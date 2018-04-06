@@ -1,0 +1,4 @@
+name: gluon_vision_pylint
+dependencies:
+- python
+- pylint
