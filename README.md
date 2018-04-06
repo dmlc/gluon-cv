@@ -1,6 +1,6 @@
 # Gluon Vision
 
-[![Build Status](http://ci.mxnet.io/job/gluon-vision/badge/icon)](http://ci.mxnet.io/job/gluon-vision/)
+[![Build Status](http://ci.mxnet.io/job/gluon-vision/badge/icon)](http://ci.mxnet.io/blue/organizations/jenkins/gluon-vision/activity)
 
 - doc preview: http://gluon-vision.mxnet.io.s3-website-us-west-2.amazonaws.com
 - CI: http://ci.mxnet.io/blue/organizations/jenkins/gluon-vision/activity
