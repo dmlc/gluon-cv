@@ -18,6 +18,9 @@
 # import guzzle_sphinx_theme
 
 # import recommonmark
+from recommonmark.parser import CommonMarkParser
+from recommonmark.transform import AutoStructify
+
 # -- Project information -----------------------------------------------------
 
 project = 'GluonVision'
@@ -56,6 +59,7 @@ templates_path = ['_templates']
 # You can specify multiple suffix as a list of string:
 #
 
+source_parsers = {'.md': CommonMarkParser}
 source_suffix = ['.rst', '.md']
 # source_suffix = '.rst'
 
