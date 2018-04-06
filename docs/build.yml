@@ -1,0 +1,11 @@
+name: gluon_vision_docs
+dependencies:
+- python
+- sphinx>=1.5.5
+- scipy
+- matplotlib
+- pip:
+  - sphinx-gallery
+  - guzzle_sphinx_theme
+  - recommonmark
+  - Image
