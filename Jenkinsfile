@@ -12,5 +12,6 @@ stage("Docs") {
     ws('workspace/gluon-vision-docs') {
       checkout scm
       sh "bash docs/build_docs.sh"
-   }
+    }
+  }
 }
