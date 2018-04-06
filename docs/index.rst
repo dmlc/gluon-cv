@@ -1,7 +1,9 @@
-============
-Gluon Vision
-============
-This is a document about gluon-vision-toolkit and gluonvision package
+========================================================
+GluonVision: a Deep Learning Toolkit for Computer Vision
+========================================================
+
+GluonVision is a deep learning tookit for engineers, scientists and students to bring recent state-of-the-art computer vision works into products and researches.
+
 
 .. module:: gluonvision
 
