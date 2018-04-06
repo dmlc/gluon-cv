@@ -2,6 +2,7 @@ stage("LINT") {
   node {
     ws('workspace/gluon-vision-lint') {
       checkout scm
+      sh "export PATH=~/miniconda3/bin:$PATH"
       sh "conda env update -f tests/pylint.yml"
       sh "source activate gluon_vision_pylint"
       sh "make pylint"
@@ -13,6 +14,7 @@ stage("Docs") {
   node {
     ws('workspace/gluon-vision-docs') {
       checkout scm
+      sh "export PATH=~/miniconda3/bin:$PATH"
       sh "conda env update -f docs/build.yml"
       sh "source activate gluon_vision_docs"
       sh "python setup.py install"
