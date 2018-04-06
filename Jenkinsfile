@@ -1,13 +1,15 @@
-conda = '/var/lib/jenkins/miniconda3/bin/conda'
+conda = 'conda'
 
 stage("LINT") {
   node {
     ws('workspace/gluon-vision-lint') {
       checkout scm
-      sh "ls . -alt"
-      sh "${conda} env update -f tests/pylint.yml"
-      sh "source activate gluon_vision_pylint"
-      sh "make pylint"
+      sh """
+      export PATH=/var/lib/jenkins/miniconda3/bin/:${PATH}
+      conda env update -f tests/pylint.yml
+      source activate gluon_vision_pylint
+      make pylint
+      """
     }
   }
 }
