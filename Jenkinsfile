@@ -9,7 +9,7 @@ stage("LINT") {
 
 stage("Docs") {
   node {
-    ws('workspace/gluon-vision-docs) {
+    ws('workspace/gluon-vision-docs') {
       checkout scm
       sh "bash docs/build_docs.sh"
    }
