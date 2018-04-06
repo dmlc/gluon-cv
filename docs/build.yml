@@ -4,8 +4,9 @@ dependencies:
 - sphinx>=1.5.5
 - scipy
 - matplotlib
+- sphinx_rtd_theme
 - pip:
   - sphinx-gallery
-  - guzzle_sphinx_theme
+  # - guzzle_sphinx_theme
   - recommonmark
   - Image
