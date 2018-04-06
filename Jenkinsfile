@@ -1,5 +1,3 @@
-conda = 'conda'
-
 stage("LINT") {
   node {
     ws('workspace/gluon-vision-lint') {
