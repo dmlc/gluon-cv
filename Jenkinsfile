@@ -2,6 +2,7 @@ stage("LINT") {
   node {
     ws('workspace/gluon-vision-lint') {
       checkout scm
+      sh "pip install pylint"
       sh "make pylint"
     }
   }
