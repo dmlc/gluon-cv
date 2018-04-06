@@ -4,6 +4,7 @@ stage("LINT") {
   node {
     ws('workspace/gluon-vision-lint') {
       checkout scm
+      sh "ls . -alt"
       sh "${conda} env update -f tests/pylint.yml"
       sh "source activate gluon_vision_pylint"
       sh "make pylint"
