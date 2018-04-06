@@ -3,6 +3,7 @@ stage("LINT") {
     ws('workspace/gluon-vision-lint') {
       checkout scm
       sh "export PATH=/var/lib/jenkins/miniconda3/bin:$PATH"
+      echo "$PATH"
       sh "conda env update -f tests/pylint.yml"
       sh "source activate gluon_vision_pylint"
       sh "make pylint"
