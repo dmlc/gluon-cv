@@ -12,6 +12,9 @@ stage("LINT") {
 }
 
 stage("Docs") {
+  when {
+    branch 'master'
+  }
   node {
     ws('workspace/gluon-vision-docs') {
       checkout scm
@@ -23,5 +26,14 @@ stage("Docs") {
       aws s3 sync --delete build/html/ s3://gluon-vision.mxnet.io/ --acl public-read
       """
     }
+  }
+}
+
+post {
+  success {
+    githubNotify status: "SUCCESS", credentialsId: "mli-gh"
+  }
+  failure {
+    githubNotify status: "FAILURE", credentialsId: "mli-gh"
   }
 }
