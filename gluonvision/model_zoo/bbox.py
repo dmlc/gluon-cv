@@ -54,6 +54,7 @@ class BboxCenterToCorner(gluon.HybridBlock):
         self._split = split
 
     def hybrid_forward(self, F, x):
+        """Hybrid forward"""
         x, y, w, h = F.split(x, axis=-1, num_outputs=4)
         hw = w / 2
         hh = h / 2
