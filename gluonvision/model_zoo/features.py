@@ -37,7 +37,7 @@ def parse_network(network, outputs, inputs, pretrained, ctx):
     params : ParameterDict
         Network parameters.
     """
-    inputs = list(inputs) if isinstance(inputs, tuple)
+    inputs = list(inputs) if isinstance(inputs, tuple) else inputs
     for i, inp in enumerate(inputs):
         if isinstance(inp, string_types):
             inputs[i] = mx.sym.var(inp)
