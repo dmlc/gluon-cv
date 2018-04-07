@@ -30,12 +30,3 @@ stage("Docs") {
     }
   }
 }
-
-#post {
-#  success {
-#    githubNotify status: "SUCCESS", credentialsId: "mli-gh"
-#  }
-#  failure {
-#    githubNotify status: "FAILURE", credentialsId: "mli-gh"
-#  }
-#}
