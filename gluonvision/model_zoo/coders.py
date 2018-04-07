@@ -29,6 +29,7 @@ class NormalizedBoxCenterEncoder(gluon.Block):
             self.corner_to_center = BboxCornerToCenter(split=True)
 
     def forward(self, samples, matches, anchors, refs):
+        """Forward"""
         F = nd
         # TODO(zhreshold): batch_pick, take multiple elements?
         ref_boxes = nd.repeat(refs.reshape((0, 1, -1, 4)), axis=1, repeats=matches.shape[1])

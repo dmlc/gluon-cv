@@ -1,3 +1,4 @@
+# pylint: disable=unused-argument
 """Pyramid Scene Parsing Network"""
 from mxnet import init
 from mxnet.gluon import nn

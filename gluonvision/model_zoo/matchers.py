@@ -22,7 +22,7 @@ class CompositeMatcher(gluon.HybridBlock):
             assert isinstance(matcher, (gluon.Block, gluon.HybridBlock))
         self._matchers = matchers
 
-    def hybrid_forward(self, F, x, *args, **kwargs):
+    def hybrid_forward(self, F, x):
         matches = [matcher(x) for matcher in self._matchers]
         return self._compose_matches(F, matches)
 
@@ -61,7 +61,7 @@ class BipartiteMatcher(gluon.HybridBlock):
         self._threshold = threshold
         self._is_ascend = is_ascend
 
-    def hybrid_forward(self, F, x, *args, **kwargs):
+    def hybrid_forward(self, F, x):
         match = F.contrib.bipartite_matching(x, threshold=self._threshold,
                                              is_ascend=self._is_ascend)
         return match[0]
@@ -80,7 +80,7 @@ class MaximumMatcher(gluon.HybridBlock):
         super(MaximumMatcher, self).__init__()
         self._threshold = threshold
 
-    def hybrid_forward(self, F, x, *args, **kwargs):
+    def hybrid_forward(self, F, x):
         argmax = F.argmax(x, axis=-1)
         match = F.where(F.pick(x, argmax, axis=-1) > self._threshold, argmax,
                         F.ones_like(argmax) * -1)

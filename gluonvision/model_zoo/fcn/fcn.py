@@ -1,3 +1,4 @@
+# pylint: disable=unused-argument
 """Fully Convolutional Network with Strdie of 8"""
 from mxnet import init
 from mxnet.gluon import nn

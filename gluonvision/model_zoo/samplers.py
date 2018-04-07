@@ -19,7 +19,8 @@ class NaiveSampler(gluon.HybridBlock):
     def __init__(self):
         super(NaiveSampler, self).__init__()
 
-    def hybrid_forward(self, F, x, *args, **kwargs):
+    def hybrid_forward(self, F, x):
+        """Hybrid forward"""
         marker = F.ones_like(x)
         y = F.where(x >= 0, marker, marker * -1)
         return y
@@ -51,7 +52,8 @@ class OHEMSampler(gluon.Block):
         self._thresh = thresh
 
     # pylint: disable=arguments-differ
-    def forward(self, x, logits, ious, *args):
+    def forward(self, x, logits, ious):
+        """Forward"""
         F = nd
         num_positive = F.sum(x > -1, axis=1)
         num_negative = self._ratio * num_positive

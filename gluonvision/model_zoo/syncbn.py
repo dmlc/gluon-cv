@@ -110,6 +110,7 @@ class BatchNorm(HybridBlock):
         super(BatchNorm, self).cast(dtype)
 
     def hybrid_forward(self, F, x, gamma, beta, running_mean, running_var):
+        """Hybrid forward"""
         if autograd.is_training():
             isum, isqu = F.SumSquare(x)
             # reduce sum for E(x) and E(x^2)

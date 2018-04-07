@@ -1,3 +1,4 @@
+# pylint: disable=unused-argument
 """Predictor for classification/box prediction."""
 from __future__ import absolute_import
 from mxnet.gluon import HybridBlock
@@ -35,7 +36,7 @@ class ConvPredictor(HybridBlock):
                 num_channel, kernel, strides=stride, padding=pad,
                 activation=activation, use_bias=use_bias)
 
-    def hybrid_forward(self, F, x, *args, **kwargs):
+    def hybrid_forward(self, F, x):
         return self.predictor(x)
 
 
@@ -61,5 +62,5 @@ class FCPredictor(HybridBlock):
             self.predictor = nn.Dense(
                 num_output, activation=activation, use_bias=use_bias)
 
-    def hybrid_forward(self, F, x, *args, **kwargs):
+    def hybrid_forward(self, F, x):
         return self.predictor(x)
