@@ -13,7 +13,8 @@ from .vgg_atrous import vgg16_atrous_300, vgg16_atrous_512
 from ...utils import set_lr_mult
 
 __all__ = ['ssd_300_vgg16_atrous', 'ssd_512_vgg16_atrous',
-           'ssd_512_resnet18_v1', 'ssd_512_resnet50_v1']
+           'ssd_512_resnet18_v1', 'ssd_512_resnet50_v1',
+           'ssd_512_resnet101_v2', 'ssd_512_resnet152_v2']
 
 
 class SSD(HybridBlock):
@@ -189,6 +190,7 @@ def get_ssd(name, base_size, features, filters, scale, ratios, steps,
     return net
 
 def ssd_300_vgg16_atrous(pretrained=0, classes=20, **kwargs):
+    """SSD architecture with VGG16 atrous 300x300 base network."""
     net = get_ssd(None, 300, features=vgg16_atrous_300,
                   filters=None, scale=[0.1, 0.95],
                   ratios=[[1, 2, 0.5]] + [[1, 2, 0.5, 3, 1.0/3]] * 3 + [[1, 2, 0.5]] * 2,
@@ -197,6 +199,7 @@ def ssd_300_vgg16_atrous(pretrained=0, classes=20, **kwargs):
     return net
 
 def ssd_512_vgg16_atrous(pretrained=0, classes=20, **kwargs):
+    """SSD architecture with VGG16 atrous 512x512 base network."""
     net = get_ssd(None, 512, features=vgg16_atrous_512,
                   filters=None, scale=[0.1, 0.95],
                   ratios=[[1, 2, 0.5]] + [[1, 2, 0.5, 3, 1.0/3]] * 4 + [[1, 2, 0.5]] * 2,
@@ -205,9 +208,7 @@ def ssd_512_vgg16_atrous(pretrained=0, classes=20, **kwargs):
     return net
 
 def ssd_512_resnet18_v1(pretrained=0, classes=20, **kwargs):
-    """SSD architecture with ResNet v1 18 layers.
-
-    """
+    """SSD architecture with ResNet v1 18 layers."""
     return get_ssd('resnet18_v1', 512,
                    features=['stage3_activation1', 'stage4_activation1'],
                    filters=[512, 512, 256, 256], scale=[0.1, 0.95],
@@ -216,11 +217,27 @@ def ssd_512_resnet18_v1(pretrained=0, classes=20, **kwargs):
                    classes=classes, pretrained=pretrained, **kwargs)
 
 def ssd_512_resnet50_v1(pretrained=0, classes=20, **kwargs):
-    """SSD architecture with ResNet v1 50 layers.
-
-    """
+    """SSD architecture with ResNet v1 50 layers."""
     return get_ssd('resnet50_v1', 512,
-                   features=['stage2_activation3', 'stage3_activation5', 'stage4_activation2'],
+                   features=['stage3_activation5', 'stage4_activation2'],
+                   filters=[512, 512, 256, 256], scale=[0.1, 0.95],
+                   ratios=[[1, 2, 0.5]] + [[1, 2, 0.5, 3, 1.0/3]] * 3 + [[1, 2, 0.5]] * 2,
+                   steps=[16, 32, 64, 128, 256, 512],
+                   classes=classes, pretrained=pretrained, **kwargs)
+
+def ssd_512_resnet101_v2(pretrained=0, classes=20, **kwargs):
+    """SSD architecture with ResNet v2 101 layers."""
+    return get_ssd('resnet101_v2', 512,
+                   features=['stage3_activation22', 'stage4_activation2'],
+                   filters=[512, 512, 256, 256], scale=[0.1, 0.95],
+                   ratios=[[1, 2, 0.5]] + [[1, 2, 0.5, 3, 1.0/3]] * 3 + [[1, 2, 0.5]] * 2,
+                   steps=[16, 32, 64, 128, 256, 512],
+                   classes=classes, pretrained=pretrained, **kwargs)
+
+def ssd_512_resnet152_v2(pretrained=0, classes=20, **kwargs):
+    """SSD architecture with ResNet v2 152 layers."""
+    return get_ssd('resnet152_v2', 512,
+                   features=['stage2_activation7', 'stage3_activation35', 'stage4_activation2'],
                    filters=[512, 512, 256, 256], scale=[0.1, 0.95],
                    ratios=[[1, 2, 0.5]] + [[1, 2, 0.5, 3, 1.0/3]] * 4 + [[1, 2, 0.5]] * 2,
                    steps=[8, 16, 32, 64, 128, 256, 512],

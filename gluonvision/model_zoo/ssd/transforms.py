@@ -56,7 +56,7 @@ class SSDDefaultTrainTransform(object):
         bbox = transforms.bbox.flip(bbox, (w, h), flip_x=flips[0])
 
         # random color jittering
-        img = transforms.experimental.image.random_color_distort(img.astype('float32'))
+        img = transforms.experimental.image.random_color_distort(img)
 
         # to tensor
         img = mx.nd.image.to_tensor(img)

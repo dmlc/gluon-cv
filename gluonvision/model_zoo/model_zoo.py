@@ -35,6 +35,8 @@ def get_model(name, **kwargs):
         'ssd_512_vgg16_atrous': ssd_512_vgg16_atrous,
         'ssd_512_resnet18_v1': ssd_512_resnet18_v1,
         'ssd_512_resnet50_v1': ssd_512_resnet50_v1,
+        'ssd_512_resnet101_v2': ssd_512_resnet101_v2,
+        'ssd_512_resnet152_v2': ssd_512_resnet152_v2,
         'cifar_resnet20_v1': cifar_resnet20_v1,
         'cifar_resnet56_v1': cifar_resnet56_v1,
         'cifar_resnet110_v1': cifar_resnet110_v1,
