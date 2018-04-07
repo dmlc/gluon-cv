@@ -1,3 +1,4 @@
+# pylint: disable=all
 __author__ = 'tylin'
 __version__ = '2.0'
 # Interface for accessing the Microsoft COCO dataset.

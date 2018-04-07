@@ -1,5 +1,5 @@
+"""Download files with progress bar."""
 import os
-import warnings
 import requests
 from tqdm import tqdm
 from mxnet.gluon.utils import check_sha1

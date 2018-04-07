@@ -12,7 +12,7 @@ __all__ = ['get_model_criterion']
 
 def get_model_criterion(args):
     models = importlib.import_module('gluonvision.model_zoo.'+args.model+'.'+args.model)
-    model = models._Net(args)
+    model = models._Net(args.nclass, args.backbone, args.norm_layer)
     print('model', model)
     if args.ignore_index is not None:
         # ignoring boundaries
@@ -22,7 +22,7 @@ def get_model_criterion(args):
         criterion = SoftmaxCrossEntropyLoss(axis=1, ignore_label=0)
     else:
         criterion = SoftmaxCrossEntropyLoss(axis=1)
-    if not args.syncbn:
+    if not args.syncbn and not args.test:
         model.hybridize()
         criterion.hybridize()
     return _init_parallel_model(args, model, criterion)
@@ -31,10 +31,9 @@ def get_model_criterion(args):
 def _init_parallel_model(args, model, criterion):
     if args.cuda:
         model = ModelDataParallel(model, args.ctx, args.syncbn)
-        criterion = CriterionDataParallel(criterion, args.ctx, args.syncbn)
+        criterion = CriterionDataParallel(criterion, args.syncbn)
     else:
-        model.reset_ctx(ctx=args.ctx)
-        criterion.reset_ctx(ctx=args.ctx)
+        model.collect_params().reset_ctx(ctx=args.ctx)
     # resume checkpoint
     if args.resume is not None:
         if os.path.isfile(args.resume):

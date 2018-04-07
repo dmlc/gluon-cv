@@ -1,6 +1,5 @@
 """Extended image transformations to `mxnet.image`."""
 from __future__ import division
-import numpy
 import random
 import numpy as np
 import mxnet as mx

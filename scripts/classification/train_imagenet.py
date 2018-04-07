@@ -17,10 +17,8 @@ from gluonvision.utils import makedirs
 
 # CLI
 parser = argparse.ArgumentParser(description='Train a model for image classification.')
-parser.add_argument('--data-dir', type=str,
-                    help='training record file to use, required for imagenet.')
-parser.add_argument('--val-data', type=str,
-                    help='validation record file to use, required for imagenet.')
+parser.add_argument('--data-dir', type=str, default='~/.mxnet/datasets/imagenet',
+                    help='training and validation pictures to use.')
 parser.add_argument('--batch-size', type=int, default=32,
                     help='training batch size per device (CPU/GPU).')
 parser.add_argument('--num-gpus', type=int, default=0,
@@ -52,9 +50,6 @@ parser.add_argument('--batch-norm', action='store_true',
 parser.add_argument('--use-pretrained', action='store_true',
                     help='enable using pretrained model from gluon.')
 parser.add_argument('--log-interval', type=int, default=50, help='Number of batches to wait before logging.')
-parser.add_argument('--profile', action='store_true',
-                    help='Option to turn on memory profiling for front-end, '\
-                         'and prints out the memory usage by python function at the end.')
 parser.add_argument('--save-frequency', type=int, default=10,
                     help='frequency of model saving.')
 parser.add_argument('--save-dir', type=str, default='params',
@@ -214,14 +209,4 @@ def main():
     train(opt.epochs, context)
 
 if __name__ == '__main__':
-    if opt.profile:
-        import hotshot, hotshot.stats
-        prof = hotshot.Profile('image-classifier-%s-%s.prof'%(model_name, opt.mode))
-        prof.runcall(main)
-        prof.close()
-        stats = hotshot.stats.load('image-classifier-%s-%s.prof'%(model_name, opt.mode))
-        stats.strip_dirs()
-        stats.sort_stats('cumtime', 'calls')
-        stats.print_stats()
-    else:
-        main()
+    main()

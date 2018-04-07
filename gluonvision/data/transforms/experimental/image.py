@@ -34,6 +34,7 @@ def random_color_distort(src, brightness_delta=32, contrast_low=0.5, contrast_hi
 
     """
     def brightness(src, delta, p=0.5):
+        """Brightness distortion."""
         if np.random.uniform(0, 1) > p:
             delta = np.random.uniform(delta, delta)
             src += delta
@@ -41,6 +42,7 @@ def random_color_distort(src, brightness_delta=32, contrast_low=0.5, contrast_hi
         return src
 
     def contrast(src, low, high, p=0.5):
+        """Contrast distortion"""
         if np.random.uniform(0, 1) > p:
             alpha = np.random.uniform(low, high)
             src *= alpha
@@ -48,6 +50,7 @@ def random_color_distort(src, brightness_delta=32, contrast_low=0.5, contrast_hi
         return src
 
     def saturation(src, low, high, p=0.5):
+        """Saturation distortion."""
         if np.random.uniform(0, 1) > p:
             alpha = np.random.uniform(low, high)
             gray = src * nd.array([[[0.299, 0.587, 0.114]]], ctx=src.context)
@@ -59,6 +62,7 @@ def random_color_distort(src, brightness_delta=32, contrast_low=0.5, contrast_hi
         return src
 
     def hue(src, delta, p=0.5):
+        """Hue distortion"""
         if np.random.uniform(0, 1) > p:
             alpha = random.uniform(-delta, delta)
             u = np.cos(alpha * np.pi)
@@ -67,11 +71,11 @@ def random_color_distort(src, brightness_delta=32, contrast_low=0.5, contrast_hi
                            [0.0, u, -w],
                            [0.0, w, u]])
             t = np.dot(np.dot(np.array([[0.299, 0.587, 0.114],
-                              [0.596, -0.274, -0.321],
-                              [0.211, -0.523, 0.311]]), bt),
-                              np.array([[0.299, 0.587, 0.114],
-                              [0.596, -0.274, -0.321],
-                              [0.211, -0.523, 0.311]])).T
+                                        [0.596, -0.274, -0.321],
+                                        [0.211, -0.523, 0.311]]), bt),
+                       np.array([[0.299, 0.587, 0.114],
+                                 [0.596, -0.274, -0.321],
+                                 [0.211, -0.523, 0.311]])).T
             src = nd.dot(src, nd.array(t, ctx=src.context))
             return src.clip(0, 255)
         return src

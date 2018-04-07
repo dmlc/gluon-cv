@@ -1,3 +1,4 @@
+"""Filesystem utility functions."""
 import os
 import errno
 

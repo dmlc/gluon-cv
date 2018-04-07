@@ -8,7 +8,7 @@ stage("LINT") {
       #export PATH=/var/lib/jenkins/miniconda3/bin/:${PATH}
       conda env update -f tests/pylint.yml
       source activate gluon_vision_pylint
-      #make pylint
+      make pylint
       """
     }
   }

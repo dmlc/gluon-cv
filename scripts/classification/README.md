@@ -15,20 +15,18 @@ The main training script is `train_cifar10.py`. The script takes various paramet
 Training a model on ResNet110_v2 can be done with
 
 ```
-python train_cifar10.py --epochs 240 --mode hybrid --num-gpus 2 -j 32 --batch-size 64\
-    --wd 0.0001 --lr 0.1 --lr-decay 0.1 --lr-decay-epoch 80,160\
-    --num-layer 110 --resnet-version 2
+python train_cifar10.py --num-epochs 240 --mode hybrid --num-gpus 2 -j 32 --batch-size 64\
+    --wd 0.0001 --lr 0.1 --lr-decay 0.1 --lr-decay-epoch 80,160 --model cifar_resnet110_v2\
 ```
 
 With mixup, the command is
 
 ```
-python train_cifar10.py --epochs 350 --mode hybrid --num-gpus 2 -j 32 --batch-size 64\
-    --wd 0.0001 --lr 0.1 --lr-decay 0.1 --lr-decay-epoch 150,250\
-    --num-layer 110 --resnet-version 2 --mixup
+python train_cifar10_mixup.py --num-epochs 350 --mode hybrid --num-gpus 2 -j 32 --batch-size 64\
+    --wd 0.0001 --lr 0.1 --lr-decay 0.1 --lr-decay-epoch 150,250 --model cifar_resnet110_v2\
 ```
 
-To get results from a different ResNet, modify `--num-layer` and `--resnet-version`.
+To get results from a different ResNet, modify `--model`.
 
 Results:
 
@@ -44,20 +42,20 @@ Results:
 Training a model on WRN-28-10 can be done with
 
 ```
-python train_cifar10.py --epochs 200 --mode hybrid --num-gpus 2 -j 32 --batch-size 64\
+python train_cifar10.py --num-epochs 200 --mode hybrid --num-gpus 2 -j 32 --batch-size 64\
     --wd 0.0005 --lr 0.1 --lr-decay 0.2 --lr-decay-epoch 60,120,160\
-    --model wrn --num-layer 28 --width-factor 10
+    --model cifar_wideresnet28 --width-factor 10
 ```
 
 With mixup, the command is
 
 ```
-python train_cifar10.py --epochs 350 --mode hybrid --num-gpus 2 -j 32 --batch-size 64\
+python train_cifar10_mixup.py --num-epochs 350 --mode hybrid --num-gpus 2 -j 32 --batch-size 64\
     --wd 0.0001 --lr 0.1 --lr-decay 0.1 --lr-decay-epoch 80,160,240\
-    --model wrn --num-layer 28 --width-factor 10 --mixup
+    --model cifar_wideresnet28 --width-factor 10
 ```
 
-To get results from a different WRN, modify `--num-layer` and `--width-factor`.
+To get results from a different WRN, modify `--model` and `--width-factor`.
 
 Results:
 
@@ -67,9 +65,9 @@ Results:
 | WRN-28-10    | 0.9584   | 0.9667 |
 | WRN-40-8     | 0.9559   | 0.9620 |
 
-## ImageNet with ResNet
+## ImageNet
 
-Here we present examples of training resnet/densenet/mobilenet on ImageNet dataset.
+Here we present examples of training resnet/mobilenet on ImageNet dataset.
 
 The main training script is `train_imagenet.py`. The script takes various parameters, thus we offer suggested parameters, and corresponding results.
 
@@ -79,7 +77,7 @@ Training a ResNet50_v2 can be done with:
 
 ```
 python train_imagenet.py --data-dir ~/data/ILSVRC2012/\
-    --batch-size 64 --num-gpus 4 -j 32\
+    --batch-size 64 --num-gpus 4 -j 32 --mode hybrid\
     --epochs 120 --lr 0.1 -momentum 0.9 --wd 0.0001\
     --lr-decay 0.1 --lr-decay-epoch 30,60,90 --model resnet50_v2 
 ```
@@ -96,7 +94,7 @@ Training a MobileNetV2_1.0 can be done with:
 
 ```
 python3 train_imagenet.py --data-dir ~/data/ILSVRC2012/\
-    --batch-size 64 --num-gpus 4 -j 32\
+    --batch-size 64 --num-gpus 4 -j 32 --mode hybrid\
     --epochs 120 --lr 0.045 --wd 0.00004\
     --lr-decay 0.98 --lr-decay-period 1 --model mobilenetv2_1.0
 ```

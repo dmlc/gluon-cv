@@ -1,3 +1,4 @@
+# pylint: disable=arguments-differ
 """Encoder and Decoder functions.
 Encoders are used during training, which assign training targets.
 Decoders are used during testing/validation, which convert predictions back to
@@ -9,7 +10,7 @@ from mxnet import gluon
 from .bbox import BboxCornerToCenter
 
 
-class NormalizedBoxCenterEncoder(gluon.HybridBlock):
+class NormalizedBoxCenterEncoder(gluon.Block):
     """Encode bounding boxes training target with normalized center offsets.
 
     Input bounding boxes are using corner type: `x_{min}, y_{min}, x_{max}, y_{max}`.
@@ -27,12 +28,13 @@ class NormalizedBoxCenterEncoder(gluon.HybridBlock):
         with self.name_scope():
             self.corner_to_center = BboxCornerToCenter(split=True)
 
-    def forward(self, samples, matches, anchors, refs, *args, **kwargs):
+    def forward(self, samples, matches, anchors, refs):
         F = nd
         # TODO(zhreshold): batch_pick, take multiple elements?
         ref_boxes = nd.repeat(refs.reshape((0, 1, -1, 4)), axis=1, repeats=matches.shape[1])
         ref_boxes = nd.split(ref_boxes, axis=-1, num_outputs=4, squeeze_axis=True)
-        ref_boxes = nd.concat(*[F.pick(ref_boxes[i], matches, axis=2).reshape((0, -1, 1)) for i in range(4)], dim=2)
+        ref_boxes = nd.concat(*[F.pick(ref_boxes[i], matches, axis=2).reshape((0, -1, 1)) \
+            for i in range(4)], dim=2)
         g = self.corner_to_center(ref_boxes)
         a = self.corner_to_center(anchors)
         t0 = (g[0] - a[0]) / a[2] / self._stds[0]
@@ -64,7 +66,7 @@ class NormalizedBoxCenterDecoder(gluon.HybridBlock):
         assert len(stds) == 4, "Box Encoder requires 4 std values."
         self._stds = stds
 
-    def hybrid_forward(self, F, x, anchors, *args, **kwargs):
+    def hybrid_forward(self, F, x, anchors):
         a = anchors.split(axis=-1, num_outputs=4)
         p = F.split(x, axis=-1, num_outputs=4)
         ox = F.broadcast_add(F.broadcast_mul(p[0] * self._stds[0], a[2]), a[0])
@@ -92,7 +94,7 @@ class MultiClassEncoder(gluon.HybridBlock):
         super(MultiClassEncoder, self).__init__()
         self._ignore_label = ignore_label
 
-    def hybrid_forward(self, F, samples, matches, refs, *args, **kwargs):
+    def hybrid_forward(self, F, samples, matches, refs):
         refs = F.repeat(refs.reshape((0, 1, -1)), axis=1, repeats=matches.shape[1])
         target_ids = F.pick(refs, matches, axis=2) + 1
         targets = F.where(samples > 0.5, target_ids, nd.ones_like(target_ids) * self._ignore_label)
@@ -116,7 +118,7 @@ class MultiClassDecoder(gluon.HybridBlock):
         super(MultiClassDecoder, self).__init__()
         self._axis = axis
 
-    def hybrid_forward(self, F, x, *args, **kwargs):
+    def hybrid_forward(self, F, x):
         pos_x = x.slice_axis(axis=self._axis, begin=1, end=None)
         cls_id = F.argmax(pos_x, self._axis)
         scores = F.pick(pos_x, cls_id, axis=-1)

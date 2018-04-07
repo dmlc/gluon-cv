@@ -1,4 +1,6 @@
+"""Bounding boxes operators"""
 from __future__ import absolute_import
+
 from mxnet import gluon
 
 

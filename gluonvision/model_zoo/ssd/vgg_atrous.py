@@ -1,3 +1,5 @@
+# pylint: disable=arguments-differ
+"""VGG atrous network for object detection."""
 from __future__ import division
 import os
 import mxnet as mx
@@ -9,6 +11,18 @@ __all__ = ['get_vgg_atrous_extractor', 'vgg16_atrous_300', 'vgg16_atrous_512']
 
 
 class Normalize(gluon.HybridBlock):
+    """Normalize layer described in https://arxiv.org/abs/1512.02325.
+
+    Parameters
+    ----------
+    n_channel : int
+        Number of channels of input.
+    initial : float
+        Initial value for the rescaling factor.
+    eps : float
+        Small value to avoid division by zero.
+
+    """
     def __init__(self, n_channel, initial=1, eps=1e-5):
         super(Normalize, self).__init__()
         self.eps = eps
@@ -22,6 +36,18 @@ class Normalize(gluon.HybridBlock):
 
 
 class VGGAtrousBase(gluon.HybridBlock):
+    """VGG Atrous multi layer base network.
+
+    Parameters
+    ----------
+    layers : list of int
+        Number of layer for vgg base network.
+    filters : list of int
+        Number of convolution filters for each layer.
+    batch_norm : bool, default is False
+        If `True`, will use BatchNorm layers.
+
+    """
     def __init__(self, layers, filters, batch_norm=False, **kwargs):
         super(VGGAtrousBase, self).__init__(**kwargs)
         assert len(layers) == len(filters)
@@ -32,7 +58,7 @@ class VGGAtrousBase(gluon.HybridBlock):
         }
         with self.name_scope():
             self.stages = nn.HybridSequential()
-            for i, l, f in zip(range(len(layers)), layers, filters):
+            for l, f in zip(layers, filters):
                 stage = nn.HybridSequential(prefix='')
                 with stage.name_scope():
                     for _ in range(l):
@@ -56,6 +82,20 @@ class VGGAtrousBase(gluon.HybridBlock):
         raise NotImplementedError
 
 class VGGAtrousExtractor(VGGAtrousBase):
+    """VGG Atrous multi layer feature extractor.
+
+    Parameters
+    ----------
+    layers : list of int
+        Number of layer for vgg base network.
+    filters : list of int
+        Number of convolution filters for each layer.
+    extras : list of list
+        Extra layers configurations.
+    batch_norm : bool
+        If `True`, will use BatchNorm layers.
+
+    """
     def __init__(self, layers, filters, extras, batch_norm=False, **kwargs):
         super(VGGAtrousExtractor, self).__init__(layers, filters, batch_norm, **kwargs)
         with self.name_scope():
@@ -96,7 +136,7 @@ vgg_spec = {
     19: ([2, 2, 4, 4, 4], [64, 128, 256, 512, 512])
 }
 
-extra_spec ={
+extra_spec = {
     300: [((256, 1, 1, 0), (512, 3, 2, 1)),
           ((128, 1, 1, 0), (256, 3, 2, 1)),
           ((128, 1, 1, 0), (256, 3, 1, 0)),
@@ -111,6 +151,27 @@ extra_spec ={
 
 def get_vgg_atrous_extractor(num_layers, im_size, pretrained=False, ctx=mx.cpu(),
                              root=os.path.join('~', '.mxnet', 'models'), **kwargs):
+    """Get VGG atrous feature extractor networks.
+
+    Parameters
+    ----------
+    num_layers : int
+        VGG types, can be 11,13,16,19.
+    im_size : int
+        VGG detection input size, can be 300, 512.
+    pretrained : bool
+        Load pretrained weights if `True`.
+    ctx : mx.Context
+        Context such as mx.cpu(), mx.gpu(0).
+    root : str
+        Model weights storing path.
+
+    Returns
+    -------
+    mxnet.gluon.HybridBlock
+        The returned network.
+
+    """
     layers, filters = vgg_spec[num_layers]
     extras = extra_spec[im_size]
     net = VGGAtrousExtractor(layers, filters, extras, **kwargs)
@@ -121,12 +182,14 @@ def get_vgg_atrous_extractor(num_layers, im_size, pretrained=False, ctx=mx.cpu()
         try:
             net.load_params(get_model_file('vgg%d%s'%(num_layers, batch_norm_suffix),
                                            root=root), ctx=ctx)
-        except:
+        except ValueError:
             pass
     return net
 
 def vgg16_atrous_300(**kwargs):
+    """Get VGG atrous 16 layer 300 in_size feature extractor networks."""
     return get_vgg_atrous_extractor(16, 300, **kwargs)
 
 def vgg16_atrous_512(**kwargs):
+    """Get VGG atrous 16 layer 512 in_size feature extractor networks."""
     return get_vgg_atrous_extractor(16, 512, **kwargs)

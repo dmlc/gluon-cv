@@ -1,45 +1,11 @@
+# pylint: disable=consider-using-enumerate,redefined-builtin,broad-except
+"""Utils for Semantic Segmentation"""
 import threading
 
-import mxnet as mx
-from mxnet import lr_scheduler, autograd
-from mxnet.gluon.nn import HybridBlock, Block
+from mxnet import autograd
 from mxnet.ndarray import NDArray
 
-__all__ = ['PolyLRScheduler', 'ModelDataParallel', 'CriterionDataParallel']
-
-class PolyLRScheduler(lr_scheduler.LRScheduler):
-    r"""Poly like Learning Rate Scheduler
-    It returns a new learning rate by::
-
-        lr = baselr * (1 - iter/maxiter) ^ power
-
-    Parameters
-    ----------
-    baselr : float
-        Base learning rate.
-    niters : int
-        Number of iterations in each epoch.
-    nepochs : int
-        Number of training epochs.
-    power : float
-        Power of poly function.
-    """
-    def __init__(self, baselr, niters, nepochs, power=0.9):
-        super(PolyLRScheduler, self).__init__()
-        self.baselr = baselr
-        self.learning_rate = self.baselr
-        self.niters = niters
-        self.N = nepochs * niters
-        self.power = power
-
-    def __call__(self, num_update):
-        return self.learning_rate
-
-    def update(self, i, epoch):
-        T = epoch * self.niters + i
-        assert(T >= 0 and T <= self.N)
-        self.learning_rate = self.baselr * pow((1 - 1.0 * T / self.N), self.power)
-
+__all__ = ['ModelDataParallel', 'CriterionDataParallel']
 
 class ModelDataParallel:
     """Data parallelism
@@ -75,7 +41,7 @@ class ModelDataParallel:
     def __init__(self, module, ctx, sync=False):
         #super(ModelDataParallel, self).__init__()
         self.ctx = ctx
-        module.collect_params().reset_ctx(ctx = ctx)
+        module.collect_params().reset_ctx(ctx=ctx)
         self.module = module
         self.sync = sync
 
@@ -101,7 +67,7 @@ class CriterionDataParallel:
         Network to be parallelized.
     ctx : list
         A list of contexts to use.
-    
+
 
     Inputs:
 
@@ -116,15 +82,14 @@ class CriterionDataParallel:
 
         >>> ctx = [mx.gpu(0), mx.gpu(1)]
         >>> net = ModelDataParallel(model, ctx=ctx)
-        >>> criterion = CriterionDataParallel(criterion, ctx=ctx)
+        >>> criterion = CriterionDataParallel(criterion)
         >>> x = gluon.utils.split_and_load(data, ctx_list=ctx)
         >>> t = gluon.utils.split_and_load(target, ctx_list=ctx)
         >>> y = net(x)
         >>> losses = criterion(y, t)
     """
-    def __init__(self, module, ctx, sync=False):
+    def __init__(self, module, sync=False):
         #super(CriterionDataParallel, self).__init__()
-        self.ctx = ctx
         self.module = module
         self.sync = sync
 
@@ -173,15 +138,11 @@ def _parallel_apply(module, inputs, kwargs_tup=None):
             with lock:
                 results[i] = e
 
-    if autograd.is_training():
-        is_training = True
-    else:
-        is_training = False
-
+    is_training = bool(autograd.is_training())
     threads = [threading.Thread(target=_worker,
-                                args=(i, module, input, kwargs, results, 
+                                args=(i, module, input, kwargs, results,
                                       is_training, lock),
-                                )
+                               )
                for i, (input, kwargs) in
                enumerate(zip(inputs, kwargs_tup))]
 
@@ -190,7 +151,7 @@ def _parallel_apply(module, inputs, kwargs_tup=None):
     for thread in threads:
         thread.join()
     outputs = []
-        
+
     for i in range(len(inputs)):
         output = results[i]
         if isinstance(output, Exception):
@@ -227,15 +188,12 @@ def _criterion_parallel_apply(module, inputs, targets, kwargs_tup=None):
             with lock:
                 results[i] = e
 
-    if autograd.is_training():
-        is_training = True
-    else:
-        is_training = False
+    is_training = bool(autograd.is_training())
 
     threads = [threading.Thread(target=_worker,
-                                args=(i, module, input, target, 
+                                args=(i, module, input, target,
                                       kwargs, results, is_training, lock),
-                                )
+                               )
                for i, (input, target, kwargs) in
                enumerate(zip(inputs, targets, kwargs_tup))]
 

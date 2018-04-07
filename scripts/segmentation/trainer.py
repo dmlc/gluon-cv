@@ -87,8 +87,7 @@ class Trainer:
             if self.args.cuda:
                 image = image.as_in_context(args.ctx[i])
             image = image.expand_dims(0)
-            output = self.evaluator. \
-                multi_eval_batch(image, model)
+            output = self.evaluator. multi_eval_batch(image, model)
             predict = F.squeeze(F.argmax(output, 1)).asnumpy()
             # visualize format
             newmask = get_mask(predict, self.args.dataset)

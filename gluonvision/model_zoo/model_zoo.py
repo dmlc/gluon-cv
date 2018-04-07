@@ -1,8 +1,13 @@
+# pylint: disable=wildcard-import, unused-wildcard-import
 """Model store which handles pretrained models from both
 mxnet.gluon.model_zoo.vision and gluonvision.models
 """
 from mxnet import gluon
 from .ssd import *
+from .cifarresnet import *
+from .cifarwideresnet import *
+
+__all__ = ['get_model']
 
 def get_model(name, **kwargs):
     """Returns a pre-defined model by name
@@ -30,6 +35,16 @@ def get_model(name, **kwargs):
         'ssd_512_vgg16_atrous': ssd_512_vgg16_atrous,
         'ssd_512_resnet18_v1': ssd_512_resnet18_v1,
         'ssd_512_resnet50_v1': ssd_512_resnet50_v1,
+        'cifar_resnet20_v1': cifar_resnet20_v1,
+        'cifar_resnet56_v1': cifar_resnet56_v1,
+        'cifar_resnet110_v1': cifar_resnet110_v1,
+        'cifar_resnet20_v2': cifar_resnet20_v2,
+        'cifar_resnet56_v2': cifar_resnet56_v2,
+        'cifar_resnet110_v2': cifar_resnet110_v2,
+        'cifar_wideresnet16': cifar_wideresnet16,
+        'cifar_wideresnet22': cifar_wideresnet22,
+        'cifar_wideresnet28': cifar_wideresnet28,
+        'cifar_wideresnet40': cifar_wideresnet40,
         }
     try:
         net = gluon.model_zoo.vision.get_model(name, **kwargs)

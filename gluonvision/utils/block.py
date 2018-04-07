@@ -1,6 +1,5 @@
 """Utility functions for gluon parameters."""
 import re
-from mxnet import gluon
 
 def set_lr_mult(net, pattern, mult=1.0, verbose=False):
     """Reset lr_mult to new value for all parameters that match :obj:`pattern`

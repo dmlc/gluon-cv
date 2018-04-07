@@ -3,6 +3,15 @@ import os
 from mxnet.gluon.data import dataset
 
 
+class ClassProperty(object):
+    """Readonly @ClassProperty descriptor for internal usage."""
+    def __init__(self, fget):
+        self.fget = fget
+
+    def __get__(self, owner_self, owner_cls):
+        return self.fget(owner_cls)
+
+
 class VisionDataset(dataset.Dataset):
     """Base Dataset with directory checker.
 
@@ -24,5 +33,6 @@ class VisionDataset(dataset.Dataset):
         raise NotImplementedError
 
     @property
-    def class_names(self):
-        raise NotImplementedError
+    def num_class(self):
+        """Number of categories."""
+        return len(self.classes)

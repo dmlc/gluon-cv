@@ -1,14 +1,12 @@
+"""Pascal Augmented VOC Semantic Segmentation Dataset."""
 import os
-import math
 import random
 import scipy.io
-import numpy as np
 from PIL import Image, ImageOps, ImageFilter
-import mxnet as mx
-from mxnet import gluon
-from ..base import VisionDataset
+from mxnet.gluon.data import dataset
 
-class VOCAugSegmentationDataset(VisionDataset):
+
+class VOCAugSegmentationDataset(dataset.Dataset):
     """Pascal VOC Augmented Semantic Segmentation Dataset.
 
     Parameters
@@ -20,11 +18,10 @@ class VOCAugSegmentationDataset(VisionDataset):
     transform : callable, optional
         A function that transforms the image
     target_transform : callable, optional
-        A function that transforms the labels 
+        A function that transforms the labels
     """
     TRAIN_BASE_DIR = 'VOCaug/dataset/'
-    def __init__(self, root=os.path.join(os.environ['HOME'], 'data'), 
-                 split='train', transform=None, target_transform=None):
+    def __init__(self, root, split='train', transform=None, target_transform=None):
         self.transform = transform
         self.target_transform = target_transform
         self.train = split
@@ -56,10 +53,10 @@ class VOCAugSegmentationDataset(VisionDataset):
     @property
     def classes(self):
         """Category names."""
-        return ('background', 'airplane', 'bicycle', 'bird', 'boat', 'bottle', 
-        'bus', 'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse',
-        'motorcycle', 'person', 'potted-plant', 'sheep', 'sofa', 'train',
-        'tv', 'ambigious')
+        return ('background', 'airplane', 'bicycle', 'bird', 'boat', 'bottle',
+                'bus', 'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse',
+                'motorcycle', 'person', 'potted-plant', 'sheep', 'sofa', 'train',
+                'tv', 'ambigious')
 
     @property
     def num_class(self):
@@ -72,14 +69,14 @@ class VOCAugSegmentationDataset(VisionDataset):
             if self.transform is not None:
                 img = self.transform(img)
             return img, os.path.basename(self.images[index])
-            
+
         target = self._load_mat(self.masks[index])
 
         # synchrosized transform
         if self.train == 'train':
-            img, target = self._sync_transform( img, target)
+            img, target = self._sync_transform(img, target)
         elif self.train == 'val':
-            img, target = self._val_sync_transform( img, target)
+            img, target = self._val_sync_transform(img, target)
 
         # general resize, normalize and toTensor
         if self.transform is not None:
@@ -88,10 +85,10 @@ class VOCAugSegmentationDataset(VisionDataset):
             target = self.target_transform(target)
 
         return img, target
-    
+
     def _load_mat(self, filename):
-        mat = scipy.io.loadmat(filename, mat_dtype=True, squeeze_me=True, 
-            struct_as_record=False)
+        mat = scipy.io.loadmat(filename, mat_dtype=True, squeeze_me=True,
+                               struct_as_record=False)
         mask = mat['GTcls'].Segmentation
         return Image.fromarray(mask)
 
@@ -122,7 +119,7 @@ class VOCAugSegmentationDataset(VisionDataset):
     def _sync_transform(self, img, mask):
         # random mirror
         if random.random() < 0.5:
-            img  = img.transpose(Image.FLIP_LEFT_RIGHT)
+            img = img.transpose(Image.FLIP_LEFT_RIGHT)
             mask = mask.transpose(Image.FLIP_LEFT_RIGHT)
         base_size = 520
         crop_size = 480
@@ -140,19 +137,19 @@ class VOCAugSegmentationDataset(VisionDataset):
         img = img.resize((ow, oh), Image.BILINEAR)
         mask = mask.resize((ow, oh), Image.NEAREST)
         # random rotate -10~10, mask using NN rotate
-        deg = random.uniform(-10,10)
+        deg = random.uniform(-10, 10)
         img = img.rotate(deg, resample=Image.BILINEAR)
         mask = mask.rotate(deg, resample=Image.NEAREST)
         # pad crop
         if short_size < crop_size:
             padh = crop_size - oh if oh < crop_size else 0
             padw = crop_size - ow if ow < crop_size else 0
-            img  = ImageOps.expand(img,  border=(0,0,padw,padh), fill=0)
-            mask = ImageOps.expand(mask, border=(0,0,padw,padh), fill=0)
+            img = ImageOps.expand(img, border=(0, 0, padw, padh), fill=0)
+            mask = ImageOps.expand(mask, border=(0, 0, padw, padh), fill=0)
         # random crop 480
         w, h = img.size
         x1 = random.randint(0, w - crop_size)
-        y1 = random.randint(0, h - crop_size) 
+        y1 = random.randint(0, h - crop_size)
         img = img.crop((x1, y1, x1+crop_size, y1+crop_size))
         mask = mask.crop((x1, y1, x1+crop_size, y1+crop_size))
         # gaussian blur as in PSP

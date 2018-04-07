@@ -1,11 +1,10 @@
-# adapt from https://github.com/apache/incubator-mxnet/blob/master/python/mxnet/gluon/model_zoo/vision/dilated_resnet.py
-
 """Dilated_ResNets, implemented in Gluon."""
+# pylint: disable=arguments-differ,unused-argument
 from __future__ import division
 
 __all__ = ['Dilated_ResNetV2', 'DilatedBasicBlockV2', 'DilatedBottleneckV2',
-           'dilated_resnet18', 'dilated_resnet34', 'dilated_resnet50', 'dilated_resnet101', 'dilated_resnet152',
-           'get_dilated_resnet']
+           'dilated_resnet18', 'dilated_resnet34', 'dilated_resnet50',
+           'dilated_resnet101', 'dilated_resnet152', 'get_dilated_resnet']
 
 from mxnet.context import cpu
 from mxnet.gluon.block import HybridBlock
@@ -38,8 +37,8 @@ class DilatedBasicBlockV2(HybridBlock):
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.nn.BatchNorm`;
         for Synchronized Cross-GPU BachNormalization).
     """
-    def __init__(self, channels, stride, downsample=False, in_channels=0, 
-            dilation=1, first_dilation=1, norm_layer=BatchNorm, **kwargs):
+    def __init__(self, channels, stride, downsample=False, in_channels=0,
+                 dilation=1, first_dilation=1, norm_layer=BatchNorm, **kwargs):
         super(DilatedBasicBlockV2, self).__init__(**kwargs)
         self.bn1 = norm_layer()
         self.conv1 = _conv3x3(channels, stride, in_channels, dilation=dilation)
@@ -86,8 +85,8 @@ class DilatedBottleneckV2(HybridBlock):
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.nn.BatchNorm`;
         for Synchronized Cross-GPU BachNormalization).
     """
-    def __init__(self, channels, stride, downsample=False, in_channels=0, 
-            dilation=1, first_dilation=1, norm_layer=BatchNorm, **kwargs):
+    def __init__(self, channels, stride, downsample=False, in_channels=0,
+                 dilation=1, first_dilation=1, norm_layer=BatchNorm, **kwargs):
         super(DilatedBottleneckV2, self).__init__(**kwargs)
         self.bn1 = norm_layer()
         self.conv1 = nn.Conv2D(channels//4, kernel_size=1, strides=1, use_bias=False)
@@ -143,7 +142,7 @@ class Dilated_ResNetV2(HybridBlock):
         for Synchronized Cross-GPU BachNormalization).
     """
     def __init__(self, block, layers, channels, classes=1000, thumbnail=False,
-            norm_layer=BatchNorm, **kwargs):
+                 norm_layer=BatchNorm, **kwargs):
         super(Dilated_ResNetV2, self).__init__(**kwargs)
         assert len(layers) == len(channels) - 1
         with self.name_scope():
@@ -159,8 +158,8 @@ class Dilated_ResNetV2(HybridBlock):
                 self.features.add(nn.MaxPool2D(3, 2, 1))
 
             in_channels = channels[0]
-            strides = [1,2,1,1,1]
-            dilations = [1,1,2,4,4]
+            strides = [1, 2, 1, 1, 1]
+            dilations = [1, 1, 2, 4, 4]
             for i, num_layer in enumerate(layers):
                 dilation = dilations[i]
                 stride = strides[i]
@@ -176,22 +175,22 @@ class Dilated_ResNetV2(HybridBlock):
             self.output = nn.Dense(classes, in_units=in_channels)
 
     def _make_layer(self, block, layers, channels, stride, stage_index, in_channels=0,
-            dilation=1):
+                    dilation=1):
         layer = nn.HybridSequential(prefix='stage%d_'%stage_index)
         with layer.name_scope():
             if dilation == 1 or dilation == 2:
-                layer.add(block(channels, stride, channels != in_channels, 
-                                in_channels=in_channels, dilation=1, 
-                                first_dilation=dilation, 
+                layer.add(block(channels, stride, channels != in_channels,
+                                in_channels=in_channels, dilation=1,
+                                first_dilation=dilation,
                                 prefix=''))
-            elif dilation ==4:
-                layer.add(block(channels, stride, channels != in_channels, 
-                                in_channels=in_channels, dilation=2, 
-                                first_dilation=dilation, 
+            elif dilation == 4:
+                layer.add(block(channels, stride, channels != in_channels,
+                                in_channels=in_channels, dilation=2,
+                                first_dilation=dilation,
                                 prefix=''))
             for _ in range(layers-1):
-                layer.add(block(channels, 1, False, in_channels=channels, 
-                dilation=dilation, first_dilation=dilation, prefix=''))
+                layer.add(block(channels, 1, False, in_channels=channels,
+                                dilation=dilation, first_dilation=dilation, prefix=''))
         return layer
 
     def hybrid_forward(self, F, x):
@@ -201,18 +200,21 @@ class Dilated_ResNetV2(HybridBlock):
 
 
 # Specification
-dilated_resnet_spec = {18: ('basic_block', [2, 2, 2, 2], [64, 64, 128, 256, 512]),
-               34: ('basic_block', [3, 4, 6, 3], [64, 64, 128, 256, 512]),
-               50: ('bottle_neck', [3, 4, 6, 3], [64, 256, 512, 1024, 2048]),
-               101: ('bottle_neck', [3, 4, 23, 3], [64, 256, 512, 1024, 2048]),
-               152: ('bottle_neck', [3, 8, 36, 3], [64, 256, 512, 1024, 2048])}
+dilated_resnet_spec = {
+    18: ('basic_block', [2, 2, 2, 2], [64, 64, 128, 256, 512]),
+    34: ('basic_block', [3, 4, 6, 3], [64, 64, 128, 256, 512]),
+    50: ('bottle_neck', [3, 4, 6, 3], [64, 256, 512, 1024, 2048]),
+    101: ('bottle_neck', [3, 4, 23, 3], [64, 256, 512, 1024, 2048]),
+    152: ('bottle_neck', [3, 8, 36, 3], [64, 256, 512, 1024, 2048])}
 
-dilated_resnet_block_versions = {'basic_block': DilatedBasicBlockV2, 'bottle_neck': DilatedBottleneckV2}
+dilated_resnet_block_versions = {
+    'basic_block': DilatedBasicBlockV2,
+    'bottle_neck': DilatedBottleneckV2}
 
 
 # Constructor
 def get_dilated_resnet(version, num_layers, pretrained=False, ctx=cpu(), root='~/.mxnet/models',
-        **kwargs):
+                       **kwargs):
     r"""Dilated_ResNet V1 model from `"Deep Residual Learning for Image Recognition"
     <http://arxiv.org/abs/1512.03385>`_ paper.
     Dilated_ResNet V2 model from `"Identity Mappings in Deep Residual Networks"

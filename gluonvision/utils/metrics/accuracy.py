@@ -1,7 +1,7 @@
+"""Accuracy metirc with ignored labels."""
 import mxnet as mx
 from mxnet import ndarray
 from mxnet.metric import check_label_shapes
-from mxnet.base import numeric_types
 import numpy as np
 
 
