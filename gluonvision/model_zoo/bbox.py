@@ -1,3 +1,4 @@
+# pylint: disable=arguments-differ
 """Bounding boxes operators"""
 from __future__ import absolute_import
 

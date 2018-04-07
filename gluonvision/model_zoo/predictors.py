@@ -1,4 +1,4 @@
-# pylint: disable=unused-argument
+# pylint: disable=unused-argument,arguments-differ
 """Predictor for classification/box prediction."""
 from __future__ import absolute_import
 from mxnet.gluon import HybridBlock

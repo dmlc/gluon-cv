@@ -148,7 +148,7 @@ class BatchNorm(HybridBlock):
                                            for k, v in self._kwargs.items()]))
 
 
-class _SharedUpdater:
+class _SharedUpdater(object):
     # update only once
     def __init__(self, nGPUs):
         self.mutex = threading.Lock()
@@ -170,7 +170,7 @@ class _SharedUpdater:
             self._clear()
 
 
-class _SharedTensor:
+class _SharedTensor(object):
     def __init__(self, nGPUs):
         self.mutex = threading.Lock()
         self.all_tasks_done = threading.Condition(self.mutex)
