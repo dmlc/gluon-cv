@@ -21,7 +21,7 @@ def parse_network(network, outputs, inputs, pretrained, ctx):
         Convert to Symbol if network is HybridBlock
     outputs : str or iterable of str
         The name of layers to be extracted as features.
-    inputs : str or iterable of str
+    inputs : iterable of str
         The name of input datas.
     pretrained : bool
         Use pretrained parameters as in gluon.model_zoo
@@ -37,6 +37,7 @@ def parse_network(network, outputs, inputs, pretrained, ctx):
     params : ParameterDict
         Network parameters.
     """
+    inputs = list(inputs) if isinstance(inputs, tuple)
     for i, inp in enumerate(inputs):
         if isinstance(inp, string_types):
             inputs[i] = mx.sym.var(inp)
