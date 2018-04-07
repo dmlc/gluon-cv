@@ -143,6 +143,7 @@ class SSD(HybridBlock):
 
     # pylint: disable=arguments-differ
     def hybrid_forward(self, F, x):
+        """Hybrid forward"""
         features = self.features(x)
         cls_preds = [F.flatten(F.transpose(cp(feat), (0, 2, 3, 1)))
                      for feat, cp in zip(features, self.class_predictors)]

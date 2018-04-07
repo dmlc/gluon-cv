@@ -12,6 +12,7 @@ stage("LINT") {
   }
 }
 
+
 stage("Docs") {
   when {
     branch 'master'

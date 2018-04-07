@@ -51,6 +51,7 @@ class DilatedBasicBlockV2(HybridBlock):
             self.downsample = None
 
     def hybrid_forward(self, F, x):
+        """Hybrid forward"""
         residual = x
         x = self.bn1(x)
         x = F.Activation(x, act_type='relu')
@@ -101,6 +102,7 @@ class DilatedBottleneckV2(HybridBlock):
             self.downsample = None
 
     def hybrid_forward(self, F, x):
+        """Hybrid forward"""
         residual = x
         x = self.bn1(x)
         x = F.Activation(x, act_type='relu')

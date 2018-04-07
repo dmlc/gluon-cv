@@ -16,7 +16,7 @@
 # under the License.
 
 # coding: utf-8
-# pylint: disable= arguments-differ
+# pylint: disable= arguments-differ,unused-argument
 """ResNets, implemented in Gluon."""
 from __future__ import division
 
@@ -63,6 +63,7 @@ class CIFARBasicBlockV2(HybridBlock):
             self.downsample = None
 
     def hybrid_forward(self, F, x):
+        """Hybrid forward"""
         residual = x
         x = self.bn1(x)
         x = F.Activation(x, act_type='relu')

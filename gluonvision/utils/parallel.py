@@ -7,7 +7,7 @@ from mxnet.ndarray import NDArray
 
 __all__ = ['ModelDataParallel', 'CriterionDataParallel']
 
-class ModelDataParallel:
+class ModelDataParallel(object):
     """Data parallelism
 
     Inputs and outputs are both list of NDArrays in different contexts.
@@ -58,7 +58,7 @@ class ModelDataParallel:
             return outputs
 
 
-class CriterionDataParallel:
+class CriterionDataParallel(object):
     """Criterion data parallelism
 
     Parameters
