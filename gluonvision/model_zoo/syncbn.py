@@ -1,8 +1,7 @@
+"""Synchronized Cross GPU Batch Normalization"""
 import threading
 
-import mxnet as mx
 from mxnet import autograd, test_utils
-from mxnet.ndarray import NDArray
 from mxnet.gluon import HybridBlock
 
 
@@ -51,14 +50,17 @@ class BatchNorm(HybridBlock):
         - **data**: input tensor with arbitrary shape.
     Outputs:
         - **out**: output tensor with the same shape as `data`.
-    
+
 
     Reference:
 
-        .. [1] Ioffe, Sergey, and Christian Szegedy. "Batch normalization: Accelerating deep network training by reducing internal covariate shift." *ICML 2015*
+        .. [1] Ioffe, Sergey, and Christian Szegedy. "Batch normalization: Accelerating
+        deep network training by reducing internal covariate shift." *ICML 2015*
 
-        .. [2] Hang Zhang, Kristin Dana, Jianping Shi, Zhongyue Zhang, Xiaogang Wang, Ambrish Tyagi, and Amit Agrawal. "Context Encoding for Semantic Segmentation." *CVPR 2018*
+        .. [2] Hang Zhang, Kristin Dana, Jianping Shi, Zhongyue Zhang, Xiaogang Wang,
+        Ambrish Tyagi, and Amit Agrawal. "Context Encoding for Semantic Segmentation." *CVPR 2018*
     """
+    # pylint: disable=arguments-differ
     def __init__(self, momentum=0.9, epsilon=1e-5, center=True, scale=True,
                  beta_initializer='zeros', gamma_initializer='ones',
                  running_mean_initializer='zeros', running_variance_initializer='ones',
@@ -69,7 +71,7 @@ class BatchNorm(HybridBlock):
         if in_channels != 0:
             self.in_channels = in_channels
         self.eps = epsilon
-        self.momentum =  momentum
+        self.momentum = momentum
 
         self.gamma = self.params.get('gamma', grad_req='write' if scale else 'null',
                                      shape=(in_channels,), init=gamma_initializer,
@@ -91,9 +93,9 @@ class BatchNorm(HybridBlock):
                                            differentiable=False)
         if nGPUs is None:
             nGPUs = self._get_nGPUs()
-        self.xsum = SharedTensor(nGPUs)
-        self.xsqu = SharedTensor(nGPUs)
-        self.updater = SharedUpdater(nGPUs)
+        self.xsum = _SharedTensor(nGPUs)
+        self.xsqu = _SharedTensor(nGPUs)
+        self.updater = _SharedUpdater(nGPUs)
 
     def _get_nGPUs(self):
         # caution: if not using all the GPUs, please mannually set nGPUs
@@ -131,7 +133,7 @@ class BatchNorm(HybridBlock):
                                        name='fwd', **self._kwargs)
         else:
             ctx = x.context
-            return F.BatchNorm(x, gamma, beta, running_mean, running_var, name='fwd', 
+            return F.BatchNorm(x, gamma, beta, running_mean, running_var, name='fwd',
                                **self._kwargs)
 
     def __repr__(self):
@@ -145,7 +147,7 @@ class BatchNorm(HybridBlock):
                                            for k, v in self._kwargs.items()]))
 
 
-class SharedUpdater:
+class _SharedUpdater:
     # update only once
     def __init__(self, nGPUs):
         self.mutex = threading.Lock()
@@ -167,7 +169,7 @@ class SharedUpdater:
             self._clear()
 
 
-class SharedTensor:
+class _SharedTensor:
     def __init__(self, nGPUs):
         self.mutex = threading.Lock()
         self.all_tasks_done = threading.Condition(self.mutex)
@@ -180,6 +182,7 @@ class SharedTensor:
         self.reduce_tasks = self.nGPUs
 
     def push(self, t):
+        """push to _SharedTensor"""
         with self.mutex:
             if self.push_tasks == 0:
                 self._clear()
@@ -214,6 +217,7 @@ class SharedTensor:
                 self.all_tasks_done.wait()
 
     def get(self, F, idx):
+        """Get form _SharedTensor"""
         self._reduce(F)
         return self.list[idx]
 
@@ -224,4 +228,4 @@ class SharedTensor:
         return len(self.list)
 
     def __repr__(self):
-        return 'SharedTensor'
+        return '_SharedTensor'

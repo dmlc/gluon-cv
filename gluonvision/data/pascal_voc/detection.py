@@ -11,15 +11,6 @@ import mxnet as mx
 from ..base import VisionDataset
 
 
-class ClassProperty(object):
-    """Readonly @ClassProperty descriptor for internal usage."""
-    def __init__(self, fget):
-        self.fget = fget
-
-    def __get__(self, owner_self, owner_cls):
-        return self.fget(owner_cls)
-
-
 class VOCDetection(VisionDataset):
     """Pascal VOC detection Dataset.
 
@@ -70,17 +61,12 @@ class VOCDetection(VisionDataset):
         detail = ','.join([str(s[0]) + s[1] for s in self._splits])
         return self.__class__.__name__ + '(' + detail + ')'
 
-    @ClassProperty
-    def classes(cls):
+    @property
+    def classes(self):
         """Category names."""
         return ('aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car',
                 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse', 'motorbike',
                 'person', 'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor')
-
-    @ClassProperty
-    def num_class(cls):
-        """Number of categories."""
-        return len(cls.classes)
 
     def __len__(self):
         return len(self._items)
@@ -140,12 +126,16 @@ class VOCDetection(VisionDataset):
 
     def _validate_label(self, xmin, ymin, xmax, ymax, width, height):
         """Validate labels."""
-        assert xmin >= 0 and xmin < width, "xmin must in [0, {}), given {}".format(width, xmin)
-        assert ymin >= 0 and ymin < height, "ymin must in [0, {}), given {}".format(height, ymin)
-        assert xmax > xmin and xmax <= width, "xmax must in (xmin, {}], given {}".format(width, xmax)
-        assert ymax > ymin and ymax <= height, "ymax must in (ymin, {}], given {}".format(height, ymax)
+        assert xmin >= 0 and xmin < width, (
+            "xmin must in [0, {}), given {}".format(width, xmin))
+        assert ymin >= 0 and ymin < height, (
+            "ymin must in [0, {}), given {}".format(height, ymin))
+        assert xmax > xmin and xmax <= width, (
+            "xmax must in (xmin, {}], given {}".format(width, xmax))
+        assert ymax > ymin and ymax <= height, (
+            "ymax must in (ymin, {}], given {}".format(height, ymax))
 
     def _preload_labels(self):
         """Preload all labels into memory."""
-        logging.debug("Preloading {} labels into memory...".format(str(self)))
+        logging.debug("Preloading %s labels into memory...", str(self))
         return [self._load_label(idx) for idx in range(len(self))]

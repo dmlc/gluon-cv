@@ -1,6 +1,4 @@
-"""Predictor for classification/box prediction.
-
-"""
+"""Predictor for classification/box prediction."""
 from __future__ import absolute_import
 from mxnet.gluon import HybridBlock
 from mxnet.gluon import nn

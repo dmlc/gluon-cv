@@ -1,13 +1,9 @@
-"""Single-shot Multi-box Detector.
-"""
+"""Single-shot Multi-box Detector."""
 from __future__ import absolute_import
-import mxnet as mx
-from mxnet import ndarray as nd
-from mxnet import gluon
+
 from mxnet import autograd
 from mxnet.gluon import nn
-from mxnet.gluon import Block, HybridBlock
-from mxnet.gluon.model_zoo import vision
+from mxnet.gluon import HybridBlock
 from ..features import FeatureExpander
 from .anchor import SSDAnchorGenerator
 from ..predictors import ConvPredictor
@@ -25,55 +21,63 @@ class SSD(HybridBlock):
 
     Parameters
     ----------
-    network : type
-        Description of parameter `network`.
-    base_size : type
-        Description of parameter `base_size`.
-    features : type
-        Description of parameter `features`.
-    num_filters : type
-        Description of parameter `num_filters`.
-    scale : type
-        Description of parameter `scale`.
-    ratios : type
-        Description of parameter `ratios`.
-    steps : type
-        Description of parameter `steps`.
-    classes : type
-        Description of parameter `classes`.
-    use_1x1_transition : type
-        Description of parameter `use_1x1_transition`.
-    use_bn : type
-        Description of parameter `use_bn`.
-    reduce_ratio : type
-        Description of parameter `reduce_ratio`.
-    min_depth : type
-        Description of parameter `min_depth`.
-    global_pool : type
-        Description of parameter `global_pool`.
-    pretrained : type
+    network : string or None
+        Name of the base network, if `None` is used, will instantiate the
+        base network from `features` directly instead of composing.
+    base_size : int
+        Base input size, it is speficied so SSD can support dynamic input shapes.
+    features : list of str or mxnet.gluon.HybridBlock
+        Intermediate features to be extracted or a network with multi-output.
+        If `network` is `None`, `features` is expected to be a multi-output network.
+    num_filters : list of int
+        Number of channels for the appended layers, ignored if `network`is `None`.
+    scale : tuple fo float
+        Min and max range of anchors. Suggested value is (0.1, 0.95).
+    ratios : iterable of list
+        Aspect ratios of anchors in each output layer. Its length must be equals
+        to the number of SSD output layers.
+    steps : list of int
+        Step size of anchor boxes in each output layer.
+    classes : int
+        Number of categories to be classified. It is 20 for Pascal VOC for example.
+    use_1x1_transition : bool
+        Whether to use 1x1 convolution as transition layer between attached layers,
+        it is effective reducing model capacity.
+    use_bn : bool
+        Whether to use BatchNorm layer after each attached convolutional layer.
+    reduce_ratio : float
+        Channel reduce ratio (0, 1) of the transition layer.
+    min_depth : int
+        Minimum channels for the transition layers.
+    global_pool : bool
+        Whether to attach a global average pooling layer as the last output layer.
+    pretrained : bool
         Description of parameter `pretrained`.
-    iou_thresh : type
-        Description of parameter `iou_thresh`.
-    neg_thresh : type
-        Description of parameter `neg_thresh`.
-    negative_mining_ratio : type
-        Description of parameter `negative_mining_ratio`.
-    stds : type
-        Description of parameter `stds`.
-    nms_thresh : type
-        Description of parameter `nms_thresh`.
-    nms_topk : type
-        Description of parameter `nms_topk`.
-    force_nms : type
-        Description of parameter `force_nms`.
-    anchor_alloc_size : type
-        Description of parameter `anchor_alloc_size`.
+    iou_thresh : float, default is 0.5
+        IOU overlap threshold of matching targets, used during training phase.
+    neg_thresh : float, default is 0.5
+        Negative mining threshold for un-matched anchors, this is to avoid highly
+        overlapped anchors to be treated as negative samples.
+    negative_mining_ratio : float, default is 3
+        Ratio of negative vs. positive samples.
+    stds : tuple of float, default is (0.1, 0.1, 0.2, 0.2)
+        Std values to be divided/multiplied to box encoded values.
+    nms_thresh : float, default is 0.45.
+        Non-maximum suppression threshold. You can speficy < 0 or > 1 to disable NMS.
+    nms_topk : int, default is -1
+        Apply NMS to top k detection results, use -1 to disable so that every Detection
+         result is used in NMS.
+    force_nms : bool, default is False
+        Force suppress objects even they belong to different categories if `True`.
+    anchor_alloc_size : tuple of int, default is (128, 128)
+        For advanced users. Define `anchor_alloc_size` to generate large enough anchor
+        maps, which will later saved in parameters. During inference, we support arbitrary
+        input image by cropping corresponding area of the anchor map.
 
     """
     def __init__(self, network, base_size, features, num_filters, scale, ratios,
                  steps, classes, use_1x1_transition=True, use_bn=True,
-                 reduce_ratio=1.0, min_depth=128, global_pool=False, pretrained=0,
+                 reduce_ratio=1.0, min_depth=128, global_pool=False, pretrained=False,
                  iou_thresh=0.5, neg_thresh=0.5, negative_mining_ratio=3,
                  stds=(0.1, 0.1, 0.2, 0.2), nms_thresh=0, nms_topk=-1, force_nms=False,
                  anchor_alloc_size=128, **kwargs):
@@ -102,8 +106,8 @@ class SSD(HybridBlock):
         self.nms_topk = nms_topk
         self.force_nms = force_nms
         self.target = set([SSDTargetGenerator(
-                iou_thresh=iou_thresh, neg_thresh=neg_thresh,
-                negative_mining_ratio=negative_mining_ratio, stds=stds)])
+            iou_thresh=iou_thresh, neg_thresh=neg_thresh,
+            negative_mining_ratio=negative_mining_ratio, stds=stds)])
 
         with self.name_scope():
             if network is None:
@@ -114,7 +118,7 @@ class SSD(HybridBlock):
                     network=network, outputs=features, num_filters=num_filters,
                     use_1x1_transition=use_1x1_transition,
                     use_bn=use_bn, reduce_ratio=reduce_ratio, min_depth=min_depth,
-                    global_pool=global_pool, pretrained=(pretrained > 0))
+                    global_pool=global_pool, pretrained=pretrained)
             self.class_predictors = nn.HybridSequential()
             self.box_predictors = nn.HybridSequential()
             self.anchor_generators = nn.HybridSequential()
@@ -137,14 +141,15 @@ class SSD(HybridBlock):
     def target_generator(self):
         return list(self.target)[0]
 
+    # pylint: disable=arguments-differ
     def hybrid_forward(self, F, x):
         features = self.features(x)
         cls_preds = [F.flatten(F.transpose(cp(feat), (0, 2, 3, 1)))
-            for feat, cp in zip(features, self.class_predictors)]
+                     for feat, cp in zip(features, self.class_predictors)]
         box_preds = [F.flatten(F.transpose(bp(feat), (0, 2, 3, 1)))
-            for feat, bp in zip(features, self.box_predictors)]
+                     for feat, bp in zip(features, self.box_predictors)]
         anchors = [F.reshape(ag(feat), shape=(1, -1))
-            for feat, ag in zip(features, self.anchor_generators)]
+                   for feat, ag in zip(features, self.anchor_generators)]
         cls_preds = F.concat(*cls_preds, dim=1).reshape((0, -1, self.num_classes))
         box_preds = F.concat(*box_preds, dim=1).reshape((0, -1, 4))
         anchors = F.concat(*anchors, dim=1).reshape((1, -1, 4))
@@ -175,7 +180,7 @@ def get_ssd(name, base_size, features, filters, scale, ratios, steps,
 
     """
     net = SSD(name, base_size, features, filters, scale, ratios, steps,
-              pretrained=pretrained, classes=classes, **kwargs)
+              pretrained=pretrained > 0, classes=classes, **kwargs)
     if pretrained > 1:
         # load trained ssd model
         raise NotImplementedError("Loading pretrained model for detection is not finished.")
@@ -205,7 +210,7 @@ def ssd_512_resnet18_v1(pretrained=0, classes=20, **kwargs):
     return get_ssd('resnet18_v1', 512,
                    features=['stage3_activation1', 'stage4_activation1'],
                    filters=[512, 512, 256, 256], scale=[0.1, 0.95],
-                   ratios=[[1, 2, 0.5]] + [[1, 2, 0.5, 3, 1.0/3]] * 4 + [[1, 2, 0.5]] * 2,
+                   ratios=[[1, 2, 0.5]] + [[1, 2, 0.5, 3, 1.0/3]] * 3 + [[1, 2, 0.5]] * 2,
                    steps=[8, 16, 32, 64, 128, 256, 512],
                    classes=classes, pretrained=pretrained, **kwargs)
 
@@ -214,8 +219,8 @@ def ssd_512_resnet50_v1(pretrained=0, classes=20, **kwargs):
 
     """
     return get_ssd('resnet50_v1', 512,
-                   features=['stage3_activation5', 'stage4_activation2'],
+                   features=['stage2_activation3', 'stage3_activation5', 'stage4_activation2'],
                    filters=[512, 512, 256, 256], scale=[0.1, 0.95],
-                   ratios=[[1, 2, 0.5]] + [[1, 2, 0.5, 3, 1.0/3]] * 5,
-                   steps=[16, 32, 64, 128, 256, 512],
+                   ratios=[[1, 2, 0.5]] + [[1, 2, 0.5, 3, 1.0/3]] * 4 + [[1, 2, 0.5]] * 2,
+                   steps=[8, 16, 32, 64, 128, 256, 512],
                    classes=classes, pretrained=pretrained, **kwargs)

@@ -1,12 +1,12 @@
+"""Pascal VOC Semantic Segmentation Dataset."""
 import os
 import random
 import numpy as np
 from PIL import Image, ImageOps, ImageFilter
-import mxnet as mx
-from mxnet import gluon
-from ..base import VisionDataset
+from mxnet.gluon.data import dataset
 
-class VOCSegmentationDataset(VisionDataset):
+
+class VOCSegmentationDataset(dataset.Dataset):
     """Pascal VOC Semantic Segmentation Dataset.
 
     Parameters
@@ -18,11 +18,10 @@ class VOCSegmentationDataset(VisionDataset):
     transform : callable, optional
         A function that transforms the image
     target_transform : callable, optional
-        A function that transforms the labels 
+        A function that transforms the labels
     """
     BASE_DIR = 'VOC2012'
-    def __init__(self, root=os.path.join(os.environ['HOME'], 'data'), split='train', 
-                 transform=None, target_transform=None):
+    def __init__(self, root, split='train', transform=None, target_transform=None):
         self.root = root
         _voc_root = os.path.join(self.root, self.BASE_DIR)
         _mask_dir = os.path.join(_voc_root, 'SegmentationClass')
@@ -60,10 +59,10 @@ class VOCSegmentationDataset(VisionDataset):
     @property
     def classes(self):
         """Category names."""
-        return ('background', 'airplane', 'bicycle', 'bird', 'boat', 'bottle', 
-        'bus', 'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse',
-        'motorcycle', 'person', 'potted-plant', 'sheep', 'sofa', 'train',
-        'tv', 'ambigious')
+        return ('background', 'airplane', 'bicycle', 'bird', 'boat', 'bottle',
+                'bus', 'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse',
+                'motorcycle', 'person', 'potted-plant', 'sheep', 'sofa', 'train',
+                'tv', 'ambigious')
 
     @property
     def num_class(self):
@@ -123,7 +122,7 @@ class VOCSegmentationDataset(VisionDataset):
     def _sync_transform(self, img, mask):
         # random mirror
         if random.random() < 0.5:
-            img  = img.transpose(Image.FLIP_LEFT_RIGHT)
+            img = img.transpose(Image.FLIP_LEFT_RIGHT)
             mask = mask.transpose(Image.FLIP_LEFT_RIGHT)
         base_size = 520
         crop_size = 480
@@ -141,19 +140,19 @@ class VOCSegmentationDataset(VisionDataset):
         img = img.resize((ow, oh), Image.BILINEAR)
         mask = mask.resize((ow, oh), Image.NEAREST)
         # random rotate -10~10, mask using NN rotate
-        deg = random.uniform(-10,10)
+        deg = random.uniform(-10, 10)
         img = img.rotate(deg, resample=Image.BILINEAR)
         mask = mask.rotate(deg, resample=Image.NEAREST)
         # pad crop
         if short_size < crop_size:
             padh = crop_size - oh if oh < crop_size else 0
             padw = crop_size - ow if ow < crop_size else 0
-            img  = ImageOps.expand(img,  border=(0,0,padw,padh), fill=0)
-            mask = ImageOps.expand(mask, border=(0,0,padw,padh), fill=0)
+            img = ImageOps.expand(img, border=(0, 0, padw, padh), fill=0)
+            mask = ImageOps.expand(mask, border=(0, 0, padw, padh), fill=0)
         # random crop 480
         w, h = img.size
         x1 = random.randint(0, w - crop_size)
-        y1 = random.randint(0, h - crop_size) 
+        y1 = random.randint(0, h - crop_size)
         img = img.crop((x1, y1, x1+crop_size, y1+crop_size))
         mask = mask.crop((x1, y1, x1+crop_size, y1+crop_size))
         # gaussian blur as in PSP

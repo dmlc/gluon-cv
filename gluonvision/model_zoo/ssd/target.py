@@ -1,9 +1,10 @@
+"""SSD training target generator."""
 from __future__ import absolute_import
+
 from mxnet import nd
-from mxnet import autograd
-from mxnet.gluon import Block, HybridBlock
+from mxnet.gluon import Block
 from ..matchers import CompositeMatcher, BipartiteMatcher, MaximumMatcher
-from ..samplers import NaiveSampler, OHEMSampler
+from ..samplers import OHEMSampler
 from ..coders import MultiClassEncoder, NormalizedBoxCenterEncoder
 from ..bbox import BboxCenterToCorner
 
@@ -31,6 +32,7 @@ class SSDTargetGenerator(Block):
         self._box_encoder = NormalizedBoxCenterEncoder(stds=stds)
         self._center_to_corner = BboxCenterToCorner(split=False)
 
+    # pylint: disable=arguments-differ
     def forward(self, anchors, cls_preds, gt_boxes, gt_ids):
         anchors = self._center_to_corner(anchors.reshape((-1, 4)))
         ious = nd.transpose(nd.contrib.box_iou(anchors, gt_boxes), (1, 0, 2))

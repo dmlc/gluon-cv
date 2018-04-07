@@ -4,7 +4,7 @@ import numpy as np
 
 __all__ = ['crop', 'flip', 'resize', 'translate']
 
-def crop(bbox, crop=None, allow_outside_center=True):
+def crop(bbox, crop_box=None, allow_outside_center=True):
     """Crop bounding boxes according to slice area.
 
     This method is mainly used with image cropping to ensure bonding boxes fit
@@ -18,7 +18,7 @@ def crop(bbox, crop=None, allow_outside_center=True):
         Specifically, these are :math:`(x_{min}, y_{min}, x_{max}, y_{max})`,
         we allow additional attributes other than coordinates, which stay intact
         during bounding box transformations.
-    crop : tuple
+    crop_box : tuple
         Tuple of length 4. :math:`(x_{min}, y_{min}, width, height)`
     allow_outside_center : bool
         If `False`, remove bounding boxes which have centers outside cropping area.
@@ -29,15 +29,15 @@ def crop(bbox, crop=None, allow_outside_center=True):
         Cropped bounding boxes with shape (M, 4+) where M <= N.
     """
     bbox = bbox.copy()
-    if crop is None:
+    if crop_box is None:
         return bbox
-    if not len(crop) == 4:
+    if not len(crop_box) == 4:
         raise ValueError(
-            "Invalid crop parameter, requires length 4, given {}".format(str(crop)))
-    if sum([int(c is None) for c in crop]) == 4:
+            "Invalid crop_box parameter, requires length 4, given {}".format(str(crop_box)))
+    if sum([int(c is None) for c in crop_box]) == 4:
         return bbox
 
-    l, t, w, h = crop
+    l, t, w, h = crop_box
 
     left = l if l else 0
     top = t if t else 0

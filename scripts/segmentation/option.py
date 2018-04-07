@@ -103,7 +103,7 @@ class Options():
                     'during the training.'%(args.dataset))
         
         if args.syncbn:
-            from gluonvision.models.syncbn import BatchNorm
+            from gluonvision.model_zoo.syncbn import BatchNorm
             args.norm_layer = BatchNorm
         else:
             args.norm_layer = mx.gluon.nn.BatchNorm

@@ -1,12 +1,12 @@
 """Bounding box visualization functions."""
+from __future__ import absolute_import
+
 import random
-import numpy as np
 from .image import plot_image
 
-
 def plot_bboxes(img, bboxes, scores=None, labels=None, thresh=0.5,
-                     class_names=None, colors=None, ax=None,
-                     reverse_rgb=False, absolute_coordinates=True):
+                class_names=None, colors=None, ax=None,
+                reverse_rgb=False, absolute_coordinates=True):
     """Visualize bounding boxes.
 
     Parameters
@@ -51,7 +51,7 @@ def plot_bboxes(img, bboxes, scores=None, labels=None, thresh=0.5,
         raise ValueError('The length of scores and bboxes mismatch, {} vs {}'
                          .format(len(scores), len(bboxes)))
 
-    ax = visualize_image(img, ax=ax, reverse_rgb=reverse_rgb)
+    ax = plot_image(img, ax=ax, reverse_rgb=reverse_rgb)
 
     if len(bboxes) < 1:
         return ax

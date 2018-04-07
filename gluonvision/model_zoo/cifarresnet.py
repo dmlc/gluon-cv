@@ -20,14 +20,10 @@
 """ResNets, implemented in Gluon."""
 from __future__ import division
 
-__all__ = ['ResNetV1', 'ResNetV2',
-           'BasicBlockV1', 'BasicBlockV2',
-           'get_resnet_spec', 'get_resnet']
+__all__ = ['get_cifar_resnet',
+           'cifar_resnet20_v1', 'cifar_resnet56_v1', 'cifar_resnet110_v1',
+           'cifar_resnet20_v2', 'cifar_resnet56_v2', 'cifar_resnet110_v2']
 
-import os
-import mxnet as mx
-from mxnet import gluon
-from mxnet.context import cpu
 from mxnet.gluon.block import HybridBlock
 from mxnet.gluon import nn
 
@@ -38,7 +34,7 @@ def _conv3x3(channels, stride, in_channels):
 
 
 # Blocks
-class BasicBlockV1(HybridBlock):
+class CIFARBasicBlockV1(HybridBlock):
     r"""BasicBlock V1 from `"Deep Residual Learning for Image Recognition"
     <http://arxiv.org/abs/1512.03385>`_ paper.
     This is used for ResNet V1 for 18, 34 layers.
@@ -55,7 +51,7 @@ class BasicBlockV1(HybridBlock):
         Number of input channels. Default is 0, to infer from the graph.
     """
     def __init__(self, channels, stride, downsample=False, in_channels=0, **kwargs):
-        super(BasicBlockV1, self).__init__(**kwargs)
+        super(CIFARBasicBlockV1, self).__init__(**kwargs)
         self.body = nn.HybridSequential(prefix='')
         self.body.add(_conv3x3(channels, stride, in_channels))
         self.body.add(nn.BatchNorm())
@@ -82,7 +78,7 @@ class BasicBlockV1(HybridBlock):
 
         return x
 
-class BasicBlockV2(HybridBlock):
+class CIFARBasicBlockV2(HybridBlock):
     r"""BasicBlock V2 from
     `"Identity Mappings in Deep Residual Networks"
     <https://arxiv.org/abs/1603.05027>`_ paper.
@@ -100,7 +96,7 @@ class BasicBlockV2(HybridBlock):
         Number of input channels. Default is 0, to infer from the graph.
     """
     def __init__(self, channels, stride, downsample=False, in_channels=0, **kwargs):
-        super(BasicBlockV2, self).__init__(**kwargs)
+        super(CIFARBasicBlockV2, self).__init__(**kwargs)
         self.bn1 = nn.BatchNorm()
         self.conv1 = _conv3x3(channels, stride, in_channels)
         self.bn2 = nn.BatchNorm()
@@ -127,7 +123,7 @@ class BasicBlockV2(HybridBlock):
         return x + residual
 
 # Nets
-class ResNetV1(HybridBlock):
+class CIFARResNetV1(HybridBlock):
     r"""ResNet V1 model from
     `"Deep Residual Learning for Image Recognition"
     <http://arxiv.org/abs/1512.03385>`_ paper.
@@ -135,7 +131,7 @@ class ResNetV1(HybridBlock):
     Parameters
     ----------
     block : HybridBlock
-        Class for the residual block. Options are BasicBlockV1, BottleneckV1.
+        Class for the residual block. Options are CIFARBasicBlockV1, BottleneckV1.
     layers : list of int
         Numbers of layers in each block
     channels : list of int
@@ -144,7 +140,7 @@ class ResNetV1(HybridBlock):
         Number of classification classes.
     """
     def __init__(self, block, layers, channels, classes=10, **kwargs):
-        super(ResNetV1, self).__init__(**kwargs)
+        super(CIFARResNetV1, self).__init__(**kwargs)
         assert len(layers) == len(channels) - 1
         with self.name_scope():
             self.features = nn.HybridSequential(prefix='')
@@ -175,7 +171,7 @@ class ResNetV1(HybridBlock):
         return x
 
 
-class ResNetV2(HybridBlock):
+class CIFARResNetV2(HybridBlock):
     r"""ResNet V2 model from
     `"Identity Mappings in Deep Residual Networks"
     <https://arxiv.org/abs/1603.05027>`_ paper.
@@ -183,7 +179,7 @@ class ResNetV2(HybridBlock):
     Parameters
     ----------
     block : HybridBlock
-        Class for the residual block. Options are BasicBlockV1, BottleneckV1.
+        Class for the residual block. Options are CIFARBasicBlockV1, BottleneckV1.
     layers : list of int
         Numbers of layers in each block
     channels : list of int
@@ -192,7 +188,7 @@ class ResNetV2(HybridBlock):
         Number of classification classes.
     """
     def __init__(self, block, layers, channels, classes=10, **kwargs):
-        super(ResNetV2, self).__init__(**kwargs)
+        super(CIFARResNetV2, self).__init__(**kwargs)
         assert len(layers) == len(channels) - 1
         with self.name_scope():
             self.features = nn.HybridSequential(prefix='')
@@ -229,10 +225,10 @@ class ResNetV2(HybridBlock):
 
 
 # Specification
-resnet_net_versions = [ResNetV1, ResNetV2]
-resnet_block_versions = [BasicBlockV1, BasicBlockV2]
+resnet_net_versions = [CIFARResNetV1, CIFARResNetV2]
+resnet_block_versions = [CIFARBasicBlockV1, CIFARBasicBlockV2]
 
-def get_resnet_spec(num_layers):
+def _get_resnet_spec(num_layers):
     assert (num_layers - 2) % 6 == 0
 
     n = (num_layers - 2) // 6
@@ -242,8 +238,7 @@ def get_resnet_spec(num_layers):
 
 
 # Constructor
-def get_resnet(version, num_layers, pretrained=False, ctx=cpu(),
-               root=os.path.join('~', '.mxnet', 'models'), **kwargs):
+def get_cifar_resnet(version, num_layers, **kwargs):
     r"""ResNet V1 model from `"Deep Residual Learning for Image Recognition"
     <http://arxiv.org/abs/1512.03385>`_ paper.
     ResNet V2 model from `"Identity Mappings in Deep Residual Networks"
@@ -262,10 +257,49 @@ def get_resnet(version, num_layers, pretrained=False, ctx=cpu(),
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
     """
-    layers, channels = get_resnet_spec(num_layers)
+    layers, channels = _get_resnet_spec(num_layers)
 
     resnet_class = resnet_net_versions[version-1]
     block_class = resnet_block_versions[version-1]
     net = resnet_class(block_class, layers, channels, **kwargs)
+    if pretrained:
+        _ = ctx
+        _ = root
+        raise NotImplementedError("Pretrained model not ready")
     return net
 
+def cifar_resnet20_v1(**kwargs):
+    """ResNet20_v1 for CIFAR Dataset
+
+    """
+    return get_cifar_resnet(1, 20, **kwargs)
+
+def cifar_resnet56_v1(**kwargs):
+    """ResNet56_v1 for CIFAR Dataset
+
+    """
+    return get_cifar_resnet(1, 56, **kwargs)
+
+def cifar_resnet110_v1(**kwargs):
+    """ResNet110_v1 for CIFAR Dataset
+
+    """
+    return get_cifar_resnet(1, 110, **kwargs)
+
+def cifar_resnet20_v2(**kwargs):
+    """ResNet20_v1 for CIFAR Dataset
+
+    """
+    return get_cifar_resnet(2, 20, **kwargs)
+
+def cifar_resnet56_v2(**kwargs):
+    """ResNet56_v2 for CIFAR Dataset
+
+    """
+    return get_cifar_resnet(2, 56, **kwargs)
+
+def cifar_resnet110_v2(**kwargs):
+    """ResNet110_v2 for CIFAR Dataset
+
+    """
+    return get_cifar_resnet(2, 110, **kwargs)

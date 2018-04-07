@@ -3,6 +3,7 @@ import shutil
 import numpy as np
 from PIL import Image
 
+import mxnet as mx
 import mxnet.ndarray as F
 
 __all__ = ['save_checkpoint', 'get_mask', 'resize_image', 'pad_image', 'crop_image',

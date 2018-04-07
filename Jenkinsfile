@@ -5,7 +5,7 @@ stage("LINT") {
       sh """#!/bin/bash
       conda env update -f tests/pylint.yml
       source activate gluon_vision_pylint
-      #make pylint
+      make pylint
       """
     }
   }

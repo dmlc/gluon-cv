@@ -14,7 +14,7 @@ def _getDataloader(args, dataset):
     ctx = mx.cpu(0)
     input_transform = Compose([
         ToTensor(ctx=ctx),
-        Normalize(args, ctx)])
+        Normalize(args.mean, args.std, ctx)])
     target_transform = Compose([
         ToLabel(ctx=ctx)])
 
@@ -95,9 +95,9 @@ class Normalize(object):
         std (sequence): Sequence of standard deviations for each channel.
     """
 
-    def __init__(self, args, ctx):
-        self.mean = mx.nd.array(args.mean, ctx=ctx)
-        self.std = mx.nd.array(args.std, ctx=ctx)
+    def __init__(self, mean, std, ctx):
+        self.mean = mx.nd.array(mean, ctx=ctx)
+        self.std = mx.nd.array(std, ctx=ctx)
 
     def __call__(self, tensor):
         """

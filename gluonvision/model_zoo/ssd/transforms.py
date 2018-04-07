@@ -1,8 +1,6 @@
 """Transforms speficically written for Single-Shot Object Detection."""
 import numpy as np
 import mxnet as mx
-from mxnet.image import BrightnessJitterAug, ContrastJitterAug
-from mxnet.image import SaturationJitterAug, HueJitterAug
 from ...data import transforms
 
 __all__ = ['SSDDefaultTrainTransform', 'SSDDefaultValTransform']
@@ -23,7 +21,7 @@ class SSDDefaultTrainTransform(object):
         Standard deviation to be divided from image. Default is [0.229, 0.224, 0.225].
 
     """
-    def __init__(self, width, height, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]):
+    def __init__(self, width, height, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)):
         self._width = width
         self._height = height
         self._mean = mean
@@ -81,7 +79,7 @@ class SSDDefaultValTransform(object):
         Standard deviation to be divided from image. Default is [0.229, 0.224, 0.225].
 
     """
-    def __init__(self, width, height, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]):
+    def __init__(self, width, height, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)):
         self._width = width
         self._height = height
         self._mean = mean

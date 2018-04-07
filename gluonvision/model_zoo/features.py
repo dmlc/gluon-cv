@@ -1,3 +1,4 @@
+# pylint: disable=abstract-method
 """Feature extraction blocks.
 Feature or Multi-Feature extraction is a key component in object detection.
 Class predictor/Box predictor are usually applied on feature layer(s).
@@ -7,7 +8,6 @@ from __future__ import absolute_import
 import mxnet as mx
 from mxnet.symbol import Symbol
 from mxnet.gluon import HybridBlock, SymbolBlock
-from mxnet.gluon import nn
 from mxnet.gluon.model_zoo import vision
 from mxnet.base import string_types
 
@@ -35,9 +35,9 @@ def parse_network(network, outputs, inputs, pretrained, ctx):
     params : ParameterDict
         Network parameters.
     """
-    for i in range(len(inputs)):
-        if isinstance(inputs[i], string_types):
-            inputs[i] = mx.sym.var(inputs[i])
+    for i, inp in enumerate(inputs):
+        if isinstance(inp, string_types):
+            inputs[i] = mx.sym.var(inp)
         assert isinstance(inputs[i], Symbol), "Network expects inputs are Symbols."
     if len(inputs) == 1:
         inputs = inputs[0]
@@ -80,7 +80,7 @@ class FeatureExtractor(SymbolBlock):
     ctx : Context
         The context, e.g. mxnet.cpu(), mxnet.gpu(0).
     """
-    def __init__(self, network, outputs, inputs=['data'], pretrained=False, ctx=mx.cpu()):
+    def __init__(self, network, outputs, inputs=('data'), pretrained=False, ctx=mx.cpu()):
         inputs, outputs, params = parse_network(network, outputs, inputs, pretrained, ctx)
         super(FeatureExtractor, self).__init__(outputs, inputs, params=params)
 
@@ -120,7 +120,7 @@ class FeatureExpander(SymbolBlock):
     """
     def __init__(self, network, outputs, num_filters, use_1x1_transition=True,
                  use_bn=True, reduce_ratio=1.0, min_depth=128, global_pool=False,
-                 pretrained=False, ctx=mx.cpu(), inputs=['data']):
+                 pretrained=False, ctx=mx.cpu(), inputs=('data')):
         inputs, outputs, params = parse_network(network, outputs, inputs, pretrained, ctx)
         # append more layers
         y = outputs[-1]

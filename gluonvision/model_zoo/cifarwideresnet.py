@@ -20,12 +20,10 @@
 """ResNets, implemented in Gluon."""
 from __future__ import division
 
-__all__ = ['WideResNet', 'BasicBlockV2', 'get_wide_resnet']
+__all__ = ['get_cifar_wide_resnet',
+           'cifar_wideresnet16', 'cifar_wideresnet22',
+           'cifar_wideresnet28', 'cifar_wideresnet40']
 
-import os
-import mxnet as mx
-from mxnet import gluon
-from mxnet.context import cpu
 from mxnet.gluon.block import HybridBlock
 from mxnet.gluon import nn
 
@@ -34,7 +32,7 @@ def _conv3x3(channels, stride, in_channels):
     return nn.Conv2D(channels, kernel_size=3, strides=stride, padding=1,
                      use_bias=False, in_channels=in_channels)
 
-class BasicBlockV2(HybridBlock):
+class CIFARBasicBlockV2(HybridBlock):
     r"""BasicBlock V2 from
     `"Identity Mappings in Deep Residual Networks"
     <https://arxiv.org/abs/1603.05027>`_ paper.
@@ -52,7 +50,7 @@ class BasicBlockV2(HybridBlock):
         Number of input channels. Default is 0, to infer from the graph.
     """
     def __init__(self, channels, stride, downsample=False, drop_rate=0.0, in_channels=0, **kwargs):
-        super(BasicBlockV2, self).__init__(**kwargs)
+        super(CIFARBasicBlockV2, self).__init__(**kwargs)
         self.bn1 = nn.BatchNorm()
         self.conv1 = _conv3x3(channels, stride, in_channels)
         self.bn2 = nn.BatchNorm()
@@ -81,7 +79,7 @@ class BasicBlockV2(HybridBlock):
         return x + residual
 
 
-class WideResNet(HybridBlock):
+class CIFARWideResNet(HybridBlock):
     r"""ResNet V2 model from
     `"Identity Mappings in Deep Residual Networks"
     <https://arxiv.org/abs/1603.05027>`_ paper.
@@ -98,7 +96,7 @@ class WideResNet(HybridBlock):
         Number of classification classes.
     """
     def __init__(self, block, layers, channels, drop_rate, classes=10, **kwargs):
-        super(WideResNet, self).__init__(**kwargs)
+        super(CIFARWideResNet, self).__init__(**kwargs)
         assert len(layers) == len(channels) - 1
         with self.name_scope():
             self.features = nn.HybridSequential(prefix='')
@@ -134,8 +132,7 @@ class WideResNet(HybridBlock):
         return x
 
 # Constructor
-def get_wide_resnet(version, num_layers, drop_rate=0.0, width_factor=1, ctx=cpu(),
-               root=os.path.join('~', '.mxnet', 'models'), **kwargs):
+def get_cifar_wide_resnet(num_layers, drop_rate=0.0, width_factor=1, **kwargs):
     r"""ResNet V1 model from `"Deep Residual Learning for Image Recognition"
     <http://arxiv.org/abs/1512.03385>`_ paper.
     ResNet V2 model from `"Identity Mappings in Deep Residual Networks"
@@ -143,8 +140,6 @@ def get_wide_resnet(version, num_layers, drop_rate=0.0, width_factor=1, ctx=cpu(
 
     Parameters
     ----------
-    version : int
-        Version of ResNet. Options are 1, 2.
     num_layers : int
         Numbers of layers. Needs to be an integer in the form of 6*n+2, e.g. 20, 56, 110, 164.
     pretrained : bool, default False
@@ -154,12 +149,36 @@ def get_wide_resnet(version, num_layers, drop_rate=0.0, width_factor=1, ctx=cpu(
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
     """
+    assert version == 2, "Version 1 not supported"
     assert (num_layers - 4) % 6 == 0
 
     n = (num_layers - 4) // 6
     layers = [n] * 3
     channels = [16, 16*width_factor, 32*width_factor, 64*width_factor]
 
-    net = WideResNet(BasicBlockV2, layers, channels, drop_rate, **kwargs)
+    net = CIFARWideResNet(CIFARBasicBlockV2, layers, channels, drop_rate, **kwargs)
     return net
 
+def cifar_wideresnet16(width_factor=1, **kwargs):
+    """WideResNet16 for CIFAR Dataset
+
+    """
+    return get_cifar_wide_resnet(16, width_factor=width_factor, **kwargs)
+
+def cifar_wideresnet22(width_factor=1, **kwargs):
+    """WideResNet22 for CIFAR Dataset
+
+    """
+    return get_cifar_wide_resnet(22, width_factor=width_factor, **kwargs)
+
+def cifar_wideresnet28(width_factor=1, **kwargs):
+    """WideResNet28 for CIFAR Dataset
+
+    """
+    return get_cifar_wide_resnet(28, width_factor=width_factor, **kwargs)
+
+def cifar_wideresnet40(width_factor=1, **kwargs):
+    """WideResNet40 for CIFAR Dataset
+
+    """
+    return get_cifar_wide_resnet(40, width_factor=width_factor, **kwargs)

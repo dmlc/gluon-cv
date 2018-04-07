@@ -1,41 +1,43 @@
+# pylint: disable=unused-import
 """Anchor box generator for SSD detector."""
+from __future__ import absolute_import
+
 from mxnet import gluon
 import numpy as np
 from . import slice_like
 
 
 class SSDAnchorGenerator(gluon.HybridBlock):
-    def __init__(self, index, sizes, ratios, step, alloc_size=(128, 128), offsets=(0.5, 0.5), **kwargs):
-        """Bounding box anchor generator for Single-shot Object Detection.
+    """Bounding box anchor generator for Single-shot Object Detection.
 
-        Parameters
-        ----------
-        index : int
-            Index of this generator in SSD models, this is required for naming.
-        sizes : iterable of floats
-            Sizes of anchor boxes.
-        ratios : iterable of floats
-            Aspect ratios of anchor boxes.
-        step : int or float
-            Step size of anchor boxes.
-        alloc_size : tuple of int
-            Allocate size for the anchor boxes as (H, W).
-            Usually we generate large enough anchors, e.g. 100x100.
-            Later in inference we can have variable input sizes,
-            at which time we can crop corresponding anchors from this large
-            anchor map so we can skip re-generating anchors for each input.
-        offsets : tuple of float
-            Center offsets of anchor boxes as (h, w) in range(0, 1).
-        **kwargs : dict
-            Additional parameters for mxnet.gluon.Block.
+    Parameters
+    ----------
+    index : int
+        Index of this generator in SSD models, this is required for naming.
+    sizes : iterable of floats
+        Sizes of anchor boxes.
+    ratios : iterable of floats
+        Aspect ratios of anchor boxes.
+    step : int or float
+        Step size of anchor boxes.
+    alloc_size : tuple of int
+        Allocate size for the anchor boxes as (H, W).
+        Usually we generate large enough anchors, e.g. 100x100.
+        Later in inference we can have variable input sizes,
+        at which time we can crop corresponding anchors from this large
+        anchor map so we can skip re-generating anchors for each input.
+    offsets : tuple of float
+        Center offsets of anchor boxes as (h, w) in range(0, 1).
 
-        """
+    """
+    def __init__(self, index, sizes, ratios, step, alloc_size=(128, 128),
+                 offsets=(0.5, 0.5), **kwargs):
         super(SSDAnchorGenerator, self).__init__(**kwargs)
         self._sizes = (sizes[0], np.sqrt(sizes[0] * sizes[1]))
         self._ratios = ratios
         # self._steps = (step, step)
         anchors = self._generate_anchors(self._sizes, self._ratios, step, alloc_size, offsets)
-        self.anchors = self.params.get_constant('anchor_%d'.format(index), anchors)
+        self.anchors = self.params.get_constant('anchor_%d'%(index), anchors)
 
     def _generate_anchors(self, sizes, ratios, step, alloc_size, offsets):
         """Generate anchors for once."""
@@ -62,6 +64,7 @@ class SSDAnchorGenerator(gluon.HybridBlock):
         """Number of anchors at each pixel."""
         return len(self._sizes) + len(self._ratios) - 1
 
+    # pylint: disable=arguments-differ
     def hybrid_forward(self, F, x, anchors):
         a = F.Custom(anchors, x, op_type='slice_like', axis=2)
         a = F.Custom(a, x, op_type='slice_like', axis=3)

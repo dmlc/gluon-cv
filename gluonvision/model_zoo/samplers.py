@@ -10,7 +10,6 @@ from __future__ import absolute_import
 import numpy as np
 from mxnet import gluon
 from mxnet import nd
-from mxnet import autograd
 
 
 class NaiveSampler(gluon.HybridBlock):
@@ -51,6 +50,7 @@ class OHEMSampler(gluon.Block):
         self._min_samples = min_samples
         self._thresh = thresh
 
+    # pylint: disable=arguments-differ
     def forward(self, x, logits, ious, *args):
         F = nd
         num_positive = F.sum(x > -1, axis=1)
