@@ -7,7 +7,7 @@ normal boxes, etc.
 from __future__ import absolute_import
 from mxnet import nd
 from mxnet import gluon
-from .bbox import BboxCornerToCenter
+from .bbox import BBoxCornerToCenter
 
 
 class NormalizedBoxCenterEncoder(gluon.Block):
@@ -26,7 +26,7 @@ class NormalizedBoxCenterEncoder(gluon.Block):
         assert len(stds) == 4, "Box Encoder requires 4 std values."
         self._stds = stds
         with self.name_scope():
-            self.corner_to_center = BboxCornerToCenter(split=True)
+            self.corner_to_center = BBoxCornerToCenter(split=True)
 
     def forward(self, samples, matches, anchors, refs):
         """Forward"""

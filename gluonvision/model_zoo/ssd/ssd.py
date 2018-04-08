@@ -18,7 +18,7 @@ __all__ = ['ssd_300_vgg16_atrous', 'ssd_512_vgg16_atrous',
 
 
 class SSD(HybridBlock):
-    """Single-shot Object Detection Network.
+    """Single-shot Object Detection Network: https://arxiv.org/abs/1512.02325.
 
     Parameters
     ----------

@@ -2,18 +2,16 @@ import argparse
 import logging
 logging.basicConfig(level=logging.INFO)
 import time
-import random
 import numpy as np
 import mxnet as mx
 from mxnet import nd
 from mxnet import gluon
 from mxnet import autograd
 from gluonvision import data as gdata
+from gluonvision import utils as gutils
 from gluonvision.model_zoo import get_model
-from gluonvision.model_zoo.losses import *
-from gluonvision.model_zoo.ssd.transforms import SSDDefaultTrainTransform
-from gluonvision.model_zoo.ssd.transforms import SSDDefaultValTransform
-from gluonvision.model_zoo.ssd.target import SSDTargetGenerator
+from gluonvision.data.presets.ssd import SSDDefaultTrainTransform
+from gluonvision.data.presets.ssd import SSDDefaultValTransform
 from gluonvision.utils.metrics.voc_detection import VOC07MApMetric
 from gluonvision.utils.metrics.accuracy import Accuracy
 
@@ -198,9 +196,7 @@ def train(net, train_data, val_data, classes, args):
 
 if __name__ == '__main__':
     args = parse_args()
-    mx.random.seed(args.seed)
-    np.random.seed(args.seed)
-    random.seed(args.seed)
+    gutils.random.seed(args.seed)
 
     # training contexts
     ctx = [mx.gpu(int(i)) for i in args.gpus.split(',') if i.strip()]

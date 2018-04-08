@@ -6,7 +6,7 @@ from mxnet.gluon import Block
 from ..matchers import CompositeMatcher, BipartiteMatcher, MaximumMatcher
 from ..samplers import OHEMSampler
 from ..coders import MultiClassEncoder, NormalizedBoxCenterEncoder
-from ..bbox import BboxCenterToCorner
+from ..bbox import BBoxCenterToCorner
 
 
 class SSDTargetGenerator(Block):
@@ -30,7 +30,7 @@ class SSDTargetGenerator(Block):
         self._sampler = OHEMSampler(negative_mining_ratio, thresh=neg_thresh)
         self._cls_encoder = MultiClassEncoder()
         self._box_encoder = NormalizedBoxCenterEncoder(stds=stds)
-        self._center_to_corner = BboxCenterToCorner(split=False)
+        self._center_to_corner = BBoxCenterToCorner(split=False)
 
     # pylint: disable=arguments-differ
     def forward(self, anchors, cls_preds, gt_boxes, gt_ids):
