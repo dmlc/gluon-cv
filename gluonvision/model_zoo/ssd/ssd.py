@@ -82,7 +82,6 @@ class SSD(HybridBlock):
                  iou_thresh=0.5, neg_thresh=0.5, negative_mining_ratio=3,
                  stds=(0.1, 0.1, 0.2, 0.2), nms_thresh=0, nms_topk=-1, force_nms=False,
                  anchor_alloc_size=128, **kwargs):
-
         super(SSD, self).__init__(**kwargs)
         if network is None:
             num_layers = len(ratios)
