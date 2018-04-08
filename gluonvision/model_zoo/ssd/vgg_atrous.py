@@ -74,7 +74,13 @@ class VGGAtrousBase(gluon.HybridBlock):
             stage = nn.HybridSequential(prefix='dilated_')
             with stage.name_scope():
                 stage.add(nn.Conv2D(1024, kernel_size=3, padding=6, dilation=6, **self.init))
+                if batch_norm:
+                    stage.add(nn.BatchNorm())
+                stage.add(nn.Activation('relu'))
                 stage.add(nn.Conv2D(1024, kernel_size=1, **self.init))
+                if batch_norm:
+                    stage.add(nn.BatchNorm())
+                stage.add(nn.Activation('relu'))
             self.stages.add(stage)
 
             # normalize layer for 4-th stage
@@ -107,6 +113,9 @@ class VGGAtrousExtractor(VGGAtrousBase):
                 with extra.name_scope():
                     for f, k, s, p in config:
                         extra.add(nn.Conv2D(f, k, s, p, **self.init))
+                        if batch_norm:
+                            stage.add(nn.BatchNorm())
+                        extra.add(nn.Activation('relu'))
                 self.extras.add(extra)
 
     def hybrid_forward(self, F, x, init_scale):
