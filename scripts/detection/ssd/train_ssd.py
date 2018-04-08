@@ -147,34 +147,34 @@ def train(net, train_data, val_data, classes, args):
                         gt_ids = nd.slice_axis(y, axis=-1, begin=4, end=5)
                         cls_targets, box_targets, box_masks = net.target_generator(
                             anchors, cls_preds, gt_boxes, gt_ids)
-                        num_positive.append(nd.sum(box_masks >= 0).asscalar())
-                        valid_cls = nd.sum(cls_targets >= 0, axis=0, exclude=True)
-                        valid_cls = nd.maximum(valid_cls, nd.ones_like(valid_cls))
-                        valid_box = nd.sum(box_masks > 0, axis=0, exclude=True)
+                        num_positive.append(nd.sum(cls_targets >= 0).asscalar())
+                        # valid_cls = nd.sum(cls_targets >= 0, axis=0, exclude=True)
+                        # valid_cls = nd.maximum(valid_cls, nd.ones_like(valid_cls))
+                        # valid_box = nd.sum(box_masks > 0, axis=0, exclude=True)
 
                     l1 = cls_loss(cls_preds, cls_targets, (cls_targets >= 0).expand_dims(axis=-1))
-                    # losses3.append(l1 * cls_targets.size / cls_targets.shape[0])
-                    l1 = l1 / valid_cls * cls_targets.shape[-1]
+                    losses3.append(l1 * cls_targets.size / cls_targets.shape[0])
+                    # l1 = l1 / valid_cls * cls_targets.shape[-1]
                     l2 = box_loss(box_preds * box_masks, box_targets)
-                    # losses4.append(l2 * box_targets.size / box_targets.shape[0])
-                    l2 = l2 / valid_cls * box_targets.size / box_targets.shape[0]
-                    L = l1 + l2
-                    Ls.append(L)
+                    losses4.append(l2 * box_targets.size / box_targets.shape[0])
+                    # l2 = l2 / valid_cls * box_targets.size / box_targets.shape[0]
+                    # L = l1 + l2
+                    # Ls.append(L)
                     outputs.append(cls_preds)
                     labels.append(cls_targets)
                     box_outputs.append(box_preds * box_masks)
                     box_labels.append(box_targets)
-                    losses1.append(l1)
-                    losses2.append(l2)
-                # n_pos = max(1, sum(num_positive)) / batch[0].shape[0]
-                # for l3, l4 in zip(losses3, losses4):
-                #     L = l3 / n_pos + l4 / n_pos
-                #     Ls.append(L)
-                #     losses1.append(l3 / n_pos)
-                #     losses2.append(l4 / n_pos)
+                    # losses1.append(l1)
+                    # losses2.append(l2)
+                n_pos = max(1, sum(num_positive))
+                for l3, l4 in zip(losses3, losses4):
+                    L = l3 / n_pos + l4 / n_pos
+                    Ls.append(L)
+                    losses1.append(l3 / n_pos)
+                    losses2.append(l4 / n_pos)
                 autograd.backward(Ls)
             batch_size = batch[0].shape[0]
-            trainer.step(batch_size)
+            trainer.step(1)
             ce_metric.update(0, losses1)
             smoothl1_metric.update(0, losses2)
             acc_metric.update(labels, outputs)
