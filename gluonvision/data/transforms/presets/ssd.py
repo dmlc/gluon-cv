@@ -2,8 +2,8 @@
 from __future__ import absolute_import
 import numpy as np
 import mxnet as mx
-from .. import bbox
-from .. import image
+from .. import bbox as tbbox
+from .. import image as timage
 from .. import experimental
 
 __all__ = ['SSDDefaultTrainTransform', 'SSDDefaultValTransform']
@@ -33,8 +33,8 @@ class SSDDefaultTrainTransform(object):
     def __call__(self, src, label):
         # random expansion with prob 0.5
         if np.random.uniform(0, 1) > 0.5:
-            img, expand = image.random_expand(src, fill=[m * 255 for m in self._mean])
-            bbox = bbox.translate(label, x_offset=expand[0], y_offset=expand[1])
+            img, expand = timage.random_expand(src, fill=[m * 255 for m in self._mean])
+            bbox = tbbox.translate(label, x_offset=expand[0], y_offset=expand[1])
         else:
             img, bbox = src, label
 
@@ -47,14 +47,14 @@ class SSDDefaultTrainTransform(object):
         # resize with random interpolation
         h, w, _ = img.shape
         interp = np.random.randint(0, 5)
-        img = image.imresize(img, self._width, self._height, interp=interp)
-        bbox = bbox.resize(bbox, (w, h), (self._width, self._height))
+        img = timage.imresize(img, self._width, self._height, interp=interp)
+        bbox = tbbox.resize(bbox, (w, h), (self._width, self._height))
 
 
         # random horizontal flip
         h, w, _ = img.shape
-        img, flips = image.random_flip(img, px=0.5)
-        bbox = bbox.flip(bbox, (w, h), flip_x=flips[0])
+        img, flips = timage.random_flip(img, px=0.5)
+        bbox = tbbox.flip(bbox, (w, h), flip_x=flips[0])
 
         # random color jittering
         img = experimental.image.random_color_distort(img)
@@ -89,8 +89,8 @@ class SSDDefaultValTransform(object):
     def __call__(self, src, label):
         # resize
         h, w, _ = src.shape
-        img = image.imresize(src, self._width, self._height)
-        bbox = bbox.resize(label, in_size=(w, h), out_size=(self._width, self._height))
+        img = timage.imresize(src, self._width, self._height)
+        bbox = tbbox.resize(label, in_size=(w, h), out_size=(self._width, self._height))
 
         img = mx.nd.image.to_tensor(img)
         img = mx.nd.image.normalize(img, mean=self._mean, std=self._std)

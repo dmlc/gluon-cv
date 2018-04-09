@@ -1,5 +1,6 @@
 """Random wrapper."""
-import random
+from __future__ import absolute_import
+import random as pyrandom
 import numpy as np
 import mxnet as mx
 
@@ -18,6 +19,6 @@ def seed(seed=None):
         Note that the hash values for some types are nondeterministic.
 
     """
-    random.seed(seed)
+    pyrandom.seed(seed)
     np.random.seed(seed)
     mx.random.seed(seed)

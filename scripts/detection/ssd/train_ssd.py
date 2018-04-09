@@ -10,8 +10,8 @@ from mxnet import autograd
 from gluonvision import data as gdata
 from gluonvision import utils as gutils
 from gluonvision.model_zoo import get_model
-from gluonvision.data.presets.ssd import SSDDefaultTrainTransform
-from gluonvision.data.presets.ssd import SSDDefaultValTransform
+from gluonvision.data.transforms.presets.ssd import SSDDefaultTrainTransform
+from gluonvision.data.transforms.presets.ssd import SSDDefaultValTransform
 from gluonvision.utils.metrics.voc_detection import VOC07MApMetric
 from gluonvision.utils.metrics.accuracy import Accuracy
 
@@ -125,6 +125,7 @@ def train(net, train_data, val_data, classes, args):
         btic = time.time()
         net.hybridize()
         for i, batch in enumerate(train_data):
+            batch_size = batch[0].shape[0]
             data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
             label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0)
             outputs = []
@@ -168,10 +169,9 @@ def train(net, train_data, val_data, classes, args):
                 for l3, l4 in zip(losses3, losses4):
                     L = l3 / n_pos + l4 / n_pos
                     Ls.append(L)
-                    losses1.append(l3 / n_pos)
+                    losses1.append(l3 / n_pos * batch_size + l4 / n_pos * batch_size)
                     losses2.append(l4 / n_pos)
                 autograd.backward(Ls)
-            batch_size = batch[0].shape[0]
             trainer.step(1)
             ce_metric.update(0, losses1)
             smoothl1_metric.update(0, losses2)
