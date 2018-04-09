@@ -83,6 +83,7 @@ def validate(net, val_data, ctx, classes):
         label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0)
         for x, y in zip(data, label):
             ids, scores, bboxes = net(x)
+            bboxes = bboxes.clip(0, batch[0].shape[2])
             gt_ids = y.slice_axis(axis=-1, begin=4, end=5)
             gt_bboxes = y.slice_axis(axis=-1, begin=0, end=4)
             gt_difficults = y.slice_axis(axis=-1, begin=5, end=6) if y.shape[-1] > 5 else None
@@ -146,7 +147,7 @@ def train(net, train_data, val_data, classes, args):
                         gt_ids = nd.slice_axis(y, axis=-1, begin=4, end=5)
                         cls_targets, box_targets, box_masks = net.target_generator(
                             anchors, cls_preds, gt_boxes, gt_ids)
-                        num_positive.append(nd.sum(cls_targets >= 0).asscalar())
+                        num_positive.append(nd.sum(cls_targets > 0).asscalar())
                         # valid_cls = nd.sum(cls_targets >= 0, axis=0, exclude=True)
                         # valid_cls = nd.maximum(valid_cls, nd.ones_like(valid_cls))
                         # valid_box = nd.sum(box_masks > 0, axis=0, exclude=True)
@@ -169,8 +170,8 @@ def train(net, train_data, val_data, classes, args):
                 for l3, l4 in zip(losses3, losses4):
                     L = l3 / n_pos + l4 / n_pos
                     Ls.append(L)
-                    losses1.append(l3 / n_pos * batch_size + l4 / n_pos * batch_size)
-                    losses2.append(l4 / n_pos)
+                    losses1.append(l3 / n_pos * batch_size)
+                    losses2.append(l4 / n_pos * batch_size)
                 autograd.backward(Ls)
             trainer.step(1)
             ce_metric.update(0, losses1)
