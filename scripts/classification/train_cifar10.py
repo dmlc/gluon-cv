@@ -11,7 +11,7 @@ from mxnet.gluon import nn
 from mxnet.gluon.data.vision import transforms
 
 from gluonvision.model_zoo import get_model
-from gluonvision.utils import makedirs
+from gluonvision.utils import makedirs, TrainingHistory
 
 # CLI
 parser = argparse.ArgumentParser(description='Train a model for image classification.')
@@ -49,6 +49,10 @@ parser.add_argument('--save-dir', type=str, default='params',
                     help='directory of saved models')
 parser.add_argument('--logging-dir', type=str, default='logs',
                     help='directory of training logs')
+parser.add_argument('--resume-from', type=str,
+                    help='resume training from the model')
+parser.add_argument('--save-history-plot', type=str, default='training_history.png',
+                    help='the path to save the history plot')
 opt = parser.parse_args()
 
 batch_size = opt.batch_size
@@ -69,6 +73,8 @@ if model_name.startswith('cifar_wideresnet'):
 else:
     kwargs = {'classes': classes}
 net = get_model(model_name, **kwargs)
+if opt.resume_from:
+    net.load_params(opt.resume_from, ctx = context)
 optimizer = 'nag'
 
 save_period = opt.save_period
@@ -78,6 +84,8 @@ if opt.save_dir and save_period:
 else:
     save_dir = ''
     save_period = 0
+
+plot_name = opt.save_history_plot
 
 logging_handlers = [logging.StreamHandler()]
 if opt.logging_dir:
@@ -131,6 +139,7 @@ def train(epochs, ctx):
     metric = mx.metric.Accuracy()
     train_metric = mx.metric.Accuracy()
     loss_fn = gluon.loss.SoftmaxCrossEntropyLoss()
+    train_history = TrainingHistory(['training-accuracy', 'validation-accuracy'])
 
     iteration = 0
     lr_decay_count = 0
@@ -164,17 +173,18 @@ def train(epochs, ctx):
             iteration += 1
 
         name, acc = train_metric.get()
-        if val_data is not None:
-            name, val_acc = test(ctx, val_data)
-            logging.info('[Epoch %d] train=%f val=%f loss=%f time: %f' % 
-                (epoch, acc, val_acc, train_loss, time.time()-tic))
-        else:
-            logging.info('[Epoch %d] train=%f loss=%f time: %f' % 
-                (epoch, acc, train_loss, time.time()-tic))
+        name, val_acc = test(ctx, val_data)
+        train_history.update({'training-accuracy': acc, 'validation-accuracy': val_acc})
+        training_history.plot(items=['training-accuracy', 'validation-accuracy'],
+                              tofile='%s/%s_history.png'%(plot_name, model_name))
+        logging.info('[Epoch %d] train=%f val=%f loss=%f time: %f' %
+            (epoch, acc, val_acc, train_loss, time.time()-tic))
 
         if save_period and save_dir and (epoch + 1) % save_period == 0:
             net.save_params('%s/cifar10-%s-%d.params'%(save_dir, model_name, epoch))
 
+    training_history.plot(items=['training-accuracy', 'validation-accuracy'],
+                          tofile='%s_history.png'%(model_name))
     if save_period and save_dir:
         net.save_params('%s/cifar10-%s-%d.params'%(save_dir, model_name, epochs-1))
 
