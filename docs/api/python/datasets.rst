@@ -20,8 +20,8 @@ Pascal VOC: http://host.robots.ox.ac.uk/pascal/VOC/ is a vision dataset which
 - Ran challenges evaluating performance on object class recognition (from 2005-2012, now finished)
 
 .. autoclass:: gluonvision.data.VOCDetection
-.. autoclass:: gluonvision.data.VOCSegmentation
-.. autoclass:: gluonvision.data.VOCAugSegmentation
+.. autoclass:: gluonvision.data.VOCSegmentationDataset
+.. autoclass:: gluonvision.data.VOCAugSegmentationDataset
 
 ImageNet
 --------
