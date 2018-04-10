@@ -13,7 +13,6 @@ class TrainingHistory():
         List of names of the items in the history
     """
     def __init__(self, items):
-        super(TrainingHistory, self).__init__()
         self.history = {}
         if items:
             for it in items:

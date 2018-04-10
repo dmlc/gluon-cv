@@ -1,5 +1,8 @@
 from __future__ import division
 
+import matplotlib
+matplotlib.use('Agg')
+
 import argparse, time, logging, random, math
 
 import numpy as np
@@ -51,7 +54,7 @@ parser.add_argument('--logging-dir', type=str, default='logs',
                     help='directory of training logs')
 parser.add_argument('--resume-from', type=str,
                     help='resume training from the model')
-parser.add_argument('--save-history-plot', type=str, default='training_history',
+parser.add_argument('--save-plot-dir', type=str, default='.',
                     help='the path to save the history plot')
 opt = parser.parse_args()
 
@@ -86,7 +89,7 @@ else:
     save_dir = ''
     save_period = 0
 
-plot_name = opt.save_history_plot
+plot_name = opt.save_plot_dir
 
 logging_handlers = [logging.StreamHandler()]
 if opt.logging_dir:
@@ -194,7 +197,7 @@ def train(epochs, ctx):
         name, acc = train_metric.get()
         name, val_acc = test(ctx, val_data)
         train_history.update({'training-accuracy': acc, 'validation-accuracy': val_acc})
-        training_history.plot(items=['training-accuracy', 'validation-accuracy'],
+        train_history.plot(items=['training-accuracy', 'validation-accuracy'],
                               tofile='%s/%s_history.png'%(plot_name, model_name))
         logging.info('[Epoch %d] train=%f val=%f loss=%f time: %f' %
             (epoch, acc, val_acc, train_loss, time.time()-tic))

@@ -252,10 +252,6 @@ def get_cifar_resnet(version, num_layers, **kwargs):
         Version of ResNet. Options are 1, 2.
     num_layers : int
         Numbers of layers. Needs to be an integer in the form of 6*n+2, e.g. 20, 56, 110, 164.
-    pretrained : bool, default False
-        Whether to load the pretrained weights for model.
-    ctx : Context, default CPU
-        The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
     """
@@ -264,10 +260,6 @@ def get_cifar_resnet(version, num_layers, **kwargs):
     resnet_class = resnet_net_versions[version-1]
     block_class = resnet_block_versions[version-1]
     net = resnet_class(block_class, layers, channels, **kwargs)
-    if pretrained:
-        _ = ctx
-        _ = root
-        raise NotImplementedError("Pretrained model not ready")
     return net
 
 def cifar_resnet20_v1(**kwargs):
