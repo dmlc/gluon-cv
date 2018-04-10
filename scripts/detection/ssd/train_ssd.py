@@ -122,6 +122,9 @@ def train(net, train_data, val_data, classes, args):
             new_lr = trainer.learning_rate * lr_decay[lr_steps.index(epoch)]
             trainer.set_learning_rate(new_lr)
             logging.info("[Epoch {}] Set learning rate to {}".format(epoch, new_lr))
+        acc_metric.reset()
+        ce_metric.reset()
+        smoothl1_metric.reset()
         tic = time.time()
         btic = time.time()
         net.hybridize()

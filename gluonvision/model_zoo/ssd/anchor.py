@@ -30,9 +30,12 @@ class SSDAnchorGenerator(gluon.HybridBlock):
         Center offsets of anchor boxes as (h, w) in range(0, 1).
 
     """
-    def __init__(self, index, sizes, ratios, step, alloc_size=(128, 128),
-                 offsets=(0.5, 0.5), **kwargs):
+    def __init__(self, index, im_size, sizes, ratios, step, alloc_size=(128, 128),
+                 offsets=(0.5, 0.5), clip=True, **kwargs):
         super(SSDAnchorGenerator, self).__init__(**kwargs)
+        assert len(im_size) == 2
+        self._im_size = im_size
+        self._clip = clip
         self._sizes = (sizes[0], np.sqrt(sizes[0] * sizes[1]))
         self._ratios = ratios
         # self._steps = (step, step)
@@ -57,6 +60,7 @@ class SSDAnchorGenerator(gluon.HybridBlock):
                     w = sizes[0] * sr
                     h = sizes[0] / sr
                     anchors.append([cx, cy, w, h])
+        # self._anchor = np.array(anchors).reshape(1, 1, alloc_size[0], alloc_size[1], -1, 4)
         return np.array(anchors).reshape(1, 1, alloc_size[0], alloc_size[1], -1, 4)
 
     @property
@@ -66,6 +70,13 @@ class SSDAnchorGenerator(gluon.HybridBlock):
 
     # pylint: disable=arguments-differ
     def hybrid_forward(self, F, x, anchors):
+        # anchors = F.array(self._anchor)
+        # return anchors[0][0].slice_axis(0, begin=0, end=x.shape[2]).slice_axis(1, begin=0, end=x.shape[2]).reshape((1, -1, 4)).clip(0, 300)
         a = F.Custom(anchors, x, op_type='slice_like', axis=2)
         a = F.Custom(a, x, op_type='slice_like', axis=3)
+        a = a.reshape((1, -1, 4))
+        if self._clip:
+            cx, cy, cw, ch = a.split(axis=-1, num_outputs=4)
+            H, W = self._im_size
+            a = F.concat(*[cx.clip(0, W), cy.clip(0, H), cw.clip(0, W), ch.clip(0, H)])
         return a.reshape((1, -1, 4))
