@@ -244,7 +244,7 @@ def ssd_512_resnet18_v1(pretrained=0, classes=20, **kwargs):
     return get_ssd('resnet18_v1', 512,
                    features=['stage3_activation1', 'stage4_activation1'],
                    filters=[512, 512, 256, 256],
-                   sizes=[35.84, 76.8, 153.6, 230.4, 307.2, 384.0, 460.8, 537.6],
+                   sizes=[35.84, 76.8, 153.6, 230.4, 307.2, 400, 537.6],
                    ratios=[[1, 2, 0.5]] + [[1, 2, 0.5, 3, 1.0/3]] * 3 + [[1, 2, 0.5]] * 2,
                    steps=[8, 16, 32, 64, 128, 256, 512],
                    classes=classes, pretrained=pretrained, **kwargs)
@@ -254,7 +254,7 @@ def ssd_512_resnet50_v1(pretrained=0, classes=20, **kwargs):
     return get_ssd('resnet50_v1', 512,
                    features=['stage3_activation5', 'stage4_activation2'],
                    filters=[512, 512, 256, 256],
-                   sizes=[35.84, 76.8, 153.6, 230.4, 307.2, 384.0, 460.8, 537.6],
+                   sizes=[35.84, 76.8, 153.6, 230.4, 307.2, 400, 537.6],
                    ratios=[[1, 2, 0.5]] + [[1, 2, 0.5, 3, 1.0/3]] * 3 + [[1, 2, 0.5]] * 2,
                    steps=[16, 32, 64, 128, 256, 512],
                    classes=classes, pretrained=pretrained, **kwargs)
@@ -264,7 +264,7 @@ def ssd_512_resnet101_v2(pretrained=0, classes=20, **kwargs):
     return get_ssd('resnet101_v2', 512,
                    features=['stage3_activation22', 'stage4_activation2'],
                    filters=[512, 512, 256, 256],
-                   sizes=[35.84, 76.8, 153.6, 230.4, 307.2, 384.0, 460.8, 537.6],
+                   sizes=[35.84, 76.8, 153.6, 230.4, 307.2, 400, 537.6],
                    ratios=[[1, 2, 0.5]] + [[1, 2, 0.5, 3, 1.0/3]] * 3 + [[1, 2, 0.5]] * 2,
                    steps=[16, 32, 64, 128, 256, 512],
                    classes=classes, pretrained=pretrained, **kwargs)

@@ -78,5 +78,5 @@ class SSDAnchorGenerator(gluon.HybridBlock):
         if self._clip:
             cx, cy, cw, ch = a.split(axis=-1, num_outputs=4)
             H, W = self._im_size
-            a = F.concat(*[cx.clip(0, W), cy.clip(0, H), cw.clip(0, W), ch.clip(0, H)])
+            a = F.concat(*[cx.clip(0, W), cy.clip(0, H), cw.clip(0, W), ch.clip(0, H)], dim=-1)
         return a.reshape((1, -1, 4))
