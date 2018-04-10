@@ -197,8 +197,8 @@ def train(epochs, ctx):
         err_top1_val, err_top5_val = test(ctx, val_data)
         logging.info('[Epoch %d] validation: err-top1=%f err-top5=%f'%(epoch, err_top1_val, err_top5_val))
 
-        if err_top_val < best_val_score and epoch > 50:
-            best_val_score = err_top_val
+        if err_top1_val < best_val_score and epoch > 50:
+            best_val_score = err_top1_val
             net.save_params('%s/%.4f-imagenet-%s-%-best.params'%(best_val_score, save_dir, model_name, epoch))
 
         if save_frequency and save_dir and (epoch + 1) % save_frequency == 0:
