@@ -1,5 +1,8 @@
 Vision Datasets
 ===============
+.. automodule:: gluonvision.data
+.. currentmodule:: gluonvision.data
+
 Popular datasets for vision tasks are provided in gluonvision.
 By default, we require all datasets reside in ~/.mxnet/datasets/ in order to have
 frustration-free user experience and less path-works.
@@ -20,8 +23,8 @@ Pascal VOC: http://host.robots.ox.ac.uk/pascal/VOC/ is a vision dataset which
 - Ran challenges evaluating performance on object class recognition (from 2005-2012, now finished)
 
 .. autoclass:: gluonvision.data.VOCDetection
-.. autoclass:: gluonvision.data.VOCSegmentation
-.. autoclass:: gluonvision.data.VOCAugSegmentation
+.. autoclass:: gluonvision.data.VOCSegmentationDataset
+.. autoclass:: gluonvision.data.VOCAugSegmentationDataset
 
 ImageNet
 --------
