@@ -124,10 +124,10 @@ class SSD(HybridBlock):
             self.class_predictors = nn.HybridSequential()
             self.box_predictors = nn.HybridSequential()
             self.anchor_generators = nn.HybridSequential()
-            asz = (anchor_alloc_size, anchor_alloc_size)
+            asz = anchor_alloc_size
             im_size = (base_size, base_size)
             for i, s, r, st in zip(range(num_layers), sizes, ratios, steps):
-                self.anchor_generators.add(SSDAnchorGenerator(i, im_size, s, r, st, asz))
+                self.anchor_generators.add(SSDAnchorGenerator(i, im_size, s, r, st, (asz, asz)))
                 asz = asz // 2
                 num_anchors = self.anchor_generators[-1].num_depth
                 self.class_predictors.add(ConvPredictor(num_anchors * self.num_classes))
