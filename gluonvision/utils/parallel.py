@@ -39,7 +39,6 @@ class ModelDataParallel(object):
         >>> y = net(x)
     """
     def __init__(self, module, ctx, sync=False):
-        #super(ModelDataParallel, self).__init__()
         self.ctx = ctx
         module.collect_params().reset_ctx(ctx=ctx)
         self.module = module
@@ -89,7 +88,6 @@ class CriterionDataParallel(object):
         >>> losses = criterion(y, t)
     """
     def __init__(self, module, sync=False):
-        #super(CriterionDataParallel, self).__init__()
         self.module = module
         self.sync = sync
 
