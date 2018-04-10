@@ -104,8 +104,8 @@ def validate(net, val_data, ctx, classes, val_dataset):
                     bb[:, (1, 3)] /= 300 / H
                     cls_dets = np.hstack((bb, ss)).astype(np.float32, copy=False)
                     # if j == 0:
-                    # print(j, image_count, cls_dets)
-                    # raise
+                    print(j, image_count, cls_dets)
+                    raise
                     all_boxes[j+1][image_count] = cls_dets
 
 
@@ -133,7 +133,7 @@ if __name__ == '__main__':
     # network
     net_name = '_'.join(('ssd', str(args.data_shape), args.network))
     net = get_model(net_name, classes=len(classes), pretrained=0)  # load pretrained base network
-    net.load_params('/home/joshua/Dev/Cache/ssd_vgg16_converted.params')
+    net.load_params('/home/joshua/Dev/Cache/ssd_300_vgg16_atrous_voc0712_trainval.params')
 
     # training
     names, values = validate(net, val_data, ctx, classes, val_dataset)
