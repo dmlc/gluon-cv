@@ -115,12 +115,16 @@ class MultiClassDecoder(gluon.HybridBlock):
         Axis of class-wise results.
 
     """
-    def __init__(self, axis=-1):
+    def __init__(self, axis=-1, thresh=0.01):
         super(MultiClassDecoder, self).__init__()
         self._axis = axis
+        self._thresh = thresh
 
     def hybrid_forward(self, F, x):
         pos_x = x.slice_axis(axis=self._axis, begin=1, end=None)
         cls_id = F.argmax(pos_x, self._axis)
         scores = F.pick(pos_x, cls_id, axis=-1)
+        mask = scores > self._thresh
+        cls_id = F.where(mask, cls_id, F.ones_like(cls_id) * -1)
+        scores = F.where(mask, scores, F.zeros_like(scores))
         return cls_id, scores

@@ -76,7 +76,7 @@ def get_dataloader(train_dataset, val_dataset, data_shape, batch_size, num_worke
 def validate(net, val_data, ctx, classes):
     """Test on validation dataset."""
     metric = VOC07MApMetric(iou_thresh=0.5, class_names=classes)
-    net.set_nms(nms_thresh=0.5, nms_topk=400, force_nms=False)
+    net.set_nms(nms_thresh=0.5, nms_topk=200, force_nms=False)
     net.hybridize()
     for batch in val_data:
         data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
