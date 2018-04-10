@@ -199,7 +199,7 @@ def train(epochs, ctx):
 
         if err_top1_val < best_val_score and epoch > 50:
             best_val_score = err_top1_val
-            net.save_params('%s/%.4f-imagenet-%s-%d-best.params'%(best_val_score, save_dir, model_name, epoch))
+            net.save_params('%s/%.4f-imagenet-%s-%d-best.params'%(save_dir, best_val_score, model_name, epoch))
 
         if save_frequency and save_dir and (epoch + 1) % save_frequency == 0:
             net.save_params('%s/imagenet-%s-%d.params'%(save_dir, model_name, epoch))
