@@ -1,19 +1,10 @@
 Semantic Segmentation
 =====================
 
-Test Pre-trained Model
-~~~~~~~~~~~~~~~~~~~~~~
-
-
-
 Train Your Own Model
 ~~~~~~~~~~~~~~~~~~~~
 
-- Prepare PASCAL VOC Dataset and Augmented Dataset::
-
-    cd examples/datasets/
-    python setup_pascal_voc.py
-    python setup_pascal_aug.py
+- Please follow this tutorial to prepare PASCAL VOC dataset and the augmented dataset.
 
 - Training command example::
 
