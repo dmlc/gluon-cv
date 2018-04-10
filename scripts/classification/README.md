@@ -16,14 +16,14 @@ Training a model on ResNet110_v2 can be done with
 
 ```
 python train_cifar10.py --num-epochs 240 --mode hybrid --num-gpus 2 -j 32 --batch-size 64\
-    --wd 0.0001 --lr 0.1 --lr-decay 0.1 --lr-decay-epoch 80,160 --model cifar_resnet110_v2\
+    --wd 0.0001 --lr 0.1 --lr-decay 0.1 --lr-decay-epoch 80,160 --model cifar_resnet110_v2
 ```
 
 With mixup, the command is
 
 ```
 python train_cifar10_mixup.py --num-epochs 350 --mode hybrid --num-gpus 2 -j 32 --batch-size 64\
-    --wd 0.0001 --lr 0.1 --lr-decay 0.1 --lr-decay-epoch 150,250 --model cifar_resnet110_v2\
+    --wd 0.0001 --lr 0.1 --lr-decay 0.1 --lr-decay-epoch 150,250 --model cifar_resnet110_v2
 ```
 
 To get results from a different ResNet, modify `--model`.

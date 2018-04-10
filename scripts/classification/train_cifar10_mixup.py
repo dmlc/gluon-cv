@@ -149,10 +149,12 @@ def train(epochs, ctx):
     metric = mx.metric.Accuracy()
     train_metric = mx.metric.RMSE()
     loss_fn = gluon.loss.SoftmaxCrossEntropyLoss(sparse_label=False)
-    train_history = TrainingHistory(['training-accuracy', 'validation-accuracy'])
+    train_history = TrainingHistory(['training-error', 'validation-error'])
 
     iteration = 0
     lr_decay_count = 0
+
+    best_val_score = 0
 
     for epoch in range(epochs):
         tic = time.time()
@@ -196,11 +198,15 @@ def train(epochs, ctx):
 
         name, acc = train_metric.get()
         name, val_acc = test(ctx, val_data)
-        train_history.update({'training-accuracy': acc, 'validation-accuracy': val_acc})
-        train_history.plot(items=['training-accuracy', 'validation-accuracy'],
+        train_history.update({'training-error': 1-acc, 'validation-error': 1-val_acc})
+        train_history.plot(items=['training-error', 'validation-error'],
                               tofile='%s/%s_history.png'%(plot_name, model_name))
         logging.info('[Epoch %d] train=%f val=%f loss=%f time: %f' %
             (epoch, acc, val_acc, train_loss, time.time()-tic))
+
+        if val_acc > best_val_score and epoch > 200:
+            best_val_score = val_acc
+            net.save_params('%s/%.4f-imagenet-%s-%d-best.params'%(save_dir, best_val_score, model_name, epoch))
 
         if save_period and save_dir and (epoch + 1) % save_period == 0:
             net.save_params('%s/cifar10-%s-%d.params'%(save_dir, model_name, epoch))
