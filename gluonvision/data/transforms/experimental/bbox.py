@@ -71,7 +71,7 @@ def random_crop_with_constraints(bbox, size, min_scale=0.3, max_scale=1,
 
     candidates = [(0, 0, w, h)]
     for min_iou, max_iou in constraints:
-        min_iou = 0 if min_iou is None else min_iou
+        min_iou = 1e-6 if min_iou is None else min_iou
         max_iou = 1 if max_iou is None else max_iou
 
         for _ in range(max_trial):
@@ -84,7 +84,6 @@ def random_crop_with_constraints(bbox, size, min_scale=0.3, max_scale=1,
 
             crop_t = random.randrange(h - crop_h)
             crop_l = random.randrange(w - crop_w)
-            # crop_bb = np.array((crop_t, crop_l, crop_t + crop_h, crop_l + crop_w))
             crop_bb = np.array((crop_l, crop_t, crop_l + crop_w, crop_t + crop_h))
 
             iou = bbox_iou(bbox, crop_bb[np.newaxis])

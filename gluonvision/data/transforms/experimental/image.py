@@ -90,9 +90,9 @@ def random_color_distort(src, brightness_delta=32, contrast_low=0.5, contrast_hi
     if np.random.randint(0, 2):
         src = contrast(src, contrast_low, contrast_high)
         src = saturation(src, saturation_low, saturation_high)
-        src = hue(src, hue_delta)
+        # src = hue(src, hue_delta)
     else:
         src = saturation(src, saturation_low, saturation_high)
-        src = hue(src, hue_delta)
+        # src = hue(src, hue_delta)
         src = contrast(src, contrast_low, contrast_high)
     return src

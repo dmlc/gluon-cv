@@ -31,12 +31,15 @@ class SSDDefaultTrainTransform(object):
         self._std = std
 
     def __call__(self, src, label):
+        # random color jittering
+        img = experimental.image.random_color_distort(src).astype('uint8')
+
         # random expansion with prob 0.5
         if np.random.uniform(0, 1) > 0.5:
-            img, expand = timage.random_expand(src, fill=[m * 255 for m in self._mean])
+            img, expand = timage.random_expand(img, fill=[m * 255 for m in self._mean])
             bbox = tbbox.translate(label, x_offset=expand[0], y_offset=expand[1])
         else:
-            img, bbox = src, label
+            img, bbox = img, label
 
         # random cropping
         h, w, _ = img.shape
@@ -50,14 +53,10 @@ class SSDDefaultTrainTransform(object):
         img = timage.imresize(img, self._width, self._height, interp=interp)
         bbox = tbbox.resize(bbox, (w, h), (self._width, self._height))
 
-
         # random horizontal flip
         h, w, _ = img.shape
         img, flips = timage.random_flip(img, px=0.5)
         bbox = tbbox.flip(bbox, (w, h), flip_x=flips[0])
-
-        # random color jittering
-        img = experimental.image.random_color_distort(img)
 
         # to tensor
         img = mx.nd.image.to_tensor(img)
