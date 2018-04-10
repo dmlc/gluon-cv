@@ -113,6 +113,10 @@ class MultiClassDecoder(gluon.HybridBlock):
     ----------
     axis : int
         Axis of class-wise results.
+    thresh : float
+        Confidence threshold for the post-softmax scores.
+        Scores less than `thresh` are marked with `0`, corresponding `cls_id` is
+        marked with invalid class id `-1`.
 
     """
     def __init__(self, axis=-1, thresh=0.01):
@@ -124,6 +128,51 @@ class MultiClassDecoder(gluon.HybridBlock):
         pos_x = x.slice_axis(axis=self._axis, begin=1, end=None)
         cls_id = F.argmax(pos_x, self._axis)
         scores = F.pick(pos_x, cls_id, axis=-1)
+        mask = scores > self._thresh
+        cls_id = F.where(mask, cls_id, F.ones_like(cls_id) * -1)
+        scores = F.where(mask, scores, F.zeros_like(scores))
+        return cls_id, scores
+
+class MultiPerClassDecoder(gluon.HybridBlock):
+    """Decode classification results.
+
+    This decoder must work with `MultiClassEncoder` to reconstruct valid labels.
+    The decoder expect results are after logits, e.g. Softmax.
+    This version is different from `MultiClassDecoder` with the following changes:
+
+    For each position(anchor boxes), each foreground class can have their own
+    results, rather than enforced to be the best one.
+    For example, for a 5-class prediction with background(totaling 6 class), say
+    (0.5, 0.1, 0.2, 0.1, 0.05, 0.05) as (bg, apple, orange, peach, grape, melon),
+    `MultiClassDecoder` produce only one class id and score, that is  (orange-0.2).
+    `MultiPerClassDecoder` produce 5 results individually:
+    (apple-0.1, orange-0.2, peach-0.1, grape-0.05, melon-0.05).
+
+    Parameters
+    ----------
+    num_class : int
+        Number of classes including background.
+    axis : int
+        Axis of class-wise results.
+    thresh : float
+        Confidence threshold for the post-softmax scores.
+        Scores less than `thresh` are marked with `0`, corresponding `cls_id` is
+        marked with invalid class id `-1`.
+
+    """
+    def __init__(self, num_class, axis=-1, thresh=0.01):
+        super(MultiClassDecoder, self).__init__()
+        self._fg_class = num_class - 1
+        self._axis = axis
+        self._thresh = thresh
+
+    def hybrid_forward(self, F, x):
+        scores = x.slice_axis(axis=self._axis, begin=1, end=None)  # b x N x fg_class
+        template = F.zeros_like(x.slice_axis(axis=-1, begin=0, end=1))
+        cls_ids = []
+        for i in range(self._fg_class):
+            cls_ids.append(template + i)  # b x N x 1
+        cls_id = F.concat(*cls_ids, dim=-1)  # b x N x fg_class
         mask = scores > self._thresh
         cls_id = F.where(mask, cls_id, F.ones_like(cls_id) * -1)
         scores = F.where(mask, scores, F.zeros_like(scores))

@@ -32,8 +32,12 @@ class SSD(HybridBlock):
         If `network` is `None`, `features` is expected to be a multi-output network.
     num_filters : list of int
         Number of channels for the appended layers, ignored if `network`is `None`.
-    scale : tuple fo float
-        Min and max range of anchors. Suggested value is (0.1, 0.95).
+    sizes : iterable fo float
+        Sizes of anchor boxes, this should be a list of floats, in incremental order.
+        The length of `sizes` must be len(layers) + 1. For example, a two stage SSD
+        model can have ``sizes = [30, 60, 90]``, and it converts to `[30, 60]` and
+        `[60, 90]` for the two stages, respectively. For more details, please refer
+        to original paper.
     ratios : iterable of list
         Aspect ratios of anchors in each output layer. Its length must be equals
         to the number of SSD output layers.
@@ -208,10 +212,41 @@ def get_ssd(name, base_size, features, filters, sizes, ratios, steps,
 
     Parameters
     ----------
-    name : str
-        Model name
+    name : str or None
+        Model name, if `None` is used, you must specify `features` to be a `HybridBlock`.
     base_size : int
+        Base image size for training, this is fixed once training is assigned.
+        A fixed base size still allows you to have variable input size during test.
+    features : iterable of str or `HybridBlock`
+        List of network internal output names, in order to specify which layers are
+        used for predicting bbox values.
+        If `name` is `None`, `features` must be a `HybridBlock` which generate mutliple
+        outputs for prediction.
+    filters : iterable of float or None
+        List of convolution layer channels which is going to be appended to the base
+        network feature extractor. If `name` is `None`, this is ignored.
+    sizes : iterable fo float
+        Sizes of anchor boxes, this should be a list of floats, in incremental order.
+        The length of `sizes` must be len(layers) + 1. For example, a two stage SSD
+        model can have ``sizes = [30, 60, 90]``, and it converts to `[30, 60]` and
+        `[60, 90]` for the two stages, respectively. For more details, please refer
+        to original paper.
+    ratios : iterable of list
+        Aspect ratios of anchors in each output layer. Its length must be equals
+        to the number of SSD output layers.
+    steps : list of int
+        Step size of anchor boxes in each output layer.
+    classes : int
+        Number of categories to be classified. It is 20 for Pascal VOC for example.
+    pretrained : int
+        If `pretrained = 0`, all parameters are randomly initialized.
+        If `pretrained = 1`, only base network are loaded with pre-trained weights.
+        If `pretrained > 1`, the entire SSD network is loaded with pre-trained weights.
 
+    Returns
+    -------
+    HybridBlock
+        A SSD detection network.
     """
     net = SSD(name, base_size, features, filters, sizes, ratios, steps,
               pretrained=pretrained > 0, classes=classes, **kwargs)
