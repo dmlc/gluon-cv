@@ -167,8 +167,8 @@ def train(net, train_data, val_data, classes, args):
                     labels.append(cls_targets)
                     box_outputs.append(box_preds * box_masks)
                     box_labels.append(box_targets)
-                    losses1.append(l1) * batch_size
-                    losses2.append(l2) * batch_size
+                    losses1.append(l1 * batch_size)
+                    losses2.append(l2 * batch_size)
                 # n_pos = max(1, sum(num_positive))
                 # for l3, l4 in zip(losses3, losses4):
                 #     L = l3 / n_pos + l4 / n_pos
