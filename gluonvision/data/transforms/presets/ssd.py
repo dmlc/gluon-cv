@@ -32,7 +32,7 @@ class SSDDefaultTrainTransform(object):
 
     def __call__(self, src, label):
         # random color jittering
-        img = experimental.image.random_color_distort(src).astype('uint8')
+        img = experimental.image.random_color_distort(src)
 
         # random expansion with prob 0.5
         if np.random.uniform(0, 1) > 0.5:

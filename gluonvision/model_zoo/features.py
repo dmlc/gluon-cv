@@ -132,13 +132,17 @@ class FeatureExpander(SymbolBlock):
                 num_trans = max(min_depth, int(round(f * reduce_ratio)))
                 y = mx.sym.Convolution(
                     y, num_filter=num_trans, kernel=(1, 1), no_bias=use_bn,
-                    name='expand_trans_conv{}'.format(i))
+                    name='expand_trans_conv{}'.format(i),
+                    init=mx.initializer.Xavier(
+                        rnd_type='gaussian', factor_type='out', magnitude=2))
                 if use_bn:
                     y = mx.sym.BatchNorm(y, name='expand_trans_bn{}'.format(i))
                 y = mx.sym.Activation(y, act_type='relu', name='expand_trans_relu{}'.format(i))
             y = mx.sym.Convolution(
-                y, num_filter=f, kernel=(3, 3), pad=(1, 1), stride=(2, 2),
-                name='expand_conv{}'.format(i))
+                y, num_filter=f, kernel=(3, 3), pad=(1, 1), stride=(2, 2), no_bias=use_bn,
+                name='expand_conv{}'.format(i),
+                init=mx.initializer.Xavier(
+                    rnd_type='gaussian', factor_type='out', magnitude=2))
             if use_bn:
                 y = mx.sym.BatchNorm(y, name='expand_bn{}'.format(i))
             y = mx.sym.Activation(y, act_type='relu', name='expand_reu{}'.format(i))

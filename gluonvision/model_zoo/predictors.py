@@ -34,7 +34,9 @@ class ConvPredictor(HybridBlock):
         with self.name_scope():
             self.predictor = nn.Conv2D(
                 num_channel, kernel, strides=stride, padding=pad,
-                activation=activation, use_bias=use_bias)
+                activation=activation, use_bias=use_bias,
+                weight_initializer=mx.init.Xavier(magnitude=2),
+                bias_initializer='zeros')
 
     def hybrid_forward(self, F, x):
         return self.predictor(x)

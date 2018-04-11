@@ -38,7 +38,7 @@ def random_color_distort(src, brightness_delta=32, contrast_low=0.5, contrast_hi
         if np.random.uniform(0, 1) > p:
             delta = np.random.uniform(delta, delta)
             src += delta
-            return src.clip(0, 255)
+            return src
         return src
 
     def contrast(src, low, high, p=0.5):
@@ -46,7 +46,7 @@ def random_color_distort(src, brightness_delta=32, contrast_low=0.5, contrast_hi
         if np.random.uniform(0, 1) > p:
             alpha = np.random.uniform(low, high)
             src *= alpha
-            return src.clip(0, 255)
+            return src
         return src
 
     def saturation(src, low, high, p=0.5):
@@ -58,7 +58,7 @@ def random_color_distort(src, brightness_delta=32, contrast_low=0.5, contrast_hi
             gray *= (1.0 - alpha)
             src *= alpha
             src += gray
-            return src.clip(0, 255)
+            return src
         return src
 
     def hue(src, delta, p=0.5):
@@ -78,7 +78,7 @@ def random_color_distort(src, brightness_delta=32, contrast_low=0.5, contrast_hi
                               [1.0, -1.107, 1.705]])
             t = np.dot(np.dot(ityiq, bt), tyiq).T
             src = nd.dot(src, nd.array(t, ctx=src.context))
-            return src.clip(0, 255)
+            return src
         return src
 
     src = src.astype('float32')
@@ -90,9 +90,9 @@ def random_color_distort(src, brightness_delta=32, contrast_low=0.5, contrast_hi
     if np.random.randint(0, 2):
         src = contrast(src, contrast_low, contrast_high)
         src = saturation(src, saturation_low, saturation_high)
-        # src = hue(src, hue_delta)
+        src = hue(src, hue_delta)
     else:
         src = saturation(src, saturation_low, saturation_high)
-        # src = hue(src, hue_delta)
+        src = hue(src, hue_delta)
         src = contrast(src, contrast_low, contrast_high)
     return src
