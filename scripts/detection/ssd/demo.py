@@ -42,7 +42,7 @@ if __name__ == '__main__':
     else:
         image_list = [x.strip() for x in args.images.split(',') if x.strip()]
 
-    if args.pretrained in ['True', '1', 'true']:
+    if args.pretrained.lower() in ['true', '1', 'yes', 't']:
         net = gv.model_zoo.get_model(args.network, pretrained=True)
     else:
         net = gv.model_zoo.get_model(args.network, pretrained=False)

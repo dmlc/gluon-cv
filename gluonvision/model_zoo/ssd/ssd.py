@@ -7,7 +7,7 @@ from mxnet.gluon import HybridBlock
 from ..features import FeatureExpander
 from .anchor import SSDAnchorGenerator
 from ..predictors import ConvPredictor
-from ..coders import MultiClassDecoder, NormalizedBoxCenterDecoder
+from ..coders import MultiClassDecoder, MultiPerClassDecoder, NormalizedBoxCenterDecoder
 from .target import SSDTargetGenerator
 from .vgg_atrous import vgg16_atrous_300, vgg16_atrous_512
 from ...utils import set_lr_mult
@@ -78,7 +78,8 @@ class SSD(HybridBlock):
     anchor_alloc_size : tuple of int, default is (128, 128)
         For advanced users. Define `anchor_alloc_size` to generate large enough anchor
         maps, which will later saved in parameters. During inference, we support arbitrary
-        input image by cropping corresponding area of the anchor map.
+        input image by cropping corresponding area of the anchor map. This allow us
+        to export to symbol so we can run it in c++, scalar, etc.
 
     """
     def __init__(self, network, base_size, features, num_filters, sizes, ratios,
@@ -86,7 +87,7 @@ class SSD(HybridBlock):
                  reduce_ratio=1.0, min_depth=128, global_pool=False, pretrained=False,
                  iou_thresh=0.5, neg_thresh=0.5, negative_mining_ratio=3,
                  stds=(0.1, 0.1, 0.2, 0.2), nms_thresh=0.45, nms_topk=-1, force_nms=False,
-                 anchor_alloc_size=1024, **kwargs):
+                 anchor_alloc_size=128, **kwargs):
         super(SSD, self).__init__(**kwargs)
         if network is None:
             num_layers = len(ratios)
@@ -134,12 +135,12 @@ class SSD(HybridBlock):
             im_size = (base_size, base_size)
             for i, s, r, st in zip(range(num_layers), sizes, ratios, steps):
                 self.anchor_generators.add(SSDAnchorGenerator(i, im_size, s, r, st, (asz, asz)))
-                asz = asz // 2
+                asz = max(asz // 2, 16)  # pre-compute larger than 16x16 anchor map
                 num_anchors = self.anchor_generators[-1].num_depth
                 self.class_predictors.add(ConvPredictor(num_anchors * self.num_classes))
                 self.box_predictors.add(ConvPredictor(num_anchors * 4))
             self.bbox_decoder = NormalizedBoxCenterDecoder(stds)
-            self.cls_decoder = MultiClassDecoder()
+            self.cls_decoder = MultiPerClassDecoder(self.num_classes, thresh=0.01)
 
     def set_nms(self, nms_thresh=0, nms_topk=-1, force_nms=False):
         self.nms_thresh = nms_thresh
@@ -166,15 +167,29 @@ class SSD(HybridBlock):
         if autograd.is_recording():
             return [cls_preds, box_preds, anchors]
         bboxes = self.bbox_decoder(box_preds, anchors)
-        cls_ids, scores = self.cls_decoder(F.softmax(cls_preds))
-        result = F.concat(
-            cls_ids.expand_dims(axis=-1), scores.expand_dims(axis=-1), bboxes, dim=-1)
-        conf_mask = F.tile(scores.expand_dims(axis=-1) > 0.01, reps=(1, 1, 6))
-        result = F.where(conf_mask, result, F.ones_like(result) * -1)
-        if self.nms_thresh > 0 and self.nms_thresh < 1:
-            result = F.contrib.box_nms(
-                result, overlap_thresh=self.nms_thresh, topk=self.nms_topk,
-                id_index=0, score_index=1, coord_start=2, force_suppress=self.force_nms)
+        cls_ids, scores = self.cls_decoder(F.softmax(cls_preds, axis=-1))
+        results = []
+        for i in range(self.num_classes - 1):
+            cls_id = cls_ids.slice_axis(axis=-1, begin=i, end=i+1)
+            score = scores.slice_axis(axis=-1, begin=i, end=i+1)
+            # per class results
+            per_result = F.concat(*[cls_id, score, bboxes], dim=-1)
+            if self.nms_thresh > 0 and self.nms_thresh < 1:
+                per_result = F.contrib.box_nms(
+                    per_result, overlap_thresh=self.nms_thresh, topk=self.nms_topk,
+                    id_index=0, score_index=1, coord_start=2)
+            results.append(per_result)
+        result = F.concat(*results, dim=1)
+        #
+        # cls_ids, scores = self.cls_decoder(F.softmax(cls_preds))
+        # result = F.concat(
+        #     cls_ids.expand_dims(axis=-1), scores.expand_dims(axis=-1), bboxes, dim=-1)
+        # conf_mask = F.tile(scores.expand_dims(axis=-1) > 0.01, reps=(1, 1, 6))
+        # result = F.where(conf_mask, result, F.ones_like(result) * -1)
+        # if self.nms_thresh > 0 and self.nms_thresh < 1:
+        #     result = F.contrib.box_nms(
+        #         result, overlap_thresh=self.nms_thresh, topk=self.nms_topk,
+        #         id_index=0, score_index=1, coord_start=2, force_suppress=self.force_nms)
         ids = F.slice_axis(result, axis=2, begin=0, end=1)
         scores = F.slice_axis(result, axis=2, begin=1, end=2)
         bboxes = F.slice_axis(result, axis=2, begin=2, end=6)

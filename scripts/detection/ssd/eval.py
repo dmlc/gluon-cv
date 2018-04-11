@@ -8,8 +8,8 @@ import numpy as np
 import mxnet as mx
 from mxnet import nd
 from mxnet import gluon
+import gluonvision as gv
 from gluonvision import data as gdata
-from gluonvision.model_zoo import get_model
 from gluonvision.data.transforms.presets.ssd import SSDDefaultValTransform
 from gluonvision.utils.metrics.voc_detection import VOC07MApMetric
 
@@ -27,7 +27,7 @@ def parse_args():
                         default=4, help='Number of data workers')
     parser.add_argument('--gpus', type=str, default='0',
                         help='Training with GPUs, you can specify 1,3 for example.')
-    parser.add_argument('--pretrained', type=str, required=True,
+    parser.add_argument('--pretrained', type=str, default='True',
                         help='Load weights from previously saved parameters.')
     args = parser.parse_args()
     return args
@@ -64,7 +64,7 @@ def validate(net, val_data, ctx, classes):
             gt_bboxes = y.slice_axis(axis=-1, begin=0, end=4)
             gt_difficults = y.slice_axis(axis=-1, begin=5, end=6) if y.shape[-1] > 5 else None
             metric.update(bboxes, ids, scores, gt_bboxes, gt_ids, gt_difficults)
-        logging.info("[Batch %d] [Finished %d]", ib, (ib + 1) * batch[0].shape[0])
+        logging.info("[Batch %d] [Finished %d]", ib + 1, (ib + 1) * batch[0].shape[0])
     return metric.get()
 
 if __name__ == '__main__':
@@ -81,9 +81,12 @@ if __name__ == '__main__':
     classes = val_dataset.classes  # class names
 
     # network
-    net_name = '_'.join(('ssd', str(args.data_shape), args.network))
-    net = get_model(net_name, classes=len(classes), pretrained=0)  # load pretrained base network
-    net.load_params(args.pretrained.strip())
+    net_name = '_'.join(('ssd', str(args.data_shape), args.network, args.dataset))
+    if args.pretrained.lower() in ['true', '1', 'yes', 't']:
+        net = gv.model_zoo.get_model(net_name, pretrained=True)
+    else:
+        net = gv.model_zoo.get_model(net_name, pretrained=False)
+        net.load_params(args.pretrained.strip())
 
     # training
     names, values = validate(net, val_data, ctx, classes)
