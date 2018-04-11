@@ -79,7 +79,7 @@ def get_dataloader(train_dataset, val_dataset, data_shape, batch_size, num_worke
     return train_loader, val_loader
 
 def save_params(net, best_map, current_map, epoch, save_interval, prefix):
-    if current_map < best_map[0]:
+    if current_map > best_map[0]:
         best_map[0] = current_map
         net.save_params('{:s}_best.params'.format(prefix, epoch, current_map))
         with open(prefix+'best_map.log', 'a') as f:

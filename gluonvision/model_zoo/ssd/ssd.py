@@ -85,7 +85,7 @@ class SSD(HybridBlock):
                  steps, classes, use_1x1_transition=True, use_bn=True,
                  reduce_ratio=1.0, min_depth=128, global_pool=False, pretrained=False,
                  iou_thresh=0.5, neg_thresh=0.5, negative_mining_ratio=3,
-                 stds=(0.1, 0.1, 0.2, 0.2), nms_thresh=0, nms_topk=-1, force_nms=False,
+                 stds=(0.1, 0.1, 0.2, 0.2), nms_thresh=0.45, nms_topk=-1, force_nms=False,
                  anchor_alloc_size=1024, **kwargs):
         super(SSD, self).__init__(**kwargs)
         if network is None:
