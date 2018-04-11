@@ -22,7 +22,7 @@ class TrainingHistory():
 
     def update(self, kv):
         assert len(kv) == self.l
-        for k,v in kv.items():
+        for k, v in kv.items():
             self.history[k].append(v)
         self.epochs += 1
 
