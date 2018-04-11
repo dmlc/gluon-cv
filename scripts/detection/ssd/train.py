@@ -230,4 +230,5 @@ if __name__ == '__main__':
         net.load_params(args.resume.strip())
 
     # training
+    args.save_prefix += net_name
     train(net, train_data, val_data, classes, args)
