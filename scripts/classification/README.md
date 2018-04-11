@@ -37,6 +37,17 @@ Results:
 | ResNet56_v2  | 0.9307   | 0.9414 |
 | ResNet110_v2 | 0.9414   | 0.9447 |
 
+Pretrained Model:
+
+| Model        | Accuracy |
+|--------------|----------|
+| ResNet20_v1  | 0.9160   |
+| ResNet56_v1  | 0.9387   |
+| ResNet110_v1 | 0.9471   |
+| ResNet20_v2  | 0.9130   |
+| ResNet56_v2  | 0.9413   |
+| ResNet110_v2 | 0.9464   |
+
 ### Wide ResNet
 
 Training a model on WRN-28-10 can be done with
