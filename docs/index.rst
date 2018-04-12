@@ -59,10 +59,10 @@ A Quick Example
 
 
 .. toctree::
-   :maxdepth: 1
-   :caption: Get Started
+   :maxdepth: 2
+   :caption: Tutorials
 
-   get_started/install
-   tutorials/index
-   experiments/index
-   how_to/contribute
+
+   classification/index
+   detection/index
+   segmentation/index
