@@ -66,3 +66,14 @@ A Quick Example
    classification/index
    detection/index
    segmentation/index
+
+.. toctree::
+   :maxdepth: 1
+   :caption: API Documents
+
+
+   api/python/datasets
+   api/python/models
+   api/python/transforms
+   api/python/utils
+   api/python/visualizations
