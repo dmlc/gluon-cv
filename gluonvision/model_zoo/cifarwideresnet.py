@@ -20,12 +20,13 @@
 """ResNets, implemented in Gluon."""
 from __future__ import division
 
-__all__ = ['get_cifar_wide_resnet',
-           'cifar_wideresnet16', 'cifar_wideresnet22',
-           'cifar_wideresnet28', 'cifar_wideresnet40']
+__all__ = ['get_cifar_wide_resnet', 'cifar_wideresnet16_10',
+           'cifar_wideresnet28_10', 'cifar_wideresnet40_8']
 
+import os
 from mxnet.gluon.block import HybridBlock
 from mxnet.gluon import nn
+from mxnet import cpu
 
 # Helpers
 def _conv3x3(channels, stride, in_channels):
@@ -133,7 +134,9 @@ class CIFARWideResNet(HybridBlock):
         return x
 
 # Constructor
-def get_cifar_wide_resnet(num_layers, drop_rate=0.0, width_factor=1, **kwargs):
+def get_cifar_wide_resnet(num_layers, width_factor=1, drop_rate=0.0,
+                          pretrained=False, ctx=cpu(),
+                          root=os.path.join('~', '.mxnet', 'models'), **kwargs):
     r"""ResNet V1 model from `"Deep Residual Learning for Image Recognition"
     <http://arxiv.org/abs/1512.03385>`_ paper.
     ResNet V2 model from `"Identity Mappings in Deep Residual Networks"
@@ -143,6 +146,10 @@ def get_cifar_wide_resnet(num_layers, drop_rate=0.0, width_factor=1, **kwargs):
     ----------
     num_layers : int
         Numbers of layers. Needs to be an integer in the form of 6*n+2, e.g. 20, 56, 110, 164.
+    width_factor: int
+        The width factor to apply to the number of channels from the original resnet.
+    drop_rate: float
+        The rate of dropout.
     pretrained : bool, default False
         Whether to load the pretrained weights for model.
     ctx : Context, default CPU
@@ -150,7 +157,6 @@ def get_cifar_wide_resnet(num_layers, drop_rate=0.0, width_factor=1, **kwargs):
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
     """
-    assert version == 2, "Version 1 not supported"
     assert (num_layers - 4) % 6 == 0
 
     n = (num_layers - 4) // 6
@@ -158,28 +164,56 @@ def get_cifar_wide_resnet(num_layers, drop_rate=0.0, width_factor=1, **kwargs):
     channels = [16, 16*width_factor, 32*width_factor, 64*width_factor]
 
     net = CIFARWideResNet(CIFARBasicBlockV2, layers, channels, drop_rate, **kwargs)
+    if pretrained:
+        from .model_store import get_model_file
+        net.load_params(get_model_file('cifar_wideresnet_%d_%d'%(num_layers, width_factor),
+                                       root=root), ctx=ctx)
     return net
 
-def cifar_wideresnet16(width_factor=1, **kwargs):
-    """WideResNet16 for CIFAR Dataset
-
+def cifar_wideresnet16_10(**kwargs):
+    r"""WideResNet-16-10 model for CIFAR10 from `"Wide Residual Networks"
+    <https://arxiv.org/abs/1605.07146>`_ paper.
+    Parameters
+    ----------
+    drop_rate: float
+        The rate of dropout.
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
     """
-    return get_cifar_wide_resnet(16, width_factor=width_factor, **kwargs)
+    return get_cifar_wide_resnet(16, 10, **kwargs)
 
-def cifar_wideresnet22(width_factor=1, **kwargs):
-    """WideResNet22 for CIFAR Dataset
-
+def cifar_wideresnet28_10(**kwargs):
+    r"""WideResNet-28-10 model for CIFAR10 from `"Wide Residual Networks"
+    <https://arxiv.org/abs/1605.07146>`_ paper.
+    Parameters
+    ----------
+    drop_rate: float
+        The rate of dropout.
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
     """
-    return get_cifar_wide_resnet(22, width_factor=width_factor, **kwargs)
+    return get_cifar_wide_resnet(28, 10, **kwargs)
 
-def cifar_wideresnet28(width_factor=1, **kwargs):
-    """WideResNet28 for CIFAR Dataset
-
+def cifar_wideresnet40_8(**kwargs):
+    r"""WideResNet-40-8 model for CIFAR10 from `"Wide Residual Networks"
+    <https://arxiv.org/abs/1605.07146>`_ paper.
+    Parameters
+    ----------
+    drop_rate: float
+        The rate of dropout.
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
     """
-    return get_cifar_wide_resnet(28, width_factor=width_factor, **kwargs)
-
-def cifar_wideresnet40(width_factor=1, **kwargs):
-    """WideResNet40 for CIFAR Dataset
-
-    """
-    return get_cifar_wide_resnet(40, width_factor=width_factor, **kwargs)
+    return get_cifar_wide_resnet(40, 8, **kwargs)
