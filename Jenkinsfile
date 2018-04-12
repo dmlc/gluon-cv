@@ -23,6 +23,8 @@ stage("Docs") {
       set -e
       conda env update -f docs/build.yml
       source activate gluon_vision_docs
+      echo "--------------------------"
+      echo ${LD_LIBRARY_PATH}
       python setup.py install
       cd docs && make html
       aws s3 sync --delete build/html/ s3://gluon-vision.mxnet.io/ --acl public-read
