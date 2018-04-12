@@ -76,6 +76,14 @@ Results:
 | WRN-28-10    | 0.9584   | 0.9667 |
 | WRN-40-8     | 0.9559   | 0.9620 |
 
+Pretrained Model:
+
+| Model            | Accuracy |
+|------------------|----------|
+| WideResNet20_v1  | 0.9614   |
+| WideResNet56_v1  | 0.9667   |
+| WideResNet110_v1 | 0.9673   |
+
 ## ImageNet
 
 Here we present examples of training resnet/mobilenet on ImageNet dataset.
