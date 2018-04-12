@@ -3,6 +3,7 @@ stage("LINT") {
     ws('workspace/gluon-vision-lint') {
       checkout scm
       sh """#!/bin/bash
+      set -e
       conda env update -f tests/pylint.yml
       source activate gluon_vision_pylint
       conda list
@@ -19,6 +20,7 @@ stage("Docs") {
     ws('workspace/gluon-vision-docs') {
       checkout scm
       sh """#!/bin/bash
+      set -e
       conda env update -f docs/build.yml
       source activate gluon_vision_docs
       python setup.py install
@@ -29,4 +31,3 @@ stage("Docs") {
   }
 }
 }
-
