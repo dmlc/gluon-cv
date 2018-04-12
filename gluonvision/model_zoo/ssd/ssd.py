@@ -73,8 +73,6 @@ class SSD(HybridBlock):
     nms_topk : int, default is -1
         Apply NMS to top k detection results, use -1 to disable so that every Detection
          result is used in NMS.
-    force_nms : bool, default is False
-        Force suppress objects even they belong to different categories if `True`.
     anchor_alloc_size : tuple of int, default is (128, 128)
         For advanced users. Define `anchor_alloc_size` to generate large enough anchor
         maps, which will later saved in parameters. During inference, we support arbitrary
@@ -86,19 +84,13 @@ class SSD(HybridBlock):
                  steps, classes, use_1x1_transition=True, use_bn=True,
                  reduce_ratio=1.0, min_depth=128, global_pool=False, pretrained=False,
                  iou_thresh=0.5, neg_thresh=0.5, negative_mining_ratio=3,
-                 stds=(0.1, 0.1, 0.2, 0.2), nms_thresh=0.45, nms_topk=-1, force_nms=False,
+                 stds=(0.1, 0.1, 0.2, 0.2), nms_thresh=0.45, nms_topk=-1,
                  anchor_alloc_size=128, **kwargs):
         super(SSD, self).__init__(**kwargs)
         if network is None:
             num_layers = len(ratios)
         else:
             num_layers = len(features) + len(num_filters) + int(global_pool)
-        # assert len(scale) == 2, "Must specify scale as (min_scale, max_scale)."
-        # min_scale, max_scale = scale
-        # sizes = [min_scale + (max_scale - min_scale) * i / (num_layers - 1)
-        #          for i in range(num_layers)] + [1.0]
-        # sizes = [x * base_size for x in sizes]
-        # sizes = [30, 60, 111, 162, 213, 264, 315]
         assert len(sizes) == num_layers + 1
         sizes = list(zip(sizes[:-1], sizes[1:]))
         assert isinstance(ratios, list), "Must provide ratios as list or list of list"
@@ -142,10 +134,9 @@ class SSD(HybridBlock):
             self.bbox_decoder = NormalizedBoxCenterDecoder(stds)
             self.cls_decoder = MultiPerClassDecoder(self.num_classes, thresh=0.01)
 
-    def set_nms(self, nms_thresh=0, nms_topk=-1, force_nms=False):
+    def set_nms(self, nms_thresh=0, nms_topk=-1):
         self.nms_thresh = nms_thresh
         self.nms_topk = nms_topk
-        self.force_nms = force_nms
 
     @property
     def target_generator(self):
@@ -180,23 +171,13 @@ class SSD(HybridBlock):
                     id_index=0, score_index=1, coord_start=2)
             results.append(per_result)
         result = F.concat(*results, dim=1)
-        #
-        # cls_ids, scores = self.cls_decoder(F.softmax(cls_preds))
-        # result = F.concat(
-        #     cls_ids.expand_dims(axis=-1), scores.expand_dims(axis=-1), bboxes, dim=-1)
-        # conf_mask = F.tile(scores.expand_dims(axis=-1) > 0.01, reps=(1, 1, 6))
-        # result = F.where(conf_mask, result, F.ones_like(result) * -1)
-        # if self.nms_thresh > 0 and self.nms_thresh < 1:
-        #     result = F.contrib.box_nms(
-        #         result, overlap_thresh=self.nms_thresh, topk=self.nms_topk,
-        #         id_index=0, score_index=1, coord_start=2, force_suppress=self.force_nms)
         ids = F.slice_axis(result, axis=2, begin=0, end=1)
         scores = F.slice_axis(result, axis=2, begin=1, end=2)
         bboxes = F.slice_axis(result, axis=2, begin=2, end=6)
         return ids, scores, bboxes
 
 def get_ssd(name, base_size, features, filters, sizes, ratios, steps,
-            classes=20, pretrained=False, pretrained_base=True, **kwargs):
+            classes, pretrained=False, pretrained_base=True, **kwargs):
     """Get SSD models.
 
     Parameters
