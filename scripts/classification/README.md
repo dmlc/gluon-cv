@@ -48,6 +48,12 @@ Pretrained Model:
 | ResNet56_v2  | 0.9413   |
 | ResNet110_v2 | 0.9464   |
 
+by script:
+
+```
+python train_cifar10_mixup.py --num-epochs 450 --mode hybrid --num-gpus 2 -j 32 --batch-size 64 --wd 0.0001 --lr 0.1 --lr-decay 0.1 --lr-decay-epoch 150,250 --model cifar_resnet20_v1
+```
+
 ### Wide ResNet
 
 Training a model on WRN-28-10 can be done with
@@ -83,6 +89,12 @@ Pretrained Model:
 | WideResNet20_v1  | 0.9614   |
 | WideResNet56_v1  | 0.9667   |
 | WideResNet110_v1 | 0.9673   |
+
+by scripts:
+
+```
+python train_cifar10_mixup.py --num-epochs 500 --mode hybrid --num-gpus 2 -j 32 --batch-size 64 --wd 0.0001 --lr 0.1 --lr-decay 0.1 --lr-decay-epoch 100,200,300 --model cifar_wideresnet16_10
+```
 
 ## ImageNet
 

@@ -39,13 +39,12 @@ context = [mx.gpu(i) for i in range(num_gpus)] if num_gpus > 0 else [mx.cpu()]
 model_name = opt.model
 pretrained = True if opt.pretrained else False
 if model_name.startswith('cifar_wideresnet'):
-    kwargs = {'classes': classes,
-              'drop_rate': opt.drop_rate, 'width_factor': opt.width_factor}
+    kwargs = {'classes': classes, 'drop_rate': opt.drop_rate, 'pretrained': pretrained}
 else:
-    kwargs = {'classes': classes}
+    kwargs = {'classes': classes, 'pretrained': pretrained}
 net = get_model(model_name, **kwargs)
 
-if opt.saved_params is not None:
+if not pretrained and opt.saved_params is not None:
     net.load_params(opt.saved_params, ctx = context)
 
 # Load Images
