@@ -49,7 +49,6 @@ cd gluon-vision && python setup.py install --user
    get_started/install
    tutorials/index
    experiments/index
-   api/python/index
    how_to/contribute
 
 
