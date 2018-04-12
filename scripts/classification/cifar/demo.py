@@ -20,12 +20,6 @@ parser.add_argument('--saved-params', type=str, default='',
                     help='path to the saved model parameters')
 parser.add_argument('--input-pic', type=str, required=True,
                     help='path to the input picture')
-parser.add_argument('--num-gpus', type=int, default=0,
-                    help='number of GPUs to predict')
-parser.add_argument('--width-factor', type=float, default=1,
-                    help='width factor for wide resnet. default is 1.')
-parser.add_argument('--drop-rate', type=float, default=0,
-                    help='drop rate for wide resnet. default is 0.')
 opt = parser.parse_args()
 
 classes = 10
@@ -33,7 +27,7 @@ class_names = ['airplane', 'automobile', 'bird', 'cat', 'deer',
                'dog', 'frog', 'horse', 'ship', 'truck']
 
 num_gpus = opt.num_gpus
-context = [mx.gpu(i) for i in range(num_gpus)] if num_gpus > 0 else [mx.cpu()]
+context = [mx.cpu()]
 
 # Load Model
 model_name = opt.model

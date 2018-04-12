@@ -13,25 +13,6 @@ In the following content, we will
 - plot the training history
 - predict on new images with saved model
 
-## Parameters Explained
-
-- `--batch-size`: per-device batch size for the training.
-- `--num-gpus`: the number of GPUs to use for computation, default is `0` and it means only using CPU.
-- `--model`: The model to train. For `CIFAR10` we offer [`ResNet`](https://github.com/dmlc/gluon-vision/blob/master/gluonvision/model_zoo/cifarresnet.py) and [`WideResNet`](https://github.com/dmlc/gluon-vision/blob/master/gluonvision/model_zoo/cifarwideresnet.py) as options.
-- `--num-data-workers`/`-j`: the number of data processing workers.
-- `--num-epochs`: the number of training epochs.
-- `--lr`: the initial learning rate in training. 
-- `--momentum`: the momentum parameter.
-- `--wd`: the weight decay parameter.
-- `--lr-decay`: the learning rate decay factor.
-- `--lr-decay-period`: the learning rate decay period, i.e. for every `--lr-decay-period` epochs, the learning rate will decay by a factor of `--lr-decay`.
-- `--lr-decay-epoch`: epochs at which the learning rate decay by a factor of `--lr-decay`.
-- `--width-factor`: parameters for `WideResNet` model.
-- `--drop-rate`: parameters for `WideResNet` model.
-- `--mode`: whether to use `hybrid` mode to speed up the training process.
-- `--save-period`: for every `--save-period`, the model will be saved to disk.
-- `--save-dir`: the directory to save the models.
-- `--logging-dir`: the directory to save the training logs.
 
 ## Training Your First Model
 
