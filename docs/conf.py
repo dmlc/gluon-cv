@@ -17,7 +17,7 @@
 # sys.path.insert(0, os.path.abspath('.'))
 # import guzzle_sphinx_theme
 
-# import recommonmark
+import recommonmark
 from recommonmark.parser import CommonMarkParser
 from recommonmark.transform import AutoStructify
 
@@ -192,3 +192,9 @@ intersphinx_mapping = {'https://docs.python.org/': None}
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = True
+
+def setup(app):
+    app.add_transform(AutoStructify)
+    app.add_config_value('recommonmark_config', {
+    }, True)
+    # app.add_javascript('google_analytics.js')
