@@ -33,7 +33,7 @@ git clone https://github.com/dmlc/gluon-vision
 cd gluon-vision && python setup.py install --user
 ```
 
-## Quick example:
+## A Quick Example:
 
 (get a pretrained SSD model and then run forward)
 
