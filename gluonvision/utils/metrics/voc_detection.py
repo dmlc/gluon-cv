@@ -211,9 +211,12 @@ class VOCMApMetric(mx.metric.EvalMetric):
         ----------
         ap as float
         """
+        if rec is None or prec is None:
+            return np.nan
+
         # append sentinel values at both ends
         mrec = np.concatenate(([0.], rec, [1.]))
-        mpre = np.concatenate(([0.], np.nan_to_num(prec[l]), [0.]))
+        mpre = np.concatenate(([0.], np.nan_to_num(prec), [0.]))
 
         # compute precision integration ladder
         for i in range(mpre.size - 1, 0, -1):
@@ -261,6 +264,6 @@ class VOC07MApMetric(VOCMApMetric):
             if np.sum(rec >= t) == 0:
                 p = 0
             else:
-                p = np.max(prec[rec >= t])
+                p = np.max(np.nan_to_num(prec)[rec >= t])
             ap += p / 11.
         return ap

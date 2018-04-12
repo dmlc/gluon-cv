@@ -65,6 +65,12 @@ def untar_imagenet_val(filename, target_dir, checksum=False):
 
 def symlink_val(val_dir, dst_dir):
     """Symlink individual validation images to 1000 directories."""
+    val_dir = os.path.expanduser(val_dir)
+    dst_dir = os.path.expanduser(dst_dir)
+    if os.path.isdir(os.path.join(val_dir, 'n04429376')):
+        # already organzied into 1000 directories, just symlink parent dir
+        os.symlink(val_dir, dst_dir)
+        return
     import pickle
     val_maps_file = os.path.join(os.path.dirname(__file__), 'imagenet_val_maps.pkl')
     with open(val_maps_file, 'rb') as f:
@@ -72,8 +78,6 @@ def symlink_val(val_dir, dst_dir):
     assert len(dirs) == 1000, "Require 1000 dir names"
     assert len(mappings) == 50000, "Require 50000 image->dir mappings"
 
-    val_dir = os.path.expanduser(val_dir)
-    dst_dir = os.path.expanduser(dst_dir)
     for d in dirs:
         makedirs(os.path.join(dst_dir, d))
 

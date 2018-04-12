@@ -6,6 +6,7 @@ logging.basicConfig(level=logging.INFO)
 import time
 import numpy as np
 import mxnet as mx
+from tqdm import tqdm
 from mxnet import nd
 from mxnet import gluon
 import gluonvision as gv
@@ -48,23 +49,24 @@ def get_dataloader(val_dataset, data_shape, batch_size, num_workers):
         batch_size, False, last_batch='keep', num_workers=num_workers)
     return val_loader
 
-def validate(net, val_data, ctx, classes):
+def validate(net, val_data, ctx, classes, size):
     """Test on validation dataset."""
     net.collect_params().reset_ctx(ctx)
     metric = VOC07MApMetric(iou_thresh=0.5, class_names=classes)
     net.set_nms(nms_thresh=0.45, nms_topk=-1, force_nms=False)
     net.hybridize()
-    for ib, batch in enumerate(val_data):
-        data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
-        label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0)
-        for x, y in zip(data, label):
-            ids, scores, bboxes = net(x)
-            bboxes = bboxes.clip(0, batch[0].shape[2])
-            gt_ids = y.slice_axis(axis=-1, begin=4, end=5)
-            gt_bboxes = y.slice_axis(axis=-1, begin=0, end=4)
-            gt_difficults = y.slice_axis(axis=-1, begin=5, end=6) if y.shape[-1] > 5 else None
-            metric.update(bboxes, ids, scores, gt_bboxes, gt_ids, gt_difficults)
-        logging.info("[Batch %d] [Finished %d]", ib + 1, (ib + 1) * batch[0].shape[0])
+    with tqdm(total=size) as pbar:
+        for ib, batch in enumerate(val_data):
+            data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
+            label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0)
+            for x, y in zip(data, label):
+                ids, scores, bboxes = net(x)
+                bboxes = bboxes.clip(0, batch[0].shape[2])
+                gt_ids = y.slice_axis(axis=-1, begin=4, end=5)
+                gt_bboxes = y.slice_axis(axis=-1, begin=0, end=4)
+                gt_difficults = y.slice_axis(axis=-1, begin=5, end=6) if y.shape[-1] > 5 else None
+                metric.update(bboxes, ids, scores, gt_bboxes, gt_ids, gt_difficults)
+            pbar.update(batch[0].shape[0])
     return metric.get()
 
 if __name__ == '__main__':
@@ -89,6 +91,6 @@ if __name__ == '__main__':
         net.load_params(args.pretrained.strip())
 
     # training
-    names, values = validate(net, val_data, ctx, classes)
+    names, values = validate(net, val_data, ctx, classes, len(val_dataset))
     for k, v in zip(names, values):
         print(k, v)
