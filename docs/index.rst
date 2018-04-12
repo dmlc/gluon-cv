@@ -27,7 +27,7 @@ vision. Otherwise, please refer to xxx and yyy.
    contribute) is warmly welcome.
 
 
-Quick Installation
+Installation
 ------------------
 
 GluonVision relies on the recent version of MXNet. The easiest way to install
@@ -77,3 +77,10 @@ A Quick Example
    api/python/transforms
    api/python/utils
    api/python/visualizations
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Community
+
+   how_to/support
+   how_to/contribute
