@@ -4,7 +4,7 @@ from __future__ import absolute_import
 
 from mxnet import gluon
 import numpy as np
-from . import slice_like
+# from . import slice_like
 
 
 class SSDAnchorGenerator(gluon.HybridBlock):
@@ -38,7 +38,6 @@ class SSDAnchorGenerator(gluon.HybridBlock):
         self._clip = clip
         self._sizes = (sizes[0], np.sqrt(sizes[0] * sizes[1]))
         self._ratios = ratios
-        # self._steps = (step, step)
         anchors = self._generate_anchors(self._sizes, self._ratios, step, alloc_size, offsets)
         self.anchors = self.params.get_constant('anchor_%d'%(index), anchors)
 
@@ -60,8 +59,7 @@ class SSDAnchorGenerator(gluon.HybridBlock):
                     w = sizes[0] * sr
                     h = sizes[0] / sr
                     anchors.append([cx, cy, w, h])
-        # self._anchor = np.array(anchors).reshape(1, 1, alloc_size[0], alloc_size[1], -1, 4)
-        return np.array(anchors).reshape(1, 1, alloc_size[0], alloc_size[1], -1, 4)
+        return np.array(anchors).reshape(1, 1, alloc_size[0], alloc_size[1], -1)
 
     @property
     def num_depth(self):
@@ -70,10 +68,7 @@ class SSDAnchorGenerator(gluon.HybridBlock):
 
     # pylint: disable=arguments-differ
     def hybrid_forward(self, F, x, anchors):
-        # anchors = F.array(self._anchor)
-        # return anchors[0][0].slice_axis(0, begin=0, end=x.shape[2]).slice_axis(1, begin=0, end=x.shape[2]).reshape((1, -1, 4)).clip(0, 300)
-        a = F.Custom(anchors, x, op_type='slice_like', axis=2)
-        a = F.Custom(a, x, op_type='slice_like', axis=3)
+        a = F.slice_like(anchors, x, axes=(2, 3))
         a = a.reshape((1, -1, 4))
         if self._clip:
             cx, cy, cw, ch = a.split(axis=-1, num_outputs=4)
