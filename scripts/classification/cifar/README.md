@@ -15,9 +15,9 @@ We offer models in `ResNetV1`, `ResNetV2` and `WideResNet`, with various paramet
 | ResNet20_v1      | 0.9160   |
 | ResNet56_v1      | 0.9387   |
 | ResNet110_v1     | 0.9471   |
-| ResNet20_v2      | 0.9130   |
+| ResNet20_v2      | 0.9158   |
 | ResNet56_v2      | 0.9413   |
-| ResNet110_v2     | 0.9464   |
+| ResNet110_v2     | 0.9484   |
 | WideResNet16_10  | 0.9614   |
 | WideResNet28_10  | 0.9667   |
 | WideResNet40_8   | 0.9673   |
