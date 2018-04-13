@@ -17,7 +17,7 @@
 # sys.path.insert(0, os.path.abspath('.'))
 # import guzzle_sphinx_theme
 
-# import recommonmark
+import recommonmark
 from recommonmark.parser import CommonMarkParser
 from recommonmark.transform import AutoStructify
 
@@ -44,13 +44,30 @@ release = gv.__version__
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.doctest',
+    'sphinx.ext.autosummary',
     'sphinx.ext.intersphinx',
     'sphinx.ext.todo',
     'sphinx.ext.coverage',
+    'sphinx.ext.napoleon',
     'sphinx.ext.mathjax',
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
+    'sphinx_gallery.gen_gallery',
 ]
+
+sphinx_gallery_conf = {
+    # path to your examples scripts
+         'examples_dirs': '../scripts',
+    # path where to save gallery generated examples
+         'gallery_dirs': 'examples',
+    'plot_gallery':False,
+    'min_reported_time':10,
+    'download_section_examples': False,
+    #'reference_url': {
+    #    'gluonvision':None,
+    #},
+}
+
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -152,7 +169,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'GluonVision.tex', 'GluonVision Documentation',
+   (master_doc, 'GluonVision.tex', 'GluonVision Documentation',
      'MXNet Developers', 'manual'),
 ]
 
@@ -190,3 +207,9 @@ intersphinx_mapping = {'https://docs.python.org/': None}
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = True
+
+#def setup(app):
+     #app.add_transform(AutoStructify)
+    #app.add_config_value('recommonmark_config', {
+    #}, True)
+    # app.add_javascript('google_analytics.js')

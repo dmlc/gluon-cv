@@ -2,6 +2,8 @@
 __pycache__/
 *.py[cod]
 *$py.class
+*.swp
+.DS_Store
 
 # C extensions
 *.so
@@ -102,3 +104,4 @@ ENV/
 
 
 docs/build
+docs/

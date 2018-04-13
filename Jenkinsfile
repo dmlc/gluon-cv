@@ -3,6 +3,7 @@ stage("LINT") {
     ws('workspace/gluon-vision-lint') {
       checkout scm
       sh """#!/bin/bash
+      set -e
       conda env update -f tests/pylint.yml
       source activate gluon_vision_pylint
       conda list
@@ -19,9 +20,12 @@ stage("Docs") {
     ws('workspace/gluon-vision-docs') {
       checkout scm
       sh """#!/bin/bash
+      set -e
       conda env update -f docs/build.yml
       source activate gluon_vision_docs
       python setup.py install
+      env
+      export LD_LIBRARY_PATH=/usr/local/cuda-8.0/lib64
       cd docs && make html
       aws s3 sync --delete build/html/ s3://gluon-vision.mxnet.io/ --acl public-read
       """
@@ -29,4 +33,3 @@ stage("Docs") {
   }
 }
 }
-

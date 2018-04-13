@@ -27,37 +27,65 @@ Dilated Network
 
 We apply dilattion strategy to pre-trained ResNet models (with stride of 8). Please see :class:`gluonvision.model_zoo.SegBaseModel` for how to use it.
 
+:hidden:`Dilated_ResNetV2`
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 .. autoclass:: Dilated_ResNetV2
     :members:
+
+:hidden:`DilatedBasicBlockV2`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autoclass:: DilatedBasicBlockV2
     :members:
 
+:hidden:`DilatedBottleneckV2`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 .. autoclass:: DilatedBottleneckV2
     :members:
+
+:hidden:`get_dilated_resnet`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autofunction:: get_dilated_resnet
 
 
+:hidden:`dilated_resnet18`
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 .. autofunction:: dilated_resnet18
 
+
+:hidden:`dilated_resnet34`
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autofunction:: dilated_resnet34
 
 
+:hidden:`dilated_resnet50`
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 .. autofunction:: dilated_resnet50
 
+
+:hidden:`dilated_resnet101`
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autofunction:: dilated_resnet101
 
 
+:hidden:`dilated_resnet152`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 .. autofunction:: dilated_resnet152
+
 
 Object Detection
 ----------------
 
 :hidden:`SSD`
-~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~
 
 .. autoclass:: SSD
     :members:
@@ -75,12 +103,6 @@ Semantic Segmentation
 ~~~~~~~~~~~~~
 
 .. autoclass:: FCN
-    :members:
-
-:hidden:`PSPNet`
-~~~~~~~~~~~~~~~~
-
-.. autoclass:: PSPNet
     :members:
 
 
