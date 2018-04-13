@@ -4,7 +4,7 @@ from __future__ import absolute_import
 
 from mxnet import gluon
 import numpy as np
-# from . import slice_like
+from . import slice_like
 
 
 class SSDAnchorGenerator(gluon.HybridBlock):
@@ -68,7 +68,9 @@ class SSDAnchorGenerator(gluon.HybridBlock):
 
     # pylint: disable=arguments-differ
     def hybrid_forward(self, F, x, anchors):
-        a = F.slice_like(anchors, x, axes=(2, 3))
+        a = F.Custom(anchors, x, op_type='slice_like', axis=2)
+        a = F.Custom(a, x, op_type='slice_like', axis=3)
+        # a = F.slice_like(anchors, x, axes=(2, 3))
         a = a.reshape((1, -1, 4))
         if self._clip:
             cx, cy, cw, ch = a.split(axis=-1, num_outputs=4)
