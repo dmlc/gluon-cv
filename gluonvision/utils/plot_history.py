@@ -27,10 +27,12 @@ class TrainingHistory():
         self.epochs += 1
 
     def plot(self, items, tofile=None, legend_loc='upper right'):
-        for it in items:
+        line_lists = [None]*len(items)
+        for i, it in enumerate(items):
             assert self.history[it] is not None
-            plt.plot(list(range(self.epochs)), self.history[it])
-        plt.legend(items, loc=legend_loc)
+            line_lists[i],  = plt.plot(list(range(self.epochs)), self.history[it], label=it)
+        # plt.legend(items, loc=legend_loc)
+        plt.legend(tuple(line_lists), items, loc=legend_loc)
         if tofile is None:
             plt.show()
         else:
