@@ -31,13 +31,12 @@ Here we provide you a script `demo.py` to load a pre-trained model and predict o
 **Execution**
 
 ```
-python demo --model cifar_resnet110_v2 --pretrained --input-pic ~/Pictures/demo.jpg
+python demo --model cifar_resnet110_v2 --input-pic ~/Pictures/demo.jpg
 ```
 
 **Parameters Explained**
 
 - `--model`: The model to use.
-- `--pretrained`: if use a pretrained model.
 - `--saved-params`: the path to a locally saved model.
 - `--input-pic`: the path to the input picture file.
 

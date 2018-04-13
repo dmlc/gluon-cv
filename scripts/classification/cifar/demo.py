@@ -14,8 +14,6 @@ from gluonvision.model_zoo import get_model
 parser = argparse.ArgumentParser(description='Predict CIFAR10 classes from a given image')
 parser.add_argument('--model', type=str, required=True,
                     help='name of the model to use')
-parser.add_argument('--pretrained', action='store_true',
-                    help='use the official pretrained model')
 parser.add_argument('--saved-params', type=str, default='',
                     help='path to the saved model parameters')
 parser.add_argument('--input-pic', type=str, required=True,
@@ -26,19 +24,18 @@ classes = 10
 class_names = ['airplane', 'automobile', 'bird', 'cat', 'deer',
                'dog', 'frog', 'horse', 'ship', 'truck']
 
-num_gpus = opt.num_gpus
 context = [mx.cpu()]
 
 # Load Model
 model_name = opt.model
-pretrained = True if opt.pretrained else False
+pretrained = True if opt.saved_params == '' else False
 if model_name.startswith('cifar_wideresnet'):
     kwargs = {'classes': classes, 'drop_rate': opt.drop_rate, 'pretrained': pretrained}
 else:
     kwargs = {'classes': classes, 'pretrained': pretrained}
 net = get_model(model_name, **kwargs)
 
-if not pretrained and opt.saved_params is not None:
+if not pretrained:
     net.load_params(opt.saved_params, ctx = context)
 
 # Load Images
