@@ -16,9 +16,9 @@ through the steps of preparing this dataset to be used by GluonVision.
 
 .. note::
 
-   You need at least 300 GB disk space to download and extract the dataset. SSD
- (Solid-state disks) are prefered over HDD because of the better performance on
- reading and writing small objects (images).
+   You need at least 300 GB disk space to download and extract the dataset. SSD
+   (Solid-state disks) are prefered over HDD because of the better performance
+   on reading and writing small objects (images).
 
 Download the Dataset
 --------------------
@@ -43,16 +43,17 @@ following command to do it automatically.
 
 .. code-block:: bash
 
-   python scripts/datasets/setup_imagenet.py --download-dir ~/ILSVRC2012_tar --path ~/ILSVRC2012
+   python scripts/datasets/setup_imagenet.py \
+       --download-dir ~/ILSVRC2012_tar --path ~/ILSVRC2012
 
 .. note::
 
    Extracting the images may take tens of minutes to a few hours. E.g., it takes
-about 30min on AWS EBS General Purpose SSD (gp2).
+   about 30min on AWS EBS General Purpose SSD (gp2).
 
-   If you already extracted the download tar files, you only need to specify
-   ``--path``. For example, assume all images are extracted in ``~/ILSVRC2012``,
-   then you can simply run the following command to prepare the dataset.
+If you already extracted the download tar files, you only need to specify
+``--path``. For example, assume all images are extracted in ``~/ILSVRC2012``,
+then you can simply run the following command to prepare the dataset.
 
 .. code-block:: bash
 
@@ -60,7 +61,6 @@ about 30min on AWS EBS General Purpose SSD (gp2).
 
 Dive Deep into Source Codes
 ---------------------------
-
 
 """
 
