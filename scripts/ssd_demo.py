@@ -3,17 +3,19 @@
 Getting started with SSD pre-trained models
 ===========================================
 
-**Author**: `Joshua Z. Zhang <https://zhreshold.github.io/>`_
-
 This article is an introductory tutorial to play with pre-trained
 models with several lines of code.
 
 For us to begin with, mxnet and gluonvvision modules are required to be installed.
+
 A quick solution is
+
 ```
 pip install --user --pre mxnet gluonvision
 ```
-or please refer to offical installation guide.
+
+or please refer to offical installation guide:
+
 http://gluon-vision.mxnet.io.s3-website-us-west-2.amazonaws.com/index.html#installation
 
 """
@@ -39,6 +41,8 @@ image_list = ['street.jpg']
 ######################################################################
 # Preprocess image so it is normalized and converted to tensor
 # ---------------------------------------------
+# Images are scaled to (0, 1), mean pixel values are (0.485, 0.456, 0.406)
+# std values are (0.229, 0.224, 0.225), pixel order is RGB.
 def process_img(im_name, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)):
     """Pre-process image to tensor required by network."""
     img = mx.image.imread(im_name)
