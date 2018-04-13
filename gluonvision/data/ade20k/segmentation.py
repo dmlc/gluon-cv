@@ -1,9 +1,6 @@
 """Pascal ADE20K Semantic Segmentation Dataset."""
 import os
-import sys
-import numpy as np
 import random
-import math
 from PIL import Image, ImageOps, ImageFilter
 
 from mxnet.gluon.data import dataset
@@ -50,7 +47,6 @@ class ADE20KSegmentation(dataset.Dataset):
             img, mask = self._val_sync_transform(img, mask)
         else:
             raise RuntimeError('unknown mode for dataloader: {}'.format(self.mode))
-        
 
         # general resize, normalize and toTensor
         if self.transform is not None:
@@ -89,7 +85,7 @@ class ADE20KSegmentation(dataset.Dataset):
     def _sync_transform(self, img, mask):
         # random mirror
         if random.random() < 0.5:
-            img  = img.transpose(Image.FLIP_LEFT_RIGHT)
+            img = img.transpose(Image.FLIP_LEFT_RIGHT)
             mask = mask.transpose(Image.FLIP_LEFT_RIGHT)
         base_size = 520
         crop_size = 480
@@ -107,19 +103,19 @@ class ADE20KSegmentation(dataset.Dataset):
         img = img.resize((ow, oh), Image.BILINEAR)
         mask = mask.resize((ow, oh), Image.NEAREST)
         # random rotate -10~10, mask using NN rotate
-        deg = random.uniform(-10,10)
+        deg = random.uniform(-10, 10)
         img = img.rotate(deg, resample=Image.BILINEAR)
         mask = mask.rotate(deg, resample=Image.NEAREST)
         # pad crop
         if short_size < crop_size:
             padh = crop_size - oh if oh < crop_size else 0
             padw = crop_size - ow if ow < crop_size else 0
-            img  = ImageOps.expand(img,  border=(0,0,padw,padh), fill=0)
-            mask = ImageOps.expand(mask, border=(0,0,padw,padh), fill=0)
+            img = ImageOps.expand(img, border=(0, 0, padw, padh), fill=0)
+            mask = ImageOps.expand(mask, border=(0, 0, padw, padh), fill=0)
         # random crop 480
         w, h = img.size
         x1 = random.randint(0, w - crop_size)
-        y1 = random.randint(0, h - crop_size) 
+        y1 = random.randint(0, h - crop_size)
         img = img.crop((x1, y1, x1+crop_size, y1+crop_size))
         mask = mask.crop((x1, y1, x1+crop_size, y1+crop_size))
         # gaussian blur as in PSP ?
@@ -129,16 +125,16 @@ class ADE20KSegmentation(dataset.Dataset):
         return img, mask
 
 def _get_ade20k_pairs(folder, mode='train'):
-    img_paths = []  
-    mask_paths = []  
-    if mode=='train':
+    img_paths = []
+    mask_paths = []
+    if mode == 'train':
         img_folder = os.path.join(folder, 'images/training')
         mask_folder = os.path.join(folder, 'annotations/training')
     else:
         img_folder = os.path.join(folder, 'images/validation')
         mask_folder = os.path.join(folder, 'annotations/validation')
     for filename in os.listdir(img_folder):
-        basename, extension =os.path.splitext(filename)
+        basename, _ = os.path.splitext(filename)
         if filename.endswith(".jpg"):
             imgpath = os.path.join(img_folder, filename)
             maskname = basename + '.png'
