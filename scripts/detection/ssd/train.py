@@ -90,7 +90,7 @@ def save_params(net, best_map, current_map, epoch, save_interval, prefix):
 def validate(net, val_data, ctx, classes):
     """Test on validation dataset."""
     metric = VOC07MApMetric(iou_thresh=0.5, class_names=classes)
-    net.set_nms(nms_thresh=0.45, nms_topk=200)
+    net.set_nms(nms_thresh=0.45, nms_topk=400)
     net.hybridize()
     for batch in val_data:
         data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)

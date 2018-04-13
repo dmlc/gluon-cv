@@ -53,7 +53,7 @@ def validate(net, val_data, ctx, classes, size):
     """Test on validation dataset."""
     net.collect_params().reset_ctx(ctx)
     metric = VOC07MApMetric(iou_thresh=0.5, class_names=classes)
-    net.set_nms(nms_thresh=0.45, nms_topk=200)
+    net.set_nms(nms_thresh=0.45, nms_topk=400)
     net.hybridize()
     with tqdm(total=size) as pbar:
         for ib, batch in enumerate(val_data):
