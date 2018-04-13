@@ -190,7 +190,8 @@ class VOCMApMetric(mx.metric.EvalMetric):
 
             # If an element of fp + tp is 0,
             # the corresponding element of prec[l] is nan.
-            prec[l] = tp / (fp + tp)
+            with np.errstate(divide='ignore',invalid='ignore'):
+                prec[l] = tp / (fp + tp)
             # If n_pos[l] is 0, rec[l] is None.
             if self._n_pos[l] > 0:
                 rec[l] = tp / self._n_pos[l]
