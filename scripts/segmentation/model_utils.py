@@ -36,7 +36,7 @@ def _init_parallel_model(args, model, criterion):
     # resume checkpoint
     if args.resume is not None:
         if os.path.isfile(args.resume):
-            model.module.collect_params().load(args.resume, ctx=args.ctx)
+            model.module.load_params(args.resume, ctx=args.ctx)
         else:
             raise RuntimeError("=> no checkpoint found at '{}'" \
                 .format(args.resume))
