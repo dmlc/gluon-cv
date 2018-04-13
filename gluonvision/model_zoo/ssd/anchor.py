@@ -4,7 +4,6 @@ from __future__ import absolute_import
 
 from mxnet import gluon
 import numpy as np
-from . import slice_like
 
 
 class SSDAnchorGenerator(gluon.HybridBlock):
