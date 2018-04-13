@@ -17,22 +17,22 @@ class SegBaseModel(HybridBlock):
         for Synchronized Cross-GPU BachNormalization).
     """
     # pylint : disable=arguments-differ
-    def __init__(self, backbone='resnet50', norm_layer=nn.BatchNorm):
-        super(SegBaseModel, self).__init__()
-        self._prefix = ''
-        if backbone == 'resnet50':
-            pretrained = dilatedresnet.dilated_resnet50(pretrained=True, norm_layer=norm_layer)
-        elif backbone == 'resnet101':
-            pretrained = dilatedresnet.dilated_resnet101(pretrained=True, norm_layer=norm_layer)
-        elif backbone == 'resnet152':
-            pretrained = dilatedresnet.dilated_resnet152(pretrained=True, norm_layer=norm_layer)
-        else:
-            raise RuntimeError('unknown backbone: {}'.format(backbone))
-
+    def __init__(self, backbone='resnet50', norm_layer=nn.BatchNorm, **kwargs):
+        super(SegBaseModel, self).__init__(**kwargs)
         with self.name_scope():
-            self.pretrained = nn.HybridSequential(prefix='')
-            for layer in pretrained.features:
-                self.pretrained.add(layer)
+            if backbone == 'resnet50':
+                pretrained = dilatedresnet.dilated_resnet50(pretrained=True, norm_layer=norm_layer)
+            elif backbone == 'resnet101':
+                pretrained = dilatedresnet.dilated_resnet101(pretrained=True, norm_layer=norm_layer)
+            elif backbone == 'resnet152':
+                pretrained = dilatedresnet.dilated_resnet152(pretrained=True, norm_layer=norm_layer)
+            else:
+                raise RuntimeError('unknown backbone: {}'.format(backbone))
+
+            self.pretrained = nn.HybridSequential()
+            with self.pretrained.name_scope():
+                for layer in pretrained.features:
+                    self.pretrained.add(layer)
 
     # pylint: disable=arguments-differ
     def hybrid_forward(self, F, x):
