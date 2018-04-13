@@ -7,7 +7,8 @@ from mxnet import gluon
 from mxnet.gluon import nn
 from mxnet.initializer import Xavier
 
-__all__ = ['get_vgg_atrous_extractor', 'vgg16_atrous_300', 'vgg16_atrous_512']
+__all__ = ['VGGAtrousExtractor', 'get_vgg_atrous_extractor', 'vgg16_atrous_300',
+           'vgg16_atrous_512']
 
 
 class Normalize(gluon.HybridBlock):

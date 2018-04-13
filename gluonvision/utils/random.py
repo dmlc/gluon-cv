@@ -9,7 +9,9 @@ def seed(a=None):
     """Seed the generator for python builtin random, numpy.random, mxnet.random.
 
     This method is to control random state for mxnet related random functions.
-    Note that this function cannot guarantee 100 percent reproducibility.
+    
+    Note that this function cannot guarantee 100 percent reproducibility due to
+    hardware settings.
 
     Parameters
     ----------
