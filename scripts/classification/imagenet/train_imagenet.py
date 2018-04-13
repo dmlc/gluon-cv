@@ -1,3 +1,9 @@
+"""
+Train ImageNet
+==============
+
+"""
+
 from __future__ import division
 
 import argparse, time, logging, math
