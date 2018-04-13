@@ -7,10 +7,10 @@ from mxnet.gluon import HybridBlock
 from ..features import FeatureExpander
 from .anchor import SSDAnchorGenerator
 from ..predictors import ConvPredictor
-from ..coders import MultiClassDecoder, MultiPerClassDecoder, NormalizedBoxCenterDecoder
+from ..coders import MultiPerClassDecoder, NormalizedBoxCenterDecoder
 from .target import SSDTargetGenerator
 from .vgg_atrous import vgg16_atrous_300, vgg16_atrous_512
-from ...utils import set_lr_mult
+# from ...utils import set_lr_mult
 from ...data import VOCDetection
 
 __all__ = ['ssd_300_vgg16_atrous_voc', 'ssd_512_vgg16_atrous_voc',

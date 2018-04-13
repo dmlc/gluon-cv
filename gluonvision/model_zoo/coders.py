@@ -1,4 +1,4 @@
-# pylint: disable=arguments-differ
+# pylint: disable=arguments-differ, missing-docstring
 """Encoder and Decoder functions.
 Encoders are used during training, which assign training targets.
 Decoders are used during testing/validation, which convert predictions back to

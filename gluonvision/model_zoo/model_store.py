@@ -4,8 +4,8 @@ __all__ = ['get_model_file', 'purge']
 import os
 import zipfile
 
-from ..utils import download
 from mxnet.gluon.utils import check_sha1
+from ..utils import download
 
 _model_sha1 = {name: checksum for checksum, name in [
     ('4fa2e1ad96b8c8d1ba9e5a43556cd909d70b3985', 'vgg16_atrous'),
@@ -36,8 +36,8 @@ def get_model_file(name, root=os.path.join('~', '.mxnet', 'models')):
     """
     from mxnet.gluon.model_zoo.model_store import get_model_file as upstream_get_model_file
     try:
-        filename = upstream_get_model_file(name=name, root=root)
-    except ValueError as e:
+        file_name = upstream_get_model_file(name=name, root=root)
+    except ValueError:
         file_name = '{name}-{short_hash}'.format(name=name,
                                                  short_hash=short_hash(name))
     root = os.path.expanduser(root)
