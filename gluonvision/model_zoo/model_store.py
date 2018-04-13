@@ -12,7 +12,10 @@ _model_sha1 = {name: checksum for checksum, name in [
     ('aa01e54160e2c92b8dee2319f1c2a8ea0e327ed1', 'cifar_resnet56_v1'),
     ('81edd76526cc736df96b165eb6f8850bcad9d6d6', 'cifar_resnet56_v2'),
     ('3a9d8dda8e54f06735b1d61b85002d00c8cd5005', 'cifar_resnet110_v1'),
-    ('d7bacf7cb1b5e19348941e6d486b9262efe78b15', 'cifar_resnet110_v2')]}
+    ('d7bacf7cb1b5e19348941e6d486b9262efe78b15', 'cifar_resnet110_v2'),
+    ('ebc52a3cb68fb9a14f59944b510cc682675a70cc', 'cifar_wideresnet16_10'),
+    ('0ef2c7bec9c2c48b8ff52440ae84869ce2db20b1', 'cifar_wideresnet28_10'),
+    ('5369ff00708900aa34c85088ac2c15fd42f0b243', 'cifar_wideresnet40_8')]}
 
 apache_repo_url = 'https://apache-mxnet.s3-accelerate.dualstack.amazonaws.com/'
 _url_format = '{repo_url}gluon/models/{file_name}.zip'

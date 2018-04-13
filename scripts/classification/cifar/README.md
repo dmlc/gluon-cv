@@ -2,7 +2,7 @@
 
 Here we present examples of training resnet/wide-resnet on CIFAR10 dataset.
 
-The main training script is `train_cifar10.py`. The script takes various parameters, thus we offer suggested parameters, and corresponding results.
+The main training script is `train.py`. The script takes various parameters, thus we offer suggested parameters, and corresponding results.
 
 We also experiment the [Mix-Up augmentation method](https://arxiv.org/abs/1710.09412), and compare results for each model.
 
@@ -42,19 +42,19 @@ python demo --model cifar_resnet110_v2 --input-pic ~/Pictures/demo.jpg
 
 ## Training
 
-Training can be done by either `train_cifar10.py` or `train_cifar10_mixup.py`.
+Training can be done by either `train.py` or `train_mixup.py`.
 
 Training a model on ResNet110_v2 can be done with
 
 ```
-python train_cifar10.py --num-epochs 240 --mode hybrid --num-gpus 2 -j 32 --batch-size 64\
+python train.py --num-epochs 240 --mode hybrid --num-gpus 2 -j 32 --batch-size 64\
     --wd 0.0001 --lr 0.1 --lr-decay 0.1 --lr-decay-epoch 80,160 --model cifar_resnet110_v2
 ```
 
 With mixup, the command is
 
 ```
-python train_cifar10_mixup.py --num-epochs 350 --mode hybrid --num-gpus 2 -j 32 --batch-size 64\
+python train_mixup.py --num-epochs 350 --mode hybrid --num-gpus 2 -j 32 --batch-size 64\
     --wd 0.0001 --lr 0.1 --lr-decay 0.1 --lr-decay-epoch 150,250 --model cifar_resnet110_v2
 ```
 
@@ -83,7 +83,7 @@ Pretrained Model:
 by script:
 
 ```
-python train_cifar10_mixup.py --num-epochs 450 --mode hybrid --num-gpus 2 -j 32 --batch-size 64 --wd 0.0001 --lr 0.1 --lr-decay 0.1 --lr-decay-epoch 150,250 --model cifar_resnet20_v1
+python train_mixup.py --num-epochs 450 --mode hybrid --num-gpus 2 -j 32 --batch-size 64 --wd 0.0001 --lr 0.1 --lr-decay 0.1 --lr-decay-epoch 150,250 --model cifar_resnet20_v1
 ```
 
 ## Wide ResNet
@@ -91,7 +91,7 @@ python train_cifar10_mixup.py --num-epochs 450 --mode hybrid --num-gpus 2 -j 32 
 Training a model on WRN-28-10 can be done with
 
 ```
-python train_cifar10.py --num-epochs 200 --mode hybrid --num-gpus 2 -j 32 --batch-size 64\
+python train.py --num-epochs 200 --mode hybrid --num-gpus 2 -j 32 --batch-size 64\
     --wd 0.0005 --lr 0.1 --lr-decay 0.2 --lr-decay-epoch 60,120,160\
     --model cifar_wideresnet28 --width-factor 10
 ```
@@ -99,7 +99,7 @@ python train_cifar10.py --num-epochs 200 --mode hybrid --num-gpus 2 -j 32 --batc
 With mixup, the command is
 
 ```
-python train_cifar10_mixup.py --num-epochs 350 --mode hybrid --num-gpus 2 -j 32 --batch-size 64\
+python train_mixup.py --num-epochs 350 --mode hybrid --num-gpus 2 -j 32 --batch-size 64\
     --wd 0.0001 --lr 0.1 --lr-decay 0.1 --lr-decay-epoch 80,160,240\
     --model cifar_wideresnet28 --width-factor 10
 ```
@@ -125,7 +125,7 @@ Pretrained Model:
 by scripts:
 
 ```
-python train_cifar10_mixup.py --num-epochs 500 --mode hybrid --num-gpus 2 -j 32 --batch-size 64 --wd 0.0001 --lr 0.1 --lr-decay 0.1 --lr-decay-epoch 100,200,300 --model cifar_wideresnet16_10
+python train_mixup.py --num-epochs 500 --mode hybrid --num-gpus 2 -j 32 --batch-size 64 --wd 0.0001 --lr 0.1 --lr-decay 0.1 --lr-decay-epoch 100,200,300 --model cifar_wideresnet16_10
 ```
 
 **Parameters Explained**

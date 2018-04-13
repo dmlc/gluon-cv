@@ -30,7 +30,7 @@ context = [mx.cpu()]
 model_name = opt.model
 pretrained = True if opt.saved_params == '' else False
 if model_name.startswith('cifar_wideresnet'):
-    kwargs = {'classes': classes, 'drop_rate': opt.drop_rate, 'pretrained': pretrained}
+    kwargs = {'classes': classes, 'pretrained': pretrained}
 else:
     kwargs = {'classes': classes, 'pretrained': pretrained}
 net = get_model(model_name, **kwargs)
