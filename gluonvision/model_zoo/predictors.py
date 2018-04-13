@@ -1,6 +1,7 @@
 # pylint: disable=unused-argument,arguments-differ
 """Predictor for classification/box prediction."""
 from __future__ import absolute_import
+import mxnet as mx
 from mxnet.gluon import HybridBlock
 from mxnet.gluon import nn
 
@@ -34,7 +35,9 @@ class ConvPredictor(HybridBlock):
         with self.name_scope():
             self.predictor = nn.Conv2D(
                 num_channel, kernel, strides=stride, padding=pad,
-                activation=activation, use_bias=use_bias)
+                activation=activation, use_bias=use_bias,
+                weight_initializer=mx.init.Xavier(magnitude=2),
+                bias_initializer='zeros')
 
     def hybrid_forward(self, F, x):
         return self.predictor(x)
