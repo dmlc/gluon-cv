@@ -57,6 +57,7 @@ class VGGAtrousBase(gluon.HybridBlock):
             'bias_initializer': 'zeros'
         }
         with self.name_scope():
+            # we use pre-trained weights from caffe, initial scale must change
             init_scale = mx.nd.array([0.229, 0.224, 0.225]).reshape((1, 3, 1, 1)) * 255
             self.init_scale = self.params.get_constant('init_scale', init_scale)
             self.stages = nn.HybridSequential()

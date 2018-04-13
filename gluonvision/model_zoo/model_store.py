@@ -8,7 +8,8 @@ from ..utils import download
 from mxnet.gluon.utils import check_sha1
 
 _model_sha1 = {name: checksum for checksum, name in [
-    ('4fa2e1ad96b8c8d1ba9e5a43556cd909d70b3985', 'vgg16_atrous'),]}
+    ('4fa2e1ad96b8c8d1ba9e5a43556cd909d70b3985', 'vgg16_atrous'),
+    ('bf2b8f0d909f7739fc3a98e67254bd7a8bf2574a', 'ssd_300_vgg16_atrous_voc')]}
 
 apache_repo_url = 'https://apache-mxnet.s3-accelerate.dualstack.amazonaws.com/'
 _url_format = '{repo_url}gluon/models/{file_name}.zip'
