@@ -31,10 +31,12 @@ def get_model(name, **kwargs):
         The model.
     """
     models = {
-        'ssd_300_vgg16_atrous': ssd_300_vgg16_atrous,
-        'ssd_512_vgg16_atrous': ssd_512_vgg16_atrous,
-        'ssd_512_resnet18_v1': ssd_512_resnet18_v1,
-        'ssd_512_resnet50_v1': ssd_512_resnet50_v1,
+        'ssd_300_vgg16_atrous_voc': ssd_300_vgg16_atrous_voc,
+        'ssd_512_vgg16_atrous_voc': ssd_512_vgg16_atrous_voc,
+        'ssd_512_resnet18_v1_voc': ssd_512_resnet18_v1_voc,
+        'ssd_512_resnet50_v1_voc': ssd_512_resnet50_v1_voc,
+        'ssd_512_resnet101_v2_voc': ssd_512_resnet101_v2_voc,
+        'ssd_512_resnet152_v2_voc': ssd_512_resnet152_v2_voc,
         'cifar_resnet20_v1': cifar_resnet20_v1,
         'cifar_resnet56_v1': cifar_resnet56_v1,
         'cifar_resnet110_v1': cifar_resnet110_v1,
