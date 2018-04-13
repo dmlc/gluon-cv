@@ -114,10 +114,10 @@ Common Components
 
 .. currentmodule:: gluonvision.model_zoo.bbox
 
-.. autoclass:: BBoxCornerToCenter
+.. autoclass:: BboxCornerToCenter
     :members:
 
-.. autoclass:: BBoxCenterToCorner
+.. autoclass:: BboxCenterToCorner
     :members:
 
 :hidden:`Coders`
