@@ -1,3 +1,9 @@
+"""
+Train on CIFAR-10 with Mixup
+============================
+
+"""
+
 from __future__ import division
 
 import argparse, time, logging, random, math
@@ -185,10 +191,10 @@ def train(epochs, ctx):
         name, acc = train_metric.get()
         if val_data is not None:
             name, val_acc = test(ctx, val_data)
-            logging.info('[Epoch %d] train=%f val=%f loss=%f time: %f' % 
+            logging.info('[Epoch %d] train=%f val=%f loss=%f time: %f' %
                 (epoch, acc, val_acc, train_loss, time.time()-tic))
         else:
-            logging.info('[Epoch %d] train=%f loss=%f time: %f' % 
+            logging.info('[Epoch %d] train=%f loss=%f time: %f' %
                 (epoch, acc, train_loss, time.time()-tic))
 
         if save_period and save_dir and (epoch + 1) % save_period == 0:
