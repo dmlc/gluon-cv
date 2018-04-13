@@ -15,6 +15,17 @@ ImageNet contains multiple datasets. The commonly used version to benchmark imag
 Download the Dataset
 --------------------
 
+First to go to the `download page <http://www.image-net.org/download-images>`_ (you need to register an account if you don't have), and find the download link for ILSVRC2012. In the download page, we can 
+
+ Training images (Task 1 & 2). 138GB. MD5: 1d675b47d978889d74fa0da5fadfb00e
+
+ Training images (Task 3). 728MB. MD5: ccaf1013018ac1037801578038d370da
+
+ Validation images (all tasks). 6.3GB. MD5: 29b22e2961454d5413ddabcf34fc5622
+
+ Test images (all tasks). 13GB. MD5: fe64ceb247e473635708aed23ab6d839
+
+
 Preprocess the Dataset
 ----------------------
 
