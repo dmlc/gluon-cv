@@ -62,10 +62,7 @@ A Quick Example
    :maxdepth: 2
    :caption: Tutorials
 
-
-   classification/index
-   detection/index
-   segmentation/index
+   examples/index
 
 .. toctree::
    :maxdepth: 1
