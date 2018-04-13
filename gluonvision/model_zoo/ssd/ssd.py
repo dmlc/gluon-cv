@@ -105,7 +105,6 @@ class SSD(HybridBlock):
         self.num_classes = len(classes) + 1
         self.nms_thresh = nms_thresh
         self.nms_topk = nms_topk
-        self.force_nms = force_nms
         self.target = set([SSDTargetGenerator(
             iou_thresh=iou_thresh, neg_thresh=neg_thresh,
             negative_mining_ratio=negative_mining_ratio, stds=stds)])
