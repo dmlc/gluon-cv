@@ -32,17 +32,6 @@ def imresize(src, w, h, interp=1):
     -------
     out : NDArray or list of NDArrays
         The output of this function.
-
-    Examples
-    --------
-    >>> import mxnet as mx
-    >>> from gluonvision import data as gdata
-    >>> img = mx.random.uniform(0, 255, (300, 300, 3)).astype('uint8')
-    >>> print(img.shape)
-    (300, 300, 3)
-    >>> img = gdata.transforms.image.imresize(img, 200, 200)
-    >>> print(img.shape)
-    (200, 200, 3)
     """
     return mx.image.imresize(src, w, h, interp)
 

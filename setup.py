@@ -32,6 +32,7 @@ requirements = [
     'numpy',
     'tqdm',
     'requests',
+    'mxnet',
     'matplotlib',
     'Pillow',
 ]

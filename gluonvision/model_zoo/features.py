@@ -19,10 +19,8 @@ def parse_network(network, outputs, inputs, pretrained, ctx):
     network : str or HybridBlock or Symbol
         Logic chain: load from gluon.model_zoo.vision if network is string.
         Convert to Symbol if network is HybridBlock
-    outputs : str or iterable of str
-        The name of layers to be extracted as features.
-    inputs : iterable of str
-        The name of input datas.
+    outputs : str or list of str
+        The name of layers to be extracted as features
     pretrained : bool
         Use pretrained parameters as in gluon.model_zoo
     ctx : Context
@@ -37,7 +35,6 @@ def parse_network(network, outputs, inputs, pretrained, ctx):
     params : ParameterDict
         Network parameters.
     """
-    inputs = list(inputs) if isinstance(inputs, tuple) else inputs
     for i, inp in enumerate(inputs):
         if isinstance(inp, string_types):
             inputs[i] = mx.sym.var(inp)
@@ -83,7 +80,7 @@ class FeatureExtractor(SymbolBlock):
     ctx : Context
         The context, e.g. mxnet.cpu(), mxnet.gpu(0).
     """
-    def __init__(self, network, outputs, inputs=('data',), pretrained=False, ctx=mx.cpu()):
+    def __init__(self, network, outputs, inputs=('data'), pretrained=False, ctx=mx.cpu()):
         inputs, outputs, params = parse_network(network, outputs, inputs, pretrained, ctx)
         super(FeatureExtractor, self).__init__(outputs, inputs, params=params)
 
@@ -123,23 +120,22 @@ class FeatureExpander(SymbolBlock):
     """
     def __init__(self, network, outputs, num_filters, use_1x1_transition=True,
                  use_bn=True, reduce_ratio=1.0, min_depth=128, global_pool=False,
-                 pretrained=False, ctx=mx.cpu(), inputs=('data',)):
+                 pretrained=False, ctx=mx.cpu(), inputs=('data')):
         inputs, outputs, params = parse_network(network, outputs, inputs, pretrained, ctx)
         # append more layers
         y = outputs[-1]
-        weight_init = mx.init.Xavier(rnd_type='gaussian', factor_type='out', magnitude=2)
         for i, f in enumerate(num_filters):
             if use_1x1_transition:
                 num_trans = max(min_depth, int(round(f * reduce_ratio)))
                 y = mx.sym.Convolution(
                     y, num_filter=num_trans, kernel=(1, 1), no_bias=use_bn,
-                    name='expand_trans_conv{}'.format(i), attr={'__init__': weight_init})
+                    name='expand_trans_conv{}'.format(i))
                 if use_bn:
                     y = mx.sym.BatchNorm(y, name='expand_trans_bn{}'.format(i))
                 y = mx.sym.Activation(y, act_type='relu', name='expand_trans_relu{}'.format(i))
             y = mx.sym.Convolution(
                 y, num_filter=f, kernel=(3, 3), pad=(1, 1), stride=(2, 2),
-                no_bias=use_bn, name='expand_conv{}'.format(i), attr={'__init__': weight_init})
+                name='expand_conv{}'.format(i))
             if use_bn:
                 y = mx.sym.BatchNorm(y, name='expand_bn{}'.format(i))
             y = mx.sym.Activation(y, act_type='relu', name='expand_reu{}'.format(i))

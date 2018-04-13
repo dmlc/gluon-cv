@@ -5,7 +5,7 @@ from __future__ import absolute_import
 from mxnet import gluon
 
 
-class BBoxCornerToCenter(gluon.HybridBlock):
+class BboxCornerToCenter(gluon.HybridBlock):
     """Convert corner boxes to center boxes.
     Corner boxes are encoded as (xmin, ymin, xmax, ymax)
     Center boxes are encoded as (center_x, center_y, width, height)
@@ -20,7 +20,7 @@ class BBoxCornerToCenter(gluon.HybridBlock):
      A BxNx4 NDArray if split is False, or 4 BxNx1 NDArray if split is True
     """
     def __init__(self, split=False):
-        super(BBoxCornerToCenter, self).__init__()
+        super(BboxCornerToCenter, self).__init__()
         self._split = split
 
     def hybrid_forward(self, F, x):
@@ -35,7 +35,7 @@ class BBoxCornerToCenter(gluon.HybridBlock):
             return x, y, width, height
 
 
-class BBoxCenterToCorner(gluon.HybridBlock):
+class BboxCenterToCorner(gluon.HybridBlock):
     """Convert center boxes to corner boxes.
     Corner boxes are encoded as (xmin, ymin, xmax, ymax)
     Center boxes are encoded as (center_x, center_y, width, height)
@@ -50,7 +50,7 @@ class BBoxCenterToCorner(gluon.HybridBlock):
      A BxNx4 NDArray if split is False, or 4 BxNx1 NDArray if split is True.
     """
     def __init__(self, split=False):
-        super(BBoxCenterToCorner, self).__init__()
+        super(BboxCenterToCorner, self).__init__()
         self._split = split
 
     def hybrid_forward(self, F, x):

@@ -38,7 +38,7 @@ def random_color_distort(src, brightness_delta=32, contrast_low=0.5, contrast_hi
         if np.random.uniform(0, 1) > p:
             delta = np.random.uniform(delta, delta)
             src += delta
-            return src
+            return src.clip(0, 255)
         return src
 
     def contrast(src, low, high, p=0.5):
@@ -46,7 +46,7 @@ def random_color_distort(src, brightness_delta=32, contrast_low=0.5, contrast_hi
         if np.random.uniform(0, 1) > p:
             alpha = np.random.uniform(low, high)
             src *= alpha
-            return src
+            return src.clip(0, 255)
         return src
 
     def saturation(src, low, high, p=0.5):
@@ -58,7 +58,7 @@ def random_color_distort(src, brightness_delta=32, contrast_low=0.5, contrast_hi
             gray *= (1.0 - alpha)
             src *= alpha
             src += gray
-            return src
+            return src.clip(0, 255)
         return src
 
     def hue(src, delta, p=0.5):
@@ -70,15 +70,14 @@ def random_color_distort(src, brightness_delta=32, contrast_low=0.5, contrast_hi
             bt = np.array([[1.0, 0.0, 0.0],
                            [0.0, u, -w],
                            [0.0, w, u]])
-            tyiq = np.array([[0.299, 0.587, 0.114],
-                             [0.596, -0.274, -0.321],
-                             [0.211, -0.523, 0.311]])
-            ityiq = np.array([[1.0, 0.956, 0.621],
-                              [1.0, -0.272, -0.647],
-                              [1.0, -1.107, 1.705]])
-            t = np.dot(np.dot(ityiq, bt), tyiq).T
+            t = np.dot(np.dot(np.array([[0.299, 0.587, 0.114],
+                                        [0.596, -0.274, -0.321],
+                                        [0.211, -0.523, 0.311]]), bt),
+                       np.array([[0.299, 0.587, 0.114],
+                                 [0.596, -0.274, -0.321],
+                                 [0.211, -0.523, 0.311]])).T
             src = nd.dot(src, nd.array(t, ctx=src.context))
-            return src
+            return src.clip(0, 255)
         return src
 
     src = src.astype('float32')

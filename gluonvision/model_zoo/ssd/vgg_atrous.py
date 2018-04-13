@@ -57,9 +57,6 @@ class VGGAtrousBase(gluon.HybridBlock):
             'bias_initializer': 'zeros'
         }
         with self.name_scope():
-            # we use pre-trained weights from caffe, initial scale must change
-            init_scale = mx.nd.array([0.229, 0.224, 0.225]).reshape((1, 3, 1, 1)) * 255
-            self.init_scale = self.params.get_constant('init_scale', init_scale)
             self.stages = nn.HybridSequential()
             for l, f in zip(layers, filters):
                 stage = nn.HybridSequential(prefix='')
@@ -75,19 +72,13 @@ class VGGAtrousBase(gluon.HybridBlock):
             stage = nn.HybridSequential(prefix='dilated_')
             with stage.name_scope():
                 stage.add(nn.Conv2D(1024, kernel_size=3, padding=6, dilation=6, **self.init))
-                if batch_norm:
-                    stage.add(nn.BatchNorm())
-                stage.add(nn.Activation('relu'))
                 stage.add(nn.Conv2D(1024, kernel_size=1, **self.init))
-                if batch_norm:
-                    stage.add(nn.BatchNorm())
-                stage.add(nn.Activation('relu'))
             self.stages.add(stage)
 
             # normalize layer for 4-th stage
             self.norm4 = Normalize(filters[3], 20)
 
-    def hybrid_forward(self, F, x, init_scale):
+    def hybrid_forward(self, F, x):
         raise NotImplementedError
 
 class VGGAtrousExtractor(VGGAtrousBase):
@@ -114,13 +105,9 @@ class VGGAtrousExtractor(VGGAtrousBase):
                 with extra.name_scope():
                     for f, k, s, p in config:
                         extra.add(nn.Conv2D(f, k, s, p, **self.init))
-                        if batch_norm:
-                            stage.add(nn.BatchNorm())
-                        extra.add(nn.Activation('relu'))
                 self.extras.add(extra)
 
-    def hybrid_forward(self, F, x, init_scale):
-        x = F.broadcast_mul(x, init_scale)
+    def hybrid_forward(self, F, x):
         assert len(self.stages) == 6
         outputs = []
         for stage in self.stages[:3]:
@@ -189,11 +176,14 @@ def get_vgg_atrous_extractor(num_layers, im_size, pretrained=False, ctx=mx.cpu()
     extras = extra_spec[im_size]
     net = VGGAtrousExtractor(layers, filters, extras, **kwargs)
     if pretrained:
-        from ..model_store import get_model_file
+        from mxnet.gluon.model_zoo.model_store import get_model_file
         batch_norm_suffix = '_bn' if kwargs.get('batch_norm') else ''
         net.initialize()
-        net.load_params(get_model_file('vgg%d_atrous%s'%(num_layers, batch_norm_suffix),
-                                       root=root), ctx=ctx, allow_missing=True)
+        try:
+            net.load_params(get_model_file('vgg%d%s'%(num_layers, batch_norm_suffix),
+                                           root=root), ctx=ctx)
+        except ValueError:
+            pass
     return net
 
 def vgg16_atrous_300(**kwargs):

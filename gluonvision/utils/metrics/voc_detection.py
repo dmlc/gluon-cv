@@ -190,8 +190,7 @@ class VOCMApMetric(mx.metric.EvalMetric):
 
             # If an element of fp + tp is 0,
             # the corresponding element of prec[l] is nan.
-            with np.errstate(divide='ignore', invalid='ignore'):
-                prec[l] = tp / (fp + tp)
+            prec[l] = tp / (fp + tp)
             # If n_pos[l] is 0, rec[l] is None.
             if self._n_pos[l] > 0:
                 rec[l] = tp / self._n_pos[l]
@@ -212,12 +211,9 @@ class VOCMApMetric(mx.metric.EvalMetric):
         ----------
         ap as float
         """
-        if rec is None or prec is None:
-            return np.nan
-
         # append sentinel values at both ends
         mrec = np.concatenate(([0.], rec, [1.]))
-        mpre = np.concatenate(([0.], np.nan_to_num(prec), [0.]))
+        mpre = np.concatenate(([0.], np.nan_to_num(prec[l]), [0.]))
 
         # compute precision integration ladder
         for i in range(mpre.size - 1, 0, -1):
@@ -265,6 +261,6 @@ class VOC07MApMetric(VOCMApMetric):
             if np.sum(rec >= t) == 0:
                 p = 0
             else:
-                p = np.max(np.nan_to_num(prec)[rec >= t])
+                p = np.max(prec[rec >= t])
             ap += p / 11.
         return ap
