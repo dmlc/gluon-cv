@@ -6,7 +6,7 @@ from PIL import Image, ImageOps, ImageFilter
 from mxnet.gluon.data import dataset
 
 
-class VOCSegmentationDataset(dataset.Dataset):
+class VOCSegmentation(dataset.Dataset):
     """Pascal VOC Semantic Segmentation Dataset.
 
     Parameters
@@ -21,7 +21,8 @@ class VOCSegmentationDataset(dataset.Dataset):
         A function that transforms the labels
     """
     BASE_DIR = 'VOC2012'
-    def __init__(self, root, split='train', transform=None, target_transform=None):
+    def __init__(self, root=os.path.expanduser('~/.mxnet/datasets/voc'),
+                 split='train', transform=None, target_transform=None):
         self.root = root
         _voc_root = os.path.join(self.root, self.BASE_DIR)
         _mask_dir = os.path.join(_voc_root, 'SegmentationClass')
@@ -162,4 +163,4 @@ class VOCSegmentationDataset(dataset.Dataset):
         return img, mask
 
 # acronym for easy load
-_Segmentation = VOCSegmentationDataset
+_Segmentation = VOCSegmentation

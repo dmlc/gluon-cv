@@ -1,4 +1,5 @@
 """Accuracy metirc with ignored labels."""
+# pylint: disable=assignment-from-no-return
 import mxnet as mx
 from mxnet import ndarray
 from mxnet.metric import check_label_shapes

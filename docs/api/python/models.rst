@@ -35,7 +35,7 @@ We apply dilattion strategy to pre-trained ResNet models (with stride of 8). Ple
 
 
 
-.. autoclass:: Dilated_ResNetV2
+.. autoclass:: DilatedResNetV2
     :members:
 
 
