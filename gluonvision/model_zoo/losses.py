@@ -6,7 +6,7 @@ from __future__ import absolute_import
 from mxnet.gluon.loss import _apply_weighting
 
 
-class FocalLoss(Loss):
+class FocalLoss(mxnet.gluon.loss.Loss):
     """Focal Loss for inbalanced classification.
     Focal loss was described in https://arxiv.org/abs/1708.02002
 
