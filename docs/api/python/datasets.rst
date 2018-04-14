@@ -24,8 +24,8 @@ Pascal VOC: http://host.robots.ox.ac.uk/pascal/VOC/ is a vision dataset which
 - Ran challenges evaluating performance on object class recognition (from 2005-2012, now finished)
 
 .. autoclass:: gluonvision.data.VOCDetection
-.. autoclass:: gluonvision.data.VOCSegmentationDataset
-.. autoclass:: gluonvision.data.VOCAugSegmentationDataset
+.. autoclass:: gluonvision.data.VOCSegmentation
+.. autoclass:: gluonvision.data.VOCAugSegmentation
 
 ImageNet
 --------
@@ -33,6 +33,14 @@ ImageNet classification dataset is a large scale dataset for image classificatio
 
 .. autoclass:: gluonvision.data.ImageNet
 
+ADE20K
+------
+ADE20K datasets: http://groups.csail.mit.edu/vision/datasets/ADE20K/ is the largest Scene Parsing Benchmark.
+
+.. autoclass:: gluonvision.data.ADE20KSegmentation
+
 DataLoader
 ----------
 .. autoclass:: gluonvision.data.DetectionDataLoader
+
+

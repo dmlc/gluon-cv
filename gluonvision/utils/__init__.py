@@ -9,5 +9,4 @@ from . import viz
 from . import random
 
 from .lr_scheduler import PolyLRScheduler
-from .metrics.voc_segmentation import batch_pix_accuracy, batch_intersection_union
-from .parallel import ModelDataParallel, CriterionDataParallel
+from . import parallel, metrics

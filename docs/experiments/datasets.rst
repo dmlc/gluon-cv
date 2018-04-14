@@ -23,19 +23,19 @@ Link existing dataset on disk stored in ~/Datasets/voc for example:
 
 .. code:: bash
 
-  python examples/datasets/setup_pascal_voc.py --path ~/Datasets/voc
+  python scripts/datasets/setup_pascal_voc.py --path ~/Datasets/voc
 
 Download the dataset if you don't have it on disk
 
 .. code:: bash
 
-  python examples/datasets/setup_pascal_voc.py --path ~/Datasets/voc --download
+  python scripts/datasets/setup_pascal_voc.py --path ~/Datasets/voc --download
 
 Download and overwrite existing tarfiles if files are incomplete or corrupted
 
 .. code:: bash
 
-  python examples/datasets/setup_pascal_voc.py --path ~/Datasets/voc --download --overwrite
+  python scripts/datasets/setup_pascal_voc.py --path ~/Datasets/voc --download --overwrite
 
 
 .. note:: `path` specifies the `real` path on disk where the extracted files are stored. So make sure you have enough disk space for this operation.
@@ -67,20 +67,45 @@ If you already have extracted images to *train* and *val* directories, it will b
 
 .. code:: bash
 
-  python examples/datasets/setup_imagenet.py --path ~/Datasets/ILSVRC2012
+  python scripts/datasets/setup_imagenet.py --path ~/Datasets/ILSVRC2012
 
 If you have downloaded raw tarball files, it's automatically extracted and prepared for you:
 
 .. code:: bash
 
-  python examples/datasets/setup_imagenet.py --path ~/Datasets/ILSVRC2012 --download-dir ~/Downloads/
+  python scripts/datasets/setup_imagenet.py --path ~/Datasets/ILSVRC2012 --download-dir ~/Downloads/
 
 
 You can verify the sha-1 checksum, keep in mind that it will be slow for the large training file:
 
 .. code:: bash
 
-  python examples/datasets/setup_imagenet.py --path ~/Datasets/ILSVRC2012 --download-dir ~/Downloads/ --check-sha1
+  python scripts/datasets/setup_imagenet.py --path ~/Datasets/ILSVRC2012 --download-dir ~/Downloads/ --check-sha1
+
+
+.. note:: `path` specifies the `real` path on disk where the extracted files are stored. So make sure you have enough disk space for this operation.
+
+
+ADE20K
+------
+
+Link existing dataset on disk stored in ~/Datasets/voc for example:
+
+.. code:: bash
+
+  python scripts/datasets/setup_ade20k.py --path ~/Datasets/voc
+
+Download the dataset if you don't have it on disk
+
+.. code:: bash
+
+  python scripts/datasets/setup_ade20k.py --path ~/Datasets/voc --download
+
+Download and overwrite existing tarfiles if files are incomplete or corrupted
+
+.. code:: bash
+
+  python scripts/datasets/setup_ade20k.py --path ~/Datasets/voc --download --overwrite
 
 
 .. note:: `path` specifies the `real` path on disk where the extracted files are stored. So make sure you have enough disk space for this operation.

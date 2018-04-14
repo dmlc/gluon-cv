@@ -48,8 +48,6 @@ Extending the Software
 
 - Write your own Model ``mymodel.py`` to ``gluonvision/models/`` folder
 
-- Run the program:
-
-.. code:: python
+- Run the program::
 
     python main.py --dataset mydataset --model mymodel --nclass 10 ...
