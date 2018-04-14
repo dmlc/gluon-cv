@@ -1,6 +1,8 @@
 """Single-shot Multi-box Detector."""
 from __future__ import absolute_import
 
+import os
+import mxnet as mx
 from mxnet import autograd
 from mxnet.gluon import nn
 from mxnet.gluon import HybridBlock
@@ -9,7 +11,7 @@ from .anchor import SSDAnchorGenerator
 from ..predictors import ConvPredictor
 from ..coders import MultiPerClassDecoder, NormalizedBoxCenterDecoder
 from .target import SSDTargetGenerator
-from ..vgg_atrous import vgg16_atrous_300, vgg16_atrous_512
+from .vgg_atrous import vgg16_atrous_300, vgg16_atrous_512
 # from ...utils import set_lr_mult
 from ...data import VOCDetection
 
@@ -175,8 +177,9 @@ class SSD(HybridBlock):
         bboxes = F.slice_axis(result, axis=2, begin=2, end=6)
         return ids, scores, bboxes
 
-def get_ssd(name, base_size, features, filters, sizes, ratios, steps,
-            classes, pretrained=False, pretrained_base=True, **kwargs):
+def get_ssd(name, base_size, features, filters, sizes, ratios, steps, classes,
+            dataset, pretrained=False, pretrained_base=True, ctx=mx.cpu(),
+            root=os.path.join('~', '.mxnet', 'models'), **kwargs):
     """Get SSD models.
 
     Parameters
@@ -207,22 +210,33 @@ def get_ssd(name, base_size, features, filters, sizes, ratios, steps,
         Step size of anchor boxes in each output layer.
     classes : iterable of str
         Names of categories.
+    dataset : str
+        Name of dataset. This is used to identify model name because models trained on
+        differnet datasets are going to be very different.
     pretrained : bool, optional, default is False
         Load pretrained weights.
     pretrained_base : bool, optional, default is True
-        Load pretrained base network, the extra layers are randomized.
+        Load pretrained base network, the extra layers are randomized. Note that
+        if pretrained is `Ture`, this has no effect.
+    ctx : mxnet.Context
+        Context such as mx.cpu(), mx.gpu(0).
+    root : str
+        Model weights storing path.
 
     Returns
     -------
     HybridBlock
         A SSD detection network.
     """
-    net = SSD(name, base_size, features, filters, sizes, ratios, steps,
+    pretrained_base = False if pretrained else pretrained_base
+    base_name = None if callable(features) else name
+    net = SSD(base_name, base_size, features, filters, sizes, ratios, steps,
               pretrained=pretrained_base, classes=classes, **kwargs)
     if pretrained:
-        # load trained ssd model
-        raise NotImplementedError("Loading pretrained model for detection is not finished.")
-    # set_lr_mult(net, ".*_bias", 2.0)  #TODO(zhreshold): fix pattern
+        from ..model_store import get_model_file
+        full_name = '_'.join(('ssd', str(base_size), name, dataset))
+        net.load_params(get_model_file(full_name, root=root), ctx=ctx)
+    # set_lr_mult(net, ".*_bias", 2.0)
     return net
 
 def ssd_300_vgg16_atrous_voc(pretrained=False, pretrained_base=True, **kwargs):
@@ -241,11 +255,11 @@ def ssd_300_vgg16_atrous_voc(pretrained=False, pretrained_base=True, **kwargs):
         A SSD detection network.
     """
     classes = VOCDetection.CLASSES
-    net = get_ssd(None, 300, features=vgg16_atrous_300, filters=None,
+    net = get_ssd('vgg16_atrous', 300, features=vgg16_atrous_300, filters=None,
                   sizes=[30, 60, 111, 162, 213, 264, 315],
                   ratios=[[1, 2, 0.5]] + [[1, 2, 0.5, 3, 1.0/3]] * 3 + [[1, 2, 0.5]] * 2,
                   steps=[8, 16, 32, 64, 100, 300],
-                  classes=classes, pretrained=pretrained,
+                  classes=classes, dataset='voc', pretrained=pretrained,
                   pretrained_base=pretrained_base, **kwargs)
     return net
 
@@ -265,11 +279,11 @@ def ssd_512_vgg16_atrous_voc(pretrained=False, pretrained_base=True, **kwargs):
         A SSD detection network.
     """
     classes = VOCDetection.CLASSES
-    net = get_ssd(None, 512, features=vgg16_atrous_512, filters=None,
+    net = get_ssd('vgg16_atrous', 512, features=vgg16_atrous_512, filters=None,
                   sizes=[51.2, 76.8, 153.6, 230.4, 307.2, 384.0, 460.8, 537.6],
                   ratios=[[1, 2, 0.5]] + [[1, 2, 0.5, 3, 1.0/3]] * 4 + [[1, 2, 0.5]] * 2,
                   steps=[8, 16, 32, 64, 128, 256, 512],
-                  classes=classes, pretrained=pretrained,
+                  classes=classes, dataset='voc', pretrained=pretrained,
                   pretrained_base=pretrained_base, **kwargs)
     return net
 
@@ -295,7 +309,7 @@ def ssd_512_resnet18_v1_voc(pretrained=False, pretrained_base=True, **kwargs):
                    sizes=[51.2, 102.4, 189.4, 276.4, 363.52, 450.6, 492],
                    ratios=[[1, 2, 0.5]] + [[1, 2, 0.5, 3, 1.0/3]] * 3 + [[1, 2, 0.5]] * 2,
                    steps=[8, 16, 32, 64, 128, 256, 512],
-                   classes=classes, pretrained=pretrained,
+                   classes=classes, dataset='voc', pretrained=pretrained,
                    pretrained_base=pretrained_base, **kwargs)
 
 def ssd_512_resnet50_v1_voc(pretrained=False, pretrained_base=True, **kwargs):
@@ -320,7 +334,7 @@ def ssd_512_resnet50_v1_voc(pretrained=False, pretrained_base=True, **kwargs):
                    sizes=[51.2, 102.4, 189.4, 276.4, 363.52, 450.6, 492],
                    ratios=[[1, 2, 0.5]] + [[1, 2, 0.5, 3, 1.0/3]] * 3 + [[1, 2, 0.5]] * 2,
                    steps=[16, 32, 64, 128, 256, 512],
-                   classes=classes, pretrained=pretrained,
+                   classes=classes, dataset='voc', pretrained=pretrained,
                    pretrained_base=pretrained_base, **kwargs)
 
 def ssd_512_resnet101_v2_voc(pretrained=False, pretrained_base=True, **kwargs):
@@ -345,7 +359,7 @@ def ssd_512_resnet101_v2_voc(pretrained=False, pretrained_base=True, **kwargs):
                    sizes=[51.2, 102.4, 189.4, 276.4, 363.52, 450.6, 492],
                    ratios=[[1, 2, 0.5]] + [[1, 2, 0.5, 3, 1.0/3]] * 3 + [[1, 2, 0.5]] * 2,
                    steps=[16, 32, 64, 128, 256, 512],
-                   classes=classes, pretrained=pretrained,
+                   classes=classes, dataset='voc', pretrained=pretrained,
                    pretrained_base=pretrained_base, **kwargs)
 
 def ssd_512_resnet152_v2_voc(pretrained=False, pretrained_base=True, **kwargs):
@@ -367,8 +381,8 @@ def ssd_512_resnet152_v2_voc(pretrained=False, pretrained_base=True, **kwargs):
     return get_ssd('resnet152_v2', 512,
                    features=['stage2_activation7', 'stage3_activation35', 'stage4_activation2'],
                    filters=[512, 512, 256, 256],
-                   sizes=[51.2, 102.4, 189.4, 276.4, 363.52, 450.6, 492],
+                   sizes=[51.2, 76.8, 153.6, 230.4, 307.2, 384.0, 460.8, 537.6],
                    ratios=[[1, 2, 0.5]] + [[1, 2, 0.5, 3, 1.0/3]] * 4 + [[1, 2, 0.5]] * 2,
                    steps=[8, 16, 32, 64, 128, 256, 512],
-                   classes=classes, pretrained=pretrained,
+                   classes=classes, dataset='voc', pretrained=pretrained,
                    pretrained_base=pretrained_base, **kwargs)
