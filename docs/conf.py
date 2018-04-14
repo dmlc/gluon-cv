@@ -63,9 +63,9 @@ sphinx_gallery_conf = {
     'plot_gallery':False,
     'min_reported_time':10,
     'download_section_examples': False,
-    #'reference_url': {
-    #    'gluonvision':None,
-    #},
+    'reference_url': {
+        'gluonvision':None,
+    },
 }
 
 
