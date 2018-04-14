@@ -13,7 +13,7 @@ from .vgg_atrous import vgg16_atrous_300, vgg16_atrous_512
 # from ...utils import set_lr_mult
 from ...data import VOCDetection
 
-__all__ = ['ssd_300_vgg16_atrous_voc', 'ssd_512_vgg16_atrous_voc',
+__all__ = ['SSD', 'ssd_300_vgg16_atrous_voc', 'ssd_512_vgg16_atrous_voc',
            'ssd_512_resnet18_v1_voc', 'ssd_512_resnet50_v1_voc',
            'ssd_512_resnet101_v2_voc', 'ssd_512_resnet152_v2_voc']
 
