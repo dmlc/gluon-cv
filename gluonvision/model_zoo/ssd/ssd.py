@@ -9,7 +9,7 @@ from .anchor import SSDAnchorGenerator
 from ..predictors import ConvPredictor
 from ..coders import MultiPerClassDecoder, NormalizedBoxCenterDecoder
 from .target import SSDTargetGenerator
-from .vgg_atrous import vgg16_atrous_300, vgg16_atrous_512
+from ..vgg_atrous import vgg16_atrous_300, vgg16_atrous_512
 # from ...utils import set_lr_mult
 from ...data import VOCDetection
 

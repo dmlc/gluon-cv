@@ -7,7 +7,8 @@ from mxnet import gluon
 from mxnet.gluon import nn
 from mxnet.initializer import Xavier
 
-__all__ = ['VGGAtrousExtractor', 'get_vgg_atrous_extractor', 'vgg16_atrous_300',
+__all__ = ['VGGAtrousBase', 'VGGAtrousExtractor',
+           'get_vgg_atrous_extractor', 'vgg16_atrous_300',
            'vgg16_atrous_512']
 
 
@@ -37,7 +38,8 @@ class Normalize(gluon.HybridBlock):
 
 
 class VGGAtrousBase(gluon.HybridBlock):
-    """VGG Atrous multi layer base network.
+    """VGG Atrous multi layer base network. You must inherit from it to define
+    how the features are computed.
 
     Parameters
     ----------
@@ -85,14 +87,12 @@ class VGGAtrousBase(gluon.HybridBlock):
                 stage.add(nn.Activation('relu'))
             self.stages.add(stage)
 
-            # normalize layer for 4-th stage
-            self.norm4 = Normalize(filters[3], 20)
-
     def hybrid_forward(self, F, x, init_scale):
         raise NotImplementedError
 
 class VGGAtrousExtractor(VGGAtrousBase):
-    """VGG Atrous multi layer feature extractor.
+    """VGG Atrous multi layer feature extractor which produces multiple output
+    feauture maps.
 
     Parameters
     ----------
@@ -109,6 +109,9 @@ class VGGAtrousExtractor(VGGAtrousBase):
     def __init__(self, layers, filters, extras, batch_norm=False, **kwargs):
         super(VGGAtrousExtractor, self).__init__(layers, filters, batch_norm, **kwargs)
         with self.name_scope():
+            # normalize layer for 4-th stage
+            self.norm4 = Normalize(filters[3], 20)
+
             self.extras = nn.HybridSequential()
             for i, config in enumerate(extras):
                 extra = nn.HybridSequential(prefix='extra%d_'%(i))

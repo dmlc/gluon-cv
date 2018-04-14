@@ -1,5 +1,5 @@
-Vision Transformations
-======================
+Vision Transforms
+=================
 This file includes various transformations that is critical to vision tasks.
 
 Bounding Box Transformations
