@@ -1,39 +1,70 @@
 """Plot History from Training"""
+import os
 import matplotlib.pyplot as plt
 
 class TrainingHistory():
-    r"""Poly like Learning Rate Scheduler
-    It returns a new learning rate by::
-
-        lr = baselr * (1 - iter/maxiter) ^ power
+    r"""Training History Record and Plot
 
     Parameters
     ----------
-    items : list of str
-        List of names of the items in the history
+    labels : list of str
+        List of names of the labels in the history.
     """
-    def __init__(self, items):
+    def __init__(self, labels):
+        self.l = len(labels)
         self.history = {}
-        if items:
-            for it in items:
-                self.history[it] = []
-        self.l = len(items)
         self.epochs = 0
+        self.labels = labels
+        for lb in self.labels:
+            self.history[lb] = []
 
-    def update(self, kv):
-        assert len(kv) == self.l
-        for k, v in kv.items():
-            self.history[k].append(v)
+    def update(self, values):
+        r"""Update the training history
+
+        Parameters
+        ---------
+        values: list of float
+            List of metric scores for each label.
+        """
+        assert len(values) == self.l
+        for i, v in enumerate(values):
+            label = self.labels[i]
+            self.history[label].append(v)
         self.epochs += 1
 
-    def plot(self, items, tofile=None, legend_loc='upper right'):
-        line_lists = [None]*len(items)
-        for i, it in enumerate(items):
-            assert self.history[it] is not None
-            line_lists[i],  = plt.plot(list(range(self.epochs)), self.history[it], label=it)
-        # plt.legend(items, loc=legend_loc)
-        plt.legend(tuple(line_lists), items, loc=legend_loc)
-        if tofile is None:
+    def plot(self, labels=None, colors=None,
+             save_path=None, legend_loc='upper right'):
+        r"""Update the training history
+
+        Parameters
+        ---------
+        labels: list of str
+            List of label names to plot.
+        colors: list of str
+            List of line colors.
+        save_path: str
+            Path to save the plot. Will plot to screen if is None.
+        legend_loc: str
+            location of legend. upper right by default.
+        """
+        if labels is None:
+            labels = self.labels
+        n = len(labels)
+
+        line_lists = [None]*n
+        if colors is None:
+            colors = ['C'+str(i) for i in range(n)]
+        else:
+            assert len(colors) == n
+
+        for i, lb in enumerate(labels):
+            line_lists[i], = plt.plot(list(range(self.epochs)),
+                                      self.history[lb],
+                                      colors[i],
+                                      label=labels)
+        plt.legend(tuple(line_lists), self.labels, loc=legend_loc)
+        if save_path is None:
             plt.show()
         else:
-            plt.savefig(tofile)
+            save_path = os.path.expanduser(save_path)
+            plt.savefig(save_path)
