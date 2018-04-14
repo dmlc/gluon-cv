@@ -2,7 +2,7 @@
 # pylint: disable=arguments-differ,unused-argument
 from __future__ import division
 
-__all__ = ['Dilated_ResNetV2', 'DilatedBasicBlockV2', 'DilatedBottleneckV2',
+__all__ = ['DilatedResNetV2', 'DilatedBasicBlockV2', 'DilatedBottleneckV2',
            'dilated_resnet18', 'dilated_resnet34', 'dilated_resnet50',
            'dilated_resnet101', 'dilated_resnet152', 'get_dilated_resnet']
 
@@ -122,7 +122,7 @@ class DilatedBottleneckV2(HybridBlock):
 
 
 # Nets
-class Dilated_ResNetV2(HybridBlock):
+class DilatedResNetV2(HybridBlock):
     r"""Dilated_ResNet V2 model from
     `"Identity Mappings in Deep Residual Networks"
     <https://arxiv.org/abs/1603.05027>`_ paper.
@@ -145,7 +145,7 @@ class Dilated_ResNetV2(HybridBlock):
     """
     def __init__(self, block, layers, channels, classes=1000, thumbnail=False,
                  norm_layer=BatchNorm, **kwargs):
-        super(Dilated_ResNetV2, self).__init__(**kwargs)
+        super(DilatedResNetV2, self).__init__(**kwargs)
         assert len(layers) == len(channels) - 1
         with self.name_scope():
             self.features = nn.HybridSequential(prefix='')
@@ -240,7 +240,7 @@ def get_dilated_resnet(version, num_layers, pretrained=False, ctx=cpu(), root='~
     """
     block_type, layers, channels = dilated_resnet_spec[num_layers]
     block_class = dilated_resnet_block_versions[block_type]
-    net = Dilated_ResNetV2(block_class, layers, channels, **kwargs)
+    net = DilatedResNetV2(block_class, layers, channels, **kwargs)
     if pretrained:
         from mxnet.gluon.model_zoo.model_store import get_model_file
         net.load_params(get_model_file('resnet%d_v%d'%(num_layers, version),

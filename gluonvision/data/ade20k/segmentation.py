@@ -1,97 +1,62 @@
-"""Pascal Augmented VOC Semantic Segmentation Dataset."""
+"""Pascal ADE20K Semantic Segmentation Dataset."""
 import os
 import random
-import scipy.io
 from PIL import Image, ImageOps, ImageFilter
+
 from mxnet.gluon.data import dataset
 
-
-class VOCAugSegmentation(dataset.Dataset):
-    """Pascal VOC Augmented Semantic Segmentation Dataset.
+class ADE20KSegmentation(dataset.Dataset):
+    """ADE20K Semantic Segmentation Dataset.
 
     Parameters
     ----------
     root : string
         Path to VOCdevkit folder. Default is '$(HOME)/mxnet/datasplits/voc'
     split: string
-        'train' or 'val'
+        'train', 'val' or 'test'
     transform : callable, optional
         A function that transforms the image
     target_transform : callable, optional
         A function that transforms the labels
     """
-    TRAIN_BASE_DIR = 'VOCaug/dataset/'
-    def __init__(self, root=os.path.expanduser('~/.mxnet/datasets/voc'),
+    BASE_DIR = 'ADEChallengeData2016'
+    def __init__(self, root=os.path.expanduser('~/.mxnet/datasets/ade'),
                  split='train', transform=None, target_transform=None):
+        self.root = os.path.join(root, self.BASE_DIR)
         self.transform = transform
         self.target_transform = target_transform
-        self.train = split
-
-        # train/val/test splits are pre-cut
-        _voc_root = os.path.join(root, self.TRAIN_BASE_DIR)
-        _mask_dir = os.path.join(_voc_root, 'cls')
-        _image_dir = os.path.join(_voc_root, 'img')
-        if self.train == 'train':
-            _split_f = os.path.join(_voc_root, 'trainval.txt')
-        elif self.train == 'val':
-            _split_f = os.path.join(_voc_root, 'val.txt')
-        else:
-            raise RuntimeError('Unknown dataset split.')
-
-        self.images = []
-        self.masks = []
-        with open(os.path.join(_split_f), "r") as lines:
-            for line in lines:
-                _image = os.path.join(_image_dir, line.rstrip('\n')+".jpg")
-                assert os.path.isfile(_image)
-                self.images.append(_image)
-                _mask = os.path.join(_mask_dir, line.rstrip('\n')+".mat")
-                assert os.path.isfile(_mask)
-                self.masks.append(_mask)
-
+        self.mode = split
+        self.images, self.masks = _get_ade20k_pairs(self.root, split)
         assert (len(self.images) == len(self.masks))
-
-    @property
-    def classes(self):
-        """Category names."""
-        return ('background', 'airplane', 'bicycle', 'bird', 'boat', 'bottle',
-                'bus', 'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse',
-                'motorcycle', 'person', 'potted-plant', 'sheep', 'sofa', 'train',
-                'tv', 'ambigious')
-
-    @property
-    def num_class(self):
-        """Number of categories."""
-        return len(self.classes)
+        if len(self.images) == 0:
+            raise(RuntimeError("Found 0 images in subfolders of: \
+                " + self.root + "\n"))
 
     def __getitem__(self, index):
         img = Image.open(self.images[index]).convert('RGB')
-        if self.train == 'test':
+        if self.mode == 'test':
             if self.transform is not None:
                 img = self.transform(img)
             return img, os.path.basename(self.images[index])
 
-        target = self._load_mat(self.masks[index])
-
+        mask = Image.open(self.masks[index])#.convert("P")
         # synchrosized transform
-        if self.train == 'train':
-            img, target = self._sync_transform(img, target)
-        elif self.train == 'val':
-            img, target = self._val_sync_transform(img, target)
+        if self.mode == 'train':
+            img, mask = self._sync_transform(img, mask)
+        elif self.mode == 'val':
+            img, mask = self._val_sync_transform(img, mask)
+        else:
+            raise RuntimeError('unknown mode for dataloader: {}'.format(self.mode))
 
         # general resize, normalize and toTensor
         if self.transform is not None:
+            #print("transform for input")
             img = self.transform(img)
         if self.target_transform is not None:
-            target = self.target_transform(target)
+            #print("transform for label")
+            mask = self.target_transform(mask)
 
-        return img, target
-
-    def _load_mat(self, filename):
-        mat = scipy.io.loadmat(filename, mat_dtype=True, squeeze_me=True,
-                               struct_as_record=False)
-        mask = mat['GTcls'].Segmentation
-        return Image.fromarray(mask)
+        return img, mask
 
     def __len__(self):
         return len(self.images)
@@ -153,11 +118,34 @@ class VOCAugSegmentation(dataset.Dataset):
         y1 = random.randint(0, h - crop_size)
         img = img.crop((x1, y1, x1+crop_size, y1+crop_size))
         mask = mask.crop((x1, y1, x1+crop_size, y1+crop_size))
-        # gaussian blur as in PSP
+        # gaussian blur as in PSP ?
         if random.random() < 0.5:
             img = img.filter(ImageFilter.GaussianBlur(
                 radius=random.random()))
         return img, mask
 
+def _get_ade20k_pairs(folder, mode='train'):
+    img_paths = []
+    mask_paths = []
+    if mode == 'train':
+        img_folder = os.path.join(folder, 'images/training')
+        mask_folder = os.path.join(folder, 'annotations/training')
+    else:
+        img_folder = os.path.join(folder, 'images/validation')
+        mask_folder = os.path.join(folder, 'annotations/validation')
+    for filename in os.listdir(img_folder):
+        basename, _ = os.path.splitext(filename)
+        if filename.endswith(".jpg"):
+            imgpath = os.path.join(img_folder, filename)
+            maskname = basename + '.png'
+            maskpath = os.path.join(mask_folder, maskname)
+            if os.path.isfile(maskpath):
+                img_paths.append(imgpath)
+                mask_paths.append(maskpath)
+            else:
+                print('cannot find the mask:', maskpath)
+
+    return img_paths, mask_paths
+
 # acronym for easy load
-_Segmentation = VOCAugSegmentation
+_Segmentation = ADE20KSegmentation

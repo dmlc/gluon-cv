@@ -27,10 +27,10 @@ Dilated Network
 
 We apply dilattion strategy to pre-trained ResNet models (with stride of 8). Please see :class:`gluonvision.model_zoo.SegBaseModel` for how to use it.
 
-:hidden:`Dilated_ResNetV2`
+:hidden:`DilatedResNetV2`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: Dilated_ResNetV2
+.. autoclass:: DilatedResNetV2
     :members:
 
 :hidden:`DilatedBasicBlockV2`
@@ -114,10 +114,10 @@ Common Components
 
 .. currentmodule:: gluonvision.model_zoo.bbox
 
-.. autoclass:: BboxCornerToCenter
+.. autoclass:: BBoxCornerToCenter
     :members:
 
-.. autoclass:: BboxCenterToCorner
+.. autoclass:: BBoxCenterToCorner
     :members:
 
 :hidden:`Coders`

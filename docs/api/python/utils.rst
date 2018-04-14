@@ -4,6 +4,7 @@
 Utility functions
 =================
 
+.. currentmodule:: gluonvision.utils
 .. automodule:: gluonvision.utils
 
 :hidden:`PolyLRScheduler`
@@ -12,14 +13,3 @@ Utility functions
 .. autoclass:: PolyLRScheduler
     :members:
 
-:hidden:`ModelDataParallel`
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. autoclass:: ModelDataParallel
-    :members:
-
-:hidden:`CriterionDataParallel`
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. autoclass:: CriterionDataParallel
-    :members:

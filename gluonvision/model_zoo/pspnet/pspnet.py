@@ -34,7 +34,6 @@ class PSPNet(SegBaseModel):
     def __init__(self, nclass, backbone='resnet50', norm_layer=nn.BatchNorm, aux=True):
         super(PSPNet, self).__init__(backbone, norm_layer)
         self.aux = aux
-        self._prefix = ''
         with self.name_scope():
             self.head = _PSPHead(nclass)
         self.head.initialize(init=init.Xavier())

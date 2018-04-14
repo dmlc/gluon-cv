@@ -41,6 +41,9 @@ class VOCDetection(VisionDataset):
         Whether or not normalize box coordinates to range (0, 1) by dividing width/height.
 
     """
+    CLASSES = ('aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car',
+               'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse', 'motorbike',
+               'person', 'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor')
     def __init__(self, root=os.path.join('~', '.mxnet', 'datasets', 'voc'),
                  splits='train', flag=1, transform=None, index_map=None,
                  preload=True, normalize_bbox=False):
@@ -64,9 +67,7 @@ class VOCDetection(VisionDataset):
     @property
     def classes(self):
         """Category names."""
-        return ('aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car',
-                'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse', 'motorbike',
-                'person', 'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor')
+        return type(self).CLASSES
 
     def __len__(self):
         return len(self._items)

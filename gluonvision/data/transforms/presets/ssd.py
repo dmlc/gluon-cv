@@ -1,7 +1,10 @@
-"""Transforms speficically written for Single-Shot Object Detection."""
+"""Transforms described in https://arxiv.org/abs/1512.02325."""
+from __future__ import absolute_import
 import numpy as np
 import mxnet as mx
-from ...data import transforms
+from .. import bbox as tbbox
+from .. import image as timage
+from .. import experimental
 
 __all__ = ['SSDDefaultTrainTransform', 'SSDDefaultValTransform']
 
@@ -28,35 +31,32 @@ class SSDDefaultTrainTransform(object):
         self._std = std
 
     def __call__(self, src, label):
+        # random color jittering
+        img = experimental.image.random_color_distort(src)
+
         # random expansion with prob 0.5
         if np.random.uniform(0, 1) > 0.5:
-            img, expand = transforms.image.random_expand(src, fill=[m * 255 for m in self._mean])
-            bbox = transforms.bbox.translate(label, x_offset=expand[0], y_offset=expand[1])
+            img, expand = timage.random_expand(img, fill=[m * 255 for m in self._mean])
+            bbox = tbbox.translate(label, x_offset=expand[0], y_offset=expand[1])
         else:
-            img, bbox = src, label
-        h, w, _ = img.shape
-
+            img, bbox = img, label
 
         # random cropping
         h, w, _ = img.shape
-        bbox, crop = transforms.experimental.bbox.random_crop_with_constraints(bbox, (w, h))
+        bbox, crop = experimental.bbox.random_crop_with_constraints(bbox, (w, h))
         x0, y0, w, h = crop
         img = mx.image.fixed_crop(img, x0, y0, w, h)
 
         # resize with random interpolation
         h, w, _ = img.shape
         interp = np.random.randint(0, 5)
-        img = transforms.image.imresize(img, self._width, self._height, interp=interp)
-        bbox = transforms.bbox.resize(bbox, (w, h), (self._width, self._height))
-
+        img = timage.imresize(img, self._width, self._height, interp=interp)
+        bbox = tbbox.resize(bbox, (w, h), (self._width, self._height))
 
         # random horizontal flip
         h, w, _ = img.shape
-        img, flips = transforms.image.random_flip(img, px=0.5)
-        bbox = transforms.bbox.flip(bbox, (w, h), flip_x=flips[0])
-
-        # random color jittering
-        img = transforms.experimental.image.random_color_distort(img.astype('float32'))
+        img, flips = timage.random_flip(img, px=0.5)
+        bbox = tbbox.flip(bbox, (w, h), flip_x=flips[0])
 
         # to tensor
         img = mx.nd.image.to_tensor(img)
@@ -88,9 +88,8 @@ class SSDDefaultValTransform(object):
     def __call__(self, src, label):
         # resize
         h, w, _ = src.shape
-        img = transforms.image.imresize(src, self._width, self._height)
-        bbox = transforms.bbox.resize(
-            label, in_size=(w, h), out_size=(self._width, self._height))
+        img = timage.imresize(src, self._width, self._height)
+        bbox = tbbox.resize(label, in_size=(w, h), out_size=(self._width, self._height))
 
         img = mx.nd.image.to_tensor(img)
         img = mx.nd.image.normalize(img, mean=self._mean, std=self._std)

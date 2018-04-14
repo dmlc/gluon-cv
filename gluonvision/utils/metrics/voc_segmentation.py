@@ -6,12 +6,13 @@ def batch_pix_accuracy(output, target, bg=False):
     """PixAcc"""
     # inputs are NDarray, output 4D, target 3D
     predict = F.argmax(output, 1)
+    target = target.astype(predict.dtype)
     if bg:
-        pixel_labeled = (target > 0).sum()
-        pixel_correct = (F.equal(predict, target)*(target > 0)).sum().asnumpy()[0]
+        pixel_labeled = (target > 0).sum().asscalar()
+        pixel_correct = (F.equal(predict, target)*(target > 0.0)).sum().asscalar()
     else:
         pixel_labeled = target.size
-        pixel_correct = F.equal(predict.astype(target.dtype), target).sum().asnumpy()[0]
+        pixel_correct = F.equal(predict, target).sum().asscalar()
     return pixel_correct, pixel_labeled
 
 
@@ -19,6 +20,7 @@ def batch_intersection_union(output, target, nclass, bg=False):
     """mIoU"""
     # inputs are NDarray, output 4D, target 3D
     predict = F.argmax(output, 1)
+    target = target.astype(predict.dtype)
     mini = 0
     nbins = nclass
     maxi = nclass - 1
@@ -26,7 +28,7 @@ def batch_intersection_union(output, target, nclass, bg=False):
         mini = 1
         nbins -= 1
         predict = predict * (target > 0).astype(predict.dtype)
-    intersection = predict * (F.equal(predict, target.astype(predict.dtype))).astype(predict.dtype)
+    intersection = predict * (F.equal(predict, target)).astype(predict.dtype)
     # bg=True, ignoring class 0; bg = False, use class 0
     # areas of intersection and union
     area_inter, _ = np.histogram(intersection.asnumpy(), bins=nbins,

@@ -3,6 +3,7 @@ Losses are used to penalize incorrect classification and inaccurate box regressi
 Losses are subclasses of gluon.loss.Loss which is a HybridBlock actually.
 """
 from __future__ import absolute_import
+import mxnet
 from mxnet.gluon.loss import _apply_weighting
 
 
