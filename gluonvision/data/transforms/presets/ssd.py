@@ -9,7 +9,7 @@ from .. import experimental
 __all__ = ['load_test', 'SSDDefaultTrainTransform', 'SSDDefaultValTransform']
 
 def load_test(filenames, short, max_size=1024, mean=(0.485, 0.456, 0.406),
-                      std=(0.229, 0.224, 0.225)):
+              std=(0.229, 0.224, 0.225)):
     """A util function to load all images, transform them to tensor by applying
     normalizations. This function support 1 filename or list of filenames.
 
