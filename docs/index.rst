@@ -55,7 +55,7 @@ Then clone the GluonVision project and install it locally
 A Quick Example
 ----------------
 
-(get a pretrained SSD model and then run forward)
+.. toctree:: examples/detection/ssd_demo.rst
 
 
 .. toctree::
