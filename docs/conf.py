@@ -59,7 +59,7 @@ extensions = [
 
 sphinx_gallery_conf = {
     # path to your examples scripts
-    'examples_dirs': ['../scripts', '../scripts/detection/'],
+    'examples_dirs': ['../scripts'],
     # path where to save gallery generated examples
     'gallery_dirs': 'examples',
     # how to sort tutorials
