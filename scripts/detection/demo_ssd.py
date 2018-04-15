@@ -21,7 +21,7 @@ A quick solution is
 or please refer to offical `installation
 guide <http://gluon-vision.mxnet.io.s3-website-us-west-2.amazonaws.com/index.html#installation>`__.
 
-.. code:: ipython
+.. code:: python
 
     import mxnet as mx
     import gluonvision as gv
@@ -33,7 +33,7 @@ Obtain a pretrained model
 
 In this section, we grab a pretrained model and test image to play with
 
-.. code:: ipython
+.. code:: python
 
     # try grab a 300x300 model trained on Pascal voc dataset.
     # it will automatically download from s3 servers if not exists
@@ -44,7 +44,7 @@ Pre-process image
 
 A raw image must be converted to tensor before inference.
 
-.. code:: ipython
+.. code:: python
 
     from gluonvision.data.transforms import presets
 
@@ -65,7 +65,7 @@ A raw image must be converted to tensor before inference.
 Inference and display
 ---------------------
 
-.. code:: ipython
+.. code:: python
 
     ids, scores, bboxes = [xx[0].asnumpy() for xx in net(x)]
     from gluonvision.utils import viz
