@@ -5,6 +5,8 @@ Getting started with SSD pre-trained models
 This article is an introductory tutorial to play with pre-trained models
 with several lines of code.
 
+.. image:: https://cloud.githubusercontent.com/assets/3307514/20012568/cbc2d6f6-a27d-11e6-94c3-d35a9cb47609.jpg
+
 For us to begin with, mxnet and gluonvvision modules are required to be
 installed.
 

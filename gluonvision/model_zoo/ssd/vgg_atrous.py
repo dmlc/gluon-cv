@@ -7,8 +7,7 @@ from mxnet import gluon
 from mxnet.gluon import nn
 from mxnet.initializer import Xavier
 
-__all__ = ['VGGAtrousExtractor',
-           'get_vgg_atrous_extractor', 'vgg16_atrous_300',
+__all__ = ['VGGAtrousExtractor', 'get_vgg_atrous_extractor', 'vgg16_atrous_300',
            'vgg16_atrous_512']
 
 
