@@ -74,6 +74,8 @@ Object Detection
 :hidden:`SSD`
 ~~~~~~~~~~~~~
 
+.. currentmodule:: gluonvision.model_zoo.ssd
+
 .. autoclass:: SSD
     :members:
 
@@ -95,6 +97,8 @@ Object Detection
 .. autofunction:: get_vgg_atrous_extractor
 .. autofunction:: vgg16_atrous_300
 .. autofunction:: vgg16_atrous_512
+
+.. currentmodule:: gluonvision.model_zoo
 
 Semantic Segmentation
 ---------------------

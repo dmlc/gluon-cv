@@ -1,8 +1,8 @@
 """
-Initialize PASCAL VOC datasets
+Prepare PASCAL VOC datasets
 ==============================
 
-. http://host.robots.ox.ac.uk/pascal/VOC/
+http://host.robots.ox.ac.uk/pascal/VOC/
 This example script will try to download dataset from specifed years
 (07trainvaltest, 2012trainval by default) if not exist, extract contents to disk
 and make symbolic link to '~/.mxnet/datasets/voc' so user can use

@@ -1,5 +1,7 @@
-"""Prepare ADE20K datasets. http://sceneparsing.csail.mit.edu/
+"""Prepare ADE20K datasets.
+===========================
 
+http://sceneparsing.csail.mit.edu/
 Scene parsing is to segment and parse an image into different image regions associated with semantic categories, such as sky, road, person, and bed. The data for this benchmark comes from ADE20K Dataset which contains more than 20K scene-centric images exhaustively annotated with objects and object parts. g. There are totally 150 semantic categories included for evaluation, which include stuffs like sky, road, grass, and discrete objects like person, car, bed.
 
 .. image:: http://groups.csail.mit.edu/vision/datasets/ADE20K/assets/images/examples.png
@@ -41,7 +43,7 @@ def download_aug(path, overwrite=False):
         # extract
         with zipfile.ZipFile(filename,"r") as zip_ref:
             zip_ref.extractall(path=path)
-        
+
 
 if __name__ == '__main__':
     args = parse_args()

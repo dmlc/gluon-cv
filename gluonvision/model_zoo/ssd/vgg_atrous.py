@@ -37,7 +37,8 @@ class Normalize(gluon.HybridBlock):
 
 
 class VGGAtrousBase(gluon.HybridBlock):
-    """VGG Atrous multi layer base network.
+    """VGG Atrous multi layer base network. You must inherit from it to define
+    how the features are computed.
 
     Parameters
     ----------
@@ -92,7 +93,8 @@ class VGGAtrousBase(gluon.HybridBlock):
         raise NotImplementedError
 
 class VGGAtrousExtractor(VGGAtrousBase):
-    """VGG Atrous multi layer feature extractor.
+    """VGG Atrous multi layer feature extractor which produces multiple output
+    feauture maps.
 
     Parameters
     ----------
