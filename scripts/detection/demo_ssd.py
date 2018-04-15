@@ -7,7 +7,7 @@ Getting started with SSD pre-trained models
 This article is an introductory tutorial to play with pre-trained models
 with several lines of code.
 
-.. image:: https://cloud.githubusercontent.com/assets/3307514/20012568/cbc2d6f6-a27d-11e6-94c3-d35a9cb47609.jpg
+.. image:: https://github.com/zhreshold/gluonvision-tutorials/blob/master/detection/ssd/street_small.jpg?raw=true
 
 For us to begin with, mxnet and gluonvvision modules are required to be
 installed.
@@ -21,7 +21,7 @@ A quick solution is
 or please refer to offical `installation
 guide <http://gluon-vision.mxnet.io.s3-website-us-west-2.amazonaws.com/index.html#installation>`__.
 
-.. code:: ipython3
+.. code:: ipython
 
     import mxnet as mx
     import gluonvision as gv
@@ -33,7 +33,7 @@ Obtain a pretrained model
 
 In this section, we grab a pretrained model and test image to play with
 
-.. code:: ipython3
+.. code:: ipython
 
     # try grab a 300x300 model trained on Pascal voc dataset.
     # it will automatically download from s3 servers if not exists
@@ -44,7 +44,7 @@ Pre-process image
 
 A raw image must be converted to tensor before inference.
 
-.. code:: ipython3
+.. code:: ipython
 
     from gluonvision.data.transforms import presets
 
@@ -65,7 +65,7 @@ A raw image must be converted to tensor before inference.
 Inference and display
 ---------------------
 
-.. code:: ipython3
+.. code:: ipython
 
     ids, scores, bboxes = [xx[0].asnumpy() for xx in net(x)]
     from gluonvision.utils import viz
