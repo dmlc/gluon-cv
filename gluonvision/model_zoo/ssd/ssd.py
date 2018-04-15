@@ -127,9 +127,10 @@ class SSD(HybridBlock):
             asz = anchor_alloc_size
             im_size = (base_size, base_size)
             for i, s, r, st in zip(range(num_layers), sizes, ratios, steps):
-                self.anchor_generators.add(SSDAnchorGenerator(i, im_size, s, r, st, (asz, asz)))
+                anchor_generator = SSDAnchorGenerator(i, im_size, s, r, st, (asz, asz))
+                self.anchor_generators.add(anchor_generator)
                 asz = max(asz // 2, 16)  # pre-compute larger than 16x16 anchor map
-                num_anchors = self.anchor_generators[-1].num_depth
+                num_anchors = anchor_generator.num_depth
                 self.class_predictors.add(ConvPredictor(num_anchors * self.num_classes))
                 self.box_predictors.add(ConvPredictor(num_anchors * 4))
             self.bbox_decoder = NormalizedBoxCenterDecoder(stds)

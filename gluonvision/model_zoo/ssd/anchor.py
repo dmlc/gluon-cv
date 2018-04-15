@@ -30,7 +30,7 @@ class SSDAnchorGenerator(gluon.HybridBlock):
 
     """
     def __init__(self, index, im_size, sizes, ratios, step, alloc_size=(128, 128),
-                 offsets=(0.5, 0.5), clip=True, **kwargs):
+                 offsets=(0.5, 0.5), clip=False, **kwargs):
         super(SSDAnchorGenerator, self).__init__(**kwargs)
         assert len(im_size) == 2
         self._im_size = im_size
