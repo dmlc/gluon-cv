@@ -75,6 +75,7 @@ sphinx_gallery_conf = {
     'reference_url': {
         'gluonvision':None,
     },
+    'backreferences_dir': False,
 }
 
 

@@ -1,4 +1,6 @@
 """
+.. _ssd-demo:
+
 Getting started with SSD pre-trained models
 ===========================================
 
@@ -26,7 +28,7 @@ guide <http://gluon-vision.mxnet.io.s3-website-us-west-2.amazonaws.com/index.htm
     from matplotlib import pyplot as plt
     %matplotlib inline
 
-Obtain a with pretrained model
+Obtain a pretrained model
 ------------------------------
 
 In this section, we grab a pretrained model and test image to play with

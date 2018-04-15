@@ -55,7 +55,7 @@ Then clone the GluonVision project and install it locally
 A Quick Example
 ----------------
 
-.. toctree:: examples/detection/ssd_demo.rst
+:ref:`ssd-demo`
 
 
 .. toctree::
@@ -73,7 +73,6 @@ A Quick Example
    api/python/models
    api/python/transforms
    api/python/utils
-   api/python/visualizations
 
 .. toctree::
    :maxdepth: 1
