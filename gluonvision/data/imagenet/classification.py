@@ -14,9 +14,10 @@ class ImageNet(ImageFolderDataset):
     train : bool, default True
         Whether to load the training or testing set.
     transform : function, default None
-        A user defined callback that transforms each sample. For example:
-    ::
+        A user defined callback that transforms each sample. For example::
+
         transform=lambda data, label: (data.astype(np.float32)/255, label)
+
 
     """
     def __init__(self, root=os.path.join('~', '.mxnet', 'datasets', 'imagenet'),

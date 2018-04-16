@@ -29,6 +29,7 @@ class VOCDetection(VisionDataset):
         A function that takes data and label and transforms them::
 
             transform = lambda data, label: (data.astype(np.float32)/255, label)
+
         A transform function for object detection should take label into consideration,
         because any geometric modification will require label to be modified.
     index_map : dict, optional

@@ -24,8 +24,10 @@ __all__ = ['get_cifar_resnet',
            'cifar_resnet20_v1', 'cifar_resnet56_v1', 'cifar_resnet110_v1',
            'cifar_resnet20_v2', 'cifar_resnet56_v2', 'cifar_resnet110_v2']
 
+import os
 from mxnet.gluon.block import HybridBlock
 from mxnet.gluon import nn
+from mxnet import cpu
 
 # Helpers
 def _conv3x3(channels, stride, in_channels):
@@ -240,7 +242,8 @@ def _get_resnet_spec(num_layers):
 
 
 # Constructor
-def get_cifar_resnet(version, num_layers, **kwargs):
+def get_cifar_resnet(version, num_layers, pretrained=False, ctx=cpu(),
+                     root=os.path.join('~', '.mxnet', 'models'), **kwargs):
     r"""ResNet V1 model from `"Deep Residual Learning for Image Recognition"
     <http://arxiv.org/abs/1512.03385>`_ paper.
     ResNet V2 model from `"Identity Mappings in Deep Residual Networks"
@@ -265,43 +268,91 @@ def get_cifar_resnet(version, num_layers, **kwargs):
     block_class = resnet_block_versions[version-1]
     net = resnet_class(block_class, layers, channels, **kwargs)
     if pretrained:
-        _ = ctx
-        _ = root
-        raise NotImplementedError("Pretrained model not ready")
+        from .model_store import get_model_file
+        net.load_params(get_model_file('cifar_resnet%d_v%d'%(num_layers, version),
+                                       root=root), ctx=ctx)
     return net
 
 def cifar_resnet20_v1(**kwargs):
-    """ResNet20_v1 for CIFAR Dataset
-
+    r"""ResNet-20 V1 model for CIFAR10 from `"Deep Residual Learning for Image Recognition"
+    <http://arxiv.org/abs/1512.03385>`_ paper.
+    Parameters
+    ----------
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
     """
     return get_cifar_resnet(1, 20, **kwargs)
 
 def cifar_resnet56_v1(**kwargs):
-    """ResNet56_v1 for CIFAR Dataset
-
+    r"""ResNet-56 V1 model for CIFAR10 from `"Deep Residual Learning for Image Recognition"
+    <http://arxiv.org/abs/1512.03385>`_ paper.
+    Parameters
+    ----------
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
     """
     return get_cifar_resnet(1, 56, **kwargs)
 
 def cifar_resnet110_v1(**kwargs):
-    """ResNet110_v1 for CIFAR Dataset
-
+    r"""ResNet-110 V1 model for CIFAR10 from `"Deep Residual Learning for Image Recognition"
+    <http://arxiv.org/abs/1512.03385>`_ paper.
+    Parameters
+    ----------
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
     """
     return get_cifar_resnet(1, 110, **kwargs)
 
 def cifar_resnet20_v2(**kwargs):
-    """ResNet20_v1 for CIFAR Dataset
-
+    r"""ResNet-20 V2 model for CIFAR10 from `"Identity Mappings in Deep Residual Networks"
+    <https://arxiv.org/abs/1603.05027>`_ paper.
+    Parameters
+    ----------
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
     """
     return get_cifar_resnet(2, 20, **kwargs)
 
 def cifar_resnet56_v2(**kwargs):
-    """ResNet56_v2 for CIFAR Dataset
-
+    r"""ResNet-56 V2 model for CIFAR10 from `"Identity Mappings in Deep Residual Networks"
+    <https://arxiv.org/abs/1603.05027>`_ paper.
+    Parameters
+    ----------
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
     """
     return get_cifar_resnet(2, 56, **kwargs)
 
 def cifar_resnet110_v2(**kwargs):
-    """ResNet110_v2 for CIFAR Dataset
-
+    r"""ResNet-110 V2 model for CIFAR10 from `"Identity Mappings in Deep Residual Networks"
+    <https://arxiv.org/abs/1603.05027>`_ paper.
+    Parameters
+    ----------
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
     """
     return get_cifar_resnet(2, 110, **kwargs)

@@ -43,10 +43,9 @@ def get_model(name, **kwargs):
         'cifar_resnet20_v2': cifar_resnet20_v2,
         'cifar_resnet56_v2': cifar_resnet56_v2,
         'cifar_resnet110_v2': cifar_resnet110_v2,
-        'cifar_wideresnet16': cifar_wideresnet16,
-        'cifar_wideresnet22': cifar_wideresnet22,
-        'cifar_wideresnet28': cifar_wideresnet28,
-        'cifar_wideresnet40': cifar_wideresnet40,
+        'cifar_wideresnet16_10': cifar_wideresnet16_10,
+        'cifar_wideresnet28_10': cifar_wideresnet28_10,
+        'cifar_wideresnet40_8': cifar_wideresnet40_8,
         }
     try:
         net = gluon.model_zoo.vision.get_model(name, **kwargs)
