@@ -62,7 +62,9 @@ A Quick Example
    :maxdepth: 2
    :caption: Tutorials
 
-   examples/index
+   examples_datasets/index
+   examples_classification/index
+   examples_detection/index
 
 .. toctree::
    :maxdepth: 1

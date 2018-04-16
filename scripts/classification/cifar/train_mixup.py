@@ -1,9 +1,13 @@
 """
-Train CIFAR-10
-==============
+Train on CIFAR-10 with Mixup
+============================
 
 """
+
 from __future__ import division
+
+import matplotlib
+matplotlib.use('Agg')
 
 import argparse, time, logging, random, math
 
@@ -16,7 +20,7 @@ from mxnet.gluon import nn
 from mxnet.gluon.data.vision import transforms
 
 from gluonvision.model_zoo import get_model
-from gluonvision.utils import makedirs
+from gluonvision.utils import makedirs, TrainingHistory
 
 # CLI
 parser = argparse.ArgumentParser(description='Train a model for image classification.')
@@ -54,6 +58,10 @@ parser.add_argument('--save-dir', type=str, default='params',
                     help='directory of saved models')
 parser.add_argument('--logging-dir', type=str, default='logs',
                     help='directory of training logs')
+parser.add_argument('--resume-from', type=str,
+                    help='resume training from the model')
+parser.add_argument('--save-plot-dir', type=str, default='.',
+                    help='the path to save the history plot')
 opt = parser.parse_args()
 
 batch_size = opt.batch_size
@@ -74,6 +82,9 @@ if model_name.startswith('cifar_wideresnet'):
 else:
     kwargs = {'classes': classes}
 net = get_model(model_name, **kwargs)
+model_name += '_mixup'
+if opt.resume_from:
+    net.load_params(opt.resume_from, ctx = context)
 optimizer = 'nag'
 
 save_period = opt.save_period
@@ -83,6 +94,8 @@ if opt.save_dir and save_period:
 else:
     save_dir = ''
     save_period = 0
+
+plot_name = opt.save_plot_dir
 
 logging_handlers = [logging.StreamHandler()]
 if opt.logging_dir:
@@ -109,6 +122,12 @@ transform_test = transforms.Compose([
     transforms.Normalize([0.4914, 0.4822, 0.4465], [0.2023, 0.1994, 0.2010])
 ])
 
+def label_transform(label, classes):
+    ind = label.astype('int')
+    res = nd.zeros((ind.shape[0], classes), ctx = label.context)
+    res[nd.arange(ind.shape[0], ctx = label.context), ind] = 1
+    return res
+
 def test(ctx, val_data):
     metric = mx.metric.Accuracy()
     for i, batch in enumerate(val_data):
@@ -134,11 +153,14 @@ def train(epochs, ctx):
     trainer = gluon.Trainer(net.collect_params(), optimizer,
                             {'learning_rate': opt.lr, 'wd': opt.wd, 'momentum': opt.momentum})
     metric = mx.metric.Accuracy()
-    train_metric = mx.metric.Accuracy()
-    loss_fn = gluon.loss.SoftmaxCrossEntropyLoss()
+    train_metric = mx.metric.RMSE()
+    loss_fn = gluon.loss.SoftmaxCrossEntropyLoss(sparse_label=False)
+    train_history = TrainingHistory(['training-error', 'validation-error'])
 
     iteration = 0
     lr_decay_count = 0
+
+    best_val_score = 0
 
     for epoch in range(epochs):
         tic = time.time()
@@ -153,8 +175,19 @@ def train(epochs, ctx):
             lr_decay_count += 1
 
         for i, batch in enumerate(train_data):
-            data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
-            label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0)
+            lam = np.random.beta(alpha, alpha)
+            if epoch >= epochs - 50:
+                lam = 1
+
+            data_1 = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
+            label_1 = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0)
+
+            data = [lam*X + (1-lam)*X[::-1] for X in data_1]
+            label = []
+            for Y in label_1:
+                y1 = label_transform(Y, classes)
+                y2 = label_transform(Y[::-1], classes)
+                label.append(lam*y1 + (1-lam)*y2)
 
             with ag.record():
                 output = [net(X) for X in data]
@@ -164,11 +197,22 @@ def train(epochs, ctx):
             trainer.step(batch_size)
             train_loss += sum([l.sum().asscalar() for l in loss])
 
-            train_metric.update(label, output)
+            output_softmax = [nd.SoftmaxActivation(out) for out in output]
+            train_metric.update(label, output_softmax)
             name, acc = train_metric.get()
             iteration += 1
 
         name, acc = train_metric.get()
+        name, val_acc = test(ctx, val_data)
+        train_history.update({'training-rmse': acc, 'validation-error': 1-val_acc})
+        train_history.plot(items=['training-error', 'validation-error'],
+                              tofile='%s/%s_history.png'%(plot_name, model_name))
+        logging.info('[Epoch %d] train=%f val=%f loss=%f time: %f' %
+            (epoch, acc, val_acc, train_loss, time.time()-tic))
+
+        if val_acc > best_val_score and epoch > 200:
+            best_val_score = val_acc
+            net.save_params('%s/%.4f-imagenet-%s-%d-best.params'%(save_dir, best_val_score, model_name, epoch))
         if val_data is not None:
             name, val_acc = test(ctx, val_data)
             logging.info('[Epoch %d] train=%f val=%f loss=%f time: %f' %

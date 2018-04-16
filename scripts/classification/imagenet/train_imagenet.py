@@ -16,9 +16,7 @@ from mxnet.gluon import nn
 from mxnet.gluon.model_zoo import vision as models
 from mxnet.gluon.data.vision import transforms
 
-import sys, os
-sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
-from gluonvision.datasets import imagenet
+from gluonvision.data import imagenet
 from gluonvision.utils import makedirs
 
 # CLI
@@ -29,13 +27,13 @@ parser.add_argument('--batch-size', type=int, default=32,
                     help='training batch size per device (CPU/GPU).')
 parser.add_argument('--num-gpus', type=int, default=0,
                     help='number of gpus to use.')
-parser.add_argument('-j', '--workers', dest='num_workers', default=4, type=int,
+parser.add_argument('-j', '--num-data-workers', dest='num_workers', default=4, type=int,
                     help='number of preprocessing workers')
-parser.add_argument('--epochs', type=int, default=3,
+parser.add_argument('--num-epochs', type=int, default=3,
                     help='number of training epochs.')
 parser.add_argument('--lr', type=float, default=0.1,
                     help='learning rate. default is 0.1.')
-parser.add_argument('-momentum', type=float, default=0.9,
+parser.add_argument('--momentum', type=float, default=0.9,
                     help='momentum value for optimizer, default is 0.9.')
 parser.add_argument('--wd', type=float, default=0.0001,
                     help='weight decay rate. default is 0.0001.')
@@ -74,7 +72,7 @@ num_workers = opt.num_workers
 
 lr_decay = opt.lr_decay
 lr_decay_period = opt.lr_decay_period
-lr_decay_epoch = [int(i) for i in opt.lr_decay_epoch.split(',')] + [1e8]
+lr_decay_epoch = [int(i) for i in opt.lr_decay_epoch.split(',')] + [np.inf]
 
 model_name = opt.model
 
@@ -161,6 +159,8 @@ def train(epochs, ctx):
 
     lr_decay_count = 0
 
+    best_val_score = 1
+
     for epoch in range(epochs):
         tic = time.time()
         acc_top1.reset()
@@ -203,6 +203,10 @@ def train(epochs, ctx):
         err_top1_val, err_top5_val = test(ctx, val_data)
         logging.info('[Epoch %d] validation: err-top1=%f err-top5=%f'%(epoch, err_top1_val, err_top5_val))
 
+        if err_top1_val < best_val_score and epoch > 50:
+            best_val_score = err_top1_val
+            net.save_params('%s/%.4f-imagenet-%s-%d-best.params'%(save_dir, best_val_score, model_name, epoch))
+
         if save_frequency and save_dir and (epoch + 1) % save_frequency == 0:
             net.save_params('%s/imagenet-%s-%d.params'%(save_dir, model_name, epoch))
 
@@ -212,7 +216,7 @@ def train(epochs, ctx):
 def main():
     if opt.mode == 'hybrid':
         net.hybridize()
-    train(opt.epochs, context)
+    train(opt.num_epochs, context)
 
 if __name__ == '__main__':
     main()
