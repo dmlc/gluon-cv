@@ -192,8 +192,8 @@ feel free to read `the next tutorial on ``CIFAR10`` <>`__.
 Or, if you would like to try a more powerful demo, i.e. models trained
 on ImageNet, please read `xxx <>`__.
 
-.. |image0| image:: plane-draw.jpeg
-.. |image1| image:: mt_baker.jpeg
+.. |image0| image:: _static/plane-draw.jpeg
+.. |image1| image:: _static/mt_baker.jpeg
 
 """
 from __future__ import division
