@@ -1,10 +1,9 @@
-"""Training Your First Classification Model on CIFAR10
+"""Training Your First Classification Model on ImageNet
 ===================================================
 
-```CIFAR10`` <https://www.cs.toronto.edu/~kriz/cifar.html>`__ is a
-labeled dataset of tiny (32x32) images, collected by Alex Krizhevsky,
-Vinod Nair, and Geoffrey Hinton. It is widely used as a benchmark in
-conputer vision research.
+```ImageNet`` <http://www.image-net.org/>`__ is a
+large labeled dataset of real-world images. It is the most
+well-known dataset for computer vision tasks.
 
 In this tutorial, we will demonstrate how to use ``Gluon`` to train a
 model from scratch and reproduce the performance from papers.
@@ -192,7 +191,7 @@ feel free to read `the next tutorial on ``CIFAR10`` <>`__.
 Or, if you would like to try a more powerful demo, i.e. models trained
 on ImageNet, please read `xxx <>`__.
 
-.. |image0| image:: plane-draw.jpeg
+.. |image0| image:: mt_baker.jpeg
 
 """
 from __future__ import division
@@ -208,7 +207,7 @@ from mxnet.gluon.data.vision import transforms
 
 from gluonvision.model_zoo import get_model
 
-parser = argparse.ArgumentParser(description='Predict CIFAR10 classes from a given image')
+parser = argparse.ArgumentParser(description='Predict ImageNet classes from a given image')
 parser.add_argument('--model', type=str, required=True,
                     help='name of the model to use')
 parser.add_argument('--saved-params', type=str, default='',
@@ -217,9 +216,9 @@ parser.add_argument('--input-pic', type=str, required=True,
                     help='path to the input picture')
 opt = parser.parse_args()
 
-classes = 10
-class_names = ['airplane', 'automobile', 'bird', 'cat', 'deer',
-               'dog', 'frog', 'horse', 'ship', 'truck']
+classes = 1000
+with open('imagenet_labels.txt', 'r') as f:
+    class_names = [l.strip('\n') for l in f.readlines()]
 
 context = [mx.cpu()]
 
@@ -238,16 +237,19 @@ with open(opt.input_pic, 'rb') as f:
 
 # Transform
 transform_fn = transforms.Compose([
-    transforms.Resize(32),
-    transforms.CenterCrop(32),
+    transforms.Resize(256),
+    transforms.CenterCrop(224),
     transforms.ToTensor(),
-    transforms.Normalize([0.4914, 0.4822, 0.4465], [0.2023, 0.1994, 0.2010])
+    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 ])
 
-img_transformed = nd.zeros((1, 3, 32, 32))
+img_transformed = nd.zeros((1, 3, 224, 224))
 img_transformed[0,:,:,:] = transform_fn(img)
 pred = net(img_transformed)
 
-ind = nd.argmax(pred, axis=1).astype('int')
-print('The input picture is classified to be [%s], with probability %.3f.'%
-      (class_names[ind.asscalar()], nd.softmax(pred)[0][ind].asscalar()))
+topK = 5
+ind = nd.topk(pred, k=topK)[0].astype('int')
+print('The input picture is classified to be')
+for i in range(topK):
+    print('[%s], with probability %.3f.'%
+          (class_names[ind[i].asscalar()], nd.softmax(pred)[0][ind[i]].asscalar()))

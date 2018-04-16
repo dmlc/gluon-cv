@@ -21,10 +21,9 @@ CIFAR
 
 .. autofunction:: get_cifar_wide_resnet
 
-.. autofunction:: cifar_wideresnet16
-.. autofunction:: cifar_wideresnet22
-.. autofunction:: cifar_wideresnet28
-.. autofunction:: cifar_wideresnet40
+.. autofunction:: cifar_wideresnet16_10
+.. autofunction:: cifar_wideresnet28_10
+.. autofunction:: cifar_wideresnet40_8
 
 
 
