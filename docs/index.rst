@@ -66,6 +66,12 @@ A Quick Example
 
 .. toctree::
    :maxdepth: 1
+   :caption: Model Zoo
+
+   model_zoo/index
+
+.. toctree::
+   :maxdepth: 1
    :caption: API Documents
 
 
