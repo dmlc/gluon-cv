@@ -5,7 +5,7 @@ import mxnet.ndarray as F
 from mxnet.gluon.nn import HybridBlock
 
 from ..segbase import SegBaseModel
-# pylint: disable=unused-argument,abstract-method
+# pylint: disable=unused-argument,abstract-method,missing-docstring
 
 class FCN(SegBaseModel):
     r"""Fully Convolutional Networks for Semantic Segmentation

@@ -1,5 +1,5 @@
 """Dilated_ResNetV1s, implemented in Gluon."""
-# pylint: disable=arguments-differ,unused-argument
+# pylint: disable=arguments-differ,unused-argument,missing-docstring
 from __future__ import division
 
 from mxnet.gluon.block import HybridBlock

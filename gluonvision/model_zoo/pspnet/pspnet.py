@@ -6,7 +6,7 @@ from mxnet.gluon.nn import HybridBlock
 
 from ..segbase import SegBaseModel
 from ..fcn.fcn import _FCNHead
-# pylint: disable=arguments-differ,redefined-outer-name,abstract-method
+# pylint: disable-all
 
 class PSPNet(SegBaseModel):
     r"""Pyramid Scene Parsing Network
