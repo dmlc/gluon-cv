@@ -59,15 +59,16 @@ extensions = [
 
 sphinx_gallery_conf = {
     # path to your examples scripts
-    'examples_dirs': ['../scripts'],
+    'examples_dirs': ['../scripts/datasets',
+                      '../scripts/classification',
+                      '../scripts/detection'],
     # path where to save gallery generated examples
-    'gallery_dirs': 'examples',
-    # how to sort tutorials
+    'gallery_dirs': ['examples_datasets',
+                     'examples_classification',
+                     'examples_detection'],
+
     'filename_pattern': '.py',
-    'subsection_order': ExplicitOrder(['../scripts/datasets',
-                                       '../scripts/classification',
-                                       '../scripts/detection',
-                                       '../scripts/segmentation']),
+
     'within_subsection_order': NumberOfCodeLinesSortKey,
     'plot_gallery':False,
     'min_reported_time':10,
