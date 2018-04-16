@@ -26,7 +26,6 @@ CIFAR
 .. autofunction:: cifar_wideresnet40_8
 
 
-
 Dilated Network
 ---------------
 
