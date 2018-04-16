@@ -6,6 +6,7 @@ from __future__ import absolute_import
 import mxnet
 from mxnet.gluon.loss import _apply_weighting
 
+# pylint: disable=arguments-differ
 
 class FocalLoss(mxnet.gluon.loss.Loss):
     """Focal Loss for inbalanced classification.

@@ -11,3 +11,4 @@ dependencies:
   # - guzzle_sphinx_theme
   - recommonmark
   - Image
+  - awscli

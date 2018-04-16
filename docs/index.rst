@@ -65,6 +65,13 @@ A Quick Example
    examples_datasets/index
    examples_classification/index
    examples_detection/index
+   examples_segmentation/index
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Model Zoo
+
+   model_zoo/index
 
 .. toctree::
    :maxdepth: 1

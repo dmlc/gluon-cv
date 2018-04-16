@@ -22,6 +22,7 @@ internet speed, it may take 5 min to several hours.
 Assume you want to store the dataset in ``~/pascal_voc``, simply run
 
 .. code-block:: bash
+
     python scripts/datasets/pascal_voc.py --path ~/pascal_voc --download
 
 How to use Pascal VOC as object detection dataset

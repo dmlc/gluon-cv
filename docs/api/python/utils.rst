@@ -5,6 +5,9 @@ Utility Functions
 =================
 We implemented a broad range of utility functions which cover visualization, file handler, download and training helpers.
 
+.. currentmodule:: gluonvision.utils
+.. automodule:: gluonvision.utils
+
 :hidden:`Visualization`
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -33,5 +36,5 @@ Bounding Box Visualization
 .. autofunction:: gluonvision.utils.set_lr_mult
 
 :hidden:`Bouding Box Utils`
-~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. autofunction:: gluonvision.utils.bbox_iou
