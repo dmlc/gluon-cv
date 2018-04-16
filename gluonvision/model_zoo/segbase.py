@@ -1,10 +1,10 @@
 """Base Model for Semantic Segmentation"""
-from mxnet.gluon import nn
 from mxnet.gluon.nn import HybridBlock
 
 from ..utils.metrics import voc_segmentation
 
 from .dilated import dilatedresnetv1
+# pylint: disable=abstract-method
 
 class SegBaseModel(HybridBlock):
     r"""Base Model for Semantic Segmentation
@@ -52,6 +52,7 @@ class SegBaseModel(HybridBlock):
         return c3, c4
 
     def evaluate(self, x, target=None, bg=False):
+        """evaluating network with inputs and targets"""
         pred = self.forward(x)
         if self.aux:
             pred = pred[0]

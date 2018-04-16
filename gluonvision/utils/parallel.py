@@ -44,7 +44,6 @@ class ModelDataParallel(object):
         self.module = module
         self.sync = sync
 
-    
     def __call__(self, *inputs, **kwargs):
         if not self.ctx_list:
             return self.module(*inputs, **kwargs)
@@ -192,6 +191,7 @@ def parallel_apply(module, inputs, kwargs_tup=None, sync=False):
 
 
 def criterion_parallel_apply(module, inputs, targets, kwargs_tup=None, sync=False):
+    """Data Parallel Criterion"""
     if kwargs_tup:
         assert len(inputs) == len(kwargs_tup)
     else:
