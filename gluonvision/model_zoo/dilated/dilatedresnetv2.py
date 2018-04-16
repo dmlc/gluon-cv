@@ -188,11 +188,12 @@ class DilatedResNetV2(HybridBlock):
             elif dilation == 4:
                 layer.add(block(channels, stride, channels != in_channels,
                                 in_channels=in_channels, dilation=2,
-                                first_dilation=dilation,norm_layer=norm_layer,
+                                first_dilation=dilation, norm_layer=norm_layer,
                                 prefix=''))
             for _ in range(layers-1):
                 layer.add(block(channels, 1, False, in_channels=channels,
-                                dilation=dilation, first_dilation=dilation, norm_layer=norm_layer, prefix=''))
+                                dilation=dilation, first_dilation=dilation,
+                                norm_layer=norm_layer, prefix=''))
         return layer
 
     def hybrid_forward(self, F, x):

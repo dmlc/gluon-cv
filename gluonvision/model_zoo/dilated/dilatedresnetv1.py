@@ -2,7 +2,6 @@
 # pylint: disable=arguments-differ,unused-argument
 from __future__ import division
 
-from mxnet.context import cpu
 from mxnet.gluon.block import HybridBlock
 from mxnet.gluon import nn
 from mxnet.gluon.nn import BatchNorm
@@ -19,7 +18,8 @@ class DilatedBasicBlockV1(HybridBlock):
     def __init__(self, inplanes, planes, strides=1, dilation=1, downsample=None, first_dilation=1,
                  norm_layer=None, **kwargs):
         super(DilatedBasicBlockV1, self).__init__()
-        self.conv1 = nn.Conv2D(in_channels=inplanes, channels=planes, kernel_size=3, strides=strides,
+        self.conv1 = nn.Conv2D(in_channels=inplanes, channels=planes,
+                               kernel_size=3, strides=strides,
                                padding=dilation, dilation=dilation, use_bias=False)
         self.bn1 = nn.BatchNorm(in_channels=planes)
         self.relu = nn.Activation('relu')
@@ -29,7 +29,8 @@ class DilatedBasicBlockV1(HybridBlock):
         self.downsample = downsample
         self.strides = strides
 
-    def forward(self, x):
+    def hybrid_forward(self, F, x):
+    #def forward(self, x):
         residual = x
 
         out = self.conv1(x)
@@ -70,7 +71,8 @@ class DilatedBottleneckV1(HybridBlock):
         self.dilation = dilation
         self.strides = strides
 
-    def forward(self, x):
+    def hybrid_forward(self, F, x):
+    #def forward(self, x):
         residual = x
 
         out = self.conv1(x)
@@ -94,16 +96,18 @@ class DilatedBottleneckV1(HybridBlock):
 
 
 class DilatedResNetV1(HybridBlock):
-    """Dilated Pre-trained DilatedResNetV1 Model, which preduces the strides of 8 featuremaps at conv5.
+    """Dilated Pre-trained DilatedResNetV1 Model, which preduces the strides of 8
+    featuremaps at conv5.
 
     Reference:
 
-        - He, Kaiming, et al. "Deep residual learning for image recognition." Proceedings of the IEEE conference on computer vision and pattern recognition. 2016.
+        - He, Kaiming, et al. "Deep residual learning for image recognition."
+        Proceedings of the IEEE conference on computer vision and pattern recognition. 2016.
 
         - Yu, Fisher, and Vladlen Koltun. "Multi-scale context aggregation by dilated convolutions."
     """
     # pylint: disable=unused-variable
-    def __init__(self, block, layers, num_classes=1000, norm_layer=None, **kwargs):
+    def __init__(self, block, layers, num_classes=1000, norm_layer=BatchNorm, **kwargs):
         self.inplanes = 64
         super(DilatedResNetV1, self).__init__()
         with self.name_scope():
@@ -113,9 +117,12 @@ class DilatedResNetV1(HybridBlock):
             self.relu = nn.Activation('relu')
             self.maxpool = nn.MaxPool2D(pool_size=3, strides=2, padding=1)
             self.layer1 = self._make_layer(1, block, 64, layers[0], norm_layer=norm_layer)
-            self.layer2 = self._make_layer(2, block, 128, layers[1], strides=2, norm_layer=norm_layer)
-            self.layer3 = self._make_layer(3, block, 256, layers[2], strides=1, dilation=2, norm_layer=norm_layer)
-            self.layer4 = self._make_layer(4, block, 512, layers[3], strides=1, dilation=4, norm_layer=norm_layer)
+            self.layer2 = self._make_layer(2, block, 128, layers[1], strides=2,
+                                           norm_layer=norm_layer)
+            self.layer3 = self._make_layer(3, block, 256, layers[2], strides=1, dilation=2,
+                                           norm_layer=norm_layer)
+            self.layer4 = self._make_layer(4, block, 512, layers[3], strides=1, dilation=4,
+                                           norm_layer=norm_layer)
             self.avgpool = nn.AvgPool2D(7)
             self.flat = nn.Flatten()
             self.fc = nn.Dense(in_units=512 * block.expansion, units=num_classes)
@@ -126,7 +133,8 @@ class DilatedResNetV1(HybridBlock):
         if strides != 1 or self.inplanes != planes * block.expansion:
             downsample = nn.HybridSequential(prefix='down%d_'%stage_index)
             with downsample.name_scope():
-                downsample.add(nn.Conv2D(in_channels=self.inplanes, channels=planes * block.expansion,
+                downsample.add(nn.Conv2D(in_channels=self.inplanes,
+                                         channels=planes * block.expansion,
                                          kernel_size=1, strides=strides, use_bias=False))
                 downsample.add(norm_layer(in_channels=planes * block.expansion))
 
@@ -134,21 +142,24 @@ class DilatedResNetV1(HybridBlock):
         with layers.name_scope():
             if dilation == 1 or dilation == 2:
                 layers.add(block(self.inplanes, planes, strides, dilation=1,
-                                 downsample=downsample, first_dilation=dilation, norm_layer=norm_layer))
+                                 downsample=downsample, first_dilation=dilation,
+                                 norm_layer=norm_layer))
             elif dilation == 4:
                 layers.add(block(self.inplanes, planes, strides, dilation=2,
-                                 downsample=downsample, first_dilation=dilation, norm_layer=norm_layer))
+                                 downsample=downsample, first_dilation=dilation,
+                                 norm_layer=norm_layer))
             else:
-                raise RuntimeError("=> unknown dilation size: {}".format(dilation, norm_layer=norm_layer))
+                raise RuntimeError("=> unknown dilation size: {}".format(dilation))
 
             self.inplanes = planes * block.expansion
             for i in range(1, blocks):
                 layers.add(block(self.inplanes, planes, dilation=dilation, first_dilation=dilation,
-                           norm_layer=norm_layer))
+                                 norm_layer=norm_layer))
 
         return layers
 
-    def forward(self, x):
+    def hybrid_forward(self, F, x):
+    #def forward(self, x):
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)

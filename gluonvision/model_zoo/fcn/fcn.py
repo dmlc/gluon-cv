@@ -1,12 +1,11 @@
-# pylint: disable=unused-argument
 """Fully Convolutional Network with Strdie of 8"""
 from __future__ import division
-from mxnet import init
 from mxnet.gluon import nn
 import mxnet.ndarray as F
 from mxnet.gluon.nn import HybridBlock
 
 from ..segbase import SegBaseModel
+# pylint: disable=unused-argument,abstract-method
 
 class FCN(SegBaseModel):
     r"""Fully Convolutional Networks for Semantic Segmentation

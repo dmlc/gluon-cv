@@ -1,13 +1,12 @@
 # pylint: disable=unused-argument
 """Pyramid Scene Parsing Network"""
-from mxnet import init
 from mxnet.gluon import nn
 import mxnet.ndarray as F
 from mxnet.gluon.nn import HybridBlock
 
 from ..segbase import SegBaseModel
 from ..fcn.fcn import _FCNHead
-# pylint: disable=arguments-differ,redefined-outer-name
+# pylint: disable=arguments-differ,redefined-outer-name,abstract-method
 
 class PSPNet(SegBaseModel):
     r"""Pyramid Scene Parsing Network
