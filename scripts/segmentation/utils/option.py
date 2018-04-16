@@ -1,5 +1,5 @@
-import argparse
 import os
+import argparse
 import mxnet as mx
 
 class Options():
@@ -23,7 +23,7 @@ class Options():
                             $(HOME)/data/)')
         # training hyper params
         parser.add_argument('--aux', action='store_true', default= False,
-                            help='Auxilary loss')
+                            help='Auxilary loss as in PSPNet')
         parser.add_argument('--epochs', type=int, default=50, metavar='N',
                             help='number of epochs to train (default: 50)')
         parser.add_argument('--start_epoch', type=int, default=0,
@@ -62,6 +62,8 @@ class Options():
         parser.add_argument('--test', action='store_true', default= False,
                             help='test a set of images and save the \
                             prediction')
+        parser.add_argument('--outdir', type=str, default='outdir',
+                            help='output dir for saving image')
         # synchronized Batch Normalization
         parser.add_argument('--syncbn', action='store_true', default= False,
                             help='using Synchronized Cross-GPU BatchNorm')
@@ -79,6 +81,9 @@ class Options():
             print('Using CPU')
             self.kvstore = 'local'
             args.ctx = mx.cpu(0)
+        # test dir
+        if not os.path.exists(args.outdir):
+            os.makedirs(args.outdir)
         # model Default mean and std
         args.mean = [.485, .456, .406]
         args.std = [.229, .224, .225]

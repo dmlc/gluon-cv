@@ -5,6 +5,9 @@ Utility Functions
 =================
 We implemented a broad range of utility functions which cover visualization, file handler, download and training helpers.
 
+.. currentmodule:: gluonvision.utils
+.. automodule:: gluonvision.utils
+
 :hidden:`Visualization`
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 

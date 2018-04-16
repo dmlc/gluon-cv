@@ -6,6 +6,7 @@ import mxnet.ndarray as F
 from mxnet.gluon.nn import HybridBlock
 
 from ..segbase import SegBaseModel
+from ..fcn.fcn import _FCNHead
 # pylint: disable=arguments-differ,redefined-outer-name
 
 class PSPNet(SegBaseModel):
@@ -31,26 +32,40 @@ class PSPNet(SegBaseModel):
         "Pyramid scene parsing network." *CVPR*, 2017
 
     """
-    def __init__(self, nclass, backbone='resnet50', norm_layer=nn.BatchNorm, aux=True):
-        super(PSPNet, self).__init__(backbone, norm_layer)
-        self.aux = aux
+    def __init__(self, nclass, backbone='resnet50', norm_layer=nn.BatchNorm,
+                 aux=True, **kwargs):
+        super(PSPNet, self).__init__(backbone, aux, norm_layer, **kwargs)
+        self.nclass = nclass
         with self.name_scope():
-            self.head = _PSPHead(nclass)
-        self.head.initialize(init=init.Xavier())
+            self.head = _PSPHead(nclass, norm_layer=norm_layer, **kwargs)
+            self.head.initialize()
+            self.head.collect_params().setattr('lr_mult', 10)
+            if self.aux:
+                self.auxlayer = _FCNHead(1024, nclass, norm_layer=norm_layer, **kwargs)
+                self.auxlayer.initialize()
+                self.auxlayer.collect_params().setattr('lr_mult', 10)
 
-    # def hybrid_forward(self, F, x):
     def forward(self, x):
         _, _, H, W = x.shape
-        x = self.pretrained(x)
-        x = self.head(x)
+        c3, c4 = self.base_forward(x)
+        outputs = []
+        x = self.head(c4)
         x = F.contrib.BilinearResize2D(x, height=H, width=W)
-        return x
+        outputs.append(x)
+
+        if self.aux:
+            auxout = self.auxlayer(c3)
+            auxout = F.contrib.BilinearResize2D(auxout, height=H, width=W)
+            outputs.append(auxout)
+            return tuple(outputs)
+        else:
+            return x
 
 
-def _PSP1x1Conv(in_channels, out_channels):
+def _PSP1x1Conv(in_channels, out_channels, norm_layer=None, **kwargs):
     block = nn.HybridSequential(prefix='')
     with block.name_scope():
-        block.add(nn.BatchNorm(in_channels=in_channels))
+        block.add(norm_layer(in_channels=in_channels))
         block.add(nn.Activation('relu'))
         block.add(nn.Conv2D(in_channels=in_channels,
                             channels=out_channels, kernel_size=1))
@@ -58,14 +73,14 @@ def _PSP1x1Conv(in_channels, out_channels):
 
 
 class _PyramidPooling(HybridBlock):
-    def __init__(self, in_channels):
+    def __init__(self, in_channels, **kwargs):
         super(_PyramidPooling, self).__init__()
         out_channels = int(in_channels/4)
         with self.name_scope():
-            self.conv1 = _PSP1x1Conv(in_channels, out_channels)
-            self.conv2 = _PSP1x1Conv(in_channels, out_channels)
-            self.conv3 = _PSP1x1Conv(in_channels, out_channels)
-            self.conv4 = _PSP1x1Conv(in_channels, out_channels)
+            self.conv1 = _PSP1x1Conv(in_channels, out_channels, **kwargs)
+            self.conv2 = _PSP1x1Conv(in_channels, out_channels, **kwargs)
+            self.conv3 = _PSP1x1Conv(in_channels, out_channels, **kwargs)
+            self.conv4 = _PSP1x1Conv(in_channels, out_channels, **kwargs)
 
     def pool(self, F, x, size):
         return F.contrib.AdaptiveAvgPooling2D(x, output_size=size)
@@ -83,16 +98,16 @@ class _PyramidPooling(HybridBlock):
 
 
 class _PSPHead(HybridBlock):
-    def __init__(self, nclass):
+    def __init__(self, nclass, norm_layer=None, **kwargs):
         super(_PSPHead, self).__init__()
-        self.psp = _PyramidPooling(2048)
+        self.psp = _PyramidPooling(2048, norm_layer=None, **kwargs)
         with self.name_scope():
             self.block = nn.HybridSequential(prefix='')
-            self.block.add(nn.BatchNorm(in_channels=4096))
+            self.block.add(norm_layer(in_channels=4096))
             self.block.add(nn.Activation('relu'))
             self.block.add(nn.Conv2D(in_channels=4096, channels=512,
                                      kernel_size=3, padding=1))
-            self.block.add(nn.BatchNorm(in_channels=512))
+            self.block.add(norm_layer(in_channels=512))
             self.block.add(nn.Activation('relu'))
             self.block.add(nn.Dropout(0.1))
             self.block.add(nn.Conv2D(in_channels=512, channels=nclass,

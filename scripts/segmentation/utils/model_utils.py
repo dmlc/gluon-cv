@@ -11,16 +11,20 @@ __all__ = ['get_model_criterion']
 
 def get_model_criterion(args):
     models = importlib.import_module('gluonvision.model_zoo.'+args.model+'.'+args.model)
-    model = models._Net(args.nclass, args.backbone, args.norm_layer)
+    model = models._Net(args.nclass, args.backbone, norm_layer = args.norm_layer, aux = args.aux)
     print('model', model)
+    if args.aux:
+        Loss = CrossEntropyLossWithAux2d
+    else:
+        Loss = CrossEntropyLoss2d
     if args.ignore_index is not None:
         # ignoring boundaries
-        criterion = CrossEntropyLoss2d(axis=1, ignore_label=args.ignore_index)
+        criterion = Loss(axis=1, ignore_label=args.ignore_index)
     elif args.bg:
         # ignoring background
-        criterion = CrossEntropyLoss2d(axis=1, ignore_label=0)
+        criterion = Loss(axis=1, ignore_label=0)
     else:
-        criterion = CrossEntropyLoss2d(axis=1)
+        criterion = Loss(axis=1)
     if not args.syncbn and not args.test:
         model.hybridize()
         criterion.hybridize()
@@ -28,11 +32,8 @@ def get_model_criterion(args):
 
 
 def _init_parallel_model(args, model, criterion):
-    if args.cuda:
-        model = ModelDataParallel(model, args.ctx, args.syncbn)
-        criterion = CriterionDataParallel(criterion, args.syncbn)
-    else:
-        model.collect_params().reset_ctx(ctx=args.ctx)
+    model = ModelDataParallel(model, args.ctx, args.syncbn)
+    criterion = CriterionDataParallel(criterion, args.ctx, args.syncbn)
     # resume checkpoint
     if args.resume is not None:
         if os.path.isfile(args.resume):
@@ -41,6 +42,7 @@ def _init_parallel_model(args, model, criterion):
             raise RuntimeError("=> no checkpoint found at '{}'" \
                 .format(args.resume))
     return model, criterion
+
 
 class CrossEntropyLoss2d(gluon.loss.Loss):
     def __init__(self, axis, ignore_label=None):
@@ -58,3 +60,28 @@ class CrossEntropyLoss2d(gluon.loss.Loss):
         if self._ignore_index is not None:
             loss = loss * (1.0 * mask.size / mask.sum())
         return loss
+
+
+class CrossEntropyLossWithAux2d(gluon.loss.Loss):
+    def __init__(self, axis, aux_weight=0.2, ignore_label=None):
+        super(CrossEntropyLossWithAux2d, self).__init__(weight=None, batch_axis=0)
+        self._axis = axis
+        self.aux_weight = aux_weight
+        self._ignore_index = ignore_label
+ 
+    def forward_each(self, F, pred, label):
+        pred = F.log_softmax(pred, 1)
+        loss = -F.pick(pred, label, axis=self._axis, keepdims=True)
+        if self._ignore_index is not None:
+            mask = (label != self._ignore_index).astype(loss.dtype)
+            loss = loss * mask.expand_dims(self._axis)
+        loss = F.mean(loss, axis=self._batch_axis, exclude=True)
+        if self._ignore_index is not None:
+            loss = loss * (1.0 * mask.size / mask.sum())
+        return loss
+
+    def hybrid_forward(self, F, pred1, pred2, label):
+        loss1 = self.forward_each(F, pred1, label)
+        loss2 = self.forward_each(F, pred2, label)
+        # Auxilary loss
+        return loss1 + self.aux_weight * loss2

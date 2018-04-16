@@ -1,15 +1,33 @@
-"""Prepare ADE20K datasets.
-===========================
+"""Prepare ADE20K datasets. 
+========================
 
-http://sceneparsing.csail.mit.edu/
-Scene parsing is to segment and parse an image into different image regions associated with semantic categories, such as sky, road, person, and bed. The data for this benchmark comes from ADE20K Dataset which contains more than 20K scene-centric images exhaustively annotated with objects and object parts. g. There are totally 150 semantic categories included for evaluation, which include stuffs like sky, road, grass, and discrete objects like person, car, bed.
+Scene parsing http://sceneparsing.csail.mit.edu/ is to segment and parse an image into different image regions associated with semantic categories, such as sky, road, person, and bed. The data for this benchmark comes from ADE20K Dataset which contains more than 20K scene-centric images exhaustively annotated with objects and object parts. g. There are totally 150 semantic categories included for evaluation, which include stuffs like sky, road, grass, and discrete objects like person, car, bed.
 
 .. image:: http://groups.csail.mit.edu/vision/datasets/ADE20K/assets/images/examples.png
     :width: 500 px
 
+Preprocess the Dataset
+----------------------
+
 This example script will try to download dataset if not exist, extract contents to disk
 and make symbolic link to '~/.mxnet/datasets/ade' so user can use
 ade datasets our-of-box.
+
+- Create symbolic link for existing dataset in the folder `~/Datasets/ade`:
+
+.. code-block:: bash
+
+    python examples/setup_pascal_voc.py --path ~/Dataset/ade/
+
+- Download the dataset to `~/Datasets/ade` and make symlink
+
+.. code-block:: bash
+
+    python examples/setup_pascal_voc.py --path ~/Dataset/ade/ --download
+
+Dive Deep into Source Code
+--------------------------
+
 """
 import os
 import shutil

@@ -1,5 +1,6 @@
 # pylint: disable=unused-argument
 """Fully Convolutional Network with Strdie of 8"""
+from __future__ import division
 from mxnet import init
 from mxnet.gluon import nn
 import mxnet.ndarray as F
@@ -27,36 +28,51 @@ class FCN(SegBaseModel):
         for semantic segmentation." *CVPR*, 2015
     """
     # pylint: disable=arguments-differ
-    def __init__(self, nclass, backbone='resnet50', norm_layer=nn.BatchNorm, **kwargs):
-        super(FCN, self).__init__(backbone, norm_layer, **kwargs)
+    def __init__(self, nclass, backbone='resnet50', norm_layer=nn.BatchNorm,
+                 aux=True, **kwargs):
+        super(FCN, self).__init__(aux, backbone, norm_layer=norm_layer, **kwargs)
+        self.nclass = nclass
         with self.name_scope():
-            self.head = _FCNHead(nclass, norm_layer=norm_layer, **kwargs)
-        self.head.initialize(init=init.Xavier())
+            self.head = _FCNHead(2048, nclass, norm_layer=norm_layer, **kwargs)
+            self.head.initialize()
+            self.head.collect_params().setattr('lr_mult', 10)
+            if self.aux:
+                self.auxlayer = _FCNHead(1024, nclass, norm_layer=norm_layer, **kwargs)
+                self.auxlayer.initialize()
+                self.auxlayer.collect_params().setattr('lr_mult', 10)
 
-    # def hybrid_forward(self, F, x):
     def forward(self, x):
         _, _, H, W = x.shape
-        x = self.pretrained(x)
-        x = self.head(x)
+        c3, c4 = self.base_forward(x)
+
+        outputs = []
+        x = self.head(c4)
         x = F.contrib.BilinearResize2D(x, height=H, width=W)
-        return x
+        outputs.append(x)
+
+        if self.aux:
+            auxout = self.auxlayer(c3)
+            auxout = F.contrib.BilinearResize2D(auxout, height=H, width=W)
+            outputs.append(auxout)
+            return tuple(outputs)
+        else:
+            return x
 
 
 class _FCNHead(HybridBlock):
     # pylint: disable=redefined-outer-name
-    def __init__(self, nclass, norm_layer, **kwargs):
-        super(_FCNHead, self).__init__(**kwargs)
+    def __init__(self, in_channels, channels, norm_layer, **kwargs):
+        super(_FCNHead, self).__init__()
         with self.name_scope():
             self.block = nn.HybridSequential()
+            inter_channels = in_channels // 4
             with self.block.name_scope():
-                self.block.add(norm_layer(in_channels=2048))
-                self.block.add(nn.Activation('relu'))
-                self.block.add(nn.Conv2D(in_channels=2048, channels=512,
+                self.block.add(nn.Conv2D(in_channels=in_channels, channels=inter_channels,
                                          kernel_size=3, padding=1))
-                self.block.add(norm_layer(in_channels=512))
+                self.block.add(norm_layer(in_channels=inter_channels))
                 self.block.add(nn.Activation('relu'))
                 self.block.add(nn.Dropout(0.1))
-                self.block.add(nn.Conv2D(in_channels=512, channels=nclass,
+                self.block.add(nn.Conv2D(in_channels=inter_channels, channels=channels,
                                          kernel_size=1))
 
     # pylint: disable=arguments-differ
