@@ -33,6 +33,7 @@ Dilated Network
 
 We apply dilattion strategy to pre-trained ResNet models (with stride of 8). Please see :class:`gluonvision.model_zoo.SegBaseModel` for how to use it.
 
+.. currentmodule:: gluonvision.model_zoo.dilated.dilatedresnetv2
 
 .. autoclass:: DilatedResNetV2
     :members:

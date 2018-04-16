@@ -6,8 +6,7 @@ from PIL import Image
 import mxnet as mx
 import mxnet.ndarray as F
 
-__all__ = ['save_checkpoint', 'get_mask', 'resize_image', 'pad_image', 'crop_image',
-           'flip_image']
+__all__ = ['save_checkpoint', 'get_mask']
 
 
 def save_checkpoint(net, args, is_best=False):
@@ -19,39 +18,6 @@ def save_checkpoint(net, args, is_best=False):
     net.save_params(filename)
     if is_best:
         shutil.copyfile(filename, directory + 'model_best.params')
-
-
-def resize_image(img, h, w):
-    return F.contrib.BilinearResize2D(img, height=h, width=w)
-
-
-def pad_image(img, crop_size=480):
-    b,c,h,w = img.shape
-    assert(c==3)
-    padh = crop_size - h if h < crop_size else 0
-    padw = crop_size - w if w < crop_size else 0
-    mean = [.485, .456, .406]
-    std = [.229, .224, .225]
-    pad_values = -np.array(mean) / np.array(std)
-    img_pad = mx.nd.zeros((b,c,h+padh,w+padw)).as_in_context(img.context)
-    for i in range(c):
-        img_pad[:,i,:,:] = F.squeeze(
-            F.pad(img[:,i,:,:].expand_dims(1), 'constant', 
-                  pad_width=(0,0,0,0,0,padh,0,padw),
-                  constant_value = pad_values[i]
-            ))
-    assert(img_pad.shape[2]>=crop_size and img_pad.shape[3]>=crop_size)
-    return img_pad
-
-
-def crop_image(img, h0, h1, w0, w1):
-    return img[:,:,h0:h1,w0:w1]
-
-
-def flip_image(img):
-    assert(img.ndim == 4)
-    return img.flip(3)
-
 
 def get_mask(npimg, dataset):
     # recovery boundary
@@ -66,7 +32,7 @@ def get_mask(npimg, dataset):
     return out_img
 
 
-# ref https://github.com/dmlc/mxnet/blob/master/example/fcn-xs/image_segmentaion.py
+
 def getvocpallete(num_cls):
     n = num_cls
     pallete = [0]*(n*3)
