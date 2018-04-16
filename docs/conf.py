@@ -20,6 +20,8 @@
 import recommonmark
 from recommonmark.parser import CommonMarkParser
 from recommonmark.transform import AutoStructify
+from sphinx_gallery.sorting import ExplicitOrder
+from sphinx_gallery.sorting import NumberOfCodeLinesSortKey
 
 # -- Project information -----------------------------------------------------
 
@@ -57,15 +59,23 @@ extensions = [
 
 sphinx_gallery_conf = {
     # path to your examples scripts
-         'examples_dirs': '../scripts',
+    'examples_dirs': ['../scripts'],
     # path where to save gallery generated examples
-         'gallery_dirs': 'examples',
+    'gallery_dirs': 'examples',
+    # how to sort tutorials
+    'filename_pattern': '.py',
+    'subsection_order': ExplicitOrder(['../scripts/datasets',
+                                       '../scripts/classification',
+                                       '../scripts/detection',
+                                       '../scripts/segmentation']),
+    'within_subsection_order': NumberOfCodeLinesSortKey,
     'plot_gallery':False,
     'min_reported_time':10,
     'download_section_examples': False,
-    #'reference_url': {
-    #    'gluonvision':None,
-    #},
+    'reference_url': {
+        'gluonvision':None,
+    },
+    'backreferences_dir': False,
 }
 
 

@@ -61,7 +61,7 @@ def download_aug(path, overwrite=False):
         # extract
         with zipfile.ZipFile(filename,"r") as zip_ref:
             zip_ref.extractall(path=path)
-        
+
 
 if __name__ == '__main__':
     args = parse_args()

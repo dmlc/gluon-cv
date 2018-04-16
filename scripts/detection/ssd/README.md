@@ -3,10 +3,11 @@
 ## Performance
 PASCAL VOC 2007 Test Mean Average Precision (mAP)
 
-| Model | Original | GluonVision * |
-|:-:|:-:|:-:|
-| SSD300 | 77.5 % [2] | 77.9 % |
-| SSD512 | 79.5 % [2] | 79.6 % |
+| Model | Base size | Original | GluonVision * |
+|:-:|:-:|:-:|:-:|
+| VGG16 Atrous | 300 | 77.5 % [2] | 77.9 % |
+| VGG16 Atrous | 512 | 79.5 % [2] | 79.6 % |
+| ResNet50_v1  | 512 | - | 80.1 |
 
 \* Single time training results may vary because of randomness.
 \* You are very welcome to contribute models with better performances to the community.

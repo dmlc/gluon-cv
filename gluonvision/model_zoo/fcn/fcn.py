@@ -28,7 +28,8 @@ class FCN(SegBaseModel):
         for semantic segmentation." *CVPR*, 2015
     """
     # pylint: disable=arguments-differ
-    def __init__(self, nclass, backbone='resnet50', norm_layer=None, aux=True, **kwargs):
+    def __init__(self, nclass, backbone='resnet50', norm_layer=nn.BatchNorm,
+                 aux=True, **kwargs):
         super(FCN, self).__init__(aux, backbone, norm_layer=norm_layer, **kwargs)
         self.nclass = nclass
         with self.name_scope():

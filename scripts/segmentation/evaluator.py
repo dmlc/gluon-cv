@@ -104,6 +104,7 @@ class MultiEvalModule(object):
             scores, target, self.bg)
         inter, union = voc_segmentation.batch_intersection_union(
             scores, target, self.nclass, self.bg)
+
         return correct, labeled, inter, union
 
     def model_forward(self, image):

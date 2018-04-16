@@ -10,76 +10,62 @@ Vision Models
 CIFAR
 -----
 
-.. currentmodule:: gluonvision.model_zoo.cifar.resnet
+.. autofunction:: get_cifar_resnet
 
-.. autoclass:: ResNetV1
-    :members:
+.. autofunction:: cifar_resnet20_v1
+.. autofunction:: cifar_resnet56_v1
+.. autofunction:: cifar_resnet110_v1
+.. autofunction:: cifar_resnet20_v2
+.. autofunction:: cifar_resnet56_v2
+.. autofunction:: cifar_resnet110_v2
 
-.. autoclass:: ResNetV2
-    :members:
+.. autofunction:: get_cifar_wide_resnet
 
-.. autofunction:: get_resnet
+.. autofunction:: cifar_wideresnet16
+.. autofunction:: cifar_wideresnet22
+.. autofunction:: cifar_wideresnet28
+.. autofunction:: cifar_wideresnet40
 
-.. currentmodule:: gluonvision.model_zoo
+
 
 Dilated Network
 ---------------
 
 We apply dilattion strategy to pre-trained ResNet models (with stride of 8). Please see :class:`gluonvision.model_zoo.SegBaseModel` for how to use it.
 
-:hidden:`DilatedResNetV2`
-~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autoclass:: DilatedResNetV2
     :members:
 
-:hidden:`DilatedBasicBlockV2`
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autoclass:: DilatedBasicBlockV2
     :members:
 
-:hidden:`DilatedBottleneckV2`
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autoclass:: DilatedBottleneckV2
     :members:
 
-:hidden:`get_dilated_resnet`
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autofunction:: get_dilated_resnet
 
 
-:hidden:`dilated_resnet18`
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
 .. autofunction:: dilated_resnet18
 
 
-:hidden:`dilated_resnet34`
-~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autofunction:: dilated_resnet34
 
 
-:hidden:`dilated_resnet50`
-~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autofunction:: dilated_resnet50
 
 
-:hidden:`dilated_resnet101`
-~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autofunction:: dilated_resnet101
 
 
-:hidden:`dilated_resnet152`
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autofunction:: dilated_resnet152
-
 
 Object Detection
 ----------------
@@ -87,8 +73,31 @@ Object Detection
 :hidden:`SSD`
 ~~~~~~~~~~~~~
 
+.. currentmodule:: gluonvision.model_zoo.ssd
+
 .. autoclass:: SSD
     :members:
+
+.. autofunction:: get_ssd
+
+.. autofunction:: ssd_300_vgg16_atrous_voc
+
+.. autofunction:: ssd_512_vgg16_atrous_voc
+
+.. autofunction:: ssd_512_resnet50_v1_voc
+
+.. autofunction:: ssd_512_resnet101_v2_voc
+
+.. autofunction:: ssd_512_resnet152_v2_voc
+
+.. autoclass:: VGGAtrousExtractor
+    :members:
+
+.. autofunction:: get_vgg_atrous_extractor
+.. autofunction:: vgg16_atrous_300
+.. autofunction:: vgg16_atrous_512
+
+.. currentmodule:: gluonvision.model_zoo
 
 Semantic Segmentation
 ---------------------

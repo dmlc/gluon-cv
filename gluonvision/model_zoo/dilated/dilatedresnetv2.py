@@ -144,7 +144,7 @@ class DilatedResNetV2(HybridBlock):
         for Synchronized Cross-GPU BachNormalization).
     """
     def __init__(self, block, layers, channels, classes=1000, thumbnail=False,
-                 norm_layer=None, **kwargs):
+                 norm_layer=BatchNorm, **kwargs):
         super(DilatedResNetV2, self).__init__(**kwargs)
         assert len(layers) == len(channels) - 1
         with self.name_scope():
