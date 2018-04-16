@@ -38,7 +38,7 @@ class DilatedBasicBlockV2(HybridBlock):
         for Synchronized Cross-GPU BachNormalization).
     """
     def __init__(self, channels, stride, downsample=False, in_channels=0,
-                 dilation=1, first_dilation=1, norm_layer=BatchNorm, **kwargs):
+                 dilation=1, first_dilation=1, norm_layer=None, **kwargs):
         super(DilatedBasicBlockV2, self).__init__(**kwargs)
         self.bn1 = norm_layer()
         self.conv1 = _conv3x3(channels, stride, in_channels, dilation=dilation)
@@ -87,7 +87,7 @@ class DilatedBottleneckV2(HybridBlock):
         for Synchronized Cross-GPU BachNormalization).
     """
     def __init__(self, channels, stride, downsample=False, in_channels=0,
-                 dilation=1, first_dilation=1, norm_layer=BatchNorm, **kwargs):
+                 dilation=1, first_dilation=1, norm_layer=None, **kwargs):
         super(DilatedBottleneckV2, self).__init__(**kwargs)
         self.bn1 = norm_layer()
         self.conv1 = nn.Conv2D(channels//4, kernel_size=1, strides=1, use_bias=False)
@@ -144,7 +144,7 @@ class DilatedResNetV2(HybridBlock):
         for Synchronized Cross-GPU BachNormalization).
     """
     def __init__(self, block, layers, channels, classes=1000, thumbnail=False,
-                 norm_layer=BatchNorm, **kwargs):
+                 norm_layer=None, **kwargs):
         super(DilatedResNetV2, self).__init__(**kwargs)
         assert len(layers) == len(channels) - 1
         with self.name_scope():
@@ -167,7 +167,7 @@ class DilatedResNetV2(HybridBlock):
                 stride = strides[i]
                 self.features.add(self._make_layer(block, num_layer, channels[i+1],
                                                    stride, i+1, in_channels=in_channels,
-                                                   dilation=dilation))
+                                                   dilation=dilation, norm_layer=norm_layer))
                 in_channels = channels[i+1]
             self.features.add(norm_layer())
             self.features.add(nn.Activation('relu'))
@@ -177,22 +177,22 @@ class DilatedResNetV2(HybridBlock):
             self.output = nn.Dense(classes, in_units=in_channels)
 
     def _make_layer(self, block, layers, channels, stride, stage_index, in_channels=0,
-                    dilation=1):
+                    dilation=1, norm_layer=None):
         layer = nn.HybridSequential(prefix='stage%d_'%stage_index)
         with layer.name_scope():
             if dilation == 1 or dilation == 2:
                 layer.add(block(channels, stride, channels != in_channels,
                                 in_channels=in_channels, dilation=1,
-                                first_dilation=dilation,
+                                first_dilation=dilation, norm_layer=norm_layer,
                                 prefix=''))
             elif dilation == 4:
                 layer.add(block(channels, stride, channels != in_channels,
                                 in_channels=in_channels, dilation=2,
-                                first_dilation=dilation,
+                                first_dilation=dilation,norm_layer=norm_layer,
                                 prefix=''))
             for _ in range(layers-1):
                 layer.add(block(channels, 1, False, in_channels=channels,
-                                dilation=dilation, first_dilation=dilation, prefix=''))
+                                dilation=dilation, first_dilation=dilation, norm_layer=norm_layer, prefix=''))
         return layer
 
     def hybrid_forward(self, F, x):
@@ -242,7 +242,7 @@ def get_dilated_resnet(version, num_layers, pretrained=False, ctx=cpu(), root='~
     block_class = dilated_resnet_block_versions[block_type]
     net = DilatedResNetV2(block_class, layers, channels, **kwargs)
     if pretrained:
-        from mxnet.gluon.model_zoo.model_store import get_model_file
+        from .model_store import get_model_file
         net.load_params(get_model_file('resnet%d_v%d'%(num_layers, version),
                                        root=root), ctx=ctx)
     return net

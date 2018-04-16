@@ -1,7 +1,7 @@
 """Gluon Vision Model Zoo"""
 # pylint: disable=wildcard-import
 from .model_zoo import get_model
-from .dilatedresnet import *
+from .dilated import dilatedresnetv1, dilatedresnetv2
 from .ssd.ssd import SSD
 from .cifarresnet import *
 from .cifarwideresnet import *

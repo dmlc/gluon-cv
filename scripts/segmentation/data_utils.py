@@ -23,7 +23,11 @@ def _getDataloader(args, dataset):
             root=args.data_folder,
             split='test',
             transform=input_transform)
-        return testset
+        test_data = gluon.data.DataLoader(
+            testset, args.test_batch_size,
+            num_workers=args.workers,
+            batchify_fn=test_mp_batchify_fn)
+        return test_data
 
     trainset = dataset._Segmentation(
         root=args.data_folder,
@@ -37,12 +41,28 @@ def _getDataloader(args, dataset):
         target_transform=target_transform)
 
     train_data = gluon.data.DataLoader(
-        trainset, args.batch_size, shuffle=True, last_batch='discard',
+        trainset, args.batch_size, shuffle=True, last_batch='rollover',
         num_workers=args.workers)
     test_data = gluon.data.DataLoader(testset, args.test_batch_size,
-        last_batch='discard', num_workers=args.workers)
+        last_batch='keep', num_workers=args.workers)
     return train_data, test_data
 
+
+def test_mp_batchify_fn(data):
+    """Collate data into batch. Use shared memory for stacking."""
+    if isinstance(data[0], mx.nd.NDArray):
+        out = mx.nd.empty((len(data),) + data[0].shape, dtype=data[0].dtype,
+                           ctx=mx.context.Context('cpu_shared', 0))
+        return mx.nd.stack(*data, out=out)
+    elif isinstance(data[0], str):
+        return zip(*data)
+    elif isinstance(data[0], tuple):
+        data = zip(*data)
+        return [test_mp_batchify_fn(i) for i in data]
+    else:
+        data = np.asarray(data)
+        return mx.nd.array(data, dtype=data.dtype,
+                        ctx=mx.context.Context('cpu_shared', 0))
 
 class Compose(object):
     """Composes several transforms together.
