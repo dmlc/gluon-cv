@@ -33,5 +33,5 @@ Bounding Box Visualization
 .. autofunction:: gluonvision.utils.set_lr_mult
 
 :hidden:`Bouding Box Utils`
-~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. autofunction:: gluonvision.utils.bbox_iou
