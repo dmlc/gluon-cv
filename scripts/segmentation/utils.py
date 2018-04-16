@@ -25,12 +25,14 @@ def resize_image(img, h, w):
     return F.contrib.BilinearResize2D(img, height=h, width=w)
 
 
-def pad_image(img, args, crop_size=480):
+def pad_image(img, crop_size=480):
     b,c,h,w = img.shape
     assert(c==3)
     padh = crop_size - h if h < crop_size else 0
     padw = crop_size - w if w < crop_size else 0
-    pad_values = -np.array(args.mean) / np.array(args.std)
+    mean = [.485, .456, .406]
+    std = [.229, .224, .225]
+    pad_values = -np.array(mean) / np.array(std)
     img_pad = mx.nd.zeros((b,c,h+padh,w+padw)).as_in_context(img.context)
     for i in range(c):
         img_pad[:,i,:,:] = F.squeeze(

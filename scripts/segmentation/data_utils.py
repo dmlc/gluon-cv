@@ -23,10 +23,8 @@ def _getDataloader(args, dataset):
             root=args.data_folder,
             split='test',
             transform=input_transform)
-        test_data = gluon.data.DataLoader(
-            testset, args.test_batch_size,
-            num_workers=args.workers,
-            batchify_fn=test_mp_batchify_fn)
+        test_data = TestDataLoader(
+            testset, args.test_batch_size)
         return test_data
 
     trainset = dataset._Segmentation(
@@ -48,21 +46,72 @@ def _getDataloader(args, dataset):
     return train_data, test_data
 
 
-def test_mp_batchify_fn(data):
-    """Collate data into batch. Use shared memory for stacking."""
-    if isinstance(data[0], mx.nd.NDArray):
-        out = mx.nd.empty((len(data),) + data[0].shape, dtype=data[0].dtype,
-                           ctx=mx.context.Context('cpu_shared', 0))
-        return mx.nd.stack(*data, out=out)
-    elif isinstance(data[0], str):
-        return zip(*data)
-    elif isinstance(data[0], tuple):
-        data = zip(*data)
-        return [test_mp_batchify_fn(i) for i in data]
-    else:
-        data = np.asarray(data)
-        return mx.nd.array(data, dtype=data.dtype,
-                        ctx=mx.context.Context('cpu_shared', 0))
+class SequentialSampler(object):
+    """Samples elements from [0, length) sequentially.
+    Parameters
+    ----------
+    length : int
+        Length of the sequence.
+    """
+    def __init__(self, length):
+        self._length = length
+
+    def __iter__(self):
+        return iter(range(self._length))
+
+    def __len__(self):
+        return self._length
+
+
+class BatchSampler(object):
+    def __init__(self, sampler, batch_size):
+        self._sampler = sampler
+        self._batch_size = batch_size
+        self._prev = []
+
+    def __iter__(self):
+        batch, self._prev = self._prev, []
+        for i in self._sampler:
+            batch.append(i)
+            if len(batch) == self._batch_size:
+                yield batch
+                batch = []
+        if batch:
+            yield batch
+            
+    def __len__(self):
+        return (len(self._sampler) + self._batch_size - 1) // self._batch_size
+
+        
+class TestDataLoader(object):
+    # allowing different size in the 'batch'
+    def __init__(self, dataset, batch_size=None):
+        self._dataset = dataset
+        self._batch_sampler = BatchSampler(SequentialSampler(len(dataset)), batch_size)
+
+    def __iter__(self):
+        generator = lambda: [(yield self._batchify_fn([self._dataset[idx] for idx in batch]))
+                              for batch in self._batch_sampler]
+        return generator()
+
+    def _batchify_fn(self, data):
+        if isinstance(data[0], mx.nd.NDArray):
+            #return mx.nd.stack(*data)
+            return list(data)
+            #return [x.expand_dims(0) for x in data]
+        elif isinstance(data[0], str):
+            #print(list(data))
+            return list(data)
+        elif isinstance(data[0], tuple):
+            data = zip(*data)
+            return [self._batchify_fn(i) for i in data]
+        else:
+            data = np.asarray(data)
+            return mx.nd.array(data, dtype=data.dtype)
+
+    def __len__(self):
+        return len(self._batch_sampler)
+
 
 class Compose(object):
     """Composes several transforms together.

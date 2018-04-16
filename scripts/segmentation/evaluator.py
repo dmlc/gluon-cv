@@ -1,3 +1,4 @@
+import os
 import math
 import threading
 from tqdm import tqdm
@@ -6,7 +7,7 @@ from mxnet.ndarray import NDArray
 
 from gluonvision.utils.metrics import voc_segmentation
 from gluonvision.model_zoo.segbase import SegEvalModule
-from gluonvision.utils.parallel import ModelDataParallel
+from gluonvision.utils.parallel import ModelDataParallel, parallel_apply
 
 from utils import *
 from option import Options
@@ -16,27 +17,27 @@ from model_utils import get_model_criterion
 
 class MultiEvalModule(object):
     """Multi-size Segmentation Eavluator"""
-    def __init__(self, module, nclass, bg, ignore_index=None,
+    def __init__(self, module, nclass, bg, ctx_list,
                  base_size=520, crop_size = 480, flip=True,
                  scales=[0.5, 0.75, 1.0, 1.25, 1.5, 1.75]):
         self.bg = bg
         self.flip = flip
+        self.ctx_list = ctx_list
         self.base_size = base_size
         self.crop_size = crop_size
-        if ignore_index is not None:
-            self.nclass = nclass - 1
-        else:
-            self.nclass = nclass
+        self.nclass = nclass
         self.evalmodule = SegEvalModule(module, bg)
         self.scales=scales
 
+    def parallel_forward(self, inputs):
+        inputs = [x.as_in_context(ctx) for (x, ctx) in zip(inputs, self.ctx_list)]
+        if len(self.ctx_list) == 1:
+            return self(*inputs[0])
+        return parallel_apply(self, inputs, sync=True)
+
     def __call__(self, image, target=None):
-        """
-        multi-size evaluation
-        image: 4D Variable 1x3xHxW
-        target: 3D variable 1xHxW
-        """
         # only single image is supported for evaluation
+        image = image.expand_dims(0)
         batch, _, h, w = image.shape
         assert(batch == 1)
         base_size = self.base_size
@@ -58,13 +59,13 @@ class MultiEvalModule(object):
             # resize image to current size
             cur_img = resize_image(image, height, width)
             if scale <= 1.25 or long_size <= crop_size:# #
-                pad_img = pad_image(cur_img, self.args, crop_size)
+                pad_img = pad_image(cur_img, crop_size)
                 outputs = self.model_forward(pad_img)
                 outputs = crop_image(outputs, 0, height, 0, width)
             else:
                 if short_size < crop_size:
                     # pad if needed
-                    pad_img = pad_image(cur_img, self.args, crop_size)
+                    pad_img = pad_image(cur_img, crop_size)
                 else:
                     pad_img = cur_img
                 _,_,ph,pw = pad_img.shape
@@ -83,7 +84,7 @@ class MultiEvalModule(object):
                         w1 = min(w0 + crop_size, pw)
                         crop_img = crop_image(pad_img, h0, h1, w0, w1)
                         # pad if needed
-                        pad_crop_img = pad_image(crop_img, self.args, 
+                        pad_crop_img = pad_image(crop_img, 
                             crop_size)
                         output = self.model_forward(pad_crop_img)
                         outputs[:,:,h0:h1,w0:w1] += crop_image(output,
@@ -96,16 +97,8 @@ class MultiEvalModule(object):
             score = resize_image(outputs, h, w)
             scores += score
 
-        # test mode
         if target is None:
             return scores
-
-        correct, labeled = voc_segmentation.batch_pix_accuracy(
-            scores, target, self.bg)
-        inter, union = voc_segmentation.batch_intersection_union(
-            scores, target, self.nclass, self.bg)
-
-        return correct, labeled, inter, union
 
     def model_forward(self, image):
         assert(isinstance(image, NDArray))
@@ -121,25 +114,24 @@ class MultiEvalModule(object):
 
 def test(args):
     net, criterion = get_model_criterion(args)
-    evaluator = ModelDataParallel(MultiEvalModule(net.module, args.nclass,
-                                  args.bg, args.ignore_index), args.ctx)
+    # module, nclass, bg, ctx_list,
+    evaluator = MultiEvalModule(net.module, args.nclass,
+                                args.bg, args.ctx)
     args.test_batch_size = args.ngpus
     test_data = get_data_loader(args)
 
     tbar = tqdm(test_data)
     for i, (data, im_paths) in enumerate(tbar):
-        print('data', data)
-        print('im_paths', im_paths)
-        raise RuntimeError('debug')
-        predicts = evaluator(data)
-        for predict, im_path in zip(predicts, im_paths):
-            predict = F.squeeze(F.argmax(predict, 1)).asnumpy()
+        predicts = evaluator.parallel_forward(data)
+        for predict, impath in zip(predicts, im_paths):
+            predict = mx.nd.squeeze(mx.nd.argmax(predict, 1)).asnumpy()
             mask = get_mask(predict, args.dataset)
             outname = os.path.splitext(impath)[0] + '.png'
             mask.save(os.path.join(args.outdir, outname))
 
-         
+
 if __name__ == "__main__":
     args = Options().parse()
+    args.test = True
     print('Testing model: ', args.resume)
     test(args)

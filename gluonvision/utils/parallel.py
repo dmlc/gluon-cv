@@ -140,14 +140,20 @@ def parallel_apply(module, inputs, kwargs_tup=None, sync=False):
         try:
             if is_recording:
                 with autograd.record(is_training):
-                    output = module(*input, **kwargs)
+                    if isinstance(input, NDArray):
+                        output = module(input, **kwargs)
+                    else:
+                        output = module(*input, **kwargs)
                     if isinstance(output, NDArray):
                         output.wait_to_read()
                     else:
                         for out in output:
                             out.wait_to_read()
             else:
-                output = module(*input, **kwargs)
+                if isinstance(input, NDArray):
+                    output = module(input, **kwargs)
+                else:
+                    output = module(*input, **kwargs)
                 if isinstance(output, NDArray):
                     output.wait_to_read()
                 else:
