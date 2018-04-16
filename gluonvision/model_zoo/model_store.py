@@ -4,9 +4,14 @@ __all__ = ['get_model_file', 'purge']
 import os
 import zipfile
 
-from mxnet.gluon.utils import download, check_sha1
+from mxnet.gluon.utils import check_sha1
+from ..utils import download
 
 _model_sha1 = {name: checksum for checksum, name in [
+    ('4fa2e1ad96b8c8d1ba9e5a43556cd909d70b3985', 'vgg16_atrous'),
+    ('0e169fbb64efdee6985c3c175ec4298c4bda0298', 'ssd_300_vgg16_atrous_voc'),
+    ('13e0a68fa29b46db37a2361475d52a52ef4ff48b', 'ssd_512_vgg16_atrous_voc'),
+    ('4a9f39c407e76bbd81348a8bc4f50b2d9ac682ca', 'ssd_512_resnet50_v1_voc'),
     ('ce85f11ce208d8f5adc9da52753b717db73a2c6e', 'cifar_resnet20_v1'),
     ('f920e8b8186132e64518a4502c57e381ef336b72', 'cifar_resnet20_v2'),
     ('aa01e54160e2c92b8dee2319f1c2a8ea0e327ed1', 'cifar_resnet56_v1'),
@@ -43,8 +48,12 @@ def get_model_file(name, root=os.path.join('~', '.mxnet', 'models')):
     file_path
         Path to the requested pretrained model file.
     """
-    file_name = '{name}-{short_hash}'.format(name=name,
-                                             short_hash=short_hash(name))
+    from mxnet.gluon.model_zoo.model_store import get_model_file as upstream_get_model_file
+    try:
+        file_name = upstream_get_model_file(name=name, root=root)
+    except ValueError:
+        file_name = '{name}-{short_hash}'.format(name=name,
+                                                 short_hash=short_hash(name))
     root = os.path.expanduser(root)
     file_path = os.path.join(root, file_name+'.params')
     sha1_hash = _model_sha1[name]

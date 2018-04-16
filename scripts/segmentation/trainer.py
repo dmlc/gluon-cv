@@ -15,7 +15,7 @@ from model_utils import get_model_criterion
 from evaluator import Evaluator
 from utils import save_checkpoint, get_mask
 
-class Trainer:
+class Trainer(object):
     def __init__(self, args):
         self.args = args
         self.net, self.criterion = get_model_criterion(args)

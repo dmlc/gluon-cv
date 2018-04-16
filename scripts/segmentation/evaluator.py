@@ -3,10 +3,10 @@ import threading
 import mxnet as mx
 from mxnet.ndarray import NDArray
 
-import gluonvision.utils as utils
+from gluonvision.utils.metrics import voc_segmentation
 from utils import *
 
-class Evaluator:
+class Evaluator(object):
     def __init__(self, args):
         self.idx = 0
         self.args = args
@@ -20,9 +20,9 @@ class Evaluator:
     def test_batch(self, outputs, targets):
         # for single gpu
         if isinstance(outputs, NDArray):
-            correct, labeled = utils.batch_pix_accuracy(outputs,
+            correct, labeled = voc_segmentation.batch_pix_accuracy(outputs,
                 targets, self.args.bg)
-            inter, union = utils.batch_intersection_union(
+            inter, union = voc_segmentation.batch_intersection_union(
                 outputs, targets, self.nclass, self.args.bg)
             return correct, labeled
 
@@ -32,9 +32,9 @@ class Evaluator:
         corrects, labeleds, inters, unions = {}, {}, {}, {}
         def _worker(i, output, target, lock):
             try:
-                correct, labeled = utils.batch_pix_accuracy( \
+                correct, labeled = voc_segmentation.batch_pix_accuracy( \
                    output, target, self.args.bg)
-                inter, union = utils.batch_intersection_union(
+                inter, union = voc_segmentation.batch_intersection_union(
                     output, target, self.nclass, self.args.bg)
                 with lock:
                     corrects[i], labeleds[i] = correct, labeled
@@ -151,9 +151,9 @@ class Evaluator:
         # test mode
         if target is None:
             return scores
-        correct, labeled = utils.batch_pix_accuracy(
+        correct, labeled = voc_segmentation.batch_pix_accuracy(
             scores, target, self.args.bg)
-        inter, union = utils.batch_intersection_union(
+        inter, union = voc_segmentation.batch_intersection_union(
             scores, target, self.nclass, self.args.bg)
         return correct, labeled, inter, union
 

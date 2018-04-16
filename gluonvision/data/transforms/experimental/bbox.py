@@ -71,8 +71,8 @@ def random_crop_with_constraints(bbox, size, min_scale=0.3, max_scale=1,
 
     candidates = [(0, 0, w, h)]
     for min_iou, max_iou in constraints:
-        min_iou = 0 if min_iou is None else min_iou
-        max_iou = 1 if max_iou is None else max_iou
+        min_iou = -np.inf if min_iou is None else min_iou
+        max_iou = np.inf if max_iou is None else max_iou
 
         for _ in range(max_trial):
             scale = random.uniform(min_scale, max_scale)
@@ -84,7 +84,6 @@ def random_crop_with_constraints(bbox, size, min_scale=0.3, max_scale=1,
 
             crop_t = random.randrange(h - crop_h)
             crop_l = random.randrange(w - crop_w)
-            # crop_bb = np.array((crop_t, crop_l, crop_t + crop_h, crop_l + crop_w))
             crop_bb = np.array((crop_l, crop_t, crop_l + crop_w, crop_t + crop_h))
 
             iou = bbox_iou(bbox, crop_bb[np.newaxis])
@@ -95,7 +94,11 @@ def random_crop_with_constraints(bbox, size, min_scale=0.3, max_scale=1,
                 break
 
     # random select one
-    crop = random.choice(candidates)
-    new_bbox = bbox_crop(bbox, crop, allow_outside_center=False)
-    new_crop = (crop[0], crop[1], crop[2], crop[3])
-    return new_bbox, new_crop
+    while candidates:
+        crop = candidates.pop(np.random.randint(0, len(candidates)))
+        new_bbox = bbox_crop(bbox, crop, allow_outside_center=False)
+        if new_bbox.size < 1:
+            continue
+        new_crop = (crop[0], crop[1], crop[2], crop[3])
+        return new_bbox, new_crop
+    return bbox, (0, 0, w, h)

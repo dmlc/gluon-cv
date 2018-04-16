@@ -4,9 +4,9 @@ from __future__ import absolute_import
 import random
 from .image import plot_image
 
-def plot_bboxes(img, bboxes, scores=None, labels=None, thresh=0.5,
-                class_names=None, colors=None, ax=None,
-                reverse_rgb=False, absolute_coordinates=True):
+def plot_bbox(img, bboxes, scores=None, labels=None, thresh=0.5,
+              class_names=None, colors=None, ax=None,
+              reverse_rgb=False, absolute_coordinates=True):
     """Visualize bounding boxes.
 
     Parameters

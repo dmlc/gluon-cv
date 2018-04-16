@@ -2,7 +2,7 @@
 # pylint: disable=wildcard-import
 from .model_zoo import get_model
 from .dilatedresnet import *
-from .ssd.ssd import SSD
+from .ssd import *
 from .cifarresnet import *
 from .cifarwideresnet import *
 from .segbase import SegBaseModel

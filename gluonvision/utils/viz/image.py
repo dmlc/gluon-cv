@@ -18,6 +18,12 @@ def plot_image(img, ax=None, reverse_rgb=False):
     matplotlib axes
         The ploted axes.
 
+    Examples
+    --------
+
+    from matplotlib import pyplot as plt
+    ax = plot_image(img)
+    plt.show()
     """
     from matplotlib import pyplot as plt
     if ax is None:
