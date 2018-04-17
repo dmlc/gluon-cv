@@ -6,33 +6,26 @@ models in computer vision. It is designed for engineers, researchers, and
 students to fast prototype products and research ideas based on these
 models. This toolkit offers four main features:
 
-1. Training scripts to reproduce SOTA results reported in [research papers](link
-    to the paper to code list)
-
-2. A large number of [pre-trained models](link to model zoo)
-
-3. Carefully designed [APIs](link to API doc) that greatly reduce the
-   implementation complexity
-
-4. [Community supports](link to how to contact us)
-
+1. Training scripts to reproduce SOTA results reported in research papers
+2. A large number of pre-trained models
+3. Carefully designed APIs that greatly reduce the implementation complexity
+4. Community supports
 
 This toolkit assume users has basic knowledges about deep learning and computer
-vision. Otherwise, please refer to xxx and yyy.
+vision. Otherwise, please refer to introduction courses such as `Stanford
+CS231n <http://cs231n.stanford.edu/>`_.
 
 .. note::
 
-   This project is still at an early stage. We are continuously adding more
-   models and making it easier to use. Any contribution (link to how to
-   contribute) is warmly welcome.
-
+   This project is still at an early stage. Please expect that it will
+   be updated frequently. We also welcome any contributions.
 
 Installation
 ------------------
 
-GluonVision relies on the recent version of MXNet. The easiest way to install
-MXNet is through pip(lin). The following command installs a nightly build CPU
-version of MXNet.
+GluonVision relies on the recent version of MXNet. The easiest way to install MXNet
+is through `pip <https://pip.pypa.io/en/stable/installing/>`_. The following
+command installs a nightly build CPU version of MXNet.
 
 .. code-block:: bash
 
@@ -40,10 +33,13 @@ version of MXNet.
 
 .. note::
 
-   Most training scripts are recommended to run on GPUs. If you have a GPU
-   machine, please refer to xxx to install a GPU version MXNet, or refer to xxx
-   to launch a GPU instance on AWS. It's also common to run model inference on
-   CPUs, refer xx to install a CPU accelerated MXNet.
+   There are other pre-build MXNet packages that enables GPU supports and
+   accelerate CPU performance, please refer to `this tutorial
+   <http://gluon-crash-course.mxnet.io/mxnet_packages.html>`_ for details. Some
+   training scripts are recommended to run on GPUs, if you don't have a GPU
+   machine at hands, you may consider to `run on AWS
+   <http://gluon-crash-course.mxnet.io/use_aws.html>`_.
+
 
 Then clone the GluonVision project and install it locally
 
@@ -55,6 +51,7 @@ Then clone the GluonVision project and install it locally
 A Quick Example
 ----------------
 
+
 :ref:`ssd-demo`
 
 
@@ -62,26 +59,17 @@ A Quick Example
    :maxdepth: 2
    :caption: Tutorials
 
-   examples_datasets/index
-   examples_classification/index
-   examples_detection/index
-   examples_segmentation/index
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Model Zoo
-
-   model_zoo/index
+   examples/index
 
 .. toctree::
    :maxdepth: 1
    :caption: API Documents
 
 
-   api/python/datasets
-   api/python/models
-   api/python/transforms
-   api/python/utils
+   api/datasets
+   api/models
+   api/transforms
+   api/utils
 
 .. toctree::
    :maxdepth: 1
