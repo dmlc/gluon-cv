@@ -545,9 +545,8 @@ def train(epochs, ctx):
         train_loss /= batch_size * num_batch
         name, acc = train_metric.get()
         name, val_acc = test(ctx, val_data)
-        train_history.update({'training-error': 1-acc, 'validation-error': 1-val_acc})
-        train_history.plot(labels=['training-error', 'validation-error'],
-                           save_path='%s/%s_history.png'%(plot_path, model_name))
+        train_history.update([1-acc, 1-val_acc])
+        train_history.plot(save_path='%s/%s_history.png'%(plot_path, model_name))
 
         if val_acc > best_val_score and epoch > 50:
             best_val_score = val_acc

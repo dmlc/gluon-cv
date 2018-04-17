@@ -112,13 +112,13 @@ After the installation, one can run the following command:
     python train.py --num-epochs 240 --mode hybrid --num-gpus 0 -j 1 --batch-size 128\
         --wd 0.0001 --lr 0.1 --lr-decay 0.1 --lr-decay-epoch 80,160 --model cifar_resnet20_v1
 
-Here we change the values of `--num-gpus` to 0 and `-j` to 1, to only use CPU for training and use one thread
+Here we change the values of ``--num-gpus`` to 0 and ``-j`` to 1, to only use CPU for training and use one thread
 for data loader.
 
-the result on our side is:
+This is a brief comparison of performance on our side :
 
--  12 seconds with a V100 GPU per epoch, and 8 CPU threads.
--  70 seconds with one 8-thread CPU per epoch, with MKLDNN.
+-  13 seconds with one V100 GPU per epoch, and 8 CPU threads.
+-  70 seconds with one 8-thread CPU per epoch, with MKLDNN enabled.
 
 With limited computational power, it is good in practice to firstly test
 a few epochs to ensure everything works, then leave it running for a
