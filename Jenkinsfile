@@ -13,8 +13,6 @@ stage("LINT") {
   }
 }
 
-def upload(
-
 stage("Docs") {
   node {
     ws('workspace/gluon-vision-docs') {
