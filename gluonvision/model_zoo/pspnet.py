@@ -3,7 +3,6 @@
 from mxnet.gluon import nn
 import mxnet.ndarray as F
 from mxnet.gluon.nn import HybridBlock
-
 from .segbase import SegBaseModel
 from .fcn import _FCNHead
 # pylint: disable-all

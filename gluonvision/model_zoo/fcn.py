@@ -4,7 +4,6 @@ from mxnet.gluon import nn
 import mxnet.ndarray as F
 from mxnet.context import cpu
 from mxnet.gluon.nn import HybridBlock
-
 from .segbase import SegBaseModel
 # pylint: disable=unused-argument,abstract-method,missing-docstring
 

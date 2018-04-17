@@ -1,8 +1,6 @@
 """Base Model for Semantic Segmentation"""
 from mxnet.gluon.nn import HybridBlock
-
 from ..utils.metrics import voc_segmentation
-
 from .dilated import dilatedresnetv0
 # pylint: disable=abstract-method
 
