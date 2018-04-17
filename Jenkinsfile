@@ -12,14 +12,17 @@ stage("LINT") {
     }
   }
 }
-if (env.BRANCH_NAME == "master") {
-  job = 'master-${env.BUILD_NUMBER}'
-  dst = 's3://gluon-vision.mxnet.io/'
-  url = 'http://gluon-vision.mxnet.io'
-} else {
-  job = '${env.BRANCH_NAME}-${env.BUILD_NUMBER}'
-  dst = 's3://gluon-vision-staging/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/'
-  url = 'http://gluon-vision-staging.s3-website-us-west-2.amazonaws.com/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/index.html'
+
+environment {
+  if (env.BRANCH_NAME == "master") {
+    JOB = 'master-${env.BUILD_NUMBER}'
+    DST = 's3://gluon-vision.mxnet.io/'
+    URL = 'http://gluon-vision.mxnet.io'    
+  } else {
+    JOB = '${env.BRANCH_NAME}-${env.BUILD_NUMBER}'
+    DST = 's3://gluon-vision-staging/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/'
+    URL = 'http://gluon-vision-staging.s3-website-us-west-2.amazonaws.com/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/index.html'
+  }
 }
 
 stage("Docs") {
@@ -36,17 +39,16 @@ stage("Docs") {
       export LD_LIBRARY_PATH=/usr/local/cuda-8.0/lib64
       cd docs && make html
       """
-      
-      
+         
       retry (5) {
         try {
-          sh "aws s3 sync --delete docs/build/html/ ${dst} --acl public-read"
+          sh "aws s3 sync --delete docs/build/html/ ${DST} --acl public-read"
         } catch (exc) {
-          sh "aws s3 rm ${dst} --recursive"
+          sh "aws s3 rm ${DST} --recursive"
           error "Failed to upload document"
         }
       }
-      pullRequest.comment("Job ${job} is done. Docs are uploaded to ${url}")                          
+      pullRequest.comment("Job ${JOB} is done. Docs are uploaded to ${URL}")                          
     }
   }
 }
