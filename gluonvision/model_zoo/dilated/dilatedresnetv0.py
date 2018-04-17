@@ -1,23 +1,24 @@
-"""Dilated_ResNetV1s, implemented in Gluon."""
+"""Dilated_ResNetV0s, implemented in Gluon."""
 # pylint: disable=arguments-differ,unused-argument,missing-docstring
 from __future__ import division
 
+from mxnet.context import cpu
 from mxnet.gluon.block import HybridBlock
 from mxnet.gluon import nn
 from mxnet.gluon.nn import BatchNorm
 
-__all__ = ['DilatedResNetV1', 'dilated_resnet18', 'dilated_resnet34',
+__all__ = ['DilatedResNetV0', 'dilated_resnet18', 'dilated_resnet34',
            'dilated_resnet50', 'dilated_resnet101',
-           'dilated_resnet152', 'DilatedBasicBlockV1', 'DilatedBottleneckV1']
+           'dilated_resnet152', 'DilatedBasicBlockV0', 'DilatedBottleneckV0']
 
 
-class DilatedBasicBlockV1(HybridBlock):
-    """DilatedResNetV1 DilatedBasicBlockV1
+class DilatedBasicBlockV0(HybridBlock):
+    """DilatedResNetV0 DilatedBasicBlockV0
     """
     expansion = 1
     def __init__(self, inplanes, planes, strides=1, dilation=1, downsample=None, first_dilation=1,
                  norm_layer=None, **kwargs):
-        super(DilatedBasicBlockV1, self).__init__()
+        super(DilatedBasicBlockV0, self).__init__()
         self.conv1 = nn.Conv2D(in_channels=inplanes, channels=planes,
                                kernel_size=3, strides=strides,
                                padding=dilation, dilation=dilation, use_bias=False)
@@ -49,14 +50,14 @@ class DilatedBasicBlockV1(HybridBlock):
         return out
 
 
-class DilatedBottleneckV1(HybridBlock):
-    """DilatedResNetV1 DilatedBottleneckV1
+class DilatedBottleneckV0(HybridBlock):
+    """DilatedResNetV0 DilatedBottleneckV0
     """
     # pylint: disable=unused-argument
     expansion = 4
     def __init__(self, inplanes, planes, strides=1, dilation=1,
                  downsample=None, first_dilation=1, norm_layer=None, **kwargs):
-        super(DilatedBottleneckV1, self).__init__()
+        super(DilatedBottleneckV0, self).__init__()
         self.conv1 = nn.Conv2D(in_channels=inplanes, channels=planes, kernel_size=1, use_bias=False)
         self.bn1 = nn.BatchNorm(in_channels=planes)
         self.conv2 = nn.Conv2D(
@@ -95,9 +96,21 @@ class DilatedBottleneckV1(HybridBlock):
         return out
 
 
-class DilatedResNetV1(HybridBlock):
-    """Dilated Pre-trained DilatedResNetV1 Model, which preduces the strides of 8
+class DilatedResNetV0(HybridBlock):
+    """Dilated Pre-trained DilatedResNetV0 Model, which preduces the strides of 8
     featuremaps at conv5.
+
+    Parameters
+    ----------
+    block : Block
+        Class for the residual block. Options are BasicBlockV1, BottleneckV1.
+    layers : list of int
+        Numbers of layers in each block
+    num_classes : int, default 1000
+        Number of classification classes.
+    norm_layer : object
+        Normalization layer used in backbone network (default: :class:`mxnet.gluon.nn.BatchNorm`;
+        for Synchronized Cross-GPU BachNormalization).
 
     Reference:
 
@@ -109,7 +122,7 @@ class DilatedResNetV1(HybridBlock):
     # pylint: disable=unused-variable
     def __init__(self, block, layers, num_classes=1000, norm_layer=BatchNorm, **kwargs):
         self.inplanes = 64
-        super(DilatedResNetV1, self).__init__()
+        super(DilatedResNetV0, self).__init__()
         with self.name_scope():
             self.conv1 = nn.Conv2D(in_channels=3, channels=64, kernel_size=7, strides=2, padding=3,
                                    use_bias=False)
@@ -177,64 +190,112 @@ class DilatedResNetV1(HybridBlock):
         return x
 
 
-def dilated_resnet18(pretrained=False, **kwargs):
-    """Constructs a DilatedResNetV1-18 model.
+def dilated_resnet18(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
+    """Constructs a DilatedResNetV0-18 model.
 
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
+    Parameters
+    ----------
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    norm_layer : object
+        Normalization layer used in backbone network (default: :class:`mxnet.gluon.nn.BatchNorm`;
+        for Synchronized Cross-GPU BachNormalization).
     """
-    model = DilatedResNetV1(DilatedBasicBlockV1, [2, 2, 2, 2], **kwargs)
+    model = DilatedResNetV0(DilatedBasicBlockV0, [2, 2, 2, 2], **kwargs)
     if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['dilated_resnet18']))
+        from ..model_store import get_model_file
+        model.load_params(get_model_file('resnet%d_v%d'%(18, 0),
+                                         root=root), ctx=ctx)
     return model
 
 
-def dilated_resnet34(pretrained=False, **kwargs):
-    """Constructs a DilatedResNetV1-34 model.
+def dilated_resnet34(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
+    """Constructs a DilatedResNetV0-34 model.
 
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
+    Parameters
+    ----------
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    norm_layer : object
+        Normalization layer used in backbone network (default: :class:`mxnet.gluon.nn.BatchNorm`;
     """
-    model = DilatedResNetV1(DilatedBasicBlockV1, [3, 4, 6, 3], **kwargs)
+    model = DilatedResNetV0(DilatedBasicBlockV0, [3, 4, 6, 3], **kwargs)
     if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['dilated_resnet34']))
+        from ..model_store import get_model_file
+        model.load_params(get_model_file('resnet%d_v%d'%(34, 0),
+                                         root=root), ctx=ctx)
     return model
 
 
-def dilated_resnet50(pretrained=False, **kwargs):
-    """Constructs a DilatedResNetV1-50 model.
+def dilated_resnet50(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
+    """Constructs a DilatedResNetV0-50 model.
 
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
+    Parameters
+    ----------
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    norm_layer : object
+        Normalization layer used in backbone network (default: :class:`mxnet.gluon.nn.BatchNorm`;
     """
-    model = DilatedResNetV1(DilatedBottleneckV1, [3, 4, 6, 3], **kwargs)
+    model = DilatedResNetV0(DilatedBottleneckV0, [3, 4, 6, 3], **kwargs)
     if pretrained:
-        print('loading pretrained weights')
-        model.load_params('ResNet50.params')
+        from ..model_store import get_model_file
+        model.load_params(get_model_file('resnet%d_v%d'%(50, 0),
+                                         root=root), ctx=ctx)
     return model
 
 
-def dilated_resnet101(pretrained=False, **kwargs):
-    """Constructs a DilatedResNetV1-101 model.
+def dilated_resnet101(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
+    """Constructs a DilatedResNetV0-101 model.
 
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
+    Parameters
+    ----------
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    norm_layer : object
+        Normalization layer used in backbone network (default: :class:`mxnet.gluon.nn.BatchNorm`;
     """
-    model = DilatedResNetV1(DilatedBottleneckV1, [3, 4, 23, 3], **kwargs)
+    model = DilatedResNetV0(DilatedBottleneckV0, [3, 4, 23, 3], **kwargs)
     if pretrained:
-        print('loading pretrained weights')
-        model.load_params('ResNet101.params')
+        from ..model_store import get_model_file
+        model.load_params(get_model_file('resnet%d_v%d'%(101, 0),
+                                         root=root), ctx=ctx)
     return model
 
 
-def dilated_resnet152(pretrained=False, **kwargs):
-    """Constructs a DilatedResNetV1-152 model.
+def dilated_resnet152(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
+    """Constructs a DilatedResNetV0-152 model.
 
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
+    Parameters
+    ----------
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    norm_layer : object
+        Normalization layer used in backbone network (default: :class:`mxnet.gluon.nn.BatchNorm`;
     """
-    model = DilatedResNetV1(DilatedBottleneckV1, [3, 8, 36, 3], **kwargs)
+    model = DilatedResNetV0(DilatedBottleneckV0, [3, 8, 36, 3], **kwargs)
     if pretrained:
-        print('loading pretrained weights')
-        model.load_params('ResNet152.params')
+        from ..model_store import get_model_file
+        model.load_params(get_model_file('resnet%d_v%d'%(152, 0),
+                                         root=root), ctx=ctx)
     return model

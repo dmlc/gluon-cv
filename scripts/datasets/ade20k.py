@@ -1,33 +1,62 @@
-"""Prepare ADE20K datasets. 
+"""Prepare ADE20K datasets.
 ========================
 
-Scene parsing http://sceneparsing.csail.mit.edu/ is to segment and parse an image into different image regions associated with semantic categories, such as sky, road, person, and bed. The data for this benchmark comes from ADE20K Dataset which contains more than 20K scene-centric images exhaustively annotated with objects and object parts. g. There are totally 150 semantic categories included for evaluation, which include stuffs like sky, road, grass, and discrete objects like person, car, bed.
+This script download and prepare the `ADE20K
+<http://sceneparsing.csail.mit.edu/>`_ dataset for scene parsing.  It contains
+more than 20 thousands scene-centric images annotated with 150 object
+categories.
 
 .. image:: http://groups.csail.mit.edu/vision/datasets/ADE20K/assets/images/examples.png
-    :width: 500 px
+   :width: 600 px
 
-Preprocess the Dataset
-----------------------
+Prepare the dataset
+-------------------
 
-This example script will try to download dataset if not exist, extract contents to disk
-and make symbolic link to '~/.mxnet/datasets/ade' so user can use
-ade datasets our-of-box.
-
-- Create symbolic link for existing dataset in the folder `~/Datasets/ade`:
+The easiest way is simply running this script, which will automatically download
+and extract the data into ``~/.mxnet/datasets/ade``.
 
 .. code-block:: bash
 
-    python examples/setup_pascal_voc.py --path ~/Dataset/ade/
+   python scripts/datasets/ade20k.py
 
-- Download the dataset to `~/Datasets/ade` and make symlink
+.. note::
 
-.. code-block:: bash
+   You need 2.3 GB disk space to download and extract this dataset. SSD is
+   preferred over HDD because of its better performance.
 
-    python examples/setup_pascal_voc.py --path ~/Dataset/ade/ --download
+.. note::
 
-Dive Deep into Source Code
+   The total time to prepare the dataset depends on your Internet speed and disk
+   performance. For example, it may take 15 min on AWS EC2 with EBS.
+
+
+If you have already downloaded the following required files, whose URLs can be
+obtained from the source codes at the end of this tutorial,
+
+===========================  ======
+Filename                     Size
+===========================  ======
+ADEChallengeData2016.zip     923 MB
+release_test.zip             202 MB
+===========================  ======
+
+then you can specify the folder name through ``--download-dir`` to avoid
+download them again. For example
+
+.. code-block:: python
+
+   python scripts/datasets/ade20k.py --download-dir ~/ade_downloads
+
+How to load the dataset
+-----------------------
+
+TODO.
+
+Dive deep into source code
 --------------------------
 
+The implementation of ade20k.py is straightforward. It simply downloads and
+extract the data.
 """
 import os
 import shutil
@@ -49,7 +78,7 @@ def parse_args():
     args = parser.parse_args()
     return args
 
-
+# what does aug mean?
 def download_aug(path, overwrite=False):
     _AUG_DOWNLOAD_URLS = [
         ('http://data.csail.mit.edu/places/ADEchallenge/ADEChallengeData2016.zip', '219e1696abb36c8ba3a3afe7fb2f4b4606a897c7'),
