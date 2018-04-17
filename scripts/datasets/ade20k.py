@@ -24,7 +24,7 @@ and extract the data into ``~/.mxnet/datasets/ade``.
    You need 2.3 GB disk space to download and extract this dataset. SSD is
    preferred over HDD because of its better performance.
    The total time to prepare the dataset depends on your Internet speed and disk
-   performance. For example, it may take 5 min on AWS EC2 with EBS.
+   performance. For example, it may take 25 min on AWS EC2 with EBS.
 
 
 If you have already downloaded the following required files and unziped them, whose URLs can be
@@ -96,10 +96,9 @@ if __name__ == '__main__':
     args = parse_args()
     makedirs(os.path.expanduser('~/.mxnet/datasets'))
     if args.download_dir is not None:
-        # make symlink
         if os.path.isdir(_TARGET_DIR):
             os.remove(_TARGET_DIR)
-        os.symlink(args.path, _TARGET_DIR)
-        return
-
-    download_ade(_TARGET_DIR, overwrite=args.overwrite)
+        # make symlink
+        os.symlink(args.download_dir, _TARGET_DIR)
+    else:
+        download_ade(_TARGET_DIR, overwrite=False)
