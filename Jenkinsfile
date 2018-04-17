@@ -12,6 +12,15 @@ stage("LINT") {
     }
   }
 }
+if (env.BRANCH_NAME == "master") {
+  def job = 'master-${env.BUILD_NUMBER}'
+  def dst = 's3://gluon-vision.mxnet.io/'
+  def url = 'http://gluon-vision.mxnet.io'
+} else {
+  def job = '${env.BRANCH_NAME}-${env.BUILD_NUMBER}'
+  def dst = 's3://gluon-vision-staging/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/'
+  def url = 'http://gluon-vision-staging.s3-website-us-west-2.amazonaws.com/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/index.html'
+}
 
 stage("Docs") {
   node {
@@ -28,15 +37,6 @@ stage("Docs") {
       cd docs && make html
       """
       
-      if (env.BRANCH_NAME == "master") {
-        def job = 'master-${env.BUILD_NUMBER}'
-        def dst = 's3://gluon-vision.mxnet.io/'
-        def url = 'http://gluon-vision.mxnet.io'
-      } else {
-        def job = '${env.BRANCH_NAME}-${env.BUILD_NUMBER}'
-        def dst = 's3://gluon-vision-staging/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/'
-        def url = 'http://gluon-vision-staging.s3-website-us-west-2.amazonaws.com/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/index.html'
-      }
       
       retry (5) {
         try {
