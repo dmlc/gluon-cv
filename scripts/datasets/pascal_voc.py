@@ -42,7 +42,12 @@ VOCtrainval_11-May-2012.tar  1.9 GB
 benchmark.tgz                1.4 GB
 ===========================  ======
 
-then you can specify the folder name through ``--download-dir`` to avoid download them again.
+then you can specify the folder name through ``--download-dir`` to avoid
+download them again.  For example,
+
+.. code-block:: python
+
+   python scripts/datasets/pascal_voc.py --download-dir ~/voc_downloads
 
 How to load the dataset
 -----------------------
@@ -80,7 +85,8 @@ Output::
 Dive deep into source codes
 ---------------------------
 
-
+The implementation of pascal_voc.py is straightforward. It simply downloads and
+extract the data.
 """
 import os
 import shutil
