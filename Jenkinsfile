@@ -27,15 +27,15 @@ stage("Docs") {
       env
       export LD_LIBRARY_PATH=/usr/local/cuda-8.0/lib64
       cd docs && make html
-      
-      if [[ ${env.BRANCH_NAME} == master ]]; then
-          aws s3 sync --delete build/html/ s3://gluon-vision.mxnet.io/ --acl public-read
-          echo "Uploaded doc to http://gluon-vision.mxnet.io"
-      else
-          aws s3 sync --delete build/html/ s3://gluon-vision-staging/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/ --acl public-read       
-          echo "Uploaded doc to http://gluon-vision-staging.s3-website-us-west-2.amazonaws.com/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/index.html"
-      fi
       """
+      
+      
+      if (env.BRANCH_NAME == "master") {
+        sh "aws s3 sync --delete build/html/ s3://gluon-vision.mxnet.io/ --acl public-read"
+      } else {
+        sh  "aws s3 sync --delete build/html/ s3://gluon-vision-staging/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/ --acl public-read"
+        pullRequest.comment("Job ${env.BRANCH_NAME}-${env.BUILD_NUMBER} is done. \nDocs are uploaded to http://gluon-vision-staging.s3-website-us-west-2.amazonaws.com/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/index.html")
+      }
     }
   }
 }
