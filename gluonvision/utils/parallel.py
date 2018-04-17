@@ -213,7 +213,7 @@ def criterion_parallel_apply(module, inputs, targets, kwargs_tup=None, sync=Fals
                 if isinstance(input, NDArray):
                     output = module(input, *target, **kwargs)
                 else:
-                    output = module(*input, target, **kwargs)
+                    output = module(*input, *target, **kwargs)
                 output.wait_to_read()
             with lock:
                 results[i] = output

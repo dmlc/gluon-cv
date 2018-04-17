@@ -215,13 +215,11 @@ import mxnet as mx
 from mxnet import gluon, autograd
 
 import gluonvision.utils as utils
-from gluonvision.model_zoo.segbase import SegEvalModule
+from gluonvision.model_zoo.segbase import SegEvalModel
 from gluonvision.utils.parallel import ModelDataParallel
 
 from option import Options
-from utils import save_checkpoint
-from data_utils import get_data_loader
-from model_utils import get_model_criterion
+from utils import save_checkpoint, get_data_loader, get_model_criterion
 
 
 class Trainer(object):
@@ -241,7 +239,7 @@ class Trainer(object):
                                             'momentum': args.momentum,
                                             'multi_precision': True},
                                             kvstore = kv)
-        self.evaluator = ModelDataParallel(SegEvalModule(self.net.module, args.bg), args.ctx)
+        self.evaluator = ModelDataParallel(SegEvalModel(self.net.module, args.bg), args.ctx)
 
     def training(self, epoch):
         tbar = tqdm(self.train_data)
