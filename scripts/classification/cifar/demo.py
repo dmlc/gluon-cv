@@ -138,13 +138,18 @@ process. A good way to review the result is to have a plot:
 
 This is a plot generated from the following command:
 
-::
+|image2|
 
-We see that the issue could be not enough epochs. We then change to
+We see that the training error is much lower than validation error.
+This is a clear message of overfitting.  Actually this is the plot for
+a training process without data augmentation.
 
-::
+By adding data augmentation back, we can expect the following plot:
 
-and observe that
+|image3|
+
+and observe that training and validation errors share the same trend,
+while training error is a little bit higher than the validation error.
 
 Model Zoo
 ---------
@@ -213,6 +218,8 @@ on ImageNet, please read `xxx <>`__.
 
 .. |image0| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/classification/plane-draw.jpeg
 .. |image1| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/classification/mt_baker.jpg
+.. |image2| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/classification/overfitting.jpg
+.. |image3| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/classification/normal_training.jpg
 
 """
 from __future__ import division

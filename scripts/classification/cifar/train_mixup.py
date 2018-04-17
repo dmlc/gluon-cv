@@ -202,24 +202,19 @@ def train(epochs, ctx):
             name, acc = train_metric.get()
             iteration += 1
 
+        train_loss /= batch_size * num_batch
         name, acc = train_metric.get()
         name, val_acc = test(ctx, val_data)
-        train_history.update({'training-rmse': acc, 'validation-error': 1-val_acc})
-        train_history.plot(labels=['training-error', 'validation-error'],
-                           save_path='%s/%s_history.png'%(plot_name, model_name))
-        logging.info('[Epoch %d] train=%f val=%f loss=%f time: %f' %
-            (epoch, acc, val_acc, train_loss, time.time()-tic))
+        train_history.update([acc, 1-val_acc])
+        train_history.plot(save_path='%s/%s_history.png'%(plot_name, model_name))
 
         if val_acc > best_val_score and epoch > 200:
             best_val_score = val_acc
             net.save_params('%s/%.4f-imagenet-%s-%d-best.params'%(save_dir, best_val_score, model_name, epoch))
-        if val_data is not None:
-            name, val_acc = test(ctx, val_data)
-            logging.info('[Epoch %d] train=%f val=%f loss=%f time: %f' %
-                (epoch, acc, val_acc, train_loss, time.time()-tic))
-        else:
-            logging.info('[Epoch %d] train=%f loss=%f time: %f' %
-                (epoch, acc, train_loss, time.time()-tic))
+
+        name, val_acc = test(ctx, val_data)
+        logging.info('[Epoch %d] train=%f val=%f loss=%f time: %f' %
+            (epoch, acc, val_acc, train_loss, time.time()-tic))
 
         if save_period and save_dir and (epoch + 1) % save_period == 0:
             net.save_params('%s/cifar10-%s-%d.params'%(save_dir, model_name, epoch))
