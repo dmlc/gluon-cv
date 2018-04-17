@@ -33,11 +33,11 @@ This is an airplane:
 
 |image0|
 
-We can make prediction by
+Right click and save the image, we can then make prediction by
 
 ::
 
-    python demo.py --model cifar_resnet110_v2 --input-pic bird.jpg
+    python demo.py --model cifar_resnet110_v2 --input-pic plane.jpg
 
 And the model thinks that
 
@@ -46,9 +46,11 @@ And the model thinks that
     The input picture is classified to be [airplane], with probability 0.517.
 
 Feel free to feed in your own image to see how well it does the job.
-Keep in mind, that ``CIFAR10`` is relatively small and has only 10
+Keep in mind that ``CIFAR10`` is relatively small and has only 10
 classes. Models trained on ``CIFAR10`` only recognize objects from those
-10 classes, therefore it may surprise you:
+10 classes, therefore it may surprise you if we feed one image to the model which doesn't belong to any of the 10 classes
+
+|image1|
 
 ::
 
@@ -192,8 +194,8 @@ feel free to read `the next tutorial on ``CIFAR10`` <>`__.
 Or, if you would like to try a more powerful demo, i.e. models trained
 on ImageNet, please read `xxx <>`__.
 
-.. |image0| image:: _static/plane-draw.jpeg
-.. |image1| image:: _static/mt_baker.jpeg
+.. |image0| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/classification/plane-draw.jpeg
+.. |image1| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/classification/mt_baker.jpg
 
 """
 from __future__ import division
