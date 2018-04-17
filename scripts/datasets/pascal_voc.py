@@ -129,7 +129,7 @@ def download_voc(path, overwrite=False):
 
 
 #####################################################################################
-# Download and extract the xxx into ``path``
+# Download and extract the VOC augmented segementation dataset into ``path``
 
 def download_aug(path, overwrite=False):
     _AUG_DOWNLOAD_URLS = [

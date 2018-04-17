@@ -2,8 +2,8 @@
 ===========================================
 
 This is a quick demo of using GluonVision FCN model.
-Please refer to the installation guide to install MXNet and GluonVision.
-
+Please follow the `installation guide <../index.html>`_ to install MXNet and GluonVision if not yet.
+This demo code can be downloaded from :download:`demo.py <../../scripts/segmentation/demo.py>`.
 """
 import mxnet as mx
 from mxnet import image
