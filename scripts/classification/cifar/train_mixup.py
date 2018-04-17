@@ -205,8 +205,8 @@ def train(epochs, ctx):
         name, acc = train_metric.get()
         name, val_acc = test(ctx, val_data)
         train_history.update({'training-rmse': acc, 'validation-error': 1-val_acc})
-        train_history.plot(items=['training-error', 'validation-error'],
-                              tofile='%s/%s_history.png'%(plot_name, model_name))
+        train_history.plot(labels=['training-error', 'validation-error'],
+                           save_path='%s/%s_history.png'%(plot_name, model_name))
         logging.info('[Epoch %d] train=%f val=%f loss=%f time: %f' %
             (epoch, acc, val_acc, train_loss, time.time()-tic))
 
