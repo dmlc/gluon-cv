@@ -112,6 +112,7 @@ class DilatedResNetV0(HybridBlock):
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.nn.BatchNorm`;
         for Synchronized Cross-GPU BachNormalization).
 
+
     Reference:
 
         - He, Kaiming, et al. "Deep residual learning for image recognition."
