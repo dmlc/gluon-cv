@@ -42,7 +42,7 @@ stage("Docs") {
          
       retry (5) {
         try {
-          sh "aws s3 sync --delete docs/build/html/ ${DST} --acl public-read"
+          sh "aws s3 sync --delete docs/build/html/ "+env.DST + " --acl public-read"
         } catch (exc) {
           sh "aws s3 rm ${DST} --recursive"
           error "Failed to upload document"
