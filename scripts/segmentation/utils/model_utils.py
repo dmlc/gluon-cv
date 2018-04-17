@@ -10,7 +10,7 @@ from gluonvision.utils.parallel import ModelDataParallel, CriterionDataParallel
 __all__ = ['get_model_criterion']
 
 def get_model_criterion(args):
-    models = importlib.import_module('gluonvision.model_zoo.'+args.model+'.'+args.model)
+    models = importlib.import_module('gluonvision.model_zoo.'+args.model)
     model = models._Net(args.nclass, args.backbone, norm_layer = args.norm_layer, aux = args.aux)
     print('model', model)
     if args.aux:

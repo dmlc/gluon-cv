@@ -4,8 +4,8 @@ from mxnet.gluon import nn
 import mxnet.ndarray as F
 from mxnet.gluon.nn import HybridBlock
 
-from ..segbase import SegBaseModel
-from ..fcn.fcn import _FCNHead
+from .segbase import SegBaseModel
+from .fcn import _FCNHead
 # pylint: disable-all
 
 class PSPNet(SegBaseModel):
@@ -33,8 +33,7 @@ class PSPNet(SegBaseModel):
     """
     def __init__(self, nclass, backbone='resnet50', norm_layer=nn.BatchNorm,
                  aux=True, **kwargs):
-        super(PSPNet, self).__init__(backbone, aux, norm_layer, **kwargs)
-        self.nclass = nclass
+        super(PSPNet, self).__init__(nclass, backbone, aux, norm_layer, **kwargs)
         with self.name_scope():
             self.head = _PSPHead(nclass, norm_layer=norm_layer, **kwargs)
             self.head.initialize()

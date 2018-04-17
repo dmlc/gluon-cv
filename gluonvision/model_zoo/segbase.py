@@ -3,7 +3,7 @@ from mxnet.gluon.nn import HybridBlock
 
 from ..utils.metrics import voc_segmentation
 
-from .dilated import dilatedresnetv1
+from .dilated import dilatedresnetv0
 # pylint: disable=abstract-method
 
 class SegBaseModel(HybridBlock):
@@ -19,16 +19,17 @@ class SegBaseModel(HybridBlock):
         for Synchronized Cross-GPU BachNormalization).
     """
     # pylint : disable=arguments-differ
-    def __init__(self, aux, backbone='resnet50', **kwargs):
+    def __init__(self, nclass, aux, backbone='resnet50', **kwargs):
         super(SegBaseModel, self).__init__()
         self.aux = aux
+        self.nclass = nclass
         with self.name_scope():
             if backbone == 'resnet50':
-                pretrained = dilatedresnetv1.dilated_resnet50(pretrained=True, **kwargs)
+                pretrained = dilatedresnetv0.dilated_resnet50(pretrained=True, **kwargs)
             elif backbone == 'resnet101':
-                pretrained = dilatedresnetv1.dilated_resnet101(pretrained=True, **kwargs)
+                pretrained = dilatedresnetv0.dilated_resnet101(pretrained=True, **kwargs)
             elif backbone == 'resnet152':
-                pretrained = dilatedresnetv1.dilated_resnet152(pretrained=True, **kwargs)
+                pretrained = dilatedresnetv0.dilated_resnet152(pretrained=True, **kwargs)
             else:
                 raise RuntimeError('unknown backbone: {}'.format(backbone))
             self.conv1 = pretrained.conv1
@@ -41,6 +42,7 @@ class SegBaseModel(HybridBlock):
             self.layer4 = pretrained.layer4
 
     def base_forward(self, x):
+        """forwarding pre-trained network"""
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
@@ -66,9 +68,9 @@ class SegBaseModel(HybridBlock):
         return correct, labeled, inter, union
 
 
-class SegEvalModule(object):
+class SegEvalModel(object):
     """Segmentation Eval Module"""
-    def __init__(self, module, bg):
+    def __init__(self, module, bg=False):
         self.module = module
         self.bg = bg
 
