@@ -29,13 +29,13 @@ stage("Docs") {
       """
       
       if (env.BRANCH_NAME == "master") {
-        job = 'master-${env.BUILD_NUMBER}'
-        dst = 's3://gluon-vision.mxnet.io/'
-        url = 'http://gluon-vision.mxnet.io'
+        def job = 'master-${env.BUILD_NUMBER}'
+        def dst = 's3://gluon-vision.mxnet.io/'
+        def url = 'http://gluon-vision.mxnet.io'
       } else {
-        job = '${env.BRANCH_NAME}-${env.BUILD_NUMBER}'
-        dst = 's3://gluon-vision-staging/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/'
-        url = 'http://gluon-vision-staging.s3-website-us-west-2.amazonaws.com/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/index.html'
+        def job = '${env.BRANCH_NAME}-${env.BUILD_NUMBER}'
+        def dst = 's3://gluon-vision-staging/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/'
+        def url = 'http://gluon-vision-staging.s3-website-us-west-2.amazonaws.com/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/index.html'
       }
       
       retry (5) {
