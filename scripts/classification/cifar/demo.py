@@ -6,6 +6,8 @@ labeled dataset of tiny (32x32) images, collected by Alex Krizhevsky,
 Vinod Nair, and Geoffrey Hinton. It is widely used as a benchmark in
 computer vision research.
 
+|image-cifar10|
+
 In this tutorial, we will demonstrate how to use ``Gluon`` to train a
 model from scratch and reproduce the performance from papers.
 Specifically, we offer a script to prepare the ``CIFAR10`` dataset and
@@ -216,10 +218,11 @@ feel free to read `the next tutorial on ``CIFAR10`` <>`__.
 Or, if you would like to try a more powerful demo, i.e. models trained
 on ImageNet, please read `xxx <>`__.
 
+.. |image-cifar10| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/classification/cifar10.png
 .. |image0| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/classification/plane-draw.jpeg
 .. |image1| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/classification/mt_baker.jpg
-.. |image2| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/classification/overfitting.jpg
-.. |image3| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/classification/normal_training.jpg
+.. |image2| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/classification/overfitting.png
+.. |image3| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/classification/normal_training.png
 
 """
 from __future__ import division
