@@ -55,11 +55,21 @@ A Quick Example
 :ref:`ssd-demo`
 
 
+
 .. toctree::
    :maxdepth: 2
    :caption: Tutorials
 
-   examples/index
+   examples_datasets/index
+   examples_classification/index
+   examples_detection/index
+   examples_segmentation/index
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Model Zoo
+
+   model_zoo/index
 
 .. toctree::
    :maxdepth: 1
