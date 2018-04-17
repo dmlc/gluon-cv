@@ -17,7 +17,7 @@ through the steps of preparing this dataset to be used by GluonVision.
 .. note::
 
    You need at least 300 GB disk space to download and extract the dataset. SSD
-   (Solid-state disks) are prefered over HDD because of the better performance
+   (Solid-state disks) is prefered over HDD because of the better performance
    on reading and writing small objects (images).
 
 Download the Dataset
@@ -42,7 +42,7 @@ following command to prepare the dataset automatically.
 
 .. code-block:: bash
 
-   python scripts/datasets/imagenet.py --tar-dir ~/ILSVRC2012
+   python scripts/datasets/imagenet.py --download-dir ~/ILSVRC2012
 
 .. note::
 
@@ -112,7 +112,7 @@ def parse_args():
     parser = argparse.ArgumentParser(
         description='Setup the ImageNet dataset.',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--tar-dir', required=True,
+    parser.add_argument('--download-dir', required=True,
                         help="The directory that contains downloaded tar files")
     parser.add_argument('--target-dir', default=_TARGET_DIR,
                         help="The directory to store extracted images")

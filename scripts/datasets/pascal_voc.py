@@ -1,32 +1,51 @@
-"""
-Prepare PASCAL VOC datasets
+"""Prepare PASCAL VOC datasets
 ==============================
 
-`Pascal VOC <http://host.robots.ox.ac.uk/pascal/VOC/>`_ is a common source of data for object
-detection and very popular to be served as performance benchmarks.
+`Pascal VOC <http://host.robots.ox.ac.uk/pascal/VOC/>`_ contains a collection of
+datasets for object detection. The most commonly adopted version for
+benchmarking is using *2007 trainval* and *2012 trainval* for training and *2007
+test* for validation.  This tutorial will walk you through the steps for
+preparing this dataset to be used by GluonVision.
 
-.. image:: https://github.com/zhreshold/gluonvision-tutorials/blob/master/images/pascal2.png?raw=true
+.. image:: http://host.robots.ox.ac.uk/pascal/VOC/pascal2.png
 
-There are many years of data released in the past. The most common combination for
-object detection is (2007 trainval + 2012 trainval) and validate on (2007 test).
-Test data of year 2012 is not public and requires you to register on the site.
+Prepare the dataset
+-------------------
 
-This tutorial will walk you thourgh the preparation steps in order to let GluonVision to recognize
-the dataset on your disk automatically. Once finished, you won't need to specify the path and can totoally forget about it.
+The easiest way is simply running this script, which will automatically download
+and extract the data into ``~/.mxnet/datasets/voc``.
 
-Download the dataset
---------------------
-The included script can automatically download the dataset for you. Depending on your
-internet speed, it may take 5 min to several hours.
-
-Assume you want to store the dataset in ``~/pascal_voc``, simply run
 
 .. code-block:: bash
 
-    python scripts/datasets/pascal_voc.py --path ~/pascal_voc --download
+    python scripts/datasets/pascal_voc.py
 
-How to use Pascal VOC as object detection dataset
--------------------------------------------------
+.. note::
+
+   You need 8.4 GB disk space to download and extract this dataset. SSD is
+   preferred over HDD because of its better performance.
+
+.. note::
+
+   The total time to prepare the dataset depends on your Internet speed and disk
+   performance. For example, it often takes 10min on AWS EC2 with EBS.
+
+If you have already downloaded the following required files, whose URLs can be
+obtained from the source codes at the end of this tutorial,
+
+===========================  ======
+Filename                     Size
+===========================  ======
+VOCtrainval_06-Nov-2007.tar  439 MB
+VOCtest_06-Nov-2007.tar      430 MB
+VOCtrainval_11-May-2012.tar  1.9 GB
+benchmark.tgz                1.4 GB
+===========================  ======
+
+then you can specify the folder name through ``--download-dir`` to avoid download them again.
+
+How to load the dataset
+-----------------------
 
 Load image and label from Pascal VOC is quite straight-forward
 
@@ -38,31 +57,29 @@ Load image and label from Pascal VOC is quite straight-forward
     print('Training images:', len(train_dataset))
     print('Validation images:', len(val_dataset))
 
-Training and validation images:
-
-.. parsed-literal::
+Output::
 
     Training images: 16551
     Validation images: 4952
 
-Images and labels loaded from dataset:
+Check the first example:
 
 .. code:: python
 
     train_image, train_label = train_dataset[0]
     bboxes = train_label[:, :4]
     cids = train_label[:, 4:5]
-    print('image:', train_image.shape)
+    print('image size:', train_image.shape)
     print('bboxes:', bboxes.shape, 'class ids:', cids.shape)
 
+Output::
 
-.. parsed-literal::
-
-    image: (375, 500, 3)
+    image size: (375, 500, 3)
     bboxes: (5, 4) class ids: (5, 1)
 
-Dive deep into preparation script
----------------------------------
+Dive deep into source codes
+---------------------------
+
 
 """
 import os
@@ -85,6 +102,9 @@ def parse_args():
     args = parser.parse_args()
     return args
 
+#####################################################################################
+# Download and extract VOC datasets into ``path``
+
 def download_voc(path, overwrite=False):
     _DOWNLOAD_URLS = [
         ('http://host.robots.ox.ac.uk/pascal/VOC/voc2007/VOCtrainval_06-Nov-2007.tar',
@@ -101,6 +121,9 @@ def download_voc(path, overwrite=False):
         with tarfile.open(filename) as tar:
             tar.extractall(path=path)
 
+
+#####################################################################################
+# Download and extract the xxx into ``path``
 
 def download_aug(path, overwrite=False):
     _AUG_DOWNLOAD_URLS = [
