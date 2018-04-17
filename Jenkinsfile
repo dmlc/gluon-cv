@@ -29,11 +29,17 @@ stage("Docs") {
       cd docs && make html
       """
       
-      if (env.BRANCH_NAME == "master") {
-        sh "aws s3 sync --delete docs/build/html/ s3://gluon-vision.mxnet.io/ --acl public-read"        
-      } else {
-        sh "aws s3 sync --delete docs/build/html/ s3://gluon-vision-staging/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/ --acl public-read"
-        pullRequest.comment("${env.BRANCH_NAME}-${env.BUILD_NUMBER} is done.\nDocs are uploaded to http://gluon-vision-staging.s3-website-us-west-2.amazonaws.com/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/index.html")        
+      retry (5) {
+        try {
+          if (env.BRANCH_NAME == "master") {
+            sh "aws s3 sync --delete docs/build/html/ s3://gluon-vision.mxnet.io/ --acl public-read"        
+          } else {
+            sh "aws s3 sync --delete docs/build/html/ s3://gluon-vision-staging/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/ --acl public-read"
+            pullRequest.comment("${env.BRANCH_NAME}-${env.BUILD_NUMBER} is done.\nDocs are uploaded to http://gluon-vision-staging.s3-website-us-west-2.amazonaws.com/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/index.html")        
+          }
+        } catch (exc) {
+          error "Failed to upload document"
+        }
       }
     }
   }
