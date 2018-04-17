@@ -70,36 +70,53 @@ In the demo, we have used a pretrained model. So how did we train it?
 
 We trained the models with
 ```train.py`` <https://github.com/hetong007/gluon-vision/blob/master/scripts/classification/cifar/train.py>`__.
-It takes a lot of parameters to control the model training process. To
+It takes a bunch of parameters to control the model training process. To
 start, you can try the following command:
 
 ::
 
-    python train.py --num-epochs 240 --mode hybrid --num-gpus 2 -j 32 --batch-size 64\
-        --wd 0.0001 --lr 0.1 --lr-decay 0.1 --lr-decay-epoch 80,160 --model cifar_resnet20_v2
+    python train.py --num-epochs 240 --mode hybrid --num-gpus 1 -j 8 --batch-size 128\
+        --wd 0.0001 --lr 0.1 --lr-decay 0.1 --lr-decay-epoch 80,160 --model cifar_resnet20_v1
 
-This command trains a ``ResNet20_V2`` model for 240 epochs on two GPUs.
-The batch size for each GPU is 64, thus the total batch size is 128. We
-decay the learning rate by a factor of 10 at the 80-th and 160-th epoch.
+This command trains a ``ResNet20_V2`` model for 240 epochs on one GPU.
+The batch size is 128. We decay the learning rate by a factor of 10 at the 80-th and 160-th epoch.
 The script prints information for each epoch so that we can have a sense
 of the progress and watchout for any unexpected issues.
 
 ::
 
-    INFO:root:[Epoch 0] train=0.229176 val=0.422300 loss=101760.375931 time: 21.937484
-    INFO:root:[Epoch 1] train=0.218320 val=0.524200 loss=93098.808853 time: 21.637539
-    INFO:root:[Epoch 2] train=0.211201 val=0.559400 loss=89708.618820 time: 21.596765
-    INFO:root:[Epoch 3] train=0.205876 val=0.609300 loss=87576.185600 time: 20.972680
-    INFO:root:[Epoch 4] train=0.202815 val=0.614800 loss=85852.031380 time: 21.104631
-    INFO:root:[Epoch 5] train=0.200063 val=0.659800 loss=83747.976288 time: 21.788607
+    INFO:root:[Epoch 0] train=0.367448 val=0.460800 loss=1.735358 time: 12.739688
+    INFO:root:[Epoch 1] train=0.492027 val=0.524600 loss=1.409553 time: 12.500988
+    INFO:root:[Epoch 2] train=0.556891 val=0.640400 loss=1.241357 time: 12.994388
+    INFO:root:[Epoch 3] train=0.595152 val=0.658900 loss=1.145049 time: 12.342926
+    INFO:root:[Epoch 4] train=0.620733 val=0.680900 loss=1.075090 time: 13.098537
+    INFO:root:[Epoch 5] train=0.640966 val=0.700200 loss=1.017329 time: 12.360461
     ...
 
 The dataset and the model are relatively small, thus it won’t take you
-too long to train the model. Of course it depends on how powerful your
-machine is, the result on our side is:
+too long to train the model. If you don't have a GPU yet, you can still try to
+train with your CPU with MKLDNN. One can install MXNet with MKLDNN with
 
--  20 seconds with two V100 GPUs per epoch, and 32 CPU threads.
--  100 seconds with a GTX1060 GPU per epoch, and 4 CPU threads.
+
+::
+
+    pip install --pre mxnet-mkl
+
+
+After the installation, one can run the following command:
+
+::
+
+    python train.py --num-epochs 240 --mode hybrid --num-gpus 0 -j 1 --batch-size 128\
+        --wd 0.0001 --lr 0.1 --lr-decay 0.1 --lr-decay-epoch 80,160 --model cifar_resnet20_v1
+
+Here we change the values of `--num-gpus` to 0 and `-j` to 1, to only use CPU for training and use one thread
+for data loader.
+
+the result on our side is:
+
+-  12 seconds with a V100 GPU per epoch, and 8 CPU threads.
+-  70 seconds with one 8-thread CPU per epoch, with MKLDNN.
 
 With limited computational power, it is good in practice to firstly test
 a few epochs to ensure everything works, then leave it running for a
