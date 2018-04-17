@@ -17,11 +17,11 @@ environment {
   if (env.BRANCH_NAME == "master") {
     JOB = 'master-${env.BUILD_NUMBER}'
     DST = 's3://gluon-vision.mxnet.io/'
-    URL = 'http://gluon-vision.mxnet.io'    
+    WEB = 'http://gluon-vision.mxnet.io'    
   } else {
     JOB = '${env.BRANCH_NAME}-${env.BUILD_NUMBER}'
     DST = 's3://gluon-vision-staging/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/'
-    URL = 'http://gluon-vision-staging.s3-website-us-west-2.amazonaws.com/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/index.html'
+    WEB = 'http://gluon-vision-staging.s3-website-us-west-2.amazonaws.com/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/index.html'
   }
 }
 
@@ -48,7 +48,7 @@ stage("Docs") {
           error "Failed to upload document"
         }
       }
-      pullRequest.comment("Job ${JOB} is done. Docs are uploaded to ${URL}")                          
+      pullRequest.comment("Job ${JOB} is done. Docs are uploaded to ${WEB}")                          
     }
   }
 }
