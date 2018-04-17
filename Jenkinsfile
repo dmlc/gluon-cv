@@ -20,6 +20,7 @@ stage("Docs") {
       checkout scm
       sh """#!/bin/bash
       set -e
+      set -x
       conda env update -f docs/build.yml
       source activate gluon_vision_docs
       export PYTHONPATH=${PWD}
