@@ -31,9 +31,9 @@ stage("Docs") {
       
       
       if (env.BRANCH_NAME == "master") {
-        sh "aws s3 sync --delete docs/build/html/ s3://gluon-vision.mxnet.io/ --acl public-read"
+        sh "aws s3 sync --delete docs/build/html/ s3://gluon-vision.mxnet.io/ --acl public-read; exit 0"
       } else {
-        sh  "aws s3 sync --delete docs/build/html/ s3://gluon-vision-staging/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/ --acl public-read"
+        sh  "aws s3 sync --delete docs/build/html/ s3://gluon-vision-staging/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/ --acl public-read; exit 0"
         pullRequest.comment("Job ${env.BRANCH_NAME}-${env.BUILD_NUMBER} is done. \nDocs are uploaded to http://gluon-vision-staging.s3-website-us-west-2.amazonaws.com/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/index.html")
       }
     }
