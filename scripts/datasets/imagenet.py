@@ -99,6 +99,7 @@ import os
 import argparse
 import tarfile
 import pickle
+import gzip
 from tqdm import tqdm
 from mxnet.gluon.utils import check_sha1
 
@@ -151,8 +152,8 @@ def extract_val(tar_fname, target_dir):
     with tarfile.open(tar_fname) as tar:
         tar.extractall(target_dir)
     # move images to proper subfolders
-    val_maps_file = os.path.join(os.path.dirname(__file__), 'imagenet_val_maps.pkl')
-    with open(val_maps_file, 'rb') as f:
+    val_maps_file = os.path.join(os.path.dirname(__file__), 'imagenet_val_maps.pklz')
+    with gzip.open(val_maps_file, 'rb') as f:
         dirs, mappings = pickle.load(f)
     for d in dirs:
         os.makedirs(os.path.join(target_dir, d))
