@@ -4,7 +4,7 @@
 ```CIFAR10`` <https://www.cs.toronto.edu/~kriz/cifar.html>`__ is a
 labeled dataset of tiny (32x32) images, collected by Alex Krizhevsky,
 Vinod Nair, and Geoffrey Hinton. It is widely used as a benchmark in
-conputer vision research.
+computer vision research.
 
 In this tutorial, we will demonstrate how to use ``Gluon`` to train a
 model from scratch and reproduce the performance from papers.
@@ -33,11 +33,11 @@ This is an airplane:
 
 |image0|
 
-We can make prediction by
+Right click and save the image, we can then make prediction by
 
 ::
 
-    python demo.py --model cifar_resnet110_v1 --input-pic bird.jpg
+    python demo.py --model cifar_resnet110_v2 --input-pic plane.jpg
 
 And the model thinks that
 
@@ -46,19 +46,21 @@ And the model thinks that
     The input picture is classified to be [airplane], with probability 0.517.
 
 Feel free to feed in your own image to see how well it does the job.
-Keep in mind, that ``CIFAR10`` is relatively small and has only 10
+Keep in mind that ``CIFAR10`` is relatively small and has only 10
 classes. Models trained on ``CIFAR10`` only recognize objects from those
-10 classes, therefore it may surprise you:
+10 classes, therefore it may surprise you if we feed one image to the model which doesn't belong to any of the 10 classes
+
+|image1|
 
 ::
 
-    python demo.py --model cifar_resnet110_v1 --input-pic surprise.jpg
+    python demo.py --model cifar_resnet110_v2 --input-pic mt_baker.jpg
 
 The result is:
 
 ::
 
-    bird!
+    The input picture is classified to be [airplane], with probability 0.857.
 
 To experience a more real world friendly demo, please checkout models
 trained on `ImageNet <>`__.
@@ -209,7 +211,8 @@ feel free to read `the next tutorial on ``CIFAR10`` <>`__.
 Or, if you would like to try a more powerful demo, i.e. models trained
 on ImageNet, please read `xxx <>`__.
 
-.. |image0| image:: plane-draw.jpeg
+.. |image0| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/classification/plane-draw.jpeg
+.. |image1| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/classification/mt_baker.jpg
 
 """
 from __future__ import division
