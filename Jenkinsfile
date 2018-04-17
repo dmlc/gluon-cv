@@ -22,8 +22,7 @@ stage("Docs") {
       set -e
       conda env update -f docs/build.yml
       source activate gluon_vision_docs
-      pip uninstall -y gluonvision
-      python setup.py install
+      export PYTHONPATH=${pwd}
       env
       export LD_LIBRARY_PATH=/usr/local/cuda-8.0/lib64
       cd docs && make html
