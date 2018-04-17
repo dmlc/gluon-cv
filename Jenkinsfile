@@ -42,13 +42,13 @@ stage("Docs") {
          
       retry (5) {
         try {
-          sh "aws s3 sync --delete docs/build/html/ "+env.DST + " --acl public-read"
+          sh "aws s3 sync --delete docs/build/html/ ${env.DST} --acl public-read"
         } catch (exc) {
-          sh "aws s3 rm ${DST} --recursive"
+          sh "aws s3 rm ${env.DST} --recursive"
           error "Failed to upload document"
         }
       }
-      pullRequest.comment("Job ${JOB} is done. Docs are uploaded to ${WEB}")                          
+      pullRequest.comment("Job ${env.JOB} is done. Docs are uploaded to ${env.WEB}")                          
     }
   }
 }
