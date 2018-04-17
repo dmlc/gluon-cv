@@ -23,14 +23,11 @@ and extract the data into ``~/.mxnet/datasets/ade``.
 
    You need 2.3 GB disk space to download and extract this dataset. SSD is
    preferred over HDD because of its better performance.
-
-.. note::
-
    The total time to prepare the dataset depends on your Internet speed and disk
-   performance. For example, it may take 15 min on AWS EC2 with EBS.
+   performance. For example, it may take 25 min on AWS EC2 with EBS.
 
 
-If you have already downloaded the following required files, whose URLs can be
+If you have already downloaded the following required files and unziped them, whose URLs can be
 obtained from the source codes at the end of this tutorial,
 
 ===========================  ======
@@ -50,7 +47,13 @@ download them again. For example
 How to load the dataset
 -----------------------
 
-TODO.
+.. code-block:: python
+
+    from gluonvision.data import ADE20KSegmentation
+    train_dataset = ADE20KSegmentation(split='train')
+    val_dataset = ADE20KSegmentation(split='test')
+    print('Training images:', len(train_dataset))
+    print('Validation images:', len(val_dataset))
 
 Dive deep into source code
 --------------------------
@@ -70,16 +73,13 @@ _TARGET_DIR = os.path.expanduser('~/.mxnet/datasets/ade')
 def parse_args():
     parser = argparse.ArgumentParser(
         description='Initialize ADE20K dataset.',
-        epilog='Example: python setup_ade20k.py --path ~/Datasets --download',
+        epilog='Example: python setup_ade20k.py',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--path', required=True, help='dataset directory on disk')
-    parser.add_argument('--download', action='store_true', help='try download if set')
-    parser.add_argument('--overwrite', action='store_true', help='overwrite downloaded if set')
+    parser.add_argument('--download-dir', default=None, help='dataset directory on disk')
     args = parser.parse_args()
     return args
 
-# what does aug mean?
-def download_aug(path, overwrite=False):
+def download_ade(path, overwrite=False):
     _AUG_DOWNLOAD_URLS = [
         ('http://data.csail.mit.edu/places/ADEchallenge/ADEChallengeData2016.zip', '219e1696abb36c8ba3a3afe7fb2f4b4606a897c7'),
         ('http://data.csail.mit.edu/places/ADEchallenge/release_test.zip', 'e05747892219d10e9243933371a497e905a4860c'),]
@@ -94,16 +94,11 @@ def download_aug(path, overwrite=False):
 
 if __name__ == '__main__':
     args = parse_args()
-    path = os.path.expanduser(args.path)
-    if not os.path.isdir(os.path.join(path, 'ADEChallengeData2016')):
-        if not args.download:
-            raise ValueError(('{} is not a valid directory, make sure it is present.'
-                              ' Or you can try "--download" to grab it'.format(path)))
-        else:
-            download_aug(path, overwrite=args.overwrite)
-
-    # make symlink
     makedirs(os.path.expanduser('~/.mxnet/datasets'))
-    if os.path.isdir(_TARGET_DIR):
-        os.remove(_TARGET_DIR)
-    os.symlink(args.path, _TARGET_DIR)
+    if args.download_dir is not None:
+        if os.path.isdir(_TARGET_DIR):
+            os.remove(_TARGET_DIR)
+        # make symlink
+        os.symlink(args.download_dir, _TARGET_DIR)
+    else:
+        download_ade(_TARGET_DIR, overwrite=False)
