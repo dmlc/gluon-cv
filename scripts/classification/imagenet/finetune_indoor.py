@@ -10,6 +10,7 @@ from mxnet import gluon, image, init, nd
 from mxnet import autograd as ag
 from mxnet.gluon import nn
 from mxnet.gluon.model_zoo import vision as models
+from mxnet.gluon.data.vision import transforms
 from gluonvision.utils import makedirs
 
 def parse_args():
@@ -55,29 +56,53 @@ def prepare_data(path):
     makedirs(train_path)
     makedirs(test_path)
 
-    labesl = sorted(os.listdir(src_path))
+    labels = sorted(os.listdir(src_path))
 
     for l in labels:
-        makedirs(os.path.join(train_path, labels))
-        makedirs(os.path.join(test_path, labels))
+        makedirs(os.path.join(train_path, l))
+        makedirs(os.path.join(test_path, l))
 
     for im in train_images:
-        shutil(os.path.join(src_path, im),
-               os.path.join(train_path, im))
+        shutil.copy(os.path.join(src_path, im.strip('\n')),
+               os.path.join(train_path, im.strip('\n')))
 
     for im in test_images:
-        shutil(os.path.join(src_path, im),
-               os.path.join(test_path, im))
+        shutil.copy(os.path.join(src_path, im.strip('\n')),
+               os.path.join(test_path, im.strip('\n')))
 
     return train_path, test_path, labels
+
+# Preparation
+args = parse_args()
+classes = 67
+
+model_name = args.model
+
+epochs = args.epochs
+lr = args.lr
+batch_size = args.batch_size
+momentum = args.momentum
+wd = args.wd
+
+lr_factor = args.lr_factor
+lr_steps = [int(s) for s in args.lr_steps.split(',')] + [np.inf]
+
+num_gpus = args.num_gpus
+num_workers = args.num_workers
+ctx = [mx.gpu(i) for i in range(num_gpus)] if num_gpus > 0 else [mx.cpu()]
+batch_size = batch_size * max(num_gpus, 1)
+
+logging.basicConfig(level=logging.INFO,
+                    handlers = [logging.StreamHandler()])
+
+train_path, test_path, labels = prepare_data(args.data)
+
+normalize = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 
 transform_train = transforms.Compose([
     transforms.Resize(480),
     transforms.RandomResizedCrop(224),
     transforms.RandomFlipLeftRight(),
-    transforms.RandomColorJitter(brightness=jitter_param, contrast=jitter_param,
-                                 saturation=jitter_param),
-    transforms.RandomLighting(lighting_param),
     transforms.ToTensor(),
     normalize
 ])
@@ -153,8 +178,6 @@ def train(train_path, test_path):
 
             metric.update(label, outputs)
 
-            progressbar(i, num_batch-1)
-
         _, train_acc = metric.get()
         train_loss /= num_batch
 
@@ -166,32 +189,8 @@ def train(train_path, test_path):
     logging.info('\n')
     return (finetune_net)
 
-# Preparation
-args = parse_args()
-
-classes = 67
-
-model_name = args.model
-
-epochs = args.epochs
-lr = args.lr
-batch_size = args.batch_size
-momentum = args.momentum
-wd = args.wd
-
-lr_factor = args.lr_factor
-lr_steps = [int(s) for s in args.lr_steps.split(',')] + [np.inf]
-
-num_gpus = args.num_gpus
-num_workers = args.num_workers
-ctx = [mx.gpu(i) for i in range(num_gpus)] if num_gpus > 0 else [mx.cpu()]
-batch_size = batch_size * max(num_gpus, 1)
-
-logging.basicConfig(level=logging.INFO,
-                    handlers = logging.StreamHandler())
-
-train_data, test_data, labels = prepare_data(args.data)
-
 if __name__ == "__main__":
-    net = train(train_data, test_data)
+    # net = train(train_path, test_path)
+    net = train('/home/ubuntu/data/indoorCVPR_09/Images',
+                '/home/ubuntu/data/indoorCVPR_09/Images')
 
