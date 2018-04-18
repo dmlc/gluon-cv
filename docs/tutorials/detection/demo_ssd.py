@@ -48,7 +48,7 @@ print('shape of x:', x.shape)
 # Play with complete python script for demo
 # -----------------------------------------
 #
-# :download:`Download Full Python Script demo_ssd.py<../../scripts/detection/ssd/demo_ssd.py>`
+# :download:`Download Full Python Script demo_ssd.py<../../../scripts/detection/ssd/demo_ssd.py>`
 #
 # Example usage:
 #

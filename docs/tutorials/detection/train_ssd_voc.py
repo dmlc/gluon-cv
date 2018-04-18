@@ -11,7 +11,7 @@ A Python training script to reproduce SOTA models
 Feel free to skip this tutorial because the training script is
 self-complete and only requires a single command line to launch.
 
-:download:`Download Full Python Script train_ssd.py<../../scripts/detection/ssd/train_ssd.py>`
+:download:`Download Full Python Script train_ssd.py<../../../scripts/detection/ssd/train_ssd.py>`
 
 Example usage:
 
