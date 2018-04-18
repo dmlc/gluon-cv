@@ -16,7 +16,7 @@ from matplotlib import pyplot as plt
 # -------------------------
 # Try grab a 300x300 model trained on Pascal voc dataset.
 # it will automatically download from s3 servers if not exists
-net = gv.model_zoo.get_model('ssd_512_resnet50_v1_voc', pretrained=True)
+# net = gv.model_zoo.get_model('ssd_512_resnet50_v1_voc', pretrained=True)
 
 ######################################################################
 # Pre-process image
@@ -39,10 +39,10 @@ print('shape of x:', x.shape)
 # Inference and display
 # ---------------------
 
-ids, scores, bboxes = [xx[0].asnumpy() for xx in net(x)]
-from gluonvision.utils import viz
-ax = viz.plot_bbox(img, bboxes, scores, ids, class_names=net.classes, ax=None)
-plt.show()
+# ids, scores, bboxes = [xx[0].asnumpy() for xx in net(x)]
+# from gluonvision.utils import viz
+# ax = viz.plot_bbox(img, bboxes, scores, ids, class_names=net.classes, ax=None)
+# plt.show()
 
 ######################################################################
 # Play with complete python script for demo
