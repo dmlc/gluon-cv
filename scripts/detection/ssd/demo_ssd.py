@@ -42,8 +42,8 @@ if __name__ == '__main__':
 
     ax = None
     for image in image_list:
-        x, img = presets.ssd.load_test(image, short=512)
+        x, img = presets.ssd.load_test(image, short=768)
         ids, scores, bboxes = [xx[0].asnumpy() for xx in net(x)]
-        ax = gv.utils.viz.plot_bbox(orig_img, bboxes, scores, ids,
+        ax = gv.utils.viz.plot_bbox(img, bboxes, scores, ids,
                                     class_names=net.classes, ax=ax)
         plt.show()
