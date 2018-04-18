@@ -13,10 +13,10 @@ from mxnet.gluon.model_zoo import vision as models
 from mxnet.gluon.data.vision import transforms
 from gluonvision.utils import makedirs
 
-def parse_args():
+def parse_opts():
     parser = argparse.ArgumentParser(description='Gluon for FashionAI Competition',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--data', required=True, type=str,
+    parser.add_argument('--data', type=str, default='',
                         help='dir for the original data folder')
     parser.add_argument('--model', required=True, type=str,
                         help='name of the pretrained model from model zoo.')
@@ -38,64 +38,78 @@ def parse_args():
                         help='learning rate decay ratio')
     parser.add_argument('--lr-steps', default='10,20,30', type=str,
                         help='list of learning rate decay epochs as in str')
-    args = parser.parse_args()
-    return args
+    opts = parser.parse_args()
+    return opts
 
-def prepare_data(path):
-    train_images_file = os.path.join(path, 'TrainImages.txt')
+def prepare_minc(path):
+    train_images_file = os.path.join(path, 'labels/train1.txt')
     with open(train_images_file, 'r') as f:
         train_images = f.readlines()
 
-    test_images_file = os.path.join(path, 'TestImages.txt')
+    val_images_file = os.path.join(path, 'labels/validate1.txt')
+    with open(val_images_file, 'r') as f:
+        val_images = f.readlines()
+
+    test_images_file = os.path.join(path, 'labels/test1.txt')
     with open(test_images_file, 'r') as f:
         test_images = f.readlines()
 
-    src_path = os.path.join(path, 'Images')
+    src_path = os.path.join(path, 'images')
     train_path = os.path.join(path, 'train')
+    val_path = os.path.join(path, 'val')
     test_path = os.path.join(path, 'test')
     makedirs(train_path)
+    makedirs(val_path)
     makedirs(test_path)
 
     labels = sorted(os.listdir(src_path))
 
     for l in labels:
         makedirs(os.path.join(train_path, l))
+        makedirs(os.path.join(val_path, l))
         makedirs(os.path.join(test_path, l))
 
     for im in train_images:
-        shutil.copy(os.path.join(src_path, im.strip('\n')),
-               os.path.join(train_path, im.strip('\n')))
+        im_path = im.replace('images/', '').strip('\n')
+        shutil.copy(os.path.join(src_path, im_path),
+                    os.path.join(train_path, im_path))
+
+    for im in val_images:
+        im_path = im.replace('images/', '').strip('\n')
+        shutil.copy(os.path.join(src_path, im_path),
+                    os.path.join(val_path, im_path))
 
     for im in test_images:
-        shutil.copy(os.path.join(src_path, im.strip('\n')),
-               os.path.join(test_path, im.strip('\n')))
+        im_path = im.replace('images/', '').strip('\n')
+        shutil.copy(os.path.join(src_path, im_path),
+                    os.path.join(test_path, im_path))
 
-    return train_path, test_path, labels
+    return train_path, val_path, test_path, labels
 
 # Preparation
-args = parse_args()
+opts = parse_opts()
 classes = 67
 
-model_name = args.model
+model_name = opts.model
 
-epochs = args.epochs
-lr = args.lr
-batch_size = args.batch_size
-momentum = args.momentum
-wd = args.wd
+epochs = opts.epochs
+lr = opts.lr
+batch_size = opts.batch_size
+momentum = opts.momentum
+wd = opts.wd
 
-lr_factor = args.lr_factor
-lr_steps = [int(s) for s in args.lr_steps.split(',')] + [np.inf]
+lr_factor = opts.lr_factor
+lr_steps = [int(s) for s in opts.lr_steps.split(',')] + [np.inf]
 
-num_gpus = args.num_gpus
-num_workers = args.num_workers
+num_gpus = opts.num_gpus
+num_workers = opts.num_workers
 ctx = [mx.gpu(i) for i in range(num_gpus)] if num_gpus > 0 else [mx.cpu()]
 batch_size = batch_size * max(num_gpus, 1)
 
 logging.basicConfig(level=logging.INFO,
                     handlers = [logging.StreamHandler()])
 
-train_path, test_path, labels = prepare_data(args.data)
+train_path, val_path, test_path, labels = prepare_minc(opts.data)
 
 normalize = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 
@@ -114,19 +128,15 @@ transform_test = transforms.Compose([
     normalize
 ])
 
-def test(ctx, val_data):
-    acc_top1.reset()
-    acc_top5.reset()
+def test(net, val_data, ctx):
+    metric = mx.metric.Accuracy()
     for i, batch in enumerate(val_data):
-        data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
-        label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0)
+        data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0, even_split=False)
+        label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0, even_split=False)
         outputs = [net(X) for X in data]
-        acc_top1.update(label, outputs)
-        acc_top5.update(label, outputs)
+        metric.update(label, outputs)
 
-    _, top1 = acc_top1.get()
-    _, top5 = acc_top5.get()
-    return (1-top1, 1-top5)
+    return metric.get()
 
 def train(train_path, test_path):
     # Initialize the net with pretrained model
@@ -181,16 +191,14 @@ def train(train_path, test_path):
         _, train_acc = metric.get()
         train_loss /= num_batch
 
-        val_acc, val_map, val_loss = validate(finetune_net, val_data, ctx)
+        _, val_acc = test(finetune_net, val_data, ctx)
 
-        logging.info('[Epoch %d] Train-acc: %.3f, mAP: %.3f, loss: %.3f | Val-acc: %.3f, mAP: %.3f, loss: %.3f | time: %.1f' %
-                 (epoch, train_acc, train_map, train_loss, val_acc, val_map, val_loss, time.time() - tic))
+        logging.info('[Epoch %d] Train-acc: %.3f, loss: %.3f | Val-acc: %.3f | time: %.1f' %
+                 (epoch, train_acc, train_loss, val_acc, time.time() - tic))
 
     logging.info('\n')
     return (finetune_net)
 
 if __name__ == "__main__":
-    # net = train(train_path, test_path)
-    net = train('/home/ubuntu/data/indoorCVPR_09/Images',
-                '/home/ubuntu/data/indoorCVPR_09/Images')
+    net = train(train_path, val_path)
 
