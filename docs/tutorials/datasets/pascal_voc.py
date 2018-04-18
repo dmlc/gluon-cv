@@ -54,7 +54,7 @@ For example, make sure you have these files exist in ``~/VOCdevkit/downloads``, 
 
 .. code-block:: python
 
-   python pascal_voc.py --download-dir ~/VOCdevkit
+   python pascal_voc.py --dir ~/VOCdevkit
 
 to extract them.
 
@@ -82,3 +82,8 @@ bboxes = train_label[:, :4]
 cids = train_label[:, 4:5]
 print('image size:', train_image.shape)
 print('bboxes:', bboxes.shape, 'class ids:', cids.shape)
+
+from matplotlib import pyplot as plt
+from gluonvision.utils import viz
+ax = viz.plot_bbox(train_image.asnumpy(), bboxes, scores=None, labels=cids, class_names=train_dataset.classes)
+plt.show()
