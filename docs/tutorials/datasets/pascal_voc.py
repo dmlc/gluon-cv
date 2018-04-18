@@ -33,7 +33,7 @@ which will automatically download and extract the data into ``~/.mxnet/datasets/
    The total time to prepare the dataset depends on your Internet speed and disk
    performance. For example, it often takes 10 min on AWS EC2 with EBS.
 
-You can skip the download step if if you have already downloaded the following required files
+You can skip the download step if you have already downloaded the following required files
 
 +------------------------------------------------------------------------------------------------------------------------+--------+------------------------------------------+
 | Filename                                                                                                               | Size   | SHA-1                                    |
