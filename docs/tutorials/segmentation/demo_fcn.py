@@ -25,10 +25,9 @@ gluonvision.utils.download(url, filename)
 with open(filename, 'rb') as f:
     img = image.imdecode(f.read())
 
-##############################################################################
-#.. image:: https://raw.githubusercontent.com/zhanghang1989/gluon-vision-figures/master/voc_examples/1.jpg
-#    :width: 45%
-#
+from matplotlib import pyplot as plt
+plt.imshow(img.asnumpy())
+plt.show()
 
 # normalize the image using dataset mean
 transform_fn = transforms.Compose([
@@ -51,14 +50,14 @@ predict = mx.nd.squeeze(mx.nd.argmax(output, 1)).asnumpy()
 ##############################################################################
 # Add color pallete for visualization
 from gluonvision.utils.viz import get_color_pallete
+import matplotlib.image as mpimg
 mask = get_color_pallete(predict, 'pascal_voc')
 mask.save('output.png')
 
-
-##############################################################################
-#.. image:: https://raw.githubusercontent.com/zhanghang1989/gluon-vision-figures/master/voc_examples/1.png
-#    :width: 45%
-#
+# show the predicted mask
+mmask = mpimg.imread('output.png')
+plt.imshow(mmask)
+plt.show()
 
 ##############################################################################
 # More Examples
