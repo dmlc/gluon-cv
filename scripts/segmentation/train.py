@@ -27,41 +27,7 @@ Start Training Now
   For more training command options, please run ``python train.py -h``
 
 
-- Table of pre-trained models, performances and training commands:
-
-.. comment (models :math:`^\ast` denotes pre-trained on COCO):
-
-.. role:: raw-html(raw)
-   :format: html
-
-.. _Table:
-
-    +------------------------+------------+-----------+-----------+-----------+----------------------------------------------------------------------------------------------+
-    | Method                 | Backbone   | Dataset   | Note      | mIoU      | Training Scripts                                                                             |
-    +========================+============+===========+===========+===========+==============================================================================================+
-    | FCN                    | ResNet50   | PASCAL12  | stride 8  | 69.4_     | :raw-html:`<a href="javascript:toggleblock('cmd_fcn_50')" class="toggleblock">cmd</a>`       |
-    +------------------------+------------+-----------+-----------+-----------+----------------------------------------------------------------------------------------------+
-    | FCN                    | ResNet101  | PASCAL12  | stride 8  | 70.9_     | :raw-html:`<a href="javascript:toggleblock('cmd_fcn_101')" class="toggleblock">cmd</a>`      |
-    +------------------------+------------+-----------+-----------+-----------+----------------------------------------------------------------------------------------------+
-
-    .. _69.4:  http://host.robots.ox.ac.uk:8080/anonymous/TC12D2.html
-    .. _70.9:  http://host.robots.ox.ac.uk:8080/anonymous/FTIQXJ.html
-
-.. raw:: html
-
-    <code xml:space="preserve" id="cmd_fcn_50" style="display: none; text-align: left; white-space: pre-wrap">
-    # First training on augmented set
-    CUDA_VISIBLE_DEVICES=0,1,2,3 python train.py --dataset pascal_aug --model fcn --backbone resnet50 --lr 0.001 --syncbn --checkname mycheckpoint
-    # Finetuning on original set
-    CUDA_VISIBLE_DEVICES=0,1,2,3 python train.py --dataset pascal_voc --model fcn --backbone resnet50 --lr 0.0001 --syncbn --checkname mycheckpoint --resume runs/pascal_aug/fcn/mycheckpoint/checkpoint.params
-    </code>
-
-    <code xml:space="preserve" id="cmd_fcn_101" style="display: none; text-align: left; white-space: pre-wrap">
-    # First training on augmented set
-    CUDA_VISIBLE_DEVICES=0,1,2,3 python train.py --dataset pascal_aug --model fcn --backbone resnet101 --lr 0.001 --syncbn --checkname mycheckpoint
-    # Finetuning on original set
-    CUDA_VISIBLE_DEVICES=0,1,2,3 python train.py --dataset pascal_voc --model fcn --backbone resnet101 --lr 0.0001 --syncbn --checkname mycheckpoint --resume runs/pascal_aug/fcn/mycheckpoint/checkpoint.params
-    </code>
+- Please checkout the `model_zoo <../../model_zoo/index.html>`_ for training commands of reproducing the experiments.
 
 
 Dive into Deep
