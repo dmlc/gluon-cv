@@ -1,5 +1,5 @@
-Vision Datasets
-===============
+gluonvision.data
+================
 
 .. automodule:: gluonvision.data
 .. currentmodule:: gluonvision.data
@@ -42,5 +42,3 @@ ADE20K datasets: http://groups.csail.mit.edu/vision/datasets/ADE20K/ is the larg
 DataLoader
 ----------
 .. autoclass:: gluonvision.data.DetectionDataLoader
-
-

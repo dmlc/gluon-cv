@@ -1,7 +1,7 @@
 .. role:: hidden
     :class: hidden-section
 
-Utility Functions
+gluonvision.utils
 =================
 We implemented a broad range of utility functions which cover visualization, file handler, download and training helpers.
 
@@ -35,6 +35,6 @@ Bounding Box Visualization
 
 .. autofunction:: gluonvision.utils.set_lr_mult
 
-:hidden:`Bouding Box Utils`
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+:hidden:`Bounding Box Utils`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. autofunction:: gluonvision.utils.bbox_iou

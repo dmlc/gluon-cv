@@ -60,10 +60,10 @@ A Quick Example
    :maxdepth: 2
    :caption: Tutorials
 
-   examples_datasets/index
    examples_classification/index
    examples_detection/index
    examples_segmentation/index
+   examples_datasets/index
 
 .. toctree::
    :maxdepth: 1
@@ -73,12 +73,12 @@ A Quick Example
 
 .. toctree::
    :maxdepth: 1
-   :caption: API Documents
+   :caption: API Reference
 
 
    api/datasets
-   api/models
    api/transforms
+   api/models
    api/utils
 
 .. toctree::
