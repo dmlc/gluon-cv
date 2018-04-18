@@ -60,10 +60,10 @@ A Quick Example
    :maxdepth: 2
    :caption: Tutorials
 
-   examples_classification/index
-   examples_detection/index
-   examples_segmentation/index
-   examples_datasets/index
+   build/examples_classification/index
+   build/examples_detection/index
+   build/examples_segmentation/index
+   build/examples_datasets/index
 
 .. toctree::
    :maxdepth: 1
