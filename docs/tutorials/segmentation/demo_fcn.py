@@ -15,11 +15,12 @@ ctx = mx.cpu(0)
 
 ##############################################################################
 # Prepare the image 
+# -----------------
 
 # download the example image
 url = 'https://raw.githubusercontent.com/zhanghang1989/gluon-vision-figures/master/voc_examples/1.jpg'
-filename = '1.jpg'
-gluonvision.utils.download(url)
+filename = 'example.jpg'
+gluonvision.utils.download(url, filename)
 
 # load the image
 with open(filename, 'rb') as f:
@@ -40,6 +41,7 @@ img = img.expand_dims(0).as_in_context(ctx)
 
 ##############################################################################
 # Load the pre-trained model and make prediction
+# ----------------------------------------------
 
 # get pre-trained model
 model = gluonvision.model_zoo.get_fcn_voc_resnet101(pretrained=True)
@@ -49,8 +51,8 @@ predict = mx.nd.squeeze(mx.nd.argmax(output, 1)).asnumpy()
 
 ##############################################################################
 # Add color pallete for visualization
-from utils import get_mask
-mask = get_mask(predict, 'pascal_voc')
+from gluonvision.utils.viz import get_color_pallete
+mask = get_color_pallete(predict, 'pascal_voc')
 mask.save('output.png')
 
 
@@ -61,6 +63,7 @@ mask.save('output.png')
 
 ##############################################################################
 # More Examples
+# -------------
 #
 #.. image:: https://raw.githubusercontent.com/zhanghang1989/gluon-vision-figures/master/voc_examples/4.jpg
 #    :width: 45%

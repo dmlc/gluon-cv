@@ -15,6 +15,8 @@ Image Visualization
 ---------------------
 .. autofunction:: gluonvision.utils.viz.plot_image
 
+.. autofunction:: gluonvision.utils.viz.get_color_pallete
+
 Bounding Box Visualization
 ----------------------------
 .. autofunction:: gluonvision.utils.viz.plot_bbox
