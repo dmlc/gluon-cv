@@ -110,13 +110,17 @@ logging.basicConfig(level=logging.INFO,
                     handlers = [logging.StreamHandler()])
 
 train_path, val_path, test_path, labels = prepare_minc(opts.data)
-
+jitter_param = 0.4
+lighting_param = 0.1
 normalize = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 
 transform_train = transforms.Compose([
     transforms.Resize(480),
     transforms.RandomResizedCrop(224),
     transforms.RandomFlipLeftRight(),
+    transforms.RandomColorJitter(brightness=jitter_param, contrast=jitter_param,
+                                 saturation=jitter_param),
+    transforms.RandomLighting(lighting_param),
     transforms.ToTensor(),
     normalize
 ])
