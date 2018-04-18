@@ -20,7 +20,15 @@ _model_sha1 = {name: checksum for checksum, name in [
     ('d7bacf7cb1b5e19348941e6d486b9262efe78b15', 'cifar_resnet110_v2'),
     ('ebc52a3cb68fb9a14f59944b510cc682675a70cc', 'cifar_wideresnet16_10'),
     ('0ef2c7bec9c2c48b8ff52440ae84869ce2db20b1', 'cifar_wideresnet28_10'),
-    ('5369ff00708900aa34c85088ac2c15fd42f0b243', 'cifar_wideresnet40_8')]}
+    ('5369ff00708900aa34c85088ac2c15fd42f0b243', 'cifar_wideresnet40_8'),
+    ('954099ad52bd0a3501d87e99d268cc86696017e2', 'resnet18_v0'),
+    ('1f41ce20f25e9a2e420ebfbec34979ba4df6827d', 'resnet34_v0'),
+    ('c7120b57b6461d782bfe47b0ab428e2a1b973fef', 'resnet50_v0'),
+    ('d1712c7635aa5e72ce6e1c2e7463292331db37bb', 'resnet101_v0'),
+    ('dd7ea6fe219873041d83cb93b056d5517cd52c74', 'resnet152_v0'),
+    ('366686b664d19163286e96407b6a8e7796af56e2', 'fcn_resnet50_voc'),
+    ('bc9f665824133fdea29eb1f1eb4ce4a99ae68723', 'fcn_resnet101_voc'),
+    ]}
 
 apache_repo_url = 'https://apache-mxnet.s3-accelerate.dualstack.amazonaws.com/'
 _url_format = '{repo_url}gluon/models/{file_name}.zip'

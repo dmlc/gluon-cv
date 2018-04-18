@@ -26,45 +26,6 @@ CIFAR
 .. autofunction:: cifar_wideresnet40_8
 
 
-Dilated Network
----------------
-
-We apply dilattion strategy to pre-trained ResNet models (with stride of 8). Please see :class:`gluonvision.model_zoo.SegBaseModel` for how to use it.
-
-.. currentmodule:: gluonvision.model_zoo.dilated.dilatedresnetv2
-
-.. autoclass:: DilatedResNetV2
-    :members:
-
-
-.. autoclass:: DilatedBasicBlockV2
-    :members:
-
-
-.. autoclass:: DilatedBottleneckV2
-    :members:
-
-
-.. autofunction:: get_dilated_resnet
-
-
-.. autofunction:: dilated_resnet18
-
-
-
-.. autofunction:: dilated_resnet34
-
-
-
-.. autofunction:: dilated_resnet50
-
-
-
-.. autofunction:: dilated_resnet101
-
-
-
-.. autofunction:: dilated_resnet152
 
 Object Detection
 ----------------
@@ -101,10 +62,13 @@ Object Detection
 Semantic Segmentation
 ---------------------
 
-:hidden:`SegBaseModel`
-~~~~~~~~~~~~~~~~~~~~~~
+:hidden:`BaseModel`
+~~~~~~~~~~~~~~~~~~~
 
 .. autoclass:: SegBaseModel
+    :members:
+
+.. autoclass:: SegEvalModel
     :members:
 
 :hidden:`FCN`
@@ -112,6 +76,66 @@ Semantic Segmentation
 
 .. autoclass:: FCN
     :members:
+
+.. autofunction:: get_fcn
+
+.. autofunction:: get_fcn_voc_resnet50
+
+.. autofunction:: get_fcn_voc_resnet101
+
+Dilated Network
+---------------
+
+We apply dilattion strategy to pre-trained ResNet models (with stride of 8). Please see :class:`gluonvision.model_zoo.SegBaseModel` for how to use it.
+
+
+:hidden:`DilatedResNetV0`
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. currentmodule:: gluonvision.model_zoo.dilated.dilatedresnetv0
+
+.. autoclass:: DilatedResNetV0
+    :members:
+
+.. autofunction:: dilated_resnet18
+
+
+.. autofunction:: dilated_resnet34
+
+
+.. autofunction:: dilated_resnet50
+
+
+.. autofunction:: dilated_resnet101
+
+
+.. autofunction:: dilated_resnet152
+
+
+:hidden:`DilatedResNetV2`
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. currentmodule:: gluonvision.model_zoo.dilated.dilatedresnetv2
+
+.. autoclass:: DilatedResNetV2
+    :members:
+
+.. autofunction:: get_dilated_resnet
+
+
+.. autofunction:: dilated_resnet18
+
+
+.. autofunction:: dilated_resnet34
+
+
+.. autofunction:: dilated_resnet50
+
+
+.. autofunction:: dilated_resnet101
+
+
+.. autofunction:: dilated_resnet152
 
 
 Common Components
