@@ -66,25 +66,23 @@ The following table summarizes the available models and there performances for o
 Semantic Segmentation
 ~~~~~~~~~~~~~~~~~~~~~
 
-Table of pre-trained models, performances and training commands:
+Table of pre-trained models, performances and the training commands:
 
 .. comment (models :math:`^\ast` denotes pre-trained on COCO):
 
 .. role:: raw-html(raw)
    :format: html
 
-.. _Table:
++-------------------+--------------+------------+-----------+-----------+-----------+----------------------------------------------------------------------------------------------+
+| Name              | Method       | Backbone   | Dataset   | Note      | mIoU      | Command                                                                                      |
++===================+==============+============+===========+===========+===========+==============================================================================================+
+| fcn_resnet50_voc  | FCN [Long15]_| ResNet50   | PASCAL12  | stride 8  | 69.4_     | :raw-html:`<a href="javascript:toggleblock('cmd_fcn_50')" class="toggleblock">cmd</a>`       |
++-------------------+--------------+------------+-----------+-----------+-----------+----------------------------------------------------------------------------------------------+
+| fcn_resnet101_voc | FCN [Long15]_| ResNet101  | PASCAL12  | stride 8  | 70.9_     | :raw-html:`<a href="javascript:toggleblock('cmd_fcn_101')" class="toggleblock">cmd</a>`      |
++-------------------+--------------+------------+-----------+-----------+-----------+----------------------------------------------------------------------------------------------+
 
-    +-------------------+--------------+------------+-----------+-----------+-----------+----------------------------------------------------------------------------------------------+
-    | Name              | Method       | Backbone   | Dataset   | Note      | mIoU      | Command                                                                                      |
-    +===================+==============+============+===========+===========+===========+==============================================================================================+
-    | fcn_resnet50_voc  | FCN [Long15]_| ResNet50   | PASCAL12  | stride 8  | 69.4_     | :raw-html:`<a href="javascript:toggleblock('cmd_fcn_50')" class="toggleblock">cmd</a>`       |
-    +-------------------+--------------+------------+-----------+-----------+-----------+----------------------------------------------------------------------------------------------+
-    | fcn_resnet101_voc | FCN [Long15]_| ResNet101  | PASCAL12  | stride 8  | 70.9_     | :raw-html:`<a href="javascript:toggleblock('cmd_fcn_101')" class="toggleblock">cmd</a>`      |
-    +-------------------+--------------+------------+-----------+-----------+-----------+----------------------------------------------------------------------------------------------+
-
-    .. _69.4:  http://host.robots.ox.ac.uk:8080/anonymous/TC12D2.html
-    .. _70.9:  http://host.robots.ox.ac.uk:8080/anonymous/FTIQXJ.html
+.. _69.4:  http://host.robots.ox.ac.uk:8080/anonymous/TC12D2.html
+.. _70.9:  http://host.robots.ox.ac.uk:8080/anonymous/FTIQXJ.html
 
 .. raw:: html
 

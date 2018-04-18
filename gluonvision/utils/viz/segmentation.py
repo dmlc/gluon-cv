@@ -1,14 +1,14 @@
 """Segmentation Utils"""
 from PIL import Image
 
-def get_color_pallete(npimg, dataset):
+def get_color_pallete(npimg, dataset='pascal_voc'):
     """Visualize image.
 
     Parameters
     ----------
     npimg : numpy.ndarray
         Image with shape `H, W, 3`.
-    dataset : str, default pascal_voc
+    dataset : str, default: pascal_voc
         The dataset that model pretrained on. (pascal_voc, ade20k)
 
     Returns
