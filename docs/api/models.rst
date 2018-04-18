@@ -1,8 +1,8 @@
 .. role:: hidden
     :class: hidden-section
 
-Vision Models
-=============
+gluonvision.model_zoo
+=====================
 
 .. automodule:: gluonvision.model_zoo
 .. currentmodule:: gluonvision.model_zoo
