@@ -47,11 +47,6 @@ download them again. For example
 
    python scripts/datasets/ade20k.py --download-dir ~/ade_downloads
 
-How to load the dataset
------------------------
-
-.. code-block:: python
-
 """
 
 ################################################################
@@ -68,15 +63,30 @@ print('Validation images:', len(val_dataset))
 
 
 ################################################################
+# Get the first sample
+# --------------------
+#
+import numpy as np
+img, mask = val_dataset[0]
+# get pallete for the mask
+from gluonvision.utils.viz import get_color_pallete
+mask = get_color_pallete(np.array(mask), dataset='ade20k')
+mask.save('mask.png')
+
+
+################################################################
 # Visualize the data
 # ------------------
 #
-img, mask = val_dataset[0]
-img.show()
-print(img)
-print(mask)
-# get pallete for the mask and show
-import numpy as np
-from gluonvision.utils.viz import get_color_pallete
-mask = get_color_pallete(np.array(mask), dataset='ade20k')
-mask.show()
+from matplotlib import pyplot as plt
+import matplotlib.image as mpimg
+# subplot 1 for img
+fig = plt.figure()
+fig.add_subplot(1,2,1)
+plt.imshow(np.array(img))
+# subplot 2 for the mask
+mmask = mpimg.imread('mask.png')
+fig.add_subplot(1,2,2)
+plt.imshow(mmask)
+# display
+plt.show()
