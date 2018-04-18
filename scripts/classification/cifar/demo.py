@@ -4,7 +4,9 @@
 ```CIFAR10`` <https://www.cs.toronto.edu/~kriz/cifar.html>`__ is a
 labeled dataset of tiny (32x32) images, collected by Alex Krizhevsky,
 Vinod Nair, and Geoffrey Hinton. It is widely used as a benchmark in
-conputer vision research.
+computer vision research.
+
+|image-cifar10|
 
 In this tutorial, we will demonstrate how to use ``Gluon`` to train a
 model from scratch and reproduce the performance from papers.
@@ -33,11 +35,11 @@ This is an airplane:
 
 |image0|
 
-We can make prediction by
+Right click and save the image, we can then make prediction by
 
 ::
 
-    python demo.py --model cifar_resnet110_v1 --input-pic bird.jpg
+    python demo.py --model cifar_resnet110_v2 --input-pic plane.jpg
 
 And the model thinks that
 
@@ -46,19 +48,21 @@ And the model thinks that
     The input picture is classified to be [airplane], with probability 0.517.
 
 Feel free to feed in your own image to see how well it does the job.
-Keep in mind, that ``CIFAR10`` is relatively small and has only 10
+Keep in mind that ``CIFAR10`` is relatively small and has only 10
 classes. Models trained on ``CIFAR10`` only recognize objects from those
-10 classes, therefore it may surprise you:
+10 classes, therefore it may surprise you if we feed one image to the model which doesn't belong to any of the 10 classes
+
+|image1|
 
 ::
 
-    python demo.py --model cifar_resnet110_v1 --input-pic surprise.jpg
+    python demo.py --model cifar_resnet110_v2 --input-pic mt_baker.jpg
 
 The result is:
 
 ::
 
-    bird!
+    The input picture is classified to be [airplane], with probability 0.857.
 
 To experience a more real world friendly demo, please checkout models
 trained on `ImageNet <>`__.
@@ -70,36 +74,53 @@ In the demo, we have used a pretrained model. So how did we train it?
 
 We trained the models with
 ```train.py`` <https://github.com/hetong007/gluon-vision/blob/master/scripts/classification/cifar/train.py>`__.
-It takes a lot of parameters to control the model training process. To
+It takes a bunch of parameters to control the model training process. To
 start, you can try the following command:
 
 ::
 
-    python train.py --num-epochs 240 --mode hybrid --num-gpus 2 -j 32 --batch-size 64\
-        --wd 0.0001 --lr 0.1 --lr-decay 0.1 --lr-decay-epoch 80,160 --model cifar_resnet20_v2
+    python train.py --num-epochs 240 --mode hybrid --num-gpus 1 -j 8 --batch-size 128\
+        --wd 0.0001 --lr 0.1 --lr-decay 0.1 --lr-decay-epoch 80,160 --model cifar_resnet20_v1
 
-This command trains a ``ResNet20_V2`` model for 240 epochs on two GPUs.
-The batch size for each GPU is 64, thus the total batch size is 128. We
-decay the learning rate by a factor of 10 at the 80-th and 160-th epoch.
+This command trains a ``ResNet20_V2`` model for 240 epochs on one GPU.
+The batch size is 128. We decay the learning rate by a factor of 10 at the 80-th and 160-th epoch.
 The script prints information for each epoch so that we can have a sense
 of the progress and watchout for any unexpected issues.
 
 ::
 
-    INFO:root:[Epoch 0] train=0.229176 val=0.422300 loss=101760.375931 time: 21.937484
-    INFO:root:[Epoch 1] train=0.218320 val=0.524200 loss=93098.808853 time: 21.637539
-    INFO:root:[Epoch 2] train=0.211201 val=0.559400 loss=89708.618820 time: 21.596765
-    INFO:root:[Epoch 3] train=0.205876 val=0.609300 loss=87576.185600 time: 20.972680
-    INFO:root:[Epoch 4] train=0.202815 val=0.614800 loss=85852.031380 time: 21.104631
-    INFO:root:[Epoch 5] train=0.200063 val=0.659800 loss=83747.976288 time: 21.788607
+    INFO:root:[Epoch 0] train=0.367448 val=0.460800 loss=1.735358 time: 12.739688
+    INFO:root:[Epoch 1] train=0.492027 val=0.524600 loss=1.409553 time: 12.500988
+    INFO:root:[Epoch 2] train=0.556891 val=0.640400 loss=1.241357 time: 12.994388
+    INFO:root:[Epoch 3] train=0.595152 val=0.658900 loss=1.145049 time: 12.342926
+    INFO:root:[Epoch 4] train=0.620733 val=0.680900 loss=1.075090 time: 13.098537
+    INFO:root:[Epoch 5] train=0.640966 val=0.700200 loss=1.017329 time: 12.360461
     ...
 
 The dataset and the model are relatively small, thus it won’t take you
-too long to train the model. Of course it depends on how powerful your
-machine is, the result on our side is:
+too long to train the model. If you don't have a GPU yet, you can still try to
+train with your CPU with MKLDNN. One can install MXNet with MKLDNN with
 
--  20 seconds with two V100 GPUs per epoch, and 32 CPU threads.
--  100 seconds with a GTX1060 GPU per epoch, and 4 CPU threads.
+
+::
+
+    pip install --pre mxnet-mkl
+
+
+After the installation, one can run the following command:
+
+::
+
+    python train.py --num-epochs 240 --mode hybrid --num-gpus 0 -j 1 --batch-size 128\
+        --wd 0.0001 --lr 0.1 --lr-decay 0.1 --lr-decay-epoch 80,160 --model cifar_resnet20_v1
+
+Here we change the values of ``--num-gpus`` to 0 and ``-j`` to 1, to only use CPU for training and use one thread
+for data loader.
+
+This is a brief comparison of performance on our side :
+
+-  13 seconds with one V100 GPU per epoch, and 8 CPU threads.
+-  70 seconds with one 8-thread CPU per epoch, with MKLDNN enabled.
 
 With limited computational power, it is good in practice to firstly test
 a few epochs to ensure everything works, then leave it running for a
@@ -119,13 +140,18 @@ process. A good way to review the result is to have a plot:
 
 This is a plot generated from the following command:
 
-::
+|image2|
 
-We see that the issue could be not enough epochs. We then change to
+We see that the training error is much lower than validation error.
+This is a clear message of overfitting.  Actually this is the plot for
+a training process without data augmentation.
 
-::
+By adding data augmentation back, we can expect the following plot:
 
-and observe that
+|image3|
+
+and observe that training and validation errors share the same trend,
+while training error is a little bit higher than the validation error.
 
 Model Zoo
 ---------
@@ -192,7 +218,11 @@ feel free to read `the next tutorial on ``CIFAR10`` <>`__.
 Or, if you would like to try a more powerful demo, i.e. models trained
 on ImageNet, please read `xxx <>`__.
 
-.. |image0| image:: plane-draw.jpeg
+.. |image-cifar10| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/classification/cifar10.png
+.. |image0| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/classification/plane-draw.jpeg
+.. |image1| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/classification/mt_baker.jpg
+.. |image2| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/classification/overfitting.png
+.. |image3| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/classification/normal_training.png
 
 """
 from __future__ import division
