@@ -84,7 +84,7 @@ bounding_boxes = train_label[:, :4]
 class_ids = train_label[:, 4:5]
 print('Image size (height, width, RGB):', train_image.shape)
 print('Num of objects:', bounding_boxes.shape[0])
-print('Bounding boxes (num_boxes, bottom_x, bottom_y, upper_x, upper_y):\n',
+print('Bounding boxes (num_boxes, x_min, y_min, x_max, y_max):\n',
       bounding_boxes)
 print('Class IDs (num_boxes, ):\n', class_ids)
 
