@@ -26,7 +26,6 @@ stage("Docs") {
       export PYTHONPATH=\${PWD}
       env
       export LD_LIBRARY_PATH=/usr/local/cuda-8.0/lib64
-      python scripts/datasets/pascal_voc.py
       cd docs && make html
 
       if [[ ${env.BRANCH_NAME} == master ]]; then
