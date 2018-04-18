@@ -12,16 +12,16 @@ preparing this dataset to be used by GluonVision.
 Prepare the dataset
 -------------------
 
-The easiest way is simply running this script:
-
- :download:`Download Pascal VOC Prepare Script: pascal_voc.py<../../scripts/datasets/pascal_voc.py>`
-
-which will automatically download and extract the data into ``~/.mxnet/datasets/voc``.
-
+The easiest way is simply downloading
+:download:`pascal_voc.py<../../scripts/datasets/pascal_voc.py>` and then running
+the following command
 
 .. code-block:: bash
 
     python pascal_voc.py
+
+which will automatically download and extract the data into ``~/.mxnet/datasets/voc``.
+
 
 .. note::
 
@@ -31,9 +31,9 @@ which will automatically download and extract the data into ``~/.mxnet/datasets/
 .. note::
 
    The total time to prepare the dataset depends on your Internet speed and disk
-   performance. For example, it often takes 10min on AWS EC2 with EBS.
+   performance. For example, it often takes 10 min on AWS EC2 with EBS.
 
-If you have already downloaded the following required files
+You can skip the download step if you have already downloaded the following required files
 
 +------------------------------------------------------------------------------------------------------------------------+--------+------------------------------------------+
 | Filename                                                                                                               | Size   | SHA-1                                    |
@@ -47,16 +47,14 @@ If you have already downloaded the following required files
 | `benchmark.tgz <http://www.eecs.berkeley.edu/Research/Projects/CS/vision/grouping/semantic_contours/benchmark.tgz>`_   | 1.4 GB | 7129e0a480c2d6afb02b517bb18ac54283bfaa35 |
 +------------------------------------------------------------------------------------------------------------------------+--------+------------------------------------------+
 
-then you can specify the folder name through ``--dir`` to avoid
-download them again.
+then you can specify the folder name through ``--download-dir`` to use the
+downloaded files.
 
-For example, make sure you have these files exist in ``~/VOCdevkit/downloads``, and you can run
+For example, assume you downloaded all files into ``~/VOCdevkit/``, and you can run:
 
-.. code-block:: python
+.. code-block:: bash
 
-   python pascal_voc.py --dir ~/VOCdevkit
-
-to extract them.
+   python pascal_voc.py --download-dir ~/VOCdevkit
 
 """
 
@@ -64,26 +62,39 @@ to extract them.
 # How to load the dataset
 # -----------------------
 #
-# Load image and label from Pascal VOC is quite straight-forward
+# Loading images and labels is straight-forward through
+# :py:class:`gluonvision.data.VOCDetection`.
 
 
-from gluonvision.data import VOCDetection
-train_dataset = VOCDetection(splits=[(2007, 'trainval'), (2012, 'trainval')])
-val_dataset = VOCDetection(splits=[(2007, 'test')])
-print('Training images:', len(train_dataset))
-print('Validation images:', len(val_dataset))
+from gluonvision import data, utils
+from matplotlib import pyplot as plt
+
+train_dataset = data.VOCDetection(splits=[(2007, 'trainval'), (2012, 'trainval')])
+val_dataset = data.VOCDetection(splits=[(2007, 'test')])
+print('Num of training images:', len(train_dataset))
+print('Num of validation images:', len(val_dataset))
+
 
 ################################################################
-# Check the first example
-# -----------------------
 #
-train_image, train_label = train_dataset[0]
-bboxes = train_label[:, :4]
-cids = train_label[:, 4:5]
-print('image size:', train_image.shape)
-print('bboxes:', bboxes.shape, 'class ids:', cids.shape)
+# Now let's visualize one example.
 
-from matplotlib import pyplot as plt
-from gluonvision.utils import viz
-ax = viz.plot_bbox(train_image.asnumpy(), bboxes, scores=None, labels=cids, class_names=train_dataset.classes)
+train_image, train_label = train_dataset[5]
+bounding_boxes = train_label[:, :4]
+class_ids = train_label[:, 4:5]
+print('Image size (height, width, RGB):', train_image.shape)
+print('Num of objects:', bounding_boxes.shape[0])
+print('Bounding boxes (num_boxes, x_min, y_min, x_max, y_max):\n',
+      bounding_boxes)
+print('Class IDs (num_boxes, ):\n', class_ids)
+
+utils.viz.plot_bbox(train_image.asnumpy(), bounding_boxes, scores=None,
+                    labels=class_ids, class_names=train_dataset.classes)
 plt.show()
+
+
+##################################################################
+# Finally, to use both ``train_dataset`` and ``val_dataset`` for training, we
+# can pass them without data transformations and the batch size into
+# :py:class:`gluonvions.data.DetectionDataLoader`, see :download:`train_ssd.py
+# <../../scripts/detection/train_ssd.py>` for an example.
