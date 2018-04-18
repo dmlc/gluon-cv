@@ -13,7 +13,7 @@ Prepare the dataset
 -------------------
 
 The easiest way is simply downloading
-:download:`pascal_voc.py<../../scripts/datasets/pascal_voc.py>` and then running
+:download:`pascal_voc.py<../../../scripts/datasets/pascal_voc.py>` and then running
 the following command
 
 .. code-block:: bash
@@ -97,4 +97,4 @@ plt.show()
 # Finally, to use both ``train_dataset`` and ``val_dataset`` for training, we
 # can pass them without data transformations and the batch size into
 # :py:class:`gluonvions.data.DetectionDataLoader`, see :download:`train_ssd.py
-# <../../scripts/detection/train_ssd.py>` for an example.
+# <../../../scripts/detection/ssd/train_ssd.py>` for an example.

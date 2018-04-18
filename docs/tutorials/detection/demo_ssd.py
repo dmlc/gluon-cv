@@ -39,16 +39,16 @@ print('shape of x:', x.shape)
 # Inference and display
 # ---------------------
 
-#ids, scores, bboxes = [xx[0].asnumpy() for xx in net(x)]
-#from gluonvision.utils import viz
-#ax = viz.plot_bbox(img, bboxes, scores, ids, class_names=net.classes, ax=None)
-#plt.show()
+# ids, scores, bboxes = [xx[0].asnumpy() for xx in net(x)]
+# from gluonvision.utils import viz
+# ax = viz.plot_bbox(img, bboxes, scores, ids, class_names=net.classes, ax=None)
+# plt.show()
 
 ######################################################################
 # Play with complete python script for demo
 # -----------------------------------------
 #
-# :download:`Download Full Python Script demo_ssd.py<../../scripts/detection/ssd/demo_ssd.py>`
+# :download:`Download Full Python Script demo_ssd.py<../../../scripts/detection/ssd/demo_ssd.py>`
 #
 # Example usage:
 #
