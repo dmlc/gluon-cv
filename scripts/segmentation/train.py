@@ -3,8 +3,69 @@
 
 This is a semantic segmentation tutorial using Gluon Vison, a step-by-step example.
 The readers should have basic knowledge of deep learning and should be familiar with Gluon API.
-New users may first go through Gluon tutorials
-`Deep Learning - The Straight Dope <http://gluon.mxnet.io/>`_.
+New users may first go through `A 60-minute Gluon Crash Course <http://gluon-crash-course.mxnet.io/>`_.
+
+
+Start Training Now
+~~~~~~~~~~~~~~~~~~
+
+- Please follow the `installation guide <../index.html>`_ to install MXNet and GluonVision if not yet.
+  Use the quick script to `Prepare Pascal VOC Dataset <../examples_datasets/pascal_voc.html>`_.
+
+- Clone the code::
+
+    git clone https://github.com/dmlc/gluon-vision
+    cd scipts/segmentation/
+
+- Example training command::
+
+    # First training on augmented set
+    CUDA_VISIBLE_DEVICES=0,1,2,3 python train.py --dataset pascal_aug --model fcn --backbone resnet50 --lr 0.001 --checkname mycheckpoint
+    # Finetuning on original set
+    CUDA_VISIBLE_DEVICES=0,1,2,3 python train.py --dataset pascal_voc --model fcn --backbone resnet50 --lr 0.0001 --checkname mycheckpoint --resume runs/pascal_aug/fcn/mycheckpoint/checkpoint.params
+
+  For more training command options, please run ``python train.py -h``
+
+
+- Table of pre-trained models, performances and training commands:
+
+.. comment (models :math:`^\ast` denotes pre-trained on COCO):
+
+.. role:: raw-html(raw)
+   :format: html
+
+.. _Table:
+
+    +------------------------+------------+-----------+-----------+-----------+----------------------------------------------------------------------------------------------+
+    | Method                 | Backbone   | Dataset   | Note      | mIoU      | Training Scripts                                                                             |
+    +========================+============+===========+===========+===========+==============================================================================================+
+    | FCN                    | ResNet50   | PASCAL12  | stride 8  | 69.4_     | :raw-html:`<a href="javascript:toggleblock('cmd_fcn_50')" class="toggleblock">cmd</a>`       |
+    +------------------------+------------+-----------+-----------+-----------+----------------------------------------------------------------------------------------------+
+    | FCN                    | ResNet101  | PASCAL12  | stride 8  | 70.9_     | :raw-html:`<a href="javascript:toggleblock('cmd_fcn_101')" class="toggleblock">cmd</a>`      |
+    +------------------------+------------+-----------+-----------+-----------+----------------------------------------------------------------------------------------------+
+
+    .. _69.4:  http://host.robots.ox.ac.uk:8080/anonymous/TC12D2.html
+    .. _70.9:  http://host.robots.ox.ac.uk:8080/anonymous/FTIQXJ.html
+
+.. raw:: html
+
+    <code xml:space="preserve" id="cmd_fcn_50" style="display: none; text-align: left; white-space: pre-wrap">
+    # First training on augmented set
+    CUDA_VISIBLE_DEVICES=0,1,2,3 python train.py --dataset pascal_aug --model fcn --backbone resnet50 --lr 0.001 --syncbn --checkname mycheckpoint
+    # Finetuning on original set
+    CUDA_VISIBLE_DEVICES=0,1,2,3 python train.py --dataset pascal_voc --model fcn --backbone resnet50 --lr 0.0001 --syncbn --checkname mycheckpoint --resume runs/pascal_aug/fcn/mycheckpoint/checkpoint.params
+    </code>
+
+    <code xml:space="preserve" id="cmd_fcn_101" style="display: none; text-align: left; white-space: pre-wrap">
+    # First training on augmented set
+    CUDA_VISIBLE_DEVICES=0,1,2,3 python train.py --dataset pascal_aug --model fcn --backbone resnet101 --lr 0.001 --syncbn --checkname mycheckpoint
+    # Finetuning on original set
+    CUDA_VISIBLE_DEVICES=0,1,2,3 python train.py --dataset pascal_voc --model fcn --backbone resnet101 --lr 0.0001 --syncbn --checkname mycheckpoint --resume runs/pascal_aug/fcn/mycheckpoint/checkpoint.params
+    </code>
+
+
+Dive into Deep
+~~~~~~~~~~~~~~
 
 Fully Convolutional Network
 ---------------------------
@@ -26,7 +87,7 @@ can be beneficial for semantic segmentation.
 
 
 Model Dilation
-~~~~~~~~~~~~~~
+--------------
 
 The adaption of base network pre-trained on ImageNet leads to loss spatial resolution,
 because these networks are originally designed for classification task.
@@ -50,7 +111,7 @@ load the pre-trained dilated ResNet :class:`gluonvision.model_zoo.SegBaseModel`,
 be easily inherited and used.
 
 FCN Block
-~~~~~~~~~
+---------
 
 We build a fully convolutional "head" on top of the basenetwork (FCN model is provided
 in :class:`gluonvision.model_zoo.FCN`)::
@@ -89,12 +150,12 @@ in :class:`gluonvision.model_zoo.FCN`)::
             return x
 
 Dataset and Data Augmentation
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-----------------------------
 
 We provide semantic segmentation datasets in :class:`gluonvision.data`.
 For example, we can easily get the Pascal VOC 2012 dataset::
 
-    train_set = gluonvision.data.VOCSegmentationDataset(root)
+    train_set = gluonvision.data.VOCSegmentation(root)
 
 We follow the standard data augmentation routine to transform the input image
 and the ground truth label map synchronously. (Note that "nearest"
@@ -102,110 +163,12 @@ mode upsample are applied to the label maps to avoid messing up the boundaries.)
 We first randomly scale the input image from 0.5 to 2.0 times, then rotate
 the image from -10 to 10 degrees, and crop the image with padding if needed.
 
-Benchmarks and Training
-~~~~~~~~~~~~~~~~~~~~~~~
-
-- Training command example::
-
-    # First training on augmented set
-    CUDA_VISIBLE_DEVICES=0,1,2,3 python main.py --dataset pascal_aug --model fcn --backbone resnet50 --lr 0.001 --checkname mycheckpoint
-    # Finetuning on original set
-    CUDA_VISIBLE_DEVICES=0,1,2,3 python main.py --dataset pascal_voc --model fcn --backbone resnet50 --lr 0.0001 --checkname mycheckpoint --resume runs/pascal_aug/fcn/mycheckpoint/checkpoint.params
-
-  For more training commands, please see the ``Commands`` in the pre-trained Table_.
-
-- Detail training options::
-    
-    -h, --help            show this help message and exit
-    --model MODEL         model name (default: fcn)
-    --backbone BACKBONE   backbone name (default: resnet50)
-    --dataset DATASET     dataset name (default: pascal)
-    --nclass NCLASS       nclass for pre-trained model (default: None)
-    --workers N           dataloader threads
-    --data-folder         training dataset folder (default: $(HOME)/data/)
-    --epochs N            number of epochs to train (default: 50)
-    --start_epoch N       start epochs (default:0)
-    --batch-size N        input batch size for training (default: 16)
-    --test-batch-size N   input batch size for testing (default: 32)
-    --lr LR               learning rate (default: 1e-3)
-    --momentum M          momentum (default: 0.9)
-    --weight-decay M      w-decay (default: 1e-4)
-    --kvstore KVSTORE     kvstore to use for trainer/module.
-    --no-cuda             disables CUDA training
-    --ngpus NGPUS         number of GPUs (default: 4)
-    --seed S              random seed (default: 1)
-    --resume RESUME       put the path to resuming file if needed
-    --checkname           set the checkpoint name
-    --eval                evaluating mIoU
-    --test                test a set of images and save the prediction
-    --syncbn              using Synchronized Cross-GPU BatchNorm
-
-
-- Table of pre-trained models and its performance (models :math:`^\ast` denotes pre-trained on COCO):
-
-.. role:: raw-html(raw)
-   :format: html
-
-.. _Table:
-
-    +------------------------+------------+-----------+-----------+-----------+-----------+----------------------------------------------------------------------------------------------+
-    | Method                 | Backbone   | Dataset   | Note      | pixAcc    | mIoU      | Training Scripts                                                                             |
-    +========================+============+===========+===========+===========+===========+==============================================================================================+
-    | FCN                    | ResNet50   | PASCAL12  | stride 8  | N/A       | 70.9_     | :raw-html:`<a href="javascript:toggleblock('cmd_fcn_50')" class="toggleblock">cmd</a>`       |
-    +------------------------+------------+-----------+-----------+-----------+-----------+----------------------------------------------------------------------------------------------+
-    | FCN                    | ResNet101  | PASCAL12  | stride 8  | N/A       |           | :raw-html:`<a href="javascript:toggleblock('cmd_fcn_101')" class="toggleblock">cmd</a>`      |
-    +------------------------+------------+-----------+-----------+-----------+-----------+----------------------------------------------------------------------------------------------+
-
-    .. _70.9:  http://host.robots.ox.ac.uk:8080/anonymous/FR9APO.html
-
-.. raw:: html
-
-    <code xml:space="preserve" id="cmd_fcn_50" style="display: none; text-align: left; white-space: pre-wrap">
-    # First training on augmented set
-    CUDA_VISIBLE_DEVICES=0,1,2,3 python main.py --dataset pascal_aug --model fcn --backbone resnet50 --lr 0.001 --syncbn --checkname mycheckpoint
-    # Finetuning on original set
-    CUDA_VISIBLE_DEVICES=0,1,2,3 python main.py --dataset pascal_voc --model fcn --backbone resnet50 --lr 0.0001 --syncbn --checkname mycheckpoint --resume runs/pascal_aug/fcn/mycheckpoint/checkpoint.params
-    </code>
-
-    <code xml:space="preserve" id="cmd_fcn_101" style="display: none; text-align: left; white-space: pre-wrap">
-    # First training on augmented set
-    CUDA_VISIBLE_DEVICES=0,1,2,3 python main.py --dataset pascal_aug --model fcn --backbone resnet101 --lr 0.001 --syncbn --checkname mycheckpoint
-    # Finetuning on original set
-    CUDA_VISIBLE_DEVICES=0,1,2,3 python main.py --dataset pascal_voc --model fcn --backbone resnet101 --lr 0.0001 --syncbn --checkname mycheckpoint --resume runs/pascal_aug/fcn/mycheckpoint/checkpoint.params
-    </code>
-
-    <code xml:space="preserve" id="cmd_psp_50" style="display: none; text-align: left; white-space: pre-wrap">
-    # First training on augmented set
-    CUDA_VISIBLE_DEVICES=0,1,2,3 python main.py --dataset pascal_aug --model pspnet --backbone resnet50 --lr 0.001 --syncbn --checkname mycheckpoint
-    # Finetuning on original set
-    CUDA_VISIBLE_DEVICES=0,1,2,3 python main.py --dataset pascal_voc --model pspnet --backbone resnet50 --lr 0.0001 --syncbn --checkname mycheckpoint --resume runs/pascal_aug/fcn/mycheckpoint/checkpoint.params
-    </code>
-
-    <code xml:space="preserve" id="cmd_psp_101" style="display: none; text-align: left; white-space: pre-wrap">
-    # First training on augmented set
-    CUDA_VISIBLE_DEVICES=0,1,2,3 python main.py --dataset pascal_aug --model pspnet --backbone resnet101 --lr 0.001 --syncbn --checkname mycheckpoint
-    # Finetuning on original set
-    CUDA_VISIBLE_DEVICES=0,1,2,3 python main.py --dataset pascal_voc --model pspnet --backbone resnet101 --lr 0.0001 --syncbn --checkname mycheckpoint --resume runs/pascal_aug/fcn/mycheckpoint/checkpoint.params
-    </code>
-
-    <code xml:space="preserve" id="cmd_psp_101_coco" style="display: none; text-align: left; white-space: pre-wrap">
-    # Pre-training on COCO dataset
-    CUDA_VISIBLE_DEVICES=0,1,2,3 python main.py --dataset mscoco --model pspnet --backbone resnet101 --lr 0.01 --syncbn --checkname mycheckpoint
-    # Training on augmented set
-    CUDA_VISIBLE_DEVICES=0,1,2,3 python main.py --dataset pascal_aug --model pspnet --backbone resnet101 --lr 0.001 --syncbn --checkname mycheckpoint
-    # Finetuning on original set
-    CUDA_VISIBLE_DEVICES=0,1,2,3 python main.py --dataset pascal_voc --model pspnet --backbone resnet101 --lr 0.0001 --syncbn --checkname mycheckpoint --resume runs/pascal_aug/fcn/mycheckpoint/checkpoint.params
-    </code>
-
 References
 ----------
 
 .. [Long15] Long, Jonathan, Evan Shelhamer, and Trevor Darrell. \
     "Fully convolutional networks for semantic segmentation." \
     Proceedings of the IEEE conference on computer vision and pattern recognition. 2015.
-
-Dive Deep into the code
------------------------
 
 """
 import numpy as np
