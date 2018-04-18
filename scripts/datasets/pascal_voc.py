@@ -89,4 +89,4 @@ if __name__ == '__main__':
     makedirs(os.path.expanduser('~/.mxnet/datasets'))
     if os.path.isdir(_TARGET_DIR):
         os.remove(_TARGET_DIR)
-    os.symlink(args.dir, _TARGET_DIR)
+    os.symlink(args.download_dir, _TARGET_DIR)
