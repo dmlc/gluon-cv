@@ -13,7 +13,7 @@ Prepare the dataset
 -------------------
 
 The easiest way is simply downloading
-:download:`pascal_voc.py<../../scripts/datasets/pascal_voc.py>` and then running
+:download:`pascal_voc.py<../../../scripts/datasets/pascal_voc.py>` and then running
 the following command
 
 .. code-block:: bash

@@ -94,17 +94,22 @@ def save_params(net, best_map, current_map, epoch, save_interval, prefix):
 def validate(net, val_data, ctx, classes):
     """Test on validation dataset."""
     metric = VOC07MApMetric(iou_thresh=0.5, class_names=classes)
+    # set nms threshold and topk constraint
     net.set_nms(nms_thresh=0.45, nms_topk=400)
     net.hybridize()
     for batch in val_data:
         data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
         label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0)
         for x, y in zip(data, label):
+            # get prediction results
             ids, scores, bboxes = net(x)
+            # clip to image size
             bboxes = bboxes.clip(0, batch[0].shape[2])
+            # split ground truths
             gt_ids = y.slice_axis(axis=-1, begin=4, end=5)
             gt_bboxes = y.slice_axis(axis=-1, begin=0, end=4)
             gt_difficults = y.slice_axis(axis=-1, begin=5, end=6) if y.shape[-1] > 5 else None
+            # update metric
             metric.update(bboxes, ids, scores, gt_bboxes, gt_ids, gt_difficults)
 
     return metric.get()
