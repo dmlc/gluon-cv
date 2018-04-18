@@ -59,31 +59,30 @@ extensions = [
 
 sphinx_gallery_conf = {
     # path to your examples scripts
-    'examples_dirs': ['../scripts/datasets',
-                      '../scripts/classification',
-                      '../scripts/detection',
-                      '../scripts/segmentation'],
+    'examples_dirs': ['tutorials/datasets',
+                      'tutorials/classification',
+                      'tutorials/detection',
+                      'tutorials/segmentation',],
     # path where to save gallery generated examples
     'gallery_dirs': ['examples_datasets',
                      'examples_classification',
                      'examples_detection',
-                     'examples_segmentation'],
+                     'examples_segmentation',],
 
     'filename_pattern': '.py',
-    'ignore_pattern': 'train_mixup\.py',
+    # 'ignore_pattern': 'train_mixup\.py',
 
-    'subsection_order': ExplicitOrder(['../scripts/datasets',
-                                       '../scripts/classification/cifar',
-                                       '../scripts/classification/imagenet',
-                                       '../scripts/detection',
-                                       '../scripts/segmentation']),
+    # 'subsection_order': ExplicitOrder(['tutorials/classification',
+    #                                    'tutorials/detection',
+    #                                    'tutorials/segmentation',
+    #                                    'tutorials/datasets']),
 
     'within_subsection_order': NumberOfCodeLinesSortKey,
-    'plot_gallery':False,
+    'plot_gallery': True,
     'min_reported_time':10,
     'download_section_examples': False,
     'reference_url': {
-        'gluonvision':None,
+        'gluonvision': None,
     },
     'backreferences_dir': False,
 }
