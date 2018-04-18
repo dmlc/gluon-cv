@@ -4,16 +4,19 @@
 """
 import mxnet as mx
 import numpy as np
-import os, time, logging, math, argparse
+import os, time, logging, math, argparse, shutil
 
 from mxnet import gluon, image, init, nd
 from mxnet import autograd as ag
 from mxnet.gluon import nn
 from mxnet.gluon.model_zoo import vision as models
+from gluonvision.utils import makedirs
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Gluon for FashionAI Competition',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('--data', required=True, type=str,
+                        help='dir for the original data folder')
     parser.add_argument('--model', required=True, type=str,
                         help='name of the pretrained model from model zoo.')
     parser.add_argument('-j', '--workers', dest='num_workers', default=4, type=int,
@@ -37,7 +40,39 @@ def parse_args():
     args = parser.parse_args()
     return args
 
+def prepare_data(path):
+    train_images_file = os.path.join(path, 'TrainImages.txt')
+    with open(train_images_file, 'r') as f:
+        train_images = f.readlines()
+
+    test_images_file = os.path.join(path, 'TestImages.txt')
+    with open(test_images_file, 'r') as f:
+        test_images = f.readlines()
+
+    src_path = os.path.join(path, 'Images')
+    train_path = os.path.join(path, 'train')
+    test_path = os.path.join(path, 'test')
+    makedirs(train_path)
+    makedirs(test_path)
+
+    labesl = sorted(os.listdir(src_path))
+
+    for l in labels:
+        makedirs(os.path.join(train_path, labels))
+        makedirs(os.path.join(test_path, labels))
+
+    for im in train_images:
+        shutil(os.path.join(src_path, im),
+               os.path.join(train_path, im))
+
+    for im in test_images:
+        shutil(os.path.join(src_path, im),
+               os.path.join(test_path, im))
+
+    return train_path, test_path, labels
+
 transform_train = transforms.Compose([
+    transforms.Resize(480),
     transforms.RandomResizedCrop(224),
     transforms.RandomFlipLeftRight(),
     transforms.RandomColorJitter(brightness=jitter_param, contrast=jitter_param,
@@ -68,7 +103,7 @@ def test(ctx, val_data):
     _, top5 = acc_top5.get()
     return (1-top1, 1-top5)
 
-def train():
+def train(train_path, test_path):
     # Initialize the net with pretrained model
     finetune_net = gluon.model_zoo.vision.get_model(model_name, pretrained=True)
     with finetune_net.name_scope():
@@ -79,15 +114,11 @@ def train():
 
     # Define DataLoader
     train_data = gluon.data.DataLoader(
-        gluon.data.vision.ImageFolderDataset(
-            os.path.join('data/train_valid', task, 'train'),
-            transform=transform_train),
+        gluon.data.vision.ImageFolderDataset(train_path).transform_first(transform_train),
         batch_size=batch_size, shuffle=True, num_workers=num_workers, last_batch='discard')
 
     val_data = gluon.data.DataLoader(
-        gluon.data.vision.ImageFolderDataset(
-            os.path.join('data/train_valid', task, 'val'),
-            transform=transform_val),
+        gluon.data.vision.ImageFolderDataset(test_path).transform_first(transform_test),
         batch_size=batch_size, shuffle=False, num_workers = num_workers)
 
     # Define Trainer
@@ -138,7 +169,7 @@ def train():
 # Preparation
 args = parse_args()
 
-classes = 256
+classes = 67
 
 model_name = args.model
 
@@ -159,6 +190,8 @@ batch_size = batch_size * max(num_gpus, 1)
 logging.basicConfig(level=logging.INFO,
                     handlers = logging.StreamHandler())
 
+train_data, test_data, labels = prepare_data(args.data)
+
 if __name__ == "__main__":
-    net = train()
+    net = train(train_data, test_data)
 
