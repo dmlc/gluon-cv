@@ -27,7 +27,7 @@ Start Training Now
   For more training command options, please run ``python train.py -h``
 
 
-- Please checkout the `model_zoo <../../model_zoo/index.html>`_ for training commands of reproducing the experiments.
+- Please checkout the `model_zoo <../model_zoo/index.html#semantic-segmentation>`_ for training commands of reproducing the experiments.
 
 
 Dive into Deep
@@ -43,7 +43,7 @@ Fully Convolutional Network
 (figure redit to `Long et al. <https://arxiv.org/pdf/1411.4038.pdf>`_ )
 
 State-of-the-art approaches of semantic segmentation are typically based on
-Fully Convolutional Network (FCN) [Long15]_ .
+Fully Convolutional Network (FCN) [Long15]_.
 The key idea of a fully convolutional network is that it is "fully convolutional",
 which means it does have any fully connected layers. Therefore, the network can
 accept arbitrary input size and make dense per-pixel predictions.
