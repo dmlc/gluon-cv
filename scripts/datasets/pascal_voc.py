@@ -13,7 +13,7 @@ def parse_args():
         description='Initialize PASCAL VOC dataset.',
         epilog='Example: python pascal_voc.py --download-dir ~/VOCdevkit',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--download-dir', type=str, default='~/VOCdevkit', help='dataset directory on disk')
+    parser.add_argument('--dir', type=str, default='~/VOCdevkit', help='dataset directory on disk')
     parser.add_argument('--no-download', action='store_true', help='disable automatic download if set')
     parser.add_argument('--overwrite', action='store_true', help='overwrite downloaded files if set, in case they are corrputed')
     args = parser.parse_args()
@@ -66,7 +66,7 @@ def download_aug(path, overwrite=False):
 
 if __name__ == '__main__':
     args = parse_args()
-    path = os.path.expanduser(args.download_dir)
+    path = os.path.expanduser(args.dir)
     if not os.path.isdir(path) or not os.path.isdir(os.path.join(path, 'VOC2007')) \
         or not os.path.isdir(os.path.join(path, 'VOC2012')):
         if args.no_download:
@@ -89,4 +89,4 @@ if __name__ == '__main__':
     makedirs(os.path.expanduser('~/.mxnet/datasets'))
     if os.path.isdir(_TARGET_DIR):
         os.remove(_TARGET_DIR)
-    os.symlink(args.path, _TARGET_DIR)
+    os.symlink(args.dir, _TARGET_DIR)
