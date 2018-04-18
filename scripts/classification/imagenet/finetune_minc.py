@@ -142,7 +142,7 @@ def test(net, val_data, ctx):
 
     return metric.get()
 
-def train(train_path, test_path):
+def train(train_path, val_path, test_path):
     # Initialize the net with pretrained model
     finetune_net = gluon.model_zoo.vision.get_model(model_name, pretrained=True)
     with finetune_net.name_scope():
@@ -154,9 +154,13 @@ def train(train_path, test_path):
     # Define DataLoader
     train_data = gluon.data.DataLoader(
         gluon.data.vision.ImageFolderDataset(train_path).transform_first(transform_train),
-        batch_size=batch_size, shuffle=True, num_workers=num_workers, last_batch='discard')
+        batch_size=batch_size, shuffle=True, num_workers=num_workers)
 
     val_data = gluon.data.DataLoader(
+        gluon.data.vision.ImageFolderDataset(val_path).transform_first(transform_test),
+        batch_size=batch_size, shuffle=False, num_workers = num_workers)
+
+    test_data = gluon.data.DataLoader(
         gluon.data.vision.ImageFolderDataset(test_path).transform_first(transform_test),
         batch_size=batch_size, shuffle=False, num_workers = num_workers)
 
@@ -200,9 +204,9 @@ def train(train_path, test_path):
         logging.info('[Epoch %d] Train-acc: %.3f, loss: %.3f | Val-acc: %.3f | time: %.1f' %
                  (epoch, train_acc, train_loss, val_acc, time.time() - tic))
 
-    logging.info('\n')
-    return (finetune_net)
+    _, test_acc = test(finetune_net, test_data, ctx)
+    logging.info('[Finished] Test-acc: %.3f' % (test_acc))
 
 if __name__ == "__main__":
-    net = train(train_path, val_path)
+    train(train_path, val_path, test_path)
 
