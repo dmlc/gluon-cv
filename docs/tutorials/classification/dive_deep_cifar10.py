@@ -254,7 +254,7 @@ def test(ctx, val_data):
 # Notice: in order to speed up the training process, we only train the
 # model for 5 epochs.
 
-epochs = 5
+epochs = 1
 lr_decay_count = 0
 
 for epoch in range(epochs):
@@ -294,7 +294,7 @@ for epoch in range(epochs):
     name, val_acc = test(ctx, val_data)
 
     # Update history and print metrics
-    train_history.update(1-acc, 1-val_acc)
+    train_history.update([1-acc, 1-val_acc])
     print('[Epoch %d] train=%f val=%f loss=%f time: %f' %
         (epoch, acc, val_acc, train_loss, time.time()-tic))
 
