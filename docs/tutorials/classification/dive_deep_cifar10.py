@@ -74,7 +74,8 @@ from gluonvision.utils import makedirs, TrainingHistory
 # tutorial.
 
 # GPUs to use
-ctx = [mx.gpu(0), mx.gpu(1)]
+num_gpus = 1
+ctx = [mx.gpu(i) for i in range(num_gpus)]
 
 # Get the model CIFAR_ResNet20_v1, with 10 output classes
 net = get_model('cifar_resnet20_v1', classes=10)
@@ -143,11 +144,11 @@ transform_test = transforms.Compose([
 # training and validation datasets.
 
 # Batch Size for Each GPU
-per_device_batch_size = 64
+per_device_batch_size = 128
 # Number of data loader workers
-num_workers = 32
+num_workers = 8
 # Calculate effective total batch size
-batch_size = per_device_batch_size * 2
+batch_size = per_device_batch_size * num_gpus
 
 # Set train=True for training data
 # Set shuffle=True to shuffle the training data
@@ -254,7 +255,7 @@ def test(ctx, val_data):
 # Notice: in order to speed up the training process, we only train the
 # model for 5 epochs.
 
-epochs = 1
+epochs = 5
 lr_decay_count = 0
 
 for epoch in range(epochs):
@@ -357,7 +358,7 @@ net.load_params('dive_deep_cifar10_resnet20_v2.params', ctx=ctx)
 # than ``CIFAR10``, e.g. ImageNet, please read `xxx <>`__.
 #
 # Or, if you want like to know what can be done with the model you just
-# trained, please read `finetune <>`__.
+# trained, please read the tutorial about `Transfer learning <transfer_learning_minc.html>`__.
 #
 # .. |image-no-aug| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/classification/overfitting.png
 # .. |image-aug| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/classification/normal_training.png
