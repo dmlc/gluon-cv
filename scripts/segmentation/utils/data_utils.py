@@ -20,7 +20,6 @@ def _getDataloader(args, dataset):
 
     if args.test:
         testset = dataset._Segmentation(
-            root=args.data_folder,
             split='test',
             transform=input_transform)
         test_data = TestDataLoader(
@@ -28,12 +27,10 @@ def _getDataloader(args, dataset):
         return test_data
 
     trainset = dataset._Segmentation(
-        root=args.data_folder,
         split='train',
         transform=input_transform,
         target_transform=target_transform)
     testset = dataset._Segmentation(
-        root=args.data_folder,
         split='val',
         transform=input_transform,
         target_transform=target_transform)
@@ -95,12 +92,7 @@ class TestDataLoader(object):
         return generator()
 
     def _batchify_fn(self, data):
-        if isinstance(data[0], mx.nd.NDArray):
-            #return mx.nd.stack(*data)
-            return list(data)
-            #return [x.expand_dims(0) for x in data]
-        elif isinstance(data[0], str):
-            #print(list(data))
+        if isinstance(data[0], (str, mx.nd.NDArray)):
             return list(data)
         elif isinstance(data[0], tuple):
             data = zip(*data)

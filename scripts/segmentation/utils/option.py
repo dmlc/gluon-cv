@@ -17,10 +17,6 @@ class Options():
                             help='nclass for pre-trained model (default: None)')
         parser.add_argument('--workers', type=int, default=16,
                             metavar='N', help='dataloader threads')
-        parser.add_argument('--data-folder', type=str,
-                            default=os.path.expanduser('~/.mxnet/datasets/voc'),
-                            help='training dataset folder (default: \
-                            $(HOME)/data/)')
         # training hyper params
         parser.add_argument('--aux', action='store_true', default= False,
                             help='Auxilary loss as in PSPNet')

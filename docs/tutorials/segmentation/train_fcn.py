@@ -9,7 +9,7 @@ New users may first go through `A 60-minute Gluon Crash Course <http://gluon-cra
 Start Training Now
 ~~~~~~~~~~~~~~~~~~
 
-- Please follow the `installation guide <../index.html>`_ to install MXNet and GluonVision if not yet.
+- Please follow the `installation guide <../../index.html>`_ to install MXNet and GluonVision if not yet.
   Use the quick script to `Prepare Pascal VOC Dataset <../examples_datasets/pascal_voc.html>`_.
 
 - Clone the code::
@@ -124,10 +124,24 @@ For example, we can easily get the Pascal VOC 2012 dataset::
     train_set = gluonvision.data.VOCSegmentation(root)
 
 We follow the standard data augmentation routine to transform the input image
-and the ground truth label map synchronously. (Note that "nearest"
-mode upsample are applied to the label maps to avoid messing up the boundaries.)
+and the ground truth label map synchronously. (*Note that "nearest"
+mode upsample are applied to the label maps to avoid messing up the boundaries.*)
 We first randomly scale the input image from 0.5 to 2.0 times, then rotate
 the image from -10 to 10 degrees, and crop the image with padding if needed.
+Finally a random Gaussian blurring is applied.
+
+Training
+--------
+
+- Softmax Cross Entropy Loss:
+
+- Optional Auxiliary Loss:
+
+- Poly Like Learning Rate Scheduling:
+
+    We use a polynomial learning rate scheduler for FCN training, provided in :class:`gluonvision.utils.PolyLRScheduler`.
+    The learning rate is given by :math:`lr = baselr \times (1-iter)^power`
+
 
 References
 ----------
