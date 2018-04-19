@@ -22,7 +22,7 @@ Demo and Benchmark
 A model trained on ImageNet can classify images into 1000 classes, this makes it
 much more powerful than the one we showed in `CIFAR10 demo tutorial <demo_cifar10.html>`__.
 
-:download:`Download Python Script demo_imagenet.py<../../scripts/classification/imagenet/demo_imagenet.py>`
+:download:`Download Python Script demo_imagenet.py<../../../scripts/classification/imagenet/demo_imagenet.py>`
 
 With this script, you can load a pre-trained model and predict on any image you have.
 

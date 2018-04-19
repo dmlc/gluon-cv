@@ -1,10 +1,6 @@
-"""Title
-========
-
-"""
 import mxnet as mx
 import numpy as np
-import os, time, logging, math, argparse, shutil
+import os, time, logging, argparse, shutil
 
 from mxnet import gluon, image, init, nd
 from mxnet import autograd as ag
@@ -17,7 +13,7 @@ def parse_opts():
     parser = argparse.ArgumentParser(description='Gluon for FashionAI Competition',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--data', type=str, default='',
-                        help='dir for the original data folder')
+                        help='directory for the prepared data folder')
     parser.add_argument('--model', required=True, type=str,
                         help='name of the pretrained model from model zoo.')
     parser.add_argument('-j', '--workers', dest='num_workers', default=4, type=int,
@@ -40,51 +36,6 @@ def parse_opts():
                         help='list of learning rate decay epochs as in str')
     opts = parser.parse_args()
     return opts
-
-def prepare_minc(path):
-    train_images_file = os.path.join(path, 'labels/train1.txt')
-    with open(train_images_file, 'r') as f:
-        train_images = f.readlines()
-
-    val_images_file = os.path.join(path, 'labels/validate1.txt')
-    with open(val_images_file, 'r') as f:
-        val_images = f.readlines()
-
-    test_images_file = os.path.join(path, 'labels/test1.txt')
-    with open(test_images_file, 'r') as f:
-        test_images = f.readlines()
-
-    src_path = os.path.join(path, 'images')
-    train_path = os.path.join(path, 'train')
-    val_path = os.path.join(path, 'val')
-    test_path = os.path.join(path, 'test')
-    makedirs(train_path)
-    makedirs(val_path)
-    makedirs(test_path)
-
-    labels = sorted(os.listdir(src_path))
-
-    for l in labels:
-        makedirs(os.path.join(train_path, l))
-        makedirs(os.path.join(val_path, l))
-        makedirs(os.path.join(test_path, l))
-
-    for im in train_images:
-        im_path = im.replace('images/', '').strip('\n')
-        shutil.copy(os.path.join(src_path, im_path),
-                    os.path.join(train_path, im_path))
-
-    for im in val_images:
-        im_path = im.replace('images/', '').strip('\n')
-        shutil.copy(os.path.join(src_path, im_path),
-                    os.path.join(val_path, im_path))
-
-    for im in test_images:
-        im_path = im.replace('images/', '').strip('\n')
-        shutil.copy(os.path.join(src_path, im_path),
-                    os.path.join(test_path, im_path))
-
-    return train_path, val_path, test_path, labels
 
 # Preparation
 opts = parse_opts()
@@ -109,7 +60,10 @@ batch_size = batch_size * max(num_gpus, 1)
 logging.basicConfig(level=logging.INFO,
                     handlers = [logging.StreamHandler()])
 
-train_path, val_path, test_path, labels = prepare_minc(opts.data)
+train_path = os.path.join(opts.data, 'train')
+val_path = os.path.join(opts.data, 'val')
+test_path = os.path.join(opts.data, 'test')
+
 jitter_param = 0.4
 lighting_param = 0.1
 normalize = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
@@ -209,4 +163,3 @@ def train(train_path, val_path, test_path):
 
 if __name__ == "__main__":
     train(train_path, val_path, test_path)
-

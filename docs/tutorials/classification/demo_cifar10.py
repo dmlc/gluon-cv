@@ -26,7 +26,7 @@ an idea of what the result may look like.
 Here we provide you a script to load a pre-trained model from us and
 predict on any image on your disk.
 
-:download:`Download Python Script demo_cifar10.py<../../scripts/classification/cifar/demo_cifar10.py>`
+:download:`Download Python Script demo_cifar10.py<../../../scripts/classification/cifar/demo_cifar10.py>`
 
 This is an airplane:
 
@@ -69,7 +69,7 @@ Train Your First Model
 
 In the demo, we have used a pretrained model. So how did we train it?
 
-:download:`Download Python Script train_cifar10.py<../../scripts/classification/cifar/train_cifar10.py>`
+:download:`Download Python Script train_cifar10.py<../../../scripts/classification/cifar/train_cifar10.py>`
 
 We trained the models with ``train_cifar10.py``.
 It takes a bunch of parameters to control the model training process. To
