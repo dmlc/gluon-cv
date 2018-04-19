@@ -28,24 +28,41 @@ minimum conputation. However, since we are about to train a model, it is
 strongly recommended to have a platform with GPU(s).
 
 Training usually takes several hours. While you are reading the
-tutorial, it is a good idea to start the training script with
+tutorial, it is a good idea to start the training script:
+
+:download:`Download Python Script train_cifar10.py<../../../scripts/classification/cifar/train_cifar10.py>`
+
+Here's the command with recommended parameters:
 
 ::
 
     python train.py --num-epochs 240 --mode hybrid --num-gpus 1 -j 8 --batch-size 128\
         --wd 0.0001 --lr 0.1 --lr-decay 0.1 --lr-decay-epoch 80,160 --model cifar_resnet20_v1
 
-and remember to replace ``--num-gpus`` to the number of GPUs you have,
+remember to replace ``--num-gpus`` to the number of GPUs you have,
 and ``-j`` to a number not larger than your CPU threads.
 
-Let's load the necessary libraries first.
+If you don't have a GPU yet, it is suggested to train with your CPU with MKLDNN.
+One can install MXNet with MKLDNN with
+
+::
+
+    pip install --pre mxnet-mkl
+
+After the installation, one can run the following command:
+
+::
+
+    python train_cifar10.py --num-epochs 240 --mode hybrid --num-gpus 0 -j 1 --batch-size 128\
+        --wd 0.0001 --lr 0.1 --lr-decay 0.1 --lr-decay-epoch 80,160 --model cifar_resnet20_v1
+
+Here we change the values of ``--num-gpus`` to 0 and ``-j`` to 1, to only use CPU for training and use one thread
+for data loader.
+
+After the installation, we can load the necessary libraries into python.
 
 """
-
 from __future__ import division
-
-import matplotlib
-matplotlib.use('Agg')
 
 import argparse, time, logging, random, math
 

@@ -1,4 +1,4 @@
-"""Getting Started with ImageNet Pre-trained Models
+"""Getting Started with Pre-trained Models on ImageNet
 ===================================================
 
 `ImageNet <http://www.image-net.org/>`__ is a
@@ -13,10 +13,7 @@ classifies real life images.
 Specifically, we offer a script to load a pretrained ``ResNet50_v2`` model.
 For a list of models we have, please visit our `Model Zoo <../model_zoo/index.html>`__.
 
-Different from ``CIFAR10``, training a model on ImageNet is much more difficult.
-We will have more discussions on ImageNet in other tutorials.
-
-Demo and Benchmark
+Demo
 ------------------
 
 A model trained on ImageNet can classify images into 1000 classes, this makes it
@@ -59,7 +56,7 @@ If you would like to dig deeper in the topic of ``ImageNet`` training,
 feel free to read `the next tutorial on ``ImageNet`` <>`__.
 
 Or, if you would like to know how to train a powerful model on your own image data,
-please go ahead and read `xxx <>`__.
+please go ahead and read the tutorial about `Transfer learning <transfer_learning_minc.html>`__.
 
 .. |imagenet| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/classification/imagenet_mosaic.jpg
 .. |image0| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/classification/mt_baker.jpg
