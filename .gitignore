@@ -107,20 +107,3 @@ ENV/
 
 # mypy
 .mypy_cache/
-
-
-docs/*
-!docs/_static
-!docs/_templates
-!docs/api
-!docs/get_started
-!docs/how_to
-!docs/model_zoo
-!docs/tutorials
-!docs/.gitignore
-!docs/Doxyfile
-!docs/Makefile
-!docs/README.txt
-!docs/build.yml
-!docs/conf.py
-!docs/index.rst
