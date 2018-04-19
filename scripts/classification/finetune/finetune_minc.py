@@ -10,7 +10,7 @@ from mxnet.gluon.data.vision import transforms
 from gluonvision.utils import makedirs
 
 def parse_opts():
-    parser = argparse.ArgumentParser(description='Gluon for FashionAI Competition',
+    parser = argparse.ArgumentParser(description='Transfer learning on MINC-2500 dataset',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--data', type=str, default='',
                         help='directory for the prepared data folder')

@@ -40,7 +40,7 @@ and ``-j`` to a number not larger than your CPU threads.
 
 Let's load the necessary libraries first.
 
-.. code:: ipython2
+.. code:: python
 
     from __future__ import division
 
@@ -72,7 +72,7 @@ structure mainly affects
 Here we pick a simple yet good structure, ``cifar_resnet20_v1``, for the
 tutorial.
 
-.. code:: ipython2
+.. code:: python
 
     # GPUs to use
     ctx = [mx.gpu(0), mx.gpu(1)]
@@ -101,7 +101,7 @@ resizing, cropping and flipping before sending to the model.
 
 In ``Gluon``, we can compose our transform function as following:
 
-.. code:: ipython2
+.. code:: python
 
     transform_train = transforms.Compose([
         # Resize the short edge of the input to 32 pixels
@@ -130,7 +130,7 @@ On the other hand, when making prediction, we would like to remove all
 random operations because we want a deterministic result. The transform
 function for prediction is:
 
-.. code:: ipython2
+.. code:: python
 
     transform_test = transforms.Compose([
         transforms.Resize(32),
@@ -144,7 +144,7 @@ model only works well on input with the same distribution.
 With the transform functions, we can define data loaders for our
 training and validation datasets.
 
-.. code:: ipython2
+.. code:: python
 
     # Batch Size for Each GPU
     per_device_batch_size = 64
@@ -171,7 +171,7 @@ Optimizer, Loss and Metric
 Optimizer is what improves the model during training. We use the popular
 Nesterov accelerated gradient descent algorithm.
 
-.. code:: ipython2
+.. code:: python
 
     # Learning rate decay factor
     lr_decay = 0.1
@@ -205,7 +205,7 @@ model parameters.
 For classification tasks, we usually use softmax cross entropy as the
 loss function.
 
-.. code:: ipython2
+.. code:: python
 
     loss_fn = gluon.loss.SoftmaxCrossEntropyLoss()
 
@@ -225,7 +225,7 @@ For simplicity, we use accuracy as the metric to monitor our training
 process. Besides, we record the metric values, and will print it in the
 end of the training.
 
-.. code:: ipython2
+.. code:: python
 
     train_metric = mx.metric.Accuracy()
     train_history = TrainingHistory(['training-error', 'validation-error'])
@@ -238,7 +238,7 @@ training process. We have the labels on validation data, but just don't
 use it to train. Therefore we can predict on the validation with the
 model, and evaluate the performance at anytime.
 
-.. code:: ipython2
+.. code:: python
 
     def test(ctx, val_data):
         metric = mx.metric.Accuracy()
@@ -262,7 +262,7 @@ Following is the script.
 Notice: in order to speed up the training process, we only train the
 model for 5 epochs.
 
-.. code:: ipython2
+.. code:: python
 
     epochs = 5
     lr_decay_count = 0
@@ -320,7 +320,7 @@ model for 5 epochs.
 
 We can plot the metric scores with:
 
-.. code:: ipython2
+.. code:: python
 
     train_history.plot()
 
@@ -348,13 +348,13 @@ example, to predict the class from an arbitrary picture.
 
 It's simple! We can do it by:
 
-.. code:: ipython2
+.. code:: python
 
     net.save_params('dive_deep_cifar10_resnet20_v2.params')
 
 Next time if you need to use it, just
 
-.. code:: ipython2
+.. code:: python
 
     net.load_params('dive_deep_cifar10_resnet20_v2.params', ctx=ctx)
 

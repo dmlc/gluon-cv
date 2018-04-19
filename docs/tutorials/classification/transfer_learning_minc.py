@@ -75,7 +75,7 @@ Hyper Parameters
 
 First, let's load all necessary libraries.
 
-.. code:: ipython3
+.. code:: python
 
     import mxnet as mx
     import numpy as np
@@ -90,7 +90,7 @@ First, let's load all necessary libraries.
 
 Next we will offer a set of parameters.
 
-.. code:: ipython3
+.. code:: python
 
     classes = 67
 
@@ -115,7 +115,7 @@ Data Augmentation
 
 We use the following augmentation.
 
-.. code:: ipython3
+.. code:: python
 
     jitter_param = 0.4
     lighting_param = 0.1
@@ -156,7 +156,7 @@ Model and Trainer
 
 We use a pretrained resnet50\_v2
 
-.. code:: ipython3
+.. code:: python
 
     finetune_net = gluon.model_zoo.vision.get_model(model_name, pretrained=True)
     with finetune_net.name_scope():
@@ -185,7 +185,7 @@ Training Loop
 
 We loop
 
-.. code:: ipython3
+.. code:: python
 
     lr_counter = 0
     num_batch = len(train_data)
