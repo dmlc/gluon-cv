@@ -143,8 +143,9 @@ def train(net, train_data, val_data, classes, args):
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
     log_file_path = args.save_prefix + '_train.log'
-    if not os.path.exists(os.path.dirname(log_file_path)):
-        os.makedirs(os.path.dirname(log_file_path))
+    log_dir = os.path.dirname(log_file_path)
+    if log_dir and not os.path.exists(log_dir):
+        os.makedirs(log_dir)
     fh = logging.FileHandler(log_file_path)
     logger.addHandler(fh)
     logger.info(args)
