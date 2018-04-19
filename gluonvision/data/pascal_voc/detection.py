@@ -17,7 +17,7 @@ class VOCDetection(VisionDataset):
     Parameters
     ----------
     root : string
-        Path to VOCdevkit folder. Default is '~/mxnet/datasets/voc/VOCdevkit'
+        Path to VOCdevkit folder. Default is '~/mxnet/datasets/voc'
     splits : list of tuples
         List of combinations of (year, name), e.g. [(2007, 'trainval'), (2012, 'train')].
         For years, candidates can be: 2007, 2012.

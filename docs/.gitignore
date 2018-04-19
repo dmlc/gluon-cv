@@ -2,6 +2,3 @@ doxygen
 _build
 build
 gen_modules
-doctrees
-examples_*
-*.jpg
