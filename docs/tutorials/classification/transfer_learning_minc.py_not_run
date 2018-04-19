@@ -94,7 +94,7 @@ classes = 67
 
 model_name = 'ResNet50_v2'
 
-epochs = 0
+epochs = 1
 lr = 0.001
 batch_size = 64
 momentum = 0.9
@@ -114,9 +114,9 @@ batch_size = batch_size * max(num_gpus, 1)
 #
 # We use the following augmentation.
 #
-# jitter_param = 0.4
-# lighting_param = 0.1
-# normalize = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+jitter_param = 0.4
+lighting_param = 0.1
+normalize = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 
 transform_train = transforms.Compose([
     transforms.Resize(480),
@@ -135,6 +135,11 @@ transform_test = transforms.Compose([
     transforms.ToTensor(),
     normalize
 ])
+
+path = '~/data/minc-2500'
+train_path = os.path.join(path, 'train')
+val_path = os.path.join(path, 'val')
+test_path = os.path.join(path, 'test')
 
 train_data = gluon.data.DataLoader(
     gluon.data.vision.ImageFolderDataset(train_path).transform_first(transform_train),
