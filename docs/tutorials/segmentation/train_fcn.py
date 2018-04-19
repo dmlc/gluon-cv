@@ -139,7 +139,7 @@ print('Training images:', len(train_dataset))
 # the image from -10 to 10 degrees, and crop the image with padding if needed.
 # Finally a random Gaussian blurring is applied. Example data:
 #
-img, mask = val_dataset[0]
+img, mask = train_dataset[0]
 from gluonvision.utils.viz import get_color_pallete
 mask = get_color_pallete(np.array(mask), dataset='ade20k')
 mask.save('mask.png')
