@@ -39,7 +39,7 @@ def parse_opts():
 
 # Preparation
 opts = parse_opts()
-classes = 67
+classes = 23
 
 model_name = opts.model
 

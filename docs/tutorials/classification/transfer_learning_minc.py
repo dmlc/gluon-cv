@@ -73,7 +73,7 @@ Now we have the following structure:
     ├── train
     └── val
 
-In order to compile the tutorial with a reasonable cost, we have prepared a small subset of the 
+In order to compile the tutorial with a reasonable cost, we have prepared a small subset of the
 ``MINC-2500`` data. We can download and extract it with:
 """
 
@@ -81,15 +81,15 @@ import zipfile, os
 from gluonvision.utils import download
 
 file_url = 'https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/classification/minc-2500-tiny.zip'
-zip_file = download(file_url, path='~/data/')
+zip_file = download(file_url, path='./')
 with zipfile.ZipFile(zip_file, 'r') as zin:
-    zin.extractall(os.path.expanduser('~/data/'))
+    zin.extractall(os.path.expanduser('./'))
 
 ################################################################################
-# Hyper Parameters
+# Hyperparameters
 # ----------
-# 
-# First, let's load all necessary libraries.
+#
+# First, let's load all other necessary libraries.
 
 import mxnet as mx
 import numpy as np
@@ -103,15 +103,13 @@ from mxnet.gluon.data.vision import transforms
 from gluonvision.utils import makedirs
 
 ################################################################################
-# Next we will offer a set of parameters.
+# We set the hyperparameters as follows:
 
-classes = 67
-
-model_name = 'ResNet50_v2'
+classes = 23
 
 epochs = 5
 lr = 0.001
-batch_size = 64
+per_device_batch_size = 256
 momentum = 0.9
 wd = 0.0001
 
@@ -121,13 +119,30 @@ lr_steps = [10, 20, 30, np.inf]
 num_gpus = 1
 num_workers = 8
 ctx = [mx.gpu(i) for i in range(num_gpus)] if num_gpus > 0 else [mx.cpu()]
-batch_size = batch_size * max(num_gpus, 1)
+batch_size = per_device_batch_size * max(num_gpus, 1)
 
 ################################################################################
+# Things to keep in mind:
+#
+# 1. ``epochs = 5`` is just for this tutorial with the tiny dataset. please
+# change it to a larger number in a full training, for instance 40.
+# 2. remember to tune ``num_gpus`` and ``num_workers`` according to your machine.
+# 3. A pre-trained model is already in a pretty good status.
+# So we can start with a small ``lr``.
+#
 # Data Augmentation
 # -----------------
 #
-# We use the following augmentation.
+# In transfer learning, data augmentation can also help.
+# We use the following augmentation in training:
+#
+# 1. Resize the short edge of the image to 480px
+# 2. Randomly crop the image and resize it to 224x224
+# 3. Randomly flip the image horizontally
+# 4. Randomly disturb the color and add noise
+# 5. Transpose the data from Height*Width*Channel to Channel*Height*Width,
+# and map values from [0, 255] to [0, 1]
+# 6. Normalize with the mean and standard deviation from the ImageNet dataset.
 #
 jitter_param = 0.4
 lighting_param = 0.1
@@ -151,7 +166,10 @@ transform_test = transforms.Compose([
     normalize
 ])
 
-path = '~/data/minc-2500-tiny'
+################################################################################
+# With the data augmentation functions, we can define our data loaders:
+
+path = './minc-2500-tiny'
 train_path = os.path.join(path, 'train')
 val_path = os.path.join(path, 'val')
 test_path = os.path.join(path, 'test')
@@ -169,11 +187,18 @@ test_data = gluon.data.DataLoader(
     batch_size=batch_size, shuffle=False, num_workers = num_workers)
 
 ################################################################################
+#
+# Note that only the ``train_data`` calls ``transform_train``.
+# ``val_data`` and ``test_data`` call ``transform_test`` to have a deterministic
+# result as a performance metric.
+#
 # Model and Trainer
 # -----------------
 #
-# We use a pretrained resnet50\_v2
+# We use a pre-trained ``ResNet50_v2``, for a balance of performance and
+# computational cost.
 
+model_name = 'ResNet50_v2'
 finetune_net = gluon.model_zoo.vision.get_model(model_name, pretrained=True)
 with finetune_net.name_scope():
     finetune_net.output = nn.Dense(classes)
@@ -185,6 +210,9 @@ trainer = gluon.Trainer(finetune_net.collect_params(), 'sgd', {
                         'learning_rate': lr, 'momentum': momentum, 'wd': wd})
 metric = mx.metric.Accuracy()
 L = gluon.loss.SoftmaxCrossEntropyLoss()
+
+################################################################################
+# We can define a performance evaluation function for validation data and test data.
 
 def test(net, val_data, ctx):
     metric = mx.metric.Accuracy()
@@ -200,7 +228,9 @@ def test(net, val_data, ctx):
 # Training Loop
 # -------------
 #
-# We loop
+# Following is the main training loop. It is the same as the loop in
+# `CIFAR10 <dive_deep_cifar10.html>`__
+# and ImageNet.
 
 lr_counter = 0
 num_batch = len(train_data)
@@ -236,14 +266,13 @@ for epoch in range(epochs):
     print('[Epoch %d] Train-acc: %.3f, loss: %.3f | Val-acc: %.3f | time: %.1f' %
              (epoch, train_acc, train_loss, val_acc, time.time() - tic))
 
-# _, test_acc = test(finetune_net, test_data, ctx)
-# print('[Finished] Test-acc: %.3f' % (test_acc))
+_, test_acc = test(finetune_net, test_data, ctx)
+print('[Finished] Test-acc: %.3f' % (test_acc))
 
 ################################################################################
-# .. parsed-literal::
-#
-#     [Epoch 0] Train-acc: 0.425, loss: 2.169 | Val-acc: 0.617 | time: 72.5
-#     [Finished] Test-acc: 0.640
+# Once again, in order to build the tutorial faster, we are training on a small
+# subset of the original ``MINC-2500``, and with only 5 epochs. By training on the
+# full dataset with 40 epochs, it is expected to get accuracy around 80% on test data.
 #
 # Next
 # ----
