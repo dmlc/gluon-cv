@@ -15,12 +15,13 @@ ctx = mx.cpu(0)
 ##############################################################################
 # Prepare the image 
 # -----------------
-
+#
 # download the example image
 url = 'https://raw.githubusercontent.com/zhanghang1989/gluon-vision-figures/master/voc_examples/1.jpg'
 filename = 'example.jpg'
 gluonvision.utils.download(url, filename)
 
+##############################################################################
 # load the image
 with open(filename, 'rb') as f:
     img = image.imdecode(f.read())
@@ -29,6 +30,7 @@ from matplotlib import pyplot as plt
 plt.imshow(img.asnumpy())
 plt.show()
 
+##############################################################################
 # normalize the image using dataset mean
 transform_fn = transforms.Compose([
     transforms.ToTensor(),
@@ -40,7 +42,7 @@ img = img.expand_dims(0).as_in_context(ctx)
 ##############################################################################
 # Load the pre-trained model and make prediction
 # ----------------------------------------------
-
+#
 # get pre-trained model
 model = gluonvision.model_zoo.get_fcn_voc_resnet101(pretrained=True)
 # make prediction using single scale
@@ -54,6 +56,7 @@ import matplotlib.image as mpimg
 mask = get_color_pallete(predict, 'pascal_voc')
 mask.save('output.png')
 
+##############################################################################
 # show the predicted mask
 mmask = mpimg.imread('output.png')
 plt.imshow(mmask)

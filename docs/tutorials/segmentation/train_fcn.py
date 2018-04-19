@@ -29,125 +29,146 @@ Start Training Now
 
 - Please checkout the `model_zoo <../model_zoo/index.html#semantic-segmentation>`_ for training commands of reproducing the experiments.
 
-
 Dive into Deep
 ~~~~~~~~~~~~~~
-
-Fully Convolutional Network
----------------------------
-
-.. image:: https://cdn-images-1.medium.com/max/800/1*wRkj6lsQ5ckExB5BoYkrZg.png
-    :width: 70%
-    :align: center
-
-(figure redit to `Long et al. <https://arxiv.org/pdf/1411.4038.pdf>`_ )
-
-State-of-the-art approaches of semantic segmentation are typically based on
-Fully Convolutional Network (FCN) [Long15]_.
-The key idea of a fully convolutional network is that it is "fully convolutional",
-which means it does have any fully connected layers. Therefore, the network can
-accept arbitrary input size and make dense per-pixel predictions.
-Base/Encoder network is typically pre-trained on ImageNet, because the features
-learned from diverse set of images contain rich contextual information, which
-can be beneficial for semantic segmentation.
-
-
-Model Dilation
---------------
-
-The adaption of base network pre-trained on ImageNet leads to loss spatial resolution,
-because these networks are originally designed for classification task.
-Following recent works in semantic segmentation, we apply dilation strategy to the
-stage 3 and stage 4 of the pre-trained networks, which produces stride of 8
-featuremaps (models are provided in :class:`gluonvision.model_zoo.Dilated_ResNetV2`).
-Visualization of dilated/atrous convoution:
-
-.. image:: https://raw.githubusercontent.com/vdumoulin/conv_arithmetic/master/gif/dilation.gif
-    :width: 40%
-    :align: center
-
-(figure credit to `conv_arithmetic <https://github.com/vdumoulin/conv_arithmetic>`_ )
-
-For example, loading a dilated ResNet50 is simply::
-
-    pretrained_net = gluonvision.model_zoo.dilated_resnet50(pretrained=True)
-
-For convenience, we provide a base model for semantic segmentation, which automatically
-load the pre-trained dilated ResNet :class:`gluonvision.model_zoo.SegBaseModel`, which can
-be easily inherited and used.
-
-FCN Block
----------
-
-We build a fully convolutional "head" on top of the basenetwork (FCN model is provided
-in :class:`gluonvision.model_zoo.FCN`)::
-
-    class _FCNHead(HybridBlock):
-        def __init__(self, nclass, norm_layer):
-            super(_FCNHead, self).__init__()
-            with self.name_scope():
-                self.block = nn.HybridSequential(prefix='')
-                self.block.add(norm_layer(in_channels=2048))
-                self.block.add(nn.Activation('relu'))
-                self.block.add(nn.Conv2D(in_channels=2048, channels=512,
-                                         kernel_size=3, padding=1))
-                self.block.add(norm_layer(in_channels=512))
-                self.block.add(nn.Activation('relu'))
-                self.block.add(nn.Dropout(0.1))
-                self.block.add(nn.Conv2D(in_channels=512, channels=nclass,
-                                         kernel_size=1))
-
-        def hybrid_forward(self, F, x):
-            return self.block(x)
-
-    class FCN(SegBaseModel):
-        def __init__(self, nclass, backbone='resnet50', norm_layer=nn.BatchNorm):
-            super(FCN, self).__init__(backbone, norm_layer)
-            self._prefix = ''
-            with self.name_scope():
-                self.head = _FCNHead(nclass, norm_layer=norm_layer)
-            self.head.initialize(init=init.Xavier())
-
-        def forward(self, x):
-            _, _, H, W = x.shape
-            x = self.pretrained(x)
-            x = self.head(x)
-            x = F.contrib.BilinearResize2D(x, height=H, width=W)
-            return x
-
-Dataset and Data Augmentation
------------------------------
-
-We provide semantic segmentation datasets in :class:`gluonvision.data`.
-For example, we can easily get the Pascal VOC 2012 dataset::
-
-    train_set = gluonvision.data.VOCSegmentation(root)
-
-We follow the standard data augmentation routine to transform the input image
-and the ground truth label map synchronously. (*Note that "nearest"
-mode upsample are applied to the label maps to avoid messing up the boundaries.*)
-We first randomly scale the input image from 0.5 to 2.0 times, then rotate
-the image from -10 to 10 degrees, and crop the image with padding if needed.
-Finally a random Gaussian blurring is applied.
-
-Training
---------
-
-- Softmax Cross Entropy Loss:
-
-- Optional Auxiliary Loss:
-
-- Poly Like Learning Rate Scheduling:
-
-    We use a polynomial learning rate scheduler for FCN training, provided in :class:`gluonvision.utils.PolyLRScheduler`.
-    The learning rate is given by :math:`lr = baselr \times (1-iter)^power`
-
-
-References
-----------
-
-.. [Long15] Long, Jonathan, Evan Shelhamer, and Trevor Darrell. \
-    "Fully convolutional networks for semantic segmentation." \
-    Proceedings of the IEEE conference on computer vision and pattern recognition. 2015.
-
 """
+import mxnet as mx
+import gluonvision
+
+##############################################################################
+# Fully Convolutional Network
+# ---------------------------
+# 
+#.. image:: https://cdn-images-1.medium.com/max/800/1*wRkj6lsQ5ckExB5BoYkrZg.png
+#    :width: 70%
+#    :align: center
+#
+# (figure redit to `Long et al. <https://arxiv.org/pdf/1411.4038.pdf>`_ )
+# 
+# State-of-the-art approaches of semantic segmentation are typically based on
+# Fully Convolutional Network (FCN) [Long15]_.
+# The key idea of a fully convolutional network is that it is "fully convolutional",
+# which means it does have any fully connected layers. Therefore, the network can
+# accept arbitrary input size and make dense per-pixel predictions.
+# Base/Encoder network is typically pre-trained on ImageNet, because the features
+# learned from diverse set of images contain rich contextual information, which
+# can be beneficial for semantic segmentation.
+# 
+# 
+
+
+##############################################################################
+# Model Dilation
+# --------------
+# 
+# The adaption of base network pre-trained on ImageNet leads to loss spatial resolution,
+# because these networks are originally designed for classification task.
+# Following standard implementation in recent works of semantic segmentation,
+# we apply dilation strategy to the
+# stage 3 and stage 4 of the pre-trained networks, which produces stride of 8
+# featuremaps (models are provided in
+# :class:`gluonvision.model_zoo.dilatedresnetv0.Dilated_ResNetV2`).
+# Visualization of dilated/atrous convoution
+# (figure credit to `conv_arithmetic <https://github.com/vdumoulin/conv_arithmetic>`_ ):
+# 
+# .. image:: https://raw.githubusercontent.com/vdumoulin/conv_arithmetic/master/gif/dilation.gif
+#     :width: 40%
+#     :align: center
+# 
+# Loading a dilated ResNet50 is simply:
+# 
+pretrained_net = gluonvision.model_zoo.dilatedresnetv0.dilated_resnet50(pretrained=True)
+
+##############################################################################
+# For convenience, we provide a base model for semantic segmentation, which automatically
+# load the pre-trained dilated ResNet :class:`gluonvision.model_zoo.SegBaseModel`, which 
+# provide a convenient base model to be inherited from with a convenient method
+# ``base_forward(input)`` to get stage 3 & 4 features:
+# 
+basemodel = gluonvision.model_zoo.SegBaseModel(nclass=10, aux=False)
+x = mx.nd.random.uniform(shape=(1, 3, 224, 224))
+c3, c4 = basemodel.base_forward(x)
+print('Shapes of c3 & c4 featuremaps are ', c3.shape, c4.shape)
+
+##############################################################################
+# FCN Block
+# ---------
+# 
+# We build a fully convolutional "head" on top of the basenetwork (FCN model is provided
+# in :class:`gluonvision.model_zoo.FCN`)::
+# 
+#     class _FCNHead(HybridBlock):
+#         def __init__(self, nclass, norm_layer):
+#             super(_FCNHead, self).__init__()
+#             with self.name_scope():
+#                 self.block = nn.HybridSequential(prefix='')
+#                 self.block.add(norm_layer(in_channels=2048))
+#                 self.block.add(nn.Activation('relu'))
+#                 self.block.add(nn.Conv2D(in_channels=2048, channels=512,
+#                                          kernel_size=3, padding=1))
+#                 self.block.add(norm_layer(in_channels=512))
+#                 self.block.add(nn.Activation('relu'))
+#                 self.block.add(nn.Dropout(0.1))
+#                 self.block.add(nn.Conv2D(in_channels=512, channels=nclass,
+#                                          kernel_size=1))
+# 
+#         def hybrid_forward(self, F, x):
+#             return self.block(x)
+# 
+#     class FCN(SegBaseModel):
+#         def __init__(self, nclass, backbone='resnet50', norm_layer=nn.BatchNorm):
+#             super(FCN, self).__init__(backbone, norm_layer)
+#             self._prefix = ''
+#             with self.name_scope():
+#                 self.head = _FCNHead(nclass, norm_layer=norm_layer)
+#             self.head.initialize(init=init.Xavier())
+# 
+#         def forward(self, x):
+#             _, _, H, W = x.shape
+#             x = self.pretrained(x)
+#             x = self.head(x)
+#             x = F.contrib.BilinearResize2D(x, height=H, width=W)
+#             return x
+
+
+##############################################################################
+# Dataset and Data Augmentation
+# -----------------------------
+# 
+# We provide semantic segmentation datasets in :class:`gluonvision.data`.
+# For example, we can easily get the Pascal VOC 2012 dataset::
+# 
+#     train_set = gluonvision.data.VOCSegmentation(root)
+# 
+# We follow the standard data augmentation routine to transform the input image
+# and the ground truth label map synchronously. (*Note that "nearest"
+# mode upsample are applied to the label maps to avoid messing up the boundaries.*)
+# We first randomly scale the input image from 0.5 to 2.0 times, then rotate
+# the image from -10 to 10 degrees, and crop the image with padding if needed.
+# Finally a random Gaussian blurring is applied.
+# 
+# Training
+# --------
+# 
+# - Training Losses:
+#     
+#     We apply a standard per-pixel Softmax Cross Entropy Loss to train FCN.
+#     Optionally, an Auxiliary Loss as in PSPNet [Zhao17]_ at Stage 3 can be enabled when
+#     training with command ``--aux``. This will create an additional FCN 'head' after Stage 3.
+# 
+# - Poly Like Learning Rate Scheduling:
+# 
+#     We use a polynomial learning rate scheduler for FCN training, provided in :class:`gluonvision.utils.PolyLRScheduler`.
+#     The learning rate is given by :math:`lr = baselr \times (1-iter)^power`
+# 
+# 
+# References
+# ----------
+# 
+# .. [Long15] Long, Jonathan, Evan Shelhamer, and Trevor Darrell. \
+#     "Fully convolutional networks for semantic segmentation." \
+#     Proceedings of the IEEE conference on computer vision and pattern recognition. 2015.
+# 
+# .. [Zhao17] Zhao, Hengshuang, Jianping Shi, Xiaojuan Qi, Xiaogang Wang, and Jiaya Jia. \
+#     "Pyramid scene parsing network." IEEE Conf. on Computer Vision and Pattern Recognition (CVPR). 2017.
+# 

@@ -95,14 +95,11 @@ class Options():
             args.ignore_index = 21
         elif args.dataset == 'ade20k':
             args.nclass, args.bg = 151, True
-        elif args.dataset == 'folder':
-            assert (args.test and args.nclass is not None), \
-                'Testing images in a folder requires --nclass for pre-trained model'
         else:
             if args.nclass is None:
                 raise RuntimeError ('Customized dataset %s must provide --nclass' +
                     'during the training.'%(args.dataset))
-        
+        # using synchronized batch norm
         if args.syncbn:
             from gluonvision.model_zoo.syncbn import BatchNorm
             args.norm_layer = BatchNorm
