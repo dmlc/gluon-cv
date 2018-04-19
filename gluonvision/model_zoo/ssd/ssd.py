@@ -17,7 +17,8 @@ from ...data import VOCDetection
 
 __all__ = ['SSD', 'get_ssd', 'ssd_300_vgg16_atrous_voc', 'ssd_512_vgg16_atrous_voc',
            'ssd_512_resnet18_v1_voc', 'ssd_512_resnet50_v1_voc',
-           'ssd_512_resnet101_v2_voc', 'ssd_512_resnet152_v2_voc']
+           'ssd_512_resnet101_v2_voc', 'ssd_512_resnet152_v2_voc',
+           'ssd_512_mobilenet1_0_voc']
 
 
 class SSD(HybridBlock):
@@ -385,5 +386,30 @@ def ssd_512_resnet152_v2_voc(pretrained=False, pretrained_base=True, **kwargs):
                    sizes=[51.2, 76.8, 153.6, 230.4, 307.2, 384.0, 460.8, 537.6],
                    ratios=[[1, 2, 0.5]] + [[1, 2, 0.5, 3, 1.0/3]] * 4 + [[1, 2, 0.5]] * 2,
                    steps=[8, 16, 32, 64, 128, 256, 512],
+                   classes=classes, dataset='voc', pretrained=pretrained,
+                   pretrained_base=pretrained_base, **kwargs)
+
+def ssd_512_mobilenet1_0_voc(pretrained=False, pretrained_base=True, **kwargs):
+    """SSD architecture with mobilenet1.0 base networks.
+
+    Parameters
+    ----------
+    pretrained : bool, optional, default is False
+        Load pretrained weights.
+    pretrained_base : bool, optional, default is True
+        Load pretrained base network, the extra layers are randomized.
+
+    Returns
+    -------
+    HybridBlock
+        A SSD detection network.
+    """
+    classes = VOCDetection.CLASSES
+    return get_ssd('mobilenet1.0', 512,
+                   features=['relu22_fwd', 'relu26_fwd'],
+                   filters=[512, 512, 256, 256],
+                   sizes=[51.2, 102.4, 189.4, 276.4, 363.52, 450.6, 492],
+                   ratios=[[1, 2, 0.5]] + [[1, 2, 0.5, 3, 1.0/3]] * 3 + [[1, 2, 0.5]] * 2,
+                   steps=[16, 32, 64, 128, 256, 512],
                    classes=classes, dataset='voc', pretrained=pretrained,
                    pretrained_base=pretrained_base, **kwargs)

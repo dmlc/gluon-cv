@@ -64,10 +64,10 @@ sphinx_gallery_conf = {
                       'tutorials/detection',
                       'tutorials/segmentation',],
     # path where to save gallery generated examples
-    'gallery_dirs': ['examples_datasets',
-                     'examples_classification',
-                     'examples_detection',
-                     'examples_segmentation',],
+    'gallery_dirs': ['build/examples_datasets',
+                     'build/examples_classification',
+                     'build/examples_detection',
+                     'build/examples_segmentation',],
 
     'filename_pattern': '.py',
     # 'ignore_pattern': 'train_mixup\.py',

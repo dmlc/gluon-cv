@@ -1,4 +1,6 @@
-"""Prepare PASCAL VOC datasets"""
+"""
+.. _pascal_voc:
+Prepare PASCAL VOC datasets"""
 import os
 import shutil
 import argparse
@@ -13,7 +15,7 @@ def parse_args():
         description='Initialize PASCAL VOC dataset.',
         epilog='Example: python pascal_voc.py --download-dir ~/VOCdevkit',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--download-dir', type=str, default='~/VOCdevkit', help='dataset directory on disk')
+    parser.add_argument('--download-dir', type=str, default='~/VOCdevkit/', help='dataset directory on disk')
     parser.add_argument('--no-download', action='store_true', help='disable automatic download if set')
     parser.add_argument('--overwrite', action='store_true', help='overwrite downloaded files if set, in case they are corrputed')
     args = parser.parse_args()
@@ -30,10 +32,9 @@ def download_voc(path, overwrite=False):
          '41a8d6e12baa5ab18ee7f8f8029b9e11805b4ef1'),
         ('http://host.robots.ox.ac.uk/pascal/VOC/voc2012/VOCtrainval_11-May-2012.tar',
          '4e443f8a2eca6b1dac8a6c57641b67dd40621a49')]
-    download_dir = os.path.join(path, 'downloads')
-    makedirs(download_dir)
+    makedirs(path)
     for url, checksum in _DOWNLOAD_URLS:
-        filename = download(url, path=download_dir, overwrite=overwrite, sha1_hash=checksum)
+        filename = download(url, path=path, overwrite=overwrite, sha1_hash=checksum)
         # extract
         with tarfile.open(filename) as tar:
             tar.extractall(path=path)
@@ -45,10 +46,9 @@ def download_voc(path, overwrite=False):
 def download_aug(path, overwrite=False):
     _AUG_DOWNLOAD_URLS = [
         ('http://www.eecs.berkeley.edu/Research/Projects/CS/vision/grouping/semantic_contours/benchmark.tgz', '7129e0a480c2d6afb02b517bb18ac54283bfaa35')]
-    download_dir = os.path.join(path, 'downloads')
-    makedirs(download_dir)
+    makedirs(path)
     for url, checksum in _AUG_DOWNLOAD_URLS:
-        filename = download(url, path=download_dir, overwrite=overwrite, sha1_hash=checksum)
+        filename = download(url, path=path, overwrite=overwrite, sha1_hash=checksum)
         # extract
         with tarfile.open(filename) as tar:
             tar.extractall(path=path)
@@ -89,4 +89,4 @@ if __name__ == '__main__':
     makedirs(os.path.expanduser('~/.mxnet/datasets'))
     if os.path.isdir(_TARGET_DIR):
         os.remove(_TARGET_DIR)
-    os.symlink(args.path, _TARGET_DIR)
+    os.symlink(path, _TARGET_DIR)

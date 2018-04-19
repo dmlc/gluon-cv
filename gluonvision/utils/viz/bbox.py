@@ -1,5 +1,5 @@
 """Bounding box visualization functions."""
-from __future__ import absolute_import
+from __future__ import absolute_import, division
 
 import random
 from .image import plot_image
@@ -25,8 +25,8 @@ def plot_bbox(img, bboxes, scores=None, labels=None, thresh=0.5,
         a large number of bounding boxes with very small scores.
     class_names : list of str, optional
         Description of parameter `class_names`.
-    colors : list of tuple, optional
-        You can provide desired colors as [(255, 0, 0), (0, 255, 0), ...], otherwise
+    colors : dict, optional
+        You can provide desired colors as {0: (255, 0, 0), 1:(0, 255, 0), ...}, otherwise
         random colors will be substituded.
     ax : matplotlib axes, optional
         You can reuse previous axes if provided.
@@ -73,7 +73,10 @@ def plot_bbox(img, bboxes, scores=None, labels=None, thresh=0.5,
             continue
         cls_id = int(labels.flat[i]) if labels is not None else -1
         if cls_id not in colors:
-            colors[cls_id] = (random.random(), random.random(), random.random())
+            if class_names is not None:
+                colors[cls_id] = plt.get_cmap('hsv')(cls_id / len(class_names))
+            else:
+                colors[cls_id] = (random.random(), random.random(), random.random())
         xmin, ymin, xmax, ymax = [int(x) for x in bbox]
         rect = plt.Rectangle((xmin, ymin), xmax - xmin,
                              ymax - ymin, fill=False,
