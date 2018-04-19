@@ -4,7 +4,7 @@
 This is a semantic segmentation tutorial using Gluon Vison, a step-by-step example.
 The readers should have basic knowledge of deep learning and should be familiar with Gluon API.
 New users may first go through `A 60-minute Gluon Crash Course <http://gluon-crash-course.mxnet.io/>`_.
-If you want to skip `the tutorial `_, you can start the training now.
+You can `Start Training Now`_ or `Dive into Deep`_.
 
 Start Training Now
 ~~~~~~~~~~~~~~~~~~
@@ -137,9 +137,12 @@ print('Training images:', len(train_dataset))
 # mode upsample are applied to the label maps to avoid messing up the boundaries.*)
 # We first randomly scale the input image from 0.5 to 2.0 times, then rotate
 # the image from -10 to 10 degrees, and crop the image with padding if needed.
-# Finally a random Gaussian blurring is applied. Example data:
+# Finally a random Gaussian blurring is applied.
 #
-img, mask = train_dataset[0]
+# Random pick one example data:
+from random import randint
+idx = randint(0, len(train_dataset))
+img, mask = train_dataset[idx]
 from gluonvision.utils.viz import get_color_pallete
 mask = get_color_pallete(np.array(mask), dataset='pascal_voc')
 mask.save('mask.png')
@@ -160,8 +163,8 @@ plt.imshow(mmask)
 plt.show()
 
 ##############################################################################
-# Training Detail
-# ---------------
+# Training Details
+# ----------------
 # 
 # - Training Losses:
 #     
@@ -177,7 +180,7 @@ plt.show()
 #     We use a poly-like learning rate scheduler for FCN training, provided in :class:`gluonvision.utils.PolyLRScheduler`.
 #     The learning rate is given by :math:`lr = baselr \times (1-iter)^power`
 # 
-# You can **`Start Training Now`_**.
+# You can `Start Training Now`_.
 # 
 # References
 # ----------
