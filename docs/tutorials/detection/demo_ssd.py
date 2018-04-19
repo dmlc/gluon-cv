@@ -1,64 +1,49 @@
-"""Getting started with SSD pre-trained models
-==============================================
+"""Predict with pre-trained SSD models
+===================================
 
-This article is an introductory tutorial to play with pre-trained models
-with several lines of code.
+This article goes through how to play with pre-trained SSD models with several
+lines of code.
 
-.. image:: https://github.com/dmlc/web-data/blob/master/gluonvision/detection/street_small.jpg?raw=true
 """
 
-import mxnet as mx
-import gluonvision as gv
+from gluonvision import model_zoo, data, utils
 from matplotlib import pyplot as plt
 
 ######################################################################
 # Obtain a pretrained model
 # -------------------------
-# Try grab a 300x300 model trained on Pascal voc dataset.
-# it will automatically download from s3 servers if not exists
-# net = gv.model_zoo.get_model('ssd_512_resnet50_v1_voc', pretrained=True)
+#
+# Let's get a SSD model that is trained with 512x512 images on the Pascal VOC
+# dataset with ResNet-50 V1 as the base model. By specifying
+# ``pretrained=True``, it will automatically download the model from the model
+# zoo if necessary. For more pretrained models, refer to
+# :doc:`../../model_zoo/index`.
+
+net = model_zoo.get_model('ssd_512_resnet50_v1_voc', pretrained=True)
 
 ######################################################################
-# Pre-process image
-# -----------------
+# Pre-process an image
+# --------------------
 #
-# A raw image must be converted to tensor before inference.
-from gluonvision.data.transforms import presets
+# Next we download an image, and pre-process with preset data transforms. Here we
+# specify that we resize the short edge of the image into 512 px. But you can
+# feed an arbitrary size image.
 
-# a demo image, feel free to use your own image
-gv.utils.download('https://github.com/dmlc/web-data/blob/master/' +
-                  'gluonvision/detection/street_small.jpg?raw=true', 'street.jpg')
-image_name = 'street.jpg'
-
-# gluonvision support SSD models to accept arbitrary data shape
-# so this size is not that restrictive
-x, img = presets.ssd.load_test(image_name, short=512)
-print('shape of x:', x.shape)
+im_fname = utils.download('https://github.com/dmlc/web-data/blob/master/' +
+                          'gluonvision/detection/street_small.jpg?raw=true')
+x, img = data.transforms.presets.ssd.load_test(im_fname, short=512)
+plt.imshow(img)
+plt.show()
+print('Shape of pre-processed image:', x.shape)
 
 ######################################################################
 # Inference and display
 # ---------------------
-
-#ids, scores, bboxes = [xx[0].asnumpy() for xx in net(x)]
-#from gluonvision.utils import viz
-#ax = viz.plot_bbox(img, bboxes, scores, ids, class_names=net.classes, ax=None)
-#plt.show()
-
-######################################################################
-# Play with complete python script for demo
-# -----------------------------------------
 #
-# :download:`Download Full Python Script demo_ssd.py<../../scripts/detection/ssd/demo_ssd.py>`
 #
-# Example usage:
-#
-# .. code-block:: python
-#
-#     python demo_ssd.py --gpus 0 --network ssd_300_vgg16_atrous_voc --data-shape 300
-#     # you can use models on disk as well
-#     python demo_ssd.py --gpus 0 --network ssd_300_vgg16_atrous_voc --data-shape 300 --pretrained ./ssd_300.params
 
+class_IDs, scores, bounding_boxs = net(x)
 
-######################################################################
-# You can also download this tutorial
-# -----------------------------------
+ax = utils.viz.plot_bbox(img, bounding_boxs.asnumpy(), scores.asnumpy(),
+                         class_IDs.asnumpy(), class_names=net.classes, ax=None)
+plt.show()
