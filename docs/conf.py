@@ -79,7 +79,6 @@ sphinx_gallery_conf = {
 
     'within_subsection_order': NumberOfCodeLinesSortKey,
     'plot_gallery': True,
-    'min_reported_time':10,
     'download_section_examples': False,
     'reference_url': {
         'gluonvision': None,
