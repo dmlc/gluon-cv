@@ -2,4 +2,3 @@ doxygen
 _build
 build
 gen_modules
-examples_*
