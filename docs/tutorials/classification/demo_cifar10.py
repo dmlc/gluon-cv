@@ -8,10 +8,12 @@ computer vision research.
 
 |image-cifar10|
 
+.. |image-cifar10| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/datasets/cifar10.png
+
 In this tutorial, we will demonstrate how to load a pre-trained model in``Gluon``,
 and classify images from the Internet or your local disk.
 
-Demo
+Step by Step
 ------------------
 
 Let's first play with a pre-trained cifar model with a few lines of python code.
@@ -127,5 +129,5 @@ print('The input picture is classified to be [%s], with probability %.3f.'%
 #
 # Or, if you would like to try a more real-world-friendly demo, i.e. models trained
 # on ImageNet, please read `Getting Started with ImageNet Pre-trained Models <demo_imagenet.html>`__.
-# .. |image-cifar10| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/datasets/cifar10.png
+#
 # .. |image-mtbaker| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/classification/mt_baker.jpg
