@@ -4,7 +4,7 @@
 This is a semantic segmentation tutorial using Gluon Vison, a step-by-step example.
 The readers should have basic knowledge of deep learning and should be familiar with Gluon API.
 New users may first go through `A 60-minute Gluon Crash Course <http://gluon-crash-course.mxnet.io/>`_.
-
+If you want to skip `the tutorial `_, you can start the training now.
 
 Start Training Now
 ~~~~~~~~~~~~~~~~~~
@@ -32,6 +32,7 @@ Start Training Now
 Dive into Deep
 ~~~~~~~~~~~~~~
 """
+import numpy as np
 import mxnet as mx
 import gluonvision
 
@@ -81,9 +82,8 @@ pretrained_net = gluonvision.model_zoo.dilatedresnetv0.dilated_resnet50(pretrain
 
 ##############################################################################
 # For convenience, we provide a base model for semantic segmentation, which automatically
-# load the pre-trained dilated ResNet :class:`gluonvision.model_zoo.SegBaseModel`, which 
-# provide a convenient base model to be inherited from with a convenient method
-# ``base_forward(input)`` to get stage 3 & 4 features:
+# load the pre-trained dilated ResNet :class:`gluonvision.model_zoo.SegBaseModel`
+# with a convenient method ``base_forward(input)`` to get stage 3 & 4 featuremaps:
 # 
 basemodel = gluonvision.model_zoo.SegBaseModel(nclass=10, aux=False)
 x = mx.nd.random.uniform(shape=(1, 3, 224, 224))
@@ -94,73 +94,90 @@ print('Shapes of c3 & c4 featuremaps are ', c3.shape, c4.shape)
 # FCN Model
 # ---------
 # 
-# We build a fully convolutional "head" on top of the basenetwork (FCN model is provided
-# in :class:`gluonvision.model_zoo.FCN`)::
-# 
-#     class _FCNHead(HybridBlock):
-#         def __init__(self, nclass, norm_layer):
-#             super(_FCNHead, self).__init__()
-#             with self.name_scope():
-#                 self.block = nn.HybridSequential(prefix='')
-#                 self.block.add(norm_layer(in_channels=2048))
-#                 self.block.add(nn.Activation('relu'))
-#                 self.block.add(nn.Conv2D(in_channels=2048, channels=512,
+# We build a fully convolutional "head" on top of the base network,
+# the FCNHead is defined as::
+#
+# class _FCNHead(HybridBlock):
+#     # pylint: disable=redefined-outer-name
+#     def __init__(self, in_channels, channels, norm_layer, **kwargs):
+#         super(_FCNHead, self).__init__()
+#         with self.name_scope():
+#             self.block = nn.HybridSequential()
+#             inter_channels = in_channels // 4
+#             with self.block.name_scope():
+#                 self.block.add(nn.Conv2D(in_channels=in_channels, channels=inter_channels,
 #                                          kernel_size=3, padding=1))
-#                 self.block.add(norm_layer(in_channels=512))
+#                 self.block.add(norm_layer(in_channels=inter_channels))
 #                 self.block.add(nn.Activation('relu'))
 #                 self.block.add(nn.Dropout(0.1))
-#                 self.block.add(nn.Conv2D(in_channels=512, channels=nclass,
+#                 self.block.add(nn.Conv2D(in_channels=inter_channels, channels=channels,
 #                                          kernel_size=1))
 # 
-#         def hybrid_forward(self, F, x):
-#             return self.block(x)
+#     # pylint: disable=arguments-differ
+#     def hybrid_forward(self, F, x):
+#         return self.block(x)
 # 
-#     class FCN(SegBaseModel):
-#         def __init__(self, nclass, backbone='resnet50', norm_layer=nn.BatchNorm):
-#             super(FCN, self).__init__(backbone, norm_layer)
-#             self._prefix = ''
-#             with self.name_scope():
-#                 self.head = _FCNHead(nclass, norm_layer=norm_layer)
-#             self.head.initialize(init=init.Xavier())
-# 
-#         def forward(self, x):
-#             _, _, H, W = x.shape
-#             x = self.pretrained(x)
-#             x = self.head(x)
-#             x = F.contrib.BilinearResize2D(x, height=H, width=W)
-#             return x
-
+# FCN model is provided in :class:`gluonvision.model_zoo.FCN`. To get
+# FCN model using ResNet50 base network for Pascal VOC dataset:
+model = gluonvision.model_zoo.get_fcn(dataset='pascal_voc', backbone='resnet50', pretrained=False)
+print(model)
 
 ##############################################################################
 # Dataset and Data Augmentation
 # -----------------------------
 # 
 # We provide semantic segmentation datasets in :class:`gluonvision.data`.
-# For example, we can easily get the Pascal VOC 2012 dataset::
-# 
-#     train_set = gluonvision.data.VOCSegmentation(root)
-# 
+# For example, we can easily get the Pascal VOC 2012 dataset:
+train_dataset = gluonvision.data.VOCSegmentation(split='train')
+print('Training images:', len(train_dataset))
+
+##############################################################################
 # We follow the standard data augmentation routine to transform the input image
 # and the ground truth label map synchronously. (*Note that "nearest"
 # mode upsample are applied to the label maps to avoid messing up the boundaries.*)
 # We first randomly scale the input image from 0.5 to 2.0 times, then rotate
 # the image from -10 to 10 degrees, and crop the image with padding if needed.
-# Finally a random Gaussian blurring is applied.
-# 
-# Training
-# --------
+# Finally a random Gaussian blurring is applied. Example data:
+#
+img, mask = val_dataset[0]
+from gluonvision.utils.viz import get_color_pallete
+mask = get_color_pallete(np.array(mask), dataset='ade20k')
+mask.save('mask.png')
+
+##############################################################################
+# Visualize the data
+from matplotlib import pyplot as plt
+import matplotlib.image as mpimg
+# subplot 1 for img
+fig = plt.figure()
+fig.add_subplot(1,2,1)
+plt.imshow(np.array(img))
+# subplot 2 for the mask
+mmask = mpimg.imread('mask.png')
+fig.add_subplot(1,2,2)
+plt.imshow(mmask)
+# display
+plt.show()
+
+##############################################################################
+# Training Detail
+# ---------------
 # 
 # - Training Losses:
 #     
-#     We apply a standard per-pixel Softmax Cross Entropy Loss to train FCN.
-#     Optionally, an Auxiliary Loss as in PSPNet [Zhao17]_ at Stage 3 can be enabled when
-#     training with command ``--aux``. This will create an additional FCN 'head' after Stage 3.
+#     We apply a standard per-pixel Softmax Cross Entropy Loss to train FCN. For Pascal
+#     VOC dataset, we ignore the loss from boundary class (number 22).
+#     Additionally, an Auxiliary Loss as in PSPNet [Zhao17]_ at Stage 3 can be enabled when
+#     training with command ``--aux``. This will create an additional FCN "head" after Stage 3.
 # 
-# - Poly Like Learning Rate Scheduling:
+# - Learning Rate and Scheduling:
 # 
-#     We use a polynomial learning rate scheduler for FCN training, provided in :class:`gluonvision.utils.PolyLRScheduler`.
+#     We use different learning rate for FCN "head" and the base network. For the FCN "head",
+#     we use :math:`10\times` base learning rate, because those layers are learned from scratch.
+#     We use a poly-like learning rate scheduler for FCN training, provided in :class:`gluonvision.utils.PolyLRScheduler`.
 #     The learning rate is given by :math:`lr = baselr \times (1-iter)^power`
 # 
+# You can **`Start Training Now`_**.
 # 
 # References
 # ----------

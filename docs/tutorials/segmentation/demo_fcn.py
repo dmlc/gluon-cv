@@ -45,6 +45,8 @@ img = img.expand_dims(0).as_in_context(ctx)
 #
 # get pre-trained model
 model = gluonvision.model_zoo.get_fcn_voc_resnet101(pretrained=True)
+
+##############################################################################
 # make prediction using single scale
 output = model.evaluate(img)
 predict = mx.nd.squeeze(mx.nd.argmax(output, 1)).asnumpy()
