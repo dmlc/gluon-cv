@@ -240,4 +240,4 @@ for epoch in range(epochs):
 # The idea of transfer learning is the basis of object detection and
 # semantic segmentation, the next two chapters in our tutorial.
 #
-# .. |image-minc| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/classification/MINC-2500.png
+# .. |image-minc| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/datasets/MINC-2500.png

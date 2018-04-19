@@ -29,8 +29,6 @@ from gluonvision import utils
 from gluonvision.model_zoo import get_model
 
 ################################################################
-# Prepare the image
-# -----------------
 #
 # Download the example image:
 
@@ -44,7 +42,7 @@ plt.imshow(img.asnumpy())
 plt.show()
 
 ################################################################
-# In case you cannot recognize it, the image is a poorly-drawn plane :)
+# In case you cannot recognize it, the image is a poorly-drawn airplane :)
 #
 # Now we can define transformation for the image.
 
@@ -89,6 +87,9 @@ print('The input picture is classified to be [%s], with probability %.3f.'%
       (class_names[ind.asscalar()], nd.softmax(pred)[0][ind].asscalar()))
 
 ################################################################
+# Play with the scripts
+# ---------------------
+#
 # We provide you a script to load a pre-trained model from us and
 # predict on any image on your disk.
 #
@@ -102,7 +103,7 @@ print('The input picture is classified to be [%s], with probability %.3f.'%
 #
 # For instance we have the following photo of Mt. Baker:
 #
-# |image1|
+# |image-mtbaker|
 #
 # ::
 #
@@ -126,6 +127,5 @@ print('The input picture is classified to be [%s], with probability %.3f.'%
 #
 # Or, if you would like to try a more real-world-friendly demo, i.e. models trained
 # on ImageNet, please read `Getting Started with ImageNet Pre-trained Models <demo_imagenet.html>`__.
-#
-# .. |image0| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/classification/plane-draw.jpeg
-# .. |image1| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/classification/mt_baker.jpg
+# .. |image-cifar10| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/datasets/cifar10.png
+# .. |image-mtbaker| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/classification/mt_baker.jpg
