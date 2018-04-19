@@ -45,7 +45,7 @@ We also trained several SSD models with ResNet as the base model.
 SSD 512 Resnet50 V1 VOC
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-.. code-block: bash
+.. code-block:: bash
 
    python xx.py 11 22 33
 
