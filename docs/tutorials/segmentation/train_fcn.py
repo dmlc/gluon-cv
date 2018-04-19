@@ -141,7 +141,7 @@ print('Training images:', len(train_dataset))
 #
 img, mask = train_dataset[0]
 from gluonvision.utils.viz import get_color_pallete
-mask = get_color_pallete(np.array(mask), dataset='ade20k')
+mask = get_color_pallete(np.array(mask), dataset='pascal_voc')
 mask.save('mask.png')
 
 ##############################################################################
