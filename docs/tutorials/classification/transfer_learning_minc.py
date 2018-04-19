@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+
 """Transfer Learning with Your Own Image Dataset
 ===============================================
 
@@ -70,11 +73,23 @@ Now we have the following structure:
     ├── train
     └── val
 
-Hyper Parameters
-----------
-
-First, let's load all necessary libraries.
+In order to compile the tutorial with a reasonable cost, we have prepared a small subset of the 
+``MINC-2500`` data. We can download and extract it with:
 """
+
+import zipfile, os
+from gluonvision.utils import download
+
+file_url = 'https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/classification/minc-2500-tiny.zip'
+zip_file = download(file_url, path='~/data/')
+with zipfile.ZipFile(zip_file, 'r') as zin:
+    zin.extractall(os.path.expanduser('~/data/'))
+
+################################################################################
+# Hyper Parameters
+# ----------
+# 
+# First, let's load all necessary libraries.
 
 import mxnet as mx
 import numpy as np
@@ -94,7 +109,7 @@ classes = 67
 
 model_name = 'ResNet50_v2'
 
-epochs = 1
+epochs = 5
 lr = 0.001
 batch_size = 64
 momentum = 0.9
@@ -103,8 +118,8 @@ wd = 0.0001
 lr_factor = 0.75
 lr_steps = [10, 20, 30, np.inf]
 
-num_gpus = 4
-num_workers = 32
+num_gpus = 1
+num_workers = 8
 ctx = [mx.gpu(i) for i in range(num_gpus)] if num_gpus > 0 else [mx.cpu()]
 batch_size = batch_size * max(num_gpus, 1)
 
@@ -136,7 +151,7 @@ transform_test = transforms.Compose([
     normalize
 ])
 
-path = '~/data/minc-2500'
+path = '~/data/minc-2500-tiny'
 train_path = os.path.join(path, 'train')
 val_path = os.path.join(path, 'val')
 test_path = os.path.join(path, 'test')
