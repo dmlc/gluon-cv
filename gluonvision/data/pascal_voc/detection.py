@@ -16,37 +16,41 @@ class VOCDetection(VisionDataset):
 
     Parameters
     ----------
-    root : string
-        Path to VOCdevkit folder. Default is '~/mxnet/datasets/voc'
-    splits : list of tuples
-        List of combinations of (year, name), e.g. [(2007, 'trainval'), (2012, 'train')].
+    root : str, default '~/mxnet/datasets/voc'
+        Path to folder stored the dataset
+    splits : list of tuples, default ((2007, 'trainval'), (2012, 'trainval'))
+        List of combinations of (year, name)
         For years, candidates can be: 2007, 2012.
         For names, candidates can be: 'train', 'val', 'trainval', 'test'.
     flag : {0, 1}, default 1
         If 0, always convert images to greyscale.
         If 1, always convert images to colored (RGB).
-    transform : callable, optional
-        A function that takes data and label and transforms them::
-
-            transform = lambda data, label: (data.astype(np.float32)/255, label)
+        (TODO when we need it?)
+    transform : callable, defaut None
+        A function that takes data and label and transforms them. Refer to
+        :doc:`./transforms` for examples.
 
         A transform function for object detection should take label into consideration,
         because any geometric modification will require label to be modified.
-    index_map : dict, optional
-        If provided as dict, class indecies are mapped by looking up in the dict.
-        Otherwise will use alphabetic indexing for all classes from 0 to 19.
-    preload : bool
-        All labels will be parsed and loaded into memory at initialization.
-        This will allow early check for errors, and will be significantly faster.
-    normalize_bbox : bool
+    index_map : dict, default None
+        In default, the 20 classes are mapped into indices from 0 to 19. We can
+        customize it by providing a str to int dict specifying how to map class
+        names to indicies. (TODO why need it?)
+    preload : bool, default True
+        If True, then parse and load all labels nto memory during
+        initialization. It often accelerate speed but require more memory
+        usage. (TODO, change to preload_label? how many memory we need? when we
+        should disable it?)
+    normalize_bbox : bool, default False
         Whether or not normalize box coordinates to range (0, 1) by dividing width/height.
-
+        (TODO, do we need to have this flag?)
     """
     CLASSES = ('aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car',
                'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse', 'motorbike',
                'person', 'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor')
     def __init__(self, root=os.path.join('~', '.mxnet', 'datasets', 'voc'),
-                 splits='train', flag=1, transform=None, index_map=None,
+                 splits=((2007, 'trainval'), (2012, 'trainval')),
+                 flag=1, transform=None, index_map=None,
                  preload=True, normalize_bbox=False):
         super(VOCDetection, self).__init__(root)
         self._normalize_bbox = normalize_bbox

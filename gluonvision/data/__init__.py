@@ -1,4 +1,6 @@
-"""Dataset gallery."""
+"""
+This module provides data loaders and transfomers for popular vision datasets.
+"""
 from . import transforms
 from .imagenet.classification import ImageNet
 from .dataloader import DetectionDataLoader
