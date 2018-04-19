@@ -69,7 +69,7 @@ A Quick Example
    :maxdepth: 1
    :caption: Model Zoo
 
-   model_zoo/index
+   model_zoo/object_detection
 
 .. toctree::
    :maxdepth: 1
