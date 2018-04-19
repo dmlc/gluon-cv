@@ -23,12 +23,12 @@ the following command
 which will automatically download and extract the data into ``~/.mxnet/datasets/voc``.
 
 
-.. note::
+.. hint::
 
    You need 8.4 GB disk space to download and extract this dataset. SSD is
    preferred over HDD because of its better performance.
 
-.. note::
+.. hint::
 
    The total time to prepare the dataset depends on your Internet speed and disk
    performance. For example, it often takes 10 min on AWS EC2 with EBS.

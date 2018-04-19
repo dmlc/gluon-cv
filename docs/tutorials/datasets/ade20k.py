@@ -22,7 +22,7 @@ which will automatically download and extract the data into ``~/.mxnet/datasets/
 
    python scripts/datasets/ade20k.py
 
-.. note::
+.. hint::
 
    You need 2.3 GB disk space to download and extract this dataset. SSD is
    preferred over HDD because of its better performance.
