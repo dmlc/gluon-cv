@@ -1,4 +1,5 @@
 import os
+import shutil
 import importlib
 
 import mxnet as mx
@@ -7,7 +8,19 @@ from mxnet import gluon
 
 from gluonvision.utils.parallel import ModelDataParallel, CriterionDataParallel
 
-__all__ = ['get_model_criterion']
+__all__ = ['save_checkpoint', 'get_model_criterion']
+
+
+def save_checkpoint(net, args, is_best=False):
+    directory = "runs/%s/%s/%s/" % (args.dataset, args.model, args.checkname)
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+    filename='checkpoint.params'
+    filename = directory + filename
+    net.save_params(filename)
+    if is_best:
+        shutil.copyfile(filename, directory + 'model_best.params')
+
 
 def get_model_criterion(args):
     models = importlib.import_module('gluonvision.model_zoo.'+args.model)
