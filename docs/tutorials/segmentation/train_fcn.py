@@ -39,9 +39,9 @@ import gluonvision
 # Fully Convolutional Network
 # ---------------------------
 # 
-#.. image:: https://cdn-images-1.medium.com/max/800/1*wRkj6lsQ5ckExB5BoYkrZg.png
-#    :width: 70%
-#    :align: center
+# .. image:: https://cdn-images-1.medium.com/max/800/1*wRkj6lsQ5ckExB5BoYkrZg.png
+#     :width: 70%
+#     :align: center
 #
 # (figure redit to `Long et al. <https://arxiv.org/pdf/1411.4038.pdf>`_ )
 # 
@@ -67,7 +67,7 @@ import gluonvision
 # we apply dilation strategy to the
 # stage 3 and stage 4 of the pre-trained networks, which produces stride of 8
 # featuremaps (models are provided in
-# :class:`gluonvision.model_zoo.dilatedresnetv0.Dilated_ResNetV2`).
+# :class:`gluonvision.model_zoo.dilatedresnetv0.DilatedResNetV0`).
 # Visualization of dilated/atrous convoution
 # (figure credit to `conv_arithmetic <https://github.com/vdumoulin/conv_arithmetic>`_ ):
 # 
@@ -91,7 +91,7 @@ c3, c4 = basemodel.base_forward(x)
 print('Shapes of c3 & c4 featuremaps are ', c3.shape, c4.shape)
 
 ##############################################################################
-# FCN Block
+# FCN Model
 # ---------
 # 
 # We build a fully convolutional "head" on top of the basenetwork (FCN model is provided
