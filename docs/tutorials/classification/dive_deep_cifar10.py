@@ -32,7 +32,7 @@ tutorial, it is a good idea to start the training script with
 
 ::
 
-    python train.py --num-epochs 240 --mode hybrid --num-gpus 2 -j 32 --batch-size 64\
+    python train.py --num-epochs 240 --mode hybrid --num-gpus 1 -j 8 --batch-size 128\
         --wd 0.0001 --lr 0.1 --lr-decay 0.1 --lr-decay-epoch 80,160 --model cifar_resnet20_v1
 
 and remember to replace ``--num-gpus`` to the number of GPUs you have,
@@ -299,15 +299,6 @@ for epoch in range(epochs):
     print('[Epoch %d] train=%f val=%f loss=%f time: %f' %
         (epoch, acc, val_acc, train_loss, time.time()-tic))
 
-################################################################
-# .. parsed-literal::
-#
-#     [Epoch 0] train=0.362941 val=0.426600 loss=86895.413788 time: 25.992320
-#     [Epoch 1] train=0.496014 val=0.584200 loss=69834.481152 time: 25.585870
-#     [Epoch 2] train=0.562099 val=0.646200 loss=61467.327183 time: 25.127841
-#     [Epoch 3] train=0.599479 val=0.658300 loss=56717.487179 time: 25.180641
-#     [Epoch 4] train=0.624119 val=0.670500 loss=52825.070946 time: 25.824175
-#
 # We can plot the metric scores with:
 
 train_history.plot()
