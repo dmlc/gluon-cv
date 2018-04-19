@@ -1,19 +1,19 @@
-"""Title
-========
-
-"""
 import mxnet as mx
 import numpy as np
-import os, time, logging, math, argparse
+import os, time, logging, argparse, shutil
 
 from mxnet import gluon, image, init, nd
 from mxnet import autograd as ag
 from mxnet.gluon import nn
 from mxnet.gluon.model_zoo import vision as models
+from mxnet.gluon.data.vision import transforms
+from gluonvision.utils import makedirs
 
-def parse_args():
-    parser = argparse.ArgumentParser(description='Gluon for FashionAI Competition',
+def parse_opts():
+    parser = argparse.ArgumentParser(description='Transfer learning on MINC-2500 dataset',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('--data', type=str, default='',
+                        help='directory for the prepared data folder')
     parser.add_argument('--model', required=True, type=str,
                         help='name of the pretrained model from model zoo.')
     parser.add_argument('-j', '--workers', dest='num_workers', default=4, type=int,
@@ -34,10 +34,42 @@ def parse_args():
                         help='learning rate decay ratio')
     parser.add_argument('--lr-steps', default='10,20,30', type=str,
                         help='list of learning rate decay epochs as in str')
-    args = parser.parse_args()
-    return args
+    opts = parser.parse_args()
+    return opts
+
+# Preparation
+opts = parse_opts()
+classes = 67
+
+model_name = opts.model
+
+epochs = opts.epochs
+lr = opts.lr
+batch_size = opts.batch_size
+momentum = opts.momentum
+wd = opts.wd
+
+lr_factor = opts.lr_factor
+lr_steps = [int(s) for s in opts.lr_steps.split(',')] + [np.inf]
+
+num_gpus = opts.num_gpus
+num_workers = opts.num_workers
+ctx = [mx.gpu(i) for i in range(num_gpus)] if num_gpus > 0 else [mx.cpu()]
+batch_size = batch_size * max(num_gpus, 1)
+
+logging.basicConfig(level=logging.INFO,
+                    handlers = [logging.StreamHandler()])
+
+train_path = os.path.join(opts.data, 'train')
+val_path = os.path.join(opts.data, 'val')
+test_path = os.path.join(opts.data, 'test')
+
+jitter_param = 0.4
+lighting_param = 0.1
+normalize = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 
 transform_train = transforms.Compose([
+    transforms.Resize(480),
     transforms.RandomResizedCrop(224),
     transforms.RandomFlipLeftRight(),
     transforms.RandomColorJitter(brightness=jitter_param, contrast=jitter_param,
@@ -54,21 +86,17 @@ transform_test = transforms.Compose([
     normalize
 ])
 
-def test(ctx, val_data):
-    acc_top1.reset()
-    acc_top5.reset()
+def test(net, val_data, ctx):
+    metric = mx.metric.Accuracy()
     for i, batch in enumerate(val_data):
-        data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
-        label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0)
+        data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0, even_split=False)
+        label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0, even_split=False)
         outputs = [net(X) for X in data]
-        acc_top1.update(label, outputs)
-        acc_top5.update(label, outputs)
+        metric.update(label, outputs)
 
-    _, top1 = acc_top1.get()
-    _, top5 = acc_top5.get()
-    return (1-top1, 1-top5)
+    return metric.get()
 
-def train():
+def train(train_path, val_path, test_path):
     # Initialize the net with pretrained model
     finetune_net = gluon.model_zoo.vision.get_model(model_name, pretrained=True)
     with finetune_net.name_scope():
@@ -79,15 +107,15 @@ def train():
 
     # Define DataLoader
     train_data = gluon.data.DataLoader(
-        gluon.data.vision.ImageFolderDataset(
-            os.path.join('data/train_valid', task, 'train'),
-            transform=transform_train),
-        batch_size=batch_size, shuffle=True, num_workers=num_workers, last_batch='discard')
+        gluon.data.vision.ImageFolderDataset(train_path).transform_first(transform_train),
+        batch_size=batch_size, shuffle=True, num_workers=num_workers)
 
     val_data = gluon.data.DataLoader(
-        gluon.data.vision.ImageFolderDataset(
-            os.path.join('data/train_valid', task, 'val'),
-            transform=transform_val),
+        gluon.data.vision.ImageFolderDataset(val_path).transform_first(transform_test),
+        batch_size=batch_size, shuffle=False, num_workers = num_workers)
+
+    test_data = gluon.data.DataLoader(
+        gluon.data.vision.ImageFolderDataset(test_path).transform_first(transform_test),
         batch_size=batch_size, shuffle=False, num_workers = num_workers)
 
     # Define Trainer
@@ -122,43 +150,16 @@ def train():
 
             metric.update(label, outputs)
 
-            progressbar(i, num_batch-1)
-
         _, train_acc = metric.get()
         train_loss /= num_batch
 
-        val_acc, val_map, val_loss = validate(finetune_net, val_data, ctx)
+        _, val_acc = test(finetune_net, val_data, ctx)
 
-        logging.info('[Epoch %d] Train-acc: %.3f, mAP: %.3f, loss: %.3f | Val-acc: %.3f, mAP: %.3f, loss: %.3f | time: %.1f' %
-                 (epoch, train_acc, train_map, train_loss, val_acc, val_map, val_loss, time.time() - tic))
+        logging.info('[Epoch %d] Train-acc: %.3f, loss: %.3f | Val-acc: %.3f | time: %.1f' %
+                 (epoch, train_acc, train_loss, val_acc, time.time() - tic))
 
-    logging.info('\n')
-    return (finetune_net)
-
-# Preparation
-args = parse_args()
-
-classes = 256
-
-model_name = args.model
-
-epochs = args.epochs
-lr = args.lr
-batch_size = args.batch_size
-momentum = args.momentum
-wd = args.wd
-
-lr_factor = args.lr_factor
-lr_steps = [int(s) for s in args.lr_steps.split(',')] + [np.inf]
-
-num_gpus = args.num_gpus
-num_workers = args.num_workers
-ctx = [mx.gpu(i) for i in range(num_gpus)] if num_gpus > 0 else [mx.cpu()]
-batch_size = batch_size * max(num_gpus, 1)
-
-logging.basicConfig(level=logging.INFO,
-                    handlers = logging.StreamHandler())
+    _, test_acc = test(finetune_net, test_data, ctx)
+    logging.info('[Finished] Test-acc: %.3f' % (test_acc))
 
 if __name__ == "__main__":
-    net = train()
-
+    train(train_path, val_path, test_path)

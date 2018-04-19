@@ -40,3 +40,12 @@ Results:
 |------------------|-------------|-------------|
 | MobileNetV2_1.0  | 0.3008      |             |
 
+### Finetuning
+
+Finetune on `MINC-2500` with:
+
+```
+python3 finetune_minc.py --data ~/data/minc/minc-2500 --model resnet50_v2\
+    -j 32 --num-gpus 4 --epochs 40 -b 64 --lr 0.001 --lr-factor 0.75 --lr-steps 10,20,30
+```
+

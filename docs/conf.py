@@ -70,7 +70,6 @@ sphinx_gallery_conf = {
                      'build/examples_segmentation',],
 
     'filename_pattern': '.py',
-    # 'ignore_pattern': 'train_mixup\.py',
 
     # 'subsection_order': ExplicitOrder(['tutorials/classification',
     #                                    'tutorials/detection',
