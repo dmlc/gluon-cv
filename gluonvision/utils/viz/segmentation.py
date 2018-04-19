@@ -1,28 +1,25 @@
-import os
-import shutil
-import numpy as np
+"""Segmentation Utils"""
 from PIL import Image
 
-import mxnet as mx
-import mxnet.ndarray as F
+def get_color_pallete(npimg, dataset='pascal_voc'):
+    """Visualize image.
 
-__all__ = ['save_checkpoint', 'get_mask']
+    Parameters
+    ----------
+    npimg : numpy.ndarray
+        Image with shape `H, W, 3`.
+    dataset : str, default: pascal_voc
+        The dataset that model pretrained on. (pascal_voc, ade20k)
 
+    Returns
+    -------
+    out_img : PIL.Image
+        Image with color pallete
 
-def save_checkpoint(net, args, is_best=False):
-    directory = "runs/%s/%s/%s/" % (args.dataset, args.model, args.checkname)
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-    filename='checkpoint.params'
-    filename = directory + filename
-    net.save_params(filename)
-    if is_best:
-        shutil.copyfile(filename, directory + 'model_best.params')
-
-def get_mask(npimg, dataset):
+    """
     # recovery boundary
     if dataset == 'pascal_voc' or dataset == 'pascal_aug':
-        npimg[npimg==21] = 255
+        npimg[npimg == 21] = 255
     # put colormap
     out_img = Image.fromarray(npimg.astype('uint8'))
     if dataset == 'ade20k':
@@ -32,26 +29,26 @@ def get_mask(npimg, dataset):
     return out_img
 
 
-
-def getvocpallete(num_cls):
+def _getvocpallete(num_cls):
     n = num_cls
     pallete = [0]*(n*3)
-    for j in range(0,n):
-            lab = j
-            pallete[j*3+0] = 0
-            pallete[j*3+1] = 0
-            pallete[j*3+2] = 0
-            i = 0
-            while (lab > 0):
-                    pallete[j*3+0] |= (((lab >> 0) & 1) << (7-i))
-                    pallete[j*3+1] |= (((lab >> 1) & 1) << (7-i))
-                    pallete[j*3+2] |= (((lab >> 2) & 1) << (7-i))
-                    i = i + 1
-                    lab >>= 3
+    for j in range(0, n):
+        lab = j
+        pallete[j*3+0] = 0
+        pallete[j*3+1] = 0
+        pallete[j*3+2] = 0
+        i = 0
+        while (lab > 0):
+            pallete[j*3+0] |= (((lab >> 0) & 1) << (7-i))
+            pallete[j*3+1] |= (((lab >> 1) & 1) << (7-i))
+            pallete[j*3+2] |= (((lab >> 2) & 1) << (7-i))
+            i = i + 1
+            lab >>= 3
     return pallete
 
+vocpallete = _getvocpallete(256)
 
-vocpallete = getvocpallete(256)
+# pylint: disable=bad-whitespace
 adepallete = [
     0,0,0,120,120,120,180,120,120,6,230,230,80,50,50,4,200,3,120,120,80,140,140,140,204,
     5,255,230,230,230,4,250,7,224,5,255,235,255,7,150,5,61,120,120,70,8,255,51,255,6,82,

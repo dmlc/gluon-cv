@@ -3,7 +3,6 @@
 
 This is a quick demo of using GluonVision FCN model.
 Please follow the `installation guide <../index.html>`_ to install MXNet and GluonVision if not yet.
-This demo code can be downloaded from :download:`demo.py <../../scripts/segmentation/demo.py>`.
 """
 import mxnet as mx
 from mxnet import image
@@ -15,21 +14,23 @@ ctx = mx.cpu(0)
 
 ##############################################################################
 # Prepare the image 
-
+# -----------------
+#
 # download the example image
 url = 'https://raw.githubusercontent.com/zhanghang1989/gluon-vision-figures/master/voc_examples/1.jpg'
-filename = '1.jpg'
-gluonvision.utils.download(url)
+filename = 'example.jpg'
+gluonvision.utils.download(url, filename)
 
+##############################################################################
 # load the image
 with open(filename, 'rb') as f:
     img = image.imdecode(f.read())
 
-##############################################################################
-#.. image:: https://raw.githubusercontent.com/zhanghang1989/gluon-vision-figures/master/voc_examples/1.jpg
-#    :width: 45%
-#
+from matplotlib import pyplot as plt
+plt.imshow(img.asnumpy())
+plt.show()
 
+##############################################################################
 # normalize the image using dataset mean
 transform_fn = transforms.Compose([
     transforms.ToTensor(),
@@ -40,27 +41,32 @@ img = img.expand_dims(0).as_in_context(ctx)
 
 ##############################################################################
 # Load the pre-trained model and make prediction
-
+# ----------------------------------------------
+#
 # get pre-trained model
 model = gluonvision.model_zoo.get_fcn_voc_resnet101(pretrained=True)
+
+##############################################################################
 # make prediction using single scale
 output = model.evaluate(img)
 predict = mx.nd.squeeze(mx.nd.argmax(output, 1)).asnumpy()
 
 ##############################################################################
 # Add color pallete for visualization
-from utils import get_mask
-mask = get_mask(predict, 'pascal_voc')
+from gluonvision.utils.viz import get_color_pallete
+import matplotlib.image as mpimg
+mask = get_color_pallete(predict, 'pascal_voc')
 mask.save('output.png')
 
-
 ##############################################################################
-#.. image:: https://raw.githubusercontent.com/zhanghang1989/gluon-vision-figures/master/voc_examples/1.png
-#    :width: 45%
-#
+# show the predicted mask
+mmask = mpimg.imread('output.png')
+plt.imshow(mmask)
+plt.show()
 
 ##############################################################################
 # More Examples
+# -------------
 #
 #.. image:: https://raw.githubusercontent.com/zhanghang1989/gluon-vision-figures/master/voc_examples/4.jpg
 #    :width: 45%
