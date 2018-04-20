@@ -173,6 +173,7 @@ def get_cifar_wide_resnet(num_layers, width_factor=1, drop_rate=0.0,
 def cifar_wideresnet16_10(**kwargs):
     r"""WideResNet-16-10 model for CIFAR10 from `"Wide Residual Networks"
     <https://arxiv.org/abs/1605.07146>`_ paper.
+
     Parameters
     ----------
     drop_rate: float
@@ -189,6 +190,7 @@ def cifar_wideresnet16_10(**kwargs):
 def cifar_wideresnet28_10(**kwargs):
     r"""WideResNet-28-10 model for CIFAR10 from `"Wide Residual Networks"
     <https://arxiv.org/abs/1605.07146>`_ paper.
+
     Parameters
     ----------
     drop_rate: float
@@ -205,6 +207,7 @@ def cifar_wideresnet28_10(**kwargs):
 def cifar_wideresnet40_8(**kwargs):
     r"""WideResNet-40-8 model for CIFAR10 from `"Wide Residual Networks"
     <https://arxiv.org/abs/1605.07146>`_ paper.
+
     Parameters
     ----------
     drop_rate: float

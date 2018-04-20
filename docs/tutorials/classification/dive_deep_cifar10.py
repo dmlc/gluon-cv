@@ -24,7 +24,7 @@ place to start.
 
 As we all know, deep learning training is way faster on GPU than on CPU.
 In our demo, we only used CPU by default since that script only performs
-minimum conputation. However, since we are about to train a model, it is
+minimum computation. However, since we are about to train a model, it is
 strongly recommended to have a platform with GPU(s).
 
 Training usually takes several hours. While you are reading the

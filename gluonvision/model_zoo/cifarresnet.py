@@ -276,6 +276,7 @@ def get_cifar_resnet(version, num_layers, pretrained=False, ctx=cpu(),
 def cifar_resnet20_v1(**kwargs):
     r"""ResNet-20 V1 model for CIFAR10 from `"Deep Residual Learning for Image Recognition"
     <http://arxiv.org/abs/1512.03385>`_ paper.
+
     Parameters
     ----------
     pretrained : bool, default False
@@ -290,6 +291,7 @@ def cifar_resnet20_v1(**kwargs):
 def cifar_resnet56_v1(**kwargs):
     r"""ResNet-56 V1 model for CIFAR10 from `"Deep Residual Learning for Image Recognition"
     <http://arxiv.org/abs/1512.03385>`_ paper.
+
     Parameters
     ----------
     pretrained : bool, default False
@@ -304,6 +306,7 @@ def cifar_resnet56_v1(**kwargs):
 def cifar_resnet110_v1(**kwargs):
     r"""ResNet-110 V1 model for CIFAR10 from `"Deep Residual Learning for Image Recognition"
     <http://arxiv.org/abs/1512.03385>`_ paper.
+
     Parameters
     ----------
     pretrained : bool, default False
@@ -318,6 +321,7 @@ def cifar_resnet110_v1(**kwargs):
 def cifar_resnet20_v2(**kwargs):
     r"""ResNet-20 V2 model for CIFAR10 from `"Identity Mappings in Deep Residual Networks"
     <https://arxiv.org/abs/1603.05027>`_ paper.
+
     Parameters
     ----------
     pretrained : bool, default False
@@ -332,6 +336,7 @@ def cifar_resnet20_v2(**kwargs):
 def cifar_resnet56_v2(**kwargs):
     r"""ResNet-56 V2 model for CIFAR10 from `"Identity Mappings in Deep Residual Networks"
     <https://arxiv.org/abs/1603.05027>`_ paper.
+
     Parameters
     ----------
     pretrained : bool, default False
@@ -346,6 +351,7 @@ def cifar_resnet56_v2(**kwargs):
 def cifar_resnet110_v2(**kwargs):
     r"""ResNet-110 V2 model for CIFAR10 from `"Identity Mappings in Deep Residual Networks"
     <https://arxiv.org/abs/1603.05027>`_ paper.
+
     Parameters
     ----------
     pretrained : bool, default False
