@@ -6,23 +6,22 @@ that are very useful to start an object detection project. By going
 through this tutorial, we show how stacking the existing modules can
 produce a SOTA Single Shot Multibox Detection [Liu16]_ model.
 
-A Python training script to reproduce SOTA models
--------------------------------------------------
-Feel free to skip this tutorial because the training script is
-self-complete and only requires a single command line to launch.
+.. hint::
+    Feel free to skip this tutorial because the training script is
+    self-complete and only requires a single command line to launch.
 
-:download:`Download Full Python Script train_ssd.py<../../../scripts/detection/ssd/train_ssd.py>`
+    :download:`Download Full Python Script train_ssd.py<../../../scripts/detection/ssd/train_ssd.py>`
 
-Example usage:
+    Example usage:
 
-.. code-block:: bash
+    .. code-block:: bash
 
-    # train a default vgg16_atrous 300x300 model with Pascal VOC on GPU 0
-    python train_ssd.py
-    # train a resnet50_v1 512x512 model on GPU 0,1,2,3
-    python train_ssd.py --gpus 0,1,2,3 --network resnet50_v1 --data-shape 512
-    # check the supported arguments
-    python train_ssd.py --help
+        # train a default vgg16_atrous 300x300 model with Pascal VOC on GPU 0
+        python train_ssd.py
+        # train a resnet50_v1 512x512 model on GPU 0,1,2,3
+        python train_ssd.py --gpus 0,1,2,3 --network resnet50_v1 --data-shape 512
+        # check the supported arguments
+        python train_ssd.py --help
 
 """
 
