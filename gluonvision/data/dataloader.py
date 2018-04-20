@@ -39,31 +39,46 @@ def default_mp_pad_batchify_fn(data):
 
 
 class DetectionDataLoader(DataLoader):
-    """Wrapper of `mxnet.gluon.data.DataLoader` for detection.
+    """Data loader for detection dataset.
 
-    It loads data from a dataset and returns mini-batches of data.
+
+    It loads data batches from a dataset and then apply data
+    transformations. It's a subclass of :py:class:`mxnet.gluon.data.DataLoader`,
+    and therefore has very simliar APIs.
+
+
+    (TODO I feel gluon's dataloader doc is confusing as well, we probably want
+    to fix it as well)
 
     Parameters
     ----------
-    dataset : Dataset
-        Source dataset. Note that numpy and mxnet arrays can be directly used
-        as a Dataset.
+    dataset : mxnet.gluon.data.Dataset or numpy.ndarray or mxnet.ndarray.NDArray
+        The source dataset.
     batch_size : int
-        Size of mini-batch.
-    shuffle : bool
-        Whether to shuffle the samples.
-    sampler : Sampler
-        The sampler to use. Either specify sampler or shuffle, not both.
-    last_batch : {'keep', 'discard', 'rollover'}
-        How to handle the last batch if batch_size does not evenly divide
-        `len(dataset)`.
-        keep - A batch with less samples than previous batches is returned.
-        discard - The last batch is discarded if its incomplete.
-        rollover - The remaining samples are rolled over to the next epoch.
-    batch_sampler : Sampler
+        The size of mini-batch.
+    shuffle : bool, default False
+        If or not randomly shuffle the samples. Often use True for training
+        dataset and False for validation/test datasets
+    sampler : mxnet.gluon.data.Sampler, default None
+        The sampler to use. We should either specify a sampler or enable
+        shuffle, not both, because random shuffling is a sampling method.
+        (TODO, should we keep this arg?)
+    last_batch : {'keep', 'discard', 'rollover'}, default is TODO
+        How to handle the last batch if the batch size does not evenly divide by
+        the number of examples in the dataset. There are three options to deal
+        with the last batch if its size is smaller than the specified batch
+        size.
+
+        - keep: keep it
+        - discard: throw it away
+        - rollover: insert the examples to the beginning of the next batch
+    batch_sampler : mxnet.gluon.data.BatchSampler
+        (TODO, should we keep this arg?, if so, need to update the doc)
         A sampler that returns mini-batches. Do not specify batch_size,
         shuffle, sampler, and last_batch if batch_sampler is specified.
     batchify_fn : callable
+        (TODO, should we keep this arg?, if so, need to update the doc. namely
+        add the default callback into docs, instead of putting the codes here)
         Callback function to allow users to specify how to merge samples
         into a batch. Defaults to `default_pad_batchify_fn`::
             def default_pad_batchify_fn(data):
@@ -82,7 +97,9 @@ class DetectionDataLoader(DataLoader):
                     return nd.array(buf, dtype=data[0].dtype)
     num_workers : int, default 0
         The number of multiprocessing workers to use for data preprocessing.
+        (TODO, what does 0 mean? how about 1?)
         `num_workers > 0` is not supported on Windows yet.
+
     """
     def __init__(self, dataset, batch_size=None, shuffle=False, sampler=None,
                  last_batch=None, batch_sampler=None, batchify_fn=None,
