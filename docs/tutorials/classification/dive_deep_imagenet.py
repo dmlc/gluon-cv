@@ -170,7 +170,7 @@ Note that we set ``per_device_batch_size=64``, which may not suit GPUs with
 Memory smaller than 12GB. Please tune the value according to your specific configuration.
 
 The path ``'~/.mxnet/datasets/imagenet'`` is the default path if you
-prepare the data with our script.
+prepare the data `with our script <../examples_datasets/imagenet.html>`_.
 
 Optimizer, Loss and Metric
 --------------------------
