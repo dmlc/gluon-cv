@@ -49,10 +49,13 @@ from multiple CPU threads, and a fast SSD disk. Note that in total the compresse
 and extracted ImageNet data could occupy around 300GB disk space, thus a SSD with
 at least 300GB is necessary.
 
-:: note::
+.. note::
 
     Before dive into the details of the training, one can take a look at the complete
     training script. The command to reproduce the result is given in our model zoo.
+
+    Since the training is resource consuming, we don't actually execute code blocks
+    in this tutorial.
 
 Network structure
 -----------------
@@ -83,7 +86,7 @@ semantic segmentation. Here we use this model to demonstrate the training proces
 .. code-block:: python
 
     # GPUs to use
-    num_gpus = 1
+    num_gpus = 4
     ctx = [mx.gpu(i) for i in range(num_gpus)]
 
     # Get the model ResNet50_v2, with 10 output classes
@@ -152,19 +155,24 @@ training and validation datasets.
     # Calculate effective total batch size
     batch_size = per_device_batch_size * num_gpus
 
+    data_path = '~/.mxnet/datasets/imagenet'
+
     # Set train=True for training data
     # Set shuffle=True to shuffle the training data
     train_data = gluon.data.DataLoader(
-        imagenet.classification.ImageNet('~/.mxnet/datasets/imagenet', train=True).transform_first(transform_train),
+        imagenet.classification.ImageNet(data_path, train=True).transform_first(transform_train),
         batch_size=batch_size, shuffle=True, last_batch='discard', num_workers=num_workers)
 
     # Set train=False for validation data
     val_data = gluon.data.DataLoader(
-        imagenet.classification.ImageNet('~/.mxnet/datasets/imagenet', train=False).transform_first(transform_test),
+        imagenet.classification.ImageNet(data_path, train=False).transform_first(transform_test),
         batch_size=batch_size, shuffle=False, num_workers=num_workers)
 
 Note that we set ``per_device_batch_size=64``, which may not suit GPUs with
 Memory smaller than 12GB. Please tune the value according to your specific configuration.
+
+The path ``'~/.mxnet/datasets/imagenet'`` is the default path if you
+prepare the data with our script.
 
 Optimizer, Loss and Metric
 --------------------------
@@ -239,13 +247,9 @@ Training
 After all these preparation, we can finally start our training process!
 Following is the main training loop
 
-Notice: in order to not torture the tutorial building server, we only train the
-model on a tiny dataset for 5 epochs, instead of the full dataset. For a complete
-execution, you may want to set a larger value, for example ``epochs=120``
-
 .. code-block:: python
 
-    epochs = 5
+    epochs = 120
     lr_decay_count = 0
     log_interval = 50
     num_batch = len(train_data)
