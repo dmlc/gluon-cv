@@ -1,27 +1,28 @@
 """ImageNet classification dataset."""
-import os
+from os import path
 from mxnet.gluon.data.vision import ImageFolderDataset
 
 __all__ = ['ImageNet']
 
 class ImageNet(ImageFolderDataset):
-    """ImageNet classification dataset from http://www.image-net.org/.
+    """Load the ImageNet classification dataset.
+
+    Refer to :doc:`../build/examples_datasets/imagenet` for the description of
+    this dataset and how to prepare it.
 
     Parameters
     ----------
     root : str, default '~/.mxnet/datasets/imagenet'
-        Path to temp folder for storing data.
+        Path to the folder stored the dataset.
     train : bool, default True
-        Whether to load the training or testing set.
+        Whether to load the training or validation set.
     transform : function, default None
-        A user defined callback that transforms each sample. For example::
-
-        transform=lambda data, label: (data.astype(np.float32)/255, label)
-
-
+        A function that takes data and label and transforms them. Refer to
+        :doc:`./transforms` for examples. (TODO, should we restrict its datatype
+        to transformer?)
     """
-    def __init__(self, root=os.path.join('~', '.mxnet', 'datasets', 'imagenet'),
+    def __init__(self, root=path.join('~', '.mxnet', 'datasets', 'imagenet'),
                  train=True, transform=None):
         split = 'train' if train else 'val'
-        root = os.path.join(root, split)
+        root = path.join(root, split)
         super(ImageNet, self).__init__(root=root, flag=1, transform=transform)

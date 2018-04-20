@@ -4,38 +4,35 @@ gluonvision.data
 .. automodule:: gluonvision.data
 .. currentmodule:: gluonvision.data
 
-Popular datasets for vision tasks are provided in gluonvision.
-By default, we require all datasets reside in ~/.mxnet/datasets/ in order to have
-frustration-free user experience and less path-works.
 
-- For small datasets, such as MNIST, MNIST-fashion and CIFAR-10, we provide pre-defined class for out-of-box usage.
-- For larger datasets which require significant time for download/extracting, we provide scripts to ease preparation step.
+.. hint::
 
-.. note:: Please see :doc:`../../experiments/datasets` to understand how to initialize the datasets.
+   Please refer to :doc:`../build/examples_datasets/index` for the description
+   of the datasets listed in this page, and how to download and extract them.
+
+.. hint::
+
+   For small dataset such as MNIST and CIFAR10, please refer to `Gluon Vision
+   Datasets
+   <https://mxnet.incubator.apache.org/api/python/gluon/data.html#vision-datasets>`_,
+   which can be used directly without any downloading step.
 
 
-Pascal VOC
-----------
-Pascal VOC: http://host.robots.ox.ac.uk/pascal/VOC/ is a vision dataset which
+`ImageNet <http://www.image-net.org/>`_
+---------------------------------------
 
-- Provides standardised image data sets for object class recognition
-- Provides a common set of tools for accessing the data sets and annotations
-- Enables evaluation and comparison of different methods
-- Ran challenges evaluating performance on object class recognition (from 2005-2012, now finished)
+.. autoclass:: gluonvision.data.ImageNet
+
+`Pascal VOC <http://host.robots.ox.ac.uk/pascal/VOC/>`_
+-------------------------------------------------------
 
 .. autoclass:: gluonvision.data.VOCDetection
 .. autoclass:: gluonvision.data.VOCSegmentation
 .. autoclass:: gluonvision.data.VOCAugSegmentation
 
-ImageNet
---------
-ImageNet classification dataset is a large scale dataset for image classification, localization, etc..
 
-.. autoclass:: gluonvision.data.ImageNet
-
-ADE20K
-------
-ADE20K datasets: http://groups.csail.mit.edu/vision/datasets/ADE20K/ is the largest Scene Parsing Benchmark.
+`ADE20K <http://groups.csail.mit.edu/vision/datasets/ADE20K/>`_
+---------------------------------------------------------------
 
 .. autoclass:: gluonvision.data.ADE20KSegmentation
 
