@@ -124,7 +124,7 @@ class BatchNorm(HybridBlock):
             mean = osum / N
             sumvar = osqu - osum * osum / N
             bias_var = sumvar / N
-            std = F.sqrt(F.clip(bias_var, a_min=self.eps, a_max=bias_var.max()))
+            std = F.sqrt(F.clip(bias_var, a_min=self.eps, a_max=bias_var.max().asscalar()))
             # update running mean and var
             with autograd.pause():
                 unbias_var = sumvar / (N - 1)

@@ -28,7 +28,7 @@ def test_segmentation_utils():
     # count for pixAcc and mIoU
     total_inter, total_union, total_correct, total_label = 0, 0, 0, 0
     np_inter, np_union, np_correct, np_label = 0, 0, 0, 0
-    tbar = tqdm(range(100))
+    tbar = tqdm(range(50))
     for i in tbar:
         img, mask = dataset[i]
         # prepare data and make prediction

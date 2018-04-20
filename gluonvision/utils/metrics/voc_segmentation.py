@@ -4,23 +4,26 @@ import mxnet.ndarray as F
 
 __all__ = ['batch_pix_accuracy', 'batch_intersection_union', 'pixelAccuracy', 'intersectionAndUnion']
 
-def batch_pix_accuracy(output, target, bg=False):
+def batch_pix_accuracy(output, target, ignore_bg=False):
     """PixAcc"""
     # inputs are NDarray, output 4D, target 3D
     predict = F.argmax(output, 1)
     target = target.astype(predict.dtype)
-    if bg:
+    if ignore_bg:
         pixel_labeled = (target > 0).sum().asscalar()
         pixel_correct = (F.equal(predict, target)*(target > 0.0)).sum().asscalar()
     else:
-        pixel_labeled = target.size
-        pixel_correct = F.equal(predict, target).sum().asscalar()
+        pixel_labeled = (target >= 0).sum().asscalar()
+        pixel_correct = (F.equal(predict, target)*(target >= 0.0)).sum().asscalar()
+        #pixel_labeled = target.size
+        #pixel_correct = F.equal(predict, target).sum().asscalar()
     return pixel_correct, pixel_labeled
 
 
-def batch_intersection_union(output, target, nclass, bg=False):
+def batch_intersection_union(output, target, nclass, ignore_bg=False):
     """mIoU"""
     # inputs are NDarray, output 4D, target 3D
+    # ignore_bg=True, ignoring class 0; ignore_bg = False, use class 0
     predict = F.argmax(output, 1)
     target = target.astype(predict.dtype)
     mini = 0
@@ -28,13 +31,14 @@ def batch_intersection_union(output, target, nclass, bg=False):
     nbins = nclass
     predict = predict.asnumpy()
     target = target.asnumpy()
-    if bg:
+    if ignore_bg:
         mini = 1
         nbins -= 1
         predict = predict * (target > 0).astype(predict.dtype)
+    else:
+        predict = predict * (target >= 0).astype(predict.dtype)
     #intersection = predict * (F.equal(predict, target)).astype(predict.dtype)
     intersection = predict * (predict==target)
-    # bg=True, ignoring class 0; bg = False, use class 0
     # areas of intersection and union
     area_inter, _ = np.histogram(intersection, bins=nbins,
                                  range=(mini, maxi))

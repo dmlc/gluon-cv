@@ -113,6 +113,3 @@ class _PSPHead(HybridBlock):
     def hybrid_forward(self, F, x):
         x = self.psp(x)
         return self.block(x)
-
-# acronym for easy load
-_Net = PSPNet

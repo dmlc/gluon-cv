@@ -1,7 +1,9 @@
 """Pascal ADE20K Semantic Segmentation Dataset."""
 import os
 from PIL import Image
-from ..base import SegmentationDataset
+import numpy as np
+import mxnet as mx
+from ..segbase import SegmentationDataset
 
 class ADE20KSegmentation(SegmentationDataset):
     """ADE20K Semantic Segmentation Dataset.
@@ -34,9 +36,9 @@ class ADE20KSegmentation(SegmentationDataset):
     def __getitem__(self, index):
         img = Image.open(self.images[index]).convert('RGB')
         if self.mode == 'test':
+            img = self._img_transform(img)
             if self.transform is not None:
                 img = self.transform(img)
-            img = self._img_transform(img)
             return img, os.path.basename(self.images[index])
         mask = Image.open(self.masks[index])
         # synchrosized transform
@@ -57,9 +59,16 @@ class ADE20KSegmentation(SegmentationDataset):
 
         return img, mask
 
+    def _mask_transform(self, mask):
+        return mx.nd.array(np.array(mask) - 1, mx.cpu(0)).astype('int32')
+
     def __len__(self):
         return len(self.images)
 
+    @property
+    def num_class(self):
+        """Number of categories."""
+        return 150
 
 def _get_ade20k_pairs(folder, mode='train'):
     img_paths = []
@@ -83,6 +92,3 @@ def _get_ade20k_pairs(folder, mode='train'):
                 print('cannot find the mask:', maskpath)
 
     return img_paths, mask_paths
-
-# acronym for easy load
-_Segmentation = ADE20KSegmentation

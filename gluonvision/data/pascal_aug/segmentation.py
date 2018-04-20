@@ -2,7 +2,7 @@
 import os
 import scipy.io
 from PIL import Image
-from ..base import SegmentationDataset
+from ..segbase import SegmentationDataset
 
 class VOCAugSegmentation(SegmentationDataset):
     """Pascal VOC Augmented Semantic Segmentation Dataset.
@@ -82,13 +82,4 @@ class VOCAugSegmentation(SegmentationDataset):
         return ('background', 'airplane', 'bicycle', 'bird', 'boat', 'bottle',
                 'bus', 'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse',
                 'motorcycle', 'person', 'potted-plant', 'sheep', 'sofa', 'train',
-                'tv', 'ambigious')
-
-    @property
-    def num_class(self):
-        """Number of categories."""
-        return len(self.classes)
-
-
-# acronym for easy load
-_Segmentation = VOCAugSegmentation
+                'tv')

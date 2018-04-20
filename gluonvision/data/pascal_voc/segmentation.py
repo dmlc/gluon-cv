@@ -2,7 +2,7 @@
 import os
 import numpy as np
 from PIL import Image
-from ..base import SegmentationDataset
+from ..segbase import SegmentationDataset
 
 class VOCSegmentation(SegmentationDataset):
     """Pascal VOC Semantic Segmentation Dataset.
@@ -59,13 +59,13 @@ class VOCSegmentation(SegmentationDataset):
     def __getitem__(self, index):
         img = Image.open(self.images[index]).convert('RGB')
         if self.train == 'test':
+            img = self._img_transform(img)
             if self.transform is not None:
                 img = self.transform(img)
-            img = self._img_transform(img)
             return img, os.path.basename(self.images[index])
         timg = Image.open(self.masks[index])
         target = np.array(timg, dtype=np.uint8)
-        target[target == 255] = 21
+        target[target == 255] = -1
         target = Image.fromarray(target)
         # synchrosized transform
         if self.train == 'train':
@@ -91,13 +91,4 @@ class VOCSegmentation(SegmentationDataset):
         return ('background', 'airplane', 'bicycle', 'bird', 'boat', 'bottle',
                 'bus', 'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse',
                 'motorcycle', 'person', 'potted-plant', 'sheep', 'sofa', 'train',
-                'tv', 'ambigious')
-
-    @property
-    def num_class(self):
-        """Number of categories."""
-        return len(self.classes)
-
-
-# acronym for easy load
-_Segmentation = VOCSegmentation
+                'tv')
