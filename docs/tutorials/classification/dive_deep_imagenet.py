@@ -1,14 +1,24 @@
 """Train Your Own Model on ImageNet
 ======================
 
-``ImageNet`` is the most widely-used dataset for image classification task.
+``ImageNet`` is the most well-known dataset for image classification task.
 Since it's been published, there has been plenty of works pushing the performance
-by a large scale.
+of classification accuracy.
 
 Although there are a lot of available models, it is still a non-trivial job to
-train a well-performing model on ImageNet from scratch. In this tutorial, we will
-try to pull everything necessary together to walk you through the process of
-training a model on ImageNet with state-of-the-art accuracy.
+train a well-performing model on ``ImageNet`` from scratch. In this tutorial, we will
+try to pull necessary code together to walk you through the process of
+training a model on ``ImageNet``.
+
+.. note::
+
+    :download:`Download Python Script train_imagenet.py<../../../scripts/classification/imagenet/train_imagenet.py>`
+
+    Before dive into the details of the training, one can take a look at the complete
+    training script. The commands to reproduce papers are given in our model zoo.
+
+    Since the training is extremely resource consuming, we don't actually
+    execute code blocks in this tutorial.
 
 Prerequisites
 -------------
@@ -16,22 +26,20 @@ Prerequisites
 **Knowledge**
 
 We assume readers have a basic understanding of ``Gluon``. If you would
-like to know more about it, we suggest `Crash
+like to know more about it, we suggest the `Gluon Crash
 Course <http://gluon-crash-course.mxnet.io/index.html>`__ as a good
 place to start.
 
 Also, it is suggested that readers have read our tutorials on
-
-- `CIFAR10 Training <dive_deep_cifar10.html>`_
-- `ImageNet Demo <demo_imagenet.html>`_
-
-to gain experience and basic understanding of model training.
+`CIFAR10 Training <dive_deep_cifar10.html>`_
+and `ImageNet Demo <demo_imagenet.html>`_
+to gain some experience of model training.
 
 **Data Preparation**
 
 Unlike ``CIFAR10``, we need to prepare the data manually.
 If you haven't done so, please go through our tutorial on
-`Prepare ImageNet Data <examples_datasets/imagenet.html>`_ and
+`Prepare ImageNet Data <../examples_datasets/imagenet.html>`_ and
 prepare the data.
 
 **Hardware**
@@ -46,27 +54,19 @@ strong GPUs to work together.
 
 For data IO, we recommend a strong CPU and a SSD disk. Data loading can largely benefit
 from multiple CPU threads, and a fast SSD disk. Note that in total the compressed
-and extracted ImageNet data could occupy around 300GB disk space, thus a SSD with
+and extracted ``ImageNet`` data could occupy around 300GB disk space, thus a SSD with
 at least 300GB is necessary.
-
-.. note::
-
-    Before dive into the details of the training, one can take a look at the complete
-    training script. The command to reproduce the result is given in our model zoo.
-
-    Since the training is resource consuming, we don't actually execute code blocks
-    in this tutorial.
 
 Network structure
 -----------------
 
-After the installation, we can load the necessary libraries into python.
+If everything's prepared, Let's get started!
+
+First, load the necessary libraries into python.
 
 .. code-block:: python
 
-    from __future__ import division
-
-    import argparse, time, logging, random, math
+    import argparse, time,
 
     import numpy as np
     import mxnet as mx
@@ -80,12 +80,11 @@ After the installation, we can load the necessary libraries into python.
     from gluonvision.utils import makedirs, TrainingHistory
 
 ``ResNet50_v2`` is a network with balanced prediction accuracy and computational cost.
-It's been widely used not only in classification, but also object detection and
-semantic segmentation. Here we use this model to demonstrate the training process.
+Here we use this model to demonstrate the training process.
 
 .. code-block:: python
 
-    # GPUs to use
+    # number of GPUs to use
     num_gpus = 4
     ctx = [mx.gpu(i) for i in range(num_gpus)]
 
@@ -94,7 +93,7 @@ semantic segmentation. Here we use this model to demonstrate the training proces
     net.initialize(mx.init.Xavier(magnitude=2), ctx = ctx)
 
 
-Note that the ResNet model we use here for ImageNet is different in structure from
+Note that the ResNet model we use here for ``ImageNet`` is different in structure from
 the one we used to train ``CIFAR10``. Please refer to the original paper or
 our implementations for details.
 
@@ -102,8 +101,7 @@ Data Augmentation and Data Loader
 ---------------------------------
 
 Data augmentation is essential for a good result. It is similar to what we have
-in the CIFAR10 training tutorial, just different in the parameters.
-
+in the ``CIFAR10`` training tutorial, just different in the parameters.
 
 We compose our transform functions as following:
 
@@ -125,8 +123,8 @@ We compose our transform functions as following:
     ])
 
 
-Since ImageNet contains images with much higher resolution and quality than
-CIFAR10, thus we can crop a larger image (224x224) as the input to the model.
+Since ``ImageNet`` contains images with much higher resolution and quality than
+``CIFAR10``, thus we can crop a larger image (224x224) as the input to the model.
 
 For prediction, we still need a deterministic result. The transform function is:
 
@@ -140,7 +138,7 @@ For prediction, we still need a deterministic result. The transform function is:
     ])
 
 
-Notice that it is important to keep the normalization step, since the
+Notice that it is important to keep the normalization consistent, since the
 model only works well on input with the same distribution.
 
 With the transform functions, we can define data loaders for our
@@ -151,7 +149,7 @@ training and validation datasets.
     # Batch Size for Each GPU
     per_device_batch_size = 64
     # Number of data loader workers
-    num_workers = 8
+    num_workers = 32
     # Calculate effective total batch size
     batch_size = per_device_batch_size * num_gpus
 
@@ -208,8 +206,7 @@ With 1000 classes the model may not always rate the correct answer with the high
 rank. Besides the top-1 accuracy, we also consider top-5 accuracy as a measurement
 of how well a model can predict.
 
-At every epoch, we record the metric values, and will print it in the
-end of the training.
+At the end of every epoch, we record and print the metric scores.
 
 .. code-block:: python
 
@@ -313,7 +310,7 @@ Next Step
 
 This is our script to help you to train a model on ``ImageNet``.
 
-Or, if you want like to know what can be done with the model you just
+If you want like to know what can be done with the model you just
 trained, please read the tutorial about `Transfer learning <transfer_learning_minc.html>`__.
 
 Besides classification, deep learning models nowadays can do other exciting jobs
