@@ -225,8 +225,7 @@ class MultiEvalModel(object):
             score = _resize_image(outputs, h, w)
             scores += score
 
-        if target is None:
-            return scores
+        return scores
 
     def flip_inference(self, image):
         assert(isinstance(image, NDArray))
