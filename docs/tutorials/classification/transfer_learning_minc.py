@@ -124,13 +124,10 @@ batch_size = per_device_batch_size * max(num_gpus, 1)
 ################################################################################
 # Things to keep in mind:
 #
-# 1. ``epochs = 5`` is just for this tutorial with the tiny dataset. please
-# change it to a larger number in a full training, for instance 40.
-# 2. ``per_device_batch_size`` is also set to a small number. In a full training
-# you can try larger number like 64.
+# 1. ``epochs = 5`` is just for this tutorial with the tiny dataset. please change it to a larger number in a full training, for instance 40.
+# 2. ``per_device_batch_size`` is also set to a small number. In a full training you can try larger number like 64.
 # 3. remember to tune ``num_gpus`` and ``num_workers`` according to your machine.
-# 4. A pre-trained model is already in a pretty good status.
-# So we can start with a small ``lr``.
+# 4. A pre-trained model is already in a pretty good status. So we can start with a small ``lr``.
 #
 # Data Augmentation
 # -----------------
@@ -142,8 +139,7 @@ batch_size = per_device_batch_size * max(num_gpus, 1)
 # 2. Randomly crop the image and resize it to 224x224
 # 3. Randomly flip the image horizontally
 # 4. Randomly disturb the color and add noise
-# 5. Transpose the data from Height*Width*Channel to Channel*Height*Width,
-# and map values from [0, 255] to [0, 1]
+# 5. Transpose the data from Height*Width*Channel to Channel*Height*Width, and map values from [0, 255] to [0, 1]
 # 6. Normalize with the mean and standard deviation from the ImageNet dataset.
 #
 jitter_param = 0.4
