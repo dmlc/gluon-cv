@@ -1,12 +1,4 @@
-"""
-Train ImageNet
-==============
-
-"""
-
-from __future__ import division
-
-import argparse, time, logging, math
+import argparse, time, logging
 
 import mxnet as mx
 import numpy as np
@@ -17,7 +9,7 @@ from mxnet.gluon.model_zoo import vision as models
 from mxnet.gluon.data.vision import transforms
 
 from gluonvision.data import imagenet
-from gluonvision.utils import makedirs
+from gluonvision.utils import makedirs, TrainingHistory
 
 # CLI
 parser = argparse.ArgumentParser(description='Train a model for image classification.')
@@ -53,14 +45,20 @@ parser.add_argument('--batch-norm', action='store_true',
                     help='enable batch normalization or not in vgg. default is false.')
 parser.add_argument('--use-pretrained', action='store_true',
                     help='enable using pretrained model from gluon.')
-parser.add_argument('--log-interval', type=int, default=50, help='Number of batches to wait before logging.')
+parser.add_argument('--log-interval', type=int, default=50,
+                    help='Number of batches to wait before logging.')
 parser.add_argument('--save-frequency', type=int, default=10,
                     help='frequency of model saving.')
 parser.add_argument('--save-dir', type=str, default='params',
                     help='directory of saved models')
 parser.add_argument('--logging-dir', type=str, default='logs',
                     help='directory of training logs')
+parser.add_argument('--save-plot-dir', type=str, default='.',
+                    help='the path to save the history plot')
 opt = parser.parse_args()
+
+logging.basicConfig(level=logging.INFO)
+logging.info(opt)
 
 batch_size = opt.batch_size
 classes = 1000
@@ -89,6 +87,8 @@ net = models.get_model(model_name, **kwargs)
 
 acc_top1 = mx.metric.Accuracy()
 acc_top5 = mx.metric.TopKAccuracy(5)
+train_history = TrainingHistory(['training-top1-err', 'training-top5-err',
+                                 'validation-top1-err', 'validation-top5-err'])
 
 save_frequency = opt.save_frequency
 if opt.save_dir and save_frequency:
@@ -98,20 +98,14 @@ else:
     save_dir = ''
     save_frequency = 0
 
-logging_handlers = [logging.StreamHandler()]
-if opt.logging_dir:
-    logging_dir = opt.logging_dir
-    makedirs(logging_dir)
-    logging_handlers.append(logging.FileHandler('%s/train_imagenet_%s.log'%(logging_dir, model_name)))
-
-logging.basicConfig(level=logging.INFO, handlers = logging_handlers)
-logging.info(opt)
+plot_path = opt.save_plot_dir
 
 normalize = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 jitter_param = 0.0 if model_name.startswith('mobilenet') else 0.4
 lighting_param = 0.0 if model_name.startswith('mobilenet') else 0.1
 
 transform_train = transforms.Compose([
+    transforms.Resize(480),
     transforms.RandomResizedCrop(224),
     transforms.RandomFlipLeftRight(),
     transforms.RandomColorJitter(brightness=jitter_param, contrast=jitter_param,
@@ -198,9 +192,17 @@ def train(epochs, ctx):
         _, top1 = acc_top1.get()
         _, top5 = acc_top5.get()
         err_top1, err_top5 = (1-top1, 1-top5)
-        logging.info('[Epoch %d] training: err-top1=%f err-top5=%f'%(epoch, err_top1, err_top5))
-        logging.info('[Epoch %d] time cost: %f'%(epoch, time.time()-tic))
+        train_loss /= num_batch * batch_size
+
         err_top1_val, err_top5_val = test(ctx, val_data)
+        train_history.update([err_top1, err_top5, err_top1_val, err_top5_val])
+        train_history.plot(['training-top1-err', 'validation-top1-err'],
+                           save_path='%s/%s_top1.png'%(plot_path, model_name))
+        train_history.plot(['training-top5-err', 'validation-top5-err'],
+                           save_path='%s/%s_top5.png'%(plot_path, model_name))
+
+        logging.info('[Epoch %d] training: err-top1=%f err-top5=%f loss=%f'%(epoch, err_top1, err_top5, train_loss))
+        logging.info('[Epoch %d] time cost: %f'%(epoch, time.time()-tic))
         logging.info('[Epoch %d] validation: err-top1=%f err-top5=%f'%(epoch, err_top1_val, err_top5_val))
 
         if err_top1_val < best_val_score and epoch > 50:
