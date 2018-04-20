@@ -1,4 +1,4 @@
-"""Dive deep into SSD training: 5 tips you may not know
+"""Dive deep into SSD training: 3 tips to boost performance
 ============================================================
 
 In the previous tutorial :ref:`sphx_glr_build_examples_detection_train_ssd_voc.py`, we briefly went through
@@ -120,7 +120,7 @@ print('sample-wise norm loc loss:', sample_loc_loss * rescale_loc)
 
 
 ############################################################################
-# Initializer matters: try
+# Initializer matters: don't stick to single initializer
 # --------------------------------------------------------
 # Though SSD networks are based on pre-trained feature extractors, namely ``base_network``
 # in the context, there are convolutional layers appended to the ``base_network``
@@ -165,7 +165,9 @@ print('class prediction shape:', cls_preds.shape)
 
 ############################################################################
 # There are basically two ways to handle the prediction:
+#
 # 1. take argmax of the prediction along class axis, i.e., the most likely class this object belongs to
+#
 # 2. process ``N`` foreground classes separately, in this case, rank 2 class for example still have a
 # chance to survive as the final prediction.
 #
@@ -176,14 +178,15 @@ for k, v in zip(['bg', 'apple', 'orange', 'person', 'dog', 'cat'], cls_prob.asnu
     print(k, v)
 
 ############################################################################
-# The probabilities of the dog and cat are so close, if we use method 1,
-# we are losing the bet when cat is the correct decision.
+# The probabilities of the dog and cat are so close that if we use method 1,
+# we are losing the bet if cat is the correct decision.
 #
-# It turns out that using method2, we achieved 0.5~0.8 better mAP in evaluation.
+# It turns out that switching from method 1 to method 2, we achieved 0.5~0.8 better mAP in evaluation.
 #
-# One drawback of method 2 is that is significantly slower than method 1.
+# One obvious drawback of method 2 is that is significantly slower than method 1.
 # In terms of N classes, it's O(N) versus O(1) in method 1.
+# This may or may not be a problem depending on the use case, but feel free to switch them if you want.
 #
 # .. hint::
-#   You can checkout :doc:`gluonvision.model_zoo.coders.MultiClassDecoder` and
-#   :doc:`gluonvision.model_zoo.coders.MultiPerClassDecoder`, which implements method 1 and 2, respectively.
+#   You can checkout :py:meth:`gluonvision.model_zoo.coders.MultiClassDecoder` and
+#   :py:meth:`gluonvision.model_zoo.coders.MultiPerClassDecoder`, which implements method 1 and 2, respectively.

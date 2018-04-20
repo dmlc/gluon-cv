@@ -46,6 +46,9 @@ class DetectionDataLoader(DataLoader):
     transformations. It's a subclass of :py:class:`mxnet.gluon.data.DataLoader`,
     and therefore has very simliar APIs.
 
+    The main purpose of the DataLoader is to pad variable length of labels from
+    each image, because they have different amount of objects.
+
 
     (TODO I feel gluon's dataloader doc is confusing as well, we probably want
     to fix it as well)
