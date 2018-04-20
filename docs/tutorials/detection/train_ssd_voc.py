@@ -10,7 +10,7 @@ produce a SOTA Single Shot Multibox Detection [Liu16]_ model.
     Feel free to skip this tutorial because the training script is
     self-complete and only requires a single command line to launch.
 
-    :download:`Download Full Python Script train_ssd.py<../../../scripts/detection/ssd/train_ssd.py>`
+    :download:`Download Full Python Script: train_ssd.py<../../../scripts/detection/ssd/train_ssd.py>`
 
     Example usage:
 
@@ -172,8 +172,18 @@ cids, scores, bboxes = net(x)
 print(net.target_generator)
 
 ##############################################################################
-# You can see there are: a bounding boxes encoder which transfers raw coordinates to bbox prediction targets, a class encoder which generates class labels for each anchor box.
-# Matcher and samplers included are used to apply various advanced strategies described in paper.
+# You can observe that there are:
+#
+# - A bounding boxes encoder which transfers raw coordinates to bbox prediction targets.
+#
+# - A class encoder which generates class labels for each anchor box.
+#
+# - Matcher and samplers included are used to apply various advanced strategies described in paper.
+#
+# .. hint::
+#
+#   Due to length of this tutorial, please checkout the training :download:`script <../../../scripts/detection/ssd/train_ssd.py>` for full implementations.
+#   Don't forget this tutorial: :ref:`sphx_glr_build_examples_detection_train_ssd_advanced.py`.
 
 ##########################################################
 # References
