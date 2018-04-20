@@ -95,6 +95,7 @@ class SoftmaxCrossEntropyLoss(gluon.loss.Loss):
         self._size_average = size_average
 
     def hybrid_forward(self, F, pred, label, sample_weight=None):
+        """hybrid_forward"""
         if not self._from_logits:
             pred = F.log_softmax(pred, self._axis)
         if self._sparse_label:
