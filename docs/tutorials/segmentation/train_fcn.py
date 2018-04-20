@@ -178,7 +178,7 @@ plt.show()
 #     We use different learning rate for FCN "head" and the base network. For the FCN "head",
 #     we use :math:`10\times` base learning rate, because those layers are learned from scratch.
 #     We use a poly-like learning rate scheduler for FCN training, provided in :class:`gluonvision.utils.PolyLRScheduler`.
-#     The learning rate is given by :math:`lr = baselr \times (1-iter)^power`
+#     The learning rate is given by :math:`lr = baselr \times (1-iter)^{power}`
 # 
 # You can `Start Training Now`_.
 # 

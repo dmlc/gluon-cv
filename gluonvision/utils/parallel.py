@@ -244,6 +244,6 @@ def criterion_parallel_apply(module, inputs, targets, kwargs_tup=None, sync=Fals
             outputs.append(output)
         return tuple(outputs)
     else:
-        outputs = [module(*input, **target, **kwargs) \
+        outputs = [module(*input, *target, **kwargs) \
             for (input, target, kwargs) in zip(inputs, targets, kwargs_tup)]
         return tuple(outputs)

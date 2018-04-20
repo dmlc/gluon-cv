@@ -1,12 +1,10 @@
 """Pascal VOC Semantic Segmentation Dataset."""
 import os
-import random
 import numpy as np
-from PIL import Image, ImageOps, ImageFilter
-from mxnet.gluon.data import dataset
+from PIL import Image
+from ..base import SegmentationDataset
 
-
-class VOCSegmentation(dataset.Dataset):
+class VOCSegmentation(SegmentationDataset):
     """Pascal VOC Semantic Segmentation Dataset.
 
     Parameters
@@ -23,6 +21,7 @@ class VOCSegmentation(dataset.Dataset):
     BASE_DIR = 'VOC2012'
     def __init__(self, root=os.path.expanduser('~/.mxnet/datasets/voc'),
                  split='train', transform=None, target_transform=None):
+        super(VOCSegmentation, self).__init__(root)
         self.root = root
         _voc_root = os.path.join(self.root, self.BASE_DIR)
         _mask_dir = os.path.join(_voc_root, 'SegmentationClass')
@@ -57,6 +56,35 @@ class VOCSegmentation(dataset.Dataset):
         if self.train != 'test':
             assert (len(self.images) == len(self.masks))
 
+    def __getitem__(self, index):
+        img = Image.open(self.images[index]).convert('RGB')
+        if self.train == 'test':
+            if self.transform is not None:
+                img = self.transform(img)
+            img = self._img_transform(img)
+            return img, os.path.basename(self.images[index])
+        timg = Image.open(self.masks[index])
+        target = np.array(timg, dtype=np.uint8)
+        target[target == 255] = 21
+        target = Image.fromarray(target)
+        # synchrosized transform
+        if self.train == 'train':
+            img, target = self._sync_transform(img, target)
+        elif self.train == 'val':
+            img, target = self._val_sync_transform(img, target)
+        else:
+            raise RuntimeError('unknown mode for dataloader: {}'.format(self.mode))
+        # general resize, normalize and toTensor
+        if self.transform is not None:
+            img = self.transform(img)
+        if self.target_transform is not None:
+            target = self.target_transform(target)
+
+        return img, target
+
+    def __len__(self):
+        return len(self.images)
+
     @property
     def classes(self):
         """Category names."""
@@ -70,97 +98,6 @@ class VOCSegmentation(dataset.Dataset):
         """Number of categories."""
         return len(self.classes)
 
-    def __getitem__(self, index):
-        img = Image.open(self.images[index]).convert('RGB')
-        if self.train == 'test':
-            if self.transform is not None:
-                img = self.transform(img)
-            return img, os.path.basename(self.images[index])
-
-        timg = Image.open(self.masks[index])
-        target = np.array(timg, dtype=np.uint8)
-        target[target == 255] = 21
-        target = Image.fromarray(target)
-
-        # synchrosized transform
-        if self.train == 'train':
-            img, target = self._sync_transform(img, target)
-        elif self.train == 'val':
-            img, target = self._val_sync_transform(img, target)
-
-        # general resize, normalize and toTensor
-        if self.transform is not None:
-            img = self.transform(img)
-        if self.target_transform is not None:
-            target = self.target_transform(target)
-
-        return img, target
-
-    def __len__(self):
-        return len(self.images)
-
-    def _val_sync_transform(self, img, mask):
-        outsize = 480
-        short = outsize
-        w, h = img.size
-        if w > h:
-            oh = short
-            ow = int(1.0 * w * oh / h)
-        else:
-            ow = short
-            oh = int(1.0 * h * ow / w)
-        img = img.resize((ow, oh), Image.BILINEAR)
-        mask = mask.resize((ow, oh), Image.NEAREST)
-        # center crop
-        w, h = img.size
-        x1 = int(round((w - outsize) / 2.))
-        y1 = int(round((h - outsize) / 2.))
-        img = img.crop((x1, y1, x1+outsize, y1+outsize))
-        mask = mask.crop((x1, y1, x1+outsize, y1+outsize))
-
-        return img, mask
-
-    def _sync_transform(self, img, mask):
-        # random mirror
-        if random.random() < 0.5:
-            img = img.transpose(Image.FLIP_LEFT_RIGHT)
-            mask = mask.transpose(Image.FLIP_LEFT_RIGHT)
-        base_size = 520
-        crop_size = 480
-        # random scale (short edge from 480 to 720)
-        long_size = random.randint(int(base_size*0.5), int(base_size*2.0))
-        w, h = img.size
-        if h > w:
-            oh = long_size
-            ow = int(1.0 * w * oh / h)
-            short_size = ow
-        else:
-            ow = long_size
-            oh = int(1.0 * h * ow / w)
-            short_size = oh
-        img = img.resize((ow, oh), Image.BILINEAR)
-        mask = mask.resize((ow, oh), Image.NEAREST)
-        # random rotate -10~10, mask using NN rotate
-        deg = random.uniform(-10, 10)
-        img = img.rotate(deg, resample=Image.BILINEAR)
-        mask = mask.rotate(deg, resample=Image.NEAREST)
-        # pad crop
-        if short_size < crop_size:
-            padh = crop_size - oh if oh < crop_size else 0
-            padw = crop_size - ow if ow < crop_size else 0
-            img = ImageOps.expand(img, border=(0, 0, padw, padh), fill=0)
-            mask = ImageOps.expand(mask, border=(0, 0, padw, padh), fill=0)
-        # random crop 480
-        w, h = img.size
-        x1 = random.randint(0, w - crop_size)
-        y1 = random.randint(0, h - crop_size)
-        img = img.crop((x1, y1, x1+crop_size, y1+crop_size))
-        mask = mask.crop((x1, y1, x1+crop_size, y1+crop_size))
-        # gaussian blur as in PSP
-        if random.random() < 0.5:
-            img = img.filter(ImageFilter.GaussianBlur(
-                radius=random.random()))
-        return img, mask
 
 # acronym for easy load
 _Segmentation = VOCSegmentation
