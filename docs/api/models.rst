@@ -169,6 +169,9 @@ Common Components
 .. autoclass:: MultiClassDecoder
     :members:
 
+.. autoclass:: MultiPerClassDecoder
+    :members:
+
 
 :hidden:`Features`
 ~~~~~~~~~~~~~~~~~~~~~~

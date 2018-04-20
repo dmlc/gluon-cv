@@ -17,15 +17,11 @@ class VOCDetection(VisionDataset):
     Parameters
     ----------
     root : str, default '~/mxnet/datasets/voc'
-        Path to folder stored the dataset
+        Path to folder storing the dataset.
     splits : list of tuples, default ((2007, 'trainval'), (2012, 'trainval'))
         List of combinations of (year, name)
         For years, candidates can be: 2007, 2012.
         For names, candidates can be: 'train', 'val', 'trainval', 'test'.
-    flag : {0, 1}, default 1
-        If 0, always convert images to greyscale.
-        If 1, always convert images to colored (RGB).
-        (TODO when we need it?)
     transform : callable, defaut None
         A function that takes data and label and transforms them. Refer to
         :doc:`./transforms` for examples.
@@ -35,35 +31,30 @@ class VOCDetection(VisionDataset):
     index_map : dict, default None
         In default, the 20 classes are mapped into indices from 0 to 19. We can
         customize it by providing a str to int dict specifying how to map class
-        names to indicies. (TODO why need it?)
-    preload : bool, default True
-        If True, then parse and load all labels nto memory during
+        names to indicies. Use by advanced users only, when you want to swap the orders
+        of class labels.
+    preload_label : bool, default True
+        If True, then parse and load all labels into memory during
         initialization. It often accelerate speed but require more memory
-        usage. (TODO, change to preload_label? how many memory we need? when we
-        should disable it?)
-    normalize_bbox : bool, default False
-        Whether or not normalize box coordinates to range (0, 1) by dividing width/height.
-        (TODO, do we need to have this flag?)
+        usage. Typical preloaded labels took tens of MB. You only need to disable it
+        when your dataset is extreamly large.
     """
     CLASSES = ('aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car',
                'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse', 'motorbike',
                'person', 'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor')
     def __init__(self, root=os.path.join('~', '.mxnet', 'datasets', 'voc'),
                  splits=((2007, 'trainval'), (2012, 'trainval')),
-                 flag=1, transform=None, index_map=None,
-                 preload=True, normalize_bbox=False):
+                 transform=None, index_map=None, preload_label=True):
         super(VOCDetection, self).__init__(root)
-        self._normalize_bbox = normalize_bbox
         self._im_shapes = {}
         self._root = os.path.expanduser(root)
-        self._flag = flag
         self._transform = transform
         self._splits = splits
         self._items = self._load_items(splits)
         self._anno_path = os.path.join('{}', 'Annotations', '{}.xml')
         self._image_path = os.path.join('{}', 'JPEGImages', '{}.jpg')
         self.index_map = index_map or dict(zip(self.classes, range(self.num_class)))
-        self._label_cache = self._preload_labels() if preload else None
+        self._label_cache = self._preload_labels() if preload_label else None
 
     def __str__(self):
         detail = ','.join([str(s[0]) + s[1] for s in self._splits])
@@ -81,7 +72,7 @@ class VOCDetection(VisionDataset):
         img_id = self._items[idx]
         img_path = self._image_path.format(*img_id)
         label = self._label_cache[idx] if self._label_cache else self._load_label(idx)
-        img = mx.image.imread(img_path, self._flag)
+        img = mx.image.imread(img_path, 1)
         if self._transform is not None:
             return self._transform(img, label)
         return img, label
@@ -123,11 +114,7 @@ class VOCDetection(VisionDataset):
                 self._validate_label(xmin, ymin, xmax, ymax, width, height)
             except AssertionError as e:
                 raise RuntimeError("Invalid label at {}, {}".format(anno_path, e))
-            if self._normalize_bbox:
-                label.append([xmin / width, ymin / height, xmax / width,
-                              ymax / height, cls_id, difficult])
-            else:
-                label.append([xmin, ymin, xmax, ymax, cls_id, difficult])
+            label.append([xmin, ymin, xmax, ymax, cls_id, difficult])
         return np.array(label)
 
     def _validate_label(self, xmin, ymin, xmax, ymax, width, height):
