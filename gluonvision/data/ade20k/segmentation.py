@@ -19,6 +19,7 @@ class ADE20KSegmentation(SegmentationDataset):
     target_transform : callable, optional
         A function that transforms the labels
     """
+    # pylint: disable=abstract-method
     BASE_DIR = 'ADEChallengeData2016'
     def __init__(self, root=os.path.expanduser('~/.mxnet/datasets/ade'),
                  split='train', transform=None, target_transform=None):

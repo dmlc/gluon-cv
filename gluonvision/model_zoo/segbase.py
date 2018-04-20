@@ -1,17 +1,15 @@
 """Base Model for Semantic Segmentation"""
 import math
-import threading
 import numpy as np
 import mxnet as mx
 from mxnet import gluon
 from mxnet.ndarray import NDArray
-import mxnet.ndarray as F
 from mxnet.gluon.nn import HybridBlock
+from mxnet.gluon.loss import _apply_weighting
 from ..utils.metrics import voc_segmentation
 from ..utils.parallel import parallel_apply
 from .dilated import dilatedresnetv0
-from mxnet.gluon.loss import _apply_weighting
-# pylint: disable=abstract-method
+# pylint: disable=abstract-method,arguments-differ,dangerous-default-value
 
 __all__ = ['get_segmentation_model', 'SegBaseModel', 'SegEvalModel', 'MultiEvalModel',
            'SoftmaxCrossEntropyLoss', 'SoftmaxCrossEntropyLossWithAux']
@@ -121,8 +119,10 @@ class SoftmaxCrossEntropyLossWithAux(SoftmaxCrossEntropyLoss):
         self.aux_weight = aux_weight
 
     def aux_forward(self, F, pred1, pred2, label, **kwargs):
-        loss1 = super(SoftmaxCrossEntropyLossWithAux, self).hybrid_forward(F, pred1, label, **kwargs)
-        loss2 = super(SoftmaxCrossEntropyLossWithAux, self).hybrid_forward(F, pred2, label, **kwargs)
+        loss1 = super(SoftmaxCrossEntropyLossWithAux, self). \
+            hybrid_forward(F, pred1, label, **kwargs)
+        loss2 = super(SoftmaxCrossEntropyLossWithAux, self). \
+            hybrid_forward(F, pred2, label, **kwargs)
         return loss1 + self.aux_weight * loss2
 
     def hybrid_forward(self, F, *inputs, **kwargs):
@@ -147,14 +147,14 @@ class SegEvalModel(object):
 class MultiEvalModel(object):
     """Multi-size Segmentation Eavluator"""
     def __init__(self, module, nclass, ctx_list,
-                 base_size=520, crop_size = 480, flip=True,
+                 base_size=520, crop_size=480, flip=True,
                  scales=[0.5, 0.75, 1.0, 1.25, 1.5, 1.75]):
         self.flip = flip
         self.ctx_list = ctx_list
         self.base_size = base_size
         self.crop_size = crop_size
         self.nclass = nclass
-        self.scales=scales
+        self.scales = scales
         module.collect_params().reset_ctx(ctx=ctx_list)
         self.evalmodule = SegEvalModel(module)
 
@@ -173,8 +173,7 @@ class MultiEvalModel(object):
         crop_size = self.crop_size
         stride_rate = 2.0/3.0
         stride = int(crop_size*stride_rate)
-        
-        scores = mx.nd.zeros((batch,self.nclass,h,w), ctx=image.context)
+        scores = mx.nd.zeros((batch, self.nclass, h, w), ctx=image.context)
         for scale in self.scales:
             long_size = int(math.ceil(base_size * scale))
             if h > w:
@@ -197,13 +196,13 @@ class MultiEvalModel(object):
                     pad_img = _pad_image(cur_img, crop_size)
                 else:
                     pad_img = cur_img
-                _,_,ph,pw = pad_img.shape
+                _, _, ph, pw = pad_img.shape
                 assert(ph >= height and pw >= width)
                 # grid forward and normalize
                 h_grids = int(math.ceil(1.0*(ph-crop_size)/stride)) + 1
                 w_grids = int(math.ceil(1.0*(pw-crop_size)/stride)) + 1
-                outputs = mx.nd.zeros((batch,self.nclass,ph,pw), ctx=image.context)
-                count_norm = mx.nd.zeros((batch,1,ph,pw), ctx=image.context)
+                outputs = mx.nd.zeros((batch, self.nclass, ph, pw), ctx=image.context)
+                count_norm = mx.nd.zeros((batch, 1, ph, pw), ctx=image.context)
                 # grid evaluation
                 for idh in range(h_grids):
                     for idw in range(w_grids):
@@ -213,15 +212,14 @@ class MultiEvalModel(object):
                         w1 = min(w0 + crop_size, pw)
                         crop_img = _crop_image(pad_img, h0, h1, w0, w1)
                         # pad if needed
-                        pad_crop_img = _pad_image(crop_img, 
-                            crop_size)
+                        pad_crop_img = _pad_image(crop_img, crop_size)
                         output = self.flip_inference(pad_crop_img)
-                        outputs[:,:,h0:h1,w0:w1] += _crop_image(output,
-                            0, h1-h0, 0, w1-w0)
-                        count_norm[:,:,h0:h1,w0:w1] += 1
-                assert((count_norm==0).sum()==0)
+                        outputs[:, :, h0:h1, w0:w1] += _crop_image(
+                            output, 0, h1-h0, 0, w1-w0)
+                        count_norm[:, :, h0:h1, w0:w1] += 1
+                assert((count_norm == 0).sum() == 0)
                 outputs = outputs / count_norm
-                outputs = outputs[:,:,:height,:width]
+                outputs = outputs[:, :, :height, :width]
 
             score = _resize_image(outputs, h, w)
             scores += score
@@ -234,7 +232,7 @@ class MultiEvalModel(object):
         output = self.evalmodule(image)
         if self.flip:
             fimg = _flip_image(image)
-            foutput =self.evalmodule(fimg)
+            foutput = self.evalmodule(fimg)
             output += _flip_image(foutput)
         return output.exp()
 
@@ -243,30 +241,30 @@ class MultiEvalModel(object):
 
 
 def _resize_image(img, h, w):
-    return F.contrib.BilinearResize2D(img, height=h, width=w)
+    return mx.nd.contrib.BilinearResize2D(img, height=h, width=w)
 
 
 def _pad_image(img, crop_size=480):
-    b,c,h,w = img.shape
-    assert(c==3)
+    b, c, h, w = img.shape
+    assert(c == 3)
     padh = crop_size - h if h < crop_size else 0
     padw = crop_size - w if w < crop_size else 0
     mean = [.485, .456, .406]
     std = [.229, .224, .225]
     pad_values = -np.array(mean) / np.array(std)
-    img_pad = mx.nd.zeros((b,c,h+padh,w+padw)).as_in_context(img.context)
+    img_pad = mx.nd.zeros((b, c, h + padh, w + padw)).as_in_context(img.context)
     for i in range(c):
-        img_pad[:,i,:,:] = F.squeeze(
-            F.pad(img[:,i,:,:].expand_dims(1), 'constant', 
-                  pad_width=(0,0,0,0,0,padh,0,padw),
-                  constant_value = pad_values[i]
-            ))
-    assert(img_pad.shape[2]>=crop_size and img_pad.shape[3]>=crop_size)
+        img_pad[:, i, :, :] = mx.nd.squeeze(
+            mx.nd.pad(img[:, i, :, :].expand_dims(1), 'constant',
+                      pad_width=(0, 0, 0, 0, 0, padh, 0, padw),
+                      constant_value=pad_values[i]
+                     ))
+    assert(img_pad.shape[2] >= crop_size and img_pad.shape[3] >= crop_size)
     return img_pad
 
 
 def _crop_image(img, h0, h1, w0, w1):
-    return img[:,:,h0:h1,w0:w1]
+    return img[:, :, h0:h1, w0:w1]
 
 
 def _flip_image(img):

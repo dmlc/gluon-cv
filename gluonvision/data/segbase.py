@@ -34,6 +34,7 @@ def test_batchify_fn(data):
 
 class SegmentationDataset(VisionDataset):
     """Segmentation Base Dataset"""
+    # pylint: disable=abstract-method
     def __init__(self, root, base_size=520, crop_size=480):
         super(SegmentationDataset, self).__init__(root)
         self.base_size = base_size
@@ -73,11 +74,9 @@ class SegmentationDataset(VisionDataset):
         if h > w:
             ow = short_size
             oh = int(1.0 * h * ow / w)
-            long_size = oh
         else:
             oh = short_size
             ow = int(1.0 * w * oh / h)
-            long_size = ow
         img = img.resize((ow, oh), Image.BILINEAR)
         mask = mask.resize((ow, oh), Image.NEAREST)
         # random rotate -10~10, mask using NN rotate
