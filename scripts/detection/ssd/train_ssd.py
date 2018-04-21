@@ -2,7 +2,6 @@
 import argparse
 import os
 import logging
-logging.basicConfig(level=logging.INFO)
 import time
 import numpy as np
 import mxnet as mx
@@ -139,13 +138,24 @@ def train(net, train_data, val_data, classes, args):
     ce_metric = mx.metric.Loss('CrossEntropy')
     smoothl1_metric = mx.metric.Loss('SmoothL1')
 
-    logging.info('Start training from [Epoch %d]' % args.start_epoch)
+    # set up logger
+    logging.basicConfig()
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+    log_file_path = args.save_prefix + '_train.log'
+    log_dir = os.path.dirname(log_file_path)
+    if log_dir and not os.path.exists(log_dir):
+        os.makedirs(log_dir)
+    fh = logging.FileHandler(log_file_path)
+    logger.addHandler(fh)
+    logger.info(args)
+    logger.info('Start training from [Epoch %d]' % args.start_epoch)
     best_map = [0]
     for epoch in range(args.start_epoch, args.epochs):
         if epoch in lr_steps:
-            new_lr = trainer.learning_rate * np.prod(lr_decay[:lr_steps.index(epoch)])
+            new_lr = trainer.learning_rate * np.prod(lr_decay[:lr_steps.index(epoch)+1])
             trainer.set_learning_rate(new_lr)
-            logging.info("[Epoch {}] Set learning rate to {}".format(epoch, new_lr))
+            logger.info("[Epoch {}] Set learning rate to {}".format(epoch, new_lr))
         acc_metric.reset()
         ce_metric.reset()
         smoothl1_metric.reset()
@@ -209,18 +219,18 @@ def train(net, train_data, val_data, classes, args):
                 name1, loss1 = ce_metric.get()
                 name2, loss2 = smoothl1_metric.get()
                 name3, loss3 = acc_metric.get()
-                logging.info('[Epoch %d][Batch %d], Speed: %f samples/sec, %s=%f, %s=%f, %s=%f'%(
+                logger.info('[Epoch %d][Batch %d], Speed: %f samples/sec, %s=%f, %s=%f, %s=%f'%(
                     epoch, i, batch_size/(time.time()-btic), name1, loss1, name2, loss2, name3, loss3))
             btic = time.time()
 
         name1, loss1 = ce_metric.get()
         name2, loss2 = smoothl1_metric.get()
         name3, loss3 = acc_metric.get()
-        logging.info('[Epoch %d] Training cost: %f, %s=%f, %s=%f, %s=%f'%(
+        logger.info('[Epoch %d] Training cost: %f, %s=%f, %s=%f, %s=%f'%(
             epoch, (time.time()-tic), name1, loss1, name2, loss2, name3, loss3))
         map_name, mean_ap = validate(net, val_data, ctx, classes)
         val_msg = '\n'.join(['%s=%f'%(k, v) for k, v in zip(map_name, mean_ap)])
-        logging.info('[Epoch %d] Validation: \n%s'%(epoch, val_msg))
+        logger.info('[Epoch %d] Validation: \n%s'%(epoch, val_msg))
         save_params(net, best_map, mean_ap[-1], epoch, args.save_interval, args.save_prefix)
 
 if __name__ == '__main__':
