@@ -1,9 +1,7 @@
-from __future__ import division
-
 import matplotlib
 matplotlib.use('Agg')
 
-import argparse, time, logging, random, math
+import argparse, time, logging
 
 import numpy as np
 import mxnet as mx
@@ -40,8 +38,6 @@ parser.add_argument('--lr-decay-period', type=int, default=0,
                     help='period in epoch for learning rate decays. default is 0 (has no effect).')
 parser.add_argument('--lr-decay-epoch', type=str, default='40,60',
                     help='epoches at which learning rate decays. default is 40,60.')
-parser.add_argument('--width-factor', type=int, default=1,
-                    help='width factor for wide resnet. default is 1.')
 parser.add_argument('--drop-rate', type=float, default=0.0,
                     help='dropout rate for wide resnet. default is 0.')
 parser.add_argument('--mode', type=str,
@@ -50,8 +46,6 @@ parser.add_argument('--save-period', type=int, default=10,
                     help='period in epoch of model saving.')
 parser.add_argument('--save-dir', type=str, default='params',
                     help='directory of saved models')
-parser.add_argument('--logging-dir', type=str, default='logs',
-                    help='directory of training logs')
 parser.add_argument('--resume-from', type=str,
                     help='resume training from the model')
 parser.add_argument('--save-plot-dir', type=str, default='.',
@@ -72,7 +66,7 @@ lr_decay_epoch = [int(i) for i in opt.lr_decay_epoch.split(',')] + [np.inf]
 model_name = opt.model
 if model_name.startswith('cifar_wideresnet'):
     kwargs = {'classes': classes,
-              'drop_rate': opt.drop_rate, 'width_factor': opt.width_factor}
+              'drop_rate': opt.drop_rate}
 else:
     kwargs = {'classes': classes}
 net = get_model(model_name, **kwargs)
@@ -90,13 +84,7 @@ else:
 
 plot_path = opt.save_plot_dir
 
-logging_handlers = [logging.StreamHandler()]
-if opt.logging_dir:
-    logging_dir = opt.logging_dir
-    makedirs(logging_dir)
-    logging_handlers.append(logging.FileHandler('%s/train_cifar10_%s.log'%(logging_dir, model_name)))
-
-logging.basicConfig(level=logging.INFO, handlers = logging_handlers)
+logging.basicConfig(level=logging.INFO)
 logging.info(opt)
 
 transform_train = transforms.Compose([

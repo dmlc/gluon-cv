@@ -1,6 +1,4 @@
-from __future__ import division
-
-import argparse, time, logging, random, math
+import argparse
 
 import numpy as np
 import mxnet as mx
@@ -47,9 +45,7 @@ transform_fn = transforms.Compose([
     transforms.Normalize([0.4914, 0.4822, 0.4465], [0.2023, 0.1994, 0.2010])
 ])
 
-img_transformed = nd.zeros((1, 3, 32, 32))
-img_transformed[0,:,:,:] = transform_fn(img)
-pred = net(img_transformed)
+pred = net(img.expand_dims(0))
 
 ind = nd.argmax(pred, axis=1).astype('int')
 print('The input picture is classified to be [%s], with probability %.3f.'%

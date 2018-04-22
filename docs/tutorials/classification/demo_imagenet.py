@@ -11,7 +11,7 @@ In this tutorial, we will demonstrate how a well-trained model
 classifies real life images.
 
 Specifically, we offer a script to load a pretrained ``ResNet50_v2`` model.
-For a list of models we have, please visit our `Model Zoo <../model_zoo/index.html>`__.
+For a list of models we have, please visit our `Model Zoo <../../model_zoo/index.html>`__.
 
 Demo
 ------------------
@@ -23,11 +23,9 @@ much more powerful than the one we showed in `CIFAR10 demo tutorial <demo_cifar1
 
 With this script, you can load a pre-trained model and predict on any image you have.
 
-Let's take the photo of Mt. Baker again as the first photo.
+Let's test with the photo of Mt. Baker again.
 
 |image0|
-
-We can make prediction by
 
 ::
 
@@ -53,7 +51,7 @@ Next Step
 ---------
 
 If you would like to dig deeper in the topic of ``ImageNet`` training,
-feel free to read `the next tutorial on ``ImageNet`` <>`__.
+feel free to read `the next tutorial on `ImageNet Training <dive_deep_imagenet.html>`__.
 
 Or, if you would like to know how to train a powerful model on your own image data,
 please go ahead and read the tutorial about `Transfer learning <transfer_learning_minc.html>`__.

@@ -10,7 +10,7 @@ computer vision research.
 
 .. |image-cifar10| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/datasets/cifar10.png
 
-In this tutorial, we will demonstrate how to load a pre-trained model in``Gluon``,
+In this tutorial, we will demonstrate how to load a pre-trained model in ``Gluon``,
 and classify images from the Internet or your local disk.
 
 Step by Step
@@ -18,11 +18,10 @@ Step by Step
 
 Let's first play with a pre-trained cifar model with a few lines of python code.
 
-First, please follow the `installation guide <../index.html>`__
-to install MXNet and GluonVision if not yet.
+First, please follow the `installation guide <../../index.html#installation>`__
+to install ``mxnet`` and ``gluonvision`` if not yet.
 """
 
-import mxnet as mx
 import matplotlib.pyplot as plt
 
 from mxnet import gluon, nd, image
@@ -67,7 +66,7 @@ plt.imshow(nd.transpose(img, (1,2,0)).asnumpy())
 plt.show()
 
 ################################################################
-# You can't recognize anything? Neither do I. Don't panic!
+# You can't recognize anything? Neither do I. *Don't Panic*!
 # The transformation makes it more "model-friendly", instead of "human-friendly".
 #
 # Next, we load a pre-trained model.
@@ -78,9 +77,7 @@ net = get_model('cifar_resnet110_v2', classes=10, pretrained=True)
 #
 # Finally, we prepare the image and feed it to the model
 
-img_transformed = nd.zeros((1, 3, 32, 32))
-img_transformed[0,:,:,:] = img
-pred = net(img_transformed)
+pred = net(img.expand_dims(0))
 
 class_names = ['airplane', 'automobile', 'bird', 'cat', 'deer',
                'dog', 'frog', 'horse', 'ship', 'truck']
@@ -103,7 +100,7 @@ print('The input picture is classified to be [%s], with probability %.3f.'%
 # 10 classes, therefore it may surprise you if we feed one image to the model
 # which doesn't belong to any of the 10 classes
 #
-# For instance we have the following photo of Mt. Baker:
+# For instance we can test it with the following photo of Mt. Baker:
 #
 # |image-mtbaker|
 #
