@@ -1,12 +1,8 @@
-from __future__ import division
+import argparse
 
-import argparse, time, logging, random, math
-
-import numpy as np
-import mxnet as mx
 import matplotlib.pyplot as plt
 
-from mxnet import gluon, nd, image
+from mxnet import nd, image
 from mxnet.gluon.data.vision import transforms
 
 from gluonvision.model_zoo import get_model
@@ -24,7 +20,6 @@ classes = 1000
 with open('imagenet_labels.txt', 'r') as f:
     class_names = [l.strip('\n') for l in f.readlines()]
 
-context = [mx.cpu()]
 
 # Load Model
 model_name = opt.model
@@ -33,7 +28,7 @@ kwargs = {'classes': classes, 'pretrained': pretrained}
 net = get_model(model_name, **kwargs)
 
 if not pretrained:
-    net.load_params(opt.saved_params, ctx = context)
+    net.load_params(opt.saved_params)
 
 # Load Images
 with open(opt.input_pic, 'rb') as f:
@@ -47,9 +42,7 @@ transform_fn = transforms.Compose([
     transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 ])
 
-img_transformed = nd.zeros((1, 3, 224, 224))
-img_transformed[0,:,:,:] = transform_fn(img)
-pred = net(img_transformed)
+pred = net(img.expand_dims(0))
 
 topK = 5
 ind = nd.topk(pred, k=topK)[0].astype('int')
