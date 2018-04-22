@@ -61,7 +61,7 @@ class ADE20KSegmentation(SegmentationDataset):
         return img, mask
 
     def _mask_transform(self, mask):
-        return mx.nd.array(np.array(mask) - 1, mx.cpu(0)).astype('int32')
+        return mx.nd.array(np.array(mask), mx.cpu(0)).astype('int32') - 1
 
     def __len__(self):
         return len(self.images)

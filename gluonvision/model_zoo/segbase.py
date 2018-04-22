@@ -165,7 +165,7 @@ class MultiEvalModel(object):
             return self(*inputs[0])
         return parallel_apply(self, inputs, sync=True)
 
-    def __call__(self, image, target=None):
+    def __call__(self, image):
         # only single image is supported for evaluation
         image = image.expand_dims(0)
         batch, _, h, w = image.shape

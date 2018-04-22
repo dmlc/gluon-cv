@@ -16,8 +16,6 @@ def batch_pix_accuracy(output, target, ignore_bg=False):
     else:
         pixel_labeled = (target >= 0).sum().asscalar()
         pixel_correct = (F.equal(predict, target)*(target >= 0.0)).sum().asscalar()
-        #pixel_labeled = target.size
-        #pixel_correct = F.equal(predict, target).sum().asscalar()
     return pixel_correct, pixel_labeled
 
 
