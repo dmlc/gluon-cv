@@ -38,8 +38,6 @@ parser.add_argument('--lr-decay-period', type=int, default=0,
                     help='period in epoch for learning rate decays. default is 0 (has no effect).')
 parser.add_argument('--lr-decay-epoch', type=str, default='40,60',
                     help='epoches at which learning rate decays. default is 40,60.')
-parser.add_argument('--width-factor', type=int, default=1,
-                    help='width factor for wide resnet. default is 1.')
 parser.add_argument('--drop-rate', type=float, default=0.0,
                     help='dropout rate for wide resnet. default is 0.')
 parser.add_argument('--mode', type=str,
@@ -68,7 +66,7 @@ lr_decay_epoch = [int(i) for i in opt.lr_decay_epoch.split(',')] + [np.inf]
 model_name = opt.model
 if model_name.startswith('cifar_wideresnet'):
     kwargs = {'classes': classes,
-              'drop_rate': opt.drop_rate, 'width_factor': opt.width_factor}
+              'drop_rate': opt.drop_rate}
 else:
     kwargs = {'classes': classes}
 net = get_model(model_name, **kwargs)
