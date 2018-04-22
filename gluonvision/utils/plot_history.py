@@ -32,7 +32,7 @@ class TrainingHistory():
             self.history[label].append(v)
         self.epochs += 1
 
-    def plot(self, labels=None, colors=None,
+    def plot(self, labels=None, colors=None, y_lim=(0,1),
              save_path=None, legend_loc='upper right'):
         r"""Update the training history
 
@@ -57,11 +57,12 @@ class TrainingHistory():
         else:
             assert len(colors) == n
 
+        plt.ylim(y_lim)
         for i, lb in enumerate(labels):
             line_lists[i], = plt.plot(list(range(self.epochs)),
                                       self.history[lb],
                                       colors[i],
-                                      label=labels)
+                                      label=lb)
         plt.legend(tuple(line_lists), self.labels, loc=legend_loc)
         if save_path is None:
             plt.show()

@@ -4,9 +4,8 @@
 """Transfer Learning with Your Own Image Dataset
 ===============================================
 
-
-ImageNet is a huge and comprehensive dataset. However in practice, we
-may not have the dataset of the same size. Training a deep learning
+``ImageNet`` is a huge and comprehensive dataset. However in practice,
+we may not have the dataset of the same size. Training a deep learning
 model on a small dataset may suffer from underfitting for not enough
 data.
 
@@ -210,6 +209,20 @@ metric = mx.metric.Accuracy()
 L = gluon.loss.SoftmaxCrossEntropyLoss()
 
 ################################################################################
+# Here's a illustration of the relationship between the pre-trained model
+# and our newly defined model:
+# 
+# |image-model|
+# 
+# Specifically, we define the new model as:
+# 
+# 1. load the pre-trained model
+# 2. re-define the output layer for the new task
+# 3. train the network
+# 
+# This is called "fine-tuning", i.e. we have a good model on another field,
+# and we would like to tune it for the dataset we have in hand.
+# 
 # We can define a performance evaluation function for validation data and test data.
 
 def test(net, val_data, ctx):
@@ -229,6 +242,12 @@ def test(net, val_data, ctx):
 # Following is the main training loop. It is the same as the loop in
 # `CIFAR10 <dive_deep_cifar10.html>`__
 # and ImageNet.
+#
+# .. note::
+#
+#     Once again, in order to build the tutorial faster, we are training on a small
+#     subset of the original ``MINC-2500``, and with only 5 epochs. By training on the
+#     full dataset with 40 epochs, it is expected to get accuracy around 80% on test data.
 
 lr_counter = 0
 num_batch = len(train_data)
@@ -268,18 +287,18 @@ _, test_acc = test(finetune_net, test_data, ctx)
 print('[Finished] Test-acc: %.3f' % (test_acc))
 
 ################################################################################
-# Once again, in order to build the tutorial faster, we are training on a small
-# subset of the original ``MINC-2500``, and with only 5 epochs. By training on the
-# full dataset with 40 epochs, it is expected to get accuracy around 80% on test data.
 #
 # Next
 # ----
 #
 # Now that you have learned how powerful a model could be by transfer
 # learning. If you would like to know more about how to train a model on
-# ImageNet, please read this tutorial.
+# ImageNet, please read `this tutorial <dive_deep_imagenet.html>`__.
 #
-# The idea of transfer learning is the basis of object detection and
-# semantic segmentation, the next two chapters in our tutorial.
+# The idea of transfer learning is the basis of
+# `object detection <../examples_detection/index.html>`_ and
+# `semantic segmentation <../examples_segmentation/index.html>`_,
+# the next two chapters in our tutorial.
 #
 # .. |image-minc| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/datasets/MINC-2500.png
+# .. |image-model| image:: https://zh.gluon.ai/_images/fine-tuning.svg

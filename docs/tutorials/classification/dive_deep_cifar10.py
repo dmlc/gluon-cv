@@ -3,22 +3,13 @@
 
 Hope you enjoyed playing with our demo script. One question, as may
 naturally arise in your mind: how exactly did we train the model?
-
 In this tutorial, we will focus on answering this question.
-Specifically, the following discusses
-
--  Model Structure
--  Data Augmentation and Data Loader
--  Optimizer, Loss and Metric
--  Validation
--  Training
--  Model save and load
 
 Prerequisites
 -------------
 
 We assume readers have a basic understanding of ``Gluon``. If you would
-like to know more about it, we suggest `Crash
+like to know more about it, we suggest `Gluon Crash
 Course <http://gluon-crash-course.mxnet.io/index.html>`__ as a good
 place to start.
 
@@ -27,39 +18,25 @@ In our demo, we only used CPU by default since that script only performs
 minimum computation. However, since we are about to train a model, it is
 strongly recommended to have a platform with GPU(s).
 
-Training usually takes several hours. While you are reading the
-tutorial, it is a good idea to start the training script:
+.. note::
 
-:download:`Download Python Script train_cifar10.py<../../../scripts/classification/cifar/train_cifar10.py>`
+    Training usually takes several hours. While you are reading the
+    tutorial, it is a good idea to start the training script:
 
-Here's the command with recommended parameters:
+    :download:`Download Python Script train_cifar10.py<../../../scripts/classification/cifar/train_cifar10.py>`
 
-::
+    Here's a sample command with recommended parameters:
 
-    python train.py --num-epochs 240 --mode hybrid --num-gpus 1 -j 8 --batch-size 128\
-        --wd 0.0001 --lr 0.1 --lr-decay 0.1 --lr-decay-epoch 80,160 --model cifar_resnet20_v1
+    ::
 
-remember to replace ``--num-gpus`` to the number of GPUs you have,
-and ``-j`` to a number not larger than your CPU threads.
+        python train.py --num-epochs 240 --mode hybrid --num-gpus 1 -j 8 --batch-size 128\
+            --wd 0.0001 --lr 0.1 --lr-decay 0.1 --lr-decay-epoch 80,160 --model cifar_resnet20_v1
 
-If you don't have a GPU yet, it is suggested to train with your CPU with MKLDNN.
-One can install MXNet with MKLDNN with
 
-::
+Network Structure
+-----------------
 
-    pip install --pre mxnet-mkl
-
-After the installation, one can run the following command:
-
-::
-
-    python train_cifar10.py --num-epochs 240 --mode hybrid --num-gpus 0 -j 1 --batch-size 128\
-        --wd 0.0001 --lr 0.1 --lr-decay 0.1 --lr-decay-epoch 80,160 --model cifar_resnet20_v1
-
-Here we change the values of ``--num-gpus`` to 0 and ``-j`` to 1, to only use CPU for training and use one thread
-for data loader.
-
-After the installation, we can load the necessary libraries into python.
+First, load the necessary libraries into python.
 
 """
 from __future__ import division
@@ -78,15 +55,8 @@ from gluonvision.model_zoo import get_model
 from gluonvision.utils import makedirs, TrainingHistory
 
 ################################################################
-# Network Structure
-# -----------------
 #
-# There are numerous structures for convolutional neural networks. The
-# structure mainly affects
-#
-# -  The upperbound of the accuracy.
-# -  The cost of resources, in terms of training time and memory.
-#
+# There are numerous structures for convolutional neural networks.
 # Here we pick a simple yet good structure, ``cifar_resnet20_v1``, for the
 # tutorial.
 
@@ -107,11 +77,11 @@ net.initialize(mx.init.Xavier(), ctx = ctx)
 # composition, lighting condition, or different color may still be
 # classified as the same object.
 #
-# Here are photos taken by different people, at different time. We can all
-# tell that they are the photo for the same thing.
+# Here are photos of the Golden Bridge taken by different people,
+# from different angle and at different time.
+# We can easily tell that they are the photo for the same thing.
 #
-# .. figure::
-#    :alt:
+# |image-golden-bridge|
 #
 # We would like to teach the model to learn about it, by playing "tricks"
 # on the input picture. The trick is to transform the picture with
@@ -140,11 +110,11 @@ transform_train = transforms.Compose([
 ################################################################
 # You may notice that most of the operations are at random. This largely
 # increase the number of pictures the model can see during the training
-# process. The more data we have, the better our model can generalize on
+# process. The more data we have, the better our model generalize on
 # unseen pictures.
 #
 # On the other hand, when making prediction, we would like to remove all
-# random operations because we want a deterministic result. The transform
+# random operations in order to get a deterministic result. The transform
 # function for prediction is:
 
 transform_test = transforms.Compose([
@@ -206,11 +176,11 @@ trainer = gluon.Trainer(net.collect_params(), optimizer, optimizer_params)
 #
 # Our plan is to have the learning rate as 0.1 at the beginning, then
 # divide it by 10 at the 80-th epoch, then again at the 160-th epoch.
-# Later we'll show how to implement it.
+# We'll use `lr_decay_epoch` in the main training loop for this purpose.
 #
-# In order to let the optimizer work, we need a loss function. In plain
+# In order to enable the optimizer, we need a loss function. In plain
 # words, the loss function measures how good our model performs, and pass
-# the "difference" to the model. For the Nesterov algorithm we are using,
+# the "difference" to the model for improvement. For the Nesterov algorithm we are using,
 # the difference is the gradient of the loss function. With the
 # difference, the optimizer knows towards which direction to improve the
 # model parameters.
@@ -234,7 +204,7 @@ loss_fn = gluon.loss.SoftmaxCrossEntropyLoss()
 #    easier to understand than "softmax cross entropy"
 #
 # For simplicity, we use accuracy as the metric to monitor our training
-# process. Besides, we record the metric values, and will print it in the
+# process. Besides, we record the metric values, and will print it at the
 # end of the training.
 
 train_metric = mx.metric.Accuracy()
@@ -247,7 +217,7 @@ train_history = TrainingHistory(['training-error', 'validation-error'])
 # The existance of the validation dataset provides us a way to monitor the
 # training process. We have the labels on validation data, but just don't
 # use it to train. Therefore we can predict on the validation with the
-# model, and evaluate the performance at anytime.
+# model to evaluate the performance at the moment.
 
 def test(ctx, val_data):
     metric = mx.metric.Accuracy()
@@ -269,8 +239,9 @@ def test(ctx, val_data):
 # After all these preparation, we can finally start our training process!
 # Following is the script.
 #
-# Notice: in order to speed up the training process, we only train the
-# model for 5 epochs.
+# .. note::
+#   In order to speed up the training process, we only train the
+#   model for 5 epochs. It is suggested to set ``epoch=240``.
 
 epochs = 5
 lr_decay_count = 0
@@ -326,16 +297,14 @@ train_history.plot()
 # |image-aug|
 #
 # With plots we can observe the behavior of model training more conveniently.
-#
 # For example, one may ask what will happen if there's no data augmentation:
 #
 # |image-no-aug|
 #
 # We see that the training error is much lower than validation error.
 # After the model achieves a perfect performance on the training data,
-# it stops improving on the validation data.
-#
-# This comparison clearly demonstrate how important data augmentation is.
+# it stops improving on the validation data. 
+# By using a plot, we clearly demonstrate how important data augmentation is.
 #
 # Model Save and Load
 # -------------------
@@ -363,10 +332,11 @@ net.load_params('dive_deep_cifar10_resnet20_v2.params', ctx=ctx)
 # Please train a model with your own configurations.
 #
 # If you would like to know how to train a model on a much larger dataset
-# than ``CIFAR10``, e.g. ImageNet, please read `xxx <>`__.
+# than ``CIFAR10``, e.g. ImageNet, please read `ImageNet Training <dive_deep_imagenet.html>`__.
 #
 # Or, if you want like to know what can be done with the model you just
 # trained, please read the tutorial about `Transfer learning <transfer_learning_minc.html>`__.
 #
 # .. |image-no-aug| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/classification/overfitting.png
 # .. |image-aug| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/classification/normal_training.png
+# .. |image-golden-bridge| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/classification/golden-bridge.png
