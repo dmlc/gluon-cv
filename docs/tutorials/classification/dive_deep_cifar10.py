@@ -20,17 +20,17 @@ strongly recommended to have a platform with GPU(s).
 
 .. note::
 
-  Training usually takes several hours. While you are reading the
-  tutorial, it is a good idea to start the training script:
+    Training usually takes several hours. While you are reading the
+    tutorial, it is a good idea to start the training script:
 
-  :download:`Download Python Script train_cifar10.py<../../../scripts/classification/cifar/train_cifar10.py>`
+    :download:`Download Python Script train_cifar10.py<../../../scripts/classification/cifar/train_cifar10.py>`
 
-  Here's a sample command with recommended parameters:
+    Here's a sample command with recommended parameters:
 
-  ::
+    ::
 
-      python train.py --num-epochs 240 --mode hybrid --num-gpus 1 -j 8 --batch-size 128\
-          --wd 0.0001 --lr 0.1 --lr-decay 0.1 --lr-decay-epoch 80,160 --model cifar_resnet20_v1
+        python train.py --num-epochs 240 --mode hybrid --num-gpus 1 -j 8 --batch-size 128\
+            --wd 0.0001 --lr 0.1 --lr-decay 0.1 --lr-decay-epoch 80,160 --model cifar_resnet20_v1
 
 
 Network Structure
