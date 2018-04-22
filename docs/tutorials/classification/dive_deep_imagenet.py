@@ -7,7 +7,7 @@ of classification accuracy.
 
 Although there are a lot of available models, it is still a non-trivial job to
 train a well-performing model on ``ImageNet`` from scratch. In this tutorial, we will
-try to pull necessary code together to walk you through the process of
+try to pull necessary code together to smoothly walk you through the process of
 training a model on ``ImageNet``.
 
 .. note::
@@ -279,7 +279,7 @@ Following is the main training loop
                 _, top5 = acc_top5.get()
                 err_top1, err_top5 = (1-top1, 1-top5)
                 print('Epoch[%d] Batch [%d]\tSpeed: %f samples/sec\ttop1-err=%f\ttop5-err=%f'%(
-                             epoch, i, batch_size*opt.log_interval/(time.time()-btic), err_top1, err_top5))
+                          epoch, i, batch_size*opt.log_interval/(time.time()-btic), err_top1, err_top5))
                 btic = time.time()
 
         _, top1 = acc_top1.get()
@@ -308,7 +308,7 @@ If you train the model with ``epochs=120``, the plot may look like:
 Next Step
 ---------
 
-This is our script to help you to train a model on ``ImageNet``.
+In our `Model Zoo <../../model_zoo/index.html>`_ we offer you scripts and commands to train a model on ``ImageNet``.
 
 If you want like to know what can be done with the model you just
 trained, please read the tutorial about `Transfer learning <transfer_learning_minc.html>`__.
