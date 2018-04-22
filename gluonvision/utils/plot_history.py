@@ -32,7 +32,7 @@ class TrainingHistory():
             self.history[label].append(v)
         self.epochs += 1
 
-    def plot(self, labels=None, colors=None, y_lim=(0,1),
+    def plot(self, labels=None, colors=None, y_lim=(0, 1),
              save_path=None, legend_loc='upper right'):
         r"""Update the training history
 
