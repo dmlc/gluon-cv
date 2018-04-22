@@ -63,7 +63,7 @@ class TrainingHistory():
                                       self.history[lb],
                                       colors[i],
                                       label=lb)
-        plt.legend(tuple(line_lists), self.labels, loc=legend_loc)
+        plt.legend(tuple(line_lists), labels, loc=legend_loc)
         if save_path is None:
             plt.show()
         else:
