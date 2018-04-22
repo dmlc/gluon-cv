@@ -315,5 +315,5 @@ Besides classification, deep learning models nowadays can do other exciting jobs
 like `object detection <../examples_detection/index.html>`_,
 `semantic segmentation <../examples_segmentation/index.html>`_. Check out their tutorials!
 
-.. |image-imagenet-curve| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/classification/imagenet_resnet50_v2.png
+.. |image-imagenet-curve| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/classification/resnet50_v2_top1.png
 """
