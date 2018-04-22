@@ -137,7 +137,6 @@ For prediction, we still need a deterministic result. The transform function is:
         normalize
     ])
 
-
 Notice that it is important to keep the normalization consistent, since the
 model only works well on input with the same distribution.
 
@@ -214,7 +213,6 @@ At the end of every epoch, we record and print the metric scores.
     acc_top5 = mx.metric.TopKAccuracy(5)
     train_history = TrainingHistory(['training-top1-err', 'training-top5-err',
                                      'validation-top1-err', 'validation-top5-err'])
-
 
 Validation
 ----------
