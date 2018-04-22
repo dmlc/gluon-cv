@@ -1,9 +1,7 @@
-from __future__ import division
-
 import matplotlib
 matplotlib.use('Agg')
 
-import argparse, time, logging, random, math
+import argparse, time, logging
 
 import numpy as np
 import mxnet as mx
@@ -50,8 +48,6 @@ parser.add_argument('--save-period', type=int, default=10,
                     help='period in epoch of model saving.')
 parser.add_argument('--save-dir', type=str, default='params',
                     help='directory of saved models')
-parser.add_argument('--logging-dir', type=str, default='logs',
-                    help='directory of training logs')
 parser.add_argument('--resume-from', type=str,
                     help='resume training from the model')
 parser.add_argument('--save-plot-dir', type=str, default='.',
@@ -90,13 +86,7 @@ else:
 
 plot_path = opt.save_plot_dir
 
-logging_handlers = [logging.StreamHandler()]
-if opt.logging_dir:
-    logging_dir = opt.logging_dir
-    makedirs(logging_dir)
-    logging_handlers.append(logging.FileHandler('%s/train_cifar10_%s.log'%(logging_dir, model_name)))
-
-logging.basicConfig(level=logging.INFO, handlers = logging_handlers)
+logging.basicConfig(level=logging.INFO)
 logging.info(opt)
 
 transform_train = transforms.Compose([
