@@ -161,6 +161,7 @@ mask = get_color_pallete(mask.asnumpy(), dataset='pascal_voc')
 mask.save('mask.png')
 # denormalize the image
 img = DeNormalize([.485, .456, .406], [.229, .224, .225])(img)
+img = np.transpose((img.asnumpy()*255).astype(np.uint8), (1, 2, 0))
 
 ##############################################################################
 # Plot the image and mask
@@ -169,7 +170,8 @@ import matplotlib.image as mpimg
 # subplot 1 for img
 fig = plt.figure()
 fig.add_subplot(1,2,1)
-plt.imshow(np.array(img))
+
+plt.imshow(img)
 # subplot 2 for the mask
 mmask = mpimg.imread('mask.png')
 fig.add_subplot(1,2,2)
