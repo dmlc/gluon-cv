@@ -10,7 +10,7 @@ we often don't have so much labeled data in other domains.
 Training a deep learning models on small datasets may lead to severe overfitting.
 
 Transfer learning is a technique that addresses this problem.
-The idea is simple: we can start trianing with a pre-trained model,
+The idea is simple: we can start training with a pre-trained model,
 instead of starting from scratch.
 As Isaac Newton said, "If I have seen further it is by standing on the
 shoulders of Giants".
@@ -73,7 +73,7 @@ Now we have the following structure:
 
 In order to go through this tutorial within a reasonable amount of time,
 we have prepared a small subset of the ``MINC-2500`` dataset,
-but you should substitue it with the original dataset for your experiments.
+but you should substitute it with the original dataset for your experiments.
 We can download and extract it with:
 """
 

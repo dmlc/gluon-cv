@@ -35,7 +35,7 @@ Prerequisites
 We assume readers have a basic understanding of ``Gluon``, we suggest
 you start with `Gluon Crash Course <http://gluon-crash-course.mxnet.io/index.html>`__ .
 
-Also, it is suggested that readers have gone through previous tutorials
+Also, we assume that readers have gone through previous tutorials on
 `CIFAR10 Training <dive_deep_cifar10.html>`_ and `ImageNet Demo <demo_imagenet.html>`_ .
 
 **Data Preparation**
@@ -272,7 +272,7 @@ Following is the main training loop:
             acc_top1.update(label, outputs)
             acc_top5.update(label, outputs)
             train_loss += sum([l.sum().asscalar() for l in loss])
-            if log_interval and not log_interval:
+            if log_interval and not (i + 1) % log_interval:
                 _, top1 = acc_top1.get()
                 _, top5 = acc_top5.get()
                 err_top1, err_top5 = (1-top1, 1-top5)

@@ -10,7 +10,7 @@ computer vision research.
 
 .. |image-cifar10| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/datasets/cifar10.png
 
-In this tutorial, we will demonstrate how to load a pre-trained model from `Gluon Model Zoo`
+In this tutorial, we will demonstrate how to load a pre-trained model from ``Gluon Model Zoo``
 and classify images from the Internet or your local disk.
 
 Step by Step
@@ -90,7 +90,7 @@ print('The input picture is classified as [%s], with probability %.3f.'%
 # Play with the scripts
 # ---------------------
 #
-# Here is a script that does all the preious steps in one go.
+# Here is a script that does all the previous steps in one go.
 #
 # :download:`Download demo_cifar10.py<../../../scripts/classification/cifar/demo_cifar10.py>`
 #
