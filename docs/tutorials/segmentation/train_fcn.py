@@ -34,8 +34,9 @@ Dive into Deep
 """
 import numpy as np
 import mxnet as mx
-import gluonvision
+from mxnet import gluon, autograd
 
+import gluonvision
 ##############################################################################
 # Fully Convolutional Network
 # ---------------------------
@@ -97,23 +98,21 @@ print('Shapes of c3 & c4 featuremaps are ', c3.shape, c4.shape)
 # We build a fully convolutional "head" on top of the base network,
 # the FCNHead is defined as::
 #
-# class _FCNHead(HybridBlock):
-#     # pylint: disable=redefined-outer-name
-#     def __init__(self, in_channels, channels, norm_layer, **kwargs):
-#         super(_FCNHead, self).__init__()
-#         with self.name_scope():
-#             self.block = nn.HybridSequential()
-#             inter_channels = in_channels // 4
-#             with self.block.name_scope():
-#                 self.block.add(nn.Conv2D(in_channels=in_channels, channels=inter_channels,
-#                                          kernel_size=3, padding=1))
-#                 self.block.add(norm_layer(in_channels=inter_channels))
-#                 self.block.add(nn.Activation('relu'))
-#                 self.block.add(nn.Dropout(0.1))
-#                 self.block.add(nn.Conv2D(in_channels=inter_channels, channels=channels,
-#                                          kernel_size=1))
+#     class _FCNHead(HybridBlock):
+#         def __init__(self, in_channels, channels, norm_layer, **kwargs):
+#             super(_FCNHead, self).__init__()
+#             with self.name_scope():
+#                 self.block = nn.HybridSequential()
+#                 inter_channels = in_channels // 4
+#                 with self.block.name_scope():
+#                     self.block.add(nn.Conv2D(in_channels=in_channels, channels=inter_channels,
+#                                              kernel_size=3, padding=1))
+#                     self.block.add(norm_layer(in_channels=inter_channels))
+#                     self.block.add(nn.Activation('relu'))
+#                     self.block.add(nn.Dropout(0.1))
+#                     self.block.add(nn.Conv2D(in_channels=inter_channels, channels=channels,
+#                                              kernel_size=1))
 # 
-#     # pylint: disable=arguments-differ
 #     def hybrid_forward(self, F, x):
 #         return self.block(x)
 # 
@@ -126,35 +125,53 @@ print(model)
 # Dataset and Data Augmentation
 # -----------------------------
 # 
-# We provide semantic segmentation datasets in :class:`gluonvision.data`.
-# For example, we can easily get the Pascal VOC 2012 dataset:
-train_dataset = gluonvision.data.VOCSegmentation(split='train')
-print('Training images:', len(train_dataset))
+# image transform for color normalization
+from mxnet.gluon.data.vision import transforms
+input_transform = transforms.Compose([
+    transforms.ToTensor(),
+    transforms.Normalize([.485, .456, .406], [.229, .224, .225]),
+])
 
 ##############################################################################
-# We follow the standard data augmentation routine to transform the input image
+# We provide semantic segmentation datasets in :class:`gluonvision.data`.
+# For example, we can easily get the Pascal VOC 2012 dataset:
+trainset = gluonvision.data.VOCSegmentation(split='train', transform=input_transform)
+print('Training images:', len(trainset))
+# Create Training Loader
+train_data = gluon.data.DataLoader(
+    trainset, 4, shuffle=True, last_batch='rollover',
+    num_workers=4)
+
+##############################################################################
+# For data augmentation, 
+# we follow the standard data augmentation routine to transform the input image
 # and the ground truth label map synchronously. (*Note that "nearest"
 # mode upsample are applied to the label maps to avoid messing up the boundaries.*)
 # We first randomly scale the input image from 0.5 to 2.0 times, then rotate
 # the image from -10 to 10 degrees, and crop the image with padding if needed.
 # Finally a random Gaussian blurring is applied.
 #
-# Random pick one example data:
+# Random pick one example for visualization:
 from random import randint
-idx = randint(0, len(train_dataset))
-img, mask = train_dataset[idx]
-from gluonvision.utils.viz import get_color_pallete
-mask = get_color_pallete(np.array(mask), dataset='pascal_voc')
+idx = randint(0, len(trainset))
+img, mask = trainset[idx]
+from gluonvision.utils.viz import get_color_pallete, DeNormalize
+# get color pallete for visualize mask
+mask = get_color_pallete(mask.asnumpy(), dataset='pascal_voc')
 mask.save('mask.png')
+# denormalize the image
+img = DeNormalize([.485, .456, .406], [.229, .224, .225])(img)
+img = np.transpose((img.asnumpy()*255).astype(np.uint8), (1, 2, 0))
 
 ##############################################################################
-# Visualize the data
+# Plot the image and mask
 from matplotlib import pyplot as plt
 import matplotlib.image as mpimg
 # subplot 1 for img
 fig = plt.figure()
 fig.add_subplot(1,2,1)
-plt.imshow(np.array(img))
+
+plt.imshow(img)
 # subplot 2 for the mask
 mmask = mpimg.imread('mask.png')
 fig.add_subplot(1,2,2)
@@ -173,13 +190,60 @@ plt.show()
 #     Additionally, an Auxiliary Loss as in PSPNet [Zhao17]_ at Stage 3 can be enabled when
 #     training with command ``--aux``. This will create an additional FCN "head" after Stage 3.
 # 
+from gluonvision.model_zoo.segbase import SoftmaxCrossEntropyLossWithAux
+criterion = SoftmaxCrossEntropyLossWithAux(aux=True)
+
+##############################################################################
 # - Learning Rate and Scheduling:
 # 
 #     We use different learning rate for FCN "head" and the base network. For the FCN "head",
 #     we use :math:`10\times` base learning rate, because those layers are learned from scratch.
 #     We use a poly-like learning rate scheduler for FCN training, provided in :class:`gluonvision.utils.PolyLRScheduler`.
-#     The learning rate is given by :math:`lr = baselr \times (1-iter)^power`
+#     The learning rate is given by :math:`lr = baselr \times (1-iter)^{power}`
 # 
+lr_scheduler = gluonvision.utils.PolyLRScheduler(0.001, niters=len(train_data), 
+                                                 nepochs=50)
+
+##############################################################################
+# - Dataparallel for multi-gpu training
+from gluonvision.utils.parallel import *
+ctx_list = [mx.gpu(0), mx.gpu(1)]
+model = DataParallelModel(model, ctx_list)
+criterion = DataParallelCriterion(criterion, ctx_list)
+
+##############################################################################
+# - Create SGD solver
+kv = mx.kv.create('device')
+optimizer = gluon.Trainer(model.module.collect_params(), 'sgd',
+                          {'lr_scheduler': lr_scheduler,
+                           'wd':0.0001,
+                           'momentum': 0.9,
+                           'multi_precision': True},
+                          kvstore = kv)
+
+##############################################################################
+# The training loop
+# -----------------
+#
+train_loss = 0.0
+epoch = 0
+for i, (data, target) in enumerate(train_data):
+    lr_scheduler.update(i, epoch)
+    with autograd.record(True):
+        outputs = model(data)
+        losses = criterion(outputs, target)
+        mx.nd.waitall()
+        autograd.backward(losses)
+    optimizer.step(4)
+    for loss in losses:
+        train_loss += loss.asnumpy()[0] / len(losses)
+    print('Epoch %d, training loss %.3f'%(epoch, train_loss/(i+1)))
+    # just demo for 20 iters
+    if i > 20:
+        break
+
+
+##############################################################################
 # You can `Start Training Now`_.
 # 
 # References
