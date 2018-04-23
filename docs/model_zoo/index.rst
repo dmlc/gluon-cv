@@ -20,7 +20,7 @@ Model Zoo API
     # load ssd from scratch
     ssd2 = model_zoo.get_model('ssd_512_resnet50_v1_voc', pretrained_base=False)
 
-We recommend using `model_zoo.get_model` for loading pre-defined models, because it provides
+We recommend using :py:meth:`gluonvision.model_zoo.get_model` for loading pre-defined models, because it provides
 name check and suggest you what models are available now.
 
 However, you can still load models by directly instantiate it like
@@ -30,9 +30,10 @@ However, you can still load models by directly instantiate it like
     from gluonvision import model_zoo
     cifar_resnet20 = model_zoo.cifar_resnet20_v1(pretrained=True)
 
+Detailed ``model_zoo`` APIs are available in our API reference: :py:meth:`gluonvision.model_zoo`.
 
-Available models
-----------------
+Summary of Available Models
+---------------------------
 
 We are still in early development stage, more models will be made available for download.
 
@@ -70,19 +71,18 @@ Object Detection
 
 The following table summarizes the available models and there performances for object detection.
 
-+-------------------------------------+----------+---------+-------+
-| Model                               | Dataset  | Input   | Perf  |
-+=====================================+==========+=========+=======+
-| ssd_300_vgg16_atrous_voc [Liu16]_   | VOC07+12 | 300x300 | 77.6  |
-+-------------------------------------+----------+---------+-------+
-| ssd_512_vgg16_atrous_voc [Liu16]_   | VOC07+12 | 512x512 |       |
-+-------------------------------------+----------+---------+-------+
-| ssd_512_resnet50_v1_voc [Liu16]_    | VOC07+12 | 512x512 | 80.1  |
-+-------------------------------------+----------+---------+-------+
+.. https://bit.ly/2qQHLl4
 
-.. [Liu16] Wei Liu, Dragomir Anguelov, Dumitru Erhan,
-       Christian Szegedy, Scott Reed, Cheng-Yang Fu, Alexander C. Berg.
-       SSD: Single Shot MultiBox Detector. ECCV 2016.
++------------------------------------+------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
+| Model                              | mAP  | Training Command                                                                                                                     | Training log                                                                                                                        |
++====================================+======+======================================================================================================================================+=====================================================================================================================================+
+| ssd_300_vgg16_atrous_voc [1]_      | 77.6 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/detection/ssd_300_vgg16_atrous_voc.sh>`_      | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/detection/ssd_300_vgg16_atrous_voc_train.log>`_       |
++------------------------------------+------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
+| ssd_512_vgg16_atrous_voc [1]_      | 79.2 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/detection/ssd_512_vgg16_atrous_voc.sh>`_      | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/detection/ssd_512_vgg16_atrous_voc_train.log>`_       |
++------------------------------------+------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
+| ssd_512_resnet50_v1_voc [1]_       | 80.1 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/detection/ssd_512_resnet50_v1_voc.sh>`_       |                                                                                                                                     |
++------------------------------------+------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
+
 
 
 Semantic Segmentation
@@ -98,9 +98,9 @@ Table of pre-trained models, performances and the training commands:
 +-------------------+--------------+------------+-----------+-----------+-----------+----------------------------------------------------------------------------------------------+
 | Name              | Method       | Backbone   | Dataset   | Note      | mIoU      | Command                                                                                      |
 +===================+==============+============+===========+===========+===========+==============================================================================================+
-| fcn_resnet50_voc  | FCN [Long15]_| ResNet50   | PASCAL12  | stride 8  | 69.4_     | :raw-html:`<a href="javascript:toggleblock('cmd_fcn_50')" class="toggleblock">cmd</a>`       |
+| fcn_resnet50_voc  | FCN [2]_     | ResNet50   | PASCAL12  | stride 8  | 69.4_     | :raw-html:`<a href="javascript:toggleblock('cmd_fcn_50')" class="toggleblock">cmd</a>`       |
 +-------------------+--------------+------------+-----------+-----------+-----------+----------------------------------------------------------------------------------------------+
-| fcn_resnet101_voc | FCN [Long15]_| ResNet101  | PASCAL12  | stride 8  | 70.9_     | :raw-html:`<a href="javascript:toggleblock('cmd_fcn_101')" class="toggleblock">cmd</a>`      |
+| fcn_resnet101_voc | FCN [2]_     | ResNet101  | PASCAL12  | stride 8  | 70.9_     | :raw-html:`<a href="javascript:toggleblock('cmd_fcn_101')" class="toggleblock">cmd</a>`      |
 +-------------------+--------------+------------+-----------+-----------+-----------+----------------------------------------------------------------------------------------------+
 
 .. _69.4:  http://host.robots.ox.ac.uk:8080/anonymous/TC12D2.html
@@ -122,6 +122,9 @@ Table of pre-trained models, performances and the training commands:
     CUDA_VISIBLE_DEVICES=0,1,2,3 python train.py --dataset pascal_voc --model fcn --backbone resnet101 --lr 0.0001 --syncbn --checkname mycheckpoint --resume runs/pascal_aug/fcn/mycheckpoint/checkpoint.params
     </code>
 
-.. [Long15] Long, Jonathan, Evan Shelhamer, and Trevor Darrell. \
+.. [1] Wei Liu, Dragomir Anguelov, Dumitru Erhan,
+       Christian Szegedy, Scott Reed, Cheng-Yang Fu, Alexander C. Berg.
+       SSD: Single Shot MultiBox Detector. ECCV 2016.
+.. [2] Long, Jonathan, Evan Shelhamer, and Trevor Darrell. \
     "Fully convolutional networks for semantic segmentation." \
     Proceedings of the IEEE conference on computer vision and pattern recognition. 2015.

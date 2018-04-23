@@ -59,6 +59,6 @@ print('Shape of pre-processed image:', x.shape)
 
 class_IDs, scores, bounding_boxs = net(x)
 
-ax = utils.viz.plot_bbox(img, bounding_boxs[0].asnumpy(), scores[0].asnumpy(),
-                         class_IDs[0].asnumpy(), class_names=net.classes)
+ax = utils.viz.plot_bbox(img, bounding_boxs[0], scores[0],
+                         class_IDs[0], class_names=net.classes)
 plt.show()

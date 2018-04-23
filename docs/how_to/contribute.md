@@ -1,4 +1,4 @@
-# Contribute to gluonvision 
+# Contribute to gluonvision
 
 Gluon-vision-toolkit has been developed by community members.
 Everyone is more than welcome to contribute.
@@ -34,7 +34,7 @@ git rebase upstream/master
 - First rebase to most recent master
 ```bash
 # The first two steps can be skipped after you do it once.
-git remote add upstream [url to gluon-vision-toolkit repo]
+git remote add upstream https://github.com/dmlc/gluon-vision
 git fetch upstream
 git rebase upstream/master
 ```
