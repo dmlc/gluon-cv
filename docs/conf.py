@@ -76,7 +76,7 @@ sphinx_gallery_conf = {
     #                                    'tutorials/segmentation',
     #                                    'tutorials/datasets']),
 
-    'within_subsection_order': NumberOfCodeLinesSortKey,
+    'within_subsection_order': ExampleTitleSortKey,
     'plot_gallery': True,
     'download_section_examples': False,
     'reference_url': {
