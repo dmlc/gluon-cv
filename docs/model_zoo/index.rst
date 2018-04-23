@@ -30,7 +30,9 @@ However, you can still load models by directly instantiate it like
     from gluonvision import model_zoo
     cifar_resnet20 = model_zoo.cifar_resnet20_v1(pretrained=True)
 
-Detailed ``model_zoo`` APIs are available in our API reference: :py:meth:`gluonvision.model_zoo`.
+.. hint::
+
+  Detailed ``model_zoo`` APIs are available in our API reference: :py:meth:`gluonvision.model_zoo`.
 
 Summary of Available Models
 ---------------------------
@@ -72,6 +74,20 @@ Object Detection
 The following table summarizes the available models and there performances for object detection.
 
 .. https://bit.ly/2qQHLl4
+
+.. hint::
+
+  The detection model names contain information for you to recognize them.
+
+  For instance, ``ssd_300_vgg16_atrous_voc`` consists of four parts,
+
+  - ``ssd`` indicate the algorithm is "Single Shot Multibox Object Detection" [1]_.
+
+  - ``300`` is the training image size, which means training images are resized to 300x300 and all anchor boxes are designed to match this spatial shape.
+
+  - ``vgg16_atrous`` is the name of base feature extractor network.
+
+  - ``voc`` is the training dataset.
 
 +------------------------------------+------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
 | Model                              | mAP  | Training Command                                                                                                                     | Training log                                                                                                                        |

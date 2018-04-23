@@ -31,7 +31,7 @@ def plot_image(img, ax=None, reverse_rgb=False):
         # create new axes
         fig = plt.figure()
         ax = fig.add_subplot(1, 1, 1)
-    if isinstance(img, mxnet.nd.NDArray):
+    if isinstance(img, mx.nd.NDArray):
         img = img.asnumpy()
     img = img.copy()
     if reverse_rgb:

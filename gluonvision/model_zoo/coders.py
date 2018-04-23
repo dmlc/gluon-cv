@@ -138,7 +138,7 @@ class MultiPerClassDecoder(gluon.HybridBlock):
 
     This decoder must work with `MultiClassEncoder` to reconstruct valid labels.
     The decoder expect results are after logits, e.g. Softmax.
-    This version is different from `MultiClassDecoder` with the following changes:
+    This version is different from :py:class:`gluonvision.model_zoo.coders.MultiClassDecoder` with the following changes:
 
     For each position(anchor boxes), each foreground class can have their own
     results, rather than enforced to be the best one.
