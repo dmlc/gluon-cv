@@ -21,7 +21,7 @@ import recommonmark
 from recommonmark.parser import CommonMarkParser
 from recommonmark.transform import AutoStructify
 from sphinx_gallery.sorting import ExplicitOrder
-from sphinx_gallery.sorting import NumberOfCodeLinesSortKey
+from sphinx_gallery.sorting import ExampleTitleSortKey
 
 # -- Project information -----------------------------------------------------
 
