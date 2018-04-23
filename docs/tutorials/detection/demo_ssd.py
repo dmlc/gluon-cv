@@ -54,8 +54,7 @@ print('Shape of pre-processed image:', x.shape)
 # `(batch_size, num_bboxes, 4)`, respectively.
 #
 # We can use :py:func:`gluonvision.utils.viz.plot_bbox` to visualize the
-# results. We slice the results for the first image, convert them
-# into numpy and then feed into `plot_bbox`.
+# results. We slice the results for the first image, then feed into `plot_bbox`.
 
 class_IDs, scores, bounding_boxs = net(x)
 
