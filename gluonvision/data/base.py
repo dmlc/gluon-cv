@@ -2,7 +2,6 @@
 import os
 from mxnet.gluon.data import dataset
 
-
 class ClassProperty(object):
     """Readonly @ClassProperty descriptor for internal usage."""
     def __init__(self, fget):

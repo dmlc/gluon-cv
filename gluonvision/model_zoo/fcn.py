@@ -96,16 +96,17 @@ def get_fcn(dataset='pascal_voc', backbone='resnet50', pretrained=False,
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
     """
-    if dataset == 'pascal_voc':
-        nclass = 22
-        acronym = 'voc'
-    elif dataset == 'ade20k':
-        nclass = 151
-        acronym = 'ade'
-    model = FCN(nclass, backbone=backbone, **kwargs)
+    acronyms = {
+        'pascal_voc': 'voc',
+        'ade20k': 'ade',
+    }
+    # infer number of classes
+    from ..data.segbase import get_segmentation_dataset
+    data = get_segmentation_dataset(dataset)
+    model = FCN(data.num_class, backbone=backbone, **kwargs)
     if pretrained:
         from .model_store import get_model_file
-        model.load_params(get_model_file('fcn_%s_%s'%(backbone, acronym),
+        model.load_params(get_model_file('fcn_%s_%s'%(backbone, acronyms[dataset]),
                                          root=root), ctx=ctx)
     return model
 
@@ -140,6 +141,3 @@ def get_fcn_voc_resnet101(**kwargs):
         Location for keeping the model parameters.
     """
     return get_fcn('pascal_voc', 'resnet101', **kwargs)
-
-# acronym for easy load
-_Net = FCN
