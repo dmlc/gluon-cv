@@ -125,12 +125,8 @@ def train(net, train_data, val_data, classes, args):
         {'learning_rate': args.lr, 'wd': args.wd, 'momentum': args.momentum})
 
     # lr decay policy
-    lr_decay = args.lr_decay
-    lr_steps = [float(ls) for ls in args.lr_decay_epoch.split(',') if ls.strip()]
-    if not isinstance(lr_decay, list):
-        lr_decay = [lr_decay]
-    if len(lr_decay) == 1 and len(lr_steps) > 1:
-        lr_decay *= len(lr_steps)
+    lr_decay = float(args.lr_decay)
+    lr_steps = sorted([float(ls) for ls in args.lr_decay_epoch.split(',') if ls.strip()])
 
     cls_loss = gluon.loss.SoftmaxCrossEntropyLoss()
     box_loss = gluon.loss.HuberLoss()
@@ -152,8 +148,9 @@ def train(net, train_data, val_data, classes, args):
     logger.info('Start training from [Epoch %d]' % args.start_epoch)
     best_map = [0]
     for epoch in range(args.start_epoch, args.epochs):
-        if epoch in lr_steps:
-            new_lr = trainer.learning_rate * np.prod(lr_decay[:lr_steps.index(epoch)+1])
+        while lr_steps and epoch >= lr_steps[0]:
+            new_lr = trainer.learning_rate * lr_decay
+            lr_steps.pop(0)
             trainer.set_learning_rate(new_lr)
             logger.info("[Epoch {}] Set learning rate to {}".format(epoch, new_lr))
         acc_metric.reset()

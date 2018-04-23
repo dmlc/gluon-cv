@@ -20,7 +20,7 @@ Model Zoo API
     # load ssd from scratch
     ssd2 = model_zoo.get_model('ssd_512_resnet50_v1_voc', pretrained_base=False)
 
-We recommend using `model_zoo.get_model` for loading pre-defined models, because it provides
+We recommend using :py:meth:`gluonvision.model_zoo.get_model` for loading pre-defined models, because it provides
 name check and suggest you what models are available now.
 
 However, you can still load models by directly instantiate it like
@@ -30,9 +30,10 @@ However, you can still load models by directly instantiate it like
     from gluonvision import model_zoo
     cifar_resnet20 = model_zoo.cifar_resnet20_v1(pretrained=True)
 
+Detailed ``model_zoo`` APIs are available in our API reference: :py:meth:`gluonvision.model_zoo`.
 
-Available models
-----------------
+Summary of Available Models
+---------------------------
 
 We are still in early development stage, more models will be made available for download.
 
@@ -70,19 +71,17 @@ Object Detection
 
 The following table summarizes the available models and there performances for object detection.
 
-+-------------------------------------+----------+---------+-------+
-| Model                               | Dataset  | Input   | Perf  |
-+=====================================+==========+=========+=======+
-| ssd_300_vgg16_atrous_voc [Liu16]_   | VOC07+12 | 300x300 | 77.6  |
-+-------------------------------------+----------+---------+-------+
-| ssd_512_vgg16_atrous_voc [Liu16]_   | VOC07+12 | 512x512 |       |
-+-------------------------------------+----------+---------+-------+
-| ssd_512_resnet50_v1_voc [Liu16]_    | VOC07+12 | 512x512 | 80.1  |
-+-------------------------------------+----------+---------+-------+
+.. https://bit.ly/2Hl92pO
 
-.. [Liu16] Wei Liu, Dragomir Anguelov, Dumitru Erhan,
-       Christian Szegedy, Scott Reed, Cheng-Yang Fu, Alexander C. Berg.
-       SSD: Single Shot MultiBox Detector. ECCV 2016.
++------------------------------+------------+------+-------------------------------------+
+| Model                        | Input Size | mAP  | Details                             |
++==============================+============+======+=====================================+
+| ssd_300_vgg16_atrous_voc     | 300 x 300  | 77.6 | :ref:`ssd_300_vgg16_atrous_voc`     |
++------------------------------+------------+------+-------------------------------------+
+| ssd_512_vgg16_atrous_voc     | 512 x 512  | 79.2 | :ref:`ssd_512_vgg16_atrous_voc`     |
++------------------------------+------------+------+-------------------------------------+
+| ssd_512_resnet50_v1_voc      | 512 x 512  | 80.1 | :ref:`ssd_512_resnet50_v1_voc`      |
++------------------------------+------------+------+-------------------------------------+
 
 
 Semantic Segmentation
@@ -125,3 +124,49 @@ Table of pre-trained models, performances and the training commands:
 .. [Long15] Long, Jonathan, Evan Shelhamer, and Trevor Darrell. \
     "Fully convolutional networks for semantic segmentation." \
     Proceedings of the IEEE conference on computer vision and pattern recognition. 2015.
+
+Training Details
+----------------
+
+Object Detection
+~~~~~~~~~~~~~~~~~~~~~~
+
+Liu, Wei, et al. "`SSD: Single shot multibox detector <https://arxiv.org/pdf/1512.02325.pdf>`_". ECCV 2016
+
+.. _ssd_300_vgg16_atrous_voc:
+
+SSD 300 VGG16 Atrous VOC
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: bash
+
+   python train_ssd.py --gpus 0,1,2,3 --network resnet50_v1 --data-shape 512 -j 32
+
+:download:`Training log: ssd_300_vgg16_atrous_voc.log<../../scripts/detection/ssd/logs/ssd_300_vgg16_atrous_voc.log>`
+
+.. plot::
+
+  import importlib.util
+  spec = importlib.util.spec_from_file_location("plot", "../../scripts/detection/ssd/logs/plot.py")
+  foo = importlib.util.module_from_spec(spec)
+  spec.loader.exec_module(foo)
+  foo.plot_log('../../scripts/detection/ssd/logs/ssd_300_vgg16_atrous_voc.log')
+
+.. _ssd_512_resnet50_v1_voc:
+
+SSD 512 Resnet50 V1 VOC
+^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: bash
+
+   python train_ssd.py --gpus 0,1,2,3 --network resnet50_v1 --data-shape 512 -j 32
+
+:download:`Training log: ssd_300_vgg16_atrous_voc.log<../../scripts/detection/ssd/logs/ssd_300_vgg16_atrous_voc.log>`
+
+.. plot::
+
+  import importlib.util
+  spec = importlib.util.spec_from_file_location("plot", "../../scripts/detection/ssd/logs/plot.py")
+  foo = importlib.util.module_from_spec(spec)
+  spec.loader.exec_module(foo)
+  foo.plot_log('../../scripts/detection/ssd/logs/ssd_300_vgg16_atrous_voc.log')
