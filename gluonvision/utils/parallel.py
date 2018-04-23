@@ -6,9 +6,9 @@ from mxnet import autograd
 from mxnet.ndarray import NDArray
 from mxnet.gluon.utils import split_and_load
 
-__all__ = ['ModelDataParallel', 'CriterionDataParallel']
+__all__ = ['DataParallelModel', 'DataParallelCriterion']
 
-class ModelDataParallel(object):
+class DataParallelModel(object):
     """Data parallelism
 
     Hide the difference of single/multiple GPUs to the user.
@@ -35,7 +35,7 @@ class ModelDataParallel(object):
 
     Example::
         >>> ctx = [mx.gpu(0), mx.gpu(1)]
-        >>> net = ModelDataParallel(model, ctx_list=ctx)
+        >>> net = DataParallelModel(model, ctx_list=ctx)
         >>> y = net(x)
     """
     def __init__(self, module, ctx_list=None, sync=False):
@@ -57,7 +57,7 @@ class ModelDataParallel(object):
         return 'DataParallel:\n module = {' + self.module.__repr__() + '}'
 
 
-class CriterionDataParallel(object):
+class DataParallelCriterion(object):
     """Criterion data parallelism
 
     Parameters
@@ -80,8 +80,8 @@ class CriterionDataParallel(object):
     Example::
 
         >>> ctx = [mx.gpu(0), mx.gpu(1)]
-        >>> net = ModelDataParallel(model, ctx=ctx)
-        >>> criterion = CriterionDataParallel(criterion)
+        >>> net = DataParallelModel(model, ctx=ctx)
+        >>> criterion = DataParallelCriterion(criterion)
         >>> y = net(x)
         >>> losses = criterion(y, t)
     """
@@ -91,7 +91,7 @@ class CriterionDataParallel(object):
         self.sync = sync
 
     def __call__(self, inputs, *targets, **kwargs):
-        # the inputs should be the outputs of ModelDataParallel
+        # the inputs should be the outputs of DataParallelModel
         if not self.ctx_list:
             return self.module(inputs, *targets, **kwargs)
         targets, kwargs = split_load_kwargs(targets, kwargs, self.ctx_list)
@@ -141,21 +141,17 @@ def parallel_apply(module, inputs, kwargs_tup=None, sync=False):
                 with autograd.record(is_training):
                     if isinstance(input, NDArray):
                         output = module(input, **kwargs)
-                    else:
-                        output = module(*input, **kwargs)
-                    if isinstance(output, NDArray):
                         output.wait_to_read()
                     else:
+                        output = module(*input, **kwargs)
                         for out in output:
                             out.wait_to_read()
             else:
                 if isinstance(input, NDArray):
                     output = module(input, **kwargs)
-                else:
-                    output = module(*input, **kwargs)
-                if isinstance(output, NDArray):
                     output.wait_to_read()
                 else:
+                    output = module(*input, **kwargs)
                     for out in output:
                         out.wait_to_read()
             with lock:
@@ -204,16 +200,10 @@ def criterion_parallel_apply(module, inputs, targets, kwargs_tup=None, sync=Fals
         try:
             if is_recording:
                 with autograd.record(is_training):
-                    if isinstance(input, NDArray):
-                        output = module(input, *target, **kwargs)
-                    else:
-                        output = module(*input, *target, **kwargs)
+                    output = module(*(input + target), **kwargs)
                     output.wait_to_read()
             else:
-                if isinstance(input, NDArray):
-                    output = module(input, *target, **kwargs)
-                else:
-                    output = module(*input, *target, **kwargs)
+                output = module(*(input + target), **kwargs)
                 output.wait_to_read()
             with lock:
                 results[i] = output
@@ -244,6 +234,6 @@ def criterion_parallel_apply(module, inputs, targets, kwargs_tup=None, sync=Fals
             outputs.append(output)
         return tuple(outputs)
     else:
-        outputs = [module(*input, **target, **kwargs) \
+        outputs = [module(*(input + target), **kwargs) \
             for (input, target, kwargs) in zip(inputs, targets, kwargs_tup)]
         return tuple(outputs)

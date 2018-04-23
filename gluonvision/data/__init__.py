@@ -8,3 +8,4 @@ from .pascal_voc.detection import VOCDetection
 from .pascal_voc.segmentation import VOCSegmentation
 from .pascal_aug.segmentation import VOCAugSegmentation
 from .ade20k.segmentation import ADE20KSegmentation
+from .segbase import get_segmentation_dataset, test_batchify_fn

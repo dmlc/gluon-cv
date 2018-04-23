@@ -44,7 +44,7 @@ img = img.expand_dims(0).as_in_context(ctx)
 # ----------------------------------------------
 #
 # get pre-trained model
-model = gluonvision.model_zoo.get_fcn_voc_resnet101(pretrained=True)
+model = gluonvision.model_zoo.get_model('fcn_resnet101_voc', pretrained=True)
 
 ##############################################################################
 # make prediction using single scale

@@ -4,6 +4,7 @@ mxnet.gluon.model_zoo.vision and gluonvision.models
 """
 from mxnet import gluon
 from .ssd import *
+from .fcn import *
 from .cifarresnet import *
 from .cifarwideresnet import *
 
@@ -47,6 +48,8 @@ def get_model(name, **kwargs):
         'cifar_wideresnet16_10': cifar_wideresnet16_10,
         'cifar_wideresnet28_10': cifar_wideresnet28_10,
         'cifar_wideresnet40_8': cifar_wideresnet40_8,
+        'fcn_resnet50_voc' : get_fcn_voc_resnet50,
+        'fcn_resnet101_voc' : get_fcn_voc_resnet101,
         }
     try:
         net = gluon.model_zoo.vision.get_model(name, **kwargs)
