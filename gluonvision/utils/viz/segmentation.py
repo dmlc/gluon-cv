@@ -1,5 +1,9 @@
 """Segmentation Utils"""
 from PIL import Image
+import mxnet as mx
+from mxnet.gluon import HybridBlock
+
+__all__ = ['get_color_pallete', 'DeNormalize']
 
 def get_color_pallete(npimg, dataset='pascal_voc'):
     """Visualize image.
@@ -19,7 +23,7 @@ def get_color_pallete(npimg, dataset='pascal_voc'):
     """
     # recovery boundary
     if dataset == 'pascal_voc' or dataset == 'pascal_aug':
-        npimg[npimg == 21] = 255
+        npimg[npimg == -1] = 255
     # put colormap
     out_img = Image.fromarray(npimg.astype('uint8'))
     if dataset == 'ade20k':
@@ -27,6 +31,16 @@ def get_color_pallete(npimg, dataset='pascal_voc'):
     else:
         out_img.putpalette(vocpallete)
     return out_img
+
+
+class DeNormalize(HybridBlock):
+    def __init__(self, mean, std):
+        super(DeNormalize, self).__init__()
+        self.mean = mx.nd.array(mean, ctx=mx.cpu(0))
+        self.std = mx.nd.array(std, ctx=mx.cpu(0))
+
+    def hybrid_forward(self, F, x):
+        return (x - self.mean.reshape(shape=(3,1,1))) / self.std .reshape(shape=(3,1,1))
 
 
 def _getvocpallete(num_cls):

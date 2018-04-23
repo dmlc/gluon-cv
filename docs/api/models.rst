@@ -65,10 +65,7 @@ Semantic Segmentation
 :hidden:`BaseModel`
 ~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: SegBaseModel
-    :members:
-
-.. autoclass:: SegEvalModel
+.. autoclass:: segbase.SegBaseModel
     :members:
 
 :hidden:`FCN`
