@@ -7,6 +7,8 @@ gluonvision.model_zoo
 .. automodule:: gluonvision.model_zoo
 .. currentmodule:: gluonvision.model_zoo
 
+.. autofunction:: get_model
+
 CIFAR
 -----
 
