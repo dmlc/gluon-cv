@@ -1,6 +1,6 @@
 """Plot History from Training"""
 import os
-import matplotlib.pyplot as plt
+
 
 class TrainingHistory():
     r"""Training History Record and Plot
@@ -47,6 +47,8 @@ class TrainingHistory():
         legend_loc: str
             location of legend. upper right by default.
         """
+        import matplotlib.pyplot as plt
+
         if labels is None:
             labels = self.labels
         n = len(labels)

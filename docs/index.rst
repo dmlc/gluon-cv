@@ -1,29 +1,53 @@
 GluonVision: a Deep Learning Toolkit for Computer Vision
 ========================================================
 
-GluonVision provides implementations of the sate-of-the-art (SOTA) deep learning
-models in computer vision. It is designed for engineers, researchers, and
-students to fast prototype products and research ideas based on these
-models. This toolkit offers four main features:
+GluonVision provides implementations of state-of-the-art (SOTA) deep learning
+algorithms in computer vision.
+It is designed for helping engineers, researchers, and students to quickly
+prototype products, validate new ideas, and learning computer vision.
 
-1. Training scripts to reproduce SOTA results reported in research papers
-2. A large number of pre-trained models
-3. Carefully designed APIs that greatly reduce the implementation complexity
-4. Community supports
+GluonVision features:
+1. training scripts that reproduces SOTA results reported in latest papers,
+2. a large set of pre-trained models,
+3. carefully designed APIs and easy to understand implementations,
+4. community support.
 
-This toolkit assume users has basic knowledges about deep learning and computer
-vision. Otherwise, please refer to introduction courses such as `Stanford
-CS231n <http://cs231n.stanford.edu/>`_.
+GluonVision tutorials assume users have basic knowledges about deep learning and
+computer vision.
+Otherwise, please refer to our introductory deep learning course
+`MXNet-the-Streight-Dope <http://gluon.mxnet.io/>`_.
 
 .. note::
 
-   This project is still at an early stage. Please expect that it will
-   be updated frequently. We also welcome any contributions.
+   This project is at an early stage. Please expect frequent updates.
+   We welcome feedback and contributions.
 
 Installation
 ------------------
 
-GluonVision relies on the recent version of MXNet. The easiest way to install MXNet
+Install via PyPI
+^^^^^^^^^^^^^^^^
+
+The easiest way to install GluonVision is through `pip <https://pip.pypa.io/en/stable/installing/>`_.
+
+.. code-block:: bash
+
+  pip install gluonvision
+
+Install from Source
+^^^^^^^^^^^^^^^^^^^
+
+Optionally, you can clone the GluonVision project and install it locally
+
+.. code-block:: bash
+
+   git clone https://github.com/dmlc/gluon-vision
+   cd gluon-vision && python setup.py install --user
+
+Install MXNet
+^^^^^^^^^^^^^
+
+GluonVision depends on the recent version of MXNet. The easiest way to install MXNet
 is through `pip <https://pip.pypa.io/en/stable/installing/>`_. The following
 command installs a nightly build CPU version of MXNet.
 
@@ -33,26 +57,20 @@ command installs a nightly build CPU version of MXNet.
 
 .. note::
 
-   There are other pre-build MXNet packages that enables GPU supports and
+   There are other pre-build MXNet binaries that enable GPU support and
    accelerate CPU performance, please refer to `this tutorial
-   <http://gluon-crash-course.mxnet.io/mxnet_packages.html>`_ for details. Some
-   training scripts are recommended to run on GPUs, if you don't have a GPU
+   <http://gluon-crash-course.mxnet.io/mxnet_packages.html>`_ for details.
+
+   Some training scripts are recommended to run on GPUs, if you don't have a GPU
    machine at hands, you may consider to `run on AWS
    <http://gluon-crash-course.mxnet.io/use_aws.html>`_.
 
-
-Then clone the GluonVision project and install it locally
-
-.. code-block:: bash
-
-   git clone https://github.com/dmlc/gluon-vision
-   cd gluon-vision && python setup.py install --user
 
 A Quick Example
 ----------------
 
 
-:ref:`ssd-demo`
+:ref:`sphx_glr_build_examples_detection_demo_ssd.py`
 
 
 
