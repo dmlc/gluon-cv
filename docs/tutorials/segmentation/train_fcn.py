@@ -139,8 +139,8 @@ trainset = gluonvision.data.VOCSegmentation(split='train', transform=input_trans
 print('Training images:', len(trainset))
 # Create Training Loader
 train_data = gluon.data.DataLoader(
-    trainset, 8, shuffle=True, last_batch='rollover',
-    num_workers=8)
+    trainset, 4, shuffle=True, last_batch='rollover',
+    num_workers=4)
 
 ##############################################################################
 # For data augmentation, 
@@ -234,7 +234,7 @@ for i, (data, target) in enumerate(train_data):
         losses = criterion(outputs, target)
         mx.nd.waitall()
         autograd.backward(losses)
-    optimizer.step(8)
+    optimizer.step(4)
     for loss in losses:
         train_loss += loss.asnumpy()[0] / len(losses)
     print('Epoch %d, training loss %.3f'%(epoch, train_loss/(i+1)))
