@@ -42,7 +42,7 @@ We are still in early development stage, more models will be made available for 
 Image Classification
 ~~~~~~~~~~~~~~~~~~~~
 
-The following table summarizes the available models and there performances in additional to
+The following table summarizes the available models and their performances in additional to
 `Gluon Model Zoo
 <https://mxnet.incubator.apache.org/api/python/gluon/model_zoo.html>`_.
 
@@ -71,7 +71,7 @@ The following table summarizes the available models and there performances in ad
 Object Detection
 ~~~~~~~~~~~~~~~~
 
-The following table summarizes the available models and there performances for object detection.
+The following table summarizes the available models and their performances for object detection.
 
 .. https://bit.ly/2qQHLl4
 
