@@ -1,4 +1,4 @@
-"""Dive Deep into Training with CIFAR10
+"""2. Dive Deep into Training with CIFAR10
 ======================
 
 Hope you enjoyed playing with our demo script.

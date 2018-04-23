@@ -1,4 +1,4 @@
-"""Train Your Own Model on ImageNet
+"""5. Train Your Own Model on ImageNet
 ======================
 
 ``ImageNet`` is the most well-known dataset for image classification.

@@ -46,27 +46,27 @@ The following table summarizes the available models and their performances in ad
 `Gluon Model Zoo
 <https://mxnet.incubator.apache.org/api/python/gluon/model_zoo.html>`_.
 
-+---------------------------+----------+
-| Model                     | Accuracy |
-+===========================+==========+
-| ``CIFAR_ResNet20_v1``     | 0.9160   |
-+---------------------------+----------+
-| ``CIFAR_ResNet56_v1``     | 0.9387   |
-+---------------------------+----------+
-| ``CIFAR_ResNet110_v1``    | 0.9471   |
-+---------------------------+----------+
-| ``CIFAR_ResNet20_v2``     | 0.9130   |
-+---------------------------+----------+
-| ``CIFAR_ResNet56_v2``     | 0.9413   |
-+---------------------------+----------+
-| ``CIFAR_ResNet110_v2``    | 0.9464   |
-+---------------------------+----------+
-| ``CIFAR_WideResNet16_10`` | 0.9614   |
-+---------------------------+----------+
-| ``CIFAR_WideResNet28_10`` | 0.9667   |
-+---------------------------+----------+
-| ``CIFAR_WideResNet40_8``  | 0.9673   |
-+---------------------------+----------+
++---------------------------+--------------------+-------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Model                     | Accuracy (Vanilla) | Accuracy (Mix-Up) | Training Command  | Training Log     |
++===========================+====================+===================+==================+==================+
+| CIFAR_ResNet20_v1     [1] | 90.8               | 91.6              | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_resnet20_v1.sh>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_resnet20_v1_mixup.sh>`_         | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_resnet20_v1.log>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_resnet20_v1_mixup.log>`_     |
++---------------------------+--------------------+-------------------+------------------+------------------+
+| CIFAR_ResNet56_v1     [1] | 92.8               | 93.8              | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_resnet56_v1.sh>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_resnet56_v1_mixup.sh>`_         | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_resnet56_v1.log>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_resnet110_v1_mixup.log>`_    |
++---------------------------+--------------------+-------------------+------------------+------------------+
+| CIFAR_ResNet110_v1    [1] | 93.4               | 94.7              | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_resnet110_v1.sh>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_resnet110_v1_mixup.sh>`_       | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_resnet110_v1.log>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_resnet110_v1_mixup.log>`_    |
++---------------------------+--------------------+-------------------+------------------+------------------+
+| CIFAR_ResNet20_v2     [1] | 90.8               | 91.3              | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_resnet20_v2.sh>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_resnet20_v2_mixup.sh>`_         | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_resnet20_v2.log>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_resnet20_v2_mixup.log>`_     |
++---------------------------+--------------------+-------------------+------------------+------------------+
+| CIFAR_ResNet56_v2     [1] | 93.1               | 94.1              | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_resnet56_v2.sh>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_resnet56_v2_mixup.sh>`_         | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_resnet56_v2.log>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_resnet56_v2_mixup.log>`_     |
++---------------------------+--------------------+-------------------+------------------+------------------+
+| CIFAR_ResNet110_v2    [1] | 93.7               | 94.6              | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_resnet110_v2.sh>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_resnet110_v2_mixup.sh>`_       | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_resnet110_v2.log>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_resnet110_v2_mixup.log>`_    |
++---------------------------+--------------------+-------------------+------------------+------------------+
+| CIFAR_WideResNet16_10 [1] | 95.1               | 96.1              | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_wideresnet16_10.sh>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_wideresnet16_10_mixup.sh>`_ | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_wideresnet16_10.log>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_wideresnet16_10_mixup.log>`_ |
++---------------------------+--------------------+-------------------+------------------+------------------+
+| CIFAR_WideResNet28_10 [1] | 95.6               | 96.6              | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_wideresnet28_10.sh>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_wideresnet28_10_mixup.sh>`_ | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_wideresnet28_10.log>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_wideresnet28_10_mixup.log>`_ |
++---------------------------+--------------------+-------------------+------------------+------------------+
+| CIFAR_WideResNet40_8  [1] | 95.9               | 96.7              | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_wideresnet40_8.sh>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_wideresnet40_8_mixup.sh>`_   | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_wideresnet40_8.log>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_wideresnet40_8_mixup.log>`_  |
++---------------------------+--------------------+-------------------+------------------+------------------+
 
 Object Detection
 ~~~~~~~~~~~~~~~~
