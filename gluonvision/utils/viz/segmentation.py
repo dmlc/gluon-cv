@@ -35,7 +35,7 @@ def get_color_pallete(npimg, dataset='pascal_voc'):
 
 class DeNormalize(HybridBlock):
     """Denormalize the image"""
-    # pylint: disable=arguments-differ
+    # pylint: disable=arguments-differ,unused-argument
     def __init__(self, mean, std):
         super(DeNormalize, self).__init__()
         self.mean = mx.nd.array(mean, ctx=mx.cpu(0))
