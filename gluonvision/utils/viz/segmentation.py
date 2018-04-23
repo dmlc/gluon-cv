@@ -34,13 +34,15 @@ def get_color_pallete(npimg, dataset='pascal_voc'):
 
 
 class DeNormalize(HybridBlock):
+    """Denormalize the image"""
+    # pylint: disable=arguments-differ
     def __init__(self, mean, std):
         super(DeNormalize, self).__init__()
         self.mean = mx.nd.array(mean, ctx=mx.cpu(0))
         self.std = mx.nd.array(std, ctx=mx.cpu(0))
 
     def hybrid_forward(self, F, x):
-        return (x - self.mean.reshape(shape=(3,1,1))) / self.std .reshape(shape=(3,1,1))
+        return (x - self.mean.reshape(shape=(3, 1, 1))) / self.std .reshape(shape=(3, 1, 1))
 
 
 def _getvocpallete(num_cls):

@@ -5,7 +5,6 @@ import mxnet as mx
 from mxnet import gluon
 from mxnet.ndarray import NDArray
 from mxnet.gluon.nn import HybridBlock
-from mxnet.gluon.loss import _apply_weighting
 from ..utils.metrics import voc_segmentation
 from ..utils.parallel import parallel_apply
 from .dilated import dilatedresnetv0
