@@ -77,9 +77,15 @@ train_data = DataLoader(
     ImageNet(train=True).transform_first(train_trans),
     batch_size=128, shuffle=True)
 
+#########################################################################
 for x, y in train_data:
     print((x.shape, y.shape))
     break
 
 
-# TODO, print several images
+#########################################################################
+# Peek some validation images
+from gluonvision.utils import viz
+val_dataset = ImageNet(train=False)
+viz.plot_image(val_dataset[30][0])  # index 0 is image, 1 is label
+viz.plot_image(val_dataset[60][0])

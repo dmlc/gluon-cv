@@ -2,6 +2,7 @@
 from __future__ import absolute_import, division
 
 import random
+import mxnet as mx
 from .image import plot_image
 
 def plot_bbox(img, bboxes, scores=None, labels=None, thresh=0.5,
@@ -11,13 +12,13 @@ def plot_bbox(img, bboxes, scores=None, labels=None, thresh=0.5,
 
     Parameters
     ----------
-    img : numpy.ndarray
+    img : numpy.ndarray or mxnet.nd.NDArray
         Image with shape `H, W, 3`.
-    bboxes : numpy.ndarray
+    bboxes : numpy.ndarray or mxnet.nd.NDArray
         Bounding boxes with shape `N, 4`. Where `N` is the number of boxes.
-    scores : numpy.ndarray, optional
+    scores : numpy.ndarray or mxnet.nd.NDArray, optional
         Confidence scores of the provided `bboxes` with shape `N`.
-    labels : numpy.ndarray, optional
+    labels : numpy.ndarray or mxnet.nd.NDArray, optional
         Class labels of the provided `bboxes` with shape `N`.
     thresh : float, optional, default 0.5
         Display threshold if `scores` is provided. Scores with less than `thresh`
@@ -55,6 +56,13 @@ def plot_bbox(img, bboxes, scores=None, labels=None, thresh=0.5,
 
     if len(bboxes) < 1:
         return ax
+
+    if isinstance(bboxes, mx.nd.NDArray):
+        bboxes = bboxes.asnumpy()
+    if isinstance(labels, mx.nd.NDArray):
+        labels = labels.asnumpy()
+    if isinstance(scores, mx.nd.NDArray):
+        scores = scores.asnumpy()
 
     if not absolute_coordinates:
         # convert to absolute coordinates using image shape

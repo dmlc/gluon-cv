@@ -23,6 +23,28 @@ CS231n <http://cs231n.stanford.edu/>`_.
 Installation
 ------------------
 
+Install via PyPI
+^^^^^^^^^^^^^^^^
+
+The easiest way to install GluonVision is through `pip <https://pip.pypa.io/en/stable/installing/>`_.
+
+.. code-block:: bash
+
+  pip install gluonvision
+
+Install from Source
+^^^^^^^^^^^^^^^^^^^
+
+Optionally you can clone the GluonVision project and install it locally
+
+.. code-block:: bash
+
+   git clone https://github.com/dmlc/gluon-vision
+   cd gluon-vision && python setup.py install --user
+
+Install MXNet
+^^^^^^^^^^^^^
+
 GluonVision relies on the recent version of MXNet. The easiest way to install MXNet
 is through `pip <https://pip.pypa.io/en/stable/installing/>`_. The following
 command installs a nightly build CPU version of MXNet.
@@ -41,18 +63,11 @@ command installs a nightly build CPU version of MXNet.
    <http://gluon-crash-course.mxnet.io/use_aws.html>`_.
 
 
-Then clone the GluonVision project and install it locally
-
-.. code-block:: bash
-
-   git clone https://github.com/dmlc/gluon-vision
-   cd gluon-vision && python setup.py install --user
-
 A Quick Example
 ----------------
 
 
-:ref:`ssd-demo`
+:ref:`sphx_glr_build_examples_detection_demo_ssd.py`
 
 
 
