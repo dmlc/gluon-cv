@@ -23,8 +23,11 @@ def find_version(*file_paths):
         return version_match.group(1)
     raise RuntimeError("Unable to find version string.")
 
-
-readme = open('README.md').read()
+try:
+    import pypandoc
+    long_description = pypandoc.convert('README.md', 'rst')
+except(IOError, ImportError):
+    long_description = open('README.md').read()
 
 VERSION = find_version('gluonvision', '__init__.py')
 
@@ -32,7 +35,7 @@ requirements = [
     'numpy',
     'tqdm',
     'requests',
-    'mxnet',
+    # 'mxnet',
     'matplotlib',
     'Pillow',
 ]
@@ -41,16 +44,16 @@ setup(
     # Metadata
     name='gluonvision',
     version=VERSION,
-    author='Gluon CV Package Contributors',
-    author_email='hzaws@amazon.com',
-    url='https://github.com/dmlc/gluon-vision-toolkit',
+    author='Gluon CV Toolkit Contributors',
+    url='https://github.com/dmlc/gluon-vision',
     description='MXNet Gluon CV Toolkit',
-    long_description=readme,
+    long_description=long_description,
     license='Apache-2.0',
 
     # Package info
-    packages=find_packages(exclude=('tests',)),
+    packages=find_packages(exclude=('docs', 'tests', 'scripts')),
 
     zip_safe=True,
+    include_package_data=True,
     install_requires=requirements,
 )

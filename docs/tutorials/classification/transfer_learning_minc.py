@@ -2,7 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 """4. Transfer Learning with Your Own Image Dataset
-===============================================
+=======================================================
 
 Dataset size is a big factor in the performance of deep learning models.
 ``ImageNet`` has over one million labeled images, but

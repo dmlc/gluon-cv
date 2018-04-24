@@ -1,0 +1,5 @@
+recursive-include gluonvision *.py
+include LICENSE
+include README.md
+recursive-exclude tests *
+recursive-exclude scripts *

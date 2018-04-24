@@ -1,5 +1,5 @@
-"""Train FCN on Pascal VOC Dataset
-===============================
+"""2. Train FCN on Pascal VOC Dataset
+==================================
 
 This is a semantic segmentation tutorial using Gluon Vison, a step-by-step example.
 The readers should have basic knowledge of deep learning and should be familiar with Gluon API.
@@ -9,25 +9,21 @@ You can `Start Training Now`_ or `Dive into Deep`_.
 Start Training Now
 ~~~~~~~~~~~~~~~~~~
 
-- Please follow the `installation guide <../../index.html>`_ to install MXNet and GluonVision if not yet.
-  Use the quick script to `Prepare Pascal VOC Dataset <../examples_datasets/pascal_voc.html>`_.
+.. hint::
 
-- Clone the code::
+    Feel free to skip the tutorial because the training script is self-complete and ready to launch.
 
-    git clone https://github.com/dmlc/gluon-vision
-    cd scipts/segmentation/
+    :download:`Download Full Python Script: train.py<../../../scripts/segmentation/train.py>`
 
-- Example training command::
+    Example training command::
 
-    # First training on augmented set
-    CUDA_VISIBLE_DEVICES=0,1,2,3 python train.py --dataset pascal_aug --model fcn --backbone resnet50 --lr 0.001 --checkname mycheckpoint
-    # Finetuning on original set
-    CUDA_VISIBLE_DEVICES=0,1,2,3 python train.py --dataset pascal_voc --model fcn --backbone resnet50 --lr 0.0001 --checkname mycheckpoint --resume runs/pascal_aug/fcn/mycheckpoint/checkpoint.params
+        # First training on augmented set
+        CUDA_VISIBLE_DEVICES=0,1,2,3 python train.py --dataset pascal_aug --model fcn --backbone resnet50 --lr 0.001 --checkname mycheckpoint
+        # Finetuning on original set
+        CUDA_VISIBLE_DEVICES=0,1,2,3 python train.py --dataset pascal_voc --model fcn --backbone resnet50 --lr 0.0001 --checkname mycheckpoint --resume runs/pascal_aug/fcn/mycheckpoint/checkpoint.params
 
-  For more training command options, please run ``python train.py -h``
-
-
-- Please checkout the `model_zoo <../model_zoo/index.html#semantic-segmentation>`_ for training commands of reproducing the experiments.
+    For more training command options, please run ``python train.py -h``
+    Please checkout the `model_zoo <../model_zoo/index.html#semantic-segmentation>`_ for training commands of reproducing the pretrained model.
 
 Dive into Deep
 ~~~~~~~~~~~~~~

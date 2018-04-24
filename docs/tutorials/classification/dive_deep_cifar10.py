@@ -1,5 +1,5 @@
 """2. Dive Deep into Training with CIFAR10
-======================
+==============================================
 
 Hope you enjoyed playing with our demo script.
 Now, you may be wandering: how exactly was the model trained?

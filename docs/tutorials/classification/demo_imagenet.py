@@ -1,5 +1,5 @@
 """3. Getting Started with Pre-trained Models on ImageNet
-===================================================
+===========================================================
 
 `ImageNet <http://www.image-net.org/>`__ is a
 large labeled dataset of real-world images. It is one of the most

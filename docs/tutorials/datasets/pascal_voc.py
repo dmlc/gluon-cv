@@ -95,6 +95,6 @@ plt.show()
 
 ##################################################################
 # Finally, to use both ``train_dataset`` and ``val_dataset`` for training, we
-# can pass them without data transformations and the batch size into
+# can pass them with data transformations and the batch size into
 # :py:class:`gluonvions.data.DetectionDataLoader`, see :download:`train_ssd.py
 # <../../../scripts/detection/ssd/train_ssd.py>` for an example.
