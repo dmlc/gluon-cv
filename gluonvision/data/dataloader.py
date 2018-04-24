@@ -49,10 +49,6 @@ class DetectionDataLoader(DataLoader):
     The main purpose of the DataLoader is to pad variable length of labels from
     each image, because they have different amount of objects.
 
-
-    (TODO I feel gluon's dataloader doc is confusing as well, we probably want
-    to fix it as well)
-
     Parameters
     ----------
     dataset : mxnet.gluon.data.Dataset or numpy.ndarray or mxnet.ndarray.NDArray
@@ -65,8 +61,7 @@ class DetectionDataLoader(DataLoader):
     sampler : mxnet.gluon.data.Sampler, default None
         The sampler to use. We should either specify a sampler or enable
         shuffle, not both, because random shuffling is a sampling method.
-        (TODO, should we keep this arg?)
-    last_batch : {'keep', 'discard', 'rollover'}, default is TODO
+    last_batch : {'keep', 'discard', 'rollover'}, default is keep
         How to handle the last batch if the batch size does not evenly divide by
         the number of examples in the dataset. There are three options to deal
         with the last batch if its size is smaller than the specified batch
@@ -76,14 +71,12 @@ class DetectionDataLoader(DataLoader):
         - discard: throw it away
         - rollover: insert the examples to the beginning of the next batch
     batch_sampler : mxnet.gluon.data.BatchSampler
-        (TODO, should we keep this arg?, if so, need to update the doc)
         A sampler that returns mini-batches. Do not specify batch_size,
         shuffle, sampler, and last_batch if batch_sampler is specified.
     batchify_fn : callable
-        (TODO, should we keep this arg?, if so, need to update the doc. namely
-        add the default callback into docs, instead of putting the codes here)
         Callback function to allow users to specify how to merge samples
-        into a batch. Defaults to `default_pad_batchify_fn`::
+        into a batch.
+        Defaults to :py:meth:`gluonvision.data.dataloader.default_pad_batchify_fn`::
             def default_pad_batchify_fn(data):
                 if isinstance(data[0], nd.NDArray):
                     return nd.stack(*data)
@@ -100,8 +93,8 @@ class DetectionDataLoader(DataLoader):
                     return nd.array(buf, dtype=data[0].dtype)
     num_workers : int, default 0
         The number of multiprocessing workers to use for data preprocessing.
-        (TODO, what does 0 mean? how about 1?)
-        `num_workers > 0` is not supported on Windows yet.
+        If ``num_workers`` = 0, multiprocessing is disabled.
+        Otherwise ``num_workers`` multiprocessing worker is used to process data.
 
     """
     def __init__(self, dataset, batch_size=None, shuffle=False, sampler=None,
