@@ -70,7 +70,7 @@ import numpy as np
 img, mask = val_dataset[0]
 # get pallete for the mask
 from gluonvision.utils.viz import get_color_pallete
-mask = get_color_pallete(np.array(mask), dataset='ade20k')
+mask = get_color_pallete(mask.asnumpy(), dataset='ade20k')
 mask.save('mask.png')
 
 
@@ -83,7 +83,7 @@ import matplotlib.image as mpimg
 # subplot 1 for img
 fig = plt.figure()
 fig.add_subplot(1,2,1)
-plt.imshow(np.array(img))
+plt.imshow(img.asnumpy().astype('uint8'))
 # subplot 2 for the mask
 mmask = mpimg.imread('mask.png')
 fig.add_subplot(1,2,2)
