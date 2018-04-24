@@ -1,10 +1,10 @@
 Vision Model Zoo
 ================
 
-The GluonVision Model Zoo,
-similar to its upstream `Gluon Model Zoo
+GluonVision Model Zoo, similar to the upstream `Gluon Model Zoo
 <https://mxnet.incubator.apache.org/api/python/gluon/model_zoo.html>`_,
-provides pre-defined and pre-trained models to help bootstrap computer vision related applications.
+provides pre-defined and pre-trained models to help bootstrap computer vision
+applications.
 
 Model Zoo API
 -------------
@@ -12,16 +12,17 @@ Model Zoo API
 .. code-block:: python
 
     from gluonvision import model_zoo
+    # load a ResNet model trained on CIFAR10
     cifar_resnet20 = model_zoo.get_model('cifar_resnet20_v1', pretrained=True)
-    # a fully pretrained ssd model
+    # load a pre-trained ssd model
     ssd0 = model_zoo.get_model('ssd_300_vgg16_atrous_voc', pretrained=True)
-    # load ssd model with pretrained feature extractors
+    # load ssd model with pre-trained feature extractors
     ssd1 = model_zoo.get_model('ssd_512_vgg16_atrous_voc', pretrained_base=True)
-    # load ssd from scratch
+    # load ssd model without initialization
     ssd2 = model_zoo.get_model('ssd_512_resnet50_v1_voc', pretrained_base=False)
 
-We recommend using :py:meth:`gluonvision.model_zoo.get_model` for loading pre-defined models, because it provides
-name check and suggest you what models are available now.
+We recommend using :py:meth:`gluonvision.model_zoo.get_model` for loading
+pre-defined models, because it provides name checking and list available choices.
 
 However, you can still load models by directly instantiate it like
 
@@ -32,26 +33,26 @@ However, you can still load models by directly instantiate it like
 
 .. hint::
 
-  Detailed ``model_zoo`` APIs are available in our API reference: :py:meth:`gluonvision.model_zoo`.
+  Detailed ``model_zoo`` APIs are available in API reference: :py:meth:`gluonvision.model_zoo`.
 
 Summary of Available Models
 ---------------------------
 
-We are still in early development stage, more models will be made available for download.
+GluonVision is still under development, more models will be added later.
 
 Image Classification
 ~~~~~~~~~~~~~~~~~~~~
 
-The following table summarizes the available models and their performances in additional to
-`Gluon Model Zoo
-<https://mxnet.incubator.apache.org/api/python/gluon/model_zoo.html>`_.
+The following table lists pre-trained models trained on CIFAR10. For models
+trained on ImageNet, please refer to upstream
+`Gluon Model Zoo <https://mxnet.incubator.apache.org/api/python/gluon/model_zoo.html>`_.
 
 .. hint::
 
-    Our pre-trained models match the accuracy from "Mix-Up" [4]_ .
+    Our pre-trained models reproduce results from "Mix-Up" [4]_ .
     Please check the reference paper for further information.
 
-    The training commands work with the following scripts:
+    Training commands in the table work with the following scripts:
 
     - For vanilla training: :download:`Download train_cifar10.py<../../scripts/classification/cifar/train_cifar10.py>`
     - For mix-up training: :download:`Download train_mixup_cifar10.py<../../scripts/classification/cifar/train_mixup_cifar10.py>`
@@ -81,21 +82,21 @@ The following table summarizes the available models and their performances in ad
 Object Detection
 ~~~~~~~~~~~~~~~~
 
-The following table summarizes the available models and their performances for object detection.
+The following table lists pre-trained models for object detection
+and their performances.
 
 .. https://bit.ly/2qQHLl4
 
 .. hint::
 
-  The detection model names contain information for you to recognize them.
-
-  For instance, ``ssd_300_vgg16_atrous_voc`` consists of four parts,
+  Model attributes are coded in their names.
+  For instance, ``ssd_300_vgg16_atrous_voc`` consists of four parts:
 
   - ``ssd`` indicate the algorithm is "Single Shot Multibox Object Detection" [5]_.
 
-  - ``300`` is the training image size, which means training images are resized to 300x300 and all anchor boxes are designed to match this spatial shape.
+  - ``300`` is the training image size, which means training images are resized to 300x300 and all anchor boxes are designed to match this shape.
 
-  - ``vgg16_atrous`` is the name of base feature extractor network.
+  - ``vgg16_atrous`` is the type of base feature extractor network.
 
   - ``voc`` is the training dataset.
 
@@ -120,7 +121,7 @@ The following table summarizes the available models and their performances for o
 Semantic Segmentation
 ~~~~~~~~~~~~~~~~~~~~~
 
-Table of pre-trained models, pretrained datasets, and their performances for Semantic Segmentation. We also provide link to the training scripts:
+Table of pre-trained models for semantic segmentation and their performance.
 
 .. hint::
 
@@ -132,7 +133,7 @@ Table of pre-trained models, pretrained datasets, and their performances for Sem
 
   - ``voc`` is the training dataset.
 
-    The training commands work with the script :download:`Download train.py<../../scripts/segmentation/train.py>`
+  The training commands work with the script: :download:`Download train.py<../../scripts/segmentation/train.py>`
 
 
 .. role:: raw-html(raw)

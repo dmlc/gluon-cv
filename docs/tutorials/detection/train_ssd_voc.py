@@ -31,6 +31,7 @@ This is also a good starting point for your own object detection project.
     Check the supported arguments:
 
     .. code-block:: bash
+
         python train_ssd.py --help
 
 """
@@ -193,7 +194,7 @@ cids, scores, bboxes = net(x)
 # ------------------
 # Unlike a single ``SoftmaxCrossEntropyLoss`` used in image classification,
 # the loss used in SSD is more complicated.
-# Don't worry though, because we have these modules available out of box.
+# Don't worry though, because we have these modules available out of the box.
 
 ##############################################################################
 # Checkout the ``target_generator`` in SSD networks.

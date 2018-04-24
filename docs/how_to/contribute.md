@@ -1,4 +1,4 @@
-# Contribute to gluonvision
+# Contributing to GluonVision
 
 Gluon-vision-toolkit has been developed by community members.
 Everyone is more than welcome to contribute.
@@ -17,14 +17,15 @@ It is a way to make the project better and more accessible to more users.
 * [Python Package](#python-package)
 
 ## Submit Pull Request
-* Before submit, please rebase your code on the most recent version of master, you can do it by
+* Before submitting, please rebase your code on latest master branch. You can do it with
+
 ```bash
 git remote add upstream https://github.com/dmlc/gluon-vision
 git fetch upstream
 git rebase upstream/master
 ```
 * If you have multiple small commits,
-  it might be good to merge them together(use git rebase then squash) into more meaningful groups.
+  it might be good to merge them together (use git rebase then squash) into more meaningful groups.
 * Send the pull request!
   - Fix the problems reported by automatic checks
   - If you are contributing a new module or new function, add a test.
