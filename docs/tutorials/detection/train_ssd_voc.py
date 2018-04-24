@@ -29,7 +29,7 @@ produce a SOTA Single Shot Multibox Detection [Liu16]_ model.
 # Dataset
 # -------
 #
-# We hope you already read this :ref:`pascal_voc` so Pascal VOC dataset is well sitting on your disk.
+# We hope you already read this :ref:`sphx_glr_build_examples_datasets_pascal_voc.py` so Pascal VOC dataset is well sitting on your disk.
 # If so we are ready to load some training and validation images.
 from gluonvision.data import VOCDetection
 # typically we use 2007+2012 trainval splits as training data

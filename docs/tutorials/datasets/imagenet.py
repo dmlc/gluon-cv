@@ -42,7 +42,14 @@ following command to prepare the dataset automatically.
 
 .. code-block:: bash
 
+   # assume your current working directory is git cloned gluon-vision
    python scripts/datasets/imagenet.py --download-dir ~/ILSVRC2012
+
+.. hint::
+
+   You can download the python script :download:`imagenet.py<../../../scripts/datasets/imagenet.py>`
+   and subdirectory information for 50000 validation images: :download:`imagenet_val_maps.pklz<../../../scripts/datasets/imagenet_val_maps.pklz>`.
+   Put the pklz file in the same directory as the python script.
 
 .. note::
 
