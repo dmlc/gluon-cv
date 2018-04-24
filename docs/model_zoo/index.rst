@@ -114,20 +114,31 @@ The following table summarizes the available models and their performances for o
 Semantic Segmentation
 ~~~~~~~~~~~~~~~~~~~~~
 
-Table of pre-trained models, performances and the training commands:
+Table of pre-trained models, pretrained datasets, and their performances for Semantic Segmentation. We also provide link to the training scripts:
 
-.. comment (models :math:`^\ast` denotes pre-trained on COCO):
+.. hint::
+
+  The model names contain the training information. For instance, ``fcn_resnet50_voc``:
+
+  - ``fcn`` indicate the algorithm is "Fully Convolutional Network for Semantic Segmentation" [6]_.
+
+  - ``resnet50`` is the name of backbone network.
+
+  - ``voc`` is the training dataset.
+
+    The training commands work with the script :download:`Download train.py<../../scripts/segmentation/train.py>`
+
 
 .. role:: raw-html(raw)
    :format: html
 
-+-------------------+--------------+------------+-----------+-----------+-----------+----------------------------------------------------------------------------------------------+
-| Name              | Method       | Backbone   | Dataset   | Note      | mIoU      | Command                                                                                      |
-+===================+==============+============+===========+===========+===========+==============================================================================================+
-| fcn_resnet50_voc  | FCN [6]_     | ResNet50   | PASCAL12  | stride 8  | 69.4_     | :raw-html:`<a href="javascript:toggleblock('cmd_fcn_50')" class="toggleblock">cmd</a>`       |
-+-------------------+--------------+------------+-----------+-----------+-----------+----------------------------------------------------------------------------------------------+
-| fcn_resnet101_voc | FCN [6]_     | ResNet101  | PASCAL12  | stride 8  | 70.9_     | :raw-html:`<a href="javascript:toggleblock('cmd_fcn_101')" class="toggleblock">cmd</a>`      |
-+-------------------+--------------+------------+-----------+-----------+-----------+----------------------------------------------------------------------------------------------+
++-------------------+--------------+-----------+-----------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
+| Name              | Method       | mIoU      | Training Command                                                                                                            | Training log                                                                                                        |
++===================+==============+===========+=============================================================================================================================+=====================================================================================================================+
+| fcn_resnet50_voc  | FCN [6]_     | 69.4_     | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/segmentation/fcn_resnet50_voc.sh>`_  | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/segmentation/fcn_resnet50_voc.log>`_  |
++-------------------+--------------+-----------+-----------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
+| fcn_resnet101_voc | FCN [6]_     | 70.9_     | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/segmentation/fcn_resnet101_voc.sh>`_ | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/segmentation/fcn_resnet101_voc.log>`_ |
++-------------------+--------------+-----------+-----------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
 
 .. _69.4:  http://host.robots.ox.ac.uk:8080/anonymous/TC12D2.html
 .. _70.9:  http://host.robots.ox.ac.uk:8080/anonymous/FTIQXJ.html
