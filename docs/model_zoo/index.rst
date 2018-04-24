@@ -46,7 +46,7 @@ The following table summarizes the available models and their performances in ad
 `Gluon Model Zoo
 <https://mxnet.incubator.apache.org/api/python/gluon/model_zoo.html>`_.
 
-.. hint:
+.. hint::
 
     Our pre-trained models match the accuracy from "Mix-Up".
 
