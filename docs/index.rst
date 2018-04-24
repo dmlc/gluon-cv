@@ -74,7 +74,7 @@ A Quick Example
 ----------------
 
 
-:ref:`sphx_glr_build_examples_detection_demo_ssd.py`
+:ref:`Object Detection Demo <sphx_glr_build_examples_detection_demo_ssd.py>`
 
 
 
