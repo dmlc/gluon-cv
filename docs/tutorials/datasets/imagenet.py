@@ -12,7 +12,7 @@ the state-of-the-art results.
 The dataset are multiple versions. The commonly used one for image
 classification is the dataset provided in `ILSVRC 2012
 <http://www.image-net.org/challenges/LSVRC/2012/>`_. This tutorial will go
-through the steps of preparing this dataset to be used by GluonVision.
+through the steps of preparing this dataset to be used by GluonCV.
 
 .. note::
 
@@ -42,7 +42,7 @@ following command to prepare the dataset automatically.
 
 .. code-block:: bash
 
-   # assume your current working directory is git cloned gluon-vision
+   # assume your current working directory is git cloned gluon-cv
    python scripts/datasets/imagenet.py --download-dir ~/ILSVRC2012
 
 .. hint::
@@ -63,13 +63,13 @@ can specify a different place by using ``--target-dir``.
 How to Read the Dataset
 -----------------------
 
-The prepared dataset can be loaded by :py:class:`gluonvision.data.ImageNet`
+The prepared dataset can be loaded by :py:class:`gluoncv.data.ImageNet`
 directly. Here is an example that randomly reads 128 images each time and
 performs randomized resizing and cropping.
 """
 
 
-from gluonvision.data import ImageNet
+from gluoncv.data import ImageNet
 from mxnet.gluon.data import DataLoader
 from mxnet.gluon.data.vision import transforms
 
@@ -92,7 +92,7 @@ for x, y in train_data:
 
 #########################################################################
 # Peek some validation images
-from gluonvision.utils import viz
+from gluoncv.utils import viz
 val_dataset = ImageNet(train=False)
 viz.plot_image(val_dataset[1234][0])  # index 0 is image, 1 is label
 viz.plot_image(val_dataset[4567][0])

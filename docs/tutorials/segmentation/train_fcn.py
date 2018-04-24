@@ -32,7 +32,7 @@ import numpy as np
 import mxnet as mx
 from mxnet import gluon, autograd
 
-import gluonvision
+import gluoncv
 ##############################################################################
 # Fully Convolutional Network
 # ---------------------------
@@ -65,7 +65,7 @@ import gluonvision
 # we apply dilation strategy to the
 # stage 3 and stage 4 of the pre-trained networks, which produces stride of 8
 # featuremaps (models are provided in
-# :class:`gluonvision.model_zoo.dilatedresnetv0.DilatedResNetV0`).
+# :class:`gluoncv.model_zoo.dilatedresnetv0.DilatedResNetV0`).
 # Visualization of dilated/atrous convoution
 # (figure credit to `conv_arithmetic <https://github.com/vdumoulin/conv_arithmetic>`_ ):
 # 
@@ -75,14 +75,14 @@ import gluonvision
 # 
 # Loading a dilated ResNet50 is simply:
 # 
-pretrained_net = gluonvision.model_zoo.dilatedresnetv0.dilated_resnet50(pretrained=True)
+pretrained_net = gluoncv.model_zoo.dilatedresnetv0.dilated_resnet50(pretrained=True)
 
 ##############################################################################
 # For convenience, we provide a base model for semantic segmentation, which automatically
-# load the pre-trained dilated ResNet :class:`gluonvision.model_zoo.SegBaseModel`
+# load the pre-trained dilated ResNet :class:`gluoncv.model_zoo.SegBaseModel`
 # with a convenient method ``base_forward(input)`` to get stage 3 & 4 featuremaps:
 # 
-basemodel = gluonvision.model_zoo.SegBaseModel(nclass=10, aux=False)
+basemodel = gluoncv.model_zoo.SegBaseModel(nclass=10, aux=False)
 x = mx.nd.random.uniform(shape=(1, 3, 224, 224))
 c3, c4 = basemodel.base_forward(x)
 print('Shapes of c3 & c4 featuremaps are ', c3.shape, c4.shape)
@@ -112,9 +112,9 @@ print('Shapes of c3 & c4 featuremaps are ', c3.shape, c4.shape)
 #     def hybrid_forward(self, F, x):
 #         return self.block(x)
 # 
-# FCN model is provided in :class:`gluonvision.model_zoo.FCN`. To get
+# FCN model is provided in :class:`gluoncv.model_zoo.FCN`. To get
 # FCN model using ResNet50 base network for Pascal VOC dataset:
-model = gluonvision.model_zoo.get_fcn(dataset='pascal_voc', backbone='resnet50', pretrained=False)
+model = gluoncv.model_zoo.get_fcn(dataset='pascal_voc', backbone='resnet50', pretrained=False)
 print(model)
 
 ##############################################################################
@@ -129,9 +129,9 @@ input_transform = transforms.Compose([
 ])
 
 ##############################################################################
-# We provide semantic segmentation datasets in :class:`gluonvision.data`.
+# We provide semantic segmentation datasets in :class:`gluoncv.data`.
 # For example, we can easily get the Pascal VOC 2012 dataset:
-trainset = gluonvision.data.VOCSegmentation(split='train', transform=input_transform)
+trainset = gluoncv.data.VOCSegmentation(split='train', transform=input_transform)
 print('Training images:', len(trainset))
 # Create Training Loader
 train_data = gluon.data.DataLoader(
@@ -151,7 +151,7 @@ train_data = gluon.data.DataLoader(
 from random import randint
 idx = randint(0, len(trainset))
 img, mask = trainset[idx]
-from gluonvision.utils.viz import get_color_pallete, DeNormalize
+from gluoncv.utils.viz import get_color_pallete, DeNormalize
 # get color pallete for visualize mask
 mask = get_color_pallete(mask.asnumpy(), dataset='pascal_voc')
 mask.save('mask.png')
@@ -186,7 +186,7 @@ plt.show()
 #     Additionally, an Auxiliary Loss as in PSPNet [Zhao17]_ at Stage 3 can be enabled when
 #     training with command ``--aux``. This will create an additional FCN "head" after Stage 3.
 # 
-from gluonvision.model_zoo.segbase import SoftmaxCrossEntropyLossWithAux
+from gluoncv.model_zoo.segbase import SoftmaxCrossEntropyLossWithAux
 criterion = SoftmaxCrossEntropyLossWithAux(aux=True)
 
 ##############################################################################
@@ -194,15 +194,15 @@ criterion = SoftmaxCrossEntropyLossWithAux(aux=True)
 # 
 #     We use different learning rate for FCN "head" and the base network. For the FCN "head",
 #     we use :math:`10\times` base learning rate, because those layers are learned from scratch.
-#     We use a poly-like learning rate scheduler for FCN training, provided in :class:`gluonvision.utils.PolyLRScheduler`.
+#     We use a poly-like learning rate scheduler for FCN training, provided in :class:`gluoncv.utils.PolyLRScheduler`.
 #     The learning rate is given by :math:`lr = baselr \times (1-iter)^{power}`
 # 
-lr_scheduler = gluonvision.utils.PolyLRScheduler(0.001, niters=len(train_data), 
+lr_scheduler = gluoncv.utils.PolyLRScheduler(0.001, niters=len(train_data), 
                                                  nepochs=50)
 
 ##############################################################################
 # - Dataparallel for multi-gpu training
-from gluonvision.utils.parallel import *
+from gluoncv.utils.parallel import *
 ctx_list = [mx.gpu(0), mx.gpu(1)]
 model = DataParallelModel(model, ctx_list)
 criterion = DataParallelCriterion(criterion, ctx_list)

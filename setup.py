@@ -29,7 +29,7 @@ try:
 except(IOError, ImportError):
     long_description = open('README.md').read()
 
-VERSION = find_version('gluonvision', '__init__.py')
+VERSION = find_version('gluoncv', '__init__.py')
 
 requirements = [
     'numpy',
@@ -42,10 +42,10 @@ requirements = [
 
 setup(
     # Metadata
-    name='gluonvision',
+    name='gluoncv',
     version=VERSION,
     author='Gluon CV Toolkit Contributors',
-    url='https://github.com/dmlc/gluon-vision',
+    url='https://github.com/dmlc/gluon-cv',
     description='MXNet Gluon CV Toolkit',
     long_description=long_description,
     license='Apache-2.0',

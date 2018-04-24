@@ -78,9 +78,9 @@ We can download and extract it with:
 """
 
 import zipfile, os
-from gluonvision.utils import download
+from gluoncv.utils import download
 
-file_url = 'https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/classification/minc-2500-tiny.zip'
+file_url = 'https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/classification/minc-2500-tiny.zip'
 zip_file = download(file_url, path='./')
 with zipfile.ZipFile(zip_file, 'r') as zin:
     zin.extractall(os.path.expanduser('./'))
@@ -100,7 +100,7 @@ from mxnet import autograd as ag
 from mxnet.gluon import nn
 from mxnet.gluon.model_zoo import vision as models
 from mxnet.gluon.data.vision import transforms
-from gluonvision.utils import makedirs
+from gluoncv.utils import makedirs
 
 ################################################################################
 # We set the hyperparameters as following:
@@ -298,5 +298,5 @@ print('[Finished] Test-acc: %.3f' % (test_acc))
 # `semantic segmentation <../examples_segmentation/index.html>`_,
 # the next two chapters of our tutorial.
 #
-# .. |image-minc| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/datasets/MINC-2500.png
+# .. |image-minc| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/datasets/MINC-2500.png
 # .. |image-model| image:: https://zh.gluon.ai/_images/fine-tuning.svg

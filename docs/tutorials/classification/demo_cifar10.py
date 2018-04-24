@@ -8,7 +8,7 @@ computer vision research.
 
 |image-cifar10|
 
-.. |image-cifar10| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/datasets/cifar10.png
+.. |image-cifar10| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/datasets/cifar10.png
 
 In this tutorial, we will demonstrate how to load a pre-trained model from ``Gluon Model Zoo``
 and classify images from the Internet or your local disk.
@@ -19,21 +19,21 @@ Step by Step
 Let's first try out a pre-trained cifar model with a few lines of python code.
 
 First, please follow the `installation guide <../../index.html#installation>`__
-to install ``MXNet`` and ``GluonVision`` if you haven't done so yet.
+to install ``MXNet`` and ``GluonCV`` if you haven't done so yet.
 """
 
 import matplotlib.pyplot as plt
 
 from mxnet import gluon, nd, image
 from mxnet.gluon.data.vision import transforms
-from gluonvision import utils
-from gluonvision.model_zoo import get_model
+from gluoncv import utils
+from gluoncv.model_zoo import get_model
 
 ################################################################
 #
 # Then, we download and show the example image:
 
-url = 'https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/classification/plane-draw.jpeg'
+url = 'https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/classification/plane-draw.jpeg'
 im_fname = utils.download(url)
 
 with open(im_fname, 'rb') as f:
@@ -118,7 +118,7 @@ print('The input picture is classified as [%s], with probability %.3f.'%
 # ---------
 #
 # Congratulations! You’ve just finished reading the first tutorial.
-# There are a lot more to help you learn GluonVision.
+# There are a lot more to help you learn GluonCV.
 #
 # If you would like to dive deeper into training on ``CIFAR10``,
 # feel free to read the next `tutorial on CIFAR10 <dive_deep_cifar10.html>`__.
@@ -126,4 +126,4 @@ print('The input picture is classified as [%s], with probability %.3f.'%
 # Or, if you would like to try a larger scale dataset with 1000 classes of common objects
 # please read `Getting Started with ImageNet Pre-trained Models <demo_imagenet.html>`__.
 #
-# .. |image-mtbaker| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/classification/mt_baker.jpg
+# .. |image-mtbaker| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/classification/mt_baker.jpg

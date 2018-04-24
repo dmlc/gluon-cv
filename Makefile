@@ -3,10 +3,10 @@ ROOTDIR = $(CURDIR)
 lint: cpplint pylint
 
 cpplint:
-				tests/lint.py gluonvision cpp src
+				tests/lint.py gluoncv cpp src
 
 pylint:
-				pylint --rcfile=$(ROOTDIR)/tests/pylintrc --ignore-patterns=".*\.so$$,.*\.dll$$,.*\.dylib$$" gluonvision
+				pylint --rcfile=$(ROOTDIR)/tests/pylintrc --ignore-patterns=".*\.so$$,.*\.dll$$,.*\.dylib$$" gluoncv
 
 doc: docs
 

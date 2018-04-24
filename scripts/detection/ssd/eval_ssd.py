@@ -9,10 +9,10 @@ import mxnet as mx
 from tqdm import tqdm
 from mxnet import nd
 from mxnet import gluon
-import gluonvision as gv
-from gluonvision import data as gdata
-from gluonvision.data.transforms.presets.ssd import SSDDefaultValTransform
-from gluonvision.utils.metrics.voc_detection import VOC07MApMetric
+import gluoncv as gv
+from gluoncv import data as gdata
+from gluoncv.data.transforms.presets.ssd import SSDDefaultValTransform
+from gluoncv.utils.metrics.voc_detection import VOC07MApMetric
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train SSD networks.')

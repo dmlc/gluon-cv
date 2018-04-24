@@ -1,4 +1,4 @@
-# Contributing to GluonVision
+# Contributing to GluonCV
 
 Gluon-vision-toolkit has been developed by community members.
 Everyone is more than welcome to contribute.
@@ -20,7 +20,7 @@ It is a way to make the project better and more accessible to more users.
 * Before submitting, please rebase your code on latest master branch. You can do it with
 
 ```bash
-git remote add upstream https://github.com/dmlc/gluon-vision
+git remote add upstream https://github.com/dmlc/gluon-cv
 git fetch upstream
 git rebase upstream/master
 ```
@@ -35,7 +35,7 @@ git rebase upstream/master
 - First rebase to most recent master
 ```bash
 # The first two steps can be skipped after you do it once.
-git remote add upstream https://github.com/dmlc/gluon-vision
+git remote add upstream https://github.com/dmlc/gluon-cv
 git fetch upstream
 git rebase upstream/master
 ```

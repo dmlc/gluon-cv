@@ -11,8 +11,8 @@ from mxnet.gluon import nn
 from mxnet.gluon.model_zoo import vision as models
 from mxnet.gluon.data.vision import transforms
 
-from gluonvision.data import imagenet
-from gluonvision.utils import makedirs, TrainingHistory
+from gluoncv.data import imagenet
+from gluoncv.utils import makedirs, TrainingHistory
 
 # CLI
 parser = argparse.ArgumentParser(description='Train a model for image classification.')

@@ -8,10 +8,10 @@ import mxnet as mx
 from mxnet import gluon, autograd
 from mxnet.gluon.data.vision import transforms
 
-from gluonvision.utils import PolyLRScheduler
-from gluonvision.model_zoo.segbase import *
-from gluonvision.utils.parallel import *
-from gluonvision.data import get_segmentation_dataset
+from gluoncv.utils import PolyLRScheduler
+from gluoncv.model_zoo.segbase import *
+from gluoncv.utils.parallel import *
+from gluoncv.data import get_segmentation_dataset
 
 
 def parse_args():
@@ -77,7 +77,7 @@ def parse_args():
         args.ctx = [mx.gpu(i) for i in range(args.ngpus)]
     # Synchronized BatchNorm
     if args.syncbn:
-        from gluonvision.model_zoo.syncbn import BatchNorm
+        from gluoncv.model_zoo.syncbn import BatchNorm
         args.norm_layer = BatchNorm
     else:
         args.norm_layer = mx.gluon.nn.BatchNorm

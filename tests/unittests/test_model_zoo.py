@@ -23,7 +23,7 @@ import warnings
 import mxnet as mx
 import numpy as np
 
-import gluonvision as gv
+import gluoncv as gv
 
 def test_ssd_models():
     x = mx.random.uniform(shape=(2, 3, 512, 768))  # allow non-squre and larger inputs

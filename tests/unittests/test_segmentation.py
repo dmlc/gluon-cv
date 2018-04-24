@@ -5,9 +5,9 @@ from tqdm import tqdm
 from mxnet.test_utils import assert_almost_equal
 from mxnet.gluon.data.vision import transforms
 
-import gluonvision
-from gluonvision.utils.metrics.voc_segmentation import *
-from gluonvision.data import VOCSegmentation
+import gluoncv
+from gluoncv.utils.metrics.voc_segmentation import *
+from gluoncv.data import VOCSegmentation
 
 ctx = mx.gpu(0)
 try:
@@ -24,7 +24,7 @@ def test_segmentation_utils():
     # TODO FIXME: change it to ADE20K dataset and pretrained model
     dataset = VOCSegmentation(split='val')
     # load pretrained net
-    net = gluonvision.model_zoo.get_model('fcn_resnet50_voc', pretrained=True, ctx=ctx)
+    net = gluoncv.model_zoo.get_model('fcn_resnet50_voc', pretrained=True, ctx=ctx)
     # count for pixAcc and mIoU
     total_inter, total_union, total_correct, total_label = 0, 0, 0, 0
     np_inter, np_union, np_correct, np_label = 0, 0, 0, 0

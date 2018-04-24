@@ -5,7 +5,7 @@
 datasets for object detection. The most commonly adopted version for
 benchmarking is using *2007 trainval* and *2012 trainval* for training and *2007
 test* for validation.  This tutorial will walk you through the steps for
-preparing this dataset to be used by GluonVision.
+preparing this dataset to be used by GluonCV.
 
 .. image:: http://host.robots.ox.ac.uk/pascal/VOC/pascal2.png
 
@@ -63,10 +63,10 @@ For example, assume you downloaded all files into ``~/VOCdevkit/``, and you can 
 # -----------------------
 #
 # Loading images and labels is straight-forward through
-# :py:class:`gluonvision.data.VOCDetection`.
+# :py:class:`gluoncv.data.VOCDetection`.
 
 
-from gluonvision import data, utils
+from gluoncv import data, utils
 from matplotlib import pyplot as plt
 
 train_dataset = data.VOCDetection(splits=[(2007, 'trainval'), (2012, 'trainval')])

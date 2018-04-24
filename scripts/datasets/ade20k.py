@@ -3,7 +3,7 @@ import os
 import shutil
 import argparse
 import zipfile
-from gluonvision.utils import download, makedirs
+from gluoncv.utils import download, makedirs
 
 _TARGET_DIR = os.path.expanduser('~/.mxnet/datasets/ade')
 

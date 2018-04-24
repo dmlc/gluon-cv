@@ -23,7 +23,7 @@ class VisionDataset(dataset.Dataset):
     def __init__(self, root):
         if not os.path.isdir(os.path.expanduser(root)):
             helper_msg = "{} is not a valid dir. Did you forget to initalize \
-                         datasets described in `gluon-vision/scripts/datasets`? You need \
+                         datasets described in `gluon-cv/scripts/datasets`? You need \
                          to initialize each dataset only once.".format(root)
             raise OSError(helper_msg)
 

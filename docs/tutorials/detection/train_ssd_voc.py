@@ -2,9 +2,9 @@
 ======================================
 
 This tutorial goes through the basic building blocks of object detection
-provided by GluonVision.
+provided by GluonCV.
 Specifically, we show how to build a state-of-the-art Single Shot Multibox
-Detection [Liu16]_ model by stacking GluonVision components.
+Detection [Liu16]_ model by stacking GluonCV components.
 This is also a good starting point for your own object detection project.
 
 .. hint::
@@ -44,7 +44,7 @@ This is also a good starting point for your own object detection project.
 # VOC dataset on your disk.
 # Then, we are ready to load training and validation images.
 
-from gluonvision.data import VOCDetection
+from gluoncv.data import VOCDetection
 # typically we use 2007+2012 trainval splits for training data
 train_dataset = VOCDetection(splits=[(2007, 'trainval'), (2012, 'trainval')])
 # and use 2007 test as validation data
@@ -66,7 +66,7 @@ print('bboxes:', bboxes.shape, 'class ids:', cids.shape)
 ##############################################################################
 # Plot the image, together with the bounding box labels:
 from matplotlib import pyplot as plt
-from gluonvision.utils import viz
+from gluoncv.utils import viz
 
 ax = viz.plot_bbox(train_image.asnumpy(), bboxes, labels=cids, class_names=train_dataset.classes)
 plt.show()
@@ -84,8 +84,8 @@ plt.show()
 # For SSD networks, it is critical to apply data augmentation (see explanations in paper [Liu16]_).
 # We provide tons of image and bounding box transform functions to do that.
 # They are very convenient to use as well.
-from gluonvision.data.transforms import presets
-from gluonvision import utils
+from gluoncv.data.transforms import presets
+from gluoncv import utils
 from mxnet import nd
 
 ##############################################################################
@@ -138,10 +138,10 @@ plt.show()
 
 # Because the number of objects varys a lot across images, we also have
 # varying label sizes. As a result, we need to pad those labels to the same size.
-# To deal with this problem, GluonVision provides DetectionDataLoader,
+# To deal with this problem, GluonCV provides DetectionDataLoader,
 # which handles padding automatically.
 
-from gluonvision.data import DetectionDataLoader
+from gluoncv.data import DetectionDataLoader
 
 batch_size = 4  # for tutorial, we use smaller batch-size
 num_workers = 0  # you can make it larger(if your CPU has more cores) to accelerate data loading
@@ -159,7 +159,7 @@ for ib, batch in enumerate(train_loader):
 ##########################################################
 # SSD Network
 # ------------------
-# GluonVision's SSD implementation is a composite Gluon HybridBlock
+# GluonCV's SSD implementation is a composite Gluon HybridBlock
 # (which means it can be exported
 # to symbol to run in C++, Scala and other language bindings.
 # We will cover this usage in future tutorials).
@@ -173,7 +173,7 @@ for ib, batch in enumerate(train_loader):
 
 # `Gluon Model Zoo <../../model_zoo/index.html>`__ has a lot of built-in SSD networks.
 # You can load your favorate one with one simple line of code:
-from gluonvision import model_zoo
+from gluoncv import model_zoo
 net = model_zoo.get_model('ssd_300_vgg16_atrous_voc', pretrained_base=False)
 print(net)
 
