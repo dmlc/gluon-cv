@@ -1,5 +1,5 @@
-"""Train SSD on Pascal VOC dataset
-==================================
+"""2. Train SSD on Pascal VOC dataset
+======================================
 
 This tutorial goes through the basic building blocks of object detection
 provided by GluonVision.
@@ -39,7 +39,7 @@ This is also a good starting point for your own object detection project.
 # Dataset
 # -------
 #
-# Please first go through this :ref:`pascal_voc` tutorial to setup Pascal
+# Please first go through this :ref:`sphx_glr_build_examples_datasets_pascal_voc.py` tutorial to setup Pascal
 # VOC dataset on your disk.
 # Then, we are ready to load training and validation images.
 

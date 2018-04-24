@@ -7,9 +7,13 @@ It is designed for helping engineers, researchers, and students to quickly
 prototype products, validate new ideas, and learning computer vision.
 
 GluonVision features:
+
 1. training scripts that reproduces SOTA results reported in latest papers,
+
 2. a large set of pre-trained models,
+
 3. carefully designed APIs and easy to understand implementations,
+
 4. community support.
 
 GluonVision tutorials assume users have basic knowledges about deep learning and
@@ -70,7 +74,7 @@ A Quick Example
 ----------------
 
 
-:ref:`sphx_glr_build_examples_detection_demo_ssd.py`
+:ref:`Object Detection Demo <sphx_glr_build_examples_detection_demo_ssd.py>`
 
 
 

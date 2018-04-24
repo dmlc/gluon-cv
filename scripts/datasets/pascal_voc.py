@@ -1,6 +1,4 @@
-"""
-.. _pascal_voc:
-Prepare PASCAL VOC datasets"""
+"""Prepare PASCAL VOC datasets"""
 import os
 import shutil
 import argparse

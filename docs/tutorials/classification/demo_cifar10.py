@@ -1,5 +1,5 @@
 """1. Getting Started with Pre-trained Model on CIFAR10
-===================================================
+=======================================================
 
 `CIFAR10 <https://www.cs.toronto.edu/~kriz/cifar.html>`__ is a
 dataset of tiny (32x32) images with labels, collected by Alex Krizhevsky,
