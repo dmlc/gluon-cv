@@ -94,5 +94,5 @@ for x, y in train_data:
 # Peek some validation images
 from gluonvision.utils import viz
 val_dataset = ImageNet(train=False)
-viz.plot_image(val_dataset[123][0])  # index 0 is image, 1 is label
-viz.plot_image(val_dataset[456][0])
+viz.plot_image(val_dataset[1234][0])  # index 0 is image, 1 is label
+viz.plot_image(val_dataset[4567][0])
