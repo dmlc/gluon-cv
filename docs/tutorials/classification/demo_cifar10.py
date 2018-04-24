@@ -1,4 +1,4 @@
-"""Getting Started with Pre-trained Model on CIFAR10
+"""1. Getting Started with Pre-trained Model on CIFAR10
 ===================================================
 
 `CIFAR10 <https://www.cs.toronto.edu/~kriz/cifar.html>`__ is a

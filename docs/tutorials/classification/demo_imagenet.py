@@ -1,4 +1,4 @@
-"""Getting Started with Pre-trained Models on ImageNet
+"""3. Getting Started with Pre-trained Models on ImageNet
 ===================================================
 
 `ImageNet <http://www.image-net.org/>`__ is a

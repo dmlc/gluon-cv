@@ -21,7 +21,7 @@ import recommonmark
 from recommonmark.parser import CommonMarkParser
 from recommonmark.transform import AutoStructify
 from sphinx_gallery.sorting import ExplicitOrder
-from sphinx_gallery.sorting import NumberOfCodeLinesSortKey
+from sphinx_gallery.sorting import ExampleTitleSortKey
 
 # -- Project information -----------------------------------------------------
 
@@ -76,7 +76,7 @@ sphinx_gallery_conf = {
     #                                    'tutorials/segmentation',
     #                                    'tutorials/datasets']),
 
-    'within_subsection_order': NumberOfCodeLinesSortKey,
+    'within_subsection_order': ExampleTitleSortKey,
     'plot_gallery': True,
     'download_section_examples': False,
     'reference_url': {

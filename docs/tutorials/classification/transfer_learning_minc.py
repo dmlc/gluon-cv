@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 
-"""Transfer Learning with Your Own Image Dataset
+"""4. Transfer Learning with Your Own Image Dataset
 ===============================================
 
 Dataset size is a big factor in the performance of deep learning models.
