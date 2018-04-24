@@ -15,12 +15,10 @@ class VOCAugSegmentation(SegmentationDataset):
         'train' or 'val'
     transform : callable, optional
         A function that transforms the image
-    target_transform : callable, optional
-        A function that transforms the labels
     """
     TRAIN_BASE_DIR = 'VOCaug/dataset/'
     def __init__(self, root=os.path.expanduser('~/.mxnet/datasets/voc'),
-                 split='train', transform=None, target_transform=None):
+                 split='train', transform=None):
         super(VOCAugSegmentation, self).__init__(root)
         self.transform = transform
         self.target_transform = target_transform

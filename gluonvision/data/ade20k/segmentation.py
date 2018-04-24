@@ -16,13 +16,11 @@ class ADE20KSegmentation(SegmentationDataset):
         'train', 'val' or 'test'
     transform : callable, optional
         A function that transforms the image
-    target_transform : callable, optional
-        A function that transforms the labels
     """
     # pylint: disable=abstract-method
     BASE_DIR = 'ADEChallengeData2016'
     def __init__(self, root=os.path.expanduser('~/.mxnet/datasets/ade'),
-                 split='train', transform=None, target_transform=None):
+                 split='train', transform=None):
         super(ADE20KSegmentation, self).__init__(root)
         self.root = os.path.join(root, self.BASE_DIR)
         self.transform = transform
