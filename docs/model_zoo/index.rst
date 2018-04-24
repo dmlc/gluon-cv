@@ -53,8 +53,8 @@ The following table summarizes the available models and their performances in ad
 
     The training commands work with the following scripts:
 
-    - For vanilla training: :download:`Download train_cifar10.py<../scripts/classification/cifar/train_cifar10.py>`
-    - For mix-up training: :download:`Download train_mixup_cifar10.py<../scripts/classification/cifar/train_mixup_cifar10.py>`
+    - For vanilla training: :download:`Download train_cifar10.py<../../scripts/classification/cifar/train_cifar10.py>`
+    - For mix-up training: :download:`Download train_mixup_cifar10.py<../../scripts/classification/cifar/train_mixup_cifar10.py>`
 
 +----------------------------+----------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | Model                      | Acc (Vanilla/Mix-Up [4]_ ) | Training Command                                                                                                                                                                                                                                                             | Training Log                                                                                                                                                                                                                                                                   |
