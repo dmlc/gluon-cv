@@ -70,7 +70,7 @@ import numpy as np
 img, mask = val_dataset[0]
 # get pallete for the mask
 from gluonvision.utils.viz import get_color_pallete
-mask = get_color_pallete(np.array(mask), dataset='ade20k')
+mask = get_color_pallete(mask.asnumpy(), dataset='ade20k')
 mask.save('mask.png')
 
 
