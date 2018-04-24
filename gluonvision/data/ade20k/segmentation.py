@@ -24,7 +24,6 @@ class ADE20KSegmentation(SegmentationDataset):
         super(ADE20KSegmentation, self).__init__(root)
         self.root = os.path.join(root, self.BASE_DIR)
         self.transform = transform
-        self.target_transform = target_transform
         self.mode = split
         self.images, self.masks = _get_ade20k_pairs(self.root, split)
         assert (len(self.images) == len(self.masks))
@@ -50,11 +49,7 @@ class ADE20KSegmentation(SegmentationDataset):
 
         # general resize, normalize and toTensor
         if self.transform is not None:
-            #print("transform for input")
             img = self.transform(img)
-        if self.target_transform is not None:
-            #print("transform for label")
-            mask = self.target_transform(mask)
 
         return img, mask
 

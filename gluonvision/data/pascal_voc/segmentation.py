@@ -10,14 +10,29 @@ class VOCSegmentation(SegmentationDataset):
     Parameters
     ----------
     root : string
-        Path to VOCdevkit folder. Default is '$(HOME)/mxnet/datasplits/voc'
+        Path to VOCdevkit folder. Default is '$(HOME)/mxnet/datasets/ade'
     split: string
         'train', 'val' or 'test'
     transform : callable, optional
         A function that transforms the image
+
+    Examples
+    --------
+    >>> from mxnet.gluon.data.vision import transforms
+    >>> # Transforms for Normalization
+    >>> input_transform = transforms.Compose([
+    >>>     transforms.ToTensor(),
+    >>>     transforms.Normalize([.485, .456, .406], [.229, .224, .225]),
+    >>> ])
+    >>> # Create Dataset
+    >>> trainset = gluonvision.data.VOCSegmentation(split='train', transform=input_transform)
+    >>> # Create Training Loader
+    >>> train_data = gluon.data.DataLoader(
+    >>>     trainset, 4, shuffle=True, last_batch='rollover',
+    >>>     num_workers=4)
     """
     BASE_DIR = 'VOC2012'
-    def __init__(self, root=os.path.expanduser('~/.mxnet/datasets/voc'),
+    def __init__(self, root=os.path.expanduser('~/.mxnet/datasets/ade'),
                  split='train', transform=None):
         super(VOCSegmentation, self).__init__(root)
         self.root = root
@@ -25,7 +40,6 @@ class VOCSegmentation(SegmentationDataset):
         _mask_dir = os.path.join(_voc_root, 'SegmentationClass')
         _image_dir = os.path.join(_voc_root, 'JPEGImages')
         self.transform = transform
-        self.target_transform = target_transform
         self.train = split
 
         # train/val/test splits are pre-cut
@@ -75,8 +89,6 @@ class VOCSegmentation(SegmentationDataset):
         # general resize, normalize and toTensor
         if self.transform is not None:
             img = self.transform(img)
-        if self.target_transform is not None:
-            target = self.target_transform(target)
 
         return img, target
 

@@ -21,7 +21,6 @@ class VOCAugSegmentation(SegmentationDataset):
                  split='train', transform=None):
         super(VOCAugSegmentation, self).__init__(root)
         self.transform = transform
-        self.target_transform = target_transform
         self.train = split
 
         # train/val/test splits are pre-cut
@@ -61,8 +60,6 @@ class VOCAugSegmentation(SegmentationDataset):
         # general resize, normalize and toTensor
         if self.transform is not None:
             img = self.transform(img)
-        if self.target_transform is not None:
-            target = self.target_transform(target)
         return img, target
 
     def _load_mat(self, filename):
