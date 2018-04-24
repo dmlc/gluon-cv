@@ -1,5 +1,5 @@
 """2. Train SSD on Pascal VOC dataset
-==================================
+======================================
 
 This tutorial goes through the basic building blocks of object detection
 provided by GluonVision.
