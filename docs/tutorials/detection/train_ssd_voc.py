@@ -1,26 +1,36 @@
 """Train SSD on Pascal VOC dataset
 ==================================
 
-This article walk you through the components GluonVision provided to you
-that are very useful to start an object detection project. By going
-through this tutorial, we show how stacking the existing modules can
-produce a SOTA Single Shot Multibox Detection [Liu16]_ model.
+This tutorial goes through the basic building blocks of object detection
+provided by GluonVision.
+Specifically, we show how to build a state-of-the-art Single Shot Multibox
+Detection [Liu16]_ model by stacking GluonVision components.
+This is also a good starting point for your own object detection project.
 
 .. hint::
-    Feel free to skip this tutorial because the training script is
-    self-complete and only requires a single command line to launch.
 
-    :download:`Download Full Python Script: train_ssd.py<../../../scripts/detection/ssd/train_ssd.py>`
+    You can skip the rest of this tutorial and start training your SSD model
+    right away by downloading this script:
+
+    :download:`Download train_ssd.py<../../../scripts/detection/ssd/train_ssd.py>`
 
     Example usage:
 
+    Train a default vgg16_atrous 300x300 model with Pascal VOC on GPU 0:
+
     .. code-block:: bash
 
-        # train a default vgg16_atrous 300x300 model with Pascal VOC on GPU 0
         python train_ssd.py
-        # train a resnet50_v1 512x512 model on GPU 0,1,2,3
+
+    Train a resnet50_v1 512x512 model on GPU 0,1,2,3:
+
+    .. code-block:: bash
+
         python train_ssd.py --gpus 0,1,2,3 --network resnet50_v1 --data-shape 512
-        # check the supported arguments
+
+    Check the supported arguments:
+
+    .. code-block:: bash
         python train_ssd.py --help
 
 """
@@ -29,12 +39,14 @@ produce a SOTA Single Shot Multibox Detection [Liu16]_ model.
 # Dataset
 # -------
 #
-# We hope you already read this :ref:`sphx_glr_build_examples_datasets_pascal_voc.py` so Pascal VOC dataset is well sitting on your disk.
-# If so we are ready to load some training and validation images.
+# Please first go through this :ref:`sphx_glr_build_examples_datasets_pascal_voc.py` tutorial to setup Pascal
+# VOC dataset on your disk.
+# Then, we are ready to load training and validation images.
+
 from gluonvision.data import VOCDetection
-# typically we use 2007+2012 trainval splits as training data
+# typically we use 2007+2012 trainval splits for training data
 train_dataset = VOCDetection(splits=[(2007, 'trainval'), (2012, 'trainval')])
-# use 2007 test as validation
+# and use 2007 test as validation data
 val_dataset = VOCDetection(splits=[(2007, 'test')])
 
 print('Training images:', len(train_dataset))
@@ -43,7 +55,7 @@ print('Validation images:', len(val_dataset))
 ##########################################################
 # Data transform
 # ------------------
-# We can read a image and label pair from training dataset:
+# We can read an image-label pair from the training dataset:
 train_image, train_label = train_dataset[0]
 bboxes = train_label[:, :4]
 cids = train_label[:, 4:5]
@@ -51,7 +63,7 @@ print('image:', train_image.shape)
 print('bboxes:', bboxes.shape, 'class ids:', cids.shape)
 
 ##############################################################################
-# We could illustrate the image, together with the bounding box labels:
+# Plot the image, together with the bounding box labels:
 from matplotlib import pyplot as plt
 from gluonvision.utils import viz
 
@@ -59,8 +71,8 @@ ax = viz.plot_bbox(train_image.asnumpy(), bboxes, labels=cids, class_names=train
 plt.show()
 
 ##############################################################################
-# At this point, validation images are quite similar to training because they were
-# basically splited randomly to different sets
+# Validation images are quite similar to training because they were
+# basically split randomly to different sets
 val_image, val_label = val_dataset[0]
 bboxes = val_label[:, :4]
 cids = val_label[:, 4:5]
@@ -69,8 +81,8 @@ plt.show()
 
 ##############################################################################
 # For SSD networks, it is critical to apply data augmentation (see explanations in paper [Liu16]_).
-# We provide tons of image and bounding box transform functions to supply that.
-# It is very convenient to use as well.
+# We provide tons of image and bounding box transform functions to do that.
+# They are very convenient to use as well.
 from gluonvision.data.transforms import presets
 from gluonvision import utils
 from mxnet import nd
@@ -89,12 +101,13 @@ train_image2, train_label2 = train_transform(train_image, train_label)
 print('tensor shape:', train_image2.shape)
 
 ##############################################################################
-# Images directly from tensor is distorted because they no longer sit in (0, 255) range.
-# Let's convert it back so we can see it clearly.
+# Images in tensor are distorted because they no longer sit in (0, 255) range.
+# Let's convert them back so we can see them clearly.
 train_image2 = train_image2.transpose((1, 2, 0)) * nd.array((0.229, 0.224, 0.225)) + nd.array((0.485, 0.456, 0.406))
 train_image2 = (train_image2 * 255).clip(0, 255)
 ax = viz.plot_bbox(train_image2.asnumpy(), train_label2[:, :4],
-                   labels=train_label2[:, 4:5], class_names=train_dataset.classes)
+                   labels=train_label2[:, 4:5],
+                   class_names=train_dataset.classes)
 plt.show()
 
 ##############################################################################
@@ -103,24 +116,30 @@ val_image2, val_label2 = val_transform(val_image, val_label)
 val_image2 = val_image2.transpose((1, 2, 0)) * nd.array((0.229, 0.224, 0.225)) + nd.array((0.485, 0.456, 0.406))
 val_image2 = (val_image2 * 255).clip(0, 255)
 ax = viz.plot_bbox(val_image2.clip(0, 255).asnumpy(), val_label2[:, :4],
-                   labels=val_label2[:, 4:5], class_names=train_dataset.classes)
+                   labels=val_label2[:, 4:5],
+                   class_names=train_dataset.classes)
 plt.show()
 
 ##############################################################################
 # Transforms used in training include random expanding, random cropping, color distortion, random flipping, etc.
-# In comparison, validation transforms are conservative, where only resizing and color normalization is used.
+# In comparison, validation transforms are simpler and only resizing and color normalization is used.
 
 ##########################################################
 # Data Loader
 # ------------------
-# We want iterate through the entire dataset many times during training.
-# Keep in mind that raw images have to be transformed into tensors(mxnet use BCHW format) before they are fed into neural networks.
-# Besides, to be able to run in mini-batches, images must be resized to same shape.
+# We will iterate through the entire dataset many times during training.
+# Keep in mind that raw images have to be transformed to tensors
+# (mxnet uses BCHW format) before they are fed into neural networks.
+# In addition, to be able to run in mini-batches,
+# images must be resized to the same shape.
 
 # A handy DataLoader would be very convenient for us to apply different transforms and aggregate data into mini-batches.
 
-# Because number of objects varys a lot in different images, we have fluctuating label sizes. As a result, we need to pad those labels to the same size.
-# In response, we have DetectionDataLoader ready for you which handles it automatically.
+# Because the number of objects varys a lot across images, we also have
+# varying label sizes. As a result, we need to pad those labels to the same size.
+# To deal with this problem, GluonVision provides DetectionDataLoader,
+# which handles padding automatically.
+
 from gluonvision.data import DetectionDataLoader
 
 batch_size = 4  # for tutorial, we use smaller batch-size
@@ -139,32 +158,41 @@ for ib, batch in enumerate(train_loader):
 ##########################################################
 # SSD Network
 # ------------------
-# SSD network is a composite Gluon HybridBlock(which means it can be exported to symbol to run in C++, Scala and other language bindings, but we will cover it future tutorials).
-# In terms of structure, SSD networks are composed of feature extraction base network, anchor generators, class predictors and bounding box offsets predictors.
+# GluonVision's SSD implementation is a composite Gluon HybridBlock
+# (which means it can be exported
+# to symbol to run in C++, Scala and other language bindings.
+# We will cover this usage in future tutorials).
+# In terms of structure, SSD networks are composed of base feature extraction
+# network, anchor generators, class predictors and bounding box offset predictors.
 
-# If you have read our introductory [tutorial](http://gluon.mxnet.io/chapter08_computer-vision/object-detection.html) of SSD, you may have better idea how it works.
-# You can also refer to original paper and entry level tutorials for idea that support SSD.
+# For more details on how SSD detector works, please refer to our introductory
+# [tutorial](http://gluon.mxnet.io/chapter08_computer-vision/object-detection.html)
+# You can also refer to the original paper to learn more about the intuitions
+# behind SSD.
 
-# GluonVision has a model zoo which has a lot of built-in SSD networks.
-# Therefore you can simply load them from model_zoo module like this:
+# `Gluon Model Zoo <../../model_zoo/index.html>`__ has a lot of built-in SSD networks.
+# You can load your favorate one with one simple line of code:
 from gluonvision import model_zoo
 net = model_zoo.get_model('ssd_300_vgg16_atrous_voc', pretrained_base=False)
 print(net)
 
 ##############################################################################
-# SSD network is a HybridBlock as mentioned before. So you can call it with an input as simple as:
+# SSD network is a HybridBlock as mentioned before. You can call it with an input as:
 import mxnet as mx
 x = mx.nd.zeros(shape=(1, 3, 300, 300))
 net.initialize()
 cids, scores, bboxes = net(x)
 
 ##############################################################################
-# where ``cids`` is the class labels, ``scores`` are confidences of each predictions, ``bboxes`` are corresponding bounding boxes' absolute coordinates.
+# SSD returns three values, where ``cids`` are the class labels,
+# ``scores`` are confidence scores of each prediction,
+# and ``bboxes`` are absolute coordinates of corresponding bounding boxes.
 
 ##########################################################
 # Training targets
 # ------------------
-# Unlike a single ``SoftmaxCrossEntropyLoss`` used in image classification, the losses used in SSD is more complicated.
+# Unlike a single ``SoftmaxCrossEntropyLoss`` used in image classification,
+# the loss used in SSD is more complicated.
 # Don't worry though, because we have these modules available out of box.
 
 ##############################################################################
@@ -174,16 +202,15 @@ print(net.target_generator)
 ##############################################################################
 # You can observe that there are:
 #
-# - A bounding boxes encoder which transfers raw coordinates to bbox prediction targets.
+# - A bounding box encoder which transfers raw coordinates to bbox prediction targets.
 #
 # - A class encoder which generates class labels for each anchor box.
 #
-# - Matcher and samplers included are used to apply various advanced strategies described in paper.
+# - Matcher and samplers used to apply various advanced strategies described in paper.
 #
 # .. hint::
 #
-#   Due to length of this tutorial, please checkout the training :download:`script <../../../scripts/detection/ssd/train_ssd.py>` for full implementations.
-#   Don't forget this tutorial: :ref:`sphx_glr_build_examples_detection_train_ssd_advanced.py`.
+#   Please checkout the full :download:`training script <../../../scripts/detection/ssd/train_ssd.py>` for complete implementation.
 
 ##########################################################
 # References

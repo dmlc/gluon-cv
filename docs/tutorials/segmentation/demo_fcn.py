@@ -1,5 +1,5 @@
-"""Getting Started with FCN Pre-trained Models
-===========================================
+"""1. Getting Started with FCN Pre-trained Models
+==============================================
 
 This is a quick demo of using GluonVision FCN model.
 Please follow the `installation guide <../index.html>`_ to install MXNet and GluonVision if not yet.
