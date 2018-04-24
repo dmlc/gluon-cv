@@ -36,7 +36,7 @@ def test_segmentation_utils():
         img = img.expand_dims(0).as_in_context(ctx)
         mask = mask.expand_dims(0)
         pred = net.evaluate(img).as_in_context(mx.cpu(0))
-        # gv prediction
+        # gcv prediction
         correct1, labeled1 = batch_pix_accuracy(pred, mask, True)
         inter1, union1 = batch_intersection_union(pred, mask, dataset.num_class, True)
         total_correct += correct1

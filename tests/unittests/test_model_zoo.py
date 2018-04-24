@@ -23,13 +23,13 @@ import warnings
 import mxnet as mx
 import numpy as np
 
-import gluoncv as gv
+import gluoncv as gcv
 
 def test_ssd_models():
     x = mx.random.uniform(shape=(2, 3, 512, 768))  # allow non-squre and larger inputs
     models = ['ssd_300_vgg16_atrous_voc', 'ssd_512_vgg16_atrous_voc', 'ssd_512_resnet50_v1_voc']
     for model in models:
-        net = gv.model_zoo.get_model(model)
+        net = gcv.model_zoo.get_model(model)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             net.initialize()

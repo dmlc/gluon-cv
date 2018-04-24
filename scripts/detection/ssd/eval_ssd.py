@@ -9,7 +9,7 @@ import mxnet as mx
 from tqdm import tqdm
 from mxnet import nd
 from mxnet import gluon
-import gluoncv as gv
+import gluoncv as gcv
 from gluoncv import data as gdata
 from gluoncv.data.transforms.presets.ssd import SSDDefaultValTransform
 from gluoncv.utils.metrics.voc_detection import VOC07MApMetric
@@ -85,9 +85,9 @@ if __name__ == '__main__':
     # network
     net_name = '_'.join(('ssd', str(args.data_shape), args.network, args.dataset))
     if args.pretrained.lower() in ['true', '1', 'yes', 't']:
-        net = gv.model_zoo.get_model(net_name, pretrained=True)
+        net = gcv.model_zoo.get_model(net_name, pretrained=True)
     else:
-        net = gv.model_zoo.get_model(net_name, pretrained=False)
+        net = gcv.model_zoo.get_model(net_name, pretrained=False)
         net.load_params(args.pretrained.strip())
 
     # training
