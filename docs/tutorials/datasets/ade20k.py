@@ -83,7 +83,7 @@ import matplotlib.image as mpimg
 # subplot 1 for img
 fig = plt.figure()
 fig.add_subplot(1,2,1)
-plt.imshow(np.array(img))
+plt.imshow(img.asnumpy())
 # subplot 2 for the mask
 mmask = mpimg.imread('mask.png')
 fig.add_subplot(1,2,2)
