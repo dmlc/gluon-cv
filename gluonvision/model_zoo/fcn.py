@@ -27,6 +27,11 @@ class FCN(SegBaseModel):
 
         Long, Jonathan, Evan Shelhamer, and Trevor Darrell. "Fully convolutional networks
         for semantic segmentation." *CVPR*, 2015
+
+    Examples
+    --------
+    >>> model = FCN(nclass=21, backbone='resnet50')
+    >>> print(model)
     """
     # pylint: disable=arguments-differ
     def __init__(self, nclass, backbone='resnet50', norm_layer=nn.BatchNorm,
@@ -95,6 +100,11 @@ def get_fcn(dataset='pascal_voc', backbone='resnet50', pretrained=False,
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
+
+    Examples
+    --------
+    >>> model = get_fcn(dataset='pascal_voc', backbone='resnet50', pretrained=False)
+    >>> print(model)
     """
     acronyms = {
         'pascal_voc': 'voc',

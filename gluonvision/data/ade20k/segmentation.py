@@ -16,6 +16,21 @@ class ADE20KSegmentation(SegmentationDataset):
         'train', 'val' or 'test'
     transform : callable, optional
         A function that transforms the image
+
+    Examples
+    --------
+    >>> from mxnet.gluon.data.vision import transforms
+    >>> # Transforms for Normalization
+    >>> input_transform = transforms.Compose([
+    >>>     transforms.ToTensor(),
+    >>>     transforms.Normalize([.485, .456, .406], [.229, .224, .225]),
+    >>> ])
+    >>> # Create Dataset
+    >>> trainset = gluonvision.data.ADE20KSegmentation(split='train', transform=input_transform)
+    >>> # Create Training Loader
+    >>> train_data = gluon.data.DataLoader(
+    >>>     trainset, 4, shuffle=True, last_batch='rollover',
+    >>>     num_workers=4)
     """
     # pylint: disable=abstract-method
     BASE_DIR = 'ADEChallengeData2016'
