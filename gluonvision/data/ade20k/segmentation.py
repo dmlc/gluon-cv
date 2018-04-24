@@ -16,17 +16,29 @@ class ADE20KSegmentation(SegmentationDataset):
         'train', 'val' or 'test'
     transform : callable, optional
         A function that transforms the image
-    target_transform : callable, optional
-        A function that transforms the labels
+
+    Examples
+    --------
+    >>> from mxnet.gluon.data.vision import transforms
+    >>> # Transforms for Normalization
+    >>> input_transform = transforms.Compose([
+    >>>     transforms.ToTensor(),
+    >>>     transforms.Normalize([.485, .456, .406], [.229, .224, .225]),
+    >>> ])
+    >>> # Create Dataset
+    >>> trainset = gluonvision.data.ADE20KSegmentation(split='train', transform=input_transform)
+    >>> # Create Training Loader
+    >>> train_data = gluon.data.DataLoader(
+    >>>     trainset, 4, shuffle=True, last_batch='rollover',
+    >>>     num_workers=4)
     """
     # pylint: disable=abstract-method
     BASE_DIR = 'ADEChallengeData2016'
     def __init__(self, root=os.path.expanduser('~/.mxnet/datasets/ade'),
-                 split='train', transform=None, target_transform=None):
+                 split='train', transform=None):
         super(ADE20KSegmentation, self).__init__(root)
         self.root = os.path.join(root, self.BASE_DIR)
         self.transform = transform
-        self.target_transform = target_transform
         self.mode = split
         self.images, self.masks = _get_ade20k_pairs(self.root, split)
         assert (len(self.images) == len(self.masks))
@@ -52,11 +64,7 @@ class ADE20KSegmentation(SegmentationDataset):
 
         # general resize, normalize and toTensor
         if self.transform is not None:
-            #print("transform for input")
             img = self.transform(img)
-        if self.target_transform is not None:
-            #print("transform for label")
-            mask = self.target_transform(mask)
 
         return img, mask
 
