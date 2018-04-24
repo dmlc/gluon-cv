@@ -1,11 +1,12 @@
-"""Dive deep into SSD training: 3 tips to boost performance
-============================================================
+"""Deep dive into SSD training: 3 tips to boost performance
+===========================================================
 
-In the previous tutorial :ref:`sphx_glr_build_examples_detection_train_ssd_voc.py`, we briefly went through
-the fundamental APIs that help building the training pipeline of SSD.
+In the previous tutorial :ref:`sphx_glr_build_examples_detection_train_ssd_voc.py`,
+we briefly went through the basic APIs that help building the training pipeline of SSD.
 
-In this article, we will dive deep into the details and introduce something critical
-to reproduce SOTA that you may never know by reading the paper and tech reports.
+In this article, we will dive deep into the details and introduce tricks that
+important for reproducing state-of-the-art performance.
+These are the hidden pitfalls that are usually missing in papers and tech reports.
 
 .. contents:: :local:
 
@@ -22,7 +23,7 @@ to reproduce SOTA that you may never know by reading the paper and tech reports.
 # But the question is, what is the proper way to calculate ``N``? Should we sum up
 # ``N`` across the entire batch, or use per-sample ``N`` instead?
 #
-# let's use some fake data to illustrate
+# To illustrate this, please generate some dummy data:
 
 import mxnet as mx
 x = mx.random.uniform(shape=(2, 3, 300, 300))  # use batch-size 2
@@ -34,7 +35,7 @@ id2 = mx.nd.array([1, 3, 5, 7])
 bbox2 = mx.nd.array([[10, 10, 30, 30], [40, 40, 60, 60], [50, 50, 90, 90], [100, 110, 120, 140]])
 
 ############################################################################
-# put them together into batch, by padding some sentinal values -1
+# Then, combine them into a batch by padding -1 as sentinal values:
 gt_ids = mx.nd.ones(shape=(2, 4)) * -1
 gt_ids[0, :1] = id1
 gt_ids[1, :4] = id2
@@ -87,7 +88,8 @@ with autograd.record():
     # L.backward()
 
 ############################################################################
-# The norms are different, but sample wise norms sum up to the total
+# The norms are different, but sample-wise norms sum up to be the same with
+# batch-wise norm
 print('batch-wise num_positive:', num_positive)
 print('sample-wise num_positive:', sample_num_positive)
 
@@ -107,30 +109,30 @@ print('sample-wise norm loc loss:', sample_loc_loss * rescale_loc)
 
 ############################################################################
 # Which one is better?
-# At first glance, it is complicated to say which one is theoretically better
+# At first glance, it is hard to say which one is theoretically better
 # because batch-wise norm ensures loss is well normalized by global statistics
 # while sample-wise norm ensures gradients won't explode in some extreame cases where
-# there are seveal hundreds of objects in a single image.
+# there are hundreds of objects in a single image.
 # In such case it would cause other samples in the same
-# batch being suppressed by this unusually large norm.
+# batch to be suppressed by this unusually large norm.
 #
 # In our experiments, batch-wise norm is always better on Pascal VOC dataset,
-# contributing 1~2% mAP gain. However, you would definitely try comparing them
-# when you got a new dataset and probably new model.
+# contributing 1~2% mAP gain. However, you should definitely try both of them
+# when you use a new dataset or a new model.
 
 
 ############################################################################
-# Initializer matters: don't stick to single initializer
+# Initializer matters: don't stick to one single initializer
 # --------------------------------------------------------
-# Though SSD networks are based on pre-trained feature extractors, namely ``base_network``
-# in the context, there are convolutional layers appended to the ``base_network``
-# in order to extend the cascades of feature maps.
+# While SSD networks are based on pre-trained feature extractors (called the ``base_network``),
+# we also append uninitialized convolutional layers to the ``base_network``
+# to extend the cascades of feature maps.
 #
-# And there are convolutional
-# predictors appened to each output feature map, serve as class predictors and bounding
+# There are also convolutional
+# predictors appened to each output feature map, serving as class predictors and bounding
 # box offsets predictors.
 #
-# For these added layers, we will randomly initialize them before training.
+# For these added layers, we must initialize them before training.
 from gluonvision import model_zoo
 import mxnet as mx
 # don't load pretrained for this demo
@@ -145,48 +147,50 @@ name, pred = predictors[0]
 print(name, pred)
 
 ############################################################################
-# we can initialize it using different initializer, such as ``Normal``, ``Xavier``.
+# we can initialize it with different initializers, such as ``Normal`` or ``Xavier``.
 pred.initialize(mx.init.Uniform(), force_reinit=True)
 print('param shape:', pred.data().shape, 'peek first 20 elem:', pred.data().reshape((-1))[:20])
 
 ############################################################################
-# Simply switching from ``Uniform`` to ``Xavier`` can get ~1% mAP gain after full training.
+# Simply switching from ``Uniform`` to ``Xavier`` can produce ~1% mAP gain.
 pred.initialize(mx.init.Xavier(rnd_type='gaussian', magnitude=2, factor_type='out'), force_reinit=True)
 print('param shape:', pred.data().shape, 'peek first 20 elem:', pred.data().reshape((-1))[:20])
 
 
 ############################################################################
-# Interprete confidence scores: process each class separately
+# Interpreting confidence scores: process each class separately
 # -----------------------------------------------------------
-# If we revisit the per-class confidence predictions, its shape is (``B``, ``A``, ``N+1``)
+# If we revisit the per-class confidence predictions, its shape is (``B``, ``A``, ``N+1``),
 # where ``B`` is the batch size, ``A`` is the number of anchor boxes,
 # ``N`` is the number of foreground classes.
 print('class prediction shape:', cls_preds.shape)
 
 ############################################################################
-# There are basically two ways to handle the prediction:
+# There are two ways we can handle the prediction:
 #
-# 1. take argmax of the prediction along class axis, i.e., the most likely class this object belongs to
+# 1. take argmax of the prediction along the class axis. This way, only the
+# the most probable class is considered.
 #
-# 2. process ``N`` foreground classes separately, in this case, rank 2 class for example still have a
-# chance to survive as the final prediction.
+# 2. process ``N`` foreground classes separately. This way, the second most
+# probable class, for example, still has a
+# chance of surviving as the final prediction.
 #
-# Consider such a case
+# Consider this example:
 cls_pred = mx.nd.array([-1, -2, 3, 4, 6.5, 6.4])
 cls_prob = mx.nd.softmax(cls_pred, axis=-1)
 for k, v in zip(['bg', 'apple', 'orange', 'person', 'dog', 'cat'], cls_prob.asnumpy().tolist()):
     print(k, v)
 
 ############################################################################
-# The probabilities of the dog and cat are so close that if we use method 1,
-# we are losing the bet if cat is the correct decision.
+# The probabilities of dog and cat are so close that if we use method 1,
+# we are quite likely to lose the bet when cat is the correct decision.
 #
-# It turns out that switching from method 1 to method 2, we achieved 0.5~0.8 better mAP in evaluation.
+# It turns out that by switching from method 1 to method 2, we gain 0.5~0.8 mAP in evaluation.
 #
-# One obvious drawback of method 2 is that is significantly slower than method 1.
-# In terms of N classes, it's O(N) versus O(1) in method 1.
-# This may or may not be a problem depending on the use case, but feel free to switch them if you want.
+# One obvious drawback of method 2 is that it is significantly slower than method 1.
+# For N classes, method 2 has O(N) complexity while method 1 is always O(1).
+# This may or may not be a problem depending on the use case, but feel free to switch between them if you want.
 #
 # .. hint::
-#   You can checkout :py:meth:`gluonvision.model_zoo.coders.MultiClassDecoder` and
-#   :py:meth:`gluonvision.model_zoo.coders.MultiPerClassDecoder`, which implements method 1 and 2, respectively.
+#   Checkout :py:meth:`gluonvision.model_zoo.coders.MultiClassDecoder` and
+#   :py:meth:`gluonvision.model_zoo.coders.MultiPerClassDecoder` for implementions of method 1 and 2, respectively.
