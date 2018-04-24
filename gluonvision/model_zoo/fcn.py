@@ -133,6 +133,11 @@ def get_fcn_voc_resnet50(**kwargs):
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
+
+    Examples
+    --------
+    >>> model = get_fcn_voc_resnet50(pretrained=True)
+    >>> print(model)
     """
     return get_fcn('pascal_voc', 'resnet50', **kwargs)
 
@@ -149,5 +154,10 @@ def get_fcn_voc_resnet101(**kwargs):
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
+
+    Examples
+    --------
+    >>> model = get_fcn_voc_resnet101(pretrained=True)
+    >>> print(model)
     """
     return get_fcn('pascal_voc', 'resnet101', **kwargs)
