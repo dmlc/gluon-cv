@@ -25,7 +25,7 @@ def get_color_pallete(npimg, dataset='pascal_voc'):
     if dataset == 'pascal_voc' or dataset == 'pascal_aug':
         npimg[npimg == -1] = 255
     # put colormap
-    out_img = Image.fromarray(npimg.astype('uint8'))
+    out_img = Image.fromarray(npimg.astype('uint8').squeeze())
     if dataset == 'ade20k':
         out_img.putpalette(adepallete)
     else:
