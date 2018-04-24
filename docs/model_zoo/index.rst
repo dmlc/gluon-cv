@@ -117,9 +117,7 @@ Table of pre-trained models, pretrained datasets, and their performances for Sem
 
 .. hint::
 
-    The model names contain the training information.
-
-  For instance, ``fcn_resnet50_voc``:
+  The model names contain the training information. For instance, ``fcn_resnet50_voc``:
 
   - ``fcn`` indicate the algorithm is "Fully Convolutional Network for Semantic Segmentation" [6]_.
 
@@ -127,7 +125,7 @@ Table of pre-trained models, pretrained datasets, and their performances for Sem
 
   - ``voc`` is the training dataset.
 
-    The training commands work with the script :download:`Download train_cifar10.py<../../scripts/segmentation/train.py>`
+    The training commands work with the script :download:`Download train.py<../../scripts/segmentation/train.py>`
 
 
 .. role:: raw-html(raw)

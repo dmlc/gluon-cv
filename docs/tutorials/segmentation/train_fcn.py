@@ -13,7 +13,7 @@ Start Training Now
 
     Feel free to skip the tutorial because the training script is self-complete and ready to launch.
 
-    :download:`Download Full Python Script: train_ssd.py<../../../scripts/segmentation/train.py>`
+    :download:`Download Full Python Script: train.py<../../../scripts/segmentation/train.py>`
 
     Example training command::
 
