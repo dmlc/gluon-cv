@@ -48,12 +48,13 @@ The following table summarizes the available models and their performances in ad
 
 .. hint::
 
-    Our pre-trained models match the accuracy from "Mix-Up".
+    Our pre-trained models match the accuracy from "Mix-Up" [4]_ .
+    Please check the reference paper for further information.
 
-    The training commands assume you are under corresponding working directory:
+    The training commands work with the following scripts:
 
-    - For ``CIFAR10``, the working directory is `scripts/classification/cifar <https://github.com/dmlc/gluon-vision/tree/master/scripts/classification/cifar>`_
-    - For ``ImageNet``, the working directory is `scripts/classification/imagenet <https://github.com/dmlc/gluon-vision/tree/master/scripts/classification/imagenet>`_
+    - For vanilla training: :download:`Download train_cifar10.py<../../scripts/classification/cifar/train_cifar10.py>`
+    - For mix-up training: :download:`Download train_mixup_cifar10.py<../../scripts/classification/cifar/train_mixup_cifar10.py>`
 
 +----------------------------+----------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | Model                      | Acc (Vanilla/Mix-Up [4]_ ) | Training Command                                                                                                                                                                                                                                                             | Training Log                                                                                                                                                                                                                                                                   |
