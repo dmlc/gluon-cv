@@ -83,7 +83,7 @@ sphinx_gallery_conf = {
         'gluonvision': None,
     },
     'backreferences_dir': False,
-    'expected_failing_examples': ['tutorials/datasets/ade20k.py'],
+    # 'expected_failing_examples': ['tutorials/datasets/ade20k.py'],
 }
 
 
