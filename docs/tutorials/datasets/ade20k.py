@@ -14,13 +14,11 @@ Prepare the dataset
 
 The easiest way is simply running this script:
 
- :download:`Download ADE20K Prepare Script: ade20k.py<../../scripts/datasets/ade20k.py>`
-
-which will automatically download and extract the data into ``~/.mxnet/datasets/ade``.
+ :download:`Download ADE20K Prepare Script: ade20k.py<../../../scripts/datasets/ade20k.py>`
 
 .. code-block:: bash
 
-   python scripts/datasets/ade20k.py
+   python ade20k.py
 
 .. hint::
 
