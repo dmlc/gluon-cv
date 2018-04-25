@@ -1,12 +1,12 @@
-GluonVision: a Deep Learning Toolkit for Computer Vision
+GluonCV: a Deep Learning Toolkit for Computer Vision
 ========================================================
 
-GluonVision provides implementations of state-of-the-art (SOTA) deep learning
+GluonCV provides implementations of state-of-the-art (SOTA) deep learning
 algorithms in computer vision.
 It is designed for helping engineers, researchers, and students to quickly
 prototype products, validate new ideas, and learning computer vision.
 
-GluonVision features:
+GluonCV features:
 
 1. training scripts that reproduces SOTA results reported in latest papers,
 
@@ -16,7 +16,7 @@ GluonVision features:
 
 4. community support.
 
-GluonVision tutorials assume users have basic knowledges about deep learning and
+GluonCV tutorials assume users have basic knowledges about deep learning and
 computer vision.
 Otherwise, please refer to our introductory deep learning course
 `MXNet-the-Streight-Dope <http://gluon.mxnet.io/>`_.
@@ -32,26 +32,26 @@ Installation
 Install via PyPI
 ^^^^^^^^^^^^^^^^
 
-The easiest way to install GluonVision is through `pip <https://pip.pypa.io/en/stable/installing/>`_.
+The easiest way to install GluonCV is through `pip <https://pip.pypa.io/en/stable/installing/>`_.
 
 .. code-block:: bash
 
-  pip install gluonvision
+  pip install gluoncv
 
 Install from Source
 ^^^^^^^^^^^^^^^^^^^
 
-Optionally, you can clone the GluonVision project and install it locally
+Optionally, you can clone the GluonCV project and install it locally
 
 .. code-block:: bash
 
-   git clone https://github.com/dmlc/gluon-vision
-   cd gluon-vision && python setup.py install --user
+   git clone https://github.com/dmlc/gluon-cv
+   cd gluon-cv && python setup.py install --user
 
 Install MXNet
 ^^^^^^^^^^^^^
 
-GluonVision depends on the recent version of MXNet. The easiest way to install MXNet
+GluonCV depends on the recent version of MXNet. The easiest way to install MXNet
 is through `pip <https://pip.pypa.io/en/stable/installing/>`_. The following
 command installs a nightly build CPU version of MXNet.
 

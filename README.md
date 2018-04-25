@@ -3,9 +3,9 @@
 [![Build Status](http://ci.mxnet.io/job/gluon-vision/job/master/badge/icon)](http://ci.mxnet.io/job/gluon-vision/job/master/)
 [![GitHub license](http://dmlc.github.io/img/apache2.svg)](./LICENSE)
 
-| [Installation](http://gluon-vision.mxnet.io) | [Documentation](http://gluon-vision.mxnet.io) | [Tutorials](http://gluon-vision.mxnet.io) |
+| [Installation](http://gluon-cv.mxnet.io) | [Documentation](http://gluon-cv.mxnet.io) | [Tutorials](http://gluon-cv.mxnet.io) |
 
-GluonVision provides implementations of the sate-of-the-art (SOTA) deep learning models in computer vision.
+GluonCV provides implementations of the sate-of-the-art (SOTA) deep learning models in computer vision.
 
 It is designed for engineers, researchers, and
 students to fast prototype products and research ideas based on these
@@ -18,8 +18,8 @@ models. This toolkit offers four main features:
 
 ## Examples
 
-- [Image Classification](http://gluon-vision.mxnet.io/build/examples_classification/index.html)
+- [Image Classification](http://gluon-cv.mxnet.io/build/examples_classification/index.html)
 
-- [Object Detection](http://gluon-vision.mxnet.io/build/examples_detection/index.html)
+- [Object Detection](http://gluon-cv.mxnet.io/build/examples_detection/index.html)
 
-- [Semantic Segmentation](http://gluon-vision.mxnet.io/build/examples_segmentation/index.html)
+- [Semantic Segmentation](http://gluon-cv.mxnet.io/build/examples_segmentation/index.html)

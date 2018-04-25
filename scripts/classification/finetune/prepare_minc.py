@@ -1,5 +1,5 @@
 import os, argparse, shutil
-from gluonvision.utils import makedirs
+from gluoncv.utils import makedirs
 
 def parse_opts():
     parser = argparse.ArgumentParser(description='Preparing MINC 2500 Dataset',

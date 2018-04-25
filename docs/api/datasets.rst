@@ -1,8 +1,8 @@
-gluonvision.data
+gluoncv.data
 ================
 
-.. automodule:: gluonvision.data
-.. currentmodule:: gluonvision.data
+.. automodule:: gluoncv.data
+.. currentmodule:: gluoncv.data
 
 
 .. hint::
@@ -21,21 +21,21 @@ gluonvision.data
 `ImageNet <http://www.image-net.org/>`_
 ---------------------------------------
 
-.. autoclass:: gluonvision.data.ImageNet
+.. autoclass:: gluoncv.data.ImageNet
 
 `Pascal VOC <http://host.robots.ox.ac.uk/pascal/VOC/>`_
 -------------------------------------------------------
 
-.. autoclass:: gluonvision.data.VOCDetection
-.. autoclass:: gluonvision.data.VOCSegmentation
-.. autoclass:: gluonvision.data.VOCAugSegmentation
+.. autoclass:: gluoncv.data.VOCDetection
+.. autoclass:: gluoncv.data.VOCSegmentation
+.. autoclass:: gluoncv.data.VOCAugSegmentation
 
 
 `ADE20K <http://groups.csail.mit.edu/vision/datasets/ADE20K/>`_
 ---------------------------------------------------------------
 
-.. autoclass:: gluonvision.data.ADE20KSegmentation
+.. autoclass:: gluoncv.data.ADE20KSegmentation
 
 DataLoader
 ----------
-.. autoclass:: gluonvision.data.DetectionDataLoader
+.. autoclass:: gluoncv.data.DetectionDataLoader

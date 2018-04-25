@@ -1,25 +1,25 @@
-gluonvision.data.transforms
+gluoncv.data.transforms
 ===========================
 This file includes various transformations that is critical to vision tasks.
 
 Bounding Box Transforms
 ----------------------------
-.. automodule:: gluonvision.data.transforms.bbox
+.. automodule:: gluoncv.data.transforms.bbox
     :members:
 
 :hidden:`Experimental`
 ~~~~~~~~~~~~~~~~~~~~~~
-.. automodule:: gluonvision.data.transforms.experimental.bbox
+.. automodule:: gluoncv.data.transforms.experimental.bbox
     :members:
 
 Image Transforms
 ---------------------
-.. automodule:: gluonvision.data.transforms.image
+.. automodule:: gluoncv.data.transforms.image
     :members:
 
 :hidden:`Experimental`
 ~~~~~~~~~~~~~~~~~~~~~~
-.. automodule:: gluonvision.data.transforms.experimental.image
+.. automodule:: gluoncv.data.transforms.experimental.image
     :members:
 
 Preset Transforms
@@ -30,5 +30,5 @@ different papers. This is a complimentary section and APIs are prone to changes.
 :hidden:`Single Shot Multibox Object Detector`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. automodule:: gluonvision.data.transforms.presets.ssd
+.. automodule:: gluoncv.data.transforms.presets.ssd
     :members:

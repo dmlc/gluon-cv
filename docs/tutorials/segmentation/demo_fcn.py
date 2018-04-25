@@ -1,25 +1,25 @@
 """1. Getting Started with FCN Pre-trained Models
 ==============================================
 
-This is a quick demo of using GluonVision FCN model.
-Please follow the `installation guide <../index.html>`_ to install MXNet and GluonVision if not yet.
+This is a quick demo of using GluonCV FCN model.
+Please follow the `installation guide <../index.html>`_ to install MXNet and GluonCV if not yet.
 """
 import mxnet as mx
 from mxnet import image
 from mxnet.gluon.data.vision import transforms
-import gluonvision
+import gluoncv
 # using cpu
 ctx = mx.cpu(0)
 
 
 ##############################################################################
-# Prepare the image 
+# Prepare the image
 # -----------------
 #
 # download the example image
 url = 'https://raw.githubusercontent.com/zhanghang1989/gluon-vision-figures/master/voc_examples/1.jpg'
 filename = 'example.jpg'
-gluonvision.utils.download(url, filename)
+gluoncv.utils.download(url, filename)
 
 ##############################################################################
 # load the image
@@ -44,7 +44,7 @@ img = img.expand_dims(0).as_in_context(ctx)
 # ----------------------------------------------
 #
 # get pre-trained model
-model = gluonvision.model_zoo.get_model('fcn_resnet101_voc', pretrained=True)
+model = gluoncv.model_zoo.get_model('fcn_resnet101_voc', pretrained=True)
 
 ##############################################################################
 # make prediction using single scale
@@ -53,7 +53,7 @@ predict = mx.nd.squeeze(mx.nd.argmax(output, 1)).asnumpy()
 
 ##############################################################################
 # Add color pallete for visualization
-from gluonvision.utils.viz import get_color_pallete
+from gluoncv.utils.viz import get_color_pallete
 import matplotlib.image as mpimg
 mask = get_color_pallete(predict, 'pascal_voc')
 mask.save('output.png')

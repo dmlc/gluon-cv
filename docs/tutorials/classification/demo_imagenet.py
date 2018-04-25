@@ -57,7 +57,7 @@ feel free to read the next tutorial on `ImageNet Training <dive_deep_imagenet.ht
 Or, if you would like to know how to train a powerful model tailored to your own data,
 please go ahead and read the tutorial on `Transfer learning <transfer_learning_minc.html>`__.
 
-.. |imagenet| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/datasets/imagenet_mosaic.jpg
-.. |image0| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/classification/mt_baker.jpg
+.. |imagenet| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/datasets/imagenet_mosaic.jpg
+.. |image0| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/classification/mt_baker.jpg
 
 """

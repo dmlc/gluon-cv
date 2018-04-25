@@ -53,8 +53,8 @@ from mxnet import autograd as ag
 from mxnet.gluon import nn
 from mxnet.gluon.data.vision import transforms
 
-from gluonvision.model_zoo import get_model
-from gluonvision.utils import makedirs, TrainingHistory
+from gluoncv.model_zoo import get_model
+from gluoncv.utils import makedirs, TrainingHistory
 
 ################################################################
 #
@@ -332,6 +332,6 @@ net.load_params('dive_deep_cifar10_resnet20_v2.params', ctx=ctx)
 # Or, if you want like to know what can be done with the model you just
 # trained, please read the tutorial on `Transfer learning <transfer_learning_minc.html>`__.
 #
-# .. |image-no-aug| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/classification/overfitting.png
-# .. |image-aug| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/classification/normal_training.png
-# .. |image-golden-bridge| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/classification/golden-bridge.png
+# .. |image-no-aug| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/classification/overfitting.png
+# .. |image-aug| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/classification/normal_training.png
+# .. |image-golden-bridge| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/classification/golden-bridge.png

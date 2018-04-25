@@ -1,11 +1,11 @@
 .. role:: hidden
     :class: hidden-section
 
-gluonvision.model_zoo
+gluoncv.model_zoo
 =====================
 
-.. automodule:: gluonvision.model_zoo
-.. currentmodule:: gluonvision.model_zoo
+.. automodule:: gluoncv.model_zoo
+.. currentmodule:: gluoncv.model_zoo
 
 .. autofunction:: get_model
 
@@ -35,7 +35,7 @@ Object Detection
 :hidden:`SSD`
 ~~~~~~~~~~~~~
 
-.. currentmodule:: gluonvision.model_zoo.ssd
+.. currentmodule:: gluoncv.model_zoo.ssd
 
 .. autoclass:: SSD
     :members:
@@ -59,7 +59,7 @@ Object Detection
 .. autofunction:: vgg16_atrous_300
 .. autofunction:: vgg16_atrous_512
 
-.. currentmodule:: gluonvision.model_zoo
+.. currentmodule:: gluoncv.model_zoo
 
 Semantic Segmentation
 ---------------------
@@ -85,13 +85,13 @@ Semantic Segmentation
 Dilated Network
 ---------------
 
-We apply dilattion strategy to pre-trained ResNet models (with stride of 8). Please see :class:`gluonvision.model_zoo.SegBaseModel` for how to use it.
+We apply dilattion strategy to pre-trained ResNet models (with stride of 8). Please see :class:`gluoncv.model_zoo.SegBaseModel` for how to use it.
 
 
 :hidden:`DilatedResNetV0`
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. currentmodule:: gluonvision.model_zoo.dilated.dilatedresnetv0
+.. currentmodule:: gluoncv.model_zoo.dilated.dilatedresnetv0
 
 .. autoclass:: DilatedResNetV0
     :members:
@@ -114,7 +114,7 @@ We apply dilattion strategy to pre-trained ResNet models (with stride of 8). Ple
 :hidden:`DilatedResNetV2`
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. currentmodule:: gluonvision.model_zoo.dilated.dilatedresnetv2
+.. currentmodule:: gluoncv.model_zoo.dilated.dilatedresnetv2
 
 .. autoclass:: DilatedResNetV2
     :members:
@@ -143,7 +143,7 @@ Common Components
 :hidden:`Bounding Box`
 ~~~~~~~~~~~~~~~~~~~~~~
 
-.. currentmodule:: gluonvision.model_zoo.bbox
+.. currentmodule:: gluoncv.model_zoo.bbox
 
 .. autoclass:: BBoxCornerToCenter
     :members:
@@ -154,7 +154,7 @@ Common Components
 :hidden:`Coders`
 ~~~~~~~~~~~~~~~~~~~~~~
 
-.. currentmodule:: gluonvision.model_zoo.coders
+.. currentmodule:: gluoncv.model_zoo.coders
 
 .. autoclass:: NormalizedBoxCenterEncoder
     :members:
@@ -175,7 +175,7 @@ Common Components
 :hidden:`Features`
 ~~~~~~~~~~~~~~~~~~~~~~
 
-.. currentmodule:: gluonvision.model_zoo.features
+.. currentmodule:: gluoncv.model_zoo.features
 
 .. autoclass:: FeatureExtractor
     :members:
@@ -186,7 +186,7 @@ Common Components
 :hidden:`Losses`
 ~~~~~~~~~~~~~~~~~~~~~~
 
-.. currentmodule:: gluonvision.model_zoo.losses
+.. currentmodule:: gluoncv.model_zoo.losses
 
 .. autoclass:: FocalLoss
     :members:
@@ -195,7 +195,7 @@ Common Components
 :hidden:`Matchers`
 ~~~~~~~~~~~~~~~~~~~~~~
 
-.. currentmodule:: gluonvision.model_zoo.matchers
+.. currentmodule:: gluoncv.model_zoo.matchers
 
 .. autoclass:: CompositeMatcher
     :members:
@@ -209,7 +209,7 @@ Common Components
 :hidden:`Predictors`
 ~~~~~~~~~~~~~~~~~~~~~~
 
-.. currentmodule:: gluonvision.model_zoo.predictors
+.. currentmodule:: gluoncv.model_zoo.predictors
 
 .. autoclass:: ConvPredictor
     :members:
@@ -220,7 +220,7 @@ Common Components
 :hidden:`Samplers`
 ~~~~~~~~~~~~~~~~~~~~~~
 
-.. currentmodule:: gluonvision.model_zoo.samplers
+.. currentmodule:: gluoncv.model_zoo.samplers
 
 .. autoclass:: NaiveSampler
     :members:
