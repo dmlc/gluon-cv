@@ -45,9 +45,27 @@ GluonCV is still under development, more models will be added later.
 Image Classification
 ~~~~~~~~~~~~~~~~~~~~
 
-The following table lists pre-trained models trained on CIFAR10. For models
-trained on ImageNet, please refer to upstream
+The following table lists pre-trained models trained on ImageNet. We will keep
+adding new models and training scripts to the table.
+
+Besides the listed, we provide more models trained on ImageNet in the upstream
 `Gluon Model Zoo <https://mxnet.incubator.apache.org/api/python/gluon/model_zoo.html>`_.
+
+**ImageNet**
+
+.. hint::
+
+    Training commands work with this script: :download:`train_imagenet.py<../../scripts/classification/imagenet/train_imagenet.py>`
+
++------------------+--------+--------+---------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
+| Model            | Top-1  | Top-5  | Training Command                                                                                                                | Training Log                                                                                                                  |
++==================+========+========+=================================================================================================================================+===============================================================================================================================+
+| ResNet50_v2 [2]_ | 0.7622 | 0.9297 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet50_v2.sh>`_    | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet50_v2.log>`_          |
++------------------+--------+--------+---------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
+
+**CIFAR10**
+
+The following table lists pre-trained models trained on CIFAR10.
 
 .. hint::
 
