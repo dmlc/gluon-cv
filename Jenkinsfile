@@ -1,6 +1,6 @@
 stage("LINT") {
   node {
-    ws('workspace/gluon-cv-lint') {
+    ws('workspace/gluon-vision-lint') {
       checkout scm
       sh """#!/bin/bash
       set -e
@@ -16,7 +16,7 @@ stage("LINT") {
 
 stage("Docs") {
   node {
-    ws('workspace/gluon-cv-docs') {
+    ws('workspace/gluon-vision-docs') {
       checkout scm
       sh """#!/bin/bash
       set -e
@@ -29,16 +29,16 @@ stage("Docs") {
       cd docs && make clean && make html
 
       if [[ ${env.BRANCH_NAME} == master ]]; then
-          aws s3 sync --delete build/html/ s3://gluon-cv.mxnet.io/ --acl public-read
-          echo "Uploaded doc to http://gluon-cv.mxnet.io"
+          aws s3 sync --delete build/html/ s3://gluon-vision.mxnet.io/ --acl public-read
+          echo "Uploaded doc to http://gluon-vision.mxnet.io"
       else
-          aws s3 sync --delete build/html/ s3://gluon-cv-staging/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/ --acl public-read
-          echo "Uploaded doc to http://gluon-cv-staging.s3-website-us-west-2.amazonaws.com/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/index.html"
+          aws s3 sync --delete build/html/ s3://gluon-vision-staging/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/ --acl public-read
+          echo "Uploaded doc to http://gluon-vision-staging.s3-website-us-west-2.amazonaws.com/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/index.html"
       fi
       """
 
       if (env.BRANCH_NAME.startsWith("PR-")) {
-        pullRequest.comment("Job ${env.BRANCH_NAME}-${env.BUILD_NUMBER} is done. \nDocs are uploaded to http://gluon-cv-staging.s3-website-us-west-2.amazonaws.com/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/index.html")
+        pullRequest.comment("Job ${env.BRANCH_NAME}-${env.BUILD_NUMBER} is done. \nDocs are uploaded to http://gluon-vision-staging.s3-website-us-west-2.amazonaws.com/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/index.html")
       }
     }
   }
