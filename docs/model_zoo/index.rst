@@ -1,4 +1,6 @@
-Vision Model Zoo
+.. _gluoncv-model-zoo:
+
+GluonCV Model Zoo
 ================
 
 GluonCV Model Zoo, similar to the upstream `Gluon Model Zoo

@@ -23,8 +23,7 @@ gluoncv.utils.download(url, filename)
 
 ##############################################################################
 # load the image
-with open(filename, 'rb') as f:
-    img = image.imdecode(f.read())
+img = image.imread(filename)
 
 from matplotlib import pyplot as plt
 plt.imshow(img.asnumpy())
