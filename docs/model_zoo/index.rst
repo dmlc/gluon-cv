@@ -1,4 +1,4 @@
-Vision Model Zoo
+GluonCV Model Zoo
 ================
 
 GluonCV Model Zoo, similar to the upstream `Gluon Model Zoo

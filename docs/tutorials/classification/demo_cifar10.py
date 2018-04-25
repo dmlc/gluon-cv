@@ -10,7 +10,8 @@ computer vision research.
 
 .. |image-cifar10| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/datasets/cifar10.png
 
-In this tutorial, we will demonstrate how to load a pre-trained model from ``Gluon Model Zoo``
+In this tutorial, we will demonstrate how to load a pre-trained model from `Gluon Model Zoo
+<https://mxnet.incubator.apache.org/api/python/gluon/model_zoo.html>`_
 and classify images from the Internet or your local disk.
 
 Step by Step
@@ -36,8 +37,7 @@ from gluoncv.model_zoo import get_model
 url = 'https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/classification/plane-draw.jpeg'
 im_fname = utils.download(url)
 
-with open(im_fname, 'rb') as f:
-    img = image.imdecode(f.read())
+img = image.imread(im_fname)
 
 plt.imshow(img.asnumpy())
 plt.show()
