@@ -1,4 +1,4 @@
-# Ask Questions
+# Asking Questions
 
 You are very welcome to post questions and general discussions in our friendly user forums.
 

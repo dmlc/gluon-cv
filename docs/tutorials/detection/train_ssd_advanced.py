@@ -50,7 +50,7 @@ print('bounding boxes:', gt_boxes)
 ############################################################################
 # We use a vgg16 atrous 300x300 SSD model in this example. For demo purpose, we
 # don't use any pretrained weights here
-from gluonvision import model_zoo
+from gluoncv import model_zoo
 net = model_zoo.get_model('ssd_300_vgg16_atrous_voc', pretrained_base=False, pretrained=False)
 
 ############################################################################
@@ -133,7 +133,7 @@ print('sample-wise norm loc loss:', sample_loc_loss * rescale_loc)
 # box offsets predictors.
 #
 # For these added layers, we must initialize them before training.
-from gluonvision import model_zoo
+from gluoncv import model_zoo
 import mxnet as mx
 # don't load pretrained for this demo
 net = model_zoo.get_model('ssd_300_vgg16_atrous_voc', pretrained=False, pretrained_base=False)
@@ -192,5 +192,5 @@ for k, v in zip(['bg', 'apple', 'orange', 'person', 'dog', 'cat'], cls_prob.asnu
 # This may or may not be a problem depending on the use case, but feel free to switch between them if you want.
 #
 # .. hint::
-#   Checkout :py:meth:`gluonvision.model_zoo.coders.MultiClassDecoder` and
-#   :py:meth:`gluonvision.model_zoo.coders.MultiPerClassDecoder` for implementions of method 1 and 2, respectively.
+#   Checkout :py:meth:`gluoncv.model_zoo.coders.MultiClassDecoder` and
+#   :py:meth:`gluoncv.model_zoo.coders.MultiPerClassDecoder` for implementions of method 1 and 2, respectively.

@@ -7,7 +7,7 @@ lines of code.
 First let's import some necessary libraries:
 """
 
-from gluonvision import model_zoo, data, utils
+from gluoncv import model_zoo, data, utils
 from matplotlib import pyplot as plt
 
 ######################################################################
@@ -31,7 +31,7 @@ net = model_zoo.get_model('ssd_512_resnet50_v1_voc', pretrained=True)
 # feed an arbitrarily sized image.
 #
 # You can provide a list of image file names, such as ``[im_fname1, im_fname2,
-# ...]`` to :py:func:`gluonvision.data.transforms.presets.ssd.load_test` if you
+# ...]`` to :py:func:`gluoncv.data.transforms.presets.ssd.load_test` if you
 # want to load multiple image together.
 #
 # This function returns two results. The first is a NDArray with shape
@@ -41,7 +41,7 @@ net = model_zoo.get_model('ssd_512_resnet50_v1_voc', pretrained=True)
 # of `x` is 1.
 
 im_fname = utils.download('https://github.com/dmlc/web-data/blob/master/' +
-                          'gluonvision/detection/street_small.jpg?raw=true')
+                          'gluoncv/detection/street_small.jpg?raw=true')
 x, img = data.transforms.presets.ssd.load_test(im_fname, short=512)
 print('Shape of pre-processed image:', x.shape)
 
@@ -54,7 +54,7 @@ print('Shape of pre-processed image:', x.shape)
 # `(batch_size, num_bboxes, 1)`, `(batch_size, num_bboxes, 1)`, and
 # `(batch_size, num_bboxes, 4)`, respectively.
 #
-# We can use :py:func:`gluonvision.utils.viz.plot_bbox` to visualize the
+# We can use :py:func:`gluoncv.utils.viz.plot_bbox` to visualize the
 # results. We slice the results for the first image and feed them into `plot_bbox`:
 
 class_IDs, scores, bounding_boxs = net(x)

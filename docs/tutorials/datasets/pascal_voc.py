@@ -1,39 +1,26 @@
 """Prepare PASCAL VOC datasets
 ==============================
 
-`Pascal VOC <http://host.robots.ox.ac.uk/pascal/VOC/>`_ contains a collection of
-datasets for object detection. The most commonly adopted version for
+`Pascal VOC <http://host.robots.ox.ac.uk/pascal/VOC/>`_ is a collection of
+datasets for object detection. The most commonly combination for
 benchmarking is using *2007 trainval* and *2012 trainval* for training and *2007
-test* for validation.  This tutorial will walk you through the steps for
-preparing this dataset to be used by GluonVision.
+test* for validation. This tutorial will walk through the steps of
+preparing this dataset for GluonCV.
 
 .. image:: http://host.robots.ox.ac.uk/pascal/VOC/pascal2.png
-
-Prepare the dataset
--------------------
-
-The easiest way is simply downloading
-:download:`pascal_voc.py<../../../scripts/datasets/pascal_voc.py>` and then running
-the following command
-
-.. code-block:: bash
-
-    python pascal_voc.py
-
-which will automatically download and extract the data into ``~/.mxnet/datasets/voc``.
-
 
 .. hint::
 
    You need 8.4 GB disk space to download and extract this dataset. SSD is
    preferred over HDD because of its better performance.
 
-.. hint::
-
    The total time to prepare the dataset depends on your Internet speed and disk
    performance. For example, it often takes 10 min on AWS EC2 with EBS.
 
-You can skip the download step if you have already downloaded the following required files
+Prepare the dataset
+-------------------
+
+We need the following four files from Pascal VOC:
 
 +------------------------------------------------------------------------------------------------------------------------+--------+------------------------------------------+
 | Filename                                                                                                               | Size   | SHA-1                                    |
@@ -47,10 +34,19 @@ You can skip the download step if you have already downloaded the following requ
 | `benchmark.tgz <http://www.eecs.berkeley.edu/Research/Projects/CS/vision/grouping/semantic_contours/benchmark.tgz>`_   | 1.4 GB | 7129e0a480c2d6afb02b517bb18ac54283bfaa35 |
 +------------------------------------------------------------------------------------------------------------------------+--------+------------------------------------------+
 
-then you can specify the folder name through ``--download-dir`` to use the
-downloaded files.
+The easiest way to download and unpack these files is to download helper script
+:download:`pascal_voc.py<../../../scripts/datasets/pascal_voc.py>` and run
+the following command:
 
-For example, assume you downloaded all files into ``~/VOCdevkit/``, and you can run:
+.. code-block:: bash
+
+    python pascal_voc.py
+
+which will automatically download and extract the data into ``~/.mxnet/datasets/voc``.
+
+If you already have the above files sitting on your disk,
+you can set ``--download-dir`` to point to them.
+For example, assuming the files are saved in ``~/VOCdevkit/``, you can run:
 
 .. code-block:: bash
 
@@ -59,14 +55,14 @@ For example, assume you downloaded all files into ``~/VOCdevkit/``, and you can 
 """
 
 ################################################################
-# How to load the dataset
-# -----------------------
+# Read with GluonCV
+# -----------------
 #
-# Loading images and labels is straight-forward through
-# :py:class:`gluonvision.data.VOCDetection`.
+# Loading images and labels is straight-forward with
+# :py:class:`gluoncv.data.VOCDetection`.
 
 
-from gluonvision import data, utils
+from gluoncv import data, utils
 from matplotlib import pyplot as plt
 
 train_dataset = data.VOCDetection(splits=[(2007, 'trainval'), (2012, 'trainval')])
@@ -76,7 +72,6 @@ print('Num of validation images:', len(val_dataset))
 
 
 ################################################################
-#
 # Now let's visualize one example.
 
 train_image, train_label = train_dataset[5]
@@ -95,6 +90,6 @@ plt.show()
 
 ##################################################################
 # Finally, to use both ``train_dataset`` and ``val_dataset`` for training, we
-# can pass them with data transformations and the batch size into
+# can pass them through data transformations and load with
 # :py:class:`gluonvions.data.DetectionDataLoader`, see :download:`train_ssd.py
-# <../../../scripts/detection/ssd/train_ssd.py>` for an example.
+# <../../../scripts/detection/ssd/train_ssd.py>` for more information.

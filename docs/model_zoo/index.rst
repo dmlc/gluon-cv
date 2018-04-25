@@ -1,57 +1,58 @@
 Vision Model Zoo
 ================
 
-The GluonVision Model Zoo,
-similar to its upstream `Gluon Model Zoo
+GluonCV Model Zoo, similar to the upstream `Gluon Model Zoo
 <https://mxnet.incubator.apache.org/api/python/gluon/model_zoo.html>`_,
-provides pre-defined and pre-trained models to help bootstrap computer vision related applications.
+provides pre-defined and pre-trained models to help bootstrap computer vision
+applications.
 
 Model Zoo API
 -------------
 
 .. code-block:: python
 
-    from gluonvision import model_zoo
+    from gluoncv import model_zoo
+    # load a ResNet model trained on CIFAR10
     cifar_resnet20 = model_zoo.get_model('cifar_resnet20_v1', pretrained=True)
-    # a fully pretrained ssd model
+    # load a pre-trained ssd model
     ssd0 = model_zoo.get_model('ssd_300_vgg16_atrous_voc', pretrained=True)
-    # load ssd model with pretrained feature extractors
+    # load ssd model with pre-trained feature extractors
     ssd1 = model_zoo.get_model('ssd_512_vgg16_atrous_voc', pretrained_base=True)
-    # load ssd from scratch
+    # load ssd model without initialization
     ssd2 = model_zoo.get_model('ssd_512_resnet50_v1_voc', pretrained_base=False)
 
-We recommend using :py:meth:`gluonvision.model_zoo.get_model` for loading pre-defined models, because it provides
-name check and suggest you what models are available now.
+We recommend using :py:meth:`gluoncv.model_zoo.get_model` for loading
+pre-defined models, because it provides name checking and list available choices.
 
 However, you can still load models by directly instantiate it like
 
 .. code-block:: python
 
-    from gluonvision import model_zoo
+    from gluoncv import model_zoo
     cifar_resnet20 = model_zoo.cifar_resnet20_v1(pretrained=True)
 
 .. hint::
 
-  Detailed ``model_zoo`` APIs are available in our API reference: :py:meth:`gluonvision.model_zoo`.
+  Detailed ``model_zoo`` APIs are available in API reference: :py:meth:`gluoncv.model_zoo`.
 
 Summary of Available Models
 ---------------------------
 
-We are still in early development stage, more models will be made available for download.
+GluonCV is still under development, more models will be added later.
 
 Image Classification
 ~~~~~~~~~~~~~~~~~~~~
 
-The following table summarizes the available models and their performances in additional to
-`Gluon Model Zoo
-<https://mxnet.incubator.apache.org/api/python/gluon/model_zoo.html>`_.
+The following table lists pre-trained models trained on CIFAR10. For models
+trained on ImageNet, please refer to upstream
+`Gluon Model Zoo <https://mxnet.incubator.apache.org/api/python/gluon/model_zoo.html>`_.
 
 .. hint::
 
-    Our pre-trained models match the accuracy from "Mix-Up" [4]_ .
+    Our pre-trained models reproduce results from "Mix-Up" [4]_ .
     Please check the reference paper for further information.
 
-    The training commands work with the following scripts:
+    Training commands in the table work with the following scripts:
 
     - For vanilla training: :download:`Download train_cifar10.py<../../scripts/classification/cifar/train_cifar10.py>`
     - For mix-up training: :download:`Download train_mixup_cifar10.py<../../scripts/classification/cifar/train_mixup_cifar10.py>`
@@ -59,43 +60,43 @@ The following table summarizes the available models and their performances in ad
 +----------------------------+----------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | Model                      | Acc (Vanilla/Mix-Up [4]_ ) | Training Command                                                                                                                                                                                                                                                             | Training Log                                                                                                                                                                                                                                                                   |
 +============================+============================+==============================================================================================================================================================================================================================================================================+================================================================================================================================================================================================================================================================================+
-| CIFAR_ResNet20_v1 [1]_     | 90.8 / 91.6                | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_resnet20_v1.sh>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_resnet20_v1_mixup.sh>`_         | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_resnet20_v1.log>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_resnet20_v1_mixup.log>`_         |
+| CIFAR_ResNet20_v1 [1]_     | 90.8 / 91.6                | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/cifar/cifar_resnet20_v1.sh>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/cifar/cifar_resnet20_v1_mixup.sh>`_         | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/cifar/cifar_resnet20_v1.log>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/cifar/cifar_resnet20_v1_mixup.log>`_         |
 +----------------------------+----------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| CIFAR_ResNet56_v1 [1]_     | 92.8 / 93.8                | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_resnet56_v1.sh>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_resnet56_v1_mixup.sh>`_         | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_resnet56_v1.log>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_resnet56_v1_mixup.log>`_         |
+| CIFAR_ResNet56_v1 [1]_     | 92.8 / 93.8                | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/cifar/cifar_resnet56_v1.sh>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/cifar/cifar_resnet56_v1_mixup.sh>`_         | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/cifar/cifar_resnet56_v1.log>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/cifar/cifar_resnet56_v1_mixup.log>`_         |
 +----------------------------+----------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| CIFAR_ResNet110_v1 [1]_    | 93.4 / 94.7                | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_resnet110_v1.sh>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_resnet110_v1_mixup.sh>`_       | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_resnet110_v1.log>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_resnet110_v1_mixup.log>`_       |
+| CIFAR_ResNet110_v1 [1]_    | 93.4 / 94.7                | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/cifar/cifar_resnet110_v1.sh>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/cifar/cifar_resnet110_v1_mixup.sh>`_       | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/cifar/cifar_resnet110_v1.log>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/cifar/cifar_resnet110_v1_mixup.log>`_       |
 +----------------------------+----------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| CIFAR_ResNet20_v2 [2]_     | 90.8 / 91.3                | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_resnet20_v2.sh>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_resnet20_v2_mixup.sh>`_         | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_resnet20_v2.log>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_resnet20_v2_mixup.log>`_         |
+| CIFAR_ResNet20_v2 [2]_     | 90.8 / 91.3                | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/cifar/cifar_resnet20_v2.sh>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/cifar/cifar_resnet20_v2_mixup.sh>`_         | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/cifar/cifar_resnet20_v2.log>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/cifar/cifar_resnet20_v2_mixup.log>`_         |
 +----------------------------+----------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| CIFAR_ResNet56_v2 [2]_     | 93.1 / 94.1                | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_resnet56_v2.sh>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_resnet56_v2_mixup.sh>`_         | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_resnet56_v2.log>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_resnet56_v2_mixup.log>`_         |
+| CIFAR_ResNet56_v2 [2]_     | 93.1 / 94.1                | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/cifar/cifar_resnet56_v2.sh>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/cifar/cifar_resnet56_v2_mixup.sh>`_         | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/cifar/cifar_resnet56_v2.log>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/cifar/cifar_resnet56_v2_mixup.log>`_         |
 +----------------------------+----------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| CIFAR_ResNet110_v2 [2]_    | 93.7 / 94.6                | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_resnet110_v2.sh>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_resnet110_v2_mixup.sh>`_       | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_resnet110_v2.log>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_resnet110_v2_mixup.log>`_       |
+| CIFAR_ResNet110_v2 [2]_    | 93.7 / 94.6                | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/cifar/cifar_resnet110_v2.sh>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/cifar/cifar_resnet110_v2_mixup.sh>`_       | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/cifar/cifar_resnet110_v2.log>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/cifar/cifar_resnet110_v2_mixup.log>`_       |
 +----------------------------+----------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| CIFAR_WideResNet16_10 [3]_ | 95.1 / 96.1                | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_wideresnet16_10.sh>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_wideresnet16_10_mixup.sh>`_ | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_wideresnet16_10.log>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_wideresnet16_10_mixup.log>`_ |
+| CIFAR_WideResNet16_10 [3]_ | 95.1 / 96.1                | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/cifar/cifar_wideresnet16_10.sh>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/cifar/cifar_wideresnet16_10_mixup.sh>`_ | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/cifar/cifar_wideresnet16_10.log>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/cifar/cifar_wideresnet16_10_mixup.log>`_ |
 +----------------------------+----------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| CIFAR_WideResNet28_10 [3]_ | 95.6 / 96.6                | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_wideresnet28_10.sh>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_wideresnet28_10_mixup.sh>`_ | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_wideresnet28_10.log>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_wideresnet28_10_mixup.log>`_ |
+| CIFAR_WideResNet28_10 [3]_ | 95.6 / 96.6                | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/cifar/cifar_wideresnet28_10.sh>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/cifar/cifar_wideresnet28_10_mixup.sh>`_ | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/cifar/cifar_wideresnet28_10.log>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/cifar/cifar_wideresnet28_10_mixup.log>`_ |
 +----------------------------+----------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| CIFAR_WideResNet40_8 [3]_  | 95.9 / 96.7                | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_wideresnet40_8.sh>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_wideresnet40_8_mixup.sh>`_   | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_wideresnet40_8.log>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/classification/cifar/cifar_wideresnet40_8_mixup.log>`_   |
+| CIFAR_WideResNet40_8 [3]_  | 95.9 / 96.7                | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/cifar/cifar_wideresnet40_8.sh>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/cifar/cifar_wideresnet40_8_mixup.sh>`_   | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/cifar/cifar_wideresnet40_8.log>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/cifar/cifar_wideresnet40_8_mixup.log>`_   |
 +----------------------------+----------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 Object Detection
 ~~~~~~~~~~~~~~~~
 
-The following table summarizes the available models and their performances for object detection.
+The following table lists pre-trained models for object detection
+and their performances.
 
 .. https://bit.ly/2qQHLl4
 
 .. hint::
 
-  The detection model names contain information for you to recognize them.
-
-  For instance, ``ssd_300_vgg16_atrous_voc`` consists of four parts,
+  Model attributes are coded in their names.
+  For instance, ``ssd_300_vgg16_atrous_voc`` consists of four parts:
 
   - ``ssd`` indicate the algorithm is "Single Shot Multibox Object Detection" [5]_.
 
-  - ``300`` is the training image size, which means training images are resized to 300x300 and all anchor boxes are designed to match this spatial shape.
+  - ``300`` is the training image size, which means training images are resized to 300x300 and all anchor boxes are designed to match this shape.
 
-  - ``vgg16_atrous`` is the name of base feature extractor network.
+  - ``vgg16_atrous`` is the type of base feature extractor network.
 
   - ``voc`` is the training dataset.
 
@@ -108,11 +109,11 @@ The following table summarizes the available models and their performances for o
 +------------------------------------+------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
 | Model                              | mAP  | Training Command                                                                                                                     | Training log                                                                                                                        |
 +====================================+======+======================================================================================================================================+=====================================================================================================================================+
-| ssd_300_vgg16_atrous_voc [5]_      | 77.6 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/detection/ssd_300_vgg16_atrous_voc.sh>`_      | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/detection/ssd_300_vgg16_atrous_voc_train.log>`_       |
+| ssd_300_vgg16_atrous_voc [5]_      | 77.6 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/ssd_300_vgg16_atrous_voc.sh>`_          | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/ssd_300_vgg16_atrous_voc_train.log>`_           |
 +------------------------------------+------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
-| ssd_512_vgg16_atrous_voc [5]_      | 79.2 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/detection/ssd_512_vgg16_atrous_voc.sh>`_      | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/detection/ssd_512_vgg16_atrous_voc_train.log>`_       |
+| ssd_512_vgg16_atrous_voc [5]_      | 79.2 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/ssd_512_vgg16_atrous_voc.sh>`_          | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/ssd_512_vgg16_atrous_voc_train.log>`_           |
 +------------------------------------+------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
-| ssd_512_resnet50_v1_voc [5]_       | 80.1 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/detection/ssd_512_resnet50_v1_voc.sh>`_       |                                                                                                                                     |
+| ssd_512_resnet50_v1_voc [5]_       | 80.1 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/ssd_512_resnet50_v1_voc.sh>`_           |                                                                                                                                     |
 +------------------------------------+------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
 
 
@@ -120,7 +121,7 @@ The following table summarizes the available models and their performances for o
 Semantic Segmentation
 ~~~~~~~~~~~~~~~~~~~~~
 
-Table of pre-trained models, pretrained datasets, and their performances for Semantic Segmentation. We also provide link to the training scripts:
+Table of pre-trained models for semantic segmentation and their performance.
 
 .. hint::
 
@@ -132,7 +133,7 @@ Table of pre-trained models, pretrained datasets, and their performances for Sem
 
   - ``voc`` is the training dataset.
 
-    The training commands work with the script :download:`Download train.py<../../scripts/segmentation/train.py>`
+  The training commands work with the script: :download:`Download train.py<../../scripts/segmentation/train.py>`
 
 
 .. role:: raw-html(raw)
@@ -141,9 +142,9 @@ Table of pre-trained models, pretrained datasets, and their performances for Sem
 +-------------------+--------------+-----------+-----------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
 | Name              | Method       | mIoU      | Training Command                                                                                                            | Training log                                                                                                        |
 +===================+==============+===========+=============================================================================================================================+=====================================================================================================================+
-| fcn_resnet50_voc  | FCN [6]_     | 69.4_     | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/segmentation/fcn_resnet50_voc.sh>`_  | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/segmentation/fcn_resnet50_voc.log>`_  |
+| fcn_resnet50_voc  | FCN [6]_     | 69.4_     | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/fcn_resnet50_voc.sh>`_      | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/fcn_resnet50_voc.log>`_      |
 +-------------------+--------------+-----------+-----------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
-| fcn_resnet101_voc | FCN [6]_     | 70.9_     | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/segmentation/fcn_resnet101_voc.sh>`_ | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/segmentation/fcn_resnet101_voc.log>`_ |
+| fcn_resnet101_voc | FCN [6]_     | 70.9_     | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/fcn_resnet101_voc.sh>`_     | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/fcn_resnet101_voc.log>`_     |
 +-------------------+--------------+-----------+-----------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
 
 .. _69.4:  http://host.robots.ox.ac.uk:8080/anonymous/TC12D2.html

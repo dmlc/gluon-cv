@@ -1,6 +1,6 @@
 # pylint: disable=wildcard-import, unused-wildcard-import
 """Model store which handles pretrained models from both
-mxnet.gluon.model_zoo.vision and gluonvision.models
+mxnet.gluon.model_zoo.vision and gluoncv.models
 """
 from mxnet import gluon
 from .ssd import *

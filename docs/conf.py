@@ -25,14 +25,14 @@ from sphinx_gallery.sorting import ExampleTitleSortKey
 
 # -- Project information -----------------------------------------------------
 
-project = 'GluonVision'
+project = 'GluonCV'
 copyright = '2018, MXNet Developers'
 author = 'MXNet Developers'
 
 # The short X.Y version
-import gluonvision as gv
-version = gv.__version__
-release = gv.__version__
+import gluoncv as gcv
+version = gcv.__version__
+release = gcv.__version__
 
 # -- General configuration ---------------------------------------------------
 
@@ -80,10 +80,9 @@ sphinx_gallery_conf = {
     'plot_gallery': True,
     'download_section_examples': False,
     'reference_url': {
-        'gluonvision': None,
+        'gluoncv': None,
     },
     'backreferences_dir': False,
-    # 'expected_failing_examples': ['tutorials/datasets/ade20k.py'],
 }
 
 
@@ -161,7 +160,7 @@ html_static_path = ['_static']
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'GluonVisiondoc'
+htmlhelp_basename = 'GluonCVdoc'
 
 
 # -- Options for LaTeX output ------------------------------------------------
@@ -188,7 +187,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-   (master_doc, 'GluonVision.tex', 'GluonVision Documentation',
+   (master_doc, 'GluonCV.tex', 'GluonCV Documentation',
      'MXNet Developers', 'manual'),
 ]
 
@@ -198,7 +197,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'gluonvision', 'GluonVision Documentation',
+    (master_doc, 'gluoncv', 'GluonCV Documentation',
      [author], 1)
 ]
 
@@ -209,8 +208,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'GluonVision', 'GluonVision Documentation',
-     author, 'GluonVision', 'One line description of project.',
+    (master_doc, 'GluonCV', 'GluonCV Documentation',
+     author, 'GluonCV', 'One line description of project.',
      'Miscellaneous'),
 ]
 

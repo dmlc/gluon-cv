@@ -78,8 +78,8 @@ First, import the necessary libraries into python.
     from mxnet.gluon import nn
     from mxnet.gluon.data.vision import transforms
 
-    from gluonvision.model_zoo import get_model
-    from gluonvision.utils import makedirs, TrainingHistory
+    from gluoncv.model_zoo import get_model
+    from gluoncv.utils import makedirs, TrainingHistory
 
 In this tutorial we use ``ResNet50_v2``, a network with balanced prediction
 accuracy and computational cost.
@@ -97,7 +97,7 @@ accuracy and computational cost.
 
 Note that the ResNet model we use here for ``ImageNet`` is different in structure from
 the one we used to train ``CIFAR10``. Please refer to the original paper or
-GluonVision codebase for details.
+GluonCV codebase for details.
 
 Data Augmentation and Data Loader
 ---------------------------------
@@ -316,5 +316,5 @@ Besides classification, deep learning models nowadays can do other exciting task
 like `object detection <../examples_detection/index.html>`_ and
 `semantic segmentation <../examples_segmentation/index.html>`_.
 
-.. |image-imagenet-curve| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/classification/resnet50_v2_top1.png
+.. |image-imagenet-curve| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/classification/resnet50_v2_top1.png
 """

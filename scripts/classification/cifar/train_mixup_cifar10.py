@@ -19,8 +19,8 @@ from mxnet import autograd as ag
 from mxnet.gluon import nn
 from mxnet.gluon.data.vision import transforms
 
-from gluonvision.model_zoo import get_model
-from gluonvision.utils import makedirs, TrainingHistory
+from gluoncv.model_zoo import get_model
+from gluoncv.utils import makedirs, TrainingHistory
 
 # CLI
 parser = argparse.ArgumentParser(description='Train a model for image classification.')

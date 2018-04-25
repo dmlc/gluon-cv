@@ -8,13 +8,13 @@ import mxnet as mx
 from mxnet import nd
 from mxnet import gluon
 from mxnet import autograd
-from gluonvision import data as gdata
-from gluonvision import utils as gutils
-from gluonvision.model_zoo import get_model
-from gluonvision.data.transforms.presets.ssd import SSDDefaultTrainTransform
-from gluonvision.data.transforms.presets.ssd import SSDDefaultValTransform
-from gluonvision.utils.metrics.voc_detection import VOC07MApMetric
-from gluonvision.utils.metrics.accuracy import Accuracy
+from gluoncv import data as gdata
+from gluoncv import utils as gutils
+from gluoncv.model_zoo import get_model
+from gluoncv.data.transforms.presets.ssd import SSDDefaultTrainTransform
+from gluoncv.data.transforms.presets.ssd import SSDDefaultValTransform
+from gluoncv.utils.metrics.voc_detection import VOC07MApMetric
+from gluoncv.utils.metrics.accuracy import Accuracy
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train SSD networks.')

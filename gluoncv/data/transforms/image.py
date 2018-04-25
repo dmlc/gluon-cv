@@ -36,7 +36,7 @@ def imresize(src, w, h, interp=1):
     Examples
     --------
     >>> import mxnet as mx
-    >>> from gluonvision import data as gdata
+    >>> from gluoncv import data as gdata
     >>> img = mx.random.uniform(0, 255, (300, 300, 3)).astype('uint8')
     >>> print(img.shape)
     (300, 300, 3)

@@ -132,7 +132,7 @@ python train_mixup.py --num-epochs 500 --mode hybrid --num-gpus 2 -j 32 --batch-
 
 - `--batch-size`: per-device batch size for the training.
 - `--num-gpus`: the number of GPUs to use for computation, default is `0` and it means only using CPU.
-- `--model`: The model to train. For `CIFAR10` we offer [`ResNet`](https://github.com/dmlc/gluon-vision/blob/master/gluonvision/model_zoo/cifarresnet.py) and [`WideResNet`](https://github.com/dmlc/gluon-vision/blob/master/gluonvision/model_zoo/cifarwideresnet.py) as options.
+- `--model`: The model to train. For `CIFAR10` we offer [`ResNet`](https://github.com/dmlc/gluon-cv/blob/master/gluoncv/model_zoo/cifarresnet.py) and [`WideResNet`](https://github.com/dmlc/gluon-cv/blob/master/gluoncv/model_zoo/cifarwideresnet.py) as options.
 - `--num-data-workers`/`-j`: the number of data processing workers.
 - `--num-epochs`: the number of training epochs.
 - `--lr`: the initial learning rate in training. 
