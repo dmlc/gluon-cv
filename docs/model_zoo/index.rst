@@ -1,3 +1,4 @@
+.. _gluoncv_model_zoo:
 GluonCV Model Zoo
 ================
 
