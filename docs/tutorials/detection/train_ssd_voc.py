@@ -133,9 +133,9 @@ plt.show()
 # (mxnet uses BCHW format) before they are fed into neural networks.
 # In addition, to be able to run in mini-batches,
 # images must be resized to the same shape.
-
+#
 # A handy DataLoader would be very convenient for us to apply different transforms and aggregate data into mini-batches.
-
+#
 # Because the number of objects varys a lot across images, we also have
 # varying label sizes. As a result, we need to pad those labels to the same size.
 # To deal with this problem, GluonCV provides DetectionDataLoader,
@@ -165,12 +165,12 @@ for ib, batch in enumerate(train_loader):
 # We will cover this usage in future tutorials).
 # In terms of structure, SSD networks are composed of base feature extraction
 # network, anchor generators, class predictors and bounding box offset predictors.
-
+#
 # For more details on how SSD detector works, please refer to our introductory
 # [tutorial](http://gluon.mxnet.io/chapter08_computer-vision/object-detection.html)
 # You can also refer to the original paper to learn more about the intuitions
 # behind SSD.
-
+#
 # `Gluon Model Zoo <../../model_zoo/index.html>`__ has a lot of built-in SSD networks.
 # You can load your favorate one with one simple line of code:
 from gluoncv import model_zoo
