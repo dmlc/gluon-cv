@@ -34,8 +34,7 @@ if not pretrained:
     net.load_params(opt.saved_params, ctx = context)
 
 # Load Images
-with open(opt.input_pic, 'rb') as f:
-    img = image.imdecode(f.read())
+img = image.imread(opt.input_pic)
 
 # Transform
 transform_fn = transforms.Compose([

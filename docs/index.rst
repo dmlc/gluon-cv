@@ -29,25 +29,6 @@ Otherwise, please refer to our introductory deep learning course
 Installation
 ------------------
 
-Install via PyPI
-^^^^^^^^^^^^^^^^
-
-The easiest way to install GluonCV is through `pip <https://pip.pypa.io/en/stable/installing/>`_.
-
-.. code-block:: bash
-
-  pip install gluoncv
-
-Install from Source
-^^^^^^^^^^^^^^^^^^^
-
-Optionally, you can clone the GluonCV project and install it locally
-
-.. code-block:: bash
-
-   git clone https://github.com/dmlc/gluon-cv
-   cd gluon-cv && python setup.py install --user
-
 Install MXNet
 ^^^^^^^^^^^^^
 
@@ -68,6 +49,24 @@ command installs a nightly build CPU version of MXNet.
    Some training scripts are recommended to run on GPUs, if you don't have a GPU
    machine at hands, you may consider to `run on AWS
    <http://gluon-crash-course.mxnet.io/use_aws.html>`_.
+
+Install GluonCV
+^^^^^^^^^^^^^^^^
+
+The easiest way to install GluonCV is through `pip <https://pip.pypa.io/en/stable/installing/>`_.
+
+.. code-block:: bash
+
+ pip install gluoncv
+
+.. hint::
+
+  Optionally, you can clone the GluonCV project and install it locally
+
+  .. code-block:: bash
+
+    git clone https://github.com/dmlc/gluon-cv
+    cd gluon-cv && python setup.py install --user
 
 
 A Quick Example
