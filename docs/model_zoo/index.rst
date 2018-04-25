@@ -55,7 +55,7 @@ Besides the listed, we provide more models trained on ImageNet in the upstream
 
 .. hint::
 
-    Training commands work with this script: :download:`train_imagenet.py<../../scripts/classification/imagenet/train_imagenet.py>`
+    Training commands work with this script: :download:`Download train_imagenet.py<../../scripts/classification/imagenet/train_imagenet.py>`
 
 +-------------------+--------+--------+---------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
 | Model             | Top-1  | Top-5  | Training Command                                                                                                                | Training Log                                                                                                                  |
