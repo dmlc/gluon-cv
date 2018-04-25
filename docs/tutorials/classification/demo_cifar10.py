@@ -10,7 +10,7 @@ computer vision research.
 
 .. |image-cifar10| image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/datasets/cifar10.png
 
-In this tutorial, we will demonstrate how to load a pre-trained model from :ref:`gluoncv_model_zoo`
+In this tutorial, we will demonstrate how to load a pre-trained model from :ref:`gluoncv-model-zoo`
 and classify images from the Internet or your local disk.
 
 Step by Step
