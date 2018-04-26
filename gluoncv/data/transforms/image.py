@@ -128,7 +128,7 @@ def random_pca_lighting(src, alphastd, eigval=None, eigvec=None):
 
     """
     if alphastd <= 0:
-        return img
+        return src
 
     if eigval is None:
         eigval = np.array([55.46, 4.794, 1.148])
