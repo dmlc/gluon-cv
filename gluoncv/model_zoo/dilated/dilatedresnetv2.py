@@ -38,12 +38,12 @@ class DilatedBasicBlockV2(HybridBlock):
         for Synchronized Cross-GPU BachNormalization).
     """
     def __init__(self, channels, stride, downsample=False, in_channels=0,
-                 dilation=1, first_dilation=1, norm_layer=None, **kwargs):
+                 dilation=1, previous_dilation=1, norm_layer=None, **kwargs):
         super(DilatedBasicBlockV2, self).__init__(**kwargs)
         self.bn1 = norm_layer()
         self.conv1 = _conv3x3(channels, stride, in_channels, dilation=dilation)
         self.bn2 = norm_layer()
-        self.conv2 = _conv3x3(channels, 1, channels, dilation=first_dilation)
+        self.conv2 = _conv3x3(channels, 1, channels, dilation=previous_dilation)
         if downsample:
             self.downsample = nn.Conv2D(channels, 1, stride, use_bias=False,
                                         in_channels=in_channels)
@@ -87,7 +87,7 @@ class DilatedBottleneckV2(HybridBlock):
         for Synchronized Cross-GPU BachNormalization).
     """
     def __init__(self, channels, stride, downsample=False, in_channels=0,
-                 dilation=1, first_dilation=1, norm_layer=None, **kwargs):
+                 dilation=1, previous_dilation=1, norm_layer=None, **kwargs):
         super(DilatedBottleneckV2, self).__init__(**kwargs)
         self.bn1 = norm_layer()
         self.conv1 = nn.Conv2D(channels//4, kernel_size=1, strides=1, use_bias=False)
@@ -183,16 +183,16 @@ class DilatedResNetV2(HybridBlock):
             if dilation == 1 or dilation == 2:
                 layer.add(block(channels, stride, channels != in_channels,
                                 in_channels=in_channels, dilation=1,
-                                first_dilation=dilation, norm_layer=norm_layer,
+                                previous_dilation=dilation, norm_layer=norm_layer,
                                 prefix=''))
             elif dilation == 4:
                 layer.add(block(channels, stride, channels != in_channels,
                                 in_channels=in_channels, dilation=2,
-                                first_dilation=dilation, norm_layer=norm_layer,
+                                previous_dilation=dilation, norm_layer=norm_layer,
                                 prefix=''))
             for _ in range(layers-1):
                 layer.add(block(channels, 1, False, in_channels=channels,
-                                dilation=dilation, first_dilation=dilation,
+                                dilation=dilation, previous_dilation=dilation,
                                 norm_layer=norm_layer, prefix=''))
         return layer
 
