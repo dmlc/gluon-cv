@@ -16,8 +16,8 @@ class DilatedBasicBlockV0(HybridBlock):
     """DilatedResNetV0 DilatedBasicBlockV0
     """
     expansion = 1
-    def __init__(self, inplanes, planes, strides=1, dilation=1, downsample=None, previous_dilation=1,
-                 norm_layer=None, **kwargs):
+    def __init__(self, inplanes, planes, strides=1, dilation=1, downsample=None,
+                 previous_dilation=1, norm_layer=None, **kwargs):
         super(DilatedBasicBlockV0, self).__init__()
         self.conv1 = nn.Conv2D(in_channels=inplanes, channels=planes,
                                kernel_size=3, strides=strides,
@@ -25,7 +25,8 @@ class DilatedBasicBlockV0(HybridBlock):
         self.bn1 = nn.BatchNorm(in_channels=planes)
         self.relu = nn.Activation('relu')
         self.conv2 = nn.Conv2D(in_channels=planes, channels=planes, kernel_size=3, strides=1,
-                               padding=previous_dilation, dilation=previous_dilation, use_bias=False)
+                               padding=previous_dilation, dilation=previous_dilation,
+                               use_bias=False)
         self.bn2 = nn.BatchNorm(in_channels=planes)
         self.downsample = downsample
         self.strides = strides
@@ -167,8 +168,8 @@ class DilatedResNetV0(HybridBlock):
 
             self.inplanes = planes * block.expansion
             for i in range(1, blocks):
-                layers.add(block(self.inplanes, planes, dilation=dilation, previous_dilation=dilation,
-                                 norm_layer=norm_layer))
+                layers.add(block(self.inplanes, planes, dilation=dilation,
+                                 previous_dilation=dilation, norm_layer=norm_layer))
 
         return layers
 
