@@ -4,6 +4,8 @@ import threading
 from mxnet import autograd, test_utils
 from mxnet.gluon import HybridBlock
 
+import numpy as np
+
 
 class BatchNorm(HybridBlock):
     """Cross-GPU Synchronized Batch normalization (SyncBN)
