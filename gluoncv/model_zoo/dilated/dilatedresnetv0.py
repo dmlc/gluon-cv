@@ -16,8 +16,8 @@ class DilatedBasicBlockV0(HybridBlock):
     """DilatedResNetV0 DilatedBasicBlockV0
     """
     expansion = 1
-    def __init__(self, inplanes, planes, strides=1, dilation=1, downsample=None, first_dilation=1,
-                 norm_layer=None, **kwargs):
+    def __init__(self, inplanes, planes, strides=1, dilation=1, downsample=None,
+                 previous_dilation=1, norm_layer=None, **kwargs):
         super(DilatedBasicBlockV0, self).__init__()
         self.conv1 = nn.Conv2D(in_channels=inplanes, channels=planes,
                                kernel_size=3, strides=strides,
@@ -25,7 +25,8 @@ class DilatedBasicBlockV0(HybridBlock):
         self.bn1 = nn.BatchNorm(in_channels=planes)
         self.relu = nn.Activation('relu')
         self.conv2 = nn.Conv2D(in_channels=planes, channels=planes, kernel_size=3, strides=1,
-                               padding=first_dilation, dilation=first_dilation, use_bias=False)
+                               padding=previous_dilation, dilation=previous_dilation,
+                               use_bias=False)
         self.bn2 = nn.BatchNorm(in_channels=planes)
         self.downsample = downsample
         self.strides = strides
@@ -56,7 +57,7 @@ class DilatedBottleneckV0(HybridBlock):
     # pylint: disable=unused-argument
     expansion = 4
     def __init__(self, inplanes, planes, strides=1, dilation=1,
-                 downsample=None, first_dilation=1, norm_layer=None, **kwargs):
+                 downsample=None, previous_dilation=1, norm_layer=None, **kwargs):
         super(DilatedBottleneckV0, self).__init__()
         self.conv1 = nn.Conv2D(in_channels=inplanes, channels=planes, kernel_size=1, use_bias=False)
         self.bn1 = nn.BatchNorm(in_channels=planes)
@@ -156,19 +157,19 @@ class DilatedResNetV0(HybridBlock):
         with layers.name_scope():
             if dilation == 1 or dilation == 2:
                 layers.add(block(self.inplanes, planes, strides, dilation=1,
-                                 downsample=downsample, first_dilation=dilation,
+                                 downsample=downsample, previous_dilation=dilation,
                                  norm_layer=norm_layer))
             elif dilation == 4:
                 layers.add(block(self.inplanes, planes, strides, dilation=2,
-                                 downsample=downsample, first_dilation=dilation,
+                                 downsample=downsample, previous_dilation=dilation,
                                  norm_layer=norm_layer))
             else:
                 raise RuntimeError("=> unknown dilation size: {}".format(dilation))
 
             self.inplanes = planes * block.expansion
             for i in range(1, blocks):
-                layers.add(block(self.inplanes, planes, dilation=dilation, first_dilation=dilation,
-                                 norm_layer=norm_layer))
+                layers.add(block(self.inplanes, planes, dilation=dilation,
+                                 previous_dilation=dilation, norm_layer=norm_layer))
 
         return layers
 
