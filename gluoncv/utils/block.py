@@ -1,6 +1,7 @@
 """Utility functions for gluon parameters."""
 import re
 
+
 def set_lr_mult(net, pattern, mult=1.0, verbose=False):
     """Reset lr_mult to new value for all parameters that match :obj:`pattern`
 
@@ -27,4 +28,4 @@ def set_lr_mult(net, pattern, mult=1.0, verbose=False):
             continue
         value.lr_mult = mult
         if verbose:
-            print("Set lr_mult of {} to {}".format(param.name, mult))
+            print("Set lr_mult of {} to {}".format(value.name, mult))

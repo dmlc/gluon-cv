@@ -5,7 +5,7 @@
 
 | [Installation](http://gluon-cv.mxnet.io) | [Documentation](http://gluon-cv.mxnet.io) | [Tutorials](http://gluon-cv.mxnet.io) |
 
-GluonCV provides implementations of the sate-of-the-art (SOTA) deep learning models in computer vision.
+GluonCV provides implementations of the state-of-the-art (SOTA) deep learning models in computer vision.
 
 It is designed for engineers, researchers, and
 students to fast prototype products and research ideas based on these
