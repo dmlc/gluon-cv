@@ -24,4 +24,5 @@ def try_import_pycocotools():
             else:
                 import_try_install('pycocotools')
         except ImportError:
-            raise ImportError('Cannot import or install pycocotools, please refer to FAQ.')
+            faq = 'cocoapi FAQ'
+            raise ImportError('Cannot import or install pycocotools, please refer to %s.' % faq)
