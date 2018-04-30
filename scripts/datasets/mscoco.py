@@ -27,7 +27,7 @@ def download_coco(path, overwrite=False):
         ('http://images.cocodataset.org/zips/val2017.zip',
          '4950dc9d00dbe1c933ee0170f5797584351d2a41'),
         ('http://images.cocodataset.org/annotations/stuff_annotations_trainval2017.zip',
-         'e7aa0f7515c07e23873a9f71d9095b06bcea3e12')]
+         'e7aa0f7515c07e23873a9f71d9095b06bcea3e12'),
         # test2017.zip, for those who want to attend the competition.
         # ('http://images.cocodataset.org/zips/test2017.zip',
         #  '4e443f8a2eca6b1dac8a6c57641b67dd40621a49'),
@@ -43,7 +43,7 @@ if __name__ == '__main__':
     args = parse_args()
     path = os.path.expanduser(args.download_dir)
     if not os.path.isdir(path) or not os.path.isdir(os.path.join(path, 'train2017')) \
-        or not os.path.isdir(os.path.join(path, 'val2017'))
+        or not os.path.isdir(os.path.join(path, 'val2017')) \
         or not os.path.isdir(os.path.join(path, 'annotations')):
         if args.no_download:
             raise ValueError(('{} is not a valid directory, make sure it is present.'
