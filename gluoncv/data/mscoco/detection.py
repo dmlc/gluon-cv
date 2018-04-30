@@ -13,10 +13,10 @@ __all__ = ['COCODetection']
 
 class COCODetection(VisionDataset):
     def __init__(self, root=os.path.join('~', '.mxnet', 'datasets', 'coco'),
-                 splits=('coco_2017_test')):
+                 splits=('instances_val2014')):
         super(COCODetection, self).__init__(root)
         self._root = os.path.expanduser(root)
+        self._splits = splits
         # lazy import pycocotools
         try_import_pycocotools()
         from pycocotools.coco import COCO
-        
