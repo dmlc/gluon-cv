@@ -1,6 +1,6 @@
 # Gluon CV Toolkit
 
-[![Build Status](http://ci.mxnet.io/job/gluon-vision/job/master/badge/icon)](http://ci.mxnet.io/job/gluon-vision/job/master/)
+[![Build Status](http://ci.mxnet.io/job/gluon-cv/job/master/badge/icon)](http://ci.mxnet.io/job/gluon-vision/job/master/)
 [![GitHub license](http://dmlc.github.io/img/apache2.svg)](./LICENSE)
 
 | [Installation](http://gluon-cv.mxnet.io) | [Documentation](http://gluon-cv.mxnet.io) | [Tutorials](http://gluon-cv.mxnet.io) |
