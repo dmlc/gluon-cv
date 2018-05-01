@@ -1,4 +1,4 @@
-"""Dilated_ResNetV0s, implemented in Gluon."""
+"""ResNetV1bs, implemented in Gluon."""
 # pylint: disable=arguments-differ,unused-argument,missing-docstring
 from __future__ import division
 
@@ -7,18 +7,18 @@ from mxnet.gluon.block import HybridBlock
 from mxnet.gluon import nn
 from mxnet.gluon.nn import BatchNorm
 
-__all__ = ['DilatedResNetV0', 'dilated_resnet18', 'dilated_resnet34',
-           'dilated_resnet50', 'dilated_resnet101',
-           'dilated_resnet152', 'DilatedBasicBlockV0', 'DilatedBottleneckV0']
+__all__ = ['ResNetV1b', 'resnet18_v1b', 'resnet34_v1b',
+           'resnet50_v1b', 'resnet101_v1b',
+           'resnet152_v1b', 'BasicBlockV1b', 'BottleneckV1b']
 
 
-class DilatedBasicBlockV0(HybridBlock):
-    """DilatedResNetV0 DilatedBasicBlockV0
+class BasicBlockV1b(HybridBlock):
+    """ResNetV1b BasicBlockV1b
     """
     expansion = 1
     def __init__(self, inplanes, planes, strides=1, dilation=1, downsample=None,
                  previous_dilation=1, norm_layer=None, **kwargs):
-        super(DilatedBasicBlockV0, self).__init__()
+        super(BasicBlockV1b, self).__init__()
         self.conv1 = nn.Conv2D(in_channels=inplanes, channels=planes,
                                kernel_size=3, strides=strides,
                                padding=dilation, dilation=dilation, use_bias=False)
@@ -32,7 +32,6 @@ class DilatedBasicBlockV0(HybridBlock):
         self.strides = strides
 
     def hybrid_forward(self, F, x):
-    #def forward(self, x):
         residual = x
 
         out = self.conv1(x)
@@ -51,14 +50,14 @@ class DilatedBasicBlockV0(HybridBlock):
         return out
 
 
-class DilatedBottleneckV0(HybridBlock):
-    """DilatedResNetV0 DilatedBottleneckV0
+class BottleneckV1b(HybridBlock):
+    """ResNetV1b BottleneckV1b
     """
     # pylint: disable=unused-argument
     expansion = 4
     def __init__(self, inplanes, planes, strides=1, dilation=1,
                  downsample=None, previous_dilation=1, norm_layer=None, **kwargs):
-        super(DilatedBottleneckV0, self).__init__()
+        super(BottleneckV1b, self).__init__()
         self.conv1 = nn.Conv2D(in_channels=inplanes, channels=planes, kernel_size=1, use_bias=False)
         self.bn1 = nn.BatchNorm(in_channels=planes)
         self.conv2 = nn.Conv2D(
@@ -74,7 +73,6 @@ class DilatedBottleneckV0(HybridBlock):
         self.strides = strides
 
     def hybrid_forward(self, F, x):
-    #def forward(self, x):
         residual = x
 
         out = self.conv1(x)
@@ -97,8 +95,8 @@ class DilatedBottleneckV0(HybridBlock):
         return out
 
 
-class DilatedResNetV0(HybridBlock):
-    """Dilated Pre-trained DilatedResNetV0 Model, which preduces the strides of 8
+class ResNetV1b(HybridBlock):
+    """ Pre-trained ResNetV1b Model, which preduces the strides of 8
     featuremaps at conv5.
 
     Parameters
@@ -109,6 +107,9 @@ class DilatedResNetV0(HybridBlock):
         Numbers of layers in each block
     num_classes : int, default 1000
         Number of classification classes.
+    dilated : bool, default False
+        Applying dilation strategy to pretrained ResNet yielding a stride-8 model,
+        typically used in Semantic Segmentation.
     norm_layer : object
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.nn.BatchNorm`;
         for Synchronized Cross-GPU BachNormalization).
@@ -122,9 +123,9 @@ class DilatedResNetV0(HybridBlock):
         - Yu, Fisher, and Vladlen Koltun. "Multi-scale context aggregation by dilated convolutions."
     """
     # pylint: disable=unused-variable
-    def __init__(self, block, layers, num_classes=1000, norm_layer=BatchNorm, **kwargs):
+    def __init__(self, block, layers, num_classes=1000, dilated=False, norm_layer=BatchNorm, **kwargs):
         self.inplanes = 64
-        super(DilatedResNetV0, self).__init__()
+        super(ResNetV1b, self).__init__()
         with self.name_scope():
             self.conv1 = nn.Conv2D(in_channels=3, channels=64, kernel_size=7, strides=2, padding=3,
                                    use_bias=False)
@@ -134,10 +135,16 @@ class DilatedResNetV0(HybridBlock):
             self.layer1 = self._make_layer(1, block, 64, layers[0], norm_layer=norm_layer)
             self.layer2 = self._make_layer(2, block, 128, layers[1], strides=2,
                                            norm_layer=norm_layer)
-            self.layer3 = self._make_layer(3, block, 256, layers[2], strides=1, dilation=2,
-                                           norm_layer=norm_layer)
-            self.layer4 = self._make_layer(4, block, 512, layers[3], strides=1, dilation=4,
-                                           norm_layer=norm_layer)
+            if dilated:
+                self.layer3 = self._make_layer(3, block, 256, layers[2], strides=1, dilation=2,
+                                               norm_layer=norm_layer)
+                self.layer4 = self._make_layer(4, block, 512, layers[3], strides=1, dilation=4,
+                                               norm_layer=norm_layer)
+            else:
+                self.layer3 = self._make_layer(3, block, 256, layers[2], strides=2,
+                                               norm_layer=norm_layer)
+                self.layer4 = self._make_layer(4, block, 512, layers[3], strides=2,
+                                               norm_layer=norm_layer)
             self.avgpool = nn.AvgPool2D(7)
             self.flat = nn.Flatten()
             self.fc = nn.Dense(in_units=512 * block.expansion, units=num_classes)
@@ -174,7 +181,6 @@ class DilatedResNetV0(HybridBlock):
         return layers
 
     def hybrid_forward(self, F, x):
-    #def forward(self, x):
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
@@ -192,8 +198,8 @@ class DilatedResNetV0(HybridBlock):
         return x
 
 
-def dilated_resnet18(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
-    """Constructs a DilatedResNetV0-18 model.
+def resnet18_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
+    """Constructs a ResNetV1b-18 model.
 
     Parameters
     ----------
@@ -207,7 +213,7 @@ def dilated_resnet18(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwa
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.nn.BatchNorm`;
         for Synchronized Cross-GPU BachNormalization).
     """
-    model = DilatedResNetV0(DilatedBasicBlockV0, [2, 2, 2, 2], **kwargs)
+    model = ResNetV1b(BasicBlockV1b, [2, 2, 2, 2], **kwargs)
     if pretrained:
         from ..model_store import get_model_file
         model.load_params(get_model_file('resnet%d_v%d'%(18, 0),
@@ -215,8 +221,8 @@ def dilated_resnet18(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwa
     return model
 
 
-def dilated_resnet34(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
-    """Constructs a DilatedResNetV0-34 model.
+def resnet34_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
+    """Constructs a ResNetV1b-34 model.
 
     Parameters
     ----------
@@ -229,7 +235,7 @@ def dilated_resnet34(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwa
     norm_layer : object
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.nn.BatchNorm`;
     """
-    model = DilatedResNetV0(DilatedBasicBlockV0, [3, 4, 6, 3], **kwargs)
+    model = ResNetV1b(BasicBlockV1b, [3, 4, 6, 3], **kwargs)
     if pretrained:
         from ..model_store import get_model_file
         model.load_params(get_model_file('resnet%d_v%d'%(34, 0),
@@ -237,8 +243,8 @@ def dilated_resnet34(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwa
     return model
 
 
-def dilated_resnet50(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
-    """Constructs a DilatedResNetV0-50 model.
+def resnet50_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
+    """Constructs a ResNetV1b-50 model.
 
     Parameters
     ----------
@@ -251,7 +257,7 @@ def dilated_resnet50(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwa
     norm_layer : object
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.nn.BatchNorm`;
     """
-    model = DilatedResNetV0(DilatedBottleneckV0, [3, 4, 6, 3], **kwargs)
+    model = ResNetV1b(BottleneckV1b, [3, 4, 6, 3], **kwargs)
     if pretrained:
         from ..model_store import get_model_file
         model.load_params(get_model_file('resnet%d_v%d'%(50, 0),
@@ -259,8 +265,8 @@ def dilated_resnet50(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwa
     return model
 
 
-def dilated_resnet101(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
-    """Constructs a DilatedResNetV0-101 model.
+def resnet101_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
+    """Constructs a ResNetV1b-101 model.
 
     Parameters
     ----------
@@ -273,7 +279,7 @@ def dilated_resnet101(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kw
     norm_layer : object
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.nn.BatchNorm`;
     """
-    model = DilatedResNetV0(DilatedBottleneckV0, [3, 4, 23, 3], **kwargs)
+    model = ResNetV1b(BottleneckV1b, [3, 4, 23, 3], **kwargs)
     if pretrained:
         from ..model_store import get_model_file
         model.load_params(get_model_file('resnet%d_v%d'%(101, 0),
@@ -281,8 +287,8 @@ def dilated_resnet101(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kw
     return model
 
 
-def dilated_resnet152(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
-    """Constructs a DilatedResNetV0-152 model.
+def resnet152_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
+    """Constructs a ResNetV1b-152 model.
 
     Parameters
     ----------
@@ -295,7 +301,7 @@ def dilated_resnet152(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kw
     norm_layer : object
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.nn.BatchNorm`;
     """
-    model = DilatedResNetV0(DilatedBottleneckV0, [3, 8, 36, 3], **kwargs)
+    model = ResNetV1b(BottleneckV1b, [3, 8, 36, 3], **kwargs)
     if pretrained:
         from ..model_store import get_model_file
         model.load_params(get_model_file('resnet%d_v%d'%(152, 0),

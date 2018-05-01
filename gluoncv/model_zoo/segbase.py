@@ -7,7 +7,7 @@ from mxnet.ndarray import NDArray
 from mxnet.gluon.nn import HybridBlock
 from ..utils.metrics import voc_segmentation
 from ..utils.parallel import parallel_apply
-from .dilated import dilatedresnetv0
+from .resnetv1b import *
 # pylint: disable=abstract-method,arguments-differ,dangerous-default-value
 
 __all__ = ['get_segmentation_model', 'SegBaseModel', 'SegEvalModel', 'MultiEvalModel',
@@ -39,11 +39,11 @@ class SegBaseModel(HybridBlock):
         self.nclass = nclass
         with self.name_scope():
             if backbone == 'resnet50':
-                pretrained = dilatedresnetv0.dilated_resnet50(pretrained=True, **kwargs)
+                pretrained = resnet50_v1b(pretrained=True, dilated=True, **kwargs)
             elif backbone == 'resnet101':
-                pretrained = dilatedresnetv0.dilated_resnet101(pretrained=True, **kwargs)
+                pretrained = resnet101_v1b(pretrained=True, dilated=True, **kwargs)
             elif backbone == 'resnet152':
-                pretrained = dilatedresnetv0.dilated_resnet152(pretrained=True, **kwargs)
+                pretrained = resnet152_v1b(pretrained=True, dilated=True, **kwargs)
             else:
                 raise RuntimeError('unknown backbone: {}'.format(backbone))
             self.conv1 = pretrained.conv1
