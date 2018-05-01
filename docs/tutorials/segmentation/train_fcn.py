@@ -41,7 +41,7 @@ import gluoncv
 #     :width: 70%
 #     :align: center
 #
-# (figure redit to `Long et al. <https://arxiv.org/pdf/1411.4038.pdf>`_ )
+# (figure credit to `Long et al. <https://arxiv.org/pdf/1411.4038.pdf>`_ )
 # 
 # State-of-the-art approaches of semantic segmentation are typically based on
 # Fully Convolutional Network (FCN) [Long15]_.

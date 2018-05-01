@@ -105,7 +105,7 @@ class ResNetV1b(HybridBlock):
         Class for the residual block. Options are BasicBlockV1, BottleneckV1.
     layers : list of int
         Numbers of layers in each block
-    num_classes : int, default 1000
+    classes : int, default 1000
         Number of classification classes.
     dilated : bool, default False
         Applying dilation strategy to pretrained ResNet yielding a stride-8 model,
@@ -123,7 +123,7 @@ class ResNetV1b(HybridBlock):
         - Yu, Fisher, and Vladlen Koltun. "Multi-scale context aggregation by dilated convolutions."
     """
     # pylint: disable=unused-variable
-    def __init__(self, block, layers, num_classes=1000, dilated=False, norm_layer=BatchNorm,
+    def __init__(self, block, layers, classes=1000, dilated=False, norm_layer=BatchNorm,
                  **kwargs):
         self.inplanes = 64
         super(ResNetV1b, self).__init__()
@@ -148,7 +148,7 @@ class ResNetV1b(HybridBlock):
                                                norm_layer=norm_layer)
             self.avgpool = nn.AvgPool2D(7)
             self.flat = nn.Flatten()
-            self.fc = nn.Dense(in_units=512 * block.expansion, units=num_classes)
+            self.fc = nn.Dense(in_units=512 * block.expansion, units=classes)
 
     def _make_layer(self, stage_index, block, planes, blocks, strides=1, dilation=1,
                     norm_layer=None):
