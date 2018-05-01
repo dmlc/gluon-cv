@@ -31,7 +31,16 @@ class COCODetection(VisionDataset):
         self._root = os.path.expanduser(root)
         splits = [splits] if isinstance(splits, str) else splits
         self._splits = splits
+        # to avoid trouble, we always use continous IDs except dealing with cocoapi
+        self.index_map = dict(zip(type(self).CLASSES, range(self.num_class)))
+        self._json_id_to_continous = None
+        self._continous_id_to_json = None
         items, labels = self._load_jsons()
+
+    @property
+    def classes(self):
+        """Category names."""
+        return type(self).CLASSES
 
     def _load_jsons(self):
         items = []
@@ -43,6 +52,15 @@ class COCODetection(VisionDataset):
             anno = os.path.join(self._root, 'annotations', s) + '.json'
             _coco = COCO(anno)
             classes = [c['name'] for c in _coco.loadCats(_coco.getCatIds())]
-            print(classes)
+            if not classes == self.classes:
+                raise ValueError("Incompatible category names with COCO: ")
+            assert classes == self.classes
+            json_id_to_continous = {
+                v: k + 1 for k, v in enumerate(_coco.getCatIds())}
+            if self._json_id_to_continous is None:
+                self._json_id_to_continous = json_id_to_continous
+            else:
+
+
 
         return items, labels
