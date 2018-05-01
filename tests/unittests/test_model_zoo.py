@@ -25,6 +25,20 @@ import numpy as np
 
 import gluoncv as gcv
 
+def test_classification_models():
+    x = mx.random.uniform(shape=(2, 3, 32, 32))
+    cifar_models = [
+        'cifar_resnet20_v1', 'cifar_resnet56_v1', 'cifar_resnet110_v1',
+        'cifar_resnet20_v2', 'cifar_resnet56_v2', 'cifar_resnet110_v2',
+        'cifar_wideresnet16_10', 'cifar_wideresnet28_10', 'cifar_wideresnet40_8',
+    ]
+    for model in cifar_models:
+        net = gcv.model_zoo.get_model(model)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            net.initialize()
+        net(x)
+
 def test_ssd_models():
     x = mx.random.uniform(shape=(2, 3, 512, 768))  # allow non-squre and larger inputs
     models = ['ssd_300_vgg16_atrous_voc', 'ssd_512_vgg16_atrous_voc', 'ssd_512_resnet50_v1_voc']
