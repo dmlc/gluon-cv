@@ -7,7 +7,7 @@ from mxnet.ndarray import NDArray
 from mxnet.gluon.nn import HybridBlock
 from ..utils.metrics import voc_segmentation
 from ..utils.parallel import parallel_apply
-from .resnetv1b import *
+from .resnetv1b import resnet50_v1b, resnet101_v1b, resnet152_v1b
 # pylint: disable=abstract-method,arguments-differ,dangerous-default-value
 
 __all__ = ['get_segmentation_model', 'SegBaseModel', 'SegEvalModel', 'MultiEvalModel',

@@ -123,7 +123,8 @@ class ResNetV1b(HybridBlock):
         - Yu, Fisher, and Vladlen Koltun. "Multi-scale context aggregation by dilated convolutions."
     """
     # pylint: disable=unused-variable
-    def __init__(self, block, layers, num_classes=1000, dilated=False, norm_layer=BatchNorm, **kwargs):
+    def __init__(self, block, layers, num_classes=1000, dilated=False, norm_layer=BatchNorm,
+                 **kwargs):
         self.inplanes = 64
         super(ResNetV1b, self).__init__()
         with self.name_scope():
