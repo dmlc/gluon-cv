@@ -222,5 +222,8 @@ Table of pre-trained models for semantic segmentation and their performance.
        Christian Szegedy, Scott Reed, Cheng-Yang Fu, Alexander C. Berg.
        SSD: Single Shot MultiBox Detector. ECCV 2016.
 .. [6] Long, Jonathan, Evan Shelhamer, and Trevor Darrell. \
-    "Fully convolutional networks for semantic segmentation." \
-    Proceedings of the IEEE conference on computer vision and pattern recognition. 2015.
+       "Fully convolutional networks for semantic segmentation." \
+       Proceedings of the IEEE conference on computer vision and pattern recognition. 2015.
+.. [7] Sandler, Mark, Andrew Howard, Menglong Zhu, Andrey Zhmoginov, and Liang-Chieh Chen. \
+       "Inverted Residuals and Linear Bottlenecks: Mobile Networks for Classification, Detection and Segmentation." \
+       arXiv preprint arXiv:1801.04381 (2018).
