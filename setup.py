@@ -38,6 +38,7 @@ requirements = [
     # 'mxnet',
     'matplotlib',
     'Pillow',
+    'scipy',
 ]
 
 setup(
