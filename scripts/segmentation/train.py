@@ -186,11 +186,12 @@ def save_checkpoint(net, args, is_best=False):
 if __name__ == "__main__":
     args = parse_args()
     trainer = Trainer(args)
-    if not args.eval:
+    if args.eval:
+        print('Evaluating model: ', args.resume)
+        trainer.validation(args.start_epoch)
+    else:
         print('Starting Epoch:', args.start_epoch)
         print('Total Epoches:', args.epochs)
         for epoch in range(args.start_epoch, args.epochs):
             trainer.training(epoch)
             trainer.validation(epoch)
-    print('Evaluating model: ', args.resume)
-    trainer.validation(args.start_epoch)

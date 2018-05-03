@@ -82,6 +82,7 @@ Semantic Segmentation
 
 .. autofunction:: get_fcn_voc_resnet101
 
+.. autofunction:: get_fcn_ade_resnet50
 
 
 :hidden:`ResNetV1b`
