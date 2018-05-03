@@ -172,7 +172,7 @@ def get_cifar_resnext(num_layers, cardinality=32, bottleneck_width=4,
                                        root=root), ctx=ctx)
     return net
 
-def cifar_resnext29_32x4d():
+def cifar_resnext29_32x4d(**kwargs):
     r"""ResNext-29 32x4d model from `"Aggregated Residual Transformations for Deep Neural Networks"
     <http://arxiv.org/abs/1611.05431>`_ paper.
 
@@ -191,9 +191,9 @@ def cifar_resnext29_32x4d():
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
     """
-    return get_cifar_resnext(29, 32, 4)
+    return get_cifar_resnext(29, 32, 4, **kwargs)
 
-def cifar_resnext29_16x64d():
+def cifar_resnext29_16x64d(**kwargs):
     r"""ResNext-29 16x64d model from `"Aggregated Residual Transformations for Deep Neural Networks"
     <http://arxiv.org/abs/1611.05431>`_ paper.
 
@@ -213,4 +213,4 @@ def cifar_resnext29_16x64d():
         Location for keeping the model parameters.
     """
 
-    return get_cifar_resnext(29, 16, 64)
+    return get_cifar_resnext(29, 16, 64, **kwargs)
