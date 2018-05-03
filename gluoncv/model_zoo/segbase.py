@@ -85,25 +85,34 @@ class SegBaseModel(HybridBlock):
 class SoftmaxCrossEntropyLoss(Loss):
     """SoftmaxCrossEntropyLoss with ignore labels"""
     def __init__(self, axis=1, sparse_label=True, from_logits=False, weight=None,
-                 batch_axis=0, ignore_label=-1, **kwargs):
+                 batch_axis=0, ignore_label=-1, size_average=False, **kwargs):
         super(SoftmaxCrossEntropyLoss, self).__init__(weight, batch_axis, **kwargs)
         self._axis = axis
         self._sparse_label = sparse_label
         self._from_logits = from_logits
         self._ignore_label = ignore_label
+        self._size_average = size_average
 
-    def hybrid_forward(self, F, output, label, sample_weight=None):
+    def hybrid_forward(self, F, pred, label, sample_weight=None):
         if not self._from_logits:
-            output = F.log_softmax(output, axis=self._axis)
+            pred = F.log_softmax(pred, axis=self._axis)
         if self._sparse_label:
-            valid_label_map = (label != self._ignore_label).astype('float32')
-            loss = -(F.pick(output, label, axis=self._axis, keepdims=True) * valid_label_map)
+            if self._size_average:
+                valid_label_map = (label != self._ignore_label).astype('float32')
+                loss = -(F.pick(pred, label, axis=self._axis, keepdims=True) * valid_label_map)
+            else:
+                loss = -F.pick(pred, label, axis=self._axis, keepdims=True)
+                loss = F.where(label.expand_dims(axis=self._axis) == self._ignore_label,
+                           F.zeros_like(loss), loss)
         else:
             label = _reshape_like(F, label, pred)
             loss = -F.sum(pred*label, axis=self._axis, keepdims=True)
         loss = _apply_weighting(F, loss, self._weight, sample_weight)
-        return F.mean(loss, axis=self._batch_axis, exclude=True) * \
-            valid_label_map.size / F.sum(valid_label_map)
+        if self._size_average:
+            return F.mean(loss, axis=self._batch_axis, exclude=True) * \
+                valid_label_map.size / F.sum(valid_label_map)
+        else:
+            return F.mean(loss, axis=self._batch_axis, exclude=True)
 
 
 class SoftmaxCrossEntropyLossWithAux(SoftmaxCrossEntropyLoss):
