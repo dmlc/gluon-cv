@@ -30,9 +30,8 @@ from mxnet import cpu
 
 # Blocks
 class CIFARBlock(HybridBlock):
-    r"""BasicBlock V1 from `"Deep Residual Learning for Image Recognition"
-    <http://arxiv.org/abs/1512.03385>`_ paper.
-    This is used for ResNet V1 for 18, 34 layers.
+    r"""BottleBlock from `"Aggregated Residual Transformations for Deep Neural Networks"
+    <http://arxiv.org/abs/1611.05431>`_ paper.
 
     Parameters
     ----------
@@ -87,9 +86,8 @@ class CIFARBlock(HybridBlock):
 
 # Nets
 class CIFARResNext(HybridBlock):
-    r"""ResNet V1 model from
-    `"Deep Residual Learning for Image Recognition"
-    <http://arxiv.org/abs/1512.03385>`_ paper.
+    r"""ResNext model from `"Aggregated Residual Transformations for Deep Neural Networks"
+    <http://arxiv.org/abs/1611.05431>`_ paper.
 
     Parameters
     ----------
@@ -103,7 +101,7 @@ class CIFARResNext(HybridBlock):
         Number of classification classes.
     """
     def __init__(self, layers, cardinality, bottleneck_width, classes=10, **kwargs):
-        super(CIFARResNetV1, self).__init__(**kwargs)
+        super(CIFARResNet, self).__init__(**kwargs)
         self.cardinality = cardinality
         self.bottleneck_width = bottleneck_width
         self.in_channels = 64
@@ -145,10 +143,8 @@ class CIFARResNext(HybridBlock):
 def get_cifar_resnext(num_layers, cardinality=32, bottleneck_width=4,
                       pretrained=False, ctx=cpu(),
                       root=os.path.join('~', '.mxnet', 'models'), **kwargs):
-    r"""ResNet V1 model from `"Deep Residual Learning for Image Recognition"
-    <http://arxiv.org/abs/1512.03385>`_ paper.
-    ResNet V2 model from `"Identity Mappings in Deep Residual Networks"
-    <https://arxiv.org/abs/1603.05027>`_ paper.
+    r"""ResNext model from `"Aggregated Residual Transformations for Deep Neural Networks"
+    <http://arxiv.org/abs/1611.05431>`_ paper.
 
     Parameters
     ----------
@@ -176,7 +172,44 @@ def get_cifar_resnext(num_layers, cardinality=32, bottleneck_width=4,
     return net
 
 def cifar_resnext29_32x4d():
+    r"""ResNext-29 32x4d model from `"Aggregated Residual Transformations for Deep Neural Networks"
+    <http://arxiv.org/abs/1611.05431>`_ paper.
+
+    Parameters
+    ----------
+    num_layers : int
+        Numbers of layers. Needs to be an integer in the form of 9*n+2, e.g. 29
+    cardinality: int
+        Number of groups
+    bottleneck_width: int
+        Width of bottleneck block
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+    """
     return get_cifar_resnext(29, 32, 4)
 
 def cifar_resnext29_16x64d():
+    r"""ResNext-29 16x64d model from `"Aggregated Residual Transformations for Deep Neural Networks"
+    <http://arxiv.org/abs/1611.05431>`_ paper.
+
+    Parameters
+    ----------
+    num_layers : int
+        Numbers of layers. Needs to be an integer in the form of 9*n+2, e.g. 29
+    cardinality: int
+        Number of groups
+    bottleneck_width: int
+        Width of bottleneck block
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+    """
+
     return get_cifar_resnext(29, 16, 64)
