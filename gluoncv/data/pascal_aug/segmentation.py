@@ -92,4 +92,4 @@ class VOCAugSegmentation(SegmentationDataset):
         return ('background', 'airplane', 'bicycle', 'bird', 'boat', 'bottle',
                 'bus', 'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse',
                 'motorcycle', 'person', 'potted-plant', 'sheep', 'sofa', 'train',
-                'tv', 'ambiguous')
+                'tv')

@@ -41,7 +41,7 @@ import gluoncv
 #     :width: 70%
 #     :align: center
 #
-# (figure redit to `Long et al. <https://arxiv.org/pdf/1411.4038.pdf>`_ )
+# (figure credit to `Long et al. <https://arxiv.org/pdf/1411.4038.pdf>`_ )
 # 
 # State-of-the-art approaches of semantic segmentation are typically based on
 # Fully Convolutional Network (FCN) [Long15]_.
@@ -65,7 +65,7 @@ import gluoncv
 # we apply dilation strategy to the
 # stage 3 and stage 4 of the pre-trained networks, which produces stride of 8
 # featuremaps (models are provided in
-# :class:`gluoncv.model_zoo.dilatedresnetv0.DilatedResNetV0`).
+# :class:`gluoncv.model_zoo.ResNetV1b`).
 # Visualization of dilated/atrous convoution
 # (figure credit to `conv_arithmetic <https://github.com/vdumoulin/conv_arithmetic>`_ ):
 # 
@@ -75,7 +75,7 @@ import gluoncv
 # 
 # Loading a dilated ResNet50 is simply:
 # 
-pretrained_net = gluoncv.model_zoo.dilatedresnetv0.dilated_resnet50(pretrained=True)
+pretrained_net = gluoncv.model_zoo.resnet50_v1b(pretrained=True)
 
 ##############################################################################
 # For convenience, we provide a base model for semantic segmentation, which automatically

@@ -161,3 +161,24 @@ def get_fcn_voc_resnet101(**kwargs):
     >>> print(model)
     """
     return get_fcn('pascal_voc', 'resnet101', **kwargs)
+
+def get_fcn_ade_resnet50(**kwargs):
+    r"""FCN model with base network ResNet-50 pre-trained on ADE20K dataset
+    from the paper `"Fully Convolutional Network for semantic segmentation"
+    <https://people.eecs.berkeley.edu/~jonlong/long_shelhamer_fcn.pdf>`_
+
+    Parameters
+    ----------
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+
+    Examples
+    --------
+    >>> model = get_fcn_ade_resnet50(pretrained=True)
+    >>> print(model)
+    """
+    return get_fcn('ade20k', 'resnet50', **kwargs)
