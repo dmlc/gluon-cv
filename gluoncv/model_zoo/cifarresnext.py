@@ -46,18 +46,18 @@ class CIFARBlock(HybridBlock):
     in_channels : int, default 0
         Number of input channels. Default is 0, to infer from the graph.
     """
+    expansion = 2
 
     def __init__(self, cardinality, bottleneck_width,
                  stride, downsample=False, in_channels=0, **kwargs):
         super(CIFARBlock, self).__init__(**kwargs)
-        self.expansion = 2
         group_width = cardinality * bottleneck_width
 
         self.body = nn.HybridSequential(prefix='')
         self.body.add(nn.Conv2D(group_width, kernel_size=1, use_bias=False,
                                 in_channels=in_channels))
         self.body.add(nn.BatchNorm())
-        self.body.add(nn.Conv2D(group_width, kernel_size=3, stride=stride, padding=1,
+        self.body.add(nn.Conv2D(group_width, kernel_size=3, strides=stride, padding=1,
                                 groups=cardinality, use_bias=False))
         self.body.add(nn.BatchNorm())
         self.body.add(nn.Conv2D(self.expansion*group_width, kernel_size=1, use_bias=False))
@@ -162,7 +162,8 @@ def get_cifar_resnext(num_layers, cardinality=32, bottleneck_width=4,
         Location for keeping the model parameters.
     """
     assert (num_layers - 2) % 9 == 0
-    layers = (num_layers - 2) / 9
+    layer = (num_layers - 2) // 9
+    layers = [layer] * 3
     net = CIFARResNext(layers, cardinality, bottleneck_width, **kwargs)
     if pretrained:
         from .model_store import get_model_file
