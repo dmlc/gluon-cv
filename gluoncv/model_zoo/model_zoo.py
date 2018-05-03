@@ -6,6 +6,7 @@ from mxnet import gluon
 from .ssd import *
 from .fcn import *
 from .cifarresnet import *
+from .cifarresnext import *
 from .cifarwideresnet import *
 from .resnetv1b import *
 
@@ -49,6 +50,8 @@ def get_model(name, **kwargs):
         'cifar_wideresnet16_10': cifar_wideresnet16_10,
         'cifar_wideresnet28_10': cifar_wideresnet28_10,
         'cifar_wideresnet40_8': cifar_wideresnet40_8,
+        'cifar_resnext29_32x4d': cifar_resnet29_32x4d,
+        'cifar_resnext29_16x64d': cifar_resnet29_16x64d,
         'fcn_resnet50_voc' : get_fcn_voc_resnet50,
         'fcn_resnet101_voc' : get_fcn_voc_resnet101,
         'resnet18_v1b' : resnet18_v1b,
