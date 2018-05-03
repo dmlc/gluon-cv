@@ -39,9 +39,30 @@ def test_classification_models():
             net.initialize()
         net(x)
 
+def test_imagenet_models():
+    x = mx.random.uniform(shape=(2, 3, 224, 224))
+    models = ['resnet18_v1b', 'resnet34_v1b', 'resnet50_v1b',
+              'resnet101_v1b', 'resnet152_v1b']
+    for model in models:
+        net = gcv.model_zoo.get_model(model)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            net.initialize()
+        net(x)
+
 def test_ssd_models():
     x = mx.random.uniform(shape=(2, 3, 512, 768))  # allow non-squre and larger inputs
     models = ['ssd_300_vgg16_atrous_voc', 'ssd_512_vgg16_atrous_voc', 'ssd_512_resnet50_v1_voc']
+    for model in models:
+        net = gcv.model_zoo.get_model(model)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            net.initialize()
+        net(x)
+
+def test_segmentation_models():
+    x = mx.random.uniform(shape=(2, 3, 480, 480))
+    models = ['fcn_resnet50_voc', 'fcn_resnet101_voc']
     for model in models:
         net = gcv.model_zoo.get_model(model)
         with warnings.catch_warnings():

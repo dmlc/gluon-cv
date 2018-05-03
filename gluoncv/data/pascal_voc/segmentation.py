@@ -2,6 +2,8 @@
 import os
 import numpy as np
 from PIL import Image
+from mxnet import cpu
+import mxnet.ndarray as F
 from ..segbase import SegmentationDataset
 
 class VOCSegmentation(SegmentationDataset):
@@ -75,10 +77,7 @@ class VOCSegmentation(SegmentationDataset):
             if self.transform is not None:
                 img = self.transform(img)
             return img, os.path.basename(self.images[index])
-        timg = Image.open(self.masks[index])
-        target = np.array(timg, dtype=np.uint8)
-        target[target == 255] = -1
-        target = Image.fromarray(target)
+        target = Image.open(self.masks[index])
         # synchrosized transform
         if self.train == 'train':
             img, target = self._sync_transform(img, target)
@@ -95,10 +94,15 @@ class VOCSegmentation(SegmentationDataset):
     def __len__(self):
         return len(self.images)
 
+    def _mask_transform(self, mask):
+        target = np.array(mask).astype('int32')
+        target[target == 255] = -1
+        return F.array(target, cpu(0))
+
     @property
     def classes(self):
         """Category names."""
         return ('background', 'airplane', 'bicycle', 'bird', 'boat', 'bottle',
                 'bus', 'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse',
                 'motorcycle', 'person', 'potted-plant', 'sheep', 'sofa', 'train',
-                'tv', 'ambiguous')
+                'tv')

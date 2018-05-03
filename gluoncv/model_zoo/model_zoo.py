@@ -7,6 +7,7 @@ from .ssd import *
 from .fcn import *
 from .cifarresnet import *
 from .cifarwideresnet import *
+from .resnetv1b import *
 
 __all__ = ['get_model']
 
@@ -50,6 +51,11 @@ def get_model(name, **kwargs):
         'cifar_wideresnet40_8': cifar_wideresnet40_8,
         'fcn_resnet50_voc' : get_fcn_voc_resnet50,
         'fcn_resnet101_voc' : get_fcn_voc_resnet101,
+        'resnet18_v1b' : resnet18_v1b,
+        'resnet34_v1b' : resnet34_v1b,
+        'resnet50_v1b' : resnet50_v1b,
+        'resnet101_v1b' : resnet101_v1b,
+        'resnet152_v1b' : resnet152_v1b,
         }
     try:
         net = gluon.model_zoo.vision.get_model(name, **kwargs)
