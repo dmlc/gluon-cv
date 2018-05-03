@@ -101,7 +101,7 @@ class CIFARResNext(HybridBlock):
         Number of classification classes.
     """
     def __init__(self, layers, cardinality, bottleneck_width, classes=10, **kwargs):
-        super(CIFARResNet, self).__init__(**kwargs)
+        super(CIFARResNext, self).__init__(**kwargs)
         self.cardinality = cardinality
         self.bottleneck_width = bottleneck_width
         self.in_channels = 64
