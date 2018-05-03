@@ -130,6 +130,7 @@ class CIFARResNext(HybridBlock):
                 layer.add(CIFARBlock(self.cardinality, self.bottleneck_width,
                                      1, False, in_channels=channels, prefix=''))
             self.in_channels = channels
+        self.bottleneck_width *= 2
         return layer
 
     def hybrid_forward(self, F, x):
