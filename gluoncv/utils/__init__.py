@@ -3,6 +3,7 @@ from __future__ import absolute_import
 
 from .download import download
 from .filesystem import makedirs
+from . import bbox
 from .bbox import bbox_iou
 from .block import set_lr_mult
 from . import viz
