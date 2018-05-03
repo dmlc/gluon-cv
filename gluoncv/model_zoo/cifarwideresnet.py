@@ -94,7 +94,7 @@ class CIFARWideResNet(HybridBlock):
         Numbers of layers in each block
     channels : list of int
         Numbers of channels in each block. Length should be one larger than layers list.
-    classes : int, default 1000
+    classes : int, default 10
         Number of classification classes.
     """
     def __init__(self, block, layers, channels, drop_rate, classes=10, **kwargs):

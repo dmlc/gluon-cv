@@ -8,10 +8,10 @@ import numpy as np
 from mxnet import gluon, nd
 from mxnet import autograd as ag
 from mxnet.gluon import nn
-from mxnet.gluon.model_zoo import vision as models
 from mxnet.gluon.data.vision import transforms
 
 from gluoncv.data import imagenet
+from gluoncv.model_zoo import get_model
 from gluoncv.utils import makedirs, TrainingHistory
 
 # CLI
@@ -86,7 +86,7 @@ elif model_name.startswith('vgg'):
 optimizer = 'nag'
 optimizer_params = {'learning_rate': opt.lr, 'wd': opt.wd, 'momentum': opt.momentum}
 
-net = models.get_model(model_name, **kwargs)
+net = get_model(model_name, **kwargs)
 
 acc_top1 = mx.metric.Accuracy()
 acc_top5 = mx.metric.TopKAccuracy(5)
