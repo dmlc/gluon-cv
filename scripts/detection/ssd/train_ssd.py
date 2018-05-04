@@ -184,7 +184,7 @@ def train(net, train_data, val_data, classes, args):
                             anchors, cls_preds, gt_boxes, gt_ids)
                         # save how many positive samples are used, it will be used to
                         # normalize the loss
-                        num_positive.append(nd.sum(cls_targets > 0).asscalar())
+                        num_positive.append(nd.sum(cls_targets > 0))
 
                     # cls loss, multi class cross entropy loss, we mask out ignored
                     # labels here by broadcast_mul the positive labels
@@ -197,7 +197,7 @@ def train(net, train_data, val_data, classes, args):
                     outputs.append(cls_preds)
                     labels.append(cls_targets)
                 # n_pos is the overall positive samples in the entire batch
-                n_pos = max(1, sum(num_positive))
+                n_pos = max(1, sum([np.asnumpy() for np in num_positive]))
                 for l3, l4 in zip(losses3, losses4):
                     # normalize the losses by n_pos
                     L = l3 / n_pos + l4 / n_pos
