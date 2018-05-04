@@ -63,7 +63,6 @@ class RandomResizedPadCrop(Block):
 
     def forward(self, x):
         if self.pad > 0:
-            import pdb; pdb.set_trace()
             pad_tuple = (0, 0, 0, 0, self.pad, self.pad, self.pad, self.pad, 0, 0)
             x = x.expand_dims(axis=0).expand_dims(axis=0)
             x = x.pad(mode='constant', constant_value=0, pad_width=pad_tuple)
