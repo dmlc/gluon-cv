@@ -16,21 +16,21 @@
 # under the License.
 
 # coding: utf-8
-# pylint: disable= arguments-differ,unused-argument
-"""ResNets, implemented in Gluon."""
+# pylint: disable= arguments-differ
+"""ResNext, implemented in Gluon."""
 from __future__ import division
 
-__all__ = ['get_cifar_resnext', 'cifar_resnext29_32x4d', 'cifar_resnext29_16x64d']
+__all__ = ['ResNext', 'Block', 'get_resnext', 'resnext50_32x4d']
 
 import os
 from mxnet import cpu
 from mxnet.gluon import nn
 from mxnet.gluon.block import HybridBlock
 
+# Helpers
 
-# Blocks
-class CIFARBlock(HybridBlock):
-    r"""Bottleneck Block from `"Aggregated Residual Transformations for Deep Neural Networks"
+class Block(HybridBlock):
+    r"""Bottleneck Block from `"Aggregated Residual Transformations for Deep Neural Network"
     <http://arxiv.org/abs/1611.05431>`_ paper.
 
     Parameters
@@ -50,7 +50,7 @@ class CIFARBlock(HybridBlock):
 
     def __init__(self, cardinality, bottleneck_width,
                  stride, downsample=False, in_channels=0, **kwargs):
-        super(CIFARBlock, self).__init__(**kwargs)
+        super(Block, self).__init__(**kwargs)
         group_width = cardinality * bottleneck_width
 
         self.body = nn.HybridSequential(prefix='')
@@ -58,21 +58,19 @@ class CIFARBlock(HybridBlock):
                                 in_channels=in_channels))
         self.body.add(nn.BatchNorm())
         self.body.add(nn.Conv2D(group_width, kernel_size=3, strides=stride, padding=1,
-                                groups=cardinality, use_bias=False))
+                                use_bias=False, in_channels=in_channels))
         self.body.add(nn.BatchNorm())
         self.body.add(nn.Conv2D(self.expansion*group_width, kernel_size=1, use_bias=False))
         self.body.add(nn.BatchNorm())
-
         if downsample:
             self.downsample = nn.HybridSequential(prefix='')
-            self.downsample.add(nn.Conv2D(self.expansion*group_width, kernel_size=1, strides=stride,
+            self.downsample.add(nn.Conv2D(channels, kernel_size=1, strides=stride,
                                           use_bias=False, in_channels=in_channels))
             self.downsample.add(nn.BatchNorm())
         else:
             self.downsample = None
 
     def hybrid_forward(self, F, x):
-        """Hybrid forward"""
         residual = x
 
         x = self.body(x)
@@ -80,13 +78,14 @@ class CIFARBlock(HybridBlock):
         if self.downsample:
             residual = self.downsample(residual)
 
-        x = F.Activation(residual+x, act_type='relu')
-
+        x = F.Activation(x + residual, act_type='relu')
         return x
 
+
 # Nets
-class CIFARResNext(HybridBlock):
-    r"""ResNext model from `"Aggregated Residual Transformations for Deep Neural Networks"
+class ResNext(HybridBlock):
+    r"""ResNext model from
+    `"Aggregated Residual Transformations for Deep Neural Network"
     <http://arxiv.org/abs/1611.05431>`_ paper.
 
     Parameters
@@ -97,19 +96,27 @@ class CIFARResNext(HybridBlock):
         Number of groups
     bottleneck_width: int
         Width of bottleneck block
-    classes : int, default 10
+    classes : int, default 1000
         Number of classification classes.
+    thumbnail : bool, default False
+        Enable thumbnail.
     """
-    def __init__(self, layers, cardinality, bottleneck_width, classes=10, **kwargs):
-        super(CIFARResNext, self).__init__(**kwargs)
+    def __init__(self, layers, cardinality, bottleneck_width,
+                 classes=1000, thumbnail=False, **kwargs):
+        super(ResNext, self).__init__(**kwargs)
         self.cardinality = cardinality
         self.bottleneck_width = bottleneck_width
-        self.in_channels = 64
+        self.in_channels = 256
 
         with self.name_scope():
             self.features = nn.HybridSequential(prefix='')
-            self.features.add(nn.Conv2D(64, 3, 1, 1, use_bias=False))
-            self.features.add(nn.BatchNorm())
+            if thumbnail:
+                self.features.add(_conv3x3(64, 1, 0))
+            else:
+                self.features.add(nn.Conv2D(64, 7, 2, 3, use_bias=False))
+                self.features.add(nn.BatchNorm())
+                self.features.add(nn.Activation('relu'))
+                self.features.add(nn.MaxPool2D(3, 2, 1))
 
             for i, num_layer in enumerate(layers):
                 stride = 1 if i == 0 else 2
@@ -120,17 +127,17 @@ class CIFARResNext(HybridBlock):
             self.output = nn.Dense(classes,
                                    in_units=cardinality*bottleneck_width*total_expansion)
 
-    def _make_layer(self, num_layer, stride, stage_index):
+    def _make_layer(self, num_layers, stride, stage_index):
         layer = nn.HybridSequential(prefix='stage%d_'%stage_index)
-        channels = CIFARBlock.expansion * self.cardinality * self.bottleneck_width
+        channels = Block.expansion * self.cardinality * self.bottleneck_width
         downsample = self.in_channels != channels
         with layer.name_scope():
-            layer.add(CIFARBlock(self.cardinality, self.bottleneck_width,
-                                 stride, downsample or stride != 1,
-                                 in_channels=self.in_channels, prefix=''))
-            for _ in range(num_layer-1):
-                layer.add(CIFARBlock(self.cardinality, self.bottleneck_width,
-                                     1, False, in_channels=channels, prefix=''))
+            layer.add(Block(self.cardinality, self.bottleneck_width,
+                            stride, downsample or stride != 1,
+                            in_channels=in_channels, prefix=''))
+            for _ in range(num_layers-1):
+                layer.add(Block(self.cardinality, self.bottleneck_width,
+                                1, False, in_channels=channels, prefix=''))
 
         self.in_channels = channels
         self.bottleneck_width *= 2
@@ -143,17 +150,22 @@ class CIFARResNext(HybridBlock):
         return x
 
 
+# Specification
+resnext_spec = {50: [3, 4, 6, 3],
+                101: [3, 4, 23, 3]}
+
+
 # Constructor
-def get_cifar_resnext(num_layers, cardinality=16, bottleneck_width=64,
-                      pretrained=False, ctx=cpu(),
-                      root=os.path.join('~', '.mxnet', 'models'), **kwargs):
-    r"""ResNext model from `"Aggregated Residual Transformations for Deep Neural Networks"
+def get_resnext(num_layers, cardinality=32, bottleneck_width=4,
+                pretrained=False, ctx=cpu(),
+                root=os.path.join('~', '.mxnet', 'models'), **kwargs):
+    r"""ResNext model from `"Aggregated Residual Transformations for Deep Neural Network"
     <http://arxiv.org/abs/1611.05431>`_ paper.
 
     Parameters
     ----------
     num_layers : int
-        Numbers of layers. Needs to be an integer in the form of 9*n+2, e.g. 29
+        Numbers of layers. Options are 50, 101.
     cardinality: int
         Number of groups
     bottleneck_width: int
@@ -165,40 +177,21 @@ def get_cifar_resnext(num_layers, cardinality=16, bottleneck_width=64,
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
     """
-    assert (num_layers - 2) % 9 == 0
-    layer = (num_layers - 2) // 9
-    layers = [layer] * 3
-    net = CIFARResNext(layers, cardinality, bottleneck_width, **kwargs)
+    assert num_layers in resnext_spec, \
+        "Invalid number of layers: %d. Options are %s"%(
+            num_layers, str(resnext_spec.keys()))
+    layers = resnext_spec[num_layers]
+    net = ResNext(layers, cardinality, bottleneck_width, **kwargs)
     if pretrained:
-        from .model_store import get_model_file
-        net.load_params(get_model_file('cifar_resnext%d_%dx%d'%(num_layers, cardinality,
-                                                                bottleneck_width),
+        from ..model_store import get_model_file
+        net.load_params(get_model_file('resnext%d_%dx%d'%(num_layers, cardinality,
+                                                          bottleneck_width),
                                        root=root), ctx=ctx)
     return net
 
-def cifar_resnext29_32x4d(**kwargs):
-    r"""ResNext-29 32x4d model from `"Aggregated Residual Transformations for Deep Neural Networks"
-    <http://arxiv.org/abs/1611.05431>`_ paper.
-
-    Parameters
-    ----------
-    num_layers : int
-        Numbers of layers. Needs to be an integer in the form of 9*n+2, e.g. 29
-    cardinality: int
-        Number of groups
-    bottleneck_width: int
-        Width of bottleneck block
-    pretrained : bool, default False
-        Whether to load the pretrained weights for model.
-    ctx : Context, default CPU
-        The context in which to load the pretrained weights.
-    root : str, default '~/.mxnet/models'
-        Location for keeping the model parameters.
-    """
-    return get_cifar_resnext(29, 32, 4, **kwargs)
-
-def cifar_resnext29_16x64d(**kwargs):
-    r"""ResNext-29 16x64d model from `"Aggregated Residual Transformations for Deep Neural Networks"
+def resnext50_32x4d(**kwargs):
+    r"""ResNext50 32x4d model from
+    `"Aggregated Residual Transformations for Deep Neural Network"
     <http://arxiv.org/abs/1611.05431>`_ paper.
 
     Parameters
@@ -214,5 +207,4 @@ def cifar_resnext29_16x64d(**kwargs):
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
     """
-
-    return get_cifar_resnext(29, 16, 64, **kwargs)
+    return get_resnext(50, 32, 4, **kwargs)
