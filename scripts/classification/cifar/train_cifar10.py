@@ -13,6 +13,7 @@ from mxnet.gluon.data.vision import transforms
 
 from gluoncv.model_zoo import get_model
 from gluoncv.utils import makedirs, TrainingHistory
+from gluoncv.data import transforms as gcv_transforms
 
 # CLI
 parser = argparse.ArgumentParser(description='Train a model for image classification.')
@@ -88,17 +89,13 @@ logging.basicConfig(level=logging.INFO)
 logging.info(opt)
 
 transform_train = transforms.Compose([
-    transforms.Resize(32),
-    transforms.RandomResizedCrop(32),
+    gcv_transforms.RandomResizedPadCrop(32, pad=4, scale=(1.0, 1.0), ratio=(1.0, 1.0)),
     transforms.RandomFlipLeftRight(),
-    transforms.RandomColorJitter(brightness=0.1, contrast=0.1, saturation=0.1),
-    transforms.RandomLighting(0.1),
     transforms.ToTensor(),
     transforms.Normalize([0.4914, 0.4822, 0.4465], [0.2023, 0.1994, 0.2010])
 ])
 
 transform_test = transforms.Compose([
-    transforms.Resize(32),
     transforms.ToTensor(),
     transforms.Normalize([0.4914, 0.4822, 0.4465], [0.2023, 0.1994, 0.2010])
 ])
