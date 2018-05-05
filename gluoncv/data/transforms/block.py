@@ -19,7 +19,7 @@
 # pylint: disable= arguments-differ
 "Addtional image transforms."
 
-from mxnet import image
+from mxnet import image, nd
 from mxnet.gluon import Block
 import numpy as np
 
