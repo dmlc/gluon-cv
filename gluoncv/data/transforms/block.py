@@ -52,7 +52,7 @@ class RandomCrop(Block):
     """
 
     def __init__(self, size, pad=None, interpolation=2):
-        super(RandomResizedPadCrop, self).__init__()
+        super(RandomCrop, self).__init__()
         numeric_types = (float, int, np.generic)
         if isinstance(size, numeric_types):
             size = (size, size)
