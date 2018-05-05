@@ -2,9 +2,6 @@
 from __future__ import absolute_import
 from __future__ import division
 import os
-import copy
-import logging
-import numpy as np
 import mxnet as mx
 from .utils import try_import_pycocotools
 from ..base import VisionDataset
@@ -108,8 +105,8 @@ class COCODetection(VisionDataset):
             # iterate through the annotations
             image_ids = sorted(_coco.getImgIds())
             for entry in _coco.loadImgs(image_ids):
-                dir, filename = entry['coco_url'].split('/')[-2:]
-                abs_path = os.path.join(self._root, dir, filename)
+                dirname, filename = entry['coco_url'].split('/')[-2:]
+                abs_path = os.path.join(self._root, dirname, filename)
                 if not os.path.exists(abs_path):
                     raise IOError('Image: {} not exists.'.format(abs_path))
                 items.append(abs_path)

@@ -53,7 +53,8 @@ def import_try_install(package, extern_url=None):
         try:
             return __import__(package)
         except ImportError:
-            import sys, site
+            import sys
+            import site
             user_site = site.getusersitepackages()
             if user_site not in sys.path:
                 sys.path.append(user_site)
