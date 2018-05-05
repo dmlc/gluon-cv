@@ -89,7 +89,7 @@ logging.basicConfig(level=logging.INFO)
 logging.info(opt)
 
 transform_train = transforms.Compose([
-    gcv_transforms.RandomResizedPadCrop(32, pad=4, scale=(1.0, 1.0), ratio=(1.0, 1.0)),
+    gcv_transforms.RandomCrop(32, pad=4),
     transforms.RandomFlipLeftRight(),
     transforms.ToTensor(),
     transforms.Normalize([0.4914, 0.4822, 0.4465], [0.2023, 0.1994, 0.2010])

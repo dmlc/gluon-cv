@@ -23,24 +23,23 @@ from mxnet import image
 from mxnet.gluon import Block
 import numpy as np
 
-__all__ = ['RandomResizedPadCrop']
+__all__ = ['RandomCrop']
 
-class RandomResizedPadCrop(Block):
-    """Crop the input image with random scale and aspect ratio.
-    Makes a crop of the original image with random size (default: 0.08
-    to 1.0 of the original image size) and random aspect ratio (default:
-    3/4 to 4/3), then resize it to the specified size.
+class RandomCrop(Block):
+    """Randomly crop `src` with `size` (width, height).
+    Padding is optional.
+    Upsample result if `src` is smaller than `size`.
+
     Parameters
     ----------
     size : int or tuple of (W, H)
         Size of the final output.
-    pad: int
-        Size of the zero-padding
-    scale : tuple of two floats
-        If scale is `(min_area, max_area)`, the cropped image's area will
-        range from min_area to max_area of the original image's area
-    ratio : tuple of two floats
-        Range of aspect ratio of the cropped image before resizing.
+    pad: int or tuple
+        if int, size of the zero-padding
+        if tuple, number of values padded to the edges of each axis.
+            ((before_1, after_1), ... (before_N, after_N)) unique pad widths for each axis.
+            ((before, after),) yields same before and after pad for each axis.
+            (pad,) or int is a shortcut for before = after = pad width for all axes.
     interpolation : int
         Interpolation method for resizing. By default uses bilinear
         interpolation. See OpenCV's resize function for available choices.
@@ -52,20 +51,20 @@ class RandomResizedPadCrop(Block):
         - **out**: output tensor with ((H+2*pad) x (W+2*pad) x C) shape.
     """
 
-    def __init__(self, size, pad=0, scale=(0.08, 1.0), ratio=(3.0/4.0, 4.0/3.0),
-                 interpolation=2):
+    def __init__(self, size, pad=None, interpolation=2):
         super(RandomResizedPadCrop, self).__init__()
         numeric_types = (float, int, np.generic)
         if isinstance(size, numeric_types):
             size = (size, size)
-        self._args = (size, scale[0], ratio, interpolation)
-        self.pad = pad
+        self._args = (size, interpolation)
+        if isinstance(pad, int):
+            self.pad = ((pad, pad), (pad, pad), (0, 0))
+        else:
+            self.pad = pad
 
     def forward(self, x):
-        if self.pad > 0:
-            pad_tuple = (0, 0, 0, 0, self.pad, self.pad, self.pad, self.pad, 0, 0)
-            x = x.expand_dims(axis=0).expand_dims(axis=0)
-            x = x.pad(mode='constant', constant_value=0, pad_width=pad_tuple)
-            x = x.squeeze(axis=(0, 1))
+        if self.pad:
+            x_pad = np.pad(x.asnumpy(), self.pad,
+                           mode='constant', constant_value=0)
 
-        return image.random_size_crop(x, *self._args)[0]
+        return image.random_crop(nd.array(x_pad), *self._args)[0]
