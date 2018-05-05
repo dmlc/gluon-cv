@@ -47,11 +47,12 @@ class COCODetection(VisionDataset):
                'laptop', 'mouse', 'remote', 'keyboard', 'cell phone', 'microwave',
                'oven', 'toaster', 'sink', 'refrigerator', 'book', 'clock', 'vase',
                'scissors', 'teddy bear', 'hair drier', 'toothbrush']
-    
+
     def __init__(self, root=os.path.join('~', '.mxnet', 'datasets', 'coco'),
-                 splits=('instances_val2017',), min_object_area=0):
+                 splits=('instances_val2017',), transform=None, min_object_area=0):
         super(COCODetection, self).__init__(root)
         self._root = os.path.expanduser(root)
+        self._transform = transform
         self._min_object_area = min_object_area
         splits = [splits] if isinstance(splits, str) else splits
         self._splits = splits
