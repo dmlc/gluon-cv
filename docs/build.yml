@@ -7,6 +7,7 @@ dependencies:
 - sphinx_rtd_theme
 - pip:
   - sphinx-gallery
+  - sphinxcontrib-versioning
   - mxnet-cu80>=1.2.0b20180418
   # - guzzle_sphinx_theme
   - recommonmark
