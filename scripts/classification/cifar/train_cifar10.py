@@ -132,7 +132,7 @@ def train(epochs, ctx):
     iteration = 0
     lr_decay_count = 0
 
-    best_val_score = 1
+    best_val_score = 0
 
     for epoch in range(epochs):
         tic = time.time()
@@ -168,7 +168,7 @@ def train(epochs, ctx):
         train_history.update([1-acc, 1-val_acc])
         train_history.plot(save_path='%s/%s_history.png'%(plot_path, model_name))
 
-        if val_acc > best_val_score and epoch > 50:
+        if val_acc > best_val_score:
             best_val_score = val_acc
             net.save_params('%s/%.4f-imagenet-%s-%d-best.params'%(save_dir, best_val_score, model_name, epoch))
 

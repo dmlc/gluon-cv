@@ -171,7 +171,7 @@ def train(epochs, ctx):
 
         for i, batch in enumerate(train_data):
             lam = np.random.beta(alpha, alpha)
-            if epoch >= epochs - 50:
+            if epoch >= epochs - 20:
                 lam = 1
 
             data_1 = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
@@ -203,7 +203,7 @@ def train(epochs, ctx):
         train_history.update([acc, 1-val_acc])
         train_history.plot(save_path='%s/%s_history.png'%(plot_name, model_name))
 
-        if val_acc > best_val_score and epoch > 200:
+        if val_acc > best_val_score:
             best_val_score = val_acc
             net.save_params('%s/%.4f-imagenet-%s-%d-best.params'%(save_dir, best_val_score, model_name, epoch))
 
