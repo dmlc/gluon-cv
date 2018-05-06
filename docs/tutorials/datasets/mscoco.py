@@ -12,7 +12,7 @@ This tutorial will walk through the steps of preparing this dataset for GluonCV.
    preferred over HDD because of its better performance.
 
    The total time to prepare the dataset depends on your Internet speed and disk
-   performance. For example, it often takes 10 min on AWS EC2 with EBS.
+   performance. For example, it often takes 20 min on AWS EC2 with EBS.
 
 Prepare the dataset
 -------------------
@@ -71,7 +71,7 @@ print('Num of validation images:', len(val_dataset))
 ################################################################
 # Now let's visualize one example.
 
-train_image, train_label = train_dataset[5]
+train_image, train_label = train_dataset[25]
 bounding_boxes = train_label[:, :4]
 class_ids = train_label[:, 4:5]
 print('Image size (height, width, RGB):', train_image.shape)
