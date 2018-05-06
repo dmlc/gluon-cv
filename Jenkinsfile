@@ -21,8 +21,8 @@ stage("Docs") {
       sh """#!/bin/bash
       set -e
       set -x
-      conda env update -f docs/build.yml
       source activate gluon_vision_docs
+      conda env update -f docs/build.yml
       export PYTHONPATH=\${PWD}
       env
       export LD_LIBRARY_PATH=/usr/local/cuda-8.0/lib64
