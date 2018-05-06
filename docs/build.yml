@@ -7,7 +7,8 @@ dependencies:
 - sphinx_rtd_theme
 - pip:
   - sphinx-gallery
-  - sphinxcontrib-versioning
+  #- sphinxcontrib-versioning
+  - git+https://github.com/Lingnik/sphinxcontrib-versioning@Lingnik-patch-1
   - mxnet-cu80>=1.2.0b20180418
   # - guzzle_sphinx_theme
   - recommonmark
