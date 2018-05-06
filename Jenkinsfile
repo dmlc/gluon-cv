@@ -26,7 +26,7 @@ stage("Docs") {
       env
       export LD_LIBRARY_PATH=/usr/local/cuda-8.0/lib64
       cd docs && make clean
-      sphinx-versioning build -r v0.1 REL_SOURCE docs DESTINATION build/html/
+      sphinx-versioning -v build -r v0.1 -g .. REL_SOURCE docs DESTINATION build/html/
 
       if [[ ${env.BRANCH_NAME} == master ]]; then
           aws s3 sync --delete build/html/ s3://gluon-cv.mxnet.io/ --acl public-read
