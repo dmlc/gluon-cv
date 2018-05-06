@@ -21,6 +21,7 @@ stage("Docs") {
       sh """#!/bin/bash
       set -e
       set -x
+      pip uninstall -y sphinxcontrib-versioning
       source activate gluon_vision_docs
       conda env update -f docs/build.yml
       export PYTHONPATH=\${PWD}
