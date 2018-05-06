@@ -2,6 +2,7 @@
 from __future__ import absolute_import
 from __future__ import division
 import os
+import numpy as np
 import mxnet as mx
 from .utils import try_import_pycocotools
 from ..base import VisionDataset
@@ -77,7 +78,7 @@ class COCODetection(VisionDataset):
         img = mx.image.imread(img_path, 1)
         if self._transform is not None:
             return self._transform(img, label)
-        return img, label
+        return img, np.array(label)
 
     def _load_jsons(self):
         """Load all image paths and labels from JSON annotation files into buffer."""
@@ -94,7 +95,7 @@ class COCODetection(VisionDataset):
                 raise ValueError("Incompatible category names with COCO: ")
             assert classes == self.classes
             json_id_to_contiguous = {
-                v: k + 1 for k, v in enumerate(_coco.getCatIds())}
+                v: k for k, v in enumerate(_coco.getCatIds())}
             if self._json_id_to_contiguous is None:
                 self._json_id_to_contiguous = json_id_to_contiguous
                 self._json_id_from_contiguous = {
