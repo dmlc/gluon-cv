@@ -20,7 +20,7 @@
 """ResNext, implemented in Gluon."""
 from __future__ import division
 
-__all__ = ['ResNext', 'Block', 'get_resnext', 'resnext50_32x4d']
+__all__ = ['ResNext', 'Block', 'get_resnext', 'resnext50_32x4d', 'resnext101_32x4d']
 
 import os
 from mxnet import cpu
