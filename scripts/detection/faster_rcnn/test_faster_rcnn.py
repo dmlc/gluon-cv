@@ -54,3 +54,5 @@ if __name__ == '__main__':
     val_data = get_dataloader(
         val_dataset, args.data_shape, args.batch_size, args.num_workers)
     classes = val_dataset.classes
+    # network
+    net = gcv.model_zoo.FasterRCNN(20, 'resnet101')
