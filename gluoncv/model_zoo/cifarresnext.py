@@ -57,9 +57,11 @@ class CIFARBlock(HybridBlock):
         self.body.add(nn.Conv2D(group_width, kernel_size=1, use_bias=False,
                                 in_channels=in_channels))
         self.body.add(nn.BatchNorm())
+        self.body.add(nn.Activation('relu'))
         self.body.add(nn.Conv2D(group_width, kernel_size=3, strides=stride, padding=1,
                                 groups=cardinality, use_bias=False))
         self.body.add(nn.BatchNorm())
+        self.body.add(nn.Activation('relu'))
         self.body.add(nn.Conv2D(self.expansion*group_width, kernel_size=1, use_bias=False))
         self.body.add(nn.BatchNorm())
 
@@ -110,11 +112,12 @@ class CIFARResNext(HybridBlock):
             self.features = nn.HybridSequential(prefix='')
             self.features.add(nn.Conv2D(64, 3, 1, 1, use_bias=False))
             self.features.add(nn.BatchNorm())
+            self.body.add(nn.Activation('relu'))
 
             for i, num_layer in enumerate(layers):
                 stride = 1 if i == 0 else 2
                 self.features.add(self._make_layer(num_layer, stride, i+1))
-            self.features.add(nn.GlobalAvgPool2D())
+            self.features.add(nn.AvgPool2D(8))
 
             total_expansion = Block.expansion ** len(layers)
             self.output = nn.Dense(classes,
