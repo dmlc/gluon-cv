@@ -27,7 +27,7 @@ stage("Docs") {
       env
       export LD_LIBRARY_PATH=/usr/local/cuda-8.0/lib64
       cd docs && make clean
-      buildthedocs config.yml
+      buildthedocs config.yml dev
 
       if [[ ${env.BRANCH_NAME} == master ]]; then
           aws s3 sync --delete build/ s3://gluon-cv.mxnet.io/ --acl public-read
