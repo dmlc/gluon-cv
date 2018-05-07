@@ -44,6 +44,7 @@ transform_fn = transforms.Compose([
     transforms.Normalize([0.4914, 0.4822, 0.4465], [0.2023, 0.1994, 0.2010])
 ])
 
+img = transform_fn(img)
 pred = net(img.expand_dims(0))
 
 ind = nd.argmax(pred, axis=1).astype('int')
