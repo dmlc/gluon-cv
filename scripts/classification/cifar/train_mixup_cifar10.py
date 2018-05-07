@@ -205,7 +205,7 @@ def train(epochs, ctx):
 
         if val_acc > best_val_score:
             best_val_score = val_acc
-            net.save_params('%s/%.4f-imagenet-%s-%d-best.params'%(save_dir, best_val_score, model_name, epoch))
+            net.save_params('%s/%.4f-cifar-%s-%d-best.params'%(save_dir, best_val_score, model_name, epoch))
 
         name, val_acc = test(ctx, val_data)
         logging.info('[Epoch %d] train=%f val=%f loss=%f time: %f' %
