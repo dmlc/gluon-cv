@@ -145,6 +145,7 @@ class ResNext(HybridBlock):
         self.bottleneck_width *= 2
         return layer
 
+    # pylint: disable=unused-argument
     def hybrid_forward(self, F, x):
         x = self.features(x)
         x = self.output(x)
