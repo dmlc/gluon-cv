@@ -19,7 +19,7 @@ GluonCV features:
 GluonCV tutorials assume users have basic knowledges about deep learning and
 computer vision.
 Otherwise, please refer to our introductory deep learning course
-`MXNet-the-Streight-Dope <http://gluon.mxnet.io/>`_.
+`MXNet-the-Straight-Dope <http://gluon.mxnet.io/>`_.
 
 .. note::
 

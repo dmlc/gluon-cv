@@ -71,7 +71,7 @@ plt.show()
 #
 # Next, we load a pre-trained model.
 
-net = get_model('cifar_resnet110_v2', classes=10, pretrained=True)
+net = get_model('cifar_resnet56_v2', classes=10, pretrained=True)
 
 ################################################################
 #
@@ -111,7 +111,7 @@ print('The input picture is classified as [%s], with probability %.3f.'%
 #
 # ::
 #
-#     The input picture is classified to be [airplane], with probability 0.857.
+#     The input picture is classified to be [airplane], with probability 0.778.
 #
 # Next Step
 # ---------
