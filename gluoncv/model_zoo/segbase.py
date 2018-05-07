@@ -103,7 +103,7 @@ class SoftmaxCrossEntropyLoss(Loss):
             else:
                 loss = -F.pick(pred, label, axis=self._axis, keepdims=True)
                 loss = F.where(label.expand_dims(axis=self._axis) == self._ignore_label,
-                           F.zeros_like(loss), loss)
+                               F.zeros_like(loss), loss)
         else:
             label = _reshape_like(F, label, pred)
             loss = -F.sum(pred*label, axis=self._axis, keepdims=True)
