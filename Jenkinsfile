@@ -33,13 +33,13 @@ stage("Docs") {
           aws s3 sync build/ s3://gluon-cv.mxnet.io/ --acl public-read
           echo "Uploaded doc to http://gluon-cv.mxnet.io"
       else
-          aws s3 sync build/ s3://gluon-vision-staging/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/dev/ --acl public-read
+          aws s3 sync build/ s3://gluon-vision-staging/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/ --acl public-read
           echo "Uploaded doc to http://gluon-vision-staging.s3-website-us-west-2.amazonaws.com/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/dev/index.html"
       fi
       """
 
       if (env.BRANCH_NAME.startsWith("PR-")) {
-        pullRequest.comment("Job ${env.BRANCH_NAME}-${env.BUILD_NUMBER} is done. \nDocs are uploaded to http://gluon-vision-staging.s3-website-us-west-2.amazonaws.com/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/index.html")
+        pullRequest.comment("Job ${env.BRANCH_NAME}-${env.BUILD_NUMBER} is done. \nDocs are uploaded to http://gluon-vision-staging.s3-website-us-west-2.amazonaws.com/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/dev/index.html")
       }
     }
   }
