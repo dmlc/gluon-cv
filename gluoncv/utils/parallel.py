@@ -93,7 +93,7 @@ class DataParallelCriterion(object):
     def __call__(self, inputs, *targets, **kwargs):
         # the inputs should be the outputs of DataParallelModel
         if not self.ctx_list:
-            return self.module(inputs, *targets, **kwargs)
+            return self.module(*inputs, *targets, **kwargs)
         inputs, _ = split_load_kwargs(inputs, kwargs, self.ctx_list)
         targets, kwargs = split_load_kwargs(targets, kwargs, self.ctx_list)
         assert(len(inputs) == len(self.ctx_list))
