@@ -8,8 +8,10 @@ import mxnet as mx
 from mxnet import nd
 from mxnet import gluon
 from mxnet import autograd
+import gluoncv as gcv
 from gluoncv import data as gdata
 from gluoncv import utils as gutils
+from gluoncv import nn as gnn
 from gluoncv.model_zoo import get_model
 from gluoncv.data.transforms.presets.ssd import SSDDefaultTrainTransform
 from gluoncv.data.transforms.presets.ssd import SSDDefaultValTransform
@@ -130,6 +132,7 @@ def train(net, train_data, val_data, classes, args):
 
     cls_loss = gluon.loss.SoftmaxCrossEntropyLoss()
     box_loss = gluon.loss.HuberLoss()
+    mbox_loss = gcv.loss.SSDMultiBoxLoss()
     acc_metric = Accuracy(axis=-1, ignore_labels=[-1])
     ce_metric = mx.metric.Loss('CrossEntropy')
     smoothl1_metric = mx.metric.Loss('SmoothL1')

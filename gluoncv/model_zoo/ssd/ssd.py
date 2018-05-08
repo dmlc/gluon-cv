@@ -108,9 +108,6 @@ class SSD(HybridBlock):
         self.num_classes = len(classes) + 1
         self.nms_thresh = nms_thresh
         self.nms_topk = nms_topk
-        self.target = set([SSDTargetGenerator(
-            iou_thresh=iou_thresh, neg_thresh=neg_thresh,
-            negative_mining_ratio=negative_mining_ratio, stds=stds)])
 
         with self.name_scope():
             if network is None:
@@ -140,11 +137,7 @@ class SSD(HybridBlock):
     def set_nms(self, nms_thresh=0, nms_topk=-1):
         self.nms_thresh = nms_thresh
         self.nms_topk = nms_topk
-
-    @property
-    def target_generator(self):
-        return list(self.target)[0]
-
+    
     # pylint: disable=arguments-differ
     def hybrid_forward(self, F, x):
         """Hybrid forward"""
