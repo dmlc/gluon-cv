@@ -103,11 +103,11 @@ class SSDMultiBoxLoss(gluon.Block):
         Ratio of negative vs. positive samples.
 
     """
-    def __init__(self, negative_mining_ratio=3, rho=1.0, lambda=1.0, **kwargs):
+    def __init__(self, negative_mining_ratio=3, rho=1.0, lambd=1.0, **kwargs):
         super(SSDMultiBoxLoss, self).__init__(**kwargs)
         self._negative_mining_ratio = max(0, negative_mining_ratio)
-        self._rho = 1.0
-        self._lambda = 1.0
+        self._rho = rho
+        self._lambd = lambd
 
     def forward(self, cls_pred, box_pred, cls_target, box_target):
         # require results across different devices at this time

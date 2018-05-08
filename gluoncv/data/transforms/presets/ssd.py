@@ -5,7 +5,6 @@ import mxnet as mx
 from .. import bbox as tbbox
 from .. import image as timage
 from .. import experimental
-from ....model_zoo.ssd.target import SSDTargetGenerator
 
 __all__ = ['load_test', 'SSDDefaultTrainTransform', 'SSDDefaultValTransform']
 
@@ -94,7 +93,11 @@ class SSDDefaultTrainTransform(object):
         self._anchors = anchors
         self._mean = mean
         self._std = std
+        if anchors is None:
+            return
+
         # since we do not have predictions yet, so we ignore sampling here
+        from ....model_zoo.ssd.target import SSDTargetGenerator
         self._target_generator = SSDTargetGenerator(
             iou_thresh=iou_thresh, stds=stds, negative_mining_ratio=-1, **kwargs)
 
