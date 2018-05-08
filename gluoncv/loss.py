@@ -144,6 +144,6 @@ class SSDMultiBoxLoss(gluon.Block):
             # box loss only apply to positive samples
             box_loss = box_loss * pos.expand_dims(axis=-1)
             box_losses.append(nd.sum(box_loss, axis=0, exclude=True) / num_pos_all)
-            sum_losses.append(cls_losses[-1] + self._lambda * box_losses[-1])
+            sum_losses.append(cls_losses[-1] + self._lambd * box_losses[-1])
 
         return sum_losses, cls_losses, box_losses
