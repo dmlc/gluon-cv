@@ -137,11 +137,11 @@ class SSDDefaultTrainTransform(object):
             return img, bbox.astype('float32')
 
         # generate training target so cpu workers can help reduce the workload on gpu
-        gt_bboxes = bbox.slice_axis(axis=-1, begin=0, end=4)
-        gt_ids = bbox.slice_axis(axis=-1, begin=4, end=5)
+        gt_bboxes = mx.nd.array(bbox[np.newaxis, :, :4])
+        gt_ids = mx.nd.array(bbox[np.newaxis, :, 4:5])
         cls_targets, box_targets, _ = self._target_generator(
             self._anchors, None, gt_bboxes, gt_ids)
-        return img, cls_targets, box_targets
+        return img, cls_targets[0], box_targets[0]
 
 
 class SSDDefaultValTransform(object):
