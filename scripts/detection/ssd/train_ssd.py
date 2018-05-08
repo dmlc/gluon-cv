@@ -128,10 +128,7 @@ def train(net, train_data, val_data, classes, args):
     lr_decay = float(args.lr_decay)
     lr_steps = sorted([float(ls) for ls in args.lr_decay_epoch.split(',') if ls.strip()])
 
-    cls_loss = gluon.loss.SoftmaxCrossEntropyLoss()
-    box_loss = gluon.loss.HuberLoss()
     mbox_loss = gcv.loss.SSDMultiBoxLoss()
-    acc_metric = Accuracy(axis=-1, ignore_labels=[-1])
     ce_metric = mx.metric.Loss('CrossEntropy')
     smoothl1_metric = mx.metric.Loss('SmoothL1')
 
@@ -154,7 +151,6 @@ def train(net, train_data, val_data, classes, args):
             lr_steps.pop(0)
             trainer.set_learning_rate(new_lr)
             logger.info("[Epoch {}] Set learning rate to {}".format(epoch, new_lr))
-        acc_metric.reset()
         ce_metric.reset()
         smoothl1_metric.reset()
         tic = time.time()
@@ -165,14 +161,6 @@ def train(net, train_data, val_data, classes, args):
             data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
             cls_targets = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0)
             box_targets = gluon.utils.split_and_load(batch[2], ctx_list=ctx, batch_axis=0)
-            outputs = []
-            labels = []
-            losses1 = []
-            losses2 = []
-            losses3 = []  # temporary cls loss holder
-            losses4 = []  # temporary box loss holder
-            Ls = []
-            num_positive = []
             with autograd.record():
                 cls_preds = []
                 box_preds = []
@@ -188,20 +176,17 @@ def train(net, train_data, val_data, classes, args):
             trainer.step(1)
             ce_metric.update(0, [l * batch_size for l in cls_loss])
             smoothl1_metric.update(0, [l * batch_size for l in box_loss])
-            # acc_metric.update(labels, outputs)
             if args.log_interval and not (i + 1) % args.log_interval:
                 name1, loss1 = ce_metric.get()
                 name2, loss2 = smoothl1_metric.get()
-                name3, loss3 = acc_metric.get()
-                logger.info('[Epoch %d][Batch %d], Speed: %f samples/sec, %s=%f, %s=%f, %s=%f'%(
-                    epoch, i, batch_size/(time.time()-btic), name1, loss1, name2, loss2, name3, loss3))
+                logger.info('[Epoch %d][Batch %d], Speed: %f samples/sec, %s=%f, %s=%f'%(
+                    epoch, i, batch_size/(time.time()-btic), name1, loss1, name2, loss2))
             btic = time.time()
 
         name1, loss1 = ce_metric.get()
         name2, loss2 = smoothl1_metric.get()
-        name3, loss3 = acc_metric.get()
-        logger.info('[Epoch %d] Training cost: %f, %s=%f, %s=%f, %s=%f'%(
-            epoch, (time.time()-tic), name1, loss1, name2, loss2, name3, loss3))
+        logger.info('[Epoch %d] Training cost: %f, %s=%f, %s=%f'%(
+            epoch, (time.time()-tic), name1, loss1, name2, loss2))
         map_name, mean_ap = validate(net, val_data, ctx, classes)
         val_msg = '\n'.join(['%s=%f'%(k, v) for k, v in zip(map_name, mean_ap)])
         logger.info('[Epoch %d] Validation: \n%s'%(epoch, val_msg))

@@ -95,12 +95,24 @@ def _as_list(arr):
 
 
 class SSDMultiBoxLoss(gluon.Block):
-    """Single-Shot Multibox Object Detection Loss.
+    r"""Single-Shot Multibox Object Detection Loss.
+
+    .. note::
+
+        Since cross device synchronization is required to compute batch-wise statistics,
+        it is slightly sub-optimal compared with non-sync version. However, we find this
+        is better for converged model performance.
 
     Parameters
     ----------
     negative_mining_ratio : float, default is 3
         Ratio of negative vs. positive samples.
+    rho : float, default is 1.0
+        Threshold for trimmed mean estimator. This is the smooth parameter for the
+        L1-L2 transition.
+    lambd : float, default is 1.0
+        Relative weight between classification and box regression loss.
+        The overall loss is computed as :math:`L = loss_{class} + \lambda \times loss_{loc}`.
 
     """
     def __init__(self, negative_mining_ratio=3, rho=1.0, lambd=1.0, **kwargs):
@@ -127,7 +139,7 @@ class SSDMultiBoxLoss(gluon.Block):
         cls_losses = []
         box_losses = []
         sum_losses = []
-        for cp, bp, ct, bt, n in zip(*[cls_pred, box_pred, cls_target, box_target, num_pos]):
+        for cp, bp, ct, bt in zip(*[cls_pred, box_pred, cls_target, box_target]):
             pred = nd.log_softmax(cp, axis=-1)
             pos = ct > 0
             cls_loss = -nd.pick(pred, ct, axis=-1, keepdims=False)

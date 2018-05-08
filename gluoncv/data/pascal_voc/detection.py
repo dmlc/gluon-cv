@@ -43,7 +43,7 @@ class VOCDetection(VisionDataset):
     CLASSES = ('aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car',
                'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse', 'motorbike',
                'person', 'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor')
-    
+
     def __init__(self, root=os.path.join('~', '.mxnet', 'datasets', 'voc'),
                  splits=((2007, 'trainval'), (2012, 'trainval')),
                  transform=None, index_map=None, preload_label=True):

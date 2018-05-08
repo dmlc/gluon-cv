@@ -82,12 +82,13 @@ class SSDDefaultTrainTransform(object):
         Standard deviation to be divided from image. Default is [0.229, 0.224, 0.225].
     iou_thresh : float
         IOU overlap threshold for maximum matching, default is 0.5.
-    stds : array-like of size 4, default is (0.1, 0.1, 0.2, 0.2)
+    box_norm : array-like of size 4, default is (0.1, 0.1, 0.2, 0.2)
         Std value to be divided from encoded values.
 
     """
-    def __init__(self, width, height, anchors=None, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225),
-                 iou_thresh=0.5, stds=(0.1, 0.1, 0.2, 0.2), **kwargs):
+    def __init__(self, width, height, anchors=None, mean=(0.485, 0.456, 0.406),
+                 std=(0.229, 0.224, 0.225), iou_thresh=0.5, box_norm=(0.1, 0.1, 0.2, 0.2),
+                 **kwargs):
         self._width = width
         self._height = height
         self._anchors = anchors
@@ -99,7 +100,7 @@ class SSDDefaultTrainTransform(object):
         # since we do not have predictions yet, so we ignore sampling here
         from ....model_zoo.ssd.target import SSDTargetGenerator
         self._target_generator = SSDTargetGenerator(
-            iou_thresh=iou_thresh, stds=stds, negative_mining_ratio=-1, **kwargs)
+            iou_thresh=iou_thresh, stds=box_norm, negative_mining_ratio=-1, **kwargs)
 
     def __call__(self, src, label):
         # random color jittering
