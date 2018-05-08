@@ -139,7 +139,7 @@ class ResNext(HybridBlock):
             self.output = nn.Dense(classes,
                                    in_units=cardinality*bottleneck_width*total_expansion)
 
-    def _make_layer(self, num_layers, stride, use_se, stage_index, use_se):
+    def _make_layer(self, num_layers, stride, use_se, stage_index):
         layer = nn.HybridSequential(prefix='stage%d_'%stage_index)
         channels = Block.expansion * self.cardinality * self.bottleneck_width
         downsample = self.in_channels != channels
