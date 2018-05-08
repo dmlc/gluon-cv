@@ -112,14 +112,14 @@ class CIFARResNext(HybridBlock):
             self.features = nn.HybridSequential(prefix='')
             self.features.add(nn.Conv2D(64, 3, 1, 1, use_bias=False))
             self.features.add(nn.BatchNorm())
-            self.body.add(nn.Activation('relu'))
+            self.features.add(nn.Activation('relu'))
 
             for i, num_layer in enumerate(layers):
                 stride = 1 if i == 0 else 2
                 self.features.add(self._make_layer(num_layer, stride, i+1))
             self.features.add(nn.AvgPool2D(8))
 
-            total_expansion = Block.expansion ** len(layers)
+            total_expansion = CIFARBlock.expansion ** len(layers)
             self.output = nn.Dense(classes,
                                    in_units=cardinality*bottleneck_width*total_expansion)
 
