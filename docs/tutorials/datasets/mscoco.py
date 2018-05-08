@@ -71,7 +71,7 @@ print('Num of validation images:', len(val_dataset))
 ################################################################
 # Now let's visualize one example.
 
-train_image, train_label = train_dataset[25]
+train_image, train_label = train_dataset[0]
 bounding_boxes = train_label[:, :4]
 class_ids = train_label[:, 4:5]
 print('Image size (height, width, RGB):', train_image.shape)
