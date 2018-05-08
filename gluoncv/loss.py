@@ -122,6 +122,7 @@ class SSDMultiBoxLoss(gluon.Block):
         self._lambd = lambd
 
     def forward(self, cls_pred, box_pred, cls_target, box_target):
+        """Compute loss in entire batch across devices."""
         # require results across different devices at this time
         cls_pred, box_pred, cls_target, box_target = [_as_list(x) \
             for x in (cls_pred, box_pred, cls_target, box_target)]

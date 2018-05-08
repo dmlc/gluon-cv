@@ -39,6 +39,7 @@ class SSDTargetGenerator(Block):
 
     # pylint: disable=arguments-differ
     def forward(self, anchors, cls_preds, gt_boxes, gt_ids):
+        """Generate training targets."""
         anchors = self._center_to_corner(anchors.reshape((-1, 4)))
         ious = nd.transpose(nd.contrib.box_iou(anchors, gt_boxes), (1, 0, 2))
         matches = self._matcher(ious)
