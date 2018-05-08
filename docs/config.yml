@@ -1,0 +1,20 @@
+versions:
+  - name: "dev"
+    source:
+      provider: git
+      url: https://github.com/dmlc/gluon-cv
+      checkout: master
+    directory: docs
+    title: GluonCV Development
+    notice: unstable
+    warning: This documentation is for the in-development and unstable version of gluoncv!
+
+  - name: "0.1"
+    source:
+      provider: git
+      url: https://github.com/dmlc/gluon-cv
+      checkout: "v0.1"
+    directory: docs
+    title: GluonCV 0.1
+    notice: null
+    warning: null
