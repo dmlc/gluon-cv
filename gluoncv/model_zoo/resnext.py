@@ -88,7 +88,7 @@ class Block(HybridBlock):
 
         x = self.body(x)
 
-        if self.use_se:
+        if self.se:
             w = self.se(x)
             x = x*w
 
