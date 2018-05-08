@@ -61,13 +61,16 @@ conf_loss = gluon.loss.SoftmaxCrossEntropyLoss()
 loc_loss = gluon.loss.HuberLoss()
 
 ############################################################################
-# Simulate the training steps:
+# Simulate the training steps by manually compute losses:
+# You can always use ``gluoncv.loss.SSDMultiBoxLoss`` which fulfills this function.
 from mxnet import autograd
+from gluoncv.model_zoo.ssd.target import SSDTargetGenerator
+target_generator = SSDTargetGenerator()
 with autograd.record():
     # 1. forward pass
     cls_preds, box_preds, anchors = net(x)
     # 2. generate training targets
-    cls_targets, box_targets, box_masks = net.target_generator(
+    cls_targets, box_targets, box_masks = target_generator(
         anchors, cls_preds, gt_boxes, gt_ids)
     num_positive = (cls_targets > 0).sum().asscalar()
     cls_mask = (cls_targets >= 0).expand_dims(axis=-1)  # negative targets should be ignored in loss
