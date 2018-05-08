@@ -137,13 +137,13 @@ We apply dilattion strategy to pre-trained ResNet models (with stride of 8). Ple
 .. autofunction:: dilated_resnet152
 
 
-Common Components
------------------
+Neural Networks
+---------------
 
 :hidden:`Bounding Box`
 ~~~~~~~~~~~~~~~~~~~~~~
 
-.. currentmodule:: gluoncv.model_zoo.bbox
+.. currentmodule:: gluoncv.nn.bbox
 
 .. autoclass:: BBoxCornerToCenter
     :members:
@@ -154,7 +154,7 @@ Common Components
 :hidden:`Coders`
 ~~~~~~~~~~~~~~~~~~~~~~
 
-.. currentmodule:: gluoncv.model_zoo.coders
+.. currentmodule:: gluoncv.nn.coder
 
 .. autoclass:: NormalizedBoxCenterEncoder
     :members:
@@ -175,7 +175,7 @@ Common Components
 :hidden:`Features`
 ~~~~~~~~~~~~~~~~~~~~~~
 
-.. currentmodule:: gluoncv.model_zoo.features
+.. currentmodule:: gluoncv.nn.feature
 
 .. autoclass:: FeatureExtractor
     :members:
@@ -186,7 +186,7 @@ Common Components
 :hidden:`Losses`
 ~~~~~~~~~~~~~~~~~~~~~~
 
-.. currentmodule:: gluoncv.model_zoo.losses
+.. currentmodule:: gluoncv.loss
 
 .. autoclass:: FocalLoss
     :members:
@@ -195,7 +195,7 @@ Common Components
 :hidden:`Matchers`
 ~~~~~~~~~~~~~~~~~~~~~~
 
-.. currentmodule:: gluoncv.model_zoo.matchers
+.. currentmodule:: gluoncv.utils.nn.matcher
 
 .. autoclass:: CompositeMatcher
     :members:
@@ -209,7 +209,7 @@ Common Components
 :hidden:`Predictors`
 ~~~~~~~~~~~~~~~~~~~~~~
 
-.. currentmodule:: gluoncv.model_zoo.predictors
+.. currentmodule:: gluoncv.model_zoo.nn.predictor
 
 .. autoclass:: ConvPredictor
     :members:
@@ -220,7 +220,7 @@ Common Components
 :hidden:`Samplers`
 ~~~~~~~~~~~~~~~~~~~~~~
 
-.. currentmodule:: gluoncv.model_zoo.samplers
+.. currentmodule:: gluoncv.utils.nn.sampler
 
 .. autoclass:: NaiveSampler
     :members:

@@ -192,5 +192,5 @@ for k, v in zip(['bg', 'apple', 'orange', 'person', 'dog', 'cat'], cls_prob.asnu
 # This may or may not be a problem depending on the use case, but feel free to switch between them if you want.
 #
 # .. hint::
-#   Checkout :py:meth:`gluoncv.model_zoo.coders.MultiClassDecoder` and
-#   :py:meth:`gluoncv.model_zoo.coders.MultiPerClassDecoder` for implementions of method 1 and 2, respectively.
+#   Checkout :py:meth:`gluoncv.nn.coder.MultiClassDecoder` and
+#   :py:meth:`gluoncv.nn.coder.MultiPerClassDecoder` for implementions of method 1 and 2, respectively.

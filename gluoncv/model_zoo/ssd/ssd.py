@@ -6,10 +6,10 @@ import mxnet as mx
 from mxnet import autograd
 from mxnet.gluon import nn
 from mxnet.gluon import HybridBlock
-from ..features import FeatureExpander
+from ...nn.feature import FeatureExpander
 from .anchor import SSDAnchorGenerator
-from ..predictors import ConvPredictor
-from ..coders import MultiPerClassDecoder, NormalizedBoxCenterDecoder
+from ...nn.predictor import ConvPredictor
+from ...nn.coder import MultiPerClassDecoder, NormalizedBoxCenterDecoder
 from .target import SSDTargetGenerator
 from .vgg_atrous import vgg16_atrous_300, vgg16_atrous_512
 # from ...utils import set_lr_mult

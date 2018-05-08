@@ -3,10 +3,10 @@ from __future__ import absolute_import
 
 from mxnet import nd
 from mxnet.gluon import Block
-from ..matchers import CompositeMatcher, BipartiteMatcher, MaximumMatcher
-from ..samplers import OHEMSampler
-from ..coders import MultiClassEncoder, NormalizedBoxCenterEncoder
-from ..bbox import BBoxCenterToCorner
+from ...utils.nn.matcher import CompositeMatcher, BipartiteMatcher, MaximumMatcher
+from ...utils.nn.sampler import OHEMSampler, NaiveSampler
+from ...nn.coder import MultiClassEncoder, NormalizedBoxCenterEncoder
+from ...nn.bbox import BBoxCenterToCorner
 
 
 class SSDTargetGenerator(Block):
@@ -27,7 +27,12 @@ class SSDTargetGenerator(Block):
                  stds=(0.1, 0.1, 0.2, 0.2), **kwargs):
         super(SSDTargetGenerator, self).__init__(**kwargs)
         self._matcher = CompositeMatcher([BipartiteMatcher(), MaximumMatcher(iou_thresh)])
-        self._sampler = OHEMSampler(negative_mining_ratio, thresh=neg_thresh)
+        if negative_mining_ratio > 0:
+            self._sampler = OHEMSampler(negative_mining_ratio, thresh=neg_thresh)
+            self._use_negative_sampling = True
+        else:
+            self._sampler = NaiveSampler()
+            self._use_negative_sampling = False
         self._cls_encoder = MultiClassEncoder()
         self._box_encoder = NormalizedBoxCenterEncoder(stds=stds)
         self._center_to_corner = BBoxCenterToCorner(split=False)
@@ -37,7 +42,10 @@ class SSDTargetGenerator(Block):
         anchors = self._center_to_corner(anchors.reshape((-1, 4)))
         ious = nd.transpose(nd.contrib.box_iou(anchors, gt_boxes), (1, 0, 2))
         matches = self._matcher(ious)
-        samples = self._sampler(matches, cls_preds, ious)
+        if self._use_negative_sampling:
+            samples = self._sampler(matches, cls_preds, ious)
+        else:
+            samples = self._sampler(matches)
         cls_targets = self._cls_encoder(samples, matches, gt_ids)
         box_targets, box_masks = self._box_encoder(samples, matches, anchors, gt_boxes)
         return cls_targets, box_targets, box_masks
