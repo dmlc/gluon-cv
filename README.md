@@ -1,11 +1,11 @@
 # Gluon CV Toolkit
 
-[![Build Status](http://ci.mxnet.io/job/gluon-vision/job/master/badge/icon)](http://ci.mxnet.io/job/gluon-vision/job/master/)
+[![Build Status](http://ci.mxnet.io/job/gluon-cv/job/master/badge/icon)](http://ci.mxnet.io/job/gluon-vision/job/master/)
 [![GitHub license](http://dmlc.github.io/img/apache2.svg)](./LICENSE)
 
 | [Installation](http://gluon-cv.mxnet.io) | [Documentation](http://gluon-cv.mxnet.io) | [Tutorials](http://gluon-cv.mxnet.io) |
 
-GluonCV provides implementations of the sate-of-the-art (SOTA) deep learning models in computer vision.
+GluonCV provides implementations of the state-of-the-art (SOTA) deep learning models in computer vision.
 
 It is designed for engineers, researchers, and
 students to fast prototype products and research ideas based on these

@@ -13,6 +13,7 @@ from mxnet.gluon.data.vision import transforms
 
 from gluoncv.model_zoo import get_model
 from gluoncv.utils import makedirs, TrainingHistory
+from gluoncv.data import transforms as gcv_transforms
 
 # CLI
 parser = argparse.ArgumentParser(description='Train a model for image classification.')
@@ -88,17 +89,13 @@ logging.basicConfig(level=logging.INFO)
 logging.info(opt)
 
 transform_train = transforms.Compose([
-    transforms.Resize(32),
-    transforms.RandomResizedCrop(32),
+    gcv_transforms.RandomCrop(32, pad=4),
     transforms.RandomFlipLeftRight(),
-    transforms.RandomColorJitter(brightness=0.1, contrast=0.1, saturation=0.1),
-    transforms.RandomLighting(0.1),
     transforms.ToTensor(),
     transforms.Normalize([0.4914, 0.4822, 0.4465], [0.2023, 0.1994, 0.2010])
 ])
 
 transform_test = transforms.Compose([
-    transforms.Resize(32),
     transforms.ToTensor(),
     transforms.Normalize([0.4914, 0.4822, 0.4465], [0.2023, 0.1994, 0.2010])
 ])
@@ -135,7 +132,7 @@ def train(epochs, ctx):
     iteration = 0
     lr_decay_count = 0
 
-    best_val_score = 1
+    best_val_score = 0
 
     for epoch in range(epochs):
         tic = time.time()
@@ -171,9 +168,9 @@ def train(epochs, ctx):
         train_history.update([1-acc, 1-val_acc])
         train_history.plot(save_path='%s/%s_history.png'%(plot_path, model_name))
 
-        if val_acc > best_val_score and epoch > 50:
+        if val_acc > best_val_score:
             best_val_score = val_acc
-            net.save_params('%s/%.4f-imagenet-%s-%d-best.params'%(save_dir, best_val_score, model_name, epoch))
+            net.save_params('%s/%.4f-cifar-%s-%d-best.params'%(save_dir, best_val_score, model_name, epoch))
 
         name, val_acc = test(ctx, val_data)
         logging.info('[Epoch %d] train=%f val=%f loss=%f time: %f' %

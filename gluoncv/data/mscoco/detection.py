@@ -2,8 +2,6 @@
 from __future__ import absolute_import
 from __future__ import division
 import os
-import copy
-import logging
 import numpy as np
 import mxnet as mx
 from .utils import try_import_pycocotools
@@ -47,11 +45,12 @@ class COCODetection(VisionDataset):
                'laptop', 'mouse', 'remote', 'keyboard', 'cell phone', 'microwave',
                'oven', 'toaster', 'sink', 'refrigerator', 'book', 'clock', 'vase',
                'scissors', 'teddy bear', 'hair drier', 'toothbrush']
-    
+
     def __init__(self, root=os.path.join('~', '.mxnet', 'datasets', 'coco'),
-                 splits=('instances_val2017',), min_object_area=0):
+                 splits=('instances_val2017',), transform=None, min_object_area=0):
         super(COCODetection, self).__init__(root)
         self._root = os.path.expanduser(root)
+        self._transform = transform
         self._min_object_area = min_object_area
         splits = [splits] if isinstance(splits, str) else splits
         self._splits = splits
@@ -79,7 +78,7 @@ class COCODetection(VisionDataset):
         img = mx.image.imread(img_path, 1)
         if self._transform is not None:
             return self._transform(img, label)
-        return img, label
+        return img, np.array(label)
 
     def _load_jsons(self):
         """Load all image paths and labels from JSON annotation files into buffer."""
@@ -96,7 +95,7 @@ class COCODetection(VisionDataset):
                 raise ValueError("Incompatible category names with COCO: ")
             assert classes == self.classes
             json_id_to_contiguous = {
-                v: k + 1 for k, v in enumerate(_coco.getCatIds())}
+                v: k for k, v in enumerate(_coco.getCatIds())}
             if self._json_id_to_contiguous is None:
                 self._json_id_to_contiguous = json_id_to_contiguous
                 self._json_id_from_contiguous = {
@@ -107,8 +106,8 @@ class COCODetection(VisionDataset):
             # iterate through the annotations
             image_ids = sorted(_coco.getImgIds())
             for entry in _coco.loadImgs(image_ids):
-                dir, filename = entry['coco_url'].split('/')[-2:]
-                abs_path = os.path.join(self._root, dir, filename)
+                dirname, filename = entry['coco_url'].split('/')[-2:]
+                abs_path = os.path.join(self._root, dirname, filename)
                 if not os.path.exists(abs_path):
                     raise IOError('Image: {} not exists.'.format(abs_path))
                 items.append(abs_path)

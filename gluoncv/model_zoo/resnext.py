@@ -1,0 +1,233 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+# coding: utf-8
+# pylint: disable= arguments-differ
+"""ResNext, implemented in Gluon."""
+from __future__ import division
+
+__all__ = ['ResNext', 'Block', 'get_resnext', 'resnext50_32x4d', 'resnext101_32x4d']
+
+import os
+from mxnet import cpu
+from mxnet.gluon import nn
+from mxnet.gluon.block import HybridBlock
+
+# Helpers
+
+class Block(HybridBlock):
+    r"""Bottleneck Block from `"Aggregated Residual Transformations for Deep Neural Network"
+    <http://arxiv.org/abs/1611.05431>`_ paper.
+
+    Parameters
+    ----------
+    cardinality: int
+        Number of groups
+    bottleneck_width: int
+        Width of bottleneck block
+    stride : int
+        Stride size.
+    downsample : bool, default False
+        Whether to downsample the input.
+    in_channels : int, default 0
+        Number of input channels. Default is 0, to infer from the graph.
+    """
+    expansion = 2
+
+    def __init__(self, cardinality, bottleneck_width,
+                 stride, downsample=False, in_channels=0, **kwargs):
+        super(Block, self).__init__(**kwargs)
+        group_width = cardinality * bottleneck_width
+
+        self.body = nn.HybridSequential(prefix='')
+        self.body.add(nn.Conv2D(group_width, kernel_size=1, use_bias=False,
+                                in_channels=in_channels))
+        self.body.add(nn.BatchNorm())
+        self.body.add(nn.Activation('relu'))
+        self.body.add(nn.Conv2D(group_width, kernel_size=3, strides=stride, padding=1,
+                                use_bias=False))
+        self.body.add(nn.BatchNorm())
+        self.body.add(nn.Activation('relu'))
+        self.body.add(nn.Conv2D(self.expansion*group_width, kernel_size=1, use_bias=False))
+        self.body.add(nn.BatchNorm())
+        if downsample:
+            self.downsample = nn.HybridSequential(prefix='')
+            self.downsample.add(nn.Conv2D(self.expansion*group_width, kernel_size=1, strides=stride,
+                                          use_bias=False, in_channels=in_channels))
+            self.downsample.add(nn.BatchNorm())
+        else:
+            self.downsample = None
+
+    def hybrid_forward(self, F, x):
+        residual = x
+
+        x = self.body(x)
+
+        if self.downsample:
+            residual = self.downsample(residual)
+
+        x = F.Activation(x + residual, act_type='relu')
+        return x
+
+
+# Nets
+class ResNext(HybridBlock):
+    r"""ResNext model from
+    `"Aggregated Residual Transformations for Deep Neural Network"
+    <http://arxiv.org/abs/1611.05431>`_ paper.
+
+    Parameters
+    ----------
+    layers : list of int
+        Numbers of layers in each block
+    cardinality: int
+        Number of groups
+    bottleneck_width: int
+        Width of bottleneck block
+    classes : int, default 1000
+        Number of classification classes.
+    thumbnail : bool, default False
+        Enable thumbnail.
+    """
+    def __init__(self, layers, cardinality, bottleneck_width,
+                 classes=1000, thumbnail=False, **kwargs):
+        super(ResNext, self).__init__(**kwargs)
+        self.cardinality = cardinality
+        self.bottleneck_width = bottleneck_width
+        self.in_channels = 64
+
+        with self.name_scope():
+            self.features = nn.HybridSequential(prefix='')
+            if thumbnail:
+                self.features.add(_conv3x3(64, 1, 0))
+            else:
+                self.features.add(nn.Conv2D(64, 7, 2, 3, use_bias=False))
+                self.features.add(nn.BatchNorm())
+                self.features.add(nn.Activation('relu'))
+                self.features.add(nn.MaxPool2D(3, 2, 1))
+
+            for i, num_layer in enumerate(layers):
+                stride = 1 if i == 0 else 2
+                self.features.add(self._make_layer(num_layer, stride, i+1))
+            self.features.add(nn.AvgPool2D(7))
+
+            total_expansion = Block.expansion ** len(layers)
+            self.output = nn.Dense(classes,
+                                   in_units=cardinality*bottleneck_width*total_expansion)
+
+    def _make_layer(self, num_layers, stride, stage_index):
+        layer = nn.HybridSequential(prefix='stage%d_'%stage_index)
+        channels = Block.expansion * self.cardinality * self.bottleneck_width
+        downsample = self.in_channels != channels
+        with layer.name_scope():
+            layer.add(Block(self.cardinality, self.bottleneck_width,
+                            stride, downsample or stride != 1,
+                            in_channels=self.in_channels, prefix=''))
+            for _ in range(num_layers-1):
+                layer.add(Block(self.cardinality, self.bottleneck_width,
+                                1, False, in_channels=channels, prefix=''))
+
+        self.in_channels = channels
+        self.bottleneck_width *= 2
+        return layer
+
+    # pylint: disable=unused-argument
+    def hybrid_forward(self, F, x):
+        x = self.features(x)
+        x = self.output(x)
+
+        return x
+
+
+# Specification
+resnext_spec = {50: [3, 4, 6, 3],
+                101: [3, 4, 23, 3]}
+
+
+# Constructor
+def get_resnext(num_layers, cardinality=32, bottleneck_width=4,
+                pretrained=False, ctx=cpu(),
+                root=os.path.join('~', '.mxnet', 'models'), **kwargs):
+    r"""ResNext model from `"Aggregated Residual Transformations for Deep Neural Network"
+    <http://arxiv.org/abs/1611.05431>`_ paper.
+
+    Parameters
+    ----------
+    num_layers : int
+        Numbers of layers. Options are 50, 101.
+    cardinality: int
+        Number of groups
+    bottleneck_width: int
+        Width of bottleneck block
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+    """
+    assert num_layers in resnext_spec, \
+        "Invalid number of layers: %d. Options are %s"%(
+            num_layers, str(resnext_spec.keys()))
+    layers = resnext_spec[num_layers]
+    net = ResNext(layers, cardinality, bottleneck_width, **kwargs)
+    if pretrained:
+        from ..model_store import get_model_file
+        net.load_params(get_model_file('resnext%d_%dx%d'%(num_layers, cardinality,
+                                                          bottleneck_width),
+                                       root=root), ctx=ctx)
+    return net
+
+def resnext50_32x4d(**kwargs):
+    r"""ResNext50 32x4d model from
+    `"Aggregated Residual Transformations for Deep Neural Network"
+    <http://arxiv.org/abs/1611.05431>`_ paper.
+
+    Parameters
+    ----------
+    cardinality: int
+        Number of groups
+    bottleneck_width: int
+        Width of bottleneck block
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+    """
+    return get_resnext(50, 32, 4, **kwargs)
+
+def resnext101_32x4d(**kwargs):
+    r"""ResNext101 32x4d model from
+    `"Aggregated Residual Transformations for Deep Neural Network"
+    <http://arxiv.org/abs/1611.05431>`_ paper.
+
+    Parameters
+    ----------
+    cardinality: int
+        Number of groups
+    bottleneck_width: int
+        Width of bottleneck block
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+    """
+    return get_resnext(101, 32, 4, **kwargs)

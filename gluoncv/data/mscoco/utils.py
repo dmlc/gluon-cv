@@ -11,7 +11,7 @@ def try_import_pycocotools():
     """Tricks to optinally install and import pycocotools"""
     # first we can try import pycocotools
     try:
-        import pycocotools
+        import pycocotools as _
     except ImportError:
         import os
         # we need to install pycootools, which is a bit tricky

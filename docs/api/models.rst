@@ -82,59 +82,32 @@ Semantic Segmentation
 
 .. autofunction:: get_fcn_voc_resnet101
 
-Dilated Network
----------------
+.. autofunction:: get_fcn_ade_resnet50
+
+
+:hidden:`ResNetV1b`
+-------------------
 
 We apply dilattion strategy to pre-trained ResNet models (with stride of 8). Please see :class:`gluoncv.model_zoo.SegBaseModel` for how to use it.
 
+.. currentmodule:: gluoncv.model_zoo.resnetv1b
 
-:hidden:`DilatedResNetV0`
-~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. currentmodule:: gluoncv.model_zoo.dilated.dilatedresnetv0
-
-.. autoclass:: DilatedResNetV0
+.. autoclass:: ResNetV1b
     :members:
 
-.. autofunction:: dilated_resnet18
+.. autofunction:: resnet18_v1b
 
 
-.. autofunction:: dilated_resnet34
+.. autofunction:: resnet34_v1b
 
 
-.. autofunction:: dilated_resnet50
+.. autofunction:: resnet50_v1b
 
 
-.. autofunction:: dilated_resnet101
+.. autofunction:: resnet101_v1b
 
 
-.. autofunction:: dilated_resnet152
-
-
-:hidden:`DilatedResNetV2`
-~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. currentmodule:: gluoncv.model_zoo.dilated.dilatedresnetv2
-
-.. autoclass:: DilatedResNetV2
-    :members:
-
-.. autofunction:: get_dilated_resnet
-
-
-.. autofunction:: dilated_resnet18
-
-
-.. autofunction:: dilated_resnet34
-
-
-.. autofunction:: dilated_resnet50
-
-
-.. autofunction:: dilated_resnet101
-
-
-.. autofunction:: dilated_resnet152
+.. autofunction:: resnet152_v1b
 
 
 Neural Networks

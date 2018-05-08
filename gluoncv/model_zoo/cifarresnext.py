@@ -1,0 +1,221 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+# coding: utf-8
+# pylint: disable= arguments-differ,unused-argument
+"""ResNets, implemented in Gluon."""
+from __future__ import division
+
+__all__ = ['get_cifar_resnext', 'cifar_resnext29_32x4d', 'cifar_resnext29_16x64d']
+
+import os
+from mxnet import cpu
+from mxnet.gluon import nn
+from mxnet.gluon.block import HybridBlock
+
+
+# Blocks
+class CIFARBlock(HybridBlock):
+    r"""Bottleneck Block from `"Aggregated Residual Transformations for Deep Neural Networks"
+    <http://arxiv.org/abs/1611.05431>`_ paper.
+
+    Parameters
+    ----------
+    cardinality: int
+        Number of groups
+    bottleneck_width: int
+        Width of bottleneck block
+    stride : int
+        Stride size.
+    downsample : bool, default False
+        Whether to downsample the input.
+    in_channels : int, default 0
+        Number of input channels. Default is 0, to infer from the graph.
+    """
+    expansion = 2
+
+    def __init__(self, cardinality, bottleneck_width,
+                 stride, downsample=False, in_channels=0, **kwargs):
+        super(CIFARBlock, self).__init__(**kwargs)
+        group_width = cardinality * bottleneck_width
+
+        self.body = nn.HybridSequential(prefix='')
+        self.body.add(nn.Conv2D(group_width, kernel_size=1, use_bias=False,
+                                in_channels=in_channels))
+        self.body.add(nn.BatchNorm())
+        self.body.add(nn.Activation('relu'))
+        self.body.add(nn.Conv2D(group_width, kernel_size=3, strides=stride, padding=1,
+                                groups=cardinality, use_bias=False))
+        self.body.add(nn.BatchNorm())
+        self.body.add(nn.Activation('relu'))
+        self.body.add(nn.Conv2D(self.expansion*group_width, kernel_size=1, use_bias=False))
+        self.body.add(nn.BatchNorm())
+
+        if downsample:
+            self.downsample = nn.HybridSequential(prefix='')
+            self.downsample.add(nn.Conv2D(self.expansion*group_width, kernel_size=1, strides=stride,
+                                          use_bias=False, in_channels=in_channels))
+            self.downsample.add(nn.BatchNorm())
+        else:
+            self.downsample = None
+
+    def hybrid_forward(self, F, x):
+        """Hybrid forward"""
+        residual = x
+
+        x = self.body(x)
+
+        if self.downsample:
+            residual = self.downsample(residual)
+
+        x = F.Activation(residual+x, act_type='relu')
+
+        return x
+
+# Nets
+class CIFARResNext(HybridBlock):
+    r"""ResNext model from `"Aggregated Residual Transformations for Deep Neural Networks"
+    <http://arxiv.org/abs/1611.05431>`_ paper.
+
+    Parameters
+    ----------
+    layers : list of int
+        Numbers of layers in each block
+    cardinality: int
+        Number of groups
+    bottleneck_width: int
+        Width of bottleneck block
+    classes : int, default 10
+        Number of classification classes.
+    """
+    def __init__(self, layers, cardinality, bottleneck_width, classes=10, **kwargs):
+        super(CIFARResNext, self).__init__(**kwargs)
+        self.cardinality = cardinality
+        self.bottleneck_width = bottleneck_width
+        self.in_channels = 64
+
+        with self.name_scope():
+            self.features = nn.HybridSequential(prefix='')
+            self.features.add(nn.Conv2D(64, 3, 1, 1, use_bias=False))
+            self.features.add(nn.BatchNorm())
+            self.body.add(nn.Activation('relu'))
+
+            for i, num_layer in enumerate(layers):
+                stride = 1 if i == 0 else 2
+                self.features.add(self._make_layer(num_layer, stride, i+1))
+            self.features.add(nn.AvgPool2D(8))
+
+            total_expansion = Block.expansion ** len(layers)
+            self.output = nn.Dense(classes,
+                                   in_units=cardinality*bottleneck_width*total_expansion)
+
+    def _make_layer(self, num_layer, stride, stage_index):
+        layer = nn.HybridSequential(prefix='stage%d_'%stage_index)
+        channels = CIFARBlock.expansion * self.cardinality * self.bottleneck_width
+        downsample = self.in_channels != channels
+        with layer.name_scope():
+            layer.add(CIFARBlock(self.cardinality, self.bottleneck_width,
+                                 stride, downsample or stride != 1,
+                                 in_channels=self.in_channels, prefix=''))
+            for _ in range(num_layer-1):
+                layer.add(CIFARBlock(self.cardinality, self.bottleneck_width,
+                                     1, False, in_channels=channels, prefix=''))
+
+        self.in_channels = channels
+        self.bottleneck_width *= 2
+        return layer
+
+    def hybrid_forward(self, F, x):
+        x = self.features(x)
+        x = self.output(x)
+
+        return x
+
+
+# Constructor
+def get_cifar_resnext(num_layers, cardinality=16, bottleneck_width=64,
+                      pretrained=False, ctx=cpu(),
+                      root=os.path.join('~', '.mxnet', 'models'), **kwargs):
+    r"""ResNext model from `"Aggregated Residual Transformations for Deep Neural Networks"
+    <http://arxiv.org/abs/1611.05431>`_ paper.
+
+    Parameters
+    ----------
+    num_layers : int
+        Numbers of layers. Needs to be an integer in the form of 9*n+2, e.g. 29
+    cardinality: int
+        Number of groups
+    bottleneck_width: int
+        Width of bottleneck block
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+    """
+    assert (num_layers - 2) % 9 == 0
+    layer = (num_layers - 2) // 9
+    layers = [layer] * 3
+    net = CIFARResNext(layers, cardinality, bottleneck_width, **kwargs)
+    if pretrained:
+        from .model_store import get_model_file
+        net.load_params(get_model_file('cifar_resnext%d_%dx%d'%(num_layers, cardinality,
+                                                                bottleneck_width),
+                                       root=root), ctx=ctx)
+    return net
+
+def cifar_resnext29_32x4d(**kwargs):
+    r"""ResNext-29 32x4d model from `"Aggregated Residual Transformations for Deep Neural Networks"
+    <http://arxiv.org/abs/1611.05431>`_ paper.
+
+    Parameters
+    ----------
+    num_layers : int
+        Numbers of layers. Needs to be an integer in the form of 9*n+2, e.g. 29
+    cardinality: int
+        Number of groups
+    bottleneck_width: int
+        Width of bottleneck block
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+    """
+    return get_cifar_resnext(29, 32, 4, **kwargs)
+
+def cifar_resnext29_16x64d(**kwargs):
+    r"""ResNext-29 16x64d model from `"Aggregated Residual Transformations for Deep Neural Networks"
+    <http://arxiv.org/abs/1611.05431>`_ paper.
+
+    Parameters
+    ----------
+    cardinality: int
+        Number of groups
+    bottleneck_width: int
+        Width of bottleneck block
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+    """
+
+    return get_cifar_resnext(29, 16, 64, **kwargs)

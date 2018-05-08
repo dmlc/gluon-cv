@@ -17,7 +17,7 @@ ctx = mx.cpu(0)
 # -----------------
 #
 # download the example image
-url = 'https://raw.githubusercontent.com/zhanghang1989/gluon-vision-figures/master/voc_examples/1.jpg'
+url = 'https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/segmentation/voc_examples/1.jpg'
 filename = 'example.jpg'
 gluoncv.utils.download(url, filename)
 
@@ -43,7 +43,7 @@ img = img.expand_dims(0).as_in_context(ctx)
 # ----------------------------------------------
 #
 # get pre-trained model
-model = gluoncv.model_zoo.get_model('fcn_resnet101_voc', pretrained=True)
+model = gluoncv.model_zoo.get_model('fcn_resnet50_voc', pretrained=True)
 
 ##############################################################################
 # make prediction using single scale
@@ -67,20 +67,20 @@ plt.show()
 # More Examples
 # -------------
 #
-#.. image:: https://raw.githubusercontent.com/zhanghang1989/gluon-vision-figures/master/voc_examples/4.jpg
+#.. image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/segmentation/voc_examples/4.jpg
 #    :width: 45%
 #
-#.. image:: https://raw.githubusercontent.com/zhanghang1989/gluon-vision-figures/master/voc_examples/4.png
+#.. image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/segmentation/voc_examples/4.png
 #    :width: 45%
 #
-#.. image:: https://raw.githubusercontent.com/zhanghang1989/gluon-vision-figures/master/voc_examples/5.jpg
+#.. image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/segmentation/voc_examples/5.jpg
 #    :width: 45%
 #
-#.. image:: https://raw.githubusercontent.com/zhanghang1989/gluon-vision-figures/master/voc_examples/5.png
+#.. image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/segmentation/voc_examples/5.png
 #    :width: 45%
 #
-#.. image:: https://raw.githubusercontent.com/zhanghang1989/gluon-vision-figures/master/voc_examples/6.jpg
+#.. image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/segmentation/voc_examples/6.jpg
 #    :width: 45%
 #
-#.. image:: https://raw.githubusercontent.com/zhanghang1989/gluon-vision-figures/master/voc_examples/6.png
+#.. image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/segmentation/voc_examples/6.png
 #    :width: 45%

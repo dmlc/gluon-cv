@@ -9,7 +9,7 @@ _TARGET_DIR = os.path.expanduser('~/.mxnet/datasets/coco')
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description='Initialize MS COCO VOC dataset.',
+        description='Initialize MS COCO dataset.',
         epilog='Example: python mscoco.py --download-dir ~/mscoco',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--download-dir', type=str, default='~/mscoco/', help='dataset directory on disk')

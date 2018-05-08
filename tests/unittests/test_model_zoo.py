@@ -25,9 +25,45 @@ import numpy as np
 
 import gluoncv as gcv
 
+def test_classification_models():
+    x = mx.random.uniform(shape=(2, 3, 32, 32))
+    cifar_models = [
+        'cifar_resnet20_v1', 'cifar_resnet56_v1', 'cifar_resnet110_v1',
+        'cifar_resnet20_v2', 'cifar_resnet56_v2', 'cifar_resnet110_v2',
+        'cifar_wideresnet16_10', 'cifar_wideresnet28_10', 'cifar_wideresnet40_8',
+        'cifar_resnext29_32x4d', 'cifar_resnext29_16x64d',
+    ]
+    for model in cifar_models:
+        net = gcv.model_zoo.get_model(model)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            net.initialize()
+        net(x)
+
+def test_imagenet_models():
+    x = mx.random.uniform(shape=(2, 3, 224, 224))
+    models = ['resnet18_v1b', 'resnet34_v1b', 'resnet50_v1b',
+              'resnet101_v1b', 'resnet152_v1b', 'resnext50_32x4d', 'resnext101_32x4d']
+    for model in models:
+        net = gcv.model_zoo.get_model(model)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            net.initialize()
+        net(x)
+
 def test_ssd_models():
     x = mx.random.uniform(shape=(2, 3, 512, 768))  # allow non-squre and larger inputs
     models = ['ssd_300_vgg16_atrous_voc', 'ssd_512_vgg16_atrous_voc', 'ssd_512_resnet50_v1_voc']
+    for model in models:
+        net = gcv.model_zoo.get_model(model)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            net.initialize()
+        net(x)
+
+def test_segmentation_models():
+    x = mx.random.uniform(shape=(2, 3, 480, 480))
+    models = ['fcn_resnet50_voc', 'fcn_resnet101_voc']
     for model in models:
         net = gcv.model_zoo.get_model(model)
         with warnings.catch_warnings():
