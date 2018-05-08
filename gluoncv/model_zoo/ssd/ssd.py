@@ -137,7 +137,7 @@ class SSD(HybridBlock):
     def set_nms(self, nms_thresh=0, nms_topk=-1):
         self.nms_thresh = nms_thresh
         self.nms_topk = nms_topk
-    
+
     # pylint: disable=arguments-differ
     def hybrid_forward(self, F, x):
         """Hybrid forward"""
@@ -151,7 +151,7 @@ class SSD(HybridBlock):
         cls_preds = F.concat(*cls_preds, dim=1).reshape((0, -1, self.num_classes))
         box_preds = F.concat(*box_preds, dim=1).reshape((0, -1, 4))
         anchors = F.concat(*anchors, dim=1).reshape((1, -1, 4))
-        if autograd.is_recording():
+        if autograd.is_training():
             return [cls_preds, box_preds, anchors]
         bboxes = self.bbox_decoder(box_preds, anchors)
         cls_ids, scores = self.cls_decoder(F.softmax(cls_preds, axis=-1))
