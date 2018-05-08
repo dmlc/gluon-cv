@@ -119,10 +119,6 @@ def validate(net, val_data, ctx, classes):
 
 def train(net, train_data, val_data, classes, args):
     """Training pipeline"""
-    for param in net.collect_params().values():
-        if param._data is not None:
-            continue
-        param.initialize()
     net.collect_params().reset_ctx(ctx)
     trainer = gluon.Trainer(
         net.collect_params(), 'sgd',
@@ -225,6 +221,11 @@ if __name__ == '__main__':
     net = get_model(net_name, pretrained_base=True)
     if args.resume.strip():
         net.load_params(args.resume.strip())
+    else:
+        for param in net.collect_params().values():
+            if param._data is not None:
+                continue
+            param.initialize()
 
     # training data
     train_dataset, val_dataset = get_dataset(args.dataset)
