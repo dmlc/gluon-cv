@@ -48,8 +48,8 @@ class Block(HybridBlock):
     """
     expansion = 2
 
-    def __init__(self, cardinality, bottleneck_width,
-                 stride, downsample=False, in_channels=0, **kwargs):
+    def __init__(self, cardinality, bottleneck_width, stride,
+                 downsample=False, in_channels=0, use_se=False, **kwargs):
         super(Block, self).__init__(**kwargs)
         group_width = cardinality * bottleneck_width
 
@@ -64,6 +64,17 @@ class Block(HybridBlock):
         self.body.add(nn.Activation('relu'))
         self.body.add(nn.Conv2D(self.expansion*group_width, kernel_size=1, use_bias=False))
         self.body.add(nn.BatchNorm())
+
+        if use_se:
+            self.se = nn.HybridSequential(prefix='')
+            self.se.add(nn.GlobalAvgPool2D())
+            self.se.add(nn.Conv2D(channels//16, kernel_size=1))
+            self.se.add(nn.Activation('relu'))
+            self.se.add(nn.Conv2D(channels, kernel_size=1))
+            self.se.add(nn.Activation('sigmoid'))
+        else:
+            self.se = None
+
         if downsample:
             self.downsample = nn.HybridSequential(prefix='')
             self.downsample.add(nn.Conv2D(self.expansion*group_width, kernel_size=1, strides=stride,
@@ -76,6 +87,10 @@ class Block(HybridBlock):
         residual = x
 
         x = self.body(x)
+
+        if self.use_se:
+            w = self.se(x)
+            x = x*w
 
         if self.downsample:
             residual = self.downsample(residual)
@@ -100,11 +115,9 @@ class ResNext(HybridBlock):
         Width of bottleneck block
     classes : int, default 1000
         Number of classification classes.
-    thumbnail : bool, default False
-        Enable thumbnail.
     """
     def __init__(self, layers, cardinality, bottleneck_width,
-                 classes=1000, thumbnail=False, **kwargs):
+                 classes=1000, use_se=False, **kwargs):
         super(ResNext, self).__init__(**kwargs)
         self.cardinality = cardinality
         self.bottleneck_width = bottleneck_width
@@ -112,34 +125,31 @@ class ResNext(HybridBlock):
 
         with self.name_scope():
             self.features = nn.HybridSequential(prefix='')
-            if thumbnail:
-                self.features.add(_conv3x3(64, 1, 0))
-            else:
-                self.features.add(nn.Conv2D(64, 7, 2, 3, use_bias=False))
-                self.features.add(nn.BatchNorm())
-                self.features.add(nn.Activation('relu'))
-                self.features.add(nn.MaxPool2D(3, 2, 1))
+            self.features.add(nn.Conv2D(64, 7, 2, 3, use_bias=False))
+            self.features.add(nn.BatchNorm())
+            self.features.add(nn.Activation('relu'))
+            self.features.add(nn.MaxPool2D(3, 2, 1))
 
             for i, num_layer in enumerate(layers):
                 stride = 1 if i == 0 else 2
-                self.features.add(self._make_layer(num_layer, stride, i+1))
+                self.features.add(self._make_layer(num_layer, stride, use_se, i+1))
             self.features.add(nn.AvgPool2D(7))
 
             total_expansion = Block.expansion ** len(layers)
             self.output = nn.Dense(classes,
                                    in_units=cardinality*bottleneck_width*total_expansion)
 
-    def _make_layer(self, num_layers, stride, stage_index):
+    def _make_layer(self, num_layers, stride, use_se, stage_index, use_se):
         layer = nn.HybridSequential(prefix='stage%d_'%stage_index)
         channels = Block.expansion * self.cardinality * self.bottleneck_width
         downsample = self.in_channels != channels
         with layer.name_scope():
             layer.add(Block(self.cardinality, self.bottleneck_width,
                             stride, downsample or stride != 1,
-                            in_channels=self.in_channels, prefix=''))
+                            in_channels=self.in_channels, use_se=use_se, prefix=''))
             for _ in range(num_layers-1):
-                layer.add(Block(self.cardinality, self.bottleneck_width,
-                                1, False, in_channels=channels, prefix=''))
+                layer.add(Block(self.cardinality, self.bottleneck_width, 1, False,
+                                in_channels=channels, use_se=use_se, prefix=''))
 
         self.in_channels = channels
         self.bottleneck_width *= 2
