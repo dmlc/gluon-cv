@@ -130,19 +130,19 @@ class SSDMultiBoxLoss(gluon.Block):
         for cp, bp, ct, bt, n in zip(*[cls_pred, box_pred, cls_target, box_target, num_pos]):
             pred = nd.log_softmax(cp, axis=-1)
             pos = ct > 0
-            cls_loss = -nd.pick(pred, ct, axis=-1, keepdims=True)
+            cls_loss = -nd.pick(pred, ct, axis=-1, keepdims=False)
             rank = (cls_loss * (pos - 1)).argsort(axis=1).argsort(axis=1)
-            hard_negative = rank < (pos.sum(axis=1) * self._negative_mining_ratio)
+            hard_negative = rank < (pos.sum(axis=1) * self._negative_mining_ratio).expand_dims(-1)
             # mask out if not positive or negative
             cls_loss = nd.where((pos + hard_negative) > 0, cls_loss, nd.zeros_like(cls_loss))
             cls_losses.append(nd.sum(cls_loss, axis=0, exclude=True) / num_pos_all)
 
-            bt = _reshape_like(nd, bt, bp)
+            bp = _reshape_like(nd, bp, bt)
             box_loss = nd.abs(bp - bt)
             box_loss = nd.where(box_loss > self._rho, box_loss - 0.5 * self._rho,
                                 (0.5 / self._rho) * nd.square(box_loss))
             # box loss only apply to positive samples
-            box_loss = nd.where(pos > 0, box_loss, nd.zeros_like(box_loss))
+            box_loss = box_loss * pos.expand_dims(axis=-1)
             box_losses.append(nd.sum(box_loss, axis=0, exclude=True) / num_pos_all)
             sum_losses.append(cls_losses[-1] + self._lambda * box_losses[-1])
 
