@@ -44,6 +44,8 @@ parser.add_argument('--model', type=str, required=True,
                     help='type of model to use. see vision_model for options.')
 parser.add_argument('--use_thumbnail', action='store_true',
                     help='use thumbnail or not in resnet. default is false.')
+parser.add_argument('--use_se', action='store_true',
+                    help='use SE layers or not in resnext. default is false.')
 parser.add_argument('--batch-norm', action='store_true',
                     help='enable batch normalization or not in vgg. default is false.')
 parser.add_argument('--use-pretrained', action='store_true',
@@ -82,6 +84,8 @@ if model_name.startswith('resnet'):
     kwargs['thumbnail'] = opt.use_thumbnail
 elif model_name.startswith('vgg'):
     kwargs['batch_norm'] = opt.batch_norm
+elif model_name.startswith('resnext'):
+    kwargs['use_se'] = opt.use_se
 
 optimizer = 'nag'
 optimizer_params = {'learning_rate': opt.lr, 'wd': opt.wd, 'momentum': opt.momentum}
