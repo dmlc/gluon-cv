@@ -22,7 +22,8 @@ from __future__ import division
 
 __all__ = ['get_cifar_resnext', 'cifar_resnext29_32x4d', 'cifar_resnext29_16x64d']
 
-import os, math
+import os
+import math
 from mxnet import cpu
 from mxnet.gluon import nn
 from mxnet.gluon.block import HybridBlock

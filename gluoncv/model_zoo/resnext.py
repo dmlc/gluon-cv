@@ -23,7 +23,8 @@ from __future__ import division
 __all__ = ['ResNext', 'Block', 'get_resnext',
            'resnext50_32x4d', 'resnext101_32x4d', 'resnext101_64x4d']
 
-import os, math
+import os
+import math
 from mxnet import cpu
 from mxnet.gluon import nn
 from mxnet.gluon.block import HybridBlock
@@ -45,7 +46,7 @@ class Block(HybridBlock):
         Whether to downsample the input.
     """
     def __init__(self, channels, cardinality, bottleneck_width, stride,
-                 downsample=False, in_channels=0, use_se=False, **kwargs):
+                 downsample=False, use_se=False, **kwargs):
         super(Block, self).__init__(**kwargs)
         D = math.floor(channels * (bottleneck_width / 64))
         group_width = cardinality * D

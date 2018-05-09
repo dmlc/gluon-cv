@@ -22,7 +22,8 @@ from __future__ import division
 
 __all__ = ['SENet', 'SEBlock', 'get_senet', 'senet_154']
 
-import os, math
+import os
+import math
 from mxnet import cpu
 from mxnet.gluon import nn
 from mxnet.gluon.block import HybridBlock
@@ -45,7 +46,7 @@ class SEBlock(HybridBlock):
     """
 
     def __init__(self, channels, cardinality, bottleneck_width, stride,
-                 downsample=False, in_channels=0, **kwargs):
+                 downsample=False, **kwargs):
         super(SEBlock, self).__init__(**kwargs)
         D = math.floor(channels * (bottleneck_width / 64))
         group_width = cardinality * D
