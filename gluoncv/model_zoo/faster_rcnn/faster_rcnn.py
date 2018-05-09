@@ -59,3 +59,62 @@ class FasterRCNN(RCNN_ResNet):
             return F.Pooling(x, kernel= (2, 2), pool_type='avg')
         else:
             raise NotImplemented
+
+
+def get_faster_rccn(dataset='pascal_voc', backbone='resnet101', pretrained=False,
+            root='~/.mxnet/models', ctx=cpu(0), **kwargs):
+    r"""Faster RCNN model from the paper
+    "Ren, S., He, K., Girshick, R., & Sun, J. (2015). Faster r-cnn: Towards
+    real-time object detection with region proposal networks"
+
+    Parameters
+    ----------
+    dataset : str, default pascal_voc
+        The dataset that model pretrained on. (pascal_voc, ade20k)
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+
+    Examples
+    --------
+    >>> model = get_faster_rccn(dataset='pascal_voc', backbone='resnet50', pretrained=False)
+    >>> print(model)
+    """
+    acronyms = {
+        'pascal_voc': 'voc',
+    }
+    num_class = {
+        'pascal_voc': 21,
+    }
+    # infer number of classes
+    model = FasterRCNN(num_class['pascal_voc'], backbone=backbone, **kwargs)
+    if pretrained:
+        from .model_store import get_model_file
+        model.load_params(get_model_file('faster_rccn_%s_%s'%(backbone, acronyms[dataset]),
+                                         root=root), ctx=ctx)
+    return model
+
+
+def get_faster_rcnn_resnet101_voc(**kwargs):
+    r"""Faster RCNN model from the paper
+    "Ren, S., He, K., Girshick, R., & Sun, J. (2015). Faster r-cnn: Towards
+    real-time object detection with region proposal networks"
+
+    Parameters
+    ----------
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+
+    Examples
+    --------
+    >>> model = get_faster_rcnn_resnet101_voc(pretrained=True)
+    >>> print(model)
+    """
+    return get_faster_rccn('pascal_voc', 'resnet101', **kwargs)
