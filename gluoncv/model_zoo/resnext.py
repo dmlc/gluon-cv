@@ -122,6 +122,7 @@ class ResNext(HybridBlock):
         with self.name_scope():
             self.features = nn.HybridSequential(prefix='')
             self.features.add(nn.Conv2D(channels, 7, 2, 3, use_bias=False))
+
             self.features.add(nn.BatchNorm())
             self.features.add(nn.Activation('relu'))
             self.features.add(nn.MaxPool2D(3, 2, 1))

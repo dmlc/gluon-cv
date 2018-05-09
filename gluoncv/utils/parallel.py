@@ -50,7 +50,7 @@ class DataParallelModel(object):
         inputs, kwargs = split_load_kwargs(inputs, kwargs, self.ctx_list)
         assert(len(inputs) == len(self.ctx_list))
         if len(self.ctx_list) == 1:
-            return self.module(*inputs[0], **kwargs[0])
+            return tuple([tuple(self.module(*inputs[0], **kwargs[0]))])
         return parallel_apply(self.module, inputs, kwargs, self.sync)
 
     def __repr__(self):
@@ -95,10 +95,10 @@ class DataParallelCriterion(object):
         if not self.ctx_list:
             return self.module(inputs, *targets, **kwargs)
         targets, kwargs = split_load_kwargs(targets, kwargs, self.ctx_list)
-        assert(len(inputs) == len(self.ctx_list))
         assert(len(targets) == len(self.ctx_list))
         if len(self.ctx_list) == 1:
-            return self.module(inputs, *targets[0], **kwargs[0])
+            return tuple(self.module(*(inputs[0] + targets[0]), **kwargs[0]))
+        assert(len(inputs) == len(self.ctx_list))
         return criterion_parallel_apply(self.module, inputs, targets, kwargs, self.sync)
 
 
@@ -139,21 +139,13 @@ def parallel_apply(module, inputs, kwargs_tup=None, sync=False):
         try:
             if is_recording:
                 with autograd.record(is_training):
-                    if isinstance(input, NDArray):
-                        output = module(input, **kwargs)
-                        output.wait_to_read()
-                    else:
-                        output = module(*input, **kwargs)
-                        for out in output:
-                            out.wait_to_read()
-            else:
-                if isinstance(input, NDArray):
-                    output = module(input, **kwargs)
-                    output.wait_to_read()
-                else:
                     output = module(*input, **kwargs)
                     for out in output:
                         out.wait_to_read()
+            else:
+                output = module(*input, **kwargs)
+                for out in output:
+                    out.wait_to_read()
             with lock:
                 results[i] = output
         except Exception as e:

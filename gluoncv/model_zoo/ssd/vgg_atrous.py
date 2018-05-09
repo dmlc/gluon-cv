@@ -118,7 +118,7 @@ class VGGAtrousExtractor(VGGAtrousBase):
                     for f, k, s, p in config:
                         extra.add(nn.Conv2D(f, k, s, p, **self.init))
                         if batch_norm:
-                            stage.add(nn.BatchNorm())
+                            extra.add(nn.BatchNorm())
                         extra.add(nn.Activation('relu'))
                 self.extras.add(extra)
 
