@@ -23,12 +23,12 @@ from __future__ import division
 __all__ = ['get_cifar_resnext', 'cifar_resnext29_32x4d', 'cifar_resnext29_16x64d']
 
 import os
+import math
 from mxnet import cpu
 from mxnet.gluon import nn
 from mxnet.gluon.block import HybridBlock
 
 
-# Blocks
 class CIFARBlock(HybridBlock):
     r"""Bottleneck Block from `"Aggregated Residual Transformations for Deep Neural Networks"
     <http://arxiv.org/abs/1611.05431>`_ paper.
@@ -43,32 +43,28 @@ class CIFARBlock(HybridBlock):
         Stride size.
     downsample : bool, default False
         Whether to downsample the input.
-    in_channels : int, default 0
-        Number of input channels. Default is 0, to infer from the graph.
     """
-    expansion = 2
-
-    def __init__(self, cardinality, bottleneck_width,
-                 stride, downsample=False, in_channels=0, **kwargs):
+    def __init__(self, channels, cardinality, bottleneck_width,
+                 stride, downsample=False, **kwargs):
         super(CIFARBlock, self).__init__(**kwargs)
-        group_width = cardinality * bottleneck_width
+        D = math.floor(channels * (bottleneck_width / 64))
+        group_width = cardinality * D
 
         self.body = nn.HybridSequential(prefix='')
-        self.body.add(nn.Conv2D(group_width, kernel_size=1, use_bias=False,
-                                in_channels=in_channels))
+        self.body.add(nn.Conv2D(group_width, kernel_size=1, use_bias=False))
         self.body.add(nn.BatchNorm())
         self.body.add(nn.Activation('relu'))
         self.body.add(nn.Conv2D(group_width, kernel_size=3, strides=stride, padding=1,
                                 groups=cardinality, use_bias=False))
         self.body.add(nn.BatchNorm())
         self.body.add(nn.Activation('relu'))
-        self.body.add(nn.Conv2D(self.expansion*group_width, kernel_size=1, use_bias=False))
+        self.body.add(nn.Conv2D(channels * 4, kernel_size=1, use_bias=False))
         self.body.add(nn.BatchNorm())
 
         if downsample:
             self.downsample = nn.HybridSequential(prefix='')
-            self.downsample.add(nn.Conv2D(self.expansion*group_width, kernel_size=1, strides=stride,
-                                          use_bias=False, in_channels=in_channels))
+            self.downsample.add(nn.Conv2D(channels * 4, kernel_size=1, strides=stride,
+                                          use_bias=False))
             self.downsample.add(nn.BatchNorm())
         else:
             self.downsample = None
@@ -106,37 +102,30 @@ class CIFARResNext(HybridBlock):
         super(CIFARResNext, self).__init__(**kwargs)
         self.cardinality = cardinality
         self.bottleneck_width = bottleneck_width
-        self.in_channels = 64
+        channels = 64
 
         with self.name_scope():
             self.features = nn.HybridSequential(prefix='')
-            self.features.add(nn.Conv2D(64, 3, 1, 1, use_bias=False))
+            self.features.add(nn.Conv2D(channels, 3, 1, 1, use_bias=False))
             self.features.add(nn.BatchNorm())
             self.features.add(nn.Activation('relu'))
 
             for i, num_layer in enumerate(layers):
                 stride = 1 if i == 0 else 2
-                self.features.add(self._make_layer(num_layer, stride, i+1))
+                self.features.add(self._make_layer(channels, num_layer, stride, i+1))
+                channels *= 2
             self.features.add(nn.AvgPool2D(8))
 
-            total_expansion = CIFARBlock.expansion ** len(layers)
-            self.output = nn.Dense(classes,
-                                   in_units=cardinality*bottleneck_width*total_expansion)
+            self.output = nn.Dense(classes)
 
-    def _make_layer(self, num_layer, stride, stage_index):
+    def _make_layer(self, channels, num_layer, stride, stage_index):
         layer = nn.HybridSequential(prefix='stage%d_'%stage_index)
-        channels = CIFARBlock.expansion * self.cardinality * self.bottleneck_width
-        downsample = self.in_channels != channels
         with layer.name_scope():
-            layer.add(CIFARBlock(self.cardinality, self.bottleneck_width,
-                                 stride, downsample or stride != 1,
-                                 in_channels=self.in_channels, prefix=''))
+            layer.add(CIFARBlock(channels, self.cardinality, self.bottleneck_width,
+                                 stride, True, prefix=''))
             for _ in range(num_layer-1):
-                layer.add(CIFARBlock(self.cardinality, self.bottleneck_width,
-                                     1, False, in_channels=channels, prefix=''))
-
-        self.in_channels = channels
-        self.bottleneck_width *= 2
+                layer.add(CIFARBlock(channels, self.cardinality, self.bottleneck_width,
+                                     1, False, prefix=''))
         return layer
 
     def hybrid_forward(self, F, x):
