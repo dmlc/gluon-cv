@@ -5,7 +5,7 @@ import mxnet.gluon.nn as nn
 
 from ..resnetv1b import resnet50_v1b, resnet101_v1b, resnet152_v1b
 
-class RCNN_ResNet(Block):
+class RCNN_ResNet(gluon.Block):
     """RCNN Base model"""
     def __init__(self, classes, backbone, dilated=False, **kwargs):
         super(RCNN_ResNet, self).__init__(**kwargs)
@@ -30,11 +30,11 @@ class RCNN_ResNet(Block):
             self.layer3 = pretrained.layer3
             self.layer4 = pretrained.layer4
             # RCNN cls and bbox reg
-            self.conv_cls = nn.Conv2D(in_channels=2048, channels=classes,
-                                      kernel_size=(1, 1),padding=(0, 0))
-            self.conv_reg = nn.Conv2D(in_channels=2048, channels=4,
-                                      kernel_size=(1, 1),padding=(0, 0))
+            self.conv_cls = nn.Dense(in_units=2048, units=classes)
+            self.conv_reg = nn.Dense(in_units=2048, units=4*classes)
             self.globalavgpool = nn.GlobalAvgPool2D()
+        self.conv_cls.initialize()
+        self.conv_reg.initialize()
         # TODO lock BN
 
     def forward(self, *inputs):
