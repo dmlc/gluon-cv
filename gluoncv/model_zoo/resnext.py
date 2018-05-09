@@ -68,9 +68,9 @@ class Block(HybridBlock):
         if use_se:
             self.se = nn.HybridSequential(prefix='')
             self.se.add(nn.GlobalAvgPool2D())
-            self.se.add(nn.Conv2D(self.expansion*group_width//16, kernel_size=1))
+            self.se.add(nn.Conv2D(self.expansion*group_width//16, kernel_size=1, use_bias=False))
             self.se.add(nn.Activation('relu'))
-            self.se.add(nn.Conv2D(self.expansion*group_width, kernel_size=1))
+            self.se.add(nn.Conv2D(self.expansion*group_width, kernel_size=1, use_bias=False))
             self.se.add(nn.Activation('sigmoid'))
         else:
             self.se = None
@@ -90,7 +90,7 @@ class Block(HybridBlock):
 
         if self.se:
             w = self.se(x)
-            x = x*w
+            x = F.broadcast_mul(x, w)
 
         if self.downsample:
             residual = self.downsample(residual)

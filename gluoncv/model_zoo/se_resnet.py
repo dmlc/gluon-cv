@@ -67,9 +67,9 @@ class SE_BasicBlockV1(HybridBlock):
 
         self.se = nn.HybridSequential(prefix='')
         self.se.add(nn.GlobalAvgPool2D())
-        self.se.add(nn.Conv2D(channels//16, kernel_size=1))
+        self.se.add(nn.Conv2D(channels//16, kernel_size=1, use_bias=False))
         self.se.add(nn.Activation('relu'))
-        self.se.add(nn.Conv2D(channels, kernel_size=1))
+        self.se.add(nn.Conv2D(channels, kernel_size=1, use_bias=False))
         self.se.add(nn.Activation('sigmoid'))
 
         if downsample:
@@ -85,7 +85,7 @@ class SE_BasicBlockV1(HybridBlock):
 
         x = self.body(x)
         w = self.se(x)
-        x = x*w
+        x = F.broadcast_mul(x, w)
 
         if self.downsample:
             residual = self.downsample(residual)
@@ -125,9 +125,9 @@ class SE_BottleneckV1(HybridBlock):
 
         self.se = nn.HybridSequential(prefix='')
         self.se.add(nn.GlobalAvgPool2D())
-        self.se.add(nn.Conv2D(channels//16, kernel_size=1))
+        self.se.add(nn.Conv2D(channels//16, kernel_size=1, use_bias=False))
         self.se.add(nn.Activation('relu'))
-        self.se.add(nn.Conv2D(channels, kernel_size=1))
+        self.se.add(nn.Conv2D(channels, kernel_size=1, use_bias=False))
         self.se.add(nn.Activation('sigmoid'))
 
         if downsample:
@@ -143,7 +143,7 @@ class SE_BottleneckV1(HybridBlock):
 
         x = self.body(x)
         w = self.se(x)
-        x = x*w
+        x = F.broadcast_mul(x, w)
 
         if self.downsample:
             residual = self.downsample(residual)
@@ -178,9 +178,9 @@ class SE_BasicBlockV2(HybridBlock):
 
         self.se = nn.HybridSequential(prefix='')
         self.se.add(nn.GlobalAvgPool2D())
-        self.se.add(nn.Conv2D(channels//16, kernel_size=1))
+        self.se.add(nn.Conv2D(channels//16, kernel_size=1, use_bias=False))
         self.se.add(nn.Activation('relu'))
-        self.se.add(nn.Conv2D(channels, kernel_size=1))
+        self.se.add(nn.Conv2D(channels, kernel_size=1, use_bias=False))
         self.se.add(nn.Activation('sigmoid'))
 
         if downsample:
@@ -202,7 +202,7 @@ class SE_BasicBlockV2(HybridBlock):
         x = self.conv2(x)
 
         w = self.se(x)
-        x = x*w
+        x = F.broadcast_mul(x, w)
 
         return x + residual
 
@@ -235,9 +235,9 @@ class SE_BottleneckV2(HybridBlock):
 
         self.se = nn.HybridSequential(prefix='')
         self.se.add(nn.GlobalAvgPool2D())
-        self.se.add(nn.Conv2D(channels//16, kernel_size=1))
+        self.se.add(nn.Conv2D(channels//16, kernel_size=1, use_bias=False))
         self.se.add(nn.Activation('relu'))
-        self.se.add(nn.Conv2D(channels, kernel_size=1))
+        self.se.add(nn.Conv2D(channels, kernel_size=1, use_bias=False))
         self.se.add(nn.Activation('sigmoid'))
 
         if downsample:
@@ -263,7 +263,7 @@ class SE_BottleneckV2(HybridBlock):
         x = self.conv3(x)
 
         w = self.se(x)
-        x = x*w
+        x = F.broadcast_mul(x, w)
 
         return x + residual
 
