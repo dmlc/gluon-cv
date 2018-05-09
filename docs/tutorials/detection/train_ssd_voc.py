@@ -152,7 +152,7 @@ val_loader = DetectionDataLoader(val_dataset.transform(val_transform), batch_siz
                                  last_batch='keep', num_workers=num_workers)
 
 for ib, batch in enumerate(train_loader):
-    if ib > 5:
+    if ib > 3:
         break
     print('data:', batch[0].shape, 'label:', batch[1].shape)
 
@@ -180,7 +180,7 @@ print(net)
 ##############################################################################
 # SSD network is a HybridBlock as mentioned before. You can call it with an input as:
 import mxnet as mx
-x = mx.nd.zeros(shape=(1, 3, 300, 300))
+x = mx.nd.zeros(shape=(1, 3, 512, 512))
 net.initialize()
 cids, scores, bboxes = net(x)
 
@@ -226,12 +226,14 @@ for ib, batch in enumerate(train_loader):
     if ib > 0:
         break
     print('data:', batch[0].shape)
-    print('class targets:', batch[1])
-    print('box targets:', batch[2])
+    print('class targets:', batch[1].shape)
+    print('box targets:', batch[2].shape)
     with autograd.record():
         cls_pred, box_pred, anchors = net(batch[0])
         sum_loss, cls_loss, box_loss = mbox_loss(cls_pred, box_pred, batch[1], batch[2])
-        autograd.backward(sum_loss)
+        # some standard gluon training steps:
+        # autograd.backward(sum_loss)
+        # trainer.step(1)
 
 ##############################################################################
 # This time we can see the data loader is actually returning the training targets for us.
