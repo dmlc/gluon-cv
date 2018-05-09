@@ -6,11 +6,10 @@ import mxnet as mx
 from mxnet import autograd
 from mxnet.gluon import nn
 from mxnet.gluon import HybridBlock
-from ..features import FeatureExpander
+from ...nn.feature import FeatureExpander
 from .anchor import SSDAnchorGenerator
-from ..predictors import ConvPredictor
-from ..coders import MultiPerClassDecoder, NormalizedBoxCenterDecoder
-from .target import SSDTargetGenerator
+from ...nn.predictor import ConvPredictor
+from ...nn.coder import MultiPerClassDecoder, NormalizedBoxCenterDecoder
 from .vgg_atrous import vgg16_atrous_300, vgg16_atrous_512
 # from ...utils import set_lr_mult
 from ...data import VOCDetection
@@ -62,13 +61,6 @@ class SSD(HybridBlock):
         Whether to attach a global average pooling layer as the last output layer.
     pretrained : bool
         Description of parameter `pretrained`.
-    iou_thresh : float, default is 0.5
-        IOU overlap threshold of matching targets, used during training phase.
-    neg_thresh : float, default is 0.5
-        Negative mining threshold for un-matched anchors, this is to avoid highly
-        overlapped anchors to be treated as negative samples.
-    negative_mining_ratio : float, default is 3
-        Ratio of negative vs. positive samples.
     stds : tuple of float, default is (0.1, 0.1, 0.2, 0.2)
         Std values to be divided/multiplied to box encoded values.
     nms_thresh : float, default is 0.45.
@@ -86,7 +78,6 @@ class SSD(HybridBlock):
     def __init__(self, network, base_size, features, num_filters, sizes, ratios,
                  steps, classes, use_1x1_transition=True, use_bn=True,
                  reduce_ratio=1.0, min_depth=128, global_pool=False, pretrained=False,
-                 iou_thresh=0.5, neg_thresh=0.5, negative_mining_ratio=3,
                  stds=(0.1, 0.1, 0.2, 0.2), nms_thresh=0.45, nms_topk=-1,
                  anchor_alloc_size=128, **kwargs):
         super(SSD, self).__init__(**kwargs)
@@ -108,9 +99,6 @@ class SSD(HybridBlock):
         self.num_classes = len(classes) + 1
         self.nms_thresh = nms_thresh
         self.nms_topk = nms_topk
-        self.target = set([SSDTargetGenerator(
-            iou_thresh=iou_thresh, neg_thresh=neg_thresh,
-            negative_mining_ratio=negative_mining_ratio, stds=stds)])
 
         with self.name_scope():
             if network is None:
@@ -141,10 +129,6 @@ class SSD(HybridBlock):
         self.nms_thresh = nms_thresh
         self.nms_topk = nms_topk
 
-    @property
-    def target_generator(self):
-        return list(self.target)[0]
-
     # pylint: disable=arguments-differ
     def hybrid_forward(self, F, x):
         """Hybrid forward"""
@@ -158,7 +142,7 @@ class SSD(HybridBlock):
         cls_preds = F.concat(*cls_preds, dim=1).reshape((0, -1, self.num_classes))
         box_preds = F.concat(*box_preds, dim=1).reshape((0, -1, 4))
         anchors = F.concat(*anchors, dim=1).reshape((1, -1, 4))
-        if autograd.is_recording():
+        if autograd.is_training():
             return [cls_preds, box_preds, anchors]
         bboxes = self.bbox_decoder(box_preds, anchors)
         cls_ids, scores = self.cls_decoder(F.softmax(cls_preds, axis=-1))
