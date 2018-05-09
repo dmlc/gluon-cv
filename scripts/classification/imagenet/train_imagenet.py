@@ -46,6 +46,8 @@ parser.add_argument('--use_thumbnail', action='store_true',
                     help='use thumbnail or not in resnet. default is false.')
 parser.add_argument('--use_se', action='store_true',
                     help='use SE layers or not in resnext. default is false.')
+parser.add_argument('--label_smoothing', action='store_true',
+                    help='use label smoothing or not in training. default is false.')
 parser.add_argument('--batch-norm', action='store_true',
                     help='enable batch normalization or not in vgg. default is false.')
 parser.add_argument('--use-pretrained', action='store_true',
@@ -129,6 +131,18 @@ transform_test = transforms.Compose([
     normalize
 ])
 
+def smooth(label, classes, eta=0.1):
+    if isinstance(label, NDArray):
+        label = [label]
+    smoothed = []
+    for l in label:
+        ind = l.astype('int')
+        res = nd.zeros((ind.shape[0], classes), ctx = l.context)
+        res += eta/classes
+        res[nd.arange(ind.shape[0], ctx = label.context), ind] = 1 - eta + eta/classes
+        smoothed.append(res)
+    return smoothed
+
 def test(ctx, val_data):
     acc_top1.reset()
     acc_top5.reset()
@@ -156,7 +170,10 @@ def train(epochs, ctx):
         batch_size=batch_size, shuffle=False, num_workers=num_workers)
 
     trainer = gluon.Trainer(net.collect_params(), optimizer, optimizer_params)
-    L = gluon.loss.SoftmaxCrossEntropyLoss()
+    if opt.label_smoothing:
+        L = gluon.loss.SoftmaxCrossEntropyLoss(sparse_label=False)
+    else:
+        L = gluon.loss.SoftmaxCrossEntropyLoss()
 
     lr_decay_count = 0
 
@@ -179,9 +196,13 @@ def train(epochs, ctx):
         for i, batch in enumerate(train_data):
             data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
             label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0)
+            if opt.label_smoothing:
+                label_smooth = smooth(label)
+            else:
+                label_smooth = label
             with ag.record():
                 outputs = [net(X) for X in data]
-                loss = [L(yhat, y) for yhat, y in zip(outputs, label)]
+                loss = [L(yhat, y) for yhat, y in zip(outputs, label_smooth)]
             for l in loss:
                 l.backward()
             trainer.step(batch_size)

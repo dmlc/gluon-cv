@@ -16,22 +16,23 @@
 # under the License.
 
 # coding: utf-8
-# pylint: disable= arguments-differ
+# pylint: disable= arguments-differ,unused-argument,missing-docstring
 """SE_ResNets, implemented in Gluon."""
 from __future__ import division
 
 __all__ = ['SE_ResNetV1', 'SE_ResNetV2',
            'SE_BasicBlockV1', 'SE_BasicBlockV2',
            'SE_BottleneckV1', 'SE_BottleneckV2',
-           'se_resnet18_v1', 'resnet34_v1', 'se_resnet50_v1', 'se_resnet101_v1', 'se_resnet152_v1',
-           'se_resnet18_v2', 'se_resnet34_v2', 'se_resnet50_v2', 'se_resnet101_v2', 'se_resnet152_v2',
+           'se_resnet18_v1', 'se_resnet34_v1', 'se_resnet50_v1',
+           'se_resnet101_v1', 'se_resnet152_v1',
+           'se_resnet18_v2', 'se_resnet34_v2', 'se_resnet50_v2',
+           'se_resnet101_v2', 'se_resnet152_v2',
            'get_se_resnet']
 
 import os
-
-from ....context import cpu
-from ...block import HybridBlock
-from ... import nn
+from mxnet import cpu
+from mxnet.gluon import nn
+from mxnet.gluon.block import HybridBlock
 
 # Helpers
 def _conv3x3(channels, stride, in_channels):
@@ -398,7 +399,7 @@ resnet_block_versions = [{'basic_block': SE_BasicBlockV1, 'bottle_neck': SE_Bott
 
 # Constructor
 def get_se_resnet(version, num_layers, pretrained=False, ctx=cpu(),
-               root=os.path.join('~', '.mxnet', 'models'), **kwargs):
+                  root=os.path.join('~', '.mxnet', 'models'), **kwargs):
     r"""SE_ResNet V1 model from `"Deep Residual Learning for Image Recognition"
     <http://arxiv.org/abs/1512.03385>`_ paper.
     SE_ResNet V2 model from `"Identity Mappings in Deep Residual Networks"
