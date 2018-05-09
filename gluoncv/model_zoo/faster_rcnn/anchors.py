@@ -1,3 +1,4 @@
+"""anchor utils"""
 # The code is adapted from the original Faster R-CNN Python implementation.
 import mxnet.ndarray as nd
 
@@ -37,7 +38,7 @@ def map_anchors(ref_anchors, feat_shape, img_h, img_w, ctx):
         ref_anchors[:, anchor_i * 4 + 3] += ref_y
     return ref_anchors
 
-def _whctrs(anchor:nd.NDArray):
+def _whctrs(anchor: nd.NDArray):
     """Return width, height, x center, and y center for an anchor (window).
     """
     w = anchor[2] - anchor[0] + 1
@@ -54,10 +55,10 @@ def _mkanchors(ws, hs, x_ctr, y_ctr):
     ws = ws.reshape((-1, 1))
     hs = hs.reshape((-1, 1))
     anchors = nd.concatenate(
-                        [x_ctr - 0.5 * (ws - 1),
-                         y_ctr - 0.5 * (hs - 1),
-                         x_ctr + 0.5 * (ws - 1),
-                         y_ctr + 0.5 * (hs - 1)], axis=1)
+        [x_ctr - 0.5 * (ws - 1),
+         y_ctr - 0.5 * (hs - 1),
+         x_ctr + 0.5 * (ws - 1),
+         y_ctr + 0.5 * (hs - 1)], axis=1)
     return anchors
 
 def _ratio_enum(anchor, ratios):

@@ -1,9 +1,9 @@
-import mxnet as mx
+"""RCNN Base Model"""
 from mxnet import gluon
-import mxnet.ndarray as F
 import mxnet.gluon.nn as nn
 
 from ..resnetv1b import resnet50_v1b, resnet101_v1b, resnet152_v1b
+# pylint: disable=unused-argument
 
 class RCNN_ResNet(gluon.Block):
     """RCNN Base model"""
@@ -38,7 +38,7 @@ class RCNN_ResNet(gluon.Block):
         # TODO lock BN
 
     def forward(self, *inputs):
-        raise NotImplemented
+        raise NotImplementedError
 
     def base_forward(self, x):
         """forwarding base network"""

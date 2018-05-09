@@ -1,12 +1,12 @@
+"""Faster RCNN Model"""
 import mxnet as mx
-from mxnet import cpu, gluon
+from mxnet import cpu
 import mxnet.ndarray as F
-import mxnet.gluon.nn as nn
-from mxnet.gluon import Block
 
 from .rpn import RPN, RegionProposal
 from .rcnn import RCNN_ResNet
 from .bbox import bbox_inverse_transform, bbox_clip
+# pylint: disable=arguments-differ, unused-variable
 
 __all__ = ['FasterRCNN', 'get_faster_rccn', 'get_faster_rcnn_resnet101_voc']
 
@@ -62,13 +62,13 @@ class FasterRCNN(RCNN_ResNet):
         elif self.roi_mode == 'align':
             # ROI Align Layer with AVG Pooling
             x = F.contrib.ROIAlign(base_feat, rois, (8, 8), 1.0/self.stride)
-            return F.Pooling(x, kernel= (2, 2), pool_type='avg')
+            return F.Pooling(x, kernel=(2, 2), pool_type='avg')
         else:
-            raise NotImplemented
+            raise NotImplementedError
 
 
 def get_faster_rccn(dataset='pascal_voc', backbone='resnet101', pretrained=False,
-            root='~/.mxnet/models', ctx=cpu(0), **kwargs):
+                    root='~/.mxnet/models', ctx=cpu(0), **kwargs):
     r"""Faster RCNN model from the paper
     "Ren, S., He, K., Girshick, R., & Sun, J. (2015). Faster r-cnn: Towards
     real-time object detection with region proposal networks"

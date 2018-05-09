@@ -1,11 +1,11 @@
-import mxnet as mx
-from mxnet import gluon
+"""Region Proposal Network"""
 import mxnet.ndarray as F
 import mxnet.gluon.nn as nn
 from mxnet.gluon import Block
 
 from .anchors import generate_anchors, map_anchors
 from .bbox import bbox_inverse_transform, bbox_clip
+# pylint: disable=arguments-differ, unused-variable, invalid-sequence-index
 
 class RPN(Block):
     """ RPN: region proposal network
@@ -16,9 +16,9 @@ class RPN(Block):
         self.rpn_conv = nn.Conv2D(in_channels=in_channels, channels=512,
                                   kernel_size=(3, 3), padding=(1, 1))
         self.conv_cls = nn.Conv2D(in_channels=512, channels=2 * num_anchors,
-                                  kernel_size=(1, 1),padding=(0, 0))
+                                  kernel_size=(1, 1), padding=(0, 0))
         self.conv_reg = nn.Conv2D(in_channels=512, channels=4 * num_anchors,
-                                  kernel_size=(1, 1),padding=(0, 0))
+                                  kernel_size=(1, 1), padding=(0, 0))
 
     def forward(self, data, *args):
         # conv featuremap
@@ -49,7 +49,7 @@ class RegionProposal(object):
         img_height, img_width = image_shape[2:]
         # B,K,2,H,W
         rpn_cls = rpn_cls.reshape((B, -1, 2, H, W))
-        
+
         # Recover RPN prediction with anchors
         anchors = map_anchors(self._anchors, rpn_reg.shape, img_height, img_width, rpn_cls.context)
         # B,K,4,H,W
@@ -57,7 +57,7 @@ class RegionProposal(object):
         # B,H,W,K,4
         anchors = F.transpose(anchors, (0, 3, 4, 1, 2))
         # B,H,W,K
-        rpn_anchor_scores = F.softmax(F.transpose(rpn_cls, (0, 3, 4, 1, 2)), axis=4)[:,:,:,:,1]
+        rpn_anchor_scores = F.softmax(F.transpose(rpn_cls, (0, 3, 4, 1, 2)), axis=4)[:, :, :, :, 1]
         # B,H,W,K,4
         rpn_reg = F.transpose(rpn_reg.reshape((B, -1, 4, H, W)), (0, 3, 4, 1, 2))
 
@@ -87,7 +87,7 @@ class RegionProposal(object):
         nms_pred = F.contrib.box_nms(data, thresh, topk, coord_start=1,
                                      score_index=0, id_index=-1, force_suppress=True)
         # B, N
-        rpn_scores = nms_pred[:,:topk,0]
+        rpn_scores = nms_pred[:, :topk, 0]
         # B, N, 4
-        rpn_bbox = nms_pred[:,:topk,1:]
+        rpn_bbox = nms_pred[:, :topk, 1:]
         return rpn_scores, rpn_bbox
