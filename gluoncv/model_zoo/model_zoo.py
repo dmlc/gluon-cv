@@ -10,6 +10,7 @@ from .cifarresnext import *
 from .cifarwideresnet import *
 from .resnetv1b import *
 from .resnext import *
+from .senet import *
 
 __all__ = ['get_model']
 
@@ -62,6 +63,8 @@ def get_model(name, **kwargs):
         'resnet152_v1b' : resnet152_v1b,
         'resnext50_32x4d' : resnext50_32x4d,
         'resnext101_32x4d' : resnext101_32x4d,
+        'resnext101_64x4d' : resnext101_64x4d,
+        'senet_154' : senet_154,
         }
     try:
         net = gluon.model_zoo.vision.get_model(name, **kwargs)
