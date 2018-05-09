@@ -16,7 +16,7 @@
 # under the License.
 
 # coding: utf-8
-# pylint: disable= arguments-differ
+# pylint: disable= arguments-differ,missing-docstring
 """SENet, implemented in Gluon."""
 from __future__ import division
 
