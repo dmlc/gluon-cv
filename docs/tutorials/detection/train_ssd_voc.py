@@ -143,7 +143,7 @@ plt.show()
 
 from gluoncv.data import DetectionDataLoader
 
-batch_size = 4  # for tutorial, we use smaller batch-size
+batch_size = 2  # for tutorial, we use smaller batch-size
 num_workers = 0  # you can make it larger(if your CPU has more cores) to accelerate data loading
 
 train_loader = DetectionDataLoader(train_dataset.transform(train_transform), batch_size, shuffle=True,
@@ -152,7 +152,7 @@ val_loader = DetectionDataLoader(val_dataset.transform(val_transform), batch_siz
                                  last_batch='keep', num_workers=num_workers)
 
 for ib, batch in enumerate(train_loader):
-    if ib > 5:
+    if ib > 3:
         break
     print('data:', batch[0].shape, 'label:', batch[1].shape)
 
@@ -180,7 +180,7 @@ print(net)
 ##############################################################################
 # SSD network is a HybridBlock as mentioned before. You can call it with an input as:
 import mxnet as mx
-x = mx.nd.zeros(shape=(1, 3, 300, 300))
+x = mx.nd.zeros(shape=(1, 3, 512, 512))
 net.initialize()
 cids, scores, bboxes = net(x)
 
@@ -189,25 +189,55 @@ cids, scores, bboxes = net(x)
 # ``scores`` are confidence scores of each prediction,
 # and ``bboxes`` are absolute coordinates of corresponding bounding boxes.
 
+##############################################################################
+# SSD network behave differently during training mode:
+from mxnet import autograd
+with autograd.train_mode():
+    cls_preds, box_preds, anchors = net(x)
+
+##############################################################################
+# In training mode, SSD returns three intermediate values,
+# where ``cls_preds`` are the class predictions prior to softmax,
+# ``box_preds`` are bounding box offsets with one-to-one correspondence to anchors
+# and ``anchors`` are absolute coordinates of corresponding anchors boxes, which are
+# fixed since training images use inputs of same dimensions.
+
+
 ##########################################################
 # Training targets
 # ------------------
 # Unlike a single ``SoftmaxCrossEntropyLoss`` used in image classification,
 # the loss used in SSD is more complicated.
 # Don't worry though, because we have these modules available out of the box.
+#
+# To speed up training, we let CPU to pre-compute some training targets.
+# This is especially nice when your CPU is powerful and you can use ``-j num_workers``
+# to utilize multi-core CPU.
 
 ##############################################################################
-# Checkout the ``target_generator`` in SSD networks.
-print(net.target_generator)
+# If we provide anchors to the training transform, it will compute training targets
+train_transform = presets.ssd.SSDDefaultTrainTransform(width, height, anchors)
+train_loader = DetectionDataLoader(train_dataset.transform(train_transform), batch_size, shuffle=True,
+                                   last_batch='rollover', num_workers=num_workers)
+from gluoncv.loss import SSDMultiBoxLoss
+mbox_loss = SSDMultiBoxLoss()
+
+for ib, batch in enumerate(train_loader):
+    if ib > 0:
+        break
+    print('data:', batch[0].shape)
+    print('class targets:', batch[1].shape)
+    print('box targets:', batch[2].shape)
+    with autograd.record():
+        cls_pred, box_pred, anchors = net(batch[0])
+        sum_loss, cls_loss, box_loss = mbox_loss(cls_pred, box_pred, batch[1], batch[2])
+        # some standard gluon training steps:
+        # autograd.backward(sum_loss)
+        # trainer.step(1)
 
 ##############################################################################
-# You can observe that there are:
-#
-# - A bounding box encoder which transfers raw coordinates to bbox prediction targets.
-#
-# - A class encoder which generates class labels for each anchor box.
-#
-# - Matcher and samplers used to apply various advanced strategies described in paper.
+# This time we can see the data loader is actually returning the training targets for us.
+# Then it is very naturally a gluon training loop with Trainer and let it update the weights.
 #
 # .. hint::
 #

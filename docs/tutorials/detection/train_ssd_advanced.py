@@ -61,13 +61,16 @@ conf_loss = gluon.loss.SoftmaxCrossEntropyLoss()
 loc_loss = gluon.loss.HuberLoss()
 
 ############################################################################
-# Simulate the training steps:
+# Simulate the training steps by manually compute losses:
+# You can always use ``gluoncv.loss.SSDMultiBoxLoss`` which fulfills this function.
 from mxnet import autograd
+from gluoncv.model_zoo.ssd.target import SSDTargetGenerator
+target_generator = SSDTargetGenerator()
 with autograd.record():
     # 1. forward pass
     cls_preds, box_preds, anchors = net(x)
     # 2. generate training targets
-    cls_targets, box_targets, box_masks = net.target_generator(
+    cls_targets, box_targets, box_masks = target_generator(
         anchors, cls_preds, gt_boxes, gt_ids)
     num_positive = (cls_targets > 0).sum().asscalar()
     cls_mask = (cls_targets >= 0).expand_dims(axis=-1)  # negative targets should be ignored in loss
@@ -192,5 +195,5 @@ for k, v in zip(['bg', 'apple', 'orange', 'person', 'dog', 'cat'], cls_prob.asnu
 # This may or may not be a problem depending on the use case, but feel free to switch between them if you want.
 #
 # .. hint::
-#   Checkout :py:meth:`gluoncv.model_zoo.coders.MultiClassDecoder` and
-#   :py:meth:`gluoncv.model_zoo.coders.MultiPerClassDecoder` for implementions of method 1 and 2, respectively.
+#   Checkout :py:meth:`gluoncv.nn.coder.MultiClassDecoder` and
+#   :py:meth:`gluoncv.nn.coder.MultiPerClassDecoder` for implementions of method 1 and 2, respectively.
