@@ -11,6 +11,7 @@ from .cifarwideresnet import *
 from .resnetv1b import *
 from .resnext import *
 from .senet import *
+from .faster_rcnn import *
 
 __all__ = ['get_model']
 

@@ -6,6 +6,7 @@ def generate_anchors(base_size=16, ratios=nd.array([0.5, 1, 2]), scales=nd.array
     Generate anchor (reference) windows by enumerating aspect ratios and scales
     wrt a reference (0, 0, 15, 15) window.
     https://github.com/rbgirshick/py-faster-rcnn/blob/master/lib/rpn/generate_anchors.py
+    https://github.com/linmx0130/ya_mxdet
     """
     base_anchor = nd.array([1, 1, base_size, base_size])
     ratio_anchors = _ratio_enum(base_anchor, ratios)

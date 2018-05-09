@@ -1,1 +1,1 @@
-from .faster_rcnn import FasterRCNN
+from .faster_rcnn import *

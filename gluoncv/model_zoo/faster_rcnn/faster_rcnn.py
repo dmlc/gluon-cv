@@ -1,5 +1,5 @@
 import mxnet as mx
-from mxnet import gluon
+from mxnet import cpu, gluon
 import mxnet.ndarray as F
 import mxnet.gluon.nn as nn
 from mxnet.gluon import Block
@@ -7,6 +7,8 @@ from mxnet.gluon import Block
 from .rpn import RPN, RegionProposal
 from .rcnn import RCNN_ResNet
 from .bbox import bbox_inverse_transform, bbox_clip
+
+__all__ = ['FasterRCNN', 'get_faster_rccn', 'get_faster_rcnn_resnet101_voc']
 
 class FasterRCNN(RCNN_ResNet):
     """ faster RCNN """
@@ -27,12 +29,16 @@ class FasterRCNN(RCNN_ResNet):
         rpn_cls, rpn_reg = self.rpn(base_feat)
         # B, N, 4
         # B, sample_size, 4, TODO: Change to contrib.Proposal operator
-        rois = self.region_proposal(rpn_cls, rpn_reg, base_feat.shape, image_shape)
-        rois = rois.reshape(-1, 4)
+        rpn_scores, rois = self.region_proposal(rpn_cls, rpn_reg, base_feat.shape, image_shape)
+        batches = rois.shape[0]
+        num_rois = rois.shape[1]
         # ROI Pooling
+        roi_batchid = F.concatenate([batchid * mx.nd.ones((num_rois, 1), rois.context)
+                                     for batchid in range(batches)], axis=0)
+        roi_batchid = roi_batchid.reshape(-1, 1)
+        rois = rois.reshape(-1, 4)
+        rpn_batchid = F.concatenate([roi_batchid, rois], axis=1)
         # B*N, C, 7, 7
-        # FIXME batch ID
-        rpn_batchid = F.concatenate([mx.nd.zeros((rois.shape[0], 1), rois.context), rois], axis=1)
         pooled_feat = self.roi_feature(base_feat, rpn_batchid)
         # RCNN predict
         # rcnn_cls \in R^(B*N, nclass, 7, 7) && rcnn_reg \in R^(B*N, 4*nclass, 7, 7)
@@ -46,8 +52,8 @@ class FasterRCNN(RCNN_ResNet):
                 transform_bbox, image_shape[2], image_shape[3])
         # rcnn_cls \in R^(B*N x nclass) && rcnn_reg \in R^(B*N x nclass*4)
         # reshape
-        rcnn_cls = rcnn_cls.reshape(image_shape[0], -1, self.classes)
-        rcnn_bbox_pred = rcnn_bbox_pred.reshape(image_shape[0], -1, self.classes, 4)
+        rcnn_cls = rcnn_cls.reshape(batches, -1, self.classes)
+        rcnn_bbox_pred = rcnn_bbox_pred.reshape(batches, -1, self.classes, 4)
         return rcnn_cls, rcnn_bbox_pred
 
     def roi_feature(self, base_feat, rois):
@@ -92,8 +98,8 @@ def get_faster_rccn(dataset='pascal_voc', backbone='resnet101', pretrained=False
     # infer number of classes
     model = FasterRCNN(num_class['pascal_voc'], backbone=backbone, **kwargs)
     if pretrained:
-        from .model_store import get_model_file
-        model.load_params(get_model_file('faster_rccn_%s_%s'%(backbone, acronyms[dataset]),
+        from ..model_store import get_model_file
+        model.load_params(get_model_file('faster_rcnn_%s_%s'%(backbone, acronyms[dataset]),
                                          root=root), ctx=ctx)
     return model
 

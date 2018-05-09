@@ -33,19 +33,17 @@ class RegionProposal(object):
     """Region Proposals
     output region proposals by applying predicted transforms to the anchors
     """
-    def __init__(self, stride, ratios=F.array([0.5, 1, 2]), scales=F.array([8, 16, 32]), nms_thresh=0.7, nms_topk=300, sample_size=300):
+    def __init__(self, stride, ratios=F.array([0.5, 1, 2]), scales=F.array([8, 16, 32]),
+                 nms_thresh=0.7, nms_topk=300, pre_nms_topN=6000):
         self._feat_stride = stride
         # K,4
         self._anchors = generate_anchors(scales=scales, ratios=ratios)
         self._num_anchors = self._anchors.shape[0]
         self.nms_thresh = nms_thresh
         self.nms_topk = nms_topk
-        self.sample_size = sample_size
+        self.pre_nms_topN = pre_nms_topN
 
     def __call__(self, rpn_cls, rpn_reg, feature_shape, image_shape):
-        # TODO using single operator
-        #return F.contrib.Proposal(rpn_cls, rpn_reg, )
-
         # Get basic information of the feature and the image
         B, C, H, W = feature_shape
         img_height, img_width = image_shape[2:]
@@ -63,18 +61,20 @@ class RegionProposal(object):
         # B,H,W,K,4
         rpn_reg = F.transpose(rpn_reg.reshape((B, -1, 4, H, W)), (0, 3, 4, 1, 2))
 
-        # bbox predict
+        # bbox predict, B*N*W*K, 4
         rpn_bbox_pred = bbox_inverse_transform(anchors.reshape((-1, 4)), rpn_reg.reshape((-1, 4)))
         rpn_bbox_pred = bbox_clip(rpn_bbox_pred, img_height, img_width)
-        # B,H,W,K,4
+
+        # B, H, W, K, 4
         rpn_bbox_pred = rpn_bbox_pred.reshape((B, H, W, self._num_anchors, 4))
 
+        # self.pre_nms_topN?
         # NMS
         rpn_scores, rois = self.rpn_nms(
             rpn_anchor_scores, rpn_bbox_pred, self.nms_thresh, self.nms_topk)
 
-        # Keep first self.sample_size boxes
-        return rois[:, :self.sample_size, :]
+        # B, topK & B, topK, 4
+        return rpn_scores, rois
 
 
     @staticmethod
@@ -85,10 +85,9 @@ class RegionProposal(object):
         B = anchor_scores.shape[0]
         data = F.concat(anchor_scores, bbox_pred, dim=4).reshape(B, -1, 5)
         nms_pred = F.contrib.box_nms(data, thresh, topk, coord_start=1,
-                                     score_index=0, id_index=-1, force_suppress=True,
-                                     in_format='center', out_format='center')
+                                     score_index=0, id_index=-1, force_suppress=True)
         # B, N
-        rpn_scores = nms_pred[:,:,0]
+        rpn_scores = nms_pred[:,:topk,0]
         # B, N, 4
-        rpn_bbox = nms_pred[:,:,1:]
+        rpn_bbox = nms_pred[:,:topk,1:]
         return rpn_scores, rpn_bbox
