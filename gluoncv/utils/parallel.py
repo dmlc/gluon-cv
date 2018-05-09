@@ -50,7 +50,7 @@ class DataParallelModel(object):
         inputs, kwargs = split_load_kwargs(inputs, kwargs, self.ctx_list)
         assert(len(inputs) == len(self.ctx_list))
         if len(self.ctx_list) == 1:
-            return tuple(self.module(*inputs[0], **kwargs[0]))
+            return tuple([tuple(self.module(*inputs[0], **kwargs[0]))])
         return parallel_apply(self.module, inputs, kwargs, self.sync)
 
     def __repr__(self):
@@ -97,7 +97,7 @@ class DataParallelCriterion(object):
         targets, kwargs = split_load_kwargs(targets, kwargs, self.ctx_list)
         assert(len(targets) == len(self.ctx_list))
         if len(self.ctx_list) == 1:
-            return tuple(self.module(*(inputs + targets[0]), **kwargs[0]))
+            return tuple(self.module(*(inputs[0] + targets[0]), **kwargs[0]))
         assert(len(inputs) == len(self.ctx_list))
         return criterion_parallel_apply(self.module, inputs, targets, kwargs, self.sync)
 
