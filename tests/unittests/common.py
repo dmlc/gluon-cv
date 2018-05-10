@@ -27,6 +27,20 @@ from contextlib import contextmanager
 from nose.tools import make_decorator
 import tempfile
 
+def try_gpu(gpu_id=0):
+    def test_helper(orig_test):
+        @make_decorator(orig_test)
+        def test_wrapper(*args, **kwargs):
+            try:
+                a = mx.nd.zeros((1,), ctx=mx.gpu(gpu_id))
+                ctx = mx.gpu(gpu_id)
+            except Exception:
+                ctx = mx.cpu()
+            with ctx:
+                orig_test(*args, **kwargs)
+        return test_wrapper
+    return test_helper
+
 def assertRaises(expected_exception, func, *args, **kwargs):
     try:
         func(*args, **kwargs)
