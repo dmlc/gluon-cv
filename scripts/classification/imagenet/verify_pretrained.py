@@ -1,20 +1,16 @@
-import argparse, time, logging
+import argparse
 
 import mxnet as mx
-import numpy as np
 from mxnet import gluon, nd
-from mxnet import autograd as ag
-from mxnet.gluon import nn
 from mxnet.gluon.data.vision import transforms
 
 from gluoncv.data import imagenet
 from gluoncv.model_zoo import get_model
-from gluoncv.utils import makedirs, TrainingHistory
 
 # CLI
 parser = argparse.ArgumentParser(description='Train a model for image classification.')
 parser.add_argument('--data-dir', type=str, default='~/.mxnet/datasets/imagenet',
-                    help='training and validation pictures to use.')
+                    help='Imagenet directory for validation.')
 parser.add_argument('--batch-size', type=int, default=32,
                     help='training batch size per device (CPU/GPU).')
 parser.add_argument('--num-gpus', type=int, default=0,
@@ -28,9 +24,6 @@ parser.add_argument('--params-file', type=str,
 parser.add_argument('--use_se', action='store_true',
                     help='use SE layers or not in resnext. default is false.')
 opt = parser.parse_args()
-
-logging.basicConfig(level=logging.INFO)
-logging.info(opt)
 
 batch_size = opt.batch_size
 classes = 1000
