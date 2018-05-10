@@ -48,7 +48,7 @@ class Block(HybridBlock):
     def __init__(self, channels, cardinality, bottleneck_width, stride,
                  downsample=False, use_se=False, **kwargs):
         super(Block, self).__init__(**kwargs)
-        D = math.floor(channels * (bottleneck_width / 64))
+        D = int(math.floor(channels * (bottleneck_width / 64)))
         group_width = cardinality * D
 
         self.body = nn.HybridSequential(prefix='')
