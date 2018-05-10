@@ -28,6 +28,7 @@ from nose.tools import make_decorator
 import tempfile
 
 def try_gpu(gpu_id=0):
+    """Try execute on gpu, if not fallback to cpu"""
     def test_helper(orig_test):
         @make_decorator(orig_test)
         def test_wrapper(*args, **kwargs):

@@ -6,7 +6,10 @@ dependencies:
   - python=2.7
   - perl
   - sphinx=1.7.2
+  - nose
+  - coverage
+  - scipy
   - pip:
-    - mxnet>=1.2.0b20180415
-    - nose
-    - coverage
+    - mxnet>=1.2.0b20180418
+    - coverage-badge
+    - awscli
