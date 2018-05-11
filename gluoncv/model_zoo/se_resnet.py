@@ -142,18 +142,6 @@ class SE_BottleneckV1(HybridBlock):
     def hybrid_forward(self, F, x):
         residual = x
 
-
-        if downsample:
-            self.downsample = nn.HybridSequential(prefix='')
-            self.downsample.add(nn.Conv2D(channels, kernel_size=1, strides=stride,
-                                          use_bias=False, in_channels=in_channels))
-            self.downsample.add(nn.BatchNorm())
-        else:
-            self.downsample = None
-
-    def hybrid_forward(self, F, x):
-        residual = x
-
         x = self.body(x)
 
         w = F.contrib.AdaptiveAvgPooling2D(x, output_size=1)
@@ -196,18 +184,6 @@ class SE_BasicBlockV2(HybridBlock):
         self.se.add(nn.Activation('relu'))
         self.se.add(nn.Dense(channels, use_bias=False))
         self.se.add(nn.Activation('sigmoid'))
-
-        if downsample:
-            self.downsample = nn.HybridSequential(prefix='')
-            self.downsample.add(nn.Conv2D(channels, kernel_size=1, strides=stride,
-                                          use_bias=False, in_channels=in_channels))
-            self.downsample.add(nn.BatchNorm())
-        else:
-            self.downsample = None
-
-    def hybrid_forward(self, F, x):
-        residual = x
-
 
         if downsample:
             self.downsample = nn.Conv2D(channels, 1, stride, use_bias=False,
@@ -265,18 +241,6 @@ class SE_BottleneckV2(HybridBlock):
         self.se.add(nn.Activation('relu'))
         self.se.add(nn.Dense(channels, use_bias=False))
         self.se.add(nn.Activation('sigmoid'))
-
-        if downsample:
-            self.downsample = nn.HybridSequential(prefix='')
-            self.downsample.add(nn.Conv2D(channels, kernel_size=1, strides=stride,
-                                          use_bias=False, in_channels=in_channels))
-            self.downsample.add(nn.BatchNorm())
-        else:
-            self.downsample = None
-
-    def hybrid_forward(self, F, x):
-        residual = x
-
 
         if downsample:
             self.downsample = nn.Conv2D(channels, 1, stride, use_bias=False,
