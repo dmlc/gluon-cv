@@ -76,9 +76,11 @@ stage("Build Docs") {
       cd docs && make clean && make html
 
       if [[ ${env.BRANCH_NAME} == master ]]; then
+          aws s3 cp s3://gluon-cv.mxnet.io/coverage.svg build/html/coverage.svg
           aws s3 sync --delete build/html/ s3://gluon-cv.mxnet.io/ --acl public-read
           echo "Uploaded doc to http://gluon-cv.mxnet.io"
       else
+          aws s3 cp s3://gluon-vision-staging/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/coverage.svg build/html/coverage.svg
           aws s3 sync --delete build/html/ s3://gluon-vision-staging/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/ --acl public-read
           echo "Uploaded doc to http://gluon-vision-staging.s3-website-us-west-2.amazonaws.com/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/index.html"
       fi
