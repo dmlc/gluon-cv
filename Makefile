@@ -10,5 +10,10 @@ pylint:
 
 doc: docs
 
+clean: clean_build
+
 clean_docs:
 						make -C docs clean
+
+clean_build:
+						rm -rf dist gluoncv.egg-info build | true

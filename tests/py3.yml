@@ -1,0 +1,15 @@
+name: gluon_cv_py2
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.6
+  - perl
+  - sphinx=1.7.2
+  - nose
+  - coverage
+  - scipy
+  - pip:
+    - mxnet>=1.2.0b20180418
+    - coverage-badge
+    - awscli
