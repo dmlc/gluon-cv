@@ -265,7 +265,7 @@ def train_dummy(ctx):
     acc_top5.reset()
     btic = time.time()
     train_loss = 0
-    num_batch = 5000
+    num_batch = 1000
 
     for i in range(num_batch):
         if opt.label_smoothing:
@@ -287,7 +287,9 @@ def train_dummy(ctx):
                          i, batch_size*opt.log_interval/(time.time()-btic)))
             btic = time.time()
 
-    logging.info('[Epoch %d] time cost: %f'%(epoch, time.time()-tic))
+    total_time_cost = time.time()-tic
+    logging.info('Test finished. Average Speed: %f samples/sec. Total time cost: %f'%(
+                 batch_size*num_batch/total_time_cost, total_time_cost))
 
 def main():
     if opt.mode == 'hybrid':
