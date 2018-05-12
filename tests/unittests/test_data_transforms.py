@@ -115,6 +115,33 @@ def test_image_ten_crop():
     np.testing.assert_allclose(im, crops[1].asnumpy())
     np.testing.assert_allclose(im[:, ::-1, :], crops[6].asnumpy())
 
+def test_experimental_bbox_random_crop_with_constraints():
+    bbox = np.array([[10, 20, 200, 500], [150, 200, 400, 300]])
+    size = (640, 480)
+    for _ in range(10):
+        min_scale = np.random.uniform(0, 0.9)
+        max_scale = np.random.uniform(min_scale, 1)
+        max_aspect_ratio = np.random.uniform(1, 3)
+        out, crop = transforms.experimental.bbox.random_crop_with_constraints(
+            bbox, size, min_scale=min_scale, max_scale=max_scale,
+            max_aspect_ratio=max_aspect_ratio, max_trial=20)
+    assert out.size >= 4
+
+def test_experimental_image_random_color_distort():
+    image = mx.random.normal(shape=(240, 120, 3)).astype(np.float32)
+    for _ in range(10):
+        brightness_delta = np.random.randint(0, 64)
+        contrast_low = np.random.uniform(0, 1)
+        contrast_high = np.random.uniform(1, 2)
+        saturation_low = np.random.uniform(0, 1)
+        saturation_high = np.random.uniform(1, 2)
+        hue_delta = np.random.randint(0, 36)
+        out = transforms.experimental.image.random_color_distort(
+            image, brightness_delta=brightness_delta, contrast_low=contrast_low,
+            contrast_high=contrast_high, saturation_low=saturation_low,
+            saturation_high=saturation_high, hue_delta=hue_delta)
+        np.testing.assert_allclose(out.shape, image.shape)
+
 if __name__ == '__main__':
     import nose
     nose.runmodule()
