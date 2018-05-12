@@ -27,6 +27,7 @@ stage("Unit Test") {
         pip install -e .
         env
         export LD_LIBRARY_PATH=/usr/local/cuda-8.0/lib64
+        export MPLBACKEND=Agg
         nosetests --with-coverage --cover-package gluoncv -v tests/unittests
         rm -f coverage.svg
         coverage-badge -o coverage.svg
@@ -53,6 +54,7 @@ stage("Unit Test") {
         pip install -e .
         env
         export LD_LIBRARY_PATH=/usr/local/cuda-8.0/lib64
+        export MPLBACKEND=Agg
         nosetests --with-coverage --cover-package gluoncv -v tests/unittests
         """
       }
