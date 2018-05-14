@@ -8,3 +8,4 @@ from .fcn import *
 from .pspnet import *
 from . import segbase
 from .resnetv1b import *
+from .faster_rcnn import *
