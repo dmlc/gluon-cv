@@ -113,16 +113,18 @@ class RegionProposal(object):
         return rpn_scores, rpn_bbox
 
     @staticmethod
-    def bbox_clip(bbox:F.NDArray, height, width):
+    def bbox_clip(bbox, height, width):
+        """Box Clipping"""
         zeros_t = F.zeros(bbox[:, 0].shape, ctx=bbox.context)
-        bbox[:, 0] = F.maximum(bbox[:, 0], zeros_t) 
-        bbox[:, 1] = F.maximum(bbox[:, 1], zeros_t) 
-        bbox[:, 2] = F.minimum(bbox[:, 2], zeros_t + width - 1) 
-        bbox[:, 3] = F.minimum(bbox[:, 3], zeros_t + height - 1) 
+        bbox[:, 0] = F.maximum(bbox[:, 0], zeros_t)
+        bbox[:, 1] = F.maximum(bbox[:, 1], zeros_t)
+        bbox[:, 2] = F.minimum(bbox[:, 2], zeros_t + width - 1)
+        bbox[:, 3] = F.minimum(bbox[:, 3], zeros_t + height - 1)
         return bbox
 
     @staticmethod
     def bbox_transform(boxes, deltas, weights=(1.0, 1.0, 1.0, 1.0), clip_value=4.135166556742356):
+        """Box Transforms"""
         if boxes.shape[0] == 0:
             return None
 
@@ -137,7 +139,7 @@ class RegionProposal(object):
         dy = deltas[:, 1::4] / wy
         dw = deltas[:, 2::4] / ww
         dh = deltas[:, 3::4] / wh
-        
+
         # Prevent sending too large values into np.exp()
         dw = dw.clip(a_max=clip_value, a_min=dw.min().asscalar())
         dh = dh.clip(a_max=clip_value, a_min=dh.min().asscalar())

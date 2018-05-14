@@ -1,11 +1,10 @@
 """Faster RCNN Model"""
-import mxnet as mx
 from mxnet import cpu
 import mxnet.ndarray as F
 
 from .rpn import RPN, RegionProposal
 from .rcnn import RCNN_ResNet
-# pylint: disable=arguments-differ, unused-variable
+# pylint: disable=arguments-differ, unused-variable, invalid-sequence-index
 
 __all__ = ['FasterRCNN', 'get_faster_rccn', 'get_faster_rcnn_resnet50_coco',
            'get_faster_rcnn_resnet101_voc']
@@ -44,18 +43,6 @@ class FasterRCNN(RCNN_ResNet):
         # RCNN predict
         rcnn_cls, rcnn_reg = self.top_forward(pooled_feat)
         rcnn_cls = F.softmax(rcnn_cls, axis=1)
-        # BBox
-        """
-        rcnn_bbox_pred = F.zeros(rcnn_reg.shape)
-        for i in range(self.classes):
-            transform_bbox = bbox_inverse_transform(rois, rcnn_reg[:, i*4:(i+1)*4])
-            rcnn_bbox_pred[:, i*4:(i+1)*4] = bbox_clip(
-                transform_bbox, image_shape[2], image_shape[3])
-        # rcnn_cls \in R^(B*N x nclass) && rcnn_reg \in R^(B*N x nclass*4)
-        # reshape
-        rcnn_cls = rcnn_cls.reshape(batches, -1, self.classes)
-        rcnn_bbox_pred = rcnn_bbox_pred.reshape(batches, -1, self.classes, 4)
-        """
         return rcnn_cls, rcnn_reg, rois, base_feat
 
     def roi_feature(self, base_feat, rois):
@@ -69,6 +56,7 @@ class FasterRCNN(RCNN_ResNet):
 
     @staticmethod
     def rcnn_nms(rcnn_cls, bbox_pred, thresh=0.5, pre_nms_topN=-1, topK=100):
+        """RCNN NMS"""
         nclass = rcnn_cls.shape[1]
         nboxs = bbox_pred.shape[0]
         ids = F.concatenate([classid * F.ones((nboxs, 1), rcnn_cls.context)
