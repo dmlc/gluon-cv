@@ -4,7 +4,7 @@ import mxnet.ndarray as F
 import mxnet.gluon.nn as nn
 
 from ..resnetv1b import resnet50_v1b, resnet101_v1b, resnet152_v1b
-# pylint: disable=unused-argument
+# pylint: disable=unused-argument, invalid-sequence-index
 
 class RCNN_ResNet(gluon.Block):
     """RCNN Base model"""

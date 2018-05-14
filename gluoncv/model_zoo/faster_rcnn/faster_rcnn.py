@@ -4,7 +4,7 @@ import mxnet.ndarray as F
 
 from .rpn import RPN, RegionProposal
 from .rcnn import RCNN_ResNet
-# pylint: disable=arguments-differ, unused-variable, invalid-sequence-index
+# pylint: disable=arguments-differ, unused-variable, dangerous-default-value
 
 __all__ = ['FasterRCNN', 'get_faster_rccn', 'get_faster_rcnn_resnet50_coco',
            'get_faster_rcnn_resnet101_voc']
@@ -38,7 +38,7 @@ class FasterRCNN(RCNN_ResNet):
     pre_nms_topN : int, default is 6000
         Pick topN entries before NMS.
     """
-    def __init__(self, classes, backbone, train=False, roi_mode='align', roi_size = (14, 14),
+    def __init__(self, classes, backbone, train=False, roi_mode='align', roi_size=(14, 14),
                  anchor_ratios=[0.5, 1, 2], anchor_scales=[32, 64, 128, 256, 512],
                  nms_thresh=0.7, nms_topK=1000, pre_nms_topN=6000, **kwargs):
         super(FasterRCNN, self).__init__(classes, backbone, **kwargs)
