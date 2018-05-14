@@ -50,7 +50,11 @@ def test_imagenet_models():
     ctx = mx.context.current_context()
     x = mx.random.uniform(shape=(2, 3, 224, 224), ctx=ctx)
     models = ['resnet18_v1b', 'resnet34_v1b', 'resnet50_v1b',
-              'resnet101_v1b', 'resnet152_v1b', 'resnext50_32x4d', 'resnext101_32x4d']
+              'resnet101_v1b', 'resnet152_v1b', 'resnext50_32x4d', 'resnext101_32x4d',
+              'se_resnet18_v1', 'se_resnet34_v1', 'se_resnet50_v1',
+              'se_resnet101_v1', 'se_resnet152_v1',
+              'se_resnet18_v2', 'se_resnet34_v2', 'se_resnet50_v2',
+              'se_resnet101_v2', 'se_resnet152_v2']
     for model in models:
         net = gcv.model_zoo.get_model(model)
         with warnings.catch_warnings():
@@ -59,6 +63,15 @@ def test_imagenet_models():
         net.collect_params().reset_ctx(ctx)
         net(x)
         mx.nd.waitall()
+    for model in models:
+        if 'resnext' in model:
+            net = gcv.model_zoo.get_model(model, use_se=True)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                net.initialize()
+            net.collect_params().reset_ctx(ctx)
+            net(x)
+            mx.nd.waitall()
 
 @try_gpu(0)
 def test_ssd_models():
