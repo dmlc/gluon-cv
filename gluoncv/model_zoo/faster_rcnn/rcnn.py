@@ -29,6 +29,16 @@ class RCNN_ResNet(gluon.Block):
             self.layer2 = pretrained.layer2
             self.layer3 = pretrained.layer3
             self.layer4 = pretrained.layer4
+
+            # TODO FIXME, disable after testing
+            # hacky for load caffe pretrained weight
+            self.layer2[0].conv1._kwargs['stride'] = (2, 2)
+            self.layer2[0].conv2._kwargs['stride'] = (1, 1)
+            self.layer3[0].conv1._kwargs['stride'] = (2, 2)
+            self.layer3[0].conv2._kwargs['stride'] = (1, 1)
+            self.layer4[0].conv1._kwargs['stride'] = (2, 2)
+            self.layer4[0].conv2._kwargs['stride'] = (1, 1)
+
             # RCNN cls and bbox reg
             self.conv_cls = nn.Dense(in_units=2048, units=classes)
             self.conv_reg = nn.Dense(in_units=2048, units=4*classes)

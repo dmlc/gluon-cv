@@ -66,6 +66,7 @@ def get_model(name, **kwargs):
         'resnext101_32x4d' : resnext101_32x4d,
         'resnext101_64x4d' : resnext101_64x4d,
         'senet_154' : senet_154,
+        'faster_rcnn_resnet50_coco' : get_faster_rcnn_resnet50_coco,
         'faster_rcnn_resnet101_voc' : get_faster_rcnn_resnet101_voc,
         }
     try:

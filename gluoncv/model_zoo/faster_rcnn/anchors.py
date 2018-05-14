@@ -9,7 +9,7 @@ def generate_anchors(base_size=16, ratios=nd.array([0.5, 1, 2]), scales=nd.array
     https://github.com/rbgirshick/py-faster-rcnn/blob/master/lib/rpn/generate_anchors.py
     https://github.com/linmx0130/ya_mxdet
     """
-    base_anchor = nd.array([1, 1, base_size, base_size])
+    base_anchor = nd.array([0, 0, base_size-1, base_size-1])
     ratio_anchors = _ratio_enum(base_anchor, ratios)
     anchors = nd.concatenate([_scale_enum(ratio_anchors[i, :], scales)
                               for i in range(ratio_anchors.shape[0])])
