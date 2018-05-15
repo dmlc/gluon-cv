@@ -277,8 +277,7 @@ def train_dummy(ctx):
         with ag.record():
             outputs = [net(X) for X in data]
             loss = [L(yhat, y) for yhat, y in zip(outputs, label_smooth)]
-        for l in loss:
-            l.backward()
+        ag.backward(loss)
         trainer.step(batch_size)
         acc_top1.update(label, outputs)
         acc_top5.update(label, outputs)
