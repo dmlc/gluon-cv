@@ -14,23 +14,26 @@ class BBoxCornerToCenter(gluon.HybridBlock):
     ----------
     split : bool
         Whether split boxes to individual elements after processing.
+    axis : int, default is -1
+        Effective axis of the bounding box. Default is -1(the last dimension).
 
     Returns
     -------
      A BxNx4 NDArray if split is False, or 4 BxNx1 NDArray if split is True
     """
-    def __init__(self, split=False):
+    def __init__(self, axis=-1, split=False):
         super(BBoxCornerToCenter, self).__init__()
         self._split = split
+        self._axis = axis
 
     def hybrid_forward(self, F, x):
-        xmin, ymin, xmax, ymax = F.split(x, axis=-1, num_outputs=4)
+        xmin, ymin, xmax, ymax = F.split(x, axis=self._axis, num_outputs=4)
         width = xmax - xmin
         height = ymax - ymin
         x = xmin + width / 2
         y = ymin + height / 2
         if not self._split:
-            return F.concat(x, y, width, height, dim=-1)
+            return F.concat(x, y, width, height, dim=self._axis)
         else:
             return x, y, width, height
 
@@ -44,18 +47,21 @@ class BBoxCenterToCorner(gluon.HybridBlock):
     ----------
     split : bool
         Whether split boxes to individual elements after processing.
+    axis : int, default is -1
+        Effective axis of the bounding box. Default is -1(the last dimension).
 
     Returns
     -------
      A BxNx4 NDArray if split is False, or 4 BxNx1 NDArray if split is True.
     """
-    def __init__(self, split=False):
+    def __init__(self, axis=-1, split=False):
         super(BBoxCenterToCorner, self).__init__()
         self._split = split
+        self._axis = axis
 
     def hybrid_forward(self, F, x):
         """Hybrid forward"""
-        x, y, w, h = F.split(x, axis=-1, num_outputs=4)
+        x, y, w, h = F.split(x, axis=self._axis, num_outputs=4)
         hw = w / 2
         hh = h / 2
         xmin = x - hw
@@ -63,6 +69,111 @@ class BBoxCenterToCorner(gluon.HybridBlock):
         xmax = x + hw
         ymax = y + hh
         if not self._split:
-            return F.concat(xmin, ymin, xmax, ymax, dim=-1)
+            return F.concat(xmin, ymin, xmax, ymax, dim=self._axis)
         else:
             return xmin, ymin, xmax, ymax
+
+
+class BBoxSplit(gluon.HybridBlock):
+    """Split bounding boxes into 4 columns.
+
+    Parameters
+    ----------
+    axis : int, default is -1
+        On which axis to split the bounding box. Default is -1(the last dimension).
+
+    """
+    def __init__(self, axis, **kwargs):
+        super(BBoxSplit, self).__init__(**kwargs)
+        self._axis = axis
+
+    def hybrid_forward(self, F, x):
+        return F.split(x, axis=self._axis, num_outputs=4)
+
+
+class BBoxConcat(gluon.HybridBlock):
+    """Split bounding boxes into 4 columns.
+
+    Parameters
+    ----------
+    axis : int, default is -1
+        On which axis to concatenate the bounding box. Default is -1(the last dimension).
+
+    """
+    def __init__(self, axis, **kwargs):
+        super(BBoxConcat, self).__init__(**kwargs)
+        self._axis = axis
+
+    def hybrid_forward(self, F, x):
+        assert len(x) == 4
+        return F.concat(*x, dim=self._axis)
+
+
+class BBoxClipToImage(gluon.HybridBlock):
+    """Clip bounding boxes to image boundary.
+
+    Parameters
+    ----------
+    format : str, default is corner
+        Bounding box format, can be {'center', 'corner'}.
+        'center': {x, y, width, height}
+        'corner': {xmin, ymin, xmax, ymax}
+    axis : int, default is -1
+        Effective axis of the bounding box. Default is -1(the last dimension).
+
+    Returns
+    -------
+    A BxNx4 NDArray
+
+    """
+    def __init__(self, axis=-1, format='corner', **kwargs):
+        super(BBoxClipToImage, self).__init__(**kwargs)
+        if format.lower() == 'center':
+            self._pre = BBoxCenterToCorner(split=True)
+            self._post = BBoxCornerToCenter(split=False)
+        elif format.lower() == 'corner':
+            self._pre = BBoxSplit(axis=axis)
+            self._post = BBoxConcat(axis=axis)
+        else:
+            raise ValueError("Unsupported format: {}. Use 'corner' or 'center'.".format(format))
+
+    def hybrid_forward(self, F, x, width, height):
+        xmin, ymin, xmax, ymax = self._pre(x)
+        xmin = F.clip(xmin, 0, width)
+        ymin = F.clip(ymin, 0, height)
+        xmax = F.clip(xmax, 0, width)
+        ymax = F.clip(ymax, 0, height)
+        return self._post([xmin, ymin, xmax, ymax])
+
+
+class BBoxArea(gluon.HybridBlock):
+    """Calculate the area of bounding boxes.
+
+    Parameters
+    ----------
+    format : str, default is corner
+        Bounding box format, can be {'center', 'corner'}.
+        'center': {x, y, width, height}
+        'corner': {xmin, ymin, xmax, ymax}
+    axis : int, default is -1
+        Effective axis of the bounding box. Default is -1(the last dimension).
+
+    Returns
+    -------
+    A BxNx1 NDArray
+
+    """
+    def __init__(self, axis=-1, format='corner', **kwargs):
+        super(BBoxArea, self).__init__(**kwargs)
+        if format.lower() == 'center':
+            self._pre = BBoxCornerToCenter(split=True)
+        elif format.lower() == 'corner':
+            self._pre = BBoxSplit(axis=axis)
+        else:
+            raise ValueError("Unsupported format: {}. Use 'corner' or 'center'.".format(format))
+
+    def hybrid_forward(self, F, x):
+        x, y, width, height = self._pre(x)
+        width = F.where(width > 0, width, F.zeros_like(width))
+        height = F.where(height > 0, height, F.zeros_like(height))
+        return width * height

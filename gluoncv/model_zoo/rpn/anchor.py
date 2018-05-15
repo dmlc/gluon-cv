@@ -45,7 +45,13 @@ class RPNAnchorGenerator(gluon.HybridBlock):
             scales = [scales]
 
         anchors = self._generate_anchors(base_size, ratios, scales, alloc_size)
+        self._num_depth = len(ratios) * len(scales)
         self.anchors = self.params.get_constant('anchor_', anchors)
+
+    @property
+    def num_depth(self):
+        """Number of anchors at each pixel."""
+        return self._num_depth
 
     def _generate_anchors(self, stride, base_size, ratios, scales, alloc_size):
         # generate same shapes on every location
