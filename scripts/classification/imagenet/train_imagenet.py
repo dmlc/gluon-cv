@@ -116,7 +116,6 @@ jitter_param = 0.0 if model_name.startswith('mobilenet') else 0.4
 lighting_param = 0.0 if model_name.startswith('mobilenet') else 0.1
 
 transform_train = transforms.Compose([
-    transforms.Resize(480),
     transforms.RandomResizedCrop(224),
     transforms.RandomFlipLeftRight(),
     transforms.RandomColorJitter(brightness=jitter_param, contrast=jitter_param,
@@ -260,7 +259,6 @@ def train_dummy(ctx):
     trainer = gluon.Trainer(net.collect_params(), optimizer, optimizer_params)
     L = gluon.loss.SoftmaxCrossEntropyLoss()
 
-    tic = time.time()
     acc_top1.reset()
     acc_top5.reset()
     btic = time.time()
@@ -268,6 +266,8 @@ def train_dummy(ctx):
     num_batch = 1000
 
     for i in range(num_batch):
+        if i == 1:
+            tic = time.time()
         if opt.label_smoothing:
             label_smooth = smooth(label)
         else:
@@ -289,7 +289,7 @@ def train_dummy(ctx):
 
     total_time_cost = time.time()-tic
     logging.info('Test finished. Average Speed: %f samples/sec. Total time cost: %f'%(
-                 batch_size*num_batch/total_time_cost, total_time_cost))
+                 batch_size*(num_batch-1)/total_time_cost, total_time_cost))
 
 def main():
     if opt.mode == 'hybrid':
