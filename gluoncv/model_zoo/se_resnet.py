@@ -67,10 +67,9 @@ class SE_BasicBlockV1(HybridBlock):
         self.body.add(nn.BatchNorm())
 
         self.se = nn.HybridSequential(prefix='')
-        self.se.add(nn.GlobalAvgPool2D())
-        self.se.add(nn.Conv2D(channels//16, kernel_size=1, use_bias=False))
+        self.se.add(nn.Dense(channels//16, use_bias=False))
         self.se.add(nn.Activation('relu'))
-        self.se.add(nn.Conv2D(channels, kernel_size=1, use_bias=False))
+        self.se.add(nn.Dense(channels, use_bias=False))
         self.se.add(nn.Activation('sigmoid'))
 
         if downsample:
@@ -85,8 +84,10 @@ class SE_BasicBlockV1(HybridBlock):
         residual = x
 
         x = self.body(x)
-        w = self.se(x)
-        x = F.broadcast_mul(x, w)
+
+        w = F.contrib.AdaptiveAvgPooling2D(x, output_size=1)
+        w = self.se(w)
+        x = F.broadcast_mul(x, w.expand_dims(axis=2).expand_dims(axis=2))
 
         if self.downsample:
             residual = self.downsample(residual)
@@ -125,10 +126,9 @@ class SE_BottleneckV1(HybridBlock):
         self.body.add(nn.BatchNorm())
 
         self.se = nn.HybridSequential(prefix='')
-        self.se.add(nn.GlobalAvgPool2D())
-        self.se.add(nn.Conv2D(channels//16, kernel_size=1, use_bias=False))
+        self.se.add(nn.Dense(channels//16, use_bias=False))
         self.se.add(nn.Activation('relu'))
-        self.se.add(nn.Conv2D(channels, kernel_size=1, use_bias=False))
+        self.se.add(nn.Dense(channels, use_bias=False))
         self.se.add(nn.Activation('sigmoid'))
 
         if downsample:
@@ -143,8 +143,10 @@ class SE_BottleneckV1(HybridBlock):
         residual = x
 
         x = self.body(x)
-        w = self.se(x)
-        x = F.broadcast_mul(x, w)
+
+        w = F.contrib.AdaptiveAvgPooling2D(x, output_size=1)
+        w = self.se(w)
+        x = F.broadcast_mul(x, w.expand_dims(axis=2).expand_dims(axis=2))
 
         if self.downsample:
             residual = self.downsample(residual)
@@ -178,10 +180,9 @@ class SE_BasicBlockV2(HybridBlock):
         self.conv2 = _conv3x3(channels, 1, channels)
 
         self.se = nn.HybridSequential(prefix='')
-        self.se.add(nn.GlobalAvgPool2D())
-        self.se.add(nn.Conv2D(channels//16, kernel_size=1, use_bias=False))
+        self.se.add(nn.Dense(channels//16, use_bias=False))
         self.se.add(nn.Activation('relu'))
-        self.se.add(nn.Conv2D(channels, kernel_size=1, use_bias=False))
+        self.se.add(nn.Dense(channels, use_bias=False))
         self.se.add(nn.Activation('sigmoid'))
 
         if downsample:
@@ -202,8 +203,9 @@ class SE_BasicBlockV2(HybridBlock):
         x = F.Activation(x, act_type='relu')
         x = self.conv2(x)
 
-        w = self.se(x)
-        x = F.broadcast_mul(x, w)
+        w = F.contrib.AdaptiveAvgPooling2D(x, output_size=1)
+        w = self.se(w)
+        x = F.broadcast_mul(x, w.expand_dims(axis=2).expand_dims(axis=2))
 
         return x + residual
 
@@ -235,10 +237,9 @@ class SE_BottleneckV2(HybridBlock):
         self.conv3 = nn.Conv2D(channels, kernel_size=1, strides=1, use_bias=False)
 
         self.se = nn.HybridSequential(prefix='')
-        self.se.add(nn.GlobalAvgPool2D())
-        self.se.add(nn.Conv2D(channels//16, kernel_size=1, use_bias=False))
+        self.se.add(nn.Dense(channels//16, use_bias=False))
         self.se.add(nn.Activation('relu'))
-        self.se.add(nn.Conv2D(channels, kernel_size=1, use_bias=False))
+        self.se.add(nn.Dense(channels, use_bias=False))
         self.se.add(nn.Activation('sigmoid'))
 
         if downsample:
@@ -263,8 +264,9 @@ class SE_BottleneckV2(HybridBlock):
         x = F.Activation(x, act_type='relu')
         x = self.conv3(x)
 
-        w = self.se(x)
-        x = F.broadcast_mul(x, w)
+        w = F.contrib.AdaptiveAvgPooling2D(x, output_size=1)
+        w = self.se(w)
+        x = F.broadcast_mul(x, w.expand_dims(axis=2).expand_dims(axis=2))
 
         return x + residual
 
