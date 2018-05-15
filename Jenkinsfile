@@ -32,10 +32,10 @@ stage("Unit Test") {
         rm -f coverage.svg
         coverage-badge -o coverage.svg
         if [[ ${env.BRANCH_NAME} == master ]]; then
-            aws s3 cp coverage.svg s3://gluon-cv.mxnet.io/coverage.svg --acl public-read
+            aws s3 cp coverage.svg s3://gluon-cv.mxnet.io/coverage.svg --acl public-read --cache-control max-age=3600
             echo "Uploaded coverage badge to http://gluon-cv.mxnet.io"
         else
-            aws s3 cp coverage.svg s3://gluon-vision-staging/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/coverage.svg --acl public-read
+            aws s3 cp coverage.svg s3://gluon-vision-staging/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/coverage.svg --acl public-read --cache-control max-age=3600
             echo "Uploaded coverage badge to http://gluon-vision-staging.s3-website-us-west-2.amazonaws.com/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/coverage.svg"
         fi
         """
