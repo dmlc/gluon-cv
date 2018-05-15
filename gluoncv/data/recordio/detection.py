@@ -1,8 +1,6 @@
 """Detection dataset from RecordIO files."""
 from __future__ import absolute_import
 from __future__ import division
-import os
-import logging
 import numpy as np
 from mxnet import gluon
 
@@ -45,7 +43,7 @@ class RecordFileDetection(gluon.data.vision.ImageRecordDataset):
         label = np.array(label).ravel()
         header_len = int(label[0])  # label header
         label_width = int(label[1])  # the label width for each object, >= 5
-        if not label_width >= 5:
+        if label_width < 5:
             raise ValueError(
                 "Label info for each object shoudl >= 5, given {}".format(label_width))
         min_len = header_len + 5
