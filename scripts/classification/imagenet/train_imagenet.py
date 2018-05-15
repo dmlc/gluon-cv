@@ -264,9 +264,10 @@ def train_dummy(ctx):
     btic = time.time()
     train_loss = 0
     num_batch = 1000
+    warm_up = 100
 
     for i in range(num_batch):
-        if i == 1:
+        if i == warm_up:
             tic = time.time()
         if opt.label_smoothing:
             label_smooth = smooth(label)
@@ -289,7 +290,7 @@ def train_dummy(ctx):
 
     total_time_cost = time.time()-tic
     logging.info('Test finished. Average Speed: %f samples/sec. Total time cost: %f'%(
-                 batch_size*(num_batch-1)/total_time_cost, total_time_cost))
+                 batch_size*(num_batch-warm_up)/total_time_cost, total_time_cost))
 
 def main():
     if opt.mode == 'hybrid':
