@@ -95,6 +95,8 @@ optimizer = 'nag'
 optimizer_params = {'learning_rate': opt.lr, 'wd': opt.wd, 'momentum': opt.momentum}
 
 net = get_model(model_name, **kwargs)
+if opt.use_se:
+    model_name = 'se_' + model_name
 
 acc_top1 = mx.metric.Accuracy()
 acc_top5 = mx.metric.TopKAccuracy(5)
@@ -204,8 +206,7 @@ def train(epochs, ctx):
             with ag.record():
                 outputs = [net(X) for X in data]
                 loss = [L(yhat, y) for yhat, y in zip(outputs, label_smooth)]
-            for l in loss:
-                l.backward()
+            ag.backward(loss)
             trainer.step(batch_size)
             acc_top1.update(label, outputs)
             acc_top5.update(label, outputs)
@@ -247,7 +248,7 @@ def train(epochs, ctx):
 def train_dummy(ctx):
     if isinstance(ctx, mx.Context):
         ctx = [ctx]
-    net.initialize(mx.init.Xavier(magnitude=2), ctx=ctx)
+    net.initialize(mx.init.MSRAPrelu(), ctx=ctx)
 
     data = []
     label = []
