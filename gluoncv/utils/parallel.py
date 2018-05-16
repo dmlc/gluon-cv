@@ -139,7 +139,7 @@ def parallel_apply(module, inputs, kwargs_tup=None, sync=False):
         try:
             if is_recording:
                 with autograd.record(is_training):
-                    output = module(*input, **kwargs)
+                    output = output = tuple([module(*input, **kwargs)])
                     for out in output:
                         out.wait_to_read()
             else:
@@ -174,7 +174,7 @@ def parallel_apply(module, inputs, kwargs_tup=None, sync=False):
             outputs.append(output)
         return tuple(outputs)
     else:
-        outputs = [module(*input, **kwargs) for (input, kwargs) in zip(inputs, kwargs_tup)]
+        outputs = [tuple([module(*input, **kwargs)]) for (input, kwargs) in zip(inputs, kwargs_tup)]
         return tuple(outputs)
 
 
