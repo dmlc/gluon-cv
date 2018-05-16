@@ -126,7 +126,7 @@ def split_load_kwargs(inputs, kwargs, ctx_list, batch_axis=0):
 
 
 def tuple_map(obj):
-    if isinstance(obj, NDArray) or isinstance(obj, str):
+    if isinstance(obj, NDArray):
         return (obj,)
     if isinstance(obj, list) and len(obj) > 0:
         return tuple(obj)
@@ -147,7 +147,7 @@ def parallel_apply(module, inputs, kwargs_tup=None, sync=False):
         try:
             if is_recording:
                 with autograd.record(is_training):
-                    output =tuple_map(module(*input, **kwargs))
+                    output = tuple_map(module(*input, **kwargs))
                     for out in output:
                         out.wait_to_read()
             else:
