@@ -56,6 +56,7 @@ def test_voc_segmentation():
         index = np.random.randint(0, len(val))
         _ = val[index]
 
+
 def test_ade_segmentation():
     if not osp.isdir(osp.expanduser('~/.mxnet/datasets/ade')):
         return
@@ -63,7 +64,6 @@ def test_ade_segmentation():
     # use valid only, loading training split is very slow
     val = data.ADE20KSegmentation(split='train')
     name = str(val)
-    assert len(val.classes) > 0
 
     for _ in range(10):
         index = np.random.randint(0, len(val))
