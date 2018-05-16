@@ -118,7 +118,8 @@ def get_fcn(dataset='pascal_voc', backbone='resnet50', pretrained=False,
         from .model_store import get_model_file
         model.load_params(get_model_file('fcn_%s_%s'%(backbone, acronyms[dataset]),
                                          root=root))
-    return model.collect_params().reset_ctx(ctx)
+    model.collect_params().reset_ctx(ctx)
+    return model
 
 def get_fcn_voc_resnet50(**kwargs):
     r"""FCN model with base network ResNet-50 pre-trained on Pascal VOC dataset
