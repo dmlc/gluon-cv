@@ -11,7 +11,6 @@ def batch_pix_accuracy(output, target, ignore_bg=False):
     predict = F.argmax(output, 1)
     target = target.astype(predict.dtype)
     if ignore_bg:
-        print((target > 0).sum().context)
         pixel_labeled = (target > 0).sum().asscalar()
         pixel_correct = (F.equal(predict, target)*(target > 0.0)).sum().asscalar()
     else:

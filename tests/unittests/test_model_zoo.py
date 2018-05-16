@@ -24,8 +24,9 @@ import mxnet as mx
 import numpy as np
 
 import gluoncv as gcv
-from common import try_gpu
+from common import try_gpu, with_cpu
 
+@with_cpu(0)
 def _test_model_list(model_list, ctx, x, **kwargs):
     for model in model_list:
         net = gcv.model_zoo.get_model(model, **kwargs)
@@ -47,7 +48,6 @@ def _test_model_list(model_list, ctx, x, **kwargs):
             net(x)
             mx.nd.waitall()
 
-@try_gpu(0)
 def test_classification_models():
     ctx = mx.context.current_context()
     x = mx.random.uniform(shape=(2, 3, 32, 32), ctx=ctx)
@@ -59,7 +59,6 @@ def test_classification_models():
     ]
     _test_model_list(cifar_models, ctx, x)
 
-@try_gpu(0)
 def test_imagenet_models():
     ctx = mx.context.current_context()
     x = mx.random.uniform(shape=(2, 3, 224, 224), ctx=ctx)
