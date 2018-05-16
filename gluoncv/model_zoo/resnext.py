@@ -186,7 +186,7 @@ def get_resnext(num_layers, cardinality=32, bottleneck_width=4, use_se=False,
         "Invalid number of layers: %d. Options are %s"%(
             num_layers, str(resnext_spec.keys()))
     layers = resnext_spec[num_layers]
-    net = ResNext(layers, cardinality, bottleneck_width, **kwargs)
+    net = ResNext(layers, cardinality, bottleneck_width, use_se=use_se, **kwargs)
     if pretrained:
         from ..model_store import get_model_file
         if not use_se:
