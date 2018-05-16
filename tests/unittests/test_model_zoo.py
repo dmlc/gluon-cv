@@ -81,7 +81,7 @@ def test_ssd_models():
     if not mx.context.current_context().device_type == 'gpu':
         models = ['ssd_512_resnet50_v1_voc']
     for model in models:
-        net = gcv.model_zoo.get_model(model, ctx=mx.cpu())
+        net = gcv.model_zoo.get_model(model)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             net.initialize()
@@ -95,7 +95,7 @@ def test_segmentation_models():
     x = mx.random.uniform(shape=(2, 3, 480, 480), ctx=ctx)
     models = ['fcn_resnet50_voc', 'fcn_resnet101_voc']
     for model in models:
-        net = gcv.model_zoo.get_model(model, ctx=mx.cpu())
+        net = gcv.model_zoo.get_model(model)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             net.initialize()
