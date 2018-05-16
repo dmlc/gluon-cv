@@ -12,6 +12,7 @@ from common import try_gpu, with_cpu
 @with_cpu(0)
 def test_segmentation_utils():
     ctx = mx.context.current_context()
+    print("Running on ctx: ", ctx)
     import os
     if not os.path.isdir(os.path.expanduser('~/.mxnet/datasets/voc')):
         return
@@ -24,7 +25,7 @@ def test_segmentation_utils():
     # TODO FIXME: change it to ADE20K dataset and pretrained model
     dataset = VOCSegmentation(split='val')
     # load pretrained net
-    net = gluoncv.model_zoo.get_model('fcn_resnet50_voc', pretrained=True, ctx=ctx)
+    net = gluoncv.model_zoo.get_model('fcn_resnet50_voc', pretrained=False, ctx=ctx)
     # count for pixAcc and mIoU
     total_inter, total_union, total_correct, total_label = 0, 0, 0, 0
     np_inter, np_union, np_correct, np_label = 0, 0, 0, 0
