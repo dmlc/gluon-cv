@@ -20,7 +20,8 @@
 """SENet, implemented in Gluon."""
 from __future__ import division
 
-__all__ = ['SENet', 'SEBlock', 'get_senet', 'senet_154']
+__all__ = ['SENet', 'SEBlock', 'get_senet',
+           'senet_52', 'senet_103', 'senet_154']
 
 import os
 import math

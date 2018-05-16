@@ -68,6 +68,8 @@ def get_model(name, **kwargs):
         'se_resnext50_32x4d' : se_resnext50_32x4d,
         'se_resnext101_32x4d' : se_resnext101_32x4d,
         'se_resnext101_64x4d' : se_resnext101_64x4d,
+        'senet_52' : senet_52,
+        'senet_103' : senet_103,
         'senet_154' : senet_154,
         'se_resnet18_v1' : se_resnet18_v1,
         'se_resnet34_v1' : se_resnet34_v1,
