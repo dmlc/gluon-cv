@@ -26,7 +26,7 @@ import numpy as np
 import gluoncv as gcv
 from common import try_gpu
 
-def _test_model_list(model_list, x=None, **kwargs):
+def _test_model_list(model_list, ctx, x=None, **kwargs):
     for model in model_list:
         net = gcv.model_zoo.get_model(model, **kwargs)
         with warnings.catch_warnings():
@@ -59,7 +59,7 @@ def test_classification_models():
         'cifar_wideresnet16_10', 'cifar_wideresnet28_10', 'cifar_wideresnet40_8',
         'cifar_resnext29_32x4d', 'cifar_resnext29_16x64d',
     ]
-    _test_model_list(cifar_models, x)
+    _test_model_list(cifar_models, ctx, x)
 
 @try_gpu(0)
 def test_imagenet_models():
@@ -73,8 +73,8 @@ def test_imagenet_models():
               'se_resnet101_v1', 'se_resnet152_v1',
               'se_resnet18_v2', 'se_resnet34_v2', 'se_resnet50_v2',
               'se_resnet101_v2', 'se_resnet152_v2']
-    _test_model_list(models, x)
-    _test_model_list([m for m in models if 'resnext' in m], x, use_se=True) # test se-structure
+    _test_model_list(models, ctx, x)
+    _test_model_list([m for m in models if 'resnext' in m], ctx, x, use_se=True) # test se-structure
 
 @try_gpu(0)
 def test_ssd_models():
@@ -83,14 +83,14 @@ def test_ssd_models():
     models = ['ssd_300_vgg16_atrous_voc', 'ssd_512_vgg16_atrous_voc', 'ssd_512_resnet50_v1_voc']
     if not mx.context.current_context().device_type == 'gpu':
         models = ['ssd_512_resnet50_v1_voc']
-    _test_model_list(models, x)
+    _test_model_list(models, ctx, x)
 
 @try_gpu(0)
 def test_segmentation_models():
     ctx = mx.context.current_context()
     x = mx.random.uniform(shape=(2, 3, 480, 480), ctx=ctx)
     models = ['fcn_resnet50_voc', 'fcn_resnet101_voc']
-    _test_model_list(models, x)
+    _test_model_list(models, ctx, x)
 
 if __name__ == '__main__':
     import nose
