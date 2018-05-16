@@ -72,10 +72,8 @@ def get_model(name, **kwargs):
         'senet_52' : senet_52,
         'senet_103' : senet_103,
         'senet_154' : senet_154,
-<<<<<<< HEAD
         'faster_rcnn_resnet50_coco' : get_faster_rcnn_resnet50_coco,
         'faster_rcnn_resnet101_voc' : get_faster_rcnn_resnet101_voc,
-=======
         'se_resnet18_v1' : se_resnet18_v1,
         'se_resnet34_v1' : se_resnet34_v1,
         'se_resnet50_v1' : se_resnet50_v1,
@@ -86,7 +84,6 @@ def get_model(name, **kwargs):
         'se_resnet50_v2' : se_resnet50_v2,
         'se_resnet101_v2' : se_resnet101_v2,
         'se_resnet152_v2' : se_resnet152_v2,
->>>>>>> upstream/master
         }
     try:
         net = gluon.model_zoo.vision.get_model(name, **kwargs)
