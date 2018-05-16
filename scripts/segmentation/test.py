@@ -7,7 +7,7 @@ from mxnet.gluon.data.vision import transforms
 
 from gluoncv.utils import PolyLRScheduler
 from gluoncv.model_zoo.segbase import *
-from gluoncv.utils.parallel import *
+from gluoncv.utils.parallel import tuple_map
 from gluoncv.data import get_segmentation_dataset, test_batchify_fn
 from gluoncv.utils.viz import get_color_pallete
 
@@ -45,7 +45,7 @@ def test(args):
     tbar = tqdm(test_data)
     for i, (data, im_paths) in enumerate(tbar):
         predicts = evaluator.parallel_forward(data)
-        for predict, impath in zip(predicts, im_paths):
+        for predict, impath in zip(tuple_map(predicts), im_paths):
             predict = mx.nd.squeeze(mx.nd.argmax(predict, 1)).asnumpy()
             mask = get_color_pallete(predict, args.dataset)
             outname = os.path.splitext(impath)[0] + '.png'
