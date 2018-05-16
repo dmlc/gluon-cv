@@ -126,7 +126,7 @@ def split_load_kwargs(inputs, kwargs, ctx_list, batch_axis=0):
 
 
 def tuple_map(obj):
-    if isinstance(obj, NDArray):
+    if isinstance(obj, NDArray) or isinstance(obj, str):
         return (obj,)
     if isinstance(obj, list) and len(obj) > 0:
         return tuple(obj)
