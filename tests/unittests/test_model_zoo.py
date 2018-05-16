@@ -72,7 +72,6 @@ def test_imagenet_models():
               'se_resnet18_v2', 'se_resnet34_v2', 'se_resnet50_v2',
               'se_resnet101_v2', 'se_resnet152_v2']
     _test_model_list(models, ctx, x)
-    _test_model_list([m for m in models if 'resnext' in m], ctx, x, use_se=True) # test se-structure
 
 @try_gpu(0)
 def test_ssd_models():
