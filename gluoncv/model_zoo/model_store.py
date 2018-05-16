@@ -107,3 +107,6 @@ def purge(root=os.path.join('~', '.mxnet', 'models')):
     for f in files:
         if f.endswith(".params"):
             os.remove(os.path.join(root, f))
+
+def pretrained_model_list():
+    return list(_model_sha1.keys())

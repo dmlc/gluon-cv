@@ -164,7 +164,7 @@ def get_cifar_resnext(num_layers, cardinality=16, bottleneck_width=64,
     if pretrained:
         from .model_store import get_model_file
         net.load_params(get_model_file('cifar_resnext%d_%dx%dd'%(num_layers, cardinality,
-                                                                bottleneck_width),
+                                                                 bottleneck_width),
                                        root=root), ctx=ctx)
     return net
 
