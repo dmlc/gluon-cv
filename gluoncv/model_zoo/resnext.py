@@ -21,7 +21,8 @@
 from __future__ import division
 
 __all__ = ['ResNext', 'Block', 'get_resnext',
-           'resnext50_32x4d', 'resnext101_32x4d', 'resnext101_64x4d']
+           'resnext50_32x4d', 'resnext101_32x4d', 'resnext101_64x4d',
+           'se_resnext50_32x4d', 'se_resnext101_32x4d', 'se_resnext101_64x4d']
 
 import os
 import math
