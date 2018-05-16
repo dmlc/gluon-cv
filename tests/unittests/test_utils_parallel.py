@@ -19,11 +19,11 @@ def test_data_parallel():
         net.add(nn.Activation('relu'))
         net.add(nn.Dense(10, in_units=512))
 
-    nDevices = 2
-    ctx_list = [mx.cpu(0) for i in range(nDevices)]
     net.collect_params().initialize()
     criterion = gluon.loss.SoftmaxCELoss(axis=1)
-    def test_net_sync(net, criterion, sync):
+
+    def test_net_sync(net, criterion, sync, nDevices):
+        ctx_list = [mx.cpu(0) for i in range(nDevices)]
         net = DataParallelModel(net, ctx_list, sync=sync)
         criterion = DataParallelCriterion(criterion, ctx_list, sync=sync)
         iters = 100
@@ -40,8 +40,10 @@ def test_data_parallel():
             x = mx.random.uniform(shape=(8, 1, 28, 28))
             y = net(x)
 
-    test_net_sync(net, criterion, True)
-    test_net_sync(net, criterion, False)
+    test_net_sync(net, criterion, True, 1)
+    test_net_sync(net, criterion, True, 2)
+    test_net_sync(net, criterion, False, 1)
+    test_net_sync(net, criterion, False, 2)
 
 
 if __name__ == "__main__":
