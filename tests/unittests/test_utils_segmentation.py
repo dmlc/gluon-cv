@@ -7,9 +7,9 @@ import gluoncv
 from gluoncv.utils.metrics.voc_segmentation import *
 from gluoncv.data import VOCSegmentation
 
-from common import try_gpu
+from common import try_gpu, with_cpu
 
-@try_gpu(0)
+@with_cpu(0)
 def test_segmentation_utils():
     ctx = mx.context.current_context()
     import os
