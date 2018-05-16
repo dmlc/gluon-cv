@@ -26,15 +26,14 @@ import numpy as np
 import gluoncv as gcv
 from common import try_gpu
 
-def _test_model_list(model_list, ctx, x=None, **kwargs):
+def _test_model_list(model_list, ctx, x, **kwargs):
     for model in model_list:
         net = gcv.model_zoo.get_model(model, **kwargs)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             net.initialize()
         net.collect_params().reset_ctx(ctx)
-        if x:
-            net(x)
+        net(x)
         mx.nd.waitall()
 
     pretrained_models = gcv.model_zoo.pretrained_model_list()
@@ -45,8 +44,7 @@ def _test_model_list(model_list, ctx, x=None, **kwargs):
                 warnings.simplefilter("ignore")
                 net.initialize()
             net.collect_params().reset_ctx(ctx)
-            if x:
-                net(x)
+            net(x)
             mx.nd.waitall()
 
 @try_gpu(0)
