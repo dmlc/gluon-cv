@@ -69,7 +69,8 @@ def test_imagenet_models():
               'se_resnet18_v1', 'se_resnet34_v1', 'se_resnet50_v1',
               'se_resnet101_v1', 'se_resnet152_v1',
               'se_resnet18_v2', 'se_resnet34_v2', 'se_resnet50_v2',
-              'se_resnet101_v2', 'se_resnet152_v2']
+              'se_resnet101_v2', 'se_resnet152_v2',
+              'senet_52', 'senet_103', 'senet_154']
     _test_model_list(models, ctx, x)
 
 def test_ssd_models():

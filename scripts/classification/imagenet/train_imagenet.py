@@ -44,12 +44,12 @@ parser.add_argument('--mode', type=str,
                     help='mode in which to train the model. options are symbolic, imperative, hybrid')
 parser.add_argument('--model', type=str, required=True,
                     help='type of model to use. see vision_model for options.')
-parser.add_argument('--use_thumbnail', action='store_true',
-                    help='use thumbnail or not in resnet. default is false.')
 parser.add_argument('--use_se', action='store_true',
                     help='use SE layers or not in resnext. default is false.')
-parser.add_argument('--label_smoothing', action='store_true',
+parser.add_argument('--label-smoothing', action='store_true',
                     help='use label smoothing or not in training. default is false.')
+parser.add_argument('--freeze-bn', action='store_true',
+                    help='freeze batchnorm layers in the last frew training epochs or not. default is false.')
 parser.add_argument('--batch-norm', action='store_true',
                     help='enable batch normalization or not in vgg. default is false.')
 parser.add_argument('--use-pretrained', action='store_true',
@@ -84,8 +84,6 @@ lr_decay_epoch = [int(i) for i in opt.lr_decay_epoch.split(',')] + [np.inf]
 model_name = opt.model
 
 kwargs = {'ctx': context, 'pretrained': opt.use_pretrained, 'classes': classes}
-if model_name.startswith('resnet'):
-    kwargs['thumbnail'] = opt.use_thumbnail
 elif model_name.startswith('vgg'):
     kwargs['batch_norm'] = opt.batch_norm
 elif model_name.startswith('resnext'):
@@ -163,7 +161,7 @@ def test(ctx, val_data):
 def train(epochs, ctx):
     if isinstance(ctx, mx.Context):
         ctx = [ctx]
-    net.initialize(mx.init.Xavier(magnitude=2), ctx=ctx)
+    net.initialize(mx.init.MSRAPrelu(), ctx=ctx)
 
     train_data = gluon.data.DataLoader(
         imagenet.classification.ImageNet(opt.data_dir, train=True).transform_first(transform_train),

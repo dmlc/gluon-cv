@@ -20,7 +20,8 @@
 """SENet, implemented in Gluon."""
 from __future__ import division
 
-__all__ = ['SENet', 'SEBlock', 'get_senet', 'senet_154']
+__all__ = ['SENet', 'SEBlock', 'get_senet',
+           'senet_52', 'senet_103', 'senet_154']
 
 import os
 import math
@@ -70,8 +71,8 @@ class SEBlock(HybridBlock):
 
         if downsample:
             self.downsample = nn.HybridSequential(prefix='')
-            self.downsample.add(nn.Conv2D(channels * 4, kernel_size=3, strides=stride,
-                                          padding=1, use_bias=False))
+            self.downsample.add(nn.Conv2D(channels * 4, kernel_size=1, strides=stride,
+                                          use_bias=False))
             self.downsample.add(nn.BatchNorm())
         else:
             self.downsample = None
@@ -191,6 +192,46 @@ def get_senet(num_layers, cardinality=64, bottleneck_width=4,
                                                           bottleneck_width),
                                        root=root), ctx=ctx)
     return net
+
+def senet_52(**kwargs):
+    r"""ResNext50 32x4d model from
+    `"Aggregated Residual Transformations for Deep Neural Network"
+    <http://arxiv.org/abs/1611.05431>`_ paper.
+
+    Parameters
+    ----------
+    cardinality: int
+        Number of groups
+    bottleneck_width: int
+        Width of bottleneck block
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+    """
+    return get_senet(50, 32, 4, **kwargs)
+
+def senet_103(**kwargs):
+    r"""ResNext50 32x4d model from
+    `"Aggregated Residual Transformations for Deep Neural Network"
+    <http://arxiv.org/abs/1611.05431>`_ paper.
+
+    Parameters
+    ----------
+    cardinality: int
+        Number of groups
+    bottleneck_width: int
+        Width of bottleneck block
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+    """
+    return get_senet(101, 32, 4, **kwargs)
 
 def senet_154(**kwargs):
     r"""ResNext50 32x4d model from
