@@ -12,6 +12,7 @@ from .resnetv1b import *
 from .resnext import *
 from .senet import *
 from .faster_rcnn import *
+from .se_resnet import *
 
 __all__ = ['get_model']
 
@@ -65,9 +66,27 @@ def get_model(name, **kwargs):
         'resnext50_32x4d' : resnext50_32x4d,
         'resnext101_32x4d' : resnext101_32x4d,
         'resnext101_64x4d' : resnext101_64x4d,
+        'se_resnext50_32x4d' : se_resnext50_32x4d,
+        'se_resnext101_32x4d' : se_resnext101_32x4d,
+        'se_resnext101_64x4d' : se_resnext101_64x4d,
+        'senet_52' : senet_52,
+        'senet_103' : senet_103,
         'senet_154' : senet_154,
+<<<<<<< HEAD
         'faster_rcnn_resnet50_coco' : get_faster_rcnn_resnet50_coco,
         'faster_rcnn_resnet101_voc' : get_faster_rcnn_resnet101_voc,
+=======
+        'se_resnet18_v1' : se_resnet18_v1,
+        'se_resnet34_v1' : se_resnet34_v1,
+        'se_resnet50_v1' : se_resnet50_v1,
+        'se_resnet101_v1' : se_resnet101_v1,
+        'se_resnet152_v1' : se_resnet152_v1,
+        'se_resnet18_v2' : se_resnet18_v2,
+        'se_resnet34_v2' : se_resnet34_v2,
+        'se_resnet50_v2' : se_resnet50_v2,
+        'se_resnet101_v2' : se_resnet101_v2,
+        'se_resnet152_v2' : se_resnet152_v2,
+>>>>>>> upstream/master
         }
     try:
         net = gluon.model_zoo.vision.get_model(name, **kwargs)

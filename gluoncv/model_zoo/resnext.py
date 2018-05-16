@@ -21,14 +21,15 @@
 from __future__ import division
 
 __all__ = ['ResNext', 'Block', 'get_resnext',
-           'resnext50_32x4d', 'resnext101_32x4d', 'resnext101_64x4d']
+           'resnext50_32x4d', 'resnext101_32x4d', 'resnext101_64x4d',
+           'se_resnext50_32x4d', 'se_resnext101_32x4d', 'se_resnext101_64x4d']
 
 import os
+import math
 from mxnet import cpu
 from mxnet.gluon import nn
 from mxnet.gluon.block import HybridBlock
 
-# Helpers
 
 class Block(HybridBlock):
     r"""Bottleneck Block from `"Aggregated Residual Transformations for Deep Neural Network"
@@ -44,42 +45,37 @@ class Block(HybridBlock):
         Stride size.
     downsample : bool, default False
         Whether to downsample the input.
-    in_channels : int, default 0
-        Number of input channels. Default is 0, to infer from the graph.
     """
-    expansion = 2
-
-    def __init__(self, cardinality, bottleneck_width, stride,
-                 downsample=False, in_channels=0, use_se=False, **kwargs):
+    def __init__(self, channels, cardinality, bottleneck_width, stride,
+                 downsample=False, use_se=False, **kwargs):
         super(Block, self).__init__(**kwargs)
-        group_width = cardinality * bottleneck_width
+        D = int(math.floor(channels * (bottleneck_width / 64)))
+        group_width = cardinality * D
 
         self.body = nn.HybridSequential(prefix='')
-        self.body.add(nn.Conv2D(group_width, kernel_size=1, use_bias=False,
-                                in_channels=in_channels))
+        self.body.add(nn.Conv2D(group_width, kernel_size=1, use_bias=False))
         self.body.add(nn.BatchNorm())
         self.body.add(nn.Activation('relu'))
         self.body.add(nn.Conv2D(group_width, kernel_size=3, strides=stride, padding=1,
                                 use_bias=False))
         self.body.add(nn.BatchNorm())
         self.body.add(nn.Activation('relu'))
-        self.body.add(nn.Conv2D(self.expansion*group_width, kernel_size=1, use_bias=False))
+        self.body.add(nn.Conv2D(channels * 4, kernel_size=1, use_bias=False))
         self.body.add(nn.BatchNorm())
 
         if use_se:
             self.se = nn.HybridSequential(prefix='')
-            self.se.add(nn.GlobalAvgPool2D())
-            self.se.add(nn.Conv2D(self.expansion*group_width//16, kernel_size=1, use_bias=False))
+            self.se.add(nn.Dense(channels // 4, use_bias=False))
             self.se.add(nn.Activation('relu'))
-            self.se.add(nn.Conv2D(self.expansion*group_width, kernel_size=1, use_bias=False))
+            self.se.add(nn.Dense(channels * 4, use_bias=False))
             self.se.add(nn.Activation('sigmoid'))
         else:
             self.se = None
 
         if downsample:
             self.downsample = nn.HybridSequential(prefix='')
-            self.downsample.add(nn.Conv2D(self.expansion*group_width, kernel_size=1, strides=stride,
-                                          use_bias=False, in_channels=in_channels))
+            self.downsample.add(nn.Conv2D(channels * 4, kernel_size=1, strides=stride,
+                                          use_bias=False))
             self.downsample.add(nn.BatchNorm())
         else:
             self.downsample = None
@@ -90,8 +86,9 @@ class Block(HybridBlock):
         x = self.body(x)
 
         if self.se:
-            w = self.se(x)
-            x = F.broadcast_mul(x, w)
+            w = F.contrib.AdaptiveAvgPooling2D(x, output_size=1)
+            w = self.se(w)
+            x = F.broadcast_mul(x, w.expand_dims(axis=2).expand_dims(axis=2))
 
         if self.downsample:
             residual = self.downsample(residual)
@@ -122,38 +119,32 @@ class ResNext(HybridBlock):
         super(ResNext, self).__init__(**kwargs)
         self.cardinality = cardinality
         self.bottleneck_width = bottleneck_width
-        self.in_channels = 64
+        channels = 64
 
         with self.name_scope():
             self.features = nn.HybridSequential(prefix='')
-            self.features.add(nn.Conv2D(64, 7, 2, 3, use_bias=False))
+            self.features.add(nn.Conv2D(channels, 7, 2, 3, use_bias=False))
+
             self.features.add(nn.BatchNorm())
             self.features.add(nn.Activation('relu'))
             self.features.add(nn.MaxPool2D(3, 2, 1))
 
             for i, num_layer in enumerate(layers):
                 stride = 1 if i == 0 else 2
-                self.features.add(self._make_layer(num_layer, stride, use_se, i+1))
+                self.features.add(self._make_layer(channels, num_layer, stride, use_se, i+1))
+                channels *= 2
             self.features.add(nn.AvgPool2D(7))
 
-            total_expansion = Block.expansion ** len(layers)
-            self.output = nn.Dense(classes,
-                                   in_units=cardinality*bottleneck_width*total_expansion)
+            self.output = nn.Dense(classes)
 
-    def _make_layer(self, num_layers, stride, use_se, stage_index):
+    def _make_layer(self, channels, num_layers, stride, use_se, stage_index):
         layer = nn.HybridSequential(prefix='stage%d_'%stage_index)
-        channels = Block.expansion * self.cardinality * self.bottleneck_width
-        downsample = self.in_channels != channels
         with layer.name_scope():
-            layer.add(Block(self.cardinality, self.bottleneck_width,
-                            stride, downsample or stride != 1,
-                            in_channels=self.in_channels, use_se=use_se, prefix=''))
+            layer.add(Block(channels, self.cardinality, self.bottleneck_width,
+                            stride, True, use_se=use_se, prefix=''))
             for _ in range(num_layers-1):
-                layer.add(Block(self.cardinality, self.bottleneck_width, 1, False,
-                                in_channels=channels, use_se=use_se, prefix=''))
-
-        self.in_channels = channels
-        self.bottleneck_width *= 2
+                layer.add(Block(channels, self.cardinality, self.bottleneck_width,
+                                1, False, use_se=use_se, prefix=''))
         return layer
 
     # pylint: disable=unused-argument
@@ -170,7 +161,7 @@ resnext_spec = {50: [3, 4, 6, 3],
 
 
 # Constructor
-def get_resnext(num_layers, cardinality=32, bottleneck_width=4,
+def get_resnext(num_layers, cardinality=32, bottleneck_width=4, use_se=False,
                 pretrained=False, ctx=cpu(),
                 root=os.path.join('~', '.mxnet', 'models'), **kwargs):
     r"""ResNext model from `"Aggregated Residual Transformations for Deep Neural Network"
@@ -195,12 +186,18 @@ def get_resnext(num_layers, cardinality=32, bottleneck_width=4,
         "Invalid number of layers: %d. Options are %s"%(
             num_layers, str(resnext_spec.keys()))
     layers = resnext_spec[num_layers]
-    net = ResNext(layers, cardinality, bottleneck_width, **kwargs)
+    net = ResNext(layers, cardinality, bottleneck_width, use_se=use_se, **kwargs)
     if pretrained:
         from ..model_store import get_model_file
-        net.load_params(get_model_file('resnext%d_%dx%d'%(num_layers, cardinality,
-                                                          bottleneck_width),
-                                       root=root), ctx=ctx)
+        if not use_se:
+            net.load_params(get_model_file('resnext%d_%dx%dd'%(num_layers, cardinality,
+                                                               bottleneck_width),
+                                           root=root), ctx=ctx)
+        else:
+            net.load_params(get_model_file('se_resnext%d_%dx%dd'%(num_layers, cardinality,
+                                                                  bottleneck_width),
+                                           root=root), ctx=ctx)
+
     return net
 
 def resnext50_32x4d(**kwargs):
@@ -262,3 +259,63 @@ def resnext101_64x4d(**kwargs):
         Location for keeping the model parameters.
     """
     return get_resnext(101, 64, 4, **kwargs)
+
+def se_resnext50_32x4d(**kwargs):
+    r"""SE-ResNext50 32x4d model from
+    `"Aggregated Residual Transformations for Deep Neural Network"
+    <http://arxiv.org/abs/1611.05431>`_ paper.
+
+    Parameters
+    ----------
+    cardinality: int
+        Number of groups
+    bottleneck_width: int
+        Width of bottleneck block
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+    """
+    return get_resnext(50, 32, 4, use_se=True, **kwargs)
+
+def se_resnext101_32x4d(**kwargs):
+    r"""SE-ResNext101 32x4d model from
+    `"Aggregated Residual Transformations for Deep Neural Network"
+    <http://arxiv.org/abs/1611.05431>`_ paper.
+
+    Parameters
+    ----------
+    cardinality: int
+        Number of groups
+    bottleneck_width: int
+        Width of bottleneck block
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+    """
+    return get_resnext(101, 32, 4, use_se=True, **kwargs)
+
+def se_resnext101_64x4d(**kwargs):
+    r"""SE-ResNext101 64x4d model from
+    `"Aggregated Residual Transformations for Deep Neural Network"
+    <http://arxiv.org/abs/1611.05431>`_ paper.
+
+    Parameters
+    ----------
+    cardinality: int
+        Number of groups
+    bottleneck_width: int
+        Width of bottleneck block
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+    """
+    return get_resnext(101, 64, 4, use_se=True, **kwargs)

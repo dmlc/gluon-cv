@@ -8,6 +8,7 @@ from mxnet.gluon.loss import Loss, _apply_weighting
 from ..utils.metrics import voc_segmentation
 from ..utils.parallel import parallel_apply
 from .resnetv1b import resnet50_v1b, resnet101_v1b, resnet152_v1b
+from ..utils.parallel import tuple_map
 # pylint: disable=abstract-method,arguments-differ,dangerous-default-value,missing-docstring
 
 __all__ = ['get_segmentation_model', 'SegBaseModel', 'SegEvalModel', 'MultiEvalModel',
@@ -165,9 +166,10 @@ class MultiEvalModel(object):
         self.evalmodule = SegEvalModel(module)
 
     def parallel_forward(self, inputs):
-        inputs = [x.as_in_context(ctx) for (x, ctx) in zip(inputs, self.ctx_list)]
+        inputs = tuple([tuple([x.as_in_context(ctx)])
+                        for (x, ctx) in zip(inputs, self.ctx_list)])
         if len(self.ctx_list) == 1:
-            return self(*inputs[0])
+            return tuple_map(self(*inputs[0]))
         return parallel_apply(self, inputs, sync=True)
 
     def __call__(self, image):
