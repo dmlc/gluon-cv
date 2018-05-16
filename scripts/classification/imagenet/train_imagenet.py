@@ -95,6 +95,8 @@ optimizer = 'nag'
 optimizer_params = {'learning_rate': opt.lr, 'wd': opt.wd, 'momentum': opt.momentum}
 
 net = get_model(model_name, **kwargs)
+if opt.use_se:
+    model_name = 'se_' + model_name
 
 acc_top1 = mx.metric.Accuracy()
 acc_top5 = mx.metric.TopKAccuracy(5)
@@ -116,7 +118,6 @@ jitter_param = 0.0 if model_name.startswith('mobilenet') else 0.4
 lighting_param = 0.0 if model_name.startswith('mobilenet') else 0.1
 
 transform_train = transforms.Compose([
-    transforms.Resize(480),
     transforms.RandomResizedCrop(224),
     transforms.RandomFlipLeftRight(),
     transforms.RandomColorJitter(brightness=jitter_param, contrast=jitter_param,
@@ -205,8 +206,7 @@ def train(epochs, ctx):
             with ag.record():
                 outputs = [net(X) for X in data]
                 loss = [L(yhat, y) for yhat, y in zip(outputs, label_smooth)]
-            for l in loss:
-                l.backward()
+            ag.backward(loss)
             trainer.step(batch_size)
             acc_top1.update(label, outputs)
             acc_top5.update(label, outputs)
@@ -248,7 +248,7 @@ def train(epochs, ctx):
 def train_dummy(ctx):
     if isinstance(ctx, mx.Context):
         ctx = [ctx]
-    net.initialize(mx.init.Xavier(magnitude=2), ctx=ctx)
+    net.initialize(mx.init.MSRAPrelu(), ctx=ctx)
 
     data = []
     label = []
@@ -260,14 +260,16 @@ def train_dummy(ctx):
     trainer = gluon.Trainer(net.collect_params(), optimizer, optimizer_params)
     L = gluon.loss.SoftmaxCrossEntropyLoss()
 
-    tic = time.time()
     acc_top1.reset()
     acc_top5.reset()
     btic = time.time()
     train_loss = 0
     num_batch = 1000
+    warm_up = 100
 
     for i in range(num_batch):
+        if i == warm_up:
+            tic = time.time()
         if opt.label_smoothing:
             label_smooth = smooth(label)
         else:
@@ -275,8 +277,7 @@ def train_dummy(ctx):
         with ag.record():
             outputs = [net(X) for X in data]
             loss = [L(yhat, y) for yhat, y in zip(outputs, label_smooth)]
-        for l in loss:
-            l.backward()
+        ag.backward(loss)
         trainer.step(batch_size)
         acc_top1.update(label, outputs)
         acc_top5.update(label, outputs)
@@ -289,7 +290,7 @@ def train_dummy(ctx):
 
     total_time_cost = time.time()-tic
     logging.info('Test finished. Average Speed: %f samples/sec. Total time cost: %f'%(
-                 batch_size*num_batch/total_time_cost, total_time_cost))
+                 batch_size*(num_batch-warm_up)/total_time_cost, total_time_cost))
 
 def main():
     if opt.mode == 'hybrid':

@@ -32,10 +32,10 @@ stage("Unit Test") {
         rm -f coverage.svg
         coverage-badge -o coverage.svg
         if [[ ${env.BRANCH_NAME} == master ]]; then
-            aws s3 cp coverage.svg s3://gluon-cv.mxnet.io/coverage.svg --acl public-read
+            aws s3 cp coverage.svg s3://gluon-cv.mxnet.io/coverage.svg --acl public-read --cache-control no-cache
             echo "Uploaded coverage badge to http://gluon-cv.mxnet.io"
         else
-            aws s3 cp coverage.svg s3://gluon-vision-staging/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/coverage.svg --acl public-read
+            aws s3 cp coverage.svg s3://gluon-vision-staging/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/coverage.svg --acl public-read --cache-control no-cache
             echo "Uploaded coverage badge to http://gluon-vision-staging.s3-website-us-west-2.amazonaws.com/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/coverage.svg"
         fi
         """
@@ -80,6 +80,7 @@ stage("Build Docs") {
       if [[ ${env.BRANCH_NAME} == master ]]; then
           aws s3 cp s3://gluon-cv.mxnet.io/coverage.svg build/html/coverage.svg
           aws s3 sync --delete build/html/ s3://gluon-cv.mxnet.io/ --acl public-read
+          aws s3 cp build/html/coverage.svg s3://gluon-cv.mxnet.io/coverage.svg --acl public-read --cache-control no-cache
           echo "Uploaded doc to http://gluon-cv.mxnet.io"
       else
           aws s3 cp s3://gluon-vision-staging/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/coverage.svg build/html/coverage.svg
