@@ -34,7 +34,7 @@ def test(args):
     print(model)
     evaluator = MultiEvalModel(model, testset.num_class, ctx_list=args.ctx)
     # load pretrained weight
-    assert(args.resume is not None)
+    assert args.resume is not None, '=> Please provide the checkpoint using --resume'
     if os.path.isfile(args.resume):
         model.load_params(args.resume, ctx=args.ctx)
     else:

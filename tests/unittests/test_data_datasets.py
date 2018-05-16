@@ -42,6 +42,33 @@ def test_coco_detection():
         index = np.random.randint(0, len(val))
         _ = val[index]
 
+
+def test_voc_segmentation():
+    if not osp.isdir(osp.expanduser('~/.mxnet/datasets/voc')):
+        return
+
+    # use valid only, loading training split is very slow
+    val = data.VOCSegmentation(split='train')
+    name = str(val)
+    assert len(val.classes) > 0
+
+    for _ in range(10):
+        index = np.random.randint(0, len(val))
+        _ = val[index]
+
+def test_ade_segmentation():
+    if not osp.isdir(osp.expanduser('~/.mxnet/datasets/ade')):
+        return
+
+    # use valid only, loading training split is very slow
+    val = data.ADE20KSegmentation(split='train')
+    name = str(val)
+    assert len(val.classes) > 0
+
+    for _ in range(10):
+        index = np.random.randint(0, len(val))
+        _ = val[index]
+
 if __name__ == '__main__':
     import nose
     nose.runmodule()
