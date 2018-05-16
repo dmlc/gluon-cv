@@ -35,15 +35,15 @@ class FCN(SegBaseModel):
     """
     # pylint: disable=arguments-differ
     def __init__(self, nclass, backbone='resnet50', norm_layer=nn.BatchNorm,
-                 aux=True, **kwargs):
-        super(FCN, self).__init__(nclass, aux, backbone, norm_layer=norm_layer, **kwargs)
+                 aux=True, ctx=cpu(), **kwargs):
+        super(FCN, self).__init__(nclass, aux, backbone, ctx=ctx, norm_layer=norm_layer, **kwargs)
         with self.name_scope():
             self.head = _FCNHead(2048, nclass, norm_layer=norm_layer, **kwargs)
-            self.head.initialize()
+            self.head.initialize(ctx=ctx)
             self.head.collect_params().setattr('lr_mult', 10)
             if self.aux:
                 self.auxlayer = _FCNHead(1024, nclass, norm_layer=norm_layer, **kwargs)
-                self.auxlayer.initialize()
+                self.auxlayer.initialize(ctx=ctx)
                 self.auxlayer.collect_params().setattr('lr_mult', 10)
 
     def forward(self, x):
@@ -113,12 +113,11 @@ def get_fcn(dataset='pascal_voc', backbone='resnet50', pretrained=False,
     # infer number of classes
     from ..data.segbase import get_segmentation_dataset
     data = get_segmentation_dataset(dataset)
-    model = FCN(data.num_class, backbone=backbone, **kwargs)
+    model = FCN(data.num_class, backbone=backbone, ctx=ctx, **kwargs)
     if pretrained:
         from .model_store import get_model_file
         model.load_params(get_model_file('fcn_%s_%s'%(backbone, acronyms[dataset]),
-                                         root=root))
-    model.collect_params().reset_ctx(ctx)
+                                         root=root), ctx=ctx)
     return model
 
 def get_fcn_voc_resnet50(**kwargs):
