@@ -21,7 +21,7 @@ stage("Unit Test") {
         checkout scm
         sh """#!/bin/bash
         set -e
-        conda clean --index-cache
+        conda clean --all
         conda env update -n gluon_cv_py2 -f tests/py2.yml
         source activate gluon_cv_py2
         conda list
@@ -50,7 +50,7 @@ stage("Unit Test") {
         checkout scm
         sh """#!/bin/bash
         set -e
-        conda clean --index-cache
+        conda clean --all
         conda env update -n gluon_cv_py3 -f tests/py3.yml
         source activate gluon_cv_py3
         conda list
