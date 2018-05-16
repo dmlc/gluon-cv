@@ -11,9 +11,9 @@ def check_bn_frozen_callback(net, value):
 def test_block_freeze_bn():
     net = gcv.model_zoo.get_model('resnet18_v1')
     gcv.utils.recursive_visit(net, check_bn_frozen_callback, value=False)
-    freeze_bn(net, True)
+    gcv.utils.freeze_bn(net, True)
     gcv.utils.recursive_visit(net, check_bn_frozen_callback, value=True)
-    freeze_bn(net, False)
+    gcv.utils.freeze_bn(net, False)
     gcv.utils.recursive_visit(net, check_bn_frozen_callback, value=False)
 
 if __name__ == '__main__':
