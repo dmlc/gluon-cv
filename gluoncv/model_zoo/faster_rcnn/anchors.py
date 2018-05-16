@@ -38,7 +38,7 @@ def map_anchors(ref_anchors, feat_shape, img_h, img_w, ctx):
         ref_anchors[:, anchor_i * 4 + 3] += ref_y
     return ref_anchors
 
-def _whctrs(anchor: nd.NDArray):
+def _whctrs(anchor):
     """Return width, height, x center, and y center for an anchor (window).
     """
     w = anchor[2] - anchor[0] + 1
