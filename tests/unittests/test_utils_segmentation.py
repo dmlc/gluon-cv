@@ -10,7 +10,7 @@ from gluoncv.data import VOCSegmentation
 from common import try_gpu
 
 def test_segmentation_utils():
-    ctx = mx.context.current_context()
+    ctx = mx.cpu()
     import os
     if not os.path.isdir(os.path.expanduser('~/.mxnet/datasets/voc')):
         return
