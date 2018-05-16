@@ -18,6 +18,8 @@ from gluoncv.utils import makedirs, TrainingHistory
 parser = argparse.ArgumentParser(description='Train a model for image classification.')
 parser.add_argument('--data-dir', type=str, default='~/.mxnet/datasets/imagenet',
                     help='training and validation pictures to use.')
+parser.add_argument('--dummy', action='store_true',
+                    help='use dummy data to test training speed. default is false.')
 parser.add_argument('--batch-size', type=int, default=32,
                     help='training batch size per device (CPU/GPU).')
 parser.add_argument('--num-gpus', type=int, default=0,
@@ -93,6 +95,8 @@ optimizer = 'nag'
 optimizer_params = {'learning_rate': opt.lr, 'wd': opt.wd, 'momentum': opt.momentum}
 
 net = get_model(model_name, **kwargs)
+if opt.use_se:
+    model_name = 'se_' + model_name
 
 acc_top1 = mx.metric.Accuracy()
 acc_top5 = mx.metric.TopKAccuracy(5)
@@ -114,7 +118,6 @@ jitter_param = 0.0 if model_name.startswith('mobilenet') else 0.4
 lighting_param = 0.0 if model_name.startswith('mobilenet') else 0.1
 
 transform_train = transforms.Compose([
-    transforms.Resize(480),
     transforms.RandomResizedCrop(224),
     transforms.RandomFlipLeftRight(),
     transforms.RandomColorJitter(brightness=jitter_param, contrast=jitter_param,
@@ -203,8 +206,7 @@ def train(epochs, ctx):
             with ag.record():
                 outputs = [net(X) for X in data]
                 loss = [L(yhat, y) for yhat, y in zip(outputs, label_smooth)]
-            for l in loss:
-                l.backward()
+            ag.backward(loss)
             trainer.step(batch_size)
             acc_top1.update(label, outputs)
             acc_top5.update(label, outputs)
@@ -243,10 +245,60 @@ def train(epochs, ctx):
     if save_frequency and save_dir:
         net.save_params('%s/imagenet-%s-%d.params'%(save_dir, model_name, epochs-1))
 
+def train_dummy(ctx):
+    if isinstance(ctx, mx.Context):
+        ctx = [ctx]
+    net.initialize(mx.init.MSRAPrelu(), ctx=ctx)
+
+    data = []
+    label = []
+    bs = batch_size // len(ctx)
+    for c in ctx:
+        data.append(mx.nd.random.uniform(shape=(bs,3,224,224), ctx = c))
+        label.append(mx.nd.ones(shape=(bs), ctx = c))
+
+    trainer = gluon.Trainer(net.collect_params(), optimizer, optimizer_params)
+    L = gluon.loss.SoftmaxCrossEntropyLoss()
+
+    acc_top1.reset()
+    acc_top5.reset()
+    btic = time.time()
+    train_loss = 0
+    num_batch = 1000
+    warm_up = 100
+
+    for i in range(num_batch):
+        if i == warm_up:
+            tic = time.time()
+        if opt.label_smoothing:
+            label_smooth = smooth(label)
+        else:
+            label_smooth = label
+        with ag.record():
+            outputs = [net(X) for X in data]
+            loss = [L(yhat, y) for yhat, y in zip(outputs, label_smooth)]
+        ag.backward(loss)
+        trainer.step(batch_size)
+        acc_top1.update(label, outputs)
+        acc_top5.update(label, outputs)
+        train_loss += sum([l.sum().asscalar() for l in loss])
+
+        if opt.log_interval and not (i+1)%opt.log_interval:
+            logging.info('Batch [%d]\tSpeed: %f samples/sec'%(
+                         i, batch_size*opt.log_interval/(time.time()-btic)))
+            btic = time.time()
+
+    total_time_cost = time.time()-tic
+    logging.info('Test finished. Average Speed: %f samples/sec. Total time cost: %f'%(
+                 batch_size*(num_batch-warm_up)/total_time_cost, total_time_cost))
+
 def main():
     if opt.mode == 'hybrid':
         net.hybridize()
-    train(opt.num_epochs, context)
+    if opt.dummy:
+        train_dummy(context)
+    else:
+        train(opt.num_epochs, context)
 
 if __name__ == '__main__':
     main()

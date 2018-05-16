@@ -64,10 +64,9 @@ class Block(HybridBlock):
 
         if use_se:
             self.se = nn.HybridSequential(prefix='')
-            self.se.add(nn.GlobalAvgPool2D())
-            self.se.add(nn.Conv2D(channels // 4, kernel_size=1, use_bias=False))
+            self.se.add(nn.Dense(channels // 4, use_bias=False))
             self.se.add(nn.Activation('relu'))
-            self.se.add(nn.Conv2D(channels * 4, kernel_size=1, use_bias=False))
+            self.se.add(nn.Dense(channels * 4, use_bias=False))
             self.se.add(nn.Activation('sigmoid'))
         else:
             self.se = None
@@ -86,8 +85,9 @@ class Block(HybridBlock):
         x = self.body(x)
 
         if self.se:
-            w = self.se(x)
-            x = F.broadcast_mul(x, w)
+            w = F.contrib.AdaptiveAvgPooling2D(x, output_size=1)
+            w = self.se(w)
+            x = F.broadcast_mul(x, w.expand_dims(axis=2).expand_dims(axis=2))
 
         if self.downsample:
             residual = self.downsample(residual)
@@ -160,7 +160,7 @@ resnext_spec = {50: [3, 4, 6, 3],
 
 
 # Constructor
-def get_resnext(num_layers, cardinality=32, bottleneck_width=4,
+def get_resnext(num_layers, cardinality=32, bottleneck_width=4, use_se=False,
                 pretrained=False, ctx=cpu(),
                 root=os.path.join('~', '.mxnet', 'models'), **kwargs):
     r"""ResNext model from `"Aggregated Residual Transformations for Deep Neural Network"
@@ -188,9 +188,15 @@ def get_resnext(num_layers, cardinality=32, bottleneck_width=4,
     net = ResNext(layers, cardinality, bottleneck_width, **kwargs)
     if pretrained:
         from ..model_store import get_model_file
-        net.load_params(get_model_file('resnext%d_%dx%d'%(num_layers, cardinality,
-                                                          bottleneck_width),
-                                       root=root), ctx=ctx)
+        if not use_se:
+            net.load_params(get_model_file('resnext%d_%dx%dd'%(num_layers, cardinality,
+                                                               bottleneck_width),
+                                           root=root), ctx=ctx)
+        else:
+            net.load_params(get_model_file('se_resnext%d_%dx%dd'%(num_layers, cardinality,
+                                                                  bottleneck_width),
+                                           root=root), ctx=ctx)
+
     return net
 
 def resnext50_32x4d(**kwargs):
@@ -252,3 +258,63 @@ def resnext101_64x4d(**kwargs):
         Location for keeping the model parameters.
     """
     return get_resnext(101, 64, 4, **kwargs)
+
+def se_resnext50_32x4d(**kwargs):
+    r"""SE-ResNext50 32x4d model from
+    `"Aggregated Residual Transformations for Deep Neural Network"
+    <http://arxiv.org/abs/1611.05431>`_ paper.
+
+    Parameters
+    ----------
+    cardinality: int
+        Number of groups
+    bottleneck_width: int
+        Width of bottleneck block
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+    """
+    return get_resnext(50, 32, 4, use_se=True, **kwargs)
+
+def se_resnext101_32x4d(**kwargs):
+    r"""SE-ResNext101 32x4d model from
+    `"Aggregated Residual Transformations for Deep Neural Network"
+    <http://arxiv.org/abs/1611.05431>`_ paper.
+
+    Parameters
+    ----------
+    cardinality: int
+        Number of groups
+    bottleneck_width: int
+        Width of bottleneck block
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+    """
+    return get_resnext(101, 32, 4, use_se=True, **kwargs)
+
+def se_resnext101_64x4d(**kwargs):
+    r"""SE-ResNext101 64x4d model from
+    `"Aggregated Residual Transformations for Deep Neural Network"
+    <http://arxiv.org/abs/1611.05431>`_ paper.
+
+    Parameters
+    ----------
+    cardinality: int
+        Number of groups
+    bottleneck_width: int
+        Width of bottleneck block
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+    """
+    return get_resnext(101, 64, 4, use_se=True, **kwargs)

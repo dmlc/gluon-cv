@@ -263,8 +263,8 @@ def resize_contain(src, size, fill=0):
     if scale < 1:
         src = mx.image.imresize(src, scaled_x, scaled_y)
 
-    off_y = (oh - h) // 2 if h < oh else 0
-    off_x = (ow - h) // 2 if w < ow else 0
+    off_y = (oh - scaled_y) // 2 if scaled_y < oh else 0
+    off_x = (ow - scaled_x) // 2 if scaled_x < ow else 0
 
     # make canvas
     if isinstance(fill, numeric_types):
@@ -275,7 +275,7 @@ def resize_contain(src, size, fill=0):
             raise ValueError("Channel and fill size mismatch, {} vs {}".format(c, fill.size))
         dst = nd.repeat(fill, repeats=oh * ow).reshape((oh, ow, c))
 
-    dst[off_y:off_y+h, off_x:off_x+w, :] = src
+    dst[off_y:off_y+scaled_y, off_x:off_x+scaled_x, :] = src
     return dst, (off_x, off_y, scaled_x, scaled_y)
 
 def ten_crop(src, size):
@@ -318,11 +318,11 @@ def ten_crop(src, size):
         raise ValueError(
             "Cannot crop area {} from image with size ({}, {})".format(str(size), h, w))
 
-    center = src[:, (h - oh) // 2:(h + oh) // 2, (w - ow) // 2:(w + ow) // 2]
-    tl = src[:, 0:oh, 0:ow]
-    bl = src[:, h - oh:h, 0:ow]
-    tr = src[:, 0:oh, w - ow:w]
-    br = src[:, h - oh:h, w - ow:w]
-    crops = nd.stack([center, tl, bl, tr, br], axis=0)
+    center = src[(h - oh) // 2:(h + oh) // 2, (w - ow) // 2:(w + ow) // 2, :]
+    tl = src[0:oh, 0:ow, :]
+    bl = src[h - oh:h, 0:ow, :]
+    tr = src[0:oh, w - ow:w, :]
+    br = src[h - oh:h, w - ow:w, :]
+    crops = nd.stack(*[center, tl, bl, tr, br], axis=0)
     crops = nd.concat(*[crops, nd.flip(crops, axis=2)], dim=0)
     return crops

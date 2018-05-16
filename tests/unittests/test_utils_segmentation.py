@@ -1,7 +1,5 @@
-
 import numpy as np
 import mxnet as mx
-from tqdm import tqdm
 from mxnet.test_utils import assert_almost_equal
 from mxnet.gluon.data.vision import transforms
 
@@ -9,13 +7,15 @@ import gluoncv
 from gluoncv.utils.metrics.voc_segmentation import *
 from gluoncv.data import VOCSegmentation
 
-ctx = mx.gpu(0)
-try:
-    x = mx.ones((1)).as_in_context(ctx)
-except Exception:
-    ctx = mx.cpu(0)
+from common import try_gpu
 
+@try_gpu(0)
 def test_segmentation_utils():
+    ctx = mx.context.current_context()
+    import os
+    if not os.path.isdir(os.path.expanduser('~/.mxnet/datasets/voc')):
+        return
+
     transform_fn = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize([.485, .456, .406], [.229, .224, .225])
@@ -28,8 +28,7 @@ def test_segmentation_utils():
     # count for pixAcc and mIoU
     total_inter, total_union, total_correct, total_label = 0, 0, 0, 0
     np_inter, np_union, np_correct, np_label = 0, 0, 0, 0
-    tbar = tqdm(range(50))
-    for i in tbar:
+    for i in range(1):
         img, mask = dataset[i]
         # prepare data and make prediction
         img = transform_fn(img)
@@ -59,15 +58,11 @@ def test_segmentation_utils():
         np_pixAcc = 1.0 * np_correct / (np.spacing(1) + np_label)
         np_IoU = 1.0 * np_inter / (np.spacing(1) + np_union)
         np_mIoU = np_IoU.mean()
-        # logging
-        tbar.set_description('pixAcc: %.3f, np_pixAcc: %.3f, mIoU: %.3f,  np_mIoU: %.3f'%\
-            (pixAcc, np_pixAcc, mIoU, np_mIoU))
 
-    assert(total_inter == np_inter).all()
-    assert(total_union == np_union).all()
-    assert(total_correct == np_correct).all()
-    assert(total_label == np_label).all()
-
+    np.testing.assert_allclose(total_inter, np_inter)
+    np.testing.assert_allclose(total_union, np_union)
+    np.testing.assert_allclose(total_correct, np_correct)
+    np.testing.assert_allclose(total_label, np_label)
 
 if __name__ == '__main__':
     import nose
