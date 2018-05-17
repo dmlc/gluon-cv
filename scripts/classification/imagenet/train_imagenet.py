@@ -12,7 +12,7 @@ from mxnet.gluon.data.vision import transforms
 
 from gluoncv.data import imagenet
 from gluoncv.model_zoo import get_model
-from gluoncv.utils import makedirs, TrainingHistory
+from gluoncv.utils import makedirs, TrainingHistory, freeze_bn
 
 # CLI
 parser = argparse.ArgumentParser(description='Train a model for image classification.')
@@ -193,6 +193,9 @@ def train(epochs, ctx):
         elif lr_decay_period == 0 and epoch == lr_decay_epoch[lr_decay_count]:
             trainer.set_learning_rate(trainer.learning_rate*lr_decay)
             lr_decay_count += 1
+
+        if opt.freeze_bn and epoch == epochs - 10:
+            freeze_bn(net, True)
 
         for i, batch in enumerate(train_data):
             data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
