@@ -42,7 +42,7 @@ net = model_zoo.get_model('ssd_512_resnet50_v1_voc', pretrained=True)
 
 im_fname = utils.download('https://github.com/dmlc/web-data/blob/master/' +
                           'gluoncv/detection/street_small.jpg?raw=true',
-                         fname='street_small.jpg')
+                          path='street_small.jpg')
 x, img = data.transforms.presets.ssd.load_test(im_fname, short=512)
 print('Shape of pre-processed image:', x.shape)
 
