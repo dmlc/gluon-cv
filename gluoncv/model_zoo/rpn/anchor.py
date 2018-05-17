@@ -44,7 +44,7 @@ class RPNAnchorGenerator(gluon.HybridBlock):
         if not isinstance(scales, (tuple, list)):
             scales = [scales]
 
-        anchors = self._generate_anchors(base_size, ratios, scales, alloc_size)
+        anchors = self._generate_anchors(stride, base_size, ratios, scales, alloc_size)
         self._num_depth = len(ratios) * len(scales)
         self.anchors = self.params.get_constant('anchor_', anchors)
 
@@ -61,7 +61,7 @@ class RPNAnchorGenerator(gluon.HybridBlock):
             for j, s in enumerate(scales):
                 h = base_size * s * np.sqrt(r) / 2.
                 w = base_size * s * np.sqrt(1. / r) / 2.
-                base_size.append([px - w, py - h, px + w, py + h])
+                base_sizes.append([px - w, py - h, px + w, py + h])
         base_sizes = np.array(base_sizes)  # (N, 4)
 
         # propagete to all locations by shift offsets
