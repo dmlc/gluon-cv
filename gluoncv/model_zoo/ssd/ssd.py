@@ -73,13 +73,15 @@ class SSD(HybridBlock):
         maps, which will later saved in parameters. During inference, we support arbitrary
         input image by cropping corresponding area of the anchor map. This allow us
         to export to symbol so we can run it in c++, scalar, etc.
+    ctx : mx.Context
+        Network context.
 
     """
     def __init__(self, network, base_size, features, num_filters, sizes, ratios,
                  steps, classes, use_1x1_transition=True, use_bn=True,
                  reduce_ratio=1.0, min_depth=128, global_pool=False, pretrained=False,
                  stds=(0.1, 0.1, 0.2, 0.2), nms_thresh=0.45, nms_topk=-1,
-                 anchor_alloc_size=128, **kwargs):
+                 anchor_alloc_size=128, ctx=mx.cpu(), **kwargs):
         super(SSD, self).__init__(**kwargs)
         if network is None:
             num_layers = len(ratios)
@@ -103,13 +105,13 @@ class SSD(HybridBlock):
         with self.name_scope():
             if network is None:
                 # use fine-grained manually designed block as features
-                self.features = features(pretrained=pretrained)
+                self.features = features(pretrained=pretrained, ctx=ctx)
             else:
                 self.features = FeatureExpander(
                     network=network, outputs=features, num_filters=num_filters,
                     use_1x1_transition=use_1x1_transition,
                     use_bn=use_bn, reduce_ratio=reduce_ratio, min_depth=min_depth,
-                    global_pool=global_pool, pretrained=pretrained)
+                    global_pool=global_pool, pretrained=pretrained, ctx=ctx)
             self.class_predictors = nn.HybridSequential()
             self.box_predictors = nn.HybridSequential()
             self.anchor_generators = nn.HybridSequential()
@@ -217,7 +219,7 @@ def get_ssd(name, base_size, features, filters, sizes, ratios, steps, classes,
     pretrained_base = False if pretrained else pretrained_base
     base_name = None if callable(features) else name
     net = SSD(base_name, base_size, features, filters, sizes, ratios, steps,
-              pretrained=pretrained_base, classes=classes, **kwargs)
+              pretrained=pretrained_base, classes=classes, ctx=ctx, **kwargs)
     if pretrained:
         from ..model_store import get_model_file
         full_name = '_'.join(('ssd', str(base_size), name, dataset))

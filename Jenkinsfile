@@ -20,8 +20,11 @@ stage("Unit Test") {
       ws('workspace/gluon-cv-py2') {
         checkout scm
         sh """#!/bin/bash
-        conda env update -n gluon_cv_py2 -f tests/py2.yml
-        source activate gluon_cv_py2
+        set -e
+        # conda env remove -n gluon_cv_py2_test -y
+        # conda env create -n gluon_cv_py2_test -f tests/py2.yml
+        conda env update -n gluon_cv_py2_test -f tests/py2.yml
+        source activate gluon_cv_py2_test
         conda list
         make clean
         pip install -e .
@@ -47,8 +50,11 @@ stage("Unit Test") {
       ws('workspace/gluon-cv-py3') {
         checkout scm
         sh """#!/bin/bash
-        conda env update -n gluon_cv_py3 -f tests/py3.yml
-        source activate gluon_cv_py3
+        set -e
+        # conda env remove -n gluon_cv_py3_test -y
+        # conda env create -n gluon_cv_py3_test -f tests/py3.yml
+        conda env update -n gluon_cv_py3_test -f tests/py3.yml
+        source activate gluon_cv_py3_test
         conda list
         make clean
         pip install -e .
@@ -90,7 +96,7 @@ stage("Build Docs") {
       """
 
       if (env.BRANCH_NAME.startsWith("PR-")) {
-        pullRequest.comment("Job ${env.BRANCH_NAME}-${env.BUILD_NUMBER} is done. \nDocs are uploaded to http://gluon-vision-staging.s3-website-us-west-2.amazonaws.com/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/index.html \nCode coverage of this PR: ![pr.svg](http://gluon-vision-staging.s3-website-us-west-2.amazonaws.com/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/coverage.svg) vs. Master: ![master.svg](http://gluon-cv.mxnet.io/coverage.svg)")
+        pullRequest.comment("Job ${env.BRANCH_NAME}-${env.BUILD_NUMBER} is done. \nDocs are uploaded to http://gluon-vision-staging.s3-website-us-west-2.amazonaws.com/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/index.html \nCode coverage of this PR: ![pr.svg](http://gluon-vision-staging.s3-website-us-west-2.amazonaws.com/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/coverage.svg?) vs. Master: ![master.svg](http://gluon-cv.mxnet.io/coverage.svg?)")
       }
     }
   }
