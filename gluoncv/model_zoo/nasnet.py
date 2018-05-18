@@ -20,7 +20,7 @@
 """NASNet, implemented in Gluon."""
 from __future__ import division
 
-__all__ = ['NASNet', 'get_nasnet']
+__all__ = ['get_nasnet']
 
 import os
 import math
@@ -44,7 +44,7 @@ class MaxPoolPad(HybridBlock):
 class AvgPoolPad(HybridBlock):
 
     def __init(self, stride=2, padding=1):
-        super(MaxPoolPad, self).__init__()
+        super(AvgPoolPad, self).__init__()
         # There's no 'count_include_pad' parameter, which makes it different
         self.pool = nn.AvgPool2D(3, strides=stride, padding=padding)
 
@@ -64,7 +64,7 @@ class SeparableConv2d(HybridBlock):
        self.body.add(nn.Conv2D(in_channels, kernel_size=dw_kernel,
                                strides=dw_stride, padding=dw_padding,
                                use_bias=use_bias,
-                               groups=in_channels)
+                               groups=in_channels))
        self.body.add(nn.Conv2D(channels, kernel_size=1, strides=1, use_bias=use_bias))
 
     def hybrid_forward(self, F, x):
@@ -83,7 +83,7 @@ class BranchSeparables(HybridBlock):
         self.body.add(nn.BatchNorm(momentum=0.1, epsilon=0.001))
         self.body.add(nn.Activation('relu'))
         self.body.add(SeparableConv2d(in_channels, out_channels, kernel_size,
-                                     strides=1, padding=padding, use_bias=use_bias))
+                                      1, padding, use_bias=use_bias))
         self.body.add(nn.BatchNorm(momentum=0.1, epsilon=0.001))
 
     def hybrid_forward(self, F, x):
@@ -102,7 +102,7 @@ class BranchSeparablesStem(HybridBlock):
         self.body.add(nn.BatchNorm(momentum=0.1, epsilon=0.001))
         self.body.add(nn.Activation('relu'))
         self.body.add(SeparableConv2d(out_channels, out_channels, kernel_size,
-                                     strides=1, padding=padding, use_bias=use_bias))
+                                      1, padding, use_bias=use_bias))
         self.body.add(nn.BatchNorm(momentum=0.1, epsilon=0.001))
 
     def hybrid_forward(self, F, x):
@@ -117,13 +117,13 @@ class BranchSeparablesReduction(HybridBlock):
 
         self.z_padding = z_padding
         self.separable = SeparableConv2d(in_channels, in_channels, kernel_size,
-                                         strides, padding, use_bias=use_bias))
+                                         stride, padding, use_bias=use_bias)
 
         self.body = nn.HybridSequential(prefix='')
         self.body.add(nn.BatchNorm(momentum=0.1, epsilon=0.001))
         self.body.add(nn.Activation('relu'))
         self.body.add(SeparableConv2d(in_channels, out_channels, kernel_size,
-                                      strides=1, padding=padding, use_bias=use_bias))
+                                      1, padding, use_bias=use_bias))
         self.body.add(nn.BatchNorm(momentum=0.1, epsilon=0.001))
 
     def hybrid_forward(self, F, x):
@@ -207,13 +207,13 @@ class CellStem1(HybridBlock):
         self.final_path_bn = nn.BatchNorm(momentum=0.1, epsilon=0.001)
 
         self.comb_iter_0_left = BranchSeparables(num_filters, num_filters, 5, 2, 2)
-        self.comb_iter_0_right = BranchSeparables(stem_filters, num_filters, 7, 2, 3)
+        self.comb_iter_0_right = BranchSeparables(num_filters, num_filters, 7, 2, 3)
 
         self.comb_iter_1_left = nn.MaxPool2D(3, strides=2, padding=1)
-        self.comb_iter_1_right = BranchSeparables(stem_filters, num_filters, 7, 2, 3)
+        self.comb_iter_1_right = BranchSeparables(num_filters, num_filters, 7, 2, 3)
 
         self.comb_iter_2_left = nn.AvgPool2D(3, strides=2, padding=1)
-        self.comb_iter_2_right = BranchSeparables(stem_filters, num_filters, 5, 2, 2)
+        self.comb_iter_2_right = BranchSeparables(num_filters, num_filters, 5, 2, 2)
 
         self.comb_iter_3_right = nn.AvgPool2D(3, strides=1, padding=1)
 
@@ -227,7 +227,7 @@ class CellStem1(HybridBlock):
         x_path1 = self.path_1(x_relu)
         x_path2 = F.pad(x_relu, pad_width = (0,0,0,0,0,1,0,1), 
                   mode='constant', constant_value=0)
-        x_path2 = F.slice(x, begin=(0,0,1,1), end=(None, None, None, None))
+        x_path2 = F.slice(x_path2, begin=(0,0,1,1), end=(None, None, None, None))
         x_path2 = self.path_2(x_path2)
         x_right = self.final_path_bn(F.concat(x_path1, x_path2, dim=1))
 
@@ -418,7 +418,7 @@ class ReductionCell0(HybridBlock):
 
         self.comb_iter_3_right = nn.AvgPool2D(3, strides=1, padding=1)
 
-        self.comb_iter_4_left = BranchSeparablesReduction(out_channels_right, out_channels_right,
+        self.comb_iter_3_left = BranchSeparablesReduction(out_channels_right, out_channels_right,
                                                           3, 1, 1)
         self.comb_iter_4_left = MaxPoolPad()
 
@@ -472,16 +472,16 @@ class ReductionCell1(HybridBlock):
         self.comb_iter_0_left = BranchSeparables(out_channels_right, out_channels_right, 5, 2, 2)
         self.comb_iter_0_right = BranchSeparables(out_channels_right, out_channels_right, 7, 2, 3)
 
-        self.comb_iter_1_left = MaxPoolPad(3, strides=2, padding=1)
+        self.comb_iter_1_left = nn.MaxPool2D(3, strides=2, padding=1)
         self.comb_iter_1_right = BranchSeparables(out_channels_right, out_channels_right, 7, 2, 3)
 
-        self.comb_iter_2_left = AvgPoolPad(3, strides=2, padding=1)
+        self.comb_iter_2_left = nn.AvgPool2D(3, strides=2, padding=1)
         self.comb_iter_2_right = BranchSeparables(out_channels_right, out_channels_right, 5, 2, 2)
 
         self.comb_iter_3_right = nn.AvgPool2D(3, strides=1, padding=1)
 
         self.comb_iter_4_left = BranchSeparables(out_channels_right, out_channels_right, 3, 1, 1)
-        self.comb_iter_4_left = MaxPoolPad(3, stride=2, padding=1)
+        self.comb_iter_4_right = nn.MaxPool2D(3, strides=2, padding=1)
 
     def hybrid_forward(self, F, x_list):
         x = x_list[0]
@@ -522,7 +522,7 @@ class NASNetALarge(HybridBlock):
         filters = penultimate_filters // 24
 
         self.conv0 = nn.HybridSequential(prefix='')
-        self.conv0.add(nn.Conv2D(steam_filters, 3, padding=0, strides=2, use_bias=False))
+        self.conv0.add(nn.Conv2D(stem_filters, 3, padding=0, strides=2, use_bias=False))
         self.conv0.add(nn.BatchNorm(momentum=0.1, epsilon=0.001))
 
         self.cell_stem_0 = CellStem0(stem_filters, num_filters=filters // (filters_multiplier ** 2))
@@ -564,7 +564,7 @@ class NASNetALarge(HybridBlock):
         self.out = nn.HybridSequential(prefix='')
         self.out.add(nn.Activation('relu'))
         self.out.add(nn.AvgPool2D(11, strides=1, padding=0))
-        self.out.add(nn.Dropout())
+        self.out.add(nn.Dropout(0.5))
         self.out.add(nn.Dense(num_classes))
 
     def hybrid_forward(self, F, x):
@@ -581,6 +581,6 @@ class NASNetALarge(HybridBlock):
         x = self.out(x_norm_3[0])
         return x
 
-def nasnetalarge(num_classes=1001)
+def get_nasnet(num_classes=1001):
     model = NASNetALarge(num_classes=num_classes)
     return model
