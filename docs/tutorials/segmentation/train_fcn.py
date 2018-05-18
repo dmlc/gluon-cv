@@ -133,8 +133,8 @@ input_transform = transforms.Compose([
 # For example, we can easily get the Pascal VOC 2012 dataset:
 trainset = gluoncv.data.VOCSegmentation(split='train', transform=input_transform)
 print('Training images:', len(trainset))
-# set batch_size = 2 for toy example
-batch_size = 2
+# set batch_size = 4 for toy example
+batch_size = 4
 # Create Training Loader
 train_data = gluon.data.DataLoader(
     trainset, batch_size, shuffle=True, last_batch='rollover',
@@ -203,9 +203,9 @@ lr_scheduler = gluoncv.utils.PolyLRScheduler(0.001, niters=len(train_data),
                                                  nepochs=50)
 
 ##############################################################################
-# - Dataparallel for multi-gpu training
+# - Dataparallel for multi-gpu training, using cpu for demo only
 from gluoncv.utils.parallel import *
-ctx_list = [mx.gpu(0), mx.gpu(1)]
+ctx_list = [mx.cpu(0)]
 model = DataParallelModel(model, ctx_list)
 criterion = DataParallelCriterion(criterion, ctx_list)
 
@@ -237,7 +237,7 @@ for i, (data, target) in enumerate(train_data):
         train_loss += loss.asnumpy()[0] / len(losses)
     print('Epoch %d, training loss %.3f'%(epoch, train_loss/(i+1)))
     # just demo for 20 iters
-    if i > 20:
+    if i > 10:
         break
 
 
