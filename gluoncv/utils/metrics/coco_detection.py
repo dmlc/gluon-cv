@@ -12,8 +12,10 @@ class COCODetectionMetric(mx.metric.EvalMetric):
         self.dataset = dataset
         self._img_ids = sorted(dataset.coco.getImgIds())
         self._current_id = 0
+        self._cleanup = cleanup
+        self._results = []
         if use_time:
-            import datatime
+            import datetime
             t = datetime.datetime.now().strftime('_%Y_%m_%d_%H_%M_%S')
         else:
             t = ''
@@ -24,8 +26,6 @@ class COCODetectionMetric(mx.metric.EvalMetric):
             raise RuntimeError("Unable to open json file to dump. What(): {}".format(str(e)))
         else:
             f.close()
-        self._cleanup = cleanup
-        self._results = []
 
     def __del__(self):
         if self._cleanup:
