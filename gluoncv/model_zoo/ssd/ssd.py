@@ -228,7 +228,7 @@ def get_ssd(name, base_size, features, filters, sizes, ratios, steps, classes,
     return net
 
 def ssd_300_vgg16_atrous_voc(pretrained=False, pretrained_base=True, **kwargs):
-    """SSD architecture with VGG16 atrous 300x300 base network.
+    """SSD architecture with VGG16 atrous 300x300 base network for Pascal VOC.
 
     Parameters
     ----------
@@ -248,6 +248,31 @@ def ssd_300_vgg16_atrous_voc(pretrained=False, pretrained_base=True, **kwargs):
                   ratios=[[1, 2, 0.5]] + [[1, 2, 0.5, 3, 1.0/3]] * 3 + [[1, 2, 0.5]] * 2,
                   steps=[8, 16, 32, 64, 100, 300],
                   classes=classes, dataset='voc', pretrained=pretrained,
+                  pretrained_base=pretrained_base, **kwargs)
+    return net
+
+def ssd_300_vgg16_atrous_coco(pretrained=False, pretrained_base=True, **kwargs):
+    """SSD architecture with VGG16 atrous 300x300 base network for COCO.
+
+    Parameters
+    ----------
+    pretrained : bool, optional, default is False
+        Load pretrained weights.
+    pretrained_base : bool, optional, default is True
+        Load pretrained base network, the extra layers are randomized.
+
+    Returns
+    -------
+    HybridBlock
+        A SSD detection network.
+    """
+    from ...data import COCODetection
+    classes = COCODetection.CLASSES
+    net = get_ssd('vgg16_atrous', 300, features=vgg16_atrous_300, filters=None,
+                  sizes=[21, 45, 99, 153, 207, 261, 315],
+                  ratios=[[1, 2, 0.5]] + [[1, 2, 0.5, 3, 1.0/3]] * 3 + [[1, 2, 0.5]] * 2,
+                  steps=[8, 16, 32, 64, 100, 300],
+                  classes=classes, dataset='coco', pretrained=pretrained,
                   pretrained_base=pretrained_base, **kwargs)
     return net
 

@@ -1,6 +1,7 @@
 """MS COCO Detection Evaluate Metrics."""
 from __future__ import absolute_import
 
+import os
 from os import path as osp
 import numpy as np
 import mxnet as mx
