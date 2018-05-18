@@ -92,6 +92,7 @@ def get_dataloader(net, train_dataset, val_dataset, data_shape, batch_size, num_
     return train_loader, val_loader
 
 def save_params(net, best_map, current_map, epoch, save_interval, prefix):
+    current_map = float(current_map)
     if current_map > best_map[0]:
         best_map[0] = current_map
         net.save_params('{:s}_best.params'.format(prefix, epoch, current_map))
@@ -102,6 +103,7 @@ def save_params(net, best_map, current_map, epoch, save_interval, prefix):
 
 def validate(net, val_data, ctx, eval_metric):
     """Test on validation dataset."""
+    eval_metric.reset()
     # set nms threshold and topk constraint
     net.set_nms(nms_thresh=0.45, nms_topk=400)
     net.hybridize()

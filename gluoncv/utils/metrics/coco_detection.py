@@ -58,8 +58,9 @@ class COCODetectionMetric(mx.metric.EvalMetric):
         coco_eval.evaluate()
         coco_eval.accumulate()
         self._coco_eval = coco_eval
+        return coco_eval
 
-    def get(self, coco_eval, classes):
+    def get(self):
         """Get evaluation metrics. """
         # Metric printing adapted from detectron/json_dataset_evaluator.
         def _get_thr_ind(coco_eval, thr):
@@ -70,7 +71,7 @@ class COCODetectionMetric(mx.metric.EvalMetric):
             return ind
 
         # call real update
-        self._update()
+        coco_eval = self._update()
 
         IoU_lo_thresh = 0.5
         IoU_hi_thresh = 0.95
@@ -81,17 +82,19 @@ class COCODetectionMetric(mx.metric.EvalMetric):
         # max dets index 2: 100 per image
         precision = coco_eval.eval['precision'][ind_lo:(ind_hi + 1), :, :, 0, 2]
         ap_default = np.mean(precision[precision > -1])
-        names = ['~~~~ MeanAP @ IoU=[{:.2f},{:.2f}] ~~~~'.format(
-            IoU_lo_thresh, IoU_hi_thresh)]
-        values = ['{:.1f}'.format(100 * ap_default)]
+        names, values = [], []
+        names.append('~~~~ Summary metrics ~~~~')
+        values.append('\n' + str(coco_eval.summarize()))
         for cls_ind, cls_name in enumerate(self.dataset.classes):
             precision = coco_eval.eval['precision'][
                 ind_lo:(ind_hi + 1), :, cls_ind, 0, 2]
             ap = np.mean(precision[precision > -1])
             names.append(cls_name)
             values.append('{:.1f}'.format(100 * ap))
-        names.append('~~~~ Summary metrics ~~~~')
-        values.append('\n' + str(coco_eval.summarize()))
+        # put mean AP at last, for comparing perf
+        names.append('~~~~ MeanAP @ IoU=[{:.2f},{:.2f}] ~~~~'.format(
+            IoU_lo_thresh, IoU_hi_thresh))
+        values.append('{:.1f}'.format(100 * ap_default))
         return names, values
 
     def update(self, pred_bboxes, pred_labels, pred_scores, *args, **kwargs):
