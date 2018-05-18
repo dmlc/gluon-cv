@@ -290,10 +290,7 @@ class FirstCell(HybridBlock):
 
         self.comb_iter_4_left = BranchSeparables(out_channels_right, out_channels_right, 3, 1, 1)
 
-    def hybrid_forward(self, F, x_list):
-        x = x_list[0]
-        x_prev = x_list[1]
-
+    def hybrid_forward(self, F, x, x_prev):
         x_relu = F.Activation(x_prev, act_type='relu')
         x_path1 = self.path_1(x_relu)
         x_path2 = F.pad(x_relu, pad_width = (0,0,0,0,0,1,0,1), 
@@ -325,7 +322,7 @@ class FirstCell(HybridBlock):
         x_out = F.concat(x_left, x_comb_iter_0, x_comb_iter_1, x_comb_iter_2,
                          x_comb_iter_3, x_comb_iter_4, dim=1)
 
-        return [x_out, x]
+        return x_out, x
 
 
 class NormalCell(HybridBlock):
@@ -357,10 +354,7 @@ class NormalCell(HybridBlock):
 
         self.comb_iter_4_left = BranchSeparables(out_channels_right, out_channels_right, 3, 1, 1)
 
-    def hybrid_forward(self, F, x_list):
-        x = x_list[0]
-        x_prev = x_list[1]
-
+    def hybrid_forward(self, F, x, x_prev):
         x_left = self.conv_prev_1x1(x_prev)
         x_right = self.conv_1x1(x)
 
@@ -385,7 +379,7 @@ class NormalCell(HybridBlock):
         x_out = F.concat(x_left, x_comb_iter_0, x_comb_iter_1, x_comb_iter_2,
                          x_comb_iter_3, x_comb_iter_4, dim=1)
 
-        return [x_out, x]
+        return x_out, x
 
 class ReductionCell0(HybridBlock):
 
@@ -422,10 +416,7 @@ class ReductionCell0(HybridBlock):
                                                           3, 1, 1)
         self.comb_iter_4_left = MaxPoolPad()
 
-    def hybrid_forward(self, F, x_list):
-        x = x_list[0]
-        x_prev = x_list[1]
-
+    def hybrid_forward(self, F, x, x_prev):
         x_left = self.conv_prev_1x1(x_prev)
         x_right = self.conv_1x1(x)
 
@@ -450,7 +441,7 @@ class ReductionCell0(HybridBlock):
 
         x_out = F.concat(x_comb_iter_1, x_comb_iter_2, x_comb_iter_3, x_comb_iter_4, dim=1)
 
-        return [x_out, x]
+        return x_out, x
 
 
 class ReductionCell1(HybridBlock):
@@ -483,10 +474,7 @@ class ReductionCell1(HybridBlock):
         self.comb_iter_4_left = BranchSeparables(out_channels_right, out_channels_right, 3, 1, 1)
         self.comb_iter_4_right = nn.MaxPool2D(3, strides=2, padding=1)
 
-    def hybrid_forward(self, F, x_list):
-        x = x_list[0]
-        x_prev = x_list[1]
-
+    def hybrid_forward(self, F, x, x_prev):
         x_left = self.conv_prev_1x1(x_prev)
         x_right = self.conv_1x1(x)
 
@@ -511,7 +499,7 @@ class ReductionCell1(HybridBlock):
 
         x_out = F.concat(x_comb_iter_1, x_comb_iter_2, x_comb_iter_3, x_comb_iter_4, dim=1)
 
-        return [x_out, x]
+        return x_out, x
 
 
 class NASNetALarge(HybridBlock):
@@ -572,7 +560,7 @@ class NASNetALarge(HybridBlock):
         x_stem_0 = self.cell_stem_0(x_conv0)
         x_stem_1 = self.cell_stem_1(x_conv0, x_stem_0)
 
-        x_norm_1 = self.norm_1([x_stem_1, x_stem_0])
+        x_norm_1 = self.norm_1(x_stem_1, x_stem_0)
         x_reduction_cell_0 = self.reduction_cell_0(x_norm_1)
         x_norm_2 = self.norm_2(x_reduction_cell_0)
         x_reduction_cell_1 = self.reduction_cell_1(x_norm_2)
