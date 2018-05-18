@@ -150,8 +150,10 @@ train_data = gluon.data.DataLoader(
 # Finally a random Gaussian blurring is applied.
 #
 # Random pick one example for visualization:
-from random import randint
-idx = randint(0, len(trainset))
+import random
+from datetime import datetime
+random.seed(datetime.now())
+idx = random.randint(0, len(trainset))
 img, mask = trainset[idx]
 from gluoncv.utils.viz import get_color_pallete, DeNormalize
 # get color pallete for visualize mask
