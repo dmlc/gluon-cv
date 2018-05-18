@@ -11,6 +11,7 @@ from __future__ import absolute_import
 import numpy as np
 from mxnet import gluon
 from mxnet import nd
+from mxnet import autograd
 
 
 class NaiveSampler(gluon.HybridBlock):
@@ -81,3 +82,51 @@ class OHEMSampler(gluon.Block):
             indices = argmaxs[i, :num_neg]
             y[i, indices.astype(np.int32)] = -1  # assign negative samples
         return F.array(y, ctx=x.context)
+
+
+class QuotaSampler(autograd.Function):
+    def __init__(self, num_sample, pos_thresh, neg_thresh_high, neg_thresh_low=0.,
+                 pos_ratio=0.5, neg_ratio=None):
+        self._num_sample = num_sample
+        if neg_ratio is None:
+            self._neg_ratio = neg_ratio
+        self._pos_ratio = pos_ratio
+        assert (self._neg_ratio + self._pos_ratio) <= 1.0, (
+            "Positive and negative ratio exceed 1".format(self._neg_ratio + self._pos_ratio))
+        self._pos_thresh = min(1., max(0., pos_thresh))
+        self._neg_thresh = min(1., max(0., neg_thresh))
+
+    def forward(self, matches, ious):
+        max_pos = self._pos_ratio * self._num_sample
+        max_neg = self._neg_ratio * self._num_sample
+        # init with 0s, which are ignored
+        result = F.zeros_like(matches)
+        # negative samples with label -1
+        neg_mask = ious.max(axis=1) < self._neg_thresh
+        result = F.where(ious.max(axis=1) < self._neg_thresh,
+                         F.ones_like(matches) * -1, result)
+        # positive samples
+        result = F.where(matches >= 0, F.ones_like(result), result)
+        result = F.where(ious.max(axis=1) >= self._pos_thresh, F.ones_like(result), result)
+
+        # re-balance if number of postive or negative exceed limits
+        result = result.asnumpy()
+        num_pos = (result > 0).sum().asscalar()
+        if num_pos > max_pos:
+            disable_indices = np.random.choice(
+                np.where(result > 0)[0], size=(num_pos - max_pos), replace=False)
+            result[disable_indices] = 0   # use 0 to ignore
+        num_neg = (result < 0).sum().asscalar()
+        if num_neg > max_neg:
+            disable_indices = np.random.choice(
+                np.where(result < 0)[0], size=(num_neg - max_neg), replace=False)
+
+        # some non-related gradients
+        g1 = F.zeros_like(matches)
+        g2 = F.zeros_like(ious)
+        self.save_for_backward(g1, g2)
+        return mx.nd.array(result)
+
+    def backward(self, dy):
+        g1, g2 = self.saved_tensors
+        return g1, g2
