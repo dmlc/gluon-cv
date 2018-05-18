@@ -10,13 +10,14 @@ from ...data.mscoco.utils import try_import_pycocotools
 
 
 class COCODetectionMetric(mx.metric.EvalMetric):
-    def __init__(self, dataset, save_prefix, use_time=True, cleanup=False):
+    def __init__(self, dataset, save_prefix, use_time=True, cleanup=False, score_thresh=0.05):
         super(COCODetectionMetric, self).__init__('COCOMeanAP')
         self.dataset = dataset
         self._img_ids = sorted(dataset.coco.getImgIds())
         self._current_id = 0
         self._cleanup = cleanup
         self._results = []
+        self._score_thresh = score_thresh
         if use_time:
             import datetime
             t = datetime.datetime.now().strftime('_%Y_%m_%d_%H_%M_%S')
@@ -133,6 +134,8 @@ class COCODetectionMetric(mx.metric.EvalMetric):
             for bbox, label, score in zip(pred_bbox, pred_label, pred_score):
                 if label not in self.dataset.contiguous_id_to_json:
                     # ignore non-exist class
+                    continue
+                if score < self._score_thresh:
                     continue
                 category_id = self.dataset.contiguous_id_to_json[label]
                 self._results.append({'image_id': imgid,
