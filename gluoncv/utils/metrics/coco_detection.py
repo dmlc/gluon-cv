@@ -6,7 +6,7 @@ import numpy as np
 import mxnet as mx
 
 
-class COCODetectionMetric(mx.metirc.EvalMetric):
+class COCODetectionMetric(mx.metric.EvalMetric):
     def __init__(self, dataset, save_prefix, use_time=True, cleanup=False):
         super(COCODetectionMetric, self).__init__('COCOMeanAP')
         self.dataset = dataset
