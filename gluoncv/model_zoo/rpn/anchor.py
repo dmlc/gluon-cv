@@ -74,7 +74,7 @@ class RPNAnchorGenerator(gluon.HybridBlock):
         # broadcast_add (1, N, 4) + (M, 1, 4)
         anchors = (base_sizes.reshape((1, -1, 4))
             + offsets.reshape((1, -1, 4)).transpose((1, 0, 2)))
-        anchors = anchors.reshape((-1, 4)).astype(np.float32)
+        anchors = anchors.reshape((1, -1, height, width, 4)).astype(np.float32)
         return anchors
 
     def hybrid_forward(self, F, x, anchors):

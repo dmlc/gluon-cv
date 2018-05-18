@@ -23,7 +23,7 @@ class FasterRCNN(RCNN):
     def hybrid_forward(self, F, x, width, height):
         feat = self.features(x)
         # RPN proposals
-        rpn_score, rpn_box, rpn_roi, roi = self.rpn(feat)
+        rpn_score, rpn_box, rpn_roi, roi = self.rpn(feat, width, height)
         # ROI features
         if self._roi_mode == 'pool':
             pooled_feat = F.ROIPooling(feat, rpn_roi, self._roi_size, 1. / self._stride)

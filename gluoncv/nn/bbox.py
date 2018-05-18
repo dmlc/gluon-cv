@@ -91,22 +91,22 @@ class BBoxSplit(gluon.HybridBlock):
         return F.split(x, axis=self._axis, num_outputs=4)
 
 
-class BBoxConcat(gluon.HybridBlock):
-    """Split bounding boxes into 4 columns.
-
-    Parameters
-    ----------
-    axis : int, default is -1
-        On which axis to concatenate the bounding box. Default is -1(the last dimension).
-
-    """
-    def __init__(self, axis, **kwargs):
-        super(BBoxConcat, self).__init__(**kwargs)
-        self._axis = axis
-
-    def hybrid_forward(self, F, x):
-        assert len(x) == 4
-        return F.concat(*x, dim=self._axis)
+# class BBoxConcat(gluon.HybridBlock):
+#     """Split bounding boxes into 4 columns.
+#
+#     Parameters
+#     ----------
+#     axis : int, default is -1
+#         On which axis to concatenate the bounding box. Default is -1(the last dimension).
+#
+#     """
+#     def __init__(self, axis, **kwargs):
+#         super(BBoxConcat, self).__init__(**kwargs)
+#         self._axis = axis
+#
+#     def hybrid_forward(self, F, x):
+#         assert len(x) == 4
+#         return F.concat(*x, dim=self._axis)
 
 
 class BBoxClipToImage(gluon.HybridBlock):
@@ -133,7 +133,7 @@ class BBoxClipToImage(gluon.HybridBlock):
             self._post = BBoxCornerToCenter(split=False)
         elif format.lower() == 'corner':
             self._pre = BBoxSplit(axis=axis)
-            self._post = BBoxConcat(axis=axis)
+            self._post = lambda x : x
         else:
             raise ValueError("Unsupported format: {}. Use 'corner' or 'center'.".format(format))
 
@@ -143,7 +143,7 @@ class BBoxClipToImage(gluon.HybridBlock):
         ymin = F.clip(ymin, 0, height)
         xmax = F.clip(xmax, 0, width)
         ymax = F.clip(ymax, 0, height)
-        return self._post([xmin, ymin, xmax, ymax])
+        return self._post(F.concat(*[xmin, ymin, xmax, ymax], dim=-1))
 
 
 class BBoxArea(gluon.HybridBlock):
