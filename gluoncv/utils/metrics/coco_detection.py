@@ -3,8 +3,10 @@ from __future__ import absolute_import
 
 import os
 from os import path as osp
+import warnings
 import numpy as np
 import mxnet as mx
+from ...data.mscoco.utils import try_import_pycocotools
 
 
 class COCODetectionMetric(mx.metric.EvalMetric):
@@ -42,6 +44,10 @@ class COCODetectionMetric(mx.metric.EvalMetric):
 
     def _update(self):
         """Use coco to get real scores. """
+        if not self._current_id == len(self._img_ids) - 1:
+            warnings.warn(
+                'Recorded {} out of {} validation images, incompelete results'.format(
+                    self._current_id + 1, len(self._img_ids)))
         import json
         try:
             with open(self._filename, 'w') as f:
