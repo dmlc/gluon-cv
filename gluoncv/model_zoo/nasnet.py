@@ -60,15 +60,15 @@ class SeparableConv2d(HybridBlock):
     def __init__(self, in_channels, channels, dw_kernel, dw_stride, dw_padding,
                  use_bias=False):
        super(SeparableConv2d, self).__init__()
-       self.depthwise_conv2d = nn.Conv2D(in_channels, kernel_size=dw_kernel,
-                                         strides=dw_stride, padding=dw_padding,
-                                         use_bias = use_bias,
-                                         groups=in_channels)
-       self.pointwise_conv2d = nn.Conv2D(channels, kernel_size=1, strides=1, use_bias=use_bias)
+       self.body = nn.HybridSequential(prefix='')
+       self.body.add(nn.Conv2D(in_channels, kernel_size=dw_kernel,
+                               strides=dw_stride, padding=dw_padding,
+                               use_bias=use_bias,
+                               groups=in_channels)
+       self.body.add(nn.Conv2D(channels, kernel_size=1, strides=1, use_bias=use_bias))
 
     def hybrid_forward(self, F, x):
-        x = self.depthwise_conv2d(x)
-        x = self.pointwise_conv2d(x)
+        x = self.body(x)
         return x
 
 class BranchSeparables(HybridBlock):
@@ -123,7 +123,7 @@ class BranchSeparablesReduction(HybridBlock):
         self.body.add(nn.BatchNorm(momentum=0.1, epsilon=0.001))
         self.body.add(nn.Activation('relu'))
         self.body.add(SeparableConv2d(in_channels, out_channels, kernel_size,
-                                     strides=1, padding=padding, use_bias=use_bias))
+                                      strides=1, padding=padding, use_bias=use_bias))
         self.body.add(nn.BatchNorm(momentum=0.1, epsilon=0.001))
 
     def hybrid_forward(self, F, x):
@@ -163,15 +163,15 @@ class CellStem0(HybridBlock):
         x1 = self.conv_1x1(x)
 
         x_comb_iter_0_left = self.comb_iter_0_left(x1)
-        x_comb_iter_0_right = self.comb_iter_0_right(x1)
+        x_comb_iter_0_right = self.comb_iter_0_right(x)
         x_comb_iter_0 = x_comb_iter_0_left + x_comb_iter_0_right
 
         x_comb_iter_1_left = self.comb_iter_1_left(x1)
-        x_comb_iter_1_right = self.comb_iter_1_right(x1)
+        x_comb_iter_1_right = self.comb_iter_1_right(x)
         x_comb_iter_1 = x_comb_iter_1_left + x_comb_iter_1_right
 
         x_comb_iter_2_left = self.comb_iter_2_left(x1)
-        x_comb_iter_2_right = self.comb_iter_2_right(x1)
+        x_comb_iter_2_right = self.comb_iter_2_right(x)
         x_comb_iter_2 = x_comb_iter_2_left + x_comb_iter_2_right
 
         x_comb_iter_3_right = self.comb_iter_3_right(x_comb_iter_0)
@@ -192,17 +192,17 @@ class CellStem1(HybridBlock):
 
         self.conv_1x1 = nn.HybridSequential(prefix='')
         self.conv_1x1.add(nn.Activation('relu'))
-        self.conv_1x1.add(nn.Conv2D(num_filters, 1, strides=2, use_bias=False))
+        self.conv_1x1.add(nn.Conv2D(num_filters, 1, strides=1, use_bias=False))
         self.conv_1x1.add(nn.BatchNorm(momentum=0.1, epsilon=0.001))
 
         self.path_1 = nn.HybridSequential(prefix='')
         self.path_1.add(nn.AvgPool2D(1, strides=2))
-        self.path_1.add(nn.Conv2D(num_filters//2, 1, strides=2, use_bias=False))
+        self.path_1.add(nn.Conv2D(num_filters//2, 1, strides=1, use_bias=False))
 
         self.path_2 = nn.HybridSequential(prefix='')
         # No nn.ZeroPad2D in gluon
         self.path_2.add(nn.AvgPool2D(1, strides=2))
-        self.path_2.add(nn.Conv2D(num_filters//2, 1, strides=2, use_bias=False))
+        self.path_2.add(nn.Conv2D(num_filters//2, 1, strides=1, use_bias=False))
 
         self.final_path_bn = nn.BatchNorm(momentum=0.1, epsilon=0.001)
 
@@ -302,7 +302,7 @@ class FirstCell(HybridBlock):
         x_path2 = self.path_2(x_path2)
         x_left = self.final_path_bn(F.concat(x_path1, x_path2, dim=1))
 
-        x_right = self.conv_1x1(x_stem_0)
+        x_right = self.conv_1x1(x)
 
         x_comb_iter_0_left = self.comb_iter_0_left(x_right)
         x_comb_iter_0_right = self.comb_iter_0_right(x_left)
@@ -361,7 +361,7 @@ class NormalCell(HybridBlock):
         x = x_list[0]
         x_prev = x_list[1]
 
-        x_left = self.conv_prev_1x1(x_pref)
+        x_left = self.conv_prev_1x1(x_prev)
         x_right = self.conv_1x1(x)
 
         x_comb_iter_0_left = self.comb_iter_0_left(x_right)
@@ -403,25 +403,30 @@ class ReductionCell0(HybridBlock):
         self.conv_1x1.add(nn.Conv2D(out_channels_right, 1, strides=1, use_bias=False))
         self.conv_1x1.add(nn.BatchNorm(momentum=0.1, epsilon=0.001))
 
-        self.comb_iter_0_left = BranchSeparablesReduction(out_channels_right, out_channels_right, 5, 2, 2)
-        self.comb_iter_0_right = BranchSeparablesReduction(out_channels_right, out_channels_right, 7, 2, 3)
+        self.comb_iter_0_left = BranchSeparablesReduction(out_channels_right, out_channels_right,
+                                                          5, 2, 2)
+        self.comb_iter_0_right = BranchSeparablesReduction(out_channels_right, out_channels_right,
+                                                           7, 2, 3)
 
         self.comb_iter_1_left = MaxPoolPad()
-        self.comb_iter_1_right = BranchSeparablesReduction(out_channels_right, out_channels_right, 7, 2, 3)
+        self.comb_iter_1_right = BranchSeparablesReduction(out_channels_right, out_channels_right,
+                                                           7, 2, 3)
 
         self.comb_iter_2_left = AvgPoolPad()
-        self.comb_iter_2_right = BranchSeparablesReduction(out_channels_right, out_channels_right, 5, 2, 2)
+        self.comb_iter_2_right = BranchSeparablesReduction(out_channels_right, out_channels_right,
+                                                           5, 2, 2)
 
         self.comb_iter_3_right = nn.AvgPool2D(3, strides=1, padding=1)
 
-        self.comb_iter_4_left = BranchSeparablesReduction(out_channels_right, out_channels_right, 3, 1, 1)
+        self.comb_iter_4_left = BranchSeparablesReduction(out_channels_right, out_channels_right,
+                                                          3, 1, 1)
         self.comb_iter_4_left = MaxPoolPad()
 
     def hybrid_forward(self, F, x_list):
         x = x_list[0]
         x_prev = x_list[1]
 
-        x_left = self.conv_prev_1x1(x_pref)
+        x_left = self.conv_prev_1x1(x_prev)
         x_right = self.conv_1x1(x)
 
         x_comb_iter_0_left = self.comb_iter_0_left(x_right)
@@ -434,10 +439,10 @@ class ReductionCell0(HybridBlock):
 
         x_comb_iter_2_left = self.comb_iter_2_left(x_right)
         x_comb_iter_2_right = self.comb_iter_2_right(x_left)
-        x_comb_iter_2 = x_comb_iter_2_left + x_left
+        x_comb_iter_2 = x_comb_iter_2_left + x_comb_iter_2_right
 
         x_comb_iter_3_right = self.comb_iter_3_right(x_comb_iter_0)
-        x_comb_iter_3 = x_comb_iter_3_left + x_comb_iter_1
+        x_comb_iter_3 = x_comb_iter_3_right + x_comb_iter_1
 
         x_comb_iter_4_left = self.comb_iter_4_left(x_comb_iter_0)
         x_comb_iter_4_right = self.comb_iter_4_right(x_right)
@@ -482,7 +487,7 @@ class ReductionCell1(HybridBlock):
         x = x_list[0]
         x_prev = x_list[1]
 
-        x_left = self.conv_prev_1x1(x_pref)
+        x_left = self.conv_prev_1x1(x_prev)
         x_right = self.conv_1x1(x)
 
         x_comb_iter_0_left = self.comb_iter_0_left(x_right)
@@ -495,10 +500,10 @@ class ReductionCell1(HybridBlock):
 
         x_comb_iter_2_left = self.comb_iter_2_left(x_right)
         x_comb_iter_2_right = self.comb_iter_2_right(x_left)
-        x_comb_iter_2 = x_comb_iter_2_left + x_left
+        x_comb_iter_2 = x_comb_iter_2_left + x_comb_iter_2_right
 
         x_comb_iter_3_right = self.comb_iter_3_right(x_comb_iter_0)
-        x_comb_iter_3 = x_comb_iter_3_left + x_comb_iter_1
+        x_comb_iter_3 = x_comb_iter_3_right + x_comb_iter_1
 
         x_comb_iter_4_left = self.comb_iter_4_left(x_comb_iter_0)
         x_comb_iter_4_right = self.comb_iter_4_right(x_right)
