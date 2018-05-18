@@ -30,7 +30,7 @@ from mxnet.gluon.block import HybridBlock
 
 class MaxPoolPad(HybridBlock):
 
-    def __init(self):
+    def __init__(self):
         super(MaxPoolPad, self).__init__()
         self.pool = nn.MaxPool2D(3, strides=2, padding=1)
 
@@ -43,7 +43,7 @@ class MaxPoolPad(HybridBlock):
 
 class AvgPoolPad(HybridBlock):
 
-    def __init(self, stride=2, padding=1):
+    def __init__(self, stride=2, padding=1):
         super(AvgPoolPad, self).__init__()
         # There's no 'count_include_pad' parameter, which makes it different
         self.pool = nn.AvgPool2D(3, strides=stride, padding=padding)
@@ -293,9 +293,9 @@ class FirstCell(HybridBlock):
     def hybrid_forward(self, F, x, x_prev):
         x_relu = F.Activation(x_prev, act_type='relu')
         x_path1 = self.path_1(x_relu)
-        x_path2 = F.pad(x_relu, pad_width = (0,0,0,0,0,1,0,1), 
+        x_path2 = F.pad(x_relu, pad_width = (0,0,0,0,0,1,0,1),
                   mode='constant', constant_value=0)
-        x_path2 = F.slice(x, begin=(0,0,1,1), end=(None, None, None, None))
+        x_path2 = F.slice(x_path2, begin=(0,0,1,1), end=(None, None, None, None))
         x_path2 = self.path_2(x_path2)
         x_left = self.final_path_bn(F.concat(x_path1, x_path2, dim=1))
 
@@ -412,9 +412,9 @@ class ReductionCell0(HybridBlock):
 
         self.comb_iter_3_right = nn.AvgPool2D(3, strides=1, padding=1)
 
-        self.comb_iter_3_left = BranchSeparablesReduction(out_channels_right, out_channels_right,
+        self.comb_iter_4_left = BranchSeparablesReduction(out_channels_right, out_channels_right,
                                                           3, 1, 1)
-        self.comb_iter_4_left = MaxPoolPad()
+        self.comb_iter_4_right = MaxPoolPad()
 
     def hybrid_forward(self, F, x, x_prev):
         x_left = self.conv_prev_1x1(x_prev)
@@ -551,7 +551,7 @@ class NASNetALarge(HybridBlock):
 
         self.out = nn.HybridSequential(prefix='')
         self.out.add(nn.Activation('relu'))
-        self.out.add(nn.AvgPool2D(11, strides=1, padding=0))
+        # self.out.add(nn.AvgPool2D(11, strides=1, padding=0))
         self.out.add(nn.Dropout(0.5))
         self.out.add(nn.Dense(num_classes))
 
@@ -560,13 +560,18 @@ class NASNetALarge(HybridBlock):
         x_stem_0 = self.cell_stem_0(x_conv0)
         x_stem_1 = self.cell_stem_1(x_conv0, x_stem_0)
 
-        x_norm_1 = self.norm_1(x_stem_1, x_stem_0)
-        x_reduction_cell_0 = self.reduction_cell_0(x_norm_1)
-        x_norm_2 = self.norm_2(x_reduction_cell_0)
-        x_reduction_cell_1 = self.reduction_cell_1(x_norm_2)
-        x_norm_3 = self.norm_3(x_reduction_cell_1)
+        x = x_stem_1
+        x_prev = x_stem_0
+        for cell in self.norm_1._children.values():
+            x, x_prev = cell(x, x_prev)
+        x, x_prev = self.reduction_cell_0(x, x_prev)
+        for cell in self.norm_2._children.values():
+            x, x_prev = cell(x, x_prev)
+        x, x_prev = self.reduction_cell_1(x, x_prev)
+        for cell in self.norm_3._children.values():
+            x, x_prev = cell(x, x_prev)
 
-        x = self.out(x_norm_3[0])
+        x = self.out(x)
         return x
 
 def get_nasnet(num_classes=1001):
