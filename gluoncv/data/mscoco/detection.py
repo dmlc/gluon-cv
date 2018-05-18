@@ -58,8 +58,7 @@ class COCODetection(VisionDataset):
         self.json_id_to_contiguous = None
         self.contiguous_id_to_json = None
         self.coco = None
-        (self._items, self._labels, self.coco,
-            self.json_id_to_contiguous, self.contiguous_id_to_json) = self._load_jsons()
+        self._items, self._labels, self.coco = self._load_jsons()
 
     def __str__(self):
         return self.__class__.__name__ + '_' + str(self.split)
@@ -93,10 +92,10 @@ class COCODetection(VisionDataset):
         if not classes == self.classes:
             raise ValueError("Incompatible category names with COCO: ")
         assert classes == self.classes
-        json_id_to_contiguous = {
+        self.json_id_to_contiguous = {
             v: k for k, v in enumerate(_coco.getCatIds())}
-        contiguous_id_to_json = {
-            v: k for k, v in json_id_to_contiguous.items()}
+        self.contiguous_id_to_json = {
+            v: k for k, v in self.json_id_to_contiguous.items()}
 
         # iterate through the annotations
         image_ids = sorted(_coco.getImgIds())
@@ -108,7 +107,7 @@ class COCODetection(VisionDataset):
             items.append(abs_path)
             label = self._check_load_bbox(_coco, entry)
             labels.append(label)
-        return items, labels, _coco, json_id_to_contiguous, contiguous_id_to_json
+        return items, labels, _coco
 
     def _check_load_bbox(self, coco, entry):
         """Check and load ground-truth labels"""
