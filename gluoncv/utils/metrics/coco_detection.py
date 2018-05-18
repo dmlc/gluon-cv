@@ -6,8 +6,9 @@ import numpy as np
 import mxnet as mx
 
 
-class COCOBBoxMetric(mx.metirc.EvalMetric):
+class COCODetectionMetric(mx.metirc.EvalMetric):
     def __init__(self, dataset, save_prefix, use_time=True, cleanup=False):
+        super(COCODetectionMetric, self).__init__('COCOMeanAP')
         self.dataset = dataset
         self._img_ids = sorted(dataset.coco.getImgIds())
         self._current_id = 0
@@ -52,25 +53,47 @@ class COCOBBoxMetric(mx.metirc.EvalMetric):
         # lazy import pycocotools
         try_import_pycocotools()
         from pycocotools.coco import COCOeval
-        coco_eval = C
+        coco_eval = COCOeval(pred, gt, 'bbox')
+        coco_eval.evaluate()
+        coco_eval.accumulate()
+        self._coco_eval = coco_eval
 
-        aps = []
-        recall, precs = self._recall_prec()
-        for l, rec, prec in zip(range(len(precs)), recall, precs):
-            ap = self._average_precision(rec, prec)
-            aps.append(ap)
-            if self.num is not None and l < (self.num - 1):
-                self.sum_metric[l] = ap
-                self.num_inst[l] = 1
-        if self.num is None:
-            self.num_inst = 1
-            self.sum_metric = np.nanmean(aps)
-        else:
-            self.num_inst[-1] = 1
-            self.sum_metric[-1] = np.nanmean(aps)
+    def get(self, coco_eval, classes):
+        """Get evaluation metrics. """
+        # Metric printing adapted from detectron/json_dataset_evaluator.
+        def _get_thr_ind(coco_eval, thr):
+            ind = np.where((coco_eval.params.iouThrs > thr - 1e-5) &
+                       (coco_eval.params.iouThrs < thr + 1e-5))[0][0]
+            iou_thr = coco_eval.params.iouThrs[ind]
+            assert np.isclose(iou_thr, thr)
+            return ind
 
+        # call real update
+        self._update()
 
-    def update(self, pred_bboxes, pred_labels, pred_scores):
+        IoU_lo_thresh = 0.5
+        IoU_hi_thresh = 0.95
+        ind_lo = _get_thr_ind(coco_eval, IoU_lo_thresh)
+        ind_hi = _get_thr_ind(coco_eval, IoU_hi_thresh)
+        # precision has dims (iou, recall, cls, area range, max dets)
+        # area range index 0: all area ranges
+        # max dets index 2: 100 per image
+        precision = coco_eval.eval['precision'][ind_lo:(ind_hi + 1), :, :, 0, 2]
+        ap_default = np.mean(precision[precision > -1])
+        names = ['~~~~ MeanAP @ IoU=[{:.2f},{:.2f}] ~~~~'.format(
+            IoU_lo_thresh, IoU_hi_thresh)]
+        values = ['{:.1f}'.format(100 * ap_default)]
+        for cls_ind, cls_name in enumerate(self.dataset.classes):
+            precision = coco_eval.eval['precision'][
+                ind_lo:(ind_hi + 1), :, cls_ind, 0, 2]
+            ap = np.mean(precision[precision > -1])
+            names.append(cls_name)
+            values.append('{:.1f}'.format(100 * ap))
+        names.append('~~~~ Summary metrics ~~~~')
+        values.append('\n' + str(coco_eval.summarize()))
+        return names, values
+
+    def update(self, pred_bboxes, pred_labels, pred_scores, *args, **kwargs):
         """Update internal buffer with latest predictions.
         Note that the statistics are not available until you call self.get() to return
         the metrics.
