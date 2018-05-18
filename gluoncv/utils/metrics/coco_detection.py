@@ -59,7 +59,7 @@ class COCODetectionMetric(mx.metric.EvalMetric):
         gt = self.dataset.coco
         # lazy import pycocotools
         try_import_pycocotools()
-        from pycocotools.coco import COCOeval
+        from pycocotools.cocoeval import COCOeval
         coco_eval = COCOeval(pred, gt, 'bbox')
         coco_eval.evaluate()
         coco_eval.accumulate()
@@ -89,8 +89,8 @@ class COCODetectionMetric(mx.metric.EvalMetric):
         precision = coco_eval.eval['precision'][ind_lo:(ind_hi + 1), :, :, 0, 2]
         ap_default = np.mean(precision[precision > -1])
         names, values = [], []
-        names.append('~~~~ Summary metrics ~~~~')
-        values.append('\n' + str(coco_eval.summarize()))
+        names.append('~~~~ Summary metrics ~~~~\n')
+        values.append(str(coco_eval.summarize()))
         for cls_ind, cls_name in enumerate(self.dataset.classes):
             precision = coco_eval.eval['precision'][
                 ind_lo:(ind_hi + 1), :, cls_ind, 0, 2]
