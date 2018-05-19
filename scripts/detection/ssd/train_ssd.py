@@ -72,7 +72,7 @@ def get_dataset(dataset, args):
     elif dataset.lower() == 'coco':
         train_dataset = gdata.COCODetection(split='instances_train2017')
         val_dataset = gdata.COCODetection(split='instances_val2017')
-        val_metric = COCODetectionMetric(val_dataset, args.save_prefix + '_eval', cleanup=True)
+        val_metric = COCODetectionMetric(val_dataset, args.save_prefix + '_eval', cleanup=False)
     else:
         raise NotImplementedError('Dataset: {} not implemented.'.format(dataset))
     return train_dataset, val_dataset, val_metric
