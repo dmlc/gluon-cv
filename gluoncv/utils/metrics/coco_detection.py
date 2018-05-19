@@ -1,6 +1,8 @@
 """MS COCO Detection Evaluate Metrics."""
 from __future__ import absolute_import
 
+import sys
+import io
 import os
 from os import path as osp
 import warnings
@@ -91,7 +93,13 @@ class COCODetectionMetric(mx.metric.EvalMetric):
         ap_default = np.mean(precision[precision > -1])
         names, values = [], []
         names.append('~~~~ Summary metrics ~~~~\n')
-        values.append(str(coco_eval.summarize()))
+        # catch coco print string, don't want directly print here
+        _stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        coco_eval.summarize()
+        coco_summary = sys.stdout.getvalue()
+        sys.stdout = _stdout
+        values.append(str(coco_summary))
         for cls_ind, cls_name in enumerate(self.dataset.classes):
             precision = coco_eval.eval['precision'][
                 ind_lo:(ind_hi + 1), :, cls_ind, 0, 2]
@@ -99,7 +107,7 @@ class COCODetectionMetric(mx.metric.EvalMetric):
             names.append(cls_name)
             values.append('{:.1f}'.format(100 * ap))
         # put mean AP at last, for comparing perf
-        names.append('~~~~ MeanAP @ IoU=[{:.2f},{:.2f}] ~~~~'.format(
+        names.append('~~~~ MeanAP @ IoU=[{:.2f},{:.2f}] ~~~~\n'.format(
             IoU_lo_thresh, IoU_hi_thresh))
         values.append('{:.1f}'.format(100 * ap_default))
         return names, values
