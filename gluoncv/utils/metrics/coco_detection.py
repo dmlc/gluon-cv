@@ -61,7 +61,7 @@ class COCODetectionMetric(mx.metric.EvalMetric):
         # lazy import pycocotools
         try_import_pycocotools()
         from pycocotools.cocoeval import COCOeval
-        coco_eval = COCOeval(pred, gt, 'bbox')
+        coco_eval = COCOeval(gt, pred, 'bbox')
         coco_eval.evaluate()
         coco_eval.accumulate()
         self._coco_eval = coco_eval
