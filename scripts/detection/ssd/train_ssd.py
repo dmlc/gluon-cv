@@ -57,6 +57,9 @@ def parse_args():
                         help='Saving parameter prefix')
     parser.add_argument('--save-interval', type=int, default=10,
                         help='Saving parameters epoch interval, best model will always be saved.')
+    parser.add_argument('--val-interval', type=int, default=1,
+                        help='Epoch interval for validation, increase the number will reduce the '
+                             'training time if validation is slow.')
     parser.add_argument('--seed', type=int, default=233,
                         help='Random seed to be fixed.')
     args = parser.parse_args()
@@ -73,6 +76,9 @@ def get_dataset(dataset, args):
         train_dataset = gdata.COCODetection(split='instances_train2017')
         val_dataset = gdata.COCODetection(split='instances_val2017')
         val_metric = COCODetectionMetric(val_dataset, args.save_prefix + '_eval', cleanup=False)
+        # coco validation is slow, consider increase the validation interval
+        if args.val_interval == 1:
+            args.val_interval = 10
     else:
         raise NotImplementedError('Dataset: {} not implemented.'.format(dataset))
     return train_dataset, val_dataset, val_metric
@@ -150,7 +156,7 @@ def train(net, train_data, val_data, eval_metric, args):
     fh = logging.FileHandler(log_file_path)
     logger.addHandler(fh)
     logger.info(args)
-    logger.info('Start training from [Epoch %d]' % args.start_epoch)
+    logger.info('Start training from [Epoch {}]'.format(args.start_epoch))
     best_map = [0]
     for epoch in range(args.start_epoch, args.epochs):
         while lr_steps and epoch >= lr_steps[0]:
@@ -186,18 +192,23 @@ def train(net, train_data, val_data, eval_metric, args):
             if args.log_interval and not (i + 1) % args.log_interval:
                 name1, loss1 = ce_metric.get()
                 name2, loss2 = smoothl1_metric.get()
-                logger.info('[Epoch %d][Batch %d], Speed: %f samples/sec, %s=%f, %s=%f'%(
+                logger.info('[Epoch {}][Batch {}], Speed: {} samples/sec, {}={}, {}={}'.format(
                     epoch, i, batch_size/(time.time()-btic), name1, loss1, name2, loss2))
             btic = time.time()
 
         name1, loss1 = ce_metric.get()
         name2, loss2 = smoothl1_metric.get()
-        logger.info('[Epoch %d] Training cost: %f, %s=%f, %s=%f'%(
+        logger.info('[Epoch {}] Training cost: {}, {}={}, {}={}'.format(
             epoch, (time.time()-tic), name1, loss1, name2, loss2))
-        map_name, mean_ap = validate(net, val_data, ctx, eval_metric)
-        val_msg = '\n'.join(['%s=%f'%(k, v) for k, v in zip(map_name, mean_ap)])
-        logger.info('[Epoch %d] Validation: \n%s'%(epoch, val_msg))
-        save_params(net, best_map, mean_ap[-1], epoch, args.save_interval, args.save_prefix)
+        if not (i + 1) % args.val_interval:
+            # consider reduce the frequency of validation to save time
+            map_name, mean_ap = validate(net, val_data, ctx, eval_metric)
+            val_msg = '\n'.join(['{}={}'.format(k, v) for k, v in zip(map_name, mean_ap)])
+            logger.info('[Epoch {}] Validation: \n{}'.format(epoch, val_msg))
+            current_map = float(mean_ap[-1])
+        else:
+            current_map = 0.
+        save_params(net, best_map, current_map, epoch, args.save_interval, args.save_prefix)
 
 if __name__ == '__main__':
     args = parse_args()
