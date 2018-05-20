@@ -192,13 +192,13 @@ def train(net, train_data, val_data, eval_metric, args):
             if args.log_interval and not (i + 1) % args.log_interval:
                 name1, loss1 = ce_metric.get()
                 name2, loss2 = smoothl1_metric.get()
-                logger.info('[Epoch {}][Batch {}], Speed: {} samples/sec, {}={}, {}={}'.format(
+                logger.info('[Epoch {}][Batch {}], Speed: {:.1f} samples/sec, {}={:.1f}, {}={:.1f}'.format(
                     epoch, i, batch_size/(time.time()-btic), name1, loss1, name2, loss2))
             btic = time.time()
 
         name1, loss1 = ce_metric.get()
         name2, loss2 = smoothl1_metric.get()
-        logger.info('[Epoch {}] Training cost: {}, {}={}, {}={}'.format(
+        logger.info('[Epoch {}] Training cost: {:.1f}, {}={:.1f}, {}={:.1f}'.format(
             epoch, (time.time()-tic), name1, loss1, name2, loss2))
         if not (i + 1) % args.val_interval:
             # consider reduce the frequency of validation to save time
