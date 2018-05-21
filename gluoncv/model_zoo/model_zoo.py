@@ -12,6 +12,7 @@ from .resnetv1b import *
 from .resnext import *
 from .senet import *
 from .se_resnet import *
+from .nasnet import *
 
 __all__ = ['get_model']
 
