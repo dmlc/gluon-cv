@@ -16,7 +16,7 @@
 # under the License.
 
 # coding: utf-8
-# pylint: disable= arguments-differ,missing-docstring
+# pylint: disable= arguments-differ,missing-docstring,unused-argument
 """NASNet, implemented in Gluon."""
 from __future__ import division
 
@@ -498,9 +498,25 @@ class ReductionCell1(HybridBlock):
 
 
 class NASNetALarge(HybridBlock):
+    r"""NASNet A model from
+    `"Learning Transferable Architectures for Scalable Image Recognition"
+    <https://arxiv.org/abs/1707.07012>`_ paper
 
-    def __init__(self, num_classes, repeat=6, stem_filters=96, penultimate_filters=4032,
-                 filters_multiplier=2):
+    Parameters
+    ----------
+    repeat : int
+        Number of cell repeats
+    penultimate_filters : int
+        Number of filters in the penultimate layer of the network
+    stem_filters : int
+        Number of filters in stem layers
+    filters_multiplier : int
+        The filter multiplier for stem layers
+    classes: int, default 1000
+        Number of classification classes
+    """
+    def __init__(self, repeat=6, penultimate_filters=4032, stem_filters=96,
+                 filters_multiplier=2, classes=1000):
         super(NASNetALarge, self).__init__()
 
         filters = penultimate_filters // 24
@@ -537,7 +553,7 @@ class NASNetALarge(HybridBlock):
         self.out.add(nn.Activation('relu'))
         self.out.add(nn.GlobalAvgPool2D())
         self.out.add(nn.Dropout(0.5))
-        self.out.add(nn.Dense(num_classes))
+        self.out.add(nn.Dense(classes))
 
     def hybrid_forward(self, F, x):
         x_conv0 = self.conv0(x)
@@ -558,13 +574,30 @@ class NASNetALarge(HybridBlock):
         x = self.out(x)
         return x
 
-def get_nasnet(repeat=6, penultimate_filters=4032, num_classes=1000,
+def get_nasnet(repeat=6, penultimate_filters=4032,
                pretrained=False, ctx=cpu(),
                root=os.path.join('~', '.mxnet', 'models'), **kwargs):
+    r"""NASNet A model from
+    `"Learning Transferable Architectures for Scalable Image Recognition"
+    <https://arxiv.org/abs/1707.07012>`_ paper
+
+    Parameters
+    ----------
+    repeat : int
+        Number of cell repeats
+    penultimate_filters : int
+        Number of filters in the penultimate layer of the network
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+    """
     assert repeat >= 2, \
         "Invalid number of repeat: %d. It should be at least two"%(repeat)
     net = NASNetALarge(repeat=repeat, penultimate_filters=penultimate_filters,
-                       num_classes=num_classes, **kwargs)
+                       classes=classes, **kwargs)
     if pretrained:
         from ..model_store import get_model_file
         net.load_params(get_model_file('nasnet_%d_%d'%(repeat, penultimate_filters),
@@ -572,12 +605,63 @@ def get_nasnet(repeat=6, penultimate_filters=4032, num_classes=1000,
     return net
 
 def nasnet_5_1538(**kwargs):
+    r"""NASNet A model from
+    `"Learning Transferable Architectures for Scalable Image Recognition"
+    <https://arxiv.org/abs/1707.07012>`_ paper
+
+    Parameters
+    ----------
+    repeat : int
+        Number of cell repeats
+    penultimate_filters : int
+        Number of filters in the penultimate layer of the network
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+    """
     return get_nasnet(repeat=5, penultimate_filters=1538, **kwargs)
 
 
 def nasnet_7_1920(**kwargs):
+    r"""NASNet A model from
+    `"Learning Transferable Architectures for Scalable Image Recognition"
+    <https://arxiv.org/abs/1707.07012>`_ paper
+
+    Parameters
+    ----------
+    repeat : int
+        Number of cell repeats
+    penultimate_filters : int
+        Number of filters in the penultimate layer of the network
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+    """
     return get_nasnet(repeat=7, penultimate_filters=1920, **kwargs)
 
 
 def nasnet_6_4032(**kwargs):
+    r"""NASNet A model from
+    `"Learning Transferable Architectures for Scalable Image Recognition"
+    <https://arxiv.org/abs/1707.07012>`_ paper
+
+    Parameters
+    ----------
+    repeat : int
+        Number of cell repeats
+    penultimate_filters : int
+        Number of filters in the penultimate layer of the network
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+    """
     return get_nasnet(repeat=6, penultimate_filters=4032, **kwargs)
