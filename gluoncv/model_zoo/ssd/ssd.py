@@ -125,7 +125,7 @@ class SSD(HybridBlock):
             self.bbox_decoder = NormalizedBoxCenterDecoder(stds)
             self.cls_decoder = MultiPerClassDecoder(self.num_classes, thresh=0.01)
 
-    def set_nms(self, nms_thresh=0, nms_topk=-1):
+    def set_nms(self, nms_thresh=0.45, nms_topk=400):
         self.nms_thresh = nms_thresh
         self.nms_topk = nms_topk
 

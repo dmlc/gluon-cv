@@ -13,7 +13,7 @@ __all__ = ['FasterRCNN', 'get_faster_rcnn', 'get_faster_rcnn_resnet50_v1b_voc']
 
 class FasterRCNN(RCNN):
     def __init__(self, features, top_features, scales, ratios, classes, roi_mode, roi_size,
-                 stride=16, rpn_channel=1024, **kwargs):
+                 stride=16, rpn_channel=1024, nms_thresh=0.3, nms_topk=400, **kwargs):
         super(FasterRCNN, self).__init__(
             features, top_features, classes, roi_mode, roi_size, **kwargs)
         self._stride = stride
@@ -28,39 +28,42 @@ class FasterRCNN(RCNN):
         if self._roi_mode == 'pool':
             pooled_feat = F.ROIPooling(feat, rpn_roi, self._roi_size, 1. / self._stride)
         elif self._roi_mode == 'align':
-            pooled_feat = F.ROIAlign(feat, rpn_roi, self._roi_size, 1. / self._stride)
+            #TODO(zhreshold): use ROIAlign
+            pooled_feat = F.ROIPooling(feat, rpn_roi, self._roi_size, 1. / self._stride)
         else:
             raise ValueError("Invalid roi mode: {}".format(self._roi_mode))
         # RCNN prediction
-        top_feat = self.top_features(feat)
+        top_feat = self.top_features(pooled_feat)
         # top_feat = F.Pooling(top_feat, global_pool=True, pool_type='avg', kernel=self._roi_size)
         top_feat = self.global_avg_pool(top_feat)
         cls_pred = self.class_predictor(top_feat)
-        box_pred = self.box_predictor(top_feat)
+        box_pred = self.box_predictor(top_feat).reshape(-1, self.num_class, 4).transpose((1, 0, 2))
 
         # no need to convert bounding boxes in training, just return
         if autograd.is_training():
             return cls_pred, box_pred, roi
 
         # translate bboxes
-        raise NotImplementedError
-        bboxes = self.bbox_decoder(box_preds, anchors)
+        bboxes = self.box_decoder(box_pred, roi).split(
+            axis=0, num_outputs=self.num_class, squeeze_axis=True)
         cls_ids, scores = self.cls_decoder(F.softmax(cls_pred, axis=-1))
         results = []
-        for i in range(self.num_classes - 1):
+        for i in range(self.num_class - 1):
             cls_id = cls_ids.slice_axis(axis=-1, begin=i, end=i+1)
             score = scores.slice_axis(axis=-1, begin=i, end=i+1)
             # per class results
-            per_result = F.concat(*[cls_id, score, bboxes], dim=-1)
+            per_result = F.concat(*[cls_id, score, bboxes[i]], dim=-1)
             if self.nms_thresh > 0 and self.nms_thresh < 1:
                 per_result = F.contrib.box_nms(
                     per_result, overlap_thresh=self.nms_thresh, topk=self.nms_topk,
                     id_index=0, score_index=1, coord_start=2)
+                if self.nms_topk > 0:
+                    per_result = per_result.slice_axis(axis=0, begin=0, end=self.nms_topk)
             results.append(per_result)
-        result = F.concat(*results, dim=1)
-        ids = F.slice_axis(result, axis=2, begin=0, end=1)
-        scores = F.slice_axis(result, axis=2, begin=1, end=2)
-        bboxes = F.slice_axis(result, axis=2, begin=2, end=6)
+        result = F.concat(*results, dim=0)
+        ids = F.slice_axis(result, axis=-1, begin=0, end=1)
+        scores = F.slice_axis(result, axis=-1, begin=1, end=2)
+        bboxes = F.slice_axis(result, axis=-1, begin=2, end=6)
         return ids, scores, bboxes
 
 def get_faster_rcnn(features, top_features, scales, ratios, classes,
