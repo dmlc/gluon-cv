@@ -6,7 +6,7 @@ Losses are subclasses of gluon.loss.Loss which is a HybridBlock actually.
 from __future__ import absolute_import
 from mxnet import gluon
 from mxnet import nd
-from mxnet.gluon.loss import _apply_weighting, _reshape_like
+from mxnet.gluon.loss import Loss, _apply_weighting, _reshape_like
 
 
 class FocalLoss(gluon.loss.Loss):
@@ -160,3 +160,55 @@ class SSDMultiBoxLoss(gluon.Block):
             sum_losses.append(cls_losses[-1] + self._lambd * box_losses[-1])
 
         return sum_losses, cls_losses, box_losses
+
+class SoftmaxCrossEntropyLoss(Loss):
+    """SoftmaxCrossEntropyLoss with ignore labels"""
+    def __init__(self, axis=1, sparse_label=True, from_logits=False, weight=None,
+                 batch_axis=0, ignore_label=-1, size_average=False, **kwargs):
+        super(SoftmaxCrossEntropyLoss, self).__init__(weight, batch_axis, **kwargs)
+        self._axis = axis
+        self._sparse_label = sparse_label
+        self._from_logits = from_logits
+        self._ignore_label = ignore_label
+        self._size_average = size_average
+
+    def hybrid_forward(self, F, pred, label, sample_weight=None):
+        if not self._from_logits:
+            pred = F.log_softmax(pred, axis=self._axis)
+        if self._sparse_label:
+            if self._size_average:
+                valid_label_map = (label != self._ignore_label).astype('float32')
+            loss = -F.pick(pred, label, axis=self._axis, keepdims=True)
+            loss = F.where(label.expand_dims(axis=self._axis) == self._ignore_label,
+                           F.zeros_like(loss), loss)
+        else:
+            label = _reshape_like(F, label, pred)
+            loss = -F.sum(pred*label, axis=self._axis, keepdims=True)
+        loss = _apply_weighting(F, loss, self._weight, sample_weight)
+        if self._size_average and self._sparse_label:
+            return F.mean(loss, axis=self._batch_axis, exclude=True) * \
+                valid_label_map.size / F.sum(valid_label_map)
+        else:
+            return F.mean(loss, axis=self._batch_axis, exclude=True)
+
+class SoftmaxCrossEntropyLossWithAux(SoftmaxCrossEntropyLoss):
+    """SoftmaxCrossEntropyLoss2D with Auxilary Loss"""
+    def __init__(self, aux=True, aux_weight=0.2, ignore_label=-1, **kwargs):
+        super(SoftmaxCrossEntropyLossWithAux, self).__init__(
+            axis=1, ignore_label=ignore_label, **kwargs)
+        self.aux = aux
+        self.aux_weight = aux_weight
+
+    def aux_forward(self, F, pred1, pred2, label, **kwargs):
+        loss1 = super(SoftmaxCrossEntropyLossWithAux, self). \
+            hybrid_forward(F, pred1, label, **kwargs)
+        loss2 = super(SoftmaxCrossEntropyLossWithAux, self). \
+            hybrid_forward(F, pred2, label, **kwargs)
+        return loss1 + self.aux_weight * loss2
+
+    def hybrid_forward(self, F, *inputs, **kwargs):
+        if self.aux:
+            return self.aux_forward(F, *inputs, **kwargs)
+        else:
+            return super(SoftmaxCrossEntropyLossWithAux, self). \
+                hybrid_forward(F, *inputs, **kwargs)

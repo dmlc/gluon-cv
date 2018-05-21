@@ -9,6 +9,7 @@ from mxnet import gluon, autograd
 from mxnet.gluon.data.vision import transforms
 
 from gluoncv.utils import PolyLRScheduler
+from gluon.loss import SoftmaxCrossEntropyLossWithAux
 from gluoncv.model_zoo.segbase import *
 from gluoncv.utils.parallel import *
 from gluoncv.data import get_segmentation_dataset

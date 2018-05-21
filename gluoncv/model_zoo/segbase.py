@@ -11,8 +11,7 @@ from .resnetv1b import resnet50_v1b, resnet101_v1b, resnet152_v1b
 from ..utils.parallel import tuple_map
 # pylint: disable=abstract-method,arguments-differ,dangerous-default-value,missing-docstring
 
-__all__ = ['get_segmentation_model', 'SegBaseModel', 'SegEvalModel', 'MultiEvalModel',
-           'SoftmaxCrossEntropyLossWithAux']
+__all__ = ['get_segmentation_model', 'SegBaseModel', 'SegEvalModel', 'MultiEvalModel']
 
 def get_segmentation_model(model, **kwargs):
     from .fcn import get_fcn
@@ -82,52 +81,6 @@ class SegBaseModel(HybridBlock):
 
         return correct, labeled, inter, union
 
-
-class SoftmaxCrossEntropyLoss(Loss):
-    """SoftmaxCrossEntropyLoss with ignore labels"""
-    def __init__(self, axis=1, sparse_label=True, from_logits=False, weight=None,
-                 batch_axis=0, ignore_label=-1, **kwargs):
-        super(SoftmaxCrossEntropyLoss, self).__init__(weight, batch_axis, **kwargs)
-        self._axis = axis
-        self._sparse_label = sparse_label
-        self._from_logits = from_logits
-        self._ignore_label = ignore_label
-
-    def hybrid_forward(self, F, output, label, sample_weight=None):
-        if not self._from_logits:
-            output = F.log_softmax(output, axis=self._axis)
-        if self._sparse_label:
-            valid_label_map = (label != self._ignore_label).astype('float32')
-            loss = -(F.pick(output, label, axis=self._axis, keepdims=True) * valid_label_map)
-        else:
-            label = _reshape_like(F, label, pred)
-            loss = -F.sum(pred*label, axis=self._axis, keepdims=True)
-        loss = _apply_weighting(F, loss, self._weight, sample_weight)
-        return F.mean(loss, axis=self._batch_axis, exclude=True) * \
-            valid_label_map.size / F.sum(valid_label_map)
-
-
-class SoftmaxCrossEntropyLossWithAux(SoftmaxCrossEntropyLoss):
-    """SoftmaxCrossEntropyLoss2D with Auxilary Loss"""
-    def __init__(self, aux=True, aux_weight=0.2, ignore_label=-1, **kwargs):
-        super(SoftmaxCrossEntropyLossWithAux, self).__init__(
-            axis=1, ignore_label=ignore_label, **kwargs)
-        self.aux = aux
-        self.aux_weight = aux_weight
-
-    def aux_forward(self, F, pred1, pred2, label, **kwargs):
-        loss1 = super(SoftmaxCrossEntropyLossWithAux, self). \
-            hybrid_forward(F, pred1, label, **kwargs)
-        loss2 = super(SoftmaxCrossEntropyLossWithAux, self). \
-            hybrid_forward(F, pred2, label, **kwargs)
-        return loss1 + self.aux_weight * loss2
-
-    def hybrid_forward(self, F, *inputs, **kwargs):
-        if self.aux:
-            return self.aux_forward(F, *inputs, **kwargs)
-        else:
-            return super(SoftmaxCrossEntropyLossWithAux, self). \
-                hybrid_forward(F, *inputs, **kwargs)
 
 
 class SegEvalModel(object):
