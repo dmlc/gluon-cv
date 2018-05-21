@@ -192,6 +192,7 @@ class SoftmaxCrossEntropyLoss(Loss):
         self._size_average = size_average
 
     def hybrid_forward(self, F, pred, label, sample_weight=None):
+        """Compute loss"""
         if not self._from_logits:
             pred = F.log_softmax(pred, axis=self._axis)
         if self._sparse_label:
@@ -229,6 +230,7 @@ class SoftmaxCrossEntropyLossWithAux(SoftmaxCrossEntropyLoss):
         self.aux_weight = aux_weight
 
     def aux_forward(self, F, pred1, pred2, label, **kwargs):
+        """Compute loss including auxiliary output"""
         loss1 = super(SoftmaxCrossEntropyLossWithAux, self). \
             hybrid_forward(F, pred1, label, **kwargs)
         loss2 = super(SoftmaxCrossEntropyLossWithAux, self). \
@@ -236,6 +238,7 @@ class SoftmaxCrossEntropyLossWithAux(SoftmaxCrossEntropyLoss):
         return loss1 + self.aux_weight * loss2
 
     def hybrid_forward(self, F, *inputs, **kwargs):
+        """Compute loss"""
         if self.aux:
             return self.aux_forward(F, *inputs, **kwargs)
         else:
