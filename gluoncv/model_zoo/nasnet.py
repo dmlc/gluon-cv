@@ -23,7 +23,6 @@ from __future__ import division
 __all__ = ['get_nasnet', 'nasnet_5_1538', 'nasnet_7_1920', 'nasnet_6_4032']
 
 import os
-import math
 from mxnet import cpu
 from mxnet.gluon import nn
 from mxnet.gluon.block import HybridBlock
@@ -35,10 +34,10 @@ class MaxPoolPad(HybridBlock):
         self.pool = nn.MaxPool2D(3, strides=2, padding=1)
 
     def hybrid_forward(self, F, x):
-        x = F.pad(x, pad_width = (0,0,0,0,1,0,1,0), 
+        x = F.pad(x, pad_width=(0, 0, 0, 0, 1, 0, 1, 0),
                   mode='constant', constant_value=0)
         x = self.pool(x)
-        x = F.slice(x, begin=(0,0,1,1), end=(None, None, None, None))
+        x = F.slice(x, begin=(0, 0, 1, 1), end=(None, None, None, None))
         return x
 
 class AvgPoolPad(HybridBlock):
@@ -49,23 +48,23 @@ class AvgPoolPad(HybridBlock):
         self.pool = nn.AvgPool2D(3, strides=stride, padding=padding)
 
     def hybrid_forward(self, F, x):
-        x = F.pad(x, pad_width = (0,0,0,0,1,0,1,0), 
+        x = F.pad(x, pad_width=(0, 0, 0, 0, 1, 0, 1, 0),
                   mode='constant', constant_value=0)
         x = self.pool(x)
-        x = F.slice(x, begin=(0,0,1,1), end=(None, None, None, None))
+        x = F.slice(x, begin=(0, 0, 1, 1), end=(None, None, None, None))
         return x
 
 class SeparableConv2d(HybridBlock):
 
     def __init__(self, in_channels, channels, dw_kernel, dw_stride, dw_padding,
                  use_bias=False):
-       super(SeparableConv2d, self).__init__()
-       self.body = nn.HybridSequential(prefix='')
-       self.body.add(nn.Conv2D(in_channels, kernel_size=dw_kernel,
-                               strides=dw_stride, padding=dw_padding,
-                               use_bias=use_bias,
-                               groups=in_channels))
-       self.body.add(nn.Conv2D(channels, kernel_size=1, strides=1, use_bias=use_bias))
+        super(SeparableConv2d, self).__init__()
+        self.body = nn.HybridSequential(prefix='')
+        self.body.add(nn.Conv2D(in_channels, kernel_size=dw_kernel,
+                                strides=dw_stride, padding=dw_padding,
+                                use_bias=use_bias,
+                                groups=in_channels))
+        self.body.add(nn.Conv2D(channels, kernel_size=1, strides=1, use_bias=use_bias))
 
     def hybrid_forward(self, F, x):
         x = self.body(x)
@@ -128,10 +127,10 @@ class BranchSeparablesReduction(HybridBlock):
 
     def hybrid_forward(self, F, x):
         x = F.Activation(x, act_type='relu')
-        x = F.pad(x, pad_width = (0,0,0,0,self.z_padding,0,self.z_padding,0),
+        x = F.pad(x, pad_width=(0, 0, 0, 0, self.z_padding, 0, self.z_padding, 0),
                   mode='constant', constant_value=0)
         x = self.separable(x)
-        x = F.slice(x, begin=(0,0,1,1), end=(None, None, None, None))
+        x = F.slice(x, begin=(0, 0, 1, 1), end=(None, None, None, None))
         x = self.body(x)
         return(x)
 
@@ -187,7 +186,7 @@ class CellStem0(HybridBlock):
 
 class CellStem1(HybridBlock):
 
-    def __init__(self, stem_filters, num_filters):
+    def __init__(self, num_filters):
         super(CellStem1, self).__init__()
 
         self.conv_1x1 = nn.HybridSequential(prefix='')
@@ -225,9 +224,9 @@ class CellStem1(HybridBlock):
 
         x_relu = F.Activation(x_conv0, act_type='relu')
         x_path1 = self.path_1(x_relu)
-        x_path2 = F.pad(x_relu, pad_width = (0,0,0,0,0,1,0,1), 
-                  mode='constant', constant_value=0)
-        x_path2 = F.slice(x_path2, begin=(0,0,1,1), end=(None, None, None, None))
+        x_path2 = F.pad(x_relu, pad_width=(0, 0, 0, 0, 0, 1, 0, 1),
+                        mode='constant', constant_value=0)
+        x_path2 = F.slice(x_path2, begin=(0, 0, 1, 1), end=(None, None, None, None))
         x_path2 = self.path_2(x_path2)
         x_right = self.final_path_bn(F.concat(x_path1, x_path2, dim=1))
 
@@ -257,8 +256,7 @@ class CellStem1(HybridBlock):
 
 class FirstCell(HybridBlock):
 
-    def __init__(self, in_channels_left, out_channels_left,
-                 in_channels_right, out_channels_right):
+    def __init__(self, out_channels_left, out_channels_right):
         super(FirstCell, self).__init__()
 
         self.conv_1x1 = nn.HybridSequential(prefix='')
@@ -293,9 +291,9 @@ class FirstCell(HybridBlock):
     def hybrid_forward(self, F, x, x_prev):
         x_relu = F.Activation(x_prev, act_type='relu')
         x_path1 = self.path_1(x_relu)
-        x_path2 = F.pad(x_relu, pad_width = (0,0,0,0,0,1,0,1),
-                  mode='constant', constant_value=0)
-        x_path2 = F.slice(x_path2, begin=(0,0,1,1), end=(None, None, None, None))
+        x_path2 = F.pad(x_relu, pad_width=(0, 0, 0, 0, 0, 1, 0, 1),
+                        mode='constant', constant_value=0)
+        x_path2 = F.slice(x_path2, begin=(0, 0, 1, 1), end=(None, None, None, None))
         x_path2 = self.path_2(x_path2)
         x_left = self.final_path_bn(F.concat(x_path1, x_path2, dim=1))
 
@@ -327,8 +325,7 @@ class FirstCell(HybridBlock):
 
 class NormalCell(HybridBlock):
 
-    def __init__(self, in_channels_left, out_channels_left,
-                 in_channels_right, out_channels_right):
+    def __init__(self, out_channels_left, out_channels_right):
         super(NormalCell, self).__init__()
 
         self.conv_prev_1x1 = nn.HybridSequential(prefix='')
@@ -383,8 +380,7 @@ class NormalCell(HybridBlock):
 
 class ReductionCell0(HybridBlock):
 
-    def __init__(self, in_channels_left, out_channels_left,
-                 in_channels_right, out_channels_right):
+    def __init__(self, out_channels_left, out_channels_right):
         super(ReductionCell0, self).__init__()
 
         self.conv_prev_1x1 = nn.HybridSequential(prefix='')
@@ -446,8 +442,7 @@ class ReductionCell0(HybridBlock):
 
 class ReductionCell1(HybridBlock):
 
-    def __init__(self, in_channels_left, out_channels_left,
-                 in_channels_right, out_channels_right):
+    def __init__(self, out_channels_left, out_channels_right):
         super(ReductionCell1, self).__init__()
 
         self.conv_prev_1x1 = nn.HybridSequential(prefix='')
@@ -504,7 +499,8 @@ class ReductionCell1(HybridBlock):
 
 class NASNetALarge(HybridBlock):
 
-    def __init__(self, num_classes, repeat=6, stem_filters=96, penultimate_filters=4032, filters_multiplier=2):
+    def __init__(self, num_classes, repeat=6, stem_filters=96, penultimate_filters=4032,
+                 filters_multiplier=2):
         super(NASNetALarge, self).__init__()
 
         filters = penultimate_filters // 24
@@ -514,44 +510,28 @@ class NASNetALarge(HybridBlock):
         self.conv0.add(nn.BatchNorm(momentum=0.1, epsilon=0.001))
 
         self.cell_stem_0 = CellStem0(stem_filters, num_filters=filters // (filters_multiplier ** 2))
-        self.cell_stem_1 = CellStem1(stem_filters, num_filters=filters // filters_multiplier)
+        self.cell_stem_1 = CellStem1(num_filters=filters // filters_multiplier)
 
         self.norm_1 = nn.HybridSequential(prefix='')
-        self.norm_1.add(FirstCell(in_channels_left=filters, out_channels_left=filters//2,
-                                  in_channels_right=2*filters, out_channels_right=filters))
-        self.norm_1.add(NormalCell(in_channels_left=2*filters, out_channels_left=filters,
-                                   in_channels_right=6*filters, out_channels_right=filters))
-        for i in range(repeat - 2):
-            self.norm_1.add(NormalCell(in_channels_left=6*filters, out_channels_left=filters,
-                                       in_channels_right=6*filters, out_channels_right=filters))
+        self.norm_1.add(FirstCell(out_channels_left=filters//2, out_channels_right=filters))
+        for _ in range(repeat - 1):
+            self.norm_1.add(NormalCell(out_channels_left=filters, out_channels_right=filters))
 
-        self.reduction_cell_0 = ReductionCell0(in_channels_left=6*filters,
-                                               out_channels_left=2*filters,
-                                               in_channels_right=6*filters,
+        self.reduction_cell_0 = ReductionCell0(out_channels_left=2*filters,
                                                out_channels_right=2*filters)
 
         self.norm_2 = nn.HybridSequential(prefix='')
-        self.norm_2.add(FirstCell(in_channels_left=6*filters, out_channels_left=filters,
-                                  in_channels_right=8*filters, out_channels_right=2*filters))
-        self.norm_2.add(NormalCell(in_channels_left=8*filters, out_channels_left=2*filters,
-                                   in_channels_right=12*filters, out_channels_right=2*filters))
-        for i in range(repeat - 2):
-            self.norm_2.add(NormalCell(in_channels_left=12*filters, out_channels_left=2*filters,
-                                       in_channels_right=12*filters, out_channels_right=2*filters))
+        self.norm_2.add(FirstCell(out_channels_left=filters, out_channels_right=2*filters))
+        for _ in range(repeat - 1):
+            self.norm_2.add(NormalCell(out_channels_left=2*filters, out_channels_right=2*filters))
 
-        self.reduction_cell_1 = ReductionCell1(in_channels_left=12*filters,
-                                               out_channels_left=4*filters,
-                                               in_channels_right=12*filters,
+        self.reduction_cell_1 = ReductionCell1(out_channels_left=4*filters,
                                                out_channels_right=4*filters)
 
         self.norm_3 = nn.HybridSequential(prefix='')
-        self.norm_3.add(FirstCell(in_channels_left=12*filters, out_channels_left=2*filters,
-                                  in_channels_right=16*filters, out_channels_right=4*filters))
-        self.norm_3.add(NormalCell(in_channels_left=16*filters, out_channels_left=4*filters,
-                                   in_channels_right=24*filters, out_channels_right=4*filters))
-        for i in range(repeat - 2):
-            self.norm_3.add(NormalCell(in_channels_left=24*filters, out_channels_left=4*filters,
-                                       in_channels_right=24*filters, out_channels_right=4*filters))
+        self.norm_3.add(FirstCell(out_channels_left=2*filters, out_channels_right=4*filters))
+        for _ in range(repeat - 1):
+            self.norm_3.add(NormalCell(out_channels_left=4*filters, out_channels_right=4*filters))
 
         self.out = nn.HybridSequential(prefix='')
         self.out.add(nn.Activation('relu'))
@@ -601,4 +581,3 @@ def nasnet_7_1920(**kwargs):
 
 def nasnet_6_4032(**kwargs):
     return get_nasnet(repeat=6, penultimate_filters=4032, **kwargs)
-
