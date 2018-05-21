@@ -146,7 +146,7 @@ class ResNetV1b(HybridBlock):
                                                norm_layer=norm_layer)
                 self.layer4 = self._make_layer(4, block, 512, layers[3], strides=2,
                                                norm_layer=norm_layer)
-            self.avgpool = nn.AvgPool2D(7)
+            self.avgpool = nn.GlobalAvgPool2D()
             self.flat = nn.Flatten()
             self.fc = nn.Dense(in_units=512 * block.expansion, units=classes)
 

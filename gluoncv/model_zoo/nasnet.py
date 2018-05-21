@@ -20,7 +20,7 @@
 """NASNet, implemented in Gluon."""
 from __future__ import division
 
-__all__ = ['get_nasnet']
+__all__ = ['get_nasnet', 'nasnet_5_1538', 'nasnet_7_1920', 'nasnet_6_4032']
 
 import os
 import math
@@ -504,7 +504,7 @@ class ReductionCell1(HybridBlock):
 
 class NASNetALarge(HybridBlock):
 
-    def __init__(self, num_classes, stem_filters=96, penultimate_filters=4032, filters_multiplier=2):
+    def __init__(self, num_classes, repeat=6, stem_filters=96, penultimate_filters=4032, filters_multiplier=2):
         super(NASNetALarge, self).__init__()
 
         filters = penultimate_filters // 24
@@ -521,37 +521,41 @@ class NASNetALarge(HybridBlock):
                                   in_channels_right=2*filters, out_channels_right=filters))
         self.norm_1.add(NormalCell(in_channels_left=2*filters, out_channels_left=filters,
                                    in_channels_right=6*filters, out_channels_right=filters))
-        for i in range(4):
+        for i in range(repeat - 2):
             self.norm_1.add(NormalCell(in_channels_left=6*filters, out_channels_left=filters,
                                        in_channels_right=6*filters, out_channels_right=filters))
 
-        self.reduction_cell_0 = ReductionCell0(in_channels_left=6*filters, out_channels_left=2*filters,
-                                               in_channels_right=6*filters, out_channels_right=2*filters)
+        self.reduction_cell_0 = ReductionCell0(in_channels_left=6*filters,
+                                               out_channels_left=2*filters,
+                                               in_channels_right=6*filters,
+                                               out_channels_right=2*filters)
 
         self.norm_2 = nn.HybridSequential(prefix='')
         self.norm_2.add(FirstCell(in_channels_left=6*filters, out_channels_left=filters,
                                   in_channels_right=8*filters, out_channels_right=2*filters))
         self.norm_2.add(NormalCell(in_channels_left=8*filters, out_channels_left=2*filters,
                                    in_channels_right=12*filters, out_channels_right=2*filters))
-        for i in range(4):
+        for i in range(repeat - 2):
             self.norm_2.add(NormalCell(in_channels_left=12*filters, out_channels_left=2*filters,
                                        in_channels_right=12*filters, out_channels_right=2*filters))
 
-        self.reduction_cell_1 = ReductionCell1(in_channels_left=12*filters, out_channels_left=4*filters,
-                                               in_channels_right=12*filters, out_channels_right=4*filters)
+        self.reduction_cell_1 = ReductionCell1(in_channels_left=12*filters,
+                                               out_channels_left=4*filters,
+                                               in_channels_right=12*filters,
+                                               out_channels_right=4*filters)
 
         self.norm_3 = nn.HybridSequential(prefix='')
         self.norm_3.add(FirstCell(in_channels_left=12*filters, out_channels_left=2*filters,
                                   in_channels_right=16*filters, out_channels_right=4*filters))
         self.norm_3.add(NormalCell(in_channels_left=16*filters, out_channels_left=4*filters,
                                    in_channels_right=24*filters, out_channels_right=4*filters))
-        for i in range(4):
+        for i in range(repeat - 2):
             self.norm_3.add(NormalCell(in_channels_left=24*filters, out_channels_left=4*filters,
                                        in_channels_right=24*filters, out_channels_right=4*filters))
 
         self.out = nn.HybridSequential(prefix='')
         self.out.add(nn.Activation('relu'))
-        # self.out.add(nn.AvgPool2D(11, strides=1, padding=0))
+        self.out.add(nn.GlobalAvgPool2D())
         self.out.add(nn.Dropout(0.5))
         self.out.add(nn.Dense(num_classes))
 
@@ -574,6 +578,27 @@ class NASNetALarge(HybridBlock):
         x = self.out(x)
         return x
 
-def get_nasnet(num_classes=1001):
-    model = NASNetALarge(num_classes=num_classes)
-    return model
+def get_nasnet(repeat=6, penultimate_filters=4032, num_classes=1000,
+               pretrained=False, ctx=cpu(),
+               root=os.path.join('~', '.mxnet', 'models'), **kwargs):
+    assert repeat >= 2, \
+        "Invalid number of repeat: %d. It should be at least two"%(repeat)
+    net = NASNetALarge(repeat=repeat, penultimate_filters=penultimate_filters,
+                       num_classes=num_classes, **kwargs)
+    if pretrained:
+        from ..model_store import get_model_file
+        net.load_params(get_model_file('nasnet_%d_%d'%(repeat, penultimate_filters),
+                                       root=root), ctx=ctx)
+    return net
+
+def nasnet_5_1538(**kwargs):
+    return get_nasnet(repeat=5, penultimate_filters=1538, **kwargs)
+
+
+def nasnet_7_1920(**kwargs):
+    return get_nasnet(repeat=7, penultimate_filters=1920, **kwargs)
+
+
+def nasnet_6_4032(**kwargs):
+    return get_nasnet(repeat=6, penultimate_filters=4032, **kwargs)
+

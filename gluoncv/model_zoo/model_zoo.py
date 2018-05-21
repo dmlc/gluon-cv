@@ -81,6 +81,9 @@ def get_model(name, **kwargs):
         'se_resnet50_v2' : se_resnet50_v2,
         'se_resnet101_v2' : se_resnet101_v2,
         'se_resnet152_v2' : se_resnet152_v2,
+        'nasnet_5_1538' : nasnet_5_1538,
+        'nasnet_7_1920' : nasnet_7_1920,
+        'nasnet_6_4032' : nasnet_6_4032,
         }
     try:
         net = gluon.model_zoo.vision.get_model(name, **kwargs)

@@ -133,7 +133,7 @@ class ResNext(HybridBlock):
                 stride = 1 if i == 0 else 2
                 self.features.add(self._make_layer(channels, num_layer, stride, use_se, i+1))
                 channels *= 2
-            self.features.add(nn.AvgPool2D(7))
+            self.features.add(nn.GlobalAvgPool2D())
 
             self.output = nn.Dense(classes)
 
