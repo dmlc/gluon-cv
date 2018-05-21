@@ -200,7 +200,7 @@ def train(net, train_data, val_data, eval_metric, args):
         name2, loss2 = smoothl1_metric.get()
         logger.info('[Epoch {}] Training cost: {:.1f}, {}={:.1f}, {}={:.1f}'.format(
             epoch, (time.time()-tic), name1, loss1, name2, loss2))
-        if not (i + 1) % args.val_interval:
+        if not (epoch + 1) % args.val_interval:
             # consider reduce the frequency of validation to save time
             map_name, mean_ap = validate(net, val_data, ctx, eval_metric)
             val_msg = '\n'.join(['{}={}'.format(k, v) for k, v in zip(map_name, mean_ap)])
