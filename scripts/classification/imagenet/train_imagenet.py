@@ -44,6 +44,8 @@ parser.add_argument('--mode', type=str,
                     help='mode in which to train the model. options are symbolic, imperative, hybrid')
 parser.add_argument('--model', type=str, required=True,
                     help='type of model to use. see vision_model for options.')
+parser.add_argument('--input-size', type=int, default=224,
+                    help='size of the input image size. default is 224')
 parser.add_argument('--use_se', action='store_true',
                     help='use SE layers or not in resnext. default is false.')
 parser.add_argument('--label-smoothing', action='store_true',
@@ -115,8 +117,10 @@ normalize = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 jitter_param = 0.0 if model_name.startswith('mobilenet') else 0.4
 lighting_param = 0.0 if model_name.startswith('mobilenet') else 0.1
 
+input_size = opt.input_size
+
 transform_train = transforms.Compose([
-    transforms.RandomResizedCrop(224),
+    transforms.RandomResizedCrop(input_size),
     transforms.RandomFlipLeftRight(),
     transforms.RandomColorJitter(brightness=jitter_param, contrast=jitter_param,
                                  saturation=jitter_param),
@@ -127,7 +131,7 @@ transform_train = transforms.Compose([
 
 transform_test = transforms.Compose([
     transforms.Resize(256),
-    transforms.CenterCrop(224),
+    transforms.CenterCrop(input_size),
     transforms.ToTensor(),
     normalize
 ])
@@ -255,7 +259,7 @@ def train_dummy(ctx):
     label = []
     bs = batch_size // len(ctx)
     for c in ctx:
-        data.append(mx.nd.random.uniform(shape=(bs,3,224,224), ctx = c))
+        data.append(mx.nd.random.uniform(shape=(bs,3,input_size,input_size), ctx = c))
         label.append(mx.nd.ones(shape=(bs), ctx = c))
 
     trainer = gluon.Trainer(net.collect_params(), optimizer, optimizer_params)
