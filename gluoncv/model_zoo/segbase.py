@@ -4,7 +4,6 @@ import numpy as np
 import mxnet as mx
 from mxnet.ndarray import NDArray
 from mxnet.gluon.nn import HybridBlock
-from mxnet.gluon.loss import Loss, _apply_weighting
 from ..utils.metrics import voc_segmentation
 from ..utils.parallel import parallel_apply
 from .resnetv1b import resnet50_v1b, resnet101_v1b, resnet152_v1b

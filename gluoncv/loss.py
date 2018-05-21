@@ -162,7 +162,26 @@ class SSDMultiBoxLoss(gluon.Block):
         return sum_losses, cls_losses, box_losses
 
 class SoftmaxCrossEntropyLoss(Loss):
-    """SoftmaxCrossEntropyLoss with ignore labels"""
+    r"""SoftmaxCrossEntropyLoss with ignore labels
+
+    Parameters
+    ----------
+    axis : int, default -1
+        The axis to sum over when computing softmax and entropy.
+    sparse_label : bool, default True
+        Whether label is an integer array instead of probability distribution.
+    from_logits : bool, default False
+        Whether input is a log probability (usually from log_softmax) instead
+        of unnormalized numbers.
+    weight : float or None
+        Global scalar weight for loss.
+    batch_axis : int, default 0
+        The axis that represents mini-batch.
+    ignore_label : int, default -1
+        The label to ignore.
+    size_average : bool, default False
+        Whether to re-scale loss with regard to ignored labels.
+    """
     def __init__(self, axis=1, sparse_label=True, from_logits=False, weight=None,
                  batch_axis=0, ignore_label=-1, size_average=False, **kwargs):
         super(SoftmaxCrossEntropyLoss, self).__init__(weight, batch_axis, **kwargs)
@@ -192,7 +211,17 @@ class SoftmaxCrossEntropyLoss(Loss):
             return F.mean(loss, axis=self._batch_axis, exclude=True)
 
 class SoftmaxCrossEntropyLossWithAux(SoftmaxCrossEntropyLoss):
-    """SoftmaxCrossEntropyLoss2D with Auxilary Loss"""
+    """SoftmaxCrossEntropyLoss2D with Auxiliary Loss
+
+    Parameters
+    ----------
+    aux : bool, default True
+        Whether to use auxiliary loss.
+    aux_weight : float, default 0.2
+        The weight for aux loss.
+    ignore_label : int, default -1
+        The label to ignore.
+    """
     def __init__(self, aux=True, aux_weight=0.2, ignore_label=-1, **kwargs):
         super(SoftmaxCrossEntropyLossWithAux, self).__init__(
             axis=1, ignore_label=ignore_label, **kwargs)
