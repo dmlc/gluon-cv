@@ -603,6 +603,26 @@ def get_nasnet(repeat=6, penultimate_filters=4032,
                                        root=root), ctx=ctx)
     return net
 
+def nasnet_4_1056(**kwargs):
+    r"""NASNet A model from
+    `"Learning Transferable Architectures for Scalable Image Recognition"
+    <https://arxiv.org/abs/1707.07012>`_ paper
+
+    Parameters
+    ----------
+    repeat : int
+        Number of cell repeats
+    penultimate_filters : int
+        Number of filters in the penultimate layer of the network
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+    """
+    return get_nasnet(repeat=4, penultimate_filters=1056, **kwargs)
+
 def nasnet_5_1538(**kwargs):
     r"""NASNet A model from
     `"Learning Transferable Architectures for Scalable Image Recognition"
