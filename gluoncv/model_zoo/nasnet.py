@@ -596,8 +596,7 @@ def get_nasnet(repeat=6, penultimate_filters=4032,
     """
     assert repeat >= 2, \
         "Invalid number of repeat: %d. It should be at least two"%(repeat)
-    net = NASNetALarge(repeat=repeat, penultimate_filters=penultimate_filters,
-                       classes=classes, **kwargs)
+    net = NASNetALarge(repeat=repeat, penultimate_filters=penultimate_filters, **kwargs)
     if pretrained:
         from ..model_store import get_model_file
         net.load_params(get_model_file('nasnet_%d_%d'%(repeat, penultimate_filters),
