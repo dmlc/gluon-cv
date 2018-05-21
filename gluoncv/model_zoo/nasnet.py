@@ -20,7 +20,7 @@
 """NASNet, implemented in Gluon."""
 from __future__ import division
 
-__all__ = ['get_nasnet', 'nasnet_5_1538', 'nasnet_7_1920', 'nasnet_6_4032']
+__all__ = ['get_nasnet', 'nasnet_4_1056', 'nasnet_5_1538', 'nasnet_7_1920', 'nasnet_6_4032']
 
 import os
 from mxnet import cpu
