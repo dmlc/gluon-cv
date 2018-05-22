@@ -4,6 +4,7 @@ mxnet.gluon.model_zoo.vision and gluoncv.models
 """
 from mxnet import gluon
 from .ssd import *
+from .faster_rcnn import *
 from .fcn import *
 from .cifarresnet import *
 from .cifarresnext import *
@@ -42,6 +43,7 @@ def get_model(name, **kwargs):
         'ssd_512_resnet101_v2_voc': ssd_512_resnet101_v2_voc,
         'ssd_512_resnet152_v2_voc': ssd_512_resnet152_v2_voc,
         'ssd_512_mobilenet1_0_voc': ssd_512_mobilenet1_0_voc,
+        'faster_rcnn_resnet50_v1b_coco': faster_rcnn_resnet50_v1b_coco,
         'cifar_resnet20_v1': cifar_resnet20_v1,
         'cifar_resnet56_v1': cifar_resnet56_v1,
         'cifar_resnet110_v1': cifar_resnet110_v1,

@@ -9,8 +9,8 @@ from ..rcnn import RCNN
 from ..rpn import RPN
 
 __all__ = ['FasterRCNN', 'get_faster_rcnn',
-           'get_faster_rcnn_resnet50_v1b_voc',
-           'get_faster_rcnn_resnet50_v1b_coco']
+           'faster_rcnn_resnet50_v1b_voc',
+           'faster_rcnn_resnet50_v1b_coco']
 
 
 class FasterRCNN(RCNN):
@@ -60,7 +60,7 @@ class FasterRCNN(RCNN):
                     per_result, overlap_thresh=self.nms_thresh, topk=self.nms_topk,
                     id_index=0, score_index=1, coord_start=2)
                 if self.nms_topk > 0:
-                    per_result = per_result.slice_axis(axis=0, begin=0, end=self.nms_topk)
+                    per_result = per_result.slice_axis(axis=0, begin=0, end=100)
             results.append(per_result)
         result = F.concat(*results, dim=0)
         ids = F.slice_axis(result, axis=-1, begin=0, end=1)
@@ -68,7 +68,7 @@ class FasterRCNN(RCNN):
         bboxes = F.slice_axis(result, axis=-1, begin=2, end=6)
         return ids, scores, bboxes
 
-def get_faster_rcnn(features, top_features, scales, ratios, classes,
+def get_faster_rcnn(name, features, top_features, scales, ratios, classes,
                     roi_mode, roi_size, dataset, stride=16,
                     rpn_channel=1024, pretrained=False, pretrained_base=True, ctx=mx.cpu(),
                     root=os.path.join('~', '.mxnet', 'models'), **kwargs):
@@ -80,7 +80,7 @@ def get_faster_rcnn(features, top_features, scales, ratios, classes,
         net.load_params(get_model_file(full_name, root=root), ctx=ctx)
     return net
 
-def get_faster_rcnn_resnet50_v1b_voc(pretrained=False, pretrained_base=True, **kwargs):
+def faster_rcnn_resnet50_v1b_voc(pretrained_base=True, **kwargs):
     r"""Faster RCNN model from the paper
     "Ren, S., He, K., Girshick, R., & Sun, J. (2015). Faster r-cnn: Towards
     real-time object detection with region proposal networks"
@@ -109,12 +109,12 @@ def get_faster_rcnn_resnet50_v1b_voc(pretrained=False, pretrained_base=True, **k
         features.add(getattr(base_network, layer))
     for layer in ['layer4']:
         top_features.add(getattr(base_network, layer))
-    return get_faster_rcnn(features, top_features, scales=(32, 64, 128, 256, 512),
+    return get_faster_rcnn('resnet50_v1b', features, top_features, scales=(32, 64, 128, 256, 512),
                            ratios=(0.5, 1, 2), classes=classes, dataset='voc',
                            roi_mode='align', roi_size=(14, 14), stride=16,
                            rpn_channel=1024, **kwargs)
 
-def get_faster_rcnn_resnet50_v1b_coco(pretrained=False, pretrained_base=True, **kwargs):
+def faster_rcnn_resnet50_v1b_coco(pretrained_base=True, **kwargs):
     from ..resnetv1b import resnet50_v1b
     from ...data import COCODetection
     classes = COCODetection.CLASSES
@@ -125,7 +125,7 @@ def get_faster_rcnn_resnet50_v1b_coco(pretrained=False, pretrained_base=True, **
         features.add(getattr(base_network, layer))
     for layer in ['layer4']:
         top_features.add(getattr(base_network, layer))
-    return get_faster_rcnn(features, top_features, scales=(32, 64, 128, 256, 512),
+    return get_faster_rcnn('resnet50_v1b', features, top_features, scales=(32, 64, 128, 256, 512),
                            ratios=(0.5, 1, 2), classes=classes, dataset='coco',
                            roi_mode='align', roi_size=(14, 14), stride=16,
                            rpn_channel=1024, **kwargs)
