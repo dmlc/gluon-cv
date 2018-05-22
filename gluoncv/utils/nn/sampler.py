@@ -89,7 +89,7 @@ class QuotaSampler(autograd.Function):
                  pos_ratio=0.5, neg_ratio=None):
         self._num_sample = num_sample
         if neg_ratio is None:
-            self._neg_ratio = neg_ratio
+            self._neg_ratio = 1. - pos_ratio
         self._pos_ratio = pos_ratio
         assert (self._neg_ratio + self._pos_ratio) <= 1.0, (
             "Positive and negative ratio exceed 1".format(self._neg_ratio + self._pos_ratio))
