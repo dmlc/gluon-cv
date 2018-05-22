@@ -101,6 +101,8 @@ if opt.use_se:
 
 acc_top1 = mx.metric.Accuracy()
 acc_top5 = mx.metric.TopKAccuracy(5)
+acc_top1_aux = mx.metric.Accuracy()
+acc_top5_aux = mx.metric.TopKAccuracy(5)
 train_history = TrainingHistory(['training-top1-err', 'training-top5-err',
                                  'validation-top1-err', 'validation-top5-err'])
 
@@ -152,16 +154,22 @@ def smooth(label, classes, eta=0.1):
 def test(ctx, val_data):
     acc_top1.reset()
     acc_top5.reset()
+    acc_top1_aux.reset()
+    acc_top5_aux.reset()
     for i, batch in enumerate(val_data):
         data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
         label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0)
         outputs = [net(X) for X in data]
-        acc_top1.update(label, outputs)
-        acc_top5.update(label, outputs)
+        acc_top1.update(label, [o[0] for o in outputs])
+        acc_top5.update(label, [o[0] for o in outputs])
+        acc_top1_aux.update(label, [o[1] for o in outputs])
+        acc_top5_aux.update(label, [o[1] for o in outputs])
 
     _, top1 = acc_top1.get()
     _, top5 = acc_top5.get()
-    return (1-top1, 1-top5)
+    _, top1_aux = acc_top1_aux.get()
+    _, top5_aux = acc_top5_aux.get()
+    return (1-top1, 1-top5, 1-top1_aux, 1-top5_aux)
 
 def train(epochs, ctx):
     if isinstance(ctx, mx.Context):
@@ -177,9 +185,9 @@ def train(epochs, ctx):
 
     trainer = gluon.Trainer(net.collect_params(), optimizer, optimizer_params)
     if opt.label_smoothing:
-        L = gluon.loss.SoftmaxCrossEntropyLoss(sparse_label=False)
+        L = gluon.loss.SoftmaxCrossEntropyLossWithAux(sparse_label=False, aux_weight=0.4)
     else:
-        L = gluon.loss.SoftmaxCrossEntropyLoss()
+        L = gluon.loss.SoftmaxCrossEntropyLossWithAux(aux_weight=0.4)
 
     lr_decay_count = 0
 
@@ -189,6 +197,8 @@ def train(epochs, ctx):
         tic = time.time()
         acc_top1.reset()
         acc_top5.reset()
+        acc_top1_aux.reset()
+        acc_top5_aux.reset()
         btic = time.time()
         train_loss = 0
         num_batch = len(train_data)
@@ -199,9 +209,6 @@ def train(epochs, ctx):
             trainer.set_learning_rate(trainer.learning_rate*lr_decay)
             lr_decay_count += 1
 
-        if opt.freeze_bn and epoch == epochs - 10:
-            freeze_bn(net, True)
-
         for i, batch in enumerate(train_data):
             data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
             label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0)
@@ -211,35 +218,45 @@ def train(epochs, ctx):
                 label_smooth = label
             with ag.record():
                 outputs = [net(X) for X in data]
-                loss = [L(yhat, y) for yhat, y in zip(outputs, label_smooth)]
+                loss = [L(yhat[0], yhat[1], y) for yhat, y in zip(outputs, label_smooth)]
             ag.backward(loss)
             trainer.step(batch_size)
-            acc_top1.update(label, outputs)
-            acc_top5.update(label, outputs)
+            acc_top1.update(label, [o[0] for o in outputs])
+            acc_top5.update(label, [o[0] for o in outputs])
+            acc_top1_aux.update(label, [o[1] for o in outputs])
+            acc_top5_aux.update(label, [o[1] for o in outputs])
             train_loss += sum([l.sum().asscalar() for l in loss])
             if opt.log_interval and not (i+1)%opt.log_interval:
                 _, top1 = acc_top1.get()
                 _, top5 = acc_top5.get()
-                err_top1, err_top5 = (1-top1, 1-top5)
-                logging.info('Epoch[%d] Batch [%d]\tSpeed: %f samples/sec\ttop1-err=%f\ttop5-err=%f'%(
-                             epoch, i, batch_size*opt.log_interval/(time.time()-btic), err_top1, err_top5))
+                _, top1_aux = acc_top1_aux.get()
+                _, top5_aux = acc_top5_aux.get()
+                err_top1, err_top5, err_top1_aux, err_top5_aux = (1-top1, 1-top5, 1-top1_aux, 1-top5_aux)
+                logging.info('Epoch[%d] Batch [%d]\tSpeed: %f samples/sec\t'
+                             'top1-err=%f\ttop5-err=%f\ttop1-err-aux=%f\ttop5-err-aux=%f'%(
+                             epoch, i, batch_size*opt.log_interval/(time.time()-btic),
+                             err_top1, err_top5, err_top1_aux, err_top5_aux))
                 btic = time.time()
 
         _, top1 = acc_top1.get()
         _, top5 = acc_top5.get()
-        err_top1, err_top5 = (1-top1, 1-top5)
+        _, top1_aux = acc_top1_aux.get()
+        _, top5_aux = acc_top5_aux.get()
+        err_top1, err_top5, err_top1_aux, err_top5_aux = (1-top1, 1-top5, 1-top1_aux, 1-top5_aux)
         train_loss /= num_batch * batch_size
 
-        err_top1_val, err_top5_val = test(ctx, val_data)
+        err_top1_val, err_top5_val, err_top1_val_aux, err_top5_val_aux = test(ctx, val_data)
         train_history.update([err_top1, err_top5, err_top1_val, err_top5_val])
         train_history.plot(['training-top1-err', 'validation-top1-err'],
                            save_path='%s/%s_top1.png'%(plot_path, model_name))
         train_history.plot(['training-top5-err', 'validation-top5-err'],
                            save_path='%s/%s_top5.png'%(plot_path, model_name))
 
-        logging.info('[Epoch %d] training: err-top1=%f err-top5=%f loss=%f'%(epoch, err_top1, err_top5, train_loss))
+        logging.info('[Epoch %d] training: err-top1=%f err-top5=%f err-top1_aux=%f err-top5_aux=%f loss=%f'%
+            (epoch, err_top1, err_top5, err_top1_aux, err_top5_aux, train_loss))
         logging.info('[Epoch %d] time cost: %f'%(epoch, time.time()-tic))
-        logging.info('[Epoch %d] validation: err-top1=%f err-top5=%f'%(epoch, err_top1_val, err_top5_val))
+        logging.info('[Epoch %d] validation: err-top1=%f err-top5=%f'%
+            (epoch, err_top1_val, err_top5_val, err_top1_val_aux, err_top5_val_aux))
 
         if err_top1_val < best_val_score and epoch > 50:
             best_val_score = err_top1_val
@@ -265,9 +282,9 @@ def train_dummy(ctx):
 
     trainer = gluon.Trainer(net.collect_params(), optimizer, optimizer_params)
     if opt.label_smoothing:
-        L = gluon.loss.SoftmaxCrossEntropyLoss(sparse_label=False)
+        L = gluon.loss.SoftmaxCrossEntropyLossWithAux(sparse_label=False, aux_weight=0.4)
     else:
-        L = gluon.loss.SoftmaxCrossEntropyLoss()
+        L = gluon.loss.SoftmaxCrossEntropyLossWithAux(aux_weight=0.4)
 
     acc_top1.reset()
     acc_top5.reset()
@@ -285,11 +302,11 @@ def train_dummy(ctx):
             label_smooth = label
         with ag.record():
             outputs = [net(X) for X in data]
-            loss = [L(yhat, y) for yhat, y in zip(outputs, label_smooth)]
+            loss = [L(yhat[0], yhat[1], y) for yhat, y in zip(outputs, label_smooth)]
         ag.backward(loss)
         trainer.step(batch_size)
-        acc_top1.update(label, outputs)
-        acc_top5.update(label, outputs)
+        acc_top1.update(label, [o[0] for o in outputs])
+        acc_top5.update(label, [o[0] for o in outputs])
         train_loss += sum([l.sum().asscalar() for l in loss])
 
         if opt.log_interval and not (i+1)%opt.log_interval:
