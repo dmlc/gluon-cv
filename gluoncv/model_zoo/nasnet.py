@@ -514,9 +514,11 @@ class NASNetALarge(HybridBlock):
         The filter multiplier for stem layers
     classes: int, default 1000
         Number of classification classes
+    use_aux : bool, default True
+        Whether to use auxiliary classifier when training
     """
     def __init__(self, repeat=6, penultimate_filters=4032, stem_filters=96,
-                 filters_multiplier=2, classes=1000):
+                 filters_multiplier=2, classes=1000, use_aux=True):
         super(NASNetALarge, self).__init__()
 
         filters = penultimate_filters // 24
@@ -540,6 +542,18 @@ class NASNetALarge(HybridBlock):
         self.norm_2.add(FirstCell(out_channels_left=filters, out_channels_right=2*filters))
         for _ in range(repeat - 1):
             self.norm_2.add(NormalCell(out_channels_left=2*filters, out_channels_right=2*filters))
+
+        if use_aux:
+            self.out_aux = nn.HybridSequential(prefix='')
+            self.out_aux.add(nn.Conv2D(filters // 3, kernel_size=1, use_bias=False))
+            self.out_aux.add(nn.BatchNorm(epsilon=0.001))
+            self.out_aux.add(nn.Activation('relu'))
+            self.out_aux.add(nn.Conv2D(2*filters, kernel_size=5, use_bias=False))
+            self.out_aux.add(nn.BatchNorm(epsilon=0.001))
+            self.out_aux.add(nn.Activation('relu'))
+            self.out_aux.add(nn.Dense(classes))
+        else:
+            self.out_aux = None
 
         self.reduction_cell_1 = ReductionCell1(out_channels_left=4*filters,
                                                out_channels_right=4*filters)
@@ -567,12 +581,15 @@ class NASNetALarge(HybridBlock):
         x, x_prev = self.reduction_cell_0(x, x_prev)
         for cell in self.norm_2._children.values():
             x, x_prev = cell(x, x_prev)
+        if self.out_aux:
+            x_aux = F.AdaptiveAvgPooling2D(x, output_size=5)
+            x_aux = self.out_aux(x_aux)
         x, x_prev = self.reduction_cell_1(x, x_prev)
         for cell in self.norm_3._children.values():
             x, x_prev = cell(x, x_prev)
 
         x = self.out(x)
-        return x
+        return x, x_aux
 
 def get_nasnet(repeat=6, penultimate_filters=4032,
                pretrained=False, ctx=cpu(),

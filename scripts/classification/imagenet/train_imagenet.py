@@ -175,10 +175,16 @@ def train(epochs, ctx):
         batch_size=batch_size, shuffle=False, num_workers=num_workers)
 
     trainer = gluon.Trainer(net.collect_params(), optimizer, optimizer_params)
-    if opt.label_smoothing:
-        L = gluon.loss.SoftmaxCrossEntropyLoss(sparse_label=False)
+    if model_name.startswith('nasnet'):
+        if opt.label_smoothing:
+            L = gluon.loss.SoftmaxCrossEntropyLossWithAux(sparse_label=False, aux_weight=0.4)
+        else:
+            L = gluon.loss.SoftmaxCrossEntropyLossWithAux(aux_weight=0.4)
     else:
-        L = gluon.loss.SoftmaxCrossEntropyLoss()
+        if opt.label_smoothing:
+            L = gluon.loss.SoftmaxCrossEntropyLoss(sparse_label=False)
+        else:
+            L = gluon.loss.SoftmaxCrossEntropyLoss()
 
     lr_decay_count = 0
 
