@@ -11,6 +11,7 @@ from mxnet.gluon import nn
 from mxnet.gluon.data.vision import transforms
 
 from gluoncv.data import imagenet
+from gluoncv.loss import SoftmaxCrossEntropyLossWithAux
 from gluoncv.model_zoo import get_model
 from gluoncv.utils import makedirs, TrainingHistory, freeze_bn
 
