@@ -13,6 +13,7 @@ _model_sha1 = {name: checksum for checksum, name in [
     ('daf8181b615b480236fcb8474545077891276945', 'ssd_512_vgg16_atrous_voc'),
     ('9c8b225a552614e4284a0f647331bfdc6940eb4a', 'ssd_512_resnet50_v1_voc'),
     ('2cc0f93edf1467f428018cc7261d3246dfa15259', 'ssd_512_resnet101_v2_voc'),
+    ('b2fbd868f599828ea985adca2062e987e374b5fa', 'get_faster_rcnn_resnet50_v1b_coco'),
     ('121e1579d811b091940b3b1fa033e1f0d1dca40f', 'cifar_resnet20_v1'),
     ('4f2d18804c94f2d283b8b45256d048bd3d6dd479', 'cifar_resnet20_v2'),
     ('2fb251e60babdceb103e9659b3baa0dea20a14d7', 'cifar_resnet56_v1'),

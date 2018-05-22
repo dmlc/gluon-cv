@@ -8,7 +8,9 @@ from mxnet.gluon import nn
 from ..rcnn import RCNN
 from ..rpn import RPN
 
-__all__ = ['FasterRCNN', 'get_faster_rcnn', 'get_faster_rcnn_resnet50_v1b_voc']
+__all__ = ['FasterRCNN', 'get_faster_rcnn',
+           'get_faster_rcnn_resnet50_v1b_voc',
+           'get_faster_rcnn_resnet50_v1b_coco']
 
 
 class FasterRCNN(RCNN):
@@ -48,7 +50,7 @@ class FasterRCNN(RCNN):
             axis=0, num_outputs=self.num_class, squeeze_axis=True)
         cls_ids, scores = self.cls_decoder(F.softmax(cls_pred, axis=-1))
         results = []
-        for i in range(self.num_class - 1):
+        for i in range(self.num_class):
             cls_id = cls_ids.slice_axis(axis=-1, begin=i, end=i+1)
             score = scores.slice_axis(axis=-1, begin=i, end=i+1)
             # per class results
@@ -109,5 +111,21 @@ def get_faster_rcnn_resnet50_v1b_voc(pretrained=False, pretrained_base=True, **k
         top_features.add(getattr(base_network, layer))
     return get_faster_rcnn(features, top_features, scales=(32, 64, 128, 256, 512),
                            ratios=(0.5, 1, 2), classes=classes, dataset='voc',
+                           roi_mode='align', roi_size=(14, 14), stride=16,
+                           rpn_channel=1024, **kwargs)
+
+def get_faster_rcnn_resnet50_v1b_coco(pretrained=False, pretrained_base=True, **kwargs):
+    from ..resnetv1b import resnet50_v1b
+    from ...data import COCODetection
+    classes = COCODetection.CLASSES
+    base_network = resnet50_v1b(pretrained=pretrained_base, dilated=False)
+    features = nn.HybridSequential()
+    top_features = nn.HybridSequential()
+    for layer in ['conv1', 'bn1', 'relu', 'maxpool', 'layer1', 'layer2', 'layer3']:
+        features.add(getattr(base_network, layer))
+    for layer in ['layer4']:
+        top_features.add(getattr(base_network, layer))
+    return get_faster_rcnn(features, top_features, scales=(32, 64, 128, 256, 512),
+                           ratios=(0.5, 1, 2), classes=classes, dataset='coco',
                            roi_mode='align', roi_size=(14, 14), stride=16,
                            rpn_channel=1024, **kwargs)

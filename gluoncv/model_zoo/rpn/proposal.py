@@ -25,6 +25,9 @@ class RPNProposal(gluon.HybridBlock):
         self._max_roi = max_roi
 
     def hybrid_forward(self, F, anchor, score, bbox_pred, width, height, scale=1.0):
+        """
+        Limit to batch-size=1
+        """
         if autograd.is_training():
             pre_nms = self._train_pre_nms
             post_nms = self._train_post_nms
@@ -61,7 +64,7 @@ class RPNProposal(gluon.HybridBlock):
         roi_batchid = F.arange(
             0, self._max_batch, repeat=self._max_roi).reshape(
                 (-1, self._max_roi))
-        roi_batchid = F.slice_like(roi_batchid, roi, axes=(0, 1))
-        roi = roi.reshape((-1, 4))
+        roi_batchid = F.slice_like(roi_batchid, rpn_bbox, axes=(0, 1))
+        roi = rpn_bbox.reshape((-1, 4))
         rpn_roi = F.concat(*[roi_batchid.reshape((-1, 1)), roi], dim=1)
         return rpn_scores, rpn_bbox, rpn_roi, roi
