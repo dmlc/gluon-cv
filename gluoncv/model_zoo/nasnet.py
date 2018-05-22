@@ -582,7 +582,7 @@ class NASNetALarge(HybridBlock):
         for cell in self.norm_2._children.values():
             x, x_prev = cell(x, x_prev)
         if self.out_aux:
-            x_aux = F.AdaptiveAvgPooling2D(x, output_size=5)
+            x_aux = F.AdaptiveAvgPool2D(x, output_size=5)
             x_aux = self.out_aux(x_aux)
         x, x_prev = self.reduction_cell_1(x, x_prev)
         for cell in self.norm_3._children.values():
