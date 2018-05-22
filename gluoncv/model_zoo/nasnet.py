@@ -589,7 +589,7 @@ class NASNetALarge(HybridBlock):
             x, x_prev = cell(x, x_prev)
 
         x = self.out(x)
-        if self.out_aux
+        if self.out_aux:
             return x, x_aux
         else:
             return x
