@@ -5,7 +5,7 @@ import mxnet.gluon.nn as nn
 from mxnet.gluon import Block
 
 from .anchors import generate_anchors, map_anchors
-# pylint: disable=arguments-differ, unused-variable, invalid-sequence-index
+# pylint: disable=arguments-differ, unused-variable, invalid-sequence-index, pointless-string-statement
 
 class RPN(Block):
     """ RPN: region proposal network
