@@ -1,9 +1,12 @@
 """RCNN Base Model"""
+import numpy as np
 from mxnet import gluon
 import mxnet.ndarray as F
 import mxnet.gluon.nn as nn
 
 from ..resnetv1b import resnet50_v1b, resnet101_v1b, resnet152_v1b
+#from .rpn import bbox_clip, bbox_transform, rpn_nms
+from . import rpn
 # pylint: disable=unused-argument, invalid-sequence-index
 
 class RCNN_ResNet(gluon.Block):
@@ -71,23 +74,82 @@ class RCNN_ResNet(gluon.Block):
         return f_cls, f_reg
 
     @staticmethod
-    def rcnn_nms(rcnn_cls, bbox_pred, thresh=0.5, pre_nms_topN=-1, topK=100):
-        """RCNN NMS"""
-        nclass = rcnn_cls.shape[1]
-        nboxs = bbox_pred.shape[0]
-        ids = F.concatenate([classid * F.ones((nboxs, 1), rcnn_cls.context)
-                             for classid in range(nclass)], axis=1)
-        rcnn_cls = rcnn_cls.reshape(nboxs * nclass, 1)
-        bbox_pred = bbox_pred.reshape(nboxs * nclass, 4)
-        data = F.concat(ids.reshape(nboxs * nclass, 1), rcnn_cls, bbox_pred, dim=1)
-        nms_pred = F.contrib.box_nms(data, thresh, pre_nms_topN, coord_start=2,
-                                     score_index=1, id_index=0, force_suppress=False)
-        # topK with effective rois
+    def rcnn_prediction(rois, scaling_factor, img_height, img_width, class_scores,
+                        bbox_deltas, bbox_reg_weights=(10.0, 10.0, 5.0, 5.0)):
+        boxes = rois / scaling_factor
+        pred_boxes = rpn.bbox_transform(boxes, bbox_deltas, bbox_reg_weights)
+        pred_boxes = rpn.bbox_clip(pred_boxes, img_height, img_width)
+        scores, boxes, box_ids, cls_boxes = rcnn_nms(class_scores, pred_boxes)
+        return scores, boxes, box_ids, cls_boxes
+
+
+def rcnn_nms(rcnn_cls, bbox_pred, overlap_thresh=0.5, score_thresh=0.05, topK=100):
+    """RCNN NMS"""
+    nclass = rcnn_cls.shape[1]
+    nboxs = bbox_pred.shape[0]
+    np_scores = rcnn_cls.asnumpy()
+    cls_boxes = [[] for _ in range(nclass)]
+    # pre-thresh using numpy for now
+    for j in range(1, nclass):
+        inds = np.where(np_scores[:, j] > score_thresh)[0]
+        if len(inds) == 0:
+            continue
+        scores_j = rcnn_cls[inds, j]
+        boxes_j = bbox_pred[inds, j * 4:(j + 1) * 4]
+        data = F.concat(scores_j.expand_dims(1), boxes_j, dim=1)
+        nms_pred = F.contrib.box_nms(data, overlap_thresh, -1, coord_start=1,
+                                     score_index=0, id_index=-1, force_suppress=True)
         effect = int(F.sum(nms_pred[:, 0] >= 0).asscalar())
-        topK = topK if effect > topK else effect
-        # N,1
-        rcnn_ids = nms_pred[:topK, 0]
-        rcnn_scores = nms_pred[:topK, 1]
-        # N, 4
-        rcnn_bbox = nms_pred[:topK, 2:]
-        return rcnn_ids, rcnn_scores, rcnn_bbox
+        cls_boxes[j] = nms_pred[:effect, :]
+
+    if topK > 0:
+        image_scores = F.concat(*[cls_boxes[j][:, 0] for j in range(1, nclass)
+                                  if len(cls_boxes[j]) !=0], dim=0)
+        if image_scores.size > topK:
+            image_thresh = np.sort(image_scores.asnumpy())[-topK]
+            for j in range(1, nclass):
+                if len(cls_boxes[j]) == 0:
+                    continue
+                keep = np.where(cls_boxes[j][:, 0].asnumpy() >= image_thresh)[0]
+                cls_boxes[j] = cls_boxes[j][keep, :]
+
+    im_results = F.concat(*[cls_boxes[j] for j in range(1, nclass) if len(cls_boxes[j]) !=0], dim=0)
+    box_ids = F.concat(*[F.ones_like(cls_boxes[j][:, 0]) * (j-1) for j in range(1, nclass) if len(cls_boxes[j]) !=0], dim=0)
+    boxes = im_results[:, 1:]
+    scores = im_results[:, 0]
+    print('scores.shape', scores.shape)
+    print('box_ids.shape', box_ids.shape)
+    return scores, boxes, box_ids, cls_boxes
+    """
+    scores = rcnn_cls#.asnumpy()
+    boxes = bbox_pred#.asnumpy()
+    cls_boxes = [[] for _ in range(nclass)]
+    # skip 0 for background
+    from gluoncv.utils.nms import nms
+    for j in range(1, nclass):
+        inds = np.where(scores[:, j] > score_thresh)[0]
+        scores_j = scores[inds, j]
+        boxes_j = boxes[inds, j * 4:(j + 1) * 4]
+        dets_j = np.hstack((boxes_j, scores_j[:, np.newaxis])).astype(
+            np.float32, copy=False
+        )
+        keep = nms(dets_j, overlap_thresh)
+        cls_boxes[j] = dets_j[keep, :]
+
+    # Limit to max_per_image detections **over all classes**
+    if topK > 0:
+        image_scores = np.hstack(
+            [cls_boxes[j][:, -1] for j in range(1, nclass)]
+        )
+        if len(image_scores) > topK:
+            image_thresh = np.sort(image_scores)[-topK]
+            for j in range(1, nclass):
+                keep = np.where(cls_boxes[j][:, -1] >= image_thresh)[0]
+                cls_boxes[j] = cls_boxes[j][keep, :]
+
+    im_results = np.vstack([cls_boxes[j] for j in range(1, nclass)])
+    boxes = im_results[:, :-1]
+    scores = im_results[:, -1]
+    # Predict ids
+    return scores, boxes, cls_boxes
+    """
