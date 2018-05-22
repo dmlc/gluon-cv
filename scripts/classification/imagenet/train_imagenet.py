@@ -269,10 +269,16 @@ def train_dummy(ctx):
         label.append(mx.nd.ones(shape=(bs), ctx = c))
 
     trainer = gluon.Trainer(net.collect_params(), optimizer, optimizer_params)
-    if opt.label_smoothing:
-        L = gluon.loss.SoftmaxCrossEntropyLoss(sparse_label=False)
+    if model_name.startswith('nasnet'):
+        if opt.label_smoothing:
+            L = gluon.loss.SoftmaxCrossEntropyLossWithAux(sparse_label=False, aux_weight=0.4)
+        else:
+            L = gluon.loss.SoftmaxCrossEntropyLossWithAux(aux_weight=0.4)
     else:
-        L = gluon.loss.SoftmaxCrossEntropyLoss()
+        if opt.label_smoothing:
+            L = gluon.loss.SoftmaxCrossEntropyLoss(sparse_label=False)
+        else:
+            L = gluon.loss.SoftmaxCrossEntropyLoss()
 
     acc_top1.reset()
     acc_top5.reset()
