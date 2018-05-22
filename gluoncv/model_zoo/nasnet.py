@@ -589,7 +589,10 @@ class NASNetALarge(HybridBlock):
             x, x_prev = cell(x, x_prev)
 
         x = self.out(x)
-        return x, x_aux
+        if self.out_aux
+            return x, x_aux
+        else:
+            return x
 
 def get_nasnet(repeat=6, penultimate_filters=4032,
                pretrained=False, ctx=cpu(),

@@ -11,7 +11,6 @@ from mxnet.gluon import nn
 from mxnet.gluon.data.vision import transforms
 
 from gluoncv.data import imagenet
-from gluoncv.loss import SoftmaxCrossEntropyLossWithAux
 from gluoncv.model_zoo import get_model
 from gluoncv.utils import makedirs, TrainingHistory, freeze_bn
 
@@ -177,9 +176,9 @@ def train(epochs, ctx):
 
     trainer = gluon.Trainer(net.collect_params(), optimizer, optimizer_params)
     if opt.label_smoothing:
-        L = gluon.loss.SoftmaxCrossEntropyLoss(sparse_label=False)
+        L = SoftmaxCrossEntropyLoss(sparse_label=False)
     else:
-        L = gluon.loss.SoftmaxCrossEntropyLoss()
+        L = SoftmaxCrossEntropyLoss()
 
     lr_decay_count = 0
 
@@ -265,9 +264,9 @@ def train_dummy(ctx):
 
     trainer = gluon.Trainer(net.collect_params(), optimizer, optimizer_params)
     if opt.label_smoothing:
-        L = gluon.loss.SoftmaxCrossEntropyLoss(sparse_label=False)
+        L = SoftmaxCrossEntropyLoss(sparse_label=False)
     else:
-        L = gluon.loss.SoftmaxCrossEntropyLoss()
+        L = SoftmaxCrossEntropyLoss()
 
     acc_top1.reset()
     acc_top5.reset()
