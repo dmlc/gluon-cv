@@ -1,3 +1,4 @@
+"""Preset Transforms for Testing Faster RCNN Model"""
 from PIL import Image
 import numpy as np
 import mxnet as mx
@@ -28,11 +29,11 @@ def load_image(filename, ctx=cpu(), short_size=800):
 
 def subtract_imagenet_mean_batch(batch):
     """Subtract ImageNet mean pixel-wise from a BGR image."""
-    batch = F.swapaxes(batch,0, 1)
+    batch = F.swapaxes(batch, 0, 1)
     (r, g, b) = F.split(batch, num_outputs=3, axis=0)
     r = r - 122.7717
     g = g - 115.9465
     b = b - 102.9801
     batch = F.concat(r, g, b, dim=0)
-    batch = F.swapaxes(batch,0, 1)
+    batch = F.swapaxes(batch, 0, 1)
     return batch

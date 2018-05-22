@@ -107,7 +107,6 @@ class RegionProposal(object):
             keep = nms(np.hstack((proposals_np, scores_np)), self.nms_thresh)
             if self.nms_topK > 0:
                 keep = keep[:self.nms_topK]
-                
             rpn_bbox_pred = rpn_bbox_pred[keep, :]
             rpn_cls = rpn_cls[keep,:]
         """
@@ -135,18 +134,18 @@ def rpn_nms(anchor_scores, bbox_pred, thresh, pre_nms_topN, topK):
 
 
 def filter_boxes(boxes, min_size, scale_factor, image_height, image_width):
-        """Only keep boxes with both sides >= min_size and center within the image.
-        """
-        # Scale min_size to match image scale
-        min_size *= scale_factor
-        ws = boxes[:, 2] - boxes[:, 0] + 1
-        hs = boxes[:, 3] - boxes[:, 1] + 1
-        x_ctr = boxes[:, 0] + ws / 2.
-        y_ctr = boxes[:, 1] + hs / 2.
-        keep = np.where(
-            (ws >= min_size) & (hs >= min_size) &
-            (x_ctr < image_width) & (y_ctr < image_height))[0]
-        return keep
+    """Only keep boxes with both sides >= min_size and center within the image.
+    """
+    # Scale min_size to match image scale
+    min_size *= scale_factor
+    ws = boxes[:, 2] - boxes[:, 0] + 1
+    hs = boxes[:, 3] - boxes[:, 1] + 1
+    x_ctr = boxes[:, 0] + ws / 2.
+    y_ctr = boxes[:, 1] + hs / 2.
+    keep = np.where(
+        (ws >= min_size) & (hs >= min_size) &
+        (x_ctr < image_width) & (y_ctr < image_height))[0]
+    return keep
 
 
 def bbox_clip(bbox, height, width):

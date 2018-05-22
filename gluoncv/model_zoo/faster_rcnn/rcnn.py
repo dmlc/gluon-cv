@@ -5,7 +5,6 @@ import mxnet.ndarray as F
 import mxnet.gluon.nn as nn
 
 from ..resnetv1b import resnet50_v1b, resnet101_v1b, resnet152_v1b
-#from .rpn import bbox_clip, bbox_transform, rpn_nms
 from . import rpn
 # pylint: disable=unused-argument, invalid-sequence-index
 
@@ -86,7 +85,6 @@ class RCNN_ResNet(gluon.Block):
 def rcnn_nms(rcnn_cls, bbox_pred, overlap_thresh=0.5, score_thresh=0.05, topK=100):
     """RCNN NMS"""
     nclass = rcnn_cls.shape[1]
-    nboxs = bbox_pred.shape[0]
     np_scores = rcnn_cls.asnumpy()
     cls_boxes = [[] for _ in range(nclass)]
     # pre-thresh using numpy for now
@@ -104,7 +102,7 @@ def rcnn_nms(rcnn_cls, bbox_pred, overlap_thresh=0.5, score_thresh=0.05, topK=10
 
     if topK > 0:
         image_scores = F.concat(*[cls_boxes[j][:, 0] for j in range(1, nclass)
-                                  if len(cls_boxes[j]) !=0], dim=0)
+                                  if len(cls_boxes[j]) != 0], dim=0)
         if image_scores.size > topK:
             image_thresh = np.sort(image_scores.asnumpy())[-topK]
             for j in range(1, nclass):
@@ -113,8 +111,10 @@ def rcnn_nms(rcnn_cls, bbox_pred, overlap_thresh=0.5, score_thresh=0.05, topK=10
                 keep = np.where(cls_boxes[j][:, 0].asnumpy() >= image_thresh)[0]
                 cls_boxes[j] = cls_boxes[j][keep, :]
 
-    im_results = F.concat(*[cls_boxes[j] for j in range(1, nclass) if len(cls_boxes[j]) !=0], dim=0)
-    box_ids = F.concat(*[F.ones_like(cls_boxes[j][:, 0]) * (j-1) for j in range(1, nclass) if len(cls_boxes[j]) !=0], dim=0)
+    im_results = F.concat(*[cls_boxes[j] for j in range(1, nclass)
+                            if len(cls_boxes[j]) != 0], dim=0)
+    box_ids = F.concat(*[F.ones_like(cls_boxes[j][:, 0]) * (j-1) for j in range(1, nclass)
+                         if len(cls_boxes[j]) != 0], dim=0)
     boxes = im_results[:, 1:]
     scores = im_results[:, 0]
     print('scores.shape', scores.shape)
