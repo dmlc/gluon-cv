@@ -6,7 +6,7 @@ import mxnet.gluon.nn as nn
 
 from ..resnetv1b import resnet50_v1b, resnet101_v1b, resnet152_v1b
 from . import rpn
-# pylint: disable=unused-argument, invalid-sequence-index, pointless-string-statement
+# pylint: disable=unused-argument, invalid-sequence-index, unreachable, pointless-string-statement
 
 class RCNN_ResNet(gluon.Block):
     """RCNN Base model"""
