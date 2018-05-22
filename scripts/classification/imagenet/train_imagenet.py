@@ -176,9 +176,9 @@ def train(epochs, ctx):
 
     trainer = gluon.Trainer(net.collect_params(), optimizer, optimizer_params)
     if opt.label_smoothing:
-        L = SoftmaxCrossEntropyLoss(sparse_label=False)
+        L = gluon.loss.SoftmaxCrossEntropyLoss(sparse_label=False)
     else:
-        L = SoftmaxCrossEntropyLoss()
+        L = gluon.loss.SoftmaxCrossEntropyLoss()
 
     lr_decay_count = 0
 
@@ -264,9 +264,9 @@ def train_dummy(ctx):
 
     trainer = gluon.Trainer(net.collect_params(), optimizer, optimizer_params)
     if opt.label_smoothing:
-        L = SoftmaxCrossEntropyLoss(sparse_label=False)
+        L = gluon.loss.SoftmaxCrossEntropyLoss(sparse_label=False)
     else:
-        L = SoftmaxCrossEntropyLoss()
+        L = gluon.loss.SoftmaxCrossEntropyLoss()
 
     acc_top1.reset()
     acc_top5.reset()
