@@ -55,16 +55,18 @@ class RPNAnchorGenerator(gluon.HybridBlock):
 
     def _generate_anchors(self, stride, base_size, ratios, scales, alloc_size):
         # generate same shapes on every location
-        px, py = base_size / 2., base_size / 2.
+        px, py = (base_size - 1) * 0.5, (base_size - 1) * 0.5
         base_sizes = []
         for i, r in enumerate(ratios):
             for j, s in enumerate(scales):
-                h = base_size * s * np.sqrt(r) / 2.
-                w = base_size * s * np.sqrt(1. / r) / 2.
+                size = base_size * base_size / r
+                ws = np.round(np.sqrt(size))
+                w = (ws * s - 1) * 0.5
+                h = (np.round(ws * r) * s - 1) * 0.5
                 base_sizes.append([px - w, py - h, px + w, py + h])
         base_sizes = np.array(base_sizes)  # (N, 4)
 
-        # propagete to all locations by shift offsets
+        # propagete to all locations by shifting offsets
         height, width = alloc_size
         offset_x = np.arange(0, width * stride, stride)
         offset_y = np.arange(0, height * stride, stride)

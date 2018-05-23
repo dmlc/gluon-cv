@@ -109,7 +109,7 @@ def faster_rcnn_resnet50_v1b_voc(pretrained_base=True, **kwargs):
         features.add(getattr(base_network, layer))
     for layer in ['layer4']:
         top_features.add(getattr(base_network, layer))
-    return get_faster_rcnn('resnet50_v1b', features, top_features, scales=(32, 64, 128, 256, 512),
+    return get_faster_rcnn('resnet50_v1b', features, top_features, scales=(2, 4, 8, 16, 32),
                            ratios=(0.5, 1, 2), classes=classes, dataset='voc',
                            roi_mode='align', roi_size=(14, 14), stride=16,
                            rpn_channel=1024, **kwargs)
@@ -125,7 +125,7 @@ def faster_rcnn_resnet50_v1b_coco(pretrained_base=True, **kwargs):
         features.add(getattr(base_network, layer))
     for layer in ['layer4']:
         top_features.add(getattr(base_network, layer))
-    return get_faster_rcnn('resnet50_v1b', features, top_features, scales=(32, 64, 128, 256, 512),
+    return get_faster_rcnn('resnet50_v1b', features, top_features, scales=(2, 4, 8, 16, 32),
                            ratios=(0.5, 1, 2), classes=classes, dataset='coco',
                            roi_mode='align', roi_size=(14, 14), stride=16,
                            rpn_channel=1024, **kwargs)

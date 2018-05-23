@@ -39,7 +39,6 @@ class RPNProposal(gluon.HybridBlock):
         roi = self._box_decoder(bbox_pred, anchor)
 
         # clip rois to image's boundary
-        print(roi.shape, img.shape)
         roi = F.Custom(roi, img, op_type='bbox_clip_to_image')
         # roi = self._clipper(roi, width, height)
 
