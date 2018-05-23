@@ -32,11 +32,11 @@ class RPN(gluon.HybridBlock):
             self.score = nn.Conv2D(anchor_depth, 1, 1, 0, weight_initializer=weight_initializer)
             self.loc = nn.Conv2D(anchor_depth * 4, 1, 1, 0, weight_initializer=weight_initializer)
 
-    def hybrid_forward(self, F, x, width, height):
+    def hybrid_forward(self, F, x, img):
         anchors = self.anchor_generator(x)
         x = self.conv1(x)
         rpn_scores = F.sigmoid(self.score(x)).transpose(axes=(0, 2, 3, 1)).reshape((0, -1, 1))
         rpn_box_pred = self.loc(x).transpose(axes=(0, 2, 3, 1)).reshape((0, -1, 4))
         rpn_score, rpn_box, batch_roi, roi = self.region_proposaler(
-            anchors, rpn_scores, rpn_box_pred, width, height)
+            anchors, rpn_scores, rpn_box_pred, img)
         return rpn_score, rpn_box, batch_roi, roi

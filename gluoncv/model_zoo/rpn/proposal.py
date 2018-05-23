@@ -3,7 +3,7 @@ from __future__  import absolute_import
 
 from mxnet import autograd
 from mxnet import gluon
-from ...nn.bbox import BBoxClipToImage, BBoxArea
+# from ...nn.bbox import BBoxArea
 from ...nn.coder import NormalizedBoxCenterDecoder
 
 
@@ -13,8 +13,8 @@ class RPNProposal(gluon.HybridBlock):
                  max_batch=32, max_roi=200000):
         super(RPNProposal, self).__init__()
         self._box_decoder = NormalizedBoxCenterDecoder(stds=stds)
-        self._clipper = BBoxClipToImage()
-        self._compute_area = BBoxArea()
+        # self._clipper = BBoxClipToImage()
+        # self._compute_area = BBoxArea()
         self._nms_thresh = nms_thresh
         self._train_pre_nms = max(1, train_pre_nms)
         self._train_post_nms = max(1, train_post_nms)
@@ -24,7 +24,7 @@ class RPNProposal(gluon.HybridBlock):
         self._max_batch = max_batch
         self._max_roi = max_roi
 
-    def hybrid_forward(self, F, anchor, score, bbox_pred, width, height, scale=1.0):
+    def hybrid_forward(self, F, anchor, score, bbox_pred, img):
         """
         Limit to batch-size=1
         """
@@ -39,7 +39,9 @@ class RPNProposal(gluon.HybridBlock):
         roi = self._box_decoder(bbox_pred, anchor)
 
         # clip rois to image's boundary
-        roi = self._clipper(roi, width, height)
+        print(roi.shape, img.shape)
+        roi = F.Custom(roi, img, op_type='bbox_clip_to_image')
+        # roi = self._clipper(roi, width, height)
 
         # remove bounding boxes that don't meet the min_size constraint
         # by setting them to (-1, -1, -1, -1)
