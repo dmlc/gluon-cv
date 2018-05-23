@@ -255,7 +255,7 @@ def train(epochs, ctx):
         logging.info('[Epoch %d] training: err-top1=%f err-top5=%f err-top1_aux=%f err-top5_aux=%f loss=%f'%
             (epoch, err_top1, err_top5, err_top1_aux, err_top5_aux, train_loss))
         logging.info('[Epoch %d] time cost: %f'%(epoch, time.time()-tic))
-        logging.info('[Epoch %d] validation: err-top1=%f err-top5=%f'%
+        logging.info('[Epoch %d] validation: err-top1=%f err-top5=%f err-top1_aux=%f err-top5_aux=%f'%
             (epoch, err_top1_val, err_top5_val, err_top1_val_aux, err_top5_val_aux))
 
         if err_top1_val < best_val_score and epoch > 50:
