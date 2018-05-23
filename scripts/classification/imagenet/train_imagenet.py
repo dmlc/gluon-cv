@@ -12,7 +12,7 @@ from mxnet.gluon.data.vision import transforms
 
 from gluoncv.data import imagenet
 from gluoncv.model_zoo import get_model
-from gluoncv.utils import makedirs, TrainingHistory
+from gluoncv.utils import makedirs, TrainingHistory, freeze_bn
 
 # CLI
 parser = argparse.ArgumentParser(description='Train a model for image classification.')
@@ -44,12 +44,12 @@ parser.add_argument('--mode', type=str,
                     help='mode in which to train the model. options are symbolic, imperative, hybrid')
 parser.add_argument('--model', type=str, required=True,
                     help='type of model to use. see vision_model for options.')
-parser.add_argument('--use_thumbnail', action='store_true',
-                    help='use thumbnail or not in resnet. default is false.')
 parser.add_argument('--use_se', action='store_true',
                     help='use SE layers or not in resnext. default is false.')
-parser.add_argument('--label_smoothing', action='store_true',
+parser.add_argument('--label-smoothing', action='store_true',
                     help='use label smoothing or not in training. default is false.')
+parser.add_argument('--freeze-bn', action='store_true',
+                    help='freeze batchnorm layers in the last frew training epochs or not. default is false.')
 parser.add_argument('--batch-norm', action='store_true',
                     help='enable batch normalization or not in vgg. default is false.')
 parser.add_argument('--use-pretrained', action='store_true',
@@ -84,9 +84,7 @@ lr_decay_epoch = [int(i) for i in opt.lr_decay_epoch.split(',')] + [np.inf]
 model_name = opt.model
 
 kwargs = {'ctx': context, 'pretrained': opt.use_pretrained, 'classes': classes}
-if model_name.startswith('resnet'):
-    kwargs['thumbnail'] = opt.use_thumbnail
-elif model_name.startswith('vgg'):
+if model_name.startswith('vgg'):
     kwargs['batch_norm'] = opt.batch_norm
 elif model_name.startswith('resnext'):
     kwargs['use_se'] = opt.use_se
@@ -135,14 +133,14 @@ transform_test = transforms.Compose([
 ])
 
 def smooth(label, classes, eta=0.1):
-    if isinstance(label, NDArray):
+    if isinstance(label, nd.NDArray):
         label = [label]
     smoothed = []
     for l in label:
         ind = l.astype('int')
         res = nd.zeros((ind.shape[0], classes), ctx = l.context)
         res += eta/classes
-        res[nd.arange(ind.shape[0], ctx = label.context), ind] = 1 - eta + eta/classes
+        res[nd.arange(ind.shape[0], ctx = l.context), ind] = 1 - eta + eta/classes
         smoothed.append(res)
     return smoothed
 
@@ -163,7 +161,7 @@ def test(ctx, val_data):
 def train(epochs, ctx):
     if isinstance(ctx, mx.Context):
         ctx = [ctx]
-    net.initialize(mx.init.Xavier(magnitude=2), ctx=ctx)
+    net.initialize(mx.init.MSRAPrelu(), ctx=ctx)
 
     train_data = gluon.data.DataLoader(
         imagenet.classification.ImageNet(opt.data_dir, train=True).transform_first(transform_train),
@@ -196,11 +194,14 @@ def train(epochs, ctx):
             trainer.set_learning_rate(trainer.learning_rate*lr_decay)
             lr_decay_count += 1
 
+        if opt.freeze_bn and epoch == epochs - 10:
+            freeze_bn(net, True)
+
         for i, batch in enumerate(train_data):
             data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
             label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0)
             if opt.label_smoothing:
-                label_smooth = smooth(label)
+                label_smooth = smooth(label, classes)
             else:
                 label_smooth = label
             with ag.record():
@@ -258,7 +259,10 @@ def train_dummy(ctx):
         label.append(mx.nd.ones(shape=(bs), ctx = c))
 
     trainer = gluon.Trainer(net.collect_params(), optimizer, optimizer_params)
-    L = gluon.loss.SoftmaxCrossEntropyLoss()
+    if opt.label_smoothing:
+        L = gluon.loss.SoftmaxCrossEntropyLoss(sparse_label=False)
+    else:
+        L = gluon.loss.SoftmaxCrossEntropyLoss()
 
     acc_top1.reset()
     acc_top5.reset()
@@ -271,7 +275,7 @@ def train_dummy(ctx):
         if i == warm_up:
             tic = time.time()
         if opt.label_smoothing:
-            label_smooth = smooth(label)
+            label_smooth = smooth(label, classes)
         else:
             label_smooth = label
         with ag.record():

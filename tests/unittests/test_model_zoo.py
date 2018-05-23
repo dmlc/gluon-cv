@@ -24,8 +24,9 @@ import mxnet as mx
 import numpy as np
 
 import gluoncv as gcv
-from common import try_gpu
+from common import try_gpu, with_cpu
 
+@with_cpu(0)
 def _test_model_list(model_list, ctx, x, **kwargs):
     for model in model_list:
         net = gcv.model_zoo.get_model(model, **kwargs)
@@ -47,7 +48,6 @@ def _test_model_list(model_list, ctx, x, **kwargs):
             net(x)
             mx.nd.waitall()
 
-@try_gpu(0)
 def test_classification_models():
     ctx = mx.context.current_context()
     x = mx.random.uniform(shape=(2, 3, 32, 32), ctx=ctx)
@@ -59,7 +59,6 @@ def test_classification_models():
     ]
     _test_model_list(cifar_models, ctx, x)
 
-@try_gpu(0)
 def test_imagenet_models():
     ctx = mx.context.current_context()
     x = mx.random.uniform(shape=(2, 3, 224, 224), ctx=ctx)
@@ -70,10 +69,10 @@ def test_imagenet_models():
               'se_resnet18_v1', 'se_resnet34_v1', 'se_resnet50_v1',
               'se_resnet101_v1', 'se_resnet152_v1',
               'se_resnet18_v2', 'se_resnet34_v2', 'se_resnet50_v2',
-              'se_resnet101_v2', 'se_resnet152_v2']
+              'se_resnet101_v2', 'se_resnet152_v2',
+              'senet_52', 'senet_103', 'senet_154']
     _test_model_list(models, ctx, x)
 
-@try_gpu(0)
 def test_ssd_models():
     ctx = mx.context.current_context()
     x = mx.random.uniform(shape=(1, 3, 512, 544), ctx=ctx)  # allow non-squre and larger inputs
@@ -82,7 +81,6 @@ def test_ssd_models():
         models = ['ssd_512_resnet50_v1_voc']
     _test_model_list(models, ctx, x)
 
-@try_gpu(0)
 def test_segmentation_models():
     ctx = mx.context.current_context()
     x = mx.random.uniform(shape=(2, 3, 480, 480), ctx=ctx)
