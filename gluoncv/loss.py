@@ -181,9 +181,12 @@ class SoftmaxCrossEntropyLoss(Loss):
         The label to ignore.
     size_average : bool, default False
         Whether to re-scale loss with regard to ignored labels.
+    valid_size : int, default 1000
+        The size of label, equal to the number of classes for classification models.
+        It affects the re-scaled loss if size_average is True.
     """
     def __init__(self, axis=1, sparse_label=True, from_logits=False, weight=None,
-                 batch_axis=0, ignore_label=-1, size_average=False, **kwargs):
+                 batch_axis=0, ignore_label=-1, size_average=False, valid_size=1000, **kwargs):
         super(SoftmaxCrossEntropyLoss, self).__init__(weight, batch_axis, **kwargs)
         self._axis = axis
         self._sparse_label = sparse_label
@@ -207,7 +210,7 @@ class SoftmaxCrossEntropyLoss(Loss):
         loss = _apply_weighting(F, loss, self._weight, sample_weight)
         if self._size_average and self._sparse_label:
             return F.mean(loss, axis=self._batch_axis, exclude=True) * \
-                valid_label_map.size / F.sum(valid_label_map)
+                valid_size / F.sum(valid_label_map)
         else:
             return F.mean(loss, axis=self._batch_axis, exclude=True)
 
