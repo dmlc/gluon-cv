@@ -34,8 +34,6 @@ class RPN(gluon.HybridBlock):
 
     def hybrid_forward(self, F, x, img):
         anchors = self.anchor_generator(x)
-        print(anchors)
-        raise
         x = self.conv1(x)
         rpn_scores = F.sigmoid(self.score(x)).transpose(axes=(0, 2, 3, 1)).reshape((0, -1, 1))
         rpn_box_pred = self.loc(x).transpose(axes=(0, 2, 3, 1)).reshape((0, -1, 4))

@@ -6,7 +6,7 @@ import numpy as np
 
 
 class RPNAnchorGenerator(gluon.HybridBlock):
-    """Anchor generator for Region Proposal Netoworks.
+    r"""Anchor generator for Region Proposal Netoworks.
 
     Parameters
     ----------
@@ -74,9 +74,8 @@ class RPNAnchorGenerator(gluon.HybridBlock):
         offsets = np.stack((offset_x.ravel(), offset_y.ravel(),
                             offset_x.ravel(), offset_y.ravel()), axis=1)
         # broadcast_add (1, N, 4) + (M, 1, 4)
-        anchors = (base_sizes.reshape((1, -1, 4))
-            + offsets.reshape((1, -1, 4)).transpose((1, 0, 2)))
-        anchors = anchors.reshape((1, -1, height, width, 4)).astype(np.float32)
+        anchors = (base_sizes.reshape((1, -1, 4)) + offsets.reshape((-1, 1, 4)))
+        anchors = anchors.reshape((1, 1, height, width, -1)).astype(np.float32)
         return anchors
 
     def hybrid_forward(self, F, x, anchors):
