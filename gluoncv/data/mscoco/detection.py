@@ -52,6 +52,8 @@ class COCODetection(VisionDataset):
         self._root = os.path.expanduser(root)
         self._transform = transform
         self._min_object_area = min_object_area
+        if isinstance(splits, mx.base.string_types):
+            splits = [splits]
         self._splits = splits
         # to avoid trouble, we always use contiguous IDs except dealing with cocoapi
         self.index_map = dict(zip(type(self).CLASSES, range(self.num_class)))
