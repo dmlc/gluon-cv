@@ -63,7 +63,8 @@ class COCODetection(VisionDataset):
         self._items, self._labels = self._load_jsons()
 
     def __str__(self):
-        return self.__class__.__name__ + '_' + str(self.split)
+        detail = ','.join([str(s) for s in self._splits])
+        return self.__class__.__name__ + '(' + detail + ')'
 
     @property
     def coco(self):
