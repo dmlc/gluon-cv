@@ -12,6 +12,23 @@ from ...data.mscoco.utils import try_import_pycocotools
 
 
 class COCODetectionMetric(mx.metric.EvalMetric):
+    """Detection metric for COCO bbox task.
+
+    Parameters
+    ----------
+    dataset : instance of gluoncv.data.COCODetection
+        The validation dataset.
+    save_prefix : str
+        Prefix for the saved JSON results.
+    use_time : bool
+        Append unique datetime string to created JSON file name if ``True``.
+    cleanup : bool
+        Remove created JSON file if ``True``.
+    score_thresh : float
+        Detection results with confident scores smaller than ``score_thresh`` will
+        be discarded before saving to results.
+
+    """
     def __init__(self, dataset, save_prefix, use_time=True, cleanup=False, score_thresh=0.05):
         super(COCODetectionMetric, self).__init__('COCOMeanAP')
         self.dataset = dataset
@@ -38,7 +55,6 @@ class COCODetectionMetric(mx.metric.EvalMetric):
             try:
                 os.remove(self._filename)
             except IOError as err:
-                import warnings
                 warnings.warn(str(err))
 
     def reset(self):
@@ -74,7 +90,7 @@ class COCODetectionMetric(mx.metric.EvalMetric):
         # Metric printing adapted from detectron/json_dataset_evaluator.
         def _get_thr_ind(coco_eval, thr):
             ind = np.where((coco_eval.params.iouThrs > thr - 1e-5) &
-                       (coco_eval.params.iouThrs < thr + 1e-5))[0][0]
+                           (coco_eval.params.iouThrs < thr + 1e-5))[0][0]
             iou_thr = coco_eval.params.iouThrs[ind]
             assert np.isclose(iou_thr, thr)
             return ind
@@ -112,6 +128,7 @@ class COCODetectionMetric(mx.metric.EvalMetric):
         values.append('{:.1f}'.format(100 * ap_default))
         return names, values
 
+    # pylint: disable=arguments-differ, unused-argument
     def update(self, pred_bboxes, pred_labels, pred_scores, *args, **kwargs):
         """Update internal buffer with latest predictions.
         Note that the statistics are not available until you call self.get() to return
@@ -129,8 +146,8 @@ class COCODetectionMetric(mx.metric.EvalMetric):
 
         """
         for pred_bbox, pred_label, pred_score in zip(
-            *[x.asnumpy() if isinstance(x, mx.nd.NDArray) else x \
-                for x in [pred_bboxes, pred_labels, pred_scores]]):
+                *[x.asnumpy() if isinstance(x, mx.nd.NDArray) else x
+                  for x in [pred_bboxes, pred_labels, pred_scores]]):
             valid_pred = np.where(pred_label.flat >= 0)[0]
             pred_bbox = pred_bbox[valid_pred, :].astype(np.float)
             pred_label = pred_label.flat[valid_pred].astype(int)
