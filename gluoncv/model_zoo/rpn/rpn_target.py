@@ -10,7 +10,7 @@ from ...utils.nn.sampler import QuotaSampler
 
 class RPNTargetGenerator(gluon.Block):
     def __init__(self, num_sample=256, pos_iou_thresh=0.7, neg_iou_thresh=0.3,
-                 pos_ratio=0.5):
+                 pos_ratio=0.5, stds=(1., 1., 1., 1.)):
         self._num_sample = num_sample
         # self._pos_iou_thresh = pos_iou_thresh
         # self._neg_iou_thresh = neg_iou_thresh
@@ -19,7 +19,7 @@ class RPNTargetGenerator(gluon.Block):
         self._matcher = CompositeMatcher([BipartiteMatcher(), MaximumMatcher(pos_iou_thresh)])
         self._sampler = QuotaSampler(num_sample, pos_iou_thresh, neg_iou_thresh, 0., pos_ratio)
         self._cls_encoder = SigmoidClassEncoder()
-        self._box_encoder = NormalizedBoxCenterEncoder(stds=(1., 1., 1., 1.))
+        self._box_encoder = NormalizedBoxCenterEncoder(stds=stds)
 
     def forward(self, bbox, anchor, width, height):
         """

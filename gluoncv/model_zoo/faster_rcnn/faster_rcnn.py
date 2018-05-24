@@ -18,7 +18,7 @@ class FasterRCNN(RCNN):
                  stride=16, rpn_channel=1024, nms_thresh=0.3, nms_topk=400, **kwargs):
         super(FasterRCNN, self).__init__(
             features, top_features, classes, roi_mode, roi_size, **kwargs)
-        self._stride = stride
+        self.stride = stride
         with self.name_scope():
             self.rpn = RPN(rpn_channel, stride, scales=scales, ratios=ratios)
 
@@ -28,10 +28,10 @@ class FasterRCNN(RCNN):
         rpn_score, rpn_box, rpn_roi, roi = self.rpn(feat, F.zeros_like(x))
         # ROI features
         if self._roi_mode == 'pool':
-            pooled_feat = F.ROIPooling(feat, rpn_roi, self._roi_size, 1. / self._stride)
+            pooled_feat = F.ROIPooling(feat, rpn_roi, self._roi_size, 1. / self.stride)
         elif self._roi_mode == 'align':
             #TODO(zhreshold): use ROIAlign
-            pooled_feat = F.ROIPooling(feat, rpn_roi, self._roi_size, 1. / self._stride)
+            pooled_feat = F.contrib.ROIAlign(feat, rpn_roi, self._roi_size, 1. / self.stride)
         else:
             raise ValueError("Invalid roi mode: {}".format(self._roi_mode))
         # RCNN prediction
