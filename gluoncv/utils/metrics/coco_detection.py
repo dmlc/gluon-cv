@@ -99,7 +99,7 @@ class COCODetectionMetric(mx.metric.EvalMetric):
         coco_eval.summarize()
         coco_summary = sys.stdout.getvalue()
         sys.stdout = _stdout
-        values.append(str(coco_summary))
+        values.append(str(coco_summary).strip())
         for cls_ind, cls_name in enumerate(self.dataset.classes):
             precision = coco_eval.eval['precision'][
                 ind_lo:(ind_hi + 1), :, cls_ind, 0, 2]
@@ -146,6 +146,8 @@ class COCODetectionMetric(mx.metric.EvalMetric):
                 if score < self._score_thresh:
                     continue
                 category_id = self.dataset.contiguous_id_to_json[label]
+                # convert [xmin, ymin, xmax, ymax]  to [xmin, ymin, w, h]
+                bbox[2:4] -= (bbox[:2] - 1)
                 self._results.append({'image_id': imgid,
                                       'category_id': category_id,
                                       'bbox': bbox[:4].tolist(),
