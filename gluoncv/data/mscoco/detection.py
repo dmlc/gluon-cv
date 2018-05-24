@@ -18,7 +18,7 @@ class COCODetection(VisionDataset):
     ----------
     root : str, default '~/mxnet/datasets/voc'
         Path to folder storing the dataset.
-    split : str, default 'instances_val2017'
+    splits : list of str, default ['instances_val2017']
         Json annotations name.
         Candidates can be: instances_val2017, instances_train2017.
     transform : callable, defaut None
@@ -47,21 +47,31 @@ class COCODetection(VisionDataset):
                'scissors', 'teddy bear', 'hair drier', 'toothbrush']
 
     def __init__(self, root=os.path.join('~', '.mxnet', 'datasets', 'coco'),
-                 split='instances_val2017', transform=None, min_object_area=0):
+                 splits=('instances_val2017',), transform=None, min_object_area=0):
         super(COCODetection, self).__init__(root)
         self._root = os.path.expanduser(root)
         self._transform = transform
         self._min_object_area = min_object_area
-        self.split = split
+        self.splits = splits
         # to avoid trouble, we always use contiguous IDs except dealing with cocoapi
         self.index_map = dict(zip(type(self).CLASSES, range(self.num_class)))
         self.json_id_to_contiguous = None
         self.contiguous_id_to_json = None
-        self.coco = None
-        self._items, self._labels, self.coco = self._load_jsons()
+        self._coco = []
+        self._items, self._labels = self._load_jsons()
 
     def __str__(self):
         return self.__class__.__name__ + '_' + str(self.split)
+
+    @property
+    def coco(self):
+        """Return pycocotools object for evaluation purposes."""
+        if not self._coco:
+            raise ValueError("No coco objects found, dataset not initialized.")
+        elif len(self._coco) > 1:
+            raise NotImplementedError(
+                "Currently we don't support evaluating {} JSON files".format(len(self._coco)))
+        return self._coco[0]
 
     @property
     def classes(self):
@@ -86,28 +96,34 @@ class COCODetection(VisionDataset):
         # lazy import pycocotools
         try_import_pycocotools()
         from pycocotools.coco import COCO
-        anno = os.path.join(self._root, 'annotations', self.split) + '.json'
-        _coco = COCO(anno)
-        classes = [c['name'] for c in _coco.loadCats(_coco.getCatIds())]
-        if not classes == self.classes:
-            raise ValueError("Incompatible category names with COCO: ")
-        assert classes == self.classes
-        self.json_id_to_contiguous = {
-            v: k for k, v in enumerate(_coco.getCatIds())}
-        self.contiguous_id_to_json = {
-            v: k for k, v in self.json_id_to_contiguous.items()}
+        for split in self._splits:
+            anno = os.path.join(self._root, 'annotations', split) + '.json'
+            _coco = COCO(anno)
+            self._coco.append(_coco)
+            classes = [c['name'] for c in _coco.loadCats(_coco.getCatIds())]
+            if not classes == self.classes:
+                raise ValueError("Incompatible category names with COCO: ")
+            assert classes == self.classes
+            json_id_to_contiguous = {
+                v: k for k, v in enumerate(_coco.getCatIds())}
+            if self.json_id_to_contiguous is None:
+                self.json_id_to_contiguous = json_id_to_contiguous
+                self.contiguous_id_to_json = {
+                    v: k for k, v in self.json_id_to_contiguous.items()}
+            else:
+                assert self.json_id_to_contiguous == json_id_to_contiguous
 
-        # iterate through the annotations
-        image_ids = sorted(_coco.getImgIds())
-        for entry in _coco.loadImgs(image_ids):
-            dirname, filename = entry['coco_url'].split('/')[-2:]
-            abs_path = os.path.join(self._root, dirname, filename)
-            if not os.path.exists(abs_path):
-                raise IOError('Image: {} not exists.'.format(abs_path))
-            items.append(abs_path)
-            label = self._check_load_bbox(_coco, entry)
-            labels.append(label)
-        return items, labels, _coco
+            # iterate through the annotations
+            image_ids = sorted(_coco.getImgIds())
+            for entry in _coco.loadImgs(image_ids):
+                dirname, filename = entry['coco_url'].split('/')[-2:]
+                abs_path = os.path.join(self._root, dirname, filename)
+                if not os.path.exists(abs_path):
+                    raise IOError('Image: {} not exists.'.format(abs_path))
+                items.append(abs_path)
+                label = self._check_load_bbox(_coco, entry)
+                labels.append(label)
+        return items, labels
 
     def _check_load_bbox(self, coco, entry):
         """Check and load ground-truth labels"""
