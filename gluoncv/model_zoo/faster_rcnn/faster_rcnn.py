@@ -22,6 +22,10 @@ class FasterRCNN(RCNN):
         with self.name_scope():
             self.rpn = RPN(rpn_channel, stride, scales=scales, ratios=ratios)
 
+    def set_nms(self, nms_thresh=0.3, nms_topk=400):
+        self.nms_thresh = nms_thresh
+        self.nms_topk = nms_topk
+
     def hybrid_forward(self, F, x):
         feat = self.features(x)
         # RPN proposals
@@ -46,7 +50,7 @@ class FasterRCNN(RCNN):
             return cls_pred, box_pred, roi
 
         # translate bboxes
-        bboxes = self.box_decoder(box_pred, roi).split(
+        bboxes = self.box_decoder(box_pred, self.box_to_center(roi)).split(
             axis=0, num_outputs=self.num_class, squeeze_axis=True)
         cls_ids, scores = self.cls_decoder(F.softmax(cls_pred, axis=-1))
         results = []

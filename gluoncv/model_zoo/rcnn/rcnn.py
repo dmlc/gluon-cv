@@ -3,6 +3,7 @@ from __future__ import absolute_import
 
 from mxnet import gluon
 from mxnet.gluon import nn
+from ...nn.bbox import BBoxCornerToCenter
 from ...nn.coder import NormalizedBoxCenterDecoder, MultiPerClassDecoder
 
 
@@ -36,6 +37,7 @@ class RCNN(gluon.HybridBlock):
             self.class_predictor = nn.Dense(self.num_class + 1)
             self.box_predictor = nn.Dense(self.num_class * 4)
             self.cls_decoder = MultiPerClassDecoder(num_class=self.num_class+1)
+            self.box_to_center = BBoxCornerToCenter()
             self.box_decoder = NormalizedBoxCenterDecoder()
 
     def set_nms(self, nms_thresh=0.3, nms_topk=400):
