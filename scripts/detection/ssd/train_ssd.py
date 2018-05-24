@@ -15,6 +15,7 @@ from gluoncv.model_zoo import get_model
 from gluoncv.data.transforms.presets.ssd import SSDDefaultTrainTransform
 from gluoncv.data.transforms.presets.ssd import SSDDefaultValTransform
 from gluoncv.utils.metrics.voc_detection import VOC07MApMetric
+from gluoncv.utils.metrics.coco_detection import COCODetectionMetric
 from gluoncv.utils.metrics.accuracy import Accuracy
 
 def parse_args():
@@ -56,20 +57,31 @@ def parse_args():
                         help='Saving parameter prefix')
     parser.add_argument('--save-interval', type=int, default=10,
                         help='Saving parameters epoch interval, best model will always be saved.')
+    parser.add_argument('--val-interval', type=int, default=1,
+                        help='Epoch interval for validation, increase the number will reduce the '
+                             'training time if validation is slow.')
     parser.add_argument('--seed', type=int, default=233,
                         help='Random seed to be fixed.')
     args = parser.parse_args()
     return args
 
-def get_dataset(dataset):
+def get_dataset(dataset, args):
     if dataset.lower() == 'voc':
         train_dataset = gdata.VOCDetection(
             splits=[(2007, 'trainval'), (2012, 'trainval')])
         val_dataset = gdata.VOCDetection(
             splits=[(2007, 'test')])
+        val_metric = VOC07MApMetric(iou_thresh=0.5, class_names=val_dataset.classes)
+    elif dataset.lower() == 'coco':
+        train_dataset = gdata.COCODetection(split='instances_train2017')
+        val_dataset = gdata.COCODetection(split='instances_val2017')
+        val_metric = COCODetectionMetric(val_dataset, args.save_prefix + '_eval', cleanup=False)
+        # coco validation is slow, consider increase the validation interval
+        if args.val_interval == 1:
+            args.val_interval = 10
     else:
         raise NotImplementedError('Dataset: {} not implemented.'.format(dataset))
-    return train_dataset, val_dataset
+    return train_dataset, val_dataset, val_metric
 
 def get_dataloader(net, train_dataset, val_dataset, data_shape, batch_size, num_workers):
     """Get dataloader."""
@@ -86,6 +98,7 @@ def get_dataloader(net, train_dataset, val_dataset, data_shape, batch_size, num_
     return train_loader, val_loader
 
 def save_params(net, best_map, current_map, epoch, save_interval, prefix):
+    current_map = float(current_map)
     if current_map > best_map[0]:
         best_map[0] = current_map
         net.save_params('{:s}_best.params'.format(prefix, epoch, current_map))
@@ -94,9 +107,9 @@ def save_params(net, best_map, current_map, epoch, save_interval, prefix):
     if save_interval and epoch % save_interval == 0:
         net.save_params('{:s}_{:04d}_{:.4f}.params'.format(prefix, epoch, current_map))
 
-def validate(net, val_data, ctx, classes):
+def validate(net, val_data, ctx, eval_metric):
     """Test on validation dataset."""
-    metric = VOC07MApMetric(iou_thresh=0.5, class_names=classes)
+    eval_metric.reset()
     # set nms threshold and topk constraint
     net.set_nms(nms_thresh=0.45, nms_topk=400)
     net.hybridize()
@@ -113,11 +126,11 @@ def validate(net, val_data, ctx, classes):
             gt_bboxes = y.slice_axis(axis=-1, begin=0, end=4)
             gt_difficults = y.slice_axis(axis=-1, begin=5, end=6) if y.shape[-1] > 5 else None
             # update metric
-            metric.update(bboxes, ids, scores, gt_bboxes, gt_ids, gt_difficults)
+            eval_metric.update(bboxes, ids, scores, gt_bboxes, gt_ids, gt_difficults)
 
-    return metric.get()
+    return eval_metric.get()
 
-def train(net, train_data, val_data, classes, args):
+def train(net, train_data, val_data, eval_metric, args):
     """Training pipeline"""
     net.collect_params().reset_ctx(ctx)
     trainer = gluon.Trainer(
@@ -143,7 +156,7 @@ def train(net, train_data, val_data, classes, args):
     fh = logging.FileHandler(log_file_path)
     logger.addHandler(fh)
     logger.info(args)
-    logger.info('Start training from [Epoch %d]' % args.start_epoch)
+    logger.info('Start training from [Epoch {}]'.format(args.start_epoch))
     best_map = [0]
     for epoch in range(args.start_epoch, args.epochs):
         while lr_steps and epoch >= lr_steps[0]:
@@ -179,18 +192,23 @@ def train(net, train_data, val_data, classes, args):
             if args.log_interval and not (i + 1) % args.log_interval:
                 name1, loss1 = ce_metric.get()
                 name2, loss2 = smoothl1_metric.get()
-                logger.info('[Epoch %d][Batch %d], Speed: %f samples/sec, %s=%f, %s=%f'%(
+                logger.info('[Epoch {}][Batch {}], Speed: {:.3f} samples/sec, {}={:.3f}, {}={:.3f}'.format(
                     epoch, i, batch_size/(time.time()-btic), name1, loss1, name2, loss2))
             btic = time.time()
 
         name1, loss1 = ce_metric.get()
         name2, loss2 = smoothl1_metric.get()
-        logger.info('[Epoch %d] Training cost: %f, %s=%f, %s=%f'%(
+        logger.info('[Epoch {}] Training cost: {:.3f}, {}={:.3f}, {}={:.3f}'.format(
             epoch, (time.time()-tic), name1, loss1, name2, loss2))
-        map_name, mean_ap = validate(net, val_data, ctx, classes)
-        val_msg = '\n'.join(['%s=%f'%(k, v) for k, v in zip(map_name, mean_ap)])
-        logger.info('[Epoch %d] Validation: \n%s'%(epoch, val_msg))
-        save_params(net, best_map, mean_ap[-1], epoch, args.save_interval, args.save_prefix)
+        if not (epoch + 1) % args.val_interval:
+            # consider reduce the frequency of validation to save time
+            map_name, mean_ap = validate(net, val_data, ctx, eval_metric)
+            val_msg = '\n'.join(['{}={}'.format(k, v) for k, v in zip(map_name, mean_ap)])
+            logger.info('[Epoch {}] Validation: \n{}'.format(epoch, val_msg))
+            current_map = float(mean_ap[-1])
+        else:
+            current_map = 0.
+        save_params(net, best_map, current_map, epoch, args.save_interval, args.save_prefix)
 
 if __name__ == '__main__':
     args = parse_args()
@@ -203,6 +221,7 @@ if __name__ == '__main__':
 
     # network
     net_name = '_'.join(('ssd', str(args.data_shape), args.network, args.dataset))
+    args.save_prefix += net_name
     net = get_model(net_name, pretrained_base=True)
     if args.resume.strip():
         net.load_params(args.resume.strip())
@@ -213,11 +232,9 @@ if __name__ == '__main__':
             param.initialize()
 
     # training data
-    train_dataset, val_dataset = get_dataset(args.dataset)
+    train_dataset, val_dataset, eval_metric = get_dataset(args.dataset, args)
     train_data, val_data = get_dataloader(
         net, train_dataset, val_dataset, args.data_shape, args.batch_size, args.num_workers)
-    classes = train_dataset.classes  # class names
 
     # training
-    args.save_prefix += net_name
-    train(net, train_data, val_data, classes, args)
+    train(net, train_data, val_data, eval_metric, args)

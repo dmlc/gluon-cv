@@ -38,6 +38,7 @@ def get_model(name, **kwargs):
     """
     models = {
         'ssd_300_vgg16_atrous_voc': ssd_300_vgg16_atrous_voc,
+        'ssd_300_vgg16_atrous_coco': ssd_300_vgg16_atrous_coco,
         'ssd_512_vgg16_atrous_voc': ssd_512_vgg16_atrous_voc,
         'ssd_512_resnet18_v1_voc': ssd_512_resnet18_v1_voc,
         'ssd_512_resnet50_v1_voc': ssd_512_resnet50_v1_voc,

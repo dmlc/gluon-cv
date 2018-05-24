@@ -18,7 +18,7 @@ class VOCMApMetric(mx.metric.EvalMetric):
         optional, if provided, will print out AP for each class
     """
     def __init__(self, iou_thresh=0.5, class_names=None):
-        super(VOCMApMetric, self).__init__('mAP')
+        super(VOCMApMetric, self).__init__('VOCMeanAP')
         if class_names is None:
             self.num = None
         else:
