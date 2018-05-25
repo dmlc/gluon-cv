@@ -8,7 +8,7 @@ from .. import experimental
 
 __all__ = ['load_test', 'FasterRCNNDefaultTrainTransform', 'FasterRCNNDefaultValTransform']
 
-def load_test(filenames, short, max_size=1024, mean=(0.485, 0.456, 0.406),
+def load_test(filenames, short=600, max_size=1000, mean=(0.485, 0.456, 0.406),
               std=(0.229, 0.224, 0.225)):
     """A util function to load all images, transform them to tensor by applying
     normalizations. This function support 1 filename or list of filenames.
@@ -17,9 +17,9 @@ def load_test(filenames, short, max_size=1024, mean=(0.485, 0.456, 0.406),
     ----------
     filenames : str or list of str
         Image filename(s) to be loaded.
-    short : int
+    short : int, optional, default is 600
         Resize image short side to this `short` and keep aspect ratio.
-    max_size : int, optional
+    max_size : int, optional, default is 1000
         Maximum longer side length to fit image.
         This is to limit the input image shape, avoid processing too large image.
     mean : iterable of float
@@ -60,8 +60,12 @@ class FasterRCNNDefaultTrainTransform(object):
 
     Parameters
     ----------
+    short : int, default is 600
+        Resize image shorter side to ``short``.
+    max_size : int, default is 1000
+        Make sure image longer side is smaller than ``max_size``.
     anchors : mxnet.nd.NDArray, optional
-        Anchors generated from SSD networks, the shape must be ``(1, N, 4)``.
+        Anchors generated from RPN networks, the shape must be ``(1, N, 4)``.
         Since anchors are shared in the entire batch so it is ``1`` for the first dimension.
         ``N`` is the number of anchors for each image.
 
@@ -79,10 +83,12 @@ class FasterRCNNDefaultTrainTransform(object):
         Std value to be divided from encoded values.
 
     """
-    def __init__(self, anchors=None, mean=(0.485, 0.456, 0.406),
+    def __init__(self, short=600, max_size=1000, anchors=None, mean=(0.485, 0.456, 0.406),
                  std=(0.229, 0.224, 0.225), box_norm=(1., 1., 1., 1.),
                  num_sample=256, pos_iou_thresh=0.7, neg_iou_thresh=0.3,
                  pos_ratio=0.5, stride=16, **kwargs):
+        self._short = short
+        self._max_size = max_size
         self._anchors = anchors
         self._mean = mean
         self._std = std
@@ -97,9 +103,12 @@ class FasterRCNNDefaultTrainTransform(object):
             stds=box_norm, **kwargs)
 
     def __call__(self, src, label):
+        # resize longer side
+
+
         # random horizontal flip
-        h, w, _ = src.shape
-        img, flips = timage.random_flip(src, px=0.5)
+        h, w, _ = img.shape
+        img, flips = timage.random_flip(img, px=0.5)
         bbox = tbbox.flip(label, (w, h), flip_x=flips[0])
 
         # to tensor
@@ -119,17 +128,22 @@ class FasterRCNNDefaultTrainTransform(object):
 
 
 class FasterRCNNDefaultValTransform(object):
-    """Default SSD validation transform.
+    """Default Faster-RCNN validation transform.
 
     Parameters
     ----------
+    short : int, default is 600
+        Resize image shorter side to ``short``.
+    max_size : int, default is 1000
+        Make sure image longer side is smaller than ``max_size``.
     mean : array-like of size 3
         Mean pixel values to be subtracted from image tensor. Default is [0.485, 0.456, 0.406].
     std : array-like of size 3
         Standard deviation to be divided from image. Default is [0.229, 0.224, 0.225].
 
     """
-    def __init__(self, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)):
+    def __init__(self, short=600, max_size=1000,
+                 mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)):
         self._mean = mean
         self._std = std
 

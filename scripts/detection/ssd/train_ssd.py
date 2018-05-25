@@ -1,4 +1,4 @@
-"""Train SSD on Pascal VOC dataset"""
+"""Train SSD"""
 import argparse
 import os
 import logging
