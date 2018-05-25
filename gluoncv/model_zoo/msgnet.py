@@ -24,6 +24,10 @@ class MSGNet(Block):
 
 
     Reference:
+        Hang Zhang and Kristin Dana. "Multi-style Generative Network for Real-time Transfer."
+        *arXiv preprint arXiv:1703.06953 (2017)*
+
+    Reference:
 
         Hang Zhang and Kristin Dana. "Multi-style Generative Network for Real-time Transfer."
         *arXiv preprint arXiv:1703.06953 (2017)*
@@ -83,7 +87,13 @@ class Inspiration(Block):
     to be learned directly from the loss function without additional supervision.
 
     .. math::
+
         Y = \phi^{-1}[\phi(\mathcal{F}^T)W\mathcal{G}]
+
+    Parameters
+    ----------
+    channels : int
+        Input featuremap channels for Inspiration Layer.
 
     Please see the `example of MSG-Net <./experiments/style.html>`_
     training multi-style generative network for real-time transfer.
@@ -92,14 +102,14 @@ class Inspiration(Block):
         Hang Zhang and Kristin Dana. "Multi-style Generative Network for Real-time Transfer."
         *arXiv preprint arXiv:1703.06953 (2017)*
     """
-    def __init__(self, C, B=1):
+    def __init__(self, channels):
         super(Inspiration, self).__init__()
-        # B is equal to 1 or input mini_batch
-        self.C = C
+        self.C = channels
+        C = channels
         self.weight = self.params.get('weight', shape=(1, C, C),
                                       init=mx.initializer.Uniform(),
                                       allow_deferred_init=True)
-        self.gram = F.random.uniform(shape=(B, C, C))
+        self.gram = F.random.uniform(shape=(1, C, C))
 
     def set_target(self, target):
         self.gram = target
@@ -147,6 +157,7 @@ def gram_matrix(y):
     r""" Gram Matrix for a 4D convolutional featuremaps as a mini-batch
 
     .. math::
+
         \mathcal{G} = \sum_{h=1}^{H_i}\sum_{w=1}^{W_i} \mathcal{F}_{h,w}\mathcal{F}_{h,w}^T
     """
     (b, ch, h, w) = y.shape

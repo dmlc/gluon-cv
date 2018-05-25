@@ -87,6 +87,12 @@ def test_segmentation_models():
     models = ['fcn_resnet50_voc', 'fcn_resnet101_voc']
     _test_model_list(models, ctx, x)
 
+def test_style_transfer_models():
+    ctx = mx.context.current_context()
+    x = mx.random.uniform(shape=(2, 3, 240, 240), ctx=ctx)
+    models = ['msgnet_21styles']
+    _test_model_list(models, ctx, x)
+
 if __name__ == '__main__':
     import nose
     nose.runmodule()

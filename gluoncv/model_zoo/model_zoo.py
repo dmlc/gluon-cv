@@ -12,6 +12,7 @@ from .resnetv1b import *
 from .resnext import *
 from .senet import *
 from .se_resnet import *
+from .msgnet import get_msgnet
 
 __all__ = ['get_model']
 
@@ -82,6 +83,7 @@ def get_model(name, **kwargs):
         'se_resnet50_v2' : se_resnet50_v2,
         'se_resnet101_v2' : se_resnet101_v2,
         'se_resnet152_v2' : se_resnet152_v2,
+        'msgnet_21styles' : get_msgnet,
         }
     try:
         net = gluon.model_zoo.vision.get_model(name, **kwargs)
