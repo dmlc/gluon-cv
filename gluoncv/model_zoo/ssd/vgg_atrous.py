@@ -194,7 +194,7 @@ def get_vgg_atrous_extractor(num_layers, im_size, pretrained=False, ctx=mx.cpu()
     if pretrained:
         from ..model_store import get_model_file
         batch_norm_suffix = '_bn' if kwargs.get('batch_norm') else ''
-        net.initialize()
+        net.initialize(ctx=ctx)
         net.load_params(get_model_file('vgg%d_atrous%s'%(num_layers, batch_norm_suffix),
                                        root=root), ctx=ctx, allow_missing=True)
     return net

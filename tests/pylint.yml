@@ -1,4 +1,4 @@
-name: gluon_vision_pylint
+name: gluon_cv_pylint
 dependencies:
 - python
 - pylint

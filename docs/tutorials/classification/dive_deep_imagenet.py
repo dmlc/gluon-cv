@@ -92,7 +92,7 @@ accuracy and computational cost.
 
     # Get the model ResNet50_v2, with 10 output classes
     net = get_model('ResNet50_v2', classes=1000)
-    net.initialize(mx.init.Xavier(magnitude=2), ctx = ctx)
+    net.initialize(mx.init.MSRAPrelu(), ctx = ctx)
 
 
 Note that the ResNet model we use here for ``ImageNet`` is different in structure from
@@ -266,8 +266,7 @@ Following is the main training loop:
             with ag.record():
                 outputs = [net(X) for X in data]
                 loss = [L(yhat, y) for yhat, y in zip(outputs, label)]
-            for l in loss:
-                l.backward()
+            ag.backward(loss)
             trainer.step(batch_size)
             acc_top1.update(label, outputs)
             acc_top5.update(label, outputs)

@@ -11,6 +11,8 @@ from .cifarresnext import *
 from .cifarwideresnet import *
 from .resnetv1b import *
 from .resnext import *
+from .senet import *
+from .se_resnet import *
 
 __all__ = ['get_model']
 
@@ -37,6 +39,7 @@ def get_model(name, **kwargs):
     """
     models = {
         'ssd_300_vgg16_atrous_voc': ssd_300_vgg16_atrous_voc,
+        'ssd_300_vgg16_atrous_coco': ssd_300_vgg16_atrous_coco,
         'ssd_512_vgg16_atrous_voc': ssd_512_vgg16_atrous_voc,
         'ssd_512_resnet18_v1_voc': ssd_512_resnet18_v1_voc,
         'ssd_512_resnet50_v1_voc': ssd_512_resnet50_v1_voc,
@@ -64,6 +67,23 @@ def get_model(name, **kwargs):
         'resnet152_v1b' : resnet152_v1b,
         'resnext50_32x4d' : resnext50_32x4d,
         'resnext101_32x4d' : resnext101_32x4d,
+        'resnext101_64x4d' : resnext101_64x4d,
+        'se_resnext50_32x4d' : se_resnext50_32x4d,
+        'se_resnext101_32x4d' : se_resnext101_32x4d,
+        'se_resnext101_64x4d' : se_resnext101_64x4d,
+        'senet_52' : senet_52,
+        'senet_103' : senet_103,
+        'senet_154' : senet_154,
+        'se_resnet18_v1' : se_resnet18_v1,
+        'se_resnet34_v1' : se_resnet34_v1,
+        'se_resnet50_v1' : se_resnet50_v1,
+        'se_resnet101_v1' : se_resnet101_v1,
+        'se_resnet152_v1' : se_resnet152_v1,
+        'se_resnet18_v2' : se_resnet18_v2,
+        'se_resnet34_v2' : se_resnet34_v2,
+        'se_resnet50_v2' : se_resnet50_v2,
+        'se_resnet101_v2' : se_resnet101_v2,
+        'se_resnet152_v2' : se_resnet152_v2,
         }
     try:
         net = gluon.model_zoo.vision.get_model(name, **kwargs)

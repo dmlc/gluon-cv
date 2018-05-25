@@ -23,6 +23,7 @@ _model_sha1 = {name: checksum for checksum, name in [
     ('7c07b5ba6e850f9c37ca1e57c0a2e529455cc2e4', 'cifar_wideresnet16_10'),
     ('4a3466aadd4c3ddbcb968bca862d0e59d6f15ec1', 'cifar_wideresnet28_10'),
     ('085ca2afabbe0ddfe87d0edc5408bcfcfbffd414', 'cifar_wideresnet40_8'),
+    ('e8ff9f4f9cb319dfbf524d01e487af9a7f8a3cf5', 'cifar_resnext29_16x64d'),
     ('954099ad52bd0a3501d87e99d268cc86696017e2', 'resnet18_v0'),
     ('1f41ce20f25e9a2e420ebfbec34979ba4df6827d', 'resnet34_v0'),
     ('c7120b57b6461d782bfe47b0ab428e2a1b973fef', 'resnet50_v0'),
@@ -107,3 +108,6 @@ def purge(root=os.path.join('~', '.mxnet', 'models')):
     for f in files:
         if f.endswith(".params"):
             os.remove(os.path.join(root, f))
+
+def pretrained_model_list():
+    return list(_model_sha1.keys())
