@@ -96,6 +96,7 @@ class FasterRCNNDefaultTrainTransform(object):
         if anchors is None:
             return
 
+        self._anchors = anchors
         from ....model_zoo.rpn.rpn_target import RPNTargetGenerator
         self._target_generator = RPNTargetGenerator(
             num_sample=num_sample, pos_iou_thresh=pos_iou_thresh,
@@ -103,13 +104,15 @@ class FasterRCNNDefaultTrainTransform(object):
             stds=box_norm, **kwargs)
 
     def __call__(self, src, label):
-        # resize longer side
-
+        # resize shorter side but keep in max_size
+        h, w, _ = src.shape
+        img = timage.resize_short_within(src, short, max_size)
+        bbox = tbbox.resize(label, (w, h), (img.shape[0], img.shape[1]))
 
         # random horizontal flip
         h, w, _ = img.shape
         img, flips = timage.random_flip(img, px=0.5)
-        bbox = tbbox.flip(label, (w, h), flip_x=flips[0])
+        bbox = tbbox.flip(bbox, (w, h), flip_x=flips[0])
 
         # to tensor
         img = mx.nd.image.to_tensor(img)
@@ -124,7 +127,7 @@ class FasterRCNNDefaultTrainTransform(object):
         gt_bboxes = mx.nd.array(bbox[np.newaxis, :, :4])
         cls_target, cls_mask, box_target, box_mask = self._target_generator(
             gt_bboxes, anchor, img.shape[2], img.shape[1])
-        return img, cls_target[0], cls_mask[0], box_target[0], box_mask[0]
+        return img, cls_target[0], box_target[0], box_mask[0]
 
 
 class FasterRCNNDefaultValTransform(object):
@@ -148,6 +151,11 @@ class FasterRCNNDefaultValTransform(object):
         self._std = std
 
     def __call__(self, src, label):
-        img = mx.nd.image.to_tensor(src)
+        # resize shorter side but keep in max_size
+        h, w, _ = src.shape
+        img = timage.resize_short_within(src, short, max_size)
+        bbox = tbbox.resize(label, (w, h), (img.shape[0], img.shape[1]))
+
+        img = mx.nd.image.to_tensor(img)
         img = mx.nd.image.normalize(img, mean=self._mean, std=self._std)
-        return img, label.astype('float32')
+        return img, bbox.astype('float32')

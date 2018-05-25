@@ -17,15 +17,12 @@ from gluoncv.data.transforms.presets.ssd import FasterRCNNDefaultValTransform
 from gluoncv.utils.metrics.voc_detection import VOC07MApMetric
 from gluoncv.utils.metrics.coco_detection import COCODetectionMetric
 from gluoncv.utils.metrics.accuracy import Accuracy
+from gluoncv.utils.parallel import DataParallelModel
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train Faster-RCNN networks e2e.')
     parser.add_argument('--network', type=str, default='vgg16_atrous',
                         help="Base network name which serves as feature extraction base.")
-    parser.add_argument('--data-shape', type=int, default=300,
-                        help="Input data shape, use 300, 512.")
-    parser.add_argument('--batch-size', type=int, default=32,
-                        help='Training mini-batch size')
     parser.add_argument('--dataset', type=str, default='voc',
                         help='Training dataset. Now support voc.')
     parser.add_argument('--num-workers', '-j', dest='num_workers', type=int,
@@ -73,9 +70,9 @@ def get_dataset(dataset, args):
             splits=[(2007, 'test')])
         val_metric = VOC07MApMetric(iou_thresh=0.5, class_names=val_dataset.classes)
     elif dataset.lower() == 'coco':
-        train_dataset = gdata.COCODetection(split='instances_train2017')
-        val_dataset = gdata.COCODetection(split='instances_val2017')
-        val_metric = COCODetectionMetric(val_dataset, args.save_prefix + '_eval', cleanup=False)
+        train_dataset = gdata.COCODetection(splits='instances_train2017')
+        val_dataset = gdata.COCODetection(splits='instances_val2017')
+        val_metric = COCODetectionMetric(val_dataset, args.save_prefix + '_eval', cleanup=True)
         # coco validation is slow, consider increase the validation interval
         if args.val_interval == 1:
             args.val_interval = 10
@@ -83,17 +80,16 @@ def get_dataset(dataset, args):
         raise NotImplementedError('Dataset: {} not implemented.'.format(dataset))
     return train_dataset, val_dataset, val_metric
 
-def get_dataloader(net, train_dataset, val_dataset, data_shape, batch_size, num_workers):
+def get_dataloader(net, train_dataset, val_dataset, batch_size, num_workers):
     """Get dataloader."""
-    width, height = data_shape, data_shape
+    short, max_size = 600, 1000
     # use fake data to generate fixed anchors for target generation
-    with autograd.train_mode():
-        _, _, anchors = net(mx.nd.zeros((1, 3, height, width)))
+    anchors = net.rpn.anchor_generator(mx.nd.zeros(1, 3, 1200, 1200))
     train_loader = gdata.DetectionDataLoader(
-        train_dataset.transform(FasterRCNNDefaultTrainTransform(width, height, anchors)),
+        train_dataset.transform(FasterRCNNDefaultTrainTransform(short, max_size, anchors)),
         batch_size, True, last_batch='rollover', num_workers=num_workers)
     val_loader = gdata.DetectionDataLoader(
-        val_dataset.transform(FasterRCNNDefaultValTransform(width, height)),
+        val_dataset.transform(FasterRCNNDefaultValTransform(short, max_size)),
         batch_size, False, last_batch='keep', num_workers=num_workers)
     return train_loader, val_loader
 
@@ -116,18 +112,26 @@ def validate(net, val_data, ctx, eval_metric):
     for batch in val_data:
         data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
         label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0)
+        det_bboxes = []
+        det_ids = []
+        det_scores = []
+        gt_bboxes = []
+        gt_ids = []
+        gt_difficults = []
         for x, y in zip(data, label):
             # get prediction results
             ids, scores, bboxes = net(x)
+            det_ids.append(ids)
+            det_scores.append(scores)
             # clip to image size
-            bboxes = bboxes.clip(0, batch[0].shape[2])
+            det_bboxes.append(bboxes.clip(0, batch[0].shape[2]))
             # split ground truths
-            gt_ids = y.slice_axis(axis=-1, begin=4, end=5)
-            gt_bboxes = y.slice_axis(axis=-1, begin=0, end=4)
-            gt_difficults = y.slice_axis(axis=-1, begin=5, end=6) if y.shape[-1] > 5 else None
-            # update metric
-            eval_metric.update(bboxes, ids, scores, gt_bboxes, gt_ids, gt_difficults)
+            gt_ids.append(y.slice_axis(axis=-1, begin=4, end=5))
+            gt_bboxes.append(y.slice_axis(axis=-1, begin=0, end=4))
+            gt_difficults.append(y.slice_axis(axis=-1, begin=5, end=6) if y.shape[-1] > 5 else None)
 
+        # update metric
+        eval_metric.update(det_bboxes, det_ids, det_scores, gt_bboxes, gt_ids, gt_difficults)
     return eval_metric.get()
 
 def train(net, train_data, val_data, eval_metric, args):
@@ -141,7 +145,7 @@ def train(net, train_data, val_data, eval_metric, args):
     lr_decay = float(args.lr_decay)
     lr_steps = sorted([float(ls) for ls in args.lr_decay_epoch.split(',') if ls.strip()])
 
-    mbox_loss = gcv.loss.SSDMultiBoxLoss()
+    # TODO(zhreshold) losses?
     ce_metric = mx.metric.Loss('CrossEntropy')
     smoothl1_metric = mx.metric.Loss('SmoothL1')
 
@@ -174,21 +178,14 @@ def train(net, train_data, val_data, eval_metric, args):
             data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
             cls_targets = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0)
             box_targets = gluon.utils.split_and_load(batch[2], ctx_list=ctx, batch_axis=0)
+            box_masks = gluon.utils.split_and_load(batch[3], ctx_list=ctx, batch_axis=0)
             with autograd.record():
-                cls_preds = []
-                box_preds = []
-                for x in data:
-                    cls_pred, box_pred, _ = net(x)
-                    cls_preds.append(cls_pred)
-                    box_preds.append(box_pred)
-                sum_loss, cls_loss, box_loss = mbox_loss(
-                    cls_preds, box_preds, cls_targets, box_targets)
-                autograd.backward(sum_loss)
+                pass
+                autograd.backward()
             # since we have already normalized the loss, we don't want to normalize
             # by batch-size anymore
-            trainer.step(1)
-            ce_metric.update(0, [l * batch_size for l in cls_loss])
-            smoothl1_metric.update(0, [l * batch_size for l in box_loss])
+            trainer.step(batch_size)
+            # update metrics
             if args.log_interval and not (i + 1) % args.log_interval:
                 name1, loss1 = ce_metric.get()
                 name2, loss2 = smoothl1_metric.get()
@@ -218,6 +215,7 @@ if __name__ == '__main__':
     # training contexts
     ctx = [mx.gpu(int(i)) for i in args.gpus.split(',') if i.strip()]
     ctx = ctx if ctx else [mx.cpu()]
+    args.batch_size *= len(ctx)  # 1 batch per device
 
     # network
     net_name = '_'.join(('ssd', str(args.data_shape), args.network, args.dataset))
