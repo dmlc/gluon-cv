@@ -20,7 +20,7 @@ class MSGNet(Block):
     ngf : int
         Number of filters in the generative network.
     norm_layer : object
-        Normalization layer used in backbone network (default: :class:`mxnet.gluon.nn.InstanceNorm`;
+        Normalization layer used in the network (default: :class:`mxnet.gluon.nn.InstanceNorm`;
 
 
     Reference:
@@ -116,11 +116,13 @@ class Inspiration(Block):
             + 'N x ' + str(self.C) + ')'
 
 
-def get_msgnet(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
+def get_msgnet(styles=21, pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
     r"""Multi-style Generative Network for Real-time Transfer
 
     Parameters
     ----------
+    styles : int, default 21
+        Number of styles for the pretrained model.
     pretrained : bool, default False
         Whether to load the pretrained weights for model.
     ctx : Context, default CPU
@@ -137,7 +139,7 @@ def get_msgnet(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
     model = MSGNet(ngf=128, **kwargs)
     if pretrained:
         from .model_store import get_model_file
-        model.load_params(get_model_file('21styles', root=root), ctx=ctx)
+        model.load_params(get_model_file('msgnet_%dstyles'%(styles), root=root), ctx=ctx)
     return model
 
 
