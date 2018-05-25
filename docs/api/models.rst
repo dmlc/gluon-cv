@@ -85,6 +85,20 @@ Semantic Segmentation
 .. autofunction:: get_fcn_ade_resnet50
 
 
+Style Transfer
+--------------
+
+.. autoclass:: MSGNet
+   :members
+
+.. autofunction:: get_msgnet
+
+.. autoclass:: Inspiration
+   :members
+
+.. autofunction:: gram_matrix
+
+
 :hidden:`ResNetV1b`
 -------------------
 

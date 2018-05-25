@@ -14,11 +14,9 @@ def load_image(filename, ctx=cpu(), short_size=800):
     w, h = img.size[0], img.size[1]
     if h < w:
         nh = short_size
-        scale = 1.0 * short_size / h
         nw = int(1.0 * short_size / h * w)
     else:
         nw = short_size
-        scale = 1.0 * short_size / w
         nh = int(1.0 * short_size / w * h)
 
     img = img.resize((nw, nh), Image.ANTIALIAS)
@@ -49,13 +47,13 @@ def subtract_imagenet_mean_batch(batch):
 
 def add_imagenet_mean_batch(batch):
     """Add ImageNet mean pixel-wise from a BGR image."""
-    batch = F.swapaxes(batch,0, 1)
+    batch = F.swapaxes(batch, 0, 1)
     (b, g, r) = F.split(batch, num_outputs=3, axis=0)
     r = r + 123.680
     g = g + 116.779
     b = b + 103.939
     batch = F.concat(b, g, r, dim=0)
-    batch = F.swapaxes(batch,0, 1)
+    batch = F.swapaxes(batch, 0, 1)
     return batch
 
 

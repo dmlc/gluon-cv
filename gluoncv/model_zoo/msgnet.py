@@ -1,9 +1,10 @@
 """Multi-style Generative Network for Real-time Transfer"""
 import numpy as np
 import mxnet as mx
-from mxnet import cpu
+from mxnet import cpu, nd
 from mxnet.gluon import nn, Block, HybridBlock
 import mxnet.ndarray as F
+# pylint: disable=arguments-differ,redefined-outer-name
 
 __all__ = ['MSGNet', 'Inspiration', 'get_msgnet', 'gram_matrix']
 
@@ -32,7 +33,7 @@ class MSGNet(Block):
     >>> model = MSGNet()
     >>> print(model)
     """
-    def __init__(self, in_channels=3, out_channels=3, ngf=128, 
+    def __init__(self, in_channels=3, out_channels=3, ngf=128,
                  norm_layer=nn.InstanceNorm, n_blocks=6):
         super(MSGNet, self).__init__()
 
@@ -55,9 +56,9 @@ class MSGNet(Block):
             self.model.add(self.model1)
             self.model.add(self.ins)
 
-            for i in range(n_blocks):
+            for _ in range(n_blocks):
                 self.model.add(block(ngf*expansion, ngf, 1, None, norm_layer))
-        
+
             self.model.add(upblock(ngf*expansion, 32, 2, norm_layer))
             self.model.add(upblock(32*expansion, 16, 2, norm_layer))
             self.model.add(norm_layer(in_channels=16*expansion))
@@ -66,12 +67,12 @@ class MSGNet(Block):
 
 
     def set_target(self, Xs):
-        F = self.model1(Xs)
-        G = gram_matrix(F)
-        self.ins.set_target(G)
+        feature = self.model1(Xs)
+        gram = gram_matrix(feature)
+        self.ins.set_target(gram)
 
-    def forward(self, input):
-        return self.model(input)
+    def forward(self, x):
+        return self.model(x)
 
 
 class Inspiration(Block):
@@ -95,7 +96,7 @@ class Inspiration(Block):
         super(Inspiration, self).__init__()
         # B is equal to 1 or input mini_batch
         self.C = C
-        self.weight = self.params.get('weight', shape=(1,C,C),
+        self.weight = self.params.get('weight', shape=(1, C, C),
                                       init=mx.initializer.Uniform(),
                                       allow_deferred_init=True)
         self.gram = F.random.uniform(shape=(B, C, C))
@@ -106,7 +107,9 @@ class Inspiration(Block):
     def forward(self, X):
         # input X is a 3D feature map
         self.P = F.batch_dot(F.broadcast_to(self.weight.data(), shape=(self.gram.shape)), self.gram)
-        return F.batch_dot(F.SwapAxis(self.P,1,2).broadcast_to((X.shape[0], self.C, self.C)), X.reshape((0,0,X.shape[2]*X.shape[3]))).reshape(X.shape)
+        return F.batch_dot(
+            F.SwapAxis(self.P, 1, 2).broadcast_to((X.shape[0], self.C, self.C)),
+            X.reshape((0, 0, X.shape[2]*X.shape[3]))).reshape(X.shape)
 
     def __repr__(self):
         return self.__class__.__name__ + '(' \
@@ -160,25 +163,23 @@ class Bottleneck(HybridBlock):
         self.expansion = 4
         self.downsample = downsample
         if self.downsample is not None:
-            self.residual_layer = nn.Conv2D(in_channels=inplanes, 
+            self.residual_layer = nn.Conv2D(in_channels=inplanes,
                                             channels=planes * self.expansion,
                                             kernel_size=1, strides=(stride, stride))
         self.conv_block = nn.HybridSequential()
         with self.conv_block.name_scope():
             self.conv_block.add(norm_layer(in_channels=inplanes))
             self.conv_block.add(nn.Activation('relu'))
-            self.conv_block.add(nn.Conv2D(in_channels=inplanes, channels=planes, 
-                                 kernel_size=1))
+            self.conv_block.add(nn.Conv2D(in_channels=inplanes, channels=planes,
+                                          kernel_size=1))
             self.conv_block.add(norm_layer(in_channels=planes))
             self.conv_block.add(nn.Activation('relu'))
-            self.conv_block.add(ConvLayer(planes, planes, kernel_size=3, 
-                stride=stride))
+            self.conv_block.add(ConvLayer(planes, planes, kernel_size=3, stride=stride))
             self.conv_block.add(norm_layer(in_channels=planes))
             self.conv_block.add(nn.Activation('relu'))
-            self.conv_block.add(nn.Conv2D(in_channels=planes, 
-                                 channels=planes * self.expansion, 
-                                 kernel_size=1))
-        
+            self.conv_block.add(nn.Conv2D(in_channels=planes, channels=planes * self.expansion,
+                                          kernel_size=1))
+
     def hybrid_forward(self, F, x):
         if self.downsample is not None:
             residual = self.residual_layer(x)
@@ -196,21 +197,21 @@ class UpBottleneck(HybridBlock):
         super(UpBottleneck, self).__init__()
         self.expansion = 4
         self.residual_layer = UpsampleConvLayer(inplanes, planes * self.expansion,
-                                                      kernel_size=1, stride=1, upsample=stride)
+                                                kernel_size=1, stride=1, upsample=stride)
         self.conv_block = nn.HybridSequential()
         with self.conv_block.name_scope():
             self.conv_block.add(norm_layer(in_channels=inplanes))
             self.conv_block.add(nn.Activation('relu'))
-            self.conv_block.add(nn.Conv2D(in_channels=inplanes, channels=planes, 
-                                kernel_size=1))
+            self.conv_block.add(nn.Conv2D(in_channels=inplanes, channels=planes,
+                                          kernel_size=1))
             self.conv_block.add(norm_layer(in_channels=planes))
             self.conv_block.add(nn.Activation('relu'))
-            self.conv_block.add(UpsampleConvLayer(planes, planes, kernel_size=3, stride=1, upsample=stride))
+            self.conv_block.add(UpsampleConvLayer(planes, planes, kernel_size=3, stride=1,
+                                                  upsample=stride))
             self.conv_block.add(norm_layer(in_channels=planes))
             self.conv_block.add(nn.Activation('relu'))
-            self.conv_block.add(nn.Conv2D(in_channels=planes, 
-                                channels=planes * self.expansion, 
-                                kernel_size=1))
+            self.conv_block.add(nn.Conv2D(in_channels=planes, channels=planes * self.expansion,
+                                          kernel_size=1))
 
     def hybrid_forward(self, F, x):
         return  self.residual_layer(x) + self.conv_block(x)
@@ -223,8 +224,8 @@ class ConvLayer(HybridBlock):
         super(ConvLayer, self).__init__()
         pad_size = int(np.floor(kernel_size / 2))
         self.pad = nn.ReflectionPad2D(padding=pad_size)
-        self.conv2d = nn.Conv2D(in_channels=in_channels, channels=out_channels, 
-                                kernel_size=kernel_size, strides=(stride,stride),
+        self.conv2d = nn.Conv2D(in_channels=in_channels, channels=out_channels,
+                                kernel_size=kernel_size, strides=(stride, stride),
                                 padding=0)
 
     def hybrid_forward(self, F, x):
@@ -240,14 +241,13 @@ class UpsampleConvLayer(HybridBlock):
     ref: http://distill.pub/2016/deconv-checkerboard/
     """
 
-    def __init__(self, in_channels, out_channels, kernel_size, 
-            stride, upsample=None):
+    def __init__(self, in_channels, out_channels, kernel_size,
+                 stride, upsample=None):
         super(UpsampleConvLayer, self).__init__()
         self.upsample = upsample
         self.reflection_padding = int(np.floor(kernel_size / 2))
-        self.conv2d = nn.Conv2D(in_channels=in_channels, 
-                                channels=out_channels, 
-                                kernel_size=kernel_size, strides=(stride,stride),
+        self.conv2d = nn.Conv2D(in_channels=in_channels, channels=out_channels,
+                                kernel_size=kernel_size, strides=(stride, stride),
                                 padding=self.reflection_padding)
 
     def hybrid_forward(self, F, x):
