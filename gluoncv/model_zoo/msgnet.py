@@ -1,10 +1,10 @@
 """Multi-style Generative Network for Real-time Transfer"""
 import numpy as np
 import mxnet as mx
-from mxnet import cpu, nd
+from mxnet import cpu
 from mxnet.gluon import nn, Block, HybridBlock
 import mxnet.ndarray as F
-# pylint: disable=arguments-differ,redefined-outer-name
+# pylint: disable=arguments-differ,redefined-outer-name,unused-argument
 
 __all__ = ['MSGNet', 'Inspiration', 'get_msgnet', 'gram_matrix']
 
