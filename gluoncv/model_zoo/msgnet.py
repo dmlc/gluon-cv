@@ -20,12 +20,9 @@ class MSGNet(Block):
     ngf : int
         Number of filters in the generative network.
     norm_layer : object
-        Normalization layer used in the network (default: :class:`mxnet.gluon.nn.InstanceNorm`;
+        Normalization layer used in the network (default
+        :class:`mxnet.gluon.nn.InstanceNorm`);
 
-
-    Reference:
-        Hang Zhang and Kristin Dana. "Multi-style Generative Network for Real-time Transfer."
-        *arXiv preprint arXiv:1703.06953 (2017)*
 
     Reference:
 
@@ -94,6 +91,7 @@ class Inspiration(Block):
     ----------
     channels : int
         Input featuremap channels for Inspiration Layer.
+
 
     Please see the `example of MSG-Net <./experiments/style.html>`_
     training multi-style generative network for real-time transfer.

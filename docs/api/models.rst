@@ -59,7 +59,6 @@ Object Detection
 .. autofunction:: vgg16_atrous_300
 .. autofunction:: vgg16_atrous_512
 
-.. currentmodule:: gluoncv.model_zoo
 
 Semantic Segmentation
 ---------------------
@@ -67,11 +66,14 @@ Semantic Segmentation
 :hidden:`BaseModel`
 ~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: segbase.SegBaseModel
+.. currentmodule:: gluoncv.model_zoo.segbase
+.. autoclass:: SegBaseModel
     :members:
 
 :hidden:`FCN`
 ~~~~~~~~~~~~~
+
+.. currentmodule:: gluoncv.model_zoo
 
 .. autoclass:: FCN
     :members:
@@ -87,6 +89,8 @@ Semantic Segmentation
 
 Style Transfer
 --------------
+
+.. currentmodule:: gluoncv.model_zoo
 
 .. autoclass:: MSGNet
    :members

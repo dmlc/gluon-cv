@@ -1,12 +1,12 @@
 """1.Getting Started with Pre-trained MSG-Net
 ==========================================
 
-This tutorial shows how to use pre-trained MSG-Net for real-time style transfer.
-
 .. image:: https://github.com/zhanghang1989/MSG-Net/blob/master/images/figure1.jpg?raw=True
     :width: 55%
     :align: left
 
+This tutorial shows how to use pre-trained MSG-Net for real-time style transfer. The network
+was pre-trained using MS-COCO dataset and 21 painting style images.
 
 .. note::
     Hang Zhang, and Kristin Dana. "Multi-style Generative Network for Real-time Transfer."::
