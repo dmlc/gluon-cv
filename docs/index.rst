@@ -85,6 +85,7 @@ A Quick Example
    build/examples_classification/index
    build/examples_detection/index
    build/examples_segmentation/index
+   build/examples_style_transfer/index
    build/examples_datasets/index
 
 .. toctree::

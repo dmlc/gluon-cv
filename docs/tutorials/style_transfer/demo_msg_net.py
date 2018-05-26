@@ -1,10 +1,11 @@
 """1.Getting Started with Pre-trained MSG-Net
 ==========================================
 
-.. image:: https://github.com/zhanghang1989/MSG-Net/blob/master/images/figure1.jpg
+This tutorial shows how to use pre-trained MSG-Net for real-time style transfer.
+
+.. image:: https://github.com/zhanghang1989/MSG-Net/blob/master/images/figure1.jpg?raw=True
     :width: 55%
     :align: left
-
 
 
 .. note::
