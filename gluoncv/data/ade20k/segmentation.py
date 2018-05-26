@@ -34,6 +34,7 @@ class ADE20KSegmentation(SegmentationDataset):
     """
     # pylint: disable=abstract-method
     BASE_DIR = 'ADEChallengeData2016'
+    NUM_CLASS = 150
     def __init__(self, root=os.path.expanduser('~/.mxnet/datasets/ade'),
                  split='train', transform=None):
         super(ADE20KSegmentation, self).__init__(root)
@@ -74,10 +75,6 @@ class ADE20KSegmentation(SegmentationDataset):
     def __len__(self):
         return len(self.images)
 
-    @property
-    def num_class(self):
-        """Number of categories."""
-        return 150
 
 def _get_ade20k_pairs(folder, mode='train'):
     img_paths = []

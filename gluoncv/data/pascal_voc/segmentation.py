@@ -34,6 +34,7 @@ class VOCSegmentation(SegmentationDataset):
     >>>     num_workers=4)
     """
     BASE_DIR = 'VOC2012'
+    NUM_CLASS = 21
     def __init__(self, root=os.path.expanduser('~/.mxnet/datasets/voc'),
                  split='train', transform=None):
         super(VOCSegmentation, self).__init__(root)
