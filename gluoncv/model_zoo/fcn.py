@@ -107,14 +107,18 @@ def get_fcn(dataset='pascal_voc', backbone='resnet50', pretrained=False,
     >>> model = get_fcn(dataset='pascal_voc', backbone='resnet50', pretrained=False)
     >>> print(model)
     """
+    from .pascal_aug.segmentation import VOCAugSegmentation
+    from .ade20k.segmentation import ADE20KSegmentation
     acronyms = {
         'pascal_voc': 'voc',
         'ade20k': 'ade',
     }
+    datasets = {
+        'pascal_voc': VOCSegmentation,
+        'ade20k': ADE20KSegmentation,
+    }
     # infer number of classes
-    from ..data.segbase import get_segmentation_dataset
-    data = get_segmentation_dataset(dataset)
-    model = FCN(data.num_class, backbone=backbone, ctx=ctx, **kwargs)
+    model = FCN(datasets[dataset].num_class, backbone=backbone, ctx=ctx, **kwargs)
     if pretrained:
         from .model_store import get_model_file
         model.load_params(get_model_file('fcn_%s_%s'%(backbone, acronyms[dataset]),
