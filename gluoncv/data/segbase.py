@@ -108,3 +108,8 @@ class SegmentationDataset(VisionDataset):
 
     def _mask_transform(self, mask):
         return F.array(np.array(mask), cpu(0)).astype('int32')
+
+    @property
+    def num_class(self):
+        """Number of categories."""
+        return self.NUM_CLASS
