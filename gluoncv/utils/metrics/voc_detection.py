@@ -89,20 +89,20 @@ class VOCMApMetric(mx.metric.EvalMetric):
             Ground-truth bounding boxes difficulty labels with shape `B, M`.
 
         """
-        def input_check(a):
-            """Collaps a list or mx.NDArray into numpy.array"""
+        def as_numpy(a):
+            """Convert a (list of) mx.NDArray into numpy.ndarray"""
             if isinstance(a, (list, tuple)):
                 out = [x.asnumpy() if isinstance(x, mx.nd.NDArray) else x for x in a]
-                return np.stack(out, axis=0)
+                return np.concatenate(out, axis=0)
             elif isinstance(a, mx.NDArray):
-                return a.asnumpy()
+                a = a.asnumpy()
             return a
 
         if gt_difficults is None:
             gt_difficults = [None for _ in gt_labels]
 
         for pred_bbox, pred_label, pred_score, gt_bbox, gt_label, gt_difficult in zip(
-                *[input_check(x) for x in [pred_bboxes, pred_labels, pred_scores,
+                *[as_numpy(x) for x in [pred_bboxes, pred_labels, pred_scores,
                                            gt_bboxes, gt_labels, gt_difficults]]):
             # strip padding -1 for pred and gt
             valid_pred = np.where(pred_label.flat >= 0)[0]
