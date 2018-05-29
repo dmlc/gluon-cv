@@ -103,7 +103,7 @@ class VOCMApMetric(mx.metric.EvalMetric):
 
         for pred_bbox, pred_label, pred_score, gt_bbox, gt_label, gt_difficult in zip(
                 *[as_numpy(x) for x in [pred_bboxes, pred_labels, pred_scores,
-                                           gt_bboxes, gt_labels, gt_difficults]]):
+                                        gt_bboxes, gt_labels, gt_difficults]]):
             # strip padding -1 for pred and gt
             valid_pred = np.where(pred_label.flat >= 0)[0]
             pred_bbox = pred_bbox[valid_pred, :]
