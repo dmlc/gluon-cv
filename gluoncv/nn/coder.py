@@ -27,7 +27,7 @@ class NormalizedBoxCenterEncoder(gluon.Block):
         super(NormalizedBoxCenterEncoder, self).__init__()
         assert len(stds) == 4, "Box Encoder requires 4 std values."
         self._stds = stds
-        seff._means = means
+        self._means = means
         with self.name_scope():
             self.corner_to_center = BBoxCornerToCenter(split=True)
 
@@ -193,5 +193,6 @@ class SigmoidClassEncoder(gluon.HybridBlock):
     def hybrid_forward(self, F, samples):
         # notation from samples, 1:pos, 0:ignore, -1:negative
         target = (samples + 1) / 2.
+        # output: 1: pos, 0: negative, 0.5: ignore
         mask = F.where(samples != 0, F.ones_like(samples), F.zeros_like(samples))
         return target, mask

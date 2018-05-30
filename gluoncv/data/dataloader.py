@@ -100,6 +100,10 @@ class DetectionDataLoader(DataLoader):
     def __init__(self, dataset, batch_size=None, shuffle=False, sampler=None,
                  last_batch=None, batch_sampler=None, batchify_fn=None,
                  num_workers=0):
+        import warnings
+        warnings.warn('DetectionDataLoader is deprecated. ' +
+                     'Please use mxnet.gluon.data.DataLoader '
+                     'with batchify functions directly.')
         if batchify_fn is None:
             if num_workers > 0:
                 batchify_fn = default_mp_pad_batchify_fn

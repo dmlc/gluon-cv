@@ -9,6 +9,7 @@ Note: 1 for positive, -1 for negative, 0 for ignore.
 """
 from __future__ import absolute_import
 import numpy as np
+import mxnet as mx
 from mxnet import gluon
 from mxnet import nd
 from mxnet import autograd
@@ -87,6 +88,7 @@ class OHEMSampler(gluon.Block):
 class QuotaSampler(autograd.Function):
     def __init__(self, num_sample, pos_thresh, neg_thresh_high, neg_thresh_low=0.,
                  pos_ratio=0.5, neg_ratio=None):
+        super(QuotaSampler, self).__init__()
         self._num_sample = num_sample
         if neg_ratio is None:
             self._neg_ratio = 1. - pos_ratio
@@ -94,29 +96,32 @@ class QuotaSampler(autograd.Function):
         assert (self._neg_ratio + self._pos_ratio) <= 1.0, (
             "Positive and negative ratio exceed 1".format(self._neg_ratio + self._pos_ratio))
         self._pos_thresh = min(1., max(0., pos_thresh))
-        self._neg_thresh = min(1., max(0., neg_thresh))
+        self._neg_thresh_high = min(1., max(0., neg_thresh_high))
+        self._neg_thresh_low = min(1., max(0., neg_thresh_low))
 
     def forward(self, matches, ious):
-        max_pos = self._pos_ratio * self._num_sample
-        max_neg = self._neg_ratio * self._num_sample
+        F = mx.nd
+        max_pos = int(round(self._pos_ratio * self._num_sample))
+        max_neg = int(self._neg_ratio * self._num_sample)
         # init with 0s, which are ignored
-        result = F.zeros_like(matches)
+        result = F.zeros_like(matches[0])
         # negative samples with label -1
-        neg_mask = ious.max(axis=1) < self._neg_thresh
-        result = F.where(ious.max(axis=1) < self._neg_thresh,
-                         F.ones_like(matches) * -1, result)
+        ious_max = ious.max(axis=-1)[0]
+        neg_mask = ious_max < self._neg_thresh_high
+        neg_mask = neg_mask * (ious_max > self._neg_thresh_low)
+        result = F.where(neg_mask, F.ones_like(result) * -1, result)
         # positive samples
-        result = F.where(matches >= 0, F.ones_like(result), result)
-        result = F.where(ious.max(axis=1) >= self._pos_thresh, F.ones_like(result), result)
+        result = F.where(matches[0] >= 0, F.ones_like(result), result)
+        result = F.where(ious_max >= self._pos_thresh, F.ones_like(result), result)
 
         # re-balance if number of postive or negative exceed limits
         result = result.asnumpy()
-        num_pos = (result > 0).sum().asscalar()
+        num_pos = int((result > 0).sum())
         if num_pos > max_pos:
             disable_indices = np.random.choice(
                 np.where(result > 0)[0], size=(num_pos - max_pos), replace=False)
             result[disable_indices] = 0   # use 0 to ignore
-        num_neg = (result < 0).sum().asscalar()
+        num_neg = int((result < 0).sum())
         if num_neg > max_neg:
             disable_indices = np.random.choice(
                 np.where(result < 0)[0], size=(num_neg - max_neg), replace=False)

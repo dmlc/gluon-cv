@@ -46,6 +46,7 @@ def get_model(name, **kwargs):
         'ssd_512_resnet101_v2_voc': ssd_512_resnet101_v2_voc,
         'ssd_512_resnet152_v2_voc': ssd_512_resnet152_v2_voc,
         'ssd_512_mobilenet1_0_voc': ssd_512_mobilenet1_0_voc,
+        'faster_rcnn_resnet50_v1b_voc': faster_rcnn_resnet50_v1b_voc,
         'faster_rcnn_resnet50_v1b_coco': faster_rcnn_resnet50_v1b_coco,
         'cifar_resnet20_v1': cifar_resnet20_v1,
         'cifar_resnet56_v1': cifar_resnet56_v1,
@@ -87,9 +88,12 @@ def get_model(name, **kwargs):
         }
     try:
         net = gluon.model_zoo.vision.get_model(name, **kwargs)
+        return net
     except ValueError as e:
-        name = name.lower()
-        if name not in models:
-            raise ValueError('%s\n\t%s' % (str(e), '\n\t'.join(sorted(models.keys()))))
-        net = models[name](**kwargs)
+        upstream_supported = str(e)
+        # avoid raising inside which cause a bit messy error message
+    name = name.lower()
+    if name not in models:
+        raise ValueError('%s\n\t%s' % (upstream_supported, '\n\t'.join(sorted(models.keys()))))
+    net = models[name](**kwargs)
     return net

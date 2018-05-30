@@ -12,8 +12,9 @@ import gluoncv as gcv
 from gluoncv import data as gdata
 from gluoncv import utils as gutils
 from gluoncv.model_zoo import get_model
-from gluoncv.data.transforms.presets.ssd import FasterRCNNDefaultTrainTransform
-from gluoncv.data.transforms.presets.ssd import FasterRCNNDefaultValTransform
+from gluoncv.data import batchify
+from gluoncv.data.transforms.presets.rcnn import FasterRCNNDefaultTrainTransform
+from gluoncv.data.transforms.presets.rcnn import FasterRCNNDefaultValTransform
 from gluoncv.utils.metrics.voc_detection import VOC07MApMetric
 from gluoncv.utils.metrics.coco_detection import COCODetectionMetric
 from gluoncv.utils.metrics.accuracy import Accuracy
@@ -21,7 +22,7 @@ from gluoncv.utils.parallel import DataParallelModel
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train Faster-RCNN networks e2e.')
-    parser.add_argument('--network', type=str, default='vgg16_atrous',
+    parser.add_argument('--network', type=str, default='resnet50_v1b',
                         help="Base network name which serves as feature extraction base.")
     parser.add_argument('--dataset', type=str, default='voc',
                         help='Training dataset. Now support voc.')
@@ -83,14 +84,15 @@ def get_dataset(dataset, args):
 def get_dataloader(net, train_dataset, val_dataset, batch_size, num_workers):
     """Get dataloader."""
     short, max_size = 600, 1000
-    # use fake data to generate fixed anchors for target generation
-    anchors = net.rpn.anchor_generator(mx.nd.zeros(1, 3, 1200, 1200))
-    train_loader = gdata.DetectionDataLoader(
-        train_dataset.transform(FasterRCNNDefaultTrainTransform(short, max_size, anchors)),
-        batch_size, True, last_batch='rollover', num_workers=num_workers)
-    val_loader = gdata.DetectionDataLoader(
+
+    train_bfn = batchify.Tuple(*[batchify.Append() for _ in range(4)])
+    train_loader = mx.gluon.data.DataLoader(
+        train_dataset.transform(FasterRCNNDefaultTrainTransform(short, max_size, net)),
+        batch_size, True, batchify_fn=train_bfn, last_batch='rollover', num_workers=num_workers)
+    val_bfn = batchify.Tuple(*[batchify.Append() for _ in range(2)])
+    val_loader = mx.gluon.data.DataLoader(
         val_dataset.transform(FasterRCNNDefaultValTransform(short, max_size)),
-        batch_size, False, last_batch='keep', num_workers=num_workers)
+        batch_size, False, batchify_fn=val_bfn, last_batch='keep', num_workers=num_workers)
     return train_loader, val_loader
 
 def save_params(net, best_map, current_map, epoch, save_interval, prefix):
@@ -174,11 +176,19 @@ def train(net, train_data, val_data, eval_metric, args):
         btic = time.time()
         net.hybridize()
         for i, batch in enumerate(train_data):
-            batch_size = batch[0].shape[0]
+            batch_size = len(batch[0])
+            print('bs:', batch_size)
+            print(batch[0])
+            raise
             data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
             cls_targets = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0)
             box_targets = gluon.utils.split_and_load(batch[2], ctx_list=ctx, batch_axis=0)
             box_masks = gluon.utils.split_and_load(batch[3], ctx_list=ctx, batch_axis=0)
+            print(data)
+            print(cls_targets)
+            print(box_targets)
+            print(box_mask)
+            raise NotImplementedError
             with autograd.record():
                 pass
                 autograd.backward()
@@ -215,10 +225,10 @@ if __name__ == '__main__':
     # training contexts
     ctx = [mx.gpu(int(i)) for i in args.gpus.split(',') if i.strip()]
     ctx = ctx if ctx else [mx.cpu()]
-    args.batch_size *= len(ctx)  # 1 batch per device
+    args.batch_size = len(ctx)  # 1 batch per device
 
     # network
-    net_name = '_'.join(('ssd', str(args.data_shape), args.network, args.dataset))
+    net_name = '_'.join(('faster_rcnn', args.network, args.dataset))
     args.save_prefix += net_name
     net = get_model(net_name, pretrained_base=True)
     if args.resume.strip():
@@ -232,7 +242,7 @@ if __name__ == '__main__':
     # training data
     train_dataset, val_dataset, eval_metric = get_dataset(args.dataset, args)
     train_data, val_data = get_dataloader(
-        net, train_dataset, val_dataset, args.data_shape, args.batch_size, args.num_workers)
+        net, train_dataset, val_dataset, args.batch_size, args.num_workers)
 
     # training
     train(net, train_data, val_data, eval_metric, args)
