@@ -10,3 +10,4 @@ from .pspnet import *
 from . import segbase
 from .resnetv1b import *
 from .se_resnet import *
+from .msgnet import *

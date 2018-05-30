@@ -62,12 +62,16 @@ sphinx_gallery_conf = {
     'examples_dirs': ['tutorials/datasets',
                       'tutorials/classification',
                       'tutorials/detection',
-                      'tutorials/segmentation',],
+                      'tutorials/segmentation',
+                      'tutorials/style_transfer',
+                     ],
     # path where to save gallery generated examples
     'gallery_dirs': ['build/examples_datasets',
                      'build/examples_classification',
                      'build/examples_detection',
-                     'build/examples_segmentation',],
+                     'build/examples_segmentation',
+                     'build/examples_style_transfer',
+                    ],
 
     'filename_pattern': '.py',
 
