@@ -177,17 +177,12 @@ def train(net, train_data, val_data, eval_metric, args):
         net.hybridize()
         for i, batch in enumerate(train_data):
             batch_size = len(batch[0])
-            print('bs:', batch_size)
-            print(batch[0])
-            raise
+            assert batch_size == len(ctx)
             data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
             cls_targets = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0)
             box_targets = gluon.utils.split_and_load(batch[2], ctx_list=ctx, batch_axis=0)
             box_masks = gluon.utils.split_and_load(batch[3], ctx_list=ctx, batch_axis=0)
             print(data)
-            print(cls_targets)
-            print(box_targets)
-            print(box_mask)
             raise NotImplementedError
             with autograd.record():
                 pass

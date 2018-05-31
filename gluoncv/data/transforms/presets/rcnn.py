@@ -101,7 +101,7 @@ class FasterRCNNDefaultTrainTransform(object):
         # record feature extractor for infer_shape
         if not hasattr(net, 'features'):
             raise ValueError("Cannot find features in network, it is a Faster-RCNN network?")
-        self._feat_sym = net.features
+        self._feat_sym = net.features(mx.sym.var(name='data'))
         from ....model_zoo.rpn.rpn_target import RPNTargetGenerator
         self._target_generator = RPNTargetGenerator(
             num_sample=num_sample, pos_iou_thresh=pos_iou_thresh,
@@ -128,10 +128,8 @@ class FasterRCNNDefaultTrainTransform(object):
 
         # generate RPN target so cpu workers can help reduce the workload
         # feat_h, feat_w = (img.shape[1] // self._stride, img.shape[2] // self._stride)
-        oshape = self._feat_sym.infer_shape(mx.sym.var(name='data', shape=(1, 3, img.shape[0], img.shape[1])))
-        print(oshape)
-        raise
-        anchor = self._anchors[:, :, :feat_h, :feat_w, :].reshape((-1, 4))
+        oshape = self._feat_sym.infer_shape(data=(1, 3, img.shape[1], img.shape[2]))[1][0]
+        anchor = self._anchors[:, :, :oshape[2], :oshape[3], :].reshape((-1, 4))
         gt_bboxes = mx.nd.array(bbox[np.newaxis, :, :4])
         cls_target, cls_mask, box_target, box_mask = self._target_generator(
             gt_bboxes, anchor, img.shape[2], img.shape[1])
