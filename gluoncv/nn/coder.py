@@ -248,7 +248,7 @@ class SigmoidClassEncoder(gluon.HybridBlock):
     def hybrid_forward(self, F, samples):
         # notation from samples, 1:pos, 0:ignore, -1:negative
         target = (samples + 1) / 2.
-        target = F.where(samples == 0, F.ones_like(target) * -1, target)
+        target = F.where(F.abs(samples) < 1e-5, F.ones_like(target) * -1, target)
         # output: 1: pos, 0: negative, -1: ignore
-        mask = F.where(samples != 0, F.ones_like(samples), F.zeros_like(samples))
+        mask = F.where(F.abs(samples) > 1e-5, F.ones_like(samples), F.zeros_like(samples))
         return target, mask

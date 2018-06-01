@@ -20,6 +20,7 @@ class RPNTargetGenerator(gluon.Block):
         self._pos_ratio = pos_ratio
         self._bbox_split = BBoxSplit(axis=-1)
         self._matcher = CompositeMatcher([BipartiteMatcher(), MaximumMatcher(pos_iou_thresh)])
+        # self._matcher = MaximumMatcher(pos_iou_thresh)
         # self._sampler = QuotaSampler(num_sample, pos_iou_thresh, neg_iou_thresh, 0., pos_ratio)
         self._cls_encoder = SigmoidClassEncoder()
         self._box_encoder = NormalizedBoxCenterEncoder(stds=stds)
@@ -34,7 +35,7 @@ class RPNTargetGenerator(gluon.Block):
         a_xmin, a_ymin, a_xmax, a_ymax = self._bbox_split(anchor)
         # valid anchor mask with shape (N, 1)
         # anchor_mask = ((a_xmin >= 0) * (a_ymin >= 0) *
-        #     (a_xmax <= width) * (a_ymax <= height)) > 0
+            # (a_xmax <= width) * (a_ymax <= height)) > 0
         # anchor_mask = mx.nd.array(np.where(anchor_mask.asnumpy() > 0)[0], ctx=anchor.context)
         invalid_mask = ((a_xmin >= 0) * (a_ymin >= 0) *
             (a_xmax <= width) * (a_ymax <= height)) <= 0

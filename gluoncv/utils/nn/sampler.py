@@ -183,6 +183,7 @@ class QuotaSamplerOp(mx.operator.CustomOp):
             if num_neg > max_neg:
                 disable_indices = np.random.choice(
                     np.where(result < 0)[0], size=(num_neg - max_neg), replace=False)
+                result[disable_indices] = 0  # use 0 to ignore
 
             self.assign(out_data[0][i], req[0], mx.nd.array(result))
 
