@@ -215,12 +215,12 @@ def train(net, train_data, val_data, eval_metric, args):
             trainer.step(batch_size)
             # update metrics
             if args.log_interval and not (i + 1) % args.log_interval:
-                msg = ','.join(['{}={:.3f}'.format(*metric.get() for metric in metrics])
+                msg = ','.join(['{}={:.3f}'.format(*metric.get()) for metric in metrics])
                 logger.info('[Epoch {}][Batch {}], Speed: {:.3f} samples/sec, {}'.format(
                     epoch, i, batch_size/(time.time()-btic), msg))
             btic = time.time()
 
-        msg = ','.join(['{}={:.3f}'.format(*metric.get() for metric in metrics])
+        msg = ','.join(['{}={:.3f}'.format(*metric.get()) for metric in metrics])
         logger.info('[Epoch {}] Training cost: {:.3f}, {}'.format(
             epoch, (time.time()-tic), msg))
         if not (epoch + 1) % args.val_interval:
