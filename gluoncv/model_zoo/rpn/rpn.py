@@ -14,7 +14,7 @@ class RPN(gluon.HybridBlock):
                  scales=(8, 16, 32), alloc_size=(128, 128),
                  nms_thresh=0.7, train_pre_nms=12000, train_post_nms=2000,
                  test_pre_nms=6000, test_post_nms=300, min_size=16, stds=(1., 1., 1., 1.),
-                 weight_initializer=None, max_batch=32, **kwargs):
+                 weight_initializer=None, **kwargs):
         super(RPN, self).__init__(**kwargs)
         if weight_initializer is None:
             weight_initializer = mx.init.Normal(0.1)
@@ -24,7 +24,7 @@ class RPN(gluon.HybridBlock):
             anchor_depth = self.anchor_generator.num_depth
             self.region_proposaler = RPNProposal(
                 nms_thresh, train_pre_nms, train_post_nms,
-                test_pre_nms, test_post_nms, min_size, stds, max_batch=max_batch)
+                test_pre_nms, test_post_nms, min_size, stds)
             self.conv1 = nn.HybridSequential()
             self.conv1.add(
                 nn.Conv2D(channels, 3, 1, 1, weight_initializer=weight_initializer))
@@ -38,9 +38,9 @@ class RPN(gluon.HybridBlock):
         x = self.conv1(x)
         rpn_scores = F.sigmoid(self.score(x)).transpose(axes=(0, 2, 3, 1)).reshape((0, -1, 1))
         rpn_box_pred = self.loc(x).transpose(axes=(0, 2, 3, 1)).reshape((0, -1, 4))
-        rpn_score, rpn_box, batch_roi, roi = self.region_proposaler(
+        rpn_score, rpn_box, roi = self.region_proposaler(
             anchors, rpn_scores, rpn_box_pred, img)
         if autograd.is_training():
             # return raw predictions as well in training for bp
-            return rpn_score, rpn_box, batch_roi, roi, rpn_scores, rpn_box_pred
-        return rpn_score, rpn_box, batch_roi, roi
+            return rpn_score, rpn_box, roi, rpn_scores, rpn_box_pred
+        return rpn_score, rpn_box, roi

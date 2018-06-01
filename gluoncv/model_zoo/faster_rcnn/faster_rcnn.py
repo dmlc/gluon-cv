@@ -5,6 +5,7 @@ import os
 import mxnet as mx
 from mxnet import autograd
 from mxnet.gluon import nn
+from .rcnn_target import RCNNTargetSampler
 from ..rcnn import RCNN
 from ..rpn import RPN
 
@@ -15,25 +16,46 @@ __all__ = ['FasterRCNN', 'get_faster_rcnn',
 
 class FasterRCNN(RCNN):
     def __init__(self, features, top_features, scales, ratios, classes, roi_mode, roi_size,
-                 stride=16, rpn_channel=1024, nms_thresh=0.3, nms_topk=400, **kwargs):
+                 stride=16, rpn_channel=1024, nms_thresh=0.3, nms_topk=400,
+                 num_sample=128, pos_iou_thresh=0.5, neg_iou_thresh_high=0.5,
+                 neg_iou_thresh_low=0.0, pos_ratio=0.25, max_batch=32, max_roi=200000, **kwargs):
         super(FasterRCNN, self).__init__(
             features, top_features, classes, roi_mode, roi_size, **kwargs)
         self.stride = stride
+        self._max_batch = max_batch
+        self._max_roi = max_roi
         with self.name_scope():
             self.rpn = RPN(rpn_channel, stride, scales=scales, ratios=ratios)
+            self.sampler = RCNNTargetSampler(num_sample, pos_iou_thresh, neg_iou_thresh_high,
+                                             neg_iou_thresh_low, pos_ratio)
 
     def set_nms(self, nms_thresh=0.3, nms_topk=400):
         self.nms_thresh = nms_thresh
         self.nms_topk = nms_topk
 
-    def hybrid_forward(self, F, x):
+    def hybrid_forward(self, F, x, gt_box=None):
         feat = self.features(x)
         # RPN proposals
         if autograd.is_training():
-            rpn_score, rpn_box, rpn_roi, roi, raw_rpn_score, raw_rpn_box = self.rpn(
+            rpn_score, rpn_box, roi, raw_rpn_score, raw_rpn_box = self.rpn(
                 feat, F.zeros_like(x))
+            # sample 128 roi
+            assert gt_box is not None
+            roi, samples, matches = self.sampler(roi, gt_box)
+            print(roi.shape, samples.shape, matches.shape)
+            raise
         else:
-            rpn_score, rpn_box, rpn_roi, roi = self.rpn(feat, F.zeros_like(x))
+            rpn_score, rpn_box, roi = self.rpn(feat, F.zeros_like(x))
+
+        # create batchid for roi
+        roi_batchid = F.arange(
+            0, self._max_batch, repeat=self._max_roi).reshape(
+                (-1, self._max_roi))
+        roi_batchid = F.slice_like(roi_batchid, rpn_box, axes=(0, 1))
+        print(roi_batchid.shape, roi.shape)
+        raise
+        rpn_roi = F.concat(*[roi_batchid.reshape((-1, 1)), roi], dim=1)
+
         # ROI features
         if self._roi_mode == 'pool':
             pooled_feat = F.ROIPooling(feat, rpn_roi, self._roi_size, 1. / self.stride)
@@ -51,7 +73,7 @@ class FasterRCNN(RCNN):
 
         # no need to convert bounding boxes in training, just return
         if autograd.is_training():
-            return cls_pred, box_pred, roi, raw_rpn_score, raw_rpn_box
+            return cls_pred, box_pred, roi, samples, matches, raw_rpn_score, raw_rpn_box
 
         # translate bboxes
         bboxes = self.box_decoder(box_pred, self.box_to_center(roi)).split(

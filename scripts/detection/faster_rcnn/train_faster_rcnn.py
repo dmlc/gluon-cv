@@ -187,22 +187,25 @@ def train(net, train_data, val_data, eval_metric, args):
             losses = []
             with autograd.record():
                 for data, label, rpn_cls_targets, rpn_box_targets, rpn_box_masks in zip(*batch):
-                    cls_pred, box_pred, roi, rpn_score, rpn_box = net(data)
+                    gt_label = label[:, :, 4:5]
+                    gt_box = label[:, :, :4]
+                    cls_pred, box_pred, roi, samples, matches, rpn_score, rpn_box = net(data, gt_box)
+                    print(cls_pred.shape, box_pred.shape, roi.shape, samples.shape, matches.shape, rpn_score.shape, rpn_box.shape)
+                    raise
                     # losses of rpn
                     rpn_loss1 = rpn_cls_loss(rpn_score, rpn_cls_targets, rpn_cls_targets >= 0)
                     rpn_loss2 = rpn_box_loss(rpn_box * rpn_box_masks, rpn_box_targets)
                     # rpn overall loss, use sum rather than average
                     rpn_loss = rpn_loss1 * rpn_cls_targets.size + rpn_loss2 * rpn_box.size
                     # generate targets for rcnn
-                    gt_label = label[:, :, 4:5]
-                    gt_box = label[:, :, :4]
-                    cls_targets, box_targets, box_masks = rcnn_target_generator(roi, gt_label, gt_box)
-                    print(cls_targets.shape, box_targets.shape, box_masks.shape)
-                    raise
+                    cls_targets, box_targets, box_masks = rcnn_target_generator(roi, samples, matches, gt_label, gt_box)
                     # losses of rcnn
+                    print(cls_pred.shape, cls_targets.shape)
                     rcnn_loss1 = rcnn_cls_loss(cls_pred, cls_targets, cls_targets >= 0)
                     rcnn_loss2 = rcnn_box_loss(box_pred * box_masks, box_targets)
                     rcnn_loss = rcnn_loss1 * cls_targets.size + rcnn_loss2 * box_pred.size
+                    print(rcnn_loss1 * cls_targets.size, rcnn_loss2 * box_pred.size, rcnn_loss)
+                    raise
                     # overall losses, TODO(zhreshold): weights? currently 1:1 used
                     losses.append(rpn_loss + rcnn_loss)
                 autograd.backward(losses)
