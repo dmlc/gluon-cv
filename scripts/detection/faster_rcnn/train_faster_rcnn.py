@@ -192,6 +192,7 @@ def train(net, train_data, val_data, eval_metric, args):
         # net.hybridize()
         for i, batch in enumerate(train_data):
             batch = split_and_load(batch, ctx_list=ctx)
+            batch_size = len(batch[0])
             losses = []
             metric_losses = [[] for _ in metrics]
             with autograd.record():
