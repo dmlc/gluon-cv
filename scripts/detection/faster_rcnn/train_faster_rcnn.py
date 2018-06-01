@@ -109,7 +109,7 @@ def validate(net, val_data, ctx, eval_metric):
     """Test on validation dataset."""
     eval_metric.reset()
     # set nms threshold and topk constraint
-    net.set_nms(nms_thresh=0.45, nms_topk=400)
+    net.set_nms(nms_thresh=0.3, nms_topk=400)
     # net.hybridize()
     for batch in val_data:
         data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
@@ -152,8 +152,10 @@ def train(net, train_data, val_data, eval_metric, args):
     rpn_box_loss = mx.gluon.loss.HuberLoss(rho=0.9)  # == smoothl1
     rcnn_cls_loss = mx.gluon.loss.SoftmaxCrossEntropyLoss()
     rcnn_box_loss = mx.gluon.loss.HuberLoss()  # == smoothl1
-    ce_metric = mx.metric.Loss('CrossEntropy')
-    smoothl1_metric = mx.metric.Loss('SmoothL1')
+    metrics = [mx.metric.Loss('RPN_Conf'),
+               mx.metric.Loss('RPN_SmoothL1'),
+               mx.metric.Loss('RCNN_CrossEntropy'),
+               mx.metric.Loss('RCNN_SmoothL1'),]
 
     # set up logger
     logging.basicConfig()
@@ -183,41 +185,44 @@ def train(net, train_data, val_data, eval_metric, args):
             batch_size = len(batch[0])
             assert batch_size == len(ctx), "allow one batch per device"
             losses = []
+            metric_losses = [[] for _ in metrics]
             with autograd.record():
                 for data, label, rpn_cls_targets, rpn_box_targets, rpn_box_masks in zip(*batch):
                     gt_label = label[:, :, 4:5]
                     gt_box = label[:, :, :4]
                     cls_pred, box_pred, roi, samples, matches, rpn_score, rpn_box = net(data, gt_box)
                     # losses of rpn
-                    rpn_loss1 = rpn_cls_loss(rpn_score, rpn_cls_targets, rpn_cls_targets >= 0)
-                    rpn_loss2 = rpn_box_loss(rpn_box * rpn_box_masks, rpn_box_targets)
+                    rpn_loss1 = rpn_cls_loss(rpn_score, rpn_cls_targets, rpn_cls_targets >= 0) * rpn_cls_targets.size
+                    rpn_loss2 = rpn_box_loss(rpn_box * rpn_box_masks, rpn_box_targets) * rpn_box.size
                     # rpn overall loss, use sum rather than average
-                    rpn_loss = rpn_loss1 * rpn_cls_targets.size + rpn_loss2 * rpn_box.size
+                    rpn_loss = rpn_loss1 + rpn_loss2
                     # generate targets for rcnn
                     cls_targets, box_targets, box_masks = net.target_generator(roi, samples, matches, gt_label, gt_box)
                     # losses of rcnn
-                    rcnn_loss1 = rcnn_cls_loss(cls_pred, cls_targets, cls_targets >= 0)
-                    rcnn_loss2 = rcnn_box_loss(box_pred * box_masks, box_targets)
-                    rcnn_loss = rcnn_loss1 * cls_targets.size + rcnn_loss2 * box_pred.size
+                    rcnn_loss1 = rcnn_cls_loss(cls_pred, cls_targets, cls_targets >= 0) * cls_targets.size
+                    rcnn_loss2 = rcnn_box_loss(box_pred * box_masks, box_targets) * box_pred.size
+                    rcnn_loss = rcnn_loss1 + rcnn_loss2
                     # overall losses, TODO(zhreshold): weights? currently 1:1 used
                     losses.append(rpn_loss)
                     losses.append(rcnn_loss)
+                    metric_losses[0].append(rpn_loss1)
+                    metric_losses[1].append(rpn_loss2)
+                    metric_losses[2].append(rcnn_loss1)
+                    metric_losses[3].append(rcnn_loss2)
                 autograd.backward(losses)
+                for metric, record in zip(metrics, metric_losses):
+                    metric.update(0, record)
             trainer.step(batch_size)
-            mx.nd.waitall()
-            raise
             # update metrics
             if args.log_interval and not (i + 1) % args.log_interval:
-                name1, loss1 = ce_metric.get()
-                name2, loss2 = smoothl1_metric.get()
-                logger.info('[Epoch {}][Batch {}], Speed: {:.3f} samples/sec, {}={:.3f}, {}={:.3f}'.format(
-                    epoch, i, batch_size/(time.time()-btic), name1, loss1, name2, loss2))
+                msg = ','.join(['{}={:.3f}'.format(*metric.get() for metric in metrics])
+                logger.info('[Epoch {}][Batch {}], Speed: {:.3f} samples/sec, {}'.format(
+                    epoch, i, batch_size/(time.time()-btic), msg))
             btic = time.time()
 
-        name1, loss1 = ce_metric.get()
-        name2, loss2 = smoothl1_metric.get()
-        logger.info('[Epoch {}] Training cost: {:.3f}, {}={:.3f}, {}={:.3f}'.format(
-            epoch, (time.time()-tic), name1, loss1, name2, loss2))
+        msg = ','.join(['{}={:.3f}'.format(*metric.get() for metric in metrics])
+        logger.info('[Epoch {}] Training cost: {:.3f}, {}'.format(
+            epoch, (time.time()-tic), msg))
         if not (epoch + 1) % args.val_interval:
             # consider reduce the frequency of validation to save time
             map_name, mean_ap = validate(net, val_data, ctx, eval_metric)
