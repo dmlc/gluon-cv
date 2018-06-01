@@ -124,7 +124,7 @@ class FasterRCNNDefaultTrainTransform(object):
         img = mx.nd.image.normalize(img, mean=self._mean, std=self._std)
 
         if self._anchors is None:
-            return img, bbox.astype('float32')
+            return img, bbox.astype(img.dtype)
 
         # generate RPN target so cpu workers can help reduce the workload
         # feat_h, feat_w = (img.shape[1] // self._stride, img.shape[2] // self._stride)
@@ -133,7 +133,7 @@ class FasterRCNNDefaultTrainTransform(object):
         gt_bboxes = mx.nd.array(bbox[np.newaxis, :, :4])
         cls_target, cls_mask, box_target, box_mask = self._target_generator(
             gt_bboxes, anchor, img.shape[2], img.shape[1])
-        return img, cls_target[0], box_target[0], box_mask[0]
+        return img, bbox.astype(img.dtype), cls_target[0], box_target[0], box_mask[0]
 
 
 class FasterRCNNDefaultValTransform(object):

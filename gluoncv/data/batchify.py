@@ -62,22 +62,23 @@ def _stack_arrs(arrs, use_shared_mem=False):
         else:
             return mx.nd.array(out)
 
-def _append_arrs(arrs, use_shared_mem=False):
+def _append_arrs(arrs, use_shared_mem=False, expand=False, batch_axis=0):
     """Internal impl for returning appened arrays as list."""
     if isinstance(arrs[0], mx.nd.NDArray):
         if use_shared_mem:
             out = [x.as_in_context(mx.Context('cpu_shared', 0)) for x in arrs]
-            return out
         else:
-            return arrs
+            out = arrs
     else:
         if use_shared_mem:
             out = [mx.nd.array(x, ctx=mx.Context('cpu_shared', 0)) for x in arrs]
-            return out
         else:
             out = [mx.nd.array(x) for x in arrs]
-            return out
 
+    # add batch axis
+    if expand:
+        out = [x.expand_dims(axis=batch_axis) for x in out]
+    return out
 
 class Stack(object):
     r"""Stack the input data samples to construct the batch.
@@ -240,14 +241,18 @@ class Append(object):
     >>> c = [8, 2]
     >>> batchify.Append()([a, b, c])
     [
-    [1. 2. 3. 4.]
-    <NDArray 4 @cpu_shared(0)>,
-    [4. 5. 6.]
-    <NDArray 3 @cpu_shared(0)>,
-    [8. 2.]
-    <NDArray 2 @cpu_shared(0)>
+    [[1. 2. 3. 4.]]
+    <NDArray 1x4 @cpu_shared(0)>,
+    [[4. 5. 6.]]
+    <NDArray 1x3 @cpu_shared(0)>,
+    [[8. 2.]]
+    <NDArray 1x2 @cpu_shared(0)>
     ]
     """
+    def __init__(self, expand=True, batch_axis=0):
+        self._expand = expand
+        self._batch_axis = batch_axis
+
     def __call__(self, data):
         """Batchify the input data.
 
@@ -259,7 +264,8 @@ class Append(object):
         -------
         batch_data : NDArray
         """
-        return _append_arrs(data, True)
+        return _append_arrs(data, use_shared_mem=True,
+                            expand=self._expand, batch_axis=self._batch_axis)
 
 
 class Tuple(object):

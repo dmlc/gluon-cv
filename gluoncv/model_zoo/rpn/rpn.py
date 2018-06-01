@@ -3,6 +3,7 @@ from __future__ import absolute_import
 
 import mxnet as mx
 from mxnet import gluon
+from mxnet import autograd
 from mxnet.gluon import nn
 from .anchor import RPNAnchorGenerator
 from .proposal import RPNProposal
@@ -39,4 +40,7 @@ class RPN(gluon.HybridBlock):
         rpn_box_pred = self.loc(x).transpose(axes=(0, 2, 3, 1)).reshape((0, -1, 4))
         rpn_score, rpn_box, batch_roi, roi = self.region_proposaler(
             anchors, rpn_scores, rpn_box_pred, img)
+        if autograd.is_training():
+            # return raw predictions as well in training for bp
+            return rpn_score, rpn_box, batch_roi, roi, rpn_scores, rpn_box_pred
         return rpn_score, rpn_box, batch_roi, roi

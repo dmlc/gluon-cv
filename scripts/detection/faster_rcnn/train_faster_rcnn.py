@@ -12,6 +12,7 @@ import gluoncv as gcv
 from gluoncv import data as gdata
 from gluoncv import utils as gutils
 from gluoncv.model_zoo import get_model
+from gluoncv.model_zoo.faster_rcnn.rcnn_target import RCNNTargetGenerator
 from gluoncv.data import batchify
 from gluoncv.data.transforms.presets.rcnn import FasterRCNNDefaultTrainTransform
 from gluoncv.data.transforms.presets.rcnn import FasterRCNNDefaultValTransform
@@ -85,7 +86,7 @@ def get_dataloader(net, train_dataset, val_dataset, batch_size, num_workers):
     """Get dataloader."""
     short, max_size = 600, 1000
 
-    train_bfn = batchify.Tuple(*[batchify.Append() for _ in range(4)])
+    train_bfn = batchify.Tuple(*[batchify.Append() for _ in range(5)])
     train_loader = mx.gluon.data.DataLoader(
         train_dataset.transform(FasterRCNNDefaultTrainTransform(short, max_size, net)),
         batch_size, True, batchify_fn=train_bfn, last_batch='rollover', num_workers=num_workers)
@@ -110,7 +111,7 @@ def validate(net, val_data, ctx, eval_metric):
     eval_metric.reset()
     # set nms threshold and topk constraint
     net.set_nms(nms_thresh=0.45, nms_topk=400)
-    net.hybridize()
+    # net.hybridize()
     for batch in val_data:
         data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
         label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0)
@@ -148,6 +149,11 @@ def train(net, train_data, val_data, eval_metric, args):
     lr_steps = sorted([float(ls) for ls in args.lr_decay_epoch.split(',') if ls.strip()])
 
     # TODO(zhreshold) losses?
+    rcnn_target_generator = RCNNTargetGenerator()
+    rpn_cls_loss = mx.gluon.loss.SigmoidBinaryCrossEntropyLoss(from_sigmoid=True)
+    rpn_box_loss = mx.gluon.loss.HuberLoss(rho=0.9)  # == smoothl1
+    rcnn_cls_loss = mx.gluon.loss.SoftmaxCrossEntropyLoss()
+    rcnn_box_loss = mx.gluon.loss.HuberLoss()  # == smoothl1
     ce_metric = mx.metric.Loss('CrossEntropy')
     smoothl1_metric = mx.metric.Loss('SmoothL1')
 
@@ -174,21 +180,32 @@ def train(net, train_data, val_data, eval_metric, args):
         smoothl1_metric.reset()
         tic = time.time()
         btic = time.time()
-        net.hybridize()
+        # net.hybridize()
         for i, batch in enumerate(train_data):
             batch_size = len(batch[0])
-            assert batch_size == len(ctx)
-            data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
-            cls_targets = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0)
-            box_targets = gluon.utils.split_and_load(batch[2], ctx_list=ctx, batch_axis=0)
-            box_masks = gluon.utils.split_and_load(batch[3], ctx_list=ctx, batch_axis=0)
-            print(data)
-            raise NotImplementedError
+            assert batch_size == len(ctx), "allow one batch per device"
+            losses = []
             with autograd.record():
-                pass
-                autograd.backward()
-            # since we have already normalized the loss, we don't want to normalize
-            # by batch-size anymore
+                for data, label, rpn_cls_targets, rpn_box_targets, rpn_box_masks in zip(*batch):
+                    cls_pred, box_pred, roi, rpn_score, rpn_box = net(data)
+                    # losses of rpn
+                    rpn_loss1 = rpn_cls_loss(rpn_score, rpn_cls_targets, rpn_cls_targets >= 0)
+                    rpn_loss2 = rpn_box_loss(rpn_box * rpn_box_masks, rpn_box_targets)
+                    # rpn overall loss, use sum rather than average
+                    rpn_loss = rpn_loss1 * rpn_cls_targets.size + rpn_loss2 * rpn_box.size
+                    # generate targets for rcnn
+                    gt_label = label[:, :, 4:5]
+                    gt_box = label[:, :, :4]
+                    cls_targets, box_targets, box_masks = rcnn_target_generator(roi, gt_label, gt_box)
+                    print(cls_targets.shape, box_targets.shape, box_masks.shape)
+                    raise
+                    # losses of rcnn
+                    rcnn_loss1 = rcnn_cls_loss(cls_pred, cls_targets, cls_targets >= 0)
+                    rcnn_loss2 = rcnn_box_loss(box_pred * box_masks, box_targets)
+                    rcnn_loss = rcnn_loss1 * cls_targets.size + rcnn_loss2 * box_pred.size
+                    # overall losses, TODO(zhreshold): weights? currently 1:1 used
+                    losses.append(rpn_loss + rcnn_loss)
+                autograd.backward(losses)
             trainer.step(batch_size)
             # update metrics
             if args.log_interval and not (i + 1) % args.log_interval:

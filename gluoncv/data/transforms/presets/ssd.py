@@ -135,7 +135,7 @@ class SSDDefaultTrainTransform(object):
         img = mx.nd.image.normalize(img, mean=self._mean, std=self._std)
 
         if self._anchors is None:
-            return img, bbox.astype('float32')
+            return img, bbox.astype(img.dtype)
 
         # generate training target so cpu workers can help reduce the workload on gpu
         gt_bboxes = mx.nd.array(bbox[np.newaxis, :, :4])
@@ -174,4 +174,4 @@ class SSDDefaultValTransform(object):
 
         img = mx.nd.image.to_tensor(img)
         img = mx.nd.image.normalize(img, mean=self._mean, std=self._std)
-        return img, bbox.astype('float32')
+        return img, bbox.astype(img.dtype)

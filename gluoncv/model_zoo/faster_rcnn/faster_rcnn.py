@@ -29,7 +29,11 @@ class FasterRCNN(RCNN):
     def hybrid_forward(self, F, x):
         feat = self.features(x)
         # RPN proposals
-        rpn_score, rpn_box, rpn_roi, roi = self.rpn(feat, F.zeros_like(x))
+        if autograd.is_training():
+            rpn_score, rpn_box, rpn_roi, roi, raw_rpn_score, raw_rpn_box = self.rpn(
+                feat, F.zeros_like(x))
+        else:
+            rpn_score, rpn_box, rpn_roi, roi = self.rpn(feat, F.zeros_like(x))
         # ROI features
         if self._roi_mode == 'pool':
             pooled_feat = F.ROIPooling(feat, rpn_roi, self._roi_size, 1. / self.stride)
@@ -47,7 +51,7 @@ class FasterRCNN(RCNN):
 
         # no need to convert bounding boxes in training, just return
         if autograd.is_training():
-            return cls_pred, box_pred, roi
+            return cls_pred, box_pred, roi, raw_rpn_score, raw_rpn_box
 
         # translate bboxes
         bboxes = self.box_decoder(box_pred, self.box_to_center(roi)).split(

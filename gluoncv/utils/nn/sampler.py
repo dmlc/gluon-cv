@@ -103,35 +103,118 @@ class QuotaSampler(autograd.Function):
         F = mx.nd
         max_pos = int(round(self._pos_ratio * self._num_sample))
         max_neg = int(self._neg_ratio * self._num_sample)
-        # init with 0s, which are ignored
-        result = F.zeros_like(matches[0])
-        # negative samples with label -1
-        ious_max = ious.max(axis=-1)[0]
-        neg_mask = ious_max < self._neg_thresh_high
-        neg_mask = neg_mask * (ious_max > self._neg_thresh_low)
-        result = F.where(neg_mask, F.ones_like(result) * -1, result)
-        # positive samples
-        result = F.where(matches[0] >= 0, F.ones_like(result), result)
-        result = F.where(ious_max >= self._pos_thresh, F.ones_like(result), result)
+        results = []
+        for i in range(matches.shape[0]):
+            # init with 0s, which are ignored
+            result = F.zeros_like(matches[0])
+            # negative samples with label -1
+            ious_max = ious.max(axis=-1)[i]
+            neg_mask = ious_max < self._neg_thresh_high
+            neg_mask = neg_mask * (ious_max > self._neg_thresh_low)
+            result = F.where(neg_mask, F.ones_like(result) * -1, result)
+            # positive samples
+            result = F.where(matches[i] >= 0, F.ones_like(result), result)
+            result = F.where(ious_max >= self._pos_thresh, F.ones_like(result), result)
 
-        # re-balance if number of postive or negative exceed limits
-        result = result.asnumpy()
-        num_pos = int((result > 0).sum())
-        if num_pos > max_pos:
-            disable_indices = np.random.choice(
-                np.where(result > 0)[0], size=(num_pos - max_pos), replace=False)
-            result[disable_indices] = 0   # use 0 to ignore
-        num_neg = int((result < 0).sum())
-        if num_neg > max_neg:
-            disable_indices = np.random.choice(
-                np.where(result < 0)[0], size=(num_neg - max_neg), replace=False)
+            # re-balance if number of postive or negative exceed limits
+            result = result.asnumpy()
+            num_pos = int((result > 0).sum())
+            if num_pos > max_pos:
+                disable_indices = np.random.choice(
+                    np.where(result > 0)[0], size=(num_pos - max_pos), replace=False)
+                result[disable_indices] = 0   # use 0 to ignore
+            num_neg = int((result < 0).sum())
+            if num_neg > max_neg:
+                disable_indices = np.random.choice(
+                    np.where(result < 0)[0], size=(num_neg - max_neg), replace=False)
+                result[disable_indices] = 0
+            results.append(mx.nd.array(result))
 
         # some non-related gradients
         g1 = F.zeros_like(matches)
         g2 = F.zeros_like(ious)
         self.save_for_backward(g1, g2)
-        return mx.nd.array(result)
+        return mx.nd.stack(*results, axis=0)
 
     def backward(self, dy):
         g1, g2 = self.saved_tensors
         return g1, g2
+
+
+class QuotaSamplerOp(mx.operator.CustomOp):
+    def __init__(self, num_sample, pos_thresh, neg_thresh_high=0.5, neg_thresh_low=0.,
+                 pos_ratio=0.5, neg_ratio=None):
+        self._num_sample = num_sample
+        if neg_ratio is None:
+            self._neg_ratio = 1. - pos_ratio
+        self._pos_ratio = pos_ratio
+        assert (self._neg_ratio + self._pos_ratio) <= 1.0, (
+            "Positive and negative ratio exceed 1".format(self._neg_ratio + self._pos_ratio))
+        self._pos_thresh = min(1., max(0., pos_thresh))
+        self._neg_thresh_high = min(1., max(0., neg_thresh_high))
+        self._neg_thresh_low = min(1., max(0., neg_thresh_low))
+
+    def forward(self, is_train, req, in_data, out_data, aux):
+        matches = in_data[0]
+        ious = in_data[1]
+        F = mx.nd
+        max_pos = int(round(self._pos_ratio * self._num_sample))
+        max_neg = int(self._neg_ratio * self._num_sample)
+        for i in range(matches.shape[0]):
+            # init with 0s, which are ignored
+            result = F.zeros_like(matches[i])
+            # negative samples with label -1
+            ious_max = ious.max(axis=-1)[i]
+            neg_mask = ious_max < self._neg_thresh_high
+            neg_mask = neg_mask * (ious_max > self._neg_thresh_low)
+            result = F.where(neg_mask, F.ones_like(result) * -1, result)
+            # positive samples
+            result = F.where(matches[i] >= 0, F.ones_like(result), result)
+            result = F.where(ious_max >= self._pos_thresh, F.ones_like(result), result)
+
+            # re-balance if number of postive or negative exceed limits
+            result = result.asnumpy()
+            num_pos = int((result > 0).sum())
+            if num_pos > max_pos:
+                disable_indices = np.random.choice(
+                    np.where(result > 0)[0], size=(num_pos - max_pos), replace=False)
+                result[disable_indices] = 0   # use 0 to ignore
+            num_neg = int((result < 0).sum())
+            if num_neg > max_neg:
+                disable_indices = np.random.choice(
+                    np.where(result < 0)[0], size=(num_neg - max_neg), replace=False)
+
+            self.assign(out_data[0][i], req[0], mx.nd.array(result))
+
+    def backward(self, req, out_grad, in_data, out_data, in_grad, aux):
+        self.assign(in_grad[0], req[0], 0)
+        self.assign(in_grad[1], req[1], 0)
+
+
+@mx.operator.register('quota_sampler')
+class QuotaSamplerProp(mx.operator.CustomOpProp):
+    def __init__(self, num_sample, pos_thresh, neg_thresh_high=0.5, neg_thresh_low=0.,
+                 pos_ratio=0.5, neg_ratio=None):
+        super(QuotaSamplerProp, self).__init__(need_top_grad=False)
+        self.num_sample = int(num_sample)
+        self.pos_thresh = float(pos_thresh)
+        self.neg_thresh_high = float(neg_thresh_high)
+        self.neg_thresh_low = float(neg_thresh_low)
+        self.pos_ratio = float(pos_ratio)
+        self.neg_ratio = None if neg_ratio is None else float(neg_ratio)
+
+    def list_arguments(self):
+        return ['matches', 'ious']
+
+    def list_outputs(self):
+        return ['output']
+
+    def infer_shape(self, in_shape):
+        return in_shape, [in_shape[0]], []
+
+    def infer_type(self, in_type):
+        return [in_type[0], in_type[0]], [in_type[0]], []
+
+    def create_operator(self, ctx, shapes, dtypes):
+        return QuotaSamplerOp(self.num_sample, self.pos_thresh, self.neg_thresh_high,
+                              self.neg_thresh_low, self.pos_ratio, self.neg_ratio)
