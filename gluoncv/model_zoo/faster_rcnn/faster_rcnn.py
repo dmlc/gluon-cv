@@ -5,7 +5,7 @@ import os
 import mxnet as mx
 from mxnet import autograd
 from mxnet.gluon import nn
-from .rcnn_target import RCNNTargetSampler
+from .rcnn_target import RCNNTargetSampler, RCNNTargetGenerator
 from ..rcnn import RCNN
 from ..rpn import RPN
 
@@ -18,12 +18,13 @@ class FasterRCNN(RCNN):
     def __init__(self, features, top_features, scales, ratios, classes, roi_mode, roi_size,
                  stride=16, rpn_channel=1024, nms_thresh=0.3, nms_topk=400,
                  num_sample=128, pos_iou_thresh=0.5, neg_iou_thresh_high=0.5,
-                 neg_iou_thresh_low=0.0, pos_ratio=0.25, max_batch=32, max_roi=200000, **kwargs):
+                 neg_iou_thresh_low=0.0, pos_ratio=0.25, max_batch=1, max_roi=200000, **kwargs):
         super(FasterRCNN, self).__init__(
             features, top_features, classes, roi_mode, roi_size, **kwargs)
         self.stride = stride
         self._max_batch = max_batch
         self._max_roi = max_roi
+        self._target_generator = set([RCNNTargetGenerator(self.num_class)])
         with self.name_scope():
             self.rpn = RPN(rpn_channel, stride, scales=scales, ratios=ratios)
             self.sampler = RCNNTargetSampler(num_sample, pos_iou_thresh, neg_iou_thresh_high,
@@ -32,6 +33,10 @@ class FasterRCNN(RCNN):
     def set_nms(self, nms_thresh=0.3, nms_topk=400):
         self.nms_thresh = nms_thresh
         self.nms_topk = nms_topk
+
+    @property
+    def target_generator(self):
+        return list(self._target_generator)[0]
 
     def hybrid_forward(self, F, x, gt_box=None):
         feat = self.features(x)
@@ -42,8 +47,6 @@ class FasterRCNN(RCNN):
             # sample 128 roi
             assert gt_box is not None
             roi, samples, matches = self.sampler(roi, gt_box)
-            print(roi.shape, samples.shape, matches.shape)
-            raise
         else:
             rpn_score, rpn_box, roi = self.rpn(feat, F.zeros_like(x))
 
@@ -51,10 +54,8 @@ class FasterRCNN(RCNN):
         roi_batchid = F.arange(
             0, self._max_batch, repeat=self._max_roi).reshape(
                 (-1, self._max_roi))
-        roi_batchid = F.slice_like(roi_batchid, rpn_box, axes=(0, 1))
-        print(roi_batchid.shape, roi.shape)
-        raise
-        rpn_roi = F.concat(*[roi_batchid.reshape((-1, 1)), roi], dim=1)
+        roi_batchid = F.slice_like(roi_batchid, roi, axes=(0, 1))
+        rpn_roi = F.concat(*[roi_batchid.reshape((-1, 1)), roi.reshape((-1, 4))], dim=-1)
 
         # ROI features
         if self._roi_mode == 'pool':
@@ -73,6 +74,7 @@ class FasterRCNN(RCNN):
 
         # no need to convert bounding boxes in training, just return
         if autograd.is_training():
+            box_pred = box_pred.transpose((1, 0, 2))
             return cls_pred, box_pred, roi, samples, matches, raw_rpn_score, raw_rpn_box
 
         # translate bboxes

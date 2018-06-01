@@ -6,6 +6,7 @@ Matching is usually not required during testing.
 """
 from __future__ import absolute_import
 from mxnet import gluon
+from mxnet.gluon import nn
 
 
 class CompositeMatcher(gluon.HybridBlock):
@@ -21,7 +22,9 @@ class CompositeMatcher(gluon.HybridBlock):
         assert len(matchers) > 0, "At least one matcher required."
         for matcher in matchers:
             assert isinstance(matcher, (gluon.Block, gluon.HybridBlock))
-        self._matchers = matchers
+        self._matchers = nn.HybridSequential()
+        for m in matchers:
+            self._matchers.add(m)
 
     def hybrid_forward(self, F, x):
         matches = [matcher(x) for matcher in self._matchers]

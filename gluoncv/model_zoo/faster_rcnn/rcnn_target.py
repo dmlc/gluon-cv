@@ -5,7 +5,7 @@ import numpy as np
 import mxnet as mx
 from mxnet import gluon
 from ...nn.bbox import BBoxSplit
-from ...nn.coder import MultiClassEncoder, NormalizedBoxCenterEncoder
+from ...nn.coder import MultiClassEncoder, NormalizedPerClassBoxCenterEncoder
 from ...utils.nn.matcher import CompositeMatcher, BipartiteMatcher, MaximumMatcher
 
 
@@ -43,14 +43,18 @@ class RCNNTargetSampler(gluon.HybridBlock):
         sf_samples = F.where(samples == 0, F.ones_like(samples) * -999, samples)
         sf_samples = F.shuffle(sf_samples)
         indices = F.argsort(sf_samples).slice_axis(axis=0, begin=0, end=self._num_sample)
-        return all_roi.take(indices), samples.take(indices), matches.take(indices)
+        new_roi = all_roi.take(indices).expand_dims(0)
+        new_samples = samples.take(indices).expand_dims(0)
+        new_matches = matches.take(indices).expand_dims(0)
+        return new_roi, new_samples, new_matches
 
 
 class RCNNTargetGenerator(gluon.Block):
-    def __init__(self, means=(0., 0., 0., 0.), stds=(.1, .1, .2, .2)):
+    def __init__(self, num_class, means=(0., 0., 0., 0.), stds=(.1, .1, .2, .2)):
         super(RCNNTargetGenerator, self).__init__()
         self._cls_encoder = MultiClassEncoder()
-        self._box_encoder = NormalizedBoxCenterEncoder(means=means, stds=stds)
+        self._box_encoder = NormalizedPerClassBoxCenterEncoder(
+            num_class=num_class, means=means, stds=stds)
 
     def forward(self, roi, samples, matches, gt_label, gt_box):
         """
@@ -58,5 +62,9 @@ class RCNNTargetGenerator(gluon.Block):
         """
         cls_target = self._cls_encoder(samples, matches, gt_label)
         box_target, box_mask = self._box_encoder(
-            samples, matches, roi, gt_box)
+            samples, matches, roi, gt_label, gt_box)
+        # modify shapes to match predictions
+        cls_target = cls_target[0]
+        box_target = box_target.transpose((1, 2, 0, 3))[0]
+        box_mask = box_mask.transpose((1, 2, 0, 3))[0]
         return cls_target, box_target, box_mask

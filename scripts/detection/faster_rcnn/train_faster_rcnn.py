@@ -12,7 +12,6 @@ import gluoncv as gcv
 from gluoncv import data as gdata
 from gluoncv import utils as gutils
 from gluoncv.model_zoo import get_model
-from gluoncv.model_zoo.faster_rcnn.rcnn_target import RCNNTargetGenerator
 from gluoncv.data import batchify
 from gluoncv.data.transforms.presets.rcnn import FasterRCNNDefaultTrainTransform
 from gluoncv.data.transforms.presets.rcnn import FasterRCNNDefaultValTransform
@@ -149,7 +148,6 @@ def train(net, train_data, val_data, eval_metric, args):
     lr_steps = sorted([float(ls) for ls in args.lr_decay_epoch.split(',') if ls.strip()])
 
     # TODO(zhreshold) losses?
-    rcnn_target_generator = RCNNTargetGenerator()
     rpn_cls_loss = mx.gluon.loss.SigmoidBinaryCrossEntropyLoss(from_sigmoid=True)
     rpn_box_loss = mx.gluon.loss.HuberLoss(rho=0.9)  # == smoothl1
     rcnn_cls_loss = mx.gluon.loss.SoftmaxCrossEntropyLoss()
@@ -190,26 +188,24 @@ def train(net, train_data, val_data, eval_metric, args):
                     gt_label = label[:, :, 4:5]
                     gt_box = label[:, :, :4]
                     cls_pred, box_pred, roi, samples, matches, rpn_score, rpn_box = net(data, gt_box)
-                    print(cls_pred.shape, box_pred.shape, roi.shape, samples.shape, matches.shape, rpn_score.shape, rpn_box.shape)
-                    raise
                     # losses of rpn
                     rpn_loss1 = rpn_cls_loss(rpn_score, rpn_cls_targets, rpn_cls_targets >= 0)
                     rpn_loss2 = rpn_box_loss(rpn_box * rpn_box_masks, rpn_box_targets)
                     # rpn overall loss, use sum rather than average
                     rpn_loss = rpn_loss1 * rpn_cls_targets.size + rpn_loss2 * rpn_box.size
                     # generate targets for rcnn
-                    cls_targets, box_targets, box_masks = rcnn_target_generator(roi, samples, matches, gt_label, gt_box)
+                    cls_targets, box_targets, box_masks = net.target_generator(roi, samples, matches, gt_label, gt_box)
                     # losses of rcnn
-                    print(cls_pred.shape, cls_targets.shape)
                     rcnn_loss1 = rcnn_cls_loss(cls_pred, cls_targets, cls_targets >= 0)
                     rcnn_loss2 = rcnn_box_loss(box_pred * box_masks, box_targets)
                     rcnn_loss = rcnn_loss1 * cls_targets.size + rcnn_loss2 * box_pred.size
-                    print(rcnn_loss1 * cls_targets.size, rcnn_loss2 * box_pred.size, rcnn_loss)
-                    raise
                     # overall losses, TODO(zhreshold): weights? currently 1:1 used
-                    losses.append(rpn_loss + rcnn_loss)
+                    losses.append(rpn_loss)
+                    losses.append(rcnn_loss)
                 autograd.backward(losses)
             trainer.step(batch_size)
+            mx.nd.waitall()
+            raise
             # update metrics
             if args.log_interval and not (i + 1) % args.log_interval:
                 name1, loss1 = ce_metric.get()
