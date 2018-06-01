@@ -16,8 +16,10 @@ __all__ = ['get_segmentation_model', 'SegBaseModel', 'SegEvalModel', 'MultiEvalM
 
 def get_segmentation_model(model, **kwargs):
     from .fcn import get_fcn
+    from .pspnet import get_psp
     models = {
         'fcn': get_fcn,
+        'psp': get_psp,
     }
     return models[model](**kwargs)
 
@@ -34,7 +36,7 @@ class SegBaseModel(HybridBlock):
         for Synchronized Cross-GPU BachNormalization).
     """
     # pylint : disable=arguments-differ
-    def __init__(self, nclass, aux, backbone='resnet50', **kwargs):
+    def __init__(self, nclass, aux, backbone='resnet50', height=480, width=480, **kwargs):
         super(SegBaseModel, self).__init__()
         self.aux = aux
         self.nclass = nclass
@@ -55,6 +57,7 @@ class SegBaseModel(HybridBlock):
             self.layer2 = pretrained.layer2
             self.layer3 = pretrained.layer3
             self.layer4 = pretrained.layer4
+        self._up_kwargs = {'height': height, 'width': width}
 
     def base_forward(self, x):
         """forwarding pre-trained network"""

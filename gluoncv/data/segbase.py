@@ -35,8 +35,12 @@ def test_batchify_fn(data):
 class SegmentationDataset(VisionDataset):
     """Segmentation Base Dataset"""
     # pylint: disable=abstract-method
-    def __init__(self, root, base_size=520, crop_size=480):
+    def __init__(self, root, split, mode, transform, base_size=520, crop_size=480):
         super(SegmentationDataset, self).__init__(root)
+        self.root = root
+        self.transform = transform
+        self.split = split
+        self.mode = mode if mode is not None else split
         self.base_size = base_size
         self.crop_size = crop_size
 

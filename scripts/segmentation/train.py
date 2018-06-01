@@ -59,6 +59,8 @@ def parse_args():
                         help='put the path to resuming file if needed')
     parser.add_argument('--checkname', type=str, default='default',
                         help='set the checkpoint name')
+    parser.add_argument('--model-zoo', type=str, default=None,
+                        help='evaluating on model zoo model')
     # evaluation only
     parser.add_argument('--eval', action='store_true', default= False,
                         help='evaluation only')

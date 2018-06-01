@@ -34,21 +34,18 @@ class VOCAugSegmentation(SegmentationDataset):
     TRAIN_BASE_DIR = 'VOCaug/dataset/'
     NUM_CLASS = 21
     def __init__(self, root=os.path.expanduser('~/.mxnet/datasets/voc'),
-                 split='train', transform=None):
-        super(VOCAugSegmentation, self).__init__(root)
-        self.transform = transform
-        self.train = split
-
+                 split='train', mode=None, transform=None):
+        super(VOCAugSegmentation, self).__init__(root, split, mode, transform)
         # train/val/test splits are pre-cut
         _voc_root = os.path.join(root, self.TRAIN_BASE_DIR)
         _mask_dir = os.path.join(_voc_root, 'cls')
         _image_dir = os.path.join(_voc_root, 'img')
-        if self.train == 'train':
+        if split == 'train':
             _split_f = os.path.join(_voc_root, 'trainval.txt')
-        elif self.train == 'val':
+        elif split == 'val':
             _split_f = os.path.join(_voc_root, 'val.txt')
         else:
-            raise RuntimeError('Unknown dataset split.')
+            raise RuntimeError('Unknown dataset split: {}'.format(split))
 
         self.images = []
         self.masks = []
@@ -67,9 +64,9 @@ class VOCAugSegmentation(SegmentationDataset):
         img = Image.open(self.images[index]).convert('RGB')
         target = self._load_mat(self.masks[index])
         # synchrosized transform
-        if self.train == 'train':
+        if self.mode == 'train':
             img, target = self._sync_transform(img, target)
-        elif self.train == 'val':
+        elif self.mode == 'val':
             img, target = self._val_sync_transform(img, target)
         else:
             raise RuntimeError('unknown mode for dataloader: {}'.format(self.mode))

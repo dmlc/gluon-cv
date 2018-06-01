@@ -5,37 +5,28 @@ import mxnet.ndarray as F
 __all__ = ['batch_pix_accuracy', 'batch_intersection_union', 'pixelAccuracy',
            'intersectionAndUnion']
 
-def batch_pix_accuracy(output, target, ignore_bg=False):
+def batch_pix_accuracy(output, target):
     """PixAcc"""
     # inputs are NDarray, output 4D, target 3D
-    predict = F.argmax(output, 1)
-    target = target.astype(predict.dtype)
-    if ignore_bg:
-        pixel_labeled = (target > 0).sum().asscalar()
-        pixel_correct = (F.equal(predict, target)*(target > 0.0)).sum().asscalar()
-    else:
-        pixel_labeled = (target >= 0).sum().asscalar()
-        pixel_correct = (F.equal(predict, target)*(target >= 0.0)).sum().asscalar()
+    predict = F.argmax(output, 1) + 1
+    target = target.astype(predict.dtype) +1
+    pixel_labeled = (target > 0).sum().asscalar()
+    pixel_correct = (F.equal(predict, target)*(target > 0.0)).sum().asscalar()
     return pixel_correct, pixel_labeled
 
 
-def batch_intersection_union(output, target, nclass, ignore_bg=False):
+def batch_intersection_union(output, target, nclass):
     """mIoU"""
     # inputs are NDarray, output 4D, target 3D
-    # ignore_bg=True, ignoring class 0; ignore_bg = False, use class 0
-    predict = F.argmax(output, 1)
-    target = target.astype(predict.dtype)
-    mini = 0
-    maxi = nclass - 1
+    predict = F.argmax(output, 1) + 1
+    target = target.astype(predict.dtype) + 1
+    mini = 1
+    maxi = nclass
     nbins = nclass
     predict = predict.asnumpy()
     target = target.asnumpy()
-    if ignore_bg:
-        mini = 1
-        nbins -= 1
-        predict = predict * (target > 0).astype(predict.dtype)
-    else:
-        predict = predict * (target >= 0).astype(predict.dtype)
+
+    predict = predict * (target > 0).astype(predict.dtype)
     #intersection = predict * (F.equal(predict, target)).astype(predict.dtype)
     intersection = predict * (predict == target)
     # areas of intersection and union
