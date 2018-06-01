@@ -105,6 +105,15 @@ def save_params(net, best_map, current_map, epoch, save_interval, prefix):
     if save_interval and epoch % save_interval == 0:
         net.save_params('{:s}_{:04d}_{:.4f}.params'.format(prefix, epoch, current_map))
 
+def split_and_load(batch, ctx_list):
+    """Split data to 1 batch each device."""
+    num_ctx = len(ctx_list)
+    new_batch = []
+    for i, data in enumerate(batch):
+        new_data = [x.as_in_context(ctx) for x, ctx in zip(data, ctx_list)]
+        new_batch.append(new_data)
+    return new_batch
+
 def validate(net, val_data, ctx, eval_metric):
     """Test on validation dataset."""
     eval_metric.reset()
@@ -182,8 +191,7 @@ def train(net, train_data, val_data, eval_metric, args):
         btic = time.time()
         # net.hybridize()
         for i, batch in enumerate(train_data):
-            batch_size = len(batch[0])
-            assert batch_size == len(ctx), "allow one batch per device"
+            batch = split_and_load(batch)
             losses = []
             metric_losses = [[] for _ in metrics]
             with autograd.record():
