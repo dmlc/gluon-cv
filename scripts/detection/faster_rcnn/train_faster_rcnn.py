@@ -176,8 +176,8 @@ def train(net, train_data, val_data, eval_metric, args):
             lr_steps.pop(0)
             trainer.set_learning_rate(new_lr)
             logger.info("[Epoch {}] Set learning rate to {}".format(epoch, new_lr))
-        ce_metric.reset()
-        smoothl1_metric.reset()
+        for metric in metrics:
+            metric.reset()
         tic = time.time()
         btic = time.time()
         # net.hybridize()
