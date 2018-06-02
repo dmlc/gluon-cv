@@ -122,14 +122,21 @@ class NormalizedBoxCenterDecoder(gluon.HybridBlock):
         Mean value to be subtracted from encoded values, default is (0., 0., 0., 0.).
 
     """
-    def __init__(self, stds=(0.1, 0.1, 0.2, 0.2), means=(0., 0., 0., 0.)):
+    def __init__(self, stds=(0.1, 0.1, 0.2, 0.2), means=(0., 0., 0., 0.), convert_anchor=False):
         super(NormalizedBoxCenterDecoder, self).__init__()
         assert len(stds) == 4, "Box Encoder requires 4 std values."
         self._stds = stds
         self._means = means
+        if convert_anchor:
+            self.corner_to_center = BBoxCornerToCenter(split=True)
+        else:
+            self.corner_to_center = None
 
     def hybrid_forward(self, F, x, anchors):
-        a = anchors.split(axis=-1, num_outputs=4)
+        if self.corner_to_center is not None:
+            a = self.corner_to_center(anchors)
+        else:
+            a = anchors.split(axis=-1, num_outputs=4)
         p = F.split(x, axis=-1, num_outputs=4)
         ox = F.broadcast_add(F.broadcast_mul(p[0] * self._stds[0] + self._means[0], a[2]), a[0])
         oy = F.broadcast_add(F.broadcast_mul(p[1] * self._stds[1] + self._means[1], a[3]), a[1])
