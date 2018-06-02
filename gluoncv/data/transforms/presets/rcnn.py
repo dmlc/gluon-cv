@@ -1,5 +1,6 @@
 """Transforms for RCNN series."""
 from __future__ import absolute_import
+import copy
 import numpy as np
 import mxnet as mx
 from .. import bbox as tbbox
@@ -95,7 +96,10 @@ class FasterRCNNDefaultTrainTransform(object):
 
         # use fake data to generate fixed anchors for target generation
         ashape = 128
-        anchors = net.rpn.anchor_generator(
+        # in case network has reset_ctx to gpu
+        anchor_generator = copy.deepcopy(net.rpn.anchor_generator)
+        anchor_generator.collect_params().reset_ctx(None)
+        anchors = anchor_generator(
             mx.nd.zeros((1, 3, ashape, ashape))).reshape((1, 1, ashape, ashape, -1))
         self._anchors = anchors
         # record feature extractor for infer_shape
@@ -112,7 +116,7 @@ class FasterRCNNDefaultTrainTransform(object):
         # resize shorter side but keep in max_size
         h, w, _ = src.shape
         img = timage.resize_short_within(src, self._short, self._max_size)
-        bbox = tbbox.resize(label, (w, h), (img.shape[0], img.shape[1]))
+        bbox = tbbox.resize(label, (w, h), (img.shape[1], img.shape[0]))
 
         # random horizontal flip
         h, w, _ = img.shape
