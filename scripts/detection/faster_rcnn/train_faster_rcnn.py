@@ -201,15 +201,15 @@ def train(net, train_data, val_data, eval_metric, args):
                     gt_box = label[:, :, :4]
                     cls_pred, box_pred, roi, samples, matches, rpn_score, rpn_box = net(data, gt_box)
                     # losses of rpn
-                    rpn_loss1 = rpn_cls_loss(rpn_score, rpn_cls_targets, rpn_cls_targets >= 0) / 256.
-                    rpn_loss2 = rpn_box_loss(rpn_box, rpn_box_targets, rpn_box_masks) / 256.
+                    rpn_loss1 = rpn_cls_loss(rpn_score, rpn_cls_targets, rpn_cls_targets >= 0) * rpn_cls_targets.size / 256.
+                    rpn_loss2 = rpn_box_loss(rpn_box, rpn_box_targets, rpn_box_masks) * rpn_box.size / 256.
                     # rpn overall loss, use sum rather than average
                     rpn_loss = rpn_loss1 + rpn_loss2
                     # generate targets for rcnn
                     cls_targets, box_targets, box_masks = net.target_generator(roi, samples, matches, gt_label, gt_box)
                     # losses of rcnn
-                    rcnn_loss1 = rcnn_cls_loss(cls_pred, cls_targets, cls_targets >= 0) / 128.
-                    rcnn_loss2 = rcnn_box_loss(box_pred * box_masks, box_targets) / 128.
+                    rcnn_loss1 = rcnn_cls_loss(cls_pred, cls_targets, cls_targets >= 0) * cls_targets.size / 128.
+                    rcnn_loss2 = rcnn_box_loss(box_pred * box_masks, box_targets) * box_pred.size / 128.
                     rcnn_loss = rcnn_loss1 + rcnn_loss2
                     # overall losses, TODO(zhreshold): weights? currently 1:1 used
                     losses.append(rpn_loss)
