@@ -202,7 +202,7 @@ def train(net, train_data, val_data, eval_metric, args):
                     cls_pred, box_pred, roi, samples, matches, rpn_score, rpn_box = net(data, gt_box)
                     # losses of rpn
                     rpn_loss1 = rpn_cls_loss(rpn_score, rpn_cls_targets, rpn_cls_targets >= 0) * rpn_cls_targets.size
-                    rpn_loss2 = rpn_box_loss(rpn_box * rpn_box_masks, rpn_box_targets) * rpn_box.size
+                    rpn_loss2 = rpn_box_loss(rpn_box, rpn_box_targets, rpn_box_masks) * rpn_box.size
                     # rpn overall loss, use sum rather than average
                     rpn_loss = rpn_loss1 + rpn_loss2
                     # generate targets for rcnn
