@@ -208,16 +208,15 @@ def train(net, train_data, val_data, eval_metric, args):
                     # generate targets for rcnn
                     cls_targets, box_targets, box_masks = net.target_generator(roi, samples, matches, gt_label, gt_box)
                     # losses of rcnn
-                    rcnn_loss1 = rcnn_cls_loss(cls_pred, cls_targets, cls_targets >= 0) * cls_targets.size / 128.
-                    rcnn_loss2 = rcnn_box_loss(box_pred * box_masks, box_targets) * box_pred.size / 128.
+                    rcnn_loss1 = rcnn_cls_loss(cls_pred, cls_targets, cls_targets >= 0) * cls_targets.size
+                    rcnn_loss2 = rcnn_box_loss(box_pred * box_masks, box_targets) * box_pred.size
                     rcnn_loss = rcnn_loss1 + rcnn_loss2
                     # overall losses, TODO(zhreshold): weights? currently 1:1 used
-                    losses.append(rpn_loss)
-                    losses.append(rcnn_loss)
-                    metric_losses[0].append(rpn_loss1)
-                    metric_losses[1].append(rpn_loss2)
-                    metric_losses[2].append(rcnn_loss1)
-                    metric_losses[3].append(rcnn_loss2)
+                    losses.append(rpn_loss.sum() + rcnn_loss.sum())
+                    metric_losses[0].append(rpn_loss1.sum())
+                    metric_losses[1].append(rpn_loss2.sum())
+                    metric_losses[2].append(rcnn_loss1.sum())
+                    metric_losses[3].append(rcnn_loss2.sum())
                 autograd.backward(losses)
                 for metric, record in zip(metrics, metric_losses):
                     metric.update(0, record)
