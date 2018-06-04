@@ -157,7 +157,7 @@ def train(net, train_data, val_data, eval_metric, args):
     lr_steps = sorted([float(ls) for ls in args.lr_decay_epoch.split(',') if ls.strip()])
 
     # TODO(zhreshold) losses?
-    rpn_cls_loss = mx.gluon.loss.SigmoidBinaryCrossEntropyLoss(from_sigmoid=True)
+    rpn_cls_loss = mx.gluon.loss.SigmoidBinaryCrossEntropyLoss(from_sigmoid=False)
     rpn_box_loss = mx.gluon.loss.HuberLoss(rho=0.9)  # == smoothl1
     rcnn_cls_loss = mx.gluon.loss.SoftmaxCrossEntropyLoss()
     rcnn_box_loss = mx.gluon.loss.HuberLoss()  # == smoothl1
@@ -201,6 +201,8 @@ def train(net, train_data, val_data, eval_metric, args):
                     gt_box = label[:, :, :4]
                     cls_pred, box_pred, roi, samples, matches, rpn_score, rpn_box = net(data, gt_box)
                     # losses of rpn
+                    print(rpn_score)
+                    raise
                     rpn_loss1 = rpn_cls_loss(rpn_score, rpn_cls_targets, rpn_cls_targets >= 0) * rpn_cls_targets.size / 256.
                     rpn_loss2 = rpn_box_loss(rpn_box, rpn_box_targets, rpn_box_masks) * rpn_box.size / 256.
                     # rpn overall loss, use sum rather than average
