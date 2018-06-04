@@ -41,8 +41,7 @@ class RCNNTargetSampler(gluon.HybridBlock):
 
         # shuffle and argsort, take first num_sample samples
         sf_samples = F.where(samples == 0, F.ones_like(samples) * -999, samples)
-        sf_samples = F.shuffle(sf_samples)
-        indices = F.argsort(sf_samples).slice_axis(axis=0, begin=0, end=self._num_sample)
+        indices = F.argsort(sf_samples, is_ascend=False).slice_axis(axis=0, begin=0, end=self._num_sample)
         new_roi = all_roi.take(indices).expand_dims(0)
         new_samples = samples.take(indices).expand_dims(0)
         new_matches = matches.take(indices).expand_dims(0)
