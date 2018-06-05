@@ -1,6 +1,7 @@
 """RCNN Model."""
 from __future__ import absolute_import
 
+import mxnet as mx
 from mxnet import gluon
 from mxnet.gluon import nn
 from ...nn.bbox import BBoxCornerToCenter
