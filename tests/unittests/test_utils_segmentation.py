@@ -28,7 +28,7 @@ def test_segmentation_utils():
     # count for pixAcc and mIoU
     total_inter, total_union, total_correct, total_label = 0, 0, 0, 0
     np_inter, np_union, np_correct, np_label = 0, 0, 0, 0
-    for i in range(1):
+    for i in range(10):
         img, mask = dataset[i]
         # prepare data and make prediction
         img = transform_fn(img)
@@ -47,8 +47,8 @@ def test_segmentation_utils():
         mIoU = IoU.mean()
 
         # np predicition
-        pred = mx.nd.squeeze(mx.nd.argmax(pred, 1)).asnumpy()
-        mask = mask.squeeze().asnumpy()
+        pred = mx.nd.squeeze(mx.nd.argmax(pred, 1)).asnumpy() + 1
+        mask = mask.squeeze().asnumpy() + 1
         _, correct2, labeled2 = pixelAccuracy(pred, mask)
         inter2, union2 = intersectionAndUnion(pred, mask, dataset.num_class)
         np_correct += correct2
