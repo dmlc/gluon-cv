@@ -9,7 +9,7 @@ from mxnet.gluon.data.vision import transforms
 from gluoncv.utils import PolyLRScheduler
 from gluoncv.model_zoo.segbase import *
 from gluoncv.model_zoo import get_model
-from gluoncv.data import get_segmentation_dataset, test_batchify_fn
+from gluoncv.data import get_segmentation_dataset, ms_batchify_fn
 from gluoncv.utils.viz import get_color_pallete
 from gluoncv.utils.metrics.voc_segmentation import batch_pix_accuracy, batch_intersection_union
 
@@ -36,7 +36,7 @@ def test(args):
             args.dataset, split='test', mode='test', transform=input_transform)
     test_data = gluon.data.DataLoader(
         testset, args.test_batch_size, last_batch='keep',
-        batchify_fn=test_batchify_fn)#, num_workers=args.workers)
+        batchify_fn=ms_batchify_fn, num_workers=args.workers)
     # create network
     if args.model_zoo is not None:
         model = get_model(args.model_zoo, pretrained=True)

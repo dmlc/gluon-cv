@@ -7,7 +7,7 @@ import mxnet.ndarray as F
 from PIL import Image, ImageOps, ImageFilter
 from .base import VisionDataset
 
-__all__ = ['get_segmentation_dataset', 'test_batchify_fn', 'SegmentationDataset']
+__all__ = ['get_segmentation_dataset', 'ms_batchify_fn', 'SegmentationDataset']
 
 def get_segmentation_dataset(name, **kwargs):
     from .pascal_voc.segmentation import VOCSegmentation
@@ -21,12 +21,12 @@ def get_segmentation_dataset(name, **kwargs):
     return datasets[name](**kwargs)
 
 
-def test_batchify_fn(data):
+def ms_batchify_fn(data):
     if isinstance(data[0], (str, mx.nd.NDArray)):
         return list(data)
     elif isinstance(data[0], tuple):
         data = zip(*data)
-        return [test_batchify_fn(i) for i in data]
+        return [ms_batchify_fn(i) for i in data]
     raise RuntimeError('unknown datatype')
 
 
