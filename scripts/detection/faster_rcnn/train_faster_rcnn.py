@@ -201,21 +201,20 @@ def validate(net, val_data, ctx, eval_metric):
     net.set_nms(nms_thresh=0.3, nms_topk=400)
     # net.hybridize()
     for batch in val_data:
-        data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
-        label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0)
+        batch = split_and_load(batch, ctx_list=ctx)
         det_bboxes = []
         det_ids = []
         det_scores = []
         gt_bboxes = []
         gt_ids = []
         gt_difficults = []
-        for x, y in zip(data, label):
+        for x, y in zip(*batch):
             # get prediction results
             ids, scores, bboxes = net(x)
             det_ids.append(ids)
             det_scores.append(scores)
             # clip to image size
-            det_bboxes.append(bboxes.clip(0, batch[0].shape[2]))
+            det_bboxes.append(mx.nd.Custom(bboxes, x, op_type='bbox_clip_to_image'))
             # split ground truths
             gt_ids.append(y.slice_axis(axis=-1, begin=4, end=5))
             gt_bboxes.append(y.slice_axis(axis=-1, begin=0, end=4))
