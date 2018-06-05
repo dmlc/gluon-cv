@@ -90,7 +90,7 @@ class FasterRCNNDefaultTrainTransform(object):
         self._max_size = max_size
         self._mean = mean
         self._std = std
-        self._stride = int(stride)
+        # self._stride = int(stride)
         if net is None:
             return
 
@@ -159,6 +159,8 @@ class FasterRCNNDefaultValTransform(object):
                  mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)):
         self._mean = mean
         self._std = std
+        self._short = short
+        self._max_size = max_size
 
     def __call__(self, src, label):
         # resize shorter side but keep in max_size
