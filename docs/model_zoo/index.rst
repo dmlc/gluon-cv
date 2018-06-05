@@ -181,19 +181,26 @@ Table of pre-trained models for semantic segmentation and their performance.
 
   - ``voc`` is the training dataset.
 
+  The test script :download:`Download train.py<../../scripts/segmentation/test.py>` can be used for
+  evaluating the models (VOC results are evaluated using the official server). For example ``fcn_resnet50_ade``::
+
+    python test.py --dataset ade20k --model-zoo fcn_resnet50_ade --eval
+
   The training commands work with the script: :download:`Download train.py<../../scripts/segmentation/train.py>`
 
 
 .. role:: raw-html(raw)
    :format: html
 
-+-------------------+--------------+-----------+-----------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
-| Name              | Method       | mIoU      | Training Command                                                                                                            | Training log                                                                                                        |
-+===================+==============+===========+=============================================================================================================================+=====================================================================================================================+
-| fcn_resnet50_voc  | FCN [6]_     | 69.4_     | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/fcn_resnet50_voc.sh>`_      | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/fcn_resnet50_voc.log>`_      |
-+-------------------+--------------+-----------+-----------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
-| fcn_resnet101_voc | FCN [6]_     | 70.9_     | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/fcn_resnet101_voc.sh>`_     | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/fcn_resnet101_voc.log>`_     |
-+-------------------+--------------+-----------+-----------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
++-------------------+--------------+-----------+-----------+-----------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
+| Name              | Method       | pixAcc    | mIoU      | Command                                                                                                                     | log                                                                                                                 |
++===================+==============+===========+===========+=============================================================================================================================+=====================================================================================================================+
+| fcn_resnet50_voc  | FCN [6]_     | N/A       | 69.4_     | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/fcn_resnet50_voc.sh>`_      | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/fcn_resnet50_voc.log>`_      |
++-------------------+--------------+-----------+-----------+-----------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
+| fcn_resnet101_voc | FCN [6]_     | N/A       | 70.9_     | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/fcn_resnet101_voc.sh>`_     | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/fcn_resnet101_voc.log>`_     |
++-------------------+--------------+-----------+-----------+-----------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
+| fcn_resnet50_ade  | FCN [6]_     | 78.6      | 38.7      | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/fcn_resnet50_ade.sh>`_      | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/fcn_resnet50_ade.log>`_     |
++-------------------+--------------+-----------+-----------+-----------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
 
 .. _69.4:  http://host.robots.ox.ac.uk:8080/anonymous/TC12D2.html
 .. _70.9:  http://host.robots.ox.ac.uk:8080/anonymous/FTIQXJ.html

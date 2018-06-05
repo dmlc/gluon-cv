@@ -36,13 +36,11 @@ class VOCSegmentation(SegmentationDataset):
     BASE_DIR = 'VOC2012'
     NUM_CLASS = 21
     def __init__(self, root=os.path.expanduser('~/.mxnet/datasets/voc'),
-                 split='train', transform=None):
-        super(VOCSegmentation, self).__init__(root)
+                 split='train', mode=None, transform=None):
+        super(VOCAugSegmentation, self).__init__(root, split, mode, transform)
         _voc_root = os.path.join(root, self.BASE_DIR)
         _mask_dir = os.path.join(_voc_root, 'SegmentationClass')
         _image_dir = os.path.join(_voc_root, 'JPEGImages')
-        self.transform = transform
-
         # train/val/test splits are pre-cut
         _splits_dir = os.path.join(_voc_root, 'ImageSets/Segmentation')
         if split == 'train':

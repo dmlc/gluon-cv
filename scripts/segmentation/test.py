@@ -29,7 +29,8 @@ def test(args):
     if args.eval:
         testset = get_segmentation_dataset(
             args.dataset, split='val', mode='testval', transform=input_transform)
-        total_inter, total_union, total_correct, total_label = 0, 0, 0, 0
+        total_inter, total_union, total_correct, total_label = \
+            np.int64(0), np.int64(0), np.int64(0), np.int64(0)
     else:
         testset = get_segmentation_dataset(
             args.dataset, split='test', mode='test', transform=input_transform)
@@ -62,12 +63,12 @@ def test(args):
                 correct, labeled = batch_pix_accuracy(predict[0], target)
                 inter, union = batch_intersection_union(
                     predict[0], target, testset.num_class)
-                total_correct += correct
-                total_label += labeled
-                total_inter += inter
-                total_union += union
-            pixAcc = 1.0 * total_correct / (np.spacing(1) + total_label)
-            IoU = 1.0 * total_inter / (np.spacing(1) + total_union)
+                total_correct += correct.astype('int64')
+                total_label += labeled.astype('int64')
+                total_inter += inter.astype('int64')
+                total_union += union.astype('int64')
+            pixAcc = np.float64(1.0) * total_correct / (np.spacing(1, dtype=np.float64) + total_label)
+            IoU = np.float64(1.0) * total_inter / (np.spacing(1, dtype=np.float64) + total_union)
             mIoU = IoU.mean()
             tbar.set_description(
                 'pixAcc: %.4f, mIoU: %.4f' % (pixAcc, mIoU))
