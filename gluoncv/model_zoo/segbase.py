@@ -16,8 +16,10 @@ __all__ = ['get_segmentation_model', 'SegBaseModel', 'SegEvalModel', 'MultiEvalM
 
 def get_segmentation_model(model, **kwargs):
     from .fcn import get_fcn
+    from .pspnet import get_psp
     models = {
         'fcn': get_fcn,
+        'psp': get_psp,
     }
     return models[model](**kwargs)
 
@@ -34,7 +36,7 @@ class SegBaseModel(HybridBlock):
         for Synchronized Cross-GPU BachNormalization).
     """
     # pylint : disable=arguments-differ
-    def __init__(self, nclass, aux, backbone='resnet50', **kwargs):
+    def __init__(self, nclass, aux, backbone='resnet50', height=480, width=480, **kwargs):
         super(SegBaseModel, self).__init__()
         self.aux = aux
         self.nclass = nclass
@@ -55,6 +57,7 @@ class SegBaseModel(HybridBlock):
             self.layer2 = pretrained.layer2
             self.layer3 = pretrained.layer3
             self.layer4 = pretrained.layer4
+        self._up_kwargs = {'height': height, 'width': width}
 
     def base_forward(self, x):
         """forwarding pre-trained network"""
@@ -185,7 +188,7 @@ class MultiEvalModel(object):
                 short_size = height
             # resize image to current size
             cur_img = _resize_image(image, height, width)
-            if scale <= 1.25 or long_size <= crop_size:# #
+            if long_size <= crop_size:
                 pad_img = _pad_image(cur_img, crop_size)
                 outputs = self.flip_inference(pad_img)
                 outputs = _crop_image(outputs, 0, height, 0, width)

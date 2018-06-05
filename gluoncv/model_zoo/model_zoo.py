@@ -58,6 +58,7 @@ def get_model(name, **kwargs):
         'cifar_resnext29_16x64d': cifar_resnext29_16x64d,
         'fcn_resnet50_voc' : get_fcn_voc_resnet50,
         'fcn_resnet101_voc' : get_fcn_voc_resnet101,
+        'fcn_resnet50_ade' : get_fcn_ade_resnet50,
         'resnet18_v1b' : resnet18_v1b,
         'resnet34_v1b' : resnet34_v1b,
         'resnet50_v1b' : resnet50_v1b,
