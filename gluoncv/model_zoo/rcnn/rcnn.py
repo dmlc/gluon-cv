@@ -34,8 +34,8 @@ class RCNN(gluon.HybridBlock):
             #     self.top_features = FeatureExtractor(network=network, outputs=top_features,
             #         inputs=features, pretrained=pretrained)
             self.global_avg_pool = nn.GlobalAvgPool2D()
-            self.class_predictor = nn.Dense(self.num_class + 1)
-            self.box_predictor = nn.Dense(self.num_class * 4)
+            self.class_predictor = nn.Dense(self.num_class + 1, weight_initializer=mx.init.Normal(0.01))
+            self.box_predictor = nn.Dense(self.num_class * 4, weight_initializer=mx.init.Normal(0.001))
             self.cls_decoder = MultiPerClassDecoder(num_class=self.num_class+1)
             self.box_to_center = BBoxCornerToCenter()
             self.box_decoder = NormalizedBoxCenterDecoder()

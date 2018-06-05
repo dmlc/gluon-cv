@@ -63,6 +63,86 @@ def parse_args():
     args = parser.parse_args()
     return args
 
+class RPNAccMetric(mx.metric.EvalMetric):
+    def __init__(self):
+        super(RPNAccMetric, self).__init__('RPNAcc')
+
+    def update(self, labels, preds):
+        # label: [rpn_label, rpn_weight]
+        # preds: [rpn_cls_logits]
+        rpn_label, rpn_weight = labels
+        rpn_cls_logits = preds[0]
+
+        # calculate num_inst (average on those fg anchors)
+        num_inst = mx.nd.sum(rpn_weight)
+
+        # cls_logits (b, c, h, w) red_label (b, 1, h, w)
+        # pred_label = mx.nd.argmax(rpn_cls_logits, axis=1, keepdims=True)
+        pred_label = mx.nd.sigmoid(rpn_cls_logits) >= 0.5
+        # label (b, 1, h, w)
+        num_acc = mx.nd.sum((pred_label == rpn_label) * rpn_weight)
+
+        self.sum_metric += num_acc.asscalar()
+        self.num_inst += num_inst.asscalar()
+
+
+class RPNL1LossMetric(mx.metric.EvalMetric):
+    def __init__(self):
+        super(RPNL1LossMetric, self).__init__('RPNL1Loss')
+
+    def update(self, labels, preds):
+        # label = [rpn_bbox_target, rpn_bbox_weight]
+        # pred = [rpn_bbox_reg]
+        rpn_bbox_target, rpn_bbox_weight = labels
+        rpn_bbox_reg = preds[0]
+
+        # calculate num_inst (average on those fg anchors)
+        num_inst = mx.nd.sum(rpn_bbox_weight) / 4
+
+        # calculate smooth_l1
+        loss = mx.nd.sum(rpn_bbox_weight * mx.nd.smooth_l1(rpn_bbox_reg - rpn_bbox_target, scalar=3))
+
+        self.sum_metric += loss.asscalar()
+        self.num_inst += num_inst.asscalar()
+
+
+class RCNNAccMetric(mx.metric.EvalMetric):
+    def __init__(self):
+        super(RCNNAccMetric, self).__init__('RCNNAcc')
+
+    def update(self, labels, preds):
+        # label = [rcnn_label]
+        # pred = [rcnn_cls]
+        rcnn_label = labels[0]
+        rcnn_cls = preds[0]
+
+        # calculate num_acc
+        pred_label = mx.nd.argmax(rcnn_cls, axis=1)
+        num_acc = mx.nd.sum(pred_label == rcnn_label)
+
+        self.sum_metric += num_acc.asscalar()
+        self.num_inst += rcnn_label.size
+
+
+class RCNNL1LossMetric(mx.metric.EvalMetric):
+    def __init__(self):
+        super(RCNNL1LossMetric, self).__init__('RCNNL1Loss')
+
+    def update(self, labels, preds):
+        # label = [rcnn_bbox_target, rcnn_bbox_weight]
+        # pred = [rcnn_reg]
+        rcnn_bbox_target, rcnn_bbox_weight = labels
+        rcnn_bbox_reg = preds[0]
+
+        # calculate num_inst
+        num_inst = mx.nd.sum(rcnn_bbox_weight) / 4
+
+        # calculate smooth_l1
+        loss = mx.nd.sum(rcnn_bbox_weight * mx.nd.smooth_l1(rcnn_bbox_reg - rcnn_bbox_target, scalar=1))
+
+        self.sum_metric += loss.asscalar()
+        self.num_inst += num_inst.asscalar()
+
 def get_dataset(dataset, args):
     if dataset.lower() == 'voc':
         train_dataset = gdata.VOCDetection(
@@ -158,13 +238,19 @@ def train(net, train_data, val_data, eval_metric, args):
 
     # TODO(zhreshold) losses?
     rpn_cls_loss = mx.gluon.loss.SigmoidBinaryCrossEntropyLoss(from_sigmoid=False)
-    rpn_box_loss = mx.gluon.loss.HuberLoss(rho=0.9)  # == smoothl1
+    rpn_box_loss = mx.gluon.loss.HuberLoss(rho=1/9.)  # == smoothl1
     rcnn_cls_loss = mx.gluon.loss.SoftmaxCrossEntropyLoss()
     rcnn_box_loss = mx.gluon.loss.HuberLoss()  # == smoothl1
     metrics = [mx.metric.Loss('RPN_Conf'),
                mx.metric.Loss('RPN_SmoothL1'),
                mx.metric.Loss('RCNN_CrossEntropy'),
                mx.metric.Loss('RCNN_SmoothL1'),]
+
+    rpn_acc_metric = RPNAccMetric()
+    rpn_bbox_metric = RPNL1LossMetric()
+    rcnn_acc_metric = RCNNAccMetric()
+    rcnn_bbox_metric = RCNNL1LossMetric()
+    metrics2 = [rpn_acc_metric, rpn_bbox_metric, rcnn_acc_metric, rcnn_bbox_metric]
 
     # set up logger
     logging.basicConfig()
@@ -218,13 +304,20 @@ def train(net, train_data, val_data, eval_metric, args):
                     metric_losses[1].append(rpn_loss2.sum())
                     metric_losses[2].append(rcnn_loss1.sum())
                     metric_losses[3].append(rcnn_loss2.sum())
+                    if batch_size <= 1:
+                        with autograd.pause():
+                            rpn_acc_metric.update([rpn_cls_targets, rpn_cls_targets>=0], [rpn_score])
+                            rpn_bbox_metric.update([rpn_box_targets, rpn_box_masks], [rpn_box])
+                            rcnn_acc_metric.update([cls_targets], [cls_pred])
+                            rcnn_bbox_metric.update([box_targets, box_masks], [box_pred])
                 autograd.backward(losses)
                 for metric, record in zip(metrics, metric_losses):
                     metric.update(0, record)
             trainer.step(batch_size)
             # update metrics
             if args.log_interval and not (i + 1) % args.log_interval:
-                msg = ','.join(['{}={:.3f}'.format(*metric.get()) for metric in metrics])
+                # msg = ','.join(['{}={:.3f}'.format(*metric.get()) for metric in metrics])
+                msg = ','.join(['{}={:.3f}'.format(*metric.get()) for metric in metrics + metrics2])
                 logger.info('[Epoch {}][Batch {}], Speed: {:.3f} samples/sec, {}'.format(
                     epoch, i, batch_size/(time.time()-btic), msg))
             btic = time.time()

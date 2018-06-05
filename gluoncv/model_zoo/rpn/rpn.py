@@ -17,7 +17,7 @@ class RPN(gluon.HybridBlock):
                  weight_initializer=None, **kwargs):
         super(RPN, self).__init__(**kwargs)
         if weight_initializer is None:
-            weight_initializer = mx.init.Normal(0.1)
+            weight_initializer = mx.init.Normal(0.01)
         with self.name_scope():
             self.anchor_generator = RPNAnchorGenerator(
                 stride, base_size, ratios, scales, alloc_size)
