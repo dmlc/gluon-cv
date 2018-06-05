@@ -210,7 +210,7 @@ def train(net, train_data, val_data, eval_metric, args):
                     cls_targets, box_targets, box_masks = net.target_generator(roi, samples, matches, gt_label, gt_box)
                     # losses of rcnn
                     rcnn_loss1 = rcnn_cls_loss(cls_pred, cls_targets, cls_targets >= 0) * cls_targets.size / cls_targets.shape[0] / 128.
-                    rcnn_loss2 = rcnn_box_loss(box_pred * box_masks, box_targets) * box_pred.size / box_pred.shape[0] / 128.
+                    rcnn_loss2 = rcnn_box_loss(box_pred, box_targets, box_masks) * box_pred.size / box_pred.shape[0] / 128.
                     rcnn_loss = rcnn_loss1 + rcnn_loss2
                     # overall losses, TODO(zhreshold): weights? currently 1:1 used
                     losses.append(rpn_loss.sum() + rcnn_loss.sum())
