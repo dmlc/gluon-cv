@@ -83,9 +83,6 @@ def parse_args():
         args.norm_layer = BatchNorm
     else:
         args.norm_layer = mx.gluon.nn.BatchNorm
-    # check resuming
-    if args.eval and args.resume is None:
-        raise RuntimeError('checkpoint must be provided for eval or test')
     return args
 
 

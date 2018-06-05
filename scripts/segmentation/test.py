@@ -1,5 +1,6 @@
 import os
 from tqdm import tqdm
+import numpy as np
 
 import mxnet as mx
 from mxnet import gluon
@@ -7,9 +8,10 @@ from mxnet.gluon.data.vision import transforms
 
 from gluoncv.utils import PolyLRScheduler
 from gluoncv.model_zoo.segbase import *
+from gluoncv.model_zoo import get_model
 from gluoncv.data import get_segmentation_dataset, test_batchify_fn
 from gluoncv.utils.viz import get_color_pallete
-from gluoncv.utils.metrics.voc_segmentation import batch_pix_accuracy, batch_intersection_union, 
+from gluoncv.utils.metrics.voc_segmentation import batch_pix_accuracy, batch_intersection_union
 
 from train import parse_args
 
@@ -33,12 +35,12 @@ def test(args):
             args.dataset, split='test', mode='test', transform=input_transform)
     test_data = gluon.data.DataLoader(
         testset, args.test_batch_size, last_batch='keep',
-        batchify_fn=test_batchify_fn, num_workers=args.workers)
+        batchify_fn=test_batchify_fn)#, num_workers=args.workers)
     # create network
     if args.model_zoo is not None:
         model = get_model(args.model_zoo, pretrained=True)
     else:
-        model = get_segmentation_model(model=args.model, dataset=args.dataset,
+        model = get_segmentation_model(model=args.model, dataset=args.dataset, ctx = args.ctx,
                                        backbone=args.backbone, norm_layer=args.norm_layer)
         # load pretrained weight
         assert args.resume is not None, '=> Please provide the checkpoint using --resume'
@@ -53,12 +55,13 @@ def test(args):
     tbar = tqdm(test_data)
     for i, (data, dsts) in enumerate(tbar):
         if args.eval:
-            targets = dst
+            targets = dsts
             predicts = evaluator.parallel_forward(data)
             for predict, target in zip(predicts, targets):
-                correct, labeled = batch_pix_accuracy(output, target)
+                target = target.as_in_context(predict[0].context)
+                correct, labeled = batch_pix_accuracy(predict[0], target)
                 inter, union = batch_intersection_union(
-                    output, target, testset.num_class)
+                    predict[0], target, testset.num_class)
                 total_correct += correct
                 total_label += labeled
                 total_inter += inter
@@ -72,7 +75,7 @@ def test(args):
             im_paths = dsts
             predicts = evaluator.parallel_forward(data)
             for predict, impath in zip(predicts, im_paths):
-                predict = mx.nd.squeeze(mx.nd.argmax(predict, 1)).asnumpy()
+                predict = mx.nd.squeeze(mx.nd.argmax(predict[0], 1)).asnumpy()
                 mask = get_color_pallete(predict, args.dataset)
                 outname = os.path.splitext(impath)[0] + '.png'
                 mask.save(os.path.join(outdir, outname))

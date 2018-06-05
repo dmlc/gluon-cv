@@ -11,7 +11,7 @@ def batch_pix_accuracy(output, target):
     predict = F.argmax(output, 1) + 1
     target = target.astype(predict.dtype) +1
     pixel_labeled = (target > 0).sum().asscalar()
-    pixel_correct = (F.equal(predict, target)*(target > 0.0)).sum().asscalar()
+    pixel_correct = (F.equal(predict, target)*(target > 0)).sum().asscalar()
     return pixel_correct, pixel_labeled
 
 
