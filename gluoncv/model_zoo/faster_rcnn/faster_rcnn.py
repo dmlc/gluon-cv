@@ -75,7 +75,7 @@ class FasterRCNN(RCNN):
         # no need to convert bounding boxes in training, just return
         if autograd.is_training():
             box_pred = box_pred.transpose((1, 0, 2))
-            return cls_pred, box_pred, roi, samples, matches, raw_rpn_score, raw_rpn_box
+            return cls_pred, box_pred, rpn_box, samples, matches, raw_rpn_score, raw_rpn_box
 
         # translate bboxes
         bboxes = self.box_decoder(box_pred, self.box_to_center(rpn_box)).split(
