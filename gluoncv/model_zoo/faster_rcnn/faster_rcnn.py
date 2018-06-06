@@ -46,7 +46,7 @@ class FasterRCNN(RCNN):
                 feat, F.zeros_like(x))
             # sample 128 roi
             assert gt_box is not None
-            roi, samples, matches = self.sampler(rpn_box, gt_box)
+            rpn_box, samples, matches = self.sampler(rpn_box, gt_box)
         else:
             rpn_score, rpn_box, roi = self.rpn(feat, F.zeros_like(x))
 
