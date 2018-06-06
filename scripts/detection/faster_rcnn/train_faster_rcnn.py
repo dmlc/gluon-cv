@@ -1,6 +1,8 @@
 """Train Faster-RCNN end to end."""
 import argparse
 import os
+# disable autotune
+os.environ['MXNET_CUDNN_AUTOTUNE_DEFAULT'] = '0'
 import logging
 import time
 import numpy as np
@@ -18,7 +20,7 @@ from gluoncv.data.transforms.presets.rcnn import FasterRCNNDefaultValTransform
 from gluoncv.utils.metrics.voc_detection import VOC07MApMetric
 from gluoncv.utils.metrics.coco_detection import COCODetectionMetric
 from gluoncv.utils.metrics.accuracy import Accuracy
-from gluoncv.utils.parallel import DataParallelModel
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train Faster-RCNN networks e2e.')
@@ -35,7 +37,7 @@ def parse_args():
                         help='Training epochs.')
     parser.add_argument('--resume', type=str, default='',
                         help='Resume from previously saved parameters if not None. '
-                        'For example, you can resume from ./ssd_xxx_0123.params')
+                        'For example, you can resume from ./faster_rcnn_xxx_0123.params')
     parser.add_argument('--start-epoch', type=int, default=0,
                         help='Starting epoch for resuming, default is 0 for new training.'
                         'You can specify it to 100 for example to start from 100 epoch.')
@@ -228,9 +230,18 @@ def validate(net, val_data, ctx, eval_metric):
 def train(net, train_data, val_data, eval_metric, args):
     """Training pipeline"""
     net.collect_params().reset_ctx(ctx)
+    # trainer = gluon.Trainer(
+    #     net.collect_params(), 'sgd',
+    #     {'learning_rate': args.lr, 'wd': args.wd, 'momentum': args.momentum})
+    select = ['rcnn', 'rpn', 'stage2_conv', 'stage3_conv', 'stage4_conv']
+    select = '|'.join([net.prefix + s for s in select])
     trainer = gluon.Trainer(
-        net.collect_params(), 'sgd',
-        {'learning_rate': args.lr, 'wd': args.wd, 'momentum': args.momentum})
+        net.collect_params(select),
+        'sgd',
+        {'learning_rate': args.lr,
+         'wd': 0.0005,
+         'momentum': 0.9,
+         'clip_gradient': 5})
 
     # lr decay policy
     lr_decay = float(args.lr_decay)
