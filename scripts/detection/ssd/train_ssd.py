@@ -73,8 +73,8 @@ def get_dataset(dataset, args):
             splits=[(2007, 'test')])
         val_metric = VOC07MApMetric(iou_thresh=0.5, class_names=val_dataset.classes)
     elif dataset.lower() == 'coco':
-        train_dataset = gdata.COCODetection(split='instances_train2017')
-        val_dataset = gdata.COCODetection(split='instances_val2017')
+        train_dataset = gdata.COCODetection(splits='instances_train2017')
+        val_dataset = gdata.COCODetection(splits='instances_val2017')
         val_metric = COCODetectionMetric(val_dataset, args.save_prefix + '_eval', cleanup=False)
         # coco validation is slow, consider increase the validation interval
         if args.val_interval == 1:
@@ -116,18 +116,26 @@ def validate(net, val_data, ctx, eval_metric):
     for batch in val_data:
         data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
         label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0)
+        det_bboxes = []
+        det_ids = []
+        det_scores = []
+        gt_bboxes = []
+        gt_ids = []
+        gt_difficults = []
         for x, y in zip(data, label):
             # get prediction results
             ids, scores, bboxes = net(x)
+            det_ids.append(ids)
+            det_scores.append(scores)
             # clip to image size
-            bboxes = bboxes.clip(0, batch[0].shape[2])
+            det_bboxes.append(bboxes.clip(0, batch[0].shape[2]))
             # split ground truths
-            gt_ids = y.slice_axis(axis=-1, begin=4, end=5)
-            gt_bboxes = y.slice_axis(axis=-1, begin=0, end=4)
-            gt_difficults = y.slice_axis(axis=-1, begin=5, end=6) if y.shape[-1] > 5 else None
-            # update metric
-            eval_metric.update(bboxes, ids, scores, gt_bboxes, gt_ids, gt_difficults)
+            gt_ids.append(y.slice_axis(axis=-1, begin=4, end=5))
+            gt_bboxes.append(y.slice_axis(axis=-1, begin=0, end=4))
+            gt_difficults.append(y.slice_axis(axis=-1, begin=5, end=6) if y.shape[-1] > 5 else None)
 
+        # update metric
+        eval_metric.update(det_bboxes, det_ids, det_scores, gt_bboxes, gt_ids, gt_difficults)
     return eval_metric.get()
 
 def train(net, train_data, val_data, eval_metric, args):

@@ -34,23 +34,20 @@ class VOCSegmentation(SegmentationDataset):
     >>>     num_workers=4)
     """
     BASE_DIR = 'VOC2012'
+    NUM_CLASS = 21
     def __init__(self, root=os.path.expanduser('~/.mxnet/datasets/voc'),
-                 split='train', transform=None):
-        super(VOCSegmentation, self).__init__(root)
-        self.root = root
-        _voc_root = os.path.join(self.root, self.BASE_DIR)
+                 split='train', mode=None, transform=None):
+        super(VOCSegmentation, self).__init__(root, split, mode, transform)
+        _voc_root = os.path.join(root, self.BASE_DIR)
         _mask_dir = os.path.join(_voc_root, 'SegmentationClass')
         _image_dir = os.path.join(_voc_root, 'JPEGImages')
-        self.transform = transform
-        self.train = split
-
         # train/val/test splits are pre-cut
         _splits_dir = os.path.join(_voc_root, 'ImageSets/Segmentation')
-        if self.train == 'train':
+        if split == 'train':
             _split_f = os.path.join(_splits_dir, 'trainval.txt')
-        elif self.train == 'val':
+        elif split == 'val':
             _split_f = os.path.join(_splits_dir, 'val.txt')
-        elif self.train == 'test':
+        elif split == 'test':
             _split_f = os.path.join(_splits_dir, 'test.txt')
         else:
             raise RuntimeError('Unknown dataset split.')
@@ -62,34 +59,35 @@ class VOCSegmentation(SegmentationDataset):
                 _image = os.path.join(_image_dir, line.rstrip('\n')+".jpg")
                 assert os.path.isfile(_image)
                 self.images.append(_image)
-                if self.train != 'test':
+                if split != 'test':
                     _mask = os.path.join(_mask_dir, line.rstrip('\n')+".png")
                     assert os.path.isfile(_mask)
                     self.masks.append(_mask)
 
-        if self.train != 'test':
+        if split != 'test':
             assert (len(self.images) == len(self.masks))
 
     def __getitem__(self, index):
         img = Image.open(self.images[index]).convert('RGB')
-        if self.train == 'test':
+        if self.mode == 'test':
             img = self._img_transform(img)
             if self.transform is not None:
                 img = self.transform(img)
             return img, os.path.basename(self.images[index])
-        target = Image.open(self.masks[index])
+        mask = Image.open(self.masks[index])
         # synchrosized transform
-        if self.train == 'train':
-            img, target = self._sync_transform(img, target)
-        elif self.train == 'val':
-            img, target = self._val_sync_transform(img, target)
+        if self.mode == 'train':
+            img, mask = self._sync_transform(img, mask)
+        elif self.mode == 'val':
+            img, mask = self._val_sync_transform(img, mask)
         else:
-            raise RuntimeError('unknown mode for dataloader: {}'.format(self.mode))
+            assert self.mode == 'testval'
+            mask = self._mask_transform(mask)
         # general resize, normalize and toTensor
         if self.transform is not None:
             img = self.transform(img)
 
-        return img, target
+        return img, mask
 
     def __len__(self):
         return len(self.images)

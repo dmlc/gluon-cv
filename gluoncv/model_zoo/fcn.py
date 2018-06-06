@@ -1,7 +1,6 @@
 """Fully Convolutional Network with Strdie of 8"""
 from __future__ import division
 from mxnet.gluon import nn
-import mxnet.ndarray as F
 from mxnet.context import cpu
 from mxnet.gluon.nn import HybridBlock
 from .segbase import SegBaseModel
@@ -47,18 +46,17 @@ class FCN(SegBaseModel):
                 self.auxlayer.initialize(ctx=ctx)
                 self.auxlayer.collect_params().setattr('lr_mult', 10)
 
-    def forward(self, x):
-        _, _, H, W = x.shape
+    def hybrid_forward(self, F, x):
         c3, c4 = self.base_forward(x)
 
         outputs = []
         x = self.head(c4)
-        x = F.contrib.BilinearResize2D(x, height=H, width=W)
+        x = F.contrib.BilinearResize2D(x, **self._up_kwargs)
         outputs.append(x)
 
         if self.aux:
             auxout = self.auxlayer(c3)
-            auxout = F.contrib.BilinearResize2D(auxout, height=H, width=W)
+            auxout = F.contrib.BilinearResize2D(auxout, **self._up_kwargs)
             outputs.append(auxout)
             return tuple(outputs)
         else:
@@ -107,14 +105,18 @@ def get_fcn(dataset='pascal_voc', backbone='resnet50', pretrained=False,
     >>> model = get_fcn(dataset='pascal_voc', backbone='resnet50', pretrained=False)
     >>> print(model)
     """
+    from ..data.pascal_voc.segmentation import VOCSegmentation
+    from ..data.ade20k.segmentation import ADE20KSegmentation
     acronyms = {
         'pascal_voc': 'voc',
         'ade20k': 'ade',
     }
+    datasets = {
+        'pascal_voc': VOCSegmentation,
+        'ade20k': ADE20KSegmentation,
+    }
     # infer number of classes
-    from ..data.segbase import get_segmentation_dataset
-    data = get_segmentation_dataset(dataset)
-    model = FCN(data.num_class, backbone=backbone, ctx=ctx, **kwargs)
+    model = FCN(datasets[dataset].NUM_CLASS, backbone=backbone, ctx=ctx, **kwargs)
     if pretrained:
         from .model_store import get_model_file
         model.load_params(get_model_file('fcn_%s_%s'%(backbone, acronyms[dataset]),

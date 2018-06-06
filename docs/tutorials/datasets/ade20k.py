@@ -13,7 +13,7 @@ This tutorial help you to download ADE20K and set it up for later experiments.
    You need 2.3 GB free disk space to download and extract this dataset.
    SSD harddrives are recommended for faster speed.
    The time it takes to prepare the dataset depends on your Internet connection
-   and disk speec. For example, it takes around 25 min on an AWS EC2 instance
+   and disk speed. For example, it takes around 25 mins on an AWS EC2 instance
    with EBS.
 
 Prepare the dataset

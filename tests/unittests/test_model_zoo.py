@@ -84,7 +84,7 @@ def test_ssd_models():
 def test_segmentation_models():
     ctx = mx.context.current_context()
     x = mx.random.uniform(shape=(2, 3, 480, 480), ctx=ctx)
-    models = ['fcn_resnet50_voc', 'fcn_resnet101_voc']
+    models = ['fcn_resnet50_voc', 'fcn_resnet101_voc', 'fcn_resnet50_ade']
     _test_model_list(models, ctx, x)
 
 if __name__ == '__main__':
