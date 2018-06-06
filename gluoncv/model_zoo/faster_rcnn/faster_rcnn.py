@@ -46,7 +46,7 @@ class FasterRCNN(RCNN):
                 feat, F.zeros_like(x))
             # sample 128 roi
             assert gt_box is not None
-            roi, samples, matches = self.sampler(roi, gt_box)
+            roi, samples, matches = self.sampler(rpn_box, gt_box)
         else:
             rpn_score, rpn_box, roi = self.rpn(feat, F.zeros_like(x))
 
@@ -54,8 +54,8 @@ class FasterRCNN(RCNN):
         roi_batchid = F.arange(
             0, self._max_batch, repeat=self._max_roi).reshape(
                 (-1, self._max_roi))
-        roi_batchid = F.slice_like(roi_batchid, roi, axes=(0, 1))
-        rpn_roi = F.concat(*[roi_batchid.reshape((-1, 1)), roi.reshape((-1, 4))], dim=-1)
+        roi_batchid = F.slice_like(roi_batchid, rpn_box, axes=(0, 1))
+        rpn_roi = F.concat(*[roi_batchid.reshape((-1, 1)), rpn_box.reshape((-1, 4))], dim=-1)
 
         # ROI features
         if self._roi_mode == 'pool':
@@ -78,7 +78,7 @@ class FasterRCNN(RCNN):
             return cls_pred, box_pred, roi, samples, matches, raw_rpn_score, raw_rpn_box
 
         # translate bboxes
-        bboxes = self.box_decoder(box_pred, self.box_to_center(roi)).split(
+        bboxes = self.box_decoder(box_pred, self.box_to_center(rpn_box)).split(
             axis=0, num_outputs=self.num_class, squeeze_axis=True)
         cls_ids, scores = self.cls_decoder(F.softmax(cls_pred, axis=-1))
         results = []
