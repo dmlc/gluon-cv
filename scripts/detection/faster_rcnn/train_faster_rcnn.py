@@ -233,8 +233,8 @@ def train(net, train_data, val_data, eval_metric, args):
     # trainer = gluon.Trainer(
     #     net.collect_params(), 'sgd',
     #     {'learning_rate': args.lr, 'wd': args.wd, 'momentum': args.momentum})
-    select = ['rcnn', 'rpn', 'stage2_conv', 'stage3_conv', 'stage4_conv']
-    select = '|'.join([net.prefix + s for s in select])
+    select = ['.*dense', '.*rpn', '.*down2_conv', '.*down3_conv', '.*down4_conv', '.*layers2_conv', '.*layers3_conv', '.*layers4_conv']
+    select = '|'.join([s for s in select])
     trainer = gluon.Trainer(
         net.collect_params(select),
         'sgd',
@@ -242,6 +242,8 @@ def train(net, train_data, val_data, eval_metric, args):
          'wd': 0.0005,
          'momentum': 0.9,
          'clip_gradient': 5})
+    # print(net.collect_params().keys())
+    # raise
 
     # lr decay policy
     lr_decay = float(args.lr_decay)
