@@ -124,6 +124,8 @@ class QuotaSampler(gluon.Block):
                     np.where(result > 0)[0], size=(num_pos - max_pos), replace=False)
                 result[disable_indices] = 0   # use 0 to ignore
             num_neg = int((result < 0).sum())
+            # if pos_sample is less than quota, we can have negative samples filling the gap
+            max_neg = max(self._num_sample - min(num_pos, max_pos), max_neg)
             if num_neg > max_neg:
                 disable_indices = np.random.choice(
                     np.where(result < 0)[0], size=(num_neg - max_neg), replace=False)
@@ -172,6 +174,8 @@ class QuotaSamplerOp(mx.operator.CustomOp):
                     np.where(result > 0)[0], size=(num_pos - max_pos), replace=False)
                 result[disable_indices] = 0   # use 0 to ignore
             num_neg = int((result < 0).sum())
+            # if pos_sample is less than quota, we can have negative samples filling the gap
+            max_neg = max(self._num_sample - min(num_pos, max_pos), max_neg)
             if num_neg > max_neg:
                 disable_indices = np.random.choice(
                     np.where(result < 0)[0], size=(num_neg - max_neg), replace=False)
