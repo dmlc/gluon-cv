@@ -1,27 +1,35 @@
-import matplotlib
-matplotlib.use('Agg')
-
 import argparse, time, logging
 
 import mxnet as mx
 import numpy as np
 from mxnet import gluon, nd
 from mxnet import autograd as ag
+from utils import get_data_iter, get_data_loader
 from mxnet.gluon import nn
 from mxnet.gluon.data.vision import transforms
 
 from gluoncv.data import imagenet
 from gluoncv.model_zoo import get_model
-from gluoncv.utils import makedirs, TrainingHistory, freeze_bn
+from gluoncv.utils import makedirs, TrainingHistory
 
 # CLI
 parser = argparse.ArgumentParser(description='Train a model for image classification.')
 parser.add_argument('--data-dir', type=str, default='~/.mxnet/datasets/imagenet',
                     help='training and validation pictures to use.')
-parser.add_argument('--dummy', action='store_true',
-                    help='use dummy data to test training speed. default is false.')
+parser.add_argument('--rec-train', type=str, default='~/.mxnet/datasets/imagenet/rec/train.rec', 
+                    help='the training data')
+parser.add_argument('--rec-train-idx', type=str, default='~/.mxnet/datasets/imagenet/rec/train.idx',
+                    help='the index of training data')
+parser.add_argument('--rec-val', type=str, default='~/.mxnet/datasets/imagenet/rec/val.rec',
+                    help='the validation data')
+parser.add_argument('--rec-val-idx', type=str, default='~/.mxnet/datasets/imagenet/rec/val.idx',
+                    help='the index of validation data')
+parser.add_argument('--use-rec', action='store_true',
+                    help='use image record iter for data input. default is false.')
 parser.add_argument('--batch-size', type=int, default=32,
                     help='training batch size per device (CPU/GPU).')
+parser.add_argument('--dtype', type=str, default='float32',
+                    help='data type for training. default is float32')
 parser.add_argument('--num-gpus', type=int, default=0,
                     help='number of gpus to use.')
 parser.add_argument('-j', '--num-data-workers', dest='num_workers', default=4, type=int,
@@ -40,20 +48,22 @@ parser.add_argument('--lr-decay-period', type=int, default=0,
                     help='interval for periodic learning rate decays. default is 0 to disable.')
 parser.add_argument('--lr-decay-epoch', type=str, default='40,60',
                     help='epoches at which learning rate decays. default is 40,60.')
+parser.add_argument('--warmup-lr', type=float, default=0.0,
+                    help='starting warmup learning rate. default is 0.0.')
+parser.add_argument('--warmup-epochs', type=int, default=0,
+                    help='number of warmup epochs.')
+parser.add_argument('--last-gamma', action='store_true',
+                    help='whether to initialize the gamma of the last BN layer in each bottleneck to zero')
 parser.add_argument('--mode', type=str,
                     help='mode in which to train the model. options are symbolic, imperative, hybrid')
 parser.add_argument('--model', type=str, required=True,
                     help='type of model to use. see vision_model for options.')
-parser.add_argument('--use_se', action='store_true',
-                    help='use SE layers or not in resnext. default is false.')
-parser.add_argument('--label-smoothing', action='store_true',
-                    help='use label smoothing or not in training. default is false.')
-parser.add_argument('--freeze-bn', action='store_true',
-                    help='freeze batchnorm layers in the last frew training epochs or not. default is false.')
-parser.add_argument('--batch-norm', action='store_true',
-                    help='enable batch normalization or not in vgg. default is false.')
 parser.add_argument('--use-pretrained', action='store_true',
                     help='enable using pretrained model from gluon.')
+parser.add_argument('--use_se', action='store_true',
+                    help='use SE layers or not in resnext. default is false.')
+parser.add_argument('--batch-norm', action='store_true',
+                    help='enable batch normalization or not in vgg. default is false.')
 parser.add_argument('--log-interval', type=int, default=50,
                     help='Number of batches to wait before logging.')
 parser.add_argument('--save-frequency', type=int, default=10,
@@ -62,8 +72,6 @@ parser.add_argument('--save-dir', type=str, default='params',
                     help='directory of saved models')
 parser.add_argument('--logging-dir', type=str, default='logs',
                     help='directory of training logs')
-parser.add_argument('--save-plot-dir', type=str, default='.',
-                    help='the path to save the history plot')
 opt = parser.parse_args()
 
 logging.basicConfig(level=logging.INFO)
@@ -71,6 +79,7 @@ logging.info(opt)
 
 batch_size = opt.batch_size
 classes = 1000
+num_training_samples = 1281167
 
 num_gpus = opt.num_gpus
 batch_size *= max(1, num_gpus)
@@ -84,22 +93,32 @@ lr_decay_epoch = [int(i) for i in opt.lr_decay_epoch.split(',')] + [np.inf]
 model_name = opt.model
 
 kwargs = {'ctx': context, 'pretrained': opt.use_pretrained, 'classes': classes}
-if model_name.startswith('vgg'):
+if model_name.startswith('resnet'):
+    kwargs['thumbnail'] = opt.use_thumbnail
+elif model_name.startswith('vgg'):
     kwargs['batch_norm'] = opt.batch_norm
 elif model_name.startswith('resnext'):
     kwargs['use_se'] = opt.use_se
 
+if opt.last_gamma:
+    kwargs['last_gamma'] = True
+
 optimizer = 'nag'
 optimizer_params = {'learning_rate': opt.lr, 'wd': opt.wd, 'momentum': opt.momentum}
+if opt.dtype != 'float32':
+    optimizer_params['multi_precision'] = True
 
 net = get_model(model_name, **kwargs)
-if opt.use_se:
-    model_name = 'se_' + model_name
+net.cast(opt.dtype)
+
+if opt.use_rec:
+    train_data, val_data, batch_fn = get_data_rec(opt.rec_train, opt.rec_train_idx,
+                                                  opt.rec_val, opt.rec_val_idx)
+else:
+    train_data, val_data, batch_fn = get_data_loader(opt.data_dir)
 
 acc_top1 = mx.metric.Accuracy()
 acc_top5 = mx.metric.TopKAccuracy(5)
-train_history = TrainingHistory(['training-top1-err', 'training-top5-err',
-                                 'validation-top1-err', 'validation-top5-err'])
 
 save_frequency = opt.save_frequency
 if opt.save_dir and save_frequency:
@@ -109,48 +128,14 @@ else:
     save_dir = ''
     save_frequency = 0
 
-plot_path = opt.save_plot_dir
-
-normalize = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-jitter_param = 0.0 if model_name.startswith('mobilenet') else 0.4
-lighting_param = 0.0 if model_name.startswith('mobilenet') else 0.1
-
-transform_train = transforms.Compose([
-    transforms.RandomResizedCrop(224),
-    transforms.RandomFlipLeftRight(),
-    transforms.RandomColorJitter(brightness=jitter_param, contrast=jitter_param,
-                                 saturation=jitter_param),
-    transforms.RandomLighting(lighting_param),
-    transforms.ToTensor(),
-    normalize
-])
-
-transform_test = transforms.Compose([
-    transforms.Resize(256),
-    transforms.CenterCrop(224),
-    transforms.ToTensor(),
-    normalize
-])
-
-def smooth(label, classes, eta=0.1):
-    if isinstance(label, nd.NDArray):
-        label = [label]
-    smoothed = []
-    for l in label:
-        ind = l.astype('int')
-        res = nd.zeros((ind.shape[0], classes), ctx = l.context)
-        res += eta/classes
-        res[nd.arange(ind.shape[0], ctx = l.context), ind] = 1 - eta + eta/classes
-        smoothed.append(res)
-    return smoothed
-
 def test(ctx, val_data):
+    if opt.use_rec:
+        val_data.reset()
     acc_top1.reset()
     acc_top5.reset()
     for i, batch in enumerate(val_data):
-        data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
-        label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0)
-        outputs = [net(X) for X in data]
+        data, label = batch_fn(batch, ctx)
+        outputs = [net(X.astype(opt.dtype, copy=False)) for X in data]
         acc_top1.update(label, outputs)
         acc_top5.update(label, outputs)
 
@@ -158,35 +143,33 @@ def test(ctx, val_data):
     _, top5 = acc_top5.get()
     return (1-top1, 1-top5)
 
-def train(epochs, ctx):
+def train(ctx):
     if isinstance(ctx, mx.Context):
         ctx = [ctx]
     net.initialize(mx.init.MSRAPrelu(), ctx=ctx)
 
-    train_data = gluon.data.DataLoader(
-        imagenet.classification.ImageNet(opt.data_dir, train=True).transform_first(transform_train),
-        batch_size=batch_size, shuffle=True, last_batch='discard', num_workers=num_workers)
-    val_data = gluon.data.DataLoader(
-        imagenet.classification.ImageNet(opt.data_dir, train=False).transform_first(transform_test),
-        batch_size=batch_size, shuffle=False, num_workers=num_workers)
-
     trainer = gluon.Trainer(net.collect_params(), optimizer, optimizer_params)
-    if opt.label_smoothing:
-        L = gluon.loss.SoftmaxCrossEntropyLoss(sparse_label=False)
-    else:
-        L = gluon.loss.SoftmaxCrossEntropyLoss()
+    L = gluon.loss.SoftmaxCrossEntropyLoss()
 
     lr_decay_count = 0
-
     best_val_score = 1
 
-    for epoch in range(epochs):
+    if opt.warmup_epochs > 0:
+        num_batches = num_training_samples // batch_size
+        lr_diff = optimizer_params['learning_rate'] - opt.warmup_lr
+        warmup_inc = lr_diff / (num_batches * opt.warmup_epochs)
+        trainer.set_learning_rate(opt.warmup_lr)
+
+    for epoch in range(opt.num_epochs):
         tic = time.time()
+        if opt.use_rec:
+            train_data.reset()
         acc_top1.reset()
         acc_top5.reset()
         btic = time.time()
-        train_loss = 0
-        num_batch = len(train_data)
+
+        if epoch == opt.warmup_epochs and opt.warmup_epochs > 0:
+            trainer.set_learning_rate(optimizer_params['learning_rate'])
 
         if lr_decay_period and epoch and epoch % lr_decay_period == 0:
             trainer.set_learning_rate(trainer.learning_rate*lr_decay)
@@ -194,45 +177,36 @@ def train(epochs, ctx):
             trainer.set_learning_rate(trainer.learning_rate*lr_decay)
             lr_decay_count += 1
 
-        if opt.freeze_bn and epoch == epochs - 10:
-            freeze_bn(net, True)
-
         for i, batch in enumerate(train_data):
-            data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
-            label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0)
-            if opt.label_smoothing:
-                label_smooth = smooth(label, classes)
-            else:
-                label_smooth = label
+            if epoch < opt.warmup_epochs and opt.warmup_epochs > 0:
+                trainer.set_learning_rate(trainer.learning_rate + warmup_inc)
+
+            data, label = batch_fn(batch, ctx)
             with ag.record():
-                outputs = [net(X) for X in data]
-                loss = [L(yhat, y) for yhat, y in zip(outputs, label_smooth)]
-            ag.backward(loss)
+                outputs = [net(X.astype(opt.dtype, copy=False)) for X in data]
+                loss = [L(yhat, y) for yhat, y in zip(outputs, label)]
+            for l in loss:
+                l.backward()
             trainer.step(batch_size)
+
             acc_top1.update(label, outputs)
             acc_top5.update(label, outputs)
-            train_loss += sum([l.sum().asscalar() for l in loss])
             if opt.log_interval and not (i+1)%opt.log_interval:
                 _, top1 = acc_top1.get()
                 _, top5 = acc_top5.get()
                 err_top1, err_top5 = (1-top1, 1-top5)
-                logging.info('Epoch[%d] Batch [%d]\tSpeed: %f samples/sec\ttop1-err=%f\ttop5-err=%f'%(
-                             epoch, i, batch_size*opt.log_interval/(time.time()-btic), err_top1, err_top5))
+                logging.info('Epoch[%d] Batch [%d]\tSpeed: %f samples/sec\ttop1-err=%f\ttop5-err=%f\tlr=%f'%(
+                             epoch, i, batch_size*opt.log_interval/(time.time()-btic), err_top1, err_top5,
+                             trainer.learning_rate))
                 btic = time.time()
 
         _, top1 = acc_top1.get()
         _, top5 = acc_top5.get()
         err_top1, err_top5 = (1-top1, 1-top5)
-        train_loss /= num_batch * batch_size
 
         err_top1_val, err_top5_val = test(ctx, val_data)
-        train_history.update([err_top1, err_top5, err_top1_val, err_top5_val])
-        train_history.plot(['training-top1-err', 'validation-top1-err'],
-                           save_path='%s/%s_top1.png'%(plot_path, model_name))
-        train_history.plot(['training-top5-err', 'validation-top5-err'],
-                           save_path='%s/%s_top5.png'%(plot_path, model_name))
 
-        logging.info('[Epoch %d] training: err-top1=%f err-top5=%f loss=%f'%(epoch, err_top1, err_top5, train_loss))
+        logging.info('[Epoch %d] training: err-top1=%f err-top5=%f'%(epoch, err_top1, err_top5))
         logging.info('[Epoch %d] time cost: %f'%(epoch, time.time()-tic))
         logging.info('[Epoch %d] validation: err-top1=%f err-top5=%f'%(epoch, err_top1_val, err_top5_val))
 
@@ -244,65 +218,12 @@ def train(epochs, ctx):
             net.save_params('%s/imagenet-%s-%d.params'%(save_dir, model_name, epoch))
 
     if save_frequency and save_dir:
-        net.save_params('%s/imagenet-%s-%d.params'%(save_dir, model_name, epochs-1))
-
-def train_dummy(ctx):
-    if isinstance(ctx, mx.Context):
-        ctx = [ctx]
-    net.initialize(mx.init.MSRAPrelu(), ctx=ctx)
-
-    data = []
-    label = []
-    bs = batch_size // len(ctx)
-    for c in ctx:
-        data.append(mx.nd.random.uniform(shape=(bs,3,224,224), ctx = c))
-        label.append(mx.nd.ones(shape=(bs), ctx = c))
-
-    trainer = gluon.Trainer(net.collect_params(), optimizer, optimizer_params)
-    if opt.label_smoothing:
-        L = gluon.loss.SoftmaxCrossEntropyLoss(sparse_label=False)
-    else:
-        L = gluon.loss.SoftmaxCrossEntropyLoss()
-
-    acc_top1.reset()
-    acc_top5.reset()
-    btic = time.time()
-    train_loss = 0
-    num_batch = 1000
-    warm_up = 100
-
-    for i in range(num_batch):
-        if i == warm_up:
-            tic = time.time()
-        if opt.label_smoothing:
-            label_smooth = smooth(label, classes)
-        else:
-            label_smooth = label
-        with ag.record():
-            outputs = [net(X) for X in data]
-            loss = [L(yhat, y) for yhat, y in zip(outputs, label_smooth)]
-        ag.backward(loss)
-        trainer.step(batch_size)
-        acc_top1.update(label, outputs)
-        acc_top5.update(label, outputs)
-        train_loss += sum([l.sum().asscalar() for l in loss])
-
-        if opt.log_interval and not (i+1)%opt.log_interval:
-            logging.info('Batch [%d]\tSpeed: %f samples/sec'%(
-                         i, batch_size*opt.log_interval/(time.time()-btic)))
-            btic = time.time()
-
-    total_time_cost = time.time()-tic
-    logging.info('Test finished. Average Speed: %f samples/sec. Total time cost: %f'%(
-                 batch_size*(num_batch-warm_up)/total_time_cost, total_time_cost))
+        net.save_params('%s/imagenet-%s-%d.params'%(save_dir, model_name, opt.num_epochs-1))
 
 def main():
     if opt.mode == 'hybrid':
-        net.hybridize()
-    if opt.dummy:
-        train_dummy(context)
-    else:
-        train(opt.num_epochs, context)
+        net.hybridize(static_alloc=True, static_shape=True)
+    train(context)
 
 if __name__ == '__main__':
     main()

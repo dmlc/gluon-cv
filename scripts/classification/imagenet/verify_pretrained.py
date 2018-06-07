@@ -1,7 +1,8 @@
-import argparse
+import argparse, os
 
 import mxnet as mx
-from mxnet import gluon, nd
+from mxnet import gluon, nd, image
+from mxnet.gluon.nn import Block, HybridBlock
 from mxnet.gluon.data.vision import transforms
 
 from gluoncv.data import imagenet
@@ -11,6 +12,8 @@ from gluoncv.model_zoo import get_model
 parser = argparse.ArgumentParser(description='Train a model for image classification.')
 parser.add_argument('--data-dir', type=str, default='~/.mxnet/datasets/imagenet',
                     help='Imagenet directory for validation.')
+parser.add_argument('--rec-dir', type=str, default='',
+                    help='recio directory for validation.')
 parser.add_argument('--batch-size', type=int, default=32,
                     help='training batch size per device (CPU/GPU).')
 parser.add_argument('--num-gpus', type=int, default=0,
@@ -21,6 +24,8 @@ parser.add_argument('--model', type=str, required=True,
                     help='type of model to use. see vision_model for options.')
 parser.add_argument('--params-file', type=str,
                     help='local parameter file to load, instead of pre-trained weight.')
+parser.add_argument('--dtype', type=str,
+                    help='training data type')
 parser.add_argument('--use_se', action='store_true',
                     help='use SE layers or not in resnext. default is false.')
 opt = parser.parse_args()
@@ -28,9 +33,11 @@ opt = parser.parse_args()
 batch_size = opt.batch_size
 classes = 1000
 
+# import pdb; pdb.set_trace()
+
 num_gpus = opt.num_gpus
 batch_size *= num_gpus
-ctx = [mx.gpu(i) for i in range(num_gpus)] if num_gpus > 0 else [mx.cpu()]
+ctx = [mx.gpu(i+4) for i in range(num_gpus)] if num_gpus > 0 else [mx.cpu()]
 num_workers = opt.num_workers
 
 model_name = opt.model
@@ -41,6 +48,7 @@ if model_name.startswith('resnext'):
     kwargs['use_se'] = opt.use_se
 
 net = get_model(model_name, **kwargs)
+net.cast(opt.dtype)
 if opt.params_file:
     net.load_params(opt.params_file, ctx=ctx)
 net.hybridize()
@@ -48,39 +56,101 @@ net.hybridize()
 acc_top1 = mx.metric.Accuracy()
 acc_top5 = mx.metric.TopKAccuracy(5)
 
-normalize = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+# normalize = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+normalize = transforms.Normalize([123.68, 116.779, 103.939], [1, 1, 1])
+
+class ToTensor2(HybridBlock):
+    def __init__(self):
+        super(ToTensor2, self).__init__()
+
+    def hybrid_forward(self, F, x):
+        return F.transpose(x, (2, 0, 1)).astype(opt.dtype)
+
+class Resize2(Block):
+    def __init__(self, size, interpolation=2):
+        super(Resize2, self).__init__()
+        # self._args = tuple(size) + (interpolation,)
+        self.size = size
+        self.interpolation = interpolation
+
+    def forward(self, x):
+        # import pdb; pdb.set_trace()
+        h, w, _ = x.shape
+        if h > w:
+            wsize = self.size
+            hsize = int(h * self.size / w)
+        else:
+            hsize = self.size
+            wsize = int(w * self.size / h)
+
+        _args = tuple((hsize, wsize)) + (self.interpolation,)
+        print(h, w, hsize, wsize)
+        return image.imresize(x, *_args)
 
 transform_test = transforms.Compose([
-    transforms.Resize(256),
+    Resize2(256),
     transforms.CenterCrop(224),
-    transforms.ToTensor(),
+    ToTensor2(),
     normalize
 ])
 
-def test(ctx, val_data):
+def test(ctx, val_data, mode='image'):
     acc_top1.reset()
     acc_top5.reset()
-    num_batch = len(val_data)
+    if not opt.rec_dir:
+        num_batch = len(val_data)
     for i, batch in enumerate(val_data):
-        data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
-        label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0)
-        outputs = [net(X) for X in data]
+        if mode == 'image':
+            data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
+            label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0)
+        else:
+            data = gluon.utils.split_and_load(batch.data[0], ctx_list=ctx, batch_axis=0)
+            label = gluon.utils.split_and_load(batch.label[0], ctx_list=ctx, batch_axis=0)
+        # import pdb; pdb.set_trace()
+        outputs = [net(X.astype(opt.dtype, copy=False)) for X in data]
         acc_top1.update(label, outputs)
         acc_top5.update(label, outputs)
 
         _, top1 = acc_top1.get()
         _, top5 = acc_top5.get()
-        print('%d / %d : %.8f, %.8f'%(i, num_batch, 1-top1, 1-top5))
+        if not opt.rec_dir:
+            print('%d / %d : %.8f, %.8f'%(i, num_batch, 1-top1, 1-top5))
+        else:
+            print('%d : %.8f, %.8f'%(i, 1-top1, 1-top5))
 
     _, top1 = acc_top1.get()
     _, top5 = acc_top5.get()
     return (1-top1, 1-top5)
 
-val_data = gluon.data.DataLoader(
-    imagenet.classification.ImageNet(opt.data_dir, train=False).transform_first(transform_test),
-    batch_size=batch_size, shuffle=False, num_workers=num_workers)
+if not opt.rec_dir:
+    val_data = gluon.data.DataLoader(
+        imagenet.classification.ImageNet(opt.data_dir, train=False).transform_first(transform_test),
+        batch_size=batch_size, shuffle=False, num_workers=num_workers)
+else:
+    imgrec = os.path.join(opt.rec_dir, 'val.rec')
+    imgidx = os.path.join(opt.rec_dir, 'val.idx')
+    val_data = mx.io.ImageRecordIter(
+        path_imgrec         = imgrec,
+        path_imgidx         = imgidx,
+        label_width         = 1,
+        mean_r              = 123.68,
+        mean_g              = 116.779,
+        mean_b              = 103.939,
+        data_name           = 'data',
+        label_name          = 'softmax_label',
+        batch_size          = batch_size,
+        resize              = 256,
+        data_shape          = (3, 224, 224),
+        preprocess_threads  = 30,
+        rand_crop           = False,
+        rand_mirror         = False,
+        num_parts           = 1,
+        part_index          = 0)
 
-err_top1_val, err_top5_val = test(ctx, val_data)
+if not opt.rec_dir:
+    err_top1_val, err_top5_val = test(ctx, val_data, 'image')
+else:
+    err_top1_val, err_top5_val = test(ctx, val_data, 'rec')
 print(err_top1_val, err_top5_val)
 
 params_count = 0
