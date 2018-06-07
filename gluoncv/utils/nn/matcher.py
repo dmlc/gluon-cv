@@ -71,6 +71,36 @@ class BipartiteMatcher(gluon.HybridBlock):
         return match[0]
 
 
+class BipartiteMatcherV1(gluon.HybridBlock):
+    """A Matcher implementing bipartite matching strategy.
+
+    Parameters
+    ----------
+    threshold : float
+        Threshold used to ignore invalid paddings
+    is_ascend : bool
+        Whether sort matching order in ascending order. Default is False.
+    """
+    def __init__(self, threshold=1e-12, is_ascend=False):
+        super(BipartiteMatcherV1, self).__init__()
+        self._threshold = threshold
+        self._is_ascend = is_ascend
+
+    def hybrid_forward(self, F, x):
+        match = F.contrib.bipartite_matching(x, threshold=self._threshold,
+                                             is_ascend=self._is_ascend)
+        # make sure if iou(a, y) == iou(b, y), then b should also be a good match
+        # otherwise positive/negative samples are confusing
+        # potential argmax and max
+        pargmax = x.argmax(axis=-1, keepdims=True)  # (B, num_anchor, 1)
+        maxs = x.argmax(axis=-2, keepdims=True)  # (B, 1, num_gt)
+        pmax = F.pick(x, pargmax, axis=-1, keepdims=True)   # (B, num_anchor, 1)
+        mask = F.broadcast_greater_equal(pmax, maxs)  # (B, num_anchor, num_gt)
+        mask = F.pick(mask, pargmax, axis=-1, keepdims=True)  # (B, num_anchor, 1)
+        result = F.where(match[0] < 0, mask.squeeze(axis=-1), match[0])
+        return result
+
+
 class MaximumMatcher(gluon.HybridBlock):
     """A Matcher implementing maximum matching strategy.
 
