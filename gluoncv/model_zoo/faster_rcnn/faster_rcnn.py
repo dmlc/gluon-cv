@@ -42,7 +42,7 @@ class FasterRCNN(RCNN):
         feat = self.features(x)
         # RPN proposals
         if autograd.is_training():
-            rpn_score, rpn_box, roi, raw_rpn_score, raw_rpn_box = self.rpn(
+            rpn_score, rpn_box, roi, raw_rpn_score, raw_rpn_box, anchors = self.rpn(
                 feat, F.zeros_like(x))
             # sample 128 roi
             assert gt_box is not None
@@ -75,7 +75,8 @@ class FasterRCNN(RCNN):
         # no need to convert bounding boxes in training, just return
         if autograd.is_training():
             box_pred = box_pred.transpose((1, 0, 2))
-            return cls_pred, box_pred, rpn_box, samples, matches, raw_rpn_score, raw_rpn_box
+            return (cls_pred, box_pred, rpn_box, samples, matches,
+                    raw_rpn_score, raw_rpn_box, anchors)
 
         # translate bboxes
         bboxes = self.box_decoder(box_pred, self.box_to_center(rpn_box)).split(

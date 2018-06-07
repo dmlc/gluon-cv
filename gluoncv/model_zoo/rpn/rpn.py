@@ -43,5 +43,5 @@ class RPN(gluon.HybridBlock):
             anchors, rpn_scores, rpn_box_pred, img)
         if autograd.is_training():
             # return raw predictions as well in training for bp
-            return rpn_score, rpn_box, roi, raw_rpn_scores, rpn_box_pred
+            return rpn_score, rpn_box, roi, raw_rpn_scores, rpn_box_pred, anchors
         return rpn_score, rpn_box, roi
