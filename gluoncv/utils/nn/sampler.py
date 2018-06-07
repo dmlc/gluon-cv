@@ -139,8 +139,9 @@ class QuotaSampler(gluon.Block):
 
 class QuotaSamplerOp(mx.operator.CustomOp):
     def __init__(self, num_sample, pos_thresh, neg_thresh_high=0.5, neg_thresh_low=0.,
-                 pos_ratio=0.5, neg_ratio=None):
+                 pos_ratio=0.5, neg_ratio=None, fill_negative=True):
         self._num_sample = num_sample
+        self._fill_negative = fill_negative
         if neg_ratio is None:
             self._neg_ratio = 1. - pos_ratio
         self._pos_ratio = pos_ratio
@@ -194,7 +195,7 @@ class QuotaSamplerOp(mx.operator.CustomOp):
 @mx.operator.register('quota_sampler')
 class QuotaSamplerProp(mx.operator.CustomOpProp):
     def __init__(self, num_sample, pos_thresh, neg_thresh_high=0.5, neg_thresh_low=0.,
-                 pos_ratio=0.5, neg_ratio=None):
+                 pos_ratio=0.5, neg_ratio=None, fill_negative=True):
         super(QuotaSamplerProp, self).__init__(need_top_grad=False)
         self.num_sample = int(num_sample)
         self.pos_thresh = float(pos_thresh)
@@ -202,6 +203,7 @@ class QuotaSamplerProp(mx.operator.CustomOpProp):
         self.neg_thresh_low = float(neg_thresh_low)
         self.pos_ratio = float(pos_ratio)
         self.neg_ratio = None if neg_ratio is None else float(neg_ratio)
+        self.fill_negative = bool(fill_negative)
 
     def list_arguments(self):
         return ['matches', 'ious']
@@ -217,4 +219,5 @@ class QuotaSamplerProp(mx.operator.CustomOpProp):
 
     def create_operator(self, ctx, shapes, dtypes):
         return QuotaSamplerOp(self.num_sample, self.pos_thresh, self.neg_thresh_high,
-                              self.neg_thresh_low, self.pos_ratio, self.neg_ratio)
+                              self.neg_thresh_low, self.pos_ratio, self.neg_ratio,
+                              self.fill_negative)
