@@ -294,6 +294,7 @@ def train(net, train_data, val_data, eval_metric, args):
             batch_size = len(batch[0])
             losses = []
             metric_losses = [[] for _ in metrics]
+            add_losses = [[] for _ in metrics2]
             with autograd.record():
                 for data, label, rpn_cls_targets, rpn_box_targets, rpn_box_masks in zip(*batch):
                     gt_label = label[:, :, 4:5]
@@ -317,15 +318,16 @@ def train(net, train_data, val_data, eval_metric, args):
                     metric_losses[1].append(rpn_loss2.sum())
                     metric_losses[2].append(rcnn_loss1.sum())
                     metric_losses[3].append(rcnn_loss2.sum())
-                    if batch_size <= 1:
-                        with autograd.pause():
-                            rpn_acc_metric.update([rpn_cls_targets, rpn_cls_targets>=0], [rpn_score])
-                            rpn_bbox_metric.update([rpn_box_targets, rpn_box_masks], [rpn_box])
-                            rcnn_acc_metric.update([cls_targets], [cls_pred])
-                            rcnn_bbox_metric.update([box_targets, box_masks], [box_pred])
+                    add_losses[0].append([[rpn_cls_targets, rpn_cls_targets>=0], [rpn_score]])
+                    add_losses[1].append([[rpn_box_targets, rpn_box_masks], [rpn_box]])
+                    add_losses[2].append([[cls_targets], [cls_pred]])
+                    add_losses[3].append([[box_targets, box_masks], [box_pred]])
                 autograd.backward(losses)
                 for metric, record in zip(metrics, metric_losses):
                     metric.update(0, record)
+                for metric, records in zip(metrics2, add_losses):
+                    for pred in records:
+                        metric.update(pred[0], pred[1])
             trainer.step(batch_size)
             # update metrics
             if args.log_interval and not (i + 1) % args.log_interval:
