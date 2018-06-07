@@ -59,4 +59,4 @@ class RPNProposal(gluon.HybridBlock):
         rpn_scores = F.slice_axis(result, axis=-1, begin=0, end=1)
         rpn_bbox = F.slice_axis(result, axis=-1, begin=1, end=None)
 
-        return rpn_scores, rpn_bbox, roi
+        return rpn_scores, rpn_bbox

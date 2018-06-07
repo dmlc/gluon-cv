@@ -42,13 +42,13 @@ class FasterRCNN(RCNN):
         feat = self.features(x)
         # RPN proposals
         if autograd.is_training():
-            rpn_score, rpn_box, roi, raw_rpn_score, raw_rpn_box, anchors = self.rpn(
+            rpn_score, rpn_box, raw_rpn_score, raw_rpn_box, anchors = self.rpn(
                 feat, F.zeros_like(x))
             # sample 128 roi
             assert gt_box is not None
             rpn_box, samples, matches = self.sampler(rpn_box, gt_box)
         else:
-            rpn_score, rpn_box, roi = self.rpn(feat, F.zeros_like(x))
+            rpn_score, rpn_box = self.rpn(feat, F.zeros_like(x))
 
         # create batchid for roi
         roi_batchid = F.arange(

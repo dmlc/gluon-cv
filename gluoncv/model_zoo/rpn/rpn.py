@@ -39,9 +39,9 @@ class RPN(gluon.HybridBlock):
         raw_rpn_scores = self.score(x).transpose(axes=(0, 2, 3, 1)).reshape((0, -1, 1))
         rpn_scores = F.sigmoid(raw_rpn_scores)
         rpn_box_pred = self.loc(x).transpose(axes=(0, 2, 3, 1)).reshape((0, -1, 4))
-        rpn_score, rpn_box, roi = self.region_proposaler(
+        rpn_score, rpn_box = self.region_proposaler(
             anchors, rpn_scores, rpn_box_pred, img)
         if autograd.is_training():
             # return raw predictions as well in training for bp
-            return rpn_score, rpn_box, roi, raw_rpn_scores, rpn_box_pred, anchors
-        return rpn_score, rpn_box, roi
+            return rpn_score, rpn_box, raw_rpn_scores, rpn_box_pred, anchors
+        return rpn_score, rpn_box
