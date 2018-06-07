@@ -80,11 +80,14 @@ class BipartiteMatcherV1(gluon.HybridBlock):
         Threshold used to ignore invalid paddings
     is_ascend : bool
         Whether sort matching order in ascending order. Default is False.
+    eps : float
+        Epsilon for floating number comparison
     """
-    def __init__(self, threshold=1e-12, is_ascend=False):
+    def __init__(self, threshold=1e-12, is_ascend=False, eps=1e-12):
         super(BipartiteMatcherV1, self).__init__()
         self._threshold = threshold
         self._is_ascend = is_ascend
+        self._eps = eps
 
     def hybrid_forward(self, F, x):
         match = F.contrib.bipartite_matching(x, threshold=self._threshold,
@@ -95,7 +98,7 @@ class BipartiteMatcherV1(gluon.HybridBlock):
         pargmax = x.argmax(axis=-1, keepdims=True)  # (B, num_anchor, 1)
         maxs = x.max(axis=-2, keepdims=True)  # (B, 1, num_gt)
         pmax = F.pick(x, pargmax, axis=-1, keepdims=True)   # (B, num_anchor, 1)
-        mask = F.broadcast_greater_equal(pmax, maxs - 1e-12)  # (B, num_anchor, num_gt)
+        mask = F.broadcast_greater(pmax + self._eps, maxs)  # (B, num_anchor, num_gt)
         mask = F.pick(mask, pargmax, axis=-1, keepdims=True)  # (B, num_anchor, 1)
         new_match = F.where(mask > 0, pargmax, F.ones_like(pargmax) * -1)
         result = F.where(match[0] < 0, new_match.squeeze(axis=-1), match[0])

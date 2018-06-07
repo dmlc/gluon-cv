@@ -7,7 +7,7 @@ from mxnet import gluon
 from mxnet import autograd
 from ...nn.bbox import BBoxSplit
 from ...nn.coder import MultiClassEncoder, NormalizedPerClassBoxCenterEncoder
-from ...utils.nn.matcher import CompositeMatcher, BipartiteMatcher, MaximumMatcher
+from ...utils.nn.matcher import CompositeMatcher, BipartiteMatcherV1, MaximumMatcher
 
 
 class RCNNTargetSampler(gluon.HybridBlock):
@@ -19,7 +19,7 @@ class RCNNTargetSampler(gluon.HybridBlock):
         self._neg_iou_thresh_high = neg_iou_thresh_high
         self._neg_iou_thresh_low = neg_iou_thresh_low
         self._pos_ratio = pos_ratio
-        self._matcher = CompositeMatcher([BipartiteMatcher(), MaximumMatcher(pos_iou_thresh)])
+        self._matcher = CompositeMatcher([BipartiteMatcherV1(), MaximumMatcher(pos_iou_thresh)])
 
     def hybrid_forward(self, F, roi, gt_box):
         """
