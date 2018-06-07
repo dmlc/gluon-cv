@@ -85,7 +85,7 @@ class OHEMSampler(gluon.Block):
         return F.array(y, ctx=x.context)
 
 
-class QuotaSampler(autograd.Function):
+class QuotaSampler(gluon.Block):
     def __init__(self, num_sample, pos_thresh, neg_thresh_high, neg_thresh_low=0.,
                  pos_ratio=0.5, neg_ratio=None):
         super(QuotaSampler, self).__init__()
@@ -130,15 +130,7 @@ class QuotaSampler(autograd.Function):
                 result[disable_indices] = 0
             results.append(mx.nd.array(result))
 
-        # some non-related gradients
-        g1 = F.zeros_like(matches)
-        g2 = F.zeros_like(ious)
-        self.save_for_backward(g1, g2)
         return mx.nd.stack(*results, axis=0)
-
-    def backward(self, dy):
-        g1, g2 = self.saved_tensors
-        return g1, g2
 
 
 class QuotaSamplerOp(mx.operator.CustomOp):

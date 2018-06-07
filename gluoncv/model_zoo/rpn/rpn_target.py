@@ -21,7 +21,7 @@ class RPNTargetGenerator(gluon.Block):
         self._bbox_split = BBoxSplit(axis=-1)
         self._matcher = CompositeMatcher([BipartiteMatcher(), MaximumMatcher(pos_iou_thresh)])
         # self._matcher = MaximumMatcher(pos_iou_thresh)
-        # self._sampler = QuotaSampler(num_sample, pos_iou_thresh, neg_iou_thresh, 0., pos_ratio)
+        self._sampler = QuotaSampler(num_sample, pos_iou_thresh, neg_iou_thresh, 0., pos_ratio)
         self._cls_encoder = SigmoidClassEncoder()
         self._box_encoder = NormalizedBoxCenterEncoder(stds=stds)
 
@@ -50,15 +50,15 @@ class RPNTargetGenerator(gluon.Block):
         ious = F.contrib.box_iou(anchor, bbox, format='corner').transpose((1, 0, 2))
         ious[:, invalid_mask, :] = -1
         matches = self._matcher(ious)
-        # samples = self._sampler(matches, ious)
-        samples = F.Custom(matches, ious, op_type='quota_sampler',
-                             num_sample=self._num_sample,
-                             pos_thresh=self._pos_iou_thresh,
-                             neg_thresh_high=self._neg_iou_thresh,
-                             neg_thresh_low=0.,
-                             pos_ratio=self._pos_ratio)
+        samples = self._sampler(matches, ious)
+        # samples = F.Custom(matches, ious, op_type='quota_sampler',
+        #                      num_sample=self._num_sample,
+        #                      pos_thresh=self._pos_iou_thresh,
+        #                      neg_thresh_high=self._neg_iou_thresh,
+        #                      neg_thresh_low=0.,
+        #                      pos_ratio=self._pos_ratio)
         # training targets for RPN
         cls_target, cls_mask = self._cls_encoder(samples)
         box_target, box_mask = self._box_encoder(
             samples, matches, anchor.expand_dims(axis=0), bbox)
-        return cls_target, cls_mask, box_target, box_mask
+        return cls_target, box_target, box_mask

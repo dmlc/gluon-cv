@@ -135,7 +135,7 @@ class FasterRCNNDefaultTrainTransform(object):
         oshape = self._feat_sym.infer_shape(data=(1, 3, img.shape[1], img.shape[2]))[1][0]
         anchor = self._anchors[:, :, :oshape[2], :oshape[3], :].reshape((-1, 4))
         gt_bboxes = mx.nd.array(bbox[np.newaxis, :, :4])
-        cls_target, cls_mask, box_target, box_mask = self._target_generator(
+        cls_target, box_target, box_mask = self._target_generator(
             gt_bboxes, anchor, img.shape[2], img.shape[1])
         return img, bbox.astype(img.dtype), cls_target[0], box_target[0], box_mask[0]
 
