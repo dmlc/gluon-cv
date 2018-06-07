@@ -1,12 +1,17 @@
+import os
 import mxnet as mx
 from mxnet import gluon
 
 from gluoncv.data import imagenet
 from mxnet.gluon.data.vision import transforms
 
-def get_data_iter(rec_train, rec_train_idx, rec_val, rec_val_idx, batch_size, num_workers):
-    jitter_param = 0.0 if model_name.startswith('mobilenet') else 0.4
-    lighting_param = 0.0 if model_name.startswith('mobilenet') else 0.1
+def get_data_rec(rec_train, rec_train_idx, rec_val, rec_val_idx, batch_size, num_workers):
+    rec_train = os.path.expanduser(rec_train)
+    rec_train_idx = os.path.expanduser(rec_train_idx)
+    rec_val = os.path.expanduser(rec_val)
+    rec_val_idx = os.path.expanduser(rec_val_idx)
+    jitter_param = 0.4
+    lighting_param = 0.1
     mean_rgb = [123.68, 116.779, 103.939]
     std_rgb = [58.393, 57.12, 57.375]
 
@@ -60,8 +65,8 @@ def get_data_iter(rec_train, rec_train_idx, rec_val, rec_val_idx, batch_size, nu
 
 def get_data_loader(data_dir, batch_size, num_workers):
     normalize = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-    jitter_param = 0.0 if model_name.startswith('mobilenet') else 0.4
-    lighting_param = 0.0 if model_name.startswith('mobilenet') else 0.1
+    jitter_param = 0.4
+    lighting_param = 0.1
 
     def batch_fn(batch, ctx):
         data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)

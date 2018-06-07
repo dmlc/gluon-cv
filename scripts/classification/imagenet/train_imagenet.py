@@ -4,7 +4,7 @@ import mxnet as mx
 import numpy as np
 from mxnet import gluon, nd
 from mxnet import autograd as ag
-from utils import get_data_iter, get_data_loader
+from utils import get_data_rec, get_data_loader
 from mxnet.gluon import nn
 from mxnet.gluon.data.vision import transforms
 
@@ -93,9 +93,7 @@ lr_decay_epoch = [int(i) for i in opt.lr_decay_epoch.split(',')] + [np.inf]
 model_name = opt.model
 
 kwargs = {'ctx': context, 'pretrained': opt.use_pretrained, 'classes': classes}
-if model_name.startswith('resnet'):
-    kwargs['thumbnail'] = opt.use_thumbnail
-elif model_name.startswith('vgg'):
+if model_name.startswith('vgg'):
     kwargs['batch_norm'] = opt.batch_norm
 elif model_name.startswith('resnext'):
     kwargs['use_se'] = opt.use_se
@@ -113,9 +111,10 @@ net.cast(opt.dtype)
 
 if opt.use_rec:
     train_data, val_data, batch_fn = get_data_rec(opt.rec_train, opt.rec_train_idx,
-                                                  opt.rec_val, opt.rec_val_idx)
+                                                  opt.rec_val, opt.rec_val_idx,
+                                                  batch_size, num_workers)
 else:
-    train_data, val_data, batch_fn = get_data_loader(opt.data_dir)
+    train_data, val_data, batch_fn = get_data_loader(opt.data_dir, batch_size, num_workers)
 
 acc_top1 = mx.metric.Accuracy()
 acc_top5 = mx.metric.TopKAccuracy(5)
