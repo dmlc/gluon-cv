@@ -1,5 +1,7 @@
 from __future__ import division
-
+import os
+# disable autotune
+os.environ['MXNET_CUDNN_AUTOTUNE_DEFAULT'] = '0'
 import argparse
 import logging
 logging.basicConfig(level=logging.INFO)

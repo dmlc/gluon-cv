@@ -30,10 +30,6 @@ class FasterRCNN(RCNN):
             self.sampler = RCNNTargetSampler(num_sample, pos_iou_thresh, neg_iou_thresh_high,
                                              neg_iou_thresh_low, pos_ratio)
 
-    def set_nms(self, nms_thresh=0.3, nms_topk=400):
-        self.nms_thresh = nms_thresh
-        self.nms_topk = nms_topk
-
     @property
     def target_generator(self):
         return list(self._target_generator)[0]
@@ -107,7 +103,7 @@ def get_faster_rcnn(name, features, top_features, scales, ratios, classes,
                     rpn_channel=1024, pretrained=False, pretrained_base=True, ctx=mx.cpu(),
                     root=os.path.join('~', '.mxnet', 'models'), **kwargs):
     net = FasterRCNN(features, top_features, scales, ratios, classes, roi_mode, roi_size,
-                     stride=stride, rpn_channel=rpn_channel)
+                     stride=stride, rpn_channel=rpn_channel, **kwargs)
     if pretrained:
         from ..model_store import get_model_file
         full_name = '_'.join(('faster_rcnn', name, dataset))
@@ -143,10 +139,11 @@ def faster_rcnn_resnet50_v1b_voc(pretrained_base=True, **kwargs):
         features.add(getattr(base_network, layer))
     for layer in ['layer4']:
         top_features.add(getattr(base_network, layer))
+    train_patterns = '|'.join(['.*dense', '.*rpn', '.*down(2|3|4)_conv', '.*layers(2|3|4)_conv'])
     return get_faster_rcnn('resnet50_v1b', features, top_features, scales=(2, 4, 8, 16, 32),
                            ratios=(0.5, 1, 2), classes=classes, dataset='voc',
                            roi_mode='align', roi_size=(14, 14), stride=16,
-                           rpn_channel=1024, **kwargs)
+                           rpn_channel=1024, train_patterns=train_patterns, **kwargs)
 
 def faster_rcnn_resnet50_v1b_coco(pretrained_base=True, **kwargs):
     from ..resnetv1b import resnet50_v1b
@@ -159,7 +156,8 @@ def faster_rcnn_resnet50_v1b_coco(pretrained_base=True, **kwargs):
         features.add(getattr(base_network, layer))
     for layer in ['layer4']:
         top_features.add(getattr(base_network, layer))
+    train_patterns = '|'.join(['.*dense', '.*rpn', '.*down(2|3|4)_conv', '.*layers(2|3|4)_conv'])
     return get_faster_rcnn('resnet50_v1b', features, top_features, scales=(2, 4, 8, 16, 32),
                            ratios=(0.5, 1, 2), classes=classes, dataset='coco',
                            roi_mode='align', roi_size=(14, 14), stride=16,
-                           rpn_channel=1024, **kwargs)
+                           rpn_channel=1024, train_patterns=train_patterns, **kwargs)

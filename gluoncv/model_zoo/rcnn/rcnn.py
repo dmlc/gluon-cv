@@ -10,7 +10,7 @@ from ...nn.coder import NormalizedBoxCenterDecoder, MultiPerClassDecoder
 
 class RCNN(gluon.HybridBlock):
     def __init__(self, features, top_features, classes, roi_mode, roi_size,
-                 nms_thresh=0.3, nms_topk=400, **kwargs):
+                 nms_thresh=0.3, nms_topk=400, train_patterns=None, **kwargs):
         super(RCNN, self).__init__(**kwargs)
         self.classes = classes
         self.num_class = len(classes)
@@ -21,6 +21,7 @@ class RCNN(gluon.HybridBlock):
         self._roi_size = roi_size
         self.nms_thresh = nms_thresh
         self.nms_topk = nms_topk
+        self.train_patterns = train_patterns
 
         with self.name_scope():
             self.features = features
@@ -40,6 +41,11 @@ class RCNN(gluon.HybridBlock):
             self.cls_decoder = MultiPerClassDecoder(num_class=self.num_class+1)
             self.box_to_center = BBoxCornerToCenter()
             self.box_decoder = NormalizedBoxCenterDecoder()
+
+    def collect_train_params(self, select=None):
+        if select is None:
+            return self.collect_params(self.train_patterns)
+        return self.collect_params(select)
 
     def set_nms(self, nms_thresh=0.3, nms_topk=400):
         self.nms_thresh = nms_thresh

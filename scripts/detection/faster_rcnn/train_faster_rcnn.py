@@ -62,8 +62,11 @@ def parse_args():
                              'training time if validation is slow.')
     parser.add_argument('--seed', type=int, default=233,
                         help='Random seed to be fixed.')
+    parser.add_argument('--verbose', dest='verbose', action='store_true',
+                        help='Print helpful debugging info once set.')
     args = parser.parse_args()
     return args
+
 
 class RPNAccMetric(mx.metric.EvalMetric):
     def __init__(self):
@@ -157,7 +160,7 @@ def get_dataset(dataset, args):
         val_dataset = gdata.COCODetection(splits='instances_val2017')
         val_metric = COCODetectionMetric(val_dataset, args.save_prefix + '_eval', cleanup=True)
         # coco validation is slow, consider increase the validation interval
-        if args.val_interval == 1:
+        if args.val_interval < 6:
             args.val_interval = 10
     else:
         raise NotImplementedError('Dataset: {} not implemented.'.format(dataset))
@@ -230,20 +233,13 @@ def validate(net, val_data, ctx, eval_metric):
 def train(net, train_data, val_data, eval_metric, args):
     """Training pipeline"""
     net.collect_params().reset_ctx(ctx)
-    # trainer = gluon.Trainer(
-    #     net.collect_params(), 'sgd',
-    #     {'learning_rate': args.lr, 'wd': args.wd, 'momentum': args.momentum})
-    select = ['.*dense', '.*rpn', '.*down2_conv', '.*down3_conv', '.*down4_conv', '.*layers2_conv', '.*layers3_conv', '.*layers4_conv']
-    select = '|'.join([s for s in select])
     trainer = gluon.Trainer(
-        net.collect_params(select),
+        net.collect_train_params(),  # fix batchnorm, fix first stage, etc...
         'sgd',
         {'learning_rate': args.lr,
-         'wd': 0.0005,
-         'momentum': 0.9,
+         'wd': args.wd,
+         'momentum': args.momentum,
          'clip_gradient': 5})
-    # print(net.collect_params().keys())
-    # raise
 
     # lr decay policy
     lr_decay = float(args.lr_decay)
@@ -276,6 +272,9 @@ def train(net, train_data, val_data, eval_metric, args):
     fh = logging.FileHandler(log_file_path)
     logger.addHandler(fh)
     logger.info(args)
+    if args.verbose:
+        logger.info('Trainable parameters:')
+        logger.info(net.collect_train_params().keys())
     logger.info('Start training from [Epoch {}]'.format(args.start_epoch))
     best_map = [0]
     for epoch in range(args.start_epoch, args.epochs):
@@ -312,7 +311,7 @@ def train(net, train_data, val_data, eval_metric, args):
                     rcnn_loss1 = rcnn_cls_loss(cls_pred, cls_targets, cls_targets >= 0) * cls_targets.size / cls_targets.shape[0] / 128.
                     rcnn_loss2 = rcnn_box_loss(box_pred, box_targets, box_masks) * box_pred.size / box_pred.shape[0] / 128.
                     rcnn_loss = rcnn_loss1 + rcnn_loss2
-                    # overall losses, TODO(zhreshold): weights? currently 1:1 used
+                    # overall losses
                     losses.append(rpn_loss.sum() + rcnn_loss.sum())
                     metric_losses[0].append(rpn_loss1.sum())
                     metric_losses[1].append(rpn_loss2.sum())
