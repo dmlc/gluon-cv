@@ -164,7 +164,6 @@ def train(ctx):
         if opt.use_rec:
             train_data.reset()
         acc_top1.reset()
-        acc_top5.reset()
         btic = time.time()
 
         if epoch == opt.warmup_epochs and opt.warmup_epochs > 0:
@@ -189,24 +188,22 @@ def train(ctx):
             trainer.step(batch_size)
 
             acc_top1.update(label, outputs)
-            acc_top5.update(label, outputs)
             if opt.log_interval and not (i+1)%opt.log_interval:
                 _, top1 = acc_top1.get()
-                _, top5 = acc_top5.get()
-                err_top1, err_top5 = (1-top1, 1-top5)
-                logging.info('Epoch[%d] Batch [%d]\tSpeed: %f samples/sec\ttop1-err=%f\ttop5-err=%f\tlr=%f'%(
-                             epoch, i, batch_size*opt.log_interval/(time.time()-btic), err_top1, err_top5,
+                err_top1 = 1-top1
+                logging.info('Epoch[%d] Batch [%d]\tSpeed: %f samples/sec\ttop1-err=%f\tlr=%f'%(
+                             epoch, i, batch_size*opt.log_interval/(time.time()-btic), err_top1,
                              trainer.learning_rate))
                 btic = time.time()
 
         _, top1 = acc_top1.get()
-        _, top5 = acc_top5.get()
-        err_top1, err_top5 = (1-top1, 1-top5)
+        err_top1 = 1-top1
+        throughput = int(batch_size * i /(time.time() - tic))
 
         err_top1_val, err_top5_val = test(ctx, val_data)
 
-        logging.info('[Epoch %d] training: err-top1=%f err-top5=%f'%(epoch, err_top1, err_top5))
-        logging.info('[Epoch %d] time cost: %f'%(epoch, time.time()-tic))
+        logging.info('[Epoch %d] training: err-top1=%f'%(epoch, err_top1))
+        logging.info('[Epoch %d] speed: %d samples/sec\ttime cost: %f'%(epoch, throughput, time.time()-tic))
         logging.info('[Epoch %d] validation: err-top1=%f err-top5=%f'%(epoch, err_top1_val, err_top5_val))
 
         if err_top1_val < best_val_score and epoch > 50:
