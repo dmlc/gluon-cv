@@ -45,6 +45,7 @@ class RPNProposal(gluon.HybridBlock):
         self._test_post_nms = max(1, test_post_nms)
         self._min_size = min_size
 
+    #pylint: disable=arguments-differ
     def hybrid_forward(self, F, anchor, score, bbox_pred, img):
         """
         Generate proposals. Limit to batch-size=1 in current implementation.

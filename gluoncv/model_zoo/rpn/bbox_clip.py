@@ -1,5 +1,5 @@
+"""Custom OP: BBoxClipToImage, used to clip bbox to image edges."""
 import mxnet as mx
-import numpy as np
 
 
 class BBoxClipToImage(mx.operator.CustomOp):
@@ -12,6 +12,7 @@ class BBoxClipToImage(mx.operator.CustomOp):
 
     """
     def __init__(self, axis=-1):
+        super(BBoxClipToImage, self).__init__()
         self.axis = int(axis)
 
     def forward(self, is_train, req, in_data, out_data, aux):
@@ -57,5 +58,6 @@ class BBoxClipToImageProp(mx.operator.CustomOpProp):
     def infer_type(self, in_type):
         return [in_type[0], in_type[0]], [in_type[0]], []
 
-    def create_operator(self, ctx, shapes, dtypes):
+    # pylint: disable=unused-argument
+    def create_operator(self, ctx, in_shapes, in_dtypes):
         return BBoxClipToImage(self.axis)

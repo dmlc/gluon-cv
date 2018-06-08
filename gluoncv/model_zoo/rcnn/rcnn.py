@@ -9,7 +9,7 @@ from ...nn.coder import NormalizedBoxCenterDecoder, MultiPerClassDecoder
 
 
 class RCNN(gluon.HybridBlock):
-    """Short summary.
+    """RCNN network.
 
     Parameters
     ----------
@@ -64,8 +64,10 @@ class RCNN(gluon.HybridBlock):
             self.features = features
             self.top_features = top_features
             self.global_avg_pool = nn.GlobalAvgPool2D()
-            self.class_predictor = nn.Dense(self.num_class + 1, weight_initializer=mx.init.Normal(0.01))
-            self.box_predictor = nn.Dense(self.num_class * 4, weight_initializer=mx.init.Normal(0.001))
+            self.class_predictor = nn.Dense(
+                self.num_class + 1, weight_initializer=mx.init.Normal(0.01))
+            self.box_predictor = nn.Dense(
+                self.num_class * 4, weight_initializer=mx.init.Normal(0.001))
             self.cls_decoder = MultiPerClassDecoder(num_class=self.num_class+1)
             self.box_to_center = BBoxCornerToCenter()
             self.box_decoder = NormalizedBoxCenterDecoder()
@@ -116,6 +118,7 @@ class RCNN(gluon.HybridBlock):
         self.nms_thresh = nms_thresh
         self.nms_topk = nms_topk
 
+    # pylint: disable=arguments-differ
     def hybrid_forward(self, F, x, width, height):
         """Not implemented yet."""
         raise NotImplementedError

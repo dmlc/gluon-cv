@@ -12,7 +12,7 @@ from ...utils.nn.sampler import QuotaSampler
 
 
 class RPNTargetGenerator(gluon.Block):
-    """Short summary.
+    """RPN target generator network.
 
     Parameters
     ----------
@@ -44,6 +44,7 @@ class RPNTargetGenerator(gluon.Block):
         self._cls_encoder = SigmoidClassEncoder()
         self._box_encoder = NormalizedBoxCenterEncoder(stds=stds)
 
+    # pylint: disable=arguments-differ
     def forward(self, bbox, anchor, width, height):
         """
         Only support batch_size=1 now.
@@ -57,19 +58,18 @@ class RPNTargetGenerator(gluon.Block):
             # anchor_mask = ((a_xmin >= 0) * (a_ymin >= 0) *
                 # (a_xmax <= width) * (a_ymax <= height)) > 0
             # anchor_mask = mx.nd.array(np.where(anchor_mask.asnumpy() > 0)[0], ctx=anchor.context)
-            invalid_mask = ((a_xmin >= 0) * (a_ymin >= 0) *
-                (a_xmax <= width) * (a_ymax <= height)) <= 0
-            invalid_mask = mx.nd.array(np.where(invalid_mask.asnumpy() > 0)[0], ctx=anchor.context)
+            imask = ((a_xmin >= 0) * (a_ymin >= 0) * (a_xmax <= width) * (a_ymax <= height)) <= 0
+            imask = mx.nd.array(np.where(imask.asnumpy() > 0)[0], ctx=anchor.context)
 
             # calculate ious between (N, 4) anchors and (M, 4) bbox ground-truths
             # ious is (N, M)
             ious = F.contrib.box_iou(anchor, bbox, format='corner').transpose((1, 0, 2))
-            ious[:, invalid_mask, :] = -1
+            ious[:, imask, :] = -1
             matches = self._matcher(ious)
             samples = self._sampler(matches, ious)
 
             # training targets for RPN
-            cls_target, cls_mask = self._cls_encoder(samples)
+            cls_target, _ = self._cls_encoder(samples)
             box_target, box_mask = self._box_encoder(
                 samples, matches, anchor.expand_dims(axis=0), bbox)
         return cls_target, box_target, box_mask

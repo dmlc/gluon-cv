@@ -5,7 +5,6 @@ import numpy as np
 import mxnet as mx
 from .. import bbox as tbbox
 from .. import image as timage
-from .. import experimental
 
 __all__ = ['load_test', 'FasterRCNNDefaultTrainTransform', 'FasterRCNNDefaultValTransform']
 

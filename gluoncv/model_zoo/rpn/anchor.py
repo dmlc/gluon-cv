@@ -58,8 +58,8 @@ class RPNAnchorGenerator(gluon.HybridBlock):
         # generate same shapes on every location
         px, py = (base_size - 1) * 0.5, (base_size - 1) * 0.5
         base_sizes = []
-        for i, r in enumerate(ratios):
-            for j, s in enumerate(scales):
+        for r in ratios:
+            for s in scales:
                 size = base_size * base_size / r
                 ws = np.round(np.sqrt(size))
                 w = (ws * s - 1) * 0.5
@@ -79,6 +79,7 @@ class RPNAnchorGenerator(gluon.HybridBlock):
         anchors = anchors.reshape((1, 1, height, width, -1)).astype(np.float32)
         return anchors
 
+    # pylint: disable=arguments-differ
     def hybrid_forward(self, F, x, anchors):
         """Slice anchors given the input image shape.
 

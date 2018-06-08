@@ -91,66 +91,12 @@ class BBoxSplit(gluon.HybridBlock):
         return F.split(x, axis=self._axis, num_outputs=4)
 
 
-# class BBoxConcat(gluon.HybridBlock):
-#     """Split bounding boxes into 4 columns.
-#
-#     Parameters
-#     ----------
-#     axis : int, default is -1
-#         On which axis to concatenate the bounding box. Default is -1(the last dimension).
-#
-#     """
-#     def __init__(self, axis, **kwargs):
-#         super(BBoxConcat, self).__init__(**kwargs)
-#         self._axis = axis
-#
-#     def hybrid_forward(self, F, x):
-#         assert len(x) == 4
-#         return F.concat(*x, dim=self._axis)
-
-# class BBoxClipToImage(gluon.HybridBlock):
-#     """Clip bounding boxes to image boundary.
-#
-#     Parameters
-#     ----------
-#     format : str, default is corner
-#         Bounding box format, can be {'center', 'corner'}.
-#         'center': {x, y, width, height}
-#         'corner': {xmin, ymin, xmax, ymax}
-#     axis : int, default is -1
-#         Effective axis of the bounding box. Default is -1(the last dimension).
-#
-#     Returns
-#     -------
-#     A BxNx4 NDArray
-#
-#     """
-#     def __init__(self, axis=-1, format='corner', **kwargs):
-#         super(BBoxClipToImage, self).__init__(**kwargs)
-#         if format.lower() == 'center':
-#             self._pre = BBoxCenterToCorner(split=True)
-#             self._post = BBoxCornerToCenter(split=False)
-#         elif format.lower() == 'corner':
-#             self._pre = BBoxSplit(axis=axis)
-#             self._post = lambda x : x
-#         else:
-#             raise ValueError("Unsupported format: {}. Use 'corner' or 'center'.".format(format))
-#
-#     def hybrid_forward(self, F, x, width, height):
-#         xmin, ymin, xmax, ymax = self._pre(x)
-#         xmin = F.clip(xmin, 0, width - 1)
-#         ymin = F.clip(ymin, 0, height - 1)
-#         xmax = F.clip(xmax, 0, width - 1)
-#         ymax = F.clip(ymax, 0, height - 1)
-#         return self._post(F.concat(*[xmin, ymin, xmax, ymax], dim=-1))
-
-
 class BBoxArea(gluon.HybridBlock):
     """Calculate the area of bounding boxes.
 
     Parameters
     ----------
-    format : str, default is corner
+    fmt : str, default is corner
         Bounding box format, can be {'center', 'corner'}.
         'center': {x, y, width, height}
         'corner': {xmin, ymin, xmax, ymax}
@@ -162,17 +108,17 @@ class BBoxArea(gluon.HybridBlock):
     A BxNx1 NDArray
 
     """
-    def __init__(self, axis=-1, format='corner', **kwargs):
+    def __init__(self, axis=-1, fmt='corner', **kwargs):
         super(BBoxArea, self).__init__(**kwargs)
-        if format.lower() == 'center':
+        if fmt.lower() == 'center':
             self._pre = BBoxCornerToCenter(split=True)
-        elif format.lower() == 'corner':
+        elif fmt.lower() == 'corner':
             self._pre = BBoxSplit(axis=axis)
         else:
-            raise ValueError("Unsupported format: {}. Use 'corner' or 'center'.".format(format))
+            raise ValueError("Unsupported format: {}. Use 'corner' or 'center'.".format(fmt))
 
     def hybrid_forward(self, F, x):
-        x, y, width, height = self._pre(x)
+        _, _, width, height = self._pre(x)
         width = F.where(width > 0, width, F.zeros_like(width))
         height = F.where(height > 0, height, F.zeros_like(height))
         return width * height

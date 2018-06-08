@@ -15,7 +15,7 @@ __all__ = ['FasterRCNN', 'get_faster_rcnn',
 
 
 class FasterRCNN(RCNN):
-    """Faster RCNN network.
+    r"""Faster RCNN network.
 
     Parameters
     ----------
@@ -33,6 +33,7 @@ class FasterRCNN(RCNN):
 
             width_{anchor} = size_{base} \times scale \times \sqrt{ 1 / ratio}
             height_{anchor} = size_{base} \times scale \times \sqrt{ratio}
+
     ratios : iterable of float
         The aspect ratios of anchor boxes. We expect it to be a list or tuple.
     classes : iterable of str
@@ -56,8 +57,8 @@ class FasterRCNN(RCNN):
     pos_iou_thresh : float, default is 0.5
         Proposal whose IOU larger than ``pos_iou_thresh`` is regarded as positive samples.
     neg_iou_thresh_high : float, default is 0.5
-        Proposal whose IOU smaller than ``neg_iou_thresh_high`` and larger than ``neg_iou_thresh_low``
-        is regarded as negative samples.
+        Proposal whose IOU smaller than ``neg_iou_thresh_high``
+        and larger than ``neg_iou_thresh_low`` is regarded as negative samples.
         Proposals with IOU in between ``pos_iou_thresh`` and ``neg_iou_thresh`` are
         ignored.
     neg_iou_thresh_low : float, default is 0.0
@@ -94,6 +95,7 @@ class FasterRCNN(RCNN):
         """
         return list(self._target_generator)[0]
 
+    # pylint: disable=arguments-differ
     def hybrid_forward(self, F, x, gt_box=None):
         """Forward Faster-RCNN network.
 
@@ -116,13 +118,13 @@ class FasterRCNN(RCNN):
         feat = self.features(x)
         # RPN proposals
         if autograd.is_training():
-            rpn_score, rpn_box, raw_rpn_score, raw_rpn_box, anchors = self.rpn(
+            _, rpn_box, raw_rpn_score, raw_rpn_box, anchors = self.rpn(
                 feat, F.zeros_like(x))
             # sample 128 roi
             assert gt_box is not None
             rpn_box, samples, matches = self.sampler(rpn_box, gt_box)
         else:
-            rpn_score, rpn_box = self.rpn(feat, F.zeros_like(x))
+            _, rpn_box = self.rpn(feat, F.zeros_like(x))
 
         # create batchid for roi
         with autograd.pause():
@@ -144,7 +146,8 @@ class FasterRCNN(RCNN):
         # top_feat = F.Pooling(top_feat, global_pool=True, pool_type='avg', kernel=self._roi_size)
         top_feat = self.global_avg_pool(top_feat)
         cls_pred = self.class_predictor(top_feat)
-        box_pred = self.box_predictor(top_feat).reshape((-1, self.num_class, 4)).transpose((1, 0, 2))
+        box_pred = self.box_predictor(top_feat).reshape(
+            (-1, self.num_class, 4)).transpose((1, 0, 2))
 
         # no need to convert bounding boxes in training, just return
         if autograd.is_training():
@@ -178,9 +181,9 @@ class FasterRCNN(RCNN):
 
 def get_faster_rcnn(name, features, top_features, scales, ratios, classes,
                     roi_mode, roi_size, dataset, stride=16,
-                    rpn_channel=1024, pretrained=False, pretrained_base=True, ctx=mx.cpu(),
+                    rpn_channel=1024, pretrained=False, ctx=mx.cpu(),
                     root=os.path.join('~', '.mxnet', 'models'), **kwargs):
-    """Short summary.
+    r"""Utility function to return faster rcnn networks.
 
     Parameters
     ----------
@@ -198,6 +201,7 @@ def get_faster_rcnn(name, features, top_features, scales, ratios, classes,
 
             width_{anchor} = size_{base} \times scale \times \sqrt{ 1 / ratio}
             height_{anchor} = size_{base} \times scale \times \sqrt{ratio}
+
     ratios : iterable of float
         The aspect ratios of anchor boxes. We expect it to be a list or tuple.
     classes : iterable of str
@@ -215,9 +219,6 @@ def get_faster_rcnn(name, features, top_features, scales, ratios, classes,
         Channel number used in RPN convolutional layers.
     pretrained : bool, optional, default is False
         Load pretrained weights.
-    pretrained_base : bool, optional, default is True
-        Load pretrained base network, the extra layers are randomized. Note that
-        if pretrained is `Ture`, this has no effect.
     ctx : mxnet.Context
         Context such as mx.cpu(), mx.gpu(0).
     root : str
@@ -237,15 +238,18 @@ def get_faster_rcnn(name, features, top_features, scales, ratios, classes,
         net.load_params(get_model_file(full_name, root=root), ctx=ctx)
     return net
 
-def faster_rcnn_resnet50_v1b_voc(pretrained_base=True, **kwargs):
+def faster_rcnn_resnet50_v1b_voc(pretrained=False, pretrained_base=True, **kwargs):
     r"""Faster RCNN model from the paper
     "Ren, S., He, K., Girshick, R., & Sun, J. (2015). Faster r-cnn: Towards
     real-time object detection with region proposal networks"
 
     Parameters
     ----------
-    pretrained : bool, default False
-        Whether to load the pretrained weights for model.
+    pretrained : bool, optional, default is False
+        Load pretrained weights.
+    pretrained_base : bool, optional, default is True
+        Load pretrained base network, the extra layers are randomized. Note that
+        if pretrained is `Ture`, this has no effect.
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
@@ -259,6 +263,7 @@ def faster_rcnn_resnet50_v1b_voc(pretrained_base=True, **kwargs):
     from ..resnetv1b import resnet50_v1b
     from ...data import VOCDetection
     classes = VOCDetection.CLASSES
+    pretrained_base = False if pretrained else pretrained_base
     base_network = resnet50_v1b(pretrained=pretrained_base, dilated=False)
     features = nn.HybridSequential()
     top_features = nn.HybridSequential()
@@ -270,17 +275,21 @@ def faster_rcnn_resnet50_v1b_voc(pretrained_base=True, **kwargs):
     return get_faster_rcnn('resnet50_v1b', features, top_features, scales=(2, 4, 8, 16, 32),
                            ratios=(0.5, 1, 2), classes=classes, dataset='voc',
                            roi_mode='align', roi_size=(14, 14), stride=16,
-                           rpn_channel=1024, train_patterns=train_patterns, **kwargs)
+                           rpn_channel=1024, train_patterns=train_patterns,
+                           pretrained=pretrained, **kwargs)
 
-def faster_rcnn_resnet50_v1b_coco(pretrained_base=True, **kwargs):
+def faster_rcnn_resnet50_v1b_coco(pretrained=False, pretrained_base=True, **kwargs):
     r"""Faster RCNN model from the paper
     "Ren, S., He, K., Girshick, R., & Sun, J. (2015). Faster r-cnn: Towards
     real-time object detection with region proposal networks"
 
     Parameters
     ----------
-    pretrained : bool, default False
-        Whether to load the pretrained weights for model.
+    pretrained : bool, optional, default is False
+        Load pretrained weights.
+    pretrained_base : bool, optional, default is True
+        Load pretrained base network, the extra layers are randomized. Note that
+        if pretrained is `Ture`, this has no effect.
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
@@ -294,6 +303,7 @@ def faster_rcnn_resnet50_v1b_coco(pretrained_base=True, **kwargs):
     from ..resnetv1b import resnet50_v1b
     from ...data import COCODetection
     classes = COCODetection.CLASSES
+    pretrained_base = False if pretrained else pretrained_base
     base_network = resnet50_v1b(pretrained=pretrained_base, dilated=False)
     features = nn.HybridSequential()
     top_features = nn.HybridSequential()

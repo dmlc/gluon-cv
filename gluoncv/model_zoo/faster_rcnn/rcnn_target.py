@@ -1,11 +1,8 @@
 """RCNN Target Generator."""
 from __future__ import absolute_import
 
-import numpy as np
-import mxnet as mx
 from mxnet import gluon
 from mxnet import autograd
-from ...nn.bbox import BBoxSplit
 from ...nn.coder import MultiClassEncoder, NormalizedPerClassBoxCenterEncoder
 from ...utils.nn.matcher import CompositeMatcher, BipartiteMatcherV1, MaximumMatcher
 
@@ -20,7 +17,8 @@ class RCNNTargetSampler(gluon.HybridBlock):
     pos_iou_thresh : float, default is 0.5
         Proposal whose IOU larger than ``pos_iou_thresh`` is regarded as positive samples.
     neg_iou_thresh_high : float, default is 0.5
-        Proposal whose IOU smaller than ``neg_iou_thresh_high`` and larger than ``neg_iou_thresh_low``
+        Proposal whose IOU smaller than ``neg_iou_thresh_high``
+        and larger than ``neg_iou_thresh_low``
         is regarded as negative samples.
         Proposals with IOU in between ``pos_iou_thresh`` and ``neg_iou_thresh`` are
         ignored.
@@ -41,6 +39,7 @@ class RCNNTargetSampler(gluon.HybridBlock):
         self._pos_ratio = pos_ratio
         self._matcher = CompositeMatcher([BipartiteMatcherV1(), MaximumMatcher(pos_iou_thresh)])
 
+    #pylint: disable=arguments-differ
     def hybrid_forward(self, F, roi, gt_box):
         """
         Only support batch_size=1 now.
@@ -53,11 +52,11 @@ class RCNNTargetSampler(gluon.HybridBlock):
             ious = F.contrib.box_iou(all_roi, gt_box, format='corner').transpose((1, 0, 2))
             matches = self._matcher(ious)
             samples = F.Custom(matches, ious, op_type='quota_sampler',
-                                 num_sample=self._num_sample,
-                                 pos_thresh=self._pos_iou_thresh,
-                                 neg_thresh_high=self._neg_iou_thresh_high,
-                                 neg_thresh_low=self._neg_iou_thresh_low,
-                                 pos_ratio=self._pos_ratio)
+                               num_sample=self._num_sample,
+                               pos_thresh=self._pos_iou_thresh,
+                               neg_thresh_high=self._neg_iou_thresh_high,
+                               neg_thresh_low=self._neg_iou_thresh_low,
+                               pos_ratio=self._pos_ratio)
             samples = samples.squeeze(axis=0)   # remove batch axis
             matches = matches.squeeze(axis=0)
 
@@ -90,6 +89,7 @@ class RCNNTargetGenerator(gluon.Block):
         self._box_encoder = NormalizedPerClassBoxCenterEncoder(
             num_class=num_class, means=means, stds=stds)
 
+    #pylint: disable=arguments-differ
     def forward(self, roi, samples, matches, gt_label, gt_box):
         """
         Only support batch_size=1 now.

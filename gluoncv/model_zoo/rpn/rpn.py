@@ -10,7 +10,7 @@ from .proposal import RPNProposal
 
 
 class RPN(gluon.HybridBlock):
-    """Short summary.
+    r"""Region Proposal Network.
 
     Parameters
     ----------
@@ -31,6 +31,7 @@ class RPN(gluon.HybridBlock):
 
             width_{anchor} = size_{base} \times scale \times \sqrt{ 1 / ratio}
             height_{anchor} = size_{base} \times scale \times \sqrt{ratio}
+
     alloc_size : tuple of int
         Allocate size for the anchor boxes as (H, W).
         Usually we generate enough anchors for large feature map, e.g. 128x128.
@@ -79,6 +80,7 @@ class RPN(gluon.HybridBlock):
             self.score = nn.Conv2D(anchor_depth, 1, 1, 0, weight_initializer=weight_initializer)
             self.loc = nn.Conv2D(anchor_depth * 4, 1, 1, 0, weight_initializer=weight_initializer)
 
+    # pylint: disable=arguments-differ
     def hybrid_forward(self, F, x, img):
         """Forward RPN.
 
