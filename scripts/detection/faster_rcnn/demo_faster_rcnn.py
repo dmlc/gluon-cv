@@ -45,5 +45,5 @@ if __name__ == '__main__':
         x, img = presets.rcnn.load_test(image, short=600, max_size=1000)
         ids, scores, bboxes = [xx.asnumpy() for xx in net(x)]
         ax = gcv.utils.viz.plot_bbox(img, bboxes, scores, ids,
-                                    class_names=net.classes, ax=ax)
+                                     class_names=net.classes, ax=ax)
         plt.show()

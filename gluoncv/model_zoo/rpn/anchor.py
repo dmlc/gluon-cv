@@ -54,6 +54,7 @@ class RPNAnchorGenerator(gluon.HybridBlock):
         return self._num_depth
 
     def _generate_anchors(self, stride, base_size, ratios, scales, alloc_size):
+        """Pre-generate all anchors."""
         # generate same shapes on every location
         px, py = (base_size - 1) * 0.5, (base_size - 1) * 0.5
         base_sizes = []
@@ -79,5 +80,13 @@ class RPNAnchorGenerator(gluon.HybridBlock):
         return anchors
 
     def hybrid_forward(self, F, x, anchors):
+        """Slice anchors given the input image shape.
+
+        Inputs:
+            - **x**: input tensor with (1 x C x H x W) shape.
+        Outputs:
+            - **out**: output anchor with (1, N, 4) shape. N is the number of anchors.
+
+        """
         a = F.slice_like(anchors, x * 0, axes=(2, 3))
         return a.reshape((1, -1, 4))

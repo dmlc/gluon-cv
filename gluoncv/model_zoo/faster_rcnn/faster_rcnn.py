@@ -15,15 +15,67 @@ __all__ = ['FasterRCNN', 'get_faster_rcnn',
 
 
 class FasterRCNN(RCNN):
+    """Faster RCNN network.
+
+    Parameters
+    ----------
+    features : gluon.HybridBlock
+        Base feature extractor before feature pooling layer.
+    top_features : gluon.HybridBlock
+        Tail feature extractor after feature pooling layer.
+    train_patterns : str
+        Matching pattern for trainable parameters.
+    scales : iterable of float
+        The areas of anchor boxes.
+        We use the following form to compute the shapes of anchors:
+
+        .. math::
+
+            width_{anchor} = size_{base} \times scale \times \sqrt{ 1 / ratio}
+            height_{anchor} = size_{base} \times scale \times \sqrt{ratio}
+    ratios : iterable of float
+        The aspect ratios of anchor boxes. We expect it to be a list or tuple.
+    classes : iterable of str
+        Names of categories, its length is ``num_class``.
+    roi_mode : str
+        ROI pooling mode. Currently support 'pool' and 'align'.
+    roi_size : tuple of int, length 2
+        (height, width) of the ROI region.
+    stride : int, default is 16
+        Feature map stride with respect to original image.
+        This is usually the ratio between original image size and feature map size.
+    rpn_channel : int, default is 1024
+        Channel number used in RPN convolutional layers.
+    nms_thresh : float, default is 0.3.
+        Non-maximum suppression threshold. You can speficy < 0 or > 1 to disable NMS.
+    nms_topk : int, default is 400
+        Apply NMS to top k detection results, use -1 to disable so that every Detection
+         result is used in NMS.
+    num_sample : int, default is 128
+        Number of samples for RCNN targets.
+    pos_iou_thresh : float, default is 0.5
+        Proposal whose IOU larger than ``pos_iou_thresh`` is regarded as positive samples.
+    neg_iou_thresh_high : float, default is 0.5
+        Proposal whose IOU smaller than ``neg_iou_thresh_high`` and larger than ``neg_iou_thresh_low``
+        is regarded as negative samples.
+        Proposals with IOU in between ``pos_iou_thresh`` and ``neg_iou_thresh`` are
+        ignored.
+    neg_iou_thresh_low : float, default is 0.0
+        See ``neg_iou_thresh_high``.
+    pos_ratio : float, default is 0.25
+        ``pos_ratio`` defines how many positive samples (``pos_ratio * num_sample``) is
+        to be sampled.
+
+    """
     def __init__(self, features, top_features, scales, ratios, classes, roi_mode, roi_size,
                  stride=16, rpn_channel=1024, nms_thresh=0.3, nms_topk=400,
                  num_sample=128, pos_iou_thresh=0.5, neg_iou_thresh_high=0.5,
-                 neg_iou_thresh_low=0.0, pos_ratio=0.25, max_batch=1, max_roi=100000, **kwargs):
+                 neg_iou_thresh_low=0.0, pos_ratio=0.25, **kwargs):
         super(FasterRCNN, self).__init__(
             features, top_features, classes, roi_mode, roi_size, **kwargs)
         self.stride = stride
-        self._max_batch = max_batch
-        self._max_roi = max_roi
+        self._max_batch = 1  # currently only support batch size = 1
+        self._max_roi = 100000  # maximum allowed ROIs
         self._target_generator = set([RCNNTargetGenerator(self.num_class)])
         with self.name_scope():
             self.rpn = RPN(rpn_channel, stride, scales=scales, ratios=ratios)
@@ -32,9 +84,35 @@ class FasterRCNN(RCNN):
 
     @property
     def target_generator(self):
+        """Returns stored target generator
+
+        Returns
+        -------
+        mxnet.gluon.HybridBlock
+            The RCNN target generator
+
+        """
         return list(self._target_generator)[0]
 
     def hybrid_forward(self, F, x, gt_box=None):
+        """Forward Faster-RCNN network.
+
+        The behavior during traing and inference is different.
+
+        Parameters
+        ----------
+        x : mxnet.nd.NDArray or mxnet.symbol
+            The network input tensor.
+        gt_box : type, only required during training
+            The ground-truth bbox tensor with shape (1, N, 4).
+
+        Returns
+        -------
+        (ids, scores, bboxes)
+            During inference, returns final class id, confidence scores, bounding
+            boxes.
+
+        """
         feat = self.features(x)
         # RPN proposals
         if autograd.is_training():
@@ -102,6 +180,55 @@ def get_faster_rcnn(name, features, top_features, scales, ratios, classes,
                     roi_mode, roi_size, dataset, stride=16,
                     rpn_channel=1024, pretrained=False, pretrained_base=True, ctx=mx.cpu(),
                     root=os.path.join('~', '.mxnet', 'models'), **kwargs):
+    """Short summary.
+
+    Parameters
+    ----------
+    name : str
+        Model name.
+    features : gluon.HybridBlock
+        Base feature extractor before feature pooling layer.
+    top_features : gluon.HybridBlock
+        Tail feature extractor after feature pooling layer.
+    scales : iterable of float
+        The areas of anchor boxes.
+        We use the following form to compute the shapes of anchors:
+
+        .. math::
+
+            width_{anchor} = size_{base} \times scale \times \sqrt{ 1 / ratio}
+            height_{anchor} = size_{base} \times scale \times \sqrt{ratio}
+    ratios : iterable of float
+        The aspect ratios of anchor boxes. We expect it to be a list or tuple.
+    classes : iterable of str
+        Names of categories, its length is ``num_class``.
+    roi_mode : str
+        ROI pooling mode. Currently support 'pool' and 'align'.
+    roi_size : tuple of int, length 2
+        (height, width) of the ROI region.
+    dataset : str
+        The name of dataset.
+    stride : int, default is 16
+        Feature map stride with respect to original image.
+        This is usually the ratio between original image size and feature map size.
+    rpn_channel : int, default is 1024
+        Channel number used in RPN convolutional layers.
+    pretrained : bool, optional, default is False
+        Load pretrained weights.
+    pretrained_base : bool, optional, default is True
+        Load pretrained base network, the extra layers are randomized. Note that
+        if pretrained is `Ture`, this has no effect.
+    ctx : mxnet.Context
+        Context such as mx.cpu(), mx.gpu(0).
+    root : str
+        Model weights storing path.
+
+    Returns
+    -------
+    mxnet.gluon.HybridBlock
+        The Faster-RCNN network.
+
+    """
     net = FasterRCNN(features, top_features, scales, ratios, classes, roi_mode, roi_size,
                      stride=stride, rpn_channel=rpn_channel, **kwargs)
     if pretrained:
@@ -119,11 +246,11 @@ def faster_rcnn_resnet50_v1b_voc(pretrained_base=True, **kwargs):
     ----------
     pretrained : bool, default False
         Whether to load the pretrained weights for model.
-
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
+
     Examples
     --------
     >>> model = get_faster_rcnn_resnet50_voc(pretrained=True)
@@ -146,6 +273,24 @@ def faster_rcnn_resnet50_v1b_voc(pretrained_base=True, **kwargs):
                            rpn_channel=1024, train_patterns=train_patterns, **kwargs)
 
 def faster_rcnn_resnet50_v1b_coco(pretrained_base=True, **kwargs):
+    r"""Faster RCNN model from the paper
+    "Ren, S., He, K., Girshick, R., & Sun, J. (2015). Faster r-cnn: Towards
+    real-time object detection with region proposal networks"
+
+    Parameters
+    ----------
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+
+    Examples
+    --------
+    >>> model = get_faster_rcnn_resnet50_coco(pretrained=True)
+    >>> print(model)
+    """
     from ..resnetv1b import resnet50_v1b
     from ...data import COCODetection
     classes = COCODetection.CLASSES

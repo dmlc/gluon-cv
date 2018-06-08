@@ -103,6 +103,7 @@ class SSDDefaultTrainTransform(object):
             iou_thresh=iou_thresh, stds=box_norm, negative_mining_ratio=-1, **kwargs)
 
     def __call__(self, src, label):
+        """Apply transform to training image/label."""
         # random color jittering
         img = experimental.image.random_color_distort(src)
 
@@ -167,6 +168,7 @@ class SSDDefaultValTransform(object):
         self._std = std
 
     def __call__(self, src, label):
+        """Apply transform to validation image/label."""
         # resize
         h, w, _ = src.shape
         img = timage.imresize(src, self._width, self._height)

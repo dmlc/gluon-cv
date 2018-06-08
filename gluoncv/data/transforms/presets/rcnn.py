@@ -78,19 +78,29 @@ class FasterRCNNDefaultTrainTransform(object):
         Mean pixel values to be subtracted from image tensor. Default is [0.485, 0.456, 0.406].
     std : array-like of size 3
         Standard deviation to be divided from image. Default is [0.229, 0.224, 0.225].
-    box_norm : array-like of size 4, default is (0.1, 0.1, 0.2, 0.2)
+    box_norm : array-like of size 4, default is (1., 1., 1., 1.)
         Std value to be divided from encoded values.
+    num_sample : int, default is 256
+        Number of samples for RPN targets.
+    pos_iou_thresh : float, default is 0.7
+        Anchors larger than ``pos_iou_thresh`` is regarded as positive samples.
+    neg_iou_thresh : float, default is 0.3
+        Anchors smaller than ``neg_iou_thresh`` is regarded as negative samples.
+        Anchors with IOU in between ``pos_iou_thresh`` and ``neg_iou_thresh`` are
+        ignored.
+    pos_ratio : float, default is 0.5
+        ``pos_ratio`` defines how many positive samples (``pos_ratio * num_sample``) is
+        to be sampled.
 
     """
     def __init__(self, short=600, max_size=1000, net=None, mean=(0.485, 0.456, 0.406),
                  std=(0.229, 0.224, 0.225), box_norm=(1., 1., 1., 1.),
                  num_sample=256, pos_iou_thresh=0.7, neg_iou_thresh=0.3,
-                 pos_ratio=0.5, stride=16, **kwargs):
+                 pos_ratio=0.5, **kwargs):
         self._short = short
         self._max_size = max_size
         self._mean = mean
         self._std = std
-        # self._stride = int(stride)
         if net is None:
             return
 
@@ -113,6 +123,7 @@ class FasterRCNNDefaultTrainTransform(object):
             stds=box_norm, **kwargs)
 
     def __call__(self, src, label):
+        """Apply transform to training image/label."""
         # resize shorter side but keep in max_size
         h, w, _ = src.shape
         img = timage.resize_short_within(src, self._short, self._max_size)
@@ -163,6 +174,7 @@ class FasterRCNNDefaultValTransform(object):
         self._max_size = max_size
 
     def __call__(self, src, label):
+        """Apply transform to validation image/label."""
         # resize shorter side but keep in max_size
         h, w, _ = src.shape
         img = timage.resize_short_within(src, self._short, self._max_size)

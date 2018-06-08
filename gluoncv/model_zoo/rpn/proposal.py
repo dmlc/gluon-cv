@@ -8,6 +8,29 @@ from ...nn.coder import NormalizedBoxCenterDecoder
 
 
 class RPNProposal(gluon.HybridBlock):
+    """Proposal generator for RPN.
+
+    RPNProposal takes RPN anchors, RPN prediction scores and box regression preditions.
+    It will transform anchors, apply NMS to get clean foreground proposals.
+
+    Parameters
+    ----------
+    nms_thresh : float, default is 0.7
+        IOU threshold for NMS. It is used to remove overlapping proposals.
+    train_pre_nms : int, default is 12000
+        Filter top proposals before NMS in training.
+    train_post_nms : int, default is 2000
+        Return top proposal results after NMS in training.
+    test_pre_nms : int, default is 6000
+        Filter top proposals before NMS in testing.
+    test_post_nms : int, default is 300
+        Return top proposal results after NMS in testing.
+    min_size : int, default is 16
+        Proposals whose size is smaller than ``min_size`` will be discarded.
+    stds : tuple of float
+        Standard deviation to be multiplied from encoded regression targets.
+        These values must be the same as stds used in RPNTargetGenerator.
+    """
     def __init__(self, nms_thresh=0.7, train_pre_nms=12000, train_post_nms=2000,
                  test_pre_nms=6000, test_post_nms=300, min_size=16, stds=(1., 1., 1., 1.)):
         super(RPNProposal, self).__init__()
@@ -24,7 +47,7 @@ class RPNProposal(gluon.HybridBlock):
 
     def hybrid_forward(self, F, anchor, score, bbox_pred, img):
         """
-        Limit to batch-size=1
+        Generate proposals. Limit to batch-size=1 in current implementation.
         """
         if autograd.is_training():
             pre_nms = self._train_pre_nms

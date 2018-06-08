@@ -11,6 +11,26 @@ from ...utils.nn.matcher import CompositeMatcher, BipartiteMatcherV1, MaximumMat
 
 
 class RCNNTargetSampler(gluon.HybridBlock):
+    """A sampler to choose positive/negative samples from RCNN Proposals
+
+    Parameters
+    ----------
+    num_sample : int, default is 128
+        Number of samples for RCNN targets.
+    pos_iou_thresh : float, default is 0.5
+        Proposal whose IOU larger than ``pos_iou_thresh`` is regarded as positive samples.
+    neg_iou_thresh_high : float, default is 0.5
+        Proposal whose IOU smaller than ``neg_iou_thresh_high`` and larger than ``neg_iou_thresh_low``
+        is regarded as negative samples.
+        Proposals with IOU in between ``pos_iou_thresh`` and ``neg_iou_thresh`` are
+        ignored.
+    neg_iou_thresh_low : float, default is 0.0
+        See ``neg_iou_thresh_high``.
+    pos_ratio : float, default is 0.25
+        ``pos_ratio`` defines how many positive samples (``pos_ratio * num_sample``) is
+        to be sampled.
+
+    """
     def __init__(self, num_sample=128, pos_iou_thresh=0.5, neg_iou_thresh_high=0.5,
                  neg_iou_thresh_low=0.0, pos_ratio=0.25):
         super(RCNNTargetSampler, self).__init__()
@@ -43,7 +63,8 @@ class RCNNTargetSampler(gluon.HybridBlock):
 
             # shuffle and argsort, take first num_sample samples
             sf_samples = F.where(samples == 0, F.ones_like(samples) * -999, samples)
-            indices = F.argsort(sf_samples, is_ascend=False).slice_axis(axis=0, begin=0, end=self._num_sample)
+            indices = F.argsort(sf_samples, is_ascend=False).slice_axis(
+                axis=0, begin=0, end=self._num_sample)
             new_roi = all_roi.take(indices).expand_dims(0)
             new_samples = samples.take(indices).expand_dims(0)
             new_matches = matches.take(indices).expand_dims(0)
@@ -51,6 +72,18 @@ class RCNNTargetSampler(gluon.HybridBlock):
 
 
 class RCNNTargetGenerator(gluon.Block):
+    """RCNN target encoder to generate matching target and regression target values.
+
+    Parameters
+    ----------
+    num_class : int
+        Number of total number of positive classes.
+    means : iterable of float, default is (0., 0., 0., 0.)
+        Mean values to be subtracted from regression targets.
+    stds : iterable of float, default is (.1, .1, .2, .2)
+        Standard deviations to be divided from regression targets.
+
+    """
     def __init__(self, num_class, means=(0., 0., 0., 0.), stds=(.1, .1, .2, .2)):
         super(RCNNTargetGenerator, self).__init__()
         self._cls_encoder = MultiClassEncoder()

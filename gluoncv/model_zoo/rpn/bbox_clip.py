@@ -3,6 +3,14 @@ import numpy as np
 
 
 class BBoxClipToImage(mx.operator.CustomOp):
+    """Clip bounding box to image edges.
+
+    Parameters
+    ----------
+    axis : int
+        The coordinate axis with length 4.
+
+    """
     def __init__(self, axis=-1):
         self.axis = int(axis)
 
@@ -25,6 +33,14 @@ class BBoxClipToImage(mx.operator.CustomOp):
 
 @mx.operator.register('bbox_clip_to_image')
 class BBoxClipToImageProp(mx.operator.CustomOpProp):
+    """Property of BBoxClipToImage custom Op.
+
+    Parameters
+    ----------
+    axis : int
+        The coordinate axis with length 4.
+
+    """
     def __init__(self, axis=-1):
         super(BBoxClipToImageProp, self).__init__(need_top_grad=True)
         self.axis = int(axis)
