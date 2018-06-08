@@ -69,7 +69,7 @@ class FasterRCNN(RCNN):
         # top_feat = F.Pooling(top_feat, global_pool=True, pool_type='avg', kernel=self._roi_size)
         top_feat = self.global_avg_pool(top_feat)
         cls_pred = self.class_predictor(top_feat)
-        box_pred = self.box_predictor(top_feat).reshape(-1, self.num_class, 4).transpose((1, 0, 2))
+        box_pred = self.box_predictor(top_feat).reshape((-1, self.num_class, 4)).transpose((1, 0, 2))
 
         # no need to convert bounding boxes in training, just return
         if autograd.is_training():
