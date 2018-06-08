@@ -88,14 +88,15 @@ class FasterRCNN(RCNN):
             score = scores.slice_axis(axis=-1, begin=i, end=i+1)
             # per class results
             per_result = F.concat(*[cls_id, score, bboxes[i]], dim=-1)
-            if self.nms_thresh > 0 and self.nms_thresh < 1:
-                per_result = F.contrib.box_nms(
-                    per_result, overlap_thresh=self.nms_thresh, topk=self.nms_topk,
-                    id_index=0, score_index=1, coord_start=2)
-                if self.nms_topk > 0:
-                    per_result = per_result.slice_axis(axis=0, begin=0, end=100)
+
             results.append(per_result)
-        result = F.concat(*results, dim=0)
+        result = F.concat(*results, dim=0).expand_dims(0)
+        if self.nms_thresh > 0 and self.nms_thresh < 1:
+            result = F.contrib.box_nms(
+                result, overlap_thresh=self.nms_thresh, topk=self.nms_topk,
+                id_index=0, score_index=1, coord_start=2)
+            if self.nms_topk > 0:
+                result = result.slice_axis(axis=1, begin=0, end=100).squeeze(axis=0)
         ids = F.slice_axis(result, axis=-1, begin=0, end=1)
         scores = F.slice_axis(result, axis=-1, begin=1, end=2)
         bboxes = F.slice_axis(result, axis=-1, begin=2, end=6)
