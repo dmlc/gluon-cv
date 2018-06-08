@@ -201,7 +201,7 @@ def validate(net, val_data, ctx, eval_metric):
     eval_metric.reset()
     # set nms threshold and topk constraint
     net.set_nms(nms_thresh=0.3, nms_topk=400)
-    # net.hybridize()
+    net.hybridize()
     for batch in val_data:
         batch = split_and_load(batch, ctx_list=ctx)
         det_bboxes = []
@@ -288,7 +288,7 @@ def train(net, train_data, val_data, eval_metric, args):
             metric.reset()
         tic = time.time()
         btic = time.time()
-        # net.hybridize()
+        net.hybridize()
         for i, batch in enumerate(train_data):
             batch = split_and_load(batch, ctx_list=ctx)
             batch_size = len(batch[0])
