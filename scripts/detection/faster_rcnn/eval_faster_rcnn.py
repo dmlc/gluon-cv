@@ -65,8 +65,8 @@ def split_and_load(batch, ctx_list):
 
 def validate(net, val_data, ctx, eval_metric, size):
     """Test on validation dataset."""
+    eval_metric.reset()
     net.collect_params().reset_ctx(ctx)
-    metric = VOC07MApMetric(iou_thresh=0.5, class_names=net.classes)
     net.set_nms(nms_thresh=0.3, nms_topk=400)
     # net.hybridize()
     with tqdm(total=size) as pbar:
@@ -93,7 +93,7 @@ def validate(net, val_data, ctx, eval_metric, size):
             for det_bbox, det_id, det_score, gt_bbox, gt_id, gt_diff in zip(det_bboxes, det_ids, det_scores, gt_bboxes, gt_ids, gt_difficults):
                 eval_metric.update(det_bbox, det_id, det_score, gt_bbox, gt_id, gt_diff)
             pbar.update(len(ctx))
-    return metric.get()
+    return eval_metric.get()
 
 if __name__ == '__main__':
     args = parse_args()
