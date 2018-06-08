@@ -37,7 +37,7 @@ classes = 1000
 
 num_gpus = opt.num_gpus
 batch_size *= num_gpus
-ctx = [mx.gpu(i+4) for i in range(num_gpus)] if num_gpus > 0 else [mx.cpu()]
+ctx = [mx.gpu(i) for i in range(num_gpus)] if num_gpus > 0 else [mx.cpu()]
 num_workers = opt.num_workers
 
 model_name = opt.model
@@ -56,41 +56,12 @@ net.hybridize()
 acc_top1 = mx.metric.Accuracy()
 acc_top5 = mx.metric.TopKAccuracy(5)
 
-# normalize = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-normalize = transforms.Normalize([123.68, 116.779, 103.939], [1, 1, 1])
-
-class ToTensor2(HybridBlock):
-    def __init__(self):
-        super(ToTensor2, self).__init__()
-
-    def hybrid_forward(self, F, x):
-        return F.transpose(x, (2, 0, 1)).astype(opt.dtype)
-
-class Resize2(Block):
-    def __init__(self, size, interpolation=2):
-        super(Resize2, self).__init__()
-        # self._args = tuple(size) + (interpolation,)
-        self.size = size
-        self.interpolation = interpolation
-
-    def forward(self, x):
-        # import pdb; pdb.set_trace()
-        h, w, _ = x.shape
-        if h > w:
-            wsize = self.size
-            hsize = int(h * self.size / w)
-        else:
-            hsize = self.size
-            wsize = int(w * self.size / h)
-
-        _args = tuple((hsize, wsize)) + (self.interpolation,)
-        print(h, w, hsize, wsize)
-        return image.imresize(x, *_args)
+normalize = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 
 transform_test = transforms.Compose([
-    Resize2(256),
+    transforms.Resize(256),
     transforms.CenterCrop(224),
-    ToTensor2(),
+    transforms.ToTensor(),
     normalize
 ])
 
@@ -132,20 +103,18 @@ else:
     val_data = mx.io.ImageRecordIter(
         path_imgrec         = imgrec,
         path_imgidx         = imgidx,
-        label_width         = 1,
+        preprocess_threads  = 30,
+        batch_size          = batch_size,
+
+        resize              = 256,
+        data_shape          = (3, 224, 224),
         mean_r              = 123.68,
         mean_g              = 116.779,
         mean_b              = 103.939,
-        data_name           = 'data',
-        label_name          = 'softmax_label',
-        batch_size          = batch_size,
-        resize              = 256,
-        data_shape          = (3, 224, 224),
-        preprocess_threads  = 30,
-        rand_crop           = False,
-        rand_mirror         = False,
-        num_parts           = 1,
-        part_index          = 0)
+        std_r               = 58.393,
+        std_g               = 57.12,
+        std_b               = 57.375
+    )
 
 if not opt.rec_dir:
     err_top1_val, err_top5_val = test(ctx, val_data, 'image')
