@@ -166,7 +166,7 @@ class FasterRCNNDefaultValTransform(object):
         # resize shorter side but keep in max_size
         h, w, _ = src.shape
         img = timage.resize_short_within(src, self._short, self._max_size)
-        bbox = tbbox.resize(label, (w, h), (img.shape[0], img.shape[1]))
+        bbox = tbbox.resize(label, (w, h), (img.shape[1], img.shape[0]))
 
         img = mx.nd.image.to_tensor(img)
         img = mx.nd.image.normalize(img, mean=self._mean, std=self._std)

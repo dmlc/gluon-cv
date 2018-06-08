@@ -89,11 +89,10 @@ def validate(net, val_data, ctx, eval_metric, size):
                 gt_ids.append(y.slice_axis(axis=-1, begin=4, end=5))
                 gt_bboxes.append(y.slice_axis(axis=-1, begin=0, end=4))
                 gt_difficults.append(y.slice_axis(axis=-1, begin=5, end=6) if y.shape[-1] > 5 else None)
-
             # update metric
             for det_bbox, det_id, det_score, gt_bbox, gt_id, gt_diff in zip(det_bboxes, det_ids, det_scores, gt_bboxes, gt_ids, gt_difficults):
                 eval_metric.update(det_bbox, det_id, det_score, gt_bbox, gt_id, gt_diff)
-            pbar.update(batch[0].shape[0])
+            pbar.update(len(ctx))
     return metric.get()
 
 if __name__ == '__main__':
