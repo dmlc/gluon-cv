@@ -33,30 +33,31 @@ class RPNProposal(gluon.HybridBlock):
             pre_nms = self._test_pre_nms
             post_nms = self._test_post_nms
 
-        # restore bounding boxes
-        roi = self._box_decoder(bbox_pred, self._box_to_center(anchor))
+        with autograd.pause():
+            # restore bounding boxes
+            roi = self._box_decoder(bbox_pred, self._box_to_center(anchor))
 
-        # clip rois to image's boundary
-        roi = F.Custom(roi, img, op_type='bbox_clip_to_image')
-        # roi = self._clipper(roi, width, height)
+            # clip rois to image's boundary
+            roi = F.Custom(roi, img, op_type='bbox_clip_to_image')
+            # roi = self._clipper(roi, width, height)
 
-        # remove bounding boxes that don't meet the min_size constraint
-        # by setting them to (-1, -1, -1, -1)
-        width = roi.slice_axis(axis=-1, begin=2, end=3)
-        height = roi.slice_axis(axis=-1, begin=3, end=None)
-        invalid = (width < self._min_size) + (height < self._min_size)
-        score = F.where(invalid, F.zeros_like(invalid), score)
-        invalid = F.repeat(invalid, axis=-1, repeats=4)
-        roi = F.where(invalid, F.ones_like(invalid) * -1, roi)
+            # remove bounding boxes that don't meet the min_size constraint
+            # by setting them to (-1, -1, -1, -1)
+            width = roi.slice_axis(axis=-1, begin=2, end=3)
+            height = roi.slice_axis(axis=-1, begin=3, end=None)
+            invalid = (width < self._min_size) + (height < self._min_size)
+            score = F.where(invalid, F.zeros_like(invalid), score)
+            invalid = F.repeat(invalid, axis=-1, repeats=4)
+            roi = F.where(invalid, F.ones_like(invalid) * -1, roi)
 
-        # Non-maximum suppression
-        pre = F.concat(score, roi, dim=-1)
-        tmp = F.contrib.box_nms(pre, self._nms_thresh, pre_nms, coord_start=1,
-                                score_index=0, id_index=-1, force_suppress=True)
+            # Non-maximum suppression
+            pre = F.concat(score, roi, dim=-1)
+            tmp = F.contrib.box_nms(pre, self._nms_thresh, pre_nms, coord_start=1,
+                                    score_index=0, id_index=-1, force_suppress=True)
 
-        # slice post_nms number of boxes
-        result = F.slice_axis(tmp, axis=1, begin=0, end=post_nms)
-        rpn_scores = F.slice_axis(result, axis=-1, begin=0, end=1)
-        rpn_bbox = F.slice_axis(result, axis=-1, begin=1, end=None)
+            # slice post_nms number of boxes
+            result = F.slice_axis(tmp, axis=1, begin=0, end=post_nms)
+            rpn_scores = F.slice_axis(result, axis=-1, begin=0, end=1)
+            rpn_bbox = F.slice_axis(result, axis=-1, begin=1, end=None)
 
         return rpn_scores, rpn_bbox

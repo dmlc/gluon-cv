@@ -18,7 +18,7 @@ class FasterRCNN(RCNN):
     def __init__(self, features, top_features, scales, ratios, classes, roi_mode, roi_size,
                  stride=16, rpn_channel=1024, nms_thresh=0.3, nms_topk=400,
                  num_sample=128, pos_iou_thresh=0.5, neg_iou_thresh_high=0.5,
-                 neg_iou_thresh_low=0.0, pos_ratio=0.25, max_batch=1, max_roi=200000, **kwargs):
+                 neg_iou_thresh_low=0.0, pos_ratio=0.25, max_batch=1, max_roi=100000, **kwargs):
         super(FasterRCNN, self).__init__(
             features, top_features, classes, roi_mode, roi_size, **kwargs)
         self.stride = stride
@@ -61,7 +61,6 @@ class FasterRCNN(RCNN):
         if self._roi_mode == 'pool':
             pooled_feat = F.ROIPooling(feat, rpn_roi, self._roi_size, 1. / self.stride)
         elif self._roi_mode == 'align':
-            #TODO(zhreshold): use ROIAlign
             pooled_feat = F.contrib.ROIAlign(feat, rpn_roi, self._roi_size, 1. / self.stride)
         else:
             raise ValueError("Invalid roi mode: {}".format(self._roi_mode))
