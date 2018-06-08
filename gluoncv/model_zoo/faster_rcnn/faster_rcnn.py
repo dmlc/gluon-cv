@@ -55,7 +55,7 @@ class FasterRCNN(RCNN):
             roi_batchid = F.arange(
                 0, self._max_batch, repeat=self._max_roi).reshape(
                     (-1, self._max_roi))
-            roi_batchid = F.slice_like(roi_batchid, rpn_box, axes=(0, 1))
+            roi_batchid = F.slice_like(roi_batchid, rpn_box * 0, axes=(0, 1))
             rpn_roi = F.concat(*[roi_batchid.reshape((-1, 1)), rpn_box.reshape((-1, 4))], dim=-1)
 
         # ROI features
