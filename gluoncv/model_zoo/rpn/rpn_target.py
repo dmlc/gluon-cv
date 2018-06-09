@@ -40,7 +40,7 @@ class RPNTargetGenerator(gluon.Block):
         self._pos_ratio = pos_ratio
         self._bbox_split = BBoxSplit(axis=-1)
         self._matcher = CompositeMatcher([BipartiteMatcherV1(), MaximumMatcher(pos_iou_thresh)])
-        self._sampler = QuotaSampler(num_sample, pos_iou_thresh, neg_iou_thresh, 0., pos_ratio)
+        self._sampler = QuotaSampler(num_sample, pos_iou_thresh, neg_iou_thresh, -np.inf, pos_ratio)
         self._cls_encoder = SigmoidClassEncoder()
         self._box_encoder = NormalizedBoxCenterEncoder(stds=stds)
 

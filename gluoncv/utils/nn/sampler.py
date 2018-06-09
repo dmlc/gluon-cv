@@ -116,7 +116,7 @@ class QuotaSampler(gluon.Block):
         If ``fill_negative == False``, the ``40`` slots is filled with ``-1(ignore)``.
 
     """
-    def __init__(self, num_sample, pos_thresh, neg_thresh_high, neg_thresh_low=0.,
+    def __init__(self, num_sample, pos_thresh, neg_thresh_high, neg_thresh_low=-np.inf,
                  pos_ratio=0.5, neg_ratio=None, fill_negative=True):
         super(QuotaSampler, self).__init__()
         self._fill_negative = fill_negative
@@ -128,7 +128,7 @@ class QuotaSampler(gluon.Block):
             "Positive and negative ratio {} exceed 1".format(self._neg_ratio + self._pos_ratio))
         self._pos_thresh = min(1., max(0., pos_thresh))
         self._neg_thresh_high = min(1., max(0., neg_thresh_high))
-        self._neg_thresh_low = min(1., max(0., neg_thresh_low))
+        self._neg_thresh_low = neg_thresh_low
 
     def forward(self, matches, ious):
         F = mx.nd

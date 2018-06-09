@@ -315,4 +315,5 @@ def faster_rcnn_resnet50_v1b_coco(pretrained=False, pretrained_base=True, **kwar
     return get_faster_rcnn('resnet50_v1b', features, top_features, scales=(2, 4, 8, 16, 32),
                            ratios=(0.5, 1, 2), classes=classes, dataset='coco',
                            roi_mode='align', roi_size=(14, 14), stride=16,
-                           rpn_channel=1024, train_patterns=train_patterns, **kwargs)
+                           rpn_channel=1024, train_patterns=train_patterns,
+                           pretrained=pretrained, **kwargs)
