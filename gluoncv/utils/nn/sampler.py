@@ -141,7 +141,7 @@ class QuotaSampler(gluon.Block):
             # negative samples with label -1
             ious_max = ious.max(axis=-1)[i]
             neg_mask = ious_max < self._neg_thresh_high
-            neg_mask = neg_mask * (ious_max > self._neg_thresh_low)
+            neg_mask = neg_mask * (ious_max >= self._neg_thresh_low)
             result = F.where(neg_mask, F.ones_like(result) * -1, result)
             # positive samples
             result = F.where(matches[i] >= 0, F.ones_like(result), result)
@@ -201,7 +201,7 @@ class QuotaSamplerOp(mx.operator.CustomOp):
         If ``fill_negative == False``, the ``40`` slots is filled with ``-1(ignore)``.
 
     """
-    def __init__(self, num_sample, pos_thresh, neg_thresh_high=0.5, neg_thresh_low=0.,
+    def __init__(self, num_sample, pos_thresh, neg_thresh_high=0.5, neg_thresh_low=-np.inf,
                  pos_ratio=0.5, neg_ratio=None, fill_negative=True):
         super(QuotaSamplerOp, self).__init__()
         self._num_sample = num_sample
@@ -213,7 +213,7 @@ class QuotaSamplerOp(mx.operator.CustomOp):
             "Positive and negative ratio {} exceed 1".format(self._neg_ratio + self._pos_ratio))
         self._pos_thresh = min(1., max(0., pos_thresh))
         self._neg_thresh_high = min(1., max(0., neg_thresh_high))
-        self._neg_thresh_low = min(1., max(0., neg_thresh_low))
+        self._neg_thresh_low = neg_thresh_low
 
     def forward(self, is_train, req, in_data, out_data, aux):
         matches = in_data[0]
@@ -227,7 +227,7 @@ class QuotaSamplerOp(mx.operator.CustomOp):
             # negative samples with label -1
             ious_max = ious.max(axis=-1)[i]
             neg_mask = ious_max < self._neg_thresh_high
-            neg_mask = neg_mask * (ious_max > self._neg_thresh_low)
+            neg_mask = neg_mask * (ious_max >= self._neg_thresh_low)
             result = F.where(neg_mask, F.ones_like(result) * -1, result)
             # positive samples
             result = F.where(matches[i] >= 0, F.ones_like(result), result)
