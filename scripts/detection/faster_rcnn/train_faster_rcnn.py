@@ -82,8 +82,8 @@ class RPNAccMetric(mx.metric.EvalMetric):
         num_inst = mx.nd.sum(rpn_weight)
 
         # cls_logits (b, c, h, w) red_label (b, 1, h, w)
-        # pred_label = mx.nd.argmax(rpn_cls_logits, axis=1, keepdims=True)
-        pred_label = mx.nd.sigmoid(rpn_cls_logits) >= 0.5
+        pred_label = mx.nd.argmax(rpn_cls_logits, axis=-1)
+        # pred_label = mx.nd.sigmoid(rpn_cls_logits) >= 0.5
         # label (b, 1, h, w)
         num_acc = mx.nd.sum((pred_label == rpn_label) * rpn_weight)
 
@@ -246,7 +246,8 @@ def train(net, train_data, val_data, eval_metric, args):
     lr_steps = sorted([float(ls) for ls in args.lr_decay_epoch.split(',') if ls.strip()])
 
     # TODO(zhreshold) losses?
-    rpn_cls_loss = mx.gluon.loss.SigmoidBinaryCrossEntropyLoss(from_sigmoid=False)
+    # rpn_cls_loss = mx.gluon.loss.SigmoidBinaryCrossEntropyLoss(from_sigmoid=False)
+    rpn_cls_loss = mx.gluon.loss.SoftmaxCrossEntropyLoss(axis=-1)
     rpn_box_loss = mx.gluon.loss.HuberLoss(rho=1/9.)  # == smoothl1
     rcnn_cls_loss = mx.gluon.loss.SoftmaxCrossEntropyLoss()
     rcnn_box_loss = mx.gluon.loss.HuberLoss()  # == smoothl1
@@ -300,8 +301,8 @@ def train(net, train_data, val_data, eval_metric, args):
                     gt_box = label[:, :, :4]
                     cls_pred, box_pred, roi, samples, matches, rpn_score, rpn_box, anchors = net(data, gt_box)
                     # losses of rpn
-                    rpn_score = rpn_score.squeeze(axis=-1)
-                    rpn_loss1 = rpn_cls_loss(rpn_score, rpn_cls_targets, rpn_cls_targets >= 0) * rpn_cls_targets.size / 256.
+                    # rpn_score = rpn_score.squeeze(axis=-1)
+                    rpn_loss1 = rpn_cls_loss(rpn_score, rpn_cls_targets, rpn_cls_targets.expand_dims(-1) >= 0) * rpn_cls_targets.size / 256.
                     rpn_loss2 = rpn_box_loss(rpn_box, rpn_box_targets, rpn_box_masks) * rpn_box.size / 256.
                     # rpn overall loss, use sum rather than average
                     rpn_loss = rpn_loss1 + rpn_loss2
