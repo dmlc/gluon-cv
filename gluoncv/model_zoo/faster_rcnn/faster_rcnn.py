@@ -11,7 +11,8 @@ from ..rpn import RPN
 
 __all__ = ['FasterRCNN', 'get_faster_rcnn',
            'faster_rcnn_resnet50_v1b_voc',
-           'faster_rcnn_resnet50_v1b_coco']
+           'faster_rcnn_resnet50_v1b_coco',
+           'faster_rcnn_resnet50_v2a_voc']
 
 
 class FasterRCNN(RCNN):
@@ -315,5 +316,45 @@ def faster_rcnn_resnet50_v1b_coco(pretrained=False, pretrained_base=True, **kwar
     return get_faster_rcnn('resnet50_v1b', features, top_features, scales=(2, 4, 8, 16, 32),
                            ratios=(0.5, 1, 2), classes=classes, dataset='coco',
                            roi_mode='align', roi_size=(14, 14), stride=16,
+                           rpn_channel=1024, train_patterns=train_patterns,
+                           pretrained=pretrained, **kwargs)
+
+def faster_rcnn_resnet50_v2a_voc(pretrained=False, pretrained_base=True, **kwargs):
+    r"""Faster RCNN model from the paper
+    "Ren, S., He, K., Girshick, R., & Sun, J. (2015). Faster r-cnn: Towards
+    real-time object detection with region proposal networks"
+
+    Parameters
+    ----------
+    pretrained : bool, optional, default is False
+        Load pretrained weights.
+    pretrained_base : bool, optional, default is True
+        Load pretrained base network, the extra layers are randomized. Note that
+        if pretrained is `Ture`, this has no effect.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+
+    Examples
+    --------
+    >>> model = get_faster_rcnn_resnet50_voc(pretrained=True)
+    >>> print(model)
+    """
+    from .resnet50_v2a import resnet50_v2a
+    from ...data import VOCDetection
+    classes = VOCDetection.CLASSES
+    pretrained_base = False if pretrained else pretrained_base
+    base_network = resnet50_v2a(pretrained=pretrained_base)
+    features = nn.HybridSequential()
+    top_features = nn.HybridSequential()
+    for layer in ['rescale'] + ['layer' + str(i) for i in range(4)]:
+        features.add(getattr(base_network, layer))
+    for layer in ['layer4']:
+        top_features.add(getattr(base_network, layer))
+    train_patterns = '|'.join(['.*dense', '.*rpn', '.*stage(2|3|4)_conv'])
+    return get_faster_rcnn('resnet50_v1b', features, top_features, scales=(2, 4, 8, 16, 32),
+                           ratios=(0.5, 1, 2), classes=classes, dataset='voc',
+                           roi_mode='pool', roi_size=(14, 14), stride=16,
                            rpn_channel=1024, train_patterns=train_patterns,
                            pretrained=pretrained, **kwargs)

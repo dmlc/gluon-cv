@@ -24,7 +24,7 @@ from gluoncv.utils.metrics.accuracy import Accuracy
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train Faster-RCNN networks e2e.')
-    parser.add_argument('--network', type=str, default='resnet50_v1b',
+    parser.add_argument('--network', type=str, default='resnet50_v2a',
                         help="Base network name which serves as feature extraction base.")
     parser.add_argument('--dataset', type=str, default='voc',
                         help='Training dataset. Now support voc.')
