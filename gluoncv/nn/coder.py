@@ -187,7 +187,7 @@ class MultiClassDecoder(gluon.HybridBlock):
         marked with invalid class id `-1`.
 
     """
-    def __init__(self, axis=-1, thresh=0.0):
+    def __init__(self, axis=-1, thresh=0.01):
         super(MultiClassDecoder, self).__init__()
         self._axis = axis
         self._thresh = thresh
@@ -229,7 +229,7 @@ class MultiPerClassDecoder(gluon.HybridBlock):
         marked with invalid class id `-1`.
 
     """
-    def __init__(self, num_class, axis=-1, thresh=0.0):
+    def __init__(self, num_class, axis=-1, thresh=0.01):
         super(MultiPerClassDecoder, self).__init__()
         self._fg_class = num_class - 1
         self._axis = axis
