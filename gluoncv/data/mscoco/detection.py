@@ -123,8 +123,10 @@ class COCODetection(VisionDataset):
                 abs_path = os.path.join(self._root, dirname, filename)
                 if not os.path.exists(abs_path):
                     raise IOError('Image: {} not exists.'.format(abs_path))
-                items.append(abs_path)
                 label = self._check_load_bbox(_coco, entry)
+                if not label:
+                    continue
+                items.append(abs_path)
                 labels.append(label)
         return items, labels
 
@@ -149,5 +151,7 @@ class COCODetection(VisionDataset):
                 valid_objs.append([xmin, ymin, xmax, ymax, contiguous_cid])
         if not valid_objs:
             # dummy invalid labels if no valid objects are found
-            valid_objs.append([-1, -1, -1, -1, -1])
+            # valid_objs.append([-1, -1, -1, -1, -1])
+            # TODO(zhreshold): skip image with no valid object?
+            pass
         return valid_objs
