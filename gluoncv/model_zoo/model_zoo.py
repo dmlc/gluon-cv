@@ -11,7 +11,6 @@ from .cifarwideresnet import *
 from .resnetv1b import *
 from .resnext import *
 from .senet import *
-from .faster_rcnn import *
 from .se_resnet import *
 
 __all__ = ['get_model']
@@ -72,8 +71,6 @@ def get_model(name, **kwargs):
         'senet_52' : senet_52,
         'senet_103' : senet_103,
         'senet_154' : senet_154,
-        'faster_rcnn_resnet50_coco' : get_faster_rcnn_resnet50_coco,
-        'faster_rcnn_resnet101_voc' : get_faster_rcnn_resnet101_voc,
         'se_resnet18_v1' : se_resnet18_v1,
         'se_resnet34_v1' : se_resnet34_v1,
         'se_resnet50_v1' : se_resnet50_v1,
