@@ -37,7 +37,8 @@ class RCNNTargetSampler(gluon.HybridBlock):
         self._neg_iou_thresh_high = neg_iou_thresh_high
         self._neg_iou_thresh_low = neg_iou_thresh_low
         self._pos_ratio = pos_ratio
-        self._matcher = CompositeMatcher([BipartiteMatcherV1(), MaximumMatcher(pos_iou_thresh)])
+        # self._matcher = CompositeMatcher([BipartiteMatcherV1(), MaximumMatcher(pos_iou_thresh)])
+        self._matcher = MaximumMatcher(pos_iou_thresh)
 
     #pylint: disable=arguments-differ
     def hybrid_forward(self, F, roi, gt_box):
