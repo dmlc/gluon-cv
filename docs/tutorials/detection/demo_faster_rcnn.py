@@ -1,4 +1,4 @@
-"""1. Predict with pre-trained Faster RCNN models
+"""2. Predict with pre-trained Faster RCNN models
 ==============================================
 
 This article shows how to play with pre-trained Faster RCNN model.
@@ -21,7 +21,7 @@ from gluoncv import model_zoo, data, utils
 # zoo if necessary. For more pretrained models, please refer to
 # :doc:`../../model_zoo/index`.
 
-net = gluoncv.model_zoo.get_model('faster_rcnn_resnet50_coco', pretrained = True)
+net = gluoncv.model_zoo.get_model('faster_rcnn_resnet50_v2a_voc', pretrained=True)
 
 ######################################################################
 # Pre-process an image
@@ -34,23 +34,18 @@ net = gluoncv.model_zoo.get_model('faster_rcnn_resnet50_coco', pretrained = True
 im_fname = utils.download('https://github.com/dmlc/web-data/blob/master/' +
                           'gluoncv/detection/biking.jpg?raw=true',
                           path='biking.jpg')
-x, scale, imw, imh = gluoncv.data.transforms.presets.faster_rcnn.load_image(im_fname)
+x, orig_img = gluoncv.data.transforms.presets.rcnn.load_test(im_fname)
 
 ######################################################################
 # Inference and display
 # ---------------------
 #
-# The Faster RCNN model 
+# The Faster RCNN model
 #
 # We can use :py:func:`gluoncv.utils.viz.plot_bbox` to visualize the
 # results. We slice the results for the first image and feed them into `plot_bbox`:
 
-rcnn_cls, rcnn_bbox_pred, mxrois, base_feat = net(x, scale)
-scores, boxes, box_ids, cls_boxes = net.rcnn_prediction(
-    mxrois, scale, imh, imw, rcnn_cls, rcnn_bbox_pred)
+box_ids, scores, bboxes = net(x)
+ax = utils.viz.plot_bbox(orig_img, bboxes, scores, box_ids, class_names=net.classes)
 
-orimg = image.imread(im_fname)
-ax = utils.viz.plot_bbox(orimg, boxes, scores, box_ids, class_names=data.COCODetection.CLASSES)
-
-from matplotlib import pyplot as plt
 plt.show()
