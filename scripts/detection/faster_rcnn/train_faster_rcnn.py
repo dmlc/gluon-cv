@@ -160,8 +160,8 @@ def get_dataset(dataset, args):
         val_dataset = gdata.COCODetection(splits='instances_val2017')
         val_metric = COCODetectionMetric(val_dataset, args.save_prefix + '_eval', cleanup=True)
         # coco validation is slow, consider increase the validation interval
-        if args.val_interval < 6:
-            args.val_interval = 10
+        if args.val_interval < 2:
+            args.val_interval = 2
     else:
         raise NotImplementedError('Dataset: {} not implemented.'.format(dataset))
     return train_dataset, val_dataset, val_metric
