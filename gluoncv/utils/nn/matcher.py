@@ -69,6 +69,14 @@ class BipartiteMatcher(gluon.HybridBlock):
         self._eps = eps
 
     def hybrid_forward(self, F, x):
+        """BipartiteMatching
+
+        Parameters:
+        ----------
+        x : NDArray or Symbol
+            IOU overlaps with shape (N, M), batching is supported.
+
+        """
         match = F.contrib.bipartite_matching(x, threshold=self._threshold,
                                              is_ascend=self._is_ascend)
         # make sure if iou(a, y) == iou(b, y), then b should also be a good match

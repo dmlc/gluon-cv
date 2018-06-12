@@ -1,4 +1,4 @@
-# pylint: disable=arguments-differ
+# pylint: disable=arguments-differ, unused-argument
 """Samplers for positive/negative/ignore sample selections.
 This module is used to select samples during training.
 Based on different strategies, we would like to choose different number of
@@ -131,6 +131,22 @@ class QuotaSampler(gluon.Block):
         self._neg_thresh_low = neg_thresh_low
 
     def forward(self, matches, ious):
+        """Quota Sampler
+
+        Parameters:
+        ----------
+        matches : NDArray or Symbol
+            Matching results, postive number for postive matching, -1 for not matched.
+        ious : NDArray or Symbol
+            IOU overlaps with shape (N, M), batching is supported.
+
+        Returns:
+        --------
+        NDArray or Symbol
+            Sampling results with same shape as ``matches``.
+            1 for positive, -1 for negative, 0 for ignore.
+
+        """
         F = mx.nd
         max_pos = int(round(self._pos_ratio * self._num_sample))
         max_neg = int(self._neg_ratio * self._num_sample)
@@ -216,6 +232,24 @@ class QuotaSamplerOp(mx.operator.CustomOp):
         self._neg_thresh_low = neg_thresh_low
 
     def forward(self, is_train, req, in_data, out_data, aux):
+        """Quota Sampler
+
+        Parameters:
+        ----------
+        in_data: array-like of Symbol
+            [matches, ious], see below.
+        matches : NDArray or Symbol
+            Matching results, postive number for postive matching, -1 for not matched.
+        ious : NDArray or Symbol
+            IOU overlaps with shape (N, M), batching is supported.
+
+        Returns:
+        --------
+        NDArray or Symbol
+            Sampling results with same shape as ``matches``.
+            1 for positive, -1 for negative, 0 for ignore.
+
+        """
         matches = in_data[0]
         ious = in_data[1]
         F = mx.nd

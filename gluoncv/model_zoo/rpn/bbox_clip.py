@@ -1,3 +1,4 @@
+# pylint: disable=unused-argument
 """Custom OP: BBoxClipToImage, used to clip bbox to image edges."""
 import mxnet as mx
 
@@ -16,6 +17,7 @@ class BBoxClipToImage(mx.operator.CustomOp):
         self.axis = int(axis)
 
     def forward(self, is_train, req, in_data, out_data, aux):
+        """Clip box with shape infered from image."""
         x = in_data[0]
         shape_like = in_data[1]
         height, width = shape_like.shape[-2:]
@@ -29,6 +31,7 @@ class BBoxClipToImage(mx.operator.CustomOp):
         self.assign(out_data[0], req[0], out)
 
     def backward(self, req, out_grad, in_data, out_data, in_grad, aux):
+        """Backward gradient is passed through."""
         self.assign(in_grad[0], req[0], out_grad[0])
 
 

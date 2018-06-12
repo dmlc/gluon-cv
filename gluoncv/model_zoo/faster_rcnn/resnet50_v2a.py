@@ -28,6 +28,7 @@ class BottleneckV2(HybridBlock):
             self.downsample = None
 
     def hybrid_forward(self, F, x):
+        """Custom forward."""
         residual = x
         x = self.bn1(x)
         x = F.Activation(x, act_type='relu')
@@ -97,7 +98,9 @@ class ResNet50V2(HybridBlock):
                 layer.add(BottleneckV2(channels, 1, False, in_channels=channels, prefix=''))
         return layer
 
+    # pylint: disable=unused-argument
     def hybrid_forward(self, F, x):
+        """Custom forward."""
         x = self.rescale(x)
         x = self.layer0(x)
         x = self.layer1(x)
