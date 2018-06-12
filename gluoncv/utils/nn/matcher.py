@@ -120,6 +120,6 @@ class MaximumMatcher(gluon.HybridBlock):
 
     def hybrid_forward(self, F, x):
         argmax = F.argmax(x, axis=-1)
-        match = F.where(F.pick(x, argmax, axis=-1) > self._threshold, argmax,
+        match = F.where(F.pick(x, argmax, axis=-1) >= self._threshold, argmax,
                         F.ones_like(argmax) * -1)
         return match
