@@ -1,7 +1,7 @@
 # pylint: disable=unused-argument
 """Pyramid Scene Parsing Network"""
 from mxnet.gluon import nn
-import mxnet.ndarray as F
+from mxnet.context import cpu
 from mxnet.gluon.nn import HybridBlock
 from .segbase import SegBaseModel
 from .fcn import _FCNHead
@@ -31,8 +31,9 @@ class PSPNet(SegBaseModel):
 
     """
     def __init__(self, nclass, backbone='resnet50', norm_layer=nn.BatchNorm,
-                 aux=True, **kwargs):
-        super(PSPNet, self).__init__(nclass, backbone, aux, norm_layer, **kwargs)
+                 aux=True, ctx=cpu(), **kwargs):
+        super(PSPNet, self).__init__(nclass, aux, backbone, ctx=ctx,
+                                     norm_layer=norm_layer, **kwargs)
         with self.name_scope():
             self.head = _PSPHead(nclass, norm_layer=norm_layer, **kwargs)
             self.head.initialize()
@@ -42,17 +43,16 @@ class PSPNet(SegBaseModel):
                 self.auxlayer.initialize()
                 self.auxlayer.collect_params().setattr('lr_mult', 10)
 
-    def forward(self, x):
-        _, _, H, W = x.shape
+    def hybrid_forward(self, F, x):
         c3, c4 = self.base_forward(x)
         outputs = []
         x = self.head(c4)
-        x = F.contrib.BilinearResize2D(x, height=H, width=W)
+        x = F.contrib.BilinearResize2D(x, **self._up_kwargs)
         outputs.append(x)
 
         if self.aux:
             auxout = self.auxlayer(c3)
-            auxout = F.contrib.BilinearResize2D(auxout, height=H, width=W)
+            auxout = F.contrib.BilinearResize2D(auxout, **self._up_kwargs)
             outputs.append(auxout)
             return tuple(outputs)
         else:
@@ -97,7 +97,7 @@ class _PyramidPooling(HybridBlock):
 class _PSPHead(HybridBlock):
     def __init__(self, nclass, norm_layer=None, **kwargs):
         super(_PSPHead, self).__init__()
-        self.psp = _PyramidPooling(2048, norm_layer=None, **kwargs)
+        self.psp = _PyramidPooling(2048, norm_layer=norm_layer, **kwargs)
         with self.name_scope():
             self.block = nn.HybridSequential(prefix='')
             self.block.add(norm_layer(in_channels=4096))
@@ -113,3 +113,59 @@ class _PSPHead(HybridBlock):
     def hybrid_forward(self, F, x):
         x = self.psp(x)
         return self.block(x)
+
+def get_psp(dataset='pascal_voc', backbone='resnet50', pretrained=False,
+            root='~/.mxnet/models', ctx=cpu(0), **kwargs):
+    r"""Pyramid Scene Parsing Network
+    Parameters
+    ----------
+    dataset : str, default pascal_voc
+        The dataset that model pretrained on. (pascal_voc, ade20k)
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+
+    Examples
+    --------
+    >>> model = get_fcn(dataset='pascal_voc', backbone='resnet50', pretrained=False)
+    >>> print(model)
+    """
+    from ..data.pascal_voc.segmentation import VOCSegmentation
+    from ..data.ade20k.segmentation import ADE20KSegmentation
+    acronyms = {
+        'pascal_voc': 'voc',
+        'ade20k': 'ade',
+    }
+    datasets = {
+        'pascal_voc': VOCSegmentation,
+        'ade20k': ADE20KSegmentation,
+    }
+    # infer number of classes
+    model = PSPNet(datasets[dataset].NUM_CLASS, backbone=backbone, ctx=ctx, **kwargs)
+    if pretrained:
+        from .model_store import get_model_file
+        model.load_params(get_model_file('psp_%s_%s'%(backbone, acronyms[dataset]),
+                                         root=root), ctx=ctx)
+    return model
+
+
+def get_psp_ade_resnet50(**kwargs):
+    r"""Pyramid Scene Parsing Network
+    Parameters
+    ----------
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+
+    Examples
+    --------
+    >>> model = get_fcn_ade_resnet50(pretrained=True)
+    >>> print(model)
+    """
+    return get_psp('ade20k', 'resnet50', **kwargs)

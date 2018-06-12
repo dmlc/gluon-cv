@@ -18,8 +18,8 @@ class COCODetection(VisionDataset):
     ----------
     root : str, default '~/mxnet/datasets/voc'
         Path to folder storing the dataset.
-    splits : list of str, default ('instances_val2017',)
-        List of json annotations.
+    splits : list of str, default ['instances_val2017']
+        Json annotations name.
         Candidates can be: instances_val2017, instances_train2017.
     transform : callable, defaut None
         A function that takes data and label and transforms them. Refer to
@@ -52,17 +52,29 @@ class COCODetection(VisionDataset):
         self._root = os.path.expanduser(root)
         self._transform = transform
         self._min_object_area = min_object_area
-        splits = [splits] if isinstance(splits, str) else splits
+        if isinstance(splits, mx.base.string_types):
+            splits = [splits]
         self._splits = splits
         # to avoid trouble, we always use contiguous IDs except dealing with cocoapi
         self.index_map = dict(zip(type(self).CLASSES, range(self.num_class)))
-        self._json_id_to_contiguous = None
-        self._contiguous_id_to_json = None
+        self.json_id_to_contiguous = None
+        self.contiguous_id_to_json = None
+        self._coco = []
         self._items, self._labels = self._load_jsons()
 
     def __str__(self):
         detail = ','.join([str(s) for s in self._splits])
         return self.__class__.__name__ + '(' + detail + ')'
+
+    @property
+    def coco(self):
+        """Return pycocotools object for evaluation purposes."""
+        if not self._coco:
+            raise ValueError("No coco objects found, dataset not initialized.")
+        elif len(self._coco) > 1:
+            raise NotImplementedError(
+                "Currently we don't support evaluating {} JSON files".format(len(self._coco)))
+        return self._coco[0]
 
     @property
     def classes(self):
@@ -87,21 +99,22 @@ class COCODetection(VisionDataset):
         # lazy import pycocotools
         try_import_pycocotools()
         from pycocotools.coco import COCO
-        for s in self._splits:
-            anno = os.path.join(self._root, 'annotations', s) + '.json'
+        for split in self._splits:
+            anno = os.path.join(self._root, 'annotations', split) + '.json'
             _coco = COCO(anno)
+            self._coco.append(_coco)
             classes = [c['name'] for c in _coco.loadCats(_coco.getCatIds())]
             if not classes == self.classes:
                 raise ValueError("Incompatible category names with COCO: ")
             assert classes == self.classes
             json_id_to_contiguous = {
                 v: k for k, v in enumerate(_coco.getCatIds())}
-            if self._json_id_to_contiguous is None:
-                self._json_id_to_contiguous = json_id_to_contiguous
-                self._json_id_from_contiguous = {
-                    v: k for k, v in self._json_id_to_contiguous.items()}
+            if self.json_id_to_contiguous is None:
+                self.json_id_to_contiguous = json_id_to_contiguous
+                self.contiguous_id_to_json = {
+                    v: k for k, v in self.json_id_to_contiguous.items()}
             else:
-                assert self._json_id_to_contiguous == json_id_to_contiguous
+                assert self.json_id_to_contiguous == json_id_to_contiguous
 
             # iterate through the annotations
             image_ids = sorted(_coco.getImgIds())
@@ -110,8 +123,10 @@ class COCODetection(VisionDataset):
                 abs_path = os.path.join(self._root, dirname, filename)
                 if not os.path.exists(abs_path):
                     raise IOError('Image: {} not exists.'.format(abs_path))
-                items.append(abs_path)
                 label = self._check_load_bbox(_coco, entry)
+                if not label:
+                    continue
+                items.append(abs_path)
                 labels.append(label)
         return items, labels
 
@@ -132,9 +147,11 @@ class COCODetection(VisionDataset):
             xmin, ymin, xmax, ymax = bbox_clip_xyxy(bbox_xywh_to_xyxy(obj['bbox']), width, height)
             # require non-zero box area
             if obj['area'] > 0 and xmax > xmin and ymax > ymin:
-                contiguous_cid = self._json_id_to_contiguous[obj['category_id']]
+                contiguous_cid = self.json_id_to_contiguous[obj['category_id']]
                 valid_objs.append([xmin, ymin, xmax, ymax, contiguous_cid])
         if not valid_objs:
             # dummy invalid labels if no valid objects are found
-            valid_objs.append([-1, -1, -1, -1, -1])
+            # valid_objs.append([-1, -1, -1, -1, -1])
+            # TODO(zhreshold): skip image with no valid object?
+            pass
         return valid_objs

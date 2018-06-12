@@ -6,6 +6,7 @@ Matching is usually not required during testing.
 """
 from __future__ import absolute_import
 from mxnet import gluon
+from mxnet.gluon import nn
 
 
 class CompositeMatcher(gluon.HybridBlock):
@@ -21,7 +22,9 @@ class CompositeMatcher(gluon.HybridBlock):
         assert len(matchers) > 0, "At least one matcher required."
         for matcher in matchers:
             assert isinstance(matcher, (gluon.Block, gluon.HybridBlock))
-        self._matchers = matchers
+        self._matchers = nn.HybridSequential()
+        for m in matchers:
+            self._matchers.add(m)
 
     def hybrid_forward(self, F, x):
         matches = [matcher(x) for matcher in self._matchers]
@@ -56,16 +59,29 @@ class BipartiteMatcher(gluon.HybridBlock):
         Threshold used to ignore invalid paddings
     is_ascend : bool
         Whether sort matching order in ascending order. Default is False.
+    eps : float
+        Epsilon for floating number comparison
     """
-    def __init__(self, threshold=1e-12, is_ascend=False):
+    def __init__(self, threshold=1e-12, is_ascend=False, eps=1e-12):
         super(BipartiteMatcher, self).__init__()
         self._threshold = threshold
         self._is_ascend = is_ascend
+        self._eps = eps
 
     def hybrid_forward(self, F, x):
         match = F.contrib.bipartite_matching(x, threshold=self._threshold,
                                              is_ascend=self._is_ascend)
-        return match[0]
+        # make sure if iou(a, y) == iou(b, y), then b should also be a good match
+        # otherwise positive/negative samples are confusing
+        # potential argmax and max
+        pargmax = x.argmax(axis=-1, keepdims=True)  # (B, num_anchor, 1)
+        maxs = x.max(axis=-2, keepdims=True)  # (B, 1, num_gt)
+        pmax = F.pick(x, pargmax, axis=-1, keepdims=True)   # (B, num_anchor, 1)
+        mask = F.broadcast_greater_equal(pmax + self._eps, maxs)  # (B, num_anchor, num_gt)
+        mask = F.pick(mask, pargmax, axis=-1, keepdims=True)  # (B, num_anchor, 1)
+        new_match = F.where(mask > 0, pargmax, F.ones_like(pargmax) * -1)
+        result = F.where(match[0] < 0, new_match.squeeze(axis=-1), match[0])
+        return result
 
 
 class MaximumMatcher(gluon.HybridBlock):
@@ -83,6 +99,6 @@ class MaximumMatcher(gluon.HybridBlock):
 
     def hybrid_forward(self, F, x):
         argmax = F.argmax(x, axis=-1)
-        match = F.where(F.pick(x, argmax, axis=-1) > self._threshold, argmax,
+        match = F.where(F.pick(x, argmax, axis=-1) >= self._threshold, argmax,
                         F.ones_like(argmax) * -1)
         return match

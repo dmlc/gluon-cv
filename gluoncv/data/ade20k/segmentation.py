@@ -34,17 +34,17 @@ class ADE20KSegmentation(SegmentationDataset):
     """
     # pylint: disable=abstract-method
     BASE_DIR = 'ADEChallengeData2016'
+    NUM_CLASS = 150
     def __init__(self, root=os.path.expanduser('~/.mxnet/datasets/ade'),
-                 split='train', transform=None):
-        super(ADE20KSegmentation, self).__init__(root)
-        self.root = os.path.join(root, self.BASE_DIR)
-        self.transform = transform
+                 split='train', mode=None, transform=None):
+        super(ADE20KSegmentation, self).__init__(root, split, mode, transform)
+        root = os.path.join(root, self.BASE_DIR)
         self.mode = split
-        self.images, self.masks = _get_ade20k_pairs(self.root, split)
+        self.images, self.masks = _get_ade20k_pairs(root, split)
         assert (len(self.images) == len(self.masks))
         if len(self.images) == 0:
             raise(RuntimeError("Found 0 images in subfolders of: \
-                " + self.root + "\n"))
+                " + root + "\n"))
 
     def __getitem__(self, index):
         img = Image.open(self.images[index]).convert('RGB')
@@ -60,12 +60,11 @@ class ADE20KSegmentation(SegmentationDataset):
         elif self.mode == 'val':
             img, mask = self._val_sync_transform(img, mask)
         else:
-            raise RuntimeError('unknown mode for dataloader: {}'.format(self.mode))
-
+            assert self.mode == 'testval'
+            mask = self._mask_transform(mask)
         # general resize, normalize and toTensor
         if self.transform is not None:
             img = self.transform(img)
-
         return img, mask
 
     def _mask_transform(self, mask):
@@ -74,10 +73,6 @@ class ADE20KSegmentation(SegmentationDataset):
     def __len__(self):
         return len(self.images)
 
-    @property
-    def num_class(self):
-        """Number of categories."""
-        return 150
 
 def _get_ade20k_pairs(folder, mode='train'):
     img_paths = []

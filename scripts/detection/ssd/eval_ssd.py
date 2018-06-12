@@ -59,13 +59,24 @@ def validate(net, val_data, ctx, classes, size):
         for ib, batch in enumerate(val_data):
             data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
             label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0)
+            det_bboxes = []
+            det_ids = []
+            det_scores = []
+            gt_bboxes = []
+            gt_ids = []
+            gt_difficults = []
             for x, y in zip(data, label):
                 ids, scores, bboxes = net(x)
-                bboxes = bboxes.clip(0, batch[0].shape[2])
-                gt_ids = y.slice_axis(axis=-1, begin=4, end=5)
-                gt_bboxes = y.slice_axis(axis=-1, begin=0, end=4)
-                gt_difficults = y.slice_axis(axis=-1, begin=5, end=6) if y.shape[-1] > 5 else None
-                metric.update(bboxes, ids, scores, gt_bboxes, gt_ids, gt_difficults)
+                det_ids.append(ids)
+                det_scores.append(scores)
+                # clip to image size
+                det_bboxes.append(bboxes.clip(0, batch[0].shape[2]))
+                # split ground truths
+                gt_ids.append(y.slice_axis(axis=-1, begin=4, end=5))
+                gt_bboxes.append(y.slice_axis(axis=-1, begin=0, end=4))
+                gt_difficults.append(y.slice_axis(axis=-1, begin=5, end=6) if y.shape[-1] > 5 else None)
+
+            metric.update(det_bboxes, det_ids, det_scores, gt_bboxes, gt_ids, gt_difficults)
             pbar.update(batch[0].shape[0])
     return metric.get()
 

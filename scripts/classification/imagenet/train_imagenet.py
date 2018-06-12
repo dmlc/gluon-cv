@@ -12,7 +12,7 @@ from mxnet.gluon.data.vision import transforms
 
 from gluoncv.data import imagenet
 from gluoncv.model_zoo import get_model
-from gluoncv.utils import makedirs, TrainingHistory
+from gluoncv.utils import makedirs, TrainingHistory, freeze_bn
 
 # CLI
 parser = argparse.ArgumentParser(description='Train a model for image classification.')
@@ -84,7 +84,7 @@ lr_decay_epoch = [int(i) for i in opt.lr_decay_epoch.split(',')] + [np.inf]
 model_name = opt.model
 
 kwargs = {'ctx': context, 'pretrained': opt.use_pretrained, 'classes': classes}
-elif model_name.startswith('vgg'):
+if model_name.startswith('vgg'):
     kwargs['batch_norm'] = opt.batch_norm
 elif model_name.startswith('resnext'):
     kwargs['use_se'] = opt.use_se
@@ -133,14 +133,14 @@ transform_test = transforms.Compose([
 ])
 
 def smooth(label, classes, eta=0.1):
-    if isinstance(label, NDArray):
+    if isinstance(label, nd.NDArray):
         label = [label]
     smoothed = []
     for l in label:
         ind = l.astype('int')
         res = nd.zeros((ind.shape[0], classes), ctx = l.context)
         res += eta/classes
-        res[nd.arange(ind.shape[0], ctx = label.context), ind] = 1 - eta + eta/classes
+        res[nd.arange(ind.shape[0], ctx = l.context), ind] = 1 - eta + eta/classes
         smoothed.append(res)
     return smoothed
 
@@ -194,11 +194,14 @@ def train(epochs, ctx):
             trainer.set_learning_rate(trainer.learning_rate*lr_decay)
             lr_decay_count += 1
 
+        if opt.freeze_bn and epoch == epochs - 10:
+            freeze_bn(net, True)
+
         for i, batch in enumerate(train_data):
             data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
             label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0)
             if opt.label_smoothing:
-                label_smooth = smooth(label)
+                label_smooth = smooth(label, classes)
             else:
                 label_smooth = label
             with ag.record():
@@ -256,7 +259,10 @@ def train_dummy(ctx):
         label.append(mx.nd.ones(shape=(bs), ctx = c))
 
     trainer = gluon.Trainer(net.collect_params(), optimizer, optimizer_params)
-    L = gluon.loss.SoftmaxCrossEntropyLoss()
+    if opt.label_smoothing:
+        L = gluon.loss.SoftmaxCrossEntropyLoss(sparse_label=False)
+    else:
+        L = gluon.loss.SoftmaxCrossEntropyLoss()
 
     acc_top1.reset()
     acc_top5.reset()
@@ -269,7 +275,7 @@ def train_dummy(ctx):
         if i == warm_up:
             tic = time.time()
         if opt.label_smoothing:
-            label_smooth = smooth(label)
+            label_smooth = smooth(label, classes)
         else:
             label_smooth = label
         with ag.record():

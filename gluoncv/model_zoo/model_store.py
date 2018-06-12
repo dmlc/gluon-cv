@@ -13,6 +13,7 @@ _model_sha1 = {name: checksum for checksum, name in [
     ('daf8181b615b480236fcb8474545077891276945', 'ssd_512_vgg16_atrous_voc'),
     ('9c8b225a552614e4284a0f647331bfdc6940eb4a', 'ssd_512_resnet50_v1_voc'),
     ('2cc0f93edf1467f428018cc7261d3246dfa15259', 'ssd_512_resnet101_v2_voc'),
+    ('78e5daa9e47b1f2f9c3ffd3ffb9714c8d968a367', 'faster_rcnn_resnet50_v1b_coco'),
     ('121e1579d811b091940b3b1fa033e1f0d1dca40f', 'cifar_resnet20_v1'),
     ('4f2d18804c94f2d283b8b45256d048bd3d6dd479', 'cifar_resnet20_v2'),
     ('2fb251e60babdceb103e9659b3baa0dea20a14d7', 'cifar_resnet56_v1'),
@@ -30,6 +31,8 @@ _model_sha1 = {name: checksum for checksum, name in [
     ('dd7ea6fe219873041d83cb93b056d5517cd52c74', 'resnet152_v0'),
     ('953657f235cc52dbc60f3874f9d437c380045cd0', 'fcn_resnet50_voc'),
     ('70a6f22a1a0b6ddd1f680de587d67b5c2c0acc0b', 'fcn_resnet101_voc'),
+    ('b1b11976bf753ed1e05a526065e1666950fcf0a2', 'fcn_resnet50_ade'),
+    ('b8f9c5f193d84b828fa78d7bd7646ca7f11a29bc', 'resnet50_v2a'),
     ]}
 
 apache_repo_url = 'https://apache-mxnet.s3-accelerate.dualstack.amazonaws.com/'
