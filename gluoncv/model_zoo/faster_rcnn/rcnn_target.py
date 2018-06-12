@@ -4,7 +4,7 @@ from __future__ import absolute_import
 from mxnet import gluon
 from mxnet import autograd
 from ...nn.coder import MultiClassEncoder, NormalizedPerClassBoxCenterEncoder
-from ...utils.nn.matcher import CompositeMatcher, BipartiteMatcher, MaximumMatcher
+from ...utils.nn.matcher import MaximumMatcher
 
 
 class RCNNTargetSampler(gluon.HybridBlock):
@@ -37,7 +37,6 @@ class RCNNTargetSampler(gluon.HybridBlock):
         self._neg_iou_thresh_high = neg_iou_thresh_high
         self._neg_iou_thresh_low = neg_iou_thresh_low
         self._pos_ratio = pos_ratio
-        # self._matcher = CompositeMatcher([BipartiteMatcher(), MaximumMatcher(pos_iou_thresh)])
         self._matcher = MaximumMatcher(pos_iou_thresh)
 
     #pylint: disable=arguments-differ
