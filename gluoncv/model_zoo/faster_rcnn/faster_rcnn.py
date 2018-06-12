@@ -52,25 +52,25 @@ class FasterRCNN(RCNN_ResNet):
             pre_nms_topN=pre_nms_topN)
         self.rpn.initialize()
 
-    def forward(self, x):
-        # TODO FIXME padding? for different image shape
+    def forward(self, x, scaling_factor):
         image_shape = x.shape
         base_feat = self.base_forward(x)
         # Region Proposal for ROIs
         rpn_cls, rpn_reg = self.rpn(base_feat)
         # ROIs
-        rpn_scores, rois = self.region_proposal(rpn_cls, rpn_reg, base_feat.shape, image_shape)
+        rpn_scores, rois = self.region_proposal(
+            rpn_cls, rpn_reg, base_feat.shape, image_shape, scaling_factor)
         batches = rois.shape[0]
         num_rois = rois.shape[1]
-        # Prepare data for ROI Pooling
+        # Prepare Data for ROI Pooling, assuming batch=1 for now (FIXME)
         roi_batchid = F.concatenate([batchid * F.ones((num_rois, 1), rois.context)
                                      for batchid in range(batches)], axis=0)
         roi_batchid = roi_batchid.reshape(-1, 1)
         rois = rois.reshape(-1, 4)
-        rpn_batchid = F.concatenate([roi_batchid, rois], axis=1)
-        # ROI Features
-        pooled_feat = self.roi_feature(base_feat, rpn_batchid)
-        # RCNN predict
+        roi_with_batchid = F.concatenate([roi_batchid, rois], axis=1)
+        # ROI Features (#ROIs, channel, h, w)
+        pooled_feat = self.roi_feature(base_feat, roi_with_batchid)
+        # RCNN Output
         rcnn_cls, rcnn_reg = self.top_forward(pooled_feat)
         rcnn_cls = F.softmax(rcnn_cls, axis=1)
         return rcnn_cls, rcnn_reg, rois, base_feat
