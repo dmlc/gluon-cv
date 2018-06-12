@@ -48,6 +48,8 @@ def get_model(name, **kwargs):
         'ssd_512_mobilenet1_0_voc': ssd_512_mobilenet1_0_voc,
         'faster_rcnn_resnet50_v1b_voc': faster_rcnn_resnet50_v1b_voc,
         'faster_rcnn_resnet50_v1b_coco': faster_rcnn_resnet50_v1b_coco,
+        'faster_rcnn_resnet50_v2a_voc': faster_rcnn_resnet50_v2a_voc,
+        'faster_rcnn_resnet50_v2a_coco': faster_rcnn_resnet50_v2a_coco,
         'cifar_resnet20_v1': cifar_resnet20_v1,
         'cifar_resnet56_v1': cifar_resnet56_v1,
         'cifar_resnet110_v1': cifar_resnet110_v1,
@@ -67,6 +69,7 @@ def get_model(name, **kwargs):
         'resnet50_v1b' : resnet50_v1b,
         'resnet101_v1b' : resnet101_v1b,
         'resnet152_v1b' : resnet152_v1b,
+        'resnet50_v2a': resnet50_v2a,
         'resnext50_32x4d' : resnext50_32x4d,
         'resnext101_32x4d' : resnext101_32x4d,
         'resnext101_64x4d' : resnext101_64x4d,
@@ -86,8 +89,6 @@ def get_model(name, **kwargs):
         'se_resnet50_v2' : se_resnet50_v2,
         'se_resnet101_v2' : se_resnet101_v2,
         'se_resnet152_v2' : se_resnet152_v2,
-        'resnet50_v2a': resnet50_v2a,
-        'faster_rcnn_resnet50_v2a_voc': faster_rcnn_resnet50_v2a_voc,
         }
     try:
         net = gluon.model_zoo.vision.get_model(name, **kwargs)

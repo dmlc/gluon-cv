@@ -95,7 +95,7 @@ class ResNet50V2(HybridBlock):
         return x
 
 def resnet50_v2a(pretrained=False, root='~/.mxnet/models', ctx=mx.cpu(0), **kwargs):
-    """Constructs a ResNetV2a-50 model.
+    """Constructs a ResNet50-v2a model.
 
     Parameters
     ----------
@@ -103,7 +103,7 @@ def resnet50_v2a(pretrained=False, root='~/.mxnet/models', ctx=mx.cpu(0), **kwar
         Whether to load the pretrained weights for model.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
-    ctx : Context, default CPU
+    ctx : Context, default mx.cpu(0)
         The context in which to load the pretrained weights.
     norm_layer : object
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.nn.BatchNorm`;
