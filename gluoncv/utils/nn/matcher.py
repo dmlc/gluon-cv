@@ -59,32 +59,11 @@ class BipartiteMatcher(gluon.HybridBlock):
         Threshold used to ignore invalid paddings
     is_ascend : bool
         Whether sort matching order in ascending order. Default is False.
-    """
-    def __init__(self, threshold=1e-12, is_ascend=False):
-        super(BipartiteMatcher, self).__init__()
-        self._threshold = threshold
-        self._is_ascend = is_ascend
-
-    def hybrid_forward(self, F, x):
-        match = F.contrib.bipartite_matching(x, threshold=self._threshold,
-                                             is_ascend=self._is_ascend)
-        return match[0]
-
-
-class BipartiteMatcherV1(gluon.HybridBlock):
-    """A Matcher implementing bipartite matching strategy.
-
-    Parameters
-    ----------
-    threshold : float
-        Threshold used to ignore invalid paddings
-    is_ascend : bool
-        Whether sort matching order in ascending order. Default is False.
     eps : float
         Epsilon for floating number comparison
     """
     def __init__(self, threshold=1e-12, is_ascend=False, eps=1e-12):
-        super(BipartiteMatcherV1, self).__init__()
+        super(BipartiteMatcher, self).__init__()
         self._threshold = threshold
         self._is_ascend = is_ascend
         self._eps = eps

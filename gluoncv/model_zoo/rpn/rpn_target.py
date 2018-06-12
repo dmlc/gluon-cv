@@ -7,7 +7,7 @@ from mxnet import gluon
 from mxnet import autograd
 from ...nn.bbox import BBoxSplit
 from ...nn.coder import SigmoidClassEncoder, NormalizedBoxCenterEncoder
-from ...utils.nn.matcher import CompositeMatcher, BipartiteMatcherV1, MaximumMatcher
+from ...utils.nn.matcher import CompositeMatcher, BipartiteMatcher, MaximumMatcher
 from ...utils.nn.sampler import QuotaSampler
 
 
@@ -39,7 +39,7 @@ class RPNTargetGenerator(gluon.Block):
         self._neg_iou_thresh = neg_iou_thresh
         self._pos_ratio = pos_ratio
         self._bbox_split = BBoxSplit(axis=-1)
-        self._matcher = CompositeMatcher([BipartiteMatcherV1(), MaximumMatcher(pos_iou_thresh)])
+        self._matcher = CompositeMatcher([BipartiteMatcher(), MaximumMatcher(pos_iou_thresh)])
         self._sampler = QuotaSampler(num_sample, pos_iou_thresh, neg_iou_thresh, 0., pos_ratio)
         self._cls_encoder = SigmoidClassEncoder()
         self._box_encoder = NormalizedBoxCenterEncoder(stds=stds)
