@@ -382,7 +382,7 @@ def faster_rcnn_resnet50_v2a_coco(pretrained=False, pretrained_base=True, **kwar
     >>> model = get_faster_rcnn_resnet50_v2a_coco(pretrained=True)
     >>> print(model)
     """
-    from ..resnetv1b import resnet50_v2a
+    from .resnet50_v2a import resnet50_v2a
     from ...data import COCODetection
     classes = COCODetection.CLASSES
     pretrained_base = False if pretrained else pretrained_base
