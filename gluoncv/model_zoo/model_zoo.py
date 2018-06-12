@@ -50,6 +50,7 @@ def get_model(name, **kwargs):
         'faster_rcnn_resnet50_v1b_coco': faster_rcnn_resnet50_v1b_coco,
         'faster_rcnn_resnet50_v2a_voc': faster_rcnn_resnet50_v2a_voc,
         'faster_rcnn_resnet50_v2a_coco': faster_rcnn_resnet50_v2a_coco,
+        'faster_rcnn_resnet50_v2_voc': faster_rcnn_resnet50_v2_voc,
         'cifar_resnet20_v1': cifar_resnet20_v1,
         'cifar_resnet56_v1': cifar_resnet56_v1,
         'cifar_resnet110_v1': cifar_resnet110_v1,
