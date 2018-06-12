@@ -77,7 +77,7 @@ class RPN(gluon.HybridBlock):
                 nn.Conv2D(channels, 3, 1, 1, weight_initializer=weight_initializer))
             self.conv1.add(nn.Activation('relu'))
             # use sigmoid instead of softmax, reduce channel numbers
-            self.score = nn.Conv2D(anchor_depth * 2, 1, 1, 0, weight_initializer=weight_initializer)
+            self.score = nn.Conv2D(anchor_depth, 1, 1, 0, weight_initializer=weight_initializer)
             self.loc = nn.Conv2D(anchor_depth * 4, 1, 1, 0, weight_initializer=weight_initializer)
 
     # pylint: disable=arguments-differ
@@ -101,9 +101,8 @@ class RPN(gluon.HybridBlock):
         """
         anchors = self.anchor_generator(x)
         x = self.conv1(x)
-        raw_rpn_scores = self.score(x).transpose(axes=(0, 2, 3, 1)).reshape((0, -1, 2))
-        # rpn_scores = F.sigmoid(raw_rpn_scores)
-        rpn_scores = F.softmax(raw_rpn_scores, axis=-1).slice_axis(axis=-1, begin=1, end=2)
+        raw_rpn_scores = self.score(x).transpose(axes=(0, 2, 3, 1)).reshape((0, -1, 1))
+        rpn_scores = F.sigmoid(raw_rpn_scores)
         rpn_box_pred = self.loc(x).transpose(axes=(0, 2, 3, 1)).reshape((0, -1, 4))
         rpn_score, rpn_box = self.region_proposaler(
             anchors, rpn_scores, rpn_box_pred, img)
