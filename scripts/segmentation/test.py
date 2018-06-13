@@ -6,7 +6,6 @@ import mxnet as mx
 from mxnet import gluon
 from mxnet.gluon.data.vision import transforms
 
-from gluoncv.utils import PolyLRScheduler
 from gluoncv.model_zoo.segbase import *
 from gluoncv.model_zoo import get_model
 from gluoncv.data import get_segmentation_dataset, ms_batchify_fn

@@ -1,7 +1,6 @@
 import argparse, time, logging
 
 import mxnet as mx
-import numpy as np
 from mxnet import gluon, nd
 from mxnet import autograd as ag
 from utils import get_data_rec, get_data_loader
@@ -10,7 +9,7 @@ from mxnet.gluon.data.vision import transforms
 
 from gluoncv.data import imagenet
 from gluoncv.model_zoo import get_model
-from gluoncv.utils import makedirs, TrainingHistory
+from gluoncv.utils import makedirs, LR_Scheduler
 
 # CLI
 parser = argparse.ArgumentParser(description='Train a model for image classification.')
@@ -42,6 +41,8 @@ parser.add_argument('--momentum', type=float, default=0.9,
                     help='momentum value for optimizer, default is 0.9.')
 parser.add_argument('--wd', type=float, default=0.0001,
                     help='weight decay rate. default is 0.0001.')
+parser.add_argument('--lr-mode', type=str, default='step',
+                    help='learning rate scheduler mode. options are step, poly and cosine.')
 parser.add_argument('--lr-decay', type=float, default=0.1,
                     help='decay rate of learning rate. default is 0.1.')
 parser.add_argument('--lr-decay-period', type=int, default=0,
@@ -86,9 +87,18 @@ batch_size *= max(1, num_gpus)
 context = [mx.gpu(i) for i in range(num_gpus)] if num_gpus > 0 else [mx.cpu()]
 num_workers = opt.num_workers
 
+
 lr_decay = opt.lr_decay
 lr_decay_period = opt.lr_decay_period
-lr_decay_epoch = [int(i) for i in opt.lr_decay_epoch.split(',')] + [np.inf]
+if opt.lr_decay_period > 0:
+    lr_decay_epoch = list(range(lr_decay_period, opt.num_epochs, lr_decay_period))
+else:
+    lr_decay_epoch = [int(i) for i in opt.lr_decay_epoch.split(',')]
+num_batches = num_training_samples // batch_size
+lr_scheduler = LR_Scheduler(mode=opt.lr_mode, baselr=opt.lr,
+                            niters=num_batches, nepochs=opt.num_epochs,
+                            step=lr_decay_epoch, step_factor=opt.lr_decay, power=2,
+                            warmup_epochs=opt.warmup_epochs)
 
 model_name = opt.model
 
@@ -102,7 +112,7 @@ if opt.last_gamma:
     kwargs['last_gamma'] = True
 
 optimizer = 'nag'
-optimizer_params = {'learning_rate': opt.lr, 'wd': opt.wd, 'momentum': opt.momentum}
+optimizer_params = {'wd': opt.wd, 'momentum': opt.momentum, 'lr_scheduler': lr_scheduler}
 if opt.dtype != 'float32':
     optimizer_params['multi_precision'] = True
 
@@ -148,16 +158,10 @@ def train(ctx):
     net.initialize(mx.init.MSRAPrelu(), ctx=ctx)
 
     trainer = gluon.Trainer(net.collect_params(), optimizer, optimizer_params)
+
     L = gluon.loss.SoftmaxCrossEntropyLoss()
 
-    lr_decay_count = 0
     best_val_score = 1
-
-    if opt.warmup_epochs > 0:
-        num_batches = num_training_samples // batch_size
-        lr_diff = optimizer_params['learning_rate'] - opt.warmup_lr
-        warmup_inc = lr_diff / (num_batches * opt.warmup_epochs)
-        trainer.set_learning_rate(opt.warmup_lr)
 
     for epoch in range(opt.num_epochs):
         tic = time.time()
@@ -166,25 +170,14 @@ def train(ctx):
         acc_top1.reset()
         btic = time.time()
 
-        if epoch == opt.warmup_epochs and opt.warmup_epochs > 0:
-            trainer.set_learning_rate(optimizer_params['learning_rate'])
-
-        if lr_decay_period and epoch and epoch % lr_decay_period == 0:
-            trainer.set_learning_rate(trainer.learning_rate*lr_decay)
-        elif lr_decay_period == 0 and epoch == lr_decay_epoch[lr_decay_count]:
-            trainer.set_learning_rate(trainer.learning_rate*lr_decay)
-            lr_decay_count += 1
-
         for i, batch in enumerate(train_data):
-            if epoch < opt.warmup_epochs and opt.warmup_epochs > 0:
-                trainer.set_learning_rate(trainer.learning_rate + warmup_inc)
-
             data, label = batch_fn(batch, ctx)
             with ag.record():
                 outputs = [net(X.astype(opt.dtype, copy=False)) for X in data]
                 loss = [L(yhat, y) for yhat, y in zip(outputs, label)]
             for l in loss:
                 l.backward()
+            lr_scheduler.update(i, epoch)
             trainer.step(batch_size)
 
             acc_top1.update(label, outputs)

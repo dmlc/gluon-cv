@@ -32,7 +32,7 @@ Bounding Box Visualization
 
 :hidden:`Training Helpers`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. autoclass:: gluoncv.utils.PolyLRScheduler
+.. autoclass:: gluoncv.utils.LR_Scheduler
     :members:
 
 .. autofunction:: gluoncv.utils.set_lr_mult
