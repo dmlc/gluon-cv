@@ -24,7 +24,8 @@ __all__ = ['SSD', 'get_ssd',
            'ssd_512_resnet50_v1_coco',
            'ssd_512_resnet101_v2_voc',
            'ssd_512_resnet152_v2_voc',
-           'ssd_512_mobilenet1_0_voc']
+           'ssd_512_mobilenet1_0_voc',
+           'ssd_512_mobilenet1_0_coco',]
 
 
 class SSD(HybridBlock):
