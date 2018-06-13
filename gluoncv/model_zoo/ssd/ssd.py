@@ -449,6 +449,32 @@ def ssd_512_mobilenet1_0_voc(pretrained=False, pretrained_base=True, **kwargs):
                    classes=classes, dataset='voc', pretrained=pretrained,
                    pretrained_base=pretrained_base, **kwargs)
 
+def ssd_512_mobilenet1_0_coco(pretrained=False, pretrained_base=True, **kwargs):
+    """SSD architecture with mobilenet1.0 base networks for COCO.
+
+    Parameters
+    ----------
+    pretrained : bool, optional, default is False
+        Load pretrained weights.
+    pretrained_base : bool, optional, default is True
+        Load pretrained base network, the extra layers are randomized.
+
+    Returns
+    -------
+    HybridBlock
+        A SSD detection network.
+    """
+    from ...data import COCODetection
+    classes = COCODetection.CLASSES
+    return get_ssd('mobilenet1.0', 512,
+                   features=['relu22_fwd', 'relu26_fwd'],
+                   filters=[512, 512, 256, 256],
+                   sizes=[51.2, 102.4, 189.4, 276.4, 363.52, 450.6, 492],
+                   ratios=[[1, 2, 0.5]] + [[1, 2, 0.5, 3, 1.0/3]] * 3 + [[1, 2, 0.5]] * 2,
+                   steps=[16, 32, 64, 128, 256, 512],
+                   classes=classes, dataset='coco', pretrained=pretrained,
+                   pretrained_base=pretrained_base, **kwargs)
+
 def ssd_512_vgg16_atrous_coco(pretrained=False, pretrained_base=True, **kwargs):
     """SSD architecture with VGG16 atrous layers for COCO.
 
