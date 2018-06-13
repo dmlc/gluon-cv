@@ -4,6 +4,7 @@ mxnet.gluon.model_zoo.vision and gluoncv.models
 """
 from mxnet import gluon
 from .ssd import *
+from .faster_rcnn import *
 from .fcn import *
 from .cifarresnet import *
 from .cifarresnext import *
@@ -47,6 +48,11 @@ def get_model(name, **kwargs):
         'ssd_512_resnet101_v2_voc': ssd_512_resnet101_v2_voc,
         'ssd_512_resnet152_v2_voc': ssd_512_resnet152_v2_voc,
         'ssd_512_mobilenet1_0_voc': ssd_512_mobilenet1_0_voc,
+        'faster_rcnn_resnet50_v1b_voc': faster_rcnn_resnet50_v1b_voc,
+        'faster_rcnn_resnet50_v1b_coco': faster_rcnn_resnet50_v1b_coco,
+        'faster_rcnn_resnet50_v2a_voc': faster_rcnn_resnet50_v2a_voc,
+        'faster_rcnn_resnet50_v2a_coco': faster_rcnn_resnet50_v2a_coco,
+        'faster_rcnn_resnet50_v2_voc': faster_rcnn_resnet50_v2_voc,
         'cifar_resnet20_v1': cifar_resnet20_v1,
         'cifar_resnet56_v1': cifar_resnet56_v1,
         'cifar_resnet110_v1': cifar_resnet110_v1,
@@ -66,6 +72,7 @@ def get_model(name, **kwargs):
         'resnet50_v1b' : resnet50_v1b,
         'resnet101_v1b' : resnet101_v1b,
         'resnet152_v1b' : resnet152_v1b,
+        'resnet50_v2a': resnet50_v2a,
         'resnext50_32x4d' : resnext50_32x4d,
         'resnext101_32x4d' : resnext101_32x4d,
         'resnext101_64x4d' : resnext101_64x4d,
@@ -88,9 +95,12 @@ def get_model(name, **kwargs):
         }
     try:
         net = gluon.model_zoo.vision.get_model(name, **kwargs)
+        return net
     except ValueError as e:
-        name = name.lower()
-        if name not in models:
-            raise ValueError('%s\n\t%s' % (str(e), '\n\t'.join(sorted(models.keys()))))
-        net = models[name](**kwargs)
+        upstream_supported = str(e)
+        # avoid raising inside which cause a bit messy error message
+    name = name.lower()
+    if name not in models:
+        raise ValueError('%s\n\t%s' % (upstream_supported, '\n\t'.join(sorted(models.keys()))))
+    net = models[name](**kwargs)
     return net

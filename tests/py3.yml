@@ -10,6 +10,6 @@ dependencies:
   - coverage
   - scipy
   - pip:
-    - mxnet-cu80>=1.2.0b20180515
+    - mxnet-cu80==1.2.0b20180524
     - coverage-badge
     - awscli

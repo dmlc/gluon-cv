@@ -94,7 +94,7 @@ class VOCMApMetric(mx.metric.EvalMetric):
             if isinstance(a, (list, tuple)):
                 out = [x.asnumpy() if isinstance(x, mx.nd.NDArray) else x for x in a]
                 return np.concatenate(out, axis=0)
-            elif isinstance(a, mx.NDArray):
+            elif isinstance(a, mx.nd.NDArray):
                 a = a.asnumpy()
             return a
 

@@ -1,4 +1,4 @@
-# pylint: disable=arguments-differ
+# pylint: disable=arguments-differ, unused-argument
 """Samplers for positive/negative/ignore sample selections.
 This module is used to select samples during training.
 Based on different strategies, we would like to choose different number of
@@ -9,6 +9,7 @@ Note: 1 for positive, -1 for negative, 0 for ignore.
 """
 from __future__ import absolute_import
 import numpy as np
+import mxnet as mx
 from mxnet import gluon
 from mxnet import nd
 
@@ -81,3 +82,272 @@ class OHEMSampler(gluon.Block):
             indices = argmaxs[i, :num_neg]
             y[i, indices.astype(np.int32)] = -1  # assign negative samples
         return F.array(y, ctx=x.context)
+
+
+class QuotaSampler(gluon.Block):
+    """Sampler that handles limited quota for positive and negative samples.
+
+    Parameters
+    ----------
+    num_sample : int, default is 128
+        Number of samples for RCNN targets.
+    pos_iou_thresh : float, default is 0.5
+        Proposal whose IOU larger than ``pos_iou_thresh`` is regarded as positive samples.
+    neg_iou_thresh_high : float, default is 0.5
+        Proposal whose IOU smaller than ``neg_iou_thresh_high``
+        and larger than ``neg_iou_thresh_low``
+        is regarded as negative samples.
+        Proposals with IOU in between ``pos_iou_thresh`` and ``neg_iou_thresh`` are
+        ignored.
+    neg_iou_thresh_low : float, default is 0.0
+        See ``neg_iou_thresh_high``.
+    pos_ratio : float, default is 0.25
+        ``pos_ratio`` defines how many positive samples (``pos_ratio * num_sample``) is
+        to be sampled.
+    neg_ratio : float or None
+        ``neg_ratio`` defines how many negative samples (``pos_ratio * num_sample``) is
+        to be sampled. If ``None`` is provided, it equals to ``1 - pos_ratio``.
+    fill_negative : bool
+        If ``True``, negative samples will fill the gap caused by insufficient positive samples.
+        For example, if ``num_sample`` is 100, ``pos_ratio`` and ``neg_ratio`` are both ``0.5``.
+        Available positive sample and negative samples are 10 and 10000, which are typical values.
+        Now, the output positive samples is 10(intact), since it's smaller than ``50(100 * 0.5)``,
+        the negative samples will fill the rest ``40`` slots.
+        If ``fill_negative == False``, the ``40`` slots is filled with ``-1(ignore)``.
+
+    """
+    def __init__(self, num_sample, pos_thresh, neg_thresh_high, neg_thresh_low=-np.inf,
+                 pos_ratio=0.5, neg_ratio=None, fill_negative=True):
+        super(QuotaSampler, self).__init__()
+        self._fill_negative = fill_negative
+        self._num_sample = num_sample
+        if neg_ratio is None:
+            self._neg_ratio = 1. - pos_ratio
+        self._pos_ratio = pos_ratio
+        assert (self._neg_ratio + self._pos_ratio) <= 1.0, (
+            "Positive and negative ratio {} exceed 1".format(self._neg_ratio + self._pos_ratio))
+        self._pos_thresh = min(1., max(0., pos_thresh))
+        self._neg_thresh_high = min(1., max(0., neg_thresh_high))
+        self._neg_thresh_low = neg_thresh_low
+
+    def forward(self, matches, ious):
+        """Quota Sampler
+
+        Parameters:
+        ----------
+        matches : NDArray or Symbol
+            Matching results, postive number for postive matching, -1 for not matched.
+        ious : NDArray or Symbol
+            IOU overlaps with shape (N, M), batching is supported.
+
+        Returns:
+        --------
+        NDArray or Symbol
+            Sampling results with same shape as ``matches``.
+            1 for positive, -1 for negative, 0 for ignore.
+
+        """
+        F = mx.nd
+        max_pos = int(round(self._pos_ratio * self._num_sample))
+        max_neg = int(self._neg_ratio * self._num_sample)
+        results = []
+        for i in range(matches.shape[0]):
+            # init with 0s, which are ignored
+            result = F.zeros_like(matches[0])
+            # negative samples with label -1
+            ious_max = ious.max(axis=-1)[i]
+            neg_mask = ious_max < self._neg_thresh_high
+            neg_mask = neg_mask * (ious_max >= self._neg_thresh_low)
+            result = F.where(neg_mask, F.ones_like(result) * -1, result)
+            # positive samples
+            result = F.where(matches[i] >= 0, F.ones_like(result), result)
+            result = F.where(ious_max >= self._pos_thresh, F.ones_like(result), result)
+
+            # re-balance if number of postive or negative exceed limits
+            result = result.asnumpy()
+            num_pos = int((result > 0).sum())
+            if num_pos > max_pos:
+                disable_indices = np.random.choice(
+                    np.where(result > 0)[0], size=(num_pos - max_pos), replace=False)
+                result[disable_indices] = 0   # use 0 to ignore
+            num_neg = int((result < 0).sum())
+            if self._fill_negative:
+                # if pos_sample is less than quota, we can have negative samples filling the gap
+                max_neg = max(self._num_sample - min(num_pos, max_pos), max_neg)
+            if num_neg > max_neg:
+                disable_indices = np.random.choice(
+                    np.where(result < 0)[0], size=(num_neg - max_neg), replace=False)
+                result[disable_indices] = 0
+            results.append(mx.nd.array(result))
+
+        return mx.nd.stack(*results, axis=0)
+
+
+class QuotaSamplerOp(mx.operator.CustomOp):
+    """Sampler that handles limited quota for positive and negative samples.
+
+    This is a custom Operator used inside HybridBlock.
+
+    Parameters
+    ----------
+    num_sample : int, default is 128
+        Number of samples for RCNN targets.
+    pos_iou_thresh : float, default is 0.5
+        Proposal whose IOU larger than ``pos_iou_thresh`` is regarded as positive samples.
+    neg_iou_thresh_high : float, default is 0.5
+        Proposal whose IOU smaller than ``neg_iou_thresh_high``
+        and larger than ``neg_iou_thresh_low``
+        is regarded as negative samples.
+        Proposals with IOU in between ``pos_iou_thresh`` and ``neg_iou_thresh`` are
+        ignored.
+    neg_iou_thresh_low : float, default is 0.0
+        See ``neg_iou_thresh_high``.
+    pos_ratio : float, default is 0.25
+        ``pos_ratio`` defines how many positive samples (``pos_ratio * num_sample``) is
+        to be sampled.
+    neg_ratio : float or None
+        ``neg_ratio`` defines how many negative samples (``pos_ratio * num_sample``) is
+        to be sampled. If ``None`` is provided, it equals to ``1 - pos_ratio``.
+    fill_negative : bool
+        If ``True``, negative samples will fill the gap caused by insufficient positive samples.
+        For example, if ``num_sample`` is 100, ``pos_ratio`` and ``neg_ratio`` are both ``0.5``.
+        Available positive sample and negative samples are 10 and 10000, which are typical values.
+        Now, the output positive samples is 10(intact), since it's smaller than ``50(100 * 0.5)``,
+        the negative samples will fill the rest ``40`` slots.
+        If ``fill_negative == False``, the ``40`` slots is filled with ``-1(ignore)``.
+
+    """
+    def __init__(self, num_sample, pos_thresh, neg_thresh_high=0.5, neg_thresh_low=-np.inf,
+                 pos_ratio=0.5, neg_ratio=None, fill_negative=True):
+        super(QuotaSamplerOp, self).__init__()
+        self._num_sample = num_sample
+        self._fill_negative = fill_negative
+        if neg_ratio is None:
+            self._neg_ratio = 1. - pos_ratio
+        self._pos_ratio = pos_ratio
+        assert (self._neg_ratio + self._pos_ratio) <= 1.0, (
+            "Positive and negative ratio {} exceed 1".format(self._neg_ratio + self._pos_ratio))
+        self._pos_thresh = min(1., max(0., pos_thresh))
+        self._neg_thresh_high = min(1., max(0., neg_thresh_high))
+        self._neg_thresh_low = neg_thresh_low
+
+    def forward(self, is_train, req, in_data, out_data, aux):
+        """Quota Sampler
+
+        Parameters:
+        ----------
+        in_data: array-like of Symbol
+            [matches, ious], see below.
+        matches : NDArray or Symbol
+            Matching results, postive number for postive matching, -1 for not matched.
+        ious : NDArray or Symbol
+            IOU overlaps with shape (N, M), batching is supported.
+
+        Returns:
+        --------
+        NDArray or Symbol
+            Sampling results with same shape as ``matches``.
+            1 for positive, -1 for negative, 0 for ignore.
+
+        """
+        matches = in_data[0]
+        ious = in_data[1]
+        F = mx.nd
+        max_pos = int(round(self._pos_ratio * self._num_sample))
+        max_neg = int(self._neg_ratio * self._num_sample)
+        for i in range(matches.shape[0]):
+            # init with 0s, which are ignored
+            result = F.zeros_like(matches[i])
+            # negative samples with label -1
+            ious_max = ious.max(axis=-1)[i]
+            neg_mask = ious_max < self._neg_thresh_high
+            neg_mask = neg_mask * (ious_max >= self._neg_thresh_low)
+            result = F.where(neg_mask, F.ones_like(result) * -1, result)
+            # positive samples
+            result = F.where(matches[i] >= 0, F.ones_like(result), result)
+            result = F.where(ious_max >= self._pos_thresh, F.ones_like(result), result)
+
+            # re-balance if number of postive or negative exceed limits
+            result = result.asnumpy()
+            num_pos = int((result > 0).sum())
+            if num_pos > max_pos:
+                disable_indices = np.random.choice(
+                    np.where(result > 0)[0], size=(num_pos - max_pos), replace=False)
+                result[disable_indices] = 0   # use 0 to ignore
+            num_neg = int((result < 0).sum())
+            if self._fill_negative:
+                # if pos_sample is less than quota, we can have negative samples filling the gap
+                max_neg = max(self._num_sample - min(num_pos, max_pos), max_neg)
+            if num_neg > max_neg:
+                disable_indices = np.random.choice(
+                    np.where(result < 0)[0], size=(num_neg - max_neg), replace=False)
+                result[disable_indices] = 0  # use 0 to ignore
+
+            self.assign(out_data[0][i], req[0], mx.nd.array(result))
+
+    def backward(self, req, out_grad, in_data, out_data, in_grad, aux):
+        self.assign(in_grad[0], req[0], 0)
+        self.assign(in_grad[1], req[1], 0)
+
+
+@mx.operator.register('quota_sampler')
+class QuotaSamplerProp(mx.operator.CustomOpProp):
+    """Property for QuotaSampleOp.
+
+    Parameters
+    ----------
+    num_sample : int, default is 128
+        Number of samples for RCNN targets.
+    pos_iou_thresh : float, default is 0.5
+        Proposal whose IOU larger than ``pos_iou_thresh`` is regarded as positive samples.
+    neg_iou_thresh_high : float, default is 0.5
+        Proposal whose IOU smaller than ``neg_iou_thresh_high``
+        and larger than ``neg_iou_thresh_low``
+        is regarded as negative samples.
+        Proposals with IOU in between ``pos_iou_thresh`` and ``neg_iou_thresh`` are
+        ignored.
+    neg_iou_thresh_low : float, default is 0.0
+        See ``neg_iou_thresh_high``.
+    pos_ratio : float, default is 0.25
+        ``pos_ratio`` defines how many positive samples (``pos_ratio * num_sample``) is
+        to be sampled.
+    neg_ratio : float or None
+        ``neg_ratio`` defines how many negative samples (``pos_ratio * num_sample``) is
+        to be sampled. If ``None`` is provided, it equals to ``1 - pos_ratio``.
+    fill_negative : bool
+        If ``True``, negative samples will fill the gap caused by insufficient positive samples.
+        For example, if ``num_sample`` is 100, ``pos_ratio`` and ``neg_ratio`` are both ``0.5``.
+        Available positive sample and negative samples are 10 and 10000, which are typical values.
+        Now, the output positive samples is 10(intact), since it's smaller than ``50(100 * 0.5)``,
+        the negative samples will fill the rest ``40`` slots.
+        If ``fill_negative == False``, the ``40`` slots is filled with ``-1(ignore)``.
+
+    """
+    def __init__(self, num_sample, pos_thresh, neg_thresh_high=0.5, neg_thresh_low=0.,
+                 pos_ratio=0.5, neg_ratio=None, fill_negative=True):
+        super(QuotaSamplerProp, self).__init__(need_top_grad=False)
+        self.num_sample = int(num_sample)
+        self.pos_thresh = float(pos_thresh)
+        self.neg_thresh_high = float(neg_thresh_high)
+        self.neg_thresh_low = float(neg_thresh_low)
+        self.pos_ratio = float(pos_ratio)
+        self.neg_ratio = None if neg_ratio is None else float(neg_ratio)
+        self.fill_negative = bool(fill_negative)
+
+    def list_arguments(self):
+        return ['matches', 'ious']
+
+    def list_outputs(self):
+        return ['output']
+
+    def infer_shape(self, in_shape):
+        return in_shape, [in_shape[0]], []
+
+    def infer_type(self, in_type):
+        return [in_type[0], in_type[0]], [in_type[0]], []
+
+    # pylint: disable=unused-argument
+    def create_operator(self, ctx, in_shapes, in_dtypes):
+        return QuotaSamplerOp(self.num_sample, self.pos_thresh, self.neg_thresh_high,
+                              self.neg_thresh_low, self.pos_ratio, self.neg_ratio,
+                              self.fill_negative)
