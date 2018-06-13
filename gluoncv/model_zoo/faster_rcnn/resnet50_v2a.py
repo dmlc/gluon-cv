@@ -1,5 +1,5 @@
 # pylint: disable=arguments-differ
-"""Resnet50 v2a model as in 0-255 range."""
+"""Resnet50 v2a model which take original image with zero mean and uniform std."""
 import mxnet as mx
 from mxnet.gluon import nn, HybridBlock
 
@@ -53,9 +53,13 @@ class Rescale(HybridBlock):
         with self.name_scope():
             init_scale = mx.nd.array([0.229, 0.224, 0.225]).reshape((1, 3, 1, 1)) * 255
             self.init_scale = self.params.get_constant('init_scale', init_scale)
+            init_mean = mx.nd.array([0.485, 0.456, 0.406]).reshape((1, 3, 1, 1)) * 255
+            self.init_mean = self.params.get_constant('init_mean', init_mean)
 
-    def hybrid_forward(self, F, x, init_scale):
-        return F.broadcast_mul(x, init_scale)  # restore caffe scale
+    def hybrid_forward(self, F, x, init_scale, init_mean):
+        x = F.broadcast_mul(x, init_scale)  # restore std
+        x = F.broadcast_add(x, init_mean)  # restore mean
+        return x
 
 
 class ResNet50V2(HybridBlock):
@@ -129,5 +133,7 @@ def resnet50_v2a(pretrained=False, root='~/.mxnet/models', ctx=mx.cpu(0), **kwar
     if pretrained:
         from ..model_store import get_model_file
         model.load_params(get_model_file('resnet%d_v%da'%(50, 2),
-                                         root=root), ctx=ctx)
+                                         root=root), ctx=ctx, allow_missing=True)
+        for k, v in model.collect_params(select='init_scale|init_mean').items():
+            v.initialize(force_reinit=True)
     return model
