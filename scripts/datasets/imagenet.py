@@ -4,8 +4,10 @@ import argparse
 import tarfile
 import pickle
 import gzip
+import subprocess
 from tqdm import tqdm
-from mxnet.gluon.utils import check_sha1, download, makedirs
+from mxnet.gluon.utils import check_sha1
+from gluoncv.utils import download, makedirs
 
 _TARGET_DIR = os.path.expanduser('~/.mxnet/datasets/imagenet')
 _TRAIN_TAR = 'ILSVRC2012_img_train.tar'
@@ -36,27 +38,34 @@ def check_file(filename, checksum, sha1):
     if checksum and not check_sha1(filename, sha1):
         raise ValueError('Corrupted file: '+filename)
 
-def build_rec_process(target_dir, train=False, num_thread=1):
-    makedirs(os.path.join(target_dir, 'rec'))
+def build_rec_process(img_dir, train=False, num_thread=1):
+    rec_dir = os.path.abspath(os.path.join(img_dir, '../rec'))
+    makedirs(rec_dir)
     prefix = 'train' if train else 'val'
     print('Building ImageRecord file for ' + prefix + ' ...')
-    to_path = os.path.join(target_dir, 'rec', prefix)
-    from_path = os.path.join(target_dir, prefix)
+    to_path = rec_dir
 
     # download lst file and im2rec script
-    script_path = os.path.join(to_path, 'im2rec.py')
+    script_path = os.path.join(rec_dir, 'im2rec.py')
     script_url = 'https://raw.githubusercontent.com/apache/incubator-mxnet/master/tools/im2rec.py'
     download(script_url, script_path)
 
-    lst_path = os.path.join(to_path, prefix + '.lst')
+    lst_path = os.path.join(rec_dir, prefix + '.lst')
     lst_url = 'http://data.mxnet.io/models/imagenet/resnet/' + prefix + '.lst'
     download(lst_url, lst_path)
 
     # execution
-    cmd = 'python %s %s %s --recursive --path-through --pack-label --num-thread %d'%
-        (script_path, to_path, from_path, num_thread)
-    if not train:
-        cmd += ' --no-shuffle'
+    cmd = [
+        'python',
+        script_path,
+        rec_dir,
+        img_dir,
+        '--recursive',
+        '--pass-through',
+        '--pack-label',
+        '--num-thread',
+        str(num_thread)
+    ]
     subprocess.call(cmd)
     os.remove(script_path)
     print('ImageRecord file for ' + prefix + ' has been built!')
@@ -78,18 +87,17 @@ def extract_train(tar_fname, target_dir, with_rec=False, num_thread=1):
             os.remove(class_fname)
             pbar.update(1)
         pbar.close()
-
     if with_rec:
         build_rec_process(target_dir, True, num_thread)
 
-def extract_val(tar_fname, target_dir, num_thread=1):
+def extract_val(tar_fname, target_dir, with_rec=False, num_thread=1):
     os.makedirs(target_dir)
     print('Extracting ' + tar_fname)
     with tarfile.open(tar_fname) as tar:
         tar.extractall(target_dir)
     # build rec file before images are moved into subfolders
     if with_rec:
-        build_rec_process(target_dir, True, num_thread)
+        build_rec_process(target_dir, False, num_thread)
     # move images to proper subfolders
     val_maps_file = os.path.join(os.path.dirname(__file__), 'imagenet_val_maps.pklz')
     with gzip.open(val_maps_file, 'rb') as f:
@@ -106,16 +114,16 @@ def main():
     if os.path.exists(target_dir):
         raise ValueError('Target dir ['+target_dir+'] exists. Remove it first')
 
-    tar_dir = os.path.expanduser(args.tar_dir)
-    train_tar_fname = os.path.join(tar_dir, _TRAIN_TAR)
+    download_dir = os.path.expanduser(args.download_dir)
+    train_tar_fname = os.path.join(download_dir, _TRAIN_TAR)
     check_file(train_tar_fname, args.checksum, _TRAIN_TAR_SHA1)
-    val_tar_fname = os.path.join(tar_dir, _VAL_TAR)
+    val_tar_fname = os.path.join(download_dir, _VAL_TAR)
     check_file(val_tar_fname, args.checksum, _VAL_TAR_SHA1)
 
     build_rec = args.with_rec
     if build_rec:
         os.makedirs(os.path.join(target_dir, 'rec'))
-    extract_train(train_tar_fname, os.path.join(target_dir, 'train'), build_rec, args.num_thread)
+    # extract_train(train_tar_fname, os.path.join(target_dir, 'train'), build_rec, args.num_thread)
     extract_val(val_tar_fname, os.path.join(target_dir, 'val'), build_rec, args.num_thread)
 
 if __name__ == '__main__':
