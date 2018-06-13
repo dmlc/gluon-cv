@@ -96,20 +96,17 @@ from mxnet.io import ImageRecordIter
 
 # You need to specify ``root`` for ImageNet if you extracted the images into
 # a different folder
-train_data = DataLoader(
-    ImageNet(train=True).transform_first(train_trans),
-    batch_size=128, shuffle=True)
 train_data = ImageRecordIter(
     path_imgrec = '~/.mxnet/datasets/imagenet/rec/train.rec',
     path_imgidx = '~/.mxnet/datasets/imagenet/rec/train.idx',
     data_shape  = (3, 224, 224),
-    batch_size  = 128,
+    batch_size  = 32,
     shuffle     = True
 )
 
 #########################################################################
 for batch in enumerate(train_data):
-    print(batch.data[0].shape, batch.label[0].shape)
+    print(batch.data.shape, batch.label.shape)
     break
 
 #########################################################################
@@ -119,8 +116,10 @@ val_data = ImageRecordIter(
     path_imgrec = '~/.mxnet/datasets/imagenet/rec/val.rec',
     path_imgidx = '~/.mxnet/datasets/imagenet/rec/val.idx',
     data_shape  = (3, 224, 224),
-    batch_size  = 128,
+    batch_size  = 32,
     shuffle     = False
 )
-# viz.plot_image(val_dataset[1234][0])  # index 0 is image, 1 is label
-# viz.plot_image(val_dataset[4567][0])
+for batch in enumerate(val_data):
+    vis.plot_image(batch.data[12])
+    vis.plot_image(batch.data[21])
+    break
