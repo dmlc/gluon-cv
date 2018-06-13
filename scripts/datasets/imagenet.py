@@ -68,6 +68,7 @@ def build_rec_process(img_dir, train=False, num_thread=1):
     ]
     subprocess.call(cmd)
     os.remove(script_path)
+    os.remove(lst_path)
     print('ImageRecord file for ' + prefix + ' has been built!')
 
 def extract_train(tar_fname, target_dir, with_rec=False, num_thread=1):
@@ -123,7 +124,7 @@ def main():
     build_rec = args.with_rec
     if build_rec:
         os.makedirs(os.path.join(target_dir, 'rec'))
-    # extract_train(train_tar_fname, os.path.join(target_dir, 'train'), build_rec, args.num_thread)
+    extract_train(train_tar_fname, os.path.join(target_dir, 'train'), build_rec, args.num_thread)
     extract_val(val_tar_fname, os.path.join(target_dir, 'val'), build_rec, args.num_thread)
 
 if __name__ == '__main__':
