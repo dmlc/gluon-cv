@@ -9,7 +9,7 @@ dependencies:
   - nose
   - coverage
   - scipy
-  - pip>=10.0.0
+  - pip=9.0.3
   - pip:
     - mxnet-cu80>=1.2.0b20180515
     - coverage-badge
