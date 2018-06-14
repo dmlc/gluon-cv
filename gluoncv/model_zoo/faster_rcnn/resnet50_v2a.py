@@ -57,6 +57,7 @@ class Rescale(HybridBlock):
             self.init_mean = self.params.get_constant('init_mean', init_mean)
 
     def hybrid_forward(self, F, x, init_scale, init_mean):
+        """Restore original image scale."""
         x = F.broadcast_mul(x, init_scale)  # restore std
         x = F.broadcast_add(x, init_mean)  # restore mean
         return x
@@ -134,6 +135,6 @@ def resnet50_v2a(pretrained=False, root='~/.mxnet/models', ctx=mx.cpu(0), **kwar
         from ..model_store import get_model_file
         model.load_params(get_model_file('resnet%d_v%da'%(50, 2),
                                          root=root), ctx=ctx, allow_missing=True)
-        for k, v in model.collect_params(select='init_scale|init_mean').items():
+        for v in model.collect_params(select='init_scale|init_mean').values():
             v.initialize(force_reinit=True)
     return model

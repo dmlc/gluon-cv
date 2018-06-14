@@ -19,7 +19,7 @@ from gluoncv.utils.metrics.voc_detection import VOC07MApMetric
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Validate Faster-RCNN networks.')
-    parser.add_argument('--network', type=str, default='resnet50_v1b',
+    parser.add_argument('--network', type=str, default='resnet50_v2a',
                         help="Base feature extraction network name")
     parser.add_argument('--dataset', type=str, default='voc',
                         help='Training dataset.')
