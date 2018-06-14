@@ -1,8 +1,9 @@
 """Popular Learning Rate Schedulers"""
+# pylint: disable=missing-docstring
 from __future__ import division
 
-from mxnet import lr_scheduler
 from math import pi, cos
+from mxnet import lr_scheduler
 
 class LR_Scheduler(lr_scheduler.LRScheduler):
     r"""Learning Rate Scheduler
@@ -20,11 +21,11 @@ class LR_Scheduler(lr_scheduler.LRScheduler):
     If warmup_epochs > 0, a warmup stage will be inserted before the main lr scheduler.
 
     For warmup_mode='linear'::
-        
+
         lr = warmup_lr + (baselr - warmup_lr) * iter / max_warmup_iter
 
     For warmup_mode='constant'::
-        
+
         lr = warmup_lr
 
     Parameters
@@ -55,7 +56,7 @@ class LR_Scheduler(lr_scheduler.LRScheduler):
         Currently it supports 'linear' and 'constant'.
     """
     def __init__(self, mode, baselr, niters, nepochs,
-                 step=[30,60,90], step_factor=0.1, targetlr=0, power=0.9,
+                 step=(30, 60, 90), step_factor=0.1, targetlr=0, power=0.9,
                  warmup_epochs=0, warmup_lr=0, warmup_mode='linear'):
         super(LR_Scheduler, self).__init__()
         assert(mode in ['step', 'poly', 'cosine'])

@@ -137,7 +137,8 @@ class ResNetV1b(HybridBlock):
             self.bn1 = norm_layer(in_channels=64)
             self.relu = nn.Activation('relu')
             self.maxpool = nn.MaxPool2D(pool_size=3, strides=2, padding=1)
-            self.layer1 = self._make_layer(1, block, 64, layers[0], norm_layer=norm_layer, last_gamma=last_gamma)
+            self.layer1 = self._make_layer(1, block, 64, layers[0], norm_layer=norm_layer,
+                                           last_gamma=last_gamma)
             self.layer2 = self._make_layer(2, block, 128, layers[1], strides=2,
                                            norm_layer=norm_layer, last_gamma=last_gamma)
             if dilated:
