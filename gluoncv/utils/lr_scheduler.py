@@ -75,7 +75,7 @@ class LR_Scheduler(lr_scheduler.LRScheduler):
         self.warmup_mode = warmup_mode
 
         self.N = nepochs * niters
-        self.warmup_N = self.warmup_epoch * niters
+        self.warmup_N = warmup_epochs * niters
 
     def __call__(self, num_update):
         return self.learning_rate
