@@ -23,11 +23,12 @@ stage("Unit Test") {
         set -e
         # conda env remove -n gluon_cv_py2_test -y
         # conda env create -n gluon_cv_py2_test -f tests/py2.yml
-        conda env update -n gluon_cv_py2_test -f tests/py2.yml --prune
+        conda env update -n gluon_cv_py2_test -f tests/py2.yml
         source activate gluon_cv_py2_test
         conda list
         make clean
-        pip install -e .
+        python setup.py develop --uninstall
+        pip install --force-reinstall .
         env
         export LD_LIBRARY_PATH=/usr/local/cuda-8.0/lib64
         export MPLBACKEND=Agg
@@ -53,11 +54,12 @@ stage("Unit Test") {
         set -e
         # conda env remove -n gluon_cv_py3_test -y
         # conda env create -n gluon_cv_py3_test -f tests/py3.yml
-        conda env update -n gluon_cv_py3_test -f tests/py3.yml --prune
+        conda env update -n gluon_cv_py3_test -f tests/py3.yml
         source activate gluon_cv_py3_test
         conda list
         make clean
-        pip install -e .
+        python setup.py develop --uninstall
+        pip install --force-reinstall .
         env
         export LD_LIBRARY_PATH=/usr/local/cuda-8.0/lib64
         export MPLBACKEND=Agg
