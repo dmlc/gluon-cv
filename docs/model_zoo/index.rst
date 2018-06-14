@@ -40,7 +40,7 @@ However, you can still load models by directly instantiate it like
 Summary of Available Models
 ---------------------------
 
-GluonCV is still under development, more models will be added later.
+GluonCV is still under development, stay tuned for more models!
 
 Image Classification
 ~~~~~~~~~~~~~~~~~~~~
@@ -55,7 +55,11 @@ Besides the listed, we provide more models trained on ImageNet in the upstream
 
 .. hint::
 
-    Training commands work with this script: :download:`Download train_imagenet.py<../../scripts/classification/imagenet/train_imagenet.py>`
+    Training commands work with these two script: 
+    
+    :download:`Download train_imagenet.py<../../scripts/classification/imagenet/train_imagenet.py>`
+
+    :download:`Download utils.py<../../scripts/classification/imagenet/utils.py>`
 
 +-----------------------+--------+--------+------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
 | Model                 | Top-1  | Top-5  | Training Command                                                                                                                   | Training Log                                                                                                                  |
