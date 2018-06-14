@@ -34,7 +34,7 @@ class LR_Scheduler(lr_scheduler.LRScheduler):
         Modes for learning rate scheduler.
         Currently it supports 'step', 'poly' and 'cosine'.
     baselr : float
-        Base learning rate.
+        Base learning rate, i.e. the starting learning rate.
     niters : int
         Number of iterations in each epoch.
     nepochs : int
@@ -44,7 +44,7 @@ class LR_Scheduler(lr_scheduler.LRScheduler):
     step_factor : float
         Learning rate decay factor.
     targetlr : float
-        Target learning rate for poly and cosine.
+        Target learning rate for poly and cosine, as the ending learning rate.
     power : float
         Power of poly function.
     warmup_epochs : int
