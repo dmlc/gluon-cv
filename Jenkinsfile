@@ -23,7 +23,7 @@ stage("Unit Test") {
         set -e
         # conda env remove -n gluon_cv_py2_test -y
         # conda env create -n gluon_cv_py2_test -f tests/py2.yml
-        conda env update -n gluon_cv_py2_test -f tests/py2.yml
+        conda env update -n gluon_cv_py2_test -f tests/py2.yml --prune
         source activate gluon_cv_py2_test
         conda list
         make clean
@@ -53,7 +53,7 @@ stage("Unit Test") {
         set -e
         # conda env remove -n gluon_cv_py3_test -y
         # conda env create -n gluon_cv_py3_test -f tests/py3.yml
-        conda env update -n gluon_cv_py3_test -f tests/py3.yml
+        conda env update -n gluon_cv_py3_test -f tests/py3.yml --prune
         source activate gluon_cv_py3_test
         conda list
         make clean
