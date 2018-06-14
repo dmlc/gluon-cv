@@ -117,11 +117,11 @@ We can set related parameters in the `ImageRecordIter`.
     std_rgb = [58.393, 57.12, 57.375]
 
     train_data = mx.io.ImageRecordIter(
-        path_imgrec         = rec_train,
-        path_imgidx         = rec_train_idx,
-        preprocess_threads  = num_workers,
+        path_imgrec         = '~/.mxnet/datasets/imagenet/rec/train.rec',
+        path_imgidx         = '~/.mxnet/datasets/imagenet/rec/train.idx',
+        preprocess_threads  = 32,
         shuffle             = True,
-        batch_size          = batch_size,
+        batch_size          = 256,
 
         data_shape          = (3, 224, 224),
         mean_r              = mean_rgb[0],
@@ -151,9 +151,9 @@ For prediction, we still need deterministic results. The function to read is:
 .. code-block:: python
 
     val_data = mx.io.ImageRecordIter(
-        path_imgrec         = rec_val,
-        path_imgidx         = rec_val_idx,
-        preprocess_threads  = num_workers,
+        path_imgrec         = '~/.mxnet/datasets/imagenet/rec/val.rec',
+        path_imgidx         = '~/.mxnet/datasets/imagenet/rec/val.idx',
+        preprocess_threads  = 32,
         shuffle             = False,
         batch_size          = 256,
 
