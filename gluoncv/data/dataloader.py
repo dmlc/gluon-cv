@@ -76,7 +76,7 @@ class DetectionDataLoader(DataLoader):
     batchify_fn : callable
         Callback function to allow users to specify how to merge samples
         into a batch.
-        Defaults to :py:meth:`gluonvision.data.dataloader.default_pad_batchify_fn`::
+        Defaults to :py:meth:`gluoncv.data.dataloader.default_pad_batchify_fn`::
             def default_pad_batchify_fn(data):
                 if isinstance(data[0], nd.NDArray):
                     return nd.stack(*data)
