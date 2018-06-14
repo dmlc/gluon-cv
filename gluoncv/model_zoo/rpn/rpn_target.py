@@ -29,15 +29,19 @@ class RPNTargetGenerator(gluon.Block):
         to be sampled.
     stds : array-like of size 4, default is (1., 1., 1., 1.)
         Std value to be divided from encoded regression targets.
+    allowed_border : int or float, default is 0
+        The allowed distance of anchors which are off the image border. This is used to clip out of
+        border anchors. You can set it to very large value to keep all anchors.
 
     """
     def __init__(self, num_sample=256, pos_iou_thresh=0.7, neg_iou_thresh=0.3,
-                 pos_ratio=0.5, stds=(1., 1., 1., 1.)):
+                 pos_ratio=0.5, stds=(1., 1., 1., 1.), allowed_border=0):
         super(RPNTargetGenerator, self).__init__()
         self._num_sample = num_sample
         self._pos_iou_thresh = pos_iou_thresh
         self._neg_iou_thresh = neg_iou_thresh
         self._pos_ratio = pos_ratio
+        self._allowed_border = allowed_border
         self._bbox_split = BBoxSplit(axis=-1)
         self._matcher = CompositeMatcher([BipartiteMatcher(), MaximumMatcher(pos_iou_thresh)])
         self._sampler = QuotaSampler(num_sample, pos_iou_thresh, neg_iou_thresh, 0., pos_ratio)
@@ -54,11 +58,12 @@ class RPNTargetGenerator(gluon.Block):
         with autograd.pause():
             # anchor with shape (N, 4)
             a_xmin, a_ymin, a_xmax, a_ymax = self._bbox_split(anchor)
-            # valid anchor mask with shape (N, 1)
-            # anchor_mask = ((a_xmin >= 0) * (a_ymin >= 0) *
-                # (a_xmax <= width) * (a_ymax <= height)) > 0
-            # anchor_mask = mx.nd.array(np.where(anchor_mask.asnumpy() > 0)[0], ctx=anchor.context)
-            imask = ((a_xmin >= 0) * (a_ymin >= 0) * (a_xmax <= width) * (a_ymax <= height)) <= 0
+            # invalid anchor mask with shape (N, 1)
+            imask = (
+                (a_xmin >= -self._allowed_border) *
+                (a_ymin >= -self._allowed_border) *
+                (a_xmax <= (width + self._allowed_border)) *
+                (a_ymax <= (height + self._allowed_border))) <= 0
             imask = mx.nd.array(np.where(imask.asnumpy() > 0)[0], ctx=anchor.context)
 
             # calculate ious between (N, 4) anchors and (M, 4) bbox ground-truths
