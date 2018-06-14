@@ -16,6 +16,7 @@ from gluoncv import data as gdata
 from gluoncv.data import batchify
 from gluoncv.data.transforms.presets.rcnn import FasterRCNNDefaultValTransform
 from gluoncv.utils.metrics.voc_detection import VOC07MApMetric
+from gluoncv.utils.metrics.coco_detection import COCODetectionMetric
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Validate Faster-RCNN networks.')
@@ -29,6 +30,8 @@ def parse_args():
                         help='Training with GPUs, you can specify 1,3 for example.')
     parser.add_argument('--pretrained', type=str, default='True',
                         help='Load weights from previously saved parameters.')
+    parser.add_argument('--save-prefix', type=str, default='',
+                        help='Saving parameter prefix')
     args = parser.parse_args()
     return args
 
@@ -40,9 +43,6 @@ def get_dataset(dataset, args):
     elif dataset.lower() == 'coco':
         val_dataset = gdata.COCODetection(splits='instances_val2017')
         val_metric = COCODetectionMetric(val_dataset, args.save_prefix + '_eval', cleanup=True)
-        # coco validation is slow, consider increase the validation interval
-        if args.val_interval == 1:
-            args.val_interval = 10
     else:
         raise NotImplementedError('Dataset: {} not implemented.'.format(dataset))
     return val_dataset, val_metric

@@ -13,9 +13,10 @@ import gluoncv as gcv
 from gluoncv import data as gdata
 from gluoncv.data.transforms.presets.ssd import SSDDefaultValTransform
 from gluoncv.utils.metrics.voc_detection import VOC07MApMetric
+from gluoncv.utils.metrics.coco_detection import COCODetectionMetric
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='Train SSD networks.')
+    parser = argparse.ArgumentParser(description='Eval SSD networks.')
     parser.add_argument('--network', type=str, default='vgg16_atrous',
                         help="Base network name")
     parser.add_argument('--data-shape', type=int, default=300,
@@ -30,16 +31,21 @@ def parse_args():
                         help='Training with GPUs, you can specify 1,3 for example.')
     parser.add_argument('--pretrained', type=str, default='True',
                         help='Load weights from previously saved parameters.')
+    parser.add_argument('--save-prefix', type=str, default='',
+                        help='Saving parameter prefix')
     args = parser.parse_args()
     return args
 
 def get_dataset(dataset):
     if dataset.lower() == 'voc':
-        val_dataset = gdata.VOCDetection(
-            splits=[(2007, 'test')])
+        val_dataset = gdata.VOCDetection(splits=[(2007, 'test')])
+        val_metric = VOC07MApMetric(iou_thresh=0.5, class_names=val_dataset.classes)
+    elif dataset.lower() == 'coco':
+        val_dataset = gdata.COCODetection(splits='instances_val2017')
+        val_metric = COCODetectionMetric(val_dataset, args.save_prefix + '_eval', cleanup=True)
     else:
         raise NotImplementedError('Dataset: {} not implemented.'.format(dataset))
-    return val_dataset
+    return val_dataset, val_metric
 
 def get_dataloader(val_dataset, data_shape, batch_size, num_workers):
     """Get dataloader."""
@@ -49,10 +55,10 @@ def get_dataloader(val_dataset, data_shape, batch_size, num_workers):
         batch_size, False, last_batch='keep', num_workers=num_workers)
     return val_loader
 
-def validate(net, val_data, ctx, classes, size):
+def validate(net, val_data, ctx, classes, size, metric):
     """Test on validation dataset."""
     net.collect_params().reset_ctx(ctx)
-    metric = VOC07MApMetric(iou_thresh=0.5, class_names=classes)
+    metric.reset()
     net.set_nms(nms_thresh=0.45, nms_topk=400)
     net.hybridize()
     with tqdm(total=size) as pbar:
@@ -88,7 +94,7 @@ if __name__ == '__main__':
     ctx = ctx if ctx else [mx.cpu()]
 
     # training data
-    val_dataset = get_dataset(args.dataset)
+    val_dataset, val_metric = get_dataset(args.dataset)
     val_data = get_dataloader(
         val_dataset, args.data_shape, args.batch_size, args.num_workers)
     classes = val_dataset.classes  # class names
@@ -102,6 +108,6 @@ if __name__ == '__main__':
         net.load_params(args.pretrained.strip())
 
     # training
-    names, values = validate(net, val_data, ctx, classes, len(val_dataset))
+    names, values = validate(net, val_data, ctx, classes, len(val_dataset), val_metric)
     for k, v in zip(names, values):
         print(k, v)
