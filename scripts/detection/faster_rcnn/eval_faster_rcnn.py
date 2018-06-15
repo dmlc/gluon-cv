@@ -41,7 +41,7 @@ def get_dataset(dataset, args):
             splits=[(2007, 'test')])
         val_metric = VOC07MApMetric(iou_thresh=0.5, class_names=val_dataset.classes)
     elif dataset.lower() == 'coco':
-        val_dataset = gdata.COCODetection(splits='instances_val2017')
+        val_dataset = gdata.COCODetection(splits='instances_val2017', skip_empty=False)
         val_metric = COCODetectionMetric(val_dataset, args.save_prefix + '_eval', cleanup=True)
     else:
         raise NotImplementedError('Dataset: {} not implemented.'.format(dataset))
@@ -50,7 +50,7 @@ def get_dataset(dataset, args):
 def get_dataloader(net, val_dataset, batch_size, num_workers):
     """Get dataloader."""
     short, max_size = 600, 1000
-    val_bfn = batchify.Tuple(*[batchify.Append() for _ in range(2)])
+    val_bfn = batchify.Tuple(*[batchify.Append() for _ in range(3)])
     val_loader = mx.gluon.data.DataLoader(
         val_dataset.transform(FasterRCNNDefaultValTransform(short, max_size)),
         batch_size, False, batchify_fn=val_bfn, last_batch='keep', num_workers=num_workers)
@@ -80,13 +80,15 @@ def validate(net, val_data, ctx, eval_metric, size):
             gt_bboxes = []
             gt_ids = []
             gt_difficults = []
-            for x, y in zip(*batch):
+            for x, y, im_scale in zip(*batch):
                 # get prediction results
                 ids, scores, bboxes = net(x)
                 det_ids.append(ids.expand_dims(0))
                 det_scores.append(scores.expand_dims(0))
                 # clip to image size
                 det_bboxes.append(mx.nd.Custom(bboxes, x, op_type='bbox_clip_to_image').expand_dims(0))
+                # rescale to original resolution
+                det_bboxes[-1] *= im_scale.reshape((-1)).asscalar()
                 # split ground truths
                 gt_ids.append(y.slice_axis(axis=-1, begin=4, end=5))
                 gt_bboxes.append(y.slice_axis(axis=-1, begin=0, end=4))
@@ -107,6 +109,7 @@ if __name__ == '__main__':
 
     # network
     net_name = '_'.join(('faster_rcnn', args.network, args.dataset))
+    args.save_prefix += net_name
     if args.pretrained.lower() in ['true', '1', 'yes', 't']:
         net = gcv.model_zoo.get_model(net_name, pretrained=True)
     else:

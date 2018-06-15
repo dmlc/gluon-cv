@@ -36,13 +36,15 @@ def parse_args():
     args = parser.parse_args()
     return args
 
-def get_dataset(dataset):
+def get_dataset(dataset, data_shape):
     if dataset.lower() == 'voc':
         val_dataset = gdata.VOCDetection(splits=[(2007, 'test')])
         val_metric = VOC07MApMetric(iou_thresh=0.5, class_names=val_dataset.classes)
     elif dataset.lower() == 'coco':
-        val_dataset = gdata.COCODetection(splits='instances_val2017')
-        val_metric = COCODetectionMetric(val_dataset, args.save_prefix + '_eval', cleanup=True)
+        val_dataset = gdata.COCODetection(splits='instances_val2017', skip_empty=False)
+        val_metric = COCODetectionMetric(
+            val_dataset, args.save_prefix + '_eval', cleanup=True,
+            data_shape=(data_shape, data_shape))
     else:
         raise NotImplementedError('Dataset: {} not implemented.'.format(dataset))
     return val_dataset, val_metric
@@ -93,19 +95,20 @@ if __name__ == '__main__':
     ctx = [mx.gpu(int(i)) for i in args.gpus.split(',') if i.strip()]
     ctx = ctx if ctx else [mx.cpu()]
 
-    # training data
-    val_dataset, val_metric = get_dataset(args.dataset)
-    val_data = get_dataloader(
-        val_dataset, args.data_shape, args.batch_size, args.num_workers)
-    classes = val_dataset.classes  # class names
-
     # network
     net_name = '_'.join(('ssd', str(args.data_shape), args.network, args.dataset))
+    args.save_prefix += net_name
     if args.pretrained.lower() in ['true', '1', 'yes', 't']:
         net = gcv.model_zoo.get_model(net_name, pretrained=True)
     else:
         net = gcv.model_zoo.get_model(net_name, pretrained=False)
         net.load_params(args.pretrained.strip())
+
+    # training data
+    val_dataset, val_metric = get_dataset(args.dataset, args.data_shape)
+    val_data = get_dataloader(
+        val_dataset, args.data_shape, args.batch_size, args.num_workers)
+    classes = val_dataset.classes  # class names
 
     # training
     names, values = validate(net, val_data, ctx, classes, len(val_dataset), val_metric)

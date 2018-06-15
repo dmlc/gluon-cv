@@ -30,6 +30,9 @@ class COCODetection(VisionDataset):
     min_object_area : float
         Minimum accepted ground-truth area, if an object's area is smaller than this value,
         it will be ignored.
+    skip_empty : bool, default is True
+        Whether skip images with no valid object. This should be `True` in training, otherwise
+        it will cause undefined behavior.
 
     """
     CLASSES = ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train',
@@ -47,11 +50,13 @@ class COCODetection(VisionDataset):
                'scissors', 'teddy bear', 'hair drier', 'toothbrush']
 
     def __init__(self, root=os.path.join('~', '.mxnet', 'datasets', 'coco'),
-                 splits=('instances_val2017',), transform=None, min_object_area=0):
+                 splits=('instances_val2017',), transform=None, min_object_area=0,
+                 skip_empty=True):
         super(COCODetection, self).__init__(root)
         self._root = os.path.expanduser(root)
         self._transform = transform
         self._min_object_area = min_object_area
+        self._skip_empty = skip_empty
         if isinstance(splits, mx.base.string_types):
             splits = [splits]
         self._splits = splits
@@ -150,8 +155,7 @@ class COCODetection(VisionDataset):
                 contiguous_cid = self.json_id_to_contiguous[obj['category_id']]
                 valid_objs.append([xmin, ymin, xmax, ymax, contiguous_cid])
         if not valid_objs:
-            # dummy invalid labels if no valid objects are found
-            # valid_objs.append([-1, -1, -1, -1, -1])
-            # TODO(zhreshold): skip image with no valid object?
-            pass
+            if not self._skip_empty:
+                # dummy invalid labels if no valid objects are found
+                valid_objs.append([-1, -1, -1, -1, -1])
         return valid_objs

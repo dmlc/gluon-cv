@@ -157,7 +157,7 @@ def get_dataset(dataset, args):
         val_metric = VOC07MApMetric(iou_thresh=0.5, class_names=val_dataset.classes)
     elif dataset.lower() == 'coco':
         train_dataset = gdata.COCODetection(splits='instances_train2017')
-        val_dataset = gdata.COCODetection(splits='instances_val2017')
+        val_dataset = gdata.COCODetection(splits='instances_val2017', skip_empty=False)
         val_metric = COCODetectionMetric(val_dataset, args.save_prefix + '_eval', cleanup=True)
         # coco validation is slow, consider increase the validation interval
         if args.val_interval < 2:
@@ -174,7 +174,7 @@ def get_dataloader(net, train_dataset, val_dataset, batch_size, num_workers):
     train_loader = mx.gluon.data.DataLoader(
         train_dataset.transform(FasterRCNNDefaultTrainTransform(short, max_size, net)),
         batch_size, True, batchify_fn=train_bfn, last_batch='rollover', num_workers=num_workers)
-    val_bfn = batchify.Tuple(*[batchify.Append() for _ in range(2)])
+    val_bfn = batchify.Tuple(*[batchify.Append() for _ in range(3)])
     val_loader = mx.gluon.data.DataLoader(
         val_dataset.transform(FasterRCNNDefaultValTransform(short, max_size)),
         batch_size, False, batchify_fn=val_bfn, last_batch='keep', num_workers=num_workers)
@@ -213,13 +213,15 @@ def validate(net, val_data, ctx, eval_metric):
         gt_bboxes = []
         gt_ids = []
         gt_difficults = []
-        for x, y in zip(*batch):
+        for x, y, im_scale in zip(*batch):
             # get prediction results
             ids, scores, bboxes = net(x)
             det_ids.append(ids.expand_dims(0))
             det_scores.append(scores.expand_dims(0))
             # clip to image size
             det_bboxes.append(mx.nd.Custom(bboxes, x, op_type='bbox_clip_to_image').expand_dims(0))
+            # rescale to original resolution
+            det_bboxes[-1] *= im_scale.reshape((-1)).asscalar()
             # split ground truths
             gt_ids.append(y.slice_axis(axis=-1, begin=4, end=5))
             gt_bboxes.append(y.slice_axis(axis=-1, begin=0, end=4))
