@@ -15,7 +15,7 @@ def parse_args():
     parser.add_argument('--gpus', type=str, default='0',
                         help='Training with GPUs, you can specify 1,3 for example.')
     parser.add_argument('--pretrained', type=str, default='True',
-                        help='Load weights from previously saved parameters.')
+                        help='Load weights from previously saved parameters. You can specify parameter file name.')
     args = parser.parse_args()
     return args
 
