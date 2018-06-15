@@ -34,7 +34,7 @@ class COCODetectionMetric(mx.metric.EvalMetric):
         the data_shape must be fixed for all validation images.
 
     """
-    def __init__(self, dataset, save_prefix, use_time=True, cleanup=False, score_thresh=0.05
+    def __init__(self, dataset, save_prefix, use_time=True, cleanup=False, score_thresh=0.05,
                  data_shape=None):
         super(COCODetectionMetric, self).__init__('COCOMeanAP')
         self.dataset = dataset
