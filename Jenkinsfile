@@ -48,6 +48,10 @@ stage("Unit Test") {
   'Python 3': {
     node {
       ws('workspace/gluon-cv-py3') {
+        wget https://raw.githubusercontent.com/hetong007/gluon-cv/temp_files/temp_folder/train.idx -P ~/.mxnet/datasets/imagenet/rec/
+        wget https://raw.githubusercontent.com/hetong007/gluon-cv/temp_files/temp_folder/train.rec -P ~/.mxnet/datasets/imagenet/rec/
+        wget https://raw.githubusercontent.com/hetong007/gluon-cv/temp_files/temp_folder/val.idx -P ~/.mxnet/datasets/imagenet/rec/
+        wget https://raw.githubusercontent.com/hetong007/gluon-cv/temp_files/temp_folder/val.rec -P ~/.mxnet/datasets/imagenet/rec/
         checkout scm
         sh """#!/bin/bash
         set -e
