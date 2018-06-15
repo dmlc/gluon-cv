@@ -73,13 +73,13 @@ stage("Build Docs") {
   node {
     ws('workspace/gluon-cv-docs') {
       checkout scm
+      sh """#!/bin/bash
+      set -e
+      set -x
       wget https://raw.githubusercontent.com/hetong007/gluon-cv/temp_files/temp_folder/train.idx -P ~/.mxnet/datasets/imagenet/rec/
       wget https://raw.githubusercontent.com/hetong007/gluon-cv/temp_files/temp_folder/train.rec -P ~/.mxnet/datasets/imagenet/rec/
       wget https://raw.githubusercontent.com/hetong007/gluon-cv/temp_files/temp_folder/val.idx -P ~/.mxnet/datasets/imagenet/rec/
       wget https://raw.githubusercontent.com/hetong007/gluon-cv/temp_files/temp_folder/val.rec -P ~/.mxnet/datasets/imagenet/rec/
-      sh """#!/bin/bash
-      set -e
-      set -x
       conda env update -n gluon_vision_docs -f docs/build.yml
       source activate gluon_vision_docs
       export PYTHONPATH=\${PWD}
