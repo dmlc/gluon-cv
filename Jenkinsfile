@@ -27,7 +27,7 @@ stage("Unit Test") {
         source activate gluon_cv_py2_test
         conda list
         make clean
-        pip install -e .
+        pip install --force-reinstall .
         env
         export LD_LIBRARY_PATH=/usr/local/cuda-8.0/lib64
         export MPLBACKEND=Agg
@@ -57,7 +57,7 @@ stage("Unit Test") {
         source activate gluon_cv_py3_test
         conda list
         make clean
-        pip install -e .
+        pip install --force-reinstall .
         env
         export LD_LIBRARY_PATH=/usr/local/cuda-8.0/lib64
         export MPLBACKEND=Agg
