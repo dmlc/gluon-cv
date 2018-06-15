@@ -76,6 +76,10 @@ class SSD(HybridBlock):
     nms_topk : int, default is 400
         Apply NMS to top k detection results, use -1 to disable so that every Detection
          result is used in NMS.
+    post_nms : int, default is 100
+        Only return top `post_nms` detection results, the rest is discarded. The number is
+        based on COCO dataset which has maximum 100 objects per image. You can adjust this
+        number if expecting more objects. You can use -1 to return all detections.
     anchor_alloc_size : tuple of int, default is (128, 128)
         For advanced users. Define `anchor_alloc_size` to generate large enough anchor
         maps, which will later saved in parameters. During inference, we support arbitrary
@@ -88,7 +92,7 @@ class SSD(HybridBlock):
     def __init__(self, network, base_size, features, num_filters, sizes, ratios,
                  steps, classes, use_1x1_transition=True, use_bn=True,
                  reduce_ratio=1.0, min_depth=128, global_pool=False, pretrained=False,
-                 stds=(0.1, 0.1, 0.2, 0.2), nms_thresh=0.45, nms_topk=400,
+                 stds=(0.1, 0.1, 0.2, 0.2), nms_thresh=0.45, nms_topk=400, post_nms=100,
                  anchor_alloc_size=128, ctx=mx.cpu(), **kwargs):
         super(SSD, self).__init__(**kwargs)
         if network is None:
@@ -109,6 +113,7 @@ class SSD(HybridBlock):
         self.num_classes = len(classes) + 1
         self.nms_thresh = nms_thresh
         self.nms_topk = nms_topk
+        self.post_nms = post_nms
 
         with self.name_scope():
             if network is None:
@@ -135,7 +140,7 @@ class SSD(HybridBlock):
             self.bbox_decoder = NormalizedBoxCenterDecoder(stds)
             self.cls_decoder = MultiPerClassDecoder(self.num_classes, thresh=0.01)
 
-    def set_nms(self, nms_thresh=0, nms_topk=400):
+    def set_nms(self, nms_thresh=0, nms_topk=400, post_nms=100):
         """Set non-maximum suppression parameters.
 
         Parameters
@@ -145,6 +150,10 @@ class SSD(HybridBlock):
         nms_topk : int, default is 400
             Apply NMS to top k detection results, use -1 to disable so that every Detection
              result is used in NMS.
+        post_nms : int, default is 100
+            Only return top `post_nms` detection results, the rest is discarded. The number is
+            based on COCO dataset which has maximum 100 objects per image. You can adjust this
+            number if expecting more objects. You can use -1 to return all detections.
 
         Returns
         -------
@@ -153,6 +162,7 @@ class SSD(HybridBlock):
         """
         self.nms_thresh = nms_thresh
         self.nms_topk = nms_topk
+        self.post_nms = post_nms
 
     # pylint: disable=arguments-differ
     def hybrid_forward(self, F, x):
@@ -177,14 +187,14 @@ class SSD(HybridBlock):
             score = scores.slice_axis(axis=-1, begin=i, end=i+1)
             # per class results
             per_result = F.concat(*[cls_id, score, bboxes], dim=-1)
-            if self.nms_thresh > 0 and self.nms_thresh < 1:
-                per_result = F.contrib.box_nms(
-                    per_result, overlap_thresh=self.nms_thresh, topk=self.nms_topk,
-                    id_index=0, score_index=1, coord_start=2)
-                if self.nms_topk > 0:
-                    per_result = per_result.slice_axis(axis=1, begin=0, end=self.nms_topk)
             results.append(per_result)
         result = F.concat(*results, dim=1)
+        if self.nms_thresh > 0 and self.nms_thresh < 1:
+            result = F.contrib.box_nms(
+                result, overlap_thresh=self.nms_thresh, topk=self.nms_topk,
+                id_index=0, score_index=1, coord_start=2, force_suppress=False)
+            if self.post_nms > 0:
+                result = result.slice_axis(axis=1, begin=0, end=self.post_nms)
         ids = F.slice_axis(result, axis=2, begin=0, end=1)
         scores = F.slice_axis(result, axis=2, begin=1, end=2)
         bboxes = F.slice_axis(result, axis=2, begin=2, end=6)

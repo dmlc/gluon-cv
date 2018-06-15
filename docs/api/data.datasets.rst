@@ -30,6 +30,11 @@ gluoncv.data
 .. autoclass:: gluoncv.data.VOCSegmentation
 .. autoclass:: gluoncv.data.VOCAugSegmentation
 
+`COCO <http://cocodataset.org>`_
+--------------------------------
+
+.. autoclass::gluoncv.data.COCODetection
+
 
 `ADE20K <http://groups.csail.mit.edu/vision/datasets/ADE20K/>`_
 ---------------------------------------------------------------
