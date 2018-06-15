@@ -96,7 +96,7 @@ class LR_Scheduler(lr_scheduler.LRScheduler):
                 raise NotImplementedError
         else:
             if self.mode == 'step':
-                count = sum([1 for s in step if s <= epoch])
+                count = sum([1 for s in self.step if s <= epoch])
                 self.learning_rate = self.baselr * pow(self_factor, count)
             elif self.mode == 'poly':
                 self.learning_rate = self.targetlr + (self.baselr - self.targetlr) * \

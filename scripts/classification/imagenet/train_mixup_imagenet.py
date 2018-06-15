@@ -138,6 +138,12 @@ else:
     save_dir = ''
     save_frequency = 0
 
+def label_transform(label, classes):
+    ind = label.astype('int')
+    res = nd.zeros((ind.shape[0], classes), ctx = label.context)
+    res[nd.arange(ind.shape[0], ctx = label.context), ind] = 1
+    return res
+
 def test(ctx, val_data):
     if opt.use_rec:
         val_data.reset()
@@ -160,7 +166,7 @@ def train(ctx):
 
     trainer = gluon.Trainer(net.collect_params(), optimizer, optimizer_params)
 
-    L = gluon.loss.SoftmaxCrossEntropyLoss()
+    L = gluon.loss.SoftmaxCrossEntropyLoss(sparse_label=False)
 
     best_val_score = 1
     alpha = 0.2
