@@ -19,12 +19,15 @@ class NormalizedBoxCenterEncoder(gluon.Block):
     ----------
     stds : array-like of size 4
         Std value to be divided from encoded values, default is (0.1, 0.1, 0.2, 0.2).
+    means : array-like of size 4
+        Mean value to be subtracted from encoded values, default is (0., 0., 0., 0.).
 
     """
-    def __init__(self, stds=(0.1, 0.1, 0.2, 0.2)):
+    def __init__(self, stds=(0.1, 0.1, 0.2, 0.2), means=(0., 0., 0., 0.)):
         super(NormalizedBoxCenterEncoder, self).__init__()
         assert len(stds) == 4, "Box Encoder requires 4 std values."
         self._stds = stds
+        self._means = means
         with self.name_scope():
             self.corner_to_center = BBoxCornerToCenter(split=True)
 
@@ -38,15 +41,70 @@ class NormalizedBoxCenterEncoder(gluon.Block):
             for i in range(4)], dim=2)
         g = self.corner_to_center(ref_boxes)
         a = self.corner_to_center(anchors)
-        t0 = (g[0] - a[0]) / a[2] / self._stds[0]
-        t1 = (g[1] - a[1]) / a[3] / self._stds[1]
-        t2 = F.log(g[2] / a[2]) / self._stds[2]
-        t3 = F.log(g[3] / a[3]) / self._stds[3]
+        t0 = ((g[0] - a[0]) / a[2] - self._means[0]) / self._stds[0]
+        t1 = ((g[1] - a[1]) / a[3] - self._means[1]) / self._stds[1]
+        t2 = (F.log(g[2] / a[2]) - self._means[2]) / self._stds[2]
+        t3 = (F.log(g[3] / a[3]) - self._means[3]) / self._stds[3]
         codecs = F.concat(t0, t1, t2, t3, dim=2)
         temp = F.tile(samples.reshape((0, -1, 1)), reps=(1, 1, 4)) > 0.5
         targets = F.where(temp, codecs, F.zeros_like(codecs))
         masks = F.where(temp, F.ones_like(temp), F.zeros_like(temp))
         return targets, masks
+
+
+class NormalizedPerClassBoxCenterEncoder(gluon.Block):
+    """Encode bounding boxes training target with normalized center offsets.
+
+    Input bounding boxes are using corner type: `x_{min}, y_{min}, x_{max}, y_{max}`.
+
+    Parameters
+    ----------
+    stds : array-like of size 4
+        Std value to be divided from encoded values, default is (0.1, 0.1, 0.2, 0.2).
+    means : array-like of size 4
+        Mean value to be subtracted from encoded values, default is (0., 0., 0., 0.).
+
+    """
+    def __init__(self, num_class, stds=(0.1, 0.1, 0.2, 0.2), means=(0., 0., 0., 0.)):
+        super(NormalizedPerClassBoxCenterEncoder, self).__init__()
+        assert len(stds) == 4, "Box Encoder requires 4 std values."
+        assert num_class > 0, "Number of classes must be positive"
+        self._num_class = num_class
+        self._stds = stds
+        self._means = means
+        with self.name_scope():
+            self.corner_to_center = BBoxCornerToCenter(split=True)
+
+    def forward(self, samples, matches, anchors, labels, refs):
+        """Encode BBox One entry per category"""
+        F = nd
+        ref_boxes = F.repeat(refs.reshape((0, 1, -1, 4)), axis=1, repeats=matches.shape[1])
+        ref_boxes = F.split(ref_boxes, axis=-1, num_outputs=4, squeeze_axis=True)
+        ref_boxes = F.concat(*[F.pick(ref_boxes[i], matches, axis=2).reshape((0, -1, 1)) \
+            for i in range(4)], dim=2)
+        ref_labels = F.repeat(labels.reshape((0, 1, -1)), axis=1, repeats=matches.shape[1])
+        ref_labels = F.pick(ref_labels, matches, axis=2).reshape((0, -1, 1))
+        g = self.corner_to_center(ref_boxes)
+        a = self.corner_to_center(anchors)
+        t0 = ((g[0] - a[0]) / a[2] - self._means[0]) / self._stds[0]
+        t1 = ((g[1] - a[1]) / a[3] - self._means[1]) / self._stds[1]
+        t2 = (F.log(g[2] / a[2]) - self._means[2]) / self._stds[2]
+        t3 = (F.log(g[3] / a[3]) - self._means[3]) / self._stds[3]
+        codecs = F.concat(t0, t1, t2, t3, dim=2)
+        temp = F.tile(samples.reshape((0, -1, 1)), reps=(1, 1, 4)) > 0.5
+        targets = F.where(temp, codecs, F.zeros_like(codecs))
+        masks = F.where(temp, F.ones_like(temp), F.zeros_like(temp))
+        out_targets = []
+        out_masks = []
+        for cid in range(self._num_class):
+            same_cid = ref_labels == cid
+            # keep orig targets
+            out_targets.append(targets)
+            # but mask out the one not belong to this class
+            out_masks.append(masks * same_cid.repeat(axis=-1, repeats=4))
+        all_targets = F.stack(*out_targets, axis=0)
+        all_masks = F.stack(*out_masks, axis=0)
+        return all_targets, all_masks
 
 
 class NormalizedBoxCenterDecoder(gluon.HybridBlock):
@@ -60,20 +118,30 @@ class NormalizedBoxCenterDecoder(gluon.HybridBlock):
     ----------
     stds : array-like of size 4
         Std value to be divided from encoded values, default is (0.1, 0.1, 0.2, 0.2).
+    means : array-like of size 4
+        Mean value to be subtracted from encoded values, default is (0., 0., 0., 0.).
 
     """
-    def __init__(self, stds=(0.1, 0.1, 0.2, 0.2)):
+    def __init__(self, stds=(0.1, 0.1, 0.2, 0.2), means=(0., 0., 0., 0.), convert_anchor=False):
         super(NormalizedBoxCenterDecoder, self).__init__()
         assert len(stds) == 4, "Box Encoder requires 4 std values."
         self._stds = stds
+        self._means = means
+        if convert_anchor:
+            self.corner_to_center = BBoxCornerToCenter(split=True)
+        else:
+            self.corner_to_center = None
 
     def hybrid_forward(self, F, x, anchors):
-        a = anchors.split(axis=-1, num_outputs=4)
+        if self.corner_to_center is not None:
+            a = self.corner_to_center(anchors)
+        else:
+            a = anchors.split(axis=-1, num_outputs=4)
         p = F.split(x, axis=-1, num_outputs=4)
-        ox = F.broadcast_add(F.broadcast_mul(p[0] * self._stds[0], a[2]), a[0])
-        oy = F.broadcast_add(F.broadcast_mul(p[1] * self._stds[1], a[3]), a[1])
-        ow = F.broadcast_mul(F.exp(p[2] * self._stds[2]), a[2]) / 2
-        oh = F.broadcast_mul(F.exp(p[3] * self._stds[3]), a[3]) / 2
+        ox = F.broadcast_add(F.broadcast_mul(p[0] * self._stds[0] + self._means[0], a[2]), a[0])
+        oy = F.broadcast_add(F.broadcast_mul(p[1] * self._stds[1] + self._means[1], a[3]), a[1])
+        ow = F.broadcast_mul(F.exp(p[2] * self._stds[2]) + self._means[2], a[2]) / 2
+        oh = F.broadcast_mul(F.exp(p[3] * self._stds[3]) + self._means[3], a[3]) / 2
         return F.concat(ox - ow, oy - oh, ox + ow, oy + oh, dim=-1)
 
 
@@ -178,3 +246,16 @@ class MultiPerClassDecoder(gluon.HybridBlock):
         cls_id = F.where(mask, cls_id, F.ones_like(cls_id) * -1)
         scores = F.where(mask, scores, F.zeros_like(scores))
         return cls_id, scores
+
+
+class SigmoidClassEncoder(gluon.HybridBlock):
+    def __init__(self, **kwargs):
+        super(SigmoidClassEncoder, self).__init__(**kwargs)
+
+    def hybrid_forward(self, F, samples):
+        # notation from samples, 1:pos, 0:ignore, -1:negative
+        target = (samples + 1) / 2.
+        target = F.where(F.abs(samples) < 1e-5, F.ones_like(target) * -1, target)
+        # output: 1: pos, 0: negative, -1: ignore
+        mask = F.where(F.abs(samples) > 1e-5, F.ones_like(samples), F.zeros_like(samples))
+        return target, mask

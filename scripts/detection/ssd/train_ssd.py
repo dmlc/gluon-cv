@@ -74,8 +74,10 @@ def get_dataset(dataset, args):
         val_metric = VOC07MApMetric(iou_thresh=0.5, class_names=val_dataset.classes)
     elif dataset.lower() == 'coco':
         train_dataset = gdata.COCODetection(splits='instances_train2017')
-        val_dataset = gdata.COCODetection(splits='instances_val2017')
-        val_metric = COCODetectionMetric(val_dataset, args.save_prefix + '_eval', cleanup=False)
+        val_dataset = gdata.COCODetection(splits='instances_val2017', skip_empty=False)
+        val_metric = COCODetectionMetric(
+            val_dataset, args.save_prefix + '_eval', cleanup=True,
+            data_shape=(args.data_shape, args.data_shape))
         # coco validation is slow, consider increase the validation interval
         if args.val_interval == 1:
             args.val_interval = 10
