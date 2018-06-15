@@ -312,7 +312,7 @@ train_history.plot()
 # After training, we usually want to save it for later use.
 # This is simply done with:
 
-net.save_params('dive_deep_cifar10_resnet20_v2.params')
+net.save_parameters('dive_deep_cifar10_resnet20_v2.params')
 
 ################################################################
 # Next time if you need to use it, just run

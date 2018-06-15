@@ -201,13 +201,13 @@ def train(ctx):
 
         if err_top1_val < best_val_score and epoch > 50:
             best_val_score = err_top1_val
-            net.save_params('%s/%.4f-imagenet-%s-%d-best.params'%(save_dir, best_val_score, model_name, epoch))
+            net.save_parameters('%s/%.4f-imagenet-%s-%d-best.params'%(save_dir, best_val_score, model_name, epoch))
 
         if save_frequency and save_dir and (epoch + 1) % save_frequency == 0:
-            net.save_params('%s/imagenet-%s-%d.params'%(save_dir, model_name, epoch))
+            net.save_parameters('%s/imagenet-%s-%d.params'%(save_dir, model_name, epoch))
 
     if save_frequency and save_dir:
-        net.save_params('%s/imagenet-%s-%d.params'%(save_dir, model_name, opt.num_epochs-1))
+        net.save_parameters('%s/imagenet-%s-%d.params'%(save_dir, model_name, opt.num_epochs-1))
 
 def main():
     if opt.mode == 'hybrid':
