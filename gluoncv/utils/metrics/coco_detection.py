@@ -169,7 +169,7 @@ class COCODetectionMetric(mx.metric.EvalMetric):
             return a
 
         for pred_bbox, pred_label, pred_score in zip(
-                *[asnumpy(x) for x in [pred_bboxes, pred_labels, pred_scores]]):
+                *[as_numpy(x) for x in [pred_bboxes, pred_labels, pred_scores]]):
             valid_pred = np.where(pred_label.flat >= 0)[0]
             pred_bbox = pred_bbox[valid_pred, :].astype(np.float)
             pred_label = pred_label.flat[valid_pred].astype(int)
