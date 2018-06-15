@@ -48,6 +48,9 @@ class BottleneckV2(HybridBlock):
 
 
 class Rescale(HybridBlock):
+    """Rescale layer/block that restore the original by
+    the default mean [0.485, 0.456, 0.406] and std [0.229, 0.224, 0.225].
+    """
     def __init__(self, **kwargs):
         super(Rescale, self).__init__(**kwargs)
         with self.name_scope():
