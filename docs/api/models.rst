@@ -168,7 +168,7 @@ Neural Networks
 :hidden:`Matchers`
 ~~~~~~~~~~~~~~~~~~~~~~
 
-.. currentmodule:: gluoncv.utils.nn.matcher
+.. currentmodule:: gluoncv.nn.matcher
 
 .. autoclass:: CompositeMatcher
     :members:
@@ -193,7 +193,7 @@ Neural Networks
 :hidden:`Samplers`
 ~~~~~~~~~~~~~~~~~~~~~~
 
-.. currentmodule:: gluoncv.utils.nn.sampler
+.. currentmodule:: gluoncv.nn.sampler
 
 .. autoclass:: NaiveSampler
     :members:

@@ -3,8 +3,8 @@ from __future__ import absolute_import
 
 from mxnet import nd
 from mxnet.gluon import Block
-from ...utils.nn.matcher import CompositeMatcher, BipartiteMatcher, MaximumMatcher
-from ...utils.nn.sampler import OHEMSampler, NaiveSampler
+from ...nn.matcher import CompositeMatcher, BipartiteMatcher, MaximumMatcher
+from ...nn.sampler import OHEMSampler, NaiveSampler
 from ...nn.coder import MultiClassEncoder, NormalizedBoxCenterEncoder
 from ...nn.bbox import BBoxCenterToCorner
 
