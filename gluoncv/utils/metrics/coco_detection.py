@@ -194,8 +194,8 @@ class COCODetectionMetric(mx.metric.EvalMetric):
                     continue
                 category_id = self.dataset.contiguous_id_to_json[label]
                 # rescale bboxes
-                bbox[(0, 2)] *= width_scale
-                bbox[(1, 3)] *= height_scale
+                bbox[[0, 2]] *= width_scale
+                bbox[[1, 3]] *= height_scale
                 # convert [xmin, ymin, xmax, ymax]  to [xmin, ymin, w, h]
                 bbox[2:4] -= (bbox[:2] - 1)
                 self._results.append({'image_id': imgid,
