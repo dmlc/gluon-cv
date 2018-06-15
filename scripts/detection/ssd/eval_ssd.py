@@ -11,6 +11,7 @@ from mxnet import nd
 from mxnet import gluon
 import gluoncv as gcv
 from gluoncv import data as gdata
+from gluoncv.data.batchify import Tuple, Stack, Pad
 from gluoncv.data.transforms.presets.ssd import SSDDefaultValTransform
 from gluoncv.utils.metrics.voc_detection import VOC07MApMetric
 from gluoncv.utils.metrics.coco_detection import COCODetectionMetric
@@ -52,8 +53,9 @@ def get_dataset(dataset, data_shape):
 def get_dataloader(val_dataset, data_shape, batch_size, num_workers):
     """Get dataloader."""
     width, height = data_shape, data_shape
-    val_loader = gdata.DetectionDataLoader(
-        val_dataset.transform(SSDDefaultValTransform(width, height)),
+    batchify_fn = Tuple(Stack(), Pad(pad_val=-1))
+    val_loader = gluon.data.DataLoader(
+        val_dataset.transform(SSDDefaultValTransform(width, height)), batchify_fn=batchify_fn,
         batch_size, False, last_batch='keep', num_workers=num_workers)
     return val_loader
 

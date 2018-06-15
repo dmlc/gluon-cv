@@ -32,3 +32,9 @@ different papers. This is a complimentary section and APIs are prone to changes.
 
 .. automodule:: gluoncv.data.transforms.presets.ssd
     :members:
+
+:hidden:`Faster RCNN`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: gluoncv.data.transforms.presets.rcnn
+    :members:

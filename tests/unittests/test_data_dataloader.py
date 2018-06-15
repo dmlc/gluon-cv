@@ -5,6 +5,7 @@ import mxnet as mx
 import numpy as np
 
 import gluoncv as gcv
+from gluoncv.data.batchify import *
 from gluoncv.data import DetectionDataLoader
 
 
@@ -27,6 +28,23 @@ def test_detection_dataloader():
                 dataloader = DetectionDataLoader(
                     dataset, batch_size=2, shuffle=shuffle, last_batch=last_batch,
                     num_workers=num_workers)
+                for batch in dataloader:
+                    mx.nd.waitall()
+                    pass
+
+                # new dataloader methods
+                batchify_fn = Tuple(Stack(), Pad(pad_val=-1))
+                dataloader = mx.gluon.data.DataLoader(
+                    dataset, batch_size=2, shuffle=shuffle, last_batch=last_batch,
+                    batchify_fn=batchify_fn, num_workers=num_workers)
+                for batch in dataloader:
+                    mx.nd.waitall()
+                    pass
+
+                batchify_fn = Tuple(Append(), Append())
+                dataloader = mx.gluon.data.DataLoader(
+                    dataset, batch_size=2, shuffle=shuffle, last_batch=last_batch,
+                    batchify_fn=batchify_fn, num_workers=num_workers)
                 for batch in dataloader:
                     mx.nd.waitall()
                     pass
