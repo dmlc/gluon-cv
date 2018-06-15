@@ -159,9 +159,17 @@ class COCODetectionMetric(mx.metric.EvalMetric):
             Prediction bounding boxes scores with shape `B, N`.
 
         """
+        def as_numpy(a):
+            """Convert a (list of) mx.NDArray into numpy.ndarray"""
+            if isinstance(a, (list, tuple)):
+                out = [x.asnumpy() if isinstance(x, mx.nd.NDArray) else x for x in a]
+                return np.concatenate(out, axis=0)
+            elif isinstance(a, mx.nd.NDArray):
+                a = a.asnumpy()
+            return a
+
         for pred_bbox, pred_label, pred_score in zip(
-                *[x.asnumpy() if isinstance(x, mx.nd.NDArray) else x
-                  for x in [pred_bboxes, pred_labels, pred_scores]]):
+                *[asnumpy(x) for x in [pred_bboxes, pred_labels, pred_scores]]):
             valid_pred = np.where(pred_label.flat >= 0)[0]
             pred_bbox = pred_bbox[valid_pred, :].astype(np.float)
             pred_label = pred_label.flat[valid_pred].astype(int)
