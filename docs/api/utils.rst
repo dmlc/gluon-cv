@@ -6,37 +6,70 @@ gluoncv.utils
 We implemented a broad range of utility functions which cover visualization, file handler, download and training helpers.
 
 .. currentmodule:: gluoncv.utils
+
+Visualization
+-------------
+
+.. currentmodule:: gluoncv.utils.viz
+
+.. autosummary::
+    :nosignatures:
+
+    plot_image
+
+    get_color_pallete
+
+    plot_bbox
+
+Miscellaneous
+-------------
+
+.. currentmodule:: gluoncv.utils
+
+.. autosummary::
+    :nosignatures:
+
+    download
+
+    makedirs
+
+    random.random
+
+Training Helpers
+----------------
+
+.. currentmodule:: gluoncv.utils
+
+.. autosummary::
+    :nosignatures:
+
+    PolyLRScheduler
+
+    set_lr_mult
+
+Bounding Box Utils
+------------------
+
+.. currentmodule:: gluoncv.utils
+
+.. autosummary::
+    :nosignatures:
+
+    bbox_iou
+
+
+API Reference
+-------------
+
 .. automodule:: gluoncv.utils
-
-:hidden:`Visualization`
-~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Image Visualization
----------------------
-.. autofunction:: gluoncv.utils.viz.plot_image
-
-.. autofunction:: gluoncv.utils.viz.get_color_pallete
-
-Bounding Box Visualization
-----------------------------
-.. autofunction:: gluoncv.utils.viz.plot_bbox
-
-:hidden:`Miscellaneous`
-~~~~~~~~~~~~~~~~~~~~~~~~~
-.. autofunction:: gluoncv.utils.download
-
-.. autofunction:: gluoncv.utils.makedirs
-
-.. automodule:: gluoncv.utils.random
     :members:
+    :imported-members:
 
-:hidden:`Training Helpers`
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. autoclass:: gluoncv.utils.PolyLRScheduler
+
+.. automodule:: gluoncv.utils.viz
     :members:
+    :imported-members:
 
-.. autofunction:: gluoncv.utils.set_lr_mult
-
-:hidden:`Bounding Box Utils`
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. autofunction:: gluoncv.utils.bbox_iou
+.. automodule:: gluoncv.utils.metrics
+    :members:
+    :imported-members:

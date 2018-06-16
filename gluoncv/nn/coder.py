@@ -249,10 +249,26 @@ class MultiPerClassDecoder(gluon.HybridBlock):
 
 
 class SigmoidClassEncoder(gluon.HybridBlock):
+    """Encode class prediction labels for SigmoidCrossEntropy Loss."""
     def __init__(self, **kwargs):
         super(SigmoidClassEncoder, self).__init__(**kwargs)
 
     def hybrid_forward(self, F, samples):
+        """Encode class prediction labels for SigmoidCrossEntropy Loss.
+
+        Parameters
+        ----------
+        samples : mxnet.nd.NDArray or mxnet.sym.Symbol
+            Sampling results with shape (B, N), 1:pos, 0:ignore, -1:negative
+
+        Returns
+        -------
+        (mxnet.nd.NDArray, mxnet.nd.NDArray)
+            (target, mask)
+            target is the output label with shape (B, N), 1: pos, 0: negative, -1: ignore
+            mask is the mask for label, -1(ignore) labels have mask 0, otherwise mask is 1.
+
+        """
         # notation from samples, 1:pos, 0:ignore, -1:negative
         target = (samples + 1) / 2.
         target = F.where(F.abs(samples) < 1e-5, F.ones_like(target) * -1, target)

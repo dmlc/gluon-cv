@@ -101,7 +101,9 @@ A Quick Example
    api/data.datasets
    api/data.batchify
    api/data.transforms
-   api/models
+   api/model_zoo
+   api/nn
+   api/loss
    api/utils
 
 .. toctree::

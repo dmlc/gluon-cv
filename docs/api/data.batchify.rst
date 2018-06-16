@@ -21,6 +21,6 @@ Batch Loaders
 
 API Reference
 -------------
+
 .. automodule:: gluoncv.data.batchify
    :members:
-   :imported-members:
