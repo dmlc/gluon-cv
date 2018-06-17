@@ -7,8 +7,8 @@ from mxnet import gluon
 from mxnet import autograd
 from ...nn.bbox import BBoxSplit
 from ...nn.coder import SigmoidClassEncoder, NormalizedBoxCenterEncoder
-from ...utils.nn.matcher import CompositeMatcher, BipartiteMatcher, MaximumMatcher
-from ...utils.nn.sampler import QuotaSampler
+from ...nn.matcher import CompositeMatcher, BipartiteMatcher, MaximumMatcher
+from ...nn.sampler import QuotaSampler
 
 
 class RPNTargetGenerator(gluon.Block):

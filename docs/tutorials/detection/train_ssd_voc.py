@@ -138,18 +138,21 @@ plt.show()
 #
 # Because the number of objects varys a lot across images, we also have
 # varying label sizes. As a result, we need to pad those labels to the same size.
-# To deal with this problem, GluonCV provides DetectionDataLoader,
+# To deal with this problem, GluonCV provides :py:class:`gluoncv.data.batchify.Pad`,
 # which handles padding automatically.
 
-from gluoncv.data import DetectionDataLoader
+from gluoncv.data.batchify import Tuple, Stack, Pad
+from mxnet.gluon.data import DataLoader
 
 batch_size = 2  # for tutorial, we use smaller batch-size
 num_workers = 0  # you can make it larger(if your CPU has more cores) to accelerate data loading
 
-train_loader = DetectionDataLoader(train_dataset.transform(train_transform), batch_size, shuffle=True,
-                                   last_batch='rollover', num_workers=num_workers)
-val_loader = DetectionDataLoader(val_dataset.transform(val_transform), batch_size, shuffle=False,
-                                 last_batch='keep', num_workers=num_workers)
+# behavior of batchify_fn: stack images, and pad labels
+batchify_fn = Tuple(Stack(), Pad(pad_val=-1))
+train_loader = DataLoader(train_dataset.transform(train_transform), batch_size, shuffle=True,
+                          batchify_fn=batchify_fn, last_batch='rollover', num_workers=num_workers)
+val_loader = DataLoader(val_dataset.transform(val_transform), batch_size, shuffle=False,
+                        batchify_fn=batchify_fn, last_batch='keep', num_workers=num_workers)
 
 for ib, batch in enumerate(train_loader):
     if ib > 3:
@@ -217,8 +220,9 @@ with autograd.train_mode():
 ##############################################################################
 # If we provide anchors to the training transform, it will compute training targets
 train_transform = presets.ssd.SSDDefaultTrainTransform(width, height, anchors)
-train_loader = DetectionDataLoader(train_dataset.transform(train_transform), batch_size, shuffle=True,
-                                   last_batch='rollover', num_workers=num_workers)
+batchify_fn = Tuple(Stack(), Stack(), Stack())
+train_loader = DataLoader(train_dataset.transform(train_transform), batch_size, shuffle=True,
+                          batchify_fn=batchify_fn, last_batch='rollover', num_workers=num_workers)
 from gluoncv.loss import SSDMultiBoxLoss
 mbox_loss = SSDMultiBoxLoss()
 

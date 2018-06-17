@@ -36,13 +36,13 @@ import gluoncv
 ##############################################################################
 # Fully Convolutional Network
 # ---------------------------
-# 
+#
 # .. image:: https://cdn-images-1.medium.com/max/800/1*wRkj6lsQ5ckExB5BoYkrZg.png
 #     :width: 70%
 #     :align: center
 #
 # (figure credit to `Long et al. <https://arxiv.org/pdf/1411.4038.pdf>`_ )
-# 
+#
 # State-of-the-art approaches of semantic segmentation are typically based on
 # Fully Convolutional Network (FCN) [Long15]_.
 # The key idea of a fully convolutional network is that it is "fully convolutional",
@@ -51,14 +51,14 @@ import gluoncv
 # Base/Encoder network is typically pre-trained on ImageNet, because the features
 # learned from diverse set of images contain rich contextual information, which
 # can be beneficial for semantic segmentation.
-# 
-# 
+#
+#
 
 
 ##############################################################################
 # Model Dilation
 # --------------
-# 
+#
 # The adaption of base network pre-trained on ImageNet leads to loss spatial resolution,
 # because these networks are originally designed for classification task.
 # Following standard implementation in recent works of semantic segmentation,
@@ -68,20 +68,20 @@ import gluoncv
 # :class:`gluoncv.model_zoo.ResNetV1b`).
 # Visualization of dilated/atrous convoution
 # (figure credit to `conv_arithmetic <https://github.com/vdumoulin/conv_arithmetic>`_ ):
-# 
+#
 # .. image:: https://raw.githubusercontent.com/vdumoulin/conv_arithmetic/master/gif/dilation.gif
 #     :width: 40%
 #     :align: center
-# 
+#
 # Loading a dilated ResNet50 is simply:
-# 
+#
 pretrained_net = gluoncv.model_zoo.resnet50_v1b(pretrained=True)
 
 ##############################################################################
 # For convenience, we provide a base model for semantic segmentation, which automatically
 # load the pre-trained dilated ResNet :class:`gluoncv.model_zoo.SegBaseModel`
 # with a convenient method ``base_forward(input)`` to get stage 3 & 4 featuremaps:
-# 
+#
 basemodel = gluoncv.model_zoo.SegBaseModel(nclass=10, aux=False)
 x = mx.nd.random.uniform(shape=(1, 3, 224, 224))
 c3, c4 = basemodel.base_forward(x)
@@ -90,7 +90,7 @@ print('Shapes of c3 & c4 featuremaps are ', c3.shape, c4.shape)
 ##############################################################################
 # FCN Model
 # ---------
-# 
+#
 # We build a fully convolutional "head" on top of the base network,
 # the FCNHead is defined as::
 #
@@ -108,10 +108,10 @@ print('Shapes of c3 & c4 featuremaps are ', c3.shape, c4.shape)
 #                     self.block.add(nn.Dropout(0.1))
 #                     self.block.add(nn.Conv2D(in_channels=inter_channels, channels=channels,
 #                                              kernel_size=1))
-# 
+#
 #     def hybrid_forward(self, F, x):
 #         return self.block(x)
-# 
+#
 # FCN model is provided in :class:`gluoncv.model_zoo.FCN`. To get
 # FCN model using ResNet50 base network for Pascal VOC dataset:
 model = gluoncv.model_zoo.get_fcn(dataset='pascal_voc', backbone='resnet50', pretrained=False)
@@ -120,7 +120,7 @@ print(model)
 ##############################################################################
 # Dataset and Data Augmentation
 # -----------------------------
-# 
+#
 # image transform for color normalization
 from mxnet.gluon.data.vision import transforms
 input_transform = transforms.Compose([
@@ -141,7 +141,7 @@ train_data = gluon.data.DataLoader(
     num_workers=batch_size)
 
 ##############################################################################
-# For data augmentation, 
+# For data augmentation,
 # we follow the standard data augmentation routine to transform the input image
 # and the ground truth label map synchronously. (*Note that "nearest"
 # mode upsample are applied to the label maps to avoid messing up the boundaries.*)
@@ -182,26 +182,26 @@ plt.show()
 ##############################################################################
 # Training Details
 # ----------------
-# 
+#
 # - Training Losses:
-#     
+#
 #     We apply a standard per-pixel Softmax Cross Entropy Loss to train FCN. For Pascal
 #     VOC dataset, we ignore the loss from boundary class (number 22).
 #     Additionally, an Auxiliary Loss as in PSPNet [Zhao17]_ at Stage 3 can be enabled when
 #     training with command ``--aux``. This will create an additional FCN "head" after Stage 3.
-# 
+#
 from gluoncv.model_zoo.segbase import SoftmaxCrossEntropyLossWithAux
 criterion = SoftmaxCrossEntropyLossWithAux(aux=True)
 
 ##############################################################################
 # - Learning Rate and Scheduling:
-# 
+#
 #     We use different learning rate for FCN "head" and the base network. For the FCN "head",
 #     we use :math:`10\times` base learning rate, because those layers are learned from scratch.
 #     We use a poly-like learning rate scheduler for FCN training, provided in :class:`gluoncv.utils.PolyLRScheduler`.
 #     The learning rate is given by :math:`lr = baselr \times (1-iter)^{power}`
-# 
-lr_scheduler = gluoncv.utils.PolyLRScheduler(0.001, niters=len(train_data), 
+#
+lr_scheduler = gluoncv.utils.PolyLRScheduler(0.001, niters=len(train_data),
                                                  nepochs=50)
 
 ##############################################################################
@@ -237,22 +237,22 @@ for i, (data, target) in enumerate(train_data):
     optimizer.step(batch_size)
     for loss in losses:
         train_loss += loss.asnumpy()[0] / len(losses)
-    print('Epoch %d, training loss %.3f'%(epoch, train_loss/(i+1)))
-    # just demo for 20 iters
-    if i > 10:
+    print('Epoch %d, batch %d, training loss %.3f'%(epoch, i, train_loss/(i+1)))
+    # just demo for 2 iters
+    if i >= 2:
         break
 
 
 ##############################################################################
 # You can `Start Training Now`_.
-# 
+#
 # References
 # ----------
-# 
+#
 # .. [Long15] Long, Jonathan, Evan Shelhamer, and Trevor Darrell. \
 #     "Fully convolutional networks for semantic segmentation." \
 #     Proceedings of the IEEE conference on computer vision and pattern recognition. 2015.
-# 
+#
 # .. [Zhao17] Zhao, Hengshuang, Jianping Shi, Xiaojuan Qi, Xiaogang Wang, and Jiaya Jia. \
 #     "Pyramid scene parsing network." IEEE Conf. on Computer Vision and Pattern Recognition (CVPR). 2017.
-# 
+#

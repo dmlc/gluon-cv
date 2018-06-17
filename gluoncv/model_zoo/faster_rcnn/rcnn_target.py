@@ -4,7 +4,7 @@ from __future__ import absolute_import
 from mxnet import gluon
 from mxnet import autograd
 from ...nn.coder import MultiClassEncoder, NormalizedPerClassBoxCenterEncoder
-from ...utils.nn.matcher import MaximumMatcher
+from ...nn.matcher import MaximumMatcher
 
 
 class RCNNTargetSampler(gluon.HybridBlock):

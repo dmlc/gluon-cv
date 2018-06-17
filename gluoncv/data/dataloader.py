@@ -41,6 +41,10 @@ def default_mp_pad_batchify_fn(data):
 class DetectionDataLoader(DataLoader):
     """Data loader for detection dataset.
 
+    .. deprecated:: 0.2.0
+        :py:class:`DetectionDataLoader` is deprecated,
+        please use :py:class:`mxnet.gluon.data.DataLoader` with
+        batchify functions listed in `gluoncv.data.batchify` directly.
 
     It loads data batches from a dataset and then apply data
     transformations. It's a subclass of :py:class:`mxnet.gluon.data.DataLoader`,

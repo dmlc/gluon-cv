@@ -218,10 +218,12 @@ def validate(net, val_data, ctx, eval_metric):
             # clip to image size
             det_bboxes.append(mx.nd.Custom(bboxes, x, op_type='bbox_clip_to_image').expand_dims(0))
             # rescale to original resolution
-            det_bboxes[-1] *= im_scale.reshape((-1)).asscalar()
+            im_scale = im_scale.reshape((-1)).asscalar()
+            det_bboxes[-1] *= im_scale
             # split ground truths
             gt_ids.append(y.slice_axis(axis=-1, begin=4, end=5))
             gt_bboxes.append(y.slice_axis(axis=-1, begin=0, end=4))
+            gt_bboxes[-1] *= im_scale
             gt_difficults.append(y.slice_axis(axis=-1, begin=5, end=6) if y.shape[-1] > 5 else None)
 
         # update metric
