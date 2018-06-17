@@ -220,6 +220,7 @@ with autograd.train_mode():
 ##############################################################################
 # If we provide anchors to the training transform, it will compute training targets
 train_transform = presets.ssd.SSDDefaultTrainTransform(width, height, anchors)
+batchify_fn = Tuple(Stack(), Stack(), Stack())
 train_loader = DataLoader(train_dataset.transform(train_transform), batch_size, shuffle=True,
                           batchify_fn=batchify_fn, last_batch='rollover', num_workers=num_workers)
 from gluoncv.loss import SSDMultiBoxLoss
