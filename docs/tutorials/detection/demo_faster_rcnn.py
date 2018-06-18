@@ -7,7 +7,6 @@ First let's import some necessary libraries:
 """
 
 from matplotlib import pyplot as plt
-from mxnet import image
 import gluoncv
 from gluoncv import model_zoo, data, utils
 
