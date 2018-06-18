@@ -225,7 +225,7 @@ def resnet18_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
     model = ResNetV1b(BasicBlockV1b, [2, 2, 2, 2], **kwargs)
     if pretrained:
         from .model_store import get_model_file
-        model.load_params(get_model_file('resnet%d_v%d'%(18, 0),
+        model.load_params(get_model_file('resnet%d_v%db'%(18, 1),
                                          root=root), ctx=ctx)
     return model
 
@@ -249,7 +249,7 @@ def resnet34_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
     model = ResNetV1b(BasicBlockV1b, [3, 4, 6, 3], **kwargs)
     if pretrained:
         from .model_store import get_model_file
-        model.load_params(get_model_file('resnet%d_v%d'%(34, 0),
+        model.load_params(get_model_file('resnet%d_v%db'%(34, 1),
                                          root=root), ctx=ctx)
     return model
 
@@ -273,7 +273,7 @@ def resnet50_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
     model = ResNetV1b(BottleneckV1b, [3, 4, 6, 3], **kwargs)
     if pretrained:
         from .model_store import get_model_file
-        model.load_params(get_model_file('resnet%d_v%d'%(50, 0),
+        model.load_params(get_model_file('resnet%d_v%db'%(50, 1),
                                          root=root), ctx=ctx)
     return model
 
@@ -297,7 +297,7 @@ def resnet101_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
     model = ResNetV1b(BottleneckV1b, [3, 4, 23, 3], **kwargs)
     if pretrained:
         from .model_store import get_model_file
-        model.load_params(get_model_file('resnet%d_v%d'%(101, 0),
+        model.load_params(get_model_file('resnet%d_v%db'%(101, 1),
                                          root=root), ctx=ctx)
     return model
 
@@ -321,6 +321,6 @@ def resnet152_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
     model = ResNetV1b(BottleneckV1b, [3, 8, 36, 3], **kwargs)
     if pretrained:
         from .model_store import get_model_file
-        model.load_params(get_model_file('resnet%d_v%d'%(152, 0),
+        model.load_params(get_model_file('resnet%d_v%db'%(152, 1),
                                          root=root), ctx=ctx)
     return model
