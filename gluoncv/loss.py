@@ -1,6 +1,5 @@
 # pylint: disable=arguments-differ
-"""Custom losses for object detection.
-Losses are used to penalize incorrect classification and inaccurate box regression.
+"""Custom losses.
 Losses are subclasses of gluon.loss.Loss which is a HybridBlock actually.
 """
 from __future__ import absolute_import

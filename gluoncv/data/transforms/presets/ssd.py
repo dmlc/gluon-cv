@@ -103,6 +103,7 @@ class SSDDefaultTrainTransform(object):
             iou_thresh=iou_thresh, stds=box_norm, negative_mining_ratio=-1, **kwargs)
 
     def __call__(self, src, label):
+        """Apply transform to training image/label."""
         # random color jittering
         img = experimental.image.random_color_distort(src)
 
@@ -135,7 +136,7 @@ class SSDDefaultTrainTransform(object):
         img = mx.nd.image.normalize(img, mean=self._mean, std=self._std)
 
         if self._anchors is None:
-            return img, bbox.astype('float32')
+            return img, bbox.astype(img.dtype)
 
         # generate training target so cpu workers can help reduce the workload on gpu
         gt_bboxes = mx.nd.array(bbox[np.newaxis, :, :4])
@@ -167,6 +168,7 @@ class SSDDefaultValTransform(object):
         self._std = std
 
     def __call__(self, src, label):
+        """Apply transform to validation image/label."""
         # resize
         h, w, _ = src.shape
         img = timage.imresize(src, self._width, self._height)
@@ -174,4 +176,4 @@ class SSDDefaultValTransform(object):
 
         img = mx.nd.image.to_tensor(img)
         img = mx.nd.image.normalize(img, mean=self._mean, std=self._std)
-        return img, bbox.astype('float32')
+        return img, bbox.astype(img.dtype)

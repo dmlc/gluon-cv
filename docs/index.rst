@@ -23,7 +23,7 @@ Otherwise, please refer to our introductory deep learning course
 
 .. note::
 
-   The source codes are available at `Github <https://github.com/dmlc/gluon-cv>`_. 
+   The source codes are available at `Github <https://github.com/dmlc/gluon-cv>`_.
    This project is at an early stage. Please expect frequent updates.
    We welcome feedback and contributions.
 
@@ -98,9 +98,12 @@ A Quick Example
    :caption: API Reference
 
 
-   api/datasets
-   api/transforms
-   api/models
+   api/data.datasets
+   api/data.batchify
+   api/data.transforms
+   api/model_zoo
+   api/nn
+   api/loss
    api/utils
 
 .. toctree::
