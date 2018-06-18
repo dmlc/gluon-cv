@@ -184,11 +184,11 @@ def train(ctx):
                 lam = 1
 
             data_ori, label_ori = batch_fn(batch, ctx)
-            data = [lam*X + (1-lam)*nd.random.shuffle(X) for X in data_ori]
+            data = [lam*X + (1-lam)*X[::-1] for X in data_ori]
             label = []
             for Y in label_ori:
                 y1 = label_transform(Y, classes)
-                y2 = label_transform(nd.random.shuffle(Y), classes)
+                y2 = label_transform(Y[::-1], classes)
                 label.append(lam*y1 + (1-lam)*y2)
 
             with ag.record():

@@ -33,8 +33,6 @@ opt = parser.parse_args()
 batch_size = opt.batch_size
 classes = 1000
 
-# import pdb; pdb.set_trace()
-
 num_gpus = opt.num_gpus
 batch_size *= num_gpus
 ctx = [mx.gpu(i) for i in range(num_gpus)] if num_gpus > 0 else [mx.cpu()]
@@ -77,7 +75,6 @@ def test(ctx, val_data, mode='image'):
         else:
             data = gluon.utils.split_and_load(batch.data[0], ctx_list=ctx, batch_axis=0)
             label = gluon.utils.split_and_load(batch.label[0], ctx_list=ctx, batch_axis=0)
-        # import pdb; pdb.set_trace()
         outputs = [net(X.astype(opt.dtype, copy=False)) for X in data]
         acc_top1.update(label, outputs)
         acc_top5.update(label, outputs)
