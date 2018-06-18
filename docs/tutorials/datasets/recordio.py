@@ -97,8 +97,8 @@ from mxnet.io import ImageRecordIter
 # You need to specify ``root`` for ImageNet if you extracted the images into
 # a different folder
 train_data = ImageRecordIter(
-    path_imgrec = '~/.mxnet/datasets/imagenet/train.rec',
-    path_imgidx = '~/.mxnet/datasets/imagenet/train.idx',
+    path_imgrec = '~/.mxnet/datasets/imagenet/rec/train.rec',
+    path_imgidx = '~/.mxnet/datasets/imagenet/rec/train.idx',
     data_shape  = (3, 224, 224),
     batch_size  = 32,
     shuffle     = True
@@ -113,8 +113,8 @@ for batch in train_data:
 # Plot some validation images
 from gluoncv.utils import viz
 val_data = ImageRecordIter(
-    path_imgrec = '~/.mxnet/datasets/imagenet/val.rec',
-    path_imgidx = '~/.mxnet/datasets/imagenet/val.idx',
+    path_imgrec = '~/.mxnet/datasets/imagenet/rec/val.rec',
+    path_imgidx = '~/.mxnet/datasets/imagenet/rec/val.idx',
     data_shape  = (3, 224, 224),
     batch_size  = 32,
     shuffle     = False

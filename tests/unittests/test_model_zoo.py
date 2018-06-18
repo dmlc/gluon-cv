@@ -26,8 +26,6 @@ import numpy as np
 import gluoncv as gcv
 from common import try_gpu, with_cpu
 
-from gluoncv.utils import download, makedirs
-
 @with_cpu(0)
 def _test_model_list(model_list, ctx, x, **kwargs):
     for model in model_list:
@@ -51,14 +49,6 @@ def _test_model_list(model_list, ctx, x, **kwargs):
             mx.nd.waitall()
 
 def test_classification_models():
-    download('https://raw.githubusercontent.com/hetong007/gluon-cv/temp_files/temp_folder/train.idx',
-             '~/.mxnet/datasets/imagenet/train.idx')
-    download('https://raw.githubusercontent.com/hetong007/gluon-cv/temp_files/temp_folder/train.rec',
-             '~/.mxnet/datasets/imagenet/train.rec')
-    download('https://raw.githubusercontent.com/hetong007/gluon-cv/temp_files/temp_folder/val.idx',
-             '~/.mxnet/datasets/imagenet/val.idx')
-    download('https://raw.githubusercontent.com/hetong007/gluon-cv/temp_files/temp_folder/val.rec',
-             '~/.mxnet/datasets/imagenet/val.rec')
     ctx = mx.context.current_context()
     x = mx.random.uniform(shape=(2, 3, 32, 32), ctx=ctx)
     cifar_models = [
