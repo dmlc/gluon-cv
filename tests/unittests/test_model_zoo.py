@@ -26,7 +26,7 @@ import numpy as np
 import gluoncv as gcv
 from common import try_gpu, with_cpu
 
-from gluoncv.utils import download
+from gluoncv.utils import download, makedirs
 
 @with_cpu(0)
 def _test_model_list(model_list, ctx, x, **kwargs):
@@ -51,6 +51,7 @@ def _test_model_list(model_list, ctx, x, **kwargs):
             mx.nd.waitall()
 
 def test_classification_models():
+    makedirs('~/.mxnet/datasets/imagenet/rec')
     download('https://raw.githubusercontent.com/hetong007/gluon-cv/temp_files/temp_folder/train.idx',
              '~/.mxnet/datasets/imagenet/rec/train.idx')
     download('https://raw.githubusercontent.com/hetong007/gluon-cv/temp_files/temp_folder/train.rec',
