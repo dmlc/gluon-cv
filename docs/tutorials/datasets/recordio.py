@@ -105,7 +105,7 @@ train_data = ImageRecordIter(
 )
 
 #########################################################################
-for batch in enumerate(train_data):
+for batch in train_data:
     print(batch.data[0].shape, batch.label[0].shape)
     break
 
@@ -119,7 +119,7 @@ val_data = ImageRecordIter(
     batch_size  = 32,
     shuffle     = False
 )
-for batch in enumerate(val_data):
+for batch in val_data:
     vis.plot_image(batch.data[0][12])
     vis.plot_image(batch.data[0][21])
     break
