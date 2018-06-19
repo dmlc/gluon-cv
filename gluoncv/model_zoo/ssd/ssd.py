@@ -140,7 +140,7 @@ class SSD(HybridBlock):
             self.bbox_decoder = NormalizedBoxCenterDecoder(stds)
             self.cls_decoder = MultiPerClassDecoder(self.num_classes, thresh=0.01)
 
-    def set_nms(self, nms_thresh=0, nms_topk=400, post_nms=100):
+    def set_nms(self, nms_thresh=0.45, nms_topk=400, post_nms=100):
         """Set non-maximum suppression parameters.
 
         Parameters
@@ -160,6 +160,7 @@ class SSD(HybridBlock):
         None
 
         """
+        self._clear_cached_op()
         self.nms_thresh = nms_thresh
         self.nms_topk = nms_topk
         self.post_nms = post_nms
