@@ -100,6 +100,7 @@ class FasterRCNNDefaultTrainTransform(object):
         self._max_size = max_size
         self._mean = mean
         self._std = std
+        self._anchors = None
         if net is None:
             return
 

@@ -239,7 +239,8 @@ for i, (data, target) in enumerate(train_data):
         train_loss += loss.asnumpy()[0] / len(losses)
     print('Epoch %d, batch %d, training loss %.3f'%(epoch, i, train_loss/(i+1)))
     # just demo for 2 iters
-    if i >= 2:
+    if i > 1:
+        print('Terminated for this demo...')
         break
 
 

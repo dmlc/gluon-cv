@@ -124,6 +124,7 @@ class RCNN(gluon.HybridBlock):
         None
 
         """
+        self._clear_cached_op()
         self.nms_thresh = nms_thresh
         self.nms_topk = nms_topk
         self.post_nms = post_nms
