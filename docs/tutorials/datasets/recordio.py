@@ -93,6 +93,17 @@ performs randomized resizing and cropping.
 """
 
 from mxnet.io import ImageRecordIter
+from gluoncv.utils import download, makedirs
+
+makedirs('~/.mxnet/datasets/imagenet/rec/')
+download('https://raw.githubusercontent.com/hetong007/gluon-cv/temp_files/temp_folder/train.idx',
+         '~/.mxnet/datasets/imagenet/rec/train.idx')
+download('https://raw.githubusercontent.com/hetong007/gluon-cv/temp_files/temp_folder/train.rec',
+         '~/.mxnet/datasets/imagenet/rec/train.rec')
+download('https://raw.githubusercontent.com/hetong007/gluon-cv/temp_files/temp_folder/val.idx',
+         '~/.mxnet/datasets/imagenet/rec/val.idx')
+download('https://raw.githubusercontent.com/hetong007/gluon-cv/temp_files/temp_folder/val.rec',
+         '~/.mxnet/datasets/imagenet/rec/val.rec')
 
 # You need to specify ``root`` for ImageNet if you extracted the images into
 # a different folder
