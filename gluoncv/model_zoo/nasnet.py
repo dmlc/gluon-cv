@@ -45,7 +45,7 @@ class AvgPoolPad(HybridBlock):
     def __init__(self, stride=2, padding=1):
         super(AvgPoolPad, self).__init__()
         # There's no 'count_include_pad' parameter, which makes it different
-        self.pool = nn.AvgPool2D(3, strides=stride, padding=padding)
+        self.pool = nn.AvgPool2D(3, strides=stride, padding=padding, count_include_pad=False)
 
     def hybrid_forward(self, F, x):
         x = F.pad(x, pad_width=(0, 0, 0, 0, 1, 0, 1, 0),
@@ -150,10 +150,10 @@ class CellStem0(HybridBlock):
         self.comb_iter_1_left = nn.MaxPool2D(3, strides=2, padding=1)
         self.comb_iter_1_right = BranchSeparablesStem(stem_filters, num_filters, 7, 2, 3)
 
-        self.comb_iter_2_left = nn.AvgPool2D(3, strides=2, padding=1)
+        self.comb_iter_2_left = nn.AvgPool2D(3, strides=2, padding=1, count_include_pad=False)
         self.comb_iter_2_right = BranchSeparablesStem(stem_filters, num_filters, 5, 2, 2)
 
-        self.comb_iter_3_right = nn.AvgPool2D(3, strides=1, padding=1)
+        self.comb_iter_3_right = nn.AvgPool2D(3, strides=1, padding=1, count_include_pad=False)
 
         self.comb_iter_4_left = BranchSeparables(num_filters, num_filters, 3, 1, 1)
         self.comb_iter_4_right = nn.MaxPool2D(3, strides=2, padding=1)
@@ -195,12 +195,12 @@ class CellStem1(HybridBlock):
         self.conv_1x1.add(nn.BatchNorm(momentum=0.1, epsilon=0.001))
 
         self.path_1 = nn.HybridSequential(prefix='')
-        self.path_1.add(nn.AvgPool2D(1, strides=2))
+        self.path_1.add(nn.AvgPool2D(1, strides=2, count_include_pad=False))
         self.path_1.add(nn.Conv2D(num_filters//2, 1, strides=1, use_bias=False))
 
         self.path_2 = nn.HybridSequential(prefix='')
         # No nn.ZeroPad2D in gluon
-        self.path_2.add(nn.AvgPool2D(1, strides=2))
+        self.path_2.add(nn.AvgPool2D(1, strides=2, count_include_pad=False))
         self.path_2.add(nn.Conv2D(num_filters//2, 1, strides=1, use_bias=False))
 
         self.final_path_bn = nn.BatchNorm(momentum=0.1, epsilon=0.001)
@@ -211,10 +211,10 @@ class CellStem1(HybridBlock):
         self.comb_iter_1_left = nn.MaxPool2D(3, strides=2, padding=1)
         self.comb_iter_1_right = BranchSeparables(num_filters, num_filters, 7, 2, 3)
 
-        self.comb_iter_2_left = nn.AvgPool2D(3, strides=2, padding=1)
+        self.comb_iter_2_left = nn.AvgPool2D(3, strides=2, padding=1, count_include_pad=False)
         self.comb_iter_2_right = BranchSeparables(num_filters, num_filters, 5, 2, 2)
 
-        self.comb_iter_3_right = nn.AvgPool2D(3, strides=1, padding=1)
+        self.comb_iter_3_right = nn.AvgPool2D(3, strides=1, padding=1, count_include_pad=False)
 
         self.comb_iter_4_left = BranchSeparables(num_filters, num_filters, 3, 1, 1)
         self.comb_iter_4_right = nn.MaxPool2D(3, strides=2, padding=1)
@@ -265,12 +265,12 @@ class FirstCell(HybridBlock):
         self.conv_1x1.add(nn.BatchNorm(momentum=0.1, epsilon=0.001))
 
         self.path_1 = nn.HybridSequential(prefix='')
-        self.path_1.add(nn.AvgPool2D(1, strides=2))
+        self.path_1.add(nn.AvgPool2D(1, strides=2, count_include_pad=False))
         self.path_1.add(nn.Conv2D(out_channels_left, 1, strides=1, use_bias=False))
 
         self.path_2 = nn.HybridSequential(prefix='')
         # No nn.ZeroPad2D in gluon
-        self.path_2.add(nn.AvgPool2D(1, strides=2))
+        self.path_2.add(nn.AvgPool2D(1, strides=2, count_include_pad=False))
         self.path_2.add(nn.Conv2D(out_channels_left, 1, strides=1, use_bias=False))
 
         self.final_path_bn = nn.BatchNorm(momentum=0.1, epsilon=0.001)
@@ -281,10 +281,10 @@ class FirstCell(HybridBlock):
         self.comb_iter_1_left = BranchSeparables(out_channels_right, out_channels_right, 5, 1, 2)
         self.comb_iter_1_right = BranchSeparables(out_channels_right, out_channels_right, 3, 1, 1)
 
-        self.comb_iter_2_left = nn.AvgPool2D(3, strides=1, padding=1)
+        self.comb_iter_2_left = nn.AvgPool2D(3, strides=1, padding=1, count_include_pad=False)
 
-        self.comb_iter_3_left = nn.AvgPool2D(3, strides=1, padding=1)
-        self.comb_iter_3_right = nn.AvgPool2D(3, strides=1, padding=1)
+        self.comb_iter_3_left = nn.AvgPool2D(3, strides=1, padding=1, count_include_pad=False)
+        self.comb_iter_3_right = nn.AvgPool2D(3, strides=1, padding=1, count_include_pad=False)
 
         self.comb_iter_4_left = BranchSeparables(out_channels_right, out_channels_right, 3, 1, 1)
 
@@ -344,10 +344,10 @@ class NormalCell(HybridBlock):
         self.comb_iter_1_left = BranchSeparables(out_channels_left, out_channels_left, 5, 1, 2)
         self.comb_iter_1_right = BranchSeparables(out_channels_left, out_channels_left, 3, 1, 1)
 
-        self.comb_iter_2_left = nn.AvgPool2D(3, strides=1, padding=1)
+        self.comb_iter_2_left = nn.AvgPool2D(3, strides=1, padding=1, count_include_pad=False)
 
-        self.comb_iter_3_left = nn.AvgPool2D(3, strides=1, padding=1)
-        self.comb_iter_3_right = nn.AvgPool2D(3, strides=1, padding=1)
+        self.comb_iter_3_left = nn.AvgPool2D(3, strides=1, padding=1, count_include_pad=False)
+        self.comb_iter_3_right = nn.AvgPool2D(3, strides=1, padding=1, count_include_pad=False)
 
         self.comb_iter_4_left = BranchSeparables(out_channels_right, out_channels_right, 3, 1, 1)
 
@@ -406,7 +406,7 @@ class ReductionCell0(HybridBlock):
         self.comb_iter_2_right = BranchSeparablesReduction(out_channels_right, out_channels_right,
                                                            5, 2, 2)
 
-        self.comb_iter_3_right = nn.AvgPool2D(3, strides=1, padding=1)
+        self.comb_iter_3_right = nn.AvgPool2D(3, strides=1, padding=1, count_include_pad=False)
 
         self.comb_iter_4_left = BranchSeparablesReduction(out_channels_right, out_channels_right,
                                                           3, 1, 1)
@@ -461,10 +461,10 @@ class ReductionCell1(HybridBlock):
         self.comb_iter_1_left = nn.MaxPool2D(3, strides=2, padding=1)
         self.comb_iter_1_right = BranchSeparables(out_channels_right, out_channels_right, 7, 2, 3)
 
-        self.comb_iter_2_left = nn.AvgPool2D(3, strides=2, padding=1)
+        self.comb_iter_2_left = nn.AvgPool2D(3, strides=2, padding=1, count_include_pad=False)
         self.comb_iter_2_right = BranchSeparables(out_channels_right, out_channels_right, 5, 2, 2)
 
-        self.comb_iter_3_right = nn.AvgPool2D(3, strides=1, padding=1)
+        self.comb_iter_3_right = nn.AvgPool2D(3, strides=1, padding=1, count_include_pad=False)
 
         self.comb_iter_4_left = BranchSeparables(out_channels_right, out_channels_right, 3, 1, 1)
         self.comb_iter_4_right = nn.MaxPool2D(3, strides=2, padding=1)
