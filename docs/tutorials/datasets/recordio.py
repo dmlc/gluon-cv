@@ -92,27 +92,16 @@ directly. Here is an example that randomly reads 128 images each time and
 performs randomized resizing and cropping.
 """
 
-from mxnet.io import ImageRecordIter
 import os
-'''
-from gluoncv.utils import download, makedirs
+from mxnet.io import ImageRecordIter
 
-makedirs('~/.mxnet/datasets/imagenet/rec/')
-download('https://raw.githubusercontent.com/hetong007/gluon-cv/temp_files/temp_folder/train.idx',
-         '~/.mxnet/datasets/imagenet/rec/train.idx')
-download('https://raw.githubusercontent.com/hetong007/gluon-cv/temp_files/temp_folder/train.rec',
-         '~/.mxnet/datasets/imagenet/rec/train.rec')
-download('https://raw.githubusercontent.com/hetong007/gluon-cv/temp_files/temp_folder/val.idx',
-         '~/.mxnet/datasets/imagenet/rec/val.idx')
-download('https://raw.githubusercontent.com/hetong007/gluon-cv/temp_files/temp_folder/val.rec',
-         '~/.mxnet/datasets/imagenet/rec/val.rec')
-'''
+rec_path = os.path.expanduser('~/.mxnet/datasets/imagenet/rec/')
 
 # You need to specify ``root`` for ImageNet if you extracted the images into
 # a different folder
 train_data = ImageRecordIter(
-    path_imgrec = os.path.expanduser('~/.mxnet/datasets/imagenet/rec/train.rec'),
-    path_imgidx = os.path.expanduser('~/.mxnet/datasets/imagenet/rec/train.idx'),
+    path_imgrec = os.path.join(rec_path, 'train.rec'),
+    path_imgidx = os.path.join(rec_path, 'train.idx'),
     data_shape  = (3, 224, 224),
     batch_size  = 32,
     shuffle     = True
@@ -127,8 +116,8 @@ for batch in train_data:
 # Plot some validation images
 from gluoncv.utils import viz
 val_data = ImageRecordIter(
-    path_imgrec = os.path.expanduser('~/.mxnet/datasets/imagenet/rec/val.rec'),
-    path_imgidx = os.path.expanduser('~/.mxnet/datasets/imagenet/rec/val.idx'),
+    path_imgrec = os.path.join(rec_path, 'val.rec'),
+    path_imgidx = os.path.join(rec_path, 'val.idx'),
     data_shape  = (3, 224, 224),
     batch_size  = 32,
     shuffle     = False
