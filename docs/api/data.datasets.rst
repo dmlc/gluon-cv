@@ -21,21 +21,45 @@ gluoncv.data
 `ImageNet <http://www.image-net.org/>`_
 ---------------------------------------
 
-.. autoclass:: gluoncv.data.ImageNet
+.. autosummary::
+    :nosignatures:
+
+    gluoncv.data.ImageNet
 
 `Pascal VOC <http://host.robots.ox.ac.uk/pascal/VOC/>`_
 -------------------------------------------------------
 
-.. autoclass:: gluoncv.data.VOCDetection
-.. autoclass:: gluoncv.data.VOCSegmentation
-.. autoclass:: gluoncv.data.VOCAugSegmentation
+.. autosummary::
+    :nosignatures:
+
+    gluoncv.data.VOCDetection
+    gluoncv.data.VOCSegmentation
+    gluoncv.data.VOCAugSegmentation
+
+`COCO <http://cocodataset.org>`_
+--------------------------------
+
+.. autosummary::
+    :nosignatures:
+
+    gluoncv.data.COCODetection
 
 
 `ADE20K <http://groups.csail.mit.edu/vision/datasets/ADE20K/>`_
 ---------------------------------------------------------------
 
-.. autoclass:: gluoncv.data.ADE20KSegmentation
+.. autosummary::
+    :nosignatures:
 
-DataLoader
-----------
+    gluoncv.data.ADE20KSegmentation
+
+API Reference
+-------------
+
+.. autoclass:: gluoncv.data.ImageNet
+.. autoclass:: gluoncv.data.VOCDetection
+.. autoclass:: gluoncv.data.VOCSegmentation
+.. autoclass:: gluoncv.data.VOCAugSegmentation
+.. autoclass:: gluoncv.data.COCODetection
+.. autoclass:: gluoncv.data.ADE20KSegmentation
 .. autoclass:: gluoncv.data.DetectionDataLoader

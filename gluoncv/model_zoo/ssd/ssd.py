@@ -14,10 +14,18 @@ from .vgg_atrous import vgg16_atrous_300, vgg16_atrous_512
 # from ...utils import set_lr_mult
 from ...data import VOCDetection
 
-__all__ = ['SSD', 'get_ssd', 'ssd_300_vgg16_atrous_voc', 'ssd_512_vgg16_atrous_voc',
-           'ssd_512_resnet18_v1_voc', 'ssd_512_resnet50_v1_voc',
-           'ssd_512_resnet101_v2_voc', 'ssd_512_resnet152_v2_voc',
-           'ssd_512_mobilenet1_0_voc']
+__all__ = ['SSD', 'get_ssd',
+           'ssd_300_vgg16_atrous_voc',
+           'ssd_300_vgg16_atrous_coco',
+           'ssd_512_vgg16_atrous_voc',
+           'ssd_512_vgg16_atrous_coco',
+           'ssd_512_resnet18_v1_voc',
+           'ssd_512_resnet50_v1_voc',
+           'ssd_512_resnet50_v1_coco',
+           'ssd_512_resnet101_v2_voc',
+           'ssd_512_resnet152_v2_voc',
+           'ssd_512_mobilenet1_0_voc',
+           'ssd_512_mobilenet1_0_coco',]
 
 
 class SSD(HybridBlock):
@@ -65,9 +73,13 @@ class SSD(HybridBlock):
         Std values to be divided/multiplied to box encoded values.
     nms_thresh : float, default is 0.45.
         Non-maximum suppression threshold. You can speficy < 0 or > 1 to disable NMS.
-    nms_topk : int, default is -1
+    nms_topk : int, default is 400
         Apply NMS to top k detection results, use -1 to disable so that every Detection
          result is used in NMS.
+    post_nms : int, default is 100
+        Only return top `post_nms` detection results, the rest is discarded. The number is
+        based on COCO dataset which has maximum 100 objects per image. You can adjust this
+        number if expecting more objects. You can use -1 to return all detections.
     anchor_alloc_size : tuple of int, default is (128, 128)
         For advanced users. Define `anchor_alloc_size` to generate large enough anchor
         maps, which will later saved in parameters. During inference, we support arbitrary
@@ -80,7 +92,7 @@ class SSD(HybridBlock):
     def __init__(self, network, base_size, features, num_filters, sizes, ratios,
                  steps, classes, use_1x1_transition=True, use_bn=True,
                  reduce_ratio=1.0, min_depth=128, global_pool=False, pretrained=False,
-                 stds=(0.1, 0.1, 0.2, 0.2), nms_thresh=0.45, nms_topk=-1,
+                 stds=(0.1, 0.1, 0.2, 0.2), nms_thresh=0.45, nms_topk=400, post_nms=100,
                  anchor_alloc_size=128, ctx=mx.cpu(), **kwargs):
         super(SSD, self).__init__(**kwargs)
         if network is None:
@@ -101,6 +113,7 @@ class SSD(HybridBlock):
         self.num_classes = len(classes) + 1
         self.nms_thresh = nms_thresh
         self.nms_topk = nms_topk
+        self.post_nms = post_nms
 
         with self.name_scope():
             if network is None:
@@ -127,9 +140,30 @@ class SSD(HybridBlock):
             self.bbox_decoder = NormalizedBoxCenterDecoder(stds)
             self.cls_decoder = MultiPerClassDecoder(self.num_classes, thresh=0.01)
 
-    def set_nms(self, nms_thresh=0, nms_topk=-1):
+    def set_nms(self, nms_thresh=0.45, nms_topk=400, post_nms=100):
+        """Set non-maximum suppression parameters.
+
+        Parameters
+        ----------
+        nms_thresh : float, default is 0.45.
+            Non-maximum suppression threshold. You can speficy < 0 or > 1 to disable NMS.
+        nms_topk : int, default is 400
+            Apply NMS to top k detection results, use -1 to disable so that every Detection
+             result is used in NMS.
+        post_nms : int, default is 100
+            Only return top `post_nms` detection results, the rest is discarded. The number is
+            based on COCO dataset which has maximum 100 objects per image. You can adjust this
+            number if expecting more objects. You can use -1 to return all detections.
+
+        Returns
+        -------
+        None
+
+        """
+        self._clear_cached_op()
         self.nms_thresh = nms_thresh
         self.nms_topk = nms_topk
+        self.post_nms = post_nms
 
     # pylint: disable=arguments-differ
     def hybrid_forward(self, F, x):
@@ -154,12 +188,14 @@ class SSD(HybridBlock):
             score = scores.slice_axis(axis=-1, begin=i, end=i+1)
             # per class results
             per_result = F.concat(*[cls_id, score, bboxes], dim=-1)
-            if self.nms_thresh > 0 and self.nms_thresh < 1:
-                per_result = F.contrib.box_nms(
-                    per_result, overlap_thresh=self.nms_thresh, topk=self.nms_topk,
-                    id_index=0, score_index=1, coord_start=2)
             results.append(per_result)
         result = F.concat(*results, dim=1)
+        if self.nms_thresh > 0 and self.nms_thresh < 1:
+            result = F.contrib.box_nms(
+                result, overlap_thresh=self.nms_thresh, topk=self.nms_topk,
+                id_index=0, score_index=1, coord_start=2, force_suppress=False)
+            if self.post_nms > 0:
+                result = result.slice_axis(axis=1, begin=0, end=self.post_nms)
         ids = F.slice_axis(result, axis=2, begin=0, end=1)
         scores = F.slice_axis(result, axis=2, begin=1, end=2)
         bboxes = F.slice_axis(result, axis=2, begin=2, end=6)
@@ -228,7 +264,7 @@ def get_ssd(name, base_size, features, filters, sizes, ratios, steps, classes,
     return net
 
 def ssd_300_vgg16_atrous_voc(pretrained=False, pretrained_base=True, **kwargs):
-    """SSD architecture with VGG16 atrous 300x300 base network.
+    """SSD architecture with VGG16 atrous 300x300 base network for Pascal VOC.
 
     Parameters
     ----------
@@ -248,6 +284,31 @@ def ssd_300_vgg16_atrous_voc(pretrained=False, pretrained_base=True, **kwargs):
                   ratios=[[1, 2, 0.5]] + [[1, 2, 0.5, 3, 1.0/3]] * 3 + [[1, 2, 0.5]] * 2,
                   steps=[8, 16, 32, 64, 100, 300],
                   classes=classes, dataset='voc', pretrained=pretrained,
+                  pretrained_base=pretrained_base, **kwargs)
+    return net
+
+def ssd_300_vgg16_atrous_coco(pretrained=False, pretrained_base=True, **kwargs):
+    """SSD architecture with VGG16 atrous 300x300 base network for COCO.
+
+    Parameters
+    ----------
+    pretrained : bool, optional, default is False
+        Load pretrained weights.
+    pretrained_base : bool, optional, default is True
+        Load pretrained base network, the extra layers are randomized.
+
+    Returns
+    -------
+    HybridBlock
+        A SSD detection network.
+    """
+    from ...data import COCODetection
+    classes = COCODetection.CLASSES
+    net = get_ssd('vgg16_atrous', 300, features=vgg16_atrous_300, filters=None,
+                  sizes=[21, 45, 99, 153, 207, 261, 315],
+                  ratios=[[1, 2, 0.5]] + [[1, 2, 0.5, 3, 1.0/3]] * 3 + [[1, 2, 0.5]] * 2,
+                  steps=[8, 16, 32, 64, 100, 300],
+                  classes=classes, dataset='coco', pretrained=pretrained,
                   pretrained_base=pretrained_base, **kwargs)
     return net
 
@@ -398,4 +459,81 @@ def ssd_512_mobilenet1_0_voc(pretrained=False, pretrained_base=True, **kwargs):
                    ratios=[[1, 2, 0.5]] + [[1, 2, 0.5, 3, 1.0/3]] * 3 + [[1, 2, 0.5]] * 2,
                    steps=[16, 32, 64, 128, 256, 512],
                    classes=classes, dataset='voc', pretrained=pretrained,
+                   pretrained_base=pretrained_base, **kwargs)
+
+def ssd_512_mobilenet1_0_coco(pretrained=False, pretrained_base=True, **kwargs):
+    """SSD architecture with mobilenet1.0 base networks for COCO.
+
+    Parameters
+    ----------
+    pretrained : bool, optional, default is False
+        Load pretrained weights.
+    pretrained_base : bool, optional, default is True
+        Load pretrained base network, the extra layers are randomized.
+
+    Returns
+    -------
+    HybridBlock
+        A SSD detection network.
+    """
+    from ...data import COCODetection
+    classes = COCODetection.CLASSES
+    return get_ssd('mobilenet1.0', 512,
+                   features=['relu22_fwd', 'relu26_fwd'],
+                   filters=[512, 512, 256, 256],
+                   sizes=[51.2, 102.4, 189.4, 276.4, 363.52, 450.6, 492],
+                   ratios=[[1, 2, 0.5]] + [[1, 2, 0.5, 3, 1.0/3]] * 3 + [[1, 2, 0.5]] * 2,
+                   steps=[16, 32, 64, 128, 256, 512],
+                   classes=classes, dataset='coco', pretrained=pretrained,
+                   pretrained_base=pretrained_base, **kwargs)
+
+def ssd_512_vgg16_atrous_coco(pretrained=False, pretrained_base=True, **kwargs):
+    """SSD architecture with VGG16 atrous layers for COCO.
+
+    Parameters
+    ----------
+    pretrained : bool, optional, default is False
+        Load pretrained weights.
+    pretrained_base : bool, optional, default is True
+        Load pretrained base network, the extra layers are randomized.
+
+    Returns
+    -------
+    HybridBlock
+        A SSD detection network.
+    """
+    from ...data import COCODetection
+    classes = COCODetection.CLASSES
+    return get_ssd('vgg16_atrous', 512, features=vgg16_atrous_512, filters=None,
+                   sizes=[51.2, 76.8, 153.6, 230.4, 307.2, 384.0, 460.8, 537.6],
+                   ratios=[[1, 2, 0.5]] + [[1, 2, 0.5, 3, 1.0/3]] * 4 + [[1, 2, 0.5]] * 2,
+                   steps=[8, 16, 32, 64, 128, 256, 512],
+                   classes=classes, dataset='coco', pretrained=pretrained,
+                   pretrained_base=pretrained_base, **kwargs)
+
+
+def ssd_512_resnet50_v1_coco(pretrained=False, pretrained_base=True, **kwargs):
+    """SSD architecture with ResNet v1 50 layers for COCO.
+
+    Parameters
+    ----------
+    pretrained : bool, optional, default is False
+        Load pretrained weights.
+    pretrained_base : bool, optional, default is True
+        Load pretrained base network, the extra layers are randomized.
+
+    Returns
+    -------
+    HybridBlock
+        A SSD detection network.
+    """
+    from ...data import COCODetection
+    classes = COCODetection.CLASSES
+    return get_ssd('resnet50_v1', 512,
+                   features=['stage3_activation5', 'stage4_activation2'],
+                   filters=[512, 512, 256, 256],
+                   sizes=[51.2, 133.12, 215.04, 296.96, 378.88, 460.8, 542.72],
+                   ratios=[[1, 2, 0.5]] + [[1, 2, 0.5, 3, 1.0/3]] * 3 + [[1, 2, 0.5]] * 2,
+                   steps=[16, 32, 64, 128, 256, 512],
+                   classes=classes, dataset='coco', pretrained=pretrained,
                    pretrained_base=pretrained_base, **kwargs)

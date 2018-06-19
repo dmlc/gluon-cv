@@ -2,7 +2,7 @@
 import os
 
 
-class TrainingHistory():
+class TrainingHistory(object):
     r"""Training History Record and Plot
 
     Parameters

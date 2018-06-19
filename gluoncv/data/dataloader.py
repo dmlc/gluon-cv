@@ -41,6 +41,10 @@ def default_mp_pad_batchify_fn(data):
 class DetectionDataLoader(DataLoader):
     """Data loader for detection dataset.
 
+    .. deprecated:: 0.2.0
+        :py:class:`DetectionDataLoader` is deprecated,
+        please use :py:class:`mxnet.gluon.data.DataLoader` with
+        batchify functions listed in `gluoncv.data.batchify` directly.
 
     It loads data batches from a dataset and then apply data
     transformations. It's a subclass of :py:class:`mxnet.gluon.data.DataLoader`,
@@ -76,7 +80,7 @@ class DetectionDataLoader(DataLoader):
     batchify_fn : callable
         Callback function to allow users to specify how to merge samples
         into a batch.
-        Defaults to :py:meth:`gluonvision.data.dataloader.default_pad_batchify_fn`::
+        Defaults to :py:meth:`gluoncv.data.dataloader.default_pad_batchify_fn`::
             def default_pad_batchify_fn(data):
                 if isinstance(data[0], nd.NDArray):
                     return nd.stack(*data)
@@ -100,6 +104,10 @@ class DetectionDataLoader(DataLoader):
     def __init__(self, dataset, batch_size=None, shuffle=False, sampler=None,
                  last_batch=None, batch_sampler=None, batchify_fn=None,
                  num_workers=0):
+        import warnings
+        warnings.warn('DetectionDataLoader is deprecated. ' +
+                      'Please use mxnet.gluon.data.DataLoader '
+                      'with batchify functions directly.')
         if batchify_fn is None:
             if num_workers > 0:
                 batchify_fn = default_mp_pad_batchify_fn

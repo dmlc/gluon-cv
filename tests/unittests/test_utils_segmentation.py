@@ -28,7 +28,7 @@ def test_segmentation_utils():
     # count for pixAcc and mIoU
     total_inter, total_union, total_correct, total_label = 0, 0, 0, 0
     np_inter, np_union, np_correct, np_label = 0, 0, 0, 0
-    for i in range(1):
+    for i in range(10):
         img, mask = dataset[i]
         # prepare data and make prediction
         img = transform_fn(img)
@@ -36,8 +36,8 @@ def test_segmentation_utils():
         mask = mask.expand_dims(0)
         pred = net.evaluate(img).as_in_context(mx.cpu(0))
         # gcv prediction
-        correct1, labeled1 = batch_pix_accuracy(pred, mask, True)
-        inter1, union1 = batch_intersection_union(pred, mask, dataset.num_class, True)
+        correct1, labeled1 = batch_pix_accuracy(pred, mask)
+        inter1, union1 = batch_intersection_union(pred, mask, dataset.num_class)
         total_correct += correct1
         total_label += labeled1
         total_inter += inter1
@@ -47,10 +47,10 @@ def test_segmentation_utils():
         mIoU = IoU.mean()
 
         # np predicition
-        pred = mx.nd.squeeze(mx.nd.argmax(pred, 1)).asnumpy()
-        mask = mask.squeeze().asnumpy()
+        pred = mx.nd.squeeze(mx.nd.argmax(pred, 1)).asnumpy() + 1
+        mask = mask.squeeze().asnumpy() + 1
         _, correct2, labeled2 = pixelAccuracy(pred, mask)
-        inter2, union2 = intersectionAndUnion(pred, mask, dataset.num_class-1)
+        inter2, union2 = intersectionAndUnion(pred, mask, dataset.num_class)
         np_correct += correct2
         np_label += labeled2
         np_inter += inter2

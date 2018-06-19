@@ -1,6 +1,5 @@
 # pylint: disable=arguments-differ
-"""Custom losses for object detection.
-Losses are used to penalize incorrect classification and inaccurate box regression.
+"""Custom losses.
 Losses are subclasses of gluon.loss.Loss which is a HybridBlock actually.
 """
 from __future__ import absolute_import
@@ -130,8 +129,8 @@ class SSDMultiBoxLoss(gluon.Block):
         num_pos = []
         for cp, bp, ct, bt in zip(*[cls_pred, box_pred, cls_target, box_target]):
             pos_samples = (ct > 0)
-            num_pos.append(pos_samples.sum().asscalar())
-        num_pos_all = sum(num_pos)
+            num_pos.append(pos_samples.sum())
+        num_pos_all = sum([p.asscalar() for p in num_pos])
         if num_pos_all < 1:
             # no positive samples found, return dummy losses
             return nd.zeros((1,)), nd.zeros((1,)), nd.zeros((1,))

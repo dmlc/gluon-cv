@@ -7,7 +7,7 @@ import mxnet.ndarray as F
 from PIL import Image, ImageOps, ImageFilter
 from .base import VisionDataset
 
-__all__ = ['get_segmentation_dataset', 'test_batchify_fn', 'SegmentationDataset']
+__all__ = ['get_segmentation_dataset', 'ms_batchify_fn', 'SegmentationDataset']
 
 def get_segmentation_dataset(name, **kwargs):
     from .pascal_voc.segmentation import VOCSegmentation
@@ -21,22 +21,24 @@ def get_segmentation_dataset(name, **kwargs):
     return datasets[name](**kwargs)
 
 
-def test_batchify_fn(data):
+def ms_batchify_fn(data):
     if isinstance(data[0], (str, mx.nd.NDArray)):
         return list(data)
     elif isinstance(data[0], tuple):
         data = zip(*data)
-        return [test_batchify_fn(i) for i in data]
-    else:
-        data = np.asarray(data)
-        return mx.nd.array(data, dtype=data.dtype)
+        return [ms_batchify_fn(i) for i in data]
+    raise RuntimeError('unknown datatype')
 
 
 class SegmentationDataset(VisionDataset):
     """Segmentation Base Dataset"""
     # pylint: disable=abstract-method
-    def __init__(self, root, base_size=520, crop_size=480):
+    def __init__(self, root, split, mode, transform, base_size=520, crop_size=480):
         super(SegmentationDataset, self).__init__(root)
+        self.root = root
+        self.transform = transform
+        self.split = split
+        self.mode = mode if mode is not None else split
         self.base_size = base_size
         self.crop_size = crop_size
 
@@ -108,3 +110,8 @@ class SegmentationDataset(VisionDataset):
 
     def _mask_transform(self, mask):
         return F.array(np.array(mask), cpu(0)).astype('int32')
+
+    @property
+    def num_class(self):
+        """Number of categories."""
+        return self.NUM_CLASS

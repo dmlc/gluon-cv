@@ -1,11 +1,16 @@
 from __future__ import print_function
 from __future__ import division
 
+import os.path as osp
 import mxnet as mx
 import numpy as np
-
+from mxnet import autograd, gluon
 import gluoncv as gcv
 from gluoncv.data import transforms
+from gluoncv.data import batchify
+from gluoncv.data.batchify import Tuple, Stack, Pad
+from gluoncv.data.transforms.presets import ssd
+from gluoncv.data.transforms.presets import rcnn
 
 def test_bbox_crop():
     bbox = np.array([[10, 20, 200, 500], [150, 200, 400, 300]])
@@ -141,6 +146,72 @@ def test_experimental_image_random_color_distort():
             contrast_high=contrast_high, saturation_low=saturation_low,
             saturation_high=saturation_high, hue_delta=hue_delta)
         np.testing.assert_allclose(out.shape, image.shape)
+
+def test_transforms_presets_ssd():
+    im_fname = gcv.utils.download('https://github.com/dmlc/web-data/blob/master/' +
+                                  'gluoncv/detection/biking.jpg?raw=true', path='biking.jpg')
+    x, orig_img = ssd.load_test(im_fname, short=512)
+    if not osp.isdir(osp.expanduser('~/.mxnet/datasets/voc')):
+        return
+    train_dataset = gcv.data.VOCDetection(splits=((2007, 'trainval'), (2012, 'trainval')))
+    val_dataset = gcv.data.VOCDetection(splits=[(2007, 'test')])
+    width, height = (512, 512)
+    net = gcv.model_zoo.get_model('ssd_512_resnet50_v1_voc', pretrained=False, pretrained_base=False)
+    net.initialize()
+    num_workers = 0
+    batch_size = 4
+    with autograd.train_mode():
+        _, _, anchors = net(mx.nd.zeros((1, 3, height, width)))
+    batchify_fn = Tuple(Stack(), Stack(), Stack())  # stack image, cls_targets, box_targets
+    train_loader = gluon.data.DataLoader(
+        train_dataset.transform(ssd.SSDDefaultTrainTransform(width, height, anchors)),
+        batch_size, True, batchify_fn=batchify_fn, last_batch='rollover', num_workers=num_workers)
+    val_batchify_fn = Tuple(Stack(), Pad(pad_val=-1))
+    val_loader = gluon.data.DataLoader(
+        val_dataset.transform(ssd.SSDDefaultValTransform(width, height)),
+        batch_size, False, batchify_fn=val_batchify_fn, last_batch='keep', num_workers=num_workers)
+    train_loader2 = gluon.data.DataLoader(
+        train_dataset.transform(ssd.SSDDefaultTrainTransform(width, height)),
+        batch_size, True, batchify_fn=val_batchify_fn, last_batch='rollover', num_workers=num_workers)
+
+    for loader in [train_loader, val_loader, train_loader2]:
+        for i, batch in enumerate(loader):
+            if i > 1:
+                break
+            pass
+
+def test_transforms_presets_rcnn():
+    im_fname = gcv.utils.download('https://github.com/dmlc/web-data/blob/master/' +
+                                  'gluoncv/detection/biking.jpg?raw=true', path='biking.jpg')
+    x, orig_img = rcnn.load_test(im_fname, short=600, max_size=1000)
+    if not osp.isdir(osp.expanduser('~/.mxnet/datasets/voc')):
+        return
+    train_dataset = gcv.data.VOCDetection(splits=((2007, 'trainval'), (2012, 'trainval')))
+    val_dataset = gcv.data.VOCDetection(splits=[(2007, 'test')])
+    width, height = (512, 512)
+    net = gcv.model_zoo.get_model('faster_rcnn_resnet50_v2a_voc', pretrained=False, pretrained_base=False)
+    net.initialize()
+    num_workers = 0
+    short, max_size = 600, 1000
+    batch_size = 4
+    train_bfn = batchify.Tuple(*[batchify.Append() for _ in range(5)])
+    train_loader = mx.gluon.data.DataLoader(
+        train_dataset.transform(rcnn.FasterRCNNDefaultTrainTransform(short, max_size, net)),
+        batch_size, True, batchify_fn=train_bfn, last_batch='rollover', num_workers=num_workers)
+    val_bfn = batchify.Tuple(*[batchify.Append() for _ in range(3)])
+    val_loader = mx.gluon.data.DataLoader(
+        val_dataset.transform(rcnn.FasterRCNNDefaultValTransform(short, max_size)),
+        batch_size, False, batchify_fn=val_bfn, last_batch='keep', num_workers=num_workers)
+    train_loader2 = gluon.data.DataLoader(
+        train_dataset.transform(rcnn.FasterRCNNDefaultTrainTransform(short, max_size)),
+        batch_size, True, batchify_fn=batchify.Tuple(*[batchify.Append() for _ in range(2)]),
+        last_batch='rollover', num_workers=num_workers)
+
+    for loader in [train_loader, val_loader, train_loader2]:
+        for i, batch in enumerate(loader):
+            if i > 1:
+                break
+            pass
 
 if __name__ == '__main__':
     import nose

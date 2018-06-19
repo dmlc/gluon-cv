@@ -124,7 +124,7 @@ The following table lists pre-trained models trained on CIFAR10.
 +------------------------------+----------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | CIFAR_WideResNet40_8 [3]_    | 95.9 / 97.3                | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/cifar/cifar_wideresnet40_8.sh>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/cifar/cifar_wideresnet40_8_mixup.sh>`_       | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/cifar/cifar_wideresnet40_8.log>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/cifar/cifar_wideresnet40_8_mixup.log>`_       |
 +------------------------------+----------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| CIFAR_ResNeXt29_16x64d [8]_  | 95.7 / 97.3                | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/cifar/cifar_resnext29_16x64d.sh>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/cifar/cifar_resnext29_16x64d_mixup.sh>`_   | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/cifar/cifar_resnext29_16x64d.log>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/cifar/cifar_resnext29_16x64d_mixup.log>`_   |
+| CIFAR_ResNeXt29_16x64d [8]_  | 96.3 / 97.3                | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/cifar/cifar_resnext29_16x64d.sh>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/cifar/cifar_resnext29_16x64d_mixup.sh>`_   | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/cifar/cifar_resnext29_16x64d.log>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/cifar/cifar_resnext29_16x64d_mixup.log>`_   |
 +------------------------------+----------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 Object Detection
@@ -132,8 +132,6 @@ Object Detection
 
 The following table lists pre-trained models for object detection
 and their performances.
-
-.. https://bit.ly/2qQHLl4
 
 .. hint::
 
@@ -146,25 +144,45 @@ and their performances.
 
   - ``vgg16_atrous`` is the type of base feature extractor network.
 
-  - ``voc`` is the training dataset.
+  - ``voc`` is the training dataset. You can choose ``voc`` or ``coco``, etc.
 
 .. hint::
 
   The training commands work with the following scripts:
 
   - For SSD networks: :download:`Download train_ssd.py<../../scripts/detection/ssd/train_ssd.py>`
-
-+------------------------------------+------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
-| Model                              | mAP  | Training Command                                                                                                                     | Training log                                                                                                                        |
-+====================================+======+======================================================================================================================================+=====================================================================================================================================+
-| ssd_300_vgg16_atrous_voc [5]_      | 77.6 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/ssd_300_vgg16_atrous_voc.sh>`_          | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/ssd_300_vgg16_atrous_voc_train.log>`_           |
-+------------------------------------+------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
-| ssd_512_vgg16_atrous_voc [5]_      | 79.2 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/ssd_512_vgg16_atrous_voc.sh>`_          | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/ssd_512_vgg16_atrous_voc_train.log>`_           |
-+------------------------------------+------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
-| ssd_512_resnet50_v1_voc [5]_       | 80.1 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/ssd_512_resnet50_v1_voc.sh>`_           | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/ssd_512_resnet50_v1_voc_train.log>`_            |
-+------------------------------------+------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
+  - For Faster-RCNN networks: :download:`Download train_faster_rcnn.py<../../scripts/detection/faster_rcnn/train_faster_rcnn.py>`
 
 
+.. https://bit.ly/2JLnI2R
+
++----------------------------------+-------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
+| Model                            | mAP   | Training Command                                                                                                                     | Training log                                                                                                                        |
++==================================+=======+======================================================================================================================================+=====================================================================================================================================+
+| ssd_300_vgg16_atrous_voc         | 77.6  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/detection/ssd_300_vgg16_atrous_voc.sh>`_      | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/detection/ssd_300_vgg16_atrous_voc_train.log>`_       |
++----------------------------------+-------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
+| ssd_512_vgg16_atrous_voc         | 79.2  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/detection/ssd_512_vgg16_atrous_voc.sh>`_      | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/detection/ssd_512_vgg16_atrous_voc_train.log>`_       |
++----------------------------------+-------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
+| ssd_512_resnet50_v1_voc          | 80.1  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluonvision/logs/detection/ssd_512_resnet50_v1_voc.sh>`_       | `log  <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/ssd_512_resnet50_v1_voc_train.log>`_           |
++----------------------------------+-------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
+| ssd_512_mobilenet1.0_voc         | 75.4  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/ssd_512_mobilenet1_0_voc.sh>`_          | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/ssd_512_mobilenet1_0_voc_train.log>`_           |
++----------------------------------+-------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
+| faster_rcnn_resnet50_v2a_voc     | 77.9  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/faster_rcnn_resnet50_v2a_voc.sh>`_      | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/faster_rcnn_resnet50_v2a_voc_train.log>`_       |
++----------------------------------+-------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
+
+.. https://bit.ly/2JM82we
+
++-----------------------------------+----------+------+------+-----------------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------+
+| Model                             | 0.5:0.95 | 0.5  | 0.75 | Training Command                                                                                                                  | Training Log                                                                                                                     |
++===================================+==========+======+======+===================================================================================================================================+==================================================================================================================================+
+| ssd_300_vgg16_atrous_coco         | 25.1     | 42.9 | 25.8 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/ssd_300_vgg16_atrous_coco.sh>`_      | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/ssd_300_vgg16_atrous_coco_train.log>`_       |
++-----------------------------------+----------+------+------+-----------------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------+
+| ssd_512_vgg16_atrous_coco         |          |      |      |                                                                                                                                   |                                                                                                                                  |
++-----------------------------------+----------+------+------+-----------------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------+
+| ssd_512_resnet50_v1_coco          | 30.6     | 50.0 | 32.2 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/ssd_512_resnet50_v1_coco.sh>`_       | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/ssd_512_resnet50_v1_coco_train.log>`_        |
++-----------------------------------+----------+------+------+-----------------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------+
+| faster_rcnn_resnet50_v2a_coco     |          |      |      |                                                                                                                                   |                                                                                                                                  |
++-----------------------------------+----------+------+------+-----------------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------+
 
 Semantic Segmentation
 ~~~~~~~~~~~~~~~~~~~~~
@@ -181,19 +199,26 @@ Table of pre-trained models for semantic segmentation and their performance.
 
   - ``voc`` is the training dataset.
 
+  The test script :download:`Download train.py<../../scripts/segmentation/test.py>` can be used for
+  evaluating the models (VOC results are evaluated using the official server). For example ``fcn_resnet50_ade``::
+
+    python test.py --dataset ade20k --model-zoo fcn_resnet50_ade --eval
+
   The training commands work with the script: :download:`Download train.py<../../scripts/segmentation/train.py>`
 
 
 .. role:: raw-html(raw)
    :format: html
 
-+-------------------+--------------+-----------+-----------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
-| Name              | Method       | mIoU      | Training Command                                                                                                            | Training log                                                                                                        |
-+===================+==============+===========+=============================================================================================================================+=====================================================================================================================+
-| fcn_resnet50_voc  | FCN [6]_     | 69.4_     | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/fcn_resnet50_voc.sh>`_      | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/fcn_resnet50_voc.log>`_      |
-+-------------------+--------------+-----------+-----------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
-| fcn_resnet101_voc | FCN [6]_     | 70.9_     | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/fcn_resnet101_voc.sh>`_     | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/fcn_resnet101_voc.log>`_     |
-+-------------------+--------------+-----------+-----------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
++-------------------+--------------+-----------+-----------+-----------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
+| Name              | Method       | pixAcc    | mIoU      | Command                                                                                                                     | log                                                                                                                 |
++===================+==============+===========+===========+=============================================================================================================================+=====================================================================================================================+
+| fcn_resnet50_voc  | FCN [6]_     | N/A       | 69.4_     | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/fcn_resnet50_voc.sh>`_      | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/fcn_resnet50_voc.log>`_      |
++-------------------+--------------+-----------+-----------+-----------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
+| fcn_resnet101_voc | FCN [6]_     | N/A       | 70.9_     | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/fcn_resnet101_voc.sh>`_     | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/fcn_resnet101_voc.log>`_     |
++-------------------+--------------+-----------+-----------+-----------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
+| fcn_resnet50_ade  | FCN [6]_     | 78.6      | 38.7      | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/fcn_resnet50_ade.sh>`_      | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/fcn_resnet50_ade.log>`_      |
++-------------------+--------------+-----------+-----------+-----------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
 
 .. _69.4:  http://host.robots.ox.ac.uk:8080/anonymous/TC12D2.html
 .. _70.9:  http://host.robots.ox.ac.uk:8080/anonymous/FTIQXJ.html
