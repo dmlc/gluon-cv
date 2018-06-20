@@ -1,4 +1,5 @@
 """5. Train Faster-RCNN end-to-end on PASCAL VOC
+================================================
 
 This tutorial goes through the basic steps of training a Faster-RCNN object detection model
 provided by GluonCV.
@@ -61,7 +62,7 @@ print('Validation images:', len(val_dataset))
 # Data transform
 # ------------------
 # We can read an image-label pair from the training dataset:
-train_image, train_label = train_dataset[0]
+train_image, train_label = train_dataset[6]
 bboxes = train_label[:, :4]
 cids = train_label[:, 4:5]
 print('image:', train_image.shape)
@@ -78,7 +79,7 @@ plt.show()
 ##############################################################################
 # Validation images are quite similar to training because they were
 # basically split randomly to different sets
-val_image, val_label = val_dataset[0]
+val_image, val_label = val_dataset[6]
 bboxes = val_label[:, :4]
 cids = val_label[:, 4:5]
 ax = viz.plot_bbox(val_image.asnumpy(), bboxes, labels=cids, class_names=train_dataset.classes)
@@ -183,8 +184,9 @@ cids, scores, bboxes = net(x)
 # Faster-RCNN network behave differently during training mode:
 from mxnet import autograd
 with autograd.train_mode():
+    gt_box = bboxes.expand_dims(0)
     # this time we need ground-truth to generate high quality roi proposals during training
-    cls_preds, box_preds, roi, samples, matches, rpn_score, rpn_box, anchors = net(x, bboxes)
+    cls_preds, box_preds, roi, samples, matches, rpn_score, rpn_box, anchors = net(x, gt_box)
 
 ##############################################################################
 # In training mode, Faster-RCNN returns a lot of intermediate values, which we require to train in an end-to-end favor,
@@ -218,7 +220,7 @@ rcnn_box_loss = mx.gluon.loss.HuberLoss()  # == smoothl1
 # If we provide network to the training transform function, it will compute training targets
 train_transform = presets.rcnn.FasterRCNNDefaultTrainTransform(short, max_size, net)
 # return images, rpn_cls_targets, rpn_box_targets loosely
-batchify_fn = Tuple(Append(), Append(), Append())
+batchify_fn = Tuple(*[Append() for _ in range(5)])
 train_loader = DataLoader(train_dataset.transform(train_transform), batch_size, shuffle=True,
                           batchify_fn=batchify_fn, last_batch='rollover', num_workers=num_workers)
 
@@ -226,14 +228,14 @@ for ib, batch in enumerate(train_loader):
     if ib > 0:
         break
     print('data:', batch[0][0].shape)
-    print('class targets:', batch[1][0].shape)
-    print('box targets:', batch[2][0].shape)
+    print('label:', batch[1][0].shape)
     with autograd.record():
-        cls_pred, box_pred, anchors = net(batch[0])
-        sum_loss, cls_loss, box_loss = mbox_loss(cls_pred, box_pred, batch[1], batch[2])
+        gt_box = batch[1][0][:, :, :4]
+        cls_preds, box_preds, roi, samples, matches, rpn_score, rpn_box, anchors = net(batch[0][0], gt_box)
+        # sum up the losses
         # some standard gluon training steps:
         # autograd.backward(sum_loss)
-        # trainer.step(1)
+        # trainer.step(batch_size)
 
 ##############################################################################
 # This time we can see the data loader is actually returning the training targets for us.
@@ -241,4 +243,4 @@ for ib, batch in enumerate(train_loader):
 #
 # .. hint::
 #
-#   Please checkout the full :download:`training script <../../../scripts/detection/ssd/train_faster_rcnn.py>` for complete implementation.
+#   Please checkout the full :download:`training script <../../../scripts/detection/faster_rcnn/train_faster_rcnn.py>` for complete implementation.
