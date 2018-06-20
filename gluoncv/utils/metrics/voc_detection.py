@@ -270,6 +270,8 @@ class VOC07MApMetric(VOCMApMetric):
         ----------
         ap as float
         """
+        if rec is None or prec is None:
+            return np.nan
         ap = 0.
         for t in np.arange(0., 1.1, 0.1):
             if np.sum(rec >= t) == 0:
