@@ -3,6 +3,7 @@
 
 This tutorial goes through the basic steps of training a Faster-RCNN object detection model
 provided by GluonCV.
+
 Specifically, we show how to build a state-of-the-art Faster-RCNN model by stacking GluonCV components.
 
 
@@ -60,7 +61,7 @@ print('Validation images:', len(val_dataset))
 
 ##########################################################
 # Data transform
-# ------------------
+# --------------
 # We can read an image-label pair from the training dataset:
 train_image, train_label = train_dataset[6]
 bboxes = train_label[:, :4]
@@ -121,7 +122,7 @@ plt.show()
 
 ##########################################################
 # Data Loader
-# ------------------
+# -----------
 # We will iterate through the entire dataset many times during training.
 # Keep in mind that raw images have to be transformed to tensors
 # (mxnet uses BCHW format) before they are fed into neural networks.
@@ -153,7 +154,7 @@ for ib, batch in enumerate(train_loader):
 
 ##########################################################
 # Faster-RCNN Network
-# ------------------
+# -------------------
 # GluonCV's Faster-RCNN implementation is a composite Gluon HybridBlock
 # In terms of structure, Faster-RCNN networks are composed of base feature extraction
 # network, Region Proposal Network(including its own anchor system, proposal generator),
@@ -199,7 +200,7 @@ with autograd.train_mode():
 
 ##########################################################
 # Training targets
-# ------------------
+# ----------------
 # There are four losses involved in end-to-end Faster-RCNN training.
 
 # the loss to penalize incorrect foreground/background prediction
@@ -244,3 +245,10 @@ for ib, batch in enumerate(train_loader):
 # .. hint::
 #
 #   Please checkout the full :download:`training script <../../../scripts/detection/faster_rcnn/train_faster_rcnn.py>` for complete implementation.
+
+
+##########################################################
+# References
+# ----------
+#
+# .. [Ren15] Shaoqing Ren and Kaiming He and Ross Girshick and Jian Sun. Faster {R-CNN}: Towards Real-Time Object Detection with Region Proposal Networks. NIPS 2015.
