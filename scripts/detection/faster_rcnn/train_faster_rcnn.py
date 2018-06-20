@@ -47,6 +47,8 @@ def parse_args():
                         help='decay rate of learning rate. default is 0.1.')
     parser.add_argument('--lr-decay-epoch', type=str, default='14,20',
                         help='epoches at which learning rate decays. default is 14,20.')
+    parser.add_argument('--lr-warmup', type=int, default=2000,
+                        help='warmup iterations to adjust learning rate, default is 2000.')
     parser.add_argument('--momentum', type=float, default=0.9,
                         help='SGD momentum, default is 0.9')
     parser.add_argument('--wd', type=float, default=0.0005,
@@ -231,6 +233,9 @@ def validate(net, val_data, ctx, eval_metric):
             eval_metric.update(det_bbox, det_id, det_score, gt_bbox, gt_id, gt_diff)
     return eval_metric.get()
 
+def get_lr_at_iter(alpha):
+    return 1. / 3. * (1 - alpha) + alpha
+
 def train(net, train_data, val_data, eval_metric, args):
     """Training pipeline"""
     net.collect_params().reset_ctx(ctx)
@@ -289,7 +294,13 @@ def train(net, train_data, val_data, eval_metric, args):
         tic = time.time()
         btic = time.time()
         net.hybridize(static_alloc=True)
+        base_lr = trainer.learning_rate
         for i, batch in enumerate(train_data):
+            if epoch == 0 and i <= args.lr_warmup:
+                new_lr = base_lr * get_lr_at_iter(i // args.lr_warmup)
+                if new_lr != trainer.learning_rate:
+                    logger.info('[Epoch 0 Iteration {}] Set learning rate to {}'.format(i, new_lr))
+                    trainer.set_learning_rate(new_lr)
             batch = split_and_load(batch, ctx_list=ctx)
             batch_size = len(batch[0])
             losses = []
