@@ -61,7 +61,7 @@ Besides the listed, we provide more models trained on ImageNet in the upstream
 
     :download:`Download utils.py<../../scripts/classification/imagenet/utils.py>`
 
-    The `resnet_v1b` family is a modified version of `resnet_v1`, specifically we set stride at the 3x3 layer for a bottleneck block. `ResNet18` and `ResNet34` have identical `v1` and `v1b` network structures. This modification is widely mentioned in literatures [8]_ .
+    The `resnet_v1b` family is a modified version of `resnet_v1`, specifically we set stride at the 3x3 layer for a bottleneck block. `ResNet18` and `ResNet34` have identical `v1` and `v1b` network structures. This modification has been mentioned in recent literatures, e.g. [8]_ .
 
 +-----------------------+--------+--------+------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
 | Model                 | Top-1  | Top-5  | Training Command                                                                                                                   | Training Log                                                                                                                  |

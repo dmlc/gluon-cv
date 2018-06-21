@@ -104,7 +104,7 @@ Data Augmentation with ImageRecordIter
 When training a small network with multiple GPUs, data IO could be a bottleneck for the performance.
 Besides data loader from gluon, we recommend to use the `ImageRecordIter` interface to load and
 process data from record files.
-For more information on record files, please refer to `our tutorial <../datasets/recordio.html>`_.
+For more information on record files, please refer to `our tutorial <../examples_datasets/recordio.html>`_.
 
 Data augmentation is essential for a good result.
 We can set related parameters in the `ImageRecordIter`.
