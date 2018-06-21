@@ -55,11 +55,9 @@ Besides the listed, we provide more models trained on ImageNet in the upstream
 
 .. hint::
 
-    Training commands work with these two script:
+    Training commands work with this script:
 
     :download:`Download train_imagenet.py<../../scripts/classification/imagenet/train_imagenet.py>`
-
-    :download:`Download utils.py<../../scripts/classification/imagenet/utils.py>`
 
     The `resnet_v1b` family is a modified version of `resnet_v1`, specifically we set stride at the 3x3 layer for a bottleneck block. `ResNet18` and `ResNet34` have identical `v1` and `v1b` network structures. This modification has been mentioned in recent literatures, e.g. [8]_ .
 
