@@ -7,7 +7,6 @@ First let's import some necessary libraries:
 """
 
 from matplotlib import pyplot as plt
-from mxnet import image
 import gluoncv
 from gluoncv import model_zoo, data, utils
 
@@ -27,9 +26,19 @@ net = model_zoo.get_model('faster_rcnn_resnet50_v2a_voc', pretrained=True)
 # Pre-process an image
 # --------------------
 #
-# Next we download an image, and pre-process with preset data transforms. We
-# resize the short edge of the image to 600 px and apply image transforms
-# with mean (0.485, 0.456, 0.406) and std (0.229, 0.224, 0.225)
+# Next we download an image, and pre-process with preset data transforms. Here we
+# specify that we resize the short edge of the image to 512 px. But you can
+# feed an arbitrarily sized image.
+#
+# You can provide a list of image file names, such as ``[im_fname1, im_fname2,
+# ...]`` to :py:func:`gluoncv.data.transforms.presets.ssd.load_test` if you
+# want to load multiple image together.
+#
+# This function returns two results. The first is a NDArray with shape
+# `(batch_size, RGB_channels, height, width)`. It can be fed into the
+# model directly. The second one contains the images in numpy format to
+# easy to be plotted. Since we only loaded a single image, the first dimension
+# of `x` is 1.
 
 im_fname = utils.download('https://github.com/dmlc/web-data/blob/master/' +
                           'gluoncv/detection/biking.jpg?raw=true',

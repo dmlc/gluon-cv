@@ -1,38 +1,44 @@
-"""3. Train SSD on Pascal VOC dataset
-======================================
+"""5. Train Faster-RCNN end-to-end on PASCAL VOC
+================================================
 
-This tutorial goes through the basic building blocks of object detection
+This tutorial goes through the basic steps of training a Faster-RCNN object detection model
 provided by GluonCV.
-Specifically, we show how to build a state-of-the-art Single Shot Multibox
-Detection [Liu16]_ model by stacking GluonCV components.
-This is also a good starting point for your own object detection project.
+
+Specifically, we show how to build a state-of-the-art Faster-RCNN model by stacking GluonCV components.
+
 
 .. hint::
 
     You can skip the rest of this tutorial and start training your SSD model
     right away by downloading this script:
 
-    :download:`Download train_ssd.py<../../../scripts/detection/ssd/train_ssd.py>`
+    :download:`Download train_faster_rcnn.py<../../../scripts/detection/faster_rcnn/train_faster_rcnn.py>`
 
     Example usage:
 
-    Train a default vgg16_atrous 300x300 model with Pascal VOC on GPU 0:
+    Train a default resnet50_v2a model with Pascal VOC on GPU 0:
 
     .. code-block:: bash
 
-        python train_ssd.py
+        python train_faster_rcnn.py --gpus 0
 
-    Train a resnet50_v1 512x512 model on GPU 0,1,2,3:
+    Train a resnet50_v2a model on GPU 0,1,2,3:
 
     .. code-block:: bash
 
-        python train_ssd.py --gpus 0,1,2,3 --network resnet50_v1 --data-shape 512
+        python train_faster_rcnn.py --gpus 0,1,2,3 --network resnet50_v2a
 
     Check the supported arguments:
 
     .. code-block:: bash
 
-        python train_ssd.py --help
+        python train_faster_rcnn.py --help
+
+
+.. hint::
+
+    Since lots of contents in this tutorial is very similar to :doc:`./train_ssd_voc`, you can skip any part
+    if you feel comfortable.
 
 """
 
@@ -55,9 +61,9 @@ print('Validation images:', len(val_dataset))
 
 ##########################################################
 # Data transform
-# ------------------
+# --------------
 # We can read an image-label pair from the training dataset:
-train_image, train_label = train_dataset[0]
+train_image, train_label = train_dataset[6]
 bboxes = train_label[:, :4]
 cids = train_label[:, 4:5]
 print('image:', train_image.shape)
@@ -74,24 +80,23 @@ plt.show()
 ##############################################################################
 # Validation images are quite similar to training because they were
 # basically split randomly to different sets
-val_image, val_label = val_dataset[0]
+val_image, val_label = val_dataset[6]
 bboxes = val_label[:, :4]
 cids = val_label[:, 4:5]
 ax = viz.plot_bbox(val_image.asnumpy(), bboxes, labels=cids, class_names=train_dataset.classes)
 plt.show()
 
 ##############################################################################
-# For SSD networks, it is critical to apply data augmentation (see explanations in paper [Liu16]_).
-# We provide tons of image and bounding box transform functions to do that.
-# They are very convenient to use as well.
+# For Faster-RCNN networks, we only horizontal flip for data augmentation.
+# We
 from gluoncv.data.transforms import presets
 from gluoncv import utils
 from mxnet import nd
 
 ##############################################################################
-width, height = 512, 512  # suppose we use 512 as base training size
-train_transform = presets.ssd.SSDDefaultTrainTransform(width, height)
-val_transform = presets.ssd.SSDDefaultValTransform(width, height)
+short, max_size = 600, 1000  # resize image to short side 600 px, but keep maximum length within 1000
+train_transform = presets.rcnn.FasterRCNNDefaultTrainTransform(short, max_size)
+val_transform = presets.rcnn.FasterRCNNDefaultValTransform(short, max_size)
 
 ##############################################################################
 utils.random.seed(233)  # fix seed in this tutorial
@@ -112,45 +117,30 @@ ax = viz.plot_bbox(train_image2.asnumpy(), train_label2[:, :4],
 plt.show()
 
 ##############################################################################
-# apply transforms to validation image
-val_image2, val_label2 = val_transform(val_image, val_label)
-val_image2 = val_image2.transpose((1, 2, 0)) * nd.array((0.229, 0.224, 0.225)) + nd.array((0.485, 0.456, 0.406))
-val_image2 = (val_image2 * 255).clip(0, 255)
-ax = viz.plot_bbox(val_image2.clip(0, 255).asnumpy(), val_label2[:, :4],
-                   labels=val_label2[:, 4:5],
-                   class_names=train_dataset.classes)
-plt.show()
-
-##############################################################################
-# Transforms used in training include random expanding, random cropping, color distortion, random flipping, etc.
-# In comparison, validation transforms are simpler and only resizing and color normalization is used.
+# Transforms used in training include random flipping, resizing and fixed color normalization.
+# In comparison, validation only involves resizing and color normalization.
 
 ##########################################################
 # Data Loader
-# ------------------
+# -----------
 # We will iterate through the entire dataset many times during training.
 # Keep in mind that raw images have to be transformed to tensors
 # (mxnet uses BCHW format) before they are fed into neural networks.
-# In addition, to be able to run in mini-batches,
-# images must be resized to the same shape.
 #
 # A handy DataLoader would be very convenient for us to apply different transforms and aggregate data into mini-batches.
 #
-# Because the number of objects varys a lot across images, we also have
-# varying label sizes. As a result, we need to pad those labels to the same size.
-# To deal with this problem, GluonCV provides :py:class:`gluoncv.data.batchify.Pad`,
-# which handles padding automatically.
-# :py:class:`gluoncv.data.batchify.Stack` in addition, is used to stack NDArrays with consistent shapes.
-# :py:class:`gluoncv.data.batchify.Tuple` is used to handle different behaviors across multiple outputs from transform functions.
+# Because Faster-RCNN handles raw images with various aspect ratios and various shapes, we provide a
+# :py:class:`gluoncv.data.batchify.Append`, which neither stack or pad images, but instead return lists.
+# In such way, image tensors and labels returned have their own shapes, unaware of the rest in the same batch.
 
-from gluoncv.data.batchify import Tuple, Stack, Pad
+from gluoncv.data.batchify import Tuple, Append
 from mxnet.gluon.data import DataLoader
 
 batch_size = 2  # for tutorial, we use smaller batch-size
 num_workers = 0  # you can make it larger(if your CPU has more cores) to accelerate data loading
 
 # behavior of batchify_fn: stack images, and pad labels
-batchify_fn = Tuple(Stack(), Pad(pad_val=-1))
+batchify_fn = Tuple(Append(), Append())
 train_loader = DataLoader(train_dataset.transform(train_transform), batch_size, shuffle=True,
                           batchify_fn=batchify_fn, last_batch='rollover', num_workers=num_workers)
 val_loader = DataLoader(val_dataset.transform(val_transform), batch_size, shuffle=False,
@@ -159,87 +149,94 @@ val_loader = DataLoader(val_dataset.transform(val_transform), batch_size, shuffl
 for ib, batch in enumerate(train_loader):
     if ib > 3:
         break
-    print('data:', batch[0].shape, 'label:', batch[1].shape)
+    print('data 0:', batch[0][0].shape, 'label 0:', batch[1][0].shape)
+    print('data 1:', batch[0][1].shape, 'label 1:', batch[1][1].shape)
 
 ##########################################################
-# SSD Network
-# ------------------
-# GluonCV's SSD implementation is a composite Gluon HybridBlock
-# (which means it can be exported
-# to symbol to run in C++, Scala and other language bindings.
-# We will cover this usage in future tutorials).
-# In terms of structure, SSD networks are composed of base feature extraction
-# network, anchor generators, class predictors and bounding box offset predictors.
+# Faster-RCNN Network
+# -------------------
+# GluonCV's Faster-RCNN implementation is a composite Gluon HybridBlock
+# In terms of structure, Faster-RCNN networks are composed of base feature extraction
+# network, Region Proposal Network(including its own anchor system, proposal generator),
+# region-aware pooling layers, class predictors and bounding box offset predictors.
 #
-# For more details on how SSD detector works, please refer to our introductory
-# [tutorial](http://gluon.mxnet.io/chapter08_computer-vision/object-detection.html)
-# You can also refer to the original paper to learn more about the intuitions
-# behind SSD.
+# We highly recommend you to read the original paper to learn more about the ideas
+# behind Faster-RCNN.
 #
-# `Gluon Model Zoo <../../model_zoo/index.html>`__ has a lot of built-in SSD networks.
+# `Gluon Model Zoo <../../model_zoo/index.html>`__ has a few built-in Faster-RCNN networks, more on the way.
 # You can load your favorate one with one simple line of code:
 from gluoncv import model_zoo
-net = model_zoo.get_model('ssd_300_vgg16_atrous_voc', pretrained_base=False)
+net = model_zoo.get_model('faster_rcnn_resnet50_v2a_voc', pretrained_base=False)
 print(net)
 
 ##############################################################################
-# SSD network is a HybridBlock as mentioned before. You can call it with an input as:
+# Faster-RCNN network is callable with image tensor
 import mxnet as mx
-x = mx.nd.zeros(shape=(1, 3, 512, 512))
+x = mx.nd.zeros(shape=(1, 3, 600, 800))
 net.initialize()
 cids, scores, bboxes = net(x)
 
 ##############################################################################
-# SSD returns three values, where ``cids`` are the class labels,
+# Faster-RCNN returns three values, where ``cids`` are the class labels,
 # ``scores`` are confidence scores of each prediction,
 # and ``bboxes`` are absolute coordinates of corresponding bounding boxes.
 
 ##############################################################################
-# SSD network behave differently during training mode:
+# Faster-RCNN network behave differently during training mode:
 from mxnet import autograd
 with autograd.train_mode():
-    cls_preds, box_preds, anchors = net(x)
+    gt_box = bboxes.expand_dims(0)
+    # this time we need ground-truth to generate high quality roi proposals during training
+    cls_preds, box_preds, roi, samples, matches, rpn_score, rpn_box, anchors = net(x, gt_box)
 
 ##############################################################################
-# In training mode, SSD returns three intermediate values,
+# In training mode, Faster-RCNN returns a lot of intermediate values, which we require to train in an end-to-end favor,
 # where ``cls_preds`` are the class predictions prior to softmax,
-# ``box_preds`` are bounding box offsets with one-to-one correspondence to anchors
-# and ``anchors`` are absolute coordinates of corresponding anchors boxes, which are
-# fixed since training images use inputs of same dimensions.
+# ``box_preds`` are bounding box offsets with one-to-one correspondence to proposals
+# ``roi`` is the proposal candidates, ``samples`` and ``matches`` are the samling/matching results of RPN anchors.
+# ``rpn_score`` and ``rpn_box`` are the raw outputs from RPN's convolutional layers.
+# and ``anchors`` are absolute coordinates of corresponding anchors boxes.
 
 
 ##########################################################
 # Training targets
-# ------------------
-# Unlike a single ``SoftmaxCrossEntropyLoss`` used in image classification,
-# the loss used in SSD is more complicated.
-# Don't worry though, because we have these modules available out of the box.
-#
-# To speed up training, we let CPU to pre-compute some training targets.
+# ----------------
+# There are four losses involved in end-to-end Faster-RCNN training.
+
+# the loss to penalize incorrect foreground/background prediction
+rpn_cls_loss = mx.gluon.loss.SigmoidBinaryCrossEntropyLoss(from_sigmoid=False)
+# the loss to penalize inaccurate anchor boxes
+rpn_box_loss = mx.gluon.loss.HuberLoss(rho=1/9.)  # == smoothl1
+# the loss to penalize incorrect classification prediction.
+rcnn_cls_loss = mx.gluon.loss.SoftmaxCrossEntropyLoss()
+# and finally the loss to penalize inaccurate proposals
+rcnn_box_loss = mx.gluon.loss.HuberLoss()  # == smoothl1
+
+##########################################################
+# To speed up training, we let CPU to pre-compute some training targets (similar to SSD example).
 # This is especially nice when your CPU is powerful and you can use ``-j num_workers``
 # to utilize multi-core CPU.
 
 ##############################################################################
-# If we provide anchors to the training transform, it will compute training targets
-train_transform = presets.ssd.SSDDefaultTrainTransform(width, height, anchors)
-batchify_fn = Tuple(Stack(), Stack(), Stack())
+# If we provide network to the training transform function, it will compute training targets
+train_transform = presets.rcnn.FasterRCNNDefaultTrainTransform(short, max_size, net)
+# return images, rpn_cls_targets, rpn_box_targets loosely
+batchify_fn = Tuple(*[Append() for _ in range(5)])
 train_loader = DataLoader(train_dataset.transform(train_transform), batch_size, shuffle=True,
                           batchify_fn=batchify_fn, last_batch='rollover', num_workers=num_workers)
-from gluoncv.loss import SSDMultiBoxLoss
-mbox_loss = SSDMultiBoxLoss()
 
 for ib, batch in enumerate(train_loader):
     if ib > 0:
         break
-    print('data:', batch[0].shape)
-    print('class targets:', batch[1].shape)
-    print('box targets:', batch[2].shape)
+    print('data:', batch[0][0].shape)
+    print('label:', batch[1][0].shape)
     with autograd.record():
-        cls_pred, box_pred, anchors = net(batch[0])
-        sum_loss, cls_loss, box_loss = mbox_loss(cls_pred, box_pred, batch[1], batch[2])
+        gt_box = batch[1][0][:, :, :4]
+        cls_preds, box_preds, roi, samples, matches, rpn_score, rpn_box, anchors = net(batch[0][0], gt_box)
+        # sum up the losses
         # some standard gluon training steps:
         # autograd.backward(sum_loss)
-        # trainer.step(1)
+        # trainer.step(batch_size)
 
 ##############################################################################
 # This time we can see the data loader is actually returning the training targets for us.
@@ -247,10 +244,11 @@ for ib, batch in enumerate(train_loader):
 #
 # .. hint::
 #
-#   Please checkout the full :download:`training script <../../../scripts/detection/ssd/train_ssd.py>` for complete implementation.
+#   Please checkout the full :download:`training script <../../../scripts/detection/faster_rcnn/train_faster_rcnn.py>` for complete implementation.
+
 
 ##########################################################
 # References
 # ----------
 #
-# .. [Liu16] Wei Liu, Dragomir Anguelov, Dumitru Erhan, Christian Szegedy, Scott Reed, Cheng-Yang Fu, Alexander C. Berg. SSD: Single Shot MultiBox Detector. ECCV 2016.
+# .. [Ren15] Shaoqing Ren and Kaiming He and Ross Girshick and Jian Sun. Faster {R-CNN}: Towards Real-Time Object Detection with Region Proposal Networks. NIPS 2015.

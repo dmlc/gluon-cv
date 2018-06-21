@@ -95,11 +95,11 @@ def get_dataloader(net, train_dataset, val_dataset, data_shape, batch_size, num_
     batchify_fn = Tuple(Stack(), Stack(), Stack())  # stack image, cls_targets, box_targets
     train_loader = gluon.data.DataLoader(
         train_dataset.transform(SSDDefaultTrainTransform(width, height, anchors)),
-        batchify_fn=batchify_fn, batch_size, True, last_batch='rollover', num_workers=num_workers)
+        batch_size, True, batchify_fn=batchify_fn, last_batch='rollover', num_workers=num_workers)
     val_batchify_fn = Tuple(Stack(), Pad(pad_val=-1))
     val_loader = gluon.data.DataLoader(
         val_dataset.transform(SSDDefaultValTransform(width, height)),
-        batchify_fn=val_batchify_fn, batch_size, False, last_batch='keep', num_workers=num_workers)
+        batch_size, False, batchify_fn=val_batchify_fn, last_batch='keep', num_workers=num_workers)
     return train_loader, val_loader
 
 def save_params(net, best_map, current_map, epoch, save_interval, prefix):
