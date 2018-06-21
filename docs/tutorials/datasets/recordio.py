@@ -93,6 +93,7 @@ performs randomized resizing and cropping.
 """
 
 import os
+from mxnet import nd
 from mxnet.io import ImageRecordIter
 
 rec_path = os.path.expanduser('~/.mxnet/datasets/imagenet/rec/')
@@ -123,6 +124,6 @@ val_data = ImageRecordIter(
     shuffle     = False
 )
 for batch in val_data:
-    viz.plot_image(batch.data[0][12])
-    viz.plot_image(batch.data[0][21])
+    viz.plot_image(nd.transpose(batch.data[0][12], (1, 2, 0)))
+    viz.plot_image(nd.transpose(batch.data[0][21], (1, 2, 0)))
     break
