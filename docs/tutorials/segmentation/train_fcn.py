@@ -198,10 +198,10 @@ criterion = SoftmaxCrossEntropyLossWithAux(aux=True)
 #
 #     We use different learning rate for FCN "head" and the base network. For the FCN "head",
 #     we use :math:`10\times` base learning rate, because those layers are learned from scratch.
-#     We use a poly-like learning rate scheduler for FCN training, provided in :class:`gluoncv.utils.LR_Scheduler`.
+#     We use a poly-like learning rate scheduler for FCN training, provided in :class:`gluoncv.utils.LRScheduler`.
 #     The learning rate is given by :math:`lr = baselr \times (1-iter)^{power}`
 # 
-lr_scheduler = gluoncv.utils.LR_Scheduler(mode='poly', 0.001, niters=len(train_data), 
+lr_scheduler = gluoncv.utils.LRScheduler(mode='poly', baselr=0.001, niters=len(train_data), 
                                           nepochs=50)
 
 ##############################################################################

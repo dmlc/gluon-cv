@@ -9,7 +9,7 @@ from mxnet.gluon.data.vision import transforms
 
 from gluoncv.data import imagenet
 from gluoncv.model_zoo import get_model
-from gluoncv.utils import makedirs, LR_Scheduler
+from gluoncv.utils import makedirs, LRScheduler
 
 # CLI
 parser = argparse.ArgumentParser(description='Train a model for image classification.')
@@ -95,7 +95,7 @@ if opt.lr_decay_period > 0:
 else:
     lr_decay_epoch = [int(i) for i in opt.lr_decay_epoch.split(',')]
 num_batches = num_training_samples // batch_size
-lr_scheduler = LR_Scheduler(mode=opt.lr_mode, baselr=opt.lr,
+lr_scheduler = LRScheduler(mode=opt.lr_mode, baselr=opt.lr,
                             niters=num_batches, nepochs=opt.num_epochs,
                             step=lr_decay_epoch, step_factor=opt.lr_decay, power=2,
                             warmup_epochs=opt.warmup_epochs)

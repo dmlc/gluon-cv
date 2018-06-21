@@ -5,7 +5,7 @@ from __future__ import division
 from math import pi, cos
 from mxnet import lr_scheduler
 
-class LR_Scheduler(lr_scheduler.LRScheduler):
+class LRScheduler(lr_scheduler.LRScheduler):
     r"""Learning Rate Scheduler
 
     For mode='step', we multiply lr with `step_factor` at each epoch in `step`.
@@ -58,7 +58,7 @@ class LR_Scheduler(lr_scheduler.LRScheduler):
     def __init__(self, mode, baselr, niters, nepochs,
                  step=(30, 60, 90), step_factor=0.1, targetlr=0, power=0.9,
                  warmup_epochs=0, warmup_lr=0, warmup_mode='linear'):
-        super(LR_Scheduler, self).__init__()
+        super(LRScheduler, self).__init__()
         assert(mode in ['step', 'poly', 'cosine'])
         assert(warmup_mode in ['linear', 'constant'])
 
