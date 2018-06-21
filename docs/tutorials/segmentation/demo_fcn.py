@@ -7,6 +7,7 @@ Please follow the `installation guide <../index.html>`_ to install MXNet and Glu
 import mxnet as mx
 from mxnet import image
 from mxnet.gluon.data.vision import transforms
+from gluoncv.model_zoo.segbase import *
 import gluoncv
 # using cpu
 ctx = mx.cpu(0)
@@ -36,18 +37,19 @@ transform_fn = transforms.Compose([
     transforms.Normalize([.485, .456, .406], [.229, .224, .225])
 ])
 img = transform_fn(img)
-img = img.expand_dims(0).as_in_context(ctx)
+img = img.as_in_context(ctx)
 
 ##############################################################################
 # Load the pre-trained model and make prediction
 # ----------------------------------------------
 #
-# get pre-trained model
+# get pre-trained model and wrap it with evaluator
 model = gluoncv.model_zoo.get_model('fcn_resnet50_voc', pretrained=True)
+evaluator = MultiEvalModel(model, 21, ctx_list=ctx)
 
 ##############################################################################
 # make prediction using single scale
-output = model.evaluate(img)
+output = evaluator(img)
 predict = mx.nd.squeeze(mx.nd.argmax(output, 1)).asnumpy()
 
 ##############################################################################
