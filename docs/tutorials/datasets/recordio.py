@@ -123,6 +123,6 @@ val_data = ImageRecordIter(
     shuffle     = False
 )
 for batch in val_data:
-    vis.plot_image(batch.data[0][12])
-    vis.plot_image(batch.data[0][21])
+    viz.plot_image(batch.data[0][12])
+    viz.plot_image(batch.data[0][21])
     break
