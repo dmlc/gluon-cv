@@ -122,8 +122,8 @@ class Trainer(object):
         criterion = SoftmaxCrossEntropyLossWithAux(args.aux)
         self.criterion = DataParallelCriterion(criterion, args.ctx, args.syncbn)
         # optimizer and lr scheduling
-        self.lr_scheduler = LRScheduler(mode='poly', args.lr, niters=len(self.train_data), 
-                                         nepochs=args.epochs)
+        self.lr_scheduler = LRScheduler(mode='poly', baselr=args.lr, niters=len(self.train_data), 
+                                        nepochs=args.epochs)
         kv = mx.kv.create(args.kvstore)
         self.optimizer = gluon.Trainer(self.net.module.collect_params(), 'sgd',
                                        {'lr_scheduler': self.lr_scheduler,
