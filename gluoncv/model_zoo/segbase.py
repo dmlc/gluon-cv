@@ -85,6 +85,15 @@ class SegBaseModel(HybridBlock):
 
         return correct, labeled, inter, union
 
+    def demo(self, x):
+        h, w = x.shape[2:]
+        self._up_kwargs['height'] = h
+        self._up_kwargs['width'] = w
+        pred = self.forward(x)
+        if self.aux:
+            pred = pred[0]
+        return pred
+
 
 class SoftmaxCrossEntropyLoss(Loss):
     """SoftmaxCrossEntropyLoss with ignore labels"""
