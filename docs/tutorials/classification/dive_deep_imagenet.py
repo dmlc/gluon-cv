@@ -76,7 +76,6 @@ First, import the necessary libraries into python.
     from mxnet import gluon, nd
     from mxnet import autograd as ag
     from mxnet.gluon import nn
-    from mxnet.gluon.data.vision import transforms
 
     from gluoncv.model_zoo import get_model
     from gluoncv.utils import makedirs, TrainingHistory
@@ -99,76 +98,85 @@ Note that the ResNet model we use here for ``ImageNet`` is different in structur
 the one we used to train ``CIFAR10``. Please refer to the original paper or
 GluonCV codebase for details.
 
-Data Augmentation and Data Loader
+Data Augmentation with ImageRecordIter
 ---------------------------------
 
-Data augmentation is essential for a good result. It is similar to what we have
-in the ``CIFAR10`` training tutorial, just different in the parameters.
+When training a small network with multiple GPUs, data IO could be a bottleneck for the performance.
+Besides data loader from gluon, we recommend to use the `ImageRecordIter` interface to load and
+process data from record files.
+For more information on record files, please refer to `our tutorial <../examples_datasets/recordio.html>`_.
 
-We compose our transform functions as following:
+Data augmentation is essential for a good result.
+We can set related parameters in the `ImageRecordIter`.
 
 .. code-block:: python
 
     jitter_param = 0.4
     lighting_param = 0.1
+    mean_rgb = [123.68, 116.779, 103.939]
+    std_rgb = [58.393, 57.12, 57.375]
 
-    transform_train = transforms.Compose([
-        transforms.RandomResizedCrop(224),
-        transforms.RandomFlipLeftRight(),
-        transforms.RandomColorJitter(brightness=jitter_param, contrast=jitter_param,
-                                     saturation=jitter_param),
-        transforms.RandomLighting(lighting_param),
-        transforms.ToTensor(),
-        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-    ])
+    train_data = mx.io.ImageRecordIter(
+        path_imgrec         = '~/.mxnet/datasets/imagenet/rec/train.rec',
+        path_imgidx         = '~/.mxnet/datasets/imagenet/rec/train.idx',
+        preprocess_threads  = 32,
+        shuffle             = True,
+        batch_size          = 256,
+
+        data_shape          = (3, 224, 224),
+        mean_r              = mean_rgb[0],
+        mean_g              = mean_rgb[1],
+        mean_b              = mean_rgb[2],
+        std_r               = std_rgb[0],
+        std_g               = std_rgb[1],
+        std_b               = std_rgb[2],
+        rand_mirror         = True,
+        random_resized_crop = True,
+        max_aspect_ratio    = 4. / 3.,
+        min_aspect_ratio    = 3. / 4.,
+        max_random_area     = 1,
+        min_random_area     = 0.08,
+        brightness          = jitter_param,
+        saturation          = jitter_param,
+        contrast            = jitter_param,
+        pca_noise           = lighting_param,
+    )
 
 
 Since ``ImageNet`` images have much higher resolution and quality than
 ``CIFAR10``, we can crop a larger image (224x224) as input to the model.
 
-For prediction, we still need deterministic results. The transform function is:
+For prediction, we still need deterministic results. The function to read is:
 
 .. code-block:: python
 
-    transform_test = transforms.Compose([
-        transforms.Resize(256),
-        transforms.CenterCrop(224),
-        transforms.ToTensor(),
-        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-    ])
+    val_data = mx.io.ImageRecordIter(
+        path_imgrec         = '~/.mxnet/datasets/imagenet/rec/val.rec',
+        path_imgidx         = '~/.mxnet/datasets/imagenet/rec/val.idx',
+        preprocess_threads  = 32,
+        shuffle             = False,
+        batch_size          = 256,
 
-Notice that it is important to keep the normalization consistent, since trained
+        resize              = 256,
+        data_shape          = (3, 224, 224),
+        mean_r              = mean_rgb[0],
+        mean_g              = mean_rgb[1],
+        mean_b              = mean_rgb[2],
+        std_r               = std_rgb[0],
+        std_g               = std_rgb[1],
+        std_b               = std_rgb[2],
+    )
+
+It is important to keep the normalization consistent, since trained
 model only works well on test data from the same distribution.
 
-With the transform functions, we can define data loaders for our
-training and validation datasets.
+The above code works as data loader, thus we can later directly plug them into
+the training loop.
 
-.. code-block:: python
+Note that we set `batch_size=256` as the total batch size on 4 GPUs.
+It may not suit GPUs with memory smaller than 12GB. Please tune the value according to your specific configuration.
 
-    # Batch Size for Each GPU
-    per_device_batch_size = 64
-    # Number of data loader workers
-    num_workers = 32
-    # Calculate effective total batch size
-    batch_size = per_device_batch_size * num_gpus
-
-    data_path = '~/.mxnet/datasets/imagenet'
-
-    # Set train=True for training data
-    # Set shuffle=True to shuffle the training data
-    train_data = gluon.data.DataLoader(
-        imagenet.classification.ImageNet(data_path, train=True).transform_first(transform_train),
-        batch_size=batch_size, shuffle=True, last_batch='discard', num_workers=num_workers)
-
-    # Set train=False for validation data
-    val_data = gluon.data.DataLoader(
-        imagenet.classification.ImageNet(data_path, train=False).transform_first(transform_test),
-        batch_size=batch_size, shuffle=False, num_workers=num_workers)
-
-Note that we set ``per_device_batch_size=64``, which may not suit GPUs with
-Memory smaller than 12GB. Please tune the value according to your specific configuration.
-
-Path ``'~/.mxnet/datasets/imagenet'`` is the default path if you
+Path ``'~/.mxnet/datasets/imagenet/rec'`` is the default path if you
 prepared the data `with our script <../examples_datasets/imagenet.html>`_.
 
 Optimizer, Loss and Metric
@@ -226,8 +234,8 @@ and report the top-1 and top-5 error rate.
         acc_top1_val = mx.metric.Accuracy()
         acc_top5_val = mx.metric.TopKAccuracy(5)
         for i, batch in enumerate(val_data):
-            data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
-            label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0)
+            data = gluon.utils.split_and_load(batch.data[0], ctx_list=ctx, batch_axis=0)
+            label = gluon.utils.split_and_load(batch.label[0], ctx_list=ctx, batch_axis=0)
             outputs = [net(X) for X in data]
             acc_top1_val.update(label, outputs)
             acc_top5_val.update(label, outputs)
@@ -247,22 +255,20 @@ Following is the main training loop:
     epochs = 120
     lr_decay_count = 0
     log_interval = 50
-    num_batch = len(train_data)
 
     for epoch in range(epochs):
         tic = time.time()
         btic = time.time()
         acc_top1.reset()
         acc_top5.reset()
-        train_loss = 0
 
         if lr_decay_period == 0 and epoch == lr_decay_epoch[lr_decay_count]:
             trainer.set_learning_rate(trainer.learning_rate*lr_decay)
             lr_decay_count += 1
 
         for i, batch in enumerate(train_data):
-            data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
-            label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0)
+            data = gluon.utils.split_and_load(batch.data[0], ctx_list=ctx, batch_axis=0)
+            label = gluon.utils.split_and_load(batch.label[0], ctx_list=ctx, batch_axis=0)
             with ag.record():
                 outputs = [net(X) for X in data]
                 loss = [L(yhat, y) for yhat, y in zip(outputs, label)]
@@ -270,7 +276,6 @@ Following is the main training loop:
             trainer.step(batch_size)
             acc_top1.update(label, outputs)
             acc_top5.update(label, outputs)
-            train_loss += sum([l.sum().asscalar() for l in loss])
             if log_interval and not (i + 1) % log_interval:
                 _, top1 = acc_top1.get()
                 _, top5 = acc_top5.get()
@@ -282,12 +287,11 @@ Following is the main training loop:
         _, top1 = acc_top1.get()
         _, top5 = acc_top5.get()
         err_top1, err_top5 = (1-top1, 1-top5)
-        train_loss /= num_batch * batch_size
 
         err_top1_val, err_top5_val = test(ctx, val_data)
         train_history.update([err_top1, err_top5, err_top1_val, err_top5_val])
 
-        print('[Epoch %d] training: err-top1=%f err-top5=%f loss=%f'%(epoch, err_top1, err_top5, train_loss))
+        print('[Epoch %d] training: err-top1=%f err-top5=%f'%(epoch, err_top1, err_top5))
         print('[Epoch %d] time cost: %f'%(epoch, time.time()-tic))
         print('[Epoch %d] validation: err-top1=%f err-top5=%f'%(epoch, err_top1_val, err_top5_val))
 
