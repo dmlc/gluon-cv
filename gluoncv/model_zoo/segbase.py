@@ -92,8 +92,7 @@ class SegBaseModel(HybridBlock):
         pred = self.forward(x)
         if self.aux:
             pred = pred[0]
-        if target is None:
-            return pred
+        return pred
 
 
 class SoftmaxCrossEntropyLoss(Loss):
