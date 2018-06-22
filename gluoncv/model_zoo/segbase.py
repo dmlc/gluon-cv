@@ -87,8 +87,8 @@ class SegBaseModel(HybridBlock):
 
     def demo(self, x):
         h, w = x.shape[2:]
-        self._up_kwargs['height', h]
-        self._up_kwargs['width', w]
+        self._up_kwargs['height'] = h
+        self._up_kwargs['width'] = w
         pred = self.forward(x)
         if self.aux:
             pred = pred[0]
