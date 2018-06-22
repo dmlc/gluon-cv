@@ -47,7 +47,7 @@ model = gluoncv.model_zoo.get_model('fcn_resnet50_voc', pretrained=True)
 
 ##############################################################################
 # make prediction using single scale
-output = model.evaluate(img)
+output = model.demo(img)
 predict = mx.nd.squeeze(mx.nd.argmax(output, 1)).asnumpy()
 
 ##############################################################################
