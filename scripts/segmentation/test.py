@@ -6,7 +6,6 @@ import mxnet as mx
 from mxnet import gluon
 from mxnet.gluon.data.vision import transforms
 
-from gluoncv.utils import PolyLRScheduler
 from gluoncv.model_zoo.segbase import *
 from gluoncv.model_zoo import get_model
 from gluoncv.data import get_segmentation_dataset, ms_batchify_fn
@@ -76,7 +75,7 @@ def test(args):
             im_paths = dsts
             predicts = evaluator.parallel_forward(data)
             for predict, impath in zip(predicts, im_paths):
-                predict = mx.nd.squeeze(mx.nd.argmax(predict[0], 1)).asnumpy()
+                predict = mx.nd.squeeze(mx.nd.argmax(predict[0], 1)).asnumpy() + testset.pred_offset
                 mask = get_color_pallete(predict, args.dataset)
                 outname = os.path.splitext(impath)[0] + '.png'
                 mask.save(os.path.join(outdir, outname))

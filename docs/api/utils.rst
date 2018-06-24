@@ -43,7 +43,7 @@ Training Helpers
 .. autosummary::
     :nosignatures:
 
-    PolyLRScheduler
+    LRScheduler
 
     set_lr_mult
 
