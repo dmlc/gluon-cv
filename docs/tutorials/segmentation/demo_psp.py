@@ -1,5 +1,5 @@
-"""2. Getting Started with PSPNet Pre-trained Models
-==============================================
+"""2. Test with PSPNet Pre-trained Models
+======================================
 
 This is a quick demo of using GluonCV PSPNet model on ADE20K dataset.
 Please follow the `installation guide <../index.html>`_ to install MXNet and GluonCV if not yet.

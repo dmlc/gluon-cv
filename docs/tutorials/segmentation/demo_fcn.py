@@ -1,7 +1,7 @@
 """1. Getting Started with FCN Pre-trained Models
 ==============================================
 
-This is a quick demo of using GluonCV FCN model.
+This is a quick demo of using GluonCV FCN model on PASCAL VOC dataset.
 Please follow the `installation guide <../index.html>`_ to install MXNet and GluonCV if not yet.
 """
 import mxnet as mx
