@@ -240,6 +240,7 @@ def criterion_parallel_apply(module, inputs, targets, kwargs_tup=None, sync=Fals
         return tuple(outputs)
 
 def parallel_backward(losses, sync=True):
+    """Parallel Backward for CustomOp"""
     def _worker(loss):
         autograd.backward(loss)
     threads = [threading.Thread(target=_worker, args=(loss,)) for loss in losses]
