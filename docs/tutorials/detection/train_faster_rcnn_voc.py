@@ -9,7 +9,7 @@ Specifically, we show how to build a state-of-the-art Faster-RCNN model by stack
 
 .. hint::
 
-    You can skip the rest of this tutorial and start training your SSD model
+    You can skip the rest of this tutorial and start training your Faster-RCNN model
     right away by downloading this script:
 
     :download:`Download train_faster_rcnn.py<../../../scripts/detection/faster_rcnn/train_faster_rcnn.py>`
