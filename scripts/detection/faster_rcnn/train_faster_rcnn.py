@@ -203,14 +203,18 @@ def get_dataloader(net, train_dataset, val_dataset, short, max_size, batch_size,
         batch_size, False, batchify_fn=val_bfn, last_batch='keep', num_workers=num_workers)
     return train_loader, val_loader
 
-def save_params(net, best_map, current_map, epoch, save_interval, prefix):
+def save_params(net, logger, best_map, current_map, epoch, save_interval, prefix):
     current_map = float(current_map)
     if current_map > best_map[0]:
+        logger.info('[Epoch {}] mAP {} higher than current best {} saving to {}'.format(
+                    epoch, current_map, best_map, '{:s}_best.params'.format(prefix)))
         best_map[0] = current_map
-        net.save_parameters('{:s}_best.params'.format(prefix, epoch, current_map))
+        net.save_parameters('{:s}_best.params'.format(prefix))
         with open(prefix+'_best_map.log', 'a') as f:
             f.write('\n{:04d}:\t{:.4f}'.format(epoch, current_map))
-    if save_interval and epoch % save_interval == 0:
+    if save_interval and (epoch + 1) % save_interval == 0:
+        logger.info('[Epoch {}] Saving parameters to {}'.format(
+            epoch, '{:s}_{:04d}_{:.4f}.params'.format(prefix, epoch, current_map)))
         net.save_parameters('{:s}_{:04d}_{:.4f}.params'.format(prefix, epoch, current_map))
 
 def split_and_load(batch, ctx_list):
@@ -386,7 +390,7 @@ def train(net, train_data, val_data, eval_metric, args):
             current_map = float(mean_ap[-1])
         else:
             current_map = 0.
-        save_params(net, best_map, current_map, epoch, args.save_interval, args.save_prefix)
+        save_params(net, logger, best_map, current_map, epoch, args.save_interval, args.save_prefix)
 
 if __name__ == '__main__':
     args = parse_args()
