@@ -238,7 +238,7 @@ def get_faster_rcnn(name, features, top_features, scales, ratios, classes,
     if pretrained:
         from ..model_store import get_model_file
         full_name = '_'.join(('faster_rcnn', name, dataset))
-        net.load_params(get_model_file(full_name, root=root), ctx=ctx)
+        net.load_parameters(get_model_file(full_name, root=root), ctx=ctx)
     return net
 
 def faster_rcnn_resnet50_v1b_voc(pretrained=False, pretrained_base=True, **kwargs):
