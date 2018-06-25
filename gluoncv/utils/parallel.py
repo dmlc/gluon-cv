@@ -1,5 +1,5 @@
-# pylint: disable=consider-using-enumerate,redefined-builtin,broad-except
 """Utils for Semantic Segmentation"""
+# pylint: disable=consider-using-enumerate,redefined-builtin,broad-except
 import threading
 
 from mxnet import autograd
@@ -240,7 +240,6 @@ def criterion_parallel_apply(module, inputs, targets, kwargs_tup=None, sync=Fals
         return tuple(outputs)
 
 def parallel_backward(losses, sync=True):
-    lock = threading.Lock()
     def _worker(loss):
         autograd.backward(loss)
     threads = [threading.Thread(target=_worker, args=(loss,)) for loss in losses]

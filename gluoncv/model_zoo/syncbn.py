@@ -1,19 +1,17 @@
 """Synchronized Cross GPU Batch Normalization"""
 import threading
-import numpy as np
 
 import mxnet as mx
-import mxnet.ndarray as F
 from mxnet import gluon, autograd, test_utils
-from mxnet.gluon import HybridBlock
 
 class SharedTensor(object):
+    """Shared Tensor for Syncing"""
     def __init__(self, key, nchannels, nGPUs):
         self.mutex = threading.Lock()
         self.all_tasks_done = threading.Condition(self.mutex)
         self._key = key
         self.nGPUs = int(nGPUs)
-        self.out = F.zeros(nchannels)
+        self.out = mx.nd.zeros(nchannels)
         self._clear()
 
     def _clear(self):
@@ -60,6 +58,7 @@ class SharedTensor(object):
 
 
 class SharedTDict(object):
+    """Shared Dict for Syncing"""
     def __init__(self):
         self.stdict = {}
         self.keys = []
@@ -72,7 +71,7 @@ class SharedTDict(object):
                 return
             print('registerring {}'.format(key))
             self.stdict[key] = SharedTensor(key, nchannels, nGPUs)
-            self.kv.init(key, F.zeros(nchannels))
+            self.kv.init(key, mx.nd.zeros(nchannels))
             self.keys.append(key)
 
     def push(self, key, value):
@@ -85,6 +84,7 @@ class SharedTDict(object):
 sharedTensorDict = SharedTDict()
 
 class AllReduce(autograd.Function):
+    """All Reduce Operation"""
     def __init__(self, key):
         super(AllReduce, self).__init__()
         self.xsumkey = key + 'sum'
