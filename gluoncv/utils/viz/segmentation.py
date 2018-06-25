@@ -44,7 +44,7 @@ class DeNormalize(HybridBlock):
         self.std = mx.nd.array(std, ctx=mx.cpu(0))
 
     def hybrid_forward(self, F, x):
-        return x * self.std .reshape(shape=(3, 1, 1)) - self.mean.reshape(shape=(3, 1, 1))
+        return x * self.std .reshape(shape=(3, 1, 1)) + self.mean.reshape(shape=(3, 1, 1))
 
 
 def _getvocpallete(num_cls):
