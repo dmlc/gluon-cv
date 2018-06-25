@@ -119,18 +119,10 @@ Object Detection
     faster_rcnn_resnet50_v2a_coco
 
 
-.. currentmodule:: gluoncv.model_zoo
-
 Semantic Segmentation
 ^^^^^^^^^^^^^^^^^^^^^
 
-.. :hidden:`BaseModel`
-.. ~~~~~~~~~~~~~~~~~~~
-
-.. .. autosummary::
-..    :nosignatures:
-
- ..   segbase.SegBaseModel
+.. currentmodule:: gluoncv.model_zoo
 
 :hidden:`FCN`
 ~~~~~~~~~~~~~
