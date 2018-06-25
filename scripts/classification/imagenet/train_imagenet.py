@@ -197,7 +197,11 @@ def get_data_loader(data_dir, batch_size, num_workers):
         normalize
     ])
     transform_test = transforms.Compose([
+<<<<<<< HEAD
         transforms.Resize(256, keep_ratio=True),
+=======
+        transforms.Resize(256),
+>>>>>>> upstream/master
         transforms.CenterCrop(224),
         transforms.ToTensor(),
         normalize
