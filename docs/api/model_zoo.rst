@@ -148,11 +148,17 @@ Semantic Segmentation
 
     get_fcn_ade_resnet50
 
+:hidden:`PSPNet`
+~~~~~~~~~~~~~~~~
 
+.. autosummary::
+    :nosignatures:
 
+    PSPNet
 
+    get_psp
 
-
+    get_psp_ade_resnet50
 
 
 API Reference
