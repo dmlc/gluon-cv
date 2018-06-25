@@ -197,7 +197,7 @@ Table of pre-trained models for semantic segmentation and their performance.
 
   - ``voc`` is the training dataset.
 
-  The test script :download:`Download train.py<../../scripts/segmentation/test.py>` can be used for
+  The test script :download:`Download test.py<../../scripts/segmentation/test.py>` can be used for
   evaluating the models (VOC results are evaluated using the official server). For example ``fcn_resnet50_ade``::
 
     python test.py --dataset ade20k --model-zoo fcn_resnet50_ade --eval
