@@ -82,8 +82,8 @@ def parse_args():
     elif args.dataset == 'coco':
         args.short = int(args.short) if args.short else 800
         args.max_size = int(args.max_size) if args.max_size else 1333
-        args.epochs = int(args.epochs) if args.epochs else 20
-        args.lr_decay_epoch = args.lr_decay_epoch if args.lr_decay_epoch else '10,15'
+        args.epochs = int(args.epochs) if args.epochs else 24
+        args.lr_decay_epoch = args.lr_decay_epoch if args.lr_decay_epoch else '16,21'
         args.lr = float(args.lr) if args.lr else 0.00125
         args.lr_warmup = args.lr_warmup if args.lr_warmup else 8000
         args.wd = float(args.wd) if args.wd else 1e-4
