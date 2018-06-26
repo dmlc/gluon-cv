@@ -47,6 +47,14 @@ class FasterRCNN(RCNN):
         This is usually the ratio between original image size and feature map size.
     rpn_channel : int, default is 1024
         Channel number used in RPN convolutional layers.
+    rpn_train_pre_nms : int, default is 12000
+        Filter top proposals before NMS in training of RPN.
+    rpn_train_post_nms : int, default is 2000
+        Return top proposal results after NMS in training of RPN.
+    rpn_test_pre_nms : int, default is 6000
+        Filter top proposals before NMS in testing of RPN.
+    rpn_test_post_nms : int, default is 300
+        Return top proposal results after NMS in testing of RPN.
     nms_thresh : float, default is 0.3.
         Non-maximum suppression threshold. You can speficy < 0 or > 1 to disable NMS.
     nms_topk : int, default is 400
