@@ -28,12 +28,16 @@ def parse_args():
                         help="Base network name which serves as feature extraction base.")
     parser.add_argument('--dataset', type=str, default='voc',
                         help='Training dataset. Now support voc.')
+    parser.add_argument('--short', type=str, default='',
+                        help='Resize image to the given short side side, default to 600 for voc.')
+    parser.add_argument('--max-size', type=str, default='',
+                        help='Max size of either side of image, default to 1000 for voc.')
     parser.add_argument('--num-workers', '-j', dest='num_workers', type=int,
                         default=4, help='Number of data workers, you can use larger '
                         'number to accelerate data loading, if you CPU and GPUs are powerful.')
     parser.add_argument('--gpus', type=str, default='0',
                         help='Training with GPUs, you can specify 1,3 for example.')
-    parser.add_argument('--epochs', type=int, default=30,
+    parser.add_argument('--epochs', type=str, default='',
                         help='Training epochs.')
     parser.add_argument('--resume', type=str, default='',
                         help='Resume from previously saved parameters if not None. '
@@ -41,16 +45,18 @@ def parse_args():
     parser.add_argument('--start-epoch', type=int, default=0,
                         help='Starting epoch for resuming, default is 0 for new training.'
                         'You can specify it to 100 for example to start from 100 epoch.')
-    parser.add_argument('--lr', type=float, default=0.001,
-                        help='Learning rate, default is 0.001')
+    parser.add_argument('--lr', type=str, default='',
+                        help='Learning rate, default is 0.001 for voc single gpu training.')
     parser.add_argument('--lr-decay', type=float, default=0.1,
                         help='decay rate of learning rate. default is 0.1.')
-    parser.add_argument('--lr-decay-epoch', type=str, default='14,20',
-                        help='epoches at which learning rate decays. default is 14,20.')
+    parser.add_argument('--lr-decay-epoch', type=str, default='',
+                        help='epoches at which learning rate decays. default is 14,20 for voc.')
+    parser.add_argument('--lr-warmup', type=str, default='',
+                        help='warmup iterations to adjust learning rate, default is 0 for voc.')
     parser.add_argument('--momentum', type=float, default=0.9,
                         help='SGD momentum, default is 0.9')
-    parser.add_argument('--wd', type=float, default=0.0005,
-                        help='Weight decay, default is 5e-4')
+    parser.add_argument('--wd', type=str, default='',
+                        help='Weight decay, default is 5e-4 for voc')
     parser.add_argument('--log-interval', type=int, default=100,
                         help='Logging mini-batch interval. Default is 100.')
     parser.add_argument('--save-prefix', type=str, default='',
@@ -65,6 +71,28 @@ def parse_args():
     parser.add_argument('--verbose', dest='verbose', action='store_true',
                         help='Print helpful debugging info once set.')
     args = parser.parse_args()
+    if args.dataset == 'voc':
+        args.short = int(args.short) if args.short else 600
+        args.max_size = int(args.max_size) if args.max_size else 1000
+        args.epochs = int(args.epochs) if args.epochs else 20
+        args.lr_decay_epoch = args.lr_decay_epoch if args.lr_decay_epoch else '14,20'
+        args.lr = float(args.lr) if args.lr else 0.001
+        args.lr_warmup = args.lr_warmup if args.lr_warmup else -1
+        args.wd = float(args.wd) if args.wd else 5e-4
+    elif args.dataset == 'coco':
+        args.short = int(args.short) if args.short else 800
+        args.max_size = int(args.max_size) if args.max_size else 1333
+        args.epochs = int(args.epochs) if args.epochs else 24
+        args.lr_decay_epoch = args.lr_decay_epoch if args.lr_decay_epoch else '16,21'
+        args.lr = float(args.lr) if args.lr else 0.00125
+        args.lr_warmup = args.lr_warmup if args.lr_warmup else 8000
+        args.wd = float(args.wd) if args.wd else 1e-4
+        num_gpus = len(args.gpus.split(','))
+        if num_gpus == 1:
+            args.lr_warmup = -1
+        else:
+            args.lr *=  num_gpus
+            args.lr_warmup /= num_gpus
     return args
 
 
@@ -163,10 +191,8 @@ def get_dataset(dataset, args):
         raise NotImplementedError('Dataset: {} not implemented.'.format(dataset))
     return train_dataset, val_dataset, val_metric
 
-def get_dataloader(net, train_dataset, val_dataset, batch_size, num_workers):
+def get_dataloader(net, train_dataset, val_dataset, short, max_size, batch_size, num_workers):
     """Get dataloader."""
-    short, max_size = 600, 1000
-
     train_bfn = batchify.Tuple(*[batchify.Append() for _ in range(5)])
     train_loader = mx.gluon.data.DataLoader(
         train_dataset.transform(FasterRCNNDefaultTrainTransform(short, max_size, net)),
@@ -177,15 +203,19 @@ def get_dataloader(net, train_dataset, val_dataset, batch_size, num_workers):
         batch_size, False, batchify_fn=val_bfn, last_batch='keep', num_workers=num_workers)
     return train_loader, val_loader
 
-def save_params(net, best_map, current_map, epoch, save_interval, prefix):
+def save_params(net, logger, best_map, current_map, epoch, save_interval, prefix):
     current_map = float(current_map)
     if current_map > best_map[0]:
+        logger.info('[Epoch {}] mAP {} higher than current best {} saving to {}'.format(
+                    epoch, current_map, best_map, '{:s}_best.params'.format(prefix)))
         best_map[0] = current_map
-        net.save_params('{:s}_best.params'.format(prefix, epoch, current_map))
+        net.save_parameters('{:s}_best.params'.format(prefix))
         with open(prefix+'_best_map.log', 'a') as f:
             f.write('\n{:04d}:\t{:.4f}'.format(epoch, current_map))
-    if save_interval and epoch % save_interval == 0:
-        net.save_params('{:s}_{:04d}_{:.4f}.params'.format(prefix, epoch, current_map))
+    if save_interval and (epoch + 1) % save_interval == 0:
+        logger.info('[Epoch {}] Saving parameters to {}'.format(
+            epoch, '{:s}_{:04d}_{:.4f}.params'.format(prefix, epoch, current_map)))
+        net.save_parameters('{:s}_{:04d}_{:.4f}.params'.format(prefix, epoch, current_map))
 
 def split_and_load(batch, ctx_list):
     """Split data to 1 batch each device."""
@@ -201,7 +231,7 @@ def validate(net, val_data, ctx, eval_metric):
     eval_metric.reset()
     # set nms threshold and topk constraint
     net.set_nms(nms_thresh=0.3, nms_topk=400)
-    net.hybridize()
+    net.hybridize(static_alloc=True)
     for batch in val_data:
         batch = split_and_load(batch, ctx_list=ctx)
         det_bboxes = []
@@ -231,6 +261,9 @@ def validate(net, val_data, ctx, eval_metric):
             eval_metric.update(det_bbox, det_id, det_score, gt_bbox, gt_id, gt_diff)
     return eval_metric.get()
 
+def get_lr_at_iter(alpha):
+    return 1. / 3. * (1 - alpha) + alpha
+
 def train(net, train_data, val_data, eval_metric, args):
     """Training pipeline"""
     net.collect_params().reset_ctx(ctx)
@@ -245,6 +278,7 @@ def train(net, train_data, val_data, eval_metric, args):
     # lr decay policy
     lr_decay = float(args.lr_decay)
     lr_steps = sorted([float(ls) for ls in args.lr_decay_epoch.split(',') if ls.strip()])
+    lr_warmup = int(args.lr_warmup)
 
     # TODO(zhreshold) losses?
     rpn_cls_loss = mx.gluon.loss.SigmoidBinaryCrossEntropyLoss(from_sigmoid=False)
@@ -288,8 +322,14 @@ def train(net, train_data, val_data, eval_metric, args):
             metric.reset()
         tic = time.time()
         btic = time.time()
-        net.hybridize()
+        net.hybridize(static_alloc=True)
+        base_lr = trainer.learning_rate
         for i, batch in enumerate(train_data):
+            if epoch == 0 and i <= lr_warmup:
+                new_lr = base_lr * get_lr_at_iter((i // 500) / (lr_warmup / 500.))
+                if new_lr != trainer.learning_rate:
+                    logger.info('[Epoch 0 Iteration {}] Set learning rate to {}'.format(i, new_lr))
+                    trainer.set_learning_rate(new_lr)
             batch = split_and_load(batch, ctx_list=ctx)
             batch_size = len(batch[0])
             losses = []
@@ -350,7 +390,7 @@ def train(net, train_data, val_data, eval_metric, args):
             current_map = float(mean_ap[-1])
         else:
             current_map = 0.
-        save_params(net, best_map, current_map, epoch, args.save_interval, args.save_prefix)
+        save_params(net, logger, best_map, current_map, epoch, args.save_interval, args.save_prefix)
 
 if __name__ == '__main__':
     args = parse_args()
@@ -367,7 +407,7 @@ if __name__ == '__main__':
     args.save_prefix += net_name
     net = get_model(net_name, pretrained_base=True)
     if args.resume.strip():
-        net.load_params(args.resume.strip())
+        net.load_parameters(args.resume.strip())
     else:
         for param in net.collect_params().values():
             if param._data is not None:
@@ -377,7 +417,7 @@ if __name__ == '__main__':
     # training data
     train_dataset, val_dataset, eval_metric = get_dataset(args.dataset, args)
     train_data, val_data = get_dataloader(
-        net, train_dataset, val_dataset, args.batch_size, args.num_workers)
+        net, train_dataset, val_dataset, args.short, args.max_size, args.batch_size, args.num_workers)
 
     # training
     train(net, train_data, val_data, eval_metric, args)

@@ -47,6 +47,14 @@ class FasterRCNN(RCNN):
         This is usually the ratio between original image size and feature map size.
     rpn_channel : int, default is 1024
         Channel number used in RPN convolutional layers.
+    rpn_train_pre_nms : int, default is 12000
+        Filter top proposals before NMS in training of RPN.
+    rpn_train_post_nms : int, default is 2000
+        Return top proposal results after NMS in training of RPN.
+    rpn_test_pre_nms : int, default is 6000
+        Filter top proposals before NMS in testing of RPN.
+    rpn_test_post_nms : int, default is 300
+        Return top proposal results after NMS in testing of RPN.
     nms_thresh : float, default is 0.3.
         Non-maximum suppression threshold. You can speficy < 0 or > 1 to disable NMS.
     nms_topk : int, default is 400
@@ -73,8 +81,10 @@ class FasterRCNN(RCNN):
 
     """
     def __init__(self, features, top_features, scales, ratios, classes, roi_mode, roi_size,
-                 stride=16, rpn_channel=1024, num_sample=128, pos_iou_thresh=0.5,
-                 neg_iou_thresh_high=0.5, neg_iou_thresh_low=0.0, pos_ratio=0.25, **kwargs):
+                 stride=16, rpn_channel=1024, rpn_train_pre_nms=12000, rpn_train_post_nms=2000,
+                 rpn_test_pre_nms=6000, rpn_test_post_nms=300,
+                 num_sample=128, pos_iou_thresh=0.5, neg_iou_thresh_high=0.5,
+                 neg_iou_thresh_low=0.0, pos_ratio=0.25, **kwargs):
         super(FasterRCNN, self).__init__(
             features, top_features, classes, roi_mode, roi_size, **kwargs)
         self.stride = stride
@@ -82,7 +92,9 @@ class FasterRCNN(RCNN):
         self._max_roi = 100000  # maximum allowed ROIs
         self._target_generator = set([RCNNTargetGenerator(self.num_class)])
         with self.name_scope():
-            self.rpn = RPN(rpn_channel, stride, scales=scales, ratios=ratios)
+            self.rpn = RPN(rpn_channel, stride, scales=scales, ratios=ratios,
+                           train_pre_nms=rpn_train_pre_nms, train_post_nms=rpn_train_post_nms,
+                           test_pre_nms=rpn_test_pre_nms, test_post_nms=rpn_test_post_nms)
             self.sampler = RCNNTargetSampler(num_sample, pos_iou_thresh, neg_iou_thresh_high,
                                              neg_iou_thresh_low, pos_ratio)
 
@@ -238,7 +250,7 @@ def get_faster_rcnn(name, features, top_features, scales, ratios, classes,
     if pretrained:
         from ..model_store import get_model_file
         full_name = '_'.join(('faster_rcnn', name, dataset))
-        net.load_params(get_model_file(full_name, root=root), ctx=ctx)
+        net.load_parameters(get_model_file(full_name, root=root), ctx=ctx)
     return net
 
 def faster_rcnn_resnet50_v1b_voc(pretrained=False, pretrained_base=True, **kwargs):
@@ -319,7 +331,8 @@ def faster_rcnn_resnet50_v1b_coco(pretrained=False, pretrained_base=True, **kwar
                            ratios=(0.5, 1, 2), classes=classes, dataset='coco',
                            roi_mode='align', roi_size=(14, 14), stride=16,
                            rpn_channel=1024, train_patterns=train_patterns,
-                           pretrained=pretrained, **kwargs)
+                           pretrained=pretrained, num_sample=512, rpn_test_post_nms=1000,
+                           **kwargs)
 
 def faster_rcnn_resnet50_v2a_voc(pretrained=False, pretrained_base=True, **kwargs):
     r"""Faster RCNN model from the paper
@@ -399,7 +412,8 @@ def faster_rcnn_resnet50_v2a_coco(pretrained=False, pretrained_base=True, **kwar
                            ratios=(0.5, 1, 2), classes=classes, dataset='coco',
                            roi_mode='align', roi_size=(14, 14), stride=16,
                            rpn_channel=1024, train_patterns=train_patterns,
-                           pretrained=pretrained, **kwargs)
+                           pretrained=pretrained, num_sample=512, rpn_test_post_nms=1000,
+                           **kwargs)
 
 def faster_rcnn_resnet50_v2_voc(pretrained=False, pretrained_base=True, **kwargs):
     r"""Faster RCNN model from the paper

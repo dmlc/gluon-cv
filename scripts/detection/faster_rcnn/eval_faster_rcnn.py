@@ -24,6 +24,10 @@ def parse_args():
                         help="Base feature extraction network name")
     parser.add_argument('--dataset', type=str, default='voc',
                         help='Training dataset.')
+    parser.add_argument('--short', type=str, default='',
+                        help='Resize image to the given short side side, default to 600 for voc.')
+    parser.add_argument('--max-size', type=str, default='',
+                        help='Max size of either side of image, default to 1000 for voc.')
     parser.add_argument('--num-workers', '-j', dest='num_workers', type=int,
                         default=4, help='Number of data workers')
     parser.add_argument('--gpus', type=str, default='0',
@@ -33,6 +37,12 @@ def parse_args():
     parser.add_argument('--save-prefix', type=str, default='',
                         help='Saving parameter prefix')
     args = parser.parse_args()
+    if args.dataset == 'voc':
+        args.short = int(args.short) if args.short else 600
+        args.max_size = int(args.max_size) if args.max_size else 1000
+    elif args.dataset == 'coco':
+        args.short = int(args.short) if args.short else 800
+        args.max_size = int(args.max_size) if args.max_size else 1333
     return args
 
 def get_dataset(dataset, args):
@@ -47,9 +57,8 @@ def get_dataset(dataset, args):
         raise NotImplementedError('Dataset: {} not implemented.'.format(dataset))
     return val_dataset, val_metric
 
-def get_dataloader(net, val_dataset, batch_size, num_workers):
+def get_dataloader(net, val_dataset, short, max_size, batch_size, num_workers):
     """Get dataloader."""
-    short, max_size = 600, 1000
     val_bfn = batchify.Tuple(*[batchify.Append() for _ in range(3)])
     val_loader = mx.gluon.data.DataLoader(
         val_dataset.transform(FasterRCNNDefaultValTransform(short, max_size)),
@@ -116,12 +125,12 @@ if __name__ == '__main__':
         net = gcv.model_zoo.get_model(net_name, pretrained=True)
     else:
         net = gcv.model_zoo.get_model(net_name, pretrained=False)
-        net.load_params(args.pretrained.strip())
+        net.load_parameters(args.pretrained.strip())
 
     # training data
     val_dataset, eval_metric = get_dataset(args.dataset, args)
     val_data = get_dataloader(
-        net, val_dataset, args.batch_size, args.num_workers)
+        net, val_dataset, args.short, args.max_size, args.batch_size, args.num_workers)
 
     # validation
     names, values = validate(net, val_data, ctx, eval_metric, len(val_dataset))
