@@ -16,6 +16,7 @@ _model_sha1 = {name: checksum for checksum, name in [
     ('37c180765a4eb3e67751d6bacac47bb9156f5fff', 'ssd_512_mobilenet1.0_voc'),
     ('9b9ee04e4fba85431d11b9f7eb3a232b6606c7f6', 'faster_rcnn_resnet50_v2a_voc'),
     ('b302ad8a8660345c368448141d8acf30b5a3801d', 'ssd_300_vgg16_atrous_coco'),
+    ('5c86064290c05eccbdd88475376c71c595c8325c', 'ssd_512_vgg16_atrous_coco'),
     ('c48351620d4f0cbc49e4f7a84c8e67ef8fdc6e09', 'ssd_512_resnet50_v1_coco'),
     ('78e5daa9e47b1f2f9c3ffd3ffb9714c8d968a367', 'faster_rcnn_resnet50_v1b_coco'),
     ('121e1579d811b091940b3b1fa033e1f0d1dca40f', 'cifar_resnet20_v1'),

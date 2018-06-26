@@ -191,11 +191,9 @@ and their performances.
 +===================================+==========+======+======+===================================================================================================================================+==================================================================================================================================+
 | ssd_300_vgg16_atrous_coco         | 25.1     | 42.9 | 25.8 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/ssd_300_vgg16_atrous_coco.sh>`_      | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/ssd_300_vgg16_atrous_coco_train.log>`_       |
 +-----------------------------------+----------+------+------+-----------------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------+
-| ssd_512_vgg16_atrous_coco         |          |      |      |                                                                                                                                   |                                                                                                                                  |
+| ssd_512_vgg16_atrous_coco         | 28.9     | 47.9 | 30.6 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/ssd_512_vgg16_atrous_coco.sh>`_      | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/ssd_512_vgg16_atrous_coco_train.log>`_       |
 +-----------------------------------+----------+------+------+-----------------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------+
 | ssd_512_resnet50_v1_coco          | 30.6     | 50.0 | 32.2 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/ssd_512_resnet50_v1_coco.sh>`_       | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/ssd_512_resnet50_v1_coco_train.log>`_        |
-+-----------------------------------+----------+------+------+-----------------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------+
-| faster_rcnn_resnet50_v2a_coco     |          |      |      |                                                                                                                                   |                                                                                                                                  |
 +-----------------------------------+----------+------+------+-----------------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------+
 
 Semantic Segmentation
@@ -213,7 +211,7 @@ Table of pre-trained models for semantic segmentation and their performance.
 
   - ``voc`` is the training dataset.
 
-  The test script :download:`Download train.py<../../scripts/segmentation/test.py>` can be used for
+  The test script :download:`Download test.py<../../scripts/segmentation/test.py>` can be used for
   evaluating the models (VOC results are evaluated using the official server). For example ``fcn_resnet50_ade``::
 
     python test.py --dataset ade20k --model-zoo fcn_resnet50_ade --eval
