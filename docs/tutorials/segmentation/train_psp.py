@@ -9,6 +9,10 @@ You can `Start Training Now`_ or `Dive into Deep`_.
 Start Training Now
 ~~~~~~~~~~~~~~~~~~
 
+.. note::
+    
+    Training PSPNet relies on Synchronized Batch Normalization, which will be available shortly.
+
 .. hint::
 
     Feel free to skip the tutorial because the training script is self-complete and ready to launch.
@@ -101,8 +105,8 @@ input_transform = transforms.Compose([
 # For example, we can easily get the ADE20K dataset:
 trainset = gluoncv.data.ADE20KSegmentation(split='train', transform=input_transform)
 print('Training images:', len(trainset))
-# set batch_size = 4 for toy example
-batch_size = 4
+# set batch_size = 2 for toy example
+batch_size = 2
 # Create Training Loader
 train_data = gluon.data.DataLoader(
     trainset, batch_size, shuffle=True, last_batch='rollover',

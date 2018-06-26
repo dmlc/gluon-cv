@@ -133,8 +133,8 @@ input_transform = transforms.Compose([
 # For example, we can easily get the Pascal VOC 2012 dataset:
 trainset = gluoncv.data.VOCSegmentation(split='train', transform=input_transform)
 print('Training images:', len(trainset))
-# set batch_size = 4 for toy example
-batch_size = 4
+# set batch_size = 2 for toy example
+batch_size = 2
 # Create Training Loader
 train_data = gluon.data.DataLoader(
     trainset, batch_size, shuffle=True, last_batch='rollover',

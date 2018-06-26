@@ -6,49 +6,49 @@ from mxnet import gluon, autograd, test_utils
 
 class SharedTensor(object):
     """Shared Tensor for Syncing"""
-    def __init__(self, key, nchannels, nGPUs):
-        self.mutex = threading.Lock()
-        self.all_tasks_done = threading.Condition(self.mutex)
+    def __init__(self, key, nchannels, num_devices):
+        self._mutex = threading.Lock()
+        self._all_tasks_done = threading.Condition(self._mutex)
         self._key = key
-        self.nGPUs = int(nGPUs)
+        self.num_devices = int(num_devices)
         self.out = mx.nd.zeros(nchannels)
         self._clear()
 
     def _clear(self):
         self.list = []
-        self.push_tasks = self.nGPUs
-        self.reduce_tasks = self.nGPUs
+        self.push_tasks = self.num_devices
+        self.reduce_tasks = self.num_devices
 
     def push(self, t):
-        """push to _SharedTensor"""
-        with self.mutex:
+        """push value to SharedTensor"""
+        with self._mutex:
             if self.push_tasks == 0:
                 self._clear()
             #t.wait_to_read()
             self.list.append(t)
             self.push_tasks -= 1
-        with self.all_tasks_done:
+        with self._all_tasks_done:
             if self.push_tasks == 0:
-                self.all_tasks_done.notify_all()
+                self._all_tasks_done.notify_all()
             while self.push_tasks:
-                self.all_tasks_done.wait()
+                self._all_tasks_done.wait()
 
     def _reduce(self, kv):
-        with self.mutex:
+        with self._mutex:
             if self.reduce_tasks == 1:
-                assert(len(self.list) == self.nGPUs)
+                assert(len(self.list) == self.num_devices)
                 kv.push(self._key, self.list)
                 self.reduce_tasks -= 1
             else:
                 self.reduce_tasks -= 1
-        with self.all_tasks_done:
+        with self._all_tasks_done:
             if self.reduce_tasks == 0:
-                self.all_tasks_done.notify_all()
+                self._all_tasks_done.notify_all()
             while self.reduce_tasks:
-                self.all_tasks_done.wait()
+                self._all_tasks_done.wait()
 
     def pull(self, kv):
-        """Get form _SharedTensor"""
+        """Get value form SharedTensor"""
         self._reduce(kv)
         kv.pull(self._key, out=self.out)
         return self.out
@@ -62,15 +62,15 @@ class SharedTDict(object):
     def __init__(self):
         self.stdict = {}
         self.keys = []
-        self.mutex = threading.Lock()
+        self._mutex = threading.Lock()
         self.kv = mx.kv.create('local')
 
-    def register(self, key, nchannels, nGPUs):
-        with self.mutex:
+    def register(self, key, nchannels, num_devices):
+        with self._mutex:
             if key in self.keys:
                 return
             print('registerring {}'.format(key))
-            self.stdict[key] = SharedTensor(key, nchannels, nGPUs)
+            self.stdict[key] = SharedTensor(key, nchannels, num_devices)
             self.kv.init(key, mx.nd.zeros(nchannels))
             self.keys.append(key)
 
@@ -145,7 +145,7 @@ class BatchNorm(gluon.nn.BatchNorm):
         Number of channels (feature maps) in input data. If not specified,
         initialization will be deferred to the first time `forward` is called
         and `in_channels` will be inferred from the shape of input data.
-    nGPUs : int, default number of visible GPUs
+    num_devices : int, default number of visible GPUs
     Inputs:
         - **data**: input tensor with arbitrary shape.
     Outputs:
@@ -167,17 +167,17 @@ class BatchNorm(gluon.nn.BatchNorm):
         self.eps = epsilon
         self.momentum = momentum
         self.in_channels = in_channels
-        self.ndevices = self._get_nGPUs() if ndevices is None else ndevices
+        self.ndevices = self._get_num_devices() if ndevices is None else ndevices
         self.updater = _SharedUpdater(self.ndevices)
         sharedTensorDict.register(self._prefix + 'sum', in_channels, self.ndevices)
         sharedTensorDict.register(self._prefix + 'squ', in_channels, self.ndevices)
 
-    def _get_nGPUs(self):
-        # caution: if not using all the GPUs, please mannually set nGPUs
-        nGPUs = len(test_utils.list_gpus())
+    def _get_num_devices(self):
+        # caution: if not using all the GPUs, please mannually set num_devices
+        num_devices = len(test_utils.list_gpus())
         # for CPU
-        nGPUs = nGPUs if nGPUs > 0 else 1
-        return nGPUs
+        num_devices = num_devices if num_devices > 0 else 1
+        return num_devices
 
     def hybrid_forward(self, F, x, gamma, beta, running_mean, running_var):
         """Hybrid forward"""
@@ -207,17 +207,17 @@ class BatchNorm(gluon.nn.BatchNorm):
 
 class _SharedUpdater(object):
     # update only once
-    def __init__(self, nGPUs):
-        self.mutex = threading.Lock()
-        self.nGPUs = nGPUs
+    def __init__(self, num_devices):
+        self._mutex = threading.Lock()
+        self.num_devices = num_devices
         self._clear()
 
     def _clear(self):
-        self.tasks = self.nGPUs
+        self.tasks = self.num_devices
 
     def __call__(self, running_mean, running_var, mean, unbias_var, momentum, ctx):
-        with self.mutex:
-            if self.tasks == self.nGPUs:
+        with self._mutex:
+            if self.tasks == self.num_devices:
                 running_mean.set_data(momentum * running_mean.data(ctx) + \
                     (1.0 - momentum) * mean)
                 running_var.set_data(momentum * running_var.data(ctx) + \
