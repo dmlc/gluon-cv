@@ -231,25 +231,12 @@ Table of pre-trained models for semantic segmentation and their performance.
 +-------------------+--------------+-----------+-----------+-----------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
 | fcn_resnet50_ade  | FCN [6]_     | 78.6      | 38.7      | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/fcn_resnet50_ade.sh>`_      | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/fcn_resnet50_ade.log>`_      |
 +-------------------+--------------+-----------+-----------+-----------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
+| psp_resnet50_ade  | PSP [9]_     | 78.4      | 41.1      | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/psp_resnet50_ade.sh>`_      | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/psp_resnet50_ade.log>`_      |
++-------------------+--------------+-----------+-----------+-----------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
 
 .. _69.4:  http://host.robots.ox.ac.uk:8080/anonymous/TC12D2.html
 .. _70.9:  http://host.robots.ox.ac.uk:8080/anonymous/FTIQXJ.html
 
-.. raw:: html
-
-    <code xml:space="preserve" id="cmd_fcn_50" style="display: none; text-align: left; white-space: pre-wrap">
-    # First training on augmented set
-    CUDA_VISIBLE_DEVICES=0,1,2,3 python train.py --dataset pascal_aug --model fcn --backbone resnet50 --lr 0.001 --syncbn --checkname mycheckpoint
-    # Finetuning on original set
-    CUDA_VISIBLE_DEVICES=0,1,2,3 python train.py --dataset pascal_voc --model fcn --backbone resnet50 --lr 0.0001 --syncbn --checkname mycheckpoint --resume runs/pascal_aug/fcn/mycheckpoint/checkpoint.params
-    </code>
-
-    <code xml:space="preserve" id="cmd_fcn_101" style="display: none; text-align: left; white-space: pre-wrap">
-    # First training on augmented set
-    CUDA_VISIBLE_DEVICES=0,1,2,3 python train.py --dataset pascal_aug --model fcn --backbone resnet101 --lr 0.001 --syncbn --checkname mycheckpoint
-    # Finetuning on original set
-    CUDA_VISIBLE_DEVICES=0,1,2,3 python train.py --dataset pascal_voc --model fcn --backbone resnet101 --lr 0.0001 --syncbn --checkname mycheckpoint --resume runs/pascal_aug/fcn/mycheckpoint/checkpoint.params
-    </code>
 
 .. [1] He, Kaiming, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. \
        "Deep residual learning for image recognition." \

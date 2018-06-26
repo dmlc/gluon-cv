@@ -1,7 +1,7 @@
-"""1. Getting Started with FCN Pre-trained Models
-==============================================
+"""2. Test with PSPNet Pre-trained Models
+======================================
 
-This is a quick demo of using GluonCV FCN model on PASCAL VOC dataset.
+This is a quick demo of using GluonCV PSPNet model on ADE20K dataset.
 Please follow the `installation guide <../index.html>`_ to install MXNet and GluonCV if not yet.
 """
 import mxnet as mx
@@ -17,8 +17,9 @@ ctx = mx.cpu(0)
 # -----------------
 #
 # download the example image
-url = 'https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/segmentation/voc_examples/1.jpg'
-filename = 'example.jpg'
+url = 'https://github.com/zhanghang1989/image-data/blob/master/encoding/' + \
+    'segmentation/ade20k/ADE_val_00001142.jpg?raw=true'
+filename = 'ade20k_example.jpg'
 gluoncv.utils.download(url, filename)
 
 ##############################################################################
@@ -43,7 +44,7 @@ img = img.expand_dims(0).as_in_context(ctx)
 # ----------------------------------------------
 #
 # get pre-trained model
-model = gluoncv.model_zoo.get_model('fcn_resnet50_voc', pretrained=True)
+model = gluoncv.model_zoo.get_model('psp_resnet50_ade', pretrained=True)
 
 ##############################################################################
 # make prediction using single scale
@@ -54,7 +55,7 @@ predict = mx.nd.squeeze(mx.nd.argmax(output, 1)).asnumpy()
 # Add color pallete for visualization
 from gluoncv.utils.viz import get_color_pallete
 import matplotlib.image as mpimg
-mask = get_color_pallete(predict, 'pascal_voc')
+mask = get_color_pallete(predict, 'ade20k')
 mask.save('output.png')
 
 ##############################################################################
@@ -62,25 +63,3 @@ mask.save('output.png')
 mmask = mpimg.imread('output.png')
 plt.imshow(mmask)
 plt.show()
-
-##############################################################################
-# More Examples
-# -------------
-#
-#.. image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/segmentation/voc_examples/4.jpg
-#    :width: 45%
-#
-#.. image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/segmentation/voc_examples/4.png
-#    :width: 45%
-#
-#.. image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/segmentation/voc_examples/5.jpg
-#    :width: 45%
-#
-#.. image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/segmentation/voc_examples/5.png
-#    :width: 45%
-#
-#.. image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/segmentation/voc_examples/6.jpg
-#    :width: 45%
-#
-#.. image:: https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/segmentation/voc_examples/6.png
-#    :width: 45%

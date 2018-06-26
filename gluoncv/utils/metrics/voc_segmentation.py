@@ -8,10 +8,12 @@ __all__ = ['batch_pix_accuracy', 'batch_intersection_union', 'pixelAccuracy',
 def batch_pix_accuracy(output, target):
     """PixAcc"""
     # inputs are NDarray, output 4D, target 3D
-    predict = F.argmax(output, 1) + 1
-    target = target.astype(predict.dtype) + 1
-    pixel_labeled = (target > 0).sum().asscalar()
-    pixel_correct = (F.equal(predict, target)*(target > 0)).sum().asscalar()
+    predict = F.argmax(output, 1)
+    predict = predict.asnumpy() + 1
+    target = target.asnumpy().astype(predict.dtype) + 1
+    pixel_labeled = np.sum(target > 0)
+    pixel_correct = np.sum((predict == target)*(target > 0))
+    assert pixel_correct <= pixel_labeled, "Correct area should be smaller than Labeled"
     return pixel_correct, pixel_labeled
 
 

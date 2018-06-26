@@ -6,6 +6,7 @@ from mxnet import gluon
 from .ssd import *
 from .faster_rcnn import *
 from .fcn import *
+from .pspnet import *
 from .cifarresnet import *
 from .cifarresnext import *
 from .cifarwideresnet import *
@@ -65,6 +66,7 @@ def get_model(name, **kwargs):
         'fcn_resnet50_voc' : get_fcn_voc_resnet50,
         'fcn_resnet101_voc' : get_fcn_voc_resnet101,
         'fcn_resnet50_ade' : get_fcn_ade_resnet50,
+        'psp_resnet50_ade' : get_psp_ade_resnet50,
         'resnet18_v1b' : resnet18_v1b,
         'resnet34_v1b' : resnet34_v1b,
         'resnet50_v1b' : resnet50_v1b,

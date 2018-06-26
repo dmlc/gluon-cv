@@ -22,12 +22,12 @@ class BasicBlockV1b(HybridBlock):
         self.conv1 = nn.Conv2D(in_channels=inplanes, channels=planes,
                                kernel_size=3, strides=strides,
                                padding=dilation, dilation=dilation, use_bias=False)
-        self.bn1 = nn.BatchNorm(in_channels=planes)
+        self.bn1 = norm_layer(in_channels=planes)
         self.relu = nn.Activation('relu')
         self.conv2 = nn.Conv2D(in_channels=planes, channels=planes, kernel_size=3, strides=1,
                                padding=previous_dilation, dilation=previous_dilation,
                                use_bias=False)
-        self.bn2 = nn.BatchNorm(in_channels=planes)
+        self.bn2 = norm_layer(in_channels=planes)
         self.downsample = downsample
         self.strides = strides
 
@@ -60,11 +60,11 @@ class BottleneckV1b(HybridBlock):
                  last_gamma=False, **kwargs):
         super(BottleneckV1b, self).__init__()
         self.conv1 = nn.Conv2D(in_channels=inplanes, channels=planes, kernel_size=1, use_bias=False)
-        self.bn1 = nn.BatchNorm(in_channels=planes)
+        self.bn1 = norm_layer(in_channels=planes)
         self.conv2 = nn.Conv2D(
             in_channels=planes, channels=planes, kernel_size=3, strides=strides,
             padding=dilation, dilation=dilation, use_bias=False)
-        self.bn2 = nn.BatchNorm(in_channels=planes)
+        self.bn2 = norm_layer(in_channels=planes)
         self.conv3 = nn.Conv2D(
             in_channels=planes, channels=planes * 4, kernel_size=1, use_bias=False)
         if not last_gamma:
@@ -115,7 +115,7 @@ class ResNetV1b(HybridBlock):
         Applying dilation strategy to pretrained ResNet yielding a stride-8 model,
         typically used in Semantic Segmentation.
     norm_layer : object
-        Normalization layer used in backbone network (default: :class:`mxnet.gluon.nn.BatchNorm`;
+        Normalization layer used in backbone network (default: :class:`mxnet.gluon.norm_layer`;
         for Synchronized Cross-GPU BachNormalization).
 
 
@@ -219,7 +219,7 @@ def resnet18_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
     dilated: bool, default False
         Whether to apply dilation strategy to ResNetV1b, yilding a stride 8 model.
     norm_layer : object
-        Normalization layer used in backbone network (default: :class:`mxnet.gluon.nn.BatchNorm`;
+        Normalization layer used in backbone network (default: :class:`mxnet.gluon.norm_layer`;
         for Synchronized Cross-GPU BachNormalization).
     """
     model = ResNetV1b(BasicBlockV1b, [2, 2, 2, 2], **kwargs)
@@ -244,7 +244,7 @@ def resnet34_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
     dilated: bool, default False
         Whether to apply dilation strategy to ResNetV1b, yilding a stride 8 model.
     norm_layer : object
-        Normalization layer used in backbone network (default: :class:`mxnet.gluon.nn.BatchNorm`;
+        Normalization layer used in backbone network (default: :class:`mxnet.gluon.norm_layer`;
     """
     model = ResNetV1b(BasicBlockV1b, [3, 4, 6, 3], **kwargs)
     if pretrained:
@@ -268,7 +268,7 @@ def resnet50_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
     dilated: bool, default False
         Whether to apply dilation strategy to ResNetV1b, yilding a stride 8 model.
     norm_layer : object
-        Normalization layer used in backbone network (default: :class:`mxnet.gluon.nn.BatchNorm`;
+        Normalization layer used in backbone network (default: :class:`mxnet.gluon.norm_layer`;
     """
     model = ResNetV1b(BottleneckV1b, [3, 4, 6, 3], **kwargs)
     if pretrained:
@@ -292,7 +292,7 @@ def resnet101_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
     dilated: bool, default False
         Whether to apply dilation strategy to ResNetV1b, yilding a stride 8 model.
     norm_layer : object
-        Normalization layer used in backbone network (default: :class:`mxnet.gluon.nn.BatchNorm`;
+        Normalization layer used in backbone network (default: :class:`mxnet.gluon.norm_layer`;
     """
     model = ResNetV1b(BottleneckV1b, [3, 4, 23, 3], **kwargs)
     if pretrained:
@@ -316,7 +316,7 @@ def resnet152_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
     dilated: bool, default False
         Whether to apply dilation strategy to ResNetV1b, yilding a stride 8 model.
     norm_layer : object
-        Normalization layer used in backbone network (default: :class:`mxnet.gluon.nn.BatchNorm`;
+        Normalization layer used in backbone network (default: :class:`mxnet.gluon.norm_layer`;
     """
     model = ResNetV1b(BottleneckV1b, [3, 8, 36, 3], **kwargs)
     if pretrained:
