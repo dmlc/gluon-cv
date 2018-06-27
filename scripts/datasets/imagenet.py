@@ -57,7 +57,7 @@ def build_rec_process(img_dir, train=False, num_thread=1):
     # execution
     import sys
     cmd = [
-        str(sys.executable),
+        sys.executable,
         script_path,
         rec_dir,
         img_dir,
