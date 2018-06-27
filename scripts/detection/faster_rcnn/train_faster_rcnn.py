@@ -278,7 +278,7 @@ def train(net, train_data, val_data, eval_metric, args):
     # lr decay policy
     lr_decay = float(args.lr_decay)
     lr_steps = sorted([float(ls) for ls in args.lr_decay_epoch.split(',') if ls.strip()])
-    lr_warmup = int(args.lr_warmup)
+    lr_warmup = float(args.lr_warmup)  # avoid int division
 
     # TODO(zhreshold) losses?
     rpn_cls_loss = mx.gluon.loss.SigmoidBinaryCrossEntropyLoss(from_sigmoid=False)
@@ -326,7 +326,8 @@ def train(net, train_data, val_data, eval_metric, args):
         base_lr = trainer.learning_rate
         for i, batch in enumerate(train_data):
             if epoch == 0 and i <= lr_warmup:
-                new_lr = base_lr * get_lr_at_iter((i // 500) / (lr_warmup / 500.))
+                # adjust based on real percentage
+                new_lr = base_lr * get_lr_at_iter(i / lr_warmup)
                 if new_lr != trainer.learning_rate:
                     logger.info('[Epoch 0 Iteration {}] Set learning rate to {}'.format(i, new_lr))
                     trainer.set_learning_rate(new_lr)
