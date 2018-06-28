@@ -9,19 +9,24 @@ from mxnet.gluon import nn
 
 __all__ = ['DarknetV3', 'get_darknet', 'darknet53']
 
+def _conv2d(channel, kernel, padding, stride):
+    """A common conv-bn-leakyrelu cell"""
+    cell = nn.HybridSequential(prefix='')
+    cell.add(nn.Conv2D(channel, kernel_size=kernel,
+                       strides=stride, padding=padding, use_bias=False))
+    cell.add(nn.BatchNorm(epsilon=1e-5, momentum=0.9))
+    cell.add(nn.LeakyReLU(0.1))
+    return cell
+
 
 class DarknetBasicBlockV3(gluon.HybridBlock):
     def __init__(self, channel, **kwargs):
         super(DarknetBasicBlockV3, self).__init__(**kwargs)
         self.body = nn.HybridSequential(prefix='')
         # 1x1 reduce
-        self.body.add(nn.Conv2D(channel, kernel_size=1, padding=0, use_bias=False))
-        self.body.add(nn.BatchNorm(epsilon=1e-5, momentum=0.9))
-        self.body.add(nn.LeakyReLU(0.1))
+        self.body.add(_conv2d(channel, 1, 0, 1))
         # 3x3 conv expand
-        self.body.add(nn.Conv2D(channel * 2, kernel_size=3, padding=1, use_bias=False))
-        self.body.add(nn.BatchNorm(epsilon=1e-5, momentum=0.9))
-        self.body.add(nn.LeakyReLU(0.1))
+        self.body.add(_conv2d(channel * 2, 3, 1, 1))
 
     def hybrid_forward(self, F, x):
         residual = x
@@ -38,16 +43,11 @@ class DarknetV3(gluon.HybridBlock):
         with self.name_scope():
             self.features = nn.HybridSequential()
             # first 3x3 conv
-            self.features.add(nn.Conv2D(channels[0], kernel_size=3, padding=1, use_bias=False))
-            self.features.add(nn.BatchNorm(epsilon=1e-5, momentum=0.9))
-            self.features.add(nn.LeakyReLU(0.1))
+            self.features.add(_conv2d(channels[0], 3, 1, 1))
             for nlayer, channel in zip(layers, channels[1:]):
                 assert channel % 2 == 0, "channel {} cannot be divided by 2".format(channel)
                 # add downsample conv with stride=2
-                self.features.add(nn.Conv2D(
-                    channel, kernel_size=3, strides=2, padding=1, use_bias=False))
-                self.features.add(nn.BatchNorm(epsilon=1e-5, momentum=0.9))
-                self.features.add(nn.LeakyReLU(0.1))
+                self.features.add(_conv2d(channel, 3, 1, 2))
                 # add nlayer basic blocks
                 for _ in range(nlayer):
                     self.features.add(DarknetBasicBlockV3(channel // 2))
