@@ -329,7 +329,8 @@ def train(net, train_data, val_data, eval_metric, args):
                 # adjust based on real percentage
                 new_lr = base_lr * get_lr_at_iter(i / lr_warmup)
                 if new_lr != trainer.learning_rate:
-                    logger.info('[Epoch 0 Iteration {}] Set learning rate to {}'.format(i, new_lr))
+                    if i % args.log_interval == 0:
+                        logger.info('[Epoch 0 Iteration {}] Set learning rate to {}'.format(i, new_lr))
                     trainer.set_learning_rate(new_lr)
             batch = split_and_load(batch, ctx_list=ctx)
             batch_size = len(batch[0])
