@@ -1,5 +1,5 @@
 """ResNetV1bs, implemented in Gluon."""
-# pylint: disable=arguments-differ,unused-argument,missing-docstring
+# pylint: disable=arguments-differ,unused-argument,missing-docstring,dangerous-default-value
 from __future__ import division
 
 from mxnet.context import cpu
@@ -172,11 +172,13 @@ class ResNetV1b(HybridBlock):
             if dilation == 1 or dilation == 2:
                 layers.add(block(self.inplanes, planes, strides, dilation=1,
                                  downsample=downsample, previous_dilation=dilation,
-                                 norm_layer=norm_layer, norm_kwargs=self.norm_kwargs, last_gamma=last_gamma))
+                                 norm_layer=norm_layer, norm_kwargs=self.norm_kwargs,
+                                 last_gamma=last_gamma))
             elif dilation == 4:
                 layers.add(block(self.inplanes, planes, strides, dilation=2,
                                  downsample=downsample, previous_dilation=dilation,
-                                 norm_layer=norm_layer, norm_kwargs=self.norm_kwargs, last_gamma=last_gamma))
+                                 norm_layer=norm_layer, norm_kwargs=self.norm_kwargs,
+                                 last_gamma=last_gamma))
             else:
                 raise RuntimeError("=> unknown dilation size: {}".format(dilation))
 
