@@ -93,7 +93,7 @@ def get_model(name, **kwargs):
         'se_resnet50_v2' : se_resnet50_v2,
         'se_resnet101_v2' : se_resnet101_v2,
         'se_resnet152_v2' : se_resnet152_v2,
-        'darknet53': darknet53,
+        'darknet53_v3': darknet53_v3,
         }
     try:
         net = gluon.model_zoo.vision.get_model(name, **kwargs)

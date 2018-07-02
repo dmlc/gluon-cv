@@ -7,7 +7,7 @@ import numpy as np
 from mxnet import gluon
 from mxnet.gluon import nn
 
-__all__ = ['DarknetV3', 'get_darknet', 'darknet53']
+__all__ = ['DarknetV3', 'get_darknet', 'darknet53_v3']
 
 def _conv2d(channel, kernel, padding, stride):
     """A common conv-bn-leakyrelu cell"""
@@ -59,18 +59,27 @@ class DarknetV3(gluon.HybridBlock):
       x = F.Pooling(x, kernel=(7, 7), global_pool=True, pool_type='avg')
       return self.output(x)
 
-darknet_spec = {53: ([1, 2, 8, 8, 4], [32, 64, 128, 256, 512, 1024]),}
+darknet_versions = {'v3': DarknetV3}
+darknet_spec = {
+    'v3': {53: ([1, 2, 8, 8, 4], [32, 64, 128, 256, 512, 1024]),}
+}
 
-def get_darknet(num_layers, pretrained=False, ctx=mx.cpu(),
+def get_darknet(darknet_version, num_layers, pretrained=False, ctx=mx.cpu(),
                 root=os.path.join('~', '.mxnet', 'models'), **kwargs):
-    assert num_layers in darknet_spec, (
-        "Invalid number of layers: {}. Options are {}".format(num_layers, str(darknet_spec.keys())))
-    layers, channels = darknet_spec[num_layers]
-    net = DarknetV3(layers, channels, **kwargs)
+    assert darknet_version in darknet_versions and darknet_version in darknet_spec, (
+        "Invalid darknet version: {}. Options are {}".format(
+            darknet_version, str(darknet_versions.keys())))
+    specs = darknet_spec[darknet_version]
+    assert num_layers in specs, (
+        "Invalid number of layers: {}. Options are {}".format(num_layers, str(specs.keys())))
+    layers, channels = specs[num_layers]
+    darknet_class = darknet_versions[darknet_version]
+    net = darknet_class(layers, channels, **kwargs)
     if pretrained:
         from ..model_store import get_model_file
-        net.load_parameters(get_model_file('darknet%d'%(num_layers), root=root), ctx=ctx)
+        net.load_parameters(get_model_file(
+            'darknet%d_%s'%(num_layers, darknet_version), root=root), ctx=ctx)
     return net
 
-def darknet53(**kwargs):
-    return get_darknet(53, **kwargs)
+def darknet53_v3(**kwargs):
+    return get_darknet('v3', 53, **kwargs)
