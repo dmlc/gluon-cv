@@ -17,17 +17,17 @@ class BasicBlockV1b(HybridBlock):
     """
     expansion = 1
     def __init__(self, inplanes, planes, strides=1, dilation=1, downsample=None,
-                 previous_dilation=1, norm_layer=None, **kwargs):
+                 previous_dilation=1, norm_layer=None, norm_kwargs={}, **kwargs):
         super(BasicBlockV1b, self).__init__()
         self.conv1 = nn.Conv2D(in_channels=inplanes, channels=planes,
                                kernel_size=3, strides=strides,
                                padding=dilation, dilation=dilation, use_bias=False)
-        self.bn1 = norm_layer(in_channels=planes)
+        self.bn1 = norm_layer(in_channels=planes, **norm_kwargs)
         self.relu = nn.Activation('relu')
         self.conv2 = nn.Conv2D(in_channels=planes, channels=planes, kernel_size=3, strides=1,
                                padding=previous_dilation, dilation=previous_dilation,
                                use_bias=False)
-        self.bn2 = norm_layer(in_channels=planes)
+        self.bn2 = norm_layer(in_channels=planes, **norm_kwargs)
         self.downsample = downsample
         self.strides = strides
 
@@ -57,14 +57,14 @@ class BottleneckV1b(HybridBlock):
     expansion = 4
     def __init__(self, inplanes, planes, strides=1, dilation=1,
                  downsample=None, previous_dilation=1, norm_layer=None,
-                 last_gamma=False, **kwargs):
+                 norm_kwargs={}, last_gamma=False, **kwargs):
         super(BottleneckV1b, self).__init__()
         self.conv1 = nn.Conv2D(in_channels=inplanes, channels=planes, kernel_size=1, use_bias=False)
-        self.bn1 = norm_layer(in_channels=planes)
+        self.bn1 = norm_layer(in_channels=planes, **norm_kwargs)
         self.conv2 = nn.Conv2D(
             in_channels=planes, channels=planes, kernel_size=3, strides=strides,
             padding=dilation, dilation=dilation, use_bias=False)
-        self.bn2 = norm_layer(in_channels=planes)
+        self.bn2 = norm_layer(in_channels=planes, **norm_kwargs)
         self.conv3 = nn.Conv2D(
             in_channels=planes, channels=planes * 4, kernel_size=1, use_bias=False)
         if not last_gamma:
@@ -128,13 +128,14 @@ class ResNetV1b(HybridBlock):
     """
     # pylint: disable=unused-variable
     def __init__(self, block, layers, classes=1000, dilated=False, norm_layer=BatchNorm,
-                 last_gamma=False, **kwargs):
+                 norm_kwargs={}, last_gamma=False, **kwargs):
         self.inplanes = 64
         super(ResNetV1b, self).__init__()
+        self.norm_kwargs = norm_kwargs
         with self.name_scope():
             self.conv1 = nn.Conv2D(in_channels=3, channels=64, kernel_size=7, strides=2, padding=3,
                                    use_bias=False)
-            self.bn1 = norm_layer(in_channels=64)
+            self.bn1 = norm_layer(in_channels=64, **norm_kwargs)
             self.relu = nn.Activation('relu')
             self.maxpool = nn.MaxPool2D(pool_size=3, strides=2, padding=1)
             self.layer1 = self._make_layer(1, block, 64, layers[0], norm_layer=norm_layer,
@@ -164,18 +165,18 @@ class ResNetV1b(HybridBlock):
                 downsample.add(nn.Conv2D(in_channels=self.inplanes,
                                          channels=planes * block.expansion,
                                          kernel_size=1, strides=strides, use_bias=False))
-                downsample.add(norm_layer(in_channels=planes * block.expansion))
+                downsample.add(norm_layer(in_channels=planes * block.expansion, **self.norm_kwargs))
 
         layers = nn.HybridSequential(prefix='layers%d_'%stage_index)
         with layers.name_scope():
             if dilation == 1 or dilation == 2:
                 layers.add(block(self.inplanes, planes, strides, dilation=1,
                                  downsample=downsample, previous_dilation=dilation,
-                                 norm_layer=norm_layer, last_gamma=last_gamma))
+                                 norm_layer=norm_layer, norm_kwargs=self.norm_kwargs, last_gamma=last_gamma))
             elif dilation == 4:
                 layers.add(block(self.inplanes, planes, strides, dilation=2,
                                  downsample=downsample, previous_dilation=dilation,
-                                 norm_layer=norm_layer, last_gamma=last_gamma))
+                                 norm_layer=norm_layer, norm_kwargs=self.norm_kwargs, last_gamma=last_gamma))
             else:
                 raise RuntimeError("=> unknown dilation size: {}".format(dilation))
 
@@ -183,7 +184,7 @@ class ResNetV1b(HybridBlock):
             for i in range(1, blocks):
                 layers.add(block(self.inplanes, planes, dilation=dilation,
                                  previous_dilation=dilation, norm_layer=norm_layer,
-                                 last_gamma=last_gamma))
+                                 norm_kwargs=self.norm_kwargs, last_gamma=last_gamma))
 
         return layers
 

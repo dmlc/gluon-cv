@@ -59,12 +59,12 @@ class PSPNet(SegBaseModel):
             return x
 
 
-def _PSP1x1Conv(in_channels, out_channels, norm_layer=None, **kwargs):
+def _PSP1x1Conv(in_channels, out_channels, norm_layer, norm_kwargs):
     block = nn.HybridSequential(prefix='')
     with block.name_scope():
         block.add(nn.Conv2D(in_channels=in_channels,
                             channels=out_channels, kernel_size=1))
-        block.add(norm_layer(in_channels=out_channels))
+        block.add(norm_layer(in_channels=out_channels, **norm_kwargs))
         block.add(nn.Activation('relu'))
     return block
 

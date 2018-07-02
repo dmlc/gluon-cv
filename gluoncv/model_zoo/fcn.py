@@ -66,7 +66,7 @@ class FCN(SegBaseModel):
 
 class _FCNHead(HybridBlock):
     # pylint: disable=redefined-outer-name
-    def __init__(self, in_channels, channels, norm_layer, **kwargs):
+    def __init__(self, in_channels, channels, norm_layer, norm_kwargs, **kwargs):
         super(_FCNHead, self).__init__()
         with self.name_scope():
             self.block = nn.HybridSequential()
@@ -74,7 +74,7 @@ class _FCNHead(HybridBlock):
             with self.block.name_scope():
                 self.block.add(nn.Conv2D(in_channels=in_channels, channels=inter_channels,
                                          kernel_size=3, padding=1))
-                self.block.add(norm_layer(in_channels=inter_channels))
+                self.block.add(norm_layer(in_channels=inter_channels, **norm_kwargs))
                 self.block.add(nn.Activation('relu'))
                 self.block.add(nn.Dropout(0.1))
                 self.block.add(nn.Conv2D(in_channels=inter_channels, channels=channels,
