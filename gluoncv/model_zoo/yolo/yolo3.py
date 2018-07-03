@@ -47,7 +47,6 @@ class YOLOOutputV3(gluon.HybridBlock):
         pred = self.prediction(x).reshape((0, self._num_anchors * self._num_pred, -1))
         # transpose to (batch, height * width, num_anchor, num_pred)
         pred = pred.transpose(axes=(0, 2, 1)).reshape((0, -1, self._num_anchors, self._num_pred))
-        print(pred.shape)
         # components
         box_centers = pred.slice_axis(axis=-1, begin=0, end=2)
         box_scales = pred.slice_axis(axis=-1, begin=2, end=4)
@@ -86,14 +85,15 @@ class YOLODetectionBlockV3(gluon.HybridBlock):
     def __init__(self, channel, **kwargs):
         super(YOLODetectionBlockV3, self).__init__(**kwargs)
         assert channel % 2 == 0, "channel {} cannot be divided by 2".format(channel)
-        self.body = nn.HybridSequential(prefix='')
-        for _ in range(2):
-            # 1x1 reduce
+        with self.name_scope():
+            self.body = nn.HybridSequential(prefix='')
+            for _ in range(2):
+                # 1x1 reduce
+                self.body.add(_conv2d(channel, 1, 0, 1))
+                # 3x3 expand
+                self.body.add(_conv2d(channel * 2, 3, 1, 1))
             self.body.add(_conv2d(channel, 1, 0, 1))
-            # 3x3 expand
-            self.body.add(_conv2d(channel * 2, 3, 1, 1))
-        self.body.add(_conv2d(channel, 1, 0, 1))
-        self.tip = _conv2d(channel * 2, 3, 1, 1)
+            self.tip = _conv2d(channel * 2, 3, 1, 1)
 
     def hybrid_forward(self, F, x):
         route = self.body(x)
@@ -197,7 +197,10 @@ class YOLOV3(gluon.HybridBlock):
                 topk=self.nms_topk, id_index=0, score_index=1, coord_start=2, force_suppress=False)
             if self.post_nms > 0:
                 result = result.slice_axis(axis=1, begin=0, end=self.post_nms)
-        return result
+        ids = result.slice_axis(axis=-1, begin=0, end=1)
+        scores = result.slice_axis(axis=-1, begin=1, end=2)
+        bboxes = result.slice_axis(axis=-1, begin=2, end=None)
+        return ids, scores, bboxes
 
 def get_yolov3(name, base_size, stages, filters, anchors, strides, classes,
                dataset, pretrained=False, ctx=mx.cpu(),
