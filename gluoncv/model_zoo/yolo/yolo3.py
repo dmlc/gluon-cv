@@ -47,6 +47,7 @@ class YOLOOutputV3(gluon.HybridBlock):
         pred = self.prediction(x).reshape((0, self._num_anchors * self._num_pred, -1))
         # transpose to (batch, height * width, num_anchor, num_pred)
         pred = pred.transpose(axes=(0, 2, 1)).reshape((0, -1, self._num_anchors, self._num_pred))
+        print(pred.shape)
         # components
         box_centers = pred.slice_axis(axis=-1, begin=0, end=2)
         box_scales = pred.slice_axis(axis=-1, begin=2, end=4)
@@ -110,17 +111,18 @@ class YOLOV3(gluon.HybridBlock):
         self.post_nms = post_nms
         with self.name_scope():
             self.stages = nn.HybridSequential()
+            self.transitions = nn.HybridSequential()
             self.yolo_blocks = nn.HybridSequential()
             self.yolo_outputs = nn.HybridSequential()
-            asize_mult = 1
-            for i, stage, channel, anchor, stride in zip(range(len(stages)), stages, channels, anchors, strides):
+            # note that anchors should be used in reverse order
+            for i, stage, channel, anchor, stride in zip(range(len(stages)), stages, channels, anchors[::-1], strides):
                 self.stages.add(stage)
                 block = YOLODetectionBlockV3(channel)
                 self.yolo_blocks.add(block)
-                asize = [max(x // asize_mult, 16) for x in alloc_size]
-                output = YOLOOutputV3(i, len(classes), anchor, stride, alloc_size=asize)
+                output = YOLOOutputV3(i, len(classes), anchor, stride, alloc_size=alloc_size)
                 self.yolo_outputs.add(output)
-                asize_mult *= 2
+                if i > 0:
+                    self.transitions.add(_conv2d(channel, 1, 0, 1))
 
     def set_nms(self, nms_thresh=0.45, nms_topk=400, post_nms=100):
         """Set non-maximum suppression parameters.
@@ -161,7 +163,7 @@ class YOLOV3(gluon.HybridBlock):
             routes.append(x)
 
         # add yolo tips in reverse order
-        for i, block, output in zip(range(len(routes)), self.yolo_blocks[::-1], self.yolo_outputs[::-1]):
+        for i, block, output in zip(range(len(routes)), self.yolo_blocks, self.yolo_outputs):
             x, tip = block(x)
             if autograd.is_training():
                 box_centers, box_scales, objness, class_pred, anchors, offsets = output(tip)
@@ -176,6 +178,7 @@ class YOLOV3(gluon.HybridBlock):
                 all_detections.append(detections)
             if i >= len(routes) - 1:
                 break
+            x = self.transitions[i](x)
             upsample = _upsample(x, stride=2)
             x = F.concat(upsample, routes[::-1][i + 1], dim=1)
 
@@ -187,11 +190,11 @@ class YOLOV3(gluon.HybridBlock):
                 F.concat(*all_objectness, dim=-2),
                 F.concat(*all_class_pred, dim=-2))
 
-        detections = F.concat(*all_detections, dim=1)
+        result = F.concat(*all_detections, dim=1)
         # apply nms per class
         if self.nms_thresh > 0 and self.nms_thresh < 1:
-            result = F.contrib.box_nms(detections, overlap_thresh=self.nms_thresh,
-            topk=self.nms_topk, id_index=0, score_index=1, coord_start=2, force_suppress=False)
+            result = F.contrib.box_nms(result, overlap_thresh=self.nms_thresh,
+                topk=self.nms_topk, id_index=0, score_index=1, coord_start=2, force_suppress=False)
             if self.post_nms > 0:
                 result = result.slice_axis(axis=1, begin=0, end=self.post_nms)
         return result
