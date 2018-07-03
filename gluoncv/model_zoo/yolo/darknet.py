@@ -7,7 +7,7 @@ import numpy as np
 from mxnet import gluon
 from mxnet.gluon import nn
 
-__all__ = ['DarknetV3', 'get_darknet', 'darknet53_v3']
+__all__ = ['DarknetV3', 'get_darknet', 'darknet53']
 
 def _conv2d(channel, kernel, padding, stride):
     """A common conv-bn-leakyrelu cell"""
@@ -81,5 +81,5 @@ def get_darknet(darknet_version, num_layers, pretrained=False, ctx=mx.cpu(),
             'darknet%d_%s'%(num_layers, darknet_version), root=root), ctx=ctx)
     return net
 
-def darknet53_v3(**kwargs):
+def darknet53(**kwargs):
     return get_darknet('v3', 53, **kwargs)
