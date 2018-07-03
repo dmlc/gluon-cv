@@ -378,8 +378,8 @@ def train(net, train_data, val_data, eval_metric, args):
                 # msg = ','.join(['{}={:.3f}'.format(*metric.get()) for metric in metrics])
                 msg = ','.join(['{}={:.3f}'.format(*metric.get()) for metric in metrics + metrics2])
                 logger.info('[Epoch {}][Batch {}], Speed: {:.3f} samples/sec, {}'.format(
-                    epoch, i, batch_size/(time.time()-btic), msg))
-            btic = time.time()
+                    epoch, i, args.log_interval * batch_size/(time.time()-btic), msg))
+                btic = time.time()
 
         msg = ','.join(['{}={:.3f}'.format(*metric.get()) for metric in metrics])
         logger.info('[Epoch {}] Training cost: {:.3f}, {}'.format(
