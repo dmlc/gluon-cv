@@ -29,7 +29,7 @@ class YOLOOutputV3(gluon.HybridBlock):
             all_pred = self._num_pred * self._num_anchors
             self.prediction = nn.Conv2D(all_pred, kernel_size=1, padding=0, strides=1)
             # anchors will be multiplied to predictions
-            anchors = anchors.reshape(1, 1, -1, 2) / stride
+            anchors = anchors.reshape(1, 1, -1, 2)
             self.anchors = self.params.get_constant('anchor_%d'%(index), anchors)
             # offsets will be added to predictions
             grid_x = np.arange(alloc_size[1])
@@ -62,7 +62,7 @@ class YOLOOutputV3(gluon.HybridBlock):
         offsets = offsets.reshape((1, -1, 1, 2))
 
         box_centers = F.broadcast_add(F.sigmoid(box_centers), offsets) * self._stride
-        box_scales = F.broadcast_mul(F.exp(box_scales), anchors) * self._stride
+        box_scales = F.broadcast_mul(F.exp(box_scales), anchors)
         confidence = F.sigmoid(objness)
         class_score = F.broadcast_mul(F.sigmoid(class_pred), confidence)
         wh = box_scales / 2.0
@@ -114,8 +114,8 @@ class YOLOV3(gluon.HybridBlock):
             self.transitions = nn.HybridSequential()
             self.yolo_blocks = nn.HybridSequential()
             self.yolo_outputs = nn.HybridSequential()
-            # note that anchors should be used in reverse order
-            for i, stage, channel, anchor, stride in zip(range(len(stages)), stages, channels, anchors[::-1], strides):
+            # note that anchors and strides should be used in reverse order
+            for i, stage, channel, anchor, stride in zip(range(len(stages)), stages, channels, anchors[::-1], strides[::-1]):
                 self.stages.add(stage)
                 block = YOLODetectionBlockV3(channel)
                 self.yolo_blocks.add(block)
@@ -162,7 +162,6 @@ class YOLOV3(gluon.HybridBlock):
             x = stage(x)
             routes.append(x)
 
-        # add yolo tips in reverse order
         for i, block, output in zip(range(len(routes)), self.yolo_blocks, self.yolo_outputs):
             x, tip = block(x)
             if autograd.is_training():
