@@ -1,4 +1,4 @@
-"""Fully Convolutional Network with Strdie of 8"""
+"""Fully Convolutional Network with Stride of 8"""
 from __future__ import division
 from mxnet.gluon import nn
 from mxnet.context import cpu
@@ -8,6 +8,7 @@ from .segbase import SegBaseModel
 
 __all__ = ['FCN', 'get_fcn', 'get_fcn_voc_resnet50', 'get_fcn_voc_resnet101',
            'get_fcn_ade_resnet50']
+
 
 class FCN(SegBaseModel):
     r"""Fully Convolutional Networks for Semantic Segmentation
@@ -67,7 +68,7 @@ class FCN(SegBaseModel):
 class _FCNHead(HybridBlock):
     # pylint: disable=redefined-outer-name
     def __init__(self, in_channels, channels, norm_layer, **kwargs):
-        super(_FCNHead, self).__init__()
+        super(_FCNHead, self).__init__(**kwargs)
         with self.name_scope():
             self.block = nn.HybridSequential()
             inter_channels = in_channels // 4
@@ -120,9 +121,10 @@ def get_fcn(dataset='pascal_voc', backbone='resnet50', pretrained=False,
     model = FCN(datasets[dataset].NUM_CLASS, backbone=backbone, ctx=ctx, **kwargs)
     if pretrained:
         from .model_store import get_model_file
-        model.load_params(get_model_file('fcn_%s_%s'%(backbone, acronyms[dataset]),
+        model.load_params(get_model_file('fcn_%s_%s' % (backbone, acronyms[dataset]),
                                          root=root), ctx=ctx)
     return model
+
 
 def get_fcn_voc_resnet50(**kwargs):
     r"""FCN model with base network ResNet-50 pre-trained on Pascal VOC dataset
@@ -145,6 +147,7 @@ def get_fcn_voc_resnet50(**kwargs):
     """
     return get_fcn('pascal_voc', 'resnet50', **kwargs)
 
+
 def get_fcn_voc_resnet101(**kwargs):
     r"""FCN model with base network ResNet-101 pre-trained on Pascal VOC dataset
     from the paper `"Fully Convolutional Network for semantic segmentation"
@@ -165,6 +168,7 @@ def get_fcn_voc_resnet101(**kwargs):
     >>> print(model)
     """
     return get_fcn('pascal_voc', 'resnet101', **kwargs)
+
 
 def get_fcn_ade_resnet50(**kwargs):
     r"""FCN model with base network ResNet-50 pre-trained on ADE20K dataset
