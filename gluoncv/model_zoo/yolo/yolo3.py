@@ -53,9 +53,6 @@ class YOLOOutputV3(gluon.HybridBlock):
         objness = pred.slice_axis(axis=-1, begin=4, end=5)
         class_pred = pred.slice_axis(axis=-1, begin=5, end=None)
 
-        if autograd.is_training():
-            return box_centers, box_scales, objness, class_pred, anchors, offsets
-
         # valid offsets, (1, 1, height, width, 2)
         offsets = F.slice_like(offsets, x * 0, axes=(2, 3))
         # reshape to (1, height*width, 1, 2)
@@ -75,6 +72,9 @@ class YOLOOutputV3(gluon.HybridBlock):
         detections = F.concat(ids, scores, bboxes, dim=-1)
         # reshape to (B, xx, 6)
         detections = F.reshape(detections.transpose(axes=(1, 0, 2, 3, 4)), (0, -1, 6))
+
+        if autograd.is_training():
+            return detections, box_centers, box_scales, objness, class_pred, anchors, offsets
         return detections
 
 
@@ -165,7 +165,7 @@ class YOLOV3(gluon.HybridBlock):
         for i, block, output in zip(range(len(routes)), self.yolo_blocks, self.yolo_outputs):
             x, tip = block(x)
             if autograd.is_training():
-                box_centers, box_scales, objness, class_pred, anchors, offsets = output(tip)
+                detections, box_centers, box_scales, objness, class_pred, anchors, offsets = output(tip)
                 all_box_centers.append(box_centers)
                 all_box_scales.append(box_scales)
                 all_objectness.append(objness)
@@ -174,7 +174,7 @@ class YOLOV3(gluon.HybridBlock):
                 all_offsets.append(offsets)
             else:
                 detections = output(tip)
-                all_detections.append(detections)
+            all_detections.append(detections)
             if i >= len(routes) - 1:
                 break
             x = self.transitions[i](x)
@@ -184,6 +184,9 @@ class YOLOV3(gluon.HybridBlock):
         if autograd.is_training():
             # return raw predictions
             return (
+                all_detections,
+                all_anchors,
+                all_offsets,
                 F.concat(*all_box_centers, dim=-2),
                 F.concat(*all_box_scales, dim=-2),
                 F.concat(*all_objectness, dim=-2),
