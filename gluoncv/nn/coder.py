@@ -107,6 +107,51 @@ class NormalizedPerClassBoxCenterEncoder(gluon.Block):
         return all_targets, all_masks
 
 
+class GridBoxCenterEncoder(gluon.Block):
+    def __init__(self, num_class):
+        super(GridBoxCenterEncoder, self).__init__()
+        self._num_class = num_class
+        with self.name_scope():
+            self.corner_to_center = BBoxCornerToCenter(split=True)
+
+    def forward(self, samples, matches, anchors, offsets, strides, labels, refs, img):
+        """Encode box regression targets.
+
+        Parameters
+        ----------
+        samples : mx.nd.NDArray
+            Sampling results, 1 for positive, -1 for negative, 0 for ignore.
+        matches : mx.nd.NDArray
+            Matching results, indicating which ground-truth is the target.
+
+
+        """
+        F = nd
+        OH = img.shape[2]
+        OW = img.shape[3]
+        H = offsets.shape[2]
+        W = offsets.shape[3]
+        ref_boxes = nd.repeat(refs.reshape((0, 1, -1, 4)), axis=1, repeats=matches.shape[1])
+        ref_boxes = nd.split(ref_boxes, axis=-1, num_outputs=4, squeeze_axis=True)
+        ref_boxes = nd.concat(*[F.pick(ref_boxes[i], matches, axis=2).reshape((0, -1, 1)) \
+            for i in range(4)], dim=2)
+        g = self.corner_to_center(ref_boxes)
+        a = self.corner_to_center(anchors)
+        offsets_x, offsets_y = offsets.split(axis=-1, num_outputs=2)
+        anchors_x, anchors_y = anchors.split(axis=-1, num_outputs=2)
+        t0 = g[0] / OW * W - offsets_x
+        t1 = g[1] / OH * H - offsets_y
+        t2 = F.log(g[2] / anchors_x)
+        t3 = F.log(g[3] / anchors_y)
+        scales = 2 - g[2] * g[3] / OW / OH
+        codecs = F.concat(t0, t1, t2, t3, dim=2)
+        temp = F.tile(samples.reshape((0, -1, 1)), reps=(1, 1, 4)) > 0.5
+        targets = F.where(temp, codecs, F.zeros_like(codecs))
+        masks = F.where(temp, scales, F.zeros_like(temp))
+        # mask has range [0, 2]
+        return targets, masks
+
+
 class NormalizedBoxCenterDecoder(gluon.HybridBlock):
     """Decode bounding boxes training target with normalized center offsets.
     This decoder must cooperate with NormalizedBoxCenterEncoder of same `stds`
