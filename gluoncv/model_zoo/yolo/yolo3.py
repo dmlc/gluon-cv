@@ -156,6 +156,7 @@ class YOLOV3(gluon.HybridBlock):
         all_class_pred = []
         all_anchors = []
         all_offsets = []
+        all_feat_maps = []
         all_detections = []
         routes = []
         for stage, block, output in zip(self.stages, self.yolo_blocks, self.yolo_outputs):
@@ -172,6 +173,7 @@ class YOLOV3(gluon.HybridBlock):
                 all_class_pred.append(class_pred)
                 all_anchors.append(anchors)
                 all_offsets.append(offsets)
+                all_feat_maps.append(tip)
             else:
                 detections = output(tip)
             all_detections.append(detections)
@@ -187,10 +189,11 @@ class YOLOV3(gluon.HybridBlock):
                 all_detections,
                 all_anchors,
                 all_offsets,
-                F.concat(*all_box_centers, dim=-2),
-                F.concat(*all_box_scales, dim=-2),
-                F.concat(*all_objectness, dim=-2),
-                F.concat(*all_class_pred, dim=-2))
+                all_feat_maps,
+                F.concat(*all_box_centers, dim=-3),
+                F.concat(*all_box_scales, dim=-3),
+                F.concat(*all_objectness, dim=-3),
+                F.concat(*all_class_pred, dim=-3))
 
         result = F.concat(*all_detections, dim=1)
         # apply nms per class
