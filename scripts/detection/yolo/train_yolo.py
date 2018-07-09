@@ -17,7 +17,7 @@ from gluoncv.data.transforms.presets.yolo import YOLO3DefaultTrainTransform
 from gluoncv.data.transforms.presets.yolo import YOLO3DefaultValTransform
 from gluoncv.utils.metrics.voc_detection import VOC07MApMetric
 from gluoncv.utils.metrics.coco_detection import COCODetectionMetric
-from gluoncv.utils.metrics.accuracy import Accuracy
+from gluoncv.model_zoo.yolo.yolo_target import YOLOTargetMergerV3
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train YOLO networks.')
@@ -89,7 +89,7 @@ def get_dataset(dataset, args):
 def get_dataloader(net, train_dataset, val_dataset, data_shape, batch_size, num_workers):
     """Get dataloader."""
     width, height = data_shape, data_shape
-    batchify_fn = Tuple(*[Stack() for _ in range(6)])  # stack image, all targets generated
+    batchify_fn = Tuple(*([Stack() for _ in range(6)] + [Pad(axis=0, pad_val=-1) for _ in range(2)]))  # stack image, all targets generated
     train_loader = gluon.data.DataLoader(
         train_dataset.transform(YOLO3DefaultTrainTransform(width, height, net)),
         batch_size, True, batchify_fn=batchify_fn, last_batch='rollover', num_workers=num_workers)
@@ -151,6 +151,15 @@ def train(net, train_data, val_data, eval_metric, args):
     lr_decay = float(args.lr_decay)
     lr_steps = sorted([float(ls) for ls in args.lr_decay_epoch.split(',') if ls.strip()])
 
+    # targets
+    target_merger = YOLOTargetMergerV3()
+    sigmoid_ce = gluon.loss.SigmoidBinaryCrossEntropyLoss(from_sigmoid=False)
+
+    # metrics
+    obj_metrics = mx.metric.Loss('Objectness')
+    center_metrics = mx.metric.Loss('BoxCenter')
+    scale_metrics = mx.metric.Loss('BoxScale')
+    cls_metrics = mx.metric.Loss('ClassLoss')
 
     # set up logger
     logging.basicConfig()
@@ -177,34 +186,62 @@ def train(net, train_data, val_data, eval_metric, args):
         for i, batch in enumerate(train_data):
             batch_size = batch[0].shape[0]
             data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
-            cls_targets = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0)
-            box_targets = gluon.utils.split_and_load(batch[2], ctx_list=ctx, batch_axis=0)
+            fixed_targets = [gluon.utils.split_and_load(batch[it], ctx_list=ctx, batch_axis=0) for it in range(1, 8)]
+            sum_losses = []
+            obj_losses = []
+            center_losses = []
+            scale_losses = []
+            cls_losses = []
             with autograd.record():
-                cls_preds = []
-                box_preds = []
-                for x in data:
-                    cls_pred, box_pred, _ = net(x)
-                    cls_preds.append(cls_pred)
-                    box_preds.append(box_pred)
-                sum_loss, cls_loss, box_loss = mbox_loss(
-                    cls_preds, box_preds, cls_targets, box_targets)
-                autograd.backward(sum_loss)
-            # since we have already normalized the loss, we don't want to normalize
-            # by batch-size anymore
-            trainer.step(1)
-            ce_metric.update(0, [l * batch_size for l in cls_loss])
-            smoothl1_metric.update(0, [l * batch_size for l in box_loss])
+                for ix, x in enumerate(data):
+                    tmp = net(x)
+                    box_preds, anchors, offsets, featmaps, box_centers, box_scales, objness, cls_preds = net(x)
+                    print(x.shape)
+                    print([xxx.shape for xxx in featmaps])
+                    print([a.shape for a in anchors])
+                    print([o.shape for o in offsets])
+                    print([bb.shape for bb in box_preds])
+                    print(box_scales.shape)
+                    print(objness.shape)
+                    print(cls_preds.shape)
+                    gt_boxes = fixed_targets[-2][ix]
+                    gt_ids = fixed_targets[-1][ix]
+                    print(gt_boxes.shape)
+                    dynamic_targets = net.target_generator(x, featmaps, anchors, offsets, box_preds, gt_boxes, gt_ids)
+                    objness_t, center_t, scale_t, weight_t, class_t = target_merger(*(list(dynamic_targets) + [ft[ix] for ft in fixed_targets[:-2]]))
+                    print(objness_t, center_t, scale_t, weight_t, class_t)
+                    raise
+                    obj_loss = sigmoid_ce(objness, objness_t, objness_t >= 0)
+                    center_loss = sigmoid_ce(box_centers, center_t, weight_t)
+                    scale_loss = sigmoid_ce(box_scales, scale_t, weight_t)
+                    cls_mask = (objness_t >= 0).tile(reps=(net.num_class, ))
+                    cls_loss = sigmoid_ce(cls_preds, class_t, cls_mask)
+                    sum_losses.append(obj_loss + center_loss + scale_loss + cls_loss)
+                    obj_losses.append(obj_loss)
+                    center_losses.append(center_loss)
+                    scale_losses.append(scale_loss)
+                    cls_losses.append(cls_loss)
+                autograd.backward(sum_losses)
+            trainer.step(batch_size)
+            obj_metrics.update(0, obj_losses)
+            center_metrics.update(0, center_losses)
+            scale_metrics.update(0, scale_losses)
+            cls_metrics.update(0, cls_losses)
             if args.log_interval and not (i + 1) % args.log_interval:
-                name1, loss1 = ce_metric.get()
-                name2, loss2 = smoothl1_metric.get()
-                logger.info('[Epoch {}][Batch {}], Speed: {:.3f} samples/sec, {}={:.3f}, {}={:.3f}'.format(
-                    epoch, i, batch_size/(time.time()-btic), name1, loss1, name2, loss2))
+                name1, loss1 = obj_metrics.get()
+                name2, loss2 = center_metrics.get()
+                name3, loss3 = scale_metrics.get()
+                name4, loss4 = cls_metrics.get()
+                logger.info('[Epoch {}][Batch {}], Speed: {:.3f} samples/sec, {}={:.3f}, {}={:.3f}, {}={:.3f}, {}={:.3f}'.format(
+                    epoch, i, batch_size/(time.time()-btic), name1, loss1, name2, loss2, name3, loss3, name4, loss4))
             btic = time.time()
 
-        name1, loss1 = ce_metric.get()
-        name2, loss2 = smoothl1_metric.get()
-        logger.info('[Epoch {}] Training cost: {:.3f}, {}={:.3f}, {}={:.3f}'.format(
-            epoch, (time.time()-tic), name1, loss1, name2, loss2))
+        name1, loss1 = obj_metrics.get()
+        name2, loss2 = center_metrics.get()
+        name3, loss3 = scale_metrics.get()
+        name4, loss4 = cls_metrics.get()
+        logger.info('[Epoch {}] Training cost: {:.3f}, {}={:.3f}, {}={:.3f}, {}={:.3f}, {}={:.3f}'.format(
+            epoch, (time.time()-tic), name1, loss1, name2, loss2, name3, loss3, name4, loss4))
         if not (epoch + 1) % args.val_interval:
             # consider reduce the frequency of validation to save time
             map_name, mean_ap = validate(net, val_data, ctx, eval_metric)
@@ -241,9 +278,5 @@ if __name__ == '__main__':
     train_data, val_data = get_dataloader(
         net, train_dataset, val_dataset, args.data_shape, args.batch_size, args.num_workers)
 
-    for batch in train_data:
-        for x in batch:
-            print(x.shape)
-
     # training
-    # train(net, train_data, val_data, eval_metric, args)
+    train(net, train_data, val_data, eval_metric, args)

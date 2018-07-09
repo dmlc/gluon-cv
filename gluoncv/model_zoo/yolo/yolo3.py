@@ -9,6 +9,7 @@ from mxnet import gluon
 from mxnet import autograd
 from mxnet.gluon import nn
 from .darknet import _conv2d, darknet53
+from .yolo_target import YOLODynamicTargetGeneratorV3
 
 __all__ = ['YOLOV3', 'yolo3_416_darknet53_voc', 'yolo3_416_darknet53_coco']
 
@@ -18,11 +19,12 @@ def _upsample(x, stride=2):
 
 
 class YOLOOutputV3(gluon.HybridBlock):
-    def __init__(self, index, num_classes, anchors, stride, alloc_size=(128, 128), **kwargs):
+    def __init__(self, index, num_class, anchors, stride,
+                 alloc_size=(128, 128), **kwargs):
         super(YOLOOutputV3, self).__init__(**kwargs)
         anchors = np.array(anchors).astype('float32')
-        self._classes = num_classes
-        self._num_pred = 1 + 4 + num_classes  # 1 objness + 4 box + num_classes
+        self._classes = num_class
+        self._num_pred = 1 + 4 + num_class  # 1 objness + 4 box + num_class
         self._num_anchors = anchors.size // 2
         self._stride = stride
         with self.name_scope():
@@ -65,6 +67,9 @@ class YOLOOutputV3(gluon.HybridBlock):
         wh = box_scales / 2.0
         bbox = F.concat(box_centers - wh, box_centers + wh, dim=-1)
 
+        if autograd.is_training():
+            return bbox, box_centers, box_scales, objness, class_pred, anchors, offsets
+
         # prediction per class
         bboxes = F.tile(bbox, reps=(self._classes, 1, 1, 1, 1))
         scores = F.transpose(class_score, axes=(3, 0, 1, 2)).expand_dims(axis=-1)
@@ -72,9 +77,6 @@ class YOLOOutputV3(gluon.HybridBlock):
         detections = F.concat(ids, scores, bboxes, dim=-1)
         # reshape to (B, xx, 6)
         detections = F.reshape(detections.transpose(axes=(1, 0, 2, 3, 4)), (0, -1, 6))
-
-        if autograd.is_training():
-            return detections, box_centers, box_scales, objness, class_pred, anchors, offsets
         return detections
 
 
@@ -103,12 +105,14 @@ class YOLODetectionBlockV3(gluon.HybridBlock):
 
 class YOLOV3(gluon.HybridBlock):
     def __init__(self, stages, channels, anchors, strides, classes, alloc_size=(128, 128),
-                 nms_thresh=0.45, nms_topk=400, post_nms=100, **kwargs):
+                 nms_thresh=0.45, nms_topk=400, post_nms=100, pos_iou_thresh=1.0, ignore_iou_thresh=0.7, **kwargs):
         super(YOLOV3, self).__init__(**kwargs)
         self.classes = classes
         self.nms_thresh = nms_thresh
         self.nms_topk = nms_topk
         self.post_nms = post_nms
+        self._target_generator = set([YOLODynamicTargetGeneratorV3(
+            len(classes), pos_iou_thresh, ignore_iou_thresh)])
         with self.name_scope():
             self.stages = nn.HybridSequential()
             self.transitions = nn.HybridSequential()
@@ -123,6 +127,64 @@ class YOLOV3(gluon.HybridBlock):
                 self.yolo_outputs.add(output)
                 if i > 0:
                     self.transitions.add(_conv2d(channel, 1, 0, 1))
+
+    def hybrid_forward(self, F, x):
+        all_box_centers = []
+        all_box_scales = []
+        all_objectness = []
+        all_class_pred = []
+        all_anchors = []
+        all_offsets = []
+        all_feat_maps = []
+        all_detections = []
+        routes = []
+        for stage, block, output in zip(self.stages, self.yolo_blocks, self.yolo_outputs):
+            x = stage(x)
+            routes.append(x)
+
+        for i, block, output in zip(range(len(routes)), self.yolo_blocks, self.yolo_outputs):
+            x, tip = block(x)
+            if autograd.is_training():
+                detections, box_centers, box_scales, objness, class_pred, anchors, offsets = output(tip)
+                all_box_centers.append(box_centers.reshape((0, -3, -1)))
+                all_box_scales.append(box_scales.reshape((0, -3, -1)))
+                all_objectness.append(objness.reshape((0, -3, -1)))
+                all_class_pred.append(class_pred.reshape((0, -3, -1)))
+                all_anchors.append(anchors)
+                all_offsets.append(offsets)
+                all_feat_maps.append(tip)
+            else:
+                detections = output(tip)
+            all_detections.append(detections)
+            if i >= len(routes) - 1:
+                break
+            x = self.transitions[i](x)
+            upsample = _upsample(x, stride=2)
+            x = F.concat(upsample, routes[::-1][i + 1], dim=1)
+
+        if autograd.is_training():
+            # return raw predictions
+            return (
+                all_detections,
+                all_anchors,
+                all_offsets,
+                all_feat_maps,
+                F.concat(*all_box_centers, dim=1),
+                F.concat(*all_box_scales, dim=1),
+                F.concat(*all_objectness, dim=1),
+                F.concat(*all_class_pred, dim=1))
+
+        result = F.concat(*all_detections, dim=1)
+        # apply nms per class
+        if self.nms_thresh > 0 and self.nms_thresh < 1:
+            result = F.contrib.box_nms(result, overlap_thresh=self.nms_thresh,
+                topk=self.nms_topk, id_index=0, score_index=1, coord_start=2, force_suppress=False)
+            if self.post_nms > 0:
+                result = result.slice_axis(axis=1, begin=0, end=self.post_nms)
+        ids = result.slice_axis(axis=-1, begin=0, end=1)
+        scores = result.slice_axis(axis=-1, begin=1, end=2)
+        bboxes = result.slice_axis(axis=-1, begin=2, end=None)
+        return ids, scores, bboxes
 
     def set_nms(self, nms_thresh=0.45, nms_topk=400, post_nms=100):
         """Set non-maximum suppression parameters.
@@ -149,63 +211,9 @@ class YOLOV3(gluon.HybridBlock):
         self.nms_topk = nms_topk
         self.post_nms = post_nms
 
-    def hybrid_forward(self, F, x):
-        all_box_centers = []
-        all_box_scales = []
-        all_objectness = []
-        all_class_pred = []
-        all_anchors = []
-        all_offsets = []
-        all_feat_maps = []
-        all_detections = []
-        routes = []
-        for stage, block, output in zip(self.stages, self.yolo_blocks, self.yolo_outputs):
-            x = stage(x)
-            routes.append(x)
-
-        for i, block, output in zip(range(len(routes)), self.yolo_blocks, self.yolo_outputs):
-            x, tip = block(x)
-            if autograd.is_training():
-                detections, box_centers, box_scales, objness, class_pred, anchors, offsets = output(tip)
-                all_box_centers.append(box_centers)
-                all_box_scales.append(box_scales)
-                all_objectness.append(objness)
-                all_class_pred.append(class_pred)
-                all_anchors.append(anchors)
-                all_offsets.append(offsets)
-                all_feat_maps.append(tip)
-            else:
-                detections = output(tip)
-            all_detections.append(detections)
-            if i >= len(routes) - 1:
-                break
-            x = self.transitions[i](x)
-            upsample = _upsample(x, stride=2)
-            x = F.concat(upsample, routes[::-1][i + 1], dim=1)
-
-        if autograd.is_training():
-            # return raw predictions
-            return (
-                all_detections,
-                all_anchors,
-                all_offsets,
-                all_feat_maps,
-                F.concat(*all_box_centers, dim=-3),
-                F.concat(*all_box_scales, dim=-3),
-                F.concat(*all_objectness, dim=-3),
-                F.concat(*all_class_pred, dim=-3))
-
-        result = F.concat(*all_detections, dim=1)
-        # apply nms per class
-        if self.nms_thresh > 0 and self.nms_thresh < 1:
-            result = F.contrib.box_nms(result, overlap_thresh=self.nms_thresh,
-                topk=self.nms_topk, id_index=0, score_index=1, coord_start=2, force_suppress=False)
-            if self.post_nms > 0:
-                result = result.slice_axis(axis=1, begin=0, end=self.post_nms)
-        ids = result.slice_axis(axis=-1, begin=0, end=1)
-        scores = result.slice_axis(axis=-1, begin=1, end=2)
-        bboxes = result.slice_axis(axis=-1, begin=2, end=None)
-        return ids, scores, bboxes
+    @property
+    def target_generator(self):
+        return list(self._target_generator)[0]
 
 def get_yolov3(name, base_size, stages, filters, anchors, strides, classes,
                dataset, pretrained=False, ctx=mx.cpu(),
