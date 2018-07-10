@@ -207,6 +207,7 @@ class YOLOTargetMergerV3(gluon.Block):
             center_targets = nd.where(mask2, centers[1], centers[0])
             scale_targets = nd.where(mask2, scales[1], scales[0])
             weights = nd.where(mask2, weights[1], weights[0])
-            class_mask = mask.tile(reps=(clas[1].shape[-1],))
-            class_targets = nd.where(class_mask, clas[1], clas[0])
+            mask3 = mask.tile(reps=(clas[1].shape[-1],))
+            class_targets = nd.where(mask3, clas[1], clas[0])
+            class_mask = objectness.tile(reps=(clas[1].shape[-1]))
             return objectness, center_targets, scale_targets, weights, class_targets, class_mask
