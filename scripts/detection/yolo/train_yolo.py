@@ -108,18 +108,18 @@ def save_params(net, best_map, current_map, epoch, save_interval, prefix):
     current_map = float(current_map)
     if current_map > best_map[0]:
         best_map[0] = current_map
-        net.save_params('{:s}_best.params'.format(prefix, epoch, current_map))
+        net.save_parameters('{:s}_best.params'.format(prefix, epoch, current_map))
         with open(prefix+'_best_map.log', 'a') as f:
             f.write('\n{:04d}:\t{:.4f}'.format(epoch, current_map))
     if save_interval and epoch % save_interval == 0:
-        net.save_params('{:s}_{:04d}_{:.4f}.params'.format(prefix, epoch, current_map))
+        net.save_parameters('{:s}_{:04d}_{:.4f}.params'.format(prefix, epoch, current_map))
 
 def validate(net, val_data, ctx, eval_metric):
     """Test on validation dataset."""
     eval_metric.reset()
     # set nms threshold and topk constraint
     net.set_nms(nms_thresh=0.45, nms_topk=400)
-    # net.hybridize()
+    net.hybridize(static_alloc=True)
     for batch in val_data:
         data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
         label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0)
@@ -154,7 +154,7 @@ def train(net, train_data, val_data, eval_metric, args):
                                nepochs=args.epochs,
                                step=[int(i) for i in args.lr_decay_epoch.split(',')],
                                step_factor=float(args.lr_decay),
-                               warmup_epochs=1,
+                               warmup_epochs=max(1, 1000 // (args.num_samples // args.batch_size)),
                                warmup_mode='linear')
 
     trainer = gluon.Trainer(
@@ -187,7 +187,7 @@ def train(net, train_data, val_data, eval_metric, args):
     for epoch in range(args.start_epoch, args.epochs):
         tic = time.time()
         btic = time.time()
-        # net.hybridize()
+        net.hybridize(static_alloc=True)
         for i, batch in enumerate(train_data):
             batch_size = batch[0].shape[0]
             data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
