@@ -95,8 +95,8 @@ class FasterRCNN(RCNN):
             self.rpn = RPN(rpn_channel, stride, scales=scales, ratios=ratios,
                            train_pre_nms=rpn_train_pre_nms, train_post_nms=rpn_train_post_nms,
                            test_pre_nms=rpn_test_pre_nms, test_post_nms=rpn_test_post_nms)
-            self.sampler = RCNNTargetSampler(num_sample, pos_iou_thresh, neg_iou_thresh_high,
-                                             neg_iou_thresh_low, pos_ratio)
+            self.sampler = RCNNTargetSampler(self._max_batch, rpn_test_post_nms,
+                                             num_sample, pos_iou_thresh, pos_ratio)
 
     @property
     def target_generator(self):
