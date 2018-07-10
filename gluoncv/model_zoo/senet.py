@@ -120,8 +120,12 @@ class SENet(HybridBlock):
         with self.name_scope():
             self.features = nn.HybridSequential(prefix='')
             self.features.add(nn.Conv2D(channels, 3, 2, 1, use_bias=False))
+            self.features.add(nn.BatchNorm())
+            self.features.add(nn.Activation('relu'))
             self.features.add(nn.Conv2D(channels, 3, 1, 1, use_bias=False))
-            self.features.add(nn.Conv2D(channels, 3, 1, 1, use_bias=False))
+            self.features.add(nn.BatchNorm())
+            self.features.add(nn.Activation('relu'))
+            self.features.add(nn.Conv2D(channels * 2, 3, 1, 1, use_bias=False))
             self.features.add(nn.BatchNorm())
             self.features.add(nn.Activation('relu'))
             self.features.add(nn.MaxPool2D(3, 2, 1))
@@ -130,7 +134,7 @@ class SENet(HybridBlock):
                 stride = 1 if i == 0 else 2
                 self.features.add(self._make_layer(channels, num_layer, stride, i+1))
                 channels *= 2
-            self.features.add(nn.AvgPool2D(7))
+            self.features.add(nn.GlobalAvgPool2D())
             self.features.add(nn.Dropout(0.2))
 
             self.output = nn.Dense(classes)
