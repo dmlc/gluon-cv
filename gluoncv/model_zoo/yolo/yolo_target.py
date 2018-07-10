@@ -29,6 +29,7 @@ class YOLOPrefetchTargetGeneratorV3(gluon.Block):
         all_offsets = nd.concat(*[o.reshape(-1, 2) for o in offsets], dim=0)
         num_anchors = np.cumsum([a.size // 2 for a in anchors])
         num_offsets = np.cumsum([o.size // 2 for o in offsets])
+        _offsets = [0] + num_offsets.tolist()
         assert isinstance(xs, (list, tuple))
         assert len(xs) == len(anchors) == len(offsets)
 
@@ -75,7 +76,7 @@ class YOLOPrefetchTargetGeneratorV3(gluon.Block):
                     loc_x = int(gtx / orig_width * width)
                     loc_y = int(gty / orig_height * height)
                     # write back to targets
-                    index = np.sum(num_offsets[:nlayer]) + loc_y * width + loc_x
+                    index = _offsets[nlayer] + loc_y * width + loc_x
                     center_targets[b, index, match, 0] = gtx / orig_width * width - loc_x  # tx
                     center_targets[b, index, match, 1] = gty / orig_height * height - loc_y  # ty
                     scale_targets[b, index, match, 0] = np.log(gtw / np_anchors[match, 0])
