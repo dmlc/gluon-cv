@@ -156,9 +156,9 @@ def train(net, train_data, val_data, eval_metric, args):
     sigmoid_ce = gluon.loss.SigmoidBinaryCrossEntropyLoss(from_sigmoid=False)
 
     # metrics
-    obj_metrics = mx.metric.Loss('Objectness')
-    center_metrics = mx.metric.Loss('BoxCenter')
-    scale_metrics = mx.metric.Loss('BoxScale')
+    obj_metrics = mx.metric.Loss('ObjLoss')
+    center_metrics = mx.metric.Loss('BoxCenterLoss')
+    scale_metrics = mx.metric.Loss('BoxScaleLoss')
     cls_metrics = mx.metric.Loss('ClassLoss')
 
     # set up logger
@@ -196,21 +196,10 @@ def train(net, train_data, val_data, eval_metric, args):
                 for ix, x in enumerate(data):
                     tmp = net(x)
                     box_preds, anchors, offsets, featmaps, box_centers, box_scales, objness, cls_preds = net(x)
-                    print(x.shape)
-                    print([xxx.shape for xxx in featmaps])
-                    print([a.shape for a in anchors])
-                    print([o.shape for o in offsets])
-                    print([bb.shape for bb in box_preds])
-                    print(box_scales.shape)
-                    print(objness.shape)
-                    print(cls_preds.shape)
                     gt_boxes = fixed_targets[-2][ix]
                     gt_ids = fixed_targets[-1][ix]
-                    print(gt_boxes.shape)
                     dynamic_targets = net.target_generator(x, featmaps, anchors, offsets, box_preds, gt_boxes, gt_ids)
                     objness_t, center_t, scale_t, weight_t, class_t = target_merger(*(list(dynamic_targets) + [ft[ix] for ft in fixed_targets[:-2]]))
-                    print(objness_t, center_t, scale_t, weight_t, class_t)
-                    raise
                     obj_loss = sigmoid_ce(objness, objness_t, objness_t >= 0)
                     center_loss = sigmoid_ce(box_centers, center_t, weight_t)
                     scale_loss = sigmoid_ce(box_scales, scale_t, weight_t)
@@ -264,7 +253,7 @@ if __name__ == '__main__':
     # network
     net_name = '_'.join(('yolo3', str(args.data_shape), args.network, args.dataset))
     args.save_prefix += net_name
-    net = get_model(net_name, pretrained_base=False)  # TODO
+    net = get_model(net_name, pretrained_base=True)
     if args.resume.strip():
         net.load_params(args.resume.strip())
     else:

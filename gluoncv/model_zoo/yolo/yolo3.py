@@ -108,6 +108,7 @@ class YOLOV3(gluon.HybridBlock):
                  nms_thresh=0.45, nms_topk=400, post_nms=100, pos_iou_thresh=1.0, ignore_iou_thresh=0.7, **kwargs):
         super(YOLOV3, self).__init__(**kwargs)
         self.classes = classes
+        self.num_class = len(self.classes)
         self.nms_thresh = nms_thresh
         self.nms_topk = nms_topk
         self.post_nms = post_nms

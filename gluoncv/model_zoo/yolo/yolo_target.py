@@ -198,7 +198,6 @@ class YOLOTargetMergerV3(gluon.HybridBlock):
     def hybrid_forward(self, F, *args):
         # use fixed target to override dynamic targets
         obj, centers, scales, weights, clas = zip(args[:5], args[5:])
-        print(obj[0].shape, obj[1].shape)
         objectness = F.where(obj[1] > 0, obj[1], obj[0])
         center_targets = F.where(centers[1] > 0, centers[1], centers[0])
         scale_targets = F.where(scales[1] > 0, scales[1], scales[0])

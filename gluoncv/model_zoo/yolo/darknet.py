@@ -78,7 +78,7 @@ def get_darknet(darknet_version, num_layers, pretrained=False, ctx=mx.cpu(),
     if pretrained:
         from ..model_store import get_model_file
         net.load_parameters(get_model_file(
-            'darknet%d_%s'%(num_layers, darknet_version), root=root), ctx=ctx)
+            'darknet%d'%(num_layers), root=root), ctx=ctx)
     return net
 
 def darknet53(**kwargs):
