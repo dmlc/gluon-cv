@@ -17,6 +17,7 @@ from gluoncv.data.transforms.presets.yolo import YOLO3DefaultTrainTransform
 from gluoncv.data.transforms.presets.yolo import YOLO3DefaultValTransform
 from gluoncv.utils.metrics.voc_detection import VOC07MApMetric
 from gluoncv.utils.metrics.coco_detection import COCODetectionMetric
+from gluoncv.utils import LRScheduler
 from gluoncv.model_zoo.yolo.yolo_target import YOLOTargetMergerV3
 
 def parse_args():
@@ -34,7 +35,7 @@ def parse_args():
                         'number to accelerate data loading, if you CPU and GPUs are powerful.')
     parser.add_argument('--gpus', type=str, default='0',
                         help='Training with GPUs, you can specify 1,3 for example.')
-    parser.add_argument('--epochs', type=int, default=240,
+    parser.add_argument('--epochs', type=int, default=200,
                         help='Training epochs.')
     parser.add_argument('--resume', type=str, default='',
                         help='Resume from previously saved parameters if not None. '
@@ -46,8 +47,8 @@ def parse_args():
                         help='Learning rate, default is 0.001')
     parser.add_argument('--lr-decay', type=float, default=0.1,
                         help='decay rate of learning rate. default is 0.1.')
-    parser.add_argument('--lr-decay-epoch', type=str, default='160,200',
-                        help='epoches at which learning rate decays. default is 160,200.')
+    parser.add_argument('--lr-decay-epoch', type=str, default='160,180',
+                        help='epoches at which learning rate decays. default is 160,180.')
     parser.add_argument('--momentum', type=float, default=0.9,
                         help='SGD momentum, default is 0.9')
     parser.add_argument('--wd', type=float, default=0.0005,
@@ -63,6 +64,8 @@ def parse_args():
                              'training time if validation is slow.')
     parser.add_argument('--seed', type=int, default=233,
                         help='Random seed to be fixed.')
+    parser.add_argument('--num-samples', type=int, default=-1,
+                        help='Training images. Use -1 to automatically get the number.')
     args = parser.parse_args()
     return args
 
@@ -84,6 +87,8 @@ def get_dataset(dataset, args):
             args.val_interval = 10
     else:
         raise NotImplementedError('Dataset: {} not implemented.'.format(dataset))
+    if args.num_samples < 0:
+        args.num_samples = len(train_dataset)
     return train_dataset, val_dataset, val_metric
 
 def get_dataloader(net, train_dataset, val_dataset, data_shape, batch_size, num_workers):
@@ -143,13 +148,18 @@ def validate(net, val_data, ctx, eval_metric):
 def train(net, train_data, val_data, eval_metric, args):
     """Training pipeline"""
     net.collect_params().reset_ctx(ctx)
+    lr_scheduler = LRScheduler(mode='step',
+                               baselr=args.lr,
+                               niters=args.num_samples // args.batch_size,
+                               nepochs=args.epochs,
+                               step=[int(i) for i in args.lr_decay_epoch.split(',')],
+                               step_factor=float(args.lr_decay),
+                               warmup_epochs=1,
+                               warmup_mode='linear')
+
     trainer = gluon.Trainer(
         net.collect_params(), 'sgd',
-        {'learning_rate': args.lr, 'wd': args.wd, 'momentum': args.momentum})
-
-    # lr decay policy
-    lr_decay = float(args.lr_decay)
-    lr_steps = sorted([float(ls) for ls in args.lr_decay_epoch.split(',') if ls.strip()])
+        {'wd': args.wd, 'momentum': args.momentum, 'lr_scheduler': lr_scheduler})
 
     # targets
     target_merger = YOLOTargetMergerV3()
@@ -175,11 +185,6 @@ def train(net, train_data, val_data, eval_metric, args):
     logger.info('Start training from [Epoch {}]'.format(args.start_epoch))
     best_map = [0]
     for epoch in range(args.start_epoch, args.epochs):
-        while lr_steps and epoch >= lr_steps[0]:
-            new_lr = trainer.learning_rate * lr_decay
-            lr_steps.pop(0)
-            trainer.set_learning_rate(new_lr)
-            logger.info("[Epoch {}] Set learning rate to {}".format(epoch, new_lr))
         tic = time.time()
         btic = time.time()
         # net.hybridize()
@@ -211,6 +216,7 @@ def train(net, train_data, val_data, eval_metric, args):
                     scale_losses.append(scale_loss)
                     cls_losses.append(cls_loss)
                 autograd.backward(sum_losses)
+            lr_scheduler.update(i, epoch)
             trainer.step(batch_size)
             obj_metrics.update(0, obj_losses)
             center_metrics.update(0, center_losses)
@@ -221,8 +227,8 @@ def train(net, train_data, val_data, eval_metric, args):
                 name2, loss2 = center_metrics.get()
                 name3, loss3 = scale_metrics.get()
                 name4, loss4 = cls_metrics.get()
-                logger.info('[Epoch {}][Batch {}], Speed: {:.3f} samples/sec, {}={:.3f}, {}={:.3f}, {}={:.3f}, {}={:.3f}'.format(
-                    epoch, i, batch_size/(time.time()-btic), name1, loss1, name2, loss2, name3, loss3, name4, loss4))
+                logger.info('[Epoch {}][Batch {}], LR: {:.2E}, Speed: {:.3f} samples/sec, {}={:.3f}, {}={:.3f}, {}={:.3f}, {}={:.3f}'.format(
+                    epoch, i, trainer.learning_rate, batch_size/(time.time()-btic), name1, loss1, name2, loss2, name3, loss3, name4, loss4))
             btic = time.time()
 
         name1, loss1 = obj_metrics.get()
