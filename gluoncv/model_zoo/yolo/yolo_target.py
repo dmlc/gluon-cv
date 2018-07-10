@@ -56,7 +56,7 @@ class YOLOPrefetchTargetGeneratorV3(gluon.Block):
             ious = nd.contrib.box_iou(shift_anchor_boxes, shift_gt_boxes).transpose((1, 0, 2))
             # real value is required to process, convert to Numpy
             matches = ious.argmax(axis=1).asnumpy()  # (B, M)
-            valid_gts = (gt_boxes >= 0).prod(axis=-1).asnumpy()  # (B, M)
+            valid_gts = (gt_boxes >= 0).asnumpy().prod(axis=-1)  # (B, M)
             np_gtx, np_gty, np_gtw, np_gth = [x.asnumpy() for x in [gtx, gty, gtw, gth]]
             np_anchors = all_anchors.asnumpy()
             np_gt_ids = gt_ids.asnumpy()
