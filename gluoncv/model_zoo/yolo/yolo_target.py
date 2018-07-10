@@ -81,6 +81,7 @@ class YOLOPrefetchTargetGeneratorV3(gluon.Block):
                     center_targets[b, index, match, 1] = gty / orig_height * height - loc_y  # ty
                     scale_targets[b, index, match, 0] = np.log(gtw / np_anchors[match, 0])
                     scale_targets[b, index, match, 1] = np.log(gth / np_anchors[match, 1])
+                    # print('tx', gtx / orig_width * width - loc_x, 'ty', gty / orig_height * height - loc_y, 'tw', np.log(gtw / np_anchors[match, 0]), 'th', np.log(gth / np_anchors[match, 1]))
                     weights[b, index, match, :] = 2.0 - gtw * gth / orig_width / orig_height
                     objectness[b, index, match, 0] = 1
                     class_targets[b, index, match, int(np_gt_ids[b, m, 0])] = 1
@@ -192,16 +193,20 @@ class YOLODynamicTargetGeneratorV3(gluon.Block):
         return all_obj_targets, all_center_targets, all_scale_targets, all_weights, all_cls_targets
 
 
-class YOLOTargetMergerV3(gluon.HybridBlock):
+class YOLOTargetMergerV3(gluon.Block):
     def __init__(self, **kwargs):
         super(YOLOTargetMergerV3, self).__init__(**kwargs)
 
-    def hybrid_forward(self, F, *args):
-        # use fixed target to override dynamic targets
-        obj, centers, scales, weights, clas = zip(args[:5], args[5:])
-        objectness = F.where(obj[1] > 0, obj[1], obj[0])
-        center_targets = F.where(centers[1] > 0, centers[1], centers[0])
-        scale_targets = F.where(scales[1] > 0, scales[1], scales[0])
-        weights = F.where(weights[1] > 0, weights[1], weights[0])
-        class_targets = F.where(clas[1] > 0, clas[1], clas[0])
-        return objectness, center_targets, scale_targets, weights, class_targets
+    def forward(self, *args):
+        with autograd.pause():
+            # use fixed target to override dynamic targets
+            obj, centers, scales, weights, clas = zip(args[:5], args[5:])
+            mask = obj[1] > 0
+            objectness = nd.where(mask, obj[1], obj[0])
+            mask2 = mask.tile(reps=(2,))
+            center_targets = nd.where(mask2, centers[1], centers[0])
+            scale_targets = nd.where(mask2, scales[1], scales[0])
+            weights = nd.where(mask2, weights[1], weights[0])
+            class_mask = mask.tile(reps=(clas[1].shape[-1],))
+            class_targets = nd.where(class_mask, clas[1], clas[0])
+            return objectness, center_targets, scale_targets, weights, class_targets, class_mask

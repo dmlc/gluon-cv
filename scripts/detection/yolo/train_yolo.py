@@ -26,7 +26,7 @@ def parse_args():
                         help="Base network name which serves as feature extraction base.")
     parser.add_argument('--data-shape', type=int, default=416,
                         help="Input data shape, use 416, 608...")
-    parser.add_argument('--batch-size', type=int, default=32,
+    parser.add_argument('--batch-size', type=int, default=64,
                         help='Training mini-batch size')
     parser.add_argument('--dataset', type=str, default='voc',
                         help='Training dataset. Now support voc.')
@@ -119,7 +119,7 @@ def validate(net, val_data, ctx, eval_metric):
     eval_metric.reset()
     # set nms threshold and topk constraint
     net.set_nms(nms_thresh=0.45, nms_topk=400)
-    net.hybridize(static_alloc=True)
+    # net.hybridize()
     for batch in val_data:
         data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
         label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0)
@@ -145,6 +145,51 @@ def validate(net, val_data, ctx, eval_metric):
         eval_metric.update(det_bboxes, det_ids, det_scores, gt_bboxes, gt_ids, gt_difficults)
     return eval_metric.get()
 
+
+def debug_viz(objness_t, center_t, scale_t, weight_t, class_t, featmaps, anchors, offsets, imgs, gt_boxes, gt_ids, net):
+    import matplotlib.pyplot as plt
+    secs = [0, 169 * 3, 845 * 3, 3549 * 3]
+
+    for b in range(imgs.shape[0]):
+        img = imgs[b].transpose((1, 2, 0)) * mx.nd.array([0.229, 0.224, 0.225]) + mx.nd.array([0.485, 0.456, 0.406])
+        img = (img * 255).asnumpy()
+        bboxes = []
+        scores = []
+        labels = []
+        for i in range(3):
+            x = featmaps[i]
+            a = anchors[i][0][0].asnumpy()
+            o = offsets[i]
+            begin = secs[i]
+            end = secs[i+1]
+            obj_tt = objness_t[b].asnumpy()[begin:end, 0]
+            center_tt = center_t[b].asnumpy()[begin:end, :]
+            scale_tt = scale_t[b].asnumpy()[begin:end, :]
+            weight_tt = weight_t[b].asnumpy()[begin:end, :]
+            class_tt = class_t[b].asnumpy()[begin:end, :]
+            for j in range(class_tt.shape[0]):
+                if (class_tt[j, :] <= 0).all():
+                    continue
+                loc_y = (j // 3) // x.shape[3]
+                loc_x = (j // 3) % x.shape[3]
+                bx = (loc_x + center_tt[j, 0]) / x.shape[3] * img.shape[1]
+                by = (loc_y + center_tt[j, 1]) / x.shape[2] * img.shape[0]
+                bw = np.exp(scale_tt[j, 0]) * a[j % 3, 0]
+                bh = np.exp(scale_tt[j, 1]) * a[j % 3, 1]
+                print('otx', center_tt[j, 0], 'oty', center_tt[j, 1], 'otw', scale_tt[j, 0], 'oth', scale_tt[j, 1])
+                bboxes.append([bx - bw/2, by - bh/2, bx + bw/ 2, by + bh / 2])
+                scores.append(1.)
+                labels.append(np.where(class_tt[j, :] > 0)[0][0])
+        gtb = gt_boxes[b].asnumpy()
+        gtb = gtb[np.where(gtb > -1)].reshape(-1, 4)
+        gti = gt_ids[b].asnumpy()
+        gti = gti[np.where(gti > -1)].reshape(-1, 1)
+        print(gtb, bboxes)
+        gcv.utils.viz.plot_bbox(img, np.array(bboxes), np.array(scores), np.array(labels), class_names=net.classes)
+        # gcv.utils.viz.plot_bbox(img, gtb, labels=gti, class_names=net.classes)
+        plt.show()
+    # raise
+
 def train(net, train_data, val_data, eval_metric, args):
     """Training pipeline"""
     net.collect_params().reset_ctx(ctx)
@@ -164,6 +209,7 @@ def train(net, train_data, val_data, eval_metric, args):
     # targets
     target_merger = YOLOTargetMergerV3()
     sigmoid_ce = gluon.loss.SigmoidBinaryCrossEntropyLoss(from_sigmoid=False)
+    l1_loss = gluon.loss.L1Loss()
 
     # metrics
     obj_metrics = mx.metric.Loss('ObjLoss')
@@ -187,7 +233,7 @@ def train(net, train_data, val_data, eval_metric, args):
     for epoch in range(args.start_epoch, args.epochs):
         tic = time.time()
         btic = time.time()
-        net.hybridize(static_alloc=True)
+        # net.hybridize()
         for i, batch in enumerate(train_data):
             batch_size = batch[0].shape[0]
             data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
@@ -204,12 +250,12 @@ def train(net, train_data, val_data, eval_metric, args):
                     gt_boxes = fixed_targets[-2][ix]
                     gt_ids = fixed_targets[-1][ix]
                     dynamic_targets = net.target_generator(x, featmaps, anchors, offsets, box_preds, gt_boxes, gt_ids)
-                    objness_t, center_t, scale_t, weight_t, class_t = target_merger(*(list(dynamic_targets) + [ft[ix] for ft in fixed_targets[:-2]]))
-                    obj_loss = sigmoid_ce(objness, objness_t, objness_t >= 0)
-                    center_loss = sigmoid_ce(box_centers, center_t, weight_t)
-                    scale_loss = sigmoid_ce(box_scales, scale_t, weight_t)
-                    cls_mask = (objness_t >= 0).tile(reps=(net.num_class, ))
-                    cls_loss = sigmoid_ce(cls_preds, class_t, cls_mask)
+                    objness_t, center_t, scale_t, weight_t, class_t, class_mask = target_merger(*(list(dynamic_targets) + [ft[ix] for ft in fixed_targets[:-2]]))
+                    # debug_viz(objness_t, center_t, scale_t, weight_t, class_t, featmaps, anchors, offsets, x, gt_boxes, gt_ids, net)
+                    obj_loss = sigmoid_ce(objness, objness_t, objness_t >= 0) * objness.size / batch_size
+                    center_loss = sigmoid_ce(box_centers, center_t, weight_t) * box_centers.size / batch_size
+                    scale_loss = l1_loss(box_scales, scale_t, weight_t) * box_scales.size / batch_size
+                    cls_loss = sigmoid_ce(cls_preds, class_t, class_mask) * cls_preds.size / batch_size
                     sum_losses.append(obj_loss + center_loss + scale_loss + cls_loss)
                     obj_losses.append(obj_loss)
                     center_losses.append(center_loss)

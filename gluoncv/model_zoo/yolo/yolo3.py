@@ -50,8 +50,8 @@ class YOLOOutputV3(gluon.HybridBlock):
         # transpose to (batch, height * width, num_anchor, num_pred)
         pred = pred.transpose(axes=(0, 2, 1)).reshape((0, -1, self._num_anchors, self._num_pred))
         # components
-        box_centers = pred.slice_axis(axis=-1, begin=0, end=2)
-        box_scales = pred.slice_axis(axis=-1, begin=2, end=4)
+        raw_box_centers = pred.slice_axis(axis=-1, begin=0, end=2)
+        raw_box_scales = pred.slice_axis(axis=-1, begin=2, end=4)
         objness = pred.slice_axis(axis=-1, begin=4, end=5)
         class_pred = pred.slice_axis(axis=-1, begin=5, end=None)
 
@@ -60,15 +60,15 @@ class YOLOOutputV3(gluon.HybridBlock):
         # reshape to (1, height*width, 1, 2)
         offsets = offsets.reshape((1, -1, 1, 2))
 
-        box_centers = F.broadcast_add(F.sigmoid(box_centers), offsets) * self._stride
-        box_scales = F.broadcast_mul(F.exp(box_scales), anchors)
+        box_centers = F.broadcast_add(F.sigmoid(raw_box_centers), offsets) * self._stride
+        box_scales = F.broadcast_mul(F.exp(raw_box_scales), anchors)
         confidence = F.sigmoid(objness)
         class_score = F.broadcast_mul(F.sigmoid(class_pred), confidence)
         wh = box_scales / 2.0
         bbox = F.concat(box_centers - wh, box_centers + wh, dim=-1)
 
         if autograd.is_training():
-            return bbox, box_centers, box_scales, objness, class_pred, anchors, offsets
+            return bbox, raw_box_centers, raw_box_scales, objness, class_pred, anchors, offsets
 
         # prediction per class
         bboxes = F.tile(bbox, reps=(self._classes, 1, 1, 1, 1))
