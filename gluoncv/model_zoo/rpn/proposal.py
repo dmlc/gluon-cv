@@ -3,7 +3,7 @@ from __future__  import absolute_import
 
 from mxnet import autograd
 from mxnet import gluon
-from ...nn.bbox import BBoxCornerToCenter
+from ...nn.bbox import BBoxCornerToCenter, BBoxClipToImage
 from ...nn.coder import NormalizedBoxCenterDecoder
 
 
@@ -36,7 +36,7 @@ class RPNProposal(gluon.HybridBlock):
         super(RPNProposal, self).__init__()
         self._box_to_center = BBoxCornerToCenter()
         self._box_decoder = NormalizedBoxCenterDecoder(stds=stds)
-        # self._clipper = BBoxClipToImage()
+        self._clipper = BBoxClipToImage()
         # self._compute_area = BBoxArea()
         self._nms_thresh = nms_thresh
         self._train_pre_nms = max(1, train_pre_nms)
@@ -62,8 +62,8 @@ class RPNProposal(gluon.HybridBlock):
             roi = self._box_decoder(bbox_pred, self._box_to_center(anchor))
 
             # clip rois to image's boundary
-            roi = F.Custom(roi, img, op_type='bbox_clip_to_image')
-            # roi = self._clipper(roi, width, height)
+            # roi = F.Custom(roi, img, op_type='bbox_clip_to_image')
+            roi = self._clipper(roi, img)
 
             # remove bounding boxes that don't meet the min_size constraint
             # by setting them to (-1, -1, -1, -1)
