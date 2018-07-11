@@ -118,7 +118,7 @@ class FasterRCNN(RCNN):
                 train_post_nms=rpn_train_post_nms, test_pre_nms=rpn_test_pre_nms,
                 test_post_nms=rpn_test_post_nms, min_size=rpn_min_size)
             self.sampler = RCNNTargetSampler(
-                num_image=self._max_batch, num_proposal=rpn_test_post_nms,
+                num_image=self._max_batch, num_proposal=rpn_train_post_nms,
                 num_sample=num_sample, pos_iou_thresh=pos_iou_thresh, pos_ratio=pos_ratio)
 
     @property
