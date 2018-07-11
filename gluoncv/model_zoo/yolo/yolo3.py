@@ -9,7 +9,7 @@ from mxnet import gluon
 from mxnet import autograd
 from mxnet.gluon import nn
 from .darknet import _conv2d, darknet53
-from .yolo_target import YOLODynamicTargetGeneratorV3
+from .yolo_target import YOLODynamicTargetGeneratorV3, YOLODynamicTargetGeneratorSimpleV3
 
 __all__ = ['YOLOV3', 'yolo3_416_darknet53_voc', 'yolo3_416_darknet53_coco']
 
@@ -112,8 +112,12 @@ class YOLOV3(gluon.HybridBlock):
         self.nms_thresh = nms_thresh
         self.nms_topk = nms_topk
         self.post_nms = post_nms
-        self._target_generator = set([YOLODynamicTargetGeneratorV3(
-            len(classes), pos_iou_thresh, ignore_iou_thresh)])
+        if pos_iou_thresh >= 1:
+            self._target_generator = set([YOLODynamicTargetGeneratorSimpleV3(
+                len(classes), ignore_iou_thresh)])
+        else:
+            self._target_generator = set([YOLODynamicTargetGeneratorV3(
+                len(classes), pos_iou_thresh, ignore_iou_thresh)])
         with self.name_scope():
             self.stages = nn.HybridSequential()
             self.transitions = nn.HybridSequential()
