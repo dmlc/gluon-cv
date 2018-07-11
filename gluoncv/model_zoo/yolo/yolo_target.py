@@ -84,6 +84,7 @@ class YOLOPrefetchTargetGeneratorV3(gluon.Block):
                     # print('tx', gtx / orig_width * width - loc_x, 'ty', gty / orig_height * height - loc_y, 'tw', np.log(gtw / np_anchors[match, 0]), 'th', np.log(gth / np_anchors[match, 1]))
                     weights[b, index, match, :] = 2.0 - gtw * gth / orig_width / orig_height
                     objectness[b, index, match, 0] = 1
+                    class_targets[b, index, match, :] = 0
                     class_targets[b, index, match, int(np_gt_ids[b, m, 0])] = 1
                     # print(loc_x, loc_y, nlayer, index, num_offsets, 'gt', gtx, gty, gtw, gth,
                     # 'targets', center_targets[b, index, match, 0].asscalar(),
@@ -168,12 +169,14 @@ class YOLODynamicTargetGeneratorV3(gluon.Block):
                     ty = gty / orig_height * height - y_offset
                     tw = nd.log(gtw / orig_width * width / x_anchor)
                     th = nd.log(gth / orig_height * height / y_anchor)
-                    mask = (obj_target > 0)
-                    center_target = nd.concat(tx, ty, dim=-1) * mask.expand_dims(axis=-1).tile(reps=(2,))
-                    scale_target = nd.concat(tw, th, dim=-1) * mask.expand_dims(axis=-1).tile(reps=(2,))
-                    weight = (2 - gtw * gth / orig_width / orig_height) * mask.expand_dims(axis=-1)
+                    mask = (obj_target > 0)  # positive samples only
+                    mask2 = mask.expand_dims(axis=-1).tile(reps=(2,))
+                    center_target = nd.concat(tx, ty, dim=-1) * mask2
+                    scale_target = nd.concat(tw, th, dim=-1) * mask2
+                    mask3 = mask.expand_dims(axis=-1)
+                    weight = (2 - gtw * gth / orig_width / orig_height) * mask3
                     cls_target = nd.one_hot(gt_ids[b].take(best_index).squeeze(axis=-1), self._num_class)
-                    cls_target = nd.broadcast_mul(cls_target, mask.expand_dims(-1))
+                    cls_target = nd.broadcast_mul(cls_target, mask3)
 
                     obj_targets.append(obj_target.reshape((-1, 1)))
                     center_targets.append(center_target.reshape((-1, 2)))
