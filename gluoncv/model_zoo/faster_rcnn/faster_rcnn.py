@@ -422,7 +422,7 @@ def faster_rcnn_resnet50_v2a_coco(pretrained=False, pretrained_base=True, **kwar
         name='resnet50_v2a', dataset='coco', pretrained=pretrained,
         features=features, top_features=top_features, classes=classes,
         roi_mode='align', roi_size=(14, 14), stride=16,
-        nms_thresh=0.3, nms_topk=400, post_nms=100,
+        nms_thresh=0.5, nms_topk=-1, post_nms=-1,
         train_patterns=train_patterns,
         rpn_channel=1024, base_size=16, scales=(2, 4, 8, 16, 32),
         ratios=(0.5, 1, 2), alloc_size=(128, 128), rpn_nms_thresh=0.7,

@@ -78,8 +78,7 @@ def validate(net, val_data, ctx, eval_metric, size):
     """Test on validation dataset."""
     eval_metric.reset()
     net.collect_params().reset_ctx(ctx)
-    net.set_nms(nms_thresh=0.3, nms_topk=400)
-    # net.hybridize()
+    net.hybridize(static_alloc=True)
     with tqdm(total=size) as pbar:
         for ib, batch in enumerate(val_data):
             batch = split_and_load(batch, ctx_list=ctx)
