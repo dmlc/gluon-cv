@@ -178,7 +178,7 @@ class YOLOV3(gluon.HybridBlock):
         result = F.concat(*all_detections, dim=1)
         # apply nms per class
         if self.nms_thresh > 0 and self.nms_thresh < 1:
-            result = F.contrib.box_nms(result, overlap_thresh=self.nms_thresh,
+            result = F.contrib.box_nms(result, overlap_thresh=self.nms_thresh, valid_thresh=0.01,
                 topk=self.nms_topk, id_index=0, score_index=1, coord_start=2, force_suppress=False)
             if self.post_nms > 0:
                 result = result.slice_axis(axis=1, begin=0, end=self.post_nms)
