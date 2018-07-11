@@ -168,11 +168,12 @@ class YOLODynamicTargetGeneratorV3(gluon.Block):
                     ty = gty / orig_height * height - y_offset
                     tw = nd.log(gtw / orig_width * width / x_anchor)
                     th = nd.log(gth / orig_height * height / y_anchor)
-                    center_target = nd.concat(tx, ty, dim=-1) * obj_target.expand_dims(axis=-1).tile(reps=(2,))
-                    scale_target = nd.concat(tw, th, dim=-1) * obj_target.expand_dims(axis=-1).tile(reps=(2,))
-                    weight = (2 - gtw * gth / orig_width / orig_height) * obj_target.expand_dims(axis=-1)
+                    mask = (obj_target > 0)
+                    center_target = nd.concat(tx, ty, dim=-1) * mask.expand_dims(axis=-1).tile(reps=(2,))
+                    scale_target = nd.concat(tw, th, dim=-1) * mask.expand_dims(axis=-1).tile(reps=(2,))
+                    weight = (2 - gtw * gth / orig_width / orig_height) * mask.expand_dims(axis=-1)
                     cls_target = nd.one_hot(gt_ids[b].take(best_index).squeeze(axis=-1), self._num_class)
-                    cls_target = nd.broadcast_mul(cls_target, obj_target.expand_dims(-1))
+                    cls_target = nd.broadcast_mul(cls_target, mask.expand_dims(-1))
 
                     obj_targets.append(obj_target.reshape((-1, 1)))
                     center_targets.append(center_target.reshape((-1, 2)))
@@ -209,5 +210,5 @@ class YOLOTargetMergerV3(gluon.Block):
             weights = nd.where(mask2, weights[1], weights[0])
             mask3 = mask.tile(reps=(clas[1].shape[-1],))
             class_targets = nd.where(mask3, clas[1], clas[0])
-            class_mask = objectness.tile(reps=(clas[1].shape[-1])) * (class_targets >= 0)
+            class_mask = mask.tile(reps=(clas[1].shape[-1])) * (class_targets >= 0)
             return objectness, center_targets, scale_targets, weights, class_targets, class_mask
