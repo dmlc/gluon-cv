@@ -109,7 +109,7 @@ class FasterRCNN(RCNN):
         self._max_batch = 1  # currently only support batch size = 1
         self._num_sample = num_sample
         self._rpn_test_post_nms = rpn_test_post_nms
-        self._target_generator = RCNNTargetGenerator(self.num_class)
+        self._target_generator = {RCNNTargetGenerator(self.num_class)}
         with self.name_scope():
             self.rpn = RPN(
                 channels=rpn_channel, stride=stride, base_size=base_size,
@@ -131,7 +131,7 @@ class FasterRCNN(RCNN):
             The RCNN target generator
 
         """
-        return self._target_generator
+        return list(self._target_generator)[0]
 
     # pylint: disable=arguments-differ
     def hybrid_forward(self, F, x, gt_box=None):
