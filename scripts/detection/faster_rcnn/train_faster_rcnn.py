@@ -264,7 +264,6 @@ def get_lr_at_iter(alpha):
 
 def train(net, train_data, val_data, eval_metric, args):
     """Training pipeline"""
-    net.collect_params().reset_ctx(ctx)
     net.collect_params().setattr('grad_req', 'null')
     net.collect_train_params().setattr('grad_req', 'write')
     trainer = gluon.Trainer(
@@ -415,6 +414,7 @@ if __name__ == '__main__':
             if param._data is not None:
                 continue
             param.initialize()
+    net.collect_params().reset_ctx(ctx)
 
     # training data
     train_dataset, val_dataset, eval_metric = get_dataset(args.dataset, args)

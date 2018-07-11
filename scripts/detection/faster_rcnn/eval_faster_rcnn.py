@@ -77,7 +77,6 @@ def split_and_load(batch, ctx_list):
 def validate(net, val_data, ctx, eval_metric, size):
     """Test on validation dataset."""
     eval_metric.reset()
-    net.collect_params().reset_ctx(ctx)
     net.hybridize(static_alloc=True)
     with tqdm(total=size) as pbar:
         for ib, batch in enumerate(val_data):
@@ -125,6 +124,7 @@ if __name__ == '__main__':
     else:
         net = gcv.model_zoo.get_model(net_name, pretrained=False)
         net.load_parameters(args.pretrained.strip())
+    net.collect_params().reset_ctx(ctx)
 
     # training data
     val_dataset, eval_metric = get_dataset(args.dataset, args)
