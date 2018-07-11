@@ -12,7 +12,7 @@ from mxnet import gluon
 import gluoncv as gcv
 from gluoncv import data as gdata
 from gluoncv.data.batchify import Tuple, Stack, Pad
-from gluoncv.data.transforms.presets.yolo import YOLODefaultValTransform
+from gluoncv.data.transforms.presets.yolo import YOLO3DefaultValTransform
 from gluoncv.utils.metrics.voc_detection import VOC07MApMetric
 from gluoncv.utils.metrics.coco_detection import COCODetectionMetric
 
@@ -57,7 +57,7 @@ def get_dataloader(val_dataset, data_shape, batch_size, num_workers):
     width, height = data_shape, data_shape
     batchify_fn = Tuple(Stack(), Pad(pad_val=-1))
     val_loader = gluon.data.DataLoader(
-        val_dataset.transform(YOLODefaultValTransform(width, height, mean=(0, 0, 0), std=(1, 1, 1))),
+        val_dataset.transform(YOLO3DefaultValTransform(width, height, mean=(0, 0, 0), std=(1, 1, 1))),
         batch_size, False, last_batch='keep', num_workers=num_workers, batchify_fn=batchify_fn,)
     return val_loader
 
