@@ -157,7 +157,9 @@ class YOLOV3(gluon.HybridBlock):
                 all_class_pred.append(class_pred.reshape((0, -3, -1)))
                 all_anchors.append(anchors)
                 all_offsets.append(offsets)
-                all_feat_maps.append(tip)
+                # here we use fake featmap to reduce memory consuption, only shape[2, 3] is used
+                fake_featmap = F.zeros_like(tip.slice_axis(axis=0, begin=0, end=1).slice_axis(axis=1, begin=0, end=1))
+                all_feat_maps.append(fake_featmap)
             else:
                 detections = output(tip)
             all_detections.append(detections)
