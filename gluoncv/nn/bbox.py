@@ -141,6 +141,7 @@ class BBoxClipToImage(gluon.HybridBlock):
         (B, N, 4) Bounding box coordinates.
 
         """
+        x = F.maximum(x, 0.0)
         # window [B, 2] -> reverse hw -> tile [B, 4] -> [B, 1, 4], boxes [B, N, 4]
         window = F.shape_array(img).slice_axis(axis=0, begin=2, end=None).expand_dims(0)
         m = F.tile(F.reverse(window, axis=1), reps=(2,)).reshape((0, -4, 1, -1))
