@@ -23,12 +23,12 @@ class RCNN(gluon.HybridBlock):
         ROI pooling mode. Currently support 'pool' and 'align'.
     roi_size : tuple of int, length 2
         (height, width) of the ROI region.
-    nms_thresh : float, default is 0.3.
+    nms_thresh : float
         Non-maximum suppression threshold. You can speficy < 0 or > 1 to disable NMS.
-    nms_topk : int, default is 400
+    nms_topk : int
         Apply NMS to top k detection results, use -1 to disable so that every Detection
          result is used in NMS.
-    post_nms : int, default is 100
+    post_nms : int
         Only return top `post_nms` detection results, the rest is discarded. The number is
         based on COCO dataset which has maximum 100 objects per image. You can adjust this
         number if expecting more objects. You can use -1 to return all detections.
@@ -50,8 +50,8 @@ class RCNN(gluon.HybridBlock):
         Matching pattern for trainable parameters.
 
     """
-    def __init__(self, features, top_features, classes, roi_mode, roi_size,
-                 nms_thresh=0.3, nms_topk=400, post_nms=100, train_patterns=None, **kwargs):
+    def __init__(self, features, top_features, classes, roi_mode, roi_size, stride,
+                 nms_thresh, nms_topk, post_nms, train_patterns, **kwargs):
         super(RCNN, self).__init__(**kwargs)
         self.classes = classes
         self.num_class = len(classes)
@@ -60,6 +60,7 @@ class RCNN(gluon.HybridBlock):
         self._roi_mode = roi_mode.lower()
         assert len(roi_size) == 2, "Require (h, w) as roi_size, given {}".format(roi_size)
         self._roi_size = roi_size
+        self._stride = stride
         self.nms_thresh = nms_thresh
         self.nms_topk = nms_topk
         self.post_nms = post_nms

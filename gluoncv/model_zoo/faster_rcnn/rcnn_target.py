@@ -11,22 +11,21 @@ class RCNNTargetSampler(gluon.HybridBlock):
 
     Parameters
     ----------
-    num_image: int, default is 1
+    num_image: int
         Number of input images.
-    num_proposal: int, default is 2000
+    num_proposal: int
         Number of input proposals.
-    num_sample : int, default is 128
+    num_sample : int
         Number of samples for RCNN targets.
-    pos_iou_thresh : float, default is 0.5
+    pos_iou_thresh : float
         Proposal whose IOU larger than ``pos_iou_thresh`` is regarded as positive samples.
         Proposal whose IOU smaller than ``pos_iou_thresh`` is regarded as negative samples.
-    pos_ratio : float, default is 0.25
+    pos_ratio : float
         ``pos_ratio`` defines how many positive samples (``pos_ratio * num_sample``) is
         to be sampled.
 
     """
-    def __init__(self, num_image=1, num_proposal=2000, num_sample=128,
-                 pos_iou_thresh=0.5, pos_ratio=0.25):
+    def __init__(self, num_image, num_proposal, num_sample, pos_iou_thresh, pos_ratio):
         super(RCNNTargetSampler, self).__init__()
         self._num_image = num_image
         self._num_proposal = num_proposal
