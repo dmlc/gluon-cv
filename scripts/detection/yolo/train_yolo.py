@@ -147,9 +147,6 @@ def get_dataset(dataset, args):
         val_metric = COCODetectionMetric(
             val_dataset, args.save_prefix + '_eval', cleanup=True,
             data_shape=(args.data_shape, args.data_shape))
-        # coco validation is slow, consider increase the validation interval
-        if args.val_interval == 1:
-            args.val_interval = 10
     else:
         raise NotImplementedError('Dataset: {} not implemented.'.format(dataset))
     if args.num_samples < 0:
