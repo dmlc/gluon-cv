@@ -181,34 +181,50 @@ class FasterRCNN(RCNN):
         top_feat = self.top_features(pooled_feat)
         top_feat = self.global_avg_pool(top_feat)
         cls_pred = self.class_predictor(top_feat)
-        box_pred = self.box_predictor(top_feat).reshape((-1, self.num_class, 4))
+        box_pred = self.box_predictor(top_feat)
+        # cls_pred (B * N, C) -> (B, N, C)
+        cls_pred = cls_pred.reshape((self._max_batch, num_roi, self.num_class + 1))
+        # box_pred (B * N, C * 4) -> (B, N, C, 4)
+        box_pred = box_pred.reshape((self._max_batch, num_roi, self.num_class, 4))
 
         # no need to convert bounding boxes in training, just return
         if autograd.is_training():
             return (cls_pred, box_pred, rpn_box, samples, matches,
                     raw_rpn_score, raw_rpn_box, anchors)
 
-        # translate bboxes
-        bboxes = self.box_decoder(box_pred.transpose((1, 0, 2)), self.box_to_center(rpn_box))
-        bboxes = F.split(bboxes, axis=0, num_outputs=self.num_class, squeeze_axis=True)
+        # cls_ids (B, N, C), scores (B, N, C)
         cls_ids, scores = self.cls_decoder(F.softmax(cls_pred, axis=-1))
-        results = []
-        for i in range(self.num_class):
-            cls_id = cls_ids.slice_axis(axis=-1, begin=i, end=i+1)
-            score = scores.slice_axis(axis=-1, begin=i, end=i+1)
-            # per class results
-            per_result = F.concat(*[cls_id, score, bboxes[i]], dim=-1)
-            results.append(per_result)
-        result = F.concat(*results, dim=0).expand_dims(0)
+        # cls_ids, scores (B, N, C) -> (B, C, N) -> (B, C, N, 1)
+        cls_ids = cls_ids.transpose((0, 2, 1)).reshape((0, 0, 0, 1))
+        scores = scores.transpose((0, 2, 1)).reshape((0, 0, 0, 1))
+        # box_pred (B, N, C, 4) -> (B, C, N, 4)
+        box_pred = box_pred.transpose((0, 2, 1, 3))
 
-        # per class nms
-        # only support batch=1
-        if self.nms_thresh > 0 and self.nms_thresh < 1:
-            result = F.contrib.box_nms(
-                result, overlap_thresh=self.nms_thresh, topk=self.nms_topk,
-                id_index=0, score_index=1, coord_start=2).squeeze(axis=0)
-            if self.post_nms > 0:
-                result = result.slice_axis(axis=0, begin=0, end=self.post_nms)
+        # rpn_boxes (B, N, 4) -> B * (1, N, 4)
+        rpn_boxes = F.split(rpn_box, axis=0, num_outputs=self._max_batch, squeeze_axis=False)
+        # cls_ids, scores (B, C, N, 1) -> B * (C, N, 1)
+        cls_ids = F.split(cls_ids, axis=0, num_outputs=self._max_batch, squeeze_axis=True)
+        scores = F.split(scores, axis=0, num_outputs=self._max_batch, squeeze_axis=True)
+        # box_preds (B, C, N, 4) -> B * (C, N, 4)
+        box_preds = F.split(box_pred, axis=0, num_outputs=self._max_batch, squeeze_axis=True)
+
+        # per batch predict, nms, each class has topk outputs
+        results = []
+        for rpn_box, cls_id, score, box_pred in zip(rpn_boxes, cls_ids, scores, box_preds):
+            # box_pred (C, N, 4) rpn_box (1, N, 4) -> bbox (C, N, 4)
+            bbox = self.box_decoder(box_pred, self.box_to_center(rpn_box))
+            # res (C, N, 6)
+            res = F.concat(*[cls_id, score, bbox], dim=-1)
+            # res (C, self.nms_topk, 6)
+            res = F.contrib.box_nms(
+                res, overlap_thresh=self.nms_thresh, topk=self.nms_topk,
+                id_index=0, score_index=1, coord_start=2, force_suppress=True)
+            # res (C * self.nms_topk, 6)
+            res = res.reshape((-3, 0))
+            results.append(res)
+
+        # result B * (C * topk, 6) -> (B, C * topk, 6)
+        result = F.stack(*results, dim=0)
         ids = F.slice_axis(result, axis=-1, begin=0, end=1)
         scores = F.slice_axis(result, axis=-1, begin=1, end=2)
         bboxes = F.slice_axis(result, axis=-1, begin=2, end=6)

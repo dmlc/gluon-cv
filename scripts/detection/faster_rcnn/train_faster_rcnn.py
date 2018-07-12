@@ -228,6 +228,7 @@ def split_and_load(batch, ctx_list):
 
 def validate(net, val_data, ctx, eval_metric):
     """Test on validation dataset."""
+    clipper = gcv.nn.bbox.BBoxClipToImage()
     eval_metric.reset()
     net.hybridize(static_alloc=True)
     for batch in val_data:
@@ -241,10 +242,10 @@ def validate(net, val_data, ctx, eval_metric):
         for x, y, im_scale in zip(*batch):
             # get prediction results
             ids, scores, bboxes = net(x)
-            det_ids.append(ids.expand_dims(0))
-            det_scores.append(scores.expand_dims(0))
+            det_ids.append(ids)
+            det_scores.append(scores)
             # clip to image size
-            det_bboxes.append(mx.nd.Custom(bboxes, x, op_type='bbox_clip_to_image').expand_dims(0))
+            det_bboxes.append(clipper(bboxes, x))
             # rescale to original resolution
             im_scale = im_scale.reshape((-1)).asscalar()
             det_bboxes[-1] *= im_scale

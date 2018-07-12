@@ -120,15 +120,31 @@ class RCNNTargetGenerator(gluon.Block):
 
     #pylint: disable=arguments-differ
     def forward(self, roi, samples, matches, gt_label, gt_box):
-        """
-        Only support batch_size=1 now.
+        """Components can handle batch images
+
+        Parameters
+        ----------
+        roi: (B, N, 4), input proposals
+        samples: (B, N), value +1: positive / -1: negative.
+        matches: (B, N), value [0, M), index to gt_label and gt_box.
+        gt_label: (B, M), value [0, num_class), excluding background class.
+        gt_box: (B, M, 4), input ground truth box corner coordinates.
+
+        Returns
+        -------
+        cls_target: (B, N), value [0, num_class + 1), including background.
+        box_target: (B, N, C, 4), only foreground class has nonzero target.
+        box_weight: (B, N, C, 4), only foreground class has nonzero weight.
+
         """
         with autograd.pause():
+            # cls_target (B, N)
             cls_target = self._cls_encoder(samples, matches, gt_label)
+            # box_target, box_weight (C, B, N, 4)
             box_target, box_mask = self._box_encoder(
                 samples, matches, roi, gt_label, gt_box)
             # modify shapes to match predictions
-            cls_target = cls_target[0]
-            box_target = box_target.transpose((1, 2, 0, 3))[0]
-            box_mask = box_mask.transpose((1, 2, 0, 3))[0]
+            # box (C, B, N, 4) -> (B, N, C, 4)
+            box_target = box_target.transpose((1, 2, 0, 3))
+            box_mask = box_mask.transpose((1, 2, 0, 3))
         return cls_target, box_target, box_mask
