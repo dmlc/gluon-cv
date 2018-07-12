@@ -202,12 +202,13 @@ class FasterRCNN(RCNN):
         result = F.concat(*results, dim=0).expand_dims(0)
 
         # per class nms
+        # only support batch=1
         if self.nms_thresh > 0 and self.nms_thresh < 1:
             result = F.contrib.box_nms(
                 result, overlap_thresh=self.nms_thresh, topk=self.nms_topk,
-                id_index=0, score_index=1, coord_start=2)
+                id_index=0, score_index=1, coord_start=2).squeeze(axis=0)
             if self.post_nms > 0:
-                result = result.slice_axis(axis=1, begin=0, end=self.post_nms).squeeze(axis=0)
+                result = result.slice_axis(axis=0, begin=0, end=self.post_nms)
         ids = F.slice_axis(result, axis=-1, begin=0, end=1)
         scores = F.slice_axis(result, axis=-1, begin=1, end=2)
         bboxes = F.slice_axis(result, axis=-1, begin=2, end=6)
