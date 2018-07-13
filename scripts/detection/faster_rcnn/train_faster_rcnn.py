@@ -150,7 +150,7 @@ class RCNNAccMetric(mx.metric.EvalMetric):
         rcnn_cls = preds[0]
 
         # calculate num_acc
-        pred_label = mx.nd.argmax(rcnn_cls, axis=1)
+        pred_label = mx.nd.argmax(rcnn_cls, axis=-1)
         num_acc = mx.nd.sum(pred_label == rcnn_label)
 
         self.sum_metric += num_acc.asscalar()
