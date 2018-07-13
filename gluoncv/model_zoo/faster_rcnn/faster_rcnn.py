@@ -224,7 +224,7 @@ class FasterRCNN(RCNN):
             results.append(res)
 
         # result B * (C * topk, 6) -> (B, C * topk, 6)
-        result = F.stack(*results, dim=0)
+        result = F.stack(*results, axis=0)
         ids = F.slice_axis(result, axis=-1, begin=0, end=1)
         scores = F.slice_axis(result, axis=-1, begin=1, end=2)
         bboxes = F.slice_axis(result, axis=-1, begin=2, end=6)
