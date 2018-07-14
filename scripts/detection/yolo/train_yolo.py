@@ -18,7 +18,7 @@ from gluoncv.data.transforms.presets.yolo import YOLO3DefaultValTransform
 from gluoncv.utils.metrics.voc_detection import VOC07MApMetric
 from gluoncv.utils.metrics.coco_detection import COCODetectionMetric
 from gluoncv.utils import LRScheduler
-from gluoncv.model_zoo.yolo.yolo_target import YOLOTargetMergerV3
+from gluoncv.model_zoo.yolo.yolo_target import YOLOV3TargetMerger
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train YOLO networks.')
@@ -269,7 +269,7 @@ def train(net, train_data, val_data, eval_metric, args):
         {'wd': args.wd, 'momentum': args.momentum, 'lr_scheduler': lr_scheduler})
 
     # targets
-    target_merger = YOLOTargetMergerV3()
+    target_merger = YOLOV3TargetMerger()
     sigmoid_ce = gluon.loss.SigmoidBinaryCrossEntropyLoss(from_sigmoid=False)
     # sce = SigmoidBinaryCrossEntropyLoss(from_sigmoid=False)
     l1_loss = gluon.loss.L1Loss()

@@ -95,20 +95,14 @@ class YOLO3DefaultTrainTransform(object):
         if net is None:
             return
 
-        # since we do not have predictions yet, so we ignore sampling here
-        from ....model_zoo.yolo.yolo_target import YOLOPrefetchTargetGeneratorV3
-        self._target_generator = YOLOPrefetchTargetGeneratorV3(
-            num_class=len(net.classes), **kwargs)
-
-
         # in case network has reset_ctx to gpu
         self._fake_x = mx.nd.zeros((1, 3, height, width))
         net = copy.deepcopy(net)
         net.collect_params().reset_ctx(None)
         with autograd.train_mode():
             _, self._anchors, self._offsets, self._feat_maps, _, _, _, _ = net(self._fake_x)
-        from ....model_zoo.yolo.yolo_target import YOLOPrefetchTargetGeneratorV3
-        self._target_generator = YOLOPrefetchTargetGeneratorV3(
+        from ....model_zoo.yolo.yolo_target import YOLOV3PrefetchTargetGenerator
+        self._target_generator = YOLOV3PrefetchTargetGenerator(
             num_class=len(net.classes), **kwargs)
 
     def __call__(self, src, label):

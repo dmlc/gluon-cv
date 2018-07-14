@@ -10,9 +10,9 @@ from ...nn.bbox import BBoxCornerToCenter, BBoxCenterToCorner
 from ...nn.coder import GridBoxCenterEncoder
 
 
-class YOLOPrefetchTargetGeneratorV3(gluon.Block):
+class YOLOV3PrefetchTargetGenerator(gluon.Block):
     def __init__(self, num_class, **kwargs):
-        super(YOLOPrefetchTargetGeneratorV3, self).__init__(**kwargs)
+        super(YOLOV3PrefetchTargetGenerator, self).__init__(**kwargs)
         self._num_class = num_class
         self.bbox2center = BBoxCornerToCenter(axis=-1, split=True)
         self.bbox2corner = BBoxCenterToCorner(axis=-1, split=False)
@@ -108,9 +108,9 @@ class YOLOPrefetchTargetGeneratorV3(gluon.Block):
         return nd.concat(*ret, dim=1)
 
 
-class YOLODynamicTargetGeneratorSimpleV3(gluon.Block):
+class YOLOV3DynamicTargetGeneratorSimple(gluon.Block):
     def __init__(self, num_class, ignore_iou_thresh, **kwargs):
-        super(YOLODynamicTargetGeneratorSimpleV3, self).__init__(**kwargs)
+        super(YOLOV3DynamicTargetGeneratorSimple, self).__init__(**kwargs)
         self._num_class = num_class
         self._ignore_iou_thresh = ignore_iou_thresh
 
@@ -134,109 +134,22 @@ class YOLODynamicTargetGeneratorSimpleV3(gluon.Block):
         return objness_t, center_t, scale_t, weight_t, class_t
 
 
-class YOLODynamicTargetGeneratorV3(gluon.Block):
-    def __init__(self, num_class, pos_iou_thresh, ignore_iou_thresh, **kwargs):
-        super(YOLODynamicTargetGeneratorV3, self).__init__(**kwargs)
+class YOLOV3TargetMerger(gluon.HybridBlock):
+    def __init__(self, num_class, **kwargs):
+        super(YOLOV3TargetMerger, self).__init__(**kwargs)
         self._num_class = num_class
-        self._pos_iou_thresh = pos_iou_thresh
-        self._ignore_iou_thresh = ignore_iou_thresh
-        self.bbox_c2c = BBoxCornerToCenter(axis=-1, split=True)
 
-    def forward(self, img, xs, anchors, offsets, box_preds, gt_boxes, gt_ids):
-        """Generate dynamic training targets based on current predictions.
-        anchors : list of anchors in each yolo output layer
-        gt_boxes
-        gt_ids
-        """
-        assert isinstance(anchors, (list, tuple))
-        assert isinstance(box_preds, (list, tuple))
-        assert isinstance(xs, (list, tuple))
-        assert len(anchors) == len(box_preds) == len(xs)
-
-        # orig image size
-        orig_height = img.shape[2]
-        orig_width = img.shape[3]
-
-        with autograd.pause():
-            # for each yolo stage
-            all_obj_targets = []
-            all_center_targets = []
-            all_scale_targets = []
-            all_weights = []
-            all_cls_targets = []
-            for anchor, box_pred, offset, x in zip(anchors, box_preds, offsets, xs):
-                # feature map size
-                height = x.shape[2]
-                width = x.shape[3]
-                # process each batch separately
-                obj_targets = []
-                center_targets = []
-                scale_targets = []
-                weights = []
-                cls_targets = []
-                for b in range(box_pred.shape[0]):
-                    # for each prediction box, find besting matching
-                    ious = nd.contrib.box_iou(box_pred[b], gt_boxes[b])
-                    best_index = ious.argmax(axis=-1)
-                    best_ious = ious.pick(best_index, axis=-1)
-                    # fill with ignore -1
-                    obj_target = nd.ones_like(best_ious) * -1
-                    # positive: 1
-                    obj_target = nd.where(best_ious > self._pos_iou_thresh, nd.ones_like(best_ious), obj_target)
-                    # negative: 0
-                    obj_target = nd.where(best_ious <= self._ignore_iou_thresh, best_ious * 0, obj_target)
-                    # compute box targets
-                    gts = gt_boxes[b].take(best_index)  # (N, 4)
-                    gtx, gty, gtw, gth = self.bbox_c2c(gts)
-                    x_offset, y_offset = offset.reshape((-1, 1, 2)).split(axis=-1, num_outputs=2)
-                    x_anchor, y_anchor = anchor.reshape((1, -1, 2)).split(axis=-1, num_outputs=2)
-                    tx = gtx / orig_width * width - x_offset
-                    ty = gty / orig_height * height - y_offset
-                    tw = nd.log(gtw / orig_width * width / x_anchor)
-                    th = nd.log(gth / orig_height * height / y_anchor)
-                    mask = (obj_target > 0)  # positive samples only
-                    mask2 = mask.expand_dims(axis=-1).tile(reps=(2,))
-                    center_target = nd.concat(tx, ty, dim=-1) * mask2
-                    scale_target = nd.concat(tw, th, dim=-1) * mask2
-                    mask3 = mask.expand_dims(axis=-1)
-                    weight = (2 - gtw * gth / orig_width / orig_height) * mask3
-                    cls_target = nd.one_hot(gt_ids[b].take(best_index).squeeze(axis=-1), self._num_class)
-                    cls_target = nd.broadcast_mul(cls_target, mask3)
-
-                    obj_targets.append(obj_target.reshape((-1, 1)))
-                    center_targets.append(center_target.reshape((-1, 2)))
-                    scale_targets.append(scale_target.reshape((-1, 2)))
-                    weights.append(weight.tile(reps=(2, )).reshape((-1, 2)))
-                    cls_targets.append(cls_target.reshape((-1, self._num_class)))
-                all_obj_targets.append(nd.stack(*obj_targets))
-                all_center_targets.append(nd.stack(*center_targets))
-                all_scale_targets.append(nd.stack(*scale_targets))
-                all_weights.append(nd.stack(*weights))
-                all_cls_targets.append(nd.stack(*cls_targets))
-            all_obj_targets = nd.concat(*all_obj_targets, dim=1)
-            all_center_targets = nd.concat(*all_center_targets, dim=1)
-            all_scale_targets = nd.concat(*all_scale_targets, dim=1)
-            all_weights = nd.concat(*all_weights, dim=1)
-            all_cls_targets = nd.concat(*all_cls_targets, dim=1)
-
-        return all_obj_targets, all_center_targets, all_scale_targets, all_weights, all_cls_targets
-
-
-class YOLOTargetMergerV3(gluon.Block):
-    def __init__(self, **kwargs):
-        super(YOLOTargetMergerV3, self).__init__(**kwargs)
-
-    def forward(self, *args):
+    def hybrid_forward(self, F, *args):
         with autograd.pause():
             # use fixed target to override dynamic targets
             obj, centers, scales, weights, clas = zip(args[:5], args[5:])
             mask = obj[1] > 0
-            objectness = nd.where(mask, obj[1], obj[0])
+            objectness = F.where(mask, obj[1], obj[0])
             mask2 = mask.tile(reps=(2,))
-            center_targets = nd.where(mask2, centers[1], centers[0])
-            scale_targets = nd.where(mask2, scales[1], scales[0])
-            weights = nd.where(mask2, weights[1], weights[0])
-            mask3 = mask.tile(reps=(clas[1].shape[-1],))
-            class_targets = nd.where(mask3, clas[1], clas[0])
-            class_mask = mask.tile(reps=(clas[1].shape[-1])) * (class_targets >= 0)
+            center_targets = F.where(mask2, centers[1], centers[0])
+            scale_targets = F.where(mask2, scales[1], scales[0])
+            weights = F.where(mask2, weights[1], weights[0])
+            mask3 = mask.tile(reps=(self._num_class,))
+            class_targets = F.where(mask3, clas[1], clas[0])
+            class_mask = mask.tile(reps=(self._num_class,)) * (class_targets >= 0)
             return objectness, center_targets, scale_targets, weights, class_targets, class_mask

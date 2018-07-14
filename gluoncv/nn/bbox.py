@@ -110,9 +110,9 @@ class BBoxArea(gluon.HybridBlock):
     """
     def __init__(self, axis=-1, fmt='corner', **kwargs):
         super(BBoxArea, self).__init__(**kwargs)
-        if fmt.lower() == 'center':
+        if fmt.lower() == 'corner':
             self._pre = BBoxCornerToCenter(split=True)
-        elif fmt.lower() == 'corner':
+        elif fmt.lower() == 'center':
             self._pre = BBoxSplit(axis=axis)
         else:
             raise ValueError("Unsupported format: {}. Use 'corner' or 'center'.".format(fmt))
@@ -122,3 +122,38 @@ class BBoxArea(gluon.HybridBlock):
         width = F.where(width > 0, width, F.zeros_like(width))
         height = F.where(height > 0, height, F.zeros_like(height))
         return width * height
+
+
+class BBoxBatchIOU(gluon.HybridBlock):
+    def __init__(self, axis=-1, fmt='corner', offset=0, eps=1e-15, **kwargs):
+        super(BBoxBatchIOU, self).__init__(**kwargs)
+        self._offset = offset
+        self._eps = eps
+        if fmt.lower() == 'center':
+            self._pre = BBoxCenterToCorner(split=True)
+        elif fmt.lower() == 'corner':
+            self._pre = BBoxSplit(axis=axis)
+        else:
+            raise ValueError("Unsupported format: {}. Use 'corner' or 'center'.".format(fmt))
+
+    def hybrid_forward(self, F, a, b):
+        al, ar, at, ab = self._pre(a)
+        bl, br, bt, bb = self._pre(b)
+
+        # (B, N, M)
+        left = F.broadcast_maximum(al.expand_dims(-1), bl.expand_dims(-2))
+        right = F.broadcast_minimum(ar.expand_dims(-1), br.expand_dims(-2))
+        top = F.broadcast_maximum(at.expand_dims(-1), bt.expand_dims(-2))
+        bot = F.broadcast_minimum(ab.expand_dims(-1), bb.expand_dims(-2))
+
+        # clip with (0, float16.max)
+        iw = F.clip(right - left + self._offset, a_min=0, a_max=6.55040e+04)
+        ih = F.clip(bot - top + self._offset, a_min=0, a_max=6.55040e+04)
+        i = iw * ih
+
+        # areas
+        area_a = ((ar - al + self._offset) * (ab - at + self._offset)).expand_dims(-1)
+        area_b = ((br - bl + self._offset) * (bb - bt + self._offset)).expand_dims(-2)
+        union = area_a + area_b - i
+
+        return i / (union + self._eps)
