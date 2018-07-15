@@ -3,6 +3,7 @@ import os
 # disable autotune
 os.environ['MXNET_CUDNN_AUTOTUNE_DEFAULT'] = '0'
 import argparse
+import glob
 import logging
 logging.basicConfig(level=logging.INFO)
 import time
@@ -36,6 +37,8 @@ def parse_args():
                         help='Load weights from previously saved parameters.')
     parser.add_argument('--save-prefix', type=str, default='',
                         help='Saving parameter prefix')
+    parser.add_argument('--eval-all', action='store_true',
+                        help='Eval all models begins with save prefix. Use with pretrained.')
     args = parser.parse_args()
     if args.dataset == 'voc':
         args.short = int(args.short) if args.short else 600
@@ -133,6 +136,19 @@ if __name__ == '__main__':
         net, val_dataset, args.short, args.max_size, args.batch_size, args.num_workers)
 
     # validation
-    names, values = validate(net, val_data, ctx, eval_metric, len(val_dataset))
-    for k, v in zip(names, values):
-        print(k, v)
+    if not args.eval_all:
+        names, values = validate(net, val_data, ctx, eval_metric, len(val_dataset))
+        for k, v in zip(names, values):
+            print(k, v)
+    else:
+        saved_models = glob.glob(args.save_prefix + '*.params')
+        for epoch, saved_model in enumerate(sorted(saved_models)):
+            print('[Epoch {}] Validating from {}'.format(epoch, saved_model))
+            net.load_parameters(saved_model)
+            net.collect_params().reset_ctx(ctx)
+            map_name, mean_ap = validate(net, val_data, ctx, eval_metric, len(val_dataset))
+            val_msg = '\n'.join(['{}={}'.format(k, v) for k, v in zip(map_name, mean_ap)])
+            print('[Epoch {}] Validation: \n{}'.format(epoch, val_msg))
+            current_map = float(mean_ap[-1])
+            with open(args.save_prefix+'_best_map.log', 'a') as f:
+                f.write('\n{:04d}:\t{:.4f}'.format(epoch, current_map))
