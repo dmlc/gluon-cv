@@ -286,7 +286,7 @@ def faster_rcnn_resnet50_v1b_voc(pretrained=False, pretrained_base=True, **kwarg
     from ...data import VOCDetection
     classes = VOCDetection.CLASSES
     pretrained_base = False if pretrained else pretrained_base
-    base_network = resnet50_v1b(pretrained=pretrained_base, dilated=False)
+    base_network = resnet50_v1b(pretrained=pretrained_base, dilated=False, use_global_stats=True)
     features = nn.HybridSequential()
     top_features = nn.HybridSequential()
     for layer in ['conv1', 'bn1', 'relu', 'maxpool', 'layer1', 'layer2', 'layer3']:
@@ -333,7 +333,7 @@ def faster_rcnn_resnet50_v1b_coco(pretrained=False, pretrained_base=True, **kwar
     from ...data import COCODetection
     classes = COCODetection.CLASSES
     pretrained_base = False if pretrained else pretrained_base
-    base_network = resnet50_v1b(pretrained=pretrained_base, dilated=False)
+    base_network = resnet50_v1b(pretrained=pretrained_base, dilated=False, use_global_stats=True)
     features = nn.HybridSequential()
     top_features = nn.HybridSequential()
     for layer in ['conv1', 'bn1', 'relu', 'maxpool', 'layer1', 'layer2', 'layer3']:
