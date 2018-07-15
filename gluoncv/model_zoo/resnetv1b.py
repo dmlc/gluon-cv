@@ -116,8 +116,13 @@ class ResNetV1b(HybridBlock):
         Applying dilation strategy to pretrained ResNet yielding a stride-8 model,
         typically used in Semantic Segmentation.
     norm_layer : object
-        Normalization layer used in backbone network (default: :class:`mxnet.gluon.norm_layer`;
+        Normalization layer used in backbone network (default: :class:`mxnet.gluon.nn.BatchNorm`;
         for Synchronized Cross-GPU BachNormalization).
+    last_gamma : bool, default False
+        Whether to initialize the gamma of the last BatchNorm layer in each bottleneck to zero.
+    use_global_stats : bool, default False
+        Whether forcing BatchNorm to use global statistics instead of minibatch statistics;
+        optionally set to True if finetuning using ImageNet classification pretrained models.
 
 
     Reference:
