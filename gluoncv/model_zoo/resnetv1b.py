@@ -17,17 +17,17 @@ class BasicBlockV1b(HybridBlock):
     """
     expansion = 1
     def __init__(self, inplanes, planes, strides=1, dilation=1, downsample=None,
-                 previous_dilation=1, norm_layer=None, **kwargs):
+                 previous_dilation=1, norm_layer=None, use_global_stats=False, **kwargs):
         super(BasicBlockV1b, self).__init__()
         self.conv1 = nn.Conv2D(in_channels=inplanes, channels=planes,
                                kernel_size=3, strides=strides,
                                padding=dilation, dilation=dilation, use_bias=False)
-        self.bn1 = norm_layer(in_channels=planes)
+        self.bn1 = norm_layer(in_channels=planes, use_global_stats=use_global_stats)
         self.relu = nn.Activation('relu')
         self.conv2 = nn.Conv2D(in_channels=planes, channels=planes, kernel_size=3, strides=1,
                                padding=previous_dilation, dilation=previous_dilation,
                                use_bias=False)
-        self.bn2 = norm_layer(in_channels=planes)
+        self.bn2 = norm_layer(in_channels=planes, use_global_stats=use_global_stats)
         self.downsample = downsample
         self.strides = strides
 
@@ -57,20 +57,21 @@ class BottleneckV1b(HybridBlock):
     expansion = 4
     def __init__(self, inplanes, planes, strides=1, dilation=1,
                  downsample=None, previous_dilation=1, norm_layer=None,
-                 last_gamma=False, **kwargs):
+                 last_gamma=False, use_global_stats=False, **kwargs):
         super(BottleneckV1b, self).__init__()
         self.conv1 = nn.Conv2D(in_channels=inplanes, channels=planes, kernel_size=1, use_bias=False)
-        self.bn1 = norm_layer(in_channels=planes)
+        self.bn1 = norm_layer(in_channels=planes, use_global_stats=use_global_stats)
         self.conv2 = nn.Conv2D(
             in_channels=planes, channels=planes, kernel_size=3, strides=strides,
             padding=dilation, dilation=dilation, use_bias=False)
-        self.bn2 = norm_layer(in_channels=planes)
+        self.bn2 = norm_layer(in_channels=planes, use_global_stats=use_global_stats)
         self.conv3 = nn.Conv2D(
             in_channels=planes, channels=planes * 4, kernel_size=1, use_bias=False)
         if not last_gamma:
-            self.bn3 = nn.BatchNorm(in_channels=planes * 4)
+            self.bn3 = norm_layer(in_channels=planes * 4, use_global_stats=use_global_stats)
         else:
-            self.bn3 = nn.BatchNorm(in_channels=planes * 4, gamma_initializer='zeros')
+            self.bn3 = norm_layer(in_channels=planes * 4, gamma_initializer='zeros',
+                                  use_global_stats=use_global_stats)
         self.relu = nn.Activation('relu')
         self.downsample = downsample
         self.dilation = dilation
@@ -128,13 +129,13 @@ class ResNetV1b(HybridBlock):
     """
     # pylint: disable=unused-variable
     def __init__(self, block, layers, classes=1000, dilated=False, norm_layer=BatchNorm,
-                 last_gamma=False, **kwargs):
+                 last_gamma=False, use_global_stats=False, **kwargs):
         self.inplanes = 64
         super(ResNetV1b, self).__init__()
         with self.name_scope():
             self.conv1 = nn.Conv2D(in_channels=3, channels=64, kernel_size=7, strides=2, padding=3,
                                    use_bias=False)
-            self.bn1 = norm_layer(in_channels=64)
+            self.bn1 = norm_layer(in_channels=64, use_global_stats=use_global_stats)
             self.relu = nn.Activation('relu')
             self.maxpool = nn.MaxPool2D(pool_size=3, strides=2, padding=1)
             self.layer1 = self._make_layer(1, block, 64, layers[0], norm_layer=norm_layer,
@@ -156,7 +157,7 @@ class ResNetV1b(HybridBlock):
             self.fc = nn.Dense(in_units=512 * block.expansion, units=classes)
 
     def _make_layer(self, stage_index, block, planes, blocks, strides=1, dilation=1,
-                    norm_layer=None, last_gamma=False):
+                    norm_layer=None, last_gamma=False, use_global_stats=False):
         downsample = None
         if strides != 1 or self.inplanes != planes * block.expansion:
             downsample = nn.HybridSequential(prefix='down%d_'%stage_index)
@@ -164,18 +165,21 @@ class ResNetV1b(HybridBlock):
                 downsample.add(nn.Conv2D(in_channels=self.inplanes,
                                          channels=planes * block.expansion,
                                          kernel_size=1, strides=strides, use_bias=False))
-                downsample.add(norm_layer(in_channels=planes * block.expansion))
+                downsample.add(norm_layer(in_channels=planes * block.expansion,
+                                          use_global_stats=use_global_stats))
 
         layers = nn.HybridSequential(prefix='layers%d_'%stage_index)
         with layers.name_scope():
             if dilation == 1 or dilation == 2:
                 layers.add(block(self.inplanes, planes, strides, dilation=1,
                                  downsample=downsample, previous_dilation=dilation,
-                                 norm_layer=norm_layer, last_gamma=last_gamma))
+                                 norm_layer=norm_layer, last_gamma=last_gamma,
+                                 use_global_stats=use_global_stats))
             elif dilation == 4:
                 layers.add(block(self.inplanes, planes, strides, dilation=2,
                                  downsample=downsample, previous_dilation=dilation,
-                                 norm_layer=norm_layer, last_gamma=last_gamma))
+                                 norm_layer=norm_layer, last_gamma=last_gamma,
+                                 use_global_stats=use_global_stats))
             else:
                 raise RuntimeError("=> unknown dilation size: {}".format(dilation))
 
@@ -183,7 +187,7 @@ class ResNetV1b(HybridBlock):
             for i in range(1, blocks):
                 layers.add(block(self.inplanes, planes, dilation=dilation,
                                  previous_dilation=dilation, norm_layer=norm_layer,
-                                 last_gamma=last_gamma))
+                                 last_gamma=last_gamma, use_global_stats=use_global_stats))
 
         return layers
 
