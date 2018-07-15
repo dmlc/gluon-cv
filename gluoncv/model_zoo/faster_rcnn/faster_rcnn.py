@@ -34,6 +34,8 @@ class FasterRCNN(RCNN):
     stride : int, default is 16
         Feature map stride with respect to original image.
         This is usually the ratio between original image size and feature map size.
+    clip : float, default is None
+        Clip bounding box target to this value.
     nms_thresh : float, default is 0.3.
         Non-maximum suppression threshold. You can speficy < 0 or > 1 to disable NMS.
     nms_topk : int, default is 400
@@ -96,7 +98,7 @@ class FasterRCNN(RCNN):
 
     """
     def __init__(self, features, top_features, classes,
-                 roi_mode='align', roi_size=(14, 14), stride=16,
+                 roi_mode='align', roi_size=(14, 14), stride=16, clip=None,
                  nms_thresh=0.3, nms_topk=400, post_nms=100, train_patterns=None,
                  rpn_channel=1024, base_size=16, scales=(0.5, 1, 2),
                  ratios=(8, 16, 32), alloc_size=(128, 128), rpn_nms_thresh=0.7,
@@ -106,7 +108,7 @@ class FasterRCNN(RCNN):
         super(FasterRCNN, self).__init__(
             features=features, top_features=top_features, classes=classes,
             roi_mode=roi_mode, roi_size=roi_size, stride=stride,
-            nms_thresh=nms_thresh, nms_topk=nms_topk, post_nms=post_nms,
+            clip=clip, nms_thresh=nms_thresh, nms_topk=nms_topk, post_nms=post_nms,
             train_patterns=train_patterns, **kwargs)
         self._max_batch = 1  # currently only support batch size = 1
         self._num_sample = num_sample
@@ -116,7 +118,7 @@ class FasterRCNN(RCNN):
             self.rpn = RPN(
                 channels=rpn_channel, stride=stride, base_size=base_size,
                 scales=scales, ratios=ratios, alloc_size=alloc_size,
-                nms_thresh=rpn_nms_thresh, train_pre_nms=rpn_train_pre_nms,
+                clip=clip, nms_thresh=rpn_nms_thresh, train_pre_nms=rpn_train_pre_nms,
                 train_post_nms=rpn_train_post_nms, test_pre_nms=rpn_test_pre_nms,
                 test_post_nms=rpn_test_post_nms, min_size=rpn_min_size)
             self.sampler = RCNNTargetSampler(
@@ -305,7 +307,7 @@ def faster_rcnn_resnet50_v1b_voc(pretrained=False, pretrained_base=True, **kwarg
     return get_faster_rcnn(
         name='resnet50_v1b', dataset='voc', pretrained=pretrained,
         features=features, top_features=top_features, classes=classes,
-        roi_mode='align', roi_size=(14, 14), stride=16,
+        roi_mode='align', roi_size=(14, 14), stride=16, clip=None,
         nms_thresh=0.3, nms_topk=400, post_nms=100,
         train_patterns=train_patterns,
         rpn_channel=1024, base_size=16, scales=(2, 4, 8, 16, 32),
@@ -352,7 +354,7 @@ def faster_rcnn_resnet50_v1b_coco(pretrained=False, pretrained_base=True, **kwar
     return get_faster_rcnn(
         name='resnet50_v1b', dataset='coco', pretrained=pretrained,
         features=features, top_features=top_features, classes=classes,
-        roi_mode='align', roi_size=(14, 14), stride=16,
+        roi_mode='align', roi_size=(14, 14), stride=16, clip=4.42,
         nms_thresh=0.5, nms_topk=-1, post_nms=-1,
         train_patterns=train_patterns,
         rpn_channel=1024, base_size=16, scales=(2, 4, 8, 16, 32),
@@ -399,7 +401,7 @@ def faster_rcnn_resnet50_v2a_voc(pretrained=False, pretrained_base=True, **kwarg
     return get_faster_rcnn(
         name='resnet50_v2a', dataset='voc', pretrained=pretrained,
         features=features, top_features=top_features, classes=classes,
-        roi_mode='align', roi_size=(14, 14), stride=16,
+        roi_mode='align', roi_size=(14, 14), stride=16, clip=None,
         nms_thresh=0.3, nms_topk=400, post_nms=100,
         train_patterns=train_patterns,
         rpn_channel=1024, base_size=16, scales=(2, 4, 8, 16, 32),
@@ -446,7 +448,7 @@ def faster_rcnn_resnet50_v2a_coco(pretrained=False, pretrained_base=True, **kwar
     return get_faster_rcnn(
         name='resnet50_v2a', dataset='coco', pretrained=pretrained,
         features=features, top_features=top_features, classes=classes,
-        roi_mode='align', roi_size=(14, 14), stride=16,
+        roi_mode='align', roi_size=(14, 14), stride=16, clip=4.42,
         nms_thresh=0.5, nms_topk=-1, post_nms=-1,
         train_patterns=train_patterns,
         rpn_channel=1024, base_size=16, scales=(2, 4, 8, 16, 32),
@@ -488,7 +490,7 @@ def faster_rcnn_resnet50_v2_voc(pretrained=False, pretrained_base=True, **kwargs
     return get_faster_rcnn(
         name='resnet50_v2', dataset='voc', pretrained=pretrained,
         features=features, top_features=top_features, classes=classes,
-        roi_mode='align', roi_size=(14, 14), stride=16,
+        roi_mode='align', roi_size=(14, 14), stride=16, clip=None,
         nms_thresh=0.3, nms_topk=400, post_nms=100,
         train_patterns=train_patterns,
         rpn_channel=1024, base_size=16, scales=(2, 4, 8, 16, 32),

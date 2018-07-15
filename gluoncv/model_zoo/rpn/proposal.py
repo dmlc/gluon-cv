@@ -15,6 +15,8 @@ class RPNProposal(gluon.HybridBlock):
 
     Parameters
     ----------
+    clip : float
+        Clip bounding box target to this value.
     nms_thresh : float
         IOU threshold for NMS. It is used to remove overlapping proposals.
     train_pre_nms : int
@@ -31,11 +33,11 @@ class RPNProposal(gluon.HybridBlock):
         Standard deviation to be multiplied from encoded regression targets.
         These values must be the same as stds used in RPNTargetGenerator.
     """
-    def __init__(self, nms_thresh, train_pre_nms, train_post_nms,
+    def __init__(self, clip, nms_thresh, train_pre_nms, train_post_nms,
                  test_pre_nms, test_post_nms, min_size, stds):
         super(RPNProposal, self).__init__()
         self._box_to_center = BBoxCornerToCenter()
-        self._box_decoder = NormalizedBoxCenterDecoder(stds=stds)
+        self._box_decoder = NormalizedBoxCenterDecoder(stds=stds, clip=clip)
         self._clipper = BBoxClipToImage()
         # self._compute_area = BBoxArea()
         self._nms_thresh = nms_thresh

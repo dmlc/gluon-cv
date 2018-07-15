@@ -38,6 +38,8 @@ class RPN(gluon.HybridBlock):
         Later in inference we can have variable input sizes,
         at which time we can crop corresponding anchors from this large
         anchor map so we can skip re-generating anchors for each input.
+    clip : float
+        Clip bounding box target to this value.
     nms_thresh : float
         IOU threshold for NMS. It is used to remove overlapping proposals.
     train_pre_nms : int
@@ -53,7 +55,7 @@ class RPN(gluon.HybridBlock):
 
     """
     def __init__(self, channels, stride, base_size, scales, ratios, alloc_size,
-                 nms_thresh, train_pre_nms, train_post_nms,
+                 clip, nms_thresh, train_pre_nms, train_post_nms,
                  test_pre_nms, test_post_nms, min_size, **kwargs):
         super(RPN, self).__init__(**kwargs)
         weight_initializer = mx.init.Normal(0.01)
@@ -62,7 +64,7 @@ class RPN(gluon.HybridBlock):
                 stride, base_size, ratios, scales, alloc_size)
             anchor_depth = self.anchor_generator.num_depth
             self.region_proposaler = RPNProposal(
-                nms_thresh, train_pre_nms, train_post_nms,
+                clip, nms_thresh, train_pre_nms, train_post_nms,
                 test_pre_nms, test_post_nms, min_size, stds=(1., 1., 1., 1.))
             self.conv1 = nn.HybridSequential()
             self.conv1.add(nn.Conv2D(channels, 3, 1, 1, weight_initializer=weight_initializer))

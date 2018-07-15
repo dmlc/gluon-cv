@@ -23,6 +23,8 @@ class RCNN(gluon.HybridBlock):
         ROI pooling mode. Currently support 'pool' and 'align'.
     roi_size : tuple of int, length 2
         (height, width) of the ROI region.
+    clip: float
+        Clip bounding box target to this value.
     nms_thresh : float
         Non-maximum suppression threshold. You can speficy < 0 or > 1 to disable NMS.
     nms_topk : int
@@ -51,7 +53,7 @@ class RCNN(gluon.HybridBlock):
 
     """
     def __init__(self, features, top_features, classes, roi_mode, roi_size, stride,
-                 nms_thresh, nms_topk, post_nms, train_patterns, **kwargs):
+                 clip, nms_thresh, nms_topk, post_nms, train_patterns, **kwargs):
         super(RCNN, self).__init__(**kwargs)
         self.classes = classes
         self.num_class = len(classes)
@@ -76,7 +78,7 @@ class RCNN(gluon.HybridBlock):
                 self.num_class * 4, weight_initializer=mx.init.Normal(0.001))
             self.cls_decoder = MultiPerClassDecoder(num_class=self.num_class+1)
             self.box_to_center = BBoxCornerToCenter()
-            self.box_decoder = NormalizedBoxCenterDecoder()
+            self.box_decoder = NormalizedBoxCenterDecoder(clip=clip)
 
     def collect_train_params(self, select=None):
         """Collect trainable params.

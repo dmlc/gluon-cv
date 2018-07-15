@@ -149,13 +149,16 @@ class NormalizedBoxCenterDecoder(gluon.HybridBlock):
         Std value to be divided from encoded values, default is (0.1, 0.1, 0.2, 0.2).
     means : array-like of size 4
         Mean value to be subtracted from encoded values, default is (0., 0., 0., 0.).
+    clip: float, default is None
+        If given, bounding box target will be clipped to this value.
 
     """
-    def __init__(self, stds=(0.1, 0.1, 0.2, 0.2), means=(0., 0., 0., 0.), convert_anchor=False):
+    def __init__(self, stds=(0.1, 0.1, 0.2, 0.2), means=(0., 0., 0., 0.), convert_anchor=False, clip=None):
         super(NormalizedBoxCenterDecoder, self).__init__()
         assert len(stds) == 4, "Box Encoder requires 4 std values."
         self._stds = stds
         self._means = means
+        self._clip = clip
         if convert_anchor:
             self.corner_to_center = BBoxCornerToCenter(split=True)
         else:
@@ -169,8 +172,13 @@ class NormalizedBoxCenterDecoder(gluon.HybridBlock):
         p = F.split(x, axis=-1, num_outputs=4)
         ox = F.broadcast_add(F.broadcast_mul(p[0] * self._stds[0] + self._means[0], a[2]), a[0])
         oy = F.broadcast_add(F.broadcast_mul(p[1] * self._stds[1] + self._means[1], a[3]), a[1])
-        ow = F.broadcast_mul(F.exp(p[2] * self._stds[2]) + self._means[2], a[2]) / 2
-        oh = F.broadcast_mul(F.exp(p[3] * self._stds[3]) + self._means[3], a[3]) / 2
+        tw = F.exp(p[2] * self._stds[2] + self._means[2])
+        th = F.exp(p[3] * self._stds[3] + self._means[2])
+        if self._clip:
+            tw = F.minimum(tw, self._clip)
+            th = F.minimum(th, self._clip)
+        ow = F.broadcast_mul(tw, a[2]) / 2
+        oh = F.broadcast_mul(th, a[3]) / 2
         return F.concat(ox - ow, oy - oh, ox + ow, oy + oh, dim=-1)
 
 
