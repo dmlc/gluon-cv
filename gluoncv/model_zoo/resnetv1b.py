@@ -234,8 +234,13 @@ def resnet18_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
     dilated: bool, default False
         Whether to apply dilation strategy to ResNetV1b, yilding a stride 8 model.
     norm_layer : object
-        Normalization layer used in backbone network (default: :class:`mxnet.gluon.norm_layer`;
+        Normalization layer used in backbone network (default: :class:`mxnet.gluon.BatchNorm`;
         for Synchronized Cross-GPU BachNormalization).
+    last_gamma : bool, default False
+        Whether to initialize the gamma of the last BatchNorm layer in each bottleneck to zero.
+    use_global_stats : bool, default False
+        Whether forcing BatchNorm to use global statistics instead of minibatch statistics;
+        optionally set to True if finetuning using ImageNet classification pretrained models.
     """
     model = ResNetV1b(BasicBlockV1b, [2, 2, 2, 2], **kwargs)
     if pretrained:
@@ -259,7 +264,12 @@ def resnet34_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
     dilated: bool, default False
         Whether to apply dilation strategy to ResNetV1b, yilding a stride 8 model.
     norm_layer : object
-        Normalization layer used in backbone network (default: :class:`mxnet.gluon.norm_layer`;
+        Normalization layer used in backbone network (default: :class:`mxnet.gluon.BatchNorm`;
+    last_gamma : bool, default False
+        Whether to initialize the gamma of the last BatchNorm layer in each bottleneck to zero.
+    use_global_stats : bool, default False
+        Whether forcing BatchNorm to use global statistics instead of minibatch statistics;
+        optionally set to True if finetuning using ImageNet classification pretrained models.
     """
     model = ResNetV1b(BasicBlockV1b, [3, 4, 6, 3], **kwargs)
     if pretrained:
@@ -283,7 +293,12 @@ def resnet50_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
     dilated: bool, default False
         Whether to apply dilation strategy to ResNetV1b, yilding a stride 8 model.
     norm_layer : object
-        Normalization layer used in backbone network (default: :class:`mxnet.gluon.norm_layer`;
+        Normalization layer used in backbone network (default: :class:`mxnet.gluon.BatchNorm`;
+    last_gamma : bool, default False
+        Whether to initialize the gamma of the last BatchNorm layer in each bottleneck to zero.
+    use_global_stats : bool, default False
+        Whether forcing BatchNorm to use global statistics instead of minibatch statistics;
+        optionally set to True if finetuning using ImageNet classification pretrained models.
     """
     model = ResNetV1b(BottleneckV1b, [3, 4, 6, 3], **kwargs)
     if pretrained:
@@ -307,7 +322,12 @@ def resnet101_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
     dilated: bool, default False
         Whether to apply dilation strategy to ResNetV1b, yilding a stride 8 model.
     norm_layer : object
-        Normalization layer used in backbone network (default: :class:`mxnet.gluon.norm_layer`;
+        Normalization layer used in backbone network (default: :class:`mxnet.gluon.BatchNorm`;
+    last_gamma : bool, default False
+        Whether to initialize the gamma of the last BatchNorm layer in each bottleneck to zero.
+    use_global_stats : bool, default False
+        Whether forcing BatchNorm to use global statistics instead of minibatch statistics;
+        optionally set to True if finetuning using ImageNet classification pretrained models.
     """
     model = ResNetV1b(BottleneckV1b, [3, 4, 23, 3], **kwargs)
     if pretrained:
@@ -331,7 +351,12 @@ def resnet152_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
     dilated: bool, default False
         Whether to apply dilation strategy to ResNetV1b, yilding a stride 8 model.
     norm_layer : object
-        Normalization layer used in backbone network (default: :class:`mxnet.gluon.norm_layer`;
+        Normalization layer used in backbone network (default: :class:`mxnet.gluon.BatchNorm`;
+    last_gamma : bool, default False
+        Whether to initialize the gamma of the last BatchNorm layer in each bottleneck to zero.
+    use_global_stats : bool, default False
+        Whether forcing BatchNorm to use global statistics instead of minibatch statistics;
+        optionally set to True if finetuning using ImageNet classification pretrained models.
     """
     model = ResNetV1b(BottleneckV1b, [3, 8, 36, 3], **kwargs)
     if pretrained:
