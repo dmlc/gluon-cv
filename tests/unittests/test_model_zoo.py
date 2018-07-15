@@ -128,6 +128,5 @@ def test_segmentation_models():
     _test_model_list(models, ctx, x)
 
 if __name__ == '__main__':
-    test_imagenet_models_bn_global_stats()
-    # import nose
-    # nose.runmodule()
+    import nose
+    nose.runmodule()
