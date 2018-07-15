@@ -139,19 +139,25 @@ class ResNetV1b(HybridBlock):
             self.relu = nn.Activation('relu')
             self.maxpool = nn.MaxPool2D(pool_size=3, strides=2, padding=1)
             self.layer1 = self._make_layer(1, block, 64, layers[0], norm_layer=norm_layer,
-                                           last_gamma=last_gamma)
+                                           last_gamma=last_gamma,
+                                           use_global_stats=use_global_stats)
             self.layer2 = self._make_layer(2, block, 128, layers[1], strides=2,
-                                           norm_layer=norm_layer, last_gamma=last_gamma)
+                                           norm_layer=norm_layer, last_gamma=last_gamma,
+                                           use_global_stats=use_global_stats)
             if dilated:
                 self.layer3 = self._make_layer(3, block, 256, layers[2], strides=1, dilation=2,
-                                               norm_layer=norm_layer, last_gamma=last_gamma)
+                                               norm_layer=norm_layer, last_gamma=last_gamma,
+                                               use_global_stats=use_global_stats)
                 self.layer4 = self._make_layer(4, block, 512, layers[3], strides=1, dilation=4,
-                                               norm_layer=norm_layer, last_gamma=last_gamma)
+                                               norm_layer=norm_layer, last_gamma=last_gamma,
+                                               use_global_stats=use_global_stats)
             else:
                 self.layer3 = self._make_layer(3, block, 256, layers[2], strides=2,
-                                               norm_layer=norm_layer, last_gamma=last_gamma)
+                                               norm_layer=norm_layer, last_gamma=last_gamma,
+                                               use_global_stats=use_global_stats)
                 self.layer4 = self._make_layer(4, block, 512, layers[3], strides=2,
-                                               norm_layer=norm_layer, last_gamma=last_gamma)
+                                               norm_layer=norm_layer, last_gamma=last_gamma,
+                                               use_global_stats=use_global_stats)
             self.avgpool = nn.AvgPool2D(7)
             self.flat = nn.Flatten()
             self.fc = nn.Dense(in_units=512 * block.expansion, units=classes)

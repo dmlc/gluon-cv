@@ -51,10 +51,10 @@ def _test_model_list(model_list, ctx, x, **kwargs):
 @with_cpu(0)
 def _test_bn_global_stats(model_list, **kwargs):
     class _BatchNorm(mx.gluon.nn.BatchNorm):
-        def __init__(self, axis, momentum, epsilon, center, scale,
-                     use_global_stats, beta_initializer, gamma_initializer,
-                     running_mean_initializer, running_variance_initializer,
-                     in_channels, **kwargs):
+        def __init__(self, axis=1, momentum=0.9, epsilon=1e-5, center=True, scale=True,
+            use_global_stats=False, beta_initializer='zeros', gamma_initializer='ones',
+            running_mean_initializer='zeros', running_variance_initializer='ones',
+            in_channels=0, **kwargs):
             assert use_global_stats
             super(_BatchNorm, self).__init__(axis, momentum, epsilon, center, scale,
                  use_global_stats, beta_initializer, gamma_initializer,
@@ -128,5 +128,6 @@ def test_segmentation_models():
     _test_model_list(models, ctx, x)
 
 if __name__ == '__main__':
-    import nose
-    nose.runmodule()
+    test_imagenet_models_bn_global_stats()
+    # import nose
+    # nose.runmodule()
