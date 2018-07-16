@@ -6,8 +6,7 @@ import numpy as np
 from mxnet import gluon
 from mxnet import nd
 from mxnet import autograd
-from ...nn.bbox import BBoxCornerToCenter, BBoxCenterToCorner
-from ...nn.coder import GridBoxCenterEncoder
+from ...nn.bbox import BBoxCornerToCenter, BBoxCenterToCorner, BBoxBatchIOU
 
 
 class YOLOV3PrefetchTargetGenerator(gluon.Block):
@@ -108,41 +107,39 @@ class YOLOV3PrefetchTargetGenerator(gluon.Block):
         return nd.concat(*ret, dim=1)
 
 
-class YOLOV3DynamicTargetGeneratorSimple(gluon.Block):
+class YOLOV3DynamicTargetGeneratorSimple(gluon.HybridBlock):
     def __init__(self, num_class, ignore_iou_thresh, **kwargs):
         super(YOLOV3DynamicTargetGeneratorSimple, self).__init__(**kwargs)
         self._num_class = num_class
         self._ignore_iou_thresh = ignore_iou_thresh
+        self._batch_iou = BBoxBatchIOU()
 
-    def forward(self, img, xs, anchors, offsets, box_preds, gt_boxes, gt_ids):
+    def hybrid_forward(self, F, box_preds, gt_boxes):
         with autograd.pause():
-            if isinstance(box_preds, (list, tuple)):
-                box_preds = nd.concat(*box_preds, dim=1)
-
             box_preds = box_preds.reshape((0, -1, 4))
-
-            objness_t = nd.zeros_like(box_preds.slice_axis(axis=-1, begin=0, end=1))
-            center_t = nd.zeros_like(box_preds.slice_axis(axis=-1, begin=0, end=2))
-            scale_t = nd.zeros_like(box_preds.slice_axis(axis=-1, begin=0, end=2))
-            weight_t = nd.zeros_like(box_preds.slice_axis(axis=-1, begin=0, end=2))
-            class_t = nd.ones_like(objness_t.tile(reps=(self._num_class))) * -1
-            for b in range(box_preds.shape[0]):
-                ious = nd.contrib.box_iou(box_preds[b], gt_boxes[b])
-                ious_max = ious.max(axis=-1)
-                ignored = (ious_max > self._ignore_iou_thresh) * -1  # use -1 for ignored
-                objness_t[b, :, 0] = ignored
+            objness_t = F.zeros_like(box_preds.slice_axis(axis=-1, begin=0, end=1))
+            center_t = F.zeros_like(box_preds.slice_axis(axis=-1, begin=0, end=2))
+            scale_t = F.zeros_like(box_preds.slice_axis(axis=-1, begin=0, end=2))
+            weight_t = F.zeros_like(box_preds.slice_axis(axis=-1, begin=0, end=2))
+            class_t = F.ones_like(objness_t.tile(reps=(self._num_class))) * -1
+            batch_ious = self._batch_iou(box_preds, gt_boxes)  # (B, N, M)
+            ious_max = batch_ious.max(axis=-1, keepdims=True)  # (B, N, 1)
+            objness_t = (ious_max > self._ignore_iou_thresh) * -1  # use -1 for ignored
         return objness_t, center_t, scale_t, weight_t, class_t
 
 
 class YOLOV3TargetMerger(gluon.HybridBlock):
-    def __init__(self, num_class, **kwargs):
+    def __init__(self, num_class, ignore_iou_thresh, **kwargs):
         super(YOLOV3TargetMerger, self).__init__(**kwargs)
         self._num_class = num_class
+        self._dynamic_target = YOLOV3DynamicTargetGeneratorSimple(num_class, ignore_iou_thresh)
 
-    def hybrid_forward(self, F, *args):
+    def hybrid_forward(self, F, box_preds, gt_boxes, obj_t, centers_t, scales_t, weights_t, clas_t):
         with autograd.pause():
+            dynamic_t = self._dynamic_target(box_preds, gt_boxes)
             # use fixed target to override dynamic targets
-            obj, centers, scales, weights, clas = zip(args[:5], args[5:])
+            obj, centers, scales, weights, clas = zip(
+                dynamic_t, [obj_t, centers_t, scales_t, weights_t, clas_t])
             mask = obj[1] > 0
             objectness = F.where(mask, obj[1], obj[0])
             mask2 = mask.tile(reps=(2,))
@@ -152,4 +149,4 @@ class YOLOV3TargetMerger(gluon.HybridBlock):
             mask3 = mask.tile(reps=(self._num_class,))
             class_targets = F.where(mask3, clas[1], clas[0])
             class_mask = mask.tile(reps=(self._num_class,)) * (class_targets >= 0)
-            return objectness, center_targets, scale_targets, weights, class_targets, class_mask
+            return [F.stop_gradient(x) for x in [objectness, center_targets, scale_targets, weights, class_targets, class_mask]]

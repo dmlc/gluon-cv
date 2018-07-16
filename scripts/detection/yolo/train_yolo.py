@@ -255,6 +255,7 @@ def debug_viz(objness_t, center_t, scale_t, weight_t, class_t, featmaps, anchors
 def train(net, train_data, val_data, eval_metric, args):
     """Training pipeline"""
     net.collect_params().reset_ctx(ctx)
+    net.target_generator.hybridize()
     lr_scheduler = LRScheduler(mode='step',
                                baselr=args.lr,
                                niters=args.num_samples // args.batch_size,
@@ -269,7 +270,7 @@ def train(net, train_data, val_data, eval_metric, args):
         {'wd': args.wd, 'momentum': args.momentum, 'lr_scheduler': lr_scheduler})
 
     # targets
-    target_merger = YOLOV3TargetMerger()
+    # target_merger = YOLOV3TargetMerger()
     sigmoid_ce = gluon.loss.SigmoidBinaryCrossEntropyLoss(from_sigmoid=False)
     # sce = SigmoidBinaryCrossEntropyLoss(from_sigmoid=False)
     l1_loss = gluon.loss.L1Loss()
@@ -300,6 +301,7 @@ def train(net, train_data, val_data, eval_metric, args):
         for i, batch in enumerate(train_data):
             batch_size = batch[0].shape[0]
             data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
+            # objectness, center_targets, scale_targets, weights, class_targets
             fixed_targets = [gluon.utils.split_and_load(batch[it], ctx_list=ctx, batch_axis=0) for it in range(1, 8)]
             sum_losses = []
             obj_losses = []
@@ -309,11 +311,11 @@ def train(net, train_data, val_data, eval_metric, args):
             with autograd.record():
                 for ix, x in enumerate(data):
                     tmp = net(x)
-                    box_preds, anchors, offsets, featmaps, box_centers, box_scales, objness, cls_preds = net(x)
+                    # box_preds, anchors, offsets, featmaps, box_centers, box_scales, objness, cls_preds = net(x)
+                    box_preds, box_centers, box_scales, objness, cls_preds = net(x)
                     gt_boxes = fixed_targets[-2][ix]
                     gt_ids = fixed_targets[-1][ix]
-                    dynamic_targets = net.target_generator(x, featmaps, anchors, offsets, box_preds, gt_boxes, gt_ids)
-                    objness_t, center_t, scale_t, weight_t, class_t, class_mask = target_merger(*(list(dynamic_targets) + [ft[ix] for ft in fixed_targets[:-2]]))
+                    objness_t, center_t, scale_t, weight_t, class_t, class_mask = net.target_generator(box_preds, gt_boxes, *[ft[ix] for ft in fixed_targets[:-2]])
                     # debug_viz(objness_t, center_t, scale_t, weight_t, class_t, featmaps, anchors, offsets, x, gt_boxes, gt_ids, net)
                     obj_loss = sigmoid_ce(objness, objness_t, objness_t >= 0) * objness.size / batch_size
                     center_loss = sigmoid_ce(box_centers, center_t, weight_t) * box_centers.size / batch_size

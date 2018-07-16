@@ -9,7 +9,7 @@ from mxnet import gluon
 from mxnet import autograd
 from mxnet.gluon import nn
 from .darknet import _conv2d, darknet53
-from .yolo_target import YOLOV3DynamicTargetGenerator, YOLOV3DynamicTargetGeneratorSimple
+from .yolo_target import YOLOV3TargetMerger
 
 __all__ = ['YOLOV3', 'yolo3_416_darknet53_voc', 'yolo3_416_darknet53_coco']
 
@@ -68,7 +68,7 @@ class YOLOOutputV3(gluon.HybridBlock):
         bbox = F.concat(box_centers - wh, box_centers + wh, dim=-1)
 
         if autograd.is_training():
-            return bbox, raw_box_centers, raw_box_scales, objness, class_pred, anchors, offsets
+            return bbox.reshape((0, -1, 4)), raw_box_centers, raw_box_scales, objness, class_pred, anchors, offsets
 
         # prediction per class
         bboxes = F.tile(bbox, reps=(self._classes, 1, 1, 1, 1))
@@ -113,11 +113,10 @@ class YOLOV3(gluon.HybridBlock):
         self.nms_topk = nms_topk
         self.post_nms = post_nms
         if pos_iou_thresh >= 1:
-            self._target_generator = set([YOLOV3DynamicTargetGeneratorSimple(
-                len(classes), ignore_iou_thresh)])
+            self._target_generator = {YOLOV3TargetMerger(len(classes), ignore_iou_thresh)}
         else:
-            self._target_generator = set([YOLOV3DynamicTargetGenerator(
-                len(classes), pos_iou_thresh, ignore_iou_thresh)])
+            raise NotImplementedError(
+                "pos_iou_thresh({}) < 1.0 is not implemented!".format(pos_iou_thresh))
         with self.name_scope():
             self.stages = nn.HybridSequential()
             self.transitions = nn.HybridSequential()
@@ -170,9 +169,15 @@ class YOLOV3(gluon.HybridBlock):
             x = F.concat(upsample, routes[::-1][i + 1], dim=1)
 
         if autograd.is_training():
+            if autograd.is_recording():
+                return (F.concat(*all_detections, dim=1),
+                    F.concat(*all_box_centers, dim=1),
+                    F.concat(*all_box_scales, dim=1),
+                    F.concat(*all_objectness, dim=1),
+                    F.concat(*all_class_pred, dim=1))
             # return raw predictions
             return (
-                all_detections,
+                F.concat(*all_detections, dim=1),
                 all_anchors,
                 all_offsets,
                 all_feat_maps,

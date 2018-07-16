@@ -81,14 +81,20 @@ class BBoxSplit(gluon.HybridBlock):
     ----------
     axis : int, default is -1
         On which axis to split the bounding box. Default is -1(the last dimension).
+    squeeze_axis : boolean, default is `False`
+        If true, Removes the axis with length 1 from the shapes of the output arrays.
+        **Note** that setting `squeeze_axis` to ``true`` removes axis with length 1 only
+        along the `axis` which it is split.
+        Also `squeeze_axis` can be set to ``true`` only if ``input.shape[axis] == num_outputs``.
 
     """
-    def __init__(self, axis, **kwargs):
+    def __init__(self, axis, squeeze_axis=False, **kwargs):
         super(BBoxSplit, self).__init__(**kwargs)
         self._axis = axis
+        self._squeeze_axis = squeeze_axis
 
     def hybrid_forward(self, F, x):
-        return F.split(x, axis=self._axis, num_outputs=4)
+        return F.split(x, axis=self._axis, num_outputs=4, squeeze_axis=self._squeeze_axis)
 
 
 class BBoxArea(gluon.HybridBlock):
@@ -132,7 +138,7 @@ class BBoxBatchIOU(gluon.HybridBlock):
         if fmt.lower() == 'center':
             self._pre = BBoxCenterToCorner(split=True)
         elif fmt.lower() == 'corner':
-            self._pre = BBoxSplit(axis=axis)
+            self._pre = BBoxSplit(axis=axis, squeeze_axis=True)
         else:
             raise ValueError("Unsupported format: {}. Use 'corner' or 'center'.".format(fmt))
 
@@ -154,6 +160,6 @@ class BBoxBatchIOU(gluon.HybridBlock):
         # areas
         area_a = ((ar - al + self._offset) * (ab - at + self._offset)).expand_dims(-1)
         area_b = ((br - bl + self._offset) * (bb - bt + self._offset)).expand_dims(-2)
-        union = area_a + area_b - i
+        union = F.broadcast_add(area_a, area_b) - i
 
         return i / (union + self._eps)
