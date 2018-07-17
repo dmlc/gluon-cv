@@ -181,6 +181,7 @@ def validate(net, val_data, ctx, eval_metric):
     eval_metric.reset()
     # set nms threshold and topk constraint
     net.set_nms(nms_thresh=0.45, nms_topk=400)
+    mx.nd.waitall()
     net.hybridize(static_alloc=True, static_shape=True)
     for batch in val_data:
         data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
@@ -298,6 +299,7 @@ def train(net, train_data, val_data, eval_metric, args):
     for epoch in range(args.start_epoch, args.epochs):
         tic = time.time()
         btic = time.time()
+        mx.nd.waitall()
         net.hybridize(static_alloc=True, static_shape=True)
         for i, batch in enumerate(train_data):
             batch_size = batch[0].shape[0]
