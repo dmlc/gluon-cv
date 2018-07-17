@@ -156,7 +156,7 @@ def get_dataset(dataset, args):
 def get_dataloader(net, train_dataset, val_dataset, data_shape, batch_size, num_workers):
     """Get dataloader."""
     width, height = data_shape, data_shape
-    batchify_fn = Tuple(*([Stack() for _ in range(6)] + [Pad(axis=0, pad_val=-1) for _ in range(2)]))  # stack image, all targets generated
+    batchify_fn = Tuple(*([Stack() for _ in range(6)] + [Pad(axis=0, pad_val=-1) for _ in range(1)]))  # stack image, all targets generated
     train_loader = gluon.data.DataLoader(
         train_dataset.transform(YOLO3DefaultTrainTransform(width, height, net)),
         batch_size, True, batchify_fn=batchify_fn, last_batch='rollover', num_workers=num_workers)
@@ -256,7 +256,6 @@ def debug_viz(objness_t, center_t, scale_t, weight_t, class_t, featmaps, anchors
 def train(net, train_data, val_data, eval_metric, args):
     """Training pipeline"""
     net.collect_params().reset_ctx(ctx)
-    net.target_generator.hybridize(static_alloc=True, static_shape=True)
     lr_scheduler = LRScheduler(mode='step',
                                baselr=args.lr,
                                niters=args.num_samples // args.batch_size,
@@ -305,7 +304,8 @@ def train(net, train_data, val_data, eval_metric, args):
             batch_size = batch[0].shape[0]
             data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
             # objectness, center_targets, scale_targets, weights, class_targets
-            fixed_targets = [gluon.utils.split_and_load(batch[it], ctx_list=ctx, batch_axis=0) for it in range(1, 8)]
+            fixed_targets = [gluon.utils.split_and_load(batch[it], ctx_list=ctx, batch_axis=0) for it in range(1, 6)]
+            gt_boxes = gluon.utils.split_and_load(batch[6], ctx_list=ctx, batch_axis=0)
             sum_losses = []
             obj_losses = []
             center_losses = []
@@ -313,17 +313,7 @@ def train(net, train_data, val_data, eval_metric, args):
             cls_losses = []
             with autograd.record():
                 for ix, x in enumerate(data):
-                    tmp = net(x)
-                    # box_preds, anchors, offsets, featmaps, box_centers, box_scales, objness, cls_preds = net(x)
-                    box_preds, box_centers, box_scales, objness, cls_preds = net(x)
-                    gt_boxes = fixed_targets[-2][ix]
-                    gt_ids = fixed_targets[-1][ix]
-                    objness_t, center_t, scale_t, weight_t, class_t, class_mask = net.target_generator(box_preds, gt_boxes, *[ft[ix] for ft in fixed_targets[:-2]])
-                    # debug_viz(objness_t, center_t, scale_t, weight_t, class_t, featmaps, anchors, offsets, x, gt_boxes, gt_ids, net)
-                    obj_loss = sigmoid_ce(objness, objness_t, objness_t >= 0) * objness.size / batch_size
-                    center_loss = sigmoid_ce(box_centers, center_t, weight_t) * box_centers.size / batch_size
-                    scale_loss = l1_loss(box_scales, scale_t, weight_t) * box_scales.size / batch_size
-                    cls_loss = sigmoid_ce(cls_preds, class_t, class_mask) * cls_preds.size / batch_size
+                    obj_loss, center_loss, scale_loss, cls_loss = net(x, gt_boxes[ix], *[ft[ix] for ft in fixed_targets])
                     sum_losses.append(obj_loss + center_loss + scale_loss + cls_loss)
                     obj_losses.append(obj_loss)
                     center_losses.append(center_loss)
