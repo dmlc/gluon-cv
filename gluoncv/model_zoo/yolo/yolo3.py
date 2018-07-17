@@ -84,18 +84,18 @@ class YOLODetectionBlockV3(gluon.HybridBlock):
     """
     Add a few conv layers, return the output, and have a branch that do yolo detection.
     """
-    def __init__(self, channel, **kwargs):
+    def __init__(self, channel, num_sync_bn_devices=-1, **kwargs):
         super(YOLODetectionBlockV3, self).__init__(**kwargs)
         assert channel % 2 == 0, "channel {} cannot be divided by 2".format(channel)
         with self.name_scope():
             self.body = nn.HybridSequential(prefix='')
             for _ in range(2):
                 # 1x1 reduce
-                self.body.add(_conv2d(channel, 1, 0, 1))
+                self.body.add(_conv2d(channel, 1, 0, 1, num_sync_bn_devices))
                 # 3x3 expand
-                self.body.add(_conv2d(channel * 2, 3, 1, 1))
-            self.body.add(_conv2d(channel, 1, 0, 1))
-            self.tip = _conv2d(channel * 2, 3, 1, 1)
+                self.body.add(_conv2d(channel * 2, 3, 1, 1, num_sync_bn_devices))
+            self.body.add(_conv2d(channel, 1, 0, 1, num_sync_bn_devices))
+            self.tip = _conv2d(channel * 2, 3, 1, 1, num_sync_bn_devices)
 
     def hybrid_forward(self, F, x):
         route = self.body(x)
@@ -105,7 +105,8 @@ class YOLODetectionBlockV3(gluon.HybridBlock):
 
 class YOLOV3(gluon.HybridBlock):
     def __init__(self, stages, channels, anchors, strides, classes, alloc_size=(128, 128),
-                 nms_thresh=0.45, nms_topk=400, post_nms=100, pos_iou_thresh=1.0, ignore_iou_thresh=0.7, **kwargs):
+                 nms_thresh=0.45, nms_topk=400, post_nms=100, pos_iou_thresh=1.0,
+                 ignore_iou_thresh=0.7, num_sync_bn_devices=-1, **kwargs):
         super(YOLOV3, self).__init__(**kwargs)
         self.classes = classes
         self.num_class = len(self.classes)
@@ -125,12 +126,12 @@ class YOLOV3(gluon.HybridBlock):
             # note that anchors and strides should be used in reverse order
             for i, stage, channel, anchor, stride in zip(range(len(stages)), stages, channels, anchors[::-1], strides[::-1]):
                 self.stages.add(stage)
-                block = YOLODetectionBlockV3(channel)
+                block = YOLODetectionBlockV3(channel, num_sync_bn_devices)
                 self.yolo_blocks.add(block)
                 output = YOLOOutputV3(i, len(classes), anchor, stride, alloc_size=alloc_size)
                 self.yolo_outputs.add(output)
                 if i > 0:
-                    self.transitions.add(_conv2d(channel, 1, 0, 1))
+                    self.transitions.add(_conv2d(channel, 1, 0, 1, num_sync_bn_devices))
 
     def hybrid_forward(self, F, x):
         all_box_centers = []
@@ -285,20 +286,20 @@ def get_yolov3(name, base_size, stages, filters, anchors, strides, classes,
         net.load_params(get_model_file(full_name, root=root), ctx=ctx)
     return net
 
-def yolo3_416_darknet53_voc(pretrained_base=True, pretrained=False, **kwargs):
+def yolo3_416_darknet53_voc(pretrained_base=True, pretrained=False, num_sync_bn_devices=-1, **kwargs):
     from ...data import VOCDetection
     pretrained_base = False if pretrained else pretrained_base
-    base_net = darknet53(pretrained=pretrained_base)
+    base_net = darknet53(pretrained=pretrained_base, num_sync_bn_devices=num_sync_bn_devices)
     stages = [base_net.features[:15], base_net.features[15:24], base_net.features[24:]]
     anchors = [[10,13,  16,30,  33,23],  [30,61,  62,45,  59,119],  [116,90,  156,198,  373,326]]
     strides = [8, 16, 32]
     classes = VOCDetection.CLASSES
     return get_yolov3('darknet53', 416, stages, [512, 256, 128], anchors, strides, classes, 'voc', pretrained=pretrained, **kwargs)
 
-def yolo3_416_darknet53_coco(pretrained_base=True, pretrained=False, **kwargs):
+def yolo3_416_darknet53_coco(pretrained_base=True, pretrained=False, num_sync_bn_devices=-1, **kwargs):
     from ...data import COCODetection
     pretrained_base = False if pretrained else pretrained_base
-    base_net = darknet53(pretrained=pretrained_base)
+    base_net = darknet53(pretrained=pretrained_base, num_sync_bn_devices=num_sync_bn_devices)
     stages = [base_net.features[:15], base_net.features[15:24], base_net.features[24:]]
     anchors = [[10,13,  16,30,  33,23],  [30,61,  62,45,  59,119],  [116,90,  156,198,  373,326]]
     strides = [8, 16, 32]

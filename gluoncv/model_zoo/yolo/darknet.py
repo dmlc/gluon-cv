@@ -9,24 +9,28 @@ from mxnet.gluon import nn
 
 __all__ = ['DarknetV3', 'get_darknet', 'darknet53']
 
-def _conv2d(channel, kernel, padding, stride):
+def _conv2d(channel, kernel, padding, stride, num_sync_bn_devices=-1):
     """A common conv-bn-leakyrelu cell"""
     cell = nn.HybridSequential(prefix='')
     cell.add(nn.Conv2D(channel, kernel_size=kernel,
                        strides=stride, padding=padding, use_bias=False))
-    cell.add(nn.BatchNorm(epsilon=1e-5, momentum=0.9))
+    if num_sync_bn_devices > 1:
+        cell.add(nn.BatchNorm(epsilon=1e-5, momentum=0.9))
+    else:
+        cell.add(gluon.contrib.nn.SyncBatchNorm(
+            epsilon=1e-5, momentum=0.9, num_devices=num_sync_bn_devices))
     cell.add(nn.LeakyReLU(0.1))
     return cell
 
 
 class DarknetBasicBlockV3(gluon.HybridBlock):
-    def __init__(self, channel, **kwargs):
+    def __init__(self, channel, num_sync_bn_devices=-1, **kwargs):
         super(DarknetBasicBlockV3, self).__init__(**kwargs)
         self.body = nn.HybridSequential(prefix='')
         # 1x1 reduce
-        self.body.add(_conv2d(channel, 1, 0, 1))
+        self.body.add(_conv2d(channel, 1, 0, 1, num_sync_bn_devices))
         # 3x3 conv expand
-        self.body.add(_conv2d(channel * 2, 3, 1, 1))
+        self.body.add(_conv2d(channel * 2, 3, 1, 1, num_sync_bn_devices))
 
     def hybrid_forward(self, F, x):
         residual = x
@@ -35,7 +39,7 @@ class DarknetBasicBlockV3(gluon.HybridBlock):
 
 
 class DarknetV3(gluon.HybridBlock):
-    def __init__(self, layers, channels, classes=1000, **kwargs):
+    def __init__(self, layers, channels, classes=1000, num_sync_bn_devices=-1, **kwargs):
         super(DarknetV3, self).__init__(**kwargs)
         assert len(layers) == len(channels) - 1, (
             "len(channels) should equal to len(layers) + 1, given {} vs {}".format(
@@ -43,14 +47,14 @@ class DarknetV3(gluon.HybridBlock):
         with self.name_scope():
             self.features = nn.HybridSequential()
             # first 3x3 conv
-            self.features.add(_conv2d(channels[0], 3, 1, 1))
+            self.features.add(_conv2d(channels[0], 3, 1, 1, num_sync_bn_devices))
             for nlayer, channel in zip(layers, channels[1:]):
                 assert channel % 2 == 0, "channel {} cannot be divided by 2".format(channel)
                 # add downsample conv with stride=2
-                self.features.add(_conv2d(channel, 3, 1, 2))
+                self.features.add(_conv2d(channel, 3, 1, 2, num_sync_bn_devices))
                 # add nlayer basic blocks
                 for _ in range(nlayer):
-                    self.features.add(DarknetBasicBlockV3(channel // 2))
+                    self.features.add(DarknetBasicBlockV3(channel // 2, num_sync_bn_devices))
             # output
             self.output = nn.Dense(classes)
 

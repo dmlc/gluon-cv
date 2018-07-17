@@ -66,6 +66,7 @@ def parse_args():
                         help='Random seed to be fixed.')
     parser.add_argument('--num-samples', type=int, default=-1,
                         help='Training images. Use -1 to automatically get the number.')
+    parser.add_argument('--syncbn', action='store_true', help='Use synchronize BN across devices.')
     args = parser.parse_args()
     return args
 
@@ -373,7 +374,9 @@ if __name__ == '__main__':
     # network
     net_name = '_'.join(('yolo3', str(args.data_shape), args.network, args.dataset))
     args.save_prefix += net_name
-    net = get_model(net_name, pretrained_base=True)
+    # use sync bn if specified
+    num_sync_bn_devices = len(ctx) if args.syncbn else -1
+    net = get_model(net_name, pretrained_base=True, num_sync_bn_devices=num_sync_bn_devices)
     if args.resume.strip():
         net.load_params(args.resume.strip())
     else:
