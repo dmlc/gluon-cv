@@ -296,7 +296,7 @@ def yolo3_416_darknet53_voc(pretrained_base=True, pretrained=False, num_sync_bn_
     anchors = [[10,13,  16,30,  33,23],  [30,61,  62,45,  59,119],  [116,90,  156,198,  373,326]]
     strides = [8, 16, 32]
     classes = VOCDetection.CLASSES
-    return get_yolov3('darknet53', 416, stages, [512, 256, 128], anchors, strides, classes, 'voc', pretrained=pretrained, **kwargs)
+    return get_yolov3('darknet53', 416, stages, [512, 256, 128], anchors, strides, classes, 'voc', pretrained=pretrained, num_sync_bn_devices=num_sync_bn_devices, **kwargs)
 
 def yolo3_416_darknet53_coco(pretrained_base=True, pretrained=False, num_sync_bn_devices=-1, **kwargs):
     from ...data import COCODetection
@@ -306,4 +306,4 @@ def yolo3_416_darknet53_coco(pretrained_base=True, pretrained=False, num_sync_bn
     anchors = [[10,13,  16,30,  33,23],  [30,61,  62,45,  59,119],  [116,90,  156,198,  373,326]]
     strides = [8, 16, 32]
     classes = COCODetection.CLASSES
-    return get_yolov3('darknet53', 416, stages, [512, 256, 128], anchors, strides, classes, 'coco', pretrained=pretrained, **kwargs)
+    return get_yolov3('darknet53', 416, stages, [512, 256, 128], anchors, strides, classes, 'coco', pretrained=pretrained, num_sync_bn_devices=num_sync_bn_devices, **kwargs)

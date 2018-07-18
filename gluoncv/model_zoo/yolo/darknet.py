@@ -14,7 +14,7 @@ def _conv2d(channel, kernel, padding, stride, num_sync_bn_devices=-1):
     cell = nn.HybridSequential(prefix='')
     cell.add(nn.Conv2D(channel, kernel_size=kernel,
                        strides=stride, padding=padding, use_bias=False))
-    if num_sync_bn_devices > 1:
+    if num_sync_bn_devices < 1:
         cell.add(nn.BatchNorm(epsilon=1e-5, momentum=0.9))
     else:
         cell.add(gluon.contrib.nn.SyncBatchNorm(
