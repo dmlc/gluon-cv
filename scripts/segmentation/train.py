@@ -81,6 +81,7 @@ def parse_args():
     args.norm_layer = mx.gluon.contrib.nn.SyncBatchNorm if args.syncbn \
         else mx.gluon.nn.BatchNorm
     args.norm_kwargs = {'num_devices': args.ngpus} if args.syncbn else {}
+    print(args)
     return args
 
 
