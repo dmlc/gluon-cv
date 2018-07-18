@@ -10,6 +10,7 @@ from mxnet import autograd
 from mxnet.gluon import nn
 from .darknet import _conv2d, darknet53
 from .yolo_target import YOLOV3TargetMerger
+from ...loss import YOLOV3Loss
 
 __all__ = ['YOLOV3', 'yolo3_416_darknet53_voc', 'yolo3_416_darknet53_coco']
 
@@ -114,10 +115,11 @@ class YOLOV3(gluon.HybridBlock):
         self.nms_topk = nms_topk
         self.post_nms = post_nms
         if pos_iou_thresh >= 1:
-            self._target_generator = {YOLOV3TargetMerger(len(classes), ignore_iou_thresh)}
+            self._target_generator = YOLOV3TargetMerger(len(classes), ignore_iou_thresh)
         else:
             raise NotImplementedError(
                 "pos_iou_thresh({}) < 1.0 is not implemented!".format(pos_iou_thresh))
+        self._loss = YOLOV3Loss()
         with self.name_scope():
             self.stages = nn.HybridSequential()
             self.transitions = nn.HybridSequential()
@@ -133,7 +135,7 @@ class YOLOV3(gluon.HybridBlock):
                 if i > 0:
                     self.transitions.add(_conv2d(channel, 1, 0, 1, num_sync_bn_devices))
 
-    def hybrid_forward(self, F, x):
+    def hybrid_forward(self, F, x, *args):
         all_box_centers = []
         all_box_scales = []
         all_objectness = []
@@ -171,11 +173,11 @@ class YOLOV3(gluon.HybridBlock):
 
         if autograd.is_training():
             if autograd.is_recording():
-                return (F.concat(*all_detections, dim=1),
-                    F.concat(*all_box_centers, dim=1),
-                    F.concat(*all_box_scales, dim=1),
-                    F.concat(*all_objectness, dim=1),
-                    F.concat(*all_class_pred, dim=1))
+                box_preds = F.concat(*all_detections, dim=1)
+                all_preds = [F.concat(*p, dim=1) for p in [all_objectness, all_box_centers, all_box_scales, all_class_pred]]
+                all_targets = self._target_generator(box_preds, *args)
+                return self._loss(*(all_preds + all_targets))
+
             # return raw predictions
             return (
                 F.concat(*all_detections, dim=1),
@@ -226,7 +228,7 @@ class YOLOV3(gluon.HybridBlock):
 
     @property
     def target_generator(self):
-        return list(self._target_generator)[0]
+        return self._target_generator
 
 def get_yolov3(name, base_size, stages, filters, anchors, strides, classes,
                dataset, pretrained=False, ctx=mx.cpu(),
