@@ -125,6 +125,10 @@ class BBoxArea(gluon.HybridBlock):
 
 
 class BBoxClipToImage(gluon.HybridBlock):
+    """Clip bounding box coordinates to image boundaries.
+    If multiple images are supplied and padded, must have additional inputs
+    of accurate image shape.
+    """
     def __init__(self, **kwargs):
         super(BBoxClipToImage, self).__init__(**kwargs)
 

@@ -73,7 +73,8 @@ class RCNNTargetSampler(gluon.HybridBlock):
                 mask = F.where(pos_mask, F.ones_like(mask), mask)
 
                 # shuffle mask
-                rand = F.random.uniform(0, 1, shape=(self._num_proposal + 100,)).slice_like(ious_argmax)
+                rand = F.random.uniform(0, 1, shape=(self._num_proposal + 100,))
+                rand = F.slice_like(rand, ious_argmax)
                 index = F.argsort(rand)
                 mask = F.take(mask, index)
                 ious_argmax = F.take(ious_argmax, index)
@@ -81,7 +82,8 @@ class RCNNTargetSampler(gluon.HybridBlock):
                 # sample pos and neg samples
                 order = F.argsort(mask, is_ascend=False)
                 topk = F.slice_axis(order, axis=0, begin=0, end=self._max_pos)
-                bottomk = F.slice_axis(order, axis=0, begin=-(self._num_sample - self._max_pos), end=None)
+                num_neg = self._num_sample - self._max_pos
+                bottomk = F.slice_axis(order, axis=0, begin=-num_neg, end=None)
                 selected = F.concat(topk, bottomk, dim=0)
 
                 # output
