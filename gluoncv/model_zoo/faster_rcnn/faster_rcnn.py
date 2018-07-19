@@ -155,6 +155,11 @@ class FasterRCNN(RCNN):
             boxes.
 
         """
+        def _tolist(x):
+            if isinstance(x, list):
+                return x
+            else:
+                return [x]
         feat = self.features(x)
         # RPN proposals
         if autograd.is_training():
@@ -205,10 +210,10 @@ class FasterRCNN(RCNN):
         # rpn_boxes (B, N, 4) -> B * (1, N, 4)
         rpn_boxes = F.split(rpn_box, axis=0, num_outputs=self._max_batch, squeeze_axis=False)
         # cls_ids, scores (B, C, N, 1) -> B * (C, N, 1)
-        cls_ids = F.split(cls_ids, axis=0, num_outputs=self._max_batch, squeeze_axis=True)
-        scores = F.split(scores, axis=0, num_outputs=self._max_batch, squeeze_axis=True)
+        cls_ids = _tolist(F.split(cls_ids, axis=0, num_outputs=self._max_batch, squeeze_axis=True))
+        scores = _tolist(F.split(scores, axis=0, num_outputs=self._max_batch, squeeze_axis=True))
         # box_preds (B, C, N, 4) -> B * (C, N, 4)
-        box_preds = F.split(box_pred, axis=0, num_outputs=self._max_batch, squeeze_axis=True)
+        box_preds = _tolist(F.split(box_pred, axis=0, num_outputs=self._max_batch, squeeze_axis=True))
 
         # per batch predict, nms, each class has topk outputs
         results = []
