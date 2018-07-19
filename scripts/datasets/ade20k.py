@@ -38,5 +38,4 @@ if __name__ == '__main__':
             os.remove(_TARGET_DIR)
         # make symlink
         os.symlink(args.download_dir, _TARGET_DIR)
-    else:
-        download_ade(_TARGET_DIR, overwrite=False)
+    download_ade(_TARGET_DIR, overwrite=False)
