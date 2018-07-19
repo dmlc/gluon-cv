@@ -1,4 +1,5 @@
 """Synchronized Cross GPU Batch Normalization"""
+# pylint: disable=arguments-differ
 import threading
 
 import mxnet as mx
