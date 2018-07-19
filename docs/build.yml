@@ -3,6 +3,7 @@ dependencies:
 - python
 - sphinx>=1.5.5
 - scipy
+- numpy
 - matplotlib
 - sphinx_rtd_theme
 - pip:
@@ -12,3 +13,6 @@ dependencies:
   - recommonmark
   - Image
   - awscli
+  - tqdm
+  - requests
+  - Pillow
