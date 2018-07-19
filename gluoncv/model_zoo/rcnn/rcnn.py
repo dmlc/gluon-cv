@@ -101,7 +101,7 @@ class RCNN(gluon.HybridBlock):
             return self.collect_params(self.train_patterns)
         return self.collect_params(select)
 
-    def set_nms(self, nms_thresh, nms_topk, post_nms):
+    def set_nms(self, nms_thresh=0.3, nms_topk=400, post_nms=100):
         """Set NMS parameters to the network.
 
         .. Note::
@@ -110,12 +110,12 @@ class RCNN(gluon.HybridBlock):
 
         Parameters
         ----------
-        nms_thresh : float.
+        nms_thresh : float, default is 0.3.
             Non-maximum suppression threshold. You can speficy < 0 or > 1 to disable NMS.
-        nms_topk : int
+        nms_topk : int, default is 400
             Apply NMS to top k detection results, use -1 to disable so that every Detection
              result is used in NMS.
-        post_nms : int
+        post_nms : int, default is 100
             Only return top `post_nms` detection results, the rest is discarded. The number is
             based on COCO dataset which has maximum 100 objects per image. You can adjust this
             number if expecting more objects. You can use -1 to return all detections.
