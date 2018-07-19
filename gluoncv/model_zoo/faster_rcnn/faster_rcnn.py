@@ -217,7 +217,7 @@ class FasterRCNN(RCNN):
             res = F.concat(*[cls_id, score, bbox], dim=-1)
             # res (C, self.nms_topk, 6)
             res = F.contrib.box_nms(
-                res, overlap_thresh=self.nms_thresh, topk=self.nms_topk,
+                res, overlap_thresh=self.nms_thresh, topk=self.nms_topk, valid_thresh=0.0001,
                 id_index=0, score_index=1, coord_start=2, force_suppress=True)
             # res (C * self.nms_topk, 6)
             res = res.reshape((-3, 0))
