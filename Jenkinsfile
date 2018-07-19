@@ -27,7 +27,8 @@ stage("Unit Test") {
         conda activate gluon_cv_py2_test
         conda list
         make clean
-        pip install --force-reinstall .
+        # from https://stackoverflow.com/questions/19548957/can-i-force-pip-to-reinstall-the-current-version
+        pip install --upgrade --force-reinstall .
         env
         export LD_LIBRARY_PATH=/usr/local/cuda-8.0/lib64
         export MPLBACKEND=Agg
@@ -57,7 +58,8 @@ stage("Unit Test") {
         conda activate gluon_cv_py3_test
         conda list
         make clean
-        pip install --force-reinstall .
+        # from https://stackoverflow.com/questions/19548957/can-i-force-pip-to-reinstall-the-current-version
+        pip install --upgrade --force-reinstall .
         env
         export LD_LIBRARY_PATH=/usr/local/cuda-8.0/lib64
         export MPLBACKEND=Agg
