@@ -33,6 +33,8 @@ class COCODetection(VisionDataset):
     skip_empty : bool, default is True
         Whether skip images with no valid object. This should be `True` in training, otherwise
         it will cause undefined behavior.
+    use_crowd : bool, default is True
+        Whether use boxes labeled as crowd instance.
 
     """
     CLASSES = ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train',
@@ -51,12 +53,13 @@ class COCODetection(VisionDataset):
 
     def __init__(self, root=os.path.join('~', '.mxnet', 'datasets', 'coco'),
                  splits=('instances_val2017',), transform=None, min_object_area=0,
-                 skip_empty=True):
+                 skip_empty=True, use_crowd=True):
         super(COCODetection, self).__init__(root)
         self._root = os.path.expanduser(root)
         self._transform = transform
         self._min_object_area = min_object_area
         self._skip_empty = skip_empty
+        self._use_crowd = use_crowd
         if isinstance(splits, mx.base.string_types):
             splits = [splits]
         self._splits = splits
@@ -148,7 +151,7 @@ class COCODetection(VisionDataset):
                 continue
             if obj.get('ignore', 0) == 1:
                 continue
-            if obj['iscrowd']:
+            if not self._use_crowd and obj['iscrowd']:
                 continue
             # convert from (x, y, w, h) to (xmin, ymin, xmax, ymax) and clip bound
             xmin, ymin, xmax, ymax = bbox_clip_xyxy(bbox_xywh_to_xyxy(obj['bbox']), width, height)
