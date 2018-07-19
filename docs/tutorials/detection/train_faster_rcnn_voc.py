@@ -185,8 +185,8 @@ cids, scores, bboxes = net(x)
 # Faster-RCNN network behave differently during training mode:
 from mxnet import autograd
 with autograd.train_mode():
-    gt_box = bboxes.expand_dims(0)
     # this time we need ground-truth to generate high quality roi proposals during training
+    gt_box = mx.nd.zeros(shape=(1, 1, 4))
     cls_preds, box_preds, roi, samples, matches, rpn_score, rpn_box, anchors = net(x, gt_box)
 
 ##############################################################################
