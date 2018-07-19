@@ -1,4 +1,4 @@
-name: gluon_cv_py2
+name: gluon_cv_py3
 channels:
   - conda-forge
   - defaults
