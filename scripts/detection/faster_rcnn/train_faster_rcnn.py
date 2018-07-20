@@ -28,10 +28,6 @@ def parse_args():
                         help="Base network name which serves as feature extraction base.")
     parser.add_argument('--dataset', type=str, default='voc',
                         help='Training dataset. Now support voc.')
-    parser.add_argument('--short', type=str, default='',
-                        help='Resize image to the given short side side, default to 600 for voc.')
-    parser.add_argument('--max-size', type=str, default='',
-                        help='Max size of either side of image, default to 1000 for voc.')
     parser.add_argument('--num-workers', '-j', dest='num_workers', type=int,
                         default=4, help='Number of data workers, you can use larger '
                         'number to accelerate data loading, if you CPU and GPUs are powerful.')
@@ -72,16 +68,12 @@ def parse_args():
                         help='Print helpful debugging info once set.')
     args = parser.parse_args()
     if args.dataset == 'voc':
-        args.short = int(args.short) if args.short else 600
-        args.max_size = int(args.max_size) if args.max_size else 1000
         args.epochs = int(args.epochs) if args.epochs else 20
         args.lr_decay_epoch = args.lr_decay_epoch if args.lr_decay_epoch else '14,20'
         args.lr = float(args.lr) if args.lr else 0.001
         args.lr_warmup = args.lr_warmup if args.lr_warmup else -1
         args.wd = float(args.wd) if args.wd else 5e-4
     elif args.dataset == 'coco':
-        args.short = int(args.short) if args.short else 800
-        args.max_size = int(args.max_size) if args.max_size else 1333
         args.epochs = int(args.epochs) if args.epochs else 24
         args.lr_decay_epoch = args.lr_decay_epoch if args.lr_decay_epoch else '16,21'
         args.lr = float(args.lr) if args.lr else 0.00125
@@ -150,7 +142,7 @@ class RCNNAccMetric(mx.metric.EvalMetric):
         rcnn_cls = preds[0]
 
         # calculate num_acc
-        pred_label = mx.nd.argmax(rcnn_cls, axis=1)
+        pred_label = mx.nd.argmax(rcnn_cls, axis=-1)
         num_acc = mx.nd.sum(pred_label == rcnn_label)
 
         self.sum_metric += num_acc.asscalar()
@@ -184,22 +176,22 @@ def get_dataset(dataset, args):
             splits=[(2007, 'test')])
         val_metric = VOC07MApMetric(iou_thresh=0.5, class_names=val_dataset.classes)
     elif dataset.lower() == 'coco':
-        train_dataset = gdata.COCODetection(splits='instances_train2017')
+        train_dataset = gdata.COCODetection(splits='instances_train2017', use_crowd=False)
         val_dataset = gdata.COCODetection(splits='instances_val2017', skip_empty=False)
         val_metric = COCODetectionMetric(val_dataset, args.save_prefix + '_eval', cleanup=True)
     else:
         raise NotImplementedError('Dataset: {} not implemented.'.format(dataset))
     return train_dataset, val_dataset, val_metric
 
-def get_dataloader(net, train_dataset, val_dataset, short, max_size, batch_size, num_workers):
+def get_dataloader(net, train_dataset, val_dataset, batch_size, num_workers):
     """Get dataloader."""
     train_bfn = batchify.Tuple(*[batchify.Append() for _ in range(5)])
     train_loader = mx.gluon.data.DataLoader(
-        train_dataset.transform(FasterRCNNDefaultTrainTransform(short, max_size, net)),
+        train_dataset.transform(FasterRCNNDefaultTrainTransform(net.short, net.max_size, net)),
         batch_size, True, batchify_fn=train_bfn, last_batch='rollover', num_workers=num_workers)
     val_bfn = batchify.Tuple(*[batchify.Append() for _ in range(3)])
     val_loader = mx.gluon.data.DataLoader(
-        val_dataset.transform(FasterRCNNDefaultValTransform(short, max_size)),
+        val_dataset.transform(FasterRCNNDefaultValTransform(net.short, net.max_size)),
         batch_size, False, batchify_fn=val_bfn, last_batch='keep', num_workers=num_workers)
     return train_loader, val_loader
 
@@ -228,9 +220,8 @@ def split_and_load(batch, ctx_list):
 
 def validate(net, val_data, ctx, eval_metric):
     """Test on validation dataset."""
+    clipper = gcv.nn.bbox.BBoxClipToImage()
     eval_metric.reset()
-    # set nms threshold and topk constraint
-    net.set_nms(nms_thresh=0.3, nms_topk=400)
     net.hybridize(static_alloc=True)
     for batch in val_data:
         batch = split_and_load(batch, ctx_list=ctx)
@@ -243,10 +234,10 @@ def validate(net, val_data, ctx, eval_metric):
         for x, y, im_scale in zip(*batch):
             # get prediction results
             ids, scores, bboxes = net(x)
-            det_ids.append(ids.expand_dims(0))
-            det_scores.append(scores.expand_dims(0))
+            det_ids.append(ids)
+            det_scores.append(scores)
             # clip to image size
-            det_bboxes.append(mx.nd.Custom(bboxes, x, op_type='bbox_clip_to_image').expand_dims(0))
+            det_bboxes.append(clipper(bboxes, x))
             # rescale to original resolution
             im_scale = im_scale.reshape((-1)).asscalar()
             det_bboxes[-1] *= im_scale
@@ -266,7 +257,8 @@ def get_lr_at_iter(alpha):
 
 def train(net, train_data, val_data, eval_metric, args):
     """Training pipeline"""
-    net.collect_params().reset_ctx(ctx)
+    net.collect_params().setattr('grad_req', 'null')
+    net.collect_train_params().setattr('grad_req', 'write')
     trainer = gluon.Trainer(
         net.collect_train_params(),  # fix batchnorm, fix first stage, etc...
         'sgd',
@@ -278,7 +270,7 @@ def train(net, train_data, val_data, eval_metric, args):
     # lr decay policy
     lr_decay = float(args.lr_decay)
     lr_steps = sorted([float(ls) for ls in args.lr_decay_epoch.split(',') if ls.strip()])
-    lr_warmup = int(args.lr_warmup)
+    lr_warmup = float(args.lr_warmup)  # avoid int division
 
     # TODO(zhreshold) losses?
     rpn_cls_loss = mx.gluon.loss.SigmoidBinaryCrossEntropyLoss(from_sigmoid=False)
@@ -326,9 +318,11 @@ def train(net, train_data, val_data, eval_metric, args):
         base_lr = trainer.learning_rate
         for i, batch in enumerate(train_data):
             if epoch == 0 and i <= lr_warmup:
-                new_lr = base_lr * get_lr_at_iter((i // 500) / (lr_warmup / 500.))
+                # adjust based on real percentage
+                new_lr = base_lr * get_lr_at_iter(i / lr_warmup)
                 if new_lr != trainer.learning_rate:
-                    logger.info('[Epoch 0 Iteration {}] Set learning rate to {}'.format(i, new_lr))
+                    if i % args.log_interval == 0:
+                        logger.info('[Epoch 0 Iteration {}] Set learning rate to {}'.format(i, new_lr))
                     trainer.set_learning_rate(new_lr)
             batch = split_and_load(batch, ctx_list=ctx)
             batch_size = len(batch[0])
@@ -376,8 +370,8 @@ def train(net, train_data, val_data, eval_metric, args):
                 # msg = ','.join(['{}={:.3f}'.format(*metric.get()) for metric in metrics])
                 msg = ','.join(['{}={:.3f}'.format(*metric.get()) for metric in metrics + metrics2])
                 logger.info('[Epoch {}][Batch {}], Speed: {:.3f} samples/sec, {}'.format(
-                    epoch, i, batch_size/(time.time()-btic), msg))
-            btic = time.time()
+                    epoch, i, args.log_interval * batch_size/(time.time()-btic), msg))
+                btic = time.time()
 
         msg = ','.join(['{}={:.3f}'.format(*metric.get()) for metric in metrics])
         logger.info('[Epoch {}] Training cost: {:.3f}, {}'.format(
@@ -413,11 +407,12 @@ if __name__ == '__main__':
             if param._data is not None:
                 continue
             param.initialize()
+    net.collect_params().reset_ctx(ctx)
 
     # training data
     train_dataset, val_dataset, eval_metric = get_dataset(args.dataset, args)
     train_data, val_data = get_dataloader(
-        net, train_dataset, val_dataset, args.short, args.max_size, args.batch_size, args.num_workers)
+        net, train_dataset, val_dataset, args.batch_size, args.num_workers)
 
     # training
     train(net, train_data, val_data, eval_metric, args)

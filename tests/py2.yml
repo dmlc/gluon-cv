@@ -11,6 +11,6 @@ dependencies:
   - scipy
   - pip=9.0.3
   - pip:
-    - mxnet-cu80==1.3.0b20180621
+    - mxnet-cu80==1.3.0b20180713
     - coverage-badge
     - awscli
