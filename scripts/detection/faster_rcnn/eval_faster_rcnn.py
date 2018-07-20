@@ -33,6 +33,8 @@ def parse_args():
                         help='Load weights from previously saved parameters.')
     parser.add_argument('--save-prefix', type=str, default='',
                         help='Saving parameter prefix')
+    parser.add_argument('--save-json', action='store_true',
+                        help='Save coco output json')
     parser.add_argument('--eval-all', action='store_true',
                         help='Eval all models begins with save prefix. Use with pretrained.')
     args = parser.parse_args()
@@ -45,7 +47,8 @@ def get_dataset(dataset, args):
         val_metric = VOC07MApMetric(iou_thresh=0.5, class_names=val_dataset.classes)
     elif dataset.lower() == 'coco':
         val_dataset = gdata.COCODetection(splits='instances_val2017', skip_empty=False)
-        val_metric = COCODetectionMetric(val_dataset, args.save_prefix + '_eval', cleanup=True)
+        val_metric = COCODetectionMetric(val_dataset, args.save_prefix + '_eval',
+                                         cleanup=not args.save_json)
     else:
         raise NotImplementedError('Dataset: {} not implemented.'.format(dataset))
     return val_dataset, val_metric
