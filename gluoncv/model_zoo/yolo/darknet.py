@@ -24,6 +24,16 @@ def _conv2d(channel, kernel, padding, stride, num_sync_bn_devices=-1):
 
 
 class DarknetBasicBlockV3(gluon.HybridBlock):
+    """Darknet Basic Block. Which is a 1x1 reduce conv followed by 3x3 conv.
+
+    Parameters
+    ----------
+    channel : int
+        Convolution channels for 1x1 conv.
+    num_sync_bn_devices : int, default is -1
+        Number of devices for training. If `num_sync_bn_devices < 2`, SyncBatchNorm is disabled.
+
+    """
     def __init__(self, channel, num_sync_bn_devices=-1, **kwargs):
         super(DarknetBasicBlockV3, self).__init__(**kwargs)
         self.body = nn.HybridSequential(prefix='')
@@ -39,6 +49,27 @@ class DarknetBasicBlockV3(gluon.HybridBlock):
 
 
 class DarknetV3(gluon.HybridBlock):
+    """Darknet v3.
+
+    Parameters
+    ----------
+    layers : iterable
+        Description of parameter `layers`.
+    channels : iterable
+        Description of parameter `channels`.
+    classes : int, default is 1000
+        Number of classes, which determines the dense layer output channels.
+    num_sync_bn_devices : int, default is -1
+        Number of devices for training. If `num_sync_bn_devices < 2`, SyncBatchNorm is disabled.
+
+    Attributes
+    ----------
+    features : mxnet.gluon.nn.HybridSequential
+        Feature extraction layers.
+    output : mxnet.gluon.nn.Dense
+        A classes(1000)-way Fully-Connected Layer.
+
+    """
     def __init__(self, layers, channels, classes=1000, num_sync_bn_devices=-1, **kwargs):
         super(DarknetV3, self).__init__(**kwargs)
         assert len(layers) == len(channels) - 1, (
@@ -63,6 +94,7 @@ class DarknetV3(gluon.HybridBlock):
       x = F.Pooling(x, kernel=(7, 7), global_pool=True, pool_type='avg')
       return self.output(x)
 
+# default configurations
 darknet_versions = {'v3': DarknetV3}
 darknet_spec = {
     'v3': {53: ([1, 2, 8, 8, 4], [32, 64, 128, 256, 512, 1024]),}
@@ -70,6 +102,32 @@ darknet_spec = {
 
 def get_darknet(darknet_version, num_layers, pretrained=False, ctx=mx.cpu(),
                 root=os.path.join('~', '.mxnet', 'models'), **kwargs):
+    """Get darknet by `version` and `num_layers` info.
+
+    Parameters
+    ----------
+    darknet_version : str
+        Darknet version, choices are ['v3'].
+    num_layers : int
+        Number of layers.
+    pretrained : boolean
+        Whether fetch and load pre-trained weights.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+
+    Returns
+    -------
+    mxnet.gluon.HybridBlock
+        Darknet network.
+
+    Examples
+    --------
+    >>> model = get_darknet('v3', 53, pretrained=True)
+    >>> print(model)
+
+    """
     assert darknet_version in darknet_versions and darknet_version in darknet_spec, (
         "Invalid darknet version: {}. Options are {}".format(
             darknet_version, str(darknet_versions.keys())))
@@ -86,4 +144,13 @@ def get_darknet(darknet_version, num_layers, pretrained=False, ctx=mx.cpu(),
     return net
 
 def darknet53(**kwargs):
+    """Darknet v3 53 layer network.
+    Reference: https://arxiv.org/pdf/1804.02767.pdf.
+
+    Returns
+    -------
+    mxnet.gluon.HybridBlock
+        Darknet network.
+
+    """
     return get_darknet('v3', 53, **kwargs)

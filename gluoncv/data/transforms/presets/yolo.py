@@ -146,7 +146,8 @@ class YOLO3DefaultTrainTransform(object):
         gt_ids = mx.nd.array(bbox[np.newaxis, :, 4:5])
         center_targets, scale_targets, weights, objectness, class_targets = self._target_generator(
             self._fake_x, self._feat_maps, self._anchors, self._offsets, gt_bboxes, gt_ids)
-        return img, center_targets[0], scale_targets[0], weights[0], objectness[0], class_targets[0], gt_bboxes[0]
+        return (img, center_targets[0], scale_targets[0], weights[0],
+                objectness[0], class_targets[0], gt_bboxes[0])
 
 
 class YOLO3DefaultValTransform(object):

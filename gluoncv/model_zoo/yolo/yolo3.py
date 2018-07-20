@@ -17,10 +17,39 @@ __all__ = ['YOLOV3',
            'yolo3_320_darknet53_coco', 'yolo3_416_darknet53_coco', 'yolo3_608_darknet53_coco']
 
 def _upsample(x, stride=2):
+    """Simple upsampling layer by stack pixel alongside horizontal and vertical directions.
+
+    Parameters
+    ----------
+    x : mxnet.nd.NDArray or mxnet.symbol.Symbol
+        The input array.
+    stride : int, default is 2
+        Upsampling stride
+
+    """
     return x.repeat(axis=-1, repeats=stride).repeat(axis=-2, repeats=stride)
 
 
 class YOLOOutputV3(gluon.HybridBlock):
+    """YOLO output layer V3.
+
+    Parameters
+    ----------
+    index : int
+        Index of the yolo output layer, to avoid naming confliction only.
+    num_class : int
+        Number of foreground objects.
+    anchors : iterable
+        The anchor setting. Reference: https://arxiv.org/pdf/1804.02767.pdf.
+    stride : int
+        Stride of feature map.
+    alloc_size : tuple of int, default is (128, 128)
+        For advanced users. Define `alloc_size` to generate large enough anchor
+        maps, which will later saved in parameters. During inference, we support arbitrary
+        input image by cropping corresponding area of the anchor map. This allow us
+        to export to symbol so we can run it in c++, Scalar, etc.
+
+    """
     def __init__(self, index, num_class, anchors, stride,
                  alloc_size=(128, 128), **kwargs):
         super(YOLOOutputV3, self).__init__(**kwargs)
@@ -47,6 +76,27 @@ class YOLOOutputV3(gluon.HybridBlock):
 
 
     def hybrid_forward(self, F, x, anchors, offsets):
+        """Hybrid Foward of YOLOV3Output layer.
+
+        Parameters
+        ----------
+        F : mxnet.nd or mxnet.sym
+            `F` is mxnet.sym if hybridized or mxnet.nd if not.
+        x : mxnet.nd.NDArray
+            Input feature map.
+        anchors : mxnet.nd.NDArray
+            Anchors loaded from self, no need to supply.
+        offsets : mxnet.nd.NDArray
+            Offsets loaded from self, no need to supply.
+
+        Returns
+        -------
+        (tuple of) mxnet.nd.NDArray
+            During training, return (bbox, raw_box_centers, raw_box_scales, objness,
+            class_pred, anchors, offsets).
+            During inference, return detections.
+
+        """
         # prediction flat to (batch, pred per pixel, height * width)
         pred = self.prediction(x).reshape((0, self._num_anchors * self._num_pred, -1))
         # transpose to (batch, height * width, num_anchor, num_pred)
@@ -70,7 +120,9 @@ class YOLOOutputV3(gluon.HybridBlock):
         bbox = F.concat(box_centers - wh, box_centers + wh, dim=-1)
 
         if autograd.is_training():
-            return bbox.reshape((0, -1, 4)), raw_box_centers, raw_box_scales, objness, class_pred, anchors, offsets
+            # during training, we don't need to convert whole bunch of info to detection results
+            return (bbox.reshape((0, -1, 4)), raw_box_centers, raw_box_scales,
+                    objness, class_pred, anchors, offsets)
 
         # prediction per class
         bboxes = F.tile(bbox, reps=(self._classes, 1, 1, 1, 1))
@@ -83,8 +135,19 @@ class YOLOOutputV3(gluon.HybridBlock):
 
 
 class YOLODetectionBlockV3(gluon.HybridBlock):
-    """
-    Add a few conv layers, return the output, and have a branch that do yolo detection.
+    """YOLO V3 Detection Block which does the following:
+
+    - add a few conv layers
+    - return the output
+    - have a branch that do yolo detection.
+
+    Parameters
+    ----------
+    channel : int
+        Number of channels for 1x1 conv. 3x3 Conv will have 2*channel.
+    num_sync_bn_devices : int, default is -1
+        Number of devices for training. If `num_sync_bn_devices < 2`, SyncBatchNorm is disabled.
+
     """
     def __init__(self, channel, num_sync_bn_devices=-1, **kwargs):
         super(YOLODetectionBlockV3, self).__init__(**kwargs)
@@ -106,6 +169,47 @@ class YOLODetectionBlockV3(gluon.HybridBlock):
 
 
 class YOLOV3(gluon.HybridBlock):
+    """YOLO V3 detection network.
+    Reference: https://arxiv.org/pdf/1804.02767.pdf.
+
+    Parameters
+    ----------
+    stages : mxnet.gluon.HybridBlock
+        Staged feature extraction blocks.
+        For example, 3 stages and 3 YOLO output layers are used original paper.
+    channels : iterable
+        Number of conv channels for each appended stage.
+        `len(channels)` should match `len(stages)`.
+    num_class : int
+        Number of foreground objects.
+    anchors : iterable
+        The anchor setting. `len(anchors)` should match `len(stages)`.
+    strides : iterable
+        Strides of feature map. `len(strides)` should match `len(stages)`.
+    alloc_size : tuple of int, default is (128, 128)
+        For advanced users. Define `alloc_size` to generate large enough anchor
+        maps, which will later saved in parameters. During inference, we support arbitrary
+        input image by cropping corresponding area of the anchor map. This allow us
+        to export to symbol so we can run it in c++, Scalar, etc.
+    nms_thresh : float, default is 0.45.
+        Non-maximum suppression threshold. You can speficy < 0 or > 1 to disable NMS.
+    nms_topk : int, default is 400
+        Apply NMS to top k detection results, use -1 to disable so that every Detection
+         result is used in NMS.
+    post_nms : int, default is 100
+        Only return top `post_nms` detection results, the rest is discarded. The number is
+        based on COCO dataset which has maximum 100 objects per image. You can adjust this
+        number if expecting more objects. You can use -1 to return all detections.
+    pos_iou_thresh : float, default is 1.0
+        IOU threshold for true anchors that match real objects.
+        'pos_iou_thresh < 1' is not implemented.
+    ignore_iou_thresh : float
+        Anchors that has IOU in `range(ignore_iou_thresh, pos_iou_thresh)` don't get
+        penalized of objectness score.
+    num_sync_bn_devices : int, default is -1
+        Number of devices for training. If `num_sync_bn_devices < 2`, SyncBatchNorm is disabled.
+
+    """
     def __init__(self, stages, channels, anchors, strides, classes, alloc_size=(128, 128),
                  nms_thresh=0.45, nms_topk=400, post_nms=100, pos_iou_thresh=1.0,
                  ignore_iou_thresh=0.7, num_sync_bn_devices=-1, **kwargs):
@@ -127,7 +231,8 @@ class YOLOV3(gluon.HybridBlock):
             self.yolo_blocks = nn.HybridSequential()
             self.yolo_outputs = nn.HybridSequential()
             # note that anchors and strides should be used in reverse order
-            for i, stage, channel, anchor, stride in zip(range(len(stages)), stages, channels, anchors[::-1], strides[::-1]):
+            for i, stage, channel, anchor, stride in zip(
+                range(len(stages)), stages, channels, anchors[::-1], strides[::-1]):
                 self.stages.add(stage)
                 block = YOLODetectionBlockV3(channel, num_sync_bn_devices)
                 self.yolo_blocks.add(block)
@@ -137,6 +242,28 @@ class YOLOV3(gluon.HybridBlock):
                     self.transitions.add(_conv2d(channel, 1, 0, 1, num_sync_bn_devices))
 
     def hybrid_forward(self, F, x, *args):
+        """YOLOV3 network hybrid forward.
+
+        Parameters
+        ----------
+        F : mxnet.nd or mxnet.sym
+            `F` is mxnet.sym if hybridized or mxnet.nd if not.
+        x : mxnet.nd.NDArray
+            Input data.
+        *args : optional, mxnet.nd.NDArray
+            During training, extra inputs are required:
+            (gt_boxes, obj_t, centers_t, scales_t, weights_t, clas_t)
+            These are generated by YOLOV3PrefetchTargetGenerator in dataloader transform function.
+
+        Returns
+        -------
+        (tuple of) mxnet.nd.NDArray
+            During inference, return detections in shape (B, N, 6)
+            with format (cid, score, xmin, ymin, xmax, ymax)
+            During training, return losses only: (obj_loss, center_loss, scale_loss, cls_loss).
+
+
+        """
         all_box_centers = []
         all_box_scales = []
         all_objectness = []
@@ -150,10 +277,11 @@ class YOLOV3(gluon.HybridBlock):
             x = stage(x)
             routes.append(x)
 
+        # the YOLO output layers are used in reverse order, i.e., from very deep layers to shallow
         for i, block, output in zip(range(len(routes)), self.yolo_blocks, self.yolo_outputs):
             x, tip = block(x)
             if autograd.is_training():
-                detections, box_centers, box_scales, objness, class_pred, anchors, offsets = output(tip)
+                dets, box_centers, box_scales, objness, class_pred, anchors, offsets = output(tip)
                 all_box_centers.append(box_centers.reshape((0, -3, -1)))
                 all_box_scales.append(box_scales.reshape((0, -3, -1)))
                 all_objectness.append(objness.reshape((0, -3, -1)))
@@ -161,35 +289,36 @@ class YOLOV3(gluon.HybridBlock):
                 all_anchors.append(anchors)
                 all_offsets.append(offsets)
                 # here we use fake featmap to reduce memory consuption, only shape[2, 3] is used
-                fake_featmap = F.zeros_like(tip.slice_axis(axis=0, begin=0, end=1).slice_axis(axis=1, begin=0, end=1))
+                fake_featmap = F.zeros_like(tip.slice_axis(
+                    axis=0, begin=0, end=1).slice_axis(axis=1, begin=0, end=1))
                 all_feat_maps.append(fake_featmap)
             else:
-                detections = output(tip)
-            all_detections.append(detections)
+                dets = output(tip)
+            all_detections.append(dets)
             if i >= len(routes) - 1:
                 break
+            # add transition layers
             x = self.transitions[i](x)
+            # upsample feature map reverse to shallow layers
             upsample = _upsample(x, stride=2)
             x = F.concat(upsample, routes[::-1][i + 1], dim=1)
 
         if autograd.is_training():
+            # during training, the network behaves differently since we don't need detection results
             if autograd.is_recording():
+                # generate losses and return them directly
                 box_preds = F.concat(*all_detections, dim=1)
-                all_preds = [F.concat(*p, dim=1) for p in [all_objectness, all_box_centers, all_box_scales, all_class_pred]]
+                all_preds = [F.concat(*p, dim=1) for p in [
+                    all_objectness, all_box_centers, all_box_scales, all_class_pred]]
                 all_targets = self._target_generator(box_preds, *args)
                 return self._loss(*(all_preds + all_targets))
 
-            # return raw predictions
-            return (
-                F.concat(*all_detections, dim=1),
-                all_anchors,
-                all_offsets,
-                all_feat_maps,
-                F.concat(*all_box_centers, dim=1),
-                F.concat(*all_box_scales, dim=1),
-                F.concat(*all_objectness, dim=1),
-                F.concat(*all_class_pred, dim=1))
+            # return raw predictions, this is only used in DataLoader transform function.
+            return (F.concat(*all_detections, dim=1), all_anchors, all_offsets, all_feat_maps,
+                    F.concat(*all_box_centers, dim=1), F.concat(*all_box_scales, dim=1),
+                    F.concat(*all_objectness, dim=1), F.concat(*all_class_pred, dim=1))
 
+        # concat all detection results from different stages
         result = F.concat(*all_detections, dim=1)
         # apply nms per class
         if self.nms_thresh > 0 and self.nms_thresh < 1:
@@ -226,10 +355,6 @@ class YOLOV3(gluon.HybridBlock):
         self.nms_thresh = nms_thresh
         self.nms_topk = nms_topk
         self.post_nms = post_nms
-
-    @property
-    def target_generator(self):
-        return self._target_generator
 
 def get_yolov3(name, base_size, stages, filters, anchors, strides, classes,
                dataset, pretrained=False, ctx=mx.cpu(),
@@ -442,7 +567,7 @@ def yolo3_608_darknet53_coco(pretrained_base=True, pretrained=False, num_sync_bn
         Whether fetch and load pretrained weights for base network.
     pretrained : boolean
         Whether fetch and load pretrained weights for the entire network.
-    num_sync_bn_devices : int
+    num_sync_bn_devices : int, default is -1
         Number of devices for training. If `num_sync_bn_devices < 2`, SyncBatchNorm is disabled.
 
     Returns

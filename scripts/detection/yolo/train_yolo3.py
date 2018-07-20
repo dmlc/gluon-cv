@@ -1,4 +1,4 @@
-"""Train YOLO"""
+"""Train YOLOv3"""
 import argparse
 import os
 import logging
@@ -19,7 +19,6 @@ from gluoncv.data.transforms.presets.yolo import YOLO3DefaultValTransform
 from gluoncv.utils.metrics.voc_detection import VOC07MApMetric
 from gluoncv.utils.metrics.coco_detection import COCODetectionMetric
 from gluoncv.utils import LRScheduler
-from gluoncv.model_zoo.yolo.yolo_target import YOLOV3TargetMerger
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train YOLO networks.')
@@ -70,71 +69,6 @@ def parse_args():
     parser.add_argument('--syncbn', action='store_true', help='Use synchronize BN across devices.')
     args = parser.parse_args()
     return args
-
-# from mxnet.gluon.loss import _apply_weighting, _reshape_like
-# class SigmoidBinaryCrossEntropyLoss(gluon.loss.Loss):
-#     r"""The cross-entropy loss for binary classification. (alias: SigmoidBCELoss)
-#
-#     BCE loss is useful when training logistic regression. If `from_sigmoid`
-#     is False (default), this loss computes:
-#
-#     .. math::
-#
-#         prob = \frac{1}{1 + \exp(-{pred})}
-#
-#         L = - \sum_i {label}_i * \log({prob}_i) +
-#             (1 - {label}_i) * \log(1 - {prob}_i)
-#
-#     If `from_sigmoid` is True, this loss computes:
-#
-#     .. math::
-#
-#         L = - \sum_i {label}_i * \log({pred}_i) +
-#             (1 - {label}_i) * \log(1 - {pred}_i)
-#
-#
-#     `pred` and `label` can have arbitrary shape as long as they have the same
-#     number of elements.
-#
-#     Parameters
-#     ----------
-#     from_sigmoid : bool, default is `False`
-#         Whether the input is from the output of sigmoid. Set this to false will make
-#         the loss calculate sigmoid and BCE together, which is more numerically
-#         stable through log-sum-exp trick.
-#     weight : float or None
-#         Global scalar weight for loss.
-#     batch_axis : int, default 0
-#         The axis that represents mini-batch.
-#
-#
-#     Inputs:
-#         - **pred**: prediction tensor with arbitrary shape
-#         - **label**: target tensor with values in range `[0, 1]`. Must have the
-#           same size as `pred`.
-#         - **sample_weight**: element-wise weighting tensor. Must be broadcastable
-#           to the same shape as pred. For example, if pred has shape (64, 10)
-#           and you want to weigh each sample in the batch separately,
-#           sample_weight should have shape (64, 1).
-#
-#     Outputs:
-#         - **loss**: loss tensor with shape (batch_size,). Dimenions other than
-#           batch_axis are averaged out.
-#     """
-#     def __init__(self, from_sigmoid=False, weight=None, batch_axis=0, **kwargs):
-#         super(SigmoidBinaryCrossEntropyLoss, self).__init__(weight, batch_axis, **kwargs)
-#         self._from_sigmoid = from_sigmoid
-#
-#     def hybrid_forward(self, F, pred, label, sample_weight=None):
-#         label = _reshape_like(F, label, pred)
-#         if not self._from_sigmoid:
-#             # We use the stable formula: max(x, 0) - x * z + log(1 + exp(-abs(x)))
-#             loss = F.relu(pred) - pred * label + F.Activation(-F.abs(pred), act_type='softrelu')
-#         else:
-#             loss = -(F.log(pred+1e-12)*label + F.log(1.-pred+1e-12)*(1.-label))
-#         loss = _apply_weighting(F, loss, self._weight, sample_weight)
-#         assert (loss.asnumpy() >= 0).all(), "negative loss! {}".format(sample_weight.asnumpy()[np.where(loss.asnumpy() < 0)])
-#         return F.mean(loss, axis=self._batch_axis, exclude=True)
 
 def get_dataset(dataset, args):
     if dataset.lower() == 'voc':
@@ -210,51 +144,6 @@ def validate(net, val_data, ctx, eval_metric):
         eval_metric.update(det_bboxes, det_ids, det_scores, gt_bboxes, gt_ids, gt_difficults)
     return eval_metric.get()
 
-
-def debug_viz(objness_t, center_t, scale_t, weight_t, class_t, featmaps, anchors, offsets, imgs, gt_boxes, gt_ids, net):
-    import matplotlib.pyplot as plt
-    secs = [0, 169 * 3, 845 * 3, 3549 * 3]
-
-    for b in range(imgs.shape[0]):
-        img = imgs[b].transpose((1, 2, 0)) * mx.nd.array([0.229, 0.224, 0.225]) + mx.nd.array([0.485, 0.456, 0.406])
-        img = (img * 255).asnumpy()
-        bboxes = []
-        scores = []
-        labels = []
-        for i in range(3):
-            x = featmaps[i]
-            a = anchors[i][0][0].asnumpy()
-            o = offsets[i]
-            begin = secs[i]
-            end = secs[i+1]
-            obj_tt = objness_t[b].asnumpy()[begin:end, 0]
-            center_tt = center_t[b].asnumpy()[begin:end, :]
-            scale_tt = scale_t[b].asnumpy()[begin:end, :]
-            weight_tt = weight_t[b].asnumpy()[begin:end, :]
-            class_tt = class_t[b].asnumpy()[begin:end, :]
-            for j in range(class_tt.shape[0]):
-                if (class_tt[j, :] <= 0).all():
-                    continue
-                loc_y = (j // 3) // x.shape[3]
-                loc_x = (j // 3) % x.shape[3]
-                bx = (loc_x + center_tt[j, 0]) / x.shape[3] * img.shape[1]
-                by = (loc_y + center_tt[j, 1]) / x.shape[2] * img.shape[0]
-                bw = np.exp(scale_tt[j, 0]) * a[j % 3, 0]
-                bh = np.exp(scale_tt[j, 1]) * a[j % 3, 1]
-                print('otx', center_tt[j, 0], 'oty', center_tt[j, 1], 'otw', scale_tt[j, 0], 'oth', scale_tt[j, 1])
-                bboxes.append([bx - bw/2, by - bh/2, bx + bw/ 2, by + bh / 2])
-                scores.append(1.)
-                labels.append(np.where(class_tt[j, :] > 0)[0][0])
-        gtb = gt_boxes[b].asnumpy()
-        gtb = gtb[np.where(gtb > -1)].reshape(-1, 4)
-        gti = gt_ids[b].asnumpy()
-        gti = gti[np.where(gti > -1)].reshape(-1, 1)
-        print(gtb, bboxes)
-        gcv.utils.viz.plot_bbox(img, np.array(bboxes), np.array(scores), np.array(labels), class_names=net.classes)
-        # gcv.utils.viz.plot_bbox(img, gtb, labels=gti, class_names=net.classes)
-        plt.show()
-    # raise
-
 def train(net, train_data, val_data, eval_metric, args):
     """Training pipeline"""
     net.collect_params().reset_ctx(ctx)
@@ -273,9 +162,7 @@ def train(net, train_data, val_data, eval_metric, args):
         kvstore='local')
 
     # targets
-    # target_merger = YOLOV3TargetMerger()
     sigmoid_ce = gluon.loss.SigmoidBinaryCrossEntropyLoss(from_sigmoid=False)
-    # sce = SigmoidBinaryCrossEntropyLoss(from_sigmoid=False)
     l1_loss = gluon.loss.L1Loss()
 
     # metrics
