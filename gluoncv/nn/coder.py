@@ -153,7 +153,8 @@ class NormalizedBoxCenterDecoder(gluon.HybridBlock):
         If given, bounding box target will be clipped to this value.
 
     """
-    def __init__(self, stds=(0.1, 0.1, 0.2, 0.2), means=(0., 0., 0., 0.), convert_anchor=False, clip=None):
+    def __init__(self, stds=(0.1, 0.1, 0.2, 0.2), means=(0., 0., 0., 0.),
+                 convert_anchor=False, clip=None):
         super(NormalizedBoxCenterDecoder, self).__init__()
         assert len(stds) == 4, "Box Encoder requires 4 std values."
         self._stds = stds
