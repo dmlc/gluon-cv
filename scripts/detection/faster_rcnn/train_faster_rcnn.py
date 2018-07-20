@@ -28,10 +28,6 @@ def parse_args():
                         help="Base network name which serves as feature extraction base.")
     parser.add_argument('--dataset', type=str, default='voc',
                         help='Training dataset. Now support voc.')
-    parser.add_argument('--short', type=str, default='',
-                        help='Resize image to the given short side side, default to 600 for voc.')
-    parser.add_argument('--max-size', type=str, default='',
-                        help='Max size of either side of image, default to 1000 for voc.')
     parser.add_argument('--num-workers', '-j', dest='num_workers', type=int,
                         default=4, help='Number of data workers, you can use larger '
                         'number to accelerate data loading, if you CPU and GPUs are powerful.')
@@ -72,16 +68,12 @@ def parse_args():
                         help='Print helpful debugging info once set.')
     args = parser.parse_args()
     if args.dataset == 'voc':
-        args.short = int(args.short) if args.short else 600
-        args.max_size = int(args.max_size) if args.max_size else 1000
         args.epochs = int(args.epochs) if args.epochs else 20
         args.lr_decay_epoch = args.lr_decay_epoch if args.lr_decay_epoch else '14,20'
         args.lr = float(args.lr) if args.lr else 0.001
         args.lr_warmup = args.lr_warmup if args.lr_warmup else -1
         args.wd = float(args.wd) if args.wd else 5e-4
     elif args.dataset == 'coco':
-        args.short = int(args.short) if args.short else 800
-        args.max_size = int(args.max_size) if args.max_size else 1333
         args.epochs = int(args.epochs) if args.epochs else 24
         args.lr_decay_epoch = args.lr_decay_epoch if args.lr_decay_epoch else '16,21'
         args.lr = float(args.lr) if args.lr else 0.00125
@@ -191,15 +183,15 @@ def get_dataset(dataset, args):
         raise NotImplementedError('Dataset: {} not implemented.'.format(dataset))
     return train_dataset, val_dataset, val_metric
 
-def get_dataloader(net, train_dataset, val_dataset, short, max_size, batch_size, num_workers):
+def get_dataloader(net, train_dataset, val_dataset, batch_size, num_workers):
     """Get dataloader."""
     train_bfn = batchify.Tuple(*[batchify.Append() for _ in range(5)])
     train_loader = mx.gluon.data.DataLoader(
-        train_dataset.transform(FasterRCNNDefaultTrainTransform(short, max_size, net)),
+        train_dataset.transform(FasterRCNNDefaultTrainTransform(net.short, net.max_size, net)),
         batch_size, True, batchify_fn=train_bfn, last_batch='rollover', num_workers=num_workers)
     val_bfn = batchify.Tuple(*[batchify.Append() for _ in range(3)])
     val_loader = mx.gluon.data.DataLoader(
-        val_dataset.transform(FasterRCNNDefaultValTransform(short, max_size)),
+        val_dataset.transform(FasterRCNNDefaultValTransform(net.short, net.max_size)),
         batch_size, False, batchify_fn=val_bfn, last_batch='keep', num_workers=num_workers)
     return train_loader, val_loader
 
@@ -420,7 +412,7 @@ if __name__ == '__main__':
     # training data
     train_dataset, val_dataset, eval_metric = get_dataset(args.dataset, args)
     train_data, val_data = get_dataloader(
-        net, train_dataset, val_dataset, args.short, args.max_size, args.batch_size, args.num_workers)
+        net, train_dataset, val_dataset, args.batch_size, args.num_workers)
 
     # training
     train(net, train_data, val_data, eval_metric, args)

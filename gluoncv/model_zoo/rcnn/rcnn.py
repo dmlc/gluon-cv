@@ -19,12 +19,12 @@ class RCNN(gluon.HybridBlock):
         Tail feature extractor after feature pooling layer.
     classes : iterable of str
         Names of categories, its length is ``num_class``.
-    roi_mode : str
-        ROI pooling mode. Currently support 'pool' and 'align'.
-    roi_size : tuple of int, length 2
-        (height, width) of the ROI region.
-    clip: float
-        Clip bounding box target to this value.
+    short : int
+        Input image short side size.
+    max_size : int
+        Maximum size of input image long side.
+    train_patterns : str
+        Matching pattern for trainable parameters.
     nms_thresh : float
         Non-maximum suppression threshold. You can speficy < 0 or > 1 to disable NMS.
     nms_topk : int
@@ -34,39 +34,58 @@ class RCNN(gluon.HybridBlock):
         Only return top `post_nms` detection results, the rest is discarded. The number is
         based on COCO dataset which has maximum 100 objects per image. You can adjust this
         number if expecting more objects. You can use -1 to return all detections.
-    train_patterns : str
-        Matching pattern for trainable parameters.
+    roi_mode : str
+        ROI pooling mode. Currently support 'pool' and 'align'.
+    roi_size : tuple of int, length 2
+        (height, width) of the ROI region.
+    stride : int
+        Stride of network features.
+    clip: float
+        Clip bounding box target to this value.
 
     Attributes
     ----------
-    num_class : int
-        Number of positive categories.
     classes : iterable of str
         Names of categories, its length is ``num_class``.
+    num_class : int
+        Number of positive categories.
+    short : int
+        Input image short side size.
+    max_size : int
+        Maximum size of input image long side.
+    train_patterns : str
+        Matching pattern for trainable parameters.
     nms_thresh : float
         Non-maximum suppression threshold. You can speficy < 0 or > 1 to disable NMS.
     nms_topk : int
         Apply NMS to top k detection results, use -1 to disable so that every Detection
          result is used in NMS.
-    train_patterns : str
-        Matching pattern for trainable parameters.
+    post_nms : int
+        Only return top `post_nms` detection results, the rest is discarded. The number is
+        based on COCO dataset which has maximum 100 objects per image. You can adjust this
+        number if expecting more objects. You can use -1 to return all detections.
 
     """
-    def __init__(self, features, top_features, classes, roi_mode, roi_size, stride,
-                 clip, nms_thresh, nms_topk, post_nms, train_patterns, **kwargs):
+    def __init__(self, features, top_features, classes,
+                 short, max_size, train_patterns,
+                 nms_thresh, nms_topk, post_nms,
+                 roi_mode, roi_size, stride, clip, **kwargs):
         super(RCNN, self).__init__(**kwargs)
         self.classes = classes
         self.num_class = len(classes)
+        self.short = short
+        self.max_size = max_size
+        self.train_patterns = train_patterns
+        self.nms_thresh = nms_thresh
+        self.nms_topk = nms_topk
+        self.post_nms = post_nms
+
         assert self.num_class > 0, "Invalid number of class : {}".format(self.num_class)
         assert roi_mode.lower() in ['align', 'pool'], "Invalid roi_mode: {}".format(roi_mode)
         self._roi_mode = roi_mode.lower()
         assert len(roi_size) == 2, "Require (h, w) as roi_size, given {}".format(roi_size)
         self._roi_size = roi_size
         self._stride = stride
-        self.nms_thresh = nms_thresh
-        self.nms_topk = nms_topk
-        self.post_nms = post_nms
-        self.train_patterns = train_patterns
 
         with self.name_scope():
             self.features = features

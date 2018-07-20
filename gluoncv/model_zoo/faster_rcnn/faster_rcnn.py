@@ -27,15 +27,12 @@ class FasterRCNN(RCNN):
         Tail feature extractor after feature pooling layer.
     classes : iterable of str
         Names of categories, its length is ``num_class``.
-    roi_mode : str, default is align
-        ROI pooling mode. Currently support 'pool' and 'align'.
-    roi_size : tuple of int, length 2, default is (14, 14)
-        (height, width) of the ROI region.
-    stride : int, default is 16
-        Feature map stride with respect to original image.
-        This is usually the ratio between original image size and feature map size.
-    clip : float, default is None
-        Clip bounding box target to this value.
+    short : int
+        Input image short side size.
+    max_size : int
+        Maximum size of input image long side.
+    train_patterns : str
+        Matching pattern for trainable parameters.
     nms_thresh : float, default is 0.3.
         Non-maximum suppression threshold. You can speficy < 0 or > 1 to disable NMS.
     nms_topk : int, default is 400
@@ -45,8 +42,15 @@ class FasterRCNN(RCNN):
         Only return top `post_nms` detection results, the rest is discarded. The number is
         based on COCO dataset which has maximum 100 objects per image. You can adjust this
         number if expecting more objects. You can use -1 to return all detections.
-    train_patterns : str
-        Matching pattern for trainable parameters.
+    roi_mode : str, default is align
+        ROI pooling mode. Currently support 'pool' and 'align'.
+    roi_size : tuple of int, length 2, default is (14, 14)
+        (height, width) of the ROI region.
+    stride : int, default is 16
+        Feature map stride with respect to original image.
+        This is usually the ratio between original image size and feature map size.
+    clip : float, default is None
+        Clip bounding box target to this value.
     rpn_channel : int, default is 1024
         Channel number used in RPN convolutional layers.
     base_size : int
@@ -96,10 +100,35 @@ class FasterRCNN(RCNN):
         ``pos_ratio`` defines how many positive samples (``pos_ratio * num_sample``) is
         to be sampled.
 
+    Attributes
+    ----------
+    classes : iterable of str
+        Names of categories, its length is ``num_class``.
+    num_class : int
+        Number of positive categories.
+    short : int
+        Input image short side size.
+    max_size : int
+        Maximum size of input image long side.
+    train_patterns : str
+        Matching pattern for trainable parameters.
+    nms_thresh : float
+        Non-maximum suppression threshold. You can speficy < 0 or > 1 to disable NMS.
+    nms_topk : int
+        Apply NMS to top k detection results, use -1 to disable so that every Detection
+         result is used in NMS.
+    post_nms : int
+        Only return top `post_nms` detection results, the rest is discarded. The number is
+        based on COCO dataset which has maximum 100 objects per image. You can adjust this
+        number if expecting more objects. You can use -1 to return all detections.
+    target_generator : gluon.Block
+        Generate training targets with boxes, samples, matches, gt_label and gt_box.
+
     """
     def __init__(self, features, top_features, classes,
+                 short, max_size, train_patterns=None,
+                 nms_thresh=0.3, nms_topk=400, post_nms=100,
                  roi_mode='align', roi_size=(14, 14), stride=16, clip=None,
-                 nms_thresh=0.3, nms_topk=400, post_nms=100, train_patterns=None,
                  rpn_channel=1024, base_size=16, scales=(0.5, 1, 2),
                  ratios=(8, 16, 32), alloc_size=(128, 128), rpn_nms_thresh=0.7,
                  rpn_train_pre_nms=12000, rpn_train_post_nms=2000,
@@ -107,9 +136,9 @@ class FasterRCNN(RCNN):
                  num_sample=128, pos_iou_thresh=0.5, pos_ratio=0.25, **kwargs):
         super(FasterRCNN, self).__init__(
             features=features, top_features=top_features, classes=classes,
-            roi_mode=roi_mode, roi_size=roi_size, stride=stride,
-            clip=clip, nms_thresh=nms_thresh, nms_topk=nms_topk, post_nms=post_nms,
-            train_patterns=train_patterns, **kwargs)
+            short=short, max_size=max_size, train_patterns=train_patterns,
+            nms_thresh=nms_thresh, nms_topk=nms_topk, post_nms=post_nms,
+            roi_mode=roi_mode, roi_size=roi_size, stride=stride, clip=clip, **kwargs)
         self._max_batch = 1  # currently only support batch size = 1
         self._num_sample = num_sample
         self._rpn_test_post_nms = rpn_test_post_nms
@@ -307,9 +336,9 @@ def faster_rcnn_resnet50_v1b_voc(pretrained=False, pretrained_base=True, **kwarg
     return get_faster_rcnn(
         name='resnet50_v1b', dataset='voc', pretrained=pretrained,
         features=features, top_features=top_features, classes=classes,
-        roi_mode='align', roi_size=(14, 14), stride=16, clip=None,
+        short=600, max_size=1000, train_patterns=train_patterns,
         nms_thresh=0.3, nms_topk=400, post_nms=100,
-        train_patterns=train_patterns,
+        roi_mode='align', roi_size=(14, 14), stride=16, clip=None,
         rpn_channel=1024, base_size=16, scales=(2, 4, 8, 16, 32),
         ratios=(0.5, 1, 2), alloc_size=(128, 128), rpn_nms_thresh=0.7,
         rpn_train_pre_nms=12000, rpn_train_post_nms=2000,
@@ -354,9 +383,9 @@ def faster_rcnn_resnet50_v1b_coco(pretrained=False, pretrained_base=True, **kwar
     return get_faster_rcnn(
         name='resnet50_v1b', dataset='coco', pretrained=pretrained,
         features=features, top_features=top_features, classes=classes,
-        roi_mode='align', roi_size=(14, 14), stride=16, clip=4.42,
+        short=800, max_size=1333, train_patterns=train_patterns,
         nms_thresh=0.5, nms_topk=-1, post_nms=-1,
-        train_patterns=train_patterns,
+        roi_mode='align', roi_size=(14, 14), stride=16, clip=4.42,
         rpn_channel=1024, base_size=16, scales=(2, 4, 8, 16, 32),
         ratios=(0.5, 1, 2), alloc_size=(128, 128), rpn_nms_thresh=0.7,
         rpn_train_pre_nms=12000, rpn_train_post_nms=2000,
@@ -401,9 +430,9 @@ def faster_rcnn_resnet50_v2a_voc(pretrained=False, pretrained_base=True, **kwarg
     return get_faster_rcnn(
         name='resnet50_v2a', dataset='voc', pretrained=pretrained,
         features=features, top_features=top_features, classes=classes,
-        roi_mode='align', roi_size=(14, 14), stride=16, clip=None,
+        short=600, max_size=1000, train_patterns=train_patterns,
         nms_thresh=0.3, nms_topk=400, post_nms=100,
-        train_patterns=train_patterns,
+        roi_mode='align', roi_size=(14, 14), stride=16, clip=None,
         rpn_channel=1024, base_size=16, scales=(2, 4, 8, 16, 32),
         ratios=(0.5, 1, 2), alloc_size=(128, 128), rpn_nms_thresh=0.7,
         rpn_train_pre_nms=12000, rpn_train_post_nms=2000,
@@ -448,9 +477,9 @@ def faster_rcnn_resnet50_v2a_coco(pretrained=False, pretrained_base=True, **kwar
     return get_faster_rcnn(
         name='resnet50_v2a', dataset='coco', pretrained=pretrained,
         features=features, top_features=top_features, classes=classes,
-        roi_mode='align', roi_size=(14, 14), stride=16, clip=4.42,
+        short=800, max_size=1333, train_patterns=train_patterns,
         nms_thresh=0.5, nms_topk=-1, post_nms=-1,
-        train_patterns=train_patterns,
+        roi_mode='align', roi_size=(14, 14), stride=16, clip=4.42,
         rpn_channel=1024, base_size=16, scales=(2, 4, 8, 16, 32),
         ratios=(0.5, 1, 2), alloc_size=(128, 128), rpn_nms_thresh=0.7,
         rpn_train_pre_nms=12000, rpn_train_post_nms=2000,
@@ -490,9 +519,9 @@ def faster_rcnn_resnet50_v2_voc(pretrained=False, pretrained_base=True, **kwargs
     return get_faster_rcnn(
         name='resnet50_v2', dataset='voc', pretrained=pretrained,
         features=features, top_features=top_features, classes=classes,
-        roi_mode='align', roi_size=(14, 14), stride=16, clip=None,
+        short=800, max_size=1333, train_patterns=train_patterns,
         nms_thresh=0.3, nms_topk=400, post_nms=100,
-        train_patterns=train_patterns,
+        roi_mode='align', roi_size=(14, 14), stride=16, clip=None,
         rpn_channel=1024, base_size=16, scales=(2, 4, 8, 16, 32),
         ratios=(0.5, 1, 2), alloc_size=(128, 128), rpn_nms_thresh=0.7,
         rpn_train_pre_nms=12000, rpn_train_post_nms=2000,
