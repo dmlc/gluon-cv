@@ -240,10 +240,10 @@ def test(ctx, val_data):
 # Following is the script.
 #
 # .. note::
-#   In order to finish the tutorial quickly, we only train for 5 epochs.
+#   In order to finish the tutorial quickly, we only train for 3 epochs.
 #   In your experiments, we recommend setting ``epochs=240``.
 
-epochs = 5
+epochs = 3
 lr_decay_count = 0
 
 for epoch in range(epochs):
@@ -312,7 +312,7 @@ train_history.plot()
 # After training, we usually want to save it for later use.
 # This is simply done with:
 
-net.save_params('dive_deep_cifar10_resnet20_v2.params')
+net.save_parameters('dive_deep_cifar10_resnet20_v2.params')
 
 ################################################################
 # Next time if you need to use it, just run

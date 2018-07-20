@@ -27,9 +27,9 @@ if __name__ == '__main__':
 
     # grab some image if not specified
     if not args.images.strip():
-        gcv.utils.download("https://cloud.githubusercontent.com/assets/3307514/" +
-            "20012568/cbc2d6f6-a27d-11e6-94c3-d35a9cb47609.jpg", 'street.jpg')
-        image_list = ['street.jpg']
+        gcv.utils.download('https://github.com/dmlc/web-data/blob/master/' +
+                           'gluoncv/detection/biking.jpg?raw=true', 'biking.jpg')
+        image_list = ['biking.jpg']
     else:
         image_list = [x.strip() for x in args.images.split(',') if x.strip()]
 
@@ -37,13 +37,13 @@ if __name__ == '__main__':
         net = gcv.model_zoo.get_model(args.network, pretrained=True)
     else:
         net = gcv.model_zoo.get_model(args.network, pretrained=False)
-        net.load_params(args.pretrained)
+        net.load_parameters(args.pretrained)
     net.set_nms(0.3, 200)
 
     ax = None
     for image in image_list:
-        x, img = presets.rcnn.load_test(image, short=600, max_size=1000)
-        ids, scores, bboxes = [xx.asnumpy() for xx in net(x)]
+        x, img = presets.rcnn.load_test(image, short=net.short, max_size=net.max_size)
+        ids, scores, bboxes = [xx[0].asnumpy() for xx in net(x)]
         ax = gcv.utils.viz.plot_bbox(img, bboxes, scores, ids,
                                      class_names=net.classes, ax=ax)
         plt.show()

@@ -32,13 +32,33 @@ class NormalizedBoxCenterEncoder(gluon.Block):
             self.corner_to_center = BBoxCornerToCenter(split=True)
 
     def forward(self, samples, matches, anchors, refs):
-        """Forward"""
+        """Not HybridBlock due to use of matches.shape
+
+        Parameters
+        ----------
+        samples: (B, N) value +1 (positive), -1 (negative), 0 (ignore)
+        matches: (B, N) value range [0, M)
+        anchors: (B, N, 4) encoded in corner
+        refs: (B, M, 4) encoded in corner
+
+        Returns
+        -------
+        targets: (B, N, 4) transform anchors to refs picked according to matches
+        masks: (B, N, 4) only positive anchors has targets
+
+        """
         F = nd
         # TODO(zhreshold): batch_pick, take multiple elements?
-        ref_boxes = nd.repeat(refs.reshape((0, 1, -1, 4)), axis=1, repeats=matches.shape[1])
-        ref_boxes = nd.split(ref_boxes, axis=-1, num_outputs=4, squeeze_axis=True)
-        ref_boxes = nd.concat(*[F.pick(ref_boxes[i], matches, axis=2).reshape((0, -1, 1)) \
+        # refs [B, M, 4], anchors [B, N, 4], samples [B, N], matches [B, N]
+        # refs [B, M, 4] -> reshape [B, 1, M, 4] -> repeat [B, N, M, 4]
+        ref_boxes = F.repeat(refs.reshape((0, 1, -1, 4)), axis=1, repeats=matches.shape[1])
+        # refs [B, N, M, 4] -> 4 * [B, N, M]
+        ref_boxes = F.split(ref_boxes, axis=-1, num_outputs=4, squeeze_axis=True)
+        # refs 4 * [B, N, M] -> pick from matches [B, N, 1] -> concat to [B, N, 4]
+        ref_boxes = F.concat(*[F.pick(ref_boxes[i], matches, axis=2).reshape((0, -1, 1)) \
             for i in range(4)], dim=2)
+        # transform based on x, y, w, h
+        # g [B, N, 4], a [B, N, 4] -> codecs [B, N, 4]
         g = self.corner_to_center(ref_boxes)
         a = self.corner_to_center(anchors)
         t0 = ((g[0] - a[0]) / a[2] - self._means[0]) / self._stds[0]
@@ -46,7 +66,9 @@ class NormalizedBoxCenterEncoder(gluon.Block):
         t2 = (F.log(g[2] / a[2]) - self._means[2]) / self._stds[2]
         t3 = (F.log(g[3] / a[3]) - self._means[3]) / self._stds[3]
         codecs = F.concat(t0, t1, t2, t3, dim=2)
+        # samples [B, N] -> [B, N, 1] -> [B, N, 4] -> boolean
         temp = F.tile(samples.reshape((0, -1, 1)), reps=(1, 1, 4)) > 0.5
+        # fill targets and masks [B, N, 4]
         targets = F.where(temp, codecs, F.zeros_like(codecs))
         masks = F.where(temp, F.ones_like(temp), F.zeros_like(temp))
         return targets, masks
@@ -70,38 +92,45 @@ class NormalizedPerClassBoxCenterEncoder(gluon.Block):
         assert len(stds) == 4, "Box Encoder requires 4 std values."
         assert num_class > 0, "Number of classes must be positive"
         self._num_class = num_class
-        self._stds = stds
-        self._means = means
         with self.name_scope():
-            self.corner_to_center = BBoxCornerToCenter(split=True)
+            self.class_agnostic_encoder = NormalizedBoxCenterEncoder(stds=stds, means=means)
 
     def forward(self, samples, matches, anchors, labels, refs):
-        """Encode BBox One entry per category"""
+        """Encode BBox One entry per category
+
+        Parameters
+        ----------
+        samples: (B, N) value +1 (positive), -1 (negative), 0 (ignore)
+        matches: (B, N) value range [0, M)
+        anchors: (B, N, 4) encoded in corner
+        labels: (B, N) value range [0, self._num_class), excluding background
+        refs: (B, M, 4) encoded in corner
+
+        Returns
+        -------
+        targets: (C, B, N, 4) transform anchors to refs picked according to matches
+        masks: (C, B, N, 4) only positive anchors of the correct class has targets
+
+        """
         F = nd
-        ref_boxes = F.repeat(refs.reshape((0, 1, -1, 4)), axis=1, repeats=matches.shape[1])
-        ref_boxes = F.split(ref_boxes, axis=-1, num_outputs=4, squeeze_axis=True)
-        ref_boxes = F.concat(*[F.pick(ref_boxes[i], matches, axis=2).reshape((0, -1, 1)) \
-            for i in range(4)], dim=2)
+        # refs [B, M, 4], anchors [B, N, 4], samples [B, N], matches [B, N]
+        # encoded targets [B, N, 4], masks [B, N, 4]
+        targets, masks = self.class_agnostic_encoder(samples, matches, anchors, refs)
+        # labels [B, M] -> [B, N, M]
         ref_labels = F.repeat(labels.reshape((0, 1, -1)), axis=1, repeats=matches.shape[1])
+        # labels [B, N, M] -> pick from matches [B, N] -> [B, N, 1]
         ref_labels = F.pick(ref_labels, matches, axis=2).reshape((0, -1, 1))
-        g = self.corner_to_center(ref_boxes)
-        a = self.corner_to_center(anchors)
-        t0 = ((g[0] - a[0]) / a[2] - self._means[0]) / self._stds[0]
-        t1 = ((g[1] - a[1]) / a[3] - self._means[1]) / self._stds[1]
-        t2 = (F.log(g[2] / a[2]) - self._means[2]) / self._stds[2]
-        t3 = (F.log(g[3] / a[3]) - self._means[3]) / self._stds[3]
-        codecs = F.concat(t0, t1, t2, t3, dim=2)
-        temp = F.tile(samples.reshape((0, -1, 1)), reps=(1, 1, 4)) > 0.5
-        targets = F.where(temp, codecs, F.zeros_like(codecs))
-        masks = F.where(temp, F.ones_like(temp), F.zeros_like(temp))
+        # expand class agnostic targets to per class targets
         out_targets = []
         out_masks = []
         for cid in range(self._num_class):
+            # boolean array [B, N, 1]
             same_cid = ref_labels == cid
             # keep orig targets
             out_targets.append(targets)
-            # but mask out the one not belong to this class
+            # but mask out the one not belong to this class [B, N, 1] -> [B, N, 4]
             out_masks.append(masks * same_cid.repeat(axis=-1, repeats=4))
+        # targets, masks C * [B, N, 4] -> [C, B, N, 4] -> [B, N, C, 4]
         all_targets = F.stack(*out_targets, axis=0)
         all_masks = F.stack(*out_masks, axis=0)
         return all_targets, all_masks
@@ -120,13 +149,17 @@ class NormalizedBoxCenterDecoder(gluon.HybridBlock):
         Std value to be divided from encoded values, default is (0.1, 0.1, 0.2, 0.2).
     means : array-like of size 4
         Mean value to be subtracted from encoded values, default is (0., 0., 0., 0.).
+    clip: float, default is None
+        If given, bounding box target will be clipped to this value.
 
     """
-    def __init__(self, stds=(0.1, 0.1, 0.2, 0.2), means=(0., 0., 0., 0.), convert_anchor=False):
+    def __init__(self, stds=(0.1, 0.1, 0.2, 0.2), means=(0., 0., 0., 0.),
+                 convert_anchor=False, clip=None):
         super(NormalizedBoxCenterDecoder, self).__init__()
         assert len(stds) == 4, "Box Encoder requires 4 std values."
         self._stds = stds
         self._means = means
+        self._clip = clip
         if convert_anchor:
             self.corner_to_center = BBoxCornerToCenter(split=True)
         else:
@@ -140,8 +173,13 @@ class NormalizedBoxCenterDecoder(gluon.HybridBlock):
         p = F.split(x, axis=-1, num_outputs=4)
         ox = F.broadcast_add(F.broadcast_mul(p[0] * self._stds[0] + self._means[0], a[2]), a[0])
         oy = F.broadcast_add(F.broadcast_mul(p[1] * self._stds[1] + self._means[1], a[3]), a[1])
-        ow = F.broadcast_mul(F.exp(p[2] * self._stds[2]) + self._means[2], a[2]) / 2
-        oh = F.broadcast_mul(F.exp(p[3] * self._stds[3]) + self._means[3], a[3]) / 2
+        tw = F.exp(p[2] * self._stds[2] + self._means[2])
+        th = F.exp(p[3] * self._stds[3] + self._means[2])
+        if self._clip:
+            tw = F.minimum(tw, self._clip)
+            th = F.minimum(th, self._clip)
+        ow = F.broadcast_mul(tw, a[2]) / 2
+        oh = F.broadcast_mul(th, a[3]) / 2
         return F.concat(ox - ow, oy - oh, ox + ow, oy + oh, dim=-1)
 
 
@@ -164,9 +202,27 @@ class MultiClassEncoder(gluon.HybridBlock):
         self._ignore_label = ignore_label
 
     def hybrid_forward(self, F, samples, matches, refs):
+        """HybridBlock, handle multi batch correctly
+
+        Parameters
+        ----------
+        samples: (B, N), value +1 (positive), -1 (negative), 0 (ignore)
+        matches: (B, N), value range [0, M)
+        refs: (B, M), value range [0, num_fg_class), excluding background
+
+        Returns
+        -------
+        targets: (B, N), value range [0, num_fg_class + 1), including background
+
+        """
+        # samples (B, N) (+1, -1, 0: ignore), matches (B, N) [0, M), refs (B, M)
+        # reshape refs (B, M) -> (B, 1, M) -> (B, N, M)
         refs = F.repeat(refs.reshape((0, 1, -1)), axis=1, repeats=matches.shape[1])
+        # ids (B, N, M) -> (B, N), value [0, M + 1), 0 reserved for background class
         target_ids = F.pick(refs, matches, axis=2) + 1
+        # samples 0: set ignore samples to ignore_label
         targets = F.where(samples > 0.5, target_ids, nd.ones_like(target_ids) * self._ignore_label)
+        # samples -1: set negative samples to 0
         targets = F.where(samples < -0.5, nd.zeros_like(targets), targets)
         return targets
 
@@ -200,6 +256,7 @@ class MultiClassDecoder(gluon.HybridBlock):
         cls_id = F.where(mask, cls_id, F.ones_like(cls_id) * -1)
         scores = F.where(mask, scores, F.zeros_like(scores))
         return cls_id, scores
+
 
 class MultiPerClassDecoder(gluon.HybridBlock):
     """Decode classification results.

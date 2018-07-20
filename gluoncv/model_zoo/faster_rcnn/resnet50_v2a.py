@@ -139,5 +139,5 @@ def resnet50_v2a(pretrained=False, root='~/.mxnet/models', ctx=mx.cpu(0), **kwar
         model.load_params(get_model_file('resnet%d_v%da'%(50, 2),
                                          root=root), ctx=ctx, allow_missing=True)
         for v in model.collect_params(select='init_scale|init_mean').values():
-            v.initialize(force_reinit=True)
+            v.initialize(force_reinit=True, ctx=ctx)
     return model

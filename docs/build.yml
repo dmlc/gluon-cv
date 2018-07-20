@@ -3,12 +3,16 @@ dependencies:
 - python
 - sphinx>=1.5.5
 - scipy
+- numpy
 - matplotlib
 - sphinx_rtd_theme
 - pip:
   - sphinx-gallery
-  - mxnet-cu80==1.3.0b20180608
+  - mxnet-cu80==1.3.0b20180713
   # - guzzle_sphinx_theme
   - recommonmark
   - Image
   - awscli
+  - tqdm
+  - requests
+  - Pillow

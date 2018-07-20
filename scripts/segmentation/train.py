@@ -8,8 +8,7 @@ import mxnet as mx
 from mxnet import gluon, autograd
 from mxnet.gluon.data.vision import transforms
 
-from gluoncv.utils import PolyLRScheduler
-from gluon.loss import SoftmaxCrossEntropyLossWithAux
+from gluoncv.utils import LRScheduler
 from gluoncv.model_zoo.segbase import *
 from gluoncv.utils.parallel import *
 from gluoncv.data import get_segmentation_dataset
@@ -123,8 +122,8 @@ class Trainer(object):
         criterion = SoftmaxCrossEntropyLossWithAux(args.aux)
         self.criterion = DataParallelCriterion(criterion, args.ctx, args.syncbn)
         # optimizer and lr scheduling
-        self.lr_scheduler = PolyLRScheduler(args.lr, niters=len(self.train_data), 
-                                            nepochs=args.epochs)
+        self.lr_scheduler = LRScheduler(mode='poly', baselr=args.lr, niters=len(self.train_data), 
+                                        nepochs=args.epochs)
         kv = mx.kv.create(args.kvstore)
         self.optimizer = gluon.Trainer(self.net.module.collect_params(), 'sgd',
                                        {'lr_scheduler': self.lr_scheduler,

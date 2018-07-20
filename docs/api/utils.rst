@@ -33,7 +33,7 @@ Miscellaneous
 
     makedirs
 
-    random.random
+    random.seed
 
 Training Helpers
 ----------------
@@ -43,7 +43,7 @@ Training Helpers
 .. autosummary::
     :nosignatures:
 
-    PolyLRScheduler
+    LRScheduler
 
     set_lr_mult
 

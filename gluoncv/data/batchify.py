@@ -345,7 +345,7 @@ class Tuple(object):
         """
         assert len(data[0]) == len(self._fn),\
             'The number of attributes in each data sample should contains' \
-            ' {} elements'.format(len(self._fn))
+            ' {} elements, given {}.'.format(len(self._fn), len(data[0]))
         ret = []
         for i, ele_fn in enumerate(self._fn):
             ret.append(ele_fn([ele[i] for ele in data]))

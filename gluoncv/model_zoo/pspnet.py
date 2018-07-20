@@ -36,11 +36,11 @@ class PSPNet(SegBaseModel):
                                      norm_layer=norm_layer, **kwargs)
         with self.name_scope():
             self.head = _PSPHead(nclass, norm_layer=norm_layer, **kwargs)
-            self.head.initialize()
+            self.head.initialize(ctx=ctx)
             self.head.collect_params().setattr('lr_mult', 10)
             if self.aux:
                 self.auxlayer = _FCNHead(1024, nclass, norm_layer=norm_layer, **kwargs)
-                self.auxlayer.initialize()
+                self.auxlayer.initialize(ctx=ctx)
                 self.auxlayer.collect_params().setattr('lr_mult', 10)
 
     def hybrid_forward(self, F, x):
@@ -62,10 +62,10 @@ class PSPNet(SegBaseModel):
 def _PSP1x1Conv(in_channels, out_channels, norm_layer=None, **kwargs):
     block = nn.HybridSequential(prefix='')
     with block.name_scope():
-        block.add(norm_layer(in_channels=in_channels))
-        block.add(nn.Activation('relu'))
         block.add(nn.Conv2D(in_channels=in_channels,
                             channels=out_channels, kernel_size=1))
+        block.add(norm_layer(in_channels=out_channels))
+        block.add(nn.Activation('relu'))
     return block
 
 
@@ -100,8 +100,6 @@ class _PSPHead(HybridBlock):
         self.psp = _PyramidPooling(2048, norm_layer=norm_layer, **kwargs)
         with self.name_scope():
             self.block = nn.HybridSequential(prefix='')
-            self.block.add(norm_layer(in_channels=4096))
-            self.block.add(nn.Activation('relu'))
             self.block.add(nn.Conv2D(in_channels=4096, channels=512,
                                      kernel_size=3, padding=1))
             self.block.add(norm_layer(in_channels=512))

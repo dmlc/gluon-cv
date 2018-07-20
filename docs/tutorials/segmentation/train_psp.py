@@ -1,13 +1,17 @@
-"""3. Train FCN on Pascal VOC Dataset
-=====================================
+"""3. Train PSPNet on ADE20K Dataset
+=================================
 
-This is a semantic segmentation tutorial using Gluon Vison, a step-by-step example.
+This is a tutorial of training PSPNet on ADE20K dataset using Gluon Vison.
 The readers should have basic knowledge of deep learning and should be familiar with Gluon API.
 New users may first go through `A 60-minute Gluon Crash Course <http://gluon-crash-course.mxnet.io/>`_.
 You can `Start Training Now`_ or `Dive into Deep`_.
 
 Start Training Now
 ~~~~~~~~~~~~~~~~~~
+
+.. note::
+    
+    Training PSPNet relies on Synchronized Batch Normalization, which will be available shortly.
 
 .. hint::
 
@@ -17,10 +21,7 @@ Start Training Now
 
     Example training command::
 
-        # First training on augmented set
-        CUDA_VISIBLE_DEVICES=0,1,2,3 python train.py --dataset pascal_aug --model fcn --backbone resnet50 --lr 0.001 --checkname mycheckpoint
-        # Finetuning on original set
-        CUDA_VISIBLE_DEVICES=0,1,2,3 python train.py --dataset pascal_voc --model fcn --backbone resnet50 --lr 0.0001 --checkname mycheckpoint --resume runs/pascal_aug/fcn/mycheckpoint/checkpoint.params
+        CUDA_VISIBLE_DEVICES=0,1,2,3 python train.py --dataset ade20k --model psp --backbone resnet50 --lr 0.001 --checkname mycheckpoint
 
     For more training command options, please run ``python train.py -h``
     Please checkout the `model_zoo <../model_zoo/index.html#semantic-segmentation>`_ for training commands of reproducing the pretrained model.
@@ -31,90 +32,61 @@ Dive into Deep
 import numpy as np
 import mxnet as mx
 from mxnet import gluon, autograd
-
 import gluoncv
+
 ##############################################################################
-# Fully Convolutional Network
-# ---------------------------
+# Pyramid Scene Parsing Network
+# -----------------------------
 #
-# .. image:: https://cdn-images-1.medium.com/max/800/1*wRkj6lsQ5ckExB5BoYkrZg.png
-#     :width: 70%
+# .. image:: https://hszhao.github.io/projects/pspnet/figures/pspnet.png
+#     :width: 80%
 #     :align: center
 #
-# (figure credit to `Long et al. <https://arxiv.org/pdf/1411.4038.pdf>`_ )
+# (figure credit to `Zhao et al. <https://arxiv.org/pdf/1612.01105.pdf>`_ )
 #
-# State-of-the-art approaches of semantic segmentation are typically based on
-# Fully Convolutional Network (FCN) [Long15]_.
-# The key idea of a fully convolutional network is that it is "fully convolutional",
-# which means it does have any fully connected layers. Therefore, the network can
-# accept arbitrary input size and make dense per-pixel predictions.
-# Base/Encoder network is typically pre-trained on ImageNet, because the features
-# learned from diverse set of images contain rich contextual information, which
-# can be beneficial for semantic segmentation.
-#
+# Pyramid Scene Parsing Network (PSPNet) [Zhao17]_  exploit the
+# capability of global context information by different-regionbased
+# context aggregation through the pyramid pooling module.
 #
 
 
 ##############################################################################
-# Model Dilation
-# --------------
+# PSPNet Model
+# ------------
 #
-# The adaption of base network pre-trained on ImageNet leads to loss spatial resolution,
-# because these networks are originally designed for classification task.
-# Following standard implementation in recent works of semantic segmentation,
-# we apply dilation strategy to the
-# stage 3 and stage 4 of the pre-trained networks, which produces stride of 8
-# featuremaps (models are provided in
-# :class:`gluoncv.model_zoo.ResNetV1b`).
-# Visualization of dilated/atrous convoution
-# (figure credit to `conv_arithmetic <https://github.com/vdumoulin/conv_arithmetic>`_ ):
+# A Pyramid Pooling Module is built on top of FCN, which combines multiple scale
+# features with different receptive field sizes. It pools the featuremaps
+# into different sizes and then concatinating together after upsampling.
 #
-# .. image:: https://raw.githubusercontent.com/vdumoulin/conv_arithmetic/master/gif/dilation.gif
-#     :width: 40%
-#     :align: center
+# The Pyramid Pooling Module is defined as::
 #
-# Loading a dilated ResNet50 is simply:
-#
-pretrained_net = gluoncv.model_zoo.resnet50_v1b(pretrained=True)
-
-##############################################################################
-# For convenience, we provide a base model for semantic segmentation, which automatically
-# load the pre-trained dilated ResNet :class:`gluoncv.model_zoo.SegBaseModel`
-# with a convenient method ``base_forward(input)`` to get stage 3 & 4 featuremaps:
-#
-basemodel = gluoncv.model_zoo.SegBaseModel(nclass=10, aux=False)
-x = mx.nd.random.uniform(shape=(1, 3, 224, 224))
-c3, c4 = basemodel.base_forward(x)
-print('Shapes of c3 & c4 featuremaps are ', c3.shape, c4.shape)
-
-##############################################################################
-# FCN Model
-# ---------
-#
-# We build a fully convolutional "head" on top of the base network,
-# the FCNHead is defined as::
-#
-#     class _FCNHead(HybridBlock):
-#         def __init__(self, in_channels, channels, norm_layer, **kwargs):
-#             super(_FCNHead, self).__init__()
+#     class _PyramidPooling(HybridBlock):
+#         def __init__(self, in_channels, **kwargs):
+#             super(_PyramidPooling, self).__init__()
+#             out_channels = int(in_channels/4)
 #             with self.name_scope():
-#                 self.block = nn.HybridSequential()
-#                 inter_channels = in_channels // 4
-#                 with self.block.name_scope():
-#                     self.block.add(nn.Conv2D(in_channels=in_channels, channels=inter_channels,
-#                                              kernel_size=3, padding=1))
-#                     self.block.add(norm_layer(in_channels=inter_channels))
-#                     self.block.add(nn.Activation('relu'))
-#                     self.block.add(nn.Dropout(0.1))
-#                     self.block.add(nn.Conv2D(in_channels=inter_channels, channels=channels,
-#                                              kernel_size=1))
+#                 self.conv1 = _PSP1x1Conv(in_channels, out_channels, **kwargs)
+#                 self.conv2 = _PSP1x1Conv(in_channels, out_channels, **kwargs)
+#                 self.conv3 = _PSP1x1Conv(in_channels, out_channels, **kwargs)
+#                 self.conv4 = _PSP1x1Conv(in_channels, out_channels, **kwargs)
+#     
+#         def pool(self, F, x, size):
+#             return F.contrib.AdaptiveAvgPooling2D(x, output_size=size)
+#     
+#         def upsample(self, F, x, h, w):
+#             return F.contrib.BilinearResize2D(x, height=h, width=w)
+#     
+#         def hybrid_forward(self, F, x):
+#             _, _, h, w = x.shape
+#             feat1 = self.upsample(F, self.conv1(self.pool(F, x, 1)), h, w)
+#             feat2 = self.upsample(F, self.conv2(self.pool(F, x, 2)), h, w)
+#             feat3 = self.upsample(F, self.conv3(self.pool(F, x, 3)), h, w)
+#             feat4 = self.upsample(F, self.conv4(self.pool(F, x, 4)), h, w)
+#             return F.concat(x, feat1, feat2, feat3, feat4, dim=1)
 #
-#     def hybrid_forward(self, F, x):
-#         return self.block(x)
-#
-# FCN model is provided in :class:`gluoncv.model_zoo.FCN`. To get
-# FCN model using ResNet50 base network for Pascal VOC dataset:
-model = gluoncv.model_zoo.get_fcn(dataset='pascal_voc', backbone='resnet50', pretrained=False)
+# PSPNet model is provided in :class:`gluoncv.model_zoo.PSPNet`. To get
+# PSP model using ResNet50 base network for ADE20K dataset:
+model = gluoncv.model_zoo.get_psp(dataset='ade20k', backbone='resnet50', pretrained=False)
 print(model)
 
 ##############################################################################
@@ -130,8 +102,8 @@ input_transform = transforms.Compose([
 
 ##############################################################################
 # We provide semantic segmentation datasets in :class:`gluoncv.data`.
-# For example, we can easily get the Pascal VOC 2012 dataset:
-trainset = gluoncv.data.VOCSegmentation(split='train', transform=input_transform)
+# For example, we can easily get the ADE20K dataset:
+trainset = gluoncv.data.ADE20KSegmentation(split='train', transform=input_transform)
 print('Training images:', len(trainset))
 # set batch_size = 2 for toy example
 batch_size = 2
@@ -157,7 +129,7 @@ idx = random.randint(0, len(trainset))
 img, mask = trainset[idx]
 from gluoncv.utils.viz import get_color_pallete, DeNormalize
 # get color pallete for visualize mask
-mask = get_color_pallete(mask.asnumpy(), dataset='pascal_voc')
+mask = get_color_pallete(mask.asnumpy(), dataset='ade20k')
 mask.save('mask.png')
 # denormalize the image
 img = DeNormalize([.485, .456, .406], [.229, .224, .225])(img)
@@ -185,8 +157,7 @@ plt.show()
 #
 # - Training Losses:
 #
-#     We apply a standard per-pixel Softmax Cross Entropy Loss to train FCN. For Pascal
-#     VOC dataset, we ignore the loss from boundary class (number 22).
+#     We apply a standard per-pixel Softmax Cross Entropy Loss to train PSPNet. 
 #     Additionally, an Auxiliary Loss as in PSPNet [Zhao17]_ at Stage 3 can be enabled when
 #     training with command ``--aux``. This will create an additional FCN "head" after Stage 3.
 #
@@ -196,7 +167,7 @@ criterion = SoftmaxCrossEntropyLossWithAux(aux=True)
 ##############################################################################
 # - Learning Rate and Scheduling:
 #
-#     We use different learning rate for FCN "head" and the base network. For the FCN "head",
+#     We use different learning rate for PSP "head" and the base network. For the PSP "head",
 #     we use :math:`10\times` base learning rate, because those layers are learned from scratch.
 #     We use a poly-like learning rate scheduler for FCN training, provided in :class:`gluoncv.utils.LRScheduler`.
 #     The learning rate is given by :math:`lr = baselr \times (1-iter)^{power}`
@@ -213,7 +184,7 @@ criterion = DataParallelCriterion(criterion, ctx_list)
 
 ##############################################################################
 # - Create SGD solver
-kv = mx.kv.create('device')
+kv = mx.kv.create('local')
 optimizer = gluon.Trainer(model.module.collect_params(), 'sgd',
                           {'lr_scheduler': lr_scheduler,
                            'wd':0.0001,
@@ -257,3 +228,4 @@ for i, (data, target) in enumerate(train_data):
 # .. [Zhao17] Zhao, Hengshuang, Jianping Shi, Xiaojuan Qi, Xiaogang Wang, and Jiaya Jia. \
 #     "Pyramid scene parsing network." IEEE Conf. on Computer Vision and Pattern Recognition (CVPR). 2017.
 #
+

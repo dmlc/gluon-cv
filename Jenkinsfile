@@ -5,7 +5,7 @@ stage("Sanity Check") {
       sh """#!/bin/bash
       set -e
       conda env update -n gluon_vision_pylint -f tests/pylint.yml
-      source activate gluon_vision_pylint
+      conda activate gluon_vision_pylint
       conda list
       make clean
       make pylint
@@ -24,10 +24,11 @@ stage("Unit Test") {
         # conda env remove -n gluon_cv_py2_test -y
         # conda env create -n gluon_cv_py2_test -f tests/py2.yml
         conda env update -n gluon_cv_py2_test -f tests/py2.yml
-        source activate gluon_cv_py2_test
+        conda activate gluon_cv_py2_test
         conda list
         make clean
-        pip install --force-reinstall .
+        # from https://stackoverflow.com/questions/19548957/can-i-force-pip-to-reinstall-the-current-version
+        pip install --upgrade --force-reinstall --no-deps .
         env
         export LD_LIBRARY_PATH=/usr/local/cuda-8.0/lib64
         export MPLBACKEND=Agg
@@ -54,10 +55,11 @@ stage("Unit Test") {
         # conda env remove -n gluon_cv_py3_test -y
         # conda env create -n gluon_cv_py3_test -f tests/py3.yml
         conda env update -n gluon_cv_py3_test -f tests/py3.yml
-        source activate gluon_cv_py3_test
+        conda activate gluon_cv_py3_test
         conda list
         make clean
-        pip install --force-reinstall .
+        # from https://stackoverflow.com/questions/19548957/can-i-force-pip-to-reinstall-the-current-version
+        pip install --upgrade --force-reinstall --no-deps .
         env
         export LD_LIBRARY_PATH=/usr/local/cuda-8.0/lib64
         export MPLBACKEND=Agg
@@ -77,7 +79,7 @@ stage("Build Docs") {
       set -e
       set -x
       conda env update -n gluon_vision_docs -f docs/build.yml
-      source activate gluon_vision_docs
+      conda activate gluon_vision_docs
       export PYTHONPATH=\${PWD}
       env
       export LD_LIBRARY_PATH=/usr/local/cuda-8.0/lib64
