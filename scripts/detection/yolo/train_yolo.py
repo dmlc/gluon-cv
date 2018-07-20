@@ -3,6 +3,7 @@ import argparse
 import os
 import logging
 import time
+import warnings
 import numpy as np
 import mxnet as mx
 from mxnet import nd
@@ -364,28 +365,26 @@ if __name__ == '__main__':
     # network
     net_name = '_'.join(('yolo3', str(args.data_shape), args.network, args.dataset))
     args.save_prefix += net_name
-    net = get_model(net_name, pretrained_base=True)
-    if args.resume.strip():
-        net.load_parameters(args.resume.strip())
-    else:
-        for param in net.collect_params().values():
-            if param._data is not None:
-                continue
-            param.initialize()
-
     # use sync bn if specified
     num_sync_bn_devices = len(ctx) if args.syncbn else -1
     if num_sync_bn_devices > 1:
-        net(mx.nd.zeros((1, 3, args.data_shape, args.data_shape)))
-        tmp_file = args.save_prefix + '_tmp.params'
-        net.save_parameters(tmp_file)
         net = get_model(net_name, pretrained_base=True, num_sync_bn_devices=num_sync_bn_devices)
-        net.load_parameters(tmp_file)
+        async_net = get_model(net_name, pretrained_base=False)  # used by cpu worker
+    else:
+        net = get_model(net_name, pretrained_base=True)
+        async_net = net
+    if args.resume.strip():
+        net.load_parameters(args.resume.strip())
+    else:
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            net.initialize()
+            async_net.initialize()
 
     # training data
     train_dataset, val_dataset, eval_metric = get_dataset(args.dataset, args)
     train_data, val_data = get_dataloader(
-        net, train_dataset, val_dataset, args.data_shape, args.batch_size, args.num_workers)
+        async_net, train_dataset, val_dataset, args.data_shape, args.batch_size, args.num_workers)
 
     # training
     train(net, train_data, val_data, eval_metric, args)
