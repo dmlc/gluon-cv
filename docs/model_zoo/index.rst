@@ -102,6 +102,14 @@ Besides the listed, we provide more models trained on ImageNet in the upstream
 +-----------------------+--------+--------+------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
 | MobileNetV2_0.25 [7]_ | 50.74  | 74.56  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/mobilenetv2_0.25.sh>`_  | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/mobilenetv2_0.25.log>`_     |
 +-----------------------+--------+--------+------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
+| VGG16 [9]_            | 72.38  | 91.02  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/vgg16.sh>`_             | .. `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/vgg16.log>`_             |
++-----------------------+--------+--------+------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
+| VGG19 [9]_            | 73.70  | 91.51  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/vgg19.sh>`_             | .. `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/vgg19.log>`_             |
++-----------------------+--------+--------+------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
+| VGG16_bn [9]_         | 72.54  | 91.14  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/vgg16_bn.sh>`_          | .. `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/vgg16_bn.log>`_          |
++-----------------------+--------+--------+------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
+| VGG19_bn [9]_         | 73.65  | 91.82  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/vgg19_bn.sh>`_          | .. `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/vgg19_bn.log>`_          |
++-----------------------+--------+--------+------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
 
 **CIFAR10**
 
@@ -262,3 +270,6 @@ Table of pre-trained models for semantic segmentation and their performance.
 .. [8] Xie, Saining, Ross Girshick, Piotr Dollár, Zhuowen Tu, and Kaiming He. \
        "Aggregated residual transformations for deep neural networks." \
        In Computer Vision and Pattern Recognition (CVPR), 2017 IEEE Conference on, pp. 5987-5995. IEEE, 2017.
+.. [9] Karen Simonyan, Andrew Zisserman. \
+       "Very Deep Convolutional Networks for Large-Scale Image Recognition." \
+       arXiv technical report arXiv:1409.1556 (2014).
