@@ -143,8 +143,8 @@ class BBoxBatchIOU(gluon.HybridBlock):
             raise ValueError("Unsupported format: {}. Use 'corner' or 'center'.".format(fmt))
 
     def hybrid_forward(self, F, a, b):
-        al, ar, at, ab = self._pre(a)
-        bl, br, bt, bb = self._pre(b)
+        al, at, ar, ab = self._pre(a)
+        bl, bt, br, bb = self._pre(b)
 
         # (B, N, M)
         left = F.broadcast_maximum(al.expand_dims(-1), bl.expand_dims(-2))
