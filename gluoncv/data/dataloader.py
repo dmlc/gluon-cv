@@ -2,7 +2,7 @@
 import numpy as np
 from mxnet import nd
 from mxnet import context
-from mxnet.gluon.data import DataLoader
+from mxnet.gluon.data import DataLoader, BatchSampler, RandomSampler
 
 def default_pad_batchify_fn(data):
     """Collate data into batch, labels are padded to same shape"""
@@ -116,3 +116,71 @@ class DetectionDataLoader(DataLoader):
         super(DetectionDataLoader, self).__init__(
             dataset, batch_size, shuffle, sampler, last_batch,
             batch_sampler, batchify_fn, num_workers)
+
+
+class RandomTransformDataLoader(object):
+    def __init__(self, dataset, batch_size, transform_fns, interval=1,
+                 last_batch=None, batchify_fn=None, num_workers=0):
+        assert isinstance(transform_fns, (list, tuple))
+        self._num_loader = len(transform_fns)
+        self._transform_fns = transform_fns
+        assert len(dataset) >= batch_size * self._num_loader, ("Dataset not large enough with batch"
+            " size {} and transforms {}, given len(dataset): {}".format(
+            len(dataset), batch_size, self._num_loader))
+        self._dataset = dataset
+        self._batch_size = batch_size
+        self._interval = int(interval)
+        self._batchify_fn = batchify_fn
+        self._last_batch = last_batch if last_batch else 'keep'
+        self._num_workers = num_workers
+        self._batch_sampler = BatchSampler(RandomSampler(len(dataset)), batch_size, self._last_batch)
+        self._loaders = []
+        self._current_loader = None
+        self._prev = []
+
+    def _reset(self):
+        """Shuffle sampler for next epoch."""
+        indices = np.concatenate((np.array(self._prev), np.arange(len(self._dataset))))
+        np.random.shuffle(indices)
+        residue = len(indices) % self._batch_size
+        if self._last_batch == 'discard':
+            indices = indices[:-residue]
+        elif self._last_batch == 'rollover':
+            indices = indices[:-residue]
+            self._prev = indices[-residue:]
+            print(self._prev)
+        num_split = len(indices) // self._batch_size
+        samplers = np.split(indices, num_split)
+        samplers = np.split(np.array(np.split(indices, num_split)), self._num_loader)
+        print(samplers)
+        raise
+        # if len(samplers[-1]) < self._batch_size and self._last_batch == 'rollover':
+        #     self._prev = samplers[-1]
+        #     samplers = samplers[:-1]
+        samplers = [iter(x) for x in samplers]
+        # print([list(xx) for xx in samplers])
+        self._loaders = [iter(DataLoader(self._dataset.transform(t), batch_size=self._batch_size,
+            sampler=s, last_batch='keep', batchify_fn=self._batchify_fn,
+            num_workers=self._num_workers)) for s, t in zip(samplers, self._transform_fns)]
+        self._loader_idx = np.random.choice(len(self._loaders))
+
+    def __iter__(self):
+        self._reset()
+
+        for i in range(len(self)):
+            if (i + 1) % self._interval == 0:
+                self._loader_idx = np.random.choice(len(self._loaders))
+
+            batch = None
+            while self._loaders:
+                try:
+                    batch = next(self._loaders[self._loader_idx])
+                    break
+                except StopIteration:
+                    self._loaders.pop(self._loader_idx)
+                    self._loader_idx = np.random.choice(len(self._loaders))
+            assert batch is not None
+            yield batch
+
+    def __len__(self):
+        return len(self._batch_sampler)

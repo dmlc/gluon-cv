@@ -19,6 +19,7 @@ from gluoncv.data.transforms.presets.yolo import YOLO3DefaultValTransform
 from gluoncv.utils.metrics.voc_detection import VOC07MApMetric
 from gluoncv.utils.metrics.coco_detection import COCODetectionMetric
 from gluoncv.utils import LRScheduler
+from gluoncv.data.dataloader import RandomTransformDataLoader
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train YOLO networks.')
@@ -93,6 +94,9 @@ def get_dataloader(net, train_dataset, val_dataset, data_shape, batch_size, num_
     """Get dataloader."""
     width, height = data_shape, data_shape
     batchify_fn = Tuple(*([Stack() for _ in range(6)] + [Pad(axis=0, pad_val=-1) for _ in range(1)]))  # stack image, all targets generated
+    transform_fns = [YOLO3DefaultTrainTransform(x * 32, x * 32, net) for x in range(10, 20)]
+    train_loader = RandomTransformDataLoader(
+        train_dataset, batch_size, transform_fns, interval=10, last_batch='rollover'
     train_loader = gluon.data.DataLoader(
         train_dataset.transform(YOLO3DefaultTrainTransform(width, height, net)),
         batch_size, True, batchify_fn=batchify_fn, last_batch='rollover', num_workers=num_workers)
