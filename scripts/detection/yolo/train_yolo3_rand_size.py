@@ -26,7 +26,7 @@ def parse_args():
     parser.add_argument('--network', type=str, default='darknet53',
                         help="Base network name which serves as feature extraction base.")
     parser.add_argument('--data-shape', type=int, default=416,
-                        help="Input data shape, use 416, 608...")
+                        help="Input data shape for evaluation, use 320, 416, 608...Training is with random shapes.")
     parser.add_argument('--batch-size', type=int, default=64,
                         help='Training mini-batch size')
     parser.add_argument('--dataset', type=str, default='voc',
@@ -255,7 +255,7 @@ if __name__ == '__main__':
     ctx = ctx if ctx else [mx.cpu()]
 
     # network
-    net_name = '_'.join(('yolo3', str(args.data_shape), args.network, args.dataset))
+    net_name = '_'.join(('yolo3', args.network, args.dataset))
     args.save_prefix += net_name
     # use sync bn if specified
     num_sync_bn_devices = len(ctx) if args.syncbn else -1

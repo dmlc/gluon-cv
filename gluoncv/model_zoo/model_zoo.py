@@ -100,6 +100,8 @@ def get_model(name, **kwargs):
         'yolo3_320_darknet53_coco': yolo3_320_darknet53_coco,
         'yolo3_416_darknet53_coco': yolo3_416_darknet53_coco,
         'yolo3_608_darknet53_coco': yolo3_608_darknet53_coco,
+        'yolo3_darknet53_coco': yolo3_darknet53_coco,
+        'yolo3_darknet53_voc': yolo3_darknet53_voc,
         }
     try:
         net = gluon.model_zoo.vision.get_model(name, **kwargs)

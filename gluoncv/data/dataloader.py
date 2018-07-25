@@ -143,6 +143,7 @@ class RandomTransformDataLoader(object):
     def _reset(self):
         """Reset sampler for next epoch."""
         indices = np.concatenate((np.array(self._prev), np.arange(len(self._dataset))))
+        indices = indices.astype('int')
         np.random.shuffle(indices)
         num_residue = len(indices) % self._batch_size
         if num_residue:
