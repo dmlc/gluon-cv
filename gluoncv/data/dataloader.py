@@ -128,37 +128,40 @@ class RandomTransformDataLoader(object):
             " size {} and transforms {}, given len(dataset): {}".format(
             len(dataset), batch_size, self._num_loader))
         self._dataset = dataset
-        self._batch_size = batch_size
+        self._batch_size = int(batch_size)
+        assert self._batch_size >= 1
         self._interval = int(interval)
         self._batchify_fn = batchify_fn
         self._last_batch = last_batch if last_batch else 'keep'
         self._num_workers = num_workers
-        self._batch_sampler = BatchSampler(RandomSampler(len(dataset)), batch_size, self._last_batch)
+        self._len = len(BatchSampler(RandomSampler(len(dataset)), batch_size, self._last_batch))
         self._loaders = []
         self._current_loader = None
         self._prev = []
+        self._reserved_loader = None  # for last_batch == 'keep' only
 
     def _reset(self):
-        """Shuffle sampler for next epoch."""
+        """Reset sampler for next epoch."""
         indices = np.concatenate((np.array(self._prev), np.arange(len(self._dataset))))
         np.random.shuffle(indices)
-        residue = len(indices) % self._batch_size
-        if self._last_batch == 'discard':
-            indices = indices[:-residue]
-        elif self._last_batch == 'rollover':
-            indices = indices[:-residue]
-            self._prev = indices[-residue:]
-            print(self._prev)
+        num_residue = len(indices) % self._batch_size
+        if num_residue:
+            if self._last_batch == 'discard':
+                pass
+            elif self._last_batch == 'rollover':
+                self._prev = indices[-num_residue:]
+            elif self._last_batch == 'keep':
+                t = np.random.choice(self._transform_fns)
+                self._reserved_loader = iter(DataLoader(
+                    self._dataset.transform(t), batch_size=self._batch_size,
+                    sampler=iter(indices[-num_residue:]), last_batch='keep',
+                    batchify_fn=self._batchify_fn, num_workers=0))
+            indices = indices[:-num_residue]
         num_split = len(indices) // self._batch_size
+        self._len = num_split + (1 if self._reserved_loader is not None else 0)
         samplers = np.split(indices, num_split)
-        samplers = np.split(np.array(np.split(indices, num_split)), self._num_loader)
-        print(samplers)
-        raise
-        # if len(samplers[-1]) < self._batch_size and self._last_batch == 'rollover':
-        #     self._prev = samplers[-1]
-        #     samplers = samplers[:-1]
-        samplers = [iter(x) for x in samplers]
-        # print([list(xx) for xx in samplers])
+        samplers = np.array_split(np.array(samplers), self._num_loader, axis=0)
+        samplers = [iter(x.ravel()) for x in samplers]
         self._loaders = [iter(DataLoader(self._dataset.transform(t), batch_size=self._batch_size,
             sampler=s, last_batch='keep', batchify_fn=self._batchify_fn,
             num_workers=self._num_workers)) for s, t in zip(samplers, self._transform_fns)]
@@ -166,7 +169,6 @@ class RandomTransformDataLoader(object):
 
     def __iter__(self):
         self._reset()
-
         for i in range(len(self)):
             if (i + 1) % self._interval == 0:
                 self._loader_idx = np.random.choice(len(self._loaders))
@@ -178,9 +180,15 @@ class RandomTransformDataLoader(object):
                     break
                 except StopIteration:
                     self._loaders.pop(self._loader_idx)
-                    self._loader_idx = np.random.choice(len(self._loaders))
-            assert batch is not None
+                    if self._loaders:
+                        self._loader_idx = np.random.choice(len(self._loaders))
+            if batch is None:
+                # make sure the the kept batch (usually smaller than batch_size) is returned
+                # as last batch, to be fully consistent with original behavior
+                assert self._last_batch == 'keep' and self._reserved_loader is not None
+                batch = next(self._reserved_loader)
+                self._reserved_loader = None
             yield batch
 
     def __len__(self):
-        return len(self._batch_sampler)
+        return self._len
