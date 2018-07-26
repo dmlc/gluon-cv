@@ -15,3 +15,5 @@ from .metrics.voc_segmentation import batch_pix_accuracy, batch_intersection_uni
 from . import parallel
 
 from .plot_history import TrainingHistory
+
+from .init_mod import init_mod_sqnet

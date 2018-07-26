@@ -8,7 +8,7 @@ from mxnet.gluon.data.vision import transforms
 
 from gluoncv.data import imagenet
 from gluoncv.model_zoo import get_model
-from gluoncv.utils import makedirs, LRScheduler
+from gluoncv.utils import makedirs, LRScheduler, init_mod_sqnet
 
 # CLI
 parser = argparse.ArgumentParser(description='Train a model for image classification.')
@@ -248,7 +248,13 @@ def test(ctx, val_data):
 def train(ctx):
     if isinstance(ctx, mx.Context):
         ctx = [ctx]
+    
+    global net
+    
     net.initialize(mx.init.MSRAPrelu(), ctx=ctx)
+
+    if model_name.startswith('squeezenet'):
+        net = init_mod_sqnet(net, ctx)
 
     trainer = gluon.Trainer(net.collect_params(), optimizer, optimizer_params)
 
