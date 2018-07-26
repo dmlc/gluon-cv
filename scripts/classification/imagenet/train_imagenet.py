@@ -248,7 +248,7 @@ def test(ctx, val_data):
 def train(ctx):
     if isinstance(ctx, mx.Context):
         ctx = [ctx]
-    
+
     global net
     
     net.initialize(mx.init.MSRAPrelu(), ctx=ctx)

@@ -5,7 +5,7 @@ import mxnet as mx
 def init_mod_sqnet(net, ctx):
     '''
     Modified initialization for SqueezeNet.
-    Initialize final conv layer to random normal weights by doing one forward pass 
+    Initialize final conv layer to random normal weights by doing one forward pass
     through the net and set weights explicitly.
     Parameters
     ----------
