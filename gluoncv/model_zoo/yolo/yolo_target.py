@@ -1,4 +1,5 @@
 """Target generators for YOLOs."""
+# pylint: disable=arguments-differ, unsupported-assignment-operation
 from __future__ import absolute_import
 from __future__ import division
 

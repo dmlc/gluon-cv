@@ -1,4 +1,5 @@
 """You Only Look Once Object Detection v3"""
+# pylint: disable=arguments-differ
 from __future__ import absolute_import
 from __future__ import division
 
@@ -13,8 +14,6 @@ from .yolo_target import YOLOV3TargetMerger
 from ...loss import YOLOV3Loss
 
 __all__ = ['YOLOV3',
-           'yolo3_320_darknet53_voc', 'yolo3_416_darknet53_voc', 'yolo3_608_darknet53_voc',
-           'yolo3_320_darknet53_coco', 'yolo3_416_darknet53_coco', 'yolo3_608_darknet53_coco',
            'yolo3_darknet53_voc', 'yolo3_darknet53_coco']
 
 def _upsample(x, stride=2):
@@ -233,7 +232,7 @@ class YOLOV3(gluon.HybridBlock):
             self.yolo_outputs = nn.HybridSequential()
             # note that anchors and strides should be used in reverse order
             for i, stage, channel, anchor, stride in zip(
-                range(len(stages)), stages, channels, anchors[::-1], strides[::-1]):
+                    range(len(stages)), stages, channels, anchors[::-1], strides[::-1]):
                 self.stages.add(stage)
                 block = YOLODetectionBlockV3(channel, num_sync_bn_devices)
                 self.yolo_blocks.add(block)
@@ -323,7 +322,8 @@ class YOLOV3(gluon.HybridBlock):
         result = F.concat(*all_detections, dim=1)
         # apply nms per class
         if self.nms_thresh > 0 and self.nms_thresh < 1:
-            result = F.contrib.box_nms(result, overlap_thresh=self.nms_thresh, valid_thresh=0.01,
+            result = F.contrib.box_nms(
+                result, overlap_thresh=self.nms_thresh, valid_thresh=0.01,
                 topk=self.nms_topk, id_index=0, score_index=1, coord_start=2, force_suppress=False)
             if self.post_nms > 0:
                 result = result.slice_axis(axis=1, begin=0, end=self.post_nms)
@@ -357,7 +357,7 @@ class YOLOV3(gluon.HybridBlock):
         self.nms_topk = nms_topk
         self.post_nms = post_nms
 
-def get_yolov3(name, base_size, stages, filters, anchors, strides, classes,
+def get_yolov3(name, stages, filters, anchors, strides, classes,
                dataset, pretrained=False, ctx=mx.cpu(),
                root=os.path.join('~', '.mxnet', 'models'), **kwargs):
     """Get YOLOV3 models.
@@ -366,9 +366,6 @@ def get_yolov3(name, base_size, stages, filters, anchors, strides, classes,
     ----------
     name : str or None
         Model name, if `None` is used, you must specify `features` to be a `HybridBlock`.
-    base_size : int
-        Base image size for training, this is fixed once training is assigned.
-        A fixed base size still allows you to have variable input size during test.
     features : iterable of str or `HybridBlock`
         List of network internal output names, in order to specify which layers are
         used for predicting bbox values.
@@ -415,95 +412,7 @@ def get_yolov3(name, base_size, stages, filters, anchors, strides, classes,
         net.load_params(get_model_file(full_name, root=root), ctx=ctx)
     return net
 
-def yolo3_320_darknet53_voc(pretrained_base=True, pretrained=False, num_sync_bn_devices=-1,
-                            **kwargs):
-    """YOLO3 320x320 with darknet53 base network on VOC dataset.
-
-    Parameters
-    ----------
-    pretrained_base : boolean
-        Whether fetch and load pretrained weights for base network.
-    pretrained : boolean
-        Whether fetch and load pretrained weights for the entire network.
-    num_sync_bn_devices : int
-        Number of devices for training. If `num_sync_bn_devices < 2`, SyncBatchNorm is disabled.
-
-    Returns
-    -------
-    mxnet.gluon.HybridBlock
-        Fully hybrid yolo3 network.
-
-    """
-    from ...data import VOCDetection
-    pretrained_base = False if pretrained else pretrained_base
-    base_net = darknet53(pretrained=pretrained_base, num_sync_bn_devices=num_sync_bn_devices)
-    stages = [base_net.features[:15], base_net.features[15:24], base_net.features[24:]]
-    anchors = [[10,13,  16,30,  33,23],  [30,61,  62,45,  59,119],  [116,90,  156,198,  373,326]]
-    strides = [8, 16, 32]
-    classes = VOCDetection.CLASSES
-    return get_yolov3('darknet53', 320, stages, [512, 256, 128], anchors, strides, classes, 'voc',
-        pretrained=pretrained, num_sync_bn_devices=num_sync_bn_devices, **kwargs)
-
-def yolo3_416_darknet53_voc(pretrained_base=True, pretrained=False, num_sync_bn_devices=-1,
-                            **kwargs):
-    """YOLO3 416x416 with darknet53 base network on VOC dataset.
-
-    Parameters
-    ----------
-    pretrained_base : boolean
-        Whether fetch and load pretrained weights for base network.
-    pretrained : boolean
-        Whether fetch and load pretrained weights for the entire network.
-    num_sync_bn_devices : int
-        Number of devices for training. If `num_sync_bn_devices < 2`, SyncBatchNorm is disabled.
-
-    Returns
-    -------
-    mxnet.gluon.HybridBlock
-        Fully hybrid yolo3 network.
-
-    """
-    from ...data import VOCDetection
-    pretrained_base = False if pretrained else pretrained_base
-    base_net = darknet53(pretrained=pretrained_base, num_sync_bn_devices=num_sync_bn_devices)
-    stages = [base_net.features[:15], base_net.features[15:24], base_net.features[24:]]
-    anchors = [[10,13,  16,30,  33,23],  [30,61,  62,45,  59,119],  [116,90,  156,198,  373,326]]
-    strides = [8, 16, 32]
-    classes = VOCDetection.CLASSES
-    return get_yolov3('darknet53', 416, stages, [512, 256, 128], anchors, strides, classes, 'voc',
-        pretrained=pretrained, num_sync_bn_devices=num_sync_bn_devices, **kwargs)
-
-def yolo3_608_darknet53_voc(pretrained_base=True, pretrained=False, num_sync_bn_devices=-1,
-                            **kwargs):
-    """YOLO3 608x608 with darknet53 base network on VOC dataset.
-
-    Parameters
-    ----------
-    pretrained_base : boolean
-        Whether fetch and load pretrained weights for base network.
-    pretrained : boolean
-        Whether fetch and load pretrained weights for the entire network.
-    num_sync_bn_devices : int
-        Number of devices for training. If `num_sync_bn_devices < 2`, SyncBatchNorm is disabled.
-
-    Returns
-    -------
-    mxnet.gluon.HybridBlock
-        Fully hybrid yolo3 network.
-
-    """
-    from ...data import VOCDetection
-    pretrained_base = False if pretrained else pretrained_base
-    base_net = darknet53(pretrained=pretrained_base, num_sync_bn_devices=num_sync_bn_devices)
-    stages = [base_net.features[:15], base_net.features[15:24], base_net.features[24:]]
-    anchors = [[10,13,  16,30,  33,23],  [30,61,  62,45,  59,119],  [116,90,  156,198,  373,326]]
-    strides = [8, 16, 32]
-    classes = VOCDetection.CLASSES
-    return get_yolov3('darknet53', 608, stages, [512, 256, 128], anchors, strides, classes, 'voc',
-        pretrained=pretrained, num_sync_bn_devices=num_sync_bn_devices, **kwargs)
-
-def yolo3_darknet53_voc(pretrained_base=True, pretrained=False, num_sync_bn_devices=-1,
-                            **kwargs):
+def yolo3_darknet53_voc(pretrained_base=True, pretrained=False, num_sync_bn_devices=-1, **kwargs):
     """YOLO3 multi-scale with darknet53 base network on VOC dataset.
 
     Parameters
@@ -525,98 +434,14 @@ def yolo3_darknet53_voc(pretrained_base=True, pretrained=False, num_sync_bn_devi
     pretrained_base = False if pretrained else pretrained_base
     base_net = darknet53(pretrained=pretrained_base, num_sync_bn_devices=num_sync_bn_devices)
     stages = [base_net.features[:15], base_net.features[15:24], base_net.features[24:]]
-    anchors = [[10,13,  16,30,  33,23],  [30,61,  62,45,  59,119],  [116,90,  156,198,  373,326]]
+    anchors = [[10, 13, 16, 30, 33, 23], [30, 61, 62, 45, 59, 119], [116, 90, 156, 198, 373, 326]]
     strides = [8, 16, 32]
     classes = VOCDetection.CLASSES
-    return get_yolov3('darknet53', '', stages, [512, 256, 128], anchors, strides, classes, 'voc',
+    return get_yolov3(
+        'darknet53', stages, [512, 256, 128], anchors, strides, classes, 'voc',
         pretrained=pretrained, num_sync_bn_devices=num_sync_bn_devices, **kwargs)
 
-def yolo3_320_darknet53_coco(pretrained_base=True, pretrained=False, num_sync_bn_devices=-1,
-                             **kwargs):
-    """YOLO3 320x320 with darknet53 base network on COCO dataset.
-
-    Parameters
-    ----------
-    pretrained_base : boolean
-        Whether fetch and load pretrained weights for base network.
-    pretrained : boolean
-        Whether fetch and load pretrained weights for the entire network.
-    num_sync_bn_devices : int
-        Number of devices for training. If `num_sync_bn_devices < 2`, SyncBatchNorm is disabled.
-
-    Returns
-    -------
-    mxnet.gluon.HybridBlock
-        Fully hybrid yolo3 network.
-    """
-    from ...data import COCODetection
-    pretrained_base = False if pretrained else pretrained_base
-    base_net = darknet53(pretrained=pretrained_base, num_sync_bn_devices=num_sync_bn_devices)
-    stages = [base_net.features[:15], base_net.features[15:24], base_net.features[24:]]
-    anchors = [[10,13,  16,30,  33,23],  [30,61,  62,45,  59,119],  [116,90,  156,198,  373,326]]
-    strides = [8, 16, 32]
-    classes = COCODetection.CLASSES
-    return get_yolov3('darknet53', 320, stages, [512, 256, 128], anchors, strides, classes, 'coco',
-        pretrained=pretrained, num_sync_bn_devices=num_sync_bn_devices, **kwargs)
-
-def yolo3_416_darknet53_coco(pretrained_base=True, pretrained=False, num_sync_bn_devices=-1,
-                             **kwargs):
-    """YOLO3 416x416 with darknet53 base network on COCO dataset.
-
-    Parameters
-    ----------
-    pretrained_base : boolean
-        Whether fetch and load pretrained weights for base network.
-    pretrained : boolean
-        Whether fetch and load pretrained weights for the entire network.
-    num_sync_bn_devices : int
-        Number of devices for training. If `num_sync_bn_devices < 2`, SyncBatchNorm is disabled.
-
-    Returns
-    -------
-    mxnet.gluon.HybridBlock
-        Fully hybrid yolo3 network.
-    """
-    from ...data import COCODetection
-    pretrained_base = False if pretrained else pretrained_base
-    base_net = darknet53(pretrained=pretrained_base, num_sync_bn_devices=num_sync_bn_devices)
-    stages = [base_net.features[:15], base_net.features[15:24], base_net.features[24:]]
-    anchors = [[10,13,  16,30,  33,23],  [30,61,  62,45,  59,119],  [116,90,  156,198,  373,326]]
-    strides = [8, 16, 32]
-    classes = COCODetection.CLASSES
-    return get_yolov3('darknet53', 416, stages, [512, 256, 128], anchors, strides, classes, 'coco',
-        pretrained=pretrained, num_sync_bn_devices=num_sync_bn_devices, **kwargs)
-
-def yolo3_608_darknet53_coco(pretrained_base=True, pretrained=False, num_sync_bn_devices=-1,
-                             **kwargs):
-    """YOLO3 608x608 with darknet53 base network on COCO dataset.
-
-    Parameters
-    ----------
-    pretrained_base : boolean
-        Whether fetch and load pretrained weights for base network.
-    pretrained : boolean
-        Whether fetch and load pretrained weights for the entire network.
-    num_sync_bn_devices : int, default is -1
-        Number of devices for training. If `num_sync_bn_devices < 2`, SyncBatchNorm is disabled.
-
-    Returns
-    -------
-    mxnet.gluon.HybridBlock
-        Fully hybrid yolo3 network.
-    """
-    from ...data import COCODetection
-    pretrained_base = False if pretrained else pretrained_base
-    base_net = darknet53(pretrained=pretrained_base, num_sync_bn_devices=num_sync_bn_devices)
-    stages = [base_net.features[:15], base_net.features[15:24], base_net.features[24:]]
-    anchors = [[10,13,  16,30,  33,23],  [30,61,  62,45,  59,119],  [116,90,  156,198,  373,326]]
-    strides = [8, 16, 32]
-    classes = COCODetection.CLASSES
-    return get_yolov3('darknet53', 608, stages, [512, 256, 128], anchors, strides, classes, 'coco',
-        pretrained=pretrained, num_sync_bn_devices=num_sync_bn_devices, **kwargs)
-
-def yolo3_darknet53_coco(pretrained_base=True, pretrained=False, num_sync_bn_devices=-1,
-                             **kwargs):
+def yolo3_darknet53_coco(pretrained_base=True, pretrained=False, num_sync_bn_devices=-1, **kwargs):
     """YOLO3 multi-scale with darknet53 base network on COCO dataset.
 
     Parameters
@@ -637,8 +462,9 @@ def yolo3_darknet53_coco(pretrained_base=True, pretrained=False, num_sync_bn_dev
     pretrained_base = False if pretrained else pretrained_base
     base_net = darknet53(pretrained=pretrained_base, num_sync_bn_devices=num_sync_bn_devices)
     stages = [base_net.features[:15], base_net.features[15:24], base_net.features[24:]]
-    anchors = [[10,13,  16,30,  33,23],  [30,61,  62,45,  59,119],  [116,90,  156,198,  373,326]]
+    anchors = [[10, 13, 16, 30, 33, 23], [30, 61, 62, 45, 59, 119], [116, 90, 156, 198, 373, 326]]
     strides = [8, 16, 32]
     classes = COCODetection.CLASSES
-    return get_yolov3('darknet53', '', stages, [512, 256, 128], anchors, strides, classes, 'coco',
+    return get_yolov3(
+        'darknet53', stages, [512, 256, 128], anchors, strides, classes, 'coco',
         pretrained=pretrained, num_sync_bn_devices=num_sync_bn_devices, **kwargs)

@@ -8,7 +8,7 @@ from .. import bbox as tbbox
 from .. import image as timage
 from .. import experimental
 
-__all__ = ['load_test', 'YOLODefaultTrainTransform', 'YOLODefaultValTransform']
+__all__ = ['load_test', 'YOLO3DefaultTrainTransform', 'YOLO3DefaultValTransform']
 
 def load_test(filenames, short=416, max_size=1024, mean=(0.485, 0.456, 0.406),
               std=(0.229, 0.224, 0.225)):

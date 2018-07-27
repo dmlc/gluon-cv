@@ -58,7 +58,7 @@ class COCODetection(VisionDataset):
         self._transform = transform
         self._min_object_area = min_object_area
         self._skip_empty = skip_empty
-        self._use_crowd = False
+        self._use_crowd = use_crowd
         if isinstance(splits, mx.base.string_types):
             splits = [splits]
         self._splits = splits

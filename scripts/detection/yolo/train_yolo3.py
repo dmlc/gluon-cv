@@ -25,7 +25,7 @@ def parse_args():
     parser.add_argument('--network', type=str, default='darknet53',
                         help="Base network name which serves as feature extraction base.")
     parser.add_argument('--data-shape', type=int, default=416,
-                        help="Input data shape, use 416, 608...")
+                        help="Input data shape, use 320, 416, 608...")
     parser.add_argument('--batch-size', type=int, default=64,
                         help='Training mini-batch size')
     parser.add_argument('--dataset', type=str, default='voc',
@@ -78,7 +78,7 @@ def get_dataset(dataset, args):
             splits=[(2007, 'test')])
         val_metric = VOC07MApMetric(iou_thresh=0.5, class_names=val_dataset.classes)
     elif dataset.lower() == 'coco':
-        train_dataset = gdata.COCODetection(splits='instances_train2017', use_crowd=True)
+        train_dataset = gdata.COCODetection(splits='instances_train2017', use_crowd=False)
         val_dataset = gdata.COCODetection(splits='instances_val2017', skip_empty=False)
         val_metric = COCODetectionMetric(
             val_dataset, args.save_prefix + '_eval', cleanup=True,
@@ -144,7 +144,7 @@ def validate(net, val_data, ctx, eval_metric):
         eval_metric.update(det_bboxes, det_ids, det_scores, gt_bboxes, gt_ids, gt_difficults)
     return eval_metric.get()
 
-def train(net, train_data, val_data, eval_metric, args):
+def train(net, train_data, val_data, eval_metric, ctx, args):
     """Training pipeline"""
     net.collect_params().reset_ctx(ctx)
     lr_scheduler = LRScheduler(mode='step',
@@ -250,7 +250,7 @@ if __name__ == '__main__':
     ctx = ctx if ctx else [mx.cpu()]
 
     # network
-    net_name = '_'.join(('yolo3', str(args.data_shape), args.network, args.dataset))
+    net_name = '_'.join(('yolo3', args.network, args.dataset))
     args.save_prefix += net_name
     # use sync bn if specified
     num_sync_bn_devices = len(ctx) if args.syncbn else -1
@@ -274,4 +274,4 @@ if __name__ == '__main__':
         async_net, train_dataset, val_dataset, args.data_shape, args.batch_size, args.num_workers)
 
     # training
-    train(net, train_data, val_data, eval_metric, args)
+    train(net, train_data, val_data, eval_metric, ctx, args)

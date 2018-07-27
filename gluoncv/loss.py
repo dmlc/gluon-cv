@@ -162,6 +162,16 @@ class SSDMultiBoxLoss(gluon.Block):
 
 
 class YOLOV3Loss(gluon.loss.Loss):
+    """Losses of YOLO v3.
+
+    Parameters
+    ----------
+    batch_axis : int, default 0
+        The axis that represents mini-batch.
+    weight : float or None
+        Global scalar weight for loss.
+
+    """
     def __init__(self, batch_axis=0, weight=None, **kwargs):
         super(YOLOV3Loss, self).__init__(weight, batch_axis, **kwargs)
         self._sigmoid_ce = gluon.loss.SigmoidBinaryCrossEntropyLoss(from_sigmoid=False)
@@ -170,10 +180,12 @@ class YOLOV3Loss(gluon.loss.Loss):
     def hybrid_forward(self, F, objness, box_centers, box_scales, cls_preds,
                        objness_t, center_t, scale_t, weight_t, class_t, class_mask):
         # compute some normalization count, except batch-size
-        denorm = F.cast(F.shape_array(objness_t).slice_axis(axis=0, begin=1, end=None).prod(), 'float32')
+        denorm = F.cast(
+            F.shape_array(objness_t).slice_axis(axis=0, begin=1, end=None).prod(), 'float32')
         obj_loss = F.broadcast_mul(self._sigmoid_ce(objness, objness_t, objness_t >= 0), denorm)
         center_loss = F.broadcast_mul(self._sigmoid_ce(box_centers, center_t, weight_t), denorm * 2)
         scale_loss = F.broadcast_mul(self._l1_loss(box_scales, scale_t, weight_t), denorm * 2)
-        denorm_class = F.cast(F.shape_array(class_t).slice_axis(axis=0, begin=1, end=None).prod(), 'float32')
+        denorm_class = F.cast(
+            F.shape_array(class_t).slice_axis(axis=0, begin=1, end=None).prod(), 'float32')
         cls_loss = F.broadcast_mul(self._sigmoid_ce(cls_preds, class_t, class_mask), denorm_class)
         return obj_loss, center_loss, scale_loss, cls_loss

@@ -131,6 +131,22 @@ class BBoxArea(gluon.HybridBlock):
 
 
 class BBoxBatchIOU(gluon.HybridBlock):
+    """Batch Bounding Box IOU.
+
+    Parameters
+    ----------
+    axis : int
+        On which axis is the lenght-4 bounding box dimension.
+    fmt : str
+        BBox encoding format, can be 'corner' or 'center'.
+        'corner': (xmin, ymin, xmax, ymax)
+        'center': (center_x, center_y, width, height)
+    offset : float, default is 0
+        Offset is used if +1 is desired for computing width and height, otherwise use 0.
+    eps : float, default is 1e-15
+        Very small number to avoid division by 0.
+
+    """
     def __init__(self, axis=-1, fmt='corner', offset=0, eps=1e-15, **kwargs):
         super(BBoxBatchIOU, self).__init__(**kwargs)
         self._offset = offset
@@ -143,6 +159,21 @@ class BBoxBatchIOU(gluon.HybridBlock):
             raise ValueError("Unsupported format: {}. Use 'corner' or 'center'.".format(fmt))
 
     def hybrid_forward(self, F, a, b):
+        """Compute IOU for each batch
+
+        Parameters
+        ----------
+        a : mxnet.nd.NDArray or mxnet.sym.Symbol
+            (B, N, 4) first input.
+        b : mxnet.nd.NDArray or mxnet.sym.Symbol
+            (B, M, 4) second input.
+
+        Returns
+        -------
+        mxnet.nd.NDArray or mxnet.sym.Symbol
+            (B, N, M) array of IOUs.
+
+        """
         al, at, ar, ab = self._pre(a)
         bl, bt, br, bb = self._pre(b)
 

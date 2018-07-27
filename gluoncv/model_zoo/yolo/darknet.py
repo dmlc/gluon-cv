@@ -1,9 +1,9 @@
 """Darknet as YOLO backbone network."""
+# pylint: disable=arguments-differ
 from __future__ import absolute_import
 
 import os
 import mxnet as mx
-import numpy as np
 from mxnet import gluon
 from mxnet.gluon import nn
 
@@ -42,7 +42,7 @@ class DarknetBasicBlockV3(gluon.HybridBlock):
         # 3x3 conv expand
         self.body.add(_conv2d(channel * 2, 3, 1, 1, num_sync_bn_devices))
 
-    def hybrid_forward(self, F, x):
+    def hybrid_forward(self, F, x, *args):
         residual = x
         x = self.body(x)
         return x + residual
@@ -74,7 +74,7 @@ class DarknetV3(gluon.HybridBlock):
         super(DarknetV3, self).__init__(**kwargs)
         assert len(layers) == len(channels) - 1, (
             "len(channels) should equal to len(layers) + 1, given {} vs {}".format(
-            len(channels), len(layers)))
+                len(channels), len(layers)))
         with self.name_scope():
             self.features = nn.HybridSequential()
             # first 3x3 conv
@@ -90,9 +90,9 @@ class DarknetV3(gluon.HybridBlock):
             self.output = nn.Dense(classes)
 
     def hybrid_forward(self, F, x):
-      x = self.features(x)
-      x = F.Pooling(x, kernel=(7, 7), global_pool=True, pool_type='avg')
-      return self.output(x)
+        x = self.features(x)
+        x = F.Pooling(x, kernel=(7, 7), global_pool=True, pool_type='avg')
+        return self.output(x)
 
 # default configurations
 darknet_versions = {'v3': DarknetV3}
