@@ -59,11 +59,11 @@ class RCNNTargetSampler(gluon.HybridBlock):
                 roi = F.squeeze(F.slice_axis(rois, axis=0, begin=i, end=i+1), axis=0)
                 score = F.squeeze(F.slice_axis(scores, axis=0, begin=i, end=i+1), axis=0)
                 gt_box = F.squeeze(F.slice_axis(gt_boxes, axis=0, begin=i, end=i+1), axis=0)
-                gt_score = F.ones_like(F.sum(gt_boxes, axis=-1, keepdims=True))
+                gt_score = F.ones_like(F.sum(gt_box, axis=-1, keepdims=True))
 
                 # concat rpn roi with ground truth
                 all_roi = F.concat(roi, gt_box, dim=0)
-                all_score = F.concat(score, gt_score, dim=0)
+                all_score = F.concat(score, gt_score, dim=0).squeeze(axis=-1)
                 # calculate (N, M) ious between (N, 4) anchors and (M, 4) bbox ground-truths
                 # cannot do batch op, will get (B, N, B, M) ious
                 ious = F.contrib.box_iou(all_roi, gt_box, format='corner')
