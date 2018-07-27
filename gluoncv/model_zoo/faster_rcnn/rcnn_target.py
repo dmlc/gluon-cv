@@ -70,13 +70,13 @@ class RCNNTargetSampler(gluon.HybridBlock):
                 # match to argmax iou
                 ious_max = ious.max(axis=-1)
                 ious_argmax = ious.argmax(axis=-1)
-                # init with -1, which are neg samples
-                mask = F.ones_like(ious_max) * -1
+                # init with 2, which are neg samples
+                mask = F.ones_like(ious_max) * 2
                 # mark all ignore to 0
                 mask = F.where(all_score < 0, F.zeros_like(mask), mask)
-                # mark positive samples with 1
+                # mark positive samples with 3
                 pos_mask = ious_max >= self._pos_iou_thresh
-                mask = F.where(pos_mask, F.ones_like(mask), mask)
+                mask = F.where(pos_mask, F.ones_like(mask) * 3, mask)
 
                 # shuffle mask
                 rand = F.random.uniform(0, 1, shape=(self._num_proposal + 100,))
@@ -85,17 +85,36 @@ class RCNNTargetSampler(gluon.HybridBlock):
                 mask = F.take(mask, index)
                 ious_argmax = F.take(ious_argmax, index)
 
-                # sample pos and neg samples
+                # sample pos samples
                 order = F.argsort(mask, is_ascend=False)
                 topk = F.slice_axis(order, axis=0, begin=0, end=self._max_pos)
+                topk_indices = F.take(index, topk)
+                topk_samples = F.take(mask, topk)
+                topk_matches = F.take(ious_argmax, topk)
+                # reset output: 3 pos 2 neg 0 ignore -> 1 pos -1 neg 0 ignore
+                topk_samples = F.where(topk_samples == 3, F.ones_like(topk_samples), topk_samples)
+                topk_samples = F.where(topk_samples == 2, F.ones_like(topk_samples) * -1, topk_samples)
+
+                # sample neg samples
+                index = F.slice_axis(index, axis=0, begin=self._max_pos, end=None)
+                mask = F.slice_axis(mask, axis=0, begin=self._max_pos, end=None)
+                ious_argmax = F.slice_axis(ious_argmax, axis=0, begin=self._max_pos, end=None)
+                # change mask: 4 neg 3 pos 0 ignore
+                mask = F.where(mask == 2, F.ones_like(mask) * 4, mask)
+                order = F.argsort(mask, is_ascend=False)
                 num_neg = self._num_sample - self._max_pos
-                bottomk = F.slice_axis(order, axis=0, begin=-num_neg, end=None)
-                selected = F.concat(topk, bottomk, dim=0)
+                bottomk = F.slice_axis(order, axis=0, begin=0, end=num_neg)
+                bottomk_indices = F.take(index, bottomk)
+                bottomk_samples = F.take(mask, bottomk)
+                bottomk_matches = F.take(ious_argmax, bottomk)
+                # reset output: 4 neg 3 pos 0 ignore -> 1 pos -1 neg 0 ignore
+                bottomk_samples = F.where(bottomk_samples == 3, F.ones_like(bottomk_samples), bottomk_samples)
+                bottomk_samples = F.where(bottomk_samples == 4, F.ones_like(bottomk_samples) * -1, bottomk_samples)
 
                 # output
-                indices = F.take(index, selected)
-                samples = F.take(mask, selected)
-                matches = F.take(ious_argmax, selected)
+                indices = F.concat(topk_indices, bottomk_indices, dim=0)
+                samples = F.concat(topk_samples, bottomk_samples, dim=0)
+                matches = F.concat(topk_matches, bottomk_matches, dim=0)
 
                 new_rois.append(all_roi.take(indices))
                 new_samples.append(samples)
