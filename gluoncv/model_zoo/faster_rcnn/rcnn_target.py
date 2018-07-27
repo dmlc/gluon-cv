@@ -34,18 +34,19 @@ class RCNNTargetSampler(gluon.HybridBlock):
         self._pos_iou_thresh = pos_iou_thresh
 
     #pylint: disable=arguments-differ
-    def hybrid_forward(self, F, rois, gt_boxes):
+    def hybrid_forward(self, F, rois, scores, gt_boxes):
         """Handle B=self._num_image by a for loop.
 
         Parameters
         ----------
         rois: (B, self._num_input, 4) encoded in (x1, y1, x2, y2).
+        scores: (B, self._num_input, 1), value range [0, 1] with ignore value -1.
         gt_boxes: (B, M, 4) encoded in (x1, y1, x2, y2), invalid box should have area of 0.
 
         Returns
         -------
         rois: (B, self._num_sample, 4), randomly drawn from proposals
-        samples: (B, self._num_sample), value +1: positive / -1: negative.
+        samples: (B, self._num_sample), value +1: positive / 0: ignore / -1: negative.
         matches: (B, self._num_sample), value between [0, M)
 
         """
@@ -56,10 +57,13 @@ class RCNNTargetSampler(gluon.HybridBlock):
             new_matches = []
             for i in range(self._num_image):
                 roi = F.squeeze(F.slice_axis(rois, axis=0, begin=i, end=i+1), axis=0)
+                score = F.squeeze(F.slice_axis(scores, axis=0, begin=i, end=i+1), axis=0)
                 gt_box = F.squeeze(F.slice_axis(gt_boxes, axis=0, begin=i, end=i+1), axis=0)
+                gt_score = F.ones_like(F.sum(gt_boxes, axis=-1, keepdims=True))
 
                 # concat rpn roi with ground truth
                 all_roi = F.concat(roi, gt_box, dim=0)
+                all_score = F.concat(score, gt_score, dim=0)
                 # calculate (N, M) ious between (N, 4) anchors and (M, 4) bbox ground-truths
                 # cannot do batch op, will get (B, N, B, M) ious
                 ious = F.contrib.box_iou(all_roi, gt_box, format='corner')
@@ -68,6 +72,8 @@ class RCNNTargetSampler(gluon.HybridBlock):
                 ious_argmax = ious.argmax(axis=-1)
                 # init with -1, which are neg samples
                 mask = F.ones_like(ious_max) * -1
+                # mark all ignore to 0
+                mask = F.where(all_score < 0, F.zeros_like(mask), mask)
                 # mark positive samples with 1
                 pos_mask = ious_max >= self._pos_iou_thresh
                 mask = F.where(pos_mask, F.ones_like(mask), mask)
