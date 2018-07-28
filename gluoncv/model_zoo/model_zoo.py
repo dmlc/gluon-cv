@@ -94,12 +94,6 @@ def get_model(name, **kwargs):
         'se_resnet101_v2' : se_resnet101_v2,
         'se_resnet152_v2' : se_resnet152_v2,
         'darknet53': darknet53,
-        'yolo3_320_darknet53_voc': yolo3_320_darknet53_voc,
-        'yolo3_416_darknet53_voc': yolo3_416_darknet53_voc,
-        'yolo3_608_darknet53_voc': yolo3_608_darknet53_voc,
-        'yolo3_320_darknet53_coco': yolo3_320_darknet53_coco,
-        'yolo3_416_darknet53_coco': yolo3_416_darknet53_coco,
-        'yolo3_608_darknet53_coco': yolo3_608_darknet53_coco,
         'yolo3_darknet53_coco': yolo3_darknet53_coco,
         'yolo3_darknet53_voc': yolo3_darknet53_voc,
         }

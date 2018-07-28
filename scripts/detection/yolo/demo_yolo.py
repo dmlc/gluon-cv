@@ -8,7 +8,7 @@ from matplotlib import pyplot as plt
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Test with YOLO networks.')
-    parser.add_argument('--network', type=str, default='yolo3_416_darknet53_voc',
+    parser.add_argument('--network', type=str, default='yolo3_darknet53_voc',
                         help="Base network name")
     parser.add_argument('--images', type=str, default='',
                         help='Test images, use comma to split multiple.')
