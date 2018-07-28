@@ -100,7 +100,7 @@ if __name__ == '__main__':
     ctx = ctx if ctx else [mx.cpu()]
 
     # network
-    net_name = '_'.join((args.algorithm, str(args.data_shape), args.network, args.dataset))
+    net_name = '_'.join((args.algorithm, args.network, args.dataset))
     args.save_prefix += net_name
     if args.pretrained.lower() in ['true', '1', 'yes', 't']:
         net = gcv.model_zoo.get_model(net_name, pretrained=True)
