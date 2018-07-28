@@ -42,6 +42,7 @@ class DarknetBasicBlockV3(gluon.HybridBlock):
         # 3x3 conv expand
         self.body.add(_conv2d(channel * 2, 3, 1, 1, num_sync_bn_devices))
 
+    # pylint: disable=unused-argument
     def hybrid_forward(self, F, x, *args):
         residual = x
         x = self.body(x)

@@ -162,6 +162,7 @@ class YOLODetectionBlockV3(gluon.HybridBlock):
             self.body.add(_conv2d(channel, 1, 0, 1, num_sync_bn_devices))
             self.tip = _conv2d(channel * 2, 3, 1, 1, num_sync_bn_devices)
 
+    # pylint: disable=unused-argument
     def hybrid_forward(self, F, x):
         route = self.body(x)
         tip = self.tip(route)
