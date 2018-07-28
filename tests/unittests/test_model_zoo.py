@@ -87,6 +87,12 @@ def test_faster_rcnn_models():
     models = ['faster_rcnn_resnet50_v2a_voc', 'faster_rcnn_resnet50_v2a_coco']
     _test_model_list(models, ctx, x)
 
+def test_yolo3_models():
+    ctx = mx.context.current_context()
+    x = mx.random.uniform(shape=(1, 3, 416, 416), ctx=ctx)  # allow non-squre and larger inputs
+    models = ['yolo3_darknet53_voc', 'yolo3_darknet53_coco']
+    _test_model_list(models, ctx, x)
+
 def test_set_nms():
     model_list = ['ssd_512_resnet50_v1_voc', 'faster_rcnn_resnet50_v2a_coco']
     for model in model_list:

@@ -4,7 +4,7 @@ This module provides data loaders and transfomers for popular vision datasets.
 from . import transforms
 from . import batchify
 from .imagenet.classification import ImageNet
-from .dataloader import DetectionDataLoader
+from .dataloader import DetectionDataLoader, RandomTransformDataLoader
 from .pascal_voc.detection import VOCDetection
 from .mscoco.detection import COCODetection
 from .pascal_voc.segmentation import VOCSegmentation

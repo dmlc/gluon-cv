@@ -92,6 +92,7 @@ class YOLO3DefaultTrainTransform(object):
         self._height = height
         self._mean = mean
         self._std = std
+        self._target_generator = None
         if net is None:
             return
 

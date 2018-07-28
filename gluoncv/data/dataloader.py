@@ -195,12 +195,13 @@ class RandomTransformDataLoader(DataLoader):
                     t = np.random.choice(self._transform_fns)
                 yield self._batchify_fn([self._dataset.transform(t)[idx] for idx in batch])
         else:
+            batch_sampler = list(self._batch_sampler)
             start = 0
             while start < len(self):
                 stop = min(len(self), start + self._interval)
-                batch_sampler = islice(self._batch_sampler, start, stop)
+                bs = islice(batch_sampler, start, stop)
                 start += self._interval
                 t = np.random.choice(self._transform_fns)
                 for batch in _MultiWorkerIter(self._num_workers, self._dataset.transform(t),
-                                              self._batchify_fn, batch_sampler):
+                                              self._batchify_fn, bs):
                     yield batch
