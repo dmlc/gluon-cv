@@ -51,6 +51,8 @@ def get_model(name, **kwargs):
         'ssd_512_resnet152_v2_voc': ssd_512_resnet152_v2_voc,
         'ssd_512_mobilenet1_0_voc': ssd_512_mobilenet1_0_voc,
         'ssd_512_mobilenet1_0_coco': ssd_512_mobilenet1_0_coco,
+        'faster_rcnn_resnet50_v1b_voc': faster_rcnn_resnet50_v1b_voc,
+        'faster_rcnn_resnet50_v1b_coco': faster_rcnn_resnet50_v1b_coco,
         'faster_rcnn_resnet50_v2a_voc': faster_rcnn_resnet50_v2a_voc,
         'faster_rcnn_resnet50_v2a_coco': faster_rcnn_resnet50_v2a_coco,
         'cifar_resnet20_v1': cifar_resnet20_v1,

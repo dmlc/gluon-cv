@@ -55,6 +55,6 @@ x, orig_img = data.transforms.presets.rcnn.load_test(im_fname)
 # results. We slice the results for the first image and feed them into `plot_bbox`:
 
 box_ids, scores, bboxes = net(x)
-ax = utils.viz.plot_bbox(orig_img, bboxes, scores, box_ids, class_names=net.classes)
+ax = utils.viz.plot_bbox(orig_img, bboxes[0], scores[0], box_ids[0], class_names=net.classes)
 
 plt.show()

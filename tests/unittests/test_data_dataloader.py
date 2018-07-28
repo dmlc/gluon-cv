@@ -9,7 +9,7 @@ from gluoncv.data.batchify import *
 from gluoncv.data import DetectionDataLoader, RandomTransformDataLoader
 
 
-class DummyDetectionDataset(object):
+class DummyDetectionDataset(mx.gluon.data.Dataset):
     def __init__(self, size=10):
         self.size = size
 

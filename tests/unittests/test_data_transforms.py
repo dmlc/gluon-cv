@@ -82,7 +82,7 @@ def test_image_random_expand():
     np.testing.assert_allclose(out.shape[0] / out.shape[1], image.shape[0] / image.shape[1], rtol=1e-2, atol=1e-3)
     # #
     out, _ = transforms.image.random_expand(image, 4, keep_ratio=False)
-    np.testing.assert_((np.array(out.shape[:2]) - np.array(image.shape[:2])).all())
+    np.testing.assert_((np.array(out.shape[:2]) - np.array(image.shape[:2]) + 1).all())
 
 def test_image_random_flip():
     image = mx.random.normal(shape=(240, 120, 3)).astype(np.uint8)

@@ -33,7 +33,7 @@ Miscellaneous
 
     makedirs
 
-    random.random
+    random.seed
 
 Training Helpers
 ----------------

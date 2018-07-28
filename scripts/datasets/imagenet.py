@@ -55,8 +55,9 @@ def build_rec_process(img_dir, train=False, num_thread=1):
     download(lst_url, lst_path)
 
     # execution
+    import sys
     cmd = [
-        'python',
+        sys.executable,
         script_path,
         rec_dir,
         img_dir,
