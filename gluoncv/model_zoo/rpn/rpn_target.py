@@ -129,4 +129,4 @@ class RPNTargetGenerator(gluon.Block):
             box_target, box_mask = self._box_encoder(
                 samples.expand_dims(axis=0), matches.expand_dims(0),
                 anchor.expand_dims(axis=0), bbox.expand_dims(0))
-        return cls_target, box_target, box_mask
+        return cls_target, box_target[0], box_mask[0]

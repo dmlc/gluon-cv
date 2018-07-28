@@ -146,7 +146,7 @@ class FasterRCNNDefaultTrainTransform(object):
         gt_bboxes = mx.nd.array(bbox[:, :4])
         cls_target, box_target, box_mask = self._target_generator(
             gt_bboxes, anchor, img.shape[2], img.shape[1])
-        return img, bbox.astype(img.dtype), cls_target[0], box_target[0], box_mask[0]
+        return img, bbox.astype(img.dtype), cls_target, box_target, box_mask
 
 
 class FasterRCNNDefaultValTransform(object):
