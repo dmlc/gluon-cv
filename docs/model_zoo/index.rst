@@ -110,6 +110,8 @@ Besides the listed, we provide more models trained on ImageNet in the upstream
 +-----------------------+--------+--------+------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
 | VGG19_bn [9]_         | 74.33  | 91.85  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/vgg19_bn.sh>`_          | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/vgg19_bn.log>`_             |
 +-----------------------+--------+--------+------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
+| darknet53 [11]_       | 77.82  |        |                                                                                                                        |                                                                                                                               |
++-----------------------+--------+--------+------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
 
 **CIFAR10**
 
@@ -172,9 +174,9 @@ and their performances.
 
   The training commands work with the following scripts:
 
-  - For SSD networks: :download:`Download train_ssd.py<../../scripts/detection/ssd/train_ssd.py>`
-  - For Faster-RCNN networks: :download:`Download train_faster_rcnn.py<../../scripts/detection/faster_rcnn/train_faster_rcnn.py>`
-
+  - For SSD [5]_ networks: :download:`Download train_ssd.py<../../scripts/detection/ssd/train_ssd.py>`
+  - For Faster-RCNN [10]_ networks: :download:`Download train_faster_rcnn.py<../../scripts/detection/faster_rcnn/train_faster_rcnn.py>`
+  - For YOLO v3 [11]_ networks: :download:`Download train_yolo3_rand_size.py<../../scripts/detection/yolo/train_yolo3_rand_size.py>` or :download:`Download train_yolo3.py<../../scripts/detection/yolo/train_yolo3.py>` with fixed size training, which is faster than random size training pipeline.
 
 .. https://bit.ly/2JLnI2R
 
@@ -191,9 +193,9 @@ and their performances.
 +----------------------------------+-------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
 | faster_rcnn_resnet50_v2a_voc     | 77.9  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/faster_rcnn_resnet50_v2a_voc.sh>`_      | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/faster_rcnn_resnet50_v2a_voc_train.log>`_       |
 +----------------------------------+-------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
-| yolo3_darknet53_voc @ 320x320    | 80.0  |                                                                                                                                      |                                                                                                                                     |
+| yolo3_darknet53_voc @ 320x320    | 79.3  |                                                                                                                                      |                                                                                                                                     |
 +----------------------------------+-------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
-| yolo3_darknet53_voc @ 416x416    | 81.4  |                                                                                                                                      |                                                                                                                                     |
+| yolo3_darknet53_voc @ 416x416    | 81.5  |                                                                                                                                      |                                                                                                                                     |
 +----------------------------------+-------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
 
 .. https://bit.ly/2JM82we
@@ -277,3 +279,9 @@ Table of pre-trained models for semantic segmentation and their performance.
 .. [9] Karen Simonyan, Andrew Zisserman. \
        "Very Deep Convolutional Networks for Large-Scale Image Recognition." \
        arXiv technical report arXiv:1409.1556 (2014).
+.. [10] Ren, Shaoqing, Kaiming He, Ross Girshick, and Jian Sun. \
+        "Faster r-cnn: Towards real-time object detection with region proposal networks." \
+        In Advances in neural information processing systems, pp. 91-99. 2015.
+.. [11] Redmon, Joseph, and Ali Farhadi. \
+        "Yolov3: An incremental improvement." \
+        arXiv preprint arXiv:1804.02767 (2018).
