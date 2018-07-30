@@ -15,6 +15,7 @@ from .resnext import *
 from .senet import *
 from .se_resnet import *
 from .yolo import *
+from .nasnet import *
 
 __all__ = ['get_model']
 
@@ -98,6 +99,10 @@ def get_model(name, **kwargs):
         'darknet53': darknet53,
         'yolo3_darknet53_coco': yolo3_darknet53_coco,
         'yolo3_darknet53_voc': yolo3_darknet53_voc,
+        'nasnet_4_1056' : nasnet_4_1056,
+        'nasnet_5_1538' : nasnet_5_1538,
+        'nasnet_7_1920' : nasnet_7_1920,
+        'nasnet_6_4032' : nasnet_6_4032,
         }
     try:
         net = gluon.model_zoo.vision.get_model(name, **kwargs)
