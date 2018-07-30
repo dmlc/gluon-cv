@@ -39,7 +39,7 @@ _model_sha1 = {name: checksum for checksum, name in [
     ('b1b11976bf753ed1e05a526065e1666950fcf0a2', 'fcn_resnet50_ade'),
     ('3133bd42540ffee84a54e95468de74560a4a27b9', 'psp_resnet50_ade'),
     ('b8f9c5f193d84b828fa78d7bd7646ca7f11a29bc', 'resnet50_v2a'),
-    ('1d08a4b1a659062dbdf2475ff283c48415b2bdd8', 'yolo3_darknet53_voc'),
+    ('f5ece5ce1422eeca3ce2908004e469ffdf91fd41', 'yolo3_darknet53_voc'),
     ('d7a709b3fef6aad002065bc993f0c663b82f4b3d', 'darknet53'),
     ]}
 
