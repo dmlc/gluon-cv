@@ -77,6 +77,8 @@ def test_classification_models():
 
 def test_imagenet_models():
     ctx = mx.context.current_context()
+
+    # 224x224
     x = mx.random.uniform(shape=(2, 3, 224, 224), ctx=ctx)
     models = ['resnet18_v1b', 'resnet34_v1b', 'resnet50_v1b',
               'resnet101_v1b', 'resnet152_v1b',
@@ -87,6 +89,16 @@ def test_imagenet_models():
               'se_resnet18_v2', 'se_resnet34_v2', 'se_resnet50_v2',
               'se_resnet101_v2', 'se_resnet152_v2',
               'senet_52', 'senet_103', 'senet_154']
+    _test_model_list(models, ctx, x)
+
+    # 299x299
+    x = mx.random.uniform(shape=(2, 3, 299, 299), ctx=ctx)
+    models = ['nasnet_5_1538', 'nasnet_7_1920', 'nasnet_6_4032']
+    _test_model_list(models, ctx, x)
+
+    # 331x331
+    x = mx.random.uniform(shape=(2, 3, 331, 331), ctx=ctx)
+    models = ['nasnet_5_1538', 'nasnet_7_1920', 'nasnet_6_4032']
     _test_model_list(models, ctx, x)
 
 def test_imagenet_models_bn_global_stats():

@@ -11,8 +11,7 @@ from .resnetv1b import resnet50_v1b, resnet101_v1b, resnet152_v1b
 from ..utils.parallel import tuple_map
 # pylint: disable=abstract-method,arguments-differ,dangerous-default-value,missing-docstring
 
-__all__ = ['get_segmentation_model', 'SegBaseModel', 'SegEvalModel', 'MultiEvalModel',
-           'SoftmaxCrossEntropyLossWithAux']
+__all__ = ['get_segmentation_model', 'SegBaseModel', 'SegEvalModel', 'MultiEvalModel']
 
 def get_segmentation_model(model, **kwargs):
     from .fcn import get_fcn
