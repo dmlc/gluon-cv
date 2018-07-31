@@ -78,11 +78,10 @@ def parse_args():
         print('Number of GPUs:', args.ngpus)
         args.ctx = [mx.gpu(i) for i in range(args.ngpus)]
     # Synchronized BatchNorm
-    if args.syncbn:
-        from gluoncv.model_zoo.syncbn import BatchNorm
-        args.norm_layer = BatchNorm
-    else:
-        args.norm_layer = mx.gluon.nn.BatchNorm
+    args.norm_layer = mx.gluon.contrib.nn.SyncBatchNorm if args.syncbn \
+        else mx.gluon.nn.BatchNorm
+    args.norm_kwargs = {'num_devices': args.ngpus} if args.syncbn else {}
+    print(args)
     return args
 
 
@@ -107,7 +106,8 @@ class Trainer(object):
         # create network
         model = get_segmentation_model(model=args.model, dataset=args.dataset,
                                        backbone=args.backbone, norm_layer=args.norm_layer,
-                                       aux=args.aux)
+                                       aux=args.aux, norm_kwargs=args.norm_kwargs)
+        # model.hybridize(static_alloc=True, static_shape=True)
         print(model)
         self.net = DataParallelModel(model, args.ctx, args.syncbn)
         self.evaluator = DataParallelModel(SegEvalModel(model), args.ctx)
@@ -122,7 +122,8 @@ class Trainer(object):
         criterion = SoftmaxCrossEntropyLossWithAux(args.aux)
         self.criterion = DataParallelCriterion(criterion, args.ctx, args.syncbn)
         # optimizer and lr scheduling
-        self.lr_scheduler = LRScheduler(mode='poly', baselr=args.lr, niters=len(self.train_data), 
+        self.lr_scheduler = LRScheduler(mode='poly', baselr=args.lr,
+                                        niters=len(self.train_data), 
                                         nepochs=args.epochs)
         kv = mx.kv.create(args.kvstore)
         self.optimizer = gluon.Trainer(self.net.module.collect_params(), 'sgd',
