@@ -7,7 +7,7 @@ from mxnet.gluon.nn import HybridBlock
 from mxnet.gluon.loss import Loss, _apply_weighting
 from ..utils.metrics import voc_segmentation
 from ..utils.parallel import parallel_apply
-from .resnetv1b import resnet50_v1c, resnet101_v1c, resnet152_v1c
+from .resnetv1b import resnet50_v1b, resnet101_v1b, resnet152_v1b
 from ..utils.parallel import tuple_map
 # pylint: disable=abstract-method,arguments-differ,dangerous-default-value,missing-docstring
 
@@ -41,11 +41,11 @@ class SegBaseModel(HybridBlock):
         self.nclass = nclass
         with self.name_scope():
             if backbone == 'resnet50':
-                pretrained = resnet50_v1c(pretrained=True, dilated=True, **kwargs)
+                pretrained = resnet50_v1b(pretrained=True, dilated=True, **kwargs)
             elif backbone == 'resnet101':
-                pretrained = resnet101_v1c(pretrained=True, dilated=True, **kwargs)
+                pretrained = resnet101_v1b(pretrained=True, dilated=True, **kwargs)
             elif backbone == 'resnet152':
-                pretrained = resnet152_v1c(pretrained=True, dilated=True, **kwargs)
+                pretrained = resnet152_v1b(pretrained=True, dilated=True, **kwargs)
             else:
                 raise RuntimeError('unknown backbone: {}'.format(backbone))
             self.conv1 = pretrained.conv1
