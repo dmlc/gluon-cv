@@ -14,6 +14,7 @@ from .resnetv1b import *
 from .resnext import *
 from .senet import *
 from .se_resnet import *
+from .nasnet import *
 
 __all__ = ['get_model']
 
@@ -50,6 +51,8 @@ def get_model(name, **kwargs):
         'ssd_512_resnet152_v2_voc': ssd_512_resnet152_v2_voc,
         'ssd_512_mobilenet1_0_voc': ssd_512_mobilenet1_0_voc,
         'ssd_512_mobilenet1_0_coco': ssd_512_mobilenet1_0_coco,
+        'faster_rcnn_resnet50_v1b_voc': faster_rcnn_resnet50_v1b_voc,
+        'faster_rcnn_resnet50_v1b_coco': faster_rcnn_resnet50_v1b_coco,
         'faster_rcnn_resnet50_v2a_voc': faster_rcnn_resnet50_v2a_voc,
         'faster_rcnn_resnet50_v2a_coco': faster_rcnn_resnet50_v2a_coco,
         'cifar_resnet20_v1': cifar_resnet20_v1,
@@ -95,6 +98,10 @@ def get_model(name, **kwargs):
         'se_resnet50_v2' : se_resnet50_v2,
         'se_resnet101_v2' : se_resnet101_v2,
         'se_resnet152_v2' : se_resnet152_v2,
+        'nasnet_4_1056' : nasnet_4_1056,
+        'nasnet_5_1538' : nasnet_5_1538,
+        'nasnet_7_1920' : nasnet_7_1920,
+        'nasnet_6_4032' : nasnet_6_4032,
         }
     try:
         net = gluon.model_zoo.vision.get_model(name, **kwargs)

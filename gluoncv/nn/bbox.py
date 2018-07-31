@@ -122,3 +122,31 @@ class BBoxArea(gluon.HybridBlock):
         width = F.where(width > 0, width, F.zeros_like(width))
         height = F.where(height > 0, height, F.zeros_like(height))
         return width * height
+
+
+class BBoxClipToImage(gluon.HybridBlock):
+    """Clip bounding box coordinates to image boundaries.
+    If multiple images are supplied and padded, must have additional inputs
+    of accurate image shape.
+    """
+    def __init__(self, **kwargs):
+        super(BBoxClipToImage, self).__init__(**kwargs)
+
+    def hybrid_forward(self, F, x, img):
+        """If images are padded, must have additional inputs for clipping
+
+        Parameters
+        ----------
+        x: (B, N, 4) Bounding box coordinates.
+        img: (B, C, H, W) Image tensor.
+
+        Returns
+        -------
+        (B, N, 4) Bounding box coordinates.
+
+        """
+        x = F.maximum(x, 0.0)
+        # window [B, 2] -> reverse hw -> tile [B, 4] -> [B, 1, 4], boxes [B, N, 4]
+        window = F.shape_array(img).slice_axis(axis=0, begin=2, end=None).expand_dims(0)
+        m = F.tile(F.reverse(window, axis=1), reps=(2,)).reshape((0, -4, 1, -1))
+        return F.broadcast_minimum(x, F.cast(m, dtype='float32'))

@@ -48,6 +48,22 @@ def _test_model_list(model_list, ctx, x, **kwargs):
             net(x)
             mx.nd.waitall()
 
+@with_cpu(0)
+def _test_bn_global_stats(model_list, **kwargs):
+    class _BatchNorm(mx.gluon.nn.BatchNorm):
+        def __init__(self, axis=1, momentum=0.9, epsilon=1e-5, center=True, scale=True,
+            use_global_stats=False, beta_initializer='zeros', gamma_initializer='ones',
+            running_mean_initializer='zeros', running_variance_initializer='ones',
+            in_channels=0, **kwargs):
+            assert use_global_stats
+            super(_BatchNorm, self).__init__(axis, momentum, epsilon, center, scale,
+                 use_global_stats, beta_initializer, gamma_initializer,
+                 running_mean_initializer, running_variance_initializer,
+                 in_channels, **kwargs)
+
+    for model in model_list:
+        gcv.model_zoo.get_model(model, norm_layer=_BatchNorm, use_global_stats=True, **kwargs)
+
 def test_classification_models():
     ctx = mx.context.current_context()
     x = mx.random.uniform(shape=(2, 3, 32, 32), ctx=ctx)
@@ -61,6 +77,8 @@ def test_classification_models():
 
 def test_imagenet_models():
     ctx = mx.context.current_context()
+
+    # 224x224
     x = mx.random.uniform(shape=(2, 3, 224, 224), ctx=ctx)
     models = ['resnet18_v1b', 'resnet34_v1b', 'resnet50_v1b',
               'resnet101_v1b', 'resnet152_v1b',
@@ -72,6 +90,21 @@ def test_imagenet_models():
               'se_resnet101_v2', 'se_resnet152_v2',
               'senet_52', 'senet_103', 'senet_154']
     _test_model_list(models, ctx, x)
+
+    # 299x299
+    x = mx.random.uniform(shape=(2, 3, 299, 299), ctx=ctx)
+    models = ['nasnet_5_1538', 'nasnet_7_1920', 'nasnet_6_4032']
+    _test_model_list(models, ctx, x)
+
+    # 331x331
+    x = mx.random.uniform(shape=(2, 3, 331, 331), ctx=ctx)
+    models = ['nasnet_5_1538', 'nasnet_7_1920', 'nasnet_6_4032']
+    _test_model_list(models, ctx, x)
+
+def test_imagenet_models_bn_global_stats():
+    models = ['resnet18_v1b', 'resnet34_v1b', 'resnet50_v1b',
+              'resnet101_v1b', 'resnet152_v1b']
+    _test_bn_global_stats(models)
 
 def test_ssd_models():
     ctx = mx.context.current_context()

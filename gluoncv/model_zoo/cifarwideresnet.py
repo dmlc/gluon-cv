@@ -115,7 +115,7 @@ class CIFARWideResNet(HybridBlock):
                 in_channels = channels[i+1]
             self.features.add(nn.BatchNorm())
             self.features.add(nn.Activation('relu'))
-            self.features.add(nn.AvgPool2D(8))
+            self.features.add(nn.GlobalAvgPool2D())
             self.features.add(nn.Flatten())
             self.output = nn.Dense(classes)
 

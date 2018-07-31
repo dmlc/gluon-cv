@@ -3,7 +3,7 @@ from __future__  import absolute_import
 
 from mxnet import autograd
 from mxnet import gluon
-from ...nn.bbox import BBoxCornerToCenter
+from ...nn.bbox import BBoxCornerToCenter, BBoxClipToImage
 from ...nn.coder import NormalizedBoxCenterDecoder
 
 
@@ -15,28 +15,30 @@ class RPNProposal(gluon.HybridBlock):
 
     Parameters
     ----------
-    nms_thresh : float, default is 0.7
+    clip : float
+        Clip bounding box target to this value.
+    nms_thresh : float
         IOU threshold for NMS. It is used to remove overlapping proposals.
-    train_pre_nms : int, default is 12000
+    train_pre_nms : int
         Filter top proposals before NMS in training.
-    train_post_nms : int, default is 2000
+    train_post_nms : int
         Return top proposal results after NMS in training.
-    test_pre_nms : int, default is 6000
+    test_pre_nms : int
         Filter top proposals before NMS in testing.
-    test_post_nms : int, default is 300
+    test_post_nms : int
         Return top proposal results after NMS in testing.
-    min_size : int, default is 16
+    min_size : int
         Proposals whose size is smaller than ``min_size`` will be discarded.
     stds : tuple of float
         Standard deviation to be multiplied from encoded regression targets.
         These values must be the same as stds used in RPNTargetGenerator.
     """
-    def __init__(self, nms_thresh=0.7, train_pre_nms=12000, train_post_nms=2000,
-                 test_pre_nms=6000, test_post_nms=300, min_size=16, stds=(1., 1., 1., 1.)):
+    def __init__(self, clip, nms_thresh, train_pre_nms, train_post_nms,
+                 test_pre_nms, test_post_nms, min_size, stds):
         super(RPNProposal, self).__init__()
         self._box_to_center = BBoxCornerToCenter()
-        self._box_decoder = NormalizedBoxCenterDecoder(stds=stds)
-        # self._clipper = BBoxClipToImage()
+        self._box_decoder = NormalizedBoxCenterDecoder(stds=stds, clip=clip)
+        self._clipper = BBoxClipToImage()
         # self._compute_area = BBoxArea()
         self._nms_thresh = nms_thresh
         self._train_pre_nms = max(1, train_pre_nms)
@@ -62,8 +64,8 @@ class RPNProposal(gluon.HybridBlock):
             roi = self._box_decoder(bbox_pred, self._box_to_center(anchor))
 
             # clip rois to image's boundary
-            roi = F.Custom(roi, img, op_type='bbox_clip_to_image')
-            # roi = self._clipper(roi, width, height)
+            # roi = F.Custom(roi, img, op_type='bbox_clip_to_image')
+            roi = self._clipper(roi, img)
 
             # remove bounding boxes that don't meet the min_size constraint
             # by setting them to (-1, -1, -1, -1)

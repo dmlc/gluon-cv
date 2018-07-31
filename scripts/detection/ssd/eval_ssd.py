@@ -56,7 +56,7 @@ def get_dataloader(val_dataset, data_shape, batch_size, num_workers):
     batchify_fn = Tuple(Stack(), Pad(pad_val=-1))
     val_loader = gluon.data.DataLoader(
         val_dataset.transform(SSDDefaultValTransform(width, height)), batchify_fn=batchify_fn,
-        batch_size, False, last_batch='keep', num_workers=num_workers)
+        batch_size=batch_size, shuffle=False, last_batch='keep', num_workers=num_workers)
     return val_loader
 
 def validate(net, val_data, ctx, classes, size, metric):

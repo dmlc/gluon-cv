@@ -7,6 +7,7 @@ from mxnet.gluon import nn
 from mxnet.gluon.data.vision import transforms
 
 from gluoncv.data import imagenet
+from gluoncv.loss import SoftmaxCrossEntropyLossWithAux
 from gluoncv.model_zoo import get_model
 from gluoncv.utils import makedirs, LRScheduler
 
@@ -48,24 +49,20 @@ parser.add_argument('--lr-decay-period', type=int, default=0,
                     help='interval for periodic learning rate decays. default is 0 to disable.')
 parser.add_argument('--lr-decay-epoch', type=str, default='40,60',
                     help='epoches at which learning rate decays. default is 40,60.')
-parser.add_argument('--warmup-lr', type=float, default=0.0,
-                    help='starting warmup learning rate. default is 0.0.')
-parser.add_argument('--warmup-epochs', type=int, default=0,
-                    help='number of warmup epochs.')
-parser.add_argument('--last-gamma', action='store_true',
-                    help='whether to initialize the gamma of the last BN layer in each bottleneck to zero')
 parser.add_argument('--mode', type=str,
                     help='mode in which to train the model. options are symbolic, imperative, hybrid')
 parser.add_argument('--model', type=str, required=True,
                     help='type of model to use. see vision_model for options.')
 parser.add_argument('--input-size', type=int, default=224,
                     help='size of the input image size. default is 224')
-parser.add_argument('--use-pretrained', action='store_true',
-                    help='enable using pretrained model from gluon.')
 parser.add_argument('--use_se', action='store_true',
                     help='use SE layers or not in resnext. default is false.')
+parser.add_argument('--label-smoothing', action='store_true',
+                    help='use label smoothing or not in training. default is false.')
 parser.add_argument('--batch-norm', action='store_true',
                     help='enable batch normalization or not in vgg. default is false.')
+parser.add_argument('--use-pretrained', action='store_true',
+                    help='enable using pretrained model from gluon.')
 parser.add_argument('--log-interval', type=int, default=50,
                     help='Number of batches to wait before logging.')
 parser.add_argument('--save-frequency', type=int, default=10,
@@ -88,7 +85,6 @@ batch_size *= max(1, num_gpus)
 context = [mx.gpu(i) for i in range(num_gpus)] if num_gpus > 0 else [mx.cpu()]
 num_workers = opt.num_workers
 
-
 lr_decay = opt.lr_decay
 lr_decay_period = opt.lr_decay_period
 if opt.lr_decay_period > 0:
@@ -108,9 +104,6 @@ if model_name.startswith('vgg'):
     kwargs['batch_norm'] = opt.batch_norm
 elif model_name.startswith('resnext'):
     kwargs['use_se'] = opt.use_se
-
-if opt.last_gamma:
-    kwargs['last_gamma'] = True
 
 optimizer = 'nag'
 optimizer_params = {'wd': opt.wd, 'momentum': opt.momentum, 'lr_scheduler': lr_scheduler}
@@ -225,6 +218,8 @@ else:
 
 acc_top1 = mx.metric.Accuracy()
 acc_top5 = mx.metric.TopKAccuracy(5)
+acc_top1_aux = mx.metric.Accuracy()
+acc_top5_aux = mx.metric.TopKAccuracy(5)
 
 save_frequency = opt.save_frequency
 if opt.save_dir and save_frequency:
@@ -251,15 +246,21 @@ def test(ctx, val_data):
         val_data.reset()
     acc_top1.reset()
     acc_top5.reset()
+    acc_top1_aux.reset()
+    acc_top5_aux.reset()
     for i, batch in enumerate(val_data):
         data, label = batch_fn(batch, ctx)
         outputs = [net(X.astype(opt.dtype, copy=False)) for X in data]
-        acc_top1.update(label, outputs)
-        acc_top5.update(label, outputs)
+        acc_top1.update(label, [o[0] for o in outputs])
+        acc_top5.update(label, [o[0] for o in outputs])
+        acc_top1_aux.update(label, [o[1] for o in outputs])
+        acc_top5_aux.update(label, [o[1] for o in outputs])
 
     _, top1 = acc_top1.get()
     _, top5 = acc_top5.get()
-    return (1-top1, 1-top5)
+    _, top1_aux = acc_top1_aux.get()
+    _, top5_aux = acc_top5_aux.get()
+    return (1-top1, 1-top5, 1-top1_aux, 1-top5_aux)
 
 def train(ctx):
     if isinstance(ctx, mx.Context):
@@ -267,8 +268,10 @@ def train(ctx):
     net.initialize(mx.init.MSRAPrelu(), ctx=ctx)
 
     trainer = gluon.Trainer(net.collect_params(), optimizer, optimizer_params)
-
-    L = gluon.loss.SoftmaxCrossEntropyLoss()
+    if opt.label_smoothing:
+        L = SoftmaxCrossEntropyLossWithAux(sparse_label=False, aux_weight=0.4)
+    else:
+        L = SoftmaxCrossEntropyLossWithAux(aux_weight=0.4)
 
     best_val_score = 1
 
@@ -277,36 +280,54 @@ def train(ctx):
         if opt.use_rec:
             train_data.reset()
         acc_top1.reset()
+        acc_top5.reset()
+        acc_top1_aux.reset()
+        acc_top5_aux.reset()
         btic = time.time()
 
         for i, batch in enumerate(train_data):
             data, label = batch_fn(batch, ctx)
+            if opt.label_smoothing:
+                label_smooth = smooth(label, classes)
+            else:
+                label_smooth = label
             with ag.record():
                 outputs = [net(X.astype(opt.dtype, copy=False)) for X in data]
-                loss = [L(yhat, y) for yhat, y in zip(outputs, label)]
+                loss = [L(yhat[0], yhat[1], y) for yhat, y in zip(outputs, label_smooth)]
             for l in loss:
                 l.backward()
             lr_scheduler.update(i, epoch)
             trainer.step(batch_size)
 
-            acc_top1.update(label, outputs)
+            acc_top1.update(label, [o[0] for o in outputs])
+            acc_top5.update(label, [o[0] for o in outputs])
+            acc_top1_aux.update(label, [o[1] for o in outputs])
+            acc_top5_aux.update(label, [o[1] for o in outputs])
             if opt.log_interval and not (i+1)%opt.log_interval:
                 _, top1 = acc_top1.get()
-                err_top1 = 1-top1
-                logging.info('Epoch[%d] Batch [%d]\tSpeed: %f samples/sec\ttop1-err=%f\tlr=%f'%(
-                             epoch, i, batch_size*opt.log_interval/(time.time()-btic), err_top1,
-                             trainer.learning_rate))
+                _, top5 = acc_top5.get()
+                _, top1_aux = acc_top1_aux.get()
+                _, top5_aux = acc_top5_aux.get()
+                err_top1, err_top5, err_top1_aux, err_top5_aux = (1-top1, 1-top5, 1-top1_aux, 1-top5_aux)
+                logging.info('Epoch[%d] Batch [%d]\tSpeed: %f samples/sec\t'
+                             'top1-err=%f\ttop5-err=%f\ttop1-err-aux=%f\ttop5-err-aux=%f'%(
+                             epoch, i, batch_size*opt.log_interval/(time.time()-btic),
+                             err_top1, err_top5, err_top1_aux, err_top5_aux))
                 btic = time.time()
 
         _, top1 = acc_top1.get()
-        err_top1 = 1-top1
-        throughput = int(batch_size * i /(time.time() - tic))
+        _, top5 = acc_top5.get()
+        _, top1_aux = acc_top1_aux.get()
+        _, top5_aux = acc_top5_aux.get()
+        err_top1, err_top5, err_top1_aux, err_top5_aux = (1-top1, 1-top5, 1-top1_aux, 1-top5_aux)
 
-        err_top1_val, err_top5_val = test(ctx, val_data)
+        err_top1_val, err_top5_val, err_top1_val_aux, err_top5_val_aux = test(ctx, val_data)
 
-        logging.info('[Epoch %d] training: err-top1=%f'%(epoch, err_top1))
-        logging.info('[Epoch %d] speed: %d samples/sec\ttime cost: %f'%(epoch, throughput, time.time()-tic))
-        logging.info('[Epoch %d] validation: err-top1=%f err-top5=%f'%(epoch, err_top1_val, err_top5_val))
+        logging.info('[Epoch %d] training: err-top1=%f err-top5=%f err-top1_aux=%f err-top5_aux=%f'%
+            (epoch, err_top1, err_top5, err_top1_aux, err_top5_aux))
+        logging.info('[Epoch %d] time cost: %f'%(epoch, time.time()-tic))
+        logging.info('[Epoch %d] validation: err-top1=%f err-top5=%f err-top1_aux=%f err-top5_aux=%f'%
+            (epoch, err_top1_val, err_top5_val, err_top1_val_aux, err_top5_val_aux))
 
         if err_top1_val < best_val_score and epoch > 50:
             best_val_score = err_top1_val

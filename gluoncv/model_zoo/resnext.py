@@ -57,7 +57,7 @@ class Block(HybridBlock):
         self.body.add(nn.BatchNorm())
         self.body.add(nn.Activation('relu'))
         self.body.add(nn.Conv2D(group_width, kernel_size=3, strides=stride, padding=1,
-                                use_bias=False))
+                                groups=cardinality, use_bias=False))
         self.body.add(nn.BatchNorm())
         self.body.add(nn.Activation('relu'))
         self.body.add(nn.Conv2D(channels * 4, kernel_size=1, use_bias=False))
@@ -133,7 +133,7 @@ class ResNext(HybridBlock):
                 stride = 1 if i == 0 else 2
                 self.features.add(self._make_layer(channels, num_layer, stride, use_se, i+1))
                 channels *= 2
-            self.features.add(nn.AvgPool2D(7))
+            self.features.add(nn.GlobalAvgPool2D())
 
             self.output = nn.Dense(classes)
 

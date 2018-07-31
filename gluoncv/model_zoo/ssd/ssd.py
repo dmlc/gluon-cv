@@ -192,7 +192,7 @@ class SSD(HybridBlock):
         result = F.concat(*results, dim=1)
         if self.nms_thresh > 0 and self.nms_thresh < 1:
             result = F.contrib.box_nms(
-                result, overlap_thresh=self.nms_thresh, topk=self.nms_topk,
+                result, overlap_thresh=self.nms_thresh, topk=self.nms_topk, valid_thresh=0.01,
                 id_index=0, score_index=1, coord_start=2, force_suppress=False)
             if self.post_nms > 0:
                 result = result.slice_axis(axis=1, begin=0, end=self.post_nms)
