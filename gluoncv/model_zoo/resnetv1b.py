@@ -10,8 +10,7 @@ from mxnet.gluon.nn import BatchNorm
 __all__ = ['ResNetV1b', 'resnet18_v1b', 'resnet34_v1b',
            'resnet50_v1b', 'resnet101_v1b',
            'resnet152_v1b', 'BasicBlockV1b', 'BottleneckV1b',
-           'resnet50_v1c', 'resnet101_v1c']
-
+           'resnet50_v1c', 'resnet101_v1c', 'resnet152_v1c']
 
 class BasicBlockV1b(HybridBlock):
     """ResNetV1b BasicBlockV1b
@@ -60,7 +59,8 @@ class BottleneckV1b(HybridBlock):
                  downsample=None, previous_dilation=1, norm_layer=None,
                  norm_kwargs={}, last_gamma=False, **kwargs):
         super(BottleneckV1b, self).__init__()
-        self.conv1 = nn.Conv2D(in_channels=inplanes, channels=planes, kernel_size=1, use_bias=False)
+        self.conv1 = nn.Conv2D(in_channels=inplanes, channels=planes, kernel_size=1,
+                               use_bias=False)
         self.bn1 = norm_layer(in_channels=planes, **norm_kwargs)
         self.conv2 = nn.Conv2D(
             in_channels=planes, channels=planes, kernel_size=3, strides=strides,

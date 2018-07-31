@@ -4,7 +4,7 @@ from mxnet.gluon import nn
 from mxnet.context import cpu
 from mxnet.gluon.nn import HybridBlock
 from .segbase import SegBaseModel
-# pylint: disable=unused-argument,abstract-method,missing-docstring
+# pylint: disable=unused-argument,abstract-method,missing-docstring,dangerous-default-value
 
 __all__ = ['FCN', 'get_fcn', 'get_fcn_voc_resnet50', 'get_fcn_voc_resnet101',
            'get_fcn_ade_resnet50']
@@ -107,13 +107,16 @@ def get_fcn(dataset='pascal_voc', backbone='resnet50', pretrained=False,
     >>> print(model)
     """
     from ..data.pascal_voc.segmentation import VOCSegmentation
+    from ..data.pascal_aug.segmentation import VOCAugSegmentation
     from ..data.ade20k.segmentation import ADE20KSegmentation
     acronyms = {
         'pascal_voc': 'voc',
+        'pascal_aug': 'voc',
         'ade20k': 'ade',
     }
     datasets = {
         'pascal_voc': VOCSegmentation,
+        'pascal_aug': VOCAugSegmentation,
         'ade20k': ADE20KSegmentation,
     }
     # infer number of classes
