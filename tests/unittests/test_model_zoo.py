@@ -124,11 +124,11 @@ def test_faster_rcnn_models():
 def test_yolo3_models():
     ctx = mx.context.current_context()
     x = mx.random.uniform(shape=(1, 3, 416, 416), ctx=ctx)  # allow non-squre and larger inputs
-    models = ['yolo3_darknet53_voc', 'yolo3_darknet53_coco']
+    models = ['yolo3_darknet53_voc']
     _test_model_list(models, ctx, x)
 
 def test_set_nms():
-    model_list = ['ssd_512_resnet50_v1_voc', 'faster_rcnn_resnet50_v2a_coco']
+    model_list = ['ssd_512_resnet50_v1_voc', 'faster_rcnn_resnet50_v2a_coco', 'yolo3_darknet53_voc']
     for model in model_list:
         net = gcv.model_zoo.get_model(model, pretrained=False, pretrained_base=False)
         net.initialize()
