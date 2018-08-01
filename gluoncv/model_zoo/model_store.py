@@ -42,6 +42,9 @@ _model_sha1 = {name: checksum for checksum, name in [
     ('8375648046fa4db2d83e93f270ff4a3eeb29a6b2', 'resnet50_v1c'),
     ('c1ca6264f44c6356282ccd2152feea6cf84e6f05', 'resnet101_v1c'),
     ('b456d9de953e71aa9a3a2543a181826710ec6549', 'resnet152_v1c'),
+    ('f5ece5ce1422eeca3ce2908004e469ffdf91fd41', 'yolo3_darknet53_voc'),
+    ('05d9a787e6be720877b93c2e9c99ef2bcf655fdc', 'yolo3_darknet53_coco'),
+    ('d7a709b3fef6aad002065bc993f0c663b82f4b3d', 'darknet53'),
     ]}
 
 apache_repo_url = 'https://apache-mxnet.s3-accelerate.dualstack.amazonaws.com/'
