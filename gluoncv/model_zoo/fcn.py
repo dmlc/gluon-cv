@@ -4,7 +4,7 @@ from mxnet.gluon import nn
 from mxnet.context import cpu
 from mxnet.gluon.nn import HybridBlock
 from .segbase import SegBaseModel
-# pylint: disable=unused-argument,abstract-method,missing-docstring
+# pylint: disable=unused-argument,abstract-method,missing-docstring,dangerous-default-value
 
 __all__ = ['FCN', 'get_fcn', 'get_fcn_voc_resnet50', 'get_fcn_voc_resnet101',
            'get_fcn_ade_resnet50']
@@ -66,7 +66,7 @@ class FCN(SegBaseModel):
 
 class _FCNHead(HybridBlock):
     # pylint: disable=redefined-outer-name
-    def __init__(self, in_channels, channels, norm_layer, **kwargs):
+    def __init__(self, in_channels, channels, norm_layer, norm_kwargs={}, **kwargs):
         super(_FCNHead, self).__init__()
         with self.name_scope():
             self.block = nn.HybridSequential()
@@ -74,7 +74,7 @@ class _FCNHead(HybridBlock):
             with self.block.name_scope():
                 self.block.add(nn.Conv2D(in_channels=in_channels, channels=inter_channels,
                                          kernel_size=3, padding=1))
-                self.block.add(norm_layer(in_channels=inter_channels))
+                self.block.add(norm_layer(in_channels=inter_channels, **norm_kwargs))
                 self.block.add(nn.Activation('relu'))
                 self.block.add(nn.Dropout(0.1))
                 self.block.add(nn.Conv2D(in_channels=inter_channels, channels=channels,
@@ -107,13 +107,16 @@ def get_fcn(dataset='pascal_voc', backbone='resnet50', pretrained=False,
     >>> print(model)
     """
     from ..data.pascal_voc.segmentation import VOCSegmentation
+    from ..data.pascal_aug.segmentation import VOCAugSegmentation
     from ..data.ade20k.segmentation import ADE20KSegmentation
     acronyms = {
         'pascal_voc': 'voc',
+        'pascal_aug': 'voc',
         'ade20k': 'ade',
     }
     datasets = {
         'pascal_voc': VOCSegmentation,
+        'pascal_aug': VOCAugSegmentation,
         'ade20k': ADE20KSegmentation,
     }
     # infer number of classes

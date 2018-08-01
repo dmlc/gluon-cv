@@ -8,6 +8,7 @@ __all__ = ['batch_pix_accuracy', 'batch_intersection_union', 'pixelAccuracy',
 def batch_pix_accuracy(output, target):
     """PixAcc"""
     # inputs are NDarray, output 4D, target 3D
+    # the category -1 is ignored class, typically for background / boundary
     predict = F.argmax(output, 1)
     predict = predict.asnumpy() + 1
     target = target.asnumpy().astype(predict.dtype) + 1
@@ -20,6 +21,7 @@ def batch_pix_accuracy(output, target):
 def batch_intersection_union(output, target, nclass):
     """mIoU"""
     # inputs are NDarray, output 4D, target 3D
+    # the category -1 is ignored class, typically for background / boundary
     predict = F.argmax(output, 1)
     target = target.astype(predict.dtype)
     mini = 1

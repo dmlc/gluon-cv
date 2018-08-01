@@ -59,12 +59,12 @@ class PSPNet(SegBaseModel):
             return x
 
 
-def _PSP1x1Conv(in_channels, out_channels, norm_layer=None, **kwargs):
+def _PSP1x1Conv(in_channels, out_channels, norm_layer, norm_kwargs):
     block = nn.HybridSequential(prefix='')
     with block.name_scope():
         block.add(nn.Conv2D(in_channels=in_channels,
                             channels=out_channels, kernel_size=1))
-        block.add(norm_layer(in_channels=out_channels))
+        block.add(norm_layer(in_channels=out_channels, **norm_kwargs))
         block.add(nn.Activation('relu'))
     return block
 
@@ -95,14 +95,15 @@ class _PyramidPooling(HybridBlock):
 
 
 class _PSPHead(HybridBlock):
-    def __init__(self, nclass, norm_layer=None, **kwargs):
+    def __init__(self, nclass, norm_layer, norm_kwargs={}, **kwargs):
         super(_PSPHead, self).__init__()
-        self.psp = _PyramidPooling(2048, norm_layer=norm_layer, **kwargs)
+        self.psp = _PyramidPooling(2048, norm_layer=norm_layer,
+                                   norm_kwargs=norm_kwargs, **kwargs)
         with self.name_scope():
             self.block = nn.HybridSequential(prefix='')
             self.block.add(nn.Conv2D(in_channels=4096, channels=512,
                                      kernel_size=3, padding=1))
-            self.block.add(norm_layer(in_channels=512))
+            self.block.add(norm_layer(in_channels=512, **norm_kwargs))
             self.block.add(nn.Activation('relu'))
             self.block.add(nn.Dropout(0.1))
             self.block.add(nn.Conv2D(in_channels=512, channels=nclass,
