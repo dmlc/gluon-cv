@@ -128,13 +128,13 @@ def test_yolo3_models():
     _test_model_list(models, ctx, x)
 
 def test_set_nms():
-    model_list = ['ssd_512_resnet50_v1_voc', 'faster_rcnn_resnet50_v2a_coco', 'yolo3_darknet53_voc']
+    model_list = ['ssd_512_resnet50_v1_voc', 'faster_rcnn_resnet50_v2a_coco', 'yolo3_darknet53_coco']
     for model in model_list:
         net = gcv.model_zoo.get_model(model, pretrained=False, pretrained_base=False)
         net.initialize()
         net.hybridize()
         ctx = mx.context.current_context()
-        x = mx.random.uniform(shape=(1, 3, 600, 800), ctx=ctx)
+        x = mx.random.uniform(shape=(1, 3, 608, 768), ctx=ctx)
         net.set_nms(nms_thresh=0.45, nms_topk=400, post_nms=100)
         net(x)
         net.set_nms(nms_thresh=0.3, nms_topk=200, post_nms=50)
