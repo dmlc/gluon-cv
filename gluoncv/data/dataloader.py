@@ -1,10 +1,12 @@
 """DataLoader utils."""
-from itertools import islice
+import sys
+import threading
+import multiprocessing
 import numpy as np
 from mxnet import nd
 from mxnet import context
 from mxnet.gluon.data import DataLoader
-from mxnet.gluon.data.dataloader import _MultiWorkerIter
+from mxnet.gluon.data.dataloader import Queue, SimpleQueue
 
 def default_pad_batchify_fn(data):
     """Collate data into batch, labels are padded to same shape"""
@@ -119,6 +121,122 @@ class DetectionDataLoader(DataLoader):
             dataset, batch_size, shuffle, sampler, last_batch,
             batch_sampler, batchify_fn, num_workers)
 
+def _as_in_context(data, ctx):
+    """Move data into new context."""
+    if isinstance(data, nd.NDArray):
+        return data.as_in_context(ctx)
+    elif isinstance(data, (list, tuple)):
+        return [_as_in_context(d, ctx) for d in data]
+    return data
+
+def random_worker_loop(datasets, key_queue, data_queue, batchify_fn):
+    """Worker loop for multiprocessing DataLoader with multiple transform functions."""
+    for dataset in datasets:
+        dataset._fork()
+    while True:
+        idx, samples, random_idx = key_queue.get()
+        if idx is None:
+            break
+        batch = batchify_fn([datasets[random_idx][i] for i in samples])
+        data_queue.put((idx, batch))
+
+def fetcher_loop(data_queue, data_buffer, pin_memory=False):
+    """Fetcher loop for fetching data from queue and put in reorder dict."""
+    while True:
+        idx, batch = data_queue.get()
+        if idx is None:
+            break
+        if pin_memory:
+            batch = _as_in_context(batch, context.cpu_pinned())
+        else:
+            batch = _as_in_context(batch, context.cpu())
+        data_buffer[idx] = batch
+
+
+class _RandomTransformMultiWorkerIter(object):
+    """Interal multi-worker iterator for DataLoader with random transform functions."""
+    def __init__(self, transform_fns, interval, num_workers, dataset, batchify_fn, batch_sampler,
+                 pin_memory=False):
+        assert num_workers > 0, "_MultiWorkerIter is not for {} workers".format(num_workers)
+        assert isinstance(transform_fns, (list, tuple)) and len(transform_fns) > 1
+        self._transform_fns = transform_fns
+        self._fn_idx = np.random.randint(len(self._transform_fns))
+        self._interval = max(int(interval), 1)
+        self._num_workers = num_workers
+        self._datasets = [dataset.transform(trans_fn) for trans_fn in self._transform_fns]
+        self._batchify_fn = batchify_fn
+        self._batch_sampler = batch_sampler
+        self._key_queue = Queue()
+        self._data_queue = Queue() if sys.version_info[0] <= 2 else SimpleQueue()
+        self._data_buffer = {}
+        self._rcvd_idx = 0
+        self._sent_idx = 0
+        self._iter = iter(self._batch_sampler)
+        self._shutdown = False
+
+        workers = []
+        for _ in range(self._num_workers):
+            worker = multiprocessing.Process(
+                target=random_worker_loop,
+                args=(self._datasets, self._key_queue, self._data_queue, self._batchify_fn))
+            worker.daemon = True
+            worker.start()
+            workers.append(worker)
+
+        self._fetcher = threading.Thread(
+            target=fetcher_loop,
+            args=(self._data_queue, self._data_buffer, pin_memory))
+        self._fetcher.daemon = True
+        self._fetcher.start()
+
+        # pre-fetch
+        for _ in range(2 * self._num_workers):
+            self._push_next()
+
+    def __len__(self):
+        return len(self._batch_sampler)
+
+    def __del__(self):
+        self.shutdown()
+
+    def _push_next(self):
+        """Assign next batch workload to workers."""
+        r = next(self._iter, None)
+        if r is None:
+            return
+        if (self._sent_idx + 1) % self._interval == 0:
+            self._fn_idx = np.random.randint(len(self._transform_fns))
+        self._key_queue.put((self._sent_idx, r, self._fn_idx))
+        self._sent_idx += 1
+
+    def __next__(self):
+        assert not self._shutdown, "call __next__ after shutdown is forbidden"
+        if self._rcvd_idx == self._sent_idx:
+            assert not self._data_buffer, "Data buffer should be empty at this moment"
+            self.shutdown()
+            raise StopIteration
+
+        while True:
+            if self._rcvd_idx in self._data_buffer:
+                batch = self._data_buffer.pop(self._rcvd_idx)
+                self._rcvd_idx += 1
+                self._push_next()
+                return batch
+
+    def next(self):
+        return self.__next__()
+
+    def __iter__(self):
+        return self
+
+    def shutdown(self):
+        """Shutdown internal workers by pushing terminate signals."""
+        if not self._shutdown:
+            for _ in range(self._num_workers):
+                self._key_queue.put((None, None, None))
+            self._data_queue.put((None, None))
+            self._shutdown = True
+
 
 class RandomTransformDataLoader(DataLoader):
     """DataLoader that support random transform function applied to dataset.
@@ -179,29 +297,25 @@ class RandomTransformDataLoader(DataLoader):
     """
     def __init__(self, transform_fns, dataset, interval=1, batch_size=None, shuffle=False,
                  sampler=None, last_batch=None, batch_sampler=None, batchify_fn=None,
-                 num_workers=0):
+                 num_workers=0, pin_memory=False):
         super(RandomTransformDataLoader, self).__init__(
             dataset, batch_size, shuffle, sampler,
             last_batch, batch_sampler, batchify_fn, num_workers)
         self._transform_fns = transform_fns
         assert len(self._transform_fns) > 0
         self._interval = max(int(interval), 1)
+        self._pin_memory = pin_memory
 
     def __iter__(self):
-        t = np.random.choice(self._transform_fns)
         if self._num_workers == 0:
-            for ib, batch in enumerate(self._batch_sampler):
-                if (ib + 1) % self._interval == 0:
-                    t = np.random.choice(self._transform_fns)
-                yield self._batchify_fn([self._dataset.transform(t)[idx] for idx in batch])
-        else:
-            batch_sampler = list(self._batch_sampler)
-            start = 0
-            while start < len(self):
-                stop = min(len(self), start + self._interval)
-                bs = islice(batch_sampler, start, stop)
-                start += self._interval
+            def same_process_iter():
                 t = np.random.choice(self._transform_fns)
-                for batch in _MultiWorkerIter(self._num_workers, self._dataset.transform(t),
-                                              self._batchify_fn, bs):
-                    yield batch
+                for ib, batch in enumerate(self._batch_sampler):
+                    if (ib + 1) % self._interval == 0:
+                        t = np.random.choice(self._transform_fns)
+                    yield self._batchify_fn([self._dataset.transform(t)[idx] for idx in batch])
+            return same_process_iter()
+        else:
+            return _RandomTransformMultiWorkerIter(
+                self._transform_fns, self._interval, self._num_workers, self._dataset,
+                self._batchify_fn, self._batch_sampler, self._pin_memory)
