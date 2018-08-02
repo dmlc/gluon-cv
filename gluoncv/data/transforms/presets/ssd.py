@@ -43,9 +43,7 @@ def load_test(filenames, short, max_size=1024, mean=(0.485, 0.456, 0.406),
     origs = []
     for f in filenames:
         img = mx.image.imread(f)
-        img = mx.image.resize_short(img, short)
-        if isinstance(max_size, int) and max(img.shape) > max_size:
-            img = timage.resize_long(img, max_size)
+        img = timage.resize_short_within(img, short, max_size)
         orig_img = img.asnumpy().astype('uint8')
         img = mx.nd.image.to_tensor(img)
         img = mx.nd.image.normalize(img, mean=mean, std=std)

@@ -10,7 +10,7 @@ from .. import experimental
 
 __all__ = ['load_test', 'YOLO3DefaultTrainTransform', 'YOLO3DefaultValTransform']
 
-def load_test(filenames, short=416, max_size=1024, mean=(0.485, 0.456, 0.406),
+def load_test(filenames, short=416, max_size=1024, stride=32, mean=(0.485, 0.456, 0.406),
               std=(0.229, 0.224, 0.225)):
     """A util function to load all images, transform them to tensor by applying
     normalizations. This function support 1 filename or list of filenames.
@@ -20,11 +20,15 @@ def load_test(filenames, short=416, max_size=1024, mean=(0.485, 0.456, 0.406),
     filenames : str or list of str
         Image filename(s) to be loaded.
     short : int, default=416
-        Resize image short side to this `short` and keep aspect ratio.
+        Resize image short side to this `short` and keep aspect ratio. Note that yolo network
     max_size : int, optional
         Maximum longer side length to fit image.
         This is to limit the input image shape. Aspect ratio is intact because we
-        support arbitrary input size in our SSD implementation.
+        support arbitrary input size in our YOLO implementation.
+    stride : int, optinal, default is 32
+        The stride constraint due to precised alignment of bounding box prediction module.
+        Image's width and height must be multiples of `stride`. Use `stride = 1` to
+        relax this constraint.
     mean : iterable of float
         Mean pixel values.
     std : iterable of float
@@ -45,9 +49,7 @@ def load_test(filenames, short=416, max_size=1024, mean=(0.485, 0.456, 0.406),
     origs = []
     for f in filenames:
         img = mx.image.imread(f)
-        img = mx.image.resize_short(img, short)
-        if isinstance(max_size, int) and max(img.shape) > max_size:
-            img = timage.resize_long(img, max_size)
+        img = timage.resize_short_within(img, short, max_size, mult_base=stride)
         orig_img = img.asnumpy().astype('uint8')
         img = mx.nd.image.to_tensor(img)
         img = mx.nd.image.normalize(img, mean=mean, std=std)
