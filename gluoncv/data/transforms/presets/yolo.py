@@ -49,7 +49,7 @@ def load_test(filenames, short=416, max_size=1024, stride=32, mean=(0.485, 0.456
     origs = []
     for f in filenames:
         img = mx.image.imread(f)
-        img = timage.resize_short(img, short, max_size, mult_base=stride)
+        img = timage.resize_short_within(img, short, max_size, mult_base=stride)
         orig_img = img.asnumpy().astype('uint8')
         img = mx.nd.image.to_tensor(img)
         img = mx.nd.image.normalize(img, mean=mean, std=std)
