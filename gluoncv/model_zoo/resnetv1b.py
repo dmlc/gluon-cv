@@ -198,12 +198,14 @@ class ResNetV1b(HybridBlock):
                     downsample.add(nn.Conv2D(in_channels=self.inplanes,
                                              channels=planes * block.expansion, kernel_size=1,
                                              strides=1, use_bias=False))
-                    downsample.add(norm_layer(in_channels=planes * block.expansion, **self.norm_kwargs))
+                    downsample.add(norm_layer(in_channels=planes * block.expansion,
+                                              **self.norm_kwargs))
                 else:
                     downsample.add(nn.Conv2D(in_channels=self.inplanes,
                                              channels=planes * block.expansion,
                                              kernel_size=1, strides=strides, use_bias=False))
-                    downsample.add(norm_layer(in_channels=planes * block.expansion, **self.norm_kwargs))
+                    downsample.add(norm_layer(in_channels=planes * block.expansion,
+                                              **self.norm_kwargs))
 
         layers = nn.HybridSequential(prefix='layers%d_'%stage_index)
         with layers.name_scope():
