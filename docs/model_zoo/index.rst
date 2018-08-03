@@ -110,6 +110,8 @@ Besides the listed, we provide more models trained on ImageNet in the upstream
 +-----------------------+--------+--------+------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
 | VGG19_bn [9]_         | 74.33  | 91.85  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/vgg19_bn.sh>`_          | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/vgg19_bn.log>`_             |
 +-----------------------+--------+--------+------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
+| darknet53 [11]_       | 77.82  | 93.72  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/darknet53.sh>`_         | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/darknet53.log>`_            |
++-----------------------+--------+--------+------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
 
 **CIFAR10**
 
@@ -162,19 +164,21 @@ and their performances.
 
   - ``ssd`` indicate the algorithm is "Single Shot Multibox Object Detection" [5]_.
 
-  - ``300`` is the training image size, which means training images are resized to 300x300 and all anchor boxes are designed to match this shape.
+  - ``300`` is the training image size, which means training images are resized to 300x300 and all anchor boxes are designed to match this shape. This may not apply to some models.
 
   - ``vgg16_atrous`` is the type of base feature extractor network.
 
   - ``voc`` is the training dataset. You can choose ``voc`` or ``coco``, etc.
 
+  - ``@ 320x320`` indicate that the model was evaluated with resolution 320x320. If not otherwise clarified, all detection models in GluonCV can take various input shapes for prediction.
+
 .. hint::
 
   The training commands work with the following scripts:
 
-  - For SSD networks: :download:`Download train_ssd.py<../../scripts/detection/ssd/train_ssd.py>`
-  - For Faster-RCNN networks: :download:`Download train_faster_rcnn.py<../../scripts/detection/faster_rcnn/train_faster_rcnn.py>`
-
+  - For SSD [5]_ networks: :download:`Download train_ssd.py<../../scripts/detection/ssd/train_ssd.py>`
+  - For Faster-RCNN [10]_ networks: :download:`Download train_faster_rcnn.py<../../scripts/detection/faster_rcnn/train_faster_rcnn.py>`
+  - For YOLO v3 [11]_ networks: :download:`Download train_yolo3_rand_size.py<../../scripts/detection/yolo/train_yolo3_rand_size.py>` or :download:`Download train_yolo3.py<../../scripts/detection/yolo/train_yolo3.py>` with fixed size training, which is faster than random size training pipeline.
 
 .. https://bit.ly/2JLnI2R
 
@@ -190,6 +194,10 @@ and their performances.
 | ssd_512_mobilenet1.0_voc         | 75.4  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/ssd_512_mobilenet1_0_voc.sh>`_          | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/ssd_512_mobilenet1_0_voc_train.log>`_           |
 +----------------------------------+-------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
 | faster_rcnn_resnet50_v2a_voc     | 77.9  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/faster_rcnn_resnet50_v2a_voc.sh>`_      | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/faster_rcnn_resnet50_v2a_voc_train.log>`_       |
++----------------------------------+-------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
+| yolo3_darknet53_voc @ 320x320    | 79.3  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/yolo3_darknet53_voc.sh>`_               | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/yolo3_darknet53_voc.log>`_             |
++----------------------------------+-------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
+| yolo3_darknet53_voc @ 416x416    | 81.5  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/yolo3_darknet53_voc.sh>`_               | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/yolo3_darknet53_voc.log>`_             |
 +----------------------------------+-------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
 
 .. https://bit.ly/2JM82we
@@ -239,7 +247,8 @@ Table of pre-trained models for semantic segmentation and their performance.
 +-------------------+--------------+-----------+-----------+-----------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
 | fcn_resnet50_ade  | FCN [6]_     | 77.1      | 38.5      | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/fcn_resnet50_ade.sh>`_      | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/fcn_resnet50_ade.log>`_      |
 +-------------------+--------------+-----------+-----------+-----------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
-| psp_resnet50_ade  | PSP [10]_    | 78.4      | 41.1      | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/psp_resnet50_ade.sh>`_      | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/psp_resnet50_ade.log>`_      |
+| psp_resnet50_ade  | PSP [12]_    | 78.4      | 41.1      | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/psp_resnet50_ade.sh>`_      | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/psp_resnet50_ade.log>`_      |
+>>>>>>> upstream/master
 +-------------------+--------------+-----------+-----------+-----------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
 
 .. _69.4:  http://host.robots.ox.ac.uk:8080/anonymous/TC12D2.html
@@ -273,5 +282,10 @@ Table of pre-trained models for semantic segmentation and their performance.
 .. [9] Karen Simonyan, Andrew Zisserman. \
        "Very Deep Convolutional Networks for Large-Scale Image Recognition." \
        arXiv technical report arXiv:1409.1556 (2014).
-.. [10] Zhao, Hengshuang, Jianping Shi, Xiaojuan Qi, Xiaogang Wang, and Jiaya Jia. \
-       "Pyramid scene parsing network." *CVPR*, 2017
+.. [10] Ren, Shaoqing, Kaiming He, Ross Girshick, and Jian Sun. \
+        "Faster r-cnn: Towards real-time object detection with region proposal networks." \
+        In Advances in neural information processing systems, pp. 91-99. 2015.
+.. [11] Redmon, Joseph, and Ali Farhadi. \
+        "Yolov3: An incremental improvement." \
+        arXiv preprint arXiv:1804.02767 (2018).
+.. [12] Zhao, Hengshuang, Jianping Shi, Xiaojuan Qi, Xiaogang Wang, and Jiaya Jia. \

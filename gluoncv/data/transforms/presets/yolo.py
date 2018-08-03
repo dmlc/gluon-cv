@@ -1,14 +1,16 @@
-"""Transforms described in https://arxiv.org/abs/1512.02325."""
+"""Transforms for YOLO series."""
 from __future__ import absolute_import
+import copy
 import numpy as np
 import mxnet as mx
+from mxnet import autograd
 from .. import bbox as tbbox
 from .. import image as timage
 from .. import experimental
 
-__all__ = ['load_test', 'SSDDefaultTrainTransform', 'SSDDefaultValTransform']
+__all__ = ['load_test', 'YOLO3DefaultTrainTransform', 'YOLO3DefaultValTransform']
 
-def load_test(filenames, short, max_size=1024, mean=(0.485, 0.456, 0.406),
+def load_test(filenames, short=416, max_size=1024, stride=32, mean=(0.485, 0.456, 0.406),
               std=(0.229, 0.224, 0.225)):
     """A util function to load all images, transform them to tensor by applying
     normalizations. This function support 1 filename or list of filenames.
@@ -17,12 +19,16 @@ def load_test(filenames, short, max_size=1024, mean=(0.485, 0.456, 0.406),
     ----------
     filenames : str or list of str
         Image filename(s) to be loaded.
-    short : int
-        Resize image short side to this `short` and keep aspect ratio.
+    short : int, default=416
+        Resize image short side to this `short` and keep aspect ratio. Note that yolo network
     max_size : int, optional
         Maximum longer side length to fit image.
         This is to limit the input image shape. Aspect ratio is intact because we
-        support arbitrary input size in our SSD implementation.
+        support arbitrary input size in our YOLO implementation.
+    stride : int, optinal, default is 32
+        The stride constraint due to precised alignment of bounding box prediction module.
+        Image's width and height must be multiples of `stride`. Use `stride = 1` to
+        relax this constraint.
     mean : iterable of float
         Mean pixel values.
     std : iterable of float
@@ -43,7 +49,7 @@ def load_test(filenames, short, max_size=1024, mean=(0.485, 0.456, 0.406),
     origs = []
     for f in filenames:
         img = mx.image.imread(f)
-        img = timage.resize_short_within(img, short, max_size)
+        img = timage.resize_short_within(img, short, max_size, mult_base=stride)
         orig_img = img.asnumpy().astype('uint8')
         img = mx.nd.image.to_tensor(img)
         img = mx.nd.image.normalize(img, mean=mean, std=std)
@@ -54,8 +60,8 @@ def load_test(filenames, short, max_size=1024, mean=(0.485, 0.456, 0.406),
     return tensors, origs
 
 
-class SSDDefaultTrainTransform(object):
-    """Default SSD training transform which includes tons of image augmentations.
+class YOLO3DefaultTrainTransform(object):
+    """Default YOLO training transform which includes tons of image augmentations.
 
     Parameters
     ----------
@@ -63,14 +69,12 @@ class SSDDefaultTrainTransform(object):
         Image width.
     height : int
         Image height.
-    anchors : mxnet.nd.NDArray, optional
-        Anchors generated from SSD networks, the shape must be ``(1, N, 4)``.
-        Since anchors are shared in the entire batch so it is ``1`` for the first dimension.
-        ``N`` is the number of anchors for each image.
+    net : mxnet.gluon.HybridBlock, optional
+        The yolo network.
 
         .. hint::
 
-            If anchors is ``None``, the transformation will not generate training targets.
+            If net is ``None``, the transformation will not generate training targets.
             Otherwise it will generate training targets to accelerate the training phase
             since we push some workload to CPU workers instead of GPUs.
 
@@ -84,21 +88,25 @@ class SSDDefaultTrainTransform(object):
         Std value to be divided from encoded values.
 
     """
-    def __init__(self, width, height, anchors=None, mean=(0.485, 0.456, 0.406),
-                 std=(0.229, 0.224, 0.225), iou_thresh=0.5, box_norm=(0.1, 0.1, 0.2, 0.2),
-                 **kwargs):
+    def __init__(self, width, height, net=None, mean=(0.485, 0.456, 0.406),
+                 std=(0.229, 0.224, 0.225), **kwargs):
         self._width = width
         self._height = height
-        self._anchors = anchors
         self._mean = mean
         self._std = std
-        if anchors is None:
+        self._target_generator = None
+        if net is None:
             return
 
-        # since we do not have predictions yet, so we ignore sampling here
-        from ....model_zoo.ssd.target import SSDTargetGenerator
-        self._target_generator = SSDTargetGenerator(
-            iou_thresh=iou_thresh, stds=box_norm, negative_mining_ratio=-1, **kwargs)
+        # in case network has reset_ctx to gpu
+        self._fake_x = mx.nd.zeros((1, 3, height, width))
+        net = copy.deepcopy(net)
+        net.collect_params().reset_ctx(None)
+        with autograd.train_mode():
+            _, self._anchors, self._offsets, self._feat_maps, _, _, _, _ = net(self._fake_x)
+        from ....model_zoo.yolo.yolo_target import YOLOV3PrefetchTargetGenerator
+        self._target_generator = YOLOV3PrefetchTargetGenerator(
+            num_class=len(net.classes), **kwargs)
 
     def __call__(self, src, label):
         """Apply transform to training image/label."""
@@ -133,19 +141,20 @@ class SSDDefaultTrainTransform(object):
         img = mx.nd.image.to_tensor(img)
         img = mx.nd.image.normalize(img, mean=self._mean, std=self._std)
 
-        if self._anchors is None:
+        if self._target_generator is None:
             return img, bbox.astype(img.dtype)
 
         # generate training target so cpu workers can help reduce the workload on gpu
         gt_bboxes = mx.nd.array(bbox[np.newaxis, :, :4])
         gt_ids = mx.nd.array(bbox[np.newaxis, :, 4:5])
-        cls_targets, box_targets, _ = self._target_generator(
-            self._anchors, None, gt_bboxes, gt_ids)
-        return img, cls_targets[0], box_targets[0]
+        center_targets, scale_targets, weights, objectness, class_targets = self._target_generator(
+            self._fake_x, self._feat_maps, self._anchors, self._offsets, gt_bboxes, gt_ids)
+        return (img, center_targets[0], scale_targets[0], weights[0],
+                objectness[0], class_targets[0], gt_bboxes[0])
 
 
-class SSDDefaultValTransform(object):
-    """Default SSD validation transform.
+class YOLO3DefaultValTransform(object):
+    """Default YOLO validation transform.
 
     Parameters
     ----------

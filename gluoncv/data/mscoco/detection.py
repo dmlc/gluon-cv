@@ -151,7 +151,7 @@ class COCODetection(VisionDataset):
                 continue
             if obj.get('ignore', 0) == 1:
                 continue
-            if not self._use_crowd and obj['iscrowd']:
+            if not self._use_crowd and obj.get('is_crowd', 0):
                 continue
             # convert from (x, y, w, h) to (xmin, ymin, xmax, ymax) and clip bound
             xmin, ymin, xmax, ymax = bbox_clip_xyxy(bbox_xywh_to_xyxy(obj['bbox']), width, height)

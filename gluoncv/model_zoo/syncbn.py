@@ -92,6 +92,15 @@ class AllReduce(autograd.Function):
         self.xsqukey = key + 'squ'
 
     def forward(self, isum, isqu):
+        """AllReduce forward.
+
+        Parameters
+        ----------
+        isum : mxnet.nd.NDArray
+            Sum array
+        isqu : mxnet.nd.NDArray
+            Squre arrays
+        """
         sharedTensorDict.push(self.xsumkey, isum)
         sharedTensorDict.push(self.xsqukey, isqu)
         osum = sharedTensorDict.pull(self.xsumkey).as_in_context(isum.context)
@@ -99,6 +108,15 @@ class AllReduce(autograd.Function):
         return osum, osqu
 
     def backward(self, dsum, dsqu):
+        """AllReduce backward.
+
+        Parameters
+        ----------
+        dsum : mxnet.nd.NDArray
+            Gradient of Sum array
+        dsqu : mxnet.nd.NDArray
+            Gradient of Squre arrays
+        """
         sharedTensorDict.push(self.xsumkey, dsum)
         sharedTensorDict.push(self.xsqukey, dsqu)
         disum = sharedTensorDict.pull(self.xsumkey).as_in_context(dsum.context)

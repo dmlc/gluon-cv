@@ -36,7 +36,7 @@ def random_color_distort(src, brightness_delta=32, contrast_low=0.5, contrast_hi
     def brightness(src, delta, p=0.5):
         """Brightness distortion."""
         if np.random.uniform(0, 1) > p:
-            delta = np.random.uniform(delta, delta)
+            delta = np.random.uniform(-delta, delta)
             src += delta
             return src
         return src
