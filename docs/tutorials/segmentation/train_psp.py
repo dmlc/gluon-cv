@@ -9,10 +9,6 @@ You can `Start Training Now`_ or `Dive into Deep`_.
 Start Training Now
 ~~~~~~~~~~~~~~~~~~
 
-.. note::
-    
-    Training PSPNet relies on Synchronized Batch Normalization, which will be available shortly.
-
 .. hint::
 
     Feel free to skip the tutorial because the training script is self-complete and ready to launch.
@@ -21,7 +17,7 @@ Start Training Now
 
     Example training command::
 
-        CUDA_VISIBLE_DEVICES=0,1,2,3 python train.py --dataset ade20k --model psp --backbone resnet50 --lr 0.001 --checkname mycheckpoint
+        CUDA_VISIBLE_DEVICES=0,1,2,3 python train.py --dataset ade20k --model psp --backbone resnet50 --syncbn --lr 0.01 --checkname mycheckpoint
 
     For more training command options, please run ``python train.py -h``
     Please checkout the `model_zoo <../model_zoo/index.html#semantic-segmentation>`_ for training commands of reproducing the pretrained model.
