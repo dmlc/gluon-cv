@@ -14,7 +14,7 @@ from .yolo_target import YOLOV3TargetMerger
 from ...loss import YOLOV3Loss
 
 __all__ = ['YOLOV3',
-           'yolo3_darknet53_voc', 'yolo3_darknet53_coco']
+           'yolo3_darknet53_voc', 'yolo3_darknet53_coco', 'yolo3_darknet53_custom']
 
 def _upsample(x, stride=2):
     """Simple upsampling layer by stack pixel alongside horizontal and vertical directions.
@@ -73,6 +73,27 @@ class YOLOOutputV3(gluon.HybridBlock):
             # expand dims to (1, 1, n, n, 2) so it's easier for broadcasting
             offsets = np.expand_dims(np.expand_dims(offsets, axis=0), axis=0)
             self.offsets = self.params.get_constant('offset_%d'%(index), offsets)
+
+    def reset_class(self, classes):
+        """Reset class prediction.
+
+        Parameters
+        ----------
+        classes : type
+            Description of parameter `classes`.
+
+        Returns
+        -------
+        type
+            Description of returned object.
+
+        """
+        self._classes = len(classes)
+        self._num_pred = 1 + 4 + len(classes)
+        all_pred = self._num_pred * self._num_anchors
+        # TODO(zhreshold): reuse box preds, objectness
+        self.prediction = nn.Conv2D(
+            all_pred, kernel_size=1, padding=0, strides=1, prefix=self.prediction.prefix)
 
 
     def hybrid_forward(self, F, x, anchors, offsets):
@@ -215,8 +236,7 @@ class YOLOV3(gluon.HybridBlock):
                  nms_thresh=0.45, nms_topk=400, post_nms=100, pos_iou_thresh=1.0,
                  ignore_iou_thresh=0.7, num_sync_bn_devices=-1, **kwargs):
         super(YOLOV3, self).__init__(**kwargs)
-        self.classes = classes
-        self.num_class = len(self.classes)
+        self._classes = classes
         self.nms_thresh = nms_thresh
         self.nms_topk = nms_topk
         self.post_nms = post_nms
@@ -241,6 +261,30 @@ class YOLOV3(gluon.HybridBlock):
                 self.yolo_outputs.add(output)
                 if i > 0:
                     self.transitions.add(_conv2d(channel, 1, 0, 1, num_sync_bn_devices))
+
+    @property
+    def num_class(self):
+        """Number of (non-background) categories.
+
+        Returns
+        -------
+        int
+            Number of (non-background) categories.
+
+        """
+        return self._num_class
+
+    @property
+    def classes(self):
+        """Return names of (non-background) categories.
+
+        Returns
+        -------
+        iterable of str
+            Names of (non-background) categories.
+
+        """
+        return self._classes
 
     def hybrid_forward(self, F, x, *args):
         """YOLOV3 network hybrid forward.
@@ -358,6 +402,19 @@ class YOLOV3(gluon.HybridBlock):
         self.nms_topk = nms_topk
         self.post_nms = post_nms
 
+    def reset_class(self, classes):
+        """Reset class categories and class predictors.
+
+        Parameters
+        ----------
+        classes : iterable of str
+            The new categories. ['apple', 'orange'] for example.
+
+        """
+        self._classes = classes
+        for outputs in self.yolo_outputs:
+            outputs.reset_class(classes)
+
 def get_yolov3(name, stages, filters, anchors, strides, classes,
                dataset, pretrained=False, ctx=mx.cpu(),
                root=os.path.join('~', '.mxnet', 'models'), **kwargs):
@@ -469,3 +526,41 @@ def yolo3_darknet53_coco(pretrained_base=True, pretrained=False, num_sync_bn_dev
     return get_yolov3(
         'darknet53', stages, [512, 256, 128], anchors, strides, classes, 'coco',
         pretrained=pretrained, num_sync_bn_devices=num_sync_bn_devices, **kwargs)
+
+def yolo3_darknet53_custom(classes, transfer=None, pretrained_base=True, pretrained=False,
+                           num_sync_bn_devices=-1, **kwargs):
+    """YOLO3 multi-scale with darknet53 base network on custom dataset.
+
+    Parameters
+    ----------
+    classes : iterable of str
+        Names of custom foreground classes. `len(classes)` is the number of foreground classes.
+    transfer : str or None
+        If not `None`, will try to reuse pre-trained weights from SSD networks trained on other
+        datasets.
+    pretrained_base : boolean
+        Whether fetch and load pretrained weights for base network.
+    num_sync_bn_devices : int, default is -1
+        Number of devices for training. If `num_sync_bn_devices < 2`, SyncBatchNorm is disabled.
+
+    Returns
+    -------
+    mxnet.gluon.HybridBlock
+        Fully hybrid yolo3 network.
+    """
+    if transfer is None:
+        base_net = darknet53(pretrained=pretrained_base, num_sync_bn_devices=num_sync_bn_devices)
+        stages = [base_net.features[:15], base_net.features[15:24], base_net.features[24:]]
+        anchors = [
+            [10, 13, 16, 30, 33, 23],
+            [30, 61, 62, 45, 59, 119],
+            [116, 90, 156, 198, 373, 326]]
+        strides = [8, 16, 32]
+        net = get_yolov3(
+            'darknet53', stages, [512, 256, 128], anchors, strides, classes, 'coco',
+            pretrained=pretrained, num_sync_bn_devices=num_sync_bn_devices, **kwargs)
+    else:
+        from ...model_zoo import get_model
+        net = get_model('yolo3_darknet53_' + str(transfer), pretrained=True, **kwargs)
+        net.reset_class(classes)
+    return net
