@@ -122,6 +122,12 @@ class ResNetV1b(HybridBlock):
         for Synchronized Cross-GPU BachNormalization).
     last_gamma : bool, default False
         Whether to initialize the gamma of the last BatchNorm layer in each bottleneck to zero.
+    deep_stem : bool, default False
+        Whether to replace the 7x7 conv1 with 3 3x3 convolution layers.
+    avg_down : bool, default False
+        Whether to use average pooling for projection skip connection between stages/downsample.
+    final_drop : float, default 0.0
+        Dropout ratio before the final classification layer.
     use_global_stats : bool, default False
         Whether forcing BatchNorm to use global statistics instead of minibatch statistics;
         optionally set to True if finetuning using ImageNet classification pretrained models.
@@ -136,15 +142,15 @@ class ResNetV1b(HybridBlock):
     """
     # pylint: disable=unused-variable
     def __init__(self, block, layers, classes=1000, dilated=False, norm_layer=BatchNorm,
-                 norm_kwargs={}, last_gamma=False, deep_base=False, avg_down=False,
+                 norm_kwargs={}, last_gamma=False, deep_stem=False, avg_down=False,
                  final_drop=0.0, use_global_stats=False, **kwargs):
-        self.inplanes = 128 if deep_base else 64
+        self.inplanes = 128 if deep_stem else 64
         super(ResNetV1b, self).__init__()
         self.norm_kwargs = norm_kwargs
         if use_global_stats:
             self.norm_kwargs['use_global_stats'] = True
         with self.name_scope():
-            if not deep_base:
+            if not deep_stem:
                 self.conv1 = nn.Conv2D(in_channels=3, channels=64, kernel_size=7, strides=2,
                                        padding=3, use_bias=False)
             else:
@@ -411,7 +417,7 @@ def resnet50_v1c(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
     norm_layer : object
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.norm_layer`;
     """
-    model = ResNetV1b(BottleneckV1b, [3, 4, 6, 3], deep_base=True, **kwargs)
+    model = ResNetV1b(BottleneckV1b, [3, 4, 6, 3], deep_stem=True, **kwargs)
     if pretrained:
         from .model_store import get_model_file
         model.load_params(get_model_file('resnet%d_v%dc'%(50, 1),
@@ -435,7 +441,7 @@ def resnet101_v1c(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
     norm_layer : object
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.norm_layer`;
     """
-    model = ResNetV1b(BottleneckV1b, [3, 4, 23, 3], deep_base=True, **kwargs)
+    model = ResNetV1b(BottleneckV1b, [3, 4, 23, 3], deep_stem=True, **kwargs)
     if pretrained:
         from .model_store import get_model_file
         model.load_params(get_model_file('resnet%d_v%dc'%(101, 1),
@@ -458,7 +464,7 @@ def resnet152_v1c(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
     norm_layer : object
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.norm_layer`;
     """
-    model = ResNetV1b(BottleneckV1b, [3, 8, 36, 3], deep_base=True, **kwargs)
+    model = ResNetV1b(BottleneckV1b, [3, 8, 36, 3], deep_stem=True, **kwargs)
     if pretrained:
         from .model_store import get_model_file
         model.load_params(get_model_file('resnet%d_v%dc'%(152, 1),
@@ -481,8 +487,7 @@ def resnet50_v1d(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
     norm_layer : object
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.norm_layer`;
     """
-    model = ResNetV1b(BottleneckV1b, [3, 4, 6, 3], deep_base=True, avg_down=True, final_drop=0.2,
-                      **kwargs)
+    model = ResNetV1b(BottleneckV1b, [3, 4, 6, 3], deep_base=True, avg_down=True, **kwargs)
     if pretrained:
         from .model_store import get_model_file
         model.load_params(get_model_file('resnet%d_v%dd'%(50, 1),
