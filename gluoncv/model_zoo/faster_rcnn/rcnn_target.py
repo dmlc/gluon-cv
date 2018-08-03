@@ -92,8 +92,10 @@ class RCNNTargetSampler(gluon.HybridBlock):
                 topk_samples = F.take(mask, topk)
                 topk_matches = F.take(ious_argmax, topk)
                 # reset output: 3 pos 2 neg 0 ignore -> 1 pos -1 neg 0 ignore
-                topk_samples = F.where(topk_samples == 3, F.ones_like(topk_samples), topk_samples)
-                topk_samples = F.where(topk_samples == 2, F.ones_like(topk_samples) * -1, topk_samples)
+                topk_samples = F.where(topk_samples == 3,
+                                       F.ones_like(topk_samples), topk_samples)
+                topk_samples = F.where(topk_samples == 2,
+                                       F.ones_like(topk_samples) * -1, topk_samples)
 
                 # sample neg samples
                 index = F.slice_axis(index, axis=0, begin=self._max_pos, end=None)
@@ -108,8 +110,10 @@ class RCNNTargetSampler(gluon.HybridBlock):
                 bottomk_samples = F.take(mask, bottomk)
                 bottomk_matches = F.take(ious_argmax, bottomk)
                 # reset output: 4 neg 3 pos 0 ignore -> 1 pos -1 neg 0 ignore
-                bottomk_samples = F.where(bottomk_samples == 3, F.ones_like(bottomk_samples), bottomk_samples)
-                bottomk_samples = F.where(bottomk_samples == 4, F.ones_like(bottomk_samples) * -1, bottomk_samples)
+                bottomk_samples = F.where(bottomk_samples == 3,
+                                          F.ones_like(bottomk_samples), bottomk_samples)
+                bottomk_samples = F.where(bottomk_samples == 4,
+                                          F.ones_like(bottomk_samples) * -1, bottomk_samples)
 
                 # output
                 indices = F.concat(topk_indices, bottomk_indices, dim=0)

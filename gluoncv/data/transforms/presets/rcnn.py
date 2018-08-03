@@ -1,7 +1,6 @@
 """Transforms for RCNN series."""
 from __future__ import absolute_import
 import copy
-import numpy as np
 import mxnet as mx
 from .. import bbox as tbbox
 from .. import image as timage

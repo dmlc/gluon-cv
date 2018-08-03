@@ -7,11 +7,24 @@ from mxnet import gluon
 from mxnet import autograd
 from ...nn.bbox import BBoxSplit
 from ...nn.coder import SigmoidClassEncoder, NormalizedBoxCenterEncoder
-from ...nn.matcher import CompositeMatcher, BipartiteMatcher, MaximumMatcher
-from ...nn.sampler import QuotaSampler
 
 
 class RPNTargetSampler(gluon.Block):
+    """A sampler to choose positive/negative samples from RPN anchors
+
+    Parameters
+    ----------
+    num_sample : int
+        Number of samples for RCNN targets.
+    pos_iou_thresh : float
+        Proposal whose IOU larger than ``pos_iou_thresh`` is regarded as positive samples.
+    neg_iou_thresh : float
+        Proposal whose IOU smaller than ``neg_iou_thresh`` is regarded as negative samples.
+    pos_ratio : float
+        ``pos_ratio`` defines how many positive samples (``pos_ratio * num_sample``) is
+        to be sampled.
+
+    """
     def __init__(self, num_sample, pos_iou_thresh, neg_iou_thresh, pos_ratio):
         super(RPNTargetSampler, self).__init__()
         self._num_sample = num_sample
@@ -20,10 +33,20 @@ class RPNTargetSampler(gluon.Block):
         self._neg_iou_thresh = neg_iou_thresh
         self._eps = np.spacing(np.float32(1.0))
 
+    # pylint: disable=arguments-differ
     def forward(self, ious):
-        # ious (N, M) i.e. (num_anchors, num_gt)
-        # return: matches (num_anchors,) value [0, M)
-        # return: samples (num_anchors,) value 1: pos, -1: neg, 0: ignore
+        """RPNTargetSampler is only used in data transform with no batch dimension.
+
+        Parameters
+        ----------
+        ious: (N, M) i.e. (num_anchors, num_gt).
+
+        Returns
+        -------
+        samples: (num_anchors,) value 1: pos, -1: neg, 0: ignore.
+        matches: (num_anchors,) value [0, M).
+
+        """
         matches = mx.nd.argmax(ious, axis=1)
 
         # samples init with 0 (ignore)
@@ -107,8 +130,22 @@ class RPNTargetGenerator(gluon.Block):
     # pylint: disable=arguments-differ
     def forward(self, bbox, anchor, width, height):
         """
-        Only support batch_size=1 now.
+        RPNTargetGenerator is only used in data transform with no batch dimension.
         Be careful there's numpy operations inside
+
+        Parameters
+        ----------
+        bbox: (M, 4) ground truth boxes with corner encoding.
+        anchor: (N, 4) anchor boxes with corner encoding.
+        width: int width of input image
+        height: int height of input image
+
+        Returns
+        -------
+        cls_target: (N,) value +1: pos, 0: neg, -1: ignore
+        box_target: (N, 4) only anchors whose cls_target > 0 has nonzero box target
+        box_mask: (N, 4) only anchors whose cls_target > 0 has nonzero mask
+
         """
         F = mx.nd
         with autograd.pause():

@@ -190,10 +190,12 @@ class FasterRCNN(RCNN):
                 return x
             else:
                 return [x]
+
         feat = self.features(x)
         # RPN proposals
         if autograd.is_training():
-            rpn_score, rpn_box, raw_rpn_score, raw_rpn_box, anchors = self.rpn(feat, F.zeros_like(x))
+            rpn_score, rpn_box, raw_rpn_score, raw_rpn_box, anchors = \
+                self.rpn(feat, F.zeros_like(x))
             rpn_box, samples, matches = self.sampler(rpn_box, rpn_score, gt_box)
         else:
             _, rpn_box = self.rpn(feat, F.zeros_like(x))
