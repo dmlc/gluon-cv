@@ -26,6 +26,15 @@ import numpy as np
 import gluoncv as gcv
 from common import try_gpu, with_cpu
 
+def test_get_all_models():
+    names = gcv.model_zoo.get_model_list()
+    for name in names:
+        kwargs = {}
+        if 'custom' in name:
+            kwargs['classes'] = ['a', 'b']
+        net = gcv.model_zoo.get_model(name, pretrained=False, **kwargs)
+        assert isinstance(net, mx.gluon.Block), '{}'.format(name)
+
 @with_cpu(0)
 def _test_model_list(model_list, ctx, x, **kwargs):
     for model in model_list:
