@@ -114,9 +114,9 @@ Object Detection
 
     get_faster_rcnn
 
-    faster_rcnn_resnet50_v2a_voc
+    faster_rcnn_resnet50_v1b_voc
 
-    faster_rcnn_resnet50_v2a_coco
+    faster_rcnn_resnet50_v1b_coco
 
 
 Semantic Segmentation
