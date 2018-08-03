@@ -14,6 +14,7 @@ from .resnetv1b import *
 from .resnext import *
 from .senet import *
 from .se_resnet import *
+from .yolo import *
 from .nasnet import *
 
 __all__ = ['get_model']
@@ -101,6 +102,9 @@ def get_model(name, **kwargs):
         'se_resnet50_v2': se_resnet50_v2,
         'se_resnet101_v2': se_resnet101_v2,
         'se_resnet152_v2': se_resnet152_v2,
+        'darknet53': darknet53,
+        'yolo3_darknet53_coco': yolo3_darknet53_coco,
+        'yolo3_darknet53_voc': yolo3_darknet53_voc,
         'nasnet_4_1056': nasnet_4_1056,
         'nasnet_5_1538': nasnet_5_1538,
         'nasnet_7_1920': nasnet_7_1920,

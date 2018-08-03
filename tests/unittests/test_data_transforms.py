@@ -11,6 +11,7 @@ from gluoncv.data import batchify
 from gluoncv.data.batchify import Tuple, Stack, Pad
 from gluoncv.data.transforms.presets import ssd
 from gluoncv.data.transforms.presets import rcnn
+from gluoncv.data.transforms.presets import yolo
 
 def test_bbox_crop():
     bbox = np.array([[10, 20, 200, 500], [150, 200, 400, 300]])
@@ -206,6 +207,37 @@ def test_transforms_presets_rcnn():
         train_dataset.transform(rcnn.FasterRCNNDefaultTrainTransform(short, max_size)),
         batch_size, True, batchify_fn=batchify.Tuple(*[batchify.Append() for _ in range(2)]),
         last_batch='rollover', num_workers=num_workers)
+
+    for loader in [train_loader, val_loader, train_loader2]:
+        for i, batch in enumerate(loader):
+            if i > 1:
+                break
+            pass
+
+def test_transforms_presets_yolo():
+    im_fname = gcv.utils.download('https://github.com/dmlc/web-data/blob/master/' +
+                                  'gluoncv/detection/biking.jpg?raw=true', path='biking.jpg')
+    x, orig_img = yolo.load_test(im_fname, short=512)
+    if not osp.isdir(osp.expanduser('~/.mxnet/datasets/voc')):
+        return
+    train_dataset = gcv.data.VOCDetection(splits=((2007, 'trainval'), (2012, 'trainval')))
+    val_dataset = gcv.data.VOCDetection(splits=[(2007, 'test')])
+    width, height = (512, 512)
+    net = gcv.model_zoo.get_model('yolo3_darknet53_voc', pretrained=False, pretrained_base=False)
+    net.initialize()
+    num_workers = 0
+    batch_size = 4
+    batchify_fn = Tuple(*([Stack() for _ in range(6)] + [Pad(axis=0, pad_val=-1) for _ in range(1)]))
+    train_loader = gluon.data.DataLoader(
+        train_dataset.transform(yolo.YOLO3DefaultTrainTransform(width, height, net)),
+        batch_size, True, batchify_fn=batchify_fn, last_batch='rollover', num_workers=num_workers)
+    val_batchify_fn = Tuple(Stack(), Pad(pad_val=-1))
+    val_loader = gluon.data.DataLoader(
+        val_dataset.transform(yolo.YOLO3DefaultValTransform(width, height)),
+        batch_size, False, batchify_fn=val_batchify_fn, last_batch='keep', num_workers=num_workers)
+    train_loader2 = gluon.data.DataLoader(
+        train_dataset.transform(yolo.YOLO3DefaultTrainTransform(width, height)),
+        batch_size, True, batchify_fn=val_batchify_fn, last_batch='rollover', num_workers=num_workers)
 
     for loader in [train_loader, val_loader, train_loader2]:
         for i, batch in enumerate(loader):
