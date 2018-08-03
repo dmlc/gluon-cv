@@ -24,10 +24,10 @@ from gluoncv.utils.metrics.accuracy import Accuracy
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train Faster-RCNN networks e2e.')
-    parser.add_argument('--network', type=str, default='resnet50_v2a',
+    parser.add_argument('--network', type=str, default='resnet50_v1b',
                         help="Base network name which serves as feature extraction base.")
     parser.add_argument('--dataset', type=str, default='voc',
-                        help='Training dataset. Now support voc.')
+                        help='Training dataset. Now support voc and coco.')
     parser.add_argument('--num-workers', '-j', dest='num_workers', type=int,
                         default=4, help='Number of data workers, you can use larger '
                         'number to accelerate data loading, if you CPU and GPUs are powerful.')
@@ -74,8 +74,8 @@ def parse_args():
         args.lr_warmup = args.lr_warmup if args.lr_warmup else -1
         args.wd = float(args.wd) if args.wd else 5e-4
     elif args.dataset == 'coco':
-        args.epochs = int(args.epochs) if args.epochs else 24
-        args.lr_decay_epoch = args.lr_decay_epoch if args.lr_decay_epoch else '16,21'
+        args.epochs = int(args.epochs) if args.epochs else 26
+        args.lr_decay_epoch = args.lr_decay_epoch if args.lr_decay_epoch else '17,23'
         args.lr = float(args.lr) if args.lr else 0.00125
         args.lr_warmup = args.lr_warmup if args.lr_warmup else 8000
         args.wd = float(args.wd) if args.wd else 1e-4

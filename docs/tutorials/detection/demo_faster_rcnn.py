@@ -20,7 +20,7 @@ from gluoncv import model_zoo, data, utils
 # zoo if necessary. For more pretrained models, please refer to
 # :doc:`../../model_zoo/index`.
 
-net = model_zoo.get_model('faster_rcnn_resnet50_v2a_voc', pretrained=True)
+net = model_zoo.get_model('faster_rcnn_resnet50_v1b_voc', pretrained=True)
 
 ######################################################################
 # Pre-process an image

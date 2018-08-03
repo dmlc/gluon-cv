@@ -16,17 +16,17 @@ Specifically, we show how to build a state-of-the-art Faster-RCNN model by stack
 
     Example usage:
 
-    Train a default resnet50_v2a model with Pascal VOC on GPU 0:
+    Train a default resnet50_v1b model with Pascal VOC on GPU 0:
 
     .. code-block:: bash
 
         python train_faster_rcnn.py --gpus 0
 
-    Train a resnet50_v2a model on GPU 0,1,2,3:
+    Train a resnet50_v1b model on GPU 0,1,2,3:
 
     .. code-block:: bash
 
-        python train_faster_rcnn.py --gpus 0,1,2,3 --network resnet50_v2a
+        python train_faster_rcnn.py --gpus 0,1,2,3 --network resnet50_v1b
 
     Check the supported arguments:
 
@@ -166,7 +166,7 @@ for ib, batch in enumerate(train_loader):
 # `Gluon Model Zoo <../../model_zoo/index.html>`__ has a few built-in Faster-RCNN networks, more on the way.
 # You can load your favorate one with one simple line of code:
 from gluoncv import model_zoo
-net = model_zoo.get_model('faster_rcnn_resnet50_v2a_voc', pretrained_base=False)
+net = model_zoo.get_model('faster_rcnn_resnet50_v1b_voc', pretrained_base=False)
 print(net)
 
 ##############################################################################
