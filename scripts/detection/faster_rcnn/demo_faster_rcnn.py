@@ -8,7 +8,7 @@ from matplotlib import pyplot as plt
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Test with Faster RCNN networks.')
-    parser.add_argument('--network', type=str, default='faster_rcnn_resnet50_v2a_voc',
+    parser.add_argument('--network', type=str, default='faster_rcnn_resnet50_v1b_voc',
                         help="Faster RCNN full network name")
     parser.add_argument('--images', type=str, default='',
                         help='Test images, use comma to split multiple.')

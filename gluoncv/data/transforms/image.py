@@ -45,7 +45,9 @@ def imresize(src, w, h, interp=1):
     >>> print(img.shape)
     (200, 200, 3)
     """
-    return mx.image.imresize(src, w, h, interp)
+    from mxnet.image.image import _get_interp_method as get_interp
+    oh, ow, _ = src.shape
+    return mx.image.imresize(src, w, h, interp=get_interp(interp, (oh, ow, h, w)))
 
 def resize_long(src, size, interp=2):
     """Resizes longer edge to size.

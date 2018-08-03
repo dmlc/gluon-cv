@@ -26,6 +26,15 @@ import numpy as np
 import gluoncv as gcv
 from common import try_gpu, with_cpu
 
+def test_get_all_models():
+    names = gcv.model_zoo.get_model_list()
+    for name in names:
+        kwargs = {}
+        if 'custom' in name:
+            kwargs['classes'] = ['a', 'b']
+        net = gcv.model_zoo.get_model(name, pretrained=False, **kwargs)
+        assert isinstance(net, mx.gluon.Block), '{}'.format(name)
+
 @with_cpu(0)
 def _test_model_list(model_list, ctx, x, **kwargs):
     for model in model_list:
@@ -118,7 +127,7 @@ def test_ssd_models():
 def test_faster_rcnn_models():
     ctx = mx.context.current_context()
     x = mx.random.uniform(shape=(1, 3, 600, 800), ctx=ctx)  # allow non-squre and larger inputs
-    models = ['faster_rcnn_resnet50_v2a_voc', 'faster_rcnn_resnet50_v2a_coco']
+    models = ['faster_rcnn_resnet50_v1b_voc', 'faster_rcnn_resnet50_v1b_coco']
     _test_model_list(models, ctx, x)
 
 def test_yolo3_models():
@@ -128,7 +137,7 @@ def test_yolo3_models():
     _test_model_list(models, ctx, x)
 
 def test_set_nms():
-    model_list = ['ssd_512_resnet50_v1_voc', 'faster_rcnn_resnet50_v2a_coco', 'yolo3_darknet53_coco']
+    model_list = ['ssd_512_resnet50_v1_voc', 'faster_rcnn_resnet50_v1b_voc', 'yolo3_darknet53_coco']
     for model in model_list:
         net = gcv.model_zoo.get_model(model, pretrained=False, pretrained_base=False)
         net.initialize()

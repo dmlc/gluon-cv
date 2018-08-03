@@ -21,7 +21,7 @@ from gluoncv.utils.metrics.coco_detection import COCODetectionMetric
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Validate Faster-RCNN networks.')
-    parser.add_argument('--network', type=str, default='resnet50_v2a',
+    parser.add_argument('--network', type=str, default='resnet50_v1b',
                         help="Base feature extraction network name")
     parser.add_argument('--dataset', type=str, default='voc',
                         help='Training dataset.')
