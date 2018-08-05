@@ -26,11 +26,11 @@ class FasterRCNN(RCNN):
         Tail feature extractor after feature pooling layer.
     classes : iterable of str
         Names of categories, its length is ``num_class``.
-    short : int
+    short : int, default is 600.
         Input image short side size.
-    max_size : int
+    max_size : int, default is 1000.
         Maximum size of input image long side.
-    train_patterns : str
+    train_patterns : str, default is None.
         Matching pattern for trainable parameters.
     nms_thresh : float, default is 0.3.
         Non-maximum suppression threshold. You can speficy < 0 or > 1 to disable NMS.
@@ -125,7 +125,7 @@ class FasterRCNN(RCNN):
 
     """
     def __init__(self, features, top_features, classes,
-                 short, max_size, train_patterns=None,
+                 short=600, max_size=1000, train_patterns=None,
                  nms_thresh=0.3, nms_topk=400, post_nms=100,
                  roi_mode='align', roi_size=(14, 14), stride=16, clip=None,
                  rpn_channel=1024, base_size=16, scales=(0.5, 1, 2),
@@ -235,7 +235,7 @@ class FasterRCNN(RCNN):
         # no need to convert bounding boxes in training, just return
         if autograd.is_training():
             return (cls_pred, box_pred, rpn_box, samples, matches,
-                    raw_rpn_score, raw_rpn_box, anchors)
+                    raw_rpn_score, raw_rpn_box, anchors, top_feat)
 
         # cls_ids (B, N, C), scores (B, N, C)
         cls_ids, scores = self.cls_decoder(F.softmax(cls_pred, axis=-1))
@@ -273,7 +273,7 @@ class FasterRCNN(RCNN):
         ids = F.slice_axis(result, axis=-1, begin=0, end=1)
         scores = F.slice_axis(result, axis=-1, begin=1, end=2)
         bboxes = F.slice_axis(result, axis=-1, begin=2, end=6)
-        return ids, scores, bboxes
+        return ids, scores, bboxes, feat
 
 def get_faster_rcnn(name, dataset, pretrained=False, ctx=mx.cpu(),
                     root=os.path.join('~', '.mxnet', 'models'), **kwargs):
