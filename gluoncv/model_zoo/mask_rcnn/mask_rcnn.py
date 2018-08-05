@@ -112,7 +112,7 @@ class MaskRCNN(FasterRCNN):
                 super(MaskRCNN, self).hybrid_forward(F, x, gt_box)
             mask_pred = self.mask(top_feat)
             return cls_pred, box_pred, mask_pred, rpn_box, samples, matches, \
-                 raw_rpn_score, raw_rpn_box, anchors, top_feat
+                 raw_rpn_score, raw_rpn_box, anchors
         else:
             ids, scores, boxes, feat = \
                 super(MaskRCNN, self).hybrid_forward(F, x)

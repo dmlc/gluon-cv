@@ -79,6 +79,27 @@ class COCOSegmentationMetric(mx.metric.EvalMetric):
         except IOError as e:
             raise RuntimeError("Unable to dump json file, ignored. What(): {}".format(str(e)))
 
+    def _get_ap(self, coco_eval):
+        """Return the default AP from coco_eval."""
+        # Metric printing adapted from detectron/json_dataset_evaluator.
+        def _get_thr_ind(coco_eval, thr):
+            ind = np.where((coco_eval.params.iouThrs > thr - 1e-5) &
+                           (coco_eval.params.iouThrs < thr + 1e-5))[0][0]
+            iou_thr = coco_eval.params.iouThrs[ind]
+            assert np.isclose(iou_thr, thr)
+            return ind
+
+        IoU_lo_thresh = 0.5
+        IoU_hi_thresh = 0.95
+        ind_lo = _get_thr_ind(coco_eval, IoU_lo_thresh)
+        ind_hi = _get_thr_ind(coco_eval, IoU_hi_thresh)
+        # precision has dims (iou, recall, cls, area range, max dets)
+        # area range index 0: all area ranges
+        # max dets index 2: 100 per image
+        precision = coco_eval.eval['precision'][ind_lo:(ind_hi + 1), :, :, 0, 2]
+        ap_default = np.mean(precision[precision > -1])
+        return ap_default
+
     def _update(self, type='bbox'):
         """Use coco to get real scores. """
         pred = self.dataset.coco.loadRes(self._filename)
@@ -98,14 +119,16 @@ class COCOSegmentationMetric(mx.metric.EvalMetric):
         coco_summary = sys.stdout.getvalue()
         sys.stdout = _stdout
         values.append(str(coco_summary).strip())
-        return coco_eval
+        return names, values, self._get_ap(coco_eval)
 
     def get(self):
         """Get evaluation metrics. """
         self._dump_json()
-        bbox_names, bbox_values = self._update('bbox')
-        mask_names, mask_values = self._update('mask')
-        return bbox_names + mask_names, bbox_values + mask_values
+        bbox_names, bbox_values, bbox_ap = self._update('bbox')
+        mask_names, mask_values, mask_ap = self._update('mask')
+        names = bbox_names + mask_names + ['bbox_ap']
+        values = bbox_values + mask_values + ['{:.1f}'.format(100 * bbox_ap)]
+        return names, values
 
     def _encode_mask(self, mask):
         """Convert mask to coco rle"""
@@ -134,10 +157,7 @@ class COCOSegmentationMetric(mx.metric.EvalMetric):
         """
         def as_numpy(a):
             """Convert a (list of) mx.NDArray into numpy.ndarray"""
-            if isinstance(a, (list, tuple)):
-                out = [x.asnumpy() if isinstance(x, mx.nd.NDArray) else x for x in a]
-                return np.concatenate(out, axis=0)
-            elif isinstance(a, mx.nd.NDArray):
+            if isinstance(a, mx.nd.NDArray):
                 a = a.asnumpy()
             return a
 

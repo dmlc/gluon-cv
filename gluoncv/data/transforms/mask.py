@@ -1,4 +1,6 @@
 import copy
+import cv2
+import numpy as np
 from ..mscoco.utils import try_import_pycocotools
 try_import_pycocotools()
 import pycocotools.mask as cocomask
@@ -93,3 +95,32 @@ def to_mask(polys, size):
     rles = cocomask.frPyObjects(polys, height, width)
     rle = cocomask.merge(rles)
     return cocomask.decode(rle)
+
+
+def fill(mask, bbox, size):
+    """Fill mask to full image size
+
+    Parameters
+    ----------
+    mask : numpy.ndarray with dtype=uint8
+        Binary mask prediction of a box
+    bbox : iterable of float
+        They are :math:`(xmin, ymin, xmax, ymax)`.
+    size : tuple
+        Tuple of length 2: (width, height).
+
+    Returns
+    -------
+    numpy.ndarray
+        Full size binary mask of shape (height, width)
+    """
+    width, height = size
+    x1, y1, x2, y2 = bbox
+    x1, y1 = int(x1 + 0.5), int(y1 + 0.5)
+    x2, y2 = int(x2 - 0.5), int(y2 - 0.5)
+    x2, y2 = max(x1, x2), max(y1, y2)
+    w, h = (x2 - x1 + 1), (y2 - y1 + 1)
+    mask = (cv2.resize(mask, (w, h)) > 0.5).astype('uint8')
+    ret = np.zeros((width, height), dtype='uint8')
+    ret[y1:y2 + 1, x1:x2 + 1] = mask
+    return ret
