@@ -117,7 +117,7 @@ def fill(mask, bbox, size):
     width, height = size
     x1, y1, x2, y2 = bbox
     x1, y1 = max(0, x1), max(0, y1)
-    x2, y2 = min(0, width), min(0, height)
+    x2, y2 = min(width, x2), min(height, y2)
     x1, y1 = int(x1 + 0.5), int(y1 + 0.5)
     x2, y2 = int(x2 - 0.5), int(y2 - 0.5)
     x2, y2 = max(x1, x2), max(y1, y2)
