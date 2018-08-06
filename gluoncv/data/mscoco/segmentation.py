@@ -131,7 +131,7 @@ class COCOSegmentation(VisionDataset):
                     raise IOError('Image: {} not exists.'.format(abs_path))
                 label, segm = self._check_load_bbox(_coco, entry)
                 # skip images without objects
-                if self._skip_empty and not label:
+                if self._skip_empty and label is None:
                     continue
                 items.append(abs_path)
                 labels.append(label)
@@ -151,7 +151,7 @@ class COCOSegmentation(VisionDataset):
             if obj.get('ignore', 0) == 1:
                 continue
             # crowd objs cannot be used for segmentation
-            if obj.get('is_crowd', 0):
+            if obj.get('iscrowd', 0) == 1:
                 continue
             # need accurate floating point box representation
             x1, y1, w, h = obj['bbox']
@@ -168,7 +168,7 @@ class COCOSegmentation(VisionDataset):
                 valid_objs.append([x1, y1, x2, y2, contiguous_cid])
 
                 segs = obj['segmentation']
-                assert isinstance(segs, list)
+                assert isinstance(segs, list), ''.format(obj.get('iscrowd', 0))
                 valid_segs.append([np.asarray(p).reshape(-1, 2).astype('float32')
                                    for p in segs if len(p) >= 6])
         # there is no easy way to return a polygon placeholder: None is returned
