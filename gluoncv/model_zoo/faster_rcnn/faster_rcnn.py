@@ -224,9 +224,9 @@ class FasterRCNN(RCNN):
 
         # RCNN prediction
         top_feat = self.top_features(pooled_feat)
-        top_feat = self.global_avg_pool(top_feat)
-        cls_pred = self.class_predictor(top_feat)
-        box_pred = self.box_predictor(top_feat)
+        avg_feat = self.global_avg_pool(top_feat)
+        cls_pred = self.class_predictor(avg_feat)
+        box_pred = self.box_predictor(avg_feat)
         # cls_pred (B * N, C) -> (B, N, C)
         cls_pred = cls_pred.reshape((self._max_batch, num_roi, self.num_class + 1))
         # box_pred (B * N, C * 4) -> (B, N, C, 4)
