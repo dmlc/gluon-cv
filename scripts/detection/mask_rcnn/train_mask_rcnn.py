@@ -251,12 +251,12 @@ def validate(net, val_data, ctx, eval_metric):
                 det_info = det_info[i].asnumpy()
                 # rescale bbox to original resolution
                 im_height, im_width, im_scale = det_info
-                det_bbox *= im_scale
+                det_bbox /= im_scale
                 # fill full mask
-                im_height, im_width = int(im_height), int(im_width)
+                im_height, im_width = int(im_height / im_scale), int(im_width / im_scale)
                 full_masks = []
                 for bbox, mask in zip(det_bbox, det_mask):
-                    full_masks.append(gdata.transforms.mask.fill(bbox, mask, (im_width, im_height)))
+                    full_masks.append(gdata.transforms.mask.fill(mask, bbox, (im_width, im_height)))
                 full_masks = np.array(full_masks)
                 eval_metric.update(det_bbox, det_id, det_score, full_masks)
     return eval_metric.get()
