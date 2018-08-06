@@ -161,31 +161,32 @@ class COCOSegmentationMetric(mx.metric.EvalMetric):
                 a = a.asnumpy()
             return a
 
-        for pred_bbox, pred_label, pred_score, pred_mask in zip(
-                *[as_numpy(x) for x in [pred_bboxes, pred_labels, pred_scores, pred_masks]]):
-            valid_pred = np.where(pred_label.flat >= 0)[0]
-            pred_bbox = pred_bbox[valid_pred, :].astype(np.float)
-            pred_label = pred_label.flat[valid_pred].astype(int)
-            pred_score = pred_score.flat[valid_pred].astype(np.float)
-            pred_mask = pred_mask[valid_pred].astype('uint8')
+        # mask must be the same as image shape, so no batch dimension is supported
+        pred_bbox, pred_label, pred_score, pred_mask = [as_numpy(x) for x in
+            [pred_bboxes, pred_labels, pred_scores, pred_masks]]
+        # filter out padded detection & low confidence detections
+        valid_pred = np.where((pred_label.flat >= 0) & (pred_score >= self._score_thresh))[0]
+        pred_bbox = pred_bbox[valid_pred, :].astype(np.float)
+        pred_label = pred_label.flat[valid_pred].astype(int)
+        pred_score = pred_score.flat[valid_pred].astype(np.float)
+        pred_mask = pred_mask[valid_pred].astype('uint8')
 
-            imgid = self._img_ids[self._current_id]
-            self._current_id += 1
-            # for each bbox detection in each image
-            for bbox, label, score, mask in zip(pred_bbox, pred_label, pred_score, pred_mask):
-                if label not in self.dataset.contiguous_id_to_json:
-                    # ignore non-exist class
-                    continue
-                if score < self._score_thresh:
-                    continue
-                category_id = self.dataset.contiguous_id_to_json[label]
-                # convert [xmin, ymin, xmax, ymax]  to [xmin, ymin, w, h]
-                bbox[2:4] -= bbox[:2]
-                # coco format full image mask to rle
-                rle = self._encode_mask(mask)
-                rle['counts'] = rle['counts'].decode('ascii')
-                self._results.append({'image_id': imgid,
-                                      'category_id': category_id,
-                                      'bbox': bbox[:4].tolist(),
-                                      'score': score,
-                                      'segmentation': rle})
+        imgid = self._img_ids[self._current_id]
+        self._current_id += 1
+        # for each bbox detection in each image
+        for bbox, label, score, mask in zip(pred_bbox, pred_label, pred_score, pred_mask):
+            if label not in self.dataset.contiguous_id_to_json:
+                # ignore non-exist class
+                continue
+            if score < self._score_thresh:
+                continue
+            category_id = self.dataset.contiguous_id_to_json[label]
+            # convert [xmin, ymin, xmax, ymax]  to [xmin, ymin, w, h]
+            bbox[2:4] -= bbox[:2]
+            # coco format full image mask to rle
+            rle = self._encode_mask(mask)
+            self._results.append({'image_id': imgid,
+                                  'category_id': category_id,
+                                  'bbox': bbox[:4].tolist(),
+                                  'score': score,
+                                  'segmentation': rle})

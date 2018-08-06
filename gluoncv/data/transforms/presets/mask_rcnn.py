@@ -184,8 +184,8 @@ class MaskRCNNDefaultValTransform(object):
         h, w, _ = src.shape
         img = timage.resize_short_within(src, self._short, self._max_size, interp=1)
         # no scaling ground-truth, return image scaling ratio instead
-        im_scale = h / float(img.shape[0])
+        im_scale = float(img.shape[0]) / h
 
         img = mx.nd.image.to_tensor(img)
         img = mx.nd.image.normalize(img, mean=self._mean, std=self._std)
-        return img, label, mx.nd.array([h, w, im_scale])
+        return img, label, mx.nd.array([img.shape[-2], img.shape[-1], im_scale])

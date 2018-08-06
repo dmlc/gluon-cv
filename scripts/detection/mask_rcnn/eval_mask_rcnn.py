@@ -88,23 +88,22 @@ def validate(net, val_data, ctx, eval_metric, size):
                 det_infos.append(im_info)
             # update metric
             for det_bbox, det_id, det_score, det_mask, det_info in zip(det_bboxes, det_ids, det_scores, det_masks, det_infos):
-                for i in range(det_info.shape[0]):
-                    # numpy everything
-                    det_bbox = det_bbox[i].asnumpy()
-                    det_id = det_id[i].asnumpy()
-                    det_score = det_score[i].asnumpy()
-                    det_mask = det_mask[i].asnumpy()
-                    det_info = det_info[i].asnumpy()
-                    # rescale bbox to original resolution
-                    im_height, im_width, im_scale = det_info
-                    det_bbox *= im_scale
-                    # fill full mask
-                    im_height, im_width = int(im_height), int(im_width)
-                    full_masks = []
-                    for bbox, mask in zip(det_bbox, det_mask):
-                        full_masks.append(gdata.transforms.mask.fill(bbox, mask, (im_width, im_height)))
-                    full_masks = np.array(full_masks)
-                    eval_metric.update(det_bbox, det_id, det_score, full_masks)
+                # numpy everything
+                det_bbox = det_bbox.asnumpy()
+                det_id = det_id.asnumpy()
+                det_score = det_score.asnumpy()
+                det_mask = det_mask.asnumpy()
+                det_info = det_info.asnumpy()
+                # rescale bbox to original resolution
+                im_height, im_width, im_scale = det_info
+                det_bbox /= im_scale
+                # fill full mask
+                im_height, im_width = int(im_height / im_scale), int(im_width / im_scale)
+                full_masks = []
+                for bbox, mask in zip(det_bbox, det_mask):
+                    full_masks.append(gdata.transforms.mask.fill(mask, bbox, (im_width, im_height)))
+                full_masks = np.array(full_masks)
+                eval_metric.update(det_bbox, det_id, det_score, full_masks)
             pbar.update(len(ctx))
     return eval_metric.get()
 

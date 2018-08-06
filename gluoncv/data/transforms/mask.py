@@ -116,11 +116,13 @@ def fill(mask, bbox, size):
     """
     width, height = size
     x1, y1, x2, y2 = bbox
+    x1, y1 = max(0, x1), max(0, y1)
+    x2, y2 = min(0, width), min(0, height)
     x1, y1 = int(x1 + 0.5), int(y1 + 0.5)
     x2, y2 = int(x2 - 0.5), int(y2 - 0.5)
     x2, y2 = max(x1, x2), max(y1, y2)
     w, h = (x2 - x1 + 1), (y2 - y1 + 1)
     mask = (cv2.resize(mask, (w, h)) > 0.5).astype('uint8')
-    ret = np.zeros((width, height), dtype='uint8')
+    ret = np.zeros((height, width), dtype='uint8')
     ret[y1:y2 + 1, x1:x2 + 1] = mask
     return ret
