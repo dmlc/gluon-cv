@@ -126,19 +126,16 @@ class MaskRCNNDefaultTrainTransform(object):
         h, w, _ = src.shape
         img = timage.resize_short_within(src, self._short, self._max_size, interp=1)
         bbox = tbbox.resize(label, (w, h), (img.shape[1], img.shape[0]))
-        segm = tmask.resize(segm, (w, h), (img.shape[1], img.shape[0]))
+        segm = [tmask.resize(polys, (w, h), (img.shape[1], img.shape[0])) for polys in segm]
 
         # random horizontal flip
         h, w, _ = img.shape
         img, flips = timage.random_flip(img, px=0.5)
         bbox = tbbox.flip(bbox, (w, h), flip_x=flips[0])
-        segm = tmask.flip(segm, (w, h), flip_x=flips[0])
+        segm = [tmask.flip(polys, (w, h), flip_x=flips[0]) for polys in segm]
 
         # gt_masks (n, im_height, im_width) of uint8 -> float32 (cannot take uint8)
-        masks = []
-        for polys in segm:
-            mask = tmask.to_mask(polys, (w, h))
-            masks.append(mx.nd.array(mask))
+        masks = [mx.nd.array(tmask.to_mask(polys, (w, h))) for polys in segm]
         # n * (im_height, im_width) -> (n, im_height, im_width)
         masks = mx.nd.stack(*masks, axis=0)
 

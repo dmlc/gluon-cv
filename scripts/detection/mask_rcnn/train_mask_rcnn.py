@@ -187,7 +187,7 @@ def get_dataset(dataset, args):
 
 def get_dataloader(net, train_dataset, val_dataset, batch_size, num_workers):
     """Get dataloader."""
-    train_bfn = batchify.Tuple(*[batchify.Append() for _ in range(5)])
+    train_bfn = batchify.Tuple(*[batchify.Append() for _ in range(6)])
     train_loader = mx.gluon.data.DataLoader(
         train_dataset.transform(MaskRCNNDefaultTrainTransform(net.short, net.max_size, net)),
         batch_size, True, batchify_fn=train_bfn, last_batch='rollover', num_workers=num_workers)
