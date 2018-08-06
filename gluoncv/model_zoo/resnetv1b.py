@@ -13,6 +13,7 @@ __all__ = ['ResNetV1b', 'resnet18_v1b', 'resnet34_v1b',
            'resnet50_v1c', 'resnet101_v1c', 'resnet152_v1c',
            'resnet50_v1d', 'resnet101_v1d', 'resnet152_v1d']
 
+
 class BasicBlockV1b(HybridBlock):
     """ResNetV1b BasicBlockV1b
     """
