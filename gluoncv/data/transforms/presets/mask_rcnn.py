@@ -188,4 +188,4 @@ class MaskRCNNDefaultValTransform(object):
 
         img = mx.nd.image.to_tensor(img)
         img = mx.nd.image.normalize(img, mean=self._mean, std=self._std)
-        return img, label, mx.nd.array([img.shape[-2], img.shape[-1], im_scale])
+        return img, mx.nd.array([img.shape[-2], img.shape[-1], im_scale])

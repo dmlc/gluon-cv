@@ -172,7 +172,7 @@ class COCOSegmentation(VisionDataset):
                 valid_segs.append([np.asarray(p).reshape(-1, 2).astype('float32')
                                    for p in segs if len(p) >= 6])
         # there is no easy way to return a polygon placeholder: None is returned
-        # in val2017, no image is "empty"
+        # in validation, None cannot be used for batchify -> drop label in transform
         # in training: empty images should be be skipped
         if not valid_objs:
             valid_objs = None
