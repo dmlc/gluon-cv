@@ -165,10 +165,10 @@ class COCOSegmentationMetric(mx.metric.EvalMetric):
         pred_bbox, pred_label, pred_score, pred_mask = [as_numpy(x) for x in
             [pred_bboxes, pred_labels, pred_scores, pred_masks]]
         # filter out padded detection & low confidence detections
-        valid_pred = np.where((pred_label.flat >= 0) & (pred_score >= self._score_thresh))[0]
-        pred_bbox = pred_bbox[valid_pred, :].astype(np.float)
-        pred_label = pred_label.flat[valid_pred].astype(int)
-        pred_score = pred_score.flat[valid_pred].astype(np.float)
+        valid_pred = np.where((pred_label >= 0) & (pred_score >= self._score_thresh))[0]
+        pred_bbox = pred_bbox[valid_pred].astype('float32')
+        pred_label = pred_label.flat[valid_pred].astype('int32')
+        pred_score = pred_score.flat[valid_pred].astype('float32')
         pred_mask = pred_mask[valid_pred].astype('uint8')
 
         imgid = self._img_ids[self._current_id]
