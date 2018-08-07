@@ -59,9 +59,9 @@ class MaskTargetGenerator(gluon.HybridBlock):
             pooled_mask = F.contrib.ROIAlign(gt_mask, padded_rois, self._mask_size, 1.0, sample_ratio=2)
             pooled_mask = pooled_mask.reshape((-3, 0, 0)) > 0.5
             # duplicate to C * (N, MS, MS)
-            mask_target = [F.zeros_like(pooled_mask)]
-            mask_mask = [F.zeros_like(pooled_mask)]
-            for cid in range(1, self._num_classes):
+            mask_target = []
+            mask_mask = []
+            for cid in range(1, self._num_classes + 1):
                 # boolean array (N,) -> (N, 1, 1)
                 same_cid = (cls_target == cid).reshape((-1, 1, 1))
                 # keep orig targets
