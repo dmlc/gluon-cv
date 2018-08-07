@@ -253,7 +253,7 @@ class SoftmaxCrossEntropyLoss(Loss):
     """
     # pylint: disable=unused-argument
     def __init__(self, axis=1, sparse_label=True, from_logits=False, weight=None,
-                 batch_axis=0, ignore_label=-1, size_average=False, valid_size=1000, **kwargs):
+                 batch_axis=0, ignore_label=-1, size_average=False, valid_size=None, **kwargs):
         super(SoftmaxCrossEntropyLoss, self).__init__(weight, batch_axis, **kwargs)
         self._axis = axis
         self._sparse_label = sparse_label
@@ -276,6 +276,7 @@ class SoftmaxCrossEntropyLoss(Loss):
             loss = -F.sum(pred*label, axis=self._axis, keepdims=True)
         loss = _apply_weighting(F, loss, self._weight, sample_weight)
         if self._size_average and self._sparse_label:
+            assert valid_size is not None, "valid_size is required for size average"
             return F.mean(loss, axis=self._batch_axis, exclude=True) * \
                 valid_size / F.sum(valid_label_map)
         else:
@@ -294,13 +295,14 @@ class SoftmaxCrossEntropyLossWithAux(SoftmaxCrossEntropyLoss):
     ignore_label : int, default -1
         The label to ignore.
     """
-    def __init__(self, aux=True, aux_weight=0.2, ignore_label=-1, **kwargs):
+    def __init__(self, aux=True, mixup=False, aux_weight=0.2, ignore_label=-1, **kwargs):
         super(SoftmaxCrossEntropyLossWithAux, self).__init__(
             axis=1, ignore_label=ignore_label, **kwargs)
         self.aux = aux
+        self.mixup = mixup
         self.aux_weight = aux_weight
 
-    def aux_forward(self, F, pred1, pred2, label, **kwargs):
+    def _aux_forward(self, F, pred1, pred2, label, **kwargs):
         """Compute loss including auxiliary output"""
         loss1 = super(SoftmaxCrossEntropyLossWithAux, self). \
             hybrid_forward(F, pred1, label, **kwargs)
@@ -308,10 +310,38 @@ class SoftmaxCrossEntropyLossWithAux(SoftmaxCrossEntropyLoss):
             hybrid_forward(F, pred2, label, **kwargs)
         return loss1 + self.aux_weight * loss2
 
+    def _aux_mixup_forward(self, F, pred1, pred2, label1, label2, lam):
+        """Compute loss including auxiliary output"""
+        loss1 = self._mixup_forwar(F, pred1, label1, label2, lam)
+        loss2 = self._mixup_forwar(F, pred2, label1, label2, lam)
+        return loss1 + self.aux_weight * loss2
+
+    def _mixup_forward(self, F, pred, label1, label2, lam, sample_weight=None):
+        if not self._from_logits:
+            pred = F.log_softmax(pred, self._axis)
+        if self._sparse_label:
+            loss1 = -F.pick(pred, label1, axis=self._axis, keepdims=True)
+            loss2 = -F.pick(pred, label2, axis=self._axis, keepdims=True)
+            loss = lam * loss1 + (1 - lam) * loss2
+        else:
+            label1 = _reshape_like(F, label1, pred)
+            label2 = _reshape_like(F, label2, pred)
+            loss1 = -F.sum(pred*label1, axis=self._axis, keepdims=True)
+            loss2 = -F.sum(pred*label2, axis=self._axis, keepdims=True)
+            loss = lam * loss1 + (1 - lam) * loss2
+        loss = _apply_weighting(F, loss, self._weight, sample_weight)
+        return F.mean(loss, axis=self._batch_axis, exclude=True)
+
     def hybrid_forward(self, F, *inputs, **kwargs):
         """Compute loss"""
         if self.aux:
-            return self.aux_forward(F, *inputs, **kwargs)
+            if self.mixup:
+                return self._aux_mixup_forward(F, *inputs, **kwargs)
+            else:
+                return self._aux_forward(F, *inputs, **kwargs)
         else:
-            return super(SoftmaxCrossEntropyLossWithAux, self). \
-                hybrid_forward(F, *inputs, **kwargs)
+            if self.mixup:
+                return self._mixup_forward(F, *inputs, **kwargs)
+            else:
+                return super(SoftmaxCrossEntropyLossWithAux, self). \
+                    hybrid_forward(F, *inputs, **kwargs)

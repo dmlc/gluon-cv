@@ -27,7 +27,7 @@ def download_coco(path, overwrite=False):
         ('http://images.cocodataset.org/zips/val2017.zip',
          '4950dc9d00dbe1c933ee0170f5797584351d2a41'),
         ('http://images.cocodataset.org/annotations/stuff_annotations_trainval2017.zip',
-         'e7aa0f7515c07e23873a9f71d9095b06bcea3e12'),
+         '46cdcf715b6b4f67e980b529534e79c2edffe084'),
         # test2017.zip, for those who want to attend the competition.
         # ('http://images.cocodataset.org/zips/test2017.zip',
         #  '4e443f8a2eca6b1dac8a6c57641b67dd40621a49'),
@@ -38,6 +38,16 @@ def download_coco(path, overwrite=False):
         # extract
         with zipfile.ZipFile(filename) as zf:
             zf.extractall(path=path)
+
+def install_coco_api():
+    repo_url = "https://github.com/cocodataset/cocoapi"
+    os.system("git clone " + repo_url)
+    os.system("cd cocoapi/PythonAPI/ && python setup.py install")
+    shutil.rmtree('cocoapi')
+    try:
+        import pycocotools
+    except Exception:
+        print("Installing COCO API failed, please install it manually %s"%(repo_url))
 
 if __name__ == '__main__':
     args = parse_args()
@@ -56,3 +66,4 @@ if __name__ == '__main__':
     if os.path.isdir(_TARGET_DIR):
         os.remove(_TARGET_DIR)
     os.symlink(path, _TARGET_DIR)
+    install_coco_api()

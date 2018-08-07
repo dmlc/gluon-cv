@@ -11,7 +11,7 @@ class ADE20KSegmentation(SegmentationDataset):
     Parameters
     ----------
     root : string
-        Path to VOCdevkit folder. Default is '$(HOME)/mxnet/datasplits/voc'
+        Path to VOCdevkit folder. Default is '$(HOME)/mxnet/datasplits/ade'
     split: string
         'train', 'val' or 'test'
     transform : callable, optional

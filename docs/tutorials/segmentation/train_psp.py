@@ -17,7 +17,7 @@ Start Training Now
 
     Example training command::
 
-        CUDA_VISIBLE_DEVICES=0,1,2,3 python train.py --dataset ade20k --model psp --backbone resnet50 --syncbn --lr 0.01 --checkname mycheckpoint
+        CUDA_VISIBLE_DEVICES=0,1,2,3 python train.py --dataset ade20k --model psp --backbone resnet50 --syncbn --epochs 120 --lr 0.01 --checkname mycheckpoint
 
     For more training command options, please run ``python train.py -h``
     Please checkout the `model_zoo <../model_zoo/index.html#semantic-segmentation>`_ for training commands of reproducing the pretrained model.

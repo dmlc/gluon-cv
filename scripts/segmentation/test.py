@@ -41,7 +41,8 @@ def test(args):
         model = get_model(args.model_zoo, pretrained=True)
     else:
         model = get_segmentation_model(model=args.model, dataset=args.dataset, ctx = args.ctx,
-                                       backbone=args.backbone, norm_layer=args.norm_layer)
+                                       backbone=args.backbone, norm_layer=args.norm_layer,
+                                       norm_kwargs=args.norm_kwargs, aux=args.aux, )
         # load pretrained weight
         assert args.resume is not None, '=> Please provide the checkpoint using --resume'
         if os.path.isfile(args.resume):

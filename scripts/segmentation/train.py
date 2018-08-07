@@ -8,6 +8,7 @@ import mxnet as mx
 from mxnet import gluon, autograd
 from mxnet.gluon.data.vision import transforms
 
+from gluoncv.loss import SoftmaxCrossEntropyLossWithAux
 from gluoncv.utils import LRScheduler
 from gluoncv.model_zoo.segbase import *
 from gluoncv.utils.parallel import *
@@ -30,6 +31,8 @@ def parse_args():
     # training hyper params
     parser.add_argument('--aux', action='store_true', default= False,
                         help='Auxilary loss')
+    parser.add_argument('--aux-weight', type=float, default=0.5,
+                        help='auxilary loss weight')
     parser.add_argument('--epochs', type=int, default=50, metavar='N',
                         help='number of epochs to train (default: 50)')
     parser.add_argument('--start_epoch', type=int, default=0,
@@ -46,6 +49,8 @@ def parse_args():
                         metavar='M', help='momentum (default: 0.9)')
     parser.add_argument('--weight-decay', type=float, default=1e-4,
                         metavar='M', help='w-decay (default: 1e-4)')
+    parser.add_argument('--mixup', action='store_true', default= False,
+                        help='mixup training')
     # cuda and logging
     parser.add_argument('--no-cuda', action='store_true', default=
                         False, help='disables CUDA training')
@@ -106,8 +111,7 @@ class Trainer(object):
         # create network
         model = get_segmentation_model(model=args.model, dataset=args.dataset,
                                        backbone=args.backbone, norm_layer=args.norm_layer,
-                                       aux=args.aux, norm_kwargs=args.norm_kwargs)
-        # model.hybridize(static_alloc=True, static_shape=True)
+                                       norm_kwargs=args.norm_kwargs, aux=args.aux)
         print(model)
         self.net = DataParallelModel(model, args.ctx, args.syncbn)
         self.evaluator = DataParallelModel(SegEvalModel(model), args.ctx)
@@ -119,7 +123,8 @@ class Trainer(object):
                 raise RuntimeError("=> no checkpoint found at '{}'" \
                     .format(args.resume))
         # create criterion
-        criterion = SoftmaxCrossEntropyLossWithAux(args.aux)
+        criterion = SoftmaxCrossEntropyLossWithAux(args.aux, mixup=args.mixup,
+                                                   aux_weight=args.aux_weight)
         self.criterion = DataParallelCriterion(criterion, args.ctx, args.syncbn)
         # optimizer and lr scheduling
         self.lr_scheduler = LRScheduler(mode='poly', baselr=args.lr,
@@ -136,11 +141,19 @@ class Trainer(object):
     def training(self, epoch):
         tbar = tqdm(self.train_data)
         train_loss = 0.0
+        alpha = 0.2
         for i, (data, target) in enumerate(tbar):
             self.lr_scheduler.update(i, epoch)
+            if args.mixup:
+                lam = np.random.beta(alpha, alpha)
+                data = lam * data + (1 - lam) * data[::-1]
+                target2 = target[::-1]
             with autograd.record(True):
                 outputs = self.net(data)
-                losses = self.criterion(outputs, target)
+                if args.mixup:
+                    losses = self.criterion(outputs, target, target2, lam)
+                else:
+                    losses = self.criterion(outputs, target)
                 mx.nd.waitall()
                 autograd.backward(losses)
             self.optimizer.step(self.args.batch_size)
