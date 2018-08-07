@@ -176,6 +176,27 @@ class MaskAccMetric(mx.metric.EvalMetric):
         self.sum_metric += num_acc.asscalar()
         self.num_inst += num_inst.asscalar()
 
+class MaskFGAccMetric(mx.metric.EvalMetric):
+    def __init__(self):
+        super(MaskFGAccMetric, self).__init__('MaskFGAcc')
+
+    def update(self, labels, preds):
+        # label = [rcnn_mask_target, rcnn_mask_weight]
+        # pred = [rcnn_mask]
+        rcnn_mask_target, rcnn_mask_weight = labels
+        rcnn_mask = preds[0]
+
+        # calculate num_inst
+        num_inst = mx.nd.sum(rcnn_mask_target)
+
+        # rcnn_mask (b, n, c, h, w)
+        pred_label = mx.nd.sigmoid(rcnn_mask) >= 0.5
+        # label (b, n, c, h, w)
+        num_acc = mx.nd.sum((pred_label == rcnn_mask_target) * rcnn_mask_target)
+
+        self.sum_metric += num_acc.asscalar()
+        self.num_inst += num_inst.asscalar()
+
 def get_dataset(dataset, args):
     if dataset.lower() == 'coco':
         train_dataset = gdata.COCOSegmentation(splits='instances_train2017')
@@ -298,8 +319,10 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
     rcnn_acc_metric = RCNNAccMetric()
     rcnn_bbox_metric = RCNNL1LossMetric()
     rcnn_mask_metric = MaskAccMetric()
+    rcnn_fgmask_metric = MaskFGAccMetric()
     metrics2 = [rpn_acc_metric, rpn_bbox_metric,
-                rcnn_acc_metric, rcnn_bbox_metric, rcnn_mask_metric]
+                rcnn_acc_metric, rcnn_bbox_metric,
+                rcnn_mask_metric, rcnn_fgmask_metric]
 
     # set up logger
     logging.basicConfig()
@@ -364,7 +387,7 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
                     # generate targets for mask
                     mask_targets, mask_masks = net.mask_target(roi, gt_mask, matches, cls_targets)
                     # loss of mask
-                    mask_loss = rcnn_mask_loss(mask_pred, mask_targets, mask_masks) * mask_targets.size / mask_targets.shape[0] / num_rcnn_pos / mask_targets.shape[-1] / mask_targets.shape[-2]
+                    mask_loss = rcnn_mask_loss(mask_pred, mask_targets, mask_masks) * mask_targets.size / mask_targets.shape[0] / mask_masks.sum()
                     # overall losses
                     losses.append(rpn_loss.sum() + rcnn_loss.sum() + mask_loss.sum())
                     metric_losses[0].append(rpn_loss1.sum())
@@ -377,6 +400,7 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
                     add_losses[2].append([[cls_targets], [cls_pred]])
                     add_losses[3].append([[box_targets, box_masks], [box_pred]])
                     add_losses[4].append([[mask_targets, mask_masks], [mask_pred]])
+                    add_losses[5].append([[mask_targets, mask_masks], [mask_pred]])
                 autograd.backward(losses)
                 for metric, record in zip(metrics, metric_losses):
                     metric.update(0, record)
