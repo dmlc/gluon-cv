@@ -187,6 +187,6 @@ class COCOSegmentationMetric(mx.metric.EvalMetric):
             rle = self._encode_mask(mask)
             self._results.append({'image_id': imgid,
                                   'category_id': category_id,
-                                  'bbox': bbox[:4].tolist(),
-                                  'score': score,
+                                  'bbox': list(map(lambda x: float(round(x, 2)), bbox[:4])),
+                                  'score': float(round(score, 3)),
                                   'segmentation': rle})
