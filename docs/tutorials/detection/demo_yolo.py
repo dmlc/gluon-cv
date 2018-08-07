@@ -41,9 +41,9 @@ net = model_zoo.get_model('yolo3_darknet53_voc', pretrained=True)
 # easy to be plotted. Since we only loaded a single image, the first dimension
 # of `x` is 1.
 
-im_fname = utils.download('https://github.com/dmlc/web-data/blob/master/' +
-                          'gluoncv/detection/street_small.jpg?raw=true',
-                          path='street_small.jpg')
+im_fname = utils.download('https://raw.githubusercontent.com/zhreshold/' +
+                          'mxnet-ssd/master/data/demo/dog.jpg',
+                          path='dog.jpg')
 x, img = data.transforms.presets.yolo.load_test(im_fname, short=512)
 print('Shape of pre-processed image:', x.shape)
 

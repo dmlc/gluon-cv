@@ -1,4 +1,4 @@
-"""6. Train YOLOv3 on PASCAL VOC
+"""7. Train YOLOv3 on PASCAL VOC
 ================================
 
 This tutorial goes through the basic steps of training a YOLOv3 object detection model
@@ -52,7 +52,7 @@ Specifically, we show how to build a state-of-the-art YOLOv3 model by stacking G
 # Please first go through this :ref:`sphx_glr_build_examples_datasets_pascal_voc.py` tutorial to setup Pascal
 # VOC dataset on your disk.
 # Then, we are ready to load training and validation images.
-
+import gluoncv as gcv
 from gluoncv.data import VOCDetection
 # typically we use 2007+2012 trainval splits for training data
 train_dataset = VOCDetection(splits=[(2007, 'trainval'), (2012, 'trainval')])
@@ -66,7 +66,7 @@ print('Validation images:', len(val_dataset))
 # Data transform
 # --------------
 # We can read an image-label pair from the training dataset:
-train_image, train_label = train_dataset[100]
+train_image, train_label = train_dataset[60]
 bboxes = train_label[:, :4]
 cids = train_label[:, 4:5]
 print('image:', train_image.shape)
@@ -101,7 +101,7 @@ train_transform = presets.yolo.YOLO3DefaultTrainTransform(width, height)
 val_transform = presets.yolo.YOLO3DefaultValTransform(width, height)
 
 ##############################################################################
-utils.random.seed(233)  # fix seed in this tutorial
+utils.random.seed(123)  # fix seed in this tutorial
 
 ##############################################################################
 # apply transforms to train image
@@ -146,7 +146,7 @@ batch_size = 2  # for tutorial, we use smaller batch-size
 num_workers = 0  # you can make it larger(if your CPU has more cores) to accelerate data loading
 
 # behavior of batchify_fn: stack images, and pad labels
-batchify_fn = Tuple(Append(), Append())
+batchify_fn = Tuple(Stack(), Pad(pad_val=-1))
 train_loader = DataLoader(train_dataset.transform(train_transform), batch_size, shuffle=True,
                           batchify_fn=batchify_fn, last_batch='rollover', num_workers=num_workers)
 val_loader = DataLoader(val_dataset.transform(val_transform), batch_size, shuffle=False,
@@ -197,9 +197,8 @@ cids, scores, bboxes = net(x)
 # Training targets
 # ----------------
 # There are four losses involved in end-to-end YOLOv3 training.
-
 # the loss to penalize incorrect class/box prediction, and is defined in :py:class:`gluoncv.loss.YOLOV3Loss`
-loss = gluoncv.loss.YOLOV3Loss()
+loss = gcv.loss.YOLOV3Loss()
 # which is already included in YOLOv3 network
 print(net._loss)
 
@@ -210,6 +209,7 @@ print(net._loss)
 
 ##############################################################################
 # If we provide network to the training transform function, it will compute partial training targets
+from mxnet import autograd
 train_transform = presets.yolo.YOLO3DefaultTrainTransform(width, height, net)
 # return stacked images, center_targets, scale_targets, gradient weights, objectness_targets, class_targets
 # additionally, return padded ground truth bboxes, so there are 7 components returned by dataloader
@@ -221,9 +221,10 @@ for ib, batch in enumerate(train_loader):
     if ib > 0:
         break
     print('data:', batch[0][0].shape)
-    print('label:', batch[7][0].shape)
+    print('label:', batch[6][0].shape)
     with autograd.record():
-        obj_loss, center_loss, scale_loss, cls_loss = net(*batch)
+        input_order = [0, 6, 1, 2, 3, 4, 5]
+        obj_loss, center_loss, scale_loss, cls_loss = net(*[batch[o] for o in input_order])
         # sum up the losses
         # some standard gluon training steps:
         # autograd.backward(sum_loss)
