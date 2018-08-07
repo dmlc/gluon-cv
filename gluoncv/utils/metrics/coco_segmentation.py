@@ -111,7 +111,7 @@ class COCOSegmentationMetric(mx.metric.EvalMetric):
         coco_eval.evaluate()
         coco_eval.accumulate()
         names, values = [], []
-        names.append('~~~~ Summary bbox metrics ~~~~\n')
+        names.append('~~~~ Summary {} metrics ~~~~\n'.format(type))
         # catch coco print string, don't want directly print here
         _stdout = sys.stdout
         sys.stdout = io.StringIO()
@@ -119,15 +119,17 @@ class COCOSegmentationMetric(mx.metric.EvalMetric):
         coco_summary = sys.stdout.getvalue()
         sys.stdout = _stdout
         values.append(str(coco_summary).strip())
-        return names, values, self._get_ap(coco_eval)
+        names.append('~~~~ Mean AP for {} ~~~~\n'.format(type))
+        values.append('{:.1f}'.format(100 * self._get_ap(coco_eval)))
+        return names, values
 
     def get(self):
         """Get evaluation metrics. """
         self._dump_json()
-        bbox_names, bbox_values, bbox_ap = self._update('bbox')
-        mask_names, mask_values, mask_ap = self._update('segm')
-        names = bbox_names + mask_names + ['bbox_ap']
-        values = bbox_values + mask_values + ['{:.1f}'.format(100 * bbox_ap)]
+        bbox_names, bbox_values = self._update('bbox')
+        mask_names, mask_values = self._update('segm')
+        names = bbox_names + mask_names
+        values = bbox_values + mask_values
         return names, values
 
     def _encode_mask(self, mask):
