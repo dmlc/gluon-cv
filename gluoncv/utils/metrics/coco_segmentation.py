@@ -125,7 +125,7 @@ class COCOSegmentationMetric(mx.metric.EvalMetric):
         """Get evaluation metrics. """
         self._dump_json()
         bbox_names, bbox_values, bbox_ap = self._update('bbox')
-        mask_names, mask_values, mask_ap = self._update('mask')
+        mask_names, mask_values, mask_ap = self._update('segm')
         names = bbox_names + mask_names + ['bbox_ap']
         values = bbox_values + mask_values + ['{:.1f}'.format(100 * bbox_ap)]
         return names, values
