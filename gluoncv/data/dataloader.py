@@ -6,7 +6,6 @@ import numpy as np
 from mxnet import nd
 from mxnet import context
 from mxnet.gluon.data import DataLoader
-from mxnet.gluon.data.dataloader import Queue, SimpleQueue
 
 def default_pad_batchify_fn(data):
     """Collate data into batch, labels are padded to same shape"""
@@ -159,6 +158,7 @@ class _RandomTransformMultiWorkerIter(object):
                  pin_memory=False):
         assert num_workers > 0, "_MultiWorkerIter is not for {} workers".format(num_workers)
         assert isinstance(transform_fns, (list, tuple)) and len(transform_fns) > 1
+        from mxnet.gluon.data.dataloader import Queue, SimpleQueue
         self._transform_fns = transform_fns
         self._fn_idx = np.random.randint(len(self._transform_fns))
         self._interval = max(int(interval), 1)
