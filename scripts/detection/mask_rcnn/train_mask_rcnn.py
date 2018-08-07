@@ -212,7 +212,7 @@ def get_dataloader(net, train_dataset, val_dataset, batch_size, num_workers):
     train_loader = mx.gluon.data.DataLoader(
         train_dataset.transform(MaskRCNNDefaultTrainTransform(net.short, net.max_size, net)),
         batch_size, True, batchify_fn=train_bfn, last_batch='rollover', num_workers=num_workers)
-    val_bfn = batchify.Tuple(*[batchify.Append() for _ in range(3)])
+    val_bfn = batchify.Tuple(*[batchify.Append() for _ in range(2)])
     val_loader = mx.gluon.data.DataLoader(
         val_dataset.transform(MaskRCNNDefaultValTransform(net.short, net.max_size)),
         batch_size, False, batchify_fn=val_bfn, last_batch='keep', num_workers=num_workers)
@@ -253,7 +253,7 @@ def validate(net, val_data, ctx, eval_metric):
         det_scores = []
         det_masks = []
         det_infos = []
-        for x, y, im_info in zip(*batch):
+        for x, im_info in zip(*batch):
             # get prediction results
             ids, scores, bboxes, masks = net(x)
             det_bboxes.append(clipper(bboxes, x))
@@ -270,9 +270,13 @@ def validate(net, val_data, ctx, eval_metric):
                 det_score = det_score[i].asnumpy()
                 det_mask = det_mask[i].asnumpy()
                 det_info = det_info[i].asnumpy()
-                # rescale bbox to original resolution
+                # filter by conf threshold
                 im_height, im_width, im_scale = det_info
-                det_bbox /= im_scale
+                valid = np.where(((det_id >= 0) & (det_score >= 0.001)))[0]
+                det_id = det_id[valid]
+                det_score = det_score[valid]
+                det_bbox = det_bbox[valid] / im_scale
+                det_mask = det_mask[valid]
                 # fill full mask
                 im_height, im_width = int(im_height / im_scale), int(im_width / im_scale)
                 full_masks = []
