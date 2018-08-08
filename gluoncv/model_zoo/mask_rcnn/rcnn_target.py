@@ -57,7 +57,7 @@ class MaskTargetGenerator(gluon.HybridBlock):
             padded_rois = F.concat(match.reshape((-1, 1)), roi, dim=-1)
             # pooled_mask (N, 1, MS, MS) -> (N, MS, MS)
             pooled_mask = F.contrib.ROIAlign(gt_mask, padded_rois, self._mask_size, 1.0, sample_ratio=2)
-            pooled_mask = pooled_mask.reshape((-3, 0, 0)) > 0.5
+            pooled_mask = pooled_mask.reshape((-3, 0, 0))
             # duplicate to C * (N, MS, MS)
             mask_target = []
             mask_mask = []
