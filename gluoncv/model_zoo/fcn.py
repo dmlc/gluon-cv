@@ -35,9 +35,9 @@ class FCN(SegBaseModel):
     """
     # pylint: disable=arguments-differ
     def __init__(self, nclass, backbone='resnet50', norm_layer=nn.BatchNorm,
-                 aux=True, ctx=cpu(), **kwargs):
+                 aux=True, ctx=cpu(), pretrained=True, **kwargs):
         super(FCN, self).__init__(nclass, aux, backbone, ctx=ctx,
-                                  norm_layer=norm_layer, **kwargs)
+                                  norm_layer=norm_layer, pretrained = pretrained, **kwargs)
         with self.name_scope():
             self.head = _FCNHead(2048, nclass, norm_layer=norm_layer, **kwargs)
             self.head.initialize(ctx=ctx)
@@ -85,7 +85,7 @@ class _FCNHead(HybridBlock):
         return self.block(x)
 
 
-def get_fcn(dataset='pascal_voc', backbone='resnet50', pretrained=False,
+def get_fcn(dataset='pascal_voc', backbone='resnet50', pretrained=True,
             root='~/.mxnet/models', ctx=cpu(0), **kwargs):
     r"""FCN model from the paper `"Fully Convolutional Network for semantic segmentation"
     <https://people.eecs.berkeley.edu/~jonlong/long_shelhamer_fcn.pdf>`_
@@ -107,20 +107,18 @@ def get_fcn(dataset='pascal_voc', backbone='resnet50', pretrained=False,
     >>> print(model)
     """
     from ..data.pascal_voc.segmentation import VOCSegmentation
-    from ..data.pascal_aug.segmentation import VOCAugSegmentation
     from ..data.ade20k.segmentation import ADE20KSegmentation
     acronyms = {
         'pascal_voc': 'voc',
-        'pascal_aug': 'voc',
         'ade20k': 'ade',
     }
     datasets = {
         'pascal_voc': VOCSegmentation,
-        'pascal_aug': VOCAugSegmentation,
         'ade20k': ADE20KSegmentation,
     }
     # infer number of classes
-    model = FCN(datasets[dataset].NUM_CLASS, backbone=backbone, ctx=ctx, **kwargs)
+    model = FCN(datasets[dataset].NUM_CLASS, backbone=backbone, pretrained = pretrained, 
+                                            ctx=ctx, **kwargs)
     if pretrained:
         from .model_store import get_model_file
         model.load_params(get_model_file('fcn_%s_%s'%(backbone, acronyms[dataset]),
