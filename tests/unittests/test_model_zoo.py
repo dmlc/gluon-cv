@@ -36,7 +36,7 @@ def test_get_all_models():
         assert isinstance(net, mx.gluon.Block), '{}'.format(name)
 
 @with_cpu(0)
-def _test_model_list(model_list, ctx, x, pretrained = True, **kwargs):
+def _test_model_list(model_list, ctx, x, pretrained=True, **kwargs):
     for model in model_list:
         net = gcv.model_zoo.get_model(model, **kwargs)
         with warnings.catch_warnings():
@@ -153,8 +153,8 @@ def test_segmentation_models():
     ctx = mx.context.current_context()
     x = mx.random.uniform(shape=(2, 3, 480, 480), ctx=ctx)
     models = ['fcn_resnet50_voc', 'fcn_resnet101_voc', 'fcn_resnet50_ade']
-    _test_model_list(models, ctx, x, pretrained = True)
-    _test_model_list(models, ctx, x, pretrained = False)
+    _test_model_list(models, ctx, x, pretrained=True)
+    _test_model_list(models, ctx, x, pretrained=False)
 
 if __name__ == '__main__':
     import nose
