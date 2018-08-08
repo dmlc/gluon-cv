@@ -103,7 +103,7 @@ def validate(net, val_data, ctx, eval_metric, size):
                     det_bbox = det_bbox[valid] / im_scale
                     det_mask = det_mask[valid]
                     # fill full mask
-                    im_height, im_width = int(im_height / im_scale), int(im_width / im_scale)
+                    im_height, im_width = int(round(im_height / im_scale)), int(round(im_width / im_scale))
                     full_masks = []
                     for bbox, mask in zip(det_bbox, det_mask):
                         full_masks.append(gcv.data.transforms.mask.fill(mask, bbox, (im_width, im_height)))
