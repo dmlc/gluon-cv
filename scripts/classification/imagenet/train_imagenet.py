@@ -53,7 +53,7 @@ parser.add_argument('--warmup-lr', type=float, default=0.0,
 parser.add_argument('--warmup-epochs', type=int, default=0,
                     help='number of warmup epochs.')
 parser.add_argument('--last-gamma', action='store_true',
-                    help='whether to initialize the gamma of the last BN layer in each bottleneck to zero')
+                    help='whether to init gamma of the last BN layer in each bottleneck to 0.')
 parser.add_argument('--mode', type=str,
                     help='mode in which to train the model. options are symbolic, imperative, hybrid')
 parser.add_argument('--model', type=str, required=True,
@@ -64,6 +64,8 @@ parser.add_argument('--use-pretrained', action='store_true',
                     help='enable using pretrained model from gluon.')
 parser.add_argument('--use_se', action='store_true',
                     help='use SE layers or not in resnext. default is false.')
+parser.add_argument('--label-smoothing', action='store_true',
+                    help='use label smoothing or not in training. default is false.')
 parser.add_argument('--batch-norm', action='store_true',
                     help='enable batch normalization or not in vgg. default is false.')
 parser.add_argument('--log-interval', type=int, default=50,
@@ -72,12 +74,19 @@ parser.add_argument('--save-frequency', type=int, default=10,
                     help='frequency of model saving.')
 parser.add_argument('--save-dir', type=str, default='params',
                     help='directory of saved models')
-parser.add_argument('--logging-dir', type=str, default='logs',
-                    help='directory of training logs')
+parser.add_argument('--logging-file', type=str, default='train_imagenet.log',
+                    help='name of training log file')
 opt = parser.parse_args()
 
-logging.basicConfig(level=logging.INFO)
-logging.info(opt)
+filehandler = logging.FileHandler(opt.logging_file)
+streamhandler = logging.StreamHandler()
+
+logger = logging.getLogger('')
+logger.setLevel(logging.INFO)
+logger.addHandler(filehandler)
+logger.addHandler(streamhandler)
+
+logger.info(opt)
 
 batch_size = opt.batch_size
 classes = 1000
@@ -97,9 +106,9 @@ else:
     lr_decay_epoch = [int(i) for i in opt.lr_decay_epoch.split(',')]
 num_batches = num_training_samples // batch_size
 lr_scheduler = LRScheduler(mode=opt.lr_mode, baselr=opt.lr,
-                            niters=num_batches, nepochs=opt.num_epochs,
-                            step=lr_decay_epoch, step_factor=opt.lr_decay, power=2,
-                            warmup_epochs=opt.warmup_epochs)
+                           niters=num_batches, nepochs=opt.num_epochs,
+                           step=lr_decay_epoch, step_factor=opt.lr_decay, power=2,
+                           warmup_epochs=opt.warmup_epochs)
 
 model_name = opt.model
 
@@ -243,7 +252,7 @@ def smooth(label, classes, eta=0.1):
         res = nd.zeros((ind.shape[0], classes), ctx = l.context)
         res += eta/classes
         res[nd.arange(ind.shape[0], ctx = l.context), ind] = 1 - eta + eta/classes
-        smoothed.append(res)
+        smoothed.append(res.astype(opt.dtype, copy=False))
     return smoothed
 
 def test(ctx, val_data):
@@ -269,6 +278,10 @@ def train(ctx):
     trainer = gluon.Trainer(net.collect_params(), optimizer, optimizer_params)
 
     L = gluon.loss.SoftmaxCrossEntropyLoss()
+    if opt.label_smoothing:
+        L = gluon.loss.SoftmaxCrossEntropyLoss(sparse_label=False)
+    else:
+        L = gluon.loss.SoftmaxCrossEntropyLoss()
 
     best_val_score = 1
 
@@ -281,9 +294,13 @@ def train(ctx):
 
         for i, batch in enumerate(train_data):
             data, label = batch_fn(batch, ctx)
+            if opt.label_smoothing:
+                label_smooth = smooth(label, classes)
+            else:
+                label_smooth = label
             with ag.record():
                 outputs = [net(X.astype(opt.dtype, copy=False)) for X in data]
-                loss = [L(yhat, y) for yhat, y in zip(outputs, label)]
+                loss = [L(yhat, y) for yhat, y in zip(outputs, label_smooth)]
             for l in loss:
                 l.backward()
             lr_scheduler.update(i, epoch)
@@ -293,7 +310,7 @@ def train(ctx):
             if opt.log_interval and not (i+1)%opt.log_interval:
                 _, top1 = acc_top1.get()
                 err_top1 = 1-top1
-                logging.info('Epoch[%d] Batch [%d]\tSpeed: %f samples/sec\ttop1-err=%f\tlr=%f'%(
+                logger.info('Epoch[%d] Batch [%d]\tSpeed: %f samples/sec\ttop1-err=%f\tlr=%f'%(
                              epoch, i, batch_size*opt.log_interval/(time.time()-btic), err_top1,
                              trainer.learning_rate))
                 btic = time.time()
@@ -304,9 +321,9 @@ def train(ctx):
 
         err_top1_val, err_top5_val = test(ctx, val_data)
 
-        logging.info('[Epoch %d] training: err-top1=%f'%(epoch, err_top1))
-        logging.info('[Epoch %d] speed: %d samples/sec\ttime cost: %f'%(epoch, throughput, time.time()-tic))
-        logging.info('[Epoch %d] validation: err-top1=%f err-top5=%f'%(epoch, err_top1_val, err_top5_val))
+        logger.info('[Epoch %d] training: err-top1=%f'%(epoch, err_top1))
+        logger.info('[Epoch %d] speed: %d samples/sec\ttime cost: %f'%(epoch, throughput, time.time()-tic))
+        logger.info('[Epoch %d] validation: err-top1=%f err-top5=%f'%(epoch, err_top1_val, err_top5_val))
 
         if err_top1_val < best_val_score and epoch > 50:
             best_val_score = err_top1_val
