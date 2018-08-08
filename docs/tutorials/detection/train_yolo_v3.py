@@ -1,38 +1,47 @@
-"""4. Train SSD on Pascal VOC dataset
-======================================
+"""7. Train YOLOv3 on PASCAL VOC
+================================
 
-This tutorial goes through the basic building blocks of object detection
+This tutorial goes through the basic steps of training a YOLOv3 object detection model
 provided by GluonCV.
-Specifically, we show how to build a state-of-the-art Single Shot Multibox
-Detection [Liu16]_ model by stacking GluonCV components.
-This is also a good starting point for your own object detection project.
+
+Specifically, we show how to build a state-of-the-art YOLOv3 model by stacking GluonCV components.
+
 
 .. hint::
 
-    You can skip the rest of this tutorial and start training your SSD model
+    You can skip the rest of this tutorial and start training your YOLOv3 model
     right away by downloading this script:
 
-    :download:`Download train_ssd.py<../../../scripts/detection/ssd/train_ssd.py>`
+    :download:`Download train_yolo3.py<../../../scripts/detection/yolo/train_yolo3.py>`
+    or a random shape training script:
+    :download:`Download train_yolo3_rand_size.py<../../../scripts/detection/yolo/train_yolo3_rand_size.py>`
+    Random shape training requires more GPU memory but generates better results.
 
     Example usage:
 
-    Train a default vgg16_atrous 300x300 model with Pascal VOC on GPU 0:
+    Train a default darknet53 model with Pascal VOC on GPU 0:
 
     .. code-block:: bash
 
-        python train_ssd.py
+        python train_yolo3(_rand_size).py --gpus 0
 
-    Train a resnet50_v1 512x512 model on GPU 0,1,2,3:
+    Train a darknet53 model on GPU 0,1,2,3 with synchronize BatchNorm:
 
     .. code-block:: bash
 
-        python train_ssd.py --gpus 0,1,2,3 --network resnet50_v1 --data-shape 512
+        python train_yolo3(_rand_size).py --gpus 0,1,2,3 --network darknet53 --syncbn
 
     Check the supported arguments:
 
     .. code-block:: bash
 
-        python train_ssd.py --help
+        python train_yolo3(_rand_size).py --help
+
+
+.. hint::
+
+    Since lots of contents in this tutorial is very similar to :doc:`./train_ssd_voc`, you can skip any part
+    if you feel comfortable.
 
 """
 
@@ -43,7 +52,7 @@ This is also a good starting point for your own object detection project.
 # Please first go through this :ref:`sphx_glr_build_examples_datasets_pascal_voc.py` tutorial to setup Pascal
 # VOC dataset on your disk.
 # Then, we are ready to load training and validation images.
-
+import gluoncv as gcv
 from gluoncv.data import VOCDetection
 # typically we use 2007+2012 trainval splits for training data
 train_dataset = VOCDetection(splits=[(2007, 'trainval'), (2012, 'trainval')])
@@ -55,9 +64,9 @@ print('Validation images:', len(val_dataset))
 
 ##########################################################
 # Data transform
-# ------------------
+# --------------
 # We can read an image-label pair from the training dataset:
-train_image, train_label = train_dataset[0]
+train_image, train_label = train_dataset[60]
 bboxes = train_label[:, :4]
 cids = train_label[:, 4:5]
 print('image:', train_image.shape)
@@ -74,27 +83,25 @@ plt.show()
 ##############################################################################
 # Validation images are quite similar to training because they were
 # basically split randomly to different sets
-val_image, val_label = val_dataset[0]
+val_image, val_label = val_dataset[100]
 bboxes = val_label[:, :4]
 cids = val_label[:, 4:5]
 ax = viz.plot_bbox(val_image.asnumpy(), bboxes, labels=cids, class_names=train_dataset.classes)
 plt.show()
 
 ##############################################################################
-# For SSD networks, it is critical to apply data augmentation (see explanations in paper [Liu16]_).
-# We provide tons of image and bounding box transform functions to do that.
-# They are very convenient to use as well.
+# For YOLOv3 networks, we apply similar transforms to SSD example.
 from gluoncv.data.transforms import presets
 from gluoncv import utils
 from mxnet import nd
 
 ##############################################################################
-width, height = 512, 512  # suppose we use 512 as base training size
-train_transform = presets.ssd.SSDDefaultTrainTransform(width, height)
-val_transform = presets.ssd.SSDDefaultValTransform(width, height)
+width, height = 416, 416  # resize image to 416x416 after all data augmentation
+train_transform = presets.yolo.YOLO3DefaultTrainTransform(width, height)
+val_transform = presets.yolo.YOLO3DefaultValTransform(width, height)
 
 ##############################################################################
-utils.random.seed(233)  # fix seed in this tutorial
+utils.random.seed(123)  # fix seed in this tutorial
 
 ##############################################################################
 # apply transforms to train image
@@ -112,27 +119,16 @@ ax = viz.plot_bbox(train_image2.asnumpy(), train_label2[:, :4],
 plt.show()
 
 ##############################################################################
-# apply transforms to validation image
-val_image2, val_label2 = val_transform(val_image, val_label)
-val_image2 = val_image2.transpose((1, 2, 0)) * nd.array((0.229, 0.224, 0.225)) + nd.array((0.485, 0.456, 0.406))
-val_image2 = (val_image2 * 255).clip(0, 255)
-ax = viz.plot_bbox(val_image2.clip(0, 255).asnumpy(), val_label2[:, :4],
-                   labels=val_label2[:, 4:5],
-                   class_names=train_dataset.classes)
-plt.show()
-
-##############################################################################
-# Transforms used in training include random expanding, random cropping, color distortion, random flipping, etc.
-# In comparison, validation transforms are simpler and only resizing and color normalization is used.
+# Transforms used in training include random color distortion, random expand/crop, random flipping,
+# resizing and fixed color normalization.
+# In comparison, validation only involves resizing and color normalization.
 
 ##########################################################
 # Data Loader
-# ------------------
+# -----------
 # We will iterate through the entire dataset many times during training.
 # Keep in mind that raw images have to be transformed to tensors
 # (mxnet uses BCHW format) before they are fed into neural networks.
-# In addition, to be able to run in mini-batches,
-# images must be resized to the same shape.
 #
 # A handy DataLoader would be very convenient for us to apply different transforms and aggregate data into mini-batches.
 #
@@ -159,24 +155,20 @@ val_loader = DataLoader(val_dataset.transform(val_transform), batch_size, shuffl
 for ib, batch in enumerate(train_loader):
     if ib > 3:
         break
-    print('data:', batch[0].shape, 'label:', batch[1].shape)
+    print('data 0:', batch[0][0].shape, 'label 0:', batch[1][0].shape)
+    print('data 1:', batch[0][1].shape, 'label 1:', batch[1][1].shape)
 
 ##########################################################
-# SSD Network
-# ------------------
-# GluonCV's SSD implementation is a composite Gluon HybridBlock
-# (which means it can be exported
-# to symbol to run in C++, Scala and other language bindings.
-# We will cover this usage in future tutorials).
-# In terms of structure, SSD networks are composed of base feature extraction
-# network, anchor generators, class predictors and bounding box offset predictors.
+# YOLOv3 Network
+# -------------------
+# GluonCV's YOLOv3 implementation is a composite Gluon HybridBlock.
+# In terms of structure, YOLOv3 networks are composed of base feature extraction
+# network, convolutional transition layers, upsampling layers, and specially designed YOLOv3 output layers.
 #
-# For more details on how SSD detector works, please refer to our introductory
-# [tutorial](http://gluon.mxnet.io/chapter08_computer-vision/object-detection.html)
-# You can also refer to the original paper to learn more about the intuitions
-# behind SSD.
+# We highly recommend you to read the original paper to learn more about the ideas
+# behind YOLO [YOLOv3]_.
 #
-# `Gluon Model Zoo <../../model_zoo/index.html>`__ has a lot of built-in SSD networks.
+# `Gluon Model Zoo <../../model_zoo/index.html>`__ has a few built-in YOLO networks, more on the way.
 # You can load your favorate one with one simple line of code:
 #
 # .. hint::
@@ -185,67 +177,58 @@ for ib, batch in enumerate(train_loader):
 #    in practice we usually want to load pre-trained imagenet models by setting
 #    `pretrained_base=True`.
 from gluoncv import model_zoo
-net = model_zoo.get_model('ssd_300_vgg16_atrous_voc', pretrained_base=False)
+net = model_zoo.get_model('yolo3_darknet53_voc', pretrained_base=False)
 print(net)
 
 ##############################################################################
-# SSD network is a HybridBlock as mentioned before. You can call it with an input as:
+# YOLOv3 network is callable with image tensor
 import mxnet as mx
-x = mx.nd.zeros(shape=(1, 3, 512, 512))
+x = mx.nd.zeros(shape=(1, 3, 416, 416))
 net.initialize()
 cids, scores, bboxes = net(x)
 
 ##############################################################################
-# SSD returns three values, where ``cids`` are the class labels,
+# YOLOv3 returns three values, where ``cids`` are the class labels,
 # ``scores`` are confidence scores of each prediction,
 # and ``bboxes`` are absolute coordinates of corresponding bounding boxes.
-
-##############################################################################
-# SSD network behave differently during training mode:
-from mxnet import autograd
-with autograd.train_mode():
-    cls_preds, box_preds, anchors = net(x)
-
-##############################################################################
-# In training mode, SSD returns three intermediate values,
-# where ``cls_preds`` are the class predictions prior to softmax,
-# ``box_preds`` are bounding box offsets with one-to-one correspondence to anchors
-# and ``anchors`` are absolute coordinates of corresponding anchors boxes, which are
-# fixed since training images use inputs of same dimensions.
 
 
 ##########################################################
 # Training targets
-# ------------------
-# Unlike a single ``SoftmaxCrossEntropyLoss`` used in image classification,
-# the loss used in SSD is more complicated.
-# Don't worry though, because we have these modules available out of the box.
-#
-# To speed up training, we let CPU to pre-compute some training targets.
+# ----------------
+# There are four losses involved in end-to-end YOLOv3 training.
+# the loss to penalize incorrect class/box prediction, and is defined in :py:class:`gluoncv.loss.YOLOV3Loss`
+loss = gcv.loss.YOLOV3Loss()
+# which is already included in YOLOv3 network
+print(net._loss)
+
+##########################################################
+# To speed up training, we let CPU to pre-compute some training targets (similar to SSD example).
 # This is especially nice when your CPU is powerful and you can use ``-j num_workers``
 # to utilize multi-core CPU.
 
 ##############################################################################
-# If we provide anchors to the training transform, it will compute training targets
-train_transform = presets.ssd.SSDDefaultTrainTransform(width, height, anchors)
-batchify_fn = Tuple(Stack(), Stack(), Stack())
+# If we provide network to the training transform function, it will compute partial training targets
+from mxnet import autograd
+train_transform = presets.yolo.YOLO3DefaultTrainTransform(width, height, net)
+# return stacked images, center_targets, scale_targets, gradient weights, objectness_targets, class_targets
+# additionally, return padded ground truth bboxes, so there are 7 components returned by dataloader
+batchify_fn = Tuple(*([Stack() for _ in range(6)] + [Pad(axis=0, pad_val=-1) for _ in range(1)]))
 train_loader = DataLoader(train_dataset.transform(train_transform), batch_size, shuffle=True,
                           batchify_fn=batchify_fn, last_batch='rollover', num_workers=num_workers)
-from gluoncv.loss import SSDMultiBoxLoss
-mbox_loss = SSDMultiBoxLoss()
 
 for ib, batch in enumerate(train_loader):
     if ib > 0:
         break
-    print('data:', batch[0].shape)
-    print('class targets:', batch[1].shape)
-    print('box targets:', batch[2].shape)
+    print('data:', batch[0][0].shape)
+    print('label:', batch[6][0].shape)
     with autograd.record():
-        cls_pred, box_pred, anchors = net(batch[0])
-        sum_loss, cls_loss, box_loss = mbox_loss(cls_pred, box_pred, batch[1], batch[2])
+        input_order = [0, 6, 1, 2, 3, 4, 5]
+        obj_loss, center_loss, scale_loss, cls_loss = net(*[batch[o] for o in input_order])
+        # sum up the losses
         # some standard gluon training steps:
         # autograd.backward(sum_loss)
-        # trainer.step(1)
+        # trainer.step(batch_size)
 
 ##############################################################################
 # This time we can see the data loader is actually returning the training targets for us.
@@ -253,10 +236,11 @@ for ib, batch in enumerate(train_loader):
 #
 # .. hint::
 #
-#   Please checkout the full :download:`training script <../../../scripts/detection/ssd/train_ssd.py>` for complete implementation.
+#   Please checkout the full :download:`training script <../../../scripts/detection/yolo/train_yolo3_rand_size.py>` for complete implementation.
+
 
 ##########################################################
 # References
 # ----------
 #
-# .. [Liu16] Wei Liu, Dragomir Anguelov, Dumitru Erhan, Christian Szegedy, Scott Reed, Cheng-Yang Fu, Alexander C. Berg. SSD: Single Shot MultiBox Detector. ECCV 2016.
+# .. [YOLOv3] Redmon, Joseph, and Ali Farhadi. "Yolov3: An incremental improvement." arXiv preprint arXiv:1804.02767 (2018).
