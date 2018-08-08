@@ -170,8 +170,9 @@ class MaskAccMetric(mx.metric.EvalMetric):
 
         # rcnn_mask (b, n, c, h, w)
         pred_label = mx.nd.sigmoid(rcnn_mask) >= 0.5
+        label = rcnn_mask_target >= 0.5
         # label (b, 1, h, w)
-        num_acc = mx.nd.sum((pred_label == rcnn_mask_target) * rcnn_mask_weight)
+        num_acc = mx.nd.sum((pred_label == label) * rcnn_mask_weight)
 
         self.sum_metric += num_acc.asscalar()
         self.num_inst += num_inst.asscalar()
@@ -191,8 +192,9 @@ class MaskFGAccMetric(mx.metric.EvalMetric):
 
         # rcnn_mask (b, n, c, h, w)
         pred_label = mx.nd.sigmoid(rcnn_mask) >= 0.5
+        label = rcnn_mask_target >= 0.5
         # label (b, n, c, h, w)
-        num_acc = mx.nd.sum((pred_label == rcnn_mask_target) * rcnn_mask_target)
+        num_acc = mx.nd.sum((pred_label == label) * label)
 
         self.sum_metric += num_acc.asscalar()
         self.num_inst += num_inst.asscalar()
