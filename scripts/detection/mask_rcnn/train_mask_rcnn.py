@@ -386,7 +386,7 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
                     # losses of rcnn
                     num_rcnn_pos = (cls_targets >= 0).sum()
                     rcnn_loss1 = rcnn_cls_loss(cls_pred, cls_targets, cls_targets >= 0) * cls_targets.size / cls_targets.shape[0] / num_rcnn_pos
-                    rcnn_loss2 = rcnn_box_loss(box_pred, box_targets, box_masks) * box_pred.size / box_pred.shape[0] / num_rcnn_pos
+                    rcnn_loss2 = rcnn_box_loss(box_pred, box_targets, box_masks) * box_pred.size / box_pred.shape[0] / box_masks.sum()
                     rcnn_loss = rcnn_loss1 + rcnn_loss2
                     # generate targets for mask
                     mask_targets, mask_masks = net.mask_target(roi, gt_mask, matches, cls_targets)
