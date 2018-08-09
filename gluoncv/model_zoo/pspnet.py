@@ -31,9 +31,9 @@ class PSPNet(SegBaseModel):
 
     """
     def __init__(self, nclass, backbone='resnet50', norm_layer=nn.BatchNorm,
-                 aux=True, ctx=cpu(), pretrained=True, **kwargs):
+                 aux=True, ctx=cpu(), **kwargs):
         super(PSPNet, self).__init__(nclass, aux, backbone, ctx=ctx,
-                                     norm_layer=norm_layer, pretrained=pretrained, **kwargs)
+                                     norm_layer=norm_layer, **kwargs)
         with self.name_scope():
             self.head = _PSPHead(nclass, norm_layer=norm_layer, **kwargs)
             self.head.initialize(ctx=ctx)
