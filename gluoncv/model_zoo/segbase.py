@@ -35,17 +35,18 @@ class SegBaseModel(HybridBlock):
         for Synchronized Cross-GPU BachNormalization).
     """
     # pylint : disable=arguments-differ
-    def __init__(self, nclass, aux, backbone='resnet50', height=480, width=480, **kwargs):
+    def __init__(self, nclass, aux, backbone='resnet50', height=480, width=480,
+                 pretrained_base=True, **kwargs):
         super(SegBaseModel, self).__init__()
         self.aux = aux
         self.nclass = nclass
         with self.name_scope():
             if backbone == 'resnet50':
-                pretrained = resnet50_v1b(pretrained=True, dilated=True, **kwargs)
+                pretrained = resnet50_v1b(pretrained=pretrained_base, dilated=True, **kwargs)
             elif backbone == 'resnet101':
-                pretrained = resnet101_v1b(pretrained=True, dilated=True, **kwargs)
+                pretrained = resnet101_v1b(pretrained=pretrained_base, dilated=True, **kwargs)
             elif backbone == 'resnet152':
-                pretrained = resnet152_v1b(pretrained=True, dilated=True, **kwargs)
+                pretrained = resnet152_v1b(pretrained=pretrained_base, dilated=True, **kwargs)
             else:
                 raise RuntimeError('unknown backbone: {}'.format(backbone))
             self.conv1 = pretrained.conv1

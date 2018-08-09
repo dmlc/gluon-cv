@@ -21,6 +21,9 @@ class FCN(SegBaseModel):
         'resnet101' or 'resnet152').
     norm_layer : object
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.nn.BatchNorm`;
+    pretrained_base : bool
+        Refers to if the FCN backbone or the encoder is pretrained or not. If `True`,
+        model weights of a model that was trained on ImageNet is loaded.
 
 
     Reference:
@@ -39,11 +42,11 @@ class FCN(SegBaseModel):
         super(FCN, self).__init__(nclass, aux, backbone, ctx=ctx,
                                   norm_layer=norm_layer, **kwargs)
         with self.name_scope():
-            self.head = _FCNHead(2048, nclass, norm_layer=norm_layer, **kwargs)
+            self.head = _FCNHead(2048, nclass, norm_layer=norm_layer)
             self.head.initialize(ctx=ctx)
             self.head.collect_params().setattr('lr_mult', 10)
             if self.aux:
-                self.auxlayer = _FCNHead(1024, nclass, norm_layer=norm_layer, **kwargs)
+                self.auxlayer = _FCNHead(1024, nclass, norm_layer=norm_layer)
                 self.auxlayer.initialize(ctx=ctx)
                 self.auxlayer.collect_params().setattr('lr_mult', 10)
 
@@ -66,7 +69,7 @@ class FCN(SegBaseModel):
 
 class _FCNHead(HybridBlock):
     # pylint: disable=redefined-outer-name
-    def __init__(self, in_channels, channels, norm_layer, norm_kwargs={}, **kwargs):
+    def __init__(self, in_channels, channels, norm_layer, norm_kwargs={}):
         super(_FCNHead, self).__init__()
         with self.name_scope():
             self.block = nn.HybridSequential()
@@ -86,7 +89,7 @@ class _FCNHead(HybridBlock):
 
 
 def get_fcn(dataset='pascal_voc', backbone='resnet50', pretrained=False,
-            root='~/.mxnet/models', ctx=cpu(0), **kwargs):
+            root='~/.mxnet/models', ctx=cpu(0), pretrained_base=True, **kwargs):
     r"""FCN model from the paper `"Fully Convolutional Network for semantic segmentation"
     <https://people.eecs.berkeley.edu/~jonlong/long_shelhamer_fcn.pdf>`_
 
@@ -95,17 +98,20 @@ def get_fcn(dataset='pascal_voc', backbone='resnet50', pretrained=False,
     dataset : str, default pascal_voc
         The dataset that model pretrained on. (pascal_voc, ade20k)
     pretrained : bool, default False
-        Whether to load the pretrained weights for model.
+        Whether to load the pretrained weights for model. This will load FCN pretrained.
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
+    pretrained_base : bool, default True
+        This will load pretrained backbone network, that was trained on ImageNet.
 
     Examples
     --------
     >>> model = get_fcn(dataset='pascal_voc', backbone='resnet50', pretrained=False)
     >>> print(model)
     """
+
     from ..data.pascal_voc.segmentation import VOCSegmentation
     from ..data.pascal_aug.segmentation import VOCAugSegmentation
     from ..data.ade20k.segmentation import ADE20KSegmentation
@@ -120,7 +126,8 @@ def get_fcn(dataset='pascal_voc', backbone='resnet50', pretrained=False,
         'ade20k': ADE20KSegmentation,
     }
     # infer number of classes
-    model = FCN(datasets[dataset].NUM_CLASS, backbone=backbone, ctx=ctx, **kwargs)
+    model = FCN(datasets[dataset].NUM_CLASS, backbone=backbone, pretrained_base=pretrained_base,
+                ctx=ctx, **kwargs)
     if pretrained:
         from .model_store import get_model_file
         model.load_params(get_model_file('fcn_%s_%s'%(backbone, acronyms[dataset]),

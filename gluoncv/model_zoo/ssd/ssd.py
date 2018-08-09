@@ -226,6 +226,7 @@ class SSD(HybridBlock):
             The new categories. ['apple', 'orange'] for example.
 
         """
+        self._clear_cached_op()
         self.classes = classes
         # replace class predictors
         with self.name_scope():
