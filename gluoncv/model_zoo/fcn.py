@@ -42,11 +42,11 @@ class FCN(SegBaseModel):
         super(FCN, self).__init__(nclass, aux, backbone, ctx=ctx,
                                   norm_layer=norm_layer, **kwargs)
         with self.name_scope():
-            self.head = _FCNHead(2048, nclass, norm_layer=norm_layer, **kwargs)
+            self.head = _FCNHead(2048, nclass, norm_layer=norm_layer)
             self.head.initialize(ctx=ctx)
             self.head.collect_params().setattr('lr_mult', 10)
             if self.aux:
-                self.auxlayer = _FCNHead(1024, nclass, norm_layer=norm_layer, **kwargs)
+                self.auxlayer = _FCNHead(1024, nclass, norm_layer=norm_layer)
                 self.auxlayer.initialize(ctx=ctx)
                 self.auxlayer.collect_params().setattr('lr_mult', 10)
 
@@ -69,7 +69,7 @@ class FCN(SegBaseModel):
 
 class _FCNHead(HybridBlock):
     # pylint: disable=redefined-outer-name
-    def __init__(self, in_channels, channels, norm_layer, norm_kwargs={}, **kwargs):
+    def __init__(self, in_channels, channels, norm_layer, norm_kwargs={}):
         super(_FCNHead, self).__init__()
         with self.name_scope():
             self.block = nn.HybridSequential()
