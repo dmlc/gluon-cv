@@ -21,6 +21,9 @@ class FCN(SegBaseModel):
         'resnet101' or 'resnet152').
     norm_layer : object
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.nn.BatchNorm`;
+    pretrained : bool
+        Refers to if the FCN backbone or the encoder is pretrained or not. If `True`,
+        model weights of a model that was trained on ImageNet is loaded.
 
 
     Reference:
@@ -86,7 +89,7 @@ class _FCNHead(HybridBlock):
 
 
 def get_fcn(dataset='pascal_voc', backbone='resnet50', pretrained=False,
-            root='~/.mxnet/models', ctx=cpu(0), **kwargs):
+            root='~/.mxnet/models', ctx=cpu(0), backbone_pretrained=True, **kwargs):
     r"""FCN model from the paper `"Fully Convolutional Network for semantic segmentation"
     <https://people.eecs.berkeley.edu/~jonlong/long_shelhamer_fcn.pdf>`_
 
@@ -95,19 +98,24 @@ def get_fcn(dataset='pascal_voc', backbone='resnet50', pretrained=False,
     dataset : str, default pascal_voc
         The dataset that model pretrained on. (pascal_voc, ade20k)
     pretrained : bool, default False
-        Whether to load the pretrained weights for model.
+        Whether to load the pretrained weights for model. This will load FCN pretrained.
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
+    backbone_pretrained : bool, default True
+        This will load pretrained backbone network, that was trained on ImageNet.
 
     Examples
     --------
     >>> model = get_fcn(dataset='pascal_voc', backbone='resnet50', pretrained=False)
     >>> print(model)
     """
+    if pretrained is True and backbone_pretrained is not True:
+        import warnings
+        warnings.warn('Ignoring backbone_pretrained and setting it to True.')
+
     from ..data.pascal_voc.segmentation import VOCSegmentation
-    from ..data.pascal_aug.segmentation import VOCAugSegmentation
     from ..data.ade20k.segmentation import ADE20KSegmentation
     acronyms = {
         'pascal_voc': 'voc',
@@ -118,7 +126,8 @@ def get_fcn(dataset='pascal_voc', backbone='resnet50', pretrained=False,
         'ade20k': ADE20KSegmentation,
     }
     # infer number of classes
-    model = FCN(datasets[dataset].NUM_CLASS, backbone=backbone, pretrained=pretrained, ctx=ctx, **kwargs)
+    model = FCN(datasets[dataset].NUM_CLASS, backbone=backbone, pretrained=backbone_pretrained,
+                ctx=ctx, **kwargs)
     if pretrained:
         from .model_store import get_model_file
         model.load_params(get_model_file('fcn_%s_%s'%(backbone, acronyms[dataset]),
