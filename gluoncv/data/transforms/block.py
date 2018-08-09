@@ -19,9 +19,9 @@
 # pylint: disable= arguments-differ
 "Addtional image transforms."
 
+import numpy as np
 from mxnet import image, nd
 from mxnet.gluon import Block
-import numpy as np
 
 __all__ = ['RandomCrop']
 
