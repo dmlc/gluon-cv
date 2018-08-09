@@ -318,7 +318,7 @@ def train(ctx):
 
             if opt.mixup:
                 lam = np.random.beta(opt.mixup_alpha, opt.mixup_alpha)
-                if epoch >= opt.num_epochs - opt.mixup_off_epoch
+                if epoch >= opt.num_epochs - opt.mixup_off_epoch:
                     lam = 1
 
                 data_mixup = [lam*X + (1-lam)*X[::-1] for X in data]
