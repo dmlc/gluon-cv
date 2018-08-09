@@ -93,6 +93,10 @@ class VOCMApMetric(mx.metric.EvalMetric):
             """Convert a (list of) mx.NDArray into numpy.ndarray"""
             if isinstance(a, (list, tuple)):
                 out = [x.asnumpy() if isinstance(x, mx.nd.NDArray) else x for x in a]
+                out = np.array(out)
+                # just return out directly for 1-d array
+                if len(out.shape) == 1:
+                    return out
                 return np.concatenate(out, axis=0)
             elif isinstance(a, mx.nd.NDArray):
                 a = a.asnumpy()
