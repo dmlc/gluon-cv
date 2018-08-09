@@ -83,7 +83,7 @@ class LRScheduler(lr_scheduler.LRScheduler):
 
     def update(self, i, epoch):
         T = epoch * self.niters + i
-        assert(T >= 0 and T <= self.N)
+        assert(0 <= T <= self.N)
 
         if self.warmup_epochs > epoch:
             # Warm-up Stage

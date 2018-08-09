@@ -1,8 +1,8 @@
 """RPN anchors."""
 from __future__ import absolute_import
 
-from mxnet import gluon
 import numpy as np
+from mxnet import gluon
 
 
 class RPNAnchorGenerator(gluon.HybridBlock):

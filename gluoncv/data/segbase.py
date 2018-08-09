@@ -1,10 +1,10 @@
 """Base segmentation dataset"""
 import random
 import numpy as np
+from PIL import Image, ImageOps, ImageFilter
 import mxnet as mx
 from mxnet import cpu
 import mxnet.ndarray as F
-from PIL import Image, ImageOps, ImageFilter
 from .base import VisionDataset
 
 __all__ = ['get_segmentation_dataset', 'ms_batchify_fn', 'SegmentationDataset']

@@ -1,7 +1,7 @@
-"""5. Train Faster-RCNN end-to-end on PASCAL VOC
+"""6. Train Faster-RCNN end-to-end on PASCAL VOC
 ================================================
 
-This tutorial goes through the basic steps of training a Faster-RCNN object detection model
+This tutorial goes through the basic steps of training a Faster-RCNN [Ren15]_ object detection model
 provided by GluonCV.
 
 Specifically, we show how to build a state-of-the-art Faster-RCNN model by stacking GluonCV components.
@@ -161,10 +161,16 @@ for ib, batch in enumerate(train_loader):
 # region-aware pooling layers, class predictors and bounding box offset predictors.
 #
 # We highly recommend you to read the original paper to learn more about the ideas
-# behind Faster-RCNN.
+# behind Faster-RCNN [Ren15]_.
 #
 # `Gluon Model Zoo <../../model_zoo/index.html>`__ has a few built-in Faster-RCNN networks, more on the way.
 # You can load your favorate one with one simple line of code:
+#
+# .. hint::
+#
+#    To avoid downloading mdoel in this tutorial, we set `pretrained_base=False`,
+#    in practice we usually want to load pre-trained imagenet models by setting
+#    `pretrained_base=True`.
 from gluoncv import model_zoo
 net = model_zoo.get_model('faster_rcnn_resnet50_v1b_voc', pretrained_base=False)
 print(net)
