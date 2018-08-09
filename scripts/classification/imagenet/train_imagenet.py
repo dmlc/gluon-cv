@@ -283,10 +283,8 @@ def train(ctx):
     net.initialize(mx.init.MSRAPrelu(), ctx=ctx)
 
     if opt.no_wd:
-        import re
-        for k, v in net.collect_params().items():
-            if re.search('beta|bias|gamma', k):
-                v.wd_mult = 0.0
+        for k, v in net.collect_params('.*beta|.*gamma|.*bias').items():
+            v.wd_mult = 0.0
 
     trainer = gluon.Trainer(net.collect_params(), optimizer, optimizer_params)
 
