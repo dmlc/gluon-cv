@@ -11,7 +11,8 @@ from ..rpn import RPN
 
 __all__ = ['FasterRCNN', 'get_faster_rcnn',
            'faster_rcnn_resnet50_v1b_voc',
-           'faster_rcnn_resnet50_v1b_coco']
+           'faster_rcnn_resnet50_v1b_coco',
+           'faster_rcnn_resnet50_v1b_custom']
 
 
 class FasterRCNN(RCNN):
@@ -163,6 +164,10 @@ class FasterRCNN(RCNN):
 
         """
         return list(self._target_generator)[0]
+
+    def reset_class(self, classes):
+        super(FasterRCNN, self).reset_class(classes)
+        self._target_generator = {RCNNTargetGenerator(self.num_class)}
 
     # pylint: disable=arguments-differ
     def hybrid_forward(self, F, x, gt_box=None):
@@ -393,3 +398,56 @@ def faster_rcnn_resnet50_v1b_coco(pretrained=False, pretrained_base=True, **kwar
         rpn_test_pre_nms=6000, rpn_test_post_nms=1000, rpn_min_size=0,
         num_sample=128, pos_iou_thresh=0.5, pos_ratio=0.25,
         **kwargs)
+
+def faster_rcnn_resnet50_v1b_custom(classes, transfer=None, pretrained_base=True,
+                                    pretrained=False, **kwargs):
+    r"""Faster RCNN model with resnet50_v1b base network on custom dataset.
+
+    Parameters
+    ----------
+    classes : iterable of str
+        Names of custom foreground classes. `len(classes)` is the number of foreground classes.
+    transfer : str or None
+        If not `None`, will try to reuse pre-trained weights from faster RCNN networks trained
+        on other datasets.
+    pretrained_base : boolean
+        Whether fetch and load pretrained weights for base network.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+
+    Returns
+    -------
+    mxnet.gluon.HybridBlock
+        Hybrid faster RCNN network.
+    """
+    if transfer is None:
+        from ..resnetv1b import resnet50_v1b
+        base_network = resnet50_v1b(pretrained=pretrained_base, dilated=False,
+                                    use_global_stats=True)
+        features = nn.HybridSequential()
+        top_features = nn.HybridSequential()
+        for layer in ['conv1', 'bn1', 'relu', 'maxpool', 'layer1', 'layer2', 'layer3']:
+            features.add(getattr(base_network, layer))
+        for layer in ['layer4']:
+            top_features.add(getattr(base_network, layer))
+        train_patterns = '|'.join(['.*dense', '.*rpn', '.*down(2|3|4)_conv',
+                                   '.*layers(2|3|4)_conv'])
+        return get_faster_rcnn(
+            name='resnet50_v1b', dataset='custom', pretrained=pretrained,
+            features=features, top_features=top_features, classes=classes,
+            short=600, max_size=1000, train_patterns=train_patterns,
+            nms_thresh=0.3, nms_topk=400, post_nms=100,
+            roi_mode='align', roi_size=(14, 14), stride=16, clip=None,
+            rpn_channel=1024, base_size=16, scales=(2, 4, 8, 16, 32),
+            ratios=(0.5, 1, 2), alloc_size=(128, 128), rpn_nms_thresh=0.7,
+            rpn_train_pre_nms=12000, rpn_train_post_nms=2000,
+            rpn_test_pre_nms=6000, rpn_test_post_nms=300, rpn_min_size=16,
+            num_sample=128, pos_iou_thresh=0.5, pos_ratio=0.25,
+            **kwargs)
+    else:
+        from ...model_zoo import get_model
+        net = get_model('faster_rcnn_resnet50_v1b_' + str(transfer), pretrained=True, **kwargs)
+        net.reset_class(classes)
+    return net

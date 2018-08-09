@@ -38,6 +38,7 @@ _models = {
     'ssd_512_mobilenet1_0_custom': ssd_512_mobilenet1_0_custom,
     'faster_rcnn_resnet50_v1b_voc': faster_rcnn_resnet50_v1b_voc,
     'faster_rcnn_resnet50_v1b_coco': faster_rcnn_resnet50_v1b_coco,
+    'faster_rcnn_resnet50_v1b_custom': faster_rcnn_resnet50_v1b_custom,
     'cifar_resnet20_v1': cifar_resnet20_v1,
     'cifar_resnet56_v1': cifar_resnet56_v1,
     'cifar_resnet110_v1': cifar_resnet110_v1,
