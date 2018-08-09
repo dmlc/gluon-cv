@@ -256,10 +256,11 @@ else:
     save_dir = ''
     save_frequency = 0
 
-def label_transform(label, classes):
+def label_transform(label, classes, eta=0.0):
     ind = label.astype('int')
     res = nd.zeros((ind.shape[0], classes), ctx = label.context)
-    res[nd.arange(ind.shape[0], ctx = label.context), ind] = 1
+    res += eta/classes
+    res[nd.arange(ind.shape[0], ctx = label.context), ind] = 1 - eta + eta/classes
     return res
 
 def smooth(label, classes, eta=0.1):
@@ -326,24 +327,26 @@ def train(ctx):
                 lam = np.random.beta(opt.mixup_alpha, opt.mixup_alpha)
                 if epoch >= opt.num_epochs - opt.mixup_off_epoch:
                     lam = 1
-
                 data_mixup = [lam*X + (1-lam)*X[::-1] for X in data]
+
                 label_mixup = []
+                if opt.label_smoothing:
+                    eta = 0.1
+                else:
+                    eta = 0.0
                 for Y in label:
-                    y1 = label_transform(Y, classes)
-                    y2 = label_transform(Y[::-1], classes)
+                    y1 = label_transform(Y, classes, eta)
+                    y2 = label_transform(Y[::-1], classes, eta)
                     label_mixup.append(lam*y1 + (1-lam)*y2)
 
                 data = data_mixup
                 label = label_mixup
+            elif opt.label_smoothing:
+                label = smooth(label, classes)
 
-            if opt.label_smoothing:
-                label_smooth = smooth(label, classes)
-            else:
-                label_smooth = label
             with ag.record():
                 outputs = [net(X.astype(opt.dtype, copy=False)) for X in data]
-                loss = [L(yhat, y) for yhat, y in zip(outputs, label_smooth)]
+                loss = [L(yhat, y) for yhat, y in zip(outputs, label)]
             for l in loss:
                 l.backward()
             lr_scheduler.update(i, epoch)
