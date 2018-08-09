@@ -2,8 +2,8 @@
 from __future__ import division
 
 from collections import defaultdict
-import mxnet as mx
 import numpy as np
+import mxnet as mx
 from ..bbox import bbox_iou
 
 class VOCMApMetric(mx.metric.EvalMetric):
