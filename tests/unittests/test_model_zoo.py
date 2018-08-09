@@ -49,7 +49,7 @@ def _test_model_list(model_list, ctx, x, pretrained=True, **kwargs):
     pretrained_models = gcv.model_zoo.pretrained_model_list()
     for model in model_list:
         if model in pretrained_models:
-            net = gcv.model_zoo.get_model(model, pretrained=pretrained, **kwargs)
+            net = gcv.model_zoo.get_model(model, pretrained=True, **kwargs)
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 net.initialize()

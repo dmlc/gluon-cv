@@ -116,13 +116,16 @@ def get_fcn(dataset='pascal_voc', backbone='resnet50', pretrained=False,
         warnings.warn('Ignoring backbone_pretrained and setting it to True.')
 
     from ..data.pascal_voc.segmentation import VOCSegmentation
+    from ..data.pascal_aug.segmentation import VOCAugSegmentation
     from ..data.ade20k.segmentation import ADE20KSegmentation
     acronyms = {
         'pascal_voc': 'voc',
+        'pascal_aug': 'voc',
         'ade20k': 'ade',
     }
     datasets = {
         'pascal_voc': VOCSegmentation,
+        'pascal_aug': VOCAugSegmentation,
         'ade20k': ADE20KSegmentation,
     }
     # infer number of classes
