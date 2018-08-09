@@ -121,14 +121,10 @@ class VOCDetection(VisionDataset):
 
     def _validate_label(self, xmin, ymin, xmax, ymax, width, height):
         """Validate labels."""
-        assert xmin >= 0 and xmin < width, (
-            "xmin must in [0, {}), given {}".format(width, xmin))
-        assert ymin >= 0 and ymin < height, (
-            "ymin must in [0, {}), given {}".format(height, ymin))
-        assert xmax > xmin and xmax <= width, (
-            "xmax must in (xmin, {}], given {}".format(width, xmax))
-        assert ymax > ymin and ymax <= height, (
-            "ymax must in (ymin, {}], given {}".format(height, ymax))
+        assert 0 <= xmin < width, "xmin must in [0, {}), given {}".format(width, xmin)
+        assert 0 <= ymin < height, "ymin must in [0, {}), given {}".format(height, ymin)
+        assert xmin < xmax <= width, "xmax must in (xmin, {}], given {}".format(width, xmax)
+        assert ymin < ymax <= height, "ymax must in (ymin, {}], given {}".format(height, ymax)
 
     def _preload_labels(self):
         """Preload all labels into memory."""

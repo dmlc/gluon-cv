@@ -216,7 +216,7 @@ class ResNetV1b(HybridBlock):
 
         layers = nn.HybridSequential(prefix='layers%d_'%stage_index)
         with layers.name_scope():
-            if dilation == 1 or dilation == 2:
+            if dilation in (1, 2):
                 layers.add(block(self.inplanes, planes, strides, dilation=1,
                                  downsample=downsample, previous_dilation=dilation,
                                  norm_layer=norm_layer, norm_kwargs=self.norm_kwargs,

@@ -22,7 +22,7 @@ def get_color_pallete(npimg, dataset='pascal_voc'):
 
     """
     # recovery boundary
-    if dataset == 'pascal_voc' or dataset == 'pascal_aug':
+    if dataset in ('pascal_voc', 'pascal_aug'):
         npimg[npimg == -1] = 255
     # put colormap
     if dataset == 'ade20k':
