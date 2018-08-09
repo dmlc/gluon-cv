@@ -1,5 +1,6 @@
 import argparse, time, logging, os
 
+import numpy as np
 import mxnet as mx
 from mxnet import gluon, nd
 from mxnet import autograd as ag
@@ -64,6 +65,12 @@ parser.add_argument('--use-pretrained', action='store_true',
                     help='enable using pretrained model from gluon.')
 parser.add_argument('--use_se', action='store_true',
                     help='use SE layers or not in resnext. default is false.')
+parser.add_argument('--mixup', action='store_true',
+                    help='whether train the model with mix-up. default is false.')
+parser.add_argument('--mixup-alpha', type=float, default=0.2,
+                    help='beta distribution parameter for mixup sampling, default is 0.2.')
+parser.add_argument('--mixup-off-epoch', type=int, default=0,
+                    help='how many last epochs to train without mixup, default is 0.')
 parser.add_argument('--label-smoothing', action='store_true',
                     help='use label smoothing or not in training. default is false.')
 parser.add_argument('--no-wd', action='store_true',
@@ -234,6 +241,10 @@ if opt.use_rec:
 else:
     train_data, val_data, batch_fn = get_data_loader(opt.data_dir, batch_size, num_workers)
 
+if opt.mixup:
+    train_metric = mx.metric.RMSE()
+else:
+    train_metric = mx.metric.Accuracy()
 acc_top1 = mx.metric.Accuracy()
 acc_top5 = mx.metric.TopKAccuracy(5)
 
@@ -288,8 +299,7 @@ def train(ctx):
 
     trainer = gluon.Trainer(net.collect_params(), optimizer, optimizer_params)
 
-    L = gluon.loss.SoftmaxCrossEntropyLoss()
-    if opt.label_smoothing:
+    if opt.label_smoothing or opt.mixup:
         L = gluon.loss.SoftmaxCrossEntropyLoss(sparse_label=False)
     else:
         L = gluon.loss.SoftmaxCrossEntropyLoss()
@@ -300,11 +310,27 @@ def train(ctx):
         tic = time.time()
         if opt.use_rec:
             train_data.reset()
-        acc_top1.reset()
+        train_metric.reset()
         btic = time.time()
 
         for i, batch in enumerate(train_data):
             data, label = batch_fn(batch, ctx)
+
+            if opt.mixup:
+                lam = np.random.beta(opt.mixup_alpha, opt.mixup_alpha)
+                if epoch >= opt.num_epochs - opt.mixup_off_epoch
+                    lam = 1
+
+                data_mixup = [lam*X + (1-lam)*X[::-1] for X in data]
+                label_mixup = []
+                for Y in label:
+                    y1 = label_transform(Y, classes)
+                    y2 = label_transform(Y[::-1], classes)
+                    label_mixup.append(lam*y1 + (1-lam)*y2)
+
+                data = data_mixup
+                label = label_mixup
+
             if opt.label_smoothing:
                 label_smooth = smooth(label, classes)
             else:
@@ -317,22 +343,25 @@ def train(ctx):
             lr_scheduler.update(i, epoch)
             trainer.step(batch_size)
 
-            acc_top1.update(label, outputs)
+            if opt.mixup:
+                output_softmax = [nd.SoftmaxActivation(out) for out in outputs]
+                train_metric.update(label, output_softmax)
+            else:
+                train_metric.update(label, outputs)
+
             if opt.log_interval and not (i+1)%opt.log_interval:
-                _, top1 = acc_top1.get()
-                err_top1 = 1-top1
-                logger.info('Epoch[%d] Batch [%d]\tSpeed: %f samples/sec\ttop1-err=%f\tlr=%f'%(
-                             epoch, i, batch_size*opt.log_interval/(time.time()-btic), err_top1,
-                             trainer.learning_rate))
+                train_metric_name, train_metric_score = train_metric.get()
+                logger.info('Epoch[%d] Batch [%d]\tSpeed: %f samples/sec\t%s=%f\tlr=%f'%(
+                             epoch, i, batch_size*opt.log_interval/(time.time()-btic),
+                             train_metric_name, train_metric_score, trainer.learning_rate))
                 btic = time.time()
 
-        _, top1 = acc_top1.get()
-        err_top1 = 1-top1
+        train_metric_name, train_metric_score = train_metric.get()
         throughput = int(batch_size * i /(time.time() - tic))
 
         err_top1_val, err_top5_val = test(ctx, val_data)
 
-        logger.info('[Epoch %d] training: err-top1=%f'%(epoch, err_top1))
+        logger.info('[Epoch %d] training: %s=%f'%(epoch, train_metric_name, train_metric_score))
         logger.info('[Epoch %d] speed: %d samples/sec\ttime cost: %f'%(epoch, throughput, time.time()-tic))
         logger.info('[Epoch %d] validation: err-top1=%f err-top5=%f'%(epoch, err_top1_val, err_top5_val))
 
