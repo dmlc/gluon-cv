@@ -21,7 +21,7 @@ class FCN(SegBaseModel):
         'resnet101' or 'resnet152').
     norm_layer : object
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.nn.BatchNorm`;
-    pretrained : bool
+    pretrained_base : bool
         Refers to if the FCN backbone or the encoder is pretrained or not. If `True`,
         model weights of a model that was trained on ImageNet is loaded.
 
@@ -38,9 +38,9 @@ class FCN(SegBaseModel):
     """
     # pylint: disable=arguments-differ
     def __init__(self, nclass, backbone='resnet50', norm_layer=nn.BatchNorm,
-                 aux=True, ctx=cpu(), pretrained=True, **kwargs):
+                 aux=True, ctx=cpu(), **kwargs):
         super(FCN, self).__init__(nclass, aux, backbone, ctx=ctx,
-                                  norm_layer=norm_layer, pretrained=pretrained, **kwargs)
+                                  norm_layer=norm_layer, **kwargs)
         with self.name_scope():
             self.head = _FCNHead(2048, nclass, norm_layer=norm_layer, **kwargs)
             self.head.initialize(ctx=ctx)
