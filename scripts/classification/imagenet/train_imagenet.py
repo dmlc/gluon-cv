@@ -66,6 +66,8 @@ parser.add_argument('--use_se', action='store_true',
                     help='use SE layers or not in resnext. default is false.')
 parser.add_argument('--label-smoothing', action='store_true',
                     help='use label smoothing or not in training. default is false.')
+parser.add_argument('--no-wd', action='store_true',
+                    help='whether to remove weight decay on bias, and beta/gamma for batchnorm layers.')
 parser.add_argument('--batch-norm', action='store_true',
                     help='enable batch normalization or not in vgg. default is false.')
 parser.add_argument('--log-interval', type=int, default=50,
@@ -255,6 +257,11 @@ def smooth(label, classes, eta=0.1):
         smoothed.append(res.astype(opt.dtype, copy=False))
     return smoothed
 
+def zero_wd():
+    for k, v in net.collect_params().items():
+        if re.search('beta', k):
+            v.wd_mult = 0.0
+
 def test(ctx, val_data):
     if opt.use_rec:
         val_data.reset()
@@ -274,6 +281,12 @@ def train(ctx):
     if isinstance(ctx, mx.Context):
         ctx = [ctx]
     net.initialize(mx.init.MSRAPrelu(), ctx=ctx)
+
+    if opt.no_wd:
+        import re
+        for k, v in net.collect_params().items():
+            if re.search('beta|bias|gamma', k):
+                v.wd_mult = 0.0
 
     trainer = gluon.Trainer(net.collect_params(), optimizer, optimizer_params)
 
