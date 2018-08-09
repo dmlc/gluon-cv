@@ -35,11 +35,11 @@ class PSPNet(SegBaseModel):
         super(PSPNet, self).__init__(nclass, aux, backbone, ctx=ctx,
                                      norm_layer=norm_layer, **kwargs)
         with self.name_scope():
-            self.head = _PSPHead(nclass, norm_layer=norm_layer, **kwargs)
+            self.head = _PSPHead(nclass, norm_layer=norm_layer)
             self.head.initialize(ctx=ctx)
             self.head.collect_params().setattr('lr_mult', 10)
             if self.aux:
-                self.auxlayer = _FCNHead(1024, nclass, norm_layer=norm_layer, **kwargs)
+                self.auxlayer = _FCNHead(1024, nclass, norm_layer=norm_layer)
                 self.auxlayer.initialize(ctx=ctx)
                 self.auxlayer.collect_params().setattr('lr_mult', 10)
 
@@ -95,10 +95,10 @@ class _PyramidPooling(HybridBlock):
 
 
 class _PSPHead(HybridBlock):
-    def __init__(self, nclass, norm_layer, norm_kwargs={}, **kwargs):
+    def __init__(self, nclass, norm_layer, norm_kwargs={}):
         super(_PSPHead, self).__init__()
         self.psp = _PyramidPooling(2048, norm_layer=norm_layer,
-                                   norm_kwargs=norm_kwargs, **kwargs)
+                                   norm_kwargs=norm_kwargs)
         with self.name_scope():
             self.block = nn.HybridSequential(prefix='')
             self.block.add(nn.Conv2D(in_channels=4096, channels=512,
@@ -114,7 +114,7 @@ class _PSPHead(HybridBlock):
         return self.block(x)
 
 def get_psp(dataset='pascal_voc', backbone='resnet50', pretrained=False,
-            root='~/.mxnet/models', ctx=cpu(0), **kwargs):
+            root='~/.mxnet/models', ctx=cpu(0), pretrained_base=True, **kwargs):
     r"""Pyramid Scene Parsing Network
     Parameters
     ----------
@@ -126,6 +126,8 @@ def get_psp(dataset='pascal_voc', backbone='resnet50', pretrained=False,
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
+    pretrained_base : bool, default True
+        This will load pretrained backbone network, that was trained on ImageNet.
 
     Examples
     --------
@@ -143,7 +145,8 @@ def get_psp(dataset='pascal_voc', backbone='resnet50', pretrained=False,
         'ade20k': ADE20KSegmentation,
     }
     # infer number of classes
-    model = PSPNet(datasets[dataset].NUM_CLASS, backbone=backbone, ctx=ctx, **kwargs)
+    model = PSPNet(datasets[dataset].NUM_CLASS, backbone=backbone,
+                   pretrained_base=pretrained_base, ctx=ctx, **kwargs)
     if pretrained:
         from .model_store import get_model_file
         model.load_params(get_model_file('psp_%s_%s'%(backbone, acronyms[dataset]),
