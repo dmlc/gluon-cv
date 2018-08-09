@@ -88,6 +88,7 @@ class YOLOOutputV3(gluon.HybridBlock):
             Description of returned object.
 
         """
+        self._clear_cached_op()
         self._classes = len(classes)
         self._num_pred = 1 + 4 + len(classes)
         all_pred = self._num_pred * self._num_anchors
