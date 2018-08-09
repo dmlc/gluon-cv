@@ -107,7 +107,7 @@ def get_fcn(dataset='pascal_voc', backbone='resnet50', pretrained=False,
     >>> print(model)
     """
     from ..data.pascal_voc.segmentation import VOCSegmentation
-    from ..data.pascal_aug.segmentation import VOCAugSegmentation    
+    from ..data.pascal_aug.segmentation import VOCAugSegmentation
     from ..data.ade20k.segmentation import ADE20KSegmentation
     acronyms = {
         'pascal_voc': 'voc',
