@@ -114,7 +114,7 @@ class _PSPHead(HybridBlock):
         return self.block(x)
 
 def get_psp(dataset='pascal_voc', backbone='resnet50', pretrained=False,
-            root='~/.mxnet/models', ctx=cpu(0), backbone_pretrained=True, **kwargs):
+            root='~/.mxnet/models', ctx=cpu(0), pretrained_base=True, **kwargs):
     r"""Pyramid Scene Parsing Network
     Parameters
     ----------
@@ -126,7 +126,7 @@ def get_psp(dataset='pascal_voc', backbone='resnet50', pretrained=False,
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
-    backbone_pretrained : bool, default True
+    pretrained_base : bool, default True
         This will load pretrained backbone network, that was trained on ImageNet.
 
     Examples
@@ -146,7 +146,7 @@ def get_psp(dataset='pascal_voc', backbone='resnet50', pretrained=False,
     }
     # infer number of classes
     model = PSPNet(datasets[dataset].NUM_CLASS, backbone=backbone,
-                   pretrained=backbone_pretrained, ctx=ctx, **kwargs)
+                   pretrained=pretrained_base, ctx=ctx, **kwargs)
     if pretrained:
         from .model_store import get_model_file
         model.load_params(get_model_file('psp_%s_%s'%(backbone, acronyms[dataset]),

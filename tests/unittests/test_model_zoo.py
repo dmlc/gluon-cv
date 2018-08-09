@@ -153,9 +153,9 @@ def test_segmentation_models():
     ctx = mx.context.current_context()
     x = mx.random.uniform(shape=(2, 3, 480, 480), ctx=ctx)
     models = ['fcn_resnet50_voc', 'fcn_resnet101_voc', 'fcn_resnet50_ade']
-    _test_model_list(models, ctx, x, pretrained=True, backbone_pretrained=True)
-    _test_model_list(models, ctx, x, pretrained=False, backbone_pretrained=False)
-    _test_model_list(models, ctx, x, pretrained=False, backbone_pretrained=True)
+    _test_model_list(models, ctx, x, pretrained=True, pretrained_base=True)
+    _test_model_list(models, ctx, x, pretrained=False, pretrained_base=False)
+    _test_model_list(models, ctx, x, pretrained=False, pretrained_base=True)
 
 if __name__ == '__main__':
     import nose
