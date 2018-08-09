@@ -35,11 +35,11 @@ class PSPNet(SegBaseModel):
         super(PSPNet, self).__init__(nclass, aux, backbone, ctx=ctx,
                                      norm_layer=norm_layer, **kwargs)
         with self.name_scope():
-            self.head = _PSPHead(nclass, norm_layer=norm_layer, **kwargs)
+            self.head = _PSPHead(nclass, norm_layer=norm_layer)
             self.head.initialize(ctx=ctx)
             self.head.collect_params().setattr('lr_mult', 10)
             if self.aux:
-                self.auxlayer = _FCNHead(1024, nclass, norm_layer=norm_layer, **kwargs)
+                self.auxlayer = _FCNHead(1024, nclass, norm_layer=norm_layer)
                 self.auxlayer.initialize(ctx=ctx)
                 self.auxlayer.collect_params().setattr('lr_mult', 10)
 
@@ -95,10 +95,10 @@ class _PyramidPooling(HybridBlock):
 
 
 class _PSPHead(HybridBlock):
-    def __init__(self, nclass, norm_layer, norm_kwargs={}, **kwargs):
+    def __init__(self, nclass, norm_layer, norm_kwargs={}):
         super(_PSPHead, self).__init__()
         self.psp = _PyramidPooling(2048, norm_layer=norm_layer,
-                                   norm_kwargs=norm_kwargs, **kwargs)
+                                   norm_kwargs=norm_kwargs)
         with self.name_scope():
             self.block = nn.HybridSequential(prefix='')
             self.block.add(nn.Conv2D(in_channels=4096, channels=512,
