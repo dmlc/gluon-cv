@@ -272,13 +272,8 @@ def smooth(label, classes, eta=0.1):
         res = nd.zeros((ind.shape[0], classes), ctx = l.context)
         res += eta/classes
         res[nd.arange(ind.shape[0], ctx = l.context), ind] = 1 - eta + eta/classes
-        smoothed.append(res.astype(opt.dtype, copy=False))
+        smoothed.append(res)
     return smoothed
-
-def zero_wd():
-    for k, v in net.collect_params().items():
-        if re.search('beta', k):
-            v.wd_mult = 0.0
 
 def test(ctx, val_data):
     if opt.use_rec:
@@ -344,9 +339,11 @@ def train(ctx):
             elif opt.label_smoothing:
                 label = smooth(label, classes)
 
+            label = [y.astype(opt.dtype, copy=False) for y in label]
+
             with ag.record():
                 outputs = [net(X.astype(opt.dtype, copy=False)) for X in data]
-                loss = [L(yhat, y.astype(opt.dtype, copy=False)) for yhat, y in zip(outputs, label)]
+                loss = [L(yhat, y) for yhat, y in zip(outputs, label)]
             for l in loss:
                 l.backward()
             lr_scheduler.update(i, epoch)
