@@ -256,6 +256,12 @@ else:
     save_dir = ''
     save_frequency = 0
 
+def label_transform(label, classes):
+    ind = label.astype('int')
+    res = nd.zeros((ind.shape[0], classes), ctx = label.context)
+    res[nd.arange(ind.shape[0], ctx = label.context), ind] = 1
+    return res
+
 def smooth(label, classes, eta=0.1):
     if isinstance(label, nd.NDArray):
         label = [label]
