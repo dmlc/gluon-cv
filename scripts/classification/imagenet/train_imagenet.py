@@ -348,7 +348,7 @@ def train(ctx):
             trainer.step(batch_size)
 
             if opt.mixup:
-                output_softmax = [nd.SoftmaxActivation(out.astype(label.dtype, copy=False)) \
+                output_softmax = [nd.SoftmaxActivation(out.astype('float32', copy=False)) \
                                   for out in outputs]
                 train_metric.update(label, output_softmax)
             else:
