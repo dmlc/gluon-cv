@@ -339,18 +339,17 @@ def train(ctx):
             elif opt.label_smoothing:
                 label = smooth(label, classes)
 
-            label = [y.astype(opt.dtype, copy=False) for y in label]
-
             with ag.record():
                 outputs = [net(X.astype(opt.dtype, copy=False)) for X in data]
-                loss = [L(yhat, y) for yhat, y in zip(outputs, label)]
+                loss = [L(yhat, y.astype(opt.dtype, copy=False)) for yhat, y in zip(outputs, label)]
             for l in loss:
                 l.backward()
             lr_scheduler.update(i, epoch)
             trainer.step(batch_size)
 
             if opt.mixup:
-                output_softmax = [nd.SoftmaxActivation(out) for out in outputs]
+                output_softmax = [nd.SoftmaxActivation(out.astype(label.dtype, copy=False)) \
+                                  for out in outputs]
                 train_metric.update(label, output_softmax)
             else:
                 train_metric.update(label, outputs)
