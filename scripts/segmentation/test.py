@@ -46,7 +46,7 @@ def test(args):
         # load pretrained weight
         assert args.resume is not None, '=> Please provide the checkpoint using --resume'
         if os.path.isfile(args.resume):
-            model.load_params(args.resume, ctx=args.ctx)
+            model.load_parameters(args.resume, ctx=args.ctx)
         else:
             raise RuntimeError("=> no checkpoint found at '{}'" \
                 .format(args.resume))

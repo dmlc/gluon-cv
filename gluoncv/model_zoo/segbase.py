@@ -16,9 +16,11 @@ __all__ = ['get_segmentation_model', 'SegBaseModel', 'SegEvalModel', 'MultiEvalM
 def get_segmentation_model(model, **kwargs):
     from .fcn import get_fcn
     from .pspnet import get_psp
+    from .deeplabv3 import get_deeplabv3
     models = {
         'fcn': get_fcn,
         'psp': get_psp,
+        'deeplab': get_deeplabv3,
     }
     return models[model](**kwargs)
 
@@ -54,6 +56,8 @@ class SegBaseModel(HybridBlock):
                 pretrained = resnet152_v1c(pretrained=True, dilated=True, **kwargs)
             else:
                 raise RuntimeError('unknown backbone: {}'.format(backbone))
+            #pretrained.load_parameters('resnet101_v1c_mixup.params')
+            #print('loaded resnet101_v1c-mixup.params')
             self.conv1 = pretrained.conv1
             self.bn1 = pretrained.bn1
             self.relu = pretrained.relu

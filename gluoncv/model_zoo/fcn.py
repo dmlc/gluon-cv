@@ -109,10 +109,12 @@ def get_fcn(dataset='pascal_voc', backbone='resnet50', pretrained=False,
     from ..data.pascal_voc.segmentation import VOCSegmentation
     from ..data.pascal_aug.segmentation import VOCAugSegmentation
     from ..data.ade20k.segmentation import ADE20KSegmentation
+    from ..data.mscoco.segmentation import COCOSegmentation
     acronyms = {
         'pascal_voc': 'voc',
         'pascal_aug': 'voc',
         'ade20k': 'ade',
+        'coco': 'coco',
     }
     datasets = {
         'pascal_voc': VOCSegmentation,
@@ -123,7 +125,7 @@ def get_fcn(dataset='pascal_voc', backbone='resnet50', pretrained=False,
     model = FCN(datasets[dataset].NUM_CLASS, backbone=backbone, ctx=ctx, **kwargs)
     if pretrained:
         from .model_store import get_model_file
-        model.load_params(get_model_file('fcn_%s_%s'%(backbone, acronyms[dataset]),
+        model.load_parameters(get_model_file('fcn_%s_%s'%(backbone, acronyms[dataset]),
                                          root=root), ctx=ctx)
     return model
 

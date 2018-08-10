@@ -139,6 +139,10 @@ class ADE20KSegmentation(SegmentationDataset):
         """Category names."""
         return type(self).CLASSES
 
+    @property
+    def pred_offset(self):
+        return 1
+
 def _get_ade20k_pairs(folder, mode='train'):
     img_paths = []
     mask_paths = []

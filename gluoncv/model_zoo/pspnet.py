@@ -7,6 +7,8 @@ from .segbase import SegBaseModel
 from .fcn import _FCNHead
 # pylint: disable-all
 
+__all__ = ['PSPNet', 'get_psp', 'get_psp_ade_resnet50']
+
 class PSPNet(SegBaseModel):
     r"""Pyramid Scene Parsing Network
 
@@ -60,7 +62,7 @@ class PSPNet(SegBaseModel):
 
 
 def _PSP1x1Conv(in_channels, out_channels, norm_layer, norm_kwargs):
-    block = nn.HybridSequential(prefix='')
+    block = nn.HybridSequential()
     with block.name_scope():
         block.add(nn.Conv2D(in_channels=in_channels,
                             channels=out_channels, kernel_size=1))
@@ -133,14 +135,18 @@ def get_psp(dataset='pascal_voc', backbone='resnet50', pretrained=False,
     >>> print(model)
     """
     from ..data.pascal_voc.segmentation import VOCSegmentation
+    from ..data.pascal_aug.segmentation import VOCAugSegmentation
     from ..data.ade20k.segmentation import ADE20KSegmentation
     from ..data.mscoco.segmentation import COCOSegmentation
     acronyms = {
         'pascal_voc': 'voc',
+        'pascal_aug': 'voc',
         'ade20k': 'ade',
+        'coco': 'coco',
     }
     datasets = {
         'pascal_voc': VOCSegmentation,
+        'pascal_aug': VOCAugSegmentation,
         'ade20k': ADE20KSegmentation,
         'coco': COCOSegmentation,
     }
@@ -148,7 +154,7 @@ def get_psp(dataset='pascal_voc', backbone='resnet50', pretrained=False,
     model = PSPNet(datasets[dataset].NUM_CLASS, backbone=backbone, ctx=ctx, **kwargs)
     if pretrained:
         from .model_store import get_model_file
-        model.load_params(get_model_file('psp_%s_%s'%(backbone, acronyms[dataset]),
+        model.load_parameters(get_model_file('psp_%s_%s'%(backbone, acronyms[dataset]),
                                          root=root), ctx=ctx)
     return model
 

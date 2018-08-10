@@ -118,7 +118,7 @@ class Trainer(object):
         # resume checkpoint if needed
         if args.resume is not None:
             if os.path.isfile(args.resume):
-                model.load_params(args.resume, ctx=args.ctx)
+                model.load_parameters(args.resume, ctx=args.ctx)
             else:
                 raise RuntimeError("=> no checkpoint found at '{}'" \
                     .format(args.resume))
@@ -191,7 +191,7 @@ def save_checkpoint(net, args, is_best=False):
         os.makedirs(directory)
     filename='checkpoint.params'
     filename = directory + filename
-    net.save_params(filename)
+    net.save_parameters(filename)
     if is_best:
         shutil.copyfile(filename, directory + 'model_best.params')
 

@@ -35,8 +35,6 @@ class COCOSegmentation(SegmentationDataset):
             ids = list(self.coco.imgs.keys())
             self.ids = self._preprocess(ids, ids_file)
         self.transform = transform
-        #self.root = os.path.join(root, 'train2017') if split == 'train' else \
-        #    os.path.join(root, 'val2017')
 
     def __getitem__(self, index):
         coco = self.coco
