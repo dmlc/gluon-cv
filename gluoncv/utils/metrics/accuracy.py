@@ -1,9 +1,9 @@
 """Accuracy metirc with ignored labels."""
 # pylint: disable=assignment-from-no-return
+import numpy as np
 import mxnet as mx
 from mxnet import ndarray
 from mxnet.metric import check_label_shapes
-import numpy as np
 
 
 class Accuracy(mx.metric.EvalMetric):

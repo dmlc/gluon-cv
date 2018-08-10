@@ -190,7 +190,7 @@ def test_transforms_presets_rcnn():
     train_dataset = gcv.data.VOCDetection(splits=((2007, 'trainval'), (2012, 'trainval')))
     val_dataset = gcv.data.VOCDetection(splits=[(2007, 'test')])
     width, height = (512, 512)
-    net = gcv.model_zoo.get_model('faster_rcnn_resnet50_v2a_voc', pretrained=False, pretrained_base=False)
+    net = gcv.model_zoo.get_model('faster_rcnn_resnet50_v1b_voc', pretrained=False, pretrained_base=False)
     net.initialize()
     num_workers = 0
     short, max_size = 600, 1000

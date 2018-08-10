@@ -37,7 +37,8 @@ class SegBaseModel(HybridBlock):
         for Synchronized Cross-GPU BachNormalization).
     """
     # pylint : disable=arguments-differ
-    def __init__(self, nclass, aux, backbone='resnet50', height=480, width=480, **kwargs):
+    def __init__(self, nclass, aux, backbone='resnet50', height=480, width=480,
+                 pretrained_base=True, **kwargs):
         super(SegBaseModel, self).__init__()
         self.aux = aux
         self.nclass = nclass

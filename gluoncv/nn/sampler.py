@@ -154,14 +154,14 @@ class QuotaSampler(gluon.Block):
         for i in range(matches.shape[0]):
             # init with 0s, which are ignored
             result = F.zeros_like(matches[0])
-            # negative samples with label -1
+            # positive samples
             ious_max = ious.max(axis=-1)[i]
+            result = F.where(matches[i] >= 0, F.ones_like(result), result)
+            result = F.where(ious_max >= self._pos_thresh, F.ones_like(result), result)
+            # negative samples with label -1
             neg_mask = ious_max < self._neg_thresh_high
             neg_mask = neg_mask * (ious_max >= self._neg_thresh_low)
             result = F.where(neg_mask, F.ones_like(result) * -1, result)
-            # positive samples
-            result = F.where(matches[i] >= 0, F.ones_like(result), result)
-            result = F.where(ious_max >= self._pos_thresh, F.ones_like(result), result)
 
             # re-balance if number of postive or negative exceed limits
             result = result.asnumpy()

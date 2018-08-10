@@ -26,8 +26,17 @@ import numpy as np
 import gluoncv as gcv
 from common import try_gpu, with_cpu
 
+def test_get_all_models():
+    names = gcv.model_zoo.get_model_list()
+    for name in names:
+        kwargs = {}
+        if 'custom' in name:
+            kwargs['classes'] = ['a', 'b']
+        net = gcv.model_zoo.get_model(name, pretrained=False, **kwargs)
+        assert isinstance(net, mx.gluon.Block), '{}'.format(name)
+
 @with_cpu(0)
-def _test_model_list(model_list, ctx, x, **kwargs):
+def _test_model_list(model_list, ctx, x, pretrained=True, **kwargs):
     for model in model_list:
         net = gcv.model_zoo.get_model(model, **kwargs)
         with warnings.catch_warnings():
@@ -82,7 +91,8 @@ def test_imagenet_models():
     x = mx.random.uniform(shape=(2, 3, 224, 224), ctx=ctx)
     models = ['resnet18_v1b', 'resnet34_v1b', 'resnet50_v1b',
               'resnet101_v1b', 'resnet152_v1b', 'resnet50_v1c',
-              'resnet101_v1c', 'resnet152_v1c',
+              'resnet101_v1c', 'resnet152_v1c', 'resnet50_v1d',
+              'resnet101_v1d', 'resnet152_v1c',
               'resnext50_32x4d', 'resnext101_32x4d', 'resnext101_64x4d',
               'se_resnext50_32x4d', 'se_resnext101_32x4d', 'se_resnext101_64x4d',
               'se_resnet18_v1', 'se_resnet34_v1', 'se_resnet50_v1',
@@ -118,7 +128,7 @@ def test_ssd_models():
 def test_faster_rcnn_models():
     ctx = mx.context.current_context()
     x = mx.random.uniform(shape=(1, 3, 600, 800), ctx=ctx)  # allow non-squre and larger inputs
-    models = ['faster_rcnn_resnet50_v2a_voc', 'faster_rcnn_resnet50_v2a_coco']
+    models = ['faster_rcnn_resnet50_v1b_voc', 'faster_rcnn_resnet50_v1b_coco']
     _test_model_list(models, ctx, x)
 
 def test_yolo3_models():
@@ -128,7 +138,7 @@ def test_yolo3_models():
     _test_model_list(models, ctx, x)
 
 def test_set_nms():
-    model_list = ['ssd_512_resnet50_v1_voc', 'faster_rcnn_resnet50_v2a_coco', 'yolo3_darknet53_coco']
+    model_list = ['ssd_512_resnet50_v1_voc', 'faster_rcnn_resnet50_v1b_voc', 'yolo3_darknet53_coco']
     for model in model_list:
         net = gcv.model_zoo.get_model(model, pretrained=False, pretrained_base=False)
         net.initialize()
@@ -144,7 +154,9 @@ def test_segmentation_models():
     ctx = mx.context.current_context()
     x = mx.random.uniform(shape=(2, 3, 480, 480), ctx=ctx)
     models = ['fcn_resnet50_voc', 'fcn_resnet101_voc', 'fcn_resnet50_ade']
-    _test_model_list(models, ctx, x)
+    _test_model_list(models, ctx, x, pretrained=True, pretrained_base=True)
+    _test_model_list(models, ctx, x, pretrained=False, pretrained_base=False)
+    _test_model_list(models, ctx, x, pretrained=False, pretrained_base=True)
 
 if __name__ == '__main__':
     import nose

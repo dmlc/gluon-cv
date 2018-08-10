@@ -1,7 +1,6 @@
 """Transforms for RCNN series."""
 from __future__ import absolute_import
 import copy
-import numpy as np
 import mxnet as mx
 from .. import bbox as tbbox
 from .. import image as timage
@@ -143,10 +142,10 @@ class FasterRCNNDefaultTrainTransform(object):
         # feat_h, feat_w = (img.shape[1] // self._stride, img.shape[2] // self._stride)
         oshape = self._feat_sym.infer_shape(data=(1, 3, img.shape[1], img.shape[2]))[1][0]
         anchor = self._anchors[:, :, :oshape[2], :oshape[3], :].reshape((-1, 4))
-        gt_bboxes = mx.nd.array(bbox[np.newaxis, :, :4])
+        gt_bboxes = mx.nd.array(bbox[:, :4])
         cls_target, box_target, box_mask = self._target_generator(
             gt_bboxes, anchor, img.shape[2], img.shape[1])
-        return img, bbox.astype(img.dtype), cls_target[0], box_target[0], box_mask[0]
+        return img, bbox.astype(img.dtype), cls_target, box_target, box_mask
 
 
 class FasterRCNNDefaultValTransform(object):

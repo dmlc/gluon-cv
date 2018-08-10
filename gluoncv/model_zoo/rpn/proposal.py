@@ -87,7 +87,8 @@ class RPNProposal(gluon.HybridBlock):
             #    img, axes=(2)).max().reshape((1, 1, 1))
             # invalid = (axmin < 0) + (aymin < 0) + F.broadcast_greater(axmax, wrange) + \
             #    F.broadcast_greater(aymax, hrange)
-            score = F.where(invalid, F.zeros_like(invalid), score)
+            # avoid invalid anchors suppress anchors with 0 confidence
+            score = F.where(invalid, F.ones_like(invalid) * -1, score)
             invalid = F.repeat(invalid, axis=-1, repeats=4)
             roi = F.where(invalid, F.ones_like(invalid) * -1, roi)
 

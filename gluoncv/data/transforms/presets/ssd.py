@@ -169,7 +169,7 @@ class SSDDefaultValTransform(object):
         """Apply transform to validation image/label."""
         # resize
         h, w, _ = src.shape
-        img = timage.imresize(src, self._width, self._height)
+        img = timage.imresize(src, self._width, self._height, interp=9)
         bbox = tbbox.resize(label, in_size=(w, h), out_size=(self._width, self._height))
 
         img = mx.nd.image.to_tensor(img)
