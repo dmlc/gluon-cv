@@ -37,16 +37,15 @@ class FCN(SegBaseModel):
     >>> print(model)
     """
     # pylint: disable=arguments-differ
-    def __init__(self, nclass, backbone='resnet50', norm_layer=nn.BatchNorm,
-                 aux=True, ctx=cpu(), **kwargs):
+    def __init__(self, nclass, backbone='resnet50', aux=True, ctx=cpu(), **kwargs):
         super(FCN, self).__init__(nclass, aux, backbone, ctx=ctx,
-                                  norm_layer=norm_layer, **kwargs)
+                                  **kwargs)
         with self.name_scope():
-            self.head = _FCNHead(2048, nclass, norm_layer=norm_layer)
+            self.head = _FCNHead(2048, nclass, **kwargs)
             self.head.initialize(ctx=ctx)
             self.head.collect_params().setattr('lr_mult', 10)
             if self.aux:
-                self.auxlayer = _FCNHead(1024, nclass, norm_layer=norm_layer)
+                self.auxlayer = _FCNHead(1024, nclass, **kwargs)
                 self.auxlayer.initialize(ctx=ctx)
                 self.auxlayer.collect_params().setattr('lr_mult', 10)
 

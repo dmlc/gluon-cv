@@ -33,16 +33,14 @@ class DeepLabV3(SegBaseModel):
         arXiv preprint arXiv:1706.05587 (2017).
 
     """
-    def __init__(self, nclass, backbone='resnet50', norm_layer=nn.BatchNorm,
-                 aux=True, ctx=cpu(), **kwargs):
-        super(DeepLabV3, self).__init__(nclass, aux, backbone, ctx=ctx,
-                                     norm_layer=norm_layer, **kwargs)
+    def __init__(self, nclass, backbone='resnet50', aux=True, ctx=cpu(), **kwargs):
+        super(DeepLabV3, self).__init__(nclass, aux, backbone, ctx=ctx, **kwargs)
         with self.name_scope():
-            self.head = _DeepLabHead(nclass, norm_layer=norm_layer, **kwargs)
+            self.head = _DeepLabHead(nclass, **kwargs)
             self.head.initialize(ctx=ctx)
             self.head.collect_params().setattr('lr_mult', 10)
             if self.aux:
-                self.auxlayer = _FCNHead(1024, nclass, norm_layer=norm_layer, **kwargs)
+                self.auxlayer = _FCNHead(1024, nclass, **kwargs)
                 self.auxlayer.initialize(ctx=ctx)
                 self.auxlayer.collect_params().setattr('lr_mult', 10)
 
