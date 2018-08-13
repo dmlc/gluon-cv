@@ -2,7 +2,10 @@
 from __future__ import absolute_import
 
 import sys
-import io
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 import os
 from os import path as osp
 import warnings
@@ -125,7 +128,7 @@ class COCODetectionMetric(mx.metric.EvalMetric):
         names.append('~~~~ Summary metrics ~~~~\n')
         # catch coco print string, don't want directly print here
         _stdout = sys.stdout
-        sys.stdout = io.BytesIO()
+        sys.stdout = StringIO()
         coco_eval.summarize()
         coco_summary = sys.stdout.getvalue()
         sys.stdout = _stdout
