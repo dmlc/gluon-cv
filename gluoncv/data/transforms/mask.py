@@ -3,9 +3,6 @@ import copy
 import mxnet as mx
 import numpy as np
 from ..mscoco.utils import try_import_pycocotools
-# pylint: disable=wrong-import-position,wrong-import-order
-try_import_pycocotools()
-import pycocotools.mask as cocomask
 
 
 def flip(polys, size, flip_x=False, flip_y=False):
@@ -92,6 +89,8 @@ def to_mask(polys, size):
     numpy.ndarray
         Full size binary mask of shape (height, width)
     """
+    try_import_pycocotools()
+    import pycocotools.mask as cocomask
     width, height = size
     polys = [p.flatten().tolist() for p in polys]
     rles = cocomask.frPyObjects(polys, height, width)
