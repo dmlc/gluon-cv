@@ -79,7 +79,7 @@ class MaskRCNN(FasterRCNN):
     def __init__(self, features, top_features, classes,
                  mask_channels=256, rcnn_max_dets=1000, **kwargs):
         super(MaskRCNN, self).__init__(features, top_features, classes,
-                                       additional_input=True, **kwargs)
+                                       additional_output=True, **kwargs)
         self._rcnn_max_dets = rcnn_max_dets
         with self.name_scope():
             self.mask = Mask(self._max_batch, self.num_class, mask_channels)

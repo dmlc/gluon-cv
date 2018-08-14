@@ -1,6 +1,6 @@
 """Mask transformation functions."""
 import copy
-import cv2
+import mxnet as mx
 import numpy as np
 from ..mscoco.utils import try_import_pycocotools
 # pylint: disable=wrong-import-position,wrong-import-order
@@ -124,7 +124,12 @@ def fill(mask, bbox, size):
     x2, y2 = int(x2 - 0.5), int(y2 - 0.5)
     x2, y2 = max(x1, x2), max(y1, y2)
     w, h = (x2 - x1 + 1), (y2 - y1 + 1)
-    mask = (cv2.resize(mask, (w, h)) > 0.5).astype('uint8')
+    mask = mx.nd.array(mask)
+    mask = mask.reshape((0, 0, 1))
+    mask = mx.image.imresize(mask, w=w, h=h, interp=1)
+    mask = mask.reshape((0, 0))
+    mask = mask.asnumpy()
+    mask = (mask > 0.5).astype('uint8')
     ret = np.zeros((height, width), dtype='uint8')
     ret[y1:y2 + 1, x1:x2 + 1] = mask
     return ret
