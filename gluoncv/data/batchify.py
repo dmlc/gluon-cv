@@ -132,13 +132,12 @@ class Stack(object):
 class Pad(object):
     """Pad the input ndarrays along the specific padding axis and stack them to get the output.
     Input of the function will be N samples. Each sample should contain a single element that
-    can be 1) numpy.ndarray, 2) mxnet.nd.NDArray, 3) list of numbers
-    You need to set the `index` parameter to determine which part of the sample requires
-    padding. Also, you can set the `pad_axis` and `pad_val` to determine the padding axis and
+    can be 1) numpy.ndarray, 2) mxnet.nd.NDArray, 3) list of numbers.
+    You can set the `axis` and `pad_val` to determine the padding axis and
     value.
-    The arrays will be padded to the largest dimension at `pad_axis` and then
+    The arrays will be padded to the largest dimension at `axis` and then
     stacked to form the final output. In addition, the function will output the original dimensions
-    at the `pad_axis` if ret_length is turned on.
+    at the `axis` if ret_length is turned on.
     Parameters
     ----------
     axis : int, default 0
