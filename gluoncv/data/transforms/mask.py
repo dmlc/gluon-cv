@@ -116,19 +116,30 @@ def fill(mask, bbox, size):
         Full size binary mask of shape (height, width)
     """
     width, height = size
+    # pad mask
+    M = mask.shape[0]
+    padded_mask = np.zeros((M + 2, M + 2))
+    padded_mask[1:-1, 1:-1] = mask
+    mask = padded_mask
+    # expand boxes
     x1, y1, x2, y2 = bbox
-    x1, y1 = max(0, x1), max(0, y1)
-    x2, y2 = min(width, x2), min(height, y2)
-    x1, y1 = int(x1 + 0.5), int(y1 + 0.5)
-    x2, y2 = int(x2 - 0.5), int(y2 - 0.5)
-    x2, y2 = max(x1, x2), max(y1, y2)
+    x, y, hw, hh = (x1 + x2) / 2, (y1 + y2) / 2, (x2 - x1) / 2, (y2 - y1) / 2
+    hw = hw * ((M + 2) * 1.0 / M)
+    hh = hh * ((M + 2) * 1.0 / M)
+    x1, y1, x2, y2 = x - hw, y - hh, x + hw, y + hh
+    # quantize
+    x1, y1, x2, y2 = map(int, (x1, y1, x2, y2))
     w, h = (x2 - x1 + 1), (y2 - y1 + 1)
+    # resize mask
     mask = mx.nd.array(mask)
     mask = mask.reshape((0, 0, 1))
     mask = mx.image.imresize(mask, w=w, h=h, interp=1)
     mask = mask.reshape((0, 0))
     mask = mask.asnumpy()
+    # binarize and fill
     mask = (mask > 0.5).astype('uint8')
     ret = np.zeros((height, width), dtype='uint8')
-    ret[y1:y2 + 1, x1:x2 + 1] = mask
+    xx1, yy1 = max(0, x1), max(0, y1)
+    xx2, yy2 = min(width, x2 + 1), min(height, y2 + 1)
+    ret[yy1:yy2, xx1:xx2] = mask[yy1 - y1:yy2 - y1, xx1 - x1:xx2 - x1]
     return ret
