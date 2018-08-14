@@ -181,7 +181,7 @@ class MaskRCNNDefaultValTransform(object):
     def __call__(self, src, label, mask):
         """Apply transform to validation image/label."""
         # resize shorter side but keep in max_size
-        h, w, _ = src.shape
+        h, _, _ = src.shape
         img = timage.resize_short_within(src, self._short, self._max_size, interp=1)
         # no scaling ground-truth, return image scaling ratio instead
         im_scale = float(img.shape[0]) / h

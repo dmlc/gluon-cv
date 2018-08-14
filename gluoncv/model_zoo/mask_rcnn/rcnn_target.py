@@ -1,10 +1,24 @@
-"""RCNN Target Generator."""
+"""Mask Target Generator."""
 from __future__ import absolute_import
 
 from mxnet import gluon
 
 
 class MaskTargetGenerator(gluon.HybridBlock):
+    """Mask RCNN target encoder to generate mask targets.
+
+    Parameters
+    ----------
+    num_images : int
+        Number of input images.
+    num_rois : int
+        Number of sampled rois.
+    num_classes : int
+        Number of classes for class-specific targets.
+    mask_size : tuple of int
+        Size of generated masks, for example (14, 14).
+
+    """
     def __init__(self, num_images, num_rois, num_classes, mask_size, **kwargs):
         self._num_images = num_images
         self._num_rois = num_rois
@@ -12,6 +26,7 @@ class MaskTargetGenerator(gluon.HybridBlock):
         self._mask_size = mask_size
         super(MaskTargetGenerator, self).__init__(**kwargs)
 
+    #pylint: disable=arguments-differ
     def hybrid_forward(self, F, rois, gt_masks, matches, cls_targets, **kwargs):
         """Handle B=self._num_image by a for loop.
         There is no way to know number of gt_masks.
@@ -56,7 +71,8 @@ class MaskTargetGenerator(gluon.HybridBlock):
             # batch id = match
             padded_rois = F.concat(match.reshape((-1, 1)), roi, dim=-1)
             # pooled_mask (N, 1, MS, MS) -> (N, MS, MS)
-            pooled_mask = F.contrib.ROIAlign(gt_mask, padded_rois, self._mask_size, 1.0, sample_ratio=2)
+            pooled_mask = F.contrib.ROIAlign(gt_mask, padded_rois,
+                                             self._mask_size, 1.0, sample_ratio=2)
             pooled_mask = pooled_mask.reshape((-3, 0, 0))
             # duplicate to C * (N, MS, MS)
             mask_target = []

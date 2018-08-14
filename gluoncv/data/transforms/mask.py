@@ -1,7 +1,9 @@
+"""Mask transformation functions."""
 import copy
 import cv2
 import numpy as np
 from ..mscoco.utils import try_import_pycocotools
+# pylint: disable=wrong-import-position,wrong-import-order
 try_import_pycocotools()
 import pycocotools.mask as cocomask
 

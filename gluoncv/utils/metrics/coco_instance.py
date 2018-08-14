@@ -101,18 +101,18 @@ class COCOInstanceMetric(mx.metric.EvalMetric):
         ap_default = np.mean(precision[precision > -1])
         return ap_default
 
-    def _update(self, type='bbox'):
+    def _update(self, annType='bbox'):
         """Use coco to get real scores. """
         pred = self.dataset.coco.loadRes(self._filename)
         gt = self.dataset.coco
         # lazy import pycocotools
         try_import_pycocotools()
         from pycocotools.cocoeval import COCOeval
-        coco_eval = COCOeval(gt, pred, type)
+        coco_eval = COCOeval(gt, pred, annType)
         coco_eval.evaluate()
         coco_eval.accumulate()
         names, values = [], []
-        names.append('~~~~ Summary {} metrics ~~~~\n'.format(type))
+        names.append('~~~~ Summary {} metrics ~~~~\n'.format(annType))
         # catch coco print string, don't want directly print here
         _stdout = sys.stdout
         sys.stdout = io.StringIO()
@@ -120,7 +120,7 @@ class COCOInstanceMetric(mx.metric.EvalMetric):
         coco_summary = sys.stdout.getvalue()
         sys.stdout = _stdout
         values.append(str(coco_summary).strip())
-        names.append('~~~~ Mean AP for {} ~~~~\n'.format(type))
+        names.append('~~~~ Mean AP for {} ~~~~\n'.format(annType))
         values.append('{:.1f}'.format(100 * self._get_ap(coco_eval)))
         return names, values
 
@@ -165,8 +165,8 @@ class COCOInstanceMetric(mx.metric.EvalMetric):
             return a
 
         # mask must be the same as image shape, so no batch dimension is supported
-        pred_bbox, pred_label, pred_score, pred_mask = [as_numpy(x) for x in
-            [pred_bboxes, pred_labels, pred_scores, pred_masks]]
+        pred_bbox, pred_label, pred_score, pred_mask = [
+            as_numpy(x) for x in [pred_bboxes, pred_labels, pred_scores, pred_masks]]
         # filter out padded detection & low confidence detections
         valid_pred = np.where((pred_label >= 0) & (pred_score >= self._score_thresh))[0]
         pred_bbox = pred_bbox[valid_pred].astype('float32')

@@ -1,4 +1,4 @@
-"""Faster RCNN Model."""
+"""Mask R-CNN Model."""
 from __future__ import absolute_import
 
 import os
@@ -35,6 +35,7 @@ class Mask(nn.HybridBlock):
             self.mask = nn.Conv2D(num_classes, kernel_size=(1, 1), strides=(1, 1), padding=(0, 0),
                                   weight_initializer=init)
 
+    # pylint: disable=arguments-differ
     def hybrid_forward(self, F, x):
         """Forward Mask Head.
 
@@ -81,11 +82,10 @@ class MaskRCNN(FasterRCNN):
         self._rcnn_max_dets = rcnn_max_dets
         with self.name_scope():
             self.mask = Mask(self._max_batch, self.num_class, mask_channels)
-            self.mask_target = MaskTargetGenerator(self._max_batch,
-                self._num_sample, self.num_class, self._roi_size)
+            self.mask_target = MaskTargetGenerator(
+                self._max_batch, self._num_sample, self.num_class, self._roi_size)
 
-    # pylint: disable=arguments-differ
-    def hybrid_forward(self, F, x, gt_box=None, gt_mask=None):
+    def hybrid_forward(self, F, x, gt_box=None):
         """Forward Faster-RCNN network.
 
         The behavior during traing and inference is different.
@@ -96,8 +96,6 @@ class MaskRCNN(FasterRCNN):
             The network input tensor.
         gt_box : type, only required during training
             The ground-truth bbox tensor with shape (1, N, 4).
-        gt_mask : type, only required during training
-            The ground-truth mask tensor with shape (1, N, x.H, x.W).
 
         Returns
         -------
@@ -135,11 +133,11 @@ class MaskRCNN(FasterRCNN):
 
             # pool to roi features
             if self._roi_mode == 'pool':
-                pooled_feat = F.ROIPooling(feat, padded_rois,
-                    self._roi_size, 1. / self._stride)
+                pooled_feat = F.ROIPooling(
+                    feat, padded_rois, self._roi_size, 1. / self._stride)
             elif self._roi_mode == 'align':
-                pooled_feat = F.contrib.ROIAlign(feat, padded_rois,
-                    self._roi_size, 1. / self._stride, sample_ratio=2)
+                pooled_feat = F.contrib.ROIAlign(
+                    feat, padded_rois, self._roi_size, 1. / self._stride, sample_ratio=2)
             else:
                 raise ValueError("Invalid roi mode: {}".format(self._roi_mode))
 
@@ -165,7 +163,7 @@ class MaskRCNN(FasterRCNN):
             return ids, scores, boxes, masks
 
 def get_mask_rcnn(name, dataset, pretrained=False, ctx=mx.cpu(),
-                    root=os.path.join('~', '.mxnet', 'models'), **kwargs):
+                  root=os.path.join('~', '.mxnet', 'models'), **kwargs):
     r"""Utility function to return mask rcnn networks.
 
     Parameters
