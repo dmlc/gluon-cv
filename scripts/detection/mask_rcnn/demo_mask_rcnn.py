@@ -44,8 +44,8 @@ if __name__ == '__main__':
         x, img = presets.rcnn.load_test(image, short=net.short, max_size=net.max_size)
         ids, scores, bboxes, masks = [xx[0].asnumpy() for xx in net(x)]
 
-        masks = gcv.utils.viz.expand_mask(masks, bboxes, (img.shape[1], img.shape[0]))
-        img = gcv.utils.viz.plot_mask(img, masks, scores)
+        masks = gcv.utils.viz.expand_mask(masks, bboxes, (img.shape[1], img.shape[0]), scores)
+        img = gcv.utils.viz.plot_mask(img, masks)
 
         fig = plt.figure(figsize=(15, 15))
         ax = fig.add_subplot(1, 1, 1)
