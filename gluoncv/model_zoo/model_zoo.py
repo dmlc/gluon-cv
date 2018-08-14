@@ -15,6 +15,13 @@ from .senet import *
 from .se_resnet import *
 from .yolo import *
 from .nasnet import *
+from .alexnet import *
+from .densenet import *
+from .inception import *
+from .resnet import *
+from .squeezenet import *
+from .vgg import *
+from .mobilenet import *
 
 __all__ = ['get_model', 'get_model_list']
 

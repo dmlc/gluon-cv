@@ -188,7 +188,7 @@ class MobileNetV2(nn.HybridBlock):
 
 # Constructor
 def get_mobilenet(multiplier, pretrained=False, ctx=cpu(),
-                  root=os.path.join(base.data_dir(), 'models'), **kwargs):
+                  root='~/.mxnet/models', **kwargs):
     r"""MobileNet model from the
     `"MobileNets: Efficient Convolutional Neural Networks for Mobile Vision Applications"
     <https://arxiv.org/abs/1704.04861>`_ paper.
@@ -219,7 +219,7 @@ def get_mobilenet(multiplier, pretrained=False, ctx=cpu(),
 
 
 def get_mobilenet_v2(multiplier, pretrained=False, ctx=cpu(),
-                     root=os.path.join(base.data_dir(), 'models'), **kwargs):
+                     root='~/.mxnet/models', **kwargs):
     r"""MobileNetV2 model from the
     `"Inverted Residuals and Linear Bottlenecks:
       Mobile Networks for Classification, Detection and Segmentation"
