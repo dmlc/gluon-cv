@@ -15,8 +15,7 @@ from gluoncv import data as gdata
 from gluoncv import utils as gutils
 from gluoncv.model_zoo import get_model
 from gluoncv.data import batchify
-from gluoncv.data.transforms.presets.mask_rcnn import MaskRCNNDefaultTrainTransform
-from gluoncv.data.transforms.presets.mask_rcnn import MaskRCNNDefaultValTransform
+from gluoncv.data.transforms.presets.rcnn import MaskRCNNDefaultTrainTransform, MaskRCNNDefaultValTransform
 from gluoncv.utils.metrics.coco_instance import COCOInstanceMetric
 
 

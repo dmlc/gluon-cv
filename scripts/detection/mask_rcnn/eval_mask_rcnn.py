@@ -15,7 +15,7 @@ from mxnet import gluon
 import gluoncv as gcv
 from gluoncv import data as gdata
 from gluoncv.data import batchify
-from gluoncv.data.transforms.presets.mask_rcnn import MaskRCNNDefaultValTransform
+from gluoncv.data.transforms.presets.rcnn import MaskRCNNDefaultValTransform
 from gluoncv.utils.metrics.coco_instance import COCOInstanceMetric
 
 def parse_args():
