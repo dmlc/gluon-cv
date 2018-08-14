@@ -87,7 +87,7 @@ class MaskRCNN(FasterRCNN):
                 self._max_batch, self._num_sample, self.num_class, self._roi_size)
 
     def hybrid_forward(self, F, x, gt_box=None):
-        """Forward Faster-RCNN network.
+        """Forward Mask RCNN network.
 
         The behavior during traing and inference is different.
 
@@ -183,7 +183,7 @@ def get_mask_rcnn(name, dataset, pretrained=False, ctx=mx.cpu(),
     Returns
     -------
     mxnet.gluon.HybridBlock
-        The Faster-RCNN network.
+        The Mask RCNN network.
 
     """
     net = MaskRCNN(**kwargs)

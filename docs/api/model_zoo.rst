@@ -121,10 +121,13 @@ Object Detection
 Instance Segmentation
 ^^^^^^^^^^^^^^^^^^^^^
 
+.. currentmodule:: gluoncv.model_zoo
+
 :hidden:`Mask RCNN`
 ~~~~~~~~~~~~~~~~~~~
 
-.. currentmodule:: gluoncv.model_zoo
+.. autosummary::
+    :nosignatures:
 
     MaskRCNN
 

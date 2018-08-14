@@ -4,6 +4,7 @@ import mxnet as mx
 import numpy as np
 from ..mscoco.utils import try_import_pycocotools
 
+__all__ = ['flip', 'resize', 'to_mask', 'fill']
 
 def flip(polys, size, flip_x=False, flip_y=False):
     """Flip polygons according to image flipping directions.
