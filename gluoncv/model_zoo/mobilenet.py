@@ -25,8 +25,6 @@ __all__ = ['MobileNet', 'MobileNetV2', 'mobilenet1_0', 'mobilenet_v2_1_0', 'mobi
 __modify__ = 'dwSun'
 __modified_date__ = '18/04/18'
 
-import os
-
 from mxnet.gluon import nn
 from mxnet.context import cpu
 from mxnet.gluon.block import HybridBlock
