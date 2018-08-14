@@ -16,7 +16,7 @@ import gluoncv as gcv
 from gluoncv import data as gdata
 from gluoncv.data import batchify
 from gluoncv.data.transforms.presets.mask_rcnn import MaskRCNNDefaultValTransform
-from gluoncv.utils.metrics.coco_segmentation import COCOSegmentationMetric
+from gluoncv.utils.metrics.coco_instance import COCOInstanceMetric
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Validate Mask RCNN networks.')
@@ -41,9 +41,9 @@ def parse_args():
 
 def get_dataset(dataset, args):
     if dataset.lower() == 'coco':
-        val_dataset = gdata.COCOSegmentation(splits='instances_val2017', skip_empty=False)
-        val_metric = COCOSegmentationMetric(val_dataset, args.save_prefix + '_eval',
-                                            cleanup=not args.save_json)
+        val_dataset = gdata.COCOInstance(splits='instances_val2017', skip_empty=False)
+        val_metric = COCOInstanceMetric(val_dataset, args.save_prefix + '_eval',
+                                        cleanup=not args.save_json)
     else:
         raise NotImplementedError('Dataset: {} not implemented.'.format(dataset))
     return val_dataset, val_metric

@@ -7,11 +7,11 @@ import mxnet as mx
 from .utils import try_import_pycocotools
 from ..base import VisionDataset
 
-__all__ = ['COCOSegmentation']
+__all__ = ['COCOInstance']
 
 
-class COCOSegmentation(VisionDataset):
-    """MS COCO detection dataset.
+class COCOInstance(VisionDataset):
+    """MS COCO instance segmentation dataset.
 
     Parameters
     ----------
@@ -51,7 +51,7 @@ class COCOSegmentation(VisionDataset):
     def __init__(self, root=os.path.join('~', '.mxnet', 'datasets', 'coco'),
                  splits=('instances_val2017',), transform=None, min_object_area=1,
                  skip_empty=True):
-        super(COCOSegmentation, self).__init__(root)
+        super(COCOInstance, self).__init__(root)
         self._root = os.path.expanduser(root)
         self._transform = transform
         self._min_object_area = min_object_area

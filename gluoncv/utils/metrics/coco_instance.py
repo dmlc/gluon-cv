@@ -1,4 +1,4 @@
-"""MS COCO Detection Evaluate Metrics."""
+"""MS COCO Instance Segmentation Evaluate Metrics."""
 from __future__ import absolute_import
 
 import sys
@@ -11,12 +11,13 @@ import mxnet as mx
 from ...data.mscoco.utils import try_import_pycocotools
 
 
-class COCOSegmentationMetric(mx.metric.EvalMetric):
-    """Detection metric for COCO bbox task.
+class COCOInstanceMetric(mx.metric.EvalMetric):
+    """Instance segmentation metric for COCO bbox and segm task.
+    Will return box summary, box metric, seg summary and seg metrc.
 
     Parameters
     ----------
-    dataset : instance of gluoncv.data.COCODetection
+    dataset : instance of gluoncv.data.COCOInstance
         The validation dataset.
     save_prefix : str
         Prefix for the saved JSON results.
@@ -30,7 +31,7 @@ class COCOSegmentationMetric(mx.metric.EvalMetric):
 
     """
     def __init__(self, dataset, save_prefix, use_time=True, cleanup=False, score_thresh=1e-3):
-        super(COCOSegmentationMetric, self).__init__('COCOMeanAP')
+        super(COCOInstanceMetric, self).__init__('COCOInstance')
         self.dataset = dataset
         self._img_ids = sorted(dataset.coco.getImgIds())
         self._current_id = 0

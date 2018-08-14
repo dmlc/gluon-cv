@@ -17,11 +17,11 @@ from gluoncv.model_zoo import get_model
 from gluoncv.data import batchify
 from gluoncv.data.transforms.presets.mask_rcnn import MaskRCNNDefaultTrainTransform
 from gluoncv.data.transforms.presets.mask_rcnn import MaskRCNNDefaultValTransform
-from gluoncv.utils.metrics.coco_segmentation import COCOSegmentationMetric
+from gluoncv.utils.metrics.coco_instance import COCOInstanceMetric
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='Train Faster-RCNN networks e2e.')
+    parser = argparse.ArgumentParser(description='Train Mask R-CNN network end to end.')
     parser.add_argument('--network', type=str, default='resnet50_v1b',
                         help="Base network name which serves as feature extraction base.")
     parser.add_argument('--dataset', type=str, default='coco',
@@ -35,22 +35,22 @@ def parse_args():
                         help='Training epochs.')
     parser.add_argument('--resume', type=str, default='',
                         help='Resume from previously saved parameters if not None. '
-                        'For example, you can resume from ./faster_rcnn_xxx_0123.params')
+                        'For example, you can resume from ./mask_rcnn_xxx_0123.params')
     parser.add_argument('--start-epoch', type=int, default=0,
                         help='Starting epoch for resuming, default is 0 for new training.'
                         'You can specify it to 100 for example to start from 100 epoch.')
     parser.add_argument('--lr', type=str, default='',
-                        help='Learning rate, default is 0.001 for voc single gpu training.')
+                        help='Learning rate, default is 0.00125 for coco single gpu training.')
     parser.add_argument('--lr-decay', type=float, default=0.1,
                         help='decay rate of learning rate. default is 0.1.')
     parser.add_argument('--lr-decay-epoch', type=str, default='',
-                        help='epoches at which learning rate decays. default is 14,20 for voc.')
+                        help='epoches at which learning rate decays. default is 17,23 for coco.')
     parser.add_argument('--lr-warmup', type=str, default='',
-                        help='warmup iterations to adjust learning rate, default is 0 for voc.')
+                        help='warmup iterations to adjust learning rate, default is 8000 for coco.')
     parser.add_argument('--momentum', type=float, default=0.9,
                         help='SGD momentum, default is 0.9')
     parser.add_argument('--wd', type=str, default='',
-                        help='Weight decay, default is 5e-4 for voc')
+                        help='Weight decay, default is 1e-4 for coco')
     parser.add_argument('--log-interval', type=int, default=100,
                         help='Logging mini-batch interval. Default is 100.')
     parser.add_argument('--save-prefix', type=str, default='',
@@ -91,10 +91,9 @@ class RPNAccMetric(mx.metric.EvalMetric):
         # calculate num_inst (average on those fg anchors)
         num_inst = mx.nd.sum(rpn_weight)
 
-        # cls_logits (b, c, h, w) red_label (b, 1, h, w)
-        # pred_label = mx.nd.argmax(rpn_cls_logits, axis=1, keepdims=True)
+        # cls_logits (b, na*h*w, 1)
         pred_label = mx.nd.sigmoid(rpn_cls_logits) >= 0.5
-        # label (b, 1, h, w)
+        # label (b, na*h*w, 1)
         num_acc = mx.nd.sum((pred_label == rpn_label) * rpn_weight)
 
         self.sum_metric += num_acc.asscalar()
@@ -171,7 +170,7 @@ class MaskAccMetric(mx.metric.EvalMetric):
         # rcnn_mask (b, n, c, h, w)
         pred_label = mx.nd.sigmoid(rcnn_mask) >= 0.5
         label = rcnn_mask_target >= 0.5
-        # label (b, 1, h, w)
+        # label (b, n, c, h, w)
         num_acc = mx.nd.sum((pred_label == label) * rcnn_mask_weight)
 
         self.sum_metric += num_acc.asscalar()
@@ -201,9 +200,9 @@ class MaskFGAccMetric(mx.metric.EvalMetric):
 
 def get_dataset(dataset, args):
     if dataset.lower() == 'coco':
-        train_dataset = gdata.COCOSegmentation(splits='instances_train2017')
-        val_dataset = gdata.COCOSegmentation(splits='instances_val2017', skip_empty=False)
-        val_metric = COCOSegmentationMetric(val_dataset, args.save_prefix + '_eval', cleanup=True)
+        train_dataset = gdata.COCOInstance(splits='instances_train2017')
+        val_dataset = gdata.COCOInstance(splits='instances_val2017', skip_empty=False)
+        val_metric = COCOInstanceMetric(val_dataset, args.save_prefix + '_eval', cleanup=True)
     else:
         raise NotImplementedError('Dataset: {} not implemented.'.format(dataset))
     return train_dataset, val_dataset, val_metric
@@ -308,7 +307,6 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
     lr_steps = sorted([float(ls) for ls in args.lr_decay_epoch.split(',') if ls.strip()])
     lr_warmup = float(args.lr_warmup)  # avoid int division
 
-    # TODO(zhreshold) losses?
     rpn_cls_loss = mx.gluon.loss.SigmoidBinaryCrossEntropyLoss(from_sigmoid=False)
     rpn_box_loss = mx.gluon.loss.HuberLoss(rho=1/9.)  # == smoothl1
     rcnn_cls_loss = mx.gluon.loss.SoftmaxCrossEntropyLoss()
@@ -416,7 +414,6 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
             trainer.step(batch_size)
             # update metrics
             if args.log_interval and not (i + 1) % args.log_interval:
-                # msg = ','.join(['{}={:.3f}'.format(*metric.get()) for metric in metrics])
                 msg = ','.join(['{}={:.3f}'.format(*metric.get()) for metric in metrics + metrics2])
                 logger.info('[Epoch {}][Batch {}], Speed: {:.3f} samples/sec, {}'.format(
                     epoch, i, args.log_interval * batch_size/(time.time()-btic), msg))
