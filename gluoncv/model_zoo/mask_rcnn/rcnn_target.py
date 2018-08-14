@@ -20,14 +20,14 @@ class MaskTargetGenerator(gluon.HybridBlock):
 
     """
     def __init__(self, num_images, num_rois, num_classes, mask_size, **kwargs):
+        super(MaskTargetGenerator, self).__init__(**kwargs)
         self._num_images = num_images
         self._num_rois = num_rois
         self._num_classes = num_classes
         self._mask_size = mask_size
-        super(MaskTargetGenerator, self).__init__(**kwargs)
 
     #pylint: disable=arguments-differ
-    def hybrid_forward(self, F, rois, gt_masks, matches, cls_targets, **kwargs):
+    def hybrid_forward(self, F, rois, gt_masks, matches, cls_targets):
         """Handle B=self._num_image by a for loop.
         There is no way to know number of gt_masks.
 
