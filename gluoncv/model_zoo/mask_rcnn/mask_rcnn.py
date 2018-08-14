@@ -195,7 +195,7 @@ def get_mask_rcnn(name, dataset, pretrained=False, ctx=mx.cpu(),
 
 def mask_rcnn_resnet50_v1b_coco(pretrained=False, pretrained_base=True, **kwargs):
     r"""Mask RCNN model from the paper
-    "He, K., Gkioxari, G., Dollár, P., & Girshick, R. (2017). Mask R-CNN"
+    "He, K., Gkioxari, G., Doll&ar, P., & Girshick, R. (2017). Mask R-CNN"
 
     Parameters
     ----------

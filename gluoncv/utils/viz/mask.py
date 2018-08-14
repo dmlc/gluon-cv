@@ -81,7 +81,7 @@ def plot_mask(img, masks, alpha=0.5):
     if isinstance(masks, mx.nd.NDArray):
         masks = masks.asnumpy()
 
-    for i, mask in enumerate(masks):
+    for mask in masks:
         color = np.random.random(3) * 255
         mask = np.repeat((mask > 0)[:, :, np.newaxis], repeats=3, axis=2)
         img = np.where(mask, img * (1 - alpha) + color * alpha, img)
