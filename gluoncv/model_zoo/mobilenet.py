@@ -16,7 +16,7 @@
 # under the License.
 
 # coding: utf-8
-# pylint: disable= arguments-differ
+# pylint: disable= arguments-differ,unused-argument,missing-docstring
 """MobileNet and MobileNetV2, implemented in Gluon."""
 __all__ = ['MobileNet', 'MobileNetV2', 'mobilenet1_0', 'mobilenet_v2_1_0', 'mobilenet0_75',
            'mobilenet_v2_0_75', 'mobilenet0_5', 'mobilenet_v2_0_5', 'mobilenet0_25',
@@ -27,10 +27,9 @@ __modified_date__ = '18/04/18'
 
 import os
 
-from ... import nn
-from ....context import cpu
-from ...block import HybridBlock
-from .... import base
+from mxnet.gluon import nn
+from mxnet.context import cpu
+from mxnet.gluon.block import HybridBlock
 
 
 # Helpers

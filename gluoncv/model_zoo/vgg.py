@@ -16,7 +16,7 @@
 # under the License.
 
 # coding: utf-8
-# pylint: disable= arguments-differ
+# pylint: disable= arguments-differ,unused-argument
 """VGG, implemented in Gluon."""
 from __future__ import division
 __all__ = ['VGG',
@@ -24,13 +24,10 @@ __all__ = ['VGG',
            'vgg11_bn', 'vgg13_bn', 'vgg16_bn', 'vgg19_bn',
            'get_vgg']
 
-import os
-
-from ....context import cpu
-from ....initializer import Xavier
-from ...block import HybridBlock
-from ... import nn
-from .... import base
+from mxnet.context import cpu
+from mxnet.initializer import Xavier
+from mxnet.gluon.block import HybridBlock
+from mxnet.gluon import nn
 
 
 class VGG(HybridBlock):
@@ -95,7 +92,7 @@ vgg_spec = {11: ([1, 1, 2, 2, 2], [64, 128, 256, 512, 512]),
 
 # Constructors
 def get_vgg(num_layers, pretrained=False, ctx=cpu(),
-            root=os.path.join(base.data_dir(), 'models'), **kwargs):
+            root='~/.mxnet/models', **kwargs):
     r"""VGG model from the `"Very Deep Convolutional Networks for Large-Scale Image Recognition"
     <https://arxiv.org/abs/1409.1556>`_ paper.
 

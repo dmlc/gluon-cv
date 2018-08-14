@@ -16,7 +16,7 @@
 # under the License.
 
 # coding: utf-8
-# pylint: disable= arguments-differ
+# pylint: disable= arguments-differ,unused-argument,missing-docstring
 """ResNets, implemented in Gluon."""
 from __future__ import division
 
@@ -31,12 +31,9 @@ __all__ = ['ResNetV1', 'ResNetV2',
            'se_resnet101_v2', 'se_resnet152_v2',
            'get_resnet']
 
-import os
-
-from ....context import cpu
-from ...block import HybridBlock
-from ... import nn
-from .... import base
+from mxnet.context import cpu
+from mxnet.gluon.block import HybridBlock
+from mxnet.gluon import nn
 
 # Helpers
 def _conv3x3(channels, stride, in_channels):
@@ -470,7 +467,7 @@ resnet_block_versions = [{'basic_block': BasicBlockV1, 'bottle_neck': Bottleneck
 
 # Constructor
 def get_resnet(version, num_layers, pretrained=False, ctx=cpu(),
-               root=os.path.join(base.data_dir(), 'models'), use_se=False, **kwargs):
+               root='~/.mxnet/models', use_se=False, **kwargs):
     r"""ResNet V1 model from `"Deep Residual Learning for Image Recognition"
     <http://arxiv.org/abs/1512.03385>`_ paper.
     ResNet V2 model from `"Identity Mappings in Deep Residual Networks"

@@ -2,7 +2,6 @@
 """Model store which handles pretrained models from both
 mxnet.gluon.model_zoo.vision and gluoncv.models
 """
-from mxnet import gluon
 from .ssd import *
 from .faster_rcnn import *
 from .fcn import *
@@ -63,7 +62,7 @@ _models = {
     'mobilenetv2_1.0': mobilenet_v2_1_0,
     'mobilenetv2_0.75': mobilenet_v2_0_75,
     'mobilenetv2_0.5': mobilenet_v2_0_5,
-    'mobilenetv2_0.25': mobilenet_v2_0_25
+    'mobilenetv2_0.25': mobilenet_v2_0_25,
     'ssd_300_vgg16_atrous_voc': ssd_300_vgg16_atrous_voc,
     'ssd_300_vgg16_atrous_coco': ssd_300_vgg16_atrous_coco,
     'ssd_300_vgg16_atrous_custom' : ssd_300_vgg16_atrous_custom,
@@ -121,16 +120,6 @@ _models = {
     'senet_52': senet_52,
     'senet_103': senet_103,
     'senet_154': senet_154,
-    'se_resnet18_v1': se_resnet18_v1,
-    'se_resnet34_v1': se_resnet34_v1,
-    'se_resnet50_v1': se_resnet50_v1,
-    'se_resnet101_v1': se_resnet101_v1,
-    'se_resnet152_v1': se_resnet152_v1,
-    'se_resnet18_v2': se_resnet18_v2,
-    'se_resnet34_v2': se_resnet34_v2,
-    'se_resnet50_v2': se_resnet50_v2,
-    'se_resnet101_v2': se_resnet101_v2,
-    'se_resnet152_v2': se_resnet152_v2,
     'darknet53': darknet53,
     'yolo3_darknet53_coco': yolo3_darknet53_coco,
     'yolo3_darknet53_voc': yolo3_darknet53_voc,

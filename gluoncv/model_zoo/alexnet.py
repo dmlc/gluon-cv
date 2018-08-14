@@ -16,16 +16,13 @@
 # under the License.
 
 # coding: utf-8
-# pylint: disable= arguments-differ
+# pylint: disable= arguments-differ,unused-argument
 """Alexnet, implemented in Gluon."""
 __all__ = ['AlexNet', 'alexnet']
 
-import os
-
-from ....context import cpu
-from ...block import HybridBlock
-from ... import nn
-from .... import base
+from mxnet.context import cpu
+from mxnet.gluon.block import HybridBlock
+from mxnet.gluon import nn
 
 # Net
 class AlexNet(HybridBlock):
@@ -69,7 +66,7 @@ class AlexNet(HybridBlock):
 
 # Constructor
 def alexnet(pretrained=False, ctx=cpu(),
-            root=os.path.join(base.data_dir(), 'models'), **kwargs):
+            root='~/.mxnet/models', **kwargs):
     r"""AlexNet model from the `"One weird trick..." <https://arxiv.org/abs/1404.5997>`_ paper.
 
     Parameters

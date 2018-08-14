@@ -16,17 +16,14 @@
 # under the License.
 
 # coding: utf-8
-# pylint: disable= arguments-differ
+# pylint: disable= arguments-differ,unused-argument
 """Inception, implemented in Gluon."""
 __all__ = ['Inception3', 'inception_v3']
 
-import os
-
-from ....context import cpu
-from ...block import HybridBlock
-from ... import nn
-from ...contrib.nn import HybridConcurrent
-from .... import base
+from mxnet.context import cpu
+from mxnet.gluon.block import HybridBlock
+from mxnet.gluon import nn
+from mxnet.gluon.contrib.nn import HybridConcurrent
 
 # Helpers
 def _make_basic_conv(**kwargs):
@@ -200,7 +197,7 @@ class Inception3(HybridBlock):
 
 # Constructor
 def inception_v3(pretrained=False, ctx=cpu(),
-                 root=os.path.join(base.data_dir(), 'models'), **kwargs):
+                 root='~/.mxnet/models', **kwargs):
     r"""Inception v3 model from
     `"Rethinking the Inception Architecture for Computer Vision"
     <http://arxiv.org/abs/1512.00567>`_ paper.

@@ -16,17 +16,14 @@
 # under the License.
 
 # coding: utf-8
-# pylint: disable= arguments-differ
+# pylint: disable= arguments-differ,unused-argument
 """DenseNet, implemented in Gluon."""
 __all__ = ['DenseNet', 'densenet121', 'densenet161', 'densenet169', 'densenet201']
 
-import os
-
-from ....context import cpu
-from ...block import HybridBlock
-from ... import nn
-from ...contrib.nn import HybridConcurrent, Identity
-from .... import base
+from mxnet.context import cpu
+from mxnet.gluon.block import HybridBlock
+from mxnet.gluon import nn
+from mxnet.gluon.contrib.nn import HybridConcurrent, Identity
 
 # Helpers
 def _make_dense_block(num_layers, bn_size, growth_rate, dropout, stage_index):
@@ -123,7 +120,7 @@ densenet_spec = {121: (64, 32, [6, 12, 24, 16]),
 
 # Constructor
 def get_densenet(num_layers, pretrained=False, ctx=cpu(),
-                 root=os.path.join(base.data_dir(), 'models'), **kwargs):
+                 root='~/.mxnet/models', **kwargs):
     r"""Densenet-BC model from the
     `"Densely Connected Convolutional Networks" <https://arxiv.org/pdf/1608.06993.pdf>`_ paper.
 

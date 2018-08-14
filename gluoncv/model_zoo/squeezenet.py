@@ -16,17 +16,14 @@
 # under the License.
 
 # coding: utf-8
-# pylint: disable= arguments-differ
+# pylint: disable= arguments-differ,unused-argument
 """SqueezeNet, implemented in Gluon."""
 __all__ = ['SqueezeNet', 'squeezenet1_0', 'squeezenet1_1']
 
-import os
-
-from ....context import cpu
-from ...block import HybridBlock
-from ... import nn
-from ...contrib.nn import HybridConcurrent
-from .... import base
+from mxnet.context import cpu
+from mxnet.gluon.block import HybridBlock
+from mxnet.gluon import nn
+from mxnet.gluon.contrib.nn import HybridConcurrent
 
 # Helpers
 def _make_fire(squeeze_channels, expand1x1_channels, expand3x3_channels):
@@ -111,7 +108,7 @@ class SqueezeNet(HybridBlock):
 
 # Constructor
 def get_squeezenet(version, pretrained=False, ctx=cpu(),
-                   root=os.path.join(base.data_dir(), 'models'), **kwargs):
+                   root='~/.mxnet/models', **kwargs):
     r"""SqueezeNet model from the `"SqueezeNet: AlexNet-level accuracy with 50x fewer parameters
     and <0.5MB model size" <https://arxiv.org/abs/1602.07360>`_ paper.
     SqueezeNet 1.1 model from the `official SqueezeNet repo
