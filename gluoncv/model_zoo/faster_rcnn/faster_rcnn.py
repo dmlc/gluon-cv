@@ -98,6 +98,8 @@ class FasterRCNN(RCNN):
     pos_ratio : float, default is 0.25
         ``pos_ratio`` defines how many positive samples (``pos_ratio * num_sample``) is
         to be sampled.
+    additional_output : boolean, default is False
+        ``additional_output`` is only used for Mask R-CNN to get internal outputs.
 
     Attributes
     ----------
@@ -132,7 +134,8 @@ class FasterRCNN(RCNN):
                  ratios=(8, 16, 32), alloc_size=(128, 128), rpn_nms_thresh=0.7,
                  rpn_train_pre_nms=12000, rpn_train_post_nms=2000,
                  rpn_test_pre_nms=6000, rpn_test_post_nms=300, rpn_min_size=16,
-                 num_sample=128, pos_iou_thresh=0.5, pos_ratio=0.25, **kwargs):
+                 num_sample=128, pos_iou_thresh=0.5, pos_ratio=0.25,
+                 additional_output=False, **kwargs):
         super(FasterRCNN, self).__init__(
             features=features, top_features=top_features, classes=classes,
             short=short, max_size=max_size, train_patterns=train_patterns,
@@ -142,6 +145,7 @@ class FasterRCNN(RCNN):
         self._num_sample = num_sample
         self._rpn_test_post_nms = rpn_test_post_nms
         self._target_generator = {RCNNTargetGenerator(self.num_class)}
+        self._additional_output = additional_output
         with self.name_scope():
             self.rpn = RPN(
                 channels=rpn_channel, stride=stride, base_size=base_size,
@@ -234,8 +238,11 @@ class FasterRCNN(RCNN):
 
         # no need to convert bounding boxes in training, just return
         if autograd.is_training():
+            if self._additional_output:
+                return (cls_pred, box_pred, rpn_box, samples, matches,
+                        raw_rpn_score, raw_rpn_box, anchors, top_feat)
             return (cls_pred, box_pred, rpn_box, samples, matches,
-                    raw_rpn_score, raw_rpn_box, anchors, top_feat)
+                    raw_rpn_score, raw_rpn_box, anchors)
 
         # cls_ids (B, N, C), scores (B, N, C)
         cls_ids, scores = self.cls_decoder(F.softmax(cls_pred, axis=-1))
@@ -273,7 +280,9 @@ class FasterRCNN(RCNN):
         ids = F.slice_axis(result, axis=-1, begin=0, end=1)
         scores = F.slice_axis(result, axis=-1, begin=1, end=2)
         bboxes = F.slice_axis(result, axis=-1, begin=2, end=6)
-        return ids, scores, bboxes, feat
+        if self._additional_output:
+            return ids, scores, bboxes, feat
+        return ids, scores, bboxes
 
 def get_faster_rcnn(name, dataset, pretrained=False, ctx=mx.cpu(),
                     root=os.path.join('~', '.mxnet', 'models'), **kwargs):

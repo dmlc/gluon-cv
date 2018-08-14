@@ -88,7 +88,7 @@ def validate(net, val_data, ctx, eval_metric, size):
             gt_difficults = []
             for x, y, im_scale in zip(*batch):
                 # get prediction results
-                ids, scores, bboxes, _ = net(x)
+                ids, scores, bboxes = net(x)
                 det_ids.append(ids)
                 det_scores.append(scores)
                 # clip to image size
