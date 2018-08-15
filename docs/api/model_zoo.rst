@@ -201,7 +201,7 @@ Semantic Segmentation
 
 
 API Reference
--------------
+^^^^^^^^^^^^^
 
 .. automodule:: gluoncv.model_zoo
     :members:
