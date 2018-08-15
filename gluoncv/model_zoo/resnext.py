@@ -200,7 +200,7 @@ def get_resnext(num_layers, cardinality=32, bottleneck_width=4, use_se=False,
     layers = resnext_spec[num_layers]
     net = ResNext(layers, cardinality, bottleneck_width, use_se=use_se, **kwargs)
     if pretrained:
-        from ..model_store import get_model_file
+        from .model_store import get_model_file
         if not use_se:
             net.load_params(get_model_file('resnext%d_%dx%dd'%(num_layers, cardinality,
                                                                bottleneck_width),

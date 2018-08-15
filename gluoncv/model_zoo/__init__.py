@@ -13,3 +13,11 @@ from . import segbase
 from .resnetv1b import *
 from .se_resnet import *
 from .nasnet import *
+
+from .alexnet import *
+from .densenet import *
+from .inception import *
+from .resnet import *
+from .squeezenet import *
+from .vgg import *
+from .mobilenet import *
