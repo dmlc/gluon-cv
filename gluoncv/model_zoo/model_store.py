@@ -103,12 +103,8 @@ def get_model_file(name, root=os.path.join('~', '.mxnet', 'models')):
     file_path
         Path to the requested pretrained model file.
     """
-    from mxnet.gluon.model_zoo.model_store import get_model_file as upstream_get_model_file
-    try:
-        file_name = upstream_get_model_file(name=name, root=root)
-    except ValueError:
-        file_name = '{name}-{short_hash}'.format(name=name,
-                                                 short_hash=short_hash(name))
+    file_name = '{name}-{short_hash}'.format(name=name,
+                                             short_hash=short_hash(name))
     root = os.path.expanduser(root)
     file_path = os.path.join(root, file_name+'.params')
     sha1_hash = _model_sha1[name]
