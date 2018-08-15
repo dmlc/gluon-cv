@@ -49,6 +49,21 @@ Image Transforms
     ten_crop
 
 
+Instance Segmentation Mask Transforms
+-------------------------------------
+.. currentmodule:: gluoncv.data.transforms.mask
+
+.. autosummary::
+    :nosignatures:
+
+    flip
+
+    resize
+
+    to_mask
+
+    fill
+
 Preset Transforms
 -----------------
 We include presets for reproducing SOTA performances described in
@@ -84,6 +99,19 @@ Faster RCNN
 
     FasterRCNNDefaultValTransform
 
+Mask RCNN
+~~~~~~~~~
+
+.. currentmodule:: gluoncv.data.transforms.presets.rcnn
+
+.. autosummary::
+    :nosignatures:
+
+    load_test
+
+    MaskRCNNDefaultTrainTransform
+
+    MaskRCNNDefaultValTransform
 
 API Reference
 -------------
@@ -99,6 +127,10 @@ API Reference
 .. automodule:: gluoncv.data.transforms.image
     :members:
     :imported-members:
+
+.. automodule:: gluoncv.data.transforms.mask
+    :members:
+    :imported-memebers:
 
 .. automodule:: gluoncv.data.transforms.experimental.bbox
     :members:

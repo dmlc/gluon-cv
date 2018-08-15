@@ -43,6 +43,7 @@ gluoncv.data
     :nosignatures:
 
     gluoncv.data.COCODetection
+    gluoncv.data.COCOInstance
 
 
 `ADE20K <http://groups.csail.mit.edu/vision/datasets/ADE20K/>`_
@@ -61,5 +62,6 @@ API Reference
 .. autoclass:: gluoncv.data.VOCSegmentation
 .. autoclass:: gluoncv.data.VOCAugSegmentation
 .. autoclass:: gluoncv.data.COCODetection
+.. autoclass:: gluoncv.data.COCOInstance
 .. autoclass:: gluoncv.data.ADE20KSegmentation
 .. autoclass:: gluoncv.data.DetectionDataLoader

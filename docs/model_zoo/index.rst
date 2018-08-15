@@ -220,6 +220,33 @@ and their performances.
 | yolo3_darknet53_coco @ 608x608    | 35.6     | 57.1 | 38.2 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/yolo3_darknet53_coco.sh>`_           | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/yolo3_darknet53_coco_train.log>`_            |
 +-----------------------------------+----------+------+------+-----------------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------+
 
+Instance Segmentation
+~~~~~~~~~~~~~~~~~~~~~
+
+Table of pre-trained models for instance segmentation and their performance.
+
+.. hint::
+
+  The model names contain the training information. For instance, ``mask_rcnn_resnet50_v1b_coco``:
+
+  - ``mask_rcnn`` indicates the algorithm is "Mask R-CNN" [13]_.
+
+  - ``resnet50_v1b`` is the type of feature extractor network.
+
+  - ``coco`` is the training dataset.
+
+.. hint::
+
+  The training commands work with the following scripts:
+
+  - For Mask R-CNN networks: :download:`Download train_mask_rcnn.py<../../scripts/instance/mask_rcnn/train_mask_rcnn.py>`
+
++------------------------------+---------------------------+--------------------------+------------------------------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------+
+| Model Box/Seg AP             | Box (0.5:0.95/0.5/0.75)   | Seg (0.5:0.95/0.5/0.75)  | Command                                                                                                                            | Training Log                                                                                                                         |
++==============================+===========================+==========================+====================================================================================================================================+======================================================================================================================================+
+| mask_rcnn_resnet50_v1b_coco  | 38.3/58.7/41.4            | 33.2/54.8/35.0           | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/instance/mask_rcnn_resnet50_v1b_coco.sh>`_      | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/instance/mask_rcnn_resnet50_v1b_coco_train.log>`_          |
++------------------------------+---------------------------+--------------------------+------------------------------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------+
+
 Semantic Segmentation
 ~~~~~~~~~~~~~~~~~~~~~
 
@@ -297,3 +324,6 @@ Table of pre-trained models for semantic segmentation and their performance.
         arXiv preprint arXiv:1804.02767 (2018).
 .. [12] Zhao, Hengshuang, Jianping Shi, Xiaojuan Qi, Xiaogang Wang, and Jiaya Jia. \
        "Pyramid scene parsing network." *CVPR*, 2017
+.. [13] He, Kaming, Georgia Gkioxari, Piotr Dollár and Ross Girshick. \
+        "Mask R-CNN." \
+        In IEEE International Conference on Computer Vision (ICCV), 2017.

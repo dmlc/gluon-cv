@@ -21,6 +21,10 @@ Visualization
 
     plot_bbox
 
+    expand_mask
+
+    plot_mask
+
 Miscellaneous
 -------------
 

@@ -5,6 +5,7 @@ mxnet.gluon.model_zoo.vision and gluoncv.models
 from mxnet import gluon
 from .ssd import *
 from .faster_rcnn import *
+from .mask_rcnn import *
 from .fcn import *
 from .pspnet import *
 from .cifarresnet import *
@@ -39,6 +40,7 @@ _models = {
     'faster_rcnn_resnet50_v1b_voc': faster_rcnn_resnet50_v1b_voc,
     'faster_rcnn_resnet50_v1b_coco': faster_rcnn_resnet50_v1b_coco,
     'faster_rcnn_resnet50_v1b_custom': faster_rcnn_resnet50_v1b_custom,
+    'mask_rcnn_resnet50_v1b_coco': mask_rcnn_resnet50_v1b_coco,
     'cifar_resnet20_v1': cifar_resnet20_v1,
     'cifar_resnet56_v1': cifar_resnet56_v1,
     'cifar_resnet110_v1': cifar_resnet110_v1,

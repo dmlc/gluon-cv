@@ -132,6 +132,12 @@ def test_faster_rcnn_models():
     models = ['faster_rcnn_resnet50_v1b_voc', 'faster_rcnn_resnet50_v1b_coco']
     _test_model_list(models, ctx, x)
 
+def test_mask_rcnn_models():
+    ctx = mx.context.current_context()
+    x = mx.random.uniform(shape=(1, 3, 600, 800), ctx=ctx)
+    models = ['mask_rcnn_resnet50_v1b_coco']
+    _test_model_list(models, ctx, x)
+
 def test_yolo3_models():
     ctx = mx.context.current_context()
     x = mx.random.uniform(shape=(1, 3, 416, 416), ctx=ctx)  # allow non-squre and larger inputs
