@@ -36,7 +36,7 @@ def test_get_all_models():
         assert isinstance(net, mx.gluon.Block), '{}'.format(name)
 
 @with_cpu(0)
-def _test_model_list(model_list, ctx, x, **kwargs):
+def _test_model_list(model_list, ctx, x, pretrained=True, **kwargs):
     for model in model_list:
         net = gcv.model_zoo.get_model(model, **kwargs)
         with warnings.catch_warnings():
@@ -89,22 +89,30 @@ def test_imagenet_models():
 
     # 224x224
     x = mx.random.uniform(shape=(2, 3, 224, 224), ctx=ctx)
-    models = ['resnet18_v1b', 'resnet34_v1b', 'resnet50_v1b',
-              'resnet101_v1b', 'resnet152_v1b', 'resnet50_v1c',
-              'resnet101_v1c', 'resnet152_v1c', 'resnet50_v1d',
-              'resnet101_v1d', 'resnet152_v1c',
+    models = ['resnet18_v1', 'resnet34_v1',
+              'resnet50_v1', 'resnet101_v1', 'resnet152_v1',
+              'resnet18_v1b', 'resnet34_v1b',
+              'resnet50_v1b', 'resnet101_v1b', 'resnet152_v1b',
+              'resnet50_v1c', 'resnet101_v1c', 'resnet152_v1c',
+              'resnet50_v1d', 'resnet101_v1d', 'resnet152_v1d',
+              'resnet50_v1e', 'resnet101_v1e', 'resnet152_v1e',
+              'resnet18_v2', 'resnet34_v2',
+              'resnet50_v2', 'resnet101_v2', 'resnet152_v2',
               'resnext50_32x4d', 'resnext101_32x4d', 'resnext101_64x4d',
               'se_resnext50_32x4d', 'se_resnext101_32x4d', 'se_resnext101_64x4d',
               'se_resnet18_v1', 'se_resnet34_v1', 'se_resnet50_v1',
               'se_resnet101_v1', 'se_resnet152_v1',
               'se_resnet18_v2', 'se_resnet34_v2', 'se_resnet50_v2',
               'se_resnet101_v2', 'se_resnet152_v2',
-              'senet_52', 'senet_103', 'senet_154']
+              'senet_52', 'senet_103', 'senet_154',
+              'alexnet', 'densenet121', 'densenet161', 'densenet169', 'densenet201',
+              'vgg11', 'vgg11_bn', 'vgg13', 'vgg13_bn',
+              'vgg16', 'vgg16_bn', 'vgg19', 'vgg19_bn']
     _test_model_list(models, ctx, x)
 
     # 299x299
     x = mx.random.uniform(shape=(2, 3, 299, 299), ctx=ctx)
-    models = ['nasnet_5_1538', 'nasnet_7_1920', 'nasnet_6_4032']
+    models = ['inceptionv3', 'nasnet_5_1538', 'nasnet_7_1920', 'nasnet_6_4032']
     _test_model_list(models, ctx, x)
 
     # 331x331
@@ -131,6 +139,12 @@ def test_faster_rcnn_models():
     models = ['faster_rcnn_resnet50_v1b_voc', 'faster_rcnn_resnet50_v1b_coco']
     _test_model_list(models, ctx, x)
 
+def test_mask_rcnn_models():
+    ctx = mx.context.current_context()
+    x = mx.random.uniform(shape=(1, 3, 600, 800), ctx=ctx)
+    models = ['mask_rcnn_resnet50_v1b_coco']
+    _test_model_list(models, ctx, x)
+
 def test_yolo3_models():
     ctx = mx.context.current_context()
     x = mx.random.uniform(shape=(1, 3, 416, 416), ctx=ctx)  # allow non-squre and larger inputs
@@ -154,7 +168,9 @@ def test_segmentation_models():
     ctx = mx.context.current_context()
     x = mx.random.uniform(shape=(2, 3, 480, 480), ctx=ctx)
     models = ['fcn_resnet50_voc', 'fcn_resnet101_voc', 'fcn_resnet50_ade']
-    _test_model_list(models, ctx, x)
+    _test_model_list(models, ctx, x, pretrained=True, pretrained_base=True)
+    _test_model_list(models, ctx, x, pretrained=False, pretrained_base=False)
+    _test_model_list(models, ctx, x, pretrained=False, pretrained_base=True)
 
 if __name__ == '__main__':
     import nose

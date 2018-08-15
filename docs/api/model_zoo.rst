@@ -118,6 +118,22 @@ Object Detection
 
     faster_rcnn_resnet50_v1b_coco
 
+Instance Segmentation
+^^^^^^^^^^^^^^^^^^^^^
+
+.. currentmodule:: gluoncv.model_zoo
+
+:hidden:`Mask RCNN`
+~~~~~~~~~~~~~~~~~~~
+
+.. autosummary::
+    :nosignatures:
+
+    MaskRCNN
+
+    get_mask_rcnn
+
+    mask_rcnn_resnet50_v1b_coco
 
 Semantic Segmentation
 ^^^^^^^^^^^^^^^^^^^^^
