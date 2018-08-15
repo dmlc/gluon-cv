@@ -105,15 +105,14 @@ def test_imagenet_models():
               'se_resnet18_v2', 'se_resnet34_v2', 'se_resnet50_v2',
               'se_resnet101_v2', 'se_resnet152_v2',
               'senet_52', 'senet_103', 'senet_154',
-              'densenet121', 'densenet161', 'densenet169', 'densenet201',
-              'inceptionv3', 'alexnet', 
+              'alexnet', 'densenet121', 'densenet161', 'densenet169', 'densenet201',
               'vgg11', 'vgg11_bn', 'vgg13', 'vgg13_bn',
               'vgg16', 'vgg16_bn', 'vgg19', 'vgg19_bn']
     _test_model_list(models, ctx, x)
 
     # 299x299
     x = mx.random.uniform(shape=(2, 3, 299, 299), ctx=ctx)
-    models = ['nasnet_5_1538', 'nasnet_7_1920', 'nasnet_6_4032']
+    models = ['inceptionv3', 'nasnet_5_1538', 'nasnet_7_1920', 'nasnet_6_4032']
     _test_model_list(models, ctx, x)
 
     # 331x331
