@@ -26,11 +26,11 @@ class FasterRCNN(RCNN):
         Tail feature extractor after feature pooling layer.
     classes : iterable of str
         Names of categories, its length is ``num_class``.
-    short : int
+    short : int, default is 600.
         Input image short side size.
-    max_size : int
+    max_size : int, default is 1000.
         Maximum size of input image long side.
-    train_patterns : str
+    train_patterns : str, default is None.
         Matching pattern for trainable parameters.
     nms_thresh : float, default is 0.3.
         Non-maximum suppression threshold. You can speficy < 0 or > 1 to disable NMS.
@@ -98,6 +98,8 @@ class FasterRCNN(RCNN):
     pos_ratio : float, default is 0.25
         ``pos_ratio`` defines how many positive samples (``pos_ratio * num_sample``) is
         to be sampled.
+    additional_output : boolean, default is False
+        ``additional_output`` is only used for Mask R-CNN to get internal outputs.
 
     Attributes
     ----------
@@ -125,14 +127,15 @@ class FasterRCNN(RCNN):
 
     """
     def __init__(self, features, top_features, classes,
-                 short, max_size, train_patterns=None,
+                 short=600, max_size=1000, train_patterns=None,
                  nms_thresh=0.3, nms_topk=400, post_nms=100,
                  roi_mode='align', roi_size=(14, 14), stride=16, clip=None,
                  rpn_channel=1024, base_size=16, scales=(0.5, 1, 2),
                  ratios=(8, 16, 32), alloc_size=(128, 128), rpn_nms_thresh=0.7,
                  rpn_train_pre_nms=12000, rpn_train_post_nms=2000,
                  rpn_test_pre_nms=6000, rpn_test_post_nms=300, rpn_min_size=16,
-                 num_sample=128, pos_iou_thresh=0.5, pos_ratio=0.25, **kwargs):
+                 num_sample=128, pos_iou_thresh=0.5, pos_ratio=0.25,
+                 additional_output=False, **kwargs):
         super(FasterRCNN, self).__init__(
             features=features, top_features=top_features, classes=classes,
             short=short, max_size=max_size, train_patterns=train_patterns,
@@ -142,6 +145,7 @@ class FasterRCNN(RCNN):
         self._num_sample = num_sample
         self._rpn_test_post_nms = rpn_test_post_nms
         self._target_generator = {RCNNTargetGenerator(self.num_class)}
+        self._additional_output = additional_output
         with self.name_scope():
             self.rpn = RPN(
                 channels=rpn_channel, stride=stride, base_size=base_size,
@@ -224,9 +228,9 @@ class FasterRCNN(RCNN):
 
         # RCNN prediction
         top_feat = self.top_features(pooled_feat)
-        top_feat = self.global_avg_pool(top_feat)
-        cls_pred = self.class_predictor(top_feat)
-        box_pred = self.box_predictor(top_feat)
+        avg_feat = self.global_avg_pool(top_feat)
+        cls_pred = self.class_predictor(avg_feat)
+        box_pred = self.box_predictor(avg_feat)
         # cls_pred (B * N, C) -> (B, N, C)
         cls_pred = cls_pred.reshape((self._max_batch, num_roi, self.num_class + 1))
         # box_pred (B * N, C * 4) -> (B, N, C, 4)
@@ -234,6 +238,9 @@ class FasterRCNN(RCNN):
 
         # no need to convert bounding boxes in training, just return
         if autograd.is_training():
+            if self._additional_output:
+                return (cls_pred, box_pred, rpn_box, samples, matches,
+                        raw_rpn_score, raw_rpn_box, anchors, top_feat)
             return (cls_pred, box_pred, rpn_box, samples, matches,
                     raw_rpn_score, raw_rpn_box, anchors)
 
@@ -273,6 +280,8 @@ class FasterRCNN(RCNN):
         ids = F.slice_axis(result, axis=-1, begin=0, end=1)
         scores = F.slice_axis(result, axis=-1, begin=1, end=2)
         bboxes = F.slice_axis(result, axis=-1, begin=2, end=6)
+        if self._additional_output:
+            return ids, scores, bboxes, feat
         return ids, scores, bboxes
 
 def get_faster_rcnn(name, dataset, pretrained=False, ctx=mx.cpu(),
