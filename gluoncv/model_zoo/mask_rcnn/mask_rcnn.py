@@ -152,6 +152,8 @@ class MaskRCNN(FasterRCNN):
             roi_ids = F.tile(F.arange(0, num_rois), reps=self._max_batch)
             # index the C dimension (B * N,)
             class_ids = ids.reshape((-1,))
+            # clip to 0 to max class
+            class_ids = F.clip(class_ids, 0, self.num_class)
             # pick from (B, N, C, PS*2, PS*2) -> (B * N, PS*2, PS*2)
             indices = F.stack(batch_ids, roi_ids, class_ids, axis=0)
             masks = F.gather_nd(rcnn_mask, indices)
