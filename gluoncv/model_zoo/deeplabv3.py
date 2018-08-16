@@ -33,8 +33,10 @@ class DeepLabV3(SegBaseModel):
         arXiv preprint arXiv:1706.05587 (2017).
 
     """
-    def __init__(self, nclass, backbone='resnet50', aux=True, ctx=cpu(), **kwargs):
-        super(DeepLabV3, self).__init__(nclass, aux, backbone, ctx=ctx, **kwargs)
+    def __init__(self, nclass, backbone='resnet50', aux=True, ctx=cpu(), pretrained_base=True,
+                 **kwargs):
+        super(DeepLabV3, self).__init__(nclass, aux, backbone, ctx=ctx, pretrained_base=True,
+                                        **kwargs)
         with self.name_scope():
             self.head = _DeepLabHead(nclass, **kwargs)
             self.head.initialize(ctx=ctx)
@@ -55,9 +57,7 @@ class DeepLabV3(SegBaseModel):
             auxout = self.auxlayer(c3)
             auxout = F.contrib.BilinearResize2D(auxout, **self._up_kwargs)
             outputs.append(auxout)
-            return tuple(outputs)
-        else:
-            return x
+        return tuple(outputs)
 
 
 class _DeepLabHead(HybridBlock):
@@ -122,7 +122,8 @@ class _ASPP(nn.HybridBlock):
         b1 = _ASPPConv(in_channels, out_channels, rate1, norm_layer, norm_kwargs)
         b2 = _ASPPConv(in_channels, out_channels, rate2, norm_layer, norm_kwargs)
         b3 = _ASPPConv(in_channels, out_channels, rate3, norm_layer, norm_kwargs)
-        b4 = _AsppPooling(in_channels, out_channels, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+        b4 = _AsppPooling(in_channels, out_channels, norm_layer=norm_layer,
+                          norm_kwargs=norm_kwargs)
 
         self.concurent = gluon.contrib.nn.HybridConcurrent(axis=1)
         self.concurent.add(b0)
@@ -132,7 +133,8 @@ class _ASPP(nn.HybridBlock):
         self.concurent.add(b4)
 
         self.project = nn.HybridSequential()
-        self.project.add(nn.Conv2D(in_channels=5*out_channels, channels=out_channels, kernel_size=1, use_bias=False))
+        self.project.add(nn.Conv2D(in_channels=5*out_channels, channels=out_channels,
+                                   kernel_size=1, use_bias=False))
         self.project.add(norm_layer(in_channels=out_channels, **norm_kwargs))
         self.project.add(nn.Activation("relu"))
         self.project.add(nn.Dropout(0.5))

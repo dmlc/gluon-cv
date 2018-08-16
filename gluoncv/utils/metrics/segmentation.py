@@ -1,9 +1,61 @@
 """Evaluation Metrics for Semantic Segmentation"""
+import threading
 import numpy as np
+import mxnet as mx
 import mxnet.ndarray as F
+from mxnet.metric import EvalMetric
 
-__all__ = ['batch_pix_accuracy', 'batch_intersection_union', 'pixelAccuracy',
-           'intersectionAndUnion']
+__all__ = ['SegmentationMetric', 'batch_pix_accuracy', 'batch_intersection_union',
+           'pixelAccuracy', 'intersectionAndUnion']
+
+class SegmentationMetric(EvalMetric):
+    """Computes pixAcc and mIoU metric scroes
+    """
+    def __init__(self, nclass):
+        super(SegmentationMetric, self).__init__('pixAcc & mIoU')
+        self.nclass = nclass
+        self.lock = threading.Lock()
+        self.reset()
+
+    def update(self, labels, preds):
+        def evaluate_worker(self, label, pred):
+            correct, labeled = batch_pix_accuracy(
+                pred, label)
+            inter, union = batch_intersection_union(
+                pred, label, self.nclass)
+            with self.lock:
+                self.total_correct += correct
+                self.total_label += labeled
+                self.total_inter += inter
+                self.total_union += union
+            return
+
+        if isinstance(preds, mx.nd.NDArray):
+            evaluate_worker(self, labels, preds)
+            return
+        elif isinstance(preds, (list, tuple)):
+            threads = [threading.Thread(target=evaluate_worker,
+                                        args=(self, label, pred),
+                                       )
+                       for (label, pred) in zip(labels, preds)]
+            for thread in threads:
+                thread.start()
+            for thread in threads:
+                thread.join()
+            return
+
+    def get(self):
+        pixAcc = 1.0 * self.total_correct / (np.spacing(1) + self.total_label)
+        IoU = 1.0 * self.total_inter / (np.spacing(1) + self.total_union)
+        mIoU = IoU.mean()
+        return pixAcc, mIoU
+        
+    def reset(self):
+        self.total_inter = 0
+        self.total_union = 0
+        self.total_correct = 0
+        self.total_label = 0
+        return
 
 def batch_pix_accuracy(output, target):
     """PixAcc"""
@@ -38,6 +90,7 @@ def batch_intersection_union(output, target, nclass):
     area_pred, _ = np.histogram(predict, bins=nbins, range=(mini, maxi))
     area_lab, _ = np.histogram(target, bins=nbins, range=(mini, maxi))
     area_union = area_pred + area_lab - area_inter
+    assert (area_inter <= area_union).all(), "Intersection area should be smaller than Unition's"
     return area_inter, area_union
 
 

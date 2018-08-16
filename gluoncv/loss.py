@@ -247,40 +247,24 @@ class SoftmaxCrossEntropyLoss(Loss):
         The label to ignore.
     size_average : bool, default False
         Whether to re-scale loss with regard to ignored labels.
-    valid_size : int, default 1000
-        The size of label, equal to the number of classes for classification models.
-        It affects the re-scaled loss if size_average is True.
     """
     # pylint: disable=unused-argument
-    def __init__(self, axis=1, sparse_label=True, from_logits=False, weight=None,
-                 batch_axis=0, ignore_label=-1, size_average=False, valid_size=None, **kwargs):
-        super(SoftmaxCrossEntropyLoss, self).__init__(weight, batch_axis, **kwargs)
-        self._axis = axis
+    def __init__(self, sparse_label=True, batch_axis=0, ignore_label=-1,
+                 size_average=True, **kwargs):
+        super(SoftmaxCrossEntropyLoss, self).__init__(None, batch_axis, **kwargs)
         self._sparse_label = sparse_label
-        self._from_logits = from_logits
         self._ignore_label = ignore_label
         self._size_average = size_average
 
-    def hybrid_forward(self, F, pred, label, sample_weight=None):
+    def hybrid_forward(self, F, pred, label):
         """Compute loss"""
-        if not self._from_logits:
-            pred = F.log_softmax(pred, axis=self._axis)
-        if self._sparse_label:
-            if self._size_average:
-                valid_label_map = (label != self._ignore_label).astype('float32')
-            loss = -F.pick(pred, label, axis=self._axis, keepdims=True)
-            loss = F.where(label.expand_dims(axis=self._axis) == self._ignore_label,
-                           F.zeros_like(loss), loss)
-        else:
-            label = _reshape_like(F, label, pred)
-            loss = -F.sum(pred*label, axis=self._axis, keepdims=True)
-        loss = _apply_weighting(F, loss, self._weight, sample_weight)
-        if self._size_average and self._sparse_label:
-            assert valid_size is not None, "valid_size is required for size average"
-            return F.mean(loss, axis=self._batch_axis, exclude=True) * \
-                valid_size / F.sum(valid_label_map)
-        else:
-            return F.mean(loss, axis=self._batch_axis, exclude=True)
+        softmaxout = F.SoftmaxOutput(
+            pred, label.astype(pred.dtype), ignore_label=self._ignore_label, multi_output=self._sparse_label,
+            use_ignore=True, normalization='valid' if self._size_average else 'null')
+        loss = -F.pick(F.log(softmaxout), label, axis=1, keepdims=True)
+        loss = F.where(label.expand_dims(axis=1) == self._ignore_label,
+                       F.zeros_like(loss), loss)
+        return F.mean(loss, axis=self._batch_axis, exclude=True)
 
 
 class SoftmaxCrossEntropyLossWithAux(SoftmaxCrossEntropyLoss):
@@ -297,7 +281,7 @@ class SoftmaxCrossEntropyLossWithAux(SoftmaxCrossEntropyLoss):
     """
     def __init__(self, aux=True, mixup=False, aux_weight=0.2, ignore_label=-1, **kwargs):
         super(SoftmaxCrossEntropyLossWithAux, self).__init__(
-            axis=1, ignore_label=ignore_label, **kwargs)
+            ignore_label=ignore_label, **kwargs)
         self.aux = aux
         self.mixup = mixup
         self.aux_weight = aux_weight

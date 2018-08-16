@@ -8,6 +8,7 @@ import mxnet as mx
 from mxnet import gluon, autograd
 from mxnet.gluon.data.vision import transforms
 
+import gluoncv
 from gluoncv.loss import SoftmaxCrossEntropyLossWithAux
 from gluoncv.utils import LRScheduler
 from gluoncv.model_zoo.segbase import *
@@ -137,6 +138,8 @@ class Trainer(object):
                                         'momentum': args.momentum,
                                         'multi_precision': True},
                                         kvstore = kv)
+        # evaluation metrics
+        self.metric = gluoncv.utils.metrics.SegmentationMetric(trainset.num_class)
 
     def training(self, epoch):
         tbar = tqdm(self.train_data)
@@ -167,18 +170,15 @@ class Trainer(object):
         save_checkpoint(self.net.module, self.args, False)
 
     def validation(self, epoch):
-        total_inter, total_union, total_correct, total_label = 0, 0, 0, 0
+        #total_inter, total_union, total_correct, total_label = 0, 0, 0, 0
+        self.metric.reset()
         tbar = tqdm(self.eval_data)
         for i, (data, target) in enumerate(tbar):
-            outputs = self.evaluator(data, target)
-            for (correct, labeled, inter, union) in outputs:
-                total_correct += correct
-                total_label += labeled
-                total_inter += inter
-                total_union += union
-            pixAcc = 1.0 * total_correct / (np.spacing(1) + total_label)
-            IoU = 1.0 * total_inter / (np.spacing(1) + total_union)
-            mIoU = IoU.mean()
+            outputs = self.evaluator(data)
+            outputs = [x[0] for x in outputs]
+            targets = mx.gluon.utils.split_and_load(target, args.ctx)
+            self.metric.update(targets, outputs)
+            pixAcc, mIoU = self.metric.get()
             tbar.set_description('Epoch %d, validation pixAcc: %.3f, mIoU: %.3f'%\
                 (epoch, pixAcc, mIoU))
             mx.nd.waitall()

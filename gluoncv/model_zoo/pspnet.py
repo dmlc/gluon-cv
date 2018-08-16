@@ -32,9 +32,9 @@ class PSPNet(SegBaseModel):
         "Pyramid scene parsing network." *CVPR*, 2017
 
     """
-    def __init__(self, nclass, backbone='resnet50', aux=True, ctx=cpu(),
+    def __init__(self, nclass, backbone='resnet50', aux=True, ctx=cpu(), pretrained_base=True,
                  **kwargs):
-        super(PSPNet, self).__init__(nclass, aux, backbone, ctx=ctx,
+        super(PSPNet, self).__init__(nclass, aux, backbone, ctx=ctx, pretrained_base=True,
                                      **kwargs)
         with self.name_scope():
             self.head = _PSPHead(nclass, **kwargs)
@@ -56,9 +56,7 @@ class PSPNet(SegBaseModel):
             auxout = self.auxlayer(c3)
             auxout = F.contrib.BilinearResize2D(auxout, **self._up_kwargs)
             outputs.append(auxout)
-            return tuple(outputs)
-        else:
-            return x
+        return tuple(outputs)
 
 
 def _PSP1x1Conv(in_channels, out_channels, norm_layer, norm_kwargs):
@@ -97,7 +95,7 @@ class _PyramidPooling(HybridBlock):
 
 
 class _PSPHead(HybridBlock):
-    def __init__(self, nclass, norm_layer, norm_kwargs={}):
+    def __init__(self, nclass, norm_layer=nn.BatchNorm, norm_kwargs={}):
         super(_PSPHead, self).__init__()
         self.psp = _PyramidPooling(2048, norm_layer=norm_layer,
                                    norm_kwargs=norm_kwargs)

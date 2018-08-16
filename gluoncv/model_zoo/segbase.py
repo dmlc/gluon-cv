@@ -5,7 +5,7 @@ import mxnet as mx
 from mxnet.ndarray import NDArray
 from mxnet.gluon.nn import HybridBlock
 from mxnet.gluon.loss import Loss, _apply_weighting
-from ..utils.metrics import voc_segmentation
+from ..utils.metrics import segmentation
 from ..utils.parallel import parallel_apply
 from .resnetv1b import *
 from ..utils.parallel import tuple_map
@@ -81,19 +81,9 @@ class SegBaseModel(HybridBlock):
         c4 = self.layer4(c3)
         return c3, c4
 
-    def evaluate(self, x, target=None):
+    def evaluate(self, x):
         """evaluating network with inputs and targets"""
-        pred = self.forward(x)
-        if self.aux:
-            pred = pred[0]
-        if target is None:
-            return pred
-        correct, labeled = voc_segmentation.batch_pix_accuracy( \
-            pred, target)
-        inter, union = voc_segmentation.batch_intersection_union(
-            pred, target, self.nclass)
-
-        return correct, labeled, inter, union
+        return self.forward(x)[0]
 
     def demo(self, x):
         h, w = x.shape[2:]

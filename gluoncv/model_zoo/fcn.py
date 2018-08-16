@@ -37,8 +37,9 @@ class FCN(SegBaseModel):
     >>> print(model)
     """
     # pylint: disable=arguments-differ
-    def __init__(self, nclass, backbone='resnet50', aux=True, ctx=cpu(), **kwargs):
-        super(FCN, self).__init__(nclass, aux, backbone, ctx=ctx,
+    def __init__(self, nclass, backbone='resnet50', aux=True, ctx=cpu(), pretrained_base=True,
+                 **kwargs):
+        super(FCN, self).__init__(nclass, aux, backbone, ctx=ctx, pretrained_base=True,
                                   **kwargs)
         with self.name_scope():
             self.head = _FCNHead(2048, nclass, **kwargs)
@@ -61,14 +62,12 @@ class FCN(SegBaseModel):
             auxout = self.auxlayer(c3)
             auxout = F.contrib.BilinearResize2D(auxout, **self._up_kwargs)
             outputs.append(auxout)
-            return tuple(outputs)
-        else:
-            return x
+        return tuple(outputs)
 
 
 class _FCNHead(HybridBlock):
     # pylint: disable=redefined-outer-name
-    def __init__(self, in_channels, channels, norm_layer, norm_kwargs={}):
+    def __init__(self, in_channels, channels, norm_layer=nn.BatchNorm, norm_kwargs={}):
         super(_FCNHead, self).__init__()
         with self.name_scope():
             self.block = nn.HybridSequential()

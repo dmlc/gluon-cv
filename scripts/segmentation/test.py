@@ -6,11 +6,12 @@ import mxnet as mx
 from mxnet import gluon
 from mxnet.gluon.data.vision import transforms
 
+import gluoncv
 from gluoncv.model_zoo.segbase import *
 from gluoncv.model_zoo import get_model
 from gluoncv.data import get_segmentation_dataset, ms_batchify_fn
 from gluoncv.utils.viz import get_color_pallete
-from gluoncv.utils.metrics.voc_segmentation import batch_pix_accuracy, batch_intersection_union
+#from gluoncv.utils.metrics.voc_segmentation import batch_pix_accuracy, batch_intersection_union
 
 from train import parse_args
 
@@ -52,6 +53,7 @@ def test(args):
                 .format(args.resume))
     print(model)
     evaluator = MultiEvalModel(model, testset.num_class, ctx_list=args.ctx)
+    metric = gluoncv.utils.metrics.SegmentationMetric(testset.num_class)
 
     tbar = tqdm(test_data)
     for i, (data, dsts) in enumerate(tbar):
@@ -60,16 +62,8 @@ def test(args):
             predicts = evaluator.parallel_forward(data)
             for predict, target in zip(predicts, targets):
                 target = target.as_in_context(predict[0].context)
-                correct, labeled = batch_pix_accuracy(predict[0], target)
-                inter, union = batch_intersection_union(
-                    predict[0], target, testset.num_class)
-                total_correct += correct.astype('int64')
-                total_label += labeled.astype('int64')
-                total_inter += inter.astype('int64')
-                total_union += union.astype('int64')
-            pixAcc = np.float64(1.0) * total_correct / (np.spacing(1, dtype=np.float64) + total_label)
-            IoU = np.float64(1.0) * total_inter / (np.spacing(1, dtype=np.float64) + total_union)
-            mIoU = IoU.mean()
+                metric.update(target, predict[0])
+            pixAcc, mIoU = metric.get()
             tbar.set_description(
                 'pixAcc: %.4f, mIoU: %.4f' % (pixAcc, mIoU))
         else:
