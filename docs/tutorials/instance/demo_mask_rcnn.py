@@ -3,6 +3,11 @@
 
 This article shows how to play with pre-trained Mask RCNN model.
 
+Mask RCNN networks are extensions to Faster RCNN networks.
+:py:class:`gluoncv.model_zoo.MaskRCNN` is inherited from
+:py:class:`gluoncv.model_zoo.FasterRCNN`.
+It is highly recommended to read :doc:`../detection/demo_faster_rcnn` first.
+
 First let's import some necessary libraries:
 """
 
@@ -28,9 +33,6 @@ net = model_zoo.get_model('mask_rcnn_resnet50_v1b_coco', pretrained=True)
 # Pre-process an image
 # --------------------
 #
-# Mask RCNN networks are extensions to Faster RCNN networks.
-# :py:class:`gluoncv.model_zoo.MaskRCNN` is inherited from
-# :py:class:`gluoncv.model_zoo.FasterRCNN`.
 # The pre-processing step is identical to Faster RCNN.
 #
 # Next we download an image, and pre-process with preset data transforms.
