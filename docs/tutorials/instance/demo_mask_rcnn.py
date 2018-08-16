@@ -89,7 +89,7 @@ fig = plt.figure(figsize=(10, 10))
 ax = fig.add_subplot(1, 1, 1)
 width, height = orig_img.shape[1], orig_img.shape[0]
 masks = utils.viz.expand_mask(masks, bboxes, (width, height), scores)
-img = utils.viz.plot_mask(orig_img, masks)
+orig_img = utils.viz.plot_mask(orig_img, masks)
 ax = utils.viz.plot_bbox(orig_img, bboxes, scores, ids,
                          class_names=net.classes, ax=ax)
 plt.show()
