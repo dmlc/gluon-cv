@@ -217,6 +217,7 @@ and their performances.
 .. hint::
 
   For Pascal VOC dataset, training image set is the union of 2007trainval and 2012trainval and validation image set is 2007test.
+
   The VOC metric, mean Average Precision (mAP) across all classes with IoU threshold 0.5 is reported.
 
 +----------------------------------+-------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
@@ -242,7 +243,9 @@ and their performances.
 .. hint::
 
   For COCO dataset, training imageset is train2017 and validation imageset is val2017.
+
   The COCO metric, Average Precision (AP) with IoU threshold 0.5:0.95 (averaged 10 values, AP 0.5:0.95), 0.5 (AP 0.5) and 0.75 (AP 0.75) are reported together in the format (AP 0.5:0.95)/(AP 0.5)/(AP 0.75).
+
   For object detection task, only box overlap based AP is evaluated and reported.
 
 +-----------------------------------+-----------------+-----------------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------+
@@ -287,7 +290,9 @@ Table of pre-trained models for instance segmentation and their performance.
 .. hint::
 
   For COCO dataset, training imageset is train2017 and validation imageset is val2017.
+
   Average precision with IoU threshold 0.5:0.95 (averaged 10 values), 0.5 and 0.75 are reported together in the format (AP 0.5:0.95)/(AP 0.5)/(AP 0.75).
+
   For instance segmentation task, both box overlap and segmentation overlap based AP are evaluated and reported.
 
 +------------------------------+---------------------------+--------------------------+------------------------------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------+

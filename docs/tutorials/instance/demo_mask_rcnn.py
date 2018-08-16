@@ -6,7 +6,7 @@ This article shows how to play with pre-trained Mask RCNN model.
 Mask RCNN networks are extensions to Faster RCNN networks.
 :py:class:`gluoncv.model_zoo.MaskRCNN` is inherited from
 :py:class:`gluoncv.model_zoo.FasterRCNN`.
-It is highly recommended to read :doc:`../detection/demo_faster_rcnn` first.
+It is highly recommended to read :doc:`../examples_detection/demo_faster_rcnn` first.
 
 First let's import some necessary libraries:
 """
@@ -79,6 +79,7 @@ ax = utils.viz.plot_bbox(orig_img, bboxes, scores, ids,
                          class_names=net.classes, ax=ax)
 plt.show()
 
+######################################################################
 # Instance Segmentation results
 #
 # We have not used segmentation masks from network outputs yet.
