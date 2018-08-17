@@ -151,6 +151,27 @@ class RCNN(gluon.HybridBlock):
         self.nms_topk = nms_topk
         self.post_nms = post_nms
 
+    def reset_class(self, classes):
+        """Reset class categories and class predictors.
+
+        Parameters
+        ----------
+        classes : iterable of str
+            The new categories. ['apple', 'orange'] for example.
+
+        """
+        self._clear_cached_op()
+        self.classes = classes
+        self.num_class = len(classes)
+        with self.name_scope():
+            self.class_predictor = nn.Dense(
+                self.num_class + 1, weight_initializer=mx.init.Normal(0.01),
+                prefix=self.class_predictor.prefix)
+            self.box_predictor = nn.Dense(
+                self.num_class * 4, weight_initializer=mx.init.Normal(0.001),
+                prefix=self.box_predictor.prefix)
+            self.cls_decoder = MultiPerClassDecoder(num_class=self.num_class + 1)
+
     # pylint: disable=arguments-differ
     def hybrid_forward(self, F, x, width, height):
         """Not implemented yet."""

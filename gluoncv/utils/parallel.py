@@ -113,7 +113,7 @@ def split_load_kwargs(inputs, kwargs, ctx_list, batch_axis=0):
             return list(map(list, zip(*map(split_map, obj))))
         if isinstance(obj, dict) and len(obj) > 0:
             return list(map(type(obj), zip(*map(split_map, obj.items()))))
-        return [obj for targets in ctx_list]
+        return [obj for _ in ctx_list]
     inputs = split_map(inputs) if inputs else []
     kwargs = split_map(kwargs) if kwargs else []
     if len(inputs) < len(kwargs):

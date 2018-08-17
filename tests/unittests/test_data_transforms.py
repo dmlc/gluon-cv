@@ -214,6 +214,30 @@ def test_transforms_presets_rcnn():
                 break
             pass
 
+def test_transforms_presets_mask_rcnn():
+    # use valid only, loading training split is very slow
+    train_dataset = gcv.data.COCOInstance(splits=('instances_val2017',), skip_empty=True)
+    val_dataset = gcv.data.COCOInstance(splits=('instances_val2017',))
+    net = gcv.model_zoo.get_model('mask_rcnn_resnet50_v1b_coco', pretrained=False, pretrained_base=False)
+    net.initialize()
+    num_workers = 0
+    short, max_size = 800, 1333
+    batch_size = 8
+    train_bfn = batchify.Tuple(*[batchify.Append() for _ in range(6)])
+    train_loader = mx.gluon.data.DataLoader(
+        train_dataset.transform(rcnn.MaskRCNNDefaultTrainTransform(short, max_size, net)),
+        batch_size, True, batchify_fn=train_bfn, last_batch='rollover', num_workers=num_workers)
+    val_bfn = batchify.Tuple(*[batchify.Append() for _ in range(2)])
+    val_loader = mx.gluon.data.DataLoader(
+        val_dataset.transform(rcnn.MaskRCNNDefaultValTransform(short, max_size)),
+        batch_size, False, batchify_fn=val_bfn, last_batch='keep', num_workers=num_workers)
+
+    for loader in [train_loader, val_loader]:
+        for i, batch in enumerate(loader):
+            if i > 1:
+                break
+            pass
+
 def test_transforms_presets_yolo():
     im_fname = gcv.utils.download('https://github.com/dmlc/web-data/blob/master/' +
                                   'gluoncv/detection/biking.jpg?raw=true', path='biking.jpg')

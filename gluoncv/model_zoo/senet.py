@@ -57,7 +57,7 @@ class SEBlock(HybridBlock):
         self.body.add(nn.BatchNorm())
         self.body.add(nn.Activation('relu'))
         self.body.add(nn.Conv2D(group_width, kernel_size=3, strides=stride, padding=1,
-                                use_bias=False))
+                                groups=cardinality, use_bias=False))
         self.body.add(nn.BatchNorm())
         self.body.add(nn.Activation('relu'))
         self.body.add(nn.Conv2D(channels * 4, kernel_size=1, use_bias=False))
@@ -191,7 +191,7 @@ def get_senet(num_layers, cardinality=64, bottleneck_width=4,
     layers = resnext_spec[num_layers]
     net = SENet(layers, cardinality, bottleneck_width, **kwargs)
     if pretrained:
-        from ..model_store import get_model_file
+        from .model_store import get_model_file
         net.load_params(get_model_file('resnext%d_%dx%d'%(num_layers, cardinality,
                                                           bottleneck_width),
                                        root=root), ctx=ctx)

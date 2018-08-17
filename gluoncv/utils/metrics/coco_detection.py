@@ -2,7 +2,10 @@
 from __future__ import absolute_import
 
 import sys
-import io
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 import os
 from os import path as osp
 import warnings
@@ -125,7 +128,7 @@ class COCODetectionMetric(mx.metric.EvalMetric):
         names.append('~~~~ Summary metrics ~~~~\n')
         # catch coco print string, don't want directly print here
         _stdout = sys.stdout
-        sys.stdout = io.StringIO()
+        sys.stdout = StringIO()
         coco_eval.summarize()
         coco_summary = sys.stdout.getvalue()
         sys.stdout = _stdout
@@ -181,8 +184,8 @@ class COCODetectionMetric(mx.metric.EvalMetric):
                 entry = self.dataset.coco.loadImgs(imgid)[0]
                 orig_height = entry['height']
                 orig_width = entry['width']
-                height_scale = orig_height / self._data_shape[0]
-                width_scale = orig_width / self._data_shape[1]
+                height_scale = float(orig_height) / self._data_shape[0]
+                width_scale = float(orig_width) / self._data_shape[1]
             else:
                 height_scale, width_scale = (1., 1.)
             # for each bbox detection in each image

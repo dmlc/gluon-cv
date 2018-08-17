@@ -42,6 +42,18 @@ def test_coco_detection():
         index = np.random.randint(0, len(val))
         _ = val[index]
 
+def test_coco_instance():
+    if not osp.isdir(osp.expanduser('~/.mxnet/datasets/coco')):
+        return
+
+    # use valid only, loading training split is very slow
+    val = data.COCOInstance(splits=('instances_val2017',))
+    name = str(val)
+    assert len(val.classes) > 0
+
+    for _ in range(10):
+        index = np.random.randint(0, len(val))
+        _ = val[index]
 
 def test_voc_segmentation():
     if not osp.isdir(osp.expanduser('~/.mxnet/datasets/voc')):
