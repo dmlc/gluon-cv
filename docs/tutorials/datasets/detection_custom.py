@@ -1,4 +1,4 @@
-"""Prepare Custom Datasets for Object Detection
+"""Prepare custom datasets for object detection
 ===============================================
 
 With GluonCV, we have already provided built-in support for widely used public datasets with zero
