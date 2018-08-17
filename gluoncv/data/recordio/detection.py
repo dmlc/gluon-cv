@@ -35,7 +35,9 @@ def _transform_label(label, height=None, width=None):
 class RecordFileDetection(gluon.data.vision.ImageRecordDataset):
     """Detection dataset loaded from record file.
     The supported record file is using the same format used by
-    :meth:`mxnet.image.ImageDetIter` and :meth:`mxnet.io.ImageDetRecordIter`.
+    :py:meth:`mxnet.image.ImageDetIter` and :py:meth:`mxnet.io.ImageDetRecordIter`.
+
+    Checkout :ref:`lst_record_dataset` for tutorial of how to prepare this file.
 
     .. note::
 

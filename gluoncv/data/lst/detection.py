@@ -5,7 +5,25 @@ import mxnet as mx
 from ..recordio.detection import _transform_label
 
 
-class ListDetection(object):
+class LstDetection(object):
+    """Detection dataset loaded from LST file and raw images.
+    LST file is a pure text file but with special label format.
+
+    Checkout :ref:`lst_record_dataset` for tutorial of how to prepare this file.
+
+    Parameters
+    ----------
+    filename : type
+        Description of parameter `filename`.
+    root : str
+        Relative image root folder for filenames in LST file.
+    flag : int, default is 1
+        Use 1 for color images, and 0 for gray images.
+    coord_normalized : boolean
+        Indicate whether bounding box coordinates haved been normalized to (0, 1) in labels.
+        If so, we will rescale back to absolute coordinates by multiplying width or height.
+
+    """
     def __init__(self, filename, root='', flag=1, coord_normalized=True):
         self._flag = flag
         self._coord_normalized = coord_normalized

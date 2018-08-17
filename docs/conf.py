@@ -59,19 +59,18 @@ extensions = [
 
 sphinx_gallery_conf = {
     # path to your examples scripts
-    # 'examples_dirs': ['tutorials/datasets',
-    #                   'tutorials/classification',
-    #                   'tutorials/detection',
-    #                   'tutorials/segmentation',],
-    # # path where to save gallery generated examples
-    # 'gallery_dirs': ['build/examples_datasets',
-    #                  'build/examples_classification',
-    #                  'build/examples_detection',
-    #                  'build/examples_segmentation',],
+    'examples_dirs': ['tutorials/datasets',
+                      'tutorials/classification',
+                      'tutorials/detection',
+                      'tutorials/segmentation',],
+    # path where to save gallery generated examples
+    'gallery_dirs': ['build/examples_datasets',
+                     'build/examples_classification',
+                     'build/examples_detection',
+                     'build/examples_segmentation',],
 
-    'examples_dirs': ['tutorials/dev'],
-    'gallery_dirs':['build/examples_dev'],
     'filename_pattern': '.py',
+    'ignore_pattern': 'im2rec.py',
 
     # 'subsection_order': ExplicitOrder(['tutorials/classification',
     #                                    'tutorials/detection',

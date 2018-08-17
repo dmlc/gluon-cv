@@ -13,7 +13,7 @@ from .darknet import _conv2d, darknet53
 from .yolo_target import YOLOV3TargetMerger
 from ...loss import YOLOV3Loss
 
-__all__ = ['YOLOV3',
+__all__ = ['YOLOV3', 'get_yolov3',
            'yolo3_darknet53_voc', 'yolo3_darknet53_coco', 'yolo3_darknet53_custom']
 
 def _upsample(x, stride=2):

@@ -54,6 +54,16 @@ gluoncv.data
 
     gluoncv.data.ADE20KSegmentation
 
+
+Customized Dataset
+------------------
+
+.. autosummary::
+    :nosignatures:
+
+    gluoncv.data.LstDetection
+    gluoncv.data.RecordFileDetection
+
 API Reference
 -------------
 
@@ -65,3 +75,5 @@ API Reference
 .. autoclass:: gluoncv.data.COCOInstance
 .. autoclass:: gluoncv.data.ADE20KSegmentation
 .. autoclass:: gluoncv.data.DetectionDataLoader
+.. autoclass:: gluoncv.data.LstDetection
+.. autoclass:: gluoncv.data.RecordFileDetection
