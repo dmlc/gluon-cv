@@ -101,7 +101,7 @@ def test_lst_detection():
     all_boxes = np.array([dog_label, bike_label, car_label])
     all_ids = np.array([0, 1, 2])
     class_names = ['dog', 'bike', 'car']
-    im_fname = utils.download('https://github.com/dmlc/web-data/blob/master/' +
+    im_fname = gcv.utils.download('https://github.com/dmlc/web-data/blob/master/' +
                               'gluoncv/datasets/dog.jpg?raw=true',
                               path='dog.jpg')
     img = mx.image.imread(im_fname)
