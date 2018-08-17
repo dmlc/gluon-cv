@@ -70,6 +70,7 @@ sphinx_gallery_conf = {
                      'build/examples_segmentation',],
 
     'filename_pattern': '.py',
+    'ignore_pattern': 'im2rec.py',
 
     # 'subsection_order': ExplicitOrder(['tutorials/classification',
     #                                    'tutorials/detection',

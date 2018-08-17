@@ -16,3 +16,4 @@ dependencies:
   - tqdm
   - requests
   - Pillow
+  - opencv-python
