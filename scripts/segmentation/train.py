@@ -9,7 +9,7 @@ from mxnet import gluon, autograd
 from mxnet.gluon.data.vision import transforms
 
 import gluoncv
-from gluoncv.loss import SoftmaxCrossEntropyLossWithAux
+from gluoncv.loss import *
 from gluoncv.utils import LRScheduler
 from gluoncv.model_zoo.segbase import *
 from gluoncv.utils.parallel import *
@@ -124,8 +124,10 @@ class Trainer(object):
                 raise RuntimeError("=> no checkpoint found at '{}'" \
                     .format(args.resume))
         # create criterion
-        criterion = SoftmaxCrossEntropyLossWithAux(args.aux, mixup=args.mixup,
-                                                   aux_weight=args.aux_weight)
+        criterion = MixSoftmaxCrossEntropyLoss(args.aux, mixup=args.mixup,
+                                               aux_weight=args.aux_weight)
+        #criterion = MixSoftmaxCrossEntropyOHEMLoss(args.aux, #mixup=args.mixup,
+        #                                           aux_weight=args.aux_weight)
         self.criterion = DataParallelCriterion(criterion, args.ctx, args.syncbn)
         # optimizer and lr scheduling
         self.lr_scheduler = LRScheduler(mode='poly', baselr=args.lr,

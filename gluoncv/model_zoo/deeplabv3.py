@@ -68,7 +68,7 @@ class _DeepLabHead(HybridBlock):
         with self.name_scope():
             self.block = nn.HybridSequential()
             self.block.add(nn.Conv2D(in_channels=256, channels=256,
-                                     kernel_size=3, padding=1))
+                                     kernel_size=3, padding=1, use_bias=False))
             self.block.add(norm_layer(in_channels=256, **norm_kwargs))
             self.block.add(nn.Activation('relu'))
             self.block.add(nn.Dropout(0.1))
@@ -84,7 +84,8 @@ def _ASPPConv(in_channels, out_channels, atrous_rate, norm_layer, norm_kwargs):
     block = nn.HybridSequential()
     with block.name_scope():
         block.add(nn.Conv2D(in_channels=in_channels, channels=out_channels,
-                            kernel_size=3, padding=atrous_rate, dilation=atrous_rate))
+                            kernel_size=3, padding=atrous_rate,
+                            dilation=atrous_rate, use_bias=False))
         block.add(norm_layer(in_channels=out_channels, **norm_kwargs))
         block.add(nn.Activation('relu'))
     return block
