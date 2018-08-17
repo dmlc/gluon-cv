@@ -194,7 +194,7 @@ import sys
 import subprocess
 im2rec = utils.download('https://raw.githubusercontent.com/apache/incubator-mxnet/' +
                         '6843914f642c8343aaa9a09db803b6af6f5d94a2/tools/im2rec.py', 'im2rec.py')
-subprocess.call([sys.executable, 'im2rec.py', 'val', '.', '--no-shuffle', '--pass-through', '--pack-label'])
+subprocess.check_output([sys.executable, 'im2rec.py', 'val', '.', '--no-shuffle', '--pass-through', '--pack-label'])
 
 ##############################################################################
 # Now similarly, we can create a dataset from the binary file we just created with on line of code:
