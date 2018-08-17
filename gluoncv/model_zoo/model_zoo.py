@@ -14,6 +14,8 @@ from .resnetv1b import *
 from .resnext import *
 from .senet import *
 from .se_resnet import *
+from .superresnet import *
+from .wideresnet import *
 from .yolo import *
 from .nasnet import *
 from .alexnet import *
@@ -120,6 +122,12 @@ _models = {
     'resnet50_v1e': resnet50_v1e,
     'resnet101_v1e': resnet101_v1e,
     'resnet152_v1e': resnet152_v1e,
+    'superresnet32': superresnet32,
+    'superresnet45': superresnet45,
+    'superresnet146': superresnet146,
+    'wideresnet16': wideresnet16,
+    'wideresnet20': wideresnet20,
+    'wideresnet38': wideresnet38,
     'resnext50_32x4d': resnext50_32x4d,
     'resnext101_32x4d': resnext101_32x4d,
     'resnext101_64x4d': resnext101_64x4d,

@@ -195,7 +195,8 @@ class ResNetV1b(HybridBlock):
             downsample = nn.HybridSequential(prefix='down%d_'%stage_index)
             with downsample.name_scope():
                 if avg_down:
-                    downsample.add(nn.AvgPool2D(pool_size=strides, strides=strides))
+                    if strides > 1:
+                        downsample.add(nn.AvgPool2D(pool_size=strides, strides=strides))
                     downsample.add(nn.Conv2D(channels=planes * block.expansion, kernel_size=1,
                                              strides=1, use_bias=False))
                     downsample.add(norm_layer(**self.norm_kwargs))
@@ -440,7 +441,7 @@ def resnet101_v1c(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
     return model
 
 def resnet152_v1c(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
-    """Constructs a ResNetV1b-152 model.
+    """Constructs a ResNetV1c-152 model.
 
     Parameters
     ----------
@@ -486,7 +487,7 @@ def resnet50_v1d(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
     return model
 
 def resnet101_v1d(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
-    """Constructs a ResNetV1d-50 model.
+    """Constructs a ResNetV1d-101 model.
 
     Parameters
     ----------
@@ -509,7 +510,7 @@ def resnet101_v1d(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
     return model
 
 def resnet152_v1d(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
-    """Constructs a ResNetV1d-50 model.
+    """Constructs a ResNetV1d-152 model.
 
     Parameters
     ----------
