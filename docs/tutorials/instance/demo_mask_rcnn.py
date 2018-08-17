@@ -12,7 +12,6 @@ First let's import some necessary libraries:
 """
 
 from matplotlib import pyplot as plt
-import gluoncv
 from gluoncv import model_zoo, data, utils
 
 ######################################################################
@@ -64,35 +63,30 @@ x, orig_img = data.transforms.presets.rcnn.load_test(im_fname)
 # bounding boxes coordinates and segmentation masks.
 # Their shape are (batch_size, num_bboxes, 1), (batch_size, num_bboxes, 1)
 # (batch_size, num_bboxes, 4), and (batch_size, num_bboxes, mask_size, mask_size)
-# respectively. For our model, mask_size is 14.
+# respectively. For the model used in this tutorial, mask_size is 14.
 #
 # Object Detection results
 #
 # We can use :py:func:`gluoncv.utils.viz.plot_bbox` to visualize the
 # results. We slice the results for the first image and feed them into `plot_bbox`:
-
-ids, scores, bboxes, masks = [xx[0].asnumpy() for xx in net(x)]
-
-fig = plt.figure(figsize=(10, 10))
-ax = fig.add_subplot(1, 1, 1)
-ax = utils.viz.plot_bbox(orig_img, bboxes, scores, ids,
-                         class_names=net.classes, ax=ax)
-plt.show()
-
-######################################################################
-# Instance Segmentation results
 #
-# We have not used segmentation masks from network outputs yet.
+# Plot Segmentation
+#
 # :py:func:`gluoncv.utils.viz.expand_mask` will resize the segmentation mask
 # and fill the bounding box size in the original image.
 # :py:func:`gluoncv.utils.viz.plot_mask` will modify an image to
 # overlay segmentation masks.
 
-fig = plt.figure(figsize=(10, 10))
-ax = fig.add_subplot(1, 1, 1)
+ids, scores, bboxes, masks = [xx[0].asnumpy() for xx in net(x)]
+
+# paint segmentation mask on images directly
 width, height = orig_img.shape[1], orig_img.shape[0]
 masks = utils.viz.expand_mask(masks, bboxes, (width, height), scores)
 orig_img = utils.viz.plot_mask(orig_img, masks)
+
+# identical to Faster RCNN object detection
+fig = plt.figure(figsize=(10, 10))
+ax = fig.add_subplot(1, 1, 1)
 ax = utils.viz.plot_bbox(orig_img, bboxes, scores, ids,
                          class_names=net.classes, ax=ax)
 plt.show()
