@@ -1,6 +1,6 @@
 # Mask R-CNN [1]
 
-[Gluon Vision Model Zoo](http://gluon-cv.mxnet.io/model_zoo/index.html#object-detection)
+[GluonCV Model Zoo](http://gluon-cv.mxnet.io/model_zoo/index.html#object-detection)
 
 ## References
 1. Kaiming He, Georgia Gkioxari, Piotr Dollár, and Ross Girshick. "Mask R-CNN." IEEE International Conference on Computer Vision (ICCV), 2017.
