@@ -2,7 +2,7 @@
 ===============================================
 
 With GluonCV, we have already provided built-in support for widely used public datasets with zero
-effort, e.g.
+effort, e.g. :ref:`sphx_glr_build_examples_datasets_pascal_voc.py` and :ref:`sphx_glr_build_examples_datasets_mscoco.py`.
 
 However it is very natural to create a custom dataset of your choice for object detection tasks.
 
@@ -21,11 +21,11 @@ In practice, feel free to choose whatever method that fits for your use case bes
 # .. _lst_record_dataset:
 #
 # 1. Preferred Object Detection Format for GluonCV and MXNet
-# ==========================================================
+# ----------------------------------------------------------
 # Let us walk through some fundamental backgrounds in case you are not familiar with them.
 #
 # Bounding Boxes
-# --------------
+# ^^^^^^^^^^^^^^
 #
 # There are multiple ways to organize the label format for object detection task. We will briefly introduce the
 # most widely used: ``bounding box``.
@@ -71,7 +71,7 @@ plt.show()
 
 ##############################################################################
 # LST Label for GluonCV and MXNet
-# --------------------------------------------
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 # Following the convention used in MXNet, we recommand a LST file which is a plain text list file to store labels.
 #
 # LST file was first introduced in MXNet following the `RecordIO design <https://mxnet.incubator.apache.org/architecture/note_data_loading.html>`_ and the `List file tutorial <https://mxnet.incubator.apache.org/faq/recordio.html>`_ of creating a LST file.
@@ -144,7 +144,7 @@ with open('val.lst', 'w') as fw:
 
 ##############################################################################
 # LstDetection for Loading Raw Images in Folders
-# -----------------------------------------------
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 #
 # Assume the relative root path to the image folder is current directory
 
@@ -159,7 +159,7 @@ print("GluonCV swaps bounding boxes to columns 0-3 by default")
 
 ##############################################################################
 # RecordFileDetection for Entire Dataset Packed in Signle MXNet RecordFile
-# ------------------------------------------------------------------------
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 #
 # Reading scattered images in folders can be slow, due to constraint of disk random access speed.
 # There's a significant gap between random/sequential access speed especially on HDDs.
@@ -214,7 +214,7 @@ print(record_dataset[0][1])
 # .. _pascal_voc_like:
 #
 # 2. Derive from PASCAL VOC format
-# ================================
+# --------------------------------
 # It you have a custom dataset fully comply with the `Pascal VOC <http://host.robots.ox.ac.uk/pascal/VOC/>`_ object detection format,
 # that could be good news, because it's can be adapted to GluonCV format real quick.
 #
