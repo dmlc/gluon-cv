@@ -12,7 +12,7 @@ gluoncv.data
 
 .. hint::
 
-   For small dataset such as MNIST and CIFAR10, please refer to `Gluon Vision
+   For small dataset such as MNIST and CIFAR10, please refer to `GluonCV
    Datasets
    <https://mxnet.incubator.apache.org/api/python/gluon/data.html#vision-datasets>`_,
    which can be used directly without any downloading step.

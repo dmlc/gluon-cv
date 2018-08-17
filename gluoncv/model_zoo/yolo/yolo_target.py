@@ -84,7 +84,7 @@ class YOLOV3PrefetchTargetGenerator(gluon.Block):
             # for instance, center of object 1 reside in grid (3, 4) in (16, 16) feature map
             # then only the anchor in (3, 4) is going to be matched
             gtx, gty, gtw, gth = self.bbox2center(gt_boxes)
-            shift_gt_boxes = nd.concat(gtx * 0, gty * 0, gtw, gth, dim=-1)
+            shift_gt_boxes = nd.concat(-0.5 * gtw, -0.5 * gth, 0.5 * gtw, 0.5 * gth, dim=-1)
             anchor_boxes = nd.concat(0 * all_anchors, all_anchors, dim=-1)  # zero center anchors
             shift_anchor_boxes = self.bbox2corner(anchor_boxes)
             ious = nd.contrib.box_iou(shift_anchor_boxes, shift_gt_boxes).transpose((1, 0, 2))

@@ -1,6 +1,6 @@
 # Faster R-CNN: Towards real-time object detection with region proposal networks. [1]
 
-[Gluon Vision Model Zoo](http://gluon-cv.mxnet.io/model_zoo/index.html#object-detection)
+[GluonCV Model Zoo](http://gluon-cv.mxnet.io/model_zoo/index.html#object-detection)
 
 ## References
 1. Shaoqing Ren, Kaiming He, Ross Girshick, and Jian Sun. "Faster R-CNN: Towards real-time object detection with region proposal networks." In IEEE Transactions on Pattern Analysis and Machine Intelligence, 2016.

@@ -133,7 +133,7 @@ html_favicon = '_static/gluon_s2.png'
 # # Guzzle theme options (see theme.conf for more information)
 # html_theme_options = {
 #         # Set the name of the project to appear in the sidebar
-#         "project_nav_name": "Gluon Vision",
+#         "project_nav_name": "GluonCV",
 # }
 
 # Theme options are theme-specific and customize the look and feel of a theme
