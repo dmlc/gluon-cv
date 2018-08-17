@@ -1,3 +1,4 @@
+"""Detection Dataset from LST file."""
 from __future__ import absolute_import
 import os
 import numpy as np
