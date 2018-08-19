@@ -44,7 +44,7 @@ if __name__ == '__main__':
 
     ax = None
     for image in image_list:
-        x, img = presets.ssd.load_test(image, short=512)
+        x, img = presets.yolo.load_test(image, short=512)
         ids, scores, bboxes = [xx[0].asnumpy() for xx in net(x)]
         ax = gcv.utils.viz.plot_bbox(img, bboxes, scores, ids, thresh=args.thresh,
                                     class_names=net.classes, ax=ax)
