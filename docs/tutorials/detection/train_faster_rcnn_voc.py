@@ -247,10 +247,10 @@ for ib, batch in enumerate(train_loader):
             print('box:', gt_box.shape)
             print('label:', gt_label.shape)
             # -1 marks ignored label
-            print('rpn cls label:', batch[2][0].shape)
+            print('rpn cls label:', rpn_cls_targets.shape)
             # mask out ignored box label
-            print('rpn box label:', batch[3][0].shape)
-            print('rpn box mask:', batch[4][0].shape)
+            print('rpn box label:', rpn_box_targets.shape)
+            print('rpn box mask:', rpn_box_masks.shape)
 
 ##########################################################
 # RCNN training targets
