@@ -19,6 +19,7 @@ python main.py --mlp_G --ngf 512
 ```
 
 **generate fake samples after 400000 epoch**
+
 ![gensample](fake_samples_400000.png "fake samples in 400000 epoch")
 
 ## References
