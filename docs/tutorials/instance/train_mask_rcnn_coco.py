@@ -252,7 +252,7 @@ for ib, batch in enumerate(train_loader):
             gt_label = label[:, :, 4:5]
             gt_box = label[:, :, :4]
             # network forward
-            cls_preds, box_preds, roi, samples, matches, rpn_score, rpn_box, anchors = net(data, gt_box)
+            cls_preds, box_preds, mask_preds, roi, samples, matches, rpn_score, rpn_box, anchors = net(data, gt_box)
             # generate targets for rcnn
             cls_targets, box_targets, box_masks = net.target_generator(roi, samples, matches, gt_label, gt_box)
             # generate targets for mask head
@@ -308,7 +308,7 @@ for ib, batch in enumerate(train_loader):
             mask_loss = rcnn_mask_loss(mask_preds, mask_targets, mask_masks) * mask_targets.size / mask_targets.shape[0] / mask_masks.sum()
 
         # some standard gluon training steps:
-        # autograd.backward([rpn_loss1, rpn_loss2, rcnn_loss1, rcnn_loss2])
+        # autograd.backward([rpn_loss1, rpn_loss2, rcnn_loss1, rcnn_loss2, mask_loss])
         # trainer.step(batch_size)
 
 ##############################################################################
