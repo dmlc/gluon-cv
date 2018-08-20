@@ -31,19 +31,19 @@ Appendix from [He16]_ and experiment detail from [Lin17]_ may also be useful ref
 
     .. code-block:: bash
 
-        python train_faster_rcnn.py --gpus 0
+        python train_mask_rcnn.py --gpus 0
 
-    Train a resnet50_v1b model on GPU 0,1,2,3:
+    Train on GPU 0,1,2,3:
 
     .. code-block:: bash
 
-        python train_faster_rcnn.py --gpus 0,1,2,3 --network resnet50_v1b
+        python train_mask_rcnn.py --gpus 0,1,2,3
 
     Check the supported arguments:
 
     .. code-block:: bash
 
-        python train_faster_rcnn.py --help
+        python train_mask_rcnn.py --help
 
 """
 
