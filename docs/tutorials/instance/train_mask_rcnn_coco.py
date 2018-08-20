@@ -233,7 +233,7 @@ rcnn_mask_loss = mx.gluon.loss.SigmoidBinaryCrossEntropyLoss(from_sigmoid=False)
 
 ##############################################################################
 # We also push
-train_transform = presets.rcnn.FasterRCNNDefaultTrainTransform(short, max_size, net)
+train_transform = presets.rcnn.MaskRCNNDefaultTrainTransform(short, max_size, net)
 # return images, labels, masks, rpn_cls_targets, rpn_box_targets, rpn_box_masks loosely
 batchify_fn = Tuple(*[Append() for _ in range(6)])
 # For the next part, we only use batch size 1
