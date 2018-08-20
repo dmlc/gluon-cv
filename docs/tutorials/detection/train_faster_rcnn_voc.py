@@ -164,9 +164,9 @@ for ib, batch in enumerate(train_loader):
 #
 # .. hint::
 #
-#    To avoid downloading mdoel in this tutorial, we set `pretrained_base=False`,
+#    To avoid downloading mdoel in this tutorial, we set ``pretrained_base=False``,
 #    in practice we usually want to load pre-trained imagenet models by setting
-#    `pretrained_base=True`.
+#    ``pretrained_base=True``.
 from gluoncv import model_zoo
 net = model_zoo.get_model('faster_rcnn_resnet50_v1b_voc', pretrained_base=False)
 print(net)
@@ -217,7 +217,7 @@ rcnn_box_loss = mx.gluon.loss.HuberLoss()  # == smoothl1
 ##########################################################
 # RPN training targets
 # --------------------
-# To speed up training, we let CPU to pre-compute RLPN training targets.
+# To speed up training, we let CPU to pre-compute RPN training targets.
 # This is especially nice when your CPU is powerful and you can use ``-j num_workers``
 # to utilize multi-core CPU.
 

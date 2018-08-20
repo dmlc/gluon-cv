@@ -5,7 +5,7 @@ This tutorial goes through the steps for training a Mask R-CNN [He17]_ instance 
 provided by GluonCV.
 
 Mask R-CNN is an extension to the Faster R-CNN [Ren15]_ object detection model.
-As such, this tutorial is also an extension to :doc:`../examples_detections/train_faster_rcnn`.
+As such, this tutorial is also an extension to :doc:`../examples_detections/train_faster_rcnn_voc`.
 We will focus on the extra work on top of Faster R-CNN to show how to use GluonCV components
 to construct a Mask R-CNN model.
 
@@ -108,7 +108,7 @@ plt.show()
 # :py:class:`gluoncv.data.transforms.presets.rcnn.MaskRCNNDefaultTrainTransform`
 # converts the segmentation polygons to binary segmentation mask.
 # :py:class:`gluoncv.data.transforms.presets.rcnn.MaskRCNNDefaultValTransform`
-# ignores the segmentation polygons and returns ``[im_height, im_width, im_scale]``.
+# ignores the segmentation polygons and returns image tensor and ``[im_height, im_width, im_scale]``.
 from gluoncv.data.transforms import presets
 from gluoncv import utils
 from mxnet import nd
@@ -150,7 +150,7 @@ plt.show()
 ##########################################################
 # Data Loader
 # -----------
-# Data loader is identical to Faster R-CNN with the difference of number of outputs.
+# Data loader is identical to Faster R-CNN with the difference of mask input and output.
 
 from gluoncv.data.batchify import Tuple, Append
 from mxnet.gluon.data import DataLoader
@@ -175,16 +175,16 @@ for ib, batch in enumerate(train_loader):
 # Mask RCNN Network
 # -------------------
 # In GluonCV, Mask RCNN network :py:class:`gluoncv.model_zoo.MaskRCNN`
-# is inherited from Faster RCNN network :py:class:`gluoncv.model_zoo.FasterRCNN`
+# is inherited from Faster RCNN network :py:class:`gluoncv.model_zoo.FasterRCNN`.
 #
 # `Gluon Model Zoo <../../model_zoo/index.html>`__ has some Mask RCNN pretrained networks.
 # You can load your favorate one with one simple line of code:
 #
 # .. hint::
 #
-#    To avoid downloading mdoel in this tutorial, we set `pretrained_base=False`,
+#    To avoid downloading mdoel in this tutorial, we set ``pretrained_base=False``,
 #    in practice we usually want to load pre-trained imagenet models by setting
-#    `pretrained_base=True`.
+#    ``pretrained_base=True``.
 from gluoncv import model_zoo
 net = model_zoo.get_model('mask_rcnn_resnet50_v1b_coco', pretrained_base=False)
 print(net)
@@ -232,7 +232,7 @@ rcnn_mask_loss = mx.gluon.loss.SigmoidBinaryCrossEntropyLoss(from_sigmoid=False)
 # RPN and RCNN training target are the same as in :doc:`../examples_detections/train_faster_rcnn`.
 
 ##############################################################################
-# We also push
+# We also push RPN targets computation to CPU workers, so network is passed to transforms
 train_transform = presets.rcnn.MaskRCNNDefaultTrainTransform(short, max_size, net)
 # return images, labels, masks, rpn_cls_targets, rpn_box_targets, rpn_box_masks loosely
 batchify_fn = Tuple(*[Append() for _ in range(6)])
@@ -277,7 +277,7 @@ for ib, batch in enumerate(train_loader):
 ##########################################################
 # Training loop
 # -------------
-# After we have defined loss function and generated training targets, we can write the training goop.
+# After we have defined loss function and generated training targets, we can write the training loop.
 
 for ib, batch in enumerate(train_loader):
     if ib > 0:
