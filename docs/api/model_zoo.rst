@@ -201,7 +201,11 @@ Semantic Segmentation
 
 
 API Reference
--------------
+^^^^^^^^^^^^^
+
+Network definitions of GluonCV models
+
+.. currentmodule:: gluoncv.model_zoo
 
 .. automodule:: gluoncv.model_zoo
     :members:
