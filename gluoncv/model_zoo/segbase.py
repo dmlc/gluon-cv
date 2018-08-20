@@ -43,22 +43,24 @@ class SegBaseModel(HybridBlock):
         self.aux = aux
         self.nclass = nclass
         with self.name_scope():
-            if backbone == 'resnet50' or backbone == 'resnet50v1b':
-                pretrained = resnet50_v1b(pretrained=True, dilated=True, **kwargs)
-            elif backbone == 'resnet101' or backbone == 'resnet101v1b':
-                pretrained = resnet101_v1b(pretrained=True, dilated=True, **kwargs)
-            elif backbone == 'resnet152' or backbone == 'resnet152v1b':
-                pretrained = resnet152_v1b(pretrained=True, dilated=True, **kwargs)
+            if backbone == 'resnet50':
+                pretrained = resnet50_v1s(pretrained=True, dilated=True, **kwargs)
+            elif backbone == 'resnet101':
+                pretrained = resnet101_v1s(pretrained=True, dilated=True, **kwargs)
+            elif backbone == 'resnet152':
+                pretrained = resnet152_v1s(pretrained=True, dilated=True, **kwargs)
             elif backbone == 'resnet50v1c':
-                pretrained = resnet50_v1c(pretrained=True, dilated=True, **kwargs)
-            elif backbone == 'resnet101v1c':
-                pretrained = resnet101_v1c(pretrained=True, dilated=True, **kwargs)
-            elif backbone == 'resnet152v1c':
-                pretrained = resnet152_v1c(pretrained=True, dilated=True, **kwargs)
+                pretrained = resnet50_v1c(pretrained=False, dilated=True, **kwargs)
+            elif backbone == 'resnet50v1e':
+                pretrained = resnet50_v1e(pretrained=False, dilated=True, **kwargs)
             else:
                 raise RuntimeError('unknown backbone: {}'.format(backbone))
-            #pretrained.load_parameters('resnet101_v1c_mixup.params')
-            #print('loaded resnet101_v1c-mixup.params')
+            pretrained.load_parameters('resnet50_v1d.params')
+            print('loaded resnet50_v1d.params')
+            """
+            pretrained.cast('float16')
+            pretrained.cast('float32')
+            """
             self.conv1 = pretrained.conv1
             self.bn1 = pretrained.bn1
             self.relu = pretrained.relu

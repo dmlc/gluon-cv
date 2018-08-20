@@ -11,7 +11,6 @@ from gluoncv.model_zoo.segbase import *
 from gluoncv.model_zoo import get_model
 from gluoncv.data import get_segmentation_dataset, ms_batchify_fn
 from gluoncv.utils.viz import get_color_pallete
-#from gluoncv.utils.metrics.voc_segmentation import batch_pix_accuracy, batch_intersection_union
 
 from train import parse_args
 
@@ -41,9 +40,9 @@ def test(args):
     if args.model_zoo is not None:
         model = get_model(args.model_zoo, pretrained=True)
     else:
-        model = get_segmentation_model(model=args.model, dataset=args.dataset, ctx = args.ctx,
+        model = get_segmentation_model(model=args.model, dataset=args.dataset, ctx=args.ctx,
                                        backbone=args.backbone, norm_layer=args.norm_layer,
-                                       norm_kwargs=args.norm_kwargs, aux=args.aux, )
+                                       norm_kwargs=args.norm_kwargs, aux=args.aux)
         # load pretrained weight
         assert args.resume is not None, '=> Please provide the checkpoint using --resume'
         if os.path.isfile(args.resume):
