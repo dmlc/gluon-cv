@@ -5,7 +5,7 @@ This tutorial goes through the steps for training a Mask R-CNN [He17]_ instance 
 provided by GluonCV.
 
 Mask R-CNN is an extension to the Faster R-CNN [Ren15]_ object detection model.
-As such, this tutorial is also an extension to :doc:`../examples_detections/train_faster_rcnn_voc`.
+As such, this tutorial is also an extension to :doc:`../examples_detection/train_faster_rcnn_voc`.
 We will focus on the extra work on top of Faster R-CNN to show how to use GluonCV components
 to construct a Mask R-CNN model.
 
@@ -229,7 +229,7 @@ rcnn_mask_loss = mx.gluon.loss.SigmoidBinaryCrossEntropyLoss(from_sigmoid=False)
 ##########################################################
 # Training targets
 # ----------------
-# RPN and RCNN training target are the same as in :doc:`../examples_detections/train_faster_rcnn`.
+# RPN and RCNN training target are the same as in :doc:`../examples_detection/train_faster_rcnn_voc`.
 
 ##############################################################################
 # We also push RPN targets computation to CPU workers, so network is passed to transforms
