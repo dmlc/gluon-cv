@@ -1,7 +1,7 @@
 """Mask transformation functions."""
 import copy
-import mxnet as mx
 import numpy as np
+import mxnet as mx
 from ..mscoco.utils import try_import_pycocotools
 
 __all__ = ['flip', 'resize', 'to_mask', 'fill']

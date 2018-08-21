@@ -90,9 +90,21 @@ Object Detection
 
     ssd_300_vgg16_atrous_voc
 
+    ssd_300_vgg16_atrous_coco
+
+    ssd_300_vgg16_atrous_custom
+
     ssd_512_vgg16_atrous_voc
 
+    ssd_512_vgg16_atrous_coco
+
+    ssd_512_vgg16_atrous_custom
+
     ssd_512_resnet50_v1_voc
+
+    ssd_512_resnet50_v1_coco
+
+    ssd_512_resnet50_v1_custom
 
     ssd_512_resnet101_v2_voc
 
@@ -117,6 +129,25 @@ Object Detection
     faster_rcnn_resnet50_v1b_voc
 
     faster_rcnn_resnet50_v1b_coco
+
+    faster_rcnn_resnet50_v1b_custom
+
+:hidden:`YOLOv3`
+~~~~~~~~~~~~~~~~
+
+.. autosummary::
+    :nosignatures:
+
+    YOLOV3
+
+    get_yolov3
+
+    yolo3_darknet53_voc
+
+    yolo3_darknet53_coco
+
+    yolo3_darknet53_custom
+
 
 Instance Segmentation
 ^^^^^^^^^^^^^^^^^^^^^
@@ -170,7 +201,11 @@ Semantic Segmentation
 
 
 API Reference
--------------
+^^^^^^^^^^^^^
+
+Network definitions of GluonCV models
+
+.. currentmodule:: gluoncv.model_zoo
 
 .. automodule:: gluoncv.model_zoo
     :members:
