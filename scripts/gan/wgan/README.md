@@ -18,9 +18,13 @@ python train_wgan.py --dataset lsun --dataroot [lsun-train-folder] --cuda
 python main.py --mlp_G --ngf 512
 ```
 
-**generate fake samples after 400000 epoch**
+**Generate fake samples after 400000 epoch**
 
 ![gensample](fake_samples_400000.png "fake samples in 400000 epoch")
+
+**Plot the value `-Loss_D`**
+
+![lossD](lossd.png "-loss D")
 
 ## References
 ["Wasserstein GAN"](https://arxiv.org/abs/1701.07875)
