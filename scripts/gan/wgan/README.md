@@ -3,7 +3,7 @@
 **Download LSUN dataset**
 ```bash
 cd ../../../scripts/datasets/
-python2.7 lsun.py -c bedroom
+python lsun.py -c bedroom
 ```
 
 **With DCGAN:**
