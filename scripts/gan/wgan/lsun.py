@@ -1,4 +1,3 @@
-"""Pascal VOC object detection dataset."""
 from __future__ import absolute_import
 from __future__ import division
 import os
@@ -6,7 +5,6 @@ import logging
 import numpy as np
 import mxnet as mx
 from mxnet import gluon
-import six
 from PIL import Image
 try:
     import xml.etree.cElementTree as ET
@@ -15,8 +13,10 @@ except ImportError:
 import sys
 if sys.version_info[0] == 2:
     import cPickle as pickle
+    import StringIO.StringIO as BytesIO
 else:
     import pickle
+    from io import BytesIO
 
 class LSUNClass(gluon.data.Dataset):
     def __init__(self, root, transform=None, target_transform=None):
@@ -43,7 +43,7 @@ class LSUNClass(gluon.data.Dataset):
         with env.begin(write=False) as txn:
             imgbuf = txn.get(self.keys[index])
 
-        buf = six.BytesIO()
+        buf = BytesIO()
         buf.write(imgbuf)
         buf.seek(0)
         img = Image.open(buf).convert('RGB')
