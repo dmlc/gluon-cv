@@ -3,18 +3,17 @@ import argparse
 from mxnet.image import image
 from mxnet.gluon.data.vision import transforms,CIFAR10,ImageFolderDataset
 from mxnet.gluon.data import DataLoader
-from mxnet import autograd
-from mxnet.gluon import Trainer
+from mxnet.gluon import Trainer,nn
 from mxnet.base import numeric_types
-import os
-from mxboard import SummaryWriter
-import mxnet as mx
-
-import mxnet.gluon as gluon
-from mxnet.gluon import nn
 from mxnet.initializer import *
+from mxnet import autograd
+import mxnet as mx
+import mxnet.gluon as gluon
+
 import numpy as np
 import math
+import os
+from mxboard import SummaryWriter
 from lsun import LSUN
 
 def save_images(images,filename):
