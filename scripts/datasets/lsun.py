@@ -6,7 +6,6 @@ import argparse
 import json
 from os.path import join
 
-import subprocess
 try:
     from urllib.request import urlopen
 except ImportError:
