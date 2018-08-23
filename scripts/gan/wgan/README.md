@@ -1,10 +1,19 @@
 ## Reproducing LSUN experiments
 
+
 **Download LSUN dataset**
 ```bash
 cd ../../../scripts/datasets/
 python lsun.py -c bedroom
 ```
+
+**Monitoring -loss D values during training**
+```bash
+pip install mxboard
+tensorboard --logdir=./logs --host=127.0.0.1 --port=8888
+```
+Details about mxboard is in [mxboard](https://github.com/awslabs/mxboard)
+
 
 **With DCGAN:**
 
