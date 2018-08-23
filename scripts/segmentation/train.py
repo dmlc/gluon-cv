@@ -50,8 +50,6 @@ def parse_args():
                         metavar='M', help='momentum (default: 0.9)')
     parser.add_argument('--weight-decay', type=float, default=1e-4,
                         metavar='M', help='w-decay (default: 1e-4)')
-    parser.add_argument('--mixup', action='store_true', default= False,
-                        help='mixup training')
     # cuda and logging
     parser.add_argument('--no-cuda', action='store_true', default=
                         False, help='disables CUDA training')
@@ -60,6 +58,8 @@ def parse_args():
                         help='number of GPUs (default: 4)')
     parser.add_argument('--kvstore', type=str, default='device',
                         help='kvstore to use for trainer/module.')
+    parser.add_argument('--dtype', type=str, default='float32',
+                        help='data type for training. default is float32')
     # checking point
     parser.add_argument('--resume', type=str, default=None,
                         help='put the path to resuming file if needed')
@@ -108,11 +108,12 @@ class Trainer(object):
             trainset, args.batch_size, shuffle=True, last_batch='rollover',
             num_workers=args.workers)
         self.eval_data = gluon.data.DataLoader(valset, args.test_batch_size,
-            last_batch='keep', num_workers=args.workers)
+            last_batch='rollover', num_workers=args.workers)
         # create network
         model = get_segmentation_model(model=args.model, dataset=args.dataset,
                                        backbone=args.backbone, norm_layer=args.norm_layer,
                                        norm_kwargs=args.norm_kwargs, aux=args.aux)
+        model.cast(args.dtype)
         print(model)
         self.net = DataParallelModel(model, args.ctx, args.syncbn)
         self.evaluator = DataParallelModel(SegEvalModel(model), args.ctx)
@@ -124,8 +125,7 @@ class Trainer(object):
                 raise RuntimeError("=> no checkpoint found at '{}'" \
                     .format(args.resume))
         # create criterion
-        criterion = MixSoftmaxCrossEntropyLoss(args.aux, mixup=args.mixup,
-                                               aux_weight=args.aux_weight)
+        criterion = MixSoftmaxCrossEntropyLoss(args.aux, aux_weight=args.aux_weight)
         #criterion = MixSoftmaxCrossEntropyOHEMLoss(args.aux, #mixup=args.mixup,
         #                                           aux_weight=args.aux_weight)
         self.criterion = DataParallelCriterion(criterion, args.ctx, args.syncbn)
@@ -134,12 +134,13 @@ class Trainer(object):
                                         niters=len(self.train_data), 
                                         nepochs=args.epochs)
         kv = mx.kv.create(args.kvstore)
+        optimizer_params = {'lr_scheduler': self.lr_scheduler,
+                            'wd':args.weight_decay,
+                            'momentum': args.momentum}
+        if args.dtype == 'float16':
+            optimizer_params['multi_precision'] = True
         self.optimizer = gluon.Trainer(self.net.module.collect_params(), 'sgd',
-                                       {'lr_scheduler': self.lr_scheduler,
-                                        'wd':args.weight_decay,
-                                        'momentum': args.momentum,
-                                        'multi_precision': True},
-                                        kvstore = kv)
+                                       optimizer_params, kvstore = kv)
         # evaluation metrics
         self.metric = gluoncv.utils.metrics.SegmentationMetric(trainset.num_class)
 
@@ -149,16 +150,9 @@ class Trainer(object):
         alpha = 0.2
         for i, (data, target) in enumerate(tbar):
             self.lr_scheduler.update(i, epoch)
-            if args.mixup:
-                lam = np.random.beta(alpha, alpha)
-                data = lam * data + (1 - lam) * data[::-1]
-                target2 = target[::-1]
             with autograd.record(True):
-                outputs = self.net(data)
-                if args.mixup:
-                    losses = self.criterion(outputs, target, target2, lam)
-                else:
-                    losses = self.criterion(outputs, target)
+                outputs = self.net(data.astype(args.dtype, copy=False))
+                losses = self.criterion(outputs, target)
                 mx.nd.waitall()
                 autograd.backward(losses)
             self.optimizer.step(self.args.batch_size)
@@ -176,7 +170,7 @@ class Trainer(object):
         self.metric.reset()
         tbar = tqdm(self.eval_data)
         for i, (data, target) in enumerate(tbar):
-            outputs = self.evaluator(data)
+            outputs = self.evaluator(data.astype(args.dtype, copy=False))
             outputs = [x[0] for x in outputs]
             targets = mx.gluon.utils.split_and_load(target, args.ctx)
             self.metric.update(targets, outputs)

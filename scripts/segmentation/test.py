@@ -57,19 +57,18 @@ def test(args):
     tbar = tqdm(test_data)
     for i, (data, dsts) in enumerate(tbar):
         if args.eval:
-            targets = dsts
-            predicts = evaluator.parallel_forward(data)
-            for predict, target in zip(predicts, targets):
-                target = target.as_in_context(predict[0].context)
-                metric.update(target, predict[0])
+            predicts = [pred[0] for pred in evaluator.parallel_forward(data)]
+            targets = [target.as_in_context(predicts[0].context) \
+                       for target in dsts]
+            metric.update(targets, predicts)
             pixAcc, mIoU = metric.get()
-            tbar.set_description(
-                'pixAcc: %.4f, mIoU: %.4f' % (pixAcc, mIoU))
+            tbar.set_description( 'pixAcc: %.4f, mIoU: %.4f' % (pixAcc, mIoU))
         else:
             im_paths = dsts
             predicts = evaluator.parallel_forward(data)
             for predict, impath in zip(predicts, im_paths):
-                predict = mx.nd.squeeze(mx.nd.argmax(predict[0], 1)).asnumpy() + testset.pred_offset
+                predict = mx.nd.squeeze(mx.nd.argmax(predict[0], 1)).asnumpy() + \
+                    testset.pred_offset
                 mask = get_color_pallete(predict, args.dataset)
                 outname = os.path.splitext(impath)[0] + '.png'
                 mask.save(os.path.join(outdir, outname))

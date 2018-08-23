@@ -63,9 +63,9 @@ class DeepLabV3(SegBaseModel):
 class _DeepLabHead(HybridBlock):
     def __init__(self, nclass, norm_layer, norm_kwargs={}, **kwargs):
         super(_DeepLabHead, self).__init__()
-        self.aspp = _ASPP(2048, [12, 24, 36], norm_layer=norm_layer,
-                               norm_kwargs=norm_kwargs, **kwargs)
         with self.name_scope():
+            self.aspp = _ASPP(2048, [12, 24, 36], norm_layer=norm_layer,
+                              norm_kwargs=norm_kwargs, **kwargs)
             self.block = nn.HybridSequential()
             self.block.add(nn.Conv2D(in_channels=256, channels=256,
                                      kernel_size=3, padding=1, use_bias=False))
@@ -109,7 +109,6 @@ class _AsppPooling(nn.HybridBlock):
 class _ASPP(nn.HybridBlock):
     def __init__(self, in_channels, atrous_rates, norm_layer, norm_kwargs):
         super(_ASPP, self).__init__()
-
         out_channels = 256
         b0 = nn.HybridSequential()
         with b0.name_scope():
@@ -119,7 +118,6 @@ class _ASPP(nn.HybridBlock):
             b0.add(nn.Activation("relu"))
 
         rate1, rate2, rate3 = tuple(atrous_rates)
-
         b1 = _ASPPConv(in_channels, out_channels, rate1, norm_layer, norm_kwargs)
         b2 = _ASPPConv(in_channels, out_channels, rate2, norm_layer, norm_kwargs)
         b3 = _ASPPConv(in_channels, out_channels, rate3, norm_layer, norm_kwargs)
@@ -127,18 +125,20 @@ class _ASPP(nn.HybridBlock):
                           norm_kwargs=norm_kwargs)
 
         self.concurent = gluon.contrib.nn.HybridConcurrent(axis=1)
-        self.concurent.add(b0)
-        self.concurent.add(b1)
-        self.concurent.add(b2)
-        self.concurent.add(b3)
-        self.concurent.add(b4)
+        with self.concurent.name_scope():
+            self.concurent.add(b0)
+            self.concurent.add(b1)
+            self.concurent.add(b2)
+            self.concurent.add(b3)
+            self.concurent.add(b4)
 
         self.project = nn.HybridSequential()
-        self.project.add(nn.Conv2D(in_channels=5*out_channels, channels=out_channels,
-                                   kernel_size=1, use_bias=False))
-        self.project.add(norm_layer(in_channels=out_channels, **norm_kwargs))
-        self.project.add(nn.Activation("relu"))
-        self.project.add(nn.Dropout(0.5))
+        with self.project.name_scope():
+            self.project.add(nn.Conv2D(in_channels=5*out_channels, channels=out_channels,
+                                       kernel_size=1, use_bias=False))
+            self.project.add(norm_layer(in_channels=out_channels, **norm_kwargs))
+            self.project.add(nn.Activation("relu"))
+            self.project.add(nn.Dropout(0.5))
 
     def hybrid_forward(self, F, x):
         return self.project(self.concurent(x))

@@ -1,3 +1,4 @@
+from tqdm import tqdm
 import numpy as np
 import mxnet as mx
 from mxnet.test_utils import assert_almost_equal
@@ -5,7 +6,7 @@ from mxnet.gluon.data.vision import transforms
 
 import gluoncv
 from gluoncv.utils.metrics.voc_segmentation import *
-from gluoncv.data import VOCSegmentation
+from gluoncv.data import ADE20KSegmentation
 
 from common import try_gpu, with_cpu
 
@@ -22,13 +23,14 @@ def test_segmentation_utils():
     ])
     # get the dataset
     # TODO FIXME: change it to ADE20K dataset and pretrained model
-    dataset = VOCSegmentation(split='val')
+    dataset = ADE20KSegmentation(split='val')
     # load pretrained net
-    net = gluoncv.model_zoo.get_model('fcn_resnet50_voc', pretrained=True, ctx=ctx)
+    #net = gluoncv.model_zoo.get_model('fcn_resnet50_ade', pretrained=True, ctx=ctx)
     # count for pixAcc and mIoU
     total_inter, total_union, total_correct, total_label = 0, 0, 0, 0
     np_inter, np_union, np_correct, np_label = 0, 0, 0, 0
-    for i in range(10):
+    tbar = tqdm(range(10))
+    for i in tbar:
         img, mask = dataset[i]
         # prepare data and make prediction
         img = transform_fn(img)
@@ -58,6 +60,8 @@ def test_segmentation_utils():
         np_pixAcc = 1.0 * np_correct / (np.spacing(1) + np_label)
         np_IoU = 1.0 * np_inter / (np.spacing(1) + np_union)
         np_mIoU = np_IoU.mean()
+        tbar.set_description('validation pixAcc: %.3f, mIoU: %.3f'%\
+            (pixAcc, mIoU))
 
     np.testing.assert_allclose(total_inter, np_inter)
     np.testing.assert_allclose(total_union, np_union)
@@ -65,5 +69,6 @@ def test_segmentation_utils():
     np.testing.assert_allclose(total_label, np_label)
 
 if __name__ == '__main__':
-    import nose
-    nose.runmodule()
+    test_segmentation_utils()
+    #import nose
+    #nose.runmodule()

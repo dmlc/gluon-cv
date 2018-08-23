@@ -49,18 +49,8 @@ class SegBaseModel(HybridBlock):
                 pretrained = resnet101_v1s(pretrained=True, dilated=True, **kwargs)
             elif backbone == 'resnet152':
                 pretrained = resnet152_v1s(pretrained=True, dilated=True, **kwargs)
-            elif backbone == 'resnet50v1c':
-                pretrained = resnet50_v1c(pretrained=False, dilated=True, **kwargs)
-            elif backbone == 'resnet50v1e':
-                pretrained = resnet50_v1e(pretrained=False, dilated=True, **kwargs)
             else:
                 raise RuntimeError('unknown backbone: {}'.format(backbone))
-            pretrained.load_parameters('resnet50_v1d.params')
-            print('loaded resnet50_v1d.params')
-            """
-            pretrained.cast('float16')
-            pretrained.cast('float32')
-            """
             self.conv1 = pretrained.conv1
             self.bn1 = pretrained.bn1
             self.relu = pretrained.relu

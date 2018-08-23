@@ -12,7 +12,8 @@ __all__ = ['ResNetV1b', 'resnet18_v1b', 'resnet34_v1b',
            'resnet152_v1b', 'BasicBlockV1b', 'BottleneckV1b',
            'resnet50_v1c', 'resnet101_v1c', 'resnet152_v1c',
            'resnet50_v1d', 'resnet101_v1d', 'resnet152_v1d',
-           'resnet50_v1e', 'resnet101_v1e', 'resnet152_v1e']
+           'resnet50_v1e', 'resnet101_v1e', 'resnet152_v1e',
+           'resnet50_v1s', 'resnet101_v1s', 'resnet152_v1s']
 
 class BasicBlockV1b(HybridBlock):
     """ResNetV1b BasicBlockV1b
@@ -626,7 +627,7 @@ def resnet50_v1s(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
     model = ResNetV1b(BottleneckV1b, [3, 4, 6, 3], deep_stem=True, stem_width=64, **kwargs)
     if pretrained:
         from .model_store import get_model_file
-        model.load_params(get_model_file('resnet%d_v%dc'%(50, 1),
+        model.load_params(get_model_file('resnet%d_v%ds'%(50, 1),
                                          root=root), ctx=ctx)
     return model
 
@@ -650,7 +651,7 @@ def resnet101_v1s(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
     model = ResNetV1b(BottleneckV1b, [3, 4, 23, 3], deep_stem=True, stem_width=64, **kwargs)
     if pretrained:
         from .model_store import get_model_file
-        model.load_params(get_model_file('resnet%d_v%dc'%(101, 1),
+        model.load_params(get_model_file('resnet%d_v%ds'%(101, 1),
                                          root=root), ctx=ctx)
     return model
 
@@ -674,6 +675,6 @@ def resnet152_v1s(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
     model = ResNetV1b(BottleneckV1b, [3, 8, 36, 3], deep_stem=True, stem_width=64, **kwargs)
     if pretrained:
         from .model_store import get_model_file
-        model.load_params(get_model_file('resnet%d_v%dc'%(152, 1),
+        model.load_params(get_model_file('resnet%d_v%ds'%(152, 1),
                                          root=root), ctx=ctx)
     return model

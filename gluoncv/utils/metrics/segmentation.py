@@ -49,7 +49,7 @@ class SegmentationMetric(EvalMetric):
         IoU = 1.0 * self.total_inter / (np.spacing(1) + self.total_union)
         mIoU = IoU.mean()
         return pixAcc, mIoU
-        
+ 
     def reset(self):
         self.total_inter = 0
         self.total_union = 0
@@ -66,6 +66,12 @@ def batch_pix_accuracy(output, target):
     target = target.asnumpy().astype(predict.dtype) + 1
     pixel_labeled = np.sum(target > 0)
     pixel_correct = np.sum((predict == target)*(target > 0))
+    """
+    predict = np.argmax(output.asnumpy(), 1) + 1
+    target = target + 1
+    pixel_labeled = (target > 0).sum().asnumpy()[0]
+    pixel_correct = (F.equal(predict, target)*(target > 0)).sum().asnumpy()[0]
+    """
     assert pixel_correct <= pixel_labeled, "Correct area should be smaller than Labeled"
     return pixel_correct, pixel_labeled
 
