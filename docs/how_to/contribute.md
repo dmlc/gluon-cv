@@ -6,7 +6,7 @@ Latest documentation can be found
 [here](http://gluon-cv.mxnet.io/index.html).
 
 There are lots of opportunities for you to become our
-[contributors](https://github.com/dmlc/gluon-cv/blob/master/contributor.md):
+[contributors](https://github.com/dmlc/gluon-cv/graphs/contributors):
 
 -   Ask or answer questions on [GitHub
     issues](https://github.com/dmlc/gluon-cv/issues).
@@ -40,12 +40,9 @@ How-to
 -   [Git Workflow Howtos](#git-workflow-howtos)
 
     > -   [How to submit pull request](#how-to-submit-pull-request)
-    > -   [How to resolve conflict with master
-    >     \<\#how-to-resolve-conflict-with-master\>]{.title-ref}\_\_
-    > -   [How to combine multiple commits into one
-    >     \<\#how-to-combine-multiple-commits-into-one\>]{.title-ref}\_\_
-    > -   [What is the consequence of force push
-    >     \<\#what-is-the-consequence-of-force-push\>]{.title-ref}\_\_
+    > -   [How to resolve conflict with master](#how-to-resolve-conflict-with-master)
+    > -   [How to combine multiple commits into one](how-to-combine-multiple-commits-into-one)
+    > -   [What is the consequence of force push](#what-is-the-consequence-of-force-push)
 
 ### Make changes
 
@@ -76,8 +73,8 @@ examples](https://github.com/dmlc/gluon-cv/tree/master/scripts).
 ### Contribute Tutorials
 
 Our [tutorials](https://gluon-cv.mxnet.io/build/examples_classification/index.html) are
-intended for people who are interested in NLP and want to get better
-familiarized on different parts in NLP. In order for people to easily
+intended for people who are interested in CV and want to get better
+familiarized on different parts in CV. In order for people to easily
 understand the content, the code needs to be clean and readable,
 accompanied by good quality writing.
 
@@ -118,7 +115,7 @@ delivers the correct message clearly and concisely. If you see any issue
 in the existing documentation, a patch to fix is most welcome! To locate
 the code responsible for the doc, you may use \"View page source\" in
 the top right corner, or the \"\[source\]\" links after each API. Also,
-[git grep]{.title-ref} works nicely if there\'s unique string.
+\"\[git grep\]\" works nicely if there\'s unique string.
 
 ### Git Workflow Howtos
 
