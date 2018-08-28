@@ -25,7 +25,7 @@ from sphinx_gallery.sorting import ExampleTitleSortKey
 
 # -- Project information -----------------------------------------------------
 
-project = 'GluonCV'
+project = 'gluoncv'
 copyright = '2018, MXNet Developers'
 author = 'MXNet Developers'
 
