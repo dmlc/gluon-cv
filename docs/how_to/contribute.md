@@ -41,7 +41,7 @@ How-to
 
     > -   [How to submit pull request](#how-to-submit-pull-request)
     > -   [How to resolve conflict with master](#how-to-resolve-conflict-with-master)
-    > -   [How to combine multiple commits into one](how-to-combine-multiple-commits-into-one)
+    > -   [How to combine multiple commits into one](#how-to-combine-multiple-commits-into-one)
     > -   [What is the consequence of force push](#what-is-the-consequence-of-force-push)
 
 ### Make changes
