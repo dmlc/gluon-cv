@@ -1,6 +1,7 @@
 """Helper utils for export HybridBlock to symbols."""
 from __future__ import absolute_import
 import mxnet as mx
+from mxnet.base import MXNetError
 from mxnet.gluon import HybridBlock
 from mxnet.gluon import nn
 
@@ -35,7 +36,7 @@ class _DefaultPreprocess(HybridBlock):
         x = F.transpose(x, axes=(0, 3, 1, 2))
         return x
 
-def export_block(path, block, data_shape=(512, 512, 3), epoch=0, preprocess=True, layout='HWC'):
+def export_block(path, block, data_shape=None, epoch=0, preprocess=True, layout='HWC'):
     """Helper function to export a HybridBlock to symbol JSON to be used by
     `SymbolBlock.imports`, `mxnet.mod.Module` or the C++ interface..
 
@@ -47,9 +48,11 @@ def export_block(path, block, data_shape=(512, 512, 3), epoch=0, preprocess=True
         where xxxx is the 4 digits epoch number.
     block : mxnet.gluon.HybridBlock
         The hybridizable block. Note that normal gluon.Block is not supported.
-    data_shape : tuple of int, default is (512, 512, 3)
+    data_shape : tuple of int, default is None
         Fake data shape just for export purpose, in format (H, W, C).
-        As long as the network can take `data_shape` as input, you don't need to modify that.
+        If you don't specify ``data_shape``, `export_block` will try use some common data_shapes,
+        e.g., (224, 224, 3), (256, 256, 3), (299, 299, 3), (512, 512, 3)...
+        If any of this ``data_shape`` goes through, the export will succeed.
     epoch : int
         Epoch number of saved model.
     preprocess : mxnet.gluon.HybridBlock, default is True.
@@ -69,11 +72,10 @@ def export_block(path, block, data_shape=(512, 512, 3), epoch=0, preprocess=True
 
     """
     # input image layout
-    h, w, c = data_shape
-    if layout == 'HWC':
-        x = mx.nd.zeros((1, h, w, c))
-    elif layout == 'CHW':
-        x = mx.nd.zeros((1, c, h, w))
+    if data_shape is None:
+        data_shapes = [(s, s, 3) for s in (224, 256, 299, 512)]
+    else:
+        data_shapes = [data_shape]
 
     if preprocess:
         # add preprocess block
@@ -86,10 +88,22 @@ def export_block(path, block, data_shape=(512, 512, 3), epoch=0, preprocess=True
         preprocess.initialize()
         wrapper_block.add(preprocess)
         wrapper_block.add(block)
-        wrapper_block.hybridize()
-        wrapper_block(x)
-        wrapper_block.export(path, epoch)
     else:
-        block.hybridize()
-        block(x)
-        block.export(path, epoch)
+        wrapper_block = block
+
+    # try different data_shape if possible, until one fits the network
+    for dshape in data_shapes:
+        h, w, c = dshape
+        if layout == 'HWC':
+            x = mx.nd.zeros((1, h, w, c))
+        elif layout == 'CHW':
+            x = mx.nd.zeros((1, c, h, w))
+
+        # hybridize and forward once
+        wrapper_block.hybridize()
+        try:
+            wrapper_block(x)
+            wrapper_block.export(path, epoch)
+            break
+        except MXNetError:
+            pass
