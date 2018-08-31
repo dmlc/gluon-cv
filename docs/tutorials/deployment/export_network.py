@@ -38,19 +38,19 @@ print(glob.glob('*.json') + glob.glob('*.params'))
 
 ################################################################################
 # The exportable networks are not limited to image classification models.
-# We can export many object detection networks as well:
-
-# SSD
-net = gcv.model_zoo.get_model('ssd_512_resnet50_v1_coco', pretrained=True)
-export_block('ssd_512_resnet50_v1_coco', net)
-
-# Faster-RCNN
-net = gcv.model_zoo.get_model('faster_rcnn_resnet50_v1b_coco', pretrained=True)
-export_block('faster_rcnn_resnet50_v1b_coco', net)
+# We can export detection and segmentation networks as well:
 
 # YOLO
 net = gcv.model_zoo.get_model('yolo3_darknet53_coco', pretrained=True)
 export_block('yolo3_darknet53_coco', net)
+
+# FCN
+net = gcv.model_zoo.get_model('fcn_resnet50_ade', pretrained=True)
+export_block('fcn_resnet50_ade', net)
+
+# MaskRCNN
+net = gcv.model_zoo.get_model('mask_rcnn_resnet50_v1b_coco', pretrained=True)
+export_block('mask_rcnn_resnet50_v1b_coco', net)
 
 ################################################################################
 #
