@@ -31,7 +31,7 @@ print('Done.')
 ################################################################################
 # The above code generates two files: xxxx.json and xxxx.params
 import glob
-print(glob.glob('./resnet18_v1.*'))
+print(glob.glob('*.json') + glob.glob('*.params'))
 
 ################################################################################
 # JSON file includes computational graph and params file includes pre-trained weights.
