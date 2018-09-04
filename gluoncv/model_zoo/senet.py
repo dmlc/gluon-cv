@@ -47,7 +47,7 @@ class SEBlock(HybridBlock):
     """
 
     def __init__(self, channels, cardinality, bottleneck_width, stride,
-                 downsample=False, **kwargs):
+                 downsample=False, downsample_kernel_size=3, **kwargs):
         super(SEBlock, self).__init__(**kwargs)
         D = int(math.floor(channels * (bottleneck_width / 64)))
         group_width = cardinality * D
@@ -64,15 +64,17 @@ class SEBlock(HybridBlock):
         self.body.add(nn.BatchNorm())
 
         self.se = nn.HybridSequential(prefix='')
-        self.se.add(nn.Dense(channels // 4, use_bias=False))
+        self.se.add(nn.Conv2D(channels // 4, kernel_size=1, padding=0))
         self.se.add(nn.Activation('relu'))
-        self.se.add(nn.Dense(channels * 4, use_bias=False))
+        self.se.add(nn.Conv2D(channels * 4, kernel_size=1, padding=0))
         self.se.add(nn.Activation('sigmoid'))
 
         if downsample:
             self.downsample = nn.HybridSequential(prefix='')
-            self.downsample.add(nn.Conv2D(channels * 4, kernel_size=1, strides=stride,
-                                          use_bias=False))
+            downsample_padding = 1 if downsample_kernel_size == 3 else 0
+            self.downsample.add(nn.Conv2D(channels * 4, kernel_size=downsample_kernel_size,
+                                          strides=stride,
+                                          padding=downsample_padding, use_bias=False))
             self.downsample.add(nn.BatchNorm())
         else:
             self.downsample = None
@@ -84,7 +86,7 @@ class SEBlock(HybridBlock):
 
         w = F.contrib.AdaptiveAvgPooling2D(x, output_size=1)
         w = self.se(w)
-        x = F.broadcast_mul(x, w.expand_dims(axis=2).expand_dims(axis=2))
+        x = F.broadcast_mul(x, w)
 
         if self.downsample:
             residual = self.downsample(residual)
@@ -128,7 +130,7 @@ class SENet(HybridBlock):
             self.features.add(nn.Conv2D(channels * 2, 3, 1, 1, use_bias=False))
             self.features.add(nn.BatchNorm())
             self.features.add(nn.Activation('relu'))
-            self.features.add(nn.MaxPool2D(3, 2, 1))
+            self.features.add(nn.MaxPool2D(3, 2, ceil_mode=True))
 
             for i, num_layer in enumerate(layers):
                 stride = 1 if i == 0 else 2
@@ -141,9 +143,10 @@ class SENet(HybridBlock):
 
     def _make_layer(self, channels, num_layers, stride, stage_index):
         layer = nn.HybridSequential(prefix='stage%d_'%stage_index)
+        downsample_kernel_size = 1 if stage_index == 1 else 3
         with layer.name_scope():
             layer.add(SEBlock(channels, self.cardinality, self.bottleneck_width,
-                              stride, True, prefix=''))
+                              stride, True, downsample_kernel_size, prefix=''))
             for _ in range(num_layers-1):
                 layer.add(SEBlock(channels, self.cardinality, self.bottleneck_width,
                                   1, False, prefix=''))

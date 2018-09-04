@@ -41,7 +41,7 @@ def parse_args():
                         help='Training epochs.')
     parser.add_argument('--resume', type=str, default='',
                         help='Resume from previously saved parameters if not None. '
-                        'For example, you can resume from ./ssd_xxx_0123.params')
+                        'For example, you can resume from ./yolo3_xxx_0123.params')
     parser.add_argument('--start-epoch', type=int, default=0,
                         help='Starting epoch for resuming, default is 0 for new training.'
                         'You can specify it to 100 for example to start from 100 epoch.')
@@ -268,6 +268,7 @@ if __name__ == '__main__':
         async_net = net
     if args.resume.strip():
         net.load_parameters(args.resume.strip())
+        async_net.load_parameters(args.resume.strip())
     else:
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
