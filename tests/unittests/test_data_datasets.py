@@ -136,6 +136,7 @@ def test_lst_detection():
     from gluoncv.data import LstDetection
     lst_dataset = LstDetection('val.lst', root=os.path.expanduser('.'))
     assert len(lst_dataset) == 4
+    lst_dataset.transform(lambda x, y : (x, y))
     try:
         os.remove('dog.jpg')
         os.remove('val.lst')

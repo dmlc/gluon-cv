@@ -3,10 +3,11 @@ from __future__ import absolute_import
 import os
 import numpy as np
 import mxnet as mx
+from ..base import VisionDataset
 from ..recordio.detection import _transform_label
 
 
-class LstDetection(object):
+class LstDetection(VisionDataset):
     """Detection dataset loaded from LST file and raw images.
     LST file is a pure text file but with special label format.
 
@@ -26,6 +27,7 @@ class LstDetection(object):
 
     """
     def __init__(self, filename, root='', flag=1, coord_normalized=True):
+        super(LstDetection, self).__init__(root)
         self._flag = flag
         self._coord_normalized = coord_normalized
         self._items = []
