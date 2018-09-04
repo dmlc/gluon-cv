@@ -256,11 +256,14 @@ else:
     save_dir = ''
     save_frequency = 0
 
-def label_transform(label, classes, eta=0.0):
-    ind = label.astype('int')
-    res = nd.zeros((ind.shape[0], classes), ctx = label.context)
-    res += eta/classes
-    res[nd.arange(ind.shape[0], ctx = label.context), ind] = 1 - eta + eta/classes
+def mixup_transform(label, classes, lam=1, eta=0.0):
+    if isinstance(label, nd.NDArray):
+        label = [label]
+    res = []
+    for l in label:
+        y1 = l.one_hot(classes, on_value = 1 - eta + eta/classes, off_value = eta/classes)
+        y2 = l[::-1].one_hot(classes, on_value = 1 - eta + eta/classes, off_value = eta/classes)
+        res.append(lam*y1 + (1-lam)*y2)
     return res
 
 def smooth(label, classes, eta=0.1):
@@ -268,10 +271,7 @@ def smooth(label, classes, eta=0.1):
         label = [label]
     smoothed = []
     for l in label:
-        ind = l.astype('int')
-        res = nd.zeros((ind.shape[0], classes), ctx = l.context)
-        res += eta/classes
-        res[nd.arange(ind.shape[0], ctx = l.context), ind] = 1 - eta + eta/classes
+        res = l.one_hot(classes, on_value = 1 - eta + eta/classes, off_value = eta/classes)
         smoothed.append(res)
     return smoothed
 
@@ -322,20 +322,14 @@ def train(ctx):
                 lam = np.random.beta(opt.mixup_alpha, opt.mixup_alpha)
                 if epoch >= opt.num_epochs - opt.mixup_off_epoch:
                     lam = 1
-                data_mixup = [lam*X + (1-lam)*X[::-1] for X in data]
+                data = [lam*X + (1-lam)*X[::-1] for X in data]
 
-                label_mixup = []
                 if opt.label_smoothing:
                     eta = 0.1
                 else:
                     eta = 0.0
-                for Y in label:
-                    y1 = label_transform(Y, classes, eta)
-                    y2 = label_transform(Y[::-1], classes, eta)
-                    label_mixup.append(lam*y1 + (1-lam)*y2)
+                label = mixup_transform(label, classes, lam, eta)
 
-                data = data_mixup
-                label = label_mixup
             elif opt.label_smoothing:
                 label = smooth(label, classes)
 
