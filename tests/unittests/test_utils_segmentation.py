@@ -25,7 +25,7 @@ def test_segmentation_utils():
     # TODO FIXME: change it to ADE20K dataset and pretrained model
     dataset = ADE20KSegmentation(split='val')
     # load pretrained net
-    #net = gluoncv.model_zoo.get_model('fcn_resnet50_ade', pretrained=True, ctx=ctx)
+    net = gluoncv.model_zoo.get_model('fcn_resnet50_ade', pretrained=True, ctx=ctx)
     # count for pixAcc and mIoU
     total_inter, total_union, total_correct, total_label = 0, 0, 0, 0
     np_inter, np_union, np_correct, np_label = 0, 0, 0, 0
@@ -69,6 +69,5 @@ def test_segmentation_utils():
     np.testing.assert_allclose(total_label, np_label)
 
 if __name__ == '__main__':
-    test_segmentation_utils()
-    #import nose
-    #nose.runmodule()
+    import nose
+    nose.runmodule()

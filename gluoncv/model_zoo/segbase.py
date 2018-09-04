@@ -128,7 +128,7 @@ class MultiEvalModel(object):
         base_size = self.base_size
         crop_size = self.crop_size
         stride_rate = 2.0/3.0
-        stride = int(crop_size*stride_rate)
+        stride = int(crop_size * stride_rate)
         scores = mx.nd.zeros((batch, self.nclass, h, w), ctx=image.context)
         for scale in self.scales:
             long_size = int(math.ceil(base_size * scale))

@@ -124,6 +124,7 @@ def get_fcn(dataset='pascal_voc', backbone='resnet50', pretrained=False,
         'pascal_voc': VOCSegmentation,
         'pascal_aug': VOCAugSegmentation,
         'ade20k': ADE20KSegmentation,
+        'coco': COCOSegmentation,
     }
     # infer number of classes
     model = FCN(datasets[dataset].NUM_CLASS, backbone=backbone, pretrained_base=pretrained_base,

@@ -32,7 +32,6 @@ class SegmentationMetric(EvalMetric):
 
         if isinstance(preds, mx.nd.NDArray):
             evaluate_worker(self, labels, preds)
-            return
         elif isinstance(preds, (list, tuple)):
             threads = [threading.Thread(target=evaluate_worker,
                                         args=(self, label, pred),
@@ -42,7 +41,6 @@ class SegmentationMetric(EvalMetric):
                 thread.start()
             for thread in threads:
                 thread.join()
-            return
 
     def get(self):
         pixAcc = 1.0 * self.total_correct / (np.spacing(1) + self.total_label)
@@ -57,21 +55,19 @@ class SegmentationMetric(EvalMetric):
         self.total_label = 0
         return
 
+import torch
+
 def batch_pix_accuracy(output, target):
     """PixAcc"""
     # inputs are NDarray, output 4D, target 3D
     # the category -1 is ignored class, typically for background / boundary
-    predict = F.argmax(output, 1)
-    predict = predict.asnumpy() + 1
-    target = target.asnumpy().astype(predict.dtype) + 1
+    predict = np.argmax(output.asnumpy().astype('int64'), 1) + 1
+
+    target = target.asnumpy().astype('int64') + 1
+
     pixel_labeled = np.sum(target > 0)
     pixel_correct = np.sum((predict == target)*(target > 0))
-    """
-    predict = np.argmax(output.asnumpy(), 1) + 1
-    target = target + 1
-    pixel_labeled = (target > 0).sum().asnumpy()[0]
-    pixel_correct = (F.equal(predict, target)*(target > 0)).sum().asnumpy()[0]
-    """
+
     assert pixel_correct <= pixel_labeled, "Correct area should be smaller than Labeled"
     return pixel_correct, pixel_labeled
 
@@ -80,23 +76,24 @@ def batch_intersection_union(output, target, nclass):
     """mIoU"""
     # inputs are NDarray, output 4D, target 3D
     # the category -1 is ignored class, typically for background / boundary
-    predict = F.argmax(output, 1)
-    target = target.astype(predict.dtype)
     mini = 1
     maxi = nclass
     nbins = nclass
-    predict = predict.asnumpy() + 1
-    target = target.asnumpy() + 1
+    #predict = F.argmax(output, 1)
+    #predict = predict.asnumpy() + 1
+    #target = target.astype(predict.dtype)
+    predict = np.argmax(output.asnumpy().astype('int64'), 1) + 1
+    target = target.asnumpy().astype('int64') + 1
 
     predict = predict * (target > 0).astype(predict.dtype)
-    #intersection = predict * (F.equal(predict, target)).astype(predict.dtype)
     intersection = predict * (predict == target)
     # areas of intersection and union
     area_inter, _ = np.histogram(intersection, bins=nbins, range=(mini, maxi))
     area_pred, _ = np.histogram(predict, bins=nbins, range=(mini, maxi))
     area_lab, _ = np.histogram(target, bins=nbins, range=(mini, maxi))
     area_union = area_pred + area_lab - area_inter
-    assert (area_inter <= area_union).all(), "Intersection area should be smaller than Unition's"
+    assert (area_inter <= area_union).all(), \
+        "Intersection area should be smaller than Union area"
     return area_inter, area_union
 
 

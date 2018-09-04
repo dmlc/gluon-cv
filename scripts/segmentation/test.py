@@ -34,7 +34,7 @@ def test(args):
         testset = get_segmentation_dataset(
             args.dataset, split='test', mode='test', transform=input_transform)
     test_data = gluon.data.DataLoader(
-        testset, args.test_batch_size, last_batch='keep',
+        testset, args.test_batch_size, shuffle=False, last_batch='keep',
         batchify_fn=ms_batchify_fn, num_workers=args.workers)
     # create network
     if args.model_zoo is not None:
