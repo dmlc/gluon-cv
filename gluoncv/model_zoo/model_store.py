@@ -73,7 +73,7 @@ _model_sha1 = {name: checksum for checksum, name in [
     ('bd93a83c05f709a803b1221aeff0b028e6eebb03', 'resnet101_v1s'),
     ('cf74621d988ad06c6c6aa44f5597e5b600a966cc', 'resnet152_v1s'),
     ('766cdf9cc3e5b980b141643f054db5b48863f634', 'fcn_resnet101_coco'),
-    ('70a6f22a1a0b6ddd1f680de587d67b5c2c0acc0b', 'fcn_resnet101_voc'),
+    ('12c2b9b3be7d4e133e52477150a9b3e616626a82', 'fcn_resnet101_voc'),
     ('3479525af7bdbf345e74e150aaae2e48174c0c5f', 'fcn_resnet50_ade'),
     ('d544440a35586f662ed1a5405ab9aa89cd750558', 'fcn_resnet101_ade'),
     ('ed817f76086abb4c3404af62ec1b5487c67642b7', 'deeplab_resnet101_coco'),

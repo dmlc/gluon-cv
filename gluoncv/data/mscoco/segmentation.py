@@ -1,15 +1,41 @@
 """MSCOCO Semantic Segmentation pretraining for VOC."""
 import os
-from tqdm import trange
-from PIL import Image, ImageOps, ImageFilter
-import numpy as np
 import pickle
+from tqdm import trange
+from PIL import Image
+import numpy as np
 
 from ..segbase import SegmentationDataset
 
 class COCOSegmentation(SegmentationDataset):
+    """COCO Semantic Segmentation Dataset for VOC Pre-training.
+
+    Parameters
+    ----------
+    root : string
+        Path to VOCdevkit folder. Default is '$(HOME)/mxnet/datasplits/ade'
+    split: string
+        'train', 'val' or 'test'
+    transform : callable, optional
+        A function that transforms the image
+
+    Examples
+    --------
+    >>> from mxnet.gluon.data.vision import transforms
+    >>> # Transforms for Normalization
+    >>> input_transform = transforms.Compose([
+    >>>     transforms.ToTensor(),
+    >>>     transforms.Normalize([.485, .456, .406], [.229, .224, .225]),
+    >>> ])
+    >>> # Create Dataset
+    >>> trainset = gluoncv.data.COCOSegmentation(split='train', transform=input_transform)
+    >>> # Create Training Loader
+    >>> train_data = gluon.data.DataLoader(
+    >>>     trainset, 4, shuffle=True, last_batch='rollover',
+    >>>     num_workers=4)
+    """
     CAT_LIST = [0, 5, 2, 16, 9, 44, 6, 3, 17, 62, 21, 67, 18, 19, 4,
-        1, 64, 20, 63, 7, 72]
+                1, 64, 20, 63, 7, 72]
     NUM_CLASS = 21
     def __init__(self, root=os.path.expanduser('~/.mxnet/datasets/coco'),
                  split='train', mode=None, transform=None):
@@ -43,8 +69,8 @@ class COCOSegmentation(SegmentationDataset):
         path = img_metadata['file_name']
         img = Image.open(os.path.join(self.root, path)).convert('RGB')
         cocotarget = coco.loadAnns(coco.getAnnIds(imgIds=img_id))
-        mask = Image.fromarray(self._gen_seg_mask(cocotarget, img_metadata['height'], 
-                               img_metadata['width']))
+        mask = Image.fromarray(self._gen_seg_mask(
+            cocotarget, img_metadata['height'], img_metadata['width']))
         # synchrosized transform
         if self.mode == 'train':
             img, mask = self._sync_transform(img, mask)
@@ -87,7 +113,7 @@ class COCOSegmentation(SegmentationDataset):
             img_id = ids[i]
             cocotarget = self.coco.loadAnns(self.coco.getAnnIds(imgIds=img_id))
             img_metadata = self.coco.loadImgs(img_id)[0]
-            mask = self._gen_seg_mask(cocotarget, img_metadata['height'], 
+            mask = self._gen_seg_mask(cocotarget, img_metadata['height'],
                                       img_metadata['width'])
             # more than 1k pixels
             if (mask > 0).sum() > 1000:

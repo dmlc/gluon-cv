@@ -2,7 +2,6 @@
 import threading
 import numpy as np
 import mxnet as mx
-import mxnet.ndarray as F
 from mxnet.metric import EvalMetric
 
 __all__ = ['SegmentationMetric', 'batch_pix_accuracy', 'batch_intersection_union',
@@ -18,6 +17,16 @@ class SegmentationMetric(EvalMetric):
         self.reset()
 
     def update(self, labels, preds):
+        """Updates the internal evaluation result.
+
+        Parameters
+        ----------
+        labels : 'NDArray' or list of `NDArray`
+            The labels of the data.
+
+        preds : 'NDArray' or list of `NDArray`
+            Predicted values.
+        """
         def evaluate_worker(self, label, pred):
             correct, labeled = batch_pix_accuracy(
                 pred, label)
@@ -28,7 +37,6 @@ class SegmentationMetric(EvalMetric):
                 self.total_label += labeled
                 self.total_inter += inter
                 self.total_union += union
-            return
 
         if isinstance(preds, mx.nd.NDArray):
             evaluate_worker(self, labels, preds)
@@ -43,19 +51,24 @@ class SegmentationMetric(EvalMetric):
                 thread.join()
 
     def get(self):
+        """Gets the current evaluation result.
+
+        Returns
+        -------
+        metrics : tuple of float
+            pixAcc and mIoU
+        """
         pixAcc = 1.0 * self.total_correct / (np.spacing(1) + self.total_label)
         IoU = 1.0 * self.total_inter / (np.spacing(1) + self.total_union)
         mIoU = IoU.mean()
         return pixAcc, mIoU
- 
+
     def reset(self):
+        """Resets the internal evaluation result to initial state."""
         self.total_inter = 0
         self.total_union = 0
         self.total_correct = 0
         self.total_label = 0
-        return
-
-import torch
 
 def batch_pix_accuracy(output, target):
     """PixAcc"""
@@ -79,9 +92,6 @@ def batch_intersection_union(output, target, nclass):
     mini = 1
     maxi = nclass
     nbins = nclass
-    #predict = F.argmax(output, 1)
-    #predict = predict.asnumpy() + 1
-    #target = target.astype(predict.dtype)
     predict = np.argmax(output.asnumpy().astype('int64'), 1) + 1
     target = target.asnumpy().astype('int64') + 1
 

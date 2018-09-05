@@ -4,23 +4,21 @@ import numpy as np
 import mxnet as mx
 from mxnet.ndarray import NDArray
 from mxnet.gluon.nn import HybridBlock
-from mxnet.gluon.loss import Loss, _apply_weighting
-from ..utils.metrics import segmentation
 from ..utils.parallel import parallel_apply
-from .resnetv1b import *
+from .resnetv1b import resnet50_v1s, resnet101_v1s, resnet152_v1s
 from ..utils.parallel import tuple_map
-# pylint: disable=abstract-method,arguments-differ,dangerous-default-value,missing-docstring
+# pylint: disable=wildcard-import,abstract-method,arguments-differ,dangerous-default-value,missing-docstring
 
 __all__ = ['get_segmentation_model', 'SegBaseModel', 'SegEvalModel', 'MultiEvalModel']
 
 def get_segmentation_model(model, **kwargs):
     from .fcn import get_fcn
     from .pspnet import get_psp
-    from .deeplabv3 import get_deeplabv3
+    from .deeplabv3 import get_deeplab
     models = {
         'fcn': get_fcn,
         'psp': get_psp,
-        'deeplab': get_deeplabv3,
+        'deeplab': get_deeplab,
     }
     return models[model](**kwargs)
 
@@ -44,11 +42,11 @@ class SegBaseModel(HybridBlock):
         self.nclass = nclass
         with self.name_scope():
             if backbone == 'resnet50':
-                pretrained = resnet50_v1s(pretrained=True, dilated=True, **kwargs)
+                pretrained = resnet50_v1s(pretrained=pretrained_base, dilated=True, **kwargs)
             elif backbone == 'resnet101':
-                pretrained = resnet101_v1s(pretrained=True, dilated=True, **kwargs)
+                pretrained = resnet101_v1s(pretrained=pretrained_base, dilated=True, **kwargs)
             elif backbone == 'resnet152':
-                pretrained = resnet152_v1s(pretrained=True, dilated=True, **kwargs)
+                pretrained = resnet152_v1s(pretrained=pretrained_base, dilated=True, **kwargs)
             else:
                 raise RuntimeError('unknown backbone: {}'.format(backbone))
             self.conv1 = pretrained.conv1

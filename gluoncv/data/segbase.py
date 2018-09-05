@@ -10,6 +10,7 @@ from .base import VisionDataset
 __all__ = ['get_segmentation_dataset', 'ms_batchify_fn', 'SegmentationDataset']
 
 def get_segmentation_dataset(name, **kwargs):
+    """Segmentation Datasets"""
     from .pascal_voc.segmentation import VOCSegmentation
     from .pascal_aug.segmentation import VOCAugSegmentation
     from .ade20k.segmentation import ADE20KSegmentation
@@ -24,6 +25,7 @@ def get_segmentation_dataset(name, **kwargs):
 
 
 def ms_batchify_fn(data):
+    """Multi-size batchfy function"""
     if isinstance(data[0], (str, mx.nd.NDArray)):
         return list(data)
     elif isinstance(data[0], tuple):
@@ -83,12 +85,6 @@ class SegmentationDataset(VisionDataset):
             ow = int(1.0 * w * oh / h)
         img = img.resize((ow, oh), Image.BILINEAR)
         mask = mask.resize((ow, oh), Image.NEAREST)
-        # random rotate -10~10, mask using NN rotate
-        """
-        deg = random.uniform(-10, 10)
-        img = img.rotate(deg, resample=Image.BILINEAR)
-        mask = mask.rotate(deg, resample=Image.NEAREST)
-        """
         # pad crop
         if short_size < crop_size:
             padh = crop_size - oh if oh < crop_size else 0
