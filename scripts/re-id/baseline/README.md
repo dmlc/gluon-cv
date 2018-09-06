@@ -45,7 +45,7 @@ ours(best, with avg) | 93.1 | 97.1 | 98.4 | 80.6
 cd ../../../scripts/datasets/
 python market1501.py
 ```
-if the dataset can not download successfully, please go to [baidu](https://pan.baidu.com/s/1ntIi2Op) or [google](https://drive.google.com/file/d/0B8-rUzbwVRk0c054eEozWG9COHM/view?usp=sharing) to download the dataset, rename it `Market-1501-v15.09.15.zip`, and move to `scripts/datasets/`.
+if the dataset can not be downloaded successfully, please download the dataset from [baidu](https://pan.baidu.com/s/1ntIi2Op) or [google](https://drive.google.com/file/d/0B8-rUzbwVRk0c054eEozWG9COHM/view?usp=sharing), rename it `Market-1501-v15.09.15.zip`, and move to `scripts/datasets/`.
 
 **Train Model:**
 
