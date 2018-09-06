@@ -260,6 +260,7 @@ class SoftmaxCrossEntropyLoss(Loss):
         self._from_logits = from_logits
         self._ignore_label = ignore_label
         self._size_average = size_average
+        self._valid_size = valid_size
 
     def hybrid_forward(self, F, pred, label, sample_weight=None):
         """Compute loss"""
@@ -277,7 +278,7 @@ class SoftmaxCrossEntropyLoss(Loss):
         loss = _apply_weighting(F, loss, self._weight, sample_weight)
         if self._size_average and self._sparse_label:
             return F.mean(loss, axis=self._batch_axis, exclude=True) * \
-                valid_size / F.sum(valid_label_map)
+                self._valid_size / F.sum(valid_label_map)
         else:
             return F.mean(loss, axis=self._batch_axis, exclude=True)
 
