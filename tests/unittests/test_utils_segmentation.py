@@ -49,10 +49,10 @@ def test_segmentation_utils():
         mIoU = IoU.mean()
 
         # np predicition
-        pred = mx.nd.squeeze(mx.nd.argmax(pred, 1)).asnumpy() + 1
-        mask = mask.squeeze().asnumpy() + 1
-        _, correct2, labeled2 = pixelAccuracy(pred, mask)
-        inter2, union2 = intersectionAndUnion(pred, mask, dataset.num_class)
+        pred2 = np.argmax(pred.asnumpy().astype('int64'), 1) + 1
+        mask2 = mask.squeeze().asnumpy().astype('int64') + 1
+        _, correct2, labeled2 = pixelAccuracy(pred2, mask2)
+        inter2, union2 = intersectionAndUnion(pred2, mask2, dataset.num_class)
         np_correct += correct2
         np_label += labeled2
         np_inter += inter2
@@ -60,8 +60,8 @@ def test_segmentation_utils():
         np_pixAcc = 1.0 * np_correct / (np.spacing(1) + np_label)
         np_IoU = 1.0 * np_inter / (np.spacing(1) + np_union)
         np_mIoU = np_IoU.mean()
-        tbar.set_description('validation pixAcc: %.3f, mIoU: %.3f'%\
-            (pixAcc, mIoU))
+        tbar.set_description('pixAcc: %.3f, np_pixAcc: %.3f, mIoU: %.3f, np_mIoU: %.3f'%\
+            (pixAcc, np_pixAcc, mIoU, np_mIoU))
 
     np.testing.assert_allclose(total_inter, np_inter)
     np.testing.assert_allclose(total_union, np_union)
