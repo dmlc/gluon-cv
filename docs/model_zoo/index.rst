@@ -349,10 +349,6 @@ Table of pre-trained models for semantic segmentation and their performance.
 | deeplab_resnet101_ade | DeepLabV3 [19]_ | 81.1      | 44.1      | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/deeplab_resnet101_ade.sh>`_  | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/deeplab_resnet101_ade.log>`_ |
 +-----------------------+-----------------+-----------+-----------+------------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
 
-..
-    | fcn_resnet50_voc      | FCN [6]_        | N/A       | 69.4_     | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/fcn_resnet50_voc.sh>`_       | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/fcn_resnet50_voc.log>`_      |
-    +-----------------------+-----------------+-----------+-----------+------------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
-
 .. _70.9:  http://host.robots.ox.ac.uk:8080/anonymous/FTIQXJ.html
 
 

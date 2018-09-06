@@ -5,7 +5,7 @@ from mxnet.test_utils import assert_almost_equal
 from mxnet.gluon.data.vision import transforms
 
 import gluoncv
-from gluoncv.utils.metrics.voc_segmentation import *
+from gluoncv.utils.metrics.segmentation import *
 from gluoncv.data import ADE20KSegmentation
 
 from common import try_gpu, with_cpu
