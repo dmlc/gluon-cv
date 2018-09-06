@@ -256,6 +256,7 @@ class SoftmaxCrossEntropyLoss(Loss):
         self._sparse_label = sparse_label
         self._ignore_label = ignore_label
         self._size_average = size_average
+        self._valid_size = valid_size
 
     def hybrid_forward(self, F, pred, label):
         """Compute loss"""
