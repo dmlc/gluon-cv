@@ -331,6 +331,7 @@ def train(ctx):
                 label = mixup_transform(label, classes, lam, eta)
 
             elif opt.label_smoothing:
+                hard_label = label
                 label = smooth(label, classes)
 
             with ag.record():
@@ -346,7 +347,10 @@ def train(ctx):
                                   for out in outputs]
                 train_metric.update(label, output_softmax)
             else:
-                train_metric.update(label, outputs)
+                if opt.label_smoothing:
+                    train_metric.update(hard_label, outputs)
+                else:
+                    train_metric.update(label, outputs)
 
             if opt.log_interval and not (i+1)%opt.log_interval:
                 train_metric_name, train_metric_score = train_metric.get()
