@@ -157,7 +157,7 @@ plt.show()
 #     Additionally, an Auxiliary Loss as in PSPNet [Zhao17]_ at Stage 3 can be enabled when
 #     training with command ``--aux``. This will create an additional FCN "head" after Stage 3.
 #
-from gluoncv.model_zoo.segbase import MixSoftmaxCrossEntropyLoss
+from gluoncv.loss import MixSoftmaxCrossEntropyLoss
 criterion = MixSoftmaxCrossEntropyLoss(aux=True)
 
 ##############################################################################

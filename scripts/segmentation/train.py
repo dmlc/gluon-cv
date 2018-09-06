@@ -126,8 +126,6 @@ class Trainer(object):
                     .format(args.resume))
         # create criterion
         criterion = MixSoftmaxCrossEntropyLoss(args.aux, aux_weight=args.aux_weight)
-        #criterion = MixSoftmaxCrossEntropyOHEMLoss(args.aux, #mixup=args.mixup,
-        #                                           aux_weight=args.aux_weight)
         self.criterion = DataParallelCriterion(criterion, args.ctx, args.syncbn)
         # optimizer and lr scheduling
         self.lr_scheduler = LRScheduler(mode='poly', baselr=args.lr,

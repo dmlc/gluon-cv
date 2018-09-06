@@ -103,7 +103,7 @@ class _AsppPooling(nn.HybridBlock):
             self.gap.add(nn.Activation("relu"))
 
     def hybrid_forward(self, F, x):
-        _, h, w = x.shape
+        _, _, h, w = x.shape
         pool = self.gap(x)
         return F.contrib.BilinearResize2D(pool, height=h, width=w)
 

@@ -79,10 +79,10 @@ pretrained_net = gluoncv.model_zoo.resnet50_v1b(pretrained=True)
 
 ##############################################################################
 # For convenience, we provide a base model for semantic segmentation, which automatically
-# load the pre-trained dilated ResNet :class:`gluoncv.model_zoo.SegBaseModel`
+# load the pre-trained dilated ResNet :class:`gluoncv.model_zoo.segbase.SegBaseModel`
 # with a convenient method ``base_forward(input)`` to get stage 3 & 4 featuremaps:
 #
-basemodel = gluoncv.model_zoo.SegBaseModel(nclass=10, aux=False)
+basemodel = gluoncv.model_zoo.segbase.SegBaseModel(nclass=10, aux=False)
 x = mx.nd.random.uniform(shape=(1, 3, 224, 224))
 c3, c4 = basemodel.base_forward(x)
 print('Shapes of c3 & c4 featuremaps are ', c3.shape, c4.shape)
