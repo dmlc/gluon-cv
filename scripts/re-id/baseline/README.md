@@ -5,7 +5,7 @@
 
 Considering the randomness for model training, these results may not be perfectly reproduced. A large number of experiments show that average result for our final model is 92.5 rank1 and 80.1 mAP, which is also get greatly improved compared with other results with resnet50 in Market1501.
 
-base setting with single query: 256*128, epoch=25,50,75, batch size=32, init lr=3.5e-4, add batch norm after feature layer, average pooling, w/o activation
+Base setting with single query: 256*128, epoch=25,50,75, batch size=32, init lr=3.5e-4, add batch norm after feature layer, average pooling, w/o activation
 
 result | rank1  | ran5 | rank10 | mAP
 --- | --- | --- | --- | ---
