@@ -13,7 +13,7 @@ from . import utils
 from . import loss
 
 # mxnet version check
-mx_version = '3.3.0'
+mx_version = '1.3.0'
 try:
     import mxnet as mx
     if LooseVersion(mx.__version__) < LooseVersion(mx_version):
