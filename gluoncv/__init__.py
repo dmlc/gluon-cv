@@ -1,6 +1,24 @@
 # coding: utf-8
 """GluonCV: a deep learning vision toolkit powered by Gluon."""
 from __future__ import absolute_import
+import warnings
+from distutils.version import LooseVersion
+
+mx_version = '3.3.0'
+try:
+
+    import mxnet as mx
+    if LooseVersion(mx.__version__) < LooseVersion(mx_version):
+        msg = (
+            "Legacy mxnet=={} detected, some new module may not work properly. "
+            "mxnet>={} is recommended. You can use pip to upgrade mxnet "
+            "`pip install mxnet --pre --upgrade`").format(mx.__version__, mx_version)
+        warnings.warn(msg)
+except ImportError:
+    raise ImportError(
+        "Unable to import dependency mxnet. "
+        "A quick tip is to install via `pip install mxnet --pre`. "
+        "please refer to https://gluon-cv.mxnet.io/#installation for details.")
 
 __version__ = '0.3.0'
 
