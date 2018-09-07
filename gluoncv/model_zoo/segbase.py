@@ -4,21 +4,21 @@ import numpy as np
 import mxnet as mx
 from mxnet.ndarray import NDArray
 from mxnet.gluon.nn import HybridBlock
-from mxnet.gluon.loss import Loss, _apply_weighting
-from ..utils.metrics import voc_segmentation
 from ..utils.parallel import parallel_apply
-from .resnetv1b import resnet50_v1b, resnet101_v1b, resnet152_v1b
+from .resnetv1b import resnet50_v1s, resnet101_v1s, resnet152_v1s
 from ..utils.parallel import tuple_map
-# pylint: disable=abstract-method,arguments-differ,dangerous-default-value,missing-docstring
+# pylint: disable=wildcard-import,abstract-method,arguments-differ,dangerous-default-value,missing-docstring
 
 __all__ = ['get_segmentation_model', 'SegBaseModel', 'SegEvalModel', 'MultiEvalModel']
 
 def get_segmentation_model(model, **kwargs):
     from .fcn import get_fcn
     from .pspnet import get_psp
+    from .deeplabv3 import get_deeplab
     models = {
         'fcn': get_fcn,
         'psp': get_psp,
+        'deeplab': get_deeplab,
     }
     return models[model](**kwargs)
 
@@ -42,11 +42,11 @@ class SegBaseModel(HybridBlock):
         self.nclass = nclass
         with self.name_scope():
             if backbone == 'resnet50':
-                pretrained = resnet50_v1b(pretrained=pretrained_base, dilated=True, **kwargs)
+                pretrained = resnet50_v1s(pretrained=pretrained_base, dilated=True, **kwargs)
             elif backbone == 'resnet101':
-                pretrained = resnet101_v1b(pretrained=pretrained_base, dilated=True, **kwargs)
+                pretrained = resnet101_v1s(pretrained=pretrained_base, dilated=True, **kwargs)
             elif backbone == 'resnet152':
-                pretrained = resnet152_v1b(pretrained=pretrained_base, dilated=True, **kwargs)
+                pretrained = resnet152_v1s(pretrained=pretrained_base, dilated=True, **kwargs)
             else:
                 raise RuntimeError('unknown backbone: {}'.format(backbone))
             self.conv1 = pretrained.conv1
@@ -71,19 +71,9 @@ class SegBaseModel(HybridBlock):
         c4 = self.layer4(c3)
         return c3, c4
 
-    def evaluate(self, x, target=None):
+    def evaluate(self, x):
         """evaluating network with inputs and targets"""
-        pred = self.forward(x)
-        if self.aux:
-            pred = pred[0]
-        if target is None:
-            return pred
-        correct, labeled = voc_segmentation.batch_pix_accuracy( \
-            pred, target)
-        inter, union = voc_segmentation.batch_intersection_union(
-            pred, target, self.nclass)
-
-        return correct, labeled, inter, union
+        return self.forward(x)[0]
 
     def demo(self, x):
         h, w = x.shape[2:]
@@ -93,62 +83,6 @@ class SegBaseModel(HybridBlock):
         if self.aux:
             pred = pred[0]
         return pred
-
-
-class SoftmaxCrossEntropyLoss(Loss):
-    """SoftmaxCrossEntropyLoss with ignore labels"""
-    def __init__(self, axis=1, sparse_label=True, from_logits=False, weight=None,
-                 batch_axis=0, ignore_label=-1, size_average=False, **kwargs):
-        super(SoftmaxCrossEntropyLoss, self).__init__(weight, batch_axis, **kwargs)
-        self._axis = axis
-        self._sparse_label = sparse_label
-        self._from_logits = from_logits
-        self._ignore_label = ignore_label
-        self._size_average = size_average
-
-    def hybrid_forward(self, F, pred, label, sample_weight=None):
-        if not self._from_logits:
-            pred = F.log_softmax(pred, axis=self._axis)
-        if self._sparse_label:
-            if self._size_average:
-                valid_label_map = (label != self._ignore_label).astype('float32')
-                loss = -(F.pick(pred, label, axis=self._axis, keepdims=True) * valid_label_map)
-            else:
-                loss = -F.pick(pred, label, axis=self._axis, keepdims=True)
-                loss = F.where(label.expand_dims(axis=self._axis) == self._ignore_label,
-                               F.zeros_like(loss), loss)
-        else:
-            label = _reshape_like(F, label, pred)
-            loss = -F.sum(pred*label, axis=self._axis, keepdims=True)
-        loss = _apply_weighting(F, loss, self._weight, sample_weight)
-        if self._size_average:
-            return F.mean(loss, axis=self._batch_axis, exclude=True) * \
-                valid_label_map.size / F.sum(valid_label_map)
-        else:
-            return F.mean(loss, axis=self._batch_axis, exclude=True)
-
-
-class SoftmaxCrossEntropyLossWithAux(SoftmaxCrossEntropyLoss):
-    """SoftmaxCrossEntropyLoss2D with Auxilary Loss"""
-    def __init__(self, aux=True, aux_weight=0.2, ignore_label=-1, **kwargs):
-        super(SoftmaxCrossEntropyLossWithAux, self).__init__(
-            axis=1, ignore_label=ignore_label, **kwargs)
-        self.aux = aux
-        self.aux_weight = aux_weight
-
-    def aux_forward(self, F, pred1, pred2, label, **kwargs):
-        loss1 = super(SoftmaxCrossEntropyLossWithAux, self). \
-            hybrid_forward(F, pred1, label, **kwargs)
-        loss2 = super(SoftmaxCrossEntropyLossWithAux, self). \
-            hybrid_forward(F, pred2, label, **kwargs)
-        return loss1 + self.aux_weight * loss2
-
-    def hybrid_forward(self, F, *inputs, **kwargs):
-        if self.aux:
-            return self.aux_forward(F, *inputs, **kwargs)
-        else:
-            return super(SoftmaxCrossEntropyLossWithAux, self). \
-                hybrid_forward(F, *inputs, **kwargs)
 
 
 class SegEvalModel(object):
@@ -192,7 +126,7 @@ class MultiEvalModel(object):
         base_size = self.base_size
         crop_size = self.crop_size
         stride_rate = 2.0/3.0
-        stride = int(crop_size*stride_rate)
+        stride = int(crop_size * stride_rate)
         scores = mx.nd.zeros((batch, self.nclass, h, w), ctx=image.context)
         for scale in self.scales:
             long_size = int(math.ceil(base_size * scale))

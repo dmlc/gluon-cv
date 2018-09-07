@@ -6,11 +6,11 @@ import mxnet as mx
 from mxnet import gluon
 from mxnet.gluon.data.vision import transforms
 
+import gluoncv
 from gluoncv.model_zoo.segbase import *
 from gluoncv.model_zoo import get_model
 from gluoncv.data import get_segmentation_dataset, ms_batchify_fn
 from gluoncv.utils.viz import get_color_pallete
-from gluoncv.utils.metrics.voc_segmentation import batch_pix_accuracy, batch_intersection_union
 
 from train import parse_args
 
@@ -34,48 +34,41 @@ def test(args):
         testset = get_segmentation_dataset(
             args.dataset, split='test', mode='test', transform=input_transform)
     test_data = gluon.data.DataLoader(
-        testset, args.test_batch_size, last_batch='keep',
+        testset, args.test_batch_size, shuffle=False, last_batch='keep',
         batchify_fn=ms_batchify_fn, num_workers=args.workers)
     # create network
     if args.model_zoo is not None:
         model = get_model(args.model_zoo, pretrained=True)
     else:
-        model = get_segmentation_model(model=args.model, dataset=args.dataset, ctx = args.ctx,
-                                       backbone=args.backbone, norm_layer=args.norm_layer)
+        model = get_segmentation_model(model=args.model, dataset=args.dataset, ctx=args.ctx,
+                                       backbone=args.backbone, norm_layer=args.norm_layer,
+                                       norm_kwargs=args.norm_kwargs, aux=args.aux)
         # load pretrained weight
         assert args.resume is not None, '=> Please provide the checkpoint using --resume'
         if os.path.isfile(args.resume):
-            model.load_params(args.resume, ctx=args.ctx)
+            model.load_parameters(args.resume, ctx=args.ctx)
         else:
             raise RuntimeError("=> no checkpoint found at '{}'" \
                 .format(args.resume))
     print(model)
     evaluator = MultiEvalModel(model, testset.num_class, ctx_list=args.ctx)
+    metric = gluoncv.utils.metrics.SegmentationMetric(testset.num_class)
 
     tbar = tqdm(test_data)
     for i, (data, dsts) in enumerate(tbar):
         if args.eval:
-            targets = dsts
-            predicts = evaluator.parallel_forward(data)
-            for predict, target in zip(predicts, targets):
-                target = target.as_in_context(predict[0].context)
-                correct, labeled = batch_pix_accuracy(predict[0], target)
-                inter, union = batch_intersection_union(
-                    predict[0], target, testset.num_class)
-                total_correct += correct.astype('int64')
-                total_label += labeled.astype('int64')
-                total_inter += inter.astype('int64')
-                total_union += union.astype('int64')
-            pixAcc = np.float64(1.0) * total_correct / (np.spacing(1, dtype=np.float64) + total_label)
-            IoU = np.float64(1.0) * total_inter / (np.spacing(1, dtype=np.float64) + total_union)
-            mIoU = IoU.mean()
-            tbar.set_description(
-                'pixAcc: %.4f, mIoU: %.4f' % (pixAcc, mIoU))
+            predicts = [pred[0] for pred in evaluator.parallel_forward(data)]
+            targets = [target.as_in_context(predicts[0].context) \
+                       for target in dsts]
+            metric.update(targets, predicts)
+            pixAcc, mIoU = metric.get()
+            tbar.set_description( 'pixAcc: %.4f, mIoU: %.4f' % (pixAcc, mIoU))
         else:
             im_paths = dsts
             predicts = evaluator.parallel_forward(data)
             for predict, impath in zip(predicts, im_paths):
-                predict = mx.nd.squeeze(mx.nd.argmax(predict[0], 1)).asnumpy() + testset.pred_offset
+                predict = mx.nd.squeeze(mx.nd.argmax(predict[0], 1)).asnumpy() + \
+                    testset.pred_offset
                 mask = get_color_pallete(predict, args.dataset)
                 outname = os.path.splitext(impath)[0] + '.png'
                 mask.save(os.path.join(outdir, outname))

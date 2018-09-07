@@ -7,6 +7,7 @@ from .faster_rcnn import *
 from .mask_rcnn import *
 from .fcn import *
 from .pspnet import *
+from .deeplabv3 import *
 from .cifarresnet import *
 from .cifarresnext import *
 from .cifarwideresnet import *
@@ -102,10 +103,19 @@ _models = {
     'cifar_wideresnet40_8': cifar_wideresnet40_8,
     'cifar_resnext29_32x4d': cifar_resnext29_32x4d,
     'cifar_resnext29_16x64d': cifar_resnext29_16x64d,
-    'fcn_resnet50_voc': get_fcn_voc_resnet50,
-    'fcn_resnet101_voc': get_fcn_voc_resnet101,
-    'fcn_resnet50_ade': get_fcn_ade_resnet50,
-    'psp_resnet50_ade': get_psp_ade_resnet50,
+    'fcn_resnet50_voc': get_fcn_resnet50_voc,
+    'fcn_resnet101_coco': get_fcn_resnet101_coco,
+    'fcn_resnet101_voc': get_fcn_resnet101_voc,
+    'fcn_resnet50_ade': get_fcn_resnet50_ade,
+    'fcn_resnet101_ade': get_fcn_resnet101_ade,
+    'psp_resnet101_coco': get_psp_resnet101_coco,
+    'psp_resnet101_voc': get_psp_resnet101_voc,
+    'psp_resnet50_ade': get_psp_resnet50_ade,
+    'psp_resnet101_ade': get_psp_resnet101_ade,
+    'deeplab_resnet101_coco': get_deeplab_resnet101_coco,
+    'deeplab_resnet101_voc': get_deeplab_resnet101_voc,
+    'deeplab_resnet50_ade': get_deeplab_resnet50_ade,
+    'deeplab_resnet101_ade': get_deeplab_resnet101_ade,
     'resnet18_v1b': resnet18_v1b,
     'resnet34_v1b': resnet34_v1b,
     'resnet50_v1b': resnet50_v1b,
@@ -120,6 +130,9 @@ _models = {
     'resnet50_v1e': resnet50_v1e,
     'resnet101_v1e': resnet101_v1e,
     'resnet152_v1e': resnet152_v1e,
+    'resnet50_v1s': resnet50_v1s,
+    'resnet101_v1s': resnet101_v1s,
+    'resnet152_v1s': resnet152_v1s,
     'resnext50_32x4d': resnext50_32x4d,
     'resnext101_32x4d': resnext101_32x4d,
     'resnext101_64x4d': resnext101_64x4d,

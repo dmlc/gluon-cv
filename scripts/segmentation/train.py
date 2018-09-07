@@ -8,6 +8,8 @@ import mxnet as mx
 from mxnet import gluon, autograd
 from mxnet.gluon.data.vision import transforms
 
+import gluoncv
+from gluoncv.loss import *
 from gluoncv.utils import LRScheduler
 from gluoncv.model_zoo.segbase import *
 from gluoncv.utils.parallel import *
@@ -30,6 +32,8 @@ def parse_args():
     # training hyper params
     parser.add_argument('--aux', action='store_true', default= False,
                         help='Auxilary loss')
+    parser.add_argument('--aux-weight', type=float, default=0.5,
+                        help='auxilary loss weight')
     parser.add_argument('--epochs', type=int, default=50, metavar='N',
                         help='number of epochs to train (default: 50)')
     parser.add_argument('--start_epoch', type=int, default=0,
@@ -54,6 +58,8 @@ def parse_args():
                         help='number of GPUs (default: 4)')
     parser.add_argument('--kvstore', type=str, default='device',
                         help='kvstore to use for trainer/module.')
+    parser.add_argument('--dtype', type=str, default='float32',
+                        help='data type for training. default is float32')
     # checking point
     parser.add_argument('--resume', type=str, default=None,
                         help='put the path to resuming file if needed')
@@ -102,44 +108,48 @@ class Trainer(object):
             trainset, args.batch_size, shuffle=True, last_batch='rollover',
             num_workers=args.workers)
         self.eval_data = gluon.data.DataLoader(valset, args.test_batch_size,
-            last_batch='keep', num_workers=args.workers)
+            last_batch='rollover', num_workers=args.workers)
         # create network
         model = get_segmentation_model(model=args.model, dataset=args.dataset,
                                        backbone=args.backbone, norm_layer=args.norm_layer,
-                                       aux=args.aux, norm_kwargs=args.norm_kwargs)
-        # model.hybridize(static_alloc=True, static_shape=True)
+                                       norm_kwargs=args.norm_kwargs, aux=args.aux)
+        model.cast(args.dtype)
         print(model)
         self.net = DataParallelModel(model, args.ctx, args.syncbn)
         self.evaluator = DataParallelModel(SegEvalModel(model), args.ctx)
         # resume checkpoint if needed
         if args.resume is not None:
             if os.path.isfile(args.resume):
-                model.load_params(args.resume, ctx=args.ctx)
+                model.load_parameters(args.resume, ctx=args.ctx)
             else:
                 raise RuntimeError("=> no checkpoint found at '{}'" \
                     .format(args.resume))
         # create criterion
-        criterion = SoftmaxCrossEntropyLossWithAux(args.aux)
+        criterion = MixSoftmaxCrossEntropyLoss(args.aux, aux_weight=args.aux_weight)
         self.criterion = DataParallelCriterion(criterion, args.ctx, args.syncbn)
         # optimizer and lr scheduling
         self.lr_scheduler = LRScheduler(mode='poly', baselr=args.lr,
                                         niters=len(self.train_data), 
                                         nepochs=args.epochs)
         kv = mx.kv.create(args.kvstore)
+        optimizer_params = {'lr_scheduler': self.lr_scheduler,
+                            'wd':args.weight_decay,
+                            'momentum': args.momentum}
+        if args.dtype == 'float16':
+            optimizer_params['multi_precision'] = True
         self.optimizer = gluon.Trainer(self.net.module.collect_params(), 'sgd',
-                                       {'lr_scheduler': self.lr_scheduler,
-                                        'wd':args.weight_decay,
-                                        'momentum': args.momentum,
-                                        'multi_precision': True},
-                                        kvstore = kv)
+                                       optimizer_params, kvstore = kv)
+        # evaluation metrics
+        self.metric = gluoncv.utils.metrics.SegmentationMetric(trainset.num_class)
 
     def training(self, epoch):
         tbar = tqdm(self.train_data)
         train_loss = 0.0
+        alpha = 0.2
         for i, (data, target) in enumerate(tbar):
             self.lr_scheduler.update(i, epoch)
             with autograd.record(True):
-                outputs = self.net(data)
+                outputs = self.net(data.astype(args.dtype, copy=False))
                 losses = self.criterion(outputs, target)
                 mx.nd.waitall()
                 autograd.backward(losses)
@@ -154,18 +164,15 @@ class Trainer(object):
         save_checkpoint(self.net.module, self.args, False)
 
     def validation(self, epoch):
-        total_inter, total_union, total_correct, total_label = 0, 0, 0, 0
+        #total_inter, total_union, total_correct, total_label = 0, 0, 0, 0
+        self.metric.reset()
         tbar = tqdm(self.eval_data)
         for i, (data, target) in enumerate(tbar):
-            outputs = self.evaluator(data, target)
-            for (correct, labeled, inter, union) in outputs:
-                total_correct += correct
-                total_label += labeled
-                total_inter += inter
-                total_union += union
-            pixAcc = 1.0 * total_correct / (np.spacing(1) + total_label)
-            IoU = 1.0 * total_inter / (np.spacing(1) + total_union)
-            mIoU = IoU.mean()
+            outputs = self.evaluator(data.astype(args.dtype, copy=False))
+            outputs = [x[0] for x in outputs]
+            targets = mx.gluon.utils.split_and_load(target, args.ctx)
+            self.metric.update(targets, outputs)
+            pixAcc, mIoU = self.metric.get()
             tbar.set_description('Epoch %d, validation pixAcc: %.3f, mIoU: %.3f'%\
                 (epoch, pixAcc, mIoU))
             mx.nd.waitall()
@@ -178,7 +185,7 @@ def save_checkpoint(net, args, is_best=False):
         os.makedirs(directory)
     filename='checkpoint.params'
     filename = directory + filename
-    net.save_params(filename)
+    net.save_parameters(filename)
     if is_best:
         shutil.copyfile(filename, directory + 'model_best.params')
 

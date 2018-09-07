@@ -10,6 +10,7 @@ from .cifarresnet import *
 from .cifarwideresnet import *
 from .fcn import *
 from .pspnet import *
+from .deeplabv3 import *
 from . import segbase
 from .resnetv1b import *
 from .se_resnet import *
