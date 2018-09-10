@@ -1,4 +1,4 @@
-"""3. Train FCN on Pascal VOC Dataset
+"""4. Train FCN on Pascal VOC Dataset
 =====================================
 
 This is a semantic segmentation tutorial using Gluon Vison, a step-by-step example.
