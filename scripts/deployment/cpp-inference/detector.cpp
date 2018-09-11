@@ -1,6 +1,7 @@
 #include <vector>
 #include <opencv2/opencv.hpp>
 #include "mxnet-cpp/MxNetCpp.h"
+#include "argparse.hpp"
 
 using namespace mxnet::cpp;
 
