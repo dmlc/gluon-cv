@@ -36,7 +36,8 @@ class _DefaultPreprocess(HybridBlock):
         x = F.transpose(x, axes=(0, 3, 1, 2))
         return x
 
-def export_block(path, block, data_shape=None, epoch=0, preprocess=True, layout='HWC'):
+def export_block(path, block, data_shape=None, epoch=0, preprocess=True, layout='HWC',
+                 ctx=mx.cpu()):
     """Helper function to export a HybridBlock to symbol JSON to be used by
     `SymbolBlock.imports`, `mxnet.mod.Module` or the C++ interface..
 
@@ -65,6 +66,8 @@ def export_block(path, block, data_shape=None, epoch=0, preprocess=True, layout=
     layout : str, default is 'HWC'
         The layout for raw input data. By default is HWC. Supports 'HWC' and 'CHW'.
         Note that image channel order is always RGB.
+    ctx: mx.Context, default mx.cpu()
+        Network context.
 
     Returns
     -------
@@ -95,9 +98,9 @@ def export_block(path, block, data_shape=None, epoch=0, preprocess=True, layout=
     for dshape in data_shapes:
         h, w, c = dshape
         if layout == 'HWC':
-            x = mx.nd.zeros((1, h, w, c))
+            x = mx.nd.zeros((1, h, w, c), ctx=ctx)
         elif layout == 'CHW':
-            x = mx.nd.zeros((1, c, h, w))
+            x = mx.nd.zeros((1, c, h, w), ctx=ctx)
 
         # hybridize and forward once
         wrapper_block.hybridize()
