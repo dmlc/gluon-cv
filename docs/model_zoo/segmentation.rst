@@ -3,46 +3,6 @@
 Segmentation
 ============
 
-Instance Segmentation
-~~~~~~~~~~~~~~~~~~~~~
-
-Table of pre-trained models for instance segmentation and their performance.
-
-.. hint::
-
-  The model names contain the training information. For instance, ``mask_rcnn_resnet50_v1b_coco``:
-
-  - ``mask_rcnn`` indicates the algorithm is "Mask R-CNN" [1]_.
-
-  - ``resnet50_v1b`` is the type of feature extractor network.
-
-  - ``coco`` is the training dataset.
-
-.. hint::
-
-  The training commands work with the following scripts:
-
-  - For Mask R-CNN networks: :download:`Download train_mask_rcnn.py<../../scripts/instance/mask_rcnn/train_mask_rcnn.py>`
-
-.. hint::
-
-  For COCO dataset, training imageset is train2017 and validation imageset is val2017.
-
-  Average precision with IoU threshold 0.5:0.95 (averaged 10 values), 0.5 and 0.75 are reported together in the format (AP 0.5:0.95)/(AP 0.5)/(AP 0.75).
-
-  For instance segmentation task, both box overlap and segmentation overlap based AP are evaluated and reported.
-
-+------------------------------+---------------------------+--------------------------+------------------------------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------+
-| Model                        | Box AP                    | Segm AP                  | Command                                                                                                                            | Training Log                                                                                                                         |
-+==============================+===========================+==========================+====================================================================================================================================+======================================================================================================================================+
-| mask_rcnn_resnet50_v1b_coco  | 38.3/58.7/41.4            | 33.1/54.8/35.0           | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/instance/mask_rcnn_resnet50_v1b_coco.sh>`_      | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/instance/mask_rcnn_resnet50_v1b_coco_train.log>`_          |
-+------------------------------+---------------------------+--------------------------+------------------------------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------+
-
-Semantic Segmentation
-~~~~~~~~~~~~~~~~~~~~~
-
-Table of pre-trained models for semantic segmentation and their performance.
-
 .. hint::
 
   The model names contain the training information. For instance, ``fcn_resnet50_voc``:
@@ -52,6 +12,13 @@ Table of pre-trained models for semantic segmentation and their performance.
   - ``resnet50`` is the name of backbone network.
 
   - ``voc`` is the training dataset.
+
+Semantic Segmentation
+~~~~~~~~~~~~~~~~~~~~~
+
+Table of pre-trained models for semantic segmentation and their performance.
+
+.. hint::
 
   The test script :download:`Download test.py<../../scripts/segmentation/test.py>` can be used for
   evaluating the models (VOC results are evaluated using the official server). For example ``fcn_resnet50_ade``::
@@ -96,6 +63,28 @@ Table of pre-trained models for semantic segmentation and their performance.
 .. _85.1:  http://host.robots.ox.ac.uk:8080/anonymous/9RTTZC.html
 .. _86.2:  http://host.robots.ox.ac.uk:8080/anonymous/ZPN6II.html
 
+Instance Segmentation
+~~~~~~~~~~~~~~~~~~~~~
+
+Table of pre-trained models for instance segmentation and their performance.
+
+.. hint::
+
+  The training commands work with the following scripts:
+
+  - For Mask R-CNN networks: :download:`Download train_mask_rcnn.py<../../scripts/instance/mask_rcnn/train_mask_rcnn.py>`
+
+  For COCO dataset, training imageset is train2017 and validation imageset is val2017.
+
+  Average precision with IoU threshold 0.5:0.95 (averaged 10 values), 0.5 and 0.75 are reported together in the format (AP 0.5:0.95)/(AP 0.5)/(AP 0.75).
+
+  For instance segmentation task, both box overlap and segmentation overlap based AP are evaluated and reported.
+
++------------------------------+---------------------------+--------------------------+------------------------------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------+
+| Model                        | Box AP                    | Segm AP                  | Command                                                                                                                            | Training Log                                                                                                                         |
++==============================+===========================+==========================+====================================================================================================================================+======================================================================================================================================+
+| mask_rcnn_resnet50_v1b_coco  | 38.3/58.7/41.4            | 33.1/54.8/35.0           | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/instance/mask_rcnn_resnet50_v1b_coco.sh>`_      | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/instance/mask_rcnn_resnet50_v1b_coco_train.log>`_          |
++------------------------------+---------------------------+--------------------------+------------------------------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------+
 
 .. [1] He, Kaming, Georgia Gkioxari, Piotr Dollár and Ross Girshick. \
         "Mask R-CNN." \

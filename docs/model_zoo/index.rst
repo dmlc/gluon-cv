@@ -11,13 +11,13 @@ Available Models
 
 Please visit pages for tasks:
 
-- `Image Classification <classification.html>`_
-    - `ImageNet <classification.html>`_
-    - `CIFAR10 <classification.html>`_
-- `Object Detection <detection.html>`_
-- `Segmentation <segmentation.html>`_
-    - `Instance Segmentation <segmentation.html>`_
-    - `Semantic Segmentation <segmentation.html>`_
+.. toctree::
+   :maxdepth: 1
+   :caption: Model Zoo
+
+  classification
+  detection
+  segmentation
 
 GluonCV is still under development, stay tuned for more models!
 
@@ -49,11 +49,3 @@ However, you can still load models by directly instantiate it like
 .. hint::
 
   Detailed ``model_zoo`` APIs are available in API reference: :py:meth:`gluoncv.model_zoo`.
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Model Zoo
-
-  classification
-  detection
-  segmentation
