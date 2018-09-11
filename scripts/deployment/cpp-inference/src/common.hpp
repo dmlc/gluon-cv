@@ -1,18 +1,21 @@
 #include "mxnet-cpp/MxNetCpp.h"
 #include <opencv2/opencv.hpp>
 #include <string>
+#include <iostream>
 #include <iomanip>
-#include <stringstream>
+#include <sstream>
 #include <map>
 #include <cmath>
+#include <random>
+#include <iomanip>
 
 using namespace mxnet::cpp;
 
 // Load data from CV BGR image
-inline NDArray AsData(cv::Mat bgr_image) {
+inline NDArray AsData(cv::Mat bgr_image, Context ctx = Context::cpu()) {
     // convert BGR image from OpenCV to RGB in MXNet.
     cv::Mat rgb_image;
-    cv::cvtColor(image, rgb_image, cv::COLOR_BGR2RGB);
+    cv::cvtColor(bgr_image, rgb_image, cv::COLOR_BGR2RGB);
     // convert to float32 from uint8
     rgb_image.convertTo(rgb_image, CV_32FC3);
     // flatten to single channel, and single row.
@@ -21,11 +24,10 @@ inline NDArray AsData(cv::Mat bgr_image) {
     std::vector<float> data_buffer;
     data_buffer.insert(
         data_buffer.end(), 
-        flat_image.ptr<float>(i), 
-        flat_image.ptr<float>(i) + flat_image.cols);
+        flat_image.ptr<float>(0), 
+        flat_image.ptr<float>(0) + flat_image.cols);
     // construct NDArray from data buffer
-    data = NDArray(data_buffer, Shape(1, rgb_image.rows, rgb_image.cols, 3), ctx);
-    return data;
+    return NDArray(data_buffer, Shape(1, rgb_image.rows, rgb_image.cols, 3), ctx);
 }
 
 // Load data from filename
@@ -41,7 +43,7 @@ inline void LoadCheckpoint(const std::string prefix, const unsigned int epoch,
     Symbol new_symbol = Symbol::Load(prefix + "-symbol.json");
     // load parameters
     std::stringstream ss;
-    ss << std::setw(4) << std::setfill('0') << i;
+    ss << std::setw(4) << std::setfill('0') << epoch;
     std::string filepath = prefix + "-" + ss.str() + ".params";
     std::map<std::string, NDArray> params = NDArray::LoadToMap(filepath);
     std::map<std::string, NDArray> args;
@@ -63,19 +65,47 @@ inline void LoadCheckpoint(const std::string prefix, const unsigned int epoch,
 }
 
 namespace viz {
-void cv::Scalar HSV2BGR(cv::Scalar<float> hsv) {
+// convert color from hsv to bgr for plotting
+inline cv::Scalar HSV2BGR(cv::Scalar hsv) {
     cv::Mat from(1, 1, CV_32FC3, hsv);
     cv::Mat to;
     cv::cvtColor(from, to, cv::COLOR_HSV2BGR);
-    auto pixel = to.at<cv::Vec3b>(0, 0);
-    return cv::Scalar(pixel[0], pixel[1], pixel[2]);
+    auto pixel = to.at<cv::Vec3f>(0, 0);
+    unsigned char b = static_cast<unsigned char>(pixel[0] * 255);
+    unsigned char g = static_cast<unsigned char>(pixel[1] * 255);
+    unsigned char r = static_cast<unsigned char>(pixel[2] * 255);
+    return cv::Scalar(b, g, r);
 }
+
+void PutLabel(cv::Mat &im, const std::string label, const cv::Point & orig, cv::Scalar color) {
+    int fontface = cv::FONT_HERSHEY_DUPLEX;
+    double scale = 0.6;
+    int thickness = 1;
+    int baseline = 0;
+    double alpha = 0.6;
+
+    cv::Size text = cv::getTextSize(label, fontface, scale, thickness, &baseline);
+    cv::Mat roi = im(cv::Rect(orig + cv::Point(0, baseline), orig + cv::Point(text.width, -text.height)));
+    cv::Mat blend(roi.size(), CV_8UC3, color);
+    // cv::rectangle(im, orig + cv::Point(0, baseline), orig + cv::Point(text.width, -text.height), CV_RGB(0, 0, 0), CV_FILLED);
+    cv::addWeighted(blend, alpha, roi, 1.0 - alpha, 0.0, roi);
+    cv::putText(im, label, orig, fontface, scale, cv::Scalar(255, 255, 255), thickness, 8);
+}
+
 // plot bounding boxes on raw image
-void plot_bbox(cv::Mat img, NDArray bboxes, NDArray scores, NDArray labels, 
-               float thresh = 0.3, std::vector<std::string> > class_names = {}, 
-               std::map<int, cv::Scalar> colors = {}, bool verbose = False) {
+inline cv::Mat PlotBbox(cv::Mat img, NDArray bboxes, NDArray scores, NDArray labels, 
+               float thresh, std::vector<std::string> class_names, 
+               std::map<int, cv::Scalar> colors, bool verbose) {
     int num = bboxes.GetShape()[1];
-    float hue = 0;
+    std::mt19937 eng;
+    std::uniform_real_distribution<float> rng(0, 1);
+    float hue = rng(eng);
+    bboxes.WaitToRead();
+    scores.WaitToRead();
+    labels.WaitToRead();
+    if (verbose) {
+        LOG(INFO) << "Start Ploting, visualize score threshold: " << thresh << "...";
+    }
     for (int i = 0; i < num; ++i) {
         float score = scores.At(0, 0, i);
         float label = labels.At(0, 0, i);
@@ -88,12 +118,13 @@ void plot_bbox(cv::Mat img, NDArray bboxes, NDArray scores, NDArray labels,
             int csize = static_cast<int>(class_names.size());
             if (class_names.size() > 0) {
                 float hue = label / csize;
-                colors[cls_id] = HSV2BGR(cv::Scalar<float>(hue, 0.5, 0.95));
+                colors[cls_id] = HSV2BGR(cv::Scalar(hue * 255, 0.75, 0.95));
             } else {
                 // generate color for this id
                 hue += 0.618033988749895;  // golden ratio
                 hue = fmod(hue, 1.0);
-                colors[cls_id] = HSV2BGR(hue, 0.5, 0.95);
+                LG << "hue: " << hue;
+                colors[cls_id] = HSV2BGR(cv::Scalar(hue * 255, 0.75, 0.95));
             }
         }
 
@@ -101,7 +132,16 @@ void plot_bbox(cv::Mat img, NDArray bboxes, NDArray scores, NDArray labels,
         auto color = colors[cls_id];
         cv::Point pt1(bboxes.At(0, i, 0), bboxes.At(0, i, 1));
         cv::Point pt2(bboxes.At(0, i, 2), bboxes.At(0, i, 3));
-        cv::rectangle(img, pt1, pt2, color);
+        cv::rectangle(img, pt1, pt2, color, 2);
+
+        if (verbose) {
+            if (cls_id >= class_names.size()) {
+                LOG(INFO) << "id: " << cls_id << ", scores: " << score;
+            } else {
+                LOG(INFO) << "id: " << class_names[cls_id] << ", scores: " << score;
+            }
+            
+        }
 
         // put text
         std::string txt;
@@ -109,9 +149,10 @@ void plot_bbox(cv::Mat img, NDArray bboxes, NDArray scores, NDArray labels,
             txt += class_names[cls_id];
         }
         std::stringstream ss;
-        ss << fixed << std::setprecision(3) << score;
+        ss << std::fixed << std::setprecision(3) << score;
         txt += " " + ss.str();
-        cv::putText(img, txt, pt1, cv::FONT_HERSHEY_TRIPLEX, color, 1.5);
+        // cv::putText(img, txt, cv::Point(pt1.x, pt1.y - 5), , 0.6, color, 1);
+        PutLabel(img, txt, pt1, color);
     }
     return img;
 }
