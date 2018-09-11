@@ -90,13 +90,11 @@ A Quick Example
    build/examples_deployment/index
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
    :caption: Model Zoo
 
    model_zoo/index
-   model_zoo/classification
-   model_zoo/detection
-   model_zoo/segmentation
+
 
 .. toctree::
    :maxdepth: 1

@@ -49,3 +49,11 @@ However, you can still load models by directly instantiate it like
 .. hint::
 
   Detailed ``model_zoo`` APIs are available in API reference: :py:meth:`gluoncv.model_zoo`.
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Model Zoo
+
+  classification
+  detection
+  segmentation
