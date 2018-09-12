@@ -2,5 +2,6 @@ build/
 bin/
 install/
 *.json
-*.params
+*.param
 *.jpg
+*.names

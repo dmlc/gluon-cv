@@ -1,8 +1,34 @@
-#include "clipp.hpp"
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+/*!
+ *  Copyright (c) 2018 by Contributors
+ * \file detect.cpp
+ * \brief GluonCV cpp inference demo for object detection models
+ * \author Joshua Zhang
+ */
 #include "common.hpp"
+#include "clipp.hpp"
 #include <chrono>
 
 namespace synset {
+// some commonly used datasets
 static std::vector<std::string> VOC_CLASS_NAMES = {
      "aeroplane", "bicycle", "bird", "boat",
      "bottle", "bus", "car", "cat", "chair",
@@ -27,20 +53,24 @@ static std::vector<std::string> COCO_CLASS_NAMES = {
     "scissors", "teddy bear", "hair drier", "toothbrush"
 };
 
+// by default class names are empty
 static std::vector<std::string> CLASS_NAMES = {};
-}
+}  // namespace synset
 
 namespace args {
-    static std::string model;
-    static std::string image;
-    static std::string output;
-    static std::string class_name_file;
-    static int epoch = 0;
-    static int gpu = -1;
-    static bool quite = false;
-    static bool no_display = false;
-    static float viz_thresh = 0.3;
-}
+static std::string model;
+static std::string image;
+static std::string output;
+static std::string class_name_file;
+static int epoch = 0;
+static int gpu = -1;
+static bool quite = false;
+static bool no_display = false;
+static float viz_thresh = 0.3;
+static int min_size = 512;
+static int max_size = 640;
+static int multiplier = 32;  // just to ensure image shapes are multipliers of feature strides, for yolo3 models
+}  // namespace args
 
 void ParseArgs(int argc, char** argv) {
     using namespace clipp;
@@ -74,16 +104,14 @@ void ParseArgs(int argc, char** argv) {
             }
             synset::CLASS_NAMES = synset::COCO_CLASS_NAMES;
         } else {
-            LOG(ERROR) << "Cannot determine class names, ignoring...";
+            LOG(ERROR) << "Cannot determine class names, you can specify --class-file with a text file...";
         }
     } else {
         synset::CLASS_NAMES = LoadClassNames(args::class_name_file);
     }
 }
 
-
-int main(int argc, char** argv) {
-    ParseArgs(argc, argv);
+void RunDemo() {
     // load symbol and parameters
     Symbol net;
     std::map<std::string, NDArray> args, auxs;
@@ -96,7 +124,7 @@ int main(int argc, char** argv) {
     // load image as data
     cv::Mat image = cv::imread(args::image, 1);
     // resize to avoid huge image, keep aspect ratio
-    image = ResizeShortWithin(image, 512, 640, 32);
+    image = ResizeShortWithin(image, args::min_size, args::max_size, args::multiplier);
     if (!args::quite) {
         LOG(INFO) << "Image shape: " << image.cols << " x " << image.rows;
     }
@@ -137,5 +165,10 @@ int main(int argc, char** argv) {
     
     delete exec;
     MXNotifyShutdown();
+}
+
+int main(int argc, char** argv) {
+    ParseArgs(argc, argv);
+    RunDemo();
     return 0;
 }
