@@ -144,13 +144,16 @@ inline cv::Scalar HSV2BGR(cv::Scalar hsv) {
 
 inline void PutLabel(cv::Mat &im, const std::string label, const cv::Point & orig, cv::Scalar color) {
     int fontface = cv::FONT_HERSHEY_DUPLEX;
-    double scale = 0.6;
+    double scale = 0.5;
     int thickness = 1;
     int baseline = 0;
     double alpha = 0.6;
 
     cv::Size text = cv::getTextSize(label, fontface, scale, thickness, &baseline);
-    cv::Mat roi = im(cv::Rect(orig + cv::Point(0, baseline), orig + cv::Point(text.width, -text.height)));
+    // make sure roi inside image region
+    cv::Rect blend_rect = cv::Rect(orig + cv::Point(0, baseline), 
+        orig + cv::Point(text.width, -text.height)) & cv::Rect(0, 0, im.cols, im.rows);
+    cv::Mat roi = im(blend_rect);
     cv::Mat blend(roi.size(), CV_8UC3, color);
     // cv::rectangle(im, orig + cv::Point(0, baseline), orig + cv::Point(text.width, -text.height), CV_RGB(0, 0, 0), CV_FILLED);
     cv::addWeighted(blend, alpha, roi, 1.0 - alpha, 0.0, roi);
