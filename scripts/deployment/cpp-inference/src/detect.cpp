@@ -153,7 +153,7 @@ void RunDemo() {
 
     // draw boxes
     auto plt = viz::PlotBbox(image, bboxes, scores, ids, args::viz_thresh, synset::CLASS_NAMES, std::map<int, cv::Scalar>(), !args::quite);
-    
+
     // display drawn image
     if (!args::no_display) {
         cv::imshow("plot", plt);
@@ -164,7 +164,7 @@ void RunDemo() {
     if (!args::output.empty()) {
         cv::imwrite(args::output, plt);
     }
-    
+
     delete exec;
     MXNotifyShutdown();
 }

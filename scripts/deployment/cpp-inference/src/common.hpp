@@ -72,8 +72,8 @@ inline NDArray AsData(cv::Mat bgr_image, Context ctx = Context::cpu()) {
     // a vector of raw pixel values, no copy
     std::vector<float> data_buffer;
     data_buffer.insert(
-        data_buffer.end(), 
-        flat_image.ptr<float>(0), 
+        data_buffer.end(),
+        flat_image.ptr<float>(0),
         flat_image.ptr<float>(0) + flat_image.cols);
     // construct NDArray from data buffer
     return NDArray(data_buffer, Shape(1, rgb_image.rows, rgb_image.cols, 3), ctx);
@@ -85,9 +85,9 @@ inline NDArray AsData(std::string filename, Context ctx = Context::cpu()) {
     return AsData(bgr_image, ctx);
 }
 
-inline void LoadCheckpoint(const std::string prefix, const unsigned int epoch, 
+inline void LoadCheckpoint(const std::string prefix, const unsigned int epoch,
                            Symbol* symbol, std::map<std::string, NDArray>* arg_params,
-                           std::map<std::string, NDArray>* aux_params, 
+                           std::map<std::string, NDArray>* aux_params,
                            Context ctx = Context::cpu()) {
     // load symbol from JSON
     Symbol new_symbol = Symbol::Load(prefix + "-symbol.json");
@@ -153,7 +153,7 @@ inline void PutLabel(cv::Mat &im, const std::string label, const cv::Point & ori
 
     cv::Size text = cv::getTextSize(label, fontface, scale, thickness, &baseline);
     // make sure roi inside image region
-    cv::Rect blend_rect = cv::Rect(orig + cv::Point(0, baseline), 
+    cv::Rect blend_rect = cv::Rect(orig + cv::Point(0, baseline),
         orig + cv::Point(text.width, -text.height)) & cv::Rect(0, 0, im.cols, im.rows);
     cv::Mat roi = im(blend_rect);
     cv::Mat blend(roi.size(), CV_8UC3, color);
@@ -163,8 +163,8 @@ inline void PutLabel(cv::Mat &im, const std::string label, const cv::Point & ori
 }
 
 // plot bounding boxes on raw image
-inline cv::Mat PlotBbox(cv::Mat img, NDArray bboxes, NDArray scores, NDArray labels, 
-               float thresh, std::vector<std::string> class_names, 
+inline cv::Mat PlotBbox(cv::Mat img, NDArray bboxes, NDArray scores, NDArray labels,
+               float thresh, std::vector<std::string> class_names,
                std::map<int, cv::Scalar> colors, bool verbose) {
     int num = bboxes.GetShape()[1];
     std::mt19937 eng;
@@ -209,7 +209,7 @@ inline cv::Mat PlotBbox(cv::Mat img, NDArray bboxes, NDArray scores, NDArray lab
             } else {
                 LOG(INFO) << "id: " << class_names[cls_id] << ", scores: " << score;
             }
-            
+
         }
 
         // put text

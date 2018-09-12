@@ -14,7 +14,7 @@ endif()
 
 # -- MXNet
 include_directories(
-  ${MXNET_ROOT}/include    
+  ${MXNET_ROOT}/include
   ${MXNET_ROOT}/cpp-package/include
   ${MXNET_ROOT}/3rdparty/dlpack/include
   ${MXNET_ROOT}/3rdparty/dmlc-core/include
