@@ -9,6 +9,7 @@ This is a demo application which illustrates how to use existing GluonCV models 
 ./gluoncv-detect yolo3_darknet53_voc demo.jpg
 ```
 
+![demo](https://user-images.githubusercontent.com/3307514/45458507-d76ff600-b6a8-11e8-92e1-0b1966e4344f.jpg)
 
 Usage:
 ```
@@ -163,7 +164,7 @@ refreshenv
 ```bash
 # download openblas and extract to c:\openblas for example
 wget http://mxnet-files.s3.amazonaws.com/openblas/openblas-0.2.14-x86-install.zip
-7z e openblas-0.2.14-x86-install.zip -o c:\openblas
+7z e openblas-0.2.14-x86-install.zip -oc:\openblas
 # download opencv
 wget https://github.com/opencv/opencv/releases/download/3.4.3/opencv-3.4.3-vc14_vc15.exe
 # extract to c:\opencv for example
@@ -172,7 +173,7 @@ opencv-3.4.3-vc14_vc15.exe
 
 3. Build MXNet shared library
 ```bash
-git clone https://github.com/dmlc/gluon-cv.git c:\incubator-mxnet
+git clone https://github.com/apache/incubator-mxnet.git c:\incubator-mxnet
 cd c:\incubator-mxnet
 mkdir build
 cd build
