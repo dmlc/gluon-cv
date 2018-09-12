@@ -112,14 +112,16 @@ void ParseArgs(int argc, char** argv) {
 }
 
 void RunDemo() {
-    // load symbol and parameters
-    Symbol net;
-    std::map<std::string, NDArray> args, auxs;
-    LoadCheckpoint(args::model, args::epoch, &net, &args, &auxs);
-    auto ctx = Context::cpu();
+    // context
+    Context ctx = Context::cpu();
     if (args::gpu >= 0) {
         ctx = Context::gpu(args::gpu);
     }
+
+    // load symbol and parameters
+    Symbol net;
+    std::map<std::string, NDArray> args, auxs;
+    LoadCheckpoint(args::model, args::epoch, &net, &args, &auxs, ctx);
 
     // load image as data
     cv::Mat image = cv::imread(args::image, 1);
@@ -130,7 +132,7 @@ void RunDemo() {
     }
 
     // set input and bind executor
-    auto data = AsData(image);
+    auto data = AsData(image, ctx);
     args["data"] = data;
     Executor *exec = net.SimpleBind(
       ctx, args, std::map<std::string, NDArray>(),

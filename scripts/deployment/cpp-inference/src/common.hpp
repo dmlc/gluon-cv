@@ -80,14 +80,15 @@ inline NDArray AsData(cv::Mat bgr_image, Context ctx = Context::cpu()) {
 }
 
 // Load data from filename
-inline NDArray AsData(std::string filename) {
+inline NDArray AsData(std::string filename, Context ctx = Context::cpu()) {
     cv::Mat bgr_image = cv::imread(filename, 1);
-    return AsData(bgr_image);
+    return AsData(bgr_image, ctx);
 }
 
 inline void LoadCheckpoint(const std::string prefix, const unsigned int epoch, 
                            Symbol* symbol, std::map<std::string, NDArray>* arg_params,
-                           std::map<std::string, NDArray>* aux_params) {
+                           std::map<std::string, NDArray>* aux_params, 
+                           Context ctx = Context::cpu()) {
     // load symbol from JSON
     Symbol new_symbol = Symbol::Load(prefix + "-symbol.json");
     // load parameters
@@ -101,12 +102,13 @@ inline void LoadCheckpoint(const std::string prefix, const unsigned int epoch,
         std::string type = iter.first.substr(0, 4);
         std::string name = iter.first.substr(4);
         if (type == "arg:")
-            args[name] = iter.second;
+            args[name] = iter.second.Copy(ctx);
         else if (type == "aux:")
-            auxs[name] = iter.second;
+            auxs[name] = iter.second.Copy(ctx);
         else
             continue;
     }
+    NDArray::WaitAll();
 
     *symbol = new_symbol;
     *arg_params = args;
