@@ -24,6 +24,7 @@ include_directories(
   ${CMAKE_CURRENT_LIST_DIR}/src
 )
 
+SET(CMAKE_FIND_LIBRARY_PREFIXES "lib")
 find_library(MXNET_LIBS NAMES mxnet HINTS "${MXNET_ROOT}/lib")
 message(STATUS MXNET_LIBS: ${MXNET_LIBS})
 message(STATUS CURRENT_DIR: ${CMAKE_CURRENT_LIST_DIR})
@@ -43,9 +44,9 @@ message(STATUS "OpenCV ${OpenCV_VERSION} found (${OpenCV_CONFIG_PATH})")
 # -- Targets and Installation
 set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_LIST_DIR})
 
-add_executable(gluoncv_detector src/detect.cpp)
-target_link_libraries(gluoncv_detector ${LINKER_LIBS})
+add_executable(gluoncv-detect src/detect.cpp)
+target_link_libraries(gluoncv-detect ${LINKER_LIBS})
 
-set(EXECS gluoncv_detector)
+set(EXECS gluoncv-detect)
 install(TARGETS ${EXECS} DESTINATION install)
 install(FILES ${MXNET_LIBS} DESTINATION install/lib)
