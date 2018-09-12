@@ -4,12 +4,36 @@
 #include <iostream>
 #include <iomanip>
 #include <sstream>
+#include <fstream>
 #include <map>
 #include <cmath>
 #include <random>
 #include <iomanip>
 
 using namespace mxnet::cpp;
+
+// resize short within
+inline cv::Mat ResizeShortWithin(cv::Mat src, int short_size, int max_size, int mult_base) {
+    double h = src.rows;
+    double w = src.cols;
+    double im_size_min = h;
+    double im_size_max = w;
+    if (w < h) {
+        im_size_min = w;
+        im_size_max = h;
+    }
+    double mb = mult_base;  // this is the factor of the output shapes
+    double scale = static_cast<double>(short_size) / static_cast<double>(im_size_min);
+    if ((std::round(scale * im_size_max / mb) * mb) > max_size) {
+        // fit in max_size
+        scale = std::floor(static_cast<double>(max_size) / mb) * mb / im_size_max;
+    }
+    int new_w = static_cast<int>(std::round(w * scale / mb) * mb);
+    int new_h = static_cast<int>(std::round(h * scale / mb) * mb);
+    cv::Mat dst;
+    cv::resize(src, dst, cv::Size(new_w, new_h));
+    return dst;
+}
 
 // Load data from CV BGR image
 inline NDArray AsData(cv::Mat bgr_image, Context ctx = Context::cpu()) {
@@ -64,6 +88,22 @@ inline void LoadCheckpoint(const std::string prefix, const unsigned int epoch,
     *aux_params = auxs;
 }
 
+inline bool EndsWith(std::string const & value, std::string const & ending)
+{
+    if (ending.size() > value.size()) return false;
+    return std::equal(ending.rbegin(), ending.rend(), value.rbegin());
+}
+
+inline std::vector<std::string> LoadClassNames(std::string filename) {
+    std::vector<std::string> classes;
+    std::string line;
+    std::ifstream infile(filename);
+    while(infile >> line) {
+        classes.emplace_back(line);
+    }
+    return classes;
+}
+
 namespace viz {
 // convert color from hsv to bgr for plotting
 inline cv::Scalar HSV2BGR(cv::Scalar hsv) {
@@ -77,7 +117,7 @@ inline cv::Scalar HSV2BGR(cv::Scalar hsv) {
     return cv::Scalar(b, g, r);
 }
 
-void PutLabel(cv::Mat &im, const std::string label, const cv::Point & orig, cv::Scalar color) {
+inline void PutLabel(cv::Mat &im, const std::string label, const cv::Point & orig, cv::Scalar color) {
     int fontface = cv::FONT_HERSHEY_DUPLEX;
     double scale = 0.6;
     int thickness = 1;
@@ -104,7 +144,7 @@ inline cv::Mat PlotBbox(cv::Mat img, NDArray bboxes, NDArray scores, NDArray lab
     scores.WaitToRead();
     labels.WaitToRead();
     if (verbose) {
-        LOG(INFO) << "Start Ploting, visualize score threshold: " << thresh << "...";
+        LOG(INFO) << "Start Ploting with visualize score threshold: " << thresh;
     }
     for (int i = 0; i < num; ++i) {
         float score = scores.At(0, 0, i);
@@ -123,7 +163,6 @@ inline cv::Mat PlotBbox(cv::Mat img, NDArray bboxes, NDArray scores, NDArray lab
                 // generate color for this id
                 hue += 0.618033988749895;  // golden ratio
                 hue = fmod(hue, 1.0);
-                LG << "hue: " << hue;
                 colors[cls_id] = HSV2BGR(cv::Scalar(hue * 255, 0.75, 0.95));
             }
         }
