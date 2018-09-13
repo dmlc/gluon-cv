@@ -163,8 +163,8 @@ refreshenv
 3. Download Openblas and Opencv
 ```bash
 # download openblas and extract to c:\openblas for example
-wget http://mxnet-files.s3.amazonaws.com/openblas/openblas-0.2.14-x86-install.zip
-7z e openblas-0.2.14-x86-install.zip -oc:\openblas
+wget http://mxnet-files.s3.amazonaws.com/openblas/openblas-0.2.14-x64-install.zip
+7z e openblas-0.2.14-x64-install.zip -oc:\openblas
 # download opencv
 wget https://github.com/opencv/opencv/releases/download/3.4.3/opencv-3.4.3-vc14_vc15.exe
 # extract to c:\opencv for example
@@ -179,8 +179,10 @@ mkdir build
 cd build
 set OpenBLAS_HOME=C:\openblas
 set OpenCV_DIR=C:\opencv\build
-cmake .. -G "Visual Studio 14 2015 Win64" -DUSE_CUDA=0 -DUSE_CUDNN=0 -DUSE_OPENCV=1 -DUSE_OPENMP=1 -DUSE_PROFILER=1 -DUSE_BLAS=open -DUSE_LAPACK=1 -DUSE_DIST_KVSTORE=0 -DUSE_MKL_IF_AVAILABLE=0 -DUSE_CPP_PACKAGE=1 -DBUILD_CPP_EXAMPLES=0 -DCMAKE_INSTALL_PREFIX=c:\incubator-mxnet
+set PATH=%PATH%;C:\openblas;C:\opencv\build\x64\vc14\bin
+cmake .. -G "Visual Studio 14 2015 Win64" -DUSE_CUDA=0 -DUSE_CUDNN=0 -DUSE_OPENCV=1 -DUSE_OPENMP=1 -DUSE_PROFILER=1 -DUSE_BLAS=open -DUSE_LAPACK=1 -DUSE_DIST_KVSTORE=0 -DUSE_MKL_IF_AVAILABLE=0 -DUSE_CPP_PACKAGE=1 -DBUILD_CPP_EXAMPLES=0 -DDO_NOT_BUILD_EXAMPLES=1 -DCMAKE_INSTALL_PREFIX=c:\incubator-mxnet
 cmake --build . --config "Release" --target INSTALL
+xcopy Release\libmxnet.dll ..\lib\
 ```
 
 4. Build demo application
@@ -189,7 +191,7 @@ git clone https://github.com/dmlc/gluon-cv.git c:\gluon-cv
 cd c:/gluon-cv/scripts/deployment/cpp-inference
 mkdir build
 cd build
-cmake .. -DMXNET_ROOT=~/incubator-mxnet
+cmake .. -G "Visual Studio 14 2015 Win64" -DMXNET_ROOT=~/incubator-mxnet
 cmake --build . --config "Release" --target INSTALL
 # app available at c:\gluon-cv\scripts\deployment\cpp-inference\install\
 ```
