@@ -12,6 +12,7 @@ import gluoncv
 from gluoncv.loss import *
 from gluoncv.utils import LRScheduler
 from gluoncv.model_zoo.segbase import *
+from gluoncv.model_zoo import get_model
 from gluoncv.utils.parallel import *
 from gluoncv.data import get_segmentation_dataset
 
@@ -110,9 +111,12 @@ class Trainer(object):
         self.eval_data = gluon.data.DataLoader(valset, args.test_batch_size,
             last_batch='rollover', num_workers=args.workers)
         # create network
-        model = get_segmentation_model(model=args.model, dataset=args.dataset,
-                                       backbone=args.backbone, norm_layer=args.norm_layer,
-                                       norm_kwargs=args.norm_kwargs, aux=args.aux)
+        if args.model_zoo is not None:
+            model = get_model(args.model_zoo, pretrained=True)
+        else:
+            model = get_segmentation_model(model=args.model, dataset=args.dataset,
+                                           backbone=args.backbone, norm_layer=args.norm_layer,
+                                           norm_kwargs=args.norm_kwargs, aux=args.aux)
         model.cast(args.dtype)
         print(model)
         self.net = DataParallelModel(model, args.ctx, args.syncbn)
