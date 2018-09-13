@@ -116,6 +116,9 @@ void RunDemo() {
     Context ctx = Context::cpu();
     if (args::gpu >= 0) {
         ctx = Context::gpu(args::gpu);
+        if (!args::quite) {
+          LOG(INFO) << "Using GPU(" << args::gpu << ")...";
+        }
     }
 
     // load symbol and parameters

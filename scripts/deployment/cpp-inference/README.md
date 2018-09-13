@@ -48,11 +48,11 @@ OPTIONS
 ### Tip: how to acquire up to date pre-built libmxnet shared library
 
 1. You can download prebuilt libmxnet binaries from PyPI wheels.
-For example, you can download mxnet 1.3.0 wheels from [PyPI](https://pypi.org/project/mxnet/#files), extract libmxnet.{so|dll} by opening the wheel as zip file. For Linux and Mac, the suffix is **so**, for windows, the suffix is **dll**.
+For example, you can download mxnet 1.3.0 wheels from [PyPI](https://pypi.org/project/mxnet/#files), extract libmxnet.{so|dll} by opening the wheel as zip file(you may change the suffix of \*.wheel to \*.zip). For Linux and Mac, the targeting shared library is **libmxnet.so**, for windows, the library is **libmxnet.dll**.
 
 2. You can then replace the libmxnet.* in previously downloaded binary package with the extracted libmxnet from PyPI wheel.
 
-By doing this, You can switch between mxnet cpu/gpu or blas versions without build from source.
+By doing this, You may switch between mxnet cpu/gpu or blas versions without build from source.
 
 
 ## Build from source
@@ -151,9 +151,9 @@ make install
 ```
 
 ### Windows
-1. Install Visual Studio 2015(2017 is good with cpu version, but may not work well with CUDA 9)
+1. Install Visual Studio 2017
 
-2. Install other dependencies(You might need to open cmd with admin permission)
+2. Install other dependencies(You might need to open cmd with admin privilege)
 ```bash
 # chocolatey is convenient and similar to unix package managers(https://chocolatey.org)
 choco install -y cmake git wget 7zip
@@ -180,18 +180,19 @@ cd build
 set OpenBLAS_HOME=C:\openblas
 set OpenCV_DIR=C:\opencv\build
 set PATH=%PATH%;C:\openblas;C:\opencv\build\x64\vc14\bin
-cmake .. -G "Visual Studio 14 2015 Win64" -DUSE_CUDA=0 -DUSE_CUDNN=0 -DUSE_OPENCV=1 -DUSE_OPENMP=1 -DUSE_PROFILER=1 -DUSE_BLAS=open -DUSE_LAPACK=1 -DUSE_DIST_KVSTORE=0 -DUSE_MKL_IF_AVAILABLE=0 -DUSE_CPP_PACKAGE=1 -DBUILD_CPP_EXAMPLES=0 -DDO_NOT_BUILD_EXAMPLES=1 -DCMAKE_INSTALL_PREFIX=c:\incubator-mxnet
+cmake .. -G "Visual Studio 15 2017 Win64" -DUSE_CUDA=0 -DUSE_CUDNN=0 -DUSE_OPENCV=1 -DUSE_OPENMP=1 -DUSE_PROFILER=1 -DUSE_BLAS=open -DUSE_LAPACK=1 -DUSE_DIST_KVSTORE=0 -DUSE_MKL_IF_AVAILABLE=0 -DUSE_CPP_PACKAGE=1 -DBUILD_CPP_EXAMPLES=0 -DDO_NOT_BUILD_EXAMPLES=1 -DCMAKE_INSTALL_PREFIX=c:\incubator-mxnet
 cmake --build . --config "Release" --target INSTALL
 xcopy Release\libmxnet.dll ..\lib\
 ```
 
 4. Build demo application
 ```bash
+# reuse the previous cmd session
 git clone https://github.com/dmlc/gluon-cv.git c:\gluon-cv
 cd c:/gluon-cv/scripts/deployment/cpp-inference
 mkdir build
 cd build
-cmake .. -G "Visual Studio 14 2015 Win64" -DMXNET_ROOT=~/incubator-mxnet
+cmake .. -G "Visual Studio 15 2017 Win64" -DMXNET_ROOT=c:\incubator-mxnet
 cmake --build . --config "Release" --target INSTALL
 # app available at c:\gluon-cv\scripts\deployment\cpp-inference\install\
 ```
