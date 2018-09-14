@@ -38,22 +38,28 @@ OPTIONS
 
 | Platform                   | Download link |
 |----------------------------|---------------|
-| Linux(cpu, openblas)       |               |
-| Linux(gpu, cuda9.0)        |               |
-| Linux(gpu, cuda9.2)        |               |
-| Windows x64(cpu, openblas) |               |
-| Windows x64(gpu, cuda9.2)  |               |
-| Mac OS(apple-blas)         |       x       |
+| Linux(cpu, openblas)<sup>[1](#linuxtip)</sup>|   [linux-cpu-openblas.zip](https://github.com/zhreshold/gluon-cv/releases/download/0.0.1/linux-cpu-openblas.zip)    |
+| Linux(gpu, cuda9.0)<sup>[1](#linuxtip)</sup><sup>[3](#gputip)</sup>|  [linux-cu90-cudnn7.zip](https://github.com/zhreshold/gluon-cv/releases/download/0.0.1/linux-cu90-cudnn7.zip)           |
+| Windows x64(cpu, openblas) |   [win64-cpu-openblas.zip](https://github.com/zhreshold/gluon-cv/releases/download/0.0.1/win64-cpu-openblas.zip)            |
+| Windows x64(gpu, cuda9.2)</sup><sup>[3](#gputip)</sup>  |     [win64-cuda92-cudnn7.zip](https://github.com/zhreshold/gluon-cv/releases/download/0.0.1/win64-cuda92-cudnn7.zip)          |
+| Mac OS(cpu, appleblas)<sup>[2](#mactip)</sup>         |       [macos-sierra-cpu-appleblas.zip](https://github.com/zhreshold/gluon-cv/releases/download/0.0.1/macos-sierra-cpu-appleblas.zip)      |
+
+<a name="linuxtip">1</a>: Use `LD_LIBRARY_PATH=$LD_LIBRARY_PATH:. ./gluoncv-detect` in case you are using the supplied shared libraries under the same directory. You can add `export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:~/path/to/prebuilt-package` to `~/.bashrc` to permanently add library into search path. You may still need to install opencv to make sure all dependencies are available (`apt install libopencv-dev`).
+
+<a name="mactip">2</a>: Use `DYLD_FALLBACK_LIBRARY_PATH=. ./gluoncv-detect` in case you are using the supplied shared libraries under the same directory. You can add `export DYLD_FALLBACK_LIBRARY_PATH=$DYLD_FALLBACK_LIBRARY_PATH:~/path/to/prebuilt-package` to `~/.bash_profile` to permanently add library into search path.
+
+<a name="gputip">3</a>: You may want to disable CUDNN autotune feature which is useful in large batch training, but not desirable during single image inference by `export MXNET_CUDNN_AUTOTUNE_DEFAULT=0` in Linux/MacOS or `set MXNET_CUDNN_AUTOTUNE_DEFAULT=0` in Windows.
 
 ### Tip: how to acquire up to date pre-built libmxnet shared library
 
 1. You can download prebuilt libmxnet binaries from PyPI wheels.
-For example, you can download mxnet 1.3.0 wheels from [PyPI](https://pypi.org/project/mxnet/#files), extract libmxnet.{so|dll} by opening the wheel as zip file(you may change the suffix of \*.wheel to \*.zip). For Linux and Mac, the targeting shared library is **libmxnet.so**, for windows, the library is **libmxnet.dll**.
+For example, you can download mxnet 1.3.0 wheels from [PyPI](https://pypi.org/project/mxnet/#files), extract libmxnet.{so|dll} by opening the wheel as zip file(you may change the suffix of \*.whl to \*.zip). For Linux and Mac, the targeting shared library is **libmxnet.so**, for windows, the library is **libmxnet.dll**.
 
 2. You can then replace the libmxnet.* in previously downloaded binary package with the extracted libmxnet from PyPI wheel.
 
 By doing this, You may switch between mxnet cpu/gpu or blas versions without build from source.
 
+3. If you encounter any compatibility issue using pre-built demo, you can always try [build from source](#build-from-source).
 
 ## Build from source
 
@@ -104,6 +110,7 @@ make -j $(nproc)
 ```bash
 make install
 # gluoncv-detect and libmxnet.so will be available at ~/gluon-cv/scripts/deployment/cpp-inference/install/
+# you may want to add libmxnet.so to LD_LIBRARY_PATH
 ```
 
 ### Mac OS
@@ -148,6 +155,7 @@ make -j$(sysctl -n hw.ncpu)
 ```bash
 make install
 # gluoncv-detect and libmxnet.so will be available at ~/gluon-cv/scripts/deployment/cpp-inference/install/
+# you may want to add libmxnet.so to RPATH
 ```
 
 ### Windows
