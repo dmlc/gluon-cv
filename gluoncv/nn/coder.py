@@ -174,7 +174,7 @@ class NormalizedBoxCenterDecoder(gluon.HybridBlock):
         ox = F.broadcast_add(F.broadcast_mul(p[0] * self._stds[0] + self._means[0], a[2]), a[0])
         oy = F.broadcast_add(F.broadcast_mul(p[1] * self._stds[1] + self._means[1], a[3]), a[1])
         tw = F.exp(p[2] * self._stds[2] + self._means[2])
-        th = F.exp(p[3] * self._stds[3] + self._means[2])
+        th = F.exp(p[3] * self._stds[3] + self._means[3])
         if self._clip:
             tw = F.minimum(tw, self._clip)
             th = F.minimum(th, self._clip)

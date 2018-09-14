@@ -76,7 +76,7 @@ def export_block(path, block, data_shape=None, epoch=0, preprocess=True, layout=
     """
     # input image layout
     if data_shape is None:
-        data_shapes = [(s, s, 3) for s in (224, 256, 299, 512)]
+        data_shapes = [(s, s, 3) for s in (224, 256, 299, 300, 320, 416, 512, 600)]
     else:
         data_shapes = [data_shape]
 
@@ -104,9 +104,12 @@ def export_block(path, block, data_shape=None, epoch=0, preprocess=True, layout=
 
         # hybridize and forward once
         wrapper_block.hybridize()
+        last_exception = None
         try:
             wrapper_block(x)
             wrapper_block.export(path, epoch)
             break
-        except MXNetError:
-            pass
+        except MXNetError as e:
+            last_exception = e
+        if last_exception is not None:
+            raise RuntimeError(str(last_exception).splitlines()[0])
