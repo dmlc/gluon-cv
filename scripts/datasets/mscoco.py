@@ -4,6 +4,7 @@ import shutil
 import argparse
 import zipfile
 from gluoncv.utils import download, makedirs
+from gluoncv.data.mscoco.utils import try_import_pycocotools
 
 _TARGET_DIR = os.path.expanduser('~/.mxnet/datasets/coco')
 
@@ -39,16 +40,6 @@ def download_coco(path, overwrite=False):
         with zipfile.ZipFile(filename) as zf:
             zf.extractall(path=path)
 
-def install_coco_api():
-    repo_url = "https://github.com/cocodataset/cocoapi"
-    os.system("git clone " + repo_url)
-    os.system("cd cocoapi/PythonAPI/ && python setup.py install")
-    shutil.rmtree('cocoapi')
-    try:
-        import pycocotools
-    except Exception:
-        print("Installing COCO API failed, please install it manually %s"%(repo_url))
-
 if __name__ == '__main__':
     args = parse_args()
     path = os.path.expanduser(args.download_dir)
@@ -66,4 +57,4 @@ if __name__ == '__main__':
     if os.path.isdir(_TARGET_DIR):
         os.remove(_TARGET_DIR)
     os.symlink(path, _TARGET_DIR)
-    install_coco_api()
+    try_import_pycocotools()
