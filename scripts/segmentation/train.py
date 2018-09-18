@@ -6,6 +6,8 @@ import time
 from tqdm import tqdm
 import logging
 
+import gluoncv	
+from gluoncv.loss import *
 import mxnet as mx
 from mxnet import gluon, autograd
 from mxnet.gluon.data.vision import transforms
