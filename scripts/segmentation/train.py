@@ -162,6 +162,7 @@ class Trainer(object):
             optimizer_params['multi_precision'] = True
         self.optimizer = gluon.Trainer(self.net.module.collect_params(), 'sgd',
                                        optimizer_params, kvstore = kv)                                        
+        self.metric = gluoncv.utils.metrics.SegmentationMetric(trainset.num_class)
 
     def training(self, epoch):
         tbar = tqdm(self.train_data)
