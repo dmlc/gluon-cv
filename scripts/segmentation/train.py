@@ -153,7 +153,7 @@ class Trainer(object):
                                         'momentum': args.momentum,
                                         'multi_precision': True},
                                         kvstore = kv"""
-       optimizer_params = {'lr_scheduler': self.lr_scheduler,
+        optimizer_params = {'lr_scheduler': self.lr_scheduler,
                             'wd':args.weight_decay,
                             'momentum': args.momentum}
         if args.dtype == 'float16':
