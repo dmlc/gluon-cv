@@ -39,7 +39,7 @@ def parse_args():
                         help='Training epochs.')
     parser.add_argument('--resume', type=str, default='',
                         help='Resume from previously saved parameters if not None. '
-                        'For example, you can resume from ./ssd_xxx_0123.params')
+                        'For example, you can resume from ./yolo3_xxx_0123.params')
     parser.add_argument('--start-epoch', type=int, default=0,
                         help='Starting epoch for resuming, default is 0 for new training.'
                         'You can specify it to 100 for example to start from 100 epoch.')
@@ -120,8 +120,8 @@ def validate(net, val_data, ctx, eval_metric):
     mx.nd.waitall()
     net.hybridize()
     for batch in val_data:
-        data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
-        label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0)
+        data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0, even_split=False)
+        label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0, even_split=False)
         det_bboxes = []
         det_ids = []
         det_scores = []
@@ -153,7 +153,7 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
                                nepochs=args.epochs,
                                step=[int(i) for i in args.lr_decay_epoch.split(',')],
                                step_factor=float(args.lr_decay),
-                               warmup_epochs=max(1, 1000 // (args.num_samples // args.batch_size)),
+                               warmup_epochs=max(2, 1000 // (args.num_samples // args.batch_size)),
                                warmup_mode='linear')
 
     trainer = gluon.Trainer(
@@ -262,6 +262,7 @@ if __name__ == '__main__':
         async_net = net
     if args.resume.strip():
         net.load_parameters(args.resume.strip())
+        async_net.load_parameters(args.resume.strip())
     else:
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")

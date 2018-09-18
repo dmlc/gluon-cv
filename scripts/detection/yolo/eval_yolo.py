@@ -1,4 +1,5 @@
 from __future__ import division
+from __future__ import print_function
 
 import argparse
 import logging
@@ -69,8 +70,8 @@ def validate(net, val_data, ctx, classes, size, metric):
     net.hybridize()
     with tqdm(total=size) as pbar:
         for ib, batch in enumerate(val_data):
-            data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
-            label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0)
+            data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0, even_split=False)
+            label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0, even_split=False)
             det_bboxes = []
             det_ids = []
             det_scores = []

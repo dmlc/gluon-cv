@@ -33,15 +33,6 @@ stage("Unit Test") {
         export LD_LIBRARY_PATH=/usr/local/cuda-8.0/lib64
         export MPLBACKEND=Agg
         nosetests --with-coverage --cover-package gluoncv -v tests/unittests
-        rm -f coverage.svg
-        coverage-badge -o coverage.svg
-        if [[ ${env.BRANCH_NAME} == master ]]; then
-            aws s3 cp coverage.svg s3://gluon-cv.mxnet.io/coverage.svg --acl public-read --cache-control no-cache
-            echo "Uploaded coverage badge to http://gluon-cv.mxnet.io"
-        else
-            aws s3 cp coverage.svg s3://gluon-vision-staging/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/coverage.svg --acl public-read --cache-control no-cache
-            echo "Uploaded coverage badge to http://gluon-vision-staging.s3-website-us-west-2.amazonaws.com/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/coverage.svg"
-        fi
         """
       }
     }
@@ -64,6 +55,15 @@ stage("Unit Test") {
         export LD_LIBRARY_PATH=/usr/local/cuda-8.0/lib64
         export MPLBACKEND=Agg
         nosetests --with-coverage --cover-package gluoncv -v tests/unittests
+        rm -f coverage.svg
+        coverage-badge -o coverage.svg
+        if [[ ${env.BRANCH_NAME} == master ]]; then
+            aws s3 cp coverage.svg s3://gluon-cv.mxnet.io/coverage.svg --acl public-read --cache-control no-cache
+            echo "Uploaded coverage badge to http://gluon-cv.mxnet.io"
+        else
+            aws s3 cp coverage.svg s3://gluon-vision-staging/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/coverage.svg --acl public-read --cache-control no-cache
+            echo "Uploaded coverage badge to http://gluon-vision-staging.s3-website-us-west-2.amazonaws.com/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/coverage.svg"
+        fi
         """
       }
     }
@@ -83,6 +83,7 @@ stage("Build Docs") {
       export PYTHONPATH=\${PWD}
       env
       export LD_LIBRARY_PATH=/usr/local/cuda-8.0/lib64
+      git clean -fx
       cd docs && make clean && make html
 
       if [[ ${env.BRANCH_NAME} == master ]]; then

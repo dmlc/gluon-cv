@@ -1,4 +1,6 @@
 from __future__ import division
+from __future__ import print_function
+
 import os
 # disable autotune
 os.environ['MXNET_CUDNN_AUTOTUNE_DEFAULT'] = '0'

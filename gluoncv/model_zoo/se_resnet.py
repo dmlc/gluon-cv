@@ -424,13 +424,13 @@ def get_se_resnet(version, num_layers, pretrained=False, ctx=cpu(),
         "Invalid number of layers: %d. Options are %s"%(
             num_layers, str(resnet_spec.keys()))
     block_type, layers, channels = resnet_spec[num_layers]
-    assert version >= 1 and version <= 2, \
+    assert 1 <= version <= 2, \
         "Invalid resnet version: %d. Options are 1 and 2."%version
     resnet_class = resnet_net_versions[version-1]
     block_class = resnet_block_versions[version-1][block_type]
     net = resnet_class(block_class, layers, channels, **kwargs)
     if pretrained:
-        from ..model_store import get_model_file
+        from .model_store import get_model_file
         net.load_params(get_model_file('se_resnet%d_v%d'%(num_layers, version),
                                        root=root), ctx=ctx)
     return net

@@ -13,7 +13,7 @@ from .darknet import _conv2d, darknet53
 from .yolo_target import YOLOV3TargetMerger
 from ...loss import YOLOV3Loss
 
-__all__ = ['YOLOV3',
+__all__ = ['YOLOV3', 'get_yolov3',
            'yolo3_darknet53_voc', 'yolo3_darknet53_coco', 'yolo3_darknet53_custom']
 
 def _upsample(x, stride=2):
@@ -88,6 +88,7 @@ class YOLOOutputV3(gluon.HybridBlock):
             Description of returned object.
 
         """
+        self._clear_cached_op()
         self._classes = len(classes)
         self._num_pred = 1 + 4 + len(classes)
         all_pred = self._num_pred * self._num_anchors
@@ -240,6 +241,8 @@ class YOLOV3(gluon.HybridBlock):
         self.nms_thresh = nms_thresh
         self.nms_topk = nms_topk
         self.post_nms = post_nms
+        self._pos_iou_thresh = pos_iou_thresh
+        self._ignore_iou_thresh = ignore_iou_thresh
         if pos_iou_thresh >= 1:
             self._target_generator = YOLOV3TargetMerger(len(classes), ignore_iou_thresh)
         else:
@@ -411,7 +414,10 @@ class YOLOV3(gluon.HybridBlock):
             The new categories. ['apple', 'orange'] for example.
 
         """
+        self._clear_cached_op()
         self._classes = classes
+        if self._pos_iou_thresh >= 1:
+            self._target_generator = YOLOV3TargetMerger(len(classes), self._ignore_iou_thresh)
         for outputs in self.yolo_outputs:
             outputs.reset_class(classes)
 

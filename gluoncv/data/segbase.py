@@ -1,27 +1,31 @@
 """Base segmentation dataset"""
 import random
 import numpy as np
+from PIL import Image, ImageOps, ImageFilter
 import mxnet as mx
 from mxnet import cpu
 import mxnet.ndarray as F
-from PIL import Image, ImageOps, ImageFilter
 from .base import VisionDataset
 
 __all__ = ['get_segmentation_dataset', 'ms_batchify_fn', 'SegmentationDataset']
 
 def get_segmentation_dataset(name, **kwargs):
+    """Segmentation Datasets"""
     from .pascal_voc.segmentation import VOCSegmentation
     from .pascal_aug.segmentation import VOCAugSegmentation
     from .ade20k.segmentation import ADE20KSegmentation
+    from .mscoco.segmentation import COCOSegmentation
     datasets = {
         'ade20k': ADE20KSegmentation,
         'pascal_voc': VOCSegmentation,
         'pascal_aug': VOCAugSegmentation,
+        'coco' : COCOSegmentation,
     }
     return datasets[name](**kwargs)
 
 
 def ms_batchify_fn(data):
+    """Multi-size batchfy function"""
     if isinstance(data[0], (str, mx.nd.NDArray)):
         return list(data)
     elif isinstance(data[0], tuple):
@@ -81,10 +85,6 @@ class SegmentationDataset(VisionDataset):
             ow = int(1.0 * w * oh / h)
         img = img.resize((ow, oh), Image.BILINEAR)
         mask = mask.resize((ow, oh), Image.NEAREST)
-        # random rotate -10~10, mask using NN rotate
-        deg = random.uniform(-10, 10)
-        img = img.rotate(deg, resample=Image.BILINEAR)
-        mask = mask.rotate(deg, resample=Image.NEAREST)
         # pad crop
         if short_size < crop_size:
             padh = crop_size - oh if oh < crop_size else 0
@@ -115,3 +115,7 @@ class SegmentationDataset(VisionDataset):
     def num_class(self):
         """Number of categories."""
         return self.NUM_CLASS
+
+    @property
+    def pred_offset(self):
+        return 0

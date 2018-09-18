@@ -226,6 +226,7 @@ class SSD(HybridBlock):
             The new categories. ['apple', 'orange'] for example.
 
         """
+        self._clear_cached_op()
         self.classes = classes
         # replace class predictors
         with self.name_scope():
@@ -236,6 +237,7 @@ class SSD(HybridBlock):
                 new_cp.collect_params().initialize()
                 class_predictors.add(new_cp)
             self.class_predictors = class_predictors
+            self.cls_decoder = MultiPerClassDecoder(len(self.classes) + 1, thresh=0.01)
 
 def get_ssd(name, base_size, features, filters, sizes, ratios, steps, classes,
             dataset, pretrained=False, pretrained_base=True, ctx=mx.cpu(),

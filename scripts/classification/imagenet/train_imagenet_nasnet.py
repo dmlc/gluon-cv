@@ -7,7 +7,7 @@ from mxnet.gluon import nn
 from mxnet.gluon.data.vision import transforms
 
 from gluoncv.data import imagenet
-from gluoncv.loss import SoftmaxCrossEntropyLossWithAux
+from gluoncv.loss import MixSoftmaxCrossEntropyLoss
 from gluoncv.model_zoo import get_model
 from gluoncv.utils import makedirs, LRScheduler
 
@@ -69,12 +69,19 @@ parser.add_argument('--save-frequency', type=int, default=10,
                     help='frequency of model saving.')
 parser.add_argument('--save-dir', type=str, default='params',
                     help='directory of saved models')
-parser.add_argument('--logging-dir', type=str, default='logs',
-                    help='directory of training logs')
+parser.add_argument('--logging-file', type=str, default='train_imagenet.log',
+                    help='name of training log file')
 opt = parser.parse_args()
 
-logging.basicConfig(level=logging.INFO)
-logging.info(opt)
+filehandler = logging.FileHandler(opt.logging_file)
+streamhandler = logging.StreamHandler()
+
+logger = logging.getLogger('')
+logger.setLevel(logging.INFO)
+logger.addHandler(filehandler)
+logger.addHandler(streamhandler)
+
+logger.info(opt)
 
 batch_size = opt.batch_size
 classes = 1000
@@ -269,9 +276,9 @@ def train(ctx):
 
     trainer = gluon.Trainer(net.collect_params(), optimizer, optimizer_params)
     if opt.label_smoothing:
-        L = SoftmaxCrossEntropyLossWithAux(sparse_label=False, aux_weight=0.4)
+        L = MixSoftmaxCrossEntropyLoss(sparse_label=False, aux_weight=0.4)
     else:
-        L = SoftmaxCrossEntropyLossWithAux(aux_weight=0.4)
+        L = MixSoftmaxCrossEntropyLoss(aux_weight=0.4)
 
     best_val_score = 1
 
@@ -309,7 +316,7 @@ def train(ctx):
                 _, top1_aux = acc_top1_aux.get()
                 _, top5_aux = acc_top5_aux.get()
                 err_top1, err_top5, err_top1_aux, err_top5_aux = (1-top1, 1-top5, 1-top1_aux, 1-top5_aux)
-                logging.info('Epoch[%d] Batch [%d]\tSpeed: %f samples/sec\t'
+                logger.info('Epoch[%d] Batch [%d]\tSpeed: %f samples/sec\t'
                              'top1-err=%f\ttop5-err=%f\ttop1-err-aux=%f\ttop5-err-aux=%f'%(
                              epoch, i, batch_size*opt.log_interval/(time.time()-btic),
                              err_top1, err_top5, err_top1_aux, err_top5_aux))
@@ -323,10 +330,10 @@ def train(ctx):
 
         err_top1_val, err_top5_val, err_top1_val_aux, err_top5_val_aux = test(ctx, val_data)
 
-        logging.info('[Epoch %d] training: err-top1=%f err-top5=%f err-top1_aux=%f err-top5_aux=%f'%
+        logger.info('[Epoch %d] training: err-top1=%f err-top5=%f err-top1_aux=%f err-top5_aux=%f'%
             (epoch, err_top1, err_top5, err_top1_aux, err_top5_aux))
-        logging.info('[Epoch %d] time cost: %f'%(epoch, time.time()-tic))
-        logging.info('[Epoch %d] validation: err-top1=%f err-top5=%f err-top1_aux=%f err-top5_aux=%f'%
+        logger.info('[Epoch %d] time cost: %f'%(epoch, time.time()-tic))
+        logger.info('[Epoch %d] validation: err-top1=%f err-top5=%f err-top1_aux=%f err-top5_aux=%f'%
             (epoch, err_top1_val, err_top5_val, err_top1_val_aux, err_top5_val_aux))
 
         if err_top1_val < best_val_score and epoch > 50:
