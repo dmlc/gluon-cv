@@ -111,3 +111,5 @@ ENV/
 
 *.png*
 *.jpg*
+
+.idea
