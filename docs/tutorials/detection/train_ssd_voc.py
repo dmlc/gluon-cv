@@ -227,13 +227,18 @@ with autograd.train_mode():
 
 ##############################################################################
 # If we provide anchors to the training transform, it will compute training targets
+from mxnet import gluon
+
 train_transform = presets.ssd.SSDDefaultTrainTransform(width, height, anchors)
 batchify_fn = Tuple(Stack(), Stack(), Stack())
 train_loader = DataLoader(train_dataset.transform(train_transform), batch_size, shuffle=True,
                           batchify_fn=batchify_fn, last_batch='rollover', num_workers=num_workers)
 from gluoncv.loss import SSDMultiBoxLoss
 mbox_loss = SSDMultiBoxLoss()
-
+from mxnet import gluon
+trainer = gluon.Trainer(
+    net.collect_params(), 'sgd',
+    {'learning_rate': 0.001, 'wd': 0.0005, 'momentum': 0.9})
 for ib, batch in enumerate(train_loader):
     if ib > 0:
         break
@@ -245,7 +250,7 @@ for ib, batch in enumerate(train_loader):
         sum_loss, cls_loss, box_loss = mbox_loss(cls_pred, box_pred, batch[1], batch[2])
         # some standard gluon training steps:
         # autograd.backward(sum_loss)
-        # trainer.step(1)
+        # trainer.step(batchsize)
 
 ##############################################################################
 # This time we can see the data loader is actually returning the training targets for us.
