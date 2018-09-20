@@ -67,7 +67,7 @@ class FCN(SegBaseModel):
 
 class _FCNHead(HybridBlock):
     # pylint: disable=redefined-outer-name
-    def __init__(self, in_channels, channels, norm_layer=nn.BatchNorm, norm_kwargs={}):
+    def __init__(self, in_channels, channels, norm_layer=nn.BatchNorm, norm_kwargs={}, **kwargs):
         super(_FCNHead, self).__init__()
         with self.name_scope():
             self.block = nn.HybridSequential()

@@ -108,7 +108,7 @@ class _AsppPooling(nn.HybridBlock):
         return F.contrib.BilinearResize2D(pool, height=h, width=w)
 
 class _ASPP(nn.HybridBlock):
-    def __init__(self, in_channels, atrous_rates, norm_layer, norm_kwargs):
+    def __init__(self, in_channels, atrous_rates, norm_layer, norm_kwargs, **kwargs):
         super(_ASPP, self).__init__()
         out_channels = 256
         b0 = nn.HybridSequential()

@@ -39,8 +39,8 @@ class COCOSegmentation(SegmentationDataset):
                 1, 64, 20, 63, 7, 72]
     NUM_CLASS = 21
     def __init__(self, root=os.path.expanduser('~/.mxnet/datasets/coco'),
-                 split='train', mode=None, transform=None):
-        super(COCOSegmentation, self).__init__(root, split, mode, transform)
+                 split='train', mode=None, transform=None, **kwargs):
+        super(COCOSegmentation, self).__init__(root, split, mode, transform, **kwargs)
         # lazy import pycocotools
         try_import_pycocotools()
         from pycocotools.coco import COCO
