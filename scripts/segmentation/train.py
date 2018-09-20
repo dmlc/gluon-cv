@@ -73,6 +73,10 @@ def parse_args():
     # synchronized Batch Normalization
     parser.add_argument('--syncbn', action='store_true', default= False,
                         help='using Synchronized Cross-GPU BatchNorm')
+    # image shape parameters
+    parser.add_argument('--crop-size', type=int, default=480,
+                        help='size of the input image.')   
+                                           
     # the parser
     args = parser.parse_args()
     # handle contexts
@@ -101,9 +105,9 @@ class Trainer(object):
         ])
         # dataset and dataloader
         trainset = get_segmentation_dataset(
-            args.dataset, split='train', transform=input_transform)
+            args.dataset, split='train', transform=input_transform, crop_size=args.crop_size)
         valset = get_segmentation_dataset(
-            args.dataset, split='val', transform=input_transform)
+            args.dataset, split='val', transform=input_transform, crop_size=args.crop_size)
         self.train_data = gluon.data.DataLoader(
             trainset, args.batch_size, shuffle=True, last_batch='rollover',
             num_workers=args.workers)
@@ -111,6 +115,7 @@ class Trainer(object):
             last_batch='rollover', num_workers=args.workers)
         # create network
         model = get_segmentation_model(model=args.model, dataset=args.dataset,
+                                       height=args.crop_size, width=args.crop_size,
                                        backbone=args.backbone, norm_layer=args.norm_layer,
                                        norm_kwargs=args.norm_kwargs, aux=args.aux)
         model.cast(args.dtype)

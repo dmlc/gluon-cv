@@ -96,7 +96,7 @@ class _PyramidPooling(HybridBlock):
 
 
 class _PSPHead(HybridBlock):
-    def __init__(self, nclass, norm_layer=nn.BatchNorm, norm_kwargs={}):
+    def __init__(self, nclass, norm_layer=nn.BatchNorm, norm_kwargs={}, **kwargs):
         super(_PSPHead, self).__init__()
         self.psp = _PyramidPooling(2048, norm_layer=norm_layer,
                                    norm_kwargs=norm_kwargs)

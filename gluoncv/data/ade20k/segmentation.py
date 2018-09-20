@@ -97,8 +97,8 @@ class ADE20KSegmentation(SegmentationDataset):
                "plate", "monitor, monitoring device", "bulletin board, notice board",
                "shower", "radiator", "glass, drinking glass", "clock", "flag")
     def __init__(self, root=os.path.expanduser('~/.mxnet/datasets/ade'),
-                 split='train', mode=None, transform=None):
-        super(ADE20KSegmentation, self).__init__(root, split, mode, transform)
+                 split='train', mode=None, transform=None, **kwargs):
+        super(ADE20KSegmentation, self).__init__(root, split, mode, transform, **kwargs)
         root = os.path.join(root, self.BASE_DIR)
         assert os.path.exists(root), "Please setup the dataset using" + \
             "scripts/datasets/ade20k.py"
