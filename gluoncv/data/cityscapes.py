@@ -29,9 +29,9 @@ class CitySegmentation(SegmentationDataset):
         self.valid_classes = [7, 8, 11, 12, 13, 17, 19, 20, 21, 22,
                               23, 24, 25, 26, 27, 28, 31, 32, 33]
         self._key = np.array([-1, -1, -1, -1, -1, -1,
-                              -1, -1,  0,  1, -1, -1, 
-                              2,   3,  4, -1, -1, -1,
-                              5,  -1,  6,  7,  8,  9,
+                              -1, -1, 0, 1, -1, -1, 
+                              2, 3, 4, -1, -1, -1,
+                              5, -1, 6, 7, 8, 9,
                               10, 11, 12, 13, 14, 15,
                               -1, -1, 16, 17, 18])
         self._mapping = np.array(range(-1, len(self._key)-1)).astype('int32')
