@@ -12,7 +12,7 @@ class VOCSegmentation(SegmentationDataset):
     Parameters
     ----------
     root : string
-        Path to VOCdevkit folder. Default is '$(HOME)/mxnet/datasets/ade'
+        Path to VOCdevkit folder. Default is '$(HOME)/mxnet/datasets/voc'
     split: string
         'train', 'val' or 'test'
     transform : callable, optional

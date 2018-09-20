@@ -29,6 +29,10 @@ def parse_args():
                         help='dataset name (default: pascal)')
     parser.add_argument('--workers', type=int, default=16,
                         metavar='N', help='dataloader threads')
+    parser.add_argument('--base-size', type=int, default=520,
+                        help='base image size')
+    parser.add_argument('--crop-size', type=int, default=480,
+                        help='crop image size')
     # training hyper params
     parser.add_argument('--aux', action='store_true', default= False,
                         help='Auxilary loss')
@@ -70,6 +74,8 @@ def parse_args():
     # evaluation only
     parser.add_argument('--eval', action='store_true', default= False,
                         help='evaluation only')
+    parser.add_argument('--no-val', action='store_true', default= False,
+                            help='skip validation during training')
     # synchronized Batch Normalization
     parser.add_argument('--syncbn', action='store_true', default= False,
                         help='using Synchronized Cross-GPU BatchNorm')
@@ -100,10 +106,12 @@ class Trainer(object):
             transforms.Normalize([.485, .456, .406], [.229, .224, .225]),
         ])
         # dataset and dataloader
+        data_kwargs = {'transform': input_transform, 'base_size': args.base_size,
+                       'crop_size': args.crop_size}
         trainset = get_segmentation_dataset(
-            args.dataset, split='train', transform=input_transform)
+            args.dataset, split='trainval', mode='train', **data_kwargs)
         valset = get_segmentation_dataset(
-            args.dataset, split='val', transform=input_transform)
+            args.dataset, split='val', mode='val', **data_kwargs)
         self.train_data = gluon.data.DataLoader(
             trainset, args.batch_size, shuffle=True, last_batch='rollover',
             num_workers=args.workers)
@@ -112,7 +120,8 @@ class Trainer(object):
         # create network
         model = get_segmentation_model(model=args.model, dataset=args.dataset,
                                        backbone=args.backbone, norm_layer=args.norm_layer,
-                                       norm_kwargs=args.norm_kwargs, aux=args.aux)
+                                       norm_kwargs=args.norm_kwargs, aux=args.aux,
+                                       crop_size=args.crop_size)
         model.cast(args.dtype)
         print(model)
         self.net = DataParallelModel(model, args.ctx, args.syncbn)
@@ -201,4 +210,5 @@ if __name__ == "__main__":
         print('Total Epoches:', args.epochs)
         for epoch in range(args.start_epoch, args.epochs):
             trainer.training(epoch)
-            trainer.validation(epoch)
+            if not trainer.args.no_val:
+                trainer.validation(epoch)
