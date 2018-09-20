@@ -190,7 +190,7 @@ def save_checkpoint(net, args, is_best=False):
         os.makedirs(directory)
     filename='checkpoint.params'
     filename = directory + filename
-    net.save_params(filename)
+    net.save_parameters(filename)
     if is_best:
         shutil.copyfile(filename, directory + 'model_best.params')
 
