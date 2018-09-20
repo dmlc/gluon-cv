@@ -35,8 +35,8 @@ class SegBaseModel(HybridBlock):
         for Synchronized Cross-GPU BachNormalization).
     """
     # pylint : disable=arguments-differ
-    def __init__(self, nclass, aux, backbone='resnet50', height=480, width=480,
-                 pretrained_base=True, **kwargs):
+    def __init__(self, nclass, aux, backbone='resnet50', height=None, width=None,
+                 base_size=520, crop_size=480, pretrained_base=True, **kwargs):
         super(SegBaseModel, self).__init__()
         self.aux = aux
         self.nclass = nclass
@@ -57,7 +57,11 @@ class SegBaseModel(HybridBlock):
             self.layer2 = pretrained.layer2
             self.layer3 = pretrained.layer3
             self.layer4 = pretrained.layer4
+        height = height if height is not None else crop_size
+        width = width if width is not None else crop_size
         self._up_kwargs = {'height': height, 'width': width}
+        self.base_size = base_size
+        self.crop_size = crop_size
 
     def base_forward(self, x):
         """forwarding pre-trained network"""
@@ -99,13 +103,12 @@ class SegEvalModel(object):
 
 class MultiEvalModel(object):
     """Multi-size Segmentation Eavluator"""
-    def __init__(self, module, nclass, ctx_list,
-                 base_size=520, crop_size=480, flip=True,
+    def __init__(self, module, nclass, ctx_list, flip=True,
                  scales=[0.5, 0.75, 1.0, 1.25, 1.5, 1.75]):
         self.flip = flip
         self.ctx_list = ctx_list
-        self.base_size = base_size
-        self.crop_size = crop_size
+        self.base_size = module.ase_size
+        self.crop_size = module.crop_size
         self.nclass = nclass
         self.scales = scales
         module.collect_params().reset_ctx(ctx=ctx_list)
