@@ -4,16 +4,17 @@
 # Copyright (c) 2017
 ###########################################################################
 
+"""Cityscapes Dataloader"""
 import os
-import sys
 import numpy as np
-from tqdm import tqdm, trange
-from PIL import Image, ImageOps, ImageFilter
+from PIL import Image
 
 import mxnet as mx
 from .segbase import SegmentationDataset
 
 class CitySegmentation(SegmentationDataset):
+    """Cityscapes Dataloader"""
+    # pylint: disable=abstract-method
     BASE_DIR = 'cityscapes'
     NUM_CLASS = 19
     def __init__(self, root=os.path.expanduser('~/.mxnet/datasets/citys'), split='train',
@@ -21,7 +22,7 @@ class CitySegmentation(SegmentationDataset):
         super(CitySegmentation, self).__init__(
             root, split, mode, transform, **kwargs)
         #self.root = os.path.join(root, self.BASE_DIR)
-        self.images, self.mask_paths = get_city_pairs(self.root, self.split)
+        self.images, self.mask_paths = _get_city_pairs(self.root, self.split)
         assert (len(self.images) == len(self.mask_paths))
         if len(self.images) == 0:
             raise RuntimeError("Found 0 images in subfolders of: \
@@ -29,7 +30,7 @@ class CitySegmentation(SegmentationDataset):
         self.valid_classes = [7, 8, 11, 12, 13, 17, 19, 20, 21, 22,
                               23, 24, 25, 26, 27, 28, 31, 32, 33]
         self._key = np.array([-1, -1, -1, -1, -1, -1,
-                              -1, -1, 0, 1, -1, -1, 
+                              -1, -1, 0, 1, -1, -1,
                               2, 3, 4, -1, -1, -1,
                               5, -1, 6, 7, 8, 9,
                               10, 11, 12, 13, 14, 15,
@@ -39,8 +40,8 @@ class CitySegmentation(SegmentationDataset):
     def _class_to_index(self, mask):
         # assert the values
         values = np.unique(mask)
-        for i in range(len(values)):
-            assert(values[i] in self._mapping)
+        for value in values:
+            assert(value in self._mapping)
         index = np.digitize(mask.ravel(), self._mapping, right=True)
         return self._key[index].reshape(mask.shape)
 
@@ -76,16 +77,16 @@ class CitySegmentation(SegmentationDataset):
     def pred_offset(self):
         return 0
 
-def get_city_pairs(folder, split='train'):
+def _get_city_pairs(folder, split='train'):
     def get_path_pairs(img_folder, mask_folder):
-        img_paths = []  
-        mask_paths = []  
+        img_paths = []
+        mask_paths = []
         for root, directories, files in os.walk(img_folder):
             for filename in files:
                 if filename.endswith(".png"):
                     imgpath = os.path.join(root, filename)
                     foldername = os.path.basename(os.path.dirname(imgpath))
-                    maskname = filename.replace('leftImg8bit','gtFine_labelIds')
+                    maskname = filename.replace('leftImg8bit', 'gtFine_labelIds')
                     maskpath = os.path.join(mask_folder, foldername, maskname)
                     if os.path.isfile(imgpath) and os.path.isfile(maskpath):
                         img_paths.append(imgpath)
