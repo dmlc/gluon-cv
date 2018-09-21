@@ -22,6 +22,8 @@ parser.add_argument('-j', '--num-data-workers', dest='num_workers', default=4, t
                     help='number of preprocessing workers')
 parser.add_argument('--model', type=str, required=True,
                     help='type of model to use. see vision_model for options.')
+parser.add_argument('--input-size', type=int, default=224,
+                    help='input shape of the image, default is 224.')
 parser.add_argument('--params-file', type=str,
                     help='local parameter file to load, instead of pre-trained weight.')
 parser.add_argument('--dtype', type=str,
@@ -38,6 +40,7 @@ batch_size *= num_gpus
 ctx = [mx.gpu(i) for i in range(num_gpus)] if num_gpus > 0 else [mx.cpu()]
 num_workers = opt.num_workers
 
+input_size = opt.input_size
 model_name = opt.model
 pretrained = True if not opt.params_file else False
 
@@ -56,12 +59,19 @@ acc_top5 = mx.metric.TopKAccuracy(5)
 
 normalize = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 
-transform_test = transforms.Compose([
-    transforms.Resize(256, keep_ratio=True),
-    transforms.CenterCrop(224),
-    transforms.ToTensor(),
-    normalize
-])
+if 'inceptionv3' in model_name:
+    transform_test = transforms.Compose([
+        transforms.CenterCrop(299),
+        transforms.ToTensor(),
+        normalize
+    ])
+else:
+    transform_test = transforms.Compose([
+        transforms.Resize(256, keep_ratio=True),
+        transforms.CenterCrop(224),
+        transforms.ToTensor(),
+        normalize
+    ])
 
 def test(ctx, val_data, mode='image'):
     acc_top1.reset()
@@ -97,6 +107,9 @@ if not opt.rec_dir:
 else:
     imgrec = os.path.join(opt.rec_dir, 'val.rec')
     imgidx = os.path.join(opt.rec_dir, 'val.idx')
+    if ('inceptionv3' in model_name) and input_size!=299:
+        print('The input shape of inceptionv3 should be 299')
+        input_size = 299
     val_data = mx.io.ImageRecordIter(
         path_imgrec         = imgrec,
         path_imgidx         = imgidx,
@@ -104,7 +117,7 @@ else:
         batch_size          = batch_size,
 
         resize              = 256,
-        data_shape          = (3, 224, 224),
+        data_shape          = (3, input_size, input_size),
         mean_r              = 123.68,
         mean_g              = 116.779,
         mean_b              = 103.939,
@@ -123,7 +136,7 @@ params_count = 0
 kwargs2 = {'ctx': mx.cpu(), 'pretrained': False, 'classes': classes}
 net2 = get_model(model_name, **kwargs2)
 net2.initialize()
-p = net2(mx.nd.zeros((1, 3, 224, 224)))
+p = net2(mx.nd.zeros((1, 3, input_size, input_size)))
 for k, v in net2.collect_params().items():
     params_count += v.data().size
 
