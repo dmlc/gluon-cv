@@ -3,6 +3,10 @@
 Classification
 ====================
 
+Summary of throughputs vs. validation accuracy of ImageNet pre-trained models:
+
+.. image:: /_static/classification_throughputs.png
+
 The following table lists pre-trained models on ImageNet. We will keep
 adding new models and training scripts to the table.
 

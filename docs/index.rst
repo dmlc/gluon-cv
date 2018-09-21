@@ -13,6 +13,27 @@ GluonCV features:
 
 4. community support.
 
+Supported Applications
+----------------------
+
+.. image:: /_static/image-classification.png
+  :height: 300px
+  :target: model_zoo/classification.html
+
+.. image:: /_static/object-detection.png
+  :height: 300px
+  :align: right
+  :target: model_zoo/detection.html
+
+.. image:: /_static/semantic-segmentation.png
+  :height: 250px
+  :target: model_zoo/segmentation.html#semantic-segmentation
+
+.. image:: /_static/instance-segmentation.png
+  :height: 250px
+  :align: right
+  :target: model_zoo/segmentation.html#instance-segmentation
+
 GluonCV tutorials assume users have basic knowledges about deep learning and
 computer vision.
 Otherwise, please refer to our introductory deep learning course
@@ -74,6 +95,11 @@ A Quick Example
 :ref:`Object Detection Demo <sphx_glr_build_examples_detection_demo_ssd.py>`
 
 
+.. toctree::
+   :maxdepth: 2
+   :caption: Model Zoo
+
+   model_zoo/index
 
 .. toctree::
    :maxdepth: 2
@@ -85,13 +111,6 @@ A Quick Example
    build/examples_segmentation/index
    build/examples_datasets/index
    build/examples_deployment/index
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Model Zoo
-
-   model_zoo/index
-
 
 .. toctree::
    :maxdepth: 1
