@@ -3,12 +3,13 @@
 Detection
 ================
 
-Summary of throughputs vs. validation mAP of COCO pre-trained models:
+Summary of throughputs vs. validation mAP of COCO pre-trained models (hover mouse on circles to reveal details):
 
-.. image:: /_static/detection_throughputs.png
+.. include:: /_static/detection_throughputs.html
+
 
 The following tables list pre-trained models for object detection
-and their performances.
+and their performances with more details.
 
 .. hint::
 
