@@ -13,7 +13,9 @@ from mxnet.gluon.data.vision import transforms
 from mxnet import autograd
 
 from networks import resnet18, resnet34, resnet50
-from process import ImageTxtDataset, Pad, RandomCrop, RandomErasing, LabelList
+from gluoncv.data.market1501.data_read import ImageTxtDataset
+from gluoncv.data.market1501.label_read import LabelList
+from gluoncv.data.transforms.block import RandomCrop
 
 
 # CLI
@@ -26,12 +28,18 @@ parser.add_argument('--batch-size', type=int, default=32,
                     help='training batch size per device (CPU/GPU).')
 parser.add_argument('--num-workers', type=int, default=8,
                     help='the number of workers for data loader')
+parser.add_argument('--dataset-root', type=str, default="~/.mxnet/datasets",
+                    help='the number of workers for data loader')
+parser.add_argument('--dataset', type=str, default="market1501",
+                    help='the number of workers for data loader')
 parser.add_argument('--num-gpus', type=int, default=1,
                     help='number of gpus to use.')
 parser.add_argument('--warmup', type=bool, default=True,
                     help='number of training epochs.')
 parser.add_argument('--epochs', type=str, default="5,25,50,75")
-parser.add_argument('--ratio', type=float, default=1)
+parser.add_argument('--ratio', type=float, default=1.,
+                    help="ratio of training set to all set")
+parser.add_argument('--pad', type=int, default=10)
 parser.add_argument('--lr', type=float, default=3.5e-4,
                     help='learning rate. default is 0.1.')
 parser.add_argument('-momentum', type=float, default=0.9,
@@ -44,18 +52,15 @@ parser.add_argument('--lr-decay', type=int, default=0.1)
 parser.add_argument('--hybridize', type=bool, default=True)
 
 
-
 def get_data_iters(batch_size):
-    train_set, val_set = LabelList(ratio=opt.ratio, name="market1501")
+    train_set, val_set = LabelList(ratio=opt.ratio, root=opt.dataset_root, name=opt.dataset)
 
     normalizer = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
     transform_train = transforms.Compose([
         transforms.Resize(size=(opt.img_width, opt.img_height), interpolation=1),
-        # RandomErasing(),
         transforms.RandomFlipLeftRight(),
-        Pad(10),
-        RandomCrop(size=(opt.img_width, opt.img_height)),
+        RandomCrop(size=(opt.img_width, opt.img_height), pad=opt.pad),
         transforms.ToTensor(),
         normalizer])
 
@@ -98,7 +103,6 @@ def main(net, batch_size, epochs, opt, ctx):
     if opt.hybridize:
         net.hybridize()
 
-    # trainer = gluon.Trainer(net.collect_params(), 'sgd', {'learning_rate': opt.lr, 'wd': opt.wd, 'momentum': opt.momentum})
     trainer = gluon.Trainer(net.collect_params(), 'adam', {'learning_rate': opt.lr, 'wd': opt.wd})
     criterion = gluon.loss.SoftmaxCrossEntropyLoss()
 
@@ -123,13 +127,11 @@ def main(net, batch_size, epochs, opt, ctx):
             with autograd.record():
                 outpus = [net(X) for X in data_list]
                 losses = [criterion(X, y) for X, y in zip(outpus, label_list)]
-            # accuray = [nd.mean(X.argmax(axis=1)==y.astype('float32')).asscalar() for X, y in zip(outpus, label_list)]
 
             for l in losses:
                 l.backward()
             trainer.step(batch_size)
             _loss_list = [l.mean().asscalar() for l in losses]
-            # print(_loss_list, accuray)
             _loss += sum(_loss_list) / len(_loss_list)
 
         cur_time = datetime.datetime.now()

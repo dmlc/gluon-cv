@@ -3,7 +3,6 @@
 
 from __future__ import print_function, division
 import json, os
-from os.path import join
 from os import path as osp
 from zipfile import ZipFile
 from gluoncv.utils import download
@@ -38,9 +37,12 @@ def make_list(exdir):
 
 def main():
     name = "Market-1501-v15.09.15"
-    url = "http://188.138.127.15:81/Datasets/"+name+".zip"
-    fpath = join('./', name+'.zip')
-    exdir = osp.join('./', name)
+    url = "http://apache-mxnet.s3-accelerate.dualstack.amazonaws.com/gluon/dataset/"+name+".zip"
+    root = osp.expanduser("~/.mxnet/datasets")
+    if not os.path.exists(root):
+        os.mkdir(root)
+    fpath = osp.join(root, name+'.zip')
+    exdir = osp.join(root, name)
 
     if os.path.exists(fpath):
         if not osp.isdir(exdir):
