@@ -26,6 +26,10 @@ class ResNet(HybridBlock):
             for n in network:
                 self.base.add(n)
 
+<<<<<<< HEAD
+=======
+            # self.maxpool = nn.GlobalMaxPool2D()
+>>>>>>> 1603f84f26bb05dfec04202d5a298c0a84e9392b
             self.avgpool = nn.GlobalAvgPool2D()
             self.flatten = nn.Flatten()
             self.bn = nn.BatchNorm(center=False, scale=True)

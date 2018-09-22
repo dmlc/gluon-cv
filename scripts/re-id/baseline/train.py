@@ -18,6 +18,7 @@ from gluoncv.data.market1501.label_read import LabelList
 from gluoncv.data.transforms.block import RandomCrop
 
 
+
 # CLI
 parser = argparse.ArgumentParser(description='Train a model for image classification.')
 parser.add_argument('--img-height', type=int, default=384,
@@ -32,6 +33,7 @@ parser.add_argument('--dataset-root', type=str, default="~/.mxnet/datasets",
                     help='the number of workers for data loader')
 parser.add_argument('--dataset', type=str, default="market1501",
                     help='the number of workers for data loader')
+
 parser.add_argument('--num-gpus', type=int, default=1,
                     help='number of gpus to use.')
 parser.add_argument('--warmup', type=bool, default=True,
@@ -40,6 +42,7 @@ parser.add_argument('--epochs', type=str, default="5,25,50,75")
 parser.add_argument('--ratio', type=float, default=1.,
                     help="ratio of training set to all set")
 parser.add_argument('--pad', type=int, default=10)
+
 parser.add_argument('--lr', type=float, default=3.5e-4,
                     help='learning rate. default is 0.1.')
 parser.add_argument('-momentum', type=float, default=0.9,

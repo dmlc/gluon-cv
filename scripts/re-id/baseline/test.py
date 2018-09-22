@@ -15,7 +15,32 @@ import scipy.io as sio
 from os import path as osp
 
 
+<<<<<<< HEAD
 def compute(index, good_index, junk_index):
+=======
+# Evaluate
+def evaluate(qf,ql,qc,gf,gl,gc):
+    query = qf
+    score = np.dot(gf,query)
+    # predict index
+    index = np.argsort(score)  #from small to large
+    index = index[::-1]
+    #index = index[0:2000]
+    # good index
+    query_index = np.argwhere(gl==ql)
+    camera_index = np.argwhere(gc==qc)
+
+    good_index = np.setdiff1d(query_index, camera_index, assume_unique=True)
+    junk_index1 = np.argwhere(gl==-1)
+    junk_index2 = np.intersect1d(query_index, camera_index)
+    junk_index = np.append(junk_index2, junk_index1) #.flatten())
+    
+    CMC_tmp = compute_mAP(index, good_index, junk_index)
+    return CMC_tmp
+
+
+def compute_mAP(index, good_index, junk_index):
+>>>>>>> 1603f84f26bb05dfec04202d5a298c0a84e9392b
     ap = 0
     cmc = np.zeros(len(index))
     if good_index.size==0:   # if empty
