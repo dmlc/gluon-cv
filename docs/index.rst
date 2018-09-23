@@ -17,21 +17,19 @@ Supported Applications
 ----------------------
 
 .. image:: /_static/image-classification.png
-  :height: 200px
+  :height: 160px
   :target: model_zoo/classification.html
 
 .. image:: /_static/object-detection.png
-  :height: 200px
-  :align: right
+  :height: 160px
   :target: model_zoo/detection.html
 
 .. image:: /_static/semantic-segmentation.png
-  :height: 200px
+  :height: 160px
   :target: model_zoo/segmentation.html#semantic-segmentation
 
 .. image:: /_static/instance-segmentation.png
-  :height: 200px
-  :align: right
+  :height: 160px
   :target: model_zoo/segmentation.html#instance-segmentation
 
 GluonCV tutorials assume users have basic knowledges about deep learning and
