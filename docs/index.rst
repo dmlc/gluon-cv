@@ -17,20 +17,20 @@ Supported Applications
 ----------------------
 
 .. image:: /_static/image-classification.png
-  :height: 300px
+  :height: 200px
   :target: model_zoo/classification.html
 
 .. image:: /_static/object-detection.png
-  :height: 300px
+  :height: 200px
   :align: right
   :target: model_zoo/detection.html
 
 .. image:: /_static/semantic-segmentation.png
-  :height: 250px
+  :height: 200px
   :target: model_zoo/segmentation.html#semantic-segmentation
 
 .. image:: /_static/instance-segmentation.png
-  :height: 250px
+  :height: 200px
   :align: right
   :target: model_zoo/segmentation.html#instance-segmentation
 
