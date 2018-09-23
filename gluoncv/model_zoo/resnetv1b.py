@@ -197,7 +197,7 @@ class ResNetV1b(HybridBlock):
             with downsample.name_scope():
                 if avg_down:
                     if dilation == 1:
-                        downsample.add(nn.AvgPool2D(pool_size=strides, strides=strides))
+                        downsample.add(nn.AvgPool2D(pool_size=strides, strides=strides, ceil_mode=True))
                     else:
                         downsample.add(nn.AvgPool2D(pool_size=1, strides=1))
                     downsample.add(nn.Conv2D(channels=planes * block.expansion, kernel_size=1,
