@@ -28,7 +28,7 @@ class RCNNTargetSampler(gluon.HybridBlock):
         necessarily very precise. However, using a very big number may impact the training speed.
 
     """
-    def __init__(self, num_image, num_proposal, num_sample, pos_iou_thresh, pos_ratio):
+    def __init__(self, num_image, num_proposal, num_sample, pos_iou_thresh, pos_ratio, max_num_gt):
         super(RCNNTargetSampler, self).__init__()
         self._num_image = num_image
         self._num_proposal = num_proposal
