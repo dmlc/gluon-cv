@@ -77,12 +77,18 @@ parser.add_argument('--no-wd', action='store_true',
                     help='whether to remove weight decay on bias, and beta/gamma for batchnorm layers.')
 parser.add_argument('--batch-norm', action='store_true',
                     help='enable batch normalization or not in vgg. default is false.')
-parser.add_argument('--log-interval', type=int, default=50,
-                    help='Number of batches to wait before logging.')
 parser.add_argument('--save-frequency', type=int, default=10,
                     help='frequency of model saving.')
 parser.add_argument('--save-dir', type=str, default='params',
                     help='directory of saved models')
+parser.add_argument('--resume-epoch', type=int, default=0,
+                    help='epoch to resume training from.')
+parser.add_argument('--resume-params', type=str, default='',
+                    help='path of parameters to load from.')
+parser.add_argument('--resume-states', type=str, default='',
+                    help='path of trainer state to load from.')
+parser.add_argument('--log-interval', type=int, default=50,
+                    help='Number of batches to wait before logging.')
 parser.add_argument('--logging-file', type=str, default='train_imagenet.log',
                     help='name of training log file')
 opt = parser.parse_args()
@@ -137,6 +143,8 @@ if opt.dtype != 'float32':
 
 net = get_model(model_name, **kwargs)
 net.cast(opt.dtype)
+if opt.resume_params is not '':
+    net.load_parameters(opt.resume_params, ctx = context)
 
 # Two functions for reading data from record file or raw images
 def get_data_rec(rec_train, rec_train_idx, rec_val, rec_val_idx, batch_size, num_workers):
@@ -293,13 +301,16 @@ def test(ctx, val_data):
 def train(ctx):
     if isinstance(ctx, mx.Context):
         ctx = [ctx]
-    net.initialize(mx.init.MSRAPrelu(), ctx=ctx)
+    if opt.resume_params is '':
+        net.initialize(mx.init.MSRAPrelu(), ctx=ctx)
 
     if opt.no_wd:
         for k, v in net.collect_params('.*beta|.*gamma|.*bias').items():
             v.wd_mult = 0.0
 
     trainer = gluon.Trainer(net.collect_params(), optimizer, optimizer_params)
+    if opt.resume_states is not '':
+        trainer.load_states(opt.resume_states)
 
     if opt.label_smoothing or opt.mixup:
         L = gluon.loss.SoftmaxCrossEntropyLoss(sparse_label=False)
@@ -308,7 +319,7 @@ def train(ctx):
 
     best_val_score = 1
 
-    for epoch in range(opt.num_epochs):
+    for epoch in range(opt.resume_epoch, opt.num_epochs):
         tic = time.time()
         if opt.use_rec:
             train_data.reset()
@@ -368,15 +379,18 @@ def train(ctx):
         logger.info('[Epoch %d] speed: %d samples/sec\ttime cost: %f'%(epoch, throughput, time.time()-tic))
         logger.info('[Epoch %d] validation: err-top1=%f err-top5=%f'%(epoch, err_top1_val, err_top5_val))
 
-        if err_top1_val < best_val_score and epoch > 50:
+        if err_top1_val < best_val_score:
             best_val_score = err_top1_val
             net.save_parameters('%s/%.4f-imagenet-%s-%d-best.params'%(save_dir, best_val_score, model_name, epoch))
+            trainer.save_states('%s/%.4f-imagenet-%s-%d-best.states'%(save_dir, best_val_score, model_name, epoch))
 
         if save_frequency and save_dir and (epoch + 1) % save_frequency == 0:
             net.save_parameters('%s/imagenet-%s-%d.params'%(save_dir, model_name, epoch))
+            net.save_states('%s/imagenet-%s-%d.states'%(save_dir, model_name, epoch))
 
     if save_frequency and save_dir:
         net.save_parameters('%s/imagenet-%s-%d.params'%(save_dir, model_name, opt.num_epochs-1))
+        trainer.save_states('%s/imagenet-%s-%d.states'%(save_dir, model_name, opt.num_epochs-1))
 
 def main():
     if opt.mode == 'hybrid':
