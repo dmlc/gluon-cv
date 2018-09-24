@@ -23,7 +23,7 @@ class RCNNTargetSampler(gluon.HybridBlock):
     pos_ratio : float
         ``pos_ratio`` defines how many positive samples (``pos_ratio * num_sample``) is
         to be sampled.
-    max_num_gt : int, default is 300
+    max_num_gt : int
         Maximum ground-truth number in whole training dataset. This is only an upper bound, not
         necessarily very precise. However, using a very big number may impact the training speed.
 
