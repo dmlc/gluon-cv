@@ -806,6 +806,6 @@ def ssd_512_mobilenet1_0_custom(classes, pretrained_base=True, transfer=None, **
                       pretrained_base=pretrained_base, **kwargs)
     else:
         from ...model_zoo import get_model
-        net = get_model('ssd_512_mobilenet1_0_' + str(transfer), pretrained=True, **kwargs)
+        net = get_model('ssd_512_mobilenet1.0_' + str(transfer), pretrained=True, **kwargs)
         net.reset_class(classes)
     return net
