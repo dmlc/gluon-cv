@@ -15,7 +15,7 @@ bash ./datasets/download_cyclegan_dataset.sh maps
 
 **Run The Model**
 ```bash
-python Cyclegan.py
+python Cyclegan.py --num_epoch 50 --lr 0.00001
 ```
 
 **Visualize The Data**
