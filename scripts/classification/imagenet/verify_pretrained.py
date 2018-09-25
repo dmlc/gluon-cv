@@ -1,6 +1,7 @@
 import argparse, os
 
 import mxnet as mx
+import math
 from mxnet import gluon, nd, image
 from mxnet.gluon.nn import Block, HybridBlock
 from mxnet.gluon.data.vision import transforms
@@ -24,6 +25,8 @@ parser.add_argument('--model', type=str, required=True,
                     help='type of model to use. see vision_model for options.')
 parser.add_argument('--input-size', type=int, default=224,
                     help='input shape of the image, default is 224.')
+parser.add_argument('--crop-ratio', type=float, default=0.875,
+                    help='The ratio for crop and input size, for validaton dataset only')
 parser.add_argument('--params-file', type=str,
                     help='local parameter file to load, instead of pre-trained weight.')
 parser.add_argument('--dtype', type=str,
@@ -36,7 +39,8 @@ batch_size = opt.batch_size
 classes = 1000
 
 num_gpus = opt.num_gpus
-batch_size *= num_gpus
+if num_gpus > 0:
+    batch_size *= num_gpus
 ctx = [mx.gpu(i) for i in range(num_gpus)] if num_gpus > 0 else [mx.cpu()]
 num_workers = opt.num_workers
 
@@ -60,23 +64,26 @@ acc_top5 = mx.metric.TopKAccuracy(5)
 normalize = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 
 """
-Aligning with TF implemenation, the crop-input ratio is 0.875
-Set the crop 342 for input size 299 accordingly. 
+Especially for inceptionv3, the input size has to be 299
+Set the inputsize to 299 even user set a different value
 """
-if 'inceptionv3' in model_name:
-    transform_test = transforms.Compose([
-        transforms.Resize(342, keep_ratio=True),
-        transforms.CenterCrop(input_size),
-        transforms.ToTensor(),
-        normalize
-    ])
-else:
-    transform_test = transforms.Compose([
-        transforms.Resize(256, keep_ratio=True),
-        transforms.CenterCrop(input_size),
-        transforms.ToTensor(),
-        normalize
-    ])
+if ('inceptionv3' in model_name) and input_size!=299:
+    input_size = 299
+    print('The input shape of inceptionv3 should be 299.')
+
+"""
+Aligning with TF implemenation, the default crop-input
+ratio set as 0.875; Set the crop as ceil(input-size/ratio)
+"""
+crop_ratio = opt.crop_ratio if opt.crop_ratio > 0 else 0.875
+resize = math.ceil(input_size/crop_ratio)
+
+transform_test = transforms.Compose([
+    transforms.Resize(resize, keep_ratio=True),
+    transforms.CenterCrop(input_size),
+    transforms.ToTensor(),
+    normalize
+])
 
 def test(ctx, val_data, mode='image'):
     acc_top1.reset()
@@ -112,15 +119,6 @@ if not opt.rec_dir:
 else:
     imgrec = os.path.join(opt.rec_dir, 'val.rec')
     imgidx = os.path.join(opt.rec_dir, 'val.idx')
-    resize = 256
-    if ('inceptionv3' in model_name) and input_size!=299:
-        print('The input shape of inceptionv3 should be 299')
-        input_size = 299
-        """
-        Aligning with TF implemenation, the crop-input ratio is 0.875
-        Set the crop 342 for input size 299 accordingly.
-        """
-        resize = 342
     val_data = mx.io.ImageRecordIter(
         path_imgrec         = imgrec,
         path_imgidx         = imgidx,
