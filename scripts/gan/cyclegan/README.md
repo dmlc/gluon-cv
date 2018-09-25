@@ -11,9 +11,11 @@ bash ./datasets/download_cyclegan_dataset.sh maps
 python Cyclegan.py
 ```
 
-**Generate fake samples after 400000 epoch**
+**Visualize The Data**
 
-![gensample](9_A.jpg "fake samples in 400000 epoch")
+![sampleA](9_A.jpg "The Input A")
+
+![sampleB](9_B.jpg "The Input B")
 
 
 ## References
