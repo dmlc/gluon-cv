@@ -59,9 +59,13 @@ acc_top5 = mx.metric.TopKAccuracy(5)
 
 normalize = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 
+"""
+Aligning with TF implemenation, the crop-input ratio is 0.875
+Set the crop 342 for input size 299 accordingly. 
+"""
 if 'inceptionv3' in model_name:
     transform_test = transforms.Compose([
-        transforms.Resize(320, keep_ratio=True),
+        transforms.Resize(342, keep_ratio=True),
         transforms.CenterCrop(input_size),
         transforms.ToTensor(),
         normalize
@@ -108,16 +112,22 @@ if not opt.rec_dir:
 else:
     imgrec = os.path.join(opt.rec_dir, 'val.rec')
     imgidx = os.path.join(opt.rec_dir, 'val.idx')
+    resize = 256
     if ('inceptionv3' in model_name) and input_size!=299:
         print('The input shape of inceptionv3 should be 299')
         input_size = 299
+        """
+        Aligning with TF implemenation, the crop-input ratio is 0.875
+        Set the crop 342 for input size 299 accordingly.
+        """
+        resize = 342
     val_data = mx.io.ImageRecordIter(
         path_imgrec         = imgrec,
         path_imgidx         = imgidx,
         preprocess_threads  = 30,
         batch_size          = batch_size,
 
-        resize              = 256,
+        resize              = resize,
         data_shape          = (3, input_size, input_size),
         mean_r              = 123.68,
         mean_g              = 116.779,
