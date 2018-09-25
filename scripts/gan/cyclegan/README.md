@@ -10,7 +10,8 @@
 
 **Download  Dataset**
 ```bash
-bash ./datasets/download_cyclegan_dataset.sh maps
+cd ./datasets
+python extract_data.py
 ```
 
 **Run The Model**
