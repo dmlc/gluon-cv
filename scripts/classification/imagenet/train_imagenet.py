@@ -386,7 +386,7 @@ def train(ctx):
 
         if save_frequency and save_dir and (epoch + 1) % save_frequency == 0:
             net.save_parameters('%s/imagenet-%s-%d.params'%(save_dir, model_name, epoch))
-            net.save_states('%s/imagenet-%s-%d.states'%(save_dir, model_name, epoch))
+            trainer.save_states('%s/imagenet-%s-%d.states'%(save_dir, model_name, epoch))
 
     if save_frequency and save_dir:
         net.save_parameters('%s/imagenet-%s-%d.params'%(save_dir, model_name, opt.num_epochs-1))
