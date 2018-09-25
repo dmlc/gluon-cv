@@ -107,7 +107,7 @@ class MultiEvalModel(object):
                  scales=[0.5, 0.75, 1.0, 1.25, 1.5, 1.75]):
         self.flip = flip
         self.ctx_list = ctx_list
-        self.base_size = module.ase_size
+        self.base_size = module.base_size
         self.crop_size = module.crop_size
         self.nclass = nclass
         self.scales = scales
