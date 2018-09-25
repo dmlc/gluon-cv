@@ -25,7 +25,7 @@ from sphinx_gallery.sorting import ExampleTitleSortKey
 
 # -- Project information -----------------------------------------------------
 
-project = 'GluonCV'
+project = 'gluoncv'
 copyright = '2018, MXNet Developers'
 author = 'MXNet Developers'
 
@@ -63,13 +63,15 @@ sphinx_gallery_conf = {
                       'tutorials/classification',
                       'tutorials/detection',
                       'tutorials/instance',
-                      'tutorials/segmentation',],
+                      'tutorials/segmentation',
+                      'tutorials/deployment',],
     # path where to save gallery generated examples
     'gallery_dirs': ['build/examples_datasets',
                      'build/examples_classification',
                      'build/examples_detection',
                      'build/examples_instance',
-                     'build/examples_segmentation',],
+                     'build/examples_segmentation',
+                     'build/examples_deployment',],
 
     'filename_pattern': '.py',
     'ignore_pattern': 'im2rec.py',

@@ -12,7 +12,8 @@ __all__ = ['ResNetV1b', 'resnet18_v1b', 'resnet34_v1b',
            'resnet152_v1b', 'BasicBlockV1b', 'BottleneckV1b',
            'resnet50_v1c', 'resnet101_v1c', 'resnet152_v1c',
            'resnet50_v1d', 'resnet101_v1d', 'resnet152_v1d',
-           'resnet50_v1e', 'resnet101_v1e', 'resnet152_v1e']
+           'resnet50_v1e', 'resnet101_v1e', 'resnet152_v1e',
+           'resnet50_v1s', 'resnet101_v1s', 'resnet152_v1s']
 
 class BasicBlockV1b(HybridBlock):
     """ResNetV1b BasicBlockV1b
@@ -195,7 +196,10 @@ class ResNetV1b(HybridBlock):
             downsample = nn.HybridSequential(prefix='down%d_'%stage_index)
             with downsample.name_scope():
                 if avg_down:
-                    downsample.add(nn.AvgPool2D(pool_size=strides, strides=strides))
+                    if dilation == 1:
+                        downsample.add(nn.AvgPool2D(pool_size=strides, strides=strides))
+                    else:
+                        downsample.add(nn.AvgPool2D(pool_size=1, strides=1))
                     downsample.add(nn.Conv2D(channels=planes * block.expansion, kernel_size=1,
                                              strides=1, use_bias=False))
                     downsample.add(norm_layer(**self.norm_kwargs))
@@ -600,5 +604,77 @@ def resnet152_v1e(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
     if pretrained:
         from .model_store import get_model_file
         model.load_params(get_model_file('resnet%d_v%dd'%(152, 1),
+                                         root=root), ctx=ctx)
+    return model
+
+
+def resnet50_v1s(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
+    """Constructs a ResNetV1s-50 model.
+
+    Parameters
+    ----------
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    dilated: bool, default False
+        Whether to apply dilation strategy to ResNetV1b, yilding a stride 8 model.
+    norm_layer : object
+        Normalization layer used in backbone network (default: :class:`mxnet.gluon.norm_layer`;
+    """
+    model = ResNetV1b(BottleneckV1b, [3, 4, 6, 3], deep_stem=True, stem_width=64, **kwargs)
+    if pretrained:
+        from .model_store import get_model_file
+        model.load_params(get_model_file('resnet%d_v%ds'%(50, 1),
+                                         root=root), ctx=ctx)
+    return model
+
+
+def resnet101_v1s(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
+    """Constructs a ResNetV1s-101 model.
+
+    Parameters
+    ----------
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    dilated: bool, default False
+        Whether to apply dilation strategy to ResNetV1b, yilding a stride 8 model.
+    norm_layer : object
+        Normalization layer used in backbone network (default: :class:`mxnet.gluon.norm_layer`;
+    """
+    model = ResNetV1b(BottleneckV1b, [3, 4, 23, 3], deep_stem=True, stem_width=64, **kwargs)
+    if pretrained:
+        from .model_store import get_model_file
+        model.load_params(get_model_file('resnet%d_v%ds'%(101, 1),
+                                         root=root), ctx=ctx)
+    return model
+
+
+def resnet152_v1s(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
+    """Constructs a ResNetV1s-152 model.
+
+    Parameters
+    ----------
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    dilated: bool, default False
+        Whether to apply dilation strategy to ResNetV1b, yilding a stride 8 model.
+    norm_layer : object
+        Normalization layer used in backbone network (default: :class:`mxnet.gluon.norm_layer`;
+    """
+    model = ResNetV1b(BottleneckV1b, [3, 8, 36, 3], deep_stem=True, stem_width=64, **kwargs)
+    if pretrained:
+        from .model_store import get_model_file
+        model.load_params(get_model_file('resnet%d_v%ds'%(152, 1),
                                          root=root), ctx=ctx)
     return model

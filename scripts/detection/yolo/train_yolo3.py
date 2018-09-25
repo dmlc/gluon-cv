@@ -262,6 +262,7 @@ if __name__ == '__main__':
         async_net = net
     if args.resume.strip():
         net.load_parameters(args.resume.strip())
+        async_net.load_parameters(args.resume.strip())
     else:
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")

@@ -7,7 +7,7 @@ from mxnet.gluon import nn
 from mxnet.gluon.data.vision import transforms
 
 from gluoncv.data import imagenet
-from gluoncv.loss import SoftmaxCrossEntropyLossWithAux
+from gluoncv.loss import MixSoftmaxCrossEntropyLoss
 from gluoncv.model_zoo import get_model
 from gluoncv.utils import makedirs, LRScheduler
 
@@ -276,9 +276,9 @@ def train(ctx):
 
     trainer = gluon.Trainer(net.collect_params(), optimizer, optimizer_params)
     if opt.label_smoothing:
-        L = SoftmaxCrossEntropyLossWithAux(sparse_label=False, aux_weight=0.4)
+        L = MixSoftmaxCrossEntropyLoss(sparse_label=False, aux_weight=0.4)
     else:
-        L = SoftmaxCrossEntropyLossWithAux(aux_weight=0.4)
+        L = MixSoftmaxCrossEntropyLoss(aux_weight=0.4)
 
     best_val_score = 1
 
