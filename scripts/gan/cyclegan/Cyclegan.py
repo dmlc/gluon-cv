@@ -8,15 +8,22 @@ from mxnet.gluon import Block
 from mxnet import autograd
 from mxnet import gluon
 import numpy as np
-from mxnet import nd
 import mxnet as mx
 import mxnet.ndarray as nd
-import itertools
 from PIL import Image
 from mxnet.gluon import nn
 import matplotlib.pyplot as plt
 import os
-ctx = mx.gpu(1)
+import argparse
+parser = argparse.ArgumentParser(description='Train the CycleGAN model')
+parser.add_argument('--usegpu', type=bool, default=True)
+parser.add_argument('--lr', type=float, default=0.00001)
+parser.add_argument('--num_epoch', type=int, default=50 )
+args = parser.parse_args()
+if not args.usegpu:
+    ctx=mx.cpu()
+else:
+    ctx=mx.gpu()
 loss = gluon.loss.L1Loss()
 
 
@@ -222,16 +229,16 @@ class CycleGANModel(Block):
     def set_optimizer(self):
         self.trainer_G_A = gluon.Trainer(
             self.netG_A.collect_params(), 'adam', {
-                'learning_rate': 0.00001, 'beta1': 0.5, 'beta2': 0.999})
+                'learning_rate': args.lr, 'beta1': 0.5, 'beta2': 0.999})
         self.trainer_G_B = gluon.Trainer(
             self.netG_B.collect_params(), 'adam', {
-                'learning_rate': 0.00001, 'beta1': 0.5, 'beta2': 0.999})
+                'learning_rate': args.lr, 'beta1': 0.5, 'beta2': 0.999})
         self.trainer_D_A = gluon.Trainer(
             self.netD_A.collect_params(), 'adam', {
-                'learning_rate': 0.00001, 'beta1': 0.5, 'beta2': 0.999})
+                'learning_rate': args.lr, 'beta1': 0.5, 'beta2': 0.999})
         self.trainer_D_B = gluon.Trainer(
             self.netD_B.collect_params(), 'adam', {
-                'learning_rate': 0.00001, 'beta1': 0.5, 'beta2': 0.999})
+                'learning_rate': args.lr,'beta1': 0.5, 'beta2': 0.999})
 
     def set_input(self, input):
         self.real_A = input[0]
@@ -316,7 +323,7 @@ for idx, batch in enumerate(train_data):
     plt.show()
     plt.close()
     break
-num_epoch = 10
+num_epoch = args.num_epoch
 net = CycleGANModel()
 net.initialize(mx.init.Xavier(), ctx=ctx)
 net.set_optimizer()
@@ -349,4 +356,5 @@ for idx, (test_A, test_B) in enumerate(test_data):
     plt.imshow(data)
     plt.show()
     plt.close()
+    break;
 
