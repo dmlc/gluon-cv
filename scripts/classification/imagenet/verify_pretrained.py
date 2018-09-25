@@ -61,6 +61,7 @@ normalize = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 
 if 'inceptionv3' in model_name:
     transform_test = transforms.Compose([
+        transforms.Resize(320, keep_ratio=True),
         transforms.CenterCrop(input_size),
         transforms.ToTensor(),
         normalize
