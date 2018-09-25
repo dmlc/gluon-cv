@@ -261,11 +261,15 @@ train_loader = DataLoader(
     batchify_fn=batchify_fn,
     last_batch='rollover',
     num_workers=num_workers)
+
+##############################################################################
+# Loss, Trainer and Training pipeline
 from gluoncv.loss import SSDMultiBoxLoss
 mbox_loss = SSDMultiBoxLoss()
 trainer = gluon.Trainer(
     net.collect_params(), 'sgd',
     {'learning_rate': 0.001, 'wd': 0.0005, 'momentum': 0.9})
+
 for ib, batch in enumerate(train_loader):
     if ib > 0:
         break
@@ -278,7 +282,7 @@ for ib, batch in enumerate(train_loader):
             cls_pred, box_pred, batch[1], batch[2])
         # some standard gluon training steps:
         # autograd.backward(sum_loss)
-        # trainer.step(batchsize)
+        # trainer.step(1)
 
 ##############################################################################
 # This time we can see the data loader is actually returning the training targets for us.
