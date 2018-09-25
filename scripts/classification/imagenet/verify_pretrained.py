@@ -1,6 +1,7 @@
 import argparse, os
 
 import mxnet as mx
+import math
 from mxnet import gluon, nd, image
 from mxnet.gluon.nn import Block, HybridBlock
 from mxnet.gluon.data.vision import transforms
@@ -22,6 +23,10 @@ parser.add_argument('-j', '--num-data-workers', dest='num_workers', default=4, t
                     help='number of preprocessing workers')
 parser.add_argument('--model', type=str, required=True,
                     help='type of model to use. see vision_model for options.')
+parser.add_argument('--input-size', type=int, default=224,
+                    help='input shape of the image, default is 224.')
+parser.add_argument('--crop-ratio', type=float, default=0.875,
+                    help='The ratio for crop and input size, for validaton dataset only')
 parser.add_argument('--params-file', type=str,
                     help='local parameter file to load, instead of pre-trained weight.')
 parser.add_argument('--dtype', type=str,
@@ -34,10 +39,12 @@ batch_size = opt.batch_size
 classes = 1000
 
 num_gpus = opt.num_gpus
-batch_size *= num_gpus
+if num_gpus > 0:
+    batch_size *= num_gpus
 ctx = [mx.gpu(i) for i in range(num_gpus)] if num_gpus > 0 else [mx.cpu()]
 num_workers = opt.num_workers
 
+input_size = opt.input_size
 model_name = opt.model
 pretrained = True if not opt.params_file else False
 
@@ -56,9 +63,16 @@ acc_top5 = mx.metric.TopKAccuracy(5)
 
 normalize = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 
+"""
+Aligning with TF implemenation, the default crop-input
+ratio set as 0.875; Set the crop as ceil(input-size/ratio)
+"""
+crop_ratio = opt.crop_ratio if opt.crop_ratio > 0 else 0.875
+resize = math.ceil(input_size/crop_ratio)
+
 transform_test = transforms.Compose([
-    transforms.Resize(256, keep_ratio=True),
-    transforms.CenterCrop(224),
+    transforms.Resize(resize, keep_ratio=True),
+    transforms.CenterCrop(input_size),
     transforms.ToTensor(),
     normalize
 ])
@@ -103,8 +117,8 @@ else:
         preprocess_threads  = 30,
         batch_size          = batch_size,
 
-        resize              = 256,
-        data_shape          = (3, 224, 224),
+        resize              = resize,
+        data_shape          = (3, input_size, input_size),
         mean_r              = 123.68,
         mean_g              = 116.779,
         mean_b              = 103.939,
@@ -123,7 +137,7 @@ params_count = 0
 kwargs2 = {'ctx': mx.cpu(), 'pretrained': False, 'classes': classes}
 net2 = get_model(model_name, **kwargs2)
 net2.initialize()
-p = net2(mx.nd.zeros((1, 3, 224, 224)))
+p = net2(mx.nd.zeros((1, 3, input_size, input_size)))
 for k, v in net2.collect_params().items():
     params_count += v.data().size
 
