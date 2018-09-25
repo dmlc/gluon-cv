@@ -1,6 +1,12 @@
 ## A Mini Implementation Of Cyclagan
 
 
+**Prerequisites**
+1. Python 3.6+
+2. Gluoncv
+3. Mxnet
+
+
 **Download  Dataset**
 ```bash
 bash ./datasets/download_cyclegan_dataset.sh maps
