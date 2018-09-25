@@ -64,14 +64,6 @@ acc_top5 = mx.metric.TopKAccuracy(5)
 normalize = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 
 """
-Especially for inceptionv3, the input size has to be 299
-Set the inputsize to 299 even user set a different value
-"""
-if ('inceptionv3' in model_name) and input_size!=299:
-    input_size = 299
-    print('The input shape of inceptionv3 should be 299.')
-
-"""
 Aligning with TF implemenation, the default crop-input
 ratio set as 0.875; Set the crop as ceil(input-size/ratio)
 """
