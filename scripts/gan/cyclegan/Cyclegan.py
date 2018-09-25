@@ -18,12 +18,12 @@ import argparse
 parser = argparse.ArgumentParser(description='Train the CycleGAN model')
 parser.add_argument('--usegpu', type=bool, default=True)
 parser.add_argument('--lr', type=float, default=0.00001)
-parser.add_argument('--num_epoch', type=int, default=50 )
+parser.add_argument('--num_epoch', type=int, default=50)
 args = parser.parse_args()
 if not args.usegpu:
-    ctx=mx.cpu()
+    ctx = mx.cpu()
 else:
-    ctx=mx.gpu()
+    ctx = mx.gpu()
 loss = gluon.loss.L1Loss()
 
 
@@ -238,7 +238,7 @@ class CycleGANModel(Block):
                 'learning_rate': args.lr, 'beta1': 0.5, 'beta2': 0.999})
         self.trainer_D_B = gluon.Trainer(
             self.netD_B.collect_params(), 'adam', {
-                'learning_rate': args.lr,'beta1': 0.5, 'beta2': 0.999})
+                'learning_rate': args.lr, 'beta1': 0.5, 'beta2': 0.999})
 
     def set_input(self, input):
         self.real_A = input[0]
@@ -356,5 +356,4 @@ for idx, (test_A, test_B) in enumerate(test_data):
     plt.imshow(data)
     plt.show()
     plt.close()
-    break;
-
+    break
