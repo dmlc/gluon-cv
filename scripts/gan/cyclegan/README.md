@@ -2,10 +2,9 @@
 
 
 **Prerequisites**
-1. Linux or OSX
-2. Python 3.6+
-3. Gluoncv
-4. Mxnet
+1. Python 3.6+
+2. Gluoncv
+3. Mxnet
 
 
 **Download  Dataset**
