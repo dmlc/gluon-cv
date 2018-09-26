@@ -76,7 +76,13 @@ The easiest way to install GluonCV is through `pip <https://pip.pypa.io/en/stabl
 
  pip install gluoncv
 
+ # if you are eager to try new features, try nightly build instead
+
+ pip install gluoncv --pre --upgrade
+
 .. hint::
+
+  Nightly build is updated daily around 12am UTC to match master progress.
 
   Optionally, you can clone the GluonCV project and install it locally
 
