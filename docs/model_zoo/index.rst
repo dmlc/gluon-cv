@@ -9,17 +9,19 @@ applications.
 Available Models
 ---------------------------
 
-Please visit pages for tasks:
+Check out different tasks that are divided into separate pages:
 
 .. toctree::
    :maxdepth: 1
    :caption: Model Zoo
 
   classification
+
   detection
+  
   segmentation
 
-GluonCV is still under development, stay tuned for more models!
+GluonCV is still under rapid development, stay tuned for more models!
 
 Model Zoo API
 -------------
