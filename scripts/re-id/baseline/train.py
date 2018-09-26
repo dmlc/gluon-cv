@@ -23,15 +23,15 @@ parser.add_argument('--img-height', type=int, default=384,
                     help='the height of image for input')
 parser.add_argument('--img-width', type=int, default=128,
                     help='the width of image for input')
-parser.add_argument('--batch-size', type=int, default=8,
+parser.add_argument('--batch-size', type=int, default=32,
                     help='training batch size per device (CPU/GPU).')
-parser.add_argument('--num-workers', type=int, default=32,
+parser.add_argument('--num-workers', type=int, default=8,
                     help='the number of workers for data loader')
 parser.add_argument('--dataset-root', type=str, default="~/.mxnet/datasets",
                     help='the number of workers for data loader')
 parser.add_argument('--dataset', type=str, default="market1501",
                     help='the number of workers for data loader')
-parser.add_argument('--num-gpus', type=int, default=4,
+parser.add_argument('--num-gpus', type=int, default=1,
                     help='number of gpus to use.')
 parser.add_argument('--warmup', type=bool, default=True,
                     help='number of training epochs.')
