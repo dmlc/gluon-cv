@@ -5,9 +5,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 
 import mxnet as mx
-import numpy
-from mxnet import gluon, image, nd
-from mxnet.gluon import nn
+from mxnet import gluon, nd
 from mxnet.gluon.model_zoo import vision as models
 from mxnet.gluon.data.vision import transforms
 from mxnet import autograd
@@ -25,16 +23,15 @@ parser.add_argument('--img-height', type=int, default=384,
                     help='the height of image for input')
 parser.add_argument('--img-width', type=int, default=128,
                     help='the width of image for input')
-parser.add_argument('--batch-size', type=int, default=32,
+parser.add_argument('--batch-size', type=int, default=8,
                     help='training batch size per device (CPU/GPU).')
-parser.add_argument('--num-workers', type=int, default=8,
+parser.add_argument('--num-workers', type=int, default=32,
                     help='the number of workers for data loader')
 parser.add_argument('--dataset-root', type=str, default="~/.mxnet/datasets",
                     help='the number of workers for data loader')
 parser.add_argument('--dataset', type=str, default="market1501",
                     help='the number of workers for data loader')
-
-parser.add_argument('--num-gpus', type=int, default=1,
+parser.add_argument('--num-gpus', type=int, default=4,
                     help='number of gpus to use.')
 parser.add_argument('--warmup', type=bool, default=True,
                     help='number of training epochs.')
@@ -42,7 +39,6 @@ parser.add_argument('--epochs', type=str, default="5,25,50,75")
 parser.add_argument('--ratio', type=float, default=1.,
                     help="ratio of training set to all set")
 parser.add_argument('--pad', type=int, default=10)
-
 parser.add_argument('--lr', type=float, default=3.5e-4,
                     help='learning rate. default is 0.1.')
 parser.add_argument('-momentum', type=float, default=0.9,
