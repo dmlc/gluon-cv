@@ -57,13 +57,26 @@ net.reset_class(classes)
 #############################################################################################
 # There is a convenient API for creating custom network with pre-trained weights.
 # This is equivalent to loading pre-trained model and call ``net.reset_class``.
+#
 net = gcv.model_zoo.get_model('ssd_512_mobilenet1.0_custom', classes=classes,
     pretrained_base=False, transfer='voc')
 
 #############################################################################################
+# By loading from fully pre-trained models, you are not only loading base network weights
+# (mobilenet for example), but also some additional blocks for object detection specifically.
+#
+# Pretrained model from detection task is more relavant and adaptive than ``pretrained_base``
+# network which is usually trained on ImageNet for image classification task.
+#
+# Therefore finetuning may converge significantly faster and better in some situations.
+
+#############################################################################################
 # Finetuning is a new round of training
 # --------------------------------------
-# Just repeat the normal training steps e.g. :download:`Download train_ssd.py<../../../scripts/detection/ssd/train_ssd.py>`
+# .. hint::
+#
+#     You will find a more detailed training implementation of SSD here:
+#     :download:`Download train_ssd.py<../../../scripts/detection/ssd/train_ssd.py>`
 def get_dataloader(net, train_dataset, data_shape, batch_size, num_workers):
     from gluoncv.data.batchify import Tuple, Stack, Pad
     from gluoncv.data.transforms.presets.ssd import SSDDefaultTrainTransform
@@ -98,12 +111,12 @@ mbox_loss = gcv.loss.SSDMultiBoxLoss()
 ce_metric = mx.metric.Loss('CrossEntropy')
 smoothl1_metric = mx.metric.Loss('SmoothL1')
 
-for epoch in range(0, 10):
+for epoch in range(0, 2):
     ce_metric.reset()
     smoothl1_metric.reset()
     tic = time.time()
     btic = time.time()
-    net.hybridize()
+    net.hybridize(static_alloc=True, static_shape=True)
     for i, batch in enumerate(train_data):
         batch_size = batch[0].shape[0]
         data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
@@ -126,8 +139,9 @@ for epoch in range(0, 10):
         smoothl1_metric.update(0, [l * batch_size for l in box_loss])
         name1, loss1 = ce_metric.get()
         name2, loss2 = smoothl1_metric.get()
-        print('[Epoch {}][Batch {}], Speed: {:.3f} samples/sec, {}={:.3f}, {}={:.3f}'.format(
-            epoch, i, batch_size/(time.time()-btic), name1, loss1, name2, loss2))
+        if i % 20 == 0:
+            print('[Epoch {}][Batch {}], Speed: {:.3f} samples/sec, {}={:.3f}, {}={:.3f}'.format(
+                epoch, i, batch_size/(time.time()-btic), name1, loss1, name2, loss2))
         btic = time.time()
 
 #############################################################################################
@@ -137,9 +151,23 @@ net.save_parameters('ssd_512_mobilenet1.0_pikachu.params')
 #############################################################################################
 # Predict with finetuned model
 # ----------------------------
+# We can test the performance using finetuned weights
 test_url = 'https://raw.githubusercontent.com/zackchase/mxnet-the-straight-dope/master/img/pikachu.jpg'
 download(test_url, 'pikachu_test.jpg')
+net = gcv.model_zoo.get_model('ssd_512_mobilenet1.0_custom', classes=classes, pretrained_base=False)
+net.load_parameters('ssd_512_mobilenet1.0_pikachu.params')
 x, image = gcv.data.transforms.presets.ssd.load_test('pikachu_test.jpg', 512)
 cid, score, bbox = net(x)
-ax = viz.plot_bbox(image, bbox, score, cid, class_names=classes)
+ax = viz.plot_bbox(image, bbox[0], score[0], cid[0], class_names=classes)
 plt.show()
+
+#############################################################################################
+# In two epochs and less than 5 min, we are able to detect pikachus perfectly!
+#
+# .. hint::
+#
+#     This finetune tutorial is not limited to SSD, you can extend it to Faster-RCNN, YOLO training by
+#     adpating a training blocks in the following examples:
+#
+#     :download:`Download train_faster_rcnn.py<../../../scripts/detection/faster_rcnn/train_faster_rcnn.py>`
+#     :download:`Download train_yolo3.py<../../../scripts/detection/yolo/train_yolo3.py>`
