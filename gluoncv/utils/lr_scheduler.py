@@ -3,106 +3,98 @@
 from __future__ import division
 
 from math import pi, cos
-from mxnet import lr_scheduler
+from mxnet import lr_scheduler.LRScheduler
+
+class Compose(lr_scheduler.LRScheduler):
+    r"""Compose Learning Rate Schedulers
+
+    Parameters
+    ----------
+
+    lr_schedulers: list
+        list of LRScheduler objects
+    """
+    def __init__(self, lr_schedulers):
+        super(Compose, self).__init__()
+        assert(len(lr_schedulers) > 0)
+
+        self.update_sep = [0]
+        self.count = 0
+        self.learning_rate = 0
+        self.lr_schedulers = []
+        for lr in lr_schedulers:
+            self.add(lr)
+
+    def add(self, lr_scheduler):
+        assert(isinstance(lr_scheduler, LRScheduler))
+
+        lr_scheduler.offset = self.count
+        self.count += lr_scheduler.niter
+        self.update_sep.append(count)
+        self.lr_schedulers.append(lr_scheduler)
+
+    def __call__(self, num_update):
+        if num_update >= self.count:
+            return self.learning_rate
+
+        ind = len(self.lr_schedulers) - 1
+        for i, sep in enumerate(self.update_sep):
+            if sep > num_update:
+                ind = i - 1
+                break
+        self.learning_rate = self.lr_schedulers[ind].__call__(num_update)
+        return self.lr_schedulers[ind].__call__(num_update)
 
 class LRScheduler(lr_scheduler.LRScheduler):
     r"""Learning Rate Scheduler
 
-    For mode='step', we multiply lr with `step_factor` at each epoch in `step`.
-
-    For mode='poly'::
-
-        lr = targetlr + (baselr - targetlr) * (1 - iter / maxiter) ^ power
-
-    For mode='cosine'::
-
-        lr = targetlr + (baselr - targetlr) * (1 + cos(pi * iter / maxiter)) / 2
-
-    If warmup_epochs > 0, a warmup stage will be inserted before the main lr scheduler.
-
-    For warmup_mode='linear'::
-
-        lr = warmup_lr + (baselr - warmup_lr) * iter / max_warmup_iter
-
-    For warmup_mode='constant'::
-
-        lr = warmup_lr
-
     Parameters
     ----------
+
     mode : str
         Modes for learning rate scheduler.
-        Currently it supports 'step', 'poly' and 'cosine'.
+        Currently it supports 'constant', 'linear', 'poly' and 'cosine'
     baselr : float
-        Base learning rate, i.e. the starting learning rate.
-    niters : int
-        Number of iterations in each epoch.
-    nepochs : int
-        Number of training epochs.
-    step : list
-        A list of epochs to decay the learning rate.
-    step_factor : float
-        Learning rate decay factor.
+        Base learning rate, i.e. the starting learning rate
     targetlr : float
-        Target learning rate for poly and cosine, as the ending learning rate.
+        Target learning rate, i.e. the ending learning rate
+    niter : int
+        Number of iterations to be scheduled
+    offset : int
+        Number of iterations before this scheduler
     power : float
-        Power of poly function.
-    warmup_epochs : int
-        Number of epochs for the warmup stage.
-    warmup_lr : float
-        The base learning rate for the warmup stage.
-    warmup_mode : str
-        Modes for the warmup stage.
-        Currently it supports 'linear' and 'constant'.
+        Power parameter of poly scheduler
     """
-    def __init__(self, mode, baselr, niters, nepochs,
-                 step=(30, 60, 90), step_factor=0.1, targetlr=0, power=0.9,
-                 warmup_epochs=0, warmup_lr=0, warmup_mode='linear'):
+    def __init__(self, mode, baselr, targetlr, niter=0, offset=0, power=2):
         super(LRScheduler, self).__init__()
-        assert(mode in ['step', 'poly', 'cosine'])
-        assert(warmup_mode in ['linear', 'constant'])
+        assert(mode in ['constant', 'linear', 'poly', 'cosine'])
 
         self.mode = mode
         self.baselr = baselr
-        self.learning_rate = self.baselr
-        self.niters = niters
-
-        self.step = step
-        self.step_factor = step_factor
         self.targetlr = targetlr
+        if self.mode == 'constant':
+            self.targetlr = self.baselr
+        self.niter = niter
+        self.offset = offset
         self.power = power
-        self.warmup_epochs = warmup_epochs
-        self.warmup_lr = warmup_lr
-        self.warmup_mode = warmup_mode
-
-        self.N = nepochs * niters
-        self.warmup_N = warmup_epochs * niters
 
     def __call__(self, num_update):
+        self.update(num_update)
         return self.learning_rate
 
-    def update(self, i, epoch):
-        T = epoch * self.niters + i
-        assert(0 <= T <= self.N)
+    def update(self, num_update):
+        N = self.niter
+        T = num_update - self.offset
 
-        if self.warmup_epochs > epoch:
-            # Warm-up Stage
-            if self.warmup_mode == 'linear':
-                self.learning_rate = self.warmup_lr + (self.baselr - self.warmup_lr) * \
-                    T / self.warmup_N
-            elif self.warmup_mode == 'constant':
-                self.learning_rate = self.warmup_lr
-            else:
-                raise NotImplementedError
+        if self.mode == 'constant':
+            factor = 0
+        elif self.mode == 'linear':
+            factor = T / N
+        elif self.mode == 'poly':
+            factor = pow(1 - T / N, self.power)
+        elif self.mode == 'cosine':
+            factor = (1 + cos(pi * T / N)) / 2
         else:
-            if self.mode == 'step':
-                count = sum([1 for s in self.step if s <= epoch])
-                self.learning_rate = self.baselr * pow(self.step_factor, count)
-            elif self.mode == 'poly':
-                self.learning_rate = self.targetlr + (self.baselr - self.targetlr) * \
-                    pow(1 - (T - self.warmup_N) / (self.N - self.warmup_N), self.power)
-            elif self.mode == 'cosine':
-                self.learning_rate = self.targetlr + (self.baselr - self.targetlr) * \
-                    (1 + cos(pi * (T - self.warmup_N) / (self.N - self.warmup_N))) / 2
-            else:
-                raise NotImplementedError
+            raise NotImplementedError
+
+        self.learning_rate = self.targetlr + (self.baselr - self.target_lr) * factor
