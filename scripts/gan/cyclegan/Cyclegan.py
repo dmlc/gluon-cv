@@ -15,11 +15,15 @@ from mxnet.gluon import nn
 import matplotlib.pyplot as plt
 import os
 import argparse
+
+
 parser = argparse.ArgumentParser(description='Train the CycleGAN model')
 parser.add_argument('--usegpu', type=bool, default=True)
 parser.add_argument('--lr', type=float, default=0.00001)
 parser.add_argument('--num_epoch', type=int, default=50)
 args = parser.parse_args()
+
+
 if not args.usegpu:
     ctx = mx.cpu()
 else:
@@ -323,16 +327,22 @@ for idx, batch in enumerate(train_data):
     plt.show()
     plt.close()
     break
+
+
 num_epoch = args.num_epoch
 net = CycleGANModel()
 net.initialize(mx.init.Xavier(), ctx=ctx)
 net.set_optimizer()
+
+
 for epoch in range(num_epoch):
     for idx, (train_A, train_B) in enumerate(train_data):
         train_A = train_A.as_in_context(ctx)
         train_B = train_B.as_in_context(ctx)
         net.set_input((train_A, train_B))
         net.optimizer_parameters()
+
+
 for idx, (test_A, test_B) in enumerate(test_data):
     test_A = test_A.as_in_context(ctx)
     fake_B = net.netG_A(test_A)
