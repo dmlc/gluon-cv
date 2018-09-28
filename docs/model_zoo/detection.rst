@@ -4,10 +4,12 @@ Detection
 ================
 
 Summary of throughputs vs. validation mAP of COCO pre-trained models (hover mouse on circles to reveal details).
-You can click on legends to show or hide per category performance comparison.
 
 .. include:: /_static/detection_throughputs.html
 
+We also provide a detailed analysis of each category, you can click on legends to show or hide each model.
+
+.. include:: /_static/detection_coco_per_class.html
 
 The following tables list pre-trained models for object detection
 and their performances with more details.
