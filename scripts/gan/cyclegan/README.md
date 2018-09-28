@@ -18,11 +18,9 @@ python extract_data.py
 python Cyclegan.py --num_epoch 50 --lr 0.00001
 ```
 
-**Visualize The Data**
+**Demo**
 
-![sampleA](9_A.jpg "The Input A")
-
-![sampleB](9_B.jpg "The Input B")
+<img src="https://junyanz.github.io/CycleGAN/images/teaser_high_res.jpg" width="800"/>
 
 
 ## References
