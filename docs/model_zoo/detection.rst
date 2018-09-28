@@ -3,7 +3,8 @@
 Detection
 ================
 
-Summary of throughputs vs. validation mAP of COCO pre-trained models (hover mouse on circles to reveal details):
+Summary of throughputs vs. validation mAP of COCO pre-trained models (hover mouse on circles to reveal details).
+You can click on legends to show or hide per category performance comparison.
 
 .. include:: /_static/detection_throughputs.html
 
