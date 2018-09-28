@@ -126,6 +126,7 @@ if opt.lr_mode == 'step':
         lr_schedulers.add(LRScheduler('constant', baselr=step_lr,
                                       niter=num_batches*interval))
         step_lr *= lr_decay
+        last_epoch = decay
 
 elif opt.lr_mode == 'cosine':
     lr_schedulers = Compose([
