@@ -34,16 +34,17 @@ class Compose(lr_scheduler.LRScheduler):
         self.schedulers.append(scheduler)
 
     def __call__(self, num_update):
-        if num_update >= self.count:
-            return self.learning_rate
+        self.update(num_update)
+        return self.learning_rate
 
-        ind = len(self.schedulers) - 1
-        for i, sep in enumerate(self.update_sep):
-            if sep > num_update:
-                ind = i - 1
-                break
-        self.learning_rate = self.schedulers[ind].__call__(num_update)
-        return self.schedulers[ind].__call__(num_update)
+    def update(self, num_update):
+        if num_update < self.count:
+            ind = len(self.schedulers) - 1
+            for i, sep in enumerate(self.update_sep):
+                if sep > num_update:
+                    ind = i - 1
+                    break
+            self.learning_rate = self.schedulers[ind].update(num_update)
 
 class LRScheduler(lr_scheduler.LRScheduler):
     r"""Learning Rate Scheduler
