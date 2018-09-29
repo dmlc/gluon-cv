@@ -12,7 +12,7 @@ class VOCSegmentation(SegmentationDataset):
     Parameters
     ----------
     root : string
-        Path to VOCdevkit folder. Default is '$(HOME)/mxnet/datasets/ade'
+        Path to VOCdevkit folder. Default is '$(HOME)/mxnet/datasets/voc'
     split: string
         'train', 'val' or 'test'
     transform : callable, optional
@@ -82,7 +82,7 @@ class VOCSegmentation(SegmentationDataset):
             img, mask = self._val_sync_transform(img, mask)
         else:
             assert self.mode == 'testval'
-            mask = self._mask_transform(mask)
+            img, mask = self._img_transform(img), self._mask_transform(mask)
         # general resize, normalize and toTensor
         if self.transform is not None:
             img = self.transform(img)

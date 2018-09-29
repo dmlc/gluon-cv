@@ -1,4 +1,4 @@
-"""3. Train PSPNet on ADE20K Dataset
+"""4. Train PSPNet on ADE20K Dataset
 =================================
 
 This is a tutorial of training PSPNet on ADE20K dataset using Gluon Vison.
@@ -9,10 +9,6 @@ You can `Start Training Now`_ or `Dive into Deep`_.
 Start Training Now
 ~~~~~~~~~~~~~~~~~~
 
-.. note::
-    
-    Training PSPNet relies on Synchronized Batch Normalization, which will be available shortly.
-
 .. hint::
 
     Feel free to skip the tutorial because the training script is self-complete and ready to launch.
@@ -21,7 +17,7 @@ Start Training Now
 
     Example training command::
 
-        CUDA_VISIBLE_DEVICES=0,1,2,3 python train.py --dataset ade20k --model psp --backbone resnet50 --lr 0.001 --checkname mycheckpoint
+        CUDA_VISIBLE_DEVICES=0,1,2,3 python train.py --dataset ade20k --model psp --backbone resnet50 --syncbn --epochs 120 --lr 0.01 --checkname mycheckpoint
 
     For more training command options, please run ``python train.py -h``
     Please checkout the `model_zoo <../model_zoo/index.html#semantic-segmentation>`_ for training commands of reproducing the pretrained model.
@@ -161,8 +157,8 @@ plt.show()
 #     Additionally, an Auxiliary Loss as in PSPNet [Zhao17]_ at Stage 3 can be enabled when
 #     training with command ``--aux``. This will create an additional FCN "head" after Stage 3.
 #
-from gluoncv.model_zoo.segbase import SoftmaxCrossEntropyLossWithAux
-criterion = SoftmaxCrossEntropyLossWithAux(aux=True)
+from gluoncv.loss import MixSoftmaxCrossEntropyLoss
+criterion = MixSoftmaxCrossEntropyLoss(aux=True)
 
 ##############################################################################
 # - Learning Rate and Scheduling:

@@ -113,6 +113,21 @@ Mask RCNN
 
     MaskRCNNDefaultValTransform
 
+
+YOLO
+~~~~
+
+.. currentmodule:: gluoncv.data.transforms.presets.yolo
+
+.. autosummary::
+    :nosignatures:
+
+    load_test
+
+    YOLO3DefaultTrainTransform
+
+    YOLO3DefaultValTransform
+
 API Reference
 -------------
 
@@ -146,5 +161,9 @@ API Reference
     :imported-members:
 
 .. automodule:: gluoncv.data.transforms.presets.rcnn
+    :members:
+    :imported-members:
+
+.. automodule:: gluoncv.data.transforms.presets.yolo
     :members:
     :imported-members:

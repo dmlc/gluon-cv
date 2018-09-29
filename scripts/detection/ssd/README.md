@@ -1,6 +1,6 @@
 # Single Shot Multibox Object Detection [1]
 
-[Gluon Vision Model Zoo](http://gluon-cv.mxnet.io/model_zoo/index.html#object-detection)
+[GluonCV Model Zoo](http://gluon-cv.mxnet.io/model_zoo/index.html#object-detection)
 
 
 ## References

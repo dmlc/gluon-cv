@@ -7,28 +7,7 @@ from mxnet import cpu
 import mxnet.ndarray as F
 from .base import VisionDataset
 
-__all__ = ['get_segmentation_dataset', 'ms_batchify_fn', 'SegmentationDataset']
-
-def get_segmentation_dataset(name, **kwargs):
-    from .pascal_voc.segmentation import VOCSegmentation
-    from .pascal_aug.segmentation import VOCAugSegmentation
-    from .ade20k.segmentation import ADE20KSegmentation
-    datasets = {
-        'ade20k': ADE20KSegmentation,
-        'pascal_voc': VOCSegmentation,
-        'pascal_aug': VOCAugSegmentation,
-    }
-    return datasets[name](**kwargs)
-
-
-def ms_batchify_fn(data):
-    if isinstance(data[0], (str, mx.nd.NDArray)):
-        return list(data)
-    elif isinstance(data[0], tuple):
-        data = zip(*data)
-        return [ms_batchify_fn(i) for i in data]
-    raise RuntimeError('unknown datatype')
-
+__all__ = ['ms_batchify_fn', 'SegmentationDataset']
 
 class SegmentationDataset(VisionDataset):
     """Segmentation Base Dataset"""
@@ -70,7 +49,7 @@ class SegmentationDataset(VisionDataset):
             img = img.transpose(Image.FLIP_LEFT_RIGHT)
             mask = mask.transpose(Image.FLIP_LEFT_RIGHT)
         crop_size = self.crop_size
-        # random scale (short edge from 480 to 720)
+        # random scale (short edge)
         short_size = random.randint(int(self.base_size*0.5), int(self.base_size*2.0))
         w, h = img.size
         if h > w:
@@ -81,10 +60,6 @@ class SegmentationDataset(VisionDataset):
             ow = int(1.0 * w * oh / h)
         img = img.resize((ow, oh), Image.BILINEAR)
         mask = mask.resize((ow, oh), Image.NEAREST)
-        # random rotate -10~10, mask using NN rotate
-        deg = random.uniform(-10, 10)
-        img = img.rotate(deg, resample=Image.BILINEAR)
-        mask = mask.rotate(deg, resample=Image.NEAREST)
         # pad crop
         if short_size < crop_size:
             padh = crop_size - oh if oh < crop_size else 0
@@ -115,3 +90,16 @@ class SegmentationDataset(VisionDataset):
     def num_class(self):
         """Number of categories."""
         return self.NUM_CLASS
+
+    @property
+    def pred_offset(self):
+        return 0
+
+def ms_batchify_fn(data):
+    """Multi-size batchfy function"""
+    if isinstance(data[0], (str, mx.nd.NDArray)):
+        return list(data)
+    elif isinstance(data[0], tuple):
+        data = zip(*data)
+        return [ms_batchify_fn(i) for i in data]
+    raise RuntimeError('unknown datatype')

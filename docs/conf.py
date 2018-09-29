@@ -25,7 +25,7 @@ from sphinx_gallery.sorting import ExampleTitleSortKey
 
 # -- Project information -----------------------------------------------------
 
-project = 'GluonCV'
+project = 'gluoncv'
 copyright = '2018, MXNet Developers'
 author = 'MXNet Developers'
 
@@ -62,14 +62,19 @@ sphinx_gallery_conf = {
     'examples_dirs': ['tutorials/datasets',
                       'tutorials/classification',
                       'tutorials/detection',
-                      'tutorials/segmentation',],
+                      'tutorials/instance',
+                      'tutorials/segmentation',
+                      'tutorials/deployment',],
     # path where to save gallery generated examples
     'gallery_dirs': ['build/examples_datasets',
                      'build/examples_classification',
                      'build/examples_detection',
-                     'build/examples_segmentation',],
+                     'build/examples_instance',
+                     'build/examples_segmentation',
+                     'build/examples_deployment',],
 
     'filename_pattern': '.py',
+    'ignore_pattern': 'im2rec.py',
 
     # 'subsection_order': ExplicitOrder(['tutorials/classification',
     #                                    'tutorials/detection',
@@ -133,7 +138,7 @@ html_favicon = '_static/gluon_s2.png'
 # # Guzzle theme options (see theme.conf for more information)
 # html_theme_options = {
 #         # Set the name of the project to appear in the sidebar
-#         "project_nav_name": "Gluon Vision",
+#         "project_nav_name": "GluonCV",
 # }
 
 # Theme options are theme-specific and customize the look and feel of a theme

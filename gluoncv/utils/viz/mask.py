@@ -1,8 +1,8 @@
 """Bounding box visualization functions."""
 from __future__ import absolute_import, division
 
-import mxnet as mx
 import numpy as np
+import mxnet as mx
 
 from ...data.transforms.mask import fill
 

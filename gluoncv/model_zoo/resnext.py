@@ -72,9 +72,9 @@ class Block(HybridBlock):
 
         if use_se:
             self.se = nn.HybridSequential(prefix='')
-            self.se.add(nn.Dense(channels // 4, use_bias=False))
+            self.se.add(nn.Conv2D(channels // 4, kernel_size=1, padding=0))
             self.se.add(nn.Activation('relu'))
-            self.se.add(nn.Dense(channels * 4, use_bias=False))
+            self.se.add(nn.Conv2D(channels * 4, kernel_size=1, padding=0))
             self.se.add(nn.Activation('sigmoid'))
         else:
             self.se = None
@@ -95,7 +95,7 @@ class Block(HybridBlock):
         if self.se:
             w = F.contrib.AdaptiveAvgPooling2D(x, output_size=1)
             w = self.se(w)
-            x = F.broadcast_mul(x, w.expand_dims(axis=2).expand_dims(axis=2))
+            x = F.broadcast_mul(x, w)
 
         if self.downsample:
             residual = self.downsample(residual)
@@ -200,7 +200,7 @@ def get_resnext(num_layers, cardinality=32, bottleneck_width=4, use_se=False,
     layers = resnext_spec[num_layers]
     net = ResNext(layers, cardinality, bottleneck_width, use_se=use_se, **kwargs)
     if pretrained:
-        from ..model_store import get_model_file
+        from .model_store import get_model_file
         if not use_se:
             net.load_params(get_model_file('resnext%d_%dx%dd'%(num_layers, cardinality,
                                                                bottleneck_width),
