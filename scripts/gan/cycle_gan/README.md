@@ -18,3 +18,6 @@ Details about mxboard is in [mxboard](https://github.com/awslabs/mxboard)
 python train_cgan.py --dataroot ./horse2zebra
 ```
 ![images](images.png "images during training")
+The meaning of those images are :
+| real_A(from dataset) | fake_B(generate from real_A) | rec_A(reconstruct from fake_B) | idt_A(generate from real_B) |
+| real_B(from dataset) | fake_A(generate from real_A) | rec_B(reconstruct from fake_A) | idt_B(generate from real_A) |
