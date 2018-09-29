@@ -24,3 +24,6 @@ The meaning of those images are :
 |-|-|-|-|
 | real_A(from dataset) | fake_B(generate from real_A) | rec_A(reconstruct from fake_B) | idt_A(generate from real_B) |
 | real_B(from dataset) | fake_A(generate from real_A) | rec_B(reconstruct from fake_A) | idt_B(generate from real_A) |
+
+## References
+["Cycle GAN"](https://arxiv.org/abs/1703.10593)
