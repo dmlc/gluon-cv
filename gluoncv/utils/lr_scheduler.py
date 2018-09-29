@@ -3,7 +3,7 @@
 from __future__ import division
 
 from math import pi, cos
-from mxnet import lr_scheduler.LRScheduler
+from mxnet import lr_scheduler
 
 class Compose(lr_scheduler.LRScheduler):
     r"""Compose Learning Rate Schedulers
@@ -11,39 +11,39 @@ class Compose(lr_scheduler.LRScheduler):
     Parameters
     ----------
 
-    lr_schedulers: list
+    schedulers: list
         list of LRScheduler objects
     """
-    def __init__(self, lr_schedulers):
+    def __init__(self, schedulers):
         super(Compose, self).__init__()
-        assert(len(lr_schedulers) > 0)
+        assert(len(schedulers) > 0)
 
         self.update_sep = [0]
         self.count = 0
         self.learning_rate = 0
-        self.lr_schedulers = []
-        for lr in lr_schedulers:
+        self.schedulers = []
+        for lr in schedulers:
             self.add(lr)
 
-    def add(self, lr_scheduler):
-        assert(isinstance(lr_scheduler, LRScheduler))
+    def add(self, scheduler):
+        assert(isinstance(scheduler, LRScheduler))
 
-        lr_scheduler.offset = self.count
-        self.count += lr_scheduler.niter
+        scheduler.offset = self.count
+        self.count += scheduler.niter
         self.update_sep.append(count)
-        self.lr_schedulers.append(lr_scheduler)
+        self.schedulers.append(scheduler)
 
     def __call__(self, num_update):
         if num_update >= self.count:
             return self.learning_rate
 
-        ind = len(self.lr_schedulers) - 1
+        ind = len(self.schedulers) - 1
         for i, sep in enumerate(self.update_sep):
             if sep > num_update:
                 ind = i - 1
                 break
-        self.learning_rate = self.lr_schedulers[ind].__call__(num_update)
-        return self.lr_schedulers[ind].__call__(num_update)
+        self.learning_rate = self.schedulers[ind].__call__(num_update)
+        return self.schedulers[ind].__call__(num_update)
 
 class LRScheduler(lr_scheduler.LRScheduler):
     r"""Learning Rate Scheduler
