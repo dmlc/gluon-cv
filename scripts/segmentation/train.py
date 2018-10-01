@@ -57,6 +57,9 @@ def parse_args():
                         metavar='M', help='momentum (default: 0.9)')
     parser.add_argument('--weight-decay', type=float, default=1e-4,
                         metavar='M', help='w-decay (default: 1e-4)')
+    parser.add_argument('--no-wd', action='store_true',
+                        help='whether to remove weight decay on bias, \
+                        and beta/gamma for batchnorm layers.')
     # cuda and logging
     parser.add_argument('--no-cuda', action='store_true', default=
                         False, help='disables CUDA training')
@@ -152,6 +155,11 @@ class Trainer(object):
                             'momentum': args.momentum}
         if args.dtype == 'float16':
             optimizer_params['multi_precision'] = True
+
+        if args.no_wd:
+            for k, v in self.net.module.collect_params('.*beta|.*gamma|.*bias').items():
+                v.wd_mult = 0.0
+
         self.optimizer = gluon.Trainer(self.net.module.collect_params(), 'sgd',
                                        optimizer_params, kvstore = kv)
         # evaluation metrics
