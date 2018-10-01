@@ -203,7 +203,7 @@ def save_params(net, logger, best_map, current_map, epoch, save_interval, prefix
         best_map[0] = current_map
         net.save_parameters('{:s}_best.params'.format(prefix))
         with open(prefix+'_best_map.log', 'a') as f:
-            f.write('\n{:04d}:\t{:.4f}'.format(epoch, current_map))
+            f.write('{:04d}:\t{:.4f}\n'.format(epoch, current_map))
     if save_interval and (epoch + 1) % save_interval == 0:
         logger.info('[Epoch {}] Saving parameters to {}'.format(
             epoch, '{:s}_{:04d}_{:.4f}.params'.format(prefix, epoch, current_map)))
