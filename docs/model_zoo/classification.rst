@@ -3,7 +3,8 @@
 Classification
 ====================
 
-Summary of throughputs vs. validation accuracy of ImageNet pre-trained models (hover mouse on circles to reveal details, click on legend to show/hide model series):
+Visualization of Inference Throughputs vs. Validation Accuracy of ImageNet pre-trained models is illustrated in the following graph.
+You can hover mouse on circles to reveal details, click on legends to show/hide model series.
 
 .. include:: /_static/classification_throughputs.html
 
