@@ -83,6 +83,12 @@ stage("Build Docs") {
       export PYTHONPATH=\${PWD}
       env
       export LD_LIBRARY_PATH=/usr/local/cuda-8.0/lib64
+
+      # hacky here to manually download cityscapes
+      wget https://s3-us-west-2.amazonaws.com/gluoncv-cityscapes/gtFine_trainvaltest.zip
+      wget https://s3-us-west-2.amazonaws.com/gluoncv-cityscapes/leftImg8bit_trainvaltest.zip
+      python scripts/datasets/cityscapes.py
+
       git clean -fx
       cd docs && make clean && make html
 
