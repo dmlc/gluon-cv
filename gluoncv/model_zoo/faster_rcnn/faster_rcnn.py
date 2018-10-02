@@ -564,7 +564,7 @@ def faster_rcnn_resnet101_v1d_coco(pretrained=False, pretrained_base=True, **kwa
         **kwargs)
 
 def faster_rcnn_resnet101_v1d_custom(classes, transfer=None, pretrained_base=True,
-                                    pretrained=False, **kwargs):
+                                     pretrained=False, **kwargs):
     r"""Faster RCNN model with resnet101_v1d base network on custom dataset.
 
     Parameters
@@ -589,7 +589,7 @@ def faster_rcnn_resnet101_v1d_custom(classes, transfer=None, pretrained_base=Tru
     if transfer is None:
         from ..resnetv1b import resnet101_v1d
         base_network = resnet101_v1d(pretrained=pretrained_base, dilated=False,
-                                    use_global_stats=True)
+                                     use_global_stats=True)
         features = nn.HybridSequential()
         top_features = nn.HybridSequential()
         for layer in ['conv1', 'bn1', 'relu', 'maxpool', 'layer1', 'layer2', 'layer3']:
