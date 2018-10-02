@@ -3,7 +3,7 @@
 Classification
 ====================
 
-Summary of throughputs vs. validation accuracy of ImageNet pre-trained models (hover mouse on circles to reveal details):
+Summary of throughputs vs. validation accuracy of ImageNet pre-trained models (hover mouse on circles to reveal details, click on legend to show/hide model series):
 
 .. include:: /_static/classification_throughputs.html
 
