@@ -6,9 +6,6 @@ GluonCV Model Zoo
 GluonCV Model Zoo provides pre-defined and pre-trained models to help bootstrap computer vision
 applications.
 
-Available Models
----------------------------
-
 Check out different tasks that are divided into separate pages:
 
 .. toctree::
@@ -18,7 +15,7 @@ Check out different tasks that are divided into separate pages:
   classification
 
   detection
-  
+
   segmentation
 
 GluonCV is still under rapid development, stay tuned for more models!
