@@ -128,20 +128,27 @@ train_data = gluon.data.DataLoader(
 # Plot an Example of generated images:
 #
 
-# pick the first example
-img, mask = trainset[0]
-
-# get pallete for the mask
-from gluoncv.utils.viz import get_color_pallete
+# Random pick one example for visualization:
+import random
+from datetime import datetime
+random.seed(datetime.now())
+idx = random.randint(0, len(trainset))
+img, mask = trainset[idx]
+from gluoncv.utils.viz import get_color_pallete, DeNormalize
+# get color pallete for visualize mask
 mask = get_color_pallete(mask.asnumpy(), dataset='coco')
 mask.save('mask.png')
+# denormalize the image
+img = DeNormalize([.485, .456, .406], [.229, .224, .225])(img)
+img = np.transpose((img.asnumpy()*255).astype(np.uint8), (1, 2, 0))
 
 from matplotlib import pyplot as plt
 import matplotlib.image as mpimg
 # subplot 1 for img
 fig = plt.figure()
 fig.add_subplot(1,2,1)
-plt.imshow(img.asnumpy().astype('uint8'))
+
+plt.imshow(img)
 # subplot 2 for the mask
 mmask = mpimg.imread('mask.png')
 fig.add_subplot(1,2,2)
