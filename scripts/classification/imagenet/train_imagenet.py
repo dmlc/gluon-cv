@@ -130,14 +130,18 @@ if opt.lr_mode == 'step':
 
 elif opt.lr_mode == 'cosine':
     lr_schedulers = Compose([
-        LRScheduler('linear', baselr=0, targetlr=opt.lr, niter=num_batches*opt.warmup_epochs),
-        LRScheduler('cosine', baselr=opt.lr, targetlr=0, niter=opt.num_epochs-opt.warmup_epochs)
+        LRScheduler('linear', baselr=0, targetlr=opt.lr,
+                    niter=num_batches*opt.warmup_epochs),
+        LRScheduler('cosine', baselr=opt.lr, targetlr=0,
+                    niter=num_batches*(opt.num_epochs-opt.warmup_epochs))
     ])
 
 elif opt.lr_mode == 'poly':
     lr_schedulers = Compose([
-        LRScheduler('linear', baselr=0, targetlr=opt.lr, niter=num_batches*opt.warmup_epochs),
-        LRScheduler('poly', baselr=opt.lr, targetlr=0, niter=opt.num_epochs-opt.warmup_epochs)
+        LRScheduler('linear', baselr=0, targetlr=opt.lr,
+                    niter=num_batches*opt.warmup_epochs),
+        LRScheduler('poly', baselr=opt.lr, targetlr=0,
+                    niter=num_batches*(opt.num_epochs-opt.warmup_epochs))
     ])
 
 model_name = opt.model
