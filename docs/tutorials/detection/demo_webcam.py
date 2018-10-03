@@ -5,6 +5,7 @@ This article will shows how to play with pre-trained object detection models by 
 them directly on your webcam video stream.
 
 .. note::
+
     - This tutorial has only been tested in a MacOS environment
     - Python packages required: cv2, matplotlib
     - You need a webcam :)
@@ -93,6 +94,7 @@ The detection loop consists of four phases:
 We release the webcam before exiting the script
 
 .. code-block:: python
+
     cap.release()
 
 Results
@@ -106,6 +108,7 @@ Run the script using `pythonw` on MacOS:
 
 
 .. note::
+
     On MacOS, to enable matplotlib rendering you need python installed as a framework,
     see guide `here <https://matplotlib.org/faq/osx_framework.html>`__
 
