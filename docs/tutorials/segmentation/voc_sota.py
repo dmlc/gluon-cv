@@ -1,4 +1,4 @@
-"""5. Reproducing SoTA on Pascal VOC Dataset
+"""6. Reproducing SoTA on Pascal VOC Dataset
 =========================================
 
 This is a semantic segmentation tutorial for reproducing state-of-the-art results
@@ -42,7 +42,7 @@ import gluoncv
 # DeepLabV3 Implementation
 # ------------------------
 # 
-# We implemented state-of-the-art semantic segmentation model of DeepLabV3 in Gluon-CVl.
+# We implemented state-of-the-art semantic segmentation model of DeepLabV3 in Gluon-CV.
 # Atrous Spatial Pyramid Pooling (ASPP) is the key part of DeepLabV3 model, which is
 # built on top of FCN. It combines multiple scale features with different receptive
 # field sizes, by using different atrous rate of dilated convolution and incorporating
@@ -97,10 +97,10 @@ print(model)
 # COCO Pretraining
 # ----------------
 # 
-# COCO dataset is an larege instance segmentation dataset with 80 categories, which has 82,783
-# training and 40,504 validation images. From the training set of MS-COCO dataset, we select with
+# COCO dataset is an larege instance segmentation dataset with 80 categories, which has 127K
+# training images. From the training set of MS-COCO dataset, we select with
 # images containing the 20 classes shared with PASCAL dataset with more than 1,000 labeled pixels,
-# resulting 92,516 images. All the other classes are marked as background. You can simply get this
+# resulting 92.5K images. All the other classes are marked as background. You can simply get this
 # dataset using the following command:
 # 
 # 
