@@ -167,7 +167,10 @@ def test_set_nms():
 def test_segmentation_models():
     ctx = mx.context.current_context()
     x = mx.random.uniform(shape=(2, 3, 480, 480), ctx=ctx)
-    models = ['fcn_resnet50_voc', 'fcn_resnet101_voc', 'fcn_resnet50_ade']
+    models = ['fcn_resnet101_coco', 'psp_resnet101_coco', 'deeplab_resnet101_coco',
+              'fcn_resnet101_voc', 'psp_resnet101_voc', 'deeplab_resnet101_voc',
+              'fcn_resnet50_ade', 'psp_resnet50_ade', 'deeplab_resnet50_ade',
+              'fcn_resnet101_ade', 'psp_resnet101_ade', 'deeplab_resnet101_ade']
     _test_model_list(models, ctx, x, pretrained=True, pretrained_base=True)
     _test_model_list(models, ctx, x, pretrained=False, pretrained_base=False)
     _test_model_list(models, ctx, x, pretrained=False, pretrained_base=True)
