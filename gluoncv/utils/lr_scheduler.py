@@ -59,6 +59,7 @@ class LRScheduler(lr_scheduler.LRScheduler):
         Base learning rate, i.e. the starting learning rate
     targetlr : float
         Target learning rate, i.e. the ending learning rate
+        With constant mode targetlr is ignored
     niter : int
         Number of iterations to be scheduled
     offset : int
@@ -66,7 +67,7 @@ class LRScheduler(lr_scheduler.LRScheduler):
     power : float
         Power parameter of poly scheduler
     """
-    def __init__(self, mode, baselr, targetlr, niter=0, offset=0, power=2):
+    def __init__(self, mode, baselr, targetlr=0, niter=0, offset=0, power=2):
         super(LRScheduler, self).__init__()
         assert(mode in ['constant', 'linear', 'poly', 'cosine'])
 
