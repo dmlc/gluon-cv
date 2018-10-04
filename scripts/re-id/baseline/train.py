@@ -89,7 +89,7 @@ def validate(val_data, net, criterion, ctx):
         with autograd.predict_mode():
             outpus = [net(X) for X in data_list]
             losses = [criterion(X, y) for X, y in zip(outpus, label_list)]
-        accuray = [nd.mean(X.argmax(axis=1)==y.astype('float32')).asscalar() for X, y in zip(outpus, label_list)]
+        accuray = [(X.argmax(axis=1)==y.astype('float32')).mean.asscalar() for X, y in zip(outpus, label_list)]
 
         loss_list = [l.mean().asscalar() for l in losses]
         loss += sum(loss_list) / len(loss_list)

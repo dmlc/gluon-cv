@@ -19,12 +19,15 @@
 # pylint: disable= arguments-differ
 "Addtional image transforms."
 
+import random
+import math
 import numpy as np
 from mxnet import image, nd
 from mxnet.gluon import Block
-import random, math
+
 
 __all__ = ['RandomCrop', 'RandomErasing']
+
 
 class RandomCrop(Block):
     """Randomly crop `src` with `size` (width, height).
@@ -95,7 +98,8 @@ class RandomErasing(Block):
         - **out**: output tensor with (Hi x Wi x C) shape.
     """
 
-    def __init__(self, probability = 0.5, s_min = 0.02, s_max = 0.4, ratio = 0.3, mean = (125.31, 122.96, 113.86)):
+    def __init__(self, probability=0.5, s_min=0.02, s_max=0.4, ratio=0.3,\
+                 mean=(125.31, 122.96, 113.86)):
         super(RandomErasing, self).__init__()
         self.probability = probability
         self.mean = mean
@@ -122,10 +126,8 @@ class RandomErasing(Block):
         area = width * height
         target_area = random.uniform(self.s_min, self.s_max) * area
         aspect_ratio = random.uniform(self.ratio, 1/self.ratio)
-        
         w = int(round(math.sqrt(target_area * aspect_ratio)))
         h = int(round(math.sqrt(target_area / aspect_ratio)))
-        
         if w < width and h < height:
             x1 = random.randint(0, width - w)
             y1 = random.randint(0, height - h)
