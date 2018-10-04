@@ -1,7 +1,7 @@
-"""2. Test with PSPNet Pre-trained Models
+"""3. Test with DeepLabV3 Pre-trained Models
 ======================================
 
-This is a quick demo of using GluonCV PSPNet model on ADE20K dataset.
+This is a quick demo of using GluonCV DeepLabV3 model on ADE20K dataset.
 Please follow the `installation guide <../index.html>`_ to install MXNet and GluonCV if not yet.
 """
 import mxnet as mx
@@ -18,7 +18,7 @@ ctx = mx.cpu(0)
 #
 # download the example image
 url = 'https://github.com/zhanghang1989/image-data/blob/master/encoding/' + \
-    'segmentation/ade20k/ADE_val_00001142.jpg?raw=true'
+    'segmentation/ade20k/ADE_val_00001755.jpg?raw=true'
 filename = 'ade20k_example.jpg'
 gluoncv.utils.download(url, filename, True)
 
@@ -44,7 +44,7 @@ img = img.expand_dims(0).as_in_context(ctx)
 # ----------------------------------------------
 #
 # get pre-trained model
-model = gluoncv.model_zoo.get_model('psp_resnet101_ade', pretrained=True)
+model = gluoncv.model_zoo.get_model('deeplab_resnet101_ade', pretrained=True)
 
 ##############################################################################
 # make prediction using single scale
@@ -63,3 +63,4 @@ mask.save('output.png')
 mmask = mpimg.imread('output.png')
 plt.imshow(mmask)
 plt.show()
+
