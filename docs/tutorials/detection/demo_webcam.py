@@ -54,13 +54,7 @@ The detection loop consists of four phases:
 
 * loading the webcam frame
 
-* pre-processing the image:
-
-    * resizing the image
-
-    * converting the image from BGR to RGB
-
-    * normalizing the data and converting it to channel first
+* pre-processing the image
 
 * running the image through the network
 
@@ -69,24 +63,22 @@ The detection loop consists of four phases:
 
 .. code-block:: python
 
+    axes = None
     NUM_FRAMES = 200 # you can change this
     for i in range(NUM_FRAMES):
         # Load frame from the camera
         ret, frame = cap.read()
 
         # Image pre-processing
-        frame = cv2.resize(frame, (700, 512))
-        rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        rgb_nd = mx.nd.array(rgb, dtype='float32').transpose((2, 0, 1))/255.
-        rgb_nd = mx.nd.image.normalize(rgb_nd, mean=(0.485, 0.456, 0.406),
-                      std=(0.229, 0.224, 0.225)).expand_dims(axis=0)
+        frame = mx.nd.array(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)).astype('uint8')
+        rgb_nd, frame = gcv.data.transforms.presets.ssd.transform_test(frame, short=512, max_size=700)
 
         # Run frame through network
         class_IDs, scores, bounding_boxes = net(rgb_nd)
 
         # Display the result
         plt.cla()
-        axes = gcv.utils.viz.plot_bbox(rgb, bounding_boxes[0], scores[0], class_IDs[0], class_names=net.classes, ax=axes)
+        axes = gcv.utils.viz.plot_bbox(frame, bounding_boxes[0], scores[0], class_IDs[0], class_names=net.classes, ax=axes)
         plt.draw()
         plt.pause(0.001)
 
