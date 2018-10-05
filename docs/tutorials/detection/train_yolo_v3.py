@@ -13,9 +13,7 @@ Specifically, we show how to build a state-of-the-art YOLOv3 model by stacking G
     right away by downloading this script:
 
     :download:`Download train_yolo3.py<../../../scripts/detection/yolo/train_yolo3.py>`
-    or a random shape training script:
-    :download:`Download train_yolo3_rand_size.py<../../../scripts/detection/yolo/train_yolo3_rand_size.py>`
-    Random shape training requires more GPU memory but generates better results.
+    Random shape training requires more GPU memory but generates better results. You can turn it off by setting `--no-random-shape`.
 
     Example usage:
 

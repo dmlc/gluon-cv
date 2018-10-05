@@ -45,6 +45,8 @@ class YOLOV3PrefetchTargetGenerator(gluon.Block):
             Ground-truth boxes.
         gt_ids : mxnet.nd.NDArray
             Ground-truth IDs.
+        gt_mixratio : mxnet.nd.NDArray, optional
+            Mixup ratio from 0 to 1.
 
         Returns
         -------

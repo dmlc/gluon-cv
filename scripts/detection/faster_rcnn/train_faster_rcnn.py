@@ -313,6 +313,7 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
     for epoch in range(args.start_epoch, args.epochs):
         mix_ratio = 1.0
         if args.mixup:
+            # TODO(zhreshold) only support evenly mixup now, target generator needs to be modified otherwise
             train_data._dataset.set_mixup(np.random.uniform, 0.5, 0.5)
             mix_ratio = 0.5
             if epoch >= args.epochs - args.no_mixup_epochs:
