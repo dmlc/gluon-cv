@@ -53,7 +53,7 @@ _model_sha1 = {name: checksum for checksum, name in [
     ('5c86064290c05eccbdd88475376c71c595c8325c', 'ssd_512_vgg16_atrous_coco'),
     ('c48351620d4f0cbc49e4f7a84c8e67ef8fdc6e09', 'ssd_512_resnet50_v1_coco'),
     ('da9756faa5b9b4e34dedcf83ee0733d5895796ad', 'ssd_512_mobilenet1.0_coco'),
-    ('dd05f30edbb00646764fc66d994128dcac2c3e32', 'faster_rcnn_resnet50_v1b_coco'),
+    ('5b4690fb7c5b62c44fb36c67d0642b633697f1bb', 'faster_rcnn_resnet50_v1b_coco'),
     ('a465eca35e78aba6ebdf99bf52031a447e501063', 'faster_rcnn_resnet101_v1d_coco'),
     ('a3527fdc2cee5b1f32a61e5fd7cda8fb673e86e5', 'mask_rcnn_resnet50_v1b_coco'),
     ('121e1579d811b091940b3b1fa033e1f0d1dca40f', 'cifar_resnet20_v1'),
@@ -87,7 +87,7 @@ _model_sha1 = {name: checksum for checksum, name in [
     ('0c42cb735aebbffc010ca5770e3d5880995da021', 'psp_resnet50_ade'),
     ('eaaa87eb1b27c36c935b372779214bf164ad5b19', 'psp_resnet101_ade'),
     ('f5ece5ce1422eeca3ce2908004e469ffdf91fd41', 'yolo3_darknet53_voc'),
-    ('b60f07b403766d78d88c57c697dce3ca92a44eb0', 'yolo3_darknet53_coco'),
+    ('09767802230b45af1c27697a2dad6d1ebaacc1e2', 'yolo3_darknet53_coco'),
     ('d7a709b3fef6aad002065bc993f0c663b82f4b3d', 'darknet53'),
     ]}
 
