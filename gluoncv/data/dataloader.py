@@ -147,7 +147,8 @@ def random_worker_loop(datasets, key_queue, data_queue, batchify_fn):
     # re-fork a new recordio handler in new process if applicable
     limit = sys.getrecursionlimit()
     max_recursion_depth = min(limit - 5, max(10, limit // 2))
-    _recursive_fork_recordio(dataset, 0, max_recursion_depth)
+    for dataset in datasets:
+        _recursive_fork_recordio(dataset, 0, max_recursion_depth)
 
     while True:
         idx, samples, random_idx = key_queue.get()
