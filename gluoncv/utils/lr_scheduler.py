@@ -30,7 +30,7 @@ class Compose(lr_scheduler.LRScheduler):
 
         scheduler.offset = self.count
         self.count += scheduler.niters
-        self.update_sep.append(count)
+        self.update_sep.append(self.count)
         self.schedulers.append(scheduler)
 
     def __call__(self, num_update):
@@ -44,7 +44,9 @@ class Compose(lr_scheduler.LRScheduler):
                 if sep > num_update:
                     ind = i - 1
                     break
-            self.learning_rate = self.schedulers[ind].update(num_update)
+            lr = self.schedulers[ind]
+            lr.update(num_update)
+            self.learning_rate = lr.learning_rate
 
 class LRScheduler(lr_scheduler.LRScheduler):
     r"""Learning Rate Scheduler
@@ -85,13 +87,14 @@ class LRScheduler(lr_scheduler.LRScheduler):
         return self.learning_rate
 
     def update(self, num_update):
-        N = self.niters
+        N = self.niters - 1
         T = num_update - self.offset
+        T = min(max(0, T), N)
 
         if self.mode == 'constant':
             factor = 0
         elif self.mode == 'linear':
-            factor = T / N
+            factor = 1 - T / N
         elif self.mode == 'poly':
             factor = pow(1 - T / N, self.power)
         elif self.mode == 'cosine':
@@ -99,4 +102,4 @@ class LRScheduler(lr_scheduler.LRScheduler):
         else:
             raise NotImplementedError
 
-        self.learning_rate = self.targetlr + (self.baselr - self.target_lr) * factor
+        self.learning_rate = self.targetlr + (self.baselr - self.targetlr) * factor
