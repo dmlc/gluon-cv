@@ -29,7 +29,7 @@ class Compose(lr_scheduler.LRScheduler):
         assert(isinstance(scheduler, LRScheduler))
 
         scheduler.offset = self.count
-        self.count += scheduler.niter
+        self.count += scheduler.niters
         self.update_sep.append(count)
         self.schedulers.append(scheduler)
 
@@ -60,14 +60,14 @@ class LRScheduler(lr_scheduler.LRScheduler):
     targetlr : float
         Target learning rate, i.e. the ending learning rate
         With constant mode targetlr is ignored
-    niter : int
+    niters : int
         Number of iterations to be scheduled
     offset : int
         Number of iterations before this scheduler
     power : float
         Power parameter of poly scheduler
     """
-    def __init__(self, mode, baselr, targetlr=0, niter=0, offset=0, power=2):
+    def __init__(self, mode, baselr, targetlr=0, niters=0, offset=0, power=2):
         super(LRScheduler, self).__init__()
         assert(mode in ['constant', 'linear', 'poly', 'cosine'])
 
@@ -76,7 +76,7 @@ class LRScheduler(lr_scheduler.LRScheduler):
         self.targetlr = targetlr
         if self.mode == 'constant':
             self.targetlr = self.baselr
-        self.niter = niter
+        self.niters = niters
         self.offset = offset
         self.power = power
 
@@ -85,7 +85,7 @@ class LRScheduler(lr_scheduler.LRScheduler):
         return self.learning_rate
 
     def update(self, num_update):
-        N = self.niter
+        N = self.niters
         T = num_update - self.offset
 
         if self.mode == 'constant':
