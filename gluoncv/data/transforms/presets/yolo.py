@@ -10,7 +10,7 @@ from .. import experimental
 
 __all__ = ['transform_test', 'load_test', 'YOLO3DefaultTrainTransform', 'YOLO3DefaultValTransform']
 
-def transform_test(imgs, short=416, max_size=1024, stride=32, mean=(0.485, 0.456, 0.406),
+def transform_test(imgs, short=416, max_size=1024, stride=1, mean=(0.485, 0.456, 0.406),
                    std=(0.229, 0.224, 0.225)):
     """A util function to transform all images to tensors as network input by applying
     normalizations. This function support 1 NDArray or iterable of NDArrays.
@@ -25,7 +25,7 @@ def transform_test(imgs, short=416, max_size=1024, stride=32, mean=(0.485, 0.456
         Maximum longer side length to fit image.
         This is to limit the input image shape. Aspect ratio is intact because we
         support arbitrary input size in our YOLO implementation.
-    stride : int, optinal, default is 32
+    stride : int, optinal, default is 1
         The stride constraint due to precised alignment of bounding box prediction module.
         Image's width and height must be multiples of `stride`. Use `stride = 1` to
         relax this constraint.
@@ -61,7 +61,7 @@ def transform_test(imgs, short=416, max_size=1024, stride=32, mean=(0.485, 0.456
         return tensors[0], origs[0]
     return tensors, origs
 
-def load_test(filenames, short=416, max_size=1024, stride=32, mean=(0.485, 0.456, 0.406),
+def load_test(filenames, short=416, max_size=1024, stride=1, mean=(0.485, 0.456, 0.406),
               std=(0.229, 0.224, 0.225)):
     """A util function to load all images, transform them to tensor by applying
     normalizations. This function support 1 filename or list of filenames.
@@ -76,7 +76,7 @@ def load_test(filenames, short=416, max_size=1024, stride=32, mean=(0.485, 0.456
         Maximum longer side length to fit image.
         This is to limit the input image shape. Aspect ratio is intact because we
         support arbitrary input size in our YOLO implementation.
-    stride : int, optinal, default is 32
+    stride : int, optinal, default is 1
         The stride constraint due to precised alignment of bounding box prediction module.
         Image's width and height must be multiples of `stride`. Use `stride = 1` to
         relax this constraint.

@@ -349,7 +349,8 @@ class YOLOV3(gluon.HybridBlock):
             x = self.transitions[i](x)
             # upsample feature map reverse to shallow layers
             upsample = _upsample(x, stride=2)
-            x = F.concat(upsample, routes[::-1][i + 1], dim=1)
+            route_now = routes[::-1][i + 1]
+            x = F.concat(F.slice_like(upsample, route_now, axes=(2, 3)), route_now, dim=1)
 
         if autograd.is_training():
             # during training, the network behaves differently since we don't need detection results
@@ -430,7 +431,7 @@ def get_yolov3(name, stages, filters, anchors, strides, classes,
     ----------
     name : str or None
         Model name, if `None` is used, you must specify `features` to be a `HybridBlock`.
-    features : iterable of str or `HybridBlock`
+    stages : iterable of str or `HybridBlock`
         List of network internal output names, in order to specify which layers are
         used for predicting bbox values.
         If `name` is `None`, `features` must be a `HybridBlock` which generate mutliple
