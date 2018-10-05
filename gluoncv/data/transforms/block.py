@@ -17,6 +17,7 @@
 
 # coding: utf-8
 # pylint: disable= arguments-differ
+# pylint: disable= missing-docstring
 "Addtional image transforms."
 
 import random
@@ -92,13 +93,14 @@ class RandomErasing(Block):
     mean : int or tuple of (R, G, B)
         The value in erasing area.
 
+
     Inputs:
         - **data**: input tensor with (Hi x Wi x C) shape.
     Outputs:
         - **out**: output tensor with (Hi x Wi x C) shape.
     """
 
-    def __init__(self, probability=0.5, s_min=0.02, s_max=0.4, ratio=0.3,\
+    def __init__(self, probability=0.5, s_min=0.02, s_max=0.4, ratio=0.3,
                  mean=(125.31, 122.96, 113.86)):
         super(RandomErasing, self).__init__()
         self.probability = probability

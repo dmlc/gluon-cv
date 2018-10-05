@@ -24,7 +24,7 @@ def LabelList(ratio=1, root='~/.mxnet/datasets', name='market1501'):
         train_txt = osp.join(path, "train.txt")
         image_path = osp.join(path, "bounding_box_train")
 
-        item_list = [(osp.join(image_path, line.split()[0]), int(line.split()[1]))\
+        item_list = [(osp.join(image_path, line.split()[0]), int(line.split()[1]))
                      for line in open(train_txt).readlines()]
         random.shuffle(item_list)
         count = len(item_list)
