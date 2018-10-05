@@ -88,8 +88,8 @@ stage("Build Docs") {
 
       if [[ ${env.BRANCH_NAME} == master ]]; then
           aws s3 cp s3://gluon-cv.mxnet.io/coverage.svg build/html/coverage.svg
-          aws s3 sync --delete build/html/ s3://gluon-cv.mxnet.io/ --acl public-read
-          aws s3 cp build/html/coverage.svg s3://gluon-cv.mxnet.io/coverage.svg --acl public-read --cache-control no-cache
+          aws s3 sync --delete build/html/ s3://gluon-cv.mxnet.io/ --acl public-read --cache-control max-age=7200
+          aws s3 cp build/html/coverage.svg s3://gluon-cv.mxnet.io/coverage.svg --acl public-read --cache-control max-age=300
           echo "Uploaded doc to http://gluon-cv.mxnet.io"
       else
           aws s3 cp s3://gluon-vision-staging/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/coverage.svg build/html/coverage.svg
