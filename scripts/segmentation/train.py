@@ -10,7 +10,7 @@ from mxnet.gluon.data.vision import transforms
 
 import gluoncv
 from gluoncv.loss import *
-from gluoncv.utils import LRScheduler
+from gluoncv.utils import LRScheduler, LRCompose
 from gluoncv.model_zoo.segbase import *
 from gluoncv.model_zoo import get_model
 from gluoncv.utils.parallel import *
@@ -149,6 +149,8 @@ class Trainer(object):
         self.lr_scheduler = LRScheduler(mode='poly', baselr=args.lr,
                                         niters=len(self.train_data), 
                                         nepochs=args.epochs)
+        self.lr_scheduler = LRScheduler(mode='poly', baselr=args.lr,
+                                        niters=len(self.train_data)*args.epochs) 
         kv = mx.kv.create(args.kvstore)
         optimizer_params = {'lr_scheduler': self.lr_scheduler,
                             'wd':args.weight_decay,

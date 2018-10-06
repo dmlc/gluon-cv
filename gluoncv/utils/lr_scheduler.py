@@ -56,22 +56,27 @@ class LRScheduler(lr_scheduler.LRScheduler):
 
     mode : str
         Modes for learning rate scheduler.
-        Currently it supports 'constant', 'linear', 'poly' and 'cosine'
+        Currently it supports 'constant', 'step', 'linear', 'poly' and 'cosine'.
     baselr : float
-        Base learning rate, i.e. the starting learning rate
+        Base learning rate, i.e. the starting learning rate.
     targetlr : float
-        Target learning rate, i.e. the ending learning rate
-        With constant mode targetlr is ignored
+        Target learning rate, i.e. the ending learning rate.
+        With constant mode targetlr is ignored.
     niters : int
-        Number of iterations to be scheduled
+        Number of iterations to be scheduled.
     offset : int
-        Number of iterations before this scheduler
+        Number of iterations before this scheduler.
     power : float
-        Power parameter of poly scheduler
+        Power parameter of poly scheduler.
+    step : list
+        A list of iterations to decay the learning rate.
+    step_factor : float
+        Learning rate decay factor.
     """
-    def __init__(self, mode, baselr, targetlr=0, niters=0, offset=0, power=2):
+    def __init__(self, mode, baselr, targetlr=0, niters=0, offset=0, power=2,
+                 step=[], step_factor=0.1):
         super(LRScheduler, self).__init__()
-        assert(mode in ['constant', 'linear', 'poly', 'cosine'])
+        assert(mode in ['constant', 'step', 'linear', 'poly', 'cosine'])
 
         self.mode = mode
         self.baselr = baselr
@@ -81,6 +86,8 @@ class LRScheduler(lr_scheduler.LRScheduler):
         self.niters = niters
         self.offset = offset
         self.power = power
+        self.step = step
+        self.step_factor = step_factor
 
     def __call__(self, num_update):
         self.update(num_update)
@@ -99,7 +106,13 @@ class LRScheduler(lr_scheduler.LRScheduler):
             factor = pow(1 - T / N, self.power)
         elif self.mode == 'cosine':
             factor = (1 + cos(pi * T / N)) / 2
+        elif self.mode == 'step':
+            count = sum([1 for s in self.step if s <= T])
+            factor = pow(self.step_factor, count)
         else:
             raise NotImplementedError
 
-        self.learning_rate = self.targetlr + (self.baselr - self.targetlr) * factor
+        if self.mode == 'step':
+            self.learning_rate = self.baselr * factor
+        else:
+            self.learning_rate = self.targetlr + (self.baselr - self.targetlr) * factor

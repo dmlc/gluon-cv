@@ -9,7 +9,7 @@ from mxnet.gluon.data.vision import transforms
 
 from gluoncv.data import imagenet
 from gluoncv.model_zoo import get_model
-from gluoncv.utils import makedirs, Compose, LRScheduler
+from gluoncv.utils import makedirs, LRCompose, LRScheduler
 
 # CLI
 parser = argparse.ArgumentParser(description='Train a model for image classification.')
@@ -118,16 +118,9 @@ num_batches = num_training_samples // batch_size
 if opt.lr_mode == 'step':
     lr_schedulers = Compose([
         LRScheduler('linear', baselr=0, targetlr=opt.lr, niters=num_batches*opt.warmup_epochs),
+        LRScheduler('step', baselr=opt.lr, niters=num_batches*(opt.num_epochs-opt.warmup_epochs),
+                    step=[num_batches*e for e in lr_decay_epoch], step_factor=lr_decay)
     ])
-    step_lr = opt.lr
-    last_epoch = 0
-    for decay in lr_decay_epoch:
-        interval = decay - last_epoch
-        lr_schedulers.add(LRScheduler('constant', baselr=step_lr,
-                                      niters=num_batches*interval))
-        step_lr *= lr_decay
-        last_epoch = decay
-
 elif opt.lr_mode == 'cosine':
     lr_schedulers = Compose([
         LRScheduler('linear', baselr=0, targetlr=opt.lr,

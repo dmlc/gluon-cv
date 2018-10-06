@@ -9,7 +9,7 @@ from mxnet.gluon.data.vision import transforms
 from gluoncv.data import imagenet
 from gluoncv.loss import MixSoftmaxCrossEntropyLoss
 from gluoncv.model_zoo import get_model
-from gluoncv.utils import makedirs, LRScheduler
+from gluoncv.utils import makedirs, LRScheduler, LRCompose
 
 # CLI
 parser = argparse.ArgumentParser(description='Train a model for image classification.')
@@ -99,10 +99,28 @@ if opt.lr_decay_period > 0:
 else:
     lr_decay_epoch = [int(i) for i in opt.lr_decay_epoch.split(',')]
 num_batches = num_training_samples // batch_size
-lr_scheduler = LRScheduler(mode=opt.lr_mode, baselr=opt.lr,
-                            niters=num_batches, nepochs=opt.num_epochs,
-                            step=lr_decay_epoch, step_factor=opt.lr_decay, power=2,
-                            warmup_epochs=opt.warmup_epochs)
+
+if opt.lr_mode == 'step':
+    lr_schedulers = Compose([
+        LRScheduler('linear', baselr=0, targetlr=opt.lr, niters=num_batches*opt.warmup_epochs),
+        LRScheduler('step', baselr=opt.lr, niters=num_batches*(opt.num_epochs-opt.warmup_epochs),
+                    step=[num_batches*e for e in lr_decay_epoch], step_factor=lr_decay)
+    ])
+elif opt.lr_mode == 'cosine':
+    lr_schedulers = Compose([
+        LRScheduler('linear', baselr=0, targetlr=opt.lr,
+                    niters=num_batches*opt.warmup_epochs),
+        LRScheduler('cosine', baselr=opt.lr, targetlr=0,
+                    niters=num_batches*(opt.num_epochs-opt.warmup_epochs))
+    ])
+
+elif opt.lr_mode == 'poly':
+    lr_schedulers = Compose([
+        LRScheduler('linear', baselr=0, targetlr=opt.lr,
+                    niters=num_batches*opt.warmup_epochs),
+        LRScheduler('poly', baselr=opt.lr, targetlr=0,
+                    niters=num_batches*(opt.num_epochs-opt.warmup_epochs))
+    ])
 
 model_name = opt.model
 
