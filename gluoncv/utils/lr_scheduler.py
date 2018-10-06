@@ -74,7 +74,7 @@ class LRScheduler(lr_scheduler.LRScheduler):
         Learning rate decay factor.
     """
     def __init__(self, mode, baselr, targetlr=0, niters=0, offset=0, power=2,
-                 step=[], step_factor=0.1):
+                 step=None, step_factor=0.1):
         super(LRScheduler, self).__init__()
         assert(mode in ['constant', 'step', 'linear', 'poly', 'cosine'])
 
