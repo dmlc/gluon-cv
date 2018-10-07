@@ -13,13 +13,12 @@
 
 **Download  Dataset**
 ```bash
-cd ./datasets
 python extract_data.py
 ```
 
 **Run The Model**
 ```bash
-python Cyclegan.py --num_epoch 50 --lr 0.00001
+python Cyclegan.py --num_epoch 5 --lr 0.0002
 ```
 
 **Demo**
