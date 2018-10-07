@@ -1,4 +1,4 @@
-"""Prepare ADE20K dataset"""
+"""Prepare Cityscapes dataset"""
 import os
 import shutil
 import argparse
@@ -19,7 +19,6 @@ def parse_args():
 
 def download_city(path, overwrite=False):
     _CITY_DOWNLOAD_URLS = [
-        #('gtCoarse.zip', '61f23198bfff5286e0d7e316ad5c4dbbaaf4717a'),
         ('gtFine_trainvaltest.zip', '99f532cb1af174f5fcc4c5bc8feea8c66246ddbc'),
         ('leftImg8bit_trainvaltest.zip', '2c0b77ce9933cc635adda307fbba5566f5d9d404')]
     download_dir = os.path.join(path, 'downloads')
