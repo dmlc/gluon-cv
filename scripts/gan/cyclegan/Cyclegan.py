@@ -4,7 +4,8 @@ from mxnet.gluon.data import Dataset
 from mxnet import lr_scheduler
 from mxnet.gluon.data import DataLoader
 from mxnet.gluon.data.vision import transforms
-from mxnet.gluon import Block
+from mxnet.gluon import Block, HybridBlock
+
 from mxnet import autograd
 from mxnet import gluon
 import numpy as np
@@ -15,19 +16,15 @@ from mxnet.gluon import nn
 import matplotlib.pyplot as plt
 import os
 import argparse
-
-
 parser = argparse.ArgumentParser(description='Train the CycleGAN model')
 parser.add_argument('--usegpu', type=bool, default=True)
-parser.add_argument('--lr', type=float, default=0.00001)
-parser.add_argument('--num_epoch', type=int, default=50)
+parser.add_argument('--lr', type=float, default=0.0002)
+parser.add_argument('--num_epoch', type=int, default=5)
 args = parser.parse_args()
-
-
 if not args.usegpu:
     ctx = mx.cpu()
 else:
-    ctx = mx.gpu()
+    ctx = mx.gpu(2)
 loss = gluon.loss.L1Loss()
 
 
@@ -105,14 +102,14 @@ test_data = DataLoader(
     shuffle=False)
 
 
-class ResnetBlock(Block):
+class ResnetBlock(HybridBlock):
     def __init__(self, **kwargs):
         super(ResnetBlock, self).__init__(**kwargs)
         with self.name_scope():
             self.model = self.get_blocks()
 
     def get_blocks(self):
-        model = nn.Sequential()
+        model = nn.HybridSequential()
         with model.name_scope():
             model.add(nn.ReflectionPad2D(1))
             model.add(nn.Conv2D(256, kernel_size=3))
@@ -128,12 +125,12 @@ class ResnetBlock(Block):
         return out
 
 
-class ResnetGenerator(Block):
+class ResnetGenerator(HybridBlock):
     def __init__(self, **kwargs):
         super(ResnetGenerator, self).__init__(**kwargs)
         num_blocks = 9
         with self.name_scope():
-            self.module = nn.Sequential()
+            self.module = nn.HybridSequential()
             with self.module.name_scope():
                 self.module.add(nn.ReflectionPad2D(3))
                 self.module.add(nn.Conv2D(64, kernel_size=7, padding=0))
@@ -167,13 +164,13 @@ class ResnetGenerator(Block):
         return out
 
 
-class NlayerDiscriminator(Block):
+class NlayerDiscriminator(HybridBlock):
     def __init__(self, **kwargs):
         super(NlayerDiscriminator, self).__init__(**kwargs)
         kw = 4
         padw = 1
         with self.name_scope():
-            self.model = nn.Sequential()
+            self.model = nn.HybridSequential()
             with self.model.name_scope():
                 self.model.add(
                     nn.Conv2D(
@@ -213,7 +210,7 @@ class NlayerDiscriminator(Block):
         return out
 
 
-class CycleGANModel(Block):
+class CycleGANModel(HybridBlock):
     def __init__(self, **kwargs):
         super(CycleGANModel, self).__init__(**kwargs)
         with self.name_scope():
@@ -309,61 +306,44 @@ class CycleGANModel(Block):
         self.trainer_D_B.step(1)
 
 
-for idx, batch in enumerate(train_data):
-    data = batch[0].asnumpy()
-    data = data.squeeze(axis=0)
-    data = (data * 0.5 + 0.5) * 255
-    data = data.transpose((1, 2, 0))
-    data = data.astype(np.uint8)
-    plt.imshow(data)
-    plt.show()
-    plt.close()
-    data = batch[1].asnumpy()
-    data = data.squeeze(axis=0)
-    data = (data * 0.5 + 0.5) * 255
-    data = data.transpose((1, 2, 0))
-    data = data.astype(np.uint8)
-    plt.imshow(data)
-    plt.show()
-    plt.close()
-    break
-
-
 num_epoch = args.num_epoch
 net = CycleGANModel()
 net.initialize(mx.init.Xavier(), ctx=ctx)
 net.set_optimizer()
-
-
+net.hybridize()
 for epoch in range(num_epoch):
+    DA_loss_list = []
+    DB_loss_list = []
+    GA_loss_list = []
+    GB_loss_list = []
     for idx, (train_A, train_B) in enumerate(train_data):
         train_A = train_A.as_in_context(ctx)
         train_B = train_B.as_in_context(ctx)
         net.set_input((train_A, train_B))
         net.optimizer_parameters()
+        DA_loss_list.append(net.loss_D_A.asscalar())
+        DB_loss_list.append(net.loss_D_B.asscalar())
+        GA_loss_list.append(net.loss_G_A.asscalar())
+        GB_loss_list.append(net.loss_G_B.asscalar())
+    DA_loss = sum(DA_loss_list) / len(DA_loss_list)
+    DB_loss = sum(DB_loss_list) / len(DB_loss_list)
+    GA_loss = sum(GA_loss_list) / len(GA_loss_list)
+    GB_loss = sum(GB_loss_list) / len(GB_loss_list)
+    print('Epoch {}, DA_loss: {:.4f}, DB_loss: {:.4f}, GA_loss: {:.4f}, GB_loss: {:.4f}'
+          .format(epoch + 1, DA_loss, DB_loss, GA_loss,
+                  GB_loss))
 
 
-for idx, (test_A, test_B) in enumerate(test_data):
-    test_A = test_A.as_in_context(ctx)
-    fake_B = net.netG_A(test_A)
-    data = fake_B.asnumpy()
-    data = data.squeeze()
-    data = (data * 0.5 + 0.5) * 255
-    data = np.clip(data, a_min=0, a_max=255)
-    data = data.transpose((1, 2, 0))
-    data = data.astype(np.uint8)
-    plt.imshow(data)
-    plt.show()
-    plt.close()
-    test_B = test_B.as_in_context(ctx)
-    fake_A = net.netG_B(test_B)
-    data = fake_A.asnumpy()
-    data = data.squeeze()
-    data = (data * 0.5 + 0.5) * 255
-    data = np.clip(data, a_min=0, a_max=255)
-    data = data.transpose((1, 2, 0))
-    data = data.astype(np.uint8)
-    plt.imshow(data)
-    plt.show()
-    plt.close()
-    break
+test_A = Gluondataset(training=False).__getitem__(0)[0]
+test_A = mx.nd.array(test_A.expand_dims(0))
+test_A = test_A.as_in_context(mx.cpu())
+net.collect_params().reset_ctx(mx.cpu())
+data = net.netG_A(test_A)
+data = mx.nd.array(data)
+data = data.asnumpy()
+data = data.squeeze()
+data = (data * 0.5 + 0.5) * 255
+data = data.transpose((1, 2, 0))
+data = data.astype(np.uint8)
+plt.imshow(data)
+plt.show()
