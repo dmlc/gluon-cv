@@ -1,4 +1,4 @@
-import argparse, time, logging, os
+import argparse, time, logging, os, math
 
 import numpy as np
 import mxnet as mx
@@ -61,6 +61,8 @@ parser.add_argument('--model', type=str, required=True,
                     help='type of model to use. see vision_model for options.')
 parser.add_argument('--input-size', type=int, default=224,
                     help='size of the input image size. default is 224')
+parser.add_argument('--crop-ratio', type=float, default=0.875,
+                    help='Crop ratio during validation. default is 0.875')
 parser.add_argument('--use-pretrained', action='store_true',
                     help='enable using pretrained model from gluon.')
 parser.add_argument('--use_se', action='store_true',
@@ -155,6 +157,8 @@ def get_data_rec(rec_train, rec_train_idx, rec_val, rec_val_idx, batch_size, num
     jitter_param = 0.4
     lighting_param = 0.1
     input_size = opt.input_size
+    crop_ratio = opt.crop_ratio if opt.crop_ratio > 0 else 0.875
+    resize = int(math.ceil(input_size / crop_ratio))
     mean_rgb = [123.68, 116.779, 103.939]
     std_rgb = [58.393, 57.12, 57.375]
 
@@ -195,7 +199,7 @@ def get_data_rec(rec_train, rec_train_idx, rec_val, rec_val_idx, batch_size, num
         shuffle             = False,
         batch_size          = batch_size,
 
-        resize              = 256,
+        resize              = resize,
         data_shape          = (3, input_size, input_size),
         mean_r              = mean_rgb[0],
         mean_g              = mean_rgb[1],
@@ -211,6 +215,8 @@ def get_data_loader(data_dir, batch_size, num_workers):
     jitter_param = 0.4
     lighting_param = 0.1
     input_size = opt.input_size
+    crop_ratio = opt.crop_ratio if opt.crop_ratio > 0 else 0.875
+    resize = int(math.ceil(input_size / crop_ratio))
 
     def batch_fn(batch, ctx):
         data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
@@ -227,7 +233,7 @@ def get_data_loader(data_dir, batch_size, num_workers):
         normalize
     ])
     transform_test = transforms.Compose([
-        transforms.Resize(256, keep_ratio=True),
+        transforms.Resize(resize, keep_ratio=True),
         transforms.CenterCrop(input_size),
         transforms.ToTensor(),
         normalize

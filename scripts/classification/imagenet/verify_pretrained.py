@@ -1,7 +1,6 @@
-import argparse, os
+import argparse, os, math
 
 import mxnet as mx
-import math
 from mxnet import gluon, nd, image
 from mxnet.gluon.nn import Block, HybridBlock
 from mxnet.gluon.data.vision import transforms
@@ -68,7 +67,7 @@ Aligning with TF implemenation, the default crop-input
 ratio set as 0.875; Set the crop as ceil(input-size/ratio)
 """
 crop_ratio = opt.crop_ratio if opt.crop_ratio > 0 else 0.875
-resize = math.ceil(input_size/crop_ratio)
+resize = int(math.ceil(input_size/crop_ratio))
 
 transform_test = transforms.Compose([
     transforms.Resize(resize, keep_ratio=True),
