@@ -109,7 +109,7 @@ def get_dataset(dataset, args):
     if args.num_samples < 0:
         args.num_samples = len(train_dataset)
     if args.mixup:
-        from gluoncv.data.mixup import MixupDetection
+        from gluoncv.data import MixupDetection
         train_dataset = MixupDetection(train_dataset)
     return train_dataset, val_dataset, val_metric
 
@@ -317,7 +317,7 @@ if __name__ == '__main__':
     # training data
     train_dataset, val_dataset, eval_metric = get_dataset(args.dataset, args)
     train_data, val_data = get_dataloader(
-        async_net, train_dataset, val_dataset, args.data_shape, args.batch_size, args.num_workers)
+        async_net, train_dataset, val_dataset, args.data_shape, args.batch_size, args.num_workers, args)
 
     # training
     train(net, train_data, val_data, eval_metric, ctx, args)

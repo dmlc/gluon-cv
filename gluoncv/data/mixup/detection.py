@@ -1,6 +1,7 @@
 """Mixup detection dataset wrapper."""
 from __future__ import absolute_import
 import numpy as np
+import mxnet as mx
 from mxnet.gluon.data import Dataset
 
 
