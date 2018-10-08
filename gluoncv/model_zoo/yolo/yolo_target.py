@@ -119,7 +119,8 @@ class YOLOV3PrefetchTargetGenerator(gluon.Block):
                     scale_targets[b, index, match, 0] = np.log(gtw / np_anchors[match, 0])
                     scale_targets[b, index, match, 1] = np.log(gth / np_anchors[match, 1])
                     weights[b, index, match, :] = 2.0 - gtw * gth / orig_width / orig_height
-                    objectness[b, index, match, 0] = np_gt_mixratios[b, m, 0] if np_gt_mixratios is not None else 1
+                    objectness[b, index, match, 0] = (
+                        np_gt_mixratios[b, m, 0] if np_gt_mixratios is not None else 1)
                     class_targets[b, index, match, :] = 0
                     class_targets[b, index, match, int(np_gt_ids[b, m, 0])] = 1
             # since some stages won't see partial anchors, so we have to slice the correct targets
@@ -265,10 +266,10 @@ class YOLOV3TargetMerger(gluon.HybridBlock):
             smooth_weight = 1. / self._num_class
             if self._label_smooth:
                 smooth_weight = 1. / self._num_class
-                class_targets = F.where(class_targets > 0.5,
-                    class_targets - smooth_weight, class_targets)
-                class_targets = F.where(class_targets < -0.5, class_targets,
-                    F.ones_like(class_targets) * smooth_weight)
+                class_targets = F.where(
+                    class_targets > 0.5, class_targets - smooth_weight, class_targets)
+                class_targets = F.where(
+                    class_targets < -0.5, class_targets, F.ones_like(class_targets) * smooth_weight)
             class_mask = mask.tile(reps=(self._num_class,)) * (class_targets >= 0)
             return [F.stop_gradient(x) for x in [objectness, center_targets, scale_targets,
                                                  weights, class_targets, class_mask]]

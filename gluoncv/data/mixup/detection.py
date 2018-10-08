@@ -1,3 +1,4 @@
+# pylint: disable=keyword-arg-before-vararg
 """Mixup detection dataset wrapper."""
 from __future__ import absolute_import
 import numpy as np
@@ -6,12 +7,37 @@ from mxnet.gluon.data import Dataset
 
 
 class MixupDetection(Dataset):
+    """Detection dataset wrapper that performs mixup for normal dataset.
+
+    Parameters
+    ----------
+    dataset : mx.gluon.data.Dataset
+        Gluon dataset object.
+    mixup : callable random generator, e.g. np.random.uniform
+        A random mixup ratio sampler, preferably a random generator from numpy.random
+        A random float will be sampled each time with mixup(*args).
+        Use None to disable.
+    *args : list
+        Additional arguments for mixup random sampler.
+
+    """
     def __init__(self, dataset, mixup=None, *args):
         self._dataset = dataset
         self._mixup = mixup
         self._mixup_args = args
 
     def set_mixup(self, mixup=None, *args):
+        """Set mixup random sampler, use None to disable.
+
+        Parameters
+        ----------
+        mixup : callable random generator, e.g. np.random.uniform
+            A random mixup ratio sampler, preferably a random generator from numpy.random
+            A random float will be sampled each time with mixup(*args)
+        *args : list
+            Additional arguments for mixup random sampler.
+
+        """
         self._mixup = mixup
         self._mixup_args = args
 
@@ -29,7 +55,7 @@ class MixupDetection(Dataset):
 
         if lambd >= 1:
             weights1 = np.ones((label1.shape[0], 1))
-            label1 = np.hstack((label1, weights))
+            label1 = np.hstack((label1, weights1))
             return img1, label1
 
         # second image

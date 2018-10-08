@@ -223,7 +223,8 @@ class YOLOV3Loss(gluon.loss.Loss):
         weight_t = F.broadcast_mul(weight_t, objness_t)
         hard_objness_t = F.where(objness_t > 0, F.ones_like(objness_t), objness_t)
         new_objness_mask = F.where(objness_t > 0, objness_t, objness_t >= 0)
-        obj_loss = F.broadcast_mul(self._sigmoid_ce(objness, hard_objness_t, new_objness_mask), denorm)
+        obj_loss = F.broadcast_mul(
+            self._sigmoid_ce(objness, hard_objness_t, new_objness_mask), denorm)
         center_loss = F.broadcast_mul(self._sigmoid_ce(box_centers, center_t, weight_t), denorm * 2)
         scale_loss = F.broadcast_mul(self._l1_loss(box_scales, scale_t, weight_t), denorm * 2)
         denorm_class = F.cast(
