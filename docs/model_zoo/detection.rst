@@ -10,7 +10,7 @@ Visualization of Inference Throughputs vs. Validation mAP of COCO pre-trained mo
 
 .. include:: /_static/detection_throughputs.html
 
-We also provide a detailed interactive analysis of 80 object categories.
+We also provide a detailed interactive analysis of all 80 object categories.
 
 .. include:: /_static/detection_coco_per_class.html
 
