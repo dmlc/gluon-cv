@@ -20,7 +20,7 @@ ctx = mx.cpu(0)
 url = 'https://github.com/zhanghang1989/image-data/blob/master/encoding/' + \
     'segmentation/ade20k/ADE_val_00001142.jpg?raw=true'
 filename = 'ade20k_example.jpg'
-gluoncv.utils.download(url, filename)
+gluoncv.utils.download(url, filename, True)
 
 ##############################################################################
 # load the image
@@ -44,7 +44,7 @@ img = img.expand_dims(0).as_in_context(ctx)
 # ----------------------------------------------
 #
 # get pre-trained model
-model = gluoncv.model_zoo.get_model('psp_resnet50_ade', pretrained=True)
+model = gluoncv.model_zoo.get_model('psp_resnet101_ade', pretrained=True)
 
 ##############################################################################
 # make prediction using single scale

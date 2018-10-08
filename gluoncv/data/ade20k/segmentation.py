@@ -11,7 +11,7 @@ class ADE20KSegmentation(SegmentationDataset):
     Parameters
     ----------
     root : string
-        Path to VOCdevkit folder. Default is '$(HOME)/mxnet/datasplits/voc'
+        Path to VOCdevkit folder. Default is '$(HOME)/mxnet/datasplits/ade'
     split: string
         'train', 'val' or 'test'
     transform : callable, optional
@@ -97,10 +97,11 @@ class ADE20KSegmentation(SegmentationDataset):
                "plate", "monitor, monitoring device", "bulletin board, notice board",
                "shower", "radiator", "glass, drinking glass", "clock", "flag")
     def __init__(self, root=os.path.expanduser('~/.mxnet/datasets/ade'),
-                 split='train', mode=None, transform=None):
-        super(ADE20KSegmentation, self).__init__(root, split, mode, transform)
+                 split='train', mode=None, transform=None, **kwargs):
+        super(ADE20KSegmentation, self).__init__(root, split, mode, transform, **kwargs)
         root = os.path.join(root, self.BASE_DIR)
-        self.mode = split
+        assert os.path.exists(root), "Please setup the dataset using" + \
+            "scripts/datasets/ade20k.py"
         self.images, self.masks = _get_ade20k_pairs(root, split)
         assert (len(self.images) == len(self.masks))
         if len(self.images) == 0:
@@ -122,7 +123,7 @@ class ADE20KSegmentation(SegmentationDataset):
             img, mask = self._val_sync_transform(img, mask)
         else:
             assert self.mode == 'testval'
-            mask = self._mask_transform(mask)
+            img, mask = self._img_transform(img), self._mask_transform(mask)
         # general resize, normalize and toTensor
         if self.transform is not None:
             img = self.transform(img)
@@ -138,6 +139,10 @@ class ADE20KSegmentation(SegmentationDataset):
     def classes(self):
         """Category names."""
         return type(self).CLASSES
+
+    @property
+    def pred_offset(self):
+        return 1
 
 def _get_ade20k_pairs(folder, mode='train'):
     img_paths = []

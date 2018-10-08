@@ -23,15 +23,19 @@ class RCNNTargetSampler(gluon.HybridBlock):
     pos_ratio : float
         ``pos_ratio`` defines how many positive samples (``pos_ratio * num_sample``) is
         to be sampled.
+    max_num_gt : int
+        Maximum ground-truth number in whole training dataset. This is only an upper bound, not
+        necessarily very precise. However, using a very big number may impact the training speed.
 
     """
-    def __init__(self, num_image, num_proposal, num_sample, pos_iou_thresh, pos_ratio):
+    def __init__(self, num_image, num_proposal, num_sample, pos_iou_thresh, pos_ratio, max_num_gt):
         super(RCNNTargetSampler, self).__init__()
         self._num_image = num_image
         self._num_proposal = num_proposal
         self._num_sample = num_sample
         self._max_pos = int(round(num_sample * pos_ratio))
         self._pos_iou_thresh = pos_iou_thresh
+        self._max_num_gt = max_num_gt
 
     #pylint: disable=arguments-differ
     def hybrid_forward(self, F, rois, scores, gt_boxes):
@@ -79,7 +83,7 @@ class RCNNTargetSampler(gluon.HybridBlock):
                 mask = F.where(pos_mask, F.ones_like(mask) * 3, mask)
 
                 # shuffle mask
-                rand = F.random.uniform(0, 1, shape=(self._num_proposal + 100,))
+                rand = F.random.uniform(0, 1, shape=(self._num_proposal + self._max_num_gt,))
                 rand = F.slice_like(rand, ious_argmax)
                 index = F.argsort(rand)
                 mask = F.take(mask, index)

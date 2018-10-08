@@ -124,6 +124,9 @@ class FasterRCNN(RCNN):
         number if expecting more objects. You can use -1 to return all detections.
     target_generator : gluon.Block
         Generate training targets with boxes, samples, matches, gt_label and gt_box.
+    max_num_gt : int, default is 300
+        Maximum ground-truth number in whole training dataset. This is only an upper bound, not
+        necessarily very precise. However, using a very big number may impact the training speed.
 
     """
     def __init__(self, features, top_features, classes,
@@ -134,7 +137,7 @@ class FasterRCNN(RCNN):
                  ratios=(0.5, 1, 2), alloc_size=(128, 128), rpn_nms_thresh=0.7,
                  rpn_train_pre_nms=12000, rpn_train_post_nms=2000,
                  rpn_test_pre_nms=6000, rpn_test_post_nms=300, rpn_min_size=16,
-                 num_sample=128, pos_iou_thresh=0.5, pos_ratio=0.25,
+                 num_sample=128, pos_iou_thresh=0.5, pos_ratio=0.25, max_num_gt=300,
                  additional_output=False, **kwargs):
         super(FasterRCNN, self).__init__(
             features=features, top_features=top_features, classes=classes,
@@ -155,7 +158,8 @@ class FasterRCNN(RCNN):
                 test_post_nms=rpn_test_post_nms, min_size=rpn_min_size)
             self.sampler = RCNNTargetSampler(
                 num_image=self._max_batch, num_proposal=rpn_train_post_nms,
-                num_sample=num_sample, pos_iou_thresh=pos_iou_thresh, pos_ratio=pos_ratio)
+                num_sample=num_sample, pos_iou_thresh=pos_iou_thresh,
+                pos_ratio=pos_ratio, max_num_gt=max_num_gt)
 
     @property
     def target_generator(self):

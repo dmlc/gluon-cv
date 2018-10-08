@@ -1,20 +1,36 @@
 GluonCV: a Deep Learning Toolkit for Computer Vision
 ========================================================
 
-GluonCV provides implementations of state-of-the-art (SOTA) deep learning
-algorithms in computer vision.
-It is designed for helping engineers, researchers, and students to quickly
-prototype products, validate new ideas, and learning computer vision.
+GluonCV provides implementations of state-of-the-art (SOTA) deep learning algorithms in computer vision. It aims to help engineers, researchers, and students quickly prototype products, validate new ideas and learn computer vision.
 
 GluonCV features:
 
-1. training scripts that reproduces SOTA results reported in latest papers,
+1. training scripts that reproduce SOTA results reported in latest papers,
 
 2. a large set of pre-trained models,
 
 3. carefully designed APIs and easy to understand implementations,
 
 4. community support.
+
+Supported Applications
+----------------------
+
+.. image:: /_static/image-classification.png
+  :height: 200px
+  :target: model_zoo/classification.html
+
+.. image:: /_static/object-detection.png
+  :height: 200px
+  :target: model_zoo/detection.html
+
+.. image:: /_static/semantic-segmentation.png
+  :height: 200px
+  :target: model_zoo/segmentation.html#semantic-segmentation
+
+.. image:: /_static/instance-segmentation.png
+  :height: 200px
+  :target: model_zoo/segmentation.html#instance-segmentation
 
 GluonCV tutorials assume users have basic knowledges about deep learning and
 computer vision.
@@ -60,7 +76,13 @@ The easiest way to install GluonCV is through `pip <https://pip.pypa.io/en/stabl
 
  pip install gluoncv
 
+ # if you are eager to try new features, try nightly build instead
+
+ pip install gluoncv --pre --upgrade
+
 .. hint::
+
+  Nightly build is updated daily around 12am UTC to match master progress.
 
   Optionally, you can clone the GluonCV project and install it locally
 
@@ -77,6 +99,11 @@ A Quick Example
 :ref:`Object Detection Demo <sphx_glr_build_examples_detection_demo_ssd.py>`
 
 
+.. toctree::
+   :maxdepth: 2
+   :caption: Model Zoo
+
+   model_zoo/index
 
 .. toctree::
    :maxdepth: 2
@@ -88,12 +115,6 @@ A Quick Example
    build/examples_segmentation/index
    build/examples_datasets/index
    build/examples_deployment/index
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Model Zoo
-
-   model_zoo/index
 
 .. toctree::
    :maxdepth: 1

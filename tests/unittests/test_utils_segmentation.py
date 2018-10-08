@@ -1,11 +1,12 @@
+from tqdm import tqdm
 import numpy as np
 import mxnet as mx
 from mxnet.test_utils import assert_almost_equal
 from mxnet.gluon.data.vision import transforms
 
 import gluoncv
-from gluoncv.utils.metrics.voc_segmentation import *
-from gluoncv.data import VOCSegmentation
+from gluoncv.utils.metrics.segmentation import *
+from gluoncv.data import ADE20KSegmentation
 
 from common import try_gpu, with_cpu
 
@@ -22,13 +23,14 @@ def test_segmentation_utils():
     ])
     # get the dataset
     # TODO FIXME: change it to ADE20K dataset and pretrained model
-    dataset = VOCSegmentation(split='val')
+    dataset = ADE20KSegmentation(split='val')
     # load pretrained net
-    net = gluoncv.model_zoo.get_model('fcn_resnet50_voc', pretrained=True, ctx=ctx)
+    net = gluoncv.model_zoo.get_model('fcn_resnet50_ade', pretrained=True, ctx=ctx)
     # count for pixAcc and mIoU
     total_inter, total_union, total_correct, total_label = 0, 0, 0, 0
     np_inter, np_union, np_correct, np_label = 0, 0, 0, 0
-    for i in range(10):
+    tbar = tqdm(range(10))
+    for i in tbar:
         img, mask = dataset[i]
         # prepare data and make prediction
         img = transform_fn(img)
@@ -47,10 +49,10 @@ def test_segmentation_utils():
         mIoU = IoU.mean()
 
         # np predicition
-        pred = mx.nd.squeeze(mx.nd.argmax(pred, 1)).asnumpy() + 1
-        mask = mask.squeeze().asnumpy() + 1
-        _, correct2, labeled2 = pixelAccuracy(pred, mask)
-        inter2, union2 = intersectionAndUnion(pred, mask, dataset.num_class)
+        pred2 = np.argmax(pred.asnumpy().astype('int64'), 1) + 1
+        mask2 = mask.squeeze().asnumpy().astype('int64') + 1
+        _, correct2, labeled2 = pixelAccuracy(pred2, mask2)
+        inter2, union2 = intersectionAndUnion(pred2, mask2, dataset.num_class)
         np_correct += correct2
         np_label += labeled2
         np_inter += inter2
@@ -58,6 +60,8 @@ def test_segmentation_utils():
         np_pixAcc = 1.0 * np_correct / (np.spacing(1) + np_label)
         np_IoU = 1.0 * np_inter / (np.spacing(1) + np_union)
         np_mIoU = np_IoU.mean()
+        tbar.set_description('pixAcc: %.3f, np_pixAcc: %.3f, mIoU: %.3f, np_mIoU: %.3f'%\
+            (pixAcc, np_pixAcc, mIoU, np_mIoU))
 
     np.testing.assert_allclose(total_inter, np_inter)
     np.testing.assert_allclose(total_union, np_union)
