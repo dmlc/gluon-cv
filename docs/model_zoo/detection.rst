@@ -4,11 +4,13 @@ Detection
 ================
 
 Visualization of Inference Throughputs vs. Validation mAP of COCO pre-trained models is illustrated in the first graph.
-You can hover mouse on circles to reveal details.
+
+.. image:: /_static/plot_help.png
+  :width: 100%
 
 .. include:: /_static/detection_throughputs.html
 
-We also provide a detailed analysis of 80 object categories, you can click on legends to show or hide each model for a cleaner comparison.
+We also provide a detailed analysis of 80 object categories.
 
 .. include:: /_static/detection_coco_per_class.html
 
