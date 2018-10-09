@@ -1,4 +1,4 @@
-"""4. Train PSPNet on ADE20K Dataset
+"""5. Train PSPNet on ADE20K Dataset
 =================================
 
 This is a tutorial of training PSPNet on ADE20K dataset using Gluon Vison.

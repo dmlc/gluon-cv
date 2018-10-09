@@ -34,9 +34,9 @@ class PSPNet(SegBaseModel):
 
     """
     def __init__(self, nclass, backbone='resnet50', aux=True, ctx=cpu(), pretrained_base=True,
-                 **kwargs):
-        super(PSPNet, self).__init__(nclass, aux, backbone, ctx=ctx, pretrained_base=True,
-                                     **kwargs)
+                 base_size=520, crop_size=480, **kwargs):
+        super(PSPNet, self).__init__(nclass, aux, backbone, ctx=ctx, base_size=base_size,
+                                     crop_size=crop_size, pretrained_base=True, **kwargs)
         with self.name_scope():
             self.head = _PSPHead(nclass, **kwargs)
             self.head.initialize(ctx=ctx)
@@ -45,6 +45,7 @@ class PSPNet(SegBaseModel):
                 self.auxlayer = _FCNHead(1024, nclass, **kwargs)
                 self.auxlayer.initialize(ctx=ctx)
                 self.auxlayer.collect_params().setattr('lr_mult', 10)
+        print('self.crop_size', self.crop_size)
 
     def hybrid_forward(self, F, x):
         c3, c4 = self.base_forward(x)
@@ -135,22 +136,13 @@ def get_psp(dataset='pascal_voc', backbone='resnet50', pretrained=False,
     >>> model = get_fcn(dataset='pascal_voc', backbone='resnet50', pretrained=False)
     >>> print(model)
     """
-    from ..data.pascal_voc.segmentation import VOCSegmentation
-    from ..data.pascal_aug.segmentation import VOCAugSegmentation
-    from ..data.ade20k.segmentation import ADE20KSegmentation
-    from ..data.mscoco.segmentation import COCOSegmentation
     acronyms = {
         'pascal_voc': 'voc',
         'pascal_aug': 'voc',
         'ade20k': 'ade',
         'coco': 'coco',
     }
-    datasets = {
-        'pascal_voc': VOCSegmentation,
-        'pascal_aug': VOCAugSegmentation,
-        'ade20k': ADE20KSegmentation,
-        'coco': COCOSegmentation,
-    }
+    from ..data import datasets
     # infer number of classes
     model = PSPNet(datasets[dataset].NUM_CLASS, backbone=backbone,
                    pretrained_base=pretrained_base, ctx=ctx, **kwargs)

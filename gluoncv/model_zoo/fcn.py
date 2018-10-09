@@ -38,9 +38,9 @@ class FCN(SegBaseModel):
     """
     # pylint: disable=arguments-differ
     def __init__(self, nclass, backbone='resnet50', aux=True, ctx=cpu(), pretrained_base=True,
-                 **kwargs):
-        super(FCN, self).__init__(nclass, aux, backbone, ctx=ctx, pretrained_base=True,
-                                  **kwargs)
+                 base_size=520, crop_size=480, **kwargs):
+        super(FCN, self).__init__(nclass, aux, backbone, ctx=ctx, base_size=base_size,
+                                  crop_size=crop_size, pretrained_base=True, **kwargs)
         with self.name_scope():
             self.head = _FCNHead(2048, nclass, **kwargs)
             self.head.initialize(ctx=ctx)
@@ -109,23 +109,13 @@ def get_fcn(dataset='pascal_voc', backbone='resnet50', pretrained=False,
     >>> model = get_fcn(dataset='pascal_voc', backbone='resnet50', pretrained=False)
     >>> print(model)
     """
-
-    from ..data.pascal_voc.segmentation import VOCSegmentation
-    from ..data.pascal_aug.segmentation import VOCAugSegmentation
-    from ..data.ade20k.segmentation import ADE20KSegmentation
-    from ..data.mscoco.segmentation import COCOSegmentation
     acronyms = {
         'pascal_voc': 'voc',
         'pascal_aug': 'voc',
         'ade20k': 'ade',
         'coco': 'coco',
     }
-    datasets = {
-        'pascal_voc': VOCSegmentation,
-        'pascal_aug': VOCAugSegmentation,
-        'ade20k': ADE20KSegmentation,
-        'coco': COCOSegmentation,
-    }
+    from ..data import datasets
     # infer number of classes
     model = FCN(datasets[dataset].NUM_CLASS, backbone=backbone, pretrained_base=pretrained_base,
                 ctx=ctx, **kwargs)

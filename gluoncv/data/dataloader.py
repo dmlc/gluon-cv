@@ -6,6 +6,7 @@ import numpy as np
 from mxnet import nd
 from mxnet import context
 from mxnet.gluon.data import DataLoader
+from mxnet.recordio import MXRecordIO
 
 def default_pad_batchify_fn(data):
     """Collate data into batch, labels are padded to same shape"""
@@ -128,10 +129,27 @@ def _as_in_context(data, ctx):
         return [_as_in_context(d, ctx) for d in data]
     return data
 
+def _recursive_fork_recordio(obj, depth, max_depth=1000):
+    """Recursively find instance of MXRecordIO and reset file handler.
+    This is required for MXRecordIO which holds a C pointer to a opened file after fork.
+    """
+    if depth >= max_depth:
+        return
+    if isinstance(obj, MXRecordIO):
+        obj.close()
+        obj.open()  # re-obtain file hanlder in new process
+    elif (hasattr(obj, '__dict__')):
+        for _, v in obj.__dict__.items():
+            _recursive_fork_recordio(v, depth + 1, max_depth)
+
 def random_worker_loop(datasets, key_queue, data_queue, batchify_fn):
     """Worker loop for multiprocessing DataLoader with multiple transform functions."""
+    # re-fork a new recordio handler in new process if applicable
+    limit = sys.getrecursionlimit()
+    max_recursion_depth = min(limit - 5, max(10, limit // 2))
     for dataset in datasets:
-        dataset._fork()
+        _recursive_fork_recordio(dataset, 0, max_recursion_depth)
+
     while True:
         idx, samples, random_idx = key_queue.get()
         if idx is None:
