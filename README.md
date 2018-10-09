@@ -22,14 +22,14 @@ models. This toolkit offers four main features:
 
 # Supported Applications
 
-| Application  | Illustration  |
-|-----------------------|:---:|
-| [Image Classification](https://gluon-cv.mxnet.io/model_zoo/classification.html)  | <a href="https://gluon-cv.mxnet.io/model_zoo/classification.html"><img  src="docs/_static/image-classification.png" alt="classification" height="200"/></a>  |
-| [Object Detection](https://gluon-cv.mxnet.io/model_zoo/detection.html)      |  <a href="https://gluon-cv.mxnet.io/model_zoo/detection.html"><img src="docs/_static/object-detection.png" alt="detection" height="200"/></a> |
-| [Semantic Segmentation](https://gluon-cv.mxnet.io/model_zoo/segmentation.html#semantic-segmentation) |  <a href="https://gluon-cv.mxnet.io/model_zoo/segmentation.html#semantic-segmentation"><img src="docs/_static/semantic-segmentation.png" alt="semantic" height="200"/></a> |
-| [Instance Segmentation](https://gluon-cv.mxnet.io/model_zoo/segmentation.html#instance-segmentation) | <a href="https://gluon-cv.mxnet.io/model_zoo/segmentation.html#instance-segmentation"><img src="docs/_static/instance-segmentation.png" alt="instance" height="200"/></a> |
-| [WGAN](https://github.com/dmlc/gluon-cv/tree/master/scripts/gan/wgan) | <a href="https://github.com/dmlc/gluon-cv/tree/master/scripts/gan/wgan"><img src="https://github.com/dmlc/gluon-cv/raw/master/scripts/gan/wgan/fake_samples_400000.png" alt="lsun" height="200"/></a> |
-| [Person Re-ID](https://github.com/dmlc/gluon-cv/tree/master/scripts/re-id/baseline) | <a href="https://github.com/dmlc/gluon-cv/tree/master/scripts/re-id/baseline"><img src="https://user-images.githubusercontent.com/3307514/46702937-f4311800-cbd9-11e8-8eeb-c945ec5643fb.png" alt="re-id" height="160"/></a> |
+| Application  | Illustration  | Note |
+|:-----------------------:|:---:|:---:|
+| [Image Classification](https://gluon-cv.mxnet.io/model_zoo/classification.html)  | <a href="https://gluon-cv.mxnet.io/model_zoo/classification.html"><img  src="docs/_static/image-classification.png" alt="classification" height="200"/></a>  | Classify the entire image |
+| [Object Detection](https://gluon-cv.mxnet.io/model_zoo/detection.html)      |  <a href="https://gluon-cv.mxnet.io/model_zoo/detection.html"><img src="docs/_static/object-detection.png" alt="detection" height="200"/></a> | Detect objects of interest in complex scenes |
+| [Semantic Segmentation](https://gluon-cv.mxnet.io/model_zoo/segmentation.html#semantic-segmentation) |  <a href="https://gluon-cv.mxnet.io/model_zoo/segmentation.html#semantic-segmentation"><img src="docs/_static/semantic-segmentation.png" alt="semantic" height="200"/></a> | Associate each pixel of an image with a category label |
+| [Instance Segmentation](https://gluon-cv.mxnet.io/model_zoo/segmentation.html#instance-segmentation) | <a href="https://gluon-cv.mxnet.io/model_zoo/segmentation.html#instance-segmentation"><img src="docs/_static/instance-segmentation.png" alt="instance" height="200"/></a> | Detect and segment individual objects|
+| [GAN](https://github.com/dmlc/gluon-cv/tree/master/scripts/gan) | <a href="https://github.com/dmlc/gluon-cv/tree/master/scripts/gan"><img src="https://github.com/dmlc/gluon-cv/raw/master/scripts/gan/wgan/fake_samples_400000.png" alt="lsun" height="200"/></a> | Generate visually deceptive images |
+| [Person Re-ID](https://github.com/dmlc/gluon-cv/tree/master/scripts/re-id/baseline) | <a href="https://github.com/dmlc/gluon-cv/tree/master/scripts/re-id/baseline"><img src="https://user-images.githubusercontent.com/3307514/46702937-f4311800-cbd9-11e8-8eeb-c945ec5643fb.png" alt="re-id" height="160"/></a> | Re-identify pedestrians across scenes|
 
 # Installation
 
