@@ -13,7 +13,7 @@ _model_sha1 = {name: checksum for checksum, name in [
     ('b6c8a95717e3e761bd88d145f4d0a214aaa515dc', 'densenet161'),
     ('2603f878403c6aa5a71a124c4a3307143d6820e9', 'densenet169'),
     ('1cdbc116bc3a1b65832b18cf53e1cb8e7da017eb', 'densenet201'),
-    ('ed47ec45a937b656fcc94dabde85495bbef5ba1f', 'inceptionv3'),
+    ('a5050dbcbfc54908fc1b7700698eb7ffbc150417', 'inceptionv3'),
     ('f0046a3da4e150b85da58ea31913dbb86e7540d1', 'mobilenet0.25'),
     ('0130d2aa2f7e3a63db35579b243e25f512172371', 'mobilenet0.5'),
     ('84c801e27b1ac5040b6e945c0d1f8d49e9a59f3d', 'mobilenet0.75'),

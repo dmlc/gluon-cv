@@ -105,6 +105,7 @@ def test_imagenet_models():
               'se_resnet18_v2', 'se_resnet34_v2', 'se_resnet50_v2',
               'se_resnet101_v2', 'se_resnet152_v2',
               'senet_52', 'senet_103', 'senet_154',
+              'squeezenet1.0', 'squeezenet1.1',
               'alexnet', 'densenet121', 'densenet161', 'densenet169', 'densenet201',
               'vgg11', 'vgg11_bn', 'vgg13', 'vgg13_bn',
               'vgg16', 'vgg16_bn', 'vgg19', 'vgg19_bn']
