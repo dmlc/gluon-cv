@@ -24,7 +24,7 @@ models. This toolkit offers four main features:
 
 | Application  | Illustration  | Note |
 |:-----------------------:|:---:|:---:|
-| [Image Classification](https://gluon-cv.mxnet.io/model_zoo/classification.html)  | <a href="https://gluon-cv.mxnet.io/model_zoo/classification.html"><img  src="docs/_static/image-classification.png" alt="classification" height="200"/></a>  | Classify category of the entire image |
+| [Image Classification](https://gluon-cv.mxnet.io/model_zoo/classification.html)  | <a href="https://gluon-cv.mxnet.io/model_zoo/classification.html"><img  src="docs/_static/image-classification.png" alt="classification" height="200"/></a>  | Classify an entire image |
 | [Object Detection](https://gluon-cv.mxnet.io/model_zoo/detection.html)      |  <a href="https://gluon-cv.mxnet.io/model_zoo/detection.html"><img src="docs/_static/object-detection.png" alt="detection" height="200"/></a> | Detect objects of interest in complex scenes |
 | [Semantic Segmentation](https://gluon-cv.mxnet.io/model_zoo/segmentation.html#semantic-segmentation) |  <a href="https://gluon-cv.mxnet.io/model_zoo/segmentation.html#semantic-segmentation"><img src="docs/_static/semantic-segmentation.png" alt="semantic" height="200"/></a> | Associate each pixel of an image with categorial labels |
 | [Instance Segmentation](https://gluon-cv.mxnet.io/model_zoo/segmentation.html#instance-segmentation) | <a href="https://gluon-cv.mxnet.io/model_zoo/segmentation.html#instance-segmentation"><img src="docs/_static/instance-segmentation.png" alt="instance" height="200"/></a> | Detect and segment individual objects|
