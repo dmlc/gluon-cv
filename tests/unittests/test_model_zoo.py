@@ -170,7 +170,8 @@ def test_segmentation_models():
     models = ['fcn_resnet101_coco', 'psp_resnet101_coco', 'deeplab_resnet101_coco',
               'fcn_resnet101_voc', 'psp_resnet101_voc', 'deeplab_resnet101_voc',
               'fcn_resnet50_ade', 'psp_resnet50_ade', 'deeplab_resnet50_ade',
-              'fcn_resnet101_ade', 'psp_resnet101_ade', 'deeplab_resnet101_ade']
+              'fcn_resnet101_ade', 'psp_resnet101_ade', 'deeplab_resnet101_ade',
+              'psp_resnet101_citys', 'deeplab_resnet152_voc', 'deeplab_resnet152_coco']
     _test_model_list(models, ctx, x, pretrained=True, pretrained_base=True)
     _test_model_list(models, ctx, x, pretrained=False, pretrained_base=False)
     _test_model_list(models, ctx, x, pretrained=False, pretrained_base=True)
