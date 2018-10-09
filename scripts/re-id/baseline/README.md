@@ -42,7 +42,7 @@ ours(avg) | 92.5 | 97.2 | 98.3 | 80.1
 ours(best, with avg) | 93.1 | 97.1 | 98.4 | 80.6
 
 
-**Download Market1501 dataset and Make Label List**
+**Download Market1501 Dataset and Make Label List**
 
 ```bash
 cd ../../../scripts/datasets/
