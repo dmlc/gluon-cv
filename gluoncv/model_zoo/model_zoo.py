@@ -112,6 +112,7 @@ _models = {
     'psp_resnet101_voc': get_psp_resnet101_voc,
     'psp_resnet50_ade': get_psp_resnet50_ade,
     'psp_resnet101_ade': get_psp_resnet101_ade,
+    'psp_resnet101_citys': get_psp_resnet101_citys,
     'deeplab_resnet101_coco': get_deeplab_resnet101_coco,
     'deeplab_resnet101_voc': get_deeplab_resnet101_voc,
     'deeplab_resnet50_ade': get_deeplab_resnet50_ade,
