@@ -141,6 +141,7 @@ def get_psp(dataset='pascal_voc', backbone='resnet50', pretrained=False,
         'pascal_aug': 'voc',
         'ade20k': 'ade',
         'coco': 'coco',
+        'citys': 'citys',
     }
     from ..data import datasets
     # infer number of classes
