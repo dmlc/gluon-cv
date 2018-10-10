@@ -94,6 +94,18 @@ def test_ade_segmentation():
         index = np.random.randint(0, len(val))
         _ = val[index]
 
+def test_citys_segmentation():
+    if not osp.isdir(osp.expanduser('~/.mxnet/datasets/ade')):
+        return
+
+    # use valid only, loading training split is very slow
+    val = data.CitySegmentation(split='train')
+    name = str(val)
+
+    for _ in range(10):
+        index = np.random.randint(0, len(val))
+        _ = val[index]
+
 def test_lst_detection():
     dog_label = [130, 220, 320, 530]
     bike_label = [115, 120, 580, 420]
