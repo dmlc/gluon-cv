@@ -28,7 +28,7 @@ stage("Unit Test") {
         conda list
         make clean
         # from https://stackoverflow.com/questions/19548957/can-i-force-pip-to-reinstall-the-current-version
-        pip install --upgrade --force-reinstall --no-deps .
+        pip install --upgrade --force-reinstall .
         env
         export LD_LIBRARY_PATH=/usr/local/cuda-8.0/lib64
         export MPLBACKEND=Agg
@@ -50,7 +50,7 @@ stage("Unit Test") {
         conda list
         make clean
         # from https://stackoverflow.com/questions/19548957/can-i-force-pip-to-reinstall-the-current-version
-        pip install --upgrade --force-reinstall --no-deps .
+        pip install --upgrade --force-reinstall .
         env
         export LD_LIBRARY_PATH=/usr/local/cuda-8.0/lib64
         export MPLBACKEND=Agg
