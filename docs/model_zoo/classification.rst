@@ -22,15 +22,15 @@ ImageNet
 
     :download:`Download train_imagenet.py<../../scripts/classification/imagenet/train_imagenet.py>`
 
-    Model names marked with "*" are trained with "Mix-Up" [13]_ .
-
 **ResNet**
 
 .. hint::
 
-    The `resnet_v1b` family is a modified version of `resnet_v1`, specifically we set stride at the 3x3 layer for a bottleneck block. `ResNet18` and `ResNet34` have identical `v1` and `v1b` network structures. This modification has been mentioned in recent literatures, e.g. [8]_ .
-    The `resnet_v1c` family is a modified version of `resnet_v1b`, specifically we replace the 7x7 conv layer with three 3x3 conv layers.
-    The `resnet_v1d` family is a modified version of `resnet_v1c`, specifically we add a avgpool layer 2x2 with stride 2 downsample feature map on the residual path to preserve more information.
+    ``ResNet_v1b`` modifies ``resNet_v1`` by setting stride at the 3x3 layer for a bottleneck block.
+
+    ``ResNet_v1c`` modifies ``resNet_v1b`` by replacing the 7x7 conv layer with three 3x3 conv layers.
+
+    ``ResNet_v1d`` modifies ``resNet_v1c`` by adding an avgpool layer 2x2 with stride 2 downsample feature map on the residual path to preserve more information.
 
 +-----------------------+--------+--------+------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
 | Model                 | Top-1  | Top-5  | Training Command                                                                                                                   | Training Log                                                                                                                  |
@@ -59,11 +59,11 @@ ImageNet
 +-----------------------+--------+--------+------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
 | ResNet101_v1c [1]_    | 79.60  | 94.75  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet101_v1c.sh>`_     | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet101_v1c.log>`_        |
 +-----------------------+--------+--------+------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
-| ResNet50_v1d * [1]_   | 79.15  | 94.58  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet50_v1d.sh>`_      | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet50_v1d.log>`_         |
+| ResNet50_v1d [1]_     | 79.15  | 94.58  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet50_v1d.sh>`_      | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet50_v1d.log>`_         |
 +-----------------------+--------+--------+------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
-| ResNet101_v1d * [1]_  | 80.51  | 95.12  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet101_v1d.sh>`_     | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet101_v1d.log>`_        |
+| ResNet101_v1d [1]_    | 80.51  | 95.12  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet101_v1d.sh>`_     | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet101_v1d.log>`_        |
 +-----------------------+--------+--------+------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
-| ResNet152_v1d * [1]_  | 80.61  | 95.34  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet152_v1d.sh>`_     | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet152_v1d.log>`_        |
+| ResNet152_v1d [1]_    | 80.61  | 95.34  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet152_v1d.sh>`_     | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet152_v1d.log>`_        |
 +-----------------------+--------+--------+------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
 | ResNet18_v2 [2]_      | 71.00  | 89.92  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet18_v2.sh>`_       | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet18_v2.log>`_          |
 +-----------------------+--------+--------+------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
@@ -148,16 +148,16 @@ ImageNet
 
 .. hint::
 
-    `InceptionV3` is evaluated with input size of 299x299.
+    ``InceptionV3`` is evaluated with input size of 299x299.
 
 +-----------------------+--------+--------+------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
 | Model                 | Top-1  | Top-5  | Training Command                                                                                                                   | Training Log                                                                                                                  |
 +=======================+========+========+====================================================================================================================================+===============================================================================================================================+
 | AlexNet [6]_          | 54.92  | 78.03  |                                                                                                                                    |                                                                                                                               |
 +-----------------------+--------+--------+------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
-| darknet53 * [3]_      | 78.56  | 94.43  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/darknet53.sh>`_         | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/darknet53.log>`_            |
+| darknet53   [3]_      | 78.56  | 94.43  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/darknet53.sh>`_         | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/darknet53.log>`_            |
 +-----------------------+--------+--------+------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
-| InceptionV3 * [8]_    | 78.77  | 94.39  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/inceptionv3.sh>`_       | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/inceptionv3.log>`_          |
+| InceptionV3 [8]_      | 78.77  | 94.39  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/inceptionv3.sh>`_       | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/inceptionv3.log>`_          |
 +-----------------------+--------+--------+------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
 
 CIFAR10
@@ -198,7 +198,6 @@ The following table lists pre-trained models trained on CIFAR10.
 +------------------------------+----------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | CIFAR_ResNeXt29_16x64d [12]_ | 96.3 / 97.3                | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/cifar/cifar_resnext29_16x64d.sh>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/cifar/cifar_resnext29_16x64d_mixup.sh>`_   | `Vanilla <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/cifar/cifar_resnext29_16x64d.log>`_ / `Mix-Up <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/cifar/cifar_resnext29_16x64d_mixup.log>`_   |
 +------------------------------+----------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-
 
 .. [1] He, Kaiming, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. \
        "Deep residual learning for image recognition." \
