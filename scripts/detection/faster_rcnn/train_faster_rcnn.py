@@ -66,6 +66,9 @@ def parse_args():
                         help='Random seed to be fixed.')
     parser.add_argument('--verbose', dest='verbose', action='store_true',
                         help='Print helpful debugging info once set.')
+    parser.add_argument('--mixup', action='store_true', help='Use mixup training.')
+    parser.add_argument('--no-mixup-epochs', type=int, default=20,
+                        help='Disable mixup training if enabled in the last N epochs.')
     args = parser.parse_args()
     if args.dataset == 'voc':
         args.epochs = int(args.epochs) if args.epochs else 20
@@ -181,6 +184,9 @@ def get_dataset(dataset, args):
         val_metric = COCODetectionMetric(val_dataset, args.save_prefix + '_eval', cleanup=True)
     else:
         raise NotImplementedError('Dataset: {} not implemented.'.format(dataset))
+    if args.mixup:
+        from gluoncv.data.mixup import MixupDetection
+        train_dataset = MixupDetection(train_dataset)
     return train_dataset, val_dataset, val_metric
 
 def get_dataloader(net, train_dataset, val_dataset, batch_size, num_workers):
@@ -305,6 +311,14 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
     logger.info('Start training from [Epoch {}]'.format(args.start_epoch))
     best_map = [0]
     for epoch in range(args.start_epoch, args.epochs):
+        mix_ratio = 1.0
+        if args.mixup:
+            # TODO(zhreshold) only support evenly mixup now, target generator needs to be modified otherwise
+            train_data._dataset.set_mixup(np.random.uniform, 0.5, 0.5)
+            mix_ratio = 0.5
+            if epoch >= args.epochs - args.no_mixup_epochs:
+                train_data._dataset.set_mixup(None)
+                mix_ratio = 1.0
         while lr_steps and epoch >= lr_steps[0]:
             new_lr = trainer.learning_rate * lr_decay
             lr_steps.pop(0)
@@ -349,11 +363,11 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
                     rcnn_loss2 = rcnn_box_loss(box_pred, box_targets, box_masks) * box_pred.size / box_pred.shape[0] / num_rcnn_pos
                     rcnn_loss = rcnn_loss1 + rcnn_loss2
                     # overall losses
-                    losses.append(rpn_loss.sum() + rcnn_loss.sum())
-                    metric_losses[0].append(rpn_loss1.sum())
-                    metric_losses[1].append(rpn_loss2.sum())
-                    metric_losses[2].append(rcnn_loss1.sum())
-                    metric_losses[3].append(rcnn_loss2.sum())
+                    losses.append(rpn_loss.sum() * mix_ratio + rcnn_loss.sum() * mix_ratio)
+                    metric_losses[0].append(rpn_loss1.sum() * mix_ratio)
+                    metric_losses[1].append(rpn_loss2.sum() * mix_ratio)
+                    metric_losses[2].append(rcnn_loss1.sum() * mix_ratio)
+                    metric_losses[3].append(rcnn_loss2.sum() * mix_ratio)
                     add_losses[0].append([[rpn_cls_targets, rpn_cls_targets>=0], [rpn_score]])
                     add_losses[1].append([[rpn_box_targets, rpn_box_masks], [rpn_box]])
                     add_losses[2].append([[cls_targets], [cls_pred]])
