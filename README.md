@@ -20,6 +20,17 @@ models. This toolkit offers four main features:
 3. Carefully designed APIs that greatly reduce the implementation complexity
 4. Community supports
 
+# Supported Applications
+
+| Application  | Illustration  | Note |
+|:-----------------------:|:---:|:---:|
+| [Image Classification](https://gluon-cv.mxnet.io/model_zoo/classification.html)  | <a href="https://gluon-cv.mxnet.io/model_zoo/classification.html"><img  src="docs/_static/image-classification.png" alt="classification" height="200"/></a>  | Classify an entire image |
+| [Object Detection](https://gluon-cv.mxnet.io/model_zoo/detection.html)      |  <a href="https://gluon-cv.mxnet.io/model_zoo/detection.html"><img src="docs/_static/object-detection.png" alt="detection" height="200"/></a> | Detect objects of interest in complex scenes |
+| [Semantic Segmentation](https://gluon-cv.mxnet.io/model_zoo/segmentation.html#semantic-segmentation) |  <a href="https://gluon-cv.mxnet.io/model_zoo/segmentation.html#semantic-segmentation"><img src="docs/_static/semantic-segmentation.png" alt="semantic" height="200"/></a> | Associate each pixel of an image with categorial labels |
+| [Instance Segmentation](https://gluon-cv.mxnet.io/model_zoo/segmentation.html#instance-segmentation) | <a href="https://gluon-cv.mxnet.io/model_zoo/segmentation.html#instance-segmentation"><img src="docs/_static/instance-segmentation.png" alt="instance" height="200"/></a> | Detect and segment individual objects|
+| [GAN](https://github.com/dmlc/gluon-cv/tree/master/scripts/gan) | <a href="https://github.com/dmlc/gluon-cv/tree/master/scripts/gan"><img src="https://github.com/dmlc/gluon-cv/raw/master/scripts/gan/wgan/fake_samples_400000.png" alt="lsun" height="200"/></a> | Generate visually deceptive images |
+| [Person Re-ID](https://github.com/dmlc/gluon-cv/tree/master/scripts/re-id/baseline) | <a href="https://github.com/dmlc/gluon-cv/tree/master/scripts/re-id/baseline"><img src="https://user-images.githubusercontent.com/3307514/46702937-f4311800-cbd9-11e8-8eeb-c945ec5643fb.png" alt="re-id" height="160"/></a> | Re-identify pedestrians across scenes|
+
 # Installation
 
 GluonCV supports Python 2.7/3.5 or later. The easiest way to install is via pip, the following command installs the latest nightly build of GluonCV and MXNet:
@@ -47,6 +58,10 @@ All tutorials are available at [our website](https://gluon-cv.mxnet.io/index.htm
 - [Semantic Segmentation](http://gluon-cv.mxnet.io/build/examples_segmentation/index.html)
 
 - [Instance Segmentation](http://gluon-cv.mxnet.io/build/examples_instance/index.html)
+
+- [Generative Adversarial Network](https://github.com/dmlc/gluon-cv/tree/master/scripts/gan)
+
+- [Person Re-identification](https://github.com/dmlc/gluon-cv/tree/master/scripts/re-id/)
 
 # Resources
 
