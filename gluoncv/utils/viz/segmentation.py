@@ -30,6 +30,10 @@ def get_color_pallete(npimg, dataset='pascal_voc'):
         out_img = Image.fromarray(npimg.astype('uint8'))
         out_img.putpalette(adepallete)
         return out_img
+    elif dataset == 'citys':
+        out_img = Image.fromarray(npimg.astype('uint8'))
+        out_img.putpalette(cityspallete)
+        return out_img
     out_img = Image.fromarray(npimg.astype('uint8'))
     out_img.putpalette(vocpallete)
     return out_img
@@ -86,3 +90,25 @@ adepallete = [
     10,190,212,214,255,0,0,204,255,20,0,255,255,255,0,0,153,255,0,41,255,0,255,204,41,0,
     255,41,255,0,173,0,255,0,245,255,71,0,255,122,0,255,0,255,184,0,92,255,184,255,0,0,
     133,255,255,214,0,25,194,194,102,255,0,92,0,255]
+
+cityspallete = [
+    128, 64, 128,
+    244, 35, 232,
+    70, 70, 70,
+    102, 102, 156,
+    190, 153, 153,
+    153, 153, 153,
+    250, 170, 30,
+    220, 220, 0,
+    107, 142, 35,
+    152, 251, 152,
+    0, 130, 180,
+    220, 20, 60,
+    255, 0, 0,
+    0, 0, 142,
+    0, 0, 70,
+    0, 60, 100,
+    0, 80, 100,
+    0, 0, 230,
+    119, 11, 32,
+]
