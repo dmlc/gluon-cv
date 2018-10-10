@@ -501,10 +501,10 @@ def get_resnet(version, num_layers, pretrained=False, ctx=cpu(),
         from .model_store import get_model_file
         if not use_se:
             net.load_parameters(get_model_file('resnet%d_v%d'%(num_layers, version),
-                                               root=root), ctx=ctx)
+                                               tag=pretrained, root=root), ctx=ctx)
         else:
             net.load_parameters(get_model_file('se_resnet%d_v%d'%(num_layers, version),
-                                               root=root), ctx=ctx)
+                                               tag=pretrained, root=root), ctx=ctx)
     return net
 
 def resnet18_v1(**kwargs):

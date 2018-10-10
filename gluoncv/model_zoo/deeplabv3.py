@@ -177,7 +177,7 @@ def get_deeplab(dataset='pascal_voc', backbone='resnet50', pretrained=False,
     if pretrained:
         from .model_store import get_model_file
         model.load_parameters(get_model_file('deeplab_%s_%s'%(backbone, acronyms[dataset]),
-                                         root=root), ctx=ctx)
+                                             tag=pretrained, root=root), ctx=ctx)
     return model
 
 def get_deeplab_resnet101_coco(**kwargs):

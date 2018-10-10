@@ -620,7 +620,7 @@ def get_nasnet(repeat=6, penultimate_filters=4032,
     if pretrained:
         from .model_store import get_model_file
         net.load_params(get_model_file('nasnet_%d_%d'%(repeat, penultimate_filters),
-                                       root=root), ctx=ctx)
+                                       tag=pretrained, root=root), ctx=ctx)
     return net
 
 def nasnet_4_1056(**kwargs):

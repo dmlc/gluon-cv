@@ -122,7 +122,7 @@ def get_fcn(dataset='pascal_voc', backbone='resnet50', pretrained=False,
     if pretrained:
         from .model_store import get_model_file
         model.load_parameters(get_model_file(
-            'fcn_%s_%s'%(backbone, acronyms[dataset]), root=root), ctx=ctx)
+            'fcn_%s_%s'%(backbone, acronyms[dataset]), tag=pretrained, root=root), ctx=ctx)
     return model
 
 def get_fcn_resnet50_voc(**kwargs):

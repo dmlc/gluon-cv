@@ -196,7 +196,7 @@ def get_vgg_atrous_extractor(num_layers, im_size, pretrained=False, ctx=mx.cpu()
         batch_norm_suffix = '_bn' if kwargs.get('batch_norm') else ''
         net.initialize(ctx=ctx)
         net.load_params(get_model_file('vgg%d_atrous%s'%(num_layers, batch_norm_suffix),
-                                       root=root), ctx=ctx, allow_missing=True)
+                                       tag=pretrained, root=root), ctx=ctx, allow_missing=True)
     return net
 
 def vgg16_atrous_300(**kwargs):

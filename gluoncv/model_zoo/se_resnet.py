@@ -432,7 +432,7 @@ def get_se_resnet(version, num_layers, pretrained=False, ctx=cpu(),
     if pretrained:
         from .model_store import get_model_file
         net.load_params(get_model_file('se_resnet%d_v%d'%(num_layers, version),
-                                       root=root), ctx=ctx)
+                                       tag=pretrained, root=root), ctx=ctx)
     return net
 
 def se_resnet18_v1(**kwargs):

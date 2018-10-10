@@ -204,11 +204,11 @@ def get_resnext(num_layers, cardinality=32, bottleneck_width=4, use_se=False,
         if not use_se:
             net.load_params(get_model_file('resnext%d_%dx%dd'%(num_layers, cardinality,
                                                                bottleneck_width),
-                                           root=root), ctx=ctx)
+                                           tag=pretrained, root=root), ctx=ctx)
         else:
             net.load_params(get_model_file('se_resnext%d_%dx%dd'%(num_layers, cardinality,
                                                                   bottleneck_width),
-                                           root=root), ctx=ctx)
+                                           tag=pretrained, root=root), ctx=ctx)
 
     return net
 
