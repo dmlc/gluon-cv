@@ -8,7 +8,7 @@ from .fcn import _FCNHead
 # pylint: disable-all
 
 __all__ = ['PSPNet', 'get_psp', 'get_psp_resnet101_coco', 'get_psp_resnet101_voc',
-    'get_psp_resnet50_ade', 'get_psp_resnet101_ade']
+    'get_psp_resnet50_ade', 'get_psp_resnet101_ade', 'get_psp_resnet101_citys']
 
 class PSPNet(SegBaseModel):
     r"""Pyramid Scene Parsing Network
@@ -141,6 +141,7 @@ def get_psp(dataset='pascal_voc', backbone='resnet50', pretrained=False,
         'pascal_aug': 'voc',
         'ade20k': 'ade',
         'coco': 'coco',
+        'citys': 'citys',
     }
     from ..data import datasets
     # infer number of classes
@@ -223,3 +224,22 @@ def get_psp_resnet101_ade(**kwargs):
     >>> print(model)
     """
     return get_psp('ade20k', 'resnet101', **kwargs)
+
+
+def get_psp_resnet101_citys(**kwargs):
+    r"""Pyramid Scene Parsing Network
+    Parameters
+    ----------
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+
+    Examples
+    --------
+    >>> model = get_psp_resnet101_ade(pretrained=True)
+    >>> print(model)
+    """
+    return get_psp('citys', 'resnet101', **kwargs)
