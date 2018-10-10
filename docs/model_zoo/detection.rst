@@ -38,7 +38,7 @@ and their performances with more details.
 
   - For SSD [1]_ networks: :download:`Download train_ssd.py<../../scripts/detection/ssd/train_ssd.py>`
   - For Faster-RCNN [2]_ networks: :download:`Download train_faster_rcnn.py<../../scripts/detection/faster_rcnn/train_faster_rcnn.py>`
-  - For YOLO v3 [3]_ networks: :download:`Download train_yolo3_rand_size.py<../../scripts/detection/yolo/train_yolo3_rand_size.py>` or :download:`Download train_yolo3.py<../../scripts/detection/yolo/train_yolo3.py>` with fixed size training, which is faster than random size training pipeline.
+  - For YOLO v3 [3]_ networks: :download:`Download train_yolo3.py<../../scripts/detection/yolo/train_yolo3.py>`
 
 Pascal VOC
 ~~~~~~~~~~

@@ -21,19 +21,19 @@ Specifically, we show how to build a state-of-the-art YOLOv3 model by stacking G
 
     .. code-block:: bash
 
-        python train_yolo3(_rand_size).py --gpus 0
+        python train_yolo3.py --gpus 0
 
     Train a darknet53 model on GPU 0,1,2,3 with synchronize BatchNorm:
 
     .. code-block:: bash
 
-        python train_yolo3(_rand_size).py --gpus 0,1,2,3 --network darknet53 --syncbn
+        python train_yolo3.py --gpus 0,1,2,3 --network darknet53 --syncbn
 
     Check the supported arguments:
 
     .. code-block:: bash
 
-        python train_yolo3(_rand_size).py --help
+        python train_yolo3.py --help
 
 
 .. hint::
@@ -234,7 +234,7 @@ for ib, batch in enumerate(train_loader):
 #
 # .. hint::
 #
-#   Please checkout the full :download:`training script <../../../scripts/detection/yolo/train_yolo3_rand_size.py>` for complete implementation.
+#   Please checkout the full :download:`training script <../../../scripts/detection/yolo/train_yolo3.py>` for complete implementation.
 
 
 ##########################################################
