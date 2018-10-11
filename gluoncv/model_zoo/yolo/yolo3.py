@@ -350,7 +350,7 @@ class YOLOV3(gluon.HybridBlock):
             # upsample feature map reverse to shallow layers
             upsample = _upsample(x, stride=2)
             route_now = routes[::-1][i + 1]
-            x = F.concat(F.slice_like(upsample, route_now, axes=(2, 3)), route_now, dim=1)
+            x = F.concat(F.slice_like(upsample, route_now * 0, axes=(2, 3)), route_now, dim=1)
 
         if autograd.is_training():
             # during training, the network behaves differently since we don't need detection results
