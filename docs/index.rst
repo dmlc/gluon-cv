@@ -16,8 +16,9 @@ GluonCV features:
 Supported Applications
 ----------------------
 
-.. include:: ./applications.html
-
+.. raw:: html
+   :file: applications.html
+   
 Installation
 ------------------
 
