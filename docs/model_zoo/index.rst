@@ -23,11 +23,17 @@ GluonCV is still under rapid development, stay tuned for more models!
 Model Zoo API
 -------------
 
+We may frequently update the pretrained weights.
+To reproduce previous results with earlier weights, please set the hashtag
+for the weights to ``pretrained``.
+
 .. code-block:: python
 
     from gluoncv import model_zoo
     # load a ResNet model trained on CIFAR10
     cifar_resnet20 = model_zoo.get_model('cifar_resnet20_v1', pretrained=True)
+    # load a MobileNet model trained on ImageNet
+    mobilenet = model_zoo.get_model('mobilenet1.0', pretrained='efbb2ca3')
     # load a pre-trained ssd model
     ssd0 = model_zoo.get_model('ssd_300_vgg16_atrous_voc', pretrained=True)
     # load ssd model with pre-trained feature extractors
