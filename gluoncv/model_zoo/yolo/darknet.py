@@ -111,8 +111,9 @@ def get_darknet(darknet_version, num_layers, pretrained=False, ctx=mx.cpu(),
         Darknet version, choices are ['v3'].
     num_layers : int
         Number of layers.
-    pretrained : boolean
-        Whether fetch and load pre-trained weights.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'

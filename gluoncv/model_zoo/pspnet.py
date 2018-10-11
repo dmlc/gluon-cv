@@ -129,7 +129,7 @@ def get_psp(dataset='pascal_voc', backbone='resnet50', pretrained=False,
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
-    pretrained_base : bool, default True
+    pretrained_base : bool or str, default True
         This will load pretrained backbone network, that was trained on ImageNet.
 
     Examples

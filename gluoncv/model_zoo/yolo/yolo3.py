@@ -455,9 +455,10 @@ def get_yolov3(name, stages, filters, anchors, strides, classes,
     dataset : str
         Name of dataset. This is used to identify model name because models trained on
         differnet datasets are going to be very different.
-    pretrained : bool, optional, default is False
-        Load pretrained weights.
-    pretrained_base : bool, optional, default is True
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True
         Load pretrained base network, the extra layers are randomized. Note that
         if pretrained is `Ture`, this has no effect.
     ctx : mxnet.Context
@@ -482,10 +483,12 @@ def yolo3_darknet53_voc(pretrained_base=True, pretrained=False, num_sync_bn_devi
 
     Parameters
     ----------
-    pretrained_base : boolean
-        Whether fetch and load pretrained weights for base network.
-    pretrained : boolean
-        Whether fetch and load pretrained weights for the entire network.
+    pretrained_base : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     num_sync_bn_devices : int
         Number of devices for training. If `num_sync_bn_devices < 2`, SyncBatchNorm is disabled.
 
@@ -513,8 +516,9 @@ def yolo3_darknet53_coco(pretrained_base=True, pretrained=False, num_sync_bn_dev
     ----------
     pretrained_base : boolean
         Whether fetch and load pretrained weights for base network.
-    pretrained : boolean
-        Whether fetch and load pretrained weights for the entire network.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     num_sync_bn_devices : int, default is -1
         Number of devices for training. If `num_sync_bn_devices < 2`, SyncBatchNorm is disabled.
 

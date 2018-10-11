@@ -8,8 +8,8 @@ from __future__ import absolute_import
 import mxnet as mx
 from mxnet.symbol import Symbol
 from mxnet.gluon import HybridBlock, SymbolBlock
-from mxnet.gluon.model_zoo import vision
 from mxnet.base import string_types
+from .model_zoo import get_model
 
 def _parse_network(network, outputs, inputs, pretrained, ctx):
     """Parse network with specified outputs and other arguments.
@@ -17,7 +17,7 @@ def _parse_network(network, outputs, inputs, pretrained, ctx):
     Parameters
     ----------
     network : str or HybridBlock or Symbol
-        Logic chain: load from gluon.model_zoo.vision if network is string.
+        Logic chain: load from gluoncv.model_zoo if network is string.
         Convert to Symbol if network is HybridBlock
     outputs : str or iterable of str
         The name of layers to be extracted as features.
@@ -49,7 +49,7 @@ def _parse_network(network, outputs, inputs, pretrained, ctx):
     params = None
     prefix = ''
     if isinstance(network, string_types):
-        network = vision.get_model(network, pretrained=pretrained, ctx=ctx)
+        network = get_model(network, pretrained=pretrained, ctx=ctx)
     if isinstance(network, HybridBlock):
         params = network.collect_params()
         prefix = network._prefix
@@ -72,7 +72,7 @@ class FeatureExtractor(SymbolBlock):
     Parameters
     ----------
     network : str or HybridBlock or Symbol
-        Logic chain: load from gluon.model_zoo.vision if network is string.
+        Logic chain: load from gluoncv.model_zoo if network is string.
         Convert to Symbol if network is HybridBlock
     outputs : str or list of str
         The name of layers to be extracted as features
@@ -96,7 +96,7 @@ class FeatureExpander(SymbolBlock):
     Parameters
     ----------
     network : str or HybridBlock or Symbol
-        Logic chain: load from gluon.model_zoo.vision if network is string.
+        Logic chain: load from gluoncv.model_zoo if network is string.
         Convert to Symbol if network is HybridBlock.
     outputs : str or list of str
         The name of layers to be extracted as features

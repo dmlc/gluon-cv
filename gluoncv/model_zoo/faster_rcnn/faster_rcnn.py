@@ -302,8 +302,9 @@ def get_faster_rcnn(name, dataset, pretrained=False, ctx=mx.cpu(),
         Model name.
     dataset : str
         The name of dataset.
-    pretrained : bool, optional, default is False
-        Load pretrained weights.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     ctx : mxnet.Context
         Context such as mx.cpu(), mx.gpu(0).
     root : str
@@ -329,9 +330,10 @@ def faster_rcnn_resnet50_v1b_voc(pretrained=False, pretrained_base=True, **kwarg
 
     Parameters
     ----------
-    pretrained : bool, optional, default is False
-        Load pretrained weights.
-    pretrained_base : bool, optional, default is True
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True
         Load pretrained base network, the extra layers are randomized. Note that
         if pretrained is `Ture`, this has no effect.
     ctx : Context, default CPU
@@ -376,9 +378,10 @@ def faster_rcnn_resnet50_v1b_coco(pretrained=False, pretrained_base=True, **kwar
 
     Parameters
     ----------
-    pretrained : bool, optional, default is False
-        Load pretrained weights.
-    pretrained_base : bool, optional, default is True
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True
         Load pretrained base network, the extra layers are randomized. Note that
         if pretrained is `Ture`, this has no effect.
     ctx : Context, default CPU
@@ -427,8 +430,12 @@ def faster_rcnn_resnet50_v1b_custom(classes, transfer=None, pretrained_base=True
     transfer : str or None
         If not `None`, will try to reuse pre-trained weights from faster RCNN networks trained
         on other datasets.
-    pretrained_base : boolean
-        Whether fetch and load pretrained weights for base network.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
@@ -478,7 +485,7 @@ def faster_rcnn_resnet101_v1d_voc(pretrained=False, pretrained_base=True, **kwar
     ----------
     pretrained : bool, optional, default is False
         Load pretrained weights.
-    pretrained_base : bool, optional, default is True
+    pretrained_base : bool or str, optional, default is True
         Load pretrained base network, the extra layers are randomized. Note that
         if pretrained is `Ture`, this has no effect.
     ctx : Context, default CPU
@@ -525,7 +532,7 @@ def faster_rcnn_resnet101_v1d_coco(pretrained=False, pretrained_base=True, **kwa
     ----------
     pretrained : bool, optional, default is False
         Load pretrained weights.
-    pretrained_base : bool, optional, default is True
+    pretrained_base : bool or str, optional, default is True
         Load pretrained base network, the extra layers are randomized. Note that
         if pretrained is `Ture`, this has no effect.
     ctx : Context, default CPU
@@ -574,8 +581,9 @@ def faster_rcnn_resnet101_v1d_custom(classes, transfer=None, pretrained_base=Tru
     transfer : str or None
         If not `None`, will try to reuse pre-trained weights from faster RCNN networks trained
         on other datasets.
-    pretrained_base : boolean
-        Whether fetch and load pretrained weights for base network.
+    pretrained_base : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'

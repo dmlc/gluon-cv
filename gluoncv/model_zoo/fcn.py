@@ -21,7 +21,7 @@ class FCN(SegBaseModel):
         'resnet101' or 'resnet152').
     norm_layer : object
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.nn.BatchNorm`;
-    pretrained_base : bool
+    pretrained_base : bool or str
         Refers to if the FCN backbone or the encoder is pretrained or not. If `True`,
         model weights of a model that was trained on ImageNet is loaded.
 
@@ -102,7 +102,7 @@ def get_fcn(dataset='pascal_voc', backbone='resnet50', pretrained=False,
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
-    pretrained_base : bool, default True
+    pretrained_base : bool or str, default True
         This will load pretrained backbone network, that was trained on ImageNet.
 
     Examples
