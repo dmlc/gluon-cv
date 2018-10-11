@@ -317,26 +317,19 @@ class AttentionModule_stage2(nn.HybridBlock):
     def hybrid_forward(self, F, x, *args, **kwargs):
         x = self.first_residual_blocks(x)
         out_trunk = self.trunk_branches(x)
-
         out_mpool1 = self.mpool1(x)
         out_softmax1 = self.softmax1_blocks(out_mpool1)
         out_skip1_connection = self.skip1_connection_residual_block(out_softmax1)
-
         out_mpool2 = self.mpool2(out_softmax1)
         out_softmax2 = self.softmax2_blocks(out_mpool2)
-
         out_interp2 = F.elemwise_add(self.interpolation2(out_softmax2), out_softmax1)
         out = F.elemwise_add(out_interp2, out_skip1_connection)
-
         out_softmax3 = self.softmax3_blocks(out)
         out_interp1 = F.elemwise_add(self.interpolation1(out_softmax3), out_trunk)
-
         out_softmax4 = self.softmax4_blocks(out_interp1)
         out = F.elemwise_add(F.ones_like(out_softmax4), out_softmax4)
         out = F.elemwise_mul(out, out_trunk)
-
         out_last = self.last_blocks(out)
-
         return out_last
 
 
@@ -381,18 +374,13 @@ class AttentionModule_stage3(nn.HybridBlock):
     def hybrid_forward(self, F, x, *args, **kwargs):
         x = self.first_residual_blocks(x)
         out_trunk = self.trunk_branches(x)
-
         out_mpool1 = self.mpool1(x)
         out_softmax1 = self.softmax1_blocks(out_mpool1)
-
         out_interp1 = F.elemwise_add(self.interpolation1(out_softmax1), out_trunk)
-
         out_softmax2 = self.softmax2_blocks(out_interp1)
         out = F.elemwise_add(F.ones_like(out_softmax2), out_softmax2)
         out = F.elemwise_mul(out, out_trunk)
-
         out_last = self.last_blocks(out)
-
         return out_last
 
 
@@ -509,18 +497,13 @@ class AttentionModule_stage2_cifar(nn.HybridBlock):
     def hybrid_forward(self, F, x, *args, **kwargs):
         x = self.first_residual_blocks(x)
         out_trunk = self.trunk_branches(x)
-
         out_mpool1 = self.mpool1(x)
         out_softmax1 = self.softmax1_blocks(out_mpool1)
-
         out_interp1 = F.elemwise_add(self.interpolation1(out_softmax1), out_trunk)
-
         out_softmax2 = self.softmax2_blocks(out_interp1)
         out = F.elemwise_add(F.ones_like(out_softmax2), out_softmax2)
         out = F.elemwise_mul(out, out_trunk)
-
         out_last = self.last_blocks(out)
-
         return out_last
 
 
@@ -560,13 +543,10 @@ class AttentionModule_stage3_cifar(nn.HybridBlock):
     def hybrid_forward(self, F, x, *args, **kwargs):
         x = self.first_residual_blocks(x)
         out_trunk = self.trunk_branches(x)
-
         out_softmax1 = self.softmax1_blocks(x)
-
         out_softmax2 = self.softmax2_blocks(out_softmax1)
         out = F.elemwise_add(F.ones_like(out_softmax2), out_softmax2)
         out = F.elemwise_mul(out, out_trunk)
-
         out_last = self.last_blocks(out)
 
         return out_last
@@ -574,10 +554,15 @@ class AttentionModule_stage3_cifar(nn.HybridBlock):
 
 class ResidualAttentionModel_448input(nn.HybridBlock):
 
-    def __init__(self, **kwargs):
-        """
-        input size is 448
-        :param kwargs:
+    def __init__(self, classes=1000, **kwargs):
+        r"""AttentionModel 92 model from
+            `"Residual Attention Network for Image Classification"
+            <https://arxiv.org/pdf/1704.06904.pdf>`_ paper.
+
+            Parameters
+            ----------
+            classes : int, default 1000
+                Number of classification classes.
         """
         super(ResidualAttentionModel_448input, self).__init__(**kwargs)
         with self.name_scope():
@@ -609,21 +594,19 @@ class ResidualAttentionModel_448input(nn.HybridBlock):
                 self.mpool2.add(nn.BatchNorm())
                 self.mpool2.add(nn.Activation('relu'))
                 self.mpool2.add(nn.AvgPool2D(pool_size=7, strides=1))
-            self.fc = nn.Conv2D(10, kernel_size=1)
+            self.fc = nn.Conv2D(classes, kernel_size=1)
 
     def hybrid_forward(self, F, x, *args, **kwargs):
         x = self.conv1(x)
         x = self.mpool1(x)
         x = self.residual_block0(x)
         x = self.attention_module0(x)
-
         x = self.residual_block1(x)
         x = self.attention_module1(x)
         x = self.residual_block2(x)
         x = self.attention_module2(x)
         x = self.attention_module2_2(x)
         x = self.residual_block3(x)
-
         x = self.attention_module3(x)
         x = self.attention_module3_2(x)
         x = self.attention_module3_3(x)
@@ -638,14 +621,11 @@ class ResidualAttentionModel_448input(nn.HybridBlock):
 
 
 class ResidualAttentionModel_92(nn.HybridBlock):
-
     def __init__(self, classes=1000, **kwargs):
         super(ResidualAttentionModel_92, self).__init__(**kwargs)
         r"""AttentionModel 92 model from
             `"Residual Attention Network for Image Classification"
             <https://arxiv.org/pdf/1704.06904.pdf>`_ paper.
-            
-            Input size must be 224.
             
             Parameters
             ----------
@@ -711,9 +691,7 @@ class ResidualAttentionModel_56(nn.HybridBlock):
         r"""AttentionModel 56 model from
             `"Residual Attention Network for Image Classification"
             <https://arxiv.org/pdf/1704.06904.pdf>`_ paper.
-            
-            Input size must be 224.
-            
+
             Parameters
             ----------
             classes : int, default 1000
@@ -771,8 +749,6 @@ class ResidualAttentionModel_56_32input(nn.HybridBlock):
             `"Residual Attention Network for Image Classification"
             <https://arxiv.org/pdf/1704.06904.pdf>`_ paper.
 
-            Input size must be 32.
-
             Parameters
             ----------
             classes : int, default 10
@@ -828,9 +804,7 @@ class ResidualAttentionModel_92_32input(nn.HybridBlock):
         r"""AttentionModel 92 model from
             `"Residual Attention Network for Image Classification"
             <https://arxiv.org/pdf/1704.06904.pdf>`_ paper.
-            
-            Input size must be 32.
-            
+        
             Parameters
             ----------
             classes : int, default 10
