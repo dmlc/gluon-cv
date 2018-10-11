@@ -120,8 +120,9 @@ def get_squeezenet(version, pretrained=False, ctx=cpu(),
     ----------
     version : str
         Version of squeezenet. Options are '1.0', '1.1'.
-    pretrained : bool, default False
-        Whether to load the pretrained weights for model.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     root : str, default $MXNET_HOME/models
@@ -140,8 +141,9 @@ def squeezenet1_0(**kwargs):
 
     Parameters
     ----------
-    pretrained : bool, default False
-        Whether to load the pretrained weights for model.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     root : str, default '$MXNET_HOME/models'
@@ -157,8 +159,9 @@ def squeezenet1_1(**kwargs):
 
     Parameters
     ----------
-    pretrained : bool, default False
-        Whether to load the pretrained weights for model.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     root : str, default '$MXNET_HOME/models'

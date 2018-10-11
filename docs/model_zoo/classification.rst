@@ -22,15 +22,21 @@ ImageNet
 
     :download:`Download train_imagenet.py<../../scripts/classification/imagenet/train_imagenet.py>`
 
+    Models with hashtag are trained differently, for example with or without "Mix-Up" [13]_ .
+
+    - Download default pretrained weights: ``net = get_model('ResNet50_v1d', pretrained=True)``
+
+    - Download weights given a hashtag: ``net = get_model('ResNet50_v1d', pretrained='117a384e')``
+
 **ResNet**
 
 .. hint::
 
-    ``ResNet_v1b`` modifies ``resNet_v1`` by setting stride at the 3x3 layer for a bottleneck block.
+    - ``ResNet_v1b`` modifies ``resNet_v1`` by setting stride at the 3x3 layer for a bottleneck block.
 
-    ``ResNet_v1c`` modifies ``resNet_v1b`` by replacing the 7x7 conv layer with three 3x3 conv layers.
+    - ``ResNet_v1c`` modifies ``resNet_v1b`` by replacing the 7x7 conv layer with three 3x3 conv layers.
 
-    ``ResNet_v1d`` modifies ``resNet_v1c`` by adding an avgpool layer 2x2 with stride 2 downsample feature map on the residual path to preserve more information.
+    - ``ResNet_v1d`` modifies ``resNet_v1c`` by adding an avgpool layer 2x2 with stride 2 downsample feature map on the residual path to preserve more information.
 
 +-----------------------+--------+--------+----------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
 | Model                 | Top-1  | Top-5  | Hashtag  | Training Command                                                                                                                     | Training Log                                                                                                                  |
