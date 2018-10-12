@@ -3,10 +3,11 @@ from __future__ import absolute_import
 import os
 import numpy as np
 import mxnet as mx
+from mxnet.gluon.data import Dataset
 from ..recordio.detection import _transform_label
 
 
-class LstDetection(object):
+class LstDetection(Dataset):
     """Detection dataset loaded from LST file and raw images.
     LST file is a pure text file but with special label format.
 

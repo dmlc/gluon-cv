@@ -105,6 +105,9 @@ def test_imagenet_models():
               'se_resnet18_v2', 'se_resnet34_v2', 'se_resnet50_v2',
               'se_resnet101_v2', 'se_resnet152_v2',
               'senet_52', 'senet_103', 'senet_154',
+              'squeezenet1.0', 'squeezenet1.1',
+              'mobilenet1.0','mobilenet0.75','mobilenet0.5','mobilenet0.25',
+              'mobilenetv2_1.0','mobilenetv2_0.75','mobilenetv2_0.5','mobilenetv2_0.25',
               'alexnet', 'densenet121', 'densenet161', 'densenet169', 'densenet201',
               'vgg11', 'vgg11_bn', 'vgg13', 'vgg13_bn',
               'vgg16', 'vgg16_bn', 'vgg19', 'vgg19_bn']
@@ -167,7 +170,11 @@ def test_set_nms():
 def test_segmentation_models():
     ctx = mx.context.current_context()
     x = mx.random.uniform(shape=(2, 3, 480, 480), ctx=ctx)
-    models = ['fcn_resnet50_voc', 'fcn_resnet101_voc', 'fcn_resnet50_ade']
+    models = ['fcn_resnet101_coco', 'psp_resnet101_coco', 'deeplab_resnet101_coco',
+              'fcn_resnet101_voc', 'psp_resnet101_voc', 'deeplab_resnet101_voc',
+              'fcn_resnet50_ade', 'psp_resnet50_ade', 'deeplab_resnet50_ade',
+              'fcn_resnet101_ade', 'psp_resnet101_ade', 'deeplab_resnet101_ade',
+              'psp_resnet101_citys', 'deeplab_resnet152_voc', 'deeplab_resnet152_coco']
     _test_model_list(models, ctx, x, pretrained=True, pretrained_base=True)
     _test_model_list(models, ctx, x, pretrained=False, pretrained_base=False)
     _test_model_list(models, ctx, x, pretrained=False, pretrained_base=True)

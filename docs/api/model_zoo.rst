@@ -181,11 +181,15 @@ Semantic Segmentation
 
     get_fcn
 
-    get_fcn_voc_resnet50
+    get_fcn_resnet50_voc
 
-    get_fcn_voc_resnet101
+    get_fcn_resnet101_voc
 
-    get_fcn_ade_resnet50
+    get_fcn_resnet101_coco
+
+    get_fcn_resnet50_ade
+
+    get_fcn_resnet101_ade
 
 :hidden:`PSPNet`
 ~~~~~~~~~~~~~~~~
@@ -197,7 +201,32 @@ Semantic Segmentation
 
     get_psp
 
-    get_psp_ade_resnet50
+    get_psp_resnet101_coco
+
+    get_psp_resnet101_voc
+
+    get_psp_resnet50_ade
+
+    get_psp_resnet101_ade
+
+
+:hidden:`DeepLabV3`
+~~~~~~~~~~~~~~~~~~~
+
+.. autosummary::
+    :nosignatures:
+
+    DeepLabV3
+
+    get_deeplab
+
+    get_deeplab_resnet101_coco
+
+    get_deeplab_resnet101_voc
+
+    get_deeplab_resnet50_ade
+
+    get_deeplab_resnet101_ade
 
 
 API Reference

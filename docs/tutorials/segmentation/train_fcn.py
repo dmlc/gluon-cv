@@ -1,7 +1,7 @@
-"""3. Train FCN on Pascal VOC Dataset
+"""4. Train FCN on Pascal VOC Dataset
 =====================================
 
-This is a semantic segmentation tutorial using Gluon Vison, a step-by-step example.
+This is a semantic segmentation tutorial using Gluon CV toolkit, a step-by-step example.
 The readers should have basic knowledge of deep learning and should be familiar with Gluon API.
 New users may first go through `A 60-minute Gluon Crash Course <http://gluon-crash-course.mxnet.io/>`_.
 You can `Start Training Now`_ or `Dive into Deep`_.
@@ -79,10 +79,10 @@ pretrained_net = gluoncv.model_zoo.resnet50_v1b(pretrained=True)
 
 ##############################################################################
 # For convenience, we provide a base model for semantic segmentation, which automatically
-# load the pre-trained dilated ResNet :class:`gluoncv.model_zoo.SegBaseModel`
+# load the pre-trained dilated ResNet :class:`gluoncv.model_zoo.segbase.SegBaseModel`
 # with a convenient method ``base_forward(input)`` to get stage 3 & 4 featuremaps:
 #
-basemodel = gluoncv.model_zoo.SegBaseModel(nclass=10, aux=False)
+basemodel = gluoncv.model_zoo.segbase.SegBaseModel(nclass=10, aux=False)
 x = mx.nd.random.uniform(shape=(1, 3, 224, 224))
 c3, c4 = basemodel.base_forward(x)
 print('Shapes of c3 & c4 featuremaps are ', c3.shape, c4.shape)
@@ -190,8 +190,8 @@ plt.show()
 #     Additionally, an Auxiliary Loss as in PSPNet [Zhao17]_ at Stage 3 can be enabled when
 #     training with command ``--aux``. This will create an additional FCN "head" after Stage 3.
 #
-from gluoncv.loss import SoftmaxCrossEntropyLossWithAux
-criterion = SoftmaxCrossEntropyLossWithAux(aux=True)
+from gluoncv.loss import MixSoftmaxCrossEntropyLoss
+criterion = MixSoftmaxCrossEntropyLoss(aux=True)
 
 ##############################################################################
 # - Learning Rate and Scheduling:

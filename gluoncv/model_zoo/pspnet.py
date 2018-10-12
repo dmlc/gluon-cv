@@ -7,6 +7,9 @@ from .segbase import SegBaseModel
 from .fcn import _FCNHead
 # pylint: disable-all
 
+__all__ = ['PSPNet', 'get_psp', 'get_psp_resnet101_coco', 'get_psp_resnet101_voc',
+    'get_psp_resnet50_ade', 'get_psp_resnet101_ade', 'get_psp_resnet101_citys']
+
 class PSPNet(SegBaseModel):
     r"""Pyramid Scene Parsing Network
 
@@ -30,18 +33,19 @@ class PSPNet(SegBaseModel):
         "Pyramid scene parsing network." *CVPR*, 2017
 
     """
-    def __init__(self, nclass, backbone='resnet50', norm_layer=nn.BatchNorm,
-                 aux=True, ctx=cpu(), **kwargs):
-        super(PSPNet, self).__init__(nclass, aux, backbone, ctx=ctx,
-                                     norm_layer=norm_layer, **kwargs)
+    def __init__(self, nclass, backbone='resnet50', aux=True, ctx=cpu(), pretrained_base=True,
+                 base_size=520, crop_size=480, **kwargs):
+        super(PSPNet, self).__init__(nclass, aux, backbone, ctx=ctx, base_size=base_size,
+                                     crop_size=crop_size, pretrained_base=True, **kwargs)
         with self.name_scope():
-            self.head = _PSPHead(nclass, norm_layer=norm_layer)
+            self.head = _PSPHead(nclass, **kwargs)
             self.head.initialize(ctx=ctx)
             self.head.collect_params().setattr('lr_mult', 10)
             if self.aux:
-                self.auxlayer = _FCNHead(1024, nclass, norm_layer=norm_layer)
+                self.auxlayer = _FCNHead(1024, nclass, **kwargs)
                 self.auxlayer.initialize(ctx=ctx)
                 self.auxlayer.collect_params().setattr('lr_mult', 10)
+        print('self.crop_size', self.crop_size)
 
     def hybrid_forward(self, F, x):
         c3, c4 = self.base_forward(x)
@@ -54,16 +58,14 @@ class PSPNet(SegBaseModel):
             auxout = self.auxlayer(c3)
             auxout = F.contrib.BilinearResize2D(auxout, **self._up_kwargs)
             outputs.append(auxout)
-            return tuple(outputs)
-        else:
-            return x
+        return tuple(outputs)
 
 
 def _PSP1x1Conv(in_channels, out_channels, norm_layer, norm_kwargs):
-    block = nn.HybridSequential(prefix='')
+    block = nn.HybridSequential()
     with block.name_scope():
-        block.add(nn.Conv2D(in_channels=in_channels,
-                            channels=out_channels, kernel_size=1))
+        block.add(nn.Conv2D(in_channels=in_channels, channels=out_channels,
+                            kernel_size=1, use_bias=False))
         block.add(norm_layer(in_channels=out_channels, **norm_kwargs))
         block.add(nn.Activation('relu'))
     return block
@@ -95,14 +97,14 @@ class _PyramidPooling(HybridBlock):
 
 
 class _PSPHead(HybridBlock):
-    def __init__(self, nclass, norm_layer, norm_kwargs={}):
+    def __init__(self, nclass, norm_layer=nn.BatchNorm, norm_kwargs={}):
         super(_PSPHead, self).__init__()
         self.psp = _PyramidPooling(2048, norm_layer=norm_layer,
                                    norm_kwargs=norm_kwargs)
         with self.name_scope():
             self.block = nn.HybridSequential(prefix='')
             self.block.add(nn.Conv2D(in_channels=4096, channels=512,
-                                     kernel_size=3, padding=1))
+                                     kernel_size=3, padding=1, use_bias=False))
             self.block.add(norm_layer(in_channels=512, **norm_kwargs))
             self.block.add(nn.Activation('relu'))
             self.block.add(nn.Dropout(0.1))
@@ -134,27 +136,24 @@ def get_psp(dataset='pascal_voc', backbone='resnet50', pretrained=False,
     >>> model = get_fcn(dataset='pascal_voc', backbone='resnet50', pretrained=False)
     >>> print(model)
     """
-    from ..data.pascal_voc.segmentation import VOCSegmentation
-    from ..data.ade20k.segmentation import ADE20KSegmentation
     acronyms = {
         'pascal_voc': 'voc',
+        'pascal_aug': 'voc',
         'ade20k': 'ade',
+        'coco': 'coco',
+        'citys': 'citys',
     }
-    datasets = {
-        'pascal_voc': VOCSegmentation,
-        'ade20k': ADE20KSegmentation,
-    }
+    from ..data import datasets
     # infer number of classes
     model = PSPNet(datasets[dataset].NUM_CLASS, backbone=backbone,
                    pretrained_base=pretrained_base, ctx=ctx, **kwargs)
     if pretrained:
         from .model_store import get_model_file
-        model.load_params(get_model_file('psp_%s_%s'%(backbone, acronyms[dataset]),
+        model.load_parameters(get_model_file('psp_%s_%s'%(backbone, acronyms[dataset]),
                                          root=root), ctx=ctx)
     return model
 
-
-def get_psp_ade_resnet50(**kwargs):
+def get_psp_resnet101_coco(**kwargs):
     r"""Pyramid Scene Parsing Network
     Parameters
     ----------
@@ -167,7 +166,80 @@ def get_psp_ade_resnet50(**kwargs):
 
     Examples
     --------
-    >>> model = get_fcn_ade_resnet50(pretrained=True)
+    >>> model = get_psp_resnet101_coco(pretrained=True)
+    >>> print(model)
+    """
+    return get_psp('coco', 'resnet101', **kwargs)
+
+def get_psp_resnet101_voc(**kwargs):
+    r"""Pyramid Scene Parsing Network
+    Parameters
+    ----------
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+
+    Examples
+    --------
+    >>> model = get_psp_resnet101_voc(pretrained=True)
+    >>> print(model)
+    """
+    return get_psp('pascal_voc', 'resnet101', **kwargs)
+
+def get_psp_resnet50_ade(**kwargs):
+    r"""Pyramid Scene Parsing Network
+    Parameters
+    ----------
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+
+    Examples
+    --------
+    >>> model = get_psp_resnet50_ade(pretrained=True)
     >>> print(model)
     """
     return get_psp('ade20k', 'resnet50', **kwargs)
+
+def get_psp_resnet101_ade(**kwargs):
+    r"""Pyramid Scene Parsing Network
+    Parameters
+    ----------
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+
+    Examples
+    --------
+    >>> model = get_psp_resnet101_ade(pretrained=True)
+    >>> print(model)
+    """
+    return get_psp('ade20k', 'resnet101', **kwargs)
+
+
+def get_psp_resnet101_citys(**kwargs):
+    r"""Pyramid Scene Parsing Network
+    Parameters
+    ----------
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+
+    Examples
+    --------
+    >>> model = get_psp_resnet101_ade(pretrained=True)
+    >>> print(model)
+    """
+    return get_psp('citys', 'resnet101', **kwargs)

@@ -28,20 +28,11 @@ stage("Unit Test") {
         conda list
         make clean
         # from https://stackoverflow.com/questions/19548957/can-i-force-pip-to-reinstall-the-current-version
-        pip install --upgrade --force-reinstall --no-deps .
+        pip install --upgrade --force-reinstall .
         env
         export LD_LIBRARY_PATH=/usr/local/cuda-8.0/lib64
         export MPLBACKEND=Agg
         nosetests --with-coverage --cover-package gluoncv -v tests/unittests
-        rm -f coverage.svg
-        coverage-badge -o coverage.svg
-        if [[ ${env.BRANCH_NAME} == master ]]; then
-            aws s3 cp coverage.svg s3://gluon-cv.mxnet.io/coverage.svg --acl public-read --cache-control no-cache
-            echo "Uploaded coverage badge to http://gluon-cv.mxnet.io"
-        else
-            aws s3 cp coverage.svg s3://gluon-vision-staging/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/coverage.svg --acl public-read --cache-control no-cache
-            echo "Uploaded coverage badge to http://gluon-vision-staging.s3-website-us-west-2.amazonaws.com/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/coverage.svg"
-        fi
         """
       }
     }
@@ -59,11 +50,20 @@ stage("Unit Test") {
         conda list
         make clean
         # from https://stackoverflow.com/questions/19548957/can-i-force-pip-to-reinstall-the-current-version
-        pip install --upgrade --force-reinstall --no-deps .
+        pip install --upgrade --force-reinstall .
         env
         export LD_LIBRARY_PATH=/usr/local/cuda-8.0/lib64
         export MPLBACKEND=Agg
         nosetests --with-coverage --cover-package gluoncv -v tests/unittests
+        rm -f coverage.svg
+        coverage-badge -o coverage.svg
+        if [[ ${env.BRANCH_NAME} == master ]]; then
+            aws s3 cp coverage.svg s3://gluon-cv.mxnet.io/coverage.svg --acl public-read --cache-control no-cache
+            echo "Uploaded coverage badge to http://gluon-cv.mxnet.io"
+        else
+            aws s3 cp coverage.svg s3://gluon-vision-staging/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/coverage.svg --acl public-read --cache-control no-cache
+            echo "Uploaded coverage badge to http://gluon-vision-staging.s3-website-us-west-2.amazonaws.com/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/coverage.svg"
+        fi
         """
       }
     }
@@ -88,8 +88,8 @@ stage("Build Docs") {
 
       if [[ ${env.BRANCH_NAME} == master ]]; then
           aws s3 cp s3://gluon-cv.mxnet.io/coverage.svg build/html/coverage.svg
-          aws s3 sync --delete build/html/ s3://gluon-cv.mxnet.io/ --acl public-read
-          aws s3 cp build/html/coverage.svg s3://gluon-cv.mxnet.io/coverage.svg --acl public-read --cache-control no-cache
+          aws s3 sync --delete build/html/ s3://gluon-cv.mxnet.io/ --acl public-read --cache-control max-age=7200
+          aws s3 cp build/html/coverage.svg s3://gluon-cv.mxnet.io/coverage.svg --acl public-read --cache-control max-age=300
           echo "Uploaded doc to http://gluon-cv.mxnet.io"
       else
           aws s3 cp s3://gluon-vision-staging/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/coverage.svg build/html/coverage.svg
