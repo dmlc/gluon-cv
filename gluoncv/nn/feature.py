@@ -9,7 +9,6 @@ import mxnet as mx
 from mxnet.symbol import Symbol
 from mxnet.gluon import HybridBlock, SymbolBlock
 from mxnet.base import string_types
-from .model_zoo import get_model
 
 def _parse_network(network, outputs, inputs, pretrained, ctx):
     """Parse network with specified outputs and other arguments.
@@ -49,6 +48,7 @@ def _parse_network(network, outputs, inputs, pretrained, ctx):
     params = None
     prefix = ''
     if isinstance(network, string_types):
+        from ..model_zoo import get_model
         network = get_model(network, pretrained=pretrained, ctx=ctx)
     if isinstance(network, HybridBlock):
         params = network.collect_params()
