@@ -5,9 +5,9 @@ import os, time, logging, argparse, shutil
 from mxnet import gluon, image, init, nd
 from mxnet import autograd as ag
 from mxnet.gluon import nn
-from mxnet.gluon.model_zoo import vision as models
 from mxnet.gluon.data.vision import transforms
 from gluoncv.utils import makedirs
+from gluoncv.model_zoo import get_model
 
 def parse_opts():
     parser = argparse.ArgumentParser(description='Transfer learning on MINC-2500 dataset',
@@ -98,7 +98,7 @@ def test(net, val_data, ctx):
 
 def train(train_path, val_path, test_path):
     # Initialize the net with pretrained model
-    finetune_net = gluon.model_zoo.vision.get_model(model_name, pretrained=True)
+    finetune_net = get_model(model_name, pretrained=True)
     with finetune_net.name_scope():
         finetune_net.output = nn.Dense(classes)
     finetune_net.output.initialize(init.Xavier(), ctx = ctx)

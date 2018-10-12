@@ -167,7 +167,7 @@ def get_cifar_wide_resnet(num_layers, width_factor=1, drop_rate=0.0,
     if pretrained:
         from .model_store import get_model_file
         net.load_params(get_model_file('cifar_wideresnet%d_%d'%(num_layers, width_factor),
-                                       root=root), ctx=ctx)
+                                       tag=pretrained, root=root), ctx=ctx)
     return net
 
 def cifar_wideresnet16_10(**kwargs):

@@ -108,7 +108,8 @@ def test_imagenet_models():
               'squeezenet1.0', 'squeezenet1.1',
               'mobilenet1.0','mobilenet0.75','mobilenet0.5','mobilenet0.25',
               'mobilenetv2_1.0','mobilenetv2_0.75','mobilenetv2_0.5','mobilenetv2_0.25',
-              'alexnet', 'densenet121', 'densenet161', 'densenet169', 'densenet201',
+              'densenet121', 'densenet161', 'densenet169', 'densenet201',
+              'darknet53', 'alexnet',
               'vgg11', 'vgg11_bn', 'vgg13', 'vgg13_bn',
               'vgg16', 'vgg16_bn', 'vgg19', 'vgg19_bn']
     _test_model_list(models, ctx, x)
