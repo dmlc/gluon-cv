@@ -25,7 +25,6 @@ First, import the necessary libraries into python.
     import gluoncv as gcv
     import matplotlib.pyplot as plt
     import mxnet as mx
-    import numpy as np
 
 
 In this tutorial we use ``ssd_512_mobilenet1.0_voc``, a snappy network with good accuracy that should be
@@ -91,7 +90,12 @@ We release the webcam before exiting the script
 
 Results
 ---------
-Copy the content of the above code blocks into a file called `demo_webcam_run.py`.
+
+Download the script to run the demo:
+
+:download:`Download demo_webcam_run.py<../../../scripts/detection/demo_webcam_run.py>`
+
+
 Run the script using `pythonw` on MacOS:
 
 .. code-block:: bash
