@@ -14,61 +14,61 @@ stage("Sanity Check") {
   }
 }
 
-stage("Unit Test") {
-  parallel 'Python 2': {
-    node {
-      ws('workspace/gluon-cv-py2') {
-        checkout scm
-        sh """#!/bin/bash
-        set -e
-        # conda env remove -n gluon_cv_py2_test -y
-        # conda env create -n gluon_cv_py2_test -f tests/py2.yml
-        conda env update -n gluon_cv_py2_test -f tests/py2.yml
-        conda activate gluon_cv_py2_test
-        conda list
-        make clean
-        # from https://stackoverflow.com/questions/19548957/can-i-force-pip-to-reinstall-the-current-version
-        pip install --upgrade --force-reinstall .
-        env
-        export LD_LIBRARY_PATH=/usr/local/cuda-8.0/lib64
-        export MPLBACKEND=Agg
-        nosetests --with-coverage --cover-package gluoncv -v tests/unittests
-        """
-      }
-    }
-  },
-  'Python 3': {
-    node {
-      ws('workspace/gluon-cv-py3') {
-        checkout scm
-        sh """#!/bin/bash
-        set -e
-        # conda env remove -n gluon_cv_py3_test -y
-        # conda env create -n gluon_cv_py3_test -f tests/py3.yml
-        conda env update -n gluon_cv_py3_test -f tests/py3.yml
-        conda activate gluon_cv_py3_test
-        conda list
-        make clean
-        # from https://stackoverflow.com/questions/19548957/can-i-force-pip-to-reinstall-the-current-version
-        pip install --upgrade --force-reinstall .
-        env
-        export LD_LIBRARY_PATH=/usr/local/cuda-8.0/lib64
-        export MPLBACKEND=Agg
-        nosetests --with-coverage --cover-package gluoncv -v tests/unittests
-        rm -f coverage.svg
-        coverage-badge -o coverage.svg
-        if [[ ${env.BRANCH_NAME} == master ]]; then
-            aws s3 cp coverage.svg s3://gluon-cv.mxnet.io/coverage.svg --acl public-read --cache-control no-cache
-            echo "Uploaded coverage badge to http://gluon-cv.mxnet.io"
-        else
-            aws s3 cp coverage.svg s3://gluon-vision-staging/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/coverage.svg --acl public-read --cache-control no-cache
-            echo "Uploaded coverage badge to http://gluon-vision-staging.s3-website-us-west-2.amazonaws.com/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/coverage.svg"
-        fi
-        """
-      }
-    }
-  }
-}
+// stage("Unit Test") {
+//   parallel 'Python 2': {
+//     node {
+//       ws('workspace/gluon-cv-py2') {
+//         checkout scm
+//         sh """#!/bin/bash
+//         set -e
+//         # conda env remove -n gluon_cv_py2_test -y
+//         # conda env create -n gluon_cv_py2_test -f tests/py2.yml
+//         conda env update -n gluon_cv_py2_test -f tests/py2.yml
+//         conda activate gluon_cv_py2_test
+//         conda list
+//         make clean
+//         # from https://stackoverflow.com/questions/19548957/can-i-force-pip-to-reinstall-the-current-version
+//         pip install --upgrade --force-reinstall .
+//         env
+//         export LD_LIBRARY_PATH=/usr/local/cuda-8.0/lib64
+//         export MPLBACKEND=Agg
+//         nosetests --with-coverage --cover-package gluoncv -v tests/unittests
+//         """
+//       }
+//     }
+//   },
+//   'Python 3': {
+//     node {
+//       ws('workspace/gluon-cv-py3') {
+//         checkout scm
+//         sh """#!/bin/bash
+//         set -e
+//         # conda env remove -n gluon_cv_py3_test -y
+//         # conda env create -n gluon_cv_py3_test -f tests/py3.yml
+//         conda env update -n gluon_cv_py3_test -f tests/py3.yml
+//         conda activate gluon_cv_py3_test
+//         conda list
+//         make clean
+//         # from https://stackoverflow.com/questions/19548957/can-i-force-pip-to-reinstall-the-current-version
+//         pip install --upgrade --force-reinstall .
+//         env
+//         export LD_LIBRARY_PATH=/usr/local/cuda-8.0/lib64
+//         export MPLBACKEND=Agg
+//         nosetests --with-coverage --cover-package gluoncv -v tests/unittests
+//         rm -f coverage.svg
+//         coverage-badge -o coverage.svg
+//         if [[ ${env.BRANCH_NAME} == master ]]; then
+//             aws s3 cp coverage.svg s3://gluon-cv.mxnet.io/coverage.svg --acl public-read --cache-control no-cache
+//             echo "Uploaded coverage badge to http://gluon-cv.mxnet.io"
+//         else
+//             aws s3 cp coverage.svg s3://gluon-vision-staging/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/coverage.svg --acl public-read --cache-control no-cache
+//             echo "Uploaded coverage badge to http://gluon-vision-staging.s3-website-us-west-2.amazonaws.com/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/coverage.svg"
+//         fi
+//         """
+//       }
+//     }
+//   }
+// }
 
 
 stage("Build Docs") {
