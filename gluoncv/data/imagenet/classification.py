@@ -1,4 +1,4 @@
-# pylint: disable=line-too-long
+# pylint: disable=line-too-long,too-many-lines,missing-docstring
 """ImageNet classification dataset."""
 from os import path
 from mxnet.gluon.data.vision import ImageFolderDataset
