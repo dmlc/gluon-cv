@@ -83,13 +83,14 @@ Faster-RCNN models of VOC dataset are evaluated with native resolutions with ``s
 YOLO-v3
 -------
 
-YOLO-v3 models can be evaluated and used for prediction at different resolutions. Different mAPs are reported with various evaluation resolutions, however, the models are identical (the resolution is not part of model name).
+YOLO-v3 models can be evaluated and used for prediction at different resolutions. Different mAPs are reported with various evaluation resolutions, however, the models are identical.
+
 +-------------------------------------------+-------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
 | Model                                     | mAP   | Training Command                                                                                                                     | Training log                                                                                                                        |
 +===========================================+=======+======================================================================================================================================+=====================================================================================================================================+
-| yolo3_darknet53_voc :gray:`(320x320)` [3]_| 79.3  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/yolo3_darknet53_voc.sh>`_               | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/yolo3_darknet53_voc.log>`_                      |
+| yolo3_darknet53_voc [3]_ :gray:`(320x320)`| 79.3  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/yolo3_darknet53_voc.sh>`_               | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/yolo3_darknet53_voc.log>`_                      |
 +-------------------------------------------+-------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
-| yolo3_darknet53_voc :gray:`(416x416)` [3]_| 81.5  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/yolo3_darknet53_voc.sh>`_               | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/yolo3_darknet53_voc.log>`_                      |
+| yolo3_darknet53_voc [3]_ :gray:`(416x416)`| 81.5  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/yolo3_darknet53_voc.sh>`_               | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/yolo3_darknet53_voc.log>`_                      |
 +-------------------------------------------+-------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
 
 MS COCO
@@ -137,17 +138,17 @@ Faster-RCNN models of VOC dataset are evaluated with native resolutions with ``s
 YOLO-v3
 -------
 
-YOLO-v3 models can be evaluated and used for prediction at different resolutions. Different mAPs are reported with various evaluation resolutions(the resolution is not part of model name).
+YOLO-v3 models can be evaluated and used for prediction at different resolutions. Different mAPs are reported with various evaluation resolutions.
 
 
 +------------------------------------------------+-----------------+-----------------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------+
 | Model                                          | Box AP          | Training Command                                                                                                                  | Training Log                                                                                                                     |
 +================================================+=================+===================================================================================================================================+==================================================================================================================================+
-| yolo3_darknet53_coco :gray:`(320x320)` [3]_    | 33.6/54.1/35.8  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/yolo3_darknet53_coco.sh>`_           | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/yolo3_darknet53_coco_train.log>`_            |
+| yolo3_darknet53_coco [3]_ :gray:`(320x320)`    | 33.6/54.1/35.8  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/yolo3_darknet53_coco.sh>`_           | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/yolo3_darknet53_coco_train.log>`_            |
 +------------------------------------------------+-----------------+-----------------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------+
-| yolo3_darknet53_coco :gray:`(416x416)` [3]_    | 36.0/57.2/38.7  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/yolo3_darknet53_coco.sh>`_           | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/yolo3_darknet53_coco_train.log>`_            |
+| yolo3_darknet53_coco [3]_ :gray:`(416x416)`    | 36.0/57.2/38.7  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/yolo3_darknet53_coco.sh>`_           | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/yolo3_darknet53_coco_train.log>`_            |
 +------------------------------------------------+-----------------+-----------------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------+
-| yolo3_darknet53_coco :gray:`(608x608)` [3]_    | 37.0/58.2/40.1  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/yolo3_darknet53_coco.sh>`_           | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/yolo3_darknet53_coco_train.log>`_            |
+| yolo3_darknet53_coco [3]_ :gray:`(608x608)`    | 37.0/58.2/40.1  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/yolo3_darknet53_coco.sh>`_           | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/yolo3_darknet53_coco_train.log>`_            |
 +------------------------------------------------+-----------------+-----------------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------+
 
 
