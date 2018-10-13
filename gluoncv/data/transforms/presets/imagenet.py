@@ -1,15 +1,13 @@
 """Transforms for ImageNet series."""
 from __future__ import absolute_import
-import numpy as np
 import mxnet as mx
 
-from mxnet import nd, image
 from mxnet.gluon.data.vision import transforms
 
 __all__ = ['transform_eval']
 
 def transform_eval(imgs, resize_short=256, crop_size=224,
-                   mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]):
+                   mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)):
     """A util function to transform all images to tensors as network input by applying
     normalizations. This function support 1 NDArray or iterable of NDArrays.
 
@@ -49,4 +47,3 @@ def transform_eval(imgs, resize_short=256, crop_size=224,
     if len(res) == 1:
         return res[0]
     return res
-

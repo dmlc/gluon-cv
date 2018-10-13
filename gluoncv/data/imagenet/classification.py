@@ -1,3 +1,4 @@
+# pylint: disable=line-too-long
 """ImageNet classification dataset."""
 from os import path
 from mxnet.gluon.data.vision import ImageFolderDataset
