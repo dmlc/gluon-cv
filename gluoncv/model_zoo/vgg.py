@@ -115,6 +115,11 @@ def get_vgg(num_layers, pretrained=False, ctx=cpu(),
         batch_norm_suffix = '_bn' if kwargs.get('batch_norm') else ''
         net.load_parameters(get_model_file('vgg%d%s'%(num_layers, batch_norm_suffix),
                                            tag=pretrained, root=root), ctx=ctx)
+        from ..data import ImageNet1kAttr
+        attrib = ImageNet1kAttr()
+        net.synset = attrib.synset
+        net.classes = attrib.classes
+        net.classes_long = attrib.classes_long
     return net
 
 def vgg11(**kwargs):

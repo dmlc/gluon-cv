@@ -210,6 +210,11 @@ def get_resnext(num_layers, cardinality=32, bottleneck_width=4, use_se=False,
             net.load_params(get_model_file('se_resnext%d_%dx%dd'%(num_layers, cardinality,
                                                                   bottleneck_width),
                                            tag=pretrained, root=root), ctx=ctx)
+        from ..data import ImageNet1kAttr
+        attrib = ImageNet1kAttr()
+        net.synset = attrib.synset
+        net.classes = attrib.classes
+        net.classes_long = attrib.classes_long
 
     return net
 

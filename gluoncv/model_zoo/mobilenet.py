@@ -214,6 +214,11 @@ def get_mobilenet(multiplier, pretrained=False, ctx=cpu(),
             version_suffix = version_suffix[:-1]
         net.load_parameters(
             get_model_file('mobilenet%s' % version_suffix, tag=pretrained, root=root), ctx=ctx)
+        from ..data import ImageNet1kAttr
+        attrib = ImageNet1kAttr()
+        net.synset = attrib.synset
+        net.classes = attrib.classes
+        net.classes_long = attrib.classes_long
     return net
 
 
@@ -247,6 +252,11 @@ def get_mobilenet_v2(multiplier, pretrained=False, ctx=cpu(),
             version_suffix = version_suffix[:-1]
         net.load_parameters(
             get_model_file('mobilenetv2_%s' % version_suffix, tag=pretrained, root=root), ctx=ctx)
+        from ..data import ImageNet1kAttr
+        attrib = ImageNet1kAttr()
+        net.synset = attrib.synset
+        net.classes = attrib.classes
+        net.classes_long = attrib.classes_long
     return net
 
 

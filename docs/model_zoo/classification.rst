@@ -12,8 +12,29 @@ Visualization of Inference Throughputs vs. Validation Accuracy of ImageNet pre-t
 
 .. include:: /_static/classification_throughputs.html
 
-The following table lists pre-trained models on ImageNet. We will keep
-adding new models and training scripts to the table.
+How To Use Pretrained Models
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+First, make sure you have ``GluonCV`` and ``MXNet`` installed. If not yet, please follow `our installation guide<../index.html#installation>`.
+
+Then, prepare an image and rename it to ``test-gluon.jpg`` (or ``.png``) under your working directory.
+
+Let's try it out!
+
+.. code-block:: python
+
+    import mxnet as mx
+    import gluoncv
+
+    model_name = 'ResNet50_v1d'
+    net = gluoncv.model_zoo.get_model(model_name, pretrained=True)
+
+    img = mx.image.imread('test-gluon.jpg')
+    transformed_img = gluoncv.data.transforms.presets.imagenet.transform_eval(img)
+    pred = net(transformed_img)
+    predicted_index = int(pred.argmax(axis=1).asscalar())
+    print("Classified to be %s"%(net.classes[predicted_index]))
+
 
 ImageNet
 ~~~~~~~~
@@ -31,7 +52,8 @@ ImageNet
 
     - Download weights given a hashtag: ``net = get_model('ResNet50_v1d', pretrained='117a384e')``
 
-**ResNet**
+ResNet
+------
 
 .. hint::
 
@@ -91,7 +113,8 @@ ImageNet
 | ResNet152_v2 [2]_         | 79.21  | 94.31  | f2695542 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet152_v2.sh>`_        | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet152_v2.log>`_         |
 +---------------------------+--------+--------+----------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
 
-**MobileNet**
+MobileNet
+---------
 
 +--------------------------+--------+--------+----------+-----------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
 | Model                    | Top-1  | Top-5  | Hashtag  | Training Command                                                                                                                        | Training Log                                                                                                                  |
@@ -115,7 +138,8 @@ ImageNet
 | MobileNetV2_0.25 [5]_    | 50.74  | 74.56  | ae8f9392 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/mobilenetv2_0.25.sh>`_       | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/mobilenetv2_0.25.log>`_     |
 +--------------------------+--------+--------+----------+-----------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
 
-**VGG**
+VGG
+---
 
 +-----------------------+--------+--------+----------+------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
 | Model                 | Top-1  | Top-5  | Hashtag  | Training Command                                                                                                                   | Training Log                                                                                                                  |
@@ -137,7 +161,8 @@ ImageNet
 | VGG19_bn [9]_         | 74.33  | 91.85  | f360b758 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/vgg19_bn.sh>`_          | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/vgg19_bn.log>`_             |
 +-----------------------+--------+--------+----------+------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
 
-**SqueezeNet**
+SqueezeNet
+----------
 
 +-----------------------+--------+--------+----------+------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
 | Model                 | Top-1  | Top-5  | Hashtag  | Training Command                                                                                                                   | Training Log                                                                                                                  |
@@ -147,7 +172,8 @@ ImageNet
 | SqueezeNet1.1 [10]_   | 54.96  | 78.17  | 33ba0f93 |                                                                                                                                    |                                                                                                                               |
 +-----------------------+--------+--------+----------+------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
 
-**DenseNet**
+DenseNet
+--------
 
 +-----------------------+--------+--------+----------+------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
 | Model                 | Top-1  | Top-5  | Hashtag  | Training Command                                                                                                                   | Training Log                                                                                                                  |
@@ -161,7 +187,8 @@ ImageNet
 | DenseNet201 [7]_      | 77.32  | 93.62  | 1cdbc116 |                                                                                                                                    |                                                                                                                               |
 +-----------------------+--------+--------+----------+------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
 
-**Others**
+Others
+------
 
 .. hint::
 
