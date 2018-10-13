@@ -15,9 +15,9 @@ Visualization of Inference Throughputs vs. Validation Accuracy of ImageNet pre-t
 How To Use Pretrained Models
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-First, make sure you have ``GluonCV`` and ``MXNet`` installed. If not yet, please follow `our installation guide<../index.html#installation>`.
+First, make sure ``GluonCV`` and ``MXNet`` are installed. If not yet, please follow `our installation guide <../index.html#installation>`__.
 
-Then, prepare an image and rename it to ``test-gluon.jpg`` (or ``.png``) under your working directory.
+Then prepare an image and rename it to ``test-gluon.jpg`` (or ``.png``) under your working directory.
 
 Let's try it out!
 
@@ -35,6 +35,8 @@ Let's try it out!
     predicted_index = int(pred.argmax(axis=1).asscalar())
     print("Classified to be %s"%(net.classes[predicted_index]))
 
+Remember, you can try different models by replacing ``model_name``.
+Read further for model names and their performances in the tables.
 
 ImageNet
 ~~~~~~~~
