@@ -89,7 +89,7 @@ YOLO-v3
 
 YOLO-v3 models can be evaluated and used for prediction at different resolutions. Different mAPs are reported with various evaluation resolutions, however, the models are identical.
 
-Checkout YOLO demo tutorial here: :ref:`sphx_glr_build_examples_detection_demo_yolo_v3.py`
+Checkout YOLO demo tutorial here: :ref:`sphx_glr_build_examples_detection_demo_yolo.py`
 
 +-------------------------------------------+-------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
 | Model                                     | mAP   | Training Command                                                                                                                     | Training log                                                                                                                        |
@@ -150,7 +150,7 @@ YOLO-v3
 
 YOLO-v3 models can be evaluated and used for prediction at different resolutions. Different mAPs are reported with various evaluation resolutions.
 
-Checkout YOLO demo tutorial here: :ref:`sphx_glr_build_examples_detection_demo_yolo_v3.py`
+Checkout YOLO demo tutorial here: :ref:`sphx_glr_build_examples_detection_demo_yolo.py`
 
 +------------------------------------------------+-----------------+-----------------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------+
 | Model                                          | Box AP          | Training Command                                                                                                                  | Training Log                                                                                                                     |
