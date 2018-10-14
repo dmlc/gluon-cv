@@ -185,7 +185,7 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
         net._target_generator._label_smooth = True
 
     if args.lr_decay_period > 0:
-        lr_decay_epoch = list(range(lr_decay_period, args.epochs, lr_decay_period))
+        lr_decay_epoch = list(range(args.lr_decay_period, args.epochs, args.lr_decay_period))
     else:
         lr_decay_epoch = [int(i) for i in args.lr_decay_epoch.split(',')]
     lr_scheduler = LRScheduler(mode=args.lr_mode,
