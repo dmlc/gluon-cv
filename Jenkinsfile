@@ -19,18 +19,20 @@ stage("Unit Test") {
     node {
       ws('workspace/gluon-cv-py2') {
         checkout scm
+        VISIBLE_GPU=env.EXECUTOR_NUMBER.toInteger() % 4
         sh """#!/bin/bash
-        set -e
+        set -ex
         # conda env remove -n gluon_cv_py2_test -y
         # conda env create -n gluon_cv_py2_test -f tests/py2.yml
         conda env update -n gluon_cv_py2_test -f tests/py2.yml
         conda activate gluon_cv_py2_test
         conda list
+        export CUDA_VISIBLE_DEVICES=${VISIBLE_GPU}
         make clean
         # from https://stackoverflow.com/questions/19548957/can-i-force-pip-to-reinstall-the-current-version
         pip install --upgrade --force-reinstall .
         env
-        export LD_LIBRARY_PATH=/usr/local/cuda-8.0/lib64
+        export LD_LIBRARY_PATH=/usr/local/cuda-9.0/lib64
         export MPLBACKEND=Agg
         nosetests --with-coverage --cover-package gluoncv -v tests/unittests
         """
@@ -41,18 +43,20 @@ stage("Unit Test") {
     node {
       ws('workspace/gluon-cv-py3') {
         checkout scm
+        VISIBLE_GPU=env.EXECUTOR_NUMBER.toInteger() % 4
         sh """#!/bin/bash
-        set -e
+        set -ex
         # conda env remove -n gluon_cv_py3_test -y
         # conda env create -n gluon_cv_py3_test -f tests/py3.yml
         conda env update -n gluon_cv_py3_test -f tests/py3.yml
         conda activate gluon_cv_py3_test
         conda list
+        export CUDA_VISIBLE_DEVICES=${VISIBLE_GPU}
         make clean
         # from https://stackoverflow.com/questions/19548957/can-i-force-pip-to-reinstall-the-current-version
         pip install --upgrade --force-reinstall .
         env
-        export LD_LIBRARY_PATH=/usr/local/cuda-8.0/lib64
+        export LD_LIBRARY_PATH=/usr/local/cuda-9.0/lib64
         export MPLBACKEND=Agg
         nosetests --with-coverage --cover-package gluoncv -v tests/unittests
         rm -f coverage.svg
@@ -75,14 +79,15 @@ stage("Build Docs") {
   node {
     ws('workspace/gluon-cv-docs') {
       checkout scm
+      VISIBLE_GPU=env.EXECUTOR_NUMBER.toInteger() % 4
       sh """#!/bin/bash
-      set -e
-      set -x
+      set -ex
+      export CUDA_VISIBLE_DEVICES=${VISIBLE_GPU}
       conda env update -n gluon_vision_docs -f docs/build.yml
       conda activate gluon_vision_docs
       export PYTHONPATH=\${PWD}
       env
-      export LD_LIBRARY_PATH=/usr/local/cuda-8.0/lib64
+      export LD_LIBRARY_PATH=/usr/local/cuda-9.0/lib64
       git clean -fx
       cd docs && make clean && make html
 
