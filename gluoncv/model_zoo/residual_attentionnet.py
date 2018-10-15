@@ -16,7 +16,7 @@
 # under the License.
 
 # coding: utf-8
-# pylint: disable= arguments-differ,unused-argument
+# pylint: disable= arguments-differ,missing-docstring
 """ResidualAttentionNetwork, implemented in Gluon."""
 
 __all__ = ['ResidualAttentionModel_448input', 'ResidualAttentionModel',
