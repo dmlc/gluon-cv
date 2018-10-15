@@ -199,6 +199,11 @@ def get_senet(num_layers, cardinality=64, bottleneck_width=4,
         net.load_params(get_model_file('resnext%d_%dx%d'%(num_layers, cardinality,
                                                           bottleneck_width),
                                        root=root), ctx=ctx)
+        from ..data import ImageNet1kAttr
+        attrib = ImageNet1kAttr()
+        net.synset = attrib.synset
+        net.classes = attrib.classes
+        net.classes_long = attrib.classes_long
     return net
 
 def senet_52(**kwargs):

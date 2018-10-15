@@ -142,6 +142,11 @@ def get_densenet(num_layers, pretrained=False, ctx=cpu(),
         from .model_store import get_model_file
         net.load_parameters(get_model_file('densenet%d'%(num_layers),
                                            tag=pretrained, root=root), ctx=ctx)
+        from ..data import ImageNet1kAttr
+        attrib = ImageNet1kAttr()
+        net.synset = attrib.synset
+        net.classes = attrib.classes
+        net.classes_long = attrib.classes_long
     return net
 
 def densenet121(**kwargs):

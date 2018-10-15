@@ -506,6 +506,11 @@ def get_resnet(version, num_layers, pretrained=False, ctx=cpu(),
         else:
             net.load_parameters(get_model_file('se_resnet%d_v%d'%(num_layers, version),
                                                tag=pretrained, root=root), ctx=ctx)
+        from ..data import ImageNet1kAttr
+        attrib = ImageNet1kAttr()
+        net.synset = attrib.synset
+        net.classes = attrib.classes
+        net.classes_long = attrib.classes_long
     return net
 
 def resnet18_v1(**kwargs):
