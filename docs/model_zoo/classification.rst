@@ -15,9 +15,11 @@ Visualization of Inference Throughputs vs. Validation Accuracy of ImageNet pre-t
 How To Use Pretrained Models
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-First, make sure ``GluonCV`` and ``MXNet`` are installed. If not yet, please follow `our installation guide <../index.html#installation>`__.
+- The following example requires ``GluonCV>=0.3`` and ``MXNet>=1.3.0``. Please follow `our installation guide <../index.html#installation>`__ to install or upgrade GluonCV and MXNet if necessary.
 
-Then prepare an image and rename it to ``test-gluon.jpg`` (or ``.png``) under your working directory.
+- Prepare an image by yourself or use `our sample image <../_static/classification-demo.png>`__. You can save the image into filename ``classification-demo.png`` in your working directory or change the filename in the source codes if you use an another name.
+
+- Use a pre-trained model. A model is specified by its name.
 
 Let's try it out!
 
@@ -26,16 +28,27 @@ Let's try it out!
     import mxnet as mx
     import gluoncv
 
+    # you can change it to your image filename
+    filename = 'classification-demo.png'
+    # you may modify it to switch to another model. The name is case-insensitive
     model_name = 'ResNet50_v1d'
+    # download and load the pre-trained model
     net = gluoncv.model_zoo.get_model(model_name, pretrained=True)
-
-    img = mx.image.imread('test-gluon.jpg')
+    # load image
+    img = mx.image.imread(filename)
+    # apply default data preprocessing
     transformed_img = gluoncv.data.transforms.presets.imagenet.transform_eval(img)
+    # run forward pass to obtain the predicted score for each class
     pred = net(transformed_img)
-    predicted_index = int(pred.argmax(axis=1).asscalar())
-    print("Classified to be %s"%(net.classes[predicted_index]))
+    # find the 5 class indices with the highest score
+    ind = mx.nd.topk(pred, k=5)[0].astype('int')
+    # print the class name and predicted probability
+    print('The input picture is classified to be')
+    for i in range(5):
+        print('\t[%s], with probability %.3f.'%
+            (net.classes[ind[i].asscalar()], mx.nd.softmax(pred)[0][ind[i]].asscalar()))
 
-Remember, you can try different models by replacing ``model_name``.
+Remember, you can try different models by replacing the value of ``model_name``.
 Read further for model names and their performances in the tables.
 
 ImageNet
