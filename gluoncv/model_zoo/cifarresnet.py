@@ -270,7 +270,7 @@ def get_cifar_resnet(version, num_layers, pretrained=False, ctx=cpu(),
     if pretrained:
         from .model_store import get_model_file
         net.load_params(get_model_file('cifar_resnet%d_v%d'%(num_layers, version),
-                                       root=root), ctx=ctx)
+                                       tag=pretrained, root=root), ctx=ctx)
     return net
 
 def cifar_resnet20_v1(**kwargs):

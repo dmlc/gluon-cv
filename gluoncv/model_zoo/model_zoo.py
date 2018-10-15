@@ -165,8 +165,9 @@ def get_model(name, **kwargs):
     ----------
     name : str
         Name of the model.
-    pretrained : bool
-        Whether to load the pretrained weights for model.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     classes : int
         Number of classes for the output layer.
     ctx : Context, default CPU

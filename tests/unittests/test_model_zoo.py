@@ -108,7 +108,8 @@ def test_imagenet_models():
               'squeezenet1.0', 'squeezenet1.1',
               'mobilenet1.0','mobilenet0.75','mobilenet0.5','mobilenet0.25',
               'mobilenetv2_1.0','mobilenetv2_0.75','mobilenetv2_0.5','mobilenetv2_0.25',
-              'alexnet', 'densenet121', 'densenet161', 'densenet169', 'densenet201',
+              'densenet121', 'densenet161', 'densenet169', 'densenet201',
+              'darknet53', 'alexnet',
               'vgg11', 'vgg11_bn', 'vgg13', 'vgg13_bn',
               'vgg16', 'vgg16_bn', 'vgg19', 'vgg19_bn']
     _test_model_list(models, ctx, x)
@@ -153,6 +154,18 @@ def test_yolo3_models():
     x = mx.random.uniform(shape=(1, 3, 416, 416), ctx=ctx)  # allow non-squre and larger inputs
     models = ['yolo3_darknet53_voc']
     _test_model_list(models, ctx, x)
+
+@try_gpu(0)
+def test_two_stage_ctx_loading():
+    model_name = 'yolo3_darknet53_coco'
+    ctx = mx.test_utils.default_context()
+    if str(ctx).startswith('cpu'):
+        # meaningless
+        return
+    net = gcv.model_zoo.get_model(model_name, pretrained=True)
+    net.save_parameters(model_name + '.params')
+    net = gcv.model_zoo.get_model(model_name, pretrained=False, ctx=ctx)
+    net.load_parameters(model_name + '.params', ctx=ctx)
 
 def test_set_nms():
     model_list = ['ssd_512_resnet50_v1_voc', 'faster_rcnn_resnet50_v1b_voc', 'yolo3_darknet53_coco']

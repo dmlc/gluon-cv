@@ -71,8 +71,9 @@ def alexnet(pretrained=False, ctx=cpu(),
 
     Parameters
     ----------
-    pretrained : bool, default False
-        Whether to load the pretrained weights for model.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     root : str, default $MXNET_HOME/models
@@ -81,5 +82,5 @@ def alexnet(pretrained=False, ctx=cpu(),
     net = AlexNet(**kwargs)
     if pretrained:
         from .model_store import get_model_file
-        net.load_parameters(get_model_file('alexnet', root=root), ctx=ctx)
+        net.load_parameters(get_model_file('alexnet', tag=pretrained, root=root), ctx=ctx)
     return net

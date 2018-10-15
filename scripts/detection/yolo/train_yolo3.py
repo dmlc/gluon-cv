@@ -185,7 +185,7 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
         net._target_generator._label_smooth = True
 
     if args.lr_decay_period > 0:
-        lr_decay_epoch = list(range(lr_decay_period, args.epochs, lr_decay_period))
+        lr_decay_epoch = list(range(args.lr_decay_period, args.epochs, args.lr_decay_period))
     else:
         lr_decay_epoch = [int(i) for i in args.lr_decay_epoch.split(',')]
     lr_scheduler = LRScheduler(mode=args.lr_mode,
@@ -226,9 +226,16 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
     best_map = [0]
     for epoch in range(args.start_epoch, args.epochs):
         if args.mixup:
-            train_data._dataset.set_mixup(np.random.beta, 1.5, 1.5)
+            # TODO(zhreshold): more elegant way to control mixup during runtime
+            try:
+                train_data._dataset.set_mixup(np.random.beta, 1.5, 1.5)
+            except AttributeError:
+                train_data._dataset._data.set_mixup(np.random.beta, 1.5, 1.5)
             if epoch >= args.epochs - args.no_mixup_epochs:
-                train_data._dataset.set_mixup(None)
+                try:
+                    train_data._dataset.set_mixup(None)
+                except AttributeError:
+                    train_data._dataset._data.set_mixup(None)
 
         tic = time.time()
         btic = time.time()

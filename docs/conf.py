@@ -239,6 +239,7 @@ todo_include_todos = True
 
 def setup(app):
     app.add_javascript('google_analytics.js')
+    app.add_stylesheet('css/custom.css')
      #app.add_transform(AutoStructify)
     #app.add_config_value('recommonmark_config', {
     #}, True)
