@@ -41,7 +41,7 @@ class UpsamplingBilinear2d(HybridBlock):
         super(UpsamplingBilinear2d, self).__init__(**kwargs)
         self.size = size
 
-    def hybrid_forward(self, F, x, *args, **kwargs):
+    def hybrid_forward(self, F, x):
         return F.contrib.BilinearResize2D(x, self.size, self.size)
 
 
