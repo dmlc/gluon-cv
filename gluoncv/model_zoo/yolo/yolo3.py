@@ -500,7 +500,8 @@ def yolo3_darknet53_voc(pretrained_base=True, pretrained=False, num_sync_bn_devi
     """
     from ...data import VOCDetection
     pretrained_base = False if pretrained else pretrained_base
-    base_net = darknet53(pretrained=pretrained_base, num_sync_bn_devices=num_sync_bn_devices)
+    base_net = darknet53(
+        pretrained=pretrained_base, num_sync_bn_devices=num_sync_bn_devices, **kwargs)
     stages = [base_net.features[:15], base_net.features[15:24], base_net.features[24:]]
     anchors = [[10, 13, 16, 30, 33, 23], [30, 61, 62, 45, 59, 119], [116, 90, 156, 198, 373, 326]]
     strides = [8, 16, 32]
@@ -529,7 +530,8 @@ def yolo3_darknet53_coco(pretrained_base=True, pretrained=False, num_sync_bn_dev
     """
     from ...data import COCODetection
     pretrained_base = False if pretrained else pretrained_base
-    base_net = darknet53(pretrained=pretrained_base, num_sync_bn_devices=num_sync_bn_devices)
+    base_net = darknet53(
+        pretrained=pretrained_base, num_sync_bn_devices=num_sync_bn_devices, **kwargs)
     stages = [base_net.features[:15], base_net.features[15:24], base_net.features[24:]]
     anchors = [[10, 13, 16, 30, 33, 23], [30, 61, 62, 45, 59, 119], [116, 90, 156, 198, 373, 326]]
     strides = [8, 16, 32]
@@ -560,7 +562,8 @@ def yolo3_darknet53_custom(classes, transfer=None, pretrained_base=True, pretrai
         Fully hybrid yolo3 network.
     """
     if transfer is None:
-        base_net = darknet53(pretrained=pretrained_base, num_sync_bn_devices=num_sync_bn_devices)
+        base_net = darknet53(
+            pretrained=pretrained_base, num_sync_bn_devices=num_sync_bn_devices, **kwargs)
         stages = [base_net.features[:15], base_net.features[15:24], base_net.features[24:]]
         anchors = [
             [10, 13, 16, 30, 33, 23],

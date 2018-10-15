@@ -155,6 +155,18 @@ def test_yolo3_models():
     models = ['yolo3_darknet53_voc']
     _test_model_list(models, ctx, x)
 
+@try_gpu(0)
+def test_two_stage_ctx_loading():
+    model_name = 'yolo3_darknet53_coco'
+    ctx = mx.test_utils.default_context()
+    if str(ctx).startswith('cpu'):
+        # meaningless
+        return
+    net = gcv.model_zoo.get_model(model_name, pretrained=True)
+    net.save_parameters(model_name + '.params')
+    net = gcv.model_zoo.get_model(model_name, pretrained=False, ctx=ctx)
+    net.load_parameters(model_name + '.params', ctx=ctx)
+
 def test_set_nms():
     model_list = ['ssd_512_resnet50_v1_voc', 'faster_rcnn_resnet50_v1b_voc', 'yolo3_darknet53_coco']
     for model in model_list:
