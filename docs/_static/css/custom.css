@@ -1,3 +1,11 @@
 .tag {
-    color:#bc5a45;
+    color:grey;
+}
+
+.tag:after {
+    content: ' (no mixup)';
+}
+
+.greytag {
+    color:grey;
 }

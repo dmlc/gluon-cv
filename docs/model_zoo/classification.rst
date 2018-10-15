@@ -3,7 +3,7 @@
 Classification
 ====================
 
-.. role:: tag
+
 
 Visualization of Inference Throughputs vs. Validation Accuracy of ImageNet pre-trained models is illustrated in the following graph.
 
@@ -64,6 +64,8 @@ The output from `our sample image <../_static/classification-demo.png>`__ is exp
 Remember, you can try different models by replacing the value of ``model_name``.
 Read further for model names and their performances in the tables.
 
+.. role:: greytag
+
 ImageNet
 ~~~~~~~~
 
@@ -74,11 +76,13 @@ ImageNet
     :download:`Download train_imagenet.py<../../scripts/classification/imagenet/train_imagenet.py>`
 
     A model can have differently trained parameters with different hashtags.
-    Parameters with :tag:`highlighted names` can be downloaded by passing corresponding hashtag.
+    Parameters with :greytag:`a grey name` can be downloaded by passing the corresponding hashtag.
 
     - Download default pretrained weights: ``net = get_model('ResNet50_v1d', pretrained=True)``
 
     - Download weights given a hashtag: ``net = get_model('ResNet50_v1d', pretrained='117a384e')``
+
+.. role:: tag
 
 ResNet
 ------
