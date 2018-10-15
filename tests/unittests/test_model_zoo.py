@@ -155,7 +155,7 @@ def test_yolo3_models():
     models = ['yolo3_darknet53_voc']
     _test_model_list(models, ctx, x)
 
-@try_gpu
+@try_gpu(0)
 def test_two_stage_ctx_loading():
     model_name = 'yolo3_darknet53_coco'
     ctx = mx.test_utils.default_context()
