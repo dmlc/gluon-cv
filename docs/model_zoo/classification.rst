@@ -40,13 +40,26 @@ Let's try it out!
     transformed_img = gluoncv.data.transforms.presets.imagenet.transform_eval(img)
     # run forward pass to obtain the predicted score for each class
     pred = net(transformed_img)
+    # map predicted values to probability by softmax
+    prob = mx.nd.softmax(pred)[0].asnumpy()
     # find the 5 class indices with the highest score
-    ind = mx.nd.topk(pred, k=5)[0].astype('int')
+    ind = mx.nd.topk(pred, k=5)[0].astype('int').asnumpy().tolist()
     # print the class name and predicted probability
     print('The input picture is classified to be')
     for i in range(5):
-        print('\t[%s], with probability %.3f.'%
-            (net.classes[ind[i].asscalar()], mx.nd.softmax(pred)[0][ind[i]].asscalar()))
+        print('- [%s], with probability %.3f.'%(net.classes[ind[i]], prob[ind[i]]))
+
+The output from `our sample image <../_static/classification-demo.png>`__ is expected to be
+
+.. code-block:: txt
+
+    The input picture is classified to be
+    - [Welsh springer spaniel], with probability 0.899.
+    - [Irish setter], with probability 0.005.
+    - [Brittany spaniel], with probability 0.003.
+    - [cocker spaniel], with probability 0.002.
+    - [Blenheim spaniel], with probability 0.002.
+
 
 Remember, you can try different models by replacing the value of ``model_name``.
 Read further for model names and their performances in the tables.
