@@ -213,7 +213,7 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
         name2, loss2 = smoothl1_metric.get()
         logger.info('[Epoch {}] Training cost: {:.3f}, {}={:.3f}, {}={:.3f}'.format(
             epoch, (time.time()-tic), name1, loss1, name2, loss2))
-        if (epoch % args.val_interval == 0) or (save_interval and epoch % save_interval == 0):
+        if (epoch % args.val_interval == 0) or (args.save_interval and epoch % args.save_interval == 0):
             # consider reduce the frequency of validation to save time
             map_name, mean_ap = validate(net, val_data, ctx, eval_metric)
             val_msg = '\n'.join(['{}={}'.format(k, v) for k, v in zip(map_name, mean_ap)])
