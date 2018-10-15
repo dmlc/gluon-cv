@@ -2,3 +2,4 @@
 from . import ssd
 from . import rcnn
 from . import yolo
+from . import imagenet

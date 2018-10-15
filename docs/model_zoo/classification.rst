@@ -12,8 +12,57 @@ Visualization of Inference Throughputs vs. Validation Accuracy of ImageNet pre-t
 
 .. include:: /_static/classification_throughputs.html
 
-The following table lists pre-trained models on ImageNet. We will keep
-adding new models and training scripts to the table.
+How To Use Pretrained Models
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- The following example requires ``GluonCV>=0.3`` and ``MXNet>=1.3.0``. Please follow `our installation guide <../index.html#installation>`__ to install or upgrade GluonCV and MXNet if necessary.
+
+- Prepare an image by yourself or use `our sample image <../_static/classification-demo.png>`__. You can save the image into filename ``classification-demo.png`` in your working directory or change the filename in the source codes if you use an another name.
+
+- Use a pre-trained model. A model is specified by its name.
+
+Let's try it out!
+
+.. code-block:: python
+
+    import mxnet as mx
+    import gluoncv
+
+    # you can change it to your image filename
+    filename = 'classification-demo.png'
+    # you may modify it to switch to another model. The name is case-insensitive
+    model_name = 'ResNet50_v1d'
+    # download and load the pre-trained model
+    net = gluoncv.model_zoo.get_model(model_name, pretrained=True)
+    # load image
+    img = mx.image.imread(filename)
+    # apply default data preprocessing
+    transformed_img = gluoncv.data.transforms.presets.imagenet.transform_eval(img)
+    # run forward pass to obtain the predicted score for each class
+    pred = net(transformed_img)
+    # map predicted values to probability by softmax
+    prob = mx.nd.softmax(pred)[0].asnumpy()
+    # find the 5 class indices with the highest score
+    ind = mx.nd.topk(pred, k=5)[0].astype('int').asnumpy().tolist()
+    # print the class name and predicted probability
+    print('The input picture is classified to be')
+    for i in range(5):
+        print('- [%s], with probability %.3f.'%(net.classes[ind[i]], prob[ind[i]]))
+
+The output from `our sample image <../_static/classification-demo.png>`__ is expected to be
+
+.. code-block:: txt
+
+    The input picture is classified to be
+    - [Welsh springer spaniel], with probability 0.899.
+    - [Irish setter], with probability 0.005.
+    - [Brittany spaniel], with probability 0.003.
+    - [cocker spaniel], with probability 0.002.
+    - [Blenheim spaniel], with probability 0.002.
+
+
+Remember, you can try different models by replacing the value of ``model_name``.
+Read further for model names and their performances in the tables.
 
 ImageNet
 ~~~~~~~~
@@ -31,7 +80,8 @@ ImageNet
 
     - Download weights given a hashtag: ``net = get_model('ResNet50_v1d', pretrained='117a384e')``
 
-**ResNet**
+ResNet
+------
 
 .. hint::
 
@@ -93,7 +143,8 @@ ImageNet
 | ResNet152_v2 [2]_         | 79.21  | 94.31  | f2695542 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet152_v2.sh>`_        | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet152_v2.log>`_         |
 +---------------------------+--------+--------+----------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
 
-**MobileNet**
+MobileNet
+---------
 
 +--------------------------+--------+--------+----------+-----------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
 | Model                    | Top-1  | Top-5  | Hashtag  | Training Command                                                                                                                        | Training Log                                                                                                                  |
@@ -117,7 +168,8 @@ ImageNet
 | MobileNetV2_0.25 [5]_    | 50.74  | 74.56  | ae8f9392 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/mobilenetv2_0.25.sh>`_       | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/mobilenetv2_0.25.log>`_     |
 +--------------------------+--------+--------+----------+-----------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
 
-**VGG**
+VGG
+---
 
 +-----------------------+--------+--------+----------+------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
 | Model                 | Top-1  | Top-5  | Hashtag  | Training Command                                                                                                                   | Training Log                                                                                                                  |
@@ -139,7 +191,8 @@ ImageNet
 | VGG19_bn [9]_         | 74.33  | 91.85  | f360b758 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/vgg19_bn.sh>`_          | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/vgg19_bn.log>`_             |
 +-----------------------+--------+--------+----------+------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
 
-**SqueezeNet**
+SqueezeNet
+----------
 
 +-----------------------+--------+--------+----------+------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
 | Model                 | Top-1  | Top-5  | Hashtag  | Training Command                                                                                                                   | Training Log                                                                                                                  |
@@ -149,7 +202,8 @@ ImageNet
 | SqueezeNet1.1 [10]_   | 54.96  | 78.17  | 33ba0f93 |                                                                                                                                    |                                                                                                                               |
 +-----------------------+--------+--------+----------+------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
 
-**DenseNet**
+DenseNet
+--------
 
 +-----------------------+--------+--------+----------+------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
 | Model                 | Top-1  | Top-5  | Hashtag  | Training Command                                                                                                                   | Training Log                                                                                                                  |
@@ -163,7 +217,8 @@ ImageNet
 | DenseNet201 [7]_      | 77.32  | 93.62  | 1cdbc116 |                                                                                                                                    |                                                                                                                               |
 +-----------------------+--------+--------+----------+------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
 
-**Others**
+Others
+------
 
 .. hint::
 

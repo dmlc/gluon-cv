@@ -622,6 +622,11 @@ def get_nasnet(repeat=6, penultimate_filters=4032,
         from .model_store import get_model_file
         net.load_params(get_model_file('nasnet_%d_%d'%(repeat, penultimate_filters),
                                        tag=pretrained, root=root), ctx=ctx)
+        from ..data import ImageNet1kAttr
+        attrib = ImageNet1kAttr()
+        net.synset = attrib.synset
+        net.classes = attrib.classes
+        net.classes_long = attrib.classes_long
     return net
 
 def nasnet_4_1056(**kwargs):
