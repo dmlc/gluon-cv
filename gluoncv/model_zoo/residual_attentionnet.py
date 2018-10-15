@@ -26,7 +26,6 @@ __modify__ = 'X.Yang'
 __modified_date__ = '18/10/15'
 
 from mxnet.gluon import nn
-from mxnet.context import cpu
 from mxnet.gluon.block import HybridBlock
 
 
@@ -76,7 +75,7 @@ class ResidualBlock(HybridBlock):
             if stride != 1 or (self.in_channels != self.channels):
                 self.conv4 = nn.Conv2D(channels, 1, stride, use_bias=False)
 
-    def hybrid_forward(self, F, x, *args, **kwargs):
+    def hybrid_forward(self, F, x):
         residual = x
         out = self.bn1(x)
         out1 = F.Activation(out, act_type='relu')
@@ -168,7 +167,7 @@ class AttentionModule_stage0(nn.HybridBlock):
 
             self.last_blocks = ResidualBlock(channels)
 
-    def hybrid_forward(self, F, x, *args, **kwargs):
+    def hybrid_forward(self, F, x):
         x = self.first_residual_blocks(x)
         out_trunk = self.trunk_branches(x)
 
@@ -279,7 +278,7 @@ class AttentionModule_stage1(nn.HybridBlock):
 
             self.last_blocks = ResidualBlock(channels)
 
-    def hybrid_forward(self, F, x, *args, **kwargs):
+    def hybrid_forward(self, F, x):
         x = self.first_residual_blocks(x)
         out_trunk = self.trunk_branches(x)
 
@@ -367,7 +366,7 @@ class AttentionModule_stage2(nn.HybridBlock):
                 self.softmax4_blocks.add(nn.Activation('sigmoid'))
             self.last_blocks = ResidualBlock(channels)
 
-    def hybrid_forward(self, F, x, *args, **kwargs):
+    def hybrid_forward(self, F, x):
         x = self.first_residual_blocks(x)
         out_trunk = self.trunk_branches(x)
         out_mpool1 = self.mpool1(x)
@@ -432,7 +431,7 @@ class AttentionModule_stage3(nn.HybridBlock):
                 self.softmax2_blocks.add(nn.Activation('sigmoid'))
             self.last_blocks = ResidualBlock(channels)
 
-    def hybrid_forward(self, F, x, *args, **kwargs):
+    def hybrid_forward(self, F, x):
         x = self.first_residual_blocks(x)
         out_trunk = self.trunk_branches(x)
         out_mpool1 = self.mpool1(x)
@@ -483,7 +482,7 @@ class AttentionModule_stage4(nn.HybridBlock):
                 self.softmax2_blocks.add(nn.Activation('sigmoid'))
             self.last_blocks = ResidualBlock(channels)
 
-    def hybrid_forward(self, F, x, *args, **kwargs):
+    def hybrid_forward(self, F, x):
         x = self.first_residual_blocks(x)
         out_trunk = self.trunk_branches(x)
         out_softmax1 = self.softmax1_blocks(x)
@@ -543,7 +542,7 @@ class ResidualAttentionModel_448input(nn.HybridBlock):
                 self.mpool2.add(nn.AvgPool2D(pool_size=7, strides=1))
             self.fc = nn.Conv2D(classes, kernel_size=1)
 
-    def hybrid_forward(self, F, x, *args, **kwargs):
+    def hybrid_forward(self, F, x):
         x = self.conv1(x)
         x = self.mpool1(x)
         x = self.residual_block0(x)
@@ -615,7 +614,7 @@ class ResidualAttentionModel(nn.HybridBlock):
                 self.mpool2.add(nn.AvgPool2D(pool_size=7, strides=1))
             self.fc = nn.Conv2D(classes, kernel_size=1)
 
-    def hybrid_forward(self, F, x, *args, **kwargs):
+    def hybrid_forward(self, F, x):
         x = self.conv1(x)
         x = self.mpool1(x)
         x = self.residual_block1(x)
@@ -684,7 +683,7 @@ class ResidualAttentionModel_32input(nn.HybridBlock):
                 self.mpool2.add(nn.AvgPool2D(pool_size=8, strides=1))
             self.fc = nn.Conv2D(classes, kernel_size=1)
 
-    def hybrid_forward(self, F, x, *args, **kwargs):
+    def hybrid_forward(self, F, x):
         x = self.conv1(x)
         x = self.residual_block1(x)
         x = self.attention_module1(x)
