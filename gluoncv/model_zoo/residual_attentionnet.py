@@ -20,10 +20,12 @@
 """ResidualAttentionNetwork, implemented in Gluon."""
 
 __all__ = ['ResidualAttentionModel_448input', 'ResidualAttentionModel',
-           'ResidualAttentionModel_32input']
+           'ResidualAttentionModel_32input', 'residualattentionnet56',
+           'residualattentionnet92', 'residualattentionnet56_32input',
+           'residualattentionnet92_32input']
 
 __modify__ = 'X.Yang'
-__modified_date__ = '18/10/15'
+__modified_date__ = '18/10/16'
 
 from mxnet.gluon import nn
 from mxnet.gluon.block import HybridBlock
@@ -31,11 +33,11 @@ from mxnet.gluon.block import HybridBlock
 
 class UpsamplingBilinear2d(HybridBlock):
     r"""
-        Parameters
-        ----------
-        size : int
-            Upsampling size.
-        """
+    Parameters
+    ----------
+    size : int
+        Upsampling size.
+    """
 
     def __init__(self, size, **kwargs):
         super(UpsamplingBilinear2d, self).__init__(**kwargs)
@@ -47,18 +49,18 @@ class UpsamplingBilinear2d(HybridBlock):
 
 class ResidualBlock(HybridBlock):
     r"""ResNet V2 model from
-        `"Identity Mappings in Deep Residual Networks"
-        <https://arxiv.org/abs/1603.05027>`_ paper.
+    `"Identity Mappings in Deep Residual Networks"
+    <https://arxiv.org/abs/1603.05027>`_ paper.
 
-        Parameters
-        ----------
-        channels : int
-            Output channels
-        in_channels : int
-            Input channels
-        stride : int
-            Stride size.
-        """
+    Parameters
+    ----------
+    channels : int
+        Output channels
+    in_channels : int
+        Input channels
+    stride : int
+        Stride size.
+    """
 
     def __init__(self, channels, in_channels=None, stride=1):
         super(ResidualBlock, self).__init__()
@@ -99,7 +101,7 @@ class AttentionModule_stage0(nn.HybridBlock):
     `"Residual Attention Network for Image Classification"
     <https://arxiv.org/pdf/1704.06904.pdf>`_ paper.
     Input size is 112 x 112.
-    Default size is for 224 input.
+    Default size is for 112 stage input.
     If input size is different you need to change it suiting for your input size.
 
     Parameters
@@ -218,7 +220,7 @@ class AttentionModule_stage1(nn.HybridBlock):
     `"Residual Attention Network for Image Classification"
     <https://arxiv.org/pdf/1704.06904.pdf>`_ paper.
     Input size is 56 x 56.
-    Default size is for 224 input.
+    Default size is for 56 stage input.
     If input size is different you need to change it suiting for your input size.
 
     Parameters
@@ -265,7 +267,6 @@ class AttentionModule_stage1(nn.HybridBlock):
             self.softmax5_blocks = ResidualBlock(channels)
 
             self.interpolation1 = UpsamplingBilinear2d(size=size1)
-
             self.softmax6_blocks = nn.HybridSequential()
             with self.softmax6_blocks.name_scope():
                 self.softmax6_blocks.add(nn.BatchNorm())
@@ -316,7 +317,7 @@ class AttentionModule_stage2(nn.HybridBlock):
     `"Residual Attention Network for Image Classification"
     <https://arxiv.org/pdf/1704.06904.pdf>`_ paper.
     Input size is 28 x 28.
-    Default size is for 224 input.
+    Default size is for 28 stage input.
     If input size is different you need to change it suiting for your input size.
 
     Parameters
@@ -390,7 +391,7 @@ class AttentionModule_stage3(nn.HybridBlock):
     `"Residual Attention Network for Image Classification"
     <https://arxiv.org/pdf/1704.06904.pdf>`_ paper.
     Input size is 14 x 14.
-    Default size is for 224 input.
+    Default size is for 14 stage input.
     If input size is different you need to change it suiting for your input size.
 
     Parameters
@@ -582,6 +583,7 @@ class ResidualAttentionModel(nn.HybridBlock):
     additional_stage : bool, default False
         If False means Attention56, True means Attention92.
     """
+
     def __init__(self, classes=1000, additional_stage=False, **kwargs):
         super(ResidualAttentionModel, self).__init__(**kwargs)
         self.additional_stage = additional_stage
@@ -650,6 +652,7 @@ class ResidualAttentionModel_32input(nn.HybridBlock):
     additional_stage : bool, default False
         If False means Attention56, True means Attention92.
     """
+
     def __init__(self, classes=10, additional_stage=False, **kwargs):
         super(ResidualAttentionModel_32input, self).__init__(**kwargs)
         self.additional_stage = additional_stage
@@ -703,3 +706,125 @@ class ResidualAttentionModel_32input(nn.HybridBlock):
         x = self.fc(x)
         x = F.Flatten(x)
         return x
+
+
+def get_residualAttentionModel(input_size, additional_stage=False,
+                               pretrained=None, ctx=None,
+                               root=None, **kwargs):
+    r"""AttentionModel model from
+    `"Residual Attention Network for Image Classification"
+    <https://arxiv.org/pdf/1704.06904.pdf>`_ paper.
+
+    Parameters
+    ----------
+    input_size : int
+        Input size of net. Options are 32, 224, 448.
+    additional_stage : bool, default False
+        If False means Attention56, True means Attention92.
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+    """
+    assert input_size in (32, 224, 448)
+    if input_size == 32:
+        net = ResidualAttentionModel_32input(additional_stage=additional_stage, **kwargs)
+    elif input_size == 224:
+        net = ResidualAttentionModel(additional_stage=additional_stage, **kwargs)
+    else:
+        net = ResidualAttentionModel_448input(additional_stage=additional_stage, **kwargs)
+
+    if pretrained:
+        pass
+
+    return net
+
+
+def residualattentionnet56(**kwargs):
+    r"""AttentionModel model from
+    `"Residual Attention Network for Image Classification"
+    <https://arxiv.org/pdf/1704.06904.pdf>`_ paper.
+
+    Parameters
+    ----------
+    input_size : int
+        Input size of net. Options are 32, 224, 448.
+    additional_stage : bool, default False
+        If False means Attention56, True means Attention92.
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+    """
+
+    return get_residualAttentionModel(224, False, **kwargs)
+
+
+def residualattentionnet92(**kwargs):
+    r"""AttentionModel model from
+    `"Residual Attention Network for Image Classification"
+    <https://arxiv.org/pdf/1704.06904.pdf>`_ paper.
+
+    Parameters
+    ----------
+    input_size : int
+        Input size of net. Options are 32, 224, 448.
+    additional_stage : bool, default False
+        If False means Attention56, True means Attention92.
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+    """
+
+    return get_residualAttentionModel(224, True, **kwargs)
+
+
+def residualattentionnet56_32input(**kwargs):
+    r"""AttentionModel model from
+    `"Residual Attention Network for Image Classification"
+    <https://arxiv.org/pdf/1704.06904.pdf>`_ paper.
+
+    Parameters
+    ----------
+    input_size : int
+        Input size of net. Options are 32, 224, 448.
+    additional_stage : bool, default False
+        If False means Attention56, True means Attention92.
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+    """
+
+    return get_residualAttentionModel(32, False, **kwargs)
+
+
+def residualattentionnet92_32input(**kwargs):
+    r"""AttentionModel model from
+    `"Residual Attention Network for Image Classification"
+    <https://arxiv.org/pdf/1704.06904.pdf>`_ paper.
+
+    Parameters
+    ----------
+    input_size : int
+        Input size of net. Options are 32, 224, 448.
+    additional_stage : bool, default False
+        If False means Attention56, True means Attention92.
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+    """
+
+    return get_residualAttentionModel(32, True, **kwargs)
