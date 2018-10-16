@@ -5,7 +5,6 @@ from mxnet import lr_scheduler
 from mxnet.gluon.data import DataLoader
 from mxnet.gluon.data.vision import transforms
 from mxnet.gluon import Block, HybridBlock
-
 from mxnet import autograd
 from mxnet import gluon
 import numpy as np
