@@ -54,7 +54,7 @@ if model_name.startswith('resnext'):
 net = get_model(model_name, **kwargs)
 net.cast(opt.dtype)
 if opt.params_file:
-    net.load_params(opt.params_file, ctx=ctx)
+    net.load_parameters(opt.params_file, ctx=ctx)
 net.hybridize()
 
 acc_top1 = mx.metric.Accuracy()

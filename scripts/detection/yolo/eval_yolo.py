@@ -107,7 +107,7 @@ if __name__ == '__main__':
         net = gcv.model_zoo.get_model(net_name, pretrained=True)
     else:
         net = gcv.model_zoo.get_model(net_name, pretrained=False)
-        net.load_params(args.pretrained.strip())
+        net.load_parameters(args.pretrained.strip())
 
     # training data
     val_dataset, val_metric = get_dataset(args.dataset, args.data_shape)

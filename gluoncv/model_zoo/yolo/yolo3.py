@@ -475,7 +475,7 @@ def get_yolov3(name, stages, filters, anchors, strides, classes,
     if pretrained:
         from ..model_store import get_model_file
         full_name = '_'.join(('yolo3', name, dataset))
-        net.load_params(get_model_file(full_name, tag=pretrained, root=root), ctx=ctx)
+        net.load_parameters(get_model_file(full_name, tag=pretrained, root=root), ctx=ctx)
     return net
 
 def yolo3_darknet53_voc(pretrained_base=True, pretrained=False, num_sync_bn_devices=-1, **kwargs):

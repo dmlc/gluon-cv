@@ -237,7 +237,7 @@ if __name__ == '__main__':
     args.save_prefix += net_name
     net = get_model(net_name, pretrained_base=True)
     if args.resume.strip():
-        net.load_params(args.resume.strip())
+        net.load_parameters(args.resume.strip())
     else:
         for param in net.collect_params().values():
             if param._data is not None:

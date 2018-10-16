@@ -31,7 +31,7 @@ kwargs = {'classes': classes, 'pretrained': pretrained}
 net = get_model(model_name, **kwargs)
 
 if not pretrained:
-    net.load_params(opt.saved_params, ctx = context)
+    net.load_parameters(opt.saved_params, ctx = context)
 
 # Load Images
 img = image.imread(opt.input_pic)

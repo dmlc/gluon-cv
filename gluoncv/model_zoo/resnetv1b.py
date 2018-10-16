@@ -279,8 +279,8 @@ def resnet18_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
     model = ResNetV1b(BasicBlockV1b, [2, 2, 2, 2], **kwargs)
     if pretrained:
         from .model_store import get_model_file
-        model.load_params(get_model_file('resnet%d_v%db'%(18, 1),
-                                         tag=pretrained, root=root), ctx=ctx)
+        model.load_parameters(get_model_file('resnet%d_v%db'%(18, 1),
+                                             tag=pretrained, root=root), ctx=ctx)
         from ..data import ImageNet1kAttr
         attrib = ImageNet1kAttr()
         model.synset = attrib.synset
@@ -314,8 +314,8 @@ def resnet34_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
     model = ResNetV1b(BasicBlockV1b, [3, 4, 6, 3], **kwargs)
     if pretrained:
         from .model_store import get_model_file
-        model.load_params(get_model_file('resnet%d_v%db'%(34, 1),
-                                         tag=pretrained, root=root), ctx=ctx)
+        model.load_parameters(get_model_file('resnet%d_v%db'%(34, 1),
+                                             tag=pretrained, root=root), ctx=ctx)
         from ..data import ImageNet1kAttr
         attrib = ImageNet1kAttr()
         model.synset = attrib.synset
@@ -349,8 +349,8 @@ def resnet50_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
     model = ResNetV1b(BottleneckV1b, [3, 4, 6, 3], **kwargs)
     if pretrained:
         from .model_store import get_model_file
-        model.load_params(get_model_file('resnet%d_v%db'%(50, 1),
-                                         tag=pretrained, root=root), ctx=ctx)
+        model.load_parameters(get_model_file('resnet%d_v%db'%(50, 1),
+                                             tag=pretrained, root=root), ctx=ctx)
         from ..data import ImageNet1kAttr
         attrib = ImageNet1kAttr()
         model.synset = attrib.synset
@@ -384,8 +384,8 @@ def resnet101_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
     model = ResNetV1b(BottleneckV1b, [3, 4, 23, 3], **kwargs)
     if pretrained:
         from .model_store import get_model_file
-        model.load_params(get_model_file('resnet%d_v%db'%(101, 1),
-                                         tag=pretrained, root=root), ctx=ctx)
+        model.load_parameters(get_model_file('resnet%d_v%db'%(101, 1),
+                                             tag=pretrained, root=root), ctx=ctx)
         from ..data import ImageNet1kAttr
         attrib = ImageNet1kAttr()
         model.synset = attrib.synset
@@ -419,8 +419,8 @@ def resnet152_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
     model = ResNetV1b(BottleneckV1b, [3, 8, 36, 3], **kwargs)
     if pretrained:
         from .model_store import get_model_file
-        model.load_params(get_model_file('resnet%d_v%db'%(152, 1),
-                                         tag=pretrained, root=root), ctx=ctx)
+        model.load_parameters(get_model_file('resnet%d_v%db'%(152, 1),
+                                             tag=pretrained, root=root), ctx=ctx)
         from ..data import ImageNet1kAttr
         attrib = ImageNet1kAttr()
         model.synset = attrib.synset
@@ -448,8 +448,8 @@ def resnet50_v1c(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
     model = ResNetV1b(BottleneckV1b, [3, 4, 6, 3], deep_stem=True, **kwargs)
     if pretrained:
         from .model_store import get_model_file
-        model.load_params(get_model_file('resnet%d_v%dc'%(50, 1),
-                                         tag=pretrained, root=root), ctx=ctx)
+        model.load_parameters(get_model_file('resnet%d_v%dc'%(50, 1),
+                                             tag=pretrained, root=root), ctx=ctx)
         from ..data import ImageNet1kAttr
         attrib = ImageNet1kAttr()
         model.synset = attrib.synset
@@ -478,8 +478,8 @@ def resnet101_v1c(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
     model = ResNetV1b(BottleneckV1b, [3, 4, 23, 3], deep_stem=True, **kwargs)
     if pretrained:
         from .model_store import get_model_file
-        model.load_params(get_model_file('resnet%d_v%dc'%(101, 1),
-                                         tag=pretrained, root=root), ctx=ctx)
+        model.load_parameters(get_model_file('resnet%d_v%dc'%(101, 1),
+                                             tag=pretrained, root=root), ctx=ctx)
         from ..data import ImageNet1kAttr
         attrib = ImageNet1kAttr()
         model.synset = attrib.synset
@@ -507,8 +507,8 @@ def resnet152_v1c(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
     model = ResNetV1b(BottleneckV1b, [3, 8, 36, 3], deep_stem=True, **kwargs)
     if pretrained:
         from .model_store import get_model_file
-        model.load_params(get_model_file('resnet%d_v%dc'%(152, 1),
-                                         tag=pretrained, root=root), ctx=ctx)
+        model.load_parameters(get_model_file('resnet%d_v%dc'%(152, 1),
+                                             tag=pretrained, root=root), ctx=ctx)
         from ..data import ImageNet1kAttr
         attrib = ImageNet1kAttr()
         model.synset = attrib.synset
@@ -536,8 +536,8 @@ def resnet50_v1d(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
     model = ResNetV1b(BottleneckV1b, [3, 4, 6, 3], deep_stem=True, avg_down=True, **kwargs)
     if pretrained:
         from .model_store import get_model_file
-        model.load_params(get_model_file('resnet%d_v%dd'%(50, 1),
-                                         tag=pretrained, root=root), ctx=ctx)
+        model.load_parameters(get_model_file('resnet%d_v%dd'%(50, 1),
+                                             tag=pretrained, root=root), ctx=ctx)
         from ..data import ImageNet1kAttr
         attrib = ImageNet1kAttr()
         model.synset = attrib.synset
@@ -565,8 +565,8 @@ def resnet101_v1d(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
     model = ResNetV1b(BottleneckV1b, [3, 4, 23, 3], deep_stem=True, avg_down=True, **kwargs)
     if pretrained:
         from .model_store import get_model_file
-        model.load_params(get_model_file('resnet%d_v%dd'%(101, 1),
-                                         tag=pretrained, root=root), ctx=ctx)
+        model.load_parameters(get_model_file('resnet%d_v%dd'%(101, 1),
+                                             tag=pretrained, root=root), ctx=ctx)
         from ..data import ImageNet1kAttr
         attrib = ImageNet1kAttr()
         model.synset = attrib.synset
@@ -594,8 +594,8 @@ def resnet152_v1d(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
     model = ResNetV1b(BottleneckV1b, [3, 8, 36, 3], deep_stem=True, avg_down=True, **kwargs)
     if pretrained:
         from .model_store import get_model_file
-        model.load_params(get_model_file('resnet%d_v%dd'%(152, 1),
-                                         tag=pretrained, root=root), ctx=ctx)
+        model.load_parameters(get_model_file('resnet%d_v%dd'%(152, 1),
+                                             tag=pretrained, root=root), ctx=ctx)
         from ..data import ImageNet1kAttr
         attrib = ImageNet1kAttr()
         model.synset = attrib.synset
@@ -624,8 +624,8 @@ def resnet50_v1e(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
                       deep_stem=True, avg_down=True, stem_width=64, **kwargs)
     if pretrained:
         from .model_store import get_model_file
-        model.load_params(get_model_file('resnet%d_v%dd'%(50, 1),
-                                         tag=pretrained, root=root), ctx=ctx)
+        model.load_parameters(get_model_file('resnet%d_v%dd'%(50, 1),
+                                             tag=pretrained, root=root), ctx=ctx)
         from ..data import ImageNet1kAttr
         attrib = ImageNet1kAttr()
         model.synset = attrib.synset
@@ -654,8 +654,8 @@ def resnet101_v1e(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
                       deep_stem=True, avg_down=True, stem_width=64, **kwargs)
     if pretrained:
         from .model_store import get_model_file
-        model.load_params(get_model_file('resnet%d_v%dd'%(101, 1),
-                                         tag=pretrained, root=root), ctx=ctx)
+        model.load_parameters(get_model_file('resnet%d_v%dd'%(101, 1),
+                                             tag=pretrained, root=root), ctx=ctx)
         from ..data import ImageNet1kAttr
         attrib = ImageNet1kAttr()
         model.synset = attrib.synset
@@ -684,8 +684,8 @@ def resnet152_v1e(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
                       deep_stem=True, avg_down=True, stem_width=64, **kwargs)
     if pretrained:
         from .model_store import get_model_file
-        model.load_params(get_model_file('resnet%d_v%dd'%(152, 1),
-                                         tag=pretrained, root=root), ctx=ctx)
+        model.load_parameters(get_model_file('resnet%d_v%dd'%(152, 1),
+                                             tag=pretrained, root=root), ctx=ctx)
         from ..data import ImageNet1kAttr
         attrib = ImageNet1kAttr()
         model.synset = attrib.synset
@@ -714,8 +714,8 @@ def resnet50_v1s(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
     model = ResNetV1b(BottleneckV1b, [3, 4, 6, 3], deep_stem=True, stem_width=64, **kwargs)
     if pretrained:
         from .model_store import get_model_file
-        model.load_params(get_model_file('resnet%d_v%ds'%(50, 1),
-                                         tag=pretrained, root=root), ctx=ctx)
+        model.load_parameters(get_model_file('resnet%d_v%ds'%(50, 1),
+                                             tag=pretrained, root=root), ctx=ctx)
         from ..data import ImageNet1kAttr
         attrib = ImageNet1kAttr()
         model.synset = attrib.synset
@@ -744,8 +744,8 @@ def resnet101_v1s(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
     model = ResNetV1b(BottleneckV1b, [3, 4, 23, 3], deep_stem=True, stem_width=64, **kwargs)
     if pretrained:
         from .model_store import get_model_file
-        model.load_params(get_model_file('resnet%d_v%ds'%(101, 1),
-                                         tag=pretrained, root=root), ctx=ctx)
+        model.load_parameters(get_model_file('resnet%d_v%ds'%(101, 1),
+                                             tag=pretrained, root=root), ctx=ctx)
         from ..data import ImageNet1kAttr
         attrib = ImageNet1kAttr()
         model.synset = attrib.synset
@@ -774,8 +774,8 @@ def resnet152_v1s(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
     model = ResNetV1b(BottleneckV1b, [3, 8, 36, 3], deep_stem=True, stem_width=64, **kwargs)
     if pretrained:
         from .model_store import get_model_file
-        model.load_params(get_model_file('resnet%d_v%ds'%(152, 1),
-                                         tag=pretrained, root=root), ctx=ctx)
+        model.load_parameters(get_model_file('resnet%d_v%ds'%(152, 1),
+                                             tag=pretrained, root=root), ctx=ctx)
         from ..data import ImageNet1kAttr
         attrib = ImageNet1kAttr()
         model.synset = attrib.synset

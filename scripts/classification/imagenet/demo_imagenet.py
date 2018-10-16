@@ -23,7 +23,7 @@ pretrained = True if opt.saved_params == '' else False
 net = get_model(model_name, pretrained=True)
 
 if not pretrained:
-    net.load_params(opt.saved_params)
+    net.load_parameters(opt.saved_params)
 
 # Load Images
 img = image.imread(opt.input_pic)
