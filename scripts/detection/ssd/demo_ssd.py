@@ -37,7 +37,7 @@ if __name__ == '__main__':
         net = gcv.model_zoo.get_model(args.network, pretrained=True)
     else:
         net = gcv.model_zoo.get_model(args.network, pretrained=False, pretrained_base=False)
-        net.load_params(args.pretrained)
+        net.load_parameters(args.pretrained)
     net.set_nms(0.45, 200)
     net.collect_params().reset_ctx(ctx = ctx)
 

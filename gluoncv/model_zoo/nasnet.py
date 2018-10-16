@@ -620,7 +620,7 @@ def get_nasnet(repeat=6, penultimate_filters=4032,
     net = NASNetALarge(repeat=repeat, penultimate_filters=penultimate_filters, **kwargs)
     if pretrained:
         from .model_store import get_model_file
-        net.load_params(get_model_file('nasnet_%d_%d'%(repeat, penultimate_filters),
+        net.load_parameters(get_model_file('nasnet_%d_%d'%(repeat, penultimate_filters),
                                        tag=pretrained, root=root), ctx=ctx)
         from ..data import ImageNet1kAttr
         attrib = ImageNet1kAttr()

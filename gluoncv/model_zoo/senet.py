@@ -196,7 +196,7 @@ def get_senet(num_layers, cardinality=64, bottleneck_width=4,
     net = SENet(layers, cardinality, bottleneck_width, **kwargs)
     if pretrained:
         from .model_store import get_model_file
-        net.load_params(get_model_file('resnext%d_%dx%d'%(num_layers, cardinality,
+        net.load_parameters(get_model_file('resnext%d_%dx%d'%(num_layers, cardinality,
                                                           bottleneck_width),
                                        root=root), ctx=ctx)
         from ..data import ImageNet1kAttr
