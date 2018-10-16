@@ -158,8 +158,8 @@ _models = {
     'residualattentionnet56': residualattentionnet56,
     'residualattentionnet92': residualattentionnet92,
     'residualattentionnet56_32input': residualattentionnet56_32input,
-    'residualattentionnet92_32input': residualattentionnet92_32input,
-    }
+    'residualattentionnet92_32input': residualattentionnet92_32input
+}
 
 
 def get_model(name, **kwargs):
@@ -191,6 +191,7 @@ def get_model(name, **kwargs):
         raise ValueError(err_str)
     net = _models[name](**kwargs)
     return net
+
 
 def get_model_list():
     """Get the entire list of model names in model_zoo.
