@@ -164,8 +164,8 @@ def get_cifar_resnext(num_layers, cardinality=16, bottleneck_width=64,
     if pretrained:
         from .model_store import get_model_file
         net.load_parameters(get_model_file('cifar_resnext%d_%dx%dd'%(num_layers, cardinality,
-                                                                 bottleneck_width),
-                                       tag=pretrained, root=root), ctx=ctx)
+                                                                     bottleneck_width),
+                                           tag=pretrained, root=root), ctx=ctx)
     return net
 
 def cifar_resnext29_32x4d(**kwargs):

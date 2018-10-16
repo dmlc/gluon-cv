@@ -433,7 +433,7 @@ def get_se_resnet(version, num_layers, pretrained=False, ctx=cpu(),
     if pretrained:
         from .model_store import get_model_file
         net.load_parameters(get_model_file('se_resnet%d_v%d'%(num_layers, version),
-                                       tag=pretrained, root=root), ctx=ctx)
+                                           tag=pretrained, root=root), ctx=ctx)
         from ..data import ImageNet1kAttr
         attrib = ImageNet1kAttr()
         net.synset = attrib.synset
