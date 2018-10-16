@@ -25,7 +25,7 @@ _model_sha1 = {name: checksum for checksum, name in [
     ('48216ba99a8b1005d75c0f3a0c422301a0473233', 'resnet34_v1'),
     ('cc729d95031ca98cf2ff362eb57dee4d9994e4b2', 'resnet50_v1'),
     ('d988c13d6159779e907140a638c56f229634cb02', 'resnet101_v1'),
-    ('671c637a14387ab9e2654eafd0d493d86b1c8579', 'resnet152_v1'),
+    ('acfd09703b113143af9c33898bad8b6154fd6fb0', 'resnet152_v1'),
     ('a81db45fd7b7a2d12ab97cd88ef0a5ac48b8f657', 'resnet18_v2'),
     ('9d6b80bbc35169de6b6edecffdd6047c56fdd322', 'resnet34_v2'),
     ('ecdde35339c1aadbec4f547857078e734a76fb49', 'resnet50_v2'),
@@ -69,9 +69,10 @@ _model_sha1 = {name: checksum for checksum, name in [
     ('8e16b84814e84f64d897854003f049872991eaa6', 'resnet34_v1b'),
     ('0ecdba34691be172036ddf244ff1b2eade75ffde', 'resnet50_v1b'),
     ('a455932aa95cb7dcfa05fd040b9b5a5660733c39', 'resnet101_v1b'),
-    ('e74027961d155170868f30bd3f113d7feb44f618', 'resnet152_v1b'),
+    ('a5a61ee1ce5ab7c09720775b223360f3c60e211d', 'resnet152_v1b'),
     ('2a4e070854db538595cc7ee02e1a914bdd49ca02', 'resnet50_v1c'),
     ('064858f23f9878bfbbe378a88ccb25d612b149a1', 'resnet101_v1c'),
+    ('75babab699e1c93f5da3c1ce4fd0092d1075f9a0', 'resnet152_v1c'),
     ('117a384ecf61490eb31ea147eb0e61e6d2b8a449', 'resnet50_v1d'),
     ('1b2b825feff86b0354642a4ab59f9b6e35e47338', 'resnet101_v1d'),
     ('cddbc86ff24a5544f57242ded0acb14ef1fbd437', 'resnet152_v1d'),
@@ -96,6 +97,7 @@ _model_sha1 = {name: checksum for checksum, name in [
     ('f5ece5ce1422eeca3ce2908004e469ffdf91fd41', 'yolo3_darknet53_voc'),
     ('09767802230b45af1c27697a2dad6d1ebaacc1e2', 'yolo3_darknet53_coco'),
     ('2189ea49720a116dead245b9b252301cffa18d28', 'darknet53'),
+    ('b5538ef10557243511b9b46063aa4c40790d74ba', 'senet_154'),
     ]}
 
 apache_repo_url = 'https://apache-mxnet.s3-accelerate.dualstack.amazonaws.com/'
