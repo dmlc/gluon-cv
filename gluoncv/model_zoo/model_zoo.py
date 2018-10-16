@@ -24,6 +24,7 @@ from .resnet import *
 from .squeezenet import *
 from .vgg import *
 from .mobilenet import *
+from .residual_attentionnet import *
 
 __all__ = ['get_model', 'get_model_list']
 
@@ -74,7 +75,7 @@ _models = {
     'mobilenetv2_0.25': mobilenet_v2_0_25,
     'ssd_300_vgg16_atrous_voc': ssd_300_vgg16_atrous_voc,
     'ssd_300_vgg16_atrous_coco': ssd_300_vgg16_atrous_coco,
-    'ssd_300_vgg16_atrous_custom' : ssd_300_vgg16_atrous_custom,
+    'ssd_300_vgg16_atrous_custom': ssd_300_vgg16_atrous_custom,
     'ssd_512_vgg16_atrous_voc': ssd_512_vgg16_atrous_voc,
     'ssd_512_vgg16_atrous_coco': ssd_512_vgg16_atrous_coco,
     'ssd_512_vgg16_atrous_custom': ssd_512_vgg16_atrous_custom,
@@ -156,7 +157,12 @@ _models = {
     'nasnet_5_1538': nasnet_5_1538,
     'nasnet_7_1920': nasnet_7_1920,
     'nasnet_6_4032': nasnet_6_4032,
-    }
+    'residualattentionnet56': residualattentionnet56,
+    'residualattentionnet92': residualattentionnet92,
+    'residualattentionnet56_32input': residualattentionnet56_32input,
+    'residualattentionnet92_32input': residualattentionnet92_32input
+}
+
 
 def get_model(name, **kwargs):
     """Returns a pre-defined model by name
@@ -184,6 +190,7 @@ def get_model(name, **kwargs):
         raise ValueError('%s' % ('\n\t'.join(sorted(_models.keys()))))
     net = _models[name](**kwargs)
     return net
+
 
 def get_model_list():
     """Get the entire list of model names in model_zoo.
