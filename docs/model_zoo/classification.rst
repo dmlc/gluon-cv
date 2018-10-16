@@ -3,7 +3,7 @@
 Classification
 ====================
 
-.. role:: tag
+
 
 Visualization of Inference Throughputs vs. Validation Accuracy of ImageNet pre-trained models is illustrated in the following graph.
 
@@ -64,6 +64,8 @@ The output from `our sample image <../_static/classification-demo.png>`__ is exp
 Remember, you can try different models by replacing the value of ``model_name``.
 Read further for model names and their performances in the tables.
 
+.. role:: greytag
+
 ImageNet
 ~~~~~~~~
 
@@ -74,11 +76,13 @@ ImageNet
     :download:`Download train_imagenet.py<../../scripts/classification/imagenet/train_imagenet.py>`
 
     A model can have differently trained parameters with different hashtags.
-    Parameters with :tag:`highlighted names` can be downloaded by passing corresponding hashtag.
+    Parameters with :greytag:`a grey name` can be downloaded by passing the corresponding hashtag.
 
     - Download default pretrained weights: ``net = get_model('ResNet50_v1d', pretrained=True)``
 
     - Download weights given a hashtag: ``net = get_model('ResNet50_v1d', pretrained='117a384e')``
+
+.. role:: tag
 
 ResNet
 ------
@@ -102,7 +106,7 @@ ResNet
 +---------------------------+--------+--------+----------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
 | ResNet101_v1 [1]_         | 78.34  | 94.01  | d988c13d | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet101_v1.sh>`_        | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet101_v1.log>`_         |
 +---------------------------+--------+--------+----------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
-| ResNet152_v1 [1]_         | 79.00  | 94.38  | 671c637a | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet152_v1.sh>`_        | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet152_v1.log>`_         |
+| ResNet152_v1 [1]_         | 79.22  | 94.64  | acfd0970 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet152_v1.sh>`_        | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet152_v1.log>`_         |
 +---------------------------+--------+--------+----------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
 | ResNet18_v1b [1]_         | 70.94  | 89.83  | 2d9d980c | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet18_v1b.sh>`_        | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet18_v1b.log>`_         |
 +---------------------------+--------+--------+----------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
@@ -112,11 +116,13 @@ ResNet
 +---------------------------+--------+--------+----------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
 | ResNet101_v1b [1]_        | 79.20  | 94.61  | a455932a | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet101_v1b.sh>`_       | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet101_v1b.log>`_        |
 +---------------------------+--------+--------+----------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
-| ResNet152_v1b [1]_        | 79.44  | 94.61  | e7402796 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet152_v1b.sh>`_       | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet152_v1b.log>`_        |
+| ResNet152_v1b [1]_        | 79.69  | 94.74  | a5a61ee1 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet152_v1b.sh>`_       | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet152_v1b.log>`_        |
 +---------------------------+--------+--------+----------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
 | ResNet50_v1c [1]_         | 78.03  | 94.09  | 2a4e0708 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet50_v1c.sh>`_        | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet50_v1c.log>`_         |
 +---------------------------+--------+--------+----------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
 | ResNet101_v1c [1]_        | 79.60  | 94.75  | 064858f2 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet101_v1c.sh>`_       | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet101_v1c.log>`_        |
++---------------------------+--------+--------+----------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
+| ResNet152_v1c [1]_        | 80.01  | 94.96  | 75babab6 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet152_v1b.sh>`_       | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet152_v1b.log>`_        |
 +---------------------------+--------+--------+----------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
 | ResNet50_v1d [1]_         | 79.15  | 94.58  | 117a384e | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet50_v1d-mixup.sh>`_  | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet50_v1d-mixup.log>`_   |
 +---------------------------+--------+--------+----------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
@@ -235,6 +241,8 @@ Others
 +-------------------------+--------+--------+----------+------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
 | :tag:`InceptionV3` [8]_ | 78.41  | 94.13  | e132adf2 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/inceptionv3.sh>`_       | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/inceptionv3.log>`_          |
 +-------------------------+--------+--------+----------+------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
+| SENet_154 [14]_         | 81.26  | 95.51  | b5538ef1 |                                                                                                                                    |                                                                                                                               |
++-------------------------+--------+--------+----------+------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
 
 CIFAR10
 ~~~~~~~
@@ -314,3 +322,4 @@ The following table lists pre-trained models trained on CIFAR10.
 .. [13] Zhang, Hongyi, Moustapha Cisse, Yann N. Dauphin, and David Lopez-Paz. \
        "mixup: Beyond empirical risk minimization." \
        arXiv preprint arXiv:1710.09412 (2017).
+.. [14] Hu, Jie, Li Shen, and Gang Sun. "Squeeze-and-excitation networks." arXiv preprint arXiv:1709.01507 7 (2017).

@@ -145,8 +145,6 @@ _models = {
     'se_resnext50_32x4d': se_resnext50_32x4d,
     'se_resnext101_32x4d': se_resnext101_32x4d,
     'se_resnext101_64x4d': se_resnext101_64x4d,
-    'senet_52': senet_52,
-    'senet_103': senet_103,
     'senet_154': senet_154,
     'darknet53': darknet53,
     'yolo3_darknet53_coco': yolo3_darknet53_coco,
@@ -182,7 +180,9 @@ def get_model(name, **kwargs):
     """
     name = name.lower()
     if name not in _models:
-        raise ValueError('%s' % ('\n\t'.join(sorted(_models.keys()))))
+        err_str = '"%s" is not among the following model list:\n\t' % (name)
+        err_str += '%s' % ('\n\t'.join(sorted(_models.keys())))
+        raise ValueError(err_str)
     net = _models[name](**kwargs)
     return net
 
