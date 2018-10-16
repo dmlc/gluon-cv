@@ -145,8 +145,6 @@ _models = {
     'se_resnext50_32x4d': se_resnext50_32x4d,
     'se_resnext101_32x4d': se_resnext101_32x4d,
     'se_resnext101_64x4d': se_resnext101_64x4d,
-    'senet_52': senet_52,
-    'senet_103': senet_103,
     'senet_154': senet_154,
     'darknet53': darknet53,
     'yolo3_darknet53_coco': yolo3_darknet53_coco,
