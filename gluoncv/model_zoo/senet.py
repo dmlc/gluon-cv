@@ -20,8 +20,7 @@
 """SENet, implemented in Gluon."""
 from __future__ import division
 
-__all__ = ['SENet', 'SEBlock', 'get_senet',
-           'senet_52', 'senet_103', 'senet_154']
+__all__ = ['SENet', 'SEBlock', 'get_senet', 'senet_154']
 
 import os
 import math
@@ -176,13 +175,14 @@ def get_senet(num_layers, cardinality=64, bottleneck_width=4,
     Parameters
     ----------
     num_layers : int
-        Numbers of layers. Options are 50, 101.
+        Numbers of layers.
     cardinality: int
         Number of groups
     bottleneck_width: int
         Width of bottleneck block
-    pretrained : bool, default False
-        Whether to load the pretrained weights for model.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
@@ -195,55 +195,19 @@ def get_senet(num_layers, cardinality=64, bottleneck_width=4,
     net = SENet(layers, cardinality, bottleneck_width, **kwargs)
     if pretrained:
         from .model_store import get_model_file
-        net.load_params(get_model_file('resnext%d_%dx%d'%(num_layers, cardinality,
-                                                          bottleneck_width),
-                                       root=root), ctx=ctx)
+        net.load_parameters(get_model_file('senet_%d'%(num_layers+2),
+                                           root=root), ctx=ctx)
+        from ..data import ImageNet1kAttr
+        attrib = ImageNet1kAttr()
+        net.synset = attrib.synset
+        net.classes = attrib.classes
+        net.classes_long = attrib.classes_long
     return net
 
-def senet_52(**kwargs):
-    r"""ResNext50 32x4d model from
-    `"Aggregated Residual Transformations for Deep Neural Network"
-    <http://arxiv.org/abs/1611.05431>`_ paper.
-
-    Parameters
-    ----------
-    cardinality: int
-        Number of groups
-    bottleneck_width: int
-        Width of bottleneck block
-    pretrained : bool, default False
-        Whether to load the pretrained weights for model.
-    ctx : Context, default CPU
-        The context in which to load the pretrained weights.
-    root : str, default '~/.mxnet/models'
-        Location for keeping the model parameters.
-    """
-    return get_senet(50, 32, 4, **kwargs)
-
-def senet_103(**kwargs):
-    r"""ResNext50 32x4d model from
-    `"Aggregated Residual Transformations for Deep Neural Network"
-    <http://arxiv.org/abs/1611.05431>`_ paper.
-
-    Parameters
-    ----------
-    cardinality: int
-        Number of groups
-    bottleneck_width: int
-        Width of bottleneck block
-    pretrained : bool, default False
-        Whether to load the pretrained weights for model.
-    ctx : Context, default CPU
-        The context in which to load the pretrained weights.
-    root : str, default '~/.mxnet/models'
-        Location for keeping the model parameters.
-    """
-    return get_senet(101, 32, 4, **kwargs)
-
 def senet_154(**kwargs):
-    r"""ResNext50 32x4d model from
-    `"Aggregated Residual Transformations for Deep Neural Network"
-    <http://arxiv.org/abs/1611.05431>`_ paper.
+    r"""SENet 154 model from
+    `"Squeeze-and-excitation networks"
+    <https://arxiv.org/abs/1709.01507>`_ paper.
 
     Parameters
     ----------
@@ -251,8 +215,9 @@ def senet_154(**kwargs):
         Number of groups
     bottleneck_width: int
         Width of bottleneck block
-    pretrained : bool, default False
-        Whether to load the pretrained weights for model.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'

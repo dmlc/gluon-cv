@@ -72,7 +72,7 @@ else:
     kwargs = {'classes': classes}
 net = get_model(model_name, **kwargs)
 if opt.resume_from:
-    net.load_params(opt.resume_from, ctx = context)
+    net.load_parameters(opt.resume_from, ctx = context)
 optimizer = 'nag'
 
 save_period = opt.save_period

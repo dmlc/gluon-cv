@@ -4,12 +4,12 @@ Currently V3 is implemented with training/evaluation/testing.
 
 Random shape training is available through
 ```bash
-python3 train_yolo3_rand_size.py -h
+python3 train_yolo3.py -h
 ```
 
 Random shape training requires more GPU memory, but it provides better models. Alternatively, a normal fixed shape training is available as
 ```bash
-python3 train_yolo3 -h
+python3 train_yolo3.py --no-random-shape
 ```
 
 

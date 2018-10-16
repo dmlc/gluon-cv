@@ -16,33 +16,9 @@ GluonCV features:
 Supported Applications
 ----------------------
 
-.. image:: /_static/image-classification.png
-  :height: 200px
-  :target: model_zoo/classification.html
-
-.. image:: /_static/object-detection.png
-  :height: 200px
-  :target: model_zoo/detection.html
-
-.. image:: /_static/semantic-segmentation.png
-  :height: 200px
-  :target: model_zoo/segmentation.html#semantic-segmentation
-
-.. image:: /_static/instance-segmentation.png
-  :height: 200px
-  :target: model_zoo/segmentation.html#instance-segmentation
-
-GluonCV tutorials assume users have basic knowledges about deep learning and
-computer vision.
-Otherwise, please refer to our introductory deep learning course
-`MXNet-the-Straight-Dope <http://gluon.mxnet.io/>`_.
-
-.. note::
-
-   The source codes are available at `Github <https://github.com/dmlc/gluon-cv>`_.
-   This project is at an early stage. Please expect frequent updates.
-   We welcome feedback and contributions.
-
+.. raw:: html
+   :file: applications.html
+   
 Installation
 ------------------
 
@@ -103,7 +79,9 @@ A Quick Example
    :maxdepth: 2
    :caption: Model Zoo
 
-   model_zoo/index
+   model_zoo/classification
+   model_zoo/detection
+   model_zoo/segmentation
 
 .. toctree::
    :maxdepth: 2

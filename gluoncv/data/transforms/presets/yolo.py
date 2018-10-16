@@ -129,11 +129,12 @@ class YOLO3DefaultTrainTransform(object):
 
     """
     def __init__(self, width, height, net=None, mean=(0.485, 0.456, 0.406),
-                 std=(0.229, 0.224, 0.225), **kwargs):
+                 std=(0.229, 0.224, 0.225), mixup=False, **kwargs):
         self._width = width
         self._height = height
         self._mean = mean
         self._std = std
+        self._mixup = mixup
         self._target_generator = None
         if net is None:
             return
@@ -187,8 +188,13 @@ class YOLO3DefaultTrainTransform(object):
         # generate training target so cpu workers can help reduce the workload on gpu
         gt_bboxes = mx.nd.array(bbox[np.newaxis, :, :4])
         gt_ids = mx.nd.array(bbox[np.newaxis, :, 4:5])
+        if self._mixup:
+            gt_mixratio = mx.nd.array(bbox[np.newaxis, :, -1:])
+        else:
+            gt_mixratio = None
         center_targets, scale_targets, weights, objectness, class_targets = self._target_generator(
-            self._fake_x, self._feat_maps, self._anchors, self._offsets, gt_bboxes, gt_ids)
+            self._fake_x, self._feat_maps, self._anchors, self._offsets,
+            gt_bboxes, gt_ids, gt_mixratio)
         return (img, center_targets[0], scale_targets[0], weights[0],
                 objectness[0], class_targets[0], gt_bboxes[0])
 
