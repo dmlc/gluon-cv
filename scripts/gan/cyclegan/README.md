@@ -2,7 +2,7 @@
 
 <br><br><br>
 
-## A Mini Implementation Of Cyclagan
+## A Mini Implementation Of Cyclegan
 
 
 **Prerequisites**
