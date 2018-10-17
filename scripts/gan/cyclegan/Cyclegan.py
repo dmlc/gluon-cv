@@ -5,6 +5,7 @@ from mxnet import lr_scheduler
 from mxnet.gluon.data import DataLoader
 from mxnet.gluon.data.vision import transforms
 from mxnet.gluon import Block, HybridBlock
+from mxboard import SummaryWriter
 from mxnet import autograd
 from mxnet import gluon
 import numpy as np
@@ -12,18 +13,18 @@ import mxnet as mx
 import mxnet.ndarray as nd
 from PIL import Image
 from mxnet.gluon import nn
-import matplotlib.pyplot as plt
 import os
 import argparse
 parser = argparse.ArgumentParser(description='Train the CycleGAN model')
 parser.add_argument('--usegpu', type=bool, default=True)
 parser.add_argument('--lr', type=float, default=0.0002)
-parser.add_argument('--num_epoch', type=int, default=5)
+parser.add_argument('--num_epoch', type=int, default=2)
+parser.add_argument('--gpu_id', type=int, default=3)
 args = parser.parse_args()
 if not args.usegpu:
     ctx = mx.cpu()
 else:
-    ctx = mx.gpu(2)
+    ctx = mx.gpu(args.gpu_id)
 loss = gluon.loss.L1Loss()
 
 
@@ -328,6 +329,11 @@ for epoch in range(num_epoch):
     DB_loss = sum(DB_loss_list) / len(DB_loss_list)
     GA_loss = sum(GA_loss_list) / len(GA_loss_list)
     GB_loss = sum(GB_loss_list) / len(GB_loss_list)
+    with SummaryWriter(logdir='./logs') as sw:
+        sw.add_scalar(tag='DA_Loss', value=DA_loss, global_step=epoch + 1)
+        sw.add_scalar(tag='DB_Loss', value=DB_loss, global_step=epoch + 1)
+        sw.add_scalar(tag='GA_Loss', value=GA_loss, global_step=epoch + 1)
+        sw.add_scalar(tag='GB_Loss', value=GB_loss, global_step=epoch + 1)
     print('Epoch {}, DA_loss: {:.4f}, DB_loss: {:.4f}, GA_loss: {:.4f}, GB_loss: {:.4f}'
           .format(epoch + 1, DA_loss, DB_loss, GA_loss,
                   GB_loss))
@@ -338,11 +344,6 @@ test_A = mx.nd.array(test_A.expand_dims(0))
 test_A = test_A.as_in_context(mx.cpu())
 net.collect_params().reset_ctx(mx.cpu())
 data = net.netG_A(test_A)
-data = mx.nd.array(data)
-data = data.asnumpy()
-data = data.squeeze()
-data = (data * 0.5 + 0.5) * 255
-data = data.transpose((1, 2, 0))
-data = data.astype(np.uint8)
-plt.imshow(data)
-plt.show()
+data = data * 0.5 + 0.5
+with SummaryWriter(logdir='./logs') as sw:
+    sw.add_image(tag='testdemo', image=data)
