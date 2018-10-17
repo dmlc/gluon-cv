@@ -9,6 +9,7 @@
 1. Python 3.6+
 2. Gluoncv
 3. Mxnet
+4. Mxboard
 
 
 **Download  Dataset**
@@ -19,6 +20,11 @@ python extract_data.py
 **Run The Model**
 ```bash
 python Cyclegan.py --num_epoch 5 --lr 0.0002
+```
+**Visualize The Training Process**
+
+```bash
+tensorboard --logdir=./logs --host=127.0.0.1 --port=8888
 ```
 
 **Demo**
