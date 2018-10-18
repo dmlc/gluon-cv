@@ -18,7 +18,7 @@ Supported Applications
 
 .. raw:: html
    :file: applications.html
-   
+
 Installation
 ------------------
 
@@ -27,11 +27,15 @@ Install MXNet
 
 GluonCV depends on the recent version of MXNet. The easiest way to install MXNet
 is through `pip <https://pip.pypa.io/en/stable/installing/>`_. The following
-command installs a nightly build CPU version of MXNet.
+command installs CPU version of MXNet.
 
 .. code-block:: bash
 
-   pip install --pre mxnet
+   # the oldest stable version of mxnet required is 1.3.0
+   pip install mxnet>=1.3.0 --upgrade
+
+   # you can install nightly build of mxnet to access up-to-date features
+   pip install --pre --upgrade mxnet
 
 .. note::
 
@@ -50,7 +54,7 @@ The easiest way to install GluonCV is through `pip <https://pip.pypa.io/en/stabl
 
 .. code-block:: bash
 
- pip install gluoncv
+ pip install gluoncv --upgrade
 
  # if you are eager to try new features, try nightly build instead
 

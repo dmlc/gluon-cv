@@ -33,10 +33,26 @@ models. This toolkit offers four main features:
 
 # Installation
 
-GluonCV supports Python 2.7/3.5 or later. The easiest way to install is via pip, the following command installs the latest nightly build of GluonCV and MXNet:
+GluonCV supports Python 2.7/3.5 or later. The easiest way to install is via pip.
+
+## Stable Release
+The following commands install the stable version of GluonCV and MXNet:
 
 ```bash
-pip install gluoncv --pre
+pip install gluoncv --upgrade
+pip install mxnet --upgrade
+# if cuda 9.2 is installed
+pip install mxnet-cu92 --upgrade
+```
+
+**The latest stable version of GluonCV is 0.3 and depends on mxnet >= 1.3.0**
+
+## Nightly Release
+
+You may get access to latest features and bug fixes with the following commands which install the nightly build of GluonCV and MXNet:
+
+```bash
+pip install gluoncv --pre --upgrade
 pip install mxnet --pre --upgrade
 # if cuda 9.2 is installed
 pip install mxnet-cu92 --pre --upgrade
