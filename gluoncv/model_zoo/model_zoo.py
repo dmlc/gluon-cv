@@ -5,6 +5,7 @@ mxnet.gluon.model_zoo.vision and gluoncv.models
 from .ssd import *
 from .faster_rcnn import *
 from .mask_rcnn import *
+from .fpn import * 
 from .fcn import *
 from .pspnet import *
 from .deeplabv3 import *
