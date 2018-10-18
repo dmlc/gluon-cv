@@ -147,3 +147,83 @@ class FeatureExpander(SymbolBlock):
         if global_pool:
             outputs.append(mx.sym.Pooling(y, pool_type='avg', global_pool=True, kernel=(1, 1)))
         super(FeatureExpander, self).__init__(outputs, inputs, params)
+
+class FPNFeatureExpander(SymbolBlock): 
+    """Feature extractor with additional layers to append.
+    This is specified for ``Feature Pyramid Network for Object Detection``
+    which implement ``Top-down pathway and lateral connections``.
+
+    Parameters
+    ----------
+    network : str or HybridBlock or Symbol
+        Logic chain: load from gluon.model_zoo.vision if network is string.
+        Convert to Symbol if network is HybridBlock.
+    outputs : str or list of str
+        The name of layers to be extracted as features
+    num_filters : list of int e.g. [256, 256, 256, 256]
+        Number of filters to be appended.
+    use_1x1 : bool
+        Whether to use 1x1 convolution
+    use_upsample : bool
+        Whether to use upsample
+    use_elewadd : float
+        Whether to use element-wise add operation
+    use_p6 : bool
+        Whther use P6 stage, this is used for RPN experiments in ori paper
+    no_bias : bool
+        Whether use bias for Convolution operation.
+    pretrained : bool
+        Use pretrained parameters as in gluon.model_zoo if `True`.
+    ctx : Context
+        The context, e.g. mxnet.cpu(), mxnet.gpu(0).
+    inputs : list of str
+        Name of input variables to the network.
+
+    """
+    def __init__(self, network, outputs, num_filters, use_1x1=True, use_upsample=True, use_elewadd=True,
+                 use_p6=False, no_bias=True, pretrained=False, ctx=mx.cpu(), inputs=('data',)):
+        inputs, outputs, params = _parse_network(network, outputs, inputs, pretrained, ctx)
+        '''
+        e.g. For ResNet50, the feature is :
+        outputs = ['stage1_activation2', 'stage2_activation3', 
+                   'stage3_activation5', 'stage4_activation2']
+        with regard to [conv2, conv3, conv4, conv5] -> [C2, C3, C4, C5]
+        '''
+        # append more layers with reversed order : [P5, P4, P3, P2]
+        y = outputs[-1]
+        base_features = outputs[::-1]
+        num_stages = len(num_filters) + 1 # usually 5
+        weight_init = mx.init.Xavier(rnd_type='gaussian', factor_type='out', magnitude=2.)
+
+        tmp_outputs = []
+        # num_filter is 256 in ori paper
+        for i, (bf, f) in enumerate(zip(base_features, num_filters)):
+            if i == 0:
+                if use_1x1: 
+                    y = mx.sym.Convolution(y, num_filter=f, kernel=(1, 1), no_bias=no_bias,
+                                           name="P{}_pre".format(num_stages-i), attr={'__init__': weight_init})
+                if use_p6:
+                    y_p6 = mx.sym.Pooling(y, pool_type="max", kernel=(1, 1), pad=(0, 0), stride=(2, 2),
+                                          name="P{}_pre".format(num_stages+1))
+            else:
+                if use_1x1:
+                    bf = mx.sym.Convolution(bf, num_filter=f, kernel=(1, 1), no_bias=no_bias,
+                                            name="P{}_conv1".format(num_stages-i), attr={'__init__': weight_init})
+                if use_upsample:
+                    y = mx.sym.UpSampling(y, scale=2, sample_type='nearest', name="P{}_upsp".format(num_stages-i))
+
+                if use_elewadd:
+                    # y = mx.sym.Crop(*[y, bf], name="P{}_clip".format(num_stages-i))
+                    # use slice_like to make these two symbol alignment
+                    y = mx.sym.slice_like(y, bf*0, axes=(2, 3), name="P{}_clip".format(num_stages-i))
+                    y = mx.sym.ElementWiseSum(bf, y, name="P{}_pre".format(num_stages-i))
+            tmp_outputs.append(y)
+        if use_p6:
+            outputs = tmp_outputs[::-1] + [y_p6]  # [P2, P3, P4, P5] + [P6]
+        else:
+            outputs = tmp_outputs[::-1]  # [P2, P3, P4, P5]
+        # reduce the aliasing effect of upsampling
+        for i, (out, f) in enumerate(zip(outputs, num_filters)):
+            out = mx.sym.Convolution(out, num_filter=f, kernel=(3, 3), no_bias=no_bias,
+                                     name='P{}'.format(i+2), attr={'__init__': weight_init})
+        super(FPNFeatureExpander, self).__init__(outputs, inputs, params)
