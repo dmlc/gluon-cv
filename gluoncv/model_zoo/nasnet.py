@@ -607,8 +607,9 @@ def get_nasnet(repeat=6, penultimate_filters=4032,
         Number of cell repeats
     penultimate_filters : int
         Number of filters in the penultimate layer of the network
-    pretrained : bool, default False
-        Whether to load the pretrained weights for model.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
@@ -619,8 +620,13 @@ def get_nasnet(repeat=6, penultimate_filters=4032,
     net = NASNetALarge(repeat=repeat, penultimate_filters=penultimate_filters, **kwargs)
     if pretrained:
         from .model_store import get_model_file
-        net.load_params(get_model_file('nasnet_%d_%d'%(repeat, penultimate_filters),
-                                       root=root), ctx=ctx)
+        net.load_parameters(get_model_file('nasnet_%d_%d'%(repeat, penultimate_filters),
+                                           tag=pretrained, root=root), ctx=ctx)
+        from ..data import ImageNet1kAttr
+        attrib = ImageNet1kAttr()
+        net.synset = attrib.synset
+        net.classes = attrib.classes
+        net.classes_long = attrib.classes_long
     return net
 
 def nasnet_4_1056(**kwargs):
@@ -634,8 +640,9 @@ def nasnet_4_1056(**kwargs):
         Number of cell repeats
     penultimate_filters : int
         Number of filters in the penultimate layer of the network
-    pretrained : bool, default False
-        Whether to load the pretrained weights for model.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
@@ -654,8 +661,9 @@ def nasnet_5_1538(**kwargs):
         Number of cell repeats
     penultimate_filters : int
         Number of filters in the penultimate layer of the network
-    pretrained : bool, default False
-        Whether to load the pretrained weights for model.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
@@ -675,8 +683,9 @@ def nasnet_7_1920(**kwargs):
         Number of cell repeats
     penultimate_filters : int
         Number of filters in the penultimate layer of the network
-    pretrained : bool, default False
-        Whether to load the pretrained weights for model.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
@@ -696,8 +705,9 @@ def nasnet_6_4032(**kwargs):
         Number of cell repeats
     penultimate_filters : int
         Number of filters in the penultimate layer of the network
-    pretrained : bool, default False
-        Whether to load the pretrained weights for model.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'

@@ -317,7 +317,7 @@ net.save_parameters('dive_deep_cifar10_resnet20_v2.params')
 ################################################################
 # Next time if you need to use it, just run
 
-net.load_params('dive_deep_cifar10_resnet20_v2.params', ctx=ctx)
+net.load_parameters('dive_deep_cifar10_resnet20_v2.params', ctx=ctx)
 
 ################################################################
 # Next Step

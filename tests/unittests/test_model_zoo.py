@@ -37,25 +37,18 @@ def test_get_all_models():
 
 @with_cpu(0)
 def _test_model_list(model_list, ctx, x, pretrained=True, **kwargs):
-    for model in model_list:
-        net = gcv.model_zoo.get_model(model, **kwargs)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            net.initialize()
-        net.collect_params().reset_ctx(ctx)
-        net(x)
-        mx.nd.waitall()
-
     pretrained_models = gcv.model_zoo.pretrained_model_list()
     for model in model_list:
         if model in pretrained_models:
             net = gcv.model_zoo.get_model(model, pretrained=True, **kwargs)
+        else:
+            net = gcv.model_zoo.get_model(model, **kwargs)
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 net.initialize()
-            net.collect_params().reset_ctx(ctx)
-            net(x)
-            mx.nd.waitall()
+        net.collect_params().reset_ctx(ctx)
+        net(x)
+        mx.nd.waitall()
 
 @with_cpu(0)
 def _test_bn_global_stats(model_list, **kwargs):
@@ -104,11 +97,11 @@ def test_imagenet_models():
               'se_resnet101_v1', 'se_resnet152_v1',
               'se_resnet18_v2', 'se_resnet34_v2', 'se_resnet50_v2',
               'se_resnet101_v2', 'se_resnet152_v2',
-              'senet_52', 'senet_103', 'senet_154',
-              'squeezenet1.0', 'squeezenet1.1',
+              'senet_154', 'squeezenet1.0', 'squeezenet1.1',
               'mobilenet1.0','mobilenet0.75','mobilenet0.5','mobilenet0.25',
               'mobilenetv2_1.0','mobilenetv2_0.75','mobilenetv2_0.5','mobilenetv2_0.25',
-              'alexnet', 'densenet121', 'densenet161', 'densenet169', 'densenet201',
+              'densenet121', 'densenet161', 'densenet169', 'densenet201',
+              'darknet53', 'alexnet',
               'vgg11', 'vgg11_bn', 'vgg13', 'vgg13_bn',
               'vgg16', 'vgg16_bn', 'vgg19', 'vgg19_bn']
     _test_model_list(models, ctx, x)
@@ -138,21 +131,33 @@ def test_ssd_models():
 
 def test_faster_rcnn_models():
     ctx = mx.context.current_context()
-    x = mx.random.uniform(shape=(1, 3, 600, 800), ctx=ctx)  # allow non-squre and larger inputs
+    x = mx.random.uniform(shape=(1, 3, 300, 400), ctx=ctx)  # allow non-squre and larger inputs
     models = ['faster_rcnn_resnet50_v1b_voc', 'faster_rcnn_resnet50_v1b_coco']
     _test_model_list(models, ctx, x)
 
 def test_mask_rcnn_models():
     ctx = mx.context.current_context()
-    x = mx.random.uniform(shape=(1, 3, 600, 800), ctx=ctx)
+    x = mx.random.uniform(shape=(1, 3, 300, 400), ctx=ctx)
     models = ['mask_rcnn_resnet50_v1b_coco']
     _test_model_list(models, ctx, x)
 
 def test_yolo3_models():
     ctx = mx.context.current_context()
-    x = mx.random.uniform(shape=(1, 3, 416, 416), ctx=ctx)  # allow non-squre and larger inputs
+    x = mx.random.uniform(shape=(1, 3, 320, 320), ctx=ctx)  # allow non-squre and larger inputs
     models = ['yolo3_darknet53_voc']
     _test_model_list(models, ctx, x)
+
+@try_gpu(0)
+def test_two_stage_ctx_loading():
+    model_name = 'yolo3_darknet53_coco'
+    ctx = mx.test_utils.default_context()
+    if str(ctx).startswith('cpu'):
+        # meaningless
+        return
+    net = gcv.model_zoo.get_model(model_name, pretrained=True)
+    net.save_parameters(model_name + '.params')
+    net = gcv.model_zoo.get_model(model_name, pretrained=False, ctx=ctx)
+    net.load_parameters(model_name + '.params', ctx=ctx)
 
 def test_set_nms():
     model_list = ['ssd_512_resnet50_v1_voc', 'faster_rcnn_resnet50_v1b_voc', 'yolo3_darknet53_coco']
@@ -169,7 +174,7 @@ def test_set_nms():
 
 def test_segmentation_models():
     ctx = mx.context.current_context()
-    x = mx.random.uniform(shape=(2, 3, 480, 480), ctx=ctx)
+    x = mx.random.uniform(shape=(1, 3, 224, 224), ctx=ctx)
     models = ['fcn_resnet101_coco', 'psp_resnet101_coco', 'deeplab_resnet101_coco',
               'fcn_resnet101_voc', 'psp_resnet101_voc', 'deeplab_resnet101_voc',
               'fcn_resnet50_ade', 'psp_resnet50_ade', 'deeplab_resnet50_ade',

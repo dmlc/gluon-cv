@@ -1,0 +1,15 @@
+.tag {
+    color:grey;
+}
+
+.tag:after {
+    content: ' (no mixup)';
+}
+
+.greytag {
+    color:grey;
+}
+
+.gray {
+    color:#808080;
+}

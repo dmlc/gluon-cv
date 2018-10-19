@@ -59,19 +59,21 @@ extensions = [
 
 sphinx_gallery_conf = {
     # path to your examples scripts
-    'examples_dirs': ['tutorials/datasets',
-                      'tutorials/classification',
-                      'tutorials/detection',
-                      'tutorials/instance',
-                      'tutorials/segmentation',
-                      'tutorials/deployment',],
+    'examples_dirs': [
+        'tutorials/datasets',
+        'tutorials/classification',
+        'tutorials/detection',
+        'tutorials/instance',
+        'tutorials/segmentation',
+        'tutorials/deployment',],
     # path where to save gallery generated examples
-    'gallery_dirs': ['build/examples_datasets',
-                     'build/examples_classification',
-                     'build/examples_detection',
-                     'build/examples_instance',
-                     'build/examples_segmentation',
-                     'build/examples_deployment',],
+    'gallery_dirs': [
+        'build/examples_datasets',
+        'build/examples_classification',
+        'build/examples_detection',
+        'build/examples_instance',
+        'build/examples_segmentation',
+        'build/examples_deployment',],
 
     'filename_pattern': '.py',
     'ignore_pattern': 'im2rec.py',
@@ -239,6 +241,7 @@ todo_include_todos = True
 
 def setup(app):
     app.add_javascript('google_analytics.js')
+    app.add_stylesheet('css/custom.css')
      #app.add_transform(AutoStructify)
     #app.add_config_value('recommonmark_config', {
     #}, True)

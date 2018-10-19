@@ -83,7 +83,7 @@ else:
 net = get_model(model_name, **kwargs)
 model_name += '_mixup'
 if opt.resume_from:
-    net.load_params(opt.resume_from, ctx = context)
+    net.load_parameters(opt.resume_from, ctx = context)
 optimizer = 'nag'
 
 save_period = opt.save_period

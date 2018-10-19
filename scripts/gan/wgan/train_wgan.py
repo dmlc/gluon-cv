@@ -404,7 +404,7 @@ else:
 netG.initialize(mx.init.Xavier(factor_type='in',magnitude=0.01),ctx=context)
 weights_init(netG.main)
 if opt.netG != '': # load checkpoint if needed
-    netG.load_params(opt.netG)
+    netG.load_parameters(opt.netG)
 print(netG)
 
 if opt.mlp_D:
@@ -415,7 +415,7 @@ else:
     netD.initialize(mx.init.Xavier(factor_type='in',magnitude=0.01), ctx=context)
     weights_init(netD.main)
 if opt.netD != '':
-    netD.load_params(opt.netD)
+    netD.load_parameters(opt.netD)
 print(netD)
 
 input = mx.nd.zeros((opt.batchSize, 3, opt.imageSize, opt.imageSize))

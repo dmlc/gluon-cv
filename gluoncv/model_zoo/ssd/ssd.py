@@ -72,8 +72,9 @@ class SSD(HybridBlock):
         Minimum channels for the transition layers.
     global_pool : bool
         Whether to attach a global average pooling layer as the last output layer.
-    pretrained : bool
-        Description of parameter `pretrained`.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     stds : tuple of float, default is (0.1, 0.1, 0.2, 0.2)
         Std values to be divided/multiplied to box encoded values.
     nms_thresh : float, default is 0.45.
@@ -275,9 +276,10 @@ def get_ssd(name, base_size, features, filters, sizes, ratios, steps, classes,
     dataset : str
         Name of dataset. This is used to identify model name because models trained on
         differnet datasets are going to be very different.
-    pretrained : bool, optional, default is False
-        Load pretrained weights.
-    pretrained_base : bool, optional, default is True
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True
         Load pretrained base network, the extra layers are randomized. Note that
         if pretrained is `Ture`, this has no effect.
     ctx : mxnet.Context
@@ -297,7 +299,7 @@ def get_ssd(name, base_size, features, filters, sizes, ratios, steps, classes,
     if pretrained:
         from ..model_store import get_model_file
         full_name = '_'.join(('ssd', str(base_size), name, dataset))
-        net.load_params(get_model_file(full_name, root=root), ctx=ctx)
+        net.load_parameters(get_model_file(full_name, tag=pretrained, root=root), ctx=ctx)
     return net
 
 def ssd_300_vgg16_atrous_voc(pretrained=False, pretrained_base=True, **kwargs):
@@ -305,9 +307,10 @@ def ssd_300_vgg16_atrous_voc(pretrained=False, pretrained_base=True, **kwargs):
 
     Parameters
     ----------
-    pretrained : bool, optional, default is False
-        Load pretrained weights.
-    pretrained_base : bool, optional, default is True
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True
         Load pretrained base network, the extra layers are randomized.
 
     Returns
@@ -329,9 +332,10 @@ def ssd_300_vgg16_atrous_coco(pretrained=False, pretrained_base=True, **kwargs):
 
     Parameters
     ----------
-    pretrained : bool, optional, default is False
-        Load pretrained weights.
-    pretrained_base : bool, optional, default is True
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True
         Load pretrained base network, the extra layers are randomized.
 
     Returns
@@ -356,7 +360,7 @@ def ssd_300_vgg16_atrous_custom(classes, pretrained_base=True, transfer=None, **
     ----------
     classes : iterable of str
         Names of custom foreground classes. `len(classes)` is the number of foreground classes.
-    pretrained_base : bool, optional, default is True
+    pretrained_base : bool or str, optional, default is True
         Load pretrained base network, the extra layers are randomized.
     transfer : str or None
         If not `None`, will try to reuse pre-trained weights from SSD networks trained on other
@@ -392,9 +396,10 @@ def ssd_512_vgg16_atrous_voc(pretrained=False, pretrained_base=True, **kwargs):
 
     Parameters
     ----------
-    pretrained : bool, optional, default is False
-        Load pretrained weights.
-    pretrained_base : bool, optional, default is True
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True
         Load pretrained base network, the extra layers are randomized.
 
     Returns
@@ -416,9 +421,10 @@ def ssd_512_vgg16_atrous_coco(pretrained=False, pretrained_base=True, **kwargs):
 
     Parameters
     ----------
-    pretrained : bool, optional, default is False
-        Load pretrained weights.
-    pretrained_base : bool, optional, default is True
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True
         Load pretrained base network, the extra layers are randomized.
 
     Returns
@@ -442,7 +448,7 @@ def ssd_512_vgg16_atrous_custom(classes, pretrained_base=True, transfer=None, **
     ----------
     classes : iterable of str
         Names of custom foreground classes. `len(classes)` is the number of foreground classes.
-    pretrained_base : bool, optional, default is True
+    pretrained_base : bool or str, optional, default is True
         Load pretrained base network, the extra layers are randomized.
     transfer : str or None
         If not `None`, will try to reuse pre-trained weights from SSD networks trained on other
@@ -478,9 +484,10 @@ def ssd_512_resnet18_v1_voc(pretrained=False, pretrained_base=True, **kwargs):
 
     Parameters
     ----------
-    pretrained : bool, optional, default is False
-        Load pretrained weights.
-    pretrained_base : bool, optional, default is True
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True
         Load pretrained base network, the extra layers are randomized.
 
     Returns
@@ -503,9 +510,10 @@ def ssd_512_resnet18_v1_coco(pretrained=False, pretrained_base=True, **kwargs):
 
     Parameters
     ----------
-    pretrained : bool, optional, default is False
-        Load pretrained weights.
-    pretrained_base : bool, optional, default is True
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True
         Load pretrained base network, the extra layers are randomized.
 
     Returns
@@ -531,7 +539,7 @@ def ssd_512_resnet18_v1_custom(classes, pretrained_base=True, transfer=None, **k
     ----------
     classes : iterable of str
         Names of custom foreground classes. `len(classes)` is the number of foreground classes.
-    pretrained_base : bool, optional, default is True
+    pretrained_base : bool or str, optional, default is True
         Load pretrained base network, the extra layers are randomized.
     transfer : str or None
         If not `None`, will try to reuse pre-trained weights from SSD networks trained on other
@@ -569,9 +577,10 @@ def ssd_512_resnet50_v1_voc(pretrained=False, pretrained_base=True, **kwargs):
 
     Parameters
     ----------
-    pretrained : bool, optional, default is False
-        Load pretrained weights.
-    pretrained_base : bool, optional, default is True
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True
         Load pretrained base network, the extra layers are randomized.
 
     Returns
@@ -594,9 +603,10 @@ def ssd_512_resnet50_v1_coco(pretrained=False, pretrained_base=True, **kwargs):
 
     Parameters
     ----------
-    pretrained : bool, optional, default is False
-        Load pretrained weights.
-    pretrained_base : bool, optional, default is True
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True
         Load pretrained base network, the extra layers are randomized.
 
     Returns
@@ -622,7 +632,7 @@ def ssd_512_resnet50_v1_custom(classes, pretrained_base=True, transfer=None, **k
     ----------
     classes : iterable of str
         Names of custom foreground classes. `len(classes)` is the number of foreground classes.
-    pretrained_base : bool, optional, default is True
+    pretrained_base : bool or str, optional, default is True
         Load pretrained base network, the extra layers are randomized.
     transfer : str or None
         If not `None`, will try to reuse pre-trained weights from SSD networks trained on other
@@ -660,9 +670,10 @@ def ssd_512_resnet101_v2_voc(pretrained=False, pretrained_base=True, **kwargs):
 
     Parameters
     ----------
-    pretrained : bool, optional, default is False
-        Load pretrained weights.
-    pretrained_base : bool, optional, default is True
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True
         Load pretrained base network, the extra layers are randomized.
 
     Returns
@@ -685,9 +696,10 @@ def ssd_512_resnet152_v2_voc(pretrained=False, pretrained_base=True, **kwargs):
 
     Parameters
     ----------
-    pretrained : bool, optional, default is False
-        Load pretrained weights.
-    pretrained_base : bool, optional, default is True
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True
         Load pretrained base network, the extra layers are randomized.
 
     Returns
@@ -710,9 +722,10 @@ def ssd_512_mobilenet1_0_voc(pretrained=False, pretrained_base=True, **kwargs):
 
     Parameters
     ----------
-    pretrained : bool, optional, default is False
-        Load pretrained weights.
-    pretrained_base : bool, optional, default is True
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True
         Load pretrained base network, the extra layers are randomized.
 
     Returns
@@ -735,9 +748,10 @@ def ssd_512_mobilenet1_0_coco(pretrained=False, pretrained_base=True, **kwargs):
 
     Parameters
     ----------
-    pretrained : bool, optional, default is False
-        Load pretrained weights.
-    pretrained_base : bool, optional, default is True
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True
         Load pretrained base network, the extra layers are randomized.
 
     Returns
@@ -763,7 +777,7 @@ def ssd_512_mobilenet1_0_custom(classes, pretrained_base=True, transfer=None, **
     ----------
     classes : iterable of str
         Names of custom foreground classes. `len(classes)` is the number of foreground classes.
-    pretrained_base : bool, optional, default is True
+    pretrained_base : bool or str, optional, default is True
         Load pretrained base network, the extra layers are randomized.
     transfer : str or None
         If not `None`, will try to reuse pre-trained weights from SSD networks trained on other
@@ -792,6 +806,6 @@ def ssd_512_mobilenet1_0_custom(classes, pretrained_base=True, transfer=None, **
                       pretrained_base=pretrained_base, **kwargs)
     else:
         from ...model_zoo import get_model
-        net = get_model('ssd_512_mobilenet1_0_' + str(transfer), pretrained=True, **kwargs)
+        net = get_model('ssd_512_mobilenet1.0_' + str(transfer), pretrained=True, **kwargs)
         net.reset_class(classes)
     return net
