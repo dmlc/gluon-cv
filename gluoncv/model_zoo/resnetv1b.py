@@ -25,10 +25,12 @@ class BasicBlockV1b(HybridBlock):
         self.conv1 = nn.Conv2D(channels=planes, kernel_size=3, strides=strides,
                                padding=dilation, dilation=dilation, use_bias=False)
         self.bn1 = norm_layer(**norm_kwargs)
+        self.relu1 = nn.Activation('relu')
         self.conv2 = nn.Conv2D(channels=planes, kernel_size=3, strides=1,
                                padding=previous_dilation, dilation=previous_dilation,
                                use_bias=False)
         self.bn2 = norm_layer(**norm_kwargs)
+        self.relu2 = nn.Activation('relu')
         self.downsample = downsample
         self.strides = strides
 
@@ -37,7 +39,7 @@ class BasicBlockV1b(HybridBlock):
 
         out = self.conv1(x)
         out = self.bn1(out)
-        out = F.Activation(out, act_type='relu')
+        out = self.relu1(out)
 
         out = self.conv2(out)
         out = self.bn2(out)
@@ -46,7 +48,7 @@ class BasicBlockV1b(HybridBlock):
             residual = self.downsample(x)
 
         out = out + residual
-        out = F.Activation(out, act_type='relu')
+        out = self.relu2(out)
 
         return out
 
@@ -62,14 +64,17 @@ class BottleneckV1b(HybridBlock):
         self.conv1 = nn.Conv2D(channels=planes, kernel_size=1,
                                use_bias=False)
         self.bn1 = norm_layer(**norm_kwargs)
+        self.relu1 = nn.Activation('relu')
         self.conv2 = nn.Conv2D(channels=planes, kernel_size=3, strides=strides,
                                padding=dilation, dilation=dilation, use_bias=False)
         self.bn2 = norm_layer(**norm_kwargs)
+        self.relu2 = nn.Activation('relu')
         self.conv3 = nn.Conv2D(channels=planes * 4, kernel_size=1, use_bias=False)
         if not last_gamma:
             self.bn3 = norm_layer(**norm_kwargs)
         else:
             self.bn3 = norm_layer(gamma_initializer='zeros', **norm_kwargs)
+        self.relu3 = nn.Activation('relu')
         self.downsample = downsample
         self.dilation = dilation
         self.strides = strides
@@ -80,10 +85,12 @@ class BottleneckV1b(HybridBlock):
         out = self.conv1(x)
         out = self.bn1(out)
         out = F.Activation(out, act_type='relu')
+        out = self.relu1(out)
 
         out = self.conv2(out)
         out = self.bn2(out)
         out = F.Activation(out, act_type='relu')
+        out = self.relu2(out)
 
         out = self.conv3(out)
         out = self.bn3(out)
@@ -92,7 +99,7 @@ class BottleneckV1b(HybridBlock):
             residual = self.downsample(x)
 
         out = out + residual
-        out = F.Activation(out, act_type='relu')
+        out = self.relu3(out)
 
         return out
 
@@ -161,6 +168,7 @@ class ResNetV1b(HybridBlock):
                 self.conv1.add(nn.Conv2D(channels=stem_width*2, kernel_size=3, strides=1,
                                          padding=1, use_bias=False))
             self.bn1 = norm_layer(**norm_kwargs)
+            self.relu = nn.Activation('relu')
             self.maxpool = nn.MaxPool2D(pool_size=3, strides=2, padding=1)
             self.layer1 = self._make_layer(1, block, 64, layers[0], avg_down=avg_down,
                                            norm_layer=norm_layer, last_gamma=last_gamma)
@@ -234,7 +242,7 @@ class ResNetV1b(HybridBlock):
     def hybrid_forward(self, F, x):
         x = self.conv1(x)
         x = self.bn1(x)
-        x = F.Activation(x, act_type='relu')
+        x = self.relu(x)
         x = self.maxpool(x)
 
         x = self.layer1(x)
