@@ -35,7 +35,7 @@ def test_get_all_models():
         net = gcv.model_zoo.get_model(name, pretrained=False, **kwargs)
         assert isinstance(net, mx.gluon.Block), '{}'.format(name)
 
-@with_cpu(0)
+@try_gpu(0)
 def _test_model_list(model_list, ctx, x, pretrained=True, **kwargs):
     pretrained_models = gcv.model_zoo.pretrained_model_list()
     for model in model_list:

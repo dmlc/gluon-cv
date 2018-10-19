@@ -259,8 +259,7 @@ class ResNetV1b(HybridBlock):
         return x
 
 
-def resnet18_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
-                 name_prefix='resnetv1b', **kwargs):
+def resnet18_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
     """Constructs a ResNetV1b-18 model.
 
     Parameters
@@ -283,7 +282,7 @@ def resnet18_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
         Whether forcing BatchNorm to use global statistics instead of minibatch statistics;
         optionally set to True if finetuning using ImageNet classification pretrained models.
     """
-    model = ResNetV1b(BasicBlockV1b, [2, 2, 2, 2], **kwargs)
+    model = ResNetV1b(BasicBlockV1b, [2, 2, 2, 2], name_prefix='resnetv1b_', **kwargs)
     if pretrained:
         from .model_store import get_model_file
         model.load_parameters(get_model_file('resnet%d_v%db'%(18, 1),
@@ -296,8 +295,7 @@ def resnet18_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
     return model
 
 
-def resnet34_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
-                 name_prefix='resnetv1b', **kwargs):
+def resnet34_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
     """Constructs a ResNetV1b-34 model.
 
     Parameters
@@ -319,7 +317,7 @@ def resnet34_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
         Whether forcing BatchNorm to use global statistics instead of minibatch statistics;
         optionally set to True if finetuning using ImageNet classification pretrained models.
     """
-    model = ResNetV1b(BasicBlockV1b, [3, 4, 6, 3], **kwargs)
+    model = ResNetV1b(BasicBlockV1b, [3, 4, 6, 3], name_prefix='resnetv1b_', **kwargs)
     if pretrained:
         from .model_store import get_model_file
         model.load_parameters(get_model_file('resnet%d_v%db'%(34, 1),
@@ -332,8 +330,7 @@ def resnet34_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
     return model
 
 
-def resnet50_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
-                 name_prefix='resnetv1b', **kwargs):
+def resnet50_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
     """Constructs a ResNetV1b-50 model.
 
     Parameters
@@ -355,7 +352,7 @@ def resnet50_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
         Whether forcing BatchNorm to use global statistics instead of minibatch statistics;
         optionally set to True if finetuning using ImageNet classification pretrained models.
     """
-    model = ResNetV1b(BottleneckV1b, [3, 4, 6, 3], **kwargs)
+    model = ResNetV1b(BottleneckV1b, [3, 4, 6, 3], name_prefix='resnetv1b_', **kwargs)
     if pretrained:
         from .model_store import get_model_file
         model.load_parameters(get_model_file('resnet%d_v%db'%(50, 1),
@@ -368,8 +365,7 @@ def resnet50_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
     return model
 
 
-def resnet101_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
-                  name_prefix='resnetv1b', **kwargs):
+def resnet101_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
     """Constructs a ResNetV1b-101 model.
 
     Parameters
@@ -391,7 +387,7 @@ def resnet101_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
         Whether forcing BatchNorm to use global statistics instead of minibatch statistics;
         optionally set to True if finetuning using ImageNet classification pretrained models.
     """
-    model = ResNetV1b(BottleneckV1b, [3, 4, 23, 3], **kwargs)
+    model = ResNetV1b(BottleneckV1b, [3, 4, 23, 3], name_prefix='resnetv1b_', **kwargs)
     if pretrained:
         from .model_store import get_model_file
         model.load_parameters(get_model_file('resnet%d_v%db'%(101, 1),
@@ -404,8 +400,7 @@ def resnet101_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
     return model
 
 
-def resnet152_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
-                  name_prefix='resnetv1b', **kwargs):
+def resnet152_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
     """Constructs a ResNetV1b-152 model.
 
     Parameters
@@ -427,7 +422,7 @@ def resnet152_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
         Whether forcing BatchNorm to use global statistics instead of minibatch statistics;
         optionally set to True if finetuning using ImageNet classification pretrained models.
     """
-    model = ResNetV1b(BottleneckV1b, [3, 8, 36, 3], **kwargs)
+    model = ResNetV1b(BottleneckV1b, [3, 8, 36, 3], name_prefix='resnetv1b_', **kwargs)
     if pretrained:
         from .model_store import get_model_file
         model.load_parameters(get_model_file('resnet%d_v%db'%(152, 1),
@@ -439,8 +434,7 @@ def resnet152_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
         model.classes_long = attrib.classes_long
     return model
 
-def resnet50_v1c(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
-                 name_prefix='resnetv1c', **kwargs):
+def resnet50_v1c(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
     """Constructs a ResNetV1c-50 model.
 
     Parameters
@@ -457,7 +451,7 @@ def resnet50_v1c(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
     norm_layer : object
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.norm_layer`;
     """
-    model = ResNetV1b(BottleneckV1b, [3, 4, 6, 3], deep_stem=True, **kwargs)
+    model = ResNetV1b(BottleneckV1b, [3, 4, 6, 3], deep_stem=True, name_prefix='resnetv1c_', **kwargs)
     if pretrained:
         from .model_store import get_model_file
         model.load_parameters(get_model_file('resnet%d_v%dc'%(50, 1),
@@ -470,8 +464,7 @@ def resnet50_v1c(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
     return model
 
 
-def resnet101_v1c(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
-                  name_prefix='resnetv1c', **kwargs):
+def resnet101_v1c(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
     """Constructs a ResNetV1c-101 model.
 
     Parameters
@@ -488,7 +481,8 @@ def resnet101_v1c(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
     norm_layer : object
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.norm_layer`;
     """
-    model = ResNetV1b(BottleneckV1b, [3, 4, 23, 3], deep_stem=True, **kwargs)
+    model = ResNetV1b(BottleneckV1b, [3, 4, 23, 3], deep_stem=True,
+                      name_prefix='resnetv1c_', **kwargs)
     if pretrained:
         from .model_store import get_model_file
         model.load_parameters(get_model_file('resnet%d_v%dc'%(101, 1),
@@ -500,8 +494,7 @@ def resnet101_v1c(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
         model.classes_long = attrib.classes_long
     return model
 
-def resnet152_v1c(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
-                  name_prefix='resnetv1c', **kwargs):
+def resnet152_v1c(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
     """Constructs a ResNetV1b-152 model.
 
     Parameters
@@ -518,7 +511,8 @@ def resnet152_v1c(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
     norm_layer : object
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.norm_layer`;
     """
-    model = ResNetV1b(BottleneckV1b, [3, 8, 36, 3], deep_stem=True, **kwargs)
+    model = ResNetV1b(BottleneckV1b, [3, 8, 36, 3], deep_stem=True,
+                      name_prefix='resnetv1c_', **kwargs)
     if pretrained:
         from .model_store import get_model_file
         model.load_parameters(get_model_file('resnet%d_v%dc'%(152, 1),
@@ -530,8 +524,7 @@ def resnet152_v1c(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
         model.classes_long = attrib.classes_long
     return model
 
-def resnet50_v1d(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
-                 name_prefix='resnetv1d', **kwargs):
+def resnet50_v1d(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
     """Constructs a ResNetV1d-50 model.
 
     Parameters
@@ -548,7 +541,8 @@ def resnet50_v1d(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
     norm_layer : object
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.norm_layer`;
     """
-    model = ResNetV1b(BottleneckV1b, [3, 4, 6, 3], deep_stem=True, avg_down=True, **kwargs)
+    model = ResNetV1b(BottleneckV1b, [3, 4, 6, 3], deep_stem=True, avg_down=True,
+                      name_prefix='resnetv1d_', **kwargs)
     if pretrained:
         from .model_store import get_model_file
         model.load_parameters(get_model_file('resnet%d_v%dd'%(50, 1),
@@ -560,8 +554,7 @@ def resnet50_v1d(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
         model.classes_long = attrib.classes_long
     return model
 
-def resnet101_v1d(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
-                  name_prefix='resnetv1d', **kwargs):
+def resnet101_v1d(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
     """Constructs a ResNetV1d-50 model.
 
     Parameters
@@ -578,7 +571,8 @@ def resnet101_v1d(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
     norm_layer : object
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.norm_layer`;
     """
-    model = ResNetV1b(BottleneckV1b, [3, 4, 23, 3], deep_stem=True, avg_down=True, **kwargs)
+    model = ResNetV1b(BottleneckV1b, [3, 4, 23, 3], deep_stem=True, avg_down=True,
+                      name_prefix='resnetv1d_', **kwargs)
     if pretrained:
         from .model_store import get_model_file
         model.load_parameters(get_model_file('resnet%d_v%dd'%(101, 1),
@@ -590,8 +584,7 @@ def resnet101_v1d(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
         model.classes_long = attrib.classes_long
     return model
 
-def resnet152_v1d(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
-                  name_prefix='resnetv1d', **kwargs):
+def resnet152_v1d(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
     """Constructs a ResNetV1d-50 model.
 
     Parameters
@@ -608,7 +601,8 @@ def resnet152_v1d(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
     norm_layer : object
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.norm_layer`;
     """
-    model = ResNetV1b(BottleneckV1b, [3, 8, 36, 3], deep_stem=True, avg_down=True, **kwargs)
+    model = ResNetV1b(BottleneckV1b, [3, 8, 36, 3], deep_stem=True, avg_down=True,
+                      name_prefix='resnetv1d_', **kwargs)
     if pretrained:
         from .model_store import get_model_file
         model.load_parameters(get_model_file('resnet%d_v%dd'%(152, 1),
@@ -620,8 +614,7 @@ def resnet152_v1d(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
         model.classes_long = attrib.classes_long
     return model
 
-def resnet50_v1e(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
-                 name_prefix='resnetv1e', **kwargs):
+def resnet50_v1e(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
     """Constructs a ResNetV1e-50 model.
 
     Parameters
@@ -639,7 +632,8 @@ def resnet50_v1e(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.norm_layer`;
     """
     model = ResNetV1b(BottleneckV1b, [3, 4, 6, 3],
-                      deep_stem=True, avg_down=True, stem_width=64, **kwargs)
+                      deep_stem=True, avg_down=True, stem_width=64,
+                      name_prefix='resnetv1e_', **kwargs)
     if pretrained:
         from .model_store import get_model_file
         model.load_parameters(get_model_file('resnet%d_v%dd'%(50, 1),
@@ -651,8 +645,7 @@ def resnet50_v1e(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
         model.classes_long = attrib.classes_long
     return model
 
-def resnet101_v1e(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
-                  name_prefix='resnetv1e', **kwargs):
+def resnet101_v1e(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
     """Constructs a ResNetV1e-50 model.
 
     Parameters
@@ -670,7 +663,8 @@ def resnet101_v1e(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.norm_layer`;
     """
     model = ResNetV1b(BottleneckV1b, [3, 4, 23, 3],
-                      deep_stem=True, avg_down=True, stem_width=64, **kwargs)
+                      deep_stem=True, avg_down=True, stem_width=64,
+                      name_prefix='resnetv1e_', **kwargs)
     if pretrained:
         from .model_store import get_model_file
         model.load_parameters(get_model_file('resnet%d_v%dd'%(101, 1),
@@ -682,8 +676,7 @@ def resnet101_v1e(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
         model.classes_long = attrib.classes_long
     return model
 
-def resnet152_v1e(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
-                  name_prefix='resnetv1e', **kwargs):
+def resnet152_v1e(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
     """Constructs a ResNetV1e-50 model.
 
     Parameters
@@ -701,7 +694,8 @@ def resnet152_v1e(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.norm_layer`;
     """
     model = ResNetV1b(BottleneckV1b, [3, 8, 36, 3],
-                      deep_stem=True, avg_down=True, stem_width=64, **kwargs)
+                      deep_stem=True, avg_down=True, stem_width=64,
+                      name_prefix='resnetv1e_', **kwargs)
     if pretrained:
         from .model_store import get_model_file
         model.load_parameters(get_model_file('resnet%d_v%dd'%(152, 1),
@@ -714,8 +708,7 @@ def resnet152_v1e(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
     return model
 
 
-def resnet50_v1s(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
-                 name_prefix='resnetv1s', **kwargs):
+def resnet50_v1s(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
     """Constructs a ResNetV1s-50 model.
 
     Parameters
@@ -732,7 +725,7 @@ def resnet50_v1s(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
     norm_layer : object
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.norm_layer`;
     """
-    model = ResNetV1b(BottleneckV1b, [3, 4, 6, 3], deep_stem=True, stem_width=64, **kwargs)
+    model = ResNetV1b(BottleneckV1b, [3, 4, 6, 3], deep_stem=True, stem_width=64, name_prefix='resnetv1s_', **kwargs)
     if pretrained:
         from .model_store import get_model_file
         model.load_parameters(get_model_file('resnet%d_v%ds'%(50, 1),
@@ -745,8 +738,7 @@ def resnet50_v1s(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
     return model
 
 
-def resnet101_v1s(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
-                  name_prefix='resnetv1s', **kwargs):
+def resnet101_v1s(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
     """Constructs a ResNetV1s-101 model.
 
     Parameters
@@ -763,7 +755,8 @@ def resnet101_v1s(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
     norm_layer : object
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.norm_layer`;
     """
-    model = ResNetV1b(BottleneckV1b, [3, 4, 23, 3], deep_stem=True, stem_width=64, **kwargs)
+    model = ResNetV1b(BottleneckV1b, [3, 4, 23, 3], deep_stem=True, stem_width=64,
+                      name_prefix='resnetv1s_', **kwargs)
     if pretrained:
         from .model_store import get_model_file
         model.load_parameters(get_model_file('resnet%d_v%ds'%(101, 1),
@@ -776,8 +769,7 @@ def resnet101_v1s(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
     return model
 
 
-def resnet152_v1s(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
-                  name_prefix='resnetv1s', **kwargs):
+def resnet152_v1s(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
     """Constructs a ResNetV1s-152 model.
 
     Parameters
@@ -794,7 +786,8 @@ def resnet152_v1s(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
     norm_layer : object
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.norm_layer`;
     """
-    model = ResNetV1b(BottleneckV1b, [3, 8, 36, 3], deep_stem=True, stem_width=64, **kwargs)
+    model = ResNetV1b(BottleneckV1b, [3, 8, 36, 3], deep_stem=True, stem_width=64,
+                      name_prefix='resnetv1s_', **kwargs)
     if pretrained:
         from .model_store import get_model_file
         model.load_parameters(get_model_file('resnet%d_v%ds'%(152, 1),
