@@ -25,7 +25,6 @@ class BasicBlockV1b(HybridBlock):
         self.conv1 = nn.Conv2D(channels=planes, kernel_size=3, strides=strides,
                                padding=dilation, dilation=dilation, use_bias=False)
         self.bn1 = norm_layer(**norm_kwargs)
-        self.relu = nn.Activation('relu')
         self.conv2 = nn.Conv2D(channels=planes, kernel_size=3, strides=1,
                                padding=previous_dilation, dilation=previous_dilation,
                                use_bias=False)
@@ -38,7 +37,7 @@ class BasicBlockV1b(HybridBlock):
 
         out = self.conv1(x)
         out = self.bn1(out)
-        out = self.relu(out)
+        out = F.Activation(out, act_type='relu')
 
         out = self.conv2(out)
         out = self.bn2(out)
@@ -47,7 +46,7 @@ class BasicBlockV1b(HybridBlock):
             residual = self.downsample(x)
 
         out = out + residual
-        out = self.relu(out)
+        out = F.Activation(out, act_type='relu')
 
         return out
 
@@ -71,7 +70,6 @@ class BottleneckV1b(HybridBlock):
             self.bn3 = norm_layer(**norm_kwargs)
         else:
             self.bn3 = norm_layer(gamma_initializer='zeros', **norm_kwargs)
-        self.relu = nn.Activation('relu')
         self.downsample = downsample
         self.dilation = dilation
         self.strides = strides
@@ -81,11 +79,11 @@ class BottleneckV1b(HybridBlock):
 
         out = self.conv1(x)
         out = self.bn1(out)
-        out = self.relu(out)
+        out = F.Activation(out, act_type='relu')
 
         out = self.conv2(out)
         out = self.bn2(out)
-        out = self.relu(out)
+        out = F.Activation(out, act_type='relu')
 
         out = self.conv3(out)
         out = self.bn3(out)
@@ -94,7 +92,7 @@ class BottleneckV1b(HybridBlock):
             residual = self.downsample(x)
 
         out = out + residual
-        out = self.relu(out)
+        out = F.Activation(out, act_type='relu')
 
         return out
 
@@ -139,9 +137,10 @@ class ResNetV1b(HybridBlock):
     # pylint: disable=unused-variable
     def __init__(self, block, layers, classes=1000, dilated=False, norm_layer=BatchNorm,
                  norm_kwargs={}, last_gamma=False, deep_stem=False, stem_width=32,
-                 avg_down=False, final_drop=0.0, use_global_stats=False, **kwargs):
+                 avg_down=False, final_drop=0.0, use_global_stats=False,
+                 name_prefix='', **kwargs):
         self.inplanes = stem_width*2 if deep_stem else 64
-        super(ResNetV1b, self).__init__()
+        super(ResNetV1b, self).__init__(prefix=name_prefix)
         self.norm_kwargs = norm_kwargs
         if use_global_stats:
             self.norm_kwargs['use_global_stats'] = True
@@ -162,7 +161,6 @@ class ResNetV1b(HybridBlock):
                 self.conv1.add(nn.Conv2D(channels=stem_width*2, kernel_size=3, strides=1,
                                          padding=1, use_bias=False))
             self.bn1 = norm_layer(**norm_kwargs)
-            self.relu = nn.Activation('relu')
             self.maxpool = nn.MaxPool2D(pool_size=3, strides=2, padding=1)
             self.layer1 = self._make_layer(1, block, 64, layers[0], avg_down=avg_down,
                                            norm_layer=norm_layer, last_gamma=last_gamma)
@@ -236,7 +234,7 @@ class ResNetV1b(HybridBlock):
     def hybrid_forward(self, F, x):
         x = self.conv1(x)
         x = self.bn1(x)
-        x = self.relu(x)
+        x = F.Activation(x, act_type='relu')
         x = self.maxpool(x)
 
         x = self.layer1(x)
@@ -253,7 +251,8 @@ class ResNetV1b(HybridBlock):
         return x
 
 
-def resnet18_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
+def resnet18_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
+                 name_prefix='resnetv1b', **kwargs):
     """Constructs a ResNetV1b-18 model.
 
     Parameters
@@ -289,7 +288,8 @@ def resnet18_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
     return model
 
 
-def resnet34_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
+def resnet34_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
+                 name_prefix='resnetv1b', **kwargs):
     """Constructs a ResNetV1b-34 model.
 
     Parameters
@@ -324,7 +324,8 @@ def resnet34_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
     return model
 
 
-def resnet50_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
+def resnet50_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
+                 name_prefix='resnetv1b', **kwargs):
     """Constructs a ResNetV1b-50 model.
 
     Parameters
@@ -359,7 +360,8 @@ def resnet50_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
     return model
 
 
-def resnet101_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
+def resnet101_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
+                  name_prefix='resnetv1b', **kwargs):
     """Constructs a ResNetV1b-101 model.
 
     Parameters
@@ -394,7 +396,8 @@ def resnet101_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
     return model
 
 
-def resnet152_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
+def resnet152_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
+                  name_prefix='resnetv1b', **kwargs):
     """Constructs a ResNetV1b-152 model.
 
     Parameters
@@ -428,7 +431,8 @@ def resnet152_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
         model.classes_long = attrib.classes_long
     return model
 
-def resnet50_v1c(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
+def resnet50_v1c(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
+                 name_prefix='resnetv1c', **kwargs):
     """Constructs a ResNetV1c-50 model.
 
     Parameters
@@ -458,7 +462,8 @@ def resnet50_v1c(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
     return model
 
 
-def resnet101_v1c(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
+def resnet101_v1c(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
+                  name_prefix='resnetv1c', **kwargs):
     """Constructs a ResNetV1c-101 model.
 
     Parameters
@@ -487,7 +492,8 @@ def resnet101_v1c(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
         model.classes_long = attrib.classes_long
     return model
 
-def resnet152_v1c(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
+def resnet152_v1c(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
+                  name_prefix='resnetv1c', **kwargs):
     """Constructs a ResNetV1b-152 model.
 
     Parameters
@@ -516,7 +522,8 @@ def resnet152_v1c(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
         model.classes_long = attrib.classes_long
     return model
 
-def resnet50_v1d(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
+def resnet50_v1d(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
+                 name_prefix='resnetv1d', **kwargs):
     """Constructs a ResNetV1d-50 model.
 
     Parameters
@@ -545,7 +552,8 @@ def resnet50_v1d(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
         model.classes_long = attrib.classes_long
     return model
 
-def resnet101_v1d(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
+def resnet101_v1d(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
+                  name_prefix='resnetv1d', **kwargs):
     """Constructs a ResNetV1d-50 model.
 
     Parameters
@@ -574,7 +582,8 @@ def resnet101_v1d(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
         model.classes_long = attrib.classes_long
     return model
 
-def resnet152_v1d(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
+def resnet152_v1d(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
+                  name_prefix='resnetv1d', **kwargs):
     """Constructs a ResNetV1d-50 model.
 
     Parameters
@@ -603,7 +612,8 @@ def resnet152_v1d(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
         model.classes_long = attrib.classes_long
     return model
 
-def resnet50_v1e(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
+def resnet50_v1e(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
+                 name_prefix='resnetv1e', **kwargs):
     """Constructs a ResNetV1e-50 model.
 
     Parameters
@@ -633,7 +643,8 @@ def resnet50_v1e(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
         model.classes_long = attrib.classes_long
     return model
 
-def resnet101_v1e(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
+def resnet101_v1e(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
+                  name_prefix='resnetv1e', **kwargs):
     """Constructs a ResNetV1e-50 model.
 
     Parameters
@@ -663,7 +674,8 @@ def resnet101_v1e(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
         model.classes_long = attrib.classes_long
     return model
 
-def resnet152_v1e(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
+def resnet152_v1e(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
+                  name_prefix='resnetv1e', **kwargs):
     """Constructs a ResNetV1e-50 model.
 
     Parameters
@@ -694,7 +706,8 @@ def resnet152_v1e(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
     return model
 
 
-def resnet50_v1s(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
+def resnet50_v1s(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
+                 name_prefix='resnetv1s', **kwargs):
     """Constructs a ResNetV1s-50 model.
 
     Parameters
@@ -724,7 +737,8 @@ def resnet50_v1s(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
     return model
 
 
-def resnet101_v1s(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
+def resnet101_v1s(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
+                  name_prefix='resnetv1s', **kwargs):
     """Constructs a ResNetV1s-101 model.
 
     Parameters
@@ -754,7 +768,8 @@ def resnet101_v1s(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
     return model
 
 
-def resnet152_v1s(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
+def resnet152_v1s(pretrained=False, root='~/.mxnet/models', ctx=cpu(0),
+                  name_prefix='resnetv1s', **kwargs):
     """Constructs a ResNetV1s-152 model.
 
     Parameters
