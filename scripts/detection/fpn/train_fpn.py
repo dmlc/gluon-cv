@@ -1,4 +1,5 @@
 """Train FPN end to end."""
+# Now only train on VOC Dataset, COCO will appear nan if not use lr_warmup
 import argparse
 import os
 # disable autotune
@@ -31,7 +32,7 @@ def parse_args():
     parser.add_argument('--num-workers', '-j', dest='num_workers', type=int,
                         default=8, help='Number of data workers, you can use larger '
                         'number to accelerate data loading, if you CPU and GPUs are powerful.')
-    parser.add_argument('--gpus', type=str, default='0',
+    parser.add_argument('--gpus', type=str, default='2,3',
                         help='Training with GPUs, you can specify 1,3 for example.')
     parser.add_argument('--epochs', type=str, default='',
                         help='Training epochs.')

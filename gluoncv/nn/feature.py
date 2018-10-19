@@ -200,14 +200,14 @@ class FPNFeatureExpander(SymbolBlock):
         for i, (bf, f) in enumerate(zip(base_features, num_filters)):
             if i == 0:
                 if use_1x1: 
-                    y = mx.sym.Convolution(y, num_filter=f, kernel=(1, 1), no_bias=no_bias,
+                    y = mx.sym.Convolution(y, num_filter=f, kernel=(1, 1), pad=(0, 0), stride=(1, 1), no_bias=no_bias,
                                            name="P{}_pre".format(num_stages-i), attr={'__init__': weight_init})
                 if use_p6:
                     y_p6 = mx.sym.Pooling(y, pool_type="max", kernel=(1, 1), pad=(0, 0), stride=(2, 2),
                                           name="P{}_pre".format(num_stages+1))
             else:
                 if use_1x1:
-                    bf = mx.sym.Convolution(bf, num_filter=f, kernel=(1, 1), no_bias=no_bias,
+                    bf = mx.sym.Convolution(bf, num_filter=f, kernel=(1, 1), pad=(0, 0), stride=(1, 1), no_bias=no_bias,
                                             name="P{}_conv1".format(num_stages-i), attr={'__init__': weight_init})
                 if use_upsample:
                     y = mx.sym.UpSampling(y, scale=2, sample_type='nearest', name="P{}_upsp".format(num_stages-i))
@@ -224,6 +224,6 @@ class FPNFeatureExpander(SymbolBlock):
             outputs = tmp_outputs[::-1]  # [P2, P3, P4, P5]
         # reduce the aliasing effect of upsampling
         for i, (out, f) in enumerate(zip(outputs, num_filters)):
-            out = mx.sym.Convolution(out, num_filter=f, kernel=(3, 3), no_bias=no_bias,
-                                     name='P{}'.format(i+2), attr={'__init__': weight_init})
+            out = mx.sym.Convolution(out, num_filter=f, kernel=(3, 3), pad=(1, 1), stride=(1, 1), 
+                                     no_bias=no_bias, name='P{}'.format(i+2), attr={'__init__': weight_init})
         super(FPNFeatureExpander, self).__init__(outputs, inputs, params)

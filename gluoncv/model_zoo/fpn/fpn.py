@@ -6,12 +6,16 @@ import mxnet as mx
 from mxnet import autograd
 from mxnet.gluon import nn
 from .rpn_fpn import RPNFPNHead
+from .proposal_fpn import RPNFPNProposal
 from ..rcnn import RCNN
-from ..rpn import RPNAnchorGenerator, RPNProposal
+from ..rpn import RPNAnchorGenerator
 from ..faster_rcnn import RCNNTargetGenerator, RCNNTargetSampler
 from ...nn.feature import FPNFeatureExpander
 
-__all__ = ['FPN', 'get_fpn', 'fpn_resnet50_v1b_voc', 'fpn_resnet50_v1b_coco']
+__all__ = ['FPN', 'get_fpn', 
+           'fpn_resnet50_v1b_voc', 
+           'fpn_resnet50_v1b_coco', 
+           'fpn_resnet101_v1s_coco',]
 
 class FPN(RCNN):
     r"""FPN network.
@@ -175,7 +179,8 @@ class FPN(RCNN):
         self.ashape = alloc_size[0]
         self._max_batch = 1 # currently only support batch size = 1
         self._num_sample = num_sample
-        self._rpn_test_post_nms = rpn_test_post_nms
+        self._rpn_train_post_nms = max(1, rpn_train_post_nms)
+        self._rpn_test_post_nms = max(1, rpn_test_post_nms)
         self._target_generator = {RCNNTargetGenerator(self.num_class)}
         self._additional_output = additional_output
         self._min_stage = min_stage
@@ -190,7 +195,7 @@ class FPN(RCNN):
             for i, st, s in zip(range(num_stages), strides, scales):
                 anchor_generator = RPNAnchorGenerator(st, base_size, ratios, s, asz)
                 self.anchor_generators.add(anchor_generator)
-                asz = max(asz[0] // 2, 16)
+                asz = max(asz[0] // 2, 16) 
                 asz = (asz, asz)  # For FPN, We use large anchor presets
             # each fpn stage has same anchor_depth, 3 in ori paper
             anchor_depth = self.anchor_generators[0].num_depth
@@ -201,12 +206,10 @@ class FPN(RCNN):
                 use_p6=use_p6, no_bias=no_bias, pretrained=pretrained_base, ctx=ctx)
             # RPN head without samples
             self.rpn_head = RPNFPNHead(channels=rpn_channel, anchor_depth=anchor_depth)
-            # Sample region proposals
-            self.region_proposaler = RPNProposal(
-                clip=clip, nms_thresh=nms_thresh, train_pre_nms=rpn_train_pre_nms,
-                train_post_nms=rpn_train_post_nms, test_pre_nms=rpn_test_pre_nms,
-                test_post_nms=rpn_test_post_nms, min_size=rpn_min_size,
-                stds=(1., 1., 1., 1.))
+            # Region proposals before post_nms operation 
+            self.region_proposaler = RPNFPNProposal(
+                clip=clip, nms_thresh=rpn_nms_thresh, train_pre_nms=rpn_train_pre_nms,
+                test_pre_nms=rpn_test_pre_nms, min_size=rpn_min_size, stds=(1., 1., 1., 1.))
             # Sample RCNN target
             self.sampler = RCNNTargetSampler(
                 num_image=self._max_batch, num_proposal=rpn_train_post_nms,
@@ -227,10 +230,10 @@ class FPN(RCNN):
         super(FPN, self).reset_class(classes) 
         self._target_generator = {RCNNTargetGenerator(self.num_class)}
 
-    def _pyramid_roi_feats(self, F, features, rpn_rois, roi_size, strides, roi_mode='pool'):
+    def _pyramid_roi_feats(self, F, features, rpn_rois, roi_size, strides, roi_mode='pool', eps=1e-6):
         '''Assign rpn_rois to specific FPN layers according to its area
            and then perform `ROIPooling` or `ROIAlign` to generate final
-           region proposals.
+           region proposals aggregated features.
 
         Parameters
         ----------
@@ -252,16 +255,15 @@ class FPN(RCNN):
         '''
         _, x1, y1, x2, y2 = F.split(rpn_rois, axis=-1, num_outputs=5)
         h = y2 - y1 + 1 
-        w = x2 - x1 + 1 
-        roi_level = F.floor(4 + F.log2(F.sqrt(w * h + 1e-8) / 224.0))
-        roi_level = F.where(roi_level < 2, F.ones_like(roi_level)*2, roi_level)
-        roi_level = F.where(roi_level > 5, F.ones_like(roi_level)*5, roi_level)
+        w = x2 - x1 + 1  
+        roi_level = F.floor(4 + F.log2(F.sqrt(w * h) / 224.0 + eps))
+        roi_level = F.clip(roi_level, self._min_stage, self._max_stage)
         # [2,2,..,3,3,...,4,4,...,5,5,...]
         # roi_level_sorted_args = F.argsort(roi_level, is_ascend=True)
         pooled_roi_feats = []
         for i, l in enumerate(range(self._min_stage, self._max_stage+1)):
-            # rpn_roi_level = F.where(roi_level == l, rpn_rois, F.ones_like(rpn_rois)*-1)
-            # the rois with [-1, -1, -1, -1, -1] will all pool to [0], so we can ele-wise add next
+            # Pool features with all rois first, and then set invalid pooled features to zero,
+            # at last ele-wise add together to aggregate all features.
             if roi_mode == 'pool':
                 pooled_feature = F.ROIPooling(features[i], rpn_rois, roi_size, 1. / strides[i])
             elif roi_mode == 'align':
@@ -305,8 +307,14 @@ class FPN(RCNN):
             else:
                 return [x]
 
-        # Perform pyramid region proposal network
+        if autograd.is_training():
+            post_nms = self._rpn_train_post_nms
+        else:
+            post_nms = self._rpn_test_post_nms
+
+        # Aggregate all proposals 
         anchors = []
+        proposals = []
         rpn_scores = []
         rpn_boxes = []
         raw_rpn_scores = []
@@ -318,19 +326,28 @@ class FPN(RCNN):
             anchor = ag(feat)
             rpn_score, rpn_box, raw_rpn_score, raw_rpn_box = \
                 self.rpn_head(feat)
+            rpn_score, rpn_box = self.region_proposaler(anchor, rpn_score, 
+                rpn_box, F.zeros_like(x)) 
+            proposal = F.concat(rpn_score, rpn_box, dim=-1)
             anchors.append(anchor)
-            rpn_scores.append(rpn_score)
+            proposals.append(proposal)
             raw_rpn_scores.append(raw_rpn_score)
-            rpn_boxes.append(rpn_box)
             raw_rpn_boxes.append(raw_rpn_box)
         anchors = F.concat(*anchors, dim=1)
-        rpn_scores = F.concat(*rpn_scores, dim=1)
-        rpn_boxes = F.concat(*rpn_boxes, dim=1)
+        proposals = F.concat(*proposals, dim=1)
         raw_rpn_scores = F.concat(*raw_rpn_scores, dim=1)
         raw_rpn_boxes = F.concat(*raw_rpn_boxes, dim=1)
-        # RPN proposals
-        rpn_scores, rpn_boxes = self.region_proposaler(
-            anchors, rpn_scores, rpn_boxes, F.zeros_like(x))
+
+        # Collect top_N(post_nms) proposals 
+        rpn_scores = F.slice_axis(proposals, axis=-1, begin=0, end=1)
+        inds = F.slice_axis(F.argsort(rpn_scores, axis=1, is_ascend=False), axis=1, 
+            begin=0, end=post_nms)
+        rpn_post_nms_proposals = F.take(proposals, inds.reshape((-1, )), axis=1)
+        rpn_scores = F.slice_axis(rpn_post_nms_proposals, axis=-1, begin=0, end=1)
+        rpn_boxes = F.slice_axis(rpn_post_nms_proposals, axis=-1, begin=1, end=None)
+
+        # Sampler proposals for training 
+        # Output self._num_sample boxes 
         if autograd.is_training():
             rpn_boxes, samples, matches = self.sampler(rpn_boxes, rpn_scores, gt_box)
 
@@ -347,10 +364,12 @@ class FPN(RCNN):
         # Note : the rpn_rois will be [[0, x1, y1, x2, y2], ..., [1, x1, y1, x2, y2], ..., [B, x1, y1, x2, y2], ...]
         # like, and same number for each batch_size
 
-        # Get pyramid pooled ROI features
-        with autograd.pause():
-            pooled_feat = self._pyramid_roi_feats(F, features, rpn_rois, self._roi_size,
-                                                  self._strides, roi_mode=self._roi_mode)
+        # Get pyramid pooled ROI features and distribute those proposals 
+        # to their appropriate FPN levels, An anchor at one FPN level may 
+        # predict an RoI that will map to another level, hence the need 
+        # to redistribute the proposals.
+        pooled_feat = self._pyramid_roi_feats(F, features, rpn_rois, self._roi_size, 
+            self._strides, roi_mode=self._roi_mode)
 
         # RCNN prediction
         '''TODO(Angzz) Whether or not use top features in FPN'''
@@ -473,19 +492,23 @@ def fpn_resnet50_v1b_voc(pretrained=False, pretrained_base=True, **kwargs):
     pretrained_base = False if pretrained else pretrained_base
     base_network = resnet50_v1b(pretrained=pretrained_base, dilated=False, use_global_stats=True)
     train_patterns = '|'.join(['.*dense', '.*rpn', '.*down(2|3|4)_conv', '.*layers(2|3|4)_conv'])
+    # Note : rpn_train_pre_nms means per level, e.g. 2000 X 4 lvl.
+    # And the same with rpn_test_post_nms, e.g. 1000 X 4 lvl.
+    # However, rpn_train_post_nms and rpn_test_post_nms means all 
+    # fpn levels 
     return get_fpn(
         name='resnet50_v1b', dataset='voc', pretrained=pretrained, network=base_network,
         features=['layers1_bottleneckv1b2_activation2', 'layers2_bottleneckv1b3_activation2', 
             'layers3_bottleneckv1b5_activation2', 'layers4_bottleneckv1b2_activation2'],
         num_filters=[256, 256, 256, 256], use_1x1=True, use_upsample=True,
-        use_elewadd=True, use_p6=False, no_bias=True, top_features=None,
+        use_elewadd=True, use_p6=False, no_bias=False, top_features=None,
         classes=classes, short=600, max_size=1000, min_stage=2, max_stage=5,
         train_patterns=train_patterns, nms_thresh=0.3, nms_topk=400, post_nms=100,
-        roi_mode='align', roi_size=(14, 14), strides=(4, 8, 16, 32), clip=None,
+        roi_mode='align', roi_size=(7, 7), strides=(4, 8, 16, 32), clip=None,
         rpn_channel=1024, base_size=16, scales=(2, 4, 8, 16), ratios=(0.5, 1, 2),
-        alloc_size=(512, 512), rpn_nms_thresh=0.7, rpn_train_pre_nms=12000,
-        rpn_train_post_nms=2000, rpn_test_pre_nms=6000, rpn_test_post_nms=300,
-        rpn_min_size=16, num_sample=128, pos_iou_thresh=0.5, pos_ratio=0.25,
+        alloc_size=(256, 256), rpn_nms_thresh=0.7, rpn_train_pre_nms=2000, 
+        rpn_train_post_nms=2000, rpn_test_pre_nms=1000, rpn_test_post_nms=300,
+        rpn_min_size=16, num_sample=256, pos_iou_thresh=0.5, pos_ratio=0.25,
         max_num_gt=100, **kwargs)
 
 def fpn_resnet50_v1b_coco(pretrained=False, pretrained_base=True, **kwargs):
@@ -494,7 +517,7 @@ def fpn_resnet50_v1b_coco(pretrained=False, pretrained_base=True, **kwargs):
     Serge Belongie (2017). Feature Pyramid Networks for Object Detection"
 
     Parameters
-    ----------
+    ---------- 
     pretrained : bool, optional, default is False
         Load pretrained weights.
     pretrained_base : bool, optional, default is True
@@ -521,7 +544,7 @@ def fpn_resnet50_v1b_coco(pretrained=False, pretrained_base=True, **kwargs):
         features=['layers1_bottleneckv1b2_activation2', 'layers2_bottleneckv1b3_activation2', 
             'layers3_bottleneckv1b5_activation2', 'layers4_bottleneckv1b2_activation2'],
         num_filters=[256, 256, 256, 256], use_1x1=True, use_upsample=True,
-        use_elewadd=True, use_p6=False, no_bias=True, top_features=None,
+        use_elewadd=True, use_p6=False, no_bias=False, top_features=None,
         classes=classes, short=800, max_size=1333, min_stage=2, max_stage=5,
         train_patterns=train_patterns, nms_thresh=0.5, nms_topk=-1, post_nms=-1,
         roi_mode='align', roi_size=(14, 14), strides=(4, 8, 16, 32), clip=4.42,
@@ -530,3 +553,46 @@ def fpn_resnet50_v1b_coco(pretrained=False, pretrained_base=True, **kwargs):
         rpn_train_post_nms=2000, rpn_test_pre_nms=6000, rpn_test_post_nms=1000,
         rpn_min_size=0, num_sample=512, pos_iou_thresh=0.5, pos_ratio=0.25,
         max_num_gt=100, **kwargs)
+
+def fpn_resnet101_v1s_coco(pretrained=False, pretrained_base=True, **kwargs):
+    r"""FPN model from the paper
+    "Tsung-Yi Lin, Piotr Dollár, Ross Girshick, Kaiming He, Bharath Hariharan,
+    Serge Belongie (2017). Feature Pyramid Networks for Object Detection"
+
+    Parameters
+    ----------
+    pretrained : bool, optional, default is False
+        Load pretrained weights.
+    pretrained_base : bool, optional, default is True
+        Load pretrained base network, the extra layers are randomized. Note that
+        if pretrained is `Ture`, this has no effect.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+
+    Examples
+    --------
+    >>> model = get_fpn_resnet50_v1b_coco(pretrained=True)
+    >>> print(model)
+    """
+    from ..resnetv1b import resnet101_v1s
+    from ...data import COCODetection
+    classes = COCODetection.CLASSES
+    pretrained_base = False if pretrained else pretrained_base
+    base_network = resnet101_v1s(pretrained=pretrained_base, dilated=False, use_global_stats=True)
+    train_patterns = '|'.join(['.*dense', '.*rpn', '.*down(2|3|4)_conv', '.*layers(2|3|4)_conv'])
+    return get_fpn(
+    name='resnet50_v1b', dataset='voc', pretrained=pretrained, network=base_network,
+    features=['layers1_bottleneckv1b2_activation2', 'layers2_bottleneckv1b3_activation2', 
+        'layers3_bottleneckv1b22_activation2', 'layers4_bottleneckv1b2_activation2'],
+    num_filters=[256, 256, 256, 256], use_1x1=True, use_upsample=True,
+    use_elewadd=True, use_p6=False, no_bias=False, top_features=None,
+    classes=classes, short=800, max_size=1333, min_stage=2, max_stage=5,
+    train_patterns=train_patterns, nms_thresh=0.5, nms_topk=-1, post_nms=-1,
+    roi_mode='align', roi_size=(14, 14), strides=(4, 8, 16, 32), clip=4.42,
+    rpn_channel=1024, base_size=16, scales=(2, 4, 8, 16), ratios=(0.5, 1, 2),
+    alloc_size=(512, 512), rpn_nms_thresh=0.7, rpn_train_pre_nms=12000,
+    rpn_train_post_nms=2000, rpn_test_pre_nms=6000, rpn_test_post_nms=1000,
+    rpn_min_size=0, num_sample=512, pos_iou_thresh=0.5, pos_ratio=0.25,
+    max_num_gt=100, **kwargs)
