@@ -84,12 +84,10 @@ class BottleneckV1b(HybridBlock):
 
         out = self.conv1(x)
         out = self.bn1(out)
-        out = F.Activation(out, act_type='relu')
         out = self.relu1(out)
 
         out = self.conv2(out)
         out = self.bn2(out)
-        out = F.Activation(out, act_type='relu')
         out = self.relu2(out)
 
         out = self.conv3(out)
