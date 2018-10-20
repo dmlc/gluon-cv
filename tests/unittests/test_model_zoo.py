@@ -35,7 +35,6 @@ def test_get_all_models():
         net = gcv.model_zoo.get_model(name, pretrained=False, **kwargs)
         assert isinstance(net, mx.gluon.Block), '{}'.format(name)
 
-@try_gpu(0)
 def _test_model_list(model_list, ctx, x, pretrained=True, **kwargs):
     pretrained_models = gcv.model_zoo.pretrained_model_list()
     for model in model_list:
@@ -66,6 +65,7 @@ def _test_bn_global_stats(model_list, **kwargs):
     for model in model_list:
         gcv.model_zoo.get_model(model, norm_layer=_BatchNorm, use_global_stats=True, **kwargs)
 
+@try_gpu(0)
 def test_classification_models():
     ctx = mx.context.current_context()
     x = mx.random.uniform(shape=(2, 3, 32, 32), ctx=ctx)
@@ -77,6 +77,7 @@ def test_classification_models():
     ]
     _test_model_list(cifar_models, ctx, x)
 
+@try_gpu(0)
 def test_imagenet_models():
     ctx = mx.context.current_context()
 
@@ -129,12 +130,14 @@ def test_ssd_models():
         models = ['ssd_512_resnet50_v1_voc']
     _test_model_list(models, ctx, x)
 
+@try_gpu(0)
 def test_faster_rcnn_models():
     ctx = mx.context.current_context()
     x = mx.random.uniform(shape=(1, 3, 300, 400), ctx=ctx)  # allow non-squre and larger inputs
     models = ['faster_rcnn_resnet50_v1b_voc', 'faster_rcnn_resnet50_v1b_coco']
     _test_model_list(models, ctx, x)
 
+@try_gpu(0)
 def test_mask_rcnn_models():
     ctx = mx.context.current_context()
     x = mx.random.uniform(shape=(1, 3, 300, 400), ctx=ctx)
@@ -172,6 +175,7 @@ def test_set_nms():
         net.set_nms(nms_thresh=0.3, nms_topk=200, post_nms=50)
         net(x)
 
+@try_gpu(0)
 def test_segmentation_models():
     ctx = mx.context.current_context()
     x = mx.random.uniform(shape=(1, 3, 224, 224), ctx=ctx)
