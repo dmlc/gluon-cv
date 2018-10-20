@@ -10,7 +10,7 @@ from gluoncv.data import ADE20KSegmentation
 
 from common import try_gpu, with_cpu
 
-@with_cpu(0)
+@try_gpu(0)
 def test_segmentation_utils():
     ctx = mx.context.current_context()
     import os
