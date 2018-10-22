@@ -253,15 +253,17 @@ class FPN(RCNN):
         -------
         Pooled roi features according aggregated with regard to its roi_level
         '''
+        if self._use_p6: # do not use p6 for RCNN
+            max_stage = self._max_stage - 1
         _, x1, y1, x2, y2 = F.split(rpn_rois, axis=-1, num_outputs=5)
         h = y2 - y1 + 1 
         w = x2 - x1 + 1  
         roi_level = F.floor(4 + F.log2(F.sqrt(w * h) / 224.0 + eps))
-        roi_level = F.clip(roi_level, self._min_stage, self._max_stage)
+        roi_level = F.clip(roi_level, self._min_stage, max_stage)
         # [2,2,..,3,3,...,4,4,...,5,5,...]
         # roi_level_sorted_args = F.argsort(roi_level, is_ascend=True)
         pooled_roi_feats = []
-        for i, l in enumerate(range(self._min_stage, self._max_stage+1)):
+        for i, l in enumerate(range(self._min_stage, max_stage+1)):
             # Pool features with all rois first, and then set invalid pooled features to zero,
             # at last ele-wise add together to aggregate all features.
             if roi_mode == 'pool':
@@ -341,7 +343,7 @@ class FPN(RCNN):
         # Collect top_N(post_nms) proposals 
         rpn_scores = F.slice_axis(proposals, axis=-1, begin=0, end=1)
         inds = F.slice_axis(F.argsort(rpn_scores, axis=1, is_ascend=False), axis=1, 
-            begin=0, end=post_nms)
+            begin=0, end=self._rpn_train_post_nms if autograd.is_training() else self._rpn_test_post_nms)
         rpn_post_nms_proposals = F.take(proposals, inds.reshape((-1, )), axis=1)
         rpn_scores = F.slice_axis(rpn_post_nms_proposals, axis=-1, begin=0, end=1)
         rpn_boxes = F.slice_axis(rpn_post_nms_proposals, axis=-1, begin=1, end=None)
@@ -504,10 +506,10 @@ def fpn_resnet50_v1b_voc(pretrained=False, pretrained_base=True, **kwargs):
         use_elewadd=True, use_p6=False, no_bias=False, top_features=None,
         classes=classes, short=600, max_size=1000, min_stage=2, max_stage=5,
         train_patterns=train_patterns, nms_thresh=0.3, nms_topk=400, post_nms=100,
-        roi_mode='align', roi_size=(7, 7), strides=(4, 8, 16, 32), clip=None,
-        rpn_channel=1024, base_size=16, scales=(2, 4, 8, 16), ratios=(0.5, 1, 2),
-        alloc_size=(256, 256), rpn_nms_thresh=0.7, rpn_train_pre_nms=2000, 
-        rpn_train_post_nms=2000, rpn_test_pre_nms=1000, rpn_test_post_nms=300,
+        roi_mode='align', roi_size=(7, 7), strides=(4, 8, 16, 32, 64), clip=None,
+        rpn_channel=1024, base_size=16, scales=(2, 4, 8, 16, 32), ratios=(0.5, 1, 2),
+        alloc_size=(512, 512), rpn_nms_thresh=0.7, rpn_train_pre_nms=4000, 
+        rpn_train_post_nms=2000, rpn_test_pre_nms=1200, rpn_test_post_nms=300,
         rpn_min_size=16, num_sample=256, pos_iou_thresh=0.5, pos_ratio=0.25,
         max_num_gt=100, **kwargs)
 
@@ -583,16 +585,16 @@ def fpn_resnet101_v1s_coco(pretrained=False, pretrained_base=True, **kwargs):
     base_network = resnet101_v1s(pretrained=pretrained_base, dilated=False, use_global_stats=True)
     train_patterns = '|'.join(['.*dense', '.*rpn', '.*down(2|3|4)_conv', '.*layers(2|3|4)_conv'])
     return get_fpn(
-    name='resnet50_v1b', dataset='voc', pretrained=pretrained, network=base_network,
-    features=['layers1_bottleneckv1b2_activation2', 'layers2_bottleneckv1b3_activation2', 
-        'layers3_bottleneckv1b22_activation2', 'layers4_bottleneckv1b2_activation2'],
-    num_filters=[256, 256, 256, 256], use_1x1=True, use_upsample=True,
-    use_elewadd=True, use_p6=False, no_bias=False, top_features=None,
-    classes=classes, short=800, max_size=1333, min_stage=2, max_stage=5,
-    train_patterns=train_patterns, nms_thresh=0.5, nms_topk=-1, post_nms=-1,
-    roi_mode='align', roi_size=(14, 14), strides=(4, 8, 16, 32), clip=4.42,
-    rpn_channel=1024, base_size=16, scales=(2, 4, 8, 16), ratios=(0.5, 1, 2),
-    alloc_size=(512, 512), rpn_nms_thresh=0.7, rpn_train_pre_nms=12000,
-    rpn_train_post_nms=2000, rpn_test_pre_nms=6000, rpn_test_post_nms=1000,
-    rpn_min_size=0, num_sample=512, pos_iou_thresh=0.5, pos_ratio=0.25,
-    max_num_gt=100, **kwargs)
+        name='resnet50_v1b', dataset='voc', pretrained=pretrained, network=base_network,
+        features=['layers1_bottleneckv1b2_activation2', 'layers2_bottleneckv1b3_activation2', 
+            'layers3_bottleneckv1b22_activation2', 'layers4_bottleneckv1b2_activation2'],
+        num_filters=[256, 256, 256, 256], use_1x1=True, use_upsample=True,
+        use_elewadd=True, use_p6=False, no_bias=False, top_features=None,
+        classes=classes, short=800, max_size=1333, min_stage=2, max_stage=5,
+        train_patterns=train_patterns, nms_thresh=0.5, nms_topk=-1, post_nms=-1,
+        roi_mode='align', roi_size=(14, 14), strides=(4, 8, 16, 32), clip=4.42,
+        rpn_channel=1024, base_size=16, scales=(2, 4, 8, 16), ratios=(0.5, 1, 2),
+        alloc_size=(512, 512), rpn_nms_thresh=0.7, rpn_train_pre_nms=12000,
+        rpn_train_post_nms=2000, rpn_test_pre_nms=6000, rpn_test_post_nms=1000,
+        rpn_min_size=0, num_sample=512, pos_iou_thresh=0.5, pos_ratio=0.25,
+        max_num_gt=100, **kwargs)
