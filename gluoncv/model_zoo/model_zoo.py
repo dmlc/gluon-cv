@@ -155,8 +155,8 @@ _models = {
     'nasnet_5_1538': nasnet_5_1538,
     'nasnet_7_1920': nasnet_7_1920,
     'nasnet_6_4032': nasnet_6_4032,
-    'fpn_resnet50_v1b_voc', fpn_resnet50_v1b_voc,
-    'fpn_resnet50_v1b_coco', fpn_resnet50_v1b_coco,
+    'fpn_resnet50_v1b_voc': fpn_resnet50_v1b_voc,
+    'fpn_resnet50_v1b_coco': fpn_resnet50_v1b_coco,
     }
 
 def get_model(name, **kwargs):

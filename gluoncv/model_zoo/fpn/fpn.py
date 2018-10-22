@@ -500,8 +500,7 @@ def fpn_resnet50_v1b_voc(pretrained=False, pretrained_base=True, **kwargs):
     # fpn levels 
     return get_fpn(
         name='resnet50_v1b', dataset='voc', pretrained=pretrained, network=base_network,
-        features=['layers1_bottleneckv1b2_activation2', 'layers2_bottleneckv1b3_activation2', 
-            'layers3_bottleneckv1b5_activation2', 'layers4_bottleneckv1b2_activation2'],
+        features=['layers1_relu8_fwd', 'layers2_relu11_fwd', 'layers3_relu17_fwd', 'layers4_relu8_fwd'],
         num_filters=[256, 256, 256, 256], use_1x1=True, use_upsample=True,
         use_elewadd=True, use_p6=False, no_bias=False, top_features=None,
         classes=classes, short=600, max_size=1000, min_stage=2, max_stage=5,
@@ -543,8 +542,7 @@ def fpn_resnet50_v1b_coco(pretrained=False, pretrained_base=True, **kwargs):
     train_patterns = '|'.join(['.*dense', '.*rpn', '.*down(2|3|4)_conv', '.*layers(2|3|4)_conv'])
     return get_fpn(
         name='resnet50_v1b', dataset='voc', pretrained=pretrained, network=base_network,
-        features=['layers1_bottleneckv1b2_activation2', 'layers2_bottleneckv1b3_activation2', 
-            'layers3_bottleneckv1b5_activation2', 'layers4_bottleneckv1b2_activation2'],
+        features=['layers1_relu8_fwd', 'layers2_relu11_fwd', 'layers3_relu17_fwd', 'layers4_relu8_fwd'],
         num_filters=[256, 256, 256, 256], use_1x1=True, use_upsample=True,
         use_elewadd=True, use_p6=False, no_bias=False, top_features=None,
         classes=classes, short=800, max_size=1333, min_stage=2, max_stage=5,
@@ -586,8 +584,7 @@ def fpn_resnet101_v1s_coco(pretrained=False, pretrained_base=True, **kwargs):
     train_patterns = '|'.join(['.*dense', '.*rpn', '.*down(2|3|4)_conv', '.*layers(2|3|4)_conv'])
     return get_fpn(
         name='resnet50_v1b', dataset='voc', pretrained=pretrained, network=base_network,
-        features=['layers1_bottleneckv1b2_activation2', 'layers2_bottleneckv1b3_activation2', 
-            'layers3_bottleneckv1b22_activation2', 'layers4_bottleneckv1b2_activation2'],
+        features=['layers1_relu8_fwd', 'layers2_relu11_fwd', 'layers3_relu68_fwd', 'layers4_relu8_fwd'],
         num_filters=[256, 256, 256, 256], use_1x1=True, use_upsample=True,
         use_elewadd=True, use_p6=False, no_bias=False, top_features=None,
         classes=classes, short=800, max_size=1333, min_stage=2, max_stage=5,
