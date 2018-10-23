@@ -88,7 +88,6 @@ class ResidualBlock(HybridBlock):
         out = self.bn3(out)
         out = F.Activation(out, act_type='relu')
         out = self.conv3(out)
-
         if self.stride != 1 or (self.channels != self.in_channels):
             residual = self.conv4(out1)
 
