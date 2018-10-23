@@ -49,4 +49,9 @@ Source Code and Build Instructions
 The C++ demo code and build instructions are available in our repository `scripts
 <https://github.com/dmlc/gluon-cv/tree/master/scripts/deployment/cpp-inference>`_.
 
+.. hint::
+
+    Prebuilt binaries are `available <https://github.com/dmlc/gluon-cv/tree/master/scripts/deployment/cpp-inference#download-prebuilt-binaries>`_ for Linus, Mac OS and Windows.
+
+    And you can also build MXNet from `source <https://github.com/dmlc/gluon-cv/tree/master/scripts/deployment/cpp-inference#build-from-source>`_ to support C++ inference demo.
 """
