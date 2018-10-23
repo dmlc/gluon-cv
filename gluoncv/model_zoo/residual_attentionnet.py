@@ -19,13 +19,13 @@
 # pylint: disable= unused-argument,missing-docstring
 """ResidualAttentionNetwork, implemented in Gluon."""
 
-__all__ = ['ResidualAttentionModel_448input', 'ResidualAttentionModel',
-           'ResidualAttentionModel_32input', 'residualattentionnet56',
-           'residualattentionnet92', 'residualattentionnet56_32input',
-           'residualattentionnet92_32input']
+__all__ = ['ResidualAttentionModel', 'ResidualAttentionModel_32input',
+           'residualattentionnet56', 'residualattentionnet56_32input',
+           'residualattentionnet92', 'residualattentionnet92_32input']
+
 
 __modify__ = 'X.Yang'
-__modified_date__ = '18/10/16'
+__modified_date__ = '18/10/23'
 
 from mxnet.gluon import nn
 from mxnet.gluon.block import HybridBlock
@@ -94,125 +94,6 @@ class ResidualBlock(HybridBlock):
 
         out = out + residual
         return out
-
-
-class AttentionModule_stage0(nn.HybridBlock):
-    r"""AttentionModel 56 model from
-    `"Residual Attention Network for Image Classification"
-    <https://arxiv.org/pdf/1704.06904.pdf>`_ paper.
-    Input size is 112 x 112.
-    Default size is for 112 stage input.
-    If input size is different you need to change it suiting for your input size.
-
-    Parameters
-    ----------
-    channels : int
-        Output channels.
-    size1 : int, default 112
-        Upsampling size1.
-    size2 : int, default 56
-        Upsampling size2.
-    size3 : int, default 28
-        Upsampling size3.
-    size4 : int, default 14
-        Upsampling size4.
-    """
-
-    def __init__(self, channels, size1=112, size2=56, size3=28, size4=14, **kwargs):
-        super(AttentionModule_stage0, self).__init__(**kwargs)
-        with self.name_scope():
-            self.first_residual_blocks = ResidualBlock(channels)
-
-            self.trunk_branches = nn.HybridSequential()
-            with self.trunk_branches.name_scope():
-                self.trunk_branches.add(ResidualBlock(channels))
-                self.trunk_branches.add(ResidualBlock(channels))
-
-            self.mpool1 = nn.MaxPool2D(pool_size=3, strides=2, padding=1)
-            self.softmax1_blocks = ResidualBlock(channels)
-            self.skip1_connection_residual_block = ResidualBlock(channels)
-
-            self.mpool2 = nn.MaxPool2D(pool_size=3, strides=2, padding=1)
-            self.softmax2_blocks = ResidualBlock(channels)
-            self.skip2_connection_residual_block = ResidualBlock(channels)
-
-            self.mpool3 = nn.MaxPool2D(pool_size=3, strides=2, padding=1)
-            self.softmax3_blocks = ResidualBlock(channels)
-            self.skip3_connection_residual_block = ResidualBlock(channels)
-
-            self.mpool4 = nn.MaxPool2D(pool_size=3, strides=2, padding=1)
-            self.softmax4_blocks = nn.HybridSequential()
-            with self.softmax4_blocks.name_scope():
-                self.softmax4_blocks.add(ResidualBlock(channels))
-                self.softmax4_blocks.add(ResidualBlock(channels))
-
-            self.interpolation4 = UpsamplingBilinear2d(size=size4)
-            self.softmax5_blocks = ResidualBlock(channels)
-
-            self.interpolation3 = UpsamplingBilinear2d(size=size3)
-            self.softmax6_blocks = ResidualBlock(channels)
-
-            self.interpolation2 = UpsamplingBilinear2d(size=size2)
-            self.softmax7_blocks = ResidualBlock(channels)
-
-            self.interpolation1 = UpsamplingBilinear2d(size=size1)
-
-            self.softmax8_blocks = nn.HybridSequential()
-            with self.softmax8_blocks.name_scope():
-                self.softmax8_blocks.add(nn.BatchNorm())
-                self.softmax8_blocks.add(nn.Activation('relu'))
-                self.softmax8_blocks.add(nn.Conv2D(channels, kernel_size=1, use_bias=False))
-                self.softmax8_blocks.add(nn.BatchNorm())
-                self.softmax8_blocks.add(nn.Activation('relu'))
-                self.softmax8_blocks.add(nn.Conv2D(channels, kernel_size=1, use_bias=False))
-                self.softmax8_blocks.add(nn.Activation('sigmoid'))
-
-            self.last_blocks = ResidualBlock(channels)
-
-    def hybrid_forward(self, F, x):
-        x = self.first_residual_blocks(x)
-        out_trunk = self.trunk_branches(x)
-
-        out_mpool1 = self.mpool1(x)
-        out_softmax1 = self.softmax1_blocks(out_mpool1)
-        out_skip1_connection = self.skip1_connection_residual_block(out_softmax1)
-        # 56 x 56
-
-        out_mpool2 = self.mpool2(out_softmax1)
-        out_softmax2 = self.softmax2_blocks(out_mpool2)
-        out_skip2_connection = self.skip2_connection_residual_block(out_softmax2)
-        # 28 x 28
-
-        out_mpool3 = self.mpool3(out_softmax2)
-        out_softmax3 = self.softmax3_blocks(out_mpool3)
-        out_skip3_connection = self.skip3_connection_residual_block(out_softmax3)
-        # 14 x 14
-
-        out_mpool4 = self.mpool4(out_softmax3)
-        out_softmax4 = self.softmax4_blocks(out_mpool4)
-        # 7 x 7
-
-        out_interp4 = F.elemwise_add(self.interpolation4(out_softmax4), out_softmax3)
-        out = F.elemwise_add(out_interp4, out_skip3_connection)
-
-        out_softmax5 = self.softmax5_blocks(out)
-        out_interp3 = F.elemwise_add(self.interpolation3(out_softmax5), out_softmax2)
-        out = F.elemwise_add(out_interp3, out_skip2_connection)
-
-        out_softmax6 = self.softmax5_blocks(out)
-        out_interp2 = F.elemwise_add(self.interpolation2(out_softmax6), out_softmax1)
-        out = F.elemwise_add(out_interp2, out_skip1_connection)
-
-        out_softmax7 = self.softmax7_blocks(out)
-        out_interp1 = F.elemwise_add(self.interpolation1(out_softmax7), out_trunk)
-
-        out_softmax8 = self.softmax8_blocks(out_interp1)
-        out = F.elemwise_add(F.ones_like(out_softmax8), out_softmax8)
-        out = F.elemwise_mul(out, out_trunk)
-
-        out_last = self.last_blocks(out)
-
-        return out_last
 
 
 class AttentionModule_stage1(nn.HybridBlock):
@@ -494,82 +375,6 @@ class AttentionModule_stage4(nn.HybridBlock):
         return out_last
 
 
-class ResidualAttentionModel_448input(nn.HybridBlock):
-    r"""AttentionModel model from
-    `"Residual Attention Network for Image Classification"
-    <https://arxiv.org/pdf/1704.06904.pdf>`_ paper.
-    Input size is 448 x 448.
-
-    Parameters
-    ----------
-    classes : int, default 1000
-        Number of classification classes.
-    additional_stage : bool, default False
-        If False means Attention56, True means Attention92.
-    """
-
-    def __init__(self, classes=1000, additional_stage=False, **kwargs):
-        self.additional_stage = additional_stage
-        super(ResidualAttentionModel_448input, self).__init__(**kwargs)
-        with self.name_scope():
-            self.conv1 = nn.HybridSequential()
-            with self.conv1.name_scope():
-                self.conv1.add(nn.Conv2D(64, kernel_size=7, strides=2, padding=3, use_bias=False))
-                self.conv1.add(nn.BatchNorm())
-                self.conv1.add(nn.Activation('relu'))
-            self.mpool1 = nn.MaxPool2D(pool_size=3, strides=2, padding=1)
-            # 112 x 112
-            self.residual_block0 = ResidualBlock(128, in_channels=64)
-            self.attention_module0 = AttentionModule_stage0(128)
-            self.residual_block1 = ResidualBlock(256, in_channels=128, stride=2)
-            # 56 x 56
-            self.attention_module1 = AttentionModule_stage1(256)
-            self.residual_block2 = ResidualBlock(512, in_channels=256, stride=2)
-            self.attention_module2 = AttentionModule_stage2(512)
-            if additional_stage:
-                self.attention_module2_2 = AttentionModule_stage2(512)
-            self.residual_block3 = ResidualBlock(1024, in_channels=512, stride=2)
-            self.attention_module3 = AttentionModule_stage3(1024)
-            if additional_stage:
-                self.attention_module3_2 = AttentionModule_stage3(1024)
-                self.attention_module3_3 = AttentionModule_stage3(1024)
-            self.residual_block4 = ResidualBlock(2048, in_channels=1024, stride=2)
-            self.residual_block5 = ResidualBlock(2048)
-            self.residual_block6 = ResidualBlock(2048)
-            self.mpool2 = nn.HybridSequential()
-            with self.mpool2.name_scope():
-                self.mpool2.add(nn.BatchNorm())
-                self.mpool2.add(nn.Activation('relu'))
-                self.mpool2.add(nn.AvgPool2D(pool_size=7, strides=1))
-            self.fc = nn.Conv2D(classes, kernel_size=1)
-
-    def hybrid_forward(self, F, x):
-        x = self.conv1(x)
-        x = self.mpool1(x)
-        x = self.residual_block0(x)
-        x = self.attention_module0(x)
-
-        x = self.residual_block1(x)
-        x = self.attention_module1(x)
-        x = self.residual_block2(x)
-        x = self.attention_module2(x)
-        if self.additional_stage:
-            x = self.attention_module2_2(x)
-        x = self.residual_block3(x)
-
-        x = self.attention_module3(x)
-        if self.additional_stage:
-            x = self.attention_module3_2(x)
-            x = self.attention_module3_3(x)
-        x = self.residual_block4(x)
-        x = self.residual_block5(x)
-        x = self.residual_block6(x)
-        x = self.mpool2(x)
-        x = self.fc(x)
-        x = F.Flatten(x)
-        return x
-
-
 class ResidualAttentionModel(nn.HybridBlock):
     r"""AttentionModel model from
     `"Residual Attention Network for Image Classification"
@@ -728,13 +533,11 @@ def get_residualAttentionModel(input_size, additional_stage=False,
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
     """
-    assert input_size in (32, 224, 448)
+    assert input_size in (32, 224)
     if input_size == 32:
         net = ResidualAttentionModel_32input(additional_stage=additional_stage, **kwargs)
     elif input_size == 224:
         net = ResidualAttentionModel(additional_stage=additional_stage, **kwargs)
-    else:
-        net = ResidualAttentionModel_448input(additional_stage=additional_stage, **kwargs)
 
     if pretrained:
         pass
