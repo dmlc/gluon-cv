@@ -100,7 +100,7 @@ Run the script using `pythonw` on MacOS:
 
 .. code-block:: bash
 
-    pythonw demo_webcam_run.py
+    pythonw demo_webcam_run.py --num-frames 200
 
 
 .. note::
