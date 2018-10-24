@@ -9,6 +9,7 @@ from .pascal_voc.detection import VOCDetection
 from .mscoco.detection import COCODetection
 from .mscoco.instance import COCOInstance
 from .mscoco.segmentation import COCOSegmentation
+from .mscoco.keypoints import COCOKeyPoints
 from .cityscapes import CitySegmentation
 from .pascal_voc.segmentation import VOCSegmentation
 from .pascal_aug.segmentation import VOCAugSegmentation
