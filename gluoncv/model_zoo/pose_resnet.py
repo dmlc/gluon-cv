@@ -105,7 +105,7 @@ class PoseResNet(HybridBlock):
         from .model_zoo import get_model
         base_network = get_model(base_name, pretrained=pretrained_base)
 
-        self.resnet=nn.HybridSequential()
+        self.resnet = nn.HybridSequential()
         if base_name.endswith('v1'):
             for layer in ['features']:
                 self.resnet.add(getattr(base_network, layer))
