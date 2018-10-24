@@ -29,6 +29,7 @@ class COCOKeyPoints(VisionDataset):
             splits = [splits]
         self._splits = splits
         self._coco = []
+        self._items, self._labels = self._load_jsons()
 
         # properties may help
         self._keypoints: {
@@ -88,4 +89,9 @@ class COCOKeyPoints(VisionDataset):
         pass
 
     def _load_jsons(self):
-        pass
+        """Load all image paths and labels from JSON annotation files into buffer."""
+        items = []
+        labels = []
+        # lazy import pycocotools
+        try_import_pycocotools()
+        from pycocotools.coco import COCO
