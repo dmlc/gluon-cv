@@ -166,7 +166,7 @@ class PoseResNet(HybridBlock):
         with layer.name_scope():
             for i in range(num_layers):
                 kernel, padding, output_padding = \
-                    self._get_deconv_cfg(num_kernels[i], i)
+                    self._get_deconv_cfg(num_kernels[i])
 
                 planes = num_filters[i]
                 layer.add(
