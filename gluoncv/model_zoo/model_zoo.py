@@ -24,6 +24,7 @@ from .resnet import *
 from .squeezenet import *
 from .vgg import *
 from .mobilenet import *
+from .residual_attentionnet import *
 
 __all__ = ['get_model', 'get_model_list']
 
@@ -154,6 +155,10 @@ _models = {
     'nasnet_5_1538': nasnet_5_1538,
     'nasnet_7_1920': nasnet_7_1920,
     'nasnet_6_4032': nasnet_6_4032,
+    'residualattentionnet56': residualattentionnet56,
+    'residualattentionnet92': residualattentionnet92,
+    'residualattentionnet56_32input': residualattentionnet56_32input,
+    'residualattentionnet92_32input': residualattentionnet92_32input
     }
 
 def get_model(name, **kwargs):
