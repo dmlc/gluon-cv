@@ -5,7 +5,7 @@
 # ------------------------------------------------------------------------------
 
 # coding: utf-8
-# pylint: disable=missing-docstring
+# pylint: disable=missing-docstring,unused-argument,arguments-differ
 
 from __future__ import division
 
@@ -19,78 +19,6 @@ __all__ = ['get_pose_resnet', 'pose_resnet18_v1', 'pose_resnet34_v1',
 from mxnet.context import cpu
 from mxnet.gluon.block import HybridBlock
 from mxnet.gluon import nn
-
-class BasicBlock(HybridBlock):
-    expansion = 1
-
-    def __init__(self, planes, strides=1, downsample=None):
-        super(BasicBlock, self).__init__()
-        self.conv1 = nn.Conv2D(planes, kernel_size=3, strides=strides,
-                               padding=1, use_bias=False)
-        self.bn1 = nn.BatchNorm()
-        self.relu1 = nn.Activation('relu')
-        self.conv2 = nn.Conv2D(planes, kernel_size=3, strides=1,
-                               padding=1, use_bias=False)
-        self.bn2 = nn.BatchNorm()
-        self.relu2 = nn.Activation('relu')
-        self.downsample = downsample
-        self.strides = strides
-
-    def forward(self, x):
-        residual = x
-
-        out = self.conv1(x)
-        out = self.bn1(out)
-        out = self.relu1(out)
-
-        out = self.conv2(out)
-        out = self.bn2(out)
-
-        if self.downsample is not None:
-            residual = self.downsample(x)
-
-        out = self.relu2(out + residual)
-
-        return out
-
-class Bottleneck(HybridBlock):
-    expansion = 4
-
-    def __init__(self, planes, strides=1, downsample=None):
-        super(Bottleneck, self).__init__()
-        self.conv1 = nn.Conv2D(planes, kernel_size=1, use_bias=False)
-        self.bn1 = nn.BatchNorm()
-        self.relu1 = nn.Activation('relu')
-        self.conv2 = nn.Conv2D(planes, kernel_size=3, strides=strides,
-                               padding=1, use_bias=False)
-        self.bn2 = nn.BatchNorm()
-        self.relu2 = nn.Activation('relu')
-        self.conv3 = nn.Conv2D(planes * self.expansion, kernel_size=1, use_bias=False)
-        self.bn3 = nn.BatchNorm()
-        self.relu3 = nn.Activation('relu')
-        self.downsample = downsample
-        self.strides = strides
-
-    def forward(self, x):
-        residual = x
-
-        out = self.conv1(x)
-        out = self.bn1(out)
-        out = self.relu1(out)
-
-        out = self.conv2(out)
-        out = self.bn2(out)
-        out = self.relu2(out)
-
-        out = self.conv3(out)
-        out = self.bn3(out)
-
-        if self.downsample is not None:
-            residual = self.downsample(x)
-
-        out = self.relu3(out + residual)
-
-        return out
 
 class PoseResNet(HybridBlock):
 
@@ -110,7 +38,8 @@ class PoseResNet(HybridBlock):
             for layer in ['features']:
                 self.resnet.add(getattr(base_network, layer))
         else:
-            for layer in ['conv1', 'bn1', 'relu', 'maxpool', 'layer1', 'layer2', 'layer3', 'layer4']:
+            for layer in ['conv1', 'bn1', 'relu', 'maxpool',
+                          'layer1', 'layer2', 'layer3', 'layer4']:
                 self.resnet.add(getattr(base_network, layer))
 
         self.deconv_with_bias = deconv_with_bias
@@ -169,7 +98,7 @@ class PoseResNet(HybridBlock):
 
         return layer
 
-    def forward(self, x):
+    def hybrid_forward(self, F, x):
         x = self.resnet(x)
 
         x = self.deconv_layers(x)
