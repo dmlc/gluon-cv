@@ -90,7 +90,7 @@ class Bottleneck(HybridBlock):
 
 class PoseResNet(HybridBlock):
 
-    def __init__(self, block, layers, num_joints,
+    def __init__(self, block, layers, num_joints=17,
                  num_deconv_layers=3,
                  num_deconv_filters=(256, 256, 256),
                  num_deconv_kernels=(4, 4, 4),
