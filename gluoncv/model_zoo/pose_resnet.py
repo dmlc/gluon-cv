@@ -4,6 +4,9 @@
 # Written by Bin Xiao (Bin.Xiao@microsoft.com)
 # ------------------------------------------------------------------------------
 
+# coding: utf-8
+# pylint: disable=missing-docstring
+
 from __future__ import division
 
 __all__ = ['get_pose_resnet', 'pose_resnet18', 'pose_resnet34',
@@ -95,7 +98,7 @@ class PoseResNet(HybridBlock):
         self.inplanes = 64
         self.deconv_with_bias = deconv_with_bias
 
-        super(PoseResNet, self).__init__()
+        super(PoseResNet, self).__init__(**kwargs)
         self.conv1 = nn.Conv2D(64, kernel_size=7, strides=2, padding=3,
                                use_bias=False)
         self.bn1 = nn.BatchNorm()
@@ -135,12 +138,12 @@ class PoseResNet(HybridBlock):
         with layer.name_scope():
             layer.add(block(planes, strides, downsample))
             self.inplanes = planes * block.expansion
-            for i in range(1, blocks):
+            for _ in range(1, blocks):
                 layer.add(block(planes))
 
         return layer
 
-    def _get_deconv_cfg(self, deconv_kernel, index):
+    def _get_deconv_cfg(self, deconv_kernel):
         if deconv_kernel == 4:
             padding = 1
             output_padding = 0
@@ -290,4 +293,3 @@ def pose_resnet152(**kwargs):
         Location for keeping the model parameters.
     """
     return get_pose_resnet(152, **kwargs)
-
