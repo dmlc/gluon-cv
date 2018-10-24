@@ -183,8 +183,8 @@ class COCOKeyPoints(VisionDataset):
             if not self._skip_empty:
                 # dummy invalid labels if no valid objects are found
                 valid_objs.append({
-                    'center': -1,
-                    'scale': 0,
+                    'center': np.array([-1., -1.]),
+                    'scale': np.array([0., 0.]),
                     'joints_3d': np.zeros((self.num_joints, 3, 2), dtype=np.float32)
                 })
         return valid_objs
