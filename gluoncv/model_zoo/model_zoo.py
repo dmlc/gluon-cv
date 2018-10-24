@@ -13,6 +13,7 @@ from .cifarresnext import *
 from .cifarwideresnet import *
 from .resnetv1b import *
 from .resnext import *
+from .pose_resnet import *
 from .senet import *
 from .se_resnet import *
 from .yolo import *
@@ -154,6 +155,11 @@ _models = {
     'nasnet_5_1538': nasnet_5_1538,
     'nasnet_7_1920': nasnet_7_1920,
     'nasnet_6_4032': nasnet_6_4032,
+    'pose_resnet18': pose_resnet18,
+    'pose_resnet34': pose_resnet34,
+    'pose_resnet50': pose_resnet50,
+    'pose_resnet101': pose_resnet101,
+    'pose_resnet152': pose_resnet152,
     }
 
 def get_model(name, **kwargs):

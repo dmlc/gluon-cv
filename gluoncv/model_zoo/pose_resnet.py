@@ -6,32 +6,28 @@
 
 from __future__ import division
 
-__all__ = ['get_pose_resnet']
-
-import torch
-import torch.nn as nn
+__all__ = ['get_pose_resnet', 'pose_resnet18', 'pose_resnet34',
+           'pose_resnet50', 'pose_resnet101', 'pose_resnet152']
 
 from mxnet.context import cpu
 from mxnet.gluon.block import HybridBlock
 from mxnet.gluon import nn
 
-def _conv3x3(out_planes, stride=1):
-    return nn.Conv2D(out_planes, kernel_size=3, stride=stride,
-                     padding=1, bias=False)
-
 class BasicBlock(HybridBlock):
     expansion = 1
 
-    def __init__(self, planes, stride=1, downsample=None):
+    def __init__(self, planes, strides=1, downsample=None):
         super(BasicBlock, self).__init__()
-        self.conv1 = _conv3x3(planes, stride)
+        self.conv1 = nn.Conv2D(planes, kernel_size=3, strides=strides,
+                               padding=1, use_bias=False)
         self.bn1 = nn.BatchNorm()
         self.relu1 = nn.Activation('relu')
-        self.conv2 = _conv3x3(planes, planes)
+        self.conv2 = nn.Conv2D(planes, kernel_size=3, strides=1,
+                               padding=1, use_bias=False)
         self.bn2 = nn.BatchNorm()
         self.relu2 = nn.Activation('relu')
         self.downsample = downsample
-        self.stride = stride
+        self.strides = strides
 
     def forward(self, x):
         residual = x
@@ -53,20 +49,20 @@ class BasicBlock(HybridBlock):
 class Bottleneck(HybridBlock):
     expansion = 4
 
-    def __init__(self, planes, stride=1, downsample=None):
+    def __init__(self, planes, strides=1, downsample=None):
         super(Bottleneck, self).__init__()
-        self.conv1 = nn.Conv2D(planes, kernel_size=1, bias=False)
+        self.conv1 = nn.Conv2D(planes, kernel_size=1, use_bias=False)
         self.bn1 = nn.BatchNorm()
         self.relu1 = nn.Activation('relu')
-        self.conv2 = nn.Conv2D(planes, kernel_size=3, stride=stride,
-                               padding=1, bias=False)
+        self.conv2 = nn.Conv2D(planes, kernel_size=3, strides=strides,
+                               padding=1, use_bias=False)
         self.bn2 = nn.BatchNorm()
         self.relu2 = nn.Activation('relu')
-        self.conv3 = nn.Conv2D(planes * self.expansion, kernel_size=1, bias=False)
+        self.conv3 = nn.Conv2D(planes * self.expansion, kernel_size=1, use_bias=False)
         self.bn3 = nn.BatchNorm()
         self.relu3 = nn.Activation('relu')
         self.downsample = downsample
-        self.stride = stride
+        self.strides = strides
 
     def forward(self, x):
         residual = x
@@ -91,22 +87,27 @@ class Bottleneck(HybridBlock):
 
 class PoseResNet(HybridBlock):
 
-    def __init__(self, block, layers,
-                 num_deconv_layers, num_deconv_filters, num_deconv_kernels,
-                 final_conv_kernel, deconv_with_bias, num_joints, **kwargs):
+    def __init__(self, block, layers, num_joints,
+                 num_deconv_layers=3,
+                 num_deconv_filters=(256, 256, 256),
+                 num_deconv_kernels=(4, 4, 4),
+                 final_conv_kernel=1, deconv_with_bias=False, **kwargs):
         self.inplanes = 64
         self.deconv_with_bias = deconv_with_bias
 
         super(PoseResNet, self).__init__()
-        self.conv1 = nn.Conv2D(3, 64, kernel_size=7, stride=2, padding=3,
-                               bias=False)
+        self.conv1 = nn.Conv2D(64, kernel_size=7, strides=2, padding=3,
+                               use_bias=False)
         self.bn1 = nn.BatchNorm()
         self.relu = nn.Activation('relu')
-        self.maxpool = nn.MaxPool2D(kernel_size=3, stride=2, padding=1)
-        self.layer1 = self._make_layer(block, 64, layers[0], 1)
-        self.layer2 = self._make_layer(block, 128, layers[1], stride=2, 2)
-        self.layer3 = self._make_layer(block, 256, layers[2], stride=2, 3)
-        self.layer4 = self._make_layer(block, 512, layers[3], stride=2, 4)
+        self.maxpool = nn.MaxPool2D(pool_size=3, strides=2, padding=1)
+        self.layer1 = self._make_layer(block, 64, layers[0], stage_index=1)
+        self.layer2 = self._make_layer(block, 128, layers[1],
+                                       stage_index=2, strides=2)
+        self.layer3 = self._make_layer(block, 256, layers[2],
+                                       stage_index=3, strides=2)
+        self.layer4 = self._make_layer(block, 512, layers[3],
+                                       stage_index=4, strides=2)
 
         # used for deconv layers
         self.deconv_layers = self._make_deconv_layer(
@@ -116,26 +117,26 @@ class PoseResNet(HybridBlock):
         )
 
         self.final_layer = nn.Conv2D(
-            out_channels=num_joints,
+            channels=num_joints,
             kernel_size=final_conv_kernel,
-            stride=1,
+            strides=1,
             padding=1 if final_conv_kernel == 3 else 0
         )
 
-    def _make_layer(self, block, planes, blocks, stride=1, stage_index):
+    def _make_layer(self, block, planes, blocks, stage_index, strides=1):
         downsample = None
-        if stride != 1 or self.inplanes != planes * block.expansion:
+        if strides != 1 or self.inplanes != planes * block.expansion:
             downsample = nn.HybridSequential(prefix='')
             downsample.add(nn.Conv2D(planes * block.expansion,
-                                     kernel_size=1, stride=stride, bias=False))
+                                     kernel_size=1, strides=strides, use_bias=False))
             downsample.add(nn.BatchNorm())
 
         layer = nn.HybridSequential(prefix='stage%d_'%stage_index)
         with layer.name_scope():
-            layers.add(block(planes, stride, downsample))
+            layer.add(block(planes, strides, downsample))
             self.inplanes = planes * block.expansion
             for i in range(1, blocks):
-                layers.add(block(planes))
+                layer.add(block(planes))
 
         return layer
 
@@ -165,16 +166,16 @@ class PoseResNet(HybridBlock):
                     self._get_deconv_cfg(num_kernels[i], i)
 
                 planes = num_filters[i]
-                layers.add(
+                layer.add(
                     nn.Conv2DTranspose(
-                        out_channels=planes,
+                        channels=planes,
                         kernel_size=kernel,
-                        stride=2,
+                        strides=2,
                         padding=padding,
                         output_padding=output_padding,
                         use_bias=self.deconv_with_bias))
-                layers.add(nn.BatchNorm())
-                layers.add(nn.Activation('relu'))
+                layer.add(nn.BatchNorm())
+                layer.add(nn.Activation('relu'))
                 self.inplanes = planes
 
         return layer
@@ -195,39 +196,6 @@ class PoseResNet(HybridBlock):
 
         return x
 
-    def init_weights(self, pretrained=''):
-        if os.path.isfile(pretrained):
-            logger.info('=> init deconv weights from normal distribution')
-            for name, m in self.deconv_layers.named_modules():
-                if isinstance(m, nn.Conv2DTranspose):
-                    logger.info('=> init {}.weight as normal(0, 0.001)'.format(name))
-                    logger.info('=> init {}.bias as 0'.format(name))
-                    nn.init.normal_(m.weight, std=0.001)
-                    if self.deconv_with_bias:
-                        nn.init.constant_(m.bias, 0)
-                elif isinstance(m, nn.BatchNorm):
-                    logger.info('=> init {}.weight as 1'.format(name))
-                    logger.info('=> init {}.bias as 0'.format(name))
-                    nn.init.constant_(m.weight, 1)
-                    nn.init.constant_(m.bias, 0)
-            logger.info('=> init final conv weights from normal distribution')
-            for m in self.final_layer.modules():
-                if isinstance(m, nn.Conv2D):
-                    # nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
-                    logger.info('=> init {}.weight as normal(0, 0.001)'.format(name))
-                    logger.info('=> init {}.bias as 0'.format(name))
-                    nn.init.normal_(m.weight, std=0.001)
-                    nn.init.constant_(m.bias, 0)
-
-            pretrained_state_dict = torch.load(pretrained)
-            logger.info('=> loading pretrained model {}'.format(pretrained))
-            self.load_state_dict(pretrained_state_dict, strict=False)
-        else:
-            logger.error('=> imagenet pretrained model dose not exist')
-            logger.error('=> please download it first')
-            raise ValueError('imagenet pretrained model does not exist')
-
-
 resnet_spec = {18: (BasicBlock, [2, 2, 2, 2]),
                34: (BasicBlock, [3, 4, 6, 3]),
                50: (Bottleneck, [3, 4, 6, 3]),
@@ -243,12 +211,83 @@ def get_pose_resnet(num_layers, pretrained=False, ctx=cpu(),
 
     if pretrained:
         from .model_store import get_model_file
-        net.load_parameters(get_model_file('pose_resnet%d_v%d'%(num_layers, version),
+        net.load_parameters(get_model_file('pose_resnet%d'%(num_layers),
                                            tag=pretrained, root=root), ctx=ctx)
-        from ..data import ImageNet1kAttr
-        attrib = ImageNet1kAttr()
-        net.synset = attrib.synset
-        net.classes = attrib.classes
-        net.classes_long = attrib.classes_long
 
-    return model
+    return net
+
+def pose_resnet18(**kwargs):
+    r"""ResNet-18 model from `"Simple Baselines for Human Pose Estimation and Tracking"
+    <https://arxiv.org/abs/1804.06208>`_ paper.
+    Parameters
+    ----------
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '$MXNET_HOME/models'
+        Location for keeping the model parameters.
+    """
+    return get_pose_resnet(18, **kwargs)
+
+def pose_resnet34(**kwargs):
+    r"""ResNet-18 model from `"Simple Baselines for Human Pose Estimation and Tracking"
+    <https://arxiv.org/abs/1804.06208>`_ paper.
+    Parameters
+    ----------
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '$MXNET_HOME/models'
+        Location for keeping the model parameters.
+    """
+    return get_pose_resnet(34, **kwargs)
+
+def pose_resnet50(**kwargs):
+    r"""ResNet-18 model from `"Simple Baselines for Human Pose Estimation and Tracking"
+    <https://arxiv.org/abs/1804.06208>`_ paper.
+    Parameters
+    ----------
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '$MXNET_HOME/models'
+        Location for keeping the model parameters.
+    """
+    return get_pose_resnet(50, **kwargs)
+
+def pose_resnet101(**kwargs):
+    r"""ResNet-18 model from `"Simple Baselines for Human Pose Estimation and Tracking"
+    <https://arxiv.org/abs/1804.06208>`_ paper.
+    Parameters
+    ----------
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '$MXNET_HOME/models'
+        Location for keeping the model parameters.
+    """
+    return get_pose_resnet(101, **kwargs)
+
+def pose_resnet152(**kwargs):
+    r"""ResNet-18 model from `"Simple Baselines for Human Pose Estimation and Tracking"
+    <https://arxiv.org/abs/1804.06208>`_ paper.
+    Parameters
+    ----------
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '$MXNET_HOME/models'
+        Location for keeping the model parameters.
+    """
+    return get_pose_resnet(152, **kwargs)
+

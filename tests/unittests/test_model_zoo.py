@@ -117,6 +117,24 @@ def test_imagenet_models():
     models = ['nasnet_5_1538', 'nasnet_7_1920', 'nasnet_6_4032']
     _test_model_list(models, ctx, x)
 
+@try_gpu(0)
+def test_pose_resnet_models():
+    ctx = mx.context.current_context()
+    models = ['pose_resnet18', 'pose_resnet34', 'pose_resnet50',
+              'pose_resnet101', 'pose_resnet152']
+
+    # 192x256
+    x = mx.random.uniform(shape=(2, 3, 192, 256), ctx=ctx)
+    _test_model_list(models, ctx, x)
+
+    # 256x256
+    x = mx.random.uniform(shape=(2, 3, 256, 256), ctx=ctx)
+    _test_model_list(models, ctx, x)
+
+    # 288x384
+    x = mx.random.uniform(shape=(2, 3, 288, 384), ctx=ctx)
+    _test_model_list(models, ctx, x)
+
 def test_imagenet_models_bn_global_stats():
     models = ['resnet18_v1b', 'resnet34_v1b', 'resnet50_v1b',
               'resnet101_v1b', 'resnet152_v1b']
