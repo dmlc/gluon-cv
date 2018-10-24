@@ -1,4 +1,4 @@
-"""8. Run an object detection model on your webcam
+"""9. Run an object detection model on your webcam
 ==================================================
 
 This article will shows how to play with pre-trained object detection models by running
