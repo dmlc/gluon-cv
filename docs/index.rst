@@ -16,32 +16,8 @@ GluonCV features:
 Supported Applications
 ----------------------
 
-.. image:: /_static/image-classification.png
-  :height: 200px
-  :target: model_zoo/classification.html
-
-.. image:: /_static/object-detection.png
-  :height: 200px
-  :target: model_zoo/detection.html
-
-.. image:: /_static/semantic-segmentation.png
-  :height: 200px
-  :target: model_zoo/segmentation.html#semantic-segmentation
-
-.. image:: /_static/instance-segmentation.png
-  :height: 200px
-  :target: model_zoo/segmentation.html#instance-segmentation
-
-GluonCV tutorials assume users have basic knowledges about deep learning and
-computer vision.
-Otherwise, please refer to our introductory deep learning course
-`MXNet-the-Straight-Dope <http://gluon.mxnet.io/>`_.
-
-.. note::
-
-   The source codes are available at `Github <https://github.com/dmlc/gluon-cv>`_.
-   This project is at an early stage. Please expect frequent updates.
-   We welcome feedback and contributions.
+.. raw:: html
+   :file: applications.html
 
 Installation
 ------------------
@@ -51,11 +27,15 @@ Install MXNet
 
 GluonCV depends on the recent version of MXNet. The easiest way to install MXNet
 is through `pip <https://pip.pypa.io/en/stable/installing/>`_. The following
-command installs a nightly build CPU version of MXNet.
+command installs CPU version of MXNet.
 
 .. code-block:: bash
 
-   pip install --pre mxnet
+   # the oldest stable version of mxnet required is 1.3.0
+   pip install mxnet>=1.3.0 --upgrade
+
+   # you can install nightly build of mxnet to access up-to-date features
+   pip install --pre --upgrade mxnet
 
 .. note::
 
@@ -74,7 +54,7 @@ The easiest way to install GluonCV is through `pip <https://pip.pypa.io/en/stabl
 
 .. code-block:: bash
 
- pip install gluoncv
+ pip install gluoncv --upgrade
 
  # if you are eager to try new features, try nightly build instead
 
@@ -103,7 +83,9 @@ A Quick Example
    :maxdepth: 2
    :caption: Model Zoo
 
-   model_zoo/index
+   model_zoo/classification
+   model_zoo/detection
+   model_zoo/segmentation
 
 .. toctree::
    :maxdepth: 2

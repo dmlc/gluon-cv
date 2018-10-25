@@ -349,7 +349,8 @@ class YOLOV3(gluon.HybridBlock):
             x = self.transitions[i](x)
             # upsample feature map reverse to shallow layers
             upsample = _upsample(x, stride=2)
-            x = F.concat(upsample, routes[::-1][i + 1], dim=1)
+            route_now = routes[::-1][i + 1]
+            x = F.concat(F.slice_like(upsample, route_now * 0, axes=(2, 3)), route_now, dim=1)
 
         if autograd.is_training():
             # during training, the network behaves differently since we don't need detection results
@@ -430,7 +431,7 @@ def get_yolov3(name, stages, filters, anchors, strides, classes,
     ----------
     name : str or None
         Model name, if `None` is used, you must specify `features` to be a `HybridBlock`.
-    features : iterable of str or `HybridBlock`
+    stages : iterable of str or `HybridBlock`
         List of network internal output names, in order to specify which layers are
         used for predicting bbox values.
         If `name` is `None`, `features` must be a `HybridBlock` which generate mutliple
@@ -454,9 +455,10 @@ def get_yolov3(name, stages, filters, anchors, strides, classes,
     dataset : str
         Name of dataset. This is used to identify model name because models trained on
         differnet datasets are going to be very different.
-    pretrained : bool, optional, default is False
-        Load pretrained weights.
-    pretrained_base : bool, optional, default is True
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True
         Load pretrained base network, the extra layers are randomized. Note that
         if pretrained is `Ture`, this has no effect.
     ctx : mxnet.Context
@@ -473,7 +475,7 @@ def get_yolov3(name, stages, filters, anchors, strides, classes,
     if pretrained:
         from ..model_store import get_model_file
         full_name = '_'.join(('yolo3', name, dataset))
-        net.load_params(get_model_file(full_name, root=root), ctx=ctx)
+        net.load_parameters(get_model_file(full_name, tag=pretrained, root=root), ctx=ctx)
     return net
 
 def yolo3_darknet53_voc(pretrained_base=True, pretrained=False, num_sync_bn_devices=-1, **kwargs):
@@ -481,10 +483,12 @@ def yolo3_darknet53_voc(pretrained_base=True, pretrained=False, num_sync_bn_devi
 
     Parameters
     ----------
-    pretrained_base : boolean
-        Whether fetch and load pretrained weights for base network.
-    pretrained : boolean
-        Whether fetch and load pretrained weights for the entire network.
+    pretrained_base : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     num_sync_bn_devices : int
         Number of devices for training. If `num_sync_bn_devices < 2`, SyncBatchNorm is disabled.
 
@@ -496,7 +500,8 @@ def yolo3_darknet53_voc(pretrained_base=True, pretrained=False, num_sync_bn_devi
     """
     from ...data import VOCDetection
     pretrained_base = False if pretrained else pretrained_base
-    base_net = darknet53(pretrained=pretrained_base, num_sync_bn_devices=num_sync_bn_devices)
+    base_net = darknet53(
+        pretrained=pretrained_base, num_sync_bn_devices=num_sync_bn_devices, **kwargs)
     stages = [base_net.features[:15], base_net.features[15:24], base_net.features[24:]]
     anchors = [[10, 13, 16, 30, 33, 23], [30, 61, 62, 45, 59, 119], [116, 90, 156, 198, 373, 326]]
     strides = [8, 16, 32]
@@ -512,8 +517,9 @@ def yolo3_darknet53_coco(pretrained_base=True, pretrained=False, num_sync_bn_dev
     ----------
     pretrained_base : boolean
         Whether fetch and load pretrained weights for base network.
-    pretrained : boolean
-        Whether fetch and load pretrained weights for the entire network.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     num_sync_bn_devices : int, default is -1
         Number of devices for training. If `num_sync_bn_devices < 2`, SyncBatchNorm is disabled.
 
@@ -524,7 +530,8 @@ def yolo3_darknet53_coco(pretrained_base=True, pretrained=False, num_sync_bn_dev
     """
     from ...data import COCODetection
     pretrained_base = False if pretrained else pretrained_base
-    base_net = darknet53(pretrained=pretrained_base, num_sync_bn_devices=num_sync_bn_devices)
+    base_net = darknet53(
+        pretrained=pretrained_base, num_sync_bn_devices=num_sync_bn_devices, **kwargs)
     stages = [base_net.features[:15], base_net.features[15:24], base_net.features[24:]]
     anchors = [[10, 13, 16, 30, 33, 23], [30, 61, 62, 45, 59, 119], [116, 90, 156, 198, 373, 326]]
     strides = [8, 16, 32]
@@ -555,7 +562,8 @@ def yolo3_darknet53_custom(classes, transfer=None, pretrained_base=True, pretrai
         Fully hybrid yolo3 network.
     """
     if transfer is None:
-        base_net = darknet53(pretrained=pretrained_base, num_sync_bn_devices=num_sync_bn_devices)
+        base_net = darknet53(
+            pretrained=pretrained_base, num_sync_bn_devices=num_sync_bn_devices, **kwargs)
         stages = [base_net.features[:15], base_net.features[15:24], base_net.features[24:]]
         anchors = [
             [10, 13, 16, 30, 33, 23],

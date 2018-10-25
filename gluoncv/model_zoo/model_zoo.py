@@ -91,6 +91,9 @@ _models = {
     'faster_rcnn_resnet50_v1b_voc': faster_rcnn_resnet50_v1b_voc,
     'faster_rcnn_resnet50_v1b_coco': faster_rcnn_resnet50_v1b_coco,
     'faster_rcnn_resnet50_v1b_custom': faster_rcnn_resnet50_v1b_custom,
+    'faster_rcnn_resnet101_v1d_voc': faster_rcnn_resnet101_v1d_voc,
+    'faster_rcnn_resnet101_v1d_coco': faster_rcnn_resnet101_v1d_coco,
+    'faster_rcnn_resnet101_v1d_custom': faster_rcnn_resnet101_v1d_custom,
     'mask_rcnn_resnet50_v1b_coco': mask_rcnn_resnet50_v1b_coco,
     'cifar_resnet20_v1': cifar_resnet20_v1,
     'cifar_resnet56_v1': cifar_resnet56_v1,
@@ -112,8 +115,11 @@ _models = {
     'psp_resnet101_voc': get_psp_resnet101_voc,
     'psp_resnet50_ade': get_psp_resnet50_ade,
     'psp_resnet101_ade': get_psp_resnet101_ade,
+    'psp_resnet101_citys': get_psp_resnet101_citys,
     'deeplab_resnet101_coco': get_deeplab_resnet101_coco,
     'deeplab_resnet101_voc': get_deeplab_resnet101_voc,
+    'deeplab_resnet152_coco': get_deeplab_resnet152_coco,
+    'deeplab_resnet152_voc': get_deeplab_resnet152_voc,
     'deeplab_resnet50_ade': get_deeplab_resnet50_ade,
     'deeplab_resnet101_ade': get_deeplab_resnet101_ade,
     'resnet18_v1b': resnet18_v1b,
@@ -139,8 +145,6 @@ _models = {
     'se_resnext50_32x4d': se_resnext50_32x4d,
     'se_resnext101_32x4d': se_resnext101_32x4d,
     'se_resnext101_64x4d': se_resnext101_64x4d,
-    'senet_52': senet_52,
-    'senet_103': senet_103,
     'senet_154': senet_154,
     'darknet53': darknet53,
     'yolo3_darknet53_coco': yolo3_darknet53_coco,
@@ -159,8 +163,9 @@ def get_model(name, **kwargs):
     ----------
     name : str
         Name of the model.
-    pretrained : bool
-        Whether to load the pretrained weights for model.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     classes : int
         Number of classes for the output layer.
     ctx : Context, default CPU
@@ -175,7 +180,9 @@ def get_model(name, **kwargs):
     """
     name = name.lower()
     if name not in _models:
-        raise ValueError('%s' % ('\n\t'.join(sorted(_models.keys()))))
+        err_str = '"%s" is not among the following model list:\n\t' % (name)
+        err_str += '%s' % ('\n\t'.join(sorted(_models.keys())))
+        raise ValueError(err_str)
     net = _models[name](**kwargs)
     return net
 

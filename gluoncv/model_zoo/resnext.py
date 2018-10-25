@@ -187,8 +187,9 @@ def get_resnext(num_layers, cardinality=32, bottleneck_width=4, use_se=False,
         Number of groups
     bottleneck_width: int
         Width of bottleneck block
-    pretrained : bool, default False
-        Whether to load the pretrained weights for model.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
@@ -202,13 +203,18 @@ def get_resnext(num_layers, cardinality=32, bottleneck_width=4, use_se=False,
     if pretrained:
         from .model_store import get_model_file
         if not use_se:
-            net.load_params(get_model_file('resnext%d_%dx%dd'%(num_layers, cardinality,
-                                                               bottleneck_width),
-                                           root=root), ctx=ctx)
+            net.load_parameters(get_model_file('resnext%d_%dx%dd'%(num_layers, cardinality,
+                                                                   bottleneck_width),
+                                               tag=pretrained, root=root), ctx=ctx)
         else:
-            net.load_params(get_model_file('se_resnext%d_%dx%dd'%(num_layers, cardinality,
-                                                                  bottleneck_width),
-                                           root=root), ctx=ctx)
+            net.load_parameters(get_model_file('se_resnext%d_%dx%dd'%(num_layers, cardinality,
+                                                                      bottleneck_width),
+                                               tag=pretrained, root=root), ctx=ctx)
+        from ..data import ImageNet1kAttr
+        attrib = ImageNet1kAttr()
+        net.synset = attrib.synset
+        net.classes = attrib.classes
+        net.classes_long = attrib.classes_long
 
     return net
 
@@ -223,8 +229,9 @@ def resnext50_32x4d(**kwargs):
         Number of groups
     bottleneck_width: int
         Width of bottleneck block
-    pretrained : bool, default False
-        Whether to load the pretrained weights for model.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
@@ -243,8 +250,9 @@ def resnext101_32x4d(**kwargs):
         Number of groups
     bottleneck_width: int
         Width of bottleneck block
-    pretrained : bool, default False
-        Whether to load the pretrained weights for model.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
@@ -263,8 +271,9 @@ def resnext101_64x4d(**kwargs):
         Number of groups
     bottleneck_width: int
         Width of bottleneck block
-    pretrained : bool, default False
-        Whether to load the pretrained weights for model.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
@@ -283,8 +292,9 @@ def se_resnext50_32x4d(**kwargs):
         Number of groups
     bottleneck_width: int
         Width of bottleneck block
-    pretrained : bool, default False
-        Whether to load the pretrained weights for model.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
@@ -303,8 +313,9 @@ def se_resnext101_32x4d(**kwargs):
         Number of groups
     bottleneck_width: int
         Width of bottleneck block
-    pretrained : bool, default False
-        Whether to load the pretrained weights for model.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
@@ -323,8 +334,9 @@ def se_resnext101_64x4d(**kwargs):
         Number of groups
     bottleneck_width: int
         Width of bottleneck block
-    pretrained : bool, default False
-        Whether to load the pretrained weights for model.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'

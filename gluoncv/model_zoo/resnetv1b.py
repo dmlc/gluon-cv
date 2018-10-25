@@ -25,11 +25,12 @@ class BasicBlockV1b(HybridBlock):
         self.conv1 = nn.Conv2D(channels=planes, kernel_size=3, strides=strides,
                                padding=dilation, dilation=dilation, use_bias=False)
         self.bn1 = norm_layer(**norm_kwargs)
-        self.relu = nn.Activation('relu')
+        self.relu1 = nn.Activation('relu')
         self.conv2 = nn.Conv2D(channels=planes, kernel_size=3, strides=1,
                                padding=previous_dilation, dilation=previous_dilation,
                                use_bias=False)
         self.bn2 = norm_layer(**norm_kwargs)
+        self.relu2 = nn.Activation('relu')
         self.downsample = downsample
         self.strides = strides
 
@@ -38,7 +39,7 @@ class BasicBlockV1b(HybridBlock):
 
         out = self.conv1(x)
         out = self.bn1(out)
-        out = self.relu(out)
+        out = self.relu1(out)
 
         out = self.conv2(out)
         out = self.bn2(out)
@@ -47,7 +48,7 @@ class BasicBlockV1b(HybridBlock):
             residual = self.downsample(x)
 
         out = out + residual
-        out = self.relu(out)
+        out = self.relu2(out)
 
         return out
 
@@ -63,15 +64,17 @@ class BottleneckV1b(HybridBlock):
         self.conv1 = nn.Conv2D(channels=planes, kernel_size=1,
                                use_bias=False)
         self.bn1 = norm_layer(**norm_kwargs)
+        self.relu1 = nn.Activation('relu')
         self.conv2 = nn.Conv2D(channels=planes, kernel_size=3, strides=strides,
                                padding=dilation, dilation=dilation, use_bias=False)
         self.bn2 = norm_layer(**norm_kwargs)
+        self.relu2 = nn.Activation('relu')
         self.conv3 = nn.Conv2D(channels=planes * 4, kernel_size=1, use_bias=False)
         if not last_gamma:
             self.bn3 = norm_layer(**norm_kwargs)
         else:
             self.bn3 = norm_layer(gamma_initializer='zeros', **norm_kwargs)
-        self.relu = nn.Activation('relu')
+        self.relu3 = nn.Activation('relu')
         self.downsample = downsample
         self.dilation = dilation
         self.strides = strides
@@ -81,11 +84,11 @@ class BottleneckV1b(HybridBlock):
 
         out = self.conv1(x)
         out = self.bn1(out)
-        out = self.relu(out)
+        out = self.relu1(out)
 
         out = self.conv2(out)
         out = self.bn2(out)
-        out = self.relu(out)
+        out = self.relu2(out)
 
         out = self.conv3(out)
         out = self.bn3(out)
@@ -94,7 +97,7 @@ class BottleneckV1b(HybridBlock):
             residual = self.downsample(x)
 
         out = out + residual
-        out = self.relu(out)
+        out = self.relu3(out)
 
         return out
 
@@ -139,9 +142,10 @@ class ResNetV1b(HybridBlock):
     # pylint: disable=unused-variable
     def __init__(self, block, layers, classes=1000, dilated=False, norm_layer=BatchNorm,
                  norm_kwargs={}, last_gamma=False, deep_stem=False, stem_width=32,
-                 avg_down=False, final_drop=0.0, use_global_stats=False, **kwargs):
+                 avg_down=False, final_drop=0.0, use_global_stats=False,
+                 name_prefix='', **kwargs):
         self.inplanes = stem_width*2 if deep_stem else 64
-        super(ResNetV1b, self).__init__()
+        super(ResNetV1b, self).__init__(prefix=name_prefix)
         self.norm_kwargs = norm_kwargs
         if use_global_stats:
             self.norm_kwargs['use_global_stats'] = True
@@ -197,9 +201,11 @@ class ResNetV1b(HybridBlock):
             with downsample.name_scope():
                 if avg_down:
                     if dilation == 1:
-                        downsample.add(nn.AvgPool2D(pool_size=strides, strides=strides))
+                        downsample.add(nn.AvgPool2D(pool_size=strides, strides=strides,
+                                                    ceil_mode=True, count_include_pad=False))
                     else:
-                        downsample.add(nn.AvgPool2D(pool_size=1, strides=1))
+                        downsample.add(nn.AvgPool2D(pool_size=1, strides=1,
+                                                    ceil_mode=True, count_include_pad=False))
                     downsample.add(nn.Conv2D(channels=planes * block.expansion, kernel_size=1,
                                              strides=1, use_bias=False))
                     downsample.add(norm_layer(**self.norm_kwargs))
@@ -256,8 +262,9 @@ def resnet18_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
 
     Parameters
     ----------
-    pretrained : bool, default False
-        Whether to load the pretrained weights for model.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
     ctx : Context, default CPU
@@ -273,11 +280,16 @@ def resnet18_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
         Whether forcing BatchNorm to use global statistics instead of minibatch statistics;
         optionally set to True if finetuning using ImageNet classification pretrained models.
     """
-    model = ResNetV1b(BasicBlockV1b, [2, 2, 2, 2], **kwargs)
+    model = ResNetV1b(BasicBlockV1b, [2, 2, 2, 2], name_prefix='resnetv1b_', **kwargs)
     if pretrained:
         from .model_store import get_model_file
-        model.load_params(get_model_file('resnet%d_v%db'%(18, 1),
-                                         root=root), ctx=ctx)
+        model.load_parameters(get_model_file('resnet%d_v%db'%(18, 1),
+                                             tag=pretrained, root=root), ctx=ctx)
+        from ..data import ImageNet1kAttr
+        attrib = ImageNet1kAttr()
+        model.synset = attrib.synset
+        model.classes = attrib.classes
+        model.classes_long = attrib.classes_long
     return model
 
 
@@ -286,8 +298,9 @@ def resnet34_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
 
     Parameters
     ----------
-    pretrained : bool, default False
-        Whether to load the pretrained weights for model.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
     ctx : Context, default CPU
@@ -302,11 +315,16 @@ def resnet34_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
         Whether forcing BatchNorm to use global statistics instead of minibatch statistics;
         optionally set to True if finetuning using ImageNet classification pretrained models.
     """
-    model = ResNetV1b(BasicBlockV1b, [3, 4, 6, 3], **kwargs)
+    model = ResNetV1b(BasicBlockV1b, [3, 4, 6, 3], name_prefix='resnetv1b_', **kwargs)
     if pretrained:
         from .model_store import get_model_file
-        model.load_params(get_model_file('resnet%d_v%db'%(34, 1),
-                                         root=root), ctx=ctx)
+        model.load_parameters(get_model_file('resnet%d_v%db'%(34, 1),
+                                             tag=pretrained, root=root), ctx=ctx)
+        from ..data import ImageNet1kAttr
+        attrib = ImageNet1kAttr()
+        model.synset = attrib.synset
+        model.classes = attrib.classes
+        model.classes_long = attrib.classes_long
     return model
 
 
@@ -315,8 +333,9 @@ def resnet50_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
 
     Parameters
     ----------
-    pretrained : bool, default False
-        Whether to load the pretrained weights for model.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
     ctx : Context, default CPU
@@ -331,11 +350,16 @@ def resnet50_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
         Whether forcing BatchNorm to use global statistics instead of minibatch statistics;
         optionally set to True if finetuning using ImageNet classification pretrained models.
     """
-    model = ResNetV1b(BottleneckV1b, [3, 4, 6, 3], **kwargs)
+    model = ResNetV1b(BottleneckV1b, [3, 4, 6, 3], name_prefix='resnetv1b_', **kwargs)
     if pretrained:
         from .model_store import get_model_file
-        model.load_params(get_model_file('resnet%d_v%db'%(50, 1),
-                                         root=root), ctx=ctx)
+        model.load_parameters(get_model_file('resnet%d_v%db'%(50, 1),
+                                             tag=pretrained, root=root), ctx=ctx)
+        from ..data import ImageNet1kAttr
+        attrib = ImageNet1kAttr()
+        model.synset = attrib.synset
+        model.classes = attrib.classes
+        model.classes_long = attrib.classes_long
     return model
 
 
@@ -344,8 +368,9 @@ def resnet101_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
 
     Parameters
     ----------
-    pretrained : bool, default False
-        Whether to load the pretrained weights for model.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
     ctx : Context, default CPU
@@ -360,11 +385,16 @@ def resnet101_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
         Whether forcing BatchNorm to use global statistics instead of minibatch statistics;
         optionally set to True if finetuning using ImageNet classification pretrained models.
     """
-    model = ResNetV1b(BottleneckV1b, [3, 4, 23, 3], **kwargs)
+    model = ResNetV1b(BottleneckV1b, [3, 4, 23, 3], name_prefix='resnetv1b_', **kwargs)
     if pretrained:
         from .model_store import get_model_file
-        model.load_params(get_model_file('resnet%d_v%db'%(101, 1),
-                                         root=root), ctx=ctx)
+        model.load_parameters(get_model_file('resnet%d_v%db'%(101, 1),
+                                             tag=pretrained, root=root), ctx=ctx)
+        from ..data import ImageNet1kAttr
+        attrib = ImageNet1kAttr()
+        model.synset = attrib.synset
+        model.classes = attrib.classes
+        model.classes_long = attrib.classes_long
     return model
 
 
@@ -373,8 +403,9 @@ def resnet152_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
 
     Parameters
     ----------
-    pretrained : bool, default False
-        Whether to load the pretrained weights for model.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
     ctx : Context, default CPU
@@ -389,11 +420,16 @@ def resnet152_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
         Whether forcing BatchNorm to use global statistics instead of minibatch statistics;
         optionally set to True if finetuning using ImageNet classification pretrained models.
     """
-    model = ResNetV1b(BottleneckV1b, [3, 8, 36, 3], **kwargs)
+    model = ResNetV1b(BottleneckV1b, [3, 8, 36, 3], name_prefix='resnetv1b_', **kwargs)
     if pretrained:
         from .model_store import get_model_file
-        model.load_params(get_model_file('resnet%d_v%db'%(152, 1),
-                                         root=root), ctx=ctx)
+        model.load_parameters(get_model_file('resnet%d_v%db'%(152, 1),
+                                             tag=pretrained, root=root), ctx=ctx)
+        from ..data import ImageNet1kAttr
+        attrib = ImageNet1kAttr()
+        model.synset = attrib.synset
+        model.classes = attrib.classes
+        model.classes_long = attrib.classes_long
     return model
 
 def resnet50_v1c(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
@@ -401,8 +437,9 @@ def resnet50_v1c(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
 
     Parameters
     ----------
-    pretrained : bool, default False
-        Whether to load the pretrained weights for model.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
     ctx : Context, default CPU
@@ -412,11 +449,17 @@ def resnet50_v1c(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
     norm_layer : object
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.norm_layer`;
     """
-    model = ResNetV1b(BottleneckV1b, [3, 4, 6, 3], deep_stem=True, **kwargs)
+    model = ResNetV1b(BottleneckV1b, [3, 4, 6, 3], deep_stem=True,
+                      name_prefix='resnetv1c_', **kwargs)
     if pretrained:
         from .model_store import get_model_file
-        model.load_params(get_model_file('resnet%d_v%dc'%(50, 1),
-                                         root=root), ctx=ctx)
+        model.load_parameters(get_model_file('resnet%d_v%dc'%(50, 1),
+                                             tag=pretrained, root=root), ctx=ctx)
+        from ..data import ImageNet1kAttr
+        attrib = ImageNet1kAttr()
+        model.synset = attrib.synset
+        model.classes = attrib.classes
+        model.classes_long = attrib.classes_long
     return model
 
 
@@ -425,8 +468,9 @@ def resnet101_v1c(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
 
     Parameters
     ----------
-    pretrained : bool, default False
-        Whether to load the pretrained weights for model.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
     ctx : Context, default CPU
@@ -436,11 +480,17 @@ def resnet101_v1c(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
     norm_layer : object
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.norm_layer`;
     """
-    model = ResNetV1b(BottleneckV1b, [3, 4, 23, 3], deep_stem=True, **kwargs)
+    model = ResNetV1b(BottleneckV1b, [3, 4, 23, 3], deep_stem=True,
+                      name_prefix='resnetv1c_', **kwargs)
     if pretrained:
         from .model_store import get_model_file
-        model.load_params(get_model_file('resnet%d_v%dc'%(101, 1),
-                                         root=root), ctx=ctx)
+        model.load_parameters(get_model_file('resnet%d_v%dc'%(101, 1),
+                                             tag=pretrained, root=root), ctx=ctx)
+        from ..data import ImageNet1kAttr
+        attrib = ImageNet1kAttr()
+        model.synset = attrib.synset
+        model.classes = attrib.classes
+        model.classes_long = attrib.classes_long
     return model
 
 def resnet152_v1c(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
@@ -448,8 +498,9 @@ def resnet152_v1c(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
 
     Parameters
     ----------
-    pretrained : bool, default False
-        Whether to load the pretrained weights for model.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
     ctx : Context, default CPU
@@ -459,11 +510,17 @@ def resnet152_v1c(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
     norm_layer : object
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.norm_layer`;
     """
-    model = ResNetV1b(BottleneckV1b, [3, 8, 36, 3], deep_stem=True, **kwargs)
+    model = ResNetV1b(BottleneckV1b, [3, 8, 36, 3], deep_stem=True,
+                      name_prefix='resnetv1c_', **kwargs)
     if pretrained:
         from .model_store import get_model_file
-        model.load_params(get_model_file('resnet%d_v%dc'%(152, 1),
-                                         root=root), ctx=ctx)
+        model.load_parameters(get_model_file('resnet%d_v%dc'%(152, 1),
+                                             tag=pretrained, root=root), ctx=ctx)
+        from ..data import ImageNet1kAttr
+        attrib = ImageNet1kAttr()
+        model.synset = attrib.synset
+        model.classes = attrib.classes
+        model.classes_long = attrib.classes_long
     return model
 
 def resnet50_v1d(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
@@ -471,8 +528,9 @@ def resnet50_v1d(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
 
     Parameters
     ----------
-    pretrained : bool, default False
-        Whether to load the pretrained weights for model.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
     ctx : Context, default CPU
@@ -482,11 +540,17 @@ def resnet50_v1d(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
     norm_layer : object
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.norm_layer`;
     """
-    model = ResNetV1b(BottleneckV1b, [3, 4, 6, 3], deep_stem=True, avg_down=True, **kwargs)
+    model = ResNetV1b(BottleneckV1b, [3, 4, 6, 3], deep_stem=True, avg_down=True,
+                      name_prefix='resnetv1d_', **kwargs)
     if pretrained:
         from .model_store import get_model_file
-        model.load_params(get_model_file('resnet%d_v%dd'%(50, 1),
-                                         root=root), ctx=ctx)
+        model.load_parameters(get_model_file('resnet%d_v%dd'%(50, 1),
+                                             tag=pretrained, root=root), ctx=ctx)
+        from ..data import ImageNet1kAttr
+        attrib = ImageNet1kAttr()
+        model.synset = attrib.synset
+        model.classes = attrib.classes
+        model.classes_long = attrib.classes_long
     return model
 
 def resnet101_v1d(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
@@ -494,8 +558,9 @@ def resnet101_v1d(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
 
     Parameters
     ----------
-    pretrained : bool, default False
-        Whether to load the pretrained weights for model.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
     ctx : Context, default CPU
@@ -505,11 +570,17 @@ def resnet101_v1d(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
     norm_layer : object
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.norm_layer`;
     """
-    model = ResNetV1b(BottleneckV1b, [3, 4, 23, 3], deep_stem=True, avg_down=True, **kwargs)
+    model = ResNetV1b(BottleneckV1b, [3, 4, 23, 3], deep_stem=True, avg_down=True,
+                      name_prefix='resnetv1d_', **kwargs)
     if pretrained:
         from .model_store import get_model_file
-        model.load_params(get_model_file('resnet%d_v%dd'%(101, 1),
-                                         root=root), ctx=ctx)
+        model.load_parameters(get_model_file('resnet%d_v%dd'%(101, 1),
+                                             tag=pretrained, root=root), ctx=ctx)
+        from ..data import ImageNet1kAttr
+        attrib = ImageNet1kAttr()
+        model.synset = attrib.synset
+        model.classes = attrib.classes
+        model.classes_long = attrib.classes_long
     return model
 
 def resnet152_v1d(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
@@ -517,8 +588,9 @@ def resnet152_v1d(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
 
     Parameters
     ----------
-    pretrained : bool, default False
-        Whether to load the pretrained weights for model.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
     ctx : Context, default CPU
@@ -528,11 +600,17 @@ def resnet152_v1d(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
     norm_layer : object
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.norm_layer`;
     """
-    model = ResNetV1b(BottleneckV1b, [3, 8, 36, 3], deep_stem=True, avg_down=True, **kwargs)
+    model = ResNetV1b(BottleneckV1b, [3, 8, 36, 3], deep_stem=True, avg_down=True,
+                      name_prefix='resnetv1d_', **kwargs)
     if pretrained:
         from .model_store import get_model_file
-        model.load_params(get_model_file('resnet%d_v%dd'%(152, 1),
-                                         root=root), ctx=ctx)
+        model.load_parameters(get_model_file('resnet%d_v%dd'%(152, 1),
+                                             tag=pretrained, root=root), ctx=ctx)
+        from ..data import ImageNet1kAttr
+        attrib = ImageNet1kAttr()
+        model.synset = attrib.synset
+        model.classes = attrib.classes
+        model.classes_long = attrib.classes_long
     return model
 
 def resnet50_v1e(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
@@ -540,8 +618,9 @@ def resnet50_v1e(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
 
     Parameters
     ----------
-    pretrained : bool, default False
-        Whether to load the pretrained weights for model.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
     ctx : Context, default CPU
@@ -552,11 +631,17 @@ def resnet50_v1e(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.norm_layer`;
     """
     model = ResNetV1b(BottleneckV1b, [3, 4, 6, 3],
-                      deep_stem=True, avg_down=True, stem_width=64, **kwargs)
+                      deep_stem=True, avg_down=True, stem_width=64,
+                      name_prefix='resnetv1e_', **kwargs)
     if pretrained:
         from .model_store import get_model_file
-        model.load_params(get_model_file('resnet%d_v%dd'%(50, 1),
-                                         root=root), ctx=ctx)
+        model.load_parameters(get_model_file('resnet%d_v%dd'%(50, 1),
+                                             tag=pretrained, root=root), ctx=ctx)
+        from ..data import ImageNet1kAttr
+        attrib = ImageNet1kAttr()
+        model.synset = attrib.synset
+        model.classes = attrib.classes
+        model.classes_long = attrib.classes_long
     return model
 
 def resnet101_v1e(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
@@ -564,8 +649,9 @@ def resnet101_v1e(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
 
     Parameters
     ----------
-    pretrained : bool, default False
-        Whether to load the pretrained weights for model.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
     ctx : Context, default CPU
@@ -576,11 +662,17 @@ def resnet101_v1e(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.norm_layer`;
     """
     model = ResNetV1b(BottleneckV1b, [3, 4, 23, 3],
-                      deep_stem=True, avg_down=True, stem_width=64, **kwargs)
+                      deep_stem=True, avg_down=True, stem_width=64,
+                      name_prefix='resnetv1e_', **kwargs)
     if pretrained:
         from .model_store import get_model_file
-        model.load_params(get_model_file('resnet%d_v%dd'%(101, 1),
-                                         root=root), ctx=ctx)
+        model.load_parameters(get_model_file('resnet%d_v%dd'%(101, 1),
+                                             tag=pretrained, root=root), ctx=ctx)
+        from ..data import ImageNet1kAttr
+        attrib = ImageNet1kAttr()
+        model.synset = attrib.synset
+        model.classes = attrib.classes
+        model.classes_long = attrib.classes_long
     return model
 
 def resnet152_v1e(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
@@ -588,8 +680,9 @@ def resnet152_v1e(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
 
     Parameters
     ----------
-    pretrained : bool, default False
-        Whether to load the pretrained weights for model.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
     ctx : Context, default CPU
@@ -600,11 +693,17 @@ def resnet152_v1e(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.norm_layer`;
     """
     model = ResNetV1b(BottleneckV1b, [3, 8, 36, 3],
-                      deep_stem=True, avg_down=True, stem_width=64, **kwargs)
+                      deep_stem=True, avg_down=True, stem_width=64,
+                      name_prefix='resnetv1e_', **kwargs)
     if pretrained:
         from .model_store import get_model_file
-        model.load_params(get_model_file('resnet%d_v%dd'%(152, 1),
-                                         root=root), ctx=ctx)
+        model.load_parameters(get_model_file('resnet%d_v%dd'%(152, 1),
+                                             tag=pretrained, root=root), ctx=ctx)
+        from ..data import ImageNet1kAttr
+        attrib = ImageNet1kAttr()
+        model.synset = attrib.synset
+        model.classes = attrib.classes
+        model.classes_long = attrib.classes_long
     return model
 
 
@@ -613,8 +712,9 @@ def resnet50_v1s(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
 
     Parameters
     ----------
-    pretrained : bool, default False
-        Whether to load the pretrained weights for model.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
     ctx : Context, default CPU
@@ -624,11 +724,17 @@ def resnet50_v1s(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
     norm_layer : object
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.norm_layer`;
     """
-    model = ResNetV1b(BottleneckV1b, [3, 4, 6, 3], deep_stem=True, stem_width=64, **kwargs)
+    model = ResNetV1b(BottleneckV1b, [3, 4, 6, 3], deep_stem=True, stem_width=64,
+                      name_prefix='resnetv1s_', **kwargs)
     if pretrained:
         from .model_store import get_model_file
-        model.load_params(get_model_file('resnet%d_v%ds'%(50, 1),
-                                         root=root), ctx=ctx)
+        model.load_parameters(get_model_file('resnet%d_v%ds'%(50, 1),
+                                             tag=pretrained, root=root), ctx=ctx)
+        from ..data import ImageNet1kAttr
+        attrib = ImageNet1kAttr()
+        model.synset = attrib.synset
+        model.classes = attrib.classes
+        model.classes_long = attrib.classes_long
     return model
 
 
@@ -637,8 +743,9 @@ def resnet101_v1s(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
 
     Parameters
     ----------
-    pretrained : bool, default False
-        Whether to load the pretrained weights for model.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
     ctx : Context, default CPU
@@ -648,11 +755,17 @@ def resnet101_v1s(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
     norm_layer : object
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.norm_layer`;
     """
-    model = ResNetV1b(BottleneckV1b, [3, 4, 23, 3], deep_stem=True, stem_width=64, **kwargs)
+    model = ResNetV1b(BottleneckV1b, [3, 4, 23, 3], deep_stem=True, stem_width=64,
+                      name_prefix='resnetv1s_', **kwargs)
     if pretrained:
         from .model_store import get_model_file
-        model.load_params(get_model_file('resnet%d_v%ds'%(101, 1),
-                                         root=root), ctx=ctx)
+        model.load_parameters(get_model_file('resnet%d_v%ds'%(101, 1),
+                                             tag=pretrained, root=root), ctx=ctx)
+        from ..data import ImageNet1kAttr
+        attrib = ImageNet1kAttr()
+        model.synset = attrib.synset
+        model.classes = attrib.classes
+        model.classes_long = attrib.classes_long
     return model
 
 
@@ -661,8 +774,9 @@ def resnet152_v1s(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
 
     Parameters
     ----------
-    pretrained : bool, default False
-        Whether to load the pretrained weights for model.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
     ctx : Context, default CPU
@@ -672,9 +786,15 @@ def resnet152_v1s(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
     norm_layer : object
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.norm_layer`;
     """
-    model = ResNetV1b(BottleneckV1b, [3, 8, 36, 3], deep_stem=True, stem_width=64, **kwargs)
+    model = ResNetV1b(BottleneckV1b, [3, 8, 36, 3], deep_stem=True, stem_width=64,
+                      name_prefix='resnetv1s_', **kwargs)
     if pretrained:
         from .model_store import get_model_file
-        model.load_params(get_model_file('resnet%d_v%ds'%(152, 1),
-                                         root=root), ctx=ctx)
+        model.load_parameters(get_model_file('resnet%d_v%ds'%(152, 1),
+                                             tag=pretrained, root=root), ctx=ctx)
+        from ..data import ImageNet1kAttr
+        attrib = ImageNet1kAttr()
+        model.synset = attrib.synset
+        model.classes = attrib.classes
+        model.classes_long = attrib.classes_long
     return model

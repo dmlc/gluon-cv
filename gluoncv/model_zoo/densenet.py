@@ -128,8 +128,9 @@ def get_densenet(num_layers, pretrained=False, ctx=cpu(),
     ----------
     num_layers : int
         Number of layers for the variant of densenet. Options are 121, 161, 169, 201.
-    pretrained : bool, default False
-        Whether to load the pretrained weights for model.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     root : str, default $MXNET_HOME/models
@@ -139,7 +140,13 @@ def get_densenet(num_layers, pretrained=False, ctx=cpu(),
     net = DenseNet(num_init_features, growth_rate, block_config, **kwargs)
     if pretrained:
         from .model_store import get_model_file
-        net.load_parameters(get_model_file('densenet%d'%(num_layers), root=root), ctx=ctx)
+        net.load_parameters(get_model_file('densenet%d'%(num_layers),
+                                           tag=pretrained, root=root), ctx=ctx)
+        from ..data import ImageNet1kAttr
+        attrib = ImageNet1kAttr()
+        net.synset = attrib.synset
+        net.classes = attrib.classes
+        net.classes_long = attrib.classes_long
     return net
 
 def densenet121(**kwargs):
@@ -148,8 +155,9 @@ def densenet121(**kwargs):
 
     Parameters
     ----------
-    pretrained : bool, default False
-        Whether to load the pretrained weights for model.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     root : str, default '$MXNET_HOME/models'
@@ -163,8 +171,9 @@ def densenet161(**kwargs):
 
     Parameters
     ----------
-    pretrained : bool, default False
-        Whether to load the pretrained weights for model.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     root : str, default '$MXNET_HOME/models'
@@ -178,8 +187,9 @@ def densenet169(**kwargs):
 
     Parameters
     ----------
-    pretrained : bool, default False
-        Whether to load the pretrained weights for model.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     root : str, default '$MXNET_HOME/models'
@@ -193,8 +203,9 @@ def densenet201(**kwargs):
 
     Parameters
     ----------
-    pretrained : bool, default False
-        Whether to load the pretrained weights for model.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     root : str, default '$MXNET_HOME/models'
