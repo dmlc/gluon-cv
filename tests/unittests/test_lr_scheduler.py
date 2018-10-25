@@ -86,19 +86,19 @@ def test_composed_method():
     arr = LRCompose([constant, null_cosine, linear, cosine, null_poly, poly, step])
     # constant
     for i in range(N):
-        compare(constant, i, 0)
+        compare(arr, i, 0)
     # linear
     for i in range(N, 2*N):
         expect_linear = 2 + (1 - 2) * (1 - (i - N) / (N - 1))
-        compare(linear, i, expect_linear)
+        compare(arr, i, expect_linear)
     # cosine
     for i in range(2*N, 3*N):
         expect_cosine = 1 + (3 - 1) * ((1 + cos(pi * (i - 2*N) / (N - 1))) / 2)
-        compare(cosine, i, expect_cosine)
+        compare(arr, i, expect_cosine)
     # poly
     for i in range(3*N, 4*N):
         expect_poly = 0 + (1 - 0) * (pow(1 - (i - 3*N) / (N - 1), 2))
-        compare(poly, i, expect_poly)
+        compare(arr, i, expect_poly)
     for i in range(4*N, 5*N):
         if i - 4*N < 100:
             expect_step = 1
@@ -106,7 +106,10 @@ def test_composed_method():
             expect_step = 0.1
         else:
             expect_step = 0.01
-        compare(step, i, expect_step)
+        compare(arr, i, expect_step)
+    # out-of-bound index
+    compare(arr, 10*N, 0.01)
+    compare(arr, -1, 0)
 
 def test_deprecated_params():
     N = 1000

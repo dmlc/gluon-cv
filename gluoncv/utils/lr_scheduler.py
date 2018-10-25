@@ -19,7 +19,7 @@ class LRCompose(lr_scheduler.LRScheduler):
         super(LRCompose, self).__init__()
         assert(len(schedulers) > 0)
 
-        self.update_sep = [0]
+        self.update_sep = []
         self.count = 0
         self.learning_rate = 0
         self.schedulers = []
@@ -39,15 +39,15 @@ class LRCompose(lr_scheduler.LRScheduler):
         return self.learning_rate
 
     def update(self, num_update):
-        if num_update < self.count:
-            ind = len(self.schedulers) - 1
-            for i, sep in enumerate(self.update_sep):
-                if sep > num_update:
-                    ind = i - 1
-                    break
-            lr = self.schedulers[ind]
-            lr.update(num_update)
-            self.learning_rate = lr.learning_rate
+        num_update = min(num_update, self.count - 1)
+        ind = len(self.schedulers) - 1
+        for i, sep in enumerate(self.update_sep):
+            if sep > num_update:
+                ind = i
+                break
+        lr = self.schedulers[ind]
+        lr.update(num_update)
+        self.learning_rate = lr.learning_rate
 
 class LRScheduler(lr_scheduler.LRScheduler):
     r"""Learning Rate Scheduler
