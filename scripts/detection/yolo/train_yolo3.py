@@ -262,7 +262,6 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
                     scale_losses.append(scale_loss)
                     cls_losses.append(cls_loss)
                 autograd.backward(sum_losses)
-            lr_scheduler.update(i, epoch)
             trainer.step(batch_size)
             obj_metrics.update(0, obj_losses)
             center_metrics.update(0, center_losses)

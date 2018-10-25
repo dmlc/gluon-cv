@@ -172,7 +172,6 @@ class Trainer(object):
         train_loss = 0.0
         alpha = 0.2
         for i, (data, target) in enumerate(tbar):
-            self.lr_scheduler.update(i, epoch)
             with autograd.record(True):
                 outputs = self.net(data.astype(args.dtype, copy=False))
                 losses = self.criterion(outputs, target)

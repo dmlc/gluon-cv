@@ -374,7 +374,6 @@ def train(ctx):
                 loss = [L(yhat, y.astype(opt.dtype, copy=False)) for yhat, y in zip(outputs, label)]
             for l in loss:
                 l.backward()
-            lr_scheduler.update(i, epoch)
             trainer.step(batch_size)
 
             if opt.mixup:
