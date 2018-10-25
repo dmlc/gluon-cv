@@ -40,6 +40,7 @@ class COCOKeyPoints(VisionDataset):
         self._items, self._labels = self._load_jsons()
 
         # properties may help
+        '''
         self._keypoints: {
             0: "nose",
             1: "left_eye",
@@ -61,8 +62,9 @@ class COCOKeyPoints(VisionDataset):
         }
 
         self._skeleton: [
-            [16,14],[14,12],[17,15],[15,13],[12,13],[6,12],[7,13], [6,7],[6,8],
-            [7,9],[8,10],[9,11],[2,3],[1,2],[1,3],[2,4],[3,5],[4,6],[5,7]]
+            [16,14], [14,12], [17,15], [15,13], [12,13], [6,12], [7,13], [6,7], [6,8],
+            [7,9], [8,10], [9,11], [2,3], [1,2], [1,3], [2,4], [3,5], [4,6], [5,7]]
+        '''
 
     def __str__(self):
         detail = ','.join([str(s) for s in self._splits])

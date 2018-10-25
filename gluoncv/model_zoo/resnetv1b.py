@@ -270,7 +270,7 @@ def resnet18_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     dilated: bool, default False
-        Whether to apply dilation strategy to ResNetV1b, yilding a stride 8 model.
+        Whether to apply dilation strategy to ResNetV1b, yielding a stride 8 model.
     norm_layer : object
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.BatchNorm`;
         for Synchronized Cross-GPU BachNormalization).
@@ -306,7 +306,7 @@ def resnet34_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     dilated: bool, default False
-        Whether to apply dilation strategy to ResNetV1b, yilding a stride 8 model.
+        Whether to apply dilation strategy to ResNetV1b, yielding a stride 8 model.
     norm_layer : object
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.BatchNorm`;
     last_gamma : bool, default False
@@ -341,7 +341,7 @@ def resnet50_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     dilated: bool, default False
-        Whether to apply dilation strategy to ResNetV1b, yilding a stride 8 model.
+        Whether to apply dilation strategy to ResNetV1b, yielding a stride 8 model.
     norm_layer : object
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.BatchNorm`;
     last_gamma : bool, default False
@@ -376,7 +376,7 @@ def resnet101_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     dilated: bool, default False
-        Whether to apply dilation strategy to ResNetV1b, yilding a stride 8 model.
+        Whether to apply dilation strategy to ResNetV1b, yielding a stride 8 model.
     norm_layer : object
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.BatchNorm`;
     last_gamma : bool, default False
@@ -411,7 +411,7 @@ def resnet152_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     dilated: bool, default False
-        Whether to apply dilation strategy to ResNetV1b, yilding a stride 8 model.
+        Whether to apply dilation strategy to ResNetV1b, yielding a stride 8 model.
     norm_layer : object
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.BatchNorm`;
     last_gamma : bool, default False
@@ -445,7 +445,7 @@ def resnet50_v1c(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     dilated: bool, default False
-        Whether to apply dilation strategy to ResNetV1b, yilding a stride 8 model.
+        Whether to apply dilation strategy to ResNetV1b, yielding a stride 8 model.
     norm_layer : object
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.norm_layer`;
     """
@@ -476,7 +476,7 @@ def resnet101_v1c(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     dilated: bool, default False
-        Whether to apply dilation strategy to ResNetV1b, yilding a stride 8 model.
+        Whether to apply dilation strategy to ResNetV1b, yielding a stride 8 model.
     norm_layer : object
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.norm_layer`;
     """
@@ -506,7 +506,7 @@ def resnet152_v1c(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     dilated: bool, default False
-        Whether to apply dilation strategy to ResNetV1b, yilding a stride 8 model.
+        Whether to apply dilation strategy to ResNetV1b, yielding a stride 8 model.
     norm_layer : object
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.norm_layer`;
     """
@@ -536,7 +536,7 @@ def resnet50_v1d(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     dilated: bool, default False
-        Whether to apply dilation strategy to ResNetV1b, yilding a stride 8 model.
+        Whether to apply dilation strategy to ResNetV1b, yielding a stride 8 model.
     norm_layer : object
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.norm_layer`;
     """
@@ -566,7 +566,7 @@ def resnet101_v1d(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     dilated: bool, default False
-        Whether to apply dilation strategy to ResNetV1b, yilding a stride 8 model.
+        Whether to apply dilation strategy to ResNetV1b, yielding a stride 8 model.
     norm_layer : object
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.norm_layer`;
     """
@@ -596,7 +596,7 @@ def resnet152_v1d(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     dilated: bool, default False
-        Whether to apply dilation strategy to ResNetV1b, yilding a stride 8 model.
+        Whether to apply dilation strategy to ResNetV1b, yielding a stride 8 model.
     norm_layer : object
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.norm_layer`;
     """
@@ -626,7 +626,7 @@ def resnet50_v1e(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     dilated: bool, default False
-        Whether to apply dilation strategy to ResNetV1b, yilding a stride 8 model.
+        Whether to apply dilation strategy to ResNetV1b, yielding a stride 8 model.
     norm_layer : object
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.norm_layer`;
     """
@@ -657,7 +657,7 @@ def resnet101_v1e(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     dilated: bool, default False
-        Whether to apply dilation strategy to ResNetV1b, yilding a stride 8 model.
+        Whether to apply dilation strategy to ResNetV1b, yielding a stride 8 model.
     norm_layer : object
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.norm_layer`;
     """
@@ -688,7 +688,7 @@ def resnet152_v1e(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     dilated: bool, default False
-        Whether to apply dilation strategy to ResNetV1b, yilding a stride 8 model.
+        Whether to apply dilation strategy to ResNetV1b, yielding a stride 8 model.
     norm_layer : object
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.norm_layer`;
     """
@@ -720,7 +720,7 @@ def resnet50_v1s(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     dilated: bool, default False
-        Whether to apply dilation strategy to ResNetV1b, yilding a stride 8 model.
+        Whether to apply dilation strategy to ResNetV1b, yielding a stride 8 model.
     norm_layer : object
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.norm_layer`;
     """
@@ -751,7 +751,7 @@ def resnet101_v1s(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     dilated: bool, default False
-        Whether to apply dilation strategy to ResNetV1b, yilding a stride 8 model.
+        Whether to apply dilation strategy to ResNetV1b, yielding a stride 8 model.
     norm_layer : object
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.norm_layer`;
     """
@@ -782,7 +782,7 @@ def resnet152_v1s(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     dilated: bool, default False
-        Whether to apply dilation strategy to ResNetV1b, yilding a stride 8 model.
+        Whether to apply dilation strategy to ResNetV1b, yielding a stride 8 model.
     norm_layer : object
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.norm_layer`;
     """
