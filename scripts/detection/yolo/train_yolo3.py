@@ -191,10 +191,9 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
     num_batches = args.num_samples // args.batch_size
     lr_scheduler = LRCompose([
         LRScheduler('linear', base_lr=0, target_lr=args.lr,
-                    niters=num_batches*max(2, 1000 // (args.num_samples // args.batch_size))),
-        LRScheduler('step', base_lr=args.lr, niters=num_batches*args.epochs,
-                    step=[int(i)*num_batches for i in args.lr_decay_epoch.split(',')],
-                    step_factor=float(args.lr_decay)),
+                    niters=num_batches*args.warmup_epochs),
+        LRScheduler(args.lr_mode, base_lr=args.lr, niters=num_batches*args.epochs,
+                    step=lr_decay_epoch, step_factor=args.lr_decay, power=2),
     ])
 
     trainer = gluon.Trainer(

@@ -10,7 +10,7 @@ from mxnet.gluon.data.vision import transforms
 
 import gluoncv
 from gluoncv.loss import *
-from gluoncv.utils import LRScheduler, LRCompose
+from gluoncv.utils import LRScheduler
 from gluoncv.model_zoo.segbase import *
 from gluoncv.model_zoo import get_model
 from gluoncv.utils.parallel import *
@@ -146,9 +146,6 @@ class Trainer(object):
         criterion = MixSoftmaxCrossEntropyLoss(args.aux, aux_weight=args.aux_weight)
         self.criterion = DataParallelCriterion(criterion, args.ctx, args.syncbn)
         # optimizer and lr scheduling
-        self.lr_scheduler = LRScheduler(mode='poly', base_lr=args.lr,
-                                        niters=len(self.train_data), 
-                                        nepochs=args.epochs)
         self.lr_scheduler = LRScheduler(mode='poly', base_lr=args.lr,
                                         niters=len(self.train_data)*args.epochs) 
         kv = mx.kv.create(args.kvstore)
