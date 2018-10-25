@@ -2,6 +2,7 @@
 # pylint: disable=missing-docstring
 from __future__ import division
 
+import warnings
 from math import pi, cos
 from mxnet import lr_scheduler
 

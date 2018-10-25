@@ -2,7 +2,6 @@ from __future__ import print_function
 from __future__ import division
 
 import os.path as osp
-import warnings
 import mxnet as mx
 import numpy as np
 import gluoncv as gcv
