@@ -5,7 +5,7 @@ from __future__ import division
 from math import pi, cos
 from mxnet import lr_scheduler
 
-class Compose(lr_scheduler.LRScheduler):
+class LRCompose(lr_scheduler.LRScheduler):
     r"""Compose Learning Rate Schedulers
 
     Parameters
@@ -15,7 +15,7 @@ class Compose(lr_scheduler.LRScheduler):
         list of LRScheduler objects
     """
     def __init__(self, schedulers):
-        super(Compose, self).__init__()
+        super(LRCompose, self).__init__()
         assert(len(schedulers) > 0)
 
         self.update_sep = [0]

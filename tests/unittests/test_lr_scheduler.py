@@ -84,7 +84,7 @@ def test_composed_method():
     null_poly = LRScheduler('cosine', baselr=3, targetlr=1, niters=0)
     step = LRScheduler('step', baselr=1, targetlr=0, niters=N,
                        step=[100, 500], step_factor=0.1)
-    arr = Compose([constant, null_cosine, linear, cosine, null_poly, poly, step])
+    arr = LRCompose([constant, null_cosine, linear, cosine, null_poly, poly, step])
     # constant
     for i in range(N):
         compare(constant, i, 0)
