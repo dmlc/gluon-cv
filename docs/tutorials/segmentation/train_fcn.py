@@ -199,9 +199,9 @@ criterion = MixSoftmaxCrossEntropyLoss(aux=True)
 #     We use different learning rate for FCN "head" and the base network. For the FCN "head",
 #     we use :math:`10\times` base learning rate, because those layers are learned from scratch.
 #     We use a poly-like learning rate scheduler for FCN training, provided in :class:`gluoncv.utils.LRScheduler`.
-#     The learning rate is given by :math:`lr = baselr \times (1-iter)^{power}`
+#     The learning rate is given by :math:`lr = base_lr \times (1-iter)^{power}`
 # 
-lr_scheduler = gluoncv.utils.LRScheduler('poly', baselr=0.001, niters=len(train_data)*50)
+lr_scheduler = gluoncv.utils.LRScheduler('poly', base_lr=0.001, niters=len(train_data)*50)
 
 ##############################################################################
 # - Dataparallel for multi-gpu training, using cpu for demo only

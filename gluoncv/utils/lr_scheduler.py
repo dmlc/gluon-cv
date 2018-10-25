@@ -57,11 +57,11 @@ class LRScheduler(lr_scheduler.LRScheduler):
     mode : str
         Modes for learning rate scheduler.
         Currently it supports 'constant', 'step', 'linear', 'poly' and 'cosine'.
-    baselr : float
+    base_lr : float
         Base learning rate, i.e. the starting learning rate.
-    targetlr : float
+    target_lr : float
         Target learning rate, i.e. the ending learning rate.
-        With constant mode targetlr is ignored.
+        With constant mode target_lr is ignored.
     niters : int
         Number of iterations to be scheduled.
     offset : int
@@ -73,16 +73,24 @@ class LRScheduler(lr_scheduler.LRScheduler):
     step_factor : float
         Learning rate decay factor.
     """
-    def __init__(self, mode, baselr, targetlr=0, niters=0, offset=0, power=2,
-                 step=None, step_factor=0.1):
+    def __init__(self, mode, base_lr=0.1, target_lr=0, niters=0, offset=0, power=2,
+                 step=None, step_factor=0.1, baselr=None, targetlr=None):
         super(LRScheduler, self).__init__()
         assert(mode in ['constant', 'step', 'linear', 'poly', 'cosine'])
 
         self.mode = mode
-        self.baselr = baselr
-        self.targetlr = targetlr
+        if baselr is not None:
+            warnings.warn("baselr is deprecated. Please use base_lr.")
+            if base_lr == 0.1:
+                base_lr = baselr
+        self.base_lr = base_lr
+        if targetlr is not None:
+            warnings.warn("targetlr is deprecated. Please use target_lr.")
+            if target_lr == 0:
+                target_lr = targetlr
+        self.target_lr = target_lr
         if self.mode == 'constant':
-            self.targetlr = self.baselr
+            self.target_lr = self.base_lr
         self.niters = niters
         self.offset = offset
         self.power = power
@@ -113,6 +121,6 @@ class LRScheduler(lr_scheduler.LRScheduler):
             raise NotImplementedError
 
         if self.mode == 'step':
-            self.learning_rate = self.baselr * factor
+            self.learning_rate = self.base_lr * factor
         else:
-            self.learning_rate = self.targetlr + (self.baselr - self.targetlr) * factor
+            self.learning_rate = self.target_lr + (self.base_lr - self.target_lr) * factor

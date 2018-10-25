@@ -13,14 +13,13 @@ from gluoncv.utils import LRScheduler, LRCompose
 def compare(obj, niter, expect):
     np.testing.assert_allclose(expect, obj.__call__(niter))
 
-
 def test_sanity():
     N = 1000
-    constant = LRScheduler('constant', baselr=0, targetlr=1, niters=N)
-    linear = LRScheduler('linear', baselr=1, targetlr=2, niters=N)
-    cosine = LRScheduler('cosine', baselr=3, targetlr=1, niters=N)
-    poly = LRScheduler('poly', baselr=1, targetlr=0, niters=N, power=2)
-    step = LRScheduler('step', baselr=1, targetlr=0, niters=N,
+    constant = LRScheduler('constant', base_lr=0, target_lr=1, niters=N)
+    linear = LRScheduler('linear', base_lr=1, target_lr=2, niters=N)
+    cosine = LRScheduler('cosine', base_lr=3, target_lr=1, niters=N)
+    poly = LRScheduler('poly', base_lr=1, target_lr=0, niters=N, power=2)
+    step = LRScheduler('step', base_lr=1, target_lr=0, niters=N,
                        step=[100, 500], step_factor=0.1)
 
     compare(constant, 0, 0)
@@ -38,11 +37,11 @@ def test_sanity():
 
 def test_single_method():
     N = 1000
-    constant = LRScheduler('constant', baselr=0, targetlr=1, niters=N)
-    linear = LRScheduler('linear', baselr=1, targetlr=2, niters=N)
-    cosine = LRScheduler('cosine', baselr=3, targetlr=1, niters=N)
-    poly = LRScheduler('poly', baselr=1, targetlr=0, niters=N, power=2)
-    step = LRScheduler('step', baselr=1, targetlr=0, niters=N,
+    constant = LRScheduler('constant', base_lr=0, target_lr=1, niters=N)
+    linear = LRScheduler('linear', base_lr=1, target_lr=2, niters=N)
+    cosine = LRScheduler('cosine', base_lr=3, target_lr=1, niters=N)
+    poly = LRScheduler('poly', base_lr=1, target_lr=0, niters=N, power=2)
+    step = LRScheduler('step', base_lr=1, target_lr=0, niters=N,
                        step=[100, 500], step_factor=0.1)
 
     # Test numerical value
@@ -75,14 +74,14 @@ def test_single_method():
 
 def test_composed_method():
     N = 1000
-    constant = LRScheduler('constant', baselr=0, targetlr=1, niters=N)
-    linear = LRScheduler('linear', baselr=1, targetlr=2, niters=N)
-    cosine = LRScheduler('cosine', baselr=3, targetlr=1, niters=N)
-    poly = LRScheduler('poly', baselr=1, targetlr=0, niters=N, power=2)
+    constant = LRScheduler('constant', base_lr=0, target_lr=1, niters=N)
+    linear = LRScheduler('linear', base_lr=1, target_lr=2, niters=N)
+    cosine = LRScheduler('cosine', base_lr=3, target_lr=1, niters=N)
+    poly = LRScheduler('poly', base_lr=1, target_lr=0, niters=N, power=2)
     # components with niters=0 will be ignored
-    null_cosine = LRScheduler('cosine', baselr=3, targetlr=1, niters=0)
-    null_poly = LRScheduler('cosine', baselr=3, targetlr=1, niters=0)
-    step = LRScheduler('step', baselr=1, targetlr=0, niters=N,
+    null_cosine = LRScheduler('cosine', base_lr=3, target_lr=1, niters=0)
+    null_poly = LRScheduler('cosine', base_lr=3, target_lr=1, niters=0)
+    step = LRScheduler('step', base_lr=1, target_lr=0, niters=N,
                        step=[100, 500], step_factor=0.1)
     arr = LRCompose([constant, null_cosine, linear, cosine, null_poly, poly, step])
     # constant
@@ -108,6 +107,20 @@ def test_composed_method():
         else:
             expect_step = 0.01
         compare(step, i, expect_step)
+
+def test_deprecated_params():
+    N = 1000
+    linear = LRScheduler('linear', base_lr=1, target_lr=2, niters=N)
+    linear2 = LRScheduler('linear', baselr=1, targetlr=2, niters=N)
+    linear3 = LRScheduler('linear', base_lr=1, target_lr=2, niters=N,
+                          baselr=0, targetlr=1)
+
+    compare(linear, 0, 1)
+    compare(linear, N-1, 2)
+    compare(linear2, 0, 1)
+    compare(linear2, N-1, 2)
+    compare(linear3, 0, 1)
+    compare(linear3, N-1, 2)
 
 if __name__ == '__main__':
     import nose

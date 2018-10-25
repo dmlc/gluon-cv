@@ -125,23 +125,23 @@ num_batches = num_training_samples // batch_size
 
 if opt.lr_mode == 'step':
     lr_schedulers = LRCompose([
-        LRScheduler('linear', baselr=0, targetlr=opt.lr, niters=num_batches*opt.warmup_epochs),
-        LRScheduler('step', baselr=opt.lr, niters=num_batches*(opt.num_epochs-opt.warmup_epochs),
+        LRScheduler('linear', base_lr=0, target_lr=opt.lr, niters=num_batches*opt.warmup_epochs),
+        LRScheduler('step', base_lr=opt.lr, niters=num_batches*(opt.num_epochs-opt.warmup_epochs),
                     step=[num_batches*e for e in lr_decay_epoch], step_factor=lr_decay)
     ])
 elif opt.lr_mode == 'cosine':
     lr_schedulers = LRCompose([
-        LRScheduler('linear', baselr=0, targetlr=opt.lr,
+        LRScheduler('linear', base_lr=0, target_lr=opt.lr,
                     niters=num_batches*opt.warmup_epochs),
-        LRScheduler('cosine', baselr=opt.lr, targetlr=0,
+        LRScheduler('cosine', base_lr=opt.lr, target_lr=0,
                     niters=num_batches*(opt.num_epochs-opt.warmup_epochs))
     ])
 
 elif opt.lr_mode == 'poly':
     lr_schedulers = LRCompose([
-        LRScheduler('linear', baselr=0, targetlr=opt.lr,
+        LRScheduler('linear', base_lr=0, target_lr=opt.lr,
                     niters=num_batches*opt.warmup_epochs),
-        LRScheduler('poly', baselr=opt.lr, targetlr=0,
+        LRScheduler('poly', base_lr=opt.lr, target_lr=0,
                     niters=num_batches*(opt.num_epochs-opt.warmup_epochs))
     ])
 

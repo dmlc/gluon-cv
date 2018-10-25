@@ -190,9 +190,9 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
         lr_decay_epoch = [int(i) for i in args.lr_decay_epoch.split(',')]
     num_batches = args.num_samples // args.batch_size
     lr_scheduler = LRCompose([
-        LRScheduler('linear', baselr=0, targetlr=args.lr,
+        LRScheduler('linear', base_lr=0, target_lr=args.lr,
                     niters=num_batches*max(2, 1000 // (args.num_samples // args.batch_size))),
-        LRScheduler('step', baselr=args.lr, niters=num_batches*args.epochs,
+        LRScheduler('step', base_lr=args.lr, niters=num_batches*args.epochs,
                     step=[int(i)*num_batches for i in args.lr_decay_epoch.split(',')],
                     step_factor=float(args.lr_decay)),
     ])
