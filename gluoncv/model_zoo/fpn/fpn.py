@@ -207,10 +207,8 @@ class FPN(RCNN):
             self.rpn_head = RPNFPNHead(channels=rpn_channel, anchor_depth=anchor_depth)
             # Region proposals for each fpn level without contribution for 
             # gradient computation 
-            self.region_proposaler = RPNFPNProposal(
-                clip=clip, nms_thresh=rpn_nms_thresh, train_pre_nms=rpn_train_pre_nms, 
-                train_post_nms=rpn_train_post_nms, test_pre_nms=rpn_test_pre_nms, 
-                test_post_nms=rpn_test_post_nms, min_size=rpn_min_size, stds=(1., 1., 1., 1.))
+            self.region_proposaler = RPNFPNProposal(clip=clip, nms_thresh=rpn_nms_thresh, 
+                min_size=rpn_min_size, stds=(1., 1., 1., 1.))
             # Sample RCNN target 
             self.sampler = RCNNTargetSampler( 
                 num_image=self._max_batch, num_proposal=rpn_train_post_nms,
