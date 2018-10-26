@@ -193,7 +193,8 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
         LRScheduler('linear', base_lr=0, target_lr=args.lr,
                     niters=num_batches*args.warmup_epochs),
         LRScheduler(args.lr_mode, base_lr=args.lr, niters=num_batches*args.epochs,
-                    step=lr_decay_epoch, step_factor=args.lr_decay, power=2),
+                    step=[num_batches*(e - args.warmup_epochs) for e in lr_decay_epoch],
+                    step_factor=args.lr_decay, power=2),
     ])
 
     trainer = gluon.Trainer(
