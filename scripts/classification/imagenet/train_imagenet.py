@@ -126,7 +126,7 @@ num_batches = num_training_samples // batch_size
 
 lr_scheduler = LRSequential([
     LRScheduler('linear', base_lr=0, target_lr=opt.lr,
-                nepochs=opt.warmup_epochs, iters_per_epoch=num_batches)
+                nepochs=opt.warmup_epochs, iters_per_epoch=num_batches),
     LRScheduler(opt.lr_mode, base_lr=opt.lr, target_lr=0,
                 nepochs=opt.num_epochs - opt.warmup_epochs,
                 iters_per_epoch=num_batches,
