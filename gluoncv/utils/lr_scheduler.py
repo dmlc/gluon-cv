@@ -6,7 +6,7 @@ import warnings
 from math import pi, cos
 from mxnet import lr_scheduler
 
-class LRCompose(lr_scheduler.LRScheduler):
+class LRSequential(lr_scheduler.LRScheduler):
     r"""Compose Learning Rate Schedulers
 
     Parameters
@@ -16,7 +16,7 @@ class LRCompose(lr_scheduler.LRScheduler):
         list of LRScheduler objects
     """
     def __init__(self, schedulers):
-        super(LRCompose, self).__init__()
+        super(LRSequential, self).__init__()
         assert(len(schedulers) > 0)
 
         self.update_sep = []
@@ -65,21 +65,31 @@ class LRScheduler(lr_scheduler.LRScheduler):
         With constant mode target_lr is ignored.
     niters : int
         Number of iterations to be scheduled.
+    nepochs : int
+        Number of epochs to be scheduled.
+    iters_per_epoch : int
+        Number of iterations in each epoch.
     offset : int
         Number of iterations before this scheduler.
     power : float
         Power parameter of poly scheduler.
-    step : list
+    step_iter : list
         A list of iterations to decay the learning rate.
+    step_epoch : list
+        A list of epochs to decay the learning rate.
     step_factor : float
         Learning rate decay factor.
     """
-    def __init__(self, mode, base_lr=0.1, target_lr=0, niters=0, offset=0, power=2,
-                 step=None, step_factor=0.1, baselr=None, targetlr=None):
+    def __init__(self, mode, base_lr=0.1, target_lr=0,
+                 niters=0, nepochs=0, iters_per_epoch=0, offset=0,
+                 power=2, step_iter=None, step_epoch=None, step_factor=0.1,
+                 baselr=None, targetlr=None):
         super(LRScheduler, self).__init__()
         assert(mode in ['constant', 'step', 'linear', 'poly', 'cosine'])
 
         self.mode = mode
+        if mode == 'step':
+            assert(step_iter is not None or step_epoch is not None)
         if baselr is not None:
             warnings.warn("baselr is deprecated. Please use base_lr.")
             if base_lr == 0.1:
@@ -92,10 +102,17 @@ class LRScheduler(lr_scheduler.LRScheduler):
         self.target_lr = target_lr
         if self.mode == 'constant':
             self.target_lr = self.base_lr
+
         self.niters = niters
+        self.step = step_iter
+        epoch_iters = nepochs * iters_per_epoch
+        if epoch_iters > 0:
+            self.niters = epoch_iters
+            if step_epoch is not None:
+                self.step = [s*iters_per_epoch for s in step_epoch]
+
         self.offset = offset
         self.power = power
-        self.step = step
         self.step_factor = step_factor
 
     def __call__(self, num_update):
@@ -116,8 +133,11 @@ class LRScheduler(lr_scheduler.LRScheduler):
         elif self.mode == 'cosine':
             factor = (1 + cos(pi * T / N)) / 2
         elif self.mode == 'step':
-            count = sum([1 for s in self.step if s <= T])
-            factor = pow(self.step_factor, count)
+            if self.step is not None:
+                count = sum([1 for s in self.step if s <= T])
+                factor = pow(self.step_factor, count)
+            else:
+                factor = 1
         else:
             raise NotImplementedError
 

@@ -9,7 +9,7 @@ from mxnet.gluon.data.vision import transforms
 
 from gluoncv.data import imagenet
 from gluoncv.model_zoo import get_model
-from gluoncv.utils import makedirs, LRCompose, LRScheduler
+from gluoncv.utils import makedirs, LRSequential, LRScheduler
 
 # CLI
 parser = argparse.ArgumentParser(description='Train a model for image classification.')
@@ -121,13 +121,16 @@ if opt.lr_decay_period > 0:
     lr_decay_epoch = list(range(lr_decay_period, opt.num_epochs, lr_decay_period))
 else:
     lr_decay_epoch = [int(i) for i in opt.lr_decay_epoch.split(',')]
+lr_decay_epoch = [e - opt.warmup_epochs for e in lr_decay_epoch]
 num_batches = num_training_samples // batch_size
 
-lr_scheduler = LRCompose([
-    LRScheduler('linear', base_lr=0, target_lr=opt.lr, niters=num_batches*opt.warmup_epochs),
+lr_scheduler = LRSequential([
+    LRScheduler('linear', base_lr=0, target_lr=opt.lr,
+                nepochs=opt.warmup_epochs, iters_per_epoch=num_batches)
     LRScheduler(opt.lr_mode, base_lr=opt.lr, target_lr=0,
-                niters=num_batches*(opt.num_epochs - opt.warmup_epochs),
-                step=[num_batches*(e - opt.warmup_epochs) for e in lr_decay_epoch],
+                nepochs=opt.num_epochs - opt.warmup_epochs,
+                iters_per_epoch=num_batches,
+                step_epoch=lr_decay_epoch,
                 step_factor=lr_decay, power=2)
 ])
 

@@ -184,7 +184,7 @@ plt.show()
 # The learning rate is given by :math:`lr = base_lr \times (1-iter)^{power}`
 # 
 lr_scheduler = gluoncv.utils.LRScheduler(mode='poly', base_lr=0.01,
-                                         niters=len(train_data)*30)
+                                         nepochs=30, iters_per_epoch=len(train_data), power=0.9)
 
 ##############################################################################
 # We first use the base learning rate of 0.01 to pretrain on MS-COCO dataset,

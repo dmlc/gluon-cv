@@ -147,7 +147,9 @@ class Trainer(object):
         self.criterion = DataParallelCriterion(criterion, args.ctx, args.syncbn)
         # optimizer and lr scheduling
         self.lr_scheduler = LRScheduler(mode='poly', base_lr=args.lr,
-                                        niters=len(self.train_data)*args.epochs) 
+                                        nepochs=args.epochs,
+                                        iters_per_epoch=len(self.train_data),
+                                        power=0.9)
         kv = mx.kv.create(args.kvstore)
         optimizer_params = {'lr_scheduler': self.lr_scheduler,
                             'wd':args.weight_decay,

@@ -8,10 +8,10 @@ import gluoncv as gcv
 
 from mxnet import autograd, gluon
 from math import pi, cos
-from gluoncv.utils import LRScheduler, LRCompose
+from gluoncv.utils import LRScheduler, LRSequential
 
-def compare(obj, niter, expect):
-    np.testing.assert_allclose(expect, obj.__call__(niter))
+def compare(obj, niter, expect, **kwargs):
+    np.testing.assert_allclose(expect, obj.__call__(niter), **kwargs)
 
 def test_sanity():
     N = 1000
@@ -20,7 +20,7 @@ def test_sanity():
     cosine = LRScheduler('cosine', base_lr=3, target_lr=1, niters=N)
     poly = LRScheduler('poly', base_lr=1, target_lr=0, niters=N, power=2)
     step = LRScheduler('step', base_lr=1, target_lr=0, niters=N,
-                       step=[100, 500], step_factor=0.1)
+                       step_iter=[100, 500], step_factor=0.1)
 
     compare(constant, 0, 0)
     compare(constant, N-1, 0)
@@ -42,7 +42,13 @@ def test_single_method():
     cosine = LRScheduler('cosine', base_lr=3, target_lr=1, niters=N)
     poly = LRScheduler('poly', base_lr=1, target_lr=0, niters=N, power=2)
     step = LRScheduler('step', base_lr=1, target_lr=0, niters=N,
-                       step=[100, 500], step_factor=0.1)
+                       step_iter=[100, 500], step_factor=0.1)
+    step2 = LRScheduler('step', base_lr=1, target_lr=0,
+                        nepochs=2, iters_per_epoch=N/2,
+                        step_iter=[100, 500], step_factor=0.1)
+    step3 = LRScheduler('step', base_lr=1, target_lr=0,
+                        nepochs=100, iters_per_epoch=N/100,
+                        step_epoch=[10, 50], step_factor=0.1)
 
     # Test numerical value
     for i in range(N):
@@ -64,6 +70,8 @@ def test_single_method():
         else:
             expect_step = 0.01
         compare(step, i, expect_step)
+        compare(step2, i, expect_step)
+        compare(step3, i, expect_step)
 
     # Test out-of-range updates
     for i in range(10):
@@ -82,8 +90,8 @@ def test_composed_method():
     null_cosine = LRScheduler('cosine', base_lr=3, target_lr=1, niters=0)
     null_poly = LRScheduler('cosine', base_lr=3, target_lr=1, niters=0)
     step = LRScheduler('step', base_lr=1, target_lr=0, niters=N,
-                       step=[100, 500], step_factor=0.1)
-    arr = LRCompose([constant, null_cosine, linear, cosine, null_poly, poly, step])
+                       step_iter=[100, 500], step_factor=0.1)
+    arr = LRSequential([constant, null_cosine, linear, cosine, null_poly, poly, step])
     # constant
     for i in range(N):
         compare(arr, i, 0)
@@ -111,12 +119,16 @@ def test_composed_method():
     compare(arr, 10*N, 0.01)
     compare(arr, -1, 0)
 
-def test_deprecated_params():
+def test_params():
     N = 1000
     linear = LRScheduler('linear', base_lr=1, target_lr=2, niters=N)
     linear2 = LRScheduler('linear', baselr=1, targetlr=2, niters=N)
     linear3 = LRScheduler('linear', base_lr=1, target_lr=2, niters=N,
                           baselr=0, targetlr=1)
+
+    linear4 = LRScheduler('linear', base_lr=1, target_lr=2, niters=N/2)
+    linear5 = LRScheduler('linear', base_lr=1, target_lr=2, niters=N/2,
+                          nepochs=N/2, iters_per_epoch=2)
 
     compare(linear, 0, 1)
     compare(linear, N-1, 2)
@@ -124,6 +136,11 @@ def test_deprecated_params():
     compare(linear2, N-1, 2)
     compare(linear3, 0, 1)
     compare(linear3, N-1, 2)
+    compare(linear4, 0, 1)
+    compare(linear4, N/2-1, 2)
+    compare(linear5, 0, 1)
+    compare(linear5, N/2-1, 1.5, rtol=0.01)
+    compare(linear5, N-1, 2)
 
 if __name__ == '__main__':
     import nose
