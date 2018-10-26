@@ -19,26 +19,19 @@ class RPNFPNProposal(gluon.HybridBlock):
         Clip bounding box target to this value.
     nms_thresh : float
         IOU threshold for NMS. It is used to remove overlapping proposals.
-    train_pre_nms : int
-        Filter top proposals before NMS in training.
-    train_post_nms : int
-        Return top proposal results after NMS in training.
     min_size : int
         Proposals whose size is smaller than ``min_size`` will be discarded.
     stds : tuple of float
         Standard deviation to be multiplied from encoded regression targets.
         These values must be the same as stds used in RPNTargetGenerator.
     """
-    def __init__(self, clip, nms_thresh, train_pre_nms, test_pre_nms,
-                 min_size, stds):
+    def __init__(self, clip, nms_thresh, min_size, stds):
         super(RPNFPNProposal, self).__init__()
         self._box_to_center = BBoxCornerToCenter()
         self._box_decoder = NormalizedBoxCenterDecoder(stds=stds, clip=clip)
         self._clipper = BBoxClipToImage()
         # self._compute_area = BBoxArea()
         self._nms_thresh = nms_thresh
-        self._train_pre_nms = max(1, train_pre_nms)
-        self._test_pre_nms = max(1, test_pre_nms)
         self._min_size = min_size
 
     #pylint: disable=arguments-differ
@@ -46,18 +39,13 @@ class RPNFPNProposal(gluon.HybridBlock):
         """
         Generate proposals. Limit to batch-size=1 in current implementation.
         """
-        if autograd.is_training():
-            pre_nms = self._train_pre_nms
-        else:
-            pre_nms = self._test_pre_nms
-
         with autograd.pause():
             # restore bounding boxes
             roi = self._box_decoder(bbox_pred, self._box_to_center(anchor))
 
-            # clip rois to image's boundary
+            # clip rois to image's boundary     
             # roi = F.Custom(roi, img, op_type='bbox_clip_to_image')
-            roi = self._clipper(roi, img)
+            roi = self._clipper(roi, img) 
 
             # remove bounding boxes that don't meet the min_size constraint
             # by setting them to (-1, -1, -1, -1)
@@ -83,14 +71,5 @@ class RPNFPNProposal(gluon.HybridBlock):
             score = F.where(invalid, F.ones_like(invalid) * -1, score)
             invalid = F.repeat(invalid, axis=-1, repeats=4)
             roi = F.where(invalid, F.ones_like(invalid) * -1, roi)
-
-            # Non-maximum suppression
-            pre = F.concat(score, roi, dim=-1)
-            result = F.contrib.box_nms(pre, overlap_thresh=self._nms_thresh, topk=pre_nms,
-                                    coord_start=1, score_index=0, id_index=-1, force_suppress=True)
-
-            # slice all boxes before post_nms 
-            rpn_score = F.slice_axis(result, axis=-1, begin=0, end=1)
-            rpn_bbox = F.slice_axis(result, axis=-1, begin=1, end=None)
-
-        return rpn_score, rpn_bbox
+            rpn_pre = F.concat(score, roi, dim=-1)
+        return rpn_pre 

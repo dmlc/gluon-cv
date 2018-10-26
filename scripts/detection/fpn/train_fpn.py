@@ -1,5 +1,4 @@
 """Train FPN end to end."""
-# Now only train on VOC Dataset, COCO will appear nan if not use lr_warmup
 import argparse
 import os
 # disable autotune
@@ -30,11 +29,11 @@ def parse_args():
     parser.add_argument('--dataset', type=str, default='voc',
                         help='Training dataset. Now support voc and coco.')
     parser.add_argument('--num-workers', '-j', dest='num_workers', type=int,
-                        default=8, help='Number of data workers, you can use larger '
+                        default=4, help='Number of data workers, you can use larger '
                         'number to accelerate data loading, if you CPU and GPUs are powerful.')
-    parser.add_argument('--gpus', type=str, default='2,3',
+    parser.add_argument('--gpus', type=str, default='0,1', 
                         help='Training with GPUs, you can specify 1,3 for example.')
-    parser.add_argument('--epochs', type=str, default='',
+    parser.add_argument('--epochs', type=str, default='20',
                         help='Training epochs.')
     parser.add_argument('--resume', type=str, default='',
                         help='Resume from previously saved parameters if not None. '
@@ -42,7 +41,7 @@ def parse_args():
     parser.add_argument('--start-epoch', type=int, default=0,
                         help='Starting epoch for resuming, default is 0 for new training.'
                         'You can specify it to 100 for example to start from 100 epoch.')
-    parser.add_argument('--lr', type=str, default='',
+    parser.add_argument('--lr', type=str, default='0.001',
                         help='Learning rate, default is 0.001 for voc single gpu training.')
     parser.add_argument('--lr-decay', type=float, default=0.1,
                         help='decay rate of learning rate. default is 0.1.')
@@ -56,14 +55,14 @@ def parse_args():
                         help='Weight decay, default is 5e-4 for voc')
     parser.add_argument('--log-interval', type=int, default=100,
                         help='Logging mini-batch interval. Default is 100.')
-    parser.add_argument('--save-prefix', type=str, default='',
+    parser.add_argument('--save-prefix', type=str, default='20181026_',
                         help='Saving parameter prefix')
     parser.add_argument('--save-interval', type=int, default=1,
                         help='Saving parameters epoch interval, best model will always be saved.')
     parser.add_argument('--val-interval', type=int, default=1,
                         help='Epoch interval for validation, increase the number will reduce the '
                              'training time if validation is slow.')
-    parser.add_argument('--seed', type=int, default=233,
+    parser.add_argument('--seed', type=int, default=233, 
                         help='Random seed to be fixed.')
     parser.add_argument('--verbose', dest='verbose', action='store_true',
                         help='Print helpful debugging info once set.')
@@ -346,6 +345,8 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
             add_losses = [[] for _ in metrics2]
             with autograd.record():
                 for data, label, rpn_cls_targets, rpn_box_targets, rpn_box_masks in zip(*batch):
+                    # data : 600 X 800
+                    # rpn_cls_targets : (1, 120015), rpn_box_targets : (1, 120015, 4), rpn_box_masks : (1, 120015, 4) 
                     gt_label = label[:, :, 4:5]
                     gt_box = label[:, :, :4]
                     cls_pred, box_pred, roi, samples, matches, rpn_score, rpn_box, anchors = net(data, gt_box)
@@ -365,14 +366,14 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
                     rcnn_loss = rcnn_loss1 + rcnn_loss2
                     # overall losses
                     losses.append(rpn_loss.sum() * mix_ratio + rcnn_loss.sum() * mix_ratio)
-                    metric_losses[0].append(rpn_loss1.sum() * mix_ratio)
-                    metric_losses[1].append(rpn_loss2.sum() * mix_ratio)
-                    metric_losses[2].append(rcnn_loss1.sum() * mix_ratio)
-                    metric_losses[3].append(rcnn_loss2.sum() * mix_ratio)
-                    add_losses[0].append([[rpn_cls_targets, rpn_cls_targets>=0], [rpn_score]])
-                    add_losses[1].append([[rpn_box_targets, rpn_box_masks], [rpn_box]])
-                    add_losses[2].append([[cls_targets], [cls_pred]])
-                    add_losses[3].append([[box_targets, box_masks], [box_pred]])
+                    metric_losses[0].append(rpn_loss1.sum() * mix_ratio) # RPN_Conf
+                    metric_losses[1].append(rpn_loss2.sum() * mix_ratio) # RPN_SmoothL1
+                    metric_losses[2].append(rcnn_loss1.sum() * mix_ratio) # RCNN_CrossEntropy 
+                    metric_losses[3].append(rcnn_loss2.sum() * mix_ratio) # RCNN_Smoothl1
+                    add_losses[0].append([[rpn_cls_targets, rpn_cls_targets>=0], [rpn_score]]) # RPNAcc
+                    add_losses[1].append([[rpn_box_targets, rpn_box_masks], [rpn_box]]) # RPNL1Loss
+                    add_losses[2].append([[cls_targets], [cls_pred]]) # RCNNAcc
+                    add_losses[3].append([[box_targets, box_masks], [box_pred]]) # RCNNL1Loss
                 autograd.backward(losses)
                 for metric, record in zip(metrics, metric_losses):
                     metric.update(0, record)

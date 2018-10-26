@@ -194,7 +194,6 @@ class FPNFeatureExpander(SymbolBlock):
         base_features = outputs[::-1]
         num_stages = len(num_filters) + 1 # usually 5
         weight_init = mx.init.Xavier(rnd_type='gaussian', factor_type='out', magnitude=2.)
-
         tmp_outputs = []
         # num_filter is 256 in ori paper
         for i, (bf, f) in enumerate(zip(base_features, num_filters)):
@@ -203,8 +202,12 @@ class FPNFeatureExpander(SymbolBlock):
                     y = mx.sym.Convolution(y, num_filter=f, kernel=(1, 1), pad=(0, 0), stride=(1, 1), no_bias=no_bias,
                                            name="P{}_pre".format(num_stages-i), attr={'__init__': weight_init})
                 if use_p6:
-                    y_p6 = mx.sym.Pooling(y, pool_type="max", kernel=(1, 1), pad=(0, 0), stride=(2, 2),
-                                          name="P{}_pre".format(num_stages+1))
+                    # method 1 : use max pool (Detectron use this)
+                    # y_p6 = mx.sym.Pooling(y, pool_type='max', kernel=(1, 1), pad=(0, 0), stride=(2, 2),
+                    #                       name="P{}_pre".format(num_stages+1))
+                    # method 2 : use conv (Deformable use this)
+                    y_p6 = mx.sym.Convolution(y, num_filter=f, kernel=(3, 3), pad=(1, 1), stride=(2, 2), no_bias=no_bias, 
+                        name='P{}_pre'.format(num_stages+1), attr={'__init__': weight_init}) 
             else:
                 if use_1x1:
                     bf = mx.sym.Convolution(bf, num_filter=f, kernel=(1, 1), pad=(0, 0), stride=(1, 1), no_bias=no_bias,
@@ -213,8 +216,10 @@ class FPNFeatureExpander(SymbolBlock):
                     y = mx.sym.UpSampling(y, scale=2, sample_type='nearest', name="P{}_upsp".format(num_stages-i))
 
                 if use_elewadd:
+                    # make two symbol alignment
+                    # method 1 : mx.sym.Crop
                     # y = mx.sym.Crop(*[y, bf], name="P{}_clip".format(num_stages-i))
-                    # use slice_like to make these two symbol alignment
+                    # method 2 : mx.sym.slice_like  
                     y = mx.sym.slice_like(y, bf*0, axes=(2, 3), name="P{}_clip".format(num_stages-i))
                     y = mx.sym.ElementWiseSum(bf, y, name="P{}_pre".format(num_stages-i))
             tmp_outputs.append(y)
@@ -222,7 +227,7 @@ class FPNFeatureExpander(SymbolBlock):
             outputs = tmp_outputs[::-1] + [y_p6]  # [P2, P3, P4, P5] + [P6]
         else:
             outputs = tmp_outputs[::-1]  # [P2, P3, P4, P5]
-        # reduce the aliasing effect of upsampling
+        # Reduce the aliasing effect of upsampling described in ori paper 
         for i, (out, f) in enumerate(zip(outputs, num_filters)):
             out = mx.sym.Convolution(out, num_filter=f, kernel=(3, 3), pad=(1, 1), stride=(1, 1), 
                                      no_bias=no_bias, name='P{}'.format(i+2), attr={'__init__': weight_init})
