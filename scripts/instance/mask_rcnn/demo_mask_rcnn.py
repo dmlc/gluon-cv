@@ -13,7 +13,7 @@ def parse_args():
     parser.add_argument('--images', type=str, default='',
                         help='Test images, use comma to split multiple.')
     parser.add_argument('--gpus', type=str, default='0',
-                        help='Training with GPUs, you can specify 1,3 for example.')
+                        help='Testing with GPUs, you can specify 0 for example.')
     parser.add_argument('--pretrained', type=str, default='True',
                         help='Load weights from previously saved parameters. You can specify parameter file name.')
     args = parser.parse_args()
@@ -39,9 +39,11 @@ if __name__ == '__main__':
         net = gcv.model_zoo.get_model(args.network, pretrained=False)
         net.load_parameters(args.pretrained)
     net.set_nms(0.3, 200)
+    net.collect_params().reset_ctx(ctx)
 
     for image in image_list:
         x, img = presets.rcnn.load_test(image, short=net.short, max_size=net.max_size)
+        x = x.as_in_context(ctx[0])
         ids, scores, bboxes, masks = [xx[0].asnumpy() for xx in net(x)]
 
         masks = gcv.utils.viz.expand_mask(masks, bboxes, (img.shape[1], img.shape[0]), scores)
