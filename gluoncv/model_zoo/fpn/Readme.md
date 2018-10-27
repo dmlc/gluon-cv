@@ -10,6 +10,7 @@ Below repos give me a lot of inspiration
 
 # Results 
 * **e2e_fastercnn_fpn_resnet50_v1b_1x_voc0712** : mAP=0.8035 on VOC07 Test.
+  * train-log : https://drive.google.com/open?id=1obMRJedBHXrNPZLsahiR6WMQyYJFnli0
 * **e2e_fastercnn(CAM/PAM)_fpn_resnet50_v1d_2x_coco17** : Stay tuned!
 
 
