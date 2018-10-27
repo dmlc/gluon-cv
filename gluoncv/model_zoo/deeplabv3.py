@@ -38,7 +38,7 @@ class DeepLabV3(SegBaseModel):
     def __init__(self, nclass, backbone='resnet50', aux=True, ctx=cpu(), pretrained_base=True,
                  base_size=520, crop_size=480, **kwargs):
         super(DeepLabV3, self).__init__(nclass, aux, backbone, ctx=ctx, base_size=base_size,
-                                     crop_size=crop_size, pretrained_base=True, **kwargs)
+                                     crop_size=crop_size, pretrained_base=pretrained_base, **kwargs)
         with self.name_scope():
             self.head = _DeepLabHead(nclass, **kwargs)
             self.head.initialize(ctx=ctx)
