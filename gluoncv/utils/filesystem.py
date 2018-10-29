@@ -49,8 +49,8 @@ def try_import_cv2():
     cv2 module if found. Raise ImportError otherwise
 
     """
-    msg = "cv2 is required, you can install by package manager, e.g. 'apt-get', " +
-        "or `pip install opencv-python --user` (note that this is unofficial PYPI package)."
+    msg = "cv2 is required, you can install by package manager, e.g. 'apt-get', \
+        or `pip install opencv-python --user` (note that this is unofficial PYPI package)."
     return try_import('cv2', msg)
 
 def import_try_install(package, extern_url=None):

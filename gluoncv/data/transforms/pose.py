@@ -1,3 +1,4 @@
+# pylint: disable=all
 """Pose related transformation functions
 
 Adapted from https://github.com/Microsoft/human-pose-estimation.pytorch
@@ -15,10 +16,25 @@ import numpy as np
 from ...utils.filesystem import try_import_cv2
 
 def flip_heatmap(heatmap, joint_pairs):
+    """Flip pose heatmap according to joint pairs.
+
+    Parameters
+    ----------
+    heatmap : numpy.ndarray
+        Heatmap of joints.
+    joint_pairs : list
+        List of joint pairs
+
+    Returns
+    -------
+    numpy.ndarray
+        Flipped heatmap
+
+    """
     assert heatmap.ndim == 4, "heatmap should have shape (batch_size, num_joints, height, width)"
     out = heatmap[:, :, :, ::-1]
 
-    for pairs in joint_pairs:
+    for pair in joint_pairs:
         tmp = out[:, pair[0], :, :].copy()
         out[:, pair[0], :, :] = out[:, pair[1], :, :]
         out[:, pair[1], :, :] = tmp
@@ -26,6 +42,23 @@ def flip_heatmap(heatmap, joint_pairs):
     return out
 
 def flip_joints_3d(joints_3d, width, joint_pairs):
+    """Flip 3d joints.
+
+    Parameters
+    ----------
+    joints_3d : numpy.ndarray
+        Joints in shape (num_joints, 3, 2)
+    width : int
+        Image width.
+    joint_pairs : list
+        List of joint pairs.
+
+    Returns
+    -------
+    numpy.ndarray
+        Flipped 3d joints with shape (num_joints, 3, 2)
+
+    """
     joints = joints_3d.copy()
     # flip horizontally
     joints[:, 0, 0] = width - joints[:, 0, 0] - 1
