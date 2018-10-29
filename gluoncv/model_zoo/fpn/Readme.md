@@ -1,7 +1,7 @@
 # Feature Pyramid Network for Object Detection
 Paper Link : https://arxiv.org/pdf/1612.03144.pdf
 
-This repo implement FPN in a [gluon-cv](https://github.com/dmlc/gluon-cv) style
+This repo is an unofficial implementation of FPN in a [gluon-cv](https://github.com/dmlc/gluon-cv) style
 
 Below repos give me a lot of inspiration
 * https://github.com/msracver/Deformable-ConvNets
