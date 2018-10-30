@@ -24,21 +24,21 @@ from gluoncv.utils.metrics.accuracy import Accuracy
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train FPN networks e2e.')
-    parser.add_argument('--network', type=str, default='resnet50_v1b',
+    parser.add_argument('--network', type=str, default='resnet50_v1d',
                         help="Base network name which serves as feature extraction base.")
     parser.add_argument('--dataset', type=str, default='voc',
                         help='Training dataset. Now support voc and coco.')
     parser.add_argument('--num-workers', '-j', dest='num_workers', type=int,
                         default=4, help='Number of data workers, you can use larger '
                         'number to accelerate data loading, if you CPU and GPUs are powerful.')
-    parser.add_argument('--gpus', type=str, default='0,1', 
+    parser.add_argument('--gpus', type=str, default='1', 
                         help='Training with GPUs, you can specify 1,3 for example.')
     parser.add_argument('--epochs', type=str, default='20',
-                        help='Training epochs.')
-    parser.add_argument('--resume', type=str, default='',
+                        help='Training epochs.') 
+    parser.add_argument('--resume', type=str, default='./20181026_fpn_resnet50_v1d_voc_0013_0.8386.params',
                         help='Resume from previously saved parameters if not None. '
                         'For example, you can resume from ./fpn_xxx_0123.params')
-    parser.add_argument('--start-epoch', type=int, default=0,
+    parser.add_argument('--start-epoch', type=int, default=14,
                         help='Starting epoch for resuming, default is 0 for new training.'
                         'You can specify it to 100 for example to start from 100 epoch.')
     parser.add_argument('--lr', type=str, default='0.001',
@@ -69,6 +69,8 @@ def parse_args():
     parser.add_argument('--mixup', action='store_true', help='Use mixup training.')
     parser.add_argument('--no-mixup-epochs', type=int, default=20,
                         help='Disable mixup training if enabled in the last N epochs.')
+    parser.add_argument('--best-map', type=float, default=0.8386, 
+                        help='The Best map for use.')
     args = parser.parse_args()
     if args.dataset == 'voc':
         args.epochs = int(args.epochs) if args.epochs else 20
@@ -174,9 +176,9 @@ class RCNNL1LossMetric(mx.metric.EvalMetric):
 def get_dataset(dataset, args):
     if dataset.lower() == 'voc':
         train_dataset = gdata.VOCDetection(
-            splits=[(2007, 'trainval'), (2012, 'trainval')])
+            splits=[(2007, 'trainval'), (2007, 'test'), (2012, 'trainval')])
         val_dataset = gdata.VOCDetection(
-            splits=[(2007, 'test')])
+            splits=[(2012, 'val')])
         val_metric = VOC07MApMetric(iou_thresh=0.5, class_names=val_dataset.classes)
     elif dataset.lower() == 'coco':
         train_dataset = gdata.COCODetection(splits='instances_val2017', use_crowd=False)
@@ -309,8 +311,8 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
         logger.info('Trainable parameters:')
         logger.info(net.collect_train_params().keys())
     logger.info('Start training from [Epoch {}]'.format(args.start_epoch))
-    best_map = [0]
-    for epoch in range(args.start_epoch, args.epochs):
+    best_map = [args.best_map]
+    for epoch in range(args.start_epoch, args.epochs):  
         mix_ratio = 1.0
         if args.mixup:
             # TODO(zhreshold) only support evenly mixup now, target generator needs to be modified otherwise
@@ -413,8 +415,11 @@ if __name__ == '__main__':
     args.batch_size = len(ctx)  # 1 batch per device
 
     # network
-    net_name = '_'.join(('fpn', args.network, args.dataset))
+    net_name = '_'.join(('fpn', args.network, args.dataset)) 
     args.save_prefix += net_name
+
+    net_name = 'fpn_resnet50_v1d_voc12'
+
     net = get_model(net_name, pretrained_base=True)
     if args.resume.strip():
         net.load_parameters(args.resume.strip())
