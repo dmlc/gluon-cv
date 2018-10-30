@@ -1,0 +1,3 @@
+[submodule "docs/sphinx_materialdesign_theme"]
+	path = docs/sphinx_materialdesign_theme
+	url = https://github.com/mli/sphinx_materialdesign_theme

@@ -117,7 +117,7 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path .
-exclude_patterns = []
+exclude_patterns = ['sphinx_materialdesign_theme']
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
@@ -128,8 +128,8 @@ pygments_style = 'sphinx'
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'sphinx_rtd_theme'
-html_logo = '_static/gluon_white.png'
+#html_theme = 'sphinx_rtd_theme'
+html_logo = '_static/gluon_black.png'
 html_favicon = '_static/gluon_s2.png'
 # html_theme_path = guzzle_sphinx_theme.html_theme_path()
 # html_theme = 'guzzle_sphinx_theme'
@@ -142,6 +142,24 @@ html_favicon = '_static/gluon_s2.png'
 #         # Set the name of the project to appear in the sidebar
 #         "project_nav_name": "GluonCV",
 # }
+
+html_theme = 'sphinx_materialdesign_theme'
+html_theme_path = [os.path.join(curr_path, 'sphinx_materialdesign_theme')]
+html_theme_options = {
+    'primary_color': 'cyan',
+    'accent_color': 'amber',
+    'header_links' : [
+        ('Install', '#installation', False, ''),
+        ('Applications', '#supported-applications', False, ''),
+        ('API', 'api/data.datasets.html', False, ''),
+        ('Contribute', 'how_to/contribute', False, ''),
+        ('GitHub', 'https://github.com/dmlc/gluon-cv/', True, ''),
+        ('Forum', 'https://discuss.mxnet.io/c/gluon', True, ''),
+        ('中文论坛', 'https://discuss.gluon.ai/c/httpsgluon-cvmxnetio', True, ''),
+    ],
+    # Render footer (Default: True)
+    'show_footer': False
+}
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the

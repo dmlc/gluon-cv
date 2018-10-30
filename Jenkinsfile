@@ -88,6 +88,7 @@ stage("Build Docs") {
       export PYTHONPATH=\${PWD}
       env
       export LD_LIBRARY_PATH=/usr/local/cuda-9.0/lib64
+      git submodule update --init --recursive
       git clean -fx
       cd docs && make clean && make html
 
