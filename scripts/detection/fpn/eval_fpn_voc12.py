@@ -91,16 +91,17 @@ def validate(net, val_data, val_items, val_shapes, ctx, size, classes):
             ids = nd.squeeze(ids, axis=(0, 2)).asnumpy().astype(np.int8).tolist()
             valid_ids = [id for id in ids if id is not -1]
             valid_len = len(valid_ids)
-            inds = nd.slice_axis(inds, begin=0, end=valid_len, axis=0)
-            scores = nd.take(scores, inds, axis=1)
-            bboxes = nd.take(bboxes, inds, axis=1)
-            scores = scores.asnumpy()
-            bboxes = bboxes.asnumpy()
-            for i, id in enumerate(valid_ids):
-                score = scores[:, i, 0][0]
-                xmin, ymin, xmax, ymax = bboxes[:, i, 0][0], bboxes[:, i, 1][0], bboxes[:, i, 2][0], bboxes[:, i, 3][0] 
-                result_dict[id] = result_dict.get(id, []) + [[item, score, xmin, ymin, xmax, ymax]]
-            print("Detect Image {:s} Done.".format(item))
+            if valid_len > 0: # valid_len must > 0
+                inds = nd.slice_axis(inds, begin=0, end=valid_len, axis=0)
+                scores = nd.take(scores, inds, axis=1)
+                bboxes = nd.take(bboxes, inds, axis=1)
+                scores = scores.asnumpy()
+                bboxes = bboxes.asnumpy()
+                for i, id in enumerate(valid_ids):
+                    score = scores[:, i, 0][0]
+                    xmin, ymin, xmax, ymax = bboxes[:, i, 0][0], bboxes[:, i, 1][0], bboxes[:, i, 2][0], bboxes[:, i, 3][0] 
+                    result_dict[id] = result_dict.get(id, []) + [[item, score, xmin, ymin, xmax, ymax]]
+                print("Detect Image {:s} Done.".format(item))
     print("---Detect Total {:d} Image Done.---".format(len(val_items)))
     return result_dict
 
