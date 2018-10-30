@@ -40,6 +40,8 @@ def parse_args():
                         help='Save coco output json')
     parser.add_argument('--eval-all', action='store_true',
                         help='Eval all models begins with save prefix. Use with pretrained.')
+    parser.add_argument('--competition', type=str, default='test',
+                        help='Competition type, either val or test, default test')
     args = parser.parse_args()
     return args
 
