@@ -145,6 +145,7 @@ html_favicon = '_static/gluon_s2.png'
 # }
 
 html_theme = 'sphinx_materialdesign_theme'
+curr_path = os.path.dirname(os.path.abspath(os.path.expanduser(__file__)))
 html_theme_path = [os.path.join(curr_path, 'sphinx_materialdesign_theme')]
 html_theme_options = {
     'primary_color': 'cyan',
