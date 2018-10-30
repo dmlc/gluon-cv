@@ -17,6 +17,7 @@
 # sys.path.insert(0, os.path.abspath('.'))
 # import guzzle_sphinx_theme
 
+import os
 import recommonmark
 from recommonmark.parser import CommonMarkParser
 from recommonmark.transform import AutoStructify
