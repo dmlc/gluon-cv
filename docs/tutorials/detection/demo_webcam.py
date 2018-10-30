@@ -29,7 +29,7 @@ First, import the necessary libraries into python.
 
 In this tutorial we use ``ssd_512_mobilenet1.0_voc``, a snappy network with good accuracy that should be
 well above 1 frame per second on most laptops. Feel free to try a different model from
-the `Gluon Model Zoo <../../model_zoo/index.html>`__ !
+the `Gluon Model Zoo <../../model_zoo/detection.html>`__ !
 
 .. code-block:: python
 
