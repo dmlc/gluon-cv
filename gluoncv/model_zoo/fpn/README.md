@@ -15,7 +15,8 @@ Below repos give me a lot of inspiration
   * models : https://pan.baidu.com/s/1JrQYMLCPXuWGViSokS1LLg
 ### VOC12
 * **e2e_fastercnn_fpn_resnet50_v1d_1x_voc07++12** : Stay tuned!
-
+  * train-log : https://drive.google.com/open?id=18NFrME-TM_8cvYTkKwtrqvcPCmZ5L-MG
+  * models : 
 ### COCO17
 * **e2e_fastercnn(CAM/PAM)_fpn_resnet50_v1d_2x_coco17** : Stay tuned!
 
