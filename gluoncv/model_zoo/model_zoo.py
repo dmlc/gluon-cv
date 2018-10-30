@@ -13,7 +13,7 @@ from .cifarresnext import *
 from .cifarwideresnet import *
 from .resnetv1b import *
 from .resnext import *
-from .simple_pose_resnet import *
+from .simple_pose.simple_pose_resnet import *
 from .senet import *
 from .se_resnet import *
 from .yolo import *

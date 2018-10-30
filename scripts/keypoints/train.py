@@ -7,13 +7,14 @@ from mxnet import autograd as ag
 from mxnet.gluon import nn
 from mxnet.gluon.data.vision import transforms
 
-from gluoncv.data import imagenet
+from gluoncv.data import mscoco
 from gluoncv.model_zoo import get_model
 from gluoncv.utils import makedirs, LRScheduler
+from gluoncv.data.transforms.presets.simple_pose import SimplePoseDefaultTrainTransform
 
 # CLI
 parser = argparse.ArgumentParser(description='Train a model for image classification.')
-parser.add_argument('--data-dir', type=str, default='~/.mxnet/datasets/imagenet',
+parser.add_argument('--data-dir', type=str, default='~/.mxnet/datasets/coco',
                     help='training and validation pictures to use.')
 parser.add_argument('--batch-size', type=int, default=32,
                     help='training batch size per device (CPU/GPU).')
@@ -47,8 +48,8 @@ parser.add_argument('--mode', type=str,
                     help='mode in which to train the model. options are symbolic, imperative, hybrid')
 parser.add_argument('--model', type=str, required=True,
                     help='type of model to use. see vision_model for options.')
-parser.add_argument('--input-size', type=int, default=224,
-                    help='size of the input image size. default is 224')
+parser.add_argument('--input-size', type=str, default='256,192',
+                    help='size of the input image size. default is 256,192')
 parser.add_argument('--use-pretrained', action='store_true',
                     help='enable using pretrained model from gluon.')
 parser.add_argument('--use-pretrained-base', action='store_true',
@@ -76,7 +77,7 @@ logger.addHandler(streamhandler)
 logger.info(opt)
 
 batch_size = opt.batch_size
-classes = 1000
+num_joints = 17
 num_training_samples = 1281167
 
 num_gpus = opt.num_gpus
@@ -99,7 +100,7 @@ lr_scheduler = LRScheduler(mode=opt.lr_mode, baselr=opt.lr,
 
 model_name = opt.model
 
-kwargs = {'ctx': context, 'pretrained': opt.use_pretrained, 'classes': classes}
+kwargs = {'ctx': context, 'pretrained': opt.use_pretrained, 'num_joints': num_joints}
 if model_name.startswith('vgg'):
     kwargs['batch_norm'] = opt.batch_norm
 elif model_name.startswith('resnext'):
@@ -116,25 +117,29 @@ if opt.dtype != 'float32':
 net = get_model(model_name, **kwargs)
 net.cast(opt.dtype)
 
-def get_data_loader(data_dir, batch_size, num_workers):
+def get_data_loader(data_dir, batch_size, num_workers, input_size):
 
     def batch_fn(batch, ctx):
         data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
         label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0)
-        return data, label
+        weight = gluon.utils.split_and_load(batch[2], ctx_list=ctx, batch_axis=0)
+        return data, label, weight
 
-    transform_train = SimplePoseDefaultTrainTransform(num_joints=17, joint_pairs=0,
-                                                      image_size=(256, 192), heatmap_size=(64, 48),
+    dataset = mscoco.keypoints.COCOKeyPoints(data_dir, aspect_ratio=4./3.)
+    heatmap_size = [int(i/4) for i in input_size]
+    transform_train = SimplePoseDefaultTrainTransform(num_joints=dataset.num_joints,
+                                                      joint_pairs=dataset.joint_pairs,
+                                                      image_size=input_size, heatmap_size=heatmap_size,
                                                       scale_factor=0.30, rotation_factor=40)
 
     train_data = gluon.data.DataLoader(
-        mscoco.COCOkeyPoint(data_dir, aspect_ratio=4./3.).transform(transform_train),
+        dataset.transform(transform_train),
         batch_size=batch_size, shuffle=True, last_batch='discard', num_workers=num_workers)
 
     return train_data, batch_fn
 
-train_data, val_data, batch_fn = get_data_loader(opt.data_dir, batch_size, num_workers)
-
+input_size = [int(i) for i in opt.input_size.split(',')]
+train_data, batch_fn = get_data_loader(opt.data_dir, batch_size, num_workers, input_size)
 train_metric = mx.metric.Accuracy()
 
 save_frequency = opt.save_frequency
@@ -166,17 +171,17 @@ def train(ctx):
 
     for epoch in range(opt.num_epochs):
         tic = time.time()
-        if opt.use_rec:
-            train_data.reset()
         train_metric.reset()
         btic = time.time()
 
         for i, batch in enumerate(train_data):
-            data, label = batch_fn(batch, ctx)
+            data, label, weight = batch_fn(batch, ctx)
 
+            import pdb; pdb.set_trace()
             with ag.record():
                 outputs = [net(X.astype(opt.dtype, copy=False)) for X in data]
-                loss = [L(yhat, y.astype(opt.dtype, copy=False)) for yhat, y in zip(outputs, label)]
+                loss = [L(yhat, y.astype(opt.dtype, copy=False), w)
+                        for yhat, y, w in zip(outputs, label, weight)]
             for l in loss:
                 l.backward()
             lr_scheduler.update(i, epoch)

@@ -27,9 +27,9 @@ class SimplePoseResNet(HybridBlock):
                  num_deconv_filters=(256, 256, 256),
                  num_deconv_kernels=(4, 4, 4),
                  final_conv_kernel=1, deconv_with_bias=False, **kwargs):
-        super(PoseResNet, self).__init__(**kwargs)
+        super(SimplePoseResNet, self).__init__(**kwargs)
 
-        from .model_zoo import get_model
+        from ..model_zoo import get_model
         base_network = get_model(base_name, pretrained=pretrained_base)
 
         self.resnet = nn.HybridSequential()
@@ -130,7 +130,7 @@ def simple_pose_resnet50_v1b(**kwargs):
     root : str, default '$MXNET_HOME/models'
         Location for keeping the model parameters.
     """
-    return get_pose_resnet('resnet50_v1b', **kwargs)
+    return get_simple_pose_resnet('resnet50_v1b', **kwargs)
 
 def simple_pose_resnet101_v1b(**kwargs):
     r"""ResNet-18 model from `"Simple Baselines for Human Pose Estimation and Tracking"
@@ -145,7 +145,7 @@ def simple_pose_resnet101_v1b(**kwargs):
     root : str, default '$MXNET_HOME/models'
         Location for keeping the model parameters.
     """
-    return get_pose_resnet('resnet101_v1b', **kwargs)
+    return get_simple_pose_resnet('resnet101_v1b', **kwargs)
 
 def simple_pose_resnet152_v1b(**kwargs):
     r"""ResNet-18 model from `"Simple Baselines for Human Pose Estimation and Tracking"
@@ -160,7 +160,7 @@ def simple_pose_resnet152_v1b(**kwargs):
     root : str, default '$MXNET_HOME/models'
         Location for keeping the model parameters.
     """
-    return get_pose_resnet('resnet152_v1b', **kwargs)
+    return get_simple_pose_resnet('resnet152_v1b', **kwargs)
 
 def simple_pose_resnet50_v1d(**kwargs):
     r"""ResNet-18 model from `"Simple Baselines for Human Pose Estimation and Tracking"
@@ -175,7 +175,7 @@ def simple_pose_resnet50_v1d(**kwargs):
     root : str, default '$MXNET_HOME/models'
         Location for keeping the model parameters.
     """
-    return get_pose_resnet('resnet50_v1d', **kwargs)
+    return get_simple_pose_resnet('resnet50_v1d', **kwargs)
 
 def simple_pose_resnet101_v1d(**kwargs):
     r"""ResNet-18 model from `"Simple Baselines for Human Pose Estimation and Tracking"
@@ -190,7 +190,7 @@ def simple_pose_resnet101_v1d(**kwargs):
     root : str, default '$MXNET_HOME/models'
         Location for keeping the model parameters.
     """
-    return get_pose_resnet('resnet101_v1d', **kwargs)
+    return get_simple_pose_resnet('resnet101_v1d', **kwargs)
 
 def simple_pose_resnet152_v1d(**kwargs):
     r"""ResNet-18 model from `"Simple Baselines for Human Pose Estimation and Tracking"
@@ -205,4 +205,4 @@ def simple_pose_resnet152_v1d(**kwargs):
     root : str, default '$MXNET_HOME/models'
         Location for keeping the model parameters.
     """
-    return get_pose_resnet('resnet152_v1d', **kwargs)
+    return get_simple_pose_resnet('resnet152_v1d', **kwargs)
