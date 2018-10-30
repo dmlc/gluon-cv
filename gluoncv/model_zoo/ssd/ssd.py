@@ -501,7 +501,7 @@ def ssd_512_resnet18_v1_voc(pretrained=False, pretrained_base=True, **kwargs):
                    filters=[512, 512, 256, 256],
                    sizes=[51.2, 102.4, 189.4, 276.4, 363.52, 450.6, 492],
                    ratios=[[1, 2, 0.5]] + [[1, 2, 0.5, 3, 1.0/3]] * 3 + [[1, 2, 0.5]] * 2,
-                   steps=[8, 16, 32, 64, 128, 256, 512],
+                   steps=[16, 32, 64, 128, 256, 512],
                    classes=classes, dataset='voc', pretrained=pretrained,
                    pretrained_base=pretrained_base, **kwargs)
 
@@ -528,7 +528,7 @@ def ssd_512_resnet18_v1_coco(pretrained=False, pretrained_base=True, **kwargs):
                    filters=[512, 512, 256, 256],
                    sizes=[51.2, 102.4, 189.4, 276.4, 363.52, 450.6, 492],
                    ratios=[[1, 2, 0.5]] + [[1, 2, 0.5, 3, 1.0/3]] * 3 + [[1, 2, 0.5]] * 2,
-                   steps=[8, 16, 32, 64, 128, 256, 512],
+                   steps=[16, 32, 64, 128, 256, 512],
                    classes=classes, dataset='coco', pretrained=pretrained,
                    pretrained_base=pretrained_base, **kwargs)
 
@@ -563,7 +563,7 @@ def ssd_512_resnet18_v1_custom(classes, pretrained_base=True, transfer=None, **k
                       filters=[512, 512, 256, 256],
                       sizes=[51.2, 102.4, 189.4, 276.4, 363.52, 450.6, 492],
                       ratios=[[1, 2, 0.5]] + [[1, 2, 0.5, 3, 1.0/3]] * 3 + [[1, 2, 0.5]] * 2,
-                      steps=[8, 16, 32, 64, 128, 256, 512],
+                      steps=[16, 32, 64, 128, 256, 512],
                       classes=classes, dataset='',
                       pretrained_base=pretrained_base, **kwargs)
     else:
