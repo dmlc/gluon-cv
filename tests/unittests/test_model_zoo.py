@@ -120,11 +120,7 @@ def test_imagenet_models():
 @try_gpu(0)
 def test_pose_resnet_models():
     ctx = mx.context.current_context()
-    models = ['pose_resnet18_v1', 'pose_resnet34_v1', 'pose_resnet50_v1',
-              'pose_resnet101_v1', 'pose_resnet152_v1',
-              'pose_resnet18_v1b', 'pose_resnet34_v1b', 'pose_resnet50_v1b',
-              'pose_resnet101_v1b', 'pose_resnet152_v1b',
-              'pose_resnet50_v1c', 'pose_resnet101_v1c', 'pose_resnet152_v1c',
+    models = ['pose_resnet50_v1b', 'pose_resnet101_v1b', 'pose_resnet152_v1b',
               'pose_resnet50_v1d', 'pose_resnet101_v1d', 'pose_resnet152_v1d']
 
     # 192x256

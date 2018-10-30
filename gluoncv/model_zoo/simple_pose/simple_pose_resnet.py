@@ -9,18 +9,17 @@
 
 from __future__ import division
 
-__all__ = ['get_pose_resnet', 'pose_resnet18_v1', 'pose_resnet34_v1',
-           'pose_resnet50_v1', 'pose_resnet101_v1', 'pose_resnet152_v1',
-           'pose_resnet18_v1b', 'pose_resnet34_v1b',
-           'pose_resnet50_v1b', 'pose_resnet101_v1b', 'pose_resnet152_v1b',
-           'pose_resnet50_v1c', 'pose_resnet101_v1c', 'pose_resnet152_v1c',
-           'pose_resnet50_v1d', 'pose_resnet101_v1d', 'pose_resnet152_v1d']
+__all__ = ['get_simple_pose_resnet', 'SimplePoseResNet',
+           'simple_pose_resnet50_v1b', 'simple_pose_resnet101_v1b',
+           'simple_pose_resnet152_v1b',
+           'simple_pose_resnet50_v1d', 'simple_pose_resnet101_v1d',
+           'simple_pose_resnet152_v1d']
 
 from mxnet.context import cpu
 from mxnet.gluon.block import HybridBlock
 from mxnet.gluon import nn
 
-class PoseResNet(HybridBlock):
+class SimplePoseResNet(HybridBlock):
 
     def __init__(self, base_name='resnet50_v1b', pretrained_base=False,
                  num_joints=17,
@@ -106,10 +105,10 @@ class PoseResNet(HybridBlock):
 
         return x
 
-def get_pose_resnet(base_name, pretrained=False, ctx=cpu(),
+def get_simple_pose_resnet(base_name, pretrained=False, ctx=cpu(),
                     root='~/.mxnet/models', **kwargs):
 
-    net = PoseResNet(base_name, **kwargs)
+    net = SimplePoseResNet(base_name, **kwargs)
 
     if pretrained:
         from .model_store import get_model_file
@@ -118,112 +117,7 @@ def get_pose_resnet(base_name, pretrained=False, ctx=cpu(),
 
     return net
 
-def pose_resnet18_v1(**kwargs):
-    r"""ResNet-18 model from `"Simple Baselines for Human Pose Estimation and Tracking"
-    <https://arxiv.org/abs/1804.06208>`_ paper.
-    Parameters
-    ----------
-    pretrained : bool or str
-        Boolean value controls whether to load the default pretrained weights for model.
-        String value represents the hashtag for a certain version of pretrained weights.
-    ctx : Context, default CPU
-        The context in which to load the pretrained weights.
-    root : str, default '$MXNET_HOME/models'
-        Location for keeping the model parameters.
-    """
-    return get_pose_resnet('resnet18_v1', **kwargs)
-
-def pose_resnet34_v1(**kwargs):
-    r"""ResNet-18 model from `"Simple Baselines for Human Pose Estimation and Tracking"
-    <https://arxiv.org/abs/1804.06208>`_ paper.
-    Parameters
-    ----------
-    pretrained : bool or str
-        Boolean value controls whether to load the default pretrained weights for model.
-        String value represents the hashtag for a certain version of pretrained weights.
-    ctx : Context, default CPU
-        The context in which to load the pretrained weights.
-    root : str, default '$MXNET_HOME/models'
-        Location for keeping the model parameters.
-    """
-    return get_pose_resnet('resnet34_v1', **kwargs)
-
-def pose_resnet50_v1(**kwargs):
-    r"""ResNet-18 model from `"Simple Baselines for Human Pose Estimation and Tracking"
-    <https://arxiv.org/abs/1804.06208>`_ paper.
-    Parameters
-    ----------
-    pretrained : bool or str
-        Boolean value controls whether to load the default pretrained weights for model.
-        String value represents the hashtag for a certain version of pretrained weights.
-    ctx : Context, default CPU
-        The context in which to load the pretrained weights.
-    root : str, default '$MXNET_HOME/models'
-        Location for keeping the model parameters.
-    """
-    return get_pose_resnet('resnet50_v1', **kwargs)
-
-def pose_resnet101_v1(**kwargs):
-    r"""ResNet-18 model from `"Simple Baselines for Human Pose Estimation and Tracking"
-    <https://arxiv.org/abs/1804.06208>`_ paper.
-    Parameters
-    ----------
-    pretrained : bool or str
-        Boolean value controls whether to load the default pretrained weights for model.
-        String value represents the hashtag for a certain version of pretrained weights.
-    ctx : Context, default CPU
-        The context in which to load the pretrained weights.
-    root : str, default '$MXNET_HOME/models'
-        Location for keeping the model parameters.
-    """
-    return get_pose_resnet('resnet101_v1', **kwargs)
-
-def pose_resnet152_v1(**kwargs):
-    r"""ResNet-18 model from `"Simple Baselines for Human Pose Estimation and Tracking"
-    <https://arxiv.org/abs/1804.06208>`_ paper.
-    Parameters
-    ----------
-    pretrained : bool or str
-        Boolean value controls whether to load the default pretrained weights for model.
-        String value represents the hashtag for a certain version of pretrained weights.
-    ctx : Context, default CPU
-        The context in which to load the pretrained weights.
-    root : str, default '$MXNET_HOME/models'
-        Location for keeping the model parameters.
-    """
-    return get_pose_resnet('resnet152_v1', **kwargs)
-
-def pose_resnet18_v1b(**kwargs):
-    r"""ResNet-18 model from `"Simple Baselines for Human Pose Estimation and Tracking"
-    <https://arxiv.org/abs/1804.06208>`_ paper.
-    Parameters
-    ----------
-    pretrained : bool or str
-        Boolean value controls whether to load the default pretrained weights for model.
-        String value represents the hashtag for a certain version of pretrained weights.
-    ctx : Context, default CPU
-        The context in which to load the pretrained weights.
-    root : str, default '$MXNET_HOME/models'
-        Location for keeping the model parameters.
-    """
-    return get_pose_resnet('resnet18_v1b', **kwargs)
-
-def pose_resnet34_v1b(**kwargs):
-    r"""ResNet-18 model from `"Simple Baselines for Human Pose Estimation and Tracking"
-    <https://arxiv.org/abs/1804.06208>`_ paper.
-    Parameters
-    ----------
-    pretrained : bool or str
-        Boolean value controls whether to load the default pretrained weights for model.
-        String value represents the hashtag for a certain version of pretrained weights.
-    ctx : Context, default CPU
-        The context in which to load the pretrained weights.
-    root : str, default '$MXNET_HOME/models'
-        Location for keeping the model parameters.
-    """
-    return get_pose_resnet('resnet34_v1b', **kwargs)
-
-def pose_resnet50_v1b(**kwargs):
+def simple_pose_resnet50_v1b(**kwargs):
     r"""ResNet-18 model from `"Simple Baselines for Human Pose Estimation and Tracking"
     <https://arxiv.org/abs/1804.06208>`_ paper.
     Parameters
@@ -238,7 +132,7 @@ def pose_resnet50_v1b(**kwargs):
     """
     return get_pose_resnet('resnet50_v1b', **kwargs)
 
-def pose_resnet101_v1b(**kwargs):
+def simple_pose_resnet101_v1b(**kwargs):
     r"""ResNet-18 model from `"Simple Baselines for Human Pose Estimation and Tracking"
     <https://arxiv.org/abs/1804.06208>`_ paper.
     Parameters
@@ -253,7 +147,7 @@ def pose_resnet101_v1b(**kwargs):
     """
     return get_pose_resnet('resnet101_v1b', **kwargs)
 
-def pose_resnet152_v1b(**kwargs):
+def simple_pose_resnet152_v1b(**kwargs):
     r"""ResNet-18 model from `"Simple Baselines for Human Pose Estimation and Tracking"
     <https://arxiv.org/abs/1804.06208>`_ paper.
     Parameters
@@ -268,52 +162,7 @@ def pose_resnet152_v1b(**kwargs):
     """
     return get_pose_resnet('resnet152_v1b', **kwargs)
 
-def pose_resnet50_v1c(**kwargs):
-    r"""ResNet-18 model from `"Simple Baselines for Human Pose Estimation and Tracking"
-    <https://arxiv.org/abs/1804.06208>`_ paper.
-    Parameters
-    ----------
-    pretrained : bool or str
-        Boolean value controls whether to load the default pretrained weights for model.
-        String value represents the hashtag for a certain version of pretrained weights.
-    ctx : Context, default CPU
-        The context in which to load the pretrained weights.
-    root : str, default '$MXNET_HOME/models'
-        Location for keeping the model parameters.
-    """
-    return get_pose_resnet('resnet50_v1c', **kwargs)
-
-def pose_resnet101_v1c(**kwargs):
-    r"""ResNet-18 model from `"Simple Baselines for Human Pose Estimation and Tracking"
-    <https://arxiv.org/abs/1804.06208>`_ paper.
-    Parameters
-    ----------
-    pretrained : bool or str
-        Boolean value controls whether to load the default pretrained weights for model.
-        String value represents the hashtag for a certain version of pretrained weights.
-    ctx : Context, default CPU
-        The context in which to load the pretrained weights.
-    root : str, default '$MXNET_HOME/models'
-        Location for keeping the model parameters.
-    """
-    return get_pose_resnet('resnet101_v1c', **kwargs)
-
-def pose_resnet152_v1c(**kwargs):
-    r"""ResNet-18 model from `"Simple Baselines for Human Pose Estimation and Tracking"
-    <https://arxiv.org/abs/1804.06208>`_ paper.
-    Parameters
-    ----------
-    pretrained : bool or str
-        Boolean value controls whether to load the default pretrained weights for model.
-        String value represents the hashtag for a certain version of pretrained weights.
-    ctx : Context, default CPU
-        The context in which to load the pretrained weights.
-    root : str, default '$MXNET_HOME/models'
-        Location for keeping the model parameters.
-    """
-    return get_pose_resnet('resnet152_v1c', **kwargs)
-
-def pose_resnet50_v1d(**kwargs):
+def simple_pose_resnet50_v1d(**kwargs):
     r"""ResNet-18 model from `"Simple Baselines for Human Pose Estimation and Tracking"
     <https://arxiv.org/abs/1804.06208>`_ paper.
     Parameters
@@ -328,7 +177,7 @@ def pose_resnet50_v1d(**kwargs):
     """
     return get_pose_resnet('resnet50_v1d', **kwargs)
 
-def pose_resnet101_v1d(**kwargs):
+def simple_pose_resnet101_v1d(**kwargs):
     r"""ResNet-18 model from `"Simple Baselines for Human Pose Estimation and Tracking"
     <https://arxiv.org/abs/1804.06208>`_ paper.
     Parameters
@@ -343,7 +192,7 @@ def pose_resnet101_v1d(**kwargs):
     """
     return get_pose_resnet('resnet101_v1d', **kwargs)
 
-def pose_resnet152_v1d(**kwargs):
+def simple_pose_resnet152_v1d(**kwargs):
     r"""ResNet-18 model from `"Simple Baselines for Human Pose Estimation and Tracking"
     <https://arxiv.org/abs/1804.06208>`_ paper.
     Parameters
