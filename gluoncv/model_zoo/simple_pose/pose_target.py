@@ -1,6 +1,12 @@
 """
 Target generator for Simple Baselines for Human Pose Estimation and Tracking
 (https://arxiv.org/abs/1804.06208)
+
+---------------------------------------------
+Copyright (c) Microsoft
+Licensed under the MIT License.
+Written by Bin Xiao (Bin.Xiao@microsoft.com)
+---------------------------------------------
 """
 import numpy as np
 

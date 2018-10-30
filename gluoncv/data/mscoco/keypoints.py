@@ -139,8 +139,11 @@ class COCOKeyPoints(VisionDataset):
                 label = self._check_load_keypoints(_coco, entry)
                 if not label:
                     continue
-                items.append(abs_path)
-                labels.append(label)
+
+                # num of items are relative to person, not image
+                for obj in label:
+                    items.append(abs_path)
+                    labels.append(obj)
         return items, labels
 
     def _check_load_keypoints(self, coco, entry):
