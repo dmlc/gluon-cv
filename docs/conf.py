@@ -160,8 +160,8 @@ html_theme_options = {
     ],
 
     # custom layout
-    'fixed_drawer': True,
-    'fixed_header': True,
+    'fixed_drawer': False,
+    'fixed_header': False,
     'header_waterfall': True,
     'header_scroll': True,
 
