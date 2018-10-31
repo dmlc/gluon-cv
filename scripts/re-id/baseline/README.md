@@ -21,11 +21,11 @@ ours(pad 0 and crop) | 91.3 | 96.7 | 97.7 | 76.2
 ours(pad 0 and crop, warm up epoch=5,25,50,75) | 90.9 | 96.3 | 97.6 | 76.0
 ours(pad 0 and crop, warm up epoch=5,30,55,80) | 90.8 | 96.4 | 97.7 | 76.5
 ours(pad 0 and crop, warm up epoch=10,30,55,80) | 90.6 | 96.5 | 97.7 | 76.0
-ours(random eraing) | 88.39 | 95.9 | 97.5 | 72.9
-ours(random eraing, warm up epoch=5,25,50,75) | 89.9 | 96.9 | 98.0 | 75.6
-ours(random eraing, warm up epoch=5,30,55,80) | 89.3 | 97.8 | 97.8 | 74.9
-ours(random eraing, warm up epoch=10,30,55,80) | 90.4 | 96.3 | 97.7 | 75.7
-ours(pad 0 and crop + random eraing) | 89.2 | 96.2 | 97.5 | 73.8
+ours(random erasing) | 88.39 | 95.9 | 97.5 | 72.9
+ours(random erasing, warm up epoch=5,25,50,75) | 89.9 | 96.9 | 98.0 | 75.6
+ours(random erasing, warm up epoch=5,30,55,80) | 89.3 | 97.8 | 97.8 | 74.9
+ours(random erasing, warm up epoch=10,30,55,80) | 90.4 | 96.3 | 97.7 | 75.7
+ours(pad 0 and crop + random erasing) | 89.2 | 96.2 | 97.5 | 73.8
 ours(batch size=48) | 86.1 | 94.1 | 96.3 | 69.7
 ours(batch size=64) | 86.7 | 94.2 | 95.9 | 70.0
 ours(max pooling) | 88.4 | 95.2 | 96.6 | 72.3
