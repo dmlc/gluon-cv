@@ -151,14 +151,20 @@ html_theme_options = {
     'primary_color': 'cyan',
     'accent_color': 'orange',
     'header_links' : [
+        ('Home', 'index', False, 'home'),
         ('Install', '#installation', False, ''),
-        ('Applications', '#supported-applications', False, ''),
-        ('API', 'api/data.datasets', False, ''),
-        ('Contribute', 'how_to/contribute', False, ''),
-        ('GitHub', 'https://github.com/dmlc/gluon-cv/', True, ''),
-        ('Forum', 'https://discuss.mxnet.io/c/gluon', True, ''),
-        ('中文论坛', 'https://discuss.gluon.ai/c/httpsgluon-cvmxnetio', True, ''),
+        ('Model Zoo', 'model_zoo/index', False, ''),
+        ('API', 'api/index', False, ''),
+        ('Community', 'how_to/index', False, ''),
+        ('GitHub', 'https://github.com/dmlc/gluon-cv/', True, 'link'),
     ],
+
+    # custom layout
+    'fixed_drawer': True,
+    'fixed_header': True,
+    'header_waterfall': True,
+    'header_scroll': True,
+
     # Render footer (Default: True)
     'show_footer': False
 }

@@ -79,10 +79,10 @@ A Quick Example
 :ref:`Object Detection Demo <sphx_glr_build_examples_detection_demo_ssd.py>`
 
 
+.. toctree::
+   :maxdepth: 2
+
    model_zoo/index
-
    tutorials/index
-
    api/index
-
    how_to/index
