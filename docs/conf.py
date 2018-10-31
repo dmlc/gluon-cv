@@ -149,11 +149,11 @@ curr_path = os.path.dirname(os.path.abspath(os.path.expanduser(__file__)))
 html_theme_path = [os.path.join(curr_path, 'sphinx_materialdesign_theme')]
 html_theme_options = {
     'primary_color': 'cyan',
-    'accent_color': 'amber',
+    'accent_color': 'orange',
     'header_links' : [
         ('Install', '#installation', False, ''),
         ('Applications', '#supported-applications', False, ''),
-        ('API', 'api/data.datasets.html', False, ''),
+        ('API', 'api/data.datasets', False, ''),
         ('Contribute', 'how_to/contribute', False, ''),
         ('GitHub', 'https://github.com/dmlc/gluon-cv/', True, ''),
         ('Forum', 'https://discuss.mxnet.io/c/gluon', True, ''),

@@ -79,41 +79,10 @@ A Quick Example
 :ref:`Object Detection Demo <sphx_glr_build_examples_detection_demo_ssd.py>`
 
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Model Zoo
+   model_zoo/index
 
-   model_zoo/classification
-   model_zoo/detection
-   model_zoo/segmentation
+   tutorials/index
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Tutorials
+   api/index
 
-   build/examples_classification/index
-   build/examples_detection/index
-   build/examples_instance/index
-   build/examples_segmentation/index
-   build/examples_datasets/index
-   build/examples_deployment/index
-
-.. toctree::
-   :maxdepth: 1
-   :caption: API Reference
-
-
-   api/data.datasets
-   api/data.batchify
-   api/data.transforms
-   api/model_zoo
-   api/nn
-   api/loss
-   api/utils
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Community
-
-   how_to/support
-   how_to/contribute
+   how_to/index
