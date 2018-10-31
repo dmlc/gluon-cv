@@ -149,7 +149,7 @@ curr_path = os.path.dirname(os.path.abspath(os.path.expanduser(__file__)))
 html_theme_path = [os.path.join(curr_path, 'sphinx_materialdesign_theme')]
 html_theme_options = {
     'primary_color': 'cyan',
-    'accent_color': 'orange',
+    'accent_color': 'pink',
     'header_links' : [
         ('Home', 'index', False, 'home'),
         ('Install', '#installation', False, ''),
@@ -160,7 +160,7 @@ html_theme_options = {
     ],
 
     # custom layout
-    'fixed_drawer': False,
+    'fixed_drawer': True,
     'fixed_header': False,
     'header_waterfall': True,
     'header_scroll': True,
@@ -267,6 +267,7 @@ todo_include_todos = True
 
 def setup(app):
     app.add_javascript('google_analytics.js')
+    app.add_javascript('hidebib.js')
     app.add_stylesheet('css/custom.css')
      #app.add_transform(AutoStructify)
     #app.add_config_value('recommonmark_config', {
