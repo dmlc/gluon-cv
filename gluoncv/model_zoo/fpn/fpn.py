@@ -253,7 +253,7 @@ class FPN(RCNN):
             ROI pooling mode. Currently support 'pool' and 'align'.
         Returns
         -------
-        Pooled roi features according aggregated according to its roi_level
+        Pooled roi features aggregated according to its roi_level
         '''
         if self._use_p6: # do not use p6 for RCNN
             max_stage = self._max_stage - 1 
