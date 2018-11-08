@@ -162,8 +162,8 @@ html_theme_options = {
     # custom layout
     'fixed_drawer': True,
     'fixed_header': False,
-    'header_waterfall': False,
-    'header_scroll': False,
+    'header_waterfall': True,
+    'header_scroll': True,
 
     # Render footer (Default: True)
     'show_footer': False
