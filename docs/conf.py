@@ -148,22 +148,22 @@ html_theme = 'sphinx_materialdesign_theme'
 curr_path = os.path.dirname(os.path.abspath(os.path.expanduser(__file__)))
 html_theme_path = [os.path.join(curr_path, 'sphinx_materialdesign_theme')]
 html_theme_options = {
-    'primary_color': 'cyan',
-    'accent_color': 'pink',
+    'primary_color': 'blue grey',
+    'accent_color': 'deep orange',
     'header_links' : [
-        ('Home', 'index', False, 'home'),
         ('Install', '#installation', False, ''),
-        ('Model Zoo', 'model_zoo/index', False, ''),
+        ('Tutorial', 'tutorials/index', False, ''),
         ('API', 'api/index', False, ''),
-        ('Community', 'how_to/index', False, ''),
+        ('Community', 'how_to/support', False, ''),
+        ('Contribute', 'how_to/contribute', False, ''),
         ('GitHub', 'https://github.com/dmlc/gluon-cv/', True, 'link'),
     ],
 
     # custom layout
     'fixed_drawer': True,
     'fixed_header': False,
-    'header_waterfall': True,
-    'header_scroll': True,
+    'header_waterfall': False,
+    'header_scroll': False,
 
     # Render footer (Default: True)
     'show_footer': False
