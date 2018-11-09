@@ -148,7 +148,7 @@ html_theme = 'sphinx_materialdesign_theme'
 curr_path = os.path.dirname(os.path.abspath(os.path.expanduser(__file__)))
 html_theme_path = [os.path.join(curr_path, 'sphinx_materialdesign_theme')]
 html_theme_options = {
-    'primary_color': 'blue_grey',
+    'primary_color': 'blue',
     'accent_color': 'deep_orange',
     'header_links' : [
         ('Install', '#installation', False, ''),
@@ -162,8 +162,8 @@ html_theme_options = {
     # custom layout
     'fixed_drawer': True,
     'fixed_header': False,
-    'header_waterfall': False,
-    'header_scroll': False,
+    'header_waterfall': True,
+    'header_scroll': True,
 
     # Render footer (Default: True)
     'show_footer': False
