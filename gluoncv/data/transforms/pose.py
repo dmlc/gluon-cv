@@ -13,6 +13,7 @@ from __future__ import absolute_import
 from __future__ import division
 
 import numpy as np
+from mxnet import nd
 from ...utils.filesystem import try_import_cv2
 
 def flip_heatmap(heatmap, joint_pairs):
@@ -148,3 +149,60 @@ def crop(img, center, scale, output_size, rot=0):
                              flags=cv2.INTER_LINEAR)
 
     return dst_img
+
+def transform_preds(coords, center, scale, output_size):
+    target_coords = nd.zeros(coords.shape)
+    trans = get_affine_transform(center, scale, 0, output_size, inv=1)
+    for p in range(coords.shape[0]):
+        target_coords[p, 0:2] = affine_transform(coords[p, 0:2], trans)
+    return target_coords
+
+
+def get_max_pred(batch_heatmaps):
+    batch_size = batch_heatmaps.shape[0]
+    num_joints = batch_heatmaps.shape[1]
+    width = batch_heatmaps.shape[3]
+    heatmaps_reshaped = batch_heatmaps.reshape((batch_size, num_joints, -1))
+    idx = nd.argmax(heatmaps_reshaped, 2)
+    maxvals = nd.max(heatmaps_reshaped, 2)
+
+    maxvals = maxvals.reshape((batch_size, num_joints, 1))
+    idx = idx.reshape((batch_size, num_joints, 1))
+
+    preds = nd.tile(idx, (1, 1, 2)).astype(np.float32)
+
+    preds[:, :, 0] = (preds[:, :, 0]) % width
+    preds[:, :, 1] = nd.floor((preds[:, :, 1]) / width)
+
+    pred_mask = nd.tile(nd.greater(maxvals, 0.0), (1, 1, 2))
+    pred_mask = pred_mask.astype(np.float32)
+
+    preds *= pred_mask
+    return preds, maxvals
+
+
+def get_final_preds(config, batch_heatmaps, center, scale):
+    coords, maxvals = get_max_preds(batch_heatmaps)
+
+    heatmap_height = batch_heatmaps.shape[2]
+    heatmap_width = batch_heatmaps.shape[3]
+
+    # post-processing
+    for n in range(coords.shape[0]):
+        for p in range(coords.shape[1]):
+            hm = batch_heatmaps[n][p]
+            px = int(math.floor(coords[n][p][0] + 0.5))
+            py = int(math.floor(coords[n][p][1] + 0.5))
+            if 1 < px < heatmap_width-1 and 1 < py < heatmap_height-1:
+                diff = nd.array([hm[py][px+1] - hm[py][px-1],
+                                 hm[py+1][px]-hm[py-1][px]])
+                coords[n][p] += nd.sign(diff) * .25
+
+    preds = coords.copy()
+
+    # Transform back
+    for i in range(coords.shape[0]):
+        preds[i] = transform_preds(coords[i], center[i], scale[i],
+                                   [heatmap_width, heatmap_height])
+
+    return preds, maxvals
