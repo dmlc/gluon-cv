@@ -157,8 +157,14 @@ _models = {
     'nasnet_6_4032': nasnet_6_4032,
     'residualattentionnet56': residualattentionnet56,
     'residualattentionnet92': residualattentionnet92,
+    'residualattentionnet128': residualattentionnet128,
+    'residualattentionnet164': residualattentionnet164,
+    'residualattentionnet200': residualattentionnet200,
+    'residualattentionnet236': residualattentionnet236,
+    'residualattentionnet452': residualattentionnet452,
     'residualattentionnet56_32input': residualattentionnet56_32input,
-    'residualattentionnet92_32input': residualattentionnet92_32input
+    'residualattentionnet92_32input': residualattentionnet92_32input,
+    'residualattentionnet452_32input': residualattentionnet452_32input
     }
 
 def get_model(name, **kwargs):
