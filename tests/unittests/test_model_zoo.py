@@ -75,6 +75,7 @@ def test_classification_models():
         'cifar_wideresnet16_10', 'cifar_wideresnet28_10', 'cifar_wideresnet40_8',
         'cifar_resnext29_32x4d', 'cifar_resnext29_16x64d',
         'residualattentionnet56_32input', 'residualattentionnet92_32input',
+        'residualattentionnet452_32input'
     ]
     _test_model_list(cifar_models, ctx, x)
 
@@ -106,7 +107,10 @@ def test_imagenet_models():
               'darknet53', 'alexnet',
               'vgg11', 'vgg11_bn', 'vgg13', 'vgg13_bn',
               'vgg16', 'vgg16_bn', 'vgg19', 'vgg19_bn',
-              'residualattentionnet56', 'residualattentionnet92']
+              'residualattentionnet56', 'residualattentionnet92',
+              'residualattentionnet128', 'residualattentionnet164',
+              'residualattentionnet200', 'residualattentionnet236',
+              'residualattentionnet452']
     _test_model_list(models, ctx, x)
 
     # 299x299
