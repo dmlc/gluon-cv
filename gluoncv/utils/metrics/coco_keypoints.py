@@ -146,7 +146,7 @@ class COCOKeyPointsMetric(mx.metric.EvalMetric):
         return names, values
 
     # pylint: disable=arguments-differ, unused-argument
-    def update(self, pred_bboxes, pred_labels, pred_scores, *args, **kwargs):
+    def update(self, pred_heatmap, pred_labels, pred_scores, *args, **kwargs):
         """Update internal buffer with latest predictions.
         Note that the statistics are not available until you call self.get() to return
         the metrics.
@@ -196,12 +196,8 @@ class COCOKeyPointsMetric(mx.metric.EvalMetric):
                 if score < self._score_thresh:
                     continue
                 category_id = self.dataset.contiguous_id_to_json[label]
-                # rescale bboxes
-                bbox[[0, 2]] *= width_scale
-                bbox[[1, 3]] *= height_scale
-                # convert [xmin, ymin, xmax, ymax]  to [xmin, ymin, w, h]
-                bbox[2:4] -= (bbox[:2] - 1)
+
                 self._results.append({'image_id': imgid,
                                       'category_id': category_id,
-                                      'bbox': bbox[:4].tolist(),
+                                      'keypoints': category_id,
                                       'score': score})

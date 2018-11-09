@@ -16,6 +16,8 @@ from gluoncv.data.transforms.presets.simple_pose import SimplePoseDefaultTrainTr
 parser = argparse.ArgumentParser(description='Train a model for image classification.')
 parser.add_argument('--data-dir', type=str, default='~/.mxnet/datasets/coco',
                     help='training and validation pictures to use.')
+parser.add_argument('--num-joints', type=int, required=True,
+                    help='Number of joints to detect')
 parser.add_argument('--batch-size', type=int, default=32,
                     help='training batch size per device (CPU/GPU).')
 parser.add_argument('--dtype', type=str, default='float32',
@@ -140,7 +142,6 @@ def get_data_loader(data_dir, batch_size, num_workers, input_size):
 
 input_size = [int(i) for i in opt.input_size.split(',')]
 train_data, batch_fn = get_data_loader(opt.data_dir, batch_size, num_workers, input_size)
-train_metric = mx.metric.Accuracy()
 
 save_frequency = opt.save_frequency
 if opt.save_dir and save_frequency:
@@ -171,35 +172,26 @@ def train(ctx):
 
     for epoch in range(opt.num_epochs):
         tic = time.time()
-        train_metric.reset()
         btic = time.time()
 
         for i, batch in enumerate(train_data):
             data, label, weight = batch_fn(batch, ctx)
 
-            import pdb; pdb.set_trace()
             with ag.record():
                 outputs = [net(X.astype(opt.dtype, copy=False)) for X in data]
-                loss = [L(yhat, y.astype(opt.dtype, copy=False), w)
+                loss = [L(yhat, y.astype(opt.dtype, copy=False), w.astype(opt.dtype, copy=False))
                         for yhat, y, w in zip(outputs, label, weight)]
             for l in loss:
                 l.backward()
             lr_scheduler.update(i, epoch)
             trainer.step(batch_size)
 
-            train_metric.update(label, outputs)
-
+            loss_val = sum([l.sum().asscalar() for l in loss]) / batch_size
             if opt.log_interval and not (i+1)%opt.log_interval:
-                train_metric_name, train_metric_score = train_metric.get()
-                logger.info('Epoch[%d] Batch [%d]\tSpeed: %f samples/sec\t%s=%f\tlr=%f'%(
+                logger.info('Epoch[%d] Batch [%d]\tSpeed: %f samples/sec\tloss=%f\tlr=%f'%(
                              epoch, i, batch_size*opt.log_interval/(time.time()-btic),
-                             train_metric_name, train_metric_score, trainer.learning_rate))
+                             loss_val, trainer.learning_rate))
                 btic = time.time()
-
-        train_metric_name, train_metric_score = train_metric.get()
-        throughput = int(batch_size * i /(time.time() - tic))
-
-        logger.info('[Epoch %d] training: %s=%f'%(epoch, train_metric_name, train_metric_score))
 
         if save_frequency and save_dir and (epoch + 1) % save_frequency == 0:
             net.save_parameters('%s/imagenet-%s-%d.params'%(save_dir, model_name, epoch))
@@ -208,11 +200,33 @@ def train(ctx):
     if save_frequency and save_dir:
         net.save_parameters('%s/imagenet-%s-%d.params'%(save_dir, model_name, opt.num_epochs-1))
         trainer.save_states('%s/imagenet-%s-%d.states'%(save_dir, model_name, opt.num_epochs-1))
+    
+    return net
+
+def validate(val_data, net, ctx):
+    if isinstance(ctx, mx.Context):
+        ctx = [ctx]
+
+    all_preds = nd.zeros((num_samples, opt.num_joints, 3))
+    for i, batch in enumerate(val_data):
+        data, label, scale, center, imgid = batch_fn(batch, ctx)
+
+        outputs = [net(X.astype(opt.dtype, copy=False)) for X in data]
+        data_flip = [flip(X.astype(opt.dtype, copy=False)) for X in data]
+        outputs_flip = [net(X) for X in data_flip]
+        outputs = [(o + o_flip)/2 for o, o_flip in zip(outputs, outputs_flip)]
+
+        all_preds = transform_pred(outputs, scale, center, imgid)
+
+    json = update_json(all_preds)
+    res = evaluate(json)
+    return res
 
 def main():
     if opt.mode == 'hybrid':
         net.hybridize(static_alloc=True, static_shape=True)
-    train(context)
+    net = train(context)
+    validate(val_data, net, context)
 
 if __name__ == '__main__':
     main()
