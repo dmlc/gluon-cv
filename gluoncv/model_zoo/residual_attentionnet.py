@@ -466,7 +466,7 @@ class ResidualAttentionModel_32input(nn.HybridBlock):
 
             self.residual_block3 = ResidualBlock(512, in_channels=256, stride=2)
             self.attention_module3 = nn.HybridSequential()
-            _add_block(self.attention_module3, AttentionModule_stage4, 
+            _add_block(self.attention_module3, AttentionModule_stage4,
                        m3, 512, scale=scale)
 
             self.residual_block4 = ResidualBlock(1024, in_channels=512)
