@@ -104,7 +104,9 @@ def test_imagenet_models():
               'densenet121', 'densenet161', 'densenet169', 'densenet201',
               'darknet53', 'alexnet',
               'vgg11', 'vgg11_bn', 'vgg13', 'vgg13_bn',
-              'vgg16', 'vgg16_bn', 'vgg19', 'vgg19_bn']
+              'vgg16', 'vgg16_bn', 'vgg19', 'vgg19_bn',
+              'residualattentionnet56', 'residualattentionnet92',
+              'residualattentionnet56_32input', 'residualattentionnet92_32input']
     _test_model_list(models, ctx, x)
 
     # 299x299
