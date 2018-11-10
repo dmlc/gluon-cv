@@ -19,10 +19,10 @@
 # pylint: disable= unused-argument,missing-docstring
 """ResidualAttentionNetwork, implemented in Gluon."""
 
-__all__ = ['ResidualAttentionModel', 'ResidualAttentionModel_32input',
-           'residualattentionnet56', 'residualattentionnet56_32input',
-           'residualattentionnet92', 'residualattentionnet92_32input',
-           'residualattentionnet128', 'residualattentionnet452_32input',
+__all__ = ['ResidualAttentionModel', 'cifar_ResidualAttentionModel',
+           'residualattentionnet56', 'cifar_residualattentionnet56',
+           'residualattentionnet92', 'cifar_residualattentionnet92',
+           'residualattentionnet128', 'cifar_residualattentionnet452',
            'residualattentionnet164', 'residualattentionnet200',
            'residualattentionnet236', 'residualattentionnet452']
 
@@ -428,7 +428,7 @@ class ResidualAttentionModel(nn.HybridBlock):
         return x
 
 
-class ResidualAttentionModel_32input(nn.HybridBlock):
+class cifar_ResidualAttentionModel(nn.HybridBlock):
     r"""AttentionModel model from
     `"Residual Attention Network for Image Classification"
     <https://arxiv.org/pdf/1704.06904.pdf>`_ paper.
@@ -443,7 +443,7 @@ class ResidualAttentionModel_32input(nn.HybridBlock):
     """
 
     def __init__(self, scale, m, classes=10, **kwargs):
-        super(ResidualAttentionModel_32input, self).__init__(**kwargs)
+        super(cifar_ResidualAttentionModel, self).__init__(**kwargs)
         assert len(scale) == 3 and len(m) == 3
         m1, m2, m3 = m
         with self.name_scope():
@@ -530,7 +530,7 @@ def get_residualAttentionModel(input_size, num_layers, pretrained=None, ctx=None
             num_layers, str(attention_spec.keys()))
     m, scale = attention_spec[num_layers]
     if input_size == 32:
-        net = ResidualAttentionModel_32input(scale, m, **kwargs)
+        net = cifar_ResidualAttentionModel(scale, m, **kwargs)
     else:
         net = ResidualAttentionModel(scale, m, **kwargs)
     if pretrained:
@@ -693,7 +693,7 @@ def residualattentionnet452(**kwargs):
     return get_residualAttentionModel(224, 452, **kwargs)
 
 
-def residualattentionnet56_32input(**kwargs):
+def cifar_residualattentionnet56(**kwargs):
     r"""AttentionModel model from
     `"Residual Attention Network for Image Classification"
     <https://arxiv.org/pdf/1704.06904.pdf>`_ paper.
@@ -715,7 +715,7 @@ def residualattentionnet56_32input(**kwargs):
     return get_residualAttentionModel(32, 56, **kwargs)
 
 
-def residualattentionnet92_32input(**kwargs):
+def cifar_residualattentionnet92(**kwargs):
     r"""AttentionModel model from
     `"Residual Attention Network for Image Classification"
     <https://arxiv.org/pdf/1704.06904.pdf>`_ paper.
@@ -737,7 +737,7 @@ def residualattentionnet92_32input(**kwargs):
     return get_residualAttentionModel(32, 92, **kwargs)
 
 
-def residualattentionnet452_32input(**kwargs):
+def cifar_residualattentionnet452(**kwargs):
     r"""AttentionModel model from
     `"Residual Attention Network for Image Classification"
     <https://arxiv.org/pdf/1704.06904.pdf>`_ paper.
