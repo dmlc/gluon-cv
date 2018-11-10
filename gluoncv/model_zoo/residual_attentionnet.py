@@ -132,6 +132,8 @@ class AttentionModule_stage1(nn.HybridBlock):
         Upsampling size2.
     size3 : int, default 14
         Upsampling size3.
+    scale : tuple, default (1, 2, 1)
+        Network scale p, t, r.
     """
 
     def __init__(self, channels, size1=56, size2=28, size3=14, scale=(1, 2, 1), **kwargs):
@@ -222,6 +224,8 @@ class AttentionModule_stage2(nn.HybridBlock):
         Upsampling size1.
     size2 : int, default 14
         Upsampling size2.
+    scale : tuple, default (1, 2, 1)
+        Network scale p, t, r.
     """
 
     def __init__(self, channels, size1=28, size2=14, scale=(1, 2, 1), **kwargs):
@@ -288,6 +292,8 @@ class AttentionModule_stage3(nn.HybridBlock):
         Output channels.
     size1 : int, default 14
         Upsampling size1.
+    scale : tuple, default (1, 2, 1)
+        Network scale p, t, r.
     """
 
     def __init__(self, channels, size1=14, scale=(1, 2, 1), **kwargs):
@@ -335,6 +341,8 @@ class AttentionModule_stage4(nn.HybridBlock):
     ----------
     channels : int
         Output channels.
+    scale : tuple, default (1, 2, 1)
+        Network scale p, t, r.
     """
 
     def __init__(self, channels, scale=(1, 2, 1), **kwargs):
@@ -374,10 +382,13 @@ class ResidualAttentionModel(nn.HybridBlock):
 
     Parameters
     ----------
+    scale : tuple
+        Network scale p, t, r.
+    m : tuple
+        Network scale m.Network scale is defined as 36m + 20.
+        And normally m is a tuple of (m-1, m, m+1) except m==1 as (1, 1, 1).
     classes : int, default 1000
         Number of classification classes.
-    additional_stage : bool, default False
-        If False means Attention56, True means Attention92.
     """
 
     def __init__(self, scale, m, classes=1000, **kwargs):
@@ -436,10 +447,13 @@ class cifar_ResidualAttentionModel(nn.HybridBlock):
 
     Parameters
     ----------
+    scale : tuple
+        Network scale p, t, r.
+    m : tuple
+        Network scale m.Network scale is defined as 36m + 20.
+        And normally m is a tuple of (m-1, m, m+1) except m==1 as (1, 1, 1).
     classes : int, default 10
         Number of classification classes.
-    additional_stage : bool, default False
-        If False means Attention56, True means Attention92.
     """
 
     def __init__(self, scale, m, classes=10, **kwargs):
@@ -548,8 +562,8 @@ def residualattentionnet56(**kwargs):
     ----------
     input_size : int
         Input size of net. Options are 32, 224.
-    additional_stage : bool, default False
-        If False means Attention56, True means Attention92.
+    num_layers : int
+        Numbers of layers. Options are 56, 92, 128, 164, 200, 236, 452.
     pretrained : bool, default False
         Whether to load the pretrained weights for model.
     ctx : Context, default CPU
@@ -570,8 +584,8 @@ def residualattentionnet92(**kwargs):
     ----------
     input_size : int
         Input size of net. Options are 32,224.
-    additional_stage : bool, default False
-        If False means Attention56, True means Attention92.
+    num_layers : int
+        Numbers of layers. Options are 56, 92, 128, 164, 200, 236, 452.
     pretrained : bool, default False
         Whether to load the pretrained weights for model.
     ctx : Context, default CPU
@@ -592,8 +606,8 @@ def residualattentionnet128(**kwargs):
     ----------
     input_size : int
         Input size of net. Options are 32,224.
-    additional_stage : bool, default False
-        If False means Attention56, True means Attention92.
+    num_layers : int
+        Numbers of layers. Options are 56, 92, 128, 164, 200, 236, 452.
     pretrained : bool, default False
         Whether to load the pretrained weights for model.
     ctx : Context, default CPU
@@ -614,8 +628,8 @@ def residualattentionnet164(**kwargs):
     ----------
     input_size : int
         Input size of net. Options are 32,224.
-    additional_stage : bool, default False
-        If False means Attention56, True means Attention92.
+    num_layers : int
+        Numbers of layers. Options are 56, 92, 128, 164, 200, 236, 452.
     pretrained : bool, default False
         Whether to load the pretrained weights for model.
     ctx : Context, default CPU
@@ -636,8 +650,8 @@ def residualattentionnet200(**kwargs):
     ----------
     input_size : int
         Input size of net. Options are 32,224.
-    additional_stage : bool, default False
-        If False means Attention56, True means Attention92.
+    num_layers : int
+        Numbers of layers. Options are 56, 92, 128, 164, 200, 236, 452.
     pretrained : bool, default False
         Whether to load the pretrained weights for model.
     ctx : Context, default CPU
@@ -658,8 +672,8 @@ def residualattentionnet236(**kwargs):
     ----------
     input_size : int
         Input size of net. Options are 32,224.
-    additional_stage : bool, default False
-        If False means Attention56, True means Attention92.
+    num_layers : int
+        Numbers of layers. Options are 56, 92, 128, 164, 200, 236, 452.
     pretrained : bool, default False
         Whether to load the pretrained weights for model.
     ctx : Context, default CPU
@@ -680,8 +694,8 @@ def residualattentionnet452(**kwargs):
     ----------
     input_size : int
         Input size of net. Options are 32,224.
-    additional_stage : bool, default False
-        If False means Attention56, True means Attention92.
+    num_layers : int
+        Numbers of layers. Options are 56, 92, 128, 164, 200, 236, 452.
     pretrained : bool, default False
         Whether to load the pretrained weights for model.
     ctx : Context, default CPU
@@ -702,8 +716,8 @@ def cifar_residualattentionnet56(**kwargs):
     ----------
     input_size : int
         Input size of net. Options are 32,224.
-    additional_stage : bool, default False
-        If False means Attention56, True means Attention92.
+    num_layers : int
+        Numbers of layers. Options are 56, 92, 128, 164, 200, 236, 452.
     pretrained : bool, default False
         Whether to load the pretrained weights for model.
     ctx : Context, default CPU
@@ -724,8 +738,8 @@ def cifar_residualattentionnet92(**kwargs):
     ----------
     input_size : int
         Input size of net. Options are 32,224.
-    additional_stage : bool, default False
-        If False means Attention56, True means Attention92.
+    num_layers : int
+        Numbers of layers. Options are 56, 92, 128, 164, 200, 236, 452.
     pretrained : bool, default False
         Whether to load the pretrained weights for model.
     ctx : Context, default CPU
@@ -746,8 +760,8 @@ def cifar_residualattentionnet452(**kwargs):
     ----------
     input_size : int
         Input size of net. Options are 32,224.
-    additional_stage : bool, default False
-        If False means Attention56, True means Attention92.
+    num_layers : int
+        Numbers of layers. Options are 56, 92, 128, 164, 200, 236, 452.
     pretrained : bool, default False
         Whether to load the pretrained weights for model.
     ctx : Context, default CPU
