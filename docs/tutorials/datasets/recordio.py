@@ -85,7 +85,7 @@ By default ``imagenet.py`` will extract the images into
 can specify a different target folder by setting ``--target-dir``.
 
 Read with ImageRecordIter
------------------
+-------------------------
 
 The prepared dataset can be loaded with utility class :py:class:`mxnet.io.ImageRecordIter`
 directly. Here is an example that randomly reads 128 images each time and
