@@ -146,7 +146,7 @@ class COCOKeyPointsMetric(mx.metric.EvalMetric):
         return names, values
 
     # pylint: disable=arguments-differ, unused-argument
-    def update(self, pred_heatmap, pred_labels, pred_scores, *args, **kwargs):
+    def update(self, all_preds, all_boxes, imgid, *args, **kwargs):
         """Update internal buffer with latest predictions.
         Note that the statistics are not available until you call self.get() to return
         the metrics.
@@ -162,42 +162,9 @@ class COCOKeyPointsMetric(mx.metric.EvalMetric):
             Prediction bounding boxes scores with shape `B, N`.
 
         """
-        def as_numpy(a):
-            """Convert a (list of) mx.NDArray into numpy.ndarray"""
-            if isinstance(a, (list, tuple)):
-                out = [x.asnumpy() if isinstance(x, mx.nd.NDArray) else x for x in a]
-                return np.concatenate(out, axis=0)
-            elif isinstance(a, mx.nd.NDArray):
-                a = a.asnumpy()
-            return a
+        for idx, kpt in enumerate(all_preds):
+            self._results.append({'image_id': imgid,
+                                  'category_id': category_id,
+                                  'keypoints': kpt,
+                                  'score': score})
 
-        for pred_bbox, pred_label, pred_score in zip(
-                *[as_numpy(x) for x in [pred_bboxes, pred_labels, pred_scores]]):
-            valid_pred = np.where(pred_label.flat >= 0)[0]
-            pred_bbox = pred_bbox[valid_pred, :].astype(np.float)
-            pred_label = pred_label.flat[valid_pred].astype(int)
-            pred_score = pred_score.flat[valid_pred].astype(np.float)
-
-            imgid = self._img_ids[self._current_id]
-            self._current_id += 1
-            if self._data_shape is not None:
-                entry = self.dataset.coco.loadImgs(imgid)[0]
-                orig_height = entry['height']
-                orig_width = entry['width']
-                height_scale = float(orig_height) / self._data_shape[0]
-                width_scale = float(orig_width) / self._data_shape[1]
-            else:
-                height_scale, width_scale = (1., 1.)
-            # for each bbox detection in each image
-            for bbox, label, score in zip(pred_bbox, pred_label, pred_score):
-                if label not in self.dataset.contiguous_id_to_json:
-                    # ignore non-exist class
-                    continue
-                if score < self._score_thresh:
-                    continue
-                category_id = self.dataset.contiguous_id_to_json[label]
-
-                self._results.append({'image_id': imgid,
-                                      'category_id': category_id,
-                                      'keypoints': category_id,
-                                      'score': score})

@@ -104,7 +104,7 @@ class COCOKeyPoints(VisionDataset):
         img_path = self._items[idx]
         label = self._labels[idx]
         img = mx.image.imread(img_path, 1)
-        return img, label
+        return img, label, img_path
 
     def _load_jsons(self):
         """Load all image paths and labels from JSON annotation files into buffer."""

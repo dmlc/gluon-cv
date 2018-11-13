@@ -10,7 +10,9 @@ from mxnet.gluon.data.vision import transforms
 from gluoncv.data import mscoco
 from gluoncv.model_zoo import get_model
 from gluoncv.utils import makedirs, LRScheduler
+from gluoncv.data.transforms.pose import transform_preds
 from gluoncv.data.transforms.presets.simple_pose import SimplePoseDefaultTrainTransform
+from gluoncv.utils.metrics.coco_detection import COCOKeyPointsMetric
 
 # CLI
 parser = argparse.ArgumentParser(description='Train a model for image classification.')
@@ -121,11 +123,20 @@ net.cast(opt.dtype)
 
 def get_data_loader(data_dir, batch_size, num_workers, input_size):
 
-    def batch_fn(batch, ctx):
+    def train_batch_fn(batch, ctx):
         data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
         label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0)
         weight = gluon.utils.split_and_load(batch[2], ctx_list=ctx, batch_axis=0)
-        return data, label, weight
+        img_path = gluon.utils.split_and_load(batch[3], ctx_list=ctx, batch_axis=0)
+        return data, label, weight, img_path
+
+    def val_batch_fn(batch, ctx):
+        data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
+        scale = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0)
+        center = gluon.utils.split_and_load(batch[2], ctx_list=ctx, batch_axis=0)
+        score = gluon.utils.split_and_load(batch[3], ctx_list=ctx, batch_axis=0)
+        img_path = gluon.utils.split_and_load(batch[4], ctx_list=ctx, batch_axis=0)
+        return data, scale, center, score, img_path
 
     dataset = mscoco.keypoints.COCOKeyPoints(data_dir, aspect_ratio=4./3.)
     heatmap_size = [int(i/4) for i in input_size]
@@ -134,14 +145,23 @@ def get_data_loader(data_dir, batch_size, num_workers, input_size):
                                                       image_size=input_size, heatmap_size=heatmap_size,
                                                       scale_factor=0.30, rotation_factor=40)
 
+    transform_val = SimplePoseDefaultValTransform(num_joints=dataset.num_joints,
+                                                  joint_pairs=dataset.joint_pairs,
+                                                  image_size=input_size)
     train_data = gluon.data.DataLoader(
         dataset.transform(transform_train),
         batch_size=batch_size, shuffle=True, last_batch='discard', num_workers=num_workers)
 
-    return train_data, batch_fn
+    val_data = gluon.data.DataLoader(
+        dataset.transform(transform_train),
+        batch_size=batch_size, shuffle=True, last_batch='discard', num_workers=num_workers)
+
+    return train_data, val_data, train_batch_fn, val_batch_fn
 
 input_size = [int(i) for i in opt.input_size.split(',')]
-train_data, batch_fn = get_data_loader(opt.data_dir, batch_size, num_workers, input_size)
+train_data, val_data, train_batch_fn, val_batch_fn = get_data_loader(opt.data_dir, batch_size,
+                                                                     num_workers, input_size)
+val_metric = COCOKeyPointsMetric(val_data, 'coco_keypoints', data_shape=tuple(input_size))
 
 save_frequency = opt.save_frequency
 if opt.save_dir and save_frequency:
@@ -175,7 +195,7 @@ def train(ctx):
         btic = time.time()
 
         for i, batch in enumerate(train_data):
-            data, label, weight = batch_fn(batch, ctx)
+            data, label, weight = train_batch_fn(batch, ctx)
 
             with ag.record():
                 outputs = [net(X.astype(opt.dtype, copy=False)) for X in data]
@@ -200,26 +220,44 @@ def train(ctx):
     if save_frequency and save_dir:
         net.save_parameters('%s/imagenet-%s-%d.params'%(save_dir, model_name, opt.num_epochs-1))
         trainer.save_states('%s/imagenet-%s-%d.states'%(save_dir, model_name, opt.num_epochs-1))
-    
+
     return net
 
 def validate(val_data, net, ctx):
     if isinstance(ctx, mx.Context):
         ctx = [ctx]
 
+    val_metric.reset()
     all_preds = nd.zeros((num_samples, opt.num_joints, 3))
+    all_boxes = nd.zeros((num_samples, 6))
+
+    idx = 0
+
     for i, batch in enumerate(val_data):
-        data, label, scale, center, imgid = batch_fn(batch, ctx)
+        data, scale, center, score, imgid = val_batch_fn(batch, ctx)
 
         outputs = [net(X.astype(opt.dtype, copy=False)) for X in data]
         data_flip = [flip(X.astype(opt.dtype, copy=False)) for X in data]
         outputs_flip = [net(X) for X in data_flip]
         outputs = [(o + o_flip)/2 for o, o_flip in zip(outputs, outputs_flip)]
 
-        all_preds = transform_pred(outputs, scale, center, imgid)
+        preds, maxvals = get_final_preds(output, center, scale)
 
-    json = update_json(all_preds)
-    res = evaluate(json)
+    
+        batch_size = data[0].size[0]
+        all_preds[idx:idx+batch_size, :, 0:2] = preds[:, :, 0:2]
+        all_preds[idx:idx+batch_size, :, 2:3] = maxvals
+
+        all_boxes[idx:idx + batch_size, 0:2] = center[:, 0:2]
+        all_boxes[idx:idx + batch_size, 2:4] = scale[:, 0:2]
+        all_boxes[idx:idx + batch_size, 4] = nd.prod(s*200, 1)
+        all_boxes[idx:idx + batch_size, 5] = score
+
+        # all_preds = transform_preds(outputs, scale, center, imgid)
+
+        val_metric.update(all_preds, all_boxes, imgid)
+
+    res = val_metric.get()
     return res
 
 def main():
