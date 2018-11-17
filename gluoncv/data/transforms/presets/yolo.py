@@ -192,11 +192,11 @@ class YOLO3DefaultTrainTransform(object):
             gt_mixratio = mx.nd.array(bbox[np.newaxis, :, -1:])
         else:
             gt_mixratio = None
-        center_targets, scale_targets, weights, objectness, class_targets = self._target_generator(
+        objectness, center_targets, scale_targets, weights, class_targets = self._target_generator(
             self._fake_x, self._feat_maps, self._anchors, self._offsets,
             gt_bboxes, gt_ids, gt_mixratio)
-        return (img, center_targets[0], scale_targets[0], weights[0],
-                objectness[0], class_targets[0], gt_bboxes[0])
+        return (img, objectness[0], center_targets[0], scale_targets[0], weights[0],
+                class_targets[0], gt_bboxes[0])
 
 
 class YOLO3DefaultValTransform(object):

@@ -8,11 +8,11 @@ from matplotlib import pyplot as plt
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Test with YOLO networks.')
-    parser.add_argument('--network', type=str, default='yolo3_darknet53_voc',
+    parser.add_argument('--network', type=str, default='yolo3_darknet53_coco',
                         help="Base network name")
     parser.add_argument('--images', type=str, default='',
                         help='Test images, use comma to split multiple.')
-    parser.add_argument('--gpus', type=str, default='0',
+    parser.add_argument('--gpus', type=str, default='',
                         help='Training with GPUs, you can specify 1,3 for example.')
     parser.add_argument('--pretrained', type=str, default='True',
                         help='Load weights from previously saved parameters.')
