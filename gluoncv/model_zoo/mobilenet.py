@@ -57,7 +57,7 @@ def _add_conv(out, channels=1, kernel=1, stride=1, pad=0,
               num_group=1, active=True, relu6=False, num_sync_bn_devices=-1):
     out.add(nn.Conv2D(channels,kernel,stride,pad,groups=num_group,use_bias=False))
     
-    if num_sync_bn_devices == -1:
+    if num_sync_bn_devices <= 1:
         out.add(nn.BatchNorm(scale=True))
     else:
         out.add(gluon.contrib.nn.SyncBatchNorm(
