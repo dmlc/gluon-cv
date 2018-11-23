@@ -55,7 +55,7 @@ class RELU6(nn.HybridBlock):
 # pylint: disable= too-many-arguments
 def _add_conv(out, channels=1, kernel=1, stride=1, pad=0,
               num_group=1, active=True, relu6=False, num_sync_bn_devices=-1):
-    out.add(nn.Conv2D(channels,kernel,stride,pad,groups=num_group,use_bias=False))
+    out.add(nn.Conv2D(channels, kernel, stride, pad, groups=num_group, use_bias=False))
     
     if num_sync_bn_devices <= 1:
         out.add(nn.BatchNorm(scale=True))
@@ -66,7 +66,7 @@ def _add_conv(out, channels=1, kernel=1, stride=1, pad=0,
         out.add(RELU6() if relu6 else nn.Activation('relu'))
 
 
-def _add_conv_dw(out,dw_channels,channels,stride,relu6=False,num_sync_bn_devices=-1):
+def _add_conv_dw(out, dw_channels, channels, stride, relu6=False, num_sync_bn_devices=-1):
     _add_conv(out, channels=dw_channels, kernel=3, stride=stride, pad=1, num_group=dw_channels, relu6=relu6,
               num_sync_bn_devices=num_sync_bn_devices)
     _add_conv(out, channels=channels, relu6=relu6,
@@ -232,7 +232,7 @@ def get_mobilenet(multiplier, pretrained=False, ctx=cpu(),
     num_sync_bn_devices : int, default is -1
         Number of devices for training. If `num_sync_bn_devices < 2`, SyncBatchNorm is disabled.
     """
-    net = MobileNet(multiplier,num_sync_bn_devices=num_sync_bn_devices,**kwargs)
+    net = MobileNet(multiplier, num_sync_bn_devices=num_sync_bn_devices, **kwargs)
     if pretrained:
         from gluoncv.model_zoo.model_store import get_model_file
         version_suffix = '{0:.2f}'.format(multiplier)
@@ -275,7 +275,7 @@ def get_mobilenet_v2(multiplier, pretrained=False, ctx=cpu(),
         version_suffix = '{0:.2f}'.format(multiplier)
         if version_suffix in ('1.00', '0.50'):
             version_suffix = version_suffix[:-1]
-        net.load_parameters(get_model_file('mobilenetv2_%s' %version_suffix,tag=pretrained,root=root),ctx=ctx)
+        net.load_parameters(get_model_file('mobilenetv2_%s' %version_suffix, tag=pretrained, root=root), ctx=ctx)
         from ..data import ImageNet1kAttr
         attrib = ImageNet1kAttr()
         net.synset = attrib.synset
