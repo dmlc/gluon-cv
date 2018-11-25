@@ -118,7 +118,6 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path .
-exclude_patterns = ['sphinx_materialdesign_theme']
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
@@ -144,9 +143,8 @@ html_favicon = '_static/gluon_s2.png'
 #         "project_nav_name": "GluonCV",
 # }
 
-html_theme = 'sphinx_materialdesign_theme'
-curr_path = os.path.dirname(os.path.abspath(os.path.expanduser(__file__)))
-html_theme_path = [os.path.join(curr_path, 'sphinx_materialdesign_theme')]
+html_theme = 'mxtheme'
+html_theme_path = ['mxtheme']
 html_theme_options = {
     'primary_color': 'blue',
     'accent_color': 'deep_orange',
@@ -266,6 +264,9 @@ intersphinx_mapping = {
 todo_include_todos = True
 
 def setup(app):
+    import mxtheme
+    app.add_directive('card', mxtheme.CardDirective)
+
     app.add_javascript('google_analytics.js')
     app.add_javascript('hidebib.js')
     app.add_stylesheet('css/custom.css')
