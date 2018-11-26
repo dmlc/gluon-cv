@@ -56,7 +56,7 @@ class RELU6(nn.HybridBlock):
 def _add_conv(out, channels=1, kernel=1, stride=1, pad=0,
               num_group=1, active=True, relu6=False, num_sync_bn_devices=-1):
     out.add(nn.Conv2D(channels, kernel, stride, pad, groups=num_group, use_bias=False))
-    
+
     if num_sync_bn_devices <= 1:
         out.add(nn.BatchNorm(scale=True))
     else:
@@ -88,19 +88,20 @@ class LinearBottleneck(nn.HybridBlock):
         Layer expansion ratio.
     stride : int
         stride
-
+    num_sync_bn_devices : int, default is -1
+        Number of devices for training. If `num_sync_bn_devices < 2`, SyncBatchNorm is disabled.
     """
 
-    def __init__(self, in_channels, channels, t, stride, **kwargs):
+    def __init__(self, in_channels, channels, t, stride, num_sync_bn_devices=-1, **kwargs):
         super(LinearBottleneck, self).__init__(**kwargs)
         self.use_shortcut = stride == 1 and in_channels == channels
         with self.name_scope():
             self.out = nn.HybridSequential()
 
-            _add_conv(self.out, in_channels * t, relu6=True)
+            _add_conv(self.out, in_channels * t, relu6=True, num_sync_bn_devices=num_sync_bn_devices)
             _add_conv(self.out, in_channels * t, kernel=3, stride=stride,
-                      pad=1, num_group=in_channels * t, relu6=True)
-            _add_conv(self.out, channels, active=False, relu6=True)
+                      pad=1, num_group=in_channels * t, relu6=True, num_sync_bn_devices=num_sync_bn_devices)
+            _add_conv(self.out, channels, active=False, relu6=True, num_sync_bn_devices=num_sync_bn_devices)
 
     def hybrid_forward(self, F, x):
         out = self.out(x)
@@ -134,7 +135,7 @@ class MobileNet(HybridBlock):
             with self.features.name_scope():
                 _add_conv(self.features, channels=int(32 * multiplier), kernel=3, pad=1, stride=2,
                           num_sync_bn_devices=num_sync_bn_devices)
-                dw_channels = [int(x * multiplier) for x in [32, 64] + [128] *2 +
+                dw_channels = [int(x * multiplier) for x in [32, 64] + [128] * 2 +
                                [256] *
                                2 +
                                [512] *
@@ -169,15 +170,17 @@ class MobileNetV2(nn.HybridBlock):
         is equal to the original channel size multiplied by this multiplier.
     classes : int, default 1000
         Number of classes for the output layer.
+    num_sync_bn_devices : int, default is -1
+        Number of devices for training. If `num_sync_bn_devices < 2`, SyncBatchNorm is disabled.
     """
 
-    def __init__(self, multiplier=1.0, classes=1000, **kwargs):
+    def __init__(self, multiplier=1.0, classes=1000, num_sync_bn_devices=-1, **kwargs):
         super(MobileNetV2, self).__init__(**kwargs)
         with self.name_scope():
             self.features = nn.HybridSequential(prefix='features_')
             with self.features.name_scope():
                 _add_conv(self.features, int(32 * multiplier), kernel=3,
-                          stride=2, pad=1, relu6=True)
+                          stride=2, pad=1, relu6=True, num_sync_bn_devices=num_sync_bn_devices)
 
                 in_channels_group = [int(x * multiplier) for x in [32] + [16] + [24] * 2
                                      + [32] * 3 + [64] * 4 + [96] * 3 + [160] * 3]
@@ -188,10 +191,10 @@ class MobileNetV2(nn.HybridBlock):
 
                 for in_c, c, t, s in zip(in_channels_group, channels_group, ts, strides):
                     self.features.add(LinearBottleneck(in_channels=in_c, channels=c,
-                                                       t=t, stride=s))
+                                                       t=t, stride=s, num_sync_bn_devices=num_sync_bn_devices))
 
                 last_channels = int(1280 * multiplier) if multiplier > 1.0 else 1280
-                _add_conv(self.features, last_channels, relu6=True)
+                _add_conv(self.features, last_channels, relu6=True, num_sync_bn_devices=num_sync_bn_devices)
 
                 self.features.add(nn.GlobalAvgPool2D())
 
@@ -247,7 +250,7 @@ def get_mobilenet(multiplier, pretrained=False, ctx=cpu(),
 
 
 def get_mobilenet_v2(multiplier, pretrained=False, ctx=cpu(),
-                     root='~/.mxnet/models', **kwargs):
+                     root='~/.mxnet/models', num_sync_bn_devices=-1, **kwargs):
     r"""MobileNetV2 model from the
     `"Inverted Residuals and Linear Bottlenecks:
       Mobile Networks for Classification, Detection and Segmentation"
@@ -266,15 +269,17 @@ def get_mobilenet_v2(multiplier, pretrained=False, ctx=cpu(),
         The context in which to load the pretrained weights.
     root : str, default $MXNET_HOME/models
         Location for keeping the model parameters.
+    num_sync_bn_devices : int, default is -1
+        Number of devices for training. If `num_sync_bn_devices < 2`, SyncBatchNorm is disabled.
     """
-    net = MobileNetV2(multiplier, **kwargs)
+    net = MobileNetV2(multiplier, num_sync_bn_devices=num_sync_bn_devices, **kwargs)
 
     if pretrained:
         from .model_store import get_model_file
         version_suffix = '{0:.2f}'.format(multiplier)
         if version_suffix in ('1.00', '0.50'):
             version_suffix = version_suffix[:-1]
-        net.load_parameters(get_model_file('mobilenetv2_%s' %version_suffix, tag=pretrained, root=root), ctx=ctx)
+        net.load_parameters(get_model_file('mobilenetv2_%s' % version_suffix, tag=pretrained, root=root), ctx=ctx)
         from ..data import ImageNet1kAttr
         attrib = ImageNet1kAttr()
         net.synset = attrib.synset
@@ -314,6 +319,8 @@ def mobilenet_v2_1_0(**kwargs):
         String value represents the hashtag for a certain version of pretrained weights.
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
+    num_sync_bn_devices : int, default is -1
+        Number of devices for training. If `num_sync_bn_devices < 2`, SyncBatchNorm is disabled.
     """
     return get_mobilenet_v2(1.0, **kwargs)
 
@@ -349,6 +356,8 @@ def mobilenet_v2_0_75(**kwargs):
         String value represents the hashtag for a certain version of pretrained weights.
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
+    num_sync_bn_devices : int, default is -1
+        Number of devices for training. If `num_sync_bn_devices < 2`, SyncBatchNorm is disabled.
     """
     return get_mobilenet_v2(0.75, **kwargs)
 
@@ -384,6 +393,8 @@ def mobilenet_v2_0_5(**kwargs):
         String value represents the hashtag for a certain version of pretrained weights.
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
+    num_sync_bn_devices : int, default is -1
+        Number of devices for training. If `num_sync_bn_devices < 2`, SyncBatchNorm is disabled.
     """
     return get_mobilenet_v2(0.5, **kwargs)
 
@@ -419,5 +430,7 @@ def mobilenet_v2_0_25(**kwargs):
         String value represents the hashtag for a certain version of pretrained weights.
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
+    num_sync_bn_devices : int, default is -1
+        Number of devices for training. If `num_sync_bn_devices < 2`, SyncBatchNorm is disabled.
     """
     return get_mobilenet_v2(0.25, **kwargs)
