@@ -18,7 +18,7 @@ Image Classification
         :title: Training on CIFAR10
         :link: ../build/examples_classification/dive_deep_cifar10.html
 
-        Hands on model training on CIFAR10
+        Hands on classification model training on CIFAR10
 
     .. card::
         :title: Pre-trained Models on ImageNet
@@ -30,13 +30,13 @@ Image Classification
         :title: Transfer Learning with Your Own Dataset
         :link: ../build/examples_classification/transfer_learning_minc.html
 
-        Train your own dataset with ImageNet pre-trained models.
+        Train on your own dataset with ImageNet pre-trained models.
 
     .. card::
         :title: Training on ImageNet
         :link: ../build/examples_classification/dive_deep_imagenet.html
 
-        Hands on model training on ImageNet
+        Hands on classification model training on ImageNet
 
 
 Object Detection
@@ -45,70 +45,58 @@ Object Detection
 .. container:: cards
 
     .. card::
-        :title: Training on ImageNet
-        :link: ../build/examples_classification/dive_deep_imagenet.html
+        :title: Pre-trained SSD Models
+        :link: ../build/examples_detection/demo_ssd.html
 
-        Hands on model training on ImageNet
-
-    .. card::
-        :title: Training on ImageNet
-        :link: ../build/examples_classification/dive_deep_imagenet.html
-
-        Hands on model training on ImageNet
+        Detect objects in real-world images with pre-trained SSD models
 
     .. card::
-        :title: Training on ImageNet
-        :link: ../build/examples_classification/dive_deep_imagenet.html
+        :title: Training SSD on Pascal VOC Dataset
+        :link: ../build/examples_detection/train_ssd_voc.html
 
-        Hands on model training on ImageNet
-
-    .. card::
-        :title: Training on ImageNet
-        :link: ../build/examples_classification/dive_deep_imagenet.html
-
-        Hands on model training on ImageNet
+        Hands on SSD model training on Pascal VOC Dataset
 
     .. card::
-        :title: Training on ImageNet
-        :link: ../build/examples_classification/dive_deep_imagenet.html
+        :title: Tips for SSD Model Training
+        :link: ../build/examples_detection/train_ssd_advanced.html
 
-        Hands on model training on ImageNet
-
-    .. card::
-        :title: Training on ImageNet
-        :link: ../build/examples_classification/dive_deep_imagenet.html
-
-        Hands on model training on ImageNet
+        Training tips to boost your SSD Model performance.
 
     .. card::
-        :title: Training on ImageNet
-        :link: ../build/examples_classification/dive_deep_imagenet.html
+        :title: Pre-trained Faster R-CNN Models
+        :link: ../build/examples_detection/demo_faster_rcnn.html
 
-        Hands on model training on ImageNet
-
-    .. card::
-        :title: Training on ImageNet
-        :link: ../build/examples_classification/dive_deep_imagenet.html
-
-        Hands on model training on ImageNet
+        Detect objects in real-world images with pre-trained Faster R-CNN models
 
     .. card::
-        :title: Training on ImageNet
-        :link: ../build/examples_classification/dive_deep_imagenet.html
+        :title: Training Faster R-CNN on Pascal VOC
+        :link: ../build/examples_detection/train_faster_rcnn_voc.html
 
-        Hands on model training on ImageNet
-
-    .. card::
-        :title: Training on ImageNet
-        :link: ../build/examples_classification/dive_deep_imagenet.html
-
-        Hands on model training on ImageNet
+        End-to-end Faster R-CNN Training on Pascal VOC
 
     .. card::
-        :title: Training on ImageNet
-        :link: ../build/examples_classification/dive_deep_imagenet.html
+        :title: Pre-trained YOLO Models
+        :link: ../build/examples_detection/demo_yolo.html
 
-        Hands on model training on ImageNet
+        Detect objects in real-world images with pre-trained YOLO models
+
+    .. card::
+        :title: Training YOLOv3 on Pascal VOC
+        :link: ../build/examples_detection/train_yolo_v3.html
+
+        Hands on YOLOv3 model training on Pascal VOC Dataset
+
+    .. card::
+        :title: Finetune a Pre-trained Model
+        :link: ../build/examples_detection/finetune_detection.html
+
+        Finetune a pre-trained model on your own dataset.
+
+    .. card::
+        :title: Object Detection from Webcam
+        :link: ../build/examples_detection/demo_webcam.html
+
+        Run an object detection model from your webcam.
 
 
 Instance Segmentation
@@ -117,16 +105,16 @@ Instance Segmentation
 .. container:: cards
 
     .. card::
-        :title: Training on ImageNet
-        :link: ../build/examples_classification/dive_deep_imagenet.html
+        :title: Pre-trained Mask R-CNN Models
+        :link: ../build/examples_instance/demo_mask_rcnn.html
 
-        Hands on model training on ImageNet
+        Perform instance segmentation on real-world images with pre-trained Mask R-CNN models
 
     .. card::
-        :title: Training on ImageNet
-        :link: ../build/examples_classification/dive_deep_imagenet.html
+        :title: Training Mask R-CNN on MS COCO
+        :link: ../build/examples_instance/train_mask_rcnn_coco.html
 
-        Hands on model training on ImageNet
+        Hands on Mask R-CNN model training on MS COCO dataset
 
 
 Semantic Segmentation
@@ -135,40 +123,41 @@ Semantic Segmentation
 .. container:: cards
 
     .. card::
-        :title: Training on ImageNet
-        :link: ../build/examples_classification/dive_deep_imagenet.html
+        :title: Pre-trained FCN Models
+        :link: ../build/examples_segmentation/demo_fcn.html
 
-        Hands on model training on ImageNet
-
-    .. card::
-        :title: Training on ImageNet
-        :link: ../build/examples_classification/dive_deep_imagenet.html
-
-        Hands on model training on ImageNet
+        Perform semantic segmentation on real-world images with pre-trained FCN models
 
     .. card::
-        :title: Training on ImageNet
-        :link: ../build/examples_classification/dive_deep_imagenet.html
+        :title: Training FCN on Pascal VOC
+        :link: ../build/examples_segmentation/train_fcn.html
 
-        Hands on model training on ImageNet
-
-    .. card::
-        :title: Training on ImageNet
-        :link: ../build/examples_classification/dive_deep_imagenet.html
-
-        Hands on model training on ImageNet
+        Hands on FCN model training on Pascal VOC dataset
 
     .. card::
-        :title: Training on ImageNet
-        :link: ../build/examples_classification/dive_deep_imagenet.html
+        :title: Pre-trained PSPNet Models
+        :link: ../build/examples_segmentation/demo_psp.html
 
-        Hands on model training on ImageNet
+        Perform semantic segmentation in real-world images with pre-trained PSPNet models
 
     .. card::
-        :title: Training on ImageNet
-        :link: ../build/examples_classification/dive_deep_imagenet.html
+        :title: Training PSPNet on ADE20K
+        :link: ../build/examples_segmentation/train_psp.html
 
-        Hands on model training on ImageNet
+        Hands on Mask R-CNN model training on ADE20K dataset
+
+    .. card::
+        :title: Pre-trained DeepLabV3 Models
+        :link: ../build/examples_segmentation/demo_deeplab.html
+
+        Perform instance segmentation in real-world images with pre-trained DeepLabV3 models
+
+    .. card::
+        :title: Getting SOTA Results on Pascal VOC
+        :link: ../build/examples_segmentation/voc_sota.html
+
+        Hands on DeepLabV3 model training on Pascal VOC dataset, and achieves 
+        state-of-the-art accuracy.
 
 
 Dataset Preparation
@@ -177,46 +166,32 @@ Dataset Preparation
 .. container:: cards
 
     .. card::
-        :title: Training on ImageNet
-        :link: ../build/examples_classification/dive_deep_imagenet.html
-
-        Hands on model training on ImageNet
+        :title: Prepare ADE20K Dataset
+        :link: ../build/examples_datasets/ade20k.html
 
     .. card::
-        :title: Training on ImageNet
-        :link: ../build/examples_classification/dive_deep_imagenet.html
-
-        Hands on model training on ImageNet
+        :title: Prepare MS COCO Dataset
+        :link: ../build/examples_datasets/mscoco.html
 
     .. card::
-        :title: Training on ImageNet
-        :link: ../build/examples_classification/dive_deep_imagenet.html
-
-        Hands on model training on ImageNet
+        :title: Prepare Cityscapes Dataset
+        :link: ../build/examples_datasets/cityscapes.html
 
     .. card::
-        :title: Training on ImageNet
-        :link: ../build/examples_classification/dive_deep_imagenet.html
-
-        Hands on model training on ImageNet
+        :title: Prepare Pascal VOC Dataset
+        :link: ../build/examples_datasets/pascal_voc.html
 
     .. card::
-        :title: Training on ImageNet
-        :link: ../build/examples_classification/dive_deep_imagenet.html
-
-        Hands on model training on ImageNet
+        :title: Prepare Custom Dataset for Object Detection
+        :link: ../build/examples_datasets/detection_custom.html
 
     .. card::
-        :title: Training on ImageNet
-        :link: ../build/examples_classification/dive_deep_imagenet.html
-
-        Hands on model training on ImageNet
+        :title: Prepare ImageNet Dataset
+        :link: ../build/examples_datasets/imagenet.html
 
     .. card::
-        :title: Training on ImageNet
-        :link: ../build/examples_classification/dive_deep_imagenet.html
-
-        Hands on model training on ImageNet
+        :title: Prepare ImageNet Dataset in ImageRecord Format
+        :link: ../build/examples_datasets/recordio.html
 
 
 Deployment
@@ -225,17 +200,12 @@ Deployment
 .. container:: cards
 
     .. card::
-        :title: Training on ImageNet
-        :link: ../build/examples_classification/dive_deep_imagenet.html
-
-        Hands on model training on ImageNet
+        :title: Export Models into JSON
+        :link: ../build/examples_deployment/export_network.html
 
     .. card::
-        :title: Training on ImageNet
-        :link: ../build/examples_classification/dive_deep_imagenet.html
-
-        Hands on model training on ImageNet
-
+        :title: C++ Inference with GluonCV
+        :link: ../build/examples_deployment/cpp_inference.html
 
 .. toctree::
     :hidden:

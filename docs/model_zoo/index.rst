@@ -10,7 +10,7 @@ Image Classification
         :title: Classification
         :link: classification.html
 
-        Basics on how to use pretrained models on CIFAR10 and apply to real images
+        Select your models from charts and tables of the classification models
 
 
 Object Detection
@@ -22,7 +22,7 @@ Object Detection
         :title: Detection
         :link: detection.html
 
-        Basics on how to use pretrained models on CIFAR10 and apply to real images
+        Select your models from charts and tables of the detection models
 
 
 Segmentation
@@ -34,7 +34,7 @@ Segmentation
         :title: Segmentation
         :link: segmentation.html
 
-        Basics on how to use pretrained models on CIFAR10 and apply to real images
+        Select your models from charts and tables of the segmentation models
 
 
 .. toctree::
