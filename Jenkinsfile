@@ -91,7 +91,7 @@ stage("Build Docs") {
       git submodule update --init --recursive
       git clean -fx
       cd docs && make clean && make html
-      sed -i.bak 's/33\,150\,243/23\,141\,201/g' build/html/_static/material-design-lite-1.3.0/material.blue-deep_orange.min.css;
+      sed -i.bak 's/33\\,150\\,243/23\\,141\\,201/g' build/html/_static/material-design-lite-1.3.0/material.blue-deep_orange.min.css;
 
       if [[ ${env.BRANCH_NAME} == master ]]; then
           aws s3 cp s3://gluon-cv.mxnet.io/coverage.svg build/html/coverage.svg
