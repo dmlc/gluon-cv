@@ -60,8 +60,7 @@ def _add_conv(out, channels=1, kernel=1, stride=1, pad=0,
     if num_sync_bn_devices <= 1:
         out.add(nn.BatchNorm(scale=True))
     else:
-        out.add(gluon.contrib.nn.SyncBatchNorm(
-            epsilon=1e-5, momentum=0.9, num_devices=num_sync_bn_devices))
+        out.add(gluon.contrib.nn.SyncBatchNorm(scale=True, num_devices=num_sync_bn_devices))
     if active:
         out.add(RELU6() if relu6 else nn.Activation('relu'))
 
@@ -239,7 +238,7 @@ def get_mobilenet(multiplier, pretrained=False, ctx=cpu(),
         if version_suffix in ('1.00', '0.50'):
             version_suffix = version_suffix[:-1]
         net.load_parameters(get_model_file('mobilenet%s' % version_suffix, tag=pretrained, root=root), ctx=ctx)
-        from gluoncv.data import ImageNet1kAttr
+        from ..data import ImageNet1kAttr
         attrib = ImageNet1kAttr()
         net.synset = attrib.synset
         net.classes = attrib.classes
