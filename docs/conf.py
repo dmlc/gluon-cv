@@ -130,7 +130,7 @@ pygments_style = 'sphinx'
 #
 #html_theme = 'sphinx_rtd_theme'
 html_logo = '_static/gluon_black.png'
-html_favicon = '_static/gluon_s2.png'
+html_favicon = '_static/gluon.ico'
 # html_theme_path = guzzle_sphinx_theme.html_theme_path()
 # html_theme = 'guzzle_sphinx_theme'
 
