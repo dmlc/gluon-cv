@@ -91,7 +91,7 @@ def parse_args():
     if args.no_cuda:
         print('Using CPU')
         args.kvstore = 'local'
-        args.ctx = mx.cpu(0)
+        args.ctx = [mx.cpu(0)]
     else:
         print('Number of GPUs:', args.ngpus)
         args.ctx = [mx.gpu(i) for i in range(args.ngpus)]
