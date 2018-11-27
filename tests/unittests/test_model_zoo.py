@@ -200,7 +200,7 @@ def test_mobilenet_sync_bn():
     model_name = models[0]
     net = gcv.model_zoo.get_model(model_name, pretrained=True)
     net.save_parameters(model_name + '.params')
-    net = gcv.model_zoo.get_model(model_name, pretrained=False, num_sync_bn_devices=2)
+    net = gcv.model_zoo.get_model(model_name, pretrained=False, num_sync_bn_devices=1)
     net.load_parameters(model_name + '.params')
     
    
