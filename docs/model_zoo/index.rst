@@ -1,9 +1,6 @@
 Model Zoo
 =========
 
-Image Classification
---------------------
-
 .. container:: cards
 
     .. card::
