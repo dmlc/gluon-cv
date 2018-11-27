@@ -214,7 +214,10 @@ class MobileNetV2(nn.HybridBlock):
                                                        num_sync_bn_devices=num_sync_bn_devices))
 
                 last_channels = int(1280 * multiplier) if multiplier > 1.0 else 1280
-                _add_conv(self.features, last_channels, relu6=True, num_sync_bn_devices=num_sync_bn_devices)
+                _add_conv(self.features,
+                          last_channels,
+                          relu6=True,
+                          num_sync_bn_devices=num_sync_bn_devices)
 
                 self.features.add(nn.GlobalAvgPool2D())
 
