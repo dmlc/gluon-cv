@@ -66,7 +66,11 @@ def _add_conv(out, channels=1, kernel=1, stride=1, pad=0,
 
 
 def _add_conv_dw(out, dw_channels, channels, stride, relu6=False, num_sync_bn_devices=-1):
-    _add_conv(out, channels=dw_channels, kernel=3, stride=stride, pad=1, num_group=dw_channels, relu6=relu6,
+    _add_conv(out, channels=dw_channels, kernel=3,
+              stride=stride,
+              pad=1,
+              num_group=dw_channels,
+              relu6=relu6,
               num_sync_bn_devices=num_sync_bn_devices)
     _add_conv(out, channels=channels, relu6=relu6,
               num_sync_bn_devices=num_sync_bn_devices)
@@ -98,10 +102,23 @@ class LinearBottleneck(nn.HybridBlock):
         with self.name_scope():
             self.out = nn.HybridSequential()
 
-            _add_conv(self.out, in_channels * t, relu6=True, num_sync_bn_devices=num_sync_bn_devices)
-            _add_conv(self.out, in_channels * t, kernel=3, stride=stride,
-                      pad=1, num_group=in_channels * t, relu6=True, num_sync_bn_devices=num_sync_bn_devices)
-            _add_conv(self.out, channels, active=False, relu6=True, num_sync_bn_devices=num_sync_bn_devices)
+            _add_conv(self.out,
+                      in_channels * t,
+                      relu6=True,
+                      num_sync_bn_devices=num_sync_bn_devices)
+            _add_conv(self.out,
+                      in_channels * t,
+                      kernel=3,
+                      stride=stride,
+                      pad=1,
+                      num_group=in_channels * t,
+                      relu6=True,
+                      num_sync_bn_devices=num_sync_bn_devices)
+            _add_conv(self.out,
+                      channels,
+                      active=False,
+                      relu6=True,
+                      num_sync_bn_devices=num_sync_bn_devices)
 
     def hybrid_forward(self, F, x):
         out = self.out(x)
@@ -190,8 +207,11 @@ class MobileNetV2(nn.HybridBlock):
                 strides = [1, 2] * 2 + [1, 1, 2] + [1] * 6 + [2] + [1] * 3
 
                 for in_c, c, t, s in zip(in_channels_group, channels_group, ts, strides):
-                    self.features.add(LinearBottleneck(in_channels=in_c, channels=c,
-                                                       t=t, stride=s, num_sync_bn_devices=num_sync_bn_devices))
+                    self.features.add(LinearBottleneck(in_channels=in_c,
+                                                       channels=c,
+                                                       t=t,
+                                                       stride=s,
+                                                       num_sync_bn_devices=num_sync_bn_devices))
 
                 last_channels = int(1280 * multiplier) if multiplier > 1.0 else 1280
                 _add_conv(self.features, last_channels, relu6=True, num_sync_bn_devices=num_sync_bn_devices)
@@ -240,7 +260,9 @@ def get_mobilenet(multiplier, pretrained=False, ctx=cpu(),
         version_suffix = '{0:.2f}'.format(multiplier)
         if version_suffix in ('1.00', '0.50'):
             version_suffix = version_suffix[:-1]
-        net.load_parameters(get_model_file('mobilenet%s' % version_suffix, tag=pretrained, root=root), ctx=ctx)
+        net.load_parameters(get_model_file('mobilenet%s' % version_suffix,
+                                           tag=pretrained,
+                                           root=root), ctx=ctx)
         from ..data import ImageNet1kAttr
         attrib = ImageNet1kAttr()
         net.synset = attrib.synset
@@ -279,7 +301,9 @@ def get_mobilenet_v2(multiplier, pretrained=False, ctx=cpu(),
         version_suffix = '{0:.2f}'.format(multiplier)
         if version_suffix in ('1.00', '0.50'):
             version_suffix = version_suffix[:-1]
-        net.load_parameters(get_model_file('mobilenetv2_%s' % version_suffix, tag=pretrained, root=root), ctx=ctx)
+        net.load_parameters(get_model_file('mobilenetv2_%s' % version_suffix,
+                                           tag=pretrained,
+                                           root=root), ctx=ctx)
         from ..data import ImageNet1kAttr
         attrib = ImageNet1kAttr()
         net.synset = attrib.synset
