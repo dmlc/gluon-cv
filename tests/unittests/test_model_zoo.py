@@ -195,7 +195,7 @@ def test_segmentation_models():
     _test_model_list(models, ctx, x, pretrained=False, pretrained_base=True)
     
     
- def test_mobilenet_sync_bn():
+def test_mobilenet_sync_bn():
     model_name = "mobilenet1.0"
     net = gcv.model_zoo.get_model(model_name, pretrained=True)
     net.save_parameters(model_name + '.params')
