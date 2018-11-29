@@ -19,8 +19,11 @@ Supported Applications
 .. raw:: html
    :file: applications.html
 
+.. raw:: html
+ <a id="installation.html"></a><select style="display:none;" id="installation-select">
+
 Installation
-------------------
+------------
 
 Install MXNet
 ^^^^^^^^^^^^^
