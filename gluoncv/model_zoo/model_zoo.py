@@ -155,8 +155,16 @@ _models = {
     'nasnet_5_1538': nasnet_5_1538,
     'nasnet_7_1920': nasnet_7_1920,
     'nasnet_6_4032': nasnet_6_4032,
-    'fpn_resnet50_v1b_voc': fpn_resnet50_v1b_voc,
-    'fpn_resnet50_v1b_coco': fpn_resnet50_v1b_coco,
+    'residualattentionnet56': residualattentionnet56,
+    'residualattentionnet92': residualattentionnet92,
+    'residualattentionnet128': residualattentionnet128,
+    'residualattentionnet164': residualattentionnet164,
+    'residualattentionnet200': residualattentionnet200,
+    'residualattentionnet236': residualattentionnet236,
+    'residualattentionnet452': residualattentionnet452,
+    'cifar_residualattentionnet56': cifar_residualattentionnet56,
+    'cifar_residualattentionnet92': cifar_residualattentionnet92,
+    'cifar_residualattentionnet452': cifar_residualattentionnet452
     }
 
 def get_model(name, **kwargs):
