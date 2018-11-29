@@ -20,7 +20,7 @@ Supported Applications
    :file: applications.html
 
 .. raw:: html
- <a id="installation.html"></a><select style="display:none;" id="installation-select">
+ <a id="installation.html"></a>
 
 Installation
 ------------
