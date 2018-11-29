@@ -38,4 +38,4 @@ Community
       General discussions, usage experiences, and questions.
 
 
-Interested in contributing to GluonCV? Check our contribution guide:
+Interested in contributing to GluonCV? Check our `contribution guide <contribute.html>`_.
