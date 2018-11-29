@@ -165,7 +165,9 @@ _models = {
     'residualattentionnet452': residualattentionnet452,
     'cifar_residualattentionnet56': cifar_residualattentionnet56,
     'cifar_residualattentionnet92': cifar_residualattentionnet92,
-    'cifar_residualattentionnet452': cifar_residualattentionnet452
+    'cifar_residualattentionnet452': cifar_residualattentionnet452,
+    'fpn_resnet50_v1b_voc': fpn_resnet50_v1b_voc,
+    'fpn_resnet50_v1b_coco': fpn_resnet50_v1b_coco,
     }
 
 def get_model(name, **kwargs):
