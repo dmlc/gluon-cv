@@ -74,6 +74,8 @@ def test_classification_models():
         'cifar_resnet20_v2', 'cifar_resnet56_v2', 'cifar_resnet110_v2',
         'cifar_wideresnet16_10', 'cifar_wideresnet28_10', 'cifar_wideresnet40_8',
         'cifar_resnext29_32x4d', 'cifar_resnext29_16x64d',
+        'cifar_residualattentionnet56', 'cifar_residualattentionnet92',
+        'cifar_residualattentionnet452'
     ]
     _test_model_list(cifar_models, ctx, x)
 
@@ -104,7 +106,11 @@ def test_imagenet_models():
               'densenet121', 'densenet161', 'densenet169', 'densenet201',
               'darknet53', 'alexnet',
               'vgg11', 'vgg11_bn', 'vgg13', 'vgg13_bn',
-              'vgg16', 'vgg16_bn', 'vgg19', 'vgg19_bn']
+              'vgg16', 'vgg16_bn', 'vgg19', 'vgg19_bn',
+              'residualattentionnet56', 'residualattentionnet92',
+              'residualattentionnet128', 'residualattentionnet164',
+              'residualattentionnet200', 'residualattentionnet236',
+              'residualattentionnet452']
     _test_model_list(models, ctx, x)
 
     # 299x299
@@ -187,6 +193,15 @@ def test_segmentation_models():
     _test_model_list(models, ctx, x, pretrained=True, pretrained_base=True)
     _test_model_list(models, ctx, x, pretrained=False, pretrained_base=False)
     _test_model_list(models, ctx, x, pretrained=False, pretrained_base=True)
+    
+    
+def test_mobilenet_sync_bn():
+    model_name = "mobilenet1.0"
+    net = gcv.model_zoo.get_model(model_name, pretrained=True)
+    net.save_parameters(model_name + '.params')
+    net = gcv.model_zoo.get_model(model_name, pretrained=False, num_sync_bn_devices=2)
+    net.load_parameters(model_name + '.params')
+ 
 
 if __name__ == '__main__':
     import nose

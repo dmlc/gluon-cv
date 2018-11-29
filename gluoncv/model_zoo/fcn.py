@@ -40,7 +40,7 @@ class FCN(SegBaseModel):
     def __init__(self, nclass, backbone='resnet50', aux=True, ctx=cpu(), pretrained_base=True,
                  base_size=520, crop_size=480, **kwargs):
         super(FCN, self).__init__(nclass, aux, backbone, ctx=ctx, base_size=base_size,
-                                  crop_size=crop_size, pretrained_base=True, **kwargs)
+                                  crop_size=crop_size, pretrained_base=pretrained_base, **kwargs)
         with self.name_scope():
             self.head = _FCNHead(2048, nclass, **kwargs)
             self.head.initialize(ctx=ctx)
@@ -67,7 +67,7 @@ class FCN(SegBaseModel):
 
 class _FCNHead(HybridBlock):
     # pylint: disable=redefined-outer-name
-    def __init__(self, in_channels, channels, norm_layer=nn.BatchNorm, norm_kwargs={}):
+    def __init__(self, in_channels, channels, norm_layer=nn.BatchNorm, norm_kwargs={}, **kwargs):
         super(_FCNHead, self).__init__()
         with self.name_scope():
             self.block = nn.HybridSequential()

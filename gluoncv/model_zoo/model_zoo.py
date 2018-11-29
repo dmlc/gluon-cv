@@ -25,6 +25,7 @@ from .resnet import *
 from .squeezenet import *
 from .vgg import *
 from .mobilenet import *
+from .residual_attentionnet import *
 
 __all__ = ['get_model', 'get_model_list']
 

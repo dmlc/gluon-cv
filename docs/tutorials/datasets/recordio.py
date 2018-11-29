@@ -84,10 +84,10 @@ By default ``imagenet.py`` will extract the images into
 ``~/.mxnet/datasets/imagenet``. You
 can specify a different target folder by setting ``--target-dir``.
 
-Read with GluonCV
------------------
+Read with ImageRecordIter
+-------------------------
 
-The prepared dataset can be loaded with utility class :py:class:`gluoncv.data.ImageNet`
+The prepared dataset can be loaded with utility class :py:class:`mxnet.io.ImageRecordIter`
 directly. Here is an example that randomly reads 128 images each time and
 performs randomized resizing and cropping.
 """

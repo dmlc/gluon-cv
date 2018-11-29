@@ -126,6 +126,9 @@ def get_model_file(name, tag=None, root=os.path.join('~', '.mxnet', 'models')):
     file_path
         Path to the requested pretrained model file.
     """
+    if 'MXNET_HOME' in os.environ:
+        root = os.path.join(os.environ['MXNET_HOME'], 'models')
+
     use_tag = isinstance(tag, str)
     if use_tag:
         file_name = '{name}-{short_hash}'.format(name=name,

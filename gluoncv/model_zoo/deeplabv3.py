@@ -93,7 +93,7 @@ def _ASPPConv(in_channels, out_channels, atrous_rate, norm_layer, norm_kwargs):
     return block
 
 class _AsppPooling(nn.HybridBlock):
-    def __init__(self, in_channels, out_channels, norm_layer, norm_kwargs):
+    def __init__(self, in_channels, out_channels, norm_layer, norm_kwargs, **kwargs):
         super(_AsppPooling, self).__init__()
         self.gap = nn.HybridSequential()
         with self.gap.name_scope():
