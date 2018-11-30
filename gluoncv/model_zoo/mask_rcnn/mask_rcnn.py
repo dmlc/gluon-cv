@@ -9,7 +9,8 @@ from ..faster_rcnn.faster_rcnn import FasterRCNN
 from .rcnn_target import MaskTargetGenerator
 
 __all__ = ['MaskRCNN', 'get_mask_rcnn',
-           'mask_rcnn_resnet50_v1b_coco']
+           'mask_rcnn_resnet50_v1b_coco',
+           'mask_rcnn_resnet101_v1b_coco']
 
 
 class Mask(nn.HybridBlock):
@@ -25,6 +26,7 @@ class Mask(nn.HybridBlock):
         Used to determine number of hidden channels
 
     """
+
     def __init__(self, batch_images, num_classes, mask_channels, **kwargs):
         super(Mask, self).__init__(**kwargs)
         self._batch_images = batch_images
@@ -76,6 +78,7 @@ class MaskRCNN(FasterRCNN):
         Number of channels in mask prediction
 
     """
+
     def __init__(self, features, top_features, classes,
                  mask_channels=256, rcnn_max_dets=1000, **kwargs):
         super(MaskRCNN, self).__init__(features, top_features, classes,
@@ -107,11 +110,11 @@ class MaskRCNN(FasterRCNN):
         """
         if autograd.is_training():
             cls_pred, box_pred, rpn_box, samples, matches, \
-                raw_rpn_score, raw_rpn_box, anchors, top_feat = \
+            raw_rpn_score, raw_rpn_box, anchors, top_feat = \
                 super(MaskRCNN, self).hybrid_forward(F, x, gt_box)
             mask_pred = self.mask(top_feat)
             return cls_pred, box_pred, mask_pred, rpn_box, samples, matches, \
-                 raw_rpn_score, raw_rpn_box, anchors
+                   raw_rpn_score, raw_rpn_box, anchors
         else:
             ids, scores, boxes, feat = \
                 super(MaskRCNN, self).hybrid_forward(F, x)
@@ -165,6 +168,7 @@ class MaskRCNN(FasterRCNN):
             # ids (B, N, 1), scores (B, N, 1), boxes (B, N, 4), masks (B, N, PS*2, PS*2)
             return ids, scores, boxes, masks
 
+
 def get_mask_rcnn(name, dataset, pretrained=False, ctx=mx.cpu(),
                   root=os.path.join('~', '.mxnet', 'models'), **kwargs):
     r"""Utility function to return mask rcnn networks.
@@ -195,6 +199,7 @@ def get_mask_rcnn(name, dataset, pretrained=False, ctx=mx.cpu(),
         full_name = '_'.join(('mask_rcnn', name, dataset))
         net.load_parameters(get_model_file(full_name, tag=pretrained, root=root), ctx=ctx)
     return net
+
 
 def mask_rcnn_resnet50_v1b_coco(pretrained=False, pretrained_base=True, **kwargs):
     r"""Mask RCNN model from the paper
@@ -233,6 +238,56 @@ def mask_rcnn_resnet50_v1b_coco(pretrained=False, pretrained_base=True, **kwargs
                                '.*down(2|3|4)_conv', '.*layers(2|3|4)_conv'])
     return get_mask_rcnn(
         name='resnet50_v1b', dataset='coco', pretrained=pretrained,
+        features=features, top_features=top_features, classes=classes,
+        mask_channels=256, rcnn_max_dets=1000,
+        short=800, max_size=1333, train_patterns=train_patterns,
+        nms_thresh=0.5, nms_topk=-1, post_nms=-1,
+        roi_mode='align', roi_size=(14, 14), stride=16, clip=4.42,
+        rpn_channel=1024, base_size=16, scales=(2, 4, 8, 16, 32),
+        ratios=(0.5, 1, 2), alloc_size=(128, 128), rpn_nms_thresh=0.7,
+        rpn_train_pre_nms=12000, rpn_train_post_nms=2000,
+        rpn_test_pre_nms=6000, rpn_test_post_nms=1000, rpn_min_size=0,
+        num_sample=128, pos_iou_thresh=0.5, pos_ratio=0.25,
+        **kwargs)
+
+
+def mask_rcnn_resnet101_v1b_coco(pretrained=False, pretrained_base=True, **kwargs):
+    r"""Mask RCNN model from the paper
+    "He, K., Gkioxari, G., Doll&ar, P., & Girshick, R. (2017). Mask R-CNN"
+
+    Parameters
+    ----------
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True
+        Load pretrained base network, the extra layers are randomized. Note that
+        if pretrained is `Ture`, this has no effect.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+
+    Examples
+    --------
+    >>> model = mask_rcnn_resnet101_v1b_coco(pretrained=True)
+    >>> print(model)
+    """
+    from ..resnetv1b import resnet101_v1b
+    from ...data import COCODetection
+    classes = COCODetection.CLASSES
+    pretrained_base = False if pretrained else pretrained_base
+    base_network = resnet101_v1b(pretrained=pretrained_base, dilated=False, use_global_stats=True)
+    features = nn.HybridSequential()
+    top_features = nn.HybridSequential()
+    for layer in ['conv1', 'bn1', 'relu', 'maxpool', 'layer1', 'layer2', 'layer3']:
+        features.add(getattr(base_network, layer))
+    for layer in ['layer4']:
+        top_features.add(getattr(base_network, layer))
+    train_patterns = '|'.join(['.*dense', '.*rpn', '.*mask',
+                               '.*down(2|3|4)_conv', '.*layers(2|3|4)_conv'])
+    return get_mask_rcnn(
+        name='resnet101_v1b', dataset='coco', pretrained=pretrained,
         features=features, top_features=top_features, classes=classes,
         mask_channels=256, rcnn_max_dets=1000,
         short=800, max_size=1333, train_patterns=train_patterns,

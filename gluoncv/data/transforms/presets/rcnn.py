@@ -130,7 +130,7 @@ class FasterRCNNDefaultTrainTransform(object):
     def __init__(self, short=600, max_size=1000, net=None, mean=(0.485, 0.456, 0.406),
                  std=(0.229, 0.224, 0.225), box_norm=(1., 1., 1., 1.),
                  num_sample=256, pos_iou_thresh=0.7, neg_iou_thresh=0.3,
-                 pos_ratio=0.5, **kwargs):
+                 pos_ratio=0.5, ashape=128, **kwargs):
         self._short = short
         self._max_size = max_size
         self._mean = mean
@@ -140,7 +140,6 @@ class FasterRCNNDefaultTrainTransform(object):
             return
 
         # use fake data to generate fixed anchors for target generation
-        ashape = 128
         # in case network has reset_ctx to gpu
         anchor_generator = copy.deepcopy(net.rpn.anchor_generator)
         anchor_generator.collect_params().reset_ctx(None)

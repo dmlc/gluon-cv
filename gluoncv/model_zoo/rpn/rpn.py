@@ -56,18 +56,20 @@ class RPN(gluon.HybridBlock):
     """
     def __init__(self, channels, stride, base_size, scales, ratios, alloc_size,
                  clip, nms_thresh, train_pre_nms, train_post_nms,
-                 test_pre_nms, test_post_nms, min_size, **kwargs):
+                 test_pre_nms, test_post_nms, min_size, syncbn=False, **kwargs):
         super(RPN, self).__init__(**kwargs)
         weight_initializer = mx.init.Normal(0.01)
         with self.name_scope():
             self.anchor_generator = RPNAnchorGenerator(
                 stride, base_size, ratios, scales, alloc_size)
             anchor_depth = self.anchor_generator.num_depth
-            self.region_proposaler = RPNProposal(
+            self.region_proposer = RPNProposal(
                 clip, nms_thresh, train_pre_nms, train_post_nms,
                 test_pre_nms, test_post_nms, min_size, stds=(1., 1., 1., 1.))
             self.conv1 = nn.HybridSequential()
             self.conv1.add(nn.Conv2D(channels, 3, 1, 1, weight_initializer=weight_initializer))
+            if syncbn:
+                self.conv1.add(mx.gluon.contrib.nn.SyncBatchNorm())
             self.conv1.add(nn.Activation('relu'))
             # use sigmoid instead of softmax, reduce channel numbers
             self.score = nn.Conv2D(anchor_depth, 1, 1, 0, weight_initializer=weight_initializer)
@@ -97,7 +99,7 @@ class RPN(gluon.HybridBlock):
         raw_rpn_scores = self.score(x).transpose(axes=(0, 2, 3, 1)).reshape((0, -1, 1))
         rpn_scores = F.sigmoid(F.stop_gradient(raw_rpn_scores))
         rpn_box_pred = self.loc(x).transpose(axes=(0, 2, 3, 1)).reshape((0, -1, 4))
-        rpn_score, rpn_box = self.region_proposaler(
+        rpn_score, rpn_box = self.region_proposer(
             anchors, rpn_scores, F.stop_gradient(rpn_box_pred), img)
         if autograd.is_training():
             # return raw predictions as well in training for bp
