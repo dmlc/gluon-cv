@@ -193,6 +193,15 @@ def test_segmentation_models():
     _test_model_list(models, ctx, x, pretrained=True, pretrained_base=True)
     _test_model_list(models, ctx, x, pretrained=False, pretrained_base=False)
     _test_model_list(models, ctx, x, pretrained=False, pretrained_base=True)
+    
+    
+def test_mobilenet_sync_bn():
+    model_name = "mobilenet1.0"
+    net = gcv.model_zoo.get_model(model_name, pretrained=True)
+    net.save_parameters(model_name + '.params')
+    net = gcv.model_zoo.get_model(model_name, pretrained=False, num_sync_bn_devices=2)
+    net.load_parameters(model_name + '.params')
+ 
 
 if __name__ == '__main__':
     import nose
