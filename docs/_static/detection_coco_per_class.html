@@ -2,7 +2,7 @@
 
   <!DOCTYPE html>
   <html lang="en">
-    
+
     <head>
 
         <meta charset="utf-8">
@@ -11,13 +11,14 @@
 
 
 
-          <link rel="stylesheet" href="https://cdn.pydata.org/bokeh/release/bokeh-0.13.0.min.css" type="text/css" />
+          <link rel="stylesheet" href="https://cdn.pydata.org/bokeh/release/bokeh-1.0.0.min.css" type="text/css" />
 
 
 
-          <script type="text/javascript" src="https://cdn.pydata.org/bokeh/release/bokeh-0.13.0.min.js"></script>
+          <script type="text/javascript" src="https://cdn.pydata.org/bokeh/release/bokeh-1.0.0.min.js"></script>
           <script type="text/javascript">
               Bokeh.set_log_level("info");
+              window.onload = function () { window.dispatchEvent(new Event('resize')); };
           </script>
 
 
