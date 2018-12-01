@@ -52,6 +52,8 @@ class RPN(gluon.HybridBlock):
         Return top proposal results after NMS in testing.
     min_size : int
         Proposals whose size is smaller than ``min_size`` will be discarded.
+    syncbn : boolean, default is False
+        Whether to use synchronized batch normalization layer.
 
     """
     def __init__(self, channels, stride, base_size, scales, ratios, alloc_size,

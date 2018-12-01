@@ -109,6 +109,8 @@ class FasterRCNN(RCNN):
         necessarily very precise. However, using a very big number may impact the training speed.
     additional_output : boolean, default is False
         ``additional_output`` is only used for Mask R-CNN to get internal outputs.
+    syncbn : boolean, default is False
+        Whether to use synchronized batch normalization layer.
 
     Attributes
     ----------
@@ -133,7 +135,6 @@ class FasterRCNN(RCNN):
         number if expecting more objects. You can use -1 to return all detections.
     target_generator : gluon.Block
         Generate training targets with boxes, samples, matches, gt_label and gt_box.
-
 
     """
 

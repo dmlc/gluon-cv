@@ -14,9 +14,6 @@ from .cifarwideresnet import *
 from .resnetv1b import *
 from .resnext import *
 from .senet import *
-from .se_resnet import *
-from .superresnet import *
-from .wideresnet import *
 from .yolo import *
 from .nasnet import *
 from .alexnet import *

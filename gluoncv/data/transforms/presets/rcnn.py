@@ -10,6 +10,7 @@ __all__ = ['transform_test', 'load_test',
            'FasterRCNNDefaultTrainTransform', 'FasterRCNNDefaultValTransform',
            'MaskRCNNDefaultTrainTransform', 'MaskRCNNDefaultValTransform']
 
+
 def transform_test(imgs, short=600, max_size=1000, mean=(0.485, 0.456, 0.406),
                    std=(0.229, 0.224, 0.225)):
     """A util function to transform all images to tensors as network input by applying
@@ -55,6 +56,7 @@ def transform_test(imgs, short=600, max_size=1000, mean=(0.485, 0.456, 0.406),
     if len(tensors) == 1:
         return tensors[0], origs[0]
     return tensors, origs
+
 
 def load_test(filenames, short=600, max_size=1000, mean=(0.485, 0.456, 0.406),
               std=(0.229, 0.224, 0.225)):
@@ -125,8 +127,11 @@ class FasterRCNNDefaultTrainTransform(object):
     pos_ratio : float, default is 0.5
         ``pos_ratio`` defines how many positive samples (``pos_ratio * num_sample``) is
         to be sampled.
+    ashape : int, default is 128
+        Defines shape of pre generated anchors for target generation
 
     """
+
     def __init__(self, short=600, max_size=1000, net=None, mean=(0.485, 0.456, 0.406),
                  std=(0.229, 0.224, 0.225), box_norm=(1., 1., 1., 1.),
                  num_sample=256, pos_iou_thresh=0.7, neg_iou_thresh=0.3,
@@ -200,6 +205,7 @@ class FasterRCNNDefaultValTransform(object):
         Standard deviation to be divided from image. Default is [0.229, 0.224, 0.225].
 
     """
+
     def __init__(self, short=600, max_size=1000,
                  mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)):
         self._mean = mean
@@ -258,6 +264,7 @@ class MaskRCNNDefaultTrainTransform(object):
         to be sampled.
 
     """
+
     def __init__(self, short=600, max_size=1000, net=None, mean=(0.485, 0.456, 0.406),
                  std=(0.229, 0.224, 0.225), box_norm=(1., 1., 1., 1.),
                  num_sample=256, pos_iou_thresh=0.7, neg_iou_thresh=0.3,
@@ -339,6 +346,7 @@ class MaskRCNNDefaultValTransform(object):
         Standard deviation to be divided from image. Default is [0.229, 0.224, 0.225].
 
     """
+
     def __init__(self, short=600, max_size=1000,
                  mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)):
         self._mean = mean
