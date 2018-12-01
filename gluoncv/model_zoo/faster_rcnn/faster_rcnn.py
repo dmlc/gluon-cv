@@ -242,7 +242,10 @@ class FasterRCNN(RCNN):
             raise ValueError("Invalid roi mode: {}".format(self._roi_mode))
 
         # RCNN prediction
-        top_feat = self.top_features(pooled_feat)
+        if self.top_features is not None:
+            top_feat = self.top_features(pooled_feat)
+        else:
+            top_feat = pooled_feat
         if self.box_features is None:
             box_feat = F.contrib.AdaptiveAvgPooling2D(top_feat, output_size=1)
         else:
@@ -467,19 +470,19 @@ def faster_rcnn_resnet50_v1b_dilated_coco(pretrained=False, pretrained_base=True
     base_network = resnet50_v1b(pretrained=pretrained_base, dilated=True,
                                 use_global_stats=not syncbn, norm_layer=norm_layer)
     features = nn.HybridSequential()
-    top_features = nn.HybridSequential()
+    top_features = None
     box_features = nn.HybridSequential()
     for layer in ['conv1', 'bn1', 'relu', 'maxpool', 'layer1', 'layer2', 'layer3', 'layer4']:
         features.add(getattr(base_network, layer))
-        box_features.add(nn.Conv2D(256, 1, weight_initializer=mx.init.Xavier(factor_type='in'),
-                                   prefix='rcnn_conv0_'),
-                         nn.Flatten(),
-                         nn.Dense(1024, weight_initializer=mx.init.Xavier(factor_type='in'),
-                                  prefix='rcnn_dense0_'),
-                         nn.Activation('relu'),
-                         nn.Dense(1024, weight_initializer=mx.init.Xavier(factor_type='in'),
-                                  prefix='rcnn_dense1_'),
-                         nn.Activation('relu'))
+    features.add(nn.Conv2D(256, 1, weight_initializer=mx.init.Xavier(factor_type='in'),
+                           prefix='rcnn_conv0_'))
+    box_features.add(nn.Flatten(),
+                     nn.Dense(1024, weight_initializer=mx.init.Xavier(factor_type='in'),
+                              prefix='rcnn_dense0_'),
+                     nn.Activation('relu'),
+                     nn.Dense(1024, weight_initializer=mx.init.Xavier(factor_type='in'),
+                              prefix='rcnn_dense1_'),
+                     nn.Activation('relu'))
     if syncbn:
         train_patterns = ''
     else:
