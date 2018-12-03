@@ -514,8 +514,7 @@ for epoch in range(opt.epoch_count, opt.niter + opt.niter_decay + 1):
         fake_B_list = []
         losses_log.reset()
         with autograd.record():
-            for ix, A in enumerate(real_A):
-                B = real_B[ix]
+            for A,B in zip(real_A,real_B):
                 fake_B = netG_A(A)
                 rec_A = netG_B(fake_B)
                 fake_A = netG_B(B)
@@ -543,10 +542,7 @@ for epoch in range(opt.epoch_count, opt.niter + opt.niter_decay + 1):
         optimizer_GA.step(opt.batchSize)
         optimizer_GB.step(opt.batchSize)
         with autograd.record():
-            for ix, A in enumerate(real_A):
-                B = real_B[ix]
-                fake_A = fake_A_list[ix]
-                fake_B = fake_B_list[ix]
+            for A,B,fake_A,fake_B in zip(real_A,real_B,fake_A_list,fake_B_list):
                 #train D_A
                 #real
                 fake_B_tmp = fake_B_pool.query(fake_B)
