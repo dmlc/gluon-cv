@@ -65,14 +65,20 @@ class DummySequentialDataset(mx.gluon.data.Dataset):
     def __getitem__(self, idx):
         return mx.nd.ones(shape=self.shape) * idx
 
+def _fn0(x):
+    return x
+
+def _fn1(x):
+    return x.tile(reps=(2,))
+
+def _fn2(x):
+    return x.tile(reps=(3,))
+
 def test_random_transform_dataloader():
     dataset = DummySequentialDataset(20)
-    fn0 = lambda x: x
-    fn1 = lambda x: x.tile(reps=(2,))
-    fn2 = lambda x: x.tile(reps=(3,))
     loader = RandomTransformDataLoader(
         dataset=dataset, shuffle=True, batch_size=4,
-        transform_fns=[fn0, fn0], last_batch='keep', interval=1, num_workers=2)
+        transform_fns=[_fn0, _fn0], last_batch='keep', interval=1, num_workers=2)
 
     for i in range(4):
         results = []
@@ -86,7 +92,7 @@ def test_random_transform_dataloader():
     # sanity test for rollover
     for last_batch in ['rollover', 'keep', 'discard']:
         loader = RandomTransformDataLoader(
-            dataset=dataset, shuffle=True, batch_size=4, transform_fns=[fn1, fn2], last_batch=last_batch, interval=2, num_workers=2)
+            dataset=dataset, shuffle=True, batch_size=4, transform_fns=[_fn1, _fn2], last_batch=last_batch, interval=2, num_workers=2)
         for i in range(4):
             results = []
             for batch in loader:
