@@ -1,6 +1,5 @@
-"""Prepare PASCAL VOC datasets"""
+"""Prepare cycle gan datasets"""
 import os
-import shutil
 import argparse
 import zipfile
 from gluoncv.utils import download, makedirs
@@ -34,5 +33,5 @@ if __name__ == '__main__':
     args.file = args.file + '.zip'
     path = os.path.expanduser(args.download_dir)
     if not os.path.isdir(path) :
-        os.makedirs(path)
-    download_data(path , args.file,overwrite=args.overwrite)
+        makedirs(path)
+    download_data(path, args.file,overwrite=args.overwrite)
