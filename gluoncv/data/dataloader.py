@@ -129,10 +129,20 @@ def _as_in_context(data, ctx):
         return [_as_in_context(d, ctx) for d in data]
     return data
 
-def _recursive_fork_recordio(obj, depth, max_depth=1000):
+def _recursive_fork_recordio(obj, depth, max_depth=1000, visited_objs=None):
     """Recursively find instance of MXRecordIO and reset file handler.
     This is required for MXRecordIO which holds a C pointer to a opened file after fork.
     """
+
+    # avoid visiting the same object due to possible references to parent object
+    if visited_objs is None:
+        visited_objs = []
+    for visited_obj in visited_objs:
+        if visited_obj is obj:
+            return
+    visited_objs.append(obj)
+
+    # recursively find MXRecordIO and fix their file handlers
     if depth >= max_depth:
         return
     if isinstance(obj, MXRecordIO):
@@ -140,7 +150,7 @@ def _recursive_fork_recordio(obj, depth, max_depth=1000):
         obj.open()  # re-obtain file hanlder in new process
     elif (hasattr(obj, '__dict__')):
         for _, v in obj.__dict__.items():
-            _recursive_fork_recordio(v, depth + 1, max_depth)
+            _recursive_fork_recordio(v, depth + 1, max_depth, visited_objs)
 
 def random_worker_loop(datasets, key_queue, data_queue, batchify_fn):
     """Worker loop for multiprocessing DataLoader with multiple transform functions."""
