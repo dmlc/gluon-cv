@@ -6,8 +6,8 @@ from gluoncv.utils import download, makedirs
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description='Initialize PASCAL VOC dataset.',
-        epilog='Example: python pascal_voc.py --download-dir ~/VOCdevkit',
+        description='Initialize Cycle Gan dataset.',
+        epilog='Example: python download_dataset.py --download-dir ./',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--download-dir', type=str, default='./', help='dataset directory on disk')
     parser.add_argument('--overwrite', action='store_true', help='overwrite downloaded files if set, in case they are corrputed')
