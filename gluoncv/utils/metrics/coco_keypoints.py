@@ -166,5 +166,5 @@ class COCOKeyPointsMetric(mx.metric.EvalMetric):
             self._results.append({'image_id': imgid,
                                   'category_id': category_id,
                                   'keypoints': kpt,
-                                  'score': score})
+                                  'score': all_boxes[idx][5]})
 
