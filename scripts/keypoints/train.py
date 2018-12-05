@@ -234,6 +234,7 @@ def validate(val_data, net, ctx):
     if isinstance(ctx, mx.Context):
         ctx = [ctx]
 
+    net.cast('float32')
     val_metric.reset()
     num_samples = len(val_dataset)
     all_preds = nd.zeros((num_samples, opt.num_joints, 3))
@@ -242,8 +243,8 @@ def validate(val_data, net, ctx):
     for i, batch in enumerate(val_data):
         data, scale, center, score, imgid = val_batch_fn(batch, ctx)
 
-        outputs = [net(X.astype(opt.dtype, copy=False)) for X in data]
-        data_flip = [nd.flip(X.astype(opt.dtype, copy=False), axis=3) for X in data]
+        outputs = [net(X) for X in data]
+        data_flip = [nd.flip(X, axis=3) for X in data]
         outputs_flip = [net(X) for X in data_flip]
         outputs = [(o + o_flip)/2 for o, o_flip in zip(outputs, outputs_flip)]
 
