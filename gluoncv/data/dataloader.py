@@ -7,6 +7,7 @@ import numpy as np
 from mxnet import nd
 from mxnet import context
 from mxnet.gluon.data.dataloader import DataLoader, _MultiWorkerIter
+from mxnet.gluon.data.dataloader import default_mp_batchify_fn, default_batchify_fn
 
 def default_pad_batchify_fn(data):
     """Collate data into batch, labels are padded to same shape"""
@@ -237,17 +238,24 @@ class RandomTransformDataLoader(DataLoader):
                  num_workers=0, pin_memory=False, prefetch=None):
         super(RandomTransformDataLoader, self).__init__(
             dataset, batch_size, shuffle, sampler,
-            last_batch, batch_sampler, batchify_fn, num_workers, pin_memory, prefetch)
+            last_batch, batch_sampler, batchify_fn, 0, pin_memory)
         self._transform_fns = transform_fns
         assert len(self._transform_fns) > 0
         self._interval = max(int(interval), 1)
         # override
-        if self._worker_pool:
-            self._worker_pool.terminate()
-            self._worker_pool = None
+        self._num_workers = num_workers if num_workers >= 0 else 0
+        self._worker_pool = None
+        self._prefetch = max(0, int(prefetch) if prefetch is not None else 2 * self._num_workers)
         if self._num_workers > 0:
             self._worker_pool = multiprocessing.Pool(
                 self._num_workers, initializer=_worker_initializer, initargs=[self._dataset])
+        if batchify_fn is None:
+            if num_workers > 0:
+                self._batchify_fn = default_mp_batchify_fn
+            else:
+                self._batchify_fn = default_batchify_fn
+        else:
+            self._batchify_fn = batchify_fn
 
     def __iter__(self):
         if self._num_workers == 0:
