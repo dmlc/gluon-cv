@@ -242,7 +242,9 @@ class RandomTransformDataLoader(DataLoader):
         assert len(self._transform_fns) > 0
         self._interval = max(int(interval), 1)
         # override
-        self._worker_pool = None
+        if self._worker_pool:
+            self._worker_pool.terminate()
+            self._worker_pool = None
         if self._num_workers > 0:
             self._worker_pool = multiprocessing.Pool(
                 self._num_workers, initializer=_worker_initializer, initargs=[self._dataset])
