@@ -8,6 +8,7 @@ except ImportError:
     from io import StringIO
 import os
 from os import path as osp
+from collections import OrderedDict
 import warnings
 import numpy as np
 import mxnet as mx
@@ -39,7 +40,7 @@ class COCOKeyPointsMetric(mx.metric.EvalMetric):
     """
     def __init__(self, dataset, save_prefix, use_time=True, cleanup=False, score_thresh=0.05,
                  data_shape=None):
-        super(COCODetectionMetric, self).__init__('COCOMeanAP')
+        super(COCOKeyPointsMetric, self).__init__('COCOMeanAP')
         self.dataset = dataset
         self._img_ids = sorted(dataset.coco.getImgIds())
         self._current_id = 0
@@ -99,6 +100,7 @@ class COCOKeyPointsMetric(mx.metric.EvalMetric):
         coco_eval = COCOeval(gt, pred, 'keypoints')
         coco_eval.evaluate()
         coco_eval.accumulate()
+        coco_eval.summarize()
         self._coco_eval = coco_eval
         return coco_eval
 
@@ -122,49 +124,25 @@ class COCOKeyPointsMetric(mx.metric.EvalMetric):
         # precision has dims (iou, recall, cls, area range, max dets)
         # area range index 0: all area ranges
         # max dets index 2: 100 per image
-        precision = coco_eval.eval['precision'][ind_lo:(ind_hi + 1), :, :, 0, 2]
-        ap_default = np.mean(precision[precision > -1])
-        names, values = [], []
-        names.append('~~~~ Summary metrics ~~~~\n')
-        # catch coco print string, don't want directly print here
-        _stdout = sys.stdout
-        sys.stdout = StringIO()
-        coco_eval.summarize()
-        coco_summary = sys.stdout.getvalue()
-        sys.stdout = _stdout
-        values.append(str(coco_summary).strip())
-        for cls_ind, cls_name in enumerate(self.dataset.classes):
-            precision = coco_eval.eval['precision'][
-                ind_lo:(ind_hi + 1), :, cls_ind, 0, 2]
-            ap = np.mean(precision[precision > -1])
-            names.append(cls_name)
-            values.append('{:.1f}'.format(100 * ap))
-        # put mean AP at last, for comparing perf
-        names.append('~~~~ MeanAP @ IoU=[{:.2f},{:.2f}] ~~~~\n'.format(
-            IoU_lo_thresh, IoU_hi_thresh))
-        values.append('{:.1f}'.format(100 * ap_default))
-        return names, values
+        stats_names = ['AP', 'Ap .5', 'AP .75', 'AP (M)', 'AP (L)', 'AR', 'AR .5', 'AR .75', 'AR (M)', 'AR (L)']
+
+        info_str = []
+        for ind, name in enumerate(stats_names):
+            info_str.append((name, coco_eval.stats[ind]))
+        name_value = OrderedDict(info_str)
+        return name_value, name_value['AP']
 
     # pylint: disable=arguments-differ, unused-argument
-    def update(self, all_preds, all_boxes, imgid, *args, **kwargs):
-        """Update internal buffer with latest predictions.
-        Note that the statistics are not available until you call self.get() to return
-        the metrics.
-
-        Parameters
-        ----------
-        pred_bboxes : mxnet.NDArray or numpy.ndarray
-            Prediction bounding boxes with shape `B, N, 4`.
-            Where B is the size of mini-batch, N is the number of bboxes.
-        pred_labels : mxnet.NDArray or numpy.ndarray
-            Prediction bounding boxes labels with shape `B, N`.
-        pred_scores : mxnet.NDArray or numpy.ndarray
-            Prediction bounding boxes scores with shape `B, N`.
-
-        """
-        for idx, kpt in enumerate(all_preds):
-            self._results.append({'image_id': imgid,
-                                  'category_id': category_id,
+    def update(self, preds, maxvals, score, imgid, *args, **kwargs):
+        batch_size = preds.shape[0]
+        num_joints = preds.shape[1]
+        for idx, kpt in enumerate(preds):
+            kpt = []
+            for i in range(num_joints):
+                kpt += preds[idx][i].asnumpy().tolist()
+                kpt.append(float(maxvals[idx][i].asscalar()))
+            self._results.append({'image_id': int(imgid[idx].asscalar()),
+                                  'category_id': 1,
                                   'keypoints': kpt,
-                                  'score': all_boxes[idx][5]})
+                                  'score': int(score[idx].asscalar())})
 

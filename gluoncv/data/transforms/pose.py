@@ -12,6 +12,7 @@ Written by Bin Xiao (Bin.Xiao@microsoft.com)
 from __future__ import absolute_import
 from __future__ import division
 
+import math
 import numpy as np
 from mxnet import nd
 from ...utils.filesystem import try_import_cv2
@@ -88,7 +89,6 @@ def get_affine_transform(center,
                          inv=0):
     cv2 = try_import_cv2()
     if not isinstance(scale, np.ndarray) and not isinstance(scale, list):
-        print(scale)
         scale = np.array([scale, scale])
 
     scale_tmp = scale * 200.0
@@ -154,7 +154,7 @@ def transform_preds(coords, center, scale, output_size):
     target_coords = nd.zeros(coords.shape)
     trans = get_affine_transform(center, scale, 0, output_size, inv=1)
     for p in range(coords.shape[0]):
-        target_coords[p, 0:2] = affine_transform(coords[p, 0:2], trans)
+        target_coords[p, 0:2] = affine_transform(coords[p, 0:2].asnumpy(), trans)
     return target_coords
 
 
@@ -181,8 +181,9 @@ def get_max_pred(batch_heatmaps):
     return preds, maxvals
 
 
-def get_final_preds(config, batch_heatmaps, center, scale):
-    coords, maxvals = get_max_preds(batch_heatmaps)
+def get_final_preds(batch_heatmaps, center, scale):
+    # import pdb; pdb.set_trace()
+    coords, maxvals = get_max_pred(batch_heatmaps)
 
     heatmap_height = batch_heatmaps.shape[2]
     heatmap_width = batch_heatmaps.shape[3]
@@ -191,14 +192,15 @@ def get_final_preds(config, batch_heatmaps, center, scale):
     for n in range(coords.shape[0]):
         for p in range(coords.shape[1]):
             hm = batch_heatmaps[n][p]
-            px = int(math.floor(coords[n][p][0] + 0.5))
-            py = int(math.floor(coords[n][p][1] + 0.5))
+            px = int(nd.floor(coords[n][p][0] + 0.5).asscalar())
+            py = int(nd.floor(coords[n][p][1] + 0.5).asscalar())
             if 1 < px < heatmap_width-1 and 1 < py < heatmap_height-1:
-                diff = nd.array([hm[py][px+1] - hm[py][px-1],
-                                 hm[py+1][px]-hm[py-1][px]])
+                diff = nd.concat(hm[py][px+1] - hm[py][px-1],
+                                 hm[py+1][px] - hm[py-1][px],
+                                 dim=0)
                 coords[n][p] += nd.sign(diff) * .25
 
-    preds = coords.copy()
+    preds = nd.zeros_like(coords)
 
     # Transform back
     for i in range(coords.shape[0]):
