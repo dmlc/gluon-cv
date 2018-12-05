@@ -127,16 +127,16 @@ def get_data_loader(data_dir, batch_size, num_workers, input_size):
         data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
         label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0)
         weight = gluon.utils.split_and_load(batch[2], ctx_list=ctx, batch_axis=0)
-        img_path = gluon.utils.split_and_load(batch[3], ctx_list=ctx, batch_axis=0)
-        return data, label, weight, img_path
+        imgid = gluon.utils.split_and_load(batch[3], ctx_list=ctx, batch_axis=0)
+        return data, label, weight, imgid
 
     def val_batch_fn(batch, ctx):
         data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
         scale = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0)
         center = gluon.utils.split_and_load(batch[2], ctx_list=ctx, batch_axis=0)
         score = gluon.utils.split_and_load(batch[3], ctx_list=ctx, batch_axis=0)
-        img_path = gluon.utils.split_and_load(batch[4], ctx_list=ctx, batch_axis=0)
-        return data, scale[0], center[0], score[0], img_path[0]
+        imgid = gluon.utils.split_and_load(batch[4], ctx_list=ctx, batch_axis=0)
+        return data, scale[0], center[0], score[0], imgid[0]
 
     train_dataset = mscoco.keypoints.COCOKeyPoints(data_dir, aspect_ratio=4./3.,
                                                    splits=('person_keypoints_train2017'))
@@ -196,14 +196,13 @@ def train(ctx):
 
     if opt.mode == 'hybrid':
         net.hybridize(static_alloc=True, static_shape=True)
-    return net
 
     for epoch in range(opt.num_epochs):
         tic = time.time()
         btic = time.time()
 
         for i, batch in enumerate(train_data):
-            data, label, weight = train_batch_fn(batch, ctx)
+            data, label, weight, imgid = train_batch_fn(batch, ctx)
 
             with ag.record():
                 outputs = [net(X.astype(opt.dtype, copy=False)) for X in data]
