@@ -271,3 +271,9 @@ class RandomTransformDataLoader(DataLoader):
                 self._transform_fns, self._interval, self._worker_pool, self._batchify_fn,
                 self._batch_sampler, pin_memory=self._pin_memory, worker_fn=_worker_fn,
                 prefetch=self._prefetch)
+
+    def __del__(self):
+        if self._worker_pool:
+            # manually terminate due to a bug that pool is not automatically terminated
+            assert isinstance(self._worker_pool, multiprocessing.pool.Pool)
+            self._worker_pool.terminate()
