@@ -352,7 +352,6 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
         btic = time.time()
         if not args.disable_hybridization:
             net.hybridize(static_alloc=args.static_alloc)
-            logger.info('using hybridization')
         base_lr = trainer.learning_rate
         for i, batch in enumerate(train_data):
             if epoch == 0 and i <= lr_warmup:
