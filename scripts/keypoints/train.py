@@ -60,11 +60,11 @@ parser.add_argument('--use-pretrained-base', action='store_true',
                     help='enable using pretrained base model from gluon.')
 parser.add_argument('--no-wd', action='store_true',
                     help='whether to remove weight decay on bias, and beta/gamma for batchnorm layers.')
-parser.add_argument('--save-frequency', type=int, default=10,
+parser.add_argument('--save-frequency', type=int, default=1,
                     help='frequency of model saving.')
 parser.add_argument('--save-dir', type=str, default='params',
                     help='directory of saved models')
-parser.add_argument('--log-interval', type=int, default=50,
+parser.add_argument('--log-interval', type=int, default=20,
                     help='Number of batches to wait before logging.')
 parser.add_argument('--logging-file', type=str, default='train_imagenet.log',
                     help='name of training log file')

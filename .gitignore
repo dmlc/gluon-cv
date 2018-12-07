@@ -1,5 +1,6 @@
 # Extra
 *.params
+*.states
 *.out
 *.swp
 .DS_Store
@@ -111,3 +112,4 @@ ENV/
 
 *.png*
 *.jpg*
+*.json
