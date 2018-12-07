@@ -66,9 +66,9 @@ class SimplePoseDefaultTrainTransform(object):
                 joints = joints_3d
             center[0] = src.shape[1] - center[0] - 1
 
-        trans = get_affine_transform(center, scale, r, self._image_size)
-        w, h = self._image_size
-        img = cv2.warpAffine(src.asnumpy(), trans, (int(h), int(w)), flags=cv2.INTER_LINEAR)
+        h, w = self._image_size
+        trans = get_affine_transform(center, scale, r, [w, h])
+        img = cv2.warpAffine(src.asnumpy(), trans, (int(w), int(h)), flags=cv2.INTER_LINEAR)
 
         # deal with joints visibility
         for i in range(self._num_joints):
@@ -114,11 +114,12 @@ class SimplePoseDefaultValTransform(object):
         scale = label['scale']
         score = label.get('score', 1)
 
-        trans = get_affine_transform(center, 1, 0, self._image_size)
-        w, h = self._image_size
-        img = cv2.warpAffine(src.asnumpy(), trans, (int(h), int(w)), flags=cv2.INTER_LINEAR)
+        h, w = self._image_size
+        trans = get_affine_transform(center, scale, 0, [w, h])
+        img = cv2.warpAffine(src.asnumpy(), trans, (int(w), int(h)), flags=cv2.INTER_LINEAR)
 
         # to tensor
         img = mx.nd.image.to_tensor(mx.nd.array(img))
         img = mx.nd.image.normalize(img, mean=self._mean, std=self._std)
+
         return img, scale, center, score, img_path

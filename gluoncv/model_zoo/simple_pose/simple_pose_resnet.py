@@ -21,7 +21,8 @@ from mxnet.gluon import nn
 
 class SimplePoseResNet(HybridBlock):
 
-    def __init__(self, base_name='resnet50_v1b', pretrained_base=False,
+    def __init__(self, base_name='resnet50_v1b',
+                 pretrained_base=False, pretrained_ctx=cpu(),
                  num_joints=17,
                  num_deconv_layers=3,
                  num_deconv_filters=(256, 256, 256),
@@ -30,7 +31,7 @@ class SimplePoseResNet(HybridBlock):
         super(SimplePoseResNet, self).__init__(**kwargs)
 
         from ..model_zoo import get_model
-        base_network = get_model(base_name, pretrained=pretrained_base)
+        base_network = get_model(base_name, pretrained=pretrained_base, ctx=pretrained_ctx)
 
         self.resnet = nn.HybridSequential()
         if base_name.endswith('v1'):

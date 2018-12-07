@@ -17,7 +17,7 @@ import numpy as np
 from mxnet import nd
 from ...utils.filesystem import try_import_cv2
 
-def flip_heatmap(heatmap, joint_pairs):
+def flip_heatmap(heatmap, joint_pairs, shift=False):
     """Flip pose heatmap according to joint pairs.
 
     Parameters
@@ -26,6 +26,8 @@ def flip_heatmap(heatmap, joint_pairs):
         Heatmap of joints.
     joint_pairs : list
         List of joint pairs
+    shift : bool
+        Whether to shift the output
 
     Returns
     -------
@@ -41,6 +43,8 @@ def flip_heatmap(heatmap, joint_pairs):
         out[:, pair[0], :, :] = out[:, pair[1], :, :]
         out[:, pair[1], :, :] = tmp
 
+    if shift:
+        out[:, :, :, 1:] = out[:, :, :, 0:-1]
     return out
 
 def flip_joints_3d(joints_3d, width, joint_pairs):

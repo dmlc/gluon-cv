@@ -28,8 +28,8 @@ class COCOKeyPointsMetric(mx.metric.EvalMetric):
         Append unique datetime string to created JSON file name if ``True``.
     cleanup : bool
         Remove created JSON file if ``True``.
-    score_thresh : float
-        Detection results with confident scores smaller than ``score_thresh`` will
+    in_vis_thresh : float
+        Detection results with confident scores smaller than ``in_vis_thresh`` will
         be discarded before saving to results.
     data_shape : tuple of int, default is None
         If `data_shape` is provided as (height, width), we will rescale bounding boxes when
@@ -38,7 +38,7 @@ class COCOKeyPointsMetric(mx.metric.EvalMetric):
         the data_shape must be fixed for all validation images.
 
     """
-    def __init__(self, dataset, save_prefix, use_time=True, cleanup=False, score_thresh=0.05,
+    def __init__(self, dataset, save_prefix, use_time=True, cleanup=False, in_vis_thresh=0.2,
                  data_shape=None):
         super(COCOKeyPointsMetric, self).__init__('COCOMeanAP')
         self.dataset = dataset
@@ -46,7 +46,7 @@ class COCOKeyPointsMetric(mx.metric.EvalMetric):
         self._current_id = 0
         self._cleanup = cleanup
         self._results = []
-        self._score_thresh = score_thresh
+        self._in_vis_thresh = in_vis_thresh
         if isinstance(data_shape, (tuple, list)):
             assert len(data_shape) == 2, "Data shape must be (height, width)"
         elif not data_shape:
@@ -98,6 +98,7 @@ class COCOKeyPointsMetric(mx.metric.EvalMetric):
         try_import_pycocotools()
         from pycocotools.cocoeval import COCOeval
         coco_eval = COCOeval(gt, pred, 'keypoints')
+        coco_eval.params.useSegm = None
         coco_eval.evaluate()
         coco_eval.accumulate()
         coco_eval.summarize()
@@ -106,24 +107,9 @@ class COCOKeyPointsMetric(mx.metric.EvalMetric):
 
     def get(self):
         """Get evaluation metrics. """
-        # Metric printing adapted from detectron/json_dataset_evaluator.
-        def _get_thr_ind(coco_eval, thr):
-            ind = np.where((coco_eval.params.iouThrs > thr - 1e-5) &
-                           (coco_eval.params.iouThrs < thr + 1e-5))[0][0]
-            iou_thr = coco_eval.params.iouThrs[ind]
-            assert np.isclose(iou_thr, thr)
-            return ind
-
         # call real update
         coco_eval = self._update()
 
-        IoU_lo_thresh = 0.5
-        IoU_hi_thresh = 0.95
-        ind_lo = _get_thr_ind(coco_eval, IoU_lo_thresh)
-        ind_hi = _get_thr_ind(coco_eval, IoU_hi_thresh)
-        # precision has dims (iou, recall, cls, area range, max dets)
-        # area range index 0: all area ranges
-        # max dets index 2: 100 per image
         stats_names = ['AP', 'Ap .5', 'AP .75', 'AP (M)', 'AP (L)', 'AR', 'AR .5', 'AR .75', 'AR (M)', 'AR (L)']
 
         info_str = []
@@ -134,15 +120,28 @@ class COCOKeyPointsMetric(mx.metric.EvalMetric):
 
     # pylint: disable=arguments-differ, unused-argument
     def update(self, preds, maxvals, score, imgid, *args, **kwargs):
+        # import pdb; pdb.set_trace()
         batch_size = preds.shape[0]
         num_joints = preds.shape[1]
+        in_vis_thresh = self._in_vis_thresh
         for idx, kpt in enumerate(preds):
             kpt = []
+            kpt_score = 0
+            count = 0
             for i in range(num_joints):
                 kpt += preds[idx][i].asnumpy().tolist()
-                kpt.append(float(maxvals[idx][i].asscalar()))
+                mval = float(maxvals[idx][i].asscalar())
+                kpt.append(mval)
+                if mval > in_vis_thresh:
+                    kpt_score += mval
+                    count += 1
+
+            if count > 0:
+                kpt_score /= count
+            rescore = kpt_score * score[idx].asscalar()
+
             self._results.append({'image_id': int(imgid[idx].asscalar()),
                                   'category_id': 1,
                                   'keypoints': kpt,
-                                  'score': int(score[idx].asscalar())})
+                                  'score': rescore})
 
