@@ -188,7 +188,7 @@ def train(ctx):
 
             with ag.record():
                 outputs = [net(X.astype(opt.dtype, copy=False)) for X in data]
-                loss = [L(yhat, y.astype(opt.dtype, copy=False), w.astype(opt.dtype, copy=False))
+                loss = [nd.cast(L(nd.cast(yhat, 'float32'), y, w), opt.dtype)
                         for yhat, y, w in zip(outputs, label, weight)]
             for l in loss:
                 l.backward()
