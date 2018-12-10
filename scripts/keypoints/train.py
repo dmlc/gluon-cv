@@ -52,6 +52,10 @@ parser.add_argument('--model', type=str, required=True,
                     help='type of model to use. see vision_model for options.')
 parser.add_argument('--input-size', type=str, default='256,192',
                     help='size of the input image size. default is 256,192')
+parser.add_argument('--mean', type=str, default='0.485,0.456,0.406',
+                    help='mean vector for normalization')
+parser.add_argument('--std', type=str, default='0.229,0.224,0.225',
+                    help='std vector for normalization')
 parser.add_argument('--use-pretrained', action='store_true',
                     help='enable using pretrained model from gluon.')
 parser.add_argument('--use-pretrained-base', action='store_true',
@@ -108,10 +112,14 @@ def get_data_loader(data_dir, batch_size, num_workers, input_size):
     train_dataset = mscoco.keypoints.COCOKeyPoints(data_dir, aspect_ratio=4./3.,
                                                    splits=('person_keypoints_train2017'))
     heatmap_size = [int(i/4) for i in input_size]
+
+    meanvec = [float(i) for i in opt.mean.split(',')]
+    stdvec = [float(i) for i in opt.std.split(',')]
     transform_train = SimplePoseDefaultTrainTransform(num_joints=train_dataset.num_joints,
                                                       joint_pairs=train_dataset.joint_pairs,
                                                       image_size=input_size, heatmap_size=heatmap_size,
-                                                      scale_factor=0.30, rotation_factor=40)
+                                                      scale_factor=0.30, rotation_factor=40,
+                                                      mean=meanvec, std=stdvec, random_flip=False)
 
     train_data = gluon.data.DataLoader(
         train_dataset.transform(transform_train),

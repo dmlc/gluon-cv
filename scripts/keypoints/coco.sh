@@ -3,5 +3,5 @@ python train.py \
     --lr 0.008 --lr-mode step --lr-decay-epoch 90,120 \
     --num-epochs 140 --batch-size 128 --num-gpus 8 -j 60 \
     --dtype float16 --no-wd --warmup-epochs 5 --use-pretrained-base \
-    --save-dir params_simple_pose_resnet50_v1d \
-    --logging-file simple_pose_resnet50_v1d.log
+    --save-dir params_simple_pose_resnet50_v1b \
+    --logging-file simple_pose_resnet50_v1b.log

@@ -31,7 +31,7 @@ class SimplePoseDefaultTrainTransform(object):
                  **kwargs):
         from ....model_zoo.simple_pose.pose_target import SimplePoseGaussianTargetGenerator
         self._target_generator = SimplePoseGaussianTargetGenerator(
-            num_joints, image_size, heatmap_size, sigma)
+            num_joints, (image_size[1], image_size[0]), (heatmap_size[1], heatmap_size[0]), sigma)
         self._num_joints = num_joints
         self._image_size = image_size
         self._joint_pairs = joint_pairs
@@ -58,12 +58,11 @@ class SimplePoseDefaultTrainTransform(object):
         rf = self._rotation_factor
         r = np.clip(np.random.randn() * rf, -rf * 2, rf * 2) if random.random() <= 0.6 else 0
 
+        joints = joints_3d
         if self._random_flip:
             src, fliped = random_flip_image(src, px=0.5, py=0)
             if fliped[0]:
                 joints = flip_joints_3d(joints_3d, src.shape[1], self._joint_pairs)
-            else:
-                joints = joints_3d
             center[0] = src.shape[1] - center[0] - 1
 
         h, w = self._image_size
