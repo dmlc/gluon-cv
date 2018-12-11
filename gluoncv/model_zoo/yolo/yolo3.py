@@ -10,7 +10,7 @@ from mxnet import gluon
 from mxnet import autograd
 from mxnet.gluon import nn
 from .darknet import _conv2d, darknet53
-from .mobilenet import MobileNet
+from .mobilenet import MobileNet, get_mobilenet
 from .yolo_target import YOLOV3TargetMerger
 from ...loss import YOLOV3Loss
 
@@ -605,7 +605,7 @@ def yolo3_mobilenet_voc(
 
     """
     from ...data import VOCDetection
-    from .mobilenet import get_mobilenet
+
     pretrained_base = False if pretrained else pretrained_base
     base_net = MobileNet(
         multiplier=1,
@@ -675,3 +675,47 @@ def yolo3_mobilenet_custom(
             **kwargs)
         net.reset_class(classes)
     return net
+
+def yolo3_mobilenet_coco(
+        pretrained_base=True,
+        pretrained=False,
+        num_sync_bn_devices=-1,
+        **kwargs):
+    """YOLO3 multi-scale with mobilenet base network on COCO dataset.
+
+    Parameters
+    ----------
+    pretrained_base : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    num_sync_bn_devices : int
+        Number of devices for training. If `num_sync_bn_devices < 2`, SyncBatchNorm is disabled.
+
+    Returns
+    -------
+    mxnet.gluon.HybridBlock
+        Fully hybrid yolo3 network.
+
+    """
+    from ...data import COCODetection
+
+    pretrained_base = False if pretrained else pretrained_base
+    base_net = get_mobilenet(
+        multiplier=1,
+        pretrained=pretrained_base,
+        num_sync_bn_devices=num_sync_bn_devices,
+        **kwargs)
+    stages = [base_net.features[:33],
+              base_net.features[33:69],
+              base_net.features[69:-2]]
+
+    anchors = [[10, 13, 16, 30, 33, 23], [30, 61, 62,
+                                          45, 59, 119], [116, 90, 156, 198, 373, 326]]
+    strides = [8, 16, 32]
+    classes = COCODetection.CLASSES
+    return get_yolov3(
+        'mobile', stages, [512, 256, 128], anchors, strides, classes, 'coco',
+        pretrained=pretrained, num_sync_bn_devices=num_sync_bn_devices, **kwargs)
