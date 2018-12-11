@@ -10,6 +10,7 @@ from mxnet import gluon
 from mxnet import autograd
 from mxnet.gluon import nn
 from .darknet import _conv2d, darknet53
+from .mobilenet import MobileNet
 from .yolo_target import YOLOV3TargetMerger
 from ...loss import YOLOV3Loss
 
@@ -549,7 +550,7 @@ def yolo3_darknet53_custom(classes, transfer=None, pretrained_base=True, pretrai
     classes : iterable of str
         Names of custom foreground classes. `len(classes)` is the number of foreground classes.
     transfer : str or None
-        If not `None`, will try to reuse pre-trained weights from SSD networks trained on other
+        If not `None`, will try to reuse pre-trained weights from 6olo networks trained on other
         datasets.
     pretrained_base : boolean
         Whether fetch and load pretrained weights for base network.
@@ -576,5 +577,101 @@ def yolo3_darknet53_custom(classes, transfer=None, pretrained_base=True, pretrai
     else:
         from ...model_zoo import get_model
         net = get_model('yolo3_darknet53_' + str(transfer), pretrained=True, **kwargs)
+        net.reset_class(classes)
+    return net
+
+def yolo3_mobilenet_voc(
+        pretrained_base=True,
+        pretrained=False,
+        num_sync_bn_devices=-1,
+        **kwargs):
+    """YOLO3 multi-scale with mobilenet base network on VOC dataset.
+
+    Parameters
+    ----------
+    pretrained_base : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    num_sync_bn_devices : int
+        Number of devices for training. If `num_sync_bn_devices < 2`, SyncBatchNorm is disabled.
+
+    Returns
+    -------
+    mxnet.gluon.HybridBlock
+        Fully hybrid yolo3 network.
+
+    """
+    from ...data import VOCDetection
+    from .mobilenet import get_mobilenet
+    pretrained_base = False if pretrained else pretrained_base
+    base_net = MobileNet(
+        multiplier=1,
+        pretrained=pretrained_base,
+        num_sync_bn_devices=num_sync_bn_devices,
+        **kwargs)
+    stages = [base_net.features[:33],
+              base_net.features[33:69],
+              base_net.features[69:-2]]
+
+    anchors = [[10, 13, 16, 30, 33, 23], [30, 61, 62,
+                                          45, 59, 119], [116, 90, 156, 198, 373, 326]]
+    strides = [8, 16, 32]
+    classes = VOCDetection.CLASSES
+    return get_yolov3(
+        'mobile', stages, [512, 256, 128], anchors, strides, classes, 'voc',
+        pretrained=pretrained, num_sync_bn_devices=num_sync_bn_devices, **kwargs)
+
+def yolo3_mobilenet_custom(
+        classes,
+        transfer=None,
+        pretrained_base=True,
+        pretrained=False,
+        num_sync_bn_devices=-1,
+        **kwargs):
+    """YOLO3 multi-scale with mobilenet base network on custom dataset.
+
+    Parameters
+    ----------
+    classes : iterable of str
+        Names of custom foreground classes. `len(classes)` is the number of foreground classes.
+    transfer : str or None
+        If not `None`, will try to reuse pre-trained weights from yolo networks trained on other
+        datasets.
+    pretrained_base : boolean
+        Whether fetch and load pretrained weights for base network.
+    num_sync_bn_devices : int, default is -1
+        Number of devices for training. If `num_sync_bn_devices < 2`, SyncBatchNorm is disabled.
+
+    Returns
+    -------
+    mxnet.gluon.HybridBlock
+        Fully hybrid yolo3 network.
+    """
+    if transfer is None:
+        base_net = MobileNet(
+            pretrained=pretrained_base,
+            num_sync_bn_devices=num_sync_bn_devices,
+            **kwargs)
+        stages = [base_net.features[:33],
+                  base_net.features[33:69],
+                  base_net.features[69:-2]]
+        anchors = [
+            [10, 13, 16, 30, 33, 23],
+            [30, 61, 62, 45, 59, 119],
+            [116, 90, 156, 198, 373, 326]]
+        strides = [8, 16, 32]
+        net = get_yolov3(
+            'mobilenet', stages, [512, 256, 128], anchors, strides, classes, 'voc',
+            pretrained=pretrained, num_sync_bn_devices=num_sync_bn_devices, **kwargs)
+    else:
+        from ...model_zoo import get_model
+        net = get_model(
+            'yolo3_mobilenet_' +
+            str(transfer),
+            pretrained=True,
+            **kwargs)
         net.reset_class(classes)
     return net
