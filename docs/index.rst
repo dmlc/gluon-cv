@@ -19,8 +19,12 @@ Supported Applications
 .. raw:: html
    :file: applications.html
 
+.. raw:: html
+
+   <a id="installation.html"></a>
+
 Installation
-------------------
+------------
 
 Install MXNet
 ^^^^^^^^^^^^^
@@ -81,39 +85,8 @@ A Quick Example
 
 .. toctree::
    :maxdepth: 2
-   :caption: Model Zoo
 
-   model_zoo/classification
-   model_zoo/detection
-   model_zoo/segmentation
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Tutorials
-
-   build/examples_classification/index
-   build/examples_detection/index
-   build/examples_instance/index
-   build/examples_segmentation/index
-   build/examples_datasets/index
-   build/examples_deployment/index
-
-.. toctree::
-   :maxdepth: 1
-   :caption: API Reference
-
-
-   api/data.datasets
-   api/data.batchify
-   api/data.transforms
-   api/model_zoo
-   api/nn
-   api/loss
-   api/utils
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Community
-
-   how_to/support
-   how_to/contribute
+   model_zoo/index
+   tutorials/index
+   api/index
+   how_to/index
