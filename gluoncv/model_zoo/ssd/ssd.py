@@ -108,8 +108,10 @@ class SSD(HybridBlock):
                  reduce_ratio=1.0, min_depth=128, global_pool=False, pretrained=False,
                  stds=(0.1, 0.1, 0.2, 0.2), nms_thresh=0.45, nms_topk=400, post_nms=100,
                  anchor_alloc_size=128, ctx=mx.cpu(),
-                 norm_layer=nn.BatchNorm, norm_kwargs={}, **kwargs):
+                 norm_layer=nn.BatchNorm, norm_kwargs=None, **kwargs):
         super(SSD, self).__init__(**kwargs)
+        if norm_kwargs is None:
+            norm_kwargs = {}
         if network is None:
             num_layers = len(ratios)
         else:
