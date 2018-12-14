@@ -63,6 +63,8 @@ def parse_args():
                              'training time if validation is slow.')
     parser.add_argument('--seed', type=int, default=233,
                         help='Random seed to be fixed.')
+    parser.add_argument('--syncbn', action='store_true',
+                        help='Use synchronize BN across devices.')
     args = parser.parse_args()
     return args
 
@@ -235,7 +237,11 @@ if __name__ == '__main__':
     # network
     net_name = '_'.join(('ssd', str(args.data_shape), args.network, args.dataset))
     args.save_prefix += net_name
-    net = get_model(net_name, pretrained_base=True)
+    if args.syncbn:
+        net = get_model(net_name, pretrained_base=True, norm_layer=gluon.contrib.nn.SyncBatchNorm,
+                        norm_kwargs={'num_devices': len(ctx)})
+    else:
+        net = get_model(net_name, pretrained_base=True, norm_layer=gluon.nn.BatchNorm)
     if args.resume.strip():
         net.load_parameters(args.resume.strip())
     else:
