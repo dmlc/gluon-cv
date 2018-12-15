@@ -1,5 +1,5 @@
 """ResNetV1bs, implemented in Gluon."""
-# pylint: disable=arguments-differ,unused-argument,missing-docstring,dangerous-default-value
+# pylint: disable=arguments-differ,unused-argument,missing-docstring
 from __future__ import division
 
 from mxnet.context import cpu
@@ -147,7 +147,7 @@ class ResNetV1b(HybridBlock):
                  name_prefix='', **kwargs):
         self.inplanes = stem_width*2 if deep_stem else 64
         super(ResNetV1b, self).__init__(prefix=name_prefix)
-        self.norm_kwargs = norm_kwargs
+        self.norm_kwargs = norm_kwargs if norm_kwargs is not None else {}
         if use_global_stats:
             self.norm_kwargs['use_global_stats'] = True
         with self.name_scope():
