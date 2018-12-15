@@ -72,16 +72,17 @@ class BasicBlockV1(HybridBlock):
     def __init__(self, channels, stride, downsample=False, in_channels=0,
                  last_gamma=False, use_se=False, norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
         super(BasicBlockV1, self).__init__(**kwargs)
+        print(norm_layer, norm_kwargs)
         self.body = nn.HybridSequential(prefix='')
         self.body.add(_conv3x3(channels, stride, in_channels))
-        self.body.add(norm_layer(**({} if norm_kwargs is None else kwargs)))
+        self.body.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
         self.body.add(nn.Activation('relu'))
         self.body.add(_conv3x3(channels, 1, channels))
         if not last_gamma:
-            self.body.add(norm_layer(**({} if norm_kwargs is None else kwargs)))
+            self.body.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
         else:
             self.body.add(norm_layer(gamma_initializer='zeros',
-                                     **({} if norm_kwargs is None else kwargs)))
+                                     **({} if norm_kwargs is None else norm_kwargs)))
 
         if use_se:
             self.se = nn.HybridSequential(prefix='')
@@ -96,7 +97,7 @@ class BasicBlockV1(HybridBlock):
             self.downsample = nn.HybridSequential(prefix='')
             self.downsample.add(nn.Conv2D(channels, kernel_size=1, strides=stride,
                                           use_bias=False, in_channels=in_channels))
-            self.downsample.add(norm_layer(**({} if norm_kwargs is None else kwargs)))
+            self.downsample.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
         else:
             self.downsample = None
 
@@ -149,10 +150,10 @@ class BottleneckV1(HybridBlock):
         super(BottleneckV1, self).__init__(**kwargs)
         self.body = nn.HybridSequential(prefix='')
         self.body.add(nn.Conv2D(channels//4, kernel_size=1, strides=stride))
-        self.body.add(norm_layer(**({} if norm_kwargs is None else kwargs)))
+        self.body.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
         self.body.add(nn.Activation('relu'))
         self.body.add(_conv3x3(channels//4, 1, channels//4))
-        self.body.add(norm_layer(**({} if norm_kwargs is None else kwargs)))
+        self.body.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
         self.body.add(nn.Activation('relu'))
         self.body.add(nn.Conv2D(channels, kernel_size=1, strides=1))
 
@@ -166,16 +167,16 @@ class BottleneckV1(HybridBlock):
             self.se = None
 
         if not last_gamma:
-            self.body.add(norm_layer(**({} if norm_kwargs is None else kwargs)))
+            self.body.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
         else:
             self.body.add(norm_layer(gamma_initializer='zeros',
-                                     **({} if norm_kwargs is None else kwargs)))
+                                     **({} if norm_kwargs is None else norm_kwargs)))
 
         if downsample:
             self.downsample = nn.HybridSequential(prefix='')
             self.downsample.add(nn.Conv2D(channels, kernel_size=1, strides=stride,
                                           use_bias=False, in_channels=in_channels))
-            self.downsample.add(norm_layer(**({} if norm_kwargs is None else kwargs)))
+            self.downsample.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
         else:
             self.downsample = None
 
@@ -227,13 +228,13 @@ class BasicBlockV2(HybridBlock):
                  last_gamma=False, use_se=False,
                  norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
         super(BasicBlockV2, self).__init__(**kwargs)
-        self.bn1 = norm_layer(**({} if norm_kwargs is None else kwargs))
+        self.bn1 = norm_layer(**({} if norm_kwargs is None else norm_kwargs))
         self.conv1 = _conv3x3(channels, stride, in_channels)
         if not last_gamma:
-            self.bn2 = norm_layer(**({} if norm_kwargs is None else kwargs))
+            self.bn2 = norm_layer(**({} if norm_kwargs is None else norm_kwargs))
         else:
             self.bn2 = norm_layer(gamma_initializer='zeros',
-                                  **({} if norm_kwargs is None else kwargs))
+                                  **({} if norm_kwargs is None else norm_kwargs))
         self.conv2 = _conv3x3(channels, 1, channels)
 
         if use_se:
@@ -301,15 +302,15 @@ class BottleneckV2(HybridBlock):
     def __init__(self, channels, stride, downsample=False, in_channels=0,
                  last_gamma=False, use_se=False, norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
         super(BottleneckV2, self).__init__(**kwargs)
-        self.bn1 = norm_layer(**({} if norm_kwargs is None else kwargs))
+        self.bn1 = norm_layer(**({} if norm_kwargs is None else norm_kwargs))
         self.conv1 = nn.Conv2D(channels//4, kernel_size=1, strides=1, use_bias=False)
-        self.bn2 = norm_layer(**({} if norm_kwargs is None else kwargs))
+        self.bn2 = norm_layer(**({} if norm_kwargs is None else norm_kwargs))
         self.conv2 = _conv3x3(channels//4, stride, channels//4)
         if not last_gamma:
-            self.bn3 = norm_layer(**({} if norm_kwargs is None else kwargs))
+            self.bn3 = norm_layer(**({} if norm_kwargs is None else norm_kwargs))
         else:
             self.bn3 = norm_layer(gamma_initializer='zeros',
-                                  **({} if norm_kwargs is None else kwargs))
+                                  **({} if norm_kwargs is None else norm_kwargs))
         self.conv3 = nn.Conv2D(channels, kernel_size=1, strides=1, use_bias=False)
 
         if use_se:
@@ -390,7 +391,7 @@ class ResNetV1(HybridBlock):
                 self.features.add(_conv3x3(channels[0], 1, 0))
             else:
                 self.features.add(nn.Conv2D(channels[0], 7, 2, 3, use_bias=False))
-                self.features.add(norm_layer(**({} if norm_kwargs is None else kwargs)))
+                self.features.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
                 self.features.add(nn.Activation('relu'))
                 self.features.add(nn.MaxPool2D(3, 2, 1))
 
@@ -459,12 +460,12 @@ class ResNetV2(HybridBlock):
         with self.name_scope():
             self.features = nn.HybridSequential(prefix='')
             self.features.add(norm_layer(scale=False, center=False,
-                                         **({} if norm_kwargs is None else kwargs)))
+                                         **({} if norm_kwargs is None else norm_kwargs)))
             if thumbnail:
                 self.features.add(_conv3x3(channels[0], 1, 0))
             else:
                 self.features.add(nn.Conv2D(channels[0], 7, 2, 3, use_bias=False))
-                self.features.add(norm_layer(**({} if norm_kwargs is None else kwargs)))
+                self.features.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
                 self.features.add(nn.Activation('relu'))
                 self.features.add(nn.MaxPool2D(3, 2, 1))
 
@@ -476,7 +477,7 @@ class ResNetV2(HybridBlock):
                                                    last_gamma=last_gamma, use_se=use_se,
                                                    norm_layer=norm_layer, norm_kwargs=norm_kwargs))
                 in_channels = channels[i+1]
-            self.features.add(norm_layer(**({} if norm_kwargs is None else kwargs)))
+            self.features.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
             self.features.add(nn.Activation('relu'))
             self.features.add(nn.GlobalAvgPool2D())
             self.features.add(nn.Flatten())

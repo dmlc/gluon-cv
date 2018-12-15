@@ -37,10 +37,10 @@ def _make_dense_block(num_layers, bn_size, growth_rate, dropout, stage_index,
 
 def _make_dense_layer(growth_rate, bn_size, dropout, norm_layer, norm_kwargs):
     new_features = nn.HybridSequential(prefix='')
-    new_features.add(norm_layer(**({} if norm_kwargs is None else kwargs)))
+    new_features.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
     new_features.add(nn.Activation('relu'))
     new_features.add(nn.Conv2D(bn_size * growth_rate, kernel_size=1, use_bias=False))
-    new_features.add(norm_layer(**({} if norm_kwargs is None else kwargs)))
+    new_features.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
     new_features.add(nn.Activation('relu'))
     new_features.add(nn.Conv2D(growth_rate, kernel_size=3, padding=1, use_bias=False))
     if dropout:
@@ -54,7 +54,7 @@ def _make_dense_layer(growth_rate, bn_size, dropout, norm_layer, norm_kwargs):
 
 def _make_transition(num_output_features, norm_layer, norm_kwargs):
     out = nn.HybridSequential(prefix='')
-    out.add(norm_layer(**({} if norm_kwargs is None else kwargs)))
+    out.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
     out.add(nn.Activation('relu'))
     out.add(nn.Conv2D(num_output_features, kernel_size=1, use_bias=False))
     out.add(nn.AvgPool2D(pool_size=2, strides=2))
@@ -95,7 +95,7 @@ class DenseNet(HybridBlock):
             self.features = nn.HybridSequential(prefix='')
             self.features.add(nn.Conv2D(num_init_features, kernel_size=7,
                                         strides=2, padding=3, use_bias=False))
-            self.features.add(norm_layer(**({} if norm_kwargs is None else kwargs)))
+            self.features.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
             self.features.add(nn.Activation('relu'))
             self.features.add(nn.MaxPool2D(pool_size=3, strides=2, padding=1))
             # Add dense blocks
@@ -107,7 +107,7 @@ class DenseNet(HybridBlock):
                 if i != len(block_config) - 1:
                     self.features.add(_make_transition(num_features // 2, norm_layer, norm_kwargs))
                     num_features = num_features // 2
-            self.features.add(norm_layer(**({} if norm_kwargs is None else kwargs)))
+            self.features.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
             self.features.add(nn.Activation('relu'))
             self.features.add(nn.AvgPool2D(pool_size=7))
             self.features.add(nn.Flatten())

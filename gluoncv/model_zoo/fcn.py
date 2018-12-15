@@ -79,7 +79,7 @@ class _FCNHead(HybridBlock):
                 self.block.add(nn.Conv2D(in_channels=in_channels, channels=inter_channels,
                                          kernel_size=3, padding=1, use_bias=False))
                 self.block.add(norm_layer(in_channels=inter_channels,
-                                          **({} if norm_kwargs is None else kwargs)))
+                                          **({} if norm_kwargs is None else norm_kwargs)))
                 self.block.add(nn.Activation('relu'))
                 self.block.add(nn.Dropout(0.1))
                 self.block.add(nn.Conv2D(in_channels=inter_channels, channels=channels,

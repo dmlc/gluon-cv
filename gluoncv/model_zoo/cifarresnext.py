@@ -59,20 +59,20 @@ class CIFARBlock(HybridBlock):
 
         self.body = nn.HybridSequential(prefix='')
         self.body.add(nn.Conv2D(group_width, kernel_size=1, use_bias=False))
-        self.body.add(norm_layer(**({} if norm_kwargs is None else kwargs)))
+        self.body.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
         self.body.add(nn.Activation('relu'))
         self.body.add(nn.Conv2D(group_width, kernel_size=3, strides=stride, padding=1,
                                 groups=cardinality, use_bias=False))
-        self.body.add(norm_layer(**({} if norm_kwargs is None else kwargs)))
+        self.body.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
         self.body.add(nn.Activation('relu'))
         self.body.add(nn.Conv2D(channels * 4, kernel_size=1, use_bias=False))
-        self.body.add(norm_layer(**({} if norm_kwargs is None else kwargs)))
+        self.body.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
 
         if downsample:
             self.downsample = nn.HybridSequential(prefix='')
             self.downsample.add(nn.Conv2D(channels * 4, kernel_size=1, strides=stride,
                                           use_bias=False))
-            self.downsample.add(norm_layer(**({} if norm_kwargs is None else kwargs)))
+            self.downsample.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
         else:
             self.downsample = None
 
@@ -121,7 +121,7 @@ class CIFARResNext(HybridBlock):
         with self.name_scope():
             self.features = nn.HybridSequential(prefix='')
             self.features.add(nn.Conv2D(channels, 3, 1, 1, use_bias=False))
-            self.features.add(norm_layer(**({} if norm_kwargs is None else kwargs)))
+            self.features.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
             self.features.add(nn.Activation('relu'))
 
             for i, num_layer in enumerate(layers):

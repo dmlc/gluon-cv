@@ -82,12 +82,12 @@ class BranchSeparables(HybridBlock):
         self.body.add(SeparableConv2d(in_channels, in_channels, kernel_size,
                                       stride, padding, use_bias=use_bias))
         self.body.add(norm_layer(momentum=0.1, epsilon=0.001,
-                                 **({} if norm_kwargs is None else kwargs)))
+                                 **({} if norm_kwargs is None else norm_kwargs)))
         self.body.add(nn.Activation('relu'))
         self.body.add(SeparableConv2d(in_channels, out_channels, kernel_size,
                                       1, padding, use_bias=use_bias))
         self.body.add(norm_layer(momentum=0.1, epsilon=0.001,
-                                 **({} if norm_kwargs is None else kwargs)))
+                                 **({} if norm_kwargs is None else norm_kwargs)))
 
     def hybrid_forward(self, F, x):
         x = self.body(x)
@@ -104,12 +104,12 @@ class BranchSeparablesStem(HybridBlock):
         self.body.add(SeparableConv2d(in_channels, out_channels, kernel_size,
                                       stride, padding, use_bias=use_bias))
         self.body.add(norm_layer(momentum=0.1, epsilon=0.001,
-                                 **({} if norm_kwargs is None else kwargs)))
+                                 **({} if norm_kwargs is None else norm_kwargs)))
         self.body.add(nn.Activation('relu'))
         self.body.add(SeparableConv2d(out_channels, out_channels, kernel_size,
                                       1, padding, use_bias=use_bias))
         self.body.add(norm_layer(momentum=0.1, epsilon=0.001,
-                                 **({} if norm_kwargs is None else kwargs)))
+                                 **({} if norm_kwargs is None else norm_kwargs)))
 
     def hybrid_forward(self, F, x):
         x = self.body(x)
@@ -127,12 +127,12 @@ class BranchSeparablesReduction(HybridBlock):
 
         self.body = nn.HybridSequential(prefix='')
         self.body.add(norm_layer(momentum=0.1, epsilon=0.001,
-                                 **({} if norm_kwargs is None else kwargs)))
+                                 **({} if norm_kwargs is None else norm_kwargs)))
         self.body.add(nn.Activation('relu'))
         self.body.add(SeparableConv2d(in_channels, out_channels, kernel_size,
                                       1, padding, use_bias=use_bias))
         self.body.add(norm_layer(momentum=0.1, epsilon=0.001,
-                                 **({} if norm_kwargs is None else kwargs)))
+                                 **({} if norm_kwargs is None else norm_kwargs)))
 
     def hybrid_forward(self, F, x):
         x = F.Activation(x, act_type='relu')
@@ -152,7 +152,7 @@ class CellStem0(HybridBlock):
         self.conv_1x1.add(nn.Activation('relu'))
         self.conv_1x1.add(nn.Conv2D(num_filters, 1, strides=1, use_bias=False))
         self.conv_1x1.add(norm_layer(momentum=0.1, epsilon=0.001,
-                                     **({} if norm_kwargs is None else kwargs)))
+                                     **({} if norm_kwargs is None else norm_kwargs)))
 
         self.comb_iter_0_left = BranchSeparables(num_filters, num_filters, 5, 2, 2,
                                                  norm_layer, norm_kwargs)
@@ -208,7 +208,7 @@ class CellStem1(HybridBlock):
         self.conv_1x1.add(nn.Activation('relu'))
         self.conv_1x1.add(nn.Conv2D(num_filters, 1, strides=1, use_bias=False))
         self.conv_1x1.add(norm_layer(momentum=0.1, epsilon=0.001,
-                                     **({} if norm_kwargs is None else kwargs)))
+                                     **({} if norm_kwargs is None else norm_kwargs)))
 
         self.path_1 = nn.HybridSequential(prefix='')
         self.path_1.add(nn.AvgPool2D(1, strides=2, count_include_pad=False))
@@ -220,7 +220,7 @@ class CellStem1(HybridBlock):
         self.path_2.add(nn.Conv2D(num_filters//2, 1, strides=1, use_bias=False))
 
         self.final_path_bn = norm_layer(momentum=0.1, epsilon=0.001,
-                                        **({} if norm_kwargs is None else kwargs))
+                                        **({} if norm_kwargs is None else norm_kwargs))
 
         self.comb_iter_0_left = BranchSeparables(num_filters, num_filters, 5, 2, 2,
                                                  norm_layer, norm_kwargs)
@@ -285,7 +285,7 @@ class FirstCell(HybridBlock):
         self.conv_1x1.add(nn.Activation('relu'))
         self.conv_1x1.add(nn.Conv2D(out_channels_right, 1, strides=1, use_bias=False))
         self.conv_1x1.add(norm_layer(momentum=0.1, epsilon=0.001,
-                                     **({} if norm_kwargs is None else kwargs)))
+                                     **({} if norm_kwargs is None else norm_kwargs)))
 
         self.path_1 = nn.HybridSequential(prefix='')
         self.path_1.add(nn.AvgPool2D(1, strides=2, count_include_pad=False))
@@ -297,7 +297,7 @@ class FirstCell(HybridBlock):
         self.path_2.add(nn.Conv2D(out_channels_left, 1, strides=1, use_bias=False))
 
         self.final_path_bn = norm_layer(momentum=0.1, epsilon=0.001,
-                                        **({} if norm_kwargs is None else kwargs))
+                                        **({} if norm_kwargs is None else norm_kwargs))
 
         self.comb_iter_0_left = BranchSeparables(out_channels_right, out_channels_right, 5, 1, 2,
                                                  norm_layer, norm_kwargs)
@@ -361,13 +361,13 @@ class NormalCell(HybridBlock):
         self.conv_prev_1x1.add(nn.Activation('relu'))
         self.conv_prev_1x1.add(nn.Conv2D(out_channels_left, 1, strides=1, use_bias=False))
         self.conv_prev_1x1.add(norm_layer(momentum=0.1, epsilon=0.001,
-                                          **({} if norm_kwargs is None else kwargs)))
+                                          **({} if norm_kwargs is None else norm_kwargs)))
 
         self.conv_1x1 = nn.HybridSequential(prefix='')
         self.conv_1x1.add(nn.Activation('relu'))
         self.conv_1x1.add(nn.Conv2D(out_channels_right, 1, strides=1, use_bias=False))
         self.conv_1x1.add(norm_layer(momentum=0.1, epsilon=0.001,
-                                     **({} if norm_kwargs is None else kwargs)))
+                                     **({} if norm_kwargs is None else norm_kwargs)))
 
         self.comb_iter_0_left = BranchSeparables(out_channels_right, out_channels_right, 5, 1, 2,
                                                  norm_layer, norm_kwargs)
@@ -423,13 +423,13 @@ class ReductionCell0(HybridBlock):
         self.conv_prev_1x1.add(nn.Activation('relu'))
         self.conv_prev_1x1.add(nn.Conv2D(out_channels_left, 1, strides=1, use_bias=False))
         self.conv_prev_1x1.add(norm_layer(momentum=0.1, epsilon=0.001,
-                                          **({} if norm_kwargs is None else kwargs)))
+                                          **({} if norm_kwargs is None else norm_kwargs)))
 
         self.conv_1x1 = nn.HybridSequential(prefix='')
         self.conv_1x1.add(nn.Activation('relu'))
         self.conv_1x1.add(nn.Conv2D(out_channels_right, 1, strides=1, use_bias=False))
         self.conv_1x1.add(norm_layer(momentum=0.1, epsilon=0.001,
-                                     **({} if norm_kwargs is None else kwargs)))
+                                     **({} if norm_kwargs is None else norm_kwargs)))
 
         self.comb_iter_0_left = BranchSeparablesReduction(out_channels_right, out_channels_right,
                                                           5, 2, 2, norm_layer, norm_kwargs)
@@ -487,13 +487,13 @@ class ReductionCell1(HybridBlock):
         self.conv_prev_1x1.add(nn.Activation('relu'))
         self.conv_prev_1x1.add(nn.Conv2D(out_channels_left, 1, strides=1, use_bias=False))
         self.conv_prev_1x1.add(norm_layer(momentum=0.1, epsilon=0.001,
-                                          **({} if norm_kwargs is None else kwargs)))
+                                          **({} if norm_kwargs is None else norm_kwargs)))
 
         self.conv_1x1 = nn.HybridSequential(prefix='')
         self.conv_1x1.add(nn.Activation('relu'))
         self.conv_1x1.add(nn.Conv2D(out_channels_right, 1, strides=1, use_bias=False))
         self.conv_1x1.add(norm_layer(momentum=0.1, epsilon=0.001,
-                                     **({} if norm_kwargs is None else kwargs)))
+                                     **({} if norm_kwargs is None else norm_kwargs)))
 
         self.comb_iter_0_left = BranchSeparables(out_channels_right, out_channels_right, 5, 2, 2,
                                                  norm_layer, norm_kwargs)
@@ -578,7 +578,7 @@ class NASNetALarge(HybridBlock):
         self.conv0 = nn.HybridSequential(prefix='')
         self.conv0.add(nn.Conv2D(stem_filters, 3, padding=0, strides=2, use_bias=False))
         self.conv0.add(norm_layer(momentum=0.1, epsilon=0.001,
-                                  **({} if norm_kwargs is None else kwargs)))
+                                  **({} if norm_kwargs is None else norm_kwargs)))
 
         self.cell_stem_0 = CellStem0(stem_filters, norm_layer, norm_kwargs,
                                      num_filters=filters // (filters_multiplier ** 2))
@@ -606,10 +606,10 @@ class NASNetALarge(HybridBlock):
         if use_aux:
             self.out_aux = nn.HybridSequential(prefix='')
             self.out_aux.add(nn.Conv2D(filters // 3, kernel_size=1, use_bias=False))
-            self.out_aux.add(norm_layer(epsilon=0.001, **({} if norm_kwargs is None else kwargs)))
+            self.out_aux.add(norm_layer(epsilon=0.001, **({} if norm_kwargs is None else norm_kwargs)))
             self.out_aux.add(nn.Activation('relu'))
             self.out_aux.add(nn.Conv2D(2*filters, kernel_size=5, use_bias=False))
-            self.out_aux.add(norm_layer(epsilon=0.001, **({} if norm_kwargs is None else kwargs)))
+            self.out_aux.add(norm_layer(epsilon=0.001, **({} if norm_kwargs is None else norm_kwargs)))
             self.out_aux.add(nn.Activation('relu'))
             self.out_aux.add(nn.Dense(classes))
         else:

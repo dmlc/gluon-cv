@@ -64,15 +64,15 @@ class CIFARBasicBlockV1(HybridBlock):
         super(CIFARBasicBlockV1, self).__init__(**kwargs)
         self.body = nn.HybridSequential(prefix='')
         self.body.add(_conv3x3(channels, stride, in_channels))
-        self.body.add(norm_layer(**({} if norm_kwargs is None else kwargs)))
+        self.body.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
         self.body.add(nn.Activation('relu'))
         self.body.add(_conv3x3(channels, 1, channels))
-        self.body.add(norm_layer(**({} if norm_kwargs is None else kwargs)))
+        self.body.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
         if downsample:
             self.downsample = nn.HybridSequential(prefix='')
             self.downsample.add(nn.Conv2D(channels, kernel_size=1, strides=stride,
                                           use_bias=False, in_channels=in_channels))
-            self.downsample.add(norm_layer(**({} if norm_kwargs is None else kwargs)))
+            self.downsample.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
         else:
             self.downsample = None
 
@@ -115,9 +115,9 @@ class CIFARBasicBlockV2(HybridBlock):
     def __init__(self, channels, stride, downsample=False, in_channels=0,
                  norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
         super(CIFARBasicBlockV2, self).__init__(**kwargs)
-        self.bn1 = norm_layer(**({} if norm_kwargs is None else kwargs))
+        self.bn1 = norm_layer(**({} if norm_kwargs is None else norm_kwargs))
         self.conv1 = _conv3x3(channels, stride, in_channels)
-        self.bn2 = norm_layer(**({} if norm_kwargs is None else kwargs))
+        self.bn2 = norm_layer(**({} if norm_kwargs is None else norm_kwargs))
         self.conv2 = _conv3x3(channels, 1, channels)
         if downsample:
             self.downsample = nn.Conv2D(channels, 1, stride, use_bias=False,
@@ -171,7 +171,7 @@ class CIFARResNetV1(HybridBlock):
         with self.name_scope():
             self.features = nn.HybridSequential(prefix='')
             self.features.add(nn.Conv2D(channels[0], 3, 1, 1, use_bias=False))
-            self.features.add(norm_layer(**({} if norm_kwargs is None else kwargs)))
+            self.features.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
 
             for i, num_layer in enumerate(layers):
                 stride = 1 if i == 0 else 2
@@ -229,7 +229,7 @@ class CIFARResNetV2(HybridBlock):
         with self.name_scope():
             self.features = nn.HybridSequential(prefix='')
             self.features.add(norm_layer(scale=False, center=False,
-                                         **({} if norm_kwargs is None else kwargs)))
+                                         **({} if norm_kwargs is None else norm_kwargs)))
 
             self.features.add(nn.Conv2D(channels[0], 3, 1, 1, use_bias=False))
 
@@ -240,7 +240,7 @@ class CIFARResNetV2(HybridBlock):
                                                    stride, i+1, in_channels=in_channels,
                                                    norm_layer=norm_layer, norm_kwargs=norm_kwargs))
                 in_channels = channels[i+1]
-            self.features.add(norm_layer(**({} if norm_kwargs is None else kwargs)))
+            self.features.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
             self.features.add(nn.Activation('relu'))
             self.features.add(nn.GlobalAvgPool2D())
             self.features.add(nn.Flatten())

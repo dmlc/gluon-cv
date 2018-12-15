@@ -78,11 +78,11 @@ class ResidualBlock(HybridBlock):
         self.stride = stride
         self.in_channels = in_channels if in_channels else channels
         with self.name_scope():
-            self.bn1 = norm_layer(**({} if norm_kwargs is None else kwargs))
+            self.bn1 = norm_layer(**({} if norm_kwargs is None else norm_kwargs))
             self.conv1 = nn.Conv2D(channels // 4, 1, 1, use_bias=False)
-            self.bn2 = norm_layer(**({} if norm_kwargs is None else kwargs))
+            self.bn2 = norm_layer(**({} if norm_kwargs is None else norm_kwargs))
             self.conv2 = nn.Conv2D(channels // 4, 3, stride, padding=1, use_bias=False)
-            self.bn3 = norm_layer(**({} if norm_kwargs is None else kwargs))
+            self.bn3 = norm_layer(**({} if norm_kwargs is None else norm_kwargs))
             self.conv3 = nn.Conv2D(channels, 1, 1, use_bias=False)
             if stride != 1 or (self.in_channels != self.channels):
                 self.conv4 = nn.Conv2D(channels, 1, stride, use_bias=False)
@@ -113,10 +113,10 @@ def _add_block(out, block, num_layers, channels, **kwargs):
 
 def _add_sigmoid_layer(out, channels, norm_layer, norm_kwargs):
     with out.name_scope():
-        out.add(norm_layer(**({} if norm_kwargs is None else kwargs)))
+        out.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
         out.add(nn.Activation('relu'))
         out.add(nn.Conv2D(channels, kernel_size=1, use_bias=False))
-        out.add(norm_layer(**({} if norm_kwargs is None else kwargs)))
+        out.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
         out.add(nn.Activation('relu'))
         out.add(nn.Conv2D(channels, kernel_size=1, use_bias=False))
         out.add(nn.Activation('sigmoid'))
@@ -458,7 +458,7 @@ class ResidualAttentionModel(nn.HybridBlock):
             self.conv1 = nn.HybridSequential()
             with self.conv1.name_scope():
                 self.conv1.add(nn.Conv2D(64, kernel_size=7, strides=2, padding=3, use_bias=False))
-                self.conv1.add(norm_layer(**({} if norm_kwargs is None else kwargs)))
+                self.conv1.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
                 self.conv1.add(nn.Activation('relu'))
             self.mpool1 = nn.MaxPool2D(pool_size=3, strides=2, padding=1)
             self.residual_block1 = ResidualBlock(256, in_channels=64)
@@ -478,7 +478,7 @@ class ResidualAttentionModel(nn.HybridBlock):
             self.residual_block6 = ResidualBlock(2048)
             self.mpool2 = nn.HybridSequential()
             with self.mpool2.name_scope():
-                self.mpool2.add(norm_layer(**({} if norm_kwargs is None else kwargs)))
+                self.mpool2.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
                 self.mpool2.add(nn.Activation('relu'))
                 self.mpool2.add(nn.AvgPool2D(pool_size=7, strides=1))
             self.fc = nn.Conv2D(classes, kernel_size=1)
@@ -532,7 +532,7 @@ class cifar_ResidualAttentionModel(nn.HybridBlock):
             self.conv1 = nn.HybridSequential()
             with self.conv1.name_scope():
                 self.conv1.add(nn.Conv2D(32, kernel_size=3, strides=1, padding=1, use_bias=False))
-                self.conv1.add(norm_layer(**({} if norm_kwargs is None else kwargs)))
+                self.conv1.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
                 self.conv1.add(nn.Activation('relu'))
             # 32 x 32
             # self.mpool1 = nn.MaxPool2D(pool_size=2, strides=2, padding=0)
@@ -558,7 +558,7 @@ class cifar_ResidualAttentionModel(nn.HybridBlock):
             self.residual_block6 = ResidualBlock(1024)
             self.mpool2 = nn.HybridSequential()
             with self.mpool2.name_scope():
-                self.mpool2.add(norm_layer(**({} if norm_kwargs is None else kwargs)))
+                self.mpool2.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
                 self.mpool2.add(nn.Activation('relu'))
                 self.mpool2.add(nn.AvgPool2D(pool_size=8, strides=1))
             self.fc = nn.Conv2D(classes, kernel_size=1)

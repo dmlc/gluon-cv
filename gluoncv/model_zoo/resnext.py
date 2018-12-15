@@ -66,18 +66,18 @@ class Block(HybridBlock):
 
         self.body = nn.HybridSequential(prefix='')
         self.body.add(nn.Conv2D(group_width, kernel_size=1, use_bias=False))
-        self.body.add(norm_layer(**({} if norm_kwargs is None else kwargs)))
+        self.body.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
         self.body.add(nn.Activation('relu'))
         self.body.add(nn.Conv2D(group_width, kernel_size=3, strides=stride, padding=1,
                                 groups=cardinality, use_bias=False))
-        self.body.add(norm_layer(**({} if norm_kwargs is None else kwargs)))
+        self.body.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
         self.body.add(nn.Activation('relu'))
         self.body.add(nn.Conv2D(channels * 4, kernel_size=1, use_bias=False))
         if last_gamma:
-            self.body.add(norm_layer(**({} if norm_kwargs is None else kwargs)))
+            self.body.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
         else:
             self.body.add(norm_layer(gamma_initializer='zeros',
-                                     **({} if norm_kwargs is None else kwargs)))
+                                     **({} if norm_kwargs is None else norm_kwargs)))
 
         if use_se:
             self.se = nn.HybridSequential(prefix='')
@@ -92,7 +92,7 @@ class Block(HybridBlock):
             self.downsample = nn.HybridSequential(prefix='')
             self.downsample.add(nn.Conv2D(channels * 4, kernel_size=1, strides=stride,
                                           use_bias=False))
-            self.downsample.add(norm_layer(**({} if norm_kwargs is None else kwargs)))
+            self.downsample.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
         else:
             self.downsample = None
 
@@ -152,7 +152,7 @@ class ResNext(HybridBlock):
             self.features = nn.HybridSequential(prefix='')
             self.features.add(nn.Conv2D(channels, 7, 2, 3, use_bias=False))
 
-            self.features.add(norm_layer(**({} if norm_kwargs is None else kwargs)))
+            self.features.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
             self.features.add(nn.Activation('relu'))
             self.features.add(nn.MaxPool2D(3, 2, 1))
 

@@ -30,7 +30,7 @@ from mxnet.gluon.contrib.nn import HybridConcurrent
 def _make_basic_conv(norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
     out = nn.HybridSequential(prefix='')
     out.add(nn.Conv2D(use_bias=False, **kwargs))
-    out.add(norm_layer(epsilon=0.001, **({} if norm_kwargs is None else kwargs)))
+    out.add(norm_layer(epsilon=0.001, **({} if norm_kwargs is None else norm_kwargs)))
     out.add(nn.Activation('relu'))
     return out
 
