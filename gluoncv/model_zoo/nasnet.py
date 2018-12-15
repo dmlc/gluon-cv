@@ -606,10 +606,12 @@ class NASNetALarge(HybridBlock):
         if use_aux:
             self.out_aux = nn.HybridSequential(prefix='')
             self.out_aux.add(nn.Conv2D(filters // 3, kernel_size=1, use_bias=False))
-            self.out_aux.add(norm_layer(epsilon=0.001, **({} if norm_kwargs is None else norm_kwargs)))
+            self.out_aux.add(norm_layer(epsilon=0.001,
+                                        **({} if norm_kwargs is None else norm_kwargs)))
             self.out_aux.add(nn.Activation('relu'))
             self.out_aux.add(nn.Conv2D(2*filters, kernel_size=5, use_bias=False))
-            self.out_aux.add(norm_layer(epsilon=0.001, **({} if norm_kwargs is None else norm_kwargs)))
+            self.out_aux.add(norm_layer(epsilon=0.001,
+                                        **({} if norm_kwargs is None else norm_kwargs)))
             self.out_aux.add(nn.Activation('relu'))
             self.out_aux.add(nn.Dense(classes))
         else:
