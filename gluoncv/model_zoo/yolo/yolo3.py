@@ -580,7 +580,7 @@ def yolo3_darknet53_custom(classes, transfer=None, pretrained_base=True, pretrai
         net.reset_class(classes)
     return net
 
-def yolo3_mobilenet_voc(
+def yolo3_mobilenetv1_voc(
         pretrained_base=True,
         pretrained=False,
         num_sync_bn_devices=-1,
@@ -621,10 +621,10 @@ def yolo3_mobilenet_voc(
     strides = [8, 16, 32]
     classes = VOCDetection.CLASSES
     return get_yolov3(
-        'mobile', stages, [512, 256, 128], anchors, strides, classes, 'voc',
+        'mobilenetv1', stages, [512, 256, 128], anchors, strides, classes, 'voc',
         pretrained=pretrained, num_sync_bn_devices=num_sync_bn_devices, **kwargs)
 
-def yolo3_mobilenet_custom(
+def yolo3_mobilenetv1_custom(
         classes,
         transfer=None,
         pretrained_base=True,
@@ -664,19 +664,19 @@ def yolo3_mobilenet_custom(
             [116, 90, 156, 198, 373, 326]]
         strides = [8, 16, 32]
         net = get_yolov3(
-            'mobilenet', stages, [512, 256, 128], anchors, strides, classes, 'voc',
+            'mobilenetv1', stages, [512, 256, 128], anchors, strides, classes, 'voc',
             pretrained=pretrained, num_sync_bn_devices=num_sync_bn_devices, **kwargs)
     else:
         from ...model_zoo import get_model
         net = get_model(
-            'yolo3_mobilenet_' +
+            'yolo3_mobilenetv1_' +
             str(transfer),
             pretrained=True,
             **kwargs)
         net.reset_class(classes)
     return net
 
-def yolo3_mobilenet_coco(
+def yolo3_mobilenetv1_coco(
         pretrained_base=True,
         pretrained=False,
         num_sync_bn_devices=-1,
@@ -717,5 +717,5 @@ def yolo3_mobilenet_coco(
     strides = [8, 16, 32]
     classes = COCODetection.CLASSES
     return get_yolov3(
-        'mobile', stages, [512, 256, 128], anchors, strides, classes, 'coco',
+        'mobilenetv1', stages, [512, 256, 128], anchors, strides, classes, 'coco',
         pretrained=pretrained, num_sync_bn_devices=num_sync_bn_devices, **kwargs)
