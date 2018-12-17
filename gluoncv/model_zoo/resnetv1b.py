@@ -147,9 +147,10 @@ class ResNetV1b(HybridBlock):
                  name_prefix='', **kwargs):
         self.inplanes = stem_width*2 if deep_stem else 64
         super(ResNetV1b, self).__init__(prefix=name_prefix)
-        self.norm_kwargs = norm_kwargs if norm_kwargs is not None else {}
+        norm_kwargs = norm_kwargs if norm_kwargs is not None else {}
         if use_global_stats:
-            self.norm_kwargs['use_global_stats'] = True
+            norm_kwargs['use_global_stats'] = True
+        self.norm_kwargs = norm_kwargs
         with self.name_scope():
             if not deep_stem:
                 self.conv1 = nn.Conv2D(channels=64, kernel_size=7, strides=2,
