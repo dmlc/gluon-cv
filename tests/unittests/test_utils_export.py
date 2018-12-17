@@ -11,7 +11,7 @@ def test_export_model_zoo():
         print('exporting:', model)
         try:
             gcv.utils.export_block(model, gcv.model_zoo.get_model(model, pretrained=True))
-        except:
+        except ValueError:
             # ignore non defined model name
             pass
 
