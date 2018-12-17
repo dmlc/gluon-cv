@@ -118,7 +118,7 @@ class BranchSeparablesStem(HybridBlock):
 class BranchSeparablesReduction(HybridBlock):
 
     def __init__(self, in_channels, out_channels, kernel_size, stride, padding,
-                 z_padding=1, norm_layer=BatchNorm, norm_kwargs=None, use_bias=False):
+                 z_padding=1, use_bias=False, norm_layer=BatchNorm, norm_kwargs=None):
         super(BranchSeparablesReduction, self).__init__()
 
         self.z_padding = z_padding
@@ -432,22 +432,32 @@ class ReductionCell0(HybridBlock):
                                      **({} if norm_kwargs is None else norm_kwargs)))
 
         self.comb_iter_0_left = BranchSeparablesReduction(out_channels_right, out_channels_right,
-                                                          5, 2, 2, norm_layer, norm_kwargs)
+                                                          5, 2, 2,
+                                                          norm_layer=norm_layer,
+                                                          norm_kwargs=norm_kwargs)
         self.comb_iter_0_right = BranchSeparablesReduction(out_channels_right, out_channels_right,
-                                                           7, 2, 3, norm_layer, norm_kwargs)
+                                                           7, 2, 3,
+                                                           norm_layer=norm_layer,
+                                                           norm_kwargs=norm_kwargs)
 
         self.comb_iter_1_left = MaxPoolPad()
         self.comb_iter_1_right = BranchSeparablesReduction(out_channels_right, out_channels_right,
-                                                           7, 2, 3, norm_layer, norm_kwargs)
+                                                           7, 2, 3,
+                                                           norm_layer=norm_layer,
+                                                           norm_kwargs=norm_kwargs)
 
         self.comb_iter_2_left = AvgPoolPad()
         self.comb_iter_2_right = BranchSeparablesReduction(out_channels_right, out_channels_right,
-                                                           5, 2, 2, norm_layer, norm_kwargs)
+                                                           5, 2, 2,
+                                                           norm_layer=norm_layer,
+                                                           norm_kwargs=norm_kwargs)
 
         self.comb_iter_3_right = nn.AvgPool2D(3, strides=1, padding=1, count_include_pad=False)
 
         self.comb_iter_4_left = BranchSeparablesReduction(out_channels_right, out_channels_right,
-                                                          3, 1, 1, norm_layer, norm_kwargs)
+                                                          3, 1, 1,
+                                                          norm_layer=norm_layer,
+                                                          norm_kwargs=norm_kwargs)
         self.comb_iter_4_right = MaxPoolPad()
 
     def hybrid_forward(self, F, x, x_prev):
