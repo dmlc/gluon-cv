@@ -10,30 +10,34 @@ from mxnet import gluon
 from mxnet import autograd
 from mxnet.gluon import nn
 from .darknet import _conv2d, darknet53
-from .mobilenet import MobileNet, get_mobilenet
+from ..mobilenet import MobileNet, get_mobilenet
 from .yolo_target import YOLOV3TargetMerger
 from ...loss import YOLOV3Loss
 
-__all__ = ['YOLOV3', 'get_yolov3',
-           'yolo3_darknet53_voc', 'yolo3_darknet53_coco', 'yolo3_darknet53_custom']
+__all__ = ['YOLOV3',
+           'get_yolov3',
+           'yolo3_darknet53_voc',
+           'yolo3_darknet53_coco',
+           'yolo3_darknet53_custom',
+           'yolo3_mobilenetv1_coco',
+           'yolo3_mobilenetv1_voc',
+           'yolo3_mobilenetv1_custom'
+           ]
 
 def _upsample(x, stride=2):
     """Simple upsampling layer by stack pixel alongside horizontal and vertical directions.
-
     Parameters
     ----------
     x : mxnet.nd.NDArray or mxnet.symbol.Symbol
         The input array.
     stride : int, default is 2
         Upsampling stride
-
     """
     return x.repeat(axis=-1, repeats=stride).repeat(axis=-2, repeats=stride)
 
 
 class YOLOOutputV3(gluon.HybridBlock):
     """YOLO output layer V3.
-
     Parameters
     ----------
     index : int
@@ -49,7 +53,6 @@ class YOLOOutputV3(gluon.HybridBlock):
         maps, which will later saved in parameters. During inference, we support arbitrary
         input image by cropping corresponding area of the anchor map. This allow us
         to export to symbol so we can run it in c++, Scalar, etc.
-
     """
     def __init__(self, index, num_class, anchors, stride,
                  alloc_size=(128, 128), **kwargs):
@@ -77,17 +80,14 @@ class YOLOOutputV3(gluon.HybridBlock):
 
     def reset_class(self, classes):
         """Reset class prediction.
-
         Parameters
         ----------
         classes : type
             Description of parameter `classes`.
-
         Returns
         -------
         type
             Description of returned object.
-
         """
         self._clear_cached_op()
         self._classes = len(classes)
@@ -100,7 +100,6 @@ class YOLOOutputV3(gluon.HybridBlock):
 
     def hybrid_forward(self, F, x, anchors, offsets):
         """Hybrid Foward of YOLOV3Output layer.
-
         Parameters
         ----------
         F : mxnet.nd or mxnet.sym
@@ -111,14 +110,12 @@ class YOLOOutputV3(gluon.HybridBlock):
             Anchors loaded from self, no need to supply.
         offsets : mxnet.nd.NDArray
             Offsets loaded from self, no need to supply.
-
         Returns
         -------
         (tuple of) mxnet.nd.NDArray
             During training, return (bbox, raw_box_centers, raw_box_scales, objness,
             class_pred, anchors, offsets).
             During inference, return detections.
-
         """
         # prediction flat to (batch, pred per pixel, height * width)
         pred = self.prediction(x).reshape((0, self._num_anchors * self._num_pred, -1))
@@ -159,18 +156,15 @@ class YOLOOutputV3(gluon.HybridBlock):
 
 class YOLODetectionBlockV3(gluon.HybridBlock):
     """YOLO V3 Detection Block which does the following:
-
     - add a few conv layers
     - return the output
     - have a branch that do yolo detection.
-
     Parameters
     ----------
     channel : int
         Number of channels for 1x1 conv. 3x3 Conv will have 2*channel.
     num_sync_bn_devices : int, default is -1
         Number of devices for training. If `num_sync_bn_devices < 2`, SyncBatchNorm is disabled.
-
     """
     def __init__(self, channel, num_sync_bn_devices=-1, **kwargs):
         super(YOLODetectionBlockV3, self).__init__(**kwargs)
@@ -195,7 +189,6 @@ class YOLODetectionBlockV3(gluon.HybridBlock):
 class YOLOV3(gluon.HybridBlock):
     """YOLO V3 detection network.
     Reference: https://arxiv.org/pdf/1804.02767.pdf.
-
     Parameters
     ----------
     stages : mxnet.gluon.HybridBlock
@@ -232,7 +225,6 @@ class YOLOV3(gluon.HybridBlock):
         penalized of objectness score.
     num_sync_bn_devices : int, default is -1
         Number of devices for training. If `num_sync_bn_devices < 2`, SyncBatchNorm is disabled.
-
     """
     def __init__(self, stages, channels, anchors, strides, classes, alloc_size=(128, 128),
                  nms_thresh=0.45, nms_topk=400, post_nms=100, pos_iou_thresh=1.0,
@@ -269,30 +261,25 @@ class YOLOV3(gluon.HybridBlock):
     @property
     def num_class(self):
         """Number of (non-background) categories.
-
         Returns
         -------
         int
             Number of (non-background) categories.
-
         """
         return self._num_class
 
     @property
     def classes(self):
         """Return names of (non-background) categories.
-
         Returns
         -------
         iterable of str
             Names of (non-background) categories.
-
         """
         return self._classes
 
     def hybrid_forward(self, F, x, *args):
         """YOLOV3 network hybrid forward.
-
         Parameters
         ----------
         F : mxnet.nd or mxnet.sym
@@ -303,15 +290,12 @@ class YOLOV3(gluon.HybridBlock):
             During training, extra inputs are required:
             (gt_boxes, obj_t, centers_t, scales_t, weights_t, clas_t)
             These are generated by YOLOV3PrefetchTargetGenerator in dataloader transform function.
-
         Returns
         -------
         (tuple of) mxnet.nd.NDArray
             During inference, return detections in shape (B, N, 6)
             with format (cid, score, xmin, ymin, xmax, ymax)
             During training, return losses only: (obj_loss, center_loss, scale_loss, cls_loss).
-
-
         """
         all_box_centers = []
         all_box_scales = []
@@ -384,7 +368,6 @@ class YOLOV3(gluon.HybridBlock):
 
     def set_nms(self, nms_thresh=0.45, nms_topk=400, post_nms=100):
         """Set non-maximum suppression parameters.
-
         Parameters
         ----------
         nms_thresh : float, default is 0.45.
@@ -396,11 +379,9 @@ class YOLOV3(gluon.HybridBlock):
             Only return top `post_nms` detection results, the rest is discarded. The number is
             based on COCO dataset which has maximum 100 objects per image. You can adjust this
             number if expecting more objects. You can use -1 to return all detections.
-
         Returns
         -------
         None
-
         """
         self._clear_cached_op()
         self.nms_thresh = nms_thresh
@@ -409,12 +390,10 @@ class YOLOV3(gluon.HybridBlock):
 
     def reset_class(self, classes):
         """Reset class categories and class predictors.
-
         Parameters
         ----------
         classes : iterable of str
             The new categories. ['apple', 'orange'] for example.
-
         """
         self._clear_cached_op()
         self._classes = classes
@@ -427,7 +406,6 @@ def get_yolov3(name, stages, filters, anchors, strides, classes,
                dataset, pretrained=False, ctx=mx.cpu(),
                root=os.path.join('~', '.mxnet', 'models'), **kwargs):
     """Get YOLOV3 models.
-
     Parameters
     ----------
     name : str or None
@@ -466,7 +444,6 @@ def get_yolov3(name, stages, filters, anchors, strides, classes,
         Context such as mx.cpu(), mx.gpu(0).
     root : str
         Model weights storing path.
-
     Returns
     -------
     HybridBlock
@@ -481,7 +458,6 @@ def get_yolov3(name, stages, filters, anchors, strides, classes,
 
 def yolo3_darknet53_voc(pretrained_base=True, pretrained=False, num_sync_bn_devices=-1, **kwargs):
     """YOLO3 multi-scale with darknet53 base network on VOC dataset.
-
     Parameters
     ----------
     pretrained_base : bool or str
@@ -492,12 +468,10 @@ def yolo3_darknet53_voc(pretrained_base=True, pretrained=False, num_sync_bn_devi
         String value represents the hashtag for a certain version of pretrained weights.
     num_sync_bn_devices : int
         Number of devices for training. If `num_sync_bn_devices < 2`, SyncBatchNorm is disabled.
-
     Returns
     -------
     mxnet.gluon.HybridBlock
         Fully hybrid yolo3 network.
-
     """
     from ...data import VOCDetection
     pretrained_base = False if pretrained else pretrained_base
@@ -513,7 +487,6 @@ def yolo3_darknet53_voc(pretrained_base=True, pretrained=False, num_sync_bn_devi
 
 def yolo3_darknet53_coco(pretrained_base=True, pretrained=False, num_sync_bn_devices=-1, **kwargs):
     """YOLO3 multi-scale with darknet53 base network on COCO dataset.
-
     Parameters
     ----------
     pretrained_base : boolean
@@ -523,7 +496,6 @@ def yolo3_darknet53_coco(pretrained_base=True, pretrained=False, num_sync_bn_dev
         String value represents the hashtag for a certain version of pretrained weights.
     num_sync_bn_devices : int, default is -1
         Number of devices for training. If `num_sync_bn_devices < 2`, SyncBatchNorm is disabled.
-
     Returns
     -------
     mxnet.gluon.HybridBlock
@@ -544,7 +516,6 @@ def yolo3_darknet53_coco(pretrained_base=True, pretrained=False, num_sync_bn_dev
 def yolo3_darknet53_custom(classes, transfer=None, pretrained_base=True, pretrained=False,
                            num_sync_bn_devices=-1, **kwargs):
     """YOLO3 multi-scale with darknet53 base network on custom dataset.
-
     Parameters
     ----------
     classes : iterable of str
@@ -556,7 +527,6 @@ def yolo3_darknet53_custom(classes, transfer=None, pretrained_base=True, pretrai
         Whether fetch and load pretrained weights for base network.
     num_sync_bn_devices : int, default is -1
         Number of devices for training. If `num_sync_bn_devices < 2`, SyncBatchNorm is disabled.
-
     Returns
     -------
     mxnet.gluon.HybridBlock
@@ -586,7 +556,6 @@ def yolo3_mobilenetv1_voc(
         num_sync_bn_devices=-1,
         **kwargs):
     """YOLO3 multi-scale with mobilenet base network on VOC dataset.
-
     Parameters
     ----------
     pretrained_base : bool or str
@@ -597,12 +566,10 @@ def yolo3_mobilenetv1_voc(
         String value represents the hashtag for a certain version of pretrained weights.
     num_sync_bn_devices : int
         Number of devices for training. If `num_sync_bn_devices < 2`, SyncBatchNorm is disabled.
-
     Returns
     -------
     mxnet.gluon.HybridBlock
         Fully hybrid yolo3 network.
-
     """
     from ...data import VOCDetection
 
@@ -632,7 +599,6 @@ def yolo3_mobilenetv1_custom(
         num_sync_bn_devices=-1,
         **kwargs):
     """YOLO3 multi-scale with mobilenet base network on custom dataset.
-
     Parameters
     ----------
     classes : iterable of str
@@ -644,7 +610,6 @@ def yolo3_mobilenetv1_custom(
         Whether fetch and load pretrained weights for base network.
     num_sync_bn_devices : int, default is -1
         Number of devices for training. If `num_sync_bn_devices < 2`, SyncBatchNorm is disabled.
-
     Returns
     -------
     mxnet.gluon.HybridBlock
@@ -682,7 +647,6 @@ def yolo3_mobilenetv1_coco(
         num_sync_bn_devices=-1,
         **kwargs):
     """YOLO3 multi-scale with mobilenet base network on COCO dataset.
-
     Parameters
     ----------
     pretrained_base : bool or str
@@ -693,12 +657,10 @@ def yolo3_mobilenetv1_coco(
         String value represents the hashtag for a certain version of pretrained weights.
     num_sync_bn_devices : int
         Number of devices for training. If `num_sync_bn_devices < 2`, SyncBatchNorm is disabled.
-
     Returns
     -------
     mxnet.gluon.HybridBlock
         Fully hybrid yolo3 network.
-
     """
     from ...data import COCODetection
 
