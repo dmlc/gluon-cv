@@ -399,181 +399,190 @@ def plot_img(losses_log):
                                                         losses_log['fake_A'][0][0:1],
                                                         losses_log['rec_B'][0][0:1],
                                                         losses_log['idt_B'][0][0:1]]) * 0.5 + 0.5, 0, 1))
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--dataroot', required=True,
+                        help='path to images (should have subfolders trainA, trainB, valA, valB, etc)')
+    parser.add_argument('--batchSize', type=int, default=1, help='input batch size')
+    parser.add_argument('--loadSize', type=int, default=286, help='scale images to this size')
+    parser.add_argument('--fineSize', type=int, default=256, help='then crop to this size')
+    parser.add_argument('--output_nc', type=int, default=3, help='# of output image channels')
+    parser.add_argument('--ngf', type=int, default=64, help='# of gen filters in first conv layer')
+    parser.add_argument('--ndf', type=int, default=64, help='# of discrim filters in first conv layer')
+    parser.add_argument('--which_model_netD', type=str, default='basic', help='selects model to use for netD')
+    parser.add_argument('--which_model_netG', type=str, default='resnet_9blocks', help='selects model to use for netG')
+    parser.add_argument('--n_layers_D', type=int, default=3, help='only used if which_model_netD==n_layers')
+    parser.add_argument('--gpu_ids', type=str, default='0', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
+    parser.add_argument('--no_dropout', action='store_false', help='no dropout for the generator')
+    parser.add_argument('--epoch_count', type=int, default=1,
+                        help='the starting epoch count, we save the model by <epoch_count>, <epoch_count>+<save_latest_freq>, ...')
+    parser.add_argument('--lambda_A', type=float, default=10.0, help='weight for cycle loss (A -> B -> A)')
+    parser.add_argument('--lambda_B', type=float, default=10.0, help='weight for cycle loss (B -> A -> B)')
+    parser.add_argument('--lambda_idt', type=float, default=0.5,
+                        help='use identity mapping. Setting lambda_identity other than 0 has an effect of scaling the weight of the identity mapping loss. For example, if the weight of the identity loss should be 10 times smaller than the weight of the reconstruction loss, please set lambda_identity = 0.1')
+    parser.add_argument('--beta1', type=float, default=0.5, help='momentum term of adam')
+    parser.add_argument('--lr', type=float, default=0.0002, help='initial learning rate for adam')
+    parser.add_argument('--pool_size', type=int, default=50,
+                        help='the size of image buffer that stores previously generated images')
+    parser.add_argument('--workers', type=int, help='number of data loading workers', default=4)
+    parser.add_argument('--niter', type=int, default=100, help='# of iter at starting learning rate')
+    parser.add_argument('--niter_decay', type=int, default=100,
+                        help='# of iter to linearly decay learning rate to zero')
+    parser.add_argument('--experiment', default=None, help='Where to store models')
+    parser.add_argument('--seed', type=int, default=233, help='Random seed to be fixed.')
 
-parser = argparse.ArgumentParser()
-parser.add_argument('--dataroot', required=True, help='path to images (should have subfolders trainA, trainB, valA, valB, etc)')
-parser.add_argument('--batchSize', type=int, default=1, help='input batch size')
-parser.add_argument('--loadSize', type=int, default=286, help='scale images to this size')
-parser.add_argument('--fineSize', type=int, default=256, help='then crop to this size')
-parser.add_argument('--output_nc', type=int, default=3, help='# of output image channels')
-parser.add_argument('--ngf', type=int, default=64, help='# of gen filters in first conv layer')
-parser.add_argument('--ndf', type=int, default=64, help='# of discrim filters in first conv layer')
-parser.add_argument('--which_model_netD', type=str, default='basic', help='selects model to use for netD')
-parser.add_argument('--which_model_netG', type=str, default='resnet_9blocks', help='selects model to use for netG')
-parser.add_argument('--n_layers_D', type=int, default=3, help='only used if which_model_netD==n_layers')
-parser.add_argument('--gpu_ids', type=str, default='0', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
-parser.add_argument('--no_dropout', action='store_false', help='no dropout for the generator')
-parser.add_argument('--epoch_count', type=int, default=1, help='the starting epoch count, we save the model by <epoch_count>, <epoch_count>+<save_latest_freq>, ...')
-parser.add_argument('--lambda_A', type=float, default=10.0, help='weight for cycle loss (A -> B -> A)')
-parser.add_argument('--lambda_B', type=float, default=10.0,help='weight for cycle loss (B -> A -> B)')
-parser.add_argument('--lambda_idt', type=float, default=0.5, help='use identity mapping. Setting lambda_identity other than 0 has an effect of scaling the weight of the identity mapping loss. For example, if the weight of the identity loss should be 10 times smaller than the weight of the reconstruction loss, please set lambda_identity = 0.1')
-parser.add_argument('--beta1', type=float, default=0.5, help='momentum term of adam')
-parser.add_argument('--lr', type=float, default=0.0002, help='initial learning rate for adam')
-parser.add_argument('--pool_size', type=int, default=50,help='the size of image buffer that stores previously generated images')
-parser.add_argument('--workers', type=int, help='number of data loading workers', default=4)
-parser.add_argument('--niter', type=int, default=100, help='# of iter at starting learning rate')
-parser.add_argument('--niter_decay', type=int, default=100, help='# of iter to linearly decay learning rate to zero')
-parser.add_argument('--experiment', default=None, help='Where to store models')
-parser.add_argument('--seed', type=int, default=233,help='Random seed to be fixed.')
+    opt = parser.parse_args()
+    print(opt)
+    return opt
 
-opt = parser.parse_args()
-print(opt)
+if __name__ == '__main__':
+    opt = parse_args()
 
-gutils.random.seed(opt.seed)#random.randint(1, 10000) # fix seed
-print("Random Seed: ", opt.seed)
+    gutils.random.seed(opt.seed)#random.randint(1, 10000) # fix seed
+    print("Random Seed: ", opt.seed)
 
-if opt.experiment is None:
-    opt.experiment = 'samples'
-os.system('mkdir {0}'.format(opt.experiment))
+    if opt.experiment is None:
+        opt.experiment = 'samples'
+    os.system('mkdir {0}'.format(opt.experiment))
 
-if opt.gpu_ids == '-1':
-    context = [mx.cpu()]
-else:
-    context = [mx.gpu(int(i)) for i in opt.gpu_ids.split(',') if i.strip()]
-
-sw = SummaryWriter(logdir='./logs', flush_secs=5)
-dommy_img = nd.random.uniform(0,1,(1,3,opt.fineSize,opt.fineSize),ctx=mx.gpu(0))
-netG_A = define_G(opt.output_nc,opt.ngf, opt.which_model_netG, not opt.no_dropout)
-netG_B = define_G(opt.output_nc, opt.ngf, opt.which_model_netG, not opt.no_dropout)
-
-netD_A = define_D(opt.ndf, opt.which_model_netD,opt.n_layers_D, False)
-netD_B = define_D(opt.ndf, opt.which_model_netD,opt.n_layers_D, False)
-
-nets = [netG_A,netG_B,netD_A,netD_B]
-for net in nets:
-    net.initialize(ctx=mx.gpu(0))
-    net(dommy_img)
-    weights_init(net.model)
-    net.collect_params().reset_ctx(context)
-
-dataset = DataSet(opt.dataroot,'train',transforms.Compose([
-                            Resize(opt.loadSize, keep_ratio=True,interpolation=3),
-                            RandomCrop(opt.fineSize),
-                            transforms.RandomFlipLeftRight(),
-                            transforms.ToTensor(),
-                            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
-                        ]))
-dataloader = DataLoader(dataset, batch_size=opt.batchSize,
-                                         shuffle=True, num_workers=int(opt.workers),last_batch='rollover')
-
-fake_A_pool = ImagePool(opt.pool_size)
-fake_B_pool = ImagePool(opt.pool_size)
-
-
-optimizer_GA = gluon.Trainer(netG_A.collect_params(), 'adam', {'learning_rate': opt.lr,'beta1':opt.beta1},kvstore='local')
-optimizer_GB = gluon.Trainer(netG_B.collect_params(), 'adam', {'learning_rate': opt.lr,'beta1':opt.beta1},kvstore='local')
-optimizer_DA = gluon.Trainer(netD_A.collect_params(), 'adam', {'learning_rate': opt.lr,'beta1':opt.beta1},kvstore='local')
-optimizer_DB = gluon.Trainer(netD_B.collect_params(), 'adam', {'learning_rate': opt.lr,'beta1':opt.beta1},kvstore='local')
-cyc_loss = gluon.loss.L1Loss()
-def gan_loss(input,target_is_real):
-    if target_is_real:
-        target = nd.ones(input.shape,ctx=input.context)
+    if opt.gpu_ids == '-1':
+        context = [mx.cpu()]
     else:
-        target = nd.zeros(input.shape, ctx=input.context)
-    #mse loss for lsgan
-    e = ((input - target) ** 2).mean(axis=0, exclude=True)
-    return e
+        context = [mx.gpu(int(i)) for i in opt.gpu_ids.split(',') if i.strip()]
 
-class loss_dict:
-    def __init__(self):
-        self.losses = {}
+    sw = SummaryWriter(logdir='./logs', flush_secs=5)
+    dommy_img = nd.random.uniform(0,1,(1,3,opt.fineSize,opt.fineSize),ctx=mx.gpu(0))
+    netG_A = define_G(opt.output_nc,opt.ngf, opt.which_model_netG, not opt.no_dropout)
+    netG_B = define_G(opt.output_nc, opt.ngf, opt.which_model_netG, not opt.no_dropout)
 
-    def add(self, **kwargs):
-        for key, value in kwargs.items():
-            if key not in self.losses:
-                self.losses[key] = [value]
-            else:
-                self.losses[key].append(value)
+    netD_A = define_D(opt.ndf, opt.which_model_netD,opt.n_layers_D, False)
+    netD_B = define_D(opt.ndf, opt.which_model_netD,opt.n_layers_D, False)
 
-    def reset(self):
-        self.losses = {}
+    nets = [netG_A,netG_B,netD_A,netD_B]
+    for net in nets:
+        net.initialize(ctx=mx.gpu(0))
+        net(dommy_img)
+        weights_init(net.model)
+        net.collect_params().reset_ctx(context)
 
-    def __getitem__(self, item):
-        return self.losses[item]
+    dataset = DataSet(opt.dataroot,'train',transforms.Compose([
+                                Resize(opt.loadSize, keep_ratio=True,interpolation=3),
+                                RandomCrop(opt.fineSize),
+                                transforms.RandomFlipLeftRight(),
+                                transforms.ToTensor(),
+                                transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+                            ]))
+    dataloader = DataLoader(dataset, batch_size=opt.batchSize,
+                                             shuffle=True, num_workers=int(opt.workers),last_batch='rollover')
 
-losses_log = loss_dict()
-dataset_size = len(dataloader)
-for epoch in range(opt.epoch_count, opt.niter + opt.niter_decay + 1):
-    for i, (real_A, real_B) in enumerate(dataloader):
-        real_A = gluon.utils.split_and_load(real_A, ctx_list=context, batch_axis=0)
-        real_B = gluon.utils.split_and_load(real_B, ctx_list=context, batch_axis=0)
-        loss_G_list = []
-        loss_D_A_list = []
-        loss_D_B_list = []
-        fake_A_list = []
-        fake_B_list = []
-        losses_log.reset()
-        with autograd.record():
-            for A,B in zip(real_A,real_B):
-                fake_B = netG_A(A)
-                rec_A = netG_B(fake_B)
-                fake_A = netG_B(B)
-                rec_B = netG_A(fake_A)
+    fake_A_pool = ImagePool(opt.pool_size)
+    fake_B_pool = ImagePool(opt.pool_size)
 
-                # Identity loss
-                idt_A = netG_A(B)
-                loss_idt_A = cyc_loss(idt_A,B) * opt.lambda_B * opt.lambda_idt
-                idt_B = netG_B(A)
-                loss_idt_B = cyc_loss(idt_B,A) * opt.lambda_A * opt.lambda_idt
 
-                loss_G_A = gan_loss(netD_A(fake_B),True)
-                loss_G_B = gan_loss(netD_B(fake_A),True)
-                loss_cycle_A = cyc_loss(rec_A,A) * opt.lambda_A
-                loss_cycle_B = cyc_loss(rec_B,B) * opt.lambda_B
-                loss_G = loss_G_A + loss_G_B + loss_cycle_A + loss_cycle_B + loss_idt_A + loss_idt_B
+    optimizer_GA = gluon.Trainer(netG_A.collect_params(), 'adam', {'learning_rate': opt.lr,'beta1':opt.beta1},kvstore='local')
+    optimizer_GB = gluon.Trainer(netG_B.collect_params(), 'adam', {'learning_rate': opt.lr,'beta1':opt.beta1},kvstore='local')
+    optimizer_DA = gluon.Trainer(netD_A.collect_params(), 'adam', {'learning_rate': opt.lr,'beta1':opt.beta1},kvstore='local')
+    optimizer_DB = gluon.Trainer(netD_B.collect_params(), 'adam', {'learning_rate': opt.lr,'beta1':opt.beta1},kvstore='local')
+    cyc_loss = gluon.loss.L1Loss()
+    def gan_loss(input,target_is_real):
+        if target_is_real:
+            target = nd.ones(input.shape,ctx=input.context)
+        else:
+            target = nd.zeros(input.shape, ctx=input.context)
+        #mse loss for lsgan
+        e = ((input - target) ** 2).mean(axis=0, exclude=True)
+        return e
 
-                loss_G_list.append(loss_G)
-                fake_A_list.append(fake_A)
-                fake_B_list.append(fake_B)
-                losses_log.add(loss_G_A=loss_G_A, loss_cycle_A=loss_cycle_A, loss_idt_A=loss_idt_A,loss_G_B=loss_G_B,
-                               loss_cycle_B=loss_cycle_B, loss_idt_B=loss_idt_B,real_A=A, fake_B=fake_B, rec_A=rec_A,
-                               idt_A=idt_A, real_B=B, fake_A=fake_A, rec_B=rec_B,idt_B=idt_B)
-            autograd.backward(loss_G_list)
-        optimizer_GA.step(opt.batchSize)
-        optimizer_GB.step(opt.batchSize)
-        with autograd.record():
-            for A,B,fake_A,fake_B in zip(real_A,real_B,fake_A_list,fake_B_list):
-                #train D_A
-                #real
-                fake_B_tmp = fake_B_pool.query(fake_B)
-                pred_real = netD_A(B)
-                loss_D_real = gan_loss(pred_real,True)
-                pred_fake = netD_A(fake_B_tmp.detach())
-                loss_D_fake = gan_loss(pred_fake, False)
-                loss_D_A = (loss_D_real + loss_D_fake) * 0.5
-                loss_D_A_list.append(loss_D_A)
+    class loss_dict:
+        def __init__(self):
+            self.losses = {}
 
-                #train D_B
-                fake_A_tmp = fake_A_pool.query(fake_A)
-                pred_real = netD_B(A)
-                loss_D_real = gan_loss(pred_real, True)
-                pred_fake = netD_B(fake_A_tmp.detach())
-                loss_D_fake = gan_loss(pred_fake,False)
-                loss_D_B = (loss_D_real + loss_D_fake) * 0.5
-                loss_D_B_list.append(loss_D_B)
-                losses_log.add(loss_D_A=loss_D_A,loss_D_B=loss_D_B)
-            autograd.backward(loss_D_A_list + loss_D_B_list)
-        optimizer_DA.step(opt.batchSize)
-        optimizer_DB.step(opt.batchSize)
-        if ((epoch-1) * dataset_size + i) % 100 == 0:
-            plot_loss(losses_log, (epoch-1) * dataset_size + i,epoch,i)
-            plot_img(losses_log)
-    lr = (1.0 - max(0, epoch + 1 + opt.epoch_count - opt.niter) / float(opt.niter_decay + 1)) * opt.lr
-    optimizer_GA.set_learning_rate(lr)
-    optimizer_GB.set_learning_rate(lr)
-    optimizer_DA.set_learning_rate(lr)
-    optimizer_DB.set_learning_rate(lr)
-    netG_A.save_parameters('{0}/netG_A_epoch_{1}.pth'.format(opt.experiment, epoch))
-    netG_B.save_parameters('{0}/netG_B_epoch_{1}.pth'.format(opt.experiment, epoch))
-    netD_A.save_parameters('{0}/netD_A_epoch_{1}.pth'.format(opt.experiment, epoch))
-    netD_B.save_parameters('{0}/netD_B_epoch_{1}.pth'.format(opt.experiment, epoch))
+        def add(self, **kwargs):
+            for key, value in kwargs.items():
+                if key not in self.losses:
+                    self.losses[key] = [value]
+                else:
+                    self.losses[key].append(value)
+
+        def reset(self):
+            self.losses = {}
+
+        def __getitem__(self, item):
+            return self.losses[item]
+
+    losses_log = loss_dict()
+    dataset_size = len(dataloader)
+    for epoch in range(opt.epoch_count, opt.niter + opt.niter_decay + 1):
+        for i, (real_A, real_B) in enumerate(dataloader):
+            real_A = gluon.utils.split_and_load(real_A, ctx_list=context, batch_axis=0)
+            real_B = gluon.utils.split_and_load(real_B, ctx_list=context, batch_axis=0)
+            loss_G_list = []
+            loss_D_A_list = []
+            loss_D_B_list = []
+            fake_A_list = []
+            fake_B_list = []
+            losses_log.reset()
+            with autograd.record():
+                for A,B in zip(real_A,real_B):
+                    fake_B = netG_A(A)
+                    rec_A = netG_B(fake_B)
+                    fake_A = netG_B(B)
+                    rec_B = netG_A(fake_A)
+
+                    # Identity loss
+                    idt_A = netG_A(B)
+                    loss_idt_A = cyc_loss(idt_A,B) * opt.lambda_B * opt.lambda_idt
+                    idt_B = netG_B(A)
+                    loss_idt_B = cyc_loss(idt_B,A) * opt.lambda_A * opt.lambda_idt
+
+                    loss_G_A = gan_loss(netD_A(fake_B),True)
+                    loss_G_B = gan_loss(netD_B(fake_A),True)
+                    loss_cycle_A = cyc_loss(rec_A,A) * opt.lambda_A
+                    loss_cycle_B = cyc_loss(rec_B,B) * opt.lambda_B
+                    loss_G = loss_G_A + loss_G_B + loss_cycle_A + loss_cycle_B + loss_idt_A + loss_idt_B
+
+                    loss_G_list.append(loss_G)
+                    fake_A_list.append(fake_A)
+                    fake_B_list.append(fake_B)
+                    losses_log.add(loss_G_A=loss_G_A, loss_cycle_A=loss_cycle_A, loss_idt_A=loss_idt_A,loss_G_B=loss_G_B,
+                                   loss_cycle_B=loss_cycle_B, loss_idt_B=loss_idt_B,real_A=A, fake_B=fake_B, rec_A=rec_A,
+                                   idt_A=idt_A, real_B=B, fake_A=fake_A, rec_B=rec_B,idt_B=idt_B)
+                autograd.backward(loss_G_list)
+            optimizer_GA.step(opt.batchSize)
+            optimizer_GB.step(opt.batchSize)
+            with autograd.record():
+                for A,B,fake_A,fake_B in zip(real_A,real_B,fake_A_list,fake_B_list):
+                    #train D_A
+                    #real
+                    fake_B_tmp = fake_B_pool.query(fake_B)
+                    pred_real = netD_A(B)
+                    loss_D_real = gan_loss(pred_real,True)
+                    pred_fake = netD_A(fake_B_tmp.detach())
+                    loss_D_fake = gan_loss(pred_fake, False)
+                    loss_D_A = (loss_D_real + loss_D_fake) * 0.5
+                    loss_D_A_list.append(loss_D_A)
+
+                    #train D_B
+                    fake_A_tmp = fake_A_pool.query(fake_A)
+                    pred_real = netD_B(A)
+                    loss_D_real = gan_loss(pred_real, True)
+                    pred_fake = netD_B(fake_A_tmp.detach())
+                    loss_D_fake = gan_loss(pred_fake,False)
+                    loss_D_B = (loss_D_real + loss_D_fake) * 0.5
+                    loss_D_B_list.append(loss_D_B)
+                    losses_log.add(loss_D_A=loss_D_A,loss_D_B=loss_D_B)
+                autograd.backward(loss_D_A_list + loss_D_B_list)
+            optimizer_DA.step(opt.batchSize)
+            optimizer_DB.step(opt.batchSize)
+            if ((epoch-1) * dataset_size + i) % 100 == 0:
+                plot_loss(losses_log, (epoch-1) * dataset_size + i,epoch,i)
+                plot_img(losses_log)
+        lr = (1.0 - max(0, epoch + 1 + opt.epoch_count - opt.niter) / float(opt.niter_decay + 1)) * opt.lr
+        optimizer_GA.set_learning_rate(lr)
+        optimizer_GB.set_learning_rate(lr)
+        optimizer_DA.set_learning_rate(lr)
+        optimizer_DB.set_learning_rate(lr)
+        netG_A.save_parameters('{0}/netG_A_epoch_{1}.params'.format(opt.experiment, epoch))
+        netG_B.save_parameters('{0}/netG_B_epoch_{1}.params'.format(opt.experiment, epoch))
+        netD_A.save_parameters('{0}/netD_A_epoch_{1}.params'.format(opt.experiment, epoch))
+        netD_B.save_parameters('{0}/netD_B_epoch_{1}.params'.format(opt.experiment, epoch))

@@ -17,6 +17,19 @@ Details about mxboard is in [mxboard](https://github.com/awslabs/mxboard)
 ```bash
 python train_cgan.py --dataroot ./horse2zebra
 ```
+
+**Test Cycle GAN**
+
+for horse to zebra model:
+```bash
+python demo_cycle_gan.py --images ./horse2zebra/testA/n02391049_10160.jpg --pretrained ./samples/netG_A_epoch_200.params --gpu_id -1
+```
+for zebra to horse model:
+```bash
+python demo_cycle_gan.py --images ./horse2zebra/testA/n02391049_10160.jpg --pretrained ./samples/netG_A_epoch_200.params --gpu_id -1
+```
+![images](images.png "images during training")
+
 ![images](images.png "images during training")
 The meaning of those images are :
 
