@@ -574,7 +574,7 @@ def yolo3_mobilenet1_0_voc(
     from ...data import VOCDetection
 
     pretrained_base = False if pretrained else pretrained_base
-    base_net = MobileNet(
+    base_net = get_mobilenet(
         multiplier=1,
         pretrained=pretrained_base,
         num_sync_bn_devices=num_sync_bn_devices,
@@ -616,10 +616,10 @@ def yolo3_mobilenet1_0_custom(
         Fully hybrid yolo3 network.
     """
     if transfer is None:
-        base_net = MobileNet(
-            pretrained=pretrained_base,
-            num_sync_bn_devices=num_sync_bn_devices,
-            **kwargs)
+        base_net = get_mobilenet(multiplier=1,
+                                 pretrained=pretrained_base,
+                                 num_sync_bn_devices=num_sync_bn_devices,
+                                 **kwargs)
         stages = [base_net.features[:33],
                   base_net.features[33:69],
                   base_net.features[69:-2]]
