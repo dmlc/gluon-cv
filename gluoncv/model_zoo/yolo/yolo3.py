@@ -10,7 +10,7 @@ from mxnet import gluon
 from mxnet import autograd
 from mxnet.gluon import nn
 from .darknet import _conv2d, darknet53
-from ..mobilenet import MobileNet, get_mobilenet
+from ..mobilenet import get_mobilenet
 from .yolo_target import YOLOV3TargetMerger
 from ...loss import YOLOV3Loss
 
