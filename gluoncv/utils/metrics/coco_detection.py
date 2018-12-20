@@ -119,7 +119,11 @@ class COCODetectionMetric(mx.metric.EvalMetric):
             return ind
 
         # call real update
-        coco_eval = self._update()
+        try:
+            coco_eval = self._update()
+        except IndexError:
+            # invalid model may result in empty JSON results, skip it
+            return ['mAP',], ['0.0',]
 
         IoU_lo_thresh = 0.5
         IoU_hi_thresh = 0.95
