@@ -86,7 +86,7 @@ A Quick Example
 New to Gluon or Deep Learning?
 ------------------------------
 
-Please refer to the open source book `Dive into Deep Learning <http://en.diveintodeeplearning.org/>`_.
+Check out the open source book `Dive into Deep Learning <http://en.diveintodeeplearning.org/>`_.
 
 
 .. toctree::
