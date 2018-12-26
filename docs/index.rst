@@ -83,6 +83,12 @@ A Quick Example
 :ref:`Object Detection Demo <sphx_glr_build_examples_detection_demo_ssd.py>`
 
 
+New to Gluon or Deep Learning?
+------------------------------
+
+Please refer to the open source book `Dive into Deep Learning <http://en.diveintodeeplearning.org/>`_.
+
+
 .. toctree::
    :maxdepth: 2
 
