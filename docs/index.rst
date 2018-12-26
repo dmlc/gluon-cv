@@ -83,10 +83,10 @@ A Quick Example
 :ref:`Object Detection Demo <sphx_glr_build_examples_detection_demo_ssd.py>`
 
 
-New to Gluon or Deep Learning?
-------------------------------
+New to Deep Learning or CV?
+---------------------------
 
-Check out the open source book `Dive into Deep Learning <http://en.diveintodeeplearning.org/>`_.
+For background knowledge of deep learning or CV, please refer to the open source book `Dive into Deep Learning <http://en.diveintodeeplearning.org/>`_.
 
 
 .. toctree::
