@@ -83,7 +83,7 @@ All tutorials are available at [our website](https://gluon-cv.mxnet.io/index.htm
 
 Check out how to use GluonCV for your own research or projects.
 
-If you are new to Gluon, please check out [our 60-minute crash course](http://gluon-crash-course.mxnet.io/).
+If you are new to Gluon or deep learning, please check out [our 60-minute crash course](http://gluon-crash-course.mxnet.io/) or [*Dive into Deep Learning*](http://diveintodeeplearning.org/).
 
 For getting started quickly, refer to notebook runnable examples at [Examples](https://gluon-cv.mxnet.io/build/examples_classification/index.html).
 
