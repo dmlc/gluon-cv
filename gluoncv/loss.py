@@ -8,7 +8,7 @@ from mxnet import nd
 from mxnet.gluon.loss import Loss, _apply_weighting, _reshape_like
 
 __all__ = ['FocalLoss', 'SSDMultiBoxLoss', 'YOLOV3Loss',
-           'MixSoftmaxCrossEntropyLoss', 'MixSoftmaxCrossEntropyOHEMLoss']
+           'MixSoftmaxCrossEntropyLoss']
 
 class FocalLoss(gluon.loss.Loss):
     """Focal Loss for inbalanced classification.
