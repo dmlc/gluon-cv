@@ -1,9 +1,3 @@
-###########################################################################
-# Created by: Hang Zhang
-# Email: zhang.hang@rutgers.edu
-# Copyright (c) 2017
-###########################################################################
-
 """Cityscapes Dataloader"""
 import os
 import numpy as np
