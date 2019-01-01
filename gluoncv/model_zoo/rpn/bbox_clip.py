@@ -17,7 +17,7 @@ class BBoxClipToImage(mx.operator.CustomOp):
         self.axis = int(axis)
 
     def forward(self, is_train, req, in_data, out_data, aux):
-        """Clip box with shape infered from image."""
+        """Clip box with shape inferred from image."""
         x = in_data[0]
         shape_like = in_data[1]
         height, width = shape_like.shape[-2:]

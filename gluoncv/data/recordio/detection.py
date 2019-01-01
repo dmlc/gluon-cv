@@ -10,7 +10,7 @@ def _transform_label(label, height=None, width=None):
     label_width = int(label[1])  # the label width for each object, >= 5
     if label_width < 5:
         raise ValueError(
-            "Label info for each object shoudl >= 5, given {}".format(label_width))
+            "Label info for each object should >= 5, given {}".format(label_width))
     min_len = header_len + 5
     if len(label) < min_len:
         raise ValueError(
@@ -41,7 +41,7 @@ class RecordFileDetection(gluon.data.vision.ImageRecordDataset):
 
     .. note::
 
-        We suggest you to use ``RecordFileDetection`` only if you are familier with
+        We suggest you to use ``RecordFileDetection`` only if you are familiar with
         the record files.
 
     Parameters
@@ -51,7 +51,7 @@ class RecordFileDetection(gluon.data.vision.ImageRecordDataset):
         directory, where raw image and labels are stored in *.rec file for better
         IO performance, *.idx file is used to provide random access to the binary file.
     coord_normalized : boolean
-        Indicate whether bounding box coordinates haved been normalized to (0, 1) in labels.
+        Indicate whether bounding box coordinates have been normalized to (0, 1) in labels.
         If so, we will rescale back to absolute coordinates by multiplying width or height.
 
     Examples

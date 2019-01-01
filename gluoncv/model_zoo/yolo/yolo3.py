@@ -41,7 +41,7 @@ class YOLOOutputV3(gluon.HybridBlock):
     Parameters
     ----------
     index : int
-        Index of the yolo output layer, to avoid naming confliction only.
+        Index of the yolo output layer, to avoid naming conflicts only.
     num_class : int
         Number of foreground objects.
     anchors : iterable
@@ -99,7 +99,7 @@ class YOLOOutputV3(gluon.HybridBlock):
 
 
     def hybrid_forward(self, F, x, anchors, offsets):
-        """Hybrid Foward of YOLOV3Output layer.
+        """Hybrid Forward of YOLOV3Output layer.
         Parameters
         ----------
         F : mxnet.nd or mxnet.sym
@@ -209,7 +209,7 @@ class YOLOV3(gluon.HybridBlock):
         input image by cropping corresponding area of the anchor map. This allow us
         to export to symbol so we can run it in c++, Scalar, etc.
     nms_thresh : float, default is 0.45.
-        Non-maximum suppression threshold. You can speficy < 0 or > 1 to disable NMS.
+        Non-maximum suppression threshold. You can specify < 0 or > 1 to disable NMS.
     nms_topk : int, default is 400
         Apply NMS to top k detection results, use -1 to disable so that every Detection
          result is used in NMS.
@@ -371,7 +371,7 @@ class YOLOV3(gluon.HybridBlock):
         Parameters
         ----------
         nms_thresh : float, default is 0.45.
-            Non-maximum suppression threshold. You can speficy < 0 or > 1 to disable NMS.
+            Non-maximum suppression threshold. You can specify < 0 or > 1 to disable NMS.
         nms_topk : int, default is 400
             Apply NMS to top k detection results, use -1 to disable so that every Detection
              result is used in NMS.
@@ -413,7 +413,7 @@ def get_yolov3(name, stages, filters, anchors, strides, classes,
     stages : iterable of str or `HybridBlock`
         List of network internal output names, in order to specify which layers are
         used for predicting bbox values.
-        If `name` is `None`, `features` must be a `HybridBlock` which generate mutliple
+        If `name` is `None`, `features` must be a `HybridBlock` which generate multiple
         outputs for prediction.
     filters : iterable of float or None
         List of convolution layer channels which is going to be appended to the base
@@ -433,13 +433,13 @@ def get_yolov3(name, stages, filters, anchors, strides, classes,
         Names of categories.
     dataset : str
         Name of dataset. This is used to identify model name because models trained on
-        differnet datasets are going to be very different.
+        different datasets are going to be very different.
     pretrained : bool or str
         Boolean value controls whether to load the default pretrained weights for model.
         String value represents the hashtag for a certain version of pretrained weights.
     pretrained_base : bool or str, optional, default is True
         Load pretrained base network, the extra layers are randomized. Note that
-        if pretrained is `Ture`, this has no effect.
+        if pretrained is `True`, this has no effect.
     ctx : mxnet.Context
         Context such as mx.cpu(), mx.gpu(0).
     root : str
@@ -521,7 +521,7 @@ def yolo3_darknet53_custom(classes, transfer=None, pretrained_base=True, pretrai
     classes : iterable of str
         Names of custom foreground classes. `len(classes)` is the number of foreground classes.
     transfer : str or None
-        If not `None`, will try to reuse pre-trained weights from 6olo networks trained on other
+        If not `None`, will try to reuse pre-trained weights from yolo networks trained on other
         datasets.
     pretrained_base : boolean
         Whether fetch and load pretrained weights for base network.

@@ -25,8 +25,8 @@ def transform_test(imgs, short=416, max_size=1024, stride=1, mean=(0.485, 0.456,
         Maximum longer side length to fit image.
         This is to limit the input image shape. Aspect ratio is intact because we
         support arbitrary input size in our YOLO implementation.
-    stride : int, optinal, default is 1
-        The stride constraint due to precised alignment of bounding box prediction module.
+    stride : int, optional, default is 1
+        The stride constraint due to precise alignment of bounding box prediction module.
         Image's width and height must be multiples of `stride`. Use `stride = 1` to
         relax this constraint.
     mean : iterable of float
@@ -76,8 +76,8 @@ def load_test(filenames, short=416, max_size=1024, stride=1, mean=(0.485, 0.456,
         Maximum longer side length to fit image.
         This is to limit the input image shape. Aspect ratio is intact because we
         support arbitrary input size in our YOLO implementation.
-    stride : int, optinal, default is 1
-        The stride constraint due to precised alignment of bounding box prediction module.
+    stride : int, optional, default is 1
+        The stride constraint due to precise alignment of bounding box prediction module.
         Image's width and height must be multiples of `stride`. Use `stride = 1` to
         relax this constraint.
     mean : iterable of float

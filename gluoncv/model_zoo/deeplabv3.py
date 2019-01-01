@@ -26,7 +26,7 @@ class DeepLabV3(SegBaseModel):
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.nn.BatchNorm`;
         for Synchronized Cross-GPU BachNormalization).
     aux : bool
-        Auxilary loss.
+        Auxiliary loss.
 
 
     Reference:

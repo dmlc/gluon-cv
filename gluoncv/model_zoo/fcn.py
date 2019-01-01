@@ -1,4 +1,4 @@
-"""Fully Convolutional Network with Strdie of 8"""
+"""Fully Convolutional Network with Stride of 8"""
 from __future__ import division
 from mxnet.gluon import nn
 from mxnet.context import cpu

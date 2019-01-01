@@ -128,7 +128,7 @@ class BatchNorm(gluon.nn.BatchNorm):
     """Cross-GPU Synchronized Batch normalization (SyncBN)
     Standard BN [1]_ implementation only normalize the data within each device.
     SyncBN normalizes the input within the whole mini-batch.
-    We follow the sync-onece implmentation described in the paper [2]_ .
+    We follow the sync-once implementation described in the paper [2]_ .
 
     Parameters
     ----------

@@ -33,7 +33,7 @@ class CompositeMatcher(gluon.HybridBlock):
     def _compose_matches(self, F, matches):
         """Given multiple match results, compose the final match results.
         The order of matches matters. Only the unmatched(-1s) in the current
-        state will be substituded with the matching in the rest matches.
+        state will be substituted with the matching in the rest matches.
 
         Parameters
         ----------

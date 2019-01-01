@@ -8,7 +8,7 @@ __all__ = ['SegmentationMetric', 'batch_pix_accuracy', 'batch_intersection_union
            'pixelAccuracy', 'intersectionAndUnion']
 
 class SegmentationMetric(EvalMetric):
-    """Computes pixAcc and mIoU metric scroes
+    """Computes pixAcc and mIoU metric scores
     """
     def __init__(self, nclass):
         super(SegmentationMetric, self).__init__('pixAcc & mIoU')

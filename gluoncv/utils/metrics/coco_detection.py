@@ -82,7 +82,7 @@ class COCODetectionMetric(mx.metric.EvalMetric):
         """Use coco to get real scores. """
         if not self._current_id == len(self._img_ids):
             warnings.warn(
-                'Recorded {} out of {} validation images, incompelete results'.format(
+                'Recorded {} out of {} validation images, incomplete results'.format(
                     self._current_id, len(self._img_ids)))
         import json
         try:

@@ -136,7 +136,7 @@ class MobileNet(HybridBlock):
     Parameters
     ----------
     multiplier : float, default 1.0
-        The width multiplier for controling the model size. Only multipliers that are no
+        The width multiplier for controlling the model size. Only multipliers that are no
         less than 0.25 are supported. The actual number of channels is equal to the original
         channel size multiplied by this multiplier.
     classes : int, default 1000
@@ -183,7 +183,7 @@ class MobileNetV2(nn.HybridBlock):
     Parameters
     ----------
     multiplier : float, default 1.0
-        The width multiplier for controling the model size. The actual number of channels
+        The width multiplier for controlling the model size. The actual number of channels
         is equal to the original channel size multiplied by this multiplier.
     classes : int, default 1000
         Number of classes for the output layer.
@@ -244,7 +244,7 @@ def get_mobilenet(multiplier, pretrained=False, ctx=cpu(),
     Parameters
     ----------
     multiplier : float
-        The width multiplier for controling the model size. Only multipliers that are no
+        The width multiplier for controlling the model size. Only multipliers that are no
         less than 0.25 are supported. The actual number of channels is equal to the original
         channel size multiplied by this multiplier.
     pretrained : bool or str
@@ -284,7 +284,7 @@ def get_mobilenet_v2(multiplier, pretrained=False, ctx=cpu(),
     Parameters
     ----------
     multiplier : float
-        The width multiplier for controling the model size. Only multipliers that are no
+        The width multiplier for controlling the model size. Only multipliers that are no
         less than 0.25 are supported. The actual number of channels is equal to the original
         channel size multiplied by this multiplier.
     pretrained : bool or str

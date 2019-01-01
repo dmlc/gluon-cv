@@ -78,7 +78,7 @@ class SSD(HybridBlock):
     stds : tuple of float, default is (0.1, 0.1, 0.2, 0.2)
         Std values to be divided/multiplied to box encoded values.
     nms_thresh : float, default is 0.45.
-        Non-maximum suppression threshold. You can speficy < 0 or > 1 to disable NMS.
+        Non-maximum suppression threshold. You can specify < 0 or > 1 to disable NMS.
     nms_topk : int, default is 400
         Apply NMS to top k detection results, use -1 to disable so that every Detection
          result is used in NMS.
@@ -163,7 +163,7 @@ class SSD(HybridBlock):
         Parameters
         ----------
         nms_thresh : float, default is 0.45.
-            Non-maximum suppression threshold. You can speficy < 0 or > 1 to disable NMS.
+            Non-maximum suppression threshold. You can specify < 0 or > 1 to disable NMS.
         nms_topk : int, default is 400
             Apply NMS to top k detection results, use -1 to disable so that every Detection
              result is used in NMS.
@@ -255,7 +255,7 @@ def get_ssd(name, base_size, features, filters, sizes, ratios, steps, classes,
     features : iterable of str or `HybridBlock`
         List of network internal output names, in order to specify which layers are
         used for predicting bbox values.
-        If `name` is `None`, `features` must be a `HybridBlock` which generate mutliple
+        If `name` is `None`, `features` must be a `HybridBlock` which generate multiple
         outputs for prediction.
     filters : iterable of float or None
         List of convolution layer channels which is going to be appended to the base
@@ -275,13 +275,13 @@ def get_ssd(name, base_size, features, filters, sizes, ratios, steps, classes,
         Names of categories.
     dataset : str
         Name of dataset. This is used to identify model name because models trained on
-        differnet datasets are going to be very different.
+        different datasets are going to be very different.
     pretrained : bool or str
         Boolean value controls whether to load the default pretrained weights for model.
         String value represents the hashtag for a certain version of pretrained weights.
     pretrained_base : bool or str, optional, default is True
         Load pretrained base network, the extra layers are randomized. Note that
-        if pretrained is `Ture`, this has no effect.
+        if pretrained is `True`, this has no effect.
     ctx : mxnet.Context
         Context such as mx.cpu(), mx.gpu(0).
     root : str

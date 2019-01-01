@@ -90,7 +90,7 @@ class FeatureExtractor(SymbolBlock):
 
 class FeatureExpander(SymbolBlock):
     """Feature extractor with additional layers to append.
-    This is very common in vision networks where extra branches are attched to
+    This is very common in vision networks where extra branches are attached to
     backbone network.
 
     Parameters

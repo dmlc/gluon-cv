@@ -48,7 +48,7 @@ parser.add_argument('--lr-decay', type=float, default=0.1,
 parser.add_argument('--lr-decay-period', type=int, default=0,
                     help='interval for periodic learning rate decays. default is 0 to disable.')
 parser.add_argument('--lr-decay-epoch', type=str, default='40,60',
-                    help='epoches at which learning rate decays. default is 40,60.')
+                    help='epochs at which learning rate decays. default is 40,60.')
 parser.add_argument('--mode', type=str,
                     help='mode in which to train the model. options are symbolic, imperative, hybrid')
 parser.add_argument('--model', type=str, required=True,

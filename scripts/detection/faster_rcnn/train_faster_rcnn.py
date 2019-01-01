@@ -46,7 +46,7 @@ def parse_args():
     parser.add_argument('--lr-decay', type=float, default=0.1,
                         help='decay rate of learning rate. default is 0.1.')
     parser.add_argument('--lr-decay-epoch', type=str, default='',
-                        help='epoches at which learning rate decays. default is 14,20 for voc.')
+                        help='epochs at which learning rate decays. default is 14,20 for voc.')
     parser.add_argument('--lr-warmup', type=str, default='',
                         help='warmup iterations to adjust learning rate, default is 0 for voc.')
     parser.add_argument('--momentum', type=float, default=0.9,
