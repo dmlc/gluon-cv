@@ -88,7 +88,7 @@ def export_block(path, block, data_shape=None, epoch=0, preprocess=True, layout=
             if not isinstance(preprocess, HybridBlock):
                 raise TypeError("preprocess must be HybridBlock, given {}".format(type(preprocess)))
         wrapper_block = nn.HybridSequential()
-        preprocess.initialize()
+        preprocess.initialize(ctx=ctx)
         wrapper_block.add(preprocess)
         wrapper_block.add(block)
     else:
