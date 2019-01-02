@@ -237,7 +237,8 @@ def resnext50_32x4d(**kwargs):
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
     """
-    return get_resnext(50, 32, 4, use_se=False, **kwargs)
+    kwargs['use_se'] = False
+    return get_resnext(50, 32, 4, **kwargs)
 
 def resnext101_32x4d(**kwargs):
     r"""ResNext101 32x4d model from
@@ -258,7 +259,8 @@ def resnext101_32x4d(**kwargs):
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
     """
-    return get_resnext(101, 32, 4, use_se=False, **kwargs)
+    kwargs['use_se'] = False
+    return get_resnext(101, 32, 4, **kwargs)
 
 def resnext101_64x4d(**kwargs):
     r"""ResNext101 64x4d model from
@@ -279,7 +281,8 @@ def resnext101_64x4d(**kwargs):
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
     """
-    return get_resnext(101, 64, 4, use_se=False, **kwargs)
+    kwargs['use_se'] = False
+    return get_resnext(101, 64, 4, **kwargs)
 
 def se_resnext50_32x4d(**kwargs):
     r"""SE-ResNext50 32x4d model from
@@ -300,7 +303,8 @@ def se_resnext50_32x4d(**kwargs):
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
     """
-    return get_resnext(50, 32, 4, use_se=True, **kwargs)
+    kwargs['use_se'] = True
+    return get_resnext(50, 32, 4, **kwargs)
 
 def se_resnext101_32x4d(**kwargs):
     r"""SE-ResNext101 32x4d model from
@@ -321,7 +325,8 @@ def se_resnext101_32x4d(**kwargs):
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
     """
-    return get_resnext(101, 32, 4, use_se=True, **kwargs)
+    kwargs['use_se'] = True
+    return get_resnext(101, 32, 4, **kwargs)
 
 def se_resnext101_64x4d(**kwargs):
     r"""SE-ResNext101 64x4d model from
@@ -342,4 +347,5 @@ def se_resnext101_64x4d(**kwargs):
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
     """
-    return get_resnext(101, 64, 4, use_se=True, **kwargs)
+    kwargs['use_se'] = True
+    return get_resnext(101, 64, 4, **kwargs)
