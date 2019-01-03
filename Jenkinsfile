@@ -4,7 +4,7 @@ stage("Sanity Check") {
       checkout scm
       sh """#!/bin/bash
       set -e
-      conda env update -n gluon_vision_pylint -f tests/pylint.yml
+      conda env update -n gluon_vision_pylint -f tests/pylint.yml --prune
       conda activate gluon_vision_pylint
       conda list
       make clean
@@ -22,9 +22,11 @@ stage("Unit Test") {
         VISIBLE_GPU=env.EXECUTOR_NUMBER.toInteger() % 4
         sh """#!/bin/bash
         set -ex
-        # conda env remove -n gluon_cv_py2_test -y
-        # conda env create -n gluon_cv_py2_test -f tests/py2.yml
-        conda env update -n gluon_cv_py2_test -f tests/py2.yml
+        # old pip packages won't be cleaned: https://github.com/conda/conda/issues/5887
+        # remove and create new env instead
+        conda env remove -n gluon_cv_py2_test -y
+        conda env create -n gluon_cv_py2_test -f tests/py2.yml
+        # conda env update -n gluon_cv_py2_test -f tests/py2.yml --prune
         conda activate gluon_cv_py2_test
         conda list
         export CUDA_VISIBLE_DEVICES=${VISIBLE_GPU}
@@ -46,9 +48,9 @@ stage("Unit Test") {
         VISIBLE_GPU=env.EXECUTOR_NUMBER.toInteger() % 4
         sh """#!/bin/bash
         set -ex
-        # conda env remove -n gluon_cv_py3_test -y
-        # conda env create -n gluon_cv_py3_test -f tests/py3.yml
-        conda env update -n gluon_cv_py3_test -f tests/py3.yml
+        conda env remove -n gluon_cv_py3_test -y
+        conda env create -n gluon_cv_py3_test -f tests/py3.yml
+        # conda env update -n gluon_cv_py3_test -f tests/py3.yml --prune
         conda activate gluon_cv_py3_test
         conda list
         export CUDA_VISIBLE_DEVICES=${VISIBLE_GPU}
@@ -83,7 +85,9 @@ stage("Build Docs") {
       sh """#!/bin/bash
       set -ex
       export CUDA_VISIBLE_DEVICES=${VISIBLE_GPU}
-      conda env update -n gluon_vision_docs -f docs/build.yml
+      conda env remove -n gluon_vision_docs -y
+      conda env create -n gluon_vision_docs -f docs/build.yml
+      # conda env update -n gluon_vision_docs -f docs/build.yml --prune
       conda activate gluon_vision_docs
       export PYTHONPATH=\${PWD}
       env
