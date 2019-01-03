@@ -10,7 +10,7 @@ def parse_args():
         epilog='Example: python download_dataset.py --download-dir ./',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--download-dir', type=str, default='./', help='dataset directory on disk')
-    parser.add_argument('--overwrite', action='store_true', help='overwrite downloaded files if set, in case they are corrputed')
+    parser.add_argument('--overwrite', action='store_true', help='overwrite downloaded files if set, in case they are corrupted')
     parser.add_argument('--file',type=str,default='horse2zebra',choices=['apple2orange','summer2winter_yosemite','horse2zebra','monet2photo','cezanne2photo','ukiyoe2photo','vangogh2photo','maps','cityscapes','facades','iphone2dslr_flower','ae_photos'],
                         help='Available datasets are: apple2orange, summer2winter_yosemite, horse2zebra, monet2photo, cezanne2photo, ukiyoe2photo, vangogh2photo, maps, cityscapes, facades, iphone2dslr_flower, ae_photos')
     args = parser.parse_args()

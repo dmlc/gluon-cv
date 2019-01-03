@@ -28,7 +28,7 @@ def plot_bbox(img, bboxes, scores=None, labels=None, thresh=0.5,
         Description of parameter `class_names`.
     colors : dict, optional
         You can provide desired colors as {0: (255, 0, 0), 1:(0, 255, 0), ...}, otherwise
-        random colors will be substituded.
+        random colors will be substituted.
     ax : matplotlib axes, optional
         You can reuse previous axes if provided.
     reverse_rgb : bool, optional

@@ -8,5 +8,5 @@ Therefore we provide convenient example scripts for existing/non-existing datase
 All datasets requires one-time setup, and will be automatically recognized by `gluoncv`
 package in the future.
 
-## Instrctions
+## Instructions
 Please refer to our official [tutorials](http://gluon-cv.mxnet.io/build/examples_datasets/index.html)

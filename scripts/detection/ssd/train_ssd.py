@@ -47,7 +47,7 @@ def parse_args():
     parser.add_argument('--lr-decay', type=float, default=0.1,
                         help='decay rate of learning rate. default is 0.1.')
     parser.add_argument('--lr-decay-epoch', type=str, default='160,200',
-                        help='epoches at which learning rate decays. default is 160,200.')
+                        help='epochs at which learning rate decays. default is 160,200.')
     parser.add_argument('--momentum', type=float, default=0.9,
                         help='SGD momentum, default is 0.9')
     parser.add_argument('--wd', type=float, default=0.0005,

@@ -53,7 +53,7 @@ class DetectionDataLoader(DataLoader):
 
     It loads data batches from a dataset and then apply data
     transformations. It's a subclass of :py:class:`mxnet.gluon.data.DataLoader`,
-    and therefore has very simliar APIs.
+    and therefore has very similar APIs.
 
     The main purpose of the DataLoader is to pad variable length of labels from
     each image, because they have different amount of objects.
@@ -124,7 +124,7 @@ class DetectionDataLoader(DataLoader):
 
 _worker_dataset = None
 def _worker_initializer(dataset):
-    """Initialier for processing pool."""
+    """Initializer for processing pool."""
     # global dataset is per-process based and only available in worker processes
     # this is only necessary to handle MXIndexedRecordIO because otherwise dataset
     # can be passed as argument
@@ -177,7 +177,7 @@ class RandomTransformDataLoader(DataLoader):
         Transform functions that takes a sample as input and returns the transformed sample.
         They will be randomly selected during the dataloader iteration.
     dataset : mxnet.gluon.data.Dataset or numpy.ndarray or mxnet.ndarray.NDArray
-        The source dataset. Original dataset is recommanded here since we will apply transform
+        The source dataset. Original dataset is recommended here since we will apply transform
         function from candidates again during the iteration.
     interval : int, default is 1
         For every `interval` batches, transform function is randomly selected from candidates.

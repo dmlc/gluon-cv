@@ -104,7 +104,7 @@ def bbox_xyxy_to_xywh(xyxy):
 def bbox_clip_xyxy(xyxy, width, height):
     """Clip bounding box with format (xmin, ymin, xmax, ymax) to specified boundary.
 
-    All bounding boxes will be cliped to the new region `(0, 0, width, height)`.
+    All bounding boxes will be clipped to the new region `(0, 0, width, height)`.
 
     Parameters
     ----------
