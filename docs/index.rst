@@ -83,6 +83,12 @@ A Quick Example
 :ref:`Object Detection Demo <sphx_glr_build_examples_detection_demo_ssd.py>`
 
 
+New to Deep Learning or CV?
+---------------------------
+
+For background knowledge of deep learning or CV, please refer to the open source book `Dive into Deep Learning <http://en.diveintodeeplearning.org/>`_.
+
+
 .. toctree::
    :maxdepth: 2
 
