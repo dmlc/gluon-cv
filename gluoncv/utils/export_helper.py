@@ -152,5 +152,79 @@ def export_block(path, block, data_shape=None, epoch=0, preprocess=True, layout=
     if last_exception is not None:
         raise RuntimeError(str(last_exception).splitlines()[0])
 
-    if box_encode is not None:
-        mx.sym.contrib.__dict__['box_encode'] = box_encode
+def export_tvm(path, block, data_shape=None, epoch=0, preprocess=True, layout='HWC',
+               ctx=mx.cpu(), target='llvm', opt_level=3):
+    """Helper function to export a HybridBlock to TVM executable. Note that tvm package needs
+    to be installed.
+
+    Parameters
+    ----------
+    path : str
+        Path to save model.
+        Two files path-symbol.json and path-xxxx.params will be created,
+        where xxxx is the 4 digits epoch number.
+    block : mxnet.gluon.HybridBlock
+        The hybridizable block. Note that normal gluon.Block is not supported.
+    data_shape : tuple of int, default is None
+        Fake data shape just for export purpose, in format (H, W, C).
+        If you don't specify ``data_shape``, `export_block` will try use some common data_shapes,
+        e.g., (224, 224, 3), (256, 256, 3), (299, 299, 3), (512, 512, 3)...
+        If any of this ``data_shape`` goes through, the export will succeed.
+    epoch : int
+        Epoch number of saved model.
+    preprocess : mxnet.gluon.HybridBlock, default is True.
+        Preprocess block prior to the network.
+        By default (True), it will subtract mean [123.675, 116.28, 103.53], divide
+        std [58.395, 57.12, 57.375], and convert original image (B, H, W, C and range [0, 255]) to
+        tensor (B, C, H, W) as network input. This is the default preprocess behavior of all GluonCV
+        pre-trained models.
+        You can use custom pre-process hybrid block or disable by set ``preprocess=None``.
+    layout : str, default is 'HWC'
+        The layout for raw input data. By default is HWC. Supports 'HWC' and 'CHW'.
+        Note that image channel order is always RGB.
+    ctx: mx.Context, default mx.cpu()
+        Network context.
+    target : str, default is 'llvm'
+        Runtime type, can be ('llvm', 'cuda', 'opencl', 'metal'...)
+    opt_level : int, default is 3
+        TVM optimization level, if supported, higher `opt_level` may generate more efficient runtime
+
+    Returns
+    -------
+    None
+
+    """
+    try:
+        import tvm
+    except ImportError:
+        print("TVM package required, please refer https://tvm.ai/ for installation guide.")
+        raise
+    try:
+        import nnvm
+    except ImportError:
+        print("NNVM package required, please refer https://tvm.ai/ for installation guide.")
+        raise
+
+    # input image layout
+    if data_shape is None:
+        data_shapes = [(s, s, 3) for s in (224, 256, 299, 300, 320, 416, 512, 600)]
+    else:
+        data_shapes = [data_shape]
+
+    if preprocess:
+        # add preprocess block
+        if preprocess is True:
+            preprocess = _DefaultPreprocess()
+        else:
+            if not isinstance(preprocess, HybridBlock):
+                raise TypeError("preprocess must be HybridBlock, given {}".format(type(preprocess)))
+        wrapper_block = nn.HybridSequential()
+        preprocess.initialize(ctx=ctx)
+        wrapper_block.add(preprocess)
+        wrapper_block.add(block)
+    else:
+        wrapper_block = block
+    wrapper_block.collect_params().reset_ctx(ctx)
+
+    # convert to nnvm symbol
+    sym, params = nnvm.frontend.from_mxnet(wrapper_block)
