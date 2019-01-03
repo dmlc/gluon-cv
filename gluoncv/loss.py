@@ -11,7 +11,7 @@ __all__ = ['FocalLoss', 'SSDMultiBoxLoss', 'YOLOV3Loss',
            'MixSoftmaxCrossEntropyLoss', 'MixSoftmaxCrossEntropyOHEMLoss']
 
 class FocalLoss(gluon.loss.Loss):
-    """Focal Loss for inbalanced classification.
+    """Focal Loss for imbalanced classification.
     Focal loss was described in https://arxiv.org/abs/1708.02002
 
     Parameters
