@@ -152,24 +152,23 @@ def export_block(path, block, data_shape=None, epoch=0, preprocess=True, layout=
     if last_exception is not None:
         raise RuntimeError(str(last_exception).splitlines()[0])
 
-def export_tvm(path, block, data_shape=None, epoch=0, preprocess=True, layout='HWC',
+def export_tvm(path, block, data_shape, epoch=0, preprocess=True, layout='HWC',
                ctx=mx.cpu(), target='llvm', opt_level=3):
     """Helper function to export a HybridBlock to TVM executable. Note that tvm package needs
-    to be installed.
+    to be installed(https://tvm.ai/).
 
     Parameters
     ----------
     path : str
         Path to save model.
-        Two files path-symbol.json and path-xxxx.params will be created,
-        where xxxx is the 4 digits epoch number.
+        Three files path_deploy_lib.tar, path_deploy_graph.json and path_deploy_xxxx.params
+        will be created, where xxxx is the 4 digits epoch number.
     block : mxnet.gluon.HybridBlock
         The hybridizable block. Note that normal gluon.Block is not supported.
-    data_shape : tuple of int, default is None
-        Fake data shape just for export purpose, in format (H, W, C).
-        If you don't specify ``data_shape``, `export_block` will try use some common data_shapes,
-        e.g., (224, 224, 3), (256, 256, 3), (299, 299, 3), (512, 512, 3)...
-        If any of this ``data_shape`` goes through, the export will succeed.
+    data_shape : tuple of int, required
+        Unlike `export_block`, `data_shape` is required here for the purpose of optimization.
+        If dynamic shape is required, you can use the shape that most fits the inference tasks,
+        but the optimization won't accommodate all situations.
     epoch : int
         Epoch number of saved model.
     preprocess : mxnet.gluon.HybridBlock, default is True.
@@ -185,9 +184,11 @@ def export_tvm(path, block, data_shape=None, epoch=0, preprocess=True, layout='H
     ctx: mx.Context, default mx.cpu()
         Network context.
     target : str, default is 'llvm'
-        Runtime type, can be ('llvm', 'cuda', 'opencl', 'metal'...)
+        Runtime type for code generation, can be ('llvm', 'cuda', 'opencl', 'metal'...)
     opt_level : int, default is 3
-        TVM optimization level, if supported, higher `opt_level` may generate more efficient runtime
+        TVM optimization level, if supported, higher `opt_level` may generate more efficient
+        runtime library, however, some operator may not support high level optimization, which will
+        fallback to lower `opt_level`.
 
     Returns
     -------
@@ -195,22 +196,12 @@ def export_tvm(path, block, data_shape=None, epoch=0, preprocess=True, layout='H
 
     """
     try:
-        import tvm
-    except ImportError:
-        print("TVM package required, please refer https://tvm.ai/ for installation guide.")
-        raise
-    try:
         import nnvm
     except ImportError:
         print("NNVM package required, please refer https://tvm.ai/ for installation guide.")
         raise
 
-    # input image layout
-    if data_shape is None:
-        data_shapes = [(s, s, 3) for s in (224, 256, 299, 300, 320, 416, 512, 600)]
-    else:
-        data_shapes = [data_shape]
-
+    # add preprocess block if necessary
     if preprocess:
         # add preprocess block
         if preprocess is True:
@@ -228,3 +219,13 @@ def export_tvm(path, block, data_shape=None, epoch=0, preprocess=True, layout='H
 
     # convert to nnvm symbol
     sym, params = nnvm.frontend.from_mxnet(wrapper_block)
+    with nnvm.compiler.build_config(opt_level=opt_level):
+        graph, lib, params = nnvm.compiler.build(
+            sym, target, shape={"data": data_shape}, params=params)
+
+    # export library, json graph and parameters
+    lib.export_library(path + '_deploy_lib.tar')
+    with open(path + '_deploy_graph.json', 'w') as fo:
+        fo.write(graph.json())
+    with open(path + '_deploy_{:04n}.params'.format(epoch), 'wb') as fo:
+        fo.write(nnvm.compiler.save_param_dict(params))
