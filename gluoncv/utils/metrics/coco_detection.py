@@ -84,6 +84,12 @@ class COCODetectionMetric(mx.metric.EvalMetric):
             warnings.warn(
                 'Recorded {} out of {} validation images, incomplete results'.format(
                     self._current_id, len(self._img_ids)))
+        if not self._results:
+            # in case of empty results, push a dummy result
+            self._results.append({'image_id': self._img_ids[0],
+                                  'category_id': 0,
+                                  'bbox': [0, 0, 0, 0],
+                                  'score': 0})
         import json
         try:
             with open(self._filename, 'w') as f:
