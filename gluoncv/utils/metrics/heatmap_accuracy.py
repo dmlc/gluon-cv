@@ -49,6 +49,8 @@ class HeatmapAccuracy(mx.metric.EvalMetric):
         self.threshold = threshold
 
     def _calc_dists(self, preds, target, normalize):
+        preds = preds.astype(np.float32)
+        target = target.astype(np.float32)
         dists = np.zeros((preds.shape[1], preds.shape[0]))
 
         for n in range(preds.shape[0]):
@@ -97,19 +99,15 @@ class HeatmapAccuracy(mx.metric.EvalMetric):
             label = label.asnumpy()
             dists = self._calc_dists(pred, label, norm)
 
-            acc = np.zeros((num_joints + 1))
-            avg_acc = 0
+            acc = 0
+            sum_acc = 0
             cnt = 0
 
             for i in range(num_joints):
-                acc[i + 1] = self._dist_acc(dists[i])
-                if acc[i + 1] >= 0:
-                    avg_acc += acc[i + 1]
+                acc = self._dist_acc(dists[i])
+                if acc >= 0:
+                    sum_acc += acc
                     cnt += 1
 
-            if cnt > 0:
-                avg_acc /= cnt
-                acc[0] = avg_acc
-
-            self.sum_metric += avg_acc
+            self.sum_metric += sum_acc
             self.num_inst += cnt

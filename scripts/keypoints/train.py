@@ -214,7 +214,7 @@ def train(ctx):
             lr_scheduler.update(i, epoch)
             trainer.step(batch_size)
 
-            metric.update(outputs, label)
+            metric.update(label, outputs)
 
             loss_val += sum([l.mean().asscalar() for l in loss]) / num_gpus
             if opt.log_interval and not (i+1)%opt.log_interval:
