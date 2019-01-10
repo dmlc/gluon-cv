@@ -48,7 +48,7 @@ class SimplePoseGaussianTargetGenerator(object):
         -------
         (numpy.ndarray, numpy.ndarray)
             target : regression target, with shape (num_joints, heatmap_h, heatmap_w)
-            target_weight : target weight to mask out non-interest target, shape (num_joints, 1)
+            target_weight : target weight to mask out non-interest target, shape (num_joints, 1, 1)
 
         """
         target_weight = np.ones((self._num_joints, 1), dtype=np.float32)
@@ -88,4 +88,4 @@ class SimplePoseGaussianTargetGenerator(object):
             if v > 0.5:
                 target[i, img_y[0]:img_y[1], img_x[0]:img_x[1]] = g[g_y[0]:g_y[1], g_x[0]:g_x[1]]
 
-        return target, target_weight
+        return target, np.expand_dims(target_weight, -1)

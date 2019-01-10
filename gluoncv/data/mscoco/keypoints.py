@@ -31,7 +31,7 @@ class COCOKeyPoints(VisionDataset):
             splits = [splits]
         self._splits = splits
         self._coco = []
-        self._aspect_ratio = float(aspect_ratio)
+        self._aspect_ratio = float(1.0/aspect_ratio)
         self._pixel_std = 200
         self._skip_empty = skip_empty
         self.index_map = dict(zip(type(self).CLASSES, range(self.num_class)))
@@ -102,9 +102,10 @@ class COCOKeyPoints(VisionDataset):
 
     def __getitem__(self, idx):
         img_path = self._items[idx]
+        img_id = int(os.path.splitext(os.path.basename(img_path))[0])
         label = self._labels[idx]
         img = mx.image.imread(img_path, 1)
-        return img, label
+        return img, label, img_id
 
     def _load_jsons(self):
         """Load all image paths and labels from JSON annotation files into buffer."""
@@ -178,11 +179,12 @@ class COCOKeyPoints(VisionDataset):
                 joints_3d[i, :2, 1] = visible
                 # joints_3d[i, 2, 1] = 0
                 center, scale = self._box_to_center_scale(xmin, ymin, xmax - xmin, ymax - ymin)
-                valid_objs.append({
-                    'center': center,
-                    'scale': scale,
-                    'joints_3d': joints_3d
-                })
+
+            valid_objs.append({
+                'center': center,
+                'scale': scale,
+                'joints_3d': joints_3d
+            })
 
         if not valid_objs:
             if not self._skip_empty:
