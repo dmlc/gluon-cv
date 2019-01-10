@@ -1,3 +1,5 @@
+from __future__ import division
+
 import argparse, time, logging, os, math
 
 import numpy as np
@@ -11,6 +13,7 @@ from gluoncv.data import mscoco
 from gluoncv.model_zoo import get_model
 from gluoncv.utils import makedirs, LRScheduler
 from gluoncv.data.transforms.presets.simple_pose import SimplePoseDefaultTrainTransform
+from gluoncv.utils.metrics import HeatmapAccuracy
 
 # CLI
 parser = argparse.ArgumentParser(description='Train a model for image classification.')
@@ -68,7 +71,7 @@ parser.add_argument('--save-dir', type=str, default='params',
                     help='directory of saved models')
 parser.add_argument('--log-interval', type=int, default=20,
                     help='Number of batches to wait before logging.')
-parser.add_argument('--logging-file', type=str, default='train_imagenet.log',
+parser.add_argument('--logging-file', type=str, default='keypoints.log',
                     help='name of training log file')
 opt = parser.parse_args()
 
@@ -94,7 +97,8 @@ model_name = opt.model
 
 kwargs = {'ctx': context, 'num_joints': num_joints,
           'pretrained': opt.use_pretrained,
-          'pretrained_base': opt.use_pretrained_base,
+          # 'pretrained_base': opt.use_pretrained_base,
+          'pretrained_base': 'e263a986',
           'pretrained_ctx': context}
 
 net = get_model(model_name, **kwargs)
@@ -119,7 +123,7 @@ def get_data_loader(data_dir, batch_size, num_workers, input_size):
                                                       joint_pairs=train_dataset.joint_pairs,
                                                       image_size=input_size, heatmap_size=heatmap_size,
                                                       scale_factor=0.30, rotation_factor=40,
-                                                      mean=meanvec, std=stdvec, random_flip=False)
+                                                      mean=meanvec, std=stdvec, random_flip=True)
 
     train_data = gluon.data.DataLoader(
         train_dataset.transform(transform_train),
@@ -144,6 +148,8 @@ lr_scheduler = LRScheduler(mode=opt.lr_mode, baselr=opt.lr,
                            step=lr_decay_epoch, step_factor=opt.lr_decay, power=2,
                            warmup_epochs=opt.warmup_epochs)
 
+# optimizer = 'sgd'
+# optimizer_params = {'wd': opt.wd, 'momentum': 0.9, 'lr_scheduler': lr_scheduler}
 optimizer = 'adam'
 optimizer_params = {'wd': opt.wd, 'lr_scheduler': lr_scheduler}
 if opt.dtype != 'float32':
@@ -161,10 +167,16 @@ def train(ctx):
     if isinstance(ctx, mx.Context):
         ctx = [ctx]
     if opt.use_pretrained_base:
-        net.deconv_layers.initialize(mx.init.MSRAPrelu(), ctx=ctx)
-        net.final_layer.initialize(mx.init.MSRAPrelu(), ctx=ctx)
+        net.deconv_layers.initialize(ctx=ctx)
+        net.final_layer.initialize(ctx=ctx)
     else:
         net.initialize(mx.init.MSRAPrelu(), ctx=ctx)
+    '''
+    # net.cast('float16')
+    net.load_parameters('simple_pose_resnet50_v1b_converted.params',
+                        ctx=ctx)
+    # net.cast('float32')
+    '''
 
     if opt.no_wd:
         for k, v in net.collect_params('.*beta|.*gamma|.*bias').items():
@@ -173,6 +185,7 @@ def train(ctx):
     trainer = gluon.Trainer(net.collect_params(), optimizer, optimizer_params)
 
     L = gluon.loss.L2Loss()
+    metric = HeatmapAccuracy()
 
     best_val_score = 1
 
@@ -180,28 +193,40 @@ def train(ctx):
         net.hybridize(static_alloc=True, static_shape=True)
 
     for epoch in range(opt.num_epochs):
+        loss_val = 0
         tic = time.time()
         btic = time.time()
+        metric.reset()
 
         for i, batch in enumerate(train_data):
             data, label, weight, imgid = train_batch_fn(batch, ctx)
 
             with ag.record():
+                outputs = [net(X) for X in data]
+                loss = [L(yhat, y, w) for yhat, y, w in zip(outputs, label, weight)]
+                '''
                 outputs = [net(X.astype(opt.dtype, copy=False)) for X in data]
                 loss = [nd.cast(L(nd.cast(yhat, 'float32'), y, w), opt.dtype)
                         for yhat, y, w in zip(outputs, label, weight)]
+                '''
             for l in loss:
                 l.backward()
             lr_scheduler.update(i, epoch)
             trainer.step(batch_size)
 
-            loss_val = sum([l.sum().asscalar() for l in loss]) / batch_size
+            metric.update(outputs, label)
+
+            loss_val += sum([l.mean().asscalar() for l in loss]) / num_gpus
             if opt.log_interval and not (i+1)%opt.log_interval:
-                logger.info('Epoch[%d] Batch [%d]\tSpeed: %f samples/sec\tloss=%f\tlr=%f'%(
+                metric_name, metric_score = metric.get()
+                logger.info('Epoch[%d] Batch [%d]\tSpeed: %f samples/sec\tloss=%f\tlr=%f\t%s=%.3f'%(
                              epoch, i, batch_size*opt.log_interval/(time.time()-btic),
-                             loss_val, trainer.learning_rate))
+                             loss_val / (i+1), trainer.learning_rate, metric_name, metric_score))
                 btic = time.time()
 
+        time_elapsed = time.time() - tic
+        logger.info('Epoch[%d]\t\tSpeed: %d samples/sec over %d secs\tloss=%f\n'%(
+                     epoch, int(i*batch_size / time_elapsed), int(time_elapsed), loss_val / (i+1)))
         if save_frequency and save_dir and (epoch + 1) % save_frequency == 0:
             net.save_parameters('%s/%s-%d.params'%(save_dir, model_name, epoch))
             trainer.save_states('%s/%s-%d.states'%(save_dir, model_name, epoch))

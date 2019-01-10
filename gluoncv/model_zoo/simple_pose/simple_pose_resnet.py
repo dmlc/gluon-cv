@@ -18,6 +18,7 @@ __all__ = ['get_simple_pose_resnet', 'SimplePoseResNet',
 from mxnet.context import cpu
 from mxnet.gluon.block import HybridBlock
 from mxnet.gluon import nn
+from mxnet import initializer
 
 class SimplePoseResNet(HybridBlock):
 
@@ -55,7 +56,9 @@ class SimplePoseResNet(HybridBlock):
             channels=num_joints,
             kernel_size=final_conv_kernel,
             strides=1,
-            padding=1 if final_conv_kernel == 3 else 0
+            padding=1 if final_conv_kernel == 3 else 0,
+            weight_initializer=initializer.Normal(0.001),
+            bias_initializer=initializer.Zero()
         )
 
     def _get_deconv_cfg(self, deconv_kernel):
@@ -91,8 +94,11 @@ class SimplePoseResNet(HybridBlock):
                         strides=2,
                         padding=padding,
                         output_padding=output_padding,
-                        use_bias=self.deconv_with_bias))
-                layer.add(nn.BatchNorm())
+                        use_bias=self.deconv_with_bias,
+                        weight_initializer=initializer.Normal(0.001),
+                        bias_initializer=initializer.Zero()))
+                layer.add(nn.BatchNorm(gamma_initializer=initializer.One(),
+                                       beta_initializer=initializer.Zero()))
                 layer.add(nn.Activation('relu'))
                 self.inplanes = planes
 
@@ -107,12 +113,12 @@ class SimplePoseResNet(HybridBlock):
         return x
 
 def get_simple_pose_resnet(base_name, pretrained=False, ctx=cpu(),
-                    root='~/.mxnet/models', **kwargs):
+                           root='~/.mxnet/models', **kwargs):
 
     net = SimplePoseResNet(base_name, **kwargs)
 
     if pretrained:
-        from .model_store import get_model_file
+        from ..model_store import get_model_file
         net.load_parameters(get_model_file('pose_resnet%d'%(num_layers),
                                            tag=pretrained, root=root), ctx=ctx)
 

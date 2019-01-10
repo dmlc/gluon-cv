@@ -10,7 +10,7 @@ from mxnet.gluon.loss import Loss, _apply_weighting, _reshape_like
 __all__ = ['FocalLoss', 'SSDMultiBoxLoss', 'YOLOV3Loss',
            'MixSoftmaxCrossEntropyLoss', 'MixSoftmaxCrossEntropyOHEMLoss']
 
-class FocalLoss(gluon.loss.Loss):
+class FocalLoss(Loss):
     """Focal Loss for inbalanced classification.
     Focal loss was described in https://arxiv.org/abs/1708.02002
 
@@ -163,7 +163,7 @@ class SSDMultiBoxLoss(gluon.Block):
         return sum_losses, cls_losses, box_losses
 
 
-class YOLOV3Loss(gluon.loss.Loss):
+class YOLOV3Loss(Loss):
     """Losses of YOLO v3.
 
     Parameters
@@ -409,3 +409,4 @@ class MixSoftmaxCrossEntropyOHEMLoss(SoftmaxCrossEntropyOHEMLoss):
         else:
             return super(MixSoftmaxCrossEntropyOHEMLoss, self). \
                 hybrid_forward(F, *inputs, **kwargs)
+

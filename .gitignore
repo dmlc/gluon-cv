@@ -5,6 +5,8 @@
 *.swp
 .DS_Store
 .vscode
+*.npy
+*.npz
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
