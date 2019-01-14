@@ -65,7 +65,7 @@ net = gcv.model_zoo.get_model('ssd_512_mobilenet1.0_custom', classes=classes,
 # By loading from fully pre-trained models, you are not only loading base network weights
 # (mobilenet for example), but also some additional blocks for object detection specifically.
 #
-# Pretrained model from detection task is more relavant and adaptive than ``pretrained_base``
+# Pretrained model from detection task is more relevant and adaptive than ``pretrained_base``
 # network which is usually trained on ImageNet for image classification task.
 #
 # Therefore finetuning may converge significantly faster and better in some situations.
@@ -167,7 +167,7 @@ plt.show()
 # .. hint::
 #
 #     This finetune tutorial is not limited to SSD, you can extend it to Faster-RCNN, YOLO training by
-#     adpating a training blocks in the following examples:
+#     adapting a training blocks in the following examples:
 #
 #     :download:`Download train_faster_rcnn.py<../../../scripts/detection/faster_rcnn/train_faster_rcnn.py>`
 #     :download:`Download train_yolo3.py<../../../scripts/detection/yolo/train_yolo3.py>`

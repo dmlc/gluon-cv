@@ -10,7 +10,7 @@ from ...nn.coder import NormalizedBoxCenterDecoder
 class RPNProposal(gluon.HybridBlock):
     """Proposal generator for RPN.
 
-    RPNProposal takes RPN anchors, RPN prediction scores and box regression preditions.
+    RPNProposal takes RPN anchors, RPN prediction scores and box regression predictions.
     It will transform anchors, apply NMS to get clean foreground proposals.
 
     Parameters

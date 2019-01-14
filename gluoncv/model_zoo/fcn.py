@@ -1,10 +1,10 @@
-"""Fully Convolutional Network with Strdie of 8"""
+"""Fully Convolutional Network with Stride of 8"""
 from __future__ import division
 from mxnet.gluon import nn
 from mxnet.context import cpu
 from mxnet.gluon.nn import HybridBlock
 from .segbase import SegBaseModel
-# pylint: disable=unused-argument,abstract-method,missing-docstring,dangerous-default-value
+# pylint: disable=unused-argument,abstract-method,missing-docstring
 
 __all__ = ['FCN', 'get_fcn', 'get_fcn_resnet50_voc', 'get_fcn_resnet101_voc',
            'get_fcn_resnet101_coco', 'get_fcn_resnet50_ade', 'get_fcn_resnet101_ade']
@@ -21,6 +21,9 @@ class FCN(SegBaseModel):
         'resnet101' or 'resnet152').
     norm_layer : object
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.nn.BatchNorm`;
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     pretrained_base : bool or str
         Refers to if the FCN backbone or the encoder is pretrained or not. If `True`,
         model weights of a model that was trained on ImageNet is loaded.
@@ -67,7 +70,7 @@ class FCN(SegBaseModel):
 
 class _FCNHead(HybridBlock):
     # pylint: disable=redefined-outer-name
-    def __init__(self, in_channels, channels, norm_layer=nn.BatchNorm, norm_kwargs={}, **kwargs):
+    def __init__(self, in_channels, channels, norm_layer=nn.BatchNorm, norm_kwargs=None, **kwargs):
         super(_FCNHead, self).__init__()
         with self.name_scope():
             self.block = nn.HybridSequential()
@@ -75,7 +78,8 @@ class _FCNHead(HybridBlock):
             with self.block.name_scope():
                 self.block.add(nn.Conv2D(in_channels=in_channels, channels=inter_channels,
                                          kernel_size=3, padding=1, use_bias=False))
-                self.block.add(norm_layer(in_channels=inter_channels, **norm_kwargs))
+                self.block.add(norm_layer(in_channels=inter_channels,
+                                          **({} if norm_kwargs is None else norm_kwargs)))
                 self.block.add(nn.Activation('relu'))
                 self.block.add(nn.Dropout(0.1))
                 self.block.add(nn.Conv2D(in_channels=inter_channels, channels=channels,

@@ -36,7 +36,7 @@ class FasterRCNN(RCNN):
     train_patterns : str, default is None.
         Matching pattern for trainable parameters.
     nms_thresh : float, default is 0.3.
-        Non-maximum suppression threshold. You can speficy < 0 or > 1 to disable NMS.
+        Non-maximum suppression threshold. You can specify < 0 or > 1 to disable NMS.
     nms_topk : int, default is 400
         Apply NMS to top k detection results, use -1 to disable so that every Detection
          result is used in NMS.
@@ -120,7 +120,7 @@ class FasterRCNN(RCNN):
     train_patterns : str
         Matching pattern for trainable parameters.
     nms_thresh : float
-        Non-maximum suppression threshold. You can speficy < 0 or > 1 to disable NMS.
+        Non-maximum suppression threshold. You can specify < 0 or > 1 to disable NMS.
     nms_topk : int
         Apply NMS to top k detection results, use -1 to disable so that every Detection
          result is used in NMS.
@@ -185,7 +185,7 @@ class FasterRCNN(RCNN):
     def hybrid_forward(self, F, x, gt_box=None):
         """Forward Faster-RCNN network.
 
-        The behavior during traing and inference is different.
+        The behavior during training and inference is different.
 
         Parameters
         ----------
@@ -335,7 +335,7 @@ def faster_rcnn_resnet50_v1b_voc(pretrained=False, pretrained_base=True, **kwarg
         String value represents the hashtag for a certain version of pretrained weights.
     pretrained_base : bool or str, optional, default is True
         Load pretrained base network, the extra layers are randomized. Note that
-        if pretrained is `Ture`, this has no effect.
+        if pretrained is `True`, this has no effect.
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
@@ -384,7 +384,7 @@ def faster_rcnn_resnet50_v1b_coco(pretrained=False, pretrained_base=True, **kwar
         String value represents the hashtag for a certain version of pretrained weights.
     pretrained_base : bool or str, optional, default is True
         Load pretrained base network, the extra layers are randomized. Note that
-        if pretrained is `Ture`, this has no effect.
+        if pretrained is `True`, this has no effect.
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
@@ -489,7 +489,7 @@ def faster_rcnn_resnet101_v1d_voc(pretrained=False, pretrained_base=True, **kwar
         Load pretrained weights.
     pretrained_base : bool or str, optional, default is True
         Load pretrained base network, the extra layers are randomized. Note that
-        if pretrained is `Ture`, this has no effect.
+        if pretrained is `True`, this has no effect.
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
@@ -537,7 +537,7 @@ def faster_rcnn_resnet101_v1d_coco(pretrained=False, pretrained_base=True, **kwa
         Load pretrained weights.
     pretrained_base : bool or str, optional, default is True
         Load pretrained base network, the extra layers are randomized. Note that
-        if pretrained is `Ture`, this has no effect.
+        if pretrained is `True`, this has no effect.
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'

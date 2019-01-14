@@ -54,7 +54,7 @@ def parse_args():
     parser.add_argument('--lr-decay-period', type=int, default=0,
                         help='interval for periodic learning rate decays. default is 0 to disable.')
     parser.add_argument('--lr-decay-epoch', type=str, default='160,180',
-                        help='epoches at which learning rate decays. default is 160,180.')
+                        help='epochs at which learning rate decays. default is 160,180.')
     parser.add_argument('--warmup-lr', type=float, default=0.0,
                         help='starting warmup learning rate. default is 0.0.')
     parser.add_argument('--warmup-epochs', type=int, default=0,
@@ -305,9 +305,9 @@ if __name__ == '__main__':
     net_name = '_'.join(('yolo3', args.network, args.dataset))
     args.save_prefix += net_name
     # use sync bn if specified
-    num_sync_bn_devices = len(ctx) if args.syncbn else -1
-    if num_sync_bn_devices > 1:
-        net = get_model(net_name, pretrained_base=True, num_sync_bn_devices=num_sync_bn_devices)
+    if args.syncbn and len(ctx) > 1:
+        net = get_model(net_name, pretrained_base=True, norm_layer=gluon.contrib.nn.SyncBatchNorm,
+                        norm_kwargs={'num_devices': len(ctx)})
         async_net = get_model(net_name, pretrained_base=False)  # used by cpu worker
     else:
         net = get_model(net_name, pretrained_base=True)

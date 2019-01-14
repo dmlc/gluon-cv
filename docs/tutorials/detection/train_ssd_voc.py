@@ -147,7 +147,7 @@ plt.show()
 #
 # A handy DataLoader would be very convenient for us to apply different transforms and aggregate data into mini-batches.
 #
-# Because the number of objects varys a lot across images, we also have
+# Because the number of objects varies a lot across images, we also have
 # varying label sizes. As a result, we need to pad those labels to the same size.
 # To deal with this problem, GluonCV provides :py:class:`gluoncv.data.batchify.Pad`,
 # which handles padding automatically.
@@ -199,11 +199,11 @@ for ib, batch in enumerate(train_loader):
 # behind SSD.
 #
 # `Gluon Model Zoo <../../model_zoo/index.html>`__ has a lot of built-in SSD networks.
-# You can load your favorate one with one simple line of code:
+# You can load your favorite one with one simple line of code:
 #
 # .. hint::
 #
-#    To avoid downloading mdoel in this tutorial, we set `pretrained_base=False`,
+#    To avoid downloading models in this tutorial, we set `pretrained_base=False`,
 #    in practice we usually want to load pre-trained imagenet models by setting
 #    `pretrained_base=True`.
 from gluoncv import model_zoo

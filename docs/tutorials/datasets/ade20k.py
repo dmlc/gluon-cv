@@ -37,7 +37,7 @@ The easiest way is to run this script:
 
    python ade20k.py
 
-If you have already downloaded the above files and unziped them,
+If you have already downloaded the above files and unzipped them,
 you can set the folder name through ``--download-dir`` to avoid
 downloading them again. For example
 

@@ -6,7 +6,7 @@ from mxnet import gluon
 
 
 class RPNAnchorGenerator(gluon.HybridBlock):
-    r"""Anchor generator for Region Proposal Netoworks.
+    r"""Anchor generator for Region Proposal Networks.
 
     Parameters
     ----------

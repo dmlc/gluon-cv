@@ -25,7 +25,7 @@ parser.add_argument('--model', type=str, required=True,
 parser.add_argument('--input-size', type=int, default=224,
                     help='input shape of the image, default is 224.')
 parser.add_argument('--crop-ratio', type=float, default=0.875,
-                    help='The ratio for crop and input size, for validaton dataset only')
+                    help='The ratio for crop and input size, for validation dataset only')
 parser.add_argument('--params-file', type=str,
                     help='local parameter file to load, instead of pre-trained weight.')
 parser.add_argument('--dtype', type=str,
@@ -63,7 +63,7 @@ acc_top5 = mx.metric.TopKAccuracy(5)
 normalize = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 
 """
-Aligning with TF implemenation, the default crop-input
+Aligning with TF implementation, the default crop-input
 ratio set as 0.875; Set the crop as ceil(input-size/ratio)
 """
 crop_ratio = opt.crop_ratio if opt.crop_ratio > 0 else 0.875

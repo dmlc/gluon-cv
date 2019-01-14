@@ -39,7 +39,7 @@ class Mask(nn.HybridBlock):
     def hybrid_forward(self, F, x):
         """Forward Mask Head.
 
-        The behavior during traing and inference is different.
+        The behavior during training and inference is different.
 
         Parameters
         ----------
@@ -89,7 +89,7 @@ class MaskRCNN(FasterRCNN):
     def hybrid_forward(self, F, x, gt_box=None):
         """Forward Mask RCNN network.
 
-        The behavior during traing and inference is different.
+        The behavior during training and inference is different.
 
         Parameters
         ----------
@@ -207,7 +207,7 @@ def mask_rcnn_resnet50_v1b_coco(pretrained=False, pretrained_base=True, **kwargs
         String value represents the hashtag for a certain version of pretrained weights.
     pretrained_base : bool or str, optional, default is True
         Load pretrained base network, the extra layers are randomized. Note that
-        if pretrained is `Ture`, this has no effect.
+        if pretrained is `True`, this has no effect.
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'

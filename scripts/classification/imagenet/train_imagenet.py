@@ -48,7 +48,7 @@ parser.add_argument('--lr-decay', type=float, default=0.1,
 parser.add_argument('--lr-decay-period', type=int, default=0,
                     help='interval for periodic learning rate decays. default is 0 to disable.')
 parser.add_argument('--lr-decay-epoch', type=str, default='40,60',
-                    help='epoches at which learning rate decays. default is 40,60.')
+                    help='epochs at which learning rate decays. default is 40,60.')
 parser.add_argument('--warmup-lr', type=float, default=0.0,
                     help='starting warmup learning rate. default is 0.0.')
 parser.add_argument('--warmup-epochs', type=int, default=0,

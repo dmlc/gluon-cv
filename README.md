@@ -4,7 +4,7 @@
 [![GitHub license](http://dmlc.github.io/img/apache2.svg)](./LICENSE)
 [![Code Coverage](http://gluon-cv.mxnet.io/coverage.svg?)](http://gluon-cv.mxnet.io/coverage.svg)
 [![PyPI](https://img.shields.io/pypi/v/gluoncv.svg)](https://pypi.python.org/pypi/gluoncv)
-[![PyPI Pre-release](https://img.shields.io/badge/pypi--prerelease-v0.3.0-ff69b4.svg)](https://pypi.python.org/pypi/gluoncv)
+[![PyPI Pre-release](https://img.shields.io/badge/pypi--prerelease-v0.4.0-ff69b4.svg)](https://pypi.org/project/gluoncv/#history)
 [![Downloads](http://pepy.tech/badge/gluoncv)](http://pepy.tech/project/gluoncv)
 
 | [Installation](http://gluon-cv.mxnet.io) | [Documentation](http://gluon-cv.mxnet.io) | [Tutorials](http://gluon-cv.mxnet.io) |
@@ -83,7 +83,7 @@ All tutorials are available at [our website](https://gluon-cv.mxnet.io/index.htm
 
 Check out how to use GluonCV for your own research or projects.
 
-If you are new to Gluon, please check out [our 60-minute crash course](http://gluon-crash-course.mxnet.io/).
+For background knowledge of deep learning or CV, please refer to the open source book [*Dive into Deep Learning*](http://diveintodeeplearning.org/). If you are new to Gluon, please check out [our 60-minute crash course](http://gluon-crash-course.mxnet.io/).
 
 For getting started quickly, refer to notebook runnable examples at [Examples](https://gluon-cv.mxnet.io/build/examples_classification/index.html).
 

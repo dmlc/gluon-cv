@@ -94,7 +94,7 @@ class VGGAtrousBase(gluon.HybridBlock):
 
 class VGGAtrousExtractor(VGGAtrousBase):
     """VGG Atrous multi layer feature extractor which produces multiple output
-    feauture maps.
+    feature maps.
 
     Parameters
     ----------

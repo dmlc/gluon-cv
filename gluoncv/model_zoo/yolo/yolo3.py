@@ -9,6 +9,7 @@ import mxnet as mx
 from mxnet import gluon
 from mxnet import autograd
 from mxnet.gluon import nn
+from mxnet.gluon.nn import BatchNorm
 from .darknet import _conv2d, darknet53
 from ..mobilenet import get_mobilenet
 from .yolo_target import YOLOV3TargetMerger
@@ -41,7 +42,7 @@ class YOLOOutputV3(gluon.HybridBlock):
     Parameters
     ----------
     index : int
-        Index of the yolo output layer, to avoid naming confliction only.
+        Index of the yolo output layer, to avoid naming conflicts only.
     num_class : int
         Number of foreground objects.
     anchors : iterable
@@ -99,7 +100,7 @@ class YOLOOutputV3(gluon.HybridBlock):
 
 
     def hybrid_forward(self, F, x, anchors, offsets):
-        """Hybrid Foward of YOLOV3Output layer.
+        """Hybrid Forward of YOLOV3Output layer.
         Parameters
         ----------
         F : mxnet.nd or mxnet.sym
@@ -163,21 +164,28 @@ class YOLODetectionBlockV3(gluon.HybridBlock):
     ----------
     channel : int
         Number of channels for 1x1 conv. 3x3 Conv will have 2*channel.
-    num_sync_bn_devices : int, default is -1
-        Number of devices for training. If `num_sync_bn_devices < 2`, SyncBatchNorm is disabled.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
-    def __init__(self, channel, num_sync_bn_devices=-1, **kwargs):
+    def __init__(self, channel, norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
         super(YOLODetectionBlockV3, self).__init__(**kwargs)
         assert channel % 2 == 0, "channel {} cannot be divided by 2".format(channel)
         with self.name_scope():
             self.body = nn.HybridSequential(prefix='')
             for _ in range(2):
                 # 1x1 reduce
-                self.body.add(_conv2d(channel, 1, 0, 1, num_sync_bn_devices))
+                self.body.add(_conv2d(channel, 1, 0, 1,
+                                      norm_layer=norm_layer, norm_kwargs=norm_kwargs))
                 # 3x3 expand
-                self.body.add(_conv2d(channel * 2, 3, 1, 1, num_sync_bn_devices))
-            self.body.add(_conv2d(channel, 1, 0, 1, num_sync_bn_devices))
-            self.tip = _conv2d(channel * 2, 3, 1, 1, num_sync_bn_devices)
+                self.body.add(_conv2d(channel * 2, 3, 1, 1,
+                                      norm_layer=norm_layer, norm_kwargs=norm_kwargs))
+            self.body.add(_conv2d(channel, 1, 0, 1,
+                                  norm_layer=norm_layer, norm_kwargs=norm_kwargs))
+            self.tip = _conv2d(channel * 2, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
     # pylint: disable=unused-argument
     def hybrid_forward(self, F, x):
@@ -209,7 +217,7 @@ class YOLOV3(gluon.HybridBlock):
         input image by cropping corresponding area of the anchor map. This allow us
         to export to symbol so we can run it in c++, Scalar, etc.
     nms_thresh : float, default is 0.45.
-        Non-maximum suppression threshold. You can speficy < 0 or > 1 to disable NMS.
+        Non-maximum suppression threshold. You can specify < 0 or > 1 to disable NMS.
     nms_topk : int, default is 400
         Apply NMS to top k detection results, use -1 to disable so that every Detection
          result is used in NMS.
@@ -223,12 +231,16 @@ class YOLOV3(gluon.HybridBlock):
     ignore_iou_thresh : float
         Anchors that has IOU in `range(ignore_iou_thresh, pos_iou_thresh)` don't get
         penalized of objectness score.
-    num_sync_bn_devices : int, default is -1
-        Number of devices for training. If `num_sync_bn_devices < 2`, SyncBatchNorm is disabled.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
     def __init__(self, stages, channels, anchors, strides, classes, alloc_size=(128, 128),
                  nms_thresh=0.45, nms_topk=400, post_nms=100, pos_iou_thresh=1.0,
-                 ignore_iou_thresh=0.7, num_sync_bn_devices=-1, **kwargs):
+                 ignore_iou_thresh=0.7, norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
         super(YOLOV3, self).__init__(**kwargs)
         self._classes = classes
         self.nms_thresh = nms_thresh
@@ -251,12 +263,14 @@ class YOLOV3(gluon.HybridBlock):
             for i, stage, channel, anchor, stride in zip(
                     range(len(stages)), stages, channels, anchors[::-1], strides[::-1]):
                 self.stages.add(stage)
-                block = YOLODetectionBlockV3(channel, num_sync_bn_devices)
+                block = YOLODetectionBlockV3(
+                    channel, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
                 self.yolo_blocks.add(block)
                 output = YOLOOutputV3(i, len(classes), anchor, stride, alloc_size=alloc_size)
                 self.yolo_outputs.add(output)
                 if i > 0:
-                    self.transitions.add(_conv2d(channel, 1, 0, 1, num_sync_bn_devices))
+                    self.transitions.add(_conv2d(channel, 1, 0, 1,
+                                                 norm_layer=norm_layer, norm_kwargs=norm_kwargs))
 
     @property
     def num_class(self):
@@ -371,7 +385,7 @@ class YOLOV3(gluon.HybridBlock):
         Parameters
         ----------
         nms_thresh : float, default is 0.45.
-            Non-maximum suppression threshold. You can speficy < 0 or > 1 to disable NMS.
+            Non-maximum suppression threshold. You can specify < 0 or > 1 to disable NMS.
         nms_topk : int, default is 400
             Apply NMS to top k detection results, use -1 to disable so that every Detection
              result is used in NMS.
@@ -413,7 +427,7 @@ def get_yolov3(name, stages, filters, anchors, strides, classes,
     stages : iterable of str or `HybridBlock`
         List of network internal output names, in order to specify which layers are
         used for predicting bbox values.
-        If `name` is `None`, `features` must be a `HybridBlock` which generate mutliple
+        If `name` is `None`, `features` must be a `HybridBlock` which generate multiple
         outputs for prediction.
     filters : iterable of float or None
         List of convolution layer channels which is going to be appended to the base
@@ -433,17 +447,23 @@ def get_yolov3(name, stages, filters, anchors, strides, classes,
         Names of categories.
     dataset : str
         Name of dataset. This is used to identify model name because models trained on
-        differnet datasets are going to be very different.
+        different datasets are going to be very different.
     pretrained : bool or str
         Boolean value controls whether to load the default pretrained weights for model.
         String value represents the hashtag for a certain version of pretrained weights.
     pretrained_base : bool or str, optional, default is True
         Load pretrained base network, the extra layers are randomized. Note that
-        if pretrained is `Ture`, this has no effect.
+        if pretrained is `True`, this has no effect.
     ctx : mxnet.Context
         Context such as mx.cpu(), mx.gpu(0).
     root : str
         Model weights storing path.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     Returns
     -------
     HybridBlock
@@ -456,7 +476,8 @@ def get_yolov3(name, stages, filters, anchors, strides, classes,
         net.load_parameters(get_model_file(full_name, tag=pretrained, root=root), ctx=ctx)
     return net
 
-def yolo3_darknet53_voc(pretrained_base=True, pretrained=False, num_sync_bn_devices=-1, **kwargs):
+def yolo3_darknet53_voc(pretrained_base=True, pretrained=False,
+                        norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
     """YOLO3 multi-scale with darknet53 base network on VOC dataset.
     Parameters
     ----------
@@ -466,8 +487,12 @@ def yolo3_darknet53_voc(pretrained_base=True, pretrained=False, num_sync_bn_devi
     pretrained : bool or str
         Boolean value controls whether to load the default pretrained weights for model.
         String value represents the hashtag for a certain version of pretrained weights.
-    num_sync_bn_devices : int
-        Number of devices for training. If `num_sync_bn_devices < 2`, SyncBatchNorm is disabled.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     Returns
     -------
     mxnet.gluon.HybridBlock
@@ -476,16 +501,17 @@ def yolo3_darknet53_voc(pretrained_base=True, pretrained=False, num_sync_bn_devi
     from ...data import VOCDetection
     pretrained_base = False if pretrained else pretrained_base
     base_net = darknet53(
-        pretrained=pretrained_base, num_sync_bn_devices=num_sync_bn_devices, **kwargs)
+        pretrained=pretrained_base, norm_layer=norm_layer, norm_kwargs=norm_kwargs, **kwargs)
     stages = [base_net.features[:15], base_net.features[15:24], base_net.features[24:]]
     anchors = [[10, 13, 16, 30, 33, 23], [30, 61, 62, 45, 59, 119], [116, 90, 156, 198, 373, 326]]
     strides = [8, 16, 32]
     classes = VOCDetection.CLASSES
     return get_yolov3(
         'darknet53', stages, [512, 256, 128], anchors, strides, classes, 'voc',
-        pretrained=pretrained, num_sync_bn_devices=num_sync_bn_devices, **kwargs)
+        pretrained=pretrained, norm_layer=norm_layer, norm_kwargs=norm_kwargs, **kwargs)
 
-def yolo3_darknet53_coco(pretrained_base=True, pretrained=False, num_sync_bn_devices=-1, **kwargs):
+def yolo3_darknet53_coco(pretrained_base=True, pretrained=False,
+                         norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
     """YOLO3 multi-scale with darknet53 base network on COCO dataset.
     Parameters
     ----------
@@ -494,8 +520,12 @@ def yolo3_darknet53_coco(pretrained_base=True, pretrained=False, num_sync_bn_dev
     pretrained : bool or str
         Boolean value controls whether to load the default pretrained weights for model.
         String value represents the hashtag for a certain version of pretrained weights.
-    num_sync_bn_devices : int, default is -1
-        Number of devices for training. If `num_sync_bn_devices < 2`, SyncBatchNorm is disabled.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     Returns
     -------
     mxnet.gluon.HybridBlock
@@ -504,29 +534,33 @@ def yolo3_darknet53_coco(pretrained_base=True, pretrained=False, num_sync_bn_dev
     from ...data import COCODetection
     pretrained_base = False if pretrained else pretrained_base
     base_net = darknet53(
-        pretrained=pretrained_base, num_sync_bn_devices=num_sync_bn_devices, **kwargs)
+        pretrained=pretrained_base, norm_layer=norm_layer, norm_kwargs=norm_kwargs, **kwargs)
     stages = [base_net.features[:15], base_net.features[15:24], base_net.features[24:]]
     anchors = [[10, 13, 16, 30, 33, 23], [30, 61, 62, 45, 59, 119], [116, 90, 156, 198, 373, 326]]
     strides = [8, 16, 32]
     classes = COCODetection.CLASSES
     return get_yolov3(
         'darknet53', stages, [512, 256, 128], anchors, strides, classes, 'coco',
-        pretrained=pretrained, num_sync_bn_devices=num_sync_bn_devices, **kwargs)
+        pretrained=pretrained, norm_layer=norm_layer, norm_kwargs=norm_kwargs, **kwargs)
 
 def yolo3_darknet53_custom(classes, transfer=None, pretrained_base=True, pretrained=False,
-                           num_sync_bn_devices=-1, **kwargs):
+                           norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
     """YOLO3 multi-scale with darknet53 base network on custom dataset.
     Parameters
     ----------
     classes : iterable of str
         Names of custom foreground classes. `len(classes)` is the number of foreground classes.
     transfer : str or None
-        If not `None`, will try to reuse pre-trained weights from 6olo networks trained on other
+        If not `None`, will try to reuse pre-trained weights from yolo networks trained on other
         datasets.
     pretrained_base : boolean
         Whether fetch and load pretrained weights for base network.
-    num_sync_bn_devices : int, default is -1
-        Number of devices for training. If `num_sync_bn_devices < 2`, SyncBatchNorm is disabled.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     Returns
     -------
     mxnet.gluon.HybridBlock
@@ -534,7 +568,7 @@ def yolo3_darknet53_custom(classes, transfer=None, pretrained_base=True, pretrai
     """
     if transfer is None:
         base_net = darknet53(
-            pretrained=pretrained_base, num_sync_bn_devices=num_sync_bn_devices, **kwargs)
+            pretrained=pretrained_base, norm_layer=norm_layer, norm_kwargs=norm_kwargs, **kwargs)
         stages = [base_net.features[:15], base_net.features[15:24], base_net.features[24:]]
         anchors = [
             [10, 13, 16, 30, 33, 23],
@@ -543,7 +577,7 @@ def yolo3_darknet53_custom(classes, transfer=None, pretrained_base=True, pretrai
         strides = [8, 16, 32]
         net = get_yolov3(
             'darknet53', stages, [512, 256, 128], anchors, strides, classes, 'coco',
-            pretrained=pretrained, num_sync_bn_devices=num_sync_bn_devices, **kwargs)
+            pretrained=pretrained, norm_layer=norm_layer, norm_kwargs=norm_kwargs, **kwargs)
     else:
         from ...model_zoo import get_model
         net = get_model('yolo3_darknet53_' + str(transfer), pretrained=True, **kwargs)
@@ -553,7 +587,7 @@ def yolo3_darknet53_custom(classes, transfer=None, pretrained_base=True, pretrai
 def yolo3_mobilenet1_0_voc(
         pretrained_base=True,
         pretrained=False,
-        num_sync_bn_devices=-1,
+        norm_layer=BatchNorm, norm_kwargs=None,
         **kwargs):
     """YOLO3 multi-scale with mobilenet base network on VOC dataset.
     Parameters
@@ -564,8 +598,12 @@ def yolo3_mobilenet1_0_voc(
     pretrained : bool or str
         Boolean value controls whether to load the default pretrained weights for model.
         String value represents the hashtag for a certain version of pretrained weights.
-    num_sync_bn_devices : int
-        Number of devices for training. If `num_sync_bn_devices < 2`, SyncBatchNorm is disabled.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     Returns
     -------
     mxnet.gluon.HybridBlock
@@ -577,7 +615,7 @@ def yolo3_mobilenet1_0_voc(
     base_net = get_mobilenet(
         multiplier=1,
         pretrained=pretrained_base,
-        num_sync_bn_devices=num_sync_bn_devices,
+        norm_layer=norm_layer, norm_kwargs=norm_kwargs,
         **kwargs)
     stages = [base_net.features[:33],
               base_net.features[33:69],
@@ -589,14 +627,14 @@ def yolo3_mobilenet1_0_voc(
     classes = VOCDetection.CLASSES
     return get_yolov3(
         'mobilenet1_0', stages, [512, 256, 128], anchors, strides, classes, 'voc',
-        pretrained=pretrained, num_sync_bn_devices=num_sync_bn_devices, **kwargs)
+        pretrained=pretrained, norm_layer=norm_layer, norm_kwargs=norm_kwargs, **kwargs)
 
 def yolo3_mobilenet1_0_custom(
         classes,
         transfer=None,
         pretrained_base=True,
         pretrained=False,
-        num_sync_bn_devices=-1,
+        norm_layer=BatchNorm, norm_kwargs=None,
         **kwargs):
     """YOLO3 multi-scale with mobilenet base network on custom dataset.
     Parameters
@@ -608,8 +646,12 @@ def yolo3_mobilenet1_0_custom(
         datasets.
     pretrained_base : boolean
         Whether fetch and load pretrained weights for base network.
-    num_sync_bn_devices : int, default is -1
-        Number of devices for training. If `num_sync_bn_devices < 2`, SyncBatchNorm is disabled.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     Returns
     -------
     mxnet.gluon.HybridBlock
@@ -618,7 +660,7 @@ def yolo3_mobilenet1_0_custom(
     if transfer is None:
         base_net = get_mobilenet(multiplier=1,
                                  pretrained=pretrained_base,
-                                 num_sync_bn_devices=num_sync_bn_devices,
+                                 norm_layer=norm_layer, norm_kwargs=norm_kwargs,
                                  **kwargs)
         stages = [base_net.features[:33],
                   base_net.features[33:69],
@@ -630,7 +672,7 @@ def yolo3_mobilenet1_0_custom(
         strides = [8, 16, 32]
         net = get_yolov3(
             'mobilenet1_0', stages, [512, 256, 128], anchors, strides, classes, 'voc',
-            pretrained=pretrained, num_sync_bn_devices=num_sync_bn_devices, **kwargs)
+            pretrained=pretrained, norm_layer=norm_layer, norm_kwargs=norm_kwargs, **kwargs)
     else:
         from ...model_zoo import get_model
         net = get_model(
@@ -644,7 +686,7 @@ def yolo3_mobilenet1_0_custom(
 def yolo3_mobilenet1_0_coco(
         pretrained_base=True,
         pretrained=False,
-        num_sync_bn_devices=-1,
+        norm_layer=BatchNorm, norm_kwargs=None,
         **kwargs):
     """YOLO3 multi-scale with mobilenet base network on COCO dataset.
     Parameters
@@ -655,8 +697,12 @@ def yolo3_mobilenet1_0_coco(
     pretrained : bool or str
         Boolean value controls whether to load the default pretrained weights for model.
         String value represents the hashtag for a certain version of pretrained weights.
-    num_sync_bn_devices : int
-        Number of devices for training. If `num_sync_bn_devices < 2`, SyncBatchNorm is disabled.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     Returns
     -------
     mxnet.gluon.HybridBlock
@@ -668,7 +714,7 @@ def yolo3_mobilenet1_0_coco(
     base_net = get_mobilenet(
         multiplier=1,
         pretrained=pretrained_base,
-        num_sync_bn_devices=num_sync_bn_devices,
+        norm_layer=norm_layer, norm_kwargs=norm_kwargs,
         **kwargs)
     stages = [base_net.features[:33],
               base_net.features[33:69],
@@ -680,4 +726,4 @@ def yolo3_mobilenet1_0_coco(
     classes = COCODetection.CLASSES
     return get_yolov3(
         'mobilenet1_0', stages, [512, 256, 128], anchors, strides, classes, 'coco',
-        pretrained=pretrained, num_sync_bn_devices=num_sync_bn_devices, **kwargs)
+        pretrained=pretrained, norm_layer=norm_layer, norm_kwargs=norm_kwargs, **kwargs)

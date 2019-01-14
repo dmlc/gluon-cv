@@ -26,7 +26,7 @@ class DeepLabV3(SegBaseModel):
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.nn.BatchNorm`;
         for Synchronized Cross-GPU BachNormalization).
     aux : bool
-        Auxilary loss.
+        Auxiliary loss.
 
 
     Reference:
@@ -63,7 +63,7 @@ class DeepLabV3(SegBaseModel):
 
 
 class _DeepLabHead(HybridBlock):
-    def __init__(self, nclass, norm_layer=nn.BatchNorm, norm_kwargs={}, **kwargs):
+    def __init__(self, nclass, norm_layer=nn.BatchNorm, norm_kwargs=None, **kwargs):
         super(_DeepLabHead, self).__init__()
         with self.name_scope():
             self.aspp = _ASPP(2048, [12, 24, 36], norm_layer=norm_layer,
@@ -71,7 +71,7 @@ class _DeepLabHead(HybridBlock):
             self.block = nn.HybridSequential()
             self.block.add(nn.Conv2D(in_channels=256, channels=256,
                                      kernel_size=3, padding=1, use_bias=False))
-            self.block.add(norm_layer(in_channels=256, **norm_kwargs))
+            self.block.add(norm_layer(in_channels=256, **({} if norm_kwargs is None else norm_kwargs)))
             self.block.add(nn.Activation('relu'))
             self.block.add(nn.Dropout(0.1))
             self.block.add(nn.Conv2D(in_channels=256, channels=nclass,
@@ -88,7 +88,7 @@ def _ASPPConv(in_channels, out_channels, atrous_rate, norm_layer, norm_kwargs):
         block.add(nn.Conv2D(in_channels=in_channels, channels=out_channels,
                             kernel_size=3, padding=atrous_rate,
                             dilation=atrous_rate, use_bias=False))
-        block.add(norm_layer(in_channels=out_channels, **norm_kwargs))
+        block.add(norm_layer(in_channels=out_channels, **({} if norm_kwargs is None else norm_kwargs)))
         block.add(nn.Activation('relu'))
     return block
 
@@ -100,7 +100,8 @@ class _AsppPooling(nn.HybridBlock):
             self.gap.add(nn.GlobalAvgPool2D())
             self.gap.add(nn.Conv2D(in_channels=in_channels, channels=out_channels,
                                    kernel_size=1, use_bias=False))
-            self.gap.add(norm_layer(in_channels=out_channels, **norm_kwargs))
+            self.gap.add(norm_layer(in_channels=out_channels,
+                                    **({} if norm_kwargs is None else norm_kwargs)))
             self.gap.add(nn.Activation("relu"))
 
     def hybrid_forward(self, F, x):
@@ -116,7 +117,7 @@ class _ASPP(nn.HybridBlock):
         with b0.name_scope():
             b0.add(nn.Conv2D(in_channels=in_channels, channels=out_channels,
                              kernel_size=1, use_bias=False))
-            b0.add(norm_layer(in_channels=out_channels, **norm_kwargs))
+            b0.add(norm_layer(in_channels=out_channels, **({} if norm_kwargs is None else norm_kwargs)))
             b0.add(nn.Activation("relu"))
 
         rate1, rate2, rate3 = tuple(atrous_rates)
@@ -138,7 +139,8 @@ class _ASPP(nn.HybridBlock):
         with self.project.name_scope():
             self.project.add(nn.Conv2D(in_channels=5*out_channels, channels=out_channels,
                                        kernel_size=1, use_bias=False))
-            self.project.add(norm_layer(in_channels=out_channels, **norm_kwargs))
+            self.project.add(norm_layer(in_channels=out_channels,
+                                        **({} if norm_kwargs is None else norm_kwargs)))
             self.project.add(nn.Activation("relu"))
             self.project.add(nn.Dropout(0.5))
 

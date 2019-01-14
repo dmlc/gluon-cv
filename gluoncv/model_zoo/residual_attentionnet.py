@@ -16,7 +16,7 @@
 # under the License.
 
 # coding: utf-8
-# pylint: disable= unused-argument,missing-docstring
+# pylint: disable= unused-argument,missing-docstring,arguments-differ
 """ResidualAttentionNetwork, implemented in Gluon."""
 
 __all__ = ['ResidualAttentionModel', 'cifar_ResidualAttentionModel',
@@ -30,6 +30,7 @@ __modify__ = 'X.Yang'
 __modified_date__ = '18/11/10'
 
 from mxnet.gluon import nn
+from mxnet.gluon.nn import BatchNorm
 from mxnet.gluon.block import HybridBlock
 
 
@@ -62,19 +63,26 @@ class ResidualBlock(HybridBlock):
         Input channels
     stride : int
         Stride size.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
 
-    def __init__(self, channels, in_channels=None, stride=1):
+    def __init__(self, channels, in_channels=None, stride=1,
+                 norm_layer=BatchNorm, norm_kwargs=None):
         super(ResidualBlock, self).__init__()
         self.channels = channels
         self.stride = stride
         self.in_channels = in_channels if in_channels else channels
         with self.name_scope():
-            self.bn1 = nn.BatchNorm()
+            self.bn1 = norm_layer(**({} if norm_kwargs is None else norm_kwargs))
             self.conv1 = nn.Conv2D(channels // 4, 1, 1, use_bias=False)
-            self.bn2 = nn.BatchNorm()
+            self.bn2 = norm_layer(**({} if norm_kwargs is None else norm_kwargs))
             self.conv2 = nn.Conv2D(channels // 4, 3, stride, padding=1, use_bias=False)
-            self.bn3 = nn.BatchNorm()
+            self.bn3 = norm_layer(**({} if norm_kwargs is None else norm_kwargs))
             self.conv3 = nn.Conv2D(channels, 1, 1, use_bias=False)
             if stride != 1 or (self.in_channels != self.channels):
                 self.conv4 = nn.Conv2D(channels, 1, stride, use_bias=False)
@@ -103,12 +111,12 @@ def _add_block(out, block, num_layers, channels, **kwargs):
             out.add(block(channels, **kwargs))
 
 
-def _add_sigmoid_layer(out, channels):
+def _add_sigmoid_layer(out, channels, norm_layer, norm_kwargs):
     with out.name_scope():
-        out.add(nn.BatchNorm())
+        out.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
         out.add(nn.Activation('relu'))
         out.add(nn.Conv2D(channels, kernel_size=1, use_bias=False))
-        out.add(nn.BatchNorm())
+        out.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
         out.add(nn.Activation('relu'))
         out.add(nn.Conv2D(channels, kernel_size=1, use_bias=False))
         out.add(nn.Activation('sigmoid'))
@@ -134,44 +142,58 @@ class AttentionModule_stage1(nn.HybridBlock):
         Upsampling size3.
     scale : tuple, default (1, 2, 1)
         Network scale p, t, r.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
 
-    def __init__(self, channels, size1=56, size2=28, size3=14, scale=(1, 2, 1), **kwargs):
+    def __init__(self, channels, size1=56, size2=28, size3=14, scale=(1, 2, 1),
+                 norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
         super(AttentionModule_stage1, self).__init__(**kwargs)
         p, t, r = scale
         with self.name_scope():
             self.first_residual_blocks = nn.HybridSequential()
-            _add_block(self.first_residual_blocks, ResidualBlock, p, channels)
+            _add_block(self.first_residual_blocks, ResidualBlock, p, channels,
+                       norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
             self.trunk_branches = nn.HybridSequential()
-            _add_block(self.trunk_branches, ResidualBlock, t, channels)
+            _add_block(self.trunk_branches, ResidualBlock, t, channels,
+                       norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
             self.mpool1 = nn.MaxPool2D(pool_size=3, strides=2, padding=1)
             self.softmax1_blocks = nn.HybridSequential()
-            _add_block(self.softmax1_blocks, ResidualBlock, r, channels)
+            _add_block(self.softmax1_blocks, ResidualBlock, r, channels,
+                       norm_layer=norm_layer, norm_kwargs=norm_kwargs)
             self.skip1_connection_residual_block = ResidualBlock(channels)
 
             self.mpool2 = nn.MaxPool2D(pool_size=3, strides=2, padding=1)
             self.softmax2_blocks = nn.HybridSequential()
-            _add_block(self.softmax2_blocks, ResidualBlock, r, channels)
+            _add_block(self.softmax2_blocks, ResidualBlock, r, channels,
+                       norm_layer=norm_layer, norm_kwargs=norm_kwargs)
             self.skip2_connection_residual_block = ResidualBlock(channels)
 
             self.mpool3 = nn.MaxPool2D(pool_size=3, strides=2, padding=1)
 
             self.softmax3_blocks = nn.HybridSequential()
-            _add_block(self.softmax3_blocks, ResidualBlock, 2 * r, channels)
+            _add_block(self.softmax3_blocks, ResidualBlock, 2 * r, channels,
+                       norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
             self.interpolation3 = UpsamplingBilinear2d(size=size3)
             self.softmax4_blocks = nn.HybridSequential()
-            _add_block(self.softmax4_blocks, ResidualBlock, r, channels)
+            _add_block(self.softmax4_blocks, ResidualBlock, r, channels,
+                       norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
             self.interpolation2 = UpsamplingBilinear2d(size=size2)
             self.softmax5_blocks = nn.HybridSequential()
-            _add_block(self.softmax5_blocks, ResidualBlock, r, channels)
+            _add_block(self.softmax5_blocks, ResidualBlock, r, channels,
+                       norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
             self.interpolation1 = UpsamplingBilinear2d(size=size1)
             self.softmax6_blocks = nn.HybridSequential()
-            _add_sigmoid_layer(self.softmax6_blocks, channels)
+            _add_sigmoid_layer(self.softmax6_blocks, channels, norm_layer, norm_kwargs)
 
             self.last_blocks = ResidualBlock(channels)
 
@@ -226,36 +248,48 @@ class AttentionModule_stage2(nn.HybridBlock):
         Upsampling size2.
     scale : tuple, default (1, 2, 1)
         Network scale p, t, r.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
 
-    def __init__(self, channels, size1=28, size2=14, scale=(1, 2, 1), **kwargs):
+    def __init__(self, channels, size1=28, size2=14, scale=(1, 2, 1),
+                 norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
         super(AttentionModule_stage2, self).__init__(**kwargs)
         p, t, r = scale
         with self.name_scope():
             self.first_residual_blocks = nn.HybridSequential()
-            _add_block(self.first_residual_blocks, ResidualBlock, p, channels)
+            _add_block(self.first_residual_blocks, ResidualBlock, p, channels,
+                       norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
             self.trunk_branches = nn.HybridSequential()
-            _add_block(self.trunk_branches, ResidualBlock, t, channels)
+            _add_block(self.trunk_branches, ResidualBlock, t, channels,
+                       norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
             self.mpool1 = nn.MaxPool2D(pool_size=3, strides=2, padding=1)
             self.softmax1_blocks = nn.HybridSequential()
-            _add_block(self.softmax1_blocks, ResidualBlock, r, channels)
+            _add_block(self.softmax1_blocks, ResidualBlock, r, channels,
+                       norm_layer=norm_layer, norm_kwargs=norm_kwargs)
             self.skip1_connection_residual_block = ResidualBlock(channels)
 
             self.mpool2 = nn.MaxPool2D(pool_size=3, strides=2, padding=1)
 
             self.softmax2_blocks = nn.HybridSequential()
-            _add_block(self.softmax2_blocks, ResidualBlock, 2 * r, channels)
+            _add_block(self.softmax2_blocks, ResidualBlock, 2 * r, channels,
+                       norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
             self.interpolation2 = UpsamplingBilinear2d(size=size2)
             self.softmax3_blocks = nn.HybridSequential()
-            _add_block(self.softmax3_blocks, ResidualBlock, r, channels)
+            _add_block(self.softmax3_blocks, ResidualBlock, r, channels,
+                       norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
             self.interpolation1 = UpsamplingBilinear2d(size=size1)
 
             self.softmax4_blocks = nn.HybridSequential()
-            _add_sigmoid_layer(self.softmax4_blocks, channels)
+            _add_sigmoid_layer(self.softmax4_blocks, channels, norm_layer, norm_kwargs)
 
             self.last_blocks = ResidualBlock(channels)
 
@@ -294,27 +328,37 @@ class AttentionModule_stage3(nn.HybridBlock):
         Upsampling size1.
     scale : tuple, default (1, 2, 1)
         Network scale p, t, r.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
 
-    def __init__(self, channels, size1=14, scale=(1, 2, 1), **kwargs):
+    def __init__(self, channels, size1=14, scale=(1, 2, 1),
+                 norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
         super(AttentionModule_stage3, self).__init__(**kwargs)
         p, t, r = scale
         with self.name_scope():
             self.first_residual_blocks = nn.HybridSequential()
-            _add_block(self.first_residual_blocks, ResidualBlock, p, channels)
+            _add_block(self.first_residual_blocks, ResidualBlock, p, channels,
+                       norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
             self.trunk_branches = nn.HybridSequential()
-            _add_block(self.trunk_branches, ResidualBlock, t, channels)
+            _add_block(self.trunk_branches, ResidualBlock, t, channels,
+                       norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
             self.mpool1 = nn.MaxPool2D(pool_size=3, strides=2, padding=1)
 
             self.softmax1_blocks = nn.HybridSequential()
-            _add_block(self.softmax1_blocks, ResidualBlock, 2 * r, channels)
+            _add_block(self.softmax1_blocks, ResidualBlock, 2 * r, channels,
+                       norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
             self.interpolation1 = UpsamplingBilinear2d(size=size1)
 
             self.softmax2_blocks = nn.HybridSequential()
-            _add_sigmoid_layer(self.softmax2_blocks, channels)
+            _add_sigmoid_layer(self.softmax2_blocks, channels, norm_layer, norm_kwargs)
 
             self.last_blocks = ResidualBlock(channels)
 
@@ -343,23 +387,32 @@ class AttentionModule_stage4(nn.HybridBlock):
         Output channels.
     scale : tuple, default (1, 2, 1)
         Network scale p, t, r.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
 
-    def __init__(self, channels, scale=(1, 2, 1), **kwargs):
+    def __init__(self, channels, scale=(1, 2, 1), norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
         super(AttentionModule_stage4, self).__init__(**kwargs)
         p, t, r = scale
         with self.name_scope():
             self.first_residual_blocks = nn.HybridSequential()
-            _add_block(self.first_residual_blocks, ResidualBlock, p, channels)
+            _add_block(self.first_residual_blocks, ResidualBlock, p, channels,
+                       norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
             self.trunk_branches = nn.HybridSequential()
-            _add_block(self.trunk_branches, ResidualBlock, t, channels)
+            _add_block(self.trunk_branches, ResidualBlock, t, channels,
+                       norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
             self.softmax1_blocks = nn.HybridSequential()
-            _add_block(self.softmax1_blocks, ResidualBlock, 2 * r, channels)
+            _add_block(self.softmax1_blocks, ResidualBlock, 2 * r, channels,
+                       norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
             self.softmax2_blocks = nn.HybridSequential()
-            _add_sigmoid_layer(self.softmax2_blocks, channels)
+            _add_sigmoid_layer(self.softmax2_blocks, channels, norm_layer, norm_kwargs)
 
             self.last_blocks = ResidualBlock(channels)
 
@@ -389,9 +442,15 @@ class ResidualAttentionModel(nn.HybridBlock):
         And normally m is a tuple of (m-1, m, m+1) except m==1 as (1, 1, 1).
     classes : int, default 1000
         Number of classification classes.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
 
-    def __init__(self, scale, m, classes=1000, **kwargs):
+    def __init__(self, scale, m, classes=1000, norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
         super(ResidualAttentionModel, self).__init__(**kwargs)
         assert len(scale) == 3 and len(m) == 3
         m1, m2, m3 = m
@@ -399,24 +458,27 @@ class ResidualAttentionModel(nn.HybridBlock):
             self.conv1 = nn.HybridSequential()
             with self.conv1.name_scope():
                 self.conv1.add(nn.Conv2D(64, kernel_size=7, strides=2, padding=3, use_bias=False))
-                self.conv1.add(nn.BatchNorm())
+                self.conv1.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
                 self.conv1.add(nn.Activation('relu'))
             self.mpool1 = nn.MaxPool2D(pool_size=3, strides=2, padding=1)
             self.residual_block1 = ResidualBlock(256, in_channels=64)
             self.attention_module1 = nn.HybridSequential()
-            _add_block(self.attention_module1, AttentionModule_stage1, m1, 256, scale=scale)
+            _add_block(self.attention_module1, AttentionModule_stage1, m1, 256, scale=scale,
+                       norm_layer=norm_layer, norm_kwargs=norm_kwargs)
             self.residual_block2 = ResidualBlock(512, in_channels=256, stride=2)
             self.attention_module2 = nn.HybridSequential()
-            _add_block(self.attention_module2, AttentionModule_stage2, m2, 512, scale=scale)
+            _add_block(self.attention_module2, AttentionModule_stage2, m2, 512, scale=scale,
+                       norm_layer=norm_layer, norm_kwargs=norm_kwargs)
             self.residual_block3 = ResidualBlock(1024, in_channels=512, stride=2)
             self.attention_module3 = nn.HybridSequential()
-            _add_block(self.attention_module3, AttentionModule_stage3, m3, 1024, scale=scale)
+            _add_block(self.attention_module3, AttentionModule_stage3, m3, 1024, scale=scale,
+                       norm_layer=norm_layer, norm_kwargs=norm_kwargs)
             self.residual_block4 = ResidualBlock(2048, in_channels=1024, stride=2)
             self.residual_block5 = ResidualBlock(2048)
             self.residual_block6 = ResidualBlock(2048)
             self.mpool2 = nn.HybridSequential()
             with self.mpool2.name_scope():
-                self.mpool2.add(nn.BatchNorm())
+                self.mpool2.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
                 self.mpool2.add(nn.Activation('relu'))
                 self.mpool2.add(nn.AvgPool2D(pool_size=7, strides=1))
             self.fc = nn.Conv2D(classes, kernel_size=1)
@@ -454,9 +516,15 @@ class cifar_ResidualAttentionModel(nn.HybridBlock):
         And normally m is a tuple of (m-1, m, m+1) except m==1 as (1, 1, 1).
     classes : int, default 10
         Number of classification classes.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
 
-    def __init__(self, scale, m, classes=10, **kwargs):
+    def __init__(self, scale, m, classes=10, norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
         super(cifar_ResidualAttentionModel, self).__init__(**kwargs)
         assert len(scale) == 3 and len(m) == 3
         m1, m2, m3 = m
@@ -464,7 +532,7 @@ class cifar_ResidualAttentionModel(nn.HybridBlock):
             self.conv1 = nn.HybridSequential()
             with self.conv1.name_scope():
                 self.conv1.add(nn.Conv2D(32, kernel_size=3, strides=1, padding=1, use_bias=False))
-                self.conv1.add(nn.BatchNorm())
+                self.conv1.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
                 self.conv1.add(nn.Activation('relu'))
             # 32 x 32
             # self.mpool1 = nn.MaxPool2D(pool_size=2, strides=2, padding=0)
@@ -472,23 +540,25 @@ class cifar_ResidualAttentionModel(nn.HybridBlock):
             self.residual_block1 = ResidualBlock(128, in_channels=32)
             self.attention_module1 = nn.HybridSequential()
             _add_block(self.attention_module1, AttentionModule_stage2,
-                       m1, 128, size1=32, size2=16, scale=scale)
+                       m1, 128, size1=32, size2=16, scale=scale,
+                       norm_layer=norm_layer, norm_kwargs=norm_kwargs)
             self.residual_block2 = ResidualBlock(256, in_channels=128, stride=2)
             self.attention_module2 = nn.HybridSequential()
             _add_block(self.attention_module2, AttentionModule_stage3,
-                       m2, 256, size1=16, scale=scale)
+                       m2, 256, size1=16, scale=scale,
+                       norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
             self.residual_block3 = ResidualBlock(512, in_channels=256, stride=2)
             self.attention_module3 = nn.HybridSequential()
             _add_block(self.attention_module3, AttentionModule_stage4,
-                       m3, 512, scale=scale)
+                       m3, 512, scale=scale, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
             self.residual_block4 = ResidualBlock(1024, in_channels=512)
             self.residual_block5 = ResidualBlock(1024)
             self.residual_block6 = ResidualBlock(1024)
             self.mpool2 = nn.HybridSequential()
             with self.mpool2.name_scope():
-                self.mpool2.add(nn.BatchNorm())
+                self.mpool2.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
                 self.mpool2.add(nn.Activation('relu'))
                 self.mpool2.add(nn.AvgPool2D(pool_size=8, strides=1))
             self.fc = nn.Conv2D(classes, kernel_size=1)
@@ -537,6 +607,12 @@ def get_residualAttentionModel(input_size, num_layers, pretrained=None, ctx=None
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
     assert input_size in (32, 224)
     assert num_layers in attention_spec, \
@@ -570,6 +646,12 @@ def residualattentionnet56(**kwargs):
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
 
     return get_residualAttentionModel(224, 56, **kwargs)
@@ -592,6 +674,12 @@ def residualattentionnet92(**kwargs):
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
 
     return get_residualAttentionModel(224, 92, **kwargs)
@@ -614,6 +702,12 @@ def residualattentionnet128(**kwargs):
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
 
     return get_residualAttentionModel(224, 128, **kwargs)
@@ -636,6 +730,12 @@ def residualattentionnet164(**kwargs):
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
 
     return get_residualAttentionModel(224, 164, **kwargs)
@@ -658,6 +758,12 @@ def residualattentionnet200(**kwargs):
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
 
     return get_residualAttentionModel(224, 200, **kwargs)
@@ -680,6 +786,12 @@ def residualattentionnet236(**kwargs):
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
 
     return get_residualAttentionModel(224, 236, **kwargs)
@@ -702,6 +814,12 @@ def residualattentionnet452(**kwargs):
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
 
     return get_residualAttentionModel(224, 452, **kwargs)
@@ -724,6 +842,12 @@ def cifar_residualattentionnet56(**kwargs):
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
 
     return get_residualAttentionModel(32, 56, **kwargs)
@@ -746,6 +870,12 @@ def cifar_residualattentionnet92(**kwargs):
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
 
     return get_residualAttentionModel(32, 92, **kwargs)
@@ -768,6 +898,12 @@ def cifar_residualattentionnet452(**kwargs):
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
 
     return get_residualAttentionModel(32, 452, **kwargs)
