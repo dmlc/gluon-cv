@@ -34,7 +34,7 @@ stage("Unit Test") {
         # from https://stackoverflow.com/questions/19548957/can-i-force-pip-to-reinstall-the-current-version
         pip install --upgrade --force-reinstall .
         env
-        export LD_LIBRARY_PATH=/usr/local/cuda-9.0/lib64
+        export LD_LIBRARY_PATH=/usr/local/cuda-9.2/lib64
         export MPLBACKEND=Agg
         nosetests --with-timer --timer-ok 5 --timer-warning 20 -x --with-coverage --cover-package gluoncv -v tests/unittests
         """
@@ -58,7 +58,7 @@ stage("Unit Test") {
         # from https://stackoverflow.com/questions/19548957/can-i-force-pip-to-reinstall-the-current-version
         pip install --upgrade --force-reinstall .
         env
-        export LD_LIBRARY_PATH=/usr/local/cuda-9.0/lib64
+        export LD_LIBRARY_PATH=/usr/local/cuda-9.2/lib64
         export MPLBACKEND=Agg
         nosetests --with-timer --timer-ok 5 --timer-warning 20 --with-coverage --cover-package gluoncv -v tests/unittests
         rm -f coverage.svg
@@ -91,7 +91,7 @@ stage("Build Docs") {
       conda activate gluon_vision_docs
       export PYTHONPATH=\${PWD}
       env
-      export LD_LIBRARY_PATH=/usr/local/cuda-9.0/lib64
+      export LD_LIBRARY_PATH=/usr/local/cuda-9.2/lib64
       git submodule update --init --recursive
       git clean -fx
       cd docs && make clean && make html
