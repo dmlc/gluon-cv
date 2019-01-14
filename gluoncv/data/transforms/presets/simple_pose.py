@@ -63,7 +63,7 @@ class SimplePoseDefaultTrainTransform(object):
             src, fliped = random_flip_image(src, px=0.5, py=0)
             if fliped[0]:
                 joints = flip_joints_3d(joints_3d, src.shape[1], self._joint_pairs)
-            center[0] = src.shape[1] - center[0] - 1
+                center[0] = src.shape[1] - center[0] - 1
 
         h, w = self._image_size
         trans = get_affine_transform(center, scale, r, [w, h])

@@ -47,7 +47,8 @@ num_joints = 17
 
 num_gpus = opt.num_gpus
 batch_size *= max(1, num_gpus)
-context = [mx.gpu(i) for i in range(num_gpus)] if num_gpus > 0 else [mx.cpu()]
+# context = [mx.gpu(i) for i in range(num_gpus)] if num_gpus > 0 else [mx.cpu()]
+context = [mx.gpu(i) for i in [4,5,6,7]]
 num_workers = opt.num_workers
 
 def get_data_loader(data_dir, batch_size, num_workers, input_size):

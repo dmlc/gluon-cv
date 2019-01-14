@@ -86,7 +86,7 @@ logger.addHandler(streamhandler)
 logger.info(opt)
 
 batch_size = opt.batch_size
-num_joints = 17
+num_joints = opt.num_joints
 
 num_gpus = opt.num_gpus
 batch_size *= max(1, num_gpus)
@@ -97,8 +97,7 @@ model_name = opt.model
 
 kwargs = {'ctx': context, 'num_joints': num_joints,
           'pretrained': opt.use_pretrained,
-          # 'pretrained_base': opt.use_pretrained_base,
-          'pretrained_base': 'e263a986',
+          'pretrained_base': opt.use_pretrained_base,
           'pretrained_ctx': context}
 
 net = get_model(model_name, **kwargs)
@@ -148,8 +147,6 @@ lr_scheduler = LRScheduler(mode=opt.lr_mode, baselr=opt.lr,
                            step=lr_decay_epoch, step_factor=opt.lr_decay, power=2,
                            warmup_epochs=opt.warmup_epochs)
 
-# optimizer = 'sgd'
-# optimizer_params = {'wd': opt.wd, 'momentum': 0.9, 'lr_scheduler': lr_scheduler}
 optimizer = 'adam'
 optimizer_params = {'wd': opt.wd, 'lr_scheduler': lr_scheduler}
 if opt.dtype != 'float32':
@@ -171,12 +168,6 @@ def train(ctx):
         net.final_layer.initialize(ctx=ctx)
     else:
         net.initialize(mx.init.MSRAPrelu(), ctx=ctx)
-    '''
-    # net.cast('float16')
-    net.load_parameters('simple_pose_resnet50_v1b_converted.params',
-                        ctx=ctx)
-    # net.cast('float32')
-    '''
 
     if opt.no_wd:
         for k, v in net.collect_params('.*beta|.*gamma|.*bias').items():
@@ -202,13 +193,9 @@ def train(ctx):
             data, label, weight, imgid = train_batch_fn(batch, ctx)
 
             with ag.record():
-                outputs = [net(X) for X in data]
-                loss = [L(yhat, y, w) for yhat, y, w in zip(outputs, label, weight)]
-                '''
                 outputs = [net(X.astype(opt.dtype, copy=False)) for X in data]
                 loss = [nd.cast(L(nd.cast(yhat, 'float32'), y, w), opt.dtype)
                         for yhat, y, w in zip(outputs, label, weight)]
-                '''
             for l in loss:
                 l.backward()
             lr_scheduler.update(i, epoch)
