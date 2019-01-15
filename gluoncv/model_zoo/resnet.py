@@ -72,7 +72,6 @@ class BasicBlockV1(HybridBlock):
     def __init__(self, channels, stride, downsample=False, in_channels=0,
                  last_gamma=False, use_se=False, norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
         super(BasicBlockV1, self).__init__(**kwargs)
-        print(norm_layer, norm_kwargs)
         self.body = nn.HybridSequential(prefix='')
         self.body.add(_conv3x3(channels, stride, in_channels))
         self.body.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
