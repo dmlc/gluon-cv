@@ -36,7 +36,7 @@ stage("Unit Test") {
         env
         export LD_LIBRARY_PATH=/usr/local/cuda-9.2/lib64
         export MPLBACKEND=Agg
-        export MXNET_MKLDNN_DEBUG=1
+        # export MXNET_MKLDNN_DEBUG=1
         export MKLDNN_VERBOSE=1
         nosetests --with-timer --timer-ok 5 --timer-warning 20 -x --with-coverage --cover-package gluoncv -v tests/unittests
         """
@@ -62,7 +62,7 @@ stage("Unit Test") {
         env
         export LD_LIBRARY_PATH=/usr/local/cuda-9.2/lib64
         export MPLBACKEND=Agg
-        export MXNET_MKLDNN_DEBUG=1
+        # export MXNET_MKLDNN_DEBUG=1
         export MKLDNN_VERBOSE=1
         nosetests --with-timer --timer-ok 5 --timer-warning 20 --with-coverage --cover-package gluoncv -v tests/unittests
         rm -f coverage.svg
