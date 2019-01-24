@@ -167,11 +167,11 @@ for ib, batch in enumerate(train_loader):
 # behind YOLO [YOLOv3]_.
 #
 # `Gluon Model Zoo <../../model_zoo/index.html>`__ has a few built-in YOLO networks, more on the way.
-# You can load your favorate one with one simple line of code:
+# You can load your favorite one with one simple line of code:
 #
 # .. hint::
 #
-#    To avoid downloading mdoel in this tutorial, we set `pretrained_base=False`,
+#    To avoid downloading models in this tutorial, we set `pretrained_base=False`,
 #    in practice we usually want to load pre-trained imagenet models by setting
 #    `pretrained_base=True`.
 from gluoncv import model_zoo

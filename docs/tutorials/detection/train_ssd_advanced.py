@@ -114,7 +114,7 @@ print('sample-wise norm loc loss:', sample_loc_loss * rescale_loc)
 # Which one is better?
 # At first glance, it is hard to say which one is theoretically better
 # because batch-wise norm ensures loss is well normalized by global statistics
-# while sample-wise norm ensures gradients won't explode in some extreame cases where
+# while sample-wise norm ensures gradients won't explode in some extreme cases where
 # there are hundreds of objects in a single image.
 # In such case it would cause other samples in the same
 # batch to be suppressed by this unusually large norm.
@@ -132,7 +132,7 @@ print('sample-wise norm loc loss:', sample_loc_loss * rescale_loc)
 # to extend the cascades of feature maps.
 #
 # There are also convolutional
-# predictors appened to each output feature map, serving as class predictors and bounding
+# predictors appended to each output feature map, serving as class predictors and bounding
 # box offsets predictors.
 #
 # For these added layers, we must initialize them before training.
@@ -196,4 +196,4 @@ for k, v in zip(['bg', 'apple', 'orange', 'person', 'dog', 'cat'], cls_prob.asnu
 #
 # .. hint::
 #   Checkout :py:meth:`gluoncv.nn.coder.MultiClassDecoder` and
-#   :py:meth:`gluoncv.nn.coder.MultiPerClassDecoder` for implementions of method 1 and 2, respectively.
+#   :py:meth:`gluoncv.nn.coder.MultiPerClassDecoder` for implementations of method 1 and 2, respectively.

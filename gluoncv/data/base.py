@@ -17,12 +17,12 @@ class VisionDataset(dataset.Dataset):
     Parameters
     ----------
     root : str
-        The root path of xxx.names, by defaut is '~/.mxnet/datasets/foo', where
+        The root path of xxx.names, by default is '~/.mxnet/datasets/foo', where
         `foo` is the name of the dataset.
     """
     def __init__(self, root):
         if not os.path.isdir(os.path.expanduser(root)):
-            helper_msg = "{} is not a valid dir. Did you forget to initalize \
+            helper_msg = "{} is not a valid dir. Did you forget to initialize \
                          datasets described in: \
                          `http://gluon-cv.mxnet.io/build/examples_datasets/index.html`? \
                          You need to initialize each dataset only once.".format(root)

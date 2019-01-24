@@ -160,7 +160,7 @@ for ib, batch in enumerate(train_loader):
 # region-aware pooling layers, class predictors and bounding box offset predictors.
 #
 # `Gluon Model Zoo <../../model_zoo/index.html>`__ has a few built-in Faster-RCNN networks, more on the way.
-# You can load your favorate one with one simple line of code:
+# You can load your favorite one with one simple line of code:
 #
 # .. hint::
 #
@@ -195,7 +195,7 @@ with autograd.train_mode():
 # In training mode, Faster-RCNN returns a lot of intermediate values, which we require to train in an end-to-end flavor,
 # where ``cls_preds`` are the class predictions prior to softmax,
 # ``box_preds`` are bounding box offsets with one-to-one correspondence to proposals
-# ``roi`` is the proposal candidates, ``samples`` and ``matches`` are the samling/matching results of RPN anchors.
+# ``roi`` is the proposal candidates, ``samples`` and ``matches`` are the sampling/matching results of RPN anchors.
 # ``rpn_score`` and ``rpn_box`` are the raw outputs from RPN's convolutional layers.
 # and ``anchors`` are absolute coordinates of corresponding anchors boxes.
 

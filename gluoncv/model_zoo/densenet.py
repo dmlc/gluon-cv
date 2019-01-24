@@ -23,22 +23,24 @@ __all__ = ['DenseNet', 'densenet121', 'densenet161', 'densenet169', 'densenet201
 from mxnet.context import cpu
 from mxnet.gluon.block import HybridBlock
 from mxnet.gluon import nn
+from mxnet.gluon.nn import BatchNorm
 from mxnet.gluon.contrib.nn import HybridConcurrent, Identity
 
 # Helpers
-def _make_dense_block(num_layers, bn_size, growth_rate, dropout, stage_index):
+def _make_dense_block(num_layers, bn_size, growth_rate, dropout, stage_index,
+                      norm_layer, norm_kwargs):
     out = nn.HybridSequential(prefix='stage%d_'%stage_index)
     with out.name_scope():
         for _ in range(num_layers):
-            out.add(_make_dense_layer(growth_rate, bn_size, dropout))
+            out.add(_make_dense_layer(growth_rate, bn_size, dropout, norm_layer, norm_kwargs))
     return out
 
-def _make_dense_layer(growth_rate, bn_size, dropout):
+def _make_dense_layer(growth_rate, bn_size, dropout, norm_layer, norm_kwargs):
     new_features = nn.HybridSequential(prefix='')
-    new_features.add(nn.BatchNorm())
+    new_features.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
     new_features.add(nn.Activation('relu'))
     new_features.add(nn.Conv2D(bn_size * growth_rate, kernel_size=1, use_bias=False))
-    new_features.add(nn.BatchNorm())
+    new_features.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
     new_features.add(nn.Activation('relu'))
     new_features.add(nn.Conv2D(growth_rate, kernel_size=3, padding=1, use_bias=False))
     if dropout:
@@ -50,9 +52,9 @@ def _make_dense_layer(growth_rate, bn_size, dropout):
 
     return out
 
-def _make_transition(num_output_features):
+def _make_transition(num_output_features, norm_layer, norm_kwargs):
     out = nn.HybridSequential(prefix='')
-    out.add(nn.BatchNorm())
+    out.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
     out.add(nn.Activation('relu'))
     out.add(nn.Conv2D(num_output_features, kernel_size=1, use_bias=False))
     out.add(nn.AvgPool2D(pool_size=2, strides=2))
@@ -78,27 +80,34 @@ class DenseNet(HybridBlock):
         Rate of dropout after each dense layer.
     classes : int, default 1000
         Number of classification classes.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
     def __init__(self, num_init_features, growth_rate, block_config,
-                 bn_size=4, dropout=0, classes=1000, **kwargs):
-
+                 bn_size=4, dropout=0, classes=1000,
+                 norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
         super(DenseNet, self).__init__(**kwargs)
         with self.name_scope():
             self.features = nn.HybridSequential(prefix='')
             self.features.add(nn.Conv2D(num_init_features, kernel_size=7,
                                         strides=2, padding=3, use_bias=False))
-            self.features.add(nn.BatchNorm())
+            self.features.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
             self.features.add(nn.Activation('relu'))
             self.features.add(nn.MaxPool2D(pool_size=3, strides=2, padding=1))
             # Add dense blocks
             num_features = num_init_features
             for i, num_layers in enumerate(block_config):
-                self.features.add(_make_dense_block(num_layers, bn_size, growth_rate, dropout, i+1))
+                self.features.add(_make_dense_block(
+                    num_layers, bn_size, growth_rate, dropout, i+1, norm_layer, norm_kwargs))
                 num_features = num_features + num_layers * growth_rate
                 if i != len(block_config) - 1:
-                    self.features.add(_make_transition(num_features // 2))
+                    self.features.add(_make_transition(num_features // 2, norm_layer, norm_kwargs))
                     num_features = num_features // 2
-            self.features.add(nn.BatchNorm())
+            self.features.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
             self.features.add(nn.Activation('relu'))
             self.features.add(nn.AvgPool2D(pool_size=7))
             self.features.add(nn.Flatten())
@@ -135,6 +144,12 @@ def get_densenet(num_layers, pretrained=False, ctx=cpu(),
         The context in which to load the pretrained weights.
     root : str, default $MXNET_HOME/models
         Location for keeping the model parameters.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
     num_init_features, growth_rate, block_config = densenet_spec[num_layers]
     net = DenseNet(num_init_features, growth_rate, block_config, **kwargs)
@@ -162,6 +177,12 @@ def densenet121(**kwargs):
         The context in which to load the pretrained weights.
     root : str, default '$MXNET_HOME/models'
         Location for keeping the model parameters.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
     return get_densenet(121, **kwargs)
 
@@ -178,6 +199,12 @@ def densenet161(**kwargs):
         The context in which to load the pretrained weights.
     root : str, default '$MXNET_HOME/models'
         Location for keeping the model parameters.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
     return get_densenet(161, **kwargs)
 
@@ -194,6 +221,12 @@ def densenet169(**kwargs):
         The context in which to load the pretrained weights.
     root : str, default '$MXNET_HOME/models'
         Location for keeping the model parameters.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
     return get_densenet(169, **kwargs)
 
@@ -210,5 +243,11 @@ def densenet201(**kwargs):
         The context in which to load the pretrained weights.
     root : str, default '$MXNET_HOME/models'
         Location for keeping the model parameters.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
     return get_densenet(201, **kwargs)

@@ -21,7 +21,7 @@ class COCODetection(VisionDataset):
     splits : list of str, default ['instances_val2017']
         Json annotations name.
         Candidates can be: instances_val2017, instances_train2017.
-    transform : callable, defaut None
+    transform : callable, default None
         A function that takes data and label and transforms them. Refer to
         :doc:`./transforms` for examples.
 

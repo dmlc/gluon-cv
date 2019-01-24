@@ -11,7 +11,7 @@ __all__ = ['FocalLoss', 'SSDMultiBoxLoss', 'YOLOV3Loss',
            'MixSoftmaxCrossEntropyLoss', 'MixSoftmaxCrossEntropyOHEMLoss']
 
 class FocalLoss(gluon.loss.Loss):
-    """Focal Loss for inbalanced classification.
+    """Focal Loss for imbalanced classification.
     Focal loss was described in https://arxiv.org/abs/1708.02002
 
     Parameters
@@ -52,7 +52,7 @@ class FocalLoss(gluon.loss.Loss):
           and you want to weigh each sample in the batch separately,
           sample_weight should have shape (64, 1).
     Outputs:
-        - **loss**: loss tensor with shape (batch_size,). Dimenions other than
+        - **loss**: loss tensor with shape (batch_size,). Dimensions other than
           batch_axis are averaged out.
     """
     def __init__(self, axis=-1, alpha=0.25, gamma=2, sparse_label=True,

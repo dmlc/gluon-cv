@@ -2,6 +2,7 @@
 import argparse
 import os
 import logging
+import warnings
 import time
 import numpy as np
 import mxnet as mx
@@ -47,7 +48,7 @@ def parse_args():
     parser.add_argument('--lr-decay', type=float, default=0.1,
                         help='decay rate of learning rate. default is 0.1.')
     parser.add_argument('--lr-decay-epoch', type=str, default='160,200',
-                        help='epoches at which learning rate decays. default is 160,200.')
+                        help='epochs at which learning rate decays. default is 160,200.')
     parser.add_argument('--momentum', type=float, default=0.9,
                         help='SGD momentum, default is 0.9')
     parser.add_argument('--wd', type=float, default=0.0005,
@@ -63,6 +64,8 @@ def parse_args():
                              'training time if validation is slow.')
     parser.add_argument('--seed', type=int, default=233,
                         help='Random seed to be fixed.')
+    parser.add_argument('--syncbn', action='store_true',
+                        help='Use synchronize BN across devices.')
     args = parser.parse_args()
     return args
 
@@ -235,19 +238,26 @@ if __name__ == '__main__':
     # network
     net_name = '_'.join(('ssd', str(args.data_shape), args.network, args.dataset))
     args.save_prefix += net_name
-    net = get_model(net_name, pretrained_base=True)
+    if args.syncbn and len(ctx) > 1:
+        net = get_model(net_name, pretrained_base=True, norm_layer=gluon.contrib.nn.SyncBatchNorm,
+                        norm_kwargs={'num_devices': len(ctx)})
+        async_net = get_model(net_name, pretrained_base=False)  # used by cpu worker
+    else:
+        net = get_model(net_name, pretrained_base=True, norm_layer=gluon.nn.BatchNorm)
+        async_net = net
     if args.resume.strip():
         net.load_parameters(args.resume.strip())
+        async_net.load_parameters(args.resume.strip())
     else:
-        for param in net.collect_params().values():
-            if param._data is not None:
-                continue
-            param.initialize()
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            net.initialize()
+            async_net.initialize()
 
     # training data
     train_dataset, val_dataset, eval_metric = get_dataset(args.dataset, args)
     train_data, val_data = get_dataloader(
-        net, train_dataset, val_dataset, args.data_shape, args.batch_size, args.num_workers)
+        async_net, train_dataset, val_dataset, args.data_shape, args.batch_size, args.num_workers)
 
     # training
     train(net, train_data, val_data, eval_metric, ctx, args)

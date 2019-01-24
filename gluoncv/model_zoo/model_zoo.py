@@ -26,6 +26,7 @@ from .vgg import *
 from .mobilenet import *
 from .residual_attentionnet import *
 
+
 __all__ = ['get_model', 'get_model_list']
 
 _models = {
@@ -153,6 +154,9 @@ _models = {
     'yolo3_darknet53_coco': yolo3_darknet53_coco,
     'yolo3_darknet53_voc': yolo3_darknet53_voc,
     'yolo3_darknet53_custom': yolo3_darknet53_custom,
+    'yolo3_mobilenet1.0_coco': yolo3_mobilenet1_0_coco,
+    'yolo3_mobilenet1.0_voc': yolo3_mobilenet1_0_voc,
+    'yolo3_mobilenet1.0_custom': yolo3_mobilenet1_0_custom,
     'nasnet_4_1056': nasnet_4_1056,
     'nasnet_5_1538': nasnet_5_1538,
     'nasnet_7_1920': nasnet_7_1920,

@@ -11,7 +11,7 @@ dependencies:
   - scipy
   - pip=9.0.3
   - pip:
-    - mxnet-cu90==1.4.0b20181202
+    - mxnet-cu92mkl==1.5.0b20190115
     - coverage-badge
     - awscli
     - nose-timer

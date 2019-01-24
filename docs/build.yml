@@ -9,7 +9,7 @@ dependencies:
 - pip:
   - https://github.com/mli/mx-theme/tarball/master
   - sphinx-gallery
-  - mxnet-cu90==1.4.0b20181202
+  - mxnet-cu92mkl==1.5.0b20190115
   # - guzzle_sphinx_theme
   - recommonmark
   - Image
