@@ -68,21 +68,21 @@ class RPN(gluon.HybridBlock):
         self._train_post_nms = max(1, train_post_nms)
         self._test_pre_nms = max(1, test_pre_nms)
         self._test_post_nms = max(1, test_post_nms)
-        self.anchor_generators = nn.HybridSequential()
+        self.anchor_generator = nn.HybridSequential()
         num_stages = len(scales)
         with self.name_scope():
             if self._multi_level:
                 asz = alloc_size
                 for _, st, s in zip(range(num_stages), strides, scales):
-                    anchor_generator = RPNAnchorGenerator(st, base_size, ratios, s, asz)
-                    self.anchor_generators.add(anchor_generator)
+                    stage_anchor_generator = RPNAnchorGenerator(st, base_size, ratios, s, asz)
+                    self.anchor_generator.add(stage_anchor_generator)
                     asz = max(asz[0] // 2, 16)
                     asz = (asz, asz)  # For FPN, We use large anchor presets
             else:
-                anchor_generator = RPNAnchorGenerator(
+                stage_anchor_generator = RPNAnchorGenerator(
                     strides, base_size, ratios, scales, alloc_size)
-                self.anchor_generators.add(anchor_generator)
-            anchor_depth = self.anchor_generators[0].num_depth
+                self.anchor_generator.add(stage_anchor_generator)
+            anchor_depth = self.anchor_generator[0].num_depth
             self.region_proposer = RPNProposal(clip, min_size, stds=(1., 1., 1., 1.))
             self.rpn_head = RPNHead(channels, anchor_depth)
 
@@ -118,7 +118,7 @@ class RPN(gluon.HybridBlock):
         if self._multi_level:
             # Generate anchors in [P2, P3, P4, P5, P6] order
             for i, feat in enumerate(x):
-                ag = self.anchor_generators[i]
+                ag = self.anchor_generator[i]
                 anchor = ag(feat)
                 rpn_score, rpn_box, raw_rpn_score, raw_rpn_box = \
                     self.rpn_head(feat)
@@ -133,7 +133,7 @@ class RPN(gluon.HybridBlock):
             raw_rpn_boxes = F.concat(*raw_rpn_boxes, dim=1)
         else:
             x = x[0]
-            anchors = self.anchor_generators[0](x)
+            anchors = self.anchor_generator[0](x)
             rpn_scores, rpn_boxes, raw_rpn_scores, raw_rpn_boxes = self.rpn_head(x)
             rpn_pre_nms_proposals = self.region_proposer(
                 anchors, rpn_scores, rpn_boxes, img)

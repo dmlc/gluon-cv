@@ -147,7 +147,7 @@ class FasterRCNNDefaultTrainTransform(object):
 
         # use fake data to generate fixed anchors for target generation
         # in case network has reset_ctx to gpu
-        anchor_generator = copy.deepcopy(net.rpn.anchor_generators)
+        anchor_generator = copy.deepcopy(net.rpn.anchor_generator)
         anchor_generator.collect_params().reset_ctx(None)
         anchors = anchor_generator(
             mx.nd.zeros((1, 3, ashape, ashape))).reshape((1, 1, ashape, ashape, -1))
@@ -281,7 +281,7 @@ class MaskRCNNDefaultTrainTransform(object):
         # use fake data to generate fixed anchors for target generation
         ashape = 128
         # in case network has reset_ctx to gpu
-        anchor_generator = copy.deepcopy(net.rpn.anchor_generators)
+        anchor_generator = copy.deepcopy(net.rpn.anchor_generator)
         anchor_generator.collect_params().reset_ctx(None)
         anchors = anchor_generator(
             mx.nd.zeros((1, 3, ashape, ashape))).reshape((1, 1, ashape, ashape, -1))
@@ -420,9 +420,9 @@ class FPNDefaultTrainTransform(object):
         ashape = ashape
         anchors = []  # [P2, P3, P4, P5]
         # in case network has reset_ctx to gpu
-        anchor_generators = copy.deepcopy(net.rpn.anchor_generators)
-        anchor_generators.collect_params().reset_ctx(None)
-        for ag in anchor_generators:
+        anchor_generator = copy.deepcopy(net.rpn.anchor_generator)
+        anchor_generator.collect_params().reset_ctx(None)
+        for ag in anchor_generator:
             anchor = ag(mx.nd.zeros((1, 3, ashape, ashape))).reshape((1, 1, ashape, ashape, -1))
             ashape = max(ashape // 2, 16)
             anchors.append(anchor)
