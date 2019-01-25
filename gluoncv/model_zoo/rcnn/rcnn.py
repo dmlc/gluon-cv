@@ -40,8 +40,8 @@ class RCNN(gluon.HybridBlock):
         ROI pooling mode. Currently support 'pool' and 'align'.
     roi_size : tuple of int, length 2
         (height, width) of the ROI region.
-    stride : int
-        Stride of network features.
+    strides : int/tuple of ints
+        Stride(s) of network features. Tuple for FPN.
     clip: float
         Clip bounding box target to this value.
 
@@ -72,7 +72,7 @@ class RCNN(gluon.HybridBlock):
     def __init__(self, features, top_features, classes, box_features,
                  short, max_size, train_patterns,
                  nms_thresh, nms_topk, post_nms,
-                 roi_mode, roi_size, stride, clip, **kwargs):
+                 roi_mode, roi_size, strides, clip, **kwargs):
         super(RCNN, self).__init__(**kwargs)
         self.classes = classes
         self.num_class = len(classes)
@@ -88,7 +88,7 @@ class RCNN(gluon.HybridBlock):
         self._roi_mode = roi_mode.lower()
         assert len(roi_size) == 2, "Require (h, w) as roi_size, given {}".format(roi_size)
         self._roi_size = roi_size
-        self._stride = stride
+        self._strides = strides
 
         with self.name_scope():
             self.features = features

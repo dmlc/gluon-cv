@@ -5,7 +5,7 @@ mxnet.gluon.model_zoo.vision and gluoncv.models
 from .ssd import *
 from .faster_rcnn import *
 from .mask_rcnn import *
-from .fpn import * 
+#from .fpn import *
 from .fcn import *
 from .pspnet import *
 from .deeplabv3 import *
@@ -171,8 +171,9 @@ _models = {
     'cifar_residualattentionnet56': cifar_residualattentionnet56,
     'cifar_residualattentionnet92': cifar_residualattentionnet92,
     'cifar_residualattentionnet452': cifar_residualattentionnet452,
-    'fpn_resnet50_v1b_voc': fpn_resnet50_v1b_voc,
-    'fpn_resnet50_v1b_coco': fpn_resnet50_v1b_coco,
+    #'faster_rcnn_fpn_resnet50_v1b_voc': faster_rcnn_fpn_resnet50_v1b_voc,
+    'faster_rcnn_fpn_resnet50_v1b_coco': faster_rcnn_fpn_resnet50_v1b_coco,
+    'faster_rcnn_fpn_resnet101_v1d_coco': faster_rcnn_fpn_resnet101_v1d_coco,
     }
 
 def get_model(name, **kwargs):

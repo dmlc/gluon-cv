@@ -9,7 +9,7 @@ from .. import mask as tmask
 __all__ = ['transform_test', 'load_test',
            'FasterRCNNDefaultTrainTransform', 'FasterRCNNDefaultValTransform',
            'MaskRCNNDefaultTrainTransform', 'MaskRCNNDefaultValTransform',
-           'FPNDefaultTrainTransform', 'FPNDefaultValTransform']
+           'FPNDefaultTrainTransform']
 
 
 def transform_test(imgs, short=600, max_size=1000, mean=(0.485, 0.456, 0.406),
@@ -147,7 +147,7 @@ class FasterRCNNDefaultTrainTransform(object):
 
         # use fake data to generate fixed anchors for target generation
         # in case network has reset_ctx to gpu
-        anchor_generator = copy.deepcopy(net.rpn.anchor_generator)
+        anchor_generator = copy.deepcopy(net.rpn.anchor_generators)
         anchor_generator.collect_params().reset_ctx(None)
         anchors = anchor_generator(
             mx.nd.zeros((1, 3, ashape, ashape))).reshape((1, 1, ashape, ashape, -1))
@@ -367,6 +367,7 @@ class MaskRCNNDefaultValTransform(object):
         img = mx.nd.image.normalize(img, mean=self._mean, std=self._std)
         return img, mx.nd.array([img.shape[-2], img.shape[-1], im_scale])
 
+
 class FPNDefaultTrainTransform(object):
     """Default Faster-RCNN training transform.
     Parameters
@@ -398,11 +399,15 @@ class FPNDefaultTrainTransform(object):
     pos_ratio : float, default is 0.5
         ``pos_ratio`` defines how many positive samples (``pos_ratio * num_sample``) is
         to be sampled.
+    ashape : int, default is 128
+        Defines shape of pre generated anchors for target generation
+
     """
+
     def __init__(self, short=600, max_size=1000, net=None, mean=(0.485, 0.456, 0.406),
                  std=(0.229, 0.224, 0.225), box_norm=(1., 1., 1., 1.),
                  num_sample=256, pos_iou_thresh=0.7, neg_iou_thresh=0.3,
-                 pos_ratio=0.5, **kwargs):
+                 pos_ratio=0.5, ashape=128, **kwargs):
         self._short = short
         self._max_size = max_size
         self._mean = mean
@@ -412,10 +417,10 @@ class FPNDefaultTrainTransform(object):
             return
 
         # use fake data to generate fixed anchors for target generation
-        ashape = net.ashape
-        anchors = [] # [P2, P3, P4, P5]
+        ashape = ashape
+        anchors = []  # [P2, P3, P4, P5]
         # in case network has reset_ctx to gpu
-        anchor_generators = copy.deepcopy(net.anchor_generators)
+        anchor_generators = copy.deepcopy(net.rpn.anchor_generators)
         anchor_generators.collect_params().reset_ctx(None)
         for ag in anchor_generators:
             anchor = ag(mx.nd.zeros((1, 3, ashape, ashape))).reshape((1, 1, ashape, ashape, -1))
@@ -423,13 +428,12 @@ class FPNDefaultTrainTransform(object):
             anchors.append(anchor)
         self._anchors = anchors
 
-
         # record feature extractor for infer_shape
         if not hasattr(net, 'features'):
             raise ValueError("Cannot find features in network, it is a FPN network?")
         features = net.features(mx.sym.var(name='data'))
         self._feat_syms = features
- 
+
         # generate rpn targets 
         from ....model_zoo.rpn.rpn_target import RPNTargetGenerator
         self._target_generator = RPNTargetGenerator(
@@ -470,37 +474,3 @@ class FPNDefaultTrainTransform(object):
         cls_target, box_target, box_mask = self._target_generator(
             gt_bboxes, anchor_targets, img.shape[2], img.shape[1])
         return img, bbox.astype(img.dtype), cls_target, box_target, box_mask
-
-
-class FPNDefaultValTransform(object):
-    """Default Faster-RCNN validation transform.
-    Parameters
-    ----------
-    short : int, default is 600
-        Resize image shorter side to ``short``.
-    max_size : int, default is 1000
-        Make sure image longer side is smaller than ``max_size``.
-    mean : array-like of size 3
-        Mean pixel values to be subtracted from image tensor. Default is [0.485, 0.456, 0.406].
-    std : array-like of size 3
-        Standard deviation to be divided from image. Default is [0.229, 0.224, 0.225].
-    """
-    def __init__(self, short=600, max_size=1000,
-                 mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)):
-        self._mean = mean
-        self._std = std
-        self._short = short
-        self._max_size = max_size
-
-    def __call__(self, src, label):
-        """Apply transform to validation image/label."""
-        # resize shorter side but keep in max_size
-        h, w, _ = src.shape
-        img = timage.resize_short_within(src, self._short, self._max_size, interp=1)
-        # no scaling ground-truth, return image scaling ratio instead
-        bbox = tbbox.resize(label, (w, h), (img.shape[1], img.shape[0]))
-        im_scale = h / float(img.shape[0])
-
-        img = mx.nd.image.to_tensor(img)
-        img = mx.nd.image.normalize(img, mean=self._mean, std=self._std)
-        return img, bbox.astype('float32'), mx.nd.array([im_scale])

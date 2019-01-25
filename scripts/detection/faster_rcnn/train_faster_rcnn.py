@@ -8,7 +8,6 @@ import logging
 import time
 import numpy as np
 import mxnet as mx
-from mxnet import nd
 from mxnet import gluon
 from mxnet import autograd
 import gluoncv as gcv
@@ -16,8 +15,8 @@ from gluoncv import data as gdata
 from gluoncv import utils as gutils
 from gluoncv.model_zoo import get_model
 from gluoncv.data import batchify
-from gluoncv.data.transforms.presets.rcnn import FasterRCNNDefaultTrainTransform
-from gluoncv.data.transforms.presets.rcnn import FasterRCNNDefaultValTransform
+from gluoncv.data.transforms.presets.rcnn import FPNDefaultTrainTransform, \
+    FasterRCNNDefaultTrainTransform, FasterRCNNDefaultValTransform
 from gluoncv.utils.metrics.voc_detection import VOC07MApMetric
 from gluoncv.utils.metrics.coco_detection import COCODetectionMetric
 
@@ -70,8 +69,15 @@ def parse_args():
     parser.add_argument('--mixup', action='store_true', help='Use mixup training.')
     parser.add_argument('--no-mixup-epochs', type=int, default=20,
                         help='Disable mixup training if enabled in the last N epochs.')
+    # FPN options
+    parser.add_argument('--use-fpn', action='store_true',
+                        help='Whether to use feature pyramid network.')
+
+    # Normalization options
     parser.add_argument('--syncbn', action='store_true',
                         help='Whether to use sync batch normalization.')
+
+    # Performance options
     parser.add_argument('--disable-hybridization', action='store_true',
                         help='Whether to disable hybridize the model. '
                              'Memory usage and speed will decrese.')
@@ -202,16 +208,17 @@ def get_dataset(dataset, args):
     return train_dataset, val_dataset, val_metric
 
 
-def get_dataloader(net, train_dataset, val_dataset, batch_size, ashape, num_workers):
+def get_dataloader(net, train_dataset, val_dataset, train_transform, val_transform, batch_size,
+                   num_workers):
     """Get dataloader."""
     train_bfn = batchify.Tuple(*[batchify.Append() for _ in range(5)])
     train_loader = mx.gluon.data.DataLoader(
         train_dataset.transform(
-            FasterRCNNDefaultTrainTransform(net.short, net.max_size, net, ashape=ashape)),
+            train_transform(net.short, net.max_size, net, ashape=net.ashape)),
         batch_size, True, batchify_fn=train_bfn, last_batch='rollover', num_workers=num_workers)
     val_bfn = batchify.Tuple(*[batchify.Append() for _ in range(3)])
     val_loader = mx.gluon.data.DataLoader(
-        val_dataset.transform(FasterRCNNDefaultValTransform(net.short, net.max_size)),
+        val_dataset.transform(val_transform(net.short, net.max_size)),
         batch_size, False, batchify_fn=val_bfn, last_batch='keep', num_workers=num_workers)
     return train_loader, val_loader
 
@@ -292,8 +299,7 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
         'sgd',
         {'learning_rate': args.lr,
          'wd': args.wd,
-         'momentum': args.momentum,
-         'clip_gradient': 5})
+         'momentum': args.momentum})
 
     # lr decay policy
     lr_decay = float(args.lr_decay)
@@ -434,6 +440,9 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
 
 
 if __name__ == '__main__':
+    import sys
+
+    sys.setrecursionlimit(1100)
     args = parse_args()
     # fix seed for mxnet, numpy and python builtin random generator.
     gutils.random.seed(args.seed)
@@ -444,7 +453,10 @@ if __name__ == '__main__':
     args.batch_size = len(ctx)  # 1 batch per device
 
     # network
-    net_name = '_'.join(('faster_rcnn', args.network, args.dataset))
+    module_list = []
+    if args.use_fpn:
+        module_list.append('fpn')
+    net_name = '_'.join(('faster_rcnn', *module_list, args.network, args.dataset))
     args.save_prefix += net_name
     net = get_model(net_name, pretrained_base=True, syncbn=args.syncbn)
     if args.resume.strip():
@@ -459,8 +471,9 @@ if __name__ == '__main__':
     # training data
     train_dataset, val_dataset, eval_metric = get_dataset(args.dataset, args)
     train_data, val_data = get_dataloader(
-        net, train_dataset, val_dataset, args.batch_size, 192 if 'dilated' in args.network else 128,
-        args.num_workers)
+        net, train_dataset, val_dataset,
+        FPNDefaultTrainTransform if args.use_fpn else FasterRCNNDefaultTrainTransform,
+        FasterRCNNDefaultValTransform, args.batch_size, args.num_workers)
 
     # training
     train(net, train_data, val_data, eval_metric, ctx, args)
