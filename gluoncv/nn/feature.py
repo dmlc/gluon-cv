@@ -195,7 +195,7 @@ class FPNFeatureExpander(SymbolBlock):
         inputs, outputs, params = _parse_network(network, outputs, inputs, pretrained, ctx)
         '''
         e.g. For ResNet50, the feature is :
-        outputs = ['stage1_activation2', 'stage2_activation3', 
+        outputs = ['stage1_activation2', 'stage2_activation3',
                    'stage3_activation5', 'stage4_activation2']
         with regard to [conv2, conv3, conv4, conv5] -> [C2, C3, C4, C5]
         '''
@@ -215,8 +215,8 @@ class FPNFeatureExpander(SymbolBlock):
                                            attr={'__init__': weight_init})
                 if use_p6:
                     # method 1 : use max pool (Detectron use this)
-                    # y_p6 = mx.sym.Pooling(y, pool_type='max', kernel=(1, 1), pad=(0, 0), stride=(2, 2),
-                    #                       name="P{}_pre".format(num_stages+1))
+                    # y_p6 = mx.sym.Pooling(y, pool_type='max', kernel=(1, 1), pad=(0, 0),
+                    #                       stride=(2, 2), name="P{}_pre".format(num_stages+1))
                     # method 2 : use conv (Deformable use this)
                     y_p6 = mx.sym.Convolution(y, num_filter=f, kernel=(3, 3), pad=(1, 1),
                                               stride=(2, 2), no_bias=no_bias,
@@ -236,7 +236,7 @@ class FPNFeatureExpander(SymbolBlock):
                     # make two symbol alignment
                     # method 1 : mx.sym.Crop
                     # y = mx.sym.Crop(*[y, bf], name="P{}_clip".format(num_stages-i))
-                    # method 2 : mx.sym.slice_like  
+                    # method 2 : mx.sym.slice_like
                     y = mx.sym.slice_like(y, bf * 0, axes=(2, 3),
                                           name="P{}_clip".format(num_stages - i))
                     y = mx.sym.ElementWiseSum(bf, y, name="P{}_pre".format(num_stages - i))
@@ -245,7 +245,7 @@ class FPNFeatureExpander(SymbolBlock):
             outputs = tmp_outputs[::-1] + [y_p6]  # [P2, P3, P4, P5] + [P6]
         else:
             outputs = tmp_outputs[::-1]  # [P2, P3, P4, P5]
-        # Reduce the aliasing effect of upsampling described in ori paper 
+        # Reduce the aliasing effect of upsampling described in ori paper
         for i, (out, f) in enumerate(zip(outputs, num_filters)):
             out = mx.sym.Convolution(out, num_filter=f, kernel=(3, 3), pad=(1, 1), stride=(1, 1),
                                      no_bias=no_bias, name='P{}'.format(i + 2),

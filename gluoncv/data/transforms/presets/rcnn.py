@@ -281,7 +281,7 @@ class MaskRCNNDefaultTrainTransform(object):
         # use fake data to generate fixed anchors for target generation
         ashape = 128
         # in case network has reset_ctx to gpu
-        anchor_generator = copy.deepcopy(net.rpn.anchor_generator)
+        anchor_generator = copy.deepcopy(net.rpn.anchor_generators)
         anchor_generator.collect_params().reset_ctx(None)
         anchors = anchor_generator(
             mx.nd.zeros((1, 3, ashape, ashape))).reshape((1, 1, ashape, ashape, -1))
@@ -434,7 +434,7 @@ class FPNDefaultTrainTransform(object):
         features = net.features(mx.sym.var(name='data'))
         self._feat_syms = features
 
-        # generate rpn targets 
+        # generate rpn targets
         from ....model_zoo.rpn.rpn_target import RPNTargetGenerator
         self._target_generator = RPNTargetGenerator(
             num_sample=num_sample, pos_iou_thresh=pos_iou_thresh,

@@ -4,7 +4,6 @@ from .model_zoo import get_model, get_model_list
 from .model_store import pretrained_model_list
 from .faster_rcnn import *
 from .mask_rcnn import *
-from .fpn import *
 from .ssd import *
 from .yolo import *
 from .cifarresnet import *

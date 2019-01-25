@@ -120,8 +120,6 @@ class FasterRCNN(RCNN):
         necessarily very precise. However, using a very big number may impact the training speed.
     additional_output : boolean, default is False
         ``additional_output`` is only used for Mask R-CNN to get internal outputs.
-    syncbn : boolean, default is False
-        Whether to use synchronized batch normalization layer.
 
     Attributes
     ----------
@@ -158,7 +156,7 @@ class FasterRCNN(RCNN):
                  rpn_train_pre_nms=12000, rpn_train_post_nms=2000,
                  rpn_test_pre_nms=6000, rpn_test_post_nms=300, rpn_min_size=16,
                  num_sample=128, pos_iou_thresh=0.5, pos_ratio=0.25, max_num_gt=300,
-                 additional_output=False, syncbn=False, **kwargs):
+                 additional_output=False, **kwargs):
         super(FasterRCNN, self).__init__(
             features=features, top_features=top_features, classes=classes,
             box_features=box_features, short=short, max_size=max_size,
@@ -185,7 +183,7 @@ class FasterRCNN(RCNN):
                 clip=clip, nms_thresh=rpn_nms_thresh, train_pre_nms=rpn_train_pre_nms,
                 train_post_nms=rpn_train_post_nms, test_pre_nms=rpn_test_pre_nms,
                 test_post_nms=rpn_test_post_nms, min_size=rpn_min_size,
-                multi_level=self.num_stages > 1, syncbn=syncbn)
+                multi_level=self.num_stages > 1)
             self.sampler = RCNNTargetSampler(
                 num_image=self._max_batch, num_proposal=rpn_train_post_nms,
                 num_sample=num_sample, pos_iou_thresh=pos_iou_thresh,
@@ -318,10 +316,10 @@ class FasterRCNN(RCNN):
         else:
             # ROI features
             if self._roi_mode == 'pool':
-                pooled_feat = F.ROIPooling(*feat, rpn_roi, self._roi_size, 1. / self._strides)
+                pooled_feat = F.ROIPooling(feat[0], rpn_roi, self._roi_size, 1. / self._strides)
             elif self._roi_mode == 'align':
-                pooled_feat = F.contrib.ROIAlign(*feat, rpn_roi, self._roi_size, 1. / self._strides,
-                                                 sample_ratio=2)
+                pooled_feat = F.contrib.ROIAlign(feat[0], rpn_roi, self._roi_size,
+                                                 1. / self._strides, sample_ratio=2)
             else:
                 raise ValueError("Invalid roi mode: {}".format(self._roi_mode))
 
@@ -463,7 +461,7 @@ def faster_rcnn_resnet50_v1b_voc(pretrained=False, pretrained_base=True, **kwarg
         features=features, top_features=top_features, classes=classes,
         short=600, max_size=1000, train_patterns=train_patterns,
         nms_thresh=0.3, nms_topk=400, post_nms=100,
-        roi_mode='align', roi_size=(14, 14), stride=16, clip=None,
+        roi_mode='align', roi_size=(14, 14), strides=16, clip=None,
         rpn_channel=1024, base_size=16, scales=(2, 4, 8, 16, 32),
         ratios=(0.5, 1, 2), alloc_size=(128, 128), rpn_nms_thresh=0.7,
         rpn_train_pre_nms=12000, rpn_train_post_nms=2000,
@@ -526,7 +524,7 @@ def faster_rcnn_fpn_resnet50_v1b_coco(pretrained=False, pretrained_base=True, **
     r"""Faster RCNN model with FPN from the paper
     "Ren, S., He, K., Girshick, R., & Sun, J. (2015). Faster r-cnn: Towards
     real-time object detection with region proposal networks"
-    "Lin, T., Dollár, P., Girshick, R., He, K., Hariharan, B., Belongie, S. (2016).
+    "Lin, T., Dollar, P., Girshick, R., He, K., Hariharan, B., Belongie, S. (2016).
     Feature Pyramid Networks for Object Detection"
 
     Parameters
@@ -635,8 +633,7 @@ def faster_rcnn_resnet50_v1b_dilated_coco(pretrained=False, pretrained_base=True
         clip=4.42, rpn_channel=1024, base_size=16, scales=(2, 4, 8, 16, 32), ratios=(0.5, 1, 2),
         alloc_size=(192, 192), rpn_nms_thresh=0.7, rpn_train_pre_nms=12000,
         rpn_train_post_nms=2000, rpn_test_pre_nms=6000, rpn_test_post_nms=1000, rpn_min_size=0,
-        num_sample=128, pos_iou_thresh=0.5, pos_ratio=0.25, max_num_gt=100, syncbn=syncbn,
-        **kwargs)
+        num_sample=128, pos_iou_thresh=0.5, pos_ratio=0.25, max_num_gt=100, **kwargs)
 
 
 def faster_rcnn_resnet50_v1b_custom(classes, transfer=None, pretrained_base=True,
@@ -799,7 +796,7 @@ def faster_rcnn_fpn_resnet101_v1d_coco(pretrained=False, pretrained_base=True, *
     r"""Faster RCNN model with FPN from the paper
     "Ren, S., He, K., Girshick, R., & Sun, J. (2015). Faster r-cnn: Towards
     real-time object detection with region proposal networks"
-    "Lin, T., Dollár, P., Girshick, R., He, K., Hariharan, B., Belongie, S. (2016).
+    "Lin, T., Dollar, P., Girshick, R., He, K., Hariharan, B., Belongie, S. (2016).
     Feature Pyramid Networks for Object Detection"
 
     Parameters

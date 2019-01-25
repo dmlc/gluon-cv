@@ -2,9 +2,10 @@
 from __future__ import absolute_import
 
 import mxnet as mx
-from mxnet import gluon
 from mxnet import autograd
+from mxnet import gluon
 from mxnet.gluon import nn
+
 from .anchor import RPNAnchorGenerator
 from .proposal import RPNProposal
 
@@ -54,14 +55,12 @@ class RPN(gluon.HybridBlock):
         Proposals whose size is smaller than ``min_size`` will be discarded.
         multi_level : boolean
         Whether to extract feature from multiple level. This is used in FPN.
-    syncbn : boolean, default is False
-        Whether to use synchronized batch normalization layer.
 
     """
 
     def __init__(self, channels, strides, base_size, scales, ratios, alloc_size,
                  clip, nms_thresh, train_pre_nms, train_post_nms,
-                 test_pre_nms, test_post_nms, min_size, multi_level=False, syncbn=False, **kwargs):
+                 test_pre_nms, test_post_nms, min_size, multi_level=False, **kwargs):
         super(RPN, self).__init__(**kwargs)
         self._nms_thresh = nms_thresh
         self._multi_level = multi_level
@@ -74,7 +73,7 @@ class RPN(gluon.HybridBlock):
         with self.name_scope():
             if self._multi_level:
                 asz = alloc_size
-                for i, st, s in zip(range(num_stages), strides, scales):
+                for _, st, s in zip(range(num_stages), strides, scales):
                     anchor_generator = RPNAnchorGenerator(st, base_size, ratios, s, asz)
                     self.anchor_generators.add(anchor_generator)
                     asz = max(asz[0] // 2, 16)
@@ -179,7 +178,8 @@ class RPNHead(gluon.HybridBlock):
             self.conv1.add(nn.Conv2D(channels, 3, 1, 1, weight_initializer=weight_initializer),
                            nn.Activation('relu'))
             # use sigmoid instead of softmax, reduce channel numbers
-            # Note : that is to say, if use softmax here, then the self.score will anchor_depth*2 output channel
+            # Note : that is to say, if use softmax here,
+            # then the self.score will anchor_depth*2 output channel
             self.score = nn.Conv2D(anchor_depth, 1, 1, 0, weight_initializer=weight_initializer)
             self.loc = nn.Conv2D(anchor_depth * 4, 1, 1, 0, weight_initializer=weight_initializer)
 
