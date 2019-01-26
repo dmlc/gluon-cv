@@ -118,6 +118,7 @@ class MaskRCNN(FasterRCNN):
         else:
             ids, scores, boxes, feat = \
                 super(MaskRCNN, self).hybrid_forward(F, x)
+            feat = feat[0]
 
             # (B, N * (C - 1), 1) -> (B, N * (C - 1)) -> (B, topk)
             num_rois = self._rcnn_max_dets
