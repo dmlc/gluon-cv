@@ -138,10 +138,10 @@ class MaskRCNN(FasterRCNN):
             # pool to roi features
             if self._roi_mode == 'pool':
                 pooled_feat = F.ROIPooling(
-                    feat, padded_rois, self._roi_size, 1. / self._stride)
+                    feat, padded_rois, self._roi_size, 1. / self._strides)
             elif self._roi_mode == 'align':
                 pooled_feat = F.contrib.ROIAlign(
-                    feat, padded_rois, self._roi_size, 1. / self._stride, sample_ratio=2)
+                    feat, padded_rois, self._roi_size, 1. / self._strides, sample_ratio=2)
             else:
                 raise ValueError("Invalid roi mode: {}".format(self._roi_mode))
 
