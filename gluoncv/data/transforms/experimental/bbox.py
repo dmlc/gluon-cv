@@ -90,6 +90,11 @@ def random_crop_with_constraints(bbox, size, min_scale=0.3, max_scale=1,
             if min_iou <= iou.min() and iou.max() <= max_iou:
                 top, bottom = crop_t, crop_t + crop_h
                 left, right = crop_l, crop_l + crop_w
+                
+                # if there is no bounding box, this crop is valid, so return
+                if len(bbox) == 0:
+                    return bbox, (left, top, right-left, bottom-top)
+                
                 candidates.append((left, top, right-left, bottom-top))
                 break
 
