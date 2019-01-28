@@ -42,9 +42,9 @@ class FasterRCNN(RCNN):
         Input image short side size.
     max_size : int, default is 1000.
         Maximum size of input image long side.
-    min_stage : int, default is 2
+    min_stage : int, default is 4
         Minimum stage NO. for FPN stages.
-    max_stage : int, default is 5
+    max_stage : int, default is 4
         Maximum stage NO. for FPN stages.
     train_patterns : str, default is None.
         Matching pattern for trainable parameters.
