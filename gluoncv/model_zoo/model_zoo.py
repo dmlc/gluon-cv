@@ -92,7 +92,6 @@ _models = {
     'ssd_512_mobilenet1.0_custom': ssd_512_mobilenet1_0_custom,
     'faster_rcnn_resnet50_v1b_voc': faster_rcnn_resnet50_v1b_voc,
     'faster_rcnn_resnet50_v1b_coco': faster_rcnn_resnet50_v1b_coco,
-    'faster_rcnn_resnet50_v1b_dilated_coco': faster_rcnn_resnet50_v1b_dilated_coco,
     'faster_rcnn_resnet50_v1b_custom': faster_rcnn_resnet50_v1b_custom,
     'faster_rcnn_resnet101_v1d_voc': faster_rcnn_resnet101_v1d_voc,
     'faster_rcnn_resnet101_v1d_coco': faster_rcnn_resnet101_v1d_coco,

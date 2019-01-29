@@ -73,10 +73,6 @@ def parse_args():
     parser.add_argument('--use-fpn', action='store_true',
                         help='Whether to use feature pyramid network.')
 
-    # Normalization options
-    parser.add_argument('--syncbn', action='store_true',
-                        help='Whether to use sync batch normalization.')
-
     # Performance options
     parser.add_argument('--disable-hybridization', action='store_true',
                         help='Whether to disable hybridize the model. '
@@ -458,7 +454,7 @@ if __name__ == '__main__':
         module_list.append('fpn')
     net_name = '_'.join(('faster_rcnn', *module_list, args.network, args.dataset))
     args.save_prefix += net_name
-    net = get_model(net_name, pretrained_base=True, syncbn=args.syncbn)
+    net = get_model(net_name, pretrained_base=True)
     if args.resume.strip():
         net.load_parameters(args.resume.strip())
     else:
