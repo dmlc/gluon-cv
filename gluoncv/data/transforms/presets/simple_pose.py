@@ -44,6 +44,7 @@ class SimplePoseDefaultTrainTransform(object):
         self._rotation_factor = rotation_factor
 
     def __call__(self, src, label, img_path):
+
         cv2 = try_import_cv2()
         joints_3d = label['joints_3d']
         center = label['center']
@@ -59,11 +60,12 @@ class SimplePoseDefaultTrainTransform(object):
         r = np.clip(np.random.randn() * rf, -rf * 2, rf * 2) if random.random() <= 0.6 else 0
 
         joints = joints_3d
-        if self._random_flip:
-            src, fliped = random_flip_image(src, px=0.5, py=0)
-            if fliped[0]:
-                joints = flip_joints_3d(joints_3d, src.shape[1], self._joint_pairs)
-                center[0] = src.shape[1] - center[0] - 1
+        if self._random_flip and random.random() > 0.5:
+            # src, fliped = random_flip_image(src, px=0.5, py=0)
+            # if fliped[0]:
+            src = src[:, ::-1, :]
+            joints = flip_joints_3d(joints_3d, src.shape[1], self._joint_pairs)
+            center[0] = src.shape[1] - center[0] - 1
 
         h, w = self._image_size
         trans = get_affine_transform(center, scale, r, [w, h])

@@ -1,6 +1,6 @@
 from __future__ import division
 
-import argparse, time, logging, os, math
+import argparse, time, logging, os, math, random
 
 import numpy as np
 import mxnet as mx
@@ -97,7 +97,8 @@ model_name = opt.model
 
 kwargs = {'ctx': context, 'num_joints': num_joints,
           'pretrained': opt.use_pretrained,
-          'pretrained_base': opt.use_pretrained_base,
+          # 'pretrained_base': opt.use_pretrained_base,
+          'pretrained_base': 'e263a986',
           'pretrained_ctx': context}
 
 net = get_model(model_name, **kwargs)
@@ -169,11 +170,8 @@ def train(ctx):
     else:
         net.initialize(mx.init.MSRAPrelu(), ctx=ctx)
 
-    if opt.no_wd:
-        for k, v in net.collect_params('.*beta|.*gamma|.*bias').items():
-            v.wd_mult = 0.0
-
-    trainer = gluon.Trainer(net.collect_params(), optimizer, optimizer_params)
+    # trainer = gluon.Trainer(net.collect_params(), optimizer, optimizer_params)
+    trainer = gluon.Trainer(net.collect_params(), 'adam', {'learning_rate': 0.001, 'wd': 0.0})
 
     L = gluon.loss.L2Loss()
     metric = HeatmapAccuracy()
