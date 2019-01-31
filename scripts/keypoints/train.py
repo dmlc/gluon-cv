@@ -1,6 +1,6 @@
 from __future__ import division
 
-import argparse, time, logging, os, math, random
+import argparse, time, logging, os, math
 
 import numpy as np
 import mxnet as mx
@@ -148,6 +148,8 @@ lr_scheduler = LRScheduler(mode=opt.lr_mode, baselr=opt.lr,
                            step=lr_decay_epoch, step_factor=opt.lr_decay, power=2,
                            warmup_epochs=opt.warmup_epochs)
 
+# optimizer = 'sgd'
+# optimizer_params = {'wd': opt.wd, 'momentum': 0.9, 'lr_scheduler': lr_scheduler}
 optimizer = 'adam'
 optimizer_params = {'wd': opt.wd, 'lr_scheduler': lr_scheduler}
 if opt.dtype != 'float32':

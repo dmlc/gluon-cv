@@ -44,7 +44,6 @@ class SimplePoseDefaultTrainTransform(object):
         self._rotation_factor = rotation_factor
 
     def __call__(self, src, label, img_path):
-
         cv2 = try_import_cv2()
         joints_3d = label['joints_3d']
         center = label['center']
