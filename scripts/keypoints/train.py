@@ -86,7 +86,7 @@ logger.addHandler(streamhandler)
 logger.info(opt)
 
 batch_size = opt.batch_size
-num_joints = 17
+num_joints = opt.num_joints
 
 num_gpus = opt.num_gpus
 batch_size *= max(1, num_gpus)
@@ -171,18 +171,9 @@ def train(ctx):
         net.final_layer.initialize(ctx=ctx)
     else:
         net.initialize(mx.init.MSRAPrelu(), ctx=ctx)
-    '''
-    # net.cast('float16')
-    net.load_parameters('simple_pose_resnet50_v1b_converted.params',
-                        ctx=ctx)
-    # net.cast('float32')
-    '''
 
-    if opt.no_wd:
-        for k, v in net.collect_params('.*beta|.*gamma|.*bias').items():
-            v.wd_mult = 0.0
-
-    trainer = gluon.Trainer(net.collect_params(), optimizer, optimizer_params)
+    # trainer = gluon.Trainer(net.collect_params(), optimizer, optimizer_params)
+    trainer = gluon.Trainer(net.collect_params(), 'adam', {'learning_rate': 0.001, 'wd': 0.0})
 
     L = gluon.loss.L2Loss()
     metric = HeatmapAccuracy()
@@ -202,19 +193,15 @@ def train(ctx):
             data, label, weight, imgid = train_batch_fn(batch, ctx)
 
             with ag.record():
-                outputs = [net(X) for X in data]
-                loss = [L(yhat, y, w) for yhat, y, w in zip(outputs, label, weight)]
-                '''
                 outputs = [net(X.astype(opt.dtype, copy=False)) for X in data]
                 loss = [nd.cast(L(nd.cast(yhat, 'float32'), y, w), opt.dtype)
                         for yhat, y, w in zip(outputs, label, weight)]
-                '''
             for l in loss:
                 l.backward()
             lr_scheduler.update(i, epoch)
             trainer.step(batch_size)
 
-            metric.update(outputs, label)
+            metric.update(label, outputs)
 
             loss_val += sum([l.mean().asscalar() for l in loss]) / num_gpus
             if opt.log_interval and not (i+1)%opt.log_interval:

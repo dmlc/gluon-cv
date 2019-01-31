@@ -59,10 +59,11 @@ class SimplePoseDefaultTrainTransform(object):
         r = np.clip(np.random.randn() * rf, -rf * 2, rf * 2) if random.random() <= 0.6 else 0
 
         joints = joints_3d
-        if self._random_flip:
-            src, fliped = random_flip_image(src, px=0.5, py=0)
-            if fliped[0]:
-                joints = flip_joints_3d(joints_3d, src.shape[1], self._joint_pairs)
+        if self._random_flip and random.random() > 0.5:
+            # src, fliped = random_flip_image(src, px=0.5, py=0)
+            # if fliped[0]:
+            src = src[:, ::-1, :]
+            joints = flip_joints_3d(joints_3d, src.shape[1], self._joint_pairs)
             center[0] = src.shape[1] - center[0] - 1
 
         h, w = self._image_size

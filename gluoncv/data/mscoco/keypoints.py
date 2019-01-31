@@ -1,7 +1,7 @@
 """MS COCO keypoints dataset."""
 from __future__ import absolute_import
 from __future__ import division
-import os
+import os, copy
 import numpy as np
 import mxnet as mx
 from .utils import try_import_pycocotools
@@ -103,7 +103,8 @@ class COCOKeyPoints(VisionDataset):
     def __getitem__(self, idx):
         img_path = self._items[idx]
         img_id = int(os.path.splitext(os.path.basename(img_path))[0])
-        label = self._labels[idx]
+
+        label = copy.deepcopy(self._labels[idx])
         img = mx.image.imread(img_path, 1)
         return img, label, img_id
 
