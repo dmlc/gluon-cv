@@ -5,7 +5,7 @@ Classification
 
 
 
-Visualization of Inference Throughputs vs. Validation Accuracy of ImageNet pre-trained models is illustrated in the following graph.
+Visualization of Inference Throughputs vs. Validation Accuracy of ImageNet pre-trained models is illustrated in the following graph. Throughputs are measured with single V100 GPU and batch size 64.
 
 .. image:: /_static/plot_help.png
   :width: 100%

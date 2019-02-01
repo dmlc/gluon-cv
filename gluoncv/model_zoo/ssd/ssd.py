@@ -256,9 +256,11 @@ class SSD(HybridBlock):
         with self.name_scope():
             class_predictors = nn.HybridSequential(prefix=self.class_predictors.prefix)
             for i, ag in zip(range(len(self.class_predictors)), self.anchor_generators):
+                # Re-use the same prefix and ctx_list as used by the current ConvPredictor
                 prefix = self.class_predictors[i].prefix
+                ctx = list(self.class_predictors[i].predictor.params.values())[0].list_ctx()
                 new_cp = ConvPredictor(ag.num_depth * (self.num_classes + 1), prefix=prefix)
-                new_cp.collect_params().initialize()
+                new_cp.collect_params().initialize(ctx=ctx)
                 class_predictors.add(new_cp)
             self.class_predictors = class_predictors
             self.cls_decoder = MultiPerClassDecoder(len(self.classes) + 1, thresh=0.01)

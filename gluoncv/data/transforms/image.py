@@ -51,8 +51,8 @@ def imresize(src, w, h, interp=1):
 
 def resize_long(src, size, interp=2):
     """Resizes longer edge to size.
-    Note: `resize_short` uses OpenCV (not the CV2 Python library).
-    MXNet must have been built with OpenCV for `resize_short` to work.
+    Note: `resize_long` uses OpenCV (not the CV2 Python library).
+    MXNet must have been built with OpenCV for `resize_long` to work.
     Resizes the original image by setting the longer edge to size
     and setting the shorter edge accordingly. This will ensure the new image will
     fit into the `size` specified.
