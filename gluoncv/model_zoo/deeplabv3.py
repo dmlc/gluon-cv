@@ -40,7 +40,8 @@ class DeepLabV3(SegBaseModel):
         super(DeepLabV3, self).__init__(nclass, aux, backbone, ctx=ctx, base_size=base_size,
                                      crop_size=crop_size, pretrained_base=pretrained_base, **kwargs)
         with self.name_scope():
-            self.head = _DeepLabHead(nclass, **kwargs)
+            self.head = _DeepLabHead(nclass, height=self._up_kwargs['height']//8,
+                                     width=self._up_kwargs['width']//8, **kwargs)
             self.head.initialize(ctx=ctx)
             self.head.collect_params().setattr('lr_mult', 10)
             if self.aux:
@@ -60,6 +61,17 @@ class DeepLabV3(SegBaseModel):
             auxout = F.contrib.BilinearResize2D(auxout, **self._up_kwargs)
             outputs.append(auxout)
         return tuple(outputs)
+
+    def demo(self, x):
+        h, w = x.shape[2:]
+        self._up_kwargs['height'] = h
+        self._up_kwargs['width'] = w
+        self.head.aspp.concurent[-1]._up_kwargs['height'] = h// 8
+        self.head.aspp.concurent[-1]._up_kwargs['width'] = w// 8
+        pred = self.forward(x)
+        if self.aux:
+            pred = pred[0]
+        return pred
 
 
 class _DeepLabHead(HybridBlock):
@@ -93,9 +105,11 @@ def _ASPPConv(in_channels, out_channels, atrous_rate, norm_layer, norm_kwargs):
     return block
 
 class _AsppPooling(nn.HybridBlock):
-    def __init__(self, in_channels, out_channels, norm_layer, norm_kwargs, **kwargs):
+    def __init__(self, in_channels, out_channels, norm_layer, norm_kwargs,
+                 height=60, width=60, **kwargs):
         super(_AsppPooling, self).__init__()
         self.gap = nn.HybridSequential()
+        self._up_kwargs = {'height': height, 'width': width}
         with self.gap.name_scope():
             self.gap.add(nn.GlobalAvgPool2D())
             self.gap.add(nn.Conv2D(in_channels=in_channels, channels=out_channels,
@@ -105,12 +119,13 @@ class _AsppPooling(nn.HybridBlock):
             self.gap.add(nn.Activation("relu"))
 
     def hybrid_forward(self, F, x):
-        _, _, h, w = x.shape
+        #_, _, h, w = x.shape
         pool = self.gap(x)
-        return F.contrib.BilinearResize2D(pool, height=h, width=w)
+        return F.contrib.BilinearResize2D(pool, **self._up_kwargs)
 
 class _ASPP(nn.HybridBlock):
-    def __init__(self, in_channels, atrous_rates, norm_layer, norm_kwargs):
+    def __init__(self, in_channels, atrous_rates, norm_layer, norm_kwargs,
+                 height=60, width=60):
         super(_ASPP, self).__init__()
         out_channels = 256
         b0 = nn.HybridSequential()
@@ -125,7 +140,7 @@ class _ASPP(nn.HybridBlock):
         b2 = _ASPPConv(in_channels, out_channels, rate2, norm_layer, norm_kwargs)
         b3 = _ASPPConv(in_channels, out_channels, rate3, norm_layer, norm_kwargs)
         b4 = _AsppPooling(in_channels, out_channels, norm_layer=norm_layer,
-                          norm_kwargs=norm_kwargs)
+                          norm_kwargs=norm_kwargs, height=height, width=width)
 
         self.concurent = gluon.contrib.nn.HybridConcurrent(axis=1)
         with self.concurent.name_scope():
