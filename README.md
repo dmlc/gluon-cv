@@ -83,10 +83,18 @@ All tutorials are available at [our website](https://gluon-cv.mxnet.io/index.htm
 
 Check out how to use GluonCV for your own research or projects.
 
-For background knowledge of deep learning or CV, please refer to the open source book [*Dive into Deep Learning*](http://diveintodeeplearning.org/). If you are new to Gluon, please check out [our 60-minute crash course](http://gluon-crash-course.mxnet.io/).
+- For background knowledge of deep learning or CV, please refer to the open source book [*Dive into Deep Learning*](http://diveintodeeplearning.org/). If you are new to Gluon, please check out [our 60-minute crash course](http://gluon-crash-course.mxnet.io/).
+- For getting started quickly, refer to notebook runnable examples at [Examples](https://gluon-cv.mxnet.io/build/examples_classification/index.html).
+- For advanced examples, check out our [Scripts](http://gluon-cv.mxnet.io/master/scripts/index.html).
+- For experienced users, check out our [API Notes](https://gluon-cv.mxnet.io/api/data.datasets.html#).
 
-For getting started quickly, refer to notebook runnable examples at [Examples](https://gluon-cv.mxnet.io/build/examples_classification/index.html).
+If you use our code or models in your research, please cite with:
 
-For advanced examples, check out our [Scripts](http://gluon-cv.mxnet.io/master/scripts/index.html).
-
-For experienced users, check out our [API Notes](https://gluon-cv.mxnet.io/api/data.datasets.html#).
+```
+@article{he2018bag,
+  title={Bag of Tricks for Image Classification with Convolutional Neural Networks},
+  author={He, Tong and Zhang, Zhi and Zhang, Hang and Zhang, Zhongyue and Xie, Junyuan and Li, Mu},
+  journal={arXiv preprint arXiv:1812.01187},
+  year={2018}
+}
+```
