@@ -81,12 +81,12 @@ stage("Build Docs") {
       checkout scm
       VISIBLE_GPU=env.EXECUTOR_NUMBER.toInteger() % 4
       sh """#!/bin/bash
-      conda env remove -n gluon_vision_docs -y
+      conda env remove -n gluon_cv_docs -y
       set -ex
       export CUDA_VISIBLE_DEVICES=${VISIBLE_GPU}
-      conda env create -n gluon_vision_docs -f docs/build.yml
-      # conda env update -n gluon_vision_docs -f docs/build.yml --prune
-      conda activate gluon_vision_docs
+      conda env create -n gluon_cv_docs -f docs/build.yml
+      # conda env update -n gluon_cv_docs -f docs/build.yml --prune
+      conda activate gluon_cv_docs
       export PYTHONPATH=\${PWD}
       env
       export LD_LIBRARY_PATH=/usr/local/cuda-9.2/lib64
