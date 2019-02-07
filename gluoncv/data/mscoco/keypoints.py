@@ -103,6 +103,7 @@ class COCOKeyPoints(VisionDataset):
     def __getitem__(self, idx):
         img_path = self._items[idx]
         img_id = int(os.path.splitext(os.path.basename(img_path))[0])
+
         label = copy.deepcopy(self._labels[idx])
         img = mx.image.imread(img_path, 1)
         return img, label, img_id
