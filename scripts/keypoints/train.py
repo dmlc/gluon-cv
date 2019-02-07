@@ -97,8 +97,7 @@ model_name = opt.model
 
 kwargs = {'ctx': context, 'num_joints': num_joints,
           'pretrained': opt.use_pretrained,
-          # 'pretrained_base': opt.use_pretrained_base,
-          'pretrained_base': 'e263a986',
+          'pretrained_base': opt.use_pretrained_base,
           'pretrained_ctx': context}
 
 net = get_model(model_name, **kwargs)
@@ -170,8 +169,7 @@ def train(ctx):
     else:
         net.initialize(mx.init.MSRAPrelu(), ctx=ctx)
 
-    # trainer = gluon.Trainer(net.collect_params(), optimizer, optimizer_params)
-    trainer = gluon.Trainer(net.collect_params(), 'adam', {'learning_rate': 0.001, 'wd': 0.0})
+    trainer = gluon.Trainer(net.collect_params(), optimizer, optimizer_params)
 
     L = gluon.loss.L2Loss()
     metric = HeatmapAccuracy()
@@ -191,9 +189,13 @@ def train(ctx):
             data, label, weight, imgid = train_batch_fn(batch, ctx)
 
             with ag.record():
+                outputs = [net(X) for X in data]
+                loss = [L(yhat, y, w) for yhat, y, w in zip(outputs, label, weight)]
+                '''
                 outputs = [net(X.astype(opt.dtype, copy=False)) for X in data]
                 loss = [nd.cast(L(nd.cast(yhat, 'float32'), y, w), opt.dtype)
                         for yhat, y, w in zip(outputs, label, weight)]
+                '''
             for l in loss:
                 l.backward()
             lr_scheduler.update(i, epoch)
