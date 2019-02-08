@@ -95,9 +95,17 @@ _model_sha1 = {name: checksum for checksum, name in [
     ('eaaa87eb1b27c36c935b372779214bf164ad5b19', 'psp_resnet101_ade'),
     ('0f49fb59180c4d91305b858380a4fd6eaf068b6c', 'psp_resnet101_citys'),
     ('f5ece5ce1422eeca3ce2908004e469ffdf91fd41', 'yolo3_darknet53_voc'),
+    ('3b47835ac3dd80f29576633949aa58aee3094353', 'yolo3_mobilenet1.0_voc'),
+    ('66dbbae67be8f1e3cd3c995ce626a2bdc89769c6', 'yolo3_mobilenet1.0_coco'),
     ('09767802230b45af1c27697a2dad6d1ebaacc1e2', 'yolo3_darknet53_coco'),
     ('2189ea49720a116dead245b9b252301cffa18d28', 'darknet53'),
     ('b5538ef10557243511b9b46063aa4c40790d74ba', 'senet_154'),
+    ('4ecf62e29336e0cbc5a2f844652635a330928b5a', 'resnext50_32x4d'),
+    ('8654ca5d0ba30a7868c5b42a7d4cc0ff2ba04dbc', 'resnext101_32x4d'),
+    ('2f0d1c9d343d140775bfa7548dd3a881a35855de', 'resnext101_64x4d'),
+    ('7906e0e16013ef8d195cbc05463cc37783ec7a8a', 'se_resnext50_32x4d'),
+    ('688e238985d45a38803c62cf345af2813d0e8aa0', 'se_resnext101_32x4d'),
+    ('11c50114a0483e27e74dc4236904254ef05b634b', 'se_resnext101_64x4d'),
     ]}
 
 apache_repo_url = 'https://apache-mxnet.s3-accelerate.dualstack.amazonaws.com/'

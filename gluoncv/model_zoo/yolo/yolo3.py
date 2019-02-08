@@ -626,7 +626,7 @@ def yolo3_mobilenet1_0_voc(
     strides = [8, 16, 32]
     classes = VOCDetection.CLASSES
     return get_yolov3(
-        'mobilenet1_0', stages, [512, 256, 128], anchors, strides, classes, 'voc',
+        'mobilenet1.0', stages, [512, 256, 128], anchors, strides, classes, 'voc',
         pretrained=pretrained, norm_layer=norm_layer, norm_kwargs=norm_kwargs, **kwargs)
 
 def yolo3_mobilenet1_0_custom(
@@ -671,12 +671,12 @@ def yolo3_mobilenet1_0_custom(
             [116, 90, 156, 198, 373, 326]]
         strides = [8, 16, 32]
         net = get_yolov3(
-            'mobilenet1_0', stages, [512, 256, 128], anchors, strides, classes, 'voc',
+            'mobilenet1.0', stages, [512, 256, 128], anchors, strides, classes, 'voc',
             pretrained=pretrained, norm_layer=norm_layer, norm_kwargs=norm_kwargs, **kwargs)
     else:
         from ...model_zoo import get_model
         net = get_model(
-            'yolo3_mobilenet1_0_' +
+            'yolo3_mobilenet1.0_' +
             str(transfer),
             pretrained=True,
             **kwargs)
@@ -725,5 +725,5 @@ def yolo3_mobilenet1_0_coco(
     strides = [8, 16, 32]
     classes = COCODetection.CLASSES
     return get_yolov3(
-        'mobilenet1_0', stages, [512, 256, 128], anchors, strides, classes, 'coco',
+        'mobilenet1.0', stages, [512, 256, 128], anchors, strides, classes, 'coco',
         pretrained=pretrained, norm_layer=norm_layer, norm_kwargs=norm_kwargs, **kwargs)
