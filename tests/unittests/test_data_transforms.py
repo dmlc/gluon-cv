@@ -103,14 +103,17 @@ def test_image_random_flip():
     np.testing.assert_allclose(image.asnumpy()[::-1, ::-1, :], out.asnumpy())
     assert(f == (True, True))
 
-def test_image_resize_contrain():
+def test_image_resize_contain():
     image = mx.random.normal(shape=(240, 120, 3)).astype(np.uint8)
-    size = (300, 300)
-    out, _ = transforms.image.resize_contain(image, size)
-    np.testing.assert_allclose(out.shape, (300, 300, 3))
-    size = (100, 100)
-    out, _ = transforms.image.resize_contain(image, size)
-    np.testing.assert_allclose(out.shape, (100, 100, 3))
+    width = 123
+    height = 321
+    out, _ = transforms.image.resize_contain(image, (width, height))
+    np.testing.assert_allclose(out.shape, (height, width, 3))
+
+    width = 120
+    height = 20
+    out, _ = transforms.image.resize_contain(image, (width, height))
+    np.testing.assert_allclose(out.shape, (height, width, 3))
 
 def test_image_ten_crop():
     image = mx.random.normal(shape=(240, 120, 3)).astype(np.uint8)

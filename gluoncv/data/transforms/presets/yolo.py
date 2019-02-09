@@ -25,8 +25,8 @@ def transform_test(imgs, short=416, max_size=1024, stride=1, mean=(0.485, 0.456,
         Maximum longer side length to fit image.
         This is to limit the input image shape. Aspect ratio is intact because we
         support arbitrary input size in our YOLO implementation.
-    stride : int, optinal, default is 1
-        The stride constraint due to precised alignment of bounding box prediction module.
+    stride : int, optional, default is 1
+        The stride constraint due to precise alignment of bounding box prediction module.
         Image's width and height must be multiples of `stride`. Use `stride = 1` to
         relax this constraint.
     mean : iterable of float
@@ -76,8 +76,8 @@ def load_test(filenames, short=416, max_size=1024, stride=1, mean=(0.485, 0.456,
         Maximum longer side length to fit image.
         This is to limit the input image shape. Aspect ratio is intact because we
         support arbitrary input size in our YOLO implementation.
-    stride : int, optinal, default is 1
-        The stride constraint due to precised alignment of bounding box prediction module.
+    stride : int, optional, default is 1
+        The stride constraint due to precise alignment of bounding box prediction module.
         Image's width and height must be multiples of `stride`. Use `stride = 1` to
         relax this constraint.
     mean : iterable of float
@@ -192,11 +192,11 @@ class YOLO3DefaultTrainTransform(object):
             gt_mixratio = mx.nd.array(bbox[np.newaxis, :, -1:])
         else:
             gt_mixratio = None
-        center_targets, scale_targets, weights, objectness, class_targets = self._target_generator(
+        objectness, center_targets, scale_targets, weights, class_targets = self._target_generator(
             self._fake_x, self._feat_maps, self._anchors, self._offsets,
             gt_bboxes, gt_ids, gt_mixratio)
-        return (img, center_targets[0], scale_targets[0], weights[0],
-                objectness[0], class_targets[0], gt_bboxes[0])
+        return (img, objectness[0], center_targets[0], scale_targets[0], weights[0],
+                class_targets[0], gt_bboxes[0])
 
 
 class YOLO3DefaultValTransform(object):

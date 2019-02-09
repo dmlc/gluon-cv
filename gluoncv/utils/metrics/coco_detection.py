@@ -82,8 +82,14 @@ class COCODetectionMetric(mx.metric.EvalMetric):
         """Use coco to get real scores. """
         if not self._current_id == len(self._img_ids):
             warnings.warn(
-                'Recorded {} out of {} validation images, incompelete results'.format(
+                'Recorded {} out of {} validation images, incomplete results'.format(
                     self._current_id, len(self._img_ids)))
+        if not self._results:
+            # in case of empty results, push a dummy result
+            self._results.append({'image_id': self._img_ids[0],
+                                  'category_id': 0,
+                                  'bbox': [0, 0, 0, 0],
+                                  'score': 0})
         import json
         try:
             with open(self._filename, 'w') as f:
@@ -113,7 +119,11 @@ class COCODetectionMetric(mx.metric.EvalMetric):
             return ind
 
         # call real update
-        coco_eval = self._update()
+        try:
+            coco_eval = self._update()
+        except IndexError:
+            # invalid model may result in empty JSON results, skip it
+            return ['mAP',], ['0.0',]
 
         IoU_lo_thresh = 0.5
         IoU_hi_thresh = 0.95

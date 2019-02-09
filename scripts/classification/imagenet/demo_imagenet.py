@@ -20,7 +20,7 @@ opt = parser.parse_args()
 # Load Model
 model_name = opt.model
 pretrained = True if opt.saved_params == '' else False
-net = get_model(model_name, pretrained=True)
+net = get_model(model_name, pretrained=pretrained)
 
 if not pretrained:
     net.load_parameters(opt.saved_params)

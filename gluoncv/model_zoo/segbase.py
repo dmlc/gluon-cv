@@ -102,7 +102,7 @@ class SegEvalModel(object):
 
 
 class MultiEvalModel(object):
-    """Multi-size Segmentation Eavluator"""
+    """Multi-size Segmentation Evaluator"""
     def __init__(self, module, nclass, ctx_list, flip=True,
                  scales=[0.5, 0.75, 1.0, 1.25, 1.5, 1.75]):
         self.flip = flip

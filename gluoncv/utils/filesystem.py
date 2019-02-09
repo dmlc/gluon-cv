@@ -4,7 +4,7 @@ import errno
 
 def makedirs(path):
     """Create directory recursively if not exists.
-    Similar to `makedir -p`, you can skip checking existance before this function.
+    Similar to `makedir -p`, you can skip checking existence before this function.
 
     Parameters
     ----------

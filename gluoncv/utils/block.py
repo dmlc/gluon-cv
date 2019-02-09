@@ -29,7 +29,7 @@ def set_lr_mult(net, pattern, mult=1.0, verbose=False):
     mult : float, default 1.0
         The new learning rate multiplier.
     verbose : bool
-        Print which parameters being modifed if set `True`.
+        Print which parameters being modified if set `True`.
 
     Returns
     -------

@@ -24,3 +24,4 @@ from .resnet import *
 from .squeezenet import *
 from .vgg import *
 from .mobilenet import *
+from .residual_attentionnet import *

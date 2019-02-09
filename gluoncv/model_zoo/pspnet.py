@@ -24,7 +24,7 @@ class PSPNet(SegBaseModel):
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.nn.BatchNorm`;
         for Synchronized Cross-GPU BachNormalization).
     aux : bool
-        Auxilary loss.
+        Auxiliary loss.
 
 
     Reference:
@@ -36,7 +36,7 @@ class PSPNet(SegBaseModel):
     def __init__(self, nclass, backbone='resnet50', aux=True, ctx=cpu(), pretrained_base=True,
                  base_size=520, crop_size=480, **kwargs):
         super(PSPNet, self).__init__(nclass, aux, backbone, ctx=ctx, base_size=base_size,
-                                     crop_size=crop_size, pretrained_base=True, **kwargs)
+                                     crop_size=crop_size, pretrained_base=pretrained_base, **kwargs)
         with self.name_scope():
             self.head = _PSPHead(nclass, **kwargs)
             self.head.initialize(ctx=ctx)
@@ -66,7 +66,7 @@ def _PSP1x1Conv(in_channels, out_channels, norm_layer, norm_kwargs):
     with block.name_scope():
         block.add(nn.Conv2D(in_channels=in_channels, channels=out_channels,
                             kernel_size=1, use_bias=False))
-        block.add(norm_layer(in_channels=out_channels, **norm_kwargs))
+        block.add(norm_layer(in_channels=out_channels, **({} if norm_kwargs is None else norm_kwargs)))
         block.add(nn.Activation('relu'))
     return block
 
@@ -97,7 +97,7 @@ class _PyramidPooling(HybridBlock):
 
 
 class _PSPHead(HybridBlock):
-    def __init__(self, nclass, norm_layer=nn.BatchNorm, norm_kwargs={}):
+    def __init__(self, nclass, norm_layer=nn.BatchNorm, norm_kwargs=None, **kwargs):
         super(_PSPHead, self).__init__()
         self.psp = _PyramidPooling(2048, norm_layer=norm_layer,
                                    norm_kwargs=norm_kwargs)
@@ -105,7 +105,7 @@ class _PSPHead(HybridBlock):
             self.block = nn.HybridSequential(prefix='')
             self.block.add(nn.Conv2D(in_channels=4096, channels=512,
                                      kernel_size=3, padding=1, use_bias=False))
-            self.block.add(norm_layer(in_channels=512, **norm_kwargs))
+            self.block.add(norm_layer(in_channels=512, **({} if norm_kwargs is None else norm_kwargs)))
             self.block.add(nn.Activation('relu'))
             self.block.add(nn.Dropout(0.1))
             self.block.add(nn.Conv2D(in_channels=512, channels=nclass,

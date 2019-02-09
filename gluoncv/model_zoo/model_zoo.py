@@ -25,6 +25,8 @@ from .resnet import *
 from .squeezenet import *
 from .vgg import *
 from .mobilenet import *
+from .residual_attentionnet import *
+
 
 __all__ = ['get_model', 'get_model_list']
 
@@ -151,6 +153,9 @@ _models = {
     'yolo3_darknet53_coco': yolo3_darknet53_coco,
     'yolo3_darknet53_voc': yolo3_darknet53_voc,
     'yolo3_darknet53_custom': yolo3_darknet53_custom,
+    'yolo3_mobilenet1.0_coco': yolo3_mobilenet1_0_coco,
+    'yolo3_mobilenet1.0_voc': yolo3_mobilenet1_0_voc,
+    'yolo3_mobilenet1.0_custom': yolo3_mobilenet1_0_custom,
     'nasnet_4_1056': nasnet_4_1056,
     'nasnet_5_1538': nasnet_5_1538,
     'nasnet_7_1920': nasnet_7_1920,
@@ -161,6 +166,16 @@ _models = {
     'simple_pose_resnet50_v1d': simple_pose_resnet50_v1d,
     'simple_pose_resnet101_v1d': simple_pose_resnet101_v1d,
     'simple_pose_resnet152_v1d': simple_pose_resnet152_v1d,
+    'residualattentionnet56': residualattentionnet56,
+    'residualattentionnet92': residualattentionnet92,
+    'residualattentionnet128': residualattentionnet128,
+    'residualattentionnet164': residualattentionnet164,
+    'residualattentionnet200': residualattentionnet200,
+    'residualattentionnet236': residualattentionnet236,
+    'residualattentionnet452': residualattentionnet452,
+    'cifar_residualattentionnet56': cifar_residualattentionnet56,
+    'cifar_residualattentionnet92': cifar_residualattentionnet92,
+    'cifar_residualattentionnet452': cifar_residualattentionnet452
     }
 
 def get_model(name, **kwargs):
