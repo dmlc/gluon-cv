@@ -205,7 +205,7 @@ def test_set_nms():
 @try_gpu(0)
 def test_segmentation_models():
     ctx = mx.context.current_context()
-    x = mx.random.uniform(shape=(1, 3, 224, 224), ctx=ctx)
+    x = mx.random.uniform(shape=(1, 3, 480, 480), ctx=ctx)
     models = ['fcn_resnet101_coco', 'psp_resnet101_coco', 'deeplab_resnet101_coco',
               'fcn_resnet101_voc', 'psp_resnet101_voc', 'deeplab_resnet101_voc',
               'fcn_resnet50_ade', 'psp_resnet50_ade', 'deeplab_resnet50_ade',
