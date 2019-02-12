@@ -11,8 +11,7 @@ from .. import mask as tmask
 
 __all__ = ['transform_test', 'load_test',
            'FasterRCNNDefaultTrainTransform', 'FasterRCNNDefaultValTransform',
-           'MaskRCNNDefaultTrainTransform', 'MaskRCNNDefaultValTransform',
-           'FPNDefaultTrainTransform', 'MaskFPNDefaultTrainTransform']
+           'MaskRCNNDefaultTrainTransform', 'MaskRCNNDefaultValTransform']
 
 
 def transform_test(imgs, short=600, max_size=1000, mean=(0.485, 0.456, 0.406),
