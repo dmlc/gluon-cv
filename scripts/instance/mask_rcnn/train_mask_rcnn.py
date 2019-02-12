@@ -8,7 +8,6 @@ import logging
 import time
 import numpy as np
 import mxnet as mx
-from mxnet import nd
 from mxnet import gluon
 from mxnet import autograd
 import gluoncv as gcv
@@ -65,11 +64,17 @@ def parse_args():
                         help='Random seed to be fixed.')
     parser.add_argument('--verbose', dest='verbose', action='store_true',
                         help='Print helpful debugging info once set.')
+    # FPN options
+    parser.add_argument('--use-fpn', action='store_true',
+                        help='Whether to use feature pyramid network.')
+
+    # Performance options
     parser.add_argument('--disable-hybridization', action='store_true',
                         help='Whether to disable hybridize the entire model. '
                              'Memory usage and speed will decrese.')
     parser.add_argument('--static-alloc', action='store_true',
                         help='Whether to use static memory allocation. Memory usage will increase.')
+
     args = parser.parse_args()
     args.epochs = int(args.epochs) if args.epochs else 26
     args.lr_decay_epoch = args.lr_decay_epoch if args.lr_decay_epoch else '17,23'
@@ -223,15 +228,17 @@ def get_dataset(dataset, args):
     return train_dataset, val_dataset, val_metric
 
 
-def get_dataloader(net, train_dataset, val_dataset, batch_size, num_workers):
+def get_dataloader(net, train_dataset, val_dataset, train_transform, val_transform, batch_size,
+                   num_workers, multi_stage):
     """Get dataloader."""
     train_bfn = batchify.Tuple(*[batchify.Append() for _ in range(6)])
     train_loader = mx.gluon.data.DataLoader(
-        train_dataset.transform(MaskRCNNDefaultTrainTransform(net.short, net.max_size, net)),
+        train_dataset.transform(train_transform(net.short, net.max_size, net, ashape=net.ashape,
+                                                multi_stage=multi_stage)),
         batch_size, True, batchify_fn=train_bfn, last_batch='rollover', num_workers=num_workers)
     val_bfn = batchify.Tuple(*[batchify.Append() for _ in range(2)])
     val_loader = mx.gluon.data.DataLoader(
-        val_dataset.transform(MaskRCNNDefaultValTransform(net.short, net.max_size)),
+        val_dataset.transform(val_transform(net.short, net.max_size)),
         batch_size, False, batchify_fn=val_bfn, last_batch='keep', num_workers=num_workers)
     return train_loader, val_loader
 
@@ -426,9 +433,8 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
                     # generate targets for mask
                     mask_targets, mask_masks = net.mask_target(roi, gt_mask, matches, cls_targets)
                     # loss of mask
-                    mask_loss = rcnn_mask_loss(mask_pred, mask_targets,
-                                               mask_masks) * mask_targets.size / mask_targets.shape[
-                                    0] / mask_masks.sum()
+                    mask_loss = rcnn_mask_loss(mask_pred, mask_targets, mask_masks) * \
+                                mask_targets.size / mask_targets.shape[0] / mask_masks.sum()
                     # overall losses
                     losses.append(rpn_loss.sum() + rcnn_loss.sum() + mask_loss.sum())
                     metric_losses[0].append(rpn_loss1.sum())
@@ -481,7 +487,10 @@ if __name__ == '__main__':
     args.batch_size = len(ctx)  # 1 batch per device
 
     # network
-    net_name = '_'.join(('mask_rcnn', args.network, args.dataset))
+    module_list = []
+    if args.use_fpn:
+        module_list.append('fpn')
+    net_name = '_'.join(('mask_rcnn', *module_list, args.network, args.dataset))
     args.save_prefix += net_name
     net = get_model(net_name, pretrained_base=True)
     if args.resume.strip():
@@ -496,7 +505,8 @@ if __name__ == '__main__':
     # training data
     train_dataset, val_dataset, eval_metric = get_dataset(args.dataset, args)
     train_data, val_data = get_dataloader(
-        net, train_dataset, val_dataset, args.batch_size, args.num_workers)
+        net, train_dataset, val_dataset, MaskRCNNDefaultTrainTransform, MaskRCNNDefaultValTransform,
+        args.batch_size, args.num_workers, args.use_fpn)
 
     # training
     train(net, train_data, val_data, eval_metric, ctx, args)

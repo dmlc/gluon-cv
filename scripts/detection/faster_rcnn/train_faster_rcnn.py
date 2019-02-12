@@ -15,8 +15,8 @@ from gluoncv import data as gdata
 from gluoncv import utils as gutils
 from gluoncv.model_zoo import get_model
 from gluoncv.data import batchify
-from gluoncv.data.transforms.presets.rcnn import FPNDefaultTrainTransform, \
-    FasterRCNNDefaultTrainTransform, FasterRCNNDefaultValTransform
+from gluoncv.data.transforms.presets.rcnn import FasterRCNNDefaultTrainTransform, \
+    FasterRCNNDefaultValTransform
 from gluoncv.utils.metrics.voc_detection import VOC07MApMetric
 from gluoncv.utils.metrics.coco_detection import COCODetectionMetric
 
@@ -205,12 +205,13 @@ def get_dataset(dataset, args):
 
 
 def get_dataloader(net, train_dataset, val_dataset, train_transform, val_transform, batch_size,
-                   num_workers):
+                   num_workers, multi_stage):
     """Get dataloader."""
     train_bfn = batchify.Tuple(*[batchify.Append() for _ in range(5)])
     train_loader = mx.gluon.data.DataLoader(
         train_dataset.transform(
-            train_transform(net.short, net.max_size, net, ashape=net.ashape)),
+            train_transform(net.short, net.max_size, net, ashape=net.ashape,
+                            multi_stage=multi_stage)),
         batch_size, True, batchify_fn=train_bfn, last_batch='rollover', num_workers=num_workers)
     val_bfn = batchify.Tuple(*[batchify.Append() for _ in range(3)])
     val_loader = mx.gluon.data.DataLoader(
@@ -467,9 +468,8 @@ if __name__ == '__main__':
     # training data
     train_dataset, val_dataset, eval_metric = get_dataset(args.dataset, args)
     train_data, val_data = get_dataloader(
-        net, train_dataset, val_dataset,
-        FPNDefaultTrainTransform if args.use_fpn else FasterRCNNDefaultTrainTransform,
-        FasterRCNNDefaultValTransform, args.batch_size, args.num_workers)
+        net, train_dataset, val_dataset, FasterRCNNDefaultTrainTransform,
+        FasterRCNNDefaultValTransform, args.batch_size, args.num_workers, args.use_fpn)
 
     # training
     train(net, train_data, val_data, eval_metric, ctx, args)
