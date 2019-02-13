@@ -24,7 +24,7 @@ Details about mxboard is in [mxboard](https://github.com/awslabs/mxboard)
 **Test SRGAN**
 
 ```bash
-python demo_sr_gan.py --images ./ --pretrained ./samples/.params --gpu_id -1
+python demo_sr_gan.py --images ./ --pretrained ./samples/netG_epoch_20000.params --gpu_id -1
 ```
 
 ## References
