@@ -625,7 +625,7 @@ def yolo3_darknet53_coco(pretrained_base=True, pretrained=False,
         'darknet53', stages, [512, 256, 128], anchors, strides, classes, 'coco',
         pretrained=pretrained, norm_layer=norm_layer, norm_kwargs=norm_kwargs, **kwargs)
 
-def yolo3_darknet53_custom(classes, transfer=None, pretrained_base=True,
+def yolo3_darknet53_custom(classes, transfer=None, pretrained_base=True, pretrained=False,
                            norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
     """YOLO3 multi-scale with darknet53 base network on custom dataset.
     Parameters
@@ -648,6 +648,8 @@ def yolo3_darknet53_custom(classes, transfer=None, pretrained_base=True,
     mxnet.gluon.HybridBlock
         Fully hybrid yolo3 network.
     """
+    if pretrained:
+        warnings.warn("Custom models don't provide `pretrained` weights, ignored.")
     if transfer is None:
         base_net = darknet53(
             pretrained=pretrained_base, norm_layer=norm_layer, norm_kwargs=norm_kwargs, **kwargs)
@@ -709,7 +711,7 @@ def yolo3_mobilenet1_0_voc(pretrained_base=True, pretrained=False,
         'mobilenet1.0', stages, [512, 256, 128], anchors, strides, classes, 'voc',
         pretrained=pretrained, norm_layer=norm_layer, norm_kwargs=norm_kwargs, **kwargs)
 
-def yolo3_mobilenet1_0_custom(classes, transfer=None, pretrained_base=True,
+def yolo3_mobilenet1_0_custom(classes, transfer=None, pretrained_base=True, pretrained=False,
                               norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
     """YOLO3 multi-scale with mobilenet base network on custom dataset.
     Parameters
@@ -732,6 +734,8 @@ def yolo3_mobilenet1_0_custom(classes, transfer=None, pretrained_base=True,
     mxnet.gluon.HybridBlock
         Fully hybrid yolo3 network.
     """
+    if pretrained:
+        warnings.warn("Custom models don't provide `pretrained` weights, ignored.")
     if transfer is None:
         base_net = get_mobilenet(multiplier=1,
                                  pretrained=pretrained_base,
