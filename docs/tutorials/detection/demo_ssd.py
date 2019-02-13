@@ -58,8 +58,8 @@ print('Shape of pre-processed image:', x.shape)
 # We can use :py:func:`gluoncv.utils.viz.plot_bbox` to visualize the
 # results. We slice the results for the first image and feed them into `plot_bbox`:
 
-class_IDs, scores, bounding_boxs = net(x)
+class_IDs, scores, bounding_boxes = net(x)
 
-ax = utils.viz.plot_bbox(img, bounding_boxs[0], scores[0],
+ax = utils.viz.plot_bbox(img, bounding_boxes[0], scores[0],
                          class_IDs[0], class_names=net.classes)
 plt.show()
