@@ -4,6 +4,7 @@ from __future__ import absolute_import
 from __future__ import division
 
 import os
+import warnings
 import numpy as np
 import mxnet as mx
 from mxnet import gluon
@@ -79,24 +80,55 @@ class YOLOOutputV3(gluon.HybridBlock):
             offsets = np.expand_dims(np.expand_dims(offsets, axis=0), axis=0)
             self.offsets = self.params.get_constant('offset_%d'%(index), offsets)
 
-    def reset_class(self, classes):
+    def reset_class(self, classes, reuse_weights=None):
         """Reset class prediction.
         Parameters
         ----------
         classes : type
             Description of parameter `classes`.
+        reuse_weights : dict
+            A {new_integer : old_integer} mapping dict that allows the new predictor to reuse the
+            previously trained weights specified by the integer index.
         Returns
         -------
         type
             Description of returned object.
         """
         self._clear_cached_op()
+        # keep old records
+        old_classes = self._classes
+        old_pred = self.prediction
+        old_num_pred = self._num_pred
+        ctx = list(old_pred.params.values())[0].list_ctx()
         self._classes = len(classes)
         self._num_pred = 1 + 4 + len(classes)
         all_pred = self._num_pred * self._num_anchors
-        # TODO(zhreshold): reuse box preds, objectness
+        # to avoid deferred init, number of in_channels must be defined
+        in_channels = list(old_pred.params.values())[0].shape[1]
         self.prediction = nn.Conv2D(
-            all_pred, kernel_size=1, padding=0, strides=1, prefix=self.prediction.prefix)
+            all_pred, kernel_size=1, padding=0, strides=1,
+            in_channels=in_channels, prefix=old_pred.prefix)
+        self.prediction.initialize(ctx=ctx)
+        if reuse_weights:
+            new_pred = self.prediction
+            assert isinstance(reuse_weights, dict)
+            for old_params, new_params in zip(old_pred.params.values(), new_pred.params.values()):
+                old_data = old_params.data()
+                new_data = new_params.data()
+                for k, v in reuse_weights.items():
+                    if k >= self._classes or v >= old_classes:
+                        warnings.warn("reuse mapping {}/{} -> {}/{} out of range".format(
+                            k, self._classes, v, old_classes))
+                        continue
+                    for i in range(self._num_anchors):
+                        off_new = i * self._num_pred
+                        off_old = i * old_num_pred
+                        # copy along the first dimension
+                        new_data[1 + 4 + k + off_new] = old_data[1 + 4 + v + off_old]
+                        # copy non-class weights as well
+                        new_data[off_new : 1 + 4 + off_new] = old_data[off_old : 1 + 4 + off_old]
+                # set data to new conv layers
+                new_params.set_data(new_data)
 
 
     def hybrid_forward(self, F, x, anchors, offsets):
@@ -402,19 +434,69 @@ class YOLOV3(gluon.HybridBlock):
         self.nms_topk = nms_topk
         self.post_nms = post_nms
 
-    def reset_class(self, classes):
+    def reset_class(self, classes, reuse_weights=None):
         """Reset class categories and class predictors.
         Parameters
         ----------
         classes : iterable of str
             The new categories. ['apple', 'orange'] for example.
+        reuse_weights : dict
+            A {new_integer : old_integer} or mapping dict or {new_name : old_name} mapping dict,
+            or a list of [name0, name1,...] if class names don't change.
+            This allows the new predictor to reuse the
+            previously trained weights specified.
+
+        Example
+        -------
+        >>> net = gluoncv.model_zoo.get_model('yolo3_darknet53_voc', pretrained=True)
+        >>> # use direct name to name mapping to reuse weights
+        >>> net.reset_class(classes=['person'], reuse_weights={'person':'person'})
+        >>> # or use interger mapping, person is the 14th category in VOC
+        >>> net.reset_class(classes=['person'], reuse_weights={0:14})
+        >>> # you can even mix them
+        >>> net.reset_class(classes=['person'], reuse_weights={'person':14})
+        >>> # or use a list of string if class name don't change
+        >>> net.reset_class(classes=['person'], reuse_weights=['person'])
+
         """
         self._clear_cached_op()
+        old_classes = self._classes
         self._classes = classes
         if self._pos_iou_thresh >= 1:
             self._target_generator = YOLOV3TargetMerger(len(classes), self._ignore_iou_thresh)
+        if isinstance(reuse_weights, (dict, list)):
+            if isinstance(reuse_weights, dict):
+                # trying to replace str with indices
+                for k, v in reuse_weights.items():
+                    if isinstance(v, str):
+                        try:
+                            v = old_classes.index(v)  # raise ValueError if not found
+                        except ValueError:
+                            raise ValueError(
+                                "{} not found in old class names {}".format(v, old_classes))
+                        reuse_weights[k] = v
+                    if isinstance(k, str):
+                        try:
+                            new_idx = self._classes.index(k)  # raise ValueError if not found
+                        except ValueError:
+                            raise ValueError(
+                                "{} not found in new class names {}".format(k, self._classes))
+                        reuse_weights.pop(k)
+                        reuse_weights[new_idx] = v
+            else:
+                new_map = {}
+                for x in reuse_weights:
+                    try:
+                        new_idx = self._classes.index(x)
+                        old_idx = old_classes.index(x)
+                        new_map[new_idx] = old_idx
+                    except ValueError:
+                        warnings.warn("{} not found in old: {} or new class names: {}".format(
+                            x, old_classes, self._classes))
+                reuse_weights = new_map
+
         for outputs in self.yolo_outputs:
-            outputs.reset_class(classes)
+            outputs.reset_class(classes, reuse_weights=reuse_weights)
 
 def get_yolov3(name, stages, filters, anchors, strides, classes,
                dataset, pretrained=False, ctx=mx.cpu(),
@@ -576,12 +658,13 @@ def yolo3_darknet53_custom(classes, transfer=None, pretrained_base=True, pretrai
             [116, 90, 156, 198, 373, 326]]
         strides = [8, 16, 32]
         net = get_yolov3(
-            'darknet53', stages, [512, 256, 128], anchors, strides, classes, 'coco',
-            pretrained=pretrained, norm_layer=norm_layer, norm_kwargs=norm_kwargs, **kwargs)
+            'darknet53', stages, [512, 256, 128], anchors, strides, classes, '',
+            norm_layer=norm_layer, norm_kwargs=norm_kwargs, **kwargs)
     else:
         from ...model_zoo import get_model
         net = get_model('yolo3_darknet53_' + str(transfer), pretrained=True, **kwargs)
-        net.reset_class(classes)
+        reuse_classes = [x for x in classes if x in net.classes]
+        net.reset_class(classes, reuse_weights=reuse_classes)
     return net
 
 def yolo3_mobilenet1_0_voc(
@@ -671,8 +754,8 @@ def yolo3_mobilenet1_0_custom(
             [116, 90, 156, 198, 373, 326]]
         strides = [8, 16, 32]
         net = get_yolov3(
-            'mobilenet1.0', stages, [512, 256, 128], anchors, strides, classes, 'voc',
-            pretrained=pretrained, norm_layer=norm_layer, norm_kwargs=norm_kwargs, **kwargs)
+            'mobilenet1.0', stages, [512, 256, 128], anchors, strides, classes, '',
+            norm_layer=norm_layer, norm_kwargs=norm_kwargs, **kwargs)
     else:
         from ...model_zoo import get_model
         net = get_model(
@@ -680,7 +763,8 @@ def yolo3_mobilenet1_0_custom(
             str(transfer),
             pretrained=True,
             **kwargs)
-        net.reset_class(classes)
+        reuse_classes = [x for x in classes if x in net.classes]
+        net.reset_class(classes, reuse_weights=reuse_classes)
     return net
 
 def yolo3_mobilenet1_0_coco(
