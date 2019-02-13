@@ -7,6 +7,11 @@
 bash ./download_dataset.sh DIV2K_train_HR
 ```
 
+**Train SRGAN**
+```bash
+python train_srgan.py --dataroot ./DIV2K_train_HR
+```
+
 **Monitoring loss values and images during training**
 ```bash
 pip install mxboard
@@ -14,10 +19,7 @@ tensorboard --logdir=./logs --host=127.0.0.1 --port=8888
 ```
 Details about mxboard is in [mxboard](https://github.com/awslabs/mxboard)
 
-**Train SRGAN**
-```bash
-python train_srgan.py --dataroot ./DIV2K_train_HR
-```
+![images](images.png "images during training")
 
 **Test SRGAN**
 
