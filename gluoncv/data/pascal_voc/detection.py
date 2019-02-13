@@ -65,6 +65,10 @@ class VOCDetection(VisionDataset):
     @property
     def classes(self):
         """Category names."""
+        try:
+            self._validate_class_names(self.CLASSES)
+        except AssertionError as e:
+            raise RuntimeError("Class names must not contain {}".format(e))
         return type(self).CLASSES
 
     def __len__(self):
@@ -103,6 +107,7 @@ class VOCDetection(VisionDataset):
         label = []
         for obj in root.iter('object'):
             difficult = int(obj.find('difficult').text)
+            print("obj.find('name').text: " + obj.find('name').text)
             cls_name = obj.find('name').text.strip().lower()
             if cls_name not in self.classes:
                 continue
@@ -125,6 +130,11 @@ class VOCDetection(VisionDataset):
         assert 0 <= ymin < height, "ymin must in [0, {}), given {}".format(height, ymin)
         assert xmin < xmax <= width, "xmax must in (xmin, {}], given {}".format(width, xmax)
         assert ymin < ymax <= height, "ymax must in (ymin, {}], given {}".format(height, ymax)
+
+    def _validate_class_names(self, class_list):
+        """Validate class names."""
+        assert all(" " not in c for c in class_list), "spaces"
+        assert all(c.islower() for c in class_list), "uppercase characters"
 
     def _preload_labels(self):
         """Preload all labels into memory."""
