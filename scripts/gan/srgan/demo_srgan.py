@@ -1,30 +1,46 @@
-import mxnet.ndarray as nd
-from model import SRGenerator
+from train_srgan import SRGenerator
 import mxnet as mx
 from mxnet.gluon.data.vision import transforms
+from matplotlib import pyplot as plt
 import cv2
 from mxnet import image
-import numpy
+import argparse
 
-ctx = mx.gpu(7)
-# dommy_img = nd.random.uniform(0,1,(1,3,96,96))
-netG = SRGenerator()
-# dommy_out = netG(dommy_img)
-netG.load_params('samples/netG_epoch_19900.pth')
-netG.collect_params().reset_ctx(ctx)
+def parse_args():
+    parser = argparse.ArgumentParser(description='Test with srgan gan networks.')
+    parser.add_argument('--images', type=str, required=True,
+                        help='Test images, use comma to split multiple.')
+    parser.add_argument('--gpu_id', type=str, default='0',
+                        help='gpu id: e.g. 0. use -1 for CPU')
+    parser.add_argument('--pretrained', type=str, required=True,
+                        help='Load weights from previously saved parameters.')
+    args = parser.parse_args()
+    return args
 
-hr_img_list = ['../datasets/DIV2K_valid_HR/' + str(i).zfill(4)+'.png' for i in range(801,901)]
-lr_img_list = ['../datasets/DIV2K_valid_LR_bicubic/X4/'  + str(i).zfill(4)+'x4.png' for i in range(801,901)]
-transform_fn = transforms.Compose([
-    transforms.ToTensor(),
-    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-])
-for i,lr_img_path in enumerate(lr_img_list):
-    lr_img = image.imread(lr_img_path)
-    lr_img_in = transform_fn(lr_img).expand_dims(0).as_in_context(ctx)
-    hr_img_gen = netG(lr_img_in)
-    hr_img_gen = (hr_img_gen[0].transpose([1,2,0]) + 1) / 2 * 255
-    hr_img = image.imread(hr_img_list[i])
-    lr_img_up = image.imresize(lr_img,lr_img.shape[1]*4,lr_img.shape[0]*4,interp=3)
-    all = nd.concatenate([lr_img_up,hr_img_gen.astype(lr_img_up.dtype()),hr_img],axis=0)
-    cv2.imwrite('../datasets/valid_gen/'+str(i).zfill(4)+'.png',all.asnumpy())
+if __name__ == '__main__':
+    opt = parse_args()
+    # context list
+    if opt.gpu_id == '-1':
+        ctx = mx.cpu()
+    else:
+        ctx = mx.gpu(int(opt.gpu_id.strip()))
+
+    netG = SRGenerator()
+    netG.load_parameters(opt.pretrained)
+    netG.collect_params().reset_ctx(ctx)
+    image_list = [x.strip() for x in opt.images.split(',') if x.strip()]
+    transform_fn = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+    ])
+
+    ax = None
+    for image_path in image_list:
+        img = image.imread(image_path)
+        img = transform_fn(img)
+        img = img.expand_dims(0).as_in_context(ctx)
+        output = netG(img)
+        predict = mx.nd.squeeze(output)
+        predict = ((predict.transpose([1,2,0]).asnumpy() * 0.5 + 0.5) * 255).astype('uint8')
+        plt.imshow(predict)
+        plt.show()
