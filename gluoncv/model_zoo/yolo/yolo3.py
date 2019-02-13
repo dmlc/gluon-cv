@@ -625,7 +625,7 @@ def yolo3_darknet53_coco(pretrained_base=True, pretrained=False,
         'darknet53', stages, [512, 256, 128], anchors, strides, classes, 'coco',
         pretrained=pretrained, norm_layer=norm_layer, norm_kwargs=norm_kwargs, **kwargs)
 
-def yolo3_darknet53_custom(classes, transfer=None, pretrained_base=True, pretrained=False,
+def yolo3_darknet53_custom(classes, transfer=None, pretrained_base=True,
                            norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
     """YOLO3 multi-scale with darknet53 base network on custom dataset.
     Parameters
@@ -667,11 +667,8 @@ def yolo3_darknet53_custom(classes, transfer=None, pretrained_base=True, pretrai
         net.reset_class(classes, reuse_weights=reuse_classes)
     return net
 
-def yolo3_mobilenet1_0_voc(
-        pretrained_base=True,
-        pretrained=False,
-        norm_layer=BatchNorm, norm_kwargs=None,
-        **kwargs):
+def yolo3_mobilenet1_0_voc(pretrained_base=True, pretrained=False,
+                           norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
     """YOLO3 multi-scale with mobilenet base network on VOC dataset.
     Parameters
     ----------
@@ -712,13 +709,8 @@ def yolo3_mobilenet1_0_voc(
         'mobilenet1.0', stages, [512, 256, 128], anchors, strides, classes, 'voc',
         pretrained=pretrained, norm_layer=norm_layer, norm_kwargs=norm_kwargs, **kwargs)
 
-def yolo3_mobilenet1_0_custom(
-        classes,
-        transfer=None,
-        pretrained_base=True,
-        pretrained=False,
-        norm_layer=BatchNorm, norm_kwargs=None,
-        **kwargs):
+def yolo3_mobilenet1_0_custom(classes, transfer=None, pretrained_base=True,
+                              norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
     """YOLO3 multi-scale with mobilenet base network on custom dataset.
     Parameters
     ----------
@@ -767,11 +759,8 @@ def yolo3_mobilenet1_0_custom(
         net.reset_class(classes, reuse_weights=reuse_classes)
     return net
 
-def yolo3_mobilenet1_0_coco(
-        pretrained_base=True,
-        pretrained=False,
-        norm_layer=BatchNorm, norm_kwargs=None,
-        **kwargs):
+def yolo3_mobilenet1_0_coco(pretrained_base=True, pretrained=False, norm_layer=BatchNorm,
+                            norm_kwargs=None, **kwargs):
     """YOLO3 multi-scale with mobilenet base network on COCO dataset.
     Parameters
     ----------
