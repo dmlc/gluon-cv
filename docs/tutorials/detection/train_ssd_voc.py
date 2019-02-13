@@ -68,7 +68,11 @@ print('bboxes:', bboxes.shape, 'class ids:', cids.shape)
 from matplotlib import pyplot as plt
 from gluoncv.utils import viz
 
-ax = viz.plot_bbox(train_image.asnumpy(), bboxes, labels=cids, class_names=train_dataset.classes)
+ax = viz.plot_bbox(
+    train_image.asnumpy(),
+    bboxes,
+    labels=cids,
+    class_names=train_dataset.classes)
 plt.show()
 
 ##############################################################################
@@ -77,7 +81,11 @@ plt.show()
 val_image, val_label = val_dataset[0]
 bboxes = val_label[:, :4]
 cids = val_label[:, 4:5]
-ax = viz.plot_bbox(val_image.asnumpy(), bboxes, labels=cids, class_names=train_dataset.classes)
+ax = viz.plot_bbox(
+    val_image.asnumpy(),
+    bboxes,
+    labels=cids,
+    class_names=train_dataset.classes)
 plt.show()
 
 ##############################################################################
@@ -104,7 +112,8 @@ print('tensor shape:', train_image2.shape)
 ##############################################################################
 # Images in tensor are distorted because they no longer sit in (0, 255) range.
 # Let's convert them back so we can see them clearly.
-train_image2 = train_image2.transpose((1, 2, 0)) * nd.array((0.229, 0.224, 0.225)) + nd.array((0.485, 0.456, 0.406))
+train_image2 = train_image2.transpose(
+    (1, 2, 0)) * nd.array((0.229, 0.224, 0.225)) + nd.array((0.485, 0.456, 0.406))
 train_image2 = (train_image2 * 255).clip(0, 255)
 ax = viz.plot_bbox(train_image2.asnumpy(), train_label2[:, :4],
                    labels=train_label2[:, 4:5],
@@ -114,7 +123,8 @@ plt.show()
 ##############################################################################
 # apply transforms to validation image
 val_image2, val_label2 = val_transform(val_image, val_label)
-val_image2 = val_image2.transpose((1, 2, 0)) * nd.array((0.229, 0.224, 0.225)) + nd.array((0.485, 0.456, 0.406))
+val_image2 = val_image2.transpose(
+    (1, 2, 0)) * nd.array((0.229, 0.224, 0.225)) + nd.array((0.485, 0.456, 0.406))
 val_image2 = (val_image2 * 255).clip(0, 255)
 ax = viz.plot_bbox(val_image2.clip(0, 255).asnumpy(), val_label2[:, :4],
                    labels=val_label2[:, 4:5],
@@ -123,7 +133,8 @@ plt.show()
 
 ##############################################################################
 # Transforms used in training include random expanding, random cropping, color distortion, random flipping, etc.
-# In comparison, validation transforms are simpler and only resizing and color normalization is used.
+# In comparison, validation transforms are simpler and only resizing and
+# color normalization is used.
 
 ##########################################################
 # Data Loader
@@ -136,7 +147,7 @@ plt.show()
 #
 # A handy DataLoader would be very convenient for us to apply different transforms and aggregate data into mini-batches.
 #
-# Because the number of objects varys a lot across images, we also have
+# Because the number of objects varies a lot across images, we also have
 # varying label sizes. As a result, we need to pad those labels to the same size.
 # To deal with this problem, GluonCV provides :py:class:`gluoncv.data.batchify.Pad`,
 # which handles padding automatically.
@@ -147,14 +158,25 @@ from gluoncv.data.batchify import Tuple, Stack, Pad
 from mxnet.gluon.data import DataLoader
 
 batch_size = 2  # for tutorial, we use smaller batch-size
-num_workers = 0  # you can make it larger(if your CPU has more cores) to accelerate data loading
+# you can make it larger(if your CPU has more cores) to accelerate data loading
+num_workers = 0
 
 # behavior of batchify_fn: stack images, and pad labels
 batchify_fn = Tuple(Stack(), Pad(pad_val=-1))
-train_loader = DataLoader(train_dataset.transform(train_transform), batch_size, shuffle=True,
-                          batchify_fn=batchify_fn, last_batch='rollover', num_workers=num_workers)
-val_loader = DataLoader(val_dataset.transform(val_transform), batch_size, shuffle=False,
-                        batchify_fn=batchify_fn, last_batch='keep', num_workers=num_workers)
+train_loader = DataLoader(
+    train_dataset.transform(train_transform),
+    batch_size,
+    shuffle=True,
+    batchify_fn=batchify_fn,
+    last_batch='rollover',
+    num_workers=num_workers)
+val_loader = DataLoader(
+    val_dataset.transform(val_transform),
+    batch_size,
+    shuffle=False,
+    batchify_fn=batchify_fn,
+    last_batch='keep',
+    num_workers=num_workers)
 
 for ib, batch in enumerate(train_loader):
     if ib > 3:
@@ -177,11 +199,11 @@ for ib, batch in enumerate(train_loader):
 # behind SSD.
 #
 # `Gluon Model Zoo <../../model_zoo/index.html>`__ has a lot of built-in SSD networks.
-# You can load your favorate one with one simple line of code:
+# You can load your favorite one with one simple line of code:
 #
 # .. hint::
 #
-#    To avoid downloading mdoel in this tutorial, we set `pretrained_base=False`,
+#    To avoid downloading models in this tutorial, we set `pretrained_base=False`,
 #    in practice we usually want to load pre-trained imagenet models by setting
 #    `pretrained_base=True`.
 from gluoncv import model_zoo
@@ -189,7 +211,8 @@ net = model_zoo.get_model('ssd_300_vgg16_atrous_voc', pretrained_base=False)
 print(net)
 
 ##############################################################################
-# SSD network is a HybridBlock as mentioned before. You can call it with an input as:
+# SSD network is a HybridBlock as mentioned before. You can call it with
+# an input as:
 import mxnet as mx
 x = mx.nd.zeros(shape=(1, 3, 512, 512))
 net.initialize()
@@ -226,13 +249,26 @@ with autograd.train_mode():
 # to utilize multi-core CPU.
 
 ##############################################################################
-# If we provide anchors to the training transform, it will compute training targets
+# If we provide anchors to the training transform, it will compute
+# training targets
+from mxnet import gluon
 train_transform = presets.ssd.SSDDefaultTrainTransform(width, height, anchors)
 batchify_fn = Tuple(Stack(), Stack(), Stack())
-train_loader = DataLoader(train_dataset.transform(train_transform), batch_size, shuffle=True,
-                          batchify_fn=batchify_fn, last_batch='rollover', num_workers=num_workers)
+train_loader = DataLoader(
+    train_dataset.transform(train_transform),
+    batch_size,
+    shuffle=True,
+    batchify_fn=batchify_fn,
+    last_batch='rollover',
+    num_workers=num_workers)
+
+##############################################################################
+# Loss, Trainer and Training pipeline
 from gluoncv.loss import SSDMultiBoxLoss
 mbox_loss = SSDMultiBoxLoss()
+trainer = gluon.Trainer(
+    net.collect_params(), 'sgd',
+    {'learning_rate': 0.001, 'wd': 0.0005, 'momentum': 0.9})
 
 for ib, batch in enumerate(train_loader):
     if ib > 0:
@@ -242,7 +278,8 @@ for ib, batch in enumerate(train_loader):
     print('box targets:', batch[2].shape)
     with autograd.record():
         cls_pred, box_pred, anchors = net(batch[0])
-        sum_loss, cls_loss, box_loss = mbox_loss(cls_pred, box_pred, batch[1], batch[2])
+        sum_loss, cls_loss, box_loss = mbox_loss(
+            cls_pred, box_pred, batch[1], batch[2])
         # some standard gluon training steps:
         # autograd.backward(sum_loss)
         # trainer.step(1)
@@ -253,7 +290,9 @@ for ib, batch in enumerate(train_loader):
 #
 # .. hint::
 #
-#   Please checkout the full :download:`training script <../../../scripts/detection/ssd/train_ssd.py>` for complete implementation.
+# Please checkout the full :download:`training script
+# <../../../scripts/detection/ssd/train_ssd.py>` for complete
+# implementation.
 
 ##########################################################
 # References

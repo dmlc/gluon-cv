@@ -8,16 +8,15 @@ from __future__ import absolute_import
 import mxnet as mx
 from mxnet.symbol import Symbol
 from mxnet.gluon import HybridBlock, SymbolBlock
-from mxnet.gluon.model_zoo import vision
 from mxnet.base import string_types
 
-def _parse_network(network, outputs, inputs, pretrained, ctx):
+def _parse_network(network, outputs, inputs, pretrained, ctx, **kwargs):
     """Parse network with specified outputs and other arguments.
 
     Parameters
     ----------
     network : str or HybridBlock or Symbol
-        Logic chain: load from gluon.model_zoo.vision if network is string.
+        Logic chain: load from gluoncv.model_zoo if network is string.
         Convert to Symbol if network is HybridBlock
     outputs : str or iterable of str
         The name of layers to be extracted as features.
@@ -49,7 +48,8 @@ def _parse_network(network, outputs, inputs, pretrained, ctx):
     params = None
     prefix = ''
     if isinstance(network, string_types):
-        network = vision.get_model(network, pretrained=pretrained, ctx=ctx)
+        from ..model_zoo import get_model
+        network = get_model(network, pretrained=pretrained, ctx=ctx, **kwargs)
     if isinstance(network, HybridBlock):
         params = network.collect_params()
         prefix = network._prefix
@@ -72,7 +72,7 @@ class FeatureExtractor(SymbolBlock):
     Parameters
     ----------
     network : str or HybridBlock or Symbol
-        Logic chain: load from gluon.model_zoo.vision if network is string.
+        Logic chain: load from gluoncv.model_zoo if network is string.
         Convert to Symbol if network is HybridBlock
     outputs : str or list of str
         The name of layers to be extracted as features
@@ -83,20 +83,22 @@ class FeatureExtractor(SymbolBlock):
     ctx : Context
         The context, e.g. mxnet.cpu(), mxnet.gpu(0).
     """
-    def __init__(self, network, outputs, inputs=('data',), pretrained=False, ctx=mx.cpu()):
-        inputs, outputs, params = _parse_network(network, outputs, inputs, pretrained, ctx)
+    def __init__(self, network, outputs, inputs=('data',),
+                 pretrained=False, ctx=mx.cpu(), **kwargs):
+        inputs, outputs, params = _parse_network(
+            network, outputs, inputs, pretrained, ctx, **kwargs)
         super(FeatureExtractor, self).__init__(outputs, inputs, params=params)
 
 
 class FeatureExpander(SymbolBlock):
     """Feature extractor with additional layers to append.
-    This is very common in vision networks where extra branches are attched to
+    This is very common in vision networks where extra branches are attached to
     backbone network.
 
     Parameters
     ----------
     network : str or HybridBlock or Symbol
-        Logic chain: load from gluon.model_zoo.vision if network is string.
+        Logic chain: load from gluoncv.model_zoo if network is string.
         Convert to Symbol if network is HybridBlock.
     outputs : str or list of str
         The name of layers to be extracted as features
@@ -123,8 +125,9 @@ class FeatureExpander(SymbolBlock):
     """
     def __init__(self, network, outputs, num_filters, use_1x1_transition=True,
                  use_bn=True, reduce_ratio=1.0, min_depth=128, global_pool=False,
-                 pretrained=False, ctx=mx.cpu(), inputs=('data',)):
-        inputs, outputs, params = _parse_network(network, outputs, inputs, pretrained, ctx)
+                 pretrained=False, ctx=mx.cpu(), inputs=('data',), **kwargs):
+        inputs, outputs, params = _parse_network(
+            network, outputs, inputs, pretrained, ctx, **kwargs)
         # append more layers
         y = outputs[-1]
         weight_init = mx.init.Xavier(rnd_type='gaussian', factor_type='out', magnitude=2)

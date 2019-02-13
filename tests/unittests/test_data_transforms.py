@@ -103,14 +103,17 @@ def test_image_random_flip():
     np.testing.assert_allclose(image.asnumpy()[::-1, ::-1, :], out.asnumpy())
     assert(f == (True, True))
 
-def test_image_resize_contrain():
+def test_image_resize_contain():
     image = mx.random.normal(shape=(240, 120, 3)).astype(np.uint8)
-    size = (300, 300)
-    out, _ = transforms.image.resize_contain(image, size)
-    np.testing.assert_allclose(out.shape, (300, 300, 3))
-    size = (100, 100)
-    out, _ = transforms.image.resize_contain(image, size)
-    np.testing.assert_allclose(out.shape, (100, 100, 3))
+    width = 123
+    height = 321
+    out, _ = transforms.image.resize_contain(image, (width, height))
+    np.testing.assert_allclose(out.shape, (height, width, 3))
+
+    width = 120
+    height = 20
+    out, _ = transforms.image.resize_contain(image, (width, height))
+    np.testing.assert_allclose(out.shape, (height, width, 3))
 
 def test_image_ten_crop():
     image = mx.random.normal(shape=(240, 120, 3)).astype(np.uint8)
@@ -152,6 +155,9 @@ def test_transforms_presets_ssd():
     im_fname = gcv.utils.download('https://github.com/dmlc/web-data/blob/master/' +
                                   'gluoncv/detection/biking.jpg?raw=true', path='biking.jpg')
     x, orig_img = ssd.load_test(im_fname, short=512)
+    x1, orig_img1 = ssd.transform_test(mx.image.imread(im_fname), short=512)
+    np.testing.assert_allclose(x.asnumpy(), x1.asnumpy())
+    np.testing.assert_allclose(orig_img, orig_img1)
     if not osp.isdir(osp.expanduser('~/.mxnet/datasets/voc')):
         return
     train_dataset = gcv.data.VOCDetection(splits=((2007, 'trainval'), (2012, 'trainval')))
@@ -185,6 +191,9 @@ def test_transforms_presets_rcnn():
     im_fname = gcv.utils.download('https://github.com/dmlc/web-data/blob/master/' +
                                   'gluoncv/detection/biking.jpg?raw=true', path='biking.jpg')
     x, orig_img = rcnn.load_test(im_fname, short=600, max_size=1000)
+    x1, orig_img1 = rcnn.transform_test(mx.image.imread(im_fname), short=600, max_size=1000)
+    np.testing.assert_allclose(x.asnumpy(), x1.asnumpy())
+    np.testing.assert_allclose(orig_img, orig_img1)
     if not osp.isdir(osp.expanduser('~/.mxnet/datasets/voc')):
         return
     train_dataset = gcv.data.VOCDetection(splits=((2007, 'trainval'), (2012, 'trainval')))
@@ -242,6 +251,9 @@ def test_transforms_presets_yolo():
     im_fname = gcv.utils.download('https://github.com/dmlc/web-data/blob/master/' +
                                   'gluoncv/detection/biking.jpg?raw=true', path='biking.jpg')
     x, orig_img = yolo.load_test(im_fname, short=512)
+    x1, orig_img1 = yolo.transform_test(mx.image.imread(im_fname), short=512)
+    np.testing.assert_allclose(x.asnumpy(), x1.asnumpy())
+    np.testing.assert_allclose(orig_img, orig_img1)
     if not osp.isdir(osp.expanduser('~/.mxnet/datasets/voc')):
         return
     train_dataset = gcv.data.VOCDetection(splits=((2007, 'trainval'), (2012, 'trainval')))

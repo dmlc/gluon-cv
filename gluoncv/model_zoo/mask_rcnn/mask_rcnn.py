@@ -39,7 +39,7 @@ class Mask(nn.HybridBlock):
     def hybrid_forward(self, F, x):
         """Forward Mask Head.
 
-        The behavior during traing and inference is different.
+        The behavior during training and inference is different.
 
         Parameters
         ----------
@@ -89,7 +89,7 @@ class MaskRCNN(FasterRCNN):
     def hybrid_forward(self, F, x, gt_box=None):
         """Forward Mask RCNN network.
 
-        The behavior during traing and inference is different.
+        The behavior during training and inference is different.
 
         Parameters
         ----------
@@ -175,8 +175,9 @@ def get_mask_rcnn(name, dataset, pretrained=False, ctx=mx.cpu(),
         Model name.
     dataset : str
         The name of dataset.
-    pretrained : bool, optional, default is False
-        Load pretrained weights.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     ctx : mxnet.Context
         Context such as mx.cpu(), mx.gpu(0).
     root : str
@@ -192,7 +193,7 @@ def get_mask_rcnn(name, dataset, pretrained=False, ctx=mx.cpu(),
     if pretrained:
         from ..model_store import get_model_file
         full_name = '_'.join(('mask_rcnn', name, dataset))
-        net.load_parameters(get_model_file(full_name, root=root), ctx=ctx)
+        net.load_parameters(get_model_file(full_name, tag=pretrained, root=root), ctx=ctx)
     return net
 
 def mask_rcnn_resnet50_v1b_coco(pretrained=False, pretrained_base=True, **kwargs):
@@ -201,11 +202,12 @@ def mask_rcnn_resnet50_v1b_coco(pretrained=False, pretrained_base=True, **kwargs
 
     Parameters
     ----------
-    pretrained : bool, optional, default is False
-        Load pretrained weights.
-    pretrained_base : bool, optional, default is True
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True
         Load pretrained base network, the extra layers are randomized. Note that
-        if pretrained is `Ture`, this has no effect.
+        if pretrained is `True`, this has no effect.
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'

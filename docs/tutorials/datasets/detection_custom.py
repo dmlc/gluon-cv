@@ -72,7 +72,7 @@ plt.show()
 ##############################################################################
 # LST Label for GluonCV and MXNet
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-# Following the convention used in MXNet, we recommand a LST file which is a plain text list file to store labels.
+# Following the convention used in MXNet, we recommend a LST file which is a plain text list file to store labels.
 #
 # LST file was first introduced in MXNet following the `RecordIO design <https://mxnet.incubator.apache.org/architecture/note_data_loading.html>`_ and the `List file tutorial <https://mxnet.incubator.apache.org/faq/recordio.html>`_ of creating a LST file.
 #

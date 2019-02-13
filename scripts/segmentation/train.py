@@ -12,6 +12,7 @@ import gluoncv
 from gluoncv.loss import *
 from gluoncv.utils import LRScheduler
 from gluoncv.model_zoo.segbase import *
+from gluoncv.model_zoo import get_model
 from gluoncv.utils.parallel import *
 from gluoncv.data import get_segmentation_dataset
 
@@ -33,11 +34,13 @@ def parse_args():
                         help='base image size')
     parser.add_argument('--crop-size', type=int, default=480,
                         help='crop image size')
+    parser.add_argument('--train-split', type=str, default='train',
+                        help='dataset train split (default: train)')
     # training hyper params
     parser.add_argument('--aux', action='store_true', default= False,
-                        help='Auxilary loss')
+                        help='Auxiliary loss')
     parser.add_argument('--aux-weight', type=float, default=0.5,
-                        help='auxilary loss weight')
+                        help='auxiliary loss weight')
     parser.add_argument('--epochs', type=int, default=50, metavar='N',
                         help='number of epochs to train (default: 50)')
     parser.add_argument('--start_epoch', type=int, default=0,
@@ -54,6 +57,9 @@ def parse_args():
                         metavar='M', help='momentum (default: 0.9)')
     parser.add_argument('--weight-decay', type=float, default=1e-4,
                         metavar='M', help='w-decay (default: 1e-4)')
+    parser.add_argument('--no-wd', action='store_true',
+                        help='whether to remove weight decay on bias, \
+                        and beta/gamma for batchnorm layers.')
     # cuda and logging
     parser.add_argument('--no-cuda', action='store_true', default=
                         False, help='disables CUDA training')
@@ -85,7 +91,7 @@ def parse_args():
     if args.no_cuda:
         print('Using CPU')
         args.kvstore = 'local'
-        args.ctx = mx.cpu(0)
+        args.ctx = [mx.cpu(0)]
     else:
         print('Number of GPUs:', args.ngpus)
         args.ctx = [mx.gpu(i) for i in range(args.ngpus)]
@@ -109,7 +115,7 @@ class Trainer(object):
         data_kwargs = {'transform': input_transform, 'base_size': args.base_size,
                        'crop_size': args.crop_size}
         trainset = get_segmentation_dataset(
-            args.dataset, split='trainval', mode='train', **data_kwargs)
+            args.dataset, split=args.train_split, mode='train', **data_kwargs)
         valset = get_segmentation_dataset(
             args.dataset, split='val', mode='val', **data_kwargs)
         self.train_data = gluon.data.DataLoader(
@@ -118,10 +124,13 @@ class Trainer(object):
         self.eval_data = gluon.data.DataLoader(valset, args.test_batch_size,
             last_batch='rollover', num_workers=args.workers)
         # create network
-        model = get_segmentation_model(model=args.model, dataset=args.dataset,
-                                       backbone=args.backbone, norm_layer=args.norm_layer,
-                                       norm_kwargs=args.norm_kwargs, aux=args.aux,
-                                       crop_size=args.crop_size)
+        if args.model_zoo is not None:
+            model = get_model(args.model_zoo, pretrained=True)
+        else:
+            model = get_segmentation_model(model=args.model, dataset=args.dataset,
+                                           backbone=args.backbone, norm_layer=args.norm_layer,
+                                           norm_kwargs=args.norm_kwargs, aux=args.aux,
+                                           crop_size=args.crop_size)
         model.cast(args.dtype)
         print(model)
         self.net = DataParallelModel(model, args.ctx, args.syncbn)
@@ -146,6 +155,11 @@ class Trainer(object):
                             'momentum': args.momentum}
         if args.dtype == 'float16':
             optimizer_params['multi_precision'] = True
+
+        if args.no_wd:
+            for k, v in self.net.module.collect_params('.*beta|.*gamma|.*bias').items():
+                v.wd_mult = 0.0
+
         self.optimizer = gluon.Trainer(self.net.module.collect_params(), 'sgd',
                                        optimizer_params, kvstore = kv)
         # evaluation metrics
@@ -207,7 +221,7 @@ if __name__ == "__main__":
         trainer.validation(args.start_epoch)
     else:
         print('Starting Epoch:', args.start_epoch)
-        print('Total Epoches:', args.epochs)
+        print('Total Epochs:', args.epochs)
         for epoch in range(args.start_epoch, args.epochs):
             trainer.training(epoch)
             if not trainer.args.no_val:

@@ -30,7 +30,7 @@ def filepath_enumerate(paths):
     return out
 
 class LintHelper(object):
-    """Class to help runing the lint and records summary"""
+    """Class to help running the lint and records summary"""
 
     @staticmethod
     def _print_summary_map(strm, result_map, ftype):

@@ -94,7 +94,7 @@ class VGGAtrousBase(gluon.HybridBlock):
 
 class VGGAtrousExtractor(VGGAtrousBase):
     """VGG Atrous multi layer feature extractor which produces multiple output
-    feauture maps.
+    feature maps.
 
     Parameters
     ----------
@@ -175,8 +175,9 @@ def get_vgg_atrous_extractor(num_layers, im_size, pretrained=False, ctx=mx.cpu()
         VGG types, can be 11,13,16,19.
     im_size : int
         VGG detection input size, can be 300, 512.
-    pretrained : bool
-        Load pretrained weights if `True`.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     ctx : mx.Context
         Context such as mx.cpu(), mx.gpu(0).
     root : str
@@ -195,8 +196,8 @@ def get_vgg_atrous_extractor(num_layers, im_size, pretrained=False, ctx=mx.cpu()
         from ..model_store import get_model_file
         batch_norm_suffix = '_bn' if kwargs.get('batch_norm') else ''
         net.initialize(ctx=ctx)
-        net.load_params(get_model_file('vgg%d_atrous%s'%(num_layers, batch_norm_suffix),
-                                       root=root), ctx=ctx, allow_missing=True)
+        net.load_parameters(get_model_file('vgg%d_atrous%s'%(num_layers, batch_norm_suffix),
+                                           tag=pretrained, root=root), ctx=ctx, allow_missing=True)
     return net
 
 def vgg16_atrous_300(**kwargs):

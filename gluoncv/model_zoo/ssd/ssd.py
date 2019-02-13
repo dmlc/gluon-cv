@@ -72,12 +72,13 @@ class SSD(HybridBlock):
         Minimum channels for the transition layers.
     global_pool : bool
         Whether to attach a global average pooling layer as the last output layer.
-    pretrained : bool
-        Description of parameter `pretrained`.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     stds : tuple of float, default is (0.1, 0.1, 0.2, 0.2)
         Std values to be divided/multiplied to box encoded values.
     nms_thresh : float, default is 0.45.
-        Non-maximum suppression threshold. You can speficy < 0 or > 1 to disable NMS.
+        Non-maximum suppression threshold. You can specify < 0 or > 1 to disable NMS.
     nms_topk : int, default is 400
         Apply NMS to top k detection results, use -1 to disable so that every Detection
          result is used in NMS.
@@ -92,14 +93,25 @@ class SSD(HybridBlock):
         to export to symbol so we can run it in c++, scalar, etc.
     ctx : mx.Context
         Network context.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+        This will only apply to base networks that has `norm_layer` specified, will ignore if the
+        base network (e.g. VGG) don't accept this argument.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
 
     """
     def __init__(self, network, base_size, features, num_filters, sizes, ratios,
                  steps, classes, use_1x1_transition=True, use_bn=True,
                  reduce_ratio=1.0, min_depth=128, global_pool=False, pretrained=False,
                  stds=(0.1, 0.1, 0.2, 0.2), nms_thresh=0.45, nms_topk=400, post_nms=100,
-                 anchor_alloc_size=128, ctx=mx.cpu(), **kwargs):
+                 anchor_alloc_size=128, ctx=mx.cpu(),
+                 norm_layer=nn.BatchNorm, norm_kwargs=None, **kwargs):
         super(SSD, self).__init__(**kwargs)
+        if norm_kwargs is None:
+            norm_kwargs = {}
         if network is None:
             num_layers = len(ratios)
         else:
@@ -122,13 +134,25 @@ class SSD(HybridBlock):
         with self.name_scope():
             if network is None:
                 # use fine-grained manually designed block as features
-                self.features = features(pretrained=pretrained, ctx=ctx)
+                try:
+                    self.features = features(pretrained=pretrained, ctx=ctx,
+                                             norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+                except TypeError:
+                    self.features = features(pretrained=pretrained, ctx=ctx)
             else:
-                self.features = FeatureExpander(
-                    network=network, outputs=features, num_filters=num_filters,
-                    use_1x1_transition=use_1x1_transition,
-                    use_bn=use_bn, reduce_ratio=reduce_ratio, min_depth=min_depth,
-                    global_pool=global_pool, pretrained=pretrained, ctx=ctx)
+                try:
+                    self.features = FeatureExpander(
+                        network=network, outputs=features, num_filters=num_filters,
+                        use_1x1_transition=use_1x1_transition,
+                        use_bn=use_bn, reduce_ratio=reduce_ratio, min_depth=min_depth,
+                        global_pool=global_pool, pretrained=pretrained, ctx=ctx,
+                        norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+                except TypeError:
+                    self.features = FeatureExpander(
+                        network=network, outputs=features, num_filters=num_filters,
+                        use_1x1_transition=use_1x1_transition,
+                        use_bn=use_bn, reduce_ratio=reduce_ratio, min_depth=min_depth,
+                        global_pool=global_pool, pretrained=pretrained, ctx=ctx)
             self.class_predictors = nn.HybridSequential()
             self.box_predictors = nn.HybridSequential()
             self.anchor_generators = nn.HybridSequential()
@@ -162,7 +186,7 @@ class SSD(HybridBlock):
         Parameters
         ----------
         nms_thresh : float, default is 0.45.
-            Non-maximum suppression threshold. You can speficy < 0 or > 1 to disable NMS.
+            Non-maximum suppression threshold. You can specify < 0 or > 1 to disable NMS.
         nms_topk : int, default is 400
             Apply NMS to top k detection results, use -1 to disable so that every Detection
              result is used in NMS.
@@ -232,9 +256,11 @@ class SSD(HybridBlock):
         with self.name_scope():
             class_predictors = nn.HybridSequential(prefix=self.class_predictors.prefix)
             for i, ag in zip(range(len(self.class_predictors)), self.anchor_generators):
+                # Re-use the same prefix and ctx_list as used by the current ConvPredictor
                 prefix = self.class_predictors[i].prefix
+                ctx = list(self.class_predictors[i].predictor.params.values())[0].list_ctx()
                 new_cp = ConvPredictor(ag.num_depth * (self.num_classes + 1), prefix=prefix)
-                new_cp.collect_params().initialize()
+                new_cp.collect_params().initialize(ctx=ctx)
                 class_predictors.add(new_cp)
             self.class_predictors = class_predictors
             self.cls_decoder = MultiPerClassDecoder(len(self.classes) + 1, thresh=0.01)
@@ -254,7 +280,7 @@ def get_ssd(name, base_size, features, filters, sizes, ratios, steps, classes,
     features : iterable of str or `HybridBlock`
         List of network internal output names, in order to specify which layers are
         used for predicting bbox values.
-        If `name` is `None`, `features` must be a `HybridBlock` which generate mutliple
+        If `name` is `None`, `features` must be a `HybridBlock` which generate multiple
         outputs for prediction.
     filters : iterable of float or None
         List of convolution layer channels which is going to be appended to the base
@@ -274,16 +300,23 @@ def get_ssd(name, base_size, features, filters, sizes, ratios, steps, classes,
         Names of categories.
     dataset : str
         Name of dataset. This is used to identify model name because models trained on
-        differnet datasets are going to be very different.
-    pretrained : bool, optional, default is False
-        Load pretrained weights.
-    pretrained_base : bool, optional, default is True
+        different datasets are going to be very different.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True
         Load pretrained base network, the extra layers are randomized. Note that
-        if pretrained is `Ture`, this has no effect.
+        if pretrained is `True`, this has no effect.
     ctx : mxnet.Context
         Context such as mx.cpu(), mx.gpu(0).
     root : str
         Model weights storing path.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
 
     Returns
     -------
@@ -297,7 +330,7 @@ def get_ssd(name, base_size, features, filters, sizes, ratios, steps, classes,
     if pretrained:
         from ..model_store import get_model_file
         full_name = '_'.join(('ssd', str(base_size), name, dataset))
-        net.load_params(get_model_file(full_name, root=root), ctx=ctx)
+        net.load_parameters(get_model_file(full_name, tag=pretrained, root=root), ctx=ctx)
     return net
 
 def ssd_300_vgg16_atrous_voc(pretrained=False, pretrained_base=True, **kwargs):
@@ -305,9 +338,10 @@ def ssd_300_vgg16_atrous_voc(pretrained=False, pretrained_base=True, **kwargs):
 
     Parameters
     ----------
-    pretrained : bool, optional, default is False
-        Load pretrained weights.
-    pretrained_base : bool, optional, default is True
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True
         Load pretrained base network, the extra layers are randomized.
 
     Returns
@@ -329,9 +363,10 @@ def ssd_300_vgg16_atrous_coco(pretrained=False, pretrained_base=True, **kwargs):
 
     Parameters
     ----------
-    pretrained : bool, optional, default is False
-        Load pretrained weights.
-    pretrained_base : bool, optional, default is True
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True
         Load pretrained base network, the extra layers are randomized.
 
     Returns
@@ -356,7 +391,7 @@ def ssd_300_vgg16_atrous_custom(classes, pretrained_base=True, transfer=None, **
     ----------
     classes : iterable of str
         Names of custom foreground classes. `len(classes)` is the number of foreground classes.
-    pretrained_base : bool, optional, default is True
+    pretrained_base : bool or str, optional, default is True
         Load pretrained base network, the extra layers are randomized.
     transfer : str or None
         If not `None`, will try to reuse pre-trained weights from SSD networks trained on other
@@ -392,9 +427,10 @@ def ssd_512_vgg16_atrous_voc(pretrained=False, pretrained_base=True, **kwargs):
 
     Parameters
     ----------
-    pretrained : bool, optional, default is False
-        Load pretrained weights.
-    pretrained_base : bool, optional, default is True
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True
         Load pretrained base network, the extra layers are randomized.
 
     Returns
@@ -416,9 +452,10 @@ def ssd_512_vgg16_atrous_coco(pretrained=False, pretrained_base=True, **kwargs):
 
     Parameters
     ----------
-    pretrained : bool, optional, default is False
-        Load pretrained weights.
-    pretrained_base : bool, optional, default is True
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True
         Load pretrained base network, the extra layers are randomized.
 
     Returns
@@ -442,7 +479,7 @@ def ssd_512_vgg16_atrous_custom(classes, pretrained_base=True, transfer=None, **
     ----------
     classes : iterable of str
         Names of custom foreground classes. `len(classes)` is the number of foreground classes.
-    pretrained_base : bool, optional, default is True
+    pretrained_base : bool or str, optional, default is True
         Load pretrained base network, the extra layers are randomized.
     transfer : str or None
         If not `None`, will try to reuse pre-trained weights from SSD networks trained on other
@@ -478,10 +515,17 @@ def ssd_512_resnet18_v1_voc(pretrained=False, pretrained_base=True, **kwargs):
 
     Parameters
     ----------
-    pretrained : bool, optional, default is False
-        Load pretrained weights.
-    pretrained_base : bool, optional, default is True
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True
         Load pretrained base network, the extra layers are randomized.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
 
     Returns
     -------
@@ -494,7 +538,7 @@ def ssd_512_resnet18_v1_voc(pretrained=False, pretrained_base=True, **kwargs):
                    filters=[512, 512, 256, 256],
                    sizes=[51.2, 102.4, 189.4, 276.4, 363.52, 450.6, 492],
                    ratios=[[1, 2, 0.5]] + [[1, 2, 0.5, 3, 1.0/3]] * 3 + [[1, 2, 0.5]] * 2,
-                   steps=[8, 16, 32, 64, 128, 256, 512],
+                   steps=[16, 32, 64, 128, 256, 512],
                    classes=classes, dataset='voc', pretrained=pretrained,
                    pretrained_base=pretrained_base, **kwargs)
 
@@ -503,10 +547,17 @@ def ssd_512_resnet18_v1_coco(pretrained=False, pretrained_base=True, **kwargs):
 
     Parameters
     ----------
-    pretrained : bool, optional, default is False
-        Load pretrained weights.
-    pretrained_base : bool, optional, default is True
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True
         Load pretrained base network, the extra layers are randomized.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
 
     Returns
     -------
@@ -520,7 +571,7 @@ def ssd_512_resnet18_v1_coco(pretrained=False, pretrained_base=True, **kwargs):
                    filters=[512, 512, 256, 256],
                    sizes=[51.2, 102.4, 189.4, 276.4, 363.52, 450.6, 492],
                    ratios=[[1, 2, 0.5]] + [[1, 2, 0.5, 3, 1.0/3]] * 3 + [[1, 2, 0.5]] * 2,
-                   steps=[8, 16, 32, 64, 128, 256, 512],
+                   steps=[16, 32, 64, 128, 256, 512],
                    classes=classes, dataset='coco', pretrained=pretrained,
                    pretrained_base=pretrained_base, **kwargs)
 
@@ -531,11 +582,17 @@ def ssd_512_resnet18_v1_custom(classes, pretrained_base=True, transfer=None, **k
     ----------
     classes : iterable of str
         Names of custom foreground classes. `len(classes)` is the number of foreground classes.
-    pretrained_base : bool, optional, default is True
+    pretrained_base : bool or str, optional, default is True
         Load pretrained base network, the extra layers are randomized.
     transfer : str or None
         If not `None`, will try to reuse pre-trained weights from SSD networks trained on other
         datasets.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
 
     Returns
     -------
@@ -555,7 +612,7 @@ def ssd_512_resnet18_v1_custom(classes, pretrained_base=True, transfer=None, **k
                       filters=[512, 512, 256, 256],
                       sizes=[51.2, 102.4, 189.4, 276.4, 363.52, 450.6, 492],
                       ratios=[[1, 2, 0.5]] + [[1, 2, 0.5, 3, 1.0/3]] * 3 + [[1, 2, 0.5]] * 2,
-                      steps=[8, 16, 32, 64, 128, 256, 512],
+                      steps=[16, 32, 64, 128, 256, 512],
                       classes=classes, dataset='',
                       pretrained_base=pretrained_base, **kwargs)
     else:
@@ -569,10 +626,17 @@ def ssd_512_resnet50_v1_voc(pretrained=False, pretrained_base=True, **kwargs):
 
     Parameters
     ----------
-    pretrained : bool, optional, default is False
-        Load pretrained weights.
-    pretrained_base : bool, optional, default is True
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True
         Load pretrained base network, the extra layers are randomized.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
 
     Returns
     -------
@@ -594,10 +658,17 @@ def ssd_512_resnet50_v1_coco(pretrained=False, pretrained_base=True, **kwargs):
 
     Parameters
     ----------
-    pretrained : bool, optional, default is False
-        Load pretrained weights.
-    pretrained_base : bool, optional, default is True
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True
         Load pretrained base network, the extra layers are randomized.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
 
     Returns
     -------
@@ -622,11 +693,17 @@ def ssd_512_resnet50_v1_custom(classes, pretrained_base=True, transfer=None, **k
     ----------
     classes : iterable of str
         Names of custom foreground classes. `len(classes)` is the number of foreground classes.
-    pretrained_base : bool, optional, default is True
+    pretrained_base : bool or str, optional, default is True
         Load pretrained base network, the extra layers are randomized.
     transfer : str or None
         If not `None`, will try to reuse pre-trained weights from SSD networks trained on other
         datasets.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
 
     Returns
     -------
@@ -660,10 +737,17 @@ def ssd_512_resnet101_v2_voc(pretrained=False, pretrained_base=True, **kwargs):
 
     Parameters
     ----------
-    pretrained : bool, optional, default is False
-        Load pretrained weights.
-    pretrained_base : bool, optional, default is True
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True
         Load pretrained base network, the extra layers are randomized.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
 
     Returns
     -------
@@ -685,10 +769,17 @@ def ssd_512_resnet152_v2_voc(pretrained=False, pretrained_base=True, **kwargs):
 
     Parameters
     ----------
-    pretrained : bool, optional, default is False
-        Load pretrained weights.
-    pretrained_base : bool, optional, default is True
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True
         Load pretrained base network, the extra layers are randomized.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
 
     Returns
     -------
@@ -710,10 +801,17 @@ def ssd_512_mobilenet1_0_voc(pretrained=False, pretrained_base=True, **kwargs):
 
     Parameters
     ----------
-    pretrained : bool, optional, default is False
-        Load pretrained weights.
-    pretrained_base : bool, optional, default is True
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True
         Load pretrained base network, the extra layers are randomized.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
 
     Returns
     -------
@@ -735,10 +833,17 @@ def ssd_512_mobilenet1_0_coco(pretrained=False, pretrained_base=True, **kwargs):
 
     Parameters
     ----------
-    pretrained : bool, optional, default is False
-        Load pretrained weights.
-    pretrained_base : bool, optional, default is True
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True
         Load pretrained base network, the extra layers are randomized.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
 
     Returns
     -------
@@ -763,11 +868,17 @@ def ssd_512_mobilenet1_0_custom(classes, pretrained_base=True, transfer=None, **
     ----------
     classes : iterable of str
         Names of custom foreground classes. `len(classes)` is the number of foreground classes.
-    pretrained_base : bool, optional, default is True
+    pretrained_base : bool or str, optional, default is True
         Load pretrained base network, the extra layers are randomized.
     transfer : str or None
         If not `None`, will try to reuse pre-trained weights from SSD networks trained on other
         datasets.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
 
     Returns
     -------
@@ -792,6 +903,6 @@ def ssd_512_mobilenet1_0_custom(classes, pretrained_base=True, transfer=None, **
                       pretrained_base=pretrained_base, **kwargs)
     else:
         from ...model_zoo import get_model
-        net = get_model('ssd_512_mobilenet1_0_' + str(transfer), pretrained=True, **kwargs)
+        net = get_model('ssd_512_mobilenet1.0_' + str(transfer), pretrained=True, **kwargs)
         net.reset_class(classes)
     return net

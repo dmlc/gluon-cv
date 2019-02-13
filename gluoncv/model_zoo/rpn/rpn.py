@@ -77,7 +77,7 @@ class RPN(gluon.HybridBlock):
     def hybrid_forward(self, F, x, img):
         """Forward RPN.
 
-        The behavior during traing and inference is different.
+        The behavior during training and inference is different.
 
         Parameters
         ----------

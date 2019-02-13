@@ -100,8 +100,9 @@ def get_vgg(num_layers, pretrained=False, ctx=cpu(),
     ----------
     num_layers : int
         Number of layers for the variant of densenet. Options are 11, 13, 16, 19.
-    pretrained : bool, default False
-        Whether to load the pretrained weights for model.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     root : str, default $MXNET_HOME/models
@@ -113,7 +114,12 @@ def get_vgg(num_layers, pretrained=False, ctx=cpu(),
         from .model_store import get_model_file
         batch_norm_suffix = '_bn' if kwargs.get('batch_norm') else ''
         net.load_parameters(get_model_file('vgg%d%s'%(num_layers, batch_norm_suffix),
-                                           root=root), ctx=ctx)
+                                           tag=pretrained, root=root), ctx=ctx)
+        from ..data import ImageNet1kAttr
+        attrib = ImageNet1kAttr()
+        net.synset = attrib.synset
+        net.classes = attrib.classes
+        net.classes_long = attrib.classes_long
     return net
 
 def vgg11(**kwargs):
@@ -122,8 +128,9 @@ def vgg11(**kwargs):
 
     Parameters
     ----------
-    pretrained : bool, default False
-        Whether to load the pretrained weights for model.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     root : str, default '$MXNET_HOME/models'
@@ -137,8 +144,9 @@ def vgg13(**kwargs):
 
     Parameters
     ----------
-    pretrained : bool, default False
-        Whether to load the pretrained weights for model.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     root : str, default '$MXNET_HOME/models'
@@ -152,8 +160,9 @@ def vgg16(**kwargs):
 
     Parameters
     ----------
-    pretrained : bool, default False
-        Whether to load the pretrained weights for model.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     root : str, default '$MXNET_HOME/models'
@@ -167,8 +176,9 @@ def vgg19(**kwargs):
 
     Parameters
     ----------
-    pretrained : bool, default False
-        Whether to load the pretrained weights for model.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     root : str, default '$MXNET_HOME/models'
@@ -183,8 +193,9 @@ def vgg11_bn(**kwargs):
 
     Parameters
     ----------
-    pretrained : bool, default False
-        Whether to load the pretrained weights for model.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     root : str, default '$MXNET_HOME/models'
@@ -200,8 +211,9 @@ def vgg13_bn(**kwargs):
 
     Parameters
     ----------
-    pretrained : bool, default False
-        Whether to load the pretrained weights for model.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     root : str, default '$MXNET_HOME/models'
@@ -217,8 +229,9 @@ def vgg16_bn(**kwargs):
 
     Parameters
     ----------
-    pretrained : bool, default False
-        Whether to load the pretrained weights for model.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     root : str, default '$MXNET_HOME/models'
@@ -234,8 +247,9 @@ def vgg19_bn(**kwargs):
 
     Parameters
     ----------
-    pretrained : bool, default False
-        Whether to load the pretrained weights for model.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     root : str, default '$MXNET_HOME/models'

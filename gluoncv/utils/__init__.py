@@ -7,7 +7,7 @@ from . import random
 from . import metrics
 from . import parallel
 
-from .download import download
+from .download import download, check_sha1
 from .filesystem import makedirs
 from .bbox import bbox_iou
 from .block import recursive_visit, set_lr_mult, freeze_bn

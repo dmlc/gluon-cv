@@ -79,6 +79,8 @@ Single Shot Multibox Object Detector
 
     load_test
 
+    transform_test
+
     SSDDefaultTrainTransform
 
     SSDDefaultValTransform
@@ -95,6 +97,8 @@ Faster RCNN
 
     load_test
 
+    transform_test
+
     FasterRCNNDefaultTrainTransform
 
     FasterRCNNDefaultValTransform
@@ -108,6 +112,8 @@ Mask RCNN
     :nosignatures:
 
     load_test
+
+    transform_test
 
     MaskRCNNDefaultTrainTransform
 
@@ -123,6 +129,8 @@ YOLO
     :nosignatures:
 
     load_test
+
+    transform_test
 
     YOLO3DefaultTrainTransform
 

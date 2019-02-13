@@ -11,7 +11,7 @@ __all__ = ['FocalLoss', 'SSDMultiBoxLoss', 'YOLOV3Loss',
            'MixSoftmaxCrossEntropyLoss', 'MixSoftmaxCrossEntropyOHEMLoss']
 
 class FocalLoss(gluon.loss.Loss):
-    """Focal Loss for inbalanced classification.
+    """Focal Loss for imbalanced classification.
     Focal loss was described in https://arxiv.org/abs/1708.02002
 
     Parameters
@@ -52,7 +52,7 @@ class FocalLoss(gluon.loss.Loss):
           and you want to weigh each sample in the batch separately,
           sample_weight should have shape (64, 1).
     Outputs:
-        - **loss**: loss tensor with shape (batch_size,). Dimenions other than
+        - **loss**: loss tensor with shape (batch_size,). Dimensions other than
           batch_axis are averaged out.
     """
     def __init__(self, axis=-1, alpha=0.25, gamma=2, sparse_label=True,
@@ -220,11 +220,16 @@ class YOLOV3Loss(gluon.loss.Loss):
         # compute some normalization count, except batch-size
         denorm = F.cast(
             F.shape_array(objness_t).slice_axis(axis=0, begin=1, end=None).prod(), 'float32')
-        obj_loss = F.broadcast_mul(self._sigmoid_ce(objness, objness_t, objness_t >= 0), denorm)
+        weight_t = F.broadcast_mul(weight_t, objness_t)
+        hard_objness_t = F.where(objness_t > 0, F.ones_like(objness_t), objness_t)
+        new_objness_mask = F.where(objness_t > 0, objness_t, objness_t >= 0)
+        obj_loss = F.broadcast_mul(
+            self._sigmoid_ce(objness, hard_objness_t, new_objness_mask), denorm)
         center_loss = F.broadcast_mul(self._sigmoid_ce(box_centers, center_t, weight_t), denorm * 2)
         scale_loss = F.broadcast_mul(self._l1_loss(box_scales, scale_t, weight_t), denorm * 2)
         denorm_class = F.cast(
             F.shape_array(class_t).slice_axis(axis=0, begin=1, end=None).prod(), 'float32')
+        class_mask = F.broadcast_mul(class_mask, objness_t)
         cls_loss = F.broadcast_mul(self._sigmoid_ce(cls_preds, class_t, class_mask), denorm_class)
         return obj_loss, center_loss, scale_loss, cls_loss
 

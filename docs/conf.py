@@ -17,6 +17,7 @@
 # sys.path.insert(0, os.path.abspath('.'))
 # import guzzle_sphinx_theme
 
+import os
 import recommonmark
 from recommonmark.parser import CommonMarkParser
 from recommonmark.transform import AutoStructify
@@ -59,19 +60,21 @@ extensions = [
 
 sphinx_gallery_conf = {
     # path to your examples scripts
-    'examples_dirs': ['tutorials/datasets',
-                      'tutorials/classification',
-                      'tutorials/detection',
-                      'tutorials/instance',
-                      'tutorials/segmentation',
-                      'tutorials/deployment',],
+    'examples_dirs': [
+        'tutorials/datasets',
+        'tutorials/classification',
+        'tutorials/detection',
+        'tutorials/instance',
+        'tutorials/segmentation',
+        'tutorials/deployment',],
     # path where to save gallery generated examples
-    'gallery_dirs': ['build/examples_datasets',
-                     'build/examples_classification',
-                     'build/examples_detection',
-                     'build/examples_instance',
-                     'build/examples_segmentation',
-                     'build/examples_deployment',],
+    'gallery_dirs': [
+        'build/examples_datasets',
+        'build/examples_classification',
+        'build/examples_detection',
+        'build/examples_instance',
+        'build/examples_segmentation',
+        'build/examples_deployment',],
 
     'filename_pattern': '.py',
     'ignore_pattern': 'im2rec.py',
@@ -115,7 +118,6 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path .
-exclude_patterns = []
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
@@ -126,9 +128,9 @@ pygments_style = 'sphinx'
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'sphinx_rtd_theme'
-html_logo = '_static/gluon_white.png'
-html_favicon = '_static/gluon_s2.png'
+#html_theme = 'sphinx_rtd_theme'
+html_logo = '_static/gluon-logo.svg'
+html_favicon = '_static/gluon.ico'
 # html_theme_path = guzzle_sphinx_theme.html_theme_path()
 # html_theme = 'guzzle_sphinx_theme'
 
@@ -140,6 +142,30 @@ html_favicon = '_static/gluon_s2.png'
 #         # Set the name of the project to appear in the sidebar
 #         "project_nav_name": "GluonCV",
 # }
+
+html_theme = 'mxtheme'
+html_theme_path = ['mxtheme']
+html_theme_options = {
+    'primary_color': 'blue',
+    'accent_color': 'deep_orange',
+    'header_links' : [
+        ('Install', '#installation', False, ''),
+        ('Tutorial', 'tutorials/index', False, ''),
+        ('API', 'api/index', False, ''),
+        ('Community', 'how_to/support', False, ''),
+        ('Contribute', 'how_to/contribute', False, ''),
+        ('GitHub', 'https://github.com/dmlc/gluon-cv/', True, 'link'),
+    ],
+
+    # custom layout
+    'fixed_drawer': True,
+    'fixed_header': True,
+    'header_waterfall': True,
+    'header_scroll': True,
+
+    # Render footer (Default: True)
+    'show_footer': False
+}
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -238,7 +264,12 @@ intersphinx_mapping = {
 todo_include_todos = True
 
 def setup(app):
+    import mxtheme
+    app.add_directive('card', mxtheme.CardDirective)
+
     app.add_javascript('google_analytics.js')
+    app.add_javascript('hidebib.js')
+    app.add_stylesheet('css/custom.css')
      #app.add_transform(AutoStructify)
     #app.add_config_value('recommonmark_config', {
     #}, True)

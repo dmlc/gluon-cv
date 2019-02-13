@@ -1,4 +1,4 @@
-"""4. Train PSPNet on ADE20K Dataset
+"""5. Train PSPNet on ADE20K Dataset
 =================================
 
 This is a tutorial of training PSPNet on ADE20K dataset using Gluon Vison.
@@ -52,7 +52,7 @@ import gluoncv
 #
 # A Pyramid Pooling Module is built on top of FCN, which combines multiple scale
 # features with different receptive field sizes. It pools the featuremaps
-# into different sizes and then concatinating together after upsampling.
+# into different sizes and then concatenating together after upsampling.
 #
 # The Pyramid Pooling Module is defined as::
 #
