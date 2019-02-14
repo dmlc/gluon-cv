@@ -160,7 +160,7 @@ def test_ssd_reset_class_on_gpu():
 def test_yolo3_reset_class():
     ctx = mx.context.current_context()
     x = mx.random.uniform(shape=(1, 3, 512, 544), ctx=ctx)  # allow non-squre and larger inputs
-    model_name = 'yolo3_darnet53_voc'
+    model_name = 'yolo3_darknet53_voc'
     net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
     net.reset_class(["bus", "car", "bird"])
     net(x)
