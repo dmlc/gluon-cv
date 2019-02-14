@@ -64,9 +64,6 @@ def random_crop_with_constraints(bbox, size, min_scale=0.3, max_scale=1,
             (None, 1),
         )
 
-    if len(bbox) == 0:
-        constraints = []
-
     w, h = size
 
     candidates = [(0, 0, w, h)]
@@ -85,6 +82,11 @@ def random_crop_with_constraints(bbox, size, min_scale=0.3, max_scale=1,
             crop_t = random.randrange(h - crop_h)
             crop_l = random.randrange(w - crop_w)
             crop_bb = np.array((crop_l, crop_t, crop_l + crop_w, crop_t + crop_h))
+
+            if len(bbox) == 0:
+                top, bottom = crop_t, crop_t + crop_h
+                left, right = crop_l, crop_l + crop_w
+                return bbox, (left, top, right-left, bottom-top)
 
             iou = bbox_iou(bbox, crop_bb[np.newaxis])
             if min_iou <= iou.min() and iou.max() <= max_iou:
