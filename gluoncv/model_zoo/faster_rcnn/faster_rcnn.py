@@ -204,7 +204,7 @@ class FasterRCNN(RCNN):
         super(FasterRCNN, self).reset_class(classes)
         self._target_generator = {RCNNTargetGenerator(self.num_class)}
 
-    def _pyramid_roi_feats(self, F, features, rpn_rois, roi_size, strides, roi_mode='pool',
+    def _pyramid_roi_feats(self, F, features, rpn_rois, roi_size, strides, roi_mode='align',
                            eps=1e-6):
         """Assign rpn_rois to specific FPN layers according to its area
            and then perform `ROIPooling` or `ROIAlign` to generate final
