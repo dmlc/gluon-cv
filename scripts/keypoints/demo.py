@@ -4,8 +4,6 @@ import argparse, time, logging, os, math, tqdm
 import numpy as np
 import mxnet as mx
 from mxnet import gluon, nd, image
-from mxnet import autograd as ag
-from mxnet.gluon import nn
 from mxnet.gluon.data.vision import transforms
 
 import matplotlib.pyplot as plt
@@ -14,10 +12,7 @@ import gluoncv as gcv
 from gluoncv import data
 from gluoncv.data import mscoco
 from gluoncv.model_zoo import get_model
-from gluoncv.utils import makedirs, LRScheduler
-from gluoncv.data.transforms.pose import transform_preds, get_final_preds, flip_heatmap
-from gluoncv.data.transforms.presets.simple_pose import SimplePoseDefaultTrainTransform, SimplePoseDefaultValTransform
-from gluoncv.utils.metrics.coco_keypoints import COCOKeyPointsMetric
+from gluoncv.data.transforms.pose import get_final_preds
 
 num_joints = 17
 
@@ -77,7 +72,6 @@ def get_final_preds(batch_heatmaps, center, scale):
 
     preds = nd.zeros_like(coords)
 
-    # import pdb; pdb.set_trace()
     # Transform back
     for i in range(coords.shape[0]):
         w_ratio = coords[i][:, 0] / heatmap_width
@@ -88,7 +82,6 @@ def get_final_preds(batch_heatmaps, center, scale):
     return preds, maxvals
 
 def heatmap_to_coord(heatmaps, bbox_list):
-    # from gluoncv.data.transforms.pose import get_final_preds
     center_list = []
     scale_list = []
     for i, bbox in enumerate(bbox_list):
@@ -104,11 +97,15 @@ def heatmap_to_coord(heatmaps, bbox_list):
     coords, maxvals = get_final_preds(heatmaps, center_list, scale_list)
     return coords, maxvals
 
-
 def keypoint_detection(img_path, detector, pose_net):
+    detector_tic = time.time()
     x, img = data.transforms.presets.yolo.load_test(img_path, short=512)
     # pretrained images
     class_IDs, scores, bounding_boxs = detector(x)
+    nd.waitall()
+    detector_tic = time.time() - detector_tic
+
+    transform_tic = time.time()
     L = class_IDs.shape[1]
     thr = 0.5
     upscale_bbox = []
@@ -121,39 +118,45 @@ def keypoint_detection(img_path, detector, pose_net):
         upscale_bbox.append(upscale_bbox_fn(bbox.asnumpy().tolist(), img, scale=1.25))
 
     pose_input = crop_resize_normalize(img, upscale_bbox, (256, 192))
+    nd.waitall()
+    transform_tic = time.time() - transform_tic
 
+    pose_tic = time.time()
     predicted_heatmap = pose_net(pose_input)
-    pred_coords, _ = heatmap_to_coord(predicted_heatmap, upscale_bbox)
+    nd.waitall()
+    pose_tic = time.time() - pose_tic
 
-    '''
+    post_proc_tic = time.time()
+    pred_coords, _ = heatmap_to_coord(predicted_heatmap, upscale_bbox)
+    nd.waitall()
+    post_proc_tic = time.time() - post_proc_tic
+
     person_ind = class_IDs[0].asnumpy() == 0
     ax = gcv.utils.viz.plot_bbox(img, bounding_boxs[0].asnumpy()[person_ind[:,0]],
                                  scores[0].asnumpy()[person_ind[:,0]], thresh=0.5)
-    # ax = gcv.utils.viz.plot_bbox(img, bounding_boxs[0], thresh=0.0)
     plt.xlim([0, img.shape[1]-1])
     plt.ylim([0, img.shape[0]-1])
     plt.gca().invert_yaxis()
     for i in range(pred_coords.shape[0]):
         pts = pred_coords[i].asnumpy()
         plt.scatter(pts[:,0], pts[:,1], s=20)
-        # import pdb; pdb.set_trace()
         joint_pairs = [[0,1], [1,3], [0,2], [2,4],
                        [5,6], [5,7], [7,9], [6,8], [8,10],
                        [5,11], [6,12], [11,12],
                        [11,13], [12,14], [13,15], [14,16]]
-        for jp in joint_pairs:
-            plt.plot(pts[jp, 0], pts[jp, 1])
+        colormap_index = np.linspace(0, 1, len(joint_pairs))
+        for cm_ind, jp in zip(colormap_index, joint_pairs):
+            plt.plot(pts[jp, 0], pts[jp, 1],
+                     linewidth=5.0, alpha=0.7, color=plt.cm.cool(cm_ind))
 
     plt.show()
-    '''
+    print(detector_tic, transform_tic, pose_tic, post_proc_tic)
 
 if __name__ == '__main__':
-    detector_name = "yolo3_mobilenet1.0_coco"
+    detector_name = "faster_rcnn_resnet50_v1b_coco"
     detector = get_model(detector_name, ctx=mx.cpu(), pretrained=True)
-    net = get_model('simple_pose_resnet50_v1b', ctx=mx.cpu())
-    net.load_parameters('simple_pose_resnet50_v1b.params')
+    net = get_model('simple_pose_resnet152_v1d', ctx=mx.cpu())
+    net.load_parameters('simple_pose_resnet152_v1d.params')
 
-    tic = time.time()
-    for i in tqdm.tqdm(range(10)):
-        keypoint_detection('test.jpg', detector, net)
-    print(time.time() - tic)
+    for i in tqdm.tqdm(range(1)):
+        keypoint_detection('outlets_model2.jpeg', detector, net)
