@@ -157,6 +157,24 @@ def test_ssd_reset_class_on_gpu():
     net.reset_class(["bus", "car", "bird"])
     net(x)
 
+def test_yolo3_reset_class():
+    ctx = mx.context.current_context()
+    x = mx.random.uniform(shape=(1, 3, 512, 544), ctx=ctx)  # allow non-squre and larger inputs
+    model_name = 'yolo3_darknet53_voc'
+    net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
+    net.reset_class(["bus", "car", "bird"])
+    net(x)
+
+    # for GPU
+    ctx = mx.gpu(0)
+    try:
+        x = mx.random.uniform(shape=(1, 3, 512, 544), ctx=ctx)
+    except Exception:
+        return
+    net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
+    net.reset_class(["bus", "car", "bird"])
+    net(x)
+
 @try_gpu(0)
 def test_faster_rcnn_models():
     ctx = mx.context.current_context()
