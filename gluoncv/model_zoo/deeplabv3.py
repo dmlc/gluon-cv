@@ -1,5 +1,6 @@
 # pylint: disable=unused-argument
 """Pyramid Scene Parsing Network"""
+import math
 from mxnet.gluon import nn
 from mxnet.context import cpu
 from mxnet.gluon.nn import HybridBlock
@@ -66,8 +67,8 @@ class DeepLabV3(SegBaseModel):
         h, w = x.shape[2:]
         self._up_kwargs['height'] = h
         self._up_kwargs['width'] = w
-        self.head.aspp.concurent[-1]._up_kwargs['height'] = h// 8
-        self.head.aspp.concurent[-1]._up_kwargs['width'] = w// 8
+        self.head.aspp.concurent[-1]._up_kwargs['height'] = math.ceil(h / 8)
+        self.head.aspp.concurent[-1]._up_kwargs['width'] = math.ceil(w / 8)
         pred = self.forward(x)
         if self.aux:
             pred = pred[0]
