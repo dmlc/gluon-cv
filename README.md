@@ -88,7 +88,9 @@ Check out how to use GluonCV for your own research or projects.
 - For advanced examples, check out our [Scripts](http://gluon-cv.mxnet.io/master/scripts/index.html).
 - For experienced users, check out our [API Notes](https://gluon-cv.mxnet.io/api/data.datasets.html#).
 
-If you use our code or models in your research, please kindly cite our papers:
+# Citation
+
+If you feel our code or models helps in your research, please kindly cite our papers:
 
 ```
 @article{he2018bag,
