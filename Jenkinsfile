@@ -25,7 +25,7 @@ stage("Unit Test") {
         # remove and create new env instead
         set -ex
         # conda env create -n gluon_cv_py2_test --force tests/py2.yml
-        # conda env update -n gluon_cv_py2_test -f tests/py2.yml --prune
+        conda env update -n gluon_cv_py2_test -f tests/py2.yml --prune
         conda activate gluon_cv_py2_test
         conda list
         export CUDA_VISIBLE_DEVICES=${VISIBLE_GPU}
@@ -81,11 +81,11 @@ stage("Build Docs") {
       checkout scm
       VISIBLE_GPU=env.EXECUTOR_NUMBER.toInteger() % 4
       sh """#!/bin/bash
-      conda env remove -n gluon_vision_docs -y
+      # conda env remove -n gluon_vision_docs -y
       set -ex
       export CUDA_VISIBLE_DEVICES=${VISIBLE_GPU}
-      conda env create -n gluon_vision_docs -f docs/build.yml
-      # conda env update -n gluon_vision_docs -f docs/build.yml --prune
+      # conda env create -n gluon_vision_docs -f docs/build.yml
+      conda env update -n gluon_vision_docs -f docs/build.yml --prune
       conda activate gluon_vision_docs
       export PYTHONPATH=\${PWD}
       env
