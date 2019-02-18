@@ -35,6 +35,9 @@ class COCODetection(VisionDataset):
         it will cause undefined behavior.
     use_crowd : bool, default is True
         Whether use boxes labeled as crowd instance.
+    annotation_dir : str, default is 'annotations'(coco default)
+        The subdir for annotations. For example, a coco format json file will be searched as
+        'root/annotation_dir/xxx.json'
 
     """
     CLASSES = ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train',
@@ -53,13 +56,14 @@ class COCODetection(VisionDataset):
 
     def __init__(self, root=os.path.join('~', '.mxnet', 'datasets', 'coco'),
                  splits=('instances_val2017',), transform=None, min_object_area=0,
-                 skip_empty=True, use_crowd=True):
+                 skip_empty=True, use_crowd=True, annotation_dir='annotations'):
         super(COCODetection, self).__init__(root)
         self._root = os.path.expanduser(root)
         self._transform = transform
         self._min_object_area = min_object_area
         self._skip_empty = skip_empty
         self._use_crowd = use_crowd
+        self._annotation_dir = annotation_dir
         if isinstance(splits, mx.base.string_types):
             splits = [splits]
         self._splits = splits
@@ -108,7 +112,7 @@ class COCODetection(VisionDataset):
         try_import_pycocotools()
         from pycocotools.coco import COCO
         for split in self._splits:
-            anno = os.path.join(self._root, 'annotations', split) + '.json'
+            anno = os.path.join(self._root, self._annotation_dir, split) + '.json'
             _coco = COCO(anno)
             self._coco.append(_coco)
             classes = [c['name'] for c in _coco.loadCats(_coco.getCatIds())]
