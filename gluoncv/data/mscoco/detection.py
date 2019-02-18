@@ -35,9 +35,7 @@ class COCODetection(VisionDataset):
         it will cause undefined behavior.
     use_crowd : bool, default is True
         Whether use boxes labeled as crowd instance.
-    annotation_dir : str, default is 'annotations'(coco default)
-        The subdir for annotations. For example, a coco format json file will be searched as
-        'root/annotation_dir/xxx.json'
+
 
     """
     CLASSES = ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train',
@@ -93,6 +91,34 @@ class COCODetection(VisionDataset):
         """Category names."""
         return type(self).CLASSES
 
+    @property
+    def annotation_dir(self):
+        """
+        The subdir for annotations. Default is 'annotations'(coco default)
+        For example, a coco format json file will be searched as
+        'root/annotation_dir/xxx.json'
+        You can override if custom dataset don't follow the same pattern
+        """
+        return 'annotations'
+
+    def _parse_image_path(self, entry):
+        """How to parse image dir and path from entry.
+
+        Parameters
+        ----------
+        entry : dict
+            COCO entry, e.g. including width, height, image path, etc..
+
+        Returns
+        -------
+        abs_path : str
+            Absolute path for corresponding image.
+
+        """
+        dirname, filename = entry['coco_url'].split('/')[-2:]
+        abs_path = os.path.join(self._root, dirname, filename)
+        return abs_path
+
     def __len__(self):
         return len(self._items)
 
@@ -112,7 +138,7 @@ class COCODetection(VisionDataset):
         try_import_pycocotools()
         from pycocotools.coco import COCO
         for split in self._splits:
-            anno = os.path.join(self._root, self._annotation_dir, split) + '.json'
+            anno = os.path.join(self._root, self.annotation_dir, split) + '.json'
             _coco = COCO(anno)
             self._coco.append(_coco)
             classes = [c['name'] for c in _coco.loadCats(_coco.getCatIds())]
@@ -131,8 +157,7 @@ class COCODetection(VisionDataset):
             # iterate through the annotations
             image_ids = sorted(_coco.getImgIds())
             for entry in _coco.loadImgs(image_ids):
-                dirname, filename = entry['coco_url'].split('/')[-2:]
-                abs_path = os.path.join(self._root, dirname, filename)
+                abs_path = self._parse_image_path(entry)
                 if not os.path.exists(abs_path):
                     raise IOError('Image: {} not exists.'.format(abs_path))
                 label = self._check_load_bbox(_coco, entry)
