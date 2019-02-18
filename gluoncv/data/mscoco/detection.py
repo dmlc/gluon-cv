@@ -169,7 +169,10 @@ class COCODetection(VisionDataset):
 
     def _check_load_bbox(self, coco, entry):
         """Check and load ground-truth labels"""
-        ann_ids = coco.getAnnIds(imgIds=entry['id'], iscrowd=None)
+        entry_id = entry['id']
+        # fix pycocotools _isArrayLike which don't work for str in python3
+        entry_id = [entry_id] if not isinstance(entry_id, (list, tuple)) else entry_id
+        ann_ids = coco.getAnnIds(imgIds=entry_id, iscrowd=None)
         objs = coco.loadAnns(ann_ids)
         # check valid bboxes
         valid_objs = []
