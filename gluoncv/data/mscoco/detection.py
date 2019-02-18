@@ -83,7 +83,8 @@ class COCODetection(VisionDataset):
             raise ValueError("No coco objects found, dataset not initialized.")
         elif len(self._coco) > 1:
             raise NotImplementedError(
-                "Currently we don't support evaluating {} JSON files".format(len(self._coco)))
+                "Currently we don't support evaluating {} JSON files. \
+                Please use single JSON dataset and evaluate one by one".format(len(self._coco)))
         return self._coco[0]
 
     @property
