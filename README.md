@@ -100,12 +100,9 @@ If you feel our code or models helps in your research, please kindly cite our pa
   year={2018}
 }
 
-@misc{zhang2019bag,
-    title={Bag of Freebies for Training Object Detection Neural Networks},
-    author={Zhi Zhang and Tong He and Hang Zhang and Zhongyuan Zhang and Junyuan Xie and Mu Li},
-    year={2019},
-    eprint={1902.04103},
-    archivePrefix={arXiv},
-    primaryClass={cs.CV}
-}
-```
+@article{zhang2019bag,
+  title={Bag of Freebies for Training Object Detection Neural Networks},
+  author={Zhang, Zhi and He, Tong and Zhang, Hang and Zhang, Zhongyuan and Xie, Junyuan and Li, Mu},
+  journal={arXiv preprint arXiv:1902.04103},
+  year={2019}
+}```
