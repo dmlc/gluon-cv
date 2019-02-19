@@ -564,7 +564,7 @@ def faster_rcnn_fpn_resnet50_v1b_coco(pretrained=False, pretrained_base=True, **
 
     train_patterns = '|'.join(['.*dense', '.*rpn', '.*down(2|3|4)_conv', '.*layers(2|3|4)_conv'])
     return get_faster_rcnn(
-        name='resnet50_v1b', dataset='coco', pretrained=pretrained, features=features,
+        name='fpn_resnet50_v1b', dataset='coco', pretrained=pretrained, features=features,
         top_features=top_features, classes=classes, box_features=box_features,
         short=800, max_size=1333, min_stage=2, max_stage=6, train_patterns=train_patterns,
         nms_thresh=0.5, nms_topk=-1, post_nms=-1, roi_mode='align', roi_size=(14, 14),
@@ -776,7 +776,7 @@ def faster_rcnn_fpn_resnet101_v1d_coco(pretrained=False, pretrained_base=True, *
 
     train_patterns = '|'.join(['.*dense', '.*rpn', '.*down(2|3|4)_conv', '.*layers(2|3|4)_conv'])
     return get_faster_rcnn(
-        name='resnet101_v1d', dataset='coco', pretrained=pretrained, features=features,
+        name='fpn_resnet101_v1d', dataset='coco', pretrained=pretrained, features=features,
         top_features=top_features, classes=classes, box_features=box_features,
         short=800, max_size=1333, min_stage=2, max_stage=6, train_patterns=train_patterns,
         nms_thresh=0.5, nms_topk=-1, post_nms=-1, roi_mode='align', roi_size=(14, 14),
