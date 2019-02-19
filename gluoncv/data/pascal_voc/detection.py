@@ -3,8 +3,8 @@ from __future__ import absolute_import
 from __future__ import division
 import os
 import logging
-import numpy as np
 import warnings
+import numpy as np
 try:
     import xml.etree.cElementTree as ET
 except ImportError:
