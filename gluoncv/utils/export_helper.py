@@ -153,7 +153,7 @@ def export_block(path, block, data_shape=None, epoch=0, preprocess=True, layout=
         raise RuntimeError(str(last_exception).splitlines()[0])
 
 def export_tvm(path, block, data_shape, epoch=0, preprocess=True, layout='HWC',
-               ctx=mx.cpu(), target='llvm', opt_level=3):
+               ctx=mx.cpu(), target='llvm', opt_level=3, use_autotvm=False):
     """Helper function to export a HybridBlock to TVM executable. Note that tvm package needs
     to be installed(https://tvm.ai/).
 
@@ -189,6 +189,9 @@ def export_tvm(path, block, data_shape, epoch=0, preprocess=True, layout='HWC',
         TVM optimization level, if supported, higher `opt_level` may generate more efficient
         runtime library, however, some operator may not support high level optimization, which will
         fallback to lower `opt_level`.
+    use_autotvm : bool, default is False
+        Use autotvm for performance tuning. Note that this can take very long time, since it's a
+        search and model based tuning process.
 
     Returns
     -------
@@ -196,9 +199,15 @@ def export_tvm(path, block, data_shape, epoch=0, preprocess=True, layout='HWC',
 
     """
     try:
+        import tvm
         import nnvm
+        from tvm import autotvm
+        from tvm import relay
+        from tvm.relay import testing
+        from tvm.autotvm.tuner import XGBTuner, RandomTuner
+        import tvm.contrib.graph_runtime as runtime
     except ImportError:
-        print("NNVM package required, please refer https://tvm.ai/ for installation guide.")
+        print("TVM package required, please refer https://tvm.ai/ for installation guide.")
         raise
 
     # add preprocess block if necessary
@@ -217,15 +226,83 @@ def export_tvm(path, block, data_shape, epoch=0, preprocess=True, layout='HWC',
         wrapper_block = block
     wrapper_block.collect_params().reset_ctx(ctx)
 
-    # convert to nnvm symbol
-    sym, params = nnvm.frontend.from_mxnet(wrapper_block)
-    with nnvm.compiler.build_config(opt_level=opt_level):
-        graph, lib, params = nnvm.compiler.build(
-            sym, target, shape={"data": data_shape}, params=params)
+    # convert to relay graph
+    sym, params = relay.frontend.from_mxnet(wrapper_block, shape={"data": data_shape})
+
+    if use_autotvm:
+        def tune_kernels(tasks,
+                 measure_option,
+                 tuner='gridsearch',
+                 early_stopping=None,
+                 log_filename='tuning.log'):
+            for i, tsk in enumerate(tasks):
+                prefix = "[Task %2d/%2d] " % (i+1, len(tasks))
+
+                # converting conv2d tasks to conv2d_NCHWc tasks
+                op_name = tsk.workload[0]
+                if op_name == 'conv2d':
+                    func_create = 'topi_x86_conv2d_NCHWc'
+                elif op_name == 'depthwise_conv2d_nchw':
+                    func_create = 'topi_x86_depthwise_conv2d_NCHWc_from_nchw'
+                else:
+                    raise ValueError("Tuning {} is not supported on x86".format(op_name))
+
+                task = autotvm.task.create(func_create, args=tsk.args,
+                                           target=target, template_key='direct')
+                task.workload = tsk.workload
+
+                # create tuner
+                if tuner == 'xgb' or tuner == 'xgb-rank':
+                    tuner_obj = XGBTuner(task, loss_type='rank')
+                elif tuner == 'ga':
+                    tuner_obj = GATuner(task, pop_size=50)
+                elif tuner == 'random':
+                    tuner_obj = RandomTuner(task)
+                elif tuner == 'gridsearch':
+                    tuner_obj = GridSearchTuner(task)
+                else:
+                    raise ValueError("Invalid tuner: " + tuner)
+
+                # do tuning
+                n_trial=len(task.config_space)
+                tuner_obj.tune(n_trial=n_trial,
+                               early_stopping=early_stopping,
+                               measure_option=measure_option,
+                               callbacks=[
+                                   autotvm.callback.progress_bar(n_trial, prefix=prefix),
+                                   autotvm.callback.log_to_file(log_filename)])
+
+        #
+        tasks = autotvm.task.extract_from_program(sym, target=target,
+                                                  params=params, ops=(relay.op.nn.conv2d,))
+        print('start tunning...')
+        tuning_option = {
+            'log_filename': 'tune.log',
+            'tuner': 'random',
+            'early_stopping': None,
+
+            'measure_option': autotvm.measure_option(
+                builder=autotvm.LocalBuilder(),
+                runner=autotvm.LocalRunner(number=10, repeat=1,
+                                           min_repeat_ms=1000),
+            ),
+        }
+        tune_kernels(tasks, **tuning_option)
+
+        with autotvm.apply_history_best(log_file):
+            print("Compile...")
+            with relay.build_config(opt_level=opt_level):
+                graph, lib, params = relay.build_module.build(
+                    sym, target=target, params=params)
+
+    else:
+        with relay.build_config(opt_level=opt_level):
+            graph, lib, params = relay.build_module.build(
+                sym, target, params=params)
 
     # export library, json graph and parameters
-    lib.export_library(path + '_deploy_lib.tar')
+    lib.export_library(path + '_deploy_lib.so')
     with open(path + '_deploy_graph.json', 'w') as fo:
-        fo.write(graph.json())
+        fo.write(graph)
     with open(path + '_deploy_{:04n}.params'.format(epoch), 'wb') as fo:
         fo.write(nnvm.compiler.save_param_dict(params))
