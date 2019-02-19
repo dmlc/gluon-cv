@@ -3,6 +3,7 @@ from __future__ import absolute_import
 from __future__ import division
 import os
 import logging
+import warnings
 import numpy as np
 try:
     import xml.etree.cElementTree as ET
@@ -65,6 +66,10 @@ class VOCDetection(VisionDataset):
     @property
     def classes(self):
         """Category names."""
+        try:
+            self._validate_class_names(self.CLASSES)
+        except AssertionError as e:
+            raise RuntimeError("Class names must not contain {}".format(e))
         return type(self).CLASSES
 
     def __len__(self):
@@ -125,6 +130,13 @@ class VOCDetection(VisionDataset):
         assert 0 <= ymin < height, "ymin must in [0, {}), given {}".format(height, ymin)
         assert xmin < xmax <= width, "xmax must in (xmin, {}], given {}".format(width, xmax)
         assert ymin < ymax <= height, "ymax must in (ymin, {}], given {}".format(height, ymax)
+
+    def _validate_class_names(self, class_list):
+        """Validate class names."""
+        assert all(c.islower() for c in class_list), "uppercase characters"
+        stripped = [c for c in class_list if c.strip() != c]
+        if stripped:
+            warnings.warn('white space removed for {}'.format(stripped))
 
     def _preload_labels(self):
         """Preload all labels into memory."""
