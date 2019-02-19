@@ -132,8 +132,10 @@ class VOCDetection(VisionDataset):
 
     def _validate_class_names(self, class_list):
         """Validate class names."""
-        assert all(" " not in c for c in class_list), "spaces"
         assert all(c.islower() for c in class_list), "uppercase characters"
+        stripped = [c for c in class_list if c.strip() != c]
+        if stripped:
+            warnings.warn('white space removed for {}'.format(stripped))
 
     def _preload_labels(self):
         """Preload all labels into memory."""
