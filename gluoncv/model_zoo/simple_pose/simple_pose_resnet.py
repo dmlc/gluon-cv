@@ -10,6 +10,7 @@
 from __future__ import division
 
 __all__ = ['get_simple_pose_resnet', 'SimplePoseResNet',
+           'simple_pose_resnet18_v1b',
            'simple_pose_resnet50_v1b', 'simple_pose_resnet101_v1b',
            'simple_pose_resnet152_v1b',
            'simple_pose_resnet50_v1d', 'simple_pose_resnet101_v1d',
@@ -119,10 +120,25 @@ def get_simple_pose_resnet(base_name, pretrained=False, ctx=cpu(),
 
     if pretrained:
         from ..model_store import get_model_file
-        net.load_parameters(get_model_file('pose_resnet%d'%(num_layers),
+        net.load_parameters(get_model_file('simple_pose_%s'%(base_name),
                                            tag=pretrained, root=root), ctx=ctx)
 
     return net
+
+def simple_pose_resnet18_v1b(**kwargs):
+    r"""ResNet-18 model from `"Simple Baselines for Human Pose Estimation and Tracking"
+    <https://arxiv.org/abs/1804.06208>`_ paper.
+    Parameters
+    ----------
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '$MXNET_HOME/models'
+        Location for keeping the model parameters.
+    """
+    return get_simple_pose_resnet('resnet18_v1b', **kwargs)
 
 def simple_pose_resnet50_v1b(**kwargs):
     r"""ResNet-18 model from `"Simple Baselines for Human Pose Estimation and Tracking"

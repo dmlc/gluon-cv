@@ -186,7 +186,6 @@ def get_max_pred(batch_heatmaps):
 
 
 def get_final_preds(batch_heatmaps, center, scale):
-    # import pdb; pdb.set_trace()
     coords, maxvals = get_max_pred(batch_heatmaps)
 
     heatmap_height = batch_heatmaps.shape[2]

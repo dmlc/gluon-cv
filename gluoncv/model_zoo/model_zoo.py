@@ -160,6 +160,7 @@ _models = {
     'nasnet_5_1538': nasnet_5_1538,
     'nasnet_7_1920': nasnet_7_1920,
     'nasnet_6_4032': nasnet_6_4032,
+    'simple_pose_resnet18_v1b': simple_pose_resnet18_v1b,
     'simple_pose_resnet50_v1b': simple_pose_resnet50_v1b,
     'simple_pose_resnet101_v1b': simple_pose_resnet101_v1b,
     'simple_pose_resnet152_v1b': simple_pose_resnet152_v1b,
