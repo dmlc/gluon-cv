@@ -456,7 +456,8 @@ def ssd_300_vgg16_atrous_coco(pretrained=False, pretrained_base=True, **kwargs):
                   pretrained_base=pretrained_base, **kwargs)
     return net
 
-def ssd_300_vgg16_atrous_custom(classes, pretrained_base=True, pretrained=False, transfer=None, **kwargs):
+def ssd_300_vgg16_atrous_custom(classes, pretrained_base=True, pretrained=False,
+                                transfer=None, **kwargs):
     """SSD architecture with VGG16 atrous 300x300 base network for COCO.
 
     Parameters
@@ -547,7 +548,8 @@ def ssd_512_vgg16_atrous_coco(pretrained=False, pretrained_base=True, **kwargs):
                    classes=classes, dataset='coco', pretrained=pretrained,
                    pretrained_base=pretrained_base, **kwargs)
 
-def ssd_512_vgg16_atrous_custom(classes, pretrained_base=True, pretrained=False, transfer=None, **kwargs):
+def ssd_512_vgg16_atrous_custom(classes, pretrained_base=True, pretrained=False,
+                                transfer=None, **kwargs):
     """SSD architecture with VGG16 atrous 300x300 base network for COCO.
 
     Parameters
@@ -653,7 +655,8 @@ def ssd_512_resnet18_v1_coco(pretrained=False, pretrained_base=True, **kwargs):
                    classes=classes, dataset='coco', pretrained=pretrained,
                    pretrained_base=pretrained_base, **kwargs)
 
-def ssd_512_resnet18_v1_custom(classes, pretrained_base=True, pretrained=False, transfer=None, **kwargs):
+def ssd_512_resnet18_v1_custom(classes, pretrained_base=True, pretrained=False,
+                               transfer=None, **kwargs):
     """SSD architecture with ResNet18 v1 512 base network for COCO.
 
     Parameters
@@ -767,7 +770,8 @@ def ssd_512_resnet50_v1_coco(pretrained=False, pretrained_base=True, **kwargs):
                    classes=classes, dataset='coco', pretrained=pretrained,
                    pretrained_base=pretrained_base, **kwargs)
 
-def ssd_512_resnet50_v1_custom(classes, pretrained_base=True, pretrained=False, transfer=None, **kwargs):
+def ssd_512_resnet50_v1_custom(classes, pretrained_base=True, pretrained=False,
+                               transfer=None, **kwargs):
     """SSD architecture with ResNet50 v1 512 base network for custom dataset.
 
     Parameters
@@ -945,7 +949,8 @@ def ssd_512_mobilenet1_0_coco(pretrained=False, pretrained_base=True, **kwargs):
                    classes=classes, dataset='coco', pretrained=pretrained,
                    pretrained_base=pretrained_base, **kwargs)
 
-def ssd_512_mobilenet1_0_custom(classes, pretrained_base=True, pretrained=False, transfer=None, **kwargs):
+def ssd_512_mobilenet1_0_custom(classes, pretrained_base=True, pretrained=False,
+                                transfer=None, **kwargs):
     """SSD architecture with mobilenet1.0 512 base network for custom dataset.
 
     Parameters
