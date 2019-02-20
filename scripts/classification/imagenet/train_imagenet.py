@@ -156,6 +156,7 @@ def main():
 
     net = get_model(model_name, **kwargs)
     net.cast(opt.dtype)
+    print(net)
     if opt.resume_params is not '':
         net.load_parameters(opt.resume_params, ctx = context)
 

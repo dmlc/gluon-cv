@@ -24,12 +24,12 @@ class BasicBlockV1b(HybridBlock):
         super(BasicBlockV1b, self).__init__()
         self.conv1 = nn.Conv2D(channels=planes, kernel_size=3, strides=strides,
                                padding=dilation, dilation=dilation, use_bias=False)
-        self.bn1 = norm_layer(**({} if norm_kwargs is None else norm_kwargs))
+        self.bn1 = norm_layer(in_channels=planes, **({} if norm_kwargs is None else norm_kwargs))
         self.relu1 = nn.Activation('relu')
         self.conv2 = nn.Conv2D(channels=planes, kernel_size=3, strides=1,
                                padding=previous_dilation, dilation=previous_dilation,
                                use_bias=False)
-        self.bn2 = norm_layer(**({} if norm_kwargs is None else norm_kwargs))
+        self.bn2 = norm_layer(in_channels=planes, **({} if norm_kwargs is None else norm_kwargs))
         self.relu2 = nn.Activation('relu')
         self.downsample = downsample
         self.strides = strides
@@ -63,17 +63,17 @@ class BottleneckV1b(HybridBlock):
         super(BottleneckV1b, self).__init__()
         self.conv1 = nn.Conv2D(channels=planes, kernel_size=1,
                                use_bias=False)
-        self.bn1 = norm_layer(**({} if norm_kwargs is None else norm_kwargs))
+        self.bn1 = norm_layer(in_channels=planes, **({} if norm_kwargs is None else norm_kwargs))
         self.relu1 = nn.Activation('relu')
         self.conv2 = nn.Conv2D(channels=planes, kernel_size=3, strides=strides,
                                padding=dilation, dilation=dilation, use_bias=False)
-        self.bn2 = norm_layer(**({} if norm_kwargs is None else norm_kwargs))
+        self.bn2 = norm_layer(in_channels=planes, **({} if norm_kwargs is None else norm_kwargs))
         self.relu2 = nn.Activation('relu')
         self.conv3 = nn.Conv2D(channels=planes * 4, kernel_size=1, use_bias=False)
         if not last_gamma:
-            self.bn3 = norm_layer(**({} if norm_kwargs is None else norm_kwargs))
+            self.bn3 = norm_layer(in_channels=planes*4, **({} if norm_kwargs is None else norm_kwargs))
         else:
-            self.bn3 = norm_layer(gamma_initializer='zeros',
+            self.bn3 = norm_layer(in_channels=planes*4, gamma_initializer='zeros',
                                   **({} if norm_kwargs is None else norm_kwargs))
         self.relu3 = nn.Activation('relu')
         self.downsample = downsample
@@ -159,15 +159,16 @@ class ResNetV1b(HybridBlock):
                 self.conv1 = nn.HybridSequential(prefix='conv1')
                 self.conv1.add(nn.Conv2D(channels=stem_width, kernel_size=3, strides=2,
                                          padding=1, use_bias=False))
-                self.conv1.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
+                self.conv1.add(norm_layer(in_channels=stem_width, **({} if norm_kwargs is None else norm_kwargs)))
                 self.conv1.add(nn.Activation('relu'))
                 self.conv1.add(nn.Conv2D(channels=stem_width, kernel_size=3, strides=1,
                                          padding=1, use_bias=False))
-                self.conv1.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
+                self.conv1.add(norm_layer(in_channels=stem_width, **({} if norm_kwargs is None else norm_kwargs)))
                 self.conv1.add(nn.Activation('relu'))
                 self.conv1.add(nn.Conv2D(channels=stem_width*2, kernel_size=3, strides=1,
                                          padding=1, use_bias=False))
-            self.bn1 = norm_layer(**({} if norm_kwargs is None else norm_kwargs))
+            self.bn1 = norm_layer(in_channels=64 if not deep_stem else stem_width*2,
+                                  **({} if norm_kwargs is None else norm_kwargs))
             self.relu = nn.Activation('relu')
             self.maxpool = nn.MaxPool2D(pool_size=3, strides=2, padding=1)
             self.layer1 = self._make_layer(1, block, 64, layers[0], avg_down=avg_down,
@@ -210,11 +211,13 @@ class ResNetV1b(HybridBlock):
                                                     ceil_mode=True, count_include_pad=False))
                     downsample.add(nn.Conv2D(channels=planes * block.expansion, kernel_size=1,
                                              strides=1, use_bias=False))
-                    downsample.add(norm_layer(**self.norm_kwargs))
+                    downsample.add(norm_layer(in_channels=planes * block.expansion,
+                                              **self.norm_kwargs))
                 else:
                     downsample.add(nn.Conv2D(channels=planes * block.expansion,
                                              kernel_size=1, strides=strides, use_bias=False))
-                    downsample.add(norm_layer(**self.norm_kwargs))
+                    downsample.add(norm_layer(in_channels=planes * block.expansion,
+                                              **self.norm_kwargs))
 
         layers = nn.HybridSequential(prefix='layers%d_'%stage_index)
         with layers.name_scope():
