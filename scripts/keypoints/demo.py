@@ -1,5 +1,5 @@
 from __future__ import division
-import argparse, time, logging, os, math, tqdm
+import argparse, logging, os, math, tqdm
 
 import numpy as np
 import mxnet as mx
@@ -14,7 +14,15 @@ from gluoncv.data import mscoco
 from gluoncv.model_zoo import get_model
 from gluoncv.data.transforms.pose import get_final_preds
 
-num_joints = 17
+
+parser = argparse.ArgumentParser(description='Predict ImageNet classes from a given image')
+parser.add_argument('--detector', type=str, default='yolo3_mobilenet1.0_coco',
+                    help='name of the detection model to use')
+parser.add_argument('--pose-model', type=str, default='simple_pose_resnet50_v1b',
+                    help='name of the pose estimation model to use')
+parser.add_argument('--input-pic', type=str, required=True,
+                    help='path to the input picture')
+opt = parser.parse_args()
 
 def upscale_bbox_fn(bbox, img, scale=1.25):
     new_bbox = []
@@ -98,14 +106,10 @@ def heatmap_to_coord(heatmaps, bbox_list):
     return coords, maxvals
 
 def keypoint_detection(img_path, detector, pose_net):
-    detector_tic = time.time()
     x, img = data.transforms.presets.yolo.load_test(img_path, short=512)
     # pretrained images
     class_IDs, scores, bounding_boxs = detector(x)
-    nd.waitall()
-    detector_tic = time.time() - detector_tic
 
-    transform_tic = time.time()
     L = class_IDs.shape[1]
     thr = 0.5
     upscale_bbox = []
@@ -118,18 +122,9 @@ def keypoint_detection(img_path, detector, pose_net):
         upscale_bbox.append(upscale_bbox_fn(bbox.asnumpy().tolist(), img, scale=1.25))
 
     pose_input = crop_resize_normalize(img, upscale_bbox, (256, 192))
-    nd.waitall()
-    transform_tic = time.time() - transform_tic
-
-    pose_tic = time.time()
     predicted_heatmap = pose_net(pose_input)
-    nd.waitall()
-    pose_tic = time.time() - pose_tic
 
-    post_proc_tic = time.time()
     pred_coords, _ = heatmap_to_coord(predicted_heatmap, upscale_bbox)
-    nd.waitall()
-    post_proc_tic = time.time() - post_proc_tic
 
     person_ind = class_IDs[0].asnumpy() == 0
     ax = gcv.utils.viz.plot_bbox(img, bounding_boxs[0].asnumpy()[person_ind[:,0]],
@@ -150,13 +145,11 @@ def keypoint_detection(img_path, detector, pose_net):
                      linewidth=5.0, alpha=0.7, color=plt.cm.cool(cm_ind))
 
     plt.show()
-    print(detector_tic, transform_tic, pose_tic, post_proc_tic)
 
 if __name__ == '__main__':
-    detector_name = "ssd_512_mobilenet1.0_coco"
-    detector = get_model(detector_name, ctx=mx.cpu(), pretrained=True)
-    net = get_model('simple_pose_resnet18_v1b', pretrained=True, ctx=mx.cpu())
-    net.reset_class(["person"], reuse_weights=['person'])
+    detector = get_model(opt.detector, ctx=mx.cpu(), pretrained=True)
+    if opt.detector.startswith('ssd') or opt.detector.startswith('yolo'):
+        detector.reset_class(["person"], reuse_weights=['person'])
+    net = get_model(opt.pose_model, pretrained=True, ctx=mx.cpu())
 
-    for i in tqdm.tqdm(range(1)):
-        keypoint_detection('manunited.jpg', detector, net)
+    keypoint_detection(opt.input_pic, detector, net)
