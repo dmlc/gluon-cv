@@ -34,7 +34,7 @@ class GroupNorm(HybridBlock):
     Outputs:
         - **out**: output tensor with the same shape as `data`.
     """
-    def __init__(self, ngroups, in_channels=0, axis=1, epsilon=1e-5,
+    def __init__(self, ngroups=32, in_channels=0, axis=1, epsilon=1e-5,
                  beta_initializer='zeros', gamma_initializer='ones', **kwargs):
         super(GroupNorm, self).__init__(**kwargs)
         self._kwargs = {'axis': axis, 'eps': epsilon, 'momentum': 0,
