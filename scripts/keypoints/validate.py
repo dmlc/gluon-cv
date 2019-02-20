@@ -26,8 +26,6 @@ parser.add_argument('--num-gpus', type=int, default=0,
                     help='number of gpus to use.')
 parser.add_argument('-j', '--num-data-workers', dest='num_workers', default=4, type=int,
                     help='number of preprocessing workers')
-parser.add_argument('--dtype', type=str, default='float32',
-                    help='data type for training. default is float32')
 parser.add_argument('--model', type=str, required=True,
                     help='type of model to use. see vision_model for options.')
 parser.add_argument('--input-size', type=str, default='256,192',
@@ -87,17 +85,17 @@ val_metric = COCOKeyPointsMetric(val_dataset, 'coco_keypoints',
                                  data_shape=tuple(input_size),
                                  in_vis_thresh=opt.score_threshold)
 
+use_pretrained = True if not opt.params_file else False
 model_name = opt.model
-net = get_model(model_name, ctx=context, num_joints=num_joints)
-net.cast(opt.dtype)
-net.load_parameters(opt.params_file, ctx=context)
+net = get_model(model_name, ctx=context, num_joints=num_joints, pretrained=use_pretrained)
+if not use_pretrained:
+    net.load_parameters(opt.params_file, ctx=context)
 net.hybridize()
 
 def validate(val_data, val_dataset, net, ctx):
     if isinstance(ctx, mx.Context):
         ctx = [ctx]
 
-    net.cast('float32')
     val_metric.reset()
 
     from tqdm import tqdm
