@@ -88,7 +88,9 @@ Check out how to use GluonCV for your own research or projects.
 - For advanced examples, check out our [Scripts](http://gluon-cv.mxnet.io/master/scripts/index.html).
 - For experienced users, check out our [API Notes](https://gluon-cv.mxnet.io/api/data.datasets.html#).
 
-If you use our code or models in your research, please cite with:
+# Citation
+
+If you feel our code or models helps in your research, please kindly cite our papers:
 
 ```
 @article{he2018bag,
@@ -97,4 +99,10 @@ If you use our code or models in your research, please cite with:
   journal={arXiv preprint arXiv:1812.01187},
   year={2018}
 }
-```
+
+@article{zhang2019bag,
+  title={Bag of Freebies for Training Object Detection Neural Networks},
+  author={Zhang, Zhi and He, Tong and Zhang, Hang and Zhang, Zhongyuan and Xie, Junyuan and Li, Mu},
+  journal={arXiv preprint arXiv:1902.04103},
+  year={2019}
+}```
