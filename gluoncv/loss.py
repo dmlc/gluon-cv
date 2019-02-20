@@ -409,4 +409,3 @@ class MixSoftmaxCrossEntropyOHEMLoss(SoftmaxCrossEntropyOHEMLoss):
         else:
             return super(MixSoftmaxCrossEntropyOHEMLoss, self). \
                 hybrid_forward(F, *inputs, **kwargs)
-

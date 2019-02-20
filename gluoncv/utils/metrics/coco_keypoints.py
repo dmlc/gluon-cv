@@ -1,16 +1,10 @@
 """MS COCO Key Points Evaluate Metrics."""
 from __future__ import absolute_import
 
-import sys
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
 import os
 from os import path as osp
 from collections import OrderedDict
 import warnings
-import numpy as np
 import mxnet as mx
 from ...data.mscoco.utils import try_import_pycocotools
 
@@ -109,7 +103,8 @@ class COCOKeyPointsMetric(mx.metric.EvalMetric):
         # call real update
         coco_eval = self._update()
 
-        stats_names = ['AP', 'Ap .5', 'AP .75', 'AP (M)', 'AP (L)', 'AR', 'AR .5', 'AR .75', 'AR (M)', 'AR (L)']
+        stats_names = ['AP', 'Ap .5', 'AP .75', 'AP (M)', 'AP (L)',
+                       'AR', 'AR .5', 'AR .75', 'AR (M)', 'AR (L)']
 
         info_str = []
         for ind, name in enumerate(stats_names):
@@ -117,10 +112,9 @@ class COCOKeyPointsMetric(mx.metric.EvalMetric):
         name_value = OrderedDict(info_str)
         return name_value, name_value['AP']
 
-    # pylint: disable=arguments-differ, unused-argument
+    # pylint: disable=arguments-differ, unused-argument, missing-docstring
     def update(self, preds, maxvals, score, imgid, *args, **kwargs):
         # import pdb; pdb.set_trace()
-        batch_size = preds.shape[0]
         num_joints = preds.shape[1]
         in_vis_thresh = self._in_vis_thresh
         for idx, kpt in enumerate(preds):
@@ -143,4 +137,3 @@ class COCOKeyPointsMetric(mx.metric.EvalMetric):
                                   'category_id': 1,
                                   'keypoints': kpt,
                                   'score': rescore})
-

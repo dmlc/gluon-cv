@@ -2,7 +2,6 @@
 # pylint: disable=assignment-from-no-return
 import numpy as np
 import mxnet as mx
-from mxnet import ndarray as nd
 from mxnet.metric import check_label_shapes
 
 from ...data.transforms.pose import get_max_pred
@@ -43,7 +42,7 @@ class HeatmapAccuracy(mx.metric.EvalMetric):
             output_names=output_names, label_names=label_names)
         self.axis = axis
         self.ignore_labels = np.array(ignore_labels).flatten()
-        self.sum_metric= 0
+        self.sum_metric = 0
         self.num_inst = 0
         self.hm_type = hm_type
         self.threshold = threshold

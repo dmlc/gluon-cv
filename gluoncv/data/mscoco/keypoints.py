@@ -1,7 +1,8 @@
 """MS COCO keypoints dataset."""
 from __future__ import absolute_import
 from __future__ import division
-import os, copy
+import os
+import copy
 import numpy as np
 import mxnet as mx
 from .utils import try_import_pycocotools
