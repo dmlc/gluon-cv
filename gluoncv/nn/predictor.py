@@ -27,15 +27,19 @@ class ConvPredictor(HybridBlock):
         Optional activation after conv, e.g. 'relu'.
     use_bias : bool
         Use bias in convolution. It is not necessary if BatchNorm is followed.
+    in_channels : int, default is 0
+        The number of input channels to this layer.
+        If not specified, initialization will be deferred to the first time forward is called and
+        in_channels will be inferred from the shape of input data.
 
     """
     def __init__(self, num_channel, kernel=(3, 3), pad=(1, 1), stride=(1, 1),
-                 activation=None, use_bias=True, **kwargs):
+                 activation=None, use_bias=True, in_channels=0, **kwargs):
         super(ConvPredictor, self).__init__(**kwargs)
         with self.name_scope():
             self.predictor = nn.Conv2D(
                 num_channel, kernel, strides=stride, padding=pad,
-                activation=activation, use_bias=use_bias,
+                activation=activation, use_bias=use_bias, in_channels=in_channels,
                 weight_initializer=mx.init.Xavier(magnitude=2),
                 bias_initializer='zeros')
 

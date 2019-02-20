@@ -92,7 +92,7 @@ class _PyramidPooling(HybridBlock):
         feat1 = self.upsample(F, self.conv1(self.pool(F, x, 1)), h, w)
         feat2 = self.upsample(F, self.conv2(self.pool(F, x, 2)), h, w)
         feat3 = self.upsample(F, self.conv3(self.pool(F, x, 3)), h, w)
-        feat4 = self.upsample(F, self.conv4(self.pool(F, x, 4)), h, w)
+        feat4 = self.upsample(F, self.conv4(self.pool(F, x, 6)), h, w)
         return F.concat(x, feat1, feat2, feat3, feat4, dim=1)
 
 

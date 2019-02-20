@@ -282,7 +282,7 @@ for ib, batch in enumerate(train_loader):
 ##########################################################
 # Training loop
 # -------------
-# After we have defined loss function and generated training targets, we can write the training goop.
+# After we have defined loss function and generated training targets, we can write the training loop.
 
 for ib, batch in enumerate(train_loader):
     if ib > 0:
