@@ -26,14 +26,14 @@ parser.add_argument('--num-gpus', type=int, default=0,
                     help='number of gpus to use.')
 parser.add_argument('-j', '--num-data-workers', dest='num_workers', default=4, type=int,
                     help='number of preprocessing workers')
-parser.add_argument('--dtype', type=str, default='float32',
-                    help='data type for training. default is float32')
 parser.add_argument('--model', type=str, required=True,
                     help='type of model to use. see vision_model for options.')
 parser.add_argument('--input-size', type=str, default='256,192',
                     help='size of the input image size. default is 256,192')
 parser.add_argument('--params-file', type=str,
                     help='local parameters to load.')
+parser.add_argument('--flip-test', action='store_true',
+                    help='Whether to flip test input to ensemble results.')
 parser.add_argument('--mean', type=str, default='0.485,0.456,0.406',
                     help='mean vector for normalization')
 parser.add_argument('--std', type=str, default='0.229,0.224,0.225',
@@ -85,17 +85,17 @@ val_metric = COCOKeyPointsMetric(val_dataset, 'coco_keypoints',
                                  data_shape=tuple(input_size),
                                  in_vis_thresh=opt.score_threshold)
 
+use_pretrained = True if not opt.params_file else False
 model_name = opt.model
-net = get_model(model_name, ctx=context, num_joints=num_joints)
-net.cast(opt.dtype)
-net.load_parameters(opt.params_file, ctx=context)
+net = get_model(model_name, ctx=context, num_joints=num_joints, pretrained=use_pretrained)
+if not use_pretrained:
+    net.load_parameters(opt.params_file, ctx=context)
 net.hybridize()
 
 def validate(val_data, val_dataset, net, ctx):
     if isinstance(ctx, mx.Context):
         ctx = [ctx]
 
-    net.cast('float32')
     val_metric.reset()
 
     from tqdm import tqdm
@@ -103,10 +103,11 @@ def validate(val_data, val_dataset, net, ctx):
         data, scale, center, score, imgid = val_batch_fn(batch, ctx)
 
         outputs = [net(X) for X in data]
-        data_flip = [nd.flip(X, axis=3) for X in data]
-        outputs_flip = [net(X) for X in data_flip]
-        outputs_flipback = [flip_heatmap(o, val_dataset.joint_pairs, shift=True) for o in outputs_flip]
-        outputs = [(o + o_flip)/2 for o, o_flip in zip(outputs, outputs_flipback)]
+        if opt.flip_test:
+            data_flip = [nd.flip(X, axis=3) for X in data]
+            outputs_flip = [net(X) for X in data_flip]
+            outputs_flipback = [flip_heatmap(o, val_dataset.joint_pairs, shift=True) for o in outputs_flip]
+            outputs = [(o + o_flip)/2 for o, o_flip in zip(outputs, outputs_flipback)]
 
         if len(outputs) > 1:
             outputs_stack = nd.concat(*[o.as_in_context(mx.cpu()) for o in outputs], dim=0)

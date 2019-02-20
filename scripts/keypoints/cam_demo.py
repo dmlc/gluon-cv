@@ -16,7 +16,7 @@ from gluoncv.data.transforms.pose import get_final_preds
 
 num_joints = 17
 
-def upscale_bbox_fn(bbox, img, scale=1.25):
+def upscale_bbox_fn(bbox, img_shape, scale=1.25):
     new_bbox = []
     x0 = bbox[0]
     y0 = bbox[1]
@@ -27,8 +27,8 @@ def upscale_bbox_fn(bbox, img, scale=1.25):
     center = [x0 + w, y0 + h]
     new_x0 = max(center[0] - w * scale, 0)
     new_y0 = max(center[1] - h * scale, 0)
-    new_x1 = min(center[0] + w * scale, img.shape[1])
-    new_y1 = min(center[1] + h * scale, img.shape[0])
+    new_x1 = min(center[0] + w * scale, img_shape[1])
+    new_y1 = min(center[1] + h * scale, img_shape[0])
     new_bbox = [new_x0, new_y0, new_x1, new_y1]
     return new_bbox
 
@@ -45,9 +45,9 @@ def crop_resize_normalize(img, bbox_list, output_size):
         y1 = min(int(bbox[3]), int(img.shape[0]))
         w = x1 - x0
         h = y1 - y0
-        # nd.image.resize is in mxnet 1.5.0
+        # nd.image.resize is available in mxnet 1.5
         # res_img = nd.image.resize(img[y0:y1, x0:x1], (256, 192))
-        res_img = image.fixed_crop(nd.array(img), x0, y0, w, h, (output_size[1], output_size[0]))
+        res_img = image.fixed_crop(img, x0, y0, w, h, (output_size[1], output_size[0]))
         res_img = transform_test(res_img)
         output_list.append(res_img)
     output_array = nd.stack(*output_list)
@@ -87,20 +87,11 @@ def heatmap_to_coord(heatmaps, bbox_list):
     coords, maxvals = get_final_preds(heatmaps, center_list, scale_list)
     return coords, maxvals
 
-def keypoint_detection(img=None, img_path=None, detector=None, pose_net=None):
-    detector_tic = time.time()
-    if img is not None:
-        x, img = gcv.data.transforms.presets.yolo.transform_test(img, short=512, max_size=350)
-    elif img_path is not None:
-        x, img = data.transforms.presets.yolo.load_test(img_path, short=512)
-    else:
-        raise("Need img or img_path.")
-    # pretrained images
+def keypoint_detection(img, detector, pose_net, ctx=mx.cpu()):
+    x, img = gcv.data.transforms.presets.yolo.transform_test(img, short=512, max_size=350)
+    x = x.as_in_context(ctx)
     class_IDs, scores, bounding_boxs = detector(x)
-    nd.waitall()
-    detector_tic = time.time() - detector_tic
 
-    transform_tic = time.time()
     L = class_IDs.shape[1]
     thr = 0.5
     upscale_bbox = []
@@ -110,22 +101,14 @@ def keypoint_detection(img=None, img_path=None, detector=None, pose_net=None):
         if scores[0][i].asscalar() < thr:
             continue
         bbox = bounding_boxs[0][i]
-        upscale_bbox.append(upscale_bbox_fn(bbox.asnumpy().tolist(), img, scale=1.25))
+        upscale_bbox.append(upscale_bbox_fn(bbox.asnumpy().tolist(), img.shape, scale=1.25))
 
     if len(upscale_bbox) > 0:
-        pose_input = crop_resize_normalize(nd.array(img), upscale_bbox, (256, 192))
+        pose_input = crop_resize_normalize(nd.array(img, ctx=ctx), upscale_bbox, (256, 192))
         nd.waitall()
-        transform_tic = time.time() - transform_tic
 
-        pose_tic = time.time()
         predicted_heatmap = pose_net(pose_input)
-        nd.waitall()
-        pose_tic = time.time() - pose_tic
-
-        post_proc_tic = time.time()
         pred_coords, _ = heatmap_to_coord(predicted_heatmap, upscale_bbox)
-        nd.waitall()
-        post_proc_tic = time.time() - post_proc_tic
 
         person_ind = class_IDs[0].asnumpy() == 0
         ax = gcv.utils.viz.plot_bbox(img, bounding_boxs[0].asnumpy()[person_ind[:,0]],
@@ -147,18 +130,17 @@ def keypoint_detection(img=None, img_path=None, detector=None, pose_net=None):
 
         plt.draw()
         plt.pause(0.1)
-        print(detector_tic, transform_tic, pose_tic, post_proc_tic)
     else:
         plt.imshow(img)
         plt.draw()
         plt.pause(0.1)
-        print("Nobody detected.")
 
 if __name__ == '__main__':
+    ctx = mx.cpu()
     detector_name = "ssd_512_mobilenet1.0_coco"
-    detector = get_model(detector_name, ctx=mx.cpu(), pretrained=True)
-    # detector.reset_class(classes=['person'], reuse_weights={'person':'person'})
-    net = get_model('simple_pose_resnet18_v1b', pretrained=True, ctx=mx.cpu())
+    detector = get_model(detector_name, pretrained=True, ctx=ctx)
+    detector.reset_class(classes=['person'], reuse_weights={'person':'person'})
+    net = get_model('simple_pose_resnet18_v1b', pretrained=True, ctx=ctx)
 
     cap = cv2.VideoCapture(0)
     time.sleep(1)  ### letting the camera autofocus
@@ -166,4 +148,4 @@ if __name__ == '__main__':
     for i in range(100):
         ret, frame = cap.read()
         frame = mx.nd.array(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)).astype('uint8')
-        keypoint_detection(frame, None, detector, net)
+        keypoint_detection(frame, detector, net, ctx)
