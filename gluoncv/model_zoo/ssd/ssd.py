@@ -313,7 +313,7 @@ class SSD(HybridBlock):
                 # to avoid deferred init, number of in_channels must be defined
                 in_channels = list(old_pred.params.values())[0].shape[1]
                 new_cp = ConvPredictor(ag.num_depth * (self.num_classes + 1),
-                                       in_channels=in_channels,prefix=prefix)
+                                       in_channels=in_channels, prefix=prefix)
                 new_cp.collect_params().initialize(ctx=ctx)
                 if reuse_weights:
                     assert isinstance(reuse_weights, dict)
