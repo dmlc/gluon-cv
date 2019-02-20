@@ -120,7 +120,7 @@ def get_simple_pose_resnet(base_name, pretrained=False, ctx=cpu(),
 
     if pretrained:
         from ..model_store import get_model_file
-        net.load_parameters(get_model_file('pose_resnet%d'%(num_layers),
+        net.load_parameters(get_model_file('simple_pose_%s'%(base_name),
                                            tag=pretrained, root=root), ctx=ctx)
 
     return net
