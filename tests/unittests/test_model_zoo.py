@@ -142,6 +142,15 @@ def test_ssd_reset_class():
     model_name = 'ssd_300_vgg16_atrous_voc'
     net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
     net.reset_class(["bus", "car", "bird"], reuse_weights=["bus", "car", "bird"])
+    net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
+    net.reset_class(["bus", "car", "bird"], reuse_weights={"bus":"bus"})
+    net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
+    net.reset_class(["person", "car", "bird"], reuse_weights={"person":14})
+    net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
+    net.reset_class(["person", "car", "bird"], reuse_weights={0:14})
+    net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
+    net.reset_class(["person", "car", "bird"], reuse_weights={0:"person"})
+
     net(x)
 
 # This test is only executed when a gpu is available
