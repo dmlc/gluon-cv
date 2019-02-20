@@ -124,7 +124,7 @@ def test_imagenet_models():
     _test_model_list(models, ctx, x)
 
 @try_gpu(0)
-def test_pose_resnet_models():
+def test_simple_pose_resnet_models():
     ctx = mx.context.current_context()
     models = ['simple_pose_resnet18_v1b',
               'simple_pose_resnet50_v1b', 'simple_pose_resnet101_v1b', 'simple_pose_resnet152_v1b',
