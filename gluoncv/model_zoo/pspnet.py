@@ -100,7 +100,6 @@ class _PyramidPooling(HybridBlock):
         return F.contrib.BilinearResize2D(x, height=h, width=w)
 
     def hybrid_forward(self, F, x):
-        _, _, h, w = x.shape
         feat1 = self.upsample(F, self.conv1(self.pool(F, x, 1)), **self._up_kwargs)
         feat2 = self.upsample(F, self.conv2(self.pool(F, x, 2)), **self._up_kwargs)
         feat3 = self.upsample(F, self.conv3(self.pool(F, x, 3)), **self._up_kwargs)
