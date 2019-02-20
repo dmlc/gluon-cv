@@ -285,10 +285,10 @@ class SSD(HybridBlock):
                         reuse_weights[k] = v
                     if isinstance(k, str):
                         try:
-                            new_idx = self._classes.index(k)  # raise ValueError if not found
+                            new_idx = self.classes.index(k)  # raise ValueError if not found
                         except ValueError:
                             raise ValueError(
-                                "{} not found in new class names {}".format(k, self._classes))
+                                "{} not found in new class names {}".format(k, self.classes))
                         reuse_weights.pop(k)
                         reuse_weights[new_idx] = v
             else:
