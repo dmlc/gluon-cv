@@ -78,6 +78,7 @@ class GroupNorm(HybridBlock):
     def __repr__(self):
         s = '{name}({content}'
         in_channels = self.gamma.shape[0]
+        s += ', ngroups={0}'.format(self.ngroups)
         s += ', in_channels={0}'.format(in_channels if in_channels else None)
         s += ')'
         return s.format(name=self.__class__.__name__,
