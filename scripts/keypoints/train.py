@@ -191,13 +191,9 @@ def train(ctx):
             data, label, weight, imgid = train_batch_fn(batch, ctx)
 
             with ag.record():
-                outputs = [net(X) for X in data]
-                loss = [L(yhat, y, w) for yhat, y, w in zip(outputs, label, weight)]
-                '''
                 outputs = [net(X.astype(opt.dtype, copy=False)) for X in data]
                 loss = [nd.cast(L(nd.cast(yhat, 'float32'), y, w), opt.dtype)
                         for yhat, y, w in zip(outputs, label, weight)]
-                '''
             for l in loss:
                 l.backward()
             lr_scheduler.update(i, epoch)
