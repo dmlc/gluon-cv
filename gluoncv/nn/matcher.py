@@ -33,7 +33,7 @@ class CompositeMatcher(gluon.HybridBlock):
     def _compose_matches(self, F, matches):
         """Given multiple match results, compose the final match results.
         The order of matches matters. Only the unmatched(-1s) in the current
-        state will be substituded with the matching in the rest matches.
+        state will be substituted with the matching in the rest matches.
 
         Parameters
         ----------
@@ -61,12 +61,17 @@ class BipartiteMatcher(gluon.HybridBlock):
         Whether sort matching order in ascending order. Default is False.
     eps : float
         Epsilon for floating number comparison
+    share_max : bool, default is True
+        The maximum overlap between anchor/gt is shared by multiple ground truths.
+        We recommend Fast(er)-RCNN series to use ``True``, while for SSD, it should
+        defaults to ``False`` for better result.
     """
-    def __init__(self, threshold=1e-12, is_ascend=False, eps=1e-12):
+    def __init__(self, threshold=1e-12, is_ascend=False, eps=1e-12, share_max=True):
         super(BipartiteMatcher, self).__init__()
         self._threshold = threshold
         self._is_ascend = is_ascend
         self._eps = eps
+        self._share_max = share_max
 
     def hybrid_forward(self, F, x):
         """BipartiteMatching
@@ -84,10 +89,13 @@ class BipartiteMatcher(gluon.HybridBlock):
         # potential argmax and max
         pargmax = x.argmax(axis=-1, keepdims=True)  # (B, num_anchor, 1)
         maxs = x.max(axis=-2, keepdims=True)  # (B, 1, num_gt)
-        # pmax = F.pick(x, pargmax, axis=-1, keepdims=True)   # (B, num_anchor, 1)
-        mask = F.broadcast_greater_equal(x + self._eps, maxs)  # (B, num_anchor, num_gt)
-        mask = F.sum(mask, axis=-1, keepdims=True)  # (B, num_anchor, 1)
-        # mask = F.pick(mask, pargmax, axis=-1, keepdims=True)  # (B, num_anchor, 1)
+        if self._share_max:
+            mask = F.broadcast_greater_equal(x + self._eps, maxs)  # (B, num_anchor, num_gt)
+            mask = F.sum(mask, axis=-1, keepdims=True)  # (B, num_anchor, 1)
+        else:
+            pmax = F.pick(x, pargmax, axis=-1, keepdims=True)   # (B, num_anchor, 1)
+            mask = F.broadcast_greater_equal(pmax + self._eps, maxs)  # (B, num_anchor, num_gt)
+            mask = F.pick(mask, pargmax, axis=-1, keepdims=True)  # (B, num_anchor, 1)
         new_match = F.where(mask > 0, pargmax, F.ones_like(pargmax) * -1)
         result = F.where(match[0] < 0, new_match.squeeze(axis=-1), match[0])
         return result

@@ -72,7 +72,7 @@ class LSUN(gluon.data.Dataset):
     Args:
         root (string): Root directory for the database files.
         classes (string or list): One of {'train', 'val', 'test'} or a list of
-            categories to load. e,g. ['bedroom_train', 'church_train'].
+            categories to load. e.g. ['bedroom_train', 'church_train'].
         transform (callable, optional): A function/transform that  takes in an PIL image
             and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the

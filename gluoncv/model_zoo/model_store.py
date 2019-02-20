@@ -89,15 +89,23 @@ _model_sha1 = {name: checksum for checksum, name in [
     ('d35bea8817935d1ab310ef1e6dd06bb18c2d5f0d', 'deeplab_resnet152_voc'),
     ('c7789b237adc7253405bee57c84d53b15db45942', 'deeplab_resnet50_ade'),
     ('bf1584dfcec12063eff3075ee643e181c0f6d443', 'deeplab_resnet101_ade'),
-    ('09e79ac5b6832724e82b57ec714f08205225a559', 'psp_resnet101_coco'),
-    ('3f1cce66eb3942fdcc0cca68b56a5bb73c464e01', 'psp_resnet101_voc'),
-    ('0c42cb735aebbffc010ca5770e3d5880995da021', 'psp_resnet50_ade'),
-    ('eaaa87eb1b27c36c935b372779214bf164ad5b19', 'psp_resnet101_ade'),
+    ('09f89cad0e107cb2bffdb1b07706ba31798096f2', 'psp_resnet101_coco'),
+    ('2c2f4e1c2b11461b52598a4b2038bccbcfc166eb', 'psp_resnet101_voc'),
+    ('3f220f537400dfa607c3d041ed3b172db39b0b01', 'psp_resnet50_ade'),
+    ('240a4758b506447faf7c55cd7a7837d66f5039a6', 'psp_resnet101_ade'),
     ('0f49fb59180c4d91305b858380a4fd6eaf068b6c', 'psp_resnet101_citys'),
     ('f5ece5ce1422eeca3ce2908004e469ffdf91fd41', 'yolo3_darknet53_voc'),
+    ('3b47835ac3dd80f29576633949aa58aee3094353', 'yolo3_mobilenet1.0_voc'),
+    ('66dbbae67be8f1e3cd3c995ce626a2bdc89769c6', 'yolo3_mobilenet1.0_coco'),
     ('09767802230b45af1c27697a2dad6d1ebaacc1e2', 'yolo3_darknet53_coco'),
     ('2189ea49720a116dead245b9b252301cffa18d28', 'darknet53'),
     ('b5538ef10557243511b9b46063aa4c40790d74ba', 'senet_154'),
+    ('4ecf62e29336e0cbc5a2f844652635a330928b5a', 'resnext50_32x4d'),
+    ('8654ca5d0ba30a7868c5b42a7d4cc0ff2ba04dbc', 'resnext101_32x4d'),
+    ('2f0d1c9d343d140775bfa7548dd3a881a35855de', 'resnext101_64x4d'),
+    ('7906e0e16013ef8d195cbc05463cc37783ec7a8a', 'se_resnext50_32x4d'),
+    ('688e238985d45a38803c62cf345af2813d0e8aa0', 'se_resnext101_32x4d'),
+    ('11c50114a0483e27e74dc4236904254ef05b634b', 'se_resnext101_64x4d'),
     ]}
 
 apache_repo_url = 'https://apache-mxnet.s3-accelerate.dualstack.amazonaws.com/'
@@ -126,6 +134,9 @@ def get_model_file(name, tag=None, root=os.path.join('~', '.mxnet', 'models')):
     file_path
         Path to the requested pretrained model file.
     """
+    if 'MXNET_HOME' in os.environ:
+        root = os.path.join(os.environ['MXNET_HOME'], 'models')
+
     use_tag = isinstance(tag, str)
     if use_tag:
         file_name = '{name}-{short_hash}'.format(name=name,

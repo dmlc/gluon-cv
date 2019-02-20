@@ -25,6 +25,7 @@ __all__ = ['get_nasnet', 'nasnet_4_1056', 'nasnet_5_1538', 'nasnet_7_1920', 'nas
 import os
 from mxnet import cpu
 from mxnet.gluon import nn
+from mxnet.gluon.nn import BatchNorm
 from mxnet.gluon.block import HybridBlock
 
 class MaxPoolPad(HybridBlock):
@@ -72,18 +73,21 @@ class SeparableConv2d(HybridBlock):
 
 class BranchSeparables(HybridBlock):
 
-    def __init__(self, in_channels, out_channels, kernel_size, stride, padding, use_bias=False):
+    def __init__(self, in_channels, out_channels, kernel_size, stride, padding,
+                 norm_layer, norm_kwargs, use_bias=False):
         super(BranchSeparables, self).__init__()
         self.body = nn.HybridSequential(prefix='')
 
         self.body.add(nn.Activation('relu'))
         self.body.add(SeparableConv2d(in_channels, in_channels, kernel_size,
                                       stride, padding, use_bias=use_bias))
-        self.body.add(nn.BatchNorm(momentum=0.1, epsilon=0.001))
+        self.body.add(norm_layer(momentum=0.1, epsilon=0.001,
+                                 **({} if norm_kwargs is None else norm_kwargs)))
         self.body.add(nn.Activation('relu'))
         self.body.add(SeparableConv2d(in_channels, out_channels, kernel_size,
                                       1, padding, use_bias=use_bias))
-        self.body.add(nn.BatchNorm(momentum=0.1, epsilon=0.001))
+        self.body.add(norm_layer(momentum=0.1, epsilon=0.001,
+                                 **({} if norm_kwargs is None else norm_kwargs)))
 
     def hybrid_forward(self, F, x):
         x = self.body(x)
@@ -91,18 +95,21 @@ class BranchSeparables(HybridBlock):
 
 class BranchSeparablesStem(HybridBlock):
 
-    def __init__(self, in_channels, out_channels, kernel_size, stride, padding, use_bias=False):
+    def __init__(self, in_channels, out_channels, kernel_size, stride, padding,
+                 norm_layer, norm_kwargs, use_bias=False):
         super(BranchSeparablesStem, self).__init__()
         self.body = nn.HybridSequential(prefix='')
 
         self.body.add(nn.Activation('relu'))
         self.body.add(SeparableConv2d(in_channels, out_channels, kernel_size,
                                       stride, padding, use_bias=use_bias))
-        self.body.add(nn.BatchNorm(momentum=0.1, epsilon=0.001))
+        self.body.add(norm_layer(momentum=0.1, epsilon=0.001,
+                                 **({} if norm_kwargs is None else norm_kwargs)))
         self.body.add(nn.Activation('relu'))
         self.body.add(SeparableConv2d(out_channels, out_channels, kernel_size,
                                       1, padding, use_bias=use_bias))
-        self.body.add(nn.BatchNorm(momentum=0.1, epsilon=0.001))
+        self.body.add(norm_layer(momentum=0.1, epsilon=0.001,
+                                 **({} if norm_kwargs is None else norm_kwargs)))
 
     def hybrid_forward(self, F, x):
         x = self.body(x)
@@ -111,7 +118,7 @@ class BranchSeparablesStem(HybridBlock):
 class BranchSeparablesReduction(HybridBlock):
 
     def __init__(self, in_channels, out_channels, kernel_size, stride, padding,
-                 z_padding=1, use_bias=False):
+                 z_padding=1, use_bias=False, norm_layer=BatchNorm, norm_kwargs=None):
         super(BranchSeparablesReduction, self).__init__()
 
         self.z_padding = z_padding
@@ -119,11 +126,13 @@ class BranchSeparablesReduction(HybridBlock):
                                          stride, padding, use_bias=use_bias)
 
         self.body = nn.HybridSequential(prefix='')
-        self.body.add(nn.BatchNorm(momentum=0.1, epsilon=0.001))
+        self.body.add(norm_layer(momentum=0.1, epsilon=0.001,
+                                 **({} if norm_kwargs is None else norm_kwargs)))
         self.body.add(nn.Activation('relu'))
         self.body.add(SeparableConv2d(in_channels, out_channels, kernel_size,
                                       1, padding, use_bias=use_bias))
-        self.body.add(nn.BatchNorm(momentum=0.1, epsilon=0.001))
+        self.body.add(norm_layer(momentum=0.1, epsilon=0.001,
+                                 **({} if norm_kwargs is None else norm_kwargs)))
 
     def hybrid_forward(self, F, x):
         x = F.Activation(x, act_type='relu')
@@ -136,26 +145,32 @@ class BranchSeparablesReduction(HybridBlock):
 
 class CellStem0(HybridBlock):
 
-    def __init__(self, stem_filters, num_filters=42):
+    def __init__(self, stem_filters, norm_layer, norm_kwargs, num_filters=42):
         super(CellStem0, self).__init__()
 
         self.conv_1x1 = nn.HybridSequential(prefix='')
         self.conv_1x1.add(nn.Activation('relu'))
         self.conv_1x1.add(nn.Conv2D(num_filters, 1, strides=1, use_bias=False))
-        self.conv_1x1.add(nn.BatchNorm(momentum=0.1, epsilon=0.001))
+        self.conv_1x1.add(norm_layer(momentum=0.1, epsilon=0.001,
+                                     **({} if norm_kwargs is None else norm_kwargs)))
 
-        self.comb_iter_0_left = BranchSeparables(num_filters, num_filters, 5, 2, 2)
-        self.comb_iter_0_right = BranchSeparablesStem(stem_filters, num_filters, 7, 2, 3)
+        self.comb_iter_0_left = BranchSeparables(num_filters, num_filters, 5, 2, 2,
+                                                 norm_layer, norm_kwargs)
+        self.comb_iter_0_right = BranchSeparablesStem(stem_filters, num_filters, 7, 2, 3,
+                                                      norm_layer, norm_kwargs)
 
         self.comb_iter_1_left = nn.MaxPool2D(3, strides=2, padding=1)
-        self.comb_iter_1_right = BranchSeparablesStem(stem_filters, num_filters, 7, 2, 3)
+        self.comb_iter_1_right = BranchSeparablesStem(stem_filters, num_filters, 7, 2, 3,
+                                                      norm_layer, norm_kwargs)
 
         self.comb_iter_2_left = nn.AvgPool2D(3, strides=2, padding=1, count_include_pad=False)
-        self.comb_iter_2_right = BranchSeparablesStem(stem_filters, num_filters, 5, 2, 2)
+        self.comb_iter_2_right = BranchSeparablesStem(stem_filters, num_filters, 5, 2, 2,
+                                                      norm_layer, norm_kwargs)
 
         self.comb_iter_3_right = nn.AvgPool2D(3, strides=1, padding=1, count_include_pad=False)
 
-        self.comb_iter_4_left = BranchSeparables(num_filters, num_filters, 3, 1, 1)
+        self.comb_iter_4_left = BranchSeparables(num_filters, num_filters, 3, 1, 1,
+                                                 norm_layer, norm_kwargs)
         self.comb_iter_4_right = nn.MaxPool2D(3, strides=2, padding=1)
 
     def hybrid_forward(self, F, x):
@@ -186,13 +201,14 @@ class CellStem0(HybridBlock):
 
 class CellStem1(HybridBlock):
 
-    def __init__(self, num_filters):
+    def __init__(self, num_filters, norm_layer, norm_kwargs):
         super(CellStem1, self).__init__()
 
         self.conv_1x1 = nn.HybridSequential(prefix='')
         self.conv_1x1.add(nn.Activation('relu'))
         self.conv_1x1.add(nn.Conv2D(num_filters, 1, strides=1, use_bias=False))
-        self.conv_1x1.add(nn.BatchNorm(momentum=0.1, epsilon=0.001))
+        self.conv_1x1.add(norm_layer(momentum=0.1, epsilon=0.001,
+                                     **({} if norm_kwargs is None else norm_kwargs)))
 
         self.path_1 = nn.HybridSequential(prefix='')
         self.path_1.add(nn.AvgPool2D(1, strides=2, count_include_pad=False))
@@ -203,20 +219,26 @@ class CellStem1(HybridBlock):
         self.path_2.add(nn.AvgPool2D(1, strides=2, count_include_pad=False))
         self.path_2.add(nn.Conv2D(num_filters//2, 1, strides=1, use_bias=False))
 
-        self.final_path_bn = nn.BatchNorm(momentum=0.1, epsilon=0.001)
+        self.final_path_bn = norm_layer(momentum=0.1, epsilon=0.001,
+                                        **({} if norm_kwargs is None else norm_kwargs))
 
-        self.comb_iter_0_left = BranchSeparables(num_filters, num_filters, 5, 2, 2)
-        self.comb_iter_0_right = BranchSeparables(num_filters, num_filters, 7, 2, 3)
+        self.comb_iter_0_left = BranchSeparables(num_filters, num_filters, 5, 2, 2,
+                                                 norm_layer, norm_kwargs)
+        self.comb_iter_0_right = BranchSeparables(num_filters, num_filters, 7, 2, 3,
+                                                  norm_layer, norm_kwargs)
 
         self.comb_iter_1_left = nn.MaxPool2D(3, strides=2, padding=1)
-        self.comb_iter_1_right = BranchSeparables(num_filters, num_filters, 7, 2, 3)
+        self.comb_iter_1_right = BranchSeparables(num_filters, num_filters, 7, 2, 3,
+                                                  norm_layer, norm_kwargs)
 
         self.comb_iter_2_left = nn.AvgPool2D(3, strides=2, padding=1, count_include_pad=False)
-        self.comb_iter_2_right = BranchSeparables(num_filters, num_filters, 5, 2, 2)
+        self.comb_iter_2_right = BranchSeparables(num_filters, num_filters, 5, 2, 2,
+                                                  norm_layer, norm_kwargs)
 
         self.comb_iter_3_right = nn.AvgPool2D(3, strides=1, padding=1, count_include_pad=False)
 
-        self.comb_iter_4_left = BranchSeparables(num_filters, num_filters, 3, 1, 1)
+        self.comb_iter_4_left = BranchSeparables(num_filters, num_filters, 3, 1, 1,
+                                                 norm_layer, norm_kwargs)
         self.comb_iter_4_right = nn.MaxPool2D(3, strides=2, padding=1)
 
     def hybrid_forward(self, F, x_conv0, x_stem_0):
@@ -256,13 +278,14 @@ class CellStem1(HybridBlock):
 
 class FirstCell(HybridBlock):
 
-    def __init__(self, out_channels_left, out_channels_right):
+    def __init__(self, out_channels_left, out_channels_right, norm_layer, norm_kwargs):
         super(FirstCell, self).__init__()
 
         self.conv_1x1 = nn.HybridSequential(prefix='')
         self.conv_1x1.add(nn.Activation('relu'))
         self.conv_1x1.add(nn.Conv2D(out_channels_right, 1, strides=1, use_bias=False))
-        self.conv_1x1.add(nn.BatchNorm(momentum=0.1, epsilon=0.001))
+        self.conv_1x1.add(norm_layer(momentum=0.1, epsilon=0.001,
+                                     **({} if norm_kwargs is None else norm_kwargs)))
 
         self.path_1 = nn.HybridSequential(prefix='')
         self.path_1.add(nn.AvgPool2D(1, strides=2, count_include_pad=False))
@@ -273,20 +296,26 @@ class FirstCell(HybridBlock):
         self.path_2.add(nn.AvgPool2D(1, strides=2, count_include_pad=False))
         self.path_2.add(nn.Conv2D(out_channels_left, 1, strides=1, use_bias=False))
 
-        self.final_path_bn = nn.BatchNorm(momentum=0.1, epsilon=0.001)
+        self.final_path_bn = norm_layer(momentum=0.1, epsilon=0.001,
+                                        **({} if norm_kwargs is None else norm_kwargs))
 
-        self.comb_iter_0_left = BranchSeparables(out_channels_right, out_channels_right, 5, 1, 2)
-        self.comb_iter_0_right = BranchSeparables(out_channels_right, out_channels_right, 3, 1, 1)
+        self.comb_iter_0_left = BranchSeparables(out_channels_right, out_channels_right, 5, 1, 2,
+                                                 norm_layer, norm_kwargs)
+        self.comb_iter_0_right = BranchSeparables(out_channels_right, out_channels_right, 3, 1, 1,
+                                                  norm_layer, norm_kwargs)
 
-        self.comb_iter_1_left = BranchSeparables(out_channels_right, out_channels_right, 5, 1, 2)
-        self.comb_iter_1_right = BranchSeparables(out_channels_right, out_channels_right, 3, 1, 1)
+        self.comb_iter_1_left = BranchSeparables(out_channels_right, out_channels_right, 5, 1, 2,
+                                                 norm_layer, norm_kwargs)
+        self.comb_iter_1_right = BranchSeparables(out_channels_right, out_channels_right, 3, 1, 1,
+                                                  norm_layer, norm_kwargs)
 
         self.comb_iter_2_left = nn.AvgPool2D(3, strides=1, padding=1, count_include_pad=False)
 
         self.comb_iter_3_left = nn.AvgPool2D(3, strides=1, padding=1, count_include_pad=False)
         self.comb_iter_3_right = nn.AvgPool2D(3, strides=1, padding=1, count_include_pad=False)
 
-        self.comb_iter_4_left = BranchSeparables(out_channels_right, out_channels_right, 3, 1, 1)
+        self.comb_iter_4_left = BranchSeparables(out_channels_right, out_channels_right, 3, 1, 1,
+                                                 norm_layer, norm_kwargs)
 
     def hybrid_forward(self, F, x, x_prev):
         x_relu = F.Activation(x_prev, act_type='relu')
@@ -325,31 +354,38 @@ class FirstCell(HybridBlock):
 
 class NormalCell(HybridBlock):
 
-    def __init__(self, out_channels_left, out_channels_right):
+    def __init__(self, out_channels_left, out_channels_right, norm_layer, norm_kwargs):
         super(NormalCell, self).__init__()
 
         self.conv_prev_1x1 = nn.HybridSequential(prefix='')
         self.conv_prev_1x1.add(nn.Activation('relu'))
         self.conv_prev_1x1.add(nn.Conv2D(out_channels_left, 1, strides=1, use_bias=False))
-        self.conv_prev_1x1.add(nn.BatchNorm(momentum=0.1, epsilon=0.001))
+        self.conv_prev_1x1.add(norm_layer(momentum=0.1, epsilon=0.001,
+                                          **({} if norm_kwargs is None else norm_kwargs)))
 
         self.conv_1x1 = nn.HybridSequential(prefix='')
         self.conv_1x1.add(nn.Activation('relu'))
         self.conv_1x1.add(nn.Conv2D(out_channels_right, 1, strides=1, use_bias=False))
-        self.conv_1x1.add(nn.BatchNorm(momentum=0.1, epsilon=0.001))
+        self.conv_1x1.add(norm_layer(momentum=0.1, epsilon=0.001,
+                                     **({} if norm_kwargs is None else norm_kwargs)))
 
-        self.comb_iter_0_left = BranchSeparables(out_channels_right, out_channels_right, 5, 1, 2)
-        self.comb_iter_0_right = BranchSeparables(out_channels_left, out_channels_left, 3, 1, 1)
+        self.comb_iter_0_left = BranchSeparables(out_channels_right, out_channels_right, 5, 1, 2,
+                                                 norm_layer, norm_kwargs)
+        self.comb_iter_0_right = BranchSeparables(out_channels_left, out_channels_left, 3, 1, 1,
+                                                  norm_layer, norm_kwargs)
 
-        self.comb_iter_1_left = BranchSeparables(out_channels_left, out_channels_left, 5, 1, 2)
-        self.comb_iter_1_right = BranchSeparables(out_channels_left, out_channels_left, 3, 1, 1)
+        self.comb_iter_1_left = BranchSeparables(out_channels_left, out_channels_left, 5, 1, 2,
+                                                 norm_layer, norm_kwargs)
+        self.comb_iter_1_right = BranchSeparables(out_channels_left, out_channels_left, 3, 1, 1,
+                                                  norm_layer, norm_kwargs)
 
         self.comb_iter_2_left = nn.AvgPool2D(3, strides=1, padding=1, count_include_pad=False)
 
         self.comb_iter_3_left = nn.AvgPool2D(3, strides=1, padding=1, count_include_pad=False)
         self.comb_iter_3_right = nn.AvgPool2D(3, strides=1, padding=1, count_include_pad=False)
 
-        self.comb_iter_4_left = BranchSeparables(out_channels_right, out_channels_right, 3, 1, 1)
+        self.comb_iter_4_left = BranchSeparables(out_channels_right, out_channels_right, 3, 1, 1,
+                                                 norm_layer, norm_kwargs)
 
     def hybrid_forward(self, F, x, x_prev):
         x_left = self.conv_prev_1x1(x_prev)
@@ -380,36 +416,48 @@ class NormalCell(HybridBlock):
 
 class ReductionCell0(HybridBlock):
 
-    def __init__(self, out_channels_left, out_channels_right):
+    def __init__(self, out_channels_left, out_channels_right, norm_layer, norm_kwargs):
         super(ReductionCell0, self).__init__()
 
         self.conv_prev_1x1 = nn.HybridSequential(prefix='')
         self.conv_prev_1x1.add(nn.Activation('relu'))
         self.conv_prev_1x1.add(nn.Conv2D(out_channels_left, 1, strides=1, use_bias=False))
-        self.conv_prev_1x1.add(nn.BatchNorm(momentum=0.1, epsilon=0.001))
+        self.conv_prev_1x1.add(norm_layer(momentum=0.1, epsilon=0.001,
+                                          **({} if norm_kwargs is None else norm_kwargs)))
 
         self.conv_1x1 = nn.HybridSequential(prefix='')
         self.conv_1x1.add(nn.Activation('relu'))
         self.conv_1x1.add(nn.Conv2D(out_channels_right, 1, strides=1, use_bias=False))
-        self.conv_1x1.add(nn.BatchNorm(momentum=0.1, epsilon=0.001))
+        self.conv_1x1.add(norm_layer(momentum=0.1, epsilon=0.001,
+                                     **({} if norm_kwargs is None else norm_kwargs)))
 
         self.comb_iter_0_left = BranchSeparablesReduction(out_channels_right, out_channels_right,
-                                                          5, 2, 2)
+                                                          5, 2, 2,
+                                                          norm_layer=norm_layer,
+                                                          norm_kwargs=norm_kwargs)
         self.comb_iter_0_right = BranchSeparablesReduction(out_channels_right, out_channels_right,
-                                                           7, 2, 3)
+                                                           7, 2, 3,
+                                                           norm_layer=norm_layer,
+                                                           norm_kwargs=norm_kwargs)
 
         self.comb_iter_1_left = MaxPoolPad()
         self.comb_iter_1_right = BranchSeparablesReduction(out_channels_right, out_channels_right,
-                                                           7, 2, 3)
+                                                           7, 2, 3,
+                                                           norm_layer=norm_layer,
+                                                           norm_kwargs=norm_kwargs)
 
         self.comb_iter_2_left = AvgPoolPad()
         self.comb_iter_2_right = BranchSeparablesReduction(out_channels_right, out_channels_right,
-                                                           5, 2, 2)
+                                                           5, 2, 2,
+                                                           norm_layer=norm_layer,
+                                                           norm_kwargs=norm_kwargs)
 
         self.comb_iter_3_right = nn.AvgPool2D(3, strides=1, padding=1, count_include_pad=False)
 
         self.comb_iter_4_left = BranchSeparablesReduction(out_channels_right, out_channels_right,
-                                                          3, 1, 1)
+                                                          3, 1, 1,
+                                                          norm_layer=norm_layer,
+                                                          norm_kwargs=norm_kwargs)
         self.comb_iter_4_right = MaxPoolPad()
 
     def hybrid_forward(self, F, x, x_prev):
@@ -442,31 +490,38 @@ class ReductionCell0(HybridBlock):
 
 class ReductionCell1(HybridBlock):
 
-    def __init__(self, out_channels_left, out_channels_right):
+    def __init__(self, out_channels_left, out_channels_right, norm_layer, norm_kwargs):
         super(ReductionCell1, self).__init__()
 
         self.conv_prev_1x1 = nn.HybridSequential(prefix='')
         self.conv_prev_1x1.add(nn.Activation('relu'))
         self.conv_prev_1x1.add(nn.Conv2D(out_channels_left, 1, strides=1, use_bias=False))
-        self.conv_prev_1x1.add(nn.BatchNorm(momentum=0.1, epsilon=0.001))
+        self.conv_prev_1x1.add(norm_layer(momentum=0.1, epsilon=0.001,
+                                          **({} if norm_kwargs is None else norm_kwargs)))
 
         self.conv_1x1 = nn.HybridSequential(prefix='')
         self.conv_1x1.add(nn.Activation('relu'))
         self.conv_1x1.add(nn.Conv2D(out_channels_right, 1, strides=1, use_bias=False))
-        self.conv_1x1.add(nn.BatchNorm(momentum=0.1, epsilon=0.001))
+        self.conv_1x1.add(norm_layer(momentum=0.1, epsilon=0.001,
+                                     **({} if norm_kwargs is None else norm_kwargs)))
 
-        self.comb_iter_0_left = BranchSeparables(out_channels_right, out_channels_right, 5, 2, 2)
-        self.comb_iter_0_right = BranchSeparables(out_channels_right, out_channels_right, 7, 2, 3)
+        self.comb_iter_0_left = BranchSeparables(out_channels_right, out_channels_right, 5, 2, 2,
+                                                 norm_layer, norm_kwargs)
+        self.comb_iter_0_right = BranchSeparables(out_channels_right, out_channels_right, 7, 2, 3,
+                                                  norm_layer, norm_kwargs)
 
         self.comb_iter_1_left = nn.MaxPool2D(3, strides=2, padding=1)
-        self.comb_iter_1_right = BranchSeparables(out_channels_right, out_channels_right, 7, 2, 3)
+        self.comb_iter_1_right = BranchSeparables(out_channels_right, out_channels_right, 7, 2, 3,
+                                                  norm_layer, norm_kwargs)
 
         self.comb_iter_2_left = nn.AvgPool2D(3, strides=2, padding=1, count_include_pad=False)
-        self.comb_iter_2_right = BranchSeparables(out_channels_right, out_channels_right, 5, 2, 2)
+        self.comb_iter_2_right = BranchSeparables(out_channels_right, out_channels_right, 5, 2, 2,
+                                                  norm_layer, norm_kwargs)
 
         self.comb_iter_3_right = nn.AvgPool2D(3, strides=1, padding=1, count_include_pad=False)
 
-        self.comb_iter_4_left = BranchSeparables(out_channels_right, out_channels_right, 3, 1, 1)
+        self.comb_iter_4_left = BranchSeparables(out_channels_right, out_channels_right, 3, 1, 1,
+                                                 norm_layer, norm_kwargs)
         self.comb_iter_4_right = nn.MaxPool2D(3, strides=2, padding=1)
 
     def hybrid_forward(self, F, x, x_prev):
@@ -516,52 +571,72 @@ class NASNetALarge(HybridBlock):
         Number of classification classes
     use_aux : bool, default True
         Whether to use auxiliary classifier when training
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
     def __init__(self, repeat=6, penultimate_filters=4032, stem_filters=96,
-                 filters_multiplier=2, classes=1000, use_aux=True):
+                 filters_multiplier=2, classes=1000, use_aux=True,
+                 norm_layer=BatchNorm, norm_kwargs=None):
         super(NASNetALarge, self).__init__()
 
         filters = penultimate_filters // 24
 
         self.conv0 = nn.HybridSequential(prefix='')
         self.conv0.add(nn.Conv2D(stem_filters, 3, padding=0, strides=2, use_bias=False))
-        self.conv0.add(nn.BatchNorm(momentum=0.1, epsilon=0.001))
+        self.conv0.add(norm_layer(momentum=0.1, epsilon=0.001,
+                                  **({} if norm_kwargs is None else norm_kwargs)))
 
-        self.cell_stem_0 = CellStem0(stem_filters, num_filters=filters // (filters_multiplier ** 2))
-        self.cell_stem_1 = CellStem1(num_filters=filters // filters_multiplier)
+        self.cell_stem_0 = CellStem0(stem_filters, norm_layer, norm_kwargs,
+                                     num_filters=filters // (filters_multiplier ** 2))
+        self.cell_stem_1 = CellStem1(filters // filters_multiplier,
+                                     norm_layer, norm_kwargs)
 
         self.norm_1 = nn.HybridSequential(prefix='')
-        self.norm_1.add(FirstCell(out_channels_left=filters//2, out_channels_right=filters))
+        self.norm_1.add(FirstCell(out_channels_left=filters//2, out_channels_right=filters,
+                                  norm_layer=norm_layer, norm_kwargs=norm_kwargs))
         for _ in range(repeat - 1):
-            self.norm_1.add(NormalCell(out_channels_left=filters, out_channels_right=filters))
+            self.norm_1.add(NormalCell(out_channels_left=filters, out_channels_right=filters,
+                                       norm_layer=norm_layer, norm_kwargs=norm_kwargs))
 
         self.reduction_cell_0 = ReductionCell0(out_channels_left=2*filters,
-                                               out_channels_right=2*filters)
+                                               out_channels_right=2*filters,
+                                               norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
         self.norm_2 = nn.HybridSequential(prefix='')
-        self.norm_2.add(FirstCell(out_channels_left=filters, out_channels_right=2*filters))
+        self.norm_2.add(FirstCell(out_channels_left=filters, out_channels_right=2*filters,
+                                  norm_layer=norm_layer, norm_kwargs=norm_kwargs))
         for _ in range(repeat - 1):
-            self.norm_2.add(NormalCell(out_channels_left=2*filters, out_channels_right=2*filters))
+            self.norm_2.add(NormalCell(out_channels_left=2*filters, out_channels_right=2*filters,
+                                       norm_layer=norm_layer, norm_kwargs=norm_kwargs))
 
         if use_aux:
             self.out_aux = nn.HybridSequential(prefix='')
             self.out_aux.add(nn.Conv2D(filters // 3, kernel_size=1, use_bias=False))
-            self.out_aux.add(nn.BatchNorm(epsilon=0.001))
+            self.out_aux.add(norm_layer(epsilon=0.001,
+                                        **({} if norm_kwargs is None else norm_kwargs)))
             self.out_aux.add(nn.Activation('relu'))
             self.out_aux.add(nn.Conv2D(2*filters, kernel_size=5, use_bias=False))
-            self.out_aux.add(nn.BatchNorm(epsilon=0.001))
+            self.out_aux.add(norm_layer(epsilon=0.001,
+                                        **({} if norm_kwargs is None else norm_kwargs)))
             self.out_aux.add(nn.Activation('relu'))
             self.out_aux.add(nn.Dense(classes))
         else:
             self.out_aux = None
 
         self.reduction_cell_1 = ReductionCell1(out_channels_left=4*filters,
-                                               out_channels_right=4*filters)
+                                               out_channels_right=4*filters,
+                                               norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
         self.norm_3 = nn.HybridSequential(prefix='')
-        self.norm_3.add(FirstCell(out_channels_left=2*filters, out_channels_right=4*filters))
+        self.norm_3.add(FirstCell(out_channels_left=2*filters, out_channels_right=4*filters,
+                                  norm_layer=norm_layer, norm_kwargs=norm_kwargs))
         for _ in range(repeat - 1):
-            self.norm_3.add(NormalCell(out_channels_left=4*filters, out_channels_right=4*filters))
+            self.norm_3.add(NormalCell(out_channels_left=4*filters, out_channels_right=4*filters,
+                                       norm_layer=norm_layer, norm_kwargs=norm_kwargs))
 
         self.out = nn.HybridSequential(prefix='')
         self.out.add(nn.Activation('relu'))
@@ -614,6 +689,12 @@ def get_nasnet(repeat=6, penultimate_filters=4032,
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
     assert repeat >= 2, \
         "Invalid number of repeat: %d. It should be at least two"%(repeat)
@@ -647,6 +728,12 @@ def nasnet_4_1056(**kwargs):
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
     return get_nasnet(repeat=4, penultimate_filters=1056, **kwargs)
 
@@ -668,6 +755,12 @@ def nasnet_5_1538(**kwargs):
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
     return get_nasnet(repeat=5, penultimate_filters=1538, **kwargs)
 
@@ -690,6 +783,12 @@ def nasnet_7_1920(**kwargs):
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
     return get_nasnet(repeat=7, penultimate_filters=1920, **kwargs)
 
@@ -712,5 +811,11 @@ def nasnet_6_4032(**kwargs):
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
     return get_nasnet(repeat=6, penultimate_filters=4032, **kwargs)

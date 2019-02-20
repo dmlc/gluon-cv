@@ -27,6 +27,7 @@ __all__ = ['get_cifar_resnet',
 import os
 from mxnet.gluon.block import HybridBlock
 from mxnet.gluon import nn
+from mxnet.gluon.nn import BatchNorm
 from mxnet import cpu
 
 # Helpers
@@ -51,20 +52,27 @@ class CIFARBasicBlockV1(HybridBlock):
         Whether to downsample the input.
     in_channels : int, default 0
         Number of input channels. Default is 0, to infer from the graph.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
-    def __init__(self, channels, stride, downsample=False, in_channels=0, **kwargs):
+    def __init__(self, channels, stride, downsample=False, in_channels=0,
+                 norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
         super(CIFARBasicBlockV1, self).__init__(**kwargs)
         self.body = nn.HybridSequential(prefix='')
         self.body.add(_conv3x3(channels, stride, in_channels))
-        self.body.add(nn.BatchNorm())
+        self.body.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
         self.body.add(nn.Activation('relu'))
         self.body.add(_conv3x3(channels, 1, channels))
-        self.body.add(nn.BatchNorm())
+        self.body.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
         if downsample:
             self.downsample = nn.HybridSequential(prefix='')
             self.downsample.add(nn.Conv2D(channels, kernel_size=1, strides=stride,
                                           use_bias=False, in_channels=in_channels))
-            self.downsample.add(nn.BatchNorm())
+            self.downsample.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
         else:
             self.downsample = None
 
@@ -97,12 +105,19 @@ class CIFARBasicBlockV2(HybridBlock):
         Whether to downsample the input.
     in_channels : int, default 0
         Number of input channels. Default is 0, to infer from the graph.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
-    def __init__(self, channels, stride, downsample=False, in_channels=0, **kwargs):
+    def __init__(self, channels, stride, downsample=False, in_channels=0,
+                 norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
         super(CIFARBasicBlockV2, self).__init__(**kwargs)
-        self.bn1 = nn.BatchNorm()
+        self.bn1 = norm_layer(**({} if norm_kwargs is None else norm_kwargs))
         self.conv1 = _conv3x3(channels, stride, in_channels)
-        self.bn2 = nn.BatchNorm()
+        self.bn2 = norm_layer(**({} if norm_kwargs is None else norm_kwargs))
         self.conv2 = _conv3x3(channels, 1, channels)
         if downsample:
             self.downsample = nn.Conv2D(channels, 1, stride, use_bias=False,
@@ -142,30 +157,40 @@ class CIFARResNetV1(HybridBlock):
         Numbers of channels in each block. Length should be one larger than layers list.
     classes : int, default 10
         Number of classification classes.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
-    def __init__(self, block, layers, channels, classes=10, **kwargs):
+    def __init__(self, block, layers, channels, classes=10,
+                 norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
         super(CIFARResNetV1, self).__init__(**kwargs)
         assert len(layers) == len(channels) - 1
         with self.name_scope():
             self.features = nn.HybridSequential(prefix='')
             self.features.add(nn.Conv2D(channels[0], 3, 1, 1, use_bias=False))
-            self.features.add(nn.BatchNorm())
+            self.features.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
 
             for i, num_layer in enumerate(layers):
                 stride = 1 if i == 0 else 2
                 self.features.add(self._make_layer(block, num_layer, channels[i+1],
-                                                   stride, i+1, in_channels=channels[i]))
+                                                   stride, i+1, in_channels=channels[i],
+                                                   norm_layer=norm_layer, norm_kwargs=norm_kwargs))
             self.features.add(nn.GlobalAvgPool2D())
 
             self.output = nn.Dense(classes, in_units=channels[-1])
 
-    def _make_layer(self, block, layers, channels, stride, stage_index, in_channels=0):
+    def _make_layer(self, block, layers, channels, stride, stage_index, in_channels=0,
+                    norm_layer=BatchNorm, norm_kwargs=None):
         layer = nn.HybridSequential(prefix='stage%d_'%stage_index)
         with layer.name_scope():
             layer.add(block(channels, stride, channels != in_channels, in_channels=in_channels,
-                            prefix=''))
+                            prefix='', norm_layer=norm_layer, norm_kwargs=norm_kwargs))
             for _ in range(layers-1):
-                layer.add(block(channels, 1, False, in_channels=channels, prefix=''))
+                layer.add(block(channels, 1, False, in_channels=channels, prefix='',
+                                norm_layer=norm_layer, norm_kwargs=norm_kwargs))
         return layer
 
     def hybrid_forward(self, F, x):
@@ -190,13 +215,21 @@ class CIFARResNetV2(HybridBlock):
         Numbers of channels in each block. Length should be one larger than layers list.
     classes : int, default 10
         Number of classification classes.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
-    def __init__(self, block, layers, channels, classes=10, **kwargs):
+    def __init__(self, block, layers, channels, classes=10,
+                 norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
         super(CIFARResNetV2, self).__init__(**kwargs)
         assert len(layers) == len(channels) - 1
         with self.name_scope():
             self.features = nn.HybridSequential(prefix='')
-            self.features.add(nn.BatchNorm(scale=False, center=False))
+            self.features.add(norm_layer(scale=False, center=False,
+                                         **({} if norm_kwargs is None else norm_kwargs)))
 
             self.features.add(nn.Conv2D(channels[0], 3, 1, 1, use_bias=False))
 
@@ -204,22 +237,25 @@ class CIFARResNetV2(HybridBlock):
             for i, num_layer in enumerate(layers):
                 stride = 1 if i == 0 else 2
                 self.features.add(self._make_layer(block, num_layer, channels[i+1],
-                                                   stride, i+1, in_channels=in_channels))
+                                                   stride, i+1, in_channels=in_channels,
+                                                   norm_layer=norm_layer, norm_kwargs=norm_kwargs))
                 in_channels = channels[i+1]
-            self.features.add(nn.BatchNorm())
+            self.features.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
             self.features.add(nn.Activation('relu'))
             self.features.add(nn.GlobalAvgPool2D())
             self.features.add(nn.Flatten())
 
             self.output = nn.Dense(classes, in_units=in_channels)
 
-    def _make_layer(self, block, layers, channels, stride, stage_index, in_channels=0):
+    def _make_layer(self, block, layers, channels, stride, stage_index, in_channels=0,
+                    norm_layer=BatchNorm, norm_kwargs=None):
         layer = nn.HybridSequential(prefix='stage%d_'%stage_index)
         with layer.name_scope():
             layer.add(block(channels, stride, channels != in_channels, in_channels=in_channels,
-                            prefix=''))
+                            prefix='', norm_layer=norm_layer, norm_kwargs=norm_kwargs))
             for _ in range(layers-1):
-                layer.add(block(channels, 1, False, in_channels=channels, prefix=''))
+                layer.add(block(channels, 1, False, in_channels=channels, prefix='',
+                                norm_layer=norm_layer, norm_kwargs=norm_kwargs))
         return layer
 
     def hybrid_forward(self, F, x):
@@ -261,6 +297,12 @@ def get_cifar_resnet(version, num_layers, pretrained=False, ctx=cpu(),
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
     layers, channels = _get_resnet_spec(num_layers)
 
@@ -285,6 +327,12 @@ def cifar_resnet20_v1(**kwargs):
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
     return get_cifar_resnet(1, 20, **kwargs)
 
@@ -300,6 +348,12 @@ def cifar_resnet56_v1(**kwargs):
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
     return get_cifar_resnet(1, 56, **kwargs)
 
@@ -315,6 +369,12 @@ def cifar_resnet110_v1(**kwargs):
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
     return get_cifar_resnet(1, 110, **kwargs)
 
@@ -330,6 +390,12 @@ def cifar_resnet20_v2(**kwargs):
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
     return get_cifar_resnet(2, 20, **kwargs)
 
@@ -345,6 +411,12 @@ def cifar_resnet56_v2(**kwargs):
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
     return get_cifar_resnet(2, 56, **kwargs)
 
@@ -360,5 +432,11 @@ def cifar_resnet110_v2(**kwargs):
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
     return get_cifar_resnet(2, 110, **kwargs)

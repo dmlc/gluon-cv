@@ -1,12 +1,13 @@
 """DataLoader utils."""
-import sys
-import threading
+import io
+import pickle
 import multiprocessing
+from multiprocessing.reduction import ForkingPickler
 import numpy as np
 from mxnet import nd
 from mxnet import context
-from mxnet.gluon.data import DataLoader
-from mxnet.recordio import MXRecordIO
+from mxnet.gluon.data.dataloader import DataLoader, _MultiWorkerIter
+from mxnet.gluon.data.dataloader import default_mp_batchify_fn, default_batchify_fn
 
 def default_pad_batchify_fn(data):
     """Collate data into batch, labels are padded to same shape"""
@@ -52,7 +53,7 @@ class DetectionDataLoader(DataLoader):
 
     It loads data batches from a dataset and then apply data
     transformations. It's a subclass of :py:class:`mxnet.gluon.data.DataLoader`,
-    and therefore has very simliar APIs.
+    and therefore has very similar APIs.
 
     The main purpose of the DataLoader is to pad variable length of labels from
     each image, because they have different amount of objects.
@@ -121,139 +122,52 @@ class DetectionDataLoader(DataLoader):
             dataset, batch_size, shuffle, sampler, last_batch,
             batch_sampler, batchify_fn, num_workers)
 
-def _as_in_context(data, ctx):
-    """Move data into new context."""
-    if isinstance(data, nd.NDArray):
-        return data.as_in_context(ctx)
-    elif isinstance(data, (list, tuple)):
-        return [_as_in_context(d, ctx) for d in data]
-    return data
+_worker_dataset = None
+def _worker_initializer(dataset):
+    """Initializer for processing pool."""
+    # global dataset is per-process based and only available in worker processes
+    # this is only necessary to handle MXIndexedRecordIO because otherwise dataset
+    # can be passed as argument
+    global _worker_dataset
+    _worker_dataset = dataset
 
-def _recursive_fork_recordio(obj, depth, max_depth=1000):
-    """Recursively find instance of MXRecordIO and reset file handler.
-    This is required for MXRecordIO which holds a C pointer to a opened file after fork.
-    """
-    if depth >= max_depth:
-        return
-    if isinstance(obj, MXRecordIO):
-        obj.close()
-        obj.open()  # re-obtain file hanlder in new process
-    elif (hasattr(obj, '__dict__')):
-        for _, v in obj.__dict__.items():
-            _recursive_fork_recordio(v, depth + 1, max_depth)
+def _worker_fn(samples, transform_fn, batchify_fn):
+    """Function for processing data in worker process."""
+    # it is required that each worker process has to fork a new MXIndexedRecordIO handle
+    # preserving dataset as global variable can save tons of overhead and is safe in new process
+    global _worker_dataset
+    t_dataset = _worker_dataset.transform(transform_fn)
+    batch = batchify_fn([t_dataset[i] for i in samples])
+    buf = io.BytesIO()
+    ForkingPickler(buf, pickle.HIGHEST_PROTOCOL).dump(batch)
+    return buf.getvalue()
 
-def random_worker_loop(datasets, key_queue, data_queue, batchify_fn):
-    """Worker loop for multiprocessing DataLoader with multiple transform functions."""
-    # re-fork a new recordio handler in new process if applicable
-    limit = sys.getrecursionlimit()
-    max_recursion_depth = min(limit - 5, max(10, limit // 2))
-    for dataset in datasets:
-        _recursive_fork_recordio(dataset, 0, max_recursion_depth)
-
-    while True:
-        idx, samples, random_idx = key_queue.get()
-        if idx is None:
-            break
-        batch = batchify_fn([datasets[random_idx][i] for i in samples])
-        data_queue.put((idx, batch))
-
-def fetcher_loop(data_queue, data_buffer, pin_memory=False):
-    """Fetcher loop for fetching data from queue and put in reorder dict."""
-    while True:
-        idx, batch = data_queue.get()
-        if idx is None:
-            break
-        if pin_memory:
-            batch = _as_in_context(batch, context.cpu_pinned())
-        else:
-            batch = _as_in_context(batch, context.cpu())
-        data_buffer[idx] = batch
-
-
-class _RandomTransformMultiWorkerIter(object):
-    """Interal multi-worker iterator for DataLoader with random transform functions."""
-    def __init__(self, transform_fns, interval, num_workers, dataset, batchify_fn, batch_sampler,
-                 pin_memory=False):
-        assert num_workers > 0, "_MultiWorkerIter is not for {} workers".format(num_workers)
-        assert isinstance(transform_fns, (list, tuple)) and len(transform_fns) > 1
-        from mxnet.gluon.data.dataloader import Queue, SimpleQueue
+class _RandomTransformMultiWorkerIter(_MultiWorkerIter):
+    """Internal multi-worker iterator for DataLoader."""
+    def __init__(self, transform_fns, interval, worker_pool, batchify_fn, batch_sampler,
+                 pin_memory=False, pin_device_id=0, worker_fn=_worker_fn, prefetch=0):
+        super(_RandomTransformMultiWorkerIter, self).__init__(
+            worker_pool, batchify_fn, batch_sampler, pin_memory=pin_memory,
+            worker_fn=worker_fn, prefetch=0)
         self._transform_fns = transform_fns
-        self._fn_idx = np.random.randint(len(self._transform_fns))
+        self._current_fn = np.random.choice(self._transform_fns)
         self._interval = max(int(interval), 1)
-        self._num_workers = num_workers
-        self._datasets = [dataset.transform(trans_fn) for trans_fn in self._transform_fns]
-        self._batchify_fn = batchify_fn
-        self._batch_sampler = batch_sampler
-        self._key_queue = Queue()
-        self._data_queue = Queue() if sys.version_info[0] <= 2 else SimpleQueue()
-        self._data_buffer = {}
-        self._rcvd_idx = 0
-        self._sent_idx = 0
-        self._iter = iter(self._batch_sampler)
-        self._shutdown = False
-
-        workers = []
-        for _ in range(self._num_workers):
-            worker = multiprocessing.Process(
-                target=random_worker_loop,
-                args=(self._datasets, self._key_queue, self._data_queue, self._batchify_fn))
-            worker.daemon = True
-            worker.start()
-            workers.append(worker)
-
-        self._fetcher = threading.Thread(
-            target=fetcher_loop,
-            args=(self._data_queue, self._data_buffer, pin_memory))
-        self._fetcher.daemon = True
-        self._fetcher.start()
-
-        # pre-fetch
-        for _ in range(2 * self._num_workers):
+        self._pin_device_id = pin_device_id
+        # pre-fetch, super class was inited without prefetch
+        for _ in range(prefetch):
             self._push_next()
-
-    def __len__(self):
-        return len(self._batch_sampler)
-
-    def __del__(self):
-        self.shutdown()
 
     def _push_next(self):
         """Assign next batch workload to workers."""
         r = next(self._iter, None)
         if r is None:
             return
-        if (self._sent_idx + 1) % self._interval == 0:
-            self._fn_idx = np.random.randint(len(self._transform_fns))
-        self._key_queue.put((self._sent_idx, r, self._fn_idx))
+        if self._sent_idx % self._interval == 0:
+            self._current_fn = np.random.choice(self._transform_fns)
+        async_ret = self._worker_pool.apply_async(
+            self._worker_fn, (r, self._current_fn, self._batchify_fn))
+        self._data_buffer[self._sent_idx] = async_ret
         self._sent_idx += 1
-
-    def __next__(self):
-        assert not self._shutdown, "call __next__ after shutdown is forbidden"
-        if self._rcvd_idx == self._sent_idx:
-            assert not self._data_buffer, "Data buffer should be empty at this moment"
-            self.shutdown()
-            raise StopIteration
-
-        while True:
-            if self._rcvd_idx in self._data_buffer:
-                batch = self._data_buffer.pop(self._rcvd_idx)
-                self._rcvd_idx += 1
-                self._push_next()
-                return batch
-
-    def next(self):
-        return self.__next__()
-
-    def __iter__(self):
-        return self
-
-    def shutdown(self):
-        """Shutdown internal workers by pushing terminate signals."""
-        if not self._shutdown:
-            for _ in range(self._num_workers):
-                self._key_queue.put((None, None, None))
-            self._data_queue.put((None, None))
-            self._shutdown = True
 
 
 class RandomTransformDataLoader(DataLoader):
@@ -265,7 +179,7 @@ class RandomTransformDataLoader(DataLoader):
         Transform functions that takes a sample as input and returns the transformed sample.
         They will be randomly selected during the dataloader iteration.
     dataset : mxnet.gluon.data.Dataset or numpy.ndarray or mxnet.ndarray.NDArray
-        The source dataset. Original dataset is recommanded here since we will apply transform
+        The source dataset. Original dataset is recommended here since we will apply transform
         function from candidates again during the iteration.
     interval : int, default is 1
         For every `interval` batches, transform function is randomly selected from candidates.
@@ -311,29 +225,65 @@ class RandomTransformDataLoader(DataLoader):
         The number of multiprocessing workers to use for data preprocessing.
         If ``num_workers`` = 0, multiprocessing is disabled.
         Otherwise ``num_workers`` multiprocessing worker is used to process data.
+    pin_memory : boolean, default False
+        If ``True``, the dataloader will copy NDArrays into pinned memory
+        before returning them. Copying from CPU pinned memory to GPU is faster
+        than from normal CPU memory.
+    pin_device_id : int, default 0
+        The device id to use for allocating pinned memory if pin_memory is ``True``
+    prefetch : int, default is `num_workers * 2`
+        The number of prefetching batches only works if `num_workers` > 0.
+        If `prefetch` > 0, it allow worker process to prefetch certain batches before
+        acquiring data from iterators.
+        Note that using large prefetching batch will provide smoother bootstrapping performance,
+        but will consume more shared_memory. Using smaller number may forfeit the purpose of using
+        multiple worker processes, try reduce `num_workers` in this case.
+        By default it defaults to `num_workers * 2`.
 
     """
     def __init__(self, transform_fns, dataset, interval=1, batch_size=None, shuffle=False,
                  sampler=None, last_batch=None, batch_sampler=None, batchify_fn=None,
-                 num_workers=0, pin_memory=False):
+                 num_workers=0, pin_memory=False, pin_device_id=0, prefetch=None):
         super(RandomTransformDataLoader, self).__init__(
-            dataset, batch_size, shuffle, sampler,
-            last_batch, batch_sampler, batchify_fn, num_workers)
+            dataset=dataset, batch_size=batch_size, shuffle=shuffle, sampler=sampler,
+            last_batch=last_batch, batch_sampler=batch_sampler, batchify_fn=batchify_fn,
+            num_workers=0, pin_memory=pin_memory)
         self._transform_fns = transform_fns
         assert len(self._transform_fns) > 0
         self._interval = max(int(interval), 1)
-        self._pin_memory = pin_memory
+        # override
+        self._pin_device_id = pin_device_id
+        self._num_workers = num_workers if num_workers >= 0 else 0
+        self._worker_pool = None
+        self._prefetch = max(0, int(prefetch) if prefetch is not None else 2 * self._num_workers)
+        if self._num_workers > 0:
+            self._worker_pool = multiprocessing.Pool(
+                self._num_workers, initializer=_worker_initializer, initargs=[self._dataset])
+        if batchify_fn is None:
+            if num_workers > 0:
+                self._batchify_fn = default_mp_batchify_fn
+            else:
+                self._batchify_fn = default_batchify_fn
+        else:
+            self._batchify_fn = batchify_fn
 
     def __iter__(self):
         if self._num_workers == 0:
             def same_process_iter():
                 t = np.random.choice(self._transform_fns)
                 for ib, batch in enumerate(self._batch_sampler):
-                    if (ib + 1) % self._interval == 0:
+                    if ib % self._interval == 0:
                         t = np.random.choice(self._transform_fns)
                     yield self._batchify_fn([self._dataset.transform(t)[idx] for idx in batch])
             return same_process_iter()
         else:
             return _RandomTransformMultiWorkerIter(
-                self._transform_fns, self._interval, self._num_workers, self._dataset,
-                self._batchify_fn, self._batch_sampler, self._pin_memory)
+                self._transform_fns, self._interval, self._worker_pool, self._batchify_fn,
+                self._batch_sampler, pin_memory=self._pin_memory, pin_device_id=self._pin_device_id,
+                worker_fn=_worker_fn, prefetch=self._prefetch)
+
+    def __del__(self):
+        if self._worker_pool:
+            # manually terminate due to a bug that pool is not automatically terminated
+            assert isinstance(self._worker_pool, multiprocessing.pool.Pool)
+            self._worker_pool.terminate()

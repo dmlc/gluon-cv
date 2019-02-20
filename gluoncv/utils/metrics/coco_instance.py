@@ -13,7 +13,7 @@ from ...data.mscoco.utils import try_import_pycocotools
 
 class COCOInstanceMetric(mx.metric.EvalMetric):
     """Instance segmentation metric for COCO bbox and segm task.
-    Will return box summary, box metric, seg summary and seg metrc.
+    Will return box summary, box metric, seg summary and seg metric.
 
     Parameters
     ----------
@@ -71,7 +71,7 @@ class COCOInstanceMetric(mx.metric.EvalMetric):
         """Write coco json file"""
         if not self._current_id == len(self._img_ids):
             warnings.warn(
-                'Recorded {} out of {} validation images, incompelete results'.format(
+                'Recorded {} out of {} validation images, incomplete results'.format(
                     self._current_id, len(self._img_ids)))
         import json
         try:

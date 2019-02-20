@@ -96,7 +96,7 @@ class SegmentationDataset(VisionDataset):
         return 0
 
 def ms_batchify_fn(data):
-    """Multi-size batchfy function"""
+    """Multi-size batchify function"""
     if isinstance(data[0], (str, mx.nd.NDArray)):
         return list(data)
     elif isinstance(data[0], tuple):

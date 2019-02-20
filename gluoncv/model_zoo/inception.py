@@ -23,17 +23,18 @@ __all__ = ['Inception3', 'inception_v3']
 from mxnet.context import cpu
 from mxnet.gluon.block import HybridBlock
 from mxnet.gluon import nn
+from mxnet.gluon.nn import BatchNorm
 from mxnet.gluon.contrib.nn import HybridConcurrent
 
 # Helpers
-def _make_basic_conv(**kwargs):
+def _make_basic_conv(norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
     out = nn.HybridSequential(prefix='')
     out.add(nn.Conv2D(use_bias=False, **kwargs))
-    out.add(nn.BatchNorm(epsilon=0.001))
+    out.add(norm_layer(epsilon=0.001, **({} if norm_kwargs is None else norm_kwargs)))
     out.add(nn.Activation('relu'))
     return out
 
-def _make_branch(use_pool, *conv_settings):
+def _make_branch(use_pool, norm_layer, norm_kwargs, *conv_settings):
     out = nn.HybridSequential(prefix='')
     if use_pool == 'avg':
         out.add(nn.AvgPool2D(pool_size=3, strides=1, padding=1))
@@ -45,108 +46,110 @@ def _make_branch(use_pool, *conv_settings):
         for i, value in enumerate(setting):
             if value is not None:
                 kwargs[setting_names[i]] = value
-        out.add(_make_basic_conv(**kwargs))
+        out.add(_make_basic_conv(norm_layer, norm_kwargs, **kwargs))
     return out
 
-def _make_A(pool_features, prefix):
+def _make_A(pool_features, prefix, norm_layer, norm_kwargs):
     out = HybridConcurrent(axis=1, prefix=prefix)
     with out.name_scope():
-        out.add(_make_branch(None,
+        out.add(_make_branch(None, norm_layer, norm_kwargs,
                              (64, 1, None, None)))
-        out.add(_make_branch(None,
+        out.add(_make_branch(None, norm_layer, norm_kwargs,
                              (48, 1, None, None),
                              (64, 5, None, 2)))
-        out.add(_make_branch(None,
+        out.add(_make_branch(None, norm_layer, norm_kwargs,
                              (64, 1, None, None),
                              (96, 3, None, 1),
                              (96, 3, None, 1)))
-        out.add(_make_branch('avg',
+        out.add(_make_branch('avg', norm_layer, norm_kwargs,
                              (pool_features, 1, None, None)))
     return out
 
-def _make_B(prefix):
+def _make_B(prefix, norm_layer, norm_kwargs):
     out = HybridConcurrent(axis=1, prefix=prefix)
     with out.name_scope():
-        out.add(_make_branch(None,
+        out.add(_make_branch(None, norm_layer, norm_kwargs,
                              (384, 3, 2, None)))
-        out.add(_make_branch(None,
+        out.add(_make_branch(None, norm_layer, norm_kwargs,
                              (64, 1, None, None),
                              (96, 3, None, 1),
                              (96, 3, 2, None)))
-        out.add(_make_branch('max'))
+        out.add(_make_branch('max', norm_layer, norm_kwargs))
     return out
 
-def _make_C(channels_7x7, prefix):
+def _make_C(channels_7x7, prefix, norm_layer, norm_kwargs):
     out = HybridConcurrent(axis=1, prefix=prefix)
     with out.name_scope():
-        out.add(_make_branch(None,
+        out.add(_make_branch(None, norm_layer, norm_kwargs,
                              (192, 1, None, None)))
-        out.add(_make_branch(None,
+        out.add(_make_branch(None, norm_layer, norm_kwargs,
                              (channels_7x7, 1, None, None),
                              (channels_7x7, (1, 7), None, (0, 3)),
                              (192, (7, 1), None, (3, 0))))
-        out.add(_make_branch(None,
+        out.add(_make_branch(None, norm_layer, norm_kwargs,
                              (channels_7x7, 1, None, None),
                              (channels_7x7, (7, 1), None, (3, 0)),
                              (channels_7x7, (1, 7), None, (0, 3)),
                              (channels_7x7, (7, 1), None, (3, 0)),
                              (192, (1, 7), None, (0, 3))))
-        out.add(_make_branch('avg',
+        out.add(_make_branch('avg', norm_layer, norm_kwargs,
                              (192, 1, None, None)))
     return out
 
-def _make_D(prefix):
+def _make_D(prefix, norm_layer, norm_kwargs):
     out = HybridConcurrent(axis=1, prefix=prefix)
     with out.name_scope():
-        out.add(_make_branch(None,
+        out.add(_make_branch(None, norm_layer, norm_kwargs,
                              (192, 1, None, None),
                              (320, 3, 2, None)))
-        out.add(_make_branch(None,
+        out.add(_make_branch(None, norm_layer, norm_kwargs,
                              (192, 1, None, None),
                              (192, (1, 7), None, (0, 3)),
                              (192, (7, 1), None, (3, 0)),
                              (192, 3, 2, None)))
-        out.add(_make_branch('max'))
+        out.add(_make_branch('max', norm_layer, norm_kwargs))
     return out
 
-def _make_E(prefix):
+def _make_E(prefix, norm_layer, norm_kwargs):
     out = HybridConcurrent(axis=1, prefix=prefix)
     with out.name_scope():
-        out.add(_make_branch(None,
+        out.add(_make_branch(None, norm_layer, norm_kwargs,
                              (320, 1, None, None)))
 
         branch_3x3 = nn.HybridSequential(prefix='')
         out.add(branch_3x3)
-        branch_3x3.add(_make_branch(None,
+        branch_3x3.add(_make_branch(None, norm_layer, norm_kwargs,
                                     (384, 1, None, None)))
         branch_3x3_split = HybridConcurrent(axis=1, prefix='')
-        branch_3x3_split.add(_make_branch(None,
+        branch_3x3_split.add(_make_branch(None, norm_layer, norm_kwargs,
                                           (384, (1, 3), None, (0, 1))))
-        branch_3x3_split.add(_make_branch(None,
+        branch_3x3_split.add(_make_branch(None, norm_layer, norm_kwargs,
                                           (384, (3, 1), None, (1, 0))))
         branch_3x3.add(branch_3x3_split)
 
         branch_3x3dbl = nn.HybridSequential(prefix='')
         out.add(branch_3x3dbl)
-        branch_3x3dbl.add(_make_branch(None,
+        branch_3x3dbl.add(_make_branch(None, norm_layer, norm_kwargs,
                                        (448, 1, None, None),
                                        (384, 3, None, 1)))
         branch_3x3dbl_split = HybridConcurrent(axis=1, prefix='')
         branch_3x3dbl.add(branch_3x3dbl_split)
-        branch_3x3dbl_split.add(_make_branch(None,
+        branch_3x3dbl_split.add(_make_branch(None, norm_layer, norm_kwargs,
                                              (384, (1, 3), None, (0, 1))))
-        branch_3x3dbl_split.add(_make_branch(None,
+        branch_3x3dbl_split.add(_make_branch(None, norm_layer, norm_kwargs,
                                              (384, (3, 1), None, (1, 0))))
 
-        out.add(_make_branch('avg',
+        out.add(_make_branch('avg', norm_layer, norm_kwargs,
                              (192, 1, None, None)))
     return out
 
-def make_aux(classes):
+def make_aux(classes, norm_layer, norm_kwargs):
     out = nn.HybridSequential(prefix='')
     out.add(nn.AvgPool2D(pool_size=5, strides=3))
-    out.add(_make_basic_conv(channels=128, kernel_size=1))
-    out.add(_make_basic_conv(channels=768, kernel_size=5))
+    out.add(_make_basic_conv(channels=128, kernel_size=1,
+                             norm_layer=norm_layer, norm_kwargs=norm_kwargs))
+    out.add(_make_basic_conv(channels=768, kernel_size=5,
+                             norm_layer=norm_layer, norm_kwargs=norm_kwargs))
     out.add(nn.Flatten())
     out.add(nn.Dense(classes))
     return out
@@ -161,30 +164,41 @@ class Inception3(HybridBlock):
     ----------
     classes : int, default 1000
         Number of classification classes.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
-    def __init__(self, classes=1000, **kwargs):
+    def __init__(self, classes=1000, norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
         super(Inception3, self).__init__(**kwargs)
         # self.use_aux_logits = use_aux_logits
         with self.name_scope():
             self.features = nn.HybridSequential(prefix='')
-            self.features.add(_make_basic_conv(channels=32, kernel_size=3, strides=2))
-            self.features.add(_make_basic_conv(channels=32, kernel_size=3))
-            self.features.add(_make_basic_conv(channels=64, kernel_size=3, padding=1))
+            self.features.add(_make_basic_conv(channels=32, kernel_size=3, strides=2,
+                                               norm_layer=norm_layer, norm_kwargs=norm_kwargs))
+            self.features.add(_make_basic_conv(channels=32, kernel_size=3,
+                                               norm_layer=norm_layer, norm_kwargs=norm_kwargs))
+            self.features.add(_make_basic_conv(channels=64, kernel_size=3, padding=1,
+                                               norm_layer=norm_layer, norm_kwargs=norm_kwargs))
             self.features.add(nn.MaxPool2D(pool_size=3, strides=2))
-            self.features.add(_make_basic_conv(channels=80, kernel_size=1))
-            self.features.add(_make_basic_conv(channels=192, kernel_size=3))
+            self.features.add(_make_basic_conv(channels=80, kernel_size=1,
+                                               norm_layer=norm_layer, norm_kwargs=norm_kwargs))
+            self.features.add(_make_basic_conv(channels=192, kernel_size=3,
+                                               norm_layer=norm_layer, norm_kwargs=norm_kwargs))
             self.features.add(nn.MaxPool2D(pool_size=3, strides=2))
-            self.features.add(_make_A(32, 'A1_'))
-            self.features.add(_make_A(64, 'A2_'))
-            self.features.add(_make_A(64, 'A3_'))
-            self.features.add(_make_B('B_'))
-            self.features.add(_make_C(128, 'C1_'))
-            self.features.add(_make_C(160, 'C2_'))
-            self.features.add(_make_C(160, 'C3_'))
-            self.features.add(_make_C(192, 'C4_'))
-            self.features.add(_make_D('D_'))
-            self.features.add(_make_E('E1_'))
-            self.features.add(_make_E('E2_'))
+            self.features.add(_make_A(32, 'A1_', norm_layer, norm_kwargs))
+            self.features.add(_make_A(64, 'A2_', norm_layer, norm_kwargs))
+            self.features.add(_make_A(64, 'A3_', norm_layer, norm_kwargs))
+            self.features.add(_make_B('B_', norm_layer, norm_kwargs))
+            self.features.add(_make_C(128, 'C1_', norm_layer, norm_kwargs))
+            self.features.add(_make_C(160, 'C2_', norm_layer, norm_kwargs))
+            self.features.add(_make_C(160, 'C3_', norm_layer, norm_kwargs))
+            self.features.add(_make_C(192, 'C4_', norm_layer, norm_kwargs))
+            self.features.add(_make_D('D_', norm_layer, norm_kwargs))
+            self.features.add(_make_E('E1_', norm_layer, norm_kwargs))
+            self.features.add(_make_E('E2_', norm_layer, norm_kwargs))
             self.features.add(nn.AvgPool2D(pool_size=8))
             self.features.add(nn.Dropout(0.5))
 
@@ -211,6 +225,12 @@ def inception_v3(pretrained=False, ctx=cpu(),
         The context in which to load the pretrained weights.
     root : str, default $MXNET_HOME/models
         Location for keeping the model parameters.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
     net = Inception3(**kwargs)
     if pretrained:

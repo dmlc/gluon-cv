@@ -3,6 +3,7 @@ from __future__ import absolute_import
 from __future__ import division
 import os
 import logging
+import warnings
 import numpy as np
 try:
     import xml.etree.cElementTree as ET
@@ -23,7 +24,7 @@ class VOCDetection(VisionDataset):
         List of combinations of (year, name)
         For years, candidates can be: 2007, 2012.
         For names, candidates can be: 'train', 'val', 'trainval', 'test'.
-    transform : callable, defaut None
+    transform : callable, default None
         A function that takes data and label and transforms them. Refer to
         :doc:`./transforms` for examples.
 
@@ -32,13 +33,13 @@ class VOCDetection(VisionDataset):
     index_map : dict, default None
         In default, the 20 classes are mapped into indices from 0 to 19. We can
         customize it by providing a str to int dict specifying how to map class
-        names to indicies. Use by advanced users only, when you want to swap the orders
+        names to indices. Use by advanced users only, when you want to swap the orders
         of class labels.
     preload_label : bool, default True
         If True, then parse and load all labels into memory during
         initialization. It often accelerate speed but require more memory
         usage. Typical preloaded labels took tens of MB. You only need to disable it
-        when your dataset is extreamly large.
+        when your dataset is extremely large.
     """
     CLASSES = ('aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car',
                'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse', 'motorbike',
@@ -65,6 +66,10 @@ class VOCDetection(VisionDataset):
     @property
     def classes(self):
         """Category names."""
+        try:
+            self._validate_class_names(self.CLASSES)
+        except AssertionError as e:
+            raise RuntimeError("Class names must not contain {}".format(e))
         return type(self).CLASSES
 
     def __len__(self):
@@ -125,6 +130,13 @@ class VOCDetection(VisionDataset):
         assert 0 <= ymin < height, "ymin must in [0, {}), given {}".format(height, ymin)
         assert xmin < xmax <= width, "xmax must in (xmin, {}], given {}".format(width, xmax)
         assert ymin < ymax <= height, "ymax must in (ymin, {}], given {}".format(height, ymax)
+
+    def _validate_class_names(self, class_list):
+        """Validate class names."""
+        assert all(c.islower() for c in class_list), "uppercase characters"
+        stripped = [c for c in class_list if c.strip() != c]
+        if stripped:
+            warnings.warn('white space removed for {}'.format(stripped))
 
     def _preload_labels(self):
         """Preload all labels into memory."""

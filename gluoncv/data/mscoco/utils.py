@@ -8,7 +8,7 @@ from __future__ import absolute_import
 from ...utils.filesystem import import_try_install
 
 def try_import_pycocotools():
-    """Tricks to optinally install and import pycocotools"""
+    """Tricks to optionally install and import pycocotools"""
     # first we can try import pycocotools
     try:
         import pycocotools as _

@@ -26,7 +26,7 @@ class RCNN(gluon.HybridBlock):
     train_patterns : str
         Matching pattern for trainable parameters.
     nms_thresh : float
-        Non-maximum suppression threshold. You can speficy < 0 or > 1 to disable NMS.
+        Non-maximum suppression threshold. You can specify < 0 or > 1 to disable NMS.
     nms_topk : int
         Apply NMS to top k detection results, use -1 to disable so that every Detection
          result is used in NMS.
@@ -56,7 +56,7 @@ class RCNN(gluon.HybridBlock):
     train_patterns : str
         Matching pattern for trainable parameters.
     nms_thresh : float
-        Non-maximum suppression threshold. You can speficy < 0 or > 1 to disable NMS.
+        Non-maximum suppression threshold. You can specify < 0 or > 1 to disable NMS.
     nms_topk : int
         Apply NMS to top k detection results, use -1 to disable so that every Detection
          result is used in NMS.
@@ -132,7 +132,7 @@ class RCNN(gluon.HybridBlock):
         Parameters
         ----------
         nms_thresh : float, default is 0.3.
-            Non-maximum suppression threshold. You can speficy < 0 or > 1 to disable NMS.
+            Non-maximum suppression threshold. You can specify < 0 or > 1 to disable NMS.
         nms_topk : int, default is 400
             Apply NMS to top k detection results, use -1 to disable so that every Detection
              result is used in NMS.
