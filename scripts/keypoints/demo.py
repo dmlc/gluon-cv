@@ -156,6 +156,7 @@ if __name__ == '__main__':
     detector_name = "ssd_512_mobilenet1.0_coco"
     detector = get_model(detector_name, ctx=mx.cpu(), pretrained=True)
     net = get_model('simple_pose_resnet18_v1b', pretrained=True, ctx=mx.cpu())
+    net.reset_class(["person"], reuse_weights=['person'])
 
     for i in tqdm.tqdm(range(1)):
         keypoint_detection('manunited.jpg', detector, net)

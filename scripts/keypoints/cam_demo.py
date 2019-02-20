@@ -156,8 +156,9 @@ def keypoint_detection(img=None, img_path=None, detector=None, pose_net=None):
 
 if __name__ == '__main__':
     detector_name = "ssd_512_mobilenet1.0_coco"
+    # detector_name = "yolo3_mobilenet1.0_coco"
     detector = get_model(detector_name, ctx=mx.cpu(), pretrained=True)
-    # detector.reset_class(classes=['person'], reuse_weights={'person':'person'})
+    detector.reset_class(classes=['person'], reuse_weights={'person':'person'})
     net = get_model('simple_pose_resnet18_v1b', pretrained=True, ctx=mx.cpu())
 
     cap = cv2.VideoCapture(0)

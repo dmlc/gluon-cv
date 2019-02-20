@@ -32,6 +32,8 @@ parser.add_argument('--input-size', type=str, default='256,192',
                     help='size of the input image size. default is 256,192')
 parser.add_argument('--params-file', type=str,
                     help='local parameters to load.')
+parser.add_argument('--flip-test', action='store_true',
+                    help='Whether to flip test input to ensemble results.')
 parser.add_argument('--mean', type=str, default='0.485,0.456,0.406',
                     help='mean vector for normalization')
 parser.add_argument('--std', type=str, default='0.229,0.224,0.225',
@@ -101,10 +103,11 @@ def validate(val_data, val_dataset, net, ctx):
         data, scale, center, score, imgid = val_batch_fn(batch, ctx)
 
         outputs = [net(X) for X in data]
-        data_flip = [nd.flip(X, axis=3) for X in data]
-        outputs_flip = [net(X) for X in data_flip]
-        outputs_flipback = [flip_heatmap(o, val_dataset.joint_pairs, shift=True) for o in outputs_flip]
-        outputs = [(o + o_flip)/2 for o, o_flip in zip(outputs, outputs_flipback)]
+        if opt.flip_test:
+            data_flip = [nd.flip(X, axis=3) for X in data]
+            outputs_flip = [net(X) for X in data_flip]
+            outputs_flipback = [flip_heatmap(o, val_dataset.joint_pairs, shift=True) for o in outputs_flip]
+            outputs = [(o + o_flip)/2 for o, o_flip in zip(outputs, outputs_flipback)]
 
         if len(outputs) > 1:
             outputs_stack = nd.concat(*[o.as_in_context(mx.cpu()) for o in outputs], dim=0)
