@@ -311,8 +311,8 @@ class MixSoftmaxCrossEntropyLoss(SoftmaxCrossEntropyLoss):
 
     def _aux_mixup_forward(self, F, pred1, pred2, label1, label2, lam):
         """Compute loss including auxiliary output"""
-        loss1 = self._mixup_forwar(F, pred1, label1, label2, lam)
-        loss2 = self._mixup_forwar(F, pred2, label1, label2, lam)
+        loss1 = self._mixup_forward(F, pred1, label1, label2, lam)
+        loss2 = self._mixup_forward(F, pred2, label1, label2, lam)
         return loss1 + self.aux_weight * loss2
 
     def _mixup_forward(self, F, pred, label1, label2, lam, sample_weight=None):
