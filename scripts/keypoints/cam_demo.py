@@ -88,10 +88,12 @@ def heatmap_to_coord(heatmaps, bbox_list):
     return coords, maxvals
 
 def keypoint_detection(img, detector, pose_net, ctx=mx.cpu()):
+    # detector
     x, img = gcv.data.transforms.presets.yolo.transform_test(img, short=512, max_size=350)
     x = x.as_in_context(ctx)
     class_IDs, scores, bounding_boxs = detector(x)
 
+    # input processing
     L = class_IDs.shape[1]
     thr = 0.5
     upscale_bbox = []
@@ -105,11 +107,18 @@ def keypoint_detection(img, detector, pose_net, ctx=mx.cpu()):
 
     if len(upscale_bbox) > 0:
         pose_input = crop_resize_normalize(nd.array(img, ctx=ctx), upscale_bbox, (256, 192))
-        nd.waitall()
 
+        # pose estimation
         predicted_heatmap = pose_net(pose_input)
-        pred_coords, _ = heatmap_to_coord(predicted_heatmap, upscale_bbox)
+        pred_coords, confidence = heatmap_to_coord(predicted_heatmap, upscale_bbox)
 
+        # plot
+        confidence_thred = 0.2
+        joint_visible = confidence[:, :, 0].asnumpy() > confidence_thred
+        joint_pairs = [[0,1], [1,3], [0,2], [2,4],
+                       [5,6], [5,7], [7,9], [6,8], [8,10],
+                       [5,11], [6,12], [11,12],
+                       [11,13], [12,14], [13,15], [14,16]]
         person_ind = class_IDs[0].asnumpy() == 0
         ax = gcv.utils.viz.plot_bbox(img, bounding_boxs[0].asnumpy()[person_ind[:,0]],
                                      scores[0].asnumpy()[person_ind[:,0]], thresh=0.5)
@@ -118,15 +127,12 @@ def keypoint_detection(img, detector, pose_net, ctx=mx.cpu()):
         plt.gca().invert_yaxis()
         for i in range(pred_coords.shape[0]):
             pts = pred_coords[i].asnumpy()
-            plt.scatter(pts[:,0], pts[:,1], s=20)
-            joint_pairs = [[0,1], [1,3], [0,2], [2,4],
-                           [5,6], [5,7], [7,9], [6,8], [8,10],
-                           [5,11], [6,12], [11,12],
-                           [11,13], [12,14], [13,15], [14,16]]
             colormap_index = np.linspace(0, 1, len(joint_pairs))
             for cm_ind, jp in zip(colormap_index, joint_pairs):
-                plt.plot(pts[jp, 0], pts[jp, 1],
-                         linewidth=5.0, alpha=0.7, color=plt.cm.cool(cm_ind))
+                if joint_visible[i, jp[0]] and joint_visible[i, jp[1]]:
+                    plt.plot(pts[jp, 0], pts[jp, 1],
+                             linewidth=5.0, alpha=0.7, color=plt.cm.cool(cm_ind))
+                    plt.scatter(pts[jp, 0], pts[jp, 1], s=20)
 
         plt.draw()
         plt.pause(0.1)

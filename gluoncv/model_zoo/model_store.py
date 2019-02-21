@@ -106,7 +106,6 @@ _model_sha1 = {name: checksum for checksum, name in [
     ('7906e0e16013ef8d195cbc05463cc37783ec7a8a', 'se_resnext50_32x4d'),
     ('688e238985d45a38803c62cf345af2813d0e8aa0', 'se_resnext101_32x4d'),
     ('11c50114a0483e27e74dc4236904254ef05b634b', 'se_resnext101_64x4d'),
-    ('11c50114a0483e27e74dc4236904254ef05b634b', 'se_resnext101_64x4d'),
     ('f63d42ac8f83b239d4e08b636b888b8e50cd066d', 'simple_pose_resnet18_v1b'),
     ('e2c7b1adea31264bc9220511308b4efa89c6fc50', 'simple_pose_resnet50_v1b'),
     ('b7ec0de1a34eb718efd4a84339cc1547ead88cbe', 'simple_pose_resnet101_v1b'),
