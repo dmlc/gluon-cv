@@ -96,14 +96,14 @@ class _PyramidPooling(HybridBlock):
     def pool(self, F, x, size):
         return F.contrib.AdaptiveAvgPooling2D(x, output_size=size)
 
-    def upsample(self, F, x, h, w):
-        return F.contrib.BilinearResize2D(x, height=h, width=w)
+    def upsample(self, F, x):
+        return F.contrib.BilinearResize2D(x, **self._up_kwargs)
 
     def hybrid_forward(self, F, x):
-        feat1 = self.upsample(F, self.conv1(self.pool(F, x, 1)), **self._up_kwargs)
-        feat2 = self.upsample(F, self.conv2(self.pool(F, x, 2)), **self._up_kwargs)
-        feat3 = self.upsample(F, self.conv3(self.pool(F, x, 3)), **self._up_kwargs)
-        feat4 = self.upsample(F, self.conv4(self.pool(F, x, 6)), **self._up_kwargs)
+        feat1 = self.upsample(F, self.conv1(self.pool(F, x, 1)))
+        feat2 = self.upsample(F, self.conv2(self.pool(F, x, 2)))
+        feat3 = self.upsample(F, self.conv3(self.pool(F, x, 3)))
+        feat4 = self.upsample(F, self.conv4(self.pool(F, x, 6)))
         return F.concat(x, feat1, feat2, feat3, feat4, dim=1)
 
 
