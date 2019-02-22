@@ -10,7 +10,7 @@ MS COCO Keypoints
 
   The training commands work with the following scripts:
 
-  - For Simple Pose [1]_ networks: :download:`Download train_ssd.py<../../scripts/detection/ssd/train_ssd.py>`
+  - For Simple Pose [1]_ networks: :download:`Download train_simple_pose.py<../../scripts/keypoints/simple_pose/train_simple_pose.py>`
 
 .. hint::
 
@@ -18,7 +18,7 @@ MS COCO Keypoints
 
     The COCO metric, Average Precision (AP) with IoU threshold 0.5:0.95 (averaged 10 values, AP 0.5:0.95), 0.5 (AP 0.5) and 0.75 (AP 0.75) are reported together in the format (AP 0.5:0.95)/(AP 0.5)/(AP 0.75).
 
-    COCO keypoints metrics evaluate Object Keypoint Similarity AP. Please read the [official doc](http://cocodataset.org/#keypoints-eval) for detailed introduction.
+    COCO keypoints metrics evaluate Object Keypoint Similarity AP. Please read the `official doc<http://cocodataset.org/#keypoints-eval>` for detailed introduction.
 
     By averaging the prediction from the original input and the flipped one, we can get higher performance. Here we report the performance for predictions with and without the flip ensemble.
 
@@ -27,9 +27,9 @@ MS COCO Keypoints
 Simple Pose with ResNet
 ------
 
-Checkout demo tutorial here: [Simple Pose Tutorial]
+Checkout demo tutorial here: :ref:`sphx_glr_build_examples_pose_demo_simple_pose.py`
 
-Models are trained with input of size 256x192. Specifically the `simple_pose_resnet152_v1d_large` is trained with input of size 384x288.
+Models are trained with input of size 256x192. Specifically the ``simple_pose_resnet152_v1d_large`` is trained with input of size 384x288.
 
 .. table::
    :widths: 45 5 5 10 20 15
