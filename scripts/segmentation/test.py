@@ -65,13 +65,19 @@ def test(args):
             pixAcc, mIoU = metric.get()
             tbar.set_description( 'pixAcc: %.4f, mIoU: %.4f' % (pixAcc, mIoU))
         else:
-            im_paths = dsts
+            idxs = range(i * len(data), (i + 1) * len(data))
+            file_names = []
+            for idx in idxs:
+                img_id = testset.ids[idx]
+                img_metadata = testset.coco.loadImgs(img_id)[0]
+                file_name = img_metadata['file_name']
+                file_names.append(file_name)
             predicts = evaluator.parallel_forward(data)
-            for predict, impath in zip(predicts, im_paths):
+            for predict, file_name in zip(predicts, file_names):
                 predict = mx.nd.squeeze(mx.nd.argmax(predict[0], 1)).asnumpy() + \
                     testset.pred_offset
                 mask = get_color_pallete(predict, args.dataset)
-                outname = os.path.splitext(impath)[0] + '.png'
+                outname = os.path.splitext(file_name)[0] + '.png'
                 mask.save(os.path.join(outdir, outname))
 
 if __name__ == "__main__":
