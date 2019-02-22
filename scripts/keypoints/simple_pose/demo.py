@@ -1,5 +1,5 @@
 from __future__ import division
-import argparse, logging, os, math, tqdm
+import argparse
 
 import numpy as np
 import mxnet as mx
@@ -9,7 +9,6 @@ import matplotlib.pyplot as plt
 
 import gluoncv as gcv
 from gluoncv import data
-from gluoncv.data import mscoco
 from gluoncv.model_zoo import get_model
 from gluoncv.data.transforms.pose import detector_to_simple_pose, heatmap_to_coord
 from gluoncv.utils.viz import plot_keypoints
@@ -37,9 +36,9 @@ def keypoint_detection(img_path, detector, pose_net):
     plt.show()
 
 if __name__ == '__main__':
-    detector = get_model(opt.detector, ctx=mx.cpu(), pretrained=True)
+    detector = get_model(opt.detector, pretrained=True)
     if opt.detector.startswith('ssd') or opt.detector.startswith('yolo'):
         detector.reset_class(["person"], reuse_weights=['person'])
-    net = get_model(opt.pose_model, pretrained=True, ctx=mx.cpu())
+    net = get_model(opt.pose_model, pretrained=True)
 
     keypoint_detection(opt.input_pic, detector, net)

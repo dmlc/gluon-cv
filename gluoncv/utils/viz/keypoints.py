@@ -64,6 +64,6 @@ def plot_keypoints(img, coords, confidence, class_ids, bboxes, scores,
         for cm_ind, jp in zip(colormap_index, joint_pairs):
             if joint_visible[i, jp[0]] and joint_visible[i, jp[1]]:
                 ax.plot(pts[jp, 0], pts[jp, 1],
-                        linewidth=5.0, alpha=0.7, color=plt.cm.cool(cm_ind))
+                        linewidth=3.0, alpha=0.7, color=plt.cm.cool(cm_ind))
                 ax.scatter(pts[jp, 0], pts[jp, 1], s=20)
     return ax
