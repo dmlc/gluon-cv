@@ -26,7 +26,7 @@ def parse_args():
                         help='model name (default: fcn)')
     parser.add_argument('--backbone', type=str, default='resnet50',
                         help='backbone name (default: resnet50)')
-    parser.add_argument('--dataset', type=str, default='pascalaug',
+    parser.add_argument('--dataset', type=str, default='pascal_aug',
                         help='dataset name (default: pascal)')
     parser.add_argument('--workers', type=int, default=16,
                         metavar='N', help='dataloader threads')
