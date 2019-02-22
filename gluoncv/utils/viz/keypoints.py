@@ -1,11 +1,11 @@
 """Bounding box visualization functions."""
 from __future__ import absolute_import, division
 
-import random
 import mxnet as mx
 import numpy as np
-from . import plot_bbox
 import matplotlib.pyplot as plt
+
+from . import plot_bbox
 
 def plot_keypoints(img, coords, confidence, class_ids, bboxes, scores,
                    box_thresh=0.5, keypoint_thresh=0.2, **kwargs):
@@ -48,15 +48,15 @@ def plot_keypoints(img, coords, confidence, class_ids, bboxes, scores,
     if isinstance(confidence, mx.nd.NDArray):
         confidence = confidence.asnumpy()
 
-    joint_visible = confidence[:,:,0] > keypoint_thresh
-    joint_pairs = [[0,1], [1,3], [0,2], [2,4],
-                   [5,6], [5,7], [7,9], [6,8], [8,10],
-                   [5,11], [6,12], [11,12],
-                   [11,13], [12,14], [13,15], [14,16]]
+    joint_visible = confidence[:, :, 0] > keypoint_thresh
+    joint_pairs = [[0, 1], [1, 3], [0, 2], [2, 4],
+                   [5, 6], [5, 7], [7, 9], [6, 8], [8, 10],
+                   [5, 11], [6, 12], [11, 12],
+                   [11, 13], [12, 14], [13, 15], [14, 16]]
 
     person_ind = class_ids[0] == 0
-    ax = plot_bbox(img, bboxes[0][person_ind[:,0]],
-                   scores[0][person_ind[:,0]], thresh=box_thresh, **kwargs)
+    ax = plot_bbox(img, bboxes[0][person_ind[:, 0]],
+                   scores[0][person_ind[:, 0]], thresh=box_thresh, **kwargs)
 
     colormap_index = np.linspace(0, 1, len(joint_pairs))
     for i in range(coords.shape[0]):
