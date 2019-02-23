@@ -76,6 +76,10 @@ class FocalLoss(Loss):
             pred = F.sigmoid(pred)
         if self._sparse_label:
             one_hot = F.one_hot(label, self._num_class)
+            ndims = len(pred.shape)
+            perm = list(range(ndims - 1))
+            perm.insert(self._axis, ndims - 1)
+            one_hot = F.transpose(one_hot, axes=perm)
         else:
             one_hot = label > 0
         pt = F.where(one_hot, pred, 1 - pred)
