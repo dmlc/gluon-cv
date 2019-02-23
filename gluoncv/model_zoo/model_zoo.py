@@ -67,6 +67,7 @@ _models = {
     'squeezenet1.0': squeezenet1_0,
     'squeezenet1.1': squeezenet1_1,
     'inceptionv3': inception_v3,
+    'xception': get_xcetption,
     'mobilenet1.0': mobilenet1_0,
     'mobilenet0.75': mobilenet0_75,
     'mobilenet0.5': mobilenet0_5,
