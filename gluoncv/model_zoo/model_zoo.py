@@ -18,6 +18,7 @@ from .pruned_resnet.resnetv1b_pruned import *
 from .pspnet import *
 from .quantized import *
 from .residual_attentionnet import *
+from .xception import *
 from .resnet import *
 from .resnetv1b import *
 from .resnext import *
