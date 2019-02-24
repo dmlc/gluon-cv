@@ -209,6 +209,8 @@ class Xception65(nn.HybridBlock):
         x = self.fc(x)
         return x
 
+        x = self.fc(x)
+        return x
 
 class Xception71(nn.HybridBlock):
     """Modified Aligned Xception
@@ -398,3 +400,4 @@ def get_xcetption_71(pretrained=False, ctx=cpu(),
         net.classes = attrib.classes
         net.classes_long = attrib.classes_long
     return net
+
