@@ -4,72 +4,80 @@ __all__ = ['Xception', 'get_xcetption']
 from mxnet.context import cpu
 import mxnet.gluon.nn as nn
 
-def fixed_padding(inputs, F, kernel_size, dilation):
-    kernel_size_effective = kernel_size + (kernel_size - 1) * (dilation - 1)
-    pad_total = kernel_size_effective - 1
-    pad_beg = pad_total // 2
-    pad_end = pad_total - pad_beg
-    padded_inputs = F.pad(inputs, (0, 0, 0, 0, pad_beg, pad_end, pad_beg, pad_end))
-    return padded_inputs
-
 class SeparableConv2d(nn.HybridBlock):
     def __init__(self, inplanes, planes, kernel_size=3, stride=1,
                  dilation=1, bias=False, norm_layer=None, norm_kwargs=None):
         super(SeparableConv2d, self).__init__()
         norm_kwargs = norm_kwargs if norm_kwargs is not None else {}
-        self.conv1 = nn.Conv2d(inplanes, inplanes, kernel_size, stride, 0, dilation,
-                               groups=inplanes, bias=bias)
-        self.bn = norm_layer(inplanes, **norm_kwargs)
-        self.pointwise = nn.Conv2d(inplanes, planes, 1, 1, 0, 1, 1, bias=bias)
+        self.kernel_size = kernel_size
+        self.dilation = dilation
+        self.conv1 = nn.Conv2D(in_channels=inplanes, channels=inplanes, kernel_size=kernel_size,
+                               strides=stride, padding=0 , dilation=dilation,
+                               groups=inplanes, use_bias=bias)
+        self.bn = norm_layer(in_channels=inplanes, **norm_kwargs)
+        self.pointwise = nn.Conv2D(in_channels=inplanes, channels=planes, kernel_size=1,
+                                   use_bias=bias)
 
     def hybrid_forward(self, F, x):
-        x = fixed_padding(x, F, self.conv1.kernel_size[0], dilation=self.conv1.dilation[0])
+        x = self.fixed_padding(x, F, self.kernel_size, dilation=self.dilation)
         x = self.conv1(x)
         x = self.bn(x)
         x = self.pointwise(x)
         return x
 
+    def fixed_padding(self, inputs, F, kernel_size, dilation):
+        kernel_size_effective = kernel_size + (kernel_size - 1) * (dilation - 1)
+        pad_total = kernel_size_effective - 1
+        pad_beg = pad_total // 2
+        pad_end = pad_total - pad_beg
+        padded_inputs = F.pad(inputs, mode="constant", constant_value=0,
+                              pad_width=(0, 0, 0, 0, pad_beg, pad_end, pad_beg, pad_end))
+        return padded_inputs
+
+
+
 class Block(nn.HybridBlock):
     def __init__(self, inplanes, planes, reps, stride=1, dilation=1, norm_layer=None,
-                 start_with_relu=True, grow_first=True, is_last=False):
+                 norm_kwargs=None, start_with_relu=True, grow_first=True, is_last=False):
         super(Block, self).__init__()
         norm_kwargs = norm_kwargs if norm_kwargs is not None else {}
         if planes != inplanes or stride != 1:
-            self.skip = nn.Conv2d(inplanes, planes, 1, stride=stride, bias=False)
-            self.skipbn = norm_layer(planes, **norm_kwargs)
+            self.skip = nn.Conv2D(in_channels=inplanes, channels=planes, kernel_size=1,
+                                  strides=stride, use_bias=False)
+            self.skipbn = norm_layer(in_channels=planes, **norm_kwargs)
         else:
             self.skip = None
-        self.relu = nn.ReLU(inplace=True)
-        self.rep = nn.Sequential()
+        self.relu = nn.Activation('relu')
+        self.rep = nn.HybridSequential()
         filters = inplanes
         if grow_first:
             if start_with_relu:
                 self.rep.add(self.relu)
             self.rep.add(SeparableConv2d(inplanes, planes, 3, 1, dilation, norm_layer=norm_layer,
                          norm_kwargs=norm_kwargs))
-            self.rep.add(norm_layer(planes, **norm_kwargs))
+            self.rep.add(norm_layer(in_channels=planes, **norm_kwargs))
             filters = planes
         for i in range(reps - 1):
             if grow_first or start_with_relu:
                 self.rep.add(self.relu)
             self.rep.add(SeparableConv2d(filters, filters, 3, 1, dilation, norm_layer=norm_layer,
                          norm_kwargs=norm_kwargs))
-            self.rep.add(norm_layer(filters, **norm_kwargs))
+            self.rep.add(norm_layer(in_channels=filters, **norm_kwargs))
         if not grow_first:
             self.rep.add(self.relu)
             self.rep.add(SeparableConv2d(inplanes, planes, 3, 1, dilation, norm_layer=norm_layer,
                          norm_kwargs=norm_kwargs))
-            self.rep.add(norm_layer(planes, **norm_kwargs))
+            self.rep.add(norm_layer(in_channels=planes, **norm_kwargs))
         if stride != 1:
             self.rep.add(self.relu)
             self.rep.add(SeparableConv2d(planes, planes, 3, 2, norm_layer=norm_layer,
                                          norm_kwargs=norm_kwargs))
-            self.rep.add(norm_layer(planes, **norm_kwargs))
+            self.rep.add(norm_layer(in_channels=planes, **norm_kwargs))
         elif is_last:
             self.rep.add(self.relu)
             self.rep.add(SeparableConv2d(planes, planes, 3, 1, norm_layer=norm_layer,
                                          norm_kwargs=norm_kwargs))
-            self.rep.add(norm_layer(planes, **norm_kwargs))
+            self.rep.add(norm_layer(in_channels=planes, **norm_kwargs))
 
     def hybrid_forward(self, F, inp):
         x = self.rep(inp)
@@ -84,32 +92,37 @@ class Block(nn.HybridBlock):
 class Xception(nn.HybridBlock):
     """Modified Aligned Xception
     """
-    def __init__(self, output_stride=, norm_layer=nn.BatchNorm,
+    def __init__(self, classes=1000, output_stride=32, norm_layer=nn.BatchNorm,
                  norm_kwargs=None):
         super(Xception, self).__init__()
         norm_kwargs = norm_kwargs if norm_kwargs is not None else {}
-        if output_stride == 8:
+        if output_stride == 32:
             entry_block3_stride = 2
+            exit_block20_stride = 2
             middle_block_dilation = 1
             exit_block_dilations = (1, 1)
-        if output_stride == 16:
+        elif output_stride == 16:
             entry_block3_stride = 2
+            exit_block20_stride = 1
             middle_block_dilation = 1
             exit_block_dilations = (1, 2)
         elif output_stride == 8:
             entry_block3_stride = 1
+            exit_block20_stride = 1
             middle_block_dilation = 2
             exit_block_dilations = (2, 4)
         else:
             raise NotImplementedError
         # Entry flow
         with self.name_scope():
-            self.conv1 = nn.Conv2d(3, 32, 3, stride=2, padding=1, bias=False)
-            self.bn1 = norm_layer(32, **norm_kwargs)
-            self.relu = nn.ReLU(inplace=True)
+            self.conv1 = nn.Conv2D(in_channels=3, channels=32, kernel_size=3,
+                                   strides=2, padding=1, use_bias=False)
+            self.bn1 = norm_layer(in_channels=32, **norm_kwargs)
+            self.relu = nn.Activation('relu')
 
-            self.conv2 = nn.Conv2d(32, 64, 3, stride=1, padding=1, bias=False)
-            self.bn2 = norm_layer(64)
+            self.conv2 = nn.Conv2D(in_channels=32, channels=64, kernel_size=3,
+                                   strides=1, padding=1, use_bias=False)
+            self.bn2 = norm_layer(in_channels=64)
 
             self.block1 = Block(64, 128, reps=2, stride=2, norm_layer=norm_layer,
                                 norm_kwargs=norm_kwargs,
@@ -123,34 +136,38 @@ class Xception(nn.HybridBlock):
                                 norm_kwargs=norm_kwargs,
                                 start_with_relu=True, grow_first=True, is_last=True)
             # Middle flow
-            self.midflow = nn.Sequential()
+            self.midflow = nn.HybridSequential()
             for i in range(4, 20):
-                self.midflow.add(('block%d'%i, Block(728, 728, reps=3, stride=1,
-                                                     dilation=middle_block_dilation,
-                                                     norm_layer=norm_layer, norm_kwargs=norm_kwargs,
-                                                     start_with_relu=True, grow_first=True)))
+                self.midflow.add((Block(728, 728, reps=3, stride=1,
+                                        dilation=middle_block_dilation,
+                                        norm_layer=norm_layer, norm_kwargs=norm_kwargs,
+                                        start_with_relu=True, grow_first=True)))
 
             # Exit flow
-            self.block20 = Block(728, 1024, reps=2, stride=1, dilation=exit_block_dilations[0],
+            self.block20 = Block(728, 1024, reps=2, stride=exit_block20_stride,
+                                 dilation=exit_block_dilations[0],
                                  norm_layer=norm_layer, norm_kwargs=norm_kwargs,
                                  start_with_relu=True, grow_first=False,
                                  is_last=True)
 
             self.conv3 = SeparableConv2d(1024, 1536, 3, stride=1, dilation=exit_block_dilations[1],
                                          norm_layer=norm_layer, norm_kwargs=norm_kwargs)
-            self.bn3 = norm_layer(1536, **norm_kwargs)
+            self.bn3 = norm_layer(in_channels=1536, **norm_kwargs)
 
             self.conv4 = SeparableConv2d(1536, 1536, 3, stride=1, dilation=exit_block_dilations[1],
                                          norm_layer=norm_layer, norm_kwargs=norm_kwargs)
-            self.bn4 = norm_layer(1536, **norm_kwargs)
+            self.bn4 = norm_layer(in_channels=1536, **norm_kwargs)
 
             self.conv5 = SeparableConv2d(1536, 2048, 3, stride=1, dilation=exit_block_dilations[1],
                                          norm_layer=norm_layer, norm_kwargs=norm_kwargs)
-            self.bn5 = norm_layer(2048, **norm_kwargs)
+            self.bn5 = norm_layer(in_channels=2048, **norm_kwargs)
+            self.avgpool = nn.GlobalAvgPool2D()
+            self.flat = nn.Flatten()
+            self.fc = nn.Dense(in_units=2048, units=classes)
 
-        def hybrid_forward(self, F, x):
-            # Entry flow
-            x = self.conv1(x)
+    def hybrid_forward(self, F, x):
+        # Entry flow
+        x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
 
@@ -183,8 +200,12 @@ class Xception(nn.HybridBlock):
         x = self.bn5(x)
         x = self.relu(x)
 
-        return x, low_level_feat
+        #return x, low_level_feat
+        x = self.avgpool(x)
+        x = self.flat(x)
 
+        x = self.fc(x)
+        return x
 
 # Constructor
 def get_xcetption(pretrained=False, ctx=cpu(),
@@ -218,3 +239,4 @@ def get_xcetption(pretrained=False, ctx=cpu(),
         net.classes = attrib.classes
         net.classes_long = attrib.classes_long
     return net
+
