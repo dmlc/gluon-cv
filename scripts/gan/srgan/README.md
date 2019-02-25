@@ -4,7 +4,7 @@
 
 **Download DIV2K dataset**
 ```bash
-bash ./download_dataset.sh DIV2K_train_HR
+python download_dataset.py --file DIV2K_train_HR
 ```
 
 **Train SRGAN**
