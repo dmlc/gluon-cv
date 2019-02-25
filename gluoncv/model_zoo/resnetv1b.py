@@ -8,7 +8,7 @@ from mxnet.gluon import nn
 from mxnet.gluon.nn import BatchNorm
 
 __all__ = ['ResNetV1b', 'resnet18_v1b', 'resnet34_v1b',
-           'resnet50_v1b', 'resnet101_v1b',
+           'resnet50_v1b', 'resnet50_v1b_gn', 'resnet101_v1b',
            'resnet152_v1b', 'BasicBlockV1b', 'BottleneckV1b',
            'resnet50_v1c', 'resnet101_v1c', 'resnet152_v1c',
            'resnet50_v1d', 'resnet101_v1d', 'resnet152_v1d',
@@ -369,6 +369,39 @@ def resnet50_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
         model.classes_long = attrib.classes_long
     return model
 
+def resnet50_v1b_gn(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
+    """Constructs a ResNetV1b-50 GroupNorm model.
+
+    Parameters
+    ----------
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    dilated: bool, default False
+        Whether to apply dilation strategy to ResNetV1b, yielding a stride 8 model.
+    last_gamma : bool, default False
+        Whether to initialize the gamma of the last BatchNorm layer in each bottleneck to zero.
+    use_global_stats : bool, default False
+        Whether forcing BatchNorm to use global statistics instead of minibatch statistics;
+        optionally set to True if finetuning using ImageNet classification pretrained models.
+    """
+    from ..nn import GroupNorm
+    model = ResNetV1b(BottleneckV1b, [3, 4, 6, 3], name_prefix='resnetv1b_',
+                      norm_layer=GroupNorm, **kwargs)
+    if pretrained:
+        from .model_store import get_model_file
+        model.load_parameters(get_model_file('resnet%d_v%db_gn'%(50, 1),
+                                             tag=pretrained, root=root), ctx=ctx)
+        from ..data import ImageNet1kAttr
+        attrib = ImageNet1kAttr()
+        model.synset = attrib.synset
+        model.classes = attrib.classes
+        model.classes_long = attrib.classes_long
+    return model
 
 def resnet101_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
     """Constructs a ResNetV1b-101 model.
