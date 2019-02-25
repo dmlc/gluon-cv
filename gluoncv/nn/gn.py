@@ -1,4 +1,4 @@
-# pylint: disable= arguments-differ
+# pylint: disable= arguments-differ,missing-docstring
 """Basic neural network layers."""
 __all__ = ['GroupNorm']
 import numpy as np
