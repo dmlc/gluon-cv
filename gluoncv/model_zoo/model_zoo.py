@@ -7,6 +7,8 @@ from .cifarresnet import *
 from .cifarresnext import *
 from .cifarwideresnet import *
 from .deeplabv3 import *
+from .simple_pose.simple_pose_resnet import *
+from .alexnet import *
 from .densenet import *
 from .faster_rcnn import *
 # from .fpn import *
@@ -163,6 +165,13 @@ _models = {
     'nasnet_5_1538': nasnet_5_1538,
     'nasnet_7_1920': nasnet_7_1920,
     'nasnet_6_4032': nasnet_6_4032,
+    'simple_pose_resnet18_v1b': simple_pose_resnet18_v1b,
+    'simple_pose_resnet50_v1b': simple_pose_resnet50_v1b,
+    'simple_pose_resnet101_v1b': simple_pose_resnet101_v1b,
+    'simple_pose_resnet152_v1b': simple_pose_resnet152_v1b,
+    'simple_pose_resnet50_v1d': simple_pose_resnet50_v1d,
+    'simple_pose_resnet101_v1d': simple_pose_resnet101_v1d,
+    'simple_pose_resnet152_v1d': simple_pose_resnet152_v1d,
     'residualattentionnet56': residualattentionnet56,
     'residualattentionnet92': residualattentionnet92,
     'residualattentionnet128': residualattentionnet128,

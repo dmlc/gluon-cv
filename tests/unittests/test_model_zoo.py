@@ -123,6 +123,25 @@ def test_imagenet_models():
     models = ['nasnet_5_1538', 'nasnet_7_1920', 'nasnet_6_4032']
     _test_model_list(models, ctx, x)
 
+@try_gpu(0)
+def test_simple_pose_resnet_models():
+    ctx = mx.context.current_context()
+    models = ['simple_pose_resnet18_v1b',
+              'simple_pose_resnet50_v1b', 'simple_pose_resnet101_v1b', 'simple_pose_resnet152_v1b',
+              'simple_pose_resnet50_v1d', 'simple_pose_resnet101_v1d', 'simple_pose_resnet152_v1d']
+
+    # 192x256
+    x = mx.random.uniform(shape=(2, 3, 192, 256), ctx=ctx)
+    _test_model_list(models, ctx, x)
+
+    # 256x256
+    x = mx.random.uniform(shape=(2, 3, 256, 256), ctx=ctx)
+    _test_model_list(models, ctx, x)
+
+    # 288x384
+    x = mx.random.uniform(shape=(2, 3, 288, 384), ctx=ctx)
+    _test_model_list(models, ctx, x)
+
 def test_imagenet_models_bn_global_stats():
     models = ['resnet18_v1b', 'resnet34_v1b', 'resnet50_v1b',
               'resnet101_v1b', 'resnet152_v1b']
@@ -141,7 +160,16 @@ def test_ssd_reset_class():
     x = mx.random.uniform(shape=(1, 3, 512, 544), ctx=ctx)  # allow non-squre and larger inputs
     model_name = 'ssd_300_vgg16_atrous_voc'
     net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
-    net.reset_class(["bus", "car", "bird"])
+    net.reset_class(["bus", "car", "bird"], reuse_weights=["bus", "car", "bird"])
+    net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
+    net.reset_class(["bus", "car", "bird"], reuse_weights={"bus":"bus"})
+    net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
+    net.reset_class(["person", "car", "bird"], reuse_weights={"person":14})
+    net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
+    net.reset_class(["person", "car", "bird"], reuse_weights={0:14})
+    net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
+    net.reset_class(["person", "car", "bird"], reuse_weights={0:"person"})
+
     net(x)
 
 # This test is only executed when a gpu is available
@@ -154,7 +182,7 @@ def test_ssd_reset_class_on_gpu():
 
     model_name = 'ssd_300_vgg16_atrous_voc'
     net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
-    net.reset_class(["bus", "car", "bird"])
+    net.reset_class(["bus", "car", "bird"], reuse_weights=["bus", "car", "bird"])
     net(x)
 
 def test_yolo3_reset_class():
@@ -162,7 +190,7 @@ def test_yolo3_reset_class():
     x = mx.random.uniform(shape=(1, 3, 512, 544), ctx=ctx)  # allow non-squre and larger inputs
     model_name = 'yolo3_darknet53_voc'
     net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
-    net.reset_class(["bus", "car", "bird"])
+    net.reset_class(["bus", "car", "bird"], reuse_weights=["bus", "car", "bird"])
     net(x)
 
     # for GPU

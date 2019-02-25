@@ -2,6 +2,8 @@
 import os
 from mxnet.gluon.data import dataset
 
+# pylint: disable= arguments-differ,unused-argument,missing-docstring,abstract-method
+
 class ClassProperty(object):
     """Readonly @ClassProperty descriptor for internal usage."""
     def __init__(self, fget):
@@ -36,3 +38,32 @@ class VisionDataset(dataset.Dataset):
     def num_class(self):
         """Number of categories."""
         return len(self.classes)
+
+
+class KeyPointDataset(VisionDataset):
+    """Base Dataset for KeyPoint detection.
+
+    Parameters
+    ----------
+    root : str
+        The root path of xxx.names, by defaut is '~/.mxnet/datasets/foo', where
+        `foo` is the name of the dataset.
+    """
+    def __init__(self, root):
+        super(KeyPointDataset, self).__init__(root)
+
+    @property
+    def num_joints(self):
+        """Dataset defined: number of joints provided."""
+        return 0
+
+    @property
+    def joint_pairs(self):
+        """Joint pairs which defines the pairs of joint to be swapped
+        when the image is flipped horizontally."""
+        return []
+
+    @property
+    def parent_joints(self):
+        """A dict that defines joint id -> parent_joint_id mapping if applicable, can be empty."""
+        return {}
