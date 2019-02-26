@@ -68,6 +68,7 @@ class DeepLabV3(SegBaseModel):
         self._up_kwargs['width'] = w
         c3, c4 = self.base_forward(x)
         x = self.head.demo(c4)
+        import mxnet.ndarray as F
         pred = F.contrib.BilinearResize2D(x, **self._up_kwargs)
         return pred
 
