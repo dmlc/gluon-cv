@@ -7,3 +7,4 @@ from . import feature
 from . import predictor
 from . import matcher
 from . import sampler
+from .gn import *

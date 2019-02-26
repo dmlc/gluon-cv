@@ -94,6 +94,8 @@ def parse_args():
                         help='Number of batches to wait before logging.')
     parser.add_argument('--logging-file', type=str, default='train_imagenet.log',
                         help='name of training log file')
+    parser.add_argument('--use-gn', action='store_true',
+                        help='whether to use group norm.')
     opt = parser.parse_args()
     return opt
 
@@ -136,6 +138,9 @@ def main():
     model_name = opt.model
 
     kwargs = {'ctx': context, 'pretrained': opt.use_pretrained, 'classes': classes}
+    if opt.use_gn:
+        from gluoncv.nn import GroupNorm
+        kwargs['norm_layer'] = GroupNorm
     if model_name.startswith('vgg'):
         kwargs['batch_norm'] = opt.batch_norm
     elif model_name.startswith('resnext'):
@@ -151,6 +156,7 @@ def main():
 
     net = get_model(model_name, **kwargs)
     net.cast(opt.dtype)
+    print(net)
     if opt.resume_params is not '':
         net.load_parameters(opt.resume_params, ctx = context)
 

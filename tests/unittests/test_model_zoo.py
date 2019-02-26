@@ -87,7 +87,7 @@ def test_imagenet_models():
     x = mx.random.uniform(shape=(2, 3, 224, 224), ctx=ctx)
     models = ['resnet18_v1', 'resnet34_v1',
               'resnet50_v1', 'resnet101_v1', 'resnet152_v1',
-              'resnet18_v1b', 'resnet34_v1b',
+              'resnet18_v1b', 'resnet34_v1b', 'resnet50_v1b_gn',
               'resnet50_v1b', 'resnet101_v1b', 'resnet152_v1b',
               'resnet50_v1c', 'resnet101_v1c', 'resnet152_v1c',
               'resnet50_v1d', 'resnet101_v1d', 'resnet152_v1d',
