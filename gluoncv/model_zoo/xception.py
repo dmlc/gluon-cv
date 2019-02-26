@@ -1,5 +1,5 @@
 # code adapted from https://github.com/jfzhang95/pytorch-deeplab-xception/
-# pylint: disable=arguments-differ,unused-argument,missing-docstring
+# pylint: disable=arguments-differ,unused-argument,missing-docstring,unused-variable
 """Xception, implemented in Gluon."""
 __all__ = ['Xception', 'get_xcetption']
 from mxnet.context import cpu
