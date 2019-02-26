@@ -1,4 +1,4 @@
-"""1. Predict with pre-trained Simpoe Pose Estimation models
+"""1. Predict with pre-trained Simple Pose Estimation models
 ==========================================
 
 This article shows how to play with pre-trained Simple Pose models with only a few
@@ -15,8 +15,8 @@ from gluoncv.data.transforms.pose import detector_to_simple_pose, heatmap_to_coo
 # Load a pretrained model
 # -------------------------
 #
-# Let's get a Simple Pose model trained with 256x192 images on MS COCO
-# dataset with ResNet-18 V1b as the base model. By specifying
+# Let's get a Simple Pose model trained with input images of size 256x192 on MS COCO
+# dataset. We pick the one using ResNet-18 V1b as the base model. By specifying
 # ``pretrained=True``, it will automatically download the model from the model
 # zoo if necessary. For more pretrained models, please refer to
 # :doc:`../../model_zoo/index`.
@@ -41,7 +41,7 @@ detector.reset_class(["person"], reuse_weights=['person'])
 # feed an arbitrarily sized image.
 #
 # This function returns two results. The first is a NDArray with shape
-# `(batch_size, RGB_channels, height, width)`. It can be fed into the
+# ``(batch_size, RGB_channels, height, width)``. It can be fed into the
 # model directly. The second one contains the images in numpy format to
 # easy to be plotted. Since we only loaded a single image, the first dimension
 # of `x` is 1.
@@ -55,17 +55,17 @@ print('Shape of pre-processed image:', x.shape)
 class_IDs, scores, bounding_boxs = detector(x)
 
 ######################################################################
-# Process from detector to keypoiny network
+# Process tensor from detector to keypoiny network
 # --------------------
 #
 # Next we process the output from the detector.
 #
-# For a Simple Pose network, it expect the input has the size 256x192,
-# and the human is about centered in the area. We crop the bounding boxes
-# for each human, and resize it to be 256x192, then finally normalize it.
+# For a Simple Pose network, it expects the input has the size 256x192,
+# and the human is centered. We crop the bounding boxed area
+# for each human, and resize it to 256x192, then finally normalize it.
 #
 # In order to make sure the bounding box has included the entire person,
-# we usually slightly upscale the box.
+# we usually slightly upscale the box size.
 
 pose_input, upscale_bbox = detector_to_simple_pose(img, class_IDs, scores, bounding_boxs)
 
@@ -73,11 +73,11 @@ pose_input, upscale_bbox = detector_to_simple_pose(img, class_IDs, scores, bound
 # Predict with a Simple Pose network
 # --------------------
 #
-# Now we can make prediction
+# Now we can make prediction.
 #
-# A Simple Pose network predicts the heatmap for each joint(i.e. keypoint).
-# After the inference we map the highest value of the heatmap to the
-# coordinates on the original image
+# A Simple Pose network predicts the heatmap for each joint (i.e. keypoint).
+# After the inference we search for the highest value in the heatmap and map it to the
+# coordinates on the original image.
 
 predicted_heatmap = pose_net(pose_input)
 pred_coords, confidence = heatmap_to_coord(predicted_heatmap, upscale_bbox)
@@ -87,7 +87,7 @@ pred_coords, confidence = heatmap_to_coord(predicted_heatmap, upscale_bbox)
 # ---------------------
 #
 # We can use :py:func:`gluoncv.utils.viz.plot_keypoints` to visualize the
-# results. We slice the results for the first image and feed them into `plot_keypoints`:
+# results.
 
 ax = utils.viz.plot_keypoints(img, pred_coords, confidence,
                               class_IDs, bounding_boxs, scores,

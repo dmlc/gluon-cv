@@ -18,7 +18,7 @@ MS COCO Keypoints
 
     The COCO metric, Average Precision (AP) with IoU threshold 0.5:0.95 (averaged 10 values, AP 0.5:0.95), 0.5 (AP 0.5) and 0.75 (AP 0.75) are reported together in the format (AP 0.5:0.95)/(AP 0.5)/(AP 0.75).
 
-    COCO keypoints metrics evaluate Object Keypoint Similarity AP. Please read the `official doc<http://cocodataset.org/#keypoints-eval>` for detailed introduction.
+    COCO keypoints metrics evaluate Object Keypoint Similarity AP. Please read the `official doc <http://cocodataset.org/#keypoints-eval>`__ for detailed introduction.
 
     By averaging the prediction from the original input and the flipped one, we can get higher performance. Here we report the performance for predictions with and without the flip ensemble.
 
@@ -27,9 +27,13 @@ MS COCO Keypoints
 Simple Pose with ResNet
 ------
 
-Checkout demo tutorial here: :ref:`sphx_glr_build_examples_pose_demo_simple_pose.py`
+Checkout the demo tutorial here: :ref:`sphx_glr_build_examples_pose_demo_simple_pose.py`
 
-Models are trained with input of size 256x192. Specifically the ``simple_pose_resnet152_v1d_large`` is trained with input of size 384x288.
+Most models are trained with input size 256x192, unless specified.
+Parameters with :greytag:`a grey name` can be downloaded by passing the corresponding hashtag.
+
+- Download default pretrained weights: ``net = get_model('simple_pose_resnet152_v1d', pretrained=True)``
+- Download weights given a hashtag: ``net = get_model('simple_pose_resnet152_v1d', pretrained='2f544338')``
 
 .. table::
    :widths: 45 5 5 10 20 15
@@ -51,7 +55,7 @@ Models are trained with input of size 256x192. Specifically the ``simple_pose_re
    +--------------------------------------------------+----------------+--------------------+----------+---------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
    | simple_pose_resnet152_v1d [1]_                   | 73.4/92.3/80.7 | 74.6/93.4/82.1     | 3ca502ea | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/pose/simple_pose_resnet152_v1d_coco.sh>`_          | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/pose/simple_pose_resnet152_v1d_coco.sh>`_           |
    +--------------------------------------------------+----------------+--------------------+----------+---------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
-   | simple_pose_resnet152_v1d [1]_ :gray:`(384x288)` |                |                    | 2f544338 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/pose/simple_pose_resnet152_v1d_large_coco.sh>`_    | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/pose/simple_pose_resnet152_v1d_large_coco.log>`_    |
+   | simple_pose_resnet152_v1d [1]_ :gray:`(384x288)` | 74.8/92.3/82.0 | 76.1/92.4/83.2     | 2f544338 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/pose/simple_pose_resnet152_v1d_large_coco.sh>`_    | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/pose/simple_pose_resnet152_v1d_large_coco.log>`_    |
    +--------------------------------------------------+----------------+--------------------+----------+---------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
 
 .. [1] Xiao, Bin, Haiping Wu, and Yichen Wei. \
