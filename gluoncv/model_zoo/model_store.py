@@ -68,6 +68,7 @@ _model_sha1 = {name: checksum for checksum, name in [
     ('2d9d980c990442f826f20781ed039851e78dabe3', 'resnet18_v1b'),
     ('8e16b84814e84f64d897854003f049872991eaa6', 'resnet34_v1b'),
     ('0ecdba34691be172036ddf244ff1b2eade75ffde', 'resnet50_v1b'),
+    ('48ddf358d5acc879f76740dae695be67d96beea6', 'resnet50_v1b_gn'),
     ('a455932aa95cb7dcfa05fd040b9b5a5660733c39', 'resnet101_v1b'),
     ('a5a61ee1ce5ab7c09720775b223360f3c60e211d', 'resnet152_v1b'),
     ('2a4e070854db538595cc7ee02e1a914bdd49ca02', 'resnet50_v1c'),
@@ -106,6 +107,13 @@ _model_sha1 = {name: checksum for checksum, name in [
     ('7906e0e16013ef8d195cbc05463cc37783ec7a8a', 'se_resnext50_32x4d'),
     ('688e238985d45a38803c62cf345af2813d0e8aa0', 'se_resnext101_32x4d'),
     ('11c50114a0483e27e74dc4236904254ef05b634b', 'se_resnext101_64x4d'),
+    ('f63d42ac8f83b239d4e08b636b888b8e50cd066d', 'simple_pose_resnet18_v1b'),
+    ('e2c7b1adea31264bc9220511308b4efa89c6fc50', 'simple_pose_resnet50_v1b'),
+    ('b7ec0de1a34eb718efd4a84339cc1547ead88cbe', 'simple_pose_resnet101_v1b'),
+    ('ef4e033612a5fca6fc69e54c87da3ba3866d533e', 'simple_pose_resnet152_v1b'),
+    ('ba2675b6a43fc31601f0e99311b0bb115369bc82', 'simple_pose_resnet50_v1d'),
+    ('1f8f48fd49a23bcc73c1cd736bdc639cd1434489', 'simple_pose_resnet101_v1d'),
+    ('3ca502ea8eaaa15f4f972d5cf139167d15ffa798', 'simple_pose_resnet152_v1d'),
     ]}
 
 apache_repo_url = 'https://apache-mxnet.s3-accelerate.dualstack.amazonaws.com/'

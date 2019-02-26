@@ -10,6 +10,8 @@ def test_export_model_zoo():
     for model in pretrained_model_list():
         print('exporting:', model)
         kwargs = {'data_shape':(480, 480, 3)} if 'deeplab' in model or 'psp' in model else {}
+        if '_gn' in model:
+            continue
         try:
             gcv.utils.export_block(model, gcv.model_zoo.get_model(model, pretrained=True), **kwargs)
         except ValueError:

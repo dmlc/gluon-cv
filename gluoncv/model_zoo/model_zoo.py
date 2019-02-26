@@ -13,6 +13,7 @@ from .cifarresnext import *
 from .cifarwideresnet import *
 from .resnetv1b import *
 from .resnext import *
+from .simple_pose.simple_pose_resnet import *
 from .senet import *
 from .se_resnet import *
 from .yolo import *
@@ -127,6 +128,8 @@ _models = {
     'resnet18_v1b': resnet18_v1b,
     'resnet34_v1b': resnet34_v1b,
     'resnet50_v1b': resnet50_v1b,
+    'resnet50_v1b_gn': resnet50_v1b_gn,
+    'resnet101_v1b_gn': resnet101_v1b_gn,
     'resnet101_v1b': resnet101_v1b,
     'resnet152_v1b': resnet152_v1b,
     'resnet50_v1c': resnet50_v1c,
@@ -159,6 +162,13 @@ _models = {
     'nasnet_5_1538': nasnet_5_1538,
     'nasnet_7_1920': nasnet_7_1920,
     'nasnet_6_4032': nasnet_6_4032,
+    'simple_pose_resnet18_v1b': simple_pose_resnet18_v1b,
+    'simple_pose_resnet50_v1b': simple_pose_resnet50_v1b,
+    'simple_pose_resnet101_v1b': simple_pose_resnet101_v1b,
+    'simple_pose_resnet152_v1b': simple_pose_resnet152_v1b,
+    'simple_pose_resnet50_v1d': simple_pose_resnet50_v1d,
+    'simple_pose_resnet101_v1d': simple_pose_resnet101_v1d,
+    'simple_pose_resnet152_v1d': simple_pose_resnet152_v1d,
     'residualattentionnet56': residualattentionnet56,
     'residualattentionnet92': residualattentionnet92,
     'residualattentionnet128': residualattentionnet128,
