@@ -1,4 +1,5 @@
 # code adapted from https://github.com/jfzhang95/pytorch-deeplab-xception/
+# pylint: disable=arguments-differ,unused-argument,missing-docstring
 """Xception, implemented in Gluon."""
 __all__ = ['Xception', 'get_xcetption']
 from mxnet.context import cpu
@@ -12,7 +13,7 @@ class SeparableConv2d(nn.HybridBlock):
         self.kernel_size = kernel_size
         self.dilation = dilation
         self.conv1 = nn.Conv2D(in_channels=inplanes, channels=inplanes, kernel_size=kernel_size,
-                               strides=stride, padding=0 , dilation=dilation,
+                               strides=stride, padding=0, dilation=dilation,
                                groups=inplanes, use_bias=bias)
         self.bn = norm_layer(in_channels=inplanes, **norm_kwargs)
         self.pointwise = nn.Conv2D(in_channels=inplanes, channels=planes, kernel_size=1,
@@ -54,19 +55,19 @@ class Block(nn.HybridBlock):
             if start_with_relu:
                 self.rep.add(self.relu)
             self.rep.add(SeparableConv2d(inplanes, planes, 3, 1, dilation, norm_layer=norm_layer,
-                         norm_kwargs=norm_kwargs))
+                                         norm_kwargs=norm_kwargs))
             self.rep.add(norm_layer(in_channels=planes, **norm_kwargs))
             filters = planes
         for i in range(reps - 1):
             if grow_first or start_with_relu:
                 self.rep.add(self.relu)
             self.rep.add(SeparableConv2d(filters, filters, 3, 1, dilation, norm_layer=norm_layer,
-                         norm_kwargs=norm_kwargs))
+                                         norm_kwargs=norm_kwargs))
             self.rep.add(norm_layer(in_channels=filters, **norm_kwargs))
         if not grow_first:
             self.rep.add(self.relu)
             self.rep.add(SeparableConv2d(inplanes, planes, 3, 1, dilation, norm_layer=norm_layer,
-                         norm_kwargs=norm_kwargs))
+                                         norm_kwargs=norm_kwargs))
             self.rep.add(norm_layer(in_channels=planes, **norm_kwargs))
         if stride != 1:
             self.rep.add(self.relu)
@@ -178,7 +179,7 @@ class Xception(nn.HybridBlock):
         x = self.block1(x)
         # add relu here
         x = self.relu(x)
-        low_level_feat = x
+        # low_level_feat = x
         x = self.block2(x)
         x = self.block3(x)
 
@@ -239,4 +240,3 @@ def get_xcetption(pretrained=False, ctx=cpu(),
         net.classes = attrib.classes
         net.classes_long = attrib.classes_long
     return net
-
