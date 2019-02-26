@@ -69,6 +69,14 @@ def parse_args():
     parser.add_argument('--mixup', action='store_true', help='Use mixup training.')
     parser.add_argument('--no-mixup-epochs', type=int, default=20,
                         help='Disable mixup training if enabled in the last N epochs.')
+
+    # Norm layer options
+    parser.add_argument('--norm-layer', type=str, default=None,
+                        help='Type of normalization layer to use. '
+                             'If set to None, backbone normalization layer will be fixed,'
+                             ' and no normalization layer will be used. '
+                             'Currently supports \'bn\', and None, default is None')
+
     # FPN options
     parser.add_argument('--use-fpn', action='store_true',
                         help='Whether to use feature pyramid network.')
@@ -214,8 +222,9 @@ def get_dataloader(net, train_dataset, val_dataset, train_transform, val_transfo
                             multi_stage=multi_stage)),
         batch_size, True, batchify_fn=train_bfn, last_batch='rollover', num_workers=num_workers)
     val_bfn = batchify.Tuple(*[batchify.Append() for _ in range(3)])
+    short = net.short[-1] if isinstance(net.short, (tuple, list)) else net.short
     val_loader = mx.gluon.data.DataLoader(
-        val_dataset.transform(val_transform(net.short, net.max_size)),
+        val_dataset.transform(val_transform(short, net.max_size)),
         batch_size, False, batchify_fn=val_bfn, last_batch='keep', num_workers=num_workers)
     return train_loader, val_loader
 
@@ -450,12 +459,17 @@ if __name__ == '__main__':
     args.batch_size = len(ctx)  # 1 batch per device
 
     # network
+    kwargs = {}
     module_list = []
     if args.use_fpn:
         module_list.append('fpn')
+    if args.norm_layer is not None:
+        module_list.append(args.norm_layer)
+        if args.norm_layer == 'bn':
+            kwargs['num_devices'] = len(args.gpus.split(','))
     net_name = '_'.join(('faster_rcnn', *module_list, args.network, args.dataset))
     args.save_prefix += net_name
-    net = get_model(net_name, pretrained_base=True)
+    net = get_model(net_name, pretrained_base=True, **kwargs)
     if args.resume.strip():
         net.load_parameters(args.resume.strip())
     else:

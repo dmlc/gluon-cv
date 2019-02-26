@@ -10,6 +10,7 @@ import mxnet as mx
 from mxnet.base import string_types
 from mxnet.gluon import HybridBlock, SymbolBlock
 from mxnet.symbol import Symbol
+from mxnet.symbol.contrib import SyncBatchNorm
 
 
 def _parse_network(network, outputs, inputs, pretrained, ctx, **kwargs):
@@ -190,8 +191,9 @@ class FPNFeatureExpander(SymbolBlock):
     """
 
     def __init__(self, network, outputs, num_filters, use_1x1=True, use_upsample=True,
-                 use_elewadd=True,
-                 use_p6=False, no_bias=True, pretrained=False, ctx=mx.cpu(), inputs=('data',)):
+                 use_elewadd=True, use_p6=False, no_bias=True, pretrained=False, norm_layer=None,
+                 norm_kwargs={}, ctx=mx.cpu(),
+                 inputs=('data',)):
         inputs, outputs, params = _parse_network(network, outputs, inputs, pretrained, ctx)
         '''
         e.g. For ResNet50, the feature is :
@@ -211,8 +213,13 @@ class FPNFeatureExpander(SymbolBlock):
                 if use_1x1:
                     y = mx.sym.Convolution(y, num_filter=f, kernel=(1, 1), pad=(0, 0),
                                            stride=(1, 1), no_bias=no_bias,
-                                           name="P{}_pre".format(num_stages - i),
+                                           name="P{}_conv_lat".format(num_stages - i),
                                            attr={'__init__': weight_init})
+                    if norm_layer is not None:
+                        if norm_layer is SyncBatchNorm:
+                            norm_kwargs['key'] = "P{}_lat_bn".format(num_stages - i)
+                            norm_kwargs['name'] = "P{}_lat_bn".format(num_stages - i)
+                        y = norm_layer(y, **norm_kwargs)
                 if use_p6:
                     # method 1 : use max pool (Detectron use this)
                     # y_p6 = mx.sym.Pooling(y, pool_type='max', kernel=(1, 1), pad=(0, 0),
@@ -220,14 +227,24 @@ class FPNFeatureExpander(SymbolBlock):
                     # method 2 : use conv (Deformable use this)
                     y_p6 = mx.sym.Convolution(y, num_filter=f, kernel=(3, 3), pad=(1, 1),
                                               stride=(2, 2), no_bias=no_bias,
-                                              name='P{}_pre'.format(num_stages + 1),
+                                              name='P{}_conv1'.format(num_stages + 1),
                                               attr={'__init__': weight_init})
+                    if norm_layer is not None:
+                        if norm_layer is SyncBatchNorm:
+                            norm_kwargs['key'] = "P{}_pre_bn".format(num_stages + 1)
+                            norm_kwargs['name'] = "P{}_pre_bn".format(num_stages + 1)
+                        y_p6 = norm_layer(y_p6, **norm_kwargs)
             else:
                 if use_1x1:
                     bf = mx.sym.Convolution(bf, num_filter=f, kernel=(1, 1), pad=(0, 0),
                                             stride=(1, 1), no_bias=no_bias,
-                                            name="P{}_conv1".format(num_stages - i),
+                                            name="P{}_conv_lat".format(num_stages - i),
                                             attr={'__init__': weight_init})
+                    if norm_layer is not None:
+                        if norm_layer is SyncBatchNorm:
+                            norm_kwargs['key'] = "P{}_conv1_bn".format(num_stages - i)
+                            norm_kwargs['name'] = "P{}_conv1_bn".format(num_stages - i)
+                        bf = norm_layer(bf, **norm_kwargs)
                 if use_upsample:
                     y = mx.sym.UpSampling(y, scale=2, sample_type='nearest',
                                           name="P{}_upsp".format(num_stages - i))
@@ -239,15 +256,20 @@ class FPNFeatureExpander(SymbolBlock):
                     # method 2 : mx.sym.slice_like
                     y = mx.sym.slice_like(y, bf * 0, axes=(2, 3),
                                           name="P{}_clip".format(num_stages - i))
-                    y = mx.sym.ElementWiseSum(bf, y, name="P{}_pre".format(num_stages - i))
-            tmp_outputs.append(y)
+                    y = mx.sym.ElementWiseSum(bf, y, name="P{}_sum".format(num_stages - i))
+            # Reduce the aliasing effect of upsampling described in ori paper
+            out = mx.sym.Convolution(y, num_filter=f, kernel=(3, 3), pad=(1, 1), stride=(1, 1),
+                                     no_bias=no_bias, name='P{}_conv1'.format(num_stages - i),
+                                     attr={'__init__': weight_init})
+            if norm_layer is not None:
+                if norm_layer is SyncBatchNorm:
+                    norm_kwargs['key'] = "P{}_bn".format(num_stages - i)
+                    norm_kwargs['name'] = "P{}_bn".format(num_stages - i)
+                out = norm_layer(out, **norm_kwargs)
+            tmp_outputs.append(out)
         if use_p6:
             outputs = tmp_outputs[::-1] + [y_p6]  # [P2, P3, P4, P5] + [P6]
         else:
             outputs = tmp_outputs[::-1]  # [P2, P3, P4, P5]
-        # Reduce the aliasing effect of upsampling described in ori paper
-        for i, (out, f) in enumerate(zip(outputs, num_filters)):
-            out = mx.sym.Convolution(out, num_filter=f, kernel=(3, 3), pad=(1, 1), stride=(1, 1),
-                                     no_bias=no_bias, name='P{}'.format(i + 2),
-                                     attr={'__init__': weight_init})
+
         super(FPNFeatureExpander, self).__init__(outputs, inputs, params)

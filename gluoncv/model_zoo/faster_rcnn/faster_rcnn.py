@@ -6,6 +6,7 @@ import os
 import mxnet as mx
 from mxnet import autograd
 from mxnet.gluon import nn
+from mxnet.gluon.contrib.nn import SyncBatchNorm
 
 from .rcnn_target import RCNNTargetSampler, RCNNTargetGenerator
 from ..rcnn import RCNN
@@ -16,6 +17,7 @@ __all__ = ['FasterRCNN', 'get_faster_rcnn',
            'faster_rcnn_resnet50_v1b_voc',
            'faster_rcnn_resnet50_v1b_coco',
            'faster_rcnn_fpn_resnet50_v1b_coco',
+           'faster_rcnn_fpn_bn_resnet50_v1b_coco',
            'faster_rcnn_resnet50_v1b_custom',
            'faster_rcnn_resnet101_v1d_voc',
            'faster_rcnn_resnet101_v1d_coco',
@@ -562,12 +564,77 @@ def faster_rcnn_fpn_resnet50_v1b_coco(pretrained=False, pretrained_base=True, **
         box_features.add(nn.Dense(1024, weight_initializer=mx.init.Normal(0.01)))
         box_features.add(nn.Activation('relu'))
 
-    train_patterns = '|'.join(['.*dense', '.*rpn', '.*down(2|3|4)_conv', '.*layers(2|3|4)_conv'])
+    train_patterns = '|'.join(
+        ['.*dense', '.*rpn', '.*down(2|3|4)_conv', '.*layers(2|3|4)_conv', 'P'])
     return get_faster_rcnn(
         name='fpn_resnet50_v1b', dataset='coco', pretrained=pretrained, features=features,
         top_features=top_features, classes=classes, box_features=box_features,
         short=800, max_size=1333, min_stage=2, max_stage=6, train_patterns=train_patterns,
-        nms_thresh=0.5, nms_topk=-1, post_nms=-1, roi_mode='align', roi_size=(14, 14),
+        nms_thresh=0.5, nms_topk=-1, post_nms=-1, roi_mode='align', roi_size=(7, 7),
+        strides=(4, 8, 16, 32, 64), clip=4.42, rpn_channel=1024, base_size=16,
+        scales=(2, 4, 8, 16, 32), ratios=(0.5, 1, 2), alloc_size=(384, 384),
+        rpn_nms_thresh=0.7, rpn_train_pre_nms=12000, rpn_train_post_nms=2000,
+        rpn_test_pre_nms=6000, rpn_test_post_nms=1000, rpn_min_size=0, num_sample=512,
+        pos_iou_thresh=0.5, pos_ratio=0.25, max_num_gt=100, **kwargs)
+
+
+def faster_rcnn_fpn_bn_resnet50_v1b_coco(pretrained=False, pretrained_base=True, num_devices=0,
+                                         **kwargs):
+    r"""Faster RCNN model with FPN from the paper
+    "Ren, S., He, K., Girshick, R., & Sun, J. (2015). Faster r-cnn: Towards
+    real-time object detection with region proposal networks"
+    "Lin, T., Dollar, P., Girshick, R., He, K., Hariharan, B., Belongie, S. (2016).
+    Feature Pyramid Networks for Object Detection"
+
+    Parameters
+    ----------
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True
+        Load pretrained base network, the extra layers are randomized. Note that
+        if pretrained is `Ture`, this has no effect.
+    num_devices : int, default is 0
+        Number of devices for sync batch norm layer. if less than 1, use all devices available.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+
+    Examples
+    --------
+    >>> model = get_faster_rcnn_fpn_bn_resnet50_v1b_coco(pretrained=True)
+    >>> print(model)
+    """
+    from ..resnetv1b import resnet50_v1b
+    from ...data import COCODetection
+    classes = COCODetection.CLASSES
+    pretrained_base = False if pretrained else pretrained_base
+    gluon_norm_kwargs = {'num_devices': num_devices} if num_devices >= 1 else {}
+    base_network = resnet50_v1b(pretrained=pretrained_base, dilated=False, use_global_stats=False,
+                                norm_layer=SyncBatchNorm, norm_kwargs=gluon_norm_kwargs, **kwargs)
+    sym_norm_kwargs = {'ndev': num_devices} if num_devices >= 1 else {}
+    features = FPNFeatureExpander(
+        network=base_network,
+        outputs=['layers1_relu8_fwd', 'layers2_relu11_fwd', 'layers3_relu17_fwd',
+                 'layers4_relu8_fwd'], num_filters=[256, 256, 256, 256], use_1x1=True,
+        use_upsample=True, use_elewadd=True, use_p6=True, no_bias=True, pretrained=pretrained_base,
+        norm_layer=mx.sym.contrib.SyncBatchNorm, norm_kwargs=sym_norm_kwargs)
+    top_features = None
+    # 1 Conv 1 FC layer before RCNN cls and reg
+    box_features = nn.HybridSequential()
+    box_features.add(nn.Conv2D(256, 3, padding=1),
+                     SyncBatchNorm(**gluon_norm_kwargs),
+                     nn.Activation('relu'),
+                     nn.Dense(1024, weight_initializer=mx.init.Normal(0.01)),
+                     nn.Activation('relu'))
+
+    train_patterns = '(?!.*moving)'  # excluding symbol bn moving mean and var
+    return get_faster_rcnn(
+        name='fpn_bn_resnet50_v1b', dataset='coco', pretrained=pretrained, features=features,
+        top_features=top_features, classes=classes, box_features=box_features,
+        short=(640, 800), max_size=1333, min_stage=2, max_stage=6, train_patterns=train_patterns,
+        nms_thresh=0.5, nms_topk=-1, post_nms=-1, roi_mode='align', roi_size=(7, 7),
         strides=(4, 8, 16, 32, 64), clip=4.42, rpn_channel=1024, base_size=16,
         scales=(2, 4, 8, 16, 32), ratios=(0.5, 1, 2), alloc_size=(384, 384),
         rpn_nms_thresh=0.7, rpn_train_pre_nms=12000, rpn_train_post_nms=2000,
@@ -774,12 +841,13 @@ def faster_rcnn_fpn_resnet101_v1d_coco(pretrained=False, pretrained_base=True, *
         box_features.add(nn.Dense(1024, weight_initializer=mx.init.Normal(0.01)))
         box_features.add(nn.Activation('relu'))
 
-    train_patterns = '|'.join(['.*dense', '.*rpn', '.*down(2|3|4)_conv', '.*layers(2|3|4)_conv'])
+    train_patterns = '|'.join(
+        ['.*dense', '.*rpn', '.*down(2|3|4)_conv', '.*layers(2|3|4)_conv', 'P'])
     return get_faster_rcnn(
         name='fpn_resnet101_v1d', dataset='coco', pretrained=pretrained, features=features,
         top_features=top_features, classes=classes, box_features=box_features,
         short=800, max_size=1333, min_stage=2, max_stage=6, train_patterns=train_patterns,
-        nms_thresh=0.5, nms_topk=-1, post_nms=-1, roi_mode='align', roi_size=(14, 14),
+        nms_thresh=0.5, nms_topk=-1, post_nms=-1, roi_mode='align', roi_size=(7, 7),
         strides=(4, 8, 16, 32, 64), clip=4.42, rpn_channel=1024, base_size=16,
         scales=(2, 4, 8, 16, 32), ratios=(0.5, 1, 2), alloc_size=(384, 384),
         rpn_nms_thresh=0.7, rpn_train_pre_nms=12000, rpn_train_post_nms=2000,

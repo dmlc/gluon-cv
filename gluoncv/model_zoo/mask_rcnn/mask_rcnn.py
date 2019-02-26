@@ -316,10 +316,11 @@ def mask_rcnn_fpn_resnet50_v1b_coco(pretrained=False, pretrained_base=True, **kw
         use_upsample=True, use_elewadd=True, use_p6=True, no_bias=False, pretrained=pretrained_base)
     top_features = None
     box_features = nn.HybridSequential()
+    box_features.add(nn.AvgPool2D(pool_size=(3, 3), strides=2, padding=1))  # reduce to 7x7
     for _ in range(2):
-        box_features.add(nn.Dense(1024, weight_initializer=mx.init.Normal(0.01)))
-        box_features.add(nn.Activation('relu'))
-    train_patterns = '|'.join(['.*dense', '.*rpn', '.*mask',
+        box_features.add(nn.Dense(1024, weight_initializer=mx.init.Normal(0.01)),
+                         nn.Activation('relu'))
+    train_patterns = '|'.join(['.*dense', '.*rpn', '.*mask', 'P',
                                '.*down(2|3|4)_conv', '.*layers(2|3|4)_conv'])
     return get_mask_rcnn(
         name='fpn_resnet50_v1b', dataset='coco', pretrained=pretrained,
@@ -420,10 +421,11 @@ def mask_rcnn_fpn_resnet101_v1d_coco(pretrained=False, pretrained_base=True, **k
         use_upsample=True, use_elewadd=True, use_p6=True, no_bias=False, pretrained=pretrained_base)
     top_features = None
     box_features = nn.HybridSequential()
+    box_features.add(nn.AvgPool2D(pool_size=(3, 3), strides=2, padding=1))  # reduce to 7x7
     for _ in range(2):
-        box_features.add(nn.Dense(1024, weight_initializer=mx.init.Normal(0.01)))
-        box_features.add(nn.Activation('relu'))
-    train_patterns = '|'.join(['.*dense', '.*rpn', '.*mask',
+        box_features.add(nn.Dense(1024, weight_initializer=mx.init.Normal(0.01)),
+                         nn.Activation('relu'))
+    train_patterns = '|'.join(['.*dense', '.*rpn', '.*mask', 'P',
                                '.*down(2|3|4)_conv', '.*layers(2|3|4)_conv'])
     return get_mask_rcnn(
         name='fpn_resnet101_v1d', dataset='coco', pretrained=pretrained,

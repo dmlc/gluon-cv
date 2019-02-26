@@ -2,6 +2,7 @@
 from __future__ import absolute_import
 
 import copy
+from random import randint
 
 import mxnet as mx
 
@@ -100,8 +101,9 @@ class FasterRCNNDefaultTrainTransform(object):
 
     Parameters
     ----------
-    short : int, default is 600
+    short : int/tuple, default is 600
         Resize image shorter side to ``short``.
+        Resize the shorter side of the image randomly within the given range, if it is a tuple.
     max_size : int, default is 1000
         Make sure image longer side is smaller than ``max_size``.
     net : mxnet.gluon.HybridBlock, optional
@@ -146,6 +148,7 @@ class FasterRCNNDefaultTrainTransform(object):
         self._std = std
         self._anchors = None
         self._multi_stage = multi_stage
+        self._random_resize = isinstance(self._short, (tuple, list))
         if net is None:
             return
 
@@ -177,7 +180,11 @@ class FasterRCNNDefaultTrainTransform(object):
         """Apply transform to training image/label."""
         # resize shorter side but keep in max_size
         h, w, _ = src.shape
-        img = timage.resize_short_within(src, self._short, self._max_size, interp=1)
+        if self._random_resize:
+            short = randint(self._short[0], self._short[1])
+        else:
+            short = self._short
+        img = timage.resize_short_within(src, short, self._max_size, interp=1)
         bbox = tbbox.resize(label, (w, h), (img.shape[1], img.shape[0]))
 
         # random horizontal flip
@@ -256,8 +263,9 @@ class MaskRCNNDefaultTrainTransform(object):
 
     Parameters
     ----------
-    short : int, default is 600
+    short : int/tuple, default is 600
         Resize image shorter side to ``short``.
+        Resize the shorter side of the image randomly within the given range, if it is a tuple.
     max_size : int, default is 1000
         Make sure image longer side is smaller than ``max_size``.
     net : mxnet.gluon.HybridBlock, optional
@@ -302,6 +310,7 @@ class MaskRCNNDefaultTrainTransform(object):
         self._std = std
         self._anchors = None
         self._multi_stage = multi_stage
+        self._random_resize = isinstance(self._short, (tuple, list))
         if net is None:
             return
 
@@ -333,7 +342,11 @@ class MaskRCNNDefaultTrainTransform(object):
         """Apply transform to training image/label."""
         # resize shorter side but keep in max_size
         h, w, _ = src.shape
-        img = timage.resize_short_within(src, self._short, self._max_size, interp=1)
+        if self._random_resize:
+            short = randint(self._short[0], self._short[1])
+        else:
+            short = self._short
+        img = timage.resize_short_within(src, short, self._max_size, interp=1)
         bbox = tbbox.resize(label, (w, h), (img.shape[1], img.shape[0]))
         segm = [tmask.resize(polys, (w, h), (img.shape[1], img.shape[0])) for polys in segm]
 
