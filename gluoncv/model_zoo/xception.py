@@ -400,4 +400,3 @@ def get_xcetption_71(pretrained=False, ctx=cpu(),
         net.classes = attrib.classes
         net.classes_long = attrib.classes_long
     return net
-
