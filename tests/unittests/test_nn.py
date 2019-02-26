@@ -1,7 +1,6 @@
 import mxnet as mx
 from gluoncv.nn import GroupNorm
 
-@with_seed()
 def test_groupnorm():
     ctx=mx.context.current_context()
     x = mx.nd.random.uniform(1, 2, (4, 16, 8, 8), ctx=ctx)

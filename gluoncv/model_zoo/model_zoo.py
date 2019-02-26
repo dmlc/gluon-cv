@@ -128,6 +128,7 @@ _models = {
     'resnet34_v1b': resnet34_v1b,
     'resnet50_v1b': resnet50_v1b,
     'resnet50_v1b_gn': resnet50_v1b_gn,
+    'resnet101_v1b_gn': resnet101_v1b_gn,
     'resnet101_v1b': resnet101_v1b,
     'resnet152_v1b': resnet152_v1b,
     'resnet50_v1c': resnet50_v1c,
