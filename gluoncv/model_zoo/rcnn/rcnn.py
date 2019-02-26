@@ -159,6 +159,11 @@ class RCNN(gluon.HybridBlock):
         ----------
         classes : iterable of str
             The new categories. ['apple', 'orange'] for example.
+        reuse_weights : dict
+            A {new_integer : old_integer} or mapping dict or {new_name : old_name} mapping dict,
+            or a list of [name0, name1,...] if class names don't change.
+            This allows the new predictor to reuse the
+            previously trained weights specified.
 
         """
         self._clear_cached_op()
@@ -217,31 +222,29 @@ class RCNN(gluon.HybridBlock):
             if reuse_weights:
                 assert isinstance(reuse_weights, dict)
                 # class predictors
-                srcs = (old_class_pred, old_box_pred, 1)
-                dsts = (self.class_predictor, self.box_predictor, 0)
-                for src, dst, offset in zip(srcs, dsts):
+                srcs = (old_class_pred, old_box_pred)
+                dsts = (self.class_predictor, self.box_predictor)
+                offsets = (1, 0)  # class predictor has bg, box don't
+                lens = (1, 4)  # class predictor length=1, box length=4
+                for src, dst, offset, l in zip(srcs, dsts, offsets, lens):
                     for old_params, new_params in zip(src.params.values(),
                                                       dst.params.values()):
                         # slice and copy weights
                         old_data = old_params.data()
                         new_data = new_params.data()
 
-                        print(new_data.shape, old_data.shape)
                         for k, v in reuse_weights.items():
-                            if k >= len(self.classes) - 1 or v >= len(old_classes) - 1:
+                            if k >= len(self.classes) or v >= len(old_classes):
                                 warnings.warn("reuse mapping {}/{} -> {}/{} out of range".format(
                                     k, self.classes, v, old_classes))
                                 continue
 
-                            # always increment k and v (background is always the 0th)
-                            new_data[k+offset::len(self.classes)+offset] = old_data[v+offset::len(old_classes)+offset]
+                            new_data[k+offset:k+offset+l] = old_data[v+offset:v+offset+l]
                         # reuse background weights as well
-                        new_data[0::len(self.classes)+offset] = old_data[0::len(old_classes)+offset]
+                        if offset > 0:
+                            new_data[0:l] = old_data[0:l]
                         # set data to new conv layers
                         new_params.set_data(new_data)
-
-
-
 
 
     # pylint: disable=arguments-differ
