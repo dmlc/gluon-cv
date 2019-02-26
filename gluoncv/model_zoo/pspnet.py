@@ -65,11 +65,11 @@ class PSPNet(SegBaseModel):
         h, w = x.shape[2:]
         self._up_kwargs['height'] = h
         self._up_kwargs['width'] = w
-        self.head.psp._up_kwargs['height'] = h// 8
-        self.head.psp._up_kwargs['width'] = w// 8
-        pred = self.forward(x)
-        if self.aux:
-            pred = pred[0]
+        c3, c4 = self.base_forward(x)
+        outputs = []
+        x = self.head.demo(c4)
+        import mxnet.ndarray as F
+        pred = F.contrib.BilinearResize2D(x, **self._up_kwargs)
         return pred
 
 def _PSP1x1Conv(in_channels, out_channels, norm_layer, norm_kwargs):
@@ -106,6 +106,15 @@ class _PyramidPooling(HybridBlock):
         feat4 = self.upsample(F, self.conv4(self.pool(F, x, 6)))
         return F.concat(x, feat1, feat2, feat3, feat4, dim=1)
 
+    def demo(self, x):
+        self._up_kwargs['height'] = x.shape[2]
+        self._up_kwargs['width'] = x.shape[3]
+        import mxnet.ndarray as F
+        feat1 = self.upsample(F, self.conv1(self.pool(F, x, 1)))
+        feat2 = self.upsample(F, self.conv2(self.pool(F, x, 2)))
+        feat3 = self.upsample(F, self.conv3(self.pool(F, x, 3)))
+        feat4 = self.upsample(F, self.conv4(self.pool(F, x, 6)))
+        return F.concat(x, feat1, feat2, feat3, feat4, dim=1)
 
 class _PSPHead(HybridBlock):
     def __init__(self, nclass, norm_layer=nn.BatchNorm, norm_kwargs=None,
@@ -127,6 +136,11 @@ class _PSPHead(HybridBlock):
     def hybrid_forward(self, F, x):
         x = self.psp(x)
         return self.block(x)
+
+    def demo(self, x):
+        x = self.psp.demo(x)
+        return self.block(x)
+        
 
 def get_psp(dataset='pascal_voc', backbone='resnet50', pretrained=False,
             root='~/.mxnet/models', ctx=cpu(0), pretrained_base=True, **kwargs):
