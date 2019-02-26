@@ -1,6 +1,7 @@
 """RCNN Model."""
 from __future__ import absolute_import
 
+import warnings
 import mxnet as mx
 from mxnet import gluon
 from mxnet.gluon import nn
@@ -151,7 +152,7 @@ class RCNN(gluon.HybridBlock):
         self.nms_topk = nms_topk
         self.post_nms = post_nms
 
-    def reset_class(self, classes):
+    def reset_class(self, classes, reuse_weights=None):
         """Reset class categories and class predictors.
 
         Parameters
@@ -161,16 +162,87 @@ class RCNN(gluon.HybridBlock):
 
         """
         self._clear_cached_op()
+        if reuse_weights:
+            assert hasattr(self, 'classes'), "require old classes to reuse weights"
+        old_classes = getattr(self, 'classes', [])
         self.classes = classes
         self.num_class = len(classes)
+        if isinstance(reuse_weights, (dict, list)):
+            if isinstance(reuse_weights, dict):
+                # trying to replace str with indices
+                for k, v in reuse_weights.items():
+                    if isinstance(v, str):
+                        try:
+                            v = old_classes.index(v)  # raise ValueError if not found
+                        except ValueError:
+                            raise ValueError(
+                                "{} not found in old class names {}".format(v, old_classes))
+                        reuse_weights[k] = v
+                    if isinstance(k, str):
+                        try:
+                            new_idx = self.classes.index(k)  # raise ValueError if not found
+                        except ValueError:
+                            raise ValueError(
+                                "{} not found in new class names {}".format(k, self.classes))
+                        reuse_weights.pop(k)
+                        reuse_weights[new_idx] = v
+            else:
+                new_map = {}
+                for x in reuse_weights:
+                    try:
+                        new_idx = self.classes.index(x)
+                        old_idx = old_classes.index(x)
+                        new_map[new_idx] = old_idx
+                    except ValueError:
+                        warnings.warn("{} not found in old: {} or new class names: {}".format(
+                            x, old_classes, self.classes))
+                reuse_weights = new_map
+
         with self.name_scope():
+            old_class_pred = self.class_predictor
+            old_box_pred = self.box_predictor
+            ctx = list(old_class_pred.params.values())[0].list_ctx()
+            # to avoid deferred init, number of in_channels must be defined
+            in_units = list(old_class_pred.params.values())[0].shape[1]
             self.class_predictor = nn.Dense(
                 self.num_class + 1, weight_initializer=mx.init.Normal(0.01),
-                prefix=self.class_predictor.prefix)
+                prefix=self.class_predictor.prefix, in_units=in_units)
             self.box_predictor = nn.Dense(
                 self.num_class * 4, weight_initializer=mx.init.Normal(0.001),
-                prefix=self.box_predictor.prefix)
+                prefix=self.box_predictor.prefix, in_units=in_units)
             self.cls_decoder = MultiPerClassDecoder(num_class=self.num_class + 1)
+            # initialize
+            self.class_predictor.initialize()
+            self.box_predictor.initialize()
+            if reuse_weights:
+                assert isinstance(reuse_weights, dict)
+                # class predictors
+                srcs = (old_class_pred, old_box_pred, 1)
+                dsts = (self.class_predictor, self.box_predictor, 0)
+                for src, dst, offset in zip(srcs, dsts):
+                    for old_params, new_params in zip(src.params.values(),
+                                                      dst.params.values()):
+                        # slice and copy weights
+                        old_data = old_params.data()
+                        new_data = new_params.data()
+
+                        print(new_data.shape, old_data.shape)
+                        for k, v in reuse_weights.items():
+                            if k >= len(self.classes) - 1 or v >= len(old_classes) - 1:
+                                warnings.warn("reuse mapping {}/{} -> {}/{} out of range".format(
+                                    k, self.classes, v, old_classes))
+                                continue
+
+                            # always increment k and v (background is always the 0th)
+                            new_data[k+offset::len(self.classes)+offset] = old_data[v+offset::len(old_classes)+offset]
+                        # reuse background weights as well
+                        new_data[0::len(self.classes)+offset] = old_data[0::len(old_classes)+offset]
+                        # set data to new conv layers
+                        new_params.set_data(new_data)
+
+
+
+
 
     # pylint: disable=arguments-differ
     def hybrid_forward(self, F, x, width, height):

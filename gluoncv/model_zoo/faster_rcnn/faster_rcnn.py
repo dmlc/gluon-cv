@@ -177,8 +177,8 @@ class FasterRCNN(RCNN):
         """
         return list(self._target_generator)[0]
 
-    def reset_class(self, classes):
-        super(FasterRCNN, self).reset_class(classes)
+    def reset_class(self, classes, reuse_weights=None):
+        super(FasterRCNN, self).reset_class(classes, reuse_weights)
         self._target_generator = {RCNNTargetGenerator(self.num_class)}
 
     # pylint: disable=arguments-differ
