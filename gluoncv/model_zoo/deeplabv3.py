@@ -93,8 +93,8 @@ class _DeepLabHead(HybridBlock):
 
     def demo(self, x):
         h, w = x.shape[2:]
-        self.aspp..concurent[-1]._up_kwargs['height'] = h
-        self.aspp..concurent[-1]._up_kwargs['width'] = w
+        self.aspp.concurent[-1]._up_kwargs['height'] = h
+        self.aspp.concurent[-1]._up_kwargs['width'] = w
         x = self.aspp(x)
         return self.block(x)
         
