@@ -9,7 +9,7 @@ from common import try_gpu
 def test_export_model_zoo():
     for model in pretrained_model_list():
         print('exporting:', model)
-        kwargs = {'data_shape':(480, 480, 3)} if 'deeplab' in model else {}
+        kwargs = {'data_shape':(480, 480, 3)} if 'deeplab' in model or 'psp' in model else {}
         if '_gn' in model:
             continue
         try:
