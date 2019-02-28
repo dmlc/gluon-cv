@@ -97,7 +97,7 @@ train_data = gluon.data.DataLoader(
 # We load the pre-trained parameters for the ``ResNet18`` layers,
 # and initialize the deconvolution layer and the final convolution layer.
 
-context = [mx.gpu(0)]
+context = mx.gpu(0)
 net = get_model('simple_pose_resnet18_v1b', num_joints=17, pretrained_base=True,
                 ctx=context, pretrained_ctx=context)
 net.deconv_layers.initialize(ctx=context)
@@ -179,9 +179,9 @@ for epoch in range(1):
     for i, batch in enumerate(train_data):
         if i > 0:
             break
-        data = gluon.utils.split_and_load(batch[0], ctx_list=context, batch_axis=0)
-        label = gluon.utils.split_and_load(batch[1], ctx_list=context, batch_axis=0)
-        weight = gluon.utils.split_and_load(batch[2], ctx_list=context, batch_axis=0)
+        data = gluon.utils.split_and_load(batch[0], ctx_list=[context], batch_axis=0)
+        label = gluon.utils.split_and_load(batch[1], ctx_list=[context], batch_axis=0)
+        weight = gluon.utils.split_and_load(batch[2], ctx_list=[context], batch_axis=0)
 
         with ag.record():
             outputs = [net(X) for X in data]

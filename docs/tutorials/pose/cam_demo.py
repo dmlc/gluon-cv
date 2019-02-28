@@ -144,5 +144,4 @@ We have also tested it on a Windows machine with an Nvidia 1060. Compare the fra
 
 .. image:: https://media.giphy.com/media/9JvoKeUeCt4bdRf3Cv/giphy.gif
 
-
-
+"""
