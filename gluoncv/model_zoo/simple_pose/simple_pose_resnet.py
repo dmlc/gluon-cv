@@ -16,6 +16,7 @@ __all__ = ['get_simple_pose_resnet', 'SimplePoseResNet',
            'simple_pose_resnet50_v1d', 'simple_pose_resnet101_v1d',
            'simple_pose_resnet152_v1d']
 
+import gluoncv as gcv
 from mxnet.context import cpu
 from mxnet.gluon.block import HybridBlock
 from mxnet.gluon import nn
@@ -33,7 +34,8 @@ class SimplePoseResNet(HybridBlock):
         super(SimplePoseResNet, self).__init__(**kwargs)
 
         from ..model_zoo import get_model
-        base_network = get_model(base_name, pretrained=pretrained_base, ctx=pretrained_ctx)
+        base_network = get_model(base_name, pretrained=pretrained_base, ctx=pretrained_ctx,
+                                 norm_layer=gcv.nn.BatchNormCudnnOff)
 
         self.resnet = nn.HybridSequential()
         if base_name.endswith('v1'):
@@ -98,8 +100,8 @@ class SimplePoseResNet(HybridBlock):
                         use_bias=self.deconv_with_bias,
                         weight_initializer=initializer.Normal(0.001),
                         bias_initializer=initializer.Zero()))
-                layer.add(nn.BatchNorm(gamma_initializer=initializer.One(),
-                                       beta_initializer=initializer.Zero()))
+                layer.add(gcv.nn.BatchNormCudnnOff(gamma_initializer=initializer.One(),
+                                                   beta_initializer=initializer.Zero()))
                 layer.add(nn.Activation('relu'))
                 self.inplanes = planes
 
@@ -126,7 +128,7 @@ def get_simple_pose_resnet(base_name, pretrained=False, ctx=cpu(),
     return net
 
 def simple_pose_resnet18_v1b(**kwargs):
-    r"""ResNet-18 model from `"Simple Baselines for Human Pose Estimation and Tracking"
+    r"""ResNet-18 backbone model from `"Simple Baselines for Human Pose Estimation and Tracking"
     <https://arxiv.org/abs/1804.06208>`_ paper.
     Parameters
     ----------
@@ -141,7 +143,7 @@ def simple_pose_resnet18_v1b(**kwargs):
     return get_simple_pose_resnet('resnet18_v1b', **kwargs)
 
 def simple_pose_resnet50_v1b(**kwargs):
-    r"""ResNet-18 model from `"Simple Baselines for Human Pose Estimation and Tracking"
+    r"""ResNet-50 backbone model from `"Simple Baselines for Human Pose Estimation and Tracking"
     <https://arxiv.org/abs/1804.06208>`_ paper.
     Parameters
     ----------
@@ -156,7 +158,7 @@ def simple_pose_resnet50_v1b(**kwargs):
     return get_simple_pose_resnet('resnet50_v1b', **kwargs)
 
 def simple_pose_resnet101_v1b(**kwargs):
-    r"""ResNet-18 model from `"Simple Baselines for Human Pose Estimation and Tracking"
+    r"""ResNet-101 backbone model from `"Simple Baselines for Human Pose Estimation and Tracking"
     <https://arxiv.org/abs/1804.06208>`_ paper.
     Parameters
     ----------
@@ -171,7 +173,7 @@ def simple_pose_resnet101_v1b(**kwargs):
     return get_simple_pose_resnet('resnet101_v1b', **kwargs)
 
 def simple_pose_resnet152_v1b(**kwargs):
-    r"""ResNet-18 model from `"Simple Baselines for Human Pose Estimation and Tracking"
+    r"""ResNet-152 backbone model from `"Simple Baselines for Human Pose Estimation and Tracking"
     <https://arxiv.org/abs/1804.06208>`_ paper.
     Parameters
     ----------
@@ -186,7 +188,7 @@ def simple_pose_resnet152_v1b(**kwargs):
     return get_simple_pose_resnet('resnet152_v1b', **kwargs)
 
 def simple_pose_resnet50_v1d(**kwargs):
-    r"""ResNet-18 model from `"Simple Baselines for Human Pose Estimation and Tracking"
+    r"""ResNet-50-d backbone model from `"Simple Baselines for Human Pose Estimation and Tracking"
     <https://arxiv.org/abs/1804.06208>`_ paper.
     Parameters
     ----------
@@ -201,7 +203,7 @@ def simple_pose_resnet50_v1d(**kwargs):
     return get_simple_pose_resnet('resnet50_v1d', **kwargs)
 
 def simple_pose_resnet101_v1d(**kwargs):
-    r"""ResNet-18 model from `"Simple Baselines for Human Pose Estimation and Tracking"
+    r"""ResNet-101-d backbone model from `"Simple Baselines for Human Pose Estimation and Tracking"
     <https://arxiv.org/abs/1804.06208>`_ paper.
     Parameters
     ----------
@@ -216,7 +218,7 @@ def simple_pose_resnet101_v1d(**kwargs):
     return get_simple_pose_resnet('resnet101_v1d', **kwargs)
 
 def simple_pose_resnet152_v1d(**kwargs):
-    r"""ResNet-18 model from `"Simple Baselines for Human Pose Estimation and Tracking"
+    r"""ResNet-152-d backbone model from `"Simple Baselines for Human Pose Estimation and Tracking"
     <https://arxiv.org/abs/1804.06208>`_ paper.
     Parameters
     ----------
