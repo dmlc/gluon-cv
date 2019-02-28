@@ -220,7 +220,9 @@ class FasterRCNN(RCNN):
         # create batchid for roi
         num_roi = self._num_sample if autograd.is_training() else self._rpn_test_post_nms
         with autograd.pause():
-            roi_batchid = F.arange(0, self._max_batch, repeat=num_roi)
+            # roi_batchid = F.arange(0, self._max_batch, repeat=num_roi)
+            roi_batchid = F.arange(0, self._max_batch)
+            roi_batchid = F.repeat(roi_batchid, num_roi)
             # remove batch dim because ROIPooling require 2d input
             rpn_roi = F.concat(*[roi_batchid.reshape((-1, 1)), rpn_box.reshape((-1, 4))], dim=-1)
             rpn_roi = F.stop_gradient(rpn_roi)
