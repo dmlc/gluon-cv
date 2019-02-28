@@ -102,7 +102,6 @@ net = get_model('simple_pose_resnet18_v1b', num_joints=17, pretrained_base=True,
                 ctx=context, pretrained_ctx=context)
 net.deconv_layers.initialize(ctx=context)
 net.final_layer.initialize(ctx=context)
-net.hybridize(static_alloc=True, static_shape=True)
 
 #############################################################################
 # We can take a look at the summary of the model
@@ -173,6 +172,7 @@ metric = HeatmapAccuracy()
 # Since we have all necessary blocks, we can now put them together to start the training.
 #
 
+net.hybridize(static_alloc=True, static_shape=True)
 for epoch in range(1):
     metric.reset()
 
