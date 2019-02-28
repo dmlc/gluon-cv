@@ -30,7 +30,7 @@ def keypoint_detection(img, detector, pose_net, ctx=mx.cpu(), axes=None):
     class_IDs, scores, bounding_boxs = detector(x)
 
     plt.cla()
-    pose_input, upscale_bbox = detector_to_simple_pose(img, class_IDs, scores, bounding_boxs) 
+    pose_input, upscale_bbox = detector_to_simple_pose(img, class_IDs, scores, bounding_boxs, ctx=ctx)
     if len(upscale_bbox) > 0:
         predicted_heatmap = pose_net(pose_input)
         pred_coords, confidence = heatmap_to_coord(predicted_heatmap, upscale_bbox)

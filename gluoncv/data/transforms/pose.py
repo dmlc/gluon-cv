@@ -14,6 +14,7 @@ from __future__ import division
 
 import math
 import numpy as np
+import mxnet as mx
 from mxnet import nd, image
 from mxnet.gluon.data.vision import transforms
 from ...utils.filesystem import try_import_cv2
@@ -249,7 +250,7 @@ def crop_resize_normalize(img, bbox_list, output_size):
     return output_array
 
 def detector_to_simple_pose(img, class_IDs, scores, bounding_boxs,
-                            output_shape=(256, 192), scale=1.25):
+                            output_shape=(256, 192), scale=1.25, ctx=mx.cpu()):
     L = class_IDs.shape[1]
     thr = 0.5
     upscale_bbox = []
@@ -262,6 +263,7 @@ def detector_to_simple_pose(img, class_IDs, scores, bounding_boxs,
         upscale_bbox.append(upscale_bbox_fn(bbox.asnumpy().tolist(), img, scale=scale))
     if len(upscale_bbox) > 0:
         pose_input = crop_resize_normalize(img, upscale_bbox, output_shape)
+        pose_input = pose_input.as_in_context(ctx)
     else:
         pose_input = None
     return pose_input, upscale_bbox
