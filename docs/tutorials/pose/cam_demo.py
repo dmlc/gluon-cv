@@ -138,11 +138,11 @@ Run the script
 
 If all goes well you should be able to see your pose detected!
 
-.. image:: https://media.giphy.com/media/9JvoKeUeCt4bdRf3Cv/giphy.gif
+.. image:: https://i.giphy.com/media/8rFv0lvBgGf62CIcM7/giphy.gif
 
 
 We have also tested it on a Windows machine with an Nvidia 1060. Compare the frames per second!
 
-.. image:: https://media.giphy.com/media/9JvoKeUeCt4bdRf3Cv/giphy.gif
+.. image:: https://i.giphy.com/media/1gOa8kPEOgiNoLjNao/giphy.gif
 
 """
