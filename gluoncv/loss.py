@@ -10,7 +10,7 @@ from mxnet.gluon.loss import Loss, _apply_weighting, _reshape_like
 __all__ = ['FocalLoss', 'SSDMultiBoxLoss', 'YOLOV3Loss',
            'MixSoftmaxCrossEntropyLoss', 'MixSoftmaxCrossEntropyOHEMLoss']
 
-class FocalLoss(gluon.loss.Loss):
+class FocalLoss(Loss):
     """Focal Loss for inbalanced classification.
     Focal loss was described in https://arxiv.org/abs/1708.02002
 
@@ -52,7 +52,7 @@ class FocalLoss(gluon.loss.Loss):
           and you want to weigh each sample in the batch separately,
           sample_weight should have shape (64, 1).
     Outputs:
-        - **loss**: loss tensor with shape (batch_size,). Dimenions other than
+        - **loss**: loss tensor with shape (batch_size,). Dimensions other than
           batch_axis are averaged out.
     """
     def __init__(self, axis=-1, alpha=0.25, gamma=2, sparse_label=True,
@@ -114,13 +114,17 @@ class SSDMultiBoxLoss(gluon.Block):
     lambd : float, default is 1.0
         Relative weight between classification and box regression loss.
         The overall loss is computed as :math:`L = loss_{class} + \lambda \times loss_{loc}`.
+    min_hard_negatives : int, default is 0
+        Minimum number of negatives samples.
 
     """
-    def __init__(self, negative_mining_ratio=3, rho=1.0, lambd=1.0, **kwargs):
+    def __init__(self, negative_mining_ratio=3, rho=1.0, lambd=1.0,
+                 min_hard_negatives=0, **kwargs):
         super(SSDMultiBoxLoss, self).__init__(**kwargs)
         self._negative_mining_ratio = max(0, negative_mining_ratio)
         self._rho = rho
         self._lambd = lambd
+        self._min_hard_negatives = max(0, min_hard_negatives)
 
     def forward(self, cls_pred, box_pred, cls_target, box_target):
         """Compute loss in entire batch across devices."""
@@ -133,9 +137,13 @@ class SSDMultiBoxLoss(gluon.Block):
             pos_samples = (ct > 0)
             num_pos.append(pos_samples.sum())
         num_pos_all = sum([p.asscalar() for p in num_pos])
-        if num_pos_all < 1:
-            # no positive samples found, return dummy losses
-            return nd.zeros((1,)), nd.zeros((1,)), nd.zeros((1,))
+        if num_pos_all < 1 and self._min_hard_negatives < 1:
+            # no positive samples and no hard negatives, return dummy losses
+            cls_losses = [nd.sum(cp * 0) for cp in cls_pred]
+            box_losses = [nd.sum(bp * 0) for bp in box_pred]
+            sum_losses = [nd.sum(cp * 0) + nd.sum(bp * 0) for cp, bp in zip(cls_pred, box_pred)]
+            return sum_losses, cls_losses, box_losses
+
 
         # compute element-wise cross entropy loss and sort, then perform negative mining
         cls_losses = []
@@ -146,10 +154,11 @@ class SSDMultiBoxLoss(gluon.Block):
             pos = ct > 0
             cls_loss = -nd.pick(pred, ct, axis=-1, keepdims=False)
             rank = (cls_loss * (pos - 1)).argsort(axis=1).argsort(axis=1)
-            hard_negative = rank < (pos.sum(axis=1) * self._negative_mining_ratio).expand_dims(-1)
+            hard_negative = rank < nd.maximum(self._min_hard_negatives, pos.sum(axis=1)
+                                              * self._negative_mining_ratio).expand_dims(-1)
             # mask out if not positive or negative
             cls_loss = nd.where((pos + hard_negative) > 0, cls_loss, nd.zeros_like(cls_loss))
-            cls_losses.append(nd.sum(cls_loss, axis=0, exclude=True) / num_pos_all)
+            cls_losses.append(nd.sum(cls_loss, axis=0, exclude=True) / max(1., num_pos_all))
 
             bp = _reshape_like(nd, bp, bt)
             box_loss = nd.abs(bp - bt)
@@ -157,13 +166,13 @@ class SSDMultiBoxLoss(gluon.Block):
                                 (0.5 / self._rho) * nd.square(box_loss))
             # box loss only apply to positive samples
             box_loss = box_loss * pos.expand_dims(axis=-1)
-            box_losses.append(nd.sum(box_loss, axis=0, exclude=True) / num_pos_all)
+            box_losses.append(nd.sum(box_loss, axis=0, exclude=True) / max(1., num_pos_all))
             sum_losses.append(cls_losses[-1] + self._lambd * box_losses[-1])
 
         return sum_losses, cls_losses, box_losses
 
 
-class YOLOV3Loss(gluon.loss.Loss):
+class YOLOV3Loss(Loss):
     """Losses of YOLO v3.
 
     Parameters

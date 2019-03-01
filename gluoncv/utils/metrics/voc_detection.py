@@ -103,7 +103,7 @@ class VOCMApMetric(mx.metric.EvalMetric):
             return a
 
         if gt_difficults is None:
-            gt_difficults = [None for _ in gt_labels]
+            gt_difficults = [None for _ in as_numpy(gt_labels)]
 
         for pred_bbox, pred_label, pred_score, gt_bbox, gt_label, gt_difficult in zip(
                 *[as_numpy(x) for x in [pred_bboxes, pred_labels, pred_scores,

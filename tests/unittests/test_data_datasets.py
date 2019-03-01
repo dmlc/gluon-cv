@@ -128,7 +128,7 @@ def test_lst_detection():
         D = h
         # concat id and bboxes
         labels = np.hstack((ids.reshape(-1, 1), boxes)).astype('float')
-        # normalized bboxes (recommanded)
+        # normalized bboxes (recommended)
         labels[:, (1, 3)] /= float(w)
         labels[:, (2, 4)] /= float(h)
         # flatten

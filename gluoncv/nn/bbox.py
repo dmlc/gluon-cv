@@ -135,7 +135,7 @@ class BBoxBatchIOU(gluon.HybridBlock):
     Parameters
     ----------
     axis : int
-        On which axis is the lenght-4 bounding box dimension.
+        On which axis is the length-4 bounding box dimension.
     fmt : str
         BBox encoding format, can be 'corner' or 'center'.
         'corner': (xmin, ymin, xmax, ymax)

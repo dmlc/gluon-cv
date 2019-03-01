@@ -28,6 +28,7 @@ import os
 import math
 from mxnet import cpu
 from mxnet.gluon import nn
+from mxnet.gluon.nn import BatchNorm
 from mxnet.gluon.block import HybridBlock
 
 
@@ -49,26 +50,34 @@ class Block(HybridBlock):
         Whether to initialize the gamma of the last BatchNorm layer in each bottleneck to zero.
     use_se : bool, default False
         Whether to use Squeeze-and-Excitation module
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
     def __init__(self, channels, cardinality, bottleneck_width, stride,
-                 downsample=False, last_gamma=False, use_se=False, **kwargs):
+                 downsample=False, last_gamma=False, use_se=False,
+                 norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
         super(Block, self).__init__(**kwargs)
         D = int(math.floor(channels * (bottleneck_width / 64)))
         group_width = cardinality * D
 
         self.body = nn.HybridSequential(prefix='')
         self.body.add(nn.Conv2D(group_width, kernel_size=1, use_bias=False))
-        self.body.add(nn.BatchNorm())
+        self.body.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
         self.body.add(nn.Activation('relu'))
         self.body.add(nn.Conv2D(group_width, kernel_size=3, strides=stride, padding=1,
                                 groups=cardinality, use_bias=False))
-        self.body.add(nn.BatchNorm())
+        self.body.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
         self.body.add(nn.Activation('relu'))
         self.body.add(nn.Conv2D(channels * 4, kernel_size=1, use_bias=False))
         if last_gamma:
-            self.body.add(nn.BatchNorm())
+            self.body.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
         else:
-            self.body.add(nn.BatchNorm(gamma_initializer='zeros'))
+            self.body.add(norm_layer(gamma_initializer='zeros',
+                                     **({} if norm_kwargs is None else norm_kwargs)))
 
         if use_se:
             self.se = nn.HybridSequential(prefix='')
@@ -83,7 +92,7 @@ class Block(HybridBlock):
             self.downsample = nn.HybridSequential(prefix='')
             self.downsample.add(nn.Conv2D(channels * 4, kernel_size=1, strides=stride,
                                           use_bias=False))
-            self.downsample.add(nn.BatchNorm())
+            self.downsample.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
         else:
             self.downsample = None
 
@@ -124,9 +133,16 @@ class ResNext(HybridBlock):
         Whether to initialize the gamma of the last BatchNorm layer in each bottleneck to zero.
     use_se : bool, default False
         Whether to use Squeeze-and-Excitation module
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
     def __init__(self, layers, cardinality, bottleneck_width,
-                 classes=1000, last_gamma=False, use_se=False, **kwargs):
+                 classes=1000, last_gamma=False, use_se=False,
+                 norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
         super(ResNext, self).__init__(**kwargs)
         self.cardinality = cardinality
         self.bottleneck_width = bottleneck_width
@@ -136,27 +152,31 @@ class ResNext(HybridBlock):
             self.features = nn.HybridSequential(prefix='')
             self.features.add(nn.Conv2D(channels, 7, 2, 3, use_bias=False))
 
-            self.features.add(nn.BatchNorm())
+            self.features.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
             self.features.add(nn.Activation('relu'))
             self.features.add(nn.MaxPool2D(3, 2, 1))
 
             for i, num_layer in enumerate(layers):
                 stride = 1 if i == 0 else 2
                 self.features.add(self._make_layer(channels, num_layer, stride,
-                                                   last_gamma, use_se, i+1))
+                                                   last_gamma, use_se, i+1,
+                                                   norm_layer=norm_layer, norm_kwargs=norm_kwargs))
                 channels *= 2
             self.features.add(nn.GlobalAvgPool2D())
 
             self.output = nn.Dense(classes)
 
-    def _make_layer(self, channels, num_layers, stride, last_gamma, use_se, stage_index):
+    def _make_layer(self, channels, num_layers, stride, last_gamma, use_se, stage_index,
+                    norm_layer=BatchNorm, norm_kwargs=None):
         layer = nn.HybridSequential(prefix='stage%d_'%stage_index)
         with layer.name_scope():
             layer.add(Block(channels, self.cardinality, self.bottleneck_width,
-                            stride, True, last_gamma=last_gamma, use_se=use_se, prefix=''))
+                            stride, True, last_gamma=last_gamma, use_se=use_se, prefix='',
+                            norm_layer=norm_layer, norm_kwargs=norm_kwargs))
             for _ in range(num_layers-1):
                 layer.add(Block(channels, self.cardinality, self.bottleneck_width,
-                                1, False, last_gamma=last_gamma, use_se=use_se, prefix=''))
+                                1, False, last_gamma=last_gamma, use_se=use_se, prefix='',
+                                norm_layer=norm_layer, norm_kwargs=norm_kwargs))
         return layer
 
     # pylint: disable=unused-argument
@@ -194,6 +214,12 @@ def get_resnext(num_layers, cardinality=32, bottleneck_width=4, use_se=False,
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
     assert num_layers in resnext_spec, \
         "Invalid number of layers: %d. Options are %s"%(
@@ -236,8 +262,15 @@ def resnext50_32x4d(**kwargs):
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
-    return get_resnext(50, 32, 4, use_se=False, **kwargs)
+    kwargs['use_se'] = False
+    return get_resnext(50, 32, 4, **kwargs)
 
 def resnext101_32x4d(**kwargs):
     r"""ResNext101 32x4d model from
@@ -257,8 +290,15 @@ def resnext101_32x4d(**kwargs):
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
-    return get_resnext(101, 32, 4, use_se=False, **kwargs)
+    kwargs['use_se'] = False
+    return get_resnext(101, 32, 4, **kwargs)
 
 def resnext101_64x4d(**kwargs):
     r"""ResNext101 64x4d model from
@@ -278,8 +318,15 @@ def resnext101_64x4d(**kwargs):
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
-    return get_resnext(101, 64, 4, use_se=False, **kwargs)
+    kwargs['use_se'] = False
+    return get_resnext(101, 64, 4, **kwargs)
 
 def se_resnext50_32x4d(**kwargs):
     r"""SE-ResNext50 32x4d model from
@@ -299,8 +346,15 @@ def se_resnext50_32x4d(**kwargs):
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
-    return get_resnext(50, 32, 4, use_se=True, **kwargs)
+    kwargs['use_se'] = True
+    return get_resnext(50, 32, 4, **kwargs)
 
 def se_resnext101_32x4d(**kwargs):
     r"""SE-ResNext101 32x4d model from
@@ -320,8 +374,15 @@ def se_resnext101_32x4d(**kwargs):
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
-    return get_resnext(101, 32, 4, use_se=True, **kwargs)
+    kwargs['use_se'] = True
+    return get_resnext(101, 32, 4, **kwargs)
 
 def se_resnext101_64x4d(**kwargs):
     r"""SE-ResNext101 64x4d model from
@@ -341,5 +402,12 @@ def se_resnext101_64x4d(**kwargs):
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
-    return get_resnext(101, 64, 4, use_se=True, **kwargs)
+    kwargs['use_se'] = True
+    return get_resnext(101, 64, 4, **kwargs)

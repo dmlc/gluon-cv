@@ -46,7 +46,7 @@ import gluoncv
 # State-of-the-art approaches of semantic segmentation are typically based on
 # Fully Convolutional Network (FCN) [Long15]_.
 # The key idea of a fully convolutional network is that it is "fully convolutional",
-# which means it does have any fully connected layers. Therefore, the network can
+# which means it does not have any fully connected layers. Therefore, the network can
 # accept arbitrary input size and make dense per-pixel predictions.
 # Base/Encoder network is typically pre-trained on ImageNet, because the features
 # learned from diverse set of images contain rich contextual information, which

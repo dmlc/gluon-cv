@@ -1,5 +1,5 @@
 """
-This module provides data loaders and transfomers for popular vision datasets.
+This module provides data loaders and transformers for popular vision datasets.
 """
 from . import transforms
 from . import batchify
@@ -9,6 +9,7 @@ from .pascal_voc.detection import VOCDetection
 from .mscoco.detection import COCODetection
 from .mscoco.instance import COCOInstance
 from .mscoco.segmentation import COCOSegmentation
+from .mscoco.keypoints import COCOKeyPoints
 from .cityscapes import CitySegmentation
 from .pascal_voc.segmentation import VOCSegmentation
 from .pascal_aug.segmentation import VOCAugSegmentation

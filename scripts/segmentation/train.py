@@ -38,9 +38,9 @@ def parse_args():
                         help='dataset train split (default: train)')
     # training hyper params
     parser.add_argument('--aux', action='store_true', default= False,
-                        help='Auxilary loss')
+                        help='Auxiliary loss')
     parser.add_argument('--aux-weight', type=float, default=0.5,
-                        help='auxilary loss weight')
+                        help='auxiliary loss weight')
     parser.add_argument('--epochs', type=int, default=50, metavar='N',
                         help='number of epochs to train (default: 50)')
     parser.add_argument('--start_epoch', type=int, default=0,
@@ -91,7 +91,7 @@ def parse_args():
     if args.no_cuda:
         print('Using CPU')
         args.kvstore = 'local'
-        args.ctx = mx.cpu(0)
+        args.ctx = [mx.cpu(0)]
     else:
         print('Number of GPUs:', args.ngpus)
         args.ctx = [mx.gpu(i) for i in range(args.ngpus)]
@@ -221,7 +221,7 @@ if __name__ == "__main__":
         trainer.validation(args.start_epoch)
     else:
         print('Starting Epoch:', args.start_epoch)
-        print('Total Epoches:', args.epochs)
+        print('Total Epochs:', args.epochs)
         for epoch in range(args.start_epoch, args.epochs):
             trainer.training(epoch)
             if not trainer.args.no_val:

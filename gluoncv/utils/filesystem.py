@@ -4,7 +4,7 @@ import errno
 
 def makedirs(path):
     """Create directory recursively if not exists.
-    Similar to `makedir -p`, you can skip checking existance before this function.
+    Similar to `makedir -p`, you can skip checking existence before this function.
 
     Parameters
     ----------
@@ -16,6 +16,42 @@ def makedirs(path):
     except OSError as exc:
         if exc.errno != errno.EEXIST:
             raise
+
+def try_import(package, message=None):
+    """Try import specified package, with custom message support.
+
+    Parameters
+    ----------
+    package : str
+        The name of the targeting package.
+    message : str, default is None
+        If not None, this function will raise customized error message when import error is found.
+
+
+    Returns
+    -------
+    module if found, raise ImportError otherwise
+
+    """
+    try:
+        return __import__(package)
+    except ImportError as e:
+        if not message:
+            raise e
+        else:
+            raise ImportError(message)
+
+def try_import_cv2():
+    """Try import cv2 at runtime.
+
+    Returns
+    -------
+    cv2 module if found. Raise ImportError otherwise
+
+    """
+    msg = "cv2 is required, you can install by package manager, e.g. 'apt-get', \
+        or `pip install opencv-python --user` (note that this is unofficial PYPI package)."
+    return try_import('cv2', msg)
 
 def import_try_install(package, extern_url=None):
     """Try import the specified package.

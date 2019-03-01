@@ -136,7 +136,7 @@ class QuotaSampler(gluon.Block):
         Parameters:
         ----------
         matches : NDArray or Symbol
-            Matching results, postive number for postive matching, -1 for not matched.
+            Matching results, positive number for positive matching, -1 for not matched.
         ious : NDArray or Symbol
             IOU overlaps with shape (N, M), batching is supported.
 
@@ -163,7 +163,7 @@ class QuotaSampler(gluon.Block):
             neg_mask = neg_mask * (ious_max >= self._neg_thresh_low)
             result = F.where(neg_mask, F.ones_like(result) * -1, result)
 
-            # re-balance if number of postive or negative exceed limits
+            # re-balance if number of positive or negative exceed limits
             result = result.asnumpy()
             num_pos = int((result > 0).sum())
             if num_pos > max_pos:
@@ -239,7 +239,7 @@ class QuotaSamplerOp(mx.operator.CustomOp):
         in_data: array-like of Symbol
             [matches, ious], see below.
         matches : NDArray or Symbol
-            Matching results, postive number for postive matching, -1 for not matched.
+            Matching results, positive number for positive matching, -1 for not matched.
         ious : NDArray or Symbol
             IOU overlaps with shape (N, M), batching is supported.
 
@@ -267,7 +267,7 @@ class QuotaSamplerOp(mx.operator.CustomOp):
             result = F.where(matches[i] >= 0, F.ones_like(result), result)
             result = F.where(ious_max >= self._pos_thresh, F.ones_like(result), result)
 
-            # re-balance if number of postive or negative exceed limits
+            # re-balance if number of positive or negative exceed limits
             result = result.asnumpy()
             num_pos = int((result > 0).sum())
             if num_pos > max_pos:

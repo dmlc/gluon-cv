@@ -116,8 +116,8 @@ class YOLOV3PrefetchTargetGenerator(gluon.Block):
                     index = _offsets[nlayer] + loc_y * width + loc_x
                     center_targets[b, index, match, 0] = gtx / orig_width * width - loc_x  # tx
                     center_targets[b, index, match, 1] = gty / orig_height * height - loc_y  # ty
-                    scale_targets[b, index, match, 0] = np.log(gtw / np_anchors[match, 0])
-                    scale_targets[b, index, match, 1] = np.log(gth / np_anchors[match, 1])
+                    scale_targets[b, index, match, 0] = np.log(max(gtw, 1) / np_anchors[match, 0])
+                    scale_targets[b, index, match, 1] = np.log(max(gth, 1) / np_anchors[match, 1])
                     weights[b, index, match, :] = 2.0 - gtw * gth / orig_width / orig_height
                     objectness[b, index, match, 0] = (
                         np_gt_mixratios[b, m, 0] if np_gt_mixratios is not None else 1)

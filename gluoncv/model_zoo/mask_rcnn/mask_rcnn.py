@@ -39,7 +39,7 @@ class Mask(nn.HybridBlock):
     def hybrid_forward(self, F, x):
         """Forward Mask Head.
 
-        The behavior during traing and inference is different.
+        The behavior during training and inference is different.
 
         Parameters
         ----------
@@ -89,7 +89,7 @@ class MaskRCNN(FasterRCNN):
     def hybrid_forward(self, F, x, gt_box=None):
         """Forward Mask RCNN network.
 
-        The behavior during traing and inference is different.
+        The behavior during training and inference is different.
 
         Parameters
         ----------
@@ -122,7 +122,9 @@ class MaskRCNN(FasterRCNN):
             topk = F.slice_axis(order, axis=1, begin=0, end=num_rois)
 
             # pick from (B, N * (C - 1), X) to (B * topk, X) -> (B, topk, X)
-            roi_batch_id = F.arange(0, self._max_batch, repeat=num_rois)
+            # roi_batch_id = F.arange(0, self._max_batch, repeat=num_rois)
+            roi_batch_id = F.arange(0, self._max_batch)
+            roi_batch_id = F.repeat(roi_batch_id, num_rois)
             indices = F.stack(roi_batch_id, topk.reshape((-1,)), axis=0)
             ids = F.gather_nd(ids, indices).reshape((-4, self._max_batch, num_rois, 1))
             scores = F.gather_nd(scores, indices).reshape((-4, self._max_batch, num_rois, 1))
@@ -147,7 +149,9 @@ class MaskRCNN(FasterRCNN):
             # (B, N, C, pooled_size * 2, pooled_size * 2)
             rcnn_mask = self.mask(top_feat)
             # index the B dimension (B * N,)
-            batch_ids = F.arange(0, self._max_batch, repeat=num_rois)
+            # batch_ids = F.arange(0, self._max_batch, repeat=num_rois)
+            batch_ids = F.arange(0, self._max_batch)
+            batch_ids = F.repeat(batch_ids, num_rois)
             # index the N dimension (B * N,)
             roi_ids = F.tile(F.arange(0, num_rois), reps=self._max_batch)
             # index the C dimension (B * N,)
@@ -207,7 +211,7 @@ def mask_rcnn_resnet50_v1b_coco(pretrained=False, pretrained_base=True, **kwargs
         String value represents the hashtag for a certain version of pretrained weights.
     pretrained_base : bool or str, optional, default is True
         Load pretrained base network, the extra layers are randomized. Note that
-        if pretrained is `Ture`, this has no effect.
+        if pretrained is `True`, this has no effect.
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'

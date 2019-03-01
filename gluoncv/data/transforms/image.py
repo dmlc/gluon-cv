@@ -13,7 +13,7 @@ __all__ = ['imresize', 'resize_long', 'resize_short_within',
 def imresize(src, w, h, interp=1):
     """Resize image with OpenCV.
 
-    This is a duplicate of mxnet.image.imresize for name space consistancy.
+    This is a duplicate of mxnet.image.imresize for name space consistency.
 
     Parameters
     ----------
@@ -51,8 +51,8 @@ def imresize(src, w, h, interp=1):
 
 def resize_long(src, size, interp=2):
     """Resizes longer edge to size.
-    Note: `resize_short` uses OpenCV (not the CV2 Python library).
-    MXNet must have been built with OpenCV for `resize_short` to work.
+    Note: `resize_long` uses OpenCV (not the CV2 Python library).
+    MXNet must have been built with OpenCV for `resize_long` to work.
     Resizes the original image by setting the longer edge to size
     and setting the shorter edge accordingly. This will ensure the new image will
     fit into the `size` specified.
@@ -76,7 +76,7 @@ def resize_long(src, size, interp=2):
         3: Bicubic interpolation over 4x4 pixel neighborhood.
         4: Lanczos interpolation over 8x8 pixel neighborhood.
         9: Cubic for enlarge, area for shrink, bilinear for others
-        10: Random select from interpolation method metioned above.
+        10: Random select from interpolation method mentioned above.
         Note:
         When shrinking an image, it will generally look best with AREA-based
         interpolation, whereas, when enlarging an image, it will generally look best
@@ -139,7 +139,7 @@ def resize_short_within(src, short, max_size, mult_base=1, interp=2):
         3: Bicubic interpolation over 4x4 pixel neighborhood.
         4: Lanczos interpolation over 8x8 pixel neighborhood.
         9: Cubic for enlarge, area for shrink, bilinear for others
-        10: Random select from interpolation method metioned above.
+        10: Random select from interpolation method mentioned above.
         Note:
         When shrinking an image, it will generally look best with AREA-based
         interpolation, whereas, when enlarging an image, it will generally look best

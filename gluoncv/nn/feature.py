@@ -10,7 +10,7 @@ from mxnet.symbol import Symbol
 from mxnet.gluon import HybridBlock, SymbolBlock
 from mxnet.base import string_types
 
-def _parse_network(network, outputs, inputs, pretrained, ctx):
+def _parse_network(network, outputs, inputs, pretrained, ctx, **kwargs):
     """Parse network with specified outputs and other arguments.
 
     Parameters
@@ -49,7 +49,7 @@ def _parse_network(network, outputs, inputs, pretrained, ctx):
     prefix = ''
     if isinstance(network, string_types):
         from ..model_zoo import get_model
-        network = get_model(network, pretrained=pretrained, ctx=ctx)
+        network = get_model(network, pretrained=pretrained, ctx=ctx, **kwargs)
     if isinstance(network, HybridBlock):
         params = network.collect_params()
         prefix = network._prefix
@@ -83,14 +83,16 @@ class FeatureExtractor(SymbolBlock):
     ctx : Context
         The context, e.g. mxnet.cpu(), mxnet.gpu(0).
     """
-    def __init__(self, network, outputs, inputs=('data',), pretrained=False, ctx=mx.cpu()):
-        inputs, outputs, params = _parse_network(network, outputs, inputs, pretrained, ctx)
+    def __init__(self, network, outputs, inputs=('data',),
+                 pretrained=False, ctx=mx.cpu(), **kwargs):
+        inputs, outputs, params = _parse_network(
+            network, outputs, inputs, pretrained, ctx, **kwargs)
         super(FeatureExtractor, self).__init__(outputs, inputs, params=params)
 
 
 class FeatureExpander(SymbolBlock):
     """Feature extractor with additional layers to append.
-    This is very common in vision networks where extra branches are attched to
+    This is very common in vision networks where extra branches are attached to
     backbone network.
 
     Parameters
@@ -123,8 +125,9 @@ class FeatureExpander(SymbolBlock):
     """
     def __init__(self, network, outputs, num_filters, use_1x1_transition=True,
                  use_bn=True, reduce_ratio=1.0, min_depth=128, global_pool=False,
-                 pretrained=False, ctx=mx.cpu(), inputs=('data',)):
-        inputs, outputs, params = _parse_network(network, outputs, inputs, pretrained, ctx)
+                 pretrained=False, ctx=mx.cpu(), inputs=('data',), **kwargs):
+        inputs, outputs, params = _parse_network(
+            network, outputs, inputs, pretrained, ctx, **kwargs)
         # append more layers
         y = outputs[-1]
         weight_init = mx.init.Xavier(rnd_type='gaussian', factor_type='out', magnitude=2)
