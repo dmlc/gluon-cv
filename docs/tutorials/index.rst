@@ -159,6 +159,17 @@ Semantic Segmentation
         Hands on DeepLabV3 model training on Pascal VOC dataset, and achieves 
         state-of-the-art accuracy.
 
+Pose Estimation
+---------------------
+
+.. container:: cards
+
+    .. card::
+        :title: Pre-trained Simple Pose Models
+        :link: ../build/examples_pose/demo_simple_pose.html
+
+        Estimate human pose in real-world images with pre-trained Simple Pose models
+
 
 Dataset Preparation
 -------------------
@@ -215,5 +226,6 @@ Deployment
     ../build/examples_detection/index
     ../build/examples_instance/index
     ../build/examples_segmentation/index
+    ../build/examples_pose/index
     ../build/examples_datasets/index
     ../build/examples_deployment/index
