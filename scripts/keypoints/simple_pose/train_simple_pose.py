@@ -202,7 +202,6 @@ def train(ctx):
                         for yhat, y, w in zip(outputs, label, weight)]
             for l in loss:
                 l.backward()
-            lr_scheduler.update(i, epoch)
             trainer.step(batch_size)
 
             metric.update(label, outputs)

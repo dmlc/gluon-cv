@@ -189,7 +189,6 @@ for epoch in range(1):
 
         for l in loss:
             l.backward()
-        lr_scheduler.update(i, epoch)
         trainer.step(batch_size)
 
         metric.update(label, outputs)
