@@ -217,8 +217,8 @@ class RCNN(gluon.HybridBlock):
                 prefix=self.box_predictor.prefix, in_units=in_units)
             self.cls_decoder = MultiPerClassDecoder(num_class=self.num_class + 1)
             # initialize
-            self.class_predictor.initialize()
-            self.box_predictor.initialize()
+            self.class_predictor.initialize(ctx=ctx)
+            self.box_predictor.initialize(ctx=ctx)
             if reuse_weights:
                 assert isinstance(reuse_weights, dict)
                 # class predictors

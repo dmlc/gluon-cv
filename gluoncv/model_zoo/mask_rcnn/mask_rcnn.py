@@ -105,7 +105,7 @@ class Mask(nn.HybridBlock):
             init = mx.init.Xavier(rnd_type='gaussian', factor_type='out', magnitude=2)
             self.mask = nn.Conv2D(len(classes), kernel_size=(1, 1), strides=(1, 1), padding=(0, 0),
                                   weight_initializer=init, in_channels=in_channels)
-            self.mask.initialize()
+            self.mask.initialize(ctx=ctx)
             if reuse_weights:
                 assert isinstance(reuse_weights, dict)
                 for old_params, new_params in zip(old_mask.params.values(),
