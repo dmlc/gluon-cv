@@ -238,14 +238,13 @@ class RCNN(gluon.HybridBlock):
                                 warnings.warn("reuse mapping {}/{} -> {}/{} out of range".format(
                                     k, self.classes, v, old_classes))
                                 continue
-
-                            new_data[k+offset:k+offset+l] = old_data[v+offset:v+offset+l]
+                            new_data[(k+offset)*l:(k+offset+1)*l] = \
+                                old_data[(v+offset)*l:(v+offset+1)*l]
                         # reuse background weights as well
                         if offset > 0:
                             new_data[0:l] = old_data[0:l]
                         # set data to new conv layers
                         new_params.set_data(new_data)
-
 
     # pylint: disable=arguments-differ
     def hybrid_forward(self, F, x, width, height):
