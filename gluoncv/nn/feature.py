@@ -181,6 +181,10 @@ class FPNFeatureExpander(SymbolBlock):
         Whther use P6 stage, this is used for RPN experiments in ori paper
     no_bias : bool
         Whether use bias for Convolution operation.
+    norm_layer : HybridBlock or SymbolBlock
+        Type of normalization layer.
+    norm_kwargs : dict
+        Arguments for normalization layer.
     pretrained : bool
         Use pretrained parameters as in gluon.model_zoo if `True`.
     ctx : Context
@@ -192,15 +196,15 @@ class FPNFeatureExpander(SymbolBlock):
 
     def __init__(self, network, outputs, num_filters, use_1x1=True, use_upsample=True,
                  use_elewadd=True, use_p6=False, no_bias=True, pretrained=False, norm_layer=None,
-                 norm_kwargs={}, ctx=mx.cpu(),
+                 norm_kwargs=None, ctx=mx.cpu(),
                  inputs=('data',)):
         inputs, outputs, params = _parse_network(network, outputs, inputs, pretrained, ctx)
-        '''
-        e.g. For ResNet50, the feature is :
-        outputs = ['stage1_activation2', 'stage2_activation3',
-                   'stage3_activation5', 'stage4_activation2']
-        with regard to [conv2, conv3, conv4, conv5] -> [C2, C3, C4, C5]
-        '''
+        if norm_kwargs is None:
+            norm_kwargs = {}
+        # e.g. For ResNet50, the feature is :
+        # outputs = ['stage1_activation2', 'stage2_activation3',
+        #            'stage3_activation5', 'stage4_activation2']
+        # with regard to [conv2, conv3, conv4, conv5] -> [C2, C3, C4, C5]
         # append more layers with reversed order : [P5, P4, P3, P2]
         y = outputs[-1]
         base_features = outputs[::-1]

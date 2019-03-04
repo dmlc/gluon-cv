@@ -7,8 +7,6 @@ from .cifarresnet import *
 from .cifarresnext import *
 from .cifarwideresnet import *
 from .deeplabv3 import *
-from .simple_pose.simple_pose_resnet import *
-from .alexnet import *
 from .densenet import *
 from .faster_rcnn import *
 from .fcn import *
@@ -22,6 +20,7 @@ from .resnet import *
 from .resnetv1b import *
 from .resnext import *
 from .senet import *
+from .simple_pose.simple_pose_resnet import *
 from .squeezenet import *
 from .ssd import *
 from .vgg import *
