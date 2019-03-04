@@ -83,3 +83,9 @@ ax = fig.add_subplot(1, 1, 1)
 ax = utils.viz.plot_bbox(orig_img, bboxes, scores, ids,
                          class_names=net.classes, ax=ax)
 plt.show()
+
+######################################################################
+# Feel excited?
+# --------------
+# Stay tuned for more generalized detection models with much more category
+# knowledges except COCO and Pascal VOC!
