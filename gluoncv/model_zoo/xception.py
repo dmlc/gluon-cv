@@ -71,12 +71,12 @@ class Block(nn.HybridBlock):
             self.rep.add(norm_layer(in_channels=planes, **norm_kwargs))
         if stride != 1:
             self.rep.add(self.relu)
-            self.rep.add(SeparableConv2d(planes, planes, 3, 2, norm_layer=norm_layer,
+            self.rep.add(SeparableConv2d(planes, planes, 3, stride, norm_layer=norm_layer,
                                          norm_kwargs=norm_kwargs))
             self.rep.add(norm_layer(in_channels=planes, **norm_kwargs))
         elif is_last:
             self.rep.add(self.relu)
-            self.rep.add(SeparableConv2d(planes, planes, 3, 1, norm_layer=norm_layer,
+            self.rep.add(SeparableConv2d(planes, planes, 3, 1, dilation, norm_layer=norm_layer,
                                          norm_kwargs=norm_kwargs))
             self.rep.add(norm_layer(in_channels=planes, **norm_kwargs))
 
@@ -126,15 +126,12 @@ class Xception(nn.HybridBlock):
             self.bn2 = norm_layer(in_channels=64)
 
             self.block1 = Block(64, 128, reps=2, stride=2, norm_layer=norm_layer,
-                                norm_kwargs=norm_kwargs,
-                                start_with_relu=False)
+                                norm_kwargs=norm_kwargs, start_with_relu=False)
             self.block2 = Block(128, 256, reps=2, stride=2, norm_layer=norm_layer,
-                                norm_kwargs=norm_kwargs,
-                                start_with_relu=False,
+                                norm_kwargs=norm_kwargs, start_with_relu=False,
                                 grow_first=True)
             self.block3 = Block(256, 728, reps=2, stride=entry_block3_stride,
-                                norm_layer=norm_layer,
-                                norm_kwargs=norm_kwargs,
+                                norm_layer=norm_layer, norm_kwargs=norm_kwargs,
                                 start_with_relu=True, grow_first=True, is_last=True)
             # Middle flow
             self.midflow = nn.HybridSequential()
@@ -185,6 +182,7 @@ class Xception(nn.HybridBlock):
 
         # Middle flow
         x = self.midflow(x)
+        # mid_level_feat = x
 
         # Exit flow
         x = self.block20(x)
@@ -232,7 +230,7 @@ def get_xcetption(pretrained=False, ctx=cpu(),
     net = Xception(**kwargs)
     if pretrained:
         from .model_store import get_model_file
-        net.load_parameters(get_model_file('exception',
+        net.load_parameters(get_model_file('xception',
                                            tag=pretrained, root=root), ctx=ctx)
         from ..data import ImageNet1kAttr
         attrib = ImageNet1kAttr()
