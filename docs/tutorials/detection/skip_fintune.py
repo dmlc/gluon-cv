@@ -40,7 +40,7 @@ x, orig_img = data.transforms.presets.rcnn.load_test(im_fname)
 # -----------------------------
 # Original COCO model has 80 classes
 print('coco classes', net.classes)
-net.reset_class(classes=['bicycle', 'backpack'], reuse_weight=['bicycle', 'backpack'])
+net.reset_class(classes=['bicycle', 'backpack'], reuse_weights=['bicycle', 'backpack'])
 # now net has 2 classes as desired
 print('new classes', net.classes)
 
@@ -58,7 +58,7 @@ plt.show()
 # ------------------------------------------------------
 # We also support dict for 1 to 1 class weights re-mapping
 net = model_zoo.get_model('faster_rcnn_resnet50_v1b_voc', pretrained=True)
-net.reset_class(classes=['athlete'], reuse_weight={'athlete':'person'})
+net.reset_class(classes=['athlete'], reuse_weights={'athlete':'person'})
 box_ids, scores, bboxes = net(x)
 ax = utils.viz.plot_bbox(orig_img, bboxes[0], scores[0], box_ids[0], class_names=net.classes)
 
@@ -69,7 +69,7 @@ plt.show()
 # --------------------------------------------------------
 # now use mask rcnn and reset class
 net = model_zoo.get_model('mask_rcnn_resnet50_v1b_coco', pretrained=True)
-net.reset_class(classes=['person'], reuse_weight=['person'])
+net.reset_class(classes=['person'], reuse_weights=['person'])
 ids, scores, bboxes, masks = [xx[0].asnumpy() for xx in net(x)]
 
 # paint segmentation mask on images directly
