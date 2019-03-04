@@ -88,4 +88,4 @@ plt.show()
 # Feel excited?
 # --------------
 # Stay tuned for more generalized detection models with much more category
-# knowledges except COCO and Pascal VOC!
+# knowledges than COCO and Pascal VOC!
