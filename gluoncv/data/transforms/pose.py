@@ -14,7 +14,9 @@ from __future__ import division
 
 import math
 import numpy as np
-from mxnet import nd
+import mxnet as mx
+from mxnet import nd, image
+from mxnet.gluon.data.vision import transforms
 from ...utils.filesystem import try_import_cv2
 
 def flip_heatmap(heatmap, joint_pairs, shift=False):
@@ -211,3 +213,80 @@ def get_final_preds(batch_heatmaps, center, scale):
                                    [heatmap_width, heatmap_height])
 
     return preds, maxvals
+
+def upscale_bbox_fn(bbox, img, scale=1.25):
+    new_bbox = []
+    x0 = bbox[0]
+    y0 = bbox[1]
+    x1 = bbox[2]
+    y1 = bbox[3]
+    w = (x1 - x0) / 2
+    h = (y1 - y0) / 2
+    center = [x0 + w, y0 + h]
+    new_x0 = max(center[0] - w * scale, 0)
+    new_y0 = max(center[1] - h * scale, 0)
+    new_x1 = min(center[0] + w * scale, img.shape[1])
+    new_y1 = min(center[1] + h * scale, img.shape[0])
+    new_bbox = [new_x0, new_y0, new_x1, new_y1]
+    return new_bbox
+
+def crop_resize_normalize(img, bbox_list, output_size):
+    output_list = []
+    transform_test = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+    ])
+    for bbox in bbox_list:
+        x0 = max(int(bbox[0]), 0)
+        y0 = max(int(bbox[1]), 0)
+        x1 = min(int(bbox[2]), int(img.shape[1]))
+        y1 = min(int(bbox[3]), int(img.shape[0]))
+        w = x1 - x0
+        h = y1 - y0
+        res_img = image.fixed_crop(nd.array(img), x0, y0, w, h, (output_size[1], output_size[0]))
+        res_img = transform_test(res_img)
+        output_list.append(res_img)
+    output_array = nd.stack(*output_list)
+    return output_array
+
+def detector_to_simple_pose(img, class_IDs, scores, bounding_boxs,
+                            output_shape=(256, 192), scale=1.25, ctx=mx.cpu()):
+    L = class_IDs.shape[1]
+    thr = 0.5
+    upscale_bbox = []
+    for i in range(L):
+        if class_IDs[0][i].asscalar() != 0:
+            continue
+        if scores[0][i].asscalar() < thr:
+            continue
+        bbox = bounding_boxs[0][i]
+        upscale_bbox.append(upscale_bbox_fn(bbox.asnumpy().tolist(), img, scale=scale))
+    if len(upscale_bbox) > 0:
+        pose_input = crop_resize_normalize(img, upscale_bbox, output_shape)
+        pose_input = pose_input.as_in_context(ctx)
+    else:
+        pose_input = None
+    return pose_input, upscale_bbox
+
+def heatmap_to_coord(heatmaps, bbox_list):
+    heatmap_height = heatmaps.shape[2]
+    heatmap_width = heatmaps.shape[3]
+    coords, maxvals = get_max_pred(heatmaps)
+    preds = nd.zeros_like(coords)
+
+    for i, bbox in enumerate(bbox_list):
+        x0 = bbox[0]
+        y0 = bbox[1]
+        x1 = bbox[2]
+        y1 = bbox[3]
+        w = (x1 - x0) / 2
+        h = (y1 - y0) / 2
+        center = np.array([x0 + w, y0 + h])
+        scale = np.array([w, h])
+
+        w_ratio = coords[i][:, 0] / heatmap_width
+        h_ratio = coords[i][:, 1] / heatmap_height
+        preds[i][:, 0] = scale[0] * 2 * w_ratio + center[0] - scale[0]
+        preds[i][:, 1] = scale[1] * 2 * h_ratio + center[1] - scale[1]
+    return preds, maxvals
+

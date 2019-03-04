@@ -2,6 +2,7 @@
 from __future__ import absolute_import
 
 import os
+import warnings
 
 import mxnet as mx
 from mxnet import autograd
@@ -25,8 +26,8 @@ class Mask(nn.HybridBlock):
     ----------
     batch_images : int
         Used to reshape output
-    num_classes : int
-        Used to determine number of output channels
+    classes : iterable of str
+        Used to determine number of output channels, and store class names
     mask_channels : int
         Used to determine number of hidden channels
     deep_fcn : boolean, default False
@@ -34,16 +35,17 @@ class Mask(nn.HybridBlock):
 
     """
 
-    def __init__(self, batch_images, num_classes, mask_channels, deep_fcn=False, **kwargs):
+    def __init__(self, batch_images, classes, mask_channels, deep_fcn=False, **kwargs):
         super(Mask, self).__init__(**kwargs)
         self._batch_images = batch_images
+        self.classes = classes
         init = mx.init.Xavier(rnd_type='gaussian', factor_type='out', magnitude=2)
         with self.name_scope():
             if deep_fcn:
                 self.deconv = nn.HybridSequential()
                 for _ in range(4):
                     self.deconv.add(
-                        nn.Conv2D(num_classes, kernel_size=(3, 3), strides=(1, 1), padding=(1, 1),
+                        nn.Conv2D(mask_channels, kernel_size=(3, 3), strides=(1, 1), padding=(1, 1),
                                   weight_initializer=init),
                         nn.Activation('relu'))
                 self.deconv.add(
@@ -52,7 +54,7 @@ class Mask(nn.HybridBlock):
             else:
                 self.deconv = nn.Conv2DTranspose(mask_channels, kernel_size=(2, 2), strides=(2, 2),
                                                  padding=(0, 0), weight_initializer=init)
-            self.mask = nn.Conv2D(num_classes, kernel_size=(1, 1), strides=(1, 1), padding=(0, 0),
+            self.mask = nn.Conv2D(len(classes), kernel_size=(1, 1), strides=(1, 1), padding=(0, 0),
                                   weight_initializer=init)
 
     # pylint: disable=arguments-differ
@@ -80,6 +82,68 @@ class Mask(nn.HybridBlock):
         x = x.reshape((-4, self._batch_images, -1, 0, 0, 0))
         return x
 
+    def reset_class(self, classes, reuse_weights=None):
+        """Reset class for mask branch."""
+        if reuse_weights:
+            assert hasattr(self, 'classes'), "require old classes to reuse weights"
+        old_classes = getattr(self, 'classes', [])
+        self.classes = classes
+        if isinstance(reuse_weights, (dict, list)):
+            if isinstance(reuse_weights, dict):
+                # trying to replace str with indices
+                for k, v in reuse_weights.items():
+                    if isinstance(v, str):
+                        try:
+                            v = old_classes.index(v)  # raise ValueError if not found
+                        except ValueError:
+                            raise ValueError(
+                                "{} not found in old class names {}".format(v, old_classes))
+                        reuse_weights[k] = v
+                    if isinstance(k, str):
+                        try:
+                            new_idx = self.classes.index(k)  # raise ValueError if not found
+                        except ValueError:
+                            raise ValueError(
+                                "{} not found in new class names {}".format(k, self.classes))
+                        reuse_weights.pop(k)
+                        reuse_weights[new_idx] = v
+            else:
+                new_map = {}
+                for x in reuse_weights:
+                    try:
+                        new_idx = self.classes.index(x)
+                        old_idx = old_classes.index(x)
+                        new_map[new_idx] = old_idx
+                    except ValueError:
+                        warnings.warn("{} not found in old: {} or new class names: {}".format(
+                            x, old_classes, self.classes))
+                reuse_weights = new_map
+        with self.name_scope():
+            old_mask = self.mask
+            ctx = list(old_mask.params.values())[0].list_ctx()
+            # to avoid deferred init, number of in_channels must be defined
+            in_channels = list(old_mask.params.values())[0].shape[1]
+            init = mx.init.Xavier(rnd_type='gaussian', factor_type='out', magnitude=2)
+            self.mask = nn.Conv2D(len(classes), kernel_size=(1, 1), strides=(1, 1), padding=(0, 0),
+                                  weight_initializer=init, in_channels=in_channels)
+            self.mask.initialize(ctx=ctx)
+            if reuse_weights:
+                assert isinstance(reuse_weights, dict)
+                for old_params, new_params in zip(old_mask.params.values(),
+                                                  self.mask.params.values()):
+                    # slice and copy weights
+                    old_data = old_params.data()
+                    new_data = new_params.data()
+
+                    for k, v in reuse_weights.items():
+                        if k >= len(self.classes) or v >= len(old_classes):
+                            warnings.warn("reuse mapping {}/{} -> {}/{} out of range".format(
+                                k, self.classes, v, old_classes))
+                            continue
+                        new_data[k:k + 1] = old_data[v:v + 1]
+                    # set data to new conv layers
+                    new_params.set_data(new_data)
+
 
 class MaskRCNN(FasterRCNN):
     r"""Mask RCNN network.
@@ -104,7 +168,7 @@ class MaskRCNN(FasterRCNN):
                                        additional_output=True, **kwargs)
         self._rcnn_max_dets = rcnn_max_dets
         with self.name_scope():
-            self.mask = Mask(self._max_batch, self.num_class, mask_channels, deep_fcn=deep_fcn)
+            self.mask = Mask(self._max_batch, classes, mask_channels, deep_fcn=deep_fcn)
             if deep_fcn:
                 roi_size = (self._roi_size[0] * 2, self._roi_size[1] * 2)
             else:
@@ -148,7 +212,9 @@ class MaskRCNN(FasterRCNN):
             topk = F.slice_axis(order, axis=1, begin=0, end=num_rois)
 
             # pick from (B, N * (C - 1), X) to (B * topk, X) -> (B, topk, X)
-            roi_batch_id = F.arange(0, self._max_batch, repeat=num_rois)
+            # roi_batch_id = F.arange(0, self._max_batch, repeat=num_rois)
+            roi_batch_id = F.arange(0, self._max_batch)
+            roi_batch_id = F.repeat(roi_batch_id, num_rois)
             indices = F.stack(roi_batch_id, topk.reshape((-1,)), axis=0)
             ids = F.gather_nd(ids, indices).reshape((-4, self._max_batch, num_rois, 1))
             scores = F.gather_nd(scores, indices).reshape((-4, self._max_batch, num_rois, 1))
@@ -181,7 +247,9 @@ class MaskRCNN(FasterRCNN):
             # (B, N, C, pooled_size * 2, pooled_size * 2)
             rcnn_mask = self.mask(top_feat)
             # index the B dimension (B * N,)
-            batch_ids = F.arange(0, self._max_batch, repeat=num_rois)
+            # batch_ids = F.arange(0, self._max_batch, repeat=num_rois)
+            batch_ids = F.arange(0, self._max_batch)
+            batch_ids = F.repeat(batch_ids, num_rois)
             # index the N dimension (B * N,)
             roi_ids = F.tile(F.arange(0, num_rois), reps=self._max_batch)
             # index the C dimension (B * N,)
@@ -198,6 +266,36 @@ class MaskRCNN(FasterRCNN):
 
             # ids (B, N, 1), scores (B, N, 1), boxes (B, N, 4), masks (B, N, PS*2, PS*2)
             return ids, scores, boxes, masks
+
+    def reset_class(self, classes, reuse_weights=None):
+        """Reset class categories and class predictors.
+
+        Parameters
+        ----------
+        classes : iterable of str
+            The new categories. ['apple', 'orange'] for example.
+        reuse_weights : dict
+            A {new_integer : old_integer} or mapping dict or {new_name : old_name} mapping dict,
+            or a list of [name0, name1,...] if class names don't change.
+            This allows the new predictor to reuse the
+            previously trained weights specified.
+
+        Example
+        -------
+        >>> net = gluoncv.model_zoo.get_model('mask_rcnn_resnet50_v1b_voc', pretrained=True)
+        >>> # use direct name to name mapping to reuse weights
+        >>> net.reset_class(classes=['person'], reuse_weights={'person':'person'})
+        >>> # or use interger mapping, person is the first category in COCO
+        >>> net.reset_class(classes=['person'], reuse_weights={0:0})
+        >>> # you can even mix them
+        >>> net.reset_class(classes=['person'], reuse_weights={'person':0})
+        >>> # or use a list of string if class name don't change
+        >>> net.reset_class(classes=['person'], reuse_weights=['person'])
+
+        """
+        self._clear_cached_op()
+        super(MaskRCNN, self).reset_class(classes=classes, reuse_weights=reuse_weights)
+        self.mask.reset_class(classes=classes, reuse_weights=reuse_weights)
 
 
 def get_mask_rcnn(name, dataset, pretrained=False, ctx=mx.cpu(),

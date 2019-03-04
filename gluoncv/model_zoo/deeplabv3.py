@@ -66,11 +66,10 @@ class DeepLabV3(SegBaseModel):
         h, w = x.shape[2:]
         self._up_kwargs['height'] = h
         self._up_kwargs['width'] = w
-        self.head.aspp.concurent[-1]._up_kwargs['height'] = h// 8
-        self.head.aspp.concurent[-1]._up_kwargs['width'] = w// 8
-        pred = self.forward(x)
-        if self.aux:
-            pred = pred[0]
+        c3, c4 = self.base_forward(x)
+        x = self.head.demo(c4)
+        import mxnet.ndarray as F
+        pred = F.contrib.BilinearResize2D(x, **self._up_kwargs)
         return pred
 
 
@@ -93,6 +92,13 @@ class _DeepLabHead(HybridBlock):
         x = self.aspp(x)
         return self.block(x)
 
+    def demo(self, x):
+        h, w = x.shape[2:]
+        self.aspp.concurent[-1]._up_kwargs['height'] = h
+        self.aspp.concurent[-1]._up_kwargs['width'] = w
+        x = self.aspp(x)
+        return self.block(x)
+        
 
 def _ASPPConv(in_channels, out_channels, atrous_rate, norm_layer, norm_kwargs):
     block = nn.HybridSequential()

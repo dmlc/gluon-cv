@@ -21,6 +21,12 @@ Model Zoo
 
         Select your models from charts and tables of the segmentation models
 
+    .. card::
+        :title: Pose Estimation
+        :link: pose.html
+
+        Select your models from charts and tables of the pose estimation models
+
 
 .. toctree::
     :hidden:
@@ -29,3 +35,4 @@ Model Zoo
     classification
     detection
     segmentation
+    pose

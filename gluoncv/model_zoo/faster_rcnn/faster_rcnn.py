@@ -2,6 +2,7 @@
 from __future__ import absolute_import
 
 import os
+import warnings
 
 import mxnet as mx
 from mxnet import autograd
@@ -202,8 +203,33 @@ class FasterRCNN(RCNN):
         """
         return list(self._target_generator)[0]
 
-    def reset_class(self, classes):
-        super(FasterRCNN, self).reset_class(classes)
+    def reset_class(self, classes, reuse_weights=None):
+        """Reset class categories and class predictors.
+
+        Parameters
+        ----------
+        classes : iterable of str
+            The new categories. ['apple', 'orange'] for example.
+        reuse_weights : dict
+            A {new_integer : old_integer} or mapping dict or {new_name : old_name} mapping dict,
+            or a list of [name0, name1,...] if class names don't change.
+            This allows the new predictor to reuse the
+            previously trained weights specified.
+
+        Example
+        -------
+        >>> net = gluoncv.model_zoo.get_model('faster_rcnn_resnet50_v1b_coco', pretrained=True)
+        >>> # use direct name to name mapping to reuse weights
+        >>> net.reset_class(classes=['person'], reuse_weights={'person':'person'})
+        >>> # or use interger mapping, person is the 14th category in VOC
+        >>> net.reset_class(classes=['person'], reuse_weights={0:14})
+        >>> # you can even mix them
+        >>> net.reset_class(classes=['person'], reuse_weights={'person':14})
+        >>> # or use a list of string if class name don't change
+        >>> net.reset_class(classes=['person'], reuse_weights=['person'])
+
+        """
+        super(FasterRCNN, self).reset_class(classes, reuse_weights)
         self._target_generator = {RCNNTargetGenerator(self.num_class)}
 
     def _pyramid_roi_feats(self, F, features, rpn_rois, roi_size, strides, roi_mode='align',
@@ -305,7 +331,9 @@ class FasterRCNN(RCNN):
         # create batchid for roi
         num_roi = self._num_sample if autograd.is_training() else self._rpn_test_post_nms
         with autograd.pause():
-            roi_batchid = F.arange(0, self._max_batch, repeat=num_roi)
+            # roi_batchid = F.arange(0, self._max_batch, repeat=num_roi)
+            roi_batchid = F.arange(0, self._max_batch)
+            roi_batchid = F.repeat(roi_batchid, num_roi)
             # remove batch dim because ROIPooling require 2d input
             rpn_roi = F.concat(*[roi_batchid.reshape((-1, 1)), rpn_box.reshape((-1, 4))], dim=-1)
             rpn_roi = F.stop_gradient(rpn_roi)
@@ -669,6 +697,8 @@ def faster_rcnn_resnet50_v1b_custom(classes, transfer=None, pretrained_base=True
     mxnet.gluon.HybridBlock
         Hybrid faster RCNN network.
     """
+    if pretrained:
+        warnings.warn("Custom models don't provide `pretrained` weights, ignored.")
     if transfer is None:
         from ..resnetv1b import resnet50_v1b
         base_network = resnet50_v1b(pretrained=pretrained_base, dilated=False,
@@ -696,7 +726,8 @@ def faster_rcnn_resnet50_v1b_custom(classes, transfer=None, pretrained_base=True
     else:
         from ...model_zoo import get_model
         net = get_model('faster_rcnn_resnet50_v1b_' + str(transfer), pretrained=True, **kwargs)
-        net.reset_class(classes)
+        reuse_classes = [x for x in classes if x in net.classes]
+        net.reset_class(classes, reuse_weights=reuse_classes)
     return net
 
 
@@ -879,6 +910,8 @@ def faster_rcnn_resnet101_v1d_custom(classes, transfer=None, pretrained_base=Tru
     mxnet.gluon.HybridBlock
         Hybrid faster RCNN network.
     """
+    if pretrained:
+        warnings.warn("Custom models don't provide `pretrained` weights, ignored.")
     if transfer is None:
         from ..resnetv1b import resnet101_v1d
         base_network = resnet101_v1d(pretrained=pretrained_base, dilated=False,
@@ -906,5 +939,6 @@ def faster_rcnn_resnet101_v1d_custom(classes, transfer=None, pretrained_base=Tru
     else:
         from ...model_zoo import get_model
         net = get_model('faster_rcnn_resnet101_v1d_' + str(transfer), pretrained=True, **kwargs)
-        net.reset_class(classes)
+        reuse_classes = [x for x in classes if x in net.classes]
+        net.reset_class(classes, reuse_weights=reuse_classes)
     return net
