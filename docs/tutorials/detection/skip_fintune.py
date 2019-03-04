@@ -23,7 +23,7 @@ from gluoncv import model_zoo, data, utils
 # Let's get an Faster RCNN model trained on COCO
 # dataset with ResNet-50 backbone.
 
-net = model_zoo.get_model('faster_rcnn_resnet50_v1b_voc', pretrained=True)
+net = model_zoo.get_model('faster_rcnn_resnet50_v1b_coco', pretrained=True)
 
 ######################################################################
 # Pre-process an image
@@ -36,13 +36,13 @@ im_fname = utils.download('https://github.com/dmlc/web-data/blob/master/' +
 x, orig_img = data.transforms.presets.rcnn.load_test(im_fname)
 
 ######################################################################
-# Reset classes to what we want
-# -----------------------------
+# Reset classes to exactly what we want
+# -------------------------------------
 # Original COCO model has 80 classes
-print('coco classes', net.classes)
+print('coco classes: ', net.classes)
 net.reset_class(classes=['bicycle', 'backpack'], reuse_weights=['bicycle', 'backpack'])
 # now net has 2 classes as desired
-print('new classes', net.classes)
+print('new classes: ', net.classes)
 
 ######################################################################
 # Inference and display
@@ -56,18 +56,21 @@ plt.show()
 ######################################################################
 # More flexible mapping strategy for reusing old weights
 # ------------------------------------------------------
-# We also support dict for 1 to 1 class weights re-mapping
-net = model_zoo.get_model('faster_rcnn_resnet50_v1b_voc', pretrained=True)
-net.reset_class(classes=['athlete'], reuse_weights={'athlete':'person'})
+# We also support dict for 1-to-1 class weights re-mapping
+# So we can take advantage of this to remap some categories
+net = model_zoo.get_model('faster_rcnn_resnet50_v1b_coco', pretrained=True)
+net.reset_class(classes=['spaceship'], reuse_weights={'spaceship':'bicycle'})
 box_ids, scores, bboxes = net(x)
 ax = utils.viz.plot_bbox(orig_img, bboxes[0], scores[0], box_ids[0], class_names=net.classes)
 
 plt.show()
 
 ######################################################################
-# The same story applies to SSD, YOLO and Mask-RCNN models
+# The same story for different models
 # --------------------------------------------------------
-# now use mask rcnn and reset class
+# We can apply this strategy to SSD, YOLO and Mask-RCNN models
+# Now we can use mask rcnn and reset class to detect person only
+
 net = model_zoo.get_model('mask_rcnn_resnet50_v1b_coco', pretrained=True)
 net.reset_class(classes=['person'], reuse_weights=['person'])
 ids, scores, bboxes, masks = [xx[0].asnumpy() for xx in net(x)]

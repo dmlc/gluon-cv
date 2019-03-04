@@ -1,4 +1,4 @@
-"""6. Train Faster-RCNN end-to-end on PASCAL VOC
+"""06. Train Faster-RCNN end-to-end on PASCAL VOC
 ================================================
 
 This tutorial goes through the basic steps of training a Faster-RCNN [Ren15]_ object detection model

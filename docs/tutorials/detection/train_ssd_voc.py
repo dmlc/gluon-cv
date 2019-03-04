@@ -1,4 +1,4 @@
-"""4. Train SSD on Pascal VOC dataset
+"""04. Train SSD on Pascal VOC dataset
 ======================================
 
 This tutorial goes through the basic building blocks of object detection
