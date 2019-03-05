@@ -27,7 +27,7 @@ def keypoint_detection(img_path, detector, pose_net):
     x, img = data.transforms.presets.yolo.load_test(img_path, short=512)
     class_IDs, scores, bounding_boxs = detector(x)
 
-    pose_input, upscale_bbox = detector_to_simple_pose(img, class_IDs, scores, bounding_boxs) 
+    pose_input, upscale_bbox = detector_to_simple_pose(img, class_IDs, scores, bounding_boxs)
     predicted_heatmap = pose_net(pose_input)
     pred_coords, confidence = heatmap_to_coord(predicted_heatmap, upscale_bbox)
 
@@ -37,8 +37,7 @@ def keypoint_detection(img_path, detector, pose_net):
 
 if __name__ == '__main__':
     detector = get_model(opt.detector, pretrained=True)
-    if opt.detector.startswith('ssd') or opt.detector.startswith('yolo'):
-        detector.reset_class(["person"], reuse_weights=['person'])
+    detector.reset_class(["person"], reuse_weights=['person'])
     net = get_model(opt.pose_model, pretrained=True)
 
     keypoint_detection(opt.input_pic, detector, net)
