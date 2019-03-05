@@ -2,6 +2,7 @@ import argparse, time, logging, os, math
 
 import numpy as np
 import mxnet as mx
+import gluoncv as gcv
 from mxnet import gluon, nd
 from mxnet import autograd as ag
 from mxnet.gluon import nn
@@ -162,7 +163,6 @@ def main():
 
     net = get_model(model_name, **kwargs)
     net.cast(opt.dtype)
-    print(net)
     if opt.resume_params is not '':
         net.load_parameters(opt.resume_params, ctx = context)
 
@@ -350,7 +350,7 @@ def main():
         else:
             sparse_label_loss = False
         if distillation:
-            L = gluoncv.loss.DistillationSoftmaxCrossEntropyLoss(temperature=opt.temperature,
+            L = gcv.loss.DistillationSoftmaxCrossEntropyLoss(temperature=opt.temperature,
                                                                  hard_weight=opt.hard_weight,
                                                                  sparse_label=sparse_label_loss)
         else:
@@ -393,7 +393,7 @@ def main():
                     if distillation:
                         loss = [L(yhat.astype('float32', copy=False),
                                   y.astype('float32', copy=False),
-                                  p.astype('float32', copy=False)) for yhat, y, p in zip(outputs, label, prob)]
+                                  p.astype('float32', copy=False)) for yhat, y, p in zip(outputs, label, teacher_prob)]
                     else:
                         loss = [L(yhat, y.astype(opt.dtype, copy=False)) for yhat, y in zip(outputs, label)]
                 for l in loss:

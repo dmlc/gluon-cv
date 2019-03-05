@@ -420,7 +420,7 @@ class MixSoftmaxCrossEntropyOHEMLoss(SoftmaxCrossEntropyOHEMLoss):
             return super(MixSoftmaxCrossEntropyOHEMLoss, self). \
                 hybrid_forward(F, *inputs, **kwargs)
 
-class DistillationSoftmaxCrossEntropyLoss(Loss)
+class DistillationSoftmaxCrossEntropyLoss(gluon.HybridBlock):
     """SoftmaxCrossEntrolyLoss with Teacher model prediction
 
     Parameters
@@ -433,7 +433,7 @@ class DistillationSoftmaxCrossEntropyLoss(Loss)
         Whether the one-hot label is sparse.
     """
     def __init__(self, temperature=1, hard_weight=0.5, sparse_label=True, **kwargs):
-        super(DistillationLoss, self).__init__(**kwargs)
+        super(DistillationSoftmaxCrossEntropyLoss, self).__init__(**kwargs)
         self._temperature = temperature
         self._hard_weight = hard_weight
         with self.name_scope():
