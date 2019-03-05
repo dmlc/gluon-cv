@@ -1,7 +1,7 @@
 # code adapted from https://github.com/jfzhang95/pytorch-deeplab-xception/
 # pylint: disable=arguments-differ,unused-argument,missing-docstring,unused-variable
 """Xception, implemented in Gluon."""
-__all__ = ['Xception', 'get_xcetption']
+__all__ = ['Xception65', 'Xception71', 'get_xcetption', 'get_xcetption_71']
 from mxnet.context import cpu
 import mxnet.gluon.nn as nn
 
@@ -90,12 +90,12 @@ class Block(nn.HybridBlock):
         x = x + skip
         return x
 
-class Xception(nn.HybridBlock):
+class Xception65(nn.HybridBlock):
     """Modified Aligned Xception
     """
     def __init__(self, classes=1000, output_stride=32, norm_layer=nn.BatchNorm,
                  norm_kwargs=None):
-        super(Xception, self).__init__()
+        super(Xception65, self).__init__()
         norm_kwargs = norm_kwargs if norm_kwargs is not None else {}
         if output_stride == 32:
             entry_block3_stride = 2
@@ -206,6 +206,131 @@ class Xception(nn.HybridBlock):
         x = self.fc(x)
         return x
 
+
+class Xception71(nn.HybridBlock):
+    """Modified Aligned Xception
+    """
+    def __init__(self, classes=1000, output_stride=32, norm_layer=nn.BatchNorm,
+                 norm_kwargs=None):
+        super(Xception71, self).__init__()
+        norm_kwargs = norm_kwargs if norm_kwargs is not None else {}
+        if output_stride == 32:
+            entry_block3_stride = 2
+            exit_block20_stride = 2
+            middle_block_dilation = 1
+            exit_block_dilations = (1, 1)
+        elif output_stride == 16:
+            entry_block3_stride = 2
+            exit_block20_stride = 1
+            middle_block_dilation = 1
+            exit_block_dilations = (1, 2)
+        elif output_stride == 8:
+            entry_block3_stride = 1
+            exit_block20_stride = 1
+            middle_block_dilation = 2
+            exit_block_dilations = (2, 4)
+        else:
+            raise NotImplementedError
+        # Entry flow
+        with self.name_scope():
+            self.conv1 = nn.Conv2D(in_channels=3, channels=32, kernel_size=3,
+                                   strides=2, padding=1, use_bias=False)
+            self.bn1 = norm_layer(in_channels=32, **norm_kwargs)
+            self.relu = nn.Activation('relu')
+
+            self.conv2 = nn.Conv2D(in_channels=32, channels=64, kernel_size=3,
+                                   strides=1, padding=1, use_bias=False)
+            self.bn2 = norm_layer(in_channels=64)
+
+            self.block1 = Block(64, 128, reps=2, stride=2, norm_layer=norm_layer,
+                                norm_kwargs=norm_kwargs, start_with_relu=False)
+            self.block2 = nn.HybridSequential()
+
+            self.block2.add(Block(128, 256, reps=2, stride=1, norm_layer=norm_layer,
+                                  norm_kwargs=norm_kwargs, start_with_relu=False,
+                                  grow_first=True))
+            self.block2.add(Block(256, 256, reps=2, stride=2, norm_layer=norm_layer,
+                                  norm_kwargs=norm_kwargs, start_with_relu=False,
+                                  grow_first=True))
+            self.block2.add(Block(256, 728, reps=2, stride=2, norm_layer=norm_layer,
+                                  norm_kwargs=norm_kwargs, start_with_relu=False,
+                                  grow_first=True))
+            self.block3 = Block(728, 728, reps=2, stride=entry_block3_stride,
+                                norm_layer=norm_layer, norm_kwargs=norm_kwargs,
+                                start_with_relu=True, grow_first=True, is_last=True)
+            # Middle flow
+            self.midflow = nn.HybridSequential()
+            for i in range(4, 20):
+                self.midflow.add((Block(728, 728, reps=3, stride=1,
+                                        dilation=middle_block_dilation,
+                                        norm_layer=norm_layer, norm_kwargs=norm_kwargs,
+                                        start_with_relu=True, grow_first=True)))
+
+            # Exit flow
+            self.block20 = Block(728, 1024, reps=2, stride=exit_block20_stride,
+                                 dilation=exit_block_dilations[0],
+                                 norm_layer=norm_layer, norm_kwargs=norm_kwargs,
+                                 start_with_relu=True, grow_first=False,
+                                 is_last=True)
+
+            self.conv3 = SeparableConv2d(1024, 1536, 3, stride=1, dilation=exit_block_dilations[1],
+                                         norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+            self.bn3 = norm_layer(in_channels=1536, **norm_kwargs)
+
+            self.conv4 = SeparableConv2d(1536, 1536, 3, stride=1, dilation=exit_block_dilations[1],
+                                         norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+            self.bn4 = norm_layer(in_channels=1536, **norm_kwargs)
+
+            self.conv5 = SeparableConv2d(1536, 2048, 3, stride=1, dilation=exit_block_dilations[1],
+                                         norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+            self.bn5 = norm_layer(in_channels=2048, **norm_kwargs)
+            self.avgpool = nn.GlobalAvgPool2D()
+            self.flat = nn.Flatten()
+            self.fc = nn.Dense(in_units=2048, units=classes)
+
+    def hybrid_forward(self, F, x):
+        # Entry flow
+        x = self.conv1(x)
+        x = self.bn1(x)
+        x = self.relu(x)
+
+        x = self.conv2(x)
+        x = self.bn2(x)
+        x = self.relu(x)
+
+        x = self.block1(x)
+        # add relu here
+        x = self.relu(x)
+        # low_level_feat = x
+        x = self.block2(x)
+        x = self.block3(x)
+
+        # Middle flow
+        x = self.midflow(x)
+        # mid_level_feat = x
+
+        # Exit flow
+        x = self.block20(x)
+        x = self.relu(x)
+        x = self.conv3(x)
+        x = self.bn3(x)
+        x = self.relu(x)
+
+        x = self.conv4(x)
+        x = self.bn4(x)
+        x = self.relu(x)
+
+        x = self.conv5(x)
+        x = self.bn5(x)
+        x = self.relu(x)
+
+        #return x, low_level_feat
+        x = self.avgpool(x)
+        x = self.flat(x)
+
+        x = self.fc(x)
+        return x
+
 # Constructor
 def get_xcetption(pretrained=False, ctx=cpu(),
                   root='~/.mxnet/models', **kwargs):
@@ -227,10 +352,42 @@ def get_xcetption(pretrained=False, ctx=cpu(),
         Additional `norm_layer` arguments, for example `num_devices=4`
         for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
-    net = Xception(**kwargs)
+    net = Xception65(**kwargs)
     if pretrained:
         from .model_store import get_model_file
         net.load_parameters(get_model_file('xception',
+                                           tag=pretrained, root=root), ctx=ctx)
+        from ..data import ImageNet1kAttr
+        attrib = ImageNet1kAttr()
+        net.synset = attrib.synset
+        net.classes = attrib.classes
+        net.classes_long = attrib.classes_long
+    return net
+
+def get_xcetption_71(pretrained=False, ctx=cpu(),
+                     root='~/.mxnet/models', **kwargs):
+    r"""Xception model from
+
+    Parameters
+    ----------
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default $MXNET_HOME/models
+        Location for keeping the model parameters.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    """
+    net = Xception71(**kwargs)
+    if pretrained:
+        from .model_store import get_model_file
+        net.load_parameters(get_model_file('xception71',
                                            tag=pretrained, root=root), ctx=ctx)
         from ..data import ImageNet1kAttr
         attrib = ImageNet1kAttr()
