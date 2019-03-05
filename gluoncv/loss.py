@@ -441,6 +441,8 @@ class DistillationSoftmaxCrossEntropyLoss(gluon.HybridBlock):
             self.hard_loss = gluon.loss.SoftmaxCrossEntropyLoss(sparse_label=sparse_label, **kwargs)
 
     def hybrid_forward(self, F, output, label, soft_target):
+        # pylint: disable=unused-argument
+        """Compute loss"""
         if self._hard_weight == 0:
             return (self._temperature ** 2) * self.soft_loss(output / self._temperature,
                                                              soft_target)
