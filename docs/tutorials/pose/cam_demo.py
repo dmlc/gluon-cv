@@ -54,9 +54,14 @@ To speed up the detector, we can reset the prediction head to only include the c
 
 Next for the estimator, we choose ``simple_pose_resnet18_v1b`` for it is light-weighted.
 
+The default ``simple_pose_resnet18_v1b`` model was trained with input size 256x192.
+We also provide an optional ``simple_pose_resnet18_v1b`` model trained with input size 128x96.
+The latter one is going to be faster, which means a smoother webcam demo.
+Remember that we can load an optional pre-trained model by passing its shasum to ``pretrained``.
+
 .. code-block:: python
 
-    estimator = get_model('simple_pose_resnet18_v1b', pretrained=True, ctx=ctx)
+    estimator = get_model('simple_pose_resnet18_v1b', pretrained='ccd24037', ctx=ctx)
 
 
 With OpenCV, we can easily retrieve frames from the webcam.
@@ -100,7 +105,8 @@ For each frame, we perform the following steps:
         class_IDs, scores, bounding_boxs = detector(x)
 
         plt.cla()
-        pose_input, upscale_bbox = detector_to_simple_pose(frame, class_IDs, scores, bounding_boxs, ctx=ctx)
+        pose_input, upscale_bbox = detector_to_simple_pose(frame, class_IDs, scores, bounding_boxs,
+                                                           output_shape=(128, 96), ctx=ctx)
         if len(upscale_bbox) > 0:
             predicted_heatmap = estimator(pose_input)
             pred_coords, confidence = heatmap_to_coord(predicted_heatmap, upscale_bbox)
