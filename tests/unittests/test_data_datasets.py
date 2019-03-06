@@ -155,6 +155,19 @@ def test_lst_detection():
     except IOError:
         pass
 
+def test_cached_dataset():
+    class DummyData(object):
+        def __len__(self):
+            return 20
+
+        def __getitem__(self, idx):
+            return mx.nd.array([idx])
+
+    data = DummyData()
+    cached_data = gcv.data.CachedDataset(data, 'test_cached_dataset.cache', cleanup=True)
+    for i in range(len(cached_data)):
+        x = cached_data[i]
+
 if __name__ == '__main__':
     import nose
     nose.runmodule()
