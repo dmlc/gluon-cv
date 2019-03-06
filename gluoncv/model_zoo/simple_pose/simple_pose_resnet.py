@@ -16,7 +16,6 @@ __all__ = ['get_simple_pose_resnet', 'SimplePoseResNet',
            'simple_pose_resnet50_v1d', 'simple_pose_resnet101_v1d',
            'simple_pose_resnet152_v1d']
 
-import gluoncv as gcv
 from mxnet.context import cpu
 from mxnet.gluon.block import HybridBlock
 from mxnet.gluon import nn
