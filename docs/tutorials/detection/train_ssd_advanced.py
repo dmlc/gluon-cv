@@ -1,4 +1,4 @@
-"""5. Deep dive into SSD training: 3 tips to boost performance
+"""05. Deep dive into SSD training: 3 tips to boost performance
 ===============================================================
 
 In the previous tutorial :ref:`sphx_glr_build_examples_detection_train_ssd_voc.py`,

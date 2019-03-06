@@ -55,6 +55,8 @@ parser.add_argument('--model', type=str, required=True,
                     help='type of model to use. see vision_model for options.')
 parser.add_argument('--input-size', type=str, default='256,192',
                     help='size of the input image size. default is 256,192')
+parser.add_argument('--sigma', type=float, default=2,
+                    help='value of the sigma parameter of the gaussian target generation. default is 2')
 parser.add_argument('--mean', type=str, default='0.485,0.456,0.406',
                     help='mean vector for normalization')
 parser.add_argument('--std', type=str, default='0.229,0.224,0.225',
@@ -121,7 +123,7 @@ def get_data_loader(data_dir, batch_size, num_workers, input_size):
     transform_train = SimplePoseDefaultTrainTransform(num_joints=train_dataset.num_joints,
                                                       joint_pairs=train_dataset.joint_pairs,
                                                       image_size=input_size, heatmap_size=heatmap_size,
-                                                      scale_factor=0.30, rotation_factor=40,
+                                                      sigma=opt.sigma, scale_factor=0.30, rotation_factor=40,
                                                       mean=meanvec, std=stdvec, random_flip=True)
 
     train_data = gluon.data.DataLoader(

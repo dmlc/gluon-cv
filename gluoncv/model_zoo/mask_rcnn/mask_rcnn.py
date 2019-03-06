@@ -19,20 +19,21 @@ class Mask(nn.HybridBlock):
     ----------
     batch_images : int
         Used to reshape output
-    num_classes : int
-        Used to determine number of output channels
+    classes : iterable of str
+        Used to determine number of output channels, and store class names
     mask_channels : int
         Used to determine number of hidden channels
 
     """
-    def __init__(self, batch_images, num_classes, mask_channels, **kwargs):
+    def __init__(self, batch_images, classes, mask_channels, **kwargs):
         super(Mask, self).__init__(**kwargs)
         self._batch_images = batch_images
+        self.classes = classes
         init = mx.init.Xavier(rnd_type='gaussian', factor_type='out', magnitude=2)
         with self.name_scope():
             self.deconv = nn.Conv2DTranspose(mask_channels, kernel_size=(2, 2), strides=(2, 2),
                                              padding=(0, 0), weight_initializer=init)
-            self.mask = nn.Conv2D(num_classes, kernel_size=(1, 1), strides=(1, 1), padding=(0, 0),
+            self.mask = nn.Conv2D(len(classes), kernel_size=(1, 1), strides=(1, 1), padding=(0, 0),
                                   weight_initializer=init)
 
     # pylint: disable=arguments-differ
@@ -60,6 +61,68 @@ class Mask(nn.HybridBlock):
         x = x.reshape((-4, self._batch_images, -1, 0, 0, 0))
         return x
 
+    def reset_class(self, classes, reuse_weights=None):
+        """Reset class for mask branch."""
+        if reuse_weights:
+            assert hasattr(self, 'classes'), "require old classes to reuse weights"
+        old_classes = getattr(self, 'classes', [])
+        self.classes = classes
+        if isinstance(reuse_weights, (dict, list)):
+            if isinstance(reuse_weights, dict):
+                # trying to replace str with indices
+                for k, v in reuse_weights.items():
+                    if isinstance(v, str):
+                        try:
+                            v = old_classes.index(v)  # raise ValueError if not found
+                        except ValueError:
+                            raise ValueError(
+                                "{} not found in old class names {}".format(v, old_classes))
+                        reuse_weights[k] = v
+                    if isinstance(k, str):
+                        try:
+                            new_idx = self.classes.index(k)  # raise ValueError if not found
+                        except ValueError:
+                            raise ValueError(
+                                "{} not found in new class names {}".format(k, self.classes))
+                        reuse_weights.pop(k)
+                        reuse_weights[new_idx] = v
+            else:
+                new_map = {}
+                for x in reuse_weights:
+                    try:
+                        new_idx = self.classes.index(x)
+                        old_idx = old_classes.index(x)
+                        new_map[new_idx] = old_idx
+                    except ValueError:
+                        warnings.warn("{} not found in old: {} or new class names: {}".format(
+                            x, old_classes, self.classes))
+                reuse_weights = new_map
+        with self.name_scope():
+            old_mask = self.mask
+            ctx = list(old_mask.params.values())[0].list_ctx()
+            # to avoid deferred init, number of in_channels must be defined
+            in_channels = list(old_mask.params.values())[0].shape[1]
+            init = mx.init.Xavier(rnd_type='gaussian', factor_type='out', magnitude=2)
+            self.mask = nn.Conv2D(len(classes), kernel_size=(1, 1), strides=(1, 1), padding=(0, 0),
+                                  weight_initializer=init, in_channels=in_channels)
+            self.mask.initialize(ctx=ctx)
+            if reuse_weights:
+                assert isinstance(reuse_weights, dict)
+                for old_params, new_params in zip(old_mask.params.values(),
+                                                  self.mask.params.values()):
+                    # slice and copy weights
+                    old_data = old_params.data()
+                    new_data = new_params.data()
+
+                    for k, v in reuse_weights.items():
+                        if k >= len(self.classes) or v >= len(old_classes):
+                            warnings.warn("reuse mapping {}/{} -> {}/{} out of range".format(
+                                k, self.classes, v, old_classes))
+                            continue
+                        new_data[k:k+1] = old_data[v:v+1]
+                    # set data to new conv layers
+                    new_params.set_data(new_data)
+
 
 class MaskRCNN(FasterRCNN):
     r"""Mask RCNN network.
@@ -82,7 +145,7 @@ class MaskRCNN(FasterRCNN):
                                        additional_output=True, **kwargs)
         self._rcnn_max_dets = rcnn_max_dets
         with self.name_scope():
-            self.mask = Mask(self._max_batch, self.num_class, mask_channels)
+            self.mask = Mask(self._max_batch, classes, mask_channels)
             self.mask_target = MaskTargetGenerator(
                 self._max_batch, self._num_sample, self.num_class, self._roi_size)
 
@@ -168,6 +231,36 @@ class MaskRCNN(FasterRCNN):
 
             # ids (B, N, 1), scores (B, N, 1), boxes (B, N, 4), masks (B, N, PS*2, PS*2)
             return ids, scores, boxes, masks
+
+    def reset_class(self, classes, reuse_weights=None):
+        """Reset class categories and class predictors.
+
+        Parameters
+        ----------
+        classes : iterable of str
+            The new categories. ['apple', 'orange'] for example.
+        reuse_weights : dict
+            A {new_integer : old_integer} or mapping dict or {new_name : old_name} mapping dict,
+            or a list of [name0, name1,...] if class names don't change.
+            This allows the new predictor to reuse the
+            previously trained weights specified.
+
+        Example
+        -------
+        >>> net = gluoncv.model_zoo.get_model('mask_rcnn_resnet50_v1b_voc', pretrained=True)
+        >>> # use direct name to name mapping to reuse weights
+        >>> net.reset_class(classes=['person'], reuse_weights={'person':'person'})
+        >>> # or use interger mapping, person is the first category in COCO
+        >>> net.reset_class(classes=['person'], reuse_weights={0:0})
+        >>> # you can even mix them
+        >>> net.reset_class(classes=['person'], reuse_weights={'person':0})
+        >>> # or use a list of string if class name don't change
+        >>> net.reset_class(classes=['person'], reuse_weights=['person'])
+
+        """
+        self._clear_cached_op()
+        super(MaskRCNN, self).reset_class(classes=classes, reuse_weights=reuse_weights)
+        self.mask.reset_class(classes=classes, reuse_weights=reuse_weights)
 
 def get_mask_rcnn(name, dataset, pretrained=False, ctx=mx.cpu(),
                   root=os.path.join('~', '.mxnet', 'models'), **kwargs):

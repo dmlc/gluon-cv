@@ -21,6 +21,7 @@ from mxnet.context import cpu
 from mxnet.gluon.block import HybridBlock
 from mxnet.gluon import nn
 from mxnet import initializer
+import gluoncv as gcv
 
 class SimplePoseResNet(HybridBlock):
 
