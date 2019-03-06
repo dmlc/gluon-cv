@@ -10,7 +10,7 @@ MS COCO Keypoints
 
   The training commands work with the following scripts:
 
-  - For Simple Pose [1]_ networks: :download:`Download train_simple_pose.py<../../scripts/keypoints/simple_pose/train_simple_pose.py>`
+  - For Simple Pose [1]_ networks: :download:`Download train_simple_pose.py<../../scripts/pose/simple_pose/train_simple_pose.py>`
 
 .. hint::
 

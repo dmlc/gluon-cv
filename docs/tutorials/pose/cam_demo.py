@@ -133,7 +133,7 @@ Results
 
 Download the script to run the demo
 
-:download:`Download cam_demo.py<../../../scripts/keypoints/simple_pose/cam_demo.py>`
+:download:`Download cam_demo.py<../../../scripts/pose/simple_pose/cam_demo.py>`
 
 Run the script 
 
