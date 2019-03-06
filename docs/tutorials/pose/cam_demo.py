@@ -144,11 +144,12 @@ Run the script
 
 If all goes well you should be able to see your pose detected!
 
+.. image:: https://i.giphy.com/media/1kTFyZCOCA4yilyOHk/giphy.gif
+
+
+The input size significantly affect the inference speed.
+Below is the webcam demo with input 256x192, compare the frames per second!
+
 .. image:: https://i.giphy.com/media/8rFv0lvBgGf62CIcM7/giphy.gif
-
-
-We have also tested it on a Windows machine with an Nvidia 1060. Compare the frames per second!
-
-.. image:: https://i.giphy.com/media/1gOa8kPEOgiNoLjNao/giphy.gif
 
 """
