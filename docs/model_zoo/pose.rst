@@ -10,7 +10,7 @@ MS COCO Keypoints
 
   The training commands work with the following scripts:
 
-  - For Simple Pose [1]_ networks: :download:`Download train_simple_pose.py<../../scripts/keypoints/simple_pose/train_simple_pose.py>`
+  - For Simple Pose [1]_ networks: :download:`Download train_simple_pose.py<../../scripts/pose/simple_pose/train_simple_pose.py>`
 
 .. hint::
 
@@ -42,6 +42,8 @@ Parameters with :greytag:`a grey name` can be downloaded by passing the correspo
    | Model                                            | OSK AP         | OSK AP (with flip) | Hashtag  | Training Command                                                                                                                      | Training log                                                                                                                  |
    +==================================================+================+====================+==========+=======================================================================================================================================+===============================================================================================================================+
    | simple_pose_resnet18_v1b [1]_                    | 66.3/89.2/73.4 | 68.4/90.3/75.7     | f63d42ac | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/pose/simple_pose_resnet18_v1b_coco.sh>`_           | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/pose/simple_pose_resnet18_v1b_coco.sh>`_            |
+   +--------------------------------------------------+----------------+--------------------+----------+---------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
+   | simple_pose_resnet18_v1b [1]_ :gray:`(128x96)`   | 52.8/83.6/57.9 | 54.5/84.8/60.3     | ccd24037 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/pose/simple_pose_resnet18_v1b_small_coco.sh>`_     | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/pose/simple_pose_resnet18_v1b_small_coco.sh>`_      |
    +--------------------------------------------------+----------------+--------------------+----------+---------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
    | simple_pose_resnet50_v1b [1]_                    | 71.0/91.2/78.6 | 72.2/92.2/79.9     | e2c7b1ad | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/pose/simple_pose_resnet50_v1b_coco.sh>`_           | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/pose/simple_pose_resnet50_v1b_coco.sh>`_            |
    +--------------------------------------------------+----------------+--------------------+----------+---------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+

@@ -348,7 +348,7 @@ def main():
         if opt.label_smoothing or opt.mixup:
             sparse_label_loss = False
         else:
-            sparse_label_loss = False
+            sparse_label_loss = True
         if distillation:
             L = gcv.loss.DistillationSoftmaxCrossEntropyLoss(temperature=opt.temperature,
                                                                  hard_weight=opt.hard_weight,
