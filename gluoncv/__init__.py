@@ -12,7 +12,8 @@ try:
         msg = (
             "Legacy mxnet-mkl=={} detected, some new modules may not work properly. "
             "mxnet-mkl>={} is required. You can use pip to upgrade mxnet "
-            "`pip install mxnet-mkl/mxnet-cu90mkl --pre --upgrade`").format(mx.__version__, mx_version)
+            "`pip install mxnet-mkl --pre --upgrade` "
+            "or `pip install mxnet-cu90mkl --pre --upgrade`").format(mx.__version__, mx_version)
         raise ImportError(msg)
 except ImportError:
     raise ImportError(
