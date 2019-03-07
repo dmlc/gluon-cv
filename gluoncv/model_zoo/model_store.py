@@ -113,6 +113,13 @@ _model_sha1 = {name: checksum for checksum, name in [
     ('ba2675b6a43fc31601f0e99311b0bb115369bc82', 'simple_pose_resnet50_v1d'),
     ('1f8f48fd49a23bcc73c1cd736bdc639cd1434489', 'simple_pose_resnet101_v1d'),
     ('3ca502ea8eaaa15f4f972d5cf139167d15ffa798', 'simple_pose_resnet152_v1d'),
+    ('54f7742b1f8939ef8e59ede3469bfa5eb6e247fa', 'resnet18_v1b_2.6x'),
+    ('a230c33f7966ab761597328686b28d0545e4ea30', 'resnet50_v1d_1.8x'),
+    ('0d3e69bb033d1375c3734419bbc653c3a474ea53', 'resnet50_v1d_3.6x'),
+    ('9982ae4985b14e1c0ab25342a9f08bc4773b3998', 'resnet50_v1d_5.9x'),
+    ('6a25eeceb7d27bd9c05fa2bf250c55d3960ad4c7', 'resnet50_v1d_8.8x'),
+    ('a872796b63fb883116831db3454711421a628154', 'resnet101_v1d_1.9x'),
+    ('712fccb185921a596baebe9246ff6c994b88591b', 'resnet101_v1d_2.2x'),
     ]}
 
 apache_repo_url = 'https://apache-mxnet.s3-accelerate.dualstack.amazonaws.com/'

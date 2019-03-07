@@ -115,4 +115,4 @@ ENV/
 *.png*
 *.jpg*
 *.jpeg*
-*.json
+.idea/*
