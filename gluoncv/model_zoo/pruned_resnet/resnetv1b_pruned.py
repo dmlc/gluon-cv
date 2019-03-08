@@ -8,8 +8,8 @@ import json
 import os
 
 
-__all__ = ['resnet18_v1b_p1', 'resnet50_v1d_p1', 'resnet50_v1d_p2', 'resnet50_v1d_p3',
-           'resnet50_v1d_p4', 'resnet101_v1d_p1', 'resnet101_v1d_p2'
+__all__ = ['resnet18_v1b_l1', 'resnet50_v1d_l1', 'resnet50_v1d_l2', 'resnet50_v1d_l3',
+           'resnet50_v1d_l4', 'resnet101_v1d_l1', 'resnet101_v1d_l2'
            ]
 
 
@@ -60,7 +60,7 @@ def prune_gluon_block(net, prefix, params_shapes, params=None, pretrained=False,
             prune_gluon_block(layer, prefix, params_shapes, params, pretrained, ctx)
 
 
-def resnet18_v1b_p1(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
+def resnet18_v1b_l1(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
     """Constructs a ResNetV1b-18_2.6x model. Uses resnet18_v1b construction from resnetv1b.py
 
     Parameters
@@ -93,7 +93,7 @@ def resnet18_v1b_p1(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwar
     return model
 
 
-def resnet50_v1d_p1(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
+def resnet50_v1d_l1(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
     """Constructs a ResNetV1d-50_1.8x model. Uses resnet50_v1d construction from resnetv1b.py
 
     Parameters
@@ -128,7 +128,7 @@ def resnet50_v1d_p1(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwar
     return model
 
 
-def resnet50_v1d_p2(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
+def resnet50_v1d_l2(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
     """Constructs a ResNetV1d-50_3.6x model. Uses resnet50_v1d construction from resnetv1b.py
 
     Parameters
@@ -163,7 +163,7 @@ def resnet50_v1d_p2(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwar
     return model
 
 
-def resnet50_v1d_p3(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
+def resnet50_v1d_l3(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
     """Constructs a ResNetV1d-50_5.9x model. Uses resnet50_v1d construction from resnetv1b.py
 
     Parameters
@@ -198,7 +198,7 @@ def resnet50_v1d_p3(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwar
     return model
 
 
-def resnet50_v1d_p4(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
+def resnet50_v1d_l4(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
     """Constructs a ResNetV1d-50_8.8x model. Uses resnet50_v1d construction from resnetv1b.py
 
     Parameters
@@ -233,7 +233,7 @@ def resnet50_v1d_p4(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwar
     return model
 
 
-def resnet101_v1d_p1(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
+def resnet101_v1d_l1(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
     """Constructs a ResNetV1d-101_1.9x model. Uses resnet101_v1d construction from resnetv1b.py
 
     Parameters
@@ -268,7 +268,7 @@ def resnet101_v1d_p1(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwa
     return model
 
 
-def resnet101_v1d_p2(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
+def resnet101_v1d_l2(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
     """Constructs a ResNetV1d-101_2.2x model. Uses resnet101_v1d construction from resnetv1b.py
 
     Parameters

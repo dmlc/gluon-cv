@@ -178,13 +178,13 @@ _models = {
     'cifar_residualattentionnet56': cifar_residualattentionnet56,
     'cifar_residualattentionnet92': cifar_residualattentionnet92,
     'cifar_residualattentionnet452': cifar_residualattentionnet452,
-    'resnet18_v1b_p1': resnet18_v1b_p1,
-    'resnet50_v1d_p1': resnet50_v1d_p1,
-    'resnet50_v1d_p2': resnet50_v1d_p2,
-    'resnet50_v1d_p3': resnet50_v1d_p3,
-    'resnet50_v1d_p4': resnet50_v1d_p4,
-    'resnet101_v1d_p1': resnet101_v1d_p1,
-    'resnet101_v1d_p2': resnet101_v1d_p2
+    'resnet18_v1b_l1': resnet18_v1b_l1,
+    'resnet50_v1d_l1': resnet50_v1d_l1,
+    'resnet50_v1d_l2': resnet50_v1d_l2,
+    'resnet50_v1d_l3': resnet50_v1d_l3,
+    'resnet50_v1d_l4': resnet50_v1d_l4,
+    'resnet101_v1d_l1': resnet101_v1d_l1,
+    'resnet101_v1d_l2': resnet101_v1d_l2
     }
 
 def get_model(name, **kwargs):
