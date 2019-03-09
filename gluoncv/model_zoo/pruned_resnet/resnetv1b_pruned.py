@@ -3,7 +3,7 @@ from __future__ import division
 from mxnet.context import cpu
 from mxnet.gluon import nn
 from mxnet import ndarray
-from gluoncv.model_zoo.resnetv1b import *
+from ..model_zoo.resnetv1b import *
 import json
 import os
 
