@@ -3,10 +3,11 @@ from __future__ import division
 from mxnet.context import cpu
 from mxnet.gluon import nn
 from mxnet import ndarray
-from ..resnetv1b import *
+from ..resnetv1b import ResNetV1b
+from ..resnetv1b import BasicBlockV1b
+from ..resnetv1b import BottleneckV1b
 import json
 import os
-
 
 __all__ = ['resnet18_v1b_89', 'resnet50_v1d_86', 'resnet50_v1d_48', 'resnet50_v1d_37',
            'resnet50_v1d_11', 'resnet101_v1d_76', 'resnet101_v1d_73'
@@ -19,12 +20,13 @@ def prune_gluon_block(net, prefix, params_shapes, params=None, pretrained=False,
     :param prefix: prefix of the original resnet50_v1d
     :param pretrained: Boolean specifying if the pretrained model parameters needs to be loaded
     :param net: original network that is required to be pruned
-    :param params: dictionary of parameters for the pruned network. Size of the parameters in this dictionary tells what
+    :param params: dictionary of parameters for the pruned network. Size of the parameters in
+    this dictionary tells what
     should be the size of channels of each convolution layer.
     :param ctx: cpu(0)
     :return: "net"
     """
-    for key, layer in net._children.items():
+    for _, layer in net._children.items():
         if pretrained:
             if isinstance(layer, nn.BatchNorm):
                 params_layer = layer._collect_params_with_prefix()
@@ -40,7 +42,8 @@ def prune_gluon_block(net, prefix, params_shapes, params=None, pretrained=False,
 
             params_layer = layer._collect_params_with_prefix()
             for param_name in ['weight']:
-                param_shape = params_shapes[layer.name.replace(prefix, "resnetv1d") + "_" + param_name]
+                param_shape = params_shapes[
+                    layer.name.replace(prefix, "resnetv1d") + "_" + param_name]
                 layer.params.get(param_name)._shape = param_shape
                 if pretrained:
                     param_val = params[layer.name.replace(prefix, "resnetv1d") + "_" + param_name]
@@ -51,7 +54,8 @@ def prune_gluon_block(net, prefix, params_shapes, params=None, pretrained=False,
 
             params_layer = layer._collect_params_with_prefix()
             for param_name in ['weight', 'bias']:
-                param_shape = params_shapes[layer.name.replace(prefix, "resnetv1d") + "_" + param_name]
+                param_shape = params_shapes[
+                    layer.name.replace(prefix, "resnetv1d") + "_" + param_name]
                 layer.params.get(param_name)._shape = param_shape
                 if pretrained:
                     param_val = params[layer.name.replace(prefix, "resnetv1d") + "_" + param_name]
@@ -75,13 +79,15 @@ def resnet18_v1b_89(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwar
     """
     model = ResNetV1b(BasicBlockV1b, [2, 2, 2, 2], name_prefix='resnetv1b_', **kwargs)
     dirname = os.path.dirname(__file__)
-    json_filename = os.path.join(dirname, 'resnet%d_v%db_%.1fx' % (18, 1, 2.6)+".json")
+    json_filename = os.path.join(dirname, 'resnet%d_v%db_%.1fx' % (18, 1, 2.6) + ".json")
     with open(json_filename, "r") as jsonFile:
         params_shapes = json.load(jsonFile)
     if pretrained:
         from ..model_store import get_model_file
-        params_file = get_model_file('resnet%d_v%db_%.1fx' % (18, 1, 2.6), tag=pretrained, root=root)
-        prune_gluon_block(model, model.name, params_shapes, params=ndarray.load(params_file), pretrained=True, ctx=ctx)
+        params_file = get_model_file('resnet%d_v%db_%.1fx' % (18, 1, 2.6), tag=pretrained,
+                                     root=root)
+        prune_gluon_block(model, model.name, params_shapes, params=ndarray.load(params_file),
+                          pretrained=True, ctx=ctx)
     else:
         prune_gluon_block(model, model.name, params_shapes, params=None, pretrained=False, ctx=ctx)
     if pretrained:
@@ -109,13 +115,15 @@ def resnet50_v1d_86(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwar
     model = ResNetV1b(BottleneckV1b, [3, 4, 6, 3], deep_stem=True, avg_down=True,
                       name_prefix='resnetv1d_', **kwargs)
     dirname = os.path.dirname(__file__)
-    json_filename = os.path.join(dirname, 'resnet%d_v%dd_%.1fx' % (50, 1, 1.8)+".json")
+    json_filename = os.path.join(dirname, 'resnet%d_v%dd_%.1fx' % (50, 1, 1.8) + ".json")
     with open(json_filename, "r") as jsonFile:
         params_shapes = json.load(jsonFile)
     if pretrained:
         from ..model_store import get_model_file
-        params_file = get_model_file('resnet%d_v%dd_%.1fx' % (50, 1, 1.8), tag=pretrained, root=root)
-        prune_gluon_block(model, model.name, params_shapes, params=ndarray.load(params_file), pretrained=True, ctx=ctx)
+        params_file = get_model_file('resnet%d_v%dd_%.1fx' % (50, 1, 1.8), tag=pretrained,
+                                     root=root)
+        prune_gluon_block(model, model.name, params_shapes, params=ndarray.load(params_file),
+                          pretrained=True, ctx=ctx)
     else:
         prune_gluon_block(model, model.name, params_shapes, params=None, pretrained=False, ctx=ctx)
 
@@ -144,13 +152,15 @@ def resnet50_v1d_48(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwar
     model = ResNetV1b(BottleneckV1b, [3, 4, 6, 3], deep_stem=True, avg_down=True,
                       name_prefix='resnetv1d_', **kwargs)
     dirname = os.path.dirname(__file__)
-    json_filename = os.path.join(dirname, 'resnet%d_v%dd_%.1fx' % (50, 1, 3.6)+".json")
+    json_filename = os.path.join(dirname, 'resnet%d_v%dd_%.1fx' % (50, 1, 3.6) + ".json")
     with open(json_filename, "r") as jsonFile:
         params_shapes = json.load(jsonFile)
     if pretrained:
         from ..model_store import get_model_file
-        params_file = get_model_file('resnet%d_v%dd_%.1fx' % (50, 1, 3.6), tag=pretrained, root=root)
-        prune_gluon_block(model, model.name, params_shapes, params=ndarray.load(params_file), pretrained=True, ctx=ctx)
+        params_file = get_model_file('resnet%d_v%dd_%.1fx' % (50, 1, 3.6), tag=pretrained,
+                                     root=root)
+        prune_gluon_block(model, model.name, params_shapes, params=ndarray.load(params_file),
+                          pretrained=True, ctx=ctx)
     else:
         prune_gluon_block(model, model.name, params_shapes, params=None, pretrained=False, ctx=ctx)
 
@@ -179,13 +189,15 @@ def resnet50_v1d_37(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwar
     model = ResNetV1b(BottleneckV1b, [3, 4, 6, 3], deep_stem=True, avg_down=True,
                       name_prefix='resnetv1d_', **kwargs)
     dirname = os.path.dirname(__file__)
-    json_filename = os.path.join(dirname, 'resnet%d_v%dd_%.1fx' % (50, 1, 5.9)+".json")
+    json_filename = os.path.join(dirname, 'resnet%d_v%dd_%.1fx' % (50, 1, 5.9) + ".json")
     with open(json_filename, "r") as jsonFile:
         params_shapes = json.load(jsonFile)
     if pretrained:
         from ..model_store import get_model_file
-        params_file = get_model_file('resnet%d_v%dd_%.1fx' % (50, 1, 5.9), tag=pretrained, root=root)
-        prune_gluon_block(model, model.name, params_shapes, params=ndarray.load(params_file), pretrained=True, ctx=ctx)
+        params_file = get_model_file('resnet%d_v%dd_%.1fx' % (50, 1, 5.9), tag=pretrained,
+                                     root=root)
+        prune_gluon_block(model, model.name, params_shapes, params=ndarray.load(params_file),
+                          pretrained=True, ctx=ctx)
     else:
         prune_gluon_block(model, model.name, params_shapes, params=None, pretrained=False, ctx=ctx)
 
@@ -214,13 +226,15 @@ def resnet50_v1d_11(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwar
     model = ResNetV1b(BottleneckV1b, [3, 4, 6, 3], deep_stem=True, avg_down=True,
                       name_prefix='resnetv1d_', **kwargs)
     dirname = os.path.dirname(__file__)
-    json_filename = os.path.join(dirname, 'resnet%d_v%dd_%.1fx' % (50, 1, 8.8)+".json")
+    json_filename = os.path.join(dirname, 'resnet%d_v%dd_%.1fx' % (50, 1, 8.8) + ".json")
     with open(json_filename, "r") as jsonFile:
         params_shapes = json.load(jsonFile)
     if pretrained:
         from ..model_store import get_model_file
-        params_file = get_model_file('resnet%d_v%dd_%.1fx' % (50, 1, 8.8), tag=pretrained, root=root)
-        prune_gluon_block(model, model.name, params_shapes, params=ndarray.load(params_file), pretrained=True, ctx=ctx)
+        params_file = get_model_file('resnet%d_v%dd_%.1fx' % (50, 1, 8.8), tag=pretrained,
+                                     root=root)
+        prune_gluon_block(model, model.name, params_shapes, params=ndarray.load(params_file),
+                          pretrained=True, ctx=ctx)
     else:
         prune_gluon_block(model, model.name, params_shapes, params=None, pretrained=False, ctx=ctx)
 
@@ -249,13 +263,15 @@ def resnet101_v1d_76(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwa
     model = ResNetV1b(BottleneckV1b, [3, 4, 23, 3], deep_stem=True, avg_down=True,
                       name_prefix='resnetv1d_', **kwargs)
     dirname = os.path.dirname(__file__)
-    json_filename = os.path.join(dirname, 'resnet%d_v%dd_%.1fx' % (101, 1, 1.9)+".json")
+    json_filename = os.path.join(dirname, 'resnet%d_v%dd_%.1fx' % (101, 1, 1.9) + ".json")
     with open(json_filename, "r") as jsonFile:
         params_shapes = json.load(jsonFile)
     if pretrained:
         from ..model_store import get_model_file
-        params_file = get_model_file('resnet%d_v%dd_%.1fx' % (101, 1, 1.9), tag=pretrained, root=root)
-        prune_gluon_block(model, model.name, params_shapes, params=ndarray.load(params_file), pretrained=True, ctx=ctx)
+        params_file = get_model_file('resnet%d_v%dd_%.1fx' % (101, 1, 1.9), tag=pretrained,
+                                     root=root)
+        prune_gluon_block(model, model.name, params_shapes, params=ndarray.load(params_file),
+                          pretrained=True, ctx=ctx)
     else:
         prune_gluon_block(model, model.name, params_shapes, params=None, pretrained=False, ctx=ctx)
 
@@ -284,13 +300,15 @@ def resnet101_v1d_73(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwa
     model = ResNetV1b(BottleneckV1b, [3, 4, 23, 3], deep_stem=True, avg_down=True,
                       name_prefix='resnetv1d_', **kwargs)
     dirname = os.path.dirname(__file__)
-    json_filename = os.path.join(dirname, 'resnet%d_v%dd_%.1fx' % (101, 1, 2.2)+".json")
+    json_filename = os.path.join(dirname, 'resnet%d_v%dd_%.1fx' % (101, 1, 2.2) + ".json")
     with open(json_filename, "r") as jsonFile:
         params_shapes = json.load(jsonFile)
     if pretrained:
         from ..model_store import get_model_file
-        params_file = get_model_file('resnet%d_v%dd_%.1fx' % (101, 1, 2.2), tag=pretrained, root=root)
-        prune_gluon_block(model, model.name, params_shapes, params=ndarray.load(params_file), pretrained=True, ctx=ctx)
+        params_file = get_model_file('resnet%d_v%dd_%.1fx' % (101, 1, 2.2), tag=pretrained,
+                                     root=root)
+        prune_gluon_block(model, model.name, params_shapes, params=ndarray.load(params_file),
+                          pretrained=True, ctx=ctx)
     else:
         prune_gluon_block(model, model.name, params_shapes, params=None, pretrained=False, ctx=ctx)
 
