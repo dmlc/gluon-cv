@@ -1,13 +1,14 @@
 """Pruned ResNetV1bs, implemented in Gluon."""
 from __future__ import division
+import json
+import os
 from mxnet.context import cpu
 from mxnet.gluon import nn
 from mxnet import ndarray
 from ..resnetv1b import ResNetV1b
 from ..resnetv1b import BasicBlockV1b
 from ..resnetv1b import BottleneckV1b
-import json
-import os
+
 
 __all__ = ['resnet18_v1b_89', 'resnet50_v1d_86', 'resnet50_v1d_48', 'resnet50_v1d_37',
            'resnet50_v1d_11', 'resnet101_v1d_76', 'resnet101_v1d_73'
