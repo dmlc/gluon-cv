@@ -10,14 +10,15 @@ try:
     from distutils.version import LooseVersion
     if LooseVersion(mx.__version__) < LooseVersion(mx_version):
         msg = (
-            "Legacy mxnet=={} detected, some new modules may not work properly. "
-            "mxnet>={} is required. You can use pip to upgrade mxnet "
-            "`pip install mxnet/mxnet-cu90 --pre --upgrade`").format(mx.__version__, mx_version)
+            "Legacy mxnet-mkl=={} detected, some new modules may not work properly. "
+            "mxnet-mkl>={} is required. You can use pip to upgrade mxnet "
+            "`pip install mxnet-mkl --pre --upgrade` "
+            "or `pip install mxnet-cu90mkl --pre --upgrade`").format(mx.__version__, mx_version)
         raise ImportError(msg)
 except ImportError:
     raise ImportError(
         "Unable to import dependency mxnet. "
-        "A quick tip is to install via `pip install mxnet/mxnet-cu90 --pre`. "
+        "A quick tip is to install via `pip install mxnet-mkl/mxnet-cu90mkl --pre`. "
         "please refer to https://gluon-cv.mxnet.io/#installation for details.")
 
 __version__ = '0.4.0'
