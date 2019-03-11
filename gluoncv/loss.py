@@ -18,6 +18,7 @@ class FocalLoss(Loss):
     ----------
     axis : int, default -1
         The axis to sum over when computing softmax and entropy.
+        Currently only axis=-1 is supported.
     alpha : float, default 0.25
         The alpha which controls loss curve.
     gamma : float, default 2
@@ -44,8 +45,9 @@ class FocalLoss(Loss):
         - **label**: the truth tensor. When `sparse_label` is True, `label`'s
           shape should be `pred`'s shape with the `axis` dimension removed.
           i.e. for `pred` with shape (1,2,3,4) and `axis = 2`, `label`'s shape
-          should be (1,2,4) and values should be integers between 0 and 2. If
-          `sparse_label` is False, `label`'s shape must be the same as `pred`
+          should be (1,2,4) and values should be integers between 0 and 2.
+          Currently only axis=-1 is supported.
+          If `sparse_label` is False, `label`'s shape must be the same as `pred
           and values should be floats in the range `[0, 1]`.
         - **sample_weight**: element-wise weighting tensor. Must be broadcastable
           to the same shape as label. For example, if label has shape (64, 10)
@@ -76,10 +78,6 @@ class FocalLoss(Loss):
             pred = F.sigmoid(pred)
         if self._sparse_label:
             one_hot = F.one_hot(label, self._num_class)
-            ndims = len(pred.shape)
-            perm = list(range(ndims - 1))
-            perm.insert(self._axis, ndims - 1)
-            one_hot = F.transpose(one_hot, axes=perm)
         else:
             one_hot = label > 0
         pt = F.where(one_hot, pred, 1 - pred)
