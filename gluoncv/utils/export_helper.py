@@ -275,7 +275,7 @@ def export_tvm(path, block, data_shape, epoch=0, preprocess=True, layout='HWC',
         #
         tasks = autotvm.task.extract_from_program(sym, target=target,
                                                   params=params, ops=(relay.op.nn.conv2d,))
-        print('start tunning...')
+        logging.warning('Start tunning, this can be slow...')
         tuning_option = {
             'log_filename': 'tune.log',
             'tuner': 'random',
@@ -290,7 +290,6 @@ def export_tvm(path, block, data_shape, epoch=0, preprocess=True, layout='HWC',
         tune_kernels(tasks, **tuning_option)
 
         with autotvm.apply_history_best(log_file):
-            print("Compile...")
             with relay.build_config(opt_level=opt_level):
                 graph, lib, params = relay.build_module.build(
                     sym, target=target, params=params)
