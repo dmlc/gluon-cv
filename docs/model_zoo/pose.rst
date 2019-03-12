@@ -3,6 +3,11 @@
 Pose Estimation
 ====================
 
+.. note::
+
+    Pose Estimation is released in GluonCV 0.4. Please be sure to update your installation by 
+    ``pip install gluoncv --upgrade`` to try it out.
+
 MS COCO Keypoints
 ~~~~~~~~
 
