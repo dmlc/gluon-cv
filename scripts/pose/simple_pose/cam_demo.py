@@ -30,7 +30,8 @@ def keypoint_detection(img, detector, pose_net, ctx=mx.cpu(), axes=None):
     class_IDs, scores, bounding_boxs = detector(x)
 
     plt.cla()
-    pose_input, upscale_bbox = detector_to_simple_pose(img, class_IDs, scores, bounding_boxs, ctx=ctx)
+    pose_input, upscale_bbox = detector_to_simple_pose(img, class_IDs, scores, bounding_boxs,
+                                                       output_shape=(128, 96), ctx=ctx)
     if len(upscale_bbox) > 0:
         predicted_heatmap = pose_net(pose_input)
         pred_coords, confidence = heatmap_to_coord(predicted_heatmap, upscale_bbox)
@@ -51,7 +52,7 @@ if __name__ == '__main__':
     detector_name = "ssd_512_mobilenet1.0_coco"
     detector = get_model(detector_name, pretrained=True, ctx=ctx)
     detector.reset_class(classes=['person'], reuse_weights={'person':'person'})
-    net = get_model('simple_pose_resnet18_v1b', pretrained=True, ctx=ctx)
+    net = get_model('simple_pose_resnet18_v1b', pretrained='ccd24037', ctx=ctx)
 
     cap = cv2.VideoCapture(0)
     time.sleep(1)  ### letting the camera autofocus

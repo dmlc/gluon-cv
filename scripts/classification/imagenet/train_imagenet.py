@@ -2,6 +2,7 @@ import argparse, time, logging, os, math
 
 import numpy as np
 import mxnet as mx
+import gluoncv as gcv
 from mxnet import gluon, nd
 from mxnet import autograd as ag
 from mxnet.gluon import nn
@@ -78,6 +79,12 @@ def parse_args():
                         help='use label smoothing or not in training. default is false.')
     parser.add_argument('--no-wd', action='store_true',
                         help='whether to remove weight decay on bias, and beta/gamma for batchnorm layers.')
+    parser.add_argument('--teacher', type=str, default=None,
+                        help='teacher model for distillation training')
+    parser.add_argument('--temperature', type=float, default=20,
+                        help='temperature parameter for distillation teacher model')
+    parser.add_argument('--hard-weight', type=float, default=0.5,
+                        help='weight for the loss of one-hot label for distillation training')
     parser.add_argument('--batch-norm', action='store_true',
                         help='enable batch normalization or not in vgg. default is false.')
     parser.add_argument('--save-frequency', type=int, default=10,
@@ -162,9 +169,17 @@ def main():
 
     net = get_model(model_name, **kwargs)
     net.cast(opt.dtype)
-    print(net)
     if opt.resume_params is not '':
         net.load_parameters(opt.resume_params, ctx = context)
+
+    # teacher model for distillation training
+    if opt.teacher is not None and opt.hard_weight < 1.0:
+        teacher_name = opt.teacher
+        teacher = get_model(teacher_name, pretrained=True, classes=classes, ctx=context)
+        teacher.cast(opt.dtype)
+        distillation = True
+    else:
+        distillation = False
 
     # Two functions for reading data from record file or raw images
     def get_data_rec(rec_train, rec_train_idx, rec_val, rec_val_idx, batch_size, num_workers):
@@ -337,9 +352,15 @@ def main():
             trainer.load_states(opt.resume_states)
 
         if opt.label_smoothing or opt.mixup:
-            L = gluon.loss.SoftmaxCrossEntropyLoss(sparse_label=False)
+            sparse_label_loss = False
         else:
-            L = gluon.loss.SoftmaxCrossEntropyLoss()
+            sparse_label_loss = True
+        if distillation:
+            L = gcv.loss.DistillationSoftmaxCrossEntropyLoss(temperature=opt.temperature,
+                                                                 hard_weight=opt.hard_weight,
+                                                                 sparse_label=sparse_label_loss)
+        else:
+            L = gluon.loss.SoftmaxCrossEntropyLoss(sparse_label=sparse_label_loss)
 
         best_val_score = 1
 
@@ -369,9 +390,18 @@ def main():
                     hard_label = label
                     label = smooth(label, classes)
 
+                if distillation:
+                    teacher_prob = [nd.softmax(teacher(X.astype(opt.dtype, copy=False)) / opt.temperature) \
+                                    for X in data]
+
                 with ag.record():
                     outputs = [net(X.astype(opt.dtype, copy=False)) for X in data]
-                    loss = [L(yhat, y.astype(opt.dtype, copy=False)) for yhat, y in zip(outputs, label)]
+                    if distillation:
+                        loss = [L(yhat.astype('float32', copy=False),
+                                  y.astype('float32', copy=False),
+                                  p.astype('float32', copy=False)) for yhat, y, p in zip(outputs, label, teacher_prob)]
+                    else:
+                        loss = [L(yhat, y.astype(opt.dtype, copy=False)) for yhat, y in zip(outputs, label)]
                 for l in loss:
                     l.backward()
                 lr_scheduler.update(i, epoch)
@@ -419,6 +449,8 @@ def main():
 
     if opt.mode == 'hybrid':
         net.hybridize(static_alloc=True, static_shape=True)
+        if distillation:
+            teacher.hybridize(static_alloc=True, static_shape=True)
     train(context)
 
 if __name__ == '__main__':

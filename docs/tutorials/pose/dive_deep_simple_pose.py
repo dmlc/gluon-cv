@@ -199,7 +199,7 @@ for epoch in range(1):
 # Due to limitation on the resources, we only train the model for one batch in this tutorial.
 # 
 # Please checkout the full :download:`training script
-# <../../../scripts/keypoints/simple_pose/train_simple_pose.py>` to reproduce our results.
+# <../../../scripts/pose/simple_pose/train_simple_pose.py>` to reproduce our results.
 #
 # References
 # ----------

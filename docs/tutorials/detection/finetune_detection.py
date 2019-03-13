@@ -1,4 +1,4 @@
-"""8. Finetune a pretrained detection model
+"""08. Finetune a pretrained detection model
 ============================================
 
 Fine-tuning is commonly used approach to transfer previously trained model to a new dataset.

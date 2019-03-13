@@ -109,8 +109,10 @@ def test_imagenet_models():
               'vgg16', 'vgg16_bn', 'vgg19', 'vgg19_bn',
               'residualattentionnet56', 'residualattentionnet92',
               'residualattentionnet128', 'residualattentionnet164',
-              'residualattentionnet200', 'residualattentionnet236',
-              'residualattentionnet452']
+              'residualattentionnet200', 'residualattentionnet236', 'residualattentionnet452',
+              'resnet18_v1b_0.89', 'resnet50_v1d_0.86', 'resnet50_v1d_0.48',
+              'resnet50_v1d_0.37', 'resnet50_v1d_0.11',
+              'resnet101_v1d_0.76', 'resnet101_v1d_0.73']
     _test_model_list(models, ctx, x)
 
     # 299x299
@@ -191,6 +193,58 @@ def test_yolo3_reset_class():
     model_name = 'yolo3_darknet53_voc'
     net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
     net.reset_class(["bus", "car", "bird"], reuse_weights=["bus", "car", "bird"])
+    net(x)
+
+    # for GPU
+    ctx = mx.gpu(0)
+    try:
+        x = mx.random.uniform(shape=(1, 3, 512, 544), ctx=ctx)
+    except Exception:
+        return
+    net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
+    net.reset_class(["bus", "car", "bird"])
+    net(x)
+
+def test_faster_rcnn_reset_class():
+    ctx = mx.context.current_context()
+    x = mx.random.uniform(shape=(1, 3, 512, 544), ctx=ctx)  # allow non-squre and larger inputs
+    model_name = 'faster_rcnn_resnet50_v1b_coco'
+    net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
+    net.reset_class(["bus", "car", "bird"], reuse_weights=["bus", "car", "bird"])
+    net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
+    net.reset_class(["bus", "car", "bird"], reuse_weights={"bus":"bus"})
+    net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
+    net.reset_class(["person", "car", "bird"], reuse_weights={"person":14})
+    net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
+    net.reset_class(["person", "car", "bird"], reuse_weights={0:14})
+    net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
+    net.reset_class(["person", "car", "bird"], reuse_weights={0:"person"})
+    net(x)
+
+    # for GPU
+    ctx = mx.gpu(0)
+    try:
+        x = mx.random.uniform(shape=(1, 3, 512, 544), ctx=ctx)
+    except Exception:
+        return
+    net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
+    net.reset_class(["bus", "car", "bird"])
+    net(x)
+
+def test_mask_rcnn_reset_class():
+    ctx = mx.context.current_context()
+    x = mx.random.uniform(shape=(1, 3, 512, 544), ctx=ctx)  # allow non-squre and larger inputs
+    model_name = 'mask_rcnn_resnet50_v1b_coco'
+    net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
+    net.reset_class(["bus", "car", "bird"], reuse_weights=["bus", "car", "bird"])
+    net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
+    net.reset_class(["bus", "car", "bird"], reuse_weights={"bus":"bus"})
+    net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
+    net.reset_class(["person", "car", "bird"], reuse_weights={"person":14})
+    net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
+    net.reset_class(["person", "car", "bird"], reuse_weights={0:14})
+    net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
+    net.reset_class(["person", "car", "bird"], reuse_weights={0:"person"})
     net(x)
 
     # for GPU

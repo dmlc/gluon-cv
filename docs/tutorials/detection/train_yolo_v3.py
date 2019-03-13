@@ -1,4 +1,4 @@
-"""7. Train YOLOv3 on PASCAL VOC
+"""07. Train YOLOv3 on PASCAL VOC
 ================================
 
 This tutorial goes through the basic steps of training a YOLOv3 object detection model

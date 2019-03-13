@@ -75,7 +75,7 @@ class COCOInstance(VisionDataset):
         """Return pycocotools object for evaluation purposes."""
         if not self._coco:
             raise ValueError("No coco objects found, dataset not initialized.")
-        elif len(self._coco) > 1:
+        if len(self._coco) > 1:
             raise NotImplementedError(
                 "Currently we don't support evaluating {} JSON files".format(len(self._coco)))
         return self._coco[0]
