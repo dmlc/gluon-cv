@@ -9,7 +9,7 @@ from mxnet.gluon.data.vision import transforms
 
 from gluoncv.data import mscoco
 from gluoncv.model_zoo import get_model
-from gluoncv.utils import makedirs, LRScheduler
+from gluoncv.utils import makedirs
 from gluoncv.data.transforms.pose import transform_preds, get_final_preds, flip_heatmap
 from gluoncv.data.transforms.presets.simple_pose import SimplePoseDefaultTrainTransform, SimplePoseDefaultValTransform
 from gluoncv.utils.metrics.coco_keypoints import COCOKeyPointsMetric
