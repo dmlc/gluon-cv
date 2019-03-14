@@ -308,11 +308,12 @@ class Xception71(nn.HybridBlock):
         x = self.relu(x)
         # low_level_feat = x
         x = self.block2(x)
+        #c2 = x
         x = self.block3(x)
 
         # Middle flow
         x = self.midflow(x)
-        # mid_level_feat = x
+        #c3 = x
 
         # Exit flow
         x = self.block20(x)
@@ -329,7 +330,6 @@ class Xception71(nn.HybridBlock):
         x = self.bn5(x)
         x = self.relu(x)
 
-        #return x, low_level_feat
         x = self.avgpool(x)
         x = self.flat(x)
 
