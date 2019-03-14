@@ -58,8 +58,8 @@ _model_sha1 = {name: checksum for checksum, name in [
     ('c24d9227b75f53b06e66f1c6a0f9115b04acc583', 'faster_rcnn_fpn_resnet101_v1d_coco'),
     ('a3527fdc2cee5b1f32a61e5fd7cda8fb673e86e5', 'mask_rcnn_resnet50_v1b_coco'),
     ('4a3249c584f81c2a9b5d852b742637cd692ebdcb', 'mask_rcnn_resnet101_v1d_coco'),
-    ('4f38808b526b0768d9df44a4f7d0fa534e72240f', 'mask_rcnn_fpn_resnet50_v1b_coco'),
-    ('5efbb12e198e8d0e990ce4aa83c0b432899f858b', 'mask_rcnn_fpn_resnet101_v1d_coco'),
+    ('1364d0afe4de575af5d4389d50c2dbf22449ceac', 'mask_rcnn_fpn_resnet50_v1b_coco'),
+    ('89c7d8669b677a05c6eaa25375ead9a174109c69', 'mask_rcnn_fpn_resnet101_v1d_coco'),
     ('121e1579d811b091940b3b1fa033e1f0d1dca40f', 'cifar_resnet20_v1'),
     ('4f2d18804c94f2d283b8b45256d048bd3d6dd479', 'cifar_resnet20_v2'),
     ('2fb251e60babdceb103e9659b3baa0dea20a14d7', 'cifar_resnet56_v1'),
@@ -119,6 +119,13 @@ _model_sha1 = {name: checksum for checksum, name in [
     ('ba2675b6a43fc31601f0e99311b0bb115369bc82', 'simple_pose_resnet50_v1d'),
     ('1f8f48fd49a23bcc73c1cd736bdc639cd1434489', 'simple_pose_resnet101_v1d'),
     ('3ca502ea8eaaa15f4f972d5cf139167d15ffa798', 'simple_pose_resnet152_v1d'),
+    ('54f7742b1f8939ef8e59ede3469bfa5eb6e247fa', 'resnet18_v1b_2.6x'),
+    ('a230c33f7966ab761597328686b28d0545e4ea30', 'resnet50_v1d_1.8x'),
+    ('0d3e69bb033d1375c3734419bbc653c3a474ea53', 'resnet50_v1d_3.6x'),
+    ('9982ae4985b14e1c0ab25342a9f08bc4773b3998', 'resnet50_v1d_5.9x'),
+    ('6a25eeceb7d27bd9c05fa2bf250c55d3960ad4c7', 'resnet50_v1d_8.8x'),
+    ('a872796b63fb883116831db3454711421a628154', 'resnet101_v1d_1.9x'),
+    ('712fccb185921a596baebe9246ff6c994b88591b', 'resnet101_v1d_2.2x'),
     ]}
 
 apache_repo_url = 'https://apache-mxnet.s3-accelerate.dualstack.amazonaws.com/'

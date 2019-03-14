@@ -206,7 +206,7 @@ def test_transforms_presets_rcnn():
     batch_size = 4
     train_bfn = batchify.Tuple(*[batchify.Append() for _ in range(5)])
     train_loader = mx.gluon.data.DataLoader(
-        train_dataset.transform(rcnn.FasterRCNNDefaultTrainTransform(short, max_size, net)),
+        train_dataset.transform(rcnn.FasterRCNNDefaultTrainTransform(short, max_size, net, flip_p=0.5)),
         batch_size, True, batchify_fn=train_bfn, last_batch='rollover', num_workers=num_workers)
     val_bfn = batchify.Tuple(*[batchify.Append() for _ in range(3)])
     val_loader = mx.gluon.data.DataLoader(

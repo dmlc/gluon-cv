@@ -55,6 +55,8 @@ parser.add_argument('--model', type=str, required=True,
                     help='type of model to use. see vision_model for options.')
 parser.add_argument('--input-size', type=str, default='256,192',
                     help='size of the input image size. default is 256,192')
+parser.add_argument('--sigma', type=float, default=2,
+                    help='value of the sigma parameter of the gaussian target generation. default is 2')
 parser.add_argument('--mean', type=str, default='0.485,0.456,0.406',
                     help='mean vector for normalization')
 parser.add_argument('--std', type=str, default='0.229,0.224,0.225',
@@ -121,7 +123,7 @@ def get_data_loader(data_dir, batch_size, num_workers, input_size):
     transform_train = SimplePoseDefaultTrainTransform(num_joints=train_dataset.num_joints,
                                                       joint_pairs=train_dataset.joint_pairs,
                                                       image_size=input_size, heatmap_size=heatmap_size,
-                                                      scale_factor=0.30, rotation_factor=40,
+                                                      sigma=opt.sigma, scale_factor=0.30, rotation_factor=40,
                                                       mean=meanvec, std=stdvec, random_flip=True)
 
     train_data = gluon.data.DataLoader(
@@ -141,11 +143,17 @@ if opt.lr_decay_period > 0:
     lr_decay_epoch = list(range(lr_decay_period, opt.num_epochs, lr_decay_period))
 else:
     lr_decay_epoch = [int(i) for i in opt.lr_decay_epoch.split(',')]
+lr_decay_epoch = [e - opt.warmup_epochs for e in lr_decay_epoch]
 num_batches = num_training_samples // batch_size
-lr_scheduler = LRScheduler(mode=opt.lr_mode, baselr=opt.lr,
-                           niters=num_batches, nepochs=opt.num_epochs,
-                           step=lr_decay_epoch, step_factor=opt.lr_decay, power=2,
-                           warmup_epochs=opt.warmup_epochs)
+lr_scheduler = LRSequential([
+    LRScheduler('linear', base_lr=0, target_lr=opt.lr,
+                nepochs=opt.warmup_epochs, iters_per_epoch=num_batches),
+    LRScheduler(opt.lr_mode, base_lr=opt.lr, target_lr=0,
+                nepochs=opt.num_epochs - opt.warmup_epochs,
+                iters_per_epoch=num_batches,
+                step_epoch=lr_decay_epoch,
+                step_factor=lr_decay, power=2)
+])
 
 # optimizer = 'sgd'
 # optimizer_params = {'wd': opt.wd, 'momentum': 0.9, 'lr_scheduler': lr_scheduler}
@@ -196,7 +204,6 @@ def train(ctx):
                         for yhat, y, w in zip(outputs, label, weight)]
             for l in loss:
                 l.backward()
-            lr_scheduler.update(i, epoch)
             trainer.step(batch_size)
 
             metric.update(label, outputs)

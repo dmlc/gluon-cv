@@ -14,6 +14,7 @@ from .inception import *
 from .mask_rcnn import *
 from .mobilenet import *
 from .nasnet import *
+from .pruned_resnet.resnetv1b_pruned import *
 from .pspnet import *
 from .residual_attentionnet import *
 from .resnet import *
@@ -183,6 +184,13 @@ _models = {
     'cifar_residualattentionnet56': cifar_residualattentionnet56,
     'cifar_residualattentionnet92': cifar_residualattentionnet92,
     'cifar_residualattentionnet452': cifar_residualattentionnet452,
+    'resnet18_v1b_0.89': resnet18_v1b_89,
+    'resnet50_v1d_0.86': resnet50_v1d_86,
+    'resnet50_v1d_0.48': resnet50_v1d_48,
+    'resnet50_v1d_0.37': resnet50_v1d_37,
+    'resnet50_v1d_0.11': resnet50_v1d_11,
+    'resnet101_v1d_0.76': resnet101_v1d_76,
+    'resnet101_v1d_0.73': resnet101_v1d_73
 }
 
 

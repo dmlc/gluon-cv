@@ -1,4 +1,5 @@
 from tqdm import tqdm
+import unittest
 import numpy as np
 import mxnet as mx
 from mxnet.test_utils import assert_almost_equal
@@ -10,6 +11,7 @@ from gluoncv.data import ADE20KSegmentation
 
 from common import try_gpu, with_cpu
 
+@unittest.skip("Temp disabled...")
 @try_gpu(0)
 def test_segmentation_utils():
     ctx = mx.context.current_context()

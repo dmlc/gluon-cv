@@ -1,0 +1,339 @@
+{
+    "resnetv1d_layers2_conv4_weight": [
+        72, 
+        72, 
+        3, 
+        3
+    ], 
+    "resnetv1d_layers1_conv1_weight": [
+        8, 
+        16, 
+        3, 
+        3
+    ], 
+    "resnetv1d_conv2_weight": [
+        32, 
+        16, 
+        3, 
+        3
+    ], 
+    "resnetv1d_layers3_conv13_weight": [
+        112, 
+        104, 
+        3, 
+        3
+    ], 
+    "resnetv1d_down3_conv0_weight": [
+        320, 
+        128, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv15_weight": [
+        120, 
+        320, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv2_weight": [
+        320, 
+        80, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv1_weight": [
+        80, 
+        32, 
+        3, 
+        3
+    ], 
+    "resnetv1d_layers3_conv14_weight": [
+        320, 
+        112, 
+        1, 
+        1
+    ], 
+    "resnetv1d_down2_conv0_weight": [
+        128, 
+        32, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv9_weight": [
+        128, 
+        320, 
+        1, 
+        1
+    ], 
+    "resnetv1d_conv0_weight": [
+        16, 
+        3, 
+        3, 
+        3
+    ], 
+    "resnetv1d_layers1_conv4_weight": [
+        8, 
+        8, 
+        3, 
+        3
+    ], 
+    "resnetv1d_layers3_conv5_weight": [
+        320, 
+        104, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers2_conv11_weight": [
+        128, 
+        40, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers4_conv3_weight": [
+        512, 
+        1920, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers4_conv4_weight": [
+        504, 
+        512, 
+        3, 
+        3
+    ], 
+    "resnetv1d_down1_conv0_weight": [
+        32, 
+        32, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers2_conv3_weight": [
+        72, 
+        128, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv6_weight": [
+        136, 
+        320, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv0_weight": [
+        32, 
+        128, 
+        1, 
+        1
+    ], 
+    "resnetv1d_dense0_weight": [
+        1000, 
+        1920
+    ], 
+    "resnetv1d_layers1_conv2_weight": [
+        32, 
+        8, 
+        1, 
+        1
+    ], 
+    "resnetv1d_dense0_bias": [
+        1000
+    ], 
+    "resnetv1d_layers1_conv0_weight": [
+        16, 
+        32, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers2_conv1_weight": [
+        72, 
+        16, 
+        3, 
+        3
+    ], 
+    "resnetv1d_layers3_conv11_weight": [
+        320, 
+        216, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv7_weight": [
+        200, 
+        136, 
+        3, 
+        3
+    ], 
+    "resnetv1d_layers1_conv7_weight": [
+        8, 
+        8, 
+        3, 
+        3
+    ], 
+    "resnetv1d_layers3_conv16_weight": [
+        96, 
+        120, 
+        3, 
+        3
+    ], 
+    "resnetv1d_layers2_conv6_weight": [
+        72, 
+        128, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers2_conv10_weight": [
+        40, 
+        64, 
+        3, 
+        3
+    ], 
+    "resnetv1d_down4_conv0_weight": [
+        1920, 
+        320, 
+        1, 
+        1
+    ], 
+    "resnetv1d_conv1_weight": [
+        16, 
+        16, 
+        3, 
+        3
+    ], 
+    "resnetv1d_layers4_conv6_weight": [
+        504, 
+        1920, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv8_weight": [
+        320, 
+        200, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers1_conv6_weight": [
+        8, 
+        32, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv4_weight": [
+        104, 
+        64, 
+        3, 
+        3
+    ], 
+    "resnetv1d_layers3_conv3_weight": [
+        64, 
+        320, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers4_conv5_weight": [
+        1920, 
+        504, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers2_conv8_weight": [
+        128, 
+        104, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers4_conv1_weight": [
+        64, 
+        56, 
+        3, 
+        3
+    ], 
+    "resnetv1d_layers4_conv2_weight": [
+        1920, 
+        64, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv12_weight": [
+        104, 
+        320, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers2_conv2_weight": [
+        128, 
+        72, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers1_conv8_weight": [
+        32, 
+        8, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv17_weight": [
+        320, 
+        96, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers4_conv7_weight": [
+        456, 
+        504, 
+        3, 
+        3
+    ], 
+    "resnetv1d_layers4_conv8_weight": [
+        1920, 
+        456, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers2_conv5_weight": [
+        128, 
+        72, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers1_conv5_weight": [
+        32, 
+        8, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers1_conv3_weight": [
+        8, 
+        32, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers4_conv0_weight": [
+        56, 
+        320, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv10_weight": [
+        216, 
+        128, 
+        3, 
+        3
+    ], 
+    "resnetv1d_layers2_conv0_weight": [
+        16, 
+        32, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers2_conv9_weight": [
+        64, 
+        128, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers2_conv7_weight": [
+        104, 
+        72, 
+        3, 
+        3
+    ]
+}

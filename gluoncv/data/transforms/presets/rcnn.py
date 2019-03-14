@@ -132,6 +132,9 @@ class FasterRCNNDefaultTrainTransform(object):
     pos_ratio : float, default is 0.5
         ``pos_ratio`` defines how many positive samples (``pos_ratio * num_sample``) is
         to be sampled.
+    flip_p : float, default is 0.5
+        Probability to flip horizontally, by default is 0.5 for random horizontal flip.
+        You may set it to 0 to disable random flip or 1 to force flip.
     ashape : int, default is 128
         Defines shape of pre generated anchors for target generation
     multi_stage : boolean, default is False
@@ -141,7 +144,7 @@ class FasterRCNNDefaultTrainTransform(object):
     def __init__(self, short=600, max_size=1000, net=None, mean=(0.485, 0.456, 0.406),
                  std=(0.229, 0.224, 0.225), box_norm=(1., 1., 1., 1.),
                  num_sample=256, pos_iou_thresh=0.7, neg_iou_thresh=0.3,
-                 pos_ratio=0.5, ashape=128, multi_stage=False, **kwargs):
+                 pos_ratio=0.5, flip_p=0.5, ashape=128, multi_stage=False, **kwargs):
         self._short = short
         self._max_size = max_size
         self._mean = mean
@@ -149,6 +152,7 @@ class FasterRCNNDefaultTrainTransform(object):
         self._anchors = None
         self._multi_stage = multi_stage
         self._random_resize = isinstance(self._short, (tuple, list))
+        self._flip_p = flip_p
         if net is None:
             return
 
@@ -189,7 +193,7 @@ class FasterRCNNDefaultTrainTransform(object):
 
         # random horizontal flip
         h, w, _ = img.shape
-        img, flips = timage.random_flip(img, px=0.5)
+        img, flips = timage.random_flip(img, px=self._flip_p)
         bbox = tbbox.flip(bbox, (w, h), flip_x=flips[0])
 
         # to tensor

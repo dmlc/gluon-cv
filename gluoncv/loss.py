@@ -8,7 +8,8 @@ from mxnet import nd
 from mxnet.gluon.loss import Loss, _apply_weighting, _reshape_like
 
 __all__ = ['FocalLoss', 'SSDMultiBoxLoss', 'YOLOV3Loss',
-           'MixSoftmaxCrossEntropyLoss', 'MixSoftmaxCrossEntropyOHEMLoss']
+           'MixSoftmaxCrossEntropyLoss', 'MixSoftmaxCrossEntropyOHEMLoss',
+           'DistillationSoftmaxCrossEntropyLoss']
 
 class FocalLoss(Loss):
     """Focal Loss for inbalanced classification.
@@ -311,8 +312,8 @@ class MixSoftmaxCrossEntropyLoss(SoftmaxCrossEntropyLoss):
 
     def _aux_mixup_forward(self, F, pred1, pred2, label1, label2, lam):
         """Compute loss including auxiliary output"""
-        loss1 = self._mixup_forwar(F, pred1, label1, label2, lam)
-        loss2 = self._mixup_forwar(F, pred2, label1, label2, lam)
+        loss1 = self._mixup_forward(F, pred1, label1, label2, lam)
+        loss2 = self._mixup_forward(F, pred2, label1, label2, lam)
         return loss1 + self.aux_weight * loss2
 
     def _mixup_forward(self, F, pred, label1, label2, lam, sample_weight=None):
@@ -418,3 +419,37 @@ class MixSoftmaxCrossEntropyOHEMLoss(SoftmaxCrossEntropyOHEMLoss):
         else:
             return super(MixSoftmaxCrossEntropyOHEMLoss, self). \
                 hybrid_forward(F, *inputs, **kwargs)
+
+class DistillationSoftmaxCrossEntropyLoss(gluon.HybridBlock):
+    """SoftmaxCrossEntrolyLoss with Teacher model prediction
+
+    Parameters
+    ----------
+    temperature : float, default 1
+        The temperature parameter to soften teacher prediction.
+    hard_weight : float, default 0.5
+        The weight for loss on the one-hot label.
+    sparse_label : bool, default True
+        Whether the one-hot label is sparse.
+    """
+    def __init__(self, temperature=1, hard_weight=0.5, sparse_label=True, **kwargs):
+        super(DistillationSoftmaxCrossEntropyLoss, self).__init__(**kwargs)
+        self._temperature = temperature
+        self._hard_weight = hard_weight
+        with self.name_scope():
+            self.soft_loss = gluon.loss.SoftmaxCrossEntropyLoss(sparse_label=False, **kwargs)
+            self.hard_loss = gluon.loss.SoftmaxCrossEntropyLoss(sparse_label=sparse_label, **kwargs)
+
+    def hybrid_forward(self, F, output, label, soft_target):
+        # pylint: disable=unused-argument
+        """Compute loss"""
+        if self._hard_weight == 0:
+            return (self._temperature ** 2) * self.soft_loss(output / self._temperature,
+                                                             soft_target)
+        elif self._hard_weight == 1:
+            return self.hard_loss(output, label)
+        else:
+            soft_loss = (self._temperature ** 2) * self.soft_loss(output / self._temperature,
+                                                                  soft_target)
+            hard_loss = self.hard_loss(output, label)
+            return (1 - self._hard_weight) * soft_loss  + self._hard_weight * hard_loss

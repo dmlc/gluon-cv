@@ -58,7 +58,7 @@ stage("Unit Test") {
         env
         export LD_LIBRARY_PATH=/usr/local/cuda-9.2/lib64
         export MPLBACKEND=Agg
-        nosetests --with-timer --timer-ok 5 --timer-warning 20 --with-coverage --cover-package gluoncv -v tests/unittests
+        nosetests --with-timer --timer-ok 5 --timer-warning 20 -x --with-coverage --cover-package gluoncv -v tests/unittests
         rm -f coverage.svg
         coverage-badge -o coverage.svg
         if [[ ${env.BRANCH_NAME} == master ]]; then

@@ -2,6 +2,7 @@ import argparse, time, logging, os, math
 
 import numpy as np
 import mxnet as mx
+import gluoncv as gcv
 from mxnet import gluon, nd
 from mxnet import autograd as ag
 from mxnet.gluon import nn
@@ -9,7 +10,7 @@ from mxnet.gluon.data.vision import transforms
 
 from gluoncv.data import imagenet
 from gluoncv.model_zoo import get_model
-from gluoncv.utils import makedirs, LRScheduler
+from gluoncv.utils import makedirs, LRSequential, LRScheduler
 
 # CLI
 def parse_args():
@@ -78,6 +79,12 @@ def parse_args():
                         help='use label smoothing or not in training. default is false.')
     parser.add_argument('--no-wd', action='store_true',
                         help='whether to remove weight decay on bias, and beta/gamma for batchnorm layers.')
+    parser.add_argument('--teacher', type=str, default=None,
+                        help='teacher model for distillation training')
+    parser.add_argument('--temperature', type=float, default=20,
+                        help='temperature parameter for distillation teacher model')
+    parser.add_argument('--hard-weight', type=float, default=0.5,
+                        help='weight for the loss of one-hot label for distillation training')
     parser.add_argument('--batch-norm', action='store_true',
                         help='enable batch normalization or not in vgg. default is false.')
     parser.add_argument('--save-frequency', type=int, default=10,
@@ -122,18 +129,24 @@ def main():
     context = [mx.gpu(i) for i in range(num_gpus)] if num_gpus > 0 else [mx.cpu()]
     num_workers = opt.num_workers
 
-
     lr_decay = opt.lr_decay
     lr_decay_period = opt.lr_decay_period
     if opt.lr_decay_period > 0:
         lr_decay_epoch = list(range(lr_decay_period, opt.num_epochs, lr_decay_period))
     else:
         lr_decay_epoch = [int(i) for i in opt.lr_decay_epoch.split(',')]
+    lr_decay_epoch = [e - opt.warmup_epochs for e in lr_decay_epoch]
     num_batches = num_training_samples // batch_size
-    lr_scheduler = LRScheduler(mode=opt.lr_mode, baselr=opt.lr,
-                            niters=num_batches, nepochs=opt.num_epochs,
-                            step=lr_decay_epoch, step_factor=opt.lr_decay, power=2,
-                            warmup_epochs=opt.warmup_epochs)
+
+    lr_scheduler = LRSequential([
+        LRScheduler('linear', base_lr=0, target_lr=opt.lr,
+                    nepochs=opt.warmup_epochs, iters_per_epoch=num_batches),
+        LRScheduler(opt.lr_mode, base_lr=opt.lr, target_lr=0,
+                    nepochs=opt.num_epochs - opt.warmup_epochs,
+                    iters_per_epoch=num_batches,
+                    step_epoch=lr_decay_epoch,
+                    step_factor=lr_decay, power=2)
+    ])
 
     model_name = opt.model
 
@@ -156,9 +169,17 @@ def main():
 
     net = get_model(model_name, **kwargs)
     net.cast(opt.dtype)
-    print(net)
     if opt.resume_params is not '':
         net.load_parameters(opt.resume_params, ctx = context)
+
+    # teacher model for distillation training
+    if opt.teacher is not None and opt.hard_weight < 1.0:
+        teacher_name = opt.teacher
+        teacher = get_model(teacher_name, pretrained=True, classes=classes, ctx=context)
+        teacher.cast(opt.dtype)
+        distillation = True
+    else:
+        distillation = False
 
     # Two functions for reading data from record file or raw images
     def get_data_rec(rec_train, rec_train_idx, rec_val, rec_val_idx, batch_size, num_workers):
@@ -331,9 +352,15 @@ def main():
             trainer.load_states(opt.resume_states)
 
         if opt.label_smoothing or opt.mixup:
-            L = gluon.loss.SoftmaxCrossEntropyLoss(sparse_label=False)
+            sparse_label_loss = False
         else:
-            L = gluon.loss.SoftmaxCrossEntropyLoss()
+            sparse_label_loss = True
+        if distillation:
+            L = gcv.loss.DistillationSoftmaxCrossEntropyLoss(temperature=opt.temperature,
+                                                                 hard_weight=opt.hard_weight,
+                                                                 sparse_label=sparse_label_loss)
+        else:
+            L = gluon.loss.SoftmaxCrossEntropyLoss(sparse_label=sparse_label_loss)
 
         best_val_score = 1
 
@@ -363,9 +390,18 @@ def main():
                     hard_label = label
                     label = smooth(label, classes)
 
+                if distillation:
+                    teacher_prob = [nd.softmax(teacher(X.astype(opt.dtype, copy=False)) / opt.temperature) \
+                                    for X in data]
+
                 with ag.record():
                     outputs = [net(X.astype(opt.dtype, copy=False)) for X in data]
-                    loss = [L(yhat, y.astype(opt.dtype, copy=False)) for yhat, y in zip(outputs, label)]
+                    if distillation:
+                        loss = [L(yhat.astype('float32', copy=False),
+                                  y.astype('float32', copy=False),
+                                  p.astype('float32', copy=False)) for yhat, y, p in zip(outputs, label, teacher_prob)]
+                    else:
+                        loss = [L(yhat, y.astype(opt.dtype, copy=False)) for yhat, y in zip(outputs, label)]
                 for l in loss:
                     l.backward()
                 lr_scheduler.update(i, epoch)
@@ -413,6 +449,8 @@ def main():
 
     if opt.mode == 'hybrid':
         net.hybridize(static_alloc=True, static_shape=True)
+        if distillation:
+            teacher.hybridize(static_alloc=True, static_shape=True)
     train(context)
 
 if __name__ == '__main__':

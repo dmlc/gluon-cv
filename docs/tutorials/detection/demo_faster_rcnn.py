@@ -1,4 +1,4 @@
-"""2. Predict with pre-trained Faster RCNN models
+"""02. Predict with pre-trained Faster RCNN models
 ==============================================
 
 This article shows how to play with pre-trained Faster RCNN model.

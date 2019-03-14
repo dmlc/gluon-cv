@@ -1,4 +1,4 @@
-"""1. Predict with pre-trained SSD models
+"""01. Predict with pre-trained SSD models
 ==========================================
 
 This article shows how to play with pre-trained SSD models with only a few

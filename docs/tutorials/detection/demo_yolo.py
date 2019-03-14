@@ -1,4 +1,4 @@
-"""3. Predict with pre-trained YOLO models
+"""03. Predict with pre-trained YOLO models
 ==========================================
 
 This article shows how to play with pre-trained YOLO models with only a few
