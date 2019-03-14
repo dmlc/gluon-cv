@@ -15,6 +15,8 @@ class SeparableConv2d(nn.HybridBlock):
         self.conv1 = nn.Conv2D(in_channels=inplanes, channels=inplanes, kernel_size=kernel_size,
                                strides=stride, padding=0, dilation=dilation,
                                groups=inplanes, use_bias=bias)
+        #print('inplanes', inplanes)
+        #print('self.conv1', self.conv1)
         self.bn = norm_layer(in_channels=inplanes, **norm_kwargs)
         self.pointwise = nn.Conv2D(in_channels=inplanes, channels=planes, kernel_size=1,
                                    use_bias=bias)
@@ -130,6 +132,7 @@ class Xception65(nn.HybridBlock):
             self.block2 = Block(128, 256, reps=2, stride=2, norm_layer=norm_layer,
                                 norm_kwargs=norm_kwargs, start_with_relu=False,
                                 grow_first=True)
+            #print('self.block2', self.block2)
             self.block3 = Block(256, 728, reps=2, stride=entry_block3_stride,
                                 norm_layer=norm_layer, norm_kwargs=norm_kwargs,
                                 start_with_relu=True, grow_first=True, is_last=True)
@@ -176,13 +179,14 @@ class Xception65(nn.HybridBlock):
         x = self.block1(x)
         # add relu here
         x = self.relu(x)
-        # low_level_feat = x
+        #c1 = x
         x = self.block2(x)
+        #c2 = x
         x = self.block3(x)
 
         # Middle flow
         x = self.midflow(x)
-        # mid_level_feat = x
+        #c3 = x
 
         # Exit flow
         x = self.block20(x)
@@ -199,7 +203,6 @@ class Xception65(nn.HybridBlock):
         x = self.bn5(x)
         x = self.relu(x)
 
-        #return x, low_level_feat
         x = self.avgpool(x)
         x = self.flat(x)
 
