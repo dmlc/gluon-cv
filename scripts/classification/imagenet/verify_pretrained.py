@@ -1,4 +1,4 @@
-import argparse, os, math
+import argparse, os, math, time
 
 import mxnet as mx
 from mxnet import gluon, nd, image
@@ -23,6 +23,8 @@ def parse_args():
                         help='number of preprocessing workers')
     parser.add_argument('--model', type=str, required=True,
                         help='type of model to use. see vision_model for options.')
+    parser.add_argument('--quantized', action='store_true',
+                        help='use int8 pretrained model')
     parser.add_argument('--input-size', type=int, default=224,
                         help='input shape of the image, default is 224.')
     parser.add_argument('--crop-ratio', type=float, default=0.875,
@@ -50,6 +52,8 @@ if __name__ == '__main__':
 
     input_size = opt.input_size
     model_name = opt.model
+    if opt.quantized:
+        model_name = '_'.join((model_name, 'int8'))
     pretrained = True if not opt.params_file else False
 
     kwargs = {'ctx': ctx, 'pretrained': pretrained, 'classes': classes}
@@ -86,6 +90,8 @@ if __name__ == '__main__':
         acc_top5.reset()
         if not opt.rec_dir:
             num_batch = len(val_data)
+        num = 0
+        start = time.time()
         for i, batch in enumerate(val_data):
             if mode == 'image':
                 data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
@@ -103,6 +109,10 @@ if __name__ == '__main__':
                 print('%d / %d : %.8f, %.8f'%(i, num_batch, 1-top1, 1-top5))
             else:
                 print('%d : %.8f, %.8f'%(i, 1-top1, 1-top5))
+            num += batch_size
+        end = time.time()
+        speed = num / (end - start)
+        print('Throughput is %f img/sec.'% speed)
 
         _, top1 = acc_top1.get()
         _, top5 = acc_top5.get()
@@ -118,7 +128,7 @@ if __name__ == '__main__':
         val_data = mx.io.ImageRecordIter(
             path_imgrec         = imgrec,
             path_imgidx         = imgidx,
-            preprocess_threads  = 30,
+            preprocess_threads  = num_workers,
             batch_size          = batch_size,
 
             resize              = resize,
