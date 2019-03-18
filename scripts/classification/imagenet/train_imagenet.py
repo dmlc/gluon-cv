@@ -10,7 +10,7 @@ from mxnet.gluon.data.vision import transforms
 
 from gluoncv.data import imagenet
 from gluoncv.model_zoo import get_model
-from gluoncv.utils import makedirs, LRScheduler
+from gluoncv.utils import makedirs, LRSequential, LRScheduler
 
 # CLI
 def parse_args():
@@ -129,18 +129,24 @@ def main():
     context = [mx.gpu(i) for i in range(num_gpus)] if num_gpus > 0 else [mx.cpu()]
     num_workers = opt.num_workers
 
-
     lr_decay = opt.lr_decay
     lr_decay_period = opt.lr_decay_period
     if opt.lr_decay_period > 0:
         lr_decay_epoch = list(range(lr_decay_period, opt.num_epochs, lr_decay_period))
     else:
         lr_decay_epoch = [int(i) for i in opt.lr_decay_epoch.split(',')]
+    lr_decay_epoch = [e - opt.warmup_epochs for e in lr_decay_epoch]
     num_batches = num_training_samples // batch_size
-    lr_scheduler = LRScheduler(mode=opt.lr_mode, baselr=opt.lr,
-                            niters=num_batches, nepochs=opt.num_epochs,
-                            step=lr_decay_epoch, step_factor=opt.lr_decay, power=2,
-                            warmup_epochs=opt.warmup_epochs)
+
+    lr_scheduler = LRSequential([
+        LRScheduler('linear', base_lr=0, target_lr=opt.lr,
+                    nepochs=opt.warmup_epochs, iters_per_epoch=num_batches),
+        LRScheduler(opt.lr_mode, base_lr=opt.lr, target_lr=0,
+                    nepochs=opt.num_epochs - opt.warmup_epochs,
+                    iters_per_epoch=num_batches,
+                    step_epoch=lr_decay_epoch,
+                    step_factor=lr_decay, power=2)
+    ])
 
     model_name = opt.model
 

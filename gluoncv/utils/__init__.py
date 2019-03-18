@@ -11,6 +11,6 @@ from .download import download, check_sha1
 from .filesystem import makedirs
 from .bbox import bbox_iou
 from .block import recursive_visit, set_lr_mult, freeze_bn
-from .lr_scheduler import LRScheduler
+from .lr_scheduler import LRSequential, LRScheduler
 from .plot_history import TrainingHistory
 from .export_helper import export_block

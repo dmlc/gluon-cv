@@ -142,9 +142,9 @@ L = gluon.loss.L2Loss()
 
 num_training_samples = len(train_dataset)
 num_batches = num_training_samples // batch_size
-lr_scheduler = LRScheduler(mode="step", baselr=0.001,
-                           niters=num_batches, nepochs=140,
-                           step=(90, 120), step_factor=0.1)
+lr_scheduler = LRScheduler(mode='step', base_lr=0.001,
+                           iters_per_epoch=num_batches, nepochs=140,
+                           step_epoch=(90, 120), step_factor=0.1)
 
 
 #############################################################################
@@ -189,7 +189,6 @@ for epoch in range(1):
 
         for l in loss:
             l.backward()
-        lr_scheduler.update(i, epoch)
         trainer.step(batch_size)
 
         metric.update(label, outputs)
