@@ -48,7 +48,12 @@ def _create_quantized_models(name, sym_prefix):
                 import tempfile
                 net.load_params(param_file)
                 net.hybridize()
-                net(mx.nd.zeros((1, 3, 224, 224)))
+                if '512' in base_name:
+                    net(mx.nd.zeros((1, 3, 512, 512)))
+                elif '300' in base_name:
+                    net(mx.nd.zeros((1, 3, 300, 300)))
+                else:
+                    net(mx.nd.zeros((1, 3, 224, 224)))
                 with tempfile.TemporaryDirectory() as tmpdirname:
                     prefix = os.path.join(tmpdirname, 'tmp')
                     net.export(prefix, epoch=0)
