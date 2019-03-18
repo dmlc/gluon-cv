@@ -315,7 +315,7 @@ def test_segmentation_models():
     _test_model_list(models, ctx, x, pretrained=False, pretrained_base=False)
     _test_model_list(models, ctx, x, pretrained=False, pretrained_base=True)
 
-
+@with_cpu(0)
 def test_mobilenet_sync_bn():
     model_name = "mobilenet1.0"
     net = gcv.model_zoo.get_model(model_name, pretrained=True)
@@ -324,6 +324,20 @@ def test_mobilenet_sync_bn():
                                   norm_layer=mx.gluon.contrib.nn.SyncBatchNorm, norm_kwargs={'num_devices': 2})
     net.load_parameters(model_name + '.params')
 
+@with_cpu(0)
+def test_quantized_imagenet_models():
+    model_list = ['mobilenet1.0_int8', 'resnet50_v1_int8']
+    ctx = mx.context.current_context()
+    x = mx.random.uniform(shape=(1, 3, 224, 224), ctx=ctx)
+    _test_model_list(model_list, ctx, x)
+
+@with_cpu(0)
+def test_quantized_ssd_models():
+    model_list = ['ssd_300_vgg16_atrous_voc_int8', 'ssd_512_mobilenet1.0_voc_int8',
+    'ssd_512_resnet50_v1_voc_int8', 'ssd_512_vgg16_atrous_voc_int8']
+    ctx = mx.context.current_context()
+    x = mx.random.uniform(shape=(1, 3, 512, 544), ctx=ctx)
+    _test_model_list(model_list, ctx, x)
 
 if __name__ == '__main__':
     import nose
