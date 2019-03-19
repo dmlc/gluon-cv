@@ -26,7 +26,6 @@ from .squeezenet import *
 from .ssd import *
 from .vgg import *
 from .yolo import *
-from .mobilenet import *
 from .quantized import *
 
 __all__ = ['get_model', 'get_model_list']
