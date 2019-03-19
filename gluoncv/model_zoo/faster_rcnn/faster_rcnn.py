@@ -3,19 +3,26 @@ from __future__ import absolute_import
 
 import os
 import warnings
+
 import mxnet as mx
 from mxnet import autograd
 from mxnet.gluon import nn
+from mxnet.gluon.contrib.nn import SyncBatchNorm
+
 from .rcnn_target import RCNNTargetSampler, RCNNTargetGenerator
 from ..rcnn import RCNN
 from ..rpn import RPN
+from ...nn.feature import FPNFeatureExpander
 
 __all__ = ['FasterRCNN', 'get_faster_rcnn',
            'faster_rcnn_resnet50_v1b_voc',
            'faster_rcnn_resnet50_v1b_coco',
+           'faster_rcnn_fpn_resnet50_v1b_coco',
+           'faster_rcnn_fpn_bn_resnet50_v1b_coco',
            'faster_rcnn_resnet50_v1b_custom',
            'faster_rcnn_resnet101_v1d_voc',
            'faster_rcnn_resnet101_v1d_coco',
+           'faster_rcnn_fpn_resnet101_v1d_coco',
            'faster_rcnn_resnet101_v1d_custom']
 
 
@@ -30,10 +37,17 @@ class FasterRCNN(RCNN):
         Tail feature extractor after feature pooling layer.
     classes : iterable of str
         Names of categories, its length is ``num_class``.
+    box_features : gluon.HybridBlock, default is None
+        feature head for transforming shared ROI output (top_features) for box prediction.
+        If set to None, global average pooling will be used.
     short : int, default is 600.
         Input image short side size.
     max_size : int, default is 1000.
         Maximum size of input image long side.
+    min_stage : int, default is 4
+        Minimum stage NO. for FPN stages.
+    max_stage : int, default is 4
+        Maximum stage NO. for FPN stages.
     train_patterns : str, default is None.
         Matching pattern for trainable parameters.
     nms_thresh : float, default is 0.3.
@@ -49,9 +63,10 @@ class FasterRCNN(RCNN):
         ROI pooling mode. Currently support 'pool' and 'align'.
     roi_size : tuple of int, length 2, default is (14, 14)
         (height, width) of the ROI region.
-    stride : int, default is 16
+    strides : int/tuple of ints, default is 16
         Feature map stride with respect to original image.
         This is usually the ratio between original image size and feature map size.
+        For FPN, use a tuple of ints.
     clip : float, default is None
         Clip bounding box target to this value.
     rpn_channel : int, default is 1024
@@ -132,12 +147,12 @@ class FasterRCNN(RCNN):
     target_generator : gluon.Block
         Generate training targets with boxes, samples, matches, gt_label and gt_box.
 
-
     """
-    def __init__(self, features, top_features, classes,
-                 short=600, max_size=1000, train_patterns=None,
+
+    def __init__(self, features, top_features, classes, box_features=None,
+                 short=600, max_size=1000, min_stage=4, max_stage=4, train_patterns=None,
                  nms_thresh=0.3, nms_topk=400, post_nms=100,
-                 roi_mode='align', roi_size=(14, 14), stride=16, clip=None,
+                 roi_mode='align', roi_size=(14, 14), strides=16, clip=None,
                  rpn_channel=1024, base_size=16, scales=(8, 16, 32),
                  ratios=(0.5, 1, 2), alloc_size=(128, 128), rpn_nms_thresh=0.7,
                  rpn_train_pre_nms=12000, rpn_train_post_nms=2000,
@@ -146,9 +161,18 @@ class FasterRCNN(RCNN):
                  additional_output=False, **kwargs):
         super(FasterRCNN, self).__init__(
             features=features, top_features=top_features, classes=classes,
-            short=short, max_size=max_size, train_patterns=train_patterns,
-            nms_thresh=nms_thresh, nms_topk=nms_topk, post_nms=post_nms,
-            roi_mode=roi_mode, roi_size=roi_size, stride=stride, clip=clip, **kwargs)
+            box_features=box_features, short=short, max_size=max_size,
+            train_patterns=train_patterns, nms_thresh=nms_thresh, nms_topk=nms_topk,
+            post_nms=post_nms, roi_mode=roi_mode, roi_size=roi_size, strides=strides, clip=clip,
+            **kwargs)
+        self.ashape = alloc_size[0]
+        self._min_stage = min_stage
+        self._max_stage = max_stage
+        self.num_stages = max_stage - min_stage + 1
+        if self.num_stages > 1:
+            assert len(scales) == len(strides) == self.num_stages, \
+                "The num_stages (%d) must match number of scales (%d) and strides (%d)" \
+                % (self.num_stages, len(scales), len(strides))
         self._max_batch = 1  # currently only support batch size = 1
         self._num_sample = num_sample
         self._rpn_test_post_nms = rpn_test_post_nms
@@ -156,11 +180,12 @@ class FasterRCNN(RCNN):
         self._additional_output = additional_output
         with self.name_scope():
             self.rpn = RPN(
-                channels=rpn_channel, stride=stride, base_size=base_size,
+                channels=rpn_channel, strides=strides, base_size=base_size,
                 scales=scales, ratios=ratios, alloc_size=alloc_size,
                 clip=clip, nms_thresh=rpn_nms_thresh, train_pre_nms=rpn_train_pre_nms,
                 train_post_nms=rpn_train_post_nms, test_pre_nms=rpn_test_pre_nms,
-                test_post_nms=rpn_test_post_nms, min_size=rpn_min_size)
+                test_post_nms=rpn_test_post_nms, min_size=rpn_min_size,
+                multi_level=self.num_stages > 1)
             self.sampler = RCNNTargetSampler(
                 num_image=self._max_batch, num_proposal=rpn_train_post_nms,
                 num_sample=num_sample, pos_iou_thresh=pos_iou_thresh,
@@ -207,6 +232,62 @@ class FasterRCNN(RCNN):
         super(FasterRCNN, self).reset_class(classes, reuse_weights)
         self._target_generator = {RCNNTargetGenerator(self.num_class)}
 
+    def _pyramid_roi_feats(self, F, features, rpn_rois, roi_size, strides, roi_mode='align',
+                           eps=1e-6):
+        """Assign rpn_rois to specific FPN layers according to its area
+           and then perform `ROIPooling` or `ROIAlign` to generate final
+           region proposals aggregated features.
+        Parameters
+        ----------
+        features : list of mx.ndarray or mx.symbol
+            Features extracted from FPN base network
+        rpn_rois : mx.ndarray or mx.symbol
+            (N, 5) with [[batch_index, x1, y1, x2, y2], ...] like
+        roi_size : tuple
+            The size of each roi with regard to ROI-Wise operation
+            each region proposal will be roi_size spatial shape.
+        strides : tuple e.g. [4, 8, 16, 32]
+            Define the gap that ori image and feature map have
+        roi_mode : str, default is align
+            ROI pooling mode. Currently support 'pool' and 'align'.
+        Returns
+        -------
+        Pooled roi features aggregated according to its roi_level
+        """
+        max_stage = self._max_stage
+        if self._max_stage > 5:  # do not use p6 for RCNN
+            max_stage = self._max_stage - 1
+        _, x1, y1, x2, y2 = F.split(rpn_rois, axis=-1, num_outputs=5)
+        h = y2 - y1 + 1
+        w = x2 - x1 + 1
+        roi_level = F.floor(4 + F.log2(F.sqrt(w * h) / 224.0 + eps))
+        roi_level = F.squeeze(F.clip(roi_level, self._min_stage, max_stage))
+        # [2,2,..,3,3,...,4,4,...,5,5,...] ``Prohibit swap order here``
+        # roi_level_sorted_args = F.argsort(roi_level, is_ascend=True)
+        # roi_level = F.sort(roi_level, is_ascend=True)
+        # rpn_rois = F.take(rpn_rois, roi_level_sorted_args, axis=0)
+        pooled_roi_feats = []
+        for i, l in enumerate(range(self._min_stage, max_stage + 1)):
+            # Pool features with all rois first, and then set invalid pooled features to zero,
+            # at last ele-wise add together to aggregate all features.
+            if roi_mode == 'pool':
+                pooled_feature = F.ROIPooling(features[i], rpn_rois, roi_size, 1. / strides[i])
+            elif roi_mode == 'align':
+                pooled_feature = F.contrib.ROIAlign(features[i], rpn_rois, roi_size,
+                                                    1. / strides[i],
+                                                    sample_ratio=2)
+            else:
+                raise ValueError("Invalid roi mode: {}".format(roi_mode))
+            pooled_feature = F.where(roi_level == l, pooled_feature, F.zeros_like(pooled_feature))
+            pooled_roi_feats.append(pooled_feature)
+        # Ele-wise add to aggregate all pooled features
+        pooled_roi_feats = F.ElementWiseSum(*pooled_roi_feats)
+        # Sort all pooled features by asceding order
+        # [2,2,..,3,3,...,4,4,...,5,5,...]
+        # pooled_roi_feats = F.take(pooled_roi_feats, roi_level_sorted_args)
+        # pooled roi feats (B*N, C, 7, 7), N = N2 + N3 + N4 + N5 = num_roi, C=256 in ori paper
+        return pooled_roi_feats
+
     # pylint: disable=arguments-differ
     def hybrid_forward(self, F, x, gt_box=None):
         """Forward Faster-RCNN network.
@@ -227,6 +308,7 @@ class FasterRCNN(RCNN):
             boxes.
 
         """
+
         def _split(x, axis, num_outputs, squeeze_axis):
             x = F.split(x, axis=axis, num_outputs=num_outputs, squeeze_axis=squeeze_axis)
             if isinstance(x, list):
@@ -235,13 +317,16 @@ class FasterRCNN(RCNN):
                 return [x]
 
         feat = self.features(x)
+        if not isinstance(feat, (list, tuple)):
+            feat = [feat]
+
         # RPN proposals
         if autograd.is_training():
             rpn_score, rpn_box, raw_rpn_score, raw_rpn_box, anchors = \
-                self.rpn(feat, F.zeros_like(x))
+                self.rpn(F.zeros_like(x), *feat)
             rpn_box, samples, matches = self.sampler(rpn_box, rpn_score, gt_box)
         else:
-            _, rpn_box = self.rpn(feat, F.zeros_like(x))
+            _, rpn_box = self.rpn(F.zeros_like(x), *feat)
 
         # create batchid for roi
         num_roi = self._num_sample if autograd.is_training() else self._rpn_test_post_nms
@@ -253,20 +338,31 @@ class FasterRCNN(RCNN):
             rpn_roi = F.concat(*[roi_batchid.reshape((-1, 1)), rpn_box.reshape((-1, 4))], dim=-1)
             rpn_roi = F.stop_gradient(rpn_roi)
 
-        # ROI features
-        if self._roi_mode == 'pool':
-            pooled_feat = F.ROIPooling(feat, rpn_roi, self._roi_size, 1. / self._stride)
-        elif self._roi_mode == 'align':
-            pooled_feat = F.contrib.ROIAlign(feat, rpn_roi, self._roi_size, 1. / self._stride,
-                                             sample_ratio=2)
+        if self.num_stages > 1:
+            # using FPN
+            pooled_feat = self._pyramid_roi_feats(F, feat, rpn_roi, self._roi_size,
+                                                  self._strides, roi_mode=self._roi_mode)
         else:
-            raise ValueError("Invalid roi mode: {}".format(self._roi_mode))
+            # ROI features
+            if self._roi_mode == 'pool':
+                pooled_feat = F.ROIPooling(feat[0], rpn_roi, self._roi_size, 1. / self._strides)
+            elif self._roi_mode == 'align':
+                pooled_feat = F.contrib.ROIAlign(feat[0], rpn_roi, self._roi_size,
+                                                 1. / self._strides, sample_ratio=2)
+            else:
+                raise ValueError("Invalid roi mode: {}".format(self._roi_mode))
 
         # RCNN prediction
-        top_feat = self.top_features(pooled_feat)
-        avg_feat = self.global_avg_pool(top_feat)
-        cls_pred = self.class_predictor(avg_feat)
-        box_pred = self.box_predictor(avg_feat)
+        if self.top_features is not None:
+            top_feat = self.top_features(pooled_feat)
+        else:
+            top_feat = pooled_feat
+        if self.box_features is None:
+            box_feat = F.contrib.AdaptiveAvgPooling2D(top_feat, output_size=1)
+        else:
+            box_feat = self.box_features(top_feat)
+        cls_pred = self.class_predictor(box_feat)
+        box_pred = self.box_predictor(box_feat)
         # cls_pred (B * N, C) -> (B, N, C)
         cls_pred = cls_pred.reshape((self._max_batch, num_roi, self.num_class + 1))
         # box_pred (B * N, C * 4) -> (B, N, C, 4)
@@ -320,6 +416,7 @@ class FasterRCNN(RCNN):
             return ids, scores, bboxes, feat
         return ids, scores, bboxes
 
+
 def get_faster_rcnn(name, dataset, pretrained=False, ctx=mx.cpu(),
                     root=os.path.join('~', '.mxnet', 'models'), **kwargs):
     r"""Utility function to return faster rcnn networks.
@@ -350,6 +447,7 @@ def get_faster_rcnn(name, dataset, pretrained=False, ctx=mx.cpu(),
         full_name = '_'.join(('faster_rcnn', name, dataset))
         net.load_parameters(get_model_file(full_name, tag=pretrained, root=root), ctx=ctx)
     return net
+
 
 def faster_rcnn_resnet50_v1b_voc(pretrained=False, pretrained_base=True, **kwargs):
     r"""Faster RCNN model from the paper
@@ -392,13 +490,14 @@ def faster_rcnn_resnet50_v1b_voc(pretrained=False, pretrained_base=True, **kwarg
         features=features, top_features=top_features, classes=classes,
         short=600, max_size=1000, train_patterns=train_patterns,
         nms_thresh=0.3, nms_topk=400, post_nms=100,
-        roi_mode='align', roi_size=(14, 14), stride=16, clip=None,
+        roi_mode='align', roi_size=(14, 14), strides=16, clip=None,
         rpn_channel=1024, base_size=16, scales=(2, 4, 8, 16, 32),
         ratios=(0.5, 1, 2), alloc_size=(128, 128), rpn_nms_thresh=0.7,
         rpn_train_pre_nms=12000, rpn_train_post_nms=2000,
         rpn_test_pre_nms=6000, rpn_test_post_nms=300, rpn_min_size=16,
         num_sample=128, pos_iou_thresh=0.5, pos_ratio=0.25, max_num_gt=100,
         **kwargs)
+
 
 def faster_rcnn_resnet50_v1b_coco(pretrained=False, pretrained_base=True, **kwargs):
     r"""Faster RCNN model from the paper
@@ -441,13 +540,135 @@ def faster_rcnn_resnet50_v1b_coco(pretrained=False, pretrained_base=True, **kwar
         features=features, top_features=top_features, classes=classes,
         short=800, max_size=1333, train_patterns=train_patterns,
         nms_thresh=0.5, nms_topk=-1, post_nms=-1,
-        roi_mode='align', roi_size=(14, 14), stride=16, clip=4.42,
+        roi_mode='align', roi_size=(14, 14), strides=16, clip=4.42,
         rpn_channel=1024, base_size=16, scales=(2, 4, 8, 16, 32),
         ratios=(0.5, 1, 2), alloc_size=(128, 128), rpn_nms_thresh=0.7,
         rpn_train_pre_nms=12000, rpn_train_post_nms=2000,
         rpn_test_pre_nms=6000, rpn_test_post_nms=1000, rpn_min_size=0,
-        num_sample=128, pos_iou_thresh=0.5, pos_ratio=0.25, max_num_gt=100,
-        **kwargs)
+        num_sample=128, pos_iou_thresh=0.5, pos_ratio=0.25,
+        max_num_gt=100, **kwargs)
+
+
+def faster_rcnn_fpn_resnet50_v1b_coco(pretrained=False, pretrained_base=True, **kwargs):
+    r"""Faster RCNN model with FPN from the paper
+    "Ren, S., He, K., Girshick, R., & Sun, J. (2015). Faster r-cnn: Towards
+    real-time object detection with region proposal networks"
+    "Lin, T., Dollar, P., Girshick, R., He, K., Hariharan, B., Belongie, S. (2016).
+    Feature Pyramid Networks for Object Detection"
+
+    Parameters
+    ----------
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True
+        Load pretrained base network, the extra layers are randomized. Note that
+        if pretrained is `Ture`, this has no effect.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+
+    Examples
+    --------
+    >>> model = get_faster_rcnn_fpn_resnet50_v1b_coco(pretrained=True)
+    >>> print(model)
+    """
+    from ..resnetv1b import resnet50_v1b
+    from ...data import COCODetection
+    classes = COCODetection.CLASSES
+    pretrained_base = False if pretrained else pretrained_base
+    base_network = resnet50_v1b(pretrained=pretrained_base, dilated=False,
+                                use_global_stats=True, **kwargs)
+    features = FPNFeatureExpander(
+        network=base_network,
+        outputs=['layers1_relu8_fwd', 'layers2_relu11_fwd', 'layers3_relu17_fwd',
+                 'layers4_relu8_fwd'], num_filters=[256, 256, 256, 256], use_1x1=True,
+        use_upsample=True, use_elewadd=True, use_p6=True, no_bias=False, pretrained=pretrained_base)
+    top_features = None
+    # 2 FC layer before RCNN cls and reg
+    box_features = nn.HybridSequential()
+    for _ in range(2):
+        box_features.add(nn.Dense(1024, weight_initializer=mx.init.Normal(0.01)))
+        box_features.add(nn.Activation('relu'))
+
+    train_patterns = '|'.join(
+        ['.*dense', '.*rpn', '.*down(2|3|4)_conv', '.*layers(2|3|4)_conv', 'P'])
+    return get_faster_rcnn(
+        name='fpn_resnet50_v1b', dataset='coco', pretrained=pretrained, features=features,
+        top_features=top_features, classes=classes, box_features=box_features,
+        short=800, max_size=1333, min_stage=2, max_stage=6, train_patterns=train_patterns,
+        nms_thresh=0.5, nms_topk=-1, post_nms=-1, roi_mode='align', roi_size=(14, 14),
+        strides=(4, 8, 16, 32, 64), clip=4.42, rpn_channel=1024, base_size=16,
+        scales=(2, 4, 8, 16, 32), ratios=(0.5, 1, 2), alloc_size=(384, 384),
+        rpn_nms_thresh=0.7, rpn_train_pre_nms=12000, rpn_train_post_nms=2000,
+        rpn_test_pre_nms=6000, rpn_test_post_nms=1000, rpn_min_size=0, num_sample=512,
+        pos_iou_thresh=0.5, pos_ratio=0.25, max_num_gt=100, **kwargs)
+
+
+def faster_rcnn_fpn_bn_resnet50_v1b_coco(pretrained=False, pretrained_base=True, num_devices=0,
+                                         **kwargs):
+    r"""Faster RCNN model with FPN from the paper
+    "Ren, S., He, K., Girshick, R., & Sun, J. (2015). Faster r-cnn: Towards
+    real-time object detection with region proposal networks"
+    "Lin, T., Dollar, P., Girshick, R., He, K., Hariharan, B., Belongie, S. (2016).
+    Feature Pyramid Networks for Object Detection"
+
+    Parameters
+    ----------
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True
+        Load pretrained base network, the extra layers are randomized. Note that
+        if pretrained is `Ture`, this has no effect.
+    num_devices : int, default is 0
+        Number of devices for sync batch norm layer. if less than 1, use all devices available.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+
+    Examples
+    --------
+    >>> model = get_faster_rcnn_fpn_bn_resnet50_v1b_coco(pretrained=True)
+    >>> print(model)
+    """
+    from ..resnetv1b import resnet50_v1b
+    from ...data import COCODetection
+    classes = COCODetection.CLASSES
+    pretrained_base = False if pretrained else pretrained_base
+    gluon_norm_kwargs = {'num_devices': num_devices} if num_devices >= 1 else {}
+    base_network = resnet50_v1b(pretrained=pretrained_base, dilated=False, use_global_stats=False,
+                                norm_layer=SyncBatchNorm, norm_kwargs=gluon_norm_kwargs, **kwargs)
+    sym_norm_kwargs = {'ndev': num_devices} if num_devices >= 1 else {}
+    features = FPNFeatureExpander(
+        network=base_network,
+        outputs=['layers1_relu8_fwd', 'layers2_relu11_fwd', 'layers3_relu17_fwd',
+                 'layers4_relu8_fwd'], num_filters=[256, 256, 256, 256], use_1x1=True,
+        use_upsample=True, use_elewadd=True, use_p6=True, no_bias=True, pretrained=pretrained_base,
+        norm_layer=mx.sym.contrib.SyncBatchNorm, norm_kwargs=sym_norm_kwargs)
+    top_features = None
+    # 1 Conv 1 FC layer before RCNN cls and reg
+    box_features = nn.HybridSequential()
+    box_features.add(nn.Conv2D(256, 3, padding=1),
+                     SyncBatchNorm(**gluon_norm_kwargs),
+                     nn.Activation('relu'),
+                     nn.Dense(1024, weight_initializer=mx.init.Normal(0.01)),
+                     nn.Activation('relu'))
+
+    train_patterns = '(?!.*moving)'  # excluding symbol bn moving mean and var
+    return get_faster_rcnn(
+        name='fpn_bn_resnet50_v1b', dataset='coco', pretrained=pretrained, features=features,
+        top_features=top_features, classes=classes, box_features=box_features,
+        short=(640, 800), max_size=1333, min_stage=2, max_stage=6, train_patterns=train_patterns,
+        nms_thresh=0.5, nms_topk=-1, post_nms=-1, roi_mode='align', roi_size=(7, 7),
+        strides=(4, 8, 16, 32, 64), clip=4.42, rpn_channel=1024, base_size=16,
+        scales=(2, 4, 8, 16, 32), ratios=(0.5, 1, 2), alloc_size=(384, 384),
+        rpn_nms_thresh=0.7, rpn_train_pre_nms=12000, rpn_train_post_nms=2000,
+        rpn_test_pre_nms=6000, rpn_test_post_nms=1000, rpn_min_size=0, num_sample=512,
+        pos_iou_thresh=0.5, pos_ratio=0.25, max_num_gt=100, **kwargs)
+
 
 def faster_rcnn_resnet50_v1b_custom(classes, transfer=None, pretrained_base=True,
                                     pretrained=False, **kwargs):
@@ -495,7 +716,7 @@ def faster_rcnn_resnet50_v1b_custom(classes, transfer=None, pretrained_base=True
             features=features, top_features=top_features, classes=classes,
             short=600, max_size=1000, train_patterns=train_patterns,
             nms_thresh=0.3, nms_topk=400, post_nms=100,
-            roi_mode='align', roi_size=(14, 14), stride=16, clip=None,
+            roi_mode='align', roi_size=(14, 14), strides=16, clip=None,
             rpn_channel=1024, base_size=16, scales=(2, 4, 8, 16, 32),
             ratios=(0.5, 1, 2), alloc_size=(128, 128), rpn_nms_thresh=0.7,
             rpn_train_pre_nms=12000, rpn_train_post_nms=2000,
@@ -508,6 +729,7 @@ def faster_rcnn_resnet50_v1b_custom(classes, transfer=None, pretrained_base=True
         reuse_classes = [x for x in classes if x in net.classes]
         net.reset_class(classes, reuse_weights=reuse_classes)
     return net
+
 
 def faster_rcnn_resnet101_v1d_voc(pretrained=False, pretrained_base=True, **kwargs):
     r"""Faster RCNN model from the paper
@@ -549,13 +771,14 @@ def faster_rcnn_resnet101_v1d_voc(pretrained=False, pretrained_base=True, **kwar
         features=features, top_features=top_features, classes=classes,
         short=600, max_size=1000, train_patterns=train_patterns,
         nms_thresh=0.3, nms_topk=400, post_nms=100,
-        roi_mode='align', roi_size=(14, 14), stride=16, clip=None,
+        roi_mode='align', roi_size=(14, 14), strides=16, clip=None,
         rpn_channel=1024, base_size=16, scales=(2, 4, 8, 16, 32),
         ratios=(0.5, 1, 2), alloc_size=(128, 128), rpn_nms_thresh=0.7,
         rpn_train_pre_nms=12000, rpn_train_post_nms=2000,
         rpn_test_pre_nms=6000, rpn_test_post_nms=300, rpn_min_size=16,
         num_sample=128, pos_iou_thresh=0.5, pos_ratio=0.25, max_num_gt=100,
         **kwargs)
+
 
 def faster_rcnn_resnet101_v1d_coco(pretrained=False, pretrained_base=True, **kwargs):
     r"""Faster RCNN model from the paper
@@ -597,13 +820,71 @@ def faster_rcnn_resnet101_v1d_coco(pretrained=False, pretrained_base=True, **kwa
         features=features, top_features=top_features, classes=classes,
         short=800, max_size=1333, train_patterns=train_patterns,
         nms_thresh=0.5, nms_topk=-1, post_nms=-1,
-        roi_mode='align', roi_size=(14, 14), stride=16, clip=4.42,
+        roi_mode='align', roi_size=(14, 14), strides=16, clip=4.42,
         rpn_channel=1024, base_size=16, scales=(2, 4, 8, 16, 32),
         ratios=(0.5, 1, 2), alloc_size=(128, 128), rpn_nms_thresh=0.7,
         rpn_train_pre_nms=12000, rpn_train_post_nms=2000,
         rpn_test_pre_nms=6000, rpn_test_post_nms=1000, rpn_min_size=0,
         num_sample=128, pos_iou_thresh=0.5, pos_ratio=0.25, max_num_gt=100,
         **kwargs)
+
+
+def faster_rcnn_fpn_resnet101_v1d_coco(pretrained=False, pretrained_base=True, **kwargs):
+    r"""Faster RCNN model with FPN from the paper
+    "Ren, S., He, K., Girshick, R., & Sun, J. (2015). Faster r-cnn: Towards
+    real-time object detection with region proposal networks"
+    "Lin, T., Dollar, P., Girshick, R., He, K., Hariharan, B., Belongie, S. (2016).
+    Feature Pyramid Networks for Object Detection"
+
+    Parameters
+    ----------
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True
+        Load pretrained base network, the extra layers are randomized. Note that
+        if pretrained is `Ture`, this has no effect.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+
+    Examples
+    --------
+    >>> model = get_faster_rcnn_fpn_resnet101_v1d_coco(pretrained=True)
+    >>> print(model)
+    """
+    from ..resnetv1b import resnet101_v1d
+    from ...data import COCODetection
+    classes = COCODetection.CLASSES
+    pretrained_base = False if pretrained else pretrained_base
+    base_network = resnet101_v1d(pretrained=pretrained_base, dilated=False,
+                                 use_global_stats=True, **kwargs)
+    features = FPNFeatureExpander(
+        network=base_network,
+        outputs=['layers1_relu8_fwd', 'layers2_relu11_fwd', 'layers3_relu68_fwd',
+                 'layers4_relu8_fwd'], num_filters=[256, 256, 256, 256], use_1x1=True,
+        use_upsample=True, use_elewadd=True, use_p6=True, no_bias=False, pretrained=pretrained_base)
+    top_features = None
+    # 2 FC layer before RCNN cls and reg
+    box_features = nn.HybridSequential()
+    for _ in range(2):
+        box_features.add(nn.Dense(1024, weight_initializer=mx.init.Normal(0.01)))
+        box_features.add(nn.Activation('relu'))
+
+    train_patterns = '|'.join(
+        ['.*dense', '.*rpn', '.*down(2|3|4)_conv', '.*layers(2|3|4)_conv', 'P'])
+    return get_faster_rcnn(
+        name='fpn_resnet101_v1d', dataset='coco', pretrained=pretrained, features=features,
+        top_features=top_features, classes=classes, box_features=box_features,
+        short=800, max_size=1333, min_stage=2, max_stage=6, train_patterns=train_patterns,
+        nms_thresh=0.5, nms_topk=-1, post_nms=-1, roi_mode='align', roi_size=(14, 14),
+        strides=(4, 8, 16, 32, 64), clip=4.42, rpn_channel=1024, base_size=16,
+        scales=(2, 4, 8, 16, 32), ratios=(0.5, 1, 2), alloc_size=(384, 384),
+        rpn_nms_thresh=0.7, rpn_train_pre_nms=12000, rpn_train_post_nms=2000,
+        rpn_test_pre_nms=6000, rpn_test_post_nms=1000, rpn_min_size=0, num_sample=512,
+        pos_iou_thresh=0.5, pos_ratio=0.25, max_num_gt=100, **kwargs)
+
 
 def faster_rcnn_resnet101_v1d_custom(classes, transfer=None, pretrained_base=True,
                                      pretrained=False, **kwargs):
@@ -648,7 +929,7 @@ def faster_rcnn_resnet101_v1d_custom(classes, transfer=None, pretrained_base=Tru
             features=features, top_features=top_features, classes=classes,
             short=600, max_size=1000, train_patterns=train_patterns,
             nms_thresh=0.3, nms_topk=400, post_nms=100,
-            roi_mode='align', roi_size=(14, 14), stride=16, clip=None,
+            roi_mode='align', roi_size=(14, 14), strides=16, clip=None,
             rpn_channel=1024, base_size=16, scales=(2, 4, 8, 16, 32),
             ratios=(0.5, 1, 2), alloc_size=(128, 128), rpn_nms_thresh=0.7,
             rpn_train_pre_nms=12000, rpn_train_post_nms=2000,

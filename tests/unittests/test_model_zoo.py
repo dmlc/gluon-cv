@@ -261,7 +261,8 @@ def test_mask_rcnn_reset_class():
 def test_faster_rcnn_models():
     ctx = mx.context.current_context()
     x = mx.random.uniform(shape=(1, 3, 300, 400), ctx=ctx)  # allow non-squre and larger inputs
-    models = ['faster_rcnn_resnet50_v1b_voc', 'faster_rcnn_resnet50_v1b_coco']
+    models = ['faster_rcnn_resnet50_v1b_voc', 'faster_rcnn_resnet50_v1b_coco',
+              'faster_rcnn_fpn_resnet50_v1b_coco']
     _test_model_list(models, ctx, x)
 
 @try_gpu(0)
