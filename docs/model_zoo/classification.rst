@@ -82,12 +82,16 @@ ImageNet
 
     - Download weights given a hashtag: ``net = get_model('ResNet50_v1d', pretrained='117a384e')``
 
+    ``ResNet50_v1_int8`` and `MobileNet1.0_int8`` are quantized model calibrated on ImageNet dataset.
+
 .. role:: tag
 
 ResNet
 ------
 
 .. hint::
+
+    - ``ResNet50_v1_int8`` is a quantized model for ``ResNet50_v1``.
 
     - ``ResNet_v1b`` modifies ``ResNet_v1`` by setting stride at the 3x3 layer for a bottleneck block.
 
@@ -106,6 +110,8 @@ ResNet
    | ResNet34_v1 [1]_          | 74.37  | 91.87  | 48216ba9 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet34_v1.sh>`_         | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet34_v1.log>`_          |
    +---------------------------+--------+--------+----------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
    | ResNet50_v1 [1]_          | 77.36  | 93.57  | cc729d95 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet50_v1.sh>`_         | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet50_v1.log>`_          |
+   +---------------------------+--------+--------+----------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
+   | ResNet50_v1_int8 [1]_     | 76.86  | 93.46  | cc729d95 | `shell script `_         | `log `_          |
    +---------------------------+--------+--------+----------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
    | ResNet101_v1 [1]_         | 78.34  | 94.01  | d988c13d | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet101_v1.sh>`_        | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet101_v1.log>`_         |
    +---------------------------+--------+--------+----------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
@@ -177,6 +183,10 @@ ResNext
 MobileNet
 ---------
 
+.. hint::
+
+    - ``MobileNet1.0_int8`` is a quantized model for ``MobileNet1.0``.
+
 .. table::
    :widths: 45 5 5 10 20 15
 
@@ -184,6 +194,8 @@ MobileNet
    | Model                    | Top-1  | Top-5  | Hashtag  | Training Command                                                                                                                        | Training Log                                                                                                                  |
    +==========================+========+========+==========+=========================================================================================================================================+===============================================================================================================================+
    | MobileNet1.0 [4]_        | 73.28  | 91.30  | efbb2ca3 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/mobilenet1.0-mixup.sh>`_     | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/mobilenet1.0-mixup.log>`_   |
+   +--------------------------+--------+--------+----------+-----------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
+   | MobileNet1.0_int8 [4]_   | 72.85  | 90.99  | efbb2ca3 | `shell script `_     | `log `_   |
    +--------------------------+--------+--------+----------+-----------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
    | :tag:`MobileNet1.0` [4]_ | 72.93  | 91.14  | cce75496 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/mobilenet1.0.sh>`_           | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/mobilenet1.0.log>`_         |
    +--------------------------+--------+--------+----------+-----------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
