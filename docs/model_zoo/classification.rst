@@ -82,7 +82,7 @@ ImageNet
 
     - Download weights given a hashtag: ``net = get_model('ResNet50_v1d', pretrained='117a384e')``
 
-    ``ResNet50_v1_int8`` and `MobileNet1.0_int8`` are quantized model calibrated on ImageNet dataset.
+    ``ResNet50_v1_int8`` and ``MobileNet1.0_int8`` are quantized model calibrated on ImageNet dataset.
 
 .. role:: tag
 

@@ -9,11 +9,7 @@ The following example requires ``GluonCV>=0.4`` and ``MXNet-mkl>=1.5.0b20190314`
 Introduction
 ------------
 
-It is essential to offer the high performance and cost efficient service by the deep learning software and hardware in real production. Therefore, most of cloud service providers (CSP) optimized their services for the inference, such as `Amazon SageMaker <https://docs.aws.amazon.com/sagemaker/latest/dg/deploy-model.html>`_, `Intel Deep Learning Boost <https://www.intel.ai/intel-deep-learning-boost/#gs.0ngn54>`_.
- 
-GluonCV delivered some quantized models to improve the performance and reduce the deployment costs for the inference. There are two main benefits of lower precision (INT8). First, the computation can be accelerated by the low precision instruction, like Intel Vector Neural Network Instruction (VNNI). Second, lower precision data type would save the memory bandwidth and allow for better cache locality and save the power.
-
-The new feature can get up to 2X performance speedup in the current AWS EC2 CPU instances and will reach 4X under the Intel DL Boost (VNNI) enabled hardware with less than 0.5% accuracy drop.
+GluonCV delivered some quantized models to improve the performance and reduce the deployment costs for the computer vision inference tasks. In real production, there are two main benefits of lower precision (INT8). First, the computation can be accelerated by the low precision instruction, like Intel Vector Neural Network Instruction (VNNI). Second, lower precision data type would save the memory bandwidth and allow for better cache locality and save the power. The new feature can get up to 2X performance speedup in the current AWS EC2 CPU instances and will reach 4X under the `Intel Deep Learning Boost (VNNI) <https://www.intel.ai/intel-deep-learning-boost/#gs.0ngn54>`_ enabled hardware with less than 0.5% accuracy drop.
 
 Please checkout `verify_pretrained.py <https://raw.githubusercontent.com/dmlc/gluon-cv/master/scripts/classification/imagenet/verify_pretrained.py>`_ for imagenet inference
 and `eval_ssd.py <https://raw.githubusercontent.com/dmlc/gluon-cv/master/scripts/detection/ssd/eval_ssd.py>`_ for SSD inference.
