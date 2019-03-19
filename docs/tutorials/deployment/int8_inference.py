@@ -4,6 +4,8 @@
 This is a tutorial which illustrates how to use quantized GluonCV
 models for inference on Intel Xeon Processors to gain higher performance.
 
+The following example requires ``GluonCV>=0.4`` and ``MXNet-mkl>=1.5.0b20190314``. Please follow `our installation guide <../index.html#installation>`__ to install or upgrade GluonCV and nightly build of MXNet if necessary.
+
 Introduction
 ----------
 
@@ -76,3 +78,4 @@ Usage:
                                     Load weights from previously saved parameters.
             --save-prefix SAVE_PREFIX
                                     Saving parameter prefix
+"""
