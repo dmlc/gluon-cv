@@ -27,8 +27,6 @@ from .ssd import *
 from .vgg import *
 from .yolo import *
 from .mobilenet import *
-from .residual_attentionnet import *
-from .pruned_resnet.resnetv1b_pruned import *
 from .quantized import *
 
 __all__ = ['get_model', 'get_model_list']
