@@ -218,6 +218,10 @@ Deployment
         :title: C++ Inference with GluonCV
         :link: ../build/examples_deployment/cpp_inference.html
 
+    .. card::
+        :title: Inference with Quantized Models
+        :link: ../build/examples_deployment/int8_inference.html
+
 .. toctree::
     :hidden:
     :maxdepth: 2
