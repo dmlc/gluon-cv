@@ -42,9 +42,9 @@ if __name__ == '__main__':
         net.load_parameters(args.pretrained)
     net.set_nms(0.45, 200)
     net.collect_params().reset_ctx(ctx = ctx)
-
-    ax = None
+   
     for image in image_list:
+        ax = None
         x, img = presets.yolo.load_test(image, short=512)
         x = x.as_in_context(ctx[0])
         ids, scores, bboxes = [xx[0].asnumpy() for xx in net(x)]

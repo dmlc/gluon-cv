@@ -16,6 +16,7 @@ from .mobilenet import *
 from .nasnet import *
 from .pruned_resnet.resnetv1b_pruned import *
 from .pspnet import *
+from .quantized import *
 from .residual_attentionnet import *
 from .resnet import *
 from .resnetv1b import *
@@ -190,7 +191,13 @@ _models = {
     'resnet50_v1d_0.37': resnet50_v1d_37,
     'resnet50_v1d_0.11': resnet50_v1d_11,
     'resnet101_v1d_0.76': resnet101_v1d_76,
-    'resnet101_v1d_0.73': resnet101_v1d_73
+    'resnet101_v1d_0.73': resnet101_v1d_73,
+    'mobilenet1.0_int8': mobilenet1_0_int8,
+    'resnet50_v1_int8': resnet50_v1_int8,
+    'ssd_300_vgg16_atrous_voc_int8': ssd_300_vgg16_atrous_voc_int8,
+    'ssd_512_mobilenet1.0_voc_int8': ssd_512_mobilenet1_0_voc_int8,
+    'ssd_512_resnet50_v1_voc_int8': ssd_512_resnet50_v1_voc_int8,
+    'ssd_512_vgg16_atrous_voc_int8': ssd_512_vgg16_atrous_voc_int8,
 }
 
 
