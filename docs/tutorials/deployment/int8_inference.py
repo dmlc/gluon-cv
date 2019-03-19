@@ -4,18 +4,18 @@
 This is a tutorial which illustrates how to use quantized GluonCV
 models for inference on Intel Xeon Processors to gain higher performance.
 
-The following example requires ``GluonCV>=0.4`` and ``MXNet-mkl>=1.5.0b20190314``. Please follow `our installation guide <../index.html#installation>`__ to install or upgrade GluonCV and nightly build of MXNet if necessary.
+The following example requires ``GluonCV>=0.4`` and ``MXNet-mkl>=1.5.0b20190314``. Please follow `our installation guide <../../index.html#installation>`__ to install or upgrade GluonCV and nightly build of MXNet if necessary.
 
 Introduction
 ------------
 
 It is essential to offer the high performance and cost efficient service by the deep learning software and hardware in real production. Therefore, most of cloud service providers (CSP) optimized their services for the inference, such as `Amazon SageMaker <https://docs.aws.amazon.com/sagemaker/latest/dg/deploy-model.html>`_, `Intel Deep Learning Boost <https://www.intel.ai/intel-deep-learning-boost/#gs.0ngn54>`_.
  
-GluonCV delivered some quantized models to improve the performance and reduce the deployment costs for the inference. There are two main benefits of lower precision (INT8). First, the computation can be accelerated by the low precision instruction, like Intel Vector Neural Network Instruction (VNNI). Second, lower precision data type would save the memory bandwidth and allow for better cache locality and save the power.  
+GluonCV delivered some quantized models to improve the performance and reduce the deployment costs for the inference. There are two main benefits of lower precision (INT8). First, the computation can be accelerated by the low precision instruction, like Intel Vector Neural Network Instruction (VNNI). Second, lower precision data type would save the memory bandwidth and allow for better cache locality and save the power.
 
 The new feature can get up to 2X performance speedup in the current AWS EC2 CPU instances and will reach 4X under the Intel DL Boost (VNNI) enabled hardware with less than 0.5% accuracy drop.
 
-Please checkout :ref:`verify_pretrained.py <https://raw.githubusercontent.com/dmlc/gluon-cv/master/scripts/classification/imagenet/verify_pretrained.py>`_ for imagenet inference
+Please checkout `verify_pretrained.py <https://raw.githubusercontent.com/dmlc/gluon-cv/master/scripts/classification/imagenet/verify_pretrained.py>`_ for imagenet inference
 and `eval_ssd.py <https://raw.githubusercontent.com/dmlc/gluon-cv/master/scripts/detection/ssd/eval_ssd.py>`_ for SSD inference.
 
 Performance
@@ -33,7 +33,7 @@ Below CPU performance is from AWS EC2 C5.18xlarge with 18 cores.
 +-----------------------+----------+------------+------------------+------------------+---------+-----------------+-----------------+
 |  Model                | Dataset  | Batch Size | C5.18xlarge FP32 | C5.18xlarge INT8 | Speedup | FP32 Accuracy   | INT8 Accuracy   |
 +=======================+==========+============+==================+==================+=========+=================+=================+
-| ResNet50 V1           | ImageNet | 128        | 122.02           | 276.72           | 2.27    | 77.21%93.55%    | 76.86%/93.46%   |
+| ResNet50 V1           | ImageNet | 128        | 122.02           | 276.72           | 2.27    | 77.21%/93.55%   | 76.86%/93.46%   |
 +-----------------------+----------+------------+------------------+------------------+---------+-----------------+-----------------+
 | MobileNet 1.0         | ImageNet | 128        | 375.33           | 1016.39          | 2.71    | 73.28%/91.22%   | 72.85%/90.99%   |
 +-----------------------+----------+------------+------------------+------------------+---------+-----------------+-----------------+
@@ -45,6 +45,8 @@ Below CPU performance is from AWS EC2 C5.18xlarge with 18 cores.
 +-----------------------+----------+------------+------------------+------------------+---------+-----------------+-----------------+
 | SSD-mobilenet1.0 512* | VOC      | 224        | 31.13            | 48.72            | 1.57    | 75.42           | 75.04           |
 +-----------------------+----------+------------+------------------+------------------+---------+-----------------+-----------------+
+
+Quantized SSD models are evaluated with ``nms_thresh=0.45``, ``nms_topk=200``.
 
 Demo usage for SSD
 ------------------
