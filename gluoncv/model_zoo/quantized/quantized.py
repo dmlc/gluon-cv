@@ -1,3 +1,4 @@
+# pylint: skip-file
 """Create quantized model from JSON files..."""
 import os
 import warnings
