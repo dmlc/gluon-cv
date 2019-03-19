@@ -1,5 +1,5 @@
 """3. Inference with Quantized Models
-================================
+=====================================
 
 This is a tutorial which illustrates how to use quantized GluonCV
 models for inference on Intel Xeon Processors to gain higher performance.
@@ -7,7 +7,7 @@ models for inference on Intel Xeon Processors to gain higher performance.
 The following example requires ``GluonCV>=0.4`` and ``MXNet-mkl>=1.5.0b20190314``. Please follow `our installation guide <../index.html#installation>`__ to install or upgrade GluonCV and nightly build of MXNet if necessary.
 
 Introduction
-----------
+------------
 
 It is essential to offer the high performance and cost efficient service by the deep learning software and hardware in real production. Therefore, most of cloud service providers (CSP) optimized their services for the inference, such as `Amazon SageMaker <https://docs.aws.amazon.com/sagemaker/latest/dg/deploy-model.html>`, `Intel Deep Learning Boost <https://www.intel.ai/intel-deep-learning-boost/#gs.0ngn54>`.
  
@@ -19,7 +19,8 @@ Please checkout :ref:`verify_pretrained.py <https://raw.githubusercontent.com/dm
 and `eval_ssd.py <https://raw.githubusercontent.com/dmlc/gluon-cv/master/scripts/detection/ssd/eval_ssd.py>` for SSD inference.
 
 Performance
-----------
+-----------
+
 GluonCV supports some quantized classification models and detection models.
 For the throughput, the target is to achieve the maximum machine efficiency to combine the inference requests together and get the results by one iteration. From the bar-chart, it is clearly that the quantization approach improved the throughput from 1.46X to 2.71X for selected models.
 Below CPU performance is from AWS EC2 C5.18xlarge with 18 cores.
@@ -44,7 +45,7 @@ Below CPU performance is from AWS EC2 C5.18xlarge with 18 cores.
    *nms_thresh=0.45, nms_topk=200
 
 Demo usage for SSD
-----------
+------------------
 
 .. code:: bash
 
