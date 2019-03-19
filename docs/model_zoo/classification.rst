@@ -15,7 +15,7 @@ Visualization of Inference Throughputs vs. Validation Accuracy of ImageNet pre-t
 How To Use Pretrained Models
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- The following example requires ``GluonCV>=0.3`` and ``MXNet>=1.3.0``. Please follow `our installation guide <../index.html#installation>`__ to install or upgrade GluonCV and MXNet if necessary.
+- The following example requires ``GluonCV>=0.4`` and ``MXNet>=1.4.0``. Please follow `our installation guide <../index.html#installation>`__ to install or upgrade GluonCV and MXNet if necessary.
 
 - Prepare an image by yourself or use `our sample image <../_static/classification-demo.png>`__. You can save the image into filename ``classification-demo.png`` in your working directory or change the filename in the source codes if you use an another name.
 

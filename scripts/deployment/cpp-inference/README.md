@@ -53,7 +53,7 @@ OPTIONS
 ### Tip: how to acquire up to date pre-built libmxnet shared library
 
 1. You can download prebuilt libmxnet binaries from PyPI wheels.
-For example, you can download mxnet 1.3.0 wheels from [PyPI](https://pypi.org/project/mxnet/#files), extract libmxnet.{so|dll} by opening the wheel as zip file(you may change the suffix of \*.whl to \*.zip). For Linux and Mac, the targeting shared library is **libmxnet.so**, for windows, the library is **libmxnet.dll**.
+For example, you can download mxnet 1.4.0 wheels from [PyPI](https://pypi.org/project/mxnet/#files), extract libmxnet.{so|dll} by opening the wheel as zip file(you may change the suffix of \*.whl to \*.zip). For Linux and Mac, the targeting shared library is **libmxnet.so**, for windows, the library is **libmxnet.dll**.
 
 2. You can then replace the libmxnet.* in previously downloaded binary package with the extracted libmxnet from PyPI wheel.
 
