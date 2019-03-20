@@ -4,7 +4,7 @@
 from __future__ import absolute_import
 
 # mxnet version check
-mx_version = '1.3.0'
+mx_version = '1.4.0'
 try:
     import mxnet as mx
     from distutils.version import LooseVersion
@@ -21,7 +21,7 @@ except ImportError:
         "A quick tip is to install via `pip install mxnet-mkl/mxnet-cu90mkl --pre`. "
         "please refer to https://gluon-cv.mxnet.io/#installation for details.")
 
-__version__ = '0.4.0'
+__version__ = '0.5.0'
 
 from . import data
 from . import model_zoo
