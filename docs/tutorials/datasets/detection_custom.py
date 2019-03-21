@@ -158,7 +158,7 @@ print(lst_dataset[0][1])
 print("GluonCV swaps bounding boxes to columns 0-3 by default")
 
 ##############################################################################
-# RecordFileDetection for Entire Dataset Packed in Signle MXNet RecordFile
+# RecordFileDetection for Entire Dataset Packed in Single MXNet RecordFile
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 #
 # Reading scattered images in folders can be slow, due to constraint of disk random access speed.
