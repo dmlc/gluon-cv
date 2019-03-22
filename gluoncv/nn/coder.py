@@ -5,9 +5,72 @@ Decoders are used during testing/validation, which convert predictions back to
 normal boxes, etc.
 """
 from __future__ import absolute_import
-from mxnet import nd
+
+import numpy as np
 from mxnet import gluon
-from .bbox import BBoxCornerToCenter
+from mxnet import nd
+
+from .bbox import BBoxCornerToCenter, NumPyBBoxCornerToCenter
+
+
+class NumPyNormalizedBoxCenterEncoder(object):
+    """Encode bounding boxes training target with normalized center offsets using numpy.
+
+    Input bounding boxes are using corner type: `x_{min}, y_{min}, x_{max}, y_{max}`.
+
+    Parameters
+    ----------
+    stds : array-like of size 4
+        Std value to be divided from encoded values, default is (0.1, 0.1, 0.2, 0.2).
+    means : array-like of size 4
+        Mean value to be subtracted from encoded values, default is (0., 0., 0., 0.).
+
+    """
+
+    def __init__(self, stds=(0.1, 0.1, 0.2, 0.2), means=(0., 0., 0., 0.)):
+        super(NumPyNormalizedBoxCenterEncoder, self).__init__()
+        assert len(stds) == 4, "Box Encoder requires 4 std values."
+        self._stds = stds
+        self._means = means
+        self.corner_to_center = NumPyBBoxCornerToCenter(split=True)
+
+    def __call__(self, samples, matches, anchors, refs):
+        """Not HybridBlock due to use of matches.shape
+
+        Parameters
+        ----------
+        samples: (B, N) value +1 (positive), -1 (negative), 0 (ignore)
+        matches: (B, N) value range [0, M)
+        anchors: (B, N, 4) encoded in corner
+        refs: (B, M, 4) encoded in corner
+
+        Returns
+        -------
+        targets: (B, N, 4) transform anchors to refs picked according to matches
+        masks: (B, N, 4) only positive anchors has targets
+
+        """
+        # refs [B, M, 4], anchors [B, N, 4], samples [B, N], matches [B, N]
+        ref_boxes = np.repeat(refs.reshape((refs.shape[0], 1, -1, 4)), axis=1,
+                              repeats=matches.shape[1])
+        # refs [B, N, M, 4] -> [B, N, 4]
+        ref_boxes = \
+            ref_boxes[:, range(matches.shape[1]), matches, :] \
+                .reshape(matches.shape[0], -1, 4)
+        # g [B, N, 4], a [B, N, 4] -> codecs [B, N, 4]
+        g = self.corner_to_center(ref_boxes)
+        a = self.corner_to_center(anchors)
+        t0 = ((g[0] - a[0]) / a[2] - self._means[0]) / self._stds[0]
+        t1 = ((g[1] - a[1]) / a[3] - self._means[1]) / self._stds[1]
+        t2 = (np.log(g[2] / a[2]) - self._means[2]) / self._stds[2]
+        t3 = (np.log(g[3] / a[3]) - self._means[3]) / self._stds[3]
+        codecs = np.concatenate((t0, t1, t2, t3), axis=2)
+        # samples [B, N] -> [B, N, 1] -> [B, N, 4] -> boolean
+        temp = np.tile(samples.reshape((samples.shape[0], -1, 1)), reps=(1, 1, 4)) > 0.5
+        # fill targets and masks [B, N, 4]
+        targets = np.where(temp, codecs, 0.0)
+        masks = np.where(temp, 1.0, 0.0)
+        return targets, masks
 
 
 class NormalizedBoxCenterEncoder(gluon.Block):
@@ -23,6 +86,7 @@ class NormalizedBoxCenterEncoder(gluon.Block):
         Mean value to be subtracted from encoded values, default is (0., 0., 0., 0.).
 
     """
+
     def __init__(self, stds=(0.1, 0.1, 0.2, 0.2), means=(0., 0., 0., 0.)):
         super(NormalizedBoxCenterEncoder, self).__init__()
         assert len(stds) == 4, "Box Encoder requires 4 std values."
@@ -56,7 +120,7 @@ class NormalizedBoxCenterEncoder(gluon.Block):
         ref_boxes = F.split(ref_boxes, axis=-1, num_outputs=4, squeeze_axis=True)
         # refs 4 * [B, N, M] -> pick from matches [B, N, 1] -> concat to [B, N, 4]
         ref_boxes = F.concat(*[F.pick(ref_boxes[i], matches, axis=2).reshape((0, -1, 1)) \
-            for i in range(4)], dim=2)
+                               for i in range(4)], dim=2)
         # transform based on x, y, w, h
         # g [B, N, 4], a [B, N, 4] -> codecs [B, N, 4]
         g = self.corner_to_center(ref_boxes)
@@ -87,6 +151,7 @@ class NormalizedPerClassBoxCenterEncoder(gluon.Block):
         Mean value to be subtracted from encoded values, default is (0., 0., 0., 0.).
 
     """
+
     def __init__(self, num_class, stds=(0.1, 0.1, 0.2, 0.2), means=(0., 0., 0., 0.)):
         super(NormalizedPerClassBoxCenterEncoder, self).__init__()
         assert len(stds) == 4, "Box Encoder requires 4 std values."
@@ -153,6 +218,7 @@ class NormalizedBoxCenterDecoder(gluon.HybridBlock):
         If given, bounding box target will be clipped to this value.
 
     """
+
     def __init__(self, stds=(0.1, 0.1, 0.2, 0.2), means=(0., 0., 0., 0.),
                  convert_anchor=False, clip=None):
         super(NormalizedBoxCenterDecoder, self).__init__()
@@ -197,6 +263,7 @@ class MultiClassEncoder(gluon.HybridBlock):
         training, and should be excluded in loss function. Default is -1.
 
     """
+
     def __init__(self, ignore_label=-1):
         super(MultiClassEncoder, self).__init__()
         self._ignore_label = ignore_label
@@ -243,6 +310,7 @@ class MultiClassDecoder(gluon.HybridBlock):
         marked with invalid class id `-1`.
 
     """
+
     def __init__(self, axis=-1, thresh=0.01):
         super(MultiClassDecoder, self).__init__()
         self._axis = axis
@@ -286,6 +354,7 @@ class MultiPerClassDecoder(gluon.HybridBlock):
         marked with invalid class id `-1`.
 
     """
+
     def __init__(self, num_class, axis=-1, thresh=0.01):
         super(MultiPerClassDecoder, self).__init__()
         self._fg_class = num_class - 1
@@ -305,17 +374,18 @@ class MultiPerClassDecoder(gluon.HybridBlock):
         return cls_id, scores
 
 
-class SigmoidClassEncoder(gluon.HybridBlock):
+class SigmoidClassEncoder(object):
     """Encode class prediction labels for SigmoidCrossEntropy Loss."""
+
     def __init__(self, **kwargs):
         super(SigmoidClassEncoder, self).__init__(**kwargs)
 
-    def hybrid_forward(self, F, samples):
+    def __call__(self, samples):
         """Encode class prediction labels for SigmoidCrossEntropy Loss.
 
         Parameters
         ----------
-        samples : mxnet.nd.NDArray or mxnet.sym.Symbol
+        samples : np.array
             Sampling results with shape (B, N), 1:pos, 0:ignore, -1:negative
 
         Returns
@@ -328,7 +398,7 @@ class SigmoidClassEncoder(gluon.HybridBlock):
         """
         # notation from samples, 1:pos, 0:ignore, -1:negative
         target = (samples + 1) / 2.
-        target = F.where(F.abs(samples) < 1e-5, F.ones_like(target) * -1, target)
+        target = np.where(np.abs(samples) < 1e-5, -1, target)
         # output: 1: pos, 0: negative, -1: ignore
-        mask = F.where(F.abs(samples) > 1e-5, F.ones_like(samples), F.zeros_like(samples))
+        mask = np.where(np.abs(samples) > 1e-5, 1.0, 0.0)
         return target, mask
