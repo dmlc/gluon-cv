@@ -3,8 +3,7 @@ from __future__ import absolute_import
 
 import mxnet as mx
 import numpy as np
-from mxnet import autograd
-from mxnet import gluon
+from mxnet import autograd, gluon
 
 from ...nn.bbox import BBoxSplit
 from ...nn.coder import SigmoidClassEncoder, NumPyNormalizedBoxCenterEncoder
