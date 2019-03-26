@@ -11,7 +11,7 @@ from mxnet.gluon.data.vision import transforms
 
 from gluoncv.data import mscoco
 from gluoncv.model_zoo import get_model
-from gluoncv.utils import makedirs, LRScheduler
+from gluoncv.utils import makedirs, LRScheduler, LRSequential
 from gluoncv.data.transforms.presets.simple_pose import SimplePoseDefaultTrainTransform
 from gluoncv.utils.metrics import HeatmapAccuracy
 
