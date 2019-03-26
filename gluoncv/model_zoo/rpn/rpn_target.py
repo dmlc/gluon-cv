@@ -1,8 +1,8 @@
 """Region Proposal Target Generator."""
 from __future__ import absolute_import
 
-import mxnet as mx
 import numpy as np
+import mxnet as mx
 from mxnet import autograd, gluon
 
 from ...nn.bbox import BBoxSplit
