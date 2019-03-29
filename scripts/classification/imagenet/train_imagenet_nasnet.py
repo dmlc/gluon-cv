@@ -316,7 +316,6 @@ def main():
                     loss = [L(yhat[0], yhat[1], y) for yhat, y in zip(outputs, label_smooth)]
                 for l in loss:
                     l.backward()
-                lr_scheduler.update(i, epoch)
                 trainer.step(batch_size)
 
                 acc_top1.update(label, [o[0] for o in outputs])
