@@ -1,5 +1,6 @@
 """Model store which provides pretrained models."""
 from __future__ import print_function
+
 __all__ = ['get_model_file', 'purge']
 import os
 import zipfile
@@ -47,14 +48,20 @@ _model_sha1 = {name: checksum for checksum, name in [
     ('9c8b225a552614e4284a0f647331bfdc6940eb4a', 'ssd_512_resnet50_v1_voc'),
     ('2cc0f93edf1467f428018cc7261d3246dfa15259', 'ssd_512_resnet101_v2_voc'),
     ('37c180765a4eb3e67751d6bacac47bb9156f5fff', 'ssd_512_mobilenet1.0_voc'),
-    ('447328d89d70ae1e2ca49226b8d834e5a5456df3', 'faster_rcnn_resnet50_v1b_voc'),
     ('b302ad8a8660345c368448141d8acf30b5a3801d', 'ssd_300_vgg16_atrous_coco'),
     ('5c86064290c05eccbdd88475376c71c595c8325c', 'ssd_512_vgg16_atrous_coco'),
     ('c48351620d4f0cbc49e4f7a84c8e67ef8fdc6e09', 'ssd_512_resnet50_v1_coco'),
     ('da9756faa5b9b4e34dedcf83ee0733d5895796ad', 'ssd_512_mobilenet1.0_coco'),
+    ('447328d89d70ae1e2ca49226b8d834e5a5456df3', 'faster_rcnn_resnet50_v1b_voc'),
     ('5b4690fb7c5b62c44fb36c67d0642b633697f1bb', 'faster_rcnn_resnet50_v1b_coco'),
     ('a465eca35e78aba6ebdf99bf52031a447e501063', 'faster_rcnn_resnet101_v1d_coco'),
+    ('24727e5541734d9703260a3ac3509a1a0cec8b82', 'faster_rcnn_fpn_resnet50_v1b_coco'),
+    ('977c247d70c33d1426f62147fc0e04dd329fc5ec', 'faster_rcnn_fpn_bn_resnet50_v1b_coco'),
+    ('c24d9227b75f53b06e66f1c6a0f9115b04acc583', 'faster_rcnn_fpn_resnet101_v1d_coco'),
     ('a3527fdc2cee5b1f32a61e5fd7cda8fb673e86e5', 'mask_rcnn_resnet50_v1b_coco'),
+    ('4a3249c584f81c2a9b5d852b742637cd692ebdcb', 'mask_rcnn_resnet101_v1d_coco'),
+    ('1364d0afe4de575af5d4389d50c2dbf22449ceac', 'mask_rcnn_fpn_resnet50_v1b_coco'),
+    ('89c7d8669b677a05c6eaa25375ead9a174109c69', 'mask_rcnn_fpn_resnet101_v1d_coco'),
     ('121e1579d811b091940b3b1fa033e1f0d1dca40f', 'cifar_resnet20_v1'),
     ('4f2d18804c94f2d283b8b45256d048bd3d6dd479', 'cifar_resnet20_v2'),
     ('2fb251e60babdceb103e9659b3baa0dea20a14d7', 'cifar_resnet56_v1'),
@@ -121,15 +128,17 @@ _model_sha1 = {name: checksum for checksum, name in [
     ('6a25eeceb7d27bd9c05fa2bf250c55d3960ad4c7', 'resnet50_v1d_8.8x'),
     ('a872796b63fb883116831db3454711421a628154', 'resnet101_v1d_1.9x'),
     ('712fccb185921a596baebe9246ff6c994b88591b', 'resnet101_v1d_2.2x'),
-    ]}
+]}
 
 apache_repo_url = 'https://apache-mxnet.s3-accelerate.dualstack.amazonaws.com/'
 _url_format = '{repo_url}gluon/models/{file_name}.zip'
+
 
 def short_hash(name):
     if name not in _model_sha1:
         raise ValueError('Pretrained model for {name} is not available.'.format(name=name))
     return _model_sha1[name][:8]
+
 
 def get_model_file(name, tag=None, root=os.path.join('~', '.mxnet', 'models')):
     r"""Return location for the pretrained on local file system.
@@ -160,7 +169,7 @@ def get_model_file(name, tag=None, root=os.path.join('~', '.mxnet', 'models')):
         file_name = '{name}-{short_hash}'.format(name=name,
                                                  short_hash=short_hash(name))
     root = os.path.expanduser(root)
-    file_path = os.path.join(root, file_name+'.params')
+    file_path = os.path.join(root, file_name + '.params')
     if use_tag:
         sha1_hash = tag
     else:
@@ -176,7 +185,7 @@ def get_model_file(name, tag=None, root=os.path.join('~', '.mxnet', 'models')):
     if not os.path.exists(root):
         os.makedirs(root)
 
-    zip_file_path = os.path.join(root, file_name+'.zip')
+    zip_file_path = os.path.join(root, file_name + '.zip')
     repo_url = os.environ.get('MXNET_GLUON_REPO', apache_repo_url)
     if repo_url[-1] != '/':
         repo_url = repo_url + '/'
@@ -192,6 +201,7 @@ def get_model_file(name, tag=None, root=os.path.join('~', '.mxnet', 'models')):
     else:
         raise ValueError('Downloaded file has different hash. Please try again.')
 
+
 def purge(root=os.path.join('~', '.mxnet', 'models')):
     r"""Purge all pretrained model files in local file store.
 
@@ -205,6 +215,7 @@ def purge(root=os.path.join('~', '.mxnet', 'models')):
     for f in files:
         if f.endswith(".params"):
             os.remove(os.path.join(root, f))
+
 
 def pretrained_model_list():
     return list(_model_sha1.keys())

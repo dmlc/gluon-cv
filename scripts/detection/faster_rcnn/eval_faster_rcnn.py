@@ -39,6 +39,13 @@ def parse_args():
                         help='Save coco output json')
     parser.add_argument('--eval-all', action='store_true',
                         help='Eval all models begins with save prefix. Use with pretrained.')
+    parser.add_argument('--norm-layer', type=str, default=None,
+                        help='Type of normalization layer to use. '
+                             'If set to None, backbone normalization layer will be fixed,'
+                             ' and no normalization layer will be used. '
+                             'Currently supports \'bn\', and None, default is None')
+    parser.add_argument('--use-fpn', action='store_true',
+                        help='Whether to use feature pyramid network.')
     args = parser.parse_args()
     return args
 
@@ -110,22 +117,30 @@ def validate(net, val_data, ctx, eval_metric, size):
 if __name__ == '__main__':
     args = parse_args()
 
-    # training contexts
+    # contexts
     ctx = [mx.gpu(int(i)) for i in args.gpus.split(',') if i.strip()]
     ctx = ctx if ctx else [mx.cpu()]
     args.batch_size = len(ctx)  # 1 batch per device
 
     # network
-    net_name = '_'.join(('faster_rcnn', args.network, args.dataset))
+    kwargs = {}
+    module_list = []
+    if args.use_fpn:
+        module_list.append('fpn')
+    if args.norm_layer is not None:
+        module_list.append(args.norm_layer)
+        if args.norm_layer == 'bn':
+            kwargs['num_devices'] = len(args.gpus.split(','))
+    net_name = '_'.join(('faster_rcnn', *module_list, args.network, args.dataset))
     args.save_prefix += net_name
     if args.pretrained.lower() in ['true', '1', 'yes', 't']:
-        net = gcv.model_zoo.get_model(net_name, pretrained=True)
+        net = gcv.model_zoo.get_model(net_name, pretrained=True, **kwargs)
     else:
-        net = gcv.model_zoo.get_model(net_name, pretrained=False)
+        net = gcv.model_zoo.get_model(net_name, pretrained=False, **kwargs)
         net.load_parameters(args.pretrained.strip())
     net.collect_params().reset_ctx(ctx)
 
-    # training data
+    # validation data
     val_dataset, eval_metric = get_dataset(args.dataset, args)
     val_data = get_dataloader(
         net, val_dataset, args.batch_size, args.num_workers)
