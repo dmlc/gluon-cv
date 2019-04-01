@@ -46,7 +46,7 @@ pip install mxnet-mkl --upgrade
 pip install mxnet-cu92mkl --upgrade
 ```
 
-**The latest stable version of GluonCV is 0.3 and depends on mxnet >= 1.3.0**
+**The latest stable version of GluonCV is 0.4 and depends on mxnet >= 1.4.0**
 
 ## Nightly Release
 

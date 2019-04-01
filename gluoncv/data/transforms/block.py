@@ -110,13 +110,13 @@ class RandomErasing(Block):
         self.ratio = ratio
 
     def forward(self, x):
-        if not isinstance(self.probability, int):
+        if not isinstance(self.probability, float):
             raise TypeError('Got inappropriate size arg')
-        if not isinstance(self.s_min, int):
+        if not isinstance(self.s_min, float):
             raise TypeError('Got inappropriate size arg')
-        if not isinstance(self.s_max, int):
+        if not isinstance(self.s_max, float):
             raise TypeError('Got inappropriate size arg')
-        if not isinstance(self.ratio, int):
+        if not isinstance(self.ratio, float):
             raise TypeError('Got inappropriate size arg')
         if not isinstance(self.mean, (int, tuple)):
             raise TypeError('Got inappropriate size arg')

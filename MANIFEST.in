@@ -1,5 +1,5 @@
-recursive-include gluoncv *.py
-include LICENSE
 include README.md
-recursive-exclude tests *
-recursive-exclude scripts *
+include LICENSE
+graft gluoncv
+prune docs tests scripts
+global-exclude *.py[co]
