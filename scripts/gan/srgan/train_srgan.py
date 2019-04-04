@@ -251,18 +251,18 @@ if __name__ == '__main__':
     else:
         context = [mx.gpu(int(i)) for i in opt.gpu_ids.split(',') if i.strip()]
 
-    dommy_img = nd.random.uniform(0,1,(1,3,int(opt.fineSize/4),int(opt.fineSize/4)),ctx=mx.gpu(0))
+    dummy_img = nd.random.uniform(0,1,(1,3,int(opt.fineSize/4),int(opt.fineSize/4)),ctx=mx.gpu(0))
     netG = SRGenerator()
     netD = SRDiscriminator()
     vgg19 = vision.vgg19(pretrained=True,ctx=context)
     features = vgg19.features[:28]
 
     netG.initialize(mx.initializer.Normal(),ctx=mx.gpu(0))
-    dommy_out = netG(dommy_img)
+    dummy_out = netG(dummy_img)
     weights_init(netG.collect_params())
     netG.collect_params().reset_ctx(context)
     netD.initialize(ctx=mx.gpu(0))
-    netD(dommy_out)
+    netD(dummy_out)
     weights_init(netD.collect_params())
     netD.collect_params().reset_ctx(context)
 
