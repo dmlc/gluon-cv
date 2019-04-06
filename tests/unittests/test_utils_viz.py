@@ -26,8 +26,8 @@ def test_viz_network():
         import graphviz
         for name in ['mobilenet1.0', 'resnet50_v1b']:
             net = gcv.model_zoo.get_model(name, pretrained=True)
-            for shape in [(1, 3, 224, 224), (1, 3, 448, 448)]
-            gcv.utils.viz.plot_network(net)
+            for shape in [(1, 3, 224, 224), (1, 3, 448, 448)]:
+                gcv.utils.viz.plot_network(net)
     except ImportError:
         pass
 
