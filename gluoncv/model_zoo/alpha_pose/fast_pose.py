@@ -4,6 +4,7 @@ from mxnet.gluon.block import HybridBlock
 from mxnet.gluon import nn
 from mxnet import initializer
 
+from .utils import _try_load_parameters, _load_from_pytorch
 
 class PixelShuffle(HybridBlock):
     """PixelShuffle layer for re-org channel to spatial dimention.
@@ -46,6 +47,154 @@ class DUC(HybridBlock):
         return x
 
 
+class SELayer(HybridBlock):
+    def __init__(self, channel, reduction=1):
+        super(SELayer, self).__init__()
+        with self.name_scope():
+            self.fc = nn.HybridSequential()
+            self.fc.add(nn.Dense(channel // reduction))
+            self.fc.add(nn.Activation('relu'))
+            self.fc.add(nn.Dense(channel, activation='sigmoid'))
+
+    def hybrid_forward(self, F, x):
+        y = F.contrib.AdaptiveAvgPooling2D(x, output_size=1)
+        y = self.fc(y)
+
+        return y.expand_dims(-1).expand_dims(-1).broadcast_like(x) * x
+
+class Bottleneck(HybridBlock):
+    expansion = 4
+
+    def __init__(self, inplanes, planes, stride=1, downsample=None, reduction=False, norm_layer=nn.BatchNorm, **kwargs):
+        super(Bottleneck, self).__init__()
+
+        with self.name_scope():
+            self.conv1 = nn.Conv2D(planes, kernel_size=1, use_bias=False)
+            self.bn1 = norm_layer(**kwargs)
+            self.conv2 = nn.Conv2D(planes, kernel_size=3, strides=stride, padding=1, use_bias=False)
+            self.bn2 = norm_layer(**kwargs)
+            self.conv3 = nn.Conv2D(planes * 4, kernel_size=1, use_bias=False)
+            self.bn3 = norm_layer(**kwargs)
+
+        if reduction:
+            self.se = SELayer(planes * 4)
+
+        self.reduc = reduction
+        self.downsample = downsample
+        self.stride = stride
+
+    def hybrid_forward(self, F, x):
+        residual = x
+
+        out = F.relu(self.bn1(self.conv1(x)))
+        out = F.relu(self.bn2(self.conv2(out)))
+
+        out = self.bn3(self.conv3(out))
+        if self.reduc:
+            out = self.se(out)
+
+        if self.downsample is not None:
+            residual = self.downsample(x)
+
+        out = residual + out
+        out = F.relu(out)
+
+        return out
+
+
+class SEResnet(HybridBlock):
+    """ SEResnet """
+    try_load_parameters = _try_load_parameters
+
+    def __init__(self, architecture, norm_layer=nn.BatchNorm, **kwargs):
+        super(SEResnet, self).__init__()
+        assert architecture in ["resnet50", "resnet101"]
+        self.inplanes = 64
+        self.norm_layer = norm_layer
+        self.layers = [3, 4, {"resnet50": 6, "resnet101": 23}[architecture], 3]
+        self.block = Bottleneck
+
+        self.conv1 = nn.Conv2D(64, kernel_size=7, strides=2, padding=3, use_bias=False)
+        self.bn1 = self.norm_layer(**kwargs)
+        self.relu = nn.Activation('relu')
+        self.maxpool = nn.MaxPool2D(pool_size=3, strides=2, padding=1)
+
+        self.layer1 = self.make_layer(self.block, 64, self.layers[0], **kwargs)
+        self.layer2 = self.make_layer(
+            self.block, 128, self.layers[1], stride=2, **kwargs)
+        self.layer3 = self.make_layer(
+            self.block, 256, self.layers[2], stride=2, **kwargs)
+
+        self.layer4 = self.make_layer(
+            self.block, 512, self.layers[3], stride=2, **kwargs)
+
+    def hybrid_forward(self, F, x):
+        x = self.maxpool(self.relu(self.bn1(self.conv1(x))))  # 64 * h/4 * w/4
+        x = self.layer1(x)  # 256 * h/4 * w/4
+        x = self.layer2(x)  # 512 * h/8 * w/8
+        x = self.layer3(x)  # 1024 * h/16 * w/16
+        x = self.layer4(x)  # 2048 * h/32 * w/32
+        return x
+
+    def stages(self):
+        return [self.layer1, self.layer2, self.layer3, self.layer4]
+
+    def make_layer(self, block, planes, blocks, stride=1, **kwargs):
+        downsample = None
+        if stride != 1 or self.inplanes != planes * block.expansion:
+            downsample = nn.HybridSequential()
+            downsample.add(nn.Conv2D(planes * block.expansion, kernel_size=1, strides=stride, use_bias=False))
+            downsample.add(self.norm_layer(**kwargs))
+
+        layers = nn.HybridSequential()
+        if downsample is not None:
+            layers.add(block(self.inplanes, planes, stride, downsample, reduction=True, norm_layer=self.norm_layer, **kwargs))
+        else:
+            layers.add(block(self.inplanes, planes, stride, downsample, norm_layer=self.norm_layer, **kwargs))
+        self.inplanes = planes * block.expansion
+        for i in range(1, blocks):
+            layers.add(block(self.inplanes, planes, norm_layer=self.norm_layer, **kwargs))
+
+        return layers
+
 class FastPose(HybridBlock):
-    def __init__(self, deconv_dim=256, **kwargs):
+    try_load_parameters = _try_load_parameters
+    load_from_pytorch = _load_from_pytorch
+    def __init__(self, deconv_dim=256, norm_layer=None, norm_kwargs=None, ctx=mx.cpu(), pretrained=True, **kwargs):
         super(FastPose, self).__init__(**kwargs)
+        self.preact = SEResnet('resnet101', norm_layer=norm_layer, **kwargs)
+        self._reload_base(ctx=ctx)
+
+        self.shuffle1 = PixelShuffle(2)
+        if norm_layer is None:
+            norm_layer = nn.BatchNorm
+        if norm_kwargs is None:
+            norm_kwargs = {}
+        self.duc1 = DUC(1024, upscale_factor=2, norm_layer=norm_layer, **norm_kwargs)
+        self.duc2 = DUC(512, upscale_factor=2, norm_layer=norm_layer, **norm_kwargs)
+
+        self.conv_out = nn.Conv2D(
+            channels=opt.nClasses,
+            kernel_size=3,
+            strides=1,
+            padding=1,
+            weight_initializer=initializer.Normal(0.001),
+            bias_initializer=initializer.Zero()
+        )
+
+    def _reload_base(self, ctx=mx.cpu()):
+        if opt.use_pretrained_base:
+            print('===Pretrain Base===')
+            from gluoncv.model_zoo import get_model
+            # self.preact.initialize(mx.init.MSRAPrelu(), ctx=ctx)
+            base_network = get_model('resnet101_v1b', pretrained=True, root='../exp/pretrain', ctx=ctx)
+            self.preact.try_load_parameters(model=base_network, ctx=ctx)
+
+    def hybrid_forward(self, F, x):
+        x = self.preact(x)
+        x = self.shuffle1(x)
+        x = self.duc1(x)
+        x = self.duc2(x)
+
+        x = self.conv_out(x)
+        return x
