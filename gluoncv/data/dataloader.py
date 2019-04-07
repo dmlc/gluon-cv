@@ -53,7 +53,7 @@ class DetectionDataLoader(DataLoader):
 
     It loads data batches from a dataset and then apply data
     transformations. It's a subclass of :py:class:`mxnet.gluon.data.DataLoader`,
-    and therefore has very simliar APIs.
+    and therefore has very similar APIs.
 
     The main purpose of the DataLoader is to pad variable length of labels from
     each image, because they have different amount of objects.
@@ -124,7 +124,7 @@ class DetectionDataLoader(DataLoader):
 
 _worker_dataset = None
 def _worker_initializer(dataset):
-    """Initialier for processing pool."""
+    """Initializer for processing pool."""
     # global dataset is per-process based and only available in worker processes
     # this is only necessary to handle MXIndexedRecordIO because otherwise dataset
     # can be passed as argument
@@ -145,12 +145,14 @@ def _worker_fn(samples, transform_fn, batchify_fn):
 class _RandomTransformMultiWorkerIter(_MultiWorkerIter):
     """Internal multi-worker iterator for DataLoader."""
     def __init__(self, transform_fns, interval, worker_pool, batchify_fn, batch_sampler,
-                 pin_memory=False, worker_fn=_worker_fn, prefetch=0):
+                 pin_memory=False, pin_device_id=0, worker_fn=_worker_fn, prefetch=0):
         super(_RandomTransformMultiWorkerIter, self).__init__(
-            worker_pool, batchify_fn, batch_sampler, pin_memory, worker_fn, prefetch=0)
+            worker_pool, batchify_fn, batch_sampler, pin_memory=pin_memory,
+            worker_fn=worker_fn, prefetch=0)
         self._transform_fns = transform_fns
         self._current_fn = np.random.choice(self._transform_fns)
         self._interval = max(int(interval), 1)
+        self._pin_device_id = pin_device_id
         # pre-fetch, super class was inited without prefetch
         for _ in range(prefetch):
             self._push_next()
@@ -177,7 +179,7 @@ class RandomTransformDataLoader(DataLoader):
         Transform functions that takes a sample as input and returns the transformed sample.
         They will be randomly selected during the dataloader iteration.
     dataset : mxnet.gluon.data.Dataset or numpy.ndarray or mxnet.ndarray.NDArray
-        The source dataset. Original dataset is recommanded here since we will apply transform
+        The source dataset. Original dataset is recommended here since we will apply transform
         function from candidates again during the iteration.
     interval : int, default is 1
         For every `interval` batches, transform function is randomly selected from candidates.
@@ -223,6 +225,12 @@ class RandomTransformDataLoader(DataLoader):
         The number of multiprocessing workers to use for data preprocessing.
         If ``num_workers`` = 0, multiprocessing is disabled.
         Otherwise ``num_workers`` multiprocessing worker is used to process data.
+    pin_memory : boolean, default False
+        If ``True``, the dataloader will copy NDArrays into pinned memory
+        before returning them. Copying from CPU pinned memory to GPU is faster
+        than from normal CPU memory.
+    pin_device_id : int, default 0
+        The device id to use for allocating pinned memory if pin_memory is ``True``
     prefetch : int, default is `num_workers * 2`
         The number of prefetching batches only works if `num_workers` > 0.
         If `prefetch` > 0, it allow worker process to prefetch certain batches before
@@ -235,14 +243,16 @@ class RandomTransformDataLoader(DataLoader):
     """
     def __init__(self, transform_fns, dataset, interval=1, batch_size=None, shuffle=False,
                  sampler=None, last_batch=None, batch_sampler=None, batchify_fn=None,
-                 num_workers=0, pin_memory=False, prefetch=None):
+                 num_workers=0, pin_memory=False, pin_device_id=0, prefetch=None):
         super(RandomTransformDataLoader, self).__init__(
-            dataset, batch_size, shuffle, sampler,
-            last_batch, batch_sampler, batchify_fn, 0, pin_memory)
+            dataset=dataset, batch_size=batch_size, shuffle=shuffle, sampler=sampler,
+            last_batch=last_batch, batch_sampler=batch_sampler, batchify_fn=batchify_fn,
+            num_workers=0, pin_memory=pin_memory)
         self._transform_fns = transform_fns
         assert len(self._transform_fns) > 0
         self._interval = max(int(interval), 1)
         # override
+        self._pin_device_id = pin_device_id
         self._num_workers = num_workers if num_workers >= 0 else 0
         self._worker_pool = None
         self._prefetch = max(0, int(prefetch) if prefetch is not None else 2 * self._num_workers)
@@ -269,8 +279,8 @@ class RandomTransformDataLoader(DataLoader):
         else:
             return _RandomTransformMultiWorkerIter(
                 self._transform_fns, self._interval, self._worker_pool, self._batchify_fn,
-                self._batch_sampler, pin_memory=self._pin_memory, worker_fn=_worker_fn,
-                prefetch=self._prefetch)
+                self._batch_sampler, pin_memory=self._pin_memory, pin_device_id=self._pin_device_id,
+                worker_fn=_worker_fn, prefetch=self._prefetch)
 
     def __del__(self):
         if self._worker_pool:

@@ -35,11 +35,11 @@ command installs CPU version of MXNet.
 
 .. code-block:: bash
 
-   # the oldest stable version of mxnet required is 1.3.0
-   pip install mxnet>=1.3.0 --upgrade
+   # the oldest stable version of mxnet required is 1.4.0
+   pip install mxnet-mkl>=1.4.0 --upgrade
 
    # you can install nightly build of mxnet to access up-to-date features
-   pip install --pre --upgrade mxnet
+   pip install --pre --upgrade mxnet-mkl
 
 .. note::
 
@@ -81,6 +81,12 @@ A Quick Example
 
 
 :ref:`Object Detection Demo <sphx_glr_build_examples_detection_demo_ssd.py>`
+
+
+New to Deep Learning or CV?
+---------------------------
+
+For background knowledge of deep learning or CV, please refer to the open source book `Dive into Deep Learning <http://en.diveintodeeplearning.org/>`_.
 
 
 .. toctree::

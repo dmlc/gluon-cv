@@ -53,7 +53,6 @@ setup(
 
     # Package info
     packages=find_packages(exclude=('docs', 'tests', 'scripts')),
-
     zip_safe=True,
     include_package_data=True,
     install_requires=requirements,

@@ -5,7 +5,7 @@ Classification
 
 
 
-Visualization of Inference Throughputs vs. Validation Accuracy of ImageNet pre-trained models is illustrated in the following graph.
+Visualization of Inference Throughputs vs. Validation Accuracy of ImageNet pre-trained models is illustrated in the following graph. Throughputs are measured with single V100 GPU and batch size 64.
 
 .. image:: /_static/plot_help.png
   :width: 100%
@@ -15,7 +15,7 @@ Visualization of Inference Throughputs vs. Validation Accuracy of ImageNet pre-t
 How To Use Pretrained Models
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- The following example requires ``GluonCV>=0.3`` and ``MXNet>=1.3.0``. Please follow `our installation guide <../index.html#installation>`__ to install or upgrade GluonCV and MXNet if necessary.
+- The following example requires ``GluonCV>=0.4`` and ``MXNet>=1.4.0``. Please follow `our installation guide <../index.html#installation>`__ to install or upgrade GluonCV and MXNet if necessary.
 
 - Prepare an image by yourself or use `our sample image <../_static/classification-demo.png>`__. You can save the image into filename ``classification-demo.png`` in your working directory or change the filename in the source codes if you use an another name.
 
@@ -82,12 +82,16 @@ ImageNet
 
     - Download weights given a hashtag: ``net = get_model('ResNet50_v1d', pretrained='117a384e')``
 
+    ``ResNet50_v1_int8`` and ``MobileNet1.0_int8`` are quantized model calibrated on ImageNet dataset.
+
 .. role:: tag
 
 ResNet
 ------
 
 .. hint::
+
+    - ``ResNet50_v1_int8`` is a quantized model for ``ResNet50_v1``.
 
     - ``ResNet_v1b`` modifies ``ResNet_v1`` by setting stride at the 3x3 layer for a bottleneck block.
 
@@ -107,6 +111,8 @@ ResNet
    +---------------------------+--------+--------+----------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
    | ResNet50_v1 [1]_          | 77.36  | 93.57  | cc729d95 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet50_v1.sh>`_         | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet50_v1.log>`_          |
    +---------------------------+--------+--------+----------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
+   | ResNet50_v1_int8 [1]_     | 76.86  | 93.46  | cc729d95 |                                                                                                                                      |                                                                                                                               |
+   +---------------------------+--------+--------+----------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
    | ResNet101_v1 [1]_         | 78.34  | 94.01  | d988c13d | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet101_v1.sh>`_        | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet101_v1.log>`_         |
    +---------------------------+--------+--------+----------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
    | ResNet152_v1 [1]_         | 79.22  | 94.64  | acfd0970 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet152_v1.sh>`_        | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet152_v1.log>`_         |
@@ -116,6 +122,8 @@ ResNet
    | ResNet34_v1b [1]_         | 74.65  | 92.08  | 8e16b848 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet34_v1b.sh>`_        | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet34_v1b.log>`_         |
    +---------------------------+--------+--------+----------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
    | ResNet50_v1b [1]_         | 77.67  | 93.82  | 0ecdba34 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet50_v1b.sh>`_        | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet50_v1b.log>`_         |
+   +---------------------------+--------+--------+----------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
+   | ResNet50_v1b_gn [1]_      | 77.36  | 93.59  | 0ecdba34 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet50_v1b_gn.sh>`_     | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet50_v1b_gn.log>`_      |
    +---------------------------+--------+--------+----------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
    | ResNet101_v1b [1]_        | 79.20  | 94.61  | a455932a | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet101_v1b.sh>`_       | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet101_v1b.log>`_        |
    +---------------------------+--------+--------+----------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
@@ -150,8 +158,34 @@ ResNet
    | ResNet152_v2 [2]_         | 79.21  | 94.31  | f2695542 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet152_v2.sh>`_        | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet152_v2.log>`_         |
    +---------------------------+--------+--------+----------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
 
+ResNext
+-------
+
+.. table::
+   :widths: 45 5 5 10 20 15
+
+   +---------------------------------+--------+--------+----------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
+   | Model                           | Top-1  | Top-5  | Hashtag  | Training Command                                                                                                                     | Training Log                                                                                                                  |
+   +=================================+========+========+==========+======================================================================================================================================+===============================================================================================================================+
+   | ResNext50_32x4d [12]_           | 79.32  | 94.53  | 4ecf62e2 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnext50_32x4d.sh>`_     | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnext50_32x4d.log>`_      |
+   +---------------------------------+--------+--------+----------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
+   | ResNext101_32x4d [12]_          | 80.37  | 95.06  | 8654ca5d | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnext101_32x4d.sh>`_    | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnext101_32x4d.log>`_     |
+   +---------------------------------+--------+--------+----------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
+   | ResNext101_64x4d_v1 [12]_       | 80.69  | 95.17  | 2f0d1c9d | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnext101_64x4d.sh>`_    | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnext101_64x4d.log>`_     |
+   +---------------------------------+--------+--------+----------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
+   | SE_ResNext50_32x4d [12]_ [14]_  | 79.95  | 94.93  | 7906e0e1 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/se_resnext50_32x4d.sh>`_  | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/se_resnext50_32x4d.log>`_   |
+   +---------------------------------+--------+--------+----------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
+   | SE_ResNext101_32x4d [12]_ [14]_ | 80.91  | 95.39  | 688e2389 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/se_resnext101_32x4d.sh>`_ | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/se_resnext101_32x4d.log>`_  |
+   +---------------------------------+--------+--------+----------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
+   | SE_ResNext101_64x4d [12]_ [14]_ | 81.01  | 95.32  | 11c50114 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/se_resnext101_64x4d.sh>`_ | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/se_resnext101_64x4d.log>`_  |
+   +---------------------------------+--------+--------+----------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
+
 MobileNet
 ---------
+
+.. hint::
+
+    - ``MobileNet1.0_int8`` is a quantized model for ``MobileNet1.0``.
 
 .. table::
    :widths: 45 5 5 10 20 15
@@ -160,6 +194,8 @@ MobileNet
    | Model                    | Top-1  | Top-5  | Hashtag  | Training Command                                                                                                                        | Training Log                                                                                                                  |
    +==========================+========+========+==========+=========================================================================================================================================+===============================================================================================================================+
    | MobileNet1.0 [4]_        | 73.28  | 91.30  | efbb2ca3 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/mobilenet1.0-mixup.sh>`_     | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/mobilenet1.0-mixup.log>`_   |
+   +--------------------------+--------+--------+----------+-----------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
+   | MobileNet1.0_int8 [4]_   | 72.85  | 90.99  | efbb2ca3 |                                                                                                                                         |                                                                                                                               |
    +--------------------------+--------+--------+----------+-----------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
    | :tag:`MobileNet1.0` [4]_ | 72.93  | 91.14  | cce75496 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/mobilenet1.0.sh>`_           | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/mobilenet1.0.log>`_         |
    +--------------------------+--------+--------+----------+-----------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
@@ -235,6 +271,31 @@ DenseNet
    +-----------------------+--------+--------+----------+------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
    | DenseNet201 [7]_      | 77.32  | 93.62  | 1cdbc116 |                                                                                                                                    |                                                                                                                               |
    +-----------------------+--------+--------+----------+------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
+
+Pruned ResNet
+-------------
+
+.. table::
+   :widths: 45 5 5 10 35
+
+   +----------------------+-------+-------+----------+------------------------------+
+   | Model                | Top-1 | Top-5 | Hashtag  | Speedup (to original ResNet) |
+   +======================+=======+=======+==========+==============================+
+   | resnet18_v1b_0.89    | 67.2  | 87.45 | 54f7742b | 2x                           |
+   +----------------------+-------+-------+----------+------------------------------+
+   | resnet50_v1d_0.86    | 78.02 | 93.82 | a230c33f | 1.68x                        |
+   +----------------------+-------+-------+----------+------------------------------+
+   | resnet50_v1d_0.48    | 74.66 | 92.34 | 0d3e69bb | 3.3x                         |
+   +----------------------+-------+-------+----------+------------------------------+
+   | resnet50_v1d_0.37    | 70.71 | 89.74 | 9982ae49 | 5.01x                        |
+   +----------------------+-------+-------+----------+------------------------------+
+   | resnet50_v1d_0.11    | 63.22 | 84.79 | 6a25eece | 8.78x                        |
+   +----------------------+-------+-------+----------+------------------------------+
+   | resnet101_v1d_0.76   | 79.46 | 94.69 | a872796b | 1.8x                         |
+   +----------------------+-------+-------+----------+------------------------------+
+   | resnet101_v1d_0.73   | 78.89 | 94.48 | 712fccb1 | 2.02x                        |
+   +----------------------+-------+-------+----------+------------------------------+
+
 
 Others
 ------

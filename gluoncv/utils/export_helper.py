@@ -88,13 +88,15 @@ def export_block(path, block, data_shape=None, epoch=0, preprocess=True, layout=
             if not isinstance(preprocess, HybridBlock):
                 raise TypeError("preprocess must be HybridBlock, given {}".format(type(preprocess)))
         wrapper_block = nn.HybridSequential()
-        preprocess.initialize()
+        preprocess.initialize(ctx=ctx)
         wrapper_block.add(preprocess)
         wrapper_block.add(block)
     else:
         wrapper_block = block
+    wrapper_block.collect_params().reset_ctx(ctx)
 
     # try different data_shape if possible, until one fits the network
+    last_exception = None
     for dshape in data_shapes:
         h, w, c = dshape
         if layout == 'HWC':
@@ -104,12 +106,12 @@ def export_block(path, block, data_shape=None, epoch=0, preprocess=True, layout=
 
         # hybridize and forward once
         wrapper_block.hybridize()
-        last_exception = None
         try:
             wrapper_block(x)
             wrapper_block.export(path, epoch)
+            last_exception = None
             break
         except MXNetError as e:
             last_exception = e
-        if last_exception is not None:
-            raise RuntimeError(str(last_exception).splitlines()[0])
+    if last_exception is not None:
+        raise RuntimeError(str(last_exception).splitlines()[0])

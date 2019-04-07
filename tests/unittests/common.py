@@ -147,7 +147,7 @@ def with_seed(seed=None):
         ...
 
     Use of the @with_seed() decorator for all tests creates
-    tests isolation and reproducability of failures.  When a
+    tests isolation and reproducibility of failures.  When a
     test fails, the decorator outputs the seed used.  The user
     can then set the environment variable MXNET_TEST_SEED to
     the value reported, then rerun the test with:

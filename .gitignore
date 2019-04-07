@@ -1,9 +1,12 @@
 # Extra
 *.params
+*.states
 *.out
 *.swp
 .DS_Store
 .vscode
+*.npy
+*.npz
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -111,3 +114,5 @@ ENV/
 
 *.png*
 *.jpg*
+*.jpeg*
+.idea/*

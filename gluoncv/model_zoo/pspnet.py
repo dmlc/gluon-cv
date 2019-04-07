@@ -24,7 +24,7 @@ class PSPNet(SegBaseModel):
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.nn.BatchNorm`;
         for Synchronized Cross-GPU BachNormalization).
     aux : bool
-        Auxilary loss.
+        Auxiliary loss.
 
 
     Reference:
@@ -38,7 +38,8 @@ class PSPNet(SegBaseModel):
         super(PSPNet, self).__init__(nclass, aux, backbone, ctx=ctx, base_size=base_size,
                                      crop_size=crop_size, pretrained_base=pretrained_base, **kwargs)
         with self.name_scope():
-            self.head = _PSPHead(nclass, **kwargs)
+            self.head = _PSPHead(nclass, height=self._up_kwargs['height']//8,
+                                 width=self._up_kwargs['width']//8, **kwargs)
             self.head.initialize(ctx=ctx)
             self.head.collect_params().setattr('lr_mult', 10)
             if self.aux:
@@ -60,21 +61,32 @@ class PSPNet(SegBaseModel):
             outputs.append(auxout)
         return tuple(outputs)
 
+    def demo(self, x):
+        h, w = x.shape[2:]
+        self._up_kwargs['height'] = h
+        self._up_kwargs['width'] = w
+        c3, c4 = self.base_forward(x)
+        outputs = []
+        x = self.head.demo(c4)
+        import mxnet.ndarray as F
+        pred = F.contrib.BilinearResize2D(x, **self._up_kwargs)
+        return pred
 
 def _PSP1x1Conv(in_channels, out_channels, norm_layer, norm_kwargs):
     block = nn.HybridSequential()
     with block.name_scope():
         block.add(nn.Conv2D(in_channels=in_channels, channels=out_channels,
                             kernel_size=1, use_bias=False))
-        block.add(norm_layer(in_channels=out_channels, **norm_kwargs))
+        block.add(norm_layer(in_channels=out_channels, **({} if norm_kwargs is None else norm_kwargs)))
         block.add(nn.Activation('relu'))
     return block
 
 
 class _PyramidPooling(HybridBlock):
-    def __init__(self, in_channels, **kwargs):
+    def __init__(self, in_channels, height=60, width=60, **kwargs):
         super(_PyramidPooling, self).__init__()
         out_channels = int(in_channels/4)
+        self._up_kwargs = {'height': height, 'width': width}
         with self.name_scope():
             self.conv1 = _PSP1x1Conv(in_channels, out_channels, **kwargs)
             self.conv2 = _PSP1x1Conv(in_channels, out_channels, **kwargs)
@@ -84,28 +96,38 @@ class _PyramidPooling(HybridBlock):
     def pool(self, F, x, size):
         return F.contrib.AdaptiveAvgPooling2D(x, output_size=size)
 
-    def upsample(self, F, x, h, w):
-        return F.contrib.BilinearResize2D(x, height=h, width=w)
+    def upsample(self, F, x):
+        return F.contrib.BilinearResize2D(x, **self._up_kwargs)
 
     def hybrid_forward(self, F, x):
-        _, _, h, w = x.shape
-        feat1 = self.upsample(F, self.conv1(self.pool(F, x, 1)), h, w)
-        feat2 = self.upsample(F, self.conv2(self.pool(F, x, 2)), h, w)
-        feat3 = self.upsample(F, self.conv3(self.pool(F, x, 3)), h, w)
-        feat4 = self.upsample(F, self.conv4(self.pool(F, x, 4)), h, w)
+        feat1 = self.upsample(F, self.conv1(self.pool(F, x, 1)))
+        feat2 = self.upsample(F, self.conv2(self.pool(F, x, 2)))
+        feat3 = self.upsample(F, self.conv3(self.pool(F, x, 3)))
+        feat4 = self.upsample(F, self.conv4(self.pool(F, x, 6)))
         return F.concat(x, feat1, feat2, feat3, feat4, dim=1)
 
+    def demo(self, x):
+        self._up_kwargs['height'] = x.shape[2]
+        self._up_kwargs['width'] = x.shape[3]
+        import mxnet.ndarray as F
+        feat1 = self.upsample(F, self.conv1(self.pool(F, x, 1)))
+        feat2 = self.upsample(F, self.conv2(self.pool(F, x, 2)))
+        feat3 = self.upsample(F, self.conv3(self.pool(F, x, 3)))
+        feat4 = self.upsample(F, self.conv4(self.pool(F, x, 6)))
+        return F.concat(x, feat1, feat2, feat3, feat4, dim=1)
 
 class _PSPHead(HybridBlock):
-    def __init__(self, nclass, norm_layer=nn.BatchNorm, norm_kwargs={}, **kwargs):
+    def __init__(self, nclass, norm_layer=nn.BatchNorm, norm_kwargs=None,
+                 height=60, width=60, **kwargs):
         super(_PSPHead, self).__init__()
-        self.psp = _PyramidPooling(2048, norm_layer=norm_layer,
+        self.psp = _PyramidPooling(2048, height=height, width=width,
+                                   norm_layer=norm_layer,
                                    norm_kwargs=norm_kwargs)
         with self.name_scope():
             self.block = nn.HybridSequential(prefix='')
             self.block.add(nn.Conv2D(in_channels=4096, channels=512,
                                      kernel_size=3, padding=1, use_bias=False))
-            self.block.add(norm_layer(in_channels=512, **norm_kwargs))
+            self.block.add(norm_layer(in_channels=512, **({} if norm_kwargs is None else norm_kwargs)))
             self.block.add(nn.Activation('relu'))
             self.block.add(nn.Dropout(0.1))
             self.block.add(nn.Conv2D(in_channels=512, channels=nclass,
@@ -114,6 +136,11 @@ class _PSPHead(HybridBlock):
     def hybrid_forward(self, F, x):
         x = self.psp(x)
         return self.block(x)
+
+    def demo(self, x):
+        x = self.psp.demo(x)
+        return self.block(x)
+        
 
 def get_psp(dataset='pascal_voc', backbone='resnet50', pretrained=False,
             root='~/.mxnet/models', ctx=cpu(0), pretrained_base=True, **kwargs):

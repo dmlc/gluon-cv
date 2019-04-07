@@ -89,12 +89,12 @@ def validate(val_data, net, criterion, ctx):
         with autograd.predict_mode():
             outpus = [net(X) for X in data_list]
             losses = [criterion(X, y) for X, y in zip(outpus, label_list)]
-        accuray = [(X.argmax(axis=1)==y.astype('float32')).mean.asscalar() for X, y in zip(outpus, label_list)]
+        accuracy = [(X.argmax(axis=1)==y.astype('float32')).mean.asscalar() for X, y in zip(outpus, label_list)]
 
         loss_list = [l.mean().asscalar() for l in losses]
         loss += sum(loss_list) / len(loss_list)
 
-    return loss/len(val_data), sum(accuray)/len(accuray)
+    return loss/len(val_data), sum(accuracy)/len(accuracy)
 
 
 def main(net, batch_size, epochs, opt, ctx):
@@ -124,8 +124,8 @@ def main(net, batch_size, epochs, opt, ctx):
             data_list = gluon.utils.split_and_load(data, ctx)
             label_list = gluon.utils.split_and_load(label, ctx)
             with autograd.record():
-                outpus = [net(X) for X in data_list]
-                losses = [criterion(X, y) for X, y in zip(outpus, label_list)]
+                output = [net(X) for X in data_list]
+                losses = [criterion(X, y) for X, y in zip(output, label_list)]
 
             for l in losses:
                 l.backward()
@@ -140,8 +140,8 @@ def main(net, batch_size, epochs, opt, ctx):
         __loss = _loss/len(train_data)
 
         if val_data is not None:
-            val_loss, val_accuray = validate(val_data, net, criterion, ctx)
-            epoch_str = ("Epoch %d. Train loss: %f, Val loss %f, Val accuray %f, " % (epoch, __loss , val_loss, val_accuray))
+            val_loss, val_accuracy = validate(val_data, net, criterion, ctx)
+            epoch_str = ("Epoch %d. Train loss: %f, Val loss %f, Val accuracy %f, " % (epoch, __loss , val_loss, val_accuracy))
         else:
             epoch_str = ("Epoch %d. Train loss: %f, " % (epoch, __loss))
 

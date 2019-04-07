@@ -19,7 +19,7 @@ from gluoncv.data.transforms.presets.yolo import YOLO3DefaultValTransform
 from gluoncv.data.dataloader import RandomTransformDataLoader
 from gluoncv.utils.metrics.voc_detection import VOC07MApMetric
 from gluoncv.utils.metrics.coco_detection import COCODetectionMetric
-from gluoncv.utils import LRScheduler
+from gluoncv.utils import LRScheduler, LRSequential
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train YOLO networks with random input shape.')
@@ -54,7 +54,7 @@ def parse_args():
     parser.add_argument('--lr-decay-period', type=int, default=0,
                         help='interval for periodic learning rate decays. default is 0 to disable.')
     parser.add_argument('--lr-decay-epoch', type=str, default='160,180',
-                        help='epoches at which learning rate decays. default is 160,180.')
+                        help='epochs at which learning rate decays. default is 160,180.')
     parser.add_argument('--warmup-lr', type=float, default=0.0,
                         help='starting warmup learning rate. default is 0.0.')
     parser.add_argument('--warmup-epochs', type=int, default=0,
@@ -188,13 +188,17 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
         lr_decay_epoch = list(range(args.lr_decay_period, args.epochs, args.lr_decay_period))
     else:
         lr_decay_epoch = [int(i) for i in args.lr_decay_epoch.split(',')]
-    lr_scheduler = LRScheduler(mode=args.lr_mode,
-                               baselr=args.lr,
-                               niters=args.num_samples // args.batch_size,
-                               nepochs=args.epochs,
-                               step=lr_decay_epoch,
-                               step_factor=args.lr_decay, power=2,
-                               warmup_epochs=args.warmup_epochs)
+    lr_decay_epoch = [e - args.warmup_epochs for e in lr_decay_epoch]
+    num_batches = args.num_samples // args.batch_size
+    lr_scheduler = LRSequential([
+        LRScheduler('linear', base_lr=0, target_lr=args.lr,
+                    nepochs=args.warmup_epochs, iters_per_epoch=num_batches),
+        LRScheduler(args.lr_mode, base_lr=args.lr,
+                    nepochs=args.epochs - args.warmup_epochs,
+                    iters_per_epoch=num_batches,
+                    step_epoch=lr_decay_epoch,
+                    step_factor=args.lr_decay, power=2),
+    ])
 
     trainer = gluon.Trainer(
         net.collect_params(), 'sgd',
@@ -261,7 +265,6 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
                     scale_losses.append(scale_loss)
                     cls_losses.append(cls_loss)
                 autograd.backward(sum_losses)
-            lr_scheduler.update(i, epoch)
             trainer.step(batch_size)
             obj_metrics.update(0, obj_losses)
             center_metrics.update(0, center_losses)
@@ -305,9 +308,9 @@ if __name__ == '__main__':
     net_name = '_'.join(('yolo3', args.network, args.dataset))
     args.save_prefix += net_name
     # use sync bn if specified
-    num_sync_bn_devices = len(ctx) if args.syncbn else -1
-    if num_sync_bn_devices > 1:
-        net = get_model(net_name, pretrained_base=True, num_sync_bn_devices=num_sync_bn_devices)
+    if args.syncbn and len(ctx) > 1:
+        net = get_model(net_name, pretrained_base=True, norm_layer=gluon.contrib.nn.SyncBatchNorm,
+                        norm_kwargs={'num_devices': len(ctx)})
         async_net = get_model(net_name, pretrained_base=False)  # used by cpu worker
     else:
         net = get_model(net_name, pretrained_base=True)

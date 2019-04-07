@@ -87,7 +87,7 @@ def test_imagenet_models():
     x = mx.random.uniform(shape=(2, 3, 224, 224), ctx=ctx)
     models = ['resnet18_v1', 'resnet34_v1',
               'resnet50_v1', 'resnet101_v1', 'resnet152_v1',
-              'resnet18_v1b', 'resnet34_v1b',
+              'resnet18_v1b', 'resnet34_v1b', 'resnet50_v1b_gn',
               'resnet50_v1b', 'resnet101_v1b', 'resnet152_v1b',
               'resnet50_v1c', 'resnet101_v1c', 'resnet152_v1c',
               'resnet50_v1d', 'resnet101_v1d', 'resnet152_v1d',
@@ -109,8 +109,10 @@ def test_imagenet_models():
               'vgg16', 'vgg16_bn', 'vgg19', 'vgg19_bn',
               'residualattentionnet56', 'residualattentionnet92',
               'residualattentionnet128', 'residualattentionnet164',
-              'residualattentionnet200', 'residualattentionnet236',
-              'residualattentionnet452']
+              'residualattentionnet200', 'residualattentionnet236', 'residualattentionnet452',
+              'resnet18_v1b_0.89', 'resnet50_v1d_0.86', 'resnet50_v1d_0.48',
+              'resnet50_v1d_0.37', 'resnet50_v1d_0.11',
+              'resnet101_v1d_0.76', 'resnet101_v1d_0.73']
     _test_model_list(models, ctx, x)
 
     # 299x299
@@ -121,6 +123,25 @@ def test_imagenet_models():
     # 331x331
     x = mx.random.uniform(shape=(2, 3, 331, 331), ctx=ctx)
     models = ['nasnet_5_1538', 'nasnet_7_1920', 'nasnet_6_4032']
+    _test_model_list(models, ctx, x)
+
+@try_gpu(0)
+def test_simple_pose_resnet_models():
+    ctx = mx.context.current_context()
+    models = ['simple_pose_resnet18_v1b',
+              'simple_pose_resnet50_v1b', 'simple_pose_resnet101_v1b', 'simple_pose_resnet152_v1b',
+              'simple_pose_resnet50_v1d', 'simple_pose_resnet101_v1d', 'simple_pose_resnet152_v1d']
+
+    # 192x256
+    x = mx.random.uniform(shape=(2, 3, 192, 256), ctx=ctx)
+    _test_model_list(models, ctx, x)
+
+    # 256x256
+    x = mx.random.uniform(shape=(2, 3, 256, 256), ctx=ctx)
+    _test_model_list(models, ctx, x)
+
+    # 288x384
+    x = mx.random.uniform(shape=(2, 3, 288, 384), ctx=ctx)
     _test_model_list(models, ctx, x)
 
 def test_imagenet_models_bn_global_stats():
@@ -136,11 +157,112 @@ def test_ssd_models():
         models = ['ssd_512_resnet50_v1_voc']
     _test_model_list(models, ctx, x)
 
+def test_ssd_reset_class():
+    ctx = mx.context.current_context()
+    x = mx.random.uniform(shape=(1, 3, 512, 544), ctx=ctx)  # allow non-squre and larger inputs
+    model_name = 'ssd_300_vgg16_atrous_voc'
+    net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
+    net.reset_class(["bus", "car", "bird"], reuse_weights=["bus", "car", "bird"])
+    net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
+    net.reset_class(["bus", "car", "bird"], reuse_weights={"bus":"bus"})
+    net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
+    net.reset_class(["person", "car", "bird"], reuse_weights={"person":14})
+    net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
+    net.reset_class(["person", "car", "bird"], reuse_weights={0:14})
+    net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
+    net.reset_class(["person", "car", "bird"], reuse_weights={0:"person"})
+
+    net(x)
+
+# This test is only executed when a gpu is available
+def test_ssd_reset_class_on_gpu():
+    ctx = mx.gpu(0)
+    try:
+        x = mx.random.uniform(shape=(1, 3, 512, 544), ctx=ctx)
+    except Exception:
+        return
+
+    model_name = 'ssd_300_vgg16_atrous_voc'
+    net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
+    net.reset_class(["bus", "car", "bird"], reuse_weights=["bus", "car", "bird"])
+    net(x)
+
+def test_yolo3_reset_class():
+    ctx = mx.context.current_context()
+    x = mx.random.uniform(shape=(1, 3, 512, 544), ctx=ctx)  # allow non-squre and larger inputs
+    model_name = 'yolo3_darknet53_voc'
+    net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
+    net.reset_class(["bus", "car", "bird"], reuse_weights=["bus", "car", "bird"])
+    net(x)
+
+    # for GPU
+    ctx = mx.gpu(0)
+    try:
+        x = mx.random.uniform(shape=(1, 3, 512, 544), ctx=ctx)
+    except Exception:
+        return
+    net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
+    net.reset_class(["bus", "car", "bird"])
+    net(x)
+
+def test_faster_rcnn_reset_class():
+    ctx = mx.context.current_context()
+    x = mx.random.uniform(shape=(1, 3, 512, 544), ctx=ctx)  # allow non-squre and larger inputs
+    model_name = 'faster_rcnn_resnet50_v1b_coco'
+    net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
+    net.reset_class(["bus", "car", "bird"], reuse_weights=["bus", "car", "bird"])
+    net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
+    net.reset_class(["bus", "car", "bird"], reuse_weights={"bus":"bus"})
+    net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
+    net.reset_class(["person", "car", "bird"], reuse_weights={"person":14})
+    net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
+    net.reset_class(["person", "car", "bird"], reuse_weights={0:14})
+    net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
+    net.reset_class(["person", "car", "bird"], reuse_weights={0:"person"})
+    net(x)
+
+    # for GPU
+    ctx = mx.gpu(0)
+    try:
+        x = mx.random.uniform(shape=(1, 3, 512, 544), ctx=ctx)
+    except Exception:
+        return
+    net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
+    net.reset_class(["bus", "car", "bird"])
+    net(x)
+
+def test_mask_rcnn_reset_class():
+    ctx = mx.context.current_context()
+    x = mx.random.uniform(shape=(1, 3, 512, 544), ctx=ctx)  # allow non-squre and larger inputs
+    model_name = 'mask_rcnn_resnet50_v1b_coco'
+    net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
+    net.reset_class(["bus", "car", "bird"], reuse_weights=["bus", "car", "bird"])
+    net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
+    net.reset_class(["bus", "car", "bird"], reuse_weights={"bus":"bus"})
+    net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
+    net.reset_class(["person", "car", "bird"], reuse_weights={"person":14})
+    net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
+    net.reset_class(["person", "car", "bird"], reuse_weights={0:14})
+    net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
+    net.reset_class(["person", "car", "bird"], reuse_weights={0:"person"})
+    net(x)
+
+    # for GPU
+    ctx = mx.gpu(0)
+    try:
+        x = mx.random.uniform(shape=(1, 3, 512, 544), ctx=ctx)
+    except Exception:
+        return
+    net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
+    net.reset_class(["bus", "car", "bird"])
+    net(x)
+
 @try_gpu(0)
 def test_faster_rcnn_models():
     ctx = mx.context.current_context()
     x = mx.random.uniform(shape=(1, 3, 300, 400), ctx=ctx)  # allow non-squre and larger inputs
-    models = ['faster_rcnn_resnet50_v1b_voc', 'faster_rcnn_resnet50_v1b_coco']
+    models = ['faster_rcnn_resnet50_v1b_voc', 'faster_rcnn_resnet50_v1b_coco',
+              'faster_rcnn_fpn_resnet50_v1b_coco']
     _test_model_list(models, ctx, x)
 
 @try_gpu(0)
@@ -184,7 +306,7 @@ def test_set_nms():
 @try_gpu(0)
 def test_segmentation_models():
     ctx = mx.context.current_context()
-    x = mx.random.uniform(shape=(1, 3, 224, 224), ctx=ctx)
+    x = mx.random.uniform(shape=(1, 3, 480, 480), ctx=ctx)
     models = ['fcn_resnet101_coco', 'psp_resnet101_coco', 'deeplab_resnet101_coco',
               'fcn_resnet101_voc', 'psp_resnet101_voc', 'deeplab_resnet101_voc',
               'fcn_resnet50_ade', 'psp_resnet50_ade', 'deeplab_resnet50_ade',
@@ -193,15 +315,30 @@ def test_segmentation_models():
     _test_model_list(models, ctx, x, pretrained=True, pretrained_base=True)
     _test_model_list(models, ctx, x, pretrained=False, pretrained_base=False)
     _test_model_list(models, ctx, x, pretrained=False, pretrained_base=True)
-    
-    
+
+@with_cpu(0)
 def test_mobilenet_sync_bn():
     model_name = "mobilenet1.0"
     net = gcv.model_zoo.get_model(model_name, pretrained=True)
     net.save_parameters(model_name + '.params')
-    net = gcv.model_zoo.get_model(model_name, pretrained=False, num_sync_bn_devices=2)
+    net = gcv.model_zoo.get_model(model_name, pretrained=False,
+                                  norm_layer=mx.gluon.contrib.nn.SyncBatchNorm, norm_kwargs={'num_devices': 2})
     net.load_parameters(model_name + '.params')
- 
+
+@with_cpu(0)
+def test_quantized_imagenet_models():
+    model_list = ['mobilenet1.0_int8', 'resnet50_v1_int8']
+    ctx = mx.context.current_context()
+    x = mx.random.uniform(shape=(1, 3, 224, 224), ctx=ctx)
+    _test_model_list(model_list, ctx, x)
+
+@with_cpu(0)
+def test_quantized_ssd_models():
+    model_list = ['ssd_300_vgg16_atrous_voc_int8', 'ssd_512_mobilenet1.0_voc_int8',
+    'ssd_512_resnet50_v1_voc_int8', 'ssd_512_vgg16_atrous_voc_int8']
+    ctx = mx.context.current_context()
+    x = mx.random.uniform(shape=(1, 3, 512, 544), ctx=ctx)
+    _test_model_list(model_list, ctx, x)
 
 if __name__ == '__main__':
     import nose

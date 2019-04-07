@@ -37,7 +37,7 @@ import gluoncv
 # 
 # State-of-the-art results [Chen17]_ [Zhao17]_ on Pascal VOC dataset are typically
 # difficult to reproduce due to the sophisticated training details.
-# In this tutorial we walk through our tate-of-the-art implementation step-by-step.
+# In this tutorial we walk through our state-of-the-art implementation step-by-step.
 #
 # DeepLabV3 Implementation
 # ------------------------
@@ -97,7 +97,7 @@ print(model)
 # COCO Pretraining
 # ----------------
 # 
-# COCO dataset is an larege instance segmentation dataset with 80 categories, which has 127K
+# COCO dataset is an large instance segmentation dataset with 80 categories, which has 127K
 # training images. From the training set of MS-COCO dataset, we select with
 # images containing the 20 classes shared with PASCAL dataset with more than 1,000 labeled pixels,
 # resulting 92.5K images. All the other classes are marked as background. You can simply get this
@@ -181,15 +181,15 @@ plt.show()
 # pretrained weights.
 # We enlarge the learning rate of the head by 10 times. A poly-like cosine learning rate
 # scheduling strategy is used.
-# The learning rate is given by :math:`lr = baselr \times (1-iter)^{power}`
+# The learning rate is given by :math:`lr = base_lr \times (1-iter)^{power}`
 # 
-lr_scheduler = gluoncv.utils.LRScheduler(mode='poly', baselr=0.01, niters=len(train_data), 
-                                         nepochs=30)
+lr_scheduler = gluoncv.utils.LRScheduler(mode='poly', base_lr=0.01,
+                                         nepochs=30, iters_per_epoch=len(train_data), power=0.9)
 
 ##############################################################################
 # We first use the base learning rate of 0.01 to pretrain on MS-COCO dataset,
-# then we devide the base learning rate by 10 times and 100 times respectively when
-# fine-tuning on Pascal Augmentated dataset and Pascal VOC orginal dataset.
+# then we divide the base learning rate by 10 times and 100 times respectively when
+# fine-tuning on Pascal Augmented dataset and Pascal VOC original dataset.
 #
 
 ##############################################################################

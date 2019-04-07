@@ -1,4 +1,4 @@
-"""6. Train Faster-RCNN end-to-end on PASCAL VOC
+"""06. Train Faster-RCNN end-to-end on PASCAL VOC
 ================================================
 
 This tutorial goes through the basic steps of training a Faster-RCNN [Ren15]_ object detection model
@@ -160,11 +160,11 @@ for ib, batch in enumerate(train_loader):
 # region-aware pooling layers, class predictors and bounding box offset predictors.
 #
 # `Gluon Model Zoo <../../model_zoo/index.html>`__ has a few built-in Faster-RCNN networks, more on the way.
-# You can load your favorate one with one simple line of code:
+# You can load your favorite one with one simple line of code:
 #
 # .. hint::
 #
-#    To avoid downloading mdoel in this tutorial, we set ``pretrained_base=False``,
+#    To avoid downloading model in this tutorial, we set ``pretrained_base=False``,
 #    in practice we usually want to load pre-trained imagenet models by setting
 #    ``pretrained_base=True``.
 from gluoncv import model_zoo
@@ -195,7 +195,7 @@ with autograd.train_mode():
 # In training mode, Faster-RCNN returns a lot of intermediate values, which we require to train in an end-to-end flavor,
 # where ``cls_preds`` are the class predictions prior to softmax,
 # ``box_preds`` are bounding box offsets with one-to-one correspondence to proposals
-# ``roi`` is the proposal candidates, ``samples`` and ``matches`` are the samling/matching results of RPN anchors.
+# ``roi`` is the proposal candidates, ``samples`` and ``matches`` are the sampling/matching results of RPN anchors.
 # ``rpn_score`` and ``rpn_box`` are the raw outputs from RPN's convolutional layers.
 # and ``anchors`` are absolute coordinates of corresponding anchors boxes.
 
@@ -282,7 +282,7 @@ for ib, batch in enumerate(train_loader):
 ##########################################################
 # Training loop
 # -------------
-# After we have defined loss function and generated training targets, we can write the training goop.
+# After we have defined loss function and generated training targets, we can write the training loop.
 
 for ib, batch in enumerate(train_loader):
     if ib > 0:

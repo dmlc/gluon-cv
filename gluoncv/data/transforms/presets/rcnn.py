@@ -1,7 +1,11 @@
 """Transforms for RCNN series."""
 from __future__ import absolute_import
+
 import copy
+from random import randint
+
 import mxnet as mx
+
 from .. import bbox as tbbox
 from .. import image as timage
 from .. import mask as tmask
@@ -9,6 +13,7 @@ from .. import mask as tmask
 __all__ = ['transform_test', 'load_test',
            'FasterRCNNDefaultTrainTransform', 'FasterRCNNDefaultValTransform',
            'MaskRCNNDefaultTrainTransform', 'MaskRCNNDefaultValTransform']
+
 
 def transform_test(imgs, short=600, max_size=1000, mean=(0.485, 0.456, 0.406),
                    std=(0.229, 0.224, 0.225)):
@@ -56,6 +61,7 @@ def transform_test(imgs, short=600, max_size=1000, mean=(0.485, 0.456, 0.406),
         return tensors[0], origs[0]
     return tensors, origs
 
+
 def load_test(filenames, short=600, max_size=1000, mean=(0.485, 0.456, 0.406),
               std=(0.229, 0.224, 0.225)):
     """A util function to load all images, transform them to tensor by applying
@@ -95,8 +101,9 @@ class FasterRCNNDefaultTrainTransform(object):
 
     Parameters
     ----------
-    short : int, default is 600
+    short : int/tuple, default is 600
         Resize image shorter side to ``short``.
+        Resize the shorter side of the image randomly within the given range, if it is a tuple.
     max_size : int, default is 1000
         Make sure image longer side is smaller than ``max_size``.
     net : mxnet.gluon.HybridBlock, optional
@@ -125,27 +132,43 @@ class FasterRCNNDefaultTrainTransform(object):
     pos_ratio : float, default is 0.5
         ``pos_ratio`` defines how many positive samples (``pos_ratio * num_sample``) is
         to be sampled.
-
+    flip_p : float, default is 0.5
+        Probability to flip horizontally, by default is 0.5 for random horizontal flip.
+        You may set it to 0 to disable random flip or 1 to force flip.
+    ashape : int, default is 128
+        Defines shape of pre generated anchors for target generation
+    multi_stage : boolean, default is False
+        Whether the network output multi stage features.
     """
+
     def __init__(self, short=600, max_size=1000, net=None, mean=(0.485, 0.456, 0.406),
                  std=(0.229, 0.224, 0.225), box_norm=(1., 1., 1., 1.),
                  num_sample=256, pos_iou_thresh=0.7, neg_iou_thresh=0.3,
-                 pos_ratio=0.5, **kwargs):
+                 pos_ratio=0.5, flip_p=0.5, ashape=128, multi_stage=False, **kwargs):
         self._short = short
         self._max_size = max_size
         self._mean = mean
         self._std = std
         self._anchors = None
+        self._multi_stage = multi_stage
+        self._random_resize = isinstance(self._short, (tuple, list))
+        self._flip_p = flip_p
         if net is None:
             return
 
         # use fake data to generate fixed anchors for target generation
-        ashape = 128
+        anchors = []  # [P2, P3, P4, P5]
         # in case network has reset_ctx to gpu
         anchor_generator = copy.deepcopy(net.rpn.anchor_generator)
         anchor_generator.collect_params().reset_ctx(None)
-        anchors = anchor_generator(
-            mx.nd.zeros((1, 3, ashape, ashape))).reshape((1, 1, ashape, ashape, -1))
+        if self._multi_stage:
+            for ag in anchor_generator:
+                anchor = ag(mx.nd.zeros((1, 3, ashape, ashape))).reshape((1, 1, ashape, ashape, -1))
+                ashape = max(ashape // 2, 16)
+                anchors.append(anchor)
+        else:
+            anchors = anchor_generator(
+                mx.nd.zeros((1, 3, ashape, ashape))).reshape((1, 1, ashape, ashape, -1))
         self._anchors = anchors
         # record feature extractor for infer_shape
         if not hasattr(net, 'features'):
@@ -161,12 +184,16 @@ class FasterRCNNDefaultTrainTransform(object):
         """Apply transform to training image/label."""
         # resize shorter side but keep in max_size
         h, w, _ = src.shape
-        img = timage.resize_short_within(src, self._short, self._max_size, interp=1)
+        if self._random_resize:
+            short = randint(self._short[0], self._short[1])
+        else:
+            short = self._short
+        img = timage.resize_short_within(src, short, self._max_size, interp=1)
         bbox = tbbox.resize(label, (w, h), (img.shape[1], img.shape[0]))
 
         # random horizontal flip
         h, w, _ = img.shape
-        img, flips = timage.random_flip(img, px=0.5)
+        img, flips = timage.random_flip(img, px=self._flip_p)
         bbox = tbbox.flip(bbox, (w, h), flip_x=flips[0])
 
         # to tensor
@@ -178,11 +205,23 @@ class FasterRCNNDefaultTrainTransform(object):
 
         # generate RPN target so cpu workers can help reduce the workload
         # feat_h, feat_w = (img.shape[1] // self._stride, img.shape[2] // self._stride)
-        oshape = self._feat_sym.infer_shape(data=(1, 3, img.shape[1], img.shape[2]))[1][0]
-        anchor = self._anchors[:, :, :oshape[2], :oshape[3], :].reshape((-1, 4))
         gt_bboxes = mx.nd.array(bbox[:, :4])
-        cls_target, box_target, box_mask = self._target_generator(
-            gt_bboxes, anchor, img.shape[2], img.shape[1])
+        if self._multi_stage:
+            oshapes = []
+            anchor_targets = []
+            for feat_sym in self._feat_sym:
+                oshapes.append(feat_sym.infer_shape(data=(1, 3, img.shape[1], img.shape[2]))[1][0])
+            for anchor, oshape in zip(self._anchors, oshapes):
+                anchor = anchor[:, :, :oshape[2], :oshape[3], :].reshape((-1, 4))
+                anchor_targets.append(anchor)
+            anchor_targets = mx.nd.concat(*anchor_targets, dim=0)
+            cls_target, box_target, box_mask = self._target_generator(
+                gt_bboxes, anchor_targets, img.shape[2], img.shape[1])
+        else:
+            oshape = self._feat_sym.infer_shape(data=(1, 3, img.shape[1], img.shape[2]))[1][0]
+            anchor = self._anchors[:, :, :oshape[2], :oshape[3], :].reshape((-1, 4))
+            cls_target, box_target, box_mask = self._target_generator(
+                gt_bboxes, anchor, img.shape[2], img.shape[1])
         return img, bbox.astype(img.dtype), cls_target, box_target, box_mask
 
 
@@ -201,6 +240,7 @@ class FasterRCNNDefaultValTransform(object):
         Standard deviation to be divided from image. Default is [0.229, 0.224, 0.225].
 
     """
+
     def __init__(self, short=600, max_size=1000,
                  mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)):
         self._mean = mean
@@ -227,8 +267,9 @@ class MaskRCNNDefaultTrainTransform(object):
 
     Parameters
     ----------
-    short : int, default is 600
+    short : int/tuple, default is 600
         Resize image shorter side to ``short``.
+        Resize the shorter side of the image randomly within the given range, if it is a tuple.
     max_size : int, default is 1000
         Make sure image longer side is smaller than ``max_size``.
     net : mxnet.gluon.HybridBlock, optional
@@ -257,27 +298,39 @@ class MaskRCNNDefaultTrainTransform(object):
     pos_ratio : float, default is 0.5
         ``pos_ratio`` defines how many positive samples (``pos_ratio * num_sample``) is
         to be sampled.
-
+    ashape : int, default is 128
+        Defines shape of pre generated anchors for target generation
+    multi_stage : boolean, default is False
+        Whether the network output multi stage features.
     """
+
     def __init__(self, short=600, max_size=1000, net=None, mean=(0.485, 0.456, 0.406),
                  std=(0.229, 0.224, 0.225), box_norm=(1., 1., 1., 1.),
                  num_sample=256, pos_iou_thresh=0.7, neg_iou_thresh=0.3,
-                 pos_ratio=0.5, **kwargs):
+                 pos_ratio=0.5, ashape=128, multi_stage=False, **kwargs):
         self._short = short
         self._max_size = max_size
         self._mean = mean
         self._std = std
         self._anchors = None
+        self._multi_stage = multi_stage
+        self._random_resize = isinstance(self._short, (tuple, list))
         if net is None:
             return
 
         # use fake data to generate fixed anchors for target generation
-        ashape = 128
+        anchors = []  # [P2, P3, P4, P5]
         # in case network has reset_ctx to gpu
         anchor_generator = copy.deepcopy(net.rpn.anchor_generator)
         anchor_generator.collect_params().reset_ctx(None)
-        anchors = anchor_generator(
-            mx.nd.zeros((1, 3, ashape, ashape))).reshape((1, 1, ashape, ashape, -1))
+        if self._multi_stage:
+            for ag in anchor_generator:
+                anchor = ag(mx.nd.zeros((1, 3, ashape, ashape))).reshape((1, 1, ashape, ashape, -1))
+                ashape = max(ashape // 2, 16)
+                anchors.append(anchor)
+        else:
+            anchors = anchor_generator(
+                mx.nd.zeros((1, 3, ashape, ashape))).reshape((1, 1, ashape, ashape, -1))
         self._anchors = anchors
         # record feature extractor for infer_shape
         if not hasattr(net, 'features'):
@@ -293,7 +346,11 @@ class MaskRCNNDefaultTrainTransform(object):
         """Apply transform to training image/label."""
         # resize shorter side but keep in max_size
         h, w, _ = src.shape
-        img = timage.resize_short_within(src, self._short, self._max_size, interp=1)
+        if self._random_resize:
+            short = randint(self._short[0], self._short[1])
+        else:
+            short = self._short
+        img = timage.resize_short_within(src, short, self._max_size, interp=1)
         bbox = tbbox.resize(label, (w, h), (img.shape[1], img.shape[0]))
         segm = [tmask.resize(polys, (w, h), (img.shape[1], img.shape[0])) for polys in segm]
 
@@ -317,11 +374,24 @@ class MaskRCNNDefaultTrainTransform(object):
 
         # generate RPN target so cpu workers can help reduce the workload
         # feat_h, feat_w = (img.shape[1] // self._stride, img.shape[2] // self._stride)
-        oshape = self._feat_sym.infer_shape(data=(1, 3, img.shape[1], img.shape[2]))[1][0]
-        anchor = self._anchors[:, :, :oshape[2], :oshape[3], :].reshape((-1, 4))
         gt_bboxes = mx.nd.array(bbox[:, :4])
-        cls_target, box_target, box_mask = self._target_generator(
-            gt_bboxes, anchor, img.shape[2], img.shape[1])
+        if self._multi_stage:
+            oshapes = []
+            anchor_targets = []
+            for feat_sym in self._feat_sym:
+                oshapes.append(feat_sym.infer_shape(data=(1, 3, img.shape[1], img.shape[2]))[1][0])
+            for anchor, oshape in zip(self._anchors, oshapes):
+                anchor = anchor[:, :, :oshape[2], :oshape[3], :].reshape((-1, 4))
+                anchor_targets.append(anchor)
+            anchor_targets = mx.nd.concat(*anchor_targets, dim=0)
+            cls_target, box_target, box_mask = self._target_generator(
+                gt_bboxes, anchor_targets, img.shape[2], img.shape[1])
+        else:
+            oshape = self._feat_sym.infer_shape(data=(1, 3, img.shape[1], img.shape[2]))[1][0]
+            anchor = self._anchors[:, :, :oshape[2], :oshape[3], :].reshape((-1, 4))
+
+            cls_target, box_target, box_mask = self._target_generator(
+                gt_bboxes, anchor, img.shape[2], img.shape[1])
         return img, bbox.astype(img.dtype), masks, cls_target, box_target, box_mask
 
 
@@ -340,6 +410,7 @@ class MaskRCNNDefaultValTransform(object):
         Standard deviation to be divided from image. Default is [0.229, 0.224, 0.225].
 
     """
+
     def __init__(self, short=600, max_size=1000,
                  mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)):
         self._mean = mean

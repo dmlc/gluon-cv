@@ -38,9 +38,9 @@ def parse_args():
                         help='dataset train split (default: train)')
     # training hyper params
     parser.add_argument('--aux', action='store_true', default= False,
-                        help='Auxilary loss')
+                        help='Auxiliary loss')
     parser.add_argument('--aux-weight', type=float, default=0.5,
-                        help='auxilary loss weight')
+                        help='auxiliary loss weight')
     parser.add_argument('--epochs', type=int, default=50, metavar='N',
                         help='number of epochs to train (default: 50)')
     parser.add_argument('--start_epoch', type=int, default=0,
@@ -146,9 +146,10 @@ class Trainer(object):
         criterion = MixSoftmaxCrossEntropyLoss(args.aux, aux_weight=args.aux_weight)
         self.criterion = DataParallelCriterion(criterion, args.ctx, args.syncbn)
         # optimizer and lr scheduling
-        self.lr_scheduler = LRScheduler(mode='poly', baselr=args.lr,
-                                        niters=len(self.train_data), 
-                                        nepochs=args.epochs)
+        self.lr_scheduler = LRScheduler(mode='poly', base_lr=args.lr,
+                                        nepochs=args.epochs,
+                                        iters_per_epoch=len(self.train_data),
+                                        power=0.9)
         kv = mx.kv.create(args.kvstore)
         optimizer_params = {'lr_scheduler': self.lr_scheduler,
                             'wd':args.weight_decay,
@@ -170,7 +171,6 @@ class Trainer(object):
         train_loss = 0.0
         alpha = 0.2
         for i, (data, target) in enumerate(tbar):
-            self.lr_scheduler.update(i, epoch)
             with autograd.record(True):
                 outputs = self.net(data.astype(args.dtype, copy=False))
                 losses = self.criterion(outputs, target)
@@ -221,7 +221,7 @@ if __name__ == "__main__":
         trainer.validation(args.start_epoch)
     else:
         print('Starting Epoch:', args.start_epoch)
-        print('Total Epoches:', args.epochs)
+        print('Total Epochs:', args.epochs)
         for epoch in range(args.start_epoch, args.epochs):
             trainer.training(epoch)
             if not trainer.args.no_val:

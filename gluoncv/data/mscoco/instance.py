@@ -20,7 +20,7 @@ class COCOInstance(VisionDataset):
     splits : list of str, default ['instances_val2017']
         Json annotations name.
         Candidates can be: instances_val2017, instances_train2017.
-    transform : callable, defaut None
+    transform : callable, default None
         A function that takes data and label and transforms them. Refer to
         :doc:`./transforms` for examples.
 
@@ -75,7 +75,7 @@ class COCOInstance(VisionDataset):
         """Return pycocotools object for evaluation purposes."""
         if not self._coco:
             raise ValueError("No coco objects found, dataset not initialized.")
-        elif len(self._coco) > 1:
+        if len(self._coco) > 1:
             raise NotImplementedError(
                 "Currently we don't support evaluating {} JSON files".format(len(self._coco)))
         return self._coco[0]

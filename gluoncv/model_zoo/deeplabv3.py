@@ -26,7 +26,7 @@ class DeepLabV3(SegBaseModel):
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.nn.BatchNorm`;
         for Synchronized Cross-GPU BachNormalization).
     aux : bool
-        Auxilary loss.
+        Auxiliary loss.
 
 
     Reference:
@@ -40,7 +40,8 @@ class DeepLabV3(SegBaseModel):
         super(DeepLabV3, self).__init__(nclass, aux, backbone, ctx=ctx, base_size=base_size,
                                      crop_size=crop_size, pretrained_base=pretrained_base, **kwargs)
         with self.name_scope():
-            self.head = _DeepLabHead(nclass, **kwargs)
+            self.head = _DeepLabHead(nclass, height=self._up_kwargs['height']//8,
+                                     width=self._up_kwargs['width']//8, **kwargs)
             self.head.initialize(ctx=ctx)
             self.head.collect_params().setattr('lr_mult', 10)
             if self.aux:
@@ -61,9 +62,19 @@ class DeepLabV3(SegBaseModel):
             outputs.append(auxout)
         return tuple(outputs)
 
+    def demo(self, x):
+        h, w = x.shape[2:]
+        self._up_kwargs['height'] = h
+        self._up_kwargs['width'] = w
+        c3, c4 = self.base_forward(x)
+        x = self.head.demo(c4)
+        import mxnet.ndarray as F
+        pred = F.contrib.BilinearResize2D(x, **self._up_kwargs)
+        return pred
+
 
 class _DeepLabHead(HybridBlock):
-    def __init__(self, nclass, norm_layer=nn.BatchNorm, norm_kwargs={}, **kwargs):
+    def __init__(self, nclass, norm_layer=nn.BatchNorm, norm_kwargs=None, **kwargs):
         super(_DeepLabHead, self).__init__()
         with self.name_scope():
             self.aspp = _ASPP(2048, [12, 24, 36], norm_layer=norm_layer,
@@ -71,7 +82,7 @@ class _DeepLabHead(HybridBlock):
             self.block = nn.HybridSequential()
             self.block.add(nn.Conv2D(in_channels=256, channels=256,
                                      kernel_size=3, padding=1, use_bias=False))
-            self.block.add(norm_layer(in_channels=256, **norm_kwargs))
+            self.block.add(norm_layer(in_channels=256, **({} if norm_kwargs is None else norm_kwargs)))
             self.block.add(nn.Activation('relu'))
             self.block.add(nn.Dropout(0.1))
             self.block.add(nn.Conv2D(in_channels=256, channels=nclass,
@@ -81,6 +92,13 @@ class _DeepLabHead(HybridBlock):
         x = self.aspp(x)
         return self.block(x)
 
+    def demo(self, x):
+        h, w = x.shape[2:]
+        self.aspp.concurent[-1]._up_kwargs['height'] = h
+        self.aspp.concurent[-1]._up_kwargs['width'] = w
+        x = self.aspp(x)
+        return self.block(x)
+        
 
 def _ASPPConv(in_channels, out_channels, atrous_rate, norm_layer, norm_kwargs):
     block = nn.HybridSequential()
@@ -88,35 +106,38 @@ def _ASPPConv(in_channels, out_channels, atrous_rate, norm_layer, norm_kwargs):
         block.add(nn.Conv2D(in_channels=in_channels, channels=out_channels,
                             kernel_size=3, padding=atrous_rate,
                             dilation=atrous_rate, use_bias=False))
-        block.add(norm_layer(in_channels=out_channels, **norm_kwargs))
+        block.add(norm_layer(in_channels=out_channels, **({} if norm_kwargs is None else norm_kwargs)))
         block.add(nn.Activation('relu'))
     return block
 
 class _AsppPooling(nn.HybridBlock):
-    def __init__(self, in_channels, out_channels, norm_layer, norm_kwargs, **kwargs):
+    def __init__(self, in_channels, out_channels, norm_layer, norm_kwargs,
+                 height=60, width=60, **kwargs):
         super(_AsppPooling, self).__init__()
         self.gap = nn.HybridSequential()
+        self._up_kwargs = {'height': height, 'width': width}
         with self.gap.name_scope():
             self.gap.add(nn.GlobalAvgPool2D())
             self.gap.add(nn.Conv2D(in_channels=in_channels, channels=out_channels,
                                    kernel_size=1, use_bias=False))
-            self.gap.add(norm_layer(in_channels=out_channels, **norm_kwargs))
+            self.gap.add(norm_layer(in_channels=out_channels,
+                                    **({} if norm_kwargs is None else norm_kwargs)))
             self.gap.add(nn.Activation("relu"))
 
     def hybrid_forward(self, F, x):
-        _, _, h, w = x.shape
         pool = self.gap(x)
-        return F.contrib.BilinearResize2D(pool, height=h, width=w)
+        return F.contrib.BilinearResize2D(pool, **self._up_kwargs)
 
 class _ASPP(nn.HybridBlock):
-    def __init__(self, in_channels, atrous_rates, norm_layer, norm_kwargs):
+    def __init__(self, in_channels, atrous_rates, norm_layer, norm_kwargs,
+                 height=60, width=60):
         super(_ASPP, self).__init__()
         out_channels = 256
         b0 = nn.HybridSequential()
         with b0.name_scope():
             b0.add(nn.Conv2D(in_channels=in_channels, channels=out_channels,
                              kernel_size=1, use_bias=False))
-            b0.add(norm_layer(in_channels=out_channels, **norm_kwargs))
+            b0.add(norm_layer(in_channels=out_channels, **({} if norm_kwargs is None else norm_kwargs)))
             b0.add(nn.Activation("relu"))
 
         rate1, rate2, rate3 = tuple(atrous_rates)
@@ -124,7 +145,7 @@ class _ASPP(nn.HybridBlock):
         b2 = _ASPPConv(in_channels, out_channels, rate2, norm_layer, norm_kwargs)
         b3 = _ASPPConv(in_channels, out_channels, rate3, norm_layer, norm_kwargs)
         b4 = _AsppPooling(in_channels, out_channels, norm_layer=norm_layer,
-                          norm_kwargs=norm_kwargs)
+                          norm_kwargs=norm_kwargs, height=height, width=width)
 
         self.concurent = gluon.contrib.nn.HybridConcurrent(axis=1)
         with self.concurent.name_scope():
@@ -138,7 +159,8 @@ class _ASPP(nn.HybridBlock):
         with self.project.name_scope():
             self.project.add(nn.Conv2D(in_channels=5*out_channels, channels=out_channels,
                                        kernel_size=1, use_bias=False))
-            self.project.add(norm_layer(in_channels=out_channels, **norm_kwargs))
+            self.project.add(norm_layer(in_channels=out_channels,
+                                        **({} if norm_kwargs is None else norm_kwargs)))
             self.project.add(nn.Activation("relu"))
             self.project.add(nn.Dropout(0.5))
 
