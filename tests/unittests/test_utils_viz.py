@@ -21,6 +21,7 @@ def test_viz_image():
     ax = gcv.utils.viz.plot_image(img)
     ax = gcv.utils.viz.plot_image(img, ax=ax, reverse_rgb=True)
 
+@unittest.skip("Skip due to graphviz env")
 def test_viz_network():
     try:
         import graphviz
