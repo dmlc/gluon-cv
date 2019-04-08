@@ -1,6 +1,7 @@
 from __future__ import print_function
 from __future__ import division
 
+import unittest
 import mxnet as mx
 import numpy as np
 
