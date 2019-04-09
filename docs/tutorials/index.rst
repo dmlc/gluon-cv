@@ -98,6 +98,10 @@ Object Detection
 
         Run an object detection model from your webcam.
 
+    .. card::
+        :title: Skip Finetuning by reusing part of pre-trained model
+        :link: ../build/examples_detection/skip_fintune.html
+
 
 Instance Segmentation
 ---------------------
@@ -156,7 +160,7 @@ Semantic Segmentation
         :title: Getting SOTA Results on Pascal VOC
         :link: ../build/examples_segmentation/voc_sota.html
 
-        Hands on DeepLabV3 model training on Pascal VOC dataset, and achieves 
+        Hands on DeepLabV3 model training on Pascal VOC dataset, and achieves
         state-of-the-art accuracy.
 
 Pose Estimation
@@ -217,6 +221,10 @@ Deployment
     .. card::
         :title: C++ Inference with GluonCV
         :link: ../build/examples_deployment/cpp_inference.html
+
+    .. card::
+        :title: Inference with Quantized Models
+        :link: ../build/examples_deployment/int8_inference.html
 
 .. toctree::
     :hidden:

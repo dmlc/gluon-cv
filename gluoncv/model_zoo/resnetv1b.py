@@ -573,7 +573,7 @@ def resnet101_v1c(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
     return model
 
 def resnet152_v1c(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
-    """Constructs a ResNetV1b-152 model.
+    """Constructs a ResNetV1c-152 model.
 
     Parameters
     ----------
@@ -635,7 +635,7 @@ def resnet50_v1d(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
     return model
 
 def resnet101_v1d(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
-    """Constructs a ResNetV1d-50 model.
+    """Constructs a ResNetV1d-101 model.
 
     Parameters
     ----------
@@ -666,7 +666,7 @@ def resnet101_v1d(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
     return model
 
 def resnet152_v1d(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
-    """Constructs a ResNetV1d-50 model.
+    """Constructs a ResNetV1d-152 model.
 
     Parameters
     ----------

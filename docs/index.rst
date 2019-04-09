@@ -35,8 +35,8 @@ command installs CPU version of MXNet.
 
 .. code-block:: bash
 
-   # the oldest stable version of mxnet required is 1.3.0
-   pip install mxnet-mkl>=1.3.0 --upgrade
+   # the oldest stable version of mxnet required is 1.4.0
+   pip install mxnet-mkl>=1.4.0 --upgrade
 
    # you can install nightly build of mxnet to access up-to-date features
    pip install --pre --upgrade mxnet-mkl

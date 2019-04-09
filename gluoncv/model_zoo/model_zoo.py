@@ -2,32 +2,31 @@
 """Model store which handles pretrained models from both
 mxnet.gluon.model_zoo.vision and gluoncv.models
 """
-from .ssd import *
-from .faster_rcnn import *
-from .mask_rcnn import *
-from .fcn import *
-from .pspnet import *
-from .deeplabv3 import *
+from .alexnet import *
 from .cifarresnet import *
 from .cifarresnext import *
 from .cifarwideresnet import *
+from .deeplabv3 import *
+from .densenet import *
+from .faster_rcnn import *
+from .fcn import *
+from .inception import *
+from .mask_rcnn import *
+from .mobilenet import *
+from .nasnet import *
+from .pruned_resnet.resnetv1b_pruned import *
+from .pspnet import *
+from .quantized import *
+from .residual_attentionnet import *
+from .resnet import *
 from .resnetv1b import *
 from .resnext import *
-from .simple_pose.simple_pose_resnet import *
 from .senet import *
-from .se_resnet import *
-from .yolo import *
-from .nasnet import *
-from .alexnet import *
-from .densenet import *
-from .inception import *
-from .resnet import *
+from .simple_pose.simple_pose_resnet import *
 from .squeezenet import *
+from .ssd import *
 from .vgg import *
-from .mobilenet import *
-from .residual_attentionnet import *
-from .pruned_resnet.resnetv1b_pruned import *
-
+from .yolo import *
 
 __all__ = ['get_model', 'get_model_list']
 
@@ -78,7 +77,7 @@ _models = {
     'mobilenetv2_0.25': mobilenet_v2_0_25,
     'ssd_300_vgg16_atrous_voc': ssd_300_vgg16_atrous_voc,
     'ssd_300_vgg16_atrous_coco': ssd_300_vgg16_atrous_coco,
-    'ssd_300_vgg16_atrous_custom' : ssd_300_vgg16_atrous_custom,
+    'ssd_300_vgg16_atrous_custom': ssd_300_vgg16_atrous_custom,
     'ssd_512_vgg16_atrous_voc': ssd_512_vgg16_atrous_voc,
     'ssd_512_vgg16_atrous_coco': ssd_512_vgg16_atrous_coco,
     'ssd_512_vgg16_atrous_custom': ssd_512_vgg16_atrous_custom,
@@ -94,11 +93,17 @@ _models = {
     'ssd_512_mobilenet1.0_custom': ssd_512_mobilenet1_0_custom,
     'faster_rcnn_resnet50_v1b_voc': faster_rcnn_resnet50_v1b_voc,
     'faster_rcnn_resnet50_v1b_coco': faster_rcnn_resnet50_v1b_coco,
+    'faster_rcnn_fpn_resnet50_v1b_coco': faster_rcnn_fpn_resnet50_v1b_coco,
+    'faster_rcnn_fpn_bn_resnet50_v1b_coco': faster_rcnn_fpn_bn_resnet50_v1b_coco,
     'faster_rcnn_resnet50_v1b_custom': faster_rcnn_resnet50_v1b_custom,
     'faster_rcnn_resnet101_v1d_voc': faster_rcnn_resnet101_v1d_voc,
     'faster_rcnn_resnet101_v1d_coco': faster_rcnn_resnet101_v1d_coco,
+    'faster_rcnn_fpn_resnet101_v1d_coco': faster_rcnn_fpn_resnet101_v1d_coco,
     'faster_rcnn_resnet101_v1d_custom': faster_rcnn_resnet101_v1d_custom,
     'mask_rcnn_resnet50_v1b_coco': mask_rcnn_resnet50_v1b_coco,
+    'mask_rcnn_fpn_resnet50_v1b_coco': mask_rcnn_fpn_resnet50_v1b_coco,
+    'mask_rcnn_resnet101_v1d_coco': mask_rcnn_resnet101_v1d_coco,
+    'mask_rcnn_fpn_resnet101_v1d_coco': mask_rcnn_fpn_resnet101_v1d_coco,
     'cifar_resnet20_v1': cifar_resnet20_v1,
     'cifar_resnet56_v1': cifar_resnet56_v1,
     'cifar_resnet110_v1': cifar_resnet110_v1,
@@ -186,8 +191,15 @@ _models = {
     'resnet50_v1d_0.37': resnet50_v1d_37,
     'resnet50_v1d_0.11': resnet50_v1d_11,
     'resnet101_v1d_0.76': resnet101_v1d_76,
-    'resnet101_v1d_0.73': resnet101_v1d_73
-    }
+    'resnet101_v1d_0.73': resnet101_v1d_73,
+    'mobilenet1.0_int8': mobilenet1_0_int8,
+    'resnet50_v1_int8': resnet50_v1_int8,
+    'ssd_300_vgg16_atrous_voc_int8': ssd_300_vgg16_atrous_voc_int8,
+    'ssd_512_mobilenet1.0_voc_int8': ssd_512_mobilenet1_0_voc_int8,
+    'ssd_512_resnet50_v1_voc_int8': ssd_512_resnet50_v1_voc_int8,
+    'ssd_512_vgg16_atrous_voc_int8': ssd_512_vgg16_atrous_voc_int8,
+}
+
 
 def get_model(name, **kwargs):
     """Returns a pre-defined model by name
@@ -218,6 +230,7 @@ def get_model(name, **kwargs):
         raise ValueError(err_str)
     net = _models[name](**kwargs)
     return net
+
 
 def get_model_list():
     """Get the entire list of model names in model_zoo.
