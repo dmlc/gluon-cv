@@ -451,7 +451,7 @@ if __name__ == '__main__':
         context = [mx.gpu(int(i)) for i in opt.gpu_ids.split(',') if i.strip()]
 
     sw = SummaryWriter(logdir='./logs', flush_secs=5)
-    dommy_img = nd.random.uniform(0,1,(1,3,opt.fineSize,opt.fineSize),ctx=mx.gpu(0))
+    dummy_img = nd.random.uniform(0,1,(1,3,opt.fineSize,opt.fineSize),ctx=mx.gpu(0))
     netG_A = define_G(opt.output_nc,opt.ngf, opt.which_model_netG, not opt.no_dropout)
     netG_B = define_G(opt.output_nc, opt.ngf, opt.which_model_netG, not opt.no_dropout)
 
@@ -461,7 +461,7 @@ if __name__ == '__main__':
     nets = [netG_A,netG_B,netD_A,netD_B]
     for net in nets:
         net.initialize(ctx=mx.gpu(0))
-        net(dommy_img)
+        net(dummy_img)
         weights_init(net.model)
         net.collect_params().reset_ctx(context)
 
