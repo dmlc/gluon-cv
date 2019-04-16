@@ -17,7 +17,7 @@ def _try_load_parameters(self, filename=None, model=None, ctx=None, allow_missin
         if filename is not None:
             loaded = ndarray.load(filename)
         else:
-            loaded = model._collect_params_with_prefix()
+            loaded = {k:v.data() for k, v in model._collect_params_with_prefix().items()}
         params = self._collect_params_with_prefix()
         if not loaded and not params:
             return
@@ -39,6 +39,7 @@ def _try_load_parameters(self, filename=None, model=None, ctx=None, allow_missin
             if name in params:
                 if params[name].shape != loaded[name].shape:
                     continue
+                data = loaded[name]
                 params[name]._load_init(loaded[name], ctx)
 
 

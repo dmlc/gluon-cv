@@ -1,10 +1,13 @@
 """Fast pose network for alpha pose"""
+import os
 import mxnet as mx
 from mxnet.gluon.block import HybridBlock
 from mxnet.gluon import nn
 from mxnet import initializer
 
 from .utils import _try_load_parameters, _load_from_pytorch
+
+__all__ = ['get_alphapose', 'alpha_pose_resnet101_v1b_coco']
 
 class PixelShuffle(HybridBlock):
     """PixelShuffle layer for re-org channel to spatial dimention.
@@ -102,12 +105,13 @@ class Bottleneck(HybridBlock):
         return out
 
 
-class SEResnet(HybridBlock):
-    """ SEResnet """
+class FastSEResNet(HybridBlock):
+    """ FastSEResNet """
     try_load_parameters = _try_load_parameters
 
     def __init__(self, architecture, norm_layer=nn.BatchNorm, **kwargs):
-        super(SEResnet, self).__init__()
+        super(FastSEResNet, self).__init__()
+        architecture = architecture.split('_')[0]
         assert architecture in ["resnet50", "resnet101"]
         self.inplanes = 64
         self.norm_layer = norm_layer
@@ -157,24 +161,20 @@ class SEResnet(HybridBlock):
 
         return layers
 
-class FastPose(HybridBlock):
-    try_load_parameters = _try_load_parameters
-    load_from_pytorch = _load_from_pytorch
-    def __init__(self, deconv_dim=256, norm_layer=None, norm_kwargs=None, ctx=mx.cpu(), pretrained=True, **kwargs):
-        super(FastPose, self).__init__(**kwargs)
-        self.preact = SEResnet('resnet101', norm_layer=norm_layer, **kwargs)
-        self._reload_base(ctx=ctx)
+class AlphaPose(HybridBlock):
+    def __init__(self, preact, num_class, deconv_dim=256, norm_layer=nn.BatchNorm, norm_kwargs=None, **kwargs):
+        super(AlphaPose, self).__init__(**kwargs)
+        self.preact = preact
+        self.num_class = num_class
 
         self.shuffle1 = PixelShuffle(2)
-        if norm_layer is None:
-            norm_layer = nn.BatchNorm
         if norm_kwargs is None:
             norm_kwargs = {}
         self.duc1 = DUC(1024, upscale_factor=2, norm_layer=norm_layer, **norm_kwargs)
         self.duc2 = DUC(512, upscale_factor=2, norm_layer=norm_layer, **norm_kwargs)
 
         self.conv_out = nn.Conv2D(
-            channels=opt.nClasses,
+            channels=num_class,
             kernel_size=3,
             strides=1,
             padding=1,
@@ -182,19 +182,55 @@ class FastPose(HybridBlock):
             bias_initializer=initializer.Zero()
         )
 
-    def _reload_base(self, ctx=mx.cpu()):
-        if opt.use_pretrained_base:
-            print('===Pretrain Base===')
-            from gluoncv.model_zoo import get_model
-            # self.preact.initialize(mx.init.MSRAPrelu(), ctx=ctx)
-            base_network = get_model('resnet101_v1b', pretrained=True, root='../exp/pretrain', ctx=ctx)
-            self.preact.try_load_parameters(model=base_network, ctx=ctx)
-
     def hybrid_forward(self, F, x):
         x = self.preact(x)
         x = self.shuffle1(x)
         x = self.duc1(x)
         x = self.duc2(x)
-
         x = self.conv_out(x)
         return x
+
+
+def get_alphapose(name, dataset, num_class, pretrained=False, pretrained_base=True, ctx=mx.cpu(),
+                  norm_layer=nn.BatchNorm, norm_kwargs=None,
+                  root=os.path.join('~', '.mxnet', 'models'), **kwargs):
+    r"""Utility function to return AlphaPose networks.
+
+    Parameters
+    ----------
+    name : str
+        Model name.
+    dataset : str
+        The name of dataset.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    ctx : mxnet.Context
+        Context such as mx.cpu(), mx.gpu(0).
+    root : str
+        Model weights storing path.
+
+    Returns
+    -------
+    mxnet.gluon.HybridBlock
+        The AlphaPose network.
+
+    """
+    if norm_kwargs is None:
+        norm_kwargs = {}
+    preact = FastSEResNet(name, norm_layer=norm_layer, **norm_kwargs)
+    if not pretrained and pretrained_base:
+        from ..model_zoo import get_model
+        base_network = get_model(name, pretrained=True, root=root, ctx=ctx)
+        _try_load_parameters(self=base_network, model=base_network, ctx=ctx)
+    net = AlphaPose(preact, num_class, **kwargs)
+    if pretrained:
+        from ..model_store import get_model_file
+        full_name = '_'.join(('alpha_pose', name, dataset))
+        net.load_parameters(get_model_file(full_name, tag=pretrained, root=root), ctx=ctx)
+    return net
+
+def alpha_pose_resnet101_v1b_coco(**kwargs):
+    from ...data import COCOKeyPoints
+    keypoints = COCOKeyPoints.KEYPOINTS
+    return get_alphapose(name='resnet101_v1b', dataset='coco', num_class=len(keypoints), **kwargs)
