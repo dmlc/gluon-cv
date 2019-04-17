@@ -123,7 +123,7 @@ def get_data_loader(data_dir, batch_size, num_workers, input_size):
                                                       joint_pairs=train_dataset.joint_pairs,
                                                       image_size=input_size, heatmap_size=heatmap_size,
                                                       sigma=opt.sigma, scale_factor=0.30, rotation_factor=40,
-                                                      mean=meanvec, std=stdvec, random_flip=True, aspect_ratio=4./3.)
+                                                      mean=meanvec, std=stdvec, random_flip=True)
 
     train_data = gluon.data.DataLoader(
         train_dataset.transform(transform_train),

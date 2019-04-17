@@ -48,7 +48,7 @@ class SimplePoseDefaultTrainTransform(object):
     """
     def __init__(self, num_joints, joint_pairs, image_size=(256, 256), heatmap_size=(64, 64),
                  sigma=2, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225),
-                 random_flip=True, scale_factor=0.25, rotation_factor=30, aspect_ratio=1.0,
+                 random_flip=True, scale_factor=0.25, rotation_factor=30,
                  **kwargs):
         from ....model_zoo.simple_pose.pose_target import SimplePoseGaussianTargetGenerator
         self._target_generator = SimplePoseGaussianTargetGenerator(
@@ -63,7 +63,7 @@ class SimplePoseDefaultTrainTransform(object):
         self._random_flip = random_flip
         self._scale_factor = scale_factor
         self._rotation_factor = rotation_factor
-        self._aspect_ratio = float(1.0 / aspect_ratio)
+        self._aspect_ratio = float(self._width) / self._height
 
     def __call__(self, src, label, img_path):
         cv2 = try_import_cv2()

@@ -7,6 +7,7 @@ import mxnet as mx
 from ..image import random_flip as random_flip_image
 from ..pose import
 from ....utils.filesystem import try_import_cv2
+from .simple_pose import _box_to_center_scale
 
 
 class AlphaPoseDefaultTrainTransform(object):
@@ -30,8 +31,10 @@ class AlphaPoseDefaultTrainTransform(object):
         self._random_crop = random_crop
         self._scale_factor = scale_factor
         self._rotation_factor = rotation_factor
+        self._aspect_ratio = float(self._width) / self._height
 
     def __call__(self, src, label, img_path):
+        cv2 = try_import_cv2()
         bbox = label['bbox']
         assert len(bbox) == 4
         joints_3d = label['joints_3d']
@@ -80,6 +83,21 @@ class AlphaPoseDefaultTrainTransform(object):
             mask = mx.nd.zeros(shape=(joints_3d.shape[0], self._heatmap_size[1], self._heatmap_size[0]))
             return img, target, mask, img_path
 
+        center, scale = _box_to_center_scale(
+            ul[0], ul[1], br[0] - ul[0], br[1] - ul[1], self._aspect_ratio)
+
+        # rotation
+        rf = self._rotation_factor
+        r = np.clip(np.random.randn() * rf, -rf * 2, rf * 2) if random.random() <= 0.6 else 0
+
+        joints = joints_3d
+        if self._random_flip and random.random() > 0.5:
+            # src, fliped = random_flip_image(src, px=0.5, py=0)
+            # if fliped[0]:
+            src = src[:, ::-1, :]
+            joints = flip_joints_3d(joints_3d, src.shape[1], self._joint_pairs)
+            center[0] = src.shape[1] - center[0] - 1
+
         h, w = self._image_size
         trans = get_affine_transform(center, scale, r, [w, h])
         img = cv2.warpAffine(src.asnumpy(), trans, (int(w), int(h)), flags=cv2.INTER_LINEAR)
@@ -91,6 +109,11 @@ class AlphaPoseDefaultTrainTransform(object):
 
         # generate training targets
         target, target_weight = self._target_generator(joints)
+
+        # to tensor
+        img = mx.nd.image.to_tensor(mx.nd.array(img))
+        img = mx.nd.image.normalize(img, mean=self._mean, std=self._std)
+        return img, target, target_weight, img_path
 
     def _random_sample_bbox(self, ul, br, w, h):
         """Take random sample"""
@@ -143,3 +166,43 @@ class AlphaPoseDefaultTrainTransform(object):
             ul[1] = (ul[1] + br[1]) / 2
 
         return ul, br
+
+class AlphaPoseDefaultValTransform(object):
+    def __init__(self, num_joints, joint_pairs, image_size=(256, 256), heatmap_size=(64, 64),
+                 sigma=1, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225),
+                 random_flip=True, random_sample=False, random_crop=False,
+                 scale_factor=(0.2, 0.3), rotation_factor=30, **kwargs):
+        self._num_joints = num_joints
+        self._joint_pairs = joint_pairs
+        self._image_size = image_size
+        self._heatmap_size = heatmap_size
+        self._width = image_size[0]
+        self._height = image_size[1]
+        self._mean = mean
+        self._std = std
+        self._random_flip = random_flip
+        self._random_sample = random_sample
+        self._random_crop = random_crop
+        self._scale_factor = scale_factor
+        self._rotation_factor = rotation_factor
+        self._aspect_ratio = float(self._width) / self._height
+
+    def __call__(self, src, label, img_path):
+        cv2 = try_import_cv2()
+        bbox = label['bbox']
+        assert len(bbox) == 4
+        joints_3d = label['joints_3d']
+        xmin, ymin, xmax, ymax = bbox
+        center, scale = _box_to_center_scale(
+            xmin, ymin, xmax - xmin, ymax - ymin, self._aspect_ratio)
+        score = label.get('score', 1)
+
+        h, w = self._image_size
+        trans = get_affine_transform(center, scale, 0, [w, h])
+        img = cv2.warpAffine(src.asnumpy(), trans, (int(w), int(h)), flags=cv2.INTER_LINEAR)
+
+        # to tensor
+        img = mx.nd.image.to_tensor(mx.nd.array(img))
+        img = mx.nd.image.normalize(img, mean=self._mean, std=self._std)
+
+        return img, scale, center, score, img_path

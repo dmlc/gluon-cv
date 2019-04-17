@@ -68,7 +68,6 @@ def get_data_loader(data_dir, batch_size, num_workers, input_size):
     transform_val = SimplePoseDefaultValTransform(num_joints=val_dataset.num_joints,
                                                   joint_pairs=val_dataset.joint_pairs,
                                                   image_size=input_size,
-                                                  aspect_ratio=4./3.,
                                                   mean=meanvec,
                                                   std=stdvec)
     val_data = gluon.data.DataLoader(
