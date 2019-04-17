@@ -114,8 +114,7 @@ def get_data_loader(data_dir, batch_size, num_workers, input_size):
         imgid = gluon.utils.split_and_load(batch[3], ctx_list=ctx, batch_axis=0)
         return data, label, weight, imgid
 
-    train_dataset = mscoco.keypoints.COCOKeyPoints(data_dir, aspect_ratio=4./3.,
-                                                   splits=('person_keypoints_train2017'))
+    train_dataset = mscoco.keypoints.COCOKeyPoints(data_dir, splits=('person_keypoints_train2017'))
     heatmap_size = [int(i/4) for i in input_size]
 
     meanvec = [float(i) for i in opt.mean.split(',')]
@@ -124,7 +123,7 @@ def get_data_loader(data_dir, batch_size, num_workers, input_size):
                                                       joint_pairs=train_dataset.joint_pairs,
                                                       image_size=input_size, heatmap_size=heatmap_size,
                                                       sigma=opt.sigma, scale_factor=0.30, rotation_factor=40,
-                                                      mean=meanvec, std=stdvec, random_flip=True)
+                                                      mean=meanvec, std=stdvec, random_flip=True, aspect_ratio=4./3.)
 
     train_data = gluon.data.DataLoader(
         train_dataset.transform(transform_train),
