@@ -97,7 +97,7 @@ def get_affine_transform(center,
     if not isinstance(scale, np.ndarray) and not isinstance(scale, list):
         scale = np.array([scale, scale])
 
-    scale_tmp = scale * 200.0
+    scale_tmp = scale
     src_w = scale_tmp[0]
     dst_w = output_size[0]
     dst_h = output_size[1]
@@ -289,4 +289,3 @@ def heatmap_to_coord(heatmaps, bbox_list):
         preds[i][:, 0] = scale[0] * 2 * w_ratio + center[0] - scale[0]
         preds[i][:, 1] = scale[1] * 2 * h_ratio + center[1] - scale[1]
     return preds, maxvals
-

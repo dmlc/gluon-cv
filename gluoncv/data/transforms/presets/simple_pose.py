@@ -15,7 +15,7 @@ def _box_to_center_scale(x, y, w, h, aspect_ratio=1.0):
     """Convert box coordinates to center and scale.
     adapted from https://github.com/Microsoft/human-pose-estimation.pytorch
     """
-    pixel_std = 200
+    pixel_std = 1
     center = np.zeros((2), dtype=np.float32)
     center[0] = x + w * 0.5
     center[1] = y + h * 0.5
