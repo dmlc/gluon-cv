@@ -97,10 +97,9 @@ num_workers = opt.num_workers
 
 model_name = '_'.join((opt.model, opt.dataset))
 
-kwargs = {'ctx': context, 'num_joints': num_joints,
+kwargs = {'ctx': context,
           'pretrained': opt.use_pretrained,
-          'pretrained_base': opt.use_pretrained_base,
-          'pretrained_ctx': context}
+          'pretrained_base': opt.use_pretrained_base}
 
 net = get_model(model_name, **kwargs)
 net.collect_params().reset_ctx(context)
