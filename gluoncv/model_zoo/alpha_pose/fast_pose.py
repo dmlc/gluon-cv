@@ -232,7 +232,7 @@ def get_alphapose(name, dataset, num_class, pretrained=False, pretrained_base=Tr
         import warnings
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
-            net.initialize()
+            net.initialize(mx.init.MSRAPrelu())
     net.collect_params().reset_ctx(ctx)
     return net
 

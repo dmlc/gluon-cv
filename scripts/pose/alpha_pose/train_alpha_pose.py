@@ -181,11 +181,6 @@ else:
 def train(ctx):
     if isinstance(ctx, mx.Context):
         ctx = [ctx]
-    if opt.use_pretrained_base:
-        net.deconv_layers.initialize(ctx=ctx)
-        net.final_layer.initialize(ctx=ctx)
-    else:
-        net.initialize(mx.init.MSRAPrelu(), ctx=ctx)
 
     trainer = gluon.Trainer(net.collect_params(), optimizer, optimizer_params)
 
