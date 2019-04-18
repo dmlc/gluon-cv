@@ -110,6 +110,7 @@ def get_dataset(dataset):
         train_dataset = mscoco.keypoints.COCOKeyPoints(splits=('person_keypoints_train2017'))
     else:
         raise NotImplementedError("Dataset: {} not supported.".format(dataset))
+    return train_dataset
 
 def get_data_loader(dataset, batch_size, num_workers, input_size):
 
