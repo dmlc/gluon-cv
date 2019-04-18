@@ -221,13 +221,13 @@ def get_alphapose(name, dataset, num_class, pretrained=False, pretrained_base=Tr
     preact = FastSEResNet(name, norm_layer=norm_layer, **norm_kwargs)
     if not pretrained and pretrained_base:
         from ..model_zoo import get_model
-        base_network = get_model(name, pretrained=True, root=root, ctx=ctx)
-        _try_load_parameters(self=base_network, model=base_network, ctx=ctx)
+        base_network = get_model(name, pretrained=True, root=root)
+        _try_load_parameters(self=base_network, model=base_network)
     net = AlphaPose(preact, num_class, **kwargs)
     if pretrained:
         from ..model_store import get_model_file
         full_name = '_'.join(('alpha_pose', name, dataset))
-        net.load_parameters(get_model_file(full_name, tag=pretrained, root=root), ctx=ctx)
+        net.load_parameters(get_model_file(full_name, tag=pretrained, root=root))
     net.collect_params().reset_ctx(ctx)
     return net
 
