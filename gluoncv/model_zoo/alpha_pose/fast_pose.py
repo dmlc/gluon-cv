@@ -228,6 +228,11 @@ def get_alphapose(name, dataset, num_class, pretrained=False, pretrained_base=Tr
         from ..model_store import get_model_file
         full_name = '_'.join(('alpha_pose', name, dataset))
         net.load_parameters(get_model_file(full_name, tag=pretrained, root=root))
+    else:
+        import warnings
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            net.initialize()
     net.collect_params().reset_ctx(ctx)
     return net
 
