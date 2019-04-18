@@ -39,9 +39,9 @@ class SimplePoseDefaultTrainTransform(object):
     num_joints : int
         Number of joints defined by dataset
     image_size : tuple of int
-        Image size, as (width, height).
+        Image size, as (height, width).
     heatmap_size : tuple of int
-        Heatmap size, as (width, height).
+        Heatmap size, as (height, width).
     sigma : float
         Gaussian sigma for the heatmap generation.
 
@@ -56,8 +56,8 @@ class SimplePoseDefaultTrainTransform(object):
         self._num_joints = num_joints
         self._image_size = image_size
         self._joint_pairs = joint_pairs
-        self._width = image_size[0]
-        self._height = image_size[1]
+        self._height = image_size[0]
+        self._width = image_size[1]
         self._mean = mean
         self._std = std
         self._random_flip = random_flip
@@ -119,7 +119,7 @@ class SimplePoseDefaultValTransform(object):
     num_joints : int
         Number of joints defined by dataset
     image_size : tuple of int
-        Image size, as (width, height).
+        Image size, as (height, width).
 
     """
     def __init__(self, num_joints, joint_pairs, image_size=(256, 256),
@@ -127,8 +127,8 @@ class SimplePoseDefaultValTransform(object):
         self._num_joints = num_joints
         self._image_size = image_size
         self._joint_pairs = joint_pairs
-        self._width = image_size[0]
-        self._height = image_size[1]
+        self._height = image_size[0]
+        self._width = image_size[1]
         self._mean = mean
         self._std = std
         self._aspect_ratio = float(self._width / self._height)

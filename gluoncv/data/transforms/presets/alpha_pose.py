@@ -23,8 +23,8 @@ class AlphaPoseDefaultTrainTransform(object):
         self._joint_pairs = joint_pairs
         self._image_size = image_size
         self._heatmap_size = heatmap_size
-        self._width = image_size[0]
-        self._height = image_size[1]
+        self._height = image_size[0]
+        self._width = image_size[1]
         self._mean = mean
         self._std = std
         self._random_flip = random_flip
@@ -56,33 +56,21 @@ class AlphaPoseDefaultTrainTransform(object):
         if self._random_sample:
             ul, br = self._random_sample_bbox(ul, br, w, h, img.shape[1], img.shape[0])
 
-
         # boundary refine
-        ul[0] = min(ul[0], br[0] - 5)
-        ul[1] = min(ul[1], br[1] - 5)
-        br[0] = max(br[0], ul[0] + 5)
-        br[1] = max(br[1], ul[1] + 5)
+        ul, br = self._refine_bound(ul, br)
 
         # counting number of joints
-        num_visible_joint = np.sum(np.logical_and.reduce((
-            joints_3d[:, 0, 0] > 0,
-            joints_3d[:, 0, 0] > ul[0],
-            joints_3d[:, 0, 0] < br[0],
-            joints_3d[:, 1, 0] > 0,
-            joints_3d[:, 1, 0] > ul[1],
-            joints_3d[:, 1, 0] < br[1],
-            joints_3d[:, 0, 1] > 0,
-            joints_3d[:, 1, 1] > 0
-            )))
+        num_visible_joint = self._count_visible(ul, br, joints_3d)
 
-        if self._random_crop and num_visible_joint > 10 and False:
+        if self._random_crop and num_visible_joint > 10:
             ul, br = self._random_crop_bbox(ul, br)
 
         if num_visible_joint < 1:
             # no valid keypoints
-            img = mx.nd.zeros((3, self._image_size[1], self._image_size[0]))
-            target = mx.nd.zeros((self._num_joints, self._heatmap_size[1], self._heatmap_size[0]))
-            target_weight = mx.nd.zeros((self._num_joints, 1, 1))
+            img = mx.nd.image.to_tensor(mx.nd.array(img))
+            img = mx.nd.image.normalize(img, mean=self._mean, std=self._std)
+            target = np.zeros((self._num_joints, self._heatmap_size[0], self._heatmap_size[1]))
+            target_weight = np.zeros((self._num_joints, 1, 1))
             return img, target, target_weight, img_path
 
         center, scale = _box_to_center_scale(
@@ -145,6 +133,7 @@ class AlphaPoseDefaultTrainTransform(object):
         return ul, br
 
     def _random_crop_bbox(self, ul, br):
+        """Random crop bbox"""
         switch = random.uniform(0, 1)
         if switch > 0.96:
             br[0] = (ul[0] + br[0]) / 2
@@ -166,8 +155,28 @@ class AlphaPoseDefaultTrainTransform(object):
             br[1] = (ul[1] + br[1]) / 2
         elif switch > 0.68:
             ul[1] = (ul[1] + br[1]) / 2
-
         return ul, br
+
+    def _refine_bound(self, ul, br):
+        """Adjust bound"""
+        ul[0] = min(ul[0], br[0] - 5)
+        ul[1] = min(ul[1], br[1] - 5)
+        br[0] = max(br[0], ul[0] + 5)
+        br[1] = max(br[1], ul[1] + 5)
+        return ul, br
+
+    def _count_visible(self, ul, br, joints_3d):
+        """Count number of visible joints given bound ul, br"""
+        return np.sum(np.logical_and.reduce((
+            joints_3d[:, 0, 0] > 0,
+            joints_3d[:, 0, 0] > ul[0],
+            joints_3d[:, 0, 0] < br[0],
+            joints_3d[:, 1, 0] > 0,
+            joints_3d[:, 1, 0] > ul[1],
+            joints_3d[:, 1, 0] < br[1],
+            joints_3d[:, 0, 1] > 0,
+            joints_3d[:, 1, 1] > 0
+            )))
 
 class AlphaPoseDefaultValTransform(object):
     def __init__(self, num_joints, joint_pairs, image_size=(256, 256), heatmap_size=(64, 64),
@@ -176,8 +185,8 @@ class AlphaPoseDefaultValTransform(object):
         self._joint_pairs = joint_pairs
         self._image_size = image_size
         self._heatmap_size = heatmap_size
-        self._width = image_size[0]
-        self._height = image_size[1]
+        self._height = image_size[0]
+        self._width = image_size[1]
         self._mean = mean
         self._std = std
         self._aspect_ratio = float(self._width) / self._height
