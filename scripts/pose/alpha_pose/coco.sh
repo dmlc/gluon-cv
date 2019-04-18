@@ -1,4 +1,4 @@
-python train_simple_pose.py --dataset coco \
+python train_alpha_pose.py --dataset coco \
     --model alpha_pose_resnet101_v1b --mode hybrid --num-joints 17 \
     --lr 0.001 --wd 0.0 --lr-mode step --lr-decay-epoch 90,120 \
     --num-epochs 140 --batch-size 32 --num-gpus 8 -j 60 \

@@ -103,6 +103,7 @@ kwargs = {'ctx': context, 'num_joints': num_joints,
           'pretrained_ctx': context}
 
 net = get_model(model_name, **kwargs)
+net.collect_params().reset_ctx(context)
 net.cast(opt.dtype)
 
 def get_dataset(dataset):
