@@ -268,7 +268,8 @@ class YOLOV3TargetMerger(gluon.HybridBlock):
                 smooth_weight = min(1. / self._num_class, 1. / 40)
                 class_targets = F.where(
                     class_targets > 0.5, class_targets - smooth_weight, class_targets)
-                class_targets = F.where((class_targets < -0.5) + (class_targets > 0.5),
+                class_targets = F.where(
+                    (class_targets < -0.5) + (class_targets > 0.5),
                     class_targets, F.ones_like(class_targets) * smooth_weight)
             class_mask = mask.tile(reps=(self._num_class,)) * (class_targets >= 0)
             return [F.stop_gradient(x) for x in [objectness, center_targets, scale_targets,
