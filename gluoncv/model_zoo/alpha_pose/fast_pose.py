@@ -221,7 +221,7 @@ def get_alphapose(name, dataset, num_class, pretrained=False, pretrained_base=Tr
     preact = FastSEResNet(name, norm_layer=norm_layer, **norm_kwargs)
     if not pretrained and pretrained_base:
         from ..model_zoo import get_model
-        base_network = get_model(name, pretrained=True, root=root)
+        base_network = get_model(name, pretrained=True, root=root, ctx=ctx)
         _try_load_parameters(self=base_network, model=base_network, ctx=ctx)
     net = AlphaPose(preact, num_class, **kwargs)
     if pretrained:
