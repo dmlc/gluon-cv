@@ -41,7 +41,7 @@ class AlphaPoseDefaultTrainTransform(object):
         joints_3d = label['joints_3d']
 
         # color jitter
-        img = experimental.image.random_color_distort(src)
+        src = experimental.image.random_color_distort(src)
 
         # scaling
         ul = np.array((int(bbox[0]), int(bbox[1])))
@@ -51,10 +51,10 @@ class AlphaPoseDefaultTrainTransform(object):
         sf = random.uniform(*self._scale_factor)
         ul[0] = max(0, ul[0] - w * sf / 2)
         ul[1] = max(0, ul[1] - h * sf / 2)
-        br[0] = min(img.shape[0] - 1, br[0] + w * sf / 2)
-        br[1] = min(img.shape[1] - 1, br[1] + h * sf / 2)
+        br[0] = min(src.shape[0] - 1, br[0] + w * sf / 2)
+        br[1] = min(src.shape[1] - 1, br[1] + h * sf / 2)
         if self._random_sample:
-            ul, br = self._random_sample_bbox(ul, br, w, h, img.shape[1], img.shape[0])
+            ul, br = self._random_sample_bbox(ul, br, w, h, src.shape[1], src.shape[0])
 
         # boundary refine
         ul, br = self._refine_bound(ul, br)
@@ -67,7 +67,7 @@ class AlphaPoseDefaultTrainTransform(object):
 
         if num_visible_joint < 1:
             # no valid keypoints
-            img = mx.nd.image.to_tensor(mx.nd.array(img))
+            img = mx.nd.image.to_tensor(mx.image.imresize(src, w=self._width, h=self._height))
             img = mx.nd.image.normalize(img, mean=self._mean, std=self._std)
             target = np.zeros((self._num_joints, self._heatmap_size[0], self._heatmap_size[1]), dtype='float32')
             target_weight = np.zeros((self._num_joints, 1, 1), dtype='float32')
