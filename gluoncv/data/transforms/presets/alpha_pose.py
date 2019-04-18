@@ -4,9 +4,10 @@ from __future__ import absolute_import
 import random
 import numpy as np
 import mxnet as mx
-from ..image import random_flip as random_flip_image
-from ..pose import
 from .simple_pose import _box_to_center_scale
+from ..image import random_flip as random_flip_image
+from ..pose import flip_joints_3d, get_affine_transform, affine_transform
+from .. import experimental
 from ....utils.filesystem import try_import_cv2
 
 
@@ -43,17 +44,18 @@ class AlphaPoseDefaultTrainTransform(object):
         img = experimental.image.random_color_distort(src)
 
         # scaling
-        ul = np.array(int(bbox[0], int(bbox[1])))
-        br = np.array(int(bbox[2], int(bbox[3])))
+        ul = np.array((int(bbox[0]), int(bbox[1])))
+        br = np.array((int(bbox[2]), int(bbox[3])))
         h = br[1] - ul[1]
         w = br[0] - ul[0]
         sf = random.uniform(*self._scale_factor)
         ul[0] = max(0, ul[0] - w * sf / 2)
         ul[1] = max(0, ul[1] - h * sf / 2)
-        br[0] = min(self._width - 1, br[0] + w * sf / 2)
-        br[1] = min(self._height - 1, br[1] + h * sf / 2)
+        br[0] = min(img.shape[0] - 1, br[0] + w * sf / 2)
+        br[1] = min(img.shape[1] - 1, br[1] + h * sf / 2)
         if self._random_sample:
-            ul, br = self._random_sample_bbox(ul, br, w, h)
+            ul, br = self._random_sample_bbox(ul, br, w, h, img.shape[1], img.shape[0])
+
 
         # boundary refine
         ul[0] = min(ul[0], br[0] - 5)
@@ -73,15 +75,15 @@ class AlphaPoseDefaultTrainTransform(object):
             joints_3d[:, 1, 1] > 0
             )))
 
-        if self._random_crop and num_visible_joint > 10:
+        if self._random_crop and num_visible_joint > 10 and False:
             ul, br = self._random_crop_bbox(ul, br)
 
         if num_visible_joint < 1:
             # no valid keypoints
-            img = mx.nd.zeros(shape=(3, self._heatmap_size[1], self._heatmap_size[0]))
-            target = mx.nd.zeros(shape=(joints_3d.shape[0], self._heatmap_size[1], self._heatmap_size[0]))
-            mask = mx.nd.zeros(shape=(joints_3d.shape[0], self._heatmap_size[1], self._heatmap_size[0]))
-            return img, target, mask, img_path
+            img = mx.nd.zeros((3, self._image_size[1], self._image_size[0]))
+            target = mx.nd.zeros((self._num_joints, self._heatmap_size[1], self._heatmap_size[0]))
+            target_weight = mx.nd.zeros((self._num_joints, 1, 1))
+            return img, target, target_weight, img_path
 
         center, scale = _box_to_center_scale(
             ul[0], ul[1], br[0] - ul[0], br[1] - ul[1], self._aspect_ratio)
@@ -115,7 +117,7 @@ class AlphaPoseDefaultTrainTransform(object):
         img = mx.nd.image.normalize(img, mean=self._mean, std=self._std)
         return img, target, target_weight, img_path
 
-    def _random_sample_bbox(self, ul, br, w, h):
+    def _random_sample_bbox(self, ul, br, w, h, im_width, im_height):
         """Take random sample"""
         patch_scale = random.uniform(0, 1)
         if patch_scale > 0.85:
@@ -131,10 +133,10 @@ class AlphaPoseDefaultTrainTransform(object):
             xmax = xmin + patch_w + 1
             ymax = ymin + patch_h + 1
         else:
-            xmin = max(1, min(ul[0] + np.random.normal(-0.0142, 0.1158) * w, self._width - 3))
-            ymin = max(1, min(ul[1] + np.random.normal(0.0043, 0.068) * h, self._height - 3))
-            xmax = min(max(xmin + 2, br[0] + np.random.normal(0.0154, 0.1337) * w), self._width - 3)
-            ymax = min(max(ymin + 2, br[1] + np.random.normal(-0.0013, 0.0711) * h), self._height - 3)
+            xmin = max(1, min(ul[0] + np.random.normal(-0.0142, 0.1158) * w, im_width - 3))
+            ymin = max(1, min(ul[1] + np.random.normal(0.0043, 0.068) * h, im_height - 3))
+            xmax = min(max(xmin + 2, br[0] + np.random.normal(0.0154, 0.1337) * w), im_width - 3)
+            ymax = min(max(ymin + 2, br[1] + np.random.normal(-0.0013, 0.0711) * h), im_height - 3)
 
         ul[0] = xmin
         ul[1] = ymin
