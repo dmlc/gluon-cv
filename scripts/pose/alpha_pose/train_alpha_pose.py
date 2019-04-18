@@ -12,13 +12,13 @@ from mxnet.gluon.data.vision import transforms
 from gluoncv.data import mscoco
 from gluoncv.model_zoo import get_model
 from gluoncv.utils import makedirs, LRScheduler, LRSequential
-from gluoncv.data.transforms.presets.simple_pose import SimplePoseDefaultTrainTransform
+from gluoncv.data.transforms.presets.alpha_pose import AlphaPoseDefaultTrainTransform
 from gluoncv.utils.metrics import HeatmapAccuracy
 
 # CLI
 parser = argparse.ArgumentParser(description='Train a model for image classification.')
-parser.add_argument('--data-dir', type=str, default='~/.mxnet/datasets/coco',
-                    help='training and validation pictures to use.')
+parser.add_argument('--dataset', type=str, default='coco',
+                    help='training dataset to use, if you use custom dataset, check get_dataset function.')
 parser.add_argument('--num-joints', type=int, required=True,
                     help='Number of joints to detect')
 parser.add_argument('--batch-size', type=int, default=32,
@@ -55,7 +55,7 @@ parser.add_argument('--model', type=str, required=True,
                     help='type of model to use. see vision_model for options.')
 parser.add_argument('--input-size', type=str, default='256,192',
                     help='size of the input image size. default is 256,192')
-parser.add_argument('--sigma', type=float, default=2,
+parser.add_argument('--sigma', type=float, default=1,
                     help='value of the sigma parameter of the gaussian target generation. default is 2')
 parser.add_argument('--mean', type=str, default='0.485,0.456,0.406',
                     help='mean vector for normalization')
@@ -95,7 +95,7 @@ batch_size *= max(1, num_gpus)
 context = [mx.gpu(i) for i in range(num_gpus)] if num_gpus > 0 else [mx.cpu()]
 num_workers = opt.num_workers
 
-model_name = opt.model
+model_name = '_'.join((opt.model, opt.dataset))
 
 kwargs = {'ctx': context, 'num_joints': num_joints,
           'pretrained': opt.use_pretrained,
@@ -105,7 +105,13 @@ kwargs = {'ctx': context, 'num_joints': num_joints,
 net = get_model(model_name, **kwargs)
 net.cast(opt.dtype)
 
-def get_data_loader(data_dir, batch_size, num_workers, input_size):
+def get_dataset(dataset):
+    if dataset == 'coco':
+        train_dataset = mscoco.keypoints.COCOKeyPoints(splits=('person_keypoints_train2017'))
+    else:
+        raise NotImplementedError("Dataset: {} not supported.".format(dataset))
+
+def get_data_loader(dataset, batch_size, num_workers, input_size):
 
     def train_batch_fn(batch, ctx):
         data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
@@ -114,16 +120,18 @@ def get_data_loader(data_dir, batch_size, num_workers, input_size):
         imgid = gluon.utils.split_and_load(batch[3], ctx_list=ctx, batch_axis=0)
         return data, label, weight, imgid
 
-    train_dataset = mscoco.keypoints.COCOKeyPoints(data_dir, splits=('person_keypoints_train2017'))
+    train_dataset = get_dataset(dataset)
+
     heatmap_size = [int(i/4) for i in input_size]
 
     meanvec = [float(i) for i in opt.mean.split(',')]
     stdvec = [float(i) for i in opt.std.split(',')]
-    transform_train = SimplePoseDefaultTrainTransform(num_joints=train_dataset.num_joints,
-                                                      joint_pairs=train_dataset.joint_pairs,
-                                                      image_size=input_size, heatmap_size=heatmap_size,
-                                                      sigma=opt.sigma, scale_factor=0.30, rotation_factor=40,
-                                                      mean=meanvec, std=stdvec, random_flip=True)
+    transform_train = AlphaPoseDefaultTrainTransform(num_joints=train_dataset.num_joints,
+                                                     joint_pairs=train_dataset.joint_pairs,
+                                                     image_size=input_size, heatmap_size=heatmap_size,
+                                                     sigma=opt.sigma, scale_factor=(0.2, 0.3),
+                                                     rotation_factor=40,
+                                                     mean=meanvec, std=stdvec, random_flip=True)
 
     train_data = gluon.data.DataLoader(
         train_dataset.transform(transform_train),
@@ -132,7 +140,7 @@ def get_data_loader(data_dir, batch_size, num_workers, input_size):
     return train_dataset, train_data, train_batch_fn
 
 input_size = [int(i) for i in opt.input_size.split(',')]
-train_dataset, train_data,  train_batch_fn = get_data_loader(opt.data_dir, batch_size,
+train_dataset, train_data,  train_batch_fn = get_data_loader(opt.dataset, batch_size,
                                                              num_workers, input_size)
 
 num_training_samples = len(train_dataset)
@@ -180,7 +188,7 @@ def train(ctx):
 
     trainer = gluon.Trainer(net.collect_params(), optimizer, optimizer_params)
 
-    L = gluon.loss.L2Loss()
+    L = gluon.loss.L2Loss(weight=2.0)
     metric = HeatmapAccuracy()
 
     best_val_score = 1
