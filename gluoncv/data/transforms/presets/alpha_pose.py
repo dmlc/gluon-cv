@@ -69,8 +69,8 @@ class AlphaPoseDefaultTrainTransform(object):
             # no valid keypoints
             img = mx.nd.image.to_tensor(mx.nd.array(img))
             img = mx.nd.image.normalize(img, mean=self._mean, std=self._std)
-            target = np.zeros((self._num_joints, self._heatmap_size[0], self._heatmap_size[1]))
-            target_weight = np.zeros((self._num_joints, 1, 1))
+            target = np.zeros((self._num_joints, self._heatmap_size[0], self._heatmap_size[1]), dtype='float32')
+            target_weight = np.zeros((self._num_joints, 1, 1), dtype='float32')
             return img, target, target_weight, img_path
 
         center, scale = _box_to_center_scale(
