@@ -11,7 +11,7 @@ from gluoncv.data import mscoco
 from gluoncv.model_zoo import get_model
 from gluoncv.utils import makedirs
 from gluoncv.data.transforms.pose import transform_preds, get_final_preds, flip_heatmap
-from gluoncv.data.transforms.presets.simple_pose import SimplePoseDefaultTrainTransform, SimplePoseDefaultValTransform
+from gluoncv.data.transforms.presets.alpha_pose import AlphaPoseDefaultValTransform
 from gluoncv.utils.metrics.coco_keypoints import COCOKeyPointsMetric
 
 # CLI
@@ -52,7 +52,7 @@ num_workers = opt.num_workers
 
 def get_dataset(dataset):
     if dataset == 'coco':
-        val_dataset = mscoco.keypoints.COCOKeyPoints(splits=('person_keypoints_val2017'))
+        val_dataset = mscoco.keypoints.COCOKeyPoints(splits=('person_keypoints_val2017'), skip_empty=False)
     else:
         raise NotImplementedError("Dataset: {} not supported.".format(dataset))
     return val_dataset
@@ -72,7 +72,7 @@ def get_data_loader(dataset, batch_size, num_workers, input_size):
 
     meanvec = [float(i) for i in opt.mean.split(',')]
     stdvec = [float(i) for i in opt.std.split(',')]
-    transform_val = SimplePoseDefaultValTransform(num_joints=val_dataset.num_joints,
+    transform_val = AlphaPoseDefaultValTransform(num_joints=val_dataset.num_joints,
                                                   joint_pairs=val_dataset.joint_pairs,
                                                   image_size=input_size,
                                                   mean=meanvec,
@@ -93,7 +93,7 @@ val_metric = COCOKeyPointsMetric(val_dataset, 'coco_keypoints',
 
 use_pretrained = True if not opt.params_file else False
 model_name = '_'.join((opt.model, opt.dataset))
-net = get_model(model_name, ctx=context, num_joints=num_joints, pretrained=use_pretrained)
+net = get_model(model_name, ctx=context, pretrained=use_pretrained)
 if not use_pretrained:
     net.load_parameters(opt.params_file, ctx=context)
 net.hybridize()
