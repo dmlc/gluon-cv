@@ -162,10 +162,10 @@ class FastSEResNet(HybridBlock):
         return layers
 
 class AlphaPose(HybridBlock):
-    def __init__(self, preact, num_class, deconv_dim=256, norm_layer=nn.BatchNorm, norm_kwargs=None, **kwargs):
+    def __init__(self, preact, num_joints, deconv_dim=256, norm_layer=nn.BatchNorm, norm_kwargs=None, **kwargs):
         super(AlphaPose, self).__init__(**kwargs)
         self.preact = preact
-        self.num_class = num_class
+        self.num_joints = num_joints
 
         self.shuffle1 = PixelShuffle(2)
         if norm_kwargs is None:
@@ -174,7 +174,7 @@ class AlphaPose(HybridBlock):
         self.duc2 = DUC(512, upscale_factor=2, norm_layer=norm_layer, **norm_kwargs)
 
         self.conv_out = nn.Conv2D(
-            channels=num_class,
+            channels=num_joints,
             kernel_size=3,
             strides=1,
             padding=1,
@@ -191,7 +191,7 @@ class AlphaPose(HybridBlock):
         return x
 
 
-def get_alphapose(name, dataset, num_class, pretrained=False, pretrained_base=True, ctx=mx.cpu(),
+def get_alphapose(name, dataset, num_joints, pretrained=False, pretrained_base=True, ctx=mx.cpu(),
                   norm_layer=nn.BatchNorm, norm_kwargs=None,
                   root=os.path.join('~', '.mxnet', 'models'), **kwargs):
     r"""Utility function to return AlphaPose networks.
@@ -223,7 +223,7 @@ def get_alphapose(name, dataset, num_class, pretrained=False, pretrained_base=Tr
         from ..model_zoo import get_model
         base_network = get_model(name, pretrained=True, root=root)
         _try_load_parameters(self=base_network, model=base_network)
-    net = AlphaPose(preact, num_class, **kwargs)
+    net = AlphaPose(preact, num_joints, **kwargs)
     if pretrained:
         from ..model_store import get_model_file
         full_name = '_'.join(('alpha_pose', name, dataset))
@@ -239,4 +239,4 @@ def get_alphapose(name, dataset, num_class, pretrained=False, pretrained_base=Tr
 def alpha_pose_resnet101_v1b_coco(**kwargs):
     from ...data import COCOKeyPoints
     keypoints = COCOKeyPoints.KEYPOINTS
-    return get_alphapose(name='resnet101_v1b', dataset='coco', num_class=len(keypoints), **kwargs)
+    return get_alphapose(name='resnet101_v1b', dataset='coco', num_joints=len(keypoints), **kwargs)
