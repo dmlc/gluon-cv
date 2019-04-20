@@ -62,7 +62,7 @@ class OHEMSampler(gluon.Block):
         num_total = x.shape[1]  # scalar
         num_negative = F.minimum(F.maximum(self._min_samples, num_negative),
                                  num_total - num_positive)
-        positive = logits.slice_axis(axis=2, begin=1, end=-1)
+        positive = logits.slice_axis(axis=2, begin=1, end=None)
         background = logits.slice_axis(axis=2, begin=0, end=1).reshape((0, -1))
         maxval = positive.max(axis=2)
         esum = F.exp(logits - maxval.reshape((0, 0, 1))).sum(axis=2)
