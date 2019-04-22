@@ -179,12 +179,11 @@ class AlphaPoseDefaultTrainTransform(object):
             )))
 
 class AlphaPoseDefaultValTransform(object):
-    def __init__(self, num_joints, joint_pairs, image_size=(256, 256), heatmap_size=(64, 64),
+    def __init__(self, num_joints, joint_pairs, image_size=(256, 256),
                  sigma=1, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225), **kwargs):
         self._num_joints = num_joints
         self._joint_pairs = joint_pairs
         self._image_size = image_size
-        self._heatmap_size = heatmap_size
         self._height = image_size[0]
         self._width = image_size[1]
         self._mean = mean

@@ -73,10 +73,10 @@ def get_data_loader(dataset, batch_size, num_workers, input_size):
     meanvec = [float(i) for i in opt.mean.split(',')]
     stdvec = [float(i) for i in opt.std.split(',')]
     transform_val = AlphaPoseDefaultValTransform(num_joints=val_dataset.num_joints,
-                                                  joint_pairs=val_dataset.joint_pairs,
-                                                  image_size=input_size,
-                                                  mean=meanvec,
-                                                  std=stdvec)
+                                                 joint_pairs=val_dataset.joint_pairs,
+                                                 image_size=input_size,
+                                                 mean=meanvec,
+                                                 std=stdvec)
     val_data = gluon.data.DataLoader(
         val_dataset.transform(transform_val),
         batch_size=batch_size, shuffle=False, last_batch='keep',
