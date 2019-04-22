@@ -137,4 +137,4 @@ class COCOKeyPointsMetric(mx.metric.EvalMetric):
                                   'category_id': 1,
                                   'keypoints': kpt,
                                   'score': rescore})
-            self._recorded_ids[int(imgid[idx].asscalar()] = True
+            self._recorded_ids[int(imgid[idx].asscalar())] = True
