@@ -96,3 +96,4 @@ For background knowledge of deep learning or CV, please refer to the open source
    tutorials/index
    api/index
    how_to/index
+   slides

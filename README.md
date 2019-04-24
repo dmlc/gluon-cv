@@ -46,7 +46,7 @@ pip install mxnet-mkl --upgrade
 pip install mxnet-cu92mkl --upgrade
 ```
 
-**The latest stable version of GluonCV is 0.3 and depends on mxnet >= 1.3.0**
+**The latest stable version of GluonCV is 0.4 and depends on mxnet >= 1.4.0**
 
 ## Nightly Release
 
@@ -103,7 +103,7 @@ If you feel our code or models helps in your research, please kindly cite our pa
 
 @article{zhang2019bag,
   title={Bag of Freebies for Training Object Detection Neural Networks},
-  author={Zhang, Zhi and He, Tong and Zhang, Hang and Zhang, Zhongyuan and Xie, Junyuan and Li, Mu},
+  author={Zhang, Zhi and He, Tong and Zhang, Hang and Zhang, Zhongyue and Xie, Junyuan and Li, Mu},
   journal={arXiv preprint arXiv:1902.04103},
   year={2019}
 }```

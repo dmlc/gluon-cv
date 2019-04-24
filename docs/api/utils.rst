@@ -25,6 +25,8 @@ Visualization
 
     plot_mask
 
+    plot_network
+
 Miscellaneous
 -------------
 
@@ -37,7 +39,12 @@ Miscellaneous
 
     makedirs
 
-    random.seed
+.. currentmodule:: gluoncv.utils.random
+
+.. autosummary::
+    :nosignatures:
+
+    seed
 
 Training Helpers
 ----------------

@@ -2,7 +2,42 @@
 """Bounding boxes operators"""
 from __future__ import absolute_import
 
+import numpy as np
 from mxnet import gluon
+
+
+class NumPyBBoxCornerToCenter(object):
+    """Convert corner boxes to center boxes using numpy.
+    Corner boxes are encoded as (xmin, ymin, xmax, ymax)
+    Center boxes are encoded as (center_x, center_y, width, height)
+
+    Parameters
+    ----------
+    split : bool
+        Whether split boxes to individual elements after processing.
+    axis : int, default is -1
+        Effective axis of the bounding box. Default is -1(the last dimension).
+
+    Returns
+    -------
+     A BxNx4 NDArray if split is False, or 4 BxNx1 NDArray if split is True
+    """
+
+    def __init__(self, axis=-1, split=False):
+        super(NumPyBBoxCornerToCenter, self).__init__()
+        self._split = split
+        self._axis = axis
+
+    def __call__(self, x):
+        xmin, ymin, xmax, ymax = np.split(x, 4, axis=self._axis)
+        width = xmax - xmin
+        height = ymax - ymin
+        x = xmin + width / 2
+        y = ymin + height / 2
+        if not self._split:
+            return np.concatenate((x, y, width, height), axis=self._axis)
+        else:
+            return x, y, width, height
 
 
 class BBoxCornerToCenter(gluon.HybridBlock):
@@ -21,6 +56,7 @@ class BBoxCornerToCenter(gluon.HybridBlock):
     -------
      A BxNx4 NDArray if split is False, or 4 BxNx1 NDArray if split is True
     """
+
     def __init__(self, axis=-1, split=False):
         super(BBoxCornerToCenter, self).__init__()
         self._split = split
@@ -54,6 +90,7 @@ class BBoxCenterToCorner(gluon.HybridBlock):
     -------
      A BxNx4 NDArray if split is False, or 4 BxNx1 NDArray if split is True.
     """
+
     def __init__(self, axis=-1, split=False):
         super(BBoxCenterToCorner, self).__init__()
         self._split = split
@@ -88,6 +125,7 @@ class BBoxSplit(gluon.HybridBlock):
         Also `squeeze_axis` can be set to ``true`` only if ``input.shape[axis] == num_outputs``.
 
     """
+
     def __init__(self, axis, squeeze_axis=False, **kwargs):
         super(BBoxSplit, self).__init__(**kwargs)
         self._axis = axis
@@ -114,6 +152,7 @@ class BBoxArea(gluon.HybridBlock):
     A BxNx1 NDArray
 
     """
+
     def __init__(self, axis=-1, fmt='corner', **kwargs):
         super(BBoxArea, self).__init__(**kwargs)
         if fmt.lower() == 'corner':
@@ -128,6 +167,7 @@ class BBoxArea(gluon.HybridBlock):
         width = F.where(width > 0, width, F.zeros_like(width))
         height = F.where(height > 0, height, F.zeros_like(height))
         return width * height
+
 
 class BBoxBatchIOU(gluon.HybridBlock):
     """Batch Bounding Box IOU.
@@ -146,6 +186,7 @@ class BBoxBatchIOU(gluon.HybridBlock):
         Very small number to avoid division by 0.
 
     """
+
     def __init__(self, axis=-1, fmt='corner', offset=0, eps=1e-15, **kwargs):
         super(BBoxBatchIOU, self).__init__(**kwargs)
         self._offset = offset
@@ -200,6 +241,7 @@ class BBoxClipToImage(gluon.HybridBlock):
     If multiple images are supplied and padded, must have additional inputs
     of accurate image shape.
     """
+
     def __init__(self, **kwargs):
         super(BBoxClipToImage, self).__init__(**kwargs)
 
