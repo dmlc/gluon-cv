@@ -3,7 +3,7 @@
 
 **Download horse2zebra dataset**
 ```bash
-python ./download_dataset.py --download-dir ./horse2zebra --file horse2zebra
+python ./download_dataset.py --download-dir . --file horse2zebra
 ```
 
 **Monitoring loss values and images during training**
