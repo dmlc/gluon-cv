@@ -64,7 +64,10 @@ if __name__ == '__main__':
     net.cast(opt.dtype)
     if opt.params_file:
         net.load_parameters(opt.params_file, ctx=ctx)
-    net.hybridize()
+    if opt.quantized:
+        net.hybridize(static_alloc=True, static_shape=True)
+    else:
+        net.hybridize()
 
     acc_top1 = mx.metric.Accuracy()
     acc_top5 = mx.metric.TopKAccuracy(5)

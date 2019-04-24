@@ -68,7 +68,9 @@ def validate(net, val_data, ctx, classes, size, metric):
     metric.reset()
     if not args.quantized:
         net.set_nms(nms_thresh=0.45, nms_topk=400)
-    net.hybridize()
+        net.hybridize()
+    else:
+        net.hybridize(static_alloc=True, static_shape=True)
     with tqdm(total=size) as pbar:
         start = time.time()
         for ib, batch in enumerate(val_data):
