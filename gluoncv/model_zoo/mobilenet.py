@@ -206,7 +206,8 @@ class MobileNetV2(nn.HybridBlock):
             self.features = nn.HybridSequential(prefix='features_')
             with self.features.name_scope():
                 _add_conv(self.features, int(32 * multiplier), kernel=3,
-                          stride=2, pad=1, relu6=True, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+                          stride=2, pad=1, relu6=True,
+                          norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
                 in_channels_group = [int(x * multiplier) for x in [32] + [16] + [24] * 2
                                      + [32] * 3 + [64] * 4 + [96] * 3 + [160] * 3]
@@ -220,7 +221,8 @@ class MobileNetV2(nn.HybridBlock):
                                                        channels=c,
                                                        t=t,
                                                        stride=s,
-                                                       norm_layer=norm_layer, norm_kwargs=norm_kwargs))
+                                                       norm_layer=norm_layer,
+                                                       norm_kwargs=norm_kwargs))
 
                 last_channels = int(1280 * multiplier) if multiplier > 1.0 else 1280
                 _add_conv(self.features,
