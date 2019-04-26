@@ -65,9 +65,9 @@ def _add_conv_dw(out, dw_channels, channels, stride, relu6=False,
                  norm_layer=BatchNorm, norm_kwargs=None):
     _add_conv(out, channels=dw_channels, kernel=3, stride=stride,
               pad=1, num_group=dw_channels, relu6=relu6,
-              norm_layer=norm_layer, norm_kwargs=None)
+              norm_layer=norm_layer, norm_kwargs=norm_kwargs)
     _add_conv(out, channels=channels, relu6=relu6,
-              norm_layer=norm_layer, norm_kwargs=None)
+              norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
 
 class LinearBottleneck(nn.HybridBlock):
@@ -104,7 +104,7 @@ class LinearBottleneck(nn.HybridBlock):
             _add_conv(self.out,
                       in_channels * t,
                       relu6=True,
-                      norm_layer=norm_layer, norm_kwargs=None)
+                      norm_layer=norm_layer, norm_kwargs=norm_kwargs)
             _add_conv(self.out,
                       in_channels * t,
                       kernel=3,
@@ -112,12 +112,12 @@ class LinearBottleneck(nn.HybridBlock):
                       pad=1,
                       num_group=in_channels * t,
                       relu6=True,
-                      norm_layer=norm_layer, norm_kwargs=None)
+                      norm_layer=norm_layer, norm_kwargs=norm_kwargs)
             _add_conv(self.out,
                       channels,
                       active=False,
                       relu6=True,
-                      norm_layer=norm_layer, norm_kwargs=None)
+                      norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
     def hybrid_forward(self, F, x):
         out = self.out(x)
@@ -155,7 +155,7 @@ class MobileNet(HybridBlock):
             self.features = nn.HybridSequential(prefix='')
             with self.features.name_scope():
                 _add_conv(self.features, channels=int(32 * multiplier), kernel=3, pad=1, stride=2,
-                          norm_layer=norm_layer, norm_kwargs=None)
+                          norm_layer=norm_layer, norm_kwargs=norm_kwargs)
                 dw_channels = [int(x * multiplier) for x in [32, 64] + [128] * 2 +
                                [256] *
                                2 +
@@ -167,7 +167,7 @@ class MobileNet(HybridBlock):
                 strides = [1, 2] * 3 + [1] * 5 + [2, 1]
                 for dwc, c, s in zip(dw_channels, channels, strides):
                     _add_conv_dw(self.features, dw_channels=dwc, channels=c, stride=s,
-                                 norm_layer=norm_layer, norm_kwargs=None)
+                                 norm_layer=norm_layer, norm_kwargs=norm_kwargs)
                 self.features.add(nn.GlobalAvgPool2D())
                 self.features.add(nn.Flatten())
 
@@ -206,7 +206,7 @@ class MobileNetV2(nn.HybridBlock):
             self.features = nn.HybridSequential(prefix='features_')
             with self.features.name_scope():
                 _add_conv(self.features, int(32 * multiplier), kernel=3,
-                          stride=2, pad=1, relu6=True, norm_layer=norm_layer, norm_kwargs=None)
+                          stride=2, pad=1, relu6=True, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
                 in_channels_group = [int(x * multiplier) for x in [32] + [16] + [24] * 2
                                      + [32] * 3 + [64] * 4 + [96] * 3 + [160] * 3]
@@ -220,13 +220,13 @@ class MobileNetV2(nn.HybridBlock):
                                                        channels=c,
                                                        t=t,
                                                        stride=s,
-                                                       norm_layer=norm_layer, norm_kwargs=None))
+                                                       norm_layer=norm_layer, norm_kwargs=norm_kwargs))
 
                 last_channels = int(1280 * multiplier) if multiplier > 1.0 else 1280
                 _add_conv(self.features,
                           last_channels,
                           relu6=True,
-                          norm_layer=norm_layer, norm_kwargs=None)
+                          norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
                 self.features.add(nn.GlobalAvgPool2D())
 
@@ -270,7 +270,7 @@ def get_mobilenet(multiplier, pretrained=False, ctx=cpu(),
         Additional `norm_layer` arguments, for example `num_devices=4`
         for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
-    net = MobileNet(multiplier, norm_layer=norm_layer, norm_kwargs=None, **kwargs)
+    net = MobileNet(multiplier, norm_layer=norm_layer, norm_kwargs=norm_kwargs, **kwargs)
     if pretrained:
         from .model_store import get_model_file
         version_suffix = '{0:.2f}'.format(multiplier)
@@ -314,7 +314,7 @@ def get_mobilenet_v2(multiplier, pretrained=False, ctx=cpu(),
         Additional `norm_layer` arguments, for example `num_devices=4`
         for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
-    net = MobileNetV2(multiplier, norm_layer=norm_layer, norm_kwargs=None, **kwargs)
+    net = MobileNetV2(multiplier, norm_layer=norm_layer, norm_kwargs=norm_kwargs, **kwargs)
 
     if pretrained:
         from .model_store import get_model_file
