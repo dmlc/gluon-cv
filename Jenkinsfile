@@ -16,7 +16,7 @@ stage("Sanity Check") {
 
 stage("Unit Test") {
   parallel 'Python 2': {
-    node {
+    node('linux-gpu') {
       ws('workspace/gluon-cv-py2') {
         checkout scm
         VISIBLE_GPU=env.EXECUTOR_NUMBER.toInteger() % 4
@@ -41,7 +41,7 @@ stage("Unit Test") {
     }
   },
   'Python 3': {
-    node {
+    node('linux-gpu') {
       ws('workspace/gluon-cv-py3') {
         checkout scm
         VISIBLE_GPU=env.EXECUTOR_NUMBER.toInteger() % 4
@@ -76,7 +76,7 @@ stage("Unit Test") {
 
 
 stage("Build Docs") {
-  node {
+  node('linux-gpu') {
     ws('workspace/gluon-cv-docs') {
       checkout scm
       VISIBLE_GPU=env.EXECUTOR_NUMBER.toInteger() % 4
