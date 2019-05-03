@@ -181,8 +181,8 @@ plt.show()
 # pretrained weights.
 # We enlarge the learning rate of the head by 10 times. A poly-like cosine learning rate
 # scheduling strategy is used.
-# The learning rate is given by :math:`lr = base_lr \times (1-iter)^{power}`
-# 
+# The learning rate is given by :math:`lr = base\_lr \times (1-iters/niters)^{power}`. Please
+# check https://gluon-cv.mxnet.io/api/utils.html#gluoncv.utils.LRScheduler for more details.
 lr_scheduler = gluoncv.utils.LRScheduler(mode='poly', base_lr=0.01,
                                          nepochs=30, iters_per_epoch=len(train_data), power=0.9)
 
