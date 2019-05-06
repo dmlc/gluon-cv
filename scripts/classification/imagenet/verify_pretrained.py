@@ -43,12 +43,12 @@ def parse_args():
     return opt
 
 
-def benchmark(ctx, batch_size=64, image_size=224, num_iter=100, datatype='float32'):
+def benchmark(network, ctx, batch_size=64, image_size=224, num_iter=100, datatype='float32'):
     input_shape = (batch_size, 3) + (image_size, image_size)
     data = mx.random.uniform(-1.0, 1.0, shape=input_shape, ctx=ctx, dtype=datatype)
     tic = time.time()
     for i in range(num_iter):
-        output = net(data)
+        output = network(data)
         output.asnumpy()
     toc = time.time() - tic
     return toc
@@ -86,7 +86,7 @@ if __name__ == '__main__':
     
     if opt.benchmark:
         print('-----benchmark mode for model %s-----'%opt.model)
-        time_cost = benchmark(ctx[0], image_size=opt.input_size, batch_size=opt.batch_size,
+        time_cost = benchmark(network=net, ctx=ctx[0], image_size=opt.input_size, batch_size=opt.batch_size,
             num_iter=opt.num_batches, datatype='float32')
         fps = (opt.batch_size*opt.num_batches)/time_cost
         print('With batch size %s, %s batches, inference performance is %.2f image/s' % (opt.batch_size, opt.num_batches, fps)) 
