@@ -713,8 +713,8 @@ def ssd_300_mobilenet0_25_custom(classes, pretrained_base=True, pretrained=False
 
     Example
     -------
-    >>> net = ssd_512_mobilenet1_0_custom(classes=['a', 'b', 'c'], pretrained_base=True)
-    >>> net = ssd_512_mobilenet1_0_custom(classes=['foo', 'bar'], transfer='voc')
+    >>> net = ssd_300_mobilenet0_25_custom(classes=['a', 'b', 'c'], pretrained_base=True)
+    >>> net = ssd_300_mobilenet0_25_custom(classes=['foo', 'bar'], transfer='voc')
 
     """
     if pretrained:
@@ -723,7 +723,7 @@ def ssd_300_mobilenet0_25_custom(classes, pretrained_base=True, pretrained=False
         kwargs['pretrained'] = False
         net = get_ssd('mobilenet0.25', 300,
                       features=['relu22_fwd', 'relu26_fwd'],
-                      ffilters=[256, 256, 128, 128],
+                      filters=[256, 256, 128, 128],
                       sizes=[21, 45, 99, 153, 207, 261, 315],
                       ratios=[[1, 2, 0.5]] + [[1, 2, 0.5, 3, 1.0/3]] * 3 + [[1, 2, 0.5]] * 2,
                       steps=[8, 16, 32, 64, 100, 300],
