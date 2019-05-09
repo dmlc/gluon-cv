@@ -23,7 +23,10 @@ __all__ = ['YOLOV3',
            'yolo3_darknet53_custom',
            'yolo3_mobilenet1_0_coco',
            'yolo3_mobilenet1_0_voc',
-           'yolo3_mobilenet1_0_custom'
+           'yolo3_mobilenet1_0_custom',
+           'yolo3_mobilenet0_25_coco',
+           'yolo3_mobilenet0_25_voc',
+           'yolo3_mobilenet0_25_custom'
            ]
 
 def _upsample(x, stride=2):
@@ -703,8 +706,9 @@ def yolo3_mobilenet1_0_voc(pretrained_base=True, pretrained=False,
               base_net.features[33:69],
               base_net.features[69:-2]]
 
-    anchors = [[10, 13, 16, 30, 33, 23], [30, 61, 62,
-                                          45, 59, 119], [116, 90, 156, 198, 373, 326]]
+    anchors = [[10, 13, 16, 30, 33, 23],
+               [30, 61, 62, 45, 59, 119],
+               [116, 90, 156, 198, 373, 326]]
     strides = [8, 16, 32]
     classes = VOCDetection.CLASSES
     return get_yolov3(
@@ -797,10 +801,149 @@ def yolo3_mobilenet1_0_coco(pretrained_base=True, pretrained=False, norm_layer=B
               base_net.features[33:69],
               base_net.features[69:-2]]
 
-    anchors = [[10, 13, 16, 30, 33, 23], [30, 61, 62,
-                                          45, 59, 119], [116, 90, 156, 198, 373, 326]]
+    anchors = [[10, 13, 16, 30, 33, 23],
+               [30, 61, 62, 45, 59, 119],
+               [116, 90, 156, 198, 373, 326]]
     strides = [8, 16, 32]
     classes = COCODetection.CLASSES
     return get_yolov3(
         'mobilenet1.0', stages, [512, 256, 128], anchors, strides, classes, 'coco',
+        pretrained=pretrained, norm_layer=norm_layer, norm_kwargs=norm_kwargs, **kwargs)
+
+def yolo3_mobilenet0_25_voc(pretrained_base=True, pretrained=False,
+                            norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
+    """YOLO3 multi-scale with mobilenet0.25 base network on VOC dataset.
+    Parameters
+    ----------
+    pretrained_base : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    Returns
+    -------
+    mxnet.gluon.HybridBlock
+        Fully hybrid yolo3 network.
+    """
+    from ...data import VOCDetection
+
+    pretrained_base = False if pretrained else pretrained_base
+    base_net = get_mobilenet(
+        multiplier=0.25,
+        pretrained=pretrained_base,
+        norm_layer=norm_layer, norm_kwargs=norm_kwargs,
+        **kwargs)
+    stages = [base_net.features[:33],
+              base_net.features[33:69],
+              base_net.features[69:-2]]
+
+    anchors = [[10, 13, 16, 30, 33, 23],
+               [30, 61, 62, 45, 59, 119],
+               [116, 90, 156, 198, 373, 326]]
+    strides = [8, 16, 32]
+    classes = VOCDetection.CLASSES
+    return get_yolov3(
+        'mobilenet0.25', stages, [256, 128, 128], anchors, strides, classes, 'voc',
+        pretrained=pretrained, norm_layer=norm_layer, norm_kwargs=norm_kwargs, **kwargs)
+
+def yolo3_mobilenet0_25_custom(classes, transfer=None, pretrained_base=True, pretrained=False,
+                               norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
+    """YOLO3 multi-scale with mobilenet0.25 base network on custom dataset.
+    Parameters
+    ----------
+    classes : iterable of str
+        Names of custom foreground classes. `len(classes)` is the number of foreground classes.
+    transfer : str or None
+        If not `None`, will try to reuse pre-trained weights from yolo networks trained on other
+        datasets.
+    pretrained_base : boolean
+        Whether fetch and load pretrained weights for base network.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    Returns
+    -------
+    mxnet.gluon.HybridBlock
+        Fully hybrid yolo3 network.
+    """
+    if pretrained:
+        warnings.warn("Custom models don't provide `pretrained` weights, ignored.")
+    if transfer is None:
+        base_net = get_mobilenet(multiplier=0.25,
+                                 pretrained=pretrained_base,
+                                 norm_layer=norm_layer, norm_kwargs=norm_kwargs,
+                                 **kwargs)
+        stages = [base_net.features[:33],
+                  base_net.features[33:69],
+                  base_net.features[69:-2]]
+        anchors = [
+            [10, 13, 16, 30, 33, 23],
+            [30, 61, 62, 45, 59, 119],
+            [116, 90, 156, 198, 373, 326]]
+        strides = [8, 16, 32]
+        net = get_yolov3(
+            'mobilenet0.25', stages, [256, 128, 128], anchors, strides, classes, '',
+            norm_layer=norm_layer, norm_kwargs=norm_kwargs, **kwargs)
+    else:
+        from ...model_zoo import get_model
+        net = get_model(
+            'yolo3_mobilenet0.25_' +
+            str(transfer),
+            pretrained=True,
+            **kwargs)
+        reuse_classes = [x for x in classes if x in net.classes]
+        net.reset_class(classes, reuse_weights=reuse_classes)
+    return net
+
+def yolo3_mobilenet0_25_coco(pretrained_base=True, pretrained=False, norm_layer=BatchNorm,
+                             norm_kwargs=None, **kwargs):
+    """YOLO3 multi-scale with mobilenet0.25 base network on COCO dataset.
+    Parameters
+    ----------
+    pretrained_base : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    Returns
+    -------
+    mxnet.gluon.HybridBlock
+        Fully hybrid yolo3 network.
+    """
+    from ...data import COCODetection
+
+    pretrained_base = False if pretrained else pretrained_base
+    base_net = get_mobilenet(
+        multiplier=0.25,
+        pretrained=pretrained_base,
+        norm_layer=norm_layer, norm_kwargs=norm_kwargs,
+        **kwargs)
+    stages = [base_net.features[:33],
+              base_net.features[33:69],
+              base_net.features[69:-2]]
+
+    anchors = [[10, 13, 16, 30, 33, 23],
+               [30, 61, 62, 45, 59, 119],
+               [116, 90, 156, 198, 373, 326]]
+    strides = [8, 16, 32]
+    classes = COCODetection.CLASSES
+    return get_yolov3(
+        'mobilenet1.0', stages, [256, 128, 128], anchors, strides, classes, 'coco',
         pretrained=pretrained, norm_layer=norm_layer, norm_kwargs=norm_kwargs, **kwargs)
