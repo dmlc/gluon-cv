@@ -230,11 +230,12 @@ def upscale_bbox_fn(bbox, img, scale=1.25):
     new_bbox = [new_x0, new_y0, new_x1, new_y1]
     return new_bbox
 
-def crop_resize_normalize(img, bbox_list, output_size):
+def crop_resize_normalize(img, bbox_list, output_size,
+                          mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)):
     output_list = []
     transform_test = transforms.Compose([
         transforms.ToTensor(),
-        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+        transforms.Normalize(mean, std)
     ])
     for bbox in bbox_list:
         x0 = max(int(bbox[0]), 0)
@@ -249,20 +250,20 @@ def crop_resize_normalize(img, bbox_list, output_size):
     output_array = nd.stack(*output_list)
     return output_array
 
-def detector_to_simple_pose(img, class_IDs, scores, bounding_boxs,
-                            output_shape=(256, 192), scale=1.25, ctx=mx.cpu()):
-    L = class_IDs.shape[1]
-    thr = 0.5
+def detector_to_simple_pose(img, class_ids, scores, bounding_boxs,
+                            output_shape=(256, 192), scale=1.25, ctx=mx.cpu(),
+                            thr=0.5, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)):
+    L = class_ids.shape[1]
     upscale_bbox = []
     for i in range(L):
-        if class_IDs[0][i].asscalar() != 0:
+        if class_ids[0][i].asscalar() != 0:
             continue
         if scores[0][i].asscalar() < thr:
             continue
         bbox = bounding_boxs[0][i]
         upscale_bbox.append(upscale_bbox_fn(bbox.asnumpy().tolist(), img, scale=scale))
     if len(upscale_bbox) > 0:
-        pose_input = crop_resize_normalize(img, upscale_bbox, output_shape)
+        pose_input = crop_resize_normalize(img, upscale_bbox, output_shape, mean=mean, std=std)
         pose_input = pose_input.as_in_context(ctx)
     else:
         pose_input = None
@@ -289,3 +290,118 @@ def heatmap_to_coord(heatmaps, bbox_list):
         preds[i][:, 0] = scale[0] * 2 * w_ratio + center[0] - scale[0]
         preds[i][:, 1] = scale[1] * 2 * h_ratio + center[1] - scale[1]
     return preds, maxvals
+
+
+'''AlphaPose'''
+def alpha_pose_detection_processor(img, boxes, class_idxs, scores, thr=0.5):
+    if len(boxes.shape) == 3:
+        boxes = boxes.squeeze(axis=0)
+
+    # cilp coordinates
+    boxes[:, [0, 2]] = mx.nd.clip(boxes[:, [0, 2]], 0., img.shape[1] - 1)
+    boxes[:, [1, 3]] = mx.nd.clip(boxes[:, [1, 3]], 0., img.shape[0] - 1)
+
+    # select boxes
+    mask1 = (class_idxs == 0).asnumpy()
+    mask2 = (scores > thr).asnumpy()
+    picked_idxs = np.where((mask1 + mask2) > 1)[1]
+    if picked_idxs.shape[0] == 0:
+        return None, None
+    else:
+        return boxes[picked_idxs], scores[picked_idxs]
+
+def alpha_pose_image_cropper(img, boxes, scores, output_shape=(256, 192),
+                             mean=(0.485, 0.456, 0.406),
+                             std=(0.229, 0.224, 0.225)):
+    if boxes is None:
+        return None, boxes
+
+    # crop person poses
+    img_width, img_height = img.shape[1], img.shape[0]
+
+    tensors = mx.nd.zeros([boxes.shape[0], 3, output_shape[0], output_shape[1]])
+    out_boxes = np.zeros([boxes.shape[0], 4])
+
+    img = mx.nd.image.to_tensor(nd.array(img))
+    img = mx.nd.image.normalize(img, mean=mean, std=std)
+    img = img.transpose(axes=[1, 2, 0])
+
+    for i, box in enumerate(boxes.asnumpy()):
+        box_width = box[2] - box[0]
+        box_height = box[3] - box[1]
+        if box_width > 100:
+            scale_rate = 0.2
+        else:
+            scale_rate = 0.3
+
+        # crop image
+        left = int(max(0, box[0] - box_width * scale_rate / 2))
+        up = int(max(0, box[1] - box_height * scale_rate / 2))
+        right = int(min(img_width - 1,
+                        max(left + 5, box[2] + box_width * scale_rate / 2)))
+        bottom = int(min(img_height - 1,
+                         max(up + 5, box[3] + box_height * scale_rate / 2)))
+        crop_width = right - left
+        if crop_width < 1:
+            continue
+        crop_height = bottom - up
+        if crop_height < 1:
+            continue
+        cropped_img = mx.image.fixed_crop(img, left, up, crop_width, crop_height)
+
+        # resize image
+        resize_factor = min(output_shape[1] / crop_width, output_shape[0] / crop_height)
+        new_width = int(crop_width * resize_factor)
+        new_height = int(crop_height * resize_factor)
+        tensor = mx.image.imresize(cropped_img, new_width, new_height)
+        tensor = tensor.transpose(axes=[2, 0, 1])
+        tensor = tensor.reshape(1, 3, new_height, new_width)
+
+        # pad tensor
+        pad_h = output_shape[0] - new_height
+        pad_w = output_shape[1] - new_width
+        pad_shape = (0, 0, 0, 0, pad_h // 2, (pad_h + 1) // 2, pad_w // 2, (pad_w + 1) // 2)
+        tensor = mx.nd.pad(tensor, mode='constant',
+                           constant_value=0.5, pad_width=pad_shape)
+        tensors[i] = tensor.reshape(3, output_shape[0], output_shape[1])
+        out_boxes[i] = (left, up, right, bottom)
+
+
+    return tensors, out_boxes
+
+def heatmap_to_coord_alpha_pose(hms, boxes):
+    hm_h = hms.shape[2]
+    hm_w = hms.shape[3]
+    aspect_ratio = float(hm_h) / hm_w
+    pt1 = mx.nd.array(boxes[:, (0, 2)])
+    pt2 = mx.nd.array(boxes[:, (1, 3)])
+
+    # get keypoint coordinates
+    idxs = mx.nd.argmax(hms.reshape(hms.shape[0], hms.shape[1], -1), 2, keepdims=True)
+    maxval = mx.nd.max(hms.reshape(hms.shape[0], hms.shape[1], -1), 2, keepdims=True)
+    preds = idxs.tile(reps=[1, 1, 2])
+    preds[:, :, 0] %= hms.shape[3]
+    preds[:, :, 1] /= hms.shape[3]
+
+    # get pred masks
+    pred_mask = (maxval > 0).tile(reps=[1, 1, 2])
+    preds *= pred_mask
+
+    # coordinate transformation
+    box_size = pt2 - pt1
+    len_h = mx.nd.maximum(box_size[:, 1:2], box_size[:, 0:1] * aspect_ratio)
+    len_w = len_h / aspect_ratio
+    canvas_size = mx.nd.concatenate([len_w, len_h], axis=1)
+    offsets = pt1 - mx.nd.maximum(0, canvas_size / 2 - box_size / 2)
+    preds_tf = preds * len_h / hm_h + offsets
+
+    return preds_tf, maxval
+
+def detector_to_alpha_pose(img, class_ids, scores, bounding_boxs,
+                            output_shape=(256, 192), scale=1.25, ctx=mx.cpu(),
+                            thr=0.5, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)):
+    boxes, scores = alpha_pose_detection_processor(
+        img, bounding_boxs, class_ids, scores, thr=thr)
+    pose_input, upscale_bbox = alpha_pose_image_cropper(
+        img, boxes, scores, output_shape=output_shape, mean=mean, std=std)
+    return pose_input, upscale_bbox
