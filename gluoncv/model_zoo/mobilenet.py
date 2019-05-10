@@ -101,10 +101,11 @@ class LinearBottleneck(nn.HybridBlock):
         with self.name_scope():
             self.out = nn.HybridSequential()
 
-            _add_conv(self.out,
-                      in_channels * t,
-                      relu6=True,
-                      norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+            if t != 1:
+                _add_conv(self.out,
+                          in_channels * t,
+                          relu6=True,
+                          norm_layer=norm_layer, norm_kwargs=norm_kwargs)
             _add_conv(self.out,
                       in_channels * t,
                       kernel=3,
