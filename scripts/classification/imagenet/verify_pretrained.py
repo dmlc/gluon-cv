@@ -42,12 +42,13 @@ def parse_args():
     opt = parser.parse_args()
     return opt
 
-
 def benchmark(network, ctx, batch_size=64, image_size=224, num_iter=100, datatype='float32'):
     input_shape = (batch_size, 3) + (image_size, image_size)
     data = mx.random.uniform(-1.0, 1.0, shape=input_shape, ctx=ctx, dtype=datatype)
-    tic = time.time()
-    for i in range(num_iter):
+    dryrun = 5
+    for i in range(num_iter+dryrun):
+        if i == dryrun:
+            tic = time.time()
         output = network(data)
         output.asnumpy()
     toc = time.time() - tic
