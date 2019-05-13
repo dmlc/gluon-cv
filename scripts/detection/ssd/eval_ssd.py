@@ -150,7 +150,7 @@ if __name__ == '__main__':
         #data = mx.random.uniform(-1.0, 1.0, shape=input_shape, ctx=ctx[0], dtype='float32')  
         speed = (args.batch_size*args.num_iterations)/benchmarking(net, ctx=ctx[0], num_iteration=args.num_iterations,
                 datashape=args.data_shape, batch_size=args.batch_size)
-        print('Inference speed on %s, with batchsize %d is %.2f img/s'%(net_name, args.batch_size, speed))
+        print('Inference speed on %s, with batchsize %d is %.2f img/sec'%(net_name, args.batch_size, speed))
         sys.exit()
 
     # eval data

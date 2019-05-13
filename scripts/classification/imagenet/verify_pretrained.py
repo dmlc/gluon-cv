@@ -90,7 +90,7 @@ if __name__ == '__main__':
         time_cost = benchmark(network=net, ctx=ctx[0], image_size=opt.input_size, batch_size=opt.batch_size,
             num_iter=opt.num_batches, datatype='float32')
         fps = (opt.batch_size*opt.num_batches)/time_cost
-        print('With batch size %s, %s batches, inference performance is %.2f image/s' % (opt.batch_size, opt.num_batches, fps)) 
+        print('With batch size %s, %s batches, inference performance is %.2f img/sec' % (opt.batch_size, opt.num_batches, fps)) 
         sys.exit()
 
     acc_top1 = mx.metric.Accuracy()
