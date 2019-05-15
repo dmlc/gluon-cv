@@ -153,7 +153,9 @@ class Trainer(object):
         kv = mx.kv.create(args.kvstore)
         optimizer_params = {'lr_scheduler': self.lr_scheduler,
                             'wd':args.weight_decay,
-                            'momentum': args.momentum}
+                            'momentum': args.momentum,
+                            'learning_rate': args.lr
+                           }
         if args.dtype == 'float16':
             optimizer_params['multi_precision'] = True
 
