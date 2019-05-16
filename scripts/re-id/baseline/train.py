@@ -160,10 +160,14 @@ if __name__ == '__main__':
     mx.random.seed(opt.seed)
 
     batch_size = opt.batch_size
-    num_gpus = opt.num_gpus
     epochs = [int(i) for i in opt.epochs.split(',')]
-    batch_size *= max(1, num_gpus)
 
-    context = [mx.gpu(i) for i in range(num_gpus)]
+    if opt.num_gpus is 0:
+        context = [mx.cpu(0)]
+    else:
+        num_gpus = opt.num_gpus
+        batch_size *= max(1, num_gpus)
+        context = [mx.gpu(i) for i in range(num_gpus)]
+
     net = resnet50(ctx=context, num_classes=751)
     main(net, batch_size, epochs, opt, context)
