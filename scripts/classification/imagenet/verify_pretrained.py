@@ -144,7 +144,7 @@ if __name__ == '__main__':
         _, top1 = acc_top1.get()
         _, top5 = acc_top5.get()
         return (1-top1, 1-top5)
-    
+ 
     if not opt.rec_dir:
         val_data = gluon.data.DataLoader(
             imagenet.classification.ImageNet(opt.data_dir, train=False).transform_first(transform_test),
