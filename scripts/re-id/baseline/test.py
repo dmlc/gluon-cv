@@ -14,6 +14,7 @@ import time, os, sys
 import scipy.io as sio
 from os import path as osp
 
+
 def get_data(batch_size, test_set, query_set):
     normalizer = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
@@ -36,7 +37,7 @@ def load_network(network, ctx):
 
 
 def fliplr(img):
-    '''flip horizontal'''
+    """flip horizontal"""
     img_flip = nd.flip(img, axis=3)
     return img_flip
 
@@ -52,7 +53,9 @@ def extract_feature(model, dataloaders, ctx):
         for i in range(2):
             if(i==1):
                 img = fliplr(img)
+            st = time.time()
             f = model(img.as_in_context(ctx)).as_in_context(mx.cpu()).asnumpy()
+            print(time.time()-st)
             ff = ff+f
         features.append(ff)
     features = np.concatenate(features)
@@ -100,16 +103,22 @@ def compute_mAP(index, good_index, junk_index):
 
 if __name__ == '__main__':
     batch_size = 256
-    data_dir = osp.expanduser("~/.mxnet/datasets/Market-1501-v15.09.15/")
+    data_dir = osp.expanduser("/home/samon/work/git/gluon-cv/scripts/datasets/Market-1501-v15.09.15/")
     gpu_ids = [0]
 
     # set gpu ids
-    if len(gpu_ids)>0:
+    if len(gpu_ids) > 0:
         context = mx.gpu()
+    # context = mx.cpu()
 
-    test_set = [(osp.join(data_dir,'bounding_box_test',line), int(line.split('_')[0])) for line in os.listdir(data_dir+'bounding_box_test') if "jpg" in line and "-1" not in line]
-    query_set = [(osp.join(data_dir,'query',line), int(line.split('_')[0])) for line in os.listdir(data_dir+'query') if "jpg" in line]
-    
+    test_set = [(osp.join(data_dir,'bounding_box_test', line),
+                 int(line.split('_')[0]))
+                for line in os.listdir(data_dir+'bounding_box_test')
+                if "jpg" in line and "-1" not in line]
+    query_set = [(osp.join(data_dir,'query', line),
+                  int(line.split('_')[0]))
+                 for line in os.listdir(data_dir+'query') if "jpg" in line]
+
     test_cam, test_label = get_id(test_set)
     query_cam, query_label = get_id(query_set)
 
@@ -124,7 +133,6 @@ if __name__ == '__main__':
     test_feature = extract_feature(model, test_loader, context)
     print('start query')
     query_feature = extract_feature(model, query_loader, context)
-
 
     query_feature = nd.array(query_feature).as_in_context(mx.gpu(0))
     test_feature = nd.array(test_feature).as_in_context(mx.gpu(0))
@@ -144,10 +152,10 @@ if __name__ == '__main__':
 
         good_index = np.setdiff1d(query_index, camera_index, assume_unique=True)
         junk_index = np.intersect1d(query_index, camera_index)
-    
+
         ap_tmp, CMC_tmp = compute_mAP(index, good_index, junk_index)
         CMC = CMC + CMC_tmp
         ap += ap_tmp
 
-    CMC = CMC/num #average CMC
+    CMC = CMC/num   # average CMC
     print('top1:%f top5:%f top10:%f mAP:%f'%(CMC[0],CMC[4],CMC[9],ap/num))

@@ -25,8 +25,7 @@ def make_list(exdir):
                 pcam = name_split[1][1]
                 if pid not in train_list:
                     train_list[pid] = []
-                train_list[pid].append({"name":name, "pid":pid, "pcam":pcam})
-
+                train_list[pid].append({"name": name, "pid": pid, "pcam": pcam})
 
     with open(osp.join(exdir, 'train.txt'), 'w') as f:
         for i, key in enumerate(train_list):
@@ -48,7 +47,7 @@ def main():
         if not osp.isdir(exdir):
             extract(fpath)
             make_list(exdir)
-            
+
     else:
         download(url, fpath, False)
         extract(fpath)

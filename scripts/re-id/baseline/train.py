@@ -11,10 +11,10 @@ from mxnet.gluon.data.vision import transforms
 from mxnet import autograd
 
 from networks import resnet18, resnet34, resnet50
+
 from gluoncv.data.market1501.data_read import ImageTxtDataset
 from gluoncv.data.market1501.label_read import LabelList
 from gluoncv.data.transforms.block import RandomCrop
-
 
 
 # CLI
@@ -27,7 +27,8 @@ parser.add_argument('--batch-size', type=int, default=32,
                     help='training batch size per device (CPU/GPU).')
 parser.add_argument('--num-workers', type=int, default=8,
                     help='the number of workers for data loader')
-parser.add_argument('--dataset-root', type=str, default="~/.mxnet/datasets",
+parser.add_argument('--dataset-root', type=str,
+                    default="../../datasets",
                     help='the number of workers for data loader')
 parser.add_argument('--dataset', type=str, default="market1501",
                     help='the number of workers for data loader')

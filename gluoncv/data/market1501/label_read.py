@@ -18,12 +18,11 @@ def LabelList(ratio=1, root='~/.mxnet/datasets', name='market1501'):
         Which dataset is used. Only support market 1501 now.
     """
     root = osp.expanduser(root)
-
     if name == "market1501":
         path = osp.join(root, "Market-1501-v15.09.15")
         train_txt = osp.join(path, "train.txt")
         image_path = osp.join(path, "bounding_box_train")
-
+        print(osp.abspath(train_txt))
         item_list = [(osp.join(image_path, line.split()[0]), int(line.split()[1]))
                      for line in open(train_txt).readlines()]
         random.shuffle(item_list)
@@ -34,4 +33,7 @@ def LabelList(ratio=1, root='~/.mxnet/datasets', name='market1501'):
         valid_set = item_list[train_count:]
 
         return train_set, valid_set
+    elif name == "msmt17":
+        return None, None
+
     return None, None
