@@ -180,7 +180,7 @@ class Trainer(object):
                 autograd.backward(losses)
             self.optimizer.step(self.args.batch_size)
             for loss in losses:
-                train_loss += loss.asnumpy()[0] / len(losses)
+                train_loss += np.mean(loss.asnumpy()) / len(losses)
             tbar.set_description('Epoch %d, training loss %.3f'%\
                 (epoch, train_loss/(i+1)))
             mx.nd.waitall()
