@@ -18,6 +18,7 @@ def LabelList(ratio=1, root='~/.mxnet/datasets', name='market1501'):
         Which dataset is used. Only support market 1501 now.
     """
     root = osp.expanduser(root)
+    print("dataset name is:", name)
     if name == "market1501":
         path = osp.join(root, "Market-1501-v15.09.15")
         train_txt = osp.join(path, "train.txt")
