@@ -179,5 +179,5 @@ if __name__ == '__main__':
         batch_size *= max(1, num_gpus)
         context = [mx.gpu(i) for i in range(num_gpus)]
 
-    net = resnet50(ctx=context, num_classes=751)
+    net = resnet50(ctx=context, num_classes=opt.classes)
     main(net, batch_size, epochs, opt, context)
