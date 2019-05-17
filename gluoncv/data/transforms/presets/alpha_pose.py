@@ -41,7 +41,9 @@ class AlphaPoseDefaultTrainTransform(object):
         joints_3d = label['joints_3d']
 
         # color jitter
-        src = experimental.image.random_color_distort(src)
+        src = experimental.image.random_color_distort(
+            src, brightness_delta=16, contrast_low=0.7, contrast_high=1.3,
+            saturation_low=0.7, saturation_high=1.3, hue_delta=0)
 
         # scaling
         ul = np.array((int(bbox[0]), int(bbox[1])))
