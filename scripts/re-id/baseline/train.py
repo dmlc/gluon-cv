@@ -109,11 +109,11 @@ def main(net: ResNet, batch_size, epochs, opt, ctx):
     train_data, val_data = get_data_iters(batch_size)
     if opt.hybridize:
         net.hybridize()
-    # kv = mx.kv.create(opt.kvstore)
+    kv = mx.kv.create(opt.kvstore)
     trainer = gluon.Trainer(net.collect_params(),
                             'adam',
-                            {'learning_rate': opt.lr, 'wd': opt.wd})
-                            # kvstore=kv)
+                            {'learning_rate': opt.lr, 'wd': opt.wd},
+                            kvstore=kv)
     criterion = gluon.loss.SoftmaxCrossEntropyLoss()
 
     lr = opt.lr
