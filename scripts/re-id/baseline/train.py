@@ -29,6 +29,8 @@ parser.add_argument('--batch-size', type=int, default=32,
                     help='training batch size per device (CPU/GPU).')
 parser.add_argument('--num-workers', type=int, default=8,
                     help='the number of workers for data loader')
+parser.add_argument('--kvstore', type=str, default='device',
+                    help='kvstore to use for trainer/module.')
 parser.add_argument('--dataset-root', type=str,
                     default="../../datasets/train_part",
                     help='the number of workers for data loader')
@@ -107,8 +109,11 @@ def main(net: ResNet, batch_size, epochs, opt, ctx):
     train_data, val_data = get_data_iters(batch_size)
     if opt.hybridize:
         net.hybridize()
-
-    trainer = gluon.Trainer(net.collect_params(), 'adam', {'learning_rate': opt.lr, 'wd': opt.wd})
+    kv = mx.kv.create(opt.kvstore)
+    trainer = gluon.Trainer(net.collect_params(),
+                            'adam',
+                            {'learning_rate': opt.lr, 'wd': opt.wd},
+                            kvstore=kv)
     criterion = gluon.loss.SoftmaxCrossEntropyLoss()
 
     lr = opt.lr
