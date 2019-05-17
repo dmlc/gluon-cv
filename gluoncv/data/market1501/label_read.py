@@ -33,7 +33,21 @@ def LabelList(ratio=1, root='~/.mxnet/datasets', name='market1501'):
         valid_set = item_list[train_count:]
 
         return train_set, valid_set
-    elif name == "msmt17":
-        return None, None
+    elif name == "reid_all_dataset":
+        path = osp.join(root, "reid_all_dataset")
+        train_txt = osp.join(path, "train.txt")
+        print(osp.abspath(train_txt))
+        item_list = [(osp.join(path, line.split()[0]), int(line.split()[1]))
+                     for line in open(train_txt).readlines()]
+
+        # item_list = [(line.split()[0], int(line.split()[1]))
+        #              for line in open(train_txt).readlines()]
+        random.shuffle(item_list)
+        count = len(item_list)
+        train_count = int(count * ratio)
+
+        train_set = item_list[:train_count]
+        valid_set = item_list[train_count:]
+        return train_set, valid_set
 
     return None, None

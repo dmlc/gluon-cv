@@ -4,6 +4,7 @@ import argparse, datetime, os
 import logging
 logging.basicConfig(level=logging.INFO)
 
+import __init
 import mxnet as mx
 from mxnet import gluon, nd
 from mxnet.gluon.model_zoo import vision as models
@@ -11,6 +12,7 @@ from mxnet.gluon.data.vision import transforms
 from mxnet import autograd
 
 from networks import resnet18, resnet34, resnet50
+from networks.resnet import ResNet
 
 from gluoncv.data.market1501.data_read import ImageTxtDataset
 from gluoncv.data.market1501.label_read import LabelList
@@ -28,12 +30,14 @@ parser.add_argument('--batch-size', type=int, default=32,
 parser.add_argument('--num-workers', type=int, default=8,
                     help='the number of workers for data loader')
 parser.add_argument('--dataset-root', type=str,
-                    default="../../datasets",
+                    default="../../datasets/train_part",
                     help='the number of workers for data loader')
-parser.add_argument('--dataset', type=str, default="market1501",
+parser.add_argument('--dataset', type=str, default="reid_all_dataset",
                     help='the number of workers for data loader')
 parser.add_argument('--num-gpus', type=int, default=1,
                     help='number of gpus to use.')
+parser.add_argument('--classes', type=int, default=751,
+                    help='the classes of the datasets.')
 parser.add_argument('--warmup', type=bool, default=True,
                     help='number of training epochs.')
 parser.add_argument('--epochs', type=str, default="5,25,50,75")
@@ -98,7 +102,7 @@ def validate(val_data, net, criterion, ctx):
     return loss/len(val_data), sum(accuracy)/len(accuracy)
 
 
-def main(net, batch_size, epochs, opt, ctx):
+def main(net: ResNet, batch_size, epochs, opt, ctx):
     train_data, val_data = get_data_iters(batch_size)
     if opt.hybridize:
         net.hybridize()

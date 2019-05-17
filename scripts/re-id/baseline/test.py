@@ -43,21 +43,23 @@ def fliplr(img):
 
 
 def extract_feature(model, dataloaders, ctx):
-    count = 0
     features = []
     for img, _ in dataloaders:
-        n = img.shape[0]
-        count += n
-        print(count)
-        ff = np.zeros((n, 2048))
+        # print(img.shape)
+        batch = img.shape[0]
+        ff = np.zeros((batch, 2048))
         for i in range(2):
             if(i==1):
                 img = fliplr(img)
             st = time.time()
             f = model(img.as_in_context(ctx)).as_in_context(mx.cpu()).asnumpy()
-            print(time.time()-st)
+            print("spend {}s".format(time.time()-st))
             ff = ff+f
+            # print(len(f[0]))
+            # print(f[0])
         features.append(ff)
+        # print(features)
+        # exit()
     features = np.concatenate(features)
     return features/np.linalg.norm(features, axis=1, keepdims=True)
 
@@ -103,7 +105,7 @@ def compute_mAP(index, good_index, junk_index):
 
 if __name__ == '__main__':
     batch_size = 256
-    data_dir = osp.expanduser("/home/samon/work/git/gluon-cv/scripts/datasets/Market-1501-v15.09.15/")
+    data_dir = osp.expanduser("~/work/git/gluon-cv/scripts/datasets/reid_all_dataset/Market-1501-v15.09.15/")
     gpu_ids = [0]
 
     # set gpu ids
@@ -131,6 +133,7 @@ if __name__ == '__main__':
     test_loader, query_loader = get_data(batch_size, test_set, query_set)
     print('start test')
     test_feature = extract_feature(model, test_loader, context)
+    print(test_feature.shape)
     print('start query')
     query_feature = extract_feature(model, query_loader, context)
 
