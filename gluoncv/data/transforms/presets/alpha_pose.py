@@ -76,7 +76,7 @@ class AlphaPoseDefaultTrainTransform(object):
             return img, target, target_weight, img_path
 
         center, scale = _box_to_center_scale(
-            ul[0], ul[1], br[0] - ul[0], br[1] - ul[1], self._aspect_ratio)
+            ul[0], ul[1], br[0] - ul[0], br[1] - ul[1], self._aspect_ratio, scale_mult=1.0)
 
         # rotation
         rf = self._rotation_factor
@@ -199,7 +199,7 @@ class AlphaPoseDefaultValTransform(object):
         joints_3d = label['joints_3d']
         xmin, ymin, xmax, ymax = bbox
         center, scale = _box_to_center_scale(
-            xmin, ymin, xmax - xmin, ymax - ymin, self._aspect_ratio)
+            xmin, ymin, xmax - xmin, ymax - ymin, self._aspect_ratio, scale_mult=1.0)
         score = label.get('score', 1)
 
         h, w = self._image_size

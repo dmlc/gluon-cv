@@ -11,7 +11,7 @@ from ....utils.filesystem import try_import_cv2
 
 __all__ = ['SimplePoseDefaultTrainTransform', 'SimplePoseDefaultValTransform']
 
-def _box_to_center_scale(x, y, w, h, aspect_ratio=1.0):
+def _box_to_center_scale(x, y, w, h, aspect_ratio=1.0, scale_mult=1.25):
     """Convert box coordinates to center and scale.
     adapted from https://github.com/Microsoft/human-pose-estimation.pytorch
     """
@@ -27,7 +27,7 @@ def _box_to_center_scale(x, y, w, h, aspect_ratio=1.0):
     scale = np.array(
         [w * 1.0 / pixel_std, h * 1.0 / pixel_std], dtype=np.float32)
     if center[0] != -1:
-        scale = scale * 1.25
+        scale = scale * scale_mult
     return center, scale
 
 
