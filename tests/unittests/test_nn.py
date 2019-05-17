@@ -1,5 +1,5 @@
 import mxnet as mx
-from gluoncv.nn import GroupNorm
+from mygluoncv.nn import GroupNorm
 
 def test_groupnorm():
     ctx=mx.context.current_context()

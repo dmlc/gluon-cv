@@ -50,7 +50,7 @@ print('bounding boxes:', gt_boxes)
 ############################################################################
 # We use a vgg16 atrous 300x300 SSD model in this example. For demo purpose, we
 # don't use any pretrained weights here
-from gluoncv import model_zoo
+from mygluoncv import model_zoo
 net = model_zoo.get_model('ssd_300_vgg16_atrous_voc', pretrained_base=False, pretrained=False)
 
 ############################################################################
@@ -64,7 +64,7 @@ loc_loss = gluon.loss.HuberLoss()
 # Simulate the training steps by manually compute losses:
 # You can always use ``gluoncv.loss.SSDMultiBoxLoss`` which fulfills this function.
 from mxnet import autograd
-from gluoncv.model_zoo.ssd.target import SSDTargetGenerator
+from mygluoncv.model_zoo.ssd.target import SSDTargetGenerator
 target_generator = SSDTargetGenerator()
 with autograd.record():
     # 1. forward pass
@@ -136,7 +136,7 @@ print('sample-wise norm loc loss:', sample_loc_loss * rescale_loc)
 # box offsets predictors.
 #
 # For these added layers, we must initialize them before training.
-from gluoncv import model_zoo
+from mygluoncv import model_zoo
 import mxnet as mx
 # don't load pretrained for this demo
 net = model_zoo.get_model('ssd_300_vgg16_atrous_voc', pretrained=False, pretrained_base=False)

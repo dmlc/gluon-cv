@@ -12,11 +12,11 @@ import mxnet as mx
 from tqdm import tqdm
 from mxnet import nd
 from mxnet import gluon
-import gluoncv as gcv
-from gluoncv import data as gdata
-from gluoncv.data import batchify
-from gluoncv.data.transforms.presets.rcnn import MaskRCNNDefaultValTransform
-from gluoncv.utils.metrics.coco_instance import COCOInstanceMetric
+import mygluoncv as gcv
+from mygluoncv import data as gdata
+from mygluoncv.data import batchify
+from mygluoncv.data.transforms.presets.rcnn import MaskRCNNDefaultValTransform
+from mygluoncv.utils.metrics.coco_instance import COCOInstanceMetric
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Validate Mask RCNN networks.')

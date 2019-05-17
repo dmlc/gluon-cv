@@ -54,7 +54,7 @@ downloading them again. For example
 # Loading images and labels from ADE20K is straight-forward
 # with GluonCV's dataset utility:
 
-from gluoncv.data import ADE20KSegmentation
+from mygluoncv.data import ADE20KSegmentation
 train_dataset = ADE20KSegmentation(split='train')
 val_dataset = ADE20KSegmentation(split='val')
 print('Training images:', len(train_dataset))
@@ -68,7 +68,7 @@ print('Validation images:', len(val_dataset))
 import numpy as np
 img, mask = val_dataset[0]
 # get pallete for the mask
-from gluoncv.utils.viz import get_color_pallete
+from mygluoncv.utils.viz import get_color_pallete
 mask = get_color_pallete(mask.asnumpy(), dataset='ade20k')
 mask.save('mask.png')
 

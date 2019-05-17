@@ -10,14 +10,14 @@ import numpy as np
 import mxnet as mx
 from mxnet import gluon
 from mxnet import autograd
-import gluoncv as gcv
-from gluoncv import data as gdata
-from gluoncv import utils as gutils
-from gluoncv.model_zoo import get_model
-from gluoncv.data import batchify
-from gluoncv.data.transforms.presets.rcnn import MaskRCNNDefaultTrainTransform, \
+import mygluoncv as gcv
+from mygluoncv import data as gdata
+from mygluoncv import utils as gutils
+from mygluoncv.model_zoo import get_model
+from mygluoncv.data import batchify
+from mygluoncv.data.transforms.presets.rcnn import MaskRCNNDefaultTrainTransform, \
     MaskRCNNDefaultValTransform
-from gluoncv.utils.metrics.coco_instance import COCOInstanceMetric
+from mygluoncv.utils.metrics.coco_instance import COCOInstanceMetric
 
 
 def parse_args():

@@ -7,7 +7,7 @@ lines of code.
 First let's import some necessary libraries:
 """
 
-from gluoncv import model_zoo, data, utils
+from mygluoncv import model_zoo, data, utils
 from matplotlib import pyplot as plt
 
 ######################################################################

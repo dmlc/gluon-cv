@@ -8,12 +8,12 @@ from mxnet.gluon.data.vision import transforms
 
 import matplotlib.pyplot as plt
 
-import gluoncv as gcv
-from gluoncv import data
-from gluoncv.data import mscoco
-from gluoncv.model_zoo import get_model
-from gluoncv.data.transforms.pose import detector_to_simple_pose, heatmap_to_coord
-from gluoncv.utils.viz import plot_image, plot_keypoints
+import mygluoncv as gcv
+from mygluoncv import data
+from mygluoncv.data import mscoco
+from mygluoncv.model_zoo import get_model
+from mygluoncv.data.transforms.pose import detector_to_simple_pose, heatmap_to_coord
+from mygluoncv.utils.viz import plot_image, plot_keypoints
 
 parser = argparse.ArgumentParser(description='Predict ImageNet classes from a given image')
 parser.add_argument('--detector', type=str, default='yolo3_mobilenet1.0_coco',

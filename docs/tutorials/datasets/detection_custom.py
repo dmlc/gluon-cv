@@ -35,7 +35,7 @@ In practice, feel free to choose whatever method that fits for your use case bes
 # First of all, let us plot a real image for example:
 
 import os, zipfile
-from gluoncv import utils
+from mygluoncv import utils
 import mxnet as mx
 import numpy as np
 from matplotlib import pyplot as plt
@@ -148,7 +148,7 @@ with open('val.lst', 'w') as fw:
 #
 # Assume the relative root path to the image folder is current directory
 
-from gluoncv.data import LstDetection
+from mygluoncv.data import LstDetection
 lst_dataset = LstDetection('val.lst', root=os.path.expanduser('.'))
 print('length:', len(lst_dataset))
 first_img = lst_dataset[0][0]
@@ -198,7 +198,7 @@ subprocess.check_output([sys.executable, 'im2rec.py', 'val', '.', '--no-shuffle'
 
 ##############################################################################
 # Now similarly, we can create a dataset from the binary file we just created with on line of code:
-from gluoncv.data import RecordFileDetection
+from mygluoncv.data import RecordFileDetection
 record_dataset = RecordFileDetection('val.rec', coord_normalized=True)
 
 # we expect same results from LstDetection
@@ -246,7 +246,7 @@ with open('VOCtemplate/VOC2018/Annotations/000001.xml', 'r') as fid:
 ##############################################################################
 # As long as your dataset can match the PASCAL VOC convension, it is convenient to
 # derive custom dataset from ``VOCDetection``
-from gluoncv.data import VOCDetection
+from mygluoncv.data import VOCDetection
 class VOCLike(VOCDetection):
     CLASSES = ['person', 'dog']
     def __init__(self, root, splits, transform=None, index_map=None, preload_label=True):

@@ -4,5 +4,5 @@ import sys
 # print(os.getcwd())
 # print(os.path.abspath(os.path.join('../../../gluoncv')))
 sys.path.append("../../../")
-sys.path.append("../../../gluoncv")
+sys.path.append("../../../mygluoncv")
 

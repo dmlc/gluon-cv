@@ -11,9 +11,9 @@ from mxnet import autograd as ag
 from mxnet.gluon import nn
 from mxnet.gluon.data.vision import transforms
 
-from gluoncv.model_zoo import get_model
-from gluoncv.utils import makedirs, TrainingHistory
-from gluoncv.data import transforms as gcv_transforms
+from mygluoncv.model_zoo import get_model
+from mygluoncv.utils import makedirs, TrainingHistory
+from mygluoncv.data import transforms as gcv_transforms
 
 # CLI
 def parse_args():

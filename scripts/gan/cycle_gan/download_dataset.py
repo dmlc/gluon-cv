@@ -2,7 +2,7 @@
 import os
 import argparse
 import zipfile
-from gluoncv.utils import download, makedirs
+from mygluoncv.utils import download, makedirs
 
 def parse_args():
     parser = argparse.ArgumentParser(

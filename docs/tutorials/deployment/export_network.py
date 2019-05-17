@@ -9,8 +9,8 @@ The answer is "Absolutely!", and it's super easy actually.
 This article will show you how to export networks/models to be used somewhere other than Python.
 
 """
-import gluoncv as gcv
-from gluoncv.utils import export_block
+import mygluoncv as gcv
+from mygluoncv.utils import export_block
 
 ################################################################################
 # First of all, we need a network to play with, a pre-trained one is perfect

@@ -6,8 +6,8 @@ from mxnet import gluon, image, init, nd
 from mxnet import autograd as ag
 from mxnet.gluon import nn
 from mxnet.gluon.data.vision import transforms
-from gluoncv.utils import makedirs
-from gluoncv.model_zoo import get_model
+from mygluoncv.utils import makedirs
+from mygluoncv.model_zoo import get_model
 
 def parse_opts():
     parser = argparse.ArgumentParser(description='Transfer learning on MINC-2500 dataset',

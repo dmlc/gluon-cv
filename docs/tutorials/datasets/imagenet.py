@@ -66,7 +66,7 @@ performs randomized resizing and cropping.
 """
 
 
-from gluoncv.data import ImageNet
+from mygluoncv.data import ImageNet
 from mxnet.gluon.data import DataLoader
 from mxnet.gluon.data.vision import transforms
 
@@ -89,7 +89,7 @@ for x, y in train_data:
 
 #########################################################################
 # Plot some validation images
-from gluoncv.utils import viz
+from mygluoncv.utils import viz
 val_dataset = ImageNet(train=False)
 viz.plot_image(val_dataset[1234][0])  # index 0 is image, 1 is label
 viz.plot_image(val_dataset[4567][0])

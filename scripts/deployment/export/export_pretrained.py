@@ -1,7 +1,7 @@
 """Script for export pre-trained models in GluonCV model zoo."""
 from __future__ import print_function
 import argparse
-import gluoncv as gcv
+import mygluoncv as gcv
 
 def parse_args():
     parser = argparse.ArgumentParser("Export model helper.")

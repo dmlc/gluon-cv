@@ -7,8 +7,8 @@ First let's import some necessary libraries:
 """
 
 from matplotlib import pyplot as plt
-import gluoncv
-from gluoncv import model_zoo, data, utils
+import mygluoncv
+from mygluoncv import model_zoo, data, utils
 
 ######################################################################
 # Load a pretrained model

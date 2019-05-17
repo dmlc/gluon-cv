@@ -7,12 +7,12 @@ from mxnet import autograd as ag
 from mxnet.gluon import nn
 from mxnet.gluon.data.vision import transforms
 
-from gluoncv.data import mscoco
-from gluoncv.model_zoo import get_model
-from gluoncv.utils import makedirs
-from gluoncv.data.transforms.pose import transform_preds, get_final_preds, flip_heatmap
-from gluoncv.data.transforms.presets.simple_pose import SimplePoseDefaultTrainTransform, SimplePoseDefaultValTransform
-from gluoncv.utils.metrics.coco_keypoints import COCOKeyPointsMetric
+from mygluoncv.data import mscoco
+from mygluoncv.model_zoo import get_model
+from mygluoncv.utils import makedirs
+from mygluoncv.data.transforms.pose import transform_preds, get_final_preds, flip_heatmap
+from mygluoncv.data.transforms.presets.simple_pose import SimplePoseDefaultTrainTransform, SimplePoseDefaultValTransform
+from mygluoncv.utils.metrics.coco_keypoints import COCOKeyPointsMetric
 
 # CLI
 parser = argparse.ArgumentParser(description='Train a model for image classification.')

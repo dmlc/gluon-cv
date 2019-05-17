@@ -5,13 +5,13 @@ import os.path as osp
 import mxnet as mx
 import numpy as np
 from mxnet import autograd, gluon
-import gluoncv as gcv
-from gluoncv.data import transforms
-from gluoncv.data import batchify
-from gluoncv.data.batchify import Tuple, Stack, Pad
-from gluoncv.data.transforms.presets import ssd
-from gluoncv.data.transforms.presets import rcnn
-from gluoncv.data.transforms.presets import yolo
+import mygluoncv as gcv
+from mygluoncv.data import transforms
+from mygluoncv.data import batchify
+from mygluoncv.data.batchify import Tuple, Stack, Pad
+from mygluoncv.data.transforms.presets import ssd
+from mygluoncv.data.transforms.presets import rcnn
+from mygluoncv.data.transforms.presets import yolo
 
 def test_bbox_crop():
     bbox = np.array([[10, 20, 200, 500], [150, 200, 400, 300]])

@@ -53,7 +53,7 @@ Appendix from [He16]_ and experiment detail from [Lin17]_ may also be useful ref
 # VOC dataset on your disk.
 # Then, we are ready to load training and validation images.
 
-from gluoncv.data import VOCDetection
+from mygluoncv.data import VOCDetection
 # typically we use 2007+2012 trainval splits for training data
 train_dataset = VOCDetection(splits=[(2007, 'trainval'), (2012, 'trainval')])
 # and use 2007 test as validation data
@@ -75,7 +75,7 @@ print('bboxes:', bboxes.shape, 'class ids:', cids.shape)
 ##############################################################################
 # Plot the image, together with the bounding box labels:
 from matplotlib import pyplot as plt
-from gluoncv.utils import viz
+from mygluoncv.utils import viz
 
 ax = viz.plot_bbox(train_image.asnumpy(), bboxes, labels=cids, class_names=train_dataset.classes)
 plt.show()
@@ -91,8 +91,8 @@ plt.show()
 
 ##############################################################################
 # For Faster-RCNN networks, the only data augmentation is horizontal flip.
-from gluoncv.data.transforms import presets
-from gluoncv import utils
+from mygluoncv.data.transforms import presets
+from mygluoncv import utils
 from mxnet import nd
 
 ##############################################################################
@@ -132,7 +132,7 @@ plt.show()
 # :py:class:`gluoncv.data.batchify.Append`, which neither stack or pad images, but instead return lists.
 # In such way, image tensors and labels returned have their own shapes, unaware of the rest in the same batch.
 
-from gluoncv.data.batchify import Tuple, Append
+from mygluoncv.data.batchify import Tuple, Append
 from mxnet.gluon.data import DataLoader
 
 batch_size = 2  # for tutorial, we use smaller batch-size
@@ -167,7 +167,7 @@ for ib, batch in enumerate(train_loader):
 #    To avoid downloading model in this tutorial, we set ``pretrained_base=False``,
 #    in practice we usually want to load pre-trained imagenet models by setting
 #    ``pretrained_base=True``.
-from gluoncv import model_zoo
+from mygluoncv import model_zoo
 net = model_zoo.get_model('faster_rcnn_resnet50_v1b_voc', pretrained_base=False)
 print(net)
 

@@ -32,7 +32,7 @@ import numpy as np
 import mxnet as mx
 from mxnet import gluon, autograd
 
-import gluoncv
+import mygluoncv
 ##############################################################################
 # Fully Convolutional Network
 # ---------------------------
@@ -75,14 +75,14 @@ import gluoncv
 #
 # Loading a dilated ResNet50 is simply:
 #
-pretrained_net = gluoncv.model_zoo.resnet50_v1b(pretrained=True)
+pretrained_net = mygluoncv.model_zoo.resnet50_v1b(pretrained=True)
 
 ##############################################################################
 # For convenience, we provide a base model for semantic segmentation, which automatically
 # load the pre-trained dilated ResNet :class:`gluoncv.model_zoo.segbase.SegBaseModel`
 # with a convenient method ``base_forward(input)`` to get stage 3 & 4 featuremaps:
 #
-basemodel = gluoncv.model_zoo.segbase.SegBaseModel(nclass=10, aux=False)
+basemodel = mygluoncv.model_zoo.segbase.SegBaseModel(nclass=10, aux=False)
 x = mx.nd.random.uniform(shape=(1, 3, 224, 224))
 c3, c4 = basemodel.base_forward(x)
 print('Shapes of c3 & c4 featuremaps are ', c3.shape, c4.shape)
@@ -114,7 +114,7 @@ print('Shapes of c3 & c4 featuremaps are ', c3.shape, c4.shape)
 #
 # FCN model is provided in :class:`gluoncv.model_zoo.FCN`. To get
 # FCN model using ResNet50 base network for Pascal VOC dataset:
-model = gluoncv.model_zoo.get_fcn(dataset='pascal_voc', backbone='resnet50', pretrained=False)
+model = mygluoncv.model_zoo.get_fcn(dataset='pascal_voc', backbone='resnet50', pretrained=False)
 print(model)
 
 ##############################################################################
@@ -131,7 +131,7 @@ input_transform = transforms.Compose([
 ##############################################################################
 # We provide semantic segmentation datasets in :class:`gluoncv.data`.
 # For example, we can easily get the Pascal VOC 2012 dataset:
-trainset = gluoncv.data.VOCSegmentation(split='train', transform=input_transform)
+trainset = mygluoncv.data.VOCSegmentation(split='train', transform=input_transform)
 print('Training images:', len(trainset))
 # set batch_size = 2 for toy example
 batch_size = 2
@@ -155,7 +155,7 @@ from datetime import datetime
 random.seed(datetime.now())
 idx = random.randint(0, len(trainset))
 img, mask = trainset[idx]
-from gluoncv.utils.viz import get_color_pallete, DeNormalize
+from mygluoncv.utils.viz import get_color_pallete, DeNormalize
 # get color pallete for visualize mask
 mask = get_color_pallete(mask.asnumpy(), dataset='pascal_voc')
 mask.save('mask.png')
@@ -190,7 +190,7 @@ plt.show()
 #     Additionally, an Auxiliary Loss as in PSPNet [Zhao17]_ at Stage 3 can be enabled when
 #     training with command ``--aux``. This will create an additional FCN "head" after Stage 3.
 #
-from gluoncv.loss import MixSoftmaxCrossEntropyLoss
+from mygluoncv.loss import MixSoftmaxCrossEntropyLoss
 criterion = MixSoftmaxCrossEntropyLoss(aux=True)
 
 ##############################################################################
@@ -201,12 +201,12 @@ criterion = MixSoftmaxCrossEntropyLoss(aux=True)
 #     We use a poly-like learning rate scheduler for FCN training, provided in :class:`gluoncv.utils.LRScheduler`.
 #     The learning rate is given by :math:`lr = base_lr \times (1-iter)^{power}`
 # 
-lr_scheduler = gluoncv.utils.LRScheduler('poly', base_lr=0.001,
-                                         nepochs=50, iters_per_epoch=len(train_data), power=0.9)
+lr_scheduler = mygluoncv.utils.LRScheduler('poly', base_lr=0.001,
+                                           nepochs=50, iters_per_epoch=len(train_data), power=0.9)
 
 ##############################################################################
 # - Dataparallel for multi-gpu training, using cpu for demo only
-from gluoncv.utils.parallel import *
+from mygluoncv.utils.parallel import *
 ctx_list = [mx.cpu(0)]
 model = DataParallelModel(model, ctx_list)
 criterion = DataParallelCriterion(criterion, ctx_list)

@@ -17,11 +17,11 @@ from mxnet import autograd as ag
 from mxnet.gluon import nn
 from mxnet.gluon.data.vision import transforms
 
-from gluoncv.data import mscoco
-from gluoncv.model_zoo import get_model
-from gluoncv.utils import makedirs, LRScheduler
-from gluoncv.data.transforms.presets.simple_pose import SimplePoseDefaultTrainTransform
-from gluoncv.utils.metrics import HeatmapAccuracy
+from mygluoncv.data import mscoco
+from mygluoncv.model_zoo import get_model
+from mygluoncv.utils import makedirs, LRScheduler
+from mygluoncv.data.transforms.presets.simple_pose import SimplePoseDefaultTrainTransform
+from mygluoncv.utils.metrics import HeatmapAccuracy
 
 #############################################################################
 # Loading the data

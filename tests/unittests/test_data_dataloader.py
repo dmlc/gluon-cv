@@ -4,9 +4,9 @@ from __future__ import division
 import mxnet as mx
 import numpy as np
 
-import gluoncv as gcv
-from gluoncv.data.batchify import *
-from gluoncv.data import DetectionDataLoader, RandomTransformDataLoader
+import mygluoncv as gcv
+from mygluoncv.data.batchify import *
+from mygluoncv.data import DetectionDataLoader, RandomTransformDataLoader
 
 
 class DummyDetectionDataset(mx.gluon.data.Dataset):

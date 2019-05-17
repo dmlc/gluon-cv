@@ -1,7 +1,7 @@
 import mxnet as mx
 from mxnet import nd, autograd, gluon
 from mxnet.gluon import nn, Block
-from gluoncv.utils.parallel import DataParallelModel, DataParallelCriterion
+from mygluoncv.utils.parallel import DataParallelModel, DataParallelCriterion
 
 def test_data_parallel():
     # test gluon.contrib.parallel.DataParallelModel

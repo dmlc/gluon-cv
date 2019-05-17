@@ -54,7 +54,7 @@ Appendix from [He16]_ and experiment detail from [Lin17]_ may also be useful ref
 # Make sure COCO dataset has been set up on your disk.
 # Then, we are ready to load training and validation images.
 
-from gluoncv.data import COCOInstance
+from mygluoncv.data import COCOInstance
 # typically we use train2017 (i.e. train2014 + minival35k) split as training data
 # COCO dataset actually has images without any objects annotated,
 # which must be skipped during training to prevent empty labels
@@ -80,7 +80,7 @@ print('masks', [[poly.shape for poly in polys] for polys in train_segm])
 ##############################################################################
 # Plot the image with boxes and labels:
 from matplotlib import pyplot as plt
-from gluoncv.utils import viz
+from mygluoncv.utils import viz
 
 fig = plt.figure(figsize=(10, 10))
 ax = fig.add_subplot(1, 1, 1)
@@ -90,7 +90,7 @@ plt.show()
 ##############################################################################
 # To actually see the object segmentation, we need to convert polygons to masks
 import numpy as np
-from gluoncv.data.transforms import mask as tmask
+from mygluoncv.data.transforms import mask as tmask
 width, height = train_image.shape[1], train_image.shape[0]
 train_masks = np.stack([tmask.to_mask(polys, (width, height)) for polys in train_segm])
 plt_image = viz.plot_mask(train_image, train_masks)
@@ -109,8 +109,8 @@ plt.show()
 # converts the segmentation polygons to binary segmentation mask.
 # :py:class:`gluoncv.data.transforms.presets.rcnn.MaskRCNNDefaultValTransform`
 # ignores the segmentation polygons and returns image tensor and ``[im_height, im_width, im_scale]``.
-from gluoncv.data.transforms import presets
-from gluoncv import utils
+from mygluoncv.data.transforms import presets
+from mygluoncv import utils
 from mxnet import nd
 
 ##############################################################################
@@ -152,7 +152,7 @@ plt.show()
 # -----------
 # Data loader is identical to Faster R-CNN with the difference of mask input and output.
 
-from gluoncv.data.batchify import Tuple, Append
+from mygluoncv.data.batchify import Tuple, Append
 from mxnet.gluon.data import DataLoader
 
 batch_size = 2  # for tutorial, we use smaller batch-size
@@ -185,7 +185,7 @@ for ib, batch in enumerate(train_loader):
 #    To avoid downloading models in this tutorial, we set ``pretrained_base=False``,
 #    in practice we usually want to load pre-trained imagenet models by setting
 #    ``pretrained_base=True``.
-from gluoncv import model_zoo
+from mygluoncv import model_zoo
 net = model_zoo.get_model('mask_rcnn_resnet50_v1b_coco', pretrained_base=False)
 print(net)
 

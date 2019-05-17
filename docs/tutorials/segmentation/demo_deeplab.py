@@ -7,7 +7,7 @@ Please follow the `installation guide <../index.html>`_ to install MXNet and Glu
 import mxnet as mx
 from mxnet import image
 from mxnet.gluon.data.vision import transforms
-import gluoncv
+import mygluoncv
 # using cpu
 ctx = mx.cpu(0)
 
@@ -20,7 +20,7 @@ ctx = mx.cpu(0)
 url = 'https://github.com/zhanghang1989/image-data/blob/master/encoding/' + \
     'segmentation/ade20k/ADE_val_00001755.jpg?raw=true'
 filename = 'ade20k_example.jpg'
-gluoncv.utils.download(url, filename, True)
+mygluoncv.utils.download(url, filename, True)
 
 ##############################################################################
 # load the image
@@ -44,7 +44,7 @@ img = img.expand_dims(0).as_in_context(ctx)
 # ----------------------------------------------
 #
 # get pre-trained model
-model = gluoncv.model_zoo.get_model('deeplab_resnet101_ade', pretrained=True)
+model = mygluoncv.model_zoo.get_model('deeplab_resnet101_ade', pretrained=True)
 
 ##############################################################################
 # make prediction using single scale
@@ -53,7 +53,7 @@ predict = mx.nd.squeeze(mx.nd.argmax(output, 1)).asnumpy()
 
 ##############################################################################
 # Add color pallete for visualization
-from gluoncv.utils.viz import get_color_pallete
+from mygluoncv.utils.viz import get_color_pallete
 import matplotlib.image as mpimg
 mask = get_color_pallete(predict, 'ade20k')
 mask.save('output.png')

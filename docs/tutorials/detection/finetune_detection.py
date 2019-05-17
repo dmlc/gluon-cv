@@ -18,8 +18,8 @@ from matplotlib import pyplot as plt
 import numpy as np
 import mxnet as mx
 from mxnet import autograd, gluon
-import gluoncv as gcv
-from gluoncv.utils import download, viz
+import mygluoncv as gcv
+from mygluoncv.utils import download, viz
 
 #############################################################################################
 # Pikachu Dataset
@@ -78,8 +78,8 @@ net = gcv.model_zoo.get_model('ssd_512_mobilenet1.0_custom', classes=classes,
 #     You will find a more detailed training implementation of SSD here:
 #     :download:`Download train_ssd.py<../../../scripts/detection/ssd/train_ssd.py>`
 def get_dataloader(net, train_dataset, data_shape, batch_size, num_workers):
-    from gluoncv.data.batchify import Tuple, Stack, Pad
-    from gluoncv.data.transforms.presets.ssd import SSDDefaultTrainTransform
+    from mygluoncv.data.batchify import Tuple, Stack, Pad
+    from mygluoncv.data.transforms.presets.ssd import SSDDefaultTrainTransform
     width, height = data_shape, data_shape
     # use fake data to generate fixed anchors for target generation
     with autograd.train_mode():

@@ -78,7 +78,7 @@ We can download and extract it with:
 """
 
 import zipfile, os
-from gluoncv.utils import download
+from mygluoncv.utils import download
 
 file_url = 'https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/classification/minc-2500-tiny.zip'
 zip_file = download(file_url, path='./')
@@ -99,8 +99,8 @@ from mxnet import gluon, image, init, nd
 from mxnet import autograd as ag
 from mxnet.gluon import nn
 from mxnet.gluon.data.vision import transforms
-from gluoncv.utils import makedirs
-from gluoncv.model_zoo import get_model
+from mygluoncv.utils import makedirs
+from mygluoncv.model_zoo import get_model
 
 ################################################################################
 # We set the hyperparameters as following:

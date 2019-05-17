@@ -7,7 +7,7 @@ Please follow the `installation guide <../index.html>`_ to install MXNet and Glu
 import mxnet as mx
 from mxnet import image
 from mxnet.gluon.data.vision import transforms
-import gluoncv
+import mygluoncv
 # using cpu
 ctx = mx.cpu(0)
 
@@ -19,7 +19,7 @@ ctx = mx.cpu(0)
 # download the example image
 url = 'https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/segmentation/voc_examples/1.jpg'
 filename = 'example.jpg'
-gluoncv.utils.download(url, filename)
+mygluoncv.utils.download(url, filename)
 
 ##############################################################################
 # load the image
@@ -43,7 +43,7 @@ img = img.expand_dims(0).as_in_context(ctx)
 # ----------------------------------------------
 #
 # get pre-trained model
-model = gluoncv.model_zoo.get_model('fcn_resnet101_voc', pretrained=True)
+model = mygluoncv.model_zoo.get_model('fcn_resnet101_voc', pretrained=True)
 
 ##############################################################################
 # make prediction using single scale
@@ -52,7 +52,7 @@ predict = mx.nd.squeeze(mx.nd.argmax(output, 1)).asnumpy()
 
 ##############################################################################
 # Add color pallete for visualization
-from gluoncv.utils.viz import get_color_pallete
+from mygluoncv.utils.viz import get_color_pallete
 import matplotlib.image as mpimg
 mask = get_color_pallete(predict, 'pascal_voc')
 mask.save('output.png')

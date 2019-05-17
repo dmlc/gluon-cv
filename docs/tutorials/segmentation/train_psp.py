@@ -28,7 +28,7 @@ Dive into Deep
 import numpy as np
 import mxnet as mx
 from mxnet import gluon, autograd
-import gluoncv
+import mygluoncv
 
 ##############################################################################
 # Pyramid Scene Parsing Network
@@ -82,7 +82,7 @@ import gluoncv
 #
 # PSPNet model is provided in :class:`gluoncv.model_zoo.PSPNet`. To get
 # PSP model using ResNet50 base network for ADE20K dataset:
-model = gluoncv.model_zoo.get_psp(dataset='ade20k', backbone='resnet50', pretrained=False)
+model = mygluoncv.model_zoo.get_psp(dataset='ade20k', backbone='resnet50', pretrained=False)
 print(model)
 
 ##############################################################################
@@ -99,7 +99,7 @@ input_transform = transforms.Compose([
 ##############################################################################
 # We provide semantic segmentation datasets in :class:`gluoncv.data`.
 # For example, we can easily get the ADE20K dataset:
-trainset = gluoncv.data.ADE20KSegmentation(split='train', transform=input_transform)
+trainset = mygluoncv.data.ADE20KSegmentation(split='train', transform=input_transform)
 print('Training images:', len(trainset))
 # set batch_size = 2 for toy example
 batch_size = 2
@@ -123,7 +123,7 @@ from datetime import datetime
 random.seed(datetime.now())
 idx = random.randint(0, len(trainset))
 img, mask = trainset[idx]
-from gluoncv.utils.viz import get_color_pallete, DeNormalize
+from mygluoncv.utils.viz import get_color_pallete, DeNormalize
 # get color pallete for visualize mask
 mask = get_color_pallete(mask.asnumpy(), dataset='ade20k')
 mask.save('mask.png')
@@ -157,7 +157,7 @@ plt.show()
 #     Additionally, an Auxiliary Loss as in PSPNet [Zhao17]_ at Stage 3 can be enabled when
 #     training with command ``--aux``. This will create an additional FCN "head" after Stage 3.
 #
-from gluoncv.loss import MixSoftmaxCrossEntropyLoss
+from mygluoncv.loss import MixSoftmaxCrossEntropyLoss
 criterion = MixSoftmaxCrossEntropyLoss(aux=True)
 
 ##############################################################################
@@ -168,12 +168,12 @@ criterion = MixSoftmaxCrossEntropyLoss(aux=True)
 #     We use a poly-like learning rate scheduler for FCN training, provided in :class:`gluoncv.utils.LRScheduler`.
 #     The learning rate is given by :math:`lr = base_lr \times (1-iter)^{power}`
 # 
-lr_scheduler = gluoncv.utils.LRScheduler(mode='poly', base_lr=0.001,
-                                         nepochs=50, iters_per_epoch=len(train_data), power=0.9)
+lr_scheduler = mygluoncv.utils.LRScheduler(mode='poly', base_lr=0.001,
+                                           nepochs=50, iters_per_epoch=len(train_data), power=0.9)
 
 ##############################################################################
 # - Dataparallel for multi-gpu training, using cpu for demo only
-from gluoncv.utils.parallel import *
+from mygluoncv.utils.parallel import *
 ctx_list = [mx.cpu(0)]
 model = DataParallelModel(model, ctx_list)
 criterion = DataParallelCriterion(criterion, ctx_list)

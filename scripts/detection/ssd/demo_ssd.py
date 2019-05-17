@@ -2,8 +2,8 @@
 import os
 import argparse
 import mxnet as mx
-import gluoncv as gcv
-from gluoncv.data.transforms import presets
+import mygluoncv as gcv
+from mygluoncv.data.transforms import presets
 from matplotlib import pyplot as plt
 
 def parse_args():

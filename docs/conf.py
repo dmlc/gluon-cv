@@ -31,7 +31,7 @@ copyright = '2018, MXNet Developers'
 author = 'MXNet Developers'
 
 # The short X.Y version
-import gluoncv as gcv
+import mygluoncv as gcv
 version = gcv.__version__
 release = gcv.__version__
 

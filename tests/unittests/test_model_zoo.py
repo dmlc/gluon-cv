@@ -23,7 +23,7 @@ import warnings
 import mxnet as mx
 import numpy as np
 
-import gluoncv as gcv
+import mygluoncv as gcv
 from common import try_gpu, with_cpu
 
 def test_get_all_models():

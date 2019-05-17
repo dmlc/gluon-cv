@@ -8,8 +8,8 @@ First let's import some necessary libraries:
 """
 
 from matplotlib import pyplot as plt
-from gluoncv import model_zoo, data, utils
-from gluoncv.data.transforms.pose import detector_to_simple_pose, heatmap_to_coord
+from mygluoncv import model_zoo, data, utils
+from mygluoncv.data.transforms.pose import detector_to_simple_pose, heatmap_to_coord
 
 ######################################################################
 # Load a pretrained model

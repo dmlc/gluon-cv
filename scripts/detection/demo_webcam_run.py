@@ -2,7 +2,7 @@ import argparse
 import time
 
 import cv2
-import gluoncv as gcv
+import mygluoncv as gcv
 import matplotlib.pyplot as plt
 import mxnet as mx
 

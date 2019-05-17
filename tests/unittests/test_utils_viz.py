@@ -5,7 +5,7 @@ import unittest
 import mxnet as mx
 import numpy as np
 
-import gluoncv as gcv
+import mygluoncv as gcv
 
 def test_viz_bbox():
     img = mx.nd.zeros((300, 300, 3), dtype=np.uint8)

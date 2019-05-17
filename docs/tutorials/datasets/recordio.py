@@ -115,7 +115,7 @@ for batch in train_data:
 
 #########################################################################
 # Plot some validation images
-from gluoncv.utils import viz
+from mygluoncv.utils import viz
 val_data = ImageRecordIter(
     path_imgrec = os.path.join(rec_path, 'val.rec'),
     path_imgidx = os.path.join(rec_path, 'val.idx'),

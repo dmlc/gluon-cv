@@ -6,10 +6,10 @@ from mxnet import autograd as ag
 from mxnet.gluon import nn
 from mxnet.gluon.data.vision import transforms
 
-from gluoncv.data import imagenet
-from gluoncv.loss import MixSoftmaxCrossEntropyLoss
-from gluoncv.model_zoo import get_model
-from gluoncv.utils import makedirs, LRScheduler, LRSequential
+from mygluoncv.data import imagenet
+from mygluoncv.loss import MixSoftmaxCrossEntropyLoss
+from mygluoncv.model_zoo import get_model
+from mygluoncv.utils import makedirs, LRScheduler, LRSequential
 
 # CLI
 def parse_args():

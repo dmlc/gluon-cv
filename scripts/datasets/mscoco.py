@@ -3,8 +3,8 @@ import os
 import shutil
 import argparse
 import zipfile
-from gluoncv.utils import download, makedirs
-from gluoncv.data.mscoco.utils import try_import_pycocotools
+from mygluoncv.utils import download, makedirs
+from mygluoncv.data.mscoco.utils import try_import_pycocotools
 
 _TARGET_DIR = os.path.expanduser('~/.mxnet/datasets/coco')
 

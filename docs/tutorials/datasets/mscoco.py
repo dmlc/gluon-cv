@@ -59,7 +59,7 @@ For example, assuming the files are saved in ``~/coco/``, you can run:
 # :py:class:`gluoncv.data.COCODetection`.
 
 
-from gluoncv import data, utils
+from mygluoncv import data, utils
 from matplotlib import pyplot as plt
 
 train_dataset = data.COCODetection(splits=['instances_train2017'])

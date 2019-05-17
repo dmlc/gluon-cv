@@ -9,17 +9,17 @@ import mxnet as mx
 from mxnet import nd
 from mxnet import gluon
 from mxnet import autograd
-import gluoncv as gcv
-from gluoncv import data as gdata
-from gluoncv import utils as gutils
-from gluoncv.model_zoo import get_model
-from gluoncv.data.batchify import Tuple, Stack, Pad
-from gluoncv.data.transforms.presets.yolo import YOLO3DefaultTrainTransform
-from gluoncv.data.transforms.presets.yolo import YOLO3DefaultValTransform
-from gluoncv.data.dataloader import RandomTransformDataLoader
-from gluoncv.utils.metrics.voc_detection import VOC07MApMetric
-from gluoncv.utils.metrics.coco_detection import COCODetectionMetric
-from gluoncv.utils import LRScheduler, LRSequential
+import mygluoncv as gcv
+from mygluoncv import data as gdata
+from mygluoncv import utils as gutils
+from mygluoncv.model_zoo import get_model
+from mygluoncv.data.batchify import Tuple, Stack, Pad
+from mygluoncv.data.transforms.presets.yolo import YOLO3DefaultTrainTransform
+from mygluoncv.data.transforms.presets.yolo import YOLO3DefaultValTransform
+from mygluoncv.data.dataloader import RandomTransformDataLoader
+from mygluoncv.utils.metrics.voc_detection import VOC07MApMetric
+from mygluoncv.utils.metrics.coco_detection import COCODetectionMetric
+from mygluoncv.utils import LRScheduler, LRSequential
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train YOLO networks with random input shape.')
@@ -109,7 +109,7 @@ def get_dataset(dataset, args):
     if args.num_samples < 0:
         args.num_samples = len(train_dataset)
     if args.mixup:
-        from gluoncv.data import MixupDetection
+        from mygluoncv.data import MixupDetection
         train_dataset = MixupDetection(train_dataset)
     return train_dataset, val_dataset, val_metric
 

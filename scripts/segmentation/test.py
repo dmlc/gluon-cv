@@ -6,11 +6,11 @@ import mxnet as mx
 from mxnet import gluon
 from mxnet.gluon.data.vision import transforms
 
-import gluoncv
-from gluoncv.model_zoo.segbase import *
-from gluoncv.model_zoo import get_model
-from gluoncv.data import get_segmentation_dataset, ms_batchify_fn
-from gluoncv.utils.viz import get_color_pallete
+import mygluoncv
+from mygluoncv.model_zoo.segbase import *
+from mygluoncv.model_zoo import get_model
+from mygluoncv.data import get_segmentation_dataset, ms_batchify_fn
+from mygluoncv.utils.viz import get_color_pallete
 
 from train import parse_args
 
@@ -53,7 +53,7 @@ def test(args):
                 .format(args.resume))
     print(model)
     evaluator = MultiEvalModel(model, testset.num_class, ctx_list=args.ctx)
-    metric = gluoncv.utils.metrics.SegmentationMetric(testset.num_class)
+    metric = mygluoncv.utils.metrics.SegmentationMetric(testset.num_class)
 
     tbar = tqdm(test_data)
     for i, (data, dsts) in enumerate(tbar):

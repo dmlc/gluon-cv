@@ -62,7 +62,7 @@ For example, assuming the files are saved in ``~/VOCdevkit/``, you can run:
 # :py:class:`gluoncv.data.VOCDetection`.
 
 
-from gluoncv import data, utils
+from mygluoncv import data, utils
 from matplotlib import pyplot as plt
 
 train_dataset = data.VOCDetection(splits=[(2007, 'trainval'), (2012, 'trainval')])

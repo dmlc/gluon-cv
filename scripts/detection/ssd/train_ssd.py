@@ -9,16 +9,16 @@ import mxnet as mx
 from mxnet import nd
 from mxnet import gluon
 from mxnet import autograd
-import gluoncv as gcv
-from gluoncv import data as gdata
-from gluoncv import utils as gutils
-from gluoncv.model_zoo import get_model
-from gluoncv.data.batchify import Tuple, Stack, Pad
-from gluoncv.data.transforms.presets.ssd import SSDDefaultTrainTransform
-from gluoncv.data.transforms.presets.ssd import SSDDefaultValTransform
-from gluoncv.utils.metrics.voc_detection import VOC07MApMetric
-from gluoncv.utils.metrics.coco_detection import COCODetectionMetric
-from gluoncv.utils.metrics.accuracy import Accuracy
+import mygluoncv as gcv
+from mygluoncv import data as gdata
+from mygluoncv import utils as gutils
+from mygluoncv.model_zoo import get_model
+from mygluoncv.data.batchify import Tuple, Stack, Pad
+from mygluoncv.data.transforms.presets.ssd import SSDDefaultTrainTransform
+from mygluoncv.data.transforms.presets.ssd import SSDDefaultValTransform
+from mygluoncv.utils.metrics.voc_detection import VOC07MApMetric
+from mygluoncv.utils.metrics.coco_detection import COCODetectionMetric
+from mygluoncv.utils.metrics.accuracy import Accuracy
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train SSD networks.')

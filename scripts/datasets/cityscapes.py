@@ -3,7 +3,7 @@ import os
 import shutil
 import argparse
 import zipfile
-from gluoncv.utils import download, makedirs
+from mygluoncv.utils import download, makedirs
 from mxnet.gluon.utils import check_sha1
 
 _TARGET_DIR = os.path.expanduser('~/.mxnet/datasets/citys')

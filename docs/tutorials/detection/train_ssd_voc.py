@@ -44,7 +44,7 @@ This is also a good starting point for your own object detection project.
 # VOC dataset on your disk.
 # Then, we are ready to load training and validation images.
 
-from gluoncv.data import VOCDetection
+from mygluoncv.data import VOCDetection
 # typically we use 2007+2012 trainval splits for training data
 train_dataset = VOCDetection(splits=[(2007, 'trainval'), (2012, 'trainval')])
 # and use 2007 test as validation data
@@ -66,7 +66,7 @@ print('bboxes:', bboxes.shape, 'class ids:', cids.shape)
 ##############################################################################
 # Plot the image, together with the bounding box labels:
 from matplotlib import pyplot as plt
-from gluoncv.utils import viz
+from mygluoncv.utils import viz
 
 ax = viz.plot_bbox(
     train_image.asnumpy(),
@@ -92,8 +92,8 @@ plt.show()
 # For SSD networks, it is critical to apply data augmentation (see explanations in paper [Liu16]_).
 # We provide tons of image and bounding box transform functions to do that.
 # They are very convenient to use as well.
-from gluoncv.data.transforms import presets
-from gluoncv import utils
+from mygluoncv.data.transforms import presets
+from mygluoncv import utils
 from mxnet import nd
 
 ##############################################################################
@@ -154,7 +154,7 @@ plt.show()
 # :py:class:`gluoncv.data.batchify.Stack` in addition, is used to stack NDArrays with consistent shapes.
 # :py:class:`gluoncv.data.batchify.Tuple` is used to handle different behaviors across multiple outputs from transform functions.
 
-from gluoncv.data.batchify import Tuple, Stack, Pad
+from mygluoncv.data.batchify import Tuple, Stack, Pad
 from mxnet.gluon.data import DataLoader
 
 batch_size = 2  # for tutorial, we use smaller batch-size
@@ -206,7 +206,7 @@ for ib, batch in enumerate(train_loader):
 #    To avoid downloading models in this tutorial, we set `pretrained_base=False`,
 #    in practice we usually want to load pre-trained imagenet models by setting
 #    `pretrained_base=True`.
-from gluoncv import model_zoo
+from mygluoncv import model_zoo
 net = model_zoo.get_model('ssd_300_vgg16_atrous_voc', pretrained_base=False)
 print(net)
 
@@ -264,7 +264,7 @@ train_loader = DataLoader(
 
 ##############################################################################
 # Loss, Trainer and Training pipeline
-from gluoncv.loss import SSDMultiBoxLoss
+from mygluoncv.loss import SSDMultiBoxLoss
 mbox_loss = SSDMultiBoxLoss()
 trainer = gluon.Trainer(
     net.collect_params(), 'sgd',

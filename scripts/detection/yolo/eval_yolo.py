@@ -10,12 +10,12 @@ import mxnet as mx
 from tqdm import tqdm
 from mxnet import nd
 from mxnet import gluon
-import gluoncv as gcv
-from gluoncv import data as gdata
-from gluoncv.data.batchify import Tuple, Stack, Pad
-from gluoncv.data.transforms.presets.yolo import YOLO3DefaultValTransform
-from gluoncv.utils.metrics.voc_detection import VOC07MApMetric
-from gluoncv.utils.metrics.coco_detection import COCODetectionMetric
+import mygluoncv as gcv
+from mygluoncv import data as gdata
+from mygluoncv.data.batchify import Tuple, Stack, Pad
+from mygluoncv.data.transforms.presets.yolo import YOLO3DefaultValTransform
+from mygluoncv.utils.metrics.voc_detection import VOC07MApMetric
+from mygluoncv.utils.metrics.coco_detection import COCODetectionMetric
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Eval YOLO networks.')

@@ -5,7 +5,7 @@ from __future__ import print_function, division
 import json, os
 from os import path as osp
 from zipfile import ZipFile
-from gluoncv.utils import download
+from mygluoncv.utils import download
 
 
 def extract(fpath):

@@ -29,7 +29,7 @@ Start Training Now
 import numpy as np
 import mxnet as mx
 from mxnet import gluon, autograd
-import gluoncv
+import mygluoncv
 
 ##############################################################################
 # Evils in the Training Details
@@ -90,7 +90,7 @@ import gluoncv
 # DeepLabV3 model is provided in :class:`gluoncv.model_zoo.DeepLabV3`. To get
 # DeepLabV3 model using ResNet50 base network for VOC dataset:
 #
-model = gluoncv.model_zoo.get_deeplab (dataset='pascal_voc', backbone='resnet50', pretrained=False)
+model = mygluoncv.model_zoo.get_deeplab (dataset='pascal_voc', backbone='resnet50', pretrained=False)
 print(model)
 
 ##############################################################################
@@ -113,7 +113,7 @@ input_transform = transforms.Compose([
 ])
 
 # get the dataset
-trainset = gluoncv.data.COCOSegmentation(split='train', transform=input_transform)
+trainset = mygluoncv.data.COCOSegmentation(split='train', transform=input_transform)
 print('Training images:', len(trainset))
 
 # set batch_size = 2 for toy example
@@ -134,7 +134,7 @@ from datetime import datetime
 random.seed(datetime.now())
 idx = random.randint(0, len(trainset))
 img, mask = trainset[idx]
-from gluoncv.utils.viz import get_color_pallete, DeNormalize
+from mygluoncv.utils.viz import get_color_pallete, DeNormalize
 # get color pallete for visualize mask
 mask = get_color_pallete(mask.asnumpy(), dataset='coco')
 mask.save('mask.png')
@@ -183,8 +183,8 @@ plt.show()
 # scheduling strategy is used.
 # The learning rate is given by :math:`lr = base_lr \times (1-iter)^{power}`
 # 
-lr_scheduler = gluoncv.utils.LRScheduler(mode='poly', base_lr=0.01,
-                                         nepochs=30, iters_per_epoch=len(train_data), power=0.9)
+lr_scheduler = mygluoncv.utils.LRScheduler(mode='poly', base_lr=0.01,
+                                           nepochs=30, iters_per_epoch=len(train_data), power=0.9)
 
 ##############################################################################
 # We first use the base learning rate of 0.01 to pretrain on MS-COCO dataset,

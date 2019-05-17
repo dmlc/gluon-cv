@@ -40,7 +40,7 @@ Then run this script:
 # Loading images and labels from Cityscapes is straight-forward
 # with GluonCV's dataset utility:
 
-from gluoncv.data import CitySegmentation
+from mygluoncv.data import CitySegmentation
 train_dataset = CitySegmentation(split='train')
 val_dataset = CitySegmentation(split='val')
 print('Training images:', len(train_dataset))
@@ -54,7 +54,7 @@ print('Validation images:', len(val_dataset))
 import numpy as np
 img, mask = val_dataset[0]
 # get pallete for the mask
-from gluoncv.utils.viz import get_color_pallete
+from mygluoncv.utils.viz import get_color_pallete
 mask = get_color_pallete(mask.asnumpy(), dataset='citys')
 mask.save('mask.png')
 

@@ -1,8 +1,8 @@
 from __future__ import print_function
 
 import numpy as np
-import gluoncv as gcv
-from gluoncv.model_zoo.model_store import pretrained_model_list
+import mygluoncv as gcv
+from mygluoncv.model_zoo.model_store import pretrained_model_list
 from common import try_gpu
 
 @try_gpu(0)

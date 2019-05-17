@@ -5,9 +5,9 @@ import mxnet as mx
 from mxnet.test_utils import assert_almost_equal
 from mxnet.gluon.data.vision import transforms
 
-import gluoncv
-from gluoncv.utils.metrics.segmentation import *
-from gluoncv.data import ADE20KSegmentation
+import mygluoncv
+from mygluoncv.utils.metrics.segmentation import *
+from mygluoncv.data import ADE20KSegmentation
 
 from common import try_gpu, with_cpu
 
@@ -27,7 +27,7 @@ def test_segmentation_utils():
     # TODO FIXME: change it to ADE20K dataset and pretrained model
     dataset = ADE20KSegmentation(split='val')
     # load pretrained net
-    net = gluoncv.model_zoo.get_model('fcn_resnet50_ade', pretrained=True, ctx=ctx)
+    net = mygluoncv.model_zoo.get_model('fcn_resnet50_ade', pretrained=True, ctx=ctx)
     # count for pixAcc and mIoU
     total_inter, total_union, total_correct, total_label = 0, 0, 0, 0
     np_inter, np_union, np_correct, np_label = 0, 0, 0, 0

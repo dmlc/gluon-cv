@@ -8,7 +8,7 @@ from mxnet.gluon import nn
 from mxnet.gluon.data.vision import transforms
 
 from networks import resnet18, resnet34, resnet50
-from gluoncv.data.market1501.data_read import ImageTxtDataset
+from mygluoncv.data.market1501.data_read import ImageTxtDataset
 
 import time, os, sys
 import scipy.io as sio

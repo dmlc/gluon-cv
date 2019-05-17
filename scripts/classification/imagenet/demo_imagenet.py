@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 from mxnet import nd, image
 from mxnet.gluon.data.vision import transforms
 
-from gluoncv.model_zoo import get_model
-from gluoncv.data.transforms.presets.imagenet import transform_eval
+from mygluoncv.model_zoo import get_model
+from mygluoncv.data.transforms.presets.imagenet import transform_eval
 
 parser = argparse.ArgumentParser(description='Predict ImageNet classes from a given image')
 parser.add_argument('--model', type=str, required=True,

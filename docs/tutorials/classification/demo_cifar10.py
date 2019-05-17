@@ -26,8 +26,8 @@ import matplotlib.pyplot as plt
 
 from mxnet import gluon, nd, image
 from mxnet.gluon.data.vision import transforms
-from gluoncv import utils
-from gluoncv.model_zoo import get_model
+from mygluoncv import utils
+from mygluoncv.model_zoo import get_model
 
 ################################################################
 #

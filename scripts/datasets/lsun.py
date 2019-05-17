@@ -10,7 +10,7 @@ try:
     from urllib.request import urlopen
 except ImportError:
     from urllib2 import urlopen
-from gluoncv.utils.download import download
+from mygluoncv.utils.download import download
 
 __author__ = 'Fisher Yu'
 __email__ = 'fy@cs.princeton.edu'

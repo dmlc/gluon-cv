@@ -5,8 +5,8 @@ import os
 import mxnet as mx
 import numpy as np
 
-import gluoncv as gcv
-from gluoncv import data
+import mygluoncv as gcv
+from mygluoncv import data
 import os.path as osp
 
 
@@ -145,7 +145,7 @@ def test_lst_detection():
             line = write_line('dog.jpg', img.shape, all_boxes, all_ids, i)
             print(line)
             fw.write(line)
-    from gluoncv.data import LstDetection
+    from mygluoncv.data import LstDetection
     lst_dataset = LstDetection('val.lst', root=os.path.expanduser('.'))
     assert len(lst_dataset) == 4
     lst_dataset.transform(lambda x, y : (x, y))

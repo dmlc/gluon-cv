@@ -10,15 +10,15 @@ import numpy as np
 import mxnet as mx
 from mxnet import gluon
 from mxnet import autograd
-import gluoncv as gcv
-from gluoncv import data as gdata
-from gluoncv import utils as gutils
-from gluoncv.model_zoo import get_model
-from gluoncv.data import batchify
-from gluoncv.data.transforms.presets.rcnn import FasterRCNNDefaultTrainTransform, \
+import mygluoncv as gcv
+from mygluoncv import data as gdata
+from mygluoncv import utils as gutils
+from mygluoncv.model_zoo import get_model
+from mygluoncv.data import batchify
+from mygluoncv.data.transforms.presets.rcnn import FasterRCNNDefaultTrainTransform, \
     FasterRCNNDefaultValTransform
-from gluoncv.utils.metrics.voc_detection import VOC07MApMetric
-from gluoncv.utils.metrics.coco_detection import COCODetectionMetric
+from mygluoncv.utils.metrics.voc_detection import VOC07MApMetric
+from mygluoncv.utils.metrics.coco_detection import COCODetectionMetric
 
 
 def parse_args():
@@ -207,7 +207,7 @@ def get_dataset(dataset, args):
     else:
         raise NotImplementedError('Dataset: {} not implemented.'.format(dataset))
     if args.mixup:
-        from gluoncv.data.mixup import detection
+        from mygluoncv.data.mixup import detection
         train_dataset = detection.MixupDetection(train_dataset)
     return train_dataset, val_dataset, val_metric
 

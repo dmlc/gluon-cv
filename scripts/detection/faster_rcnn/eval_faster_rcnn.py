@@ -14,12 +14,12 @@ import mxnet as mx
 from tqdm import tqdm
 from mxnet import nd
 from mxnet import gluon
-import gluoncv as gcv
-from gluoncv import data as gdata
-from gluoncv.data import batchify
-from gluoncv.data.transforms.presets.rcnn import FasterRCNNDefaultValTransform
-from gluoncv.utils.metrics.voc_detection import VOC07MApMetric
-from gluoncv.utils.metrics.coco_detection import COCODetectionMetric
+import mygluoncv as gcv
+from mygluoncv import data as gdata
+from mygluoncv.data import batchify
+from mygluoncv.data.transforms.presets.rcnn import FasterRCNNDefaultValTransform
+from mygluoncv.utils.metrics.voc_detection import VOC07MApMetric
+from mygluoncv.utils.metrics.coco_detection import COCODetectionMetric
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Validate Faster-RCNN networks.')

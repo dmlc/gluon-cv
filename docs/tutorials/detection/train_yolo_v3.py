@@ -50,8 +50,8 @@ Specifically, we show how to build a state-of-the-art YOLOv3 model by stacking G
 # Please first go through this :ref:`sphx_glr_build_examples_datasets_pascal_voc.py` tutorial to setup Pascal
 # VOC dataset on your disk.
 # Then, we are ready to load training and validation images.
-import gluoncv as gcv
-from gluoncv.data import VOCDetection
+import mygluoncv as gcv
+from mygluoncv.data import VOCDetection
 # typically we use 2007+2012 trainval splits for training data
 train_dataset = VOCDetection(splits=[(2007, 'trainval'), (2012, 'trainval')])
 # and use 2007 test as validation data
@@ -73,7 +73,7 @@ print('bboxes:', bboxes.shape, 'class ids:', cids.shape)
 ##############################################################################
 # Plot the image, together with the bounding box labels:
 from matplotlib import pyplot as plt
-from gluoncv.utils import viz
+from mygluoncv.utils import viz
 
 ax = viz.plot_bbox(train_image.asnumpy(), bboxes, labels=cids, class_names=train_dataset.classes)
 plt.show()
@@ -89,8 +89,8 @@ plt.show()
 
 ##############################################################################
 # For YOLOv3 networks, we apply similar transforms to SSD example.
-from gluoncv.data.transforms import presets
-from gluoncv import utils
+from mygluoncv.data.transforms import presets
+from mygluoncv import utils
 from mxnet import nd
 
 ##############################################################################
@@ -137,7 +137,7 @@ plt.show()
 # :py:class:`gluoncv.data.batchify.Stack` in addition, is used to stack NDArrays with consistent shapes.
 # :py:class:`gluoncv.data.batchify.Tuple` is used to handle different behaviors across multiple outputs from transform functions.
 
-from gluoncv.data.batchify import Tuple, Stack, Pad
+from mygluoncv.data.batchify import Tuple, Stack, Pad
 from mxnet.gluon.data import DataLoader
 
 batch_size = 2  # for tutorial, we use smaller batch-size
@@ -174,7 +174,7 @@ for ib, batch in enumerate(train_loader):
 #    To avoid downloading models in this tutorial, we set `pretrained_base=False`,
 #    in practice we usually want to load pre-trained imagenet models by setting
 #    `pretrained_base=True`.
-from gluoncv import model_zoo
+from mygluoncv import model_zoo
 net = model_zoo.get_model('yolo3_darknet53_voc', pretrained_base=False)
 print(net)
 

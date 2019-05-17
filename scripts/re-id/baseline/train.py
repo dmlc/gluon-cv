@@ -14,9 +14,9 @@ from mxnet import autograd
 from networks import resnet18, resnet34, resnet50
 from networks.resnet import ResNet
 
-from gluoncv.data.market1501.data_read import ImageTxtDataset
-from gluoncv.data.market1501.label_read import LabelList
-from gluoncv.data.transforms.block import RandomCrop
+from mygluoncv.data.market1501.data_read import ImageTxtDataset
+from mygluoncv.data.market1501.label_read import LabelList
+from mygluoncv.data.transforms.block import RandomCrop
 
 
 # CLI

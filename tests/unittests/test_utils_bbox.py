@@ -1,7 +1,7 @@
 from __future__ import print_function
 
 import numpy as np
-import gluoncv as gcv
+import mygluoncv as gcv
 
 def test_bbox_xywh_to_xyxy():
     # test list

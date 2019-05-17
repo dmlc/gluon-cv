@@ -5,8 +5,8 @@ from mxnet import gluon, nd, image
 from mxnet.gluon.nn import Block, HybridBlock
 from mxnet.gluon.data.vision import transforms
 
-from gluoncv.data import imagenet
-from gluoncv.model_zoo import get_model
+from mygluoncv.data import imagenet
+from mygluoncv.model_zoo import get_model
 
 # CLI
 def parse_args():

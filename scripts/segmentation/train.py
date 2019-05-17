@@ -8,13 +8,13 @@ import mxnet as mx
 from mxnet import gluon, autograd
 from mxnet.gluon.data.vision import transforms
 
-import gluoncv
-from gluoncv.loss import *
-from gluoncv.utils import LRScheduler
-from gluoncv.model_zoo.segbase import *
-from gluoncv.model_zoo import get_model
-from gluoncv.utils.parallel import *
-from gluoncv.data import get_segmentation_dataset
+import mygluoncv
+from mygluoncv.loss import *
+from mygluoncv.utils import LRScheduler
+from mygluoncv.model_zoo.segbase import *
+from mygluoncv.model_zoo import get_model
+from mygluoncv.utils.parallel import *
+from mygluoncv.data import get_segmentation_dataset
 
 
 def parse_args():
@@ -164,7 +164,7 @@ class Trainer(object):
         self.optimizer = gluon.Trainer(self.net.module.collect_params(), 'sgd',
                                        optimizer_params, kvstore = kv)
         # evaluation metrics
-        self.metric = gluoncv.utils.metrics.SegmentationMetric(trainset.num_class)
+        self.metric = mygluoncv.utils.metrics.SegmentationMetric(trainset.num_class)
 
     def training(self, epoch):
         tbar = tqdm(self.train_data)

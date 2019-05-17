@@ -4,11 +4,11 @@ from __future__ import division
 import os.path as osp
 import mxnet as mx
 import numpy as np
-import gluoncv as gcv
+import mygluoncv as gcv
 
 from mxnet import autograd, gluon
 from math import pi, cos
-from gluoncv.utils import LRScheduler, LRSequential
+from mygluoncv.utils import LRScheduler, LRSequential
 
 def compare(obj, niter, expect, **kwargs):
     np.testing.assert_allclose(expect, obj.__call__(niter), **kwargs)

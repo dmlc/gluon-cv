@@ -2,15 +2,15 @@ import argparse, time, logging, os, math
 
 import numpy as np
 import mxnet as mx
-import gluoncv as gcv
+import mygluoncv as gcv
 from mxnet import gluon, nd
 from mxnet import autograd as ag
 from mxnet.gluon import nn
 from mxnet.gluon.data.vision import transforms
 
-from gluoncv.data import imagenet
-from gluoncv.model_zoo import get_model
-from gluoncv.utils import makedirs, LRSequential, LRScheduler
+from mygluoncv.data import imagenet
+from mygluoncv.model_zoo import get_model
+from mygluoncv.utils import makedirs, LRSequential, LRScheduler
 
 # CLI
 def parse_args():
@@ -152,7 +152,7 @@ def main():
 
     kwargs = {'ctx': context, 'pretrained': opt.use_pretrained, 'classes': classes}
     if opt.use_gn:
-        from gluoncv.nn import GroupNorm
+        from mygluoncv.nn import GroupNorm
         kwargs['norm_layer'] = GroupNorm
     if model_name.startswith('vgg'):
         kwargs['batch_norm'] = opt.batch_norm
