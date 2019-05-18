@@ -2,7 +2,7 @@ from __future__ import division
 
 import argparse, datetime, os
 import logging
-logging.basicConfig(level=logging.INFO)
+import my_logging
 
 import __init
 import mxnet as mx
@@ -103,15 +103,22 @@ def validate(val_data, net, criterion, ctx):
     return loss/len(val_data), sum(accuracy)/len(accuracy)
 
 
+def get_my_ip():
+    cmd = "ifconfig | grep 'inet addr:' | grep -v '127.0.0.1' | cut -d: -f2 | awk '{print $1}' | head -1"
+    ip = os.popen(cmd).read().strip()
+    return ip
+
+
 def main(net: ResNet, batch_size, epochs, opt, ctx):
+    tag_logger = logging.getLogger('tag')
+    my_ip = get_my_ip()
+    extra = {'tag': my_ip}
     train_data, val_data = get_data_iters(batch_size)
     if opt.hybridize:
         net.hybridize()
     kv = mx.kv.create(opt.kvstore)
-    trainer = gluon.Trainer(net.collect_params(),
-                            'adam',
-                            {'learning_rate': opt.lr, 'wd': opt.wd},
-                            kvstore=kv)
+    trainer = gluon.Trainer(net.collect_params(), kvstore=kv, optimizer='adam',
+                            optimizer_params={'learning_rate': opt.lr, 'wd': opt.wd})
     criterion = gluon.loss.SoftmaxCrossEntropyLoss()
 
     lr = opt.lr
@@ -120,6 +127,7 @@ def main(net: ResNet, batch_size, epochs, opt, ctx):
         dlr = (lr-minlr)/(epochs[0]-1)
 
     prev_time = datetime.datetime.now()
+    tag_logger.info("start train...", extra=extra)
     for epoch in range(epochs[-1]):
         _loss = 0.
         if opt.warmup:
@@ -141,7 +149,6 @@ def main(net: ResNet, batch_size, epochs, opt, ctx):
             trainer.step(batch_size)
             _loss_list = [l.mean().asscalar() for l in losses]
             _loss += sum(_loss_list) / len(_loss_list)
-            print("step one batch of all data...")
 
         cur_time = datetime.datetime.now()
         h, remainder = divmod((cur_time - prev_time).seconds, 3600)
@@ -156,7 +163,7 @@ def main(net: ResNet, batch_size, epochs, opt, ctx):
             epoch_str = ("Epoch %d. Train loss: %f, " % (epoch, __loss))
 
         prev_time = cur_time
-        print(epoch_str + time_str + ', lr ' + str(trainer.learning_rate))
+        tag_logger.info(epoch_str + time_str + ', lr ' + str(trainer.learning_rate), extra=extra)
 
     if not os.path.exists("params"):
         os.mkdir("params")
