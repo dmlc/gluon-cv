@@ -293,6 +293,192 @@ def heatmap_to_coord(heatmaps, bbox_list):
 
 
 '''AlphaPose'''
+def refine_bound(ul, br):
+    """Adjust bound"""
+    ul[0] = min(ul[0], br[0] - 5)
+    ul[1] = min(ul[1], br[1] - 5)
+    br[0] = max(br[0], ul[0] + 5)
+    br[1] = max(br[1], ul[1] + 5)
+    return ul, br
+
+def random_crop_bbox(ul, br):
+    """Random crop bbox"""
+    switch = random.uniform(0, 1)
+    if switch > 0.96:
+        br[0] = (ul[0] + br[0]) / 2
+        br[1] = (ul[1] + br[1]) / 2
+    elif switch > 0.92:
+        ul[0] = (ul[0] + br[0]) / 2
+        br[1] = (ul[1] + br[1]) / 2
+    elif switch > 0.88:
+        ul[1] = (ul[1] + br[1]) / 2
+        br[0] = (ul[0] + br[0]) / 2
+    elif switch > 0.84:
+        ul[0] = (ul[0] + br[0]) / 2
+        ul[1] = (ul[1] + br[1]) / 2
+    elif switch > 0.80:
+        br[0] = (ul[0] + br[0]) / 2
+    elif switch > 0.76:
+        ul[0] = (ul[0] + br[0]) / 2
+    elif switch > 0.72:
+        br[1] = (ul[1] + br[1]) / 2
+    elif switch > 0.68:
+        ul[1] = (ul[1] + br[1]) / 2
+    return ul, br
+
+def random_sample_bbox(ul, br, w, h, im_width, im_height):
+    """Take random sample"""
+    patch_scale = random.uniform(0, 1)
+    if patch_scale > 0.85:
+        ratio = float(h) / w
+        if w < h:
+            patch_w = patch_scale * w
+            patch_h = patch_width * ratio
+        else:
+            patch_h = patch_scale * h
+            patch_width = patch_h / ratio
+        xmin = ul[0] + random.uniform(0, 1) * (w - patch_w)
+        ymin = ul[1] + random.uniform(0, 1) * (h - patch_h)
+        xmax = xmin + patch_w + 1
+        ymax = ymin + patch_h + 1
+    else:
+        xmin = max(1, min(ul[0] + np.random.normal(-0.0142, 0.1158) * w, im_width - 3))
+        ymin = max(1, min(ul[1] + np.random.normal(0.0043, 0.068) * h, im_height - 3))
+        xmax = min(max(xmin + 2, br[0] + np.random.normal(0.0154, 0.1337) * w), im_width - 3)
+        ymax = min(max(ymin + 2, br[1] + np.random.normal(-0.0013, 0.0711) * h), im_height - 3)
+
+    ul[0] = xmin
+    ul[1] = ymin
+    br[0] = xmax
+    br[1] = ymax
+    return ul, br
+
+def count_visible(ul, br, joints_3d):
+    """Count number of visible joints given bound ul, br"""
+    vis = np.logical_and.reduce((
+        joints_3d[:, 0, 0] > 0,
+        joints_3d[:, 0, 0] > ul[0],
+        joints_3d[:, 0, 0] < br[0],
+        joints_3d[:, 1, 0] > 0,
+        joints_3d[:, 1, 0] > ul[1],
+        joints_3d[:, 1, 0] < br[1],
+        joints_3d[:, 0, 1] > 0,
+        joints_3d[:, 1, 1] > 0
+        ))
+    return np.sum(vis), vis
+
+def cv_cropBox(img, ul, br, resH, resW, pad_val=0):
+    cv2 = try_import_cv2()
+    ul = ul
+    br = (br - 1)
+    # br = br.int()
+    lenH = max((br[1] - ul[1]).item(), (br[0] - ul[0]).item() * resH / resW)
+    lenW = lenH * resW / resH
+    if img.ndim == 2:
+        img = img[:, np.newaxis]
+
+    box_shape = [br[1] - ul[1], br[0] - ul[0]]
+    pad_size = [(lenH - box_shape[0]) // 2, (lenW - box_shape[1]) // 2]
+    # Padding Zeros
+    img[:ul[1], :, :], img[:, :ul[0], :] = pad_val, pad_val
+    img[br[1] + 1:, :, :], img[:, br[0] + 1:, :] = pad_val, pad_val
+
+    src = np.zeros((3, 2), dtype=np.float32)
+    dst = np.zeros((3, 2), dtype=np.float32)
+
+    src[0, :] = np.array(
+        [ul[0] - pad_size[1], ul[1] - pad_size[0]], np.float32)
+    src[1, :] = np.array(
+        [br[0] + pad_size[1], br[1] + pad_size[0]], np.float32)
+    dst[0, :] = 0
+    dst[1, :] = np.array([resW - 1, resH - 1], np.float32)
+
+    src[2:, :] = get_3rd_point(src[0, :], src[1, :])
+    dst[2:, :] = get_3rd_point(dst[0, :], dst[1, :])
+
+    trans = cv2.getAffineTransform(np.float32(src), np.float32(dst))
+
+    dst_img = cv2.warpAffine(img, trans,
+                             (resW, resH), flags=cv2.INTER_LINEAR)
+
+    return dst_img
+
+def cv_rotate(img, rot, resW, resH):
+    cv2 = try_import_cv2()
+    center = np.array((resW - 1, resH - 1)) / 2
+    rot_rad = np.pi * rot / 180
+
+    src_dir = get_dir([0, (resH - 1) * -0.5], rot_rad)
+    dst_dir = np.array([0, (resH - 1) * -0.5], np.float32)
+
+    src = np.zeros((3, 2), dtype=np.float32)
+    dst = np.zeros((3, 2), dtype=np.float32)
+
+    src[0, :] = center
+    src[1, :] = center + src_dir
+    dst[0, :] = [(resW - 1) * 0.5, (resH - 1) * 0.5]
+    dst[1, :] = np.array([(resW - 1) * 0.5, (resH - 1) * 0.5]) + dst_dir
+
+    src[2:, :] = get_3rd_point(src[0, :], src[1, :])
+    dst[2:, :] = get_3rd_point(dst[0, :], dst[1, :])
+
+    trans = cv2.getAffineTransform(np.float32(src), np.float32(dst))
+
+    dst_img = cv2.warpAffine(img, trans,
+                             (resW, resH), flags=cv2.INTER_LINEAR)
+    return dst_img
+
+def transformBox(pt, ul, br, inpH, inpW, resH, resW):
+    center = np.zeros(2)
+    center[0] = (br[0] - 1 - ul[0]) / 2
+    center[1] = (br[1] - 1 - ul[1]) / 2
+
+    lenH = max(br[1] - ul[1], (br[0] - ul[0]) * inpH / inpW)
+    lenW = lenH * inpW / inpH
+
+    _pt = np.zeros(2)
+    _pt[0] = pt[0] - ul[0]
+    _pt[1] = pt[1] - ul[1]
+    # Move to center
+    _pt[0] = _pt[0] + max(0, (lenW - 1) / 2 - center[0])
+    _pt[1] = _pt[1] + max(0, (lenH - 1) / 2 - center[1])
+    pt = (_pt * resH) / lenH
+    pt[0] = round(float(pt[0]))
+    pt[1] = round(float(pt[1]))
+    return pt
+
+def drawGaussian(img, pt, sigma, sig=1):
+    tmpSize = 3 * sigma
+    # Check that any part of the gaussian is in-bounds
+    ul = [int(pt[0] - tmpSize), int(pt[1] - tmpSize)]
+    br = [int(pt[0] + tmpSize + 1), int(pt[1] + tmpSize + 1)]
+
+    if (ul[0] >= img.shape[1] or ul[1] >= img.shape[0] or
+            br[0] < 0 or br[1] < 0):
+        # If not, just return the image as is
+        return img
+
+    # Generate gaussian
+    size = 2 * tmpSize + 1
+    x = np.arange(0, size, 1, np.float32)
+    y = x[:, np.newaxis]
+    x0 = y0 = size // 2
+    sigma = size / 4.0
+    # The gaussian is not normalized, we want the center value to equal 1
+    g = np.exp(-((x - x0) ** 2 + (y - y0) ** 2) / (2 * (sigma ** 2)))
+
+    if sig < 0:
+        g *= opt.spRate
+    # Usable gaussian range
+    g_x = max(0, -ul[0]), min(br[0], img.shape[1]) - ul[0]
+    g_y = max(0, -ul[1]), min(br[1], img.shape[0]) - ul[1]
+    # Image range
+    img_x = max(0, ul[0]), min(br[0], img.shape[1])
+    img_y = max(0, ul[1]), min(br[1], img.shape[0])
+
+    img[img_y[0]:img_y[1], img_x[0]:img_x[1]] = g[g_y[0]:g_y[1], g_x[0]:g_x[1]]
+    return img
+
 def alpha_pose_detection_processor(img, boxes, class_idxs, scores, thr=0.5):
     if len(boxes.shape) == 3:
         boxes = boxes.squeeze(axis=0)

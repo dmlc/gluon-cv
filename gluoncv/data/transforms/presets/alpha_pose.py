@@ -7,6 +7,8 @@ import mxnet as mx
 from .simple_pose import _box_to_center_scale
 from ..image import random_flip as random_flip_image
 from ..pose import flip_joints_3d, get_affine_transform, affine_transform
+from ..pose import random_sample_bbox, refine_bound, count_visible, random_crop_bbox
+from ..pose import drawGaussian, transformBox, cv_cropBox, cv_rotate
 from .. import experimental
 from ....utils.filesystem import try_import_cv2
 
@@ -17,6 +19,7 @@ class AlphaPoseDefaultTrainTransform(object):
                  random_flip=True, random_sample=False, random_crop=False,
                  scale_factor=(0.2, 0.3), rotation_factor=30, **kwargs):
         from ....model_zoo.simple_pose.pose_target import SimplePoseGaussianTargetGenerator
+        self._sigma = sigma
         self._target_generator = SimplePoseGaussianTargetGenerator(
             num_joints, (image_size[1], image_size[0]), (heatmap_size[1], heatmap_size[0]), sigma)
         self._num_joints = num_joints
@@ -41,9 +44,7 @@ class AlphaPoseDefaultTrainTransform(object):
         joints_3d = label['joints_3d']
 
         # color jitter
-        src = experimental.image.random_color_distort(
-            src, brightness_delta=16, contrast_low=0.7, contrast_high=1.3,
-            saturation_low=0.7, saturation_high=1.3, hue_delta=0)
+        src = experimental.image.random_color_distort(src, hue_delta=0)
 
         # scaling
         ul = np.array((int(bbox[0]), int(bbox[1])))
@@ -56,16 +57,16 @@ class AlphaPoseDefaultTrainTransform(object):
         br[0] = min(src.shape[0] - 1, br[0] + w * sf / 2)
         br[1] = min(src.shape[1] - 1, br[1] + h * sf / 2)
         if self._random_sample:
-            ul, br = self._random_sample_bbox(ul, br, w, h, src.shape[1], src.shape[0])
+            ul, br = random_sample_bbox(ul, br, w, h, src.shape[1], src.shape[0])
 
         # boundary refine
-        ul, br = self._refine_bound(ul, br)
+        ul, br = refine_bound(ul, br)
 
         # counting number of joints
-        num_visible_joint = self._count_visible(ul, br, joints_3d)
+        num_visible_joint, vis_joints = count_visible(ul, br, joints_3d)
 
         if self._random_crop and num_visible_joint > 10:
-            ul, br = self._random_crop_bbox(ul, br)
+            ul, br = random_crop_bbox(ul, br)
 
         if num_visible_joint < 1:
             # no valid keypoints
@@ -75,110 +76,38 @@ class AlphaPoseDefaultTrainTransform(object):
             target_weight = np.zeros((self._num_joints, 1, 1), dtype='float32')
             return img, target, target_weight, img_path
 
-        center, scale = _box_to_center_scale(
-            ul[0], ul[1], br[0] - ul[0], br[1] - ul[1], self._aspect_ratio, scale_mult=1.0)
+        # crop box with padding
+        img = cv_cropBox(src.asnumpy(), ul, br, self._height, self._width)
+
+        # generate labels
+        target = np.zeros((self._num_joints, self._heatmap_size[0], self._heatmap_size[1]))
+        target_weight = np.zeros((self._num_joints, 1, 1))
+
+        for i, vis in enumerate(vis_joints):
+            if vis:
+                hm_part = transformBox(
+                    (joints_3d[i, 0, 0], joints_3d[i, 1, 0]),
+                    ul, br, self._height, self._width, self._heatmap_size[0], self._heatmap_size[1])
+                target[i] = drawGaussian(target[i], hm_part, self._sigma)
+                target_weight[i] = 1
+
+        # random flip
+        joints = joints_3d
+        if self._random_flip and random.random() > 0.5:
+            img = img[:, ::-1, :]
+            joints = flip_joints_3d(joints_3d, img.shape[1], self._joint_pairs)
 
         # rotation
         rf = self._rotation_factor
         r = np.clip(np.random.randn() * rf, -rf * 2, rf * 2) if random.random() <= 0.6 else 0
-
-        joints = joints_3d
-        if self._random_flip and random.random() > 0.5:
-            # src, fliped = random_flip_image(src, px=0.5, py=0)
-            # if fliped[0]:
-            src = src[:, ::-1, :]
-            joints = flip_joints_3d(joints_3d, src.shape[1], self._joint_pairs)
-            center[0] = src.shape[1] - center[0] - 1
-
-        h, w = self._image_size
-        trans = get_affine_transform(center, scale, r, [w, h])
-        img = cv2.warpAffine(src.asnumpy(), trans, (int(w), int(h)), flags=cv2.INTER_LINEAR)
-
-        # deal with joints visibility
-        for i in range(self._num_joints):
-            if joints[i, 0, 1] > 0.0:
-                joints[i, 0:2, 0] = affine_transform(joints[i, 0:2, 0], trans)
-
-        # generate training targets
-        target, target_weight = self._target_generator(joints)
-
+        img = cv_rotate(img, r, self._width, self._height)
+        target = cv_rotate(target.transpose((1, 2, 0)), r, self._heatmap_size[1], self._heatmap_size[0])
+        target = target.transpose((2, 0, 1))
         # to tensor
         img = mx.nd.image.to_tensor(mx.nd.array(img))
         img = mx.nd.image.normalize(img, mean=self._mean, std=self._std)
         return img, target, target_weight, img_path
 
-    def _random_sample_bbox(self, ul, br, w, h, im_width, im_height):
-        """Take random sample"""
-        patch_scale = random.uniform(0, 1)
-        if patch_scale > 0.85:
-            ratio = float(h) / w
-            if w < h:
-                patch_w = patch_scale * w
-                patch_h = patch_width * ratio
-            else:
-                patch_h = patch_scale * h
-                patch_width = patch_h / ratio
-            xmin = ul[0] + random.uniform(0, 1) * (w - patch_w)
-            ymin = ul[1] + random.uniform(0, 1) * (h - patch_h)
-            xmax = xmin + patch_w + 1
-            ymax = ymin + patch_h + 1
-        else:
-            xmin = max(1, min(ul[0] + np.random.normal(-0.0142, 0.1158) * w, im_width - 3))
-            ymin = max(1, min(ul[1] + np.random.normal(0.0043, 0.068) * h, im_height - 3))
-            xmax = min(max(xmin + 2, br[0] + np.random.normal(0.0154, 0.1337) * w), im_width - 3)
-            ymax = min(max(ymin + 2, br[1] + np.random.normal(-0.0013, 0.0711) * h), im_height - 3)
-
-        ul[0] = xmin
-        ul[1] = ymin
-        br[0] = xmax
-        br[1] = ymax
-        return ul, br
-
-    def _random_crop_bbox(self, ul, br):
-        """Random crop bbox"""
-        switch = random.uniform(0, 1)
-        if switch > 0.96:
-            br[0] = (ul[0] + br[0]) / 2
-            br[1] = (ul[1] + br[1]) / 2
-        elif switch > 0.92:
-            ul[0] = (ul[0] + br[0]) / 2
-            br[1] = (ul[1] + br[1]) / 2
-        elif switch > 0.88:
-            ul[1] = (ul[1] + br[1]) / 2
-            br[0] = (ul[0] + br[0]) / 2
-        elif switch > 0.84:
-            ul[0] = (ul[0] + br[0]) / 2
-            ul[1] = (ul[1] + br[1]) / 2
-        elif switch > 0.80:
-            br[0] = (ul[0] + br[0]) / 2
-        elif switch > 0.76:
-            ul[0] = (ul[0] + br[0]) / 2
-        elif switch > 0.72:
-            br[1] = (ul[1] + br[1]) / 2
-        elif switch > 0.68:
-            ul[1] = (ul[1] + br[1]) / 2
-        return ul, br
-
-    def _refine_bound(self, ul, br):
-        """Adjust bound"""
-        ul[0] = min(ul[0], br[0] - 5)
-        ul[1] = min(ul[1], br[1] - 5)
-        br[0] = max(br[0], ul[0] + 5)
-        br[1] = max(br[1], ul[1] + 5)
-        return ul, br
-
-    def _count_visible(self, ul, br, joints_3d):
-        """Count number of visible joints given bound ul, br"""
-        return np.sum(np.logical_and.reduce((
-            joints_3d[:, 0, 0] > 0,
-            joints_3d[:, 0, 0] > ul[0],
-            joints_3d[:, 0, 0] < br[0],
-            joints_3d[:, 1, 0] > 0,
-            joints_3d[:, 1, 0] > ul[1],
-            joints_3d[:, 1, 0] < br[1],
-            joints_3d[:, 0, 1] > 0,
-            joints_3d[:, 1, 1] > 0
-            )))
 
 class AlphaPoseDefaultValTransform(object):
     def __init__(self, num_joints, joint_pairs, image_size=(256, 256),
