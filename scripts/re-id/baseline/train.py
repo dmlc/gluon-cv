@@ -59,9 +59,7 @@ parser.add_argument('--hybridize', type=bool, default=True)
 
 
 def get_data_iters(batch_size):
-    print("step in to LabelList...")
     train_set, val_set = LabelList(ratio=opt.ratio, root=opt.dataset_root, name=opt.dataset)
-    print("after LabelList !!!")
     normalizer = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
     transform_train = transforms.Compose([
@@ -143,6 +141,7 @@ def main(net: ResNet, batch_size, epochs, opt, ctx):
             trainer.step(batch_size)
             _loss_list = [l.mean().asscalar() for l in losses]
             _loss += sum(_loss_list) / len(_loss_list)
+            print("step one batch of all data...")
 
         cur_time = datetime.datetime.now()
         h, remainder = divmod((cur_time - prev_time).seconds, 3600)
