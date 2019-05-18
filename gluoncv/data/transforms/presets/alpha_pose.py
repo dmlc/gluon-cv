@@ -80,8 +80,8 @@ class AlphaPoseDefaultTrainTransform(object):
         img = cv_cropBox(src.asnumpy(), ul, br, self._height, self._width)
 
         # generate labels
-        target = np.zeros((self._num_joints, self._heatmap_size[0], self._heatmap_size[1]))
-        target_weight = np.zeros((self._num_joints, 1, 1))
+        target = np.zeros((self._num_joints, self._heatmap_size[0], self._heatmap_size[1]), dtype='float32')
+        target_weight = np.zeros((self._num_joints, 1, 1), dtype='float32')
 
         for i, vis in enumerate(vis_joints):
             if vis:
