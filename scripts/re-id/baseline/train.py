@@ -6,12 +6,11 @@ import my_logging
 
 import __init
 import mxnet as mx
-from mxnet import gluon, nd
-from mxnet.gluon.model_zoo import vision as models
+from mxnet import gluon
 from mxnet.gluon.data.vision import transforms
 from mxnet import autograd
 
-from networks import resnet18, resnet34, resnet50
+from networks import resnet50
 from networks.resnet import ResNet
 
 from mygluoncv.data.market1501.data_read import ImageTxtDataset
@@ -77,7 +76,7 @@ def get_data_iters(batch_size):
             transforms.Resize(size=(opt.img_width, opt.img_height), interpolation=1),
             transforms.ToTensor(),
             normalizer])
-            
+
         val_imgs = ImageTxtDataset(val_set, transform=transform_test)
         val_data = gluon.data.DataLoader(val_imgs, batch_size, shuffle=True, last_batch='discard', num_workers=opt.num_workers)
     else:
@@ -171,6 +170,7 @@ def main(net: ResNet, batch_size, epochs, opt, ctx):
 
 
 if __name__ == '__main__':
+    my_logging.init_logging("train.log")
     opt = parser.parse_args()
     logging.info(opt)
     mx.random.seed(opt.seed)
