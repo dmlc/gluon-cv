@@ -136,7 +136,9 @@ def main(net: ResNet, batch_size, epochs, opt, ctx):
             lr = lr * opt.lr_decay
         trainer.set_learning_rate(lr)
 
+        n = 0
         for data, label in train_data:
+            n += 1
             data_list = gluon.utils.split_and_load(data, ctx)
             label_list = gluon.utils.split_and_load(label, ctx)
             with autograd.record():
@@ -148,6 +150,8 @@ def main(net: ResNet, batch_size, epochs, opt, ctx):
             trainer.step(batch_size)
             _loss_list = [l.mean().asscalar() for l in losses]
             _loss += sum(_loss_list) / len(_loss_list)
+            if n % 2000 is 0:
+                tag_logger.info("current mean loss:{}".format(_loss), extra=extra)
 
         cur_time = datetime.datetime.now()
         h, remainder = divmod((cur_time - prev_time).seconds, 3600)
