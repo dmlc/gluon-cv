@@ -584,8 +584,8 @@ def heatmap_to_coord_alpha_pose(hms, boxes):
     return preds_tf, maxval
 
 def detector_to_alpha_pose(img, class_ids, scores, bounding_boxs,
-                            output_shape=(256, 192), scale=1.25, ctx=mx.cpu(),
-                            thr=0.5, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)):
+                           output_shape=(256, 192), ctx=mx.cpu(),
+                           thr=0.5, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)):
     boxes, scores = alpha_pose_detection_processor(
         img, bounding_boxs, class_ids, scores, thr=thr)
     pose_input, upscale_bbox = alpha_pose_image_cropper(

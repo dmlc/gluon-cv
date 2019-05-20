@@ -10,7 +10,7 @@ from mxnet.gluon.data.vision import transforms
 from gluoncv.data import mscoco
 from gluoncv.model_zoo import get_model
 from gluoncv.utils import makedirs
-from gluoncv.data.transforms.pose import transform_preds, get_final_preds, flip_heatmap
+from gluoncv.data.transforms.pose import transform_preds, get_final_preds, flip_heatmap, heatmap_to_coord_alpha_pose
 from gluoncv.data.transforms.presets.alpha_pose import AlphaPoseDefaultValTransform
 from gluoncv.utils.metrics.coco_keypoints import COCOKeyPointsMetric
 
@@ -106,7 +106,8 @@ def validate(val_data, val_dataset, net, ctx):
 
     from tqdm import tqdm
     for batch in tqdm(val_data):
-        data, scale, center, score, imgid = val_batch_fn(batch, ctx)
+        # data, scale, center, score, imgid = val_batch_fn(batch, ctx)
+        data, scale_box, imgid = val_batch_fn(batch, ctx)
 
         outputs = [net(X) for X in data]
         if opt.flip_test:
@@ -117,10 +118,13 @@ def validate(val_data, val_dataset, net, ctx):
 
         if len(outputs) > 1:
             outputs_stack = nd.concat(*[o.as_in_context(mx.cpu()) for o in outputs], dim=0)
+            scale_box = nd.concat(*[o.as_in_context(mx.cpu()) for o in scale_box], dim=0)
         else:
             outputs_stack = outputs[0].as_in_context(mx.cpu())
+            scale_box = scale_box[0].as_in_context(mx.cpu())
 
-        preds, maxvals = get_final_preds(outputs_stack, center.asnumpy(), scale.asnumpy())
+        # preds, maxvals = get_final_preds(outputs_stack, center.asnumpy(), scale.asnumpy())
+        preds, maxvals = heatmap_to_coord_alpha_pose(outputs_stack, scale_box)
         val_metric.update(preds, maxvals, score, imgid)
 
     res = val_metric.get()

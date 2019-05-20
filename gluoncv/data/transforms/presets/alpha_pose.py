@@ -8,7 +8,7 @@ from .simple_pose import _box_to_center_scale
 from ..image import random_flip as random_flip_image
 from ..pose import flip_joints_3d, get_affine_transform, affine_transform
 from ..pose import random_sample_bbox, refine_bound, count_visible, random_crop_bbox
-from ..pose import drawGaussian, transformBox, cv_cropBox, cv_rotate
+from ..pose import drawGaussian, transformBox, cv_cropBox, cv_rotate, detector_to_alpha_pose
 from .. import experimental
 from ....utils.filesystem import try_import_cv2
 
@@ -125,18 +125,28 @@ class AlphaPoseDefaultValTransform(object):
         cv2 = try_import_cv2()
         bbox = label['bbox']
         assert len(bbox) == 4
-        joints_3d = label['joints_3d']
-        xmin, ymin, xmax, ymax = bbox
-        center, scale = _box_to_center_scale(
-            xmin, ymin, xmax - xmin, ymax - ymin, self._aspect_ratio, scale_mult=1.0)
-        score = label.get('score', 1)
+        img, scale_box = detector_to_alpha_pose(
+            src,
+            class_ids=mx.nd.array([0.]),
+            scores=mx.nd.array([1.]),
+            bounding_boxs=mx.nd.array(bbox),
+            output_shape=self._image_size,
+            mean=mean,
+            std=std)
+        return img, scale_box, img_path
 
-        h, w = self._image_size
-        trans = get_affine_transform(center, scale, 0, [w, h])
-        img = cv2.warpAffine(src.asnumpy(), trans, (int(w), int(h)), flags=cv2.INTER_LINEAR)
+        # joints_3d = label['joints_3d']
+        # xmin, ymin, xmax, ymax = bbox
+        # center, scale = _box_to_center_scale(
+        #     xmin, ymin, xmax - xmin, ymax - ymin, self._aspect_ratio, scale_mult=1.0)
+        # score = label.get('score', 1)
+        #
+        # h, w = self._image_size
+        # trans = get_affine_transform(center, scale, 0, [w, h])
+        # img = cv2.warpAffine(src.asnumpy(), trans, (int(w), int(h)), flags=cv2.INTER_LINEAR)
+        #
+        # # to tensor
+        # img = mx.nd.image.to_tensor(mx.nd.array(img))
+        # img = mx.nd.image.normalize(img, mean=self._mean, std=self._std)
 
-        # to tensor
-        img = mx.nd.image.to_tensor(mx.nd.array(img))
-        img = mx.nd.image.normalize(img, mean=self._mean, std=self._std)
-
-        return img, scale, center, score, img_path
+        # return img, scale, center, score, img_path
