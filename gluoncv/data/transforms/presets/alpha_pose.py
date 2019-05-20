@@ -125,6 +125,7 @@ class AlphaPoseDefaultValTransform(object):
         cv2 = try_import_cv2()
         bbox = label['bbox']
         assert len(bbox) == 4
+        score = label.get('score', 1)
         img, scale_box = detector_to_alpha_pose(
             src,
             class_ids=mx.nd.array([[0.]]),
@@ -133,7 +134,7 @@ class AlphaPoseDefaultValTransform(object):
             output_shape=self._image_size,
             mean=self._mean,
             std=self._std)
-        return img, scale_box, img_path
+        return img, scale_box, score, img_path
 
         # joints_3d = label['joints_3d']
         # xmin, ymin, xmax, ymax = bbox

@@ -62,11 +62,10 @@ def get_data_loader(dataset, batch_size, num_workers, input_size):
     def val_batch_fn(batch, ctx):
         data = gluon.utils.split_and_load(batch[0], ctx_list=ctx,
                                           batch_axis=0, even_split=False)
-        scale = batch[1]
-        center = batch[2]
-        score = batch[3]
-        imgid = batch[4]
-        return data, scale, center, score, imgid
+        bbox = batch[1]
+        score = batch[2]
+        imgid = batch[3]
+        return data, bbox, score, imgid
 
     val_dataset = get_dataset(dataset)
 
@@ -107,7 +106,7 @@ def validate(val_data, val_dataset, net, ctx):
     from tqdm import tqdm
     for batch in tqdm(val_data):
         # data, scale, center, score, imgid = val_batch_fn(batch, ctx)
-        data, scale_box, imgid = val_batch_fn(batch, ctx)
+        data, scale_box, score, imgid = val_batch_fn(batch, ctx)
 
         outputs = [net(X) for X in data]
         if opt.flip_test:
@@ -118,10 +117,8 @@ def validate(val_data, val_dataset, net, ctx):
 
         if len(outputs) > 1:
             outputs_stack = nd.concat(*[o.as_in_context(mx.cpu()) for o in outputs], dim=0)
-            scale_box = nd.concat(*[o.as_in_context(mx.cpu()) for o in scale_box], dim=0)
         else:
             outputs_stack = outputs[0].as_in_context(mx.cpu())
-            scale_box = scale_box[0].as_in_context(mx.cpu())
 
         # preds, maxvals = get_final_preds(outputs_stack, center.asnumpy(), scale.asnumpy())
         preds, maxvals = heatmap_to_coord_alpha_pose(outputs_stack, scale_box)
