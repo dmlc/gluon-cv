@@ -35,7 +35,7 @@ parser.add_argument('--dataset-root', type=str,
                     help='the number of workers for data loader')
 parser.add_argument('--dataset', type=str, default="reid_all_dataset",
                     help='the number of workers for data loader')
-parser.add_argument('--train-txt', type=str, default="train.xtx",
+parser.add_argument('--train-txt', type=str, default="train.txt",
                     help='the train txt file')
 parser.add_argument('--num-gpus', type=int, default=1,
                     help='number of gpus to use.')
