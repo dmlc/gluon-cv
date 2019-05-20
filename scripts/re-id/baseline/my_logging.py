@@ -47,11 +47,11 @@ def init_logging(logfile_path=None):
             },
             'simple': {
                 'format': simple_format,
-                'datefmt': '%m-%d %H:%m:%S',
+                'datefmt': '%m-%d %H:%M:%S',
             },
             'tag_format': {
                 'format': tag_format,
-                'datefmt': '%m-%d %H:%m:%S',
+                'datefmt': '%m-%d %H:%M:%S',
             },
         },
         'filters': {},
