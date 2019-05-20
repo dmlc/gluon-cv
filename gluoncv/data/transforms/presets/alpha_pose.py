@@ -134,7 +134,7 @@ class AlphaPoseDefaultValTransform(object):
             output_shape=self._image_size,
             mean=self._mean,
             std=self._std)
-        return img, scale_box, score, img_path
+        return img[0], scale_box, score, img_path
 
         # joints_3d = label['joints_3d']
         # xmin, ymin, xmax, ymax = bbox
