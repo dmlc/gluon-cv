@@ -5,7 +5,7 @@ from os import path as osp
 __all__ = ['LabelList']
 
 
-def LabelList(ratio=1, root='~/.mxnet/datasets', name='market1501'):
+def LabelList(ratio=1, root='~/.mxnet/datasets', name='market1501', train_file = "train.txt"):
     """Load the Label List for Market 1501 dataset.
 
     Parameters
@@ -21,7 +21,7 @@ def LabelList(ratio=1, root='~/.mxnet/datasets', name='market1501'):
     print("dataset name is:", name)
     if name == "market1501":
         path = osp.join(root, "Market-1501-v15.09.15")
-        train_txt = osp.join(path, "train.txt")
+        train_txt = osp.join(path, train_file)
         image_path = osp.join(path, "bounding_box_train")
         print(osp.abspath(train_txt))
         item_list = [(osp.join(image_path, line.split()[0]), int(line.split()[1]))
@@ -36,7 +36,7 @@ def LabelList(ratio=1, root='~/.mxnet/datasets', name='market1501'):
         return train_set, valid_set
     elif name == "reid_all_dataset":
         path = osp.join(root, "reid_all_dataset")
-        train_txt = osp.join(path, "train.txt")
+        train_txt = osp.join(path, train_file)
         print(osp.abspath(train_txt))
         item_list = [(osp.join(path, line.split()[0]), int(line.split()[1]))
                      for line in open(train_txt).readlines()]

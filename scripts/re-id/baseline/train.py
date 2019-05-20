@@ -35,6 +35,8 @@ parser.add_argument('--dataset-root', type=str,
                     help='the number of workers for data loader')
 parser.add_argument('--dataset', type=str, default="reid_all_dataset",
                     help='the number of workers for data loader')
+parser.add_argument('--train-txt', type=str, default="train.xtx",
+                    help='the train txt file')
 parser.add_argument('--num-gpus', type=int, default=1,
                     help='number of gpus to use.')
 parser.add_argument('--classes', type=int, default=751,
@@ -58,7 +60,8 @@ parser.add_argument('--hybridize', type=bool, default=True)
 
 
 def get_data_iters(batch_size):
-    train_set, val_set = LabelList(ratio=opt.ratio, root=opt.dataset_root, name=opt.dataset)
+    train_set, val_set = LabelList(ratio=opt.ratio, root=opt.dataset_root,
+                                   name=opt.dataset, train_file=opt.train_txt)
     normalizer = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
     transform_train = transforms.Compose([
@@ -174,7 +177,7 @@ def main(net: ResNet, batch_size, epochs, opt, ctx):
 
 
 if __name__ == '__main__':
-    my_logging.init_logging("train.log")
+    my_logging.init_logging("train2.log")
     opt = parser.parse_args()
     logging.info(opt)
     mx.random.seed(opt.seed)
