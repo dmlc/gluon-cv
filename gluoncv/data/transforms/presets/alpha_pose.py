@@ -127,9 +127,9 @@ class AlphaPoseDefaultValTransform(object):
         assert len(bbox) == 4
         img, scale_box = detector_to_alpha_pose(
             src,
-            class_ids=mx.nd.array([0.]),
-            scores=mx.nd.array([1.]),
-            bounding_boxs=mx.nd.array(bbox),
+            class_ids=mx.nd.array([[0.]]),
+            scores=mx.nd.array([[1.]]),
+            bounding_boxs=mx.nd.array(np.array([bbox])),
             output_shape=self._image_size,
             mean=self._mean,
             std=self._std)
