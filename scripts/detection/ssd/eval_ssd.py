@@ -5,6 +5,7 @@ import argparse
 import logging
 logging.basicConfig(level=logging.INFO)
 import time
+import sys
 import numpy as np
 import mxnet as mx
 from tqdm import tqdm
@@ -27,6 +28,10 @@ def parse_args():
                         help="Input data shape")
     parser.add_argument('--batch-size', type=int, default=64,
                         help='eval mini-batch size')
+    parser.add_argument('--benchmark', action='store_true',
+                        help="run dummy-data based benchmarking")
+    parser.add_argument('--num-iterations', type=int, default=100,
+                        help="number of benchmarking iterations.")     
     parser.add_argument('--dataset', type=str, default='voc',
                         help='eval dataset.')
     parser.add_argument('--num-workers', '-j', dest='num_workers', type=int,
@@ -61,6 +66,25 @@ def get_dataloader(val_dataset, data_shape, batch_size, num_workers):
         val_dataset.transform(SSDDefaultValTransform(width, height)), batchify_fn=batchify_fn,
         batch_size=batch_size, shuffle=False, last_batch='keep', num_workers=num_workers)
     return val_loader
+
+def benchmarking(net, ctx, num_iteration, datashape=300, batch_size=64):
+    if not args.quantized:
+        net.set_nms(nms_thresh=0.45, nms_topk=400)
+        net.hybridize()
+    else:
+        net.hybridize(static_alloc=True, static_shape=True)
+    input_shape = (batch_size, 3) + (datashape, datashape)
+    data = mx.random.uniform(-1.0, 1.0, shape=input_shape, ctx=ctx, dtype='float32')
+    dryrun = 5
+    for i in range(dryrun + num_iteration):
+        if i == dryrun:
+            tic = time.time()
+        ids, scores, bboxes = net(data)
+        ids.asnumpy()
+        scores.asnumpy()
+        bboxes.asnumpy()
+    toc = time.time() - tic
+    return toc
 
 def validate(net, val_data, ctx, classes, size, metric):
     """Test on validation dataset."""
@@ -119,6 +143,15 @@ if __name__ == '__main__':
     else:
         net = gcv.model_zoo.get_model(net_name, pretrained=False)
         net.load_parameters(args.pretrained.strip())
+
+    if args.benchmark:
+        print('-----benchmarking on %s -----'%net_name)
+        #input_shape = (args.batch_size, 3) + (args.data_shape, args.data_shape)
+        #data = mx.random.uniform(-1.0, 1.0, shape=input_shape, ctx=ctx[0], dtype='float32')  
+        speed = (args.batch_size*args.num_iterations)/benchmarking(net, ctx=ctx[0], num_iteration=args.num_iterations,
+                datashape=args.data_shape, batch_size=args.batch_size)
+        print('Inference speed on %s, with batchsize %d is %.2f img/sec'%(net_name, args.batch_size, speed))
+        sys.exit()
 
     # eval data
     val_dataset, val_metric = get_dataset(args.dataset, args.data_shape)
