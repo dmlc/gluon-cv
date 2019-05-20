@@ -106,7 +106,7 @@ def compute_mAP(index, good_index, junk_index):
 
 if __name__ == '__main__':
     batch_size = 256
-    data_dir = osp.expanduser("~/work/git/gluon-cv/scripts/datasets/reid_all_dataset/Market-1501-v15.09.15/")
+    data_dir = osp.expanduser("~/work/git/gluon-cv/scripts/datasets/train_part/reid_all_dataset/Market-1501-v15.09.15/")
     gpu_ids = [0]
 
     # set gpu ids
