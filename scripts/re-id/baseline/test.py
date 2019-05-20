@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division
 
+import __init
 import mxnet as mx
 import numpy as np
 from mxnet import gluon, nd
