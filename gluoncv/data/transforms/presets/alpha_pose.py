@@ -131,8 +131,8 @@ class AlphaPoseDefaultValTransform(object):
             scores=mx.nd.array([1.]),
             bounding_boxs=mx.nd.array(bbox),
             output_shape=self._image_size,
-            mean=mean,
-            std=std)
+            mean=self.mean,
+            std=self.std)
         return img, scale_box, img_path
 
         # joints_3d = label['joints_3d']
