@@ -559,8 +559,8 @@ def heatmap_to_coord_alpha_pose(hms, boxes):
     hm_h = hms.shape[2]
     hm_w = hms.shape[3]
     aspect_ratio = float(hm_h) / hm_w
-    pt1 = mx.nd.array(boxes[:, :, (0, 2)], dtype=hms.dtype)
-    pt2 = mx.nd.array(boxes[:, :, (1, 3)], dtype=hms.dtype)
+    pt1 = mx.nd.array(boxes[:, :, (0, 1)], dtype=hms.dtype)
+    pt2 = mx.nd.array(boxes[:, :, (2, 3)], dtype=hms.dtype)
 
     # get keypoint coordinates
     idxs = mx.nd.argmax(hms.reshape(hms.shape[0], hms.shape[1], -1), 2, keepdims=True)

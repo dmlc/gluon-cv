@@ -62,10 +62,7 @@ def get_data_loader(dataset, batch_size, num_workers, input_size):
     def val_batch_fn(batch, ctx):
         data = gluon.utils.split_and_load(batch[0], ctx_list=ctx,
                                           batch_axis=0, even_split=False)
-        bbox = batch[1]
-        score = batch[2]
-        imgid = batch[3]
-        return data, bbox, score, imgid
+        return tuple([data] + batch[1:])
 
     val_dataset = get_dataset(dataset)
 
@@ -122,6 +119,9 @@ def validate(val_data, val_dataset, net, ctx):
 
         # preds, maxvals = get_final_preds(outputs_stack, center.asnumpy(), scale.asnumpy())
         preds, maxvals = heatmap_to_coord_alpha_pose(outputs_stack, scale_box)
+        # print(preds, maxvals, scale_box)
+        # print(preds, maxvals)
+        # raise
         val_metric.update(preds, maxvals, score, imgid)
 
     res = val_metric.get()
