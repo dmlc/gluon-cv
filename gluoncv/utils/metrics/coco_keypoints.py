@@ -74,10 +74,6 @@ class COCOKeyPointsMetric(mx.metric.EvalMetric):
 
     def _update(self):
         """Use coco to get real scores. """
-        if not len(self._recorded_ids) == len(self._img_ids):
-            warnings.warn(
-                'Recorded {} out of {} validation images, incompelete results'.format(
-                    len(self._recorded_ids), len(self._img_ids)))
         import json
         try:
             with open(self._filename, 'w') as f:
