@@ -2,7 +2,7 @@ from __future__ import division
 
 import argparse, datetime, os
 import logging
-import my_logging
+from my_logging import init_logging
 
 import __init
 import mxnet as mx
@@ -59,8 +59,16 @@ parser.add_argument('--lr-decay', type=int, default=0.1)
 parser.add_argument('--hybridize', type=bool, default=True)
 
 
+def get_my_ip():
+    cmd = "ifconfig | grep 'inet addr:' | grep -v '127.0.0.1' | cut -d: -f2 | awk '{print $1}' | head -1"
+    ip = os.popen(cmd).read().strip()
+    return ip
+
+
 opt = parser.parse_args()
 kv = mx.kv.create(opt.kvstore)
+my_ip = get_my_ip()
+extra = {'tag': my_ip}
 
 
 class SplitSampler(gluon.data.sampler.Sampler):
@@ -108,12 +116,12 @@ def get_data_iters(batch_size):
 
     train_imgs = ImageTxtDataset(train_set, transform=transform_train)
     sampler = SplitSampler(length=len(train_imgs), num_parts=kv.num_workers, part_index=kv.rank)
-    logger.info("num workers:{}".format(kv.num_workers))
-    logger.info("this machine rank:{}".format(kv.rank))
+    logger.info("num workers:{}".format(kv.num_workers), extra)
+    logger.info("this machine rank:{}".format(kv.rank), extra)
 
     train_data = gluon.data.DataLoader(train_imgs, batch_size, shuffle=True, sampler=sampler,
                                        last_batch='discard', num_workers=opt.num_workers)
-    logger.info("train images:{}".format(len(train_data)))
+    logger.info("train images:{}".format(len(train_data)), extra)
 
     if opt.ratio < 1:
         transform_test = transforms.Compose([
@@ -123,10 +131,10 @@ def get_data_iters(batch_size):
 
         val_imgs = ImageTxtDataset(val_set, transform=transform_test)
         val_data = gluon.data.DataLoader(val_imgs, batch_size, shuffle=True, last_batch='discard', num_workers=opt.num_workers)
-        logger.info("validation images:{}".format(len(val_data)))
+        logger.info("validation images:{}".format(len(val_data)), extra)
     else:
         val_data = None
-        logger.info("validation images: None")
+        logger.info("validation images: None", extra)
 
     return train_data, val_data
 
@@ -148,16 +156,8 @@ def validate(val_data, net, criterion, ctx):
     return loss/len(val_data), sum(accuracy)/len(accuracy)
 
 
-def get_my_ip():
-    cmd = "ifconfig | grep 'inet addr:' | grep -v '127.0.0.1' | cut -d: -f2 | awk '{print $1}' | head -1"
-    ip = os.popen(cmd).read().strip()
-    return ip
-
-
 def main(net: ResNet, batch_size, epochs, opt, ctx):
-    tag_logger = logging.getLogger("tag")
-    my_ip = get_my_ip()
-    extra = {'tag': my_ip}
+    tag_logger = logging.getLogger(name="tag")
     train_data, val_data = get_data_iters(batch_size)
     if opt.hybridize:
         net.hybridize()
@@ -219,10 +219,9 @@ def main(net: ResNet, batch_size, epochs, opt, ctx):
 
 
 if __name__ == '__main__':
-    my_logging.init_logging("train3.log")
-    tag_log = logging.getLogger("tag")
-    tag_log.info("*"*100)
-    tag_log.info(opt)
+    init_logging("train3.log")
+    logging.info("*"*100)
+    logging.info(opt)
 
     mx.random.seed(opt.seed)
 
