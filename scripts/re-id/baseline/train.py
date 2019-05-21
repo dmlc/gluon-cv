@@ -121,7 +121,7 @@ def get_data_iters(batch_size):
 
     train_data = gluon.data.DataLoader(train_imgs, batch_size, sampler=sampler,
                                        last_batch='discard', num_workers=opt.num_workers)
-    logger.info("train images:{}".format(len(train_data)), extra=extra)
+    logger.info("train images:{}".format(batch_size*len(train_data)), extra=extra)
 
     if opt.ratio < 1:
         transform_test = transforms.Compose([
@@ -130,8 +130,11 @@ def get_data_iters(batch_size):
             normalizer])
 
         val_imgs = ImageTxtDataset(val_set, transform=transform_test)
-        val_data = gluon.data.DataLoader(val_imgs, batch_size, shuffle=True, last_batch='discard', num_workers=opt.num_workers)
-        logger.info("validation images:{}".format(len(val_data)), extra=extra)
+        val_data = gluon.data.DataLoader(val_imgs, batch_size,
+                                         shuffle=True,
+                                         last_batch='discard',
+                                         num_workers=opt.num_workers)
+        logger.info("validation images:{}".format(batch_size*len(val_data)), extra=extra)
     else:
         val_data = None
         logger.info("validation images: None", extra=extra)
@@ -148,7 +151,7 @@ def validate(val_data, net, criterion, ctx):
         with autograd.predict_mode():
             outpus = [net(X) for X in data_list]
             losses = [criterion(X, y) for X, y in zip(outpus, label_list)]
-        accuracy = [(X.argmax(axis=1)==y.astype('float32')).mean.asscalar() for X, y in zip(outpus, label_list)]
+        accuracy = [(X.argmax(axis=1)==y.astype('float32')).mean().asscalar() for X, y in zip(outpus, label_list)]
 
         loss_list = [l.mean().asscalar() for l in losses]
         loss += sum(loss_list) / len(loss_list)
@@ -206,7 +209,10 @@ def main(net: ResNet, batch_size, epochs, opt, ctx):
 
         if val_data is not None:
             val_loss, val_accuracy = validate(val_data, net, criterion, ctx)
-            epoch_str = ("Epoch %d. Train loss: %f, Val loss %f, Val accuracy %f, " % (epoch, __loss , val_loss, val_accuracy))
+            epoch_str = ("Epoch %d. Train loss: %f, Val loss %f, Val accuracy %f, " % (epoch,
+                                                                                       __loss,
+                                                                                       val_loss,
+                                                                                       val_accuracy))
         else:
             epoch_str = ("Epoch %d. Train loss: %f, " % (epoch, __loss))
 
