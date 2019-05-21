@@ -119,7 +119,7 @@ def get_data_iters(batch_size):
     logger.info("num workers:{}".format(kv.num_workers), extra=extra)
     logger.info("this machine rank:{}".format(kv.rank), extra=extra)
 
-    train_data = gluon.data.DataLoader(train_imgs, batch_size, shuffle=True, sampler=sampler,
+    train_data = gluon.data.DataLoader(train_imgs, batch_size, sampler=sampler,
                                        last_batch='discard', num_workers=opt.num_workers)
     logger.info("train images:{}".format(len(train_data)), extra=extra)
 
