@@ -116,12 +116,12 @@ def get_data_iters(batch_size):
 
     train_imgs = ImageTxtDataset(train_set, transform=transform_train)
     sampler = SplitSampler(length=len(train_imgs), num_parts=kv.num_workers, part_index=kv.rank)
-    logger.info("num workers:{}".format(kv.num_workers), extra)
-    logger.info("this machine rank:{}".format(kv.rank), extra)
+    logger.info("num workers:{}".format(kv.num_workers), extra=extra)
+    logger.info("this machine rank:{}".format(kv.rank), extra=extra)
 
     train_data = gluon.data.DataLoader(train_imgs, batch_size, shuffle=True, sampler=sampler,
                                        last_batch='discard', num_workers=opt.num_workers)
-    logger.info("train images:{}".format(len(train_data)), extra)
+    logger.info("train images:{}".format(len(train_data)), extra=extra)
 
     if opt.ratio < 1:
         transform_test = transforms.Compose([
@@ -131,10 +131,10 @@ def get_data_iters(batch_size):
 
         val_imgs = ImageTxtDataset(val_set, transform=transform_test)
         val_data = gluon.data.DataLoader(val_imgs, batch_size, shuffle=True, last_batch='discard', num_workers=opt.num_workers)
-        logger.info("validation images:{}".format(len(val_data)), extra)
+        logger.info("validation images:{}".format(len(val_data)), extra=extra)
     else:
         val_data = None
-        logger.info("validation images: None", extra)
+        logger.info("validation images: None", extra=extra)
 
     return train_data, val_data
 
