@@ -28,10 +28,10 @@ parser.add_argument('--batch-size', type=int, default=32,
                     help='training batch size per device (CPU/GPU).')
 parser.add_argument('--num-workers', type=int, default=8,
                     help='the number of workers for data loader')
-parser.add_argument('--kvstore', type=str, default='device',
+parser.add_argument('--kvstore', type=str, default='dist_sync',
                     help='kvstore to use for trainer/module.')
 parser.add_argument('--dataset-root', type=str,
-                    default="../../datasets/train_part",
+                    default="../../datasets",
                     help='the number of workers for data loader')
 parser.add_argument('--dataset', type=str, default="reid_all_dataset",
                     help='the number of workers for data loader')
@@ -44,7 +44,7 @@ parser.add_argument('--classes', type=int, default=751,
 parser.add_argument('--warmup', type=bool, default=True,
                     help='number of training epochs.')
 parser.add_argument('--epochs', type=str, default="5,25,50,75")
-parser.add_argument('--ratio', type=float, default=1.,
+parser.add_argument('--ratio', type=float, default=0.9,
                     help="ratio of training set to all set")
 parser.add_argument('--pad', type=int, default=10)
 parser.add_argument('--lr', type=float, default=3.5e-4,
@@ -59,10 +59,45 @@ parser.add_argument('--lr-decay', type=int, default=0.1)
 parser.add_argument('--hybridize', type=bool, default=True)
 
 
+opt = parser.parse_args()
+kv = mx.kv.create(opt.kvstore)
+
+
+class SplitSampler(gluon.data.sampler.Sampler):
+    """ Split the dataset into `num_parts` parts and sample from the part with index `part_index`
+    Parameters
+    ----------
+    length: int
+      Number of examples in the dataset
+    num_parts: int
+      Partition the data into multiple parts
+    part_index: int
+      The index of the part to read from
+    """
+    def __init__(self, length, num_parts=1, part_index=0):
+        # Compute the length of each partition
+        self.part_len = length // num_parts
+        # Compute the start index for this partition
+        self.start = self.part_len * part_index
+        # Compute the end index for this partition
+        self.end = self.start + self.part_len
+
+    def __iter__(self):
+        # Extract examples between `start` and `end`, shuffle and return them.
+        indices = list(range(self.start, self.end))
+        import random
+        random.shuffle(indices)
+        return iter(indices)
+
+    def __len__(self):
+        return self.part_len
+
+
 def get_data_iters(batch_size):
+    logger = logging.getLogger('tag')
     train_set, val_set = LabelList(ratio=opt.ratio, root=opt.dataset_root,
                                    name=opt.dataset, train_file=opt.train_txt)
-    normalizer = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    normalizer = transforms.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))
 
     transform_train = transforms.Compose([
         transforms.Resize(size=(opt.img_width, opt.img_height), interpolation=1),
@@ -72,7 +107,12 @@ def get_data_iters(batch_size):
         normalizer])
 
     train_imgs = ImageTxtDataset(train_set, transform=transform_train)
-    train_data = gluon.data.DataLoader(train_imgs, batch_size, shuffle=True, last_batch='discard', num_workers=opt.num_workers)
+    sampler = SplitSampler(length=len(train_imgs), num_parts=kv.num_workers, part_index=kv.rank)
+    train_data = gluon.data.DataLoader(train_imgs, batch_size, shuffle=True, sampler=sampler,
+                                       last_batch='discard', num_workers=opt.num_workers)
+    logger.info("num workers:{}".format(kv.num_workers))
+    logger.info("this machine rank:{}".format(kv.rank))
+    logger.info("train images:{}".format(len(train_data)))
 
     if opt.ratio < 1:
         transform_test = transforms.Compose([
@@ -82,8 +122,10 @@ def get_data_iters(batch_size):
 
         val_imgs = ImageTxtDataset(val_set, transform=transform_test)
         val_data = gluon.data.DataLoader(val_imgs, batch_size, shuffle=True, last_batch='discard', num_workers=opt.num_workers)
+        logger.info("validation images:{}".format(len(val_data)))
     else:
         val_data = None
+        logger.info("validation images: None")
 
     return train_data, val_data
 
@@ -118,7 +160,6 @@ def main(net: ResNet, batch_size, epochs, opt, ctx):
     train_data, val_data = get_data_iters(batch_size)
     if opt.hybridize:
         net.hybridize()
-    kv = mx.kv.create(opt.kvstore)
     trainer = gluon.Trainer(net.collect_params(), kvstore=kv, optimizer='adam',
                             optimizer_params={'learning_rate': opt.lr, 'wd': opt.wd})
     criterion = gluon.loss.SoftmaxCrossEntropyLoss()
@@ -177,8 +218,7 @@ def main(net: ResNet, batch_size, epochs, opt, ctx):
 
 
 if __name__ == '__main__':
-    my_logging.init_logging("train2.log")
-    opt = parser.parse_args()
+    my_logging.init_logging("train3.log")
     logging.info(opt)
     mx.random.seed(opt.seed)
 
