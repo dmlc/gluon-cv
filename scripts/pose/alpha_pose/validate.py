@@ -52,7 +52,7 @@ num_workers = opt.num_workers
 
 def get_dataset(dataset):
     if dataset == 'coco':
-        val_dataset = mscoco.keypoints.COCOKeyPoints(splits=('person_keypoints_val2017'), skip_empty=True)
+        val_dataset = mscoco.keypoints.COCOKeyPoints(splits=('person_keypoints_val2017'), skip_empty=False)
     else:
         raise NotImplementedError("Dataset: {} not supported.".format(dataset))
     return val_dataset
