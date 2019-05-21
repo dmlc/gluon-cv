@@ -108,10 +108,11 @@ def get_data_iters(batch_size):
 
     train_imgs = ImageTxtDataset(train_set, transform=transform_train)
     sampler = SplitSampler(length=len(train_imgs), num_parts=kv.num_workers, part_index=kv.rank)
-    train_data = gluon.data.DataLoader(train_imgs, batch_size, shuffle=True, sampler=sampler,
-                                       last_batch='discard', num_workers=opt.num_workers)
     logger.info("num workers:{}".format(kv.num_workers))
     logger.info("this machine rank:{}".format(kv.rank))
+
+    train_data = gluon.data.DataLoader(train_imgs, batch_size, shuffle=True, sampler=sampler,
+                                       last_batch='discard', num_workers=opt.num_workers)
     logger.info("train images:{}".format(len(train_data)))
 
     if opt.ratio < 1:
