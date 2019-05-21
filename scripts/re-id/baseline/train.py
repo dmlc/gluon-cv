@@ -94,7 +94,7 @@ class SplitSampler(gluon.data.sampler.Sampler):
 
 
 def get_data_iters(batch_size):
-    logger = logging.getLogger('tag')
+    logger = logging.getLogger("tag")
     train_set, val_set = LabelList(ratio=opt.ratio, root=opt.dataset_root,
                                    name=opt.dataset, train_file=opt.train_txt)
     normalizer = transforms.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))
@@ -155,7 +155,7 @@ def get_my_ip():
 
 
 def main(net: ResNet, batch_size, epochs, opt, ctx):
-    tag_logger = logging.getLogger('tag')
+    tag_logger = logging.getLogger("tag")
     my_ip = get_my_ip()
     extra = {'tag': my_ip}
     train_data, val_data = get_data_iters(batch_size)
@@ -220,7 +220,10 @@ def main(net: ResNet, batch_size, epochs, opt, ctx):
 
 if __name__ == '__main__':
     my_logging.init_logging("train3.log")
-    logging.info(opt)
+    tag_log = logging.getLogger("tag")
+    tag_log.info("*"*100)
+    tag_log.info(opt)
+
     mx.random.seed(opt.seed)
 
     batch_size = opt.batch_size

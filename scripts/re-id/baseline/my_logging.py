@@ -91,12 +91,12 @@ def init_logging(logfile_path=None):
         },
         'loggers': {
             # 可以logging.getLogger(__name__)拿到的logger配置
-            '': {
+            "": {
                 'handlers': ['file_standard', 'console_simple'],  # 既写入文件又打印到屏幕
                 'level': 'DEBUG',
                 'propagate': False,  # 不向上（更高level的logger）传递
             },
-            'tag': {
+            "tag": {
                 'handlers': ['console_tag', 'file_tag'],  # 既写入文件又打印到屏幕
                 'level': 'DEBUG',
                 'propagate': False,  # 不向上（更高level的logger）传递
