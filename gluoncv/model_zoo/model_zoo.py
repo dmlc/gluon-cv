@@ -107,6 +107,8 @@ _models = {
     'mask_rcnn_fpn_resnet50_v1b_coco': mask_rcnn_fpn_resnet50_v1b_coco,
     'mask_rcnn_resnet101_v1d_coco': mask_rcnn_resnet101_v1d_coco,
     'mask_rcnn_fpn_resnet101_v1d_coco': mask_rcnn_fpn_resnet101_v1d_coco,
+    'mask_rcnn_fpn_resnet18_v1b_coco': mask_rcnn_fpn_resnet18_v1b_coco,
+    'mask_rcnn_fpn_bn_mobilenet1_0_coco': mask_rcnn_fpn_bn_mobilenet1_0_coco,
     'cifar_resnet20_v1': cifar_resnet20_v1,
     'cifar_resnet56_v1': cifar_resnet56_v1,
     'cifar_resnet110_v1': cifar_resnet110_v1,
