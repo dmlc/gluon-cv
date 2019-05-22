@@ -165,7 +165,8 @@ def main(net: ResNet, batch_size, epochs, opt, ctx):
     if opt.hybridize:
         net.hybridize()
     trainer = gluon.Trainer(net.collect_params(), kvstore=kv, optimizer='adam',
-                            optimizer_params={'learning_rate': opt.lr, 'wd': opt.wd})
+                            optimizer_params={'learning_rate': opt.lr, 'wd': opt.wd},
+                            compression_params={'type': '2bit', 'threshold': 0.5})
     criterion = gluon.loss.SoftmaxCrossEntropyLoss()
 
     lr = opt.lr
@@ -209,10 +210,8 @@ def main(net: ResNet, batch_size, epochs, opt, ctx):
 
         if val_data is not None:
             val_loss, val_accuracy = validate(val_data, net, criterion, ctx)
-            epoch_str = ("Epoch %d. Train loss: %f, Val loss %f, Val accuracy %f, " % (epoch,
-                                                                                       __loss,
-                                                                                       val_loss,
-                                                                                       val_accuracy))
+            epoch_str = ("Epoch %d. Train loss: %f, Val"
+                         " loss %f, Val accuracy %f, " % (epoch, __loss, val_loss, val_accuracy))
         else:
             epoch_str = ("Epoch %d. Train loss: %f, " % (epoch, __loss))
 
@@ -225,7 +224,7 @@ def main(net: ResNet, batch_size, epochs, opt, ctx):
 
 
 if __name__ == '__main__':
-    init_logging("train3.log")
+    init_logging()
     logging.info("*"*100)
     logging.info(opt)
 

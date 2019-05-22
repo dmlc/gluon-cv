@@ -10,8 +10,10 @@
 logging配置
 """
 
-import os
 import logging.config
+import os
+import time
+
 
 __all__ = ['init_logging']
 
@@ -30,7 +32,8 @@ def init_logging(logfile_path=None):
 
     if logfile_path is None:
         # log文件的全路径
-        logfile_path = os.path.join(logfile_dir, 'train.log')
+        date_time = time.strftime("%m%d-%H%M")
+        logfile_path = os.path.join(logfile_dir, '{}.log'.format(date_time))
 
     # log备份个数
     backup_count = 5
