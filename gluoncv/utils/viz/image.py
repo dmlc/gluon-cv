@@ -98,7 +98,7 @@ def cv_plot_image(img, scale=1, upperleft_txt=None, upperleft_txt_corner=(10, 10
             thickness = 1
 
             cv2.putText(img, txt, bottomLeftCornerOfText,
-                font, fontScale, fontColor, thickness)
+                        font, fontScale, fontColor, thickness)
 
             starty += 30
 
@@ -111,7 +111,7 @@ def cv_plot_image(img, scale=1, upperleft_txt=None, upperleft_txt_corner=(10, 10
 
         for txt in title_txt_list:
             cv2.putText(img, txt, bottomLeftCornerOfText,
-                font, fontScale, fontColor, thickness)
+                        font, fontScale, fontColor, thickness)
             bottomLeftCornerOfText = (bottomLeftCornerOfText[0] + 100, bottomLeftCornerOfText[1] + 50)
 
     canvas = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)

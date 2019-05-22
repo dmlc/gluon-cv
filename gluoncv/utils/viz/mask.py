@@ -126,4 +126,3 @@ def cv_merge_two_images(img1, img2, alpha=0.5, size=None):
     if size is not None:
         img = cv2.resize(img, (int(size[1]), int(size[0])))
     return img
-
