@@ -124,6 +124,6 @@ def cv_merge_two_images(img1, img2, alpha=0.5, size=None):
     """
     img = cv2.addWeighted(img1, 1-alpha, img2, alpha, 0)
     if size is not None:
-        img = cv2.resize(img, (int(size[1]),int(size[0])))
+        img = cv2.resize(img, (int(size[1]), int(size[0])))
     return img
 

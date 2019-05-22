@@ -102,9 +102,6 @@ def cv_plot_keypoints(img, coords, confidence, class_ids, bboxes, scores,
     """
     try_import_cv2()
 
-    def to_int(float_arr):
-        return tuple([int(x) for x in float_arr])
-
     if isinstance(coords, mx.nd.NDArray):
         coords = coords.asnumpy()
     if isinstance(class_ids, mx.nd.NDArray):

@@ -105,8 +105,7 @@ def plot_bbox(img, bboxes, scores=None, labels=None, thresh=0.5,
     return ax
 
 def cv_plot_bbox(img, bboxes, scores=None, labels=None, thresh=0.5,
-                 class_names=None, colors=None, ax=None,
-                 reverse_rgb=False, absolute_coordinates=True):
+                 class_names=None, colors=None, absolute_coordinates=True):
     # pylint: disable=undefined-variable
     """Visualize bounding boxes with OpenCV.
 
@@ -129,10 +128,6 @@ def cv_plot_bbox(img, bboxes, scores=None, labels=None, thresh=0.5,
     colors : dict, optional
         You can provide desired colors as {0: (255, 0, 0), 1:(0, 255, 0), ...}, otherwise
         random colors will be substituted.
-    ax : matplotlib axes, optional
-        You can reuse previous axes if provided.
-    reverse_rgb : bool, optional
-        Reverse RGB<->BGR orders if `True`.
     absolute_coordinates : bool
         If `True`, absolute coordinates will be considered, otherwise coordinates
         are interpreted as in range(0, 1).
@@ -143,7 +138,6 @@ def cv_plot_bbox(img, bboxes, scores=None, labels=None, thresh=0.5,
         The image with detected results.
 
     """
-    import random
     from matplotlib import pyplot as plt
     try_import_cv2()
 
@@ -188,7 +182,7 @@ def cv_plot_bbox(img, bboxes, scores=None, labels=None, thresh=0.5,
         xmin, ymin, xmax, ymax = [int(x) for x in bbox]
         bcolor = [x * 255 for x in colors[cls_id]]
         cv2.rectangle(img, (xmin, ymin), (xmax, ymax), bcolor, 2)
-        
+
         if class_names is not None and cls_id < len(class_names):
             class_name = class_names[cls_id]
         else:

@@ -41,7 +41,7 @@ def plot_image(img, ax=None, reverse_rgb=False):
 
 def cv_plot_image(img, scale=1, upperleft_txt=None, upperleft_txt_corner=(10, 100),
                   left_txt_list=None, left_txt_corner=(10, 150),
-                  title_txt_list=None, title_txt_corner=(500, 50), 
+                  title_txt_list=None, title_txt_corner=(500, 50),
                   canvas_name='demo'):
     # pylint: disable=undefined-variable
     """Visualize image with OpenCV.
@@ -77,53 +77,41 @@ def cv_plot_image(img, scale=1, upperleft_txt=None, upperleft_txt_corner=(10, 10
     try_import_cv2()
 
     height, width, _ = img.shape
-    img = cv2.resize(img,(int(width * scale),int(height * scale)))
+    img = cv2.resize(img, (int(width * scale), int(height * scale)))
     if upperleft_txt is not None:
-        font                   = cv2.FONT_HERSHEY_SIMPLEX
+        font = cv2.FONT_HERSHEY_SIMPLEX
         bottomLeftCornerOfText = upperleft_txt_corner
-        fontScale              = 1
-        fontColor              = (255, 255, 255)
-        thickness              = 3
+        fontScale = 1
+        fontColor = (255, 255, 255)
+        thickness = 3
 
-        cv2.putText(img, upperleft_txt,
-            bottomLeftCornerOfText,
-            font,
-            fontScale,
-            fontColor,
-            thickness)
+        cv2.putText(img, upperleft_txt, bottomLeftCornerOfText,
+                    font, fontScale, fontColor, thickness)
 
     if left_txt_list is not None:
         starty = left_txt_corner[1]
         for txt in left_txt_list:
-            font                   = cv2.FONT_HERSHEY_SIMPLEX
+            font = cv2.FONT_HERSHEY_SIMPLEX
             bottomLeftCornerOfText = (left_txt_corner[0], starty)
-            fontScale              = 1
-            fontColor              = (255, 255, 255)
-            thickness              = 1
+            fontScale = 1
+            fontColor = (255, 255, 255)
+            thickness = 1
 
-            cv2.putText(img, txt,
-                bottomLeftCornerOfText,
-                font,
-                fontScale,
-                fontColor,
-                thickness)
+            cv2.putText(img, txt, bottomLeftCornerOfText,
+                font, fontScale, fontColor, thickness)
 
             starty += 30
 
     if title_txt_list is not None:
-        font                   = cv2.FONT_HERSHEY_SIMPLEX
+        font = cv2.FONT_HERSHEY_SIMPLEX
         bottomLeftCornerOfText = title_txt_corner
-        fontScale              = 1
-        fontColor              = (255, 255, 255)
-        thickness              = 3
+        fontScale = 1
+        fontColor = (255, 255, 255)
+        thickness = 3
 
         for txt in title_txt_list:
-            cv2.putText(img, txt,
-                bottomLeftCornerOfText,
-                font,
-                fontScale,
-                fontColor,
-                thickness)
+            cv2.putText(img, txt, bottomLeftCornerOfText,
+                font, fontScale, fontColor, thickness)
             bottomLeftCornerOfText = (bottomLeftCornerOfText[0] + 100, bottomLeftCornerOfText[1] + 50)
 
     canvas = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
