@@ -3,7 +3,6 @@ import time
 
 import cv2
 import gluoncv as gcv
-import matplotlib.pyplot as plt
 import mxnet as mx
 
 
@@ -41,10 +40,8 @@ while i < NUM_FRAMES or NUM_FRAMES == -1:
     class_IDs, scores, bounding_boxes = net(rgb_nd)
 
     # Display the result
-    plt.cla()
-    axes = gcv.utils.viz.plot_bbox(frame, bounding_boxes[0], scores[0], class_IDs[0], class_names=net.classes, ax=axes)
-    plt.draw()
-    plt.pause(0.001)
-
+    img = gcv.utils.viz.cv_plot_bbox(frame, bounding_boxes[0], scores[0], class_IDs[0], class_names=net.classes)
+    gcv.utils.viz.cv_plot_image(img)
 
 cap.release()
+cv2.destroyAllWindows()
