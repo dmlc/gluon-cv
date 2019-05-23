@@ -4,7 +4,6 @@ from __future__ import absolute_import, division
 import random
 import mxnet as mx
 from .image import plot_image
-from ..filesystem import try_import_cv2
 
 def plot_bbox(img, bboxes, scores=None, labels=None, thresh=0.5,
               class_names=None, colors=None, ax=None,
@@ -105,8 +104,8 @@ def plot_bbox(img, bboxes, scores=None, labels=None, thresh=0.5,
     return ax
 
 def cv_plot_bbox(img, bboxes, scores=None, labels=None, thresh=0.5,
-                 class_names=None, colors=None, absolute_coordinates=True):
-    # pylint: disable=undefined-variable
+                 class_names=None, colors=None,
+                 absolute_coordinates=True, scale=1.0):
     """Visualize bounding boxes with OpenCV.
 
     Parameters
@@ -131,6 +130,8 @@ def cv_plot_bbox(img, bboxes, scores=None, labels=None, thresh=0.5,
     absolute_coordinates : bool
         If `True`, absolute coordinates will be considered, otherwise coordinates
         are interpreted as in range(0, 1).
+    scale : float
+        The scale of output image, which may affect the positions of boxes
 
     Returns
     -------
@@ -139,7 +140,8 @@ def cv_plot_bbox(img, bboxes, scores=None, labels=None, thresh=0.5,
 
     """
     from matplotlib import pyplot as plt
-    try_import_cv2()
+    from ..filesystem import try_import_cv2
+    cv2 = try_import_cv2()
 
     if labels is not None and not len(bboxes) == len(labels):
         raise ValueError('The length of labels and bboxes mismatch, {} vs {}'
@@ -164,6 +166,9 @@ def cv_plot_bbox(img, bboxes, scores=None, labels=None, thresh=0.5,
         width = img.shape[1]
         bboxes[:, (0, 2)] *= width
         bboxes[:, (1, 3)] *= height
+    else:
+        bboxes *= scale
+
 
     # use random colors if None is provided
     if colors is None:

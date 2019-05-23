@@ -5,7 +5,7 @@ import mxnet as mx
 import numpy as np
 import matplotlib.pyplot as plt
 
-from . import plot_bbox
+from . import plot_bbox, cv_plot_bbox
 
 def plot_keypoints(img, coords, confidence, class_ids, bboxes, scores,
                    box_thresh=0.5, keypoint_thresh=0.2, **kwargs):
@@ -70,8 +70,7 @@ def plot_keypoints(img, coords, confidence, class_ids, bboxes, scores,
 
 
 def cv_plot_keypoints(img, coords, confidence, class_ids, bboxes, scores,
-                      box_thresh=0.5, keypoint_thresh=0.2, **kwargs):
-    # pylint: disable=undefined-variable
+                      box_thresh=0.5, keypoint_thresh=0.2, scale=1.0, **kwargs):
     """Visualize keypoints with OpenCV.
 
     Parameters
@@ -93,6 +92,8 @@ def cv_plot_keypoints(img, coords, confidence, class_ids, bboxes, scores,
         will be ignored in display.
     keypoint_thresh : float, optional, default 0.2
         Keypoints with confidence less than `keypoint_thresh` will be ignored in display.
+    scale : float
+        The scale of output image, which may affect the positions of boxes
 
     Returns
     -------
@@ -100,7 +101,8 @@ def cv_plot_keypoints(img, coords, confidence, class_ids, bboxes, scores,
         The image with estimated pose.
 
     """
-    try_import_cv2()
+    from ..filesystem import try_import_cv2
+    cv2 = try_import_cv2()
 
     if isinstance(coords, mx.nd.NDArray):
         coords = coords.asnumpy()
@@ -121,9 +123,10 @@ def cv_plot_keypoints(img, coords, confidence, class_ids, bboxes, scores,
 
     person_ind = class_ids[0] == 0
     img = cv_plot_bbox(img, bboxes[0][person_ind[:, 0]], scores[0][person_ind[:, 0]],
-                       thresh=box_thresh, class_names='person', **kwargs)
+                       thresh=box_thresh, class_names='person', scale=scale, **kwargs)
 
     colormap_index = np.linspace(0, 1, len(joint_pairs))
+    coords *= scale
     for i in range(coords.shape[0]):
         pts = coords[i]
         for cm_ind, jp in zip(colormap_index, joint_pairs):

@@ -6,7 +6,7 @@ import mxnet as mx
 
 from ...data.transforms.mask import fill
 
-def expand_mask(masks, bboxes, im_shape, scores=None, thresh=0.5, sortby='area'):
+def expand_mask(masks, bboxes, im_shape, scores=None, thresh=0.5, scale=1.0, sortby='area'):
     """Expand instance segmentation mask to full image size.
 
     Parameters
@@ -26,6 +26,8 @@ def expand_mask(masks, bboxes, im_shape, scores=None, thresh=0.5, sortby='area')
     sortby : str, optional, default 'area'
         Sort the color palette for masks by the given attributes of each bounding box.
         Valid inputs are 'area', 'xmin', 'ymin', 'xmax', 'ymax'.
+    scale : float
+        The scale of output image, which may affect the positions of boxes
 
     Returns
     -------
@@ -63,6 +65,7 @@ def expand_mask(masks, bboxes, im_shape, scores=None, thresh=0.5, sortby='area')
                          .format(sortby))
 
     full_masks = []
+    bboxes *= scale
     for i in sorted_inds:
         if scores is not None and scores[i] < thresh:
             continue
@@ -122,6 +125,9 @@ def cv_merge_two_images(img1, img2, alpha=0.5, size=None):
         The merged image
 
     """
+    from ..filesystem import try_import_cv2
+    cv2 = try_import_cv2()
+
     img = cv2.addWeighted(img1, 1-alpha, img2, alpha, 0)
     if size is not None:
         img = cv2.resize(img, (int(size[1]), int(size[0])))

@@ -84,6 +84,7 @@ We release the webcam before exiting the script
 .. code-block:: python
 
     cap.release()
+    cv2.destroyAllWindows()
 
 Results
 ---------

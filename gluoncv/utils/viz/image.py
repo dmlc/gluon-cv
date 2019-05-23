@@ -43,7 +43,6 @@ def cv_plot_image(img, scale=1, upperleft_txt=None, upperleft_txt_corner=(10, 10
                   left_txt_list=None, left_txt_corner=(10, 150),
                   title_txt_list=None, title_txt_corner=(500, 50),
                   canvas_name='demo'):
-    # pylint: disable=undefined-variable
     """Visualize image with OpenCV.
 
     Parameters
@@ -74,7 +73,8 @@ def cv_plot_image(img, scale=1, upperleft_txt=None, upperleft_txt_corner=(10, 10
     ax = plot_image(img)
     plt.show()
     """
-    try_import_cv2()
+    from ..filesystem import try_import_cv2
+    cv2 = try_import_cv2()
 
     height, width, _ = img.shape
     img = cv2.resize(img, (int(width * scale), int(height * scale)))
