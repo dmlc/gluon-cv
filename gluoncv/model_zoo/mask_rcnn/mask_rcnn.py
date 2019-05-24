@@ -309,6 +309,7 @@ class MaskRCNN(FasterRCNN):
         self.mask_target = MaskTargetGenerator(
             self._max_batch, self._num_sample, self.num_class, self._target_roi_size)
 
+
 def get_mask_rcnn(name, dataset, pretrained=False, ctx=mx.cpu(),
                   root=os.path.join('~', '.mxnet', 'models'), **kwargs):
     r"""Utility function to return mask rcnn networks.
@@ -551,8 +552,7 @@ def mask_rcnn_fpn_resnet101_v1d_coco(pretrained=False, pretrained_base=True, **k
         **kwargs)
 
 
-def mask_rcnn_fpn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, num_devices=0,
-                                    **kwargs):
+def mask_rcnn_fpn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, **kwargs):
     r"""Mask RCNN model from the paper
     "He, K., Gkioxari, G., Doll&ar, P., & Girshick, R. (2017). Mask R-CNN"
 
@@ -564,8 +564,6 @@ def mask_rcnn_fpn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, num_
     pretrained_base : bool or str, optional, default is True
         Load pretrained base network, the extra layers are randomized. Note that
         if pretrained is `True`, this has no effect.
-    num_devices : int, default is 0
-        Number of devices for sync batch norm layer. if less than 1, use all devices available.
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
