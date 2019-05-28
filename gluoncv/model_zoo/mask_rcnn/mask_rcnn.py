@@ -35,21 +35,21 @@ class Mask(nn.HybridBlock):
         Used to determine number of output channels, and store class names
     mask_channels : int
         Used to determine number of hidden channels
-    deep_fcn : boolean, default False
-        Whether to use deep mask branch (4 convs)
+    num_fcn_convs : int, default 0
+        number of convolution blocks before deconv layer. For FPN network this is typically 4.
 
     """
 
-    def __init__(self, batch_images, classes, mask_channels, deep_fcn=False, norm_layer=None,
+    def __init__(self, batch_images, classes, mask_channels, num_fcn_convs=0, norm_layer=None,
                  norm_kwargs=None, **kwargs):
         super(Mask, self).__init__(**kwargs)
         self._batch_images = batch_images
         self.classes = classes
         init = mx.init.Xavier(rnd_type='gaussian', factor_type='out', magnitude=2)
         with self.name_scope():
-            if deep_fcn:
+            if num_fcn_convs > 0:
                 self.deconv = nn.HybridSequential()
-                for _ in range(4):
+                for _ in range(num_fcn_convs):
                     self.deconv.add(
                         nn.Conv2D(mask_channels, kernel_size=(3, 3), strides=(1, 1),
                                   padding=(1, 1), weight_initializer=init))
@@ -62,6 +62,7 @@ class Mask(nn.HybridBlock):
                 if norm_layer is not None and norm_layer is SyncBatchNorm:
                     self.deconv.add(norm_layer(**norm_kwargs))
             else:
+                # this is for compatibility of older models.
                 self.deconv = nn.Conv2DTranspose(mask_channels, kernel_size=(2, 2), strides=(2, 2),
                                                  padding=(0, 0), weight_initializer=init)
             self.mask = nn.Conv2D(len(classes), kernel_size=(1, 1), strides=(1, 1), padding=(0, 0),
@@ -170,17 +171,17 @@ class MaskRCNN(FasterRCNN):
         Number of channels in mask prediction
     target_roi_scale : int, default 1
         Ratio of mask output roi / input roi. For model with FPN, this is typically 2.
-    deep_fcn : boolean, default False
-        Whether to use deep mask branch (4 convs)
+    num_fcn_convs : int, default 0
+        number of convolution blocks before deconv layer. For FPN network this is typically 4.
     """
 
     def __init__(self, features, top_features, classes, mask_channels=256, rcnn_max_dets=1000,
-                 target_roi_scale=1, deep_fcn=False, norm_layer=None, norm_kwargs=None, **kwargs):
+                 target_roi_scale=1, num_fcn_convs=0, norm_layer=None, norm_kwargs=None, **kwargs):
         super(MaskRCNN, self).__init__(features, top_features, classes,
                                        additional_output=True, **kwargs)
         self._rcnn_max_dets = rcnn_max_dets
         with self.name_scope():
-            self.mask = Mask(self._max_batch, classes, mask_channels, deep_fcn=deep_fcn,
+            self.mask = Mask(self._max_batch, classes, mask_channels, num_fcn_convs=num_fcn_convs,
                              norm_layer=norm_layer, norm_kwargs=norm_kwargs)
             roi_size = (self._roi_size[0] * target_roi_scale, self._roi_size[1] * target_roi_scale)
             self._target_roi_size = roi_size
@@ -445,7 +446,7 @@ def mask_rcnn_fpn_resnet50_v1b_coco(pretrained=False, pretrained_base=True, **kw
         rpn_nms_thresh=0.7, rpn_train_pre_nms=12000, rpn_train_post_nms=2000,
         rpn_test_pre_nms=6000, rpn_test_post_nms=1000, rpn_min_size=0,
         num_sample=512, pos_iou_thresh=0.5, pos_ratio=0.25, target_roi_scale=2,
-        deep_fcn=True, **kwargs)
+        num_fcn_convs=4, **kwargs)
 
 
 def mask_rcnn_resnet101_v1d_coco(pretrained=False, pretrained_base=True, **kwargs):
@@ -550,7 +551,7 @@ def mask_rcnn_fpn_resnet101_v1d_coco(pretrained=False, pretrained_base=True, **k
         rpn_nms_thresh=0.7, rpn_train_pre_nms=12000, rpn_train_post_nms=2000,
         rpn_test_pre_nms=6000, rpn_test_post_nms=1000, rpn_min_size=0,
         num_sample=512, pos_iou_thresh=0.5, pos_ratio=0.25, target_roi_scale=2,
-        deep_fcn=True, **kwargs)
+        num_fcn_convs=4, **kwargs)
 
 
 def mask_rcnn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, rpn_test_pre_nms=6000,
@@ -664,7 +665,7 @@ def mask_rcnn_fpn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, rpn_
         rpn_nms_thresh=0.7, rpn_train_pre_nms=12000, rpn_train_post_nms=2000,
         rpn_test_pre_nms=rpn_test_pre_nms, rpn_test_post_nms=rpn_test_post_nms,
         rpn_min_size=0, num_sample=512, pos_iou_thresh=0.5, pos_ratio=0.25,
-        target_roi_scale=2, deep_fcn=False, **kwargs)
+        target_roi_scale=2, num_fcn_convs=2, **kwargs)
 
 
 def mask_rcnn_fpn_bn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, num_devices=0,
@@ -730,7 +731,7 @@ def mask_rcnn_fpn_bn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, n
         rpn_nms_thresh=0.7, rpn_train_pre_nms=12000, rpn_train_post_nms=2000,
         rpn_test_pre_nms=rpn_test_pre_nms, rpn_test_post_nms=rpn_test_post_nms,
         rpn_min_size=0, num_sample=512, pos_iou_thresh=0.5, pos_ratio=0.25,
-        target_roi_scale=2, deep_fcn=False, norm_layer=SyncBatchNorm,
+        target_roi_scale=2, num_fcn_convs=2, norm_layer=SyncBatchNorm,
         norm_kwargs=gluon_norm_kwargs, **kwargs)
 
 
@@ -795,5 +796,5 @@ def mask_rcnn_fpn_bn_mobilenet1_0_coco(pretrained=False, pretrained_base=True, n
         scales=(2, 4, 8, 16, 32), ratios=(0.5, 1, 2), alloc_size=(384, 384),
         rpn_nms_thresh=0.7, rpn_train_pre_nms=12000, rpn_train_post_nms=2000,
         rpn_test_pre_nms=rpn_test_pre_nms, rpn_test_post_nms=rpn_test_post_nms, rpn_min_size=0,
-        num_sample=512, pos_iou_thresh=0.5, pos_ratio=0.25, target_roi_scale=2, deep_fcn=False,
+        num_sample=512, pos_iou_thresh=0.5, pos_ratio=0.25, target_roi_scale=2, num_fcn_convs=2,
         norm_layer=SyncBatchNorm, norm_kwargs=gluon_norm_kwargs, **kwargs)
