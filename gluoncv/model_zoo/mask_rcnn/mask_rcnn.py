@@ -18,7 +18,9 @@ __all__ = ['MaskRCNN', 'get_mask_rcnn',
            'mask_rcnn_fpn_resnet50_v1b_coco',
            'mask_rcnn_resnet101_v1d_coco',
            'mask_rcnn_fpn_resnet101_v1d_coco',
+           'mask_rcnn_resnet18_v1b_coco',
            'mask_rcnn_fpn_resnet18_v1b_coco',
+           'mask_rcnn_fpn_bn_resnet18_v1b_coco',
            'mask_rcnn_fpn_bn_mobilenet1_0_coco']
 
 
@@ -166,22 +168,21 @@ class MaskRCNN(FasterRCNN):
         Names of categories, its length is ``num_class``.
     mask_channels : int, default is 256
         Number of channels in mask prediction
+    target_roi_scale : int, default 1
+        Ratio of mask output roi / input roi. For model with FPN, this is typically 2.
     deep_fcn : boolean, default False
-            Whether to use deep mask branch (4 convs)
+        Whether to use deep mask branch (4 convs)
     """
 
     def __init__(self, features, top_features, classes, mask_channels=256, rcnn_max_dets=1000,
-                 deep_fcn=False, norm_layer=None, norm_kwargs=None, **kwargs):
+                 target_roi_scale=1, deep_fcn=False, norm_layer=None, norm_kwargs=None, **kwargs):
         super(MaskRCNN, self).__init__(features, top_features, classes,
                                        additional_output=True, **kwargs)
         self._rcnn_max_dets = rcnn_max_dets
         with self.name_scope():
             self.mask = Mask(self._max_batch, classes, mask_channels, deep_fcn=deep_fcn,
                              norm_layer=norm_layer, norm_kwargs=norm_kwargs)
-            if deep_fcn:
-                roi_size = (self._roi_size[0] * 2, self._roi_size[1] * 2)
-            else:
-                roi_size = self._roi_size
+            roi_size = (self._roi_size[0] * target_roi_scale, self._roi_size[1] * target_roi_scale)
             self._target_roi_size = roi_size
             self.mask_target = MaskTargetGenerator(
                 self._max_batch, self._num_sample, self.num_class, self._target_roi_size)
@@ -443,8 +444,8 @@ def mask_rcnn_fpn_resnet50_v1b_coco(pretrained=False, pretrained_base=True, **kw
         scales=(2, 4, 8, 16, 32), ratios=(0.5, 1, 2), alloc_size=(384, 384),
         rpn_nms_thresh=0.7, rpn_train_pre_nms=12000, rpn_train_post_nms=2000,
         rpn_test_pre_nms=6000, rpn_test_post_nms=1000, rpn_min_size=0,
-        num_sample=512, pos_iou_thresh=0.5, pos_ratio=0.25, deep_fcn=True,
-        **kwargs)
+        num_sample=512, pos_iou_thresh=0.5, pos_ratio=0.25, target_roi_scale=2,
+        deep_fcn=True, **kwargs)
 
 
 def mask_rcnn_resnet101_v1d_coco(pretrained=False, pretrained_base=True, **kwargs):
@@ -548,11 +549,12 @@ def mask_rcnn_fpn_resnet101_v1d_coco(pretrained=False, pretrained_base=True, **k
         scales=(2, 4, 8, 16, 32), ratios=(0.5, 1, 2), alloc_size=(384, 384),
         rpn_nms_thresh=0.7, rpn_train_pre_nms=12000, rpn_train_post_nms=2000,
         rpn_test_pre_nms=6000, rpn_test_post_nms=1000, rpn_min_size=0,
-        num_sample=512, pos_iou_thresh=0.5, pos_ratio=0.25, deep_fcn=True,
-        **kwargs)
+        num_sample=512, pos_iou_thresh=0.5, pos_ratio=0.25, target_roi_scale=2,
+        deep_fcn=True, **kwargs)
 
 
-def mask_rcnn_fpn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, **kwargs):
+def mask_rcnn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, rpn_test_pre_nms=6000,
+                                rpn_test_post_nms=1000, **kwargs):
     r"""Mask RCNN model from the paper
     "He, K., Gkioxari, G., Doll&ar, P., & Girshick, R. (2017). Mask R-CNN"
 
@@ -564,6 +566,65 @@ def mask_rcnn_fpn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, **kw
     pretrained_base : bool or str, optional, default is True
         Load pretrained base network, the extra layers are randomized. Note that
         if pretrained is `True`, this has no effect.
+    rpn_test_pre_nms : int, default is 6000
+        Filter top proposals before NMS in testing of RPN.
+    rpn_test_post_nms : int, default is 300
+        Return top proposal results after NMS in testing of RPN.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+
+    Examples
+    --------
+    >>> model = mask_rcnn_resnet18_v1b_coco(pretrained=True)
+    >>> print(model)
+    """
+    from ..resnetv1b import resnet18_v1b
+    from ...data import COCODetection
+    classes = COCODetection.CLASSES
+    pretrained_base = False if pretrained else pretrained_base
+    base_network = resnet18_v1b(pretrained=pretrained_base, dilated=False, use_global_stats=True)
+    features = nn.HybridSequential()
+    top_features = nn.HybridSequential()
+    for layer in ['conv1', 'bn1', 'relu', 'maxpool', 'layer1', 'layer2', 'layer3']:
+        features.add(getattr(base_network, layer))
+    for layer in ['layer4']:
+        top_features.add(getattr(base_network, layer))
+    train_patterns = '|'.join(['.*dense', '.*rpn', '.*mask',
+                               '.*down(2|3|4)_conv', '.*layers(2|3|4)_conv'])
+    return get_mask_rcnn(
+        name='resnet50_v1b', dataset='coco', pretrained=pretrained,
+        features=features, top_features=top_features, classes=classes,
+        mask_channels=256, rcnn_max_dets=1000,
+        short=800, max_size=1333, train_patterns=train_patterns,
+        nms_thresh=0.5, nms_topk=-1, post_nms=-1,
+        roi_mode='align', roi_size=(14, 14), strides=16, clip=4.42,
+        rpn_channel=1024, base_size=16, scales=(2, 4, 8, 16, 32),
+        ratios=(0.5, 1, 2), alloc_size=(128, 128), rpn_nms_thresh=0.7,
+        rpn_train_pre_nms=12000, rpn_train_post_nms=2000,
+        rpn_test_pre_nms=rpn_test_pre_nms, rpn_test_post_nms=rpn_test_post_nms,
+        rpn_min_size=0, num_sample=256, pos_iou_thresh=0.5, pos_ratio=0.25,
+        **kwargs)
+
+
+def mask_rcnn_fpn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, rpn_test_pre_nms=6000,
+                                    rpn_test_post_nms=1000, **kwargs):
+    r"""Mask RCNN model from the paper
+    "He, K., Gkioxari, G., Doll&ar, P., & Girshick, R. (2017). Mask R-CNN"
+
+    Parameters
+    ----------
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True
+        Load pretrained base network, the extra layers are randomized. Note that
+        if pretrained is `True`, this has no effect.
+    rpn_test_pre_nms : int, default is 6000
+        Filter top proposals before NMS in testing of RPN.
+    rpn_test_post_nms : int, default is 300
+        Return top proposal results after NMS in testing of RPN.
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
@@ -586,29 +647,28 @@ def mask_rcnn_fpn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, **kw
         use_upsample=True, use_elewadd=True, use_p6=True, no_bias=False, pretrained=pretrained_base)
     top_features = None
     box_features = nn.HybridSequential()
-    box_features.add(nn.AvgPool2D(pool_size=(3, 3), strides=2, padding=1))  # reduce to 7x7
     for _ in range(2):
         box_features.add(nn.Dense(1024, weight_initializer=mx.init.Normal(0.01)),
                          nn.Activation('relu'))
     train_patterns = '|'.join(['.*dense', '.*rpn', '.*mask', 'P',
                                '.*down(2|3|4)_conv', '.*layers(2|3|4)_conv'])
     return get_mask_rcnn(
-        name='fpn_resnet18_v1b', dataset='coco', pretrained=pretrained,
+        name='resnet18_v1b', dataset='coco', pretrained=pretrained,
         features=features, top_features=top_features, classes=classes,
         box_features=box_features, mask_channels=256, rcnn_max_dets=1000,
         short=800, max_size=1333, min_stage=2, max_stage=6,
         train_patterns=train_patterns, nms_thresh=0.5, nms_topk=-1,
-        post_nms=-1, roi_mode='align', roi_size=(14, 14),
+        post_nms=-1, roi_mode='align', roi_size=(7, 7),
         strides=(4, 8, 16, 32, 64), clip=4.42, rpn_channel=1024, base_size=16,
         scales=(2, 4, 8, 16, 32), ratios=(0.5, 1, 2), alloc_size=(384, 384),
         rpn_nms_thresh=0.7, rpn_train_pre_nms=12000, rpn_train_post_nms=2000,
-        rpn_test_pre_nms=6000, rpn_test_post_nms=1000, rpn_min_size=0,
-        num_sample=512, pos_iou_thresh=0.5, pos_ratio=0.25, deep_fcn=True,
-        **kwargs)
+        rpn_test_pre_nms=rpn_test_pre_nms, rpn_test_post_nms=rpn_test_post_nms,
+        rpn_min_size=0, num_sample=512, pos_iou_thresh=0.5, pos_ratio=0.25,
+        target_roi_scale=2, deep_fcn=False, **kwargs)
 
 
-def mask_rcnn_fpn_bn_mobilenet1_0_coco(pretrained=False, pretrained_base=True, num_devices=0,
-                                       **kwargs):
+def mask_rcnn_fpn_bn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, num_devices=0,
+                                       rpn_test_pre_nms=6000, rpn_test_post_nms=1000, **kwargs):
     r"""Mask RCNN model from the paper
     "He, K., Gkioxari, G., Doll&ar, P., & Girshick, R. (2017). Mask R-CNN"
 
@@ -622,6 +682,77 @@ def mask_rcnn_fpn_bn_mobilenet1_0_coco(pretrained=False, pretrained_base=True, n
         if pretrained is `True`, this has no effect.
     num_devices : int, default is 0
         Number of devices for sync batch norm layer. if less than 1, use all devices available.
+    rpn_test_pre_nms : int, default is 6000
+        Filter top proposals before NMS in testing of RPN.
+    rpn_test_post_nms : int, default is 300
+        Return top proposal results after NMS in testing of RPN.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+
+    Examples
+    --------
+    >>> model = mask_rcnn_fpn_resnet18_v1b_coco(pretrained=True)
+    >>> print(model)
+    """
+    from ..resnetv1b import resnet18_v1b
+    from ...data import COCODetection
+    classes = COCODetection.CLASSES
+    pretrained_base = False if pretrained else pretrained_base
+    gluon_norm_kwargs = {'num_devices': num_devices} if num_devices >= 1 else {}
+    sym_norm_kwargs = {'ndev': num_devices} if num_devices >= 1 else {}
+    base_network = resnet18_v1b(pretrained=pretrained_base, dilated=False, use_global_stats=False,
+                                norm_layer=SyncBatchNorm, norm_kwargs=gluon_norm_kwargs, **kwargs)
+    features = FPNFeatureExpander(
+        network=base_network,
+        outputs=['layers1_relu3_fwd', 'layers2_relu3_fwd', 'layers3_relu3_fwd',
+                 'layers4_relu3_fwd'], num_filters=[256, 256, 256, 256], use_1x1=True,
+        use_upsample=True, use_elewadd=True, use_p6=True, no_bias=False, pretrained=pretrained_base,
+        norm_layer=mx.sym.contrib.SyncBatchNorm, norm_kwargs=sym_norm_kwargs)
+    top_features = None
+    box_features = nn.HybridSequential()
+    box_features.add(nn.Conv2D(256, 3, padding=1),
+                     SyncBatchNorm(**gluon_norm_kwargs),
+                     nn.Activation('relu'),
+                     nn.Dense(1024, weight_initializer=mx.init.Normal(0.01)),
+                     nn.Activation('relu'))
+    train_patterns = '(?!.*moving)'
+    return get_mask_rcnn(
+        name='fpn_bn_resnet18_v1b', dataset='coco', pretrained=pretrained,
+        features=features, top_features=top_features, classes=classes,
+        box_features=box_features, mask_channels=256, rcnn_max_dets=1000,
+        short=(640, 800), max_size=1333, min_stage=2, max_stage=6,
+        train_patterns=train_patterns, nms_thresh=0.5, nms_topk=-1,
+        post_nms=-1, roi_mode='align', roi_size=(7, 7),
+        strides=(4, 8, 16, 32, 64), clip=4.42, rpn_channel=1024, base_size=16,
+        scales=(2, 4, 8, 16, 32), ratios=(0.5, 1, 2), alloc_size=(384, 384),
+        rpn_nms_thresh=0.7, rpn_train_pre_nms=12000, rpn_train_post_nms=2000,
+        rpn_test_pre_nms=rpn_test_pre_nms, rpn_test_post_nms=rpn_test_post_nms,
+        rpn_min_size=0, num_sample=512, pos_iou_thresh=0.5, pos_ratio=0.25,
+        target_roi_scale=2, deep_fcn=False, norm_layer=SyncBatchNorm,
+        norm_kwargs=gluon_norm_kwargs, **kwargs)
+
+
+def mask_rcnn_fpn_bn_mobilenet1_0_coco(pretrained=False, pretrained_base=True, num_devices=0,
+                                       rpn_test_pre_nms=6000, rpn_test_post_nms=1000, **kwargs):
+    r"""Mask RCNN model from the paper
+    "He, K., Gkioxari, G., Doll&ar, P., & Girshick, R. (2017). Mask R-CNN"
+
+    Parameters
+    ----------
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True
+        Load pretrained base network, the extra layers are randomized. Note that
+        if pretrained is `True`, this has no effect.
+    num_devices : int, default is 0
+        Number of devices for sync batch norm layer. if less than 1, use all devices available.
+    rpn_test_pre_nms : int, default is 6000
+        Filter top proposals before NMS in testing of RPN.
+    rpn_test_post_nms : int, default is 300
+        Return top proposal results after NMS in testing of RPN.
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
@@ -663,6 +794,6 @@ def mask_rcnn_fpn_bn_mobilenet1_0_coco(pretrained=False, pretrained_base=True, n
         roi_size=(14, 14), strides=(4, 8, 16, 32, 64), clip=4.42, rpn_channel=1024, base_size=16,
         scales=(2, 4, 8, 16, 32), ratios=(0.5, 1, 2), alloc_size=(384, 384),
         rpn_nms_thresh=0.7, rpn_train_pre_nms=12000, rpn_train_post_nms=2000,
-        rpn_test_pre_nms=6000, rpn_test_post_nms=1000, rpn_min_size=0, num_sample=512,
-        pos_iou_thresh=0.5, pos_ratio=0.25, deep_fcn=True, norm_layer=SyncBatchNorm,
-        norm_kwargs=gluon_norm_kwargs, **kwargs)
+        rpn_test_pre_nms=rpn_test_pre_nms, rpn_test_post_nms=rpn_test_post_nms, rpn_min_size=0,
+        num_sample=512, pos_iou_thresh=0.5, pos_ratio=0.25, target_roi_scale=2, deep_fcn=False,
+        norm_layer=SyncBatchNorm, norm_kwargs=gluon_norm_kwargs, **kwargs)

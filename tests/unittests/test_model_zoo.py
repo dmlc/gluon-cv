@@ -269,7 +269,8 @@ def test_faster_rcnn_models():
 def test_mask_rcnn_models():
     ctx = mx.context.current_context()
     x = mx.random.uniform(shape=(1, 3, 300, 400), ctx=ctx)
-    models = ['mask_rcnn_resnet50_v1b_coco']
+    models = ['mask_rcnn_resnet50_v1b_coco', 'mask_rcnn_resnet18_v1b_coco',
+              'mask_rcnn_fpn_resnet18_v1b_coco']
     _test_model_list(models, ctx, x)
 
 def test_yolo3_models():
