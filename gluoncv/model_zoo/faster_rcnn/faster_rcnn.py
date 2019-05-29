@@ -447,7 +447,7 @@ def get_faster_rcnn(name, dataset, pretrained=False, ctx=mx.cpu(),
         full_name = '_'.join(('faster_rcnn', name, dataset))
         net.load_parameters(get_model_file(full_name, tag=pretrained, root=root), ctx=ctx)
     else:
-        net.collect_params().reset(ctx)
+        net.collect_params().reset_ctx(ctx)
     return net
 
 
