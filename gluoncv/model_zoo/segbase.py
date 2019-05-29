@@ -43,7 +43,11 @@ class SegBaseModel(HybridBlock):
         self.aux = aux
         self.nclass = nclass
         with self.name_scope():
-            if backbone == 'resnet50':
+            if backbone == 'resnet18':
+                pretrained = resnet18_v1b(pretrained=pretrained_base, dilated=True, **kwargs)
+            elif backbone == 'resnet34':
+                pretrained = resnet34_v1b(pretrained=pretrained_base, dilated=True, **kwargs)
+            elif backbone == 'resnet50':
                 pretrained = resnet50_v1s(pretrained=pretrained_base, dilated=True, **kwargs)
             elif backbone == 'resnet101':
                 pretrained = resnet101_v1s(pretrained=pretrained_base, dilated=True, **kwargs)
