@@ -330,7 +330,11 @@ def get_mask_rcnn(name, dataset, pretrained=False, ctx=mx.cpu(),
         full_name = '_'.join(('mask_rcnn', name, dataset))
         net.load_parameters(get_model_file(full_name, tag=pretrained, root=root), ctx=ctx)
     else:
-        net.collect_params().reset_ctx(ctx)
+        for v in net.collect_params().values():
+            try:
+                v.reset_ctx(ctx)
+            except ValueError:
+                pass
     return net
 
 
