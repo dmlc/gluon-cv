@@ -1,9 +1,11 @@
 import argparse, os, math, time, sys
 
 import mxnet as mx
+import logging
 from mxnet import gluon, nd, image
 from mxnet.gluon.nn import Block, HybridBlock
 from mxnet.gluon.data.vision import transforms
+from mxnet.contrib.quantization import *
 
 from gluoncv.data import imagenet
 from gluoncv.model_zoo import get_model
@@ -39,6 +41,26 @@ def parse_args():
                         help='training data type')
     parser.add_argument('--use_se', action='store_true',
                         help='use SE layers or not in resnext. default is false.')
+    parser.add_argument('--calibration', action='store_true',
+                        help='quantize model')
+    parser.add_argument('--num-calib-batches', type=int, default=5,
+                        help='number of batches for calibration')
+    parser.add_argument('--quantized-dtype', type=str, default='auto', 
+                        choices=['auto', 'int8', 'uint8'],
+                        help='quantization destination data type for input data')
+    parser.add_argument('--calib_mode', type=str, default='naive',
+                        help='calibration mode used for generating calibration table for the quantized symbol; supports'
+                             ' 1. none: no calibration will be used. The thresholds for quantization will be calculated'
+                             ' on the fly. This will result in inference speed slowdown and loss of accuracy'
+                             ' in general.'
+                             ' 2. naive: simply take min and max values of layer outputs as thresholds for'
+                             ' quantization. In general, the inference accuracy worsens with more examples used in'
+                             ' calibration. It is recommended to use `entropy` mode as it produces more accurate'
+                             ' inference results.'
+                             ' 3. entropy: calculate KL divergence of the fp32 output and quantized output for optimal'
+                             ' thresholds. This mode is expected to produce the best inference accuracy of all three'
+                             ' kinds of quantized models if the calibration dataset is representative enough of the'
+                             ' inference dataset.')
     opt = parser.parse_args()
     return opt
 
@@ -54,8 +76,46 @@ def benchmark(network, ctx, batch_size=64, image_size=224, num_iter=100, datatyp
     toc = time.time() - tic
     return toc
 
+def test(network, ctx, val_data, mode='image'):
+    acc_top1 = mx.metric.Accuracy()
+    acc_top5 = mx.metric.TopKAccuracy(5)
+    acc_top1.reset()
+    acc_top5.reset()
+    if not opt.rec_dir:
+        num_batch = len(val_data)
+    num = 0
+    start = time.time()
+    for i, batch in enumerate(val_data):
+        if mode == 'image':
+            data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
+            label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0)
+        else:
+            data = gluon.utils.split_and_load(batch.data[0], ctx_list=ctx, batch_axis=0)
+            label = gluon.utils.split_and_load(batch.label[0], ctx_list=ctx, batch_axis=0)
+        outputs = [network(X.astype(opt.dtype, copy=False)) for X in data]
+        acc_top1.update(label, outputs)
+        acc_top5.update(label, outputs)
+
+        _, top1 = acc_top1.get()
+        _, top5 = acc_top5.get()
+        if not opt.rec_dir:
+            print('%d / %d : %.8f, %.8f'%(i, num_batch, 1-top1, 1-top5))
+        else:
+            print('%d : %.8f, %.8f'%(i, 1-top1, 1-top5))
+        num += batch_size
+    end = time.time()
+    speed = num / (end - start)
+    print('Throughput is %f img/sec.'% speed)
+
+    _, top1 = acc_top1.get()
+    _, top5 = acc_top5.get()
+    return (1-top1, 1-top5)
+
 if __name__ == '__main__':
     opt = parse_args()
+    logging.basicConfig()
+    logger = logging.getLogger('logger')
+    logger.setLevel(logging.INFO)
 
     batch_size = opt.batch_size
     classes = 1000
@@ -85,17 +145,6 @@ if __name__ == '__main__':
     else:
         net.hybridize()
     
-    if opt.benchmark:
-        print('-----benchmark mode for model %s-----'%opt.model)
-        time_cost = benchmark(network=net, ctx=ctx[0], image_size=opt.input_size, batch_size=opt.batch_size,
-            num_iter=opt.num_batches, datatype='float32')
-        fps = (opt.batch_size*opt.num_batches)/time_cost
-        print('With batch size %s, %s batches, inference performance is %.2f img/sec' % (opt.batch_size, opt.num_batches, fps)) 
-        sys.exit()
-
-    acc_top1 = mx.metric.Accuracy()
-    acc_top5 = mx.metric.TopKAccuracy(5)
-
     normalize = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 
     """
@@ -111,39 +160,6 @@ if __name__ == '__main__':
         transforms.ToTensor(),
         normalize
     ])
-
-    def test(ctx, val_data, mode='image'):
-        acc_top1.reset()
-        acc_top5.reset()
-        if not opt.rec_dir:
-            num_batch = len(val_data)
-        num = 0
-        start = time.time()
-        for i, batch in enumerate(val_data):
-            if mode == 'image':
-                data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
-                label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0)
-            else:
-                data = gluon.utils.split_and_load(batch.data[0], ctx_list=ctx, batch_axis=0)
-                label = gluon.utils.split_and_load(batch.label[0], ctx_list=ctx, batch_axis=0)
-            outputs = [net(X.astype(opt.dtype, copy=False)) for X in data]
-            acc_top1.update(label, outputs)
-            acc_top5.update(label, outputs)
-
-            _, top1 = acc_top1.get()
-            _, top5 = acc_top5.get()
-            if not opt.rec_dir:
-                print('%d / %d : %.8f, %.8f'%(i, num_batch, 1-top1, 1-top5))
-            else:
-                print('%d : %.8f, %.8f'%(i, 1-top1, 1-top5))
-            num += batch_size
-        end = time.time()
-        speed = num / (end - start)
-        print('Throughput is %f img/sec.'% speed)
-
-        _, top1 = acc_top1.get()
-        _, top5 = acc_top5.get()
-        return (1-top1, 1-top5)
 
     if not opt.rec_dir:
         val_data = gluon.data.DataLoader(
@@ -168,10 +184,40 @@ if __name__ == '__main__':
             std_b               = 57.375
         )
 
+    if opt.calibration and not opt.quantized:
+        exclude_layers = []
+        calib_data = []
+        data_shapes = []
+        for i, batch in enumerate(val_data):
+            if not opt.rec_dir:
+                data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
+            else:
+                data = gluon.utils.split_and_load(batch.data[0], ctx_list=ctx, batch_axis=0)
+            calib_data.append(mx.io.DataBatch(data = data))
+            if i == (opt.num_calib_batches-1):
+                data_shapes.append(data[0].shape)
+                break
+        logger.info('quantize net with batch size = %d', batch_size)
+        net = quantize_net(net, quantized_dtype='auto',
+                           exclude_layers=exclude_layers, calib_data=calib_data, data_shapes=data_shapes, calib_mode=opt.calib_mode, ctx=mx.cpu(), logger=logger)
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        prefix = os.path.join(dir_path, model_name + '-quantized-' + opt.calib_mode)
+        logger.info('Saving quantized model at %s' % dir_path)
+        net.export(prefix, epoch=0)
+        net.hybridize(static_alloc=True, static_shape=True)
+    
+    if opt.benchmark:
+        print('-----benchmark mode for model %s-----'%opt.model)
+        time_cost = benchmark(network=net, ctx=ctx[0], image_size=opt.input_size, batch_size=opt.batch_size,
+            num_iter=opt.num_batches, datatype='float32')
+        fps = (opt.batch_size*opt.num_batches)/time_cost
+        print('With batch size %s, %s batches, inference performance is %.2f img/sec' % (opt.batch_size, opt.num_batches, fps)) 
+        sys.exit()
+
     if not opt.rec_dir:
-        err_top1_val, err_top5_val = test(ctx, val_data, 'image')
+        err_top1_val, err_top5_val = test(net, ctx, val_data, 'image')
     else:
-        err_top1_val, err_top5_val = test(ctx, val_data, 'rec')
+        err_top1_val, err_top5_val = test(net, ctx, val_data, 'rec')
     print(err_top1_val, err_top5_val)
 
     params_count = 0
