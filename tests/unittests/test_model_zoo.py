@@ -294,7 +294,8 @@ def test_rcnn_max_dets_greater_than_nms_mask_rcnn_models():
     ctx = mx.context.current_context()
     x = mx.random.uniform(shape=(1, 3, 300, 400), ctx=ctx)
     net = gcv.model_zoo.mask_rcnn_resnet18_v1b_coco(pretrained=False, pretrained_base=True,
-                                                    rpn_test_pre_nms=100, rpn_test_post_nms=30)
+                                                    rcnn_max_dets=1000, rpn_test_pre_nms=100,
+                                                    rpn_test_post_nms=30)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         net.initialize()
