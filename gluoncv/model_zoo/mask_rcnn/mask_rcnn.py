@@ -187,6 +187,8 @@ class MaskRCNN(FasterRCNN):
                  rpn_test_pre_nms=6000, rpn_test_post_nms=1000, target_roi_scale=1, num_fcn_convs=0,
                  norm_layer=None, norm_kwargs=None, **kwargs):
         super(MaskRCNN, self).__init__(features, top_features, classes,
+                                       rpn_test_pre_nms=rpn_test_pre_nms,
+                                       rpn_test_post_nms=rpn_test_post_nms,
                                        additional_output=True, **kwargs)
         if min(rpn_test_pre_nms, rpn_test_post_nms) < rcnn_max_dets:
             rcnn_max_dets = min(rpn_test_pre_nms, rpn_test_post_nms)
