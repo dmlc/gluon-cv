@@ -289,6 +289,20 @@ def test_mask_rcnn_models():
     _test_model_list(models, ctx, x)
 
 
+@try_gpu(0)
+def test_rcnn_max_dets_greater_than_nms_mask_rcnn_models():
+    ctx = mx.context.current_context()
+    x = mx.random.uniform(shape=(1, 3, 300, 400), ctx=ctx)
+    net = gcv.model_zoo.mask_rcnn_resnet18_v1b_coco(pretrained=False, pretrained_base=True,
+                                                    rpn_test_pre_nms=100, rpn_test_post_nms=30)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        net.initialize()
+    net.collect_params().reset_ctx(ctx)
+    net(x)
+    mx.nd.waitall()
+
+
 def test_yolo3_models():
     ctx = mx.context.current_context()
     x = mx.random.uniform(shape=(1, 3, 320, 320), ctx=ctx)  # allow non-squre and larger inputs
