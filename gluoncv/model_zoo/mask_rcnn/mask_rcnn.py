@@ -169,6 +169,8 @@ class MaskRCNN(FasterRCNN):
         Names of categories, its length is ``num_class``.
     mask_channels : int, default is 256
         Number of channels in mask prediction
+    rcnn_max_dets : int, default is 1000
+        Number of rois to retain in RCNN.
     target_roi_scale : int, default 1
         Ratio of mask output roi / input roi. For model with FPN, this is typically 2.
     num_fcn_convs : int, default 0
@@ -554,8 +556,8 @@ def mask_rcnn_fpn_resnet101_v1d_coco(pretrained=False, pretrained_base=True, **k
         num_fcn_convs=4, **kwargs)
 
 
-def mask_rcnn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, rpn_test_pre_nms=6000,
-                                rpn_test_post_nms=1000, **kwargs):
+def mask_rcnn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, rcnn_max_dets=1000,
+                                rpn_test_pre_nms=6000, rpn_test_post_nms=1000, **kwargs):
     r"""Mask RCNN model from the paper
     "He, K., Gkioxari, G., Doll&ar, P., & Girshick, R. (2017). Mask R-CNN"
 
@@ -567,6 +569,8 @@ def mask_rcnn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, rpn_test
     pretrained_base : bool or str, optional, default is True
         Load pretrained base network, the extra layers are randomized. Note that
         if pretrained is `True`, this has no effect.
+    rcnn_max_dets : int, default is 1000
+        Number of rois to retain in RCNN.
     rpn_test_pre_nms : int, default is 6000
         Filter top proposals before NMS in testing of RPN.
     rpn_test_post_nms : int, default is 300
@@ -585,6 +589,7 @@ def mask_rcnn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, rpn_test
     from ...data import COCODetection
     classes = COCODetection.CLASSES
     pretrained_base = False if pretrained else pretrained_base
+    rcnn_max_dets = rpn_test_post_nms if rcnn_max_dets > rpn_test_post_nms else rcnn_max_dets
     base_network = resnet18_v1b(pretrained=pretrained_base, dilated=False, use_global_stats=True)
     features = nn.HybridSequential()
     top_features = nn.HybridSequential()
@@ -597,7 +602,7 @@ def mask_rcnn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, rpn_test
     return get_mask_rcnn(
         name='resnet50_v1b', dataset='coco', pretrained=pretrained,
         features=features, top_features=top_features, classes=classes,
-        mask_channels=256, rcnn_max_dets=1000,
+        mask_channels=256, rcnn_max_dets=rcnn_max_dets,
         short=800, max_size=1333, train_patterns=train_patterns,
         nms_thresh=0.5, nms_topk=-1, post_nms=-1,
         roi_mode='align', roi_size=(14, 14), strides=16, clip=4.42,
@@ -609,8 +614,8 @@ def mask_rcnn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, rpn_test
         **kwargs)
 
 
-def mask_rcnn_fpn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, rpn_test_pre_nms=6000,
-                                    rpn_test_post_nms=1000, **kwargs):
+def mask_rcnn_fpn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, rcnn_max_dets=1000,
+                                    rpn_test_pre_nms=6000, rpn_test_post_nms=1000, **kwargs):
     r"""Mask RCNN model from the paper
     "He, K., Gkioxari, G., Doll&ar, P., & Girshick, R. (2017). Mask R-CNN"
 
@@ -622,6 +627,8 @@ def mask_rcnn_fpn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, rpn_
     pretrained_base : bool or str, optional, default is True
         Load pretrained base network, the extra layers are randomized. Note that
         if pretrained is `True`, this has no effect.
+    rcnn_max_dets : int, default is 1000
+        Number of rois to retain in RCNN.
     rpn_test_pre_nms : int, default is 6000
         Filter top proposals before NMS in testing of RPN.
     rpn_test_post_nms : int, default is 300
@@ -640,6 +647,7 @@ def mask_rcnn_fpn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, rpn_
     from ...data import COCODetection
     classes = COCODetection.CLASSES
     pretrained_base = False if pretrained else pretrained_base
+    rcnn_max_dets = rpn_test_post_nms if rcnn_max_dets > rpn_test_post_nms else rcnn_max_dets
     base_network = resnet18_v1b(pretrained=pretrained_base, dilated=False, use_global_stats=True)
     features = FPNFeatureExpander(
         network=base_network,
@@ -656,7 +664,7 @@ def mask_rcnn_fpn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, rpn_
     return get_mask_rcnn(
         name='resnet18_v1b', dataset='coco', pretrained=pretrained,
         features=features, top_features=top_features, classes=classes,
-        box_features=box_features, mask_channels=256, rcnn_max_dets=1000,
+        box_features=box_features, mask_channels=256, rcnn_max_dets=rcnn_max_dets,
         short=800, max_size=1333, min_stage=2, max_stage=6,
         train_patterns=train_patterns, nms_thresh=0.5, nms_topk=-1,
         post_nms=-1, roi_mode='align', roi_size=(7, 7),
@@ -669,7 +677,8 @@ def mask_rcnn_fpn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, rpn_
 
 
 def mask_rcnn_fpn_bn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, num_devices=0,
-                                       rpn_test_pre_nms=6000, rpn_test_post_nms=1000, **kwargs):
+                                       rcnn_max_dets=1000, rpn_test_pre_nms=6000,
+                                       rpn_test_post_nms=1000, **kwargs):
     r"""Mask RCNN model from the paper
     "He, K., Gkioxari, G., Doll&ar, P., & Girshick, R. (2017). Mask R-CNN"
 
@@ -683,6 +692,8 @@ def mask_rcnn_fpn_bn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, n
         if pretrained is `True`, this has no effect.
     num_devices : int, default is 0
         Number of devices for sync batch norm layer. if less than 1, use all devices available.
+    rcnn_max_dets : int, default is 1000
+        Number of rois to retain in RCNN.
     rpn_test_pre_nms : int, default is 6000
         Filter top proposals before NMS in testing of RPN.
     rpn_test_post_nms : int, default is 300
@@ -701,6 +712,7 @@ def mask_rcnn_fpn_bn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, n
     from ...data import COCODetection
     classes = COCODetection.CLASSES
     pretrained_base = False if pretrained else pretrained_base
+    rcnn_max_dets = rpn_test_post_nms if rcnn_max_dets > rpn_test_post_nms else rcnn_max_dets
     gluon_norm_kwargs = {'num_devices': num_devices} if num_devices >= 1 else {}
     sym_norm_kwargs = {'ndev': num_devices} if num_devices >= 1 else {}
     base_network = resnet18_v1b(pretrained=pretrained_base, dilated=False, use_global_stats=False,
@@ -722,7 +734,7 @@ def mask_rcnn_fpn_bn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, n
     return get_mask_rcnn(
         name='fpn_bn_resnet18_v1b', dataset='coco', pretrained=pretrained,
         features=features, top_features=top_features, classes=classes,
-        box_features=box_features, mask_channels=256, rcnn_max_dets=1000,
+        box_features=box_features, mask_channels=256, rcnn_max_dets=rcnn_max_dets,
         short=(640, 800), max_size=1333, min_stage=2, max_stage=6,
         train_patterns=train_patterns, nms_thresh=0.5, nms_topk=-1,
         post_nms=-1, roi_mode='align', roi_size=(7, 7),
@@ -736,7 +748,8 @@ def mask_rcnn_fpn_bn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, n
 
 
 def mask_rcnn_fpn_bn_mobilenet1_0_coco(pretrained=False, pretrained_base=True, num_devices=0,
-                                       rpn_test_pre_nms=6000, rpn_test_post_nms=1000, **kwargs):
+                                       rcnn_max_dets=1000, rpn_test_pre_nms=6000,
+                                       rpn_test_post_nms=1000, **kwargs):
     r"""Mask RCNN model from the paper
     "He, K., Gkioxari, G., Doll&ar, P., & Girshick, R. (2017). Mask R-CNN"
 
@@ -750,6 +763,8 @@ def mask_rcnn_fpn_bn_mobilenet1_0_coco(pretrained=False, pretrained_base=True, n
         if pretrained is `True`, this has no effect.
     num_devices : int, default is 0
         Number of devices for sync batch norm layer. if less than 1, use all devices available.
+    rcnn_max_dets : int, default is 1000
+        Number of rois to retain in RCNN.
     rpn_test_pre_nms : int, default is 6000
         Filter top proposals before NMS in testing of RPN.
     rpn_test_post_nms : int, default is 300
@@ -768,6 +783,7 @@ def mask_rcnn_fpn_bn_mobilenet1_0_coco(pretrained=False, pretrained_base=True, n
     from ...data import COCODetection
     classes = COCODetection.CLASSES
     pretrained_base = False if pretrained else pretrained_base
+    rcnn_max_dets = rpn_test_post_nms if rcnn_max_dets > rpn_test_post_nms else rcnn_max_dets
     gluon_norm_kwargs = {'num_devices': num_devices} if num_devices >= 1 else {}
     sym_norm_kwargs = {'ndev': num_devices} if num_devices >= 1 else {}
     base_network = mobilenet1_0(pretrained=pretrained_base, norm_layer=SyncBatchNorm,
@@ -790,7 +806,7 @@ def mask_rcnn_fpn_bn_mobilenet1_0_coco(pretrained=False, pretrained_base=True, n
     return get_mask_rcnn(
         name='fpn_bn_mobilenet1_0', dataset='coco', pretrained=pretrained, features=features,
         top_features=top_features, classes=classes, box_features=box_features, mask_channels=256,
-        rcnn_max_dets=1000, short=(640, 800), max_size=1333, min_stage=2, max_stage=6,
+        rcnn_max_dets=rcnn_max_dets, short=(640, 800), max_size=1333, min_stage=2, max_stage=6,
         train_patterns=train_patterns, nms_thresh=0.5, nms_topk=-1, post_nms=-1, roi_mode='align',
         roi_size=(14, 14), strides=(4, 8, 16, 32, 64), clip=4.42, rpn_channel=1024, base_size=16,
         scales=(2, 4, 8, 16, 32), ratios=(0.5, 1, 2), alloc_size=(384, 384),
