@@ -171,6 +171,12 @@ class MaskRCNN(FasterRCNN):
         Number of channels in mask prediction
     rcnn_max_dets : int, default is 1000
         Number of rois to retain in RCNN.
+        Upper bounded by min of rpn_test_pre_nms and rpn_test_post_nms.
+    rpn_test_pre_nms : int, default is 6000
+        Filter top proposals before NMS in testing of RPN.
+    rpn_test_post_nms : int, default is 1000
+        Return top proposal results after NMS in testing of RPN.
+        Will be set to rpn_test_pre_nms if it is larger than rpn_test_pre_nms.
     target_roi_scale : int, default 1
         Ratio of mask output roi / input roi. For model with FPN, this is typically 2.
     num_fcn_convs : int, default 0
@@ -178,9 +184,12 @@ class MaskRCNN(FasterRCNN):
     """
 
     def __init__(self, features, top_features, classes, mask_channels=256, rcnn_max_dets=1000,
-                 target_roi_scale=1, num_fcn_convs=0, norm_layer=None, norm_kwargs=None, **kwargs):
+                 rpn_test_pre_nms=6000, rpn_test_post_nms=1000, target_roi_scale=1, num_fcn_convs=0,
+                 norm_layer=None, norm_kwargs=None, **kwargs):
         super(MaskRCNN, self).__init__(features, top_features, classes,
                                        additional_output=True, **kwargs)
+        if min(rpn_test_pre_nms, rpn_test_post_nms) < rcnn_max_dets:
+            rcnn_max_dets = min(rpn_test_pre_nms, rpn_test_post_nms)
         self._rcnn_max_dets = rcnn_max_dets
         with self.name_scope():
             self.mask = Mask(self._max_batch, classes, mask_channels, num_fcn_convs=num_fcn_convs,
