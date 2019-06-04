@@ -23,8 +23,10 @@ def parse_args():
                         help='number of gpus to use.')
     parser.add_argument('-j', '--num-data-workers', dest='num_workers', default=4, type=int,
                         help='number of preprocessing workers')
-    parser.add_argument('--model', type=str, required=True,
+    parser.add_argument('--model', type=str, default='model', required=False,
                         help='type of model to use. see vision_model for options.')
+    parser.add_argument('--model-prefix', type=str, required=False,
+                        help='load static model as hybridblock.')
     parser.add_argument('--quantized', action='store_true',
                         help='use int8 pretrained model')
     parser.add_argument('--input-size', type=int, default=224,
@@ -136,14 +138,19 @@ if __name__ == '__main__':
     if model_name.startswith('resnext'):
         kwargs['use_se'] = opt.use_se
 
-    net = get_model(model_name, **kwargs)
-    net.cast(opt.dtype)
-    if opt.params_file:
-        net.load_parameters(opt.params_file, ctx=ctx)
-    if opt.quantized:
+    if opt.model_prefix is not None:
+        net = mx.gluon.SymbolBlock.imports('./model/{}-symbol.json'.format(opt.model_prefix),
+              ['data0'], './model/{}-0000.params'.format(opt.model_prefix))
         net.hybridize(static_alloc=True, static_shape=True)
     else:
-        net.hybridize()
+        net = get_model(model_name, **kwargs)
+        net.cast(opt.dtype)
+        if opt.params_file:
+            net.load_parameters(opt.params_file, ctx=ctx)
+        if opt.quantized:
+            net.hybridize(static_alloc=True, static_shape=True)
+        else:
+            net.hybridize()
     
     normalize = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 
@@ -161,28 +168,29 @@ if __name__ == '__main__':
         normalize
     ])
 
-    if not opt.rec_dir:
-        val_data = gluon.data.DataLoader(
-            imagenet.classification.ImageNet(opt.data_dir, train=False).transform_first(transform_test),
-            batch_size=batch_size, shuffle=False, num_workers=num_workers)
-    else:
-        imgrec = os.path.join(opt.rec_dir, 'val.rec')
-        imgidx = os.path.join(opt.rec_dir, 'val.idx')
-        val_data = mx.io.ImageRecordIter(
-            path_imgrec         = imgrec,
-            path_imgidx         = imgidx,
-            preprocess_threads  = num_workers,
-            batch_size          = batch_size,
+    if not opt.benchmark:
+        if not opt.rec_dir:
+            val_data = gluon.data.DataLoader(
+                imagenet.classification.ImageNet(opt.data_dir, train=False).transform_first(transform_test),
+                batch_size=batch_size, shuffle=False, num_workers=num_workers)
+        else:
+            imgrec = os.path.join(opt.rec_dir, 'val.rec')
+            imgidx = os.path.join(opt.rec_dir, 'val.idx')
+            val_data = mx.io.ImageRecordIter(
+                path_imgrec         = imgrec,
+                path_imgidx         = imgidx,
+                preprocess_threads  = num_workers,
+                batch_size          = batch_size,
 
-            resize              = resize,
-            data_shape          = (3, input_size, input_size),
-            mean_r              = 123.68,
-            mean_g              = 116.779,
-            mean_b              = 103.939,
-            std_r               = 58.393,
-            std_g               = 57.12,
-            std_b               = 57.375
-        )
+                resize              = resize,
+                data_shape          = (3, input_size, input_size),
+                mean_r              = 123.68,
+                mean_g              = 116.779,
+                mean_b              = 103.939,
+                std_r               = 58.393,
+                std_g               = 57.12,
+                std_b               = 57.375
+            )
 
     if opt.calibration and not opt.quantized:
         exclude_layers = []
@@ -190,22 +198,30 @@ if __name__ == '__main__':
         data_shapes = []
         for i, batch in enumerate(val_data):
             if not opt.rec_dir:
-                data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
+                data = gluon.utils.split_and_load(
+                    batch[0], ctx_list=ctx, batch_axis=0)
             else:
-                data = gluon.utils.split_and_load(batch.data[0], ctx_list=ctx, batch_axis=0)
-            calib_data.append(mx.io.DataBatch(data = data))
+                data = gluon.utils.split_and_load(
+                    batch.data[0], ctx_list=ctx, batch_axis=0)
+            calib_data.append(mx.io.DataBatch(data=data))
             if i == (opt.num_calib_batches-1):
                 data_shapes.append(data[0].shape)
                 break
         logger.info('quantize net with batch size = %d', batch_size)
         net = quantize_net(net, quantized_dtype='auto',
-                           exclude_layers=exclude_layers, calib_data=calib_data, data_shapes=data_shapes, calib_mode=opt.calib_mode, ctx=mx.cpu(), logger=logger)
+                           exclude_layers=exclude_layers, calib_data=calib_data,
+                           data_shapes=data_shapes, calib_mode=opt.calib_mode,
+                           ctx=mx.cpu(), logger=logger)
         dir_path = os.path.dirname(os.path.realpath(__file__))
-        prefix = os.path.join(dir_path, model_name + '-quantized-' + opt.calib_mode)
+        dst_dir = os.path.join(dir_path, 'model')
+        if not os.path.isdir(dst_dir):
+            os.mkdir(dst_dir)
+        prefix = os.path.join(dst_dir, model_name +
+                              '-quantized-' + opt.calib_mode)
         logger.info('Saving quantized model at %s' % dir_path)
         net.export(prefix, epoch=0)
         net.hybridize(static_alloc=True, static_shape=True)
-    
+
     if opt.benchmark:
         print('-----benchmark mode for model %s-----'%opt.model)
         time_cost = benchmark(network=net, ctx=ctx[0], image_size=opt.input_size, batch_size=opt.batch_size,
