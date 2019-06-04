@@ -53,6 +53,7 @@ if __name__ == '__main__':
         frame = mx.nd.array(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)).astype('uint8')
         img = keypoint_detection(frame, detector, net, ctx=ctx)
         cv_plot_image(img)
+        cv2.waitKey(1)
 
     cap.release()
     cv2.destroyAllWindows()
