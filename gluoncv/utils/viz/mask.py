@@ -6,7 +6,7 @@ import mxnet as mx
 
 from ...data.transforms.mask import fill
 
-def expand_mask(masks, bboxes, im_shape, scores=None, thresh=0.5, scale=1.0, sortby='area'):
+def expand_mask(masks, bboxes, im_shape, scores=None, thresh=0.5, scale=1.0, sortby=None):
     """Expand instance segmentation mask to full image size.
 
     Parameters
@@ -49,20 +49,21 @@ def expand_mask(masks, bboxes, im_shape, scores=None, thresh=0.5, scale=1.0, sor
     if isinstance(scores, mx.nd.NDArray):
         scores = scores.asnumpy()
 
-    if sortby == 'area':
-        areas = (bboxes[:, 2] - bboxes[:, 0]) * (bboxes[:, 3] - bboxes[:, 1])
-        sorted_inds = np.argsort(-areas)
-    elif sortby == 'xmin':
-        sorted_inds = np.argsort(-bboxes[:, 0])
-    elif sortby == 'ymin':
-        sorted_inds = np.argsort(-bboxes[:, 1])
-    elif sortby == 'xmax':
-        sorted_inds = np.argsort(-bboxes[:, 2])
-    elif sortby == 'ymax':
-        sorted_inds = np.argsort(-bboxes[:, 3])
-    else:
-        raise ValueError('argument sortby cannot take value {}'
-                         .format(sortby))
+    if sortby is not None:
+        if sortby == 'area':
+            areas = (bboxes[:, 2] - bboxes[:, 0]) * (bboxes[:, 3] - bboxes[:, 1])
+            sorted_inds = np.argsort(-areas)
+        elif sortby == 'xmin':
+            sorted_inds = np.argsort(-bboxes[:, 0])
+        elif sortby == 'ymin':
+            sorted_inds = np.argsort(-bboxes[:, 1])
+        elif sortby == 'xmax':
+            sorted_inds = np.argsort(-bboxes[:, 2])
+        elif sortby == 'ymax':
+            sorted_inds = np.argsort(-bboxes[:, 3])
+        else:
+            raise ValueError('argument sortby cannot take value {}'
+                             .format(sortby))
 
     full_masks = []
     bboxes *= scale
