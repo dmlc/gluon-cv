@@ -7,7 +7,8 @@ from .fcn import _FCNHead
 from .xception import get_xcetption
 # pylint: disable-all
 
-__all__ = ['DeepLabV3Plus', 'get_deeplab_plus', 'get_deeplab_plus_xception_coco']
+__all__ = ['DeepLabV3Plus', 'get_deeplab_plus', 'get_deeplabv3_plus_ade',
+           'get_deeplabv3_plus_coco']
 
 class DeepLabV3Plus(HybridBlock):
     r"""DeepLabV3Plus
@@ -271,11 +272,11 @@ def get_deeplab_plus(dataset='pascal_voc', backbone='xception', pretrained=False
     model = DeepLabV3Plus(datasets[dataset].NUM_CLASS, backbone=backbone, ctx=ctx, **kwargs)
     if pretrained:
         from .model_store import get_model_file
-        model.load_parameters(get_model_file('deeplab_%s_%s'%(backbone, acronyms[dataset]),
+        model.load_parameters(get_model_file('deeplabv3_plus_%s'%(acronyms[dataset]),
                                              tag=pretrained, root=root), ctx=ctx)
     return model
 
-def get_deeplab_plus_xception_coco(**kwargs):
+def get_deeplabv3_plus_ade(**kwargs):
     r"""DeepLabV3Plus
     Parameters
     ----------
@@ -289,7 +290,26 @@ def get_deeplab_plus_xception_coco(**kwargs):
 
     Examples
     --------
-    >>> model = get_deeplab_plus_xception_coco(pretrained=True)
+    >>> model = get_deeplab_plus_xception_ade(pretrained=True)
+    >>> print(model)
+    """
+    return get_deeplab_plus('ade20k', 'xception', **kwargs)
+
+def get_deeplabv3_plus_coco(**kwargs):
+    r"""DeepLabV3Plus
+    Parameters
+    ----------
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+
+    Examples
+    --------
+    >>> model = get_deeplabv3_plus_coco(pretrained=True)
     >>> print(model)
     """
     return get_deeplab_plus('coco', 'xception', **kwargs)
