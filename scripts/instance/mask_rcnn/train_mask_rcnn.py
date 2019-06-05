@@ -64,6 +64,13 @@ def parse_args():
                         help='Random seed to be fixed.')
     parser.add_argument('--verbose', dest='verbose', action='store_true',
                         help='Print helpful debugging info once set.')
+    # Norm layer options
+    parser.add_argument('--norm-layer', type=str, default=None,
+                        help='Type of normalization layer to use. '
+                             'If set to None, backbone normalization layer will be fixed,'
+                             ' and no normalization layer will be used. '
+                             'Currently supports \'bn\', and None, default is None')
+
     # FPN options
     parser.add_argument('--use-fpn', action='store_true',
                         help='Whether to use feature pyramid network.')
@@ -237,8 +244,9 @@ def get_dataloader(net, train_dataset, val_dataset, train_transform, val_transfo
                                                 multi_stage=multi_stage)),
         batch_size, True, batchify_fn=train_bfn, last_batch='rollover', num_workers=num_workers)
     val_bfn = batchify.Tuple(*[batchify.Append() for _ in range(2)])
+    short = net.short[-1] if isinstance(net.short, (tuple, list)) else net.short
     val_loader = mx.gluon.data.DataLoader(
-        val_dataset.transform(val_transform(net.short, net.max_size)),
+        val_dataset.transform(val_transform(short, net.max_size)),
         batch_size, False, batchify_fn=val_bfn, last_batch='keep', num_workers=num_workers)
     return train_loader, val_loader
 
@@ -325,13 +333,14 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
     """Training pipeline"""
     net.collect_params().setattr('grad_req', 'null')
     net.collect_train_params().setattr('grad_req', 'write')
+    for k, v in net.collect_params('.*beta|.*bias').items():
+        v.wd_mult = 0.0
     trainer = gluon.Trainer(
         net.collect_train_params(),  # fix batchnorm, fix first stage, etc...
         'sgd',
         {'learning_rate': args.lr,
          'wd': args.wd,
-         'momentum': args.momentum,
-         'clip_gradient': 5})
+         'momentum': args.momentum})
 
     # lr decay policy
     lr_decay = float(args.lr_decay)
@@ -487,12 +496,17 @@ if __name__ == '__main__':
     args.batch_size = len(ctx)  # 1 batch per device
 
     # network
+    kwargs = {}
     module_list = []
     if args.use_fpn:
         module_list.append('fpn')
+    if args.norm_layer is not None:
+        module_list.append(args.norm_layer)
+        if args.norm_layer == 'bn':
+            kwargs['num_devices'] = len(args.gpus.split(','))
     net_name = '_'.join(('mask_rcnn', *module_list, args.network, args.dataset))
     args.save_prefix += net_name
-    net = get_model(net_name, pretrained_base=True)
+    net = get_model(net_name, pretrained_base=True, **kwargs)
     if args.resume.strip():
         net.load_parameters(args.resume.strip())
     else:
