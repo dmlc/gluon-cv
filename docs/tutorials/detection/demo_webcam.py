@@ -77,6 +77,7 @@ The detection loop consists of four phases:
         # Display the result
         img = gcv.utils.viz.cv_plot_bbox(frame, bounding_boxes[0], scores[0], class_IDs[0], class_names=net.classes)
         gcv.utils.viz.cv_plot_image(img)
+        cv2.waitKey(1)
 
 
 We release the webcam before exiting the script

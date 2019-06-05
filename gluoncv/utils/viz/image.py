@@ -76,6 +76,9 @@ def cv_plot_image(img, scale=1, upperleft_txt=None, upperleft_txt_corner=(10, 10
     from ..filesystem import try_import_cv2
     cv2 = try_import_cv2()
 
+    if isinstance(img, mx.nd.NDArray):
+        img = img.asnumpy()
+
     height, width, _ = img.shape
     img = cv2.resize(img, (int(width * scale), int(height * scale)))
     if upperleft_txt is not None:
@@ -117,4 +120,3 @@ def cv_plot_image(img, scale=1, upperleft_txt=None, upperleft_txt_corner=(10, 10
 
     canvas = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
     cv2.imshow(canvas_name, canvas)
-    cv2.waitKey(1)
