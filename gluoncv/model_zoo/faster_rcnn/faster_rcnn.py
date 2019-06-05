@@ -94,10 +94,12 @@ class FasterRCNN(RCNN):
         Filter top proposals before NMS in training of RPN.
     rpn_train_post_nms : int, default is 2000
         Return top proposal results after NMS in training of RPN.
+        Will be set to rpn_train_pre_nms if it is larger than rpn_train_pre_nms.
     rpn_test_pre_nms : int, default is 6000
         Filter top proposals before NMS in testing of RPN.
     rpn_test_post_nms : int, default is 300
         Return top proposal results after NMS in testing of RPN.
+        Will be set to rpn_test_pre_nms if it is larger than rpn_test_pre_nms.
     rpn_nms_thresh : float, default is 0.7
         IOU threshold for NMS. It is used to remove overlapping proposals.
     train_pre_nms : int, default is 12000
@@ -165,6 +167,11 @@ class FasterRCNN(RCNN):
             train_patterns=train_patterns, nms_thresh=nms_thresh, nms_topk=nms_topk,
             post_nms=post_nms, roi_mode=roi_mode, roi_size=roi_size, strides=strides, clip=clip,
             **kwargs)
+        if rpn_train_post_nms > rpn_train_pre_nms:
+            rpn_train_post_nms = rpn_train_pre_nms
+        if rpn_test_post_nms > rpn_test_pre_nms:
+            rpn_test_post_nms = rpn_test_pre_nms
+
         self.ashape = alloc_size[0]
         self._min_stage = min_stage
         self._max_stage = max_stage
@@ -446,6 +453,12 @@ def get_faster_rcnn(name, dataset, pretrained=False, ctx=mx.cpu(),
         from ..model_store import get_model_file
         full_name = '_'.join(('faster_rcnn', name, dataset))
         net.load_parameters(get_model_file(full_name, tag=pretrained, root=root), ctx=ctx)
+    else:
+        for v in net.collect_params().values():
+            try:
+                v.reset_ctx(ctx)
+            except ValueError:
+                pass
     return net
 
 
