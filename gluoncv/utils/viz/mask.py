@@ -33,7 +33,8 @@ def expand_mask(masks, bboxes, im_shape, scores=None, thresh=0.5, scale=1.0, sor
     -------
     numpy.ndarray
         Binary images with shape `N, height, width`
-
+    numpy.ndarray
+        Index array of sorted masks
     """
     if len(masks) != len(bboxes):
         raise ValueError('The length of bboxes and masks mismatch, {} vs {}'
@@ -64,6 +65,8 @@ def expand_mask(masks, bboxes, im_shape, scores=None, thresh=0.5, scale=1.0, sor
         else:
             raise ValueError('argument sortby cannot take value {}'
                              .format(sortby))
+    else:
+        sorted_inds = np.argsort(range(len(masks)))
 
     full_masks = []
     bboxes *= scale
@@ -74,7 +77,7 @@ def expand_mask(masks, bboxes, im_shape, scores=None, thresh=0.5, scale=1.0, sor
         bbox = bboxes[i]
         full_masks.append(fill(mask, bbox, im_shape))
     full_masks = np.array(full_masks)
-    return full_masks
+    return full_masks, sorted_inds
 
 
 def plot_mask(img, masks, alpha=0.5):
