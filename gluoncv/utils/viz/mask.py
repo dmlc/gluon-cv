@@ -23,8 +23,8 @@ def expand_mask(masks, bboxes, im_shape, scores=None, thresh=0.5, scale=1.0, sor
         Display threshold if `scores` is provided. Scores with less than `thresh`
         will be ignored in display, this is visually more elegant if you have
         a large number of bounding boxes with very small scores.
-    sortby : str, optional, default 'area'
-        Sort the color palette for masks by the given attributes of each bounding box.
+    sortby : str, optional, default None
+        If not None, sort the color palette for masks by the given attributes of each bounding box.
         Valid inputs are 'area', 'xmin', 'ymin', 'xmax', 'ymax'.
     scale : float
         The scale of output image, which may affect the positions of boxes
