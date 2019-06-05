@@ -150,15 +150,16 @@ def cv_plot_bbox(img, bboxes, scores=None, labels=None, thresh=0.5,
         raise ValueError('The length of scores and bboxes mismatch, {} vs {}'
                          .format(len(scores), len(bboxes)))
 
-    if len(bboxes) < 1:
-        return img
-
+    if isinstance(img, mx.nd.NDArray):
+        img = img.asnumpy()
     if isinstance(bboxes, mx.nd.NDArray):
         bboxes = bboxes.asnumpy()
     if isinstance(labels, mx.nd.NDArray):
         labels = labels.asnumpy()
     if isinstance(scores, mx.nd.NDArray):
         scores = scores.asnumpy()
+    if len(bboxes) < 1:
+        return img
 
     if not absolute_coordinates:
         # convert to absolute coordinates using image shape
@@ -197,6 +198,6 @@ def cv_plot_bbox(img, bboxes, scores=None, labels=None, thresh=0.5,
             y = ymin - 15 if ymin - 15 > 15 else ymin + 15
             cv2.putText(img, '{:s} {:s}'.format(class_name, score),
                         (xmin, y), cv2.FONT_HERSHEY_SIMPLEX, min(scale/2, 2),
-                        bcolor, min(scale, 5), lineType=cv2.LINE_AA)
+                        bcolor, min(int(scale), 5), lineType=cv2.LINE_AA)
 
     return img

@@ -132,6 +132,10 @@ def cv_merge_two_images(img1, img2, alpha=0.5, size=None):
     from ..filesystem import try_import_cv2
     cv2 = try_import_cv2()
 
+    if isinstance(img1, mx.nd.NDArray):
+        img1 = img1.asnumpy()
+    if isinstance(img2, mx.nd.NDArray):
+        img2 = img2.asnumpy()
     img = cv2.addWeighted(img1, 1-alpha, img2, alpha, 0)
     if size is not None:
         img = cv2.resize(img, (int(size[1]), int(size[0])))

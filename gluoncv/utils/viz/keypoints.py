@@ -104,6 +104,8 @@ def cv_plot_keypoints(img, coords, confidence, class_ids, bboxes, scores,
     from ..filesystem import try_import_cv2
     cv2 = try_import_cv2()
 
+    if isinstance(img, mx.nd.NDArray):
+        img = img.asnumpy()
     if isinstance(coords, mx.nd.NDArray):
         coords = coords.asnumpy()
     if isinstance(class_ids, mx.nd.NDArray):
