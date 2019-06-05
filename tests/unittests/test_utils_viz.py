@@ -26,7 +26,8 @@ def test_viz_image():
     ax = gcv.utils.viz.plot_image(img)
     ax = gcv.utils.viz.plot_image(img, ax=ax, reverse_rgb=True)
 
-    img = gcv.utils.viz.cv_plot_image(img)
+    # No X Server
+    # img = gcv.utils.viz.cv_plot_image(img)
 
 def test_viz_keypoints():
     img = mx.nd.zeros((300, 300, 3), dtype=np.uint8)
