@@ -40,6 +40,7 @@ while i < NUM_FRAMES or NUM_FRAMES == -1:
     scale = 1.0 * frame.shape[0] / scaled_frame.shape[0]
     img = gcv.utils.viz.cv_plot_bbox(frame.asnumpy(), bounding_boxes[0], scores[0], class_IDs[0], class_names=net.classes, scale=scale)
     gcv.utils.viz.cv_plot_image(img)
+    cv2.waitKey(1)
 
 cap.release()
 cv2.destroyAllWindows()

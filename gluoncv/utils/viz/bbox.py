@@ -196,6 +196,7 @@ def cv_plot_bbox(img, bboxes, scores=None, labels=None, thresh=0.5,
         if class_name or score:
             y = ymin - 15 if ymin - 15 > 15 else ymin + 15
             cv2.putText(img, '{:s} {:s}'.format(class_name, score),
-                        (xmin, y), cv2.FONT_HERSHEY_SIMPLEX, min(scale/2, 2), bcolor, min(scale, 5), lineType=cv2.LINE_AA)
+                        (xmin, y), cv2.FONT_HERSHEY_SIMPLEX, min(scale/2, 2),
+                        bcolor, min(scale, 5), lineType=cv2.LINE_AA)
 
     return img

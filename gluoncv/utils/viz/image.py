@@ -117,4 +117,3 @@ def cv_plot_image(img, scale=1, upperleft_txt=None, upperleft_txt_corner=(10, 10
 
     canvas = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
     cv2.imshow(canvas_name, canvas)
-    cv2.waitKey(1)
