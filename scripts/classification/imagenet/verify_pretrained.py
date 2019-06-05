@@ -236,12 +236,12 @@ if __name__ == '__main__':
         err_top1_val, err_top5_val = test(net, ctx, val_data, 'rec')
     print(err_top1_val, err_top5_val)
 
-    params_count = 0
-    kwargs2 = {'ctx': mx.cpu(), 'pretrained': False, 'classes': classes}
-    net2 = get_model(model_name, **kwargs2)
-    net2.initialize()
-    p = net2(mx.nd.zeros((1, 3, input_size, input_size)))
-    for k, v in net2.collect_params().items():
-        params_count += v.data().size
+    # params_count = 0
+    # kwargs2 = {'ctx': mx.cpu(), 'pretrained': False, 'classes': classes}
+    # net2 = get_model(model_name, **kwargs2)
+    # net2.initialize()
+    # p = net2(mx.nd.zeros((1, 3, input_size, input_size)))
+    # for k, v in net2.collect_params().items():
+    #     params_count += v.data().size
 
-    print(params_count)
+    # print(params_count)
