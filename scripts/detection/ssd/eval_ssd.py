@@ -17,11 +17,16 @@ from gluoncv.data.batchify import Tuple, Stack, Pad
 from gluoncv.data.transforms.presets.ssd import SSDDefaultValTransform
 from gluoncv.utils.metrics.voc_detection import VOC07MApMetric
 from gluoncv.utils.metrics.coco_detection import COCODetectionMetric
+from mxnet.contrib.quantization import *
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Eval SSD networks.')
     parser.add_argument('--network', type=str, default='vgg16_atrous',
                         help="Base network name")
+    parser.add_argument('--deploy', action='store_true',
+                        help='whether load static model for deployment')
+    parser.add_argument('--model-prefix', type=str, required=False,
+                        help='load static model as hybridblock.')
     parser.add_argument('--quantized', action='store_true',
                         help='use int8 pretrained model')
     parser.add_argument('--data-shape', type=int, default=300,
@@ -42,6 +47,26 @@ def parse_args():
                         help='Load weights from previously saved parameters.')
     parser.add_argument('--save-prefix', type=str, default='',
                         help='Saving parameter prefix')
+    parser.add_argument('--calibration', action='store_true',
+                        help='quantize model')
+    parser.add_argument('--num-calib-batches', type=int, default=5,
+                        help='number of batches for calibration')
+    parser.add_argument('--quantized-dtype', type=str, default='auto', 
+                        choices=['auto', 'int8', 'uint8'],
+                        help='quantization destination data type for input data')
+    parser.add_argument('--calib_mode', type=str, default='naive',
+                        help='calibration mode used for generating calibration table for the quantized symbol; supports'
+                             ' 1. none: no calibration will be used. The thresholds for quantization will be calculated'
+                             ' on the fly. This will result in inference speed slowdown and loss of accuracy'
+                             ' in general.'
+                             ' 2. naive: simply take min and max values of layer outputs as thresholds for'
+                             ' quantization. In general, the inference accuracy worsens with more examples used in'
+                             ' calibration. It is recommended to use `entropy` mode as it produces more accurate'
+                             ' inference results.'
+                             ' 3. entropy: calculate KL divergence of the fp32 output and quantized output for optimal'
+                             ' thresholds. This mode is expected to produce the best inference accuracy of all three'
+                             ' kinds of quantized models if the calibration dataset is representative enough of the'
+                             ' inference dataset.')
     args = parser.parse_args()
     return args
 
@@ -68,11 +93,6 @@ def get_dataloader(val_dataset, data_shape, batch_size, num_workers):
     return val_loader
 
 def benchmarking(net, ctx, num_iteration, datashape=300, batch_size=64):
-    if not args.quantized:
-        net.set_nms(nms_thresh=0.45, nms_topk=400)
-        net.hybridize()
-    else:
-        net.hybridize(static_alloc=True, static_shape=True)
     input_shape = (batch_size, 3) + (datashape, datashape)
     data = mx.random.uniform(-1.0, 1.0, shape=input_shape, ctx=ctx, dtype='float32')
     dryrun = 5
@@ -90,11 +110,6 @@ def validate(net, val_data, ctx, classes, size, metric):
     """Test on validation dataset."""
     net.collect_params().reset_ctx(ctx)
     metric.reset()
-    if not args.quantized:
-        net.set_nms(nms_thresh=0.45, nms_topk=400)
-        net.hybridize()
-    else:
-        net.hybridize(static_alloc=True, static_shape=True)
     with tqdm(total=size) as pbar:
         start = time.time()
         for ib, batch in enumerate(val_data):
@@ -126,6 +141,9 @@ def validate(net, val_data, ctx, classes, size, metric):
 
 if __name__ == '__main__':
     args = parse_args()
+    logging.basicConfig()
+    logger = logging.getLogger('logger')
+    logger.setLevel(logging.INFO)
 
     # eval contexts
     num_gpus = args.num_gpus
@@ -138,11 +156,19 @@ if __name__ == '__main__':
     if args.quantized:
         net_name = '_'.join((net_name, 'int8'))
     args.save_prefix += net_name
-    if args.pretrained.lower() in ['true', '1', 'yes', 't']:
-        net = gcv.model_zoo.get_model(net_name, pretrained=True)
+    if not args.deploy:
+        if args.pretrained.lower() in ['true', '1', 'yes', 't']:
+            net = gcv.model_zoo.get_model(net_name, pretrained=True)
+        else:
+            net = gcv.model_zoo.get_model(net_name, pretrained=False)
+            net.load_parameters(args.pretrained.strip())
+        net.set_nms(nms_thresh=0.45, nms_topk=400)
+        net.hybridize()
     else:
-        net = gcv.model_zoo.get_model(net_name, pretrained=False)
-        net.load_parameters(args.pretrained.strip())
+        net_name = 'deploy'
+        net = mx.gluon.SymbolBlock.imports('{}-symbol.json'.format(args.model_prefix),
+              ['data'], '{}-0000.params'.format(args.model_prefix))
+        net.hybridize(static_alloc=True, static_shape=True)
 
     if args.benchmark:
         print('-----benchmarking on %s -----'%net_name)
@@ -158,6 +184,58 @@ if __name__ == '__main__':
     val_data = get_dataloader(
         val_dataset, args.data_shape, args.batch_size, args.num_workers)
     classes = val_dataset.classes  # class names
+
+    # calibration
+    if args.calibration and not args.quantized:
+        exclude_layers = []
+        exclude_layers += ['ssd0_concat0',
+                            'ssd0_multiperclassdecoder0_concat0',
+                            'ssd0_concat1',
+                            'ssd0_concat2',
+                            'ssd0_normalizedboxcenterdecoder0_concat0',
+                            'ssd0_concat3',
+                            'ssd0_concat4',
+                            'ssd0_concat5',
+                            'ssd0_concat6',
+                            'ssd0_concat7',
+                            'ssd0_concat8',
+                            'ssd0_concat9',
+                            'ssd0_concat10',
+                            'ssd0_concat11',
+                            'ssd0_concat12',
+                            'ssd0_concat13',
+                            'ssd0_concat14',
+                            'ssd0_concat15',
+                            'ssd0_concat16',
+                            'ssd0_concat17',
+                            'ssd0_concat18',
+                            'ssd0_concat19',
+                            'ssd0_concat20',
+                            'ssd0_concat21',
+                            'ssd0_concat22',
+                            'ssd0_concat23']
+        calib_data = []
+        data_shapes = []
+        for i, batch in enumerate(val_data):
+            data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0, even_split=False)
+            calib_data.append(mx.io.DataBatch(data=data))
+            if i == (args.num_calib_batches-1):
+                data_shapes.append(data[0].shape)
+                break
+        logger.info('quantize net with batch size = %d', args.batch_size)
+        net = quantize_net(net, quantized_dtype='auto',
+                           exclude_layers=exclude_layers, calib_data=calib_data,
+                           data_shapes=data_shapes, calib_mode=args.calib_mode,
+                           ctx=mx.cpu(), logger=logger)
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        dst_dir = os.path.join(dir_path, 'model')
+        if not os.path.isdir(dst_dir):
+            os.mkdir(dst_dir)
+        prefix = os.path.join(dst_dir, net_name +
+                              '-quantized-' + args.calib_mode)
+        logger.info('Saving quantized model at %s' % dst_dir)
+        net.export(prefix, epoch=0)
+        sys.exit()
 
     # eval
     names, values = validate(net, val_data, ctx, classes, len(val_dataset), val_metric)

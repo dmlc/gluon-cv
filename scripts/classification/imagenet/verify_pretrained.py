@@ -25,6 +25,8 @@ def parse_args():
                         help='number of preprocessing workers')
     parser.add_argument('--model', type=str, default='model', required=False,
                         help='type of model to use. see vision_model for options.')
+    parser.add_argument('--deploy', action='store_true',
+                        help='whether load static model for deployment')
     parser.add_argument('--model-prefix', type=str, required=False,
                         help='load static model as hybridblock.')
     parser.add_argument('--quantized', action='store_true',
@@ -138,9 +140,10 @@ if __name__ == '__main__':
     if model_name.startswith('resnext'):
         kwargs['use_se'] = opt.use_se
 
-    if opt.model_prefix is not None:
-        net = mx.gluon.SymbolBlock.imports('./model/{}-symbol.json'.format(opt.model_prefix),
-              ['data0'], './model/{}-0000.params'.format(opt.model_prefix))
+    if opt.deploy:
+        model_name = 'deploy'
+        net = mx.gluon.SymbolBlock.imports('{}-symbol.json'.format(opt.model_prefix),
+              ['data'], '{}-0000.params'.format(opt.model_prefix))
         net.hybridize(static_alloc=True, static_shape=True)
     else:
         net = get_model(model_name, **kwargs)
@@ -221,9 +224,10 @@ if __name__ == '__main__':
         logger.info('Saving quantized model at %s' % dir_path)
         net.export(prefix, epoch=0)
         net.hybridize(static_alloc=True, static_shape=True)
+        sys.exit()
 
     if opt.benchmark:
-        print('-----benchmark mode for model %s-----'%opt.model)
+        print('-----benchmark mode for model %s-----'%model_name)
         time_cost = benchmark(network=net, ctx=ctx[0], image_size=opt.input_size, batch_size=opt.batch_size,
             num_iter=opt.num_batches, datatype='float32')
         fps = (opt.batch_size*opt.num_batches)/time_cost
