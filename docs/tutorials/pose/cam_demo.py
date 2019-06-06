@@ -23,7 +23,7 @@ First, import the necessary modules.
     from gluoncv.data import mscoco
     from gluoncv.model_zoo import get_model
     from gluoncv.data.transforms.pose import detector_to_simple_pose, heatmap_to_coord
-    from gluoncv.utils.viz import plot_image, plot_keypoints
+    from gluoncv.utils.viz import cv_plot_image, cv_plot_keypoints
 
 
 Loading the model and webcam
@@ -104,21 +104,16 @@ For each frame, we perform the following steps:
         x = x.as_in_context(ctx)
         class_IDs, scores, bounding_boxs = detector(x)
 
-        plt.cla()
         pose_input, upscale_bbox = detector_to_simple_pose(frame, class_IDs, scores, bounding_boxs,
                                                            output_shape=(128, 96), ctx=ctx)
         if len(upscale_bbox) > 0:
             predicted_heatmap = estimator(pose_input)
             pred_coords, confidence = heatmap_to_coord(predicted_heatmap, upscale_bbox)
 
-            axes = plot_keypoints(frame, pred_coords, confidence, class_IDs, bounding_boxs, scores,
-                                  box_thresh=0.5, keypoint_thresh=0.2, ax=axes)
-            plt.draw()
-            plt.pause(0.001)
-        else:
-            axes = plot_image(frame, ax=axes)
-            plt.draw()
-            plt.pause(0.001)
+            img = cv_plot_keypoints(frame, pred_coords, confidence, class_IDs, bounding_boxs, scores,
+                                    box_thresh=0.5, keypoint_thresh=0.2)
+        cv_plot_image(img)
+        cv2.waitKey(1)
 
 
 We release the webcam before exiting:

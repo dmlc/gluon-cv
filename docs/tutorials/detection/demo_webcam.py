@@ -23,7 +23,6 @@ First, import the necessary libraries into python.
 
     import cv2
     import gluoncv as gcv
-    import matplotlib.pyplot as plt
     import mxnet as mx
 
 
@@ -76,10 +75,9 @@ The detection loop consists of four phases:
         class_IDs, scores, bounding_boxes = net(rgb_nd)
 
         # Display the result
-        plt.cla()
-        axes = gcv.utils.viz.plot_bbox(frame, bounding_boxes[0], scores[0], class_IDs[0], class_names=net.classes, ax=axes)
-        plt.draw()
-        plt.pause(0.001)
+        img = gcv.utils.viz.cv_plot_bbox(frame, bounding_boxes[0], scores[0], class_IDs[0], class_names=net.classes)
+        gcv.utils.viz.cv_plot_image(img)
+        cv2.waitKey(1)
 
 
 We release the webcam before exiting the script
@@ -87,6 +85,7 @@ We release the webcam before exiting the script
 .. code-block:: python
 
     cap.release()
+    cv2.destroyAllWindows()
 
 Results
 ---------
