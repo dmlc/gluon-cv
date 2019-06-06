@@ -617,7 +617,7 @@ def mask_rcnn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, rcnn_max
     train_patterns = '|'.join(['.*dense', '.*rpn', '.*mask',
                                '.*down(2|3|4)_conv', '.*layers(2|3|4)_conv'])
     return get_mask_rcnn(
-        name='resnet50_v1b', dataset='coco', pretrained=pretrained,
+        name='resnet18_v1b', dataset='coco', pretrained=pretrained,
         features=features, top_features=top_features, classes=classes,
         mask_channels=256, rcnn_max_dets=rcnn_max_dets,
         short=800, max_size=1333, train_patterns=train_patterns,
@@ -679,7 +679,7 @@ def mask_rcnn_fpn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, rcnn
     train_patterns = '|'.join(['.*dense', '.*rpn', '.*mask', 'P',
                                '.*down(2|3|4)_conv', '.*layers(2|3|4)_conv'])
     return get_mask_rcnn(
-        name='resnet18_v1b', dataset='coco', pretrained=pretrained,
+        name='fpn_resnet18_v1b', dataset='coco', pretrained=pretrained,
         features=features, top_features=top_features, classes=classes,
         box_features=box_features, mask_channels=256, rcnn_max_dets=rcnn_max_dets,
         short=800, max_size=1333, min_stage=2, max_stage=6,
