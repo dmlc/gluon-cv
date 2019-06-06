@@ -113,6 +113,7 @@ For each frame, we perform the following steps:
             img = cv_plot_keypoints(frame, pred_coords, confidence, class_IDs, bounding_boxs, scores,
                                     box_thresh=0.5, keypoint_thresh=0.2)
         cv_plot_image(img)
+        cv2.waitKey(1)
 
 
 We release the webcam before exiting:

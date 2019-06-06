@@ -46,7 +46,7 @@ if __name__ == '__main__':
         x = x.as_in_context(ctx[0])
         ids, scores, bboxes, masks = [xx[0].asnumpy() for xx in net(x)]
 
-        masks = gcv.utils.viz.expand_mask(masks, bboxes, (img.shape[1], img.shape[0]), scores)
+        masks, _ = gcv.utils.viz.expand_mask(masks, bboxes, (img.shape[1], img.shape[0]), scores)
         img = gcv.utils.viz.plot_mask(img, masks)
 
         fig = plt.figure(figsize=(15, 15))
