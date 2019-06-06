@@ -54,7 +54,7 @@ def parse_args():
     parser.add_argument('--quantized-dtype', type=str, default='auto', 
                         choices=['auto', 'int8', 'uint8'],
                         help='quantization destination data type for input data')
-    parser.add_argument('--calib_mode', type=str, default='naive',
+    parser.add_argument('--calib-mode', type=str, default='naive',
                         help='calibration mode used for generating calibration table for the quantized symbol; supports'
                              ' 1. none: no calibration will be used. The thresholds for quantization will be calculated'
                              ' on the fly. This will result in inference speed slowdown and loss of accuracy'
@@ -144,6 +144,7 @@ if __name__ == '__main__':
     logging.basicConfig()
     logger = logging.getLogger('logger')
     logger.setLevel(logging.INFO)
+    logging.info(args)
 
     # eval contexts
     num_gpus = args.num_gpus
