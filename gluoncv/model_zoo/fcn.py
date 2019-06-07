@@ -44,12 +44,13 @@ class FCN(SegBaseModel):
                  base_size=520, crop_size=480, **kwargs):
         super(FCN, self).__init__(nclass, aux, backbone, ctx=ctx, base_size=base_size,
                                   crop_size=crop_size, pretrained_base=pretrained_base, **kwargs)
+        head_channels = 512 if backbone == 'resnet18' or backbone == 'resnet34' else 2048
         with self.name_scope():
-            self.head = _FCNHead(2048, nclass, **kwargs)
+            self.head = _FCNHead(head_channels, nclass, **kwargs)
             self.head.initialize(ctx=ctx)
             self.head.collect_params().setattr('lr_mult', 10)
             if self.aux:
-                self.auxlayer = _FCNHead(1024, nclass, **kwargs)
+                self.auxlayer = _FCNHead(head_channels//2, nclass, **kwargs)
                 self.auxlayer.initialize(ctx=ctx)
                 self.auxlayer.collect_params().setattr('lr_mult', 10)
 

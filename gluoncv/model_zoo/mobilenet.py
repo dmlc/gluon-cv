@@ -237,8 +237,7 @@ class MobileNetV2(nn.HybridBlock):
             with self.output.name_scope():
                 self.output.add(
                     nn.Conv2D(classes, 1, use_bias=False, prefix='pred_'),
-                    nn.Flatten()
-                )
+                    nn.Flatten())
 
     def hybrid_forward(self, F, x):
         x = self.features(x)

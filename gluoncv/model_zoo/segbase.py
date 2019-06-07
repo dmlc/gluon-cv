@@ -5,7 +5,7 @@ import mxnet as mx
 from mxnet.ndarray import NDArray
 from mxnet.gluon.nn import HybridBlock
 from ..utils.parallel import parallel_apply
-from .resnetv1b import resnet50_v1s, resnet101_v1s, resnet152_v1s
+from .resnetv1b import *
 from ..utils.parallel import tuple_map
 # pylint: disable=wildcard-import,abstract-method,arguments-differ,dangerous-default-value,missing-docstring
 

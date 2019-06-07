@@ -81,7 +81,7 @@ ids, scores, bboxes, masks = [xx[0].asnumpy() for xx in net(x)]
 
 # paint segmentation mask on images directly
 width, height = orig_img.shape[1], orig_img.shape[0]
-masks = utils.viz.expand_mask(masks, bboxes, (width, height), scores)
+masks, _ = utils.viz.expand_mask(masks, bboxes, (width, height), scores)
 orig_img = utils.viz.plot_mask(orig_img, masks)
 
 # identical to Faster RCNN object detection
