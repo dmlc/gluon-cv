@@ -15,10 +15,12 @@ def get_segmentation_model(model, **kwargs):
     from .fcn import get_fcn
     from .pspnet import get_psp
     from .deeplabv3 import get_deeplab
+    from .deeplabv3_plus import get_deeplab_plus
     models = {
         'fcn': get_fcn,
         'psp': get_psp,
         'deeplab': get_deeplab,
+        'deeplabplus': get_deeplab_plus,
     }
     return models[model](**kwargs)
 
@@ -41,7 +43,11 @@ class SegBaseModel(HybridBlock):
         self.aux = aux
         self.nclass = nclass
         with self.name_scope():
-            if backbone == 'resnet50':
+            if backbone == 'resnet18':
+                pretrained = resnet18_v1b(pretrained=pretrained_base, dilated=True, **kwargs)
+            elif backbone == 'resnet34':
+                pretrained = resnet34_v1b(pretrained=pretrained_base, dilated=True, **kwargs)
+            elif backbone == 'resnet50':
                 pretrained = resnet50_v1s(pretrained=pretrained_base, dilated=True, **kwargs)
             elif backbone == 'resnet101':
                 pretrained = resnet101_v1s(pretrained=pretrained_base, dilated=True, **kwargs)

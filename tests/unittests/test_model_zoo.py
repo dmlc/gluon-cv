@@ -122,7 +122,7 @@ def test_imagenet_models():
 
     # 299x299
     x = mx.random.uniform(shape=(2, 3, 299, 299), ctx=ctx)
-    models = ['inceptionv3', 'nasnet_5_1538', 'nasnet_7_1920', 'nasnet_6_4032']
+    models = ['inceptionv3', 'nasnet_5_1538', 'nasnet_7_1920', 'nasnet_6_4032', 'xception']
     _test_model_list(models, ctx, x)
 
     # 331x331
