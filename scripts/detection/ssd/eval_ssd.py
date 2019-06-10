@@ -189,32 +189,7 @@ if __name__ == '__main__':
     # calibration
     if args.calibration and not args.quantized:
         exclude_layers = []
-        exclude_layers += ['ssd0_concat0',
-                            'ssd0_multiperclassdecoder0_concat0',
-                            'ssd0_concat1',
-                            'ssd0_concat2',
-                            'ssd0_normalizedboxcenterdecoder0_concat0',
-                            'ssd0_concat3',
-                            'ssd0_concat4',
-                            'ssd0_concat5',
-                            'ssd0_concat6',
-                            'ssd0_concat7',
-                            'ssd0_concat8',
-                            'ssd0_concat9',
-                            'ssd0_concat10',
-                            'ssd0_concat11',
-                            'ssd0_concat12',
-                            'ssd0_concat13',
-                            'ssd0_concat14',
-                            'ssd0_concat15',
-                            'ssd0_concat16',
-                            'ssd0_concat17',
-                            'ssd0_concat18',
-                            'ssd0_concat19',
-                            'ssd0_concat20',
-                            'ssd0_concat21',
-                            'ssd0_concat22',
-                            'ssd0_concat23']
+        exclude_layers_match = ['concat', 'flatten']
         calib_data = []
         data_shapes = []
         for i, batch in enumerate(val_data):
@@ -224,10 +199,11 @@ if __name__ == '__main__':
                 data_shapes.append(data[0].shape)
                 break
         logger.info('quantize net with batch size = %d', args.batch_size)
-        net = quantize_net(net, quantized_dtype='auto',
-                           exclude_layers=exclude_layers, calib_data=calib_data,
-                           data_shapes=data_shapes, calib_mode=args.calib_mode,
-                           ctx=mx.cpu(), logger=logger)
+        net = quantize_net(
+            net, quantized_dtype='auto', exclude_layers=exclude_layers,
+            exclude_layers_match=exclude_layers_match, calib_data=calib_data,
+            data_shapes=data_shapes, calib_mode=args.calib_mode, ctx=mx.cpu(),
+            logger=logger)
         dir_path = os.path.dirname(os.path.realpath(__file__))
         dst_dir = os.path.join(dir_path, 'model')
         if not os.path.isdir(dst_dir):

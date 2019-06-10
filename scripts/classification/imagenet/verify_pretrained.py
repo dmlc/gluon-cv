@@ -198,6 +198,7 @@ if __name__ == '__main__':
 
     if opt.calibration and not opt.quantized:
         exclude_layers = []
+        exclude_layers_match = ['fc', 'dense', 'flatten']
         calib_data = []
         data_shapes = []
         for i, batch in enumerate(val_data):
@@ -212,10 +213,11 @@ if __name__ == '__main__':
                 data_shapes.append(data[0].shape)
                 break
         logger.info('quantize net with batch size = %d', batch_size)
-        net = quantize_net(net, quantized_dtype='auto',
-                           exclude_layers=exclude_layers, calib_data=calib_data,
-                           data_shapes=data_shapes, calib_mode=opt.calib_mode,
-                           ctx=mx.cpu(), logger=logger)
+        net = quantize_net(
+            net, quantized_dtype='auto', exclude_layers=exclude_layers,
+            exclude_layers_match=exclude_layers_match, calib_data=calib_data,
+            data_shapes=data_shapes, calib_mode=opt.calib_mode, ctx=mx.cpu(),
+            logger=logger)
         dir_path = os.path.dirname(os.path.realpath(__file__))
         dst_dir = os.path.join(dir_path, 'model')
         if not os.path.isdir(dst_dir):
