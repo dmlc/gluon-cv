@@ -15,7 +15,8 @@ except ImportError:
         def __init__(self):
             raise NotImplementedError("DALI not found, please check if you installed it correctly.")
 
-__all__ = ['transform_test', 'load_test', 'SSDDefaultTrainTransform', 'SSDDefaultValTransform', 'SSDCocoDALIPipeline']
+__all__ = ['transform_test', 'load_test', 'SSDDefaultTrainTransform', 'SSDDefaultValTransform',
+           'SSDCocoDALIPipeline']
 
 def transform_test(imgs, short, max_size=1024, mean=(0.485, 0.456, 0.406),
                    std=(0.229, 0.224, 0.225)):
@@ -222,7 +223,34 @@ class SSDDefaultValTransform(object):
         return img, bbox.astype(img.dtype)
 
 class SSDCocoDALIPipeline(Pipeline):
-    def __init__(self, num_shards, device_id, shard_id, batch_size, data_shape, anchors, file_root, annotations_file, num_workers):
+    """DALI Pipeline with COCO Reader and SSD training transorm.
+
+    Parameters
+    ----------
+    num_shards: int
+         DALI pipeline arg - Number of pipelines used indicates to the reader
+         how to split/shard the dataset.
+    device_id: int
+         DALI pipeline arg - Device id.
+    shard_id: int
+         DALI pipeline arg - Shard id of the pipeline Must be in [0, num_shards).
+    batch_size:
+        Batch size.
+    data_shape: int
+        Height and width length. (height==width in SSD)
+    anchors: float list
+        Normalized [ltrb] anchors generated from SSD networks.
+        The shape length be ``N*4`` since it is a list of the N anchors that have
+        all 4 float elements.
+    file_root
+        Directory containing the COCO dataset.
+    annotations_file
+        The COCO annotation file to read from.
+    num_workers:
+        DALI pipeline arg - Number of CPU workers.
+    """
+    def __init__(self, num_shards, device_id, shard_id, batch_size, data_shape, anchors,
+                 file_root, annotations_file, num_workers):
         super(SSDCocoDALIPipeline, self).__init__(
             batch_size=batch_size,
             device_id=device_id,
@@ -284,11 +312,14 @@ class SSDCocoDALIPipeline(Pipeline):
             criteria=0.5,
             anchors=anchors,
             offset=True,
-            stds=[0.1,0.1,0.2,0.2],
+            stds=[0.1, 0.1, 0.2, 0.2],
             scale=data_shape)
 
 
     def define_graph(self):
+        """
+        Define the DALI graph.
+        """
         saturation = self.rng1()
         contrast = self.rng1()
         brightness = self.rng2()

@@ -86,8 +86,8 @@ def parse_args():
     parser.add_argument('--amp', action='store_true',
                         help='Use MXNet AMP for mixed precision training.')
     parser.add_argument('--horovod', action='store_true',
-                    help='Use MXNet Horovod for distributed training. Must be run with OpenMPI. '
-                         '--gpus is ignored when using --horovod.')
+                        help='Use MXNet Horovod for distributed training. Must be run with OpenMPI. '
+                        '--gpus is ignored when using --horovod.')
 
     args = parser.parse_args()
     return args
