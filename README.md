@@ -1,7 +1,7 @@
 # Gluon CV Toolkit
 
 [![Build Status](http://ci.mxnet.io/job/gluon-cv/job/master/badge/icon)](http://ci.mxnet.io/job/gluon-cv/job/master/)
-[![GitHub license](http://dmlc.github.io/img/apache2.svg)](./LICENSE)
+[![GitHub license](docs/_static/apache2.svg)](./LICENSE)
 [![Code Coverage](http://gluon-cv.mxnet.io/coverage.svg?)](http://gluon-cv.mxnet.io/coverage.svg)
 [![PyPI](https://img.shields.io/pypi/v/gluoncv.svg)](https://pypi.python.org/pypi/gluoncv)
 [![PyPI Pre-release](https://img.shields.io/badge/pypi--prerelease-v0.5.0-ff69b4.svg)](https://pypi.org/project/gluoncv/#history)
