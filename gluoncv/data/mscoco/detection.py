@@ -8,7 +8,15 @@ from .utils import try_import_pycocotools
 from ..base import VisionDataset
 from ...utils.bbox import bbox_xywh_to_xyxy, bbox_clip_xyxy
 
-__all__ = ['COCODetection']
+try:
+    import nvidia.dali.ops as ops
+    import nvidia.dali.types as types
+except ImportError:
+    class Pipeline:
+        def __init__(self):
+            raise NotImplementedError("DALI not found, please check if you installed it correctly.")
+
+__all__ = ['COCODetection', 'COCODetectionDALI']
 
 
 class COCODetection(VisionDataset):
@@ -195,3 +203,45 @@ class COCODetection(VisionDataset):
                 # dummy invalid labels if no valid objects are found
                 valid_objs.append([-1, -1, -1, -1, -1])
         return valid_objs
+
+class COCODetectionDALI(object):
+    """DALI partial pipeline with COCO Reader and loader. To be passed as
+    a parameter of a DALI transform pipeline.
+
+    Parameters
+    ----------
+    num_shards: int
+         DALI pipeline arg - Number of pipelines used, indicating to the reader
+         how to split/shard the dataset.
+    shard_id: int
+         DALI pipeline arg - Shard id of the pipeline must be in [0, num_shards).
+    file_root
+        Directory containing the COCO dataset.
+    annotations_file
+        The COCO annotation file to read from.
+    """
+    def __init__(self, num_shards, shard_id, file_root, annotations_file):
+        self.input = ops.COCOReader(
+            file_root=file_root,
+            annotations_file=annotations_file,
+            skip_empty=True,
+            shard_id=shard_id,
+            num_shards=num_shards,
+            ratio=True,
+            ltrb=True,
+            shuffle_after_epoch=True)
+
+        self.decode = ops.HostDecoder(device="cpu", output_type=types.RGB)
+
+    def __call__(self):
+        """Returns three DALI graph nodes: inputs, bboxes, labels.
+        To be called in `define_graph`.
+        """
+        inputs, bboxes, labels = self.input(name="Reader")
+        images = self.decode(inputs)
+        return (images, bboxes, labels)
+    def size(self):
+        """Returns size of COCO dataset
+        """
+        coco_size = 118287
+        return coco_size

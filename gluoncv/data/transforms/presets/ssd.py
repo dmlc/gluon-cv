@@ -16,7 +16,7 @@ except ImportError:
             raise NotImplementedError("DALI not found, please check if you installed it correctly.")
 
 __all__ = ['transform_test', 'load_test', 'SSDDefaultTrainTransform', 'SSDDefaultValTransform',
-           'SSDCocoDALIPipeline']
+           'SSDDALIPipeline']
 
 def transform_test(imgs, short, max_size=1024, mean=(0.485, 0.456, 0.406),
                    std=(0.229, 0.224, 0.225)):
@@ -222,18 +222,15 @@ class SSDDefaultValTransform(object):
         img = mx.nd.image.normalize(img, mean=self._mean, std=self._std)
         return img, bbox.astype(img.dtype)
 
-class SSDCocoDALIPipeline(Pipeline):
-    """DALI Pipeline with COCO Reader and SSD training transorm.
+class SSDDALIPipeline(Pipeline):
+    """DALI Pipeline with SSD training transform.
 
     Parameters
     ----------
-    num_shards: int
-         DALI pipeline arg - Number of pipelines used indicates to the reader
-         how to split/shard the dataset.
     device_id: int
          DALI pipeline arg - Device id.
-    shard_id: int
-         DALI pipeline arg - Shard id of the pipeline Must be in [0, num_shards).
+    num_workers:
+        DALI pipeline arg - Number of CPU workers.
     batch_size:
         Batch size.
     data_shape: int
@@ -242,31 +239,18 @@ class SSDCocoDALIPipeline(Pipeline):
         Normalized [ltrb] anchors generated from SSD networks.
         The shape length be ``N*4`` since it is a list of the N anchors that have
         all 4 float elements.
-    file_root
-        Directory containing the COCO dataset.
-    annotations_file
-        The COCO annotation file to read from.
-    num_workers:
-        DALI pipeline arg - Number of CPU workers.
+    dataset_reader: float
+        Partial pipeline object, which __call__ function has to return
+        (images, bboxes, labels) DALI EdgeReference tuple.
     """
-    def __init__(self, num_shards, device_id, shard_id, batch_size, data_shape, anchors,
-                 file_root, annotations_file, num_workers):
-        super(SSDCocoDALIPipeline, self).__init__(
+    def __init__(self, num_workers, device_id, batch_size, data_shape,
+                 anchors, dataset_reader):
+        super(SSDDALIPipeline, self).__init__(
             batch_size=batch_size,
             device_id=device_id,
             num_threads=num_workers)
 
-        self.input = ops.COCOReader(
-            file_root=file_root,
-            annotations_file=annotations_file,
-            skip_empty=True,
-            shard_id=shard_id,
-            num_shards=num_shards,
-            ratio=True,
-            ltrb=True,
-            shuffle_after_epoch=True)
-
-        self.decode = ops.HostDecoder(device="cpu", output_type=types.RGB)
+        self.dataset_reader = dataset_reader
 
         # Augumentation techniques
         self.crop = ops.RandomBBoxCrop(
@@ -310,11 +294,23 @@ class SSDCocoDALIPipeline(Pipeline):
         self.box_encoder = ops.BoxEncoder(
             device="cpu",
             criteria=0.5,
-            anchors=anchors,
+            anchors=self._to_normalized_ltrb_list(anchors, data_shape),
             offset=True,
             stds=[0.1, 0.1, 0.2, 0.2],
             scale=data_shape)
 
+    def _to_normalized_ltrb_list(self, anchors, size):
+        """Prepare anchors into ltrb (normalized DALI anchors format list)"""
+        if isinstance(anchors, list):
+            return anchors
+        anchors_np = anchors.squeeze().asnumpy()
+        anchors_np_ltrb = anchors_np.copy()
+        anchors_np_ltrb[:, 0] = anchors_np[:, 0] - 0.5 * anchors_np[:, 2]
+        anchors_np_ltrb[:, 1] = anchors_np[:, 1] - 0.5 * anchors_np[:, 3]
+        anchors_np_ltrb[:, 2] = anchors_np[:, 0] + 0.5 * anchors_np[:, 2]
+        anchors_np_ltrb[:, 3] = anchors_np[:, 1] + 0.5 * anchors_np[:, 3]
+        anchors_np_ltrb /= size
+        return anchors_np_ltrb.flatten().tolist()
 
     def define_graph(self):
         """
@@ -326,8 +322,7 @@ class SSDCocoDALIPipeline(Pipeline):
         hue = self.rng3()
         coin_rnd = self.flip_coin()
 
-        inputs, bboxes, labels = self.input(name="Reader")
-        images = self.decode(inputs)
+        images, bboxes, labels = self.dataset_reader()
 
         crop_begin, crop_size, bboxes, labels = self.crop(bboxes, labels)
         images = self.slice(images, crop_begin, crop_size)

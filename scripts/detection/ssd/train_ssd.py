@@ -16,7 +16,7 @@ from gluoncv.model_zoo import get_model
 from gluoncv.data.batchify import Tuple, Stack, Pad
 from gluoncv.data.transforms.presets.ssd import SSDDefaultTrainTransform
 from gluoncv.data.transforms.presets.ssd import SSDDefaultValTransform
-from gluoncv.data.transforms.presets.ssd import SSDCocoDALIPipeline
+from gluoncv.data.transforms.presets.ssd import SSDDALIPipeline
 
 from gluoncv.utils.metrics.voc_detection import VOC07MApMetric
 from gluoncv.utils.metrics.coco_detection import COCODetectionMetric
@@ -129,70 +129,70 @@ def get_dataloader(net, train_dataset, val_dataset, data_shape, batch_size, num_
         batch_size, False, batchify_fn=val_batchify_fn, last_batch='keep', num_workers=num_workers)
     return train_loader, val_loader
 
-def to_normalized_ltrb_list(anchors, size):
-    anchors_np = anchors.squeeze().asnumpy()
-    anchors_np_ltrb = anchors_np.copy()
-    anchors_np_ltrb[:, 0] = anchors_np[:, 0] - 0.5 * anchors_np[:, 2]
-    anchors_np_ltrb[:, 1] = anchors_np[:, 1] - 0.5 * anchors_np[:, 3]
-    anchors_np_ltrb[:, 2] = anchors_np[:, 0] + 0.5 * anchors_np[:, 2]
-    anchors_np_ltrb[:, 3] = anchors_np[:, 1] + 0.5 * anchors_np[:, 3]
-    anchors_np_ltrb /= size
-    return anchors_np_ltrb.flatten().tolist()
-
-def get_dali_dataloader(net, dataset_name, data_shape, global_batch_size, num_workers, devices, file_root, ctx, horovod):
+def get_dali_dataset(dataset_name, devices, args):
     if dataset_name.lower() == "coco":
-        width, height = data_shape, data_shape
-        with autograd.train_mode():
-            _, _, anchors = net(mx.nd.zeros((1, 3, height, width), ctx=ctx))
-        anchors = anchors.as_in_context(mx.cpu())
-
-        # prepare anchors into ltrb (normalized DALI anchors format list)
-        anchors_ltrb = to_normalized_ltrb_list(anchors, data_shape)
-
         # training
-        expanded_file_root = os.path.expanduser(file_root)
+        expanded_file_root = os.path.expanduser(args.dataset_root)
         coco_root = expanded_file_root + '/coco/train2017'
         coco_annotations = expanded_file_root + '/coco/annotations/instances_train2017.json'
-        coco_size = 118287
-
-        if horovod:
-            batch_size = global_batch_size // hvd.size()
-            pipelines = [SSDCocoDALIPipeline(num_shards=hvd.size(), device_id=hvd.local_rank(), shard_id=hvd.rank(),
-                                             batch_size=batch_size, data_shape=data_shape, anchors=anchors_ltrb,
-                                             num_workers=num_workers, file_root=coco_root,
-                                             annotations_file=coco_annotations)]
+        if args.horovod:
+            train_dataset = [gdata.COCODetectionDALI(num_shards=hvd.size(), shard_id=hvd.rank(), file_root=coco_root,
+                                                     annotations_file=coco_annotations)]
         else:
-            num_devices = len(devices)
-            batch_size = global_batch_size // num_devices
-            pipelines = [SSDCocoDALIPipeline(num_shards=num_devices, device_id=device_id, shard_id=i,
-                                             batch_size=batch_size, data_shape=data_shape, anchors=anchors_ltrb,
-                                            num_workers=num_workers, file_root=coco_root,
-                                             annotations_file=coco_annotations) for i, device_id in enumerate(devices)]
-
-        if horovod:
-            coco_size //= hvd.size()
-        train_loader = DALIGenericIterator(pipelines, [('data', DALIGenericIterator.DATA_TAG),
-                                                       ('bboxes', DALIGenericIterator.LABEL_TAG),
-                                                       ('label', DALIGenericIterator.LABEL_TAG)],
-                                                       coco_size, auto_reset=True)
+            train_dataset = [gdata.COCODetectionDALI(num_shards= len(devices), shard_id=i, file_root=coco_root,
+                                                     annotations_file=coco_annotations) for i, _ in enumerate(devices)]
 
         # validation
-        if (not horovod or hvd.rank() == 0):
+        if (not args.horovod or hvd.rank() == 0):
             val_dataset = gdata.COCODetection(root=(args.dataset_root + '/coco'), splits='instances_val2017', skip_empty=False)
             val_metric = COCODetectionMetric(
                 val_dataset, args.save_prefix + '_eval', cleanup=True,
                 data_shape=(args.data_shape, args.data_shape))
-            val_batchify_fn = Tuple(Stack(), Pad(pad_val=-1))
-            val_loader = gluon.data.DataLoader(
-                val_dataset.transform(SSDDefaultValTransform(width, height)),
-                global_batch_size, False, batchify_fn=val_batchify_fn, last_batch='keep', num_workers=num_workers)
         else:
-            val_loader = None
+            val_dataset = None
             val_metric = None
     else:
         raise NotImplementedError('Dataset: {} not implemented with DALI.'.format(dataset_name))
 
-    return train_loader, val_loader, val_metric
+    return train_dataset, val_dataset, val_metric
+
+def get_dali_dataloader(net, train_dataset, val_dataset, data_shape, global_batch_size, num_workers, devices, ctx, horovod):
+    width, height = data_shape, data_shape
+    with autograd.train_mode():
+        _, _, anchors = net(mx.nd.zeros((1, 3, height, width), ctx=ctx))
+    anchors = anchors.as_in_context(mx.cpu())
+
+    if horovod:
+        batch_size = global_batch_size // hvd.size()
+        pipelines = [SSDDALIPipeline(device_id=hvd.local_rank(), batch_size=batch_size,
+                                     data_shape=data_shape, anchors=anchors,
+                                     num_workers=num_workers, dataset_reader = train_dataset[0])]
+    else:
+        num_devices = len(devices)
+        batch_size = global_batch_size // num_devices
+        pipelines = [SSDDALIPipeline(device_id=device_id, batch_size=batch_size,
+                                     data_shape=data_shape, anchors=anchors,
+                                     num_workers=num_workers,
+                                     dataset_reader = train_dataset[i]) for i, device_id in enumerate(devices)]
+
+    epoch_size = train_dataset[0].size()
+    if horovod:
+        epoch_size //= hvd.size()
+    train_loader = DALIGenericIterator(pipelines, [('data', DALIGenericIterator.DATA_TAG),
+                                                    ('bboxes', DALIGenericIterator.LABEL_TAG),
+                                                    ('label', DALIGenericIterator.LABEL_TAG)],
+                                                    epoch_size, auto_reset=True)
+
+    # validation
+    if (not horovod or hvd.rank() == 0):
+        val_batchify_fn = Tuple(Stack(), Pad(pad_val=-1))
+        val_loader = gluon.data.DataLoader(
+            val_dataset.transform(SSDDefaultValTransform(width, height)),
+            global_batch_size, False, batchify_fn=val_batchify_fn, last_batch='keep', num_workers=num_workers)
+    else:
+        val_loader = None
+
+    return train_loader, val_loader
 
 
 def save_params(net, best_map, current_map, epoch, save_interval, prefix):
@@ -389,8 +389,10 @@ if __name__ == '__main__':
         if not dali_found:
             raise SystemExit("DALI not found, please check if you installed it correctly.")
         devices = [int(i) for i in args.gpus.split(',') if i.strip()]
-        train_data, val_data, eval_metric = get_dali_dataloader(
-            async_net, args.dataset, args.data_shape, args.batch_size, args.num_workers, devices, args.dataset_root, ctx[0], args.horovod)
+        train_dataset, val_dataset, eval_metric = get_dali_dataset(args.dataset, devices, args)
+        train_data, val_data = get_dali_dataloader(
+            async_net, train_dataset, val_dataset, args.data_shape, args.batch_size, args.num_workers,
+            devices, ctx[0], args.horovod)
     else:
         train_dataset, val_dataset, eval_metric = get_dataset(args.dataset, args)
         batch_size = (args.batch_size // hvd.size()) if args.horovod else args.batch_size
