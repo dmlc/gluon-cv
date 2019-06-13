@@ -189,7 +189,7 @@ if __name__ == '__main__':
     # calibration
     if args.calibration and not args.quantized:
         exclude_layers = []
-        exclude_layers_match = ['concat', 'flatten']
+        exclude_layers_match = ['flatten']
         calib_data = []
         data_shapes = []
         for i, batch in enumerate(val_data):
