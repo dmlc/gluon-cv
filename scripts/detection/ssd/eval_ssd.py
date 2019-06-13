@@ -89,7 +89,7 @@ def get_dataloader(val_dataset, data_shape, batch_size, num_workers):
     batchify_fn = Tuple(Stack(), Pad(pad_val=-1))
     val_loader = gluon.data.DataLoader(
         val_dataset.transform(SSDDefaultValTransform(width, height)), batchify_fn=batchify_fn,
-        batch_size=batch_size, shuffle=False, last_batch='keep', num_workers=num_workers)
+        batch_size=batch_size, shuffle=False, last_batch='discard', num_workers=num_workers)
     return val_loader
 
 def benchmarking(net, ctx, num_iteration, datashape=300, batch_size=64):
@@ -189,7 +189,7 @@ if __name__ == '__main__':
     # calibration
     if args.calibration and not args.quantized:
         exclude_layers = []
-        exclude_layers_match = ['flatten']
+        exclude_layers_match = ['flatten', 'concat']
         calib_data = []
         data_shapes = []
         for i, batch in enumerate(val_data):
