@@ -28,7 +28,7 @@ models. This toolkit offers four main features:
 
 <br>
 
-Check the HD video at Youtube.
+Check the HD video at [Youtube](https://www.youtube.com/watch?v=nfpouVAzXt0) or [Bilibili](https://www.bilibili.com/video/av55619231).
 
 # Supported Applications
 
