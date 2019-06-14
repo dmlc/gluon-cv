@@ -22,7 +22,9 @@ models. This toolkit offers four main features:
 
 # Supported Applications
 
-![GluonCV Demo](docs/_static/short_demo.gif)
+<div align="center">
+    <img src="docs/_static/short_demo.gif">
+</div>
 
 | Application  | Illustration  | Available Models |
 |:-----------------------:|:---:|:---:|
