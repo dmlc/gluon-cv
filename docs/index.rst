@@ -25,7 +25,7 @@ Demo
     <br>
 
 
-Check the HD video at: Youtube / Bilibili
+Check the HD video at Youtube.
 
 Supported Applications
 ----------------------

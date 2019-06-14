@@ -28,7 +28,7 @@ models. This toolkit offers four main features:
 
 <br>
 
-Check the HD video at : Youtube / Bilibili
+Check the HD video at Youtube.
 
 # Supported Applications
 
