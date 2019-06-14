@@ -13,6 +13,20 @@ GluonCV features:
 
 4. community support.
 
+Demo
+----
+
+.. raw:: html
+
+    <div align="center">
+        <img src="_static/short_demo.gif">
+    </div>
+
+    <br>
+
+
+Check the HD video at: Youtube / Bilibili
+
 Supported Applications
 ----------------------
 
