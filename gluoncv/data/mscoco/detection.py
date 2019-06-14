@@ -8,13 +8,9 @@ from .utils import try_import_pycocotools
 from ..base import VisionDataset
 from ...utils.bbox import bbox_xywh_to_xyxy, bbox_clip_xyxy
 
-try:
-    import nvidia.dali.ops as ops
-    import nvidia.dali.types as types
-except ImportError:
-    class Pipeline:
-        def __init__(self):
-            raise NotImplementedError("DALI not found, please check if you installed it correctly.")
+from ...utils import try_import_dali
+
+dali = try_import_dali()
 
 __all__ = ['COCODetection', 'COCODetectionDALI']
 
@@ -221,7 +217,7 @@ class COCODetectionDALI(object):
         The COCO annotation file to read from.
     """
     def __init__(self, num_shards, shard_id, file_root, annotations_file):
-        self.input = ops.COCOReader(
+        self.input = dali.ops.COCOReader(
             file_root=file_root,
             annotations_file=annotations_file,
             skip_empty=True,
@@ -231,7 +227,30 @@ class COCODetectionDALI(object):
             ltrb=True,
             shuffle_after_epoch=True)
 
-        self.decode = ops.HostDecoder(device="cpu", output_type=types.RGB)
+        self.decode = dali.ops.HostDecoder(device="cpu", output_type=dali.types.RGB)
+
+        # We need to build the COCOReader ops to parse the annotations
+        # and have acces to the dataset size.
+        # TODO(spanev): Replace by DALI standalone ops when available
+        class DummyMicroPipe(dali.Pipeline):
+            """ Dummy pipeline which sole purpose is to build COCOReader
+            and get the epoch size. To be replaced by DALI standalone op, when available.
+            """
+            def __init__(self):
+                super(DummyMicroPipe, self).__init__(batch_size=1,
+                                                     device_id=0,
+                                                     num_threads=1)
+                self.input = dali.ops.COCOReader(
+                    file_root=file_root,
+                    annotations_file=annotations_file)
+            def define_graph(self):
+                inputs, bboxes, labels = self.input(name="Reader")
+                return (inputs, bboxes, labels)
+
+        micro_pipe = DummyMicroPipe()
+        micro_pipe.build()
+        self._size = micro_pipe.epoch_size(name="Reader")
+        del micro_pipe
 
     def __call__(self):
         """Returns three DALI graph nodes: inputs, bboxes, labels.
@@ -243,5 +262,4 @@ class COCODetectionDALI(object):
     def size(self):
         """Returns size of COCO dataset
         """
-        coco_size = 118287
-        return coco_size
+        return self._size

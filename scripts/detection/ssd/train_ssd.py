@@ -133,8 +133,13 @@ def get_dali_dataset(dataset_name, devices, args):
     if dataset_name.lower() == "coco":
         # training
         expanded_file_root = os.path.expanduser(args.dataset_root)
-        coco_root = expanded_file_root + '/coco/train2017'
-        coco_annotations = expanded_file_root + '/coco/annotations/instances_train2017.json'
+        coco_root = os.path.join(expanded_file_root,
+                                 'coco',
+                                 'train2017')
+        coco_annotations = os.path.join(expanded_file_root,
+                                        'coco',
+                                        'annotations',
+                                        'instances_train2017.json')
         if args.horovod:
             train_dataset = [gdata.COCODetectionDALI(num_shards=hvd.size(), shard_id=hvd.rank(), file_root=coco_root,
                                                      annotations_file=coco_annotations)]
@@ -144,7 +149,9 @@ def get_dali_dataset(dataset_name, devices, args):
 
         # validation
         if (not args.horovod or hvd.rank() == 0):
-            val_dataset = gdata.COCODetection(root=(args.dataset_root + '/coco'), splits='instances_val2017', skip_empty=False)
+            val_dataset = gdata.COCODetection(root=os.path.join(args.dataset_root + '/coco'),
+                                              splits='instances_val2017',
+                                              skip_empty=False)
             val_metric = COCODetectionMetric(
                 val_dataset, args.save_prefix + '_eval', cleanup=True,
                 data_shape=(args.data_shape, args.data_shape))
