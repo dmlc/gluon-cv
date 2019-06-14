@@ -20,9 +20,13 @@ models. This toolkit offers four main features:
 3. Carefully designed APIs that greatly reduce the implementation complexity
 4. Community supports
 
+~~~~~~~~~
+
 <div align="center">
     <img src="docs/_static/short_demo.gif">
 </div>
+
+~~~~~~~~~
 
 # Supported Applications
 
