@@ -1,12 +1,10 @@
 import argparse
 
-import matplotlib.pyplot as plt
-
 from mxnet import nd, image
-from mxnet.gluon.data.vision import transforms
 
-from gluoncv.model_zoo import get_model
+from gluoncv.data import ImageNet1kAttr
 from gluoncv.data.transforms.presets.imagenet import transform_eval
+from gluoncv.model_zoo import get_model
 
 parser = argparse.ArgumentParser(description='Predict ImageNet classes from a given image')
 parser.add_argument('--model', type=str, required=True,
@@ -24,6 +22,10 @@ net = get_model(model_name, pretrained=pretrained)
 
 if not pretrained:
     net.load_parameters(opt.saved_params)
+    attrib = ImageNet1kAttr()
+    classes = attrib.classes
+else:
+    classes = net.classes
 
 # Load Images
 img = image.imread(opt.input_pic)
@@ -37,4 +39,4 @@ ind = nd.topk(pred, k=topK)[0].astype('int')
 print('The input picture is classified to be')
 for i in range(topK):
     print('\t[%s], with probability %.3f.'%
-          (net.classes[ind[i].asscalar()], nd.softmax(pred)[0][ind[i]].asscalar()))
+          (classes[ind[i].asscalar()], nd.softmax(pred)[0][ind[i]].asscalar()))
