@@ -352,6 +352,24 @@ def test_segmentation_models():
     _test_model_list(models, ctx, x, pretrained=False, pretrained_base=True)
 
 
+@try_gpu(0)
+def test_segmentation_models_custom_size():
+    ctx = mx.context.current_context()
+    num_classes = 10
+    width = 720
+    height = 480
+    x = mx.random.uniform(shape=(1, 3, height, width), ctx=ctx)
+
+    net = gcv.model_zoo.FCN(num_classes, backbone='resnet50', aux=False, ctx=ctx, pretrained_base=True,
+                            height=height, width=width)
+    result = net.forward(x)
+    assert (result[0].shape == (1, num_classes, height, width))
+    net = gcv.model_zoo.PSPNet(num_classes, backbone='resnet50', aux=False, ctx=ctx, pretrained_base=True,
+                        height=height, width=width)
+    result = net.forward(x)
+    assert (result[0].shape == (1, num_classes, height, width))
+
+
 @with_cpu(0)
 def test_mobilenet_sync_bn():
     model_name = "mobilenet1.0"
