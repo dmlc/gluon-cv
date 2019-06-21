@@ -94,7 +94,7 @@ stage("Build Docs") {
       git clean -fx
       cd docs && make clean && make html
       sed -i.bak 's/33\\,150\\,243/23\\,141\\,201/g' build/html/_static/material-design-lite-1.3.0/material.blue-deep_orange.min.css;
-      sed -i.bak 's/2196f3/178dc9/g' docs/_build/html/_static/sphinx_materialdesign_theme.css;
+      sed -i.bak 's/2196f3/178dc9/g' build/html/_static/sphinx_materialdesign_theme.css;
       sed -i.bak 's/pre{padding:1rem;margin:1.5rem\\s0;overflow:auto;overflow-y:hidden}/pre{padding:1rem;margin:1.5rem 0;overflow:auto;overflow-y:scroll}/g' build/html/_static/sphinx_materialdesign_theme.css
 
       if [[ ${env.BRANCH_NAME} == master ]]; then
