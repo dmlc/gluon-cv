@@ -1,6 +1,16 @@
 GluonCV: a Deep Learning Toolkit for Computer Vision
 ========================================================
 
+.. toctree::
+    :maxdepth: 2
+    :hidden:
+
+    model_zoo/index
+    tutorials/index    
+    api/index    
+    how_to/index    
+    slides
+
 GluonCV provides implementations of state-of-the-art (SOTA) deep learning algorithms in computer vision. It aims to help engineers, researchers, and students quickly prototype products, validate new ideas and learn computer vision.
 
 GluonCV features:
@@ -107,12 +117,5 @@ Adoptions
 
 Companies using GluonCV:
 
-.. raw:: html
-
-   <style>.section img { display: inline; margin: 1em; max-width: 120px; }</style>
-
-
-.. image:: _static/logos/acer_byoc_grad_lockup_rgb.png
-
-.. image:: _static/logos/pioneer.png
+.. include:: /_static/logos/embed.html
 

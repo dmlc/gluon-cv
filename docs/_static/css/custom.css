@@ -13,3 +13,9 @@
 .gray {
     color:#808080;
 }
+
+.Logos {
+    display: inline;
+    margin: 1em;
+    max-width: 120px;
+}
