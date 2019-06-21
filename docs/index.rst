@@ -102,12 +102,17 @@ New to Deep Learning or CV?
 
 For background knowledge of deep learning or CV, please refer to the open source book `Dive into Deep Learning <http://en.diveintodeeplearning.org/>`_.
 
+Adoptions
+---------
 
-.. toctree::
-   :maxdepth: 2
+Companies using GluonCV:
 
-   model_zoo/index
-   tutorials/index
-   api/index
-   how_to/index
-   slides
+.. raw:: html
+
+   <style>.section img { display: inline; margin: 1em; max-width: 120px; }</style>
+
+
+.. image:: _static/logos/acer_byoc_grad_lockup_rgb.png
+
+.. image:: _static/logos/pioneer.png
+
