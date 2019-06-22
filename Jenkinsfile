@@ -19,7 +19,7 @@ stage("Unit Test") {
     node('linux-gpu') {
       ws('workspace/gluon-cv-py2') {
         checkout scm
-        VISIBLE_GPU=env.EXECUTOR_NUMBER.toInteger() % 4
+        VISIBLE_GPU=env.EXECUTOR_NUMBER.toInteger() % 8
         sh """#!/bin/bash
         # old pip packages won't be cleaned: https://github.com/conda/conda/issues/5887
         # remove and create new env instead
@@ -44,7 +44,7 @@ stage("Unit Test") {
     node('linux-gpu') {
       ws('workspace/gluon-cv-py3') {
         checkout scm
-        VISIBLE_GPU=env.EXECUTOR_NUMBER.toInteger() % 4
+        VISIBLE_GPU=env.EXECUTOR_NUMBER.toInteger() % 8
         sh """#!/bin/bash
         set -ex
         # conda env create -n gluon_cv_py3_test -f tests/py3.yml
@@ -94,6 +94,7 @@ stage("Build Docs") {
       git clean -fx
       cd docs && make clean && make html
       sed -i.bak 's/33\\,150\\,243/23\\,141\\,201/g' build/html/_static/material-design-lite-1.3.0/material.blue-deep_orange.min.css;
+      sed -i.bak 's/2196f3/178dc9/g' build/html/_static/sphinx_materialdesign_theme.css;
       sed -i.bak 's/pre{padding:1rem;margin:1.5rem\\s0;overflow:auto;overflow-y:hidden}/pre{padding:1rem;margin:1.5rem 0;overflow:auto;overflow-y:scroll}/g' build/html/_static/sphinx_materialdesign_theme.css
 
       if [[ ${env.BRANCH_NAME} == master ]]; then
