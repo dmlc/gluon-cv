@@ -115,7 +115,7 @@ For background knowledge of deep learning or CV, please refer to the open source
 Adoptions
 ---------
 
-Companies using GluonCV:
+Companies and organizations using GluonCV:
 
 .. include:: /_static/logos/embed.html
 
