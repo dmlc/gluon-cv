@@ -47,8 +47,7 @@ stage("Unit Test") {
         VISIBLE_GPU=env.EXECUTOR_NUMBER.toInteger() % 8
         sh """#!/bin/bash
         set -ex
-        conda env remove -n gluon_cv_py3_test
-        conda env create -n gluon_cv_py3_test -f tests/py3.yml
+        # conda env create -n gluon_cv_py3_test -f tests/py3.yml
         conda env update -n gluon_cv_py3_test -f tests/py3.yml --prune
         conda activate gluon_cv_py3_test
         conda list
