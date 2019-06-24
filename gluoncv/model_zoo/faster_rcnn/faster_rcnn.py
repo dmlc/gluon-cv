@@ -146,8 +146,8 @@ class FasterRCNN(RCNN):
         Apply NMS to top k detection results, use -1 to disable so that every Detection
          result is used in NMS.
     force_nms : bool
-        Appy NMS to all categories, this is to avoid overlapping detection results from different
-        categories.
+        Appy NMS to all categories, this is to avoid overlapping detection results
+        from different categories.
     post_nms : int
         Only return top `post_nms` detection results, the rest is discarded. The number is
         based on COCO dataset which has maximum 100 objects per image. You can adjust this
