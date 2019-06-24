@@ -1,140 +1,25 @@
-# coding=utf-8
-# author: Quan Tang
-# 2019/6/21
+###########################################################################
+# Created by: Quan Tang
+# Email: csquantang@mail.scut.edu.cn
+# Copyright (c) 2019
+###########################################################################
 
+"""PASCAL Context Dataloader"""
 import os
 import numpy as np
 from PIL import Image
 from tqdm import trange
+from detail import Detail
 from .segbase import SegmentationDataset
 
 
-def install_pcontext_api():
-    import shutil
-    repo_url = "https://github.com/ccvl/detail-api"
-    os.system("git clone " + repo_url)
-    os.system("cd detail-api/PythonAPI/ && python setup.py install")
-    shutil.rmtree('detail-api')
-    try:
-        import detail
-    except ImportError:
-        print("Installing PASCAL Context API failed, please install it manually %s" % repo_url)
-
-
-# Detail API
-try:
-    from detail import Detail
-except ImportError:
-    install_pcontext_api()
-
-
-def download_trainval_json(root):
-    url = "https://codalabuser.blob.core.windows.net/public/trainval_merged.json"
-    checksum = "169325d9f7e9047537fedca7b04de4dddf10b881"
-    download(url, path=root, sha1_hash=checksum)
-
-
-def download(url, path=None, overwrite=False, sha1_hash=None):
-    """Download an given URL
-    Parameters
-    ----------
-    url : str
-        URL to download
-    path : str, optional
-        Destination path to store downloaded file. By default stores to the
-        current directory with same name as in url.
-    overwrite : bool, optional
-        Whether to overwrite destination file if already exists.
-    sha1_hash : str, optional
-        Expected sha1 hash in hexadecimal digits. Will ignore existing file when hash is specified
-        but doesn't match.
-    Returns
-    -------
-    str
-        The file path of the downloaded file.
-    """
-    import requests
-    from tqdm import tqdm
-    if path is None:
-        fname = url.split('/')[-1]
-    else:
-        path = os.path.expanduser(path)
-        if os.path.isdir(path):
-            fname = os.path.join(path, url.split('/')[-1])
-        else:
-            fname = path
-
-    if overwrite or not os.path.exists(fname) or (sha1_hash and not check_sha1(fname, sha1_hash)):
-        dirname = os.path.dirname(os.path.abspath(os.path.expanduser(fname)))
-        if not os.path.exists(dirname):
-            os.makedirs(dirname)
-
-        print('Downloading %s from %s...' % (fname, url))
-        r = requests.get(url, stream=True)
-        if r.status_code != 200:
-            raise RuntimeError("Failed downloading url %s" % url)
-        total_length = r.headers.get('content-length')
-        with open(fname, 'wb') as f:
-            if total_length is None:  # no content length header
-                for chunk in r.iter_content(chunk_size=1024):
-                    if chunk:  # filter out keep-alive new chunks
-                        f.write(chunk)
-            else:
-                total_length = int(total_length)
-                for chunk in tqdm(r.iter_content(chunk_size=1024),
-                                  total=int(total_length / 1024. + 0.5),
-                                  unit='KB', unit_scale=False, dynamic_ncols=True):
-                    f.write(chunk)
-
-        if sha1_hash and not check_sha1(fname, sha1_hash):
-            raise UserWarning('File {} is downloaded but the content hash does not match. ' \
-                              'The repo may be outdated or download may be incomplete. ' \
-                              'If the "repo_url" is overridden, consider switching to ' \
-                              'the default repo.'.format(fname))
-
-    return fname
-
-
-def check_sha1(filename, sha1_hash):
-    """Check whether the sha1 hash of the file content matches the expected hash.
-    Parameters
-    ----------
-    filename : str
-        Path to the file.
-    sha1_hash : str
-        Expected sha1 hash in hexadecimal digits.
-    Returns
-    -------
-    bool
-        Whether the file content matches the expected hash.
-    """
-    import hashlib
-    sha1 = hashlib.sha1()
-    with open(filename, 'rb') as f:
-        while True:
-            data = f.read(1048576)
-            if not data:
-                break
-            sha1.update(data)
-
-    return sha1.hexdigest() == sha1_hash
-
-
 class PContextSegmentation(SegmentationDataset):
-    """ Pascal context semantic segmentation dataset with 60 semantic labels.
-    R. Mottaghi, et al. The role of context for object detection and semantic segmentation in the wild. CVPR 2014.
-    """
+    """PASCAL Context Dataloader(59 + background)"""
     NUM_CLASSES = 59
 
-    def __init__(self, root=os.path.expanduser('~/.mxnet/dataset/PContext'), split='train', mode=None, transform=None,
-                 **kwargs):
+    def __init__(self, root=os.path.expanduser('~/.mxnet/dataset/PContext'), split='train',
+                 mode=None, transform=None, **kwargs):
         super(PContextSegmentation, self).__init__(root, split, mode, transform, **kwargs)
-        # trainval_merged.json
-        trainval_merged_json = os.path.join(root, 'trainval_merged.json')
-        if not os.path.exists(trainval_merged_json):
-            print("Downloading trainval_merged.json...Only for once.")
-            download_trainval_json(root)
-        # images dir
         self._img_dir = os.path.join(root, 'JPEGImages')
         # .txt split file
         if split == 'train':
@@ -184,8 +69,8 @@ class PContextSegmentation(SegmentationDataset):
     def _class_to_index(mapping, key, mask):
         # assert the values
         values = np.unique(mask)
-        for i in range(len(values)):
-            assert (values[i] in mapping)
+        for i, values in enumerate(values):
+            assert (values in mapping)
         index = np.digitize(mask.ravel(), mapping, right=True)
         return key[index].reshape(mask.shape)
 
@@ -230,10 +115,11 @@ class PContextSegmentation(SegmentationDataset):
     @property
     def classes(self):
         return (
-            'aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car', 'cat', 'chair', 'cow', 'table', 'dog',
-            'horse', 'motorbike', 'person', 'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor', 'bag', 'bed', 'bench',
-            'book', 'building', 'cabinet', 'ceiling', 'cloth', 'computer', 'cup', 'door', 'fence', 'floor', 'flower',
-            'food', 'grass', 'ground', 'keyboard', 'light', 'mountain', 'mouse', 'curtain', 'platform', 'sign', 'plate',
-            'road', 'rock', 'shelves', 'sidewalk', 'sky', 'snow', 'bedclothes', 'track', 'tree', 'truck', 'wall',
-            'water', 'window', 'wood')
-
+            'aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car', 'cat', 'chair',
+            'cow', 'table', 'dog', 'horse', 'motorbike', 'person', 'pottedplant', 'sheep',
+            'sofa', 'train', 'tvmonitor', 'bag', 'bed', 'bench', 'book', 'building',
+            'cabinet', 'ceiling', 'cloth', 'computer', 'cup', 'door', 'fence', 'floor',
+            'flower', 'food', 'grass', 'ground', 'keyboard', 'light', 'mountain', 'mouse',
+            'curtain', 'platform', 'sign', 'plate', 'road', 'rock', 'shelves', 'sidewalk',
+            'sky', 'snow', 'bedclothes', 'track', 'tree', 'truck', 'wall', 'water', 'window',
+            'wood')
