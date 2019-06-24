@@ -412,8 +412,8 @@ class FasterRCNN(RCNN):
             bbox = self.box_decoder(box_pred, self.box_to_center(rpn_box))
             # res (C, N, 6)
             res = F.concat(*[cls_id, score, bbox], dim=-1)
-            # res (1, C*N, 6)
             if self.force_suppress:
+                # res (1, C*N, 6), to allow cross-catogory suppression
                 res = res.reshape((1, -1, 0))
             # res (C, self.nms_topk, 6)
             res = F.contrib.box_nms(
