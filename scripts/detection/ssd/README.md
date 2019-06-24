@@ -26,13 +26,13 @@ python eval_ssd.py --network=mobilenet1.0 --data-shape=512 --batch-size=1 --depl
 
 ## Performance
 
-|           model          | f32 latency(ms) | s8 latency(ms) | f32 throughput(fps, BS=256) | s8 throughput(fps, BS=256) | f32 accuracy | s8 accuracy |
-|:------------------------:|:---------------:|:--------------:|:---------------------------:|:--------------------------:|:------------:|:-----------:|
-| ssd_300_vgg16_atrous_voc |      62.57      |      13.11     |            20.26            |           110.01           |     77.49    |    77.33    |
-| ssd_512_vgg16_atrous_voc |      166.38     |      30.30     |             7.72            |            37.71           |     78.82    |    78.70    |
-| ssd_512_mobilenet1.0_voc |      28.20      |      7.79      |            62.87            |           192.98           |     75.51    |    74.78    |
-|  ssd_512_resnet50_v1_voc |      49.80      |      12.71     |            28.83            |           138.74           |     80.24    |    80.28    |
-| ssd_512_resnet101_v2_voc |      78.43      |      39.90     |            19.05            |            26.41           |     79.70    |    78.34    |
+model | f32 latency(ms) | s8 latency(ms) | f32 throughput(fps, BS=256) | s8 throughput(fps, BS=256) | f32 accuracy | s8 accuracy
+-- | -- | -- | -- | -- | -- | --
+ssd_300_vgg16_atrous_voc | 105.60 | 13.08 | 19.47 | 110.14 | 77.49 | 77.49
+ssd_512_vgg16_atrous_voc | 215.05 | 32.63 | 6.76 | 36.56 | 78.82 | 78.82
+ssd_512_mobilenet1.0_voc | 28.98 | 6.97 | 65.55 | 210.17 | 75.51 | 75.49
+ssd_512_resnet50_v1_voc | 52.77 | 11.75 | 28.68 | 143.61 | 80.24 | 80.23
+ssd_512_resnet101_v2_voc | 70.82 | 40.31 | 19.28 | 25.68 | 79.7 | 79.7
 
 ## References
 1. Wei Liu, et al. "SSD: Single shot multibox detector" ECCV 2016.
