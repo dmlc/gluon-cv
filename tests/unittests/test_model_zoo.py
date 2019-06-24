@@ -355,19 +355,19 @@ def test_segmentation_models():
 @try_gpu(0)
 def test_segmentation_models_custom_size():
     ctx = mx.context.current_context()
-    num_classes = 10
-    width = 720
-    height = 480
+    num_classes = 5
+    width = 100
+    height = 50
     x = mx.random.uniform(shape=(1, 3, height, width), ctx=ctx)
 
     net = gcv.model_zoo.FCN(num_classes, backbone='resnet50', aux=False, ctx=ctx, pretrained_base=True,
                             height=height, width=width)
     result = net.forward(x)
-    assert (result[0].shape == (1, num_classes, height, width))
+    assert result[0].shape == (1, num_classes, height, width)
     net = gcv.model_zoo.PSPNet(num_classes, backbone='resnet50', aux=False, ctx=ctx, pretrained_base=True,
-                        height=height, width=width)
+                               height=height, width=width)
     result = net.forward(x)
-    assert (result[0].shape == (1, num_classes, height, width))
+    assert result[0].shape == (1, num_classes, height, width)
 
 
 @with_cpu(0)
