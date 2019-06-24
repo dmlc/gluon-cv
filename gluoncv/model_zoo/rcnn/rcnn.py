@@ -146,8 +146,8 @@ class RCNN(gluon.HybridBlock):
             based on COCO dataset which has maximum 100 objects per image. You can adjust this
             number if expecting more objects. You can use -1 to return all detections.
         force_nms : bool, default is False
-            Appy NMS to all categories, this is to avoid overlapping detection results from different
-            categories.
+            Appy NMS to all categories, this is to avoid overlapping detection results
+            from different categories.
 
         Returns
         -------
