@@ -198,7 +198,7 @@ if __name__ == '__main__':
 
     if opt.calibration and not opt.quantized:
         exclude_layers = []
-        exclude_layers_match = ['fc', 'dense', 'flatten']
+        exclude_layers_match = ['flatten']
         calib_data = []
         data_shapes = []
         for i, batch in enumerate(val_data):
