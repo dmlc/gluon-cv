@@ -69,7 +69,7 @@ class PContextSegmentation(SegmentationDataset):
     def _class_to_index(mapping, key, mask):
         # assert the values
         values = np.unique(mask)
-        for i, values in enumerate(values):
+        for _, values in enumerate(values):
             assert (values in mapping)
         index = np.digitize(mask.ravel(), mapping, right=True)
         return key[index].reshape(mask.shape)
