@@ -22,8 +22,9 @@
 from __future__ import division
 
 import numpy as np
-from mxnet.gluon.block import HybridBlock
 from mxnet.gluon import nn
+from mxnet.gluon.block import HybridBlock
+from mxnet.context import cpu
 from ..nn import ReLU6, HardSigmoid, HardSwish
 
 
