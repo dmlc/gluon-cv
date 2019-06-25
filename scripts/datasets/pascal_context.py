@@ -45,7 +45,10 @@ def download_context(path, overwrite=False):
 
 
 def install_pcontext_api():
-    repo_url = "https://github.com/ccvl/detail-api"
+    # original Detail repo 'https://github.com/ccvl/detail-api' has a bug,
+    # which need to comment out lines 101~104 of /detail/__init__.py,
+    # use ZhangHang's instead
+    repo_url = "https://github.com/zhanghang1989/detail-api"
     os.system("git clone " + repo_url)
     os.system("cd detail-api/PythonAPI/ && python setup.py install")
     shutil.rmtree('detail-api')
