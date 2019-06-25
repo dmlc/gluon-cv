@@ -316,7 +316,7 @@ def mobilenet_v3_large(**kwargs):
         Additional `norm_layer` arguments, for example `num_devices=4`
         for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
-    return get_mobilene_tv3("large", **kwargs)
+    return get_mobilenet_v3("large", **kwargs)
 
 
 def mobilenet_v3_small(**kwargs):
