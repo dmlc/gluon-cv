@@ -23,6 +23,7 @@ from __future__ import division
 
 import numpy as np
 from mxnet.gluon import nn
+from mxnet.gluon.nn import BatchNorm
 from mxnet.gluon.block import HybridBlock
 from mxnet.context import cpu
 from ..nn import ReLU6, HardSigmoid, HardSwish
