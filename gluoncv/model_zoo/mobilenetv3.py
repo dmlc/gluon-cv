@@ -81,14 +81,14 @@ class _SE(HybridBlock):
 
 class _Unit(HybridBlock):
     def __init__(self, num_out, kernel_size=1, strides=1, pad=0, num_groups=1,
-                 use_act=True, act_type="relu", prefix='', **kwargs):
+                 use_act=True, act_type="relu", prefix='', norm_layer=BatchNorm, **kwargs):
         super(_Unit, self).__init__(**kwargs)
         self.use_act = use_act
         self.conv = nn.Conv2D(channels=num_out, \
                               kernel_size=kernel_size, strides=strides, \
                               padding=pad, groups=num_groups, use_bias=False, \
                               prefix='%s-conv2d_'%prefix)
-        self.bn = nn.BatchNorm(prefix='%s-batchnorm_'%prefix)
+        self.bn = norm_layer(prefix='%s-batchnorm_'%prefix)
         if use_act is True:
             self.act = Activation(act_type)
 
@@ -102,22 +102,26 @@ class _Unit(HybridBlock):
 
 class _ResUnit(HybridBlock):
     def __init__(self, num_in, num_mid, num_out, \
-                 kernel_size, act_type="relu", use_se=False, strides=1, prefix='', **kwargs):
+                 kernel_size, act_type="relu", \
+                 use_se=False, strides=1, prefix='', norm_layer=BatchNorm, **kwargs):
         super(_ResUnit, self).__init__(**kwargs)
         self.use_se = use_se
         self.first_conv = (num_out != num_mid)
         self.use_short_cut_conv = True
         if self.first_conv:
             self.expand = _Unit(num_mid, kernel_size=1, \
-                                strides=1, pad=0, act_type=act_type, prefix='%s-exp'%prefix)
+                                strides=1, pad=0, act_type=act_type, \
+                                prefix='%s-exp'%prefix, norm_layer=norm_layer)
         self.conv1 = _Unit(num_mid, kernel_size=kernel_size, strides=strides,
                            pad=self._get_pad(kernel_size), \
-                           act_type=act_type, num_groups=num_mid, prefix='%s-depthwise'%prefix)
+                           act_type=act_type, num_groups=num_mid, \
+                           prefix='%s-depthwise'%prefix, norm_layer=norm_layer)
         if use_se:
             self.se = _SE(num_mid, prefix='%s-se'%prefix)
         self.conv2 = _Unit(num_out, kernel_size=1, \
                            strides=1, pad=0, \
-                           act_type=act_type, use_act=False, prefix='%s-linear'%prefix)
+                           act_type=act_type, use_act=False, \
+                           prefix='%s-linear'%prefix, norm_layer=norm_layer)
         if num_in != num_out or strides != 1:
             self.use_short_cut_conv = False
 
@@ -148,7 +152,8 @@ class _ResUnit(HybridBlock):
 class _MobileNetV3(HybridBlock):
     def __init__(self, cfg, cls_ch_squeeze, cls_ch_expand, multiplier=1.,
                  classes=1000, norm_kwargs=None, last_gamma=False,
-                 final_drop=0., use_global_stats=False, name_prefix=''):
+                 final_drop=0., use_global_stats=False, name_prefix='',
+                 norm_layer=BatchNorm):
         super(_MobileNetV3, self).__init__(prefix=name_prefix)
         norm_kwargs = norm_kwargs if norm_kwargs is not None else {}
         if use_global_stats:
@@ -164,7 +169,7 @@ class _MobileNetV3(HybridBlock):
             self.features.add(nn.Conv2D(channels=make_divisible(k*self.inplanes), \
                                         kernel_size=3, padding=1, strides=2,
                                         use_bias=False, prefix='first-3x3-conv-conv2d_'))
-            self.features.add(nn.BatchNorm(prefix='first-3x3-conv-batchnorm_'))
+            self.features.add(norm_layer(prefix='first-3x3-conv-batchnorm_'))
             self.features.add(HardSwish())
             i = 0
             for layer_cfg in cfg:
@@ -182,8 +187,8 @@ class _MobileNetV3(HybridBlock):
                          make_divisible(k*cls_ch_squeeze), \
                          kernel_size=1, padding=0, strides=1,
                                         use_bias=False, prefix='last-1x1-conv1-conv2d_'))
-            self.features.add(nn.BatchNorm(prefix='last-1x1-conv1-batchnorm_',
-                                           **({} if norm_kwargs is None else norm_kwargs)))
+            self.features.add(norm_layer(prefix='last-1x1-conv1-batchnorm_',
+                                         **({} if norm_kwargs is None else norm_kwargs)))
             self.features.add(HardSwish())
             self.features.add(nn.GlobalAvgPool2D())
             self.features.add(nn.Conv2D(channels=cls_ch_expand, kernel_size=1, padding=0, strides=1,
@@ -285,7 +290,8 @@ def get_mobilenet_v3(model_name, multiplier=1., pretrained=False, ctx=cpu(),
     else:
         raise NotImplementedError
     net = _MobileNetV3(cfg, cls_ch_squeeze, \
-                        cls_ch_expand, multiplier=multiplier, final_drop=0.2, **kwargs)
+                        cls_ch_expand, multiplier=multiplier, \
+                        final_drop=0.2, norm_layer=norm_layer, **kwargs)
     if pretrained:
         from .model_store import get_model_file
         net.load_parameters(get_model_file('mobilenetv3_%s' % model_name,
