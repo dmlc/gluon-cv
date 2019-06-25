@@ -16,7 +16,7 @@
 # under the License.
 
 # coding: utf-8
-# pylint: disable= arguments-differ,unused-argument,missing-docstring
+# pylint: disable= arguments-differ,unused-argument,missing-docstring,too-many-function-args
 """MobileNet and MobileNetV2, implemented in Gluon."""
 __all__ = [
     'MobileNet',
