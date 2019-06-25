@@ -15,23 +15,25 @@ from .segbase import SegmentationDataset
 
 class PContextSegmentation(SegmentationDataset):
     """PASCAL Context Dataloader(59 + background)"""
+    BASE_DIR = 'VOCdevkit/VOC2010'
     NUM_CLASSES = 59
 
     def __init__(self, root=os.path.expanduser('~/.mxnet/dataset/PContext'), split='train',
                  mode=None, transform=None, **kwargs):
         super(PContextSegmentation, self).__init__(root, split, mode, transform, **kwargs)
-        self._img_dir = os.path.join(root, 'JPEGImages')
+        self.root = os.path.join(root, self.BASE_DIR)
+        self._img_dir = os.path.join(self.root, 'JPEGImages')
         # .txt split file
         if split == 'train':
-            _split_f = os.path.join(root, 'train.txt')
+            _split_f = os.path.join(self.root, 'train.txt')
         elif split == 'val':
-            _split_f = os.path.join(root, 'val.txt')
+            _split_f = os.path.join(self.root, 'val.txt')
         else:
             raise RuntimeError('Unknown dataset split: {}'.format(split))
         if not os.path.exists(_split_f):
             self._generate_split_f(_split_f)
         # 59 + background labels directory
-        _mask_dir = os.path.join(root, 'Labels_59')
+        _mask_dir = os.path.join(self.root, 'Labels_59')
         if not os.path.exists(_mask_dir):
             self._preprocess_mask(_mask_dir)
 
