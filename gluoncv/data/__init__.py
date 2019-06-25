@@ -11,6 +11,7 @@ from .mscoco.instance import COCOInstance
 from .mscoco.segmentation import COCOSegmentation
 from .mscoco.keypoints import COCOKeyPoints
 from .cityscapes import CitySegmentation
+from .pascal_context import PContextSegmentation
 from .pascal_voc.segmentation import VOCSegmentation
 from .pascal_aug.segmentation import VOCAugSegmentation
 from .ade20k.segmentation import ADE20KSegmentation
