@@ -16,39 +16,19 @@
 # under the License.
 
 # coding: utf-8
-# pylint: disable= arguments-differ,unused-argument,missing-docstring,too-many-arguments,no-self-use,too-many-locals,invalid-name,no-member,dangerous-default-value,redefined-variable-type,unused-variable,inconsistent-return-statements,simplifiable-if-expression
+# pylint: disable= arguments-differ,unused-argument,missing-docstring,too-many-arguments,no-self-use,too-many-locals,invalid-name,no-member,dangerous-default-value,redefined-variable-type,unused-variable
 """MobileNetV3, implemented in Gluon."""
 from __future__ import division
 
 import numpy as np
 from mxnet.gluon.block import HybridBlock
 from mxnet.gluon import nn
+import gluoncv as gcv
+
 
 def make_divisible(x, divisible_by=8):
     return int(np.ceil(x * 1. / divisible_by) * divisible_by)
 
-class ReLU6(HybridBlock):
-    def __init__(self, **kwargs):
-        super(ReLU6, self).__init__(**kwargs)
-
-    def hybrid_forward(self, F, x):
-        return F.clip(x, 0, 6)
-
-class HardSigmoid(HybridBlock):
-    def __init__(self, **kwargs):
-        super(HardSigmoid, self).__init__(**kwargs)
-        self.act = ReLU6()
-
-    def hybrid_forward(self, F, x):
-        return self.act(x + 3.) / 6.
-
-class HardSwish(HybridBlock):
-    def __init__(self, **kwargs):
-        super(HardSwish, self).__init__(**kwargs)
-        self.act = HardSigmoid()
-
-    def hybrid_forward(self, F, x):
-        return x * self.act(x)
 
 class Activation(HybridBlock):
     def __init__(self, act_func, **kwargs):
@@ -56,13 +36,13 @@ class Activation(HybridBlock):
         if act_func == "relu":
             self.act = nn.Activation('relu')
         elif act_func == "relu6":
-            self.act = ReLU6()
+            self.act = gcv.nn.ReLU6
         elif act_func == "hard_sigmoid":
-            self.act = HardSigmoid()
+            self.act = gcv.nn.HardSigmoid
         elif act_func == "swish":
             self.act = nn.Swish()
         elif act_func == "hard_swish":
-            self.act = HardSwish()
+            self.act = gcv.nn.HardSwish
         elif act_func == "leaky":
             self.act = nn.LeakyReLU(alpha=0.375)
         else:
@@ -70,6 +50,7 @@ class Activation(HybridBlock):
 
     def hybrid_forward(self, F, x):
         return self.act(x)
+
 
 class _SE(HybridBlock):
     def __init__(self, num_out, ratio=4, \
@@ -93,6 +74,7 @@ class _SE(HybridBlock):
         out = self.act2(out)
         return F.broadcast_mul(x, out)
 
+
 class _Unit(HybridBlock):
     def __init__(self, num_out, kernel_size=1, strides=1, pad=0, num_groups=1,
                  use_act=True, use_bn=True, \
@@ -113,6 +95,7 @@ class _Unit(HybridBlock):
         if self.use_act:
             out = self.act(out)
         return out
+
 
 class _ResUnit(HybridBlock):
     def __init__(self, num_in, num_mid, num_out, \
@@ -179,7 +162,7 @@ class _MobileNetV3(HybridBlock):
                           kernel_size=3, padding=1, strides=2,
                                     use_bias=False, prefix='first-3x3-conv-conv2d_'))
             self.conv.add(nn.BatchNorm(prefix='first-3x3-conv-batchnorm_'))
-            self.conv.add(HardSwish())
+            self.conv.add(gcv.nn.HardSwish)
             i = 0
             for layer_cfg in cfg:
                 layer = self._make_layer(kernel_size=layer_cfg[0],
@@ -192,25 +175,28 @@ class _MobileNetV3(HybridBlock):
                                         )
                 self.conv.add(layer)
                 i += 1
-            self.cls = nn.HybridSequential()
-            self.cls.add(nn.Conv2D(channels= \
+            self.features = nn.HybridSequential(prefix='')
+            self.features.add(nn.Conv2D(channels= \
                          make_divisible(k*cls_ch_squeeze), \
                          kernel_size=1, padding=0, strides=1,
-                                   use_bias=False, prefix='last-1x1-conv1-conv2d_'))
-            self.cls.add(nn.BatchNorm(prefix='last-1x1-conv1-batchnorm_',
-                                      **({} if norm_kwargs is None else norm_kwargs)))
-            self.cls.add(HardSwish())
-            self.cls.add(nn.GlobalAvgPool2D())
-            self.cls.add(nn.Conv2D(channels=cls_ch_expand, kernel_size=1, padding=0, strides=1,
-                                   use_bias=False, prefix='last-1x1-conv2-conv2d_'))
-            self.cls.add(HardSwish())
+                                        use_bias=False, prefix='last-1x1-conv1-conv2d_'))
+            self.features.add(nn.BatchNorm(prefix='last-1x1-conv1-batchnorm_',
+                                           **({} if norm_kwargs is None else norm_kwargs)))
+            self.features.add(gcv.nn.HardSwish)
+            self.features.add(nn.GlobalAvgPool2D())
+            self.features.add(nn.Conv2D(channels=cls_ch_expand, kernel_size=1, padding=0, strides=1,
+                                        use_bias=False, prefix='last-1x1-conv2-conv2d_'))
+            self.features.add(gcv.nn.HardSwish)
 
             if final_drop > 0:
-                self.cls.add(nn.Dropout(final_drop))
-            self.cls.add(nn.Conv2D(in_channels=cls_ch_expand, channels=classes,
-                                   kernel_size=1, prefix='fc_'))
+                self.features.add(nn.Dropout(final_drop))
+            self.output = nn.HybridSequential(prefix='output_')
+            with self.output.name_scope():
+                self.output.add(
+                    nn.Conv2D(in_channels=cls_ch_expand, channels=classes,
+                              kernel_size=1, prefix='fc_'),
+                    nn.Flatten())
 
-            self.flat = nn.Flatten()
 
     def _make_layer(self, kernel_size, exp_ch, out_channel, use_se, act_func, stride=1, prefix=''):
 
@@ -224,11 +210,12 @@ class _MobileNetV3(HybridBlock):
 
     def hybrid_forward(self, F, x):
         x = self.conv(x)
-        x = self.cls(x)
-        x = self.flat(x)
+        x = self.features(x)
+        x = self.output(x)
         return x
 
-def get_model(model_name, multiplier=1., **kwargs):
+
+def get_mobilenet_v3(model_name, multiplier=1., **kwargs):
     if model_name == "large":
         cfg = [
             # k, exp, c,  se,     nl,  s,
@@ -250,40 +237,6 @@ def get_model(model_name, multiplier=1., **kwargs):
             ]
         cls_ch_squeeze = 960
         cls_ch_expand = 1280
-
-    elif model_name == "deep":
-        cfg = [
-            # k, exp, c,  se,     nl,  s,
-            [3, 16, 16, 0, 'relu', 1],
-            [3, 64, 24, 0, 'relu', 2], #stage2
-            [3, 72, 24, 0, 'relu', 1],
-            [3, 72, 24, 0, 'relu', 1],
-            [5, 72, 40, 1, 'relu', 2], #stage3
-            [5, 120, 40, 1, 'relu', 1],
-            [5, 120, 40, 1, 'relu', 1],
-            [5, 120, 40, 1, 'relu', 1],
-            [3, 200, 80, 0, 'hard_swish', 2], #stage4
-            [3, 200, 80, 0, 'hard_swish', 1],
-            [3, 200, 80, 0, 'hard_swish', 1],
-            [3, 184, 80, 0, 'hard_swish', 1],
-            [3, 184, 80, 0, 'hard_swish', 1],
-            [3, 184, 80, 0, 'hard_swish', 1],
-            [3, 480, 112, 1, 'hard_swish', 1],
-            [3, 480, 112, 1, 'hard_swish', 1],
-            [3, 480, 112, 1, 'hard_swish', 1],
-            [3, 480, 112, 1, 'hard_swish', 1],
-            [3, 480, 112, 1, 'hard_swish', 1],
-            [3, 672, 112, 1, 'hard_swish', 1],
-            [3, 672, 112, 1, 'hard_swish', 1],
-            [3, 672, 112, 1, 'hard_swish', 1],
-            [3, 672, 112, 1, 'hard_swish', 1],
-            [5, 672, 160, 1, 'hard_swish', 2], #stage5
-            [5, 960, 160, 1, 'hard_swish', 1],
-            [5, 960, 160, 1, 'hard_swish', 1],
-            ]
-        cls_ch_squeeze = 960
-        cls_ch_expand = 1280
-
     elif model_name == "small":
         cfg = [
             # k, exp, c,  se,     nl,  s,
@@ -305,3 +258,45 @@ def get_model(model_name, multiplier=1., **kwargs):
         raise NotImplementedError
     return _MobileNetV3(cfg, cls_ch_squeeze, \
                         cls_ch_expand, multiplier=multiplier, final_drop=0.2, **kwargs)
+
+
+def mobilenet_v3_large(**kwargs):
+    r"""MobileNetV3 model from the
+    `"Searching for MobileNetV3"
+    <https://arxiv.org/abs/1905.02244>`_ paper.
+    Parameters
+    ----------
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    """
+    return get_mobilenet_v3("large", **kwargs)
+
+
+def mobilenet_v3_small(**kwargs):
+    r"""MobileNetV3 model from the
+    `"Searching for MobileNetV3"
+    <https://arxiv.org/abs/1905.02244>`_ paper.
+    Parameters
+    ----------
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    """
+    return get_mobilenet_v3("small", **kwargs)

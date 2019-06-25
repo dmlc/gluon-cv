@@ -39,17 +39,7 @@ from mxnet.gluon import nn
 from mxnet.gluon.nn import BatchNorm
 from mxnet.context import cpu
 from mxnet.gluon.block import HybridBlock
-
-
-# Helpers
-class RELU6(nn.HybridBlock):
-    """Relu6 used in MobileNetV2."""
-
-    def __init__(self, **kwargs):
-        super(RELU6, self).__init__(**kwargs)
-
-    def hybrid_forward(self, F, x):
-        return F.clip(x, 0, 6, name="relu6")
+import gluoncv as gcv
 
 
 # pylint: disable= too-many-arguments
@@ -58,7 +48,7 @@ def _add_conv(out, channels=1, kernel=1, stride=1, pad=0,
     out.add(nn.Conv2D(channels, kernel, stride, pad, groups=num_group, use_bias=False))
     out.add(norm_layer(scale=True, **({} if norm_kwargs is None else norm_kwargs)))
     if active:
-        out.add(RELU6() if relu6 else nn.Activation('relu'))
+        out.add(gcv.nn.ReLU6 if relu6 else nn.Activation('relu'))
 
 
 def _add_conv_dw(out, dw_channels, channels, stride, relu6=False,
