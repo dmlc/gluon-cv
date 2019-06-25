@@ -146,8 +146,8 @@ class _ResUnit(HybridBlock):
 class _MobileNetV3(HybridBlock):
     def __init__(self, cfg, cls_ch_squeeze, cls_ch_expand, multiplier=1.,
                  classes=1000, norm_kwargs=None, last_gamma=False,
-                 final_drop=0., use_global_stats=False, name_prefix='', **kwargs):
-        super(_MobileNetV3, self).__init__(prefix=name_prefix, **kwargs)
+                 final_drop=0., use_global_stats=False, name_prefix=''):
+        super(_MobileNetV3, self).__init__(prefix=name_prefix)
         norm_kwargs = norm_kwargs if norm_kwargs is not None else {}
         if use_global_stats:
             norm_kwargs['use_global_stats'] = True
@@ -214,7 +214,8 @@ class _MobileNetV3(HybridBlock):
         return x
 
 
-def get_mobilenetv3(model_name, multiplier=1., **kwargs):
+def get_mobilenet_v3(model_name, multiplier=1., pretrained=False, ctx=cpu(),
+                     root='~/.mxnet/models', norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
     r"""MobileNet model from the
     `"Searching for MobileNetV3"
     <https://arxiv.org/abs/1905.02244>`_ paper.
@@ -227,6 +228,19 @@ def get_mobilenetv3(model_name, multiplier=1., **kwargs):
         The width multiplier for controlling the model size. Only multipliers that are no
         less than 0.25 are supported. The actual number of channels is equal to the original
         channel size multiplied by this multiplier.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default $MXNET_HOME/models
+        Location for keeping the model parameters.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
     if model_name == "large":
         cfg = [
@@ -268,8 +282,19 @@ def get_mobilenetv3(model_name, multiplier=1., **kwargs):
         cls_ch_expand = 1280
     else:
         raise NotImplementedError
-    return _MobileNetV3(cfg, cls_ch_squeeze, \
+    net = _MobileNetV3(cfg, cls_ch_squeeze, \
                         cls_ch_expand, multiplier=multiplier, final_drop=0.2, **kwargs)
+    if pretrained:
+        from .model_store import get_model_file
+        net.load_parameters(get_model_file('mobilenetv3_%s' % model_name,
+                                           tag=pretrained,
+                                           root=root), ctx=ctx)
+        from ..data import ImageNet1kAttr
+        attrib = ImageNet1kAttr()
+        net.synset = attrib.synset
+        net.classes = attrib.classes
+        net.classes_long = attrib.classes_long
+    return net
 
 
 def mobilenet_v3_large(**kwargs):
@@ -290,7 +315,7 @@ def mobilenet_v3_large(**kwargs):
         Additional `norm_layer` arguments, for example `num_devices=4`
         for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
-    return get_mobilenetv3("large", **kwargs)
+    return get_mobilene_tv3("large", **kwargs)
 
 
 def mobilenet_v3_small(**kwargs):
