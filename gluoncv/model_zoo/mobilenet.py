@@ -18,6 +18,14 @@
 # coding: utf-8
 # pylint: disable= arguments-differ,unused-argument,missing-docstring,too-many-function-args
 """MobileNet and MobileNetV2, implemented in Gluon."""
+
+from ..nn import ReLU6
+from mxnet.gluon import nn
+from mxnet.gluon.nn import BatchNorm
+from mxnet.context import cpu
+from mxnet.gluon.block import HybridBlock
+
+
 __all__ = [
     'MobileNet',
     'MobileNetV2',
@@ -35,20 +43,13 @@ __all__ = [
 __modify__ = 'dwSun'
 __modified_date__ = '18/04/18'
 
-from mxnet.gluon import nn
-from mxnet.gluon.nn import BatchNorm
-from mxnet.context import cpu
-from mxnet.gluon.block import HybridBlock
-import gluoncv as gcv
-
-
 # pylint: disable= too-many-arguments
 def _add_conv(out, channels=1, kernel=1, stride=1, pad=0,
               num_group=1, active=True, relu6=False, norm_layer=BatchNorm, norm_kwargs=None):
     out.add(nn.Conv2D(channels, kernel, stride, pad, groups=num_group, use_bias=False))
     out.add(norm_layer(scale=True, **({} if norm_kwargs is None else norm_kwargs)))
     if active:
-        out.add(gcv.nn.ReLU6 if relu6 else nn.Activation('relu'))
+        out.add(ReLU6() if relu6 else nn.Activation('relu'))
 
 
 def _add_conv_dw(out, dw_channels, channels, stride, relu6=False,

@@ -16,14 +16,14 @@
 # under the License.
 
 # coding: utf-8
-# pylint: disable= arguments-differ,unused-argument,missing-docstring,too-many-arguments,no-self-use,too-many-locals,invalid-name,no-member,dangerous-default-value,redefined-variable-type,unused-variable,simplifiable-if-expression,inconsistent-return-statements
+# pylint: disable= arguments-differ,unused-argument,missing-docstring,too-many-arguments,no-self-use,too-many-locals,invalid-name,no-member,dangerous-default-value,redefined-variable-type,unused-variable
 """MobileNetV3, implemented in Gluon."""
 from __future__ import division
 
 import numpy as np
+from ..nn import ReLU6, HardSigmoid, HardSwish
 from mxnet.gluon.block import HybridBlock
 from mxnet.gluon import nn
-import gluoncv as gcv
 
 
 def make_divisible(x, divisible_by=8):
@@ -36,13 +36,13 @@ class Activation(HybridBlock):
         if act_func == "relu":
             self.act = nn.Activation('relu')
         elif act_func == "relu6":
-            self.act = gcv.nn.ReLU6
+            self.act = ReLU6
         elif act_func == "hard_sigmoid":
-            self.act = gcv.nn.HardSigmoid
+            self.act = HardSigmoid
         elif act_func == "swish":
             self.act = nn.Swish()
         elif act_func == "hard_swish":
-            self.act = gcv.nn.HardSwish
+            self.act = HardSwish
         elif act_func == "leaky":
             self.act = nn.LeakyReLU(alpha=0.375)
         else:
@@ -157,12 +157,12 @@ class _MobileNetV3(HybridBlock):
         self.inplanes = 16
 
         with self.name_scope():
-            self.conv = nn.HybridSequential()
-            self.conv.add(nn.Conv2D(channels=make_divisible(k*self.inplanes), \
-                          kernel_size=3, padding=1, strides=2,
-                                    use_bias=False, prefix='first-3x3-conv-conv2d_'))
-            self.conv.add(nn.BatchNorm(prefix='first-3x3-conv-batchnorm_'))
-            self.conv.add(gcv.nn.HardSwish)
+            self.features = nn.HybridSequential(prefix='')
+            self.features.add(nn.Conv2D(channels=make_divisible(k*self.inplanes), \
+                                        kernel_size=3, padding=1, strides=2,
+                                        use_bias=False, prefix='first-3x3-conv-conv2d_'))
+            self.features.add(nn.BatchNorm(prefix='first-3x3-conv-batchnorm_'))
+            self.features.add(HardSwish)
             i = 0
             for layer_cfg in cfg:
                 layer = self._make_layer(kernel_size=layer_cfg[0],
@@ -173,20 +173,19 @@ class _MobileNetV3(HybridBlock):
                                          stride=layer_cfg[5],
                                          prefix='seq-%d'%i,
                                         )
-                self.conv.add(layer)
+                self.features.add(layer)
                 i += 1
-            self.features = nn.HybridSequential(prefix='')
             self.features.add(nn.Conv2D(channels= \
                          make_divisible(k*cls_ch_squeeze), \
                          kernel_size=1, padding=0, strides=1,
                                         use_bias=False, prefix='last-1x1-conv1-conv2d_'))
             self.features.add(nn.BatchNorm(prefix='last-1x1-conv1-batchnorm_',
                                            **({} if norm_kwargs is None else norm_kwargs)))
-            self.features.add(gcv.nn.HardSwish)
+            self.features.add(HardSwish)
             self.features.add(nn.GlobalAvgPool2D())
             self.features.add(nn.Conv2D(channels=cls_ch_expand, kernel_size=1, padding=0, strides=1,
                                         use_bias=False, prefix='last-1x1-conv2-conv2d_'))
-            self.features.add(gcv.nn.HardSwish)
+            self.features.add(HardSwish)
 
             if final_drop > 0:
                 self.features.add(nn.Dropout(final_drop))
@@ -209,7 +208,6 @@ class _MobileNetV3(HybridBlock):
         return layer
 
     def hybrid_forward(self, F, x):
-        x = self.conv(x)
         x = self.features(x)
         x = self.output(x)
         return x
