@@ -21,9 +21,9 @@
 from __future__ import division
 
 import numpy as np
-from ..nn import ReLU6, HardSigmoid, HardSwish
 from mxnet.gluon.block import HybridBlock
 from mxnet.gluon import nn
+from ..nn import ReLU6, HardSigmoid, HardSwish
 
 
 def make_divisible(x, divisible_by=8):
