@@ -2,8 +2,7 @@
 """Customized Layers.
 """
 from __future__ import absolute_import
-from mxnet.gluon.nn import BatchNorm
-from mxnet.gluon.block import HybridBlock
+from mxnet.gluon.nn import BatchNorm, HybridBlock
 
 __all__ = ['BatchNormCudnnOff', 'ReLU6', 'HardSigmoid', 'HardSwish']
 
