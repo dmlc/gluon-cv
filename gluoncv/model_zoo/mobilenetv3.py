@@ -16,7 +16,7 @@
 # under the License.
 
 # coding: utf-8
-# pylint: disable=redefined-variable-type
+# pylint: disable=redefined-variable-type,simplifiable-if-expression,inconsistent-return-statements,unused-argument
 """MobileNetV3, implemented in Gluon."""
 
 from __future__ import division
@@ -103,7 +103,7 @@ class _ResUnit(HybridBlock):
                  kernel_size, act_type="relu", use_se=False, strides=1, prefix='', **kwargs):
         super(_ResUnit, self).__init__(**kwargs)
         self.use_se = use_se
-        self.first_conv = True if num_out != num_mid else False
+        self.first_conv = (num_out != num_mid)
         self.use_short_cut_conv = True
         if self.first_conv:
             self.expand = _Unit(num_mid, kernel_size=1, \
@@ -139,6 +139,8 @@ class _ResUnit(HybridBlock):
             return 2
         elif kernel_size == 7:
             return 3
+        else:
+            raise NotImplementedError
 
 
 class _MobileNetV3(HybridBlock):
@@ -270,7 +272,7 @@ def get_mobilenetv3(model_name, multiplier=1., **kwargs):
                         cls_ch_expand, multiplier=multiplier, final_drop=0.2, **kwargs)
 
 
-def mobilenetv3_large(**kwargs):
+def mobilenet_v3_large(**kwargs):
     r"""MobileNetV3 model from the
     `"Searching for MobileNetV3"
     <https://arxiv.org/abs/1905.02244>`_ paper.
@@ -291,7 +293,7 @@ def mobilenetv3_large(**kwargs):
     return get_mobilenetv3("large", **kwargs)
 
 
-def mobilenetv3_small(**kwargs):
+def mobilenet_v3_small(**kwargs):
     r"""MobileNetV3 model from the
     `"Searching for MobileNetV3"
     <https://arxiv.org/abs/1905.02244>`_ paper.
