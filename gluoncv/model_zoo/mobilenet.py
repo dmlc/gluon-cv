@@ -19,11 +19,11 @@
 # pylint: disable= arguments-differ,unused-argument,missing-docstring,too-many-function-args
 """MobileNet and MobileNetV2, implemented in Gluon."""
 
-from ..nn import ReLU6
 from mxnet.gluon import nn
 from mxnet.gluon.nn import BatchNorm
 from mxnet.context import cpu
 from mxnet.gluon.block import HybridBlock
+from ..nn import ReLU6
 
 
 __all__ = [
