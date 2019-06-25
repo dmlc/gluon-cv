@@ -16,8 +16,9 @@
 # under the License.
 
 # coding: utf-8
-# pylint: disable= arguments-differ,unused-argument,missing-docstring,too-many-arguments,no-self-use,too-many-locals,invalid-name,no-member,dangerous-default-value,redefined-variable-type,unused-variable,simplifiable-if-expression,inconsistent-return-statements
+# pylint: disable=redefined-variable-type
 """MobileNetV3, implemented in Gluon."""
+
 from __future__ import division
 
 import numpy as np
@@ -31,18 +32,19 @@ def make_divisible(x, divisible_by=8):
 
 
 class Activation(HybridBlock):
+    """Activation function used in MobileNetV3"""
     def __init__(self, act_func, **kwargs):
         super(Activation, self).__init__(**kwargs)
         if act_func == "relu":
             self.act = nn.Activation('relu')
         elif act_func == "relu6":
-            self.act = ReLU6
+            self.act = ReLU6()
         elif act_func == "hard_sigmoid":
-            self.act = HardSigmoid
+            self.act = HardSigmoid()
         elif act_func == "swish":
             self.act = nn.Swish()
         elif act_func == "hard_swish":
-            self.act = HardSwish
+            self.act = HardSwish()
         elif act_func == "leaky":
             self.act = nn.LeakyReLU(alpha=0.375)
         else:
@@ -54,7 +56,7 @@ class Activation(HybridBlock):
 
 class _SE(HybridBlock):
     def __init__(self, num_out, ratio=4, \
-                 act_func=["relu", "hard_sigmoid"], use_bn=False, prefix='', **kwargs):
+                 act_func=("relu", "hard_sigmoid"), use_bn=False, prefix='', **kwargs):
         super(_SE, self).__init__(**kwargs)
         self.use_bn = use_bn
         num_mid = make_divisible(num_out // ratio)
@@ -77,8 +79,7 @@ class _SE(HybridBlock):
 
 class _Unit(HybridBlock):
     def __init__(self, num_out, kernel_size=1, strides=1, pad=0, num_groups=1,
-                 use_act=True, use_bn=True, \
-                 act_type="relu", prefix='', **kwargs):
+                 use_act=True, act_type="relu", prefix='', **kwargs):
         super(_Unit, self).__init__(**kwargs)
         self.use_act = use_act
         self.conv = nn.Conv2D(channels=num_out, \
@@ -142,10 +143,8 @@ class _ResUnit(HybridBlock):
 
 class _MobileNetV3(HybridBlock):
     def __init__(self, cfg, cls_ch_squeeze, cls_ch_expand, multiplier=1.,
-                 classes=1000,
-                 norm_kwargs=None, last_gamma=False,
-                 final_drop=0., use_global_stats=False,
-                 name_prefix='', **kwargs):
+                 classes=1000, norm_kwargs=None, last_gamma=False,
+                 final_drop=0., use_global_stats=False, name_prefix=''):
         super(_MobileNetV3, self).__init__(prefix=name_prefix)
         norm_kwargs = norm_kwargs if norm_kwargs is not None else {}
         if use_global_stats:
@@ -162,7 +161,7 @@ class _MobileNetV3(HybridBlock):
                                         kernel_size=3, padding=1, strides=2,
                                         use_bias=False, prefix='first-3x3-conv-conv2d_'))
             self.features.add(nn.BatchNorm(prefix='first-3x3-conv-batchnorm_'))
-            self.features.add(HardSwish)
+            self.features.add(HardSwish())
             i = 0
             for layer_cfg in cfg:
                 layer = self._make_layer(kernel_size=layer_cfg[0],
@@ -181,11 +180,11 @@ class _MobileNetV3(HybridBlock):
                                         use_bias=False, prefix='last-1x1-conv1-conv2d_'))
             self.features.add(nn.BatchNorm(prefix='last-1x1-conv1-batchnorm_',
                                            **({} if norm_kwargs is None else norm_kwargs)))
-            self.features.add(HardSwish)
+            self.features.add(HardSwish())
             self.features.add(nn.GlobalAvgPool2D())
             self.features.add(nn.Conv2D(channels=cls_ch_expand, kernel_size=1, padding=0, strides=1,
                                         use_bias=False, prefix='last-1x1-conv2-conv2d_'))
-            self.features.add(HardSwish)
+            self.features.add(HardSwish())
 
             if final_drop > 0:
                 self.features.add(nn.Dropout(final_drop))
@@ -213,7 +212,20 @@ class _MobileNetV3(HybridBlock):
         return x
 
 
-def get_mobilenet_v3(model_name, multiplier=1., **kwargs):
+def get_mobilenetv3(model_name, multiplier=1., **kwargs):
+    r"""MobileNet model from the
+    `"Searching for MobileNetV3"
+    <https://arxiv.org/abs/1905.02244>`_ paper.
+
+    Parameters
+    ----------
+    model_name : string
+        The name of mobilenetv3 models, large and small are supported.
+    multiplier : float
+        The width multiplier for controlling the model size. Only multipliers that are no
+        less than 0.25 are supported. The actual number of channels is equal to the original
+        channel size multiplied by this multiplier.
+    """
     if model_name == "large":
         cfg = [
             # k, exp, c,  se,     nl,  s,
@@ -258,7 +270,7 @@ def get_mobilenet_v3(model_name, multiplier=1., **kwargs):
                         cls_ch_expand, multiplier=multiplier, final_drop=0.2, **kwargs)
 
 
-def mobilenet_v3_large(**kwargs):
+def mobilenetv3_large(**kwargs):
     r"""MobileNetV3 model from the
     `"Searching for MobileNetV3"
     <https://arxiv.org/abs/1905.02244>`_ paper.
@@ -276,10 +288,10 @@ def mobilenet_v3_large(**kwargs):
         Additional `norm_layer` arguments, for example `num_devices=4`
         for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
-    return get_mobilenet_v3("large", **kwargs)
+    return get_mobilenetv3("large", **kwargs)
 
 
-def mobilenet_v3_small(**kwargs):
+def mobilenetv3_small(**kwargs):
     r"""MobileNetV3 model from the
     `"Searching for MobileNetV3"
     <https://arxiv.org/abs/1905.02244>`_ paper.

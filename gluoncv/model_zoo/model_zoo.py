@@ -13,6 +13,7 @@ from .fcn import *
 from .inception import *
 from .mask_rcnn import *
 from .mobilenet import *
+from .mobilenetv3 import *
 from .nasnet import *
 from .pruned_resnet.resnetv1b_pruned import *
 from .pspnet import *
@@ -78,6 +79,8 @@ _models = {
     'mobilenetv2_0.75': mobilenet_v2_0_75,
     'mobilenetv2_0.5': mobilenet_v2_0_5,
     'mobilenetv2_0.25': mobilenet_v2_0_25,
+    'mobilenetv3_large' : mobilenet_v3_large,
+    'mobilenetv3_small' : mobilenet_v3_small,
     'ssd_300_vgg16_atrous_voc': ssd_300_vgg16_atrous_voc,
     'ssd_300_vgg16_atrous_coco': ssd_300_vgg16_atrous_coco,
     'ssd_300_vgg16_atrous_custom': ssd_300_vgg16_atrous_custom,
