@@ -48,7 +48,7 @@ def _add_conv(out, channels=1, kernel=1, stride=1, pad=0,
     out.add(nn.Conv2D(channels, kernel, stride, pad, groups=num_group, use_bias=False))
     out.add(norm_layer(scale=True, **({} if norm_kwargs is None else norm_kwargs)))
     if active:
-        out.add(gcv.nn.ReLU6 if relu6 else nn.Activation('relu'))
+        out.add(gcv.nn.ReLU6(nn.HbridBlock) if relu6 else nn.Activation('relu'))
 
 
 def _add_conv_dw(out, dw_channels, channels, stride, relu6=False,
