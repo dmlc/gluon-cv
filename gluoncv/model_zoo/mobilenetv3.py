@@ -16,7 +16,7 @@
 # under the License.
 
 # coding: utf-8
-# pylint: disable= arguments-differ,unused-argument,missing-docstring,too-many-arguments,no-self-use,too-many-locals,invalid-name,no-member,dangerous-default-value,redefined-variable-type,unused-variable
+# pylint: disable= arguments-differ,unused-argument,missing-docstring,too-many-arguments,no-self-use,too-many-locals,invalid-name,no-member,dangerous-default-value,redefined-variable-type,unused-variable,simplifiable-if-expression,inconsistent-return-statements
 """MobileNetV3, implemented in Gluon."""
 from __future__ import division
 
