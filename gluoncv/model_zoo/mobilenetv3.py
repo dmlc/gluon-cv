@@ -146,8 +146,8 @@ class _ResUnit(HybridBlock):
 class _MobileNetV3(HybridBlock):
     def __init__(self, cfg, cls_ch_squeeze, cls_ch_expand, multiplier=1.,
                  classes=1000, norm_kwargs=None, last_gamma=False,
-                 final_drop=0., use_global_stats=False, name_prefix=''):
-        super(_MobileNetV3, self).__init__(prefix=name_prefix)
+                 final_drop=0., use_global_stats=False, name_prefix='', **kwargs):
+        super(_MobileNetV3, self).__init__(prefix=name_prefix, **kwargs)
         norm_kwargs = norm_kwargs if norm_kwargs is not None else {}
         if use_global_stats:
             norm_kwargs['use_global_stats'] = True
