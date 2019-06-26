@@ -1,8 +1,9 @@
-###########################################################################
+###################################################
 # Created by: Quan Tang
 # Email: csquantang@mail.scut.edu.cn
-# Copyright (c) 2019
-###########################################################################
+# Adapted from:
+# https://github.com/zhanghang1989/Pytorch-Encoding
+###################################################
 
 """PASCAL Context Dataloader"""
 import os
