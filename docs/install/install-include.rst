@@ -195,15 +195,15 @@
 
                .. code-block:: bash
 
-                  docker pull mxnet/python:1.3.0_cpu_mkl
+                  docker pull mxnet/python:1.4.1_cpu_mkl
 
             .. container:: cuda-mkl-dnn
 
                .. code-block:: bash
 
-                   docker pull mxnet/python:1.3.0_gpu_cu90_mkl_py3
+                   docker pull mxnet/python:1.4.1_gpu_cu90_mkl_py3
 
 .. raw:: html
 
    <style>.disabled { display: none; }</style>
-   <script type="text/javascript" src='../_static/install-options.js'></script>
+   <script type="text/javascript" src='/_static/install-options.js'></script>
