@@ -27,7 +27,7 @@ Below CPU performance is collected with dummy input from AWS EC2 C5.24xlarge ins
    Gluon Quantization Performance
 
 +-----------------------+----------+------------+------------------+------------------+---------+-----------------+-----------------+
-|  Model                | Dataset  | Batch Size | C5.18xlarge FP32 | C5.18xlarge INT8 | Speedup | FP32 Accuracy   | INT8 Accuracy   |
+|  Model                | Dataset  | Batch Size | C5.24xlarge FP32 | C5.24xlarge INT8 | Speedup | FP32 Accuracy   | INT8 Accuracy   |
 +=======================+==========+============+==================+==================+=========+=================+=================+
 | ResNet50 V1           | ImageNet | 128        | 191.17           | 1384.4           | 2.27    | 77.21%/93.55%   | 76.08%/93.04%   |
 +-----------------------+----------+------------+------------------+------------------+---------+-----------------+-----------------+
