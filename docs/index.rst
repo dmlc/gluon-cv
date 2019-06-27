@@ -6,9 +6,9 @@ GluonCV: a Deep Learning Toolkit for Computer Vision
     :hidden:
 
     model_zoo/index
-    tutorials/index    
-    api/index    
-    how_to/index    
+    tutorials/index
+    api/index
+    how_to/index
     slides
 
 GluonCV provides implementations of state-of-the-art (SOTA) deep learning algorithms in computer vision. It aims to help engineers, researchers, and students quickly prototype products, validate new ideas and learn computer vision.
@@ -53,27 +53,16 @@ Installation
 Install MXNet
 ^^^^^^^^^^^^^
 
-GluonCV depends on the recent version of MXNet. The easiest way to install MXNet
-is through `pip <https://pip.pypa.io/en/stable/installing/>`_. The following
-command installs CPU version of MXNet.
+.. Ignore prerequisites to make the index page concise, which will be shown at
+   the install page
 
-.. code-block:: bash
+.. raw:: html
 
-   # the oldest stable version of mxnet required is 1.4.0
-   pip install mxnet-mkl>=1.4.0 --upgrade
+   <style>.admonition-prerequisite {display: none;}</style>
 
-   # you can install nightly build of mxnet to access up-to-date features
-   pip install --pre --upgrade mxnet-mkl
+.. include:: install/install-include.rst
 
-.. note::
-
-   There are other pre-build MXNet binaries that enable GPU support and
-   accelerate CPU performance, please refer to `this tutorial
-   <http://gluon-crash-course.mxnet.io/mxnet_packages.html>`_ for details.
-
-   Some training scripts are recommended to run on GPUs, if you don't have a GPU
-   machine at hands, you may consider to `run on AWS
-   <http://gluon-crash-course.mxnet.io/use_aws.html>`_.
+Check :doc:`install/index` for more installation instructions and options.
 
 Install GluonCV
 ^^^^^^^^^^^^^^^^
@@ -118,4 +107,3 @@ Adoptions
 Companies and organizations using GluonCV:
 
 .. include:: /_static/logos/embed.html
-
