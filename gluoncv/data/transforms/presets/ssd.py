@@ -6,7 +6,12 @@ from .. import bbox as tbbox
 from .. import image as timage
 from .. import experimental
 
-__all__ = ['transform_test', 'load_test', 'SSDDefaultTrainTransform', 'SSDDefaultValTransform']
+from ....utils import try_import_dali
+
+dali = try_import_dali()
+
+__all__ = ['transform_test', 'load_test', 'SSDDefaultTrainTransform', 'SSDDefaultValTransform',
+           'SSDDALIPipeline']
 
 def transform_test(imgs, short, max_size=1024, mean=(0.485, 0.456, 0.406),
                    std=(0.229, 0.224, 0.225)):
@@ -211,3 +216,123 @@ class SSDDefaultValTransform(object):
         img = mx.nd.image.to_tensor(img)
         img = mx.nd.image.normalize(img, mean=self._mean, std=self._std)
         return img, bbox.astype(img.dtype)
+
+class SSDDALIPipeline(dali.Pipeline):
+    """DALI Pipeline with SSD training transform.
+
+    Parameters
+    ----------
+    device_id: int
+         DALI pipeline arg - Device id.
+    num_workers:
+        DALI pipeline arg - Number of CPU workers.
+    batch_size:
+        Batch size.
+    data_shape: int
+        Height and width length. (height==width in SSD)
+    anchors: float list
+        Normalized [ltrb] anchors generated from SSD networks.
+        The shape length be ``N*4`` since it is a list of the N anchors that have
+        all 4 float elements.
+    dataset_reader: float
+        Partial pipeline object, which __call__ function has to return
+        (images, bboxes, labels) DALI EdgeReference tuple.
+    """
+    def __init__(self, num_workers, device_id, batch_size, data_shape,
+                 anchors, dataset_reader):
+        super(SSDDALIPipeline, self).__init__(
+            batch_size=batch_size,
+            device_id=device_id,
+            num_threads=num_workers)
+
+        self.dataset_reader = dataset_reader
+
+        # Augumentation techniques
+        self.crop = dali.ops.RandomBBoxCrop(
+            device="cpu",
+            aspect_ratio=[0.5, 2.0],
+            thresholds=[0, 0.1, 0.3, 0.5, 0.7, 0.9],
+            scaling=[0.3, 1.0],
+            ltrb=True,
+            allow_no_crop=True,
+            num_attempts=1)
+        self.slice = dali.ops.Slice(device="cpu")
+        self.twist = dali.ops.ColorTwist(device="gpu")
+        self.resize = dali.ops.Resize(
+            device="cpu",
+            resize_x=data_shape,
+            resize_y=data_shape,
+            min_filter=dali.types.DALIInterpType.INTERP_TRIANGULAR)
+
+        # output_dtype = types.FLOAT16 if args.fp16 else types.FLOAT
+        output_dtype = dali.types.FLOAT
+
+        self.normalize = dali.ops.CropMirrorNormalize(
+            device="gpu",
+            crop=(data_shape, data_shape),
+            mean=[0.485 * 255, 0.456 * 255, 0.406 * 255],
+            std=[0.229 * 255, 0.224 * 255, 0.225 * 255],
+            mirror=0,
+            output_dtype=output_dtype,
+            output_layout=dali.types.NCHW,
+            pad_output=False)
+
+        # Random variables
+        self.rng1 = dali.ops.Uniform(range=[0.5, 1.5])
+        self.rng2 = dali.ops.Uniform(range=[0.875, 1.125])
+        self.rng3 = dali.ops.Uniform(range=[-0.5, 0.5])
+
+        self.flip = dali.ops.Flip(device="cpu")
+        self.bbflip = dali.ops.BbFlip(device="cpu", ltrb=True)
+        self.flip_coin = dali.ops.CoinFlip(probability=0.5)
+
+        self.box_encoder = dali.ops.BoxEncoder(
+            device="cpu",
+            criteria=0.5,
+            anchors=self._to_normalized_ltrb_list(anchors, data_shape),
+            offset=True,
+            stds=[0.1, 0.1, 0.2, 0.2],
+            scale=data_shape)
+
+    def _to_normalized_ltrb_list(self, anchors, size):
+        """Prepare anchors into ltrb (normalized DALI anchors format list)"""
+        if isinstance(anchors, list):
+            return anchors
+        anchors_np = anchors.squeeze().asnumpy()
+        anchors_np_ltrb = anchors_np.copy()
+        anchors_np_ltrb[:, 0] = anchors_np[:, 0] - 0.5 * anchors_np[:, 2]
+        anchors_np_ltrb[:, 1] = anchors_np[:, 1] - 0.5 * anchors_np[:, 3]
+        anchors_np_ltrb[:, 2] = anchors_np[:, 0] + 0.5 * anchors_np[:, 2]
+        anchors_np_ltrb[:, 3] = anchors_np[:, 1] + 0.5 * anchors_np[:, 3]
+        anchors_np_ltrb /= size
+        return anchors_np_ltrb.flatten().tolist()
+
+    def define_graph(self):
+        """
+        Define the DALI graph.
+        """
+        saturation = self.rng1()
+        contrast = self.rng1()
+        brightness = self.rng2()
+        hue = self.rng3()
+        coin_rnd = self.flip_coin()
+
+        images, bboxes, labels = self.dataset_reader()
+
+        crop_begin, crop_size, bboxes, labels = self.crop(bboxes, labels)
+        images = self.slice(images, crop_begin, crop_size)
+
+        images = self.flip(images, horizontal=coin_rnd)
+        bboxes = self.bbflip(bboxes, horizontal=coin_rnd)
+        images = self.resize(images)
+        images = images.gpu()
+        images = self.twist(
+            images,
+            saturation=saturation,
+            contrast=contrast,
+            brightness=brightness,
+            hue=hue)
+        images = self.normalize(images)
+        bboxes, labels = self.box_encoder(bboxes, labels)
+
+        return (images, bboxes.gpu(), labels.gpu())
