@@ -11,9 +11,9 @@ Install MXNet
 
    <style>.admonition-prerequisite {display: none;}</style>
 
-.. include:: install/install-include.rst
+.. include:: /install/install-include.rst
 
-Check :doc:`install/install-more` for more installation instructions and options.
+Check :doc:`/install/install-more` for more installation instructions and options.
 
 Install GluonCV
 ^^^^^^^^^^^^^^^^
