@@ -5,10 +5,11 @@ GluonCV: a Deep Learning Toolkit for Computer Vision
     :maxdepth: 2
     :hidden:
 
+    install
     model_zoo/index
-    tutorials/index    
-    api/index    
-    how_to/index    
+    tutorials/index
+    api/index
+    how_to/index
     slides
 
 GluonCV provides implementations of state-of-the-art (SOTA) deep learning algorithms in computer vision. It aims to help engineers, researchers, and students quickly prototype products, validate new ideas and learn computer vision.
@@ -47,57 +48,8 @@ Supported Applications
 
    <a id="installation.html"></a>
 
-Installation
-------------
 
-Install MXNet
-^^^^^^^^^^^^^
-
-GluonCV depends on the recent version of MXNet. The easiest way to install MXNet
-is through `pip <https://pip.pypa.io/en/stable/installing/>`_. The following
-command installs CPU version of MXNet.
-
-.. code-block:: bash
-
-   # the oldest stable version of mxnet required is 1.4.0
-   pip install mxnet-mkl>=1.4.0 --upgrade
-
-   # you can install nightly build of mxnet to access up-to-date features
-   pip install --pre --upgrade mxnet-mkl
-
-.. note::
-
-   There are other pre-build MXNet binaries that enable GPU support and
-   accelerate CPU performance, please refer to `this tutorial
-   <http://gluon-crash-course.mxnet.io/mxnet_packages.html>`_ for details.
-
-   Some training scripts are recommended to run on GPUs, if you don't have a GPU
-   machine at hands, you may consider to `run on AWS
-   <http://gluon-crash-course.mxnet.io/use_aws.html>`_.
-
-Install GluonCV
-^^^^^^^^^^^^^^^^
-
-The easiest way to install GluonCV is through `pip <https://pip.pypa.io/en/stable/installing/>`_.
-
-.. code-block:: bash
-
- pip install gluoncv --upgrade
-
- # if you are eager to try new features, try nightly build instead
-
- pip install gluoncv --pre --upgrade
-
-.. hint::
-
-  Nightly build is updated daily around 12am UTC to match master progress.
-
-  Optionally, you can clone the GluonCV project and install it locally
-
-  .. code-block:: bash
-
-    git clone https://github.com/dmlc/gluon-cv
-    cd gluon-cv && python setup.py install --user
+.. include:: install.rst
 
 
 A Quick Example
@@ -118,4 +70,3 @@ Adoptions
 Companies and organizations using GluonCV:
 
 .. include:: /_static/logos/embed.html
-
