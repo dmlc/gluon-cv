@@ -5,7 +5,7 @@ GluonCV: a Deep Learning Toolkit for Computer Vision
     :maxdepth: 2
     :hidden:
 
-    install/index
+    install
     model_zoo/index
     tutorials/index
     api/index
@@ -49,7 +49,7 @@ Supported Applications
    <a id="installation.html"></a>
 
 
-.. include:: install/index.rst
+.. include:: install.rst
 
 
 A Quick Example
