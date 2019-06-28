@@ -134,7 +134,7 @@
 
                - Requires `CUDA
                  <https://developer.nvidia.com/cuda-toolkit-archive>`_.
-                 Supported versions include 8.0, 9.0, and 9.2.
+                 Supported versions include 8.0, 9.0, 9.2, 10.0 and 10.1.
                - Hint: `cuDNN <https://developer.nvidia.com/cudnn>`_ is already
                  included in the MXNet binary, so you don't need to install it.
 
@@ -159,9 +159,9 @@
 
                .. code-block:: bash
 
-                  # Here we assume CUDA 9.2 is installed. You can change the number
+                  # Here we assume CUDA 10.0 is installed. You can change the number
                   # according to your own CUDA version.
-                  pip install mxnet-cu92
+                  pip install mxnet-cu100
 
             .. container:: mkl-dnn
 
@@ -173,9 +173,9 @@
 
                .. code-block:: bash
 
-                  # Here we assume CUDA 9.2 is installed. You can change the number
+                  # Here we assume CUDA 10.0 is installed. You can change the number
                   # according to your own CUDA version.
-                  pip install mxnet-cu92mkl
+                  pip install mxnet-cu100mkl
 
          .. container:: docker
 
