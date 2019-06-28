@@ -1,7 +1,7 @@
 import argparse
 
 from mxnet import nd, image
-import mxnet as mx
+
 from gluoncv.data import ImageNet1kAttr
 from gluoncv.data.transforms.presets.imagenet import transform_eval
 from gluoncv.model_zoo import get_model
@@ -17,15 +17,9 @@ opt = parser.parse_args()
 
 # Load Model
 model_name = opt.model
-#pretrained = True if opt.saved_params == '' else False
-pretrained = False# if opt.saved_params == '' else False
+pretrained = True if opt.saved_params == '' else False
 net = get_model(model_name, pretrained=pretrained)
-net.hybridize()
-x = mx.sym.var('data')
-y = net(x)
-y = mx.sym.SoftmaxOutput(data=y, name='softmax')
-symnet = mx.symbol.load_json(y.tojson())
-symnet.save('model.json')
+
 if not pretrained:
     net.load_parameters(opt.saved_params)
     attrib = ImageNet1kAttr()
