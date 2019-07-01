@@ -16,3 +16,5 @@ dependencies:
     - awscli
     - nose-timer
     - opencv-python
+    - cython
+    - git+https://github.com/zhanghang1989/detail-api.git#subdirectory=PythonAPI
