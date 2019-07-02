@@ -24,7 +24,8 @@ stage("Unit Test") {
         # old pip packages won't be cleaned: https://github.com/conda/conda/issues/5887
         # remove and create new env instead
         set -ex
-        # conda env create -n gluon_cv_py2_test --force tests/py2.yml
+        conda env remove -n gluon_cv_py2_test
+        conda env create -n gluon_cv_py2_test -f tests/py2.yml
         conda env update -n gluon_cv_py2_test -f tests/py2.yml --prune
         conda activate gluon_cv_py2_test
         conda list
@@ -47,7 +48,9 @@ stage("Unit Test") {
         VISIBLE_GPU=env.EXECUTOR_NUMBER.toInteger() % 8
         sh """#!/bin/bash
         set -ex
-        # conda env create -n gluon_cv_py3_test -f tests/py3.yml
+        # remove and create new env instead
+        conda env remove -n gluon_cv_py3_test
+        conda env create -n gluon_cv_py3_test -f tests/py3.yml
         conda env update -n gluon_cv_py3_test -f tests/py3.yml --prune
         conda activate gluon_cv_py3_test
         conda list
