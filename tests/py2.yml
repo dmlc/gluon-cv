@@ -10,7 +10,7 @@ dependencies:
   - coverage
   - scipy
   - cython
-  - pip
+  - pip=9.0.3
   - pip:
     - mxnet-cu92mkl==1.5.0b20190314
     - coverage-badge
