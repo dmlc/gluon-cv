@@ -7,6 +7,7 @@ from .imagenet.classification import ImageNet, ImageNet1kAttr
 from .dataloader import DetectionDataLoader, RandomTransformDataLoader
 from .pascal_voc.detection import VOCDetection
 from .mscoco.detection import COCODetection
+from .mscoco.detection import COCODetectionDALI
 from .mscoco.instance import COCOInstance
 from .mscoco.segmentation import COCOSegmentation
 from .mscoco.keypoints import COCOKeyPoints

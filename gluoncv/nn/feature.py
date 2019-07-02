@@ -178,7 +178,7 @@ class FPNFeatureExpander(SymbolBlock):
     use_elewadd : float
         Whether to use element-wise add operation
     use_p6 : bool
-        Whther use P6 stage, this is used for RPN experiments in ori paper
+        Whether use P6 stage, this is used for RPN experiments in ori paper
     no_bias : bool
         Whether use bias for Convolution operation.
     norm_layer : HybridBlock or SymbolBlock
