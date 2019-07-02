@@ -9,12 +9,12 @@ dependencies:
   - nose
   - coverage
   - scipy
-  - pip=9.0.3
+  - cython
+  - pip
   - pip:
     - mxnet-cu92mkl==1.5.0b20190314
     - coverage-badge
     - awscli
     - nose-timer
     - opencv-python
-    - cython
     - git+https://github.com/zhanghang1989/detail-api.git#subdirectory=PythonAPI
