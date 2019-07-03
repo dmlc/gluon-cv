@@ -369,6 +369,16 @@ def test_segmentation_models_custom_size():
     result = net.forward(x)
     assert result[0].shape == (1, num_classes, height, width)
 
+    net = gcv.model_zoo.DeepLabV3(num_classes, backbone='resnet50', aux=False, ctx=ctx, pretrained_base=True,
+                               height=height, width=width)
+    result = net.forward(x)
+    assert result[0].shape == (1, num_classes, height, width)
+
+    net = gcv.model_zoo.DeepLabV3Plus(num_classes, backbone='resnet50', aux=False, ctx=ctx, pretrained_base=True,
+                                  height=height, width=width)
+    result = net.forward(x)
+    assert result[0].shape == (1, num_classes, height, width)
+
 
 @with_cpu(0)
 def test_mobilenet_sync_bn():
