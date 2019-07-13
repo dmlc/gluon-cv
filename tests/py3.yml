@@ -12,7 +12,7 @@ dependencies:
   - cython
   - pip=9.0.3
   - pip:
-    - mxnet-cu92mkl==1.5.0b20190314
+    - mxnet-cu92mkl==1.5.0b20190711
     - coverage-badge
     - awscli
     - nose-timer
