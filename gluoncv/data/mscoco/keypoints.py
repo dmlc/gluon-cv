@@ -180,7 +180,7 @@ class COCOKeyPoints(VisionDataset):
                 visible = min(1, obj['keypoints'][i * 3 + 2])
                 joints_3d[i, :2, 1] = visible
                 # joints_3d[i, 2, 1] = 0
-                center, scale = self._box_to_center_scale(xmin, ymin, xmax - xmin, ymax - ymin)
+            center, scale = self._box_to_center_scale(xmin, ymin, xmax - xmin, ymax - ymin)
 
             valid_objs.append({
                 'center': center,
