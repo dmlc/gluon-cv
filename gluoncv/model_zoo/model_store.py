@@ -221,4 +221,13 @@ def purge(root=os.path.join('~', '.mxnet', 'models')):
 
 
 def pretrained_model_list():
-    return list(_model_sha1.keys())
+    _renames = {
+        'resnet18_v1b_2.6x': 'resnet18_v1b_0.89',
+        'resnet50_v1d_1.8x': 'resnet50_v1d_0.86',
+        'resnet50_v1d_3.6x': 'resnet50_v1d_0.48',
+        'resnet50_v1d_5.9x': 'resnet50_v1d_0.37',
+        'resnet50_v1d_8.8x': 'resnet50_v1d_0.11',
+        'resnet101_v1d_1.9x': 'resnet101_v1d_0.76',
+        'resnet101_v1d_2.2x': 'resnet101_v1d_0.73',
+    }
+    return [_renames[x] if x in _renames else x for x in _model_sha1.keys()]
