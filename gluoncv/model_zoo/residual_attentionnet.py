@@ -47,7 +47,7 @@ class UpsamplingBilinear2d(HybridBlock):
         self.size = size
 
     def hybrid_forward(self, F, x):
-        return F.contrib.BilinearResize2D(x, self.size, self.size)
+        return F.contrib.BilinearResize2D(x, height=self.size, width=self.size)
 
 
 class ResidualBlock(HybridBlock):
