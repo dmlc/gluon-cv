@@ -221,6 +221,7 @@ def purge(root=os.path.join('~', '.mxnet', 'models')):
 
 
 def pretrained_model_list():
+    """Get list of model which has pretrained weights available."""
     _renames = {
         'resnet18_v1b_2.6x': 'resnet18_v1b_0.89',
         'resnet50_v1d_1.8x': 'resnet50_v1d_0.86',
