@@ -11,13 +11,12 @@ dependencies:
   - scipy
   - cython
   - pip=19.1.1
-  - numpy=1.15.0
   - requests
   - matplotlib
   - tqdm
   - pillow
   - pip:
-    - mxnet-cu92mkl==1.5.0b20190711
+    - mxnet-cu92mkl==1.5.0b20190411
     - coverage-badge
     - awscli
     - nose-timer
