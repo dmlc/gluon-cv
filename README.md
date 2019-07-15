@@ -104,6 +104,12 @@ Check out how to use GluonCV for your own research or projects.
 If you feel our code or models helps in your research, please kindly cite our papers:
 
 ```
+@inproceedings{Guo2019GluonCVAG,
+  title={GluonCV and GluonNLP: Deep Learning in Computer Vision and Natural Language Processing},
+  author={Jian Guo and He He and Tong He and Leonard Lausen and Mu Li and Haibin Lin and Xingjian Shi and Chenguang Wang and Junyuan Xie and Sheng Zha and Aston Zhang and Hang Zhang and Zhi Zhang and Zhongyue Zhang and Shuai Zheng},
+  year={2019}
+}
+
 @article{he2018bag,
   title={Bag of Tricks for Image Classification with Convolutional Neural Networks},
   author={He, Tong and Zhang, Zhi and Zhang, Hang and Zhang, Zhongyue and Xie, Junyuan and Li, Mu},
