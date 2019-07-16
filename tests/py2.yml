@@ -16,7 +16,7 @@ dependencies:
   - tqdm
   - pillow
   - pip:
-    - mxnet-cu92mkl==1.5.0b20190404
+    - mxnet-cu92mkl==1.5.0b20190324
     - coverage-badge
     - awscli
     - nose-timer
