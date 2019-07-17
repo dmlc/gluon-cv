@@ -31,6 +31,8 @@ import gluoncv as gcv
 def test_get_all_models():
     names = gcv.model_zoo.get_model_list()
     for name in names:
+        if 'int8' in name:
+            continue
         kwargs = {}
         if 'custom' in name:
             kwargs['classes'] = ['a', 'b']
