@@ -20,6 +20,7 @@
 from __future__ import print_function
 
 import warnings
+import unittest
 
 import mxnet as mx
 from common import try_gpu, with_cpu
@@ -30,6 +31,8 @@ import gluoncv as gcv
 def test_get_all_models():
     names = gcv.model_zoo.get_model_list()
     for name in names:
+        if 'int8' in name:
+            continue
         kwargs = {}
         if 'custom' in name:
             kwargs['classes'] = ['a', 'b']
@@ -390,7 +393,7 @@ def test_mobilenet_sync_bn():
                                   norm_kwargs={'num_devices': 2})
     net.load_parameters(model_name + '.params')
 
-
+@unittest.skip("temporarily disabled to fallback to non-mkl version")
 @with_cpu(0)
 def test_quantized_imagenet_models():
     model_list = ['mobilenet1.0_int8', 'resnet50_v1_int8']
@@ -398,7 +401,7 @@ def test_quantized_imagenet_models():
     x = mx.random.uniform(shape=(1, 3, 224, 224), ctx=ctx)
     _test_model_list(model_list, ctx, x)
 
-
+@unittest.skip("temporarily disabled to fallback to non-mkl version")
 @with_cpu(0)
 def test_quantized_ssd_models():
     model_list = ['ssd_300_vgg16_atrous_voc_int8', 'ssd_512_mobilenet1.0_voc_int8',
