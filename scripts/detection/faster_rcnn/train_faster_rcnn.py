@@ -222,19 +222,21 @@ def get_dataset(dataset, args):
 
 
 def get_dataloader(net, train_dataset, val_dataset, train_transform, val_transform, batch_size,
-                   num_workers, multi_stage):
+                   args):
     """Get dataloader."""
     train_bfn = batchify.Tuple(*[batchify.Append() for _ in range(5)])
+    train_sampler = gcv.nn.sampler.SplitSampler(len(train_dataset), hvd.size(), hvd.rank()) if args.horovod else None
     train_loader = mx.gluon.data.DataLoader(
         train_dataset.transform(
             train_transform(net.short, net.max_size, net, ashape=net.ashape,
-                            multi_stage=multi_stage)),
-        batch_size, True, batchify_fn=train_bfn, last_batch='rollover', num_workers=num_workers)
+                            multi_stage=args.use_fpn)),
+        batch_size, train_sampler is None, sampler=train_sampler, batchify_fn=train_bfn,
+        last_batch='rollover', num_workers=args.num_workers)
     val_bfn = batchify.Tuple(*[batchify.Append() for _ in range(3)])
     short = net.short[-1] if isinstance(net.short, (tuple, list)) else net.short
     val_loader = mx.gluon.data.DataLoader(
         val_dataset.transform(val_transform(short, net.max_size)),
-        batch_size, False, batchify_fn=val_bfn, last_batch='keep', num_workers=num_workers)
+        batch_size, False, batchify_fn=val_bfn, last_batch='keep', num_workers=args.num_workers)
     return train_loader, val_loader
 
 
@@ -515,16 +517,12 @@ if __name__ == '__main__':
     net.collect_params().reset_ctx(ctx)
 
     # training data
-    train_dataset, val_dataset, eval_metric = get_dataset(args.dataset, args)
-    train_data, val_data = get_dataloader(
-        net, train_dataset, val_dataset, FasterRCNNDefaultTrainTransform,
-        FasterRCNNDefaultValTransform, args.batch_size, args.num_workers, args.use_fpn)
 
     train_dataset, val_dataset, eval_metric = get_dataset(args.dataset, args)
     batch_size = 1 if args.horovod else args.batch_size
     train_data, val_data = get_dataloader(
         net, train_dataset, val_dataset, FasterRCNNDefaultTrainTransform,
-        FasterRCNNDefaultValTransform, batch_size, args.num_workers, args.use_fpn)
+        FasterRCNNDefaultValTransform, batch_size, args)
 
     # training
     train(net, train_data, val_data, eval_metric, ctx, args)
