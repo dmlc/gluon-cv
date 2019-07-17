@@ -8,7 +8,8 @@ from mxnet.gluon import SymbolBlock
 
 __all__ = ['mobilenet1_0_int8', 'resnet50_v1_int8',
            'ssd_300_vgg16_atrous_voc_int8', 'ssd_512_mobilenet1_0_voc_int8',
-           'ssd_512_resnet50_v1_voc_int8', 'ssd_512_vgg16_atrous_voc_int8']
+           'ssd_512_resnet50_v1_voc_int8', 'ssd_512_vgg16_atrous_voc_int8',
+           'fcn_resnet101_voc_int8', 'fcn_resnet101_coco_int8']
 
 def _not_impl(*args, **kwargs):
     raise NotImplementedError("Not yet implemented for quantized models")
@@ -73,3 +74,5 @@ _create_quantized_models('ssd_300_vgg16_atrous_voc_int8', 'ssd0_')
 _create_quantized_models('ssd_512_mobilenet1_0_voc_int8', 'ssd0_')
 _create_quantized_models('ssd_512_resnet50_v1_voc_int8', 'ssd0_')
 _create_quantized_models('ssd_512_vgg16_atrous_voc_int8', 'ssd0_')
+_create_quantized_models('fcn_resnet101_voc_int8', 'fcn0_')
+_create_quantized_models('fcn_resnet101_coco_int8', 'fcn0_')

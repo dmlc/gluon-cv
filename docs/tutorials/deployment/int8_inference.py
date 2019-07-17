@@ -11,13 +11,14 @@ Introduction
 
 GluonCV delivered some quantized models to improve the performance and reduce the deployment costs for the computer vision inference tasks. In real production, there are two main benefits of lower precision (INT8). First, the computation can be accelerated by the low precision instruction, like Intel Vector Neural Network Instruction (VNNI). Second, lower precision data type would save the memory bandwidth and allow for better cache locality and save the power. The new feature can get up to 4X performance speedup in the latest `AWS EC2 C5 instances <https://aws.amazon.com/blogs/aws/now-available-new-c5-instance-sizes-and-bare-metal-instances/>`_ under the `Intel Deep Learning Boost (VNNI) <https://www.intel.ai/intel-deep-learning-boost/>`_ enabled hardware with less than 0.5% accuracy drop.
 
-Please checkout `verify_pretrained.py <https://raw.githubusercontent.com/dmlc/gluon-cv/master/scripts/classification/imagenet/verify_pretrained.py>`_ for imagenet inference
-and `eval_ssd.py <https://raw.githubusercontent.com/dmlc/gluon-cv/master/scripts/detection/ssd/eval_ssd.py>`_ for SSD inference.
+Please checkout `verify_pretrained.py <https://raw.githubusercontent.com/dmlc/gluon-cv/master/scripts/classification/imagenet/verify_pretrained.py>`_ for imagenet inference,
+`eval_ssd.py <https://raw.githubusercontent.com/dmlc/gluon-cv/master/scripts/detection/ssd/eval_ssd.py>`_ for SSD inference, and `eval_segmentation.py <https://raw.githubusercontent.com/dmlc/gluon-cv/master/scripts/segmentation/eval_segmentation.py>`_ 
+for FCN inference.
 
 Performance
 -----------
 
-GluonCV supports some quantized classification models and detection models.
+GluonCV supports some quantized classification models, detection models and segmentation models.
 For the throughput, the target is to achieve the maximum machine efficiency to combine the inference requests together and get the results by one iteration. From the bar-chart, it is clearly that the fusion and quantization approach improved the throughput from 3.22X to 7.24X for selected models.
 Below CPU performance is collected with dummy input from AWS EC2 C5.24xlarge instance with 24 physical cores.
 
@@ -41,8 +42,13 @@ Below CPU performance is collected with dummy input from AWS EC2 C5.24xlarge ins
 +-----------------------+----------+------------+------------------+------------------+---------+-----------------+-----------------+
 | SSD-mobilenet1.0 512* | VOC      | 224        | 65.97            | 212.59           | 3.22    | 75.42           | 74.70           |
 +-----------------------+----------+------------+------------------+------------------+---------+-----------------+-----------------+
+| FCN_resnet101         | VOC      | 1          | 5.09             | 21.12            | 4.15    | 97.97%          | 95.71%          |
++-----------------------+----------+------------+------------------+------------------+---------+-----------------+-----------------+
+| FCN_resnet101         | COCO     | 1          | 5.10             | 25.98            | 5.09    | 91.28%          | 90.10%          |
++-----------------------+----------+------------+------------------+------------------+---------+-----------------+-----------------+
 
-Quantized SSD models are evaluated with ``nms_thresh=0.45``, ``nms_topk=200``.
+
+Quantized SSD models are evaluated with ``nms_thresh=0.45``, ``nms_topk=200``. For FCN models, the accuracy metric is pixAcc.
 
 Demo usage for SSD
 ------------------
