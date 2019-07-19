@@ -206,6 +206,7 @@ def test_yolo3_reset_class():
     net.hybridize()
     net.reset_class(["bus", "car", "bird"], reuse_weights=["bus", "car", "bird"])
     net(x)
+    mx.nd.waitall()
 
     # for GPU
     ctx = mx.gpu(0)
@@ -214,9 +215,10 @@ def test_yolo3_reset_class():
     except Exception:
         return
     net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
+    net.hybridize()
     net.reset_class(["bus", "car", "bird"])
     net(x)
-    net.waitall()
+    mx.nd.waitall()
 
 
 def test_faster_rcnn_reset_class():
