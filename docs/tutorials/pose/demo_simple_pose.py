@@ -55,7 +55,7 @@ print('Shape of pre-processed image:', x.shape)
 class_IDs, scores, bounding_boxs = detector(x)
 
 ######################################################################
-# Process tensor from detector to keypoiny network
+# Process tensor from detector to keypoint network
 # --------------------
 #
 # Next we process the output from the detector.

@@ -42,7 +42,7 @@ Select your preferences and run the install command.
         <div class="mdl-tooltip" data-mdl-for="native">Build-in backend for CPU.</div>
         <div class="mdl-tooltip" data-mdl-for="cuda">Required to run on Nvidia GPUs.</div>
         <div class="mdl-tooltip" data-mdl-for="mkl-dnn">Accelerate Intel CPU performance.</div>
-        <div class="mdl-tooltip" data-mdl-for="cuda-mkl-dnn">Enable both Nvidia CPUs and Inter CPU acceleration.</div>
+        <div class="mdl-tooltip" data-mdl-for="cuda-mkl-dnn">Enable both Nvidia GPUs and Intel CPU acceleration.</div>
 
   .. admonition:: Prerequisites:
 

@@ -392,14 +392,12 @@ def test_mobilenet_sync_bn():
                                   norm_kwargs={'num_devices': 2})
     net.load_parameters(model_name + '.params')
 
-
 @with_cpu(0)
 def test_quantized_imagenet_models():
     model_list = ['mobilenet1.0_int8', 'resnet50_v1_int8']
     ctx = mx.context.current_context()
     x = mx.random.uniform(shape=(1, 3, 224, 224), ctx=ctx)
     _test_model_list(model_list, ctx, x)
-
 
 @with_cpu(0)
 def test_quantized_ssd_models():

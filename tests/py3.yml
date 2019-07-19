@@ -10,7 +10,11 @@ dependencies:
   - coverage
   - scipy
   - cython
-  - pip=9.0.3
+  - pip=19.1.1
+  - requests
+  - matplotlib
+  - tqdm
+  - pillow
   - pip:
     - mxnet-cu92mkl==1.5.0b20190711
     - coverage-badge
