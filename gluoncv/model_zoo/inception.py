@@ -243,7 +243,7 @@ def inception_v3(pretrained=False, ctx=cpu(),
         for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
 
-    net = Inception3(partial_bn=partial_bn, **kwargs)
+    net = Inception3(**kwargs)
     if pretrained:
         from .model_store import get_model_file
         net.load_parameters(get_model_file('inceptionv3',
