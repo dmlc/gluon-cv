@@ -7,7 +7,7 @@ from ..inception import inception_v3
 
 __all__ = ['inceptionv3_ucf101', 'ActionRecInceptionV3', 'ActionRecInceptionV3TSN']
 
-def inceptionv3_ucf101(nclass, pretrained, tsn=False, partial_bn=True, num_segments=3, **kwargs):
+def inceptionv3_ucf101(nclass=101, pretrained=True, tsn=False, partial_bn=True, num_segments=3, **kwargs):
     if tsn:
         model = ActionRecInceptionV3TSN(nclass=nclass, pretrained=pretrained, partial_bn=partial_bn, num_segments=num_segments)
     else:

@@ -7,7 +7,7 @@ from ..vgg import vgg16
 
 __all__ = ['vgg16_ucf101', 'ActionRecVGG16', 'ActionRecVGG16TSN']
 
-def vgg16_ucf101(nclass, pretrained, tsn=False, num_segments=3, **kwargs):
+def vgg16_ucf101(nclass=101, pretrained=True, tsn=False, num_segments=3, **kwargs):
     if tsn:
         model = ActionRecVGG16TSN(nclass=nclass, pretrained=pretrained, num_segments=num_segments)
     else:
