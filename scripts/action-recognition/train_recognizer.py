@@ -3,7 +3,7 @@ import argparse, time, logging, os, sys, math
 import numpy as np
 import mxnet as mx
 import gluoncv as gcv
-from mxnet import gluon, nd, init
+from mxnet import gluon, nd, init, context
 from mxnet import autograd as ag
 from mxnet.gluon import nn
 from mxnet.gluon.data.vision import transforms
@@ -12,7 +12,7 @@ from mxboard import SummaryWriter
 from gluoncv.data.transforms import video
 from gluoncv.data import ucf101
 from gluoncv.model_zoo import get_model
-from gluoncv.utils import makedirs, LRSequential, LRScheduler, freeze_bn
+from gluoncv.utils import makedirs, LRSequential, LRScheduler, split_and_load
 
 # CLI
 def parse_args():
@@ -113,41 +113,68 @@ def parse_args():
                         help='clip gradient to a certain threshold. Set the value to be larger than zero to enable gradient clipping.')
     parser.add_argument('--partial-bn', action='store_true',
                         help='whether to freeze bn layers except the first layer.')
+    parser.add_argument('--num-classes', type=int, default=101,
+                        help='number of classes.')
     opt = parser.parse_args()
     return opt
 
-def get_data_loader(opt, batch_size, num_workers):
+def tsn_mp_batchify_fn(data):
+    """Collate data into batch. Use shared memory for stacking.
+    Modify default batchify function for temporal segment networks.
+    Change `nd.stack` to `nd.concat` since batch dimension already exists.
+    """
+    if isinstance(data[0], nd.NDArray):
+        return nd.concat(*data, dim=0)
+    elif isinstance(data[0], tuple):
+        data = zip(*data)
+        return [tsn_mp_batchify_fn(i) for i in data]
+    else:
+        data = np.asarray(data)
+        return nd.array(data, dtype=data.dtype,
+                        ctx=context.Context('cpu_shared', 0))
+
+def get_data_loader(opt, batch_size, num_workers, logger):
     data_dir = opt.data_dir
     normalize = video.VideoNormalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
     scale_ratios = [1.0, 0.875, 0.75, 0.66]
     input_size = opt.input_size
 
     def batch_fn(batch, ctx):
-        data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0, even_split=False)
-        label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0, even_split=False)
+        if opt.num_segments > 1:
+            data = split_and_load(batch[0], ctx_list=ctx, batch_axis=0, even_split=False, multiplier=opt.num_segments)
+        else:
+            data = split_and_load(batch[0], ctx_list=ctx, batch_axis=0, even_split=False)
+        label = split_and_load(batch[1], ctx_list=ctx, batch_axis=0, even_split=False)
         return data, label
 
-    transform_train = video.Compose([
+    transform_train = transforms.Compose([
         video.VideoMultiScaleCrop(size=(input_size, input_size), scale_ratios=scale_ratios),
         video.VideoRandomHorizontalFlip(),
         video.VideoToTensor(),
         normalize
     ])
-    transform_test = video.Compose([
-        video.VideoCenterCrop(input_size),
+    transform_test = transforms.Compose([
+        video.VideoCenterCrop(size=input_size),
         video.VideoToTensor(),
         normalize
     ])
 
-    train_dataset = ucf101.classification.UCF101(setting=opt.train_list, root=data_dir, train=True, 
+    train_dataset = ucf101.classification.UCF101(setting=opt.train_list, root=data_dir, train=True,
                                                  new_width=opt.new_width, new_height=opt.new_height,
+                                                 target_width=input_size, target_height=input_size,
                                                  num_segments=opt.num_segments, transform=transform_train)
-    train_data = gluon.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
-
-    val_dataset = ucf101.classification.UCF101(setting=opt.val_list, root=data_dir, train=False, 
+    val_dataset = ucf101.classification.UCF101(setting=opt.val_list, root=data_dir, train=False,
                                                new_width=opt.new_width, new_height=opt.new_height,
+                                               target_width=input_size, target_height=input_size,
                                                num_segments=opt.num_segments, transform=transform_test)
-    val_data = gluon.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
+    logger.info('Load %d training samples and %d validation samples.' % (len(train_dataset), len(val_dataset)))
+
+    if opt.num_segments > 1:
+        train_data = gluon.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers, batchify_fn=tsn_mp_batchify_fn)
+        val_data = gluon.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, batchify_fn=tsn_mp_batchify_fn)
+    else:
+        train_data = gluon.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
+        val_data = gluon.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
 
     return train_data, val_data, batch_fn
 
@@ -167,7 +194,7 @@ def main():
     sw = SummaryWriter(logdir=opt.save_dir, flush_secs=5)
 
     batch_size = opt.batch_size
-    classes = 101
+    classes = opt.num_classes
 
     num_gpus = opt.num_gpus
     batch_size *= max(1, num_gpus)
@@ -190,24 +217,22 @@ def main():
         optimizer_params = {'learning_rate': opt.lr, 'wd': opt.wd, 'momentum': opt.momentum}
 
     model_name = opt.model
-    net = get_model(name=model_name, nclass=classes, pretrained=True, tsn=opt.use_tsn, partial_bn=opt.partial_bn)
+    net = get_model(name=model_name, nclass=classes, pretrained=opt.use_pretrained,
+                    tsn=opt.use_tsn, num_segments=opt.num_segments, partial_bn=opt.partial_bn)
     net.cast(opt.dtype)
     net.collect_params().reset_ctx(context)
-    # print(net)
+    logger.info(net)
 
-    # if opt.resume_params is not '':
-    #     net.load_parameters(opt.resume_params, ctx=context)
-    # sys.exit()
+    if opt.resume_params is not '':
+        net.load_parameters(opt.resume_params, ctx=context)
 
-    train_data, val_data, batch_fn = get_data_loader(opt, batch_size, num_workers)
+    train_data, val_data, batch_fn = get_data_loader(opt, batch_size, num_workers, logger)
 
     train_metric = mx.metric.Accuracy()
     acc_top1 = mx.metric.Accuracy()
     acc_top5 = mx.metric.TopKAccuracy(5)
 
     def test(ctx, val_data):
-        # if opt.use_rec:
-        #     val_data.reset()
         acc_top1.reset()
         acc_top5.reset()
         for i, batch in enumerate(val_data):
@@ -219,17 +244,14 @@ def main():
         _, top1 = acc_top1.get()
         _, top5 = acc_top5.get()
         return (top1, top5)
-        # return (1-top1, 1-top5)
 
     def train(ctx):
         if isinstance(ctx, mx.Context):
             ctx = [ctx]
-        # if opt.resume_params is '':
-        #     net.initialize(mx.init.MSRAPrelu(), ctx=ctx)
 
-        # if opt.no_wd:
-        #     for k, v in net.collect_params('.*beta|.*gamma|.*bias').items():
-        #         v.wd_mult = 0.0
+        if opt.no_wd:
+            for k, v in net.collect_params('.*beta|.*gamma|.*bias').items():
+                v.wd_mult = 0.0
 
         if opt.partial_bn:
             train_patterns = None
@@ -241,8 +263,8 @@ def main():
         else:
             trainer = gluon.Trainer(net.collect_params(), optimizer, optimizer_params)
 
-        # if opt.resume_states is not '':
-        #     trainer.load_states(opt.resume_states)
+        if opt.resume_states is not '':
+            trainer.load_states(opt.resume_states)
 
         L = gluon.loss.SoftmaxCrossEntropyLoss()
 
@@ -281,33 +303,40 @@ def main():
             train_metric_name, train_metric_score = train_metric.get()
             throughput = int(batch_size * i /(time.time() - tic))
 
-            err_top1_val, err_top5_val = test(ctx, val_data)
+            acc_top1_val, acc_top5_val = test(ctx, val_data)
 
             logger.info('[Epoch %d] training: %s=%f'%(epoch, train_metric_name, train_metric_score*100))
-            # logger.info('[Epoch %d] speed: %d samples/sec\ttime cost: %f'%(epoch, throughput, time.time()-tic))
-            logger.info('[Epoch %d] validation: acc-top1=%f acc-top5=%f'%(epoch, err_top1_val*100, err_top5_val*100))
+            logger.info('[Epoch %d] speed: %d samples/sec\ttime cost: %f'%(epoch, throughput, time.time()-tic))
+            logger.info('[Epoch %d] validation: acc-top1=%f acc-top5=%f'%(epoch, acc_top1_val*100, acc_top5_val*100))
 
             sw.add_scalar(tag='train_acc', value=train_metric_score*100, global_step=epoch)
-            sw.add_scalar(tag='valid_acc', value=err_top1_val*100, global_step=epoch)
+            sw.add_scalar(tag='valid_acc', value=acc_top1_val*100, global_step=epoch)
 
-            # it is changed to accuracy now 
-            if err_top1_val > best_val_score:
-                best_val_score = err_top1_val
-                net.save_parameters('%s/%.4f-ucf101-%s-%d-best.params'%(opt.save_dir, best_val_score, model_name, epoch))
-                # trainer.save_states('%s/%.4f-ucf101-%s-%d-best.states'%(save_dir, best_val_score, model_name, epoch))
+            if acc_top1_val > best_val_score:
+                best_val_score = acc_top1_val
+                if opt.use_tsn:
+                    net.basenet.save_parameters('%s/%.4f-ucf101-%s-%03d-best.params'%(opt.save_dir, best_val_score, model_name, epoch))
+                else:
+                    net.save_parameters('%s/%.4f-ucf101-%s-%03d-best.params'%(opt.save_dir, best_val_score, model_name, epoch))
+                trainer.save_states('%s/%.4f-ucf101-%s-%03d-best.states'%(opt.save_dir, best_val_score, model_name, epoch))
 
-            # if opt.save_frequency and opt.save_dir and (epoch + 1) % opt.save_frequency == 0:
-            #     net.save_parameters('%s/ucf101-%s-%d.params'%(opt.save_dir, model_name, epoch))
-                # trainer.save_states('%s/ucf101-%s-%d.states'%(opt.save_dir, model_name, epoch))
+            if opt.save_frequency and opt.save_dir and (epoch + 1) % opt.save_frequency == 0:
+                if opt.use_tsn:
+                    net.basenet.save_parameters('%s/ucf101-%s-%03d.params'%(opt.save_dir, model_name, epoch))
+                else:
+                    net.save_parameters('%s/ucf101-%s-%03d.params'%(opt.save_dir, model_name, epoch))
+                trainer.save_states('%s/ucf101-%s-%03d.states'%(opt.save_dir, model_name, epoch))
 
-        if opt.save_frequency and opt.save_dir:
-            net.save_parameters('%s/ucf101-%s-%d.params'%(opt.save_dir, model_name, opt.num_epochs-1))
-            # trainer.save_states('%s/ucf101-%s-%d.states'%(opt.save_dir, model_name, opt.num_epochs-1))
-
+        # save the last model
+        if opt.use_tsn:
+            net.basenet.save_parameters('%s/ucf101-%s-%03d.params'%(opt.save_dir, model_name, opt.num_epochs-1))
+        else:
+            net.save_parameters('%s/ucf101-%s-%03d.params'%(opt.save_dir, model_name, opt.num_epochs-1))
+        trainer.save_states('%s/ucf101-%s-%03d.states'%(opt.save_dir, model_name, opt.num_epochs-1))
 
     if opt.mode == 'hybrid':
         net.hybridize(static_alloc=True, static_shape=True)
-       
+
     train(context)
     sw.close()
 

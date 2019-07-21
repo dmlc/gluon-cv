@@ -1,74 +1,65 @@
-"""Extended image transformations to `mxnet.image`."""
+# pylint: disable= missing-docstring
+"""Extended image transformations to video transformations."""
 from __future__ import division
-import cv2
 import random
 import numbers
 import numpy as np
-import mxnet as mx
-from mxnet import nd, image
-from mxnet.base import numeric_types
-from mxnet.gluon import Block, HybridBlock
-from mxnet.gluon.nn import Sequential, HybridSequential
+import cv2
+from mxnet import nd
+from mxnet.gluon import Block
 
 __all__ = ['VideoToTensor', 'VideoNormalize', 'VideoRandomHorizontalFlip', 'VideoMultiScaleCrop',
            'VideoCenterCrop', 'VideoTenCrop']
 
-class Compose(Sequential):
-    """Sequentially composes multiple transforms.
+class VideoToTensor(Block):
+    """Converts a video clip NDArray to a tensor NDArray.
+
+    Converts a video clip NDArray of shape (H x W x C) in the range
+    [0, 255] to a float32 tensor NDArray of shape (C x H x W) in
+    the range [0, 1).
 
     Parameters
     ----------
-    transforms : list of transform Blocks.
-        The list of transforms to be composed.
-
+    max_intensity : float
+        The maximum intensity value to be divided.
 
     Inputs:
-        - **data**: input tensor with shape of the first transform Block requires.
+        - **data**: input tensor with (H x W x C) shape and uint8 type.
 
     Outputs:
-        - **out**: output tensor with shape of the last transform Block produces.
-
-    Examples
-    --------
-    >>> transformer = transforms.Compose([transforms.Resize(300),
-    ...                                   transforms.CenterCrop(256),
-    ...                                   transforms.ToTensor()])
-    >>> image = mx.nd.random.uniform(0, 255, (224, 224, 3)).astype(dtype=np.uint8)
-    >>> transformer(image)
-    
+        - **out**: output tensor with (C x H x W) shape and float32 type.
     """
-    def __init__(self, transforms):
-        super(Compose, self).__init__()
-        transforms.append(None)
-        hybrid = []
-        for i in transforms:
-            if isinstance(i, HybridBlock):
-                hybrid.append(i)
-                continue
-            elif len(hybrid) == 1:
-                self.add(hybrid[0])
-                hybrid = []
-            elif len(hybrid) > 1:
-                hblock = HybridSequential()
-                for j in hybrid:
-                    hblock.add(j)
-                hblock.hybridize()
-                self.add(hblock)
-                hybrid = []
-
-            if i is not None:
-                self.add(i)
-
-class VideoToTensor(Block):
-
     def __init__(self, max_intensity=255.0):
         super(VideoToTensor, self).__init__()
         self.max_intensity = max_intensity
 
     def forward(self, clips):
-        return nd.transpose(clips, axes=(2,0,1)) / self.max_intensity
+        return nd.transpose(clips, axes=(2, 0, 1)) / self.max_intensity
 
 class VideoNormalize(Block):
+    """Normalize an tensor of shape (C x H x W) with mean and standard deviation.
+
+    Given mean `(m1, ..., mn)` and std `(s1, ..., sn)` for `n` channels,
+    this transform normalizes each channel of the input tensor with::
+
+        output[i] = (input[i] - mi) / si
+
+    If mean or std is scalar, the same value will be applied to all channels.
+
+    Parameters
+    ----------
+    mean : float or tuple of floats
+        The mean values.
+    std : float or tuple of floats
+        The standard deviation values.
+
+
+    Inputs:
+        - **data**: input tensor with (C x H x W) shape.
+
+    Outputs:
+        - **out**: output tensor with the shape as `data`.
+    """
 
     def __init__(self, mean, std):
         super(VideoNormalize, self).__init__()
@@ -76,17 +67,29 @@ class VideoNormalize(Block):
         self.std = std
 
     def forward(self, clips):
-        clips = clips.asnumpy()
         c, _, _ = clips.shape
         num_images = int(c / 3)
         clip_mean = self.mean * num_images
         clip_std = self.std * num_images
-        clip_mean = np.asarray(clip_mean).reshape((c, 1, 1))
-        clip_std = np.asarray(clip_std).reshape((c, 1, 1))
+        clip_mean = nd.array(np.asarray(clip_mean).reshape((c, 1, 1)))
+        clip_std = nd.array(np.asarray(clip_std).reshape((c, 1, 1)))
 
-        return nd.array((clips - clip_mean) / clip_std)
+        return (clips - clip_mean) / clip_std
 
 class VideoRandomHorizontalFlip(Block):
+    """Randomly flip the input video clip left to right with a probability of 0.5.
+
+    Parameters
+    ----------
+    px : float
+        The probability value to flip the input tensor.
+
+    Inputs:
+        - **data**: input tensor with (H x W x C) shape.
+
+    Outputs:
+        - **out**: output tensor with same shape as `data`.
+    """
 
     def __init__(self, px=0):
         super(VideoRandomHorizontalFlip, self).__init__()
@@ -98,21 +101,38 @@ class VideoRandomHorizontalFlip(Block):
         return clips
 
 class VideoMultiScaleCrop(Block):
-    """
-    Description: Corner cropping and multi-scale cropping. Two data augmentation techniques introduced in:
+    """Corner cropping and multi-scale cropping.
+    	Two data augmentation techniques introduced in:
         Towards Good Practices for Very Deep Two-Stream ConvNets,
         http://arxiv.org/abs/1507.02159
         Limin Wang, Yuanjun Xiong, Zhe Wang and Yu Qiao
+
     Parameters:
-        size: height and width required by network input, e.g., (224, 224)
-        scale_ratios: efficient scale jittering, e.g., [1.0, 0.875, 0.75, 0.66]
-        fix_crop: use corner cropping or not. Default: True
-        more_fix_crop: use more corners or not. Default: True
-        max_distort: maximum distortion. Default: 1
-        interpolation: Default: cv2.INTER_LINEAR
+    ----------
+    size : int
+    	height and width required by network input, e.g., (224, 224)
+    scale_ratios : list
+    	efficient scale jittering, e.g., [1.0, 0.875, 0.75, 0.66]
+    fix_crop : bool
+    	use corner cropping or not. Default: True
+    more_fix_crop : bool
+    	use more corners or not. Default: True
+    max_distort : float
+    	maximum distortion. Default: 1
+    interpolation : str
+    	Default: cv2.INTER_LINEAR
+
+    Inputs:
+    	- **data**: input tensor with (H x W x C) shape.
+
+    Outputs:
+        - **out**: output tensor with desired size as 'size'
+
     """
 
-    def __init__(self, size, scale_ratios, fix_crop=True, more_fix_crop=True, max_distort=1, interpolation=cv2.INTER_LINEAR):
+    def __init__(self, size, scale_ratios, fix_crop=True,
+                 more_fix_crop=True, max_distort=1,
+                 interpolation=cv2.INTER_LINEAR):
         super(VideoMultiScaleCrop, self).__init__()
         self.height = size[0]
         self.width = size[1]
@@ -123,6 +143,15 @@ class VideoMultiScaleCrop(Block):
         self.interpolation = interpolation
 
     def fillFixOffset(self, datum_height, datum_width):
+        """Fixed cropping strategy
+
+        Inputs:
+            - **data**: height and width of input tensor
+
+        Outputs:
+            - **out**: a list of locations to crop the image
+
+        """
         h_off = int((datum_height - self.height) / 4)
         w_off = int((datum_width - self.width) / 4)
 
@@ -147,13 +176,22 @@ class VideoMultiScaleCrop(Block):
         return offsets
 
     def fillCropSize(self, input_height, input_width):
+        """Fixed cropping strategy
+
+        Inputs:
+            - **data**: height and width of input tensor
+
+        Outputs:
+            - **out**: a list of crop sizes to crop the image
+
+        """
         crop_sizes = []
         base_size = np.min((input_height, input_width))
         scale_rates = self.scale_ratios
-        for h in range(len(scale_rates)):
-            crop_h = int(base_size * scale_rates[h])
-            for w in range(len(scale_rates)):
-                crop_w = int(base_size * scale_rates[w])
+        for h, scale_rate_h in enumerate(scale_rates):
+            crop_h = int(base_size * scale_rate_h)
+            for w, scale_rate_w in enumerate(scale_rates):
+                crop_w = int(base_size * scale_rate_w)
                 # append this cropping size into the list
                 if (np.absolute(h-w) <= self.max_distort):
                     crop_sizes.append((crop_h, crop_w))
@@ -181,37 +219,50 @@ class VideoMultiScaleCrop(Block):
             h_off = random.randint(0, h - self.height)
             w_off = random.randint(0, w - self.width)
 
-        scaled_clips = np.zeros((self.height,self.width,c))
+        scaled_clips = np.zeros((self.height, self.width, c))
         if is_color:
             num_imgs = int(c / 3)
             for frame_id in range(num_imgs):
-                cur_img = clips[:,:,frame_id*3:frame_id*3+3]
+                cur_img = clips[:, :, frame_id*3:frame_id*3+3]
                 crop_img = cur_img[h_off:h_off+crop_height, w_off:w_off+crop_width, :]
-                scaled_clips[:,:,frame_id*3:frame_id*3+3] = cv2.resize(crop_img, (self.width, self.height), self.interpolation)
-            return nd.array(scaled_clips)
+                scaled_clips[:, :, frame_id*3:frame_id*3+3] = \
+                	cv2.resize(crop_img, (self.width, self.height), self.interpolation)
         else:
             num_imgs = int(c / 1)
             for frame_id in range(num_imgs):
-                cur_img = clips[:,:,frame_id:frame_id+1]
+                cur_img = clips[:, :, frame_id:frame_id+1]
                 crop_img = cur_img[h_off:h_off+crop_height, w_off:w_off+crop_width, :]
-                scaled_clips[:,:,frame_id:frame_id+1] = np.expand_dims(cv2.resize(crop_img, (self.width, self.height), self.interpolation), axis=2)
-            return nd.array(scaled_clips)
+                scaled_clips[:, :, frame_id:frame_id+1] = np.expand_dims(\
+                	cv2.resize(crop_img, (self.width, self.height), self.interpolation), axis=2)
+
+        return nd.array(scaled_clips)
 
 
 class VideoCenterCrop(Block):
     """Crops the given numpy array at the center to have a region of
     the given size. size can be a tuple (target_height, target_width)
     or an integer, in which case the target will be of a square shape (size, size)
+
+    Parameters:
+    ----------
+    size : int
+    	height and width required by network input, e.g., (224, 224)
+
+    Inputs:
+    	- **data**: input tensor with (H x W x C) shape.
+
+    Outputs:
+        - **out**: output tensor with desired size as 'size'
     """
 
     def __init__(self, size):
+        super(VideoCenterCrop, self).__init__()
         if isinstance(size, numbers.Number):
             self.size = (int(size), int(size))
         else:
             self.size = size
 
-    def __call__(self, clips):
-        clips = clips.asnumpy()
+    def forward(self, clips):
         h, w, c = clips.shape
         th, tw = self.size
         x1 = int(round((w - tw) / 2.))
@@ -221,24 +272,22 @@ class VideoCenterCrop(Block):
         if c % 3 == 0:
             is_color = True
 
+        scaled_clips = nd.zeros((th, tw, c))
         if is_color:
             num_imgs = int(c / 3)
-            scaled_clips = np.zeros((th,tw,c))
             for frame_id in range(num_imgs):
-                cur_img = clips[:,:,frame_id*3:frame_id*3+3]
+                cur_img = clips[:, :, frame_id*3:frame_id*3+3]
                 crop_img = cur_img[y1:y1+th, x1:x1+tw, :]
                 assert(crop_img.shape == (th, tw, 3))
-                scaled_clips[:,:,frame_id*3:frame_id*3+3] = crop_img
-            return nd.array(scaled_clips)
+                scaled_clips[:, :, frame_id*3:frame_id*3+3] = crop_img
         else:
             num_imgs = int(c / 1)
-            scaled_clips = np.zeros((th,tw,c))
             for frame_id in range(num_imgs):
-                cur_img = clips[:,:,frame_id:frame_id+1]
+                cur_img = clips[:, :, frame_id:frame_id+1]
                 crop_img = cur_img[y1:y1+th, x1:x1+tw, :]
                 assert(crop_img.shape == (th, tw, 1))
-                scaled_clips[:,:,frame_id:frame_id+1] = crop_img
-            return nd.array(scaled_clips)
+                scaled_clips[:, :, frame_id:frame_id+1] = crop_img
+        return scaled_clips
 
 
 class VideoTenCrop(Block):
@@ -261,38 +310,37 @@ class VideoTenCrop(Block):
     * top-right crop (flipped horizontally)
     * bottom-right crop (flipped horizontally)
 
-    Parameters
+    Parameters:
     ----------
-    src : mxnet.nd.NDArray
-        Input image sequences
-    size : int or tuple
-        Tuple of length 2, as (width, height) of the cropped areas.
+    size : int
+    	height and width required by network input, e.g., (224, 224)
 
-    Returns
-    -------
-    mxnet.nd.NDArray
-        The cropped images with shape (size[1], size[0], C x 10)
+    Inputs:
+    	- **data**: input tensor with (H x W x C) shape.
+
+    Outputs:
+        - **out**: output tensor with (H x W x 10C) shape.
 
     """
     def __init__(self, size):
+        super(VideoTenCrop, self).__init__()
         if isinstance(size, numbers.Number):
             self.size = (int(size), int(size))
         else:
             self.size = size
 
-    def __call__(self, clips):
-        h, w, c = clips.shape
+    def forward(self, clips):
+        h, w, _ = clips.shape
         oh, ow = self.size
         if h < oh or w < ow:
-            raise ValueError("Cannot crop area {} from image with size ({}, {})".format(str(self.size), h, w))
+            raise ValueError("Cannot crop area {} from image with size \
+            	({}, {})".format(str(self.size), h, w))
 
         center = clips[(h - oh) // 2:(h + oh) // 2, (w - ow) // 2:(w + ow) // 2, :]
         tl = clips[0:oh, 0:ow, :]
         bl = clips[h - oh:h, 0:ow, :]
         tr = clips[0:oh, w - ow:w, :]
         br = clips[h - oh:h, w - ow:w, :]
-        # crops = nd.stack(*[center, tl, bl, tr, br], axis=0)
         crops = nd.concat(*[center, tl, bl, tr, br], dim=2)
         crops = nd.concat(*[crops, nd.flip(crops, axis=1)], dim=2)
         return crops
-

@@ -1,9 +1,9 @@
 # pylint: disable=line-too-long,too-many-lines,missing-docstring
 """UCF101 action classification dataset."""
-import os, sys
-import cv2
+import os
 import random
 import numpy as np
+import cv2
 from mxnet import nd
 from mxnet.gluon.data import dataset
 
@@ -19,28 +19,53 @@ class UCF101(dataset.Dataset):
     ----------
     root : str, default '~/.mxnet/datasets/ucf101'
         Path to the folder stored the dataset.
+    setting : str, required
+        Config file of the prepared dataset.
     train : bool, default True
         Whether to load the training or validation set.
+    test_mode : bool, default False
+        Whether to perform evaluation on the test set
+    name_pattern : str, default None
+        The naming pattern of the decoded video frames.
+        For example, img_00012.jpg
+    is_color : bool, default True
+        Whether the loaded image is color or grayscale
+    modality : str, default 'rgb'
+        Input modalities, we support only rgb video frames for now.
+        Will add support for rgb difference image and optical flow image later.
+    num_segments : int, default 1
+        Number of segments to evenly divide the video into clips.
+        A useful technique to obtain global video-level information.
+        Limin Wang, etal, Temporal Segment Networks: Towards Good Practices for Deep Action Recognition, ECCV 2016
+    new_length : int, default 1
+        The length of input video clip. Default is a single image, but it can be multiple video frames.
+        For example, new_length=16 means we will extract a video clip of consecutive 16 frames.
+    new_width : int, default 340
+        Scale the width of loaded image to 'new_width' for later multiscale cropping and resizing.
+    new_height : int, default 256
+        Scale the height of loaded image to 'new_height' for later multiscale cropping and resizing.
+    target_width : int, default 224
+        Scale the width of transformed image to the same 'target_width' for batch forwarding.
+    target_height : int, default 224
+        Scale the height of transformed image to the same 'target_height' for batch forwarding.
     transform : function, default None
-        A function that takes data and label and transforms them. Refer to
-        :doc:`./transforms` for examples. (TODO, should we restrict its datatype
-        to transformer?)
+        A function that takes data and label and transforms them.
     """
-    def __init__(self, 
-                 setting, 
+    def __init__(self,
+                 setting,
                  root=os.path.join('~', '.mxnet', 'datasets', 'ucf101'),
-                 train=True, 
+                 train=True,
                  test_mode=False,
-                 name_pattern=None, 
-                 is_color=True, 
-                 modality='rgb', 
-                 num_segments=1, 
-                 new_length=1, 
-                 new_width=340, 
-                 new_height=256, 
-                 transform=None, 
-                 target_transform=None, 
-                 video_transform=None):
+                 name_pattern=None,
+                 is_color=True,
+                 modality='rgb',
+                 num_segments=1,
+                 new_length=1,
+                 new_width=340,
+                 new_height=256,
+                 target_width=224,
+                 target_height=224,
+                 transform=None):
 
         super(UCF101, self).__init__()
 
@@ -53,10 +78,10 @@ class UCF101(dataset.Dataset):
         self.num_segments = num_segments
         self.new_height = new_height
         self.new_width = new_width
+        self.target_height = target_height
+        self.target_width = target_width
         self.new_length = new_length
         self.transform = transform
-        self.target_transform = target_transform
-        self.video_transform = video_transform
 
         self.classes, self.class_to_idx = self._find_classes(root)
         self.clips = self._make_dataset(root, setting)
@@ -98,15 +123,15 @@ class UCF101(dataset.Dataset):
                     offsets.append(int((average_duration - self.new_length + 1)/2 + seg_id * average_duration))
                 else:
                     offsets.append(0)
-        
+
         clip_input = self._TSN_RGB(directory, offsets, self.new_height, self.new_width, self.new_length, self.is_color, self.name_pattern)
-        
+
         if self.transform is not None:
             clip_input = self.transform(clip_input)
-        if self.target_transform is not None:
-            target = self.target_transform(target)
-        if self.video_transform is not None:
-            clip_input = self.video_transform(clip_input)
+
+        if self.num_segments > 1 and not self.test_mode:
+            # For TSN training, reshape the input to B x 3 x H x W. Here, B = batch_size * num_segments
+            clip_input = clip_input.reshape((-1, 3 * self.new_length, self.target_height, self.target_width))
 
         return clip_input, target
 
@@ -123,47 +148,41 @@ class UCF101(dataset.Dataset):
     def _make_dataset(self, directory, setting):
 
         if not os.path.exists(setting):
-            print("Setting file %s doesn't exist. Check opt.train-list and opt.val-list. " % (setting))
-            sys.exit()
-        else:
-            clips = []
-            with open(setting) as split_f:
-                data = split_f.readlines()
-                for line in data:
-                    line_info = line.split()
-                    clip_path = os.path.join(directory, line_info[0])
-                    duration = int(line_info[1])
-                    target = int(line_info[2])
-                    item = (clip_path, duration, target)
-                    clips.append(item)
+            raise(RuntimeError("Setting file %s doesn't exist. Check opt.train-list and opt.val-list. " % (setting)))
+        clips = []
+        with open(setting) as split_f:
+            data = split_f.readlines()
+            for line in data:
+                line_info = line.split()
+                # line format: video_path, video_duration, video_label
+                clip_path = os.path.join(directory, line_info[0])
+                duration = int(line_info[1])
+                target = int(line_info[2])
+                item = (clip_path, duration, target)
+                clips.append(item)
         return clips
 
     def _TSN_RGB(self, directory, offsets, new_height, new_width, new_length, is_color, name_pattern):
         if is_color:
-            cv_read_flag = cv2.IMREAD_COLOR         # > 0
+            cv_read_flag = cv2.IMREAD_COLOR
         else:
-            cv_read_flag = cv2.IMREAD_GRAYSCALE     # = 0
+            cv_read_flag = cv2.IMREAD_GRAYSCALE
         interpolation = cv2.INTER_LINEAR
 
         sampled_list = []
-        for offset_id in range(len(offsets)):
-            offset = offsets[offset_id]
+        for _, offset in enumerate(offsets):
             for length_id in range(1, new_length+1):
                 frame_name = name_pattern % (length_id + offset)
                 frame_path = directory + "/" + frame_name
                 cv_img_origin = cv2.imread(frame_path, cv_read_flag)
                 if cv_img_origin is None:
-                   print("Could not load file %s" % (frame_path))
-                   sys.exit()
-                   # TODO: error handling here
+                    raise(RuntimeError("Could not load file %s. Check data path." % (frame_path)))
                 if new_width > 0 and new_height > 0:
-                    # use OpenCV3, use OpenCV2.4.13 may have error
                     cv_img = cv2.resize(cv_img_origin, (new_width, new_height), interpolation)
                 else:
                     cv_img = cv_img_origin
                 cv_img = cv2.cvtColor(cv_img, cv2.COLOR_BGR2RGB)
                 sampled_list.append(cv_img)
+        # the shape of clip_input will be H x W x C, and C = num_segments * new_length * 3
         clip_input = np.concatenate(sampled_list, axis=2)
         return nd.array(clip_input)
-
-

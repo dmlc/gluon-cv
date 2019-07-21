@@ -171,7 +171,8 @@ class Inception3(HybridBlock):
         Additional `norm_layer` arguments, for example `num_devices=4`
         for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
-    def __init__(self, classes=1000, norm_layer=BatchNorm, norm_kwargs=None, partial_bn=False, **kwargs):
+    def __init__(self, classes=1000, norm_layer=BatchNorm,
+                 norm_kwargs=None, partial_bn=False, **kwargs):
         super(Inception3, self).__init__(**kwargs)
         # self.use_aux_logits = use_aux_logits
         with self.name_scope():
@@ -233,7 +234,7 @@ def inception_v3(pretrained=False, ctx=cpu(),
     root : str, default $MXNET_HOME/models
         Location for keeping the model parameters.
     partial_bn : bool, default False
-        Freeze all batch normalization layers during training except the first layer. 
+        Freeze all batch normalization layers during training except the first layer.
     norm_layer : object
         Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
         Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
@@ -241,7 +242,7 @@ def inception_v3(pretrained=False, ctx=cpu(),
         Additional `norm_layer` arguments, for example `num_devices=4`
         for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
-    
+
     net = Inception3(partial_bn=partial_bn, **kwargs)
     if pretrained:
         from .model_store import get_model_file

@@ -4,7 +4,7 @@
 from __future__ import absolute_import
 from mxnet.gluon.nn import BatchNorm, HybridBlock
 
-__all__ = ['BatchNormCudnnOff', 'ReLU6', 'HardSigmoid', 'HardSwish']
+__all__ = ['BatchNormCudnnOff', 'Consensus', 'ReLU6', 'HardSigmoid', 'HardSwish']
 
 class BatchNormCudnnOff(BatchNorm):
     """Batch normalization layer without CUDNN. It is a temporary solution.
@@ -19,6 +19,26 @@ class BatchNormCudnnOff(BatchNorm):
     def hybrid_forward(self, F, x, gamma, beta, running_mean, running_var):
         return F.BatchNorm(x, gamma, beta, running_mean, running_var,
                            name='fwd', cudnn_off=True, **self._kwargs)
+
+class Consensus(HybridBlock):
+    """Consensus used in temporal segment networks.
+
+    Parameters
+    ----------
+    nclass : number of classses
+    num_segments : number of segments
+    kwargs : arguments goes to mxnet.gluon.nn.Consensus
+    """
+
+    def __init__(self, nclass, num_segments, **kwargs):
+        super(Consensus, self).__init__(**kwargs)
+        self.nclass = nclass
+        self.num_segments = num_segments
+
+    def hybrid_forward(self, F, x):
+        reshape_out = x.reshape((-1, self.num_segments, self.nclass))
+        consensus_out = reshape_out.mean(axis=1)
+        return consensus_out
 
 class ReLU6(HybridBlock):
     """RelU6 used in MobileNetV2 and MobileNetV3.

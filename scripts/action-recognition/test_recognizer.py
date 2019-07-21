@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 import mxnet as mx
 import gluoncv as gcv
-from mxnet import gluon, nd, gpu, init
+from mxnet import gluon, nd, gpu, init, context
 from mxnet import autograd as ag
 from mxnet.gluon import nn
 from mxnet.gluon.data.vision import transforms
@@ -12,7 +12,7 @@ from mxboard import SummaryWriter
 from gluoncv.data.transforms import video
 from gluoncv.data import ucf101
 from gluoncv.model_zoo import get_model
-from gluoncv.utils import makedirs, LRSequential, LRScheduler
+from gluoncv.utils import makedirs, LRSequential, LRScheduler, split_and_load
 
 # CLI
 def parse_args():
@@ -109,12 +109,16 @@ def parse_args():
                         help='new height of the resize image. default is 256')
     parser.add_argument('--new-width', type=int, default=340,
                         help='new width of the resize image. default is 340')
+    parser.add_argument('--num-classes', type=int, default=101,
+                        help='number of classes.')
+    parser.add_argument('--ten-crop', action='store_true',
+                        help='whether to use ten crop evaluation.')
     opt = parser.parse_args()
     return opt
 
 def batch_fn(batch, ctx):
-    data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0, even_split=False)
-    label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0, even_split=False)
+    data = split_and_load(batch[0], ctx_list=ctx, batch_axis=0, even_split=False)
+    label = split_and_load(batch[1], ctx_list=ctx, batch_axis=0, even_split=False)
     return data, label
 
 def main():
@@ -129,7 +133,7 @@ def main():
     print('Total batch size is set to %d on %d GPUs' % (batch_size, num_gpus))
 
     # get model
-    classes = 101
+    classes = opt.num_classes
     model_name = opt.model
     net = get_model(name=model_name, nclass=classes, pretrained=True, tsn=opt.use_tsn)
     net.cast(opt.dtype)
@@ -142,48 +146,50 @@ def main():
 
     # get data
     normalize = video.VideoNormalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-    transform_test = video.Compose([
+    transform_test = transforms.Compose([
         video.VideoTenCrop(opt.input_size),
         video.VideoToTensor(),
         normalize
     ])
-    val_dataset = ucf101.classification.UCF101(setting=opt.val_list, root=opt.data_dir, train=False, 
+
+    val_dataset = ucf101.classification.UCF101(setting=opt.val_list, root=opt.data_dir, train=False,
                                                new_width=opt.new_width, new_height=opt.new_height,
+                                               target_width=opt.input_size, target_height=opt.input_size,
                                                test_mode=True, num_segments=opt.num_segments, transform=transform_test)
     val_data = gluon.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
+    print('Load %d test samples.' % len(val_dataset))
 
     # start evaluation
     acc_top1 = mx.metric.Accuracy()
     acc_top5 = mx.metric.TopKAccuracy(5)
 
-    # Common practice during evaluation is to evenly sample 25 frames from a single video, and then perform 10-crop data augmentation
-    # which leads to 250 samples per video (750 channels). If this is too large to fit into one GPU, we can split it into multiple data bacthes.
-    num_data_batches = 1    
+    """Common practice during evaluation is to evenly sample 25 frames from a single video, and then perform 10-crop data augmentation.
+    This leads to 250 samples per video (750 channels). If this is too large to fit into one GPU, we can split it into multiple data bacthes.
+    `num_split_frames` has to be multiples of 3.
+    """
+    num_data_batches = 10
     num_split_frames = int(750 / num_data_batches)
 
     def test(ctx, val_data):
         acc_top1.reset()
         acc_top5.reset()
         for i, batch in enumerate(val_data):
-            # data, label = batch_fn(batch, ctx)
-            # outputs = [net(X.astype(opt.dtype, copy=False)) for X in data]
             outputs = []
             for seg_id in range(num_data_batches):
                 bs = seg_id * num_split_frames
                 be = (seg_id + 1) * num_split_frames
                 new_batch = [batch[0][:,bs:be,:,:], batch[1]]
                 data, label = batch_fn(new_batch, ctx)
-                for gpu_id in range(len(data)):
-                    X = data[gpu_id]
+                for gpu_id, X in enumerate(data):
                     X_reshaped = X.reshape((-1, 3, opt.input_size, opt.input_size))
                     pred = net(X_reshaped.astype(opt.dtype, copy=False))
                     if seg_id == 0:
                         outputs.append(pred)
                     else:
                         outputs[gpu_id] = nd.concat(outputs[gpu_id], pred, dim=0)
-                    
-            for gpu_id in range(len(outputs)):
-                outputs[gpu_id] = nd.expand_dims(outputs[gpu_id].mean(axis=0), axis=0)
+            # Perform the mean operation on 250 samples of each video
+            for gpu_id, out in enumerate(outputs):
+                outputs[gpu_id] = nd.expand_dims(out.mean(axis=0), axis=0)
 
             acc_top1.update(label, outputs)
             acc_top5.update(label, outputs)
