@@ -4,12 +4,14 @@ from __future__ import division
 import random
 import numbers
 import numpy as np
-import cv2
 from mxnet import nd
 from mxnet.gluon import Block
 
 __all__ = ['VideoToTensor', 'VideoNormalize', 'VideoRandomHorizontalFlip', 'VideoMultiScaleCrop',
            'VideoCenterCrop', 'VideoTenCrop']
+
+from ..filesystem import try_import_cv2
+cv2 = try_import_cv2()
 
 class VideoToTensor(Block):
     """Converts a video clip NDArray to a tensor NDArray.
