@@ -8,9 +8,6 @@ from mxnet.gluon.data import dataset
 
 __all__ = ['UCF101']
 
-from ..filesystem import try_import_cv2
-cv2 = try_import_cv2()
-
 class UCF101(dataset.Dataset):
     """Load the UCF101 action recognition dataset.
 
@@ -165,6 +162,10 @@ class UCF101(dataset.Dataset):
         return clips
 
     def _TSN_RGB(self, directory, offsets, new_height, new_width, new_length, is_color, name_pattern):
+
+        from ..filesystem import try_import_cv2
+        cv2 = try_import_cv2()
+
         if is_color:
             cv_read_flag = cv2.IMREAD_COLOR
         else:

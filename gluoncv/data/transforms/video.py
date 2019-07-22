@@ -10,9 +10,6 @@ from mxnet.gluon import Block
 __all__ = ['VideoToTensor', 'VideoNormalize', 'VideoRandomHorizontalFlip', 'VideoMultiScaleCrop',
            'VideoCenterCrop', 'VideoTenCrop']
 
-from ..filesystem import try_import_cv2
-cv2 = try_import_cv2()
-
 class VideoToTensor(Block):
     """Converts a video clip NDArray to a tensor NDArray.
 
@@ -131,6 +128,9 @@ class VideoMultiScaleCrop(Block):
         - **out**: output tensor with desired size as 'size'
 
     """
+
+    from ..filesystem import try_import_cv2
+    cv2 = try_import_cv2()
 
     def __init__(self, size, scale_ratios, fix_crop=True,
                  more_fix_crop=True, max_distort=1,
