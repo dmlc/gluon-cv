@@ -118,8 +118,6 @@ class VideoMultiScaleCrop(Block):
     	use more corners or not. Default: True
     max_distort : float
     	maximum distortion. Default: 1
-    interpolation : str
-    	Default: cv2.INTER_LINEAR
 
     Inputs:
     	- **data**: input tensor with (H x W x C) shape.
@@ -129,12 +127,8 @@ class VideoMultiScaleCrop(Block):
 
     """
 
-    from ..filesystem import try_import_cv2
-    cv2 = try_import_cv2()
-
     def __init__(self, size, scale_ratios, fix_crop=True,
-                 more_fix_crop=True, max_distort=1,
-                 interpolation=cv2.INTER_LINEAR):
+                 more_fix_crop=True, max_distort=1):
         super(VideoMultiScaleCrop, self).__init__()
         self.height = size[0]
         self.width = size[1]
@@ -142,7 +136,6 @@ class VideoMultiScaleCrop(Block):
         self.fix_crop = fix_crop
         self.more_fix_crop = more_fix_crop
         self.max_distort = max_distort
-        self.interpolation = interpolation
 
     def fillFixOffset(self, datum_height, datum_width):
         """Fixed cropping strategy
@@ -201,6 +194,10 @@ class VideoMultiScaleCrop(Block):
         return crop_sizes
 
     def forward(self, clips):
+
+        from ...utils.filesystem import try_import_cv2
+        cv2 = try_import_cv2()
+
         clips = clips.asnumpy()
         h, w, c = clips.shape
         is_color = False
@@ -228,14 +225,14 @@ class VideoMultiScaleCrop(Block):
                 cur_img = clips[:, :, frame_id*3:frame_id*3+3]
                 crop_img = cur_img[h_off:h_off+crop_height, w_off:w_off+crop_width, :]
                 scaled_clips[:, :, frame_id*3:frame_id*3+3] = \
-                	cv2.resize(crop_img, (self.width, self.height), self.interpolation)
+                	cv2.resize(crop_img, (self.width, self.height), cv2.INTER_LINEAR)
         else:
             num_imgs = int(c / 1)
             for frame_id in range(num_imgs):
                 cur_img = clips[:, :, frame_id:frame_id+1]
                 crop_img = cur_img[h_off:h_off+crop_height, w_off:w_off+crop_width, :]
                 scaled_clips[:, :, frame_id:frame_id+1] = np.expand_dims(\
-                	cv2.resize(crop_img, (self.width, self.height), self.interpolation), axis=2)
+                	cv2.resize(crop_img, (self.width, self.height), cv2.INTER_LINEAR), axis=2)
 
         return nd.array(scaled_clips)
 

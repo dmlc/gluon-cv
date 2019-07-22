@@ -163,7 +163,7 @@ class UCF101(dataset.Dataset):
 
     def _TSN_RGB(self, directory, offsets, new_height, new_width, new_length, is_color, name_pattern):
 
-        from ..filesystem import try_import_cv2
+        from ...utils.filesystem import try_import_cv2
         cv2 = try_import_cv2()
 
         if is_color:
