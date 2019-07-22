@@ -171,13 +171,21 @@ class Inception3(HybridBlock):
         Additional `norm_layer` arguments, for example `num_devices=4`
         for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
-    def __init__(self, classes=1000, norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
+    def __init__(self, classes=1000, norm_layer=BatchNorm,
+                 norm_kwargs=None, partial_bn=False, **kwargs):
         super(Inception3, self).__init__(**kwargs)
         # self.use_aux_logits = use_aux_logits
         with self.name_scope():
             self.features = nn.HybridSequential(prefix='')
             self.features.add(_make_basic_conv(channels=32, kernel_size=3, strides=2,
                                                norm_layer=norm_layer, norm_kwargs=norm_kwargs))
+            if partial_bn:
+                if norm_kwargs is not None:
+                    norm_kwargs['use_global_stats'] = True
+                else:
+                    norm_kwargs = {}
+                    norm_kwargs['use_global_stats'] = True
+
             self.features.add(_make_basic_conv(channels=32, kernel_size=3,
                                                norm_layer=norm_layer, norm_kwargs=norm_kwargs))
             self.features.add(_make_basic_conv(channels=64, kernel_size=3, padding=1,
@@ -211,7 +219,7 @@ class Inception3(HybridBlock):
 
 # Constructor
 def inception_v3(pretrained=False, ctx=cpu(),
-                 root='~/.mxnet/models', **kwargs):
+                 root='~/.mxnet/models', partial_bn=False, **kwargs):
     r"""Inception v3 model from
     `"Rethinking the Inception Architecture for Computer Vision"
     <http://arxiv.org/abs/1512.00567>`_ paper.
@@ -225,6 +233,8 @@ def inception_v3(pretrained=False, ctx=cpu(),
         The context in which to load the pretrained weights.
     root : str, default $MXNET_HOME/models
         Location for keeping the model parameters.
+    partial_bn : bool, default False
+        Freeze all batch normalization layers during training except the first layer.
     norm_layer : object
         Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
         Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
@@ -232,6 +242,7 @@ def inception_v3(pretrained=False, ctx=cpu(),
         Additional `norm_layer` arguments, for example `num_devices=4`
         for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
+
     net = Inception3(**kwargs)
     if pretrained:
         from .model_store import get_model_file
