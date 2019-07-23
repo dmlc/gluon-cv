@@ -12,7 +12,7 @@ Introduction
 GluonCV delivered some quantized models to improve the performance and reduce the deployment costs for the computer vision inference tasks. In real production, there are two main benefits of lower precision (INT8). First, the computation can be accelerated by the low precision instruction, like Intel Vector Neural Network Instruction (VNNI). Second, lower precision data type would save the memory bandwidth and allow for better cache locality and save the power. The new feature can get up to 4X performance speedup in the latest `AWS EC2 C5 instances <https://aws.amazon.com/blogs/aws/now-available-new-c5-instance-sizes-and-bare-metal-instances/>`_ under the `Intel Deep Learning Boost (VNNI) <https://www.intel.ai/intel-deep-learning-boost/>`_ enabled hardware with less than 0.5% accuracy drop.
 
 Please checkout `verify_pretrained.py <https://raw.githubusercontent.com/dmlc/gluon-cv/master/scripts/classification/imagenet/verify_pretrained.py>`_ for imagenet inference,
-`eval_ssd.py <https://raw.githubusercontent.com/dmlc/gluon-cv/master/scripts/detection/ssd/eval_ssd.py>`_ for SSD inference, and `eval_segmentation.py <https://raw.githubusercontent.com/dmlc/gluon-cv/master/scripts/segmentation/eval_segmentation.py>`_ 
+`eval_ssd.py <https://raw.githubusercontent.com/dmlc/gluon-cv/master/scripts/detection/ssd/eval_ssd.py>`_ for SSD inference, and `test.py <https://raw.githubusercontent.com/dmlc/gluon-cv/master/scripts/segmentation/test.py>`_ 
 for FCN inference.
 
 Performance

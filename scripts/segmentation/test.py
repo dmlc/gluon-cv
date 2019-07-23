@@ -6,7 +6,7 @@ import time
 import sys
 
 import mxnet as mx
-from mxnet import gluon
+from mxnet import gluon, ndarray as nd
 from mxnet.gluon.data.vision import transforms
 
 import gluoncv
@@ -22,6 +22,8 @@ def parse_args():
                         help='model name (default: fcn)')
     parser.add_argument('--backbone', type=str, default='resnet101',
                         help='base network')
+    parser.add_argument('--image-shape', type=int, default=480,
+                        help='image shape')
     parser.add_argument('--base-size', type=int, default=520,
                         help='base image size')
     parser.add_argument('--crop-size', type=int, default=480,
@@ -33,7 +35,8 @@ def parse_args():
     parser.add_argument('--quantized', action='store_true', 
                         help='whether to use quantized model')
     parser.add_argument('--batch-size', type=int, default=16)
-    parser.add_argument('--num-batches', type=int, default=100)
+    parser.add_argument('--num-iterations', type=int, default=100,
+                        help='number of benchmarking iterations.')
     parser.add_argument('--workers', type=int, default=4,
                         help='number of workers for data loading')
     parser.add_argument('--pretrained', action="store_true",
@@ -49,6 +52,9 @@ def parse_args():
     # evaluation only
     parser.add_argument('--eval', action='store_true', default=False,
                         help='evaluation only')
+    # dummy benchmark
+    parser.add_argument('--benchmark', action='store_true', default=False,
+                        help='whether to use dummy data for benchmark')
 
     args = parser.parse_args()
     
@@ -81,13 +87,13 @@ def test(args, model):
         testset = get_segmentation_dataset(
             args.dataset, split='test', mode=args.mode, **data_kwargs)
     size = len(testset)
+
     # get dataloader
+    batchify_fn = ms_batchify_fn if args.mode == 'test' else None
     test_data = gluon.data.DataLoader(
-            testset, args.batch_size, last_batch='keep', shuffle=False, num_workers=args.workers)
+            testset, args.batch_size, batchify_fn=batchify_fn, last_batch='keep', shuffle=False, num_workers=args.workers)
 
     print(model)
-    if not args.eval:
-        evaluator = MultiEvalModel(model, testset.num_class, ctx_list=args.ctx)
     metric = gluoncv.utils.metrics.SegmentationMetric(testset.num_class)
 
     tbar = tqdm(test_data)
@@ -99,23 +105,44 @@ def test(args, model):
             data = mx.gluon.utils.split_and_load(batch, ctx_list=args.ctx, batch_axis=0, even_split=False)
             outputs = None
             for x in data:
-                output = model.forward(x)[0]
+                output = model.forward(x)
                 outputs = output if outputs is None else nd.concat(outputs, output, axis=0)
-            outputs = [outputs]
             metric.update(targets, outputs)
             pixAcc, mIoU = metric.get()
             tbar.set_description( 'pixAcc: %.4f, mIoU: %.4f' % (pixAcc, mIoU))
         else:
-            im_paths = dsts
-            predicts = evaluator.parallel_forward(batch)
-            for predict, impath in zip(predicts, im_paths):
-                predict = mx.nd.squeeze(mx.nd.argmax(predict[0], 1)).asnumpy() + \
+            for data, impath in zip(batch, dsts):
+                data = data.as_in_context(args.ctx[0])
+                if len(data.shape) < 4:
+                    data = nd.expand_dims(data, axis=0)
+                predict = model.forward(data)[0]
+                predict = mx.nd.squeeze(mx.nd.argmax(predict, 1)).asnumpy() + \
                     testset.pred_offset
                 mask = get_color_pallete(predict, args.dataset)
                 outname = os.path.splitext(impath)[0] + '.png'
                 mask.save(os.path.join(outdir, outname))
     speed = size / (time.time() - tic)
     print('Inference speed with batchsize %d is %.2f img/sec' % (args.batch_size, speed))
+
+
+def benchmarking(args, model):
+    print('-----benchmarking on %s -----' % args.model)
+    bs = args.batch_size
+    num_iterations = args.num_iterations
+    input_shape = (bs, 3, args.image_shape, args.image_shape)
+    size = num_iterations * bs
+    data = [mx.random.uniform(-1.0, 1.0, shape=input_shape, ctx=args.ctx[0], dtype='float32')]
+    dry_run = 5
+    with tqdm(total=size+dry_run*bs) as pbar:
+        for n in range(dry_run + num_iterations):
+            if n == dry_run:
+                tic = time.time()
+            outputs = model.forward(data[0])
+            for output in outputs:
+                output.wait_to_read()
+            pbar.update(bs)
+    speed = size / (time.time() - tic)
+    print('Throughput is %f imgs/sec' % speed)
 
 
 if __name__ == "__main__":
@@ -138,12 +165,6 @@ if __name__ == "__main__":
 
     if withQuantization and args.quantized:
         model_prefix += '_int8'
-
-    if args.quantized and args.mode != 'val':
-        raise ValueError("Currently, %s mode or is not supported by quantized model." % args.mode)
-
-    if args.quantized and args.eval == False:
-        raise ValueError("Currently, only evaluation is supported by quantized model.")
 
      # create network
     if args.pretrained:
@@ -169,4 +190,7 @@ if __name__ == "__main__":
         model.hybridize()
 
     print('Testing model: ', args.resume)
-    test(args, model)
+    if not args.benchmark:
+        test(args, model)
+    else:
+        benchmarking(args, model)

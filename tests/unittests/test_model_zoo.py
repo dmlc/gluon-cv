@@ -411,6 +411,15 @@ def test_quantized_ssd_models():
     _test_model_list(model_list, ctx, x)
 
 
+@unittest.skip("temporarily disabled to fallback to non-mkl version")
+@with_cpu(0)
+def test_quantized_fcn_models():
+    model_list = ['fcn_resnet101_voc_int8', 'fcn_resnet101_coco_int8-symbol']
+    ctx = mx.context.current_context()
+    x = mx.random.uniform(shape=(1, 3, 480, 480), ctx=ctx)
+    _test_model_list(model_list, ctx, x)
+
+
 if __name__ == '__main__':
     import nose
 
