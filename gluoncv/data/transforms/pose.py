@@ -13,6 +13,7 @@ from __future__ import absolute_import
 from __future__ import division
 
 import math
+import random
 import numpy as np
 import mxnet as mx
 from mxnet import nd, image
@@ -333,10 +334,10 @@ def random_sample_bbox(ul, br, w, h, im_width, im_height):
         ratio = float(h) / w
         if w < h:
             patch_w = patch_scale * w
-            patch_h = patch_width * ratio
+            patch_h = patch_w * ratio
         else:
             patch_h = patch_scale * h
-            patch_width = patch_h / ratio
+            patch_w = patch_h / ratio
         xmin = ul[0] + random.uniform(0, 1) * (w - patch_w)
         ymin = ul[1] + random.uniform(0, 1) * (h - patch_h)
         xmax = xmin + patch_w + 1
@@ -490,29 +491,24 @@ def alpha_pose_detection_processor(img, boxes, class_idxs, scores, thr=0.5):
     # select boxes
     mask1 = (class_idxs == 0).asnumpy()
     mask2 = (scores > thr).asnumpy()
-    picked_idxs = np.where((mask1 + mask2) > 1)[1]
+    picked_idxs = np.where((mask1 + mask2) > 1)[0]
     if picked_idxs.shape[0] == 0:
         return None, None
     else:
         return boxes[picked_idxs], scores[picked_idxs]
 
-def alpha_pose_image_cropper(img, boxes, scores, output_shape=(256, 192),
-                             mean=(0.485, 0.456, 0.406),
-                             std=(0.229, 0.224, 0.225)):
+def alpha_pose_image_cropper(source_img, boxes, scores, output_shape=(256, 192)):
     if boxes is None:
         return None, boxes
 
     # crop person poses
-    img_width, img_height = img.shape[1], img.shape[0]
+    img_width, img_height = source_img.shape[1], source_img.shape[0]
 
     tensors = mx.nd.zeros([boxes.shape[0], 3, output_shape[0], output_shape[1]])
     out_boxes = np.zeros([boxes.shape[0], 4])
 
-    img = mx.nd.image.to_tensor(nd.array(img))
-    img = mx.nd.image.normalize(img, mean=mean, std=std)
-    img = img.transpose(axes=[1, 2, 0])
-
     for i, box in enumerate(boxes.asnumpy()):
+        img = source_img.copy()
         box_width = box[2] - box[0]
         box_height = box[3] - box[1]
         if box_width > 100:
@@ -533,61 +529,78 @@ def alpha_pose_image_cropper(img, boxes, scores, output_shape=(256, 192),
         crop_height = bottom - up
         if crop_height < 1:
             continue
-        cropped_img = mx.image.fixed_crop(img, left, up, crop_width, crop_height)
+        ul = np.array((left, up))
+        br = np.array((right, bottom))
+        img = cv_cropBox(img, ul, br, output_shape[0], output_shape[1])
 
-        # resize image
-        resize_factor = min(output_shape[1] / crop_width, output_shape[0] / crop_height)
-        new_width = int(crop_width * resize_factor)
-        new_height = int(crop_height * resize_factor)
-        tensor = mx.image.imresize(cropped_img, new_width, new_height)
-        tensor = tensor.transpose(axes=[2, 0, 1])
-        tensor = tensor.reshape(1, 3, new_height, new_width)
-
-        # pad tensor
-        pad_h = output_shape[0] - new_height
-        pad_w = output_shape[1] - new_width
-        pad_shape = (0, 0, 0, 0, pad_h // 2, (pad_h + 1) // 2, pad_w // 2, (pad_w + 1) // 2)
-        tensor = mx.nd.pad(tensor, mode='constant',
-                           constant_value=0.5, pad_width=pad_shape)
-        tensors[i] = tensor.reshape(3, output_shape[0], output_shape[1])
+        img = mx.nd.image.to_tensor(mx.nd.array(img))
+        # img = img.transpose((2, 0, 1))
+        img[0] = img[0] - 0.406
+        img[1] = img[1] - 0.457
+        img[2] = img[2] - 0.480
+        assert img.shape[0] == 3
+        tensors[i] = img
         out_boxes[i] = (left, up, right, bottom)
-
 
     return tensors, out_boxes
 
 def heatmap_to_coord_alpha_pose(hms, boxes):
     hm_h = hms.shape[2]
     hm_w = hms.shape[3]
-    aspect_ratio = float(hm_h) / hm_w
-    pt1 = mx.nd.array(boxes[:, :, (0, 1)], dtype=hms.dtype)
-    pt2 = mx.nd.array(boxes[:, :, (2, 3)], dtype=hms.dtype)
+    coords, maxvals = get_max_pred(hms)
+    assert boxes.shape[1] == 1
 
-    # get keypoint coordinates
-    idxs = mx.nd.argmax(hms.reshape(hms.shape[0], hms.shape[1], -1), 2, keepdims=True)
-    maxval = mx.nd.max(hms.reshape(hms.shape[0], hms.shape[1], -1), 2, keepdims=True)
-    preds = idxs.tile(reps=[1, 1, 2])
-    preds[:, :, 0] %= hms.shape[3]
-    preds[:, :, 1] /= hms.shape[3]
+    pt1 = mx.nd.array(boxes[:, 0, (0, 1)], dtype=hms.dtype)
+    pt2 = mx.nd.array(boxes[:, 0, (2, 3)], dtype=hms.dtype)
 
-    # get pred masks
-    pred_mask = (maxval > 0).tile(reps=[1, 1, 2])
-    preds *= pred_mask
+    # post-processing
+    for n in range(coords.shape[0]):
+        for p in range(coords.shape[1]):
+            hm = hms[n][p]
+            px = int(nd.floor(coords[n][p][0] + 0.5).asscalar())
+            py = int(nd.floor(coords[n][p][1] + 0.5).asscalar())
+            if 1 < px < hm_w - 1 and 1 < py < hm_h - 1:
+                diff = nd.concat(hm[py][px + 1] - hm[py][px - 1],
+                                 hm[py + 1][px] - hm[py - 1][px],
+                                 dim=0)
+                coords[n][p] += nd.sign(diff) * .25
 
-    # coordinate transformation
-    box_size = pt2 - pt1
-    len_h = mx.nd.maximum(box_size[:, :, 1:2], box_size[:, :, 0:1] * aspect_ratio)
-    len_w = len_h / aspect_ratio
-    canvas_size = mx.nd.concatenate([len_w, len_h], axis=2)
-    offsets = pt1 - mx.nd.maximum(0, canvas_size / 2 - box_size / 2)
-    preds_tf = preds * len_h / hm_h + offsets
+    preds = nd.zeros_like(coords)
+    for i in range(hms.shape[0]):
+        for j in range(hms.shape[1]):
+            preds[i][j] = transformBoxInvert(coords[i][j], pt1[i], pt2[i], hm_h, hm_w)
 
-    return preds_tf, maxval
+    return preds, maxvals
+
+
+def transformBoxInvert(pt, ul, br, resH, resW):
+    # type: (Tensor, Tensor, Tensor, float, float, float, float) -> Tensor
+
+    center = mx.nd.zeros(2)
+    center[0] = (br[0] - 1 - ul[0]) / 2
+    center[1] = (br[1] - 1 - ul[1]) / 2
+
+    lenH = max(br[1] - ul[1], (br[0] - ul[0]) * resH / resW)
+    lenW = lenH * resW / resH
+
+    _pt = (pt * lenH) / resH
+
+    if bool(((lenW - 1) / 2 - center[0]) > 0):
+        _pt[0] = _pt[0] - ((lenW - 1) / 2 - center[0]).asscalar()
+    if bool(((lenH - 1) / 2 - center[1]) > 0):
+        _pt[1] = _pt[1] - ((lenH - 1) / 2 - center[1]).asscalar()
+
+    new_point = mx.nd.zeros(2)
+    new_point[0] = _pt[0] + ul[0]
+    new_point[1] = _pt[1] + ul[1]
+    return new_point
+
 
 def detector_to_alpha_pose(img, class_ids, scores, bounding_boxs,
                            output_shape=(256, 192), ctx=mx.cpu(),
-                           thr=0.5, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)):
+                           thr=0.5):
     boxes, scores = alpha_pose_detection_processor(
         img, bounding_boxs, class_ids, scores, thr=thr)
     pose_input, upscale_bbox = alpha_pose_image_cropper(
-        img, boxes, scores, output_shape=output_shape, mean=mean, std=std)
+        img, boxes, scores, output_shape=output_shape)
     return pose_input, upscale_bbox

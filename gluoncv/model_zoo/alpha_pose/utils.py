@@ -1,5 +1,8 @@
 """Fast Pose Utils for loading parameters"""
+from mxnet import random
 from mxnet import ndarray
+from mxnet.initializer import Initializer
+
 
 def _try_load_parameters(self, filename=None, model=None, ctx=None, allow_missing=False,
                          ignore_extra=False):
@@ -69,3 +72,36 @@ def _load_from_pytorch(self, filename, ctx=None):
             raise Exception
         if name in params:
             params[name]._load_init(new_params[name], ctx=ctx)
+
+
+class ZeroUniform(Initializer):
+    """Initializes weights with random values uniformly sampled from a given range.
+
+    Parameters
+    ----------
+    scale : float, optional
+        The bound on the range of the generated random values.
+        Values are generated from the range [0, `scale`].
+        Default scale is 1.
+
+    Example
+    -------
+    >>> # Given 'module', an instance of 'mxnet.module.Module', initialize weights
+    >>> # to random values uniformly sampled between 0 and 0.1.
+    ...
+    >>> init = ZeroUniform(0.1)
+    >>> module.init_params(init)
+    >>> for dictionary in module.get_params():
+    ...     for key in dictionary:
+    ...         print(key)
+    ...         print(dictionary[key].asnumpy())
+    ...
+    fullyconnected0_weight
+    [[ 0.01360891 0.02144304  0.08511933]]
+    """
+    def __init__(self, scale=1):
+        super(ZeroUniform, self).__init__(scale=scale)
+        self.scale = scale
+
+    def _init_weight(self, _, arr):
+        random.uniform(0, self.scale, out=arr)

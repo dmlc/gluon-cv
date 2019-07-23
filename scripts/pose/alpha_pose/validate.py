@@ -34,10 +34,6 @@ parser.add_argument('--params-file', type=str,
                     help='local parameters to load.')
 parser.add_argument('--flip-test', action='store_true',
                     help='Whether to flip test input to ensemble results.')
-parser.add_argument('--mean', type=str, default='0.485,0.456,0.406',
-                    help='mean vector for normalization')
-parser.add_argument('--std', type=str, default='0.229,0.224,0.225',
-                    help='std vector for normalization')
 parser.add_argument('--score-threshold', type=float, default=0,
                     help='threshold value for predicted score.')
 opt = parser.parse_args()
@@ -52,7 +48,7 @@ num_workers = opt.num_workers
 
 def get_dataset(dataset):
     if dataset == 'coco':
-        val_dataset = mscoco.keypoints.COCOKeyPoints(splits=('person_keypoints_val2017'))
+        val_dataset = mscoco.keypoints.COCOKeyPoints(splits=('person_keypoints_val2017'), skip_empty=False)
     else:
         raise NotImplementedError("Dataset: {} not supported.".format(dataset))
     return val_dataset
@@ -66,13 +62,9 @@ def get_data_loader(dataset, batch_size, num_workers, input_size):
 
     val_dataset = get_dataset(dataset)
 
-    meanvec = [float(i) for i in opt.mean.split(',')]
-    stdvec = [float(i) for i in opt.std.split(',')]
     transform_val = AlphaPoseDefaultValTransform(num_joints=val_dataset.num_joints,
                                                  joint_pairs=val_dataset.joint_pairs,
-                                                 image_size=input_size,
-                                                 mean=meanvec,
-                                                 std=stdvec)
+                                                 image_size=input_size)
     val_data = gluon.data.DataLoader(
         val_dataset.transform(transform_val),
         batch_size=batch_size, shuffle=False, last_batch='keep',
@@ -89,7 +81,10 @@ val_metric = COCOKeyPointsMetric(val_dataset, 'coco_keypoints',
 
 use_pretrained = True if not opt.params_file else False
 model_name = '_'.join((opt.model, opt.dataset))
-net = get_model(model_name, ctx=context, pretrained=use_pretrained)
+kwargs = {'ctx': context,
+          'pretrained': use_pretrained,
+          'num_gpus': num_gpus}
+net = get_model(model_name, **kwargs)
 if not use_pretrained:
     net.load_parameters(opt.params_file, ctx=context)
 net.hybridize()

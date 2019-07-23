@@ -4,8 +4,9 @@ import mxnet as mx
 from mxnet.gluon.block import HybridBlock
 from mxnet.gluon import nn
 from mxnet import initializer
+import math
 
-from .utils import _try_load_parameters, _load_from_pytorch
+from .utils import _try_load_parameters, _load_from_pytorch, ZeroUniform
 
 __all__ = ['get_alphapose', 'alpha_pose_resnet101_v1b_coco']
 
@@ -33,11 +34,14 @@ class PixelShuffle(HybridBlock):
 
 
 class DUC(HybridBlock):
-    def __init__(self, planes, upscale_factor=2, norm_layer=nn.BatchNorm, **kwargs):
+    def __init__(self, planes, inplanes, upscale_factor=2, norm_layer=nn.BatchNorm, **kwargs):
         super(DUC, self).__init__()
         with self.name_scope():
-            self.conv = nn.Conv2D(planes, kernel_size=3, padding=1, use_bias=False)
-            self.bn = norm_layer(**kwargs)
+            self.conv = nn.Conv2D(
+                planes, in_channels=inplanes, kernel_size=3, padding=1, use_bias=False,
+                weight_initializer=initializer.Uniform(scale=math.sqrt(1 / (inplanes * 3 * 3))),
+                bias_initializer=initializer.Uniform(scale=math.sqrt(1 / (inplanes * 3 * 3))))
+            self.bn = norm_layer(gamma_initializer=ZeroUniform(), **kwargs)
             self.relu = nn.Activation('relu')
             self.pixel_shuffle = PixelShuffle(upscale_factor)
 
@@ -72,12 +76,18 @@ class Bottleneck(HybridBlock):
         super(Bottleneck, self).__init__()
 
         with self.name_scope():
-            self.conv1 = nn.Conv2D(planes, kernel_size=1, use_bias=False)
-            self.bn1 = norm_layer(**kwargs)
-            self.conv2 = nn.Conv2D(planes, kernel_size=3, strides=stride, padding=1, use_bias=False)
-            self.bn2 = norm_layer(**kwargs)
-            self.conv3 = nn.Conv2D(planes * 4, kernel_size=1, use_bias=False)
-            self.bn3 = norm_layer(**kwargs)
+            self.conv1 = nn.Conv2D(planes, in_channels=inplanes, kernel_size=1, use_bias=False,
+                                   weight_initializer=initializer.Uniform(scale=math.sqrt(1 / (inplanes * 1 * 1))),
+                                   bias_initializer=initializer.Uniform(scale=math.sqrt(1 / (inplanes * 1 * 1))))
+            self.bn1 = norm_layer(gamma_initializer=ZeroUniform(), **kwargs)
+            self.conv2 = nn.Conv2D(planes, in_channels=planes, kernel_size=3, strides=stride, padding=1, use_bias=False,
+                                   weight_initializer=initializer.Uniform(scale=math.sqrt(1 / (planes * 3 * 3))),
+                                   bias_initializer=initializer.Uniform(scale=math.sqrt(1 / (planes * 3 * 3))))
+            self.bn2 = norm_layer(gamma_initializer=ZeroUniform(), **kwargs)
+            self.conv3 = nn.Conv2D(planes * 4, in_channels=planes, kernel_size=1, use_bias=False,
+                                   weight_initializer=initializer.Uniform(scale=math.sqrt(1 / (planes * 1 * 1))),
+                                   bias_initializer=initializer.Uniform(scale=math.sqrt(1 / (planes * 1 * 1))))
+            self.bn3 = norm_layer(gamma_initializer=ZeroUniform(), **kwargs)
 
         if reduction:
             self.se = SELayer(planes * 4)
@@ -118,8 +128,10 @@ class FastSEResNet(HybridBlock):
         self.layers = [3, 4, {"resnet50": 6, "resnet101": 23}[architecture], 3]
         self.block = Bottleneck
 
-        self.conv1 = nn.Conv2D(64, kernel_size=7, strides=2, padding=3, use_bias=False)
-        self.bn1 = self.norm_layer(**kwargs)
+        self.conv1 = nn.Conv2D(64, in_channels=3, kernel_size=7, strides=2, padding=3, use_bias=False,
+                               weight_initializer=initializer.Uniform(scale=math.sqrt(1 / (3 * 7 * 7))),
+                               bias_initializer=initializer.Uniform(scale=math.sqrt(1 / (3 * 7 * 7))))
+        self.bn1 = self.norm_layer(gamma_initializer=ZeroUniform(), **kwargs)
         self.relu = nn.Activation('relu')
         self.maxpool = nn.MaxPool2D(pool_size=3, strides=2, padding=1)
 
@@ -147,8 +159,10 @@ class FastSEResNet(HybridBlock):
         downsample = None
         if stride != 1 or self.inplanes != planes * block.expansion:
             downsample = nn.HybridSequential()
-            downsample.add(nn.Conv2D(planes * block.expansion, kernel_size=1, strides=stride, use_bias=False))
-            downsample.add(self.norm_layer(**kwargs))
+            downsample.add(nn.Conv2D(planes * block.expansion, in_channels=self.inplanes, kernel_size=1, strides=stride, use_bias=False,
+                                     weight_initializer=initializer.Uniform(scale=math.sqrt(1 / (self.inplanes * 1 * 1))),
+                                     bias_initializer=initializer.Uniform(scale=math.sqrt(1 / (self.inplanes * 1 * 1)))))
+            downsample.add(self.norm_layer(gamma_initializer=ZeroUniform(), **kwargs))
 
         layers = nn.HybridSequential()
         if downsample is not None:
@@ -170,16 +184,17 @@ class AlphaPose(HybridBlock):
         self.shuffle1 = PixelShuffle(2)
         if norm_kwargs is None:
             norm_kwargs = {}
-        self.duc1 = DUC(1024, upscale_factor=2, norm_layer=norm_layer, **norm_kwargs)
-        self.duc2 = DUC(512, upscale_factor=2, norm_layer=norm_layer, **norm_kwargs)
+        self.duc1 = DUC(1024, inplanes=512, upscale_factor=2, norm_layer=norm_layer, **norm_kwargs)
+        self.duc2 = DUC(512, inplanes=256, upscale_factor=2, norm_layer=norm_layer, **norm_kwargs)
 
         self.conv_out = nn.Conv2D(
             channels=num_joints,
+            in_channels=128,
             kernel_size=3,
             strides=1,
             padding=1,
-            weight_initializer=initializer.Normal(0.001),
-            bias_initializer=initializer.Zero()
+            weight_initializer=initializer.Uniform(scale=math.sqrt(1 / (128 * 3 * 3))),
+            bias_initializer=initializer.Uniform(scale=math.sqrt(1 / (128 * 3 * 3)))
         )
 
     def hybrid_forward(self, F, x):
@@ -232,11 +247,16 @@ def get_alphapose(name, dataset, num_joints, pretrained=False, pretrained_base=T
         import warnings
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
-            net.initialize(mx.init.MSRAPrelu())
+            net.collect_params().initialize()
     net.collect_params().reset_ctx(ctx)
     return net
 
 def alpha_pose_resnet101_v1b_coco(**kwargs):
     from ...data import COCOKeyPoints
     keypoints = COCOKeyPoints.KEYPOINTS
-    return get_alphapose(name='resnet101_v1b', dataset='coco', num_joints=len(keypoints), **kwargs)
+    num_gpus = kwargs.pop('num_gpus')
+    return get_alphapose(
+        name='resnet101_v1b', dataset='coco',
+        num_joints=len(keypoints), norm_layer=mx.gluon.contrib.nn.SyncBatchNorm,
+        norm_kwargs={'use_global_stats': False, 'num_devices': num_gpus},
+        **kwargs)
