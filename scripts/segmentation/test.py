@@ -67,77 +67,93 @@ def parse_args():
     return args
     
 
-def test(args, model):
-    # output folder
-    outdir = 'outdir'
-    if not os.path.exists(outdir):
-        os.makedirs(outdir)
-    # image transform
-    input_transform = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize([.485, .456, .406], [.229, .224, .225]),
-    ])
-    data_kwargs = {'transform': input_transform, 'base_size': args.base_size,
-                   'crop_size': args.crop_size}
-    # get dataset
-    if args.eval:
-        testset = get_segmentation_dataset(
-            args.dataset, split='val', mode=args.mode, **data_kwargs)
-    else:
-        testset = get_segmentation_dataset(
-            args.dataset, split='test', mode=args.mode, **data_kwargs)
+def test(model, is_eval, batch_size, testset, metric, num_class, ctx_list, num_workers, outdir):
     size = len(testset)
-
-    # get dataloader
-    batchify_fn = ms_batchify_fn if args.mode == 'test' else None
     test_data = gluon.data.DataLoader(
-            testset, args.batch_size, batchify_fn=batchify_fn, last_batch='keep', shuffle=False, num_workers=args.workers)
-
+            testset, batch_size, batchify_fn=ms_batchify_fn, last_batch='keep', shuffle=False, num_workers=num_workers)
     print(model)
-    metric = gluoncv.utils.metrics.SegmentationMetric(testset.num_class)
+    evaluator = MultiEvalModel(model, num_class, ctx_list=ctx_list)
+
+    tbar = tqdm(test_data)
+    metric.reset()
+    tic = time.time()
+    for i, (data, dsts) in enumerate(tbar):
+        if is_eval:
+            predicts = [pred for pred in evaluator.parallel_forward(data)]
+            targets = [target.as_in_context(predicts[0].context) \
+                       for target in dsts]
+            metric.update(targets, predicts)
+            pixAcc, mIoU = metric.get()
+            tbar.set_description('pixAcc: %.4f, mIoU: %.4f' % (pixAcc, mIoU))
+        else:
+            im_paths = dsts
+            predicts = evaluator.parallel_forward(data)
+            for predict, impath in zip(predicts, im_paths):
+                predict = [predict]
+                predict = mx.nd.squeeze(mx.nd.argmax(predict[0], 1)).asnumpy() + \
+                    testset.pred_offset
+                mask = get_color_pallete(predict, testset)
+                outname = os.path.splitext(impath)[0] + '.png'
+                mask.save(os.path.join(outdir, outname))
+    speed = size / (time.time() - tic)
+    print('Inference speed with batchsize %d is %.2f img/sec' % (batch_size, speed))
+
+
+def test_quantization(model, is_eval, batch_size, testset, metric, num_class, ctx_list, num_workers, outdir):
+    model.hybridize(static_alloc=True, static_shape=True)
+    size = len(testset)
+    batchify_fn = ms_batchify_fn if testset.mode == 'test' else None
+    test_data = gluon.data.DataLoader(
+            testset, batch_size, batchify_fn=batchify_fn, last_batch='keep', shuffle=False, num_workers=num_workers)
+    print(model)
 
     tbar = tqdm(test_data)
     metric.reset()
     tic = time.time()
     for i, (batch, dsts) in enumerate(tbar):
-        if args.eval:
-            targets = mx.gluon.utils.split_and_load(dsts, ctx_list=args.ctx, even_split=False)
-            data = mx.gluon.utils.split_and_load(batch, ctx_list=args.ctx, batch_axis=0, even_split=False)
+        if is_eval:
+            targets = mx.gluon.utils.split_and_load(dsts, ctx_list=ctx_list, even_split=False)
+            data = mx.gluon.utils.split_and_load(batch, ctx_list=ctx_list, batch_axis=0, even_split=False)
             outputs = None
             for x in data:
-                output = model.forward(x)
+                output = model(x)
                 outputs = output if outputs is None else nd.concat(outputs, output, axis=0)
             metric.update(targets, outputs)
             pixAcc, mIoU = metric.get()
-            tbar.set_description( 'pixAcc: %.4f, mIoU: %.4f' % (pixAcc, mIoU))
+            tbar.set_description('pixAcc: %.4f, mIoU: %.4f' % (pixAcc, mIoU))
         else:
             for data, impath in zip(batch, dsts):
-                data = data.as_in_context(args.ctx[0])
+                data = data.as_in_context(ctx_list[0])
                 if len(data.shape) < 4:
                     data = nd.expand_dims(data, axis=0)
-                predict = model.forward(data)[0]
+                predict = model(data)[0]
                 predict = mx.nd.squeeze(mx.nd.argmax(predict, 1)).asnumpy() + \
                     testset.pred_offset
-                mask = get_color_pallete(predict, args.dataset)
+                mask = get_color_pallete(predict, testset)
                 outname = os.path.splitext(impath)[0] + '.png'
                 mask.save(os.path.join(outdir, outname))
     speed = size / (time.time() - tic)
-    print('Inference speed with batchsize %d is %.2f img/sec' % (args.batch_size, speed))
+    print('Inference speed with batchsize %d is %.2f img/sec' % (batch_size, speed))
 
 
 def benchmarking(args, model):
     print('-----benchmarking on %s -----' % args.model)
+    if args.quantized:
+        model.hybridize(static_alloc=True, static_shape=True)
+    else:
+        model.hybridize()
+    
     bs = args.batch_size
     num_iterations = args.num_iterations
     input_shape = (bs, 3, args.image_shape, args.image_shape)
     size = num_iterations * bs
-    data = [mx.random.uniform(-1.0, 1.0, shape=input_shape, ctx=args.ctx[0], dtype='float32')]
+    data = mx.random.uniform(-1.0, 1.0, shape=input_shape, ctx=args.ctx[0], dtype='float32')
     dry_run = 5
     with tqdm(total=size+dry_run*bs) as pbar:
         for n in range(dry_run + num_iterations):
             if n == dry_run:
                 tic = time.time()
-            outputs = model.forward(data[0])
+            outputs = model(data)
             for output in outputs:
                 output.wait_to_read()
             pbar.update(bs)
@@ -166,10 +182,15 @@ if __name__ == "__main__":
     if withQuantization and args.quantized:
         model_prefix += '_int8'
 
+    # output folder
+    outdir = 'outdir'
+    if not os.path.exists(outdir):
+        os.makedirs(outdir)
+
      # create network
     if args.pretrained:
         model = get_model(model_prefix, pretrained=True)
-        model.collect_params().reset_ctx(ctx = args.ctx)
+        model.collect_params().reset_ctx(ctx=args.ctx)
     else:
         model = get_segmentation_model(model=args.model, dataset=args.dataset, ctx=args.ctx,
                                        backbone=args.backbone, norm_layer=args.norm_layer,
@@ -182,15 +203,32 @@ if __name__ == "__main__":
         else:
             raise RuntimeError("=> no checkpoint found at '{}'" \
                 .format(args.resume))
-
     print("Successfully loaded %s model" % model_prefix)
-    if '_int8' in model_prefix:
-        model.hybridize(static_alloc=True, static_shape=True)
-    else:
-        model.hybridize()
 
+    # image transform
+    input_transform = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize([.485, .456, .406], [.229, .224, .225]),
+    ])
+    data_kwargs = {'transform': input_transform, 'base_size': args.base_size,
+                   'crop_size': args.crop_size}
+    # get dataset
+    if args.eval:
+        test_dataset = get_segmentation_dataset(
+            args.dataset, split='val', mode=args.mode, **data_kwargs)
+    else:
+        test_dataset = get_segmentation_dataset(
+            args.dataset, split='test', mode=args.mode, **data_kwargs)
+    
+    metric = gluoncv.utils.metrics.SegmentationMetric(test_dataset.num_class)
     print('Testing model: ', args.resume)
+
     if not args.benchmark:
-        test(args, model)
+        if '_int8' in model_prefix:
+            test_quantization(model, args.eval, args.batch_size, test_dataset, metric, 
+                test_dataset.num_class, args.ctx, args.workers, outdir)
+        else:
+            test(model, args.eval, args.batch_size, test_dataset, metric, 
+                test_dataset.num_class, args.ctx, args.workers, outdir)
     else:
         benchmarking(args, model)
