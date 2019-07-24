@@ -133,40 +133,8 @@ class AlphaPoseDefaultValTransform(object):
             scores=mx.nd.array([[1.]]),
             bounding_boxs=mx.nd.array(np.array([bbox])),
             output_shape=self._image_size)
-        # print(scale_box)
-        # import cv2
-        # img = img[0].asnumpy()
-        # img = img.transpose((1, 2, 0))
-        # img *= np.array([0.229,0.224,0.225])
-        # img += np.array([0.406,0.457,0.480])
-        # img *= 255
-        # img = np.maximum(0, img)
-        # img = np.minimum(255, img)
-        # img = img.astype('uint8')
-        # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        # src = cv2.cvtColor(src.asnumpy(), cv2.COLOR_BGR2RGB)
-        # sb = [int(x) for x in scale_box[0]]
-        # cv2.rectangle(src, (sb[0], sb[1]), (sb[2], sb[3]), (255, 0, 0))
-        # cv2.imshow('src', src)
-        # cv2.imshow('debug', img)
-        # cv2.waitKey()
-        return img[0], scale_box, score, img_path
 
-        # joints_3d = label['joints_3d']
-        # xmin, ymin, xmax, ymax = bbox
-        # center, scale = _box_to_center_scale(
-        #     xmin, ymin, xmax - xmin, ymax - ymin, self._aspect_ratio, scale_mult=1.0)
-        # score = label.get('score', 1)
-        #
-        # h, w = self._image_size
-        # trans = get_affine_transform(center, scale, 0, [w, h])
-        # img = cv2.warpAffine(src.asnumpy(), trans, (int(w), int(h)), flags=cv2.INTER_LINEAR)
-        #
-        # # to tensor
-        # img = mx.nd.image.to_tensor(mx.nd.array(img))
-        # img = mx.nd.image.normalize(img, mean=self._mean, std=self._std)
-        #
-        # return img, scale, center, score, img_path
+        return img[0], scale_box, score, img_path
 
 
 def flip_heatmap(heatmap, joint_pairs, shift=False):
