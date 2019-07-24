@@ -213,6 +213,10 @@ MobileNet
    +--------------------------+--------+--------+----------+-----------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
    | MobileNetV2_0.25 [5]_    | 51.76  | 74.89  | 9b1d2cc3 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/mobilenetv2_0.25.sh>`_       | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/mobilenetv2_0.25.log>`_     |
    +--------------------------+--------+--------+----------+-----------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
+   | MobileNetV3_Large [15]_  | 75.32  | 92.30  | eaa44578 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/mobilenetv3_large.sh>`_      | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/mobilenetv3_large.log>`_    |
+   +--------------------------+--------+--------+----------+-----------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
+   | MobileNetV2_Small [15]_  | 67.72  | 87.51  | 33c100a7 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/mobilenetv3_small.sh>`_      | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/mobilenetv3_small.log>`_    |
+   +--------------------------+--------+--------+----------+-----------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
 
 VGG
 ---
@@ -407,3 +411,6 @@ The following table lists pre-trained models trained on CIFAR10.
        "mixup: Beyond empirical risk minimization." \
        arXiv preprint arXiv:1710.09412 (2017).
 .. [14] Hu, Jie, Li Shen, and Gang Sun. "Squeeze-and-excitation networks." arXiv preprint arXiv:1709.01507 7 (2017).
+.. [15] Howard, Andrew, Mark Sandler, Grace Chu, Liang-Chieh Chen, Bo Chen, Mingxing Tan, Weijun Wang et al. \
+       "Searching for mobilenetv3." \
+       arXiv preprint arXiv:1905.02244 (2019).

@@ -23,6 +23,8 @@ _model_sha1 = {name: checksum for checksum, name in [
     ('b56e3d1c33eb52d0b90678db4ce6c5ca6c9a6704', 'mobilenetv2_0.75'),
     ('0803818513599fa1329524ee3607b708b4a4630f', 'mobilenetv2_0.5'),
     ('9b1d2cc38fed4cd171a7f7a0d17fe1a905573887', 'mobilenetv2_0.25'),
+    ('eaa44578554ddffaf2a2630ced9093181ff79688', 'mobilenetv3_large'),
+    ('33c100a740c0a278ec06e8640b19f52b744d1f11', 'mobilenetv3_small'),
     ('a0666292f0a30ff61f857b0b66efc0228eb6a54b', 'resnet18_v1'),
     ('48216ba99a8b1005d75c0f3a0c422301a0473233', 'resnet34_v1'),
     ('cc729d95031ca98cf2ff362eb57dee4d9994e4b2', 'resnet50_v1'),
