@@ -1,4 +1,4 @@
-# pylint: disable= missing-docstring
+# pylint: disable= missing-docstring,arguments-differ
 """Extended image transformations to video transformations."""
 from __future__ import division
 import random

@@ -16,7 +16,7 @@
 # under the License.
 
 # coding: utf-8
-# pylint: disable=redefined-variable-type,simplifiable-if-expression,inconsistent-return-statements,unused-argument
+# pylint: disable=redefined-variable-type,simplifiable-if-expression,inconsistent-return-statements,unused-argument,arguments-differ
 """MobileNetV3, implemented in Gluon."""
 
 from __future__ import division

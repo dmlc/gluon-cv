@@ -11,6 +11,17 @@ stage("Sanity Check") {
         conda list
         make clean
         make pylint
+        sudo apt install unrar
+        pip install Cython
+        pip install mmcv
+        cd ~/.mxnet/datasets
+        mkdir ucf101
+        cd ucf101
+        wget https://www.crcv.ucf.edu/data/UCF101/UCF101.rar
+        wget https://www.crcv.ucf.edu/data/UCF101/UCF101TrainTestSplits-RecognitionTask.zip
+        unrar x UCF101.rar
+        unzip UCF101TrainTestSplits-RecognitionTask.zip
+
         """
       }
     }
