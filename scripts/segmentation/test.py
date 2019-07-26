@@ -41,7 +41,9 @@ def parse_args():
                         help='number of workers for data loading')
     parser.add_argument('--pretrained', action="store_true",
                         help='whether to use pretrained params')
-    parser.add_argument('--ngpus', type=int, default=0)
+    parser.add_argument('--ngpus', type=int,
+                        default=len(mx.test_utils.list_gpus()),
+                        help='number of GPUs (default: 4)')
     parser.add_argument('--aux', action='store_true', default=False,
                         help='Auxiliary loss')
     # synchronized Batch Normalization
@@ -67,19 +69,31 @@ def parse_args():
     return args
     
 
-def test(model, is_eval, batch_size, testset, metric, num_class, ctx_list, num_workers, outdir):
-    size = len(testset)
+def test(model, args, input_transform):
+    # output folder
+    outdir = 'outdir'
+    if not os.path.exists(outdir):
+        os.makedirs(outdir)
+    # get dataset
+    if args.eval:
+        testset = get_segmentation_dataset(
+            args.dataset, split='val', mode='testval', transform=input_transform)
+        total_inter, total_union, total_correct, total_label = \
+            np.int64(0), np.int64(0), np.int64(0), np.int64(0)
+    else:
+        testset = get_segmentation_dataset(
+            args.dataset, split='test', mode='test', transform=input_transform)
     test_data = gluon.data.DataLoader(
-            testset, batch_size, batchify_fn=ms_batchify_fn, last_batch='keep', shuffle=False, num_workers=num_workers)
+        testset, args.batch_size, shuffle=False, last_batch='keep',
+        batchify_fn=ms_batchify_fn, num_workers=args.workers)
     print(model)
-    evaluator = MultiEvalModel(model, num_class, ctx_list=ctx_list)
+    evaluator = MultiEvalModel(model, testset.num_class, ctx_list=args.ctx)
+    metric = gluoncv.utils.metrics.SegmentationMetric(testset.num_class)
 
     tbar = tqdm(test_data)
-    metric.reset()
-    tic = time.time()
     for i, (data, dsts) in enumerate(tbar):
-        if is_eval:
-            predicts = [pred for pred in evaluator.parallel_forward(data)]
+        if args.eval:
+            predicts = [pred[0] for pred in evaluator.parallel_forward(data)]
             targets = [target.as_in_context(predicts[0].context) \
                        for target in dsts]
             metric.update(targets, predicts)
@@ -89,31 +103,43 @@ def test(model, is_eval, batch_size, testset, metric, num_class, ctx_list, num_w
             im_paths = dsts
             predicts = evaluator.parallel_forward(data)
             for predict, impath in zip(predicts, im_paths):
-                predict = [predict]
                 predict = mx.nd.squeeze(mx.nd.argmax(predict[0], 1)).asnumpy() + \
                     testset.pred_offset
-                mask = get_color_pallete(predict, testset)
+                mask = get_color_pallete(predict, args.dataset)
                 outname = os.path.splitext(impath)[0] + '.png'
                 mask.save(os.path.join(outdir, outname))
-    speed = size / (time.time() - tic)
-    print('Inference speed with batchsize %d is %.2f img/sec' % (batch_size, speed))
 
 
-def test_quantization(model, is_eval, batch_size, testset, metric, num_class, ctx_list, num_workers, outdir):
+def test_quantization(model, args, input_transform):
+    # output folder
+    outdir = 'outdir_int8'
+    if not os.path.exists(outdir):
+        os.makedirs(outdir)
+    # hybridize
     model.hybridize(static_alloc=True, static_shape=True)
+
+    # get dataset
+    if args.eval:
+        testset = get_segmentation_dataset(
+            args.dataset, split='val', mode=args.mode, transform=input_transform)
+    else:
+        testset = get_segmentation_dataset(
+            args.dataset, split='test', mode=args.mode, transform=input_transform)
     size = len(testset)
     batchify_fn = ms_batchify_fn if testset.mode == 'test' else None
     test_data = gluon.data.DataLoader(
-            testset, batch_size, batchify_fn=batchify_fn, last_batch='keep', shuffle=False, num_workers=num_workers)
+            testset, args.batch_size, batchify_fn=batchify_fn, last_batch='keep',
+            shuffle=False, num_workers=args.workers)
     print(model)
+    metric = gluoncv.utils.metrics.SegmentationMetric(testset.num_class)
 
     tbar = tqdm(test_data)
     metric.reset()
     tic = time.time()
     for i, (batch, dsts) in enumerate(tbar):
-        if is_eval:
-            targets = mx.gluon.utils.split_and_load(dsts, ctx_list=ctx_list, even_split=False)
-            data = mx.gluon.utils.split_and_load(batch, ctx_list=ctx_list, batch_axis=0, even_split=False)
+        if args.eval:
+            targets = mx.gluon.utils.split_and_load(dsts, ctx_list=args.ctx, even_split=False)
+            data = mx.gluon.utils.split_and_load(batch, ctx_list=args.ctx, batch_axis=0, even_split=False)
             outputs = None
             for x in data:
                 output = model(x)
@@ -123,17 +149,17 @@ def test_quantization(model, is_eval, batch_size, testset, metric, num_class, ct
             tbar.set_description('pixAcc: %.4f, mIoU: %.4f' % (pixAcc, mIoU))
         else:
             for data, impath in zip(batch, dsts):
-                data = data.as_in_context(ctx_list[0])
+                data = data.as_in_context(args.ctx[0])
                 if len(data.shape) < 4:
                     data = nd.expand_dims(data, axis=0)
                 predict = model(data)[0]
                 predict = mx.nd.squeeze(mx.nd.argmax(predict, 1)).asnumpy() + \
                     testset.pred_offset
-                mask = get_color_pallete(predict, testset)
+                mask = get_color_pallete(predict, args.dataset)
                 outname = os.path.splitext(impath)[0] + '.png'
                 mask.save(os.path.join(outdir, outname))
     speed = size / (time.time() - tic)
-    print('Inference speed with batchsize %d is %.2f img/sec' % (batch_size, speed))
+    print('Inference speed with batchsize %d is %.2f img/sec' % (args.batch_size, speed))
 
 
 def benchmarking(args, model):
@@ -182,11 +208,6 @@ if __name__ == "__main__":
     if withQuantization and args.quantized:
         model_prefix += '_int8'
 
-    # output folder
-    outdir = 'outdir'
-    if not os.path.exists(outdir):
-        os.makedirs(outdir)
-
      # create network
     if args.pretrained:
         model = get_model(model_prefix, pretrained=True)
@@ -205,30 +226,17 @@ if __name__ == "__main__":
                 .format(args.resume))
     print("Successfully loaded %s model" % model_prefix)
 
+    print('Testing model: ', args.resume)
     # image transform
     input_transform = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize([.485, .456, .406], [.229, .224, .225]),
     ])
-    data_kwargs = {'transform': input_transform, 'base_size': args.base_size,
-                   'crop_size': args.crop_size}
-    # get dataset
-    if args.eval:
-        test_dataset = get_segmentation_dataset(
-            args.dataset, split='val', mode=args.mode, **data_kwargs)
-    else:
-        test_dataset = get_segmentation_dataset(
-            args.dataset, split='test', mode=args.mode, **data_kwargs)
-    
-    metric = gluoncv.utils.metrics.SegmentationMetric(test_dataset.num_class)
-    print('Testing model: ', args.resume)
 
     if not args.benchmark:
         if '_int8' in model_prefix:
-            test_quantization(model, args.eval, args.batch_size, test_dataset, metric, 
-                test_dataset.num_class, args.ctx, args.workers, outdir)
+            test_quantization(model, args, input_transform)
         else:
-            test(model, args.eval, args.batch_size, test_dataset, metric, 
-                test_dataset.num_class, args.ctx, args.workers, outdir)
+            test(model, args, input_transform)
     else:
         benchmarking(args, model)
