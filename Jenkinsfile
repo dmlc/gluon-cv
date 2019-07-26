@@ -11,7 +11,7 @@ stage("Sanity Check") {
         conda list
         make clean
         make pylint
-        sudo apt install unrar
+        apt install unrar
         pip install Cython
         pip install mmcv
         cd ~/.mxnet/datasets
@@ -21,7 +21,11 @@ stage("Sanity Check") {
         wget https://www.crcv.ucf.edu/data/UCF101/UCF101TrainTestSplits-RecognitionTask.zip
         unrar x UCF101.rar
         unzip UCF101TrainTestSplits-RecognitionTask.zip
-
+        rm UCF101.rar
+        rm UCF101TrainTestSplits-RecognitionTask.zip
+        wget https://github.com/bryanyzhu/gluon-cv/blob/action_docs/scripts/datasets/ucf101.py
+        python ucf101.py --decode_video --src_dir ./UCF-101 --out_dir ./rawframes
+        python ucf101.py --build_file_list --anno_dir ./ucfTrainTestlist --frame_path ./rawframes --out_list_path ./ucfTrainTestlist --shuffle
         """
       }
     }
