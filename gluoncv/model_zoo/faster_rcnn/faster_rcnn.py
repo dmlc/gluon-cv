@@ -94,10 +94,12 @@ class FasterRCNN(RCNN):
         Filter top proposals before NMS in training of RPN.
     rpn_train_post_nms : int, default is 2000
         Return top proposal results after NMS in training of RPN.
+        Will be set to rpn_train_pre_nms if it is larger than rpn_train_pre_nms.
     rpn_test_pre_nms : int, default is 6000
         Filter top proposals before NMS in testing of RPN.
     rpn_test_post_nms : int, default is 300
         Return top proposal results after NMS in testing of RPN.
+        Will be set to rpn_test_pre_nms if it is larger than rpn_test_pre_nms.
     rpn_nms_thresh : float, default is 0.7
         IOU threshold for NMS. It is used to remove overlapping proposals.
     train_pre_nms : int, default is 12000
@@ -122,6 +124,9 @@ class FasterRCNN(RCNN):
         necessarily very precise. However, using a very big number may impact the training speed.
     additional_output : boolean, default is False
         ``additional_output`` is only used for Mask R-CNN to get internal outputs.
+    force_nms : bool, default is False
+        Appy NMS to all categories, this is to avoid overlapping detection results from different
+        categories.
 
     Attributes
     ----------
@@ -140,6 +145,9 @@ class FasterRCNN(RCNN):
     nms_topk : int
         Apply NMS to top k detection results, use -1 to disable so that every Detection
          result is used in NMS.
+    force_nms : bool
+        Appy NMS to all categories, this is to avoid overlapping detection results
+        from different categories.
     post_nms : int
         Only return top `post_nms` detection results, the rest is discarded. The number is
         based on COCO dataset which has maximum 100 objects per image. You can adjust this
@@ -158,13 +166,18 @@ class FasterRCNN(RCNN):
                  rpn_train_pre_nms=12000, rpn_train_post_nms=2000,
                  rpn_test_pre_nms=6000, rpn_test_post_nms=300, rpn_min_size=16,
                  num_sample=128, pos_iou_thresh=0.5, pos_ratio=0.25, max_num_gt=300,
-                 additional_output=False, **kwargs):
+                 additional_output=False, force_nms=False, **kwargs):
         super(FasterRCNN, self).__init__(
             features=features, top_features=top_features, classes=classes,
             box_features=box_features, short=short, max_size=max_size,
             train_patterns=train_patterns, nms_thresh=nms_thresh, nms_topk=nms_topk,
             post_nms=post_nms, roi_mode=roi_mode, roi_size=roi_size, strides=strides, clip=clip,
-            **kwargs)
+            force_nms=force_nms, **kwargs)
+        if rpn_train_post_nms > rpn_train_pre_nms:
+            rpn_train_post_nms = rpn_train_pre_nms
+        if rpn_test_post_nms > rpn_test_pre_nms:
+            rpn_test_post_nms = rpn_test_pre_nms
+
         self.ashape = alloc_size[0]
         self._min_stage = min_stage
         self._max_stage = max_stage
@@ -399,10 +412,13 @@ class FasterRCNN(RCNN):
             bbox = self.box_decoder(box_pred, self.box_to_center(rpn_box))
             # res (C, N, 6)
             res = F.concat(*[cls_id, score, bbox], dim=-1)
+            if self.force_nms:
+                # res (1, C*N, 6), to allow cross-catogory suppression
+                res = res.reshape((1, -1, 0))
             # res (C, self.nms_topk, 6)
             res = F.contrib.box_nms(
                 res, overlap_thresh=self.nms_thresh, topk=self.nms_topk, valid_thresh=0.0001,
-                id_index=0, score_index=1, coord_start=2, force_suppress=True)
+                id_index=0, score_index=1, coord_start=2, force_suppress=self.force_nms)
             # res (C * self.nms_topk, 6)
             res = res.reshape((-3, 0))
             results.append(res)
@@ -446,6 +462,12 @@ def get_faster_rcnn(name, dataset, pretrained=False, ctx=mx.cpu(),
         from ..model_store import get_model_file
         full_name = '_'.join(('faster_rcnn', name, dataset))
         net.load_parameters(get_model_file(full_name, tag=pretrained, root=root), ctx=ctx)
+    else:
+        for v in net.collect_params().values():
+            try:
+                v.reset_ctx(ctx)
+            except ValueError:
+                pass
     return net
 
 
@@ -598,7 +620,7 @@ def faster_rcnn_fpn_resnet50_v1b_coco(pretrained=False, pretrained_base=True, **
         name='fpn_resnet50_v1b', dataset='coco', pretrained=pretrained, features=features,
         top_features=top_features, classes=classes, box_features=box_features,
         short=800, max_size=1333, min_stage=2, max_stage=6, train_patterns=train_patterns,
-        nms_thresh=0.5, nms_topk=-1, post_nms=-1, roi_mode='align', roi_size=(14, 14),
+        nms_thresh=0.5, nms_topk=-1, post_nms=-1, roi_mode='align', roi_size=(7, 7),
         strides=(4, 8, 16, 32, 64), clip=4.42, rpn_channel=1024, base_size=16,
         scales=(2, 4, 8, 16, 32), ratios=(0.5, 1, 2), alloc_size=(384, 384),
         rpn_nms_thresh=0.7, rpn_train_pre_nms=12000, rpn_train_post_nms=2000,
@@ -878,7 +900,7 @@ def faster_rcnn_fpn_resnet101_v1d_coco(pretrained=False, pretrained_base=True, *
         name='fpn_resnet101_v1d', dataset='coco', pretrained=pretrained, features=features,
         top_features=top_features, classes=classes, box_features=box_features,
         short=800, max_size=1333, min_stage=2, max_stage=6, train_patterns=train_patterns,
-        nms_thresh=0.5, nms_topk=-1, post_nms=-1, roi_mode='align', roi_size=(14, 14),
+        nms_thresh=0.5, nms_topk=-1, post_nms=-1, roi_mode='align', roi_size=(7, 7),
         strides=(4, 8, 16, 32, 64), clip=4.42, rpn_channel=1024, base_size=16,
         scales=(2, 4, 8, 16, 32), ratios=(0.5, 1, 2), alloc_size=(384, 384),
         rpn_nms_thresh=0.7, rpn_train_pre_nms=12000, rpn_train_post_nms=2000,

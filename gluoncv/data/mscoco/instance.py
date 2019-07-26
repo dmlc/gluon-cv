@@ -15,7 +15,7 @@ class COCOInstance(VisionDataset):
 
     Parameters
     ----------
-    root : str, default '~/mxnet/datasets/voc'
+    root : str, default '~/mxnet/datasets/coco'
         Path to folder storing the dataset.
     splits : list of str, default ['instances_val2017']
         Json annotations name.

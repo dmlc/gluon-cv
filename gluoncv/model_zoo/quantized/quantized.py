@@ -60,10 +60,10 @@ def _create_quantized_models(name, sym_prefix):
                     net.export(prefix, epoch=0)
                     param_prefix = prefix + '-0000.params'
                     sym_net.collect_params().load(param_prefix)
-        net.classes = classes
-        net.reset_class = _not_impl
-        net.set_nms = _not_impl
-        return net
+        sym_net.classes = classes
+        sym_net.reset_class = _not_impl
+        sym_net.set_nms = _not_impl
+        return sym_net
     func.__name__ = name
     globals()[name] = func
 

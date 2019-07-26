@@ -8,3 +8,4 @@ from . import mask
 from . import presets
 from .block import RandomCrop
 from . import pose
+from . import video

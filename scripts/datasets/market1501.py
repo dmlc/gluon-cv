@@ -8,10 +8,10 @@ from zipfile import ZipFile
 from gluoncv.utils import download
 
 
-def extract(fpath):
+def extract(fpath, exdir):
     print("Extracting zip file")
     with ZipFile(fpath) as z:
-        z.extractall(path='./')
+        z.extractall(path=exdir)
     print("Extracting Done")
 
 def make_list(exdir):
@@ -46,12 +46,12 @@ def main():
 
     if os.path.exists(fpath):
         if not osp.isdir(exdir):
-            extract(fpath)
+            extract(fpath, root)
             make_list(exdir)
             
     else:
         download(url, fpath, False)
-        extract(fpath)
+        extract(fpath, root)
         make_list(exdir)
 
 

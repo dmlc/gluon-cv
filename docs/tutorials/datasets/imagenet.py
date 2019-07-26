@@ -5,7 +5,7 @@ The `ImageNet <http://www.image-net.org/>`_ project contains millions of images
 and thousands of objects for image classification. It is widely used in the
 research community for benchmarking state-of-the-art models.
 
-.. image:: https://www.fanyeong.com/wp-content/uploads/2018/01/v2-718f95df083b2d715ee29b018d9eb5c2_r.jpg
+.. image:: ../../_static/imagenet_banner.jpeg
    :width: 500 px
 
 The dataset has multiple versions. The one commonly used for image

@@ -26,7 +26,7 @@ def parse_args():
                         help='model name (default: fcn)')
     parser.add_argument('--backbone', type=str, default='resnet50',
                         help='backbone name (default: resnet50)')
-    parser.add_argument('--dataset', type=str, default='pascalaug',
+    parser.add_argument('--dataset', type=str, default='pascal_aug',
                         help='dataset name (default: pascal)')
     parser.add_argument('--workers', type=int, default=16,
                         metavar='N', help='dataloader threads')
@@ -153,7 +153,9 @@ class Trainer(object):
         kv = mx.kv.create(args.kvstore)
         optimizer_params = {'lr_scheduler': self.lr_scheduler,
                             'wd':args.weight_decay,
-                            'momentum': args.momentum}
+                            'momentum': args.momentum,
+                            'learning_rate': args.lr
+                           }
         if args.dtype == 'float16':
             optimizer_params['multi_precision'] = True
 
@@ -178,7 +180,7 @@ class Trainer(object):
                 autograd.backward(losses)
             self.optimizer.step(self.args.batch_size)
             for loss in losses:
-                train_loss += loss.asnumpy()[0] / len(losses)
+                train_loss += np.mean(loss.asnumpy()) / len(losses)
             tbar.set_description('Epoch %d, training loss %.3f'%\
                 (epoch, train_loss/(i+1)))
             mx.nd.waitall()

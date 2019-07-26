@@ -74,7 +74,7 @@ def batch_pix_accuracy(output, target):
     """PixAcc"""
     # inputs are NDarray, output 4D, target 3D
     # the category -1 is ignored class, typically for background / boundary
-    predict = np.argmax(output.asnumpy().astype('int64'), 1) + 1
+    predict = np.argmax(output.asnumpy(), 1).astype('int64') + 1
 
     target = target.asnumpy().astype('int64') + 1
 
@@ -92,7 +92,7 @@ def batch_intersection_union(output, target, nclass):
     mini = 1
     maxi = nclass
     nbins = nclass
-    predict = np.argmax(output.asnumpy().astype('int64'), 1) + 1
+    predict = np.argmax(output.asnumpy(), 1).astype('int64') + 1
     target = target.asnumpy().astype('int64') + 1
 
     predict = predict * (target > 0).astype(predict.dtype)

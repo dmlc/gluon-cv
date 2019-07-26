@@ -14,7 +14,7 @@ class COCOSegmentation(SegmentationDataset):
     Parameters
     ----------
     root : string
-        Path to VOCdevkit folder. Default is '$(HOME)/mxnet/datasplits/ade'
+        Path to COCO folder. Default is '$(HOME)/mxnet/datasets/coco'
     split: string
         'train', 'val' or 'test'
     transform : callable, optional
