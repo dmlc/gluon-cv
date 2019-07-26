@@ -254,9 +254,15 @@ def get_alphapose(name, dataset, num_joints, pretrained=False, pretrained_base=T
 def alpha_pose_resnet101_v1b_coco(**kwargs):
     from ...data import COCOKeyPoints
     keypoints = COCOKeyPoints.KEYPOINTS
-    num_gpus = kwargs.pop('num_gpus')
+    num_gpus = kwargs.pop('num_gpus', None)
+    if num_gpus is not None and int(num_gpus) > 1:
+        norm_layer = mx.gluon.contrib.nn.SyncBatchNorm
+        norm_kwargs = {'use_global_stats': False, 'num_devices': int(num_gpus)}
+    else:
+        norm_layer = mx.gluon.nn.BatchNorm
+        norm_kwargs = {'use_global_stats': False}
+
     return get_alphapose(
         name='resnet101_v1b', dataset='coco',
-        num_joints=len(keypoints), norm_layer=mx.gluon.contrib.nn.SyncBatchNorm,
-        norm_kwargs={'use_global_stats': False, 'num_devices': num_gpus},
-        **kwargs)
+        num_joints=len(keypoints), norm_layer=norm_layer,
+        norm_kwargs=norm_kwargs, **kwargs)

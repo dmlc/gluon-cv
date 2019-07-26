@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import gluoncv as gcv
 from gluoncv import data
 from gluoncv.model_zoo import get_model
-from gluoncv.data.transforms.pose import detector_to_alpha_pose, heatmap_to_coord
+from gluoncv.data.transforms.pose import detector_to_alpha_pose, heatmap_to_coord_alpha_pose
 from gluoncv.utils.viz import plot_keypoints
 
 
@@ -29,7 +29,7 @@ def keypoint_detection(img_path, detector, pose_net):
 
     pose_input, upscale_bbox = detector_to_alpha_pose(img, class_IDs, scores, bounding_boxs)
     predicted_heatmap = pose_net(pose_input)
-    pred_coords, confidence = heatmap_to_coord(predicted_heatmap, upscale_bbox)
+    pred_coords, confidence = heatmap_to_coord_alpha_pose(predicted_heatmap, upscale_bbox)
 
     ax = plot_keypoints(img, pred_coords, confidence, class_IDs, bounding_boxs, scores,
                         box_thresh=0.5, keypoint_thresh=0.2)

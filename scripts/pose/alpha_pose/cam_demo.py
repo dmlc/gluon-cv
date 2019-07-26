@@ -12,7 +12,7 @@ import gluoncv as gcv
 from gluoncv import data
 from gluoncv.data import mscoco
 from gluoncv.model_zoo import get_model
-from gluoncv.data.transforms.pose import detector_to_simple_pose, heatmap_to_coord
+from gluoncv.data.transforms.pose import detector_to_alpha_pose, heatmap_to_coord_alpha_pose
 from gluoncv.utils.viz import plot_image, plot_keypoints
 
 parser = argparse.ArgumentParser(description='Predict ImageNet classes from a given image')
@@ -30,11 +30,11 @@ def keypoint_detection(img, detector, pose_net, ctx=mx.cpu(), axes=None):
     class_IDs, scores, bounding_boxs = detector(x)
 
     plt.cla()
-    pose_input, upscale_bbox = detector_to_simple_pose(img, class_IDs, scores, bounding_boxs,
+    pose_input, upscale_bbox = detector_to_alpha_pose(img, class_IDs, scores, bounding_boxs,
                                                        output_shape=(128, 96), ctx=ctx)
     if len(upscale_bbox) > 0:
         predicted_heatmap = pose_net(pose_input)
-        pred_coords, confidence = heatmap_to_coord(predicted_heatmap, upscale_bbox)
+        pred_coords, confidence = heatmap_to_coord_alpha_pose(predicted_heatmap, upscale_bbox)
 
         axes = plot_keypoints(img, pred_coords, confidence, class_IDs, bounding_boxs, scores,
                               box_thresh=0.5, keypoint_thresh=0.2, ax=axes)

@@ -483,6 +483,10 @@ def drawGaussian(img, pt, sigma, sig=1):
 def alpha_pose_detection_processor(img, boxes, class_idxs, scores, thr=0.5):
     if len(boxes.shape) == 3:
         boxes = boxes.squeeze(axis=0)
+    if len(class_idxs.shape) == 3:
+        class_idxs = class_idxs.squeeze(axis=0)
+    if len(scores.shape) == 3:
+        scores = scores.squeeze(axis=0)
 
     # cilp coordinates
     boxes[:, [0, 2]] = mx.nd.clip(boxes[:, [0, 2]], 0., img.shape[1] - 1)
@@ -548,10 +552,13 @@ def heatmap_to_coord_alpha_pose(hms, boxes):
     hm_h = hms.shape[2]
     hm_w = hms.shape[3]
     coords, maxvals = get_max_pred(hms)
-    assert boxes.shape[1] == 1
-
-    pt1 = mx.nd.array(boxes[:, 0, (0, 1)], dtype=hms.dtype)
-    pt2 = mx.nd.array(boxes[:, 0, (2, 3)], dtype=hms.dtype)
+    if boxes.shape[1] == 1:
+        pt1 = mx.nd.array(boxes[:, 0, (0, 1)], dtype=hms.dtype)
+        pt2 = mx.nd.array(boxes[:, 0, (2, 3)], dtype=hms.dtype)
+    else:
+        assert boxes.shape[1] == 4
+        pt1 = mx.nd.array(boxes[:, (0, 1)], dtype=hms.dtype)
+        pt2 = mx.nd.array(boxes[:, (2, 3)], dtype=hms.dtype)
 
     # post-processing
     for n in range(coords.shape[0]):
