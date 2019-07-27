@@ -119,6 +119,6 @@ for x, y in train_data:
     break
 
 #########################################################################
-# Plot some validation images
+# Plot the first sample in training images
 from gluoncv.utils import viz
 viz.plot_image(train_dataset[0][0])  # index 0 is image, 1 is label

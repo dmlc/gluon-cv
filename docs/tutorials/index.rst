@@ -208,6 +208,10 @@ Dataset Preparation
         :title: Prepare ImageNet Dataset in ImageRecord Format
         :link: ../build/examples_datasets/recordio.html
 
+    .. card::
+        :title: Prepare UCF101 Dataset
+        :link: ../build/examples_datasets/ucf101.html
+
 
 Deployment
 ----------
