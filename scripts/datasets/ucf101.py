@@ -9,13 +9,14 @@ import glob
 import fnmatch
 import random
 import zipfile
-import rarfile
 from pipes import quote
 from multiprocessing import Pool, current_process
 
-import mmcv
-
 def dump_frames(vid_item):
+
+    from gluoncv.utils.filesystem import try_import_mmcv
+    mmcv = try_import_mmcv()
+
     full_path, vid_path, vid_id = vid_item
     vid_name = vid_path.split('.')[0]
     out_full_path = osp.join(args.out_dir, vid_name)
@@ -324,6 +325,9 @@ def build_file_list(args):
             f.writelines(lists[0][ind])
 
 def download_ucf101(args):
+
+    from gluoncv.utils.filesystem import try_import_rarfile
+    rarfile = try_import_rarfile()
 
     target_dir = args.download_dir
     if not os.path.exists(target_dir):

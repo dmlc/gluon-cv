@@ -10,17 +10,11 @@ will go through the steps of preparing this dataset for GluonCV.
 .. image:: https://www.crcv.ucf.edu/data/UCF101/UCF101.jpg
    :width: 500 px
 
-.. note::
+Setup
+-----
 
-   You need at least 60 GB disk space to download and extract the dataset. SSD
-   (Solid-state disks) is preferred over HDD because of faster speed.
-
-Download
---------
-
-First, go to the `UCF101 webpage <https://www.crcv.ucf.edu/data/UCF101.php>`_
-, and find the links to download the dataset and the official train/test
-split for action recognition.
+We need the following two files from UCF101: the dataset and the official train/test
+split.
 
 ============================================== ======
 Filename                                        Size
@@ -29,66 +23,28 @@ UCF101.rar                                     6.5 GB
 UCF101TrainTestSplits-RecognitionTask.zip      114 KB
 ============================================== ======
 
-If you prefer to use command lines to download the dataset, the instruction is as below:
+The easiest way to download and unpack these files is to download helper script
+:download:`ucf101.py<../../../scripts/datasets/ucf101.py>` and run the following command:
 
 .. code-block:: bash
 
-   wget https://www.crcv.ucf.edu/data/UCF101/UCF101.rar
-   wget https://www.crcv.ucf.edu/data/UCF101/UCF101TrainTestSplits-RecognitionTask.zip
+   python ucf101.py
 
-Setup
------
-
-First, extract the data from the compressed files,
-
-.. code-block:: bash
-
-   unrar x UCF101.rar
-   unzip UCF101TrainTestSplits-RecognitionTask.zip
+This script will help you download the dataset, unpack the data from compressed files,
+decode the videos to frames, and generate the training files for you. All the files will be
+stored at ``~/.mxnet/datasets/ucf101`` by default.
 
 .. note::
-   You may need to install `unrar` by `sudo apt install unrar`.
 
-Then, download the helper script
-:download:`ucf101.py<../../../scripts/datasets/ucf101.py>`. We can first use it to decode the videos to frames,
+   You need at least 60 GB disk space to download and extract the dataset. SSD
+   (Solid-state disks) is preferred over HDD because of faster speed.
 
-.. code-block:: bash
+   You may need to install `unrar` by ``sudo apt install unrar``.
 
-   python ucf101.py --decode_video --src_dir VIDEO_PATH --out_dir FRAME_PATH
+   You may need to install `rarfile`, `Cython`, `mmcv` by ``pip install rarfile Cython mmcv``.
 
-.. note::
-   VIDEO_PATH is where you store your downloaded videos, e.g., ./UCF-101
-   FRAME_PATH is where you want to store the decoded video frames, e.g., ./rawframes
-   You may need to install `Cython` and `mmcv` by `pip install Cython mmcv`.
-   Extracting the images may take a while. For example, it takes
-   about 15min on an AWS EC2 instance with EBS.
-
-Once we have the video frames, we need to generate training files according to
-the train/test split contained in the `ucfTrainTestlist` folder.
-
-.. code-block:: bash
-
-   python ucf101.py --build_file_list --anno_dir ANNOTATION_PATH --frame_path FRAME_PATH --out_list_path OUT_path --shuffle
-
-.. note::
-   ANNOTATION_PATH is where you store your annotation files, e.g., ./ucfTrainTestlist
-   FRAME_PATH is where you store the decoded video frames, e.g., ./rawframes
-   OUT_path is where you want to store your generated training files, e.g., ./ucfTrainTestlist
-
-Take a quick example, the generated training file will look like this,
-.. code-block:: bash
-
-   Typing/v_Typing_g16_c02 251 94
-   ApplyEyeMakeup/v_ApplyEyeMakeup_g25_c06 109 0
-   IceDancing/v_IceDancing_g14_c02 256 43
-   PlayingDhol/v_PlayingDhol_g15_c03 187 60
-   TableTennisShot/v_TableTennisShot_g11_c03 135 89
-
-.. note::
-   First column indicates the path to the video.
-   Second column indicates the number of frames in that video.
-   Third column indicates the label of that video.
-
+   The data preparation process may take a while. The total time to prepare the dataset depends on
+   your Internet speed and disk performance. For example, it takes about 30min on an AWS EC2 instance with EBS.
 
 Read with GluonCV
 -----------------
@@ -115,10 +71,12 @@ train_data = DataLoader(train_dataset, batch_size=25, shuffle=True)
 
 #########################################################################
 for x, y in train_data:
-    print(x.shape, y.shape)
+    print('Video frame size (batch, height, width, RGB):', x.shape)
+    print('Video label:', y.shape)
     break
 
 #########################################################################
-# Plot the first sample in training images
+# Plot several training samples. index 0 is image, 1 is label
 from gluoncv.utils import viz
-viz.plot_image(train_dataset[0][0])  # index 0 is image, 1 is label
+viz.plot_image(train_dataset[7][0])   # Basketball
+viz.plot_image(train_dataset[22][0])  # CricketBowling

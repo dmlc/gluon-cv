@@ -22,9 +22,7 @@ Table of pre-trained models for video action recognition and their performance.
   The test script :download:`Download test_recognizer.py<../../scripts/action-recognition/test_recognizer.py>` can be used for
   evaluating the models.
 
-
-.. role:: raw-html(raw)
-   :format: html
+.. role:: tag
 
 UCF101 Dataset
 --------------
@@ -38,7 +36,7 @@ The following table lists pre-trained models trained on UCF101.
   ``InceptionV3`` is trained and evaluated with input size of 299x299.
 
 .. table::
-   :widths: 45 5 10 10 30
+   :widths: 55 10 10 15 10
 
 +---------------------------------------------+-----------+-----------+------------------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------+
 | Name                                        | Top-1     | Hashtag   | Train Command                                                                                                                      | Train Log                                                                                                                  |
