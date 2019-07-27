@@ -4,19 +4,40 @@ from __future__ import absolute_import
 import random
 import numpy as np
 import mxnet as mx
-from .simple_pose import _box_to_center_scale
-from ..image import random_flip as random_flip_image
-from ..pose import flip_joints_3d, get_affine_transform, affine_transform
-from ..pose import random_sample_bbox, refine_bound, count_visible, random_crop_bbox
+from ..pose import random_sample_bbox, count_visible, random_crop_bbox
 from ..pose import drawGaussian, transformBox, cv_cropBox, cv_rotate, detector_to_alpha_pose
-from ....utils.filesystem import try_import_cv2
 
 
 class AlphaPoseDefaultTrainTransform(object):
+    """Default training transform for AlphaPose.
+
+    Parameters
+    ----------
+    num_joints : int
+        Number of joints defined by dataset
+    joint_pairs: list
+        Paired Joints for horizontal flipping
+    image_size : tuple of int
+        Image size, as (height, width).
+    heatmap_size : tuple of int
+        Heatmap size, as (height, width).
+    sigma : float
+        Gaussian sigma for the heatmap generation.
+    random_flip: bool
+        Data augmentation with horizaontal flipping.
+    random_sample: bool
+        Data augmentation with random sample.
+    random_crop: bool
+        Data augmentation with random crop.
+    scale_factor: tuple
+        Scale augmentation.
+    rotation_factor: int
+        Ratation augmentation.
+    """
     def __init__(self, num_joints, joint_pairs, image_size=(256, 256), heatmap_size=(64, 64),
                  sigma=1, random_flip=True,
                  random_sample=False, random_crop=False,
-                 scale_factor=(0.2, 0.3), rotation_factor=30, **kwargs):
+                 scale_factor=(0.2, 0.3), rotation_factor=30):
         self._sigma = sigma
         self._num_joints = num_joints
         self._joint_pairs = joint_pairs
@@ -69,7 +90,8 @@ class AlphaPoseDefaultTrainTransform(object):
         if num_visible_joint < 1:
             # no valid keypoints
             img = mx.nd.zeros((3, self._height, self._width))
-            target = np.zeros((self._num_joints, self._heatmap_size[0], self._heatmap_size[1]), dtype='float32')
+            target = np.zeros((self._num_joints, self._heatmap_size[0], self._heatmap_size[1]),
+                              dtype='float32')
             target_weight = np.ones((self._num_joints, 1, 1), dtype='float32')
             return img, target, target_weight, img_path
 
@@ -78,14 +100,16 @@ class AlphaPoseDefaultTrainTransform(object):
         img = cv_cropBox(img, ul, br, self._height, self._width)
 
         # generate labels
-        target = np.zeros((self._num_joints, self._heatmap_size[0], self._heatmap_size[1]), dtype='float32')
+        target = np.zeros((self._num_joints, self._heatmap_size[0], self._heatmap_size[1]),
+                          dtype='float32')
         target_weight = np.ones((self._num_joints, 1, 1), dtype='float32')
 
         for i, vis in enumerate(vis_joints):
             if vis:
                 hm_part = transformBox(
                     (joints_3d[i, 0, 0], joints_3d[i, 1, 0]),
-                    ul, br, self._height, self._width, self._heatmap_size[0], self._heatmap_size[1])
+                    ul, br, self._height, self._width,
+                    self._heatmap_size[0], self._heatmap_size[1])
                 target[i] = drawGaussian(target[i], hm_part, self._sigma)
             target_weight[i] = 1
 
@@ -100,7 +124,8 @@ class AlphaPoseDefaultTrainTransform(object):
         rf = self._rotation_factor
         r = np.clip(np.random.randn() * rf, -rf * 2, rf * 2) if random.random() <= 0.6 else 0
         img = cv_rotate(img, r, self._width, self._height)
-        target = cv_rotate(target.transpose((1, 2, 0)), r, self._heatmap_size[1], self._heatmap_size[0])
+        target = cv_rotate(target.transpose((1, 2, 0)), r,
+                           self._heatmap_size[1], self._heatmap_size[0])
         target = target.transpose((2, 0, 1))
         # to tensor
         src = mx.nd.image.to_tensor(mx.nd.array(img))
@@ -113,8 +138,23 @@ class AlphaPoseDefaultTrainTransform(object):
 
 
 class AlphaPoseDefaultValTransform(object):
+    """Default validation transform for AlphaPose.
+
+    Parameters
+    ----------
+    num_joints : int
+        Number of joints defined by dataset
+    joint_pairs: list
+        Paired Joints for horizontal flipping
+    image_size : tuple of int
+        Image size, as (height, width).
+    sigma : float
+        Gaussian sigma for the heatmap generation.
+
+    """
     def __init__(self, num_joints, joint_pairs, image_size=(256, 256),
-                 sigma=1, **kwargs):
+                 sigma=1):
+        self._sigma = sigma
         self._num_joints = num_joints
         self._joint_pairs = joint_pairs
         self._image_size = image_size

@@ -49,8 +49,8 @@ class COCOKeyPoints(VisionDataset):
         16: "right_ankle"
     }
     SKELETON = [
-        [16,14], [14,12], [17,15], [15,13], [12,13], [6,12], [7,13], [6,7], [6,8],
-        [7,9], [8,10], [9,11], [2,3], [1,2], [1,3], [2,4], [3,5], [4,6], [5,7]]
+        [16, 14], [14, 12], [17, 15], [15, 13], [12, 13], [6, 12], [7, 13], [6, 7], [6, 8],
+        [7, 9], [8, 10], [9, 11], [2, 3], [1, 2], [1, 3], [2, 4], [3, 5], [4, 6], [5, 7]]
 
     def __init__(self, root=os.path.join('~', '.mxnet', 'datasets', 'coco'),
                  splits=('person_keypoints_val2017',), check_centers=False, skip_empty=True):

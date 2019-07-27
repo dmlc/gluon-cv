@@ -6,44 +6,37 @@ from mxnet.initializer import Initializer
 
 def _try_load_parameters(self, filename=None, model=None, ctx=None, allow_missing=False,
                          ignore_extra=False):
-        def getblock(parent, name):
-            if len(name) == 1:
-                if name[0].isnumeric():
-                    return parent[int(name[0])]
-                else:
-                    return getattr(parent, name[0])
+    def getblock(parent, name):
+        if len(name) == 1:
+            if name[0].isnumeric():
+                return parent[int(name[0])]
             else:
-                if name[0].isnumeric():
-                    return getblock(parent[int(name[0])], name[1:])
-                else:
-                    return getblock(getattr(parent, name[0]), name[1:])
-        if filename is not None:
-            loaded = ndarray.load(filename)
+                return getattr(parent, name[0])
         else:
-            loaded = {k:v.data() for k, v in model._collect_params_with_prefix().items()}
-        params = self._collect_params_with_prefix()
-        if not loaded and not params:
-            return
+            if name[0].isnumeric():
+                return getblock(parent[int(name[0])], name[1:])
+            else:
+                return getblock(getattr(parent, name[0]), name[1:])
+    if filename is not None:
+        loaded = ndarray.load(filename)
+    else:
+        loaded = {k: v.data() for k, v in model._collect_params_with_prefix().items()}
+    params = self._collect_params_with_prefix()
+    if not loaded and not params:
+        return
 
-        if not any('.' in i for i in loaded.keys()):
-            # legacy loading
-            del loaded
-            self.collect_params().load(
-                filename, ctx, allow_missing, ignore_extra, self.prefix)
-            return
-        '''
-        for name in params.keys():
-            if name not in loaded:
-                name_split = name.split('.')
-                block = getblock(self, name_split)
-                block.initialize(ctx=ctx)
-        '''
-        for name in loaded:
-            if name in params:
-                if params[name].shape != loaded[name].shape:
-                    continue
-                data = loaded[name]
-                params[name]._load_init(loaded[name], ctx)
+    if not any('.' in i for i in loaded.keys()):
+        # legacy loading
+        del loaded
+        self.collect_params().load(
+            filename, ctx, allow_missing, ignore_extra, self.prefix)
+        return
+
+    for name in loaded:
+        if name in params:
+            if params[name].shape != loaded[name].shape:
+                continue
+            params[name]._load_init(loaded[name], ctx)
 
 
 def _load_from_pytorch(self, filename, ctx=None):
