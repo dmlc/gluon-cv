@@ -29,7 +29,7 @@ Model Zoo
 
     .. card::
         :title: Action Recognition
-        :link: action.html
+        :link: action_recognition.html
 
         Select your models from charts and tables of the action recognition models
 
@@ -42,4 +42,4 @@ Model Zoo
     detection
     segmentation
     pose
-    action
+    action_recognition

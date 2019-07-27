@@ -1,27 +1,23 @@
-.. _gluoncv-model-zoo-action:
+.. _gluoncv-model-zoo-action_recognition:
 
-Action
+Action Recognition
 ====================
 
 .. role:: greytag
-
-Action Recognition
-~~~~~~~~~~~~~~~~~~~~~
 
 Table of pre-trained models for video action recognition and their performance.
 
 .. hint::
 
   Training commands work with this script:
+  :download:`Download train_recognizer.py<../../scripts/action-recognition/train_recognizer.py>`
 
-    :download:`Download train_recognizer.py<../../scripts/action-recognition/train_recognizer.py>`
+  A model can have differently trained parameters with different hashtags.
+  Parameters with :greytag:`a grey name` can be downloaded by passing the corresponding hashtag.
 
-    A model can have differently trained parameters with different hashtags.
-    Parameters with :greytag:`a grey name` can be downloaded by passing the corresponding hashtag.
+  - Download default pretrained weights: ``net = get_model('inceptionv3_ucf101', pretrained=True)``
 
-    - Download default pretrained weights: ``net = get_model('inceptionv3_ucf101', pretrained=True)``
-
-    - Download weights given a hashtag: ``net = get_model('inceptionv3_ucf101', pretrained='0c453da8')``
+  - Download weights given a hashtag: ``net = get_model('inceptionv3_ucf101', pretrained='0c453da8')``
 
   The test script :download:`Download test_recognizer.py<../../scripts/action-recognition/test_recognizer.py>` can be used for
   evaluating the models.
@@ -40,6 +36,9 @@ The following table lists pre-trained models trained on UCF101.
   Our pre-trained models reproduce results from "Temporal Segment Networks" [2]_ . Please check the reference paper for further information.
 
   ``InceptionV3`` is trained and evaluated with input size of 299x299.
+
+.. table::
+   :widths: 45 5 10 10 30
 
 +---------------------------------------------+-----------+-----------+------------------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------+
 | Name                                        | Top-1     | Hashtag   | Train Command                                                                                                                      | Train Log                                                                                                                  |
