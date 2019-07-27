@@ -62,6 +62,9 @@ class PSPNet(SegBaseModel):
         return tuple(outputs)
 
     def demo(self, x):
+        self.predict(x)
+
+    def predict(self, x):
         h, w = x.shape[2:]
         self._up_kwargs['height'] = h
         self._up_kwargs['width'] = w
