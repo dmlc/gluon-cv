@@ -58,7 +58,7 @@ class DUC(HybridBlock):
             self.relu = nn.Activation('relu')
             self.pixel_shuffle = PixelShuffle(upscale_factor)
 
-    def hybrid_forward(self, F, x):
+    def hybrid_forward(self, _, x):
         x = self.conv(x)
         x = self.bn(x)
         x = self.relu(x)
@@ -123,6 +123,7 @@ class Bottleneck(HybridBlock):
         self.stride = stride
 
     def hybrid_forward(self, F, x):
+        """Hybrid forward"""
         residual = x
 
         out = F.relu(self.bn1(self.conv1(x)))
@@ -173,7 +174,7 @@ class FastSEResNet(HybridBlock):
         self.layer4 = self.make_layer(
             self.block, 512, self.layers[3], stride=2, **kwargs)
 
-    def hybrid_forward(self, F, x):
+    def hybrid_forward(self, _, x):
         x = self.maxpool(self.relu(self.bn1(self.conv1(x))))  # 64 * h/4 * w/4
         x = self.layer1(x)  # 256 * h/4 * w/4
         x = self.layer2(x)  # 512 * h/8 * w/8
@@ -185,6 +186,7 @@ class FastSEResNet(HybridBlock):
         return [self.layer1, self.layer2, self.layer3, self.layer4]
 
     def make_layer(self, block, planes, blocks, stride=1, **kwargs):
+        """ Make ResNet stage """
         downsample = None
         if stride != 1 or self.inplanes != planes * block.expansion:
             downsample = nn.HybridSequential()
@@ -235,7 +237,7 @@ class AlphaPose(HybridBlock):
             bias_initializer=initializer.Uniform(scale=math.sqrt(1 / (128 * 3 * 3)))
         )
 
-    def hybrid_forward(self, F, x):
+    def hybrid_forward(self, _, x):
         x = self.preact(x)
         x = self.shuffle1(x)
         x = self.duc1(x)
