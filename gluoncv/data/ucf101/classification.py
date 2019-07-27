@@ -51,8 +51,8 @@ class UCF101(dataset.Dataset):
         A function that takes data and label and transforms them.
     """
     def __init__(self,
-                 setting,
-                 root=os.path.join('~', '.mxnet', 'datasets', 'ucf101'),
+                 setting=os.path.expanduser('~/.mxnet/datasets/ucf101/ucfTrainTestlist/ucf101_train_split_2_rawframes.txt'),
+                 root=os.path.expanduser('~/.mxnet/datasets/ucf101/rawframes'),
                  train=True,
                  test_mode=False,
                  name_pattern=None,

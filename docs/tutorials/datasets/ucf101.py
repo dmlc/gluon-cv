@@ -110,10 +110,7 @@ transform_train = transforms.Compose([
 
 # Default location of the data is stored on ~/.mxnet/datasets/ucf101
 # You need to specify ``setting`` and ``root`` for UCF101 if you decoded the video frames into a different folder.
-data_dir = os.path.expanduser('~/.mxnet/datasets/ucf101/rawframes')
-train_list = os.path.expanduser('~/.mxnet/datasets/ucf101/ucfTrainTestlist/ucf101_train_split_2_rawframes.txt')
-train_dataset = ucf101.classification.UCF101(setting=train_list, root=data_dir, train=True, transform=transform_train)
-
+train_dataset = ucf101.classification.UCF101(train=True, transform=transform_train)
 train_data = DataLoader(train_dataset, batch_size=25, shuffle=True)
 
 #########################################################################
