@@ -70,6 +70,8 @@ stage("Unit Test") {
           export MPLBACKEND=Agg
           export MXNET_CUDNN_AUTOTUNE_DEFAULT=0
           pip install rarfile
+          pip install Cython
+          pip install mmcv
           python ucf101.py --tiny_dataset
           nosetests --with-timer --timer-ok 5 --timer-warning 20 -x --with-coverage --cover-package gluoncv -v tests/unittests
           rm -f coverage.svg
