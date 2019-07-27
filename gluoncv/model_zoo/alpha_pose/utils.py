@@ -61,7 +61,7 @@ def _load_from_pytorch(self, filename, ctx=None):
 
     for name in new_params:
         if name not in params:
-            print(f'==={name}===')
+            print('==={}==='.format(name))
             raise Exception
         if name in params:
             params[name]._load_init(new_params[name], ctx=ctx)
