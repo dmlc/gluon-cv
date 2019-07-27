@@ -44,7 +44,7 @@ model = gluoncv.model_zoo.get_model('psp_resnet101_ade', pretrained=True)
 
 ##############################################################################
 # make prediction using single scale
-output = model.demo(img)
+output = model.predict(img)
 predict = mx.nd.squeeze(mx.nd.argmax(output, 1)).asnumpy()
 
 ##############################################################################

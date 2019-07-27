@@ -1,5 +1,6 @@
 """Base Model for Semantic Segmentation"""
 import math
+import warnings
 import numpy as np
 import mxnet as mx
 from mxnet.ndarray import NDArray
