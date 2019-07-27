@@ -69,6 +69,8 @@ stage("Unit Test") {
           export LD_LIBRARY_PATH=/usr/local/cuda-9.2/lib64
           export MPLBACKEND=Agg
           export MXNET_CUDNN_AUTOTUNE_DEFAULT=0
+          rm ucf101.py
+          rm ucf101.py.1
           wget https://raw.githubusercontent.com/bryanyzhu/gluon-cv/action_docs/scripts/datasets/ucf101.py
           python ucf101.py --tiny_dataset
           nosetests --with-timer --timer-ok 5 --timer-warning 20 -x --with-coverage --cover-package gluoncv -v tests/unittests
