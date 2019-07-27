@@ -8,6 +8,8 @@ import os.path as osp
 import glob
 import fnmatch
 import random
+import zipfile
+import rarfile
 from pipes import quote
 from multiprocessing import Pool, current_process
 
@@ -90,46 +92,42 @@ def run_warp_optical_flow(vid_item, dev_id=0):
 
 def parse_args():
     parser = argparse.ArgumentParser(description='prepare UCF101 dataset')
-    parser.add_argument('--src_dir', type=str)
-    parser.add_argument('--out_dir', type=str)
-    parser.add_argument('--anno_dir', type=str)
-    parser.add_argument('--level', type=int,
-                        choices=[1, 2],
-                        default=2)
+    parser.add_argument('--download_dir', type=str, default='~/.mxnet/datasets/ucf101')
+    parser.add_argument('--src_dir', type=str, default='~/.mxnet/datasets/ucf101/UCF-101')
+    parser.add_argument('--out_dir', type=str, default='~/.mxnet/datasets/ucf101/rawframes')
+    parser.add_argument('--frame_path', type=str, default='~/.mxnet/datasets/ucf101/rawframes')
+    parser.add_argument('--anno_dir', type=str, default='~/.mxnet/datasets/ucf101/ucfTrainTestlist')
+    parser.add_argument('--out_list_path', type=str, default='~/.mxnet/datasets/ucf101/ucfTrainTestlist')
+    parser.add_argument('--level', type=int, choices=[1, 2], default=2)
     parser.add_argument('--num_worker', type=int, default=8)
-    parser.add_argument('--flow_type', type=str,
-                        default=None, choices=[None, 'tvl1', 'warp_tvl1'])
-    parser.add_argument('--df_path', type=str,
-                        default='./dense_flow', help='need dense flow implementation')
-    parser.add_argument("--out_format", type=str, default='dir',
-                        choices=['dir', 'zip'], help='output format')
-    parser.add_argument("--ext", type=str, default='avi',
-                        choices=['avi', 'mp4'], help='video file extensions')
-    parser.add_argument("--new_width", type=int, default=0,
-                        help='resize image width')
-    parser.add_argument("--new_height", type=int,
-                        default=0, help='resize image height')
+    parser.add_argument('--flow_type', type=str, default=None, choices=[None, 'tvl1', 'warp_tvl1'])
+    parser.add_argument('--df_path', type=str, default='./dense_flow', help='need dense flow implementation')
+    parser.add_argument("--out_format", type=str, default='dir', choices=['dir', 'zip'], help='output format')
+    parser.add_argument("--ext", type=str, default='avi', choices=['avi', 'mp4'], help='video file extensions')
+    parser.add_argument("--new_width", type=int, default=0, help='resize image width')
+    parser.add_argument("--new_height", type=int, default=0, help='resize image height')
     parser.add_argument("--num_gpu", type=int, default=8, help='number of GPU')
-    parser.add_argument("--resume", action='store_true', default=False,
-                        help='resume optical flow extraction '
-                        'instead of overwriting')
-    parser.add_argument('--dataset', type=str, choices=[
-                        'ucf101', 'kinetics400'], default='ucf101')
-    parser.add_argument('--frame_path', type=str,
-                        help='root directory for the frames')
+    parser.add_argument("--resume", action='store_true', default=False, help='resume optical flow extraction instead of overwriting')
+    parser.add_argument('--dataset', type=str, choices=['ucf101', 'kinetics400'], default='ucf101')
     parser.add_argument('--rgb_prefix', type=str, default='img_')
     parser.add_argument('--flow_x_prefix', type=str, default='flow_x_')
     parser.add_argument('--flow_y_prefix', type=str, default='flow_y_')
     parser.add_argument('--num_split', type=int, default=3)
-    parser.add_argument('--subset', type=str, default='train',
-                        choices=['train', 'val', 'test'])
-    parser.add_argument('--format', type=str,
-                        default='rawframes', choices=['rawframes', 'videos'])
-    parser.add_argument('--out_list_path', type=str, default='./')
+    parser.add_argument('--subset', type=str, default='train', choices=['train', 'val', 'test'])
+    parser.add_argument('--format', type=str, default='rawframes', choices=['rawframes', 'videos'])
     parser.add_argument('--shuffle', action='store_true', default=False)
-    parser.add_argument('--decode_video', action='store_true', default=False)
-    parser.add_argument('--build_file_list', action='store_true', default=False)
+    parser.add_argument('--tiny_dataset', action='store_true', default=False)
+    parser.add_argument('--download', action='store_true', default=True)
+    parser.add_argument('--decode_video', action='store_true', default=True)
+    parser.add_argument('--build_file_list', action='store_true', default=True)
     args = parser.parse_args()
+
+    args.download_dir = os.path.expanduser(args.download_dir)
+    args.src_dir = os.path.expanduser(args.src_dir)
+    args.out_dir = os.path.expanduser(args.out_dir)
+    args.frame_path = os.path.expanduser(args.frame_path)
+    args.anno_dir = os.path.expanduser(args.anno_dir)
+    args.out_list_path = os.path.expanduser(args.out_list_path)
 
     return args
 
@@ -325,8 +323,34 @@ def build_file_list(args):
         with open(osp.join(out_path, filename), 'w') as f:
             f.writelines(lists[0][ind])
 
+def download_ucf101(args):
+
+    target_dir = args.download_dir
+    if not os.path.exists(target_dir):
+        os.makedirs(target_dir)
+
+    if args.tiny_dataset:
+        video_url = 'https://github.com/bryanyzhu/tiny-ucf101/raw/master/tiny-UCF101.zip'
+        os.system('wget -P %s %s' % (target_dir, video_url))
+        with zipfile.ZipFile(os.path.join(target_dir, 'tiny-UCF101.zip')) as zf:
+            zf.extractall(path=target_dir)
+    else:
+        video_url = 'https://www.crcv.ucf.edu/data/UCF101/UCF101.rar'
+        os.system('wget -P %s %s' % (target_dir, video_url))
+        with rarfile.RarFile(os.path.join(target_dir, 'UCF101.rar')) as rf:
+            rf.extractall(path=target_dir)
+
+    anno_url = 'https://www.crcv.ucf.edu/data/UCF101/UCF101TrainTestSplits-RecognitionTask.zip'
+    os.system('wget -P %s %s' % (target_dir, anno_url))
+    with zipfile.ZipFile(os.path.join(target_dir, 'UCF101TrainTestSplits-RecognitionTask.zip'))  as zf:
+        zf.extractall(path=target_dir)
+
 if __name__ == '__main__':
     args = parse_args()
+
+    if args.download:
+        print('Downloading UCF101 dataset.')
+        download_ucf101(args)
 
     if args.decode_video:
         print('Decoding videos to frames.')
