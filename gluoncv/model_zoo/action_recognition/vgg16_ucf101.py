@@ -1,15 +1,15 @@
 # pylint: disable=line-too-long,too-many-lines,missing-docstring,arguments-differ,unused-argument
+import mxnet as mx
 from mxnet import init
 from mxnet.gluon import nn
 from mxnet.gluon.nn import HybridBlock
-from mxnet.context import cpu
 from ...nn.block import Consensus
 from ..vgg import vgg16
 
 __all__ = ['vgg16_ucf101', 'ActionRecVGG16', 'ActionRecVGG16TSN']
 
 def vgg16_ucf101(nclass=101, pretrained=False, tsn=False, num_segments=3,
-                 root='~/.mxnet/models', ctx=cpu(0), **kwargs):
+                 root='~/.mxnet/models', ctx=mx.cpu(), **kwargs):
     if tsn:
         model = ActionRecVGG16TSN(nclass=nclass, num_segments=num_segments)
     else:

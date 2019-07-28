@@ -1,15 +1,15 @@
 # pylint: disable=line-too-long,too-many-lines,missing-docstring,arguments-differ,unused-argument
+import mxnet as mx
 from mxnet import init
 from mxnet.gluon import nn
 from mxnet.gluon.nn import HybridBlock
-from mxnet.context import cpu
 from ...nn.block import Consensus
 from ..inception import inception_v3
 
 __all__ = ['inceptionv3_ucf101', 'ActionRecInceptionV3', 'ActionRecInceptionV3TSN']
 
 def inceptionv3_ucf101(nclass=101, pretrained=False, tsn=False, partial_bn=True,
-                       num_segments=3, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
+                       num_segments=3, root='~/.mxnet/models', ctx=mx.cpu(), **kwargs):
     if tsn:
         model = ActionRecInceptionV3TSN(nclass=nclass, partial_bn=partial_bn, num_segments=num_segments)
     else:
