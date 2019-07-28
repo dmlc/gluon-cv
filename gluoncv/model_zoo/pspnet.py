@@ -62,6 +62,9 @@ class PSPNet(SegBaseModel):
         return tuple(outputs)
 
     def demo(self, x):
+        self.predict(x)
+
+    def predict(self, x):
         h, w = x.shape[2:]
         self._up_kwargs['height'] = h
         self._up_kwargs['width'] = w
@@ -175,6 +178,7 @@ def get_psp(dataset='pascal_voc', backbone='resnet50', pretrained=False,
     # infer number of classes
     model = PSPNet(datasets[dataset].NUM_CLASS, backbone=backbone,
                    pretrained_base=pretrained_base, ctx=ctx, **kwargs)
+    model.classes = datasets[dataset].classes
     if pretrained:
         from .model_store import get_model_file
         model.load_parameters(get_model_file('psp_%s_%s'%(backbone, acronyms[dataset]),

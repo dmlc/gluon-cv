@@ -1,5 +1,6 @@
 """Base Model for Semantic Segmentation"""
 import math
+import warnings
 import numpy as np
 import mxnet as mx
 from mxnet.ndarray import NDArray
@@ -86,6 +87,10 @@ class SegBaseModel(HybridBlock):
         return self.forward(x)[0]
 
     def demo(self, x):
+        warnings.warn('demo method will be deprecated in favor of predict.')
+        return self.predict(x)
+
+    def predict(self, x):
         h, w = x.shape[2:]
         self._up_kwargs['height'] = h
         self._up_kwargs['width'] = w
