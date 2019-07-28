@@ -2,16 +2,26 @@
 from mxnet import init
 from mxnet.gluon import nn
 from mxnet.gluon.nn import HybridBlock
+from mxnet.context import cpu
 from ...nn.block import Consensus
 from ..vgg import vgg16
 
 __all__ = ['vgg16_ucf101', 'ActionRecVGG16', 'ActionRecVGG16TSN']
 
-def vgg16_ucf101(nclass=101, pretrained=True, tsn=False, num_segments=3, **kwargs):
+def vgg16_ucf101(nclass=101, pretrained=False, tsn=False, num_segments=3,
+                 root='~/.mxnet/models', ctx=cpu(0), **kwargs):
     if tsn:
-        model = ActionRecVGG16TSN(nclass=nclass, pretrained=pretrained, num_segments=num_segments)
+        model = ActionRecVGG16TSN(nclass=nclass, num_segments=num_segments)
     else:
-        model = ActionRecVGG16(nclass=nclass, pretrained=pretrained)
+        model = ActionRecVGG16(nclass=nclass)
+
+    if pretrained:
+        from ..model_store import get_model_file
+        model.load_parameters(get_model_file('vgg16_ucf101',
+                                             tag=pretrained, root=root), ctx=ctx)
+        from ...data import UCF101Attr
+        attrib = UCF101Attr()
+        model.classes = attrib.classes
     return model
 
 class ActionRecVGG16(HybridBlock):
@@ -22,15 +32,15 @@ class ActionRecVGG16(HybridBlock):
     Parameters
     ----------
     nclass : int, number of classes
-    pretrained : bool, load pre-trained weights or not
+    pretrained_base : bool, load pre-trained weights or not
 
     Input: a single video frame
     Output: a single predicted action label
     """
-    def __init__(self, nclass, pretrained=True, **kwargs):
+    def __init__(self, nclass, pretrained_base=True, **kwargs):
         super(ActionRecVGG16, self).__init__()
 
-        pretrained_model = vgg16(pretrained=pretrained, **kwargs)
+        pretrained_model = vgg16(pretrained=pretrained_base, **kwargs)
         self.features = pretrained_model.features
         def update_dropout_ratio(block):
             if isinstance(block, nn.basic_layers.Dropout):
@@ -52,15 +62,15 @@ class ActionRecVGG16TSN(HybridBlock):
     Parameters
     ----------
     nclass : int, number of classes
-    pretrained : bool, load pre-trained weights or not
+    pretrained_base : bool, load pre-trained weights or not
 
     Input: N images from N segments in a single video
     Output: a single predicted action label
     """
-    def __init__(self, nclass, pretrained=True, num_segments=3, **kwargs):
+    def __init__(self, nclass, pretrained_base=True, num_segments=3, **kwargs):
         super(ActionRecVGG16TSN, self).__init__()
 
-        self.basenet = ActionRecVGG16(nclass=nclass, pretrained=pretrained)
+        self.basenet = ActionRecVGG16(nclass=nclass, pretrained_base=pretrained_base)
         self.tsn_consensus = Consensus(nclass=nclass, num_segments=num_segments)
 
     def hybrid_forward(self, F, x):

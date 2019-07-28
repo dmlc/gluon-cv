@@ -39,9 +39,9 @@ stored at ``~/.mxnet/datasets/ucf101`` by default.
    You need at least 60 GB disk space to download and extract the dataset. SSD
    (Solid-state disks) is preferred over HDD because of faster speed.
 
-   You may need to install `unrar` by ``sudo apt install unrar``.
+   You may need to install ``unrar`` by ``sudo apt install unrar``.
 
-   You may need to install `rarfile`, `Cython`, `mmcv` by ``pip install rarfile Cython mmcv``.
+   You may need to install ``rarfile``, ``Cython``, ``mmcv`` by ``pip install rarfile Cython mmcv``.
 
    The data preparation process may take a while. The total time to prepare the dataset depends on
    your Internet speed and disk performance. For example, it takes about 30min on an AWS EC2 instance with EBS.

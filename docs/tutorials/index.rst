@@ -174,6 +174,22 @@ Pose Estimation
 
         Estimate human pose in real-world images with pre-trained Simple Pose models
 
+Action Recognition
+---------------------
+
+.. container:: cards
+
+    .. card::
+        :title: Pre-trained Models on UCF101
+        :link: ../build/examples_action_recognition/demo_ucf101.html
+
+        Recognize human actions in real-world videos with pre-trained TSN-VGG16 models
+
+    .. card::
+        :title: Training on UCF101
+        :link: ../build/examples_action_recognition/dive_deep_ucf101.html
+
+        Hands on TSN-VGG16 action recognition model training on UCF101 dataset
 
 Dataset Preparation
 -------------------
