@@ -255,5 +255,6 @@ Deployment
     ../build/examples_instance/index
     ../build/examples_segmentation/index
     ../build/examples_pose/index
+    ../build/examples_action_recognition/index
     ../build/examples_datasets/index
     ../build/examples_deployment/index
