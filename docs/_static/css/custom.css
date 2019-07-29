@@ -6,6 +6,14 @@
     content: ' (no mixup)';
 }
 
+.tsntag {
+    color:grey;
+}
+
+.tsntag:after {
+    content: ' (no TSN)';
+}
+
 .greytag {
     color:grey;
 }

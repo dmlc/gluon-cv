@@ -1,4 +1,4 @@
-"""2. Dive Deep into Training with UCF101
+"""2. Dive Deep into Training TSN mdoels on UCF101
 ==============================================
 
 This is a video action recognition tutorial using Gluon CV toolkit, a step-by-step example.
@@ -76,12 +76,12 @@ print(net)
 # want to randomly crop a video sequence, you need to make sure all the video
 # frames in this sequence undergo the same cropping process. We provide a
 # new set of transformation functions, working with multiple images.
-# Please checkout the `video.py <../data/index.html#action_recognition>`_ for more details.
+# Please checkout the `video.py <../../../gluoncv/data/transforms/video.py>`_ for more details.
+# Most video data augmentation strategies used here are introduced in [Wang15]_.
 
 transform_train = transforms.Compose([
     # Fix the input video frames size as 256×340 and randomly sample the cropping width and height from
     # {256,224,192,168}. After that, resize the cropped regions to 224 × 224.
-    # This strategy is introduced in [Wang15]_.
     video.VideoMultiScaleCrop(size=(224, 224), scale_ratios=[1.0, 0.875, 0.75, 0.66]),
     # Randomly flip the video frames horizontally
     video.VideoRandomHorizontalFlip(),
@@ -104,6 +104,7 @@ num_workers = 8
 batch_size = per_device_batch_size * num_gpus
 
 # Set train=True for training data. Here we only use a subset of UCF101 for demonstration purpose.
+# The subset has 101 training samples, one sample per class.
 train_dataset = ucf101.classification.UCF101(train=True, num_segments=3, transform=transform_train)
 print('Load %d training samples.' % len(train_dataset))
 
@@ -156,8 +157,8 @@ train_history = TrainingHistory(['training-acc'])
 # Following is the script.
 #
 # .. note::
-#   In order to finish the tutorial quickly, we only train for 3 epochs.
-#   In your experiments, we recommend setting ``epochs=80``.
+#   In order to finish the tutorial quickly, we only train for 3 epochs on the tiny subset.
+#   In your experiments, we recommend setting ``epochs=80`` for the full UCF101 dataset.
 
 epochs = 3
 lr_decay_count = 0

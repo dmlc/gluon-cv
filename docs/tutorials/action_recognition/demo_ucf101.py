@@ -1,14 +1,10 @@
-"""1. Getting Started with Pre-trained Model on UCF101
+"""1. Getting Started with Pre-trained TSN Model on UCF101
 ======================================================
 
 `UCF101 <https://www.crcv.ucf.edu/data/UCF101.php>`_  is an action recognition dataset
 of realistic action videos, collected from YouTube. With 13,320 short trimmed videos
 from 101 action categories, it is one of the most widely used dataset in the research
 community for benchmarking state-of-the-art video action recognition models.
-
-|image-UCF101|
-
-.. |image-UCF101| image:: https://www.crcv.ucf.edu/data/UCF101/UCF101.jpg
 
 In this tutorial, we will demonstrate how to load a pre-trained model from :ref:`gluoncv-model-zoo`
 and classify video frames from the Internet or your local disk.
@@ -57,7 +53,7 @@ transform_fn = transforms.Compose([
 ################################################################
 # This transformation function does three things:
 # center crop the image to 224x224 in size,
-# transpose it to `num_channels*height*width`,
+# transpose it to ``num_channels*height*width``,
 # and normalize with mean and standard deviation calculated across all ImageNet images.
 #
 # What does the transformed image look like?
@@ -89,8 +85,13 @@ for i in range(topK):
           (classes[ind[i].asscalar()], nd.softmax(pred)[0][ind[i]].asscalar()))
 
 ################################################################
+#
+# We can see that our pre-trained model predicts this video frame
+# to be ``throw discus`` action with high confidence.
+
+################################################################
 # Next Step
 # ---------
 #
-# If you would like to dive deeper into training on ``UCF101``,
+# If you would like to dive deeper into training TSN models on ``UCF101``,
 # feel free to read the next `tutorial on UCF101 <dive_deep_ucf101.html>`__.
