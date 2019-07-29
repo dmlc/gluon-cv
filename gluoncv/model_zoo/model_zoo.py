@@ -29,6 +29,7 @@ from .squeezenet import *
 from .ssd import *
 from .vgg import *
 from .yolo import *
+from .alpha_pose import *
 from .action_recognition import *
 
 __all__ = ['get_model', 'get_model_list']
@@ -215,6 +216,7 @@ _models = {
     'ssd_512_mobilenet1.0_voc_int8': ssd_512_mobilenet1_0_voc_int8,
     'ssd_512_resnet50_v1_voc_int8': ssd_512_resnet50_v1_voc_int8,
     'ssd_512_vgg16_atrous_voc_int8': ssd_512_vgg16_atrous_voc_int8,
+    'alpha_pose_resnet101_v1b_coco': alpha_pose_resnet101_v1b_coco,
     'vgg16_ucf101': vgg16_ucf101,
     'inceptionv3_ucf101': inceptionv3_ucf101,
 }

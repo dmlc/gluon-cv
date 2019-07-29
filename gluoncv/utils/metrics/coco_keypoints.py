@@ -36,7 +36,7 @@ class COCOKeyPointsMetric(mx.metric.EvalMetric):
         super(COCOKeyPointsMetric, self).__init__('COCOMeanAP')
         self.dataset = dataset
         self._img_ids = sorted(dataset.coco.getImgIds())
-        self._current_id = 0
+        self._recorded_ids = {}
         self._cleanup = cleanup
         self._results = []
         self._in_vis_thresh = in_vis_thresh
@@ -69,15 +69,11 @@ class COCOKeyPointsMetric(mx.metric.EvalMetric):
                 warnings.warn(str(err))
 
     def reset(self):
-        self._current_id = 0
+        self._recorded_ids = {}
         self._results = []
 
     def _update(self):
         """Use coco to get real scores. """
-        if not self._current_id == len(self._img_ids):
-            warnings.warn(
-                'Recorded {} out of {} validation images, incompelete results'.format(
-                    self._current_id, len(self._img_ids)))
         import json
         try:
             with open(self._filename, 'w') as f:
@@ -137,3 +133,4 @@ class COCOKeyPointsMetric(mx.metric.EvalMetric):
                                   'category_id': 1,
                                   'keypoints': kpt,
                                   'score': rescore})
+            self._recorded_ids[int(imgid[idx].asscalar())] = True
