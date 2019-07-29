@@ -19,7 +19,7 @@ from .segbase import ms_batchify_fn
 from .recordio.detection import RecordFileDetection
 from .lst.detection import LstDetection
 from .mixup.detection import MixupDetection
-from .ucf101.classification import UCF101
+from .ucf101.classification import UCF101, UCF101Attr
 
 datasets = {
     'ade20k': ADE20KSegmentation,

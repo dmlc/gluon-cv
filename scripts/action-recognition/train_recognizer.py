@@ -13,17 +13,18 @@ from gluoncv.data.transforms import video
 from gluoncv.data import ucf101
 from gluoncv.model_zoo import get_model
 from gluoncv.utils import makedirs, LRSequential, LRScheduler, split_and_load
+from gluoncv.data.dataloader import tsn_mp_batchify_fn
 
 # CLI
 def parse_args():
     parser = argparse.ArgumentParser(description='Train a model for action recognition.')
-    parser.add_argument('--data-dir', type=str, default='~/.mxnet/datasets/ucf101',
+    parser.add_argument('--data-dir', type=str, default='~/.mxnet/datasets/ucf101/rawframes',
                         help='training and validation pictures to use.')
     parser.add_argument('--train-list', type=str, default='~/.mxnet/datasets/ucf101/ucfTrainTestlist/ucf101_train_rgb_split1.txt',
                         help='the list of training data')
     parser.add_argument('--val-list', type=str, default='~/.mxnet/datasets/ucf101/ucfTrainTestlist/ucf101_val_rgb_split1.txt',
                         help='the list of validation data')
-    parser.add_argument('--batch-size', type=int, default=32,
+    parser.add_argument('--batch-size', type=int, default=25,
                         help='training batch size per device (CPU/GPU).')
     parser.add_argument('--dtype', type=str, default='float32',
                         help='data type for training. default is float32')
@@ -117,21 +118,6 @@ def parse_args():
                         help='number of classes.')
     opt = parser.parse_args()
     return opt
-
-def tsn_mp_batchify_fn(data):
-    """Collate data into batch. Use shared memory for stacking.
-    Modify default batchify function for temporal segment networks.
-    Change `nd.stack` to `nd.concat` since batch dimension already exists.
-    """
-    if isinstance(data[0], nd.NDArray):
-        return nd.concat(*data, dim=0)
-    elif isinstance(data[0], tuple):
-        data = zip(*data)
-        return [tsn_mp_batchify_fn(i) for i in data]
-    else:
-        data = np.asarray(data)
-        return nd.array(data, dtype=data.dtype,
-                        ctx=context.Context('cpu_shared', 0))
 
 def get_data_loader(opt, batch_size, num_workers, logger):
     data_dir = opt.data_dir

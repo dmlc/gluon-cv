@@ -1,4 +1,4 @@
-# pylint: disable=abstract-method,unused-argument
+# pylint: disable=abstract-method,unused-argument,arguments-differ
 """Customized Layers.
 """
 from __future__ import absolute_import

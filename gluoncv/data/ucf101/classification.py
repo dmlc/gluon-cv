@@ -51,8 +51,8 @@ class UCF101(dataset.Dataset):
         A function that takes data and label and transforms them.
     """
     def __init__(self,
-                 setting,
-                 root=os.path.join('~', '.mxnet', 'datasets', 'ucf101'),
+                 setting=os.path.expanduser('~/.mxnet/datasets/ucf101/ucfTrainTestlist/ucf101_train_split_2_rawframes.txt'),
+                 root=os.path.expanduser('~/.mxnet/datasets/ucf101/rawframes'),
                  train=True,
                  test_mode=False,
                  name_pattern=None,
@@ -189,3 +189,25 @@ class UCF101(dataset.Dataset):
         # the shape of clip_input will be H x W x C, and C = num_segments * new_length * 3
         clip_input = np.concatenate(sampled_list, axis=2)
         return nd.array(clip_input)
+
+class UCF101Attr(object):
+    def __init__(self):
+        self.num_class = 101
+        self.classes = ['ApplyEyeMakeup', 'ApplyLipstick', 'Archery', 'BabyCrawling', 'BalanceBeam',
+                        'BandMarching', 'BaseballPitch', 'Basketball', 'BasketballDunk', 'BenchPress',
+                        'Biking', 'Billiards', 'BlowDryHair', 'BlowingCandles', 'BodyWeightSquats',
+                        'Bowling', 'BoxingPunchingBag', 'BoxingSpeedBag', 'BreastStroke', 'BrushingTeeth',
+                        'CleanAndJerk', 'CliffDiving', 'CricketBowling', 'CricketShot', 'CuttingInKitchen',
+                        'Diving', 'Drumming', 'Fencing', 'FieldHockeyPenalty', 'FloorGymnastics', 'FrisbeeCatch',
+                        'FrontCrawl', 'GolfSwing', 'Haircut', 'HammerThrow', 'Hammering', 'HandstandPushups',
+                        'HandstandWalking', 'HeadMassage', 'HighJump', 'HorseRace', 'HorseRiding', 'HulaHoop',
+                        'IceDancing', 'JavelinThrow', 'JugglingBalls', 'JumpRope', 'JumpingJack', 'Kayaking',
+                        'Knitting', 'LongJump', 'Lunges', 'MilitaryParade', 'Mixing', 'MoppingFloor', 'Nunchucks',
+                        'ParallelBars', 'PizzaTossing', 'PlayingCello', 'PlayingDaf', 'PlayingDhol', 'PlayingFlute',
+                        'PlayingGuitar', 'PlayingPiano', 'PlayingSitar', 'PlayingTabla', 'PlayingViolin',
+                        'PoleVault', 'PommelHorse', 'PullUps', 'Punch', 'PushUps', 'Rafting', 'RockClimbingIndoor',
+                        'RopeClimbing', 'Rowing', 'SalsaSpin', 'ShavingBeard', 'Shotput', 'SkateBoarding',
+                        'Skiing', 'Skijet', 'SkyDiving', 'SoccerJuggling', 'SoccerPenalty', 'StillRings',
+                        'SumoWrestling', 'Surfing', 'Swing', 'TableTennisShot', 'TaiChi', 'TennisSwing',
+                        'ThrowDiscus', 'TrampolineJumping', 'Typing', 'UnevenBars', 'VolleyballSpiking',
+                        'WalkingWithDog', 'WallPushups', 'WritingOnBoard', 'YoYo']
