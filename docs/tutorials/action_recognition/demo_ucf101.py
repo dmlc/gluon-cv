@@ -24,6 +24,7 @@ to install ``MXNet`` and ``GluonCV`` if you haven't done so yet.
 
 import matplotlib.pyplot as plt
 
+import mxnet as mx
 from mxnet import gluon, nd, image
 from mxnet.gluon.data.vision import transforms
 from gluoncv.data.transforms import video

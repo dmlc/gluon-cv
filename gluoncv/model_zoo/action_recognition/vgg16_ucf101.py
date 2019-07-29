@@ -18,10 +18,11 @@ def vgg16_ucf101(nclass=101, pretrained=False, tsn=False, num_segments=3,
     if pretrained:
         from ..model_store import get_model_file
         model.load_parameters(get_model_file('vgg16_ucf101',
-                                             tag=pretrained, root=root), ctx=ctx)
+                                             tag=pretrained, root=root))
         from ...data import UCF101Attr
         attrib = UCF101Attr()
         model.classes = attrib.classes
+    model.collect_params().reset_ctx(ctx)
     return model
 
 class ActionRecVGG16(HybridBlock):
@@ -39,6 +40,7 @@ class ActionRecVGG16(HybridBlock):
     """
     def __init__(self, nclass, pretrained_base=True, **kwargs):
         super(ActionRecVGG16, self).__init__()
+        # print(ctx)
 
         pretrained_model = vgg16(pretrained=pretrained_base, **kwargs)
         self.features = pretrained_model.features

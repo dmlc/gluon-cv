@@ -18,10 +18,11 @@ def inceptionv3_ucf101(nclass=101, pretrained=False, tsn=False, partial_bn=True,
     if pretrained:
         from ..model_store import get_model_file
         model.load_parameters(get_model_file('inceptionv3_ucf101',
-                                             tag=pretrained, root=root), ctx=ctx)
+                                             tag=pretrained, root=root))
         from ...data import UCF101Attr
         attrib = UCF101Attr()
         model.classes = attrib.classes
+    model.collect_params().reset_ctx(ctx)
     return model
 
 class ActionRecInceptionV3(HybridBlock):
