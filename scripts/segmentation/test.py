@@ -77,7 +77,5 @@ def test(args):
 if __name__ == "__main__":
     args = parse_args()
     args.test_batch_size = max(1, args.ngpus)
-    if args.ngpus == 0:
-        args.ctx = [mx.cpu()]
     print('Testing model: ', args.resume)
     test(args)

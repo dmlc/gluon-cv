@@ -88,6 +88,8 @@ def parse_args():
     # the parser
     args = parser.parse_args()
     # handle contexts
+    if args.ngpus == 0:
+        args.no_cuda = True
     if args.no_cuda:
         print('Using CPU')
         args.kvstore = 'local'
