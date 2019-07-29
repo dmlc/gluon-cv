@@ -112,7 +112,7 @@ print('Load %d training samples.' % len(train_dataset))
 # When temporal segment option is turned on, the training samples from ``train_dataset``
 # have a dimention of ``num_segments x 3 x 224 x 224``.
 # Hence, we can't use default batchify function because we already have a batch dimention.
-# We modify the default batchify function as below, basically just changing ``nd.stack`` to ``nd.concat``.
+# We modify the default batchify function to ``tsn_mp_batchify_fn``, basically changing ``nd.stack`` to ``nd.concat``.
 
 train_data = gluon.data.DataLoader(train_dataset, batch_size=batch_size,
                                    shuffle=True, num_workers=num_workers, batchify_fn=tsn_mp_batchify_fn)
