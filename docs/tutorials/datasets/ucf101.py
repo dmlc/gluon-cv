@@ -83,7 +83,7 @@ viz.plot_image(train_dataset[22][0])  # CricketBowling
 
 #########################################################################
 """Here is another example that randomly reads 25 videos each time, randomly selects one clip per video and
-performs center cropping. A clip can contain multiple consecutive frames, e.g., 5.
+performs center cropping. A clip can contain N consecutive frames, e.g., N=5.
 """
 train_dataset = ucf101.classification.UCF101(train=True, new_length=5, transform=transform_train)
 train_data = DataLoader(train_dataset, batch_size=25, shuffle=True)
@@ -115,17 +115,3 @@ fig.add_subplot(1,5,5)
 plt.imshow(train_dataset[7][0][:,:,12:].asnumpy().astype('uint8'))
 # display
 plt.show()
-
-
-
-
-
-
-
-
-
-
-
-
-
-

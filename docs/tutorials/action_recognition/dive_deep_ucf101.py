@@ -49,6 +49,7 @@ from gluoncv.data.transforms import video
 from gluoncv.data import ucf101
 from gluoncv.model_zoo import get_model
 from gluoncv.utils import makedirs, LRSequential, LRScheduler, split_and_load, TrainingHistory
+from gluoncv.data.dataloader import tsn_mp_batchify_fn
 
 
 ################################################################
@@ -111,21 +112,6 @@ print('Load %d training samples.' % len(train_dataset))
 # have a dimention of ``num_segments x 3 x 224 x 224``.
 # Hence, we can't use default batchify function because we already have a batch dimention.
 # We modify the default batchify function as below, basically just changing ``nd.stack`` to ``nd.concat``.
-
-def tsn_mp_batchify_fn(data):
-    """Collate data into batch. Use shared memory for stacking.
-    Modify default batchify function for temporal segment networks.
-    Change `nd.stack` to `nd.concat` since batch dimension already exists.
-    """
-    if isinstance(data[0], nd.NDArray):
-        return nd.concat(*data, dim=0)
-    elif isinstance(data[0], tuple):
-        data = zip(*data)
-        return [tsn_mp_batchify_fn(i) for i in data]
-    else:
-        data = np.asarray(data)
-        return nd.array(data, dtype=data.dtype,
-                        ctx=context.Context('cpu_shared', 0))
 
 train_data = gluon.data.DataLoader(train_dataset, batch_size=batch_size,
                                    shuffle=True, num_workers=num_workers, batchify_fn=tsn_mp_batchify_fn)

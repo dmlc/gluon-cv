@@ -42,6 +42,20 @@ def default_mp_pad_batchify_fn(data):
             buf[i][:l.shape[0], :] = l
         return nd.array(buf, dtype=data[0].dtype, ctx=context.Context('cpu_shared', 0))
 
+def tsn_mp_batchify_fn(data):
+    """Collate data into batch. Use shared memory for stacking.
+    Modify default batchify function for temporal segment networks.
+    Change `nd.stack` to `nd.concat` since batch dimension already exists.
+    """
+    if isinstance(data[0], nd.NDArray):
+        return nd.concat(*data, dim=0)
+    elif isinstance(data[0], tuple):
+        data = zip(*data)
+        return [tsn_mp_batchify_fn(i) for i in data]
+    else:
+        data = np.asarray(data)
+        return nd.array(data, dtype=data.dtype,
+                        ctx=context.Context('cpu_shared', 0))
 
 class DetectionDataLoader(DataLoader):
     """Data loader for detection dataset.
