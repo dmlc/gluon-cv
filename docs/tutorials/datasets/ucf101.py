@@ -50,7 +50,7 @@ Read with GluonCV
 -----------------
 
 The prepared dataset can be loaded with utility class :py:class:`gluoncv.data.ucf101`
-directly. Here is an example that randomly reads 25 images each time and
+directly. Here is an example that randomly reads 25 videos each time, randomly selects one frame per video and
 performs center cropping.
 """
 
@@ -80,3 +80,52 @@ for x, y in train_data:
 from gluoncv.utils import viz
 viz.plot_image(train_dataset[7][0])   # Basketball
 viz.plot_image(train_dataset[22][0])  # CricketBowling
+
+#########################################################################
+"""Here is another example that randomly reads 25 videos each time, randomly selects one clip per video and
+performs center cropping. A clip can contain multiple consecutive frames, e.g., 5.
+"""
+train_dataset = ucf101.classification.UCF101(train=True, new_length=5, transform=transform_train)
+train_data = DataLoader(train_dataset, batch_size=25, shuffle=True)
+
+#########################################################################
+for x, y in train_data:
+    print('Video frame size (batch, height, width, RGB):', x.shape)
+    print('Video label:', y.shape)
+    break
+
+#######################################################################################
+# Plot 1 training sample, with 5 consecutive video frames. index 0 is image, 1 is label
+from matplotlib import pyplot as plt
+# subplot 1 for video frame 1
+fig = plt.figure()
+fig.add_subplot(1,5,1)
+plt.imshow(train_dataset[7][0][:,:,:3].asnumpy().astype('uint8'))
+# subplot 2 for video frame 2
+fig.add_subplot(1,5,2)
+plt.imshow(train_dataset[7][0][:,:,3:6].asnumpy().astype('uint8'))
+# subplot 3 for video frame 3
+fig.add_subplot(1,5,3)
+plt.imshow(train_dataset[7][0][:,:,6:9].asnumpy().astype('uint8'))
+# subplot 4 for video frame 4
+fig.add_subplot(1,5,4)
+plt.imshow(train_dataset[7][0][:,:,9:12].asnumpy().astype('uint8'))
+# subplot 5 for video frame 5
+fig.add_subplot(1,5,5)
+plt.imshow(train_dataset[7][0][:,:,12:].asnumpy().astype('uint8'))
+# display
+plt.show()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
