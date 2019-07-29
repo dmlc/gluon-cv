@@ -68,7 +68,7 @@ def test(args):
             im_paths = dsts
             predicts = evaluator.parallel_forward(data)
             for predict, impath in zip(predicts, im_paths):
-                predict = mx.nd.squeeze(mx.nd.argmax(predict[0], 1)).asnumpy() + \
+                predict = mx.nd.squeeze(mx.nd.argmax(predict[0], 0)).asnumpy() + \
                     testset.pred_offset
                 mask = get_color_pallete(predict, args.dataset)
                 outname = os.path.splitext(impath)[0] + '.png'
@@ -76,6 +76,8 @@ def test(args):
 
 if __name__ == "__main__":
     args = parse_args()
-    args.test_batch_size = args.ngpus
+    args.test_batch_size = max(1, args.ngpus)
+    if args.ngpus == 0:
+        args.ctx = [mx.cpu()]
     print('Testing model: ', args.resume)
     test(args)
