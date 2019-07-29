@@ -20,8 +20,11 @@ from gluoncv.data.transforms.presets.rcnn import FasterRCNNDefaultTrainTransform
     FasterRCNNDefaultValTransform
 from gluoncv.utils.metrics.voc_detection import VOC07MApMetric
 from gluoncv.utils.metrics.coco_detection import COCODetectionMetric
-import horovod.mxnet as hvd
 
+try:
+    import horovod.mxnet as hvd
+except ImportError:
+    hvd = None
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train Faster-RCNN networks e2e.')
@@ -484,6 +487,8 @@ if __name__ == '__main__':
         amp.init()
 
     if args.horovod:
+        if hvd is None:
+            raise SystemExit("Horovod not found, please check if you installed it correctly.")
         hvd.init()
 
     # training contexts
