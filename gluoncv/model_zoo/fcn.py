@@ -124,6 +124,7 @@ def get_fcn(dataset='pascal_voc', backbone='resnet50', pretrained=False,
     # infer number of classes
     model = FCN(datasets[dataset].NUM_CLASS, backbone=backbone, pretrained_base=pretrained_base,
                 ctx=ctx, **kwargs)
+    model.classes = datasets[dataset].classes
     if pretrained:
         from .model_store import get_model_file
         model.load_parameters(get_model_file(

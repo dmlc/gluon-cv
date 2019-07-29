@@ -9,6 +9,27 @@ from ..image import random_flip as random_flip_image
 from ..pose import flip_joints_3d, get_affine_transform, affine_transform
 from ....utils.filesystem import try_import_cv2
 
+__all__ = ['SimplePoseDefaultTrainTransform', 'SimplePoseDefaultValTransform']
+
+def _box_to_center_scale(x, y, w, h, aspect_ratio=1.0, scale_mult=1.25):
+    """Convert box coordinates to center and scale.
+    adapted from https://github.com/Microsoft/human-pose-estimation.pytorch
+    """
+    pixel_std = 1
+    center = np.zeros((2), dtype=np.float32)
+    center[0] = x + w * 0.5
+    center[1] = y + h * 0.5
+
+    if w > aspect_ratio * h:
+        h = w / aspect_ratio
+    elif w < aspect_ratio * h:
+        w = h * aspect_ratio
+    scale = np.array(
+        [w * 1.0 / pixel_std, h * 1.0 / pixel_std], dtype=np.float32)
+    if center[0] != -1:
+        scale = scale * scale_mult
+    return center, scale
+
 
 class SimplePoseDefaultTrainTransform(object):
     """Default training transform for simple pose.
@@ -18,9 +39,9 @@ class SimplePoseDefaultTrainTransform(object):
     num_joints : int
         Number of joints defined by dataset
     image_size : tuple of int
-        Image size, as (width, height).
+        Image size, as (height, width).
     heatmap_size : tuple of int
-        Heatmap size, as (width, height).
+        Heatmap size, as (height, width).
     sigma : float
         Gaussian sigma for the heatmap generation.
 
@@ -35,19 +56,25 @@ class SimplePoseDefaultTrainTransform(object):
         self._num_joints = num_joints
         self._image_size = image_size
         self._joint_pairs = joint_pairs
-        self._width = image_size[0]
-        self._height = image_size[1]
+        self._height = image_size[0]
+        self._width = image_size[1]
         self._mean = mean
         self._std = std
         self._random_flip = random_flip
         self._scale_factor = scale_factor
         self._rotation_factor = rotation_factor
+        self._aspect_ratio = float(self._width) / self._height
 
     def __call__(self, src, label, img_path):
         cv2 = try_import_cv2()
+        bbox = label['bbox']
+        assert len(bbox) == 4
         joints_3d = label['joints_3d']
-        center = label['center']
-        scale = label['scale']
+        xmin, ymin, xmax, ymax = bbox
+        center, scale = _box_to_center_scale(
+            xmin, ymin, xmax - xmin, ymax - ymin, self._aspect_ratio)
+        # center = label['center']
+        # scale = label['scale']
         # score = label.get('score', 1)
 
         # rescale
@@ -92,9 +119,7 @@ class SimplePoseDefaultValTransform(object):
     num_joints : int
         Number of joints defined by dataset
     image_size : tuple of int
-        Image size, as (width, height).
-    heatmap_size : tuple of int
-        Heatmap size, as (width, height).
+        Image size, as (height, width).
 
     """
     def __init__(self, num_joints, joint_pairs, image_size=(256, 256),
@@ -102,16 +127,20 @@ class SimplePoseDefaultValTransform(object):
         self._num_joints = num_joints
         self._image_size = image_size
         self._joint_pairs = joint_pairs
-        self._width = image_size[0]
-        self._height = image_size[1]
+        self._height = image_size[0]
+        self._width = image_size[1]
         self._mean = mean
         self._std = std
+        self._aspect_ratio = float(self._width / self._height)
 
     def __call__(self, src, label, img_path):
         cv2 = try_import_cv2()
+        bbox = label['bbox']
+        assert len(bbox) == 4
         joints_3d = label['joints_3d']
-        center = label['center']
-        scale = label['scale']
+        xmin, ymin, xmax, ymax = bbox
+        center, scale = _box_to_center_scale(
+            xmin, ymin, xmax - xmin, ymax - ymin, self._aspect_ratio)
         score = label.get('score', 1)
 
         h, w = self._image_size

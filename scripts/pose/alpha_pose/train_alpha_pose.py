@@ -1,6 +1,7 @@
 from __future__ import division
 
 import argparse, time, logging, os, math
+from tqdm import tqdm
 
 import numpy as np
 import mxnet as mx
@@ -12,13 +13,15 @@ from mxnet.gluon.data.vision import transforms
 from gluoncv.data import mscoco
 from gluoncv.model_zoo import get_model
 from gluoncv.utils import makedirs, LRScheduler, LRSequential
-from gluoncv.data.transforms.presets.simple_pose import SimplePoseDefaultTrainTransform
+from gluoncv.data.transforms.presets.alpha_pose import AlphaPoseDefaultTrainTransform
 from gluoncv.utils.metrics import HeatmapAccuracy
+
+from validate_tools import get_val_data_loader, validate
 
 # CLI
 parser = argparse.ArgumentParser(description='Train a model for image classification.')
-parser.add_argument('--data-dir', type=str, default='~/.mxnet/datasets/coco',
-                    help='training and validation pictures to use.')
+parser.add_argument('--dataset', type=str, default='coco',
+                    help='training dataset to use, if you use custom dataset, check get_dataset function.')
 parser.add_argument('--num-joints', type=int, required=True,
                     help='Number of joints to detect')
 parser.add_argument('--batch-size', type=int, default=32,
@@ -55,12 +58,8 @@ parser.add_argument('--model', type=str, required=True,
                     help='type of model to use. see vision_model for options.')
 parser.add_argument('--input-size', type=str, default='256,192',
                     help='size of the input image size. default is 256,192')
-parser.add_argument('--sigma', type=float, default=2,
-                    help='value of the sigma parameter of the gaussian target generation. default is 2')
-parser.add_argument('--mean', type=str, default='0.485,0.456,0.406',
-                    help='mean vector for normalization')
-parser.add_argument('--std', type=str, default='0.229,0.224,0.225',
-                    help='std vector for normalization')
+parser.add_argument('--sigma', type=float, default=1,
+                    help='value of the sigma parameter of the gaussian target generation. default is 1')
 parser.add_argument('--use-pretrained', action='store_true',
                     help='enable using pretrained model from gluon.')
 parser.add_argument('--use-pretrained-base', action='store_true',
@@ -75,6 +74,13 @@ parser.add_argument('--log-interval', type=int, default=20,
                     help='Number of batches to wait before logging.')
 parser.add_argument('--logging-file', type=str, default='keypoints.log',
                     help='name of training log file')
+parser.add_argument('--load-model', type=str, default='',
+                    help='name of loading checkpoint')
+parser.add_argument('--flip-test', action='store_true',
+                    help='Whether to flip test input to ensemble results.')
+parser.add_argument('--addDPG', action='store_true',
+                    help='Whether to add DPG while training.')
+
 opt = parser.parse_args()
 
 filehandler = logging.FileHandler(opt.logging_file)
@@ -95,17 +101,28 @@ batch_size *= max(1, num_gpus)
 context = [mx.gpu(i) for i in range(num_gpus)] if num_gpus > 0 else [mx.cpu()]
 num_workers = opt.num_workers
 
-model_name = opt.model
+model_name = '_'.join((opt.model, opt.dataset))
 
-kwargs = {'ctx': context, 'num_joints': num_joints,
+kwargs = {'ctx': context,
           'pretrained': opt.use_pretrained,
           'pretrained_base': opt.use_pretrained_base,
-          'pretrained_ctx': context}
+          'num_gpus': num_gpus}
 
 net = get_model(model_name, **kwargs)
+if opt.load_model:
+    print(f'Loading model from {opt.load_model}')
+    net.load_parameters(opt.load_model, ctx=context)
+net.collect_params().reset_ctx(context)
 net.cast(opt.dtype)
 
-def get_data_loader(data_dir, batch_size, num_workers, input_size):
+def get_dataset(dataset):
+    if dataset == 'coco':
+        train_dataset = mscoco.keypoints.COCOKeyPoints(splits=('person_keypoints_train2017'), check_centers=True)
+    else:
+        raise NotImplementedError("Dataset: {} not supported.".format(dataset))
+    return train_dataset
+
+def get_data_loader(dataset, batch_size, num_workers, input_size):
 
     def train_batch_fn(batch, ctx):
         data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
@@ -114,16 +131,16 @@ def get_data_loader(data_dir, batch_size, num_workers, input_size):
         imgid = gluon.utils.split_and_load(batch[3], ctx_list=ctx, batch_axis=0)
         return data, label, weight, imgid
 
-    train_dataset = mscoco.keypoints.COCOKeyPoints(data_dir, splits=('person_keypoints_train2017'))
+    train_dataset = get_dataset(dataset)
+
     heatmap_size = [int(i/4) for i in input_size]
 
-    meanvec = [float(i) for i in opt.mean.split(',')]
-    stdvec = [float(i) for i in opt.std.split(',')]
-    transform_train = SimplePoseDefaultTrainTransform(num_joints=train_dataset.num_joints,
-                                                      joint_pairs=train_dataset.joint_pairs,
-                                                      image_size=input_size, heatmap_size=heatmap_size,
-                                                      sigma=opt.sigma, scale_factor=0.30, rotation_factor=40,
-                                                      mean=meanvec, std=stdvec, random_flip=True)
+    transform_train = AlphaPoseDefaultTrainTransform(num_joints=train_dataset.num_joints,
+                                                     joint_pairs=train_dataset.joint_pairs,
+                                                     image_size=input_size, heatmap_size=heatmap_size,
+                                                     sigma=opt.sigma, scale_factor=(0.2, 0.3),
+                                                     rotation_factor=40, random_flip=True,
+                                                     random_crop=opt.addDPG, random_sample=opt.addDPG)
 
     train_data = gluon.data.DataLoader(
         train_dataset.transform(transform_train),
@@ -132,8 +149,11 @@ def get_data_loader(data_dir, batch_size, num_workers, input_size):
     return train_dataset, train_data, train_batch_fn
 
 input_size = [int(i) for i in opt.input_size.split(',')]
-train_dataset, train_data,  train_batch_fn = get_data_loader(opt.data_dir, batch_size,
+train_dataset, train_data,  train_batch_fn = get_data_loader(opt.dataset, batch_size,
                                                              num_workers, input_size)
+# Val dataset
+val_dataset, val_data = get_val_data_loader(opt.dataset, batch_size,
+                                            num_workers, input_size, opt)
 
 num_training_samples = len(train_dataset)
 lr_decay = opt.lr_decay
@@ -172,18 +192,13 @@ else:
 def train(ctx):
     if isinstance(ctx, mx.Context):
         ctx = [ctx]
-    if opt.use_pretrained_base:
-        net.deconv_layers.initialize(ctx=ctx)
-        net.final_layer.initialize(ctx=ctx)
-    else:
-        net.initialize(mx.init.MSRAPrelu(), ctx=ctx)
 
     trainer = gluon.Trainer(net.collect_params(), optimizer, optimizer_params)
 
-    L = gluon.loss.L2Loss()
+    L = gluon.loss.L2Loss(weight=2.0)
     metric = HeatmapAccuracy()
 
-    best_val_score = 1
+    best_ap = 0
 
     if opt.mode == 'hybrid':
         net.hybridize(static_alloc=True, static_shape=True)
@@ -194,7 +209,8 @@ def train(ctx):
         btic = time.time()
         metric.reset()
 
-        for i, batch in enumerate(train_data):
+        train_data_desc = tqdm(train_data, dynamic_ncols=True)
+        for i, batch in enumerate(train_data_desc):
             data, label, weight, imgid = train_batch_fn(batch, ctx)
 
             with ag.record():
@@ -220,6 +236,15 @@ def train(ctx):
         if save_frequency and save_dir and (epoch + 1) % save_frequency == 0:
             net.save_parameters('%s/%s-%d.params'%(save_dir, model_name, epoch))
             trainer.save_states('%s/%s-%d.states'%(save_dir, model_name, epoch))
+        if (epoch + 1) % 2 == 0:
+            res = validate(val_data, val_dataset, net, context, opt)[0]
+            logger.info(res)
+            if res['AP'] > best_ap:
+                bestAP = res['AP']
+                net.save_parameters(f'{save_dir}/best-{round(bestAP, 3)}.params')
+                if os.path.islink(f'{save_dir}/final.params'):
+                    os.remove(f'{save_dir}/final.params')
+                os.symlink(f'./best-{round(bestAP, 3)}.params', f'{save_dir}/final.params')
 
     if save_frequency and save_dir:
         net.save_parameters('%s/%s-%d.params'%(save_dir, model_name, opt.num_epochs-1))
