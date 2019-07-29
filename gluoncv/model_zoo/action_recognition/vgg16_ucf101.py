@@ -40,7 +40,6 @@ class ActionRecVGG16(HybridBlock):
     """
     def __init__(self, nclass, pretrained_base=True, **kwargs):
         super(ActionRecVGG16, self).__init__()
-        # print(ctx)
 
         pretrained_model = vgg16(pretrained=pretrained_base, **kwargs)
         self.features = pretrained_model.features
