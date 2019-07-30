@@ -68,8 +68,8 @@ def test(args):
             im_paths = dsts
             predicts = evaluator.parallel_forward(data)
             for predict, impath in zip(predicts, im_paths):
-                predict = mx.nd.squeeze(mx.nd.argmax(predict[0], 0)).asnumpy() + \
-                    testset.pred_offset
+                predict = mx.nd.squeeze(mx.nd.argmax(predict, 1), axis=0).\
+                        asnumpy() + testset.pred_offset
                 mask = get_color_pallete(predict, args.dataset)
                 outname = os.path.splitext(impath)[0] + '.png'
                 mask.save(os.path.join(outdir, outname))
