@@ -5,6 +5,7 @@ import warnings
 import mxnet as mx
 from mxnet.context import cpu
 from mxnet.gluon import SymbolBlock
+from gluoncv.utils.compress_json import get_compressed_model
 
 __all__ = ['mobilenet1_0_int8', 'resnet50_v1_int8',
            'ssd_300_vgg16_atrous_voc_int8', 'ssd_512_mobilenet1_0_voc_int8',
@@ -36,18 +37,24 @@ def _create_quantized_models(name, sym_prefix):
         curr_dir = os.path.abspath(os.path.dirname(__file__))
         model_name = name.replace('mobilenet1_', 'mobilenet1.')
         model_name = model_name.replace('mobilenet0_', 'mobilenet0.')
-        json_file = os.path.join(curr_dir, '{}-symbol.json'.format(model_name))
-        base_name = '_'.join(model_name.split('_')[:-1])
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
+            import tempfile
+            if "fcn" in model_name:
+                model_json = get_compressed_model(model_name)
+                with tempfile.NamedTemporaryFile('w') as tmpf:
+                    tmpf.write(model_json)
+                    sym_net = SymbolBlock.imports(tmpf.name, ['data'], None, ctx=ctx)
+            else:
+                json_file = os.path.join(curr_dir, '{}-symbol.json'.format(model_name))
+                sym_net = SymbolBlock.imports(json_file, ['data'], None, ctx=ctx)
+            base_name = '_'.join(model_name.split('_')[:-1])
             param_file = get_model_file(base_name, tag=tag, root=root) if pretrained else None
             net = get_model('_'.join(model_name.split('_')[:-1]), prefix=sym_prefix)
             classes = getattr(net, 'classes', [])
-            sym_net = SymbolBlock.imports(json_file, ['data'], None, ctx=ctx)
             if param_file:
                 # directly imports weights saved by save_parameters is not applicable
                 # so we hack it by load and export once to a temporary params file
-                import tempfile
                 net.load_params(param_file)
                 net.hybridize()
                 if '512' in base_name:

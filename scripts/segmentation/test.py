@@ -14,6 +14,7 @@ from gluoncv.model_zoo.segbase import *
 from gluoncv.model_zoo import get_model
 from gluoncv.data import get_segmentation_dataset, ms_batchify_fn
 from gluoncv.utils.viz import get_color_pallete
+from gluoncv.utils.compress_json import get_compressed_model
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Validation on Segmentation model')
@@ -162,7 +163,7 @@ def test_quantization(model, args, input_transform):
     print('Inference speed with batchsize %d is %.2f img/sec' % (args.batch_size, speed))
 
 
-def benchmarking(args, model):
+def benchmarking(model, args):
     print('-----benchmarking on %s -----' % args.model)
     if args.quantized:
         model.hybridize(static_alloc=True, static_shape=True)
@@ -197,7 +198,7 @@ if __name__ == "__main__":
         withQuantization = True if (args.backbone in ['resnet101'] and args.ngpus == 0) else withQuantization
     elif args.dataset == 'coco':
         model_prefix += '_coco'
-        withQuantization = True if args.backbone in ['resnet101'] else withQuantization
+        withQuantization = True if (args.backbone in ['resnet101'] and args.ngpus == 0) else withQuantization
     elif args.dataset == 'ade20k':
         model_prefix += 'ade'
     elif args.dataset == 'citys':
@@ -208,11 +209,12 @@ if __name__ == "__main__":
     if withQuantization and args.quantized:
         model_prefix += '_int8'
 
-     # create network
+    # create network
     if args.pretrained:
         model = get_model(model_prefix, pretrained=True)
         model.collect_params().reset_ctx(ctx=args.ctx)
     else:
+        assert "_in8" not in model_prefix, "Currently, Int8 models are not supported when pretrained=False"
         model = get_segmentation_model(model=args.model, dataset=args.dataset, ctx=args.ctx,
                                        backbone=args.backbone, norm_layer=args.norm_layer,
                                        norm_kwargs=args.norm_kwargs, aux=args.aux,
@@ -224,8 +226,8 @@ if __name__ == "__main__":
         else:
             raise RuntimeError("=> no checkpoint found at '{}'" \
                 .format(args.resume))
-    print("Successfully loaded %s model" % model_prefix)
 
+    print("Successfully loaded %s model" % model_prefix)
     print('Testing model: ', args.resume)
     # image transform
     input_transform = transforms.Compose([
@@ -239,4 +241,4 @@ if __name__ == "__main__":
         else:
             test(model, args, input_transform)
     else:
-        benchmarking(args, model)
+        benchmarking(model, args)
