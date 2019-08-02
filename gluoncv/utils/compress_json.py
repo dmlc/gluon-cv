@@ -1,5 +1,5 @@
+# pylint: disable=line-too-long
 """Encode/Decode helper function for compressed quantized models"""
-import json
 import zlib
 import base64
 
@@ -27,7 +27,7 @@ def encode_json(json_file, is_print=False):
     return b64_str
 
 def decode_b64(b64_str, is_print=False):
-    r""" Decode b64 string to json format 
+    r""" Decode b64 string to json format
 
     Parameters
     ---------
@@ -53,4 +53,3 @@ def get_compressed_model(model_name):
     if b64_str:
         return decode_b64(b64_str)
     raise ValueError('Model: {} is not found. Available compressed models are:\n{}'.format(model_name, '\n'.join(list(_compressed_int8_json.keys()))))
-
