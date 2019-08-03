@@ -101,6 +101,12 @@ def parse_args():
 
 
     args = parser.parse_args()
+
+    if args.horovod:
+        if hvd is None:
+            raise SystemExit("Horovod not found, please check if you installed it correctly.")
+        hvd.init()
+
     if args.dataset == 'voc':
         args.epochs = int(args.epochs) if args.epochs else 20
         args.lr_decay_epoch = args.lr_decay_epoch if args.lr_decay_epoch else '14,20'
@@ -113,7 +119,7 @@ def parse_args():
         args.lr = float(args.lr) if args.lr else 0.00125
         args.lr_warmup = args.lr_warmup if args.lr_warmup else 8000
         args.wd = float(args.wd) if args.wd else 1e-4
-        num_gpus = len(args.gpus.split(','))
+        num_gpus = hvd.size() if args.horovod else len(args.gpus.split(','))
         if num_gpus == 1:
             args.lr_warmup = -1
         else:
@@ -485,11 +491,6 @@ if __name__ == '__main__':
 
     if args.amp:
         amp.init()
-
-    if args.horovod:
-        if hvd is None:
-            raise SystemExit("Horovod not found, please check if you installed it correctly.")
-        hvd.init()
 
     # training contexts
     if args.horovod:
