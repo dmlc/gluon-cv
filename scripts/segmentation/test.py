@@ -14,7 +14,6 @@ from gluoncv.model_zoo.segbase import *
 from gluoncv.model_zoo import get_model
 from gluoncv.data import get_segmentation_dataset, ms_batchify_fn
 from gluoncv.utils.viz import get_color_pallete
-from gluoncv.utils.compress_json import get_compressed_model
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Validation on Segmentation model')
@@ -164,7 +163,6 @@ def test_quantization(model, args, input_transform):
 
 
 def benchmarking(model, args):
-    print('-----benchmarking on %s -----' % args.model)
     if args.quantized:
         model.hybridize(static_alloc=True, static_shape=True)
     else:
@@ -241,4 +239,5 @@ if __name__ == "__main__":
         else:
             test(model, args, input_transform)
     else:
+        print('-----benchmarking on %s -----' % model_prefix)
         benchmarking(model, args)
