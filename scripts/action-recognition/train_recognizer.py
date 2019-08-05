@@ -324,21 +324,21 @@ def main():
                     net.basenet.save_parameters('%s/%.4f-%s-%s-%03d-best.params'%(opt.save_dir, best_val_score, opt.dataset, model_name, epoch))
                 else:
                     net.save_parameters('%s/%.4f-%s-%s-%03d-best.params'%(opt.save_dir, best_val_score, opt.dataset, model_name, epoch))
-                # trainer.save_states('%s/%.4f-%s-%s-%03d-best.states'%(opt.save_dir, best_val_score, opt.dataset, model_name, epoch))
+                trainer.save_states('%s/%.4f-%s-%s-%03d-best.states'%(opt.save_dir, best_val_score, opt.dataset, model_name, epoch))
 
-            # if opt.save_frequency and opt.save_dir and (epoch + 1) % opt.save_frequency == 0:
-            #     if opt.use_tsn:
-            #         net.basenet.save_parameters('%s/%s-%s-%03d.params'%(opt.save_dir, opt.dataset, model_name, epoch))
-            #     else:
-            #         net.save_parameters('%s/%s-%s-%03d.params'%(opt.save_dir, opt.dataset, model_name, epoch))
-            #     trainer.save_states('%s/%-%s-%03d.states'%(opt.save_dir, opt.dataset, model_name, epoch))
+            if opt.save_frequency and opt.save_dir and (epoch + 1) % opt.save_frequency == 0:
+                if opt.use_tsn:
+                    net.basenet.save_parameters('%s/%s-%s-%03d.params'%(opt.save_dir, opt.dataset, model_name, epoch))
+                else:
+                    net.save_parameters('%s/%s-%s-%03d.params'%(opt.save_dir, opt.dataset, model_name, epoch))
+                trainer.save_states('%s/%-%s-%03d.states'%(opt.save_dir, opt.dataset, model_name, epoch))
 
         # save the last model
         if opt.use_tsn:
             net.basenet.save_parameters('%s/%s-%s-%03d.params'%(opt.save_dir, opt.dataset, model_name, opt.num_epochs-1))
         else:
             net.save_parameters('%s/%s-%s-%03d.params'%(opt.save_dir, opt.dataset, model_name, opt.num_epochs-1))
-        # trainer.save_states('%s/%s-%s-%03d.states'%(opt.save_dir, opt.dataset, model_name, opt.num_epochs-1))
+        trainer.save_states('%s/%s-%s-%03d.states'%(opt.save_dir, opt.dataset, model_name, opt.num_epochs-1))
 
     if opt.mode == 'hybrid':
         net.hybridize(static_alloc=True, static_shape=True)
