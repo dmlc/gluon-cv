@@ -1,5 +1,5 @@
 import argparse, time, logging, os, sys, math
-import cv2
+
 import numpy as np
 import mxnet as mx
 import gluoncv as gcv
@@ -10,15 +10,19 @@ from mxnet.gluon.data.vision import transforms
 from mxboard import SummaryWriter
 
 from gluoncv.data.transforms import video
-from gluoncv.data import ucf101
+from gluoncv.data import ucf101, kinetics400
 from gluoncv.model_zoo import get_model
 from gluoncv.utils import makedirs, LRSequential, LRScheduler, split_and_load
 
 # CLI
 def parse_args():
-    parser = argparse.ArgumentParser(description='Train a model for action recognition.')
-    parser.add_argument('--data-dir', type=str, default='~/.mxnet/datasets/ucf101',
-                        help='training and validation pictures to use.')
+    parser = argparse.ArgumentParser(description='Test a trained model for action recognition.')
+    parser.add_argument('--dataset', type=str, default='ucf101', choices=['ucf101', 'kinetics400'],
+                        help='which dataset to use.')
+    parser.add_argument('--data-dir', type=str, default='~/.mxnet/datasets/ucf101/rawframes',
+                        help='training (and validation) pictures to use.')
+    parser.add_argument('--val-data-dir', type=str, default='~/.mxnet/datasets/ucf101/rawframes',
+                        help='validation pictures to use.')
     parser.add_argument('--train-list', type=str, default='~/.mxnet/datasets/ucf101/ucfTrainTestlist/ucf101_train_rgb_split1.txt',
                         help='the list of training data')
     parser.add_argument('--val-list', type=str, default='~/.mxnet/datasets/ucf101/ucfTrainTestlist/ucf101_val_rgb_split1.txt',
@@ -135,14 +139,16 @@ def main():
     # get model
     classes = opt.num_classes
     model_name = opt.model
-    net = get_model(name=model_name, nclass=classes, pretrained=True, tsn=opt.use_tsn)
+    net = get_model(name=model_name, nclass=classes, pretrained=opt.use_pretrained, tsn=opt.use_tsn)
     net.cast(opt.dtype)
     net.collect_params().reset_ctx(context)
     if opt.mode == 'hybrid':
         net.hybridize(static_alloc=True, static_shape=True)
-    if opt.resume_params is not '':
+    if opt.resume_params is not '' and not opt.use_pretrained:
         net.load_parameters(opt.resume_params, ctx=context)
-    print('Pre-trained model %s is successfully loaded' % (opt.resume_params))
+        print('Pre-trained model %s is successfully loaded.' % (opt.resume_params))
+    else:
+        print('Pre-trained model is successfully loaded from the model zoo.')
 
     # get data
     normalize = video.VideoNormalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
@@ -152,10 +158,19 @@ def main():
         normalize
     ])
 
-    val_dataset = ucf101.classification.UCF101(setting=opt.val_list, root=opt.data_dir, train=False,
+    if opt.dataset == 'ucf101':
+        val_dataset = ucf101.classification.UCF101(setting=opt.val_list, root=opt.data_dir, train=False,
                                                new_width=opt.new_width, new_height=opt.new_height,
                                                target_width=opt.input_size, target_height=opt.input_size,
                                                test_mode=True, num_segments=opt.num_segments, transform=transform_test)
+    elif opt.dataset == 'kinetics400':
+        val_dataset = kinetics400.classification.Kinetics400(setting=opt.val_list, root=opt.data_dir, train=False,
+                                               new_width=opt.new_width, new_height=opt.new_height,
+                                               target_width=opt.input_size, target_height=opt.input_size,
+                                               test_mode=True, num_segments=opt.num_segments, transform=transform_test)
+    else:
+        logger.info('Dataset %s is not supported yet.' % (opt.dataset))
+
     val_data = gluon.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
     print('Load %d test samples.' % len(val_dataset))
 

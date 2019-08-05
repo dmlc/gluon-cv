@@ -6,7 +6,7 @@ from mxnet.gluon.nn import HybridBlock
 from ...nn.block import Consensus
 from ..vgg import vgg16
 
-__all__ = ['vgg16_ucf101', 'ActionRecVGG16', 'ActionRecVGG16TSN']
+__all__ = ['vgg16_ucf101']
 
 def vgg16_ucf101(nclass=101, pretrained=False, tsn=False, num_segments=3,
                  root='~/.mxnet/models', ctx=mx.cpu(), **kwargs):

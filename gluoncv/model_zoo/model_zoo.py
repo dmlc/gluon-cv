@@ -219,6 +219,7 @@ _models = {
     'alpha_pose_resnet101_v1b_coco': alpha_pose_resnet101_v1b_coco,
     'vgg16_ucf101': vgg16_ucf101,
     'inceptionv3_ucf101': inceptionv3_ucf101,
+    'inceptionv3_kinetics400': inceptionv3_kinetics400,
 }
 
 

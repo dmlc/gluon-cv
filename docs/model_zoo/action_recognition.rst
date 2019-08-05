@@ -52,6 +52,26 @@ The following table lists pre-trained models trained on UCF101.
     | :tsntag:`inceptionv3_ucf101` [1]_           | 85.6      | 0c453da8  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/action_recognition/ucf101/inceptionv3_ucf101.sh>`_          | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/action_recognition/ucf101/inceptionv3_ucf101.log>`_          |
     +---------------------------------------------+-----------+-----------+------------------------------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
 
+Kinetics400 Dataset
+--------------
+
+The following table lists pre-trained models trained on Kinetics400.
+
+.. note::
+
+  Our pre-trained models reproduce results from "Temporal Segment Networks" [2]_ . Please check the reference paper for further information.
+
+  ``InceptionV3`` is trained and evaluated with input size of 299x299.
+
+.. table::
+    :widths: 45 10 10 10 25
+
+    +---------------------------------------------+-----------+-----------+----------------------------------------------------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------+
+    | Name                                        | Top-1     | Hashtag   | Train Command                                                                                                                                            | Train Log                                                                                                                                        |
+    +=============================================+===========+===========+==========================================================================================================================================================+==================================================================================================================================================+
+    | inceptionv3_kinetics400 [2]_                | 72.5      | 8a4a6946  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/action_recognition/kinetics400/inceptionv3_kinetics400_tsn.sh>`_      | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/action_recognition/kinetics400/inceptionv3_kinetics400_tsn.log>`_      |
+    +---------------------------------------------+-----------+-----------+----------------------------------------------------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------+
+
 
 .. [1] Limin Wang, Yuanjun Xiong, Zhe Wang, and Yu Qiao. \
        "Towards Good Practices for Very Deep Two-Stream ConvNets." \
