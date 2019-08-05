@@ -20,7 +20,6 @@
 from __future__ import print_function
 
 import warnings
-import unittest
 
 import mxnet as mx
 from common import try_gpu, with_cpu
@@ -31,8 +30,6 @@ import gluoncv as gcv
 def test_get_all_models():
     names = gcv.model_zoo.get_model_list()
     for name in names:
-        if 'int8' in name:
-            continue
         kwargs = {}
         if 'custom' in name:
             kwargs['classes'] = ['a', 'b']
@@ -207,8 +204,10 @@ def test_yolo3_reset_class():
     x = mx.random.uniform(shape=(1, 3, 512, 544), ctx=ctx)  # allow non-squre and larger inputs
     model_name = 'yolo3_darknet53_voc'
     net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
+    net.hybridize()
     net.reset_class(["bus", "car", "bird"], reuse_weights=["bus", "car", "bird"])
     net(x)
+    mx.nd.waitall()
 
     # for GPU
     ctx = mx.gpu(0)
@@ -217,8 +216,10 @@ def test_yolo3_reset_class():
     except Exception:
         return
     net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
+    net.hybridize()
     net.reset_class(["bus", "car", "bird"])
     net(x)
+    mx.nd.waitall()
 
 
 def test_faster_rcnn_reset_class():
@@ -394,7 +395,6 @@ def test_mobilenet_sync_bn():
                                   norm_kwargs={'num_devices': 2})
     net.load_parameters(model_name + '.params')
 
-@unittest.skip("temporarily disabled to fallback to non-mkl version")
 @with_cpu(0)
 def test_quantized_imagenet_models():
     model_list = ['mobilenet1.0_int8', 'resnet50_v1_int8']
@@ -402,7 +402,6 @@ def test_quantized_imagenet_models():
     x = mx.random.uniform(shape=(1, 3, 224, 224), ctx=ctx)
     _test_model_list(model_list, ctx, x)
 
-@unittest.skip("temporarily disabled to fallback to non-mkl version")
 @with_cpu(0)
 def test_quantized_ssd_models():
     model_list = ['ssd_300_vgg16_atrous_voc_int8', 'ssd_512_mobilenet1.0_voc_int8',

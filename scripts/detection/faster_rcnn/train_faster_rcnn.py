@@ -10,6 +10,7 @@ import numpy as np
 import mxnet as mx
 from mxnet import gluon
 from mxnet import autograd
+from mxnet.contrib import amp
 import gluoncv as gcv
 from gluoncv import data as gdata
 from gluoncv import utils as gutils
@@ -20,6 +21,10 @@ from gluoncv.data.transforms.presets.rcnn import FasterRCNNDefaultTrainTransform
 from gluoncv.utils.metrics.voc_detection import VOC07MApMetric
 from gluoncv.utils.metrics.coco_detection import COCODetectionMetric
 
+try:
+    import horovod.mxnet as hvd
+except ImportError:
+    hvd = None
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train Faster-RCNN networks e2e.')
@@ -87,8 +92,21 @@ def parse_args():
                              'Memory usage and speed will decrese.')
     parser.add_argument('--static-alloc', action='store_true',
                         help='Whether to use static memory allocation. Memory usage will increase.')
+    parser.add_argument('--amp', action='store_true',
+                        help='Use MXNet AMP for mixed precision training.')
+    parser.add_argument('--horovod', action='store_true',
+                        help='Use MXNet Horovod for distributed training. Must be run with OpenMPI. '
+                        '--gpus is ignored when using --horovod.')
+
+
 
     args = parser.parse_args()
+
+    if args.horovod:
+        if hvd is None:
+            raise SystemExit("Horovod not found, please check if you installed it correctly.")
+        hvd.init()
+
     if args.dataset == 'voc':
         args.epochs = int(args.epochs) if args.epochs else 20
         args.lr_decay_epoch = args.lr_decay_epoch if args.lr_decay_epoch else '14,20'
@@ -101,7 +119,7 @@ def parse_args():
         args.lr = float(args.lr) if args.lr else 0.00125
         args.lr_warmup = args.lr_warmup if args.lr_warmup else 8000
         args.wd = float(args.wd) if args.wd else 1e-4
-        num_gpus = len(args.gpus.split(','))
+        num_gpus = hvd.size() if args.horovod else len(args.gpus.split(','))
         if num_gpus == 1:
             args.lr_warmup = -1
         else:
@@ -213,19 +231,21 @@ def get_dataset(dataset, args):
 
 
 def get_dataloader(net, train_dataset, val_dataset, train_transform, val_transform, batch_size,
-                   num_workers, multi_stage):
+                   args):
     """Get dataloader."""
     train_bfn = batchify.Tuple(*[batchify.Append() for _ in range(5)])
+    train_sampler = gcv.nn.sampler.SplitSampler(len(train_dataset), hvd.size(), hvd.rank()) if args.horovod else None
     train_loader = mx.gluon.data.DataLoader(
         train_dataset.transform(
             train_transform(net.short, net.max_size, net, ashape=net.ashape,
-                            multi_stage=multi_stage)),
-        batch_size, True, batchify_fn=train_bfn, last_batch='rollover', num_workers=num_workers)
+                            multi_stage=args.use_fpn)),
+        batch_size, train_sampler is None, sampler=train_sampler, batchify_fn=train_bfn,
+        last_batch='rollover', num_workers=args.num_workers)
     val_bfn = batchify.Tuple(*[batchify.Append() for _ in range(3)])
     short = net.short[-1] if isinstance(net.short, (tuple, list)) else net.short
     val_loader = mx.gluon.data.DataLoader(
         val_dataset.transform(val_transform(short, net.max_size)),
-        batch_size, False, batchify_fn=val_bfn, last_batch='keep', num_workers=num_workers)
+        batch_size, False, batchify_fn=val_bfn, last_batch='keep', num_workers=args.num_workers)
     return train_loader, val_loader
 
 
@@ -300,12 +320,21 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
     """Training pipeline"""
     net.collect_params().setattr('grad_req', 'null')
     net.collect_train_params().setattr('grad_req', 'write')
-    trainer = gluon.Trainer(
-        net.collect_train_params(),  # fix batchnorm, fix first stage, etc...
-        'sgd',
-        {'learning_rate': args.lr,
-         'wd': args.wd,
-         'momentum': args.momentum})
+    if args.horovod:
+        hvd.broadcast_parameters(net.collect_params(), root_rank=0)
+        trainer = hvd.DistributedTrainer(
+                        net.collect_train_params(), # fix batchnorm, fix first stage, etc...
+                        'sgd',
+                        {'learning_rate': args.lr, 'wd': args.wd, 'momentum': args.momentum})
+    else:
+        trainer = gluon.Trainer(
+                    net.collect_train_params(), # fix batchnorm, fix first stage, etc...
+                    'sgd',
+                    {'learning_rate': args.lr, 'wd': args.wd, 'momentum': args.momentum},
+                    update_on_kvstore=(False if args.amp else None))
+
+    if args.amp:
+        amp.init_trainer(trainer)
 
     # lr decay policy
     lr_decay = float(args.lr_decay)
@@ -408,41 +437,48 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
                     rcnn_loss = rcnn_loss1 + rcnn_loss2
                     # overall losses
                     losses.append(rpn_loss.sum() * mix_ratio + rcnn_loss.sum() * mix_ratio)
-                    metric_losses[0].append(rpn_loss1.sum() * mix_ratio)
-                    metric_losses[1].append(rpn_loss2.sum() * mix_ratio)
-                    metric_losses[2].append(rcnn_loss1.sum() * mix_ratio)
-                    metric_losses[3].append(rcnn_loss2.sum() * mix_ratio)
-                    add_losses[0].append([[rpn_cls_targets, rpn_cls_targets >= 0], [rpn_score]])
-                    add_losses[1].append([[rpn_box_targets, rpn_box_masks], [rpn_box]])
-                    add_losses[2].append([[cls_targets], [cls_pred]])
-                    add_losses[3].append([[box_targets, box_masks], [box_pred]])
-                autograd.backward(losses)
-                for metric, record in zip(metrics, metric_losses):
-                    metric.update(0, record)
-                for metric, records in zip(metrics2, add_losses):
-                    for pred in records:
-                        metric.update(pred[0], pred[1])
-            trainer.step(batch_size)
+                    if (not args.horovod or hvd.rank() == 0):
+                        metric_losses[0].append(rpn_loss1.sum() * mix_ratio)
+                        metric_losses[1].append(rpn_loss2.sum() * mix_ratio)
+                        metric_losses[2].append(rcnn_loss1.sum() * mix_ratio)
+                        metric_losses[3].append(rcnn_loss2.sum() * mix_ratio)
+                        add_losses[0].append([[rpn_cls_targets, rpn_cls_targets >= 0], [rpn_score]])
+                        add_losses[1].append([[rpn_box_targets, rpn_box_masks], [rpn_box]])
+                        add_losses[2].append([[cls_targets], [cls_pred]])
+                        add_losses[3].append([[box_targets, box_masks], [box_pred]])
+                if args.amp:
+                    with amp.scale_loss(losses, trainer) as scaled_losses:
+                        autograd.backward(scaled_losses)
+                else:
+                    autograd.backward(losses)
+                if (not args.horovod or hvd.rank() == 0):
+                    for metric, record in zip(metrics, metric_losses):
+                        metric.update(0, record)
+                    for metric, records in zip(metrics2, add_losses):
+                        for pred in records:
+                            metric.update(pred[0], pred[1])
+            trainer.step(len(losses))
             # update metrics
-            if args.log_interval and not (i + 1) % args.log_interval:
+            if (not args.horovod or hvd.rank() == 0) and args.log_interval and not (i + 1) % args.log_interval:
                 # msg = ','.join(['{}={:.3f}'.format(*metric.get()) for metric in metrics])
                 msg = ','.join(['{}={:.3f}'.format(*metric.get()) for metric in metrics + metrics2])
                 logger.info('[Epoch {}][Batch {}], Speed: {:.3f} samples/sec, {}'.format(
-                    epoch, i, args.log_interval * batch_size / (time.time() - btic), msg))
+                    epoch, i, args.log_interval * args.batch_size / (time.time() - btic), msg))
                 btic = time.time()
 
-        msg = ','.join(['{}={:.3f}'.format(*metric.get()) for metric in metrics])
-        logger.info('[Epoch {}] Training cost: {:.3f}, {}'.format(
-            epoch, (time.time() - tic), msg))
-        if not (epoch + 1) % args.val_interval:
-            # consider reduce the frequency of validation to save time
-            map_name, mean_ap = validate(net, val_data, ctx, eval_metric, args)
-            val_msg = '\n'.join(['{}={}'.format(k, v) for k, v in zip(map_name, mean_ap)])
-            logger.info('[Epoch {}] Validation: \n{}'.format(epoch, val_msg))
-            current_map = float(mean_ap[-1])
-        else:
-            current_map = 0.
-        save_params(net, logger, best_map, current_map, epoch, args.save_interval, args.save_prefix)
+        if (not args.horovod or hvd.rank() == 0):
+            msg = ','.join(['{}={:.3f}'.format(*metric.get()) for metric in metrics])
+            logger.info('[Epoch {}] Training cost: {:.3f}, {}'.format(
+                epoch, (time.time() - tic), msg))
+            if not (epoch + 1) % args.val_interval:
+                # consider reduce the frequency of validation to save time
+                map_name, mean_ap = validate(net, val_data, ctx, eval_metric, args)
+                val_msg = '\n'.join(['{}={}'.format(k, v) for k, v in zip(map_name, mean_ap)])
+                logger.info('[Epoch {}] Validation: \n{}'.format(epoch, val_msg))
+                current_map = float(mean_ap[-1])
+            else:
+                current_map = 0.
+            save_params(net, logger, best_map, current_map, epoch, args.save_interval, args.save_prefix)
 
 
 if __name__ == '__main__':
@@ -453,10 +489,17 @@ if __name__ == '__main__':
     # fix seed for mxnet, numpy and python builtin random generator.
     gutils.random.seed(args.seed)
 
+    if args.amp:
+        amp.init()
+
     # training contexts
-    ctx = [mx.gpu(int(i)) for i in args.gpus.split(',') if i.strip()]
-    ctx = ctx if ctx else [mx.cpu()]
-    args.batch_size = len(ctx)  # 1 batch per device
+    if args.horovod:
+        ctx = [mx.gpu(hvd.local_rank())]
+        args.batch_size = hvd.size()
+    else:
+        ctx = [mx.gpu(int(i)) for i in args.gpus.split(',') if i.strip()]
+        ctx = ctx if ctx else [mx.cpu()]
+        args.batch_size = len(ctx)  # 1 batch per device
 
     # network
     kwargs = {}
@@ -480,10 +523,12 @@ if __name__ == '__main__':
     net.collect_params().reset_ctx(ctx)
 
     # training data
+
     train_dataset, val_dataset, eval_metric = get_dataset(args.dataset, args)
+    batch_size = 1 if args.horovod else args.batch_size
     train_data, val_data = get_dataloader(
         net, train_dataset, val_dataset, FasterRCNNDefaultTrainTransform,
-        FasterRCNNDefaultValTransform, args.batch_size, args.num_workers, args.use_fpn)
+        FasterRCNNDefaultValTransform, batch_size, args)
 
     # training
     train(net, train_data, val_data, eval_metric, ctx, args)
