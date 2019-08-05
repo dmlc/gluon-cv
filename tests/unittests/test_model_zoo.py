@@ -64,6 +64,8 @@ def _calib_model_list(model_list, ctx, x, pretrained=True, **kwargs):
                 net.initialize()
         net.collect_params().reset_ctx(ctx)
         exclude_layers_match = ['flatten']
+        if model.find('ssd') != -1:
+            exclude_layers_match += ['concat']
         random_label = mx.random.uniform(shape=(x.shape[0],1))
         dataset = mx.gluon.data.dataset.ArrayDataset(x, random_label)
         calib_data = mx.gluon.data.DataLoader(dataset, batch_size=1)

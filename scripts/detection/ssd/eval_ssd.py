@@ -189,7 +189,7 @@ if __name__ == '__main__':
     # calibration
     if args.calibration and not args.quantized:
         exclude_layers = []
-        exclude_layers_match = ['flatten']
+        exclude_layers_match = ['flatten', 'concat']
         if num_gpus > 0:
             raise ValueError('currently only supports CPU with MKL-DNN backend')
         net = quantize_net(
