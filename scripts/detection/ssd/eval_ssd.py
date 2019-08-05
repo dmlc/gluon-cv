@@ -89,7 +89,7 @@ def get_dataloader(val_dataset, data_shape, batch_size, num_workers):
     batchify_fn = Tuple(Stack(), Pad(pad_val=-1))
     val_loader = gluon.data.DataLoader(
         val_dataset.transform(SSDDefaultValTransform(width, height)), batchify_fn=batchify_fn,
-        batch_size=batch_size, shuffle=False, last_batch='discard', num_workers=num_workers)
+        batch_size=batch_size, shuffle=False, last_batch='rollover', num_workers=num_workers)
     return val_loader
 
 def benchmarking(net, ctx, num_iteration, datashape=300, batch_size=64):
@@ -189,11 +189,13 @@ if __name__ == '__main__':
     # calibration
     if args.calibration and not args.quantized:
         exclude_layers = []
-        exclude_layers_match = ['flatten', 'concat']
+        exclude_layers_match = ['flatten']
+        if num_gpus > 0:
+            raise ValueError('currently only supports CPU with MKL-DNN backend')
         net = quantize_net(
             net, quantized_dtype='auto', exclude_layers=exclude_layers,
             exclude_layers_match=exclude_layers_match, calib_data=val_data,
-            calib_mode=args.calib_mode, num_calib_examples=args.batch_size * args.num_calib_batches, ctx=mx.cpu(),
+            calib_mode=args.calib_mode, num_calib_examples=args.batch_size * args.num_calib_batches, ctx=ctx[0],
             logger=logger)
         dir_path = os.path.dirname(os.path.realpath(__file__))
         dst_dir = os.path.join(dir_path, 'model')

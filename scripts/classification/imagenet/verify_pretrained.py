@@ -198,12 +198,14 @@ if __name__ == '__main__':
 
     if opt.calibration and not opt.quantized:
         exclude_layers = []
-        exclude_layers_match = ['flatten']
+        exclude_layers_match = []
         logger.info('quantize net with batch size = %d', batch_size)
+        if num_gpus > 0:
+            raise ValueError('currently only supports CPU with MKL-DNN backend')
         net = quantize_net(
             net, quantized_dtype='auto', exclude_layers=exclude_layers,
             exclude_layers_match=exclude_layers_match, calib_data=val_data,
-            calib_mode=opt.calib_mode, num_calib_examples=batch_size * opt.num_calib_batches, ctx=mx.cpu(),
+            calib_mode=opt.calib_mode, num_calib_examples=batch_size * opt.num_calib_batches, ctx=ctx[0],
             logger=logger)
         dir_path = os.path.dirname(os.path.realpath(__file__))
         dst_dir = os.path.join(dir_path, 'model')
@@ -230,12 +232,12 @@ if __name__ == '__main__':
         err_top1_val, err_top5_val = test(net, ctx, val_data, 'rec')
     print(err_top1_val, err_top5_val)
 
-    # params_count = 0
-    # kwargs2 = {'ctx': mx.cpu(), 'pretrained': False, 'classes': classes}
-    # net2 = get_model(model_name, **kwargs2)
-    # net2.initialize()
-    # p = net2(mx.nd.zeros((1, 3, input_size, input_size)))
-    # for k, v in net2.collect_params().items():
-    #     params_count += v.data().size
+    params_count = 0
+    kwargs2 = {'ctx': mx.cpu(), 'pretrained': False, 'classes': classes}
+    net2 = get_model(model_name, **kwargs2)
+    net2.initialize()
+    p = net2(mx.nd.zeros((1, 3, input_size, input_size)))
+    for k, v in net2.collect_params().items():
+        params_count += v.data().size
 
-    # print(params_count)
+    print(params_count)
