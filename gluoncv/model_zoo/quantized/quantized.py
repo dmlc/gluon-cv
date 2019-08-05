@@ -48,9 +48,15 @@ def _create_quantized_models(name, sym_prefix):
             import tempfile
             if "fcn" in model_name:
                 model_json = get_compressed_model(model_name, _compressed_int8_json)
-                with tempfile.NamedTemporaryFile('w') as tmpf:
-                    tmpf.write(model_json)
-                    sym_net = SymbolBlock.imports(tmpf.name, ['data'], None, ctx=ctx)
+                fd, path = tempfile.mkstemp(dir=curr_dir, suffix='.json', text=True)
+                with open(path, 'w') as f:
+                    f.write(model_json)
+                sym_net = SymbolBlock.imports(path, ['data'], None, ctx=ctx)
+                os.close(fd)
+                try:
+                    os.remove(path)
+                except:
+                    pass
             else:
                 json_file = os.path.join(curr_dir, '{}-symbol.json'.format(model_name))
                 sym_net = SymbolBlock.imports(json_file, ['data'], None, ctx=ctx)
