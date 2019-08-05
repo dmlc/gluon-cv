@@ -198,7 +198,7 @@ if __name__ == '__main__':
 
     if opt.calibration and not opt.quantized:
         exclude_layers = []
-        exclude_layers_match = []
+        exclude_layers_match = ['flatten']
         logger.info('quantize net with batch size = %d', batch_size)
         if num_gpus > 0:
             raise ValueError('currently only supports CPU with MKL-DNN backend')

@@ -36,7 +36,6 @@ ssd_300_vgg16_atrous_voc | 105.60 | 13.08 | 19.47 | 110.14 | 77.49 | 77.49
 ssd_512_vgg16_atrous_voc | 215.05 | 32.63 | 6.76 | 36.56 | 78.82 | 78.82
 ssd_512_mobilenet1.0_voc | 28.98 | 6.97 | 65.55 | 210.17 | 75.51 | 75.49
 ssd_512_resnet50_v1_voc | 52.77 | 11.75 | 28.68 | 143.61 | 80.24 | 80.23
-ssd_512_resnet101_v2_voc | 70.82 | 40.31 | 19.28 | 25.68 | 79.7 | 79.7
 
 ## References
 1. Wei Liu, et al. "SSD: Single shot multibox detector" ECCV 2016.
