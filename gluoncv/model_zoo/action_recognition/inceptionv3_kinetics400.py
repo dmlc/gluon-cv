@@ -9,7 +9,7 @@ from ..inception import inception_v3
 __all__ = ['inceptionv3_kinetics400']
 
 def inceptionv3_kinetics400(nclass=400, pretrained=False, tsn=False, partial_bn=False,
-                       num_segments=1, root='~/.mxnet/models', ctx=mx.cpu(), **kwargs):
+                            num_segments=1, root='~/.mxnet/models', ctx=mx.cpu(), **kwargs):
     if tsn:
         model = ActionRecInceptionV3TSN(nclass=nclass, partial_bn=partial_bn, num_segments=num_segments)
     else:
