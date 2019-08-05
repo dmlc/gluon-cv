@@ -101,7 +101,7 @@ for i in range(topK):
 # .. raw:: html
 #
 #     <div align="center">
-#         <img src="/_static/action_basketball_demo.gif">
+#         <img src="../../_static/action_basketball_demo.gif">
 #     </div>
 #
 #     <br>
