@@ -99,11 +99,11 @@ for i in range(topK):
 # First, we download the video and sample the video frames at a speed of 1 frame per second.
 #
 # .. raw:: html
-
+#
 #     <div align="center">
 #         <img src="docs/_static/action_basketball_demo.gif">
 #     </div>
-
+#
 #     <br>
 
 import cv2
