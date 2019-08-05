@@ -38,8 +38,8 @@ class PSPNet(SegBaseModel):
         super(PSPNet, self).__init__(nclass, aux, backbone, ctx=ctx, base_size=base_size,
                                      crop_size=crop_size, pretrained_base=pretrained_base, **kwargs)
         with self.name_scope():
-            self.head = _PSPHead(nclass, height=self._up_kwargs['height']//8,
-                                 width=self._up_kwargs['width']//8, **kwargs)
+            self.head = _PSPHead(nclass, feature_map_height=self._up_kwargs['height']//8,
+                                 feature_map_width=self._up_kwargs['width']//8, **kwargs)
             self.head.initialize(ctx=ctx)
             self.head.collect_params().setattr('lr_mult', 10)
             if self.aux:
@@ -62,6 +62,9 @@ class PSPNet(SegBaseModel):
         return tuple(outputs)
 
     def demo(self, x):
+        self.predict(x)
+
+    def predict(self, x):
         h, w = x.shape[2:]
         self._up_kwargs['height'] = h
         self._up_kwargs['width'] = w
@@ -118,9 +121,9 @@ class _PyramidPooling(HybridBlock):
 
 class _PSPHead(HybridBlock):
     def __init__(self, nclass, norm_layer=nn.BatchNorm, norm_kwargs=None,
-                 height=60, width=60, **kwargs):
+                 feature_map_height=60, feature_map_width=60, **kwargs):
         super(_PSPHead, self).__init__()
-        self.psp = _PyramidPooling(2048, height=height, width=width,
+        self.psp = _PyramidPooling(2048, height=feature_map_height, width=feature_map_width,
                                    norm_layer=norm_layer,
                                    norm_kwargs=norm_kwargs)
         with self.name_scope():
@@ -175,6 +178,7 @@ def get_psp(dataset='pascal_voc', backbone='resnet50', pretrained=False,
     # infer number of classes
     model = PSPNet(datasets[dataset].NUM_CLASS, backbone=backbone,
                    pretrained_base=pretrained_base, ctx=ctx, **kwargs)
+    model.classes = datasets[dataset].classes
     if pretrained:
         from .model_store import get_model_file
         model.load_parameters(get_model_file('psp_%s_%s'%(backbone, acronyms[dataset]),

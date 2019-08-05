@@ -67,6 +67,7 @@ sphinx_gallery_conf = {
         'tutorials/instance',
         'tutorials/segmentation',
         'tutorials/pose',
+        'tutorials/action_recognition',
         'tutorials/deployment',],
     # path where to save gallery generated examples
     'gallery_dirs': [
@@ -76,6 +77,7 @@ sphinx_gallery_conf = {
         'build/examples_instance',
         'build/examples_segmentation',
         'build/examples_pose',
+        'build/examples_action_recognition',
         'build/examples_deployment',],
 
     'filename_pattern': '.py',
@@ -271,6 +273,7 @@ def setup(app):
 
     app.add_javascript('google_analytics.js')
     app.add_javascript('hidebib.js')
+    app.add_javascript('install-options.js')
     app.add_stylesheet('css/custom.css')
      #app.add_transform(AutoStructify)
     #app.add_config_value('recommonmark_config', {

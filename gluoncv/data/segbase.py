@@ -50,14 +50,16 @@ class SegmentationDataset(VisionDataset):
             mask = mask.transpose(Image.FLIP_LEFT_RIGHT)
         crop_size = self.crop_size
         # random scale (short edge)
-        short_size = random.randint(int(self.base_size*0.5), int(self.base_size*2.0))
+        long_size = random.randint(int(self.base_size*0.5), int(self.base_size*2.0))
         w, h = img.size
         if h > w:
-            ow = short_size
-            oh = int(1.0 * h * ow / w)
+            oh = long_size
+            ow = int(1.0 * w * long_size / h + 0.5)
+            short_size = ow
         else:
-            oh = short_size
-            ow = int(1.0 * w * oh / h)
+            ow = long_size
+            oh = int(1.0 * h * long_size / w + 0.5)
+            short_size = oh
         img = img.resize((ow, oh), Image.BILINEAR)
         mask = mask.resize((ow, oh), Image.NEAREST)
         # pad crop

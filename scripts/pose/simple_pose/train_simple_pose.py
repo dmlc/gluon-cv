@@ -114,8 +114,7 @@ def get_data_loader(data_dir, batch_size, num_workers, input_size):
         imgid = gluon.utils.split_and_load(batch[3], ctx_list=ctx, batch_axis=0)
         return data, label, weight, imgid
 
-    train_dataset = mscoco.keypoints.COCOKeyPoints(data_dir, aspect_ratio=4./3.,
-                                                   splits=('person_keypoints_train2017'))
+    train_dataset = mscoco.keypoints.COCOKeyPoints(data_dir, splits=('person_keypoints_train2017'))
     heatmap_size = [int(i/4) for i in input_size]
 
     meanvec = [float(i) for i in opt.mean.split(',')]
@@ -202,8 +201,7 @@ def train(ctx):
                 outputs = [net(X.astype(opt.dtype, copy=False)) for X in data]
                 loss = [nd.cast(L(nd.cast(yhat, 'float32'), y, w), opt.dtype)
                         for yhat, y, w in zip(outputs, label, weight)]
-            for l in loss:
-                l.backward()
+            ag.backward(loss)
             trainer.step(batch_size)
 
             metric.update(label, outputs)

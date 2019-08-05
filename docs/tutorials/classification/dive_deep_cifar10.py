@@ -55,6 +55,8 @@ from mxnet.gluon.data.vision import transforms
 
 from gluoncv.model_zoo import get_model
 from gluoncv.utils import makedirs, TrainingHistory
+from gluoncv.data import transforms as gcv_transforms
+
 
 ################################################################
 #
@@ -91,14 +93,10 @@ net.initialize(mx.init.Xavier(), ctx = ctx)
 # With ``Gluon``, we can create our transform function as following:
 
 transform_train = transforms.Compose([
-    # Randomly crop an area, and then resize it to be 32x32
-    transforms.RandomResizedCrop(32),
+    # Randomly crop an area and resize it to be 32x32, then pad it to be 40x40
+    gcv_transforms.RandomCrop(32, pad=4),
     # Randomly flip the image horizontally
     transforms.RandomFlipLeftRight(),
-    # Randomly jitter the brightness, contrast and saturation of the image
-    transforms.RandomColorJitter(brightness=0.1, contrast=0.1, saturation=0.1),
-    # Randomly adding noise to the image
-    transforms.RandomLighting(0.1),
     # Transpose the image from height*width*num_channels to num_channels*height*width
     # and map values from [0, 255] to [0,1]
     transforms.ToTensor(),
@@ -117,7 +115,6 @@ transform_train = transforms.Compose([
 # function for prediction is:
 
 transform_test = transforms.Compose([
-    transforms.Resize(32),
     transforms.ToTensor(),
     transforms.Normalize([0.4914, 0.4822, 0.4465], [0.2023, 0.1994, 0.2010])
 ])

@@ -9,10 +9,16 @@ dependencies:
   - nose
   - coverage
   - scipy
-  - pip=9.0.3
+  - cython
+  - pip=19.1.1
+  - requests
+  - matplotlib
+  - tqdm
+  - pillow
   - pip:
-    - mxnet-cu92mkl==1.5.0b20190314
+    - mxnet-cu92mkl==1.6.0b20190802
     - coverage-badge
     - awscli
     - nose-timer
     - opencv-python
+    - git+https://github.com/zhanghang1989/detail-api.git#subdirectory=PythonAPI

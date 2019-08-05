@@ -61,8 +61,7 @@ def get_data_loader(data_dir, batch_size, num_workers, input_size):
         imgid = batch[4]
         return data, scale, center, score, imgid
 
-    val_dataset = mscoco.keypoints.COCOKeyPoints(data_dir, aspect_ratio=4./3.,
-                                                 splits=('person_keypoints_val2017'))
+    val_dataset = mscoco.keypoints.COCOKeyPoints(data_dir, splits=('person_keypoints_val2017'))
 
     meanvec = [float(i) for i in opt.mean.split(',')]
     stdvec = [float(i) for i in opt.std.split(',')]

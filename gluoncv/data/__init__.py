@@ -7,6 +7,7 @@ from .imagenet.classification import ImageNet, ImageNet1kAttr
 from .dataloader import DetectionDataLoader, RandomTransformDataLoader
 from .pascal_voc.detection import VOCDetection
 from .mscoco.detection import COCODetection
+from .mscoco.detection import COCODetectionDALI
 from .mscoco.instance import COCOInstance
 from .mscoco.segmentation import COCOSegmentation
 from .mscoco.keypoints import COCOKeyPoints
@@ -18,6 +19,7 @@ from .segbase import ms_batchify_fn
 from .recordio.detection import RecordFileDetection
 from .lst.detection import LstDetection
 from .mixup.detection import MixupDetection
+from .ucf101.classification import UCF101, UCF101Attr
 
 datasets = {
     'ade20k': ADE20KSegmentation,

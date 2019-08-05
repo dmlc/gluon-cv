@@ -1,5 +1,6 @@
 """Base Model for Semantic Segmentation"""
 import math
+import warnings
 import numpy as np
 import mxnet as mx
 from mxnet.ndarray import NDArray
@@ -15,10 +16,12 @@ def get_segmentation_model(model, **kwargs):
     from .fcn import get_fcn
     from .pspnet import get_psp
     from .deeplabv3 import get_deeplab
+    from .deeplabv3_plus import get_deeplab_plus
     models = {
         'fcn': get_fcn,
         'psp': get_psp,
         'deeplab': get_deeplab,
+        'deeplabplus': get_deeplab_plus,
     }
     return models[model](**kwargs)
 
@@ -41,7 +44,11 @@ class SegBaseModel(HybridBlock):
         self.aux = aux
         self.nclass = nclass
         with self.name_scope():
-            if backbone == 'resnet50':
+            if backbone == 'resnet18':
+                pretrained = resnet18_v1b(pretrained=pretrained_base, dilated=True, **kwargs)
+            elif backbone == 'resnet34':
+                pretrained = resnet34_v1b(pretrained=pretrained_base, dilated=True, **kwargs)
+            elif backbone == 'resnet50':
                 pretrained = resnet50_v1s(pretrained=pretrained_base, dilated=True, **kwargs)
             elif backbone == 'resnet101':
                 pretrained = resnet101_v1s(pretrained=pretrained_base, dilated=True, **kwargs)
@@ -80,6 +87,10 @@ class SegBaseModel(HybridBlock):
         return self.forward(x)[0]
 
     def demo(self, x):
+        warnings.warn('demo method will be deprecated in favor of predict.')
+        return self.predict(x)
+
+    def predict(self, x):
         h, w = x.shape[2:]
         self._up_kwargs['height'] = h
         self._up_kwargs['width'] = w

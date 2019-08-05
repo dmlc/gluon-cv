@@ -52,6 +52,30 @@ def try_import_cv2():
         or `pip install opencv-python --user` (note that this is unofficial PYPI package)."
     return try_import('cv2', msg)
 
+def try_import_mmcv():
+    """Try import mmcv at runtime.
+
+    Returns
+    -------
+    mmcv module if found. Raise ImportError otherwise
+
+    """
+    msg = "mmcv is required, you can install by first `pip install Cython --user` \
+        and then `pip install mmcv --user` (note that this is unofficial PYPI package)."
+    return try_import('mmcv', msg)
+
+def try_import_rarfile():
+    """Try import rarfile at runtime.
+
+    Returns
+    -------
+    rarfile module if found. Raise ImportError otherwise
+
+    """
+    msg = "rarfile is required, you can install by first `sudo apt-get install unrar` \
+        and then `pip install rarfile --user` (note that this is unofficial PYPI package)."
+    return try_import('rarfile', msg)
+
 def import_try_install(package, extern_url=None):
     """Try import the specified package.
     If the package not installed, try use pip to install and import if success.
@@ -95,3 +119,17 @@ def import_try_install(package, extern_url=None):
                 sys.path.append(user_site)
             return __import__(package)
     return __import__(package)
+
+def try_import_dali():
+    """Try import NVIDIA DALI at runtime.
+    """
+    try:
+        dali = __import__('nvidia.dali', fromlist=['pipeline', 'ops', 'types'])
+        dali.Pipeline = dali.pipeline.Pipeline
+    except ImportError:
+        class dali:
+            class Pipeline:
+                def __init__(self):
+                    raise NotImplementedError(
+                        "DALI not found, please check if you installed it correctly.")
+    return dali

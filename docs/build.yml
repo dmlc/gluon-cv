@@ -7,9 +7,9 @@ dependencies:
 - matplotlib
 - sphinx_rtd_theme
 - pip:
-  - https://github.com/mli/mx-theme/tarball/master
+  - https://github.com/mli/mx-theme/tarball/0.3.1
   - sphinx-gallery
-  - mxnet-cu92mkl==1.5.0b20190314
+  - mxnet-cu92mkl==1.6.0b20190802
   # - guzzle_sphinx_theme
   - recommonmark
   - Image

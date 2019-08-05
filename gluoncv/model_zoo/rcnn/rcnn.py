@@ -73,7 +73,7 @@ class RCNN(gluon.HybridBlock):
     def __init__(self, features, top_features, classes, box_features,
                  short, max_size, train_patterns,
                  nms_thresh, nms_topk, post_nms,
-                 roi_mode, roi_size, strides, clip, **kwargs):
+                 roi_mode, roi_size, strides, clip, force_nms=False, **kwargs):
         super(RCNN, self).__init__(**kwargs)
         self.classes = classes
         self.num_class = len(classes)
@@ -83,6 +83,7 @@ class RCNN(gluon.HybridBlock):
         self.nms_thresh = nms_thresh
         self.nms_topk = nms_topk
         self.post_nms = post_nms
+        self.force_nms = force_nms
 
         assert self.num_class > 0, "Invalid number of class : {}".format(self.num_class)
         assert roi_mode.lower() in ['align', 'pool'], "Invalid roi_mode: {}".format(roi_mode)
@@ -126,7 +127,7 @@ class RCNN(gluon.HybridBlock):
             return self.collect_params(self.train_patterns)
         return self.collect_params(select)
 
-    def set_nms(self, nms_thresh=0.3, nms_topk=400, post_nms=100):
+    def set_nms(self, nms_thresh=0.3, nms_topk=400, post_nms=100, force_nms=False):
         """Set NMS parameters to the network.
 
         .. Note::
@@ -144,6 +145,9 @@ class RCNN(gluon.HybridBlock):
             Only return top `post_nms` detection results, the rest is discarded. The number is
             based on COCO dataset which has maximum 100 objects per image. You can adjust this
             number if expecting more objects. You can use -1 to return all detections.
+        force_nms : bool, default is False
+            Appy NMS to all categories, this is to avoid overlapping detection results
+            from different categories.
 
         Returns
         -------
@@ -154,6 +158,7 @@ class RCNN(gluon.HybridBlock):
         self.nms_thresh = nms_thresh
         self.nms_topk = nms_topk
         self.post_nms = post_nms
+        self.force_nms = force_nms
 
     def reset_class(self, classes, reuse_weights=None):
         """Reset class categories and class predictors.

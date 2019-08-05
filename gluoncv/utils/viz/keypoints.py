@@ -133,7 +133,7 @@ def cv_plot_keypoints(img, coords, confidence, class_ids, bboxes, scores,
         pts = coords[i]
         for cm_ind, jp in zip(colormap_index, joint_pairs):
             if joint_visible[i, jp[0]] and joint_visible[i, jp[1]]:
-                cm_color = tuple([int(x * 255) for x in plt.cm.cool(cm_ind)[1:]])
+                cm_color = tuple([int(x * 255) for x in plt.cm.cool(cm_ind)[:3]])
                 pt1 = (int(pts[jp, 0][0]), int(pts[jp, 1][0]))
                 pt2 = (int(pts[jp, 0][1]), int(pts[jp, 1][1]))
                 cv2.line(img, pt1, pt2, cm_color, 3)

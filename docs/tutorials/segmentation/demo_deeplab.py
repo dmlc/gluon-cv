@@ -32,12 +32,8 @@ plt.show()
 
 ##############################################################################
 # normalize the image using dataset mean
-transform_fn = transforms.Compose([
-    transforms.ToTensor(),
-    transforms.Normalize([.485, .456, .406], [.229, .224, .225])
-])
-img = transform_fn(img)
-img = img.expand_dims(0).as_in_context(ctx)
+from gluoncv.data.transforms.presets.segmentation import test_transform
+img = test_transform(img, ctx)
 
 ##############################################################################
 # Load the pre-trained model and make prediction
@@ -48,7 +44,7 @@ model = gluoncv.model_zoo.get_model('deeplab_resnet101_ade', pretrained=True)
 
 ##############################################################################
 # make prediction using single scale
-output = model.demo(img)
+output = model.predict(img)
 predict = mx.nd.squeeze(mx.nd.argmax(output, 1)).asnumpy()
 
 ##############################################################################

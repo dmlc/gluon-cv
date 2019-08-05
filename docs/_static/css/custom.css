@@ -6,10 +6,47 @@
     content: ' (no mixup)';
 }
 
+.tsntag {
+    color:grey;
+}
+
+.tsntag:after {
+    content: ' (no TSN)';
+}
+
 .greytag {
     color:grey;
 }
 
 .gray {
     color:#808080;
+}
+
+.Logos {
+    display: inline;
+    margin: 1em;
+    max-width: 120px;
+}
+
+.install {
+    max-width: 800px;
+}
+.install .title {
+    display: inline-block;
+    min-width: 100px;
+    text-transform: uppercase;
+    font-size: 90%;
+    color: #555;
+}
+
+.install .option {
+    margin: 5px;
+}
+
+@media (max-width: 650px) {
+.install .option, .install .title {
+    width: 90%;
+}
+.install .title {
+    margin-top: 1em;
 }

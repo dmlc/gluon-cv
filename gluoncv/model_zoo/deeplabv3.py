@@ -36,18 +36,21 @@ class DeepLabV3(SegBaseModel):
 
     """
     def __init__(self, nclass, backbone='resnet50', aux=True, ctx=cpu(), pretrained_base=True,
-                 base_size=520, crop_size=480, **kwargs):
+                 height=None, width=None, base_size=520, crop_size=480, **kwargs):
         super(DeepLabV3, self).__init__(nclass, aux, backbone, ctx=ctx, base_size=base_size,
                                      crop_size=crop_size, pretrained_base=pretrained_base, **kwargs)
+        height = height if height is not None else crop_size
+        width = width if width is not None else crop_size
         with self.name_scope():
-            self.head = _DeepLabHead(nclass, height=self._up_kwargs['height']//8,
-                                     width=self._up_kwargs['width']//8, **kwargs)
+            self.head = _DeepLabHead(nclass, height=height//8,
+                                     width=width//8, **kwargs)
             self.head.initialize(ctx=ctx)
             self.head.collect_params().setattr('lr_mult', 10)
             if self.aux:
                 self.auxlayer = _FCNHead(1024, nclass, **kwargs)
                 self.auxlayer.initialize(ctx=ctx)
                 self.auxlayer.collect_params().setattr('lr_mult', 10)
+        self._up_kwargs = {'height': height, 'width': width}
 
     def hybrid_forward(self, F, x):
         c3, c4 = self.base_forward(x)
@@ -63,6 +66,9 @@ class DeepLabV3(SegBaseModel):
         return tuple(outputs)
 
     def demo(self, x):
+        self.predict(x)
+
+    def predict(self, x):
         h, w = x.shape[2:]
         self._up_kwargs['height'] = h
         self._up_kwargs['width'] = w
@@ -74,11 +80,12 @@ class DeepLabV3(SegBaseModel):
 
 
 class _DeepLabHead(HybridBlock):
-    def __init__(self, nclass, norm_layer=nn.BatchNorm, norm_kwargs=None, **kwargs):
+    def __init__(self, nclass, norm_layer=nn.BatchNorm, norm_kwargs=None,
+                 height=60, width=60, **kwargs):
         super(_DeepLabHead, self).__init__()
         with self.name_scope():
-            self.aspp = _ASPP(2048, [12, 24, 36], norm_layer=norm_layer,
-                              norm_kwargs=norm_kwargs, **kwargs)
+            self.aspp = _ASPP(2048, [12, 24, 36], norm_layer=norm_layer, norm_kwargs=norm_kwargs,
+                              height=height, width=width, **kwargs)
             self.block = nn.HybridSequential()
             self.block.add(nn.Conv2D(in_channels=256, channels=256,
                                      kernel_size=3, padding=1, use_bias=False))
@@ -197,6 +204,7 @@ def get_deeplab(dataset='pascal_voc', backbone='resnet50', pretrained=False,
     from ..data import datasets
     # infer number of classes
     model = DeepLabV3(datasets[dataset].NUM_CLASS, backbone=backbone, ctx=ctx, **kwargs)
+    model.classes = datasets[dataset].classes
     if pretrained:
         from .model_store import get_model_file
         model.load_parameters(get_model_file('deeplab_%s_%s'%(backbone, acronyms[dataset]),

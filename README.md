@@ -1,7 +1,7 @@
 # Gluon CV Toolkit
 
-[![Build Status](http://ci.mxnet.io/job/gluon-cv/job/master/badge/icon)](http://ci.mxnet.io/job/gluon-cv/job/master/)
-[![GitHub license](http://dmlc.github.io/img/apache2.svg)](./LICENSE)
+[![Build Status](http://ci.mxnet.io/buildStatus/icon?job=gluon-cv%2Fmaster)](http://ci.mxnet.io/job/gluon-cv/job/master/)
+[![GitHub license](docs/_static/apache2.svg)](./LICENSE)
 [![Code Coverage](http://gluon-cv.mxnet.io/coverage.svg?)](http://gluon-cv.mxnet.io/coverage.svg)
 [![PyPI](https://img.shields.io/pypi/v/gluoncv.svg)](https://pypi.python.org/pypi/gluoncv)
 [![PyPI Pre-release](https://img.shields.io/badge/pypi--prerelease-v0.5.0-ff69b4.svg)](https://pypi.org/project/gluoncv/#history)
@@ -19,6 +19,16 @@ models. This toolkit offers four main features:
 2. A large number of pre-trained models
 3. Carefully designed APIs that greatly reduce the implementation complexity
 4. Community supports
+
+# Demo
+
+<div align="center">
+    <img src="docs/_static/short_demo.gif">
+</div>
+
+<br>
+
+Check the HD video at [Youtube](https://www.youtube.com/watch?v=nfpouVAzXt0) or [Bilibili](https://www.bilibili.com/video/av55619231).
 
 # Supported Applications
 
@@ -91,9 +101,16 @@ Check out how to use GluonCV for your own research or projects.
 
 # Citation
 
-If you feel our code or models helps in your research, please kindly cite our papers:
+If you feel our code or models helps in your research, kindly cite our papers:
 
 ```
+@article{gluoncvnlp2019,
+  title={GluonCV and GluonNLP: Deep Learning in Computer Vision and Natural Language Processing},
+  author={Guo, Jian and He, He and He, Tong and Lausen, Leonard and Li, Mu and Lin, Haibin and Shi, Xingjian and Wang, Chenguang and Xie, Junyuan and Zha, Sheng and Zhang, Aston and Zhang, Hang and Zhang, Zhi and Zhang, Zhongyue and Zheng, Shuai},
+  journal={arXiv preprint arXiv:1907.04433},
+  year={2019}
+}
+
 @article{he2018bag,
   title={Bag of Tricks for Image Classification with Convolutional Neural Networks},
   author={He, Tong and Zhang, Zhi and Zhang, Hang and Zhang, Zhongyue and Xie, Junyuan and Li, Mu},
@@ -106,4 +123,5 @@ If you feel our code or models helps in your research, please kindly cite our pa
   author={Zhang, Zhi and He, Tong and Zhang, Hang and Zhang, Zhongyue and Xie, Junyuan and Li, Mu},
   journal={arXiv preprint arXiv:1902.04103},
   year={2019}
-}```
+}
+```

@@ -20,52 +20,52 @@ class COCOKeyPoints(VisionDataset):
     splits : list of str, default ['person_keypoints_val2017']
         Json annotations name.
         Candidates can be: person_keypoints_val2017, person_keypoints_train2017.
+    check_centers : bool, default is False
+        If true, will force check centers of bbox and keypoints, respectively.
+        If centers are far away from each other, remove this label.
+    skip_empty : bool, default is False
+        Whether skip entire image if no valid label is found. Use `False` if this dataset is
+        for validation to avoid COCO metric error.
 
     """
     CLASSES = ['person']
+    KEYPOINTS = {
+        0: "nose",
+        1: "left_eye",
+        2: "right_eye",
+        3: "left_ear",
+        4: "right_ear",
+        5: "left_shoulder",
+        6: "right_shoulder",
+        7: "left_elbow",
+        8: "right_elbow",
+        9: "left_wrist",
+        10: "right_wrist",
+        11: "left_hip",
+        12: "right_hip",
+        13: "left_knee",
+        14: "right_knee",
+        15: "left_ankle",
+        16: "right_ankle"
+    }
+    SKELETON = [
+        [16, 14], [14, 12], [17, 15], [15, 13], [12, 13], [6, 12], [7, 13], [6, 7], [6, 8],
+        [7, 9], [8, 10], [9, 11], [2, 3], [1, 2], [1, 3], [2, 4], [3, 5], [4, 6], [5, 7]]
 
     def __init__(self, root=os.path.join('~', '.mxnet', 'datasets', 'coco'),
-                 splits=('person_keypoints_val2017',), aspect_ratio=1.0, skip_empty=True):
+                 splits=('person_keypoints_val2017',), check_centers=False, skip_empty=True):
         super(COCOKeyPoints, self).__init__(root)
         self._root = os.path.expanduser(root)
         if isinstance(splits, mx.base.string_types):
             splits = [splits]
         self._splits = splits
         self._coco = []
-        self._aspect_ratio = float(1.0/aspect_ratio)
-        self._pixel_std = 200
+        self._check_centers = check_centers
         self._skip_empty = skip_empty
         self.index_map = dict(zip(type(self).CLASSES, range(self.num_class)))
         self.json_id_to_contiguous = None
         self.contiguous_id_to_json = None
         self._items, self._labels = self._load_jsons()
-
-        # properties may help
-        '''
-        self._keypoints: {
-            0: "nose",
-            1: "left_eye",
-            2: "right_eye",
-            3: "left_ear",
-            4: "right_ear",
-            5: "left_shoulder",
-            6: "right_shoulder",
-            7: "left_elbow",
-            8: "right_elbow",
-            9: "left_wrist",
-            10: "right_wrist",
-            11: "left_hip",
-            12: "right_hip",
-            13: "left_knee",
-            14: "right_knee",
-            15: "left_ankle",
-            16: "right_ankle"
-        }
-
-        self._skeleton: [
-            [16,14], [14,12], [17,15], [15,13], [12,13], [6,12], [7,13], [6,7], [6,8],
-            [7,9], [8,10], [9,11], [2,3], [1,2], [1,3], [2,4], [3,5], [4,6], [5,7]]
-        '''
 
     def __str__(self):
         detail = ','.join([str(s) for s in self._splits])
@@ -180,11 +180,20 @@ class COCOKeyPoints(VisionDataset):
                 visible = min(1, obj['keypoints'][i * 3 + 2])
                 joints_3d[i, :2, 1] = visible
                 # joints_3d[i, 2, 1] = 0
-                center, scale = self._box_to_center_scale(xmin, ymin, xmax - xmin, ymax - ymin)
+
+            if np.sum(joints_3d[:, 0, 1]) < 1:
+                # no visible keypoint
+                continue
+
+            if self._check_centers:
+                bbox_center, bbox_area = self._get_box_center_area((xmin, ymin, xmax, ymax))
+                kp_center, num_vis = self._get_keypoints_center_count(joints_3d)
+                ks = np.exp(-2 * np.sum(np.square(bbox_center - kp_center)) / bbox_area)
+                if (num_vis / 80.0 + 47 / 80.0) > ks:
+                    continue
 
             valid_objs.append({
-                'center': center,
-                'scale': scale,
+                'bbox': (xmin, ymin, xmax, ymax),
                 'joints_3d': joints_3d
             })
 
@@ -192,26 +201,20 @@ class COCOKeyPoints(VisionDataset):
             if not self._skip_empty:
                 # dummy invalid labels if no valid objects are found
                 valid_objs.append({
-                    'center': np.array([-1., -1.]),
-                    'scale': np.array([0., 0.]),
+                    'bbox': np.array([-1, -1, 0, 0]),
                     'joints_3d': np.zeros((self.num_joints, 3, 2), dtype=np.float32)
                 })
         return valid_objs
 
-    def _box_to_center_scale(self, x, y, w, h):
-        """Convert box coordinates to center and scale.
-        adapted from https://github.com/Microsoft/human-pose-estimation.pytorch
-        """
-        center = np.zeros((2), dtype=np.float32)
-        center[0] = x + w * 0.5
-        center[1] = y + h * 0.5
+    def _get_box_center_area(self, bbox):
+        """Get bbox center"""
+        c = np.array([(bbox[0] + bbox[2]) / 2.0, (bbox[1] + bbox[3]) / 2.0])
+        area = (bbox[3]-bbox[1])*(bbox[2]-bbox[0])
+        return c, area
 
-        if w > self._aspect_ratio * h:
-            h = w / self._aspect_ratio
-        elif w < self._aspect_ratio * h:
-            w = h * self._aspect_ratio
-        scale = np.array(
-            [w * 1.0 / self._pixel_std, h * 1.0 / self._pixel_std], dtype=np.float32)
-        if center[0] != -1:
-            scale = scale * 1.25
-        return center, scale
+    def _get_keypoints_center_count(self, keypoints):
+        """Get geometric center of all keypoints"""
+        keypoint_x = np.sum(keypoints[:, 0, 0] * (keypoints[:, 0, 1] > 0))
+        keypoint_y = np.sum(keypoints[:, 1, 0] * (keypoints[:, 1, 1] > 0))
+        num = float(np.sum(keypoints[:, 0, 1]))
+        return np.array([keypoint_x / num, keypoint_y / num]), num

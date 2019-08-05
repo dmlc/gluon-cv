@@ -14,6 +14,7 @@ _model_sha1 = {name: checksum for checksum, name in [
     ('2603f878403c6aa5a71a124c4a3307143d6820e9', 'densenet169'),
     ('1cdbc116bc3a1b65832b18cf53e1cb8e7da017eb', 'densenet201'),
     ('a5050dbcbfc54908fc1b7700698eb7ffbc150417', 'inceptionv3'),
+    ('37c1c90b56800303a66934487fbf017bca8bba00', 'xception'),
     ('f0046a3da4e150b85da58ea31913dbb86e7540d1', 'mobilenet0.25'),
     ('0130d2aa2f7e3a63db35579b243e25f512172371', 'mobilenet0.5'),
     ('84c801e27b1ac5040b6e945c0d1f8d49e9a59f3d', 'mobilenet0.75'),
@@ -22,6 +23,8 @@ _model_sha1 = {name: checksum for checksum, name in [
     ('b56e3d1c33eb52d0b90678db4ce6c5ca6c9a6704', 'mobilenetv2_0.75'),
     ('0803818513599fa1329524ee3607b708b4a4630f', 'mobilenetv2_0.5'),
     ('9b1d2cc38fed4cd171a7f7a0d17fe1a905573887', 'mobilenetv2_0.25'),
+    ('eaa44578554ddffaf2a2630ced9093181ff79688', 'mobilenetv3_large'),
+    ('33c100a740c0a278ec06e8640b19f52b744d1f11', 'mobilenetv3_small'),
     ('a0666292f0a30ff61f857b0b66efc0228eb6a54b', 'resnet18_v1'),
     ('48216ba99a8b1005d75c0f3a0c422301a0473233', 'resnet34_v1'),
     ('cc729d95031ca98cf2ff362eb57dee4d9994e4b2', 'resnet50_v1'),
@@ -58,8 +61,10 @@ _model_sha1 = {name: checksum for checksum, name in [
     ('233572743bc537291590f4edf8a0c17c14b234bb', 'faster_rcnn_fpn_resnet50_v1b_coco'),
     ('977c247d70c33d1426f62147fc0e04dd329fc5ec', 'faster_rcnn_fpn_bn_resnet50_v1b_coco'),
     ('1194ab4ec6e06386aadd55820add312c8ef59c74', 'faster_rcnn_fpn_resnet101_v1d_coco'),
+    ('e071cf1550bc0331c218a9072b59e9550595d1e7', 'mask_rcnn_resnet18_v1b_coco'),
     ('a3527fdc2cee5b1f32a61e5fd7cda8fb673e86e5', 'mask_rcnn_resnet50_v1b_coco'),
     ('4a3249c584f81c2a9b5d852b742637cd692ebdcb', 'mask_rcnn_resnet101_v1d_coco'),
+    ('14a922c38b0b196fdb1f7141be4666c10476f426', 'mask_rcnn_fpn_resnet18_v1b_coco'),
     ('1364d0afe4de575af5d4389d50c2dbf22449ceac', 'mask_rcnn_fpn_resnet50_v1b_coco'),
     ('89c7d8669b677a05c6eaa25375ead9a174109c69', 'mask_rcnn_fpn_resnet101_v1d_coco'),
     ('121e1579d811b091940b3b1fa033e1f0d1dca40f', 'cifar_resnet20_v1'),
@@ -128,6 +133,9 @@ _model_sha1 = {name: checksum for checksum, name in [
     ('6a25eeceb7d27bd9c05fa2bf250c55d3960ad4c7', 'resnet50_v1d_8.8x'),
     ('a872796b63fb883116831db3454711421a628154', 'resnet101_v1d_1.9x'),
     ('712fccb185921a596baebe9246ff6c994b88591b', 'resnet101_v1d_2.2x'),
+    ('d6dc1bbaaf3cbe0be19f02362706393f62ce76fa', 'vgg16_ucf101'),
+    ('13ef5c3bd40141f11c5b4e471f8f2ad0c1ac6299', 'inceptionv3_ucf101'),
+    ('de56b871543847d586deeca488b5bfe1b77bb5c5', 'alpha_pose_resnet101_v1b_coco'),
 ]}
 
 apache_repo_url = 'https://apache-mxnet.s3-accelerate.dualstack.amazonaws.com/'
@@ -218,4 +226,14 @@ def purge(root=os.path.join('~', '.mxnet', 'models')):
 
 
 def pretrained_model_list():
-    return list(_model_sha1.keys())
+    """Get list of model which has pretrained weights available."""
+    _renames = {
+        'resnet18_v1b_2.6x': 'resnet18_v1b_0.89',
+        'resnet50_v1d_1.8x': 'resnet50_v1d_0.86',
+        'resnet50_v1d_3.6x': 'resnet50_v1d_0.48',
+        'resnet50_v1d_5.9x': 'resnet50_v1d_0.37',
+        'resnet50_v1d_8.8x': 'resnet50_v1d_0.11',
+        'resnet101_v1d_1.9x': 'resnet101_v1d_0.76',
+        'resnet101_v1d_2.2x': 'resnet101_v1d_0.73',
+    }
+    return [_renames[x] if x in _renames else x for x in _model_sha1.keys()]

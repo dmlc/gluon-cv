@@ -23,6 +23,7 @@ class BasicBlockV1b(HybridBlock):
     def __init__(self, planes, strides=1, dilation=1, downsample=None,
                  previous_dilation=1, norm_layer=None, norm_kwargs=None, **kwargs):
         super(BasicBlockV1b, self).__init__()
+        norm_kwargs = norm_kwargs if norm_kwargs is not None else {}
         self.conv1 = nn.Conv2D(channels=planes, kernel_size=3, strides=strides,
                                padding=dilation, dilation=dilation, use_bias=False)
         self.bn1 = norm_layer(in_channels=planes, **({} if norm_kwargs is None else norm_kwargs))

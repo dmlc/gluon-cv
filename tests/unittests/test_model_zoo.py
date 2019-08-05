@@ -108,6 +108,7 @@ def test_imagenet_models():
               'senet_154', 'squeezenet1.0', 'squeezenet1.1',
               'mobilenet1.0', 'mobilenet0.75', 'mobilenet0.5', 'mobilenet0.25',
               'mobilenetv2_1.0', 'mobilenetv2_0.75', 'mobilenetv2_0.5', 'mobilenetv2_0.25',
+              'mobilenetv3_large', 'mobilenetv3_small',
               'densenet121', 'densenet161', 'densenet169', 'densenet201',
               'darknet53', 'alexnet',
               'vgg11', 'vgg11_bn', 'vgg13', 'vgg13_bn',
@@ -122,7 +123,7 @@ def test_imagenet_models():
 
     # 299x299
     x = mx.random.uniform(shape=(2, 3, 299, 299), ctx=ctx)
-    models = ['inceptionv3', 'nasnet_5_1538', 'nasnet_7_1920', 'nasnet_6_4032']
+    models = ['inceptionv3', 'nasnet_5_1538', 'nasnet_7_1920', 'nasnet_6_4032', 'xception']
     _test_model_list(models, ctx, x)
 
     # 331x331
@@ -203,8 +204,10 @@ def test_yolo3_reset_class():
     x = mx.random.uniform(shape=(1, 3, 512, 544), ctx=ctx)  # allow non-squre and larger inputs
     model_name = 'yolo3_darknet53_voc'
     net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
+    net.hybridize()
     net.reset_class(["bus", "car", "bird"], reuse_weights=["bus", "car", "bird"])
     net(x)
+    mx.nd.waitall()
 
     # for GPU
     ctx = mx.gpu(0)
@@ -213,8 +216,10 @@ def test_yolo3_reset_class():
     except Exception:
         return
     net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
+    net.hybridize()
     net.reset_class(["bus", "car", "bird"])
     net(x)
+    mx.nd.waitall()
 
 
 def test_faster_rcnn_reset_class():
@@ -352,6 +357,34 @@ def test_segmentation_models():
     _test_model_list(models, ctx, x, pretrained=False, pretrained_base=True)
 
 
+@try_gpu(0)
+def test_segmentation_models_custom_size():
+    ctx = mx.context.current_context()
+    num_classes = 5
+    width = 96
+    height = 64
+    x = mx.random.uniform(shape=(1, 3, height, width), ctx=ctx)
+
+    net = gcv.model_zoo.FCN(num_classes, backbone='resnet50', aux=False, ctx=ctx, pretrained_base=True,
+                            height=height, width=width)
+    result = net.forward(x)
+    assert result[0].shape == (1, num_classes, height, width)
+    net = gcv.model_zoo.PSPNet(num_classes, backbone='resnet50', aux=False, ctx=ctx, pretrained_base=True,
+                               height=height, width=width)
+    result = net.forward(x)
+    assert result[0].shape == (1, num_classes, height, width)
+
+    net = gcv.model_zoo.DeepLabV3(num_classes, backbone='resnet50', aux=False, ctx=ctx, pretrained_base=True,
+                               height=height, width=width)
+    result = net.forward(x)
+    assert result[0].shape == (1, num_classes, height, width)
+
+    net = gcv.model_zoo.DeepLabV3Plus(num_classes, backbone='resnet50', aux=False, ctx=ctx, pretrained_base=True,
+                                  height=height, width=width)
+    result = net.forward(x)
+    assert result[0].shape == (1, num_classes, height, width)
+
+
 @with_cpu(0)
 def test_mobilenet_sync_bn():
     model_name = "mobilenet1.0"
@@ -362,14 +395,12 @@ def test_mobilenet_sync_bn():
                                   norm_kwargs={'num_devices': 2})
     net.load_parameters(model_name + '.params')
 
-
 @with_cpu(0)
 def test_quantized_imagenet_models():
     model_list = ['mobilenet1.0_int8', 'resnet50_v1_int8']
     ctx = mx.context.current_context()
     x = mx.random.uniform(shape=(1, 3, 224, 224), ctx=ctx)
     _test_model_list(model_list, ctx, x)
-
 
 @with_cpu(0)
 def test_quantized_ssd_models():

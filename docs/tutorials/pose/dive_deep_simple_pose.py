@@ -30,7 +30,7 @@ from gluoncv.utils.metrics import HeatmapAccuracy
 # We can load COCO Keypoints dataset with their official API
 #
 
-train_dataset = mscoco.keypoints.COCOKeyPoints('~/.mxnet/datasets/coco', aspect_ratio=4./3.,
+train_dataset = mscoco.keypoints.COCOKeyPoints('~/.mxnet/datasets/coco',
                                                splits=('person_keypoints_train2017'))
 
 
