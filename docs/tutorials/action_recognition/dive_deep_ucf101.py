@@ -1,5 +1,5 @@
 """2. Dive Deep into Training TSN mdoels on UCF101
-==============================================
+==================================================
 
 This is a video action recognition tutorial using Gluon CV toolkit, a step-by-step example.
 The readers should have basic knowledge of deep learning and should be familiar with Gluon API.
@@ -218,4 +218,3 @@ train_history.plot()
 # .. [Wang16] Limin Wang, Yuanjun Xiong, Zhe Wang, Yu Qiao, Dahua Lin, Xiaoou Tang and Luc Van Gool. \
 #     "Temporal Segment Networks: Towards Good Practices for Deep Action Recognition." \
 #     In European Conference on Computer Vision (ECCV). 2016.
-#

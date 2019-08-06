@@ -1,5 +1,5 @@
-"""1. Getting Started with Pre-trained TSN Model on UCF101
-======================================================
+"""1. Getting Started with Pre-trained TSN Models on UCF101
+===========================================================
 
 `UCF101 <https://www.crcv.ucf.edu/data/UCF101.php>`_  is an action recognition dataset
 of realistic action videos, collected from YouTube. With 13,320 short trimmed videos
@@ -7,12 +7,13 @@ from 101 action categories, it is one of the most widely used dataset in the res
 community for benchmarking state-of-the-art video action recognition models.
 
 In this tutorial, we will demonstrate how to load a pre-trained model from :ref:`gluoncv-model-zoo`
-and classify video frames from the Internet or your local disk.
+and classify video frames from the Internet or your local disk into one of the 101 action classes.
 
 Step by Step
-------------------
+------------
 
-Let's first try out a pre-trained UCF101 model with a few lines of python code.
+We will show two exmaples here. For simplicity, we first try out a pre-trained UCF101 model
+on a single video frame. This is actually an image action recognition problem.
 
 First, please follow the `installation guide <../../index.html#installation>`__
 to install ``MXNet`` and ``GluonCV`` if you haven't done so yet.
@@ -88,6 +89,68 @@ for i in range(topK):
 #
 # We can see that our pre-trained model predicts this video frame
 # to be ``throw discus`` action with high confidence.
+
+################################################################
+#
+# The next example is how to perform video action recognition, e.g., use the same pre-trained model on an entire video.
+
+################################################################
+#
+# First, we download the video and sample the video frames at a speed of 1 frame per second.
+#
+# .. raw:: html
+#
+#     <div align="center">
+#         <img src="../../_static/action_basketball_demo.gif">
+#     </div>
+#
+#     <br>
+
+import cv2
+
+url = 'https://github.com/bryanyzhu/tiny-ucf101/raw/master/v_Basketball_g01_c01.avi'
+video_fname = utils.download(url)
+
+cap = cv2.VideoCapture(video_fname)
+cnt = 0
+video_frames = []
+while(cap.isOpened()):
+    ret, frame = cap.read()
+    cnt += 1
+    if ret and cnt % 25 == 0:
+        video_frames.append(frame)
+    if not ret: break
+
+cap.release()
+print('We evenly extract %d frames from the video %s.' % (len(video_frames), video_fname))
+
+################################################################
+#
+# Now we transform each video frame and feed them into the model.
+# In the end, we average the predictions from multiple video frames to get a reasonable prediction.
+
+final_pred = 0
+for frame_id, frame_img in enumerate(video_frames):
+    frame_img = transform_fn(frame_img)
+    pred = net(frame_img.expand_dims(axis=0))
+    final_pred += pred
+final_pred /= len(video_frames)
+
+classes = net.classes
+topK = 5
+ind = nd.topk(final_pred, k=topK)[0].astype('int')
+print('The input video is classified to be')
+for i in range(topK):
+    print('\t[%s], with probability %.3f.'%
+          (classes[ind[i].asscalar()], nd.softmax(final_pred)[0][ind[i]].asscalar()))
+
+################################################################
+#
+# We can see that our pre-trained model predicts this video
+# to be ``basketball`` action with high confidence.
+# Note that, there are many ways to sample video frames and obtain a final video-level prediction.
+
+################################################################
 
 ################################################################
 # Next Step
