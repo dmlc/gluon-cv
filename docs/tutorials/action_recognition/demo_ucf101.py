@@ -10,7 +10,7 @@ In this tutorial, we will demonstrate how to load a pre-trained model from :ref:
 and classify video frames from the Internet or your local disk into one of the 101 action classes.
 
 Step by Step
-------------------
+------------
 
 We will show two exmaples here. For simplicity, we first try out a pre-trained UCF101 model
 on a single video frame. This is actually an image action recognition problem.

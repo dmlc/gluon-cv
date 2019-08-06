@@ -1,5 +1,5 @@
 """2. Dive Deep into Training TSN mdoels on UCF101
-==============================================
+==================================================
 
 This is a video action recognition tutorial using Gluon CV toolkit, a step-by-step example.
 The readers should have basic knowledge of deep learning and should be familiar with Gluon API.
