@@ -218,4 +218,3 @@ train_history.plot()
 # .. [Wang16] Limin Wang, Yuanjun Xiong, Zhe Wang, Yu Qiao, Dahua Lin, Xiaoou Tang and Luc Van Gool. \
 #     "Temporal Segment Networks: Towards Good Practices for Deep Action Recognition." \
 #     In European Conference on Computer Vision (ECCV). 2016.
-#
