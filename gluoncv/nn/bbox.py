@@ -30,6 +30,8 @@ class NumPyBBoxCornerToCenter(object):
 
     def __call__(self, x):
         xmin, ymin, xmax, ymax = np.split(x, 4, axis=self._axis)
+        # note that we do not have +1 here since our nms and box iou does not.
+        # this is different that detectron.
         width = xmax - xmin
         height = ymax - ymin
         x = xmin + width / 2
@@ -57,13 +59,15 @@ class BBoxCornerToCenter(gluon.HybridBlock):
      A BxNx4 NDArray if split is False, or 4 BxNx1 NDArray if split is True
     """
 
-    def __init__(self, axis=-1, split=False):
+    def __init__(self, axis=-1, split=False, boundary_mode=0.0):
         super(BBoxCornerToCenter, self).__init__()
         self._split = split
         self._axis = axis
 
     def hybrid_forward(self, F, x):
         xmin, ymin, xmax, ymax = F.split(x, axis=self._axis, num_outputs=4)
+        # note that we do not have +1 here since our nms and box iou does not.
+        # this is different that detectron.
         width = xmax - xmin
         height = ymax - ymin
         x = xmin + width / 2

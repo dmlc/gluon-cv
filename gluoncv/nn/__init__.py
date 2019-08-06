@@ -8,4 +8,3 @@ from . import predictor
 from . import matcher
 from . import sampler
 from .block import *
-from .gn import *
