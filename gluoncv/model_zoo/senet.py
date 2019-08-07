@@ -20,7 +20,7 @@
 """SENet, implemented in Gluon."""
 from __future__ import division
 
-__all__ = ['SENet', 'SEBlock', 'get_senet', 'senet_154', 'senet_154b']
+__all__ = ['SENet', 'SEBlock', 'get_senet', 'senet_154', 'senet_154e']
 
 import os
 import math
@@ -271,8 +271,8 @@ def senet_154(**kwargs):
     return get_senet(152, **kwargs)
 
 
-def senet_154b(**kwargs):
-    r"""SENet 154b model modified from
+def senet_154e(**kwargs):
+    r"""SENet 154e model modified from
     `"Squeeze-and-excitation networks"
     <https://arxiv.org/abs/1709.01507>`_ paper.
 

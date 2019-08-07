@@ -23,7 +23,7 @@ from __future__ import division
 __all__ = ['ResNext', 'Block', 'get_resnext',
            'resnext50_32x4d', 'resnext101_32x4d', 'resnext101_64x4d',
            'se_resnext50_32x4d', 'se_resnext101_32x4d', 'se_resnext101_64x4d',
-           'resnext101b_64x4d', 'se_resnext101b_64x4d']
+           'resnext101e_64x4d', 'se_resnext101e_64x4d']
 
 import os
 import math
@@ -168,10 +168,9 @@ class ResNext(HybridBlock):
         with self.name_scope():
             self.features = nn.HybridSequential(prefix='')
             if not deep_stem:
-                self.features = nn.Conv2D(channels=64, kernel_size=7, strides=2,
-                                          padding=3, use_bias=False)
+                self.features.add(nn.Conv2D(channels=64, kernel_size=7, strides=2,
+                                            padding=3, use_bias=False))
             else:
-                self.features = nn.HybridSequential(prefix='conv1')
                 self.features.add(nn.Conv2D(channels=stem_width, kernel_size=3, strides=2,
                                             padding=1, use_bias=False))
                 self.features.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
@@ -363,8 +362,8 @@ def resnext101_64x4d(**kwargs):
     return get_resnext(101, 64, 4, **kwargs)
 
 
-def resnext101b_64x4d(**kwargs):
-    r"""ResNext101 64x4d model modified from
+def resnext101e_64x4d(**kwargs):
+    r"""ResNext101e 64x4d model modified from
     `"Aggregated Residual Transformations for Deep Neural Network"
     <http://arxiv.org/abs/1611.05431>`_ paper.
 
@@ -479,8 +478,8 @@ def se_resnext101_64x4d(**kwargs):
     return get_resnext(101, 64, 4, **kwargs)
 
 
-def se_resnext101b_64x4d(**kwargs):
-    r"""SE-ResNext101b 64x4d model modified from
+def se_resnext101e_64x4d(**kwargs):
+    r"""SE-ResNext101e 64x4d model modified from
     `"Aggregated Residual Transformations for Deep Neural Network"
     <http://arxiv.org/abs/1611.05431>`_ paper.
 
