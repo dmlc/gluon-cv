@@ -168,6 +168,8 @@ class MDConv(HybridBlock):
     def hybrid_forward(self, F, x):
         """Mixed Depthwise Convolution."""
         if self.num_groups == 1:
+            print('x.shape:', x.shape)
+            print('self.split_channels:', self.split_channels)
             return self.mix_dw_conv[0](x)
         # For unequal arbitrary contiguous groups.
         x_splits = _group_split(x, self.split_channels, axis=1)
@@ -334,15 +336,15 @@ class MixNet(HybridBlock):
 
         # net type
         if net_type == 'mixnet_s':
-            config = self.mixnet_s
+            self.config = mixnet_s
             stem_channels = 16
             dropout_rate = 0.2
         elif net_type == 'mixnet_m':
-            config = self.mixnet_m
+            self.config = mixnet_m
             stem_channels = 24
             dropout_rate = 0.25
         elif net_type == 'mixnet_l':
-            config = self.mixnet_m
+            self.config = mixnet_m
             stem_channels = 24
             dropout_rate = 0.25
         else:
@@ -352,13 +354,18 @@ class MixNet(HybridBlock):
 
         # depth multiplier
         if net_type == 'mixnet_l':
+            print('iiiiiiiiiiiiiiiiiiiiiiiiiiiiii')
             depth_multiplier *= 1.3
             stem_channels = _round_filters(stem_channels * depth_multiplier)
-            for i, conf in enumerate(config):
+            for i, conf in enumerate(self.config):
+                print('ffffffffffffffffffffffffffff')
                 conf_ls = list(conf)
                 conf_ls[0] = _round_filters(conf_ls[0] * depth_multiplier)
                 conf_ls[1] = _round_filters(conf_ls[1] * depth_multiplier)
-                config[i] = tuple(conf_ls)
+                self.config[i] = tuple(conf_ls)
+
+        print('net_type', net_type)
+        print('self.config', self.config)
 
         # stem convolution
         self.stem_conv = nn.HybridSequential(prefix='')
@@ -368,13 +375,13 @@ class MixNet(HybridBlock):
 
         # building MixNet blocks
         self.mix_layers = nn.HybridSequential(prefix='')
-        for in_chs, out_chs, k_size, s, exp_ratio, act_type, se_ratio in config:
+        for in_chs, out_chs, k_size, s, exp_ratio, act_type, se_ratio in self.config:
             self.mix_layers.add(MixNetBlock(in_chs, out_chs, k_size, s, \
                                             exp_ratio, act_type, se_ratio))
 
         # head layers
         self.head_layers = nn.HybridSequential(prefix='')
-        self.head_layers.add(_conv1x1(config[-1][1], feature_size))
+        self.head_layers.add(_conv1x1(self.config[-1][1], feature_size))
         self.head_layers.add(norm_layer(in_channels=feature_size, **(self.norm_kwargs)))
         self.head_layers.add(Activation('relu'))
         self.head_layers.add(nn.GlobalAvgPool2D())
