@@ -164,12 +164,13 @@ class MDConv(HybridBlock):
                                                 padding=kernel_size[i]//2, \
                                                 groups=self.split_channels[i], \
                                                 use_bias=False))
-                print('self.split_channels[i]', self.split_channels[i])
+                # print('self.split_channels[i]', self.split_channels[i])
 
     def hybrid_forward(self, F, x):
         """Mixed Depthwise Convolution."""
-        print('x.shape:', x.shape)
         if self.num_groups == 1:
+            print('x.shape:', x.shape)
+            print('self.split_channels:', self.split_channels)
             return self.mix_dw_conv[0](x)
         # For unequal arbitrary contiguous groups.
         x_splits = _group_split(x, self.split_channels, axis=1)
