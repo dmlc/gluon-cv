@@ -157,7 +157,7 @@ class MDConv(HybridBlock):
 
         self.mix_dw_conv = nn.HybridSequential()
         with self.mix_dw_conv.name_scope():
-             for i in range(self.num_groups):
+            for i in range(self.num_groups):
                 self.mix_dw_conv.add(nn.Conv2D(channels=self.split_channels[i], \
                                                 kernel_size=kernel_size[i], \
                                                 strides=stride, \
