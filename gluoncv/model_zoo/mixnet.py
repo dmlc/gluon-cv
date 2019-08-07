@@ -68,9 +68,6 @@ def _split_channels(total_filters, num_groups):
     """Get groups list."""
     split_channels = [total_filters // num_groups for _ in range(num_groups)]
     split_channels[0] += total_filters - sum(split_channels)
-    # print('total_filters:', total_filters)
-    # print('num_groups:', num_groups)
-    # print('split_channels:', split_channels)
     return split_channels
 
 
@@ -167,13 +164,10 @@ class MDConv(HybridBlock):
                                                 padding=kernel_size[i]//2, \
                                                 groups=self.split_channels[i], \
                                                 use_bias=False))
-                # print('self.split_channels[i]', self.split_channels[i])
 
     def hybrid_forward(self, F, x):
         """Mixed Depthwise Convolution."""
         if self.num_groups == 1:
-            print('x.shape:', x.shape)
-            print('self.split_channels:', self.split_channels)
             return self.mix_dw_conv[0](x)
         # For unequal arbitrary contiguous groups.
         x_splits = _group_split(x, self.split_channels, axis=1)
@@ -350,7 +344,6 @@ class MixNet(HybridBlock):
         elif net_type == 'mixnet_l':
             config = self.mixnet_m
             stem_channels = 24
-            depth_multiplier *= 1.3
             dropout_rate = 0.25
         else:
             raise TypeError('Unsupported MixNet type')
@@ -358,7 +351,8 @@ class MixNet(HybridBlock):
         assert input_size % 32 == 0
 
         # depth multiplier
-        if depth_multiplier != 1.0:
+        if net_type == 'mixnet_l':
+            depth_multiplier *= 1.3
             stem_channels = _round_filters(stem_channels * depth_multiplier)
 
             for i, conf in enumerate(config):
@@ -372,9 +366,6 @@ class MixNet(HybridBlock):
         self.stem_conv.add(_conv3x3(input_channels, stem_channels, stride=2))
         self.stem_conv.add(norm_layer(in_channels=stem_channels, **(self.norm_kwargs)))
         self.stem_conv.add(Activation('relu'))
-
-        print('net_type:', net_type)
-        print('config:', config)
 
         # building MixNet blocks
         self.mix_layers = nn.HybridSequential(prefix='')
