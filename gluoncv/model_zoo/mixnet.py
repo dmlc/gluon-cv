@@ -354,7 +354,6 @@ class MixNet(HybridBlock):
         if net_type == 'mixnet_l':
             depth_multiplier *= 1.3
             stem_channels = _round_filters(stem_channels * depth_multiplier)
-
             for i, conf in enumerate(config):
                 conf_ls = list(conf)
                 conf_ls[0] = _round_filters(conf_ls[0] * depth_multiplier)
