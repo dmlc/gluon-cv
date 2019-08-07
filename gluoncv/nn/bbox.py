@@ -65,6 +65,7 @@ class BBoxCornerToCenter(gluon.HybridBlock):
         self._axis = axis
 
     def hybrid_forward(self, F, x):
+        """Hybrid forward"""
         xmin, ymin, xmax, ymax = F.split(x, axis=self._axis, num_outputs=4)
         # note that we do not have +1 here since our nms and box iou does not.
         # this is different that detectron.
