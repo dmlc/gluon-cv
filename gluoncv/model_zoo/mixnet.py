@@ -285,70 +285,69 @@ class MixNet(HybridBlock):
         Whether use global moving statistics instead of local batch-norm.
         This will force change batch-norm into a scale shift operator.
     """
-
-    # [in_channels, out_channels, kernel_size, stride, expand_ratio, act_type, se_ratio]
-    mixnet_s = [(16, 16, [3], 1, 1, 'relu', 0),
-                (16, 24, [3], 2, 6, 'relu', 0),
-                (24, 24, [3], 1, 3, 'relu', 0),
-                (24, 40, [3, 5, 7], 2, 6, 'swish', 2),
-                (40, 40, [3, 5], 1, 6, 'swish', 2),
-                (40, 40, [3, 5], 1, 6, 'swish', 2),
-                (40, 40, [3, 5], 1, 6, 'swish', 2),
-                (40, 80, [3, 5, 7], 2, 6, 'swish', 4),
-                (80, 80, [3, 5], 1, 6, 'swish', 4),
-                (80, 80, [3, 5], 1, 6, 'swish', 4),
-                (80, 120, [3, 5, 7], 1, 6, 'swish', 2),
-                (120, 120, [3, 5, 7, 9], 1, 3, 'swish', 2),
-                (120, 120, [3, 5, 7, 9], 1, 3, 'swish', 2),
-                (120, 200, [3, 5, 7, 9, 11], 2, 6, 'swish', 2),
-                (200, 200, [3, 5, 7, 9], 1, 6, 'swish', 2),
-                (200, 200, [3, 5, 7, 9], 1, 6, 'swish', 2)]
-
-    mixnet_m = [(24, 24, [3], 1, 1, 'relu', 0),
-                (24, 32, [3, 5, 7], 2, 6, 'relu', 0),
-                (32, 32, [3], 1, 3, 'relu', 0),
-                (32, 40, [3, 5, 7, 9], 2, 6, 'swish', 2),
-                (40, 40, [3, 5], 1, 6, 'swish', 2),
-                (40, 40, [3, 5], 1, 6, 'swish', 2),
-                (40, 40, [3, 5], 1, 6, 'swish', 2),
-                (40, 80, [3, 5, 7], 2, 6, 'swish', 4),
-                (80, 80, [3, 5, 7, 9], 1, 6, 'swish', 4),
-                (80, 80, [3, 5, 7, 9], 1, 6, 'swish', 4),
-                (80, 80, [3, 5, 7, 9], 1, 6, 'swish', 4),
-                (80, 120, [3], 1, 6, 'swish', 2),
-                (120, 120, [3, 5, 7, 9], 1, 3, 'swish', 2),
-                (120, 120, [3, 5, 7, 9], 1, 3, 'swish', 2),
-                (120, 120, [3, 5, 7, 9], 1, 3, 'swish', 2),
-                (120, 200, [3, 5, 7, 9], 2, 6, 'swish', 2),
-                (200, 200, [3, 5, 7, 9], 1, 6, 'swish', 2),
-                (200, 200, [3, 5, 7, 9], 1, 6, 'swish', 2),
-                (200, 200, [3, 5, 7, 9], 1, 6, 'swish', 2)]
-
-    mixnet_l = [(24, 24, [3], 1, 1, 'relu', 0),
-                (24, 32, [3, 5, 7], 2, 6, 'relu', 0),
-                (32, 32, [3], 1, 3, 'relu', 0),
-                (32, 40, [3, 5, 7, 9], 2, 6, 'swish', 2),
-                (40, 40, [3, 5], 1, 6, 'swish', 2),
-                (40, 40, [3, 5], 1, 6, 'swish', 2),
-                (40, 40, [3, 5], 1, 6, 'swish', 2),
-                (40, 80, [3, 5, 7], 2, 6, 'swish', 4),
-                (80, 80, [3, 5, 7, 9], 1, 6, 'swish', 4),
-                (80, 80, [3, 5, 7, 9], 1, 6, 'swish', 4),
-                (80, 80, [3, 5, 7, 9], 1, 6, 'swish', 4),
-                (80, 120, [3], 1, 6, 'swish', 2),
-                (120, 120, [3, 5, 7, 9], 1, 3, 'swish', 2),
-                (120, 120, [3, 5, 7, 9], 1, 3, 'swish', 2),
-                (120, 120, [3, 5, 7, 9], 1, 3, 'swish', 2),
-                (120, 200, [3, 5, 7, 9], 2, 6, 'swish', 2),
-                (200, 200, [3, 5, 7, 9], 1, 6, 'swish', 2),
-                (200, 200, [3, 5, 7, 9], 1, 6, 'swish', 2),
-                (200, 200, [3, 5, 7, 9], 1, 6, 'swish', 2)]
-
     def __init__(self, net_type='mixnet_s', input_size=224, input_channels=3, \
                  stem_channels=16, feature_size=1536, num_classes=1000, \
                  depth_multiplier=1.0, norm_layer=BatchNorm, \
                  norm_kwargs=None, use_global_stats=False, **kwargs):
         super(MixNet, self).__init__(**kwargs)
+
+    # [in_channels, out_channels, kernel_size, stride, expand_ratio, act_type, se_ratio]
+        self.mixnet_s = [(16, 16, [3], 1, 1, 'relu', 0),
+                        (16, 24, [3], 2, 6, 'relu', 0),
+                        (24, 24, [3], 1, 3, 'relu', 0),
+                        (24, 40, [3, 5, 7], 2, 6, 'swish', 2),
+                        (40, 40, [3, 5], 1, 6, 'swish', 2),
+                        (40, 40, [3, 5], 1, 6, 'swish', 2),
+                        (40, 40, [3, 5], 1, 6, 'swish', 2),
+                        (40, 80, [3, 5, 7], 2, 6, 'swish', 4),
+                        (80, 80, [3, 5], 1, 6, 'swish', 4),
+                        (80, 80, [3, 5], 1, 6, 'swish', 4),
+                        (80, 120, [3, 5, 7], 1, 6, 'swish', 2),
+                        (120, 120, [3, 5, 7, 9], 1, 3, 'swish', 2),
+                        (120, 120, [3, 5, 7, 9], 1, 3, 'swish', 2),
+                        (120, 200, [3, 5, 7, 9, 11], 2, 6, 'swish', 2),
+                        (200, 200, [3, 5, 7, 9], 1, 6, 'swish', 2),
+                        (200, 200, [3, 5, 7, 9], 1, 6, 'swish', 2)]
+
+        self.mixnet_m = [(24, 24, [3], 1, 1, 'relu', 0),
+                        (24, 32, [3, 5, 7], 2, 6, 'relu', 0),
+                        (32, 32, [3], 1, 3, 'relu', 0),
+                        (32, 40, [3, 5, 7, 9], 2, 6, 'swish', 2),
+                        (40, 40, [3, 5], 1, 6, 'swish', 2),
+                        (40, 40, [3, 5], 1, 6, 'swish', 2),
+                        (40, 40, [3, 5], 1, 6, 'swish', 2),
+                        (40, 80, [3, 5, 7], 2, 6, 'swish', 4),
+                        (80, 80, [3, 5, 7, 9], 1, 6, 'swish', 4),
+                        (80, 80, [3, 5, 7, 9], 1, 6, 'swish', 4),
+                        (80, 80, [3, 5, 7, 9], 1, 6, 'swish', 4),
+                        (80, 120, [3], 1, 6, 'swish', 2),
+                        (120, 120, [3, 5, 7, 9], 1, 3, 'swish', 2),
+                        (120, 120, [3, 5, 7, 9], 1, 3, 'swish', 2),
+                        (120, 120, [3, 5, 7, 9], 1, 3, 'swish', 2),
+                        (120, 200, [3, 5, 7, 9], 2, 6, 'swish', 2),
+                        (200, 200, [3, 5, 7, 9], 1, 6, 'swish', 2),
+                        (200, 200, [3, 5, 7, 9], 1, 6, 'swish', 2),
+                        (200, 200, [3, 5, 7, 9], 1, 6, 'swish', 2)]
+
+        self.mixnet_l = [(24, 24, [3], 1, 1, 'relu', 0),
+                        (24, 32, [3, 5, 7], 2, 6, 'relu', 0),
+                        (32, 32, [3], 1, 3, 'relu', 0),
+                        (32, 40, [3, 5, 7, 9], 2, 6, 'swish', 2),
+                        (40, 40, [3, 5], 1, 6, 'swish', 2),
+                        (40, 40, [3, 5], 1, 6, 'swish', 2),
+                        (40, 40, [3, 5], 1, 6, 'swish', 2),
+                        (40, 80, [3, 5, 7], 2, 6, 'swish', 4),
+                        (80, 80, [3, 5, 7, 9], 1, 6, 'swish', 4),
+                        (80, 80, [3, 5, 7, 9], 1, 6, 'swish', 4),
+                        (80, 80, [3, 5, 7, 9], 1, 6, 'swish', 4),
+                        (80, 120, [3], 1, 6, 'swish', 2),
+                        (120, 120, [3, 5, 7, 9], 1, 3, 'swish', 2),
+                        (120, 120, [3, 5, 7, 9], 1, 3, 'swish', 2),
+                        (120, 120, [3, 5, 7, 9], 1, 3, 'swish', 2),
+                        (120, 200, [3, 5, 7, 9], 2, 6, 'swish', 2),
+                        (200, 200, [3, 5, 7, 9], 1, 6, 'swish', 2),
+                        (200, 200, [3, 5, 7, 9], 1, 6, 'swish', 2),
+                        (200, 200, [3, 5, 7, 9], 1, 6, 'swish', 2)]
 
         self.norm_kwargs = norm_kwargs if norm_kwargs is not None else {}
         if use_global_stats:
@@ -365,22 +364,11 @@ class MixNet(HybridBlock):
             dropout_rate = 0.25
         elif net_type == 'mixnet_l':
             config = self.mixnet_l
-            print('mixnet_l config_1:', config)
-            stem_channels = 24
-            dropout_rate = 0.25
-        else:
-            raise TypeError('Unsupported MixNet type')
-
-        assert input_size % 32 == 0
-
-        # depth multiplier
-        if net_type == 'mixnet_l':
-            print('iiiiiiiiiiiiiiiiiiiiiiiiiiiiii')
-            print('stem_channels_1:', stem_channels)
             depth_multiplier *= 1.3
-            stem_channels = _round_filters(stem_channels * depth_multiplier)
-            print('stem_channels_2:', stem_channels)
-            print('mixnet_l config_2:', config)
+            print('mixnet_l config_1:', config)
+            # stem_channels = 24
+            stem_channels = _round_filters(24 * depth_multiplier)
+            dropout_rate = 0.25
             for i, conf in enumerate(config):
                 print('ffffffffffffffffffffffffffff')
                 conf_ls = list(conf)
@@ -391,6 +379,29 @@ class MixNet(HybridBlock):
                 print('conf_ls[0]_2:', conf_ls[0])
                 print('conf_ls[1]_2:', conf_ls[1])
                 config[i] = tuple(conf_ls)
+        else:
+            raise TypeError('Unsupported MixNet type')
+
+        assert input_size % 32 == 0
+
+        # # depth multiplier
+        # if net_type == 'mixnet_l':
+        #     # print('iiiiiiiiiiiiiiiiiiiiiiiiiiiiii')
+        #     # print('stem_channels_1:', stem_channels)
+        #     # depth_multiplier *= 1.3
+        #     # stem_channels = _round_filters(stem_channels * depth_multiplier)
+        #     # print('stem_channels_2:', stem_channels)
+        #     # print('mixnet_l config_2:', config)
+        #     for i, conf in enumerate(config):
+        #         print('ffffffffffffffffffffffffffff')
+        #         conf_ls = list(conf)
+        #         print('conf_ls[0]_1:', conf_ls[0])
+        #         print('conf_ls[1]_1:', conf_ls[1])
+        #         conf_ls[0] = _round_filters(conf_ls[0] * depth_multiplier)
+        #         conf_ls[1] = _round_filters(conf_ls[1] * depth_multiplier)
+        #         print('conf_ls[0]_2:', conf_ls[0])
+        #         print('conf_ls[1]_2:', conf_ls[1])
+        #         config[i] = tuple(conf_ls)
 
         print('net_type', net_type)
         print('self.config', config)
