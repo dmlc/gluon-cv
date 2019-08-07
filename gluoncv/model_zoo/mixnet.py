@@ -336,15 +336,15 @@ class MixNet(HybridBlock):
 
         # net type
         if net_type == 'mixnet_s':
-            self.config = mixnet_s
+            self.config = self.mixnet_s
             stem_channels = 16
             dropout_rate = 0.2
         elif net_type == 'mixnet_m':
-            self.config = mixnet_m
+            self.config = self.mixnet_m
             stem_channels = 24
             dropout_rate = 0.25
         elif net_type == 'mixnet_l':
-            self.config = mixnet_m
+            self.config = self.mixnet_m
             stem_channels = 24
             dropout_rate = 0.25
         else:
