@@ -72,7 +72,7 @@ def _split_channels(total_filters, num_groups):
 
 
 def _group_split(x, split_groups, axis=1):
-    """Split a tensor into arbitrary contiguous groups 
+    """Split a tensor into arbitrary contiguous groups
        along the specified dimension.
     """
     x_splits = []
@@ -158,14 +158,15 @@ class MDConv(HybridBlock):
         self.mix_dw_conv = nn.HybridSequential()
         with self.mix_dw_conv.name_scope():
              for i in range(self.num_groups):
-                  self.mix_dw_conv.add(nn.Conv2D(channels=self.split_channels[i], \
-                                                 kernel_size=kernel_size[i], \
-                                                 strides=stride, \
-                                                 padding=kernel_size[i]//2, \
-                                                 groups=self.split_channels[i], \
-                                                 use_bias=False))
+                self.mix_dw_conv.add(nn.Conv2D(channels=self.split_channels[i], \
+                                                kernel_size=kernel_size[i], \
+                                                strides=stride, \
+                                                padding=kernel_size[i]//2, \
+                                                groups=self.split_channels[i], \
+                                                use_bias=False))
 
     def hybrid_forward(self, F, x):
+        """Mixed Depthwise Convolution."""
         if self.num_groups == 1:
             return self.mix_dw_conv[0](x)
         # For unequal arbitrary contiguous groups.
@@ -209,7 +210,7 @@ class MixNetBlock(HybridBlock):
         Additional `norm_layer` arguments, for example `num_devices=4`
         for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     use_global_stats: bool, default False
-        Whether use global moving statistics instead of local batch-norm. 
+        Whether use global moving statistics instead of local batch-norm.
         This will force change batch-norm into a scale shift operator.
     """
     def __init__(self, in_channels, out_channels, kernel_size, stride, \
@@ -225,7 +226,7 @@ class MixNetBlock(HybridBlock):
         expand = (expand_ratio != 1)
         expand_channels = in_channels * expand_ratio
         se = (se_ratio != 0)
-        self.residual_connection = (stride == 1 and in_channels == out_channels)  
+        self.residual_connection = (stride == 1 and in_channels == out_channels)
 
         self.body = nn.HybridSequential(prefix='')
         if expand:
@@ -279,7 +280,7 @@ class MixNet(HybridBlock):
         Additional `norm_layer` arguments, for example `num_devices=4`
         for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     use_global_stats: bool, default False
-        Whether use global moving statistics instead of local batch-norm. 
+        Whether use global moving statistics instead of local batch-norm.
         This will force change batch-norm into a scale shift operator.
     """
 
@@ -349,7 +350,7 @@ class MixNet(HybridBlock):
             raise TypeError('Unsupported MixNet type')
 
         assert input_size % 32 == 0
-        
+
         # depth multiplier
         if depth_multiplier != 1.0:
             stem_channels = _round_filters(stem_channels * depth_multiplier)
