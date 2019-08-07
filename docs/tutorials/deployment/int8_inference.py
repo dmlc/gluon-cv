@@ -13,7 +13,7 @@ GluonCV delivered some quantized models to improve the performance and reduce th
 
 Please checkout `verify_pretrained.py <https://raw.githubusercontent.com/dmlc/gluon-cv/master/scripts/classification/imagenet/verify_pretrained.py>`_ for imagenet inference,
 `eval_ssd.py <https://raw.githubusercontent.com/dmlc/gluon-cv/master/scripts/detection/ssd/eval_ssd.py>`_ for SSD inference, and `test.py <https://raw.githubusercontent.com/dmlc/gluon-cv/master/scripts/segmentation/test.py>`_ 
-for FCN inference.
+for segmentation inference.
 
 Performance
 -----------
@@ -22,7 +22,7 @@ GluonCV supports some quantized classification models, detection models and segm
 For the throughput, the target is to achieve the maximum machine efficiency to combine the inference requests together and get the results by one iteration. From the bar-chart, it is clearly that the fusion and quantization approach improved the throughput from 3.22X to 7.24X for selected models.
 Below CPU performance is collected with dummy input from AWS EC2 C5.24xlarge instance with 24 physical cores.
 
-.. figure:: https://user-images.githubusercontent.com/17897736/60255306-62129200-9884-11e9-96de-3f145be70431.png
+.. figure:: https://user-images.githubusercontent.com/34727741/62588541-9e5ff600-b8f8-11e9-94dc-dfe15907a6e9.png
    :alt: Gluon Quantization Performance
 
    Gluon Quantization Performance
@@ -42,9 +42,9 @@ Below CPU performance is collected with dummy input from AWS EC2 C5.24xlarge ins
 +-----------------------+----------+------------+------------------+------------------+---------+-----------------+-----------------+
 | SSD-mobilenet1.0 512* | VOC      | 224        | 65.97            | 212.59           | 3.22    | 75.42           | 74.70           |
 +-----------------------+----------+------------+------------------+------------------+---------+-----------------+-----------------+
-| FCN_resnet101         | VOC      | 1          | 5.09             | 21.12            | 4.15    | 97.97%          | 95.71%          |
+| FCN_resnet101         | VOC      | 1          | 5.09             | 21.12            | 4.15    | 97.97%          | 96.53%          |
 +-----------------------+----------+------------+------------------+------------------+---------+-----------------+-----------------+
-| FCN_resnet101         | COCO     | 1          | 5.10             | 25.98            | 5.09    | 91.28%          | 90.10%          |
+| FCN_resnet101         | COCO     | 1          | 5.10             | 25.98            | 5.09    | 91.28%          | 90.96%          |
 +-----------------------+----------+------------+------------------+------------------+---------+-----------------+-----------------+
 
 
