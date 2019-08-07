@@ -375,13 +375,19 @@ class MixNet(HybridBlock):
         # depth multiplier
         if net_type == 'mixnet_l':
             print('iiiiiiiiiiiiiiiiiiiiiiiiiiiiii')
+            print('stem_channels_1:', stem_channels)
             depth_multiplier *= 1.3
             stem_channels = _round_filters(stem_channels * depth_multiplier)
+            print('stem_channels_2:', stem_channels)
             for i, conf in enumerate(config):
                 print('ffffffffffffffffffffffffffff')
                 conf_ls = list(conf)
+                print('conf_ls[0]_1:', conf_ls[0])
+                print('conf_ls[1]_1:', conf_ls[1])
                 conf_ls[0] = _round_filters(conf_ls[0] * depth_multiplier)
                 conf_ls[1] = _round_filters(conf_ls[1] * depth_multiplier)
+                print('conf_ls[0]_2:', conf_ls[0])
+                print('conf_ls[1]_2:', conf_ls[1])
                 config[i] = tuple(conf_ls)
 
         print('net_type', net_type)
