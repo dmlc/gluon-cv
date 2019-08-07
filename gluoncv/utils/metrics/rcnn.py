@@ -10,6 +10,7 @@ class RPNAccMetric(mx.metric.EvalMetric):
         super(RPNAccMetric, self).__init__('RPNAcc')
 
     def update(self, labels, preds):
+        """ Updates the internal evaluation result. """
         # label: [rpn_label, rpn_weight]
         # preds: [rpn_cls_logits]
         rpn_label, rpn_weight = labels
@@ -34,6 +35,7 @@ class RPNL1LossMetric(mx.metric.EvalMetric):
         super(RPNL1LossMetric, self).__init__('RPNL1Loss')
 
     def update(self, labels, preds):
+        """ Updates the internal evaluation result. """
         # label = [rpn_bbox_target, rpn_bbox_weight]
         # pred = [rpn_bbox_reg]
         rpn_bbox_target, rpn_bbox_weight = labels
@@ -57,6 +59,7 @@ class RCNNAccMetric(mx.metric.EvalMetric):
         super(RCNNAccMetric, self).__init__('RCNNAcc')
 
     def update(self, labels, preds):
+        """ Updates the internal evaluation result. """
         # label = [rcnn_label]
         # pred = [rcnn_cls]
         rcnn_label = labels[0]
@@ -77,6 +80,7 @@ class RCNNL1LossMetric(mx.metric.EvalMetric):
         super(RCNNL1LossMetric, self).__init__('RCNNL1Loss')
 
     def update(self, labels, preds):
+        """ Updates the internal evaluation result. """
         # label = [rcnn_bbox_target, rcnn_bbox_weight]
         # pred = [rcnn_reg]
         rcnn_bbox_target, rcnn_bbox_weight = labels
@@ -100,6 +104,7 @@ class MaskAccMetric(mx.metric.EvalMetric):
         super(MaskAccMetric, self).__init__('MaskAcc')
 
     def update(self, labels, preds):
+        """ Updates the internal evaluation result. """
         # label = [rcnn_mask_target, rcnn_mask_weight]
         # pred = [rcnn_mask]
         rcnn_mask_target, rcnn_mask_weight = labels
@@ -125,9 +130,10 @@ class MaskFGAccMetric(mx.metric.EvalMetric):
         super(MaskFGAccMetric, self).__init__('MaskFGAcc')
 
     def update(self, labels, preds):
+        """ Updates the internal evaluation result. """
         # label = [rcnn_mask_target, rcnn_mask_weight]
         # pred = [rcnn_mask]
-        rcnn_mask_target, rcnn_mask_weight = labels
+        rcnn_mask_target, _ = labels
         rcnn_mask = preds[0]
 
         # calculate num_inst
