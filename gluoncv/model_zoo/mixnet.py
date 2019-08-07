@@ -68,6 +68,9 @@ def _split_channels(total_filters, num_groups):
     """Get groups list."""
     split_channels = [total_filters // num_groups for _ in range(num_groups)]
     split_channels[0] += total_filters - sum(split_channels)
+    print('total_filters:', total_filters)
+    print('num_groups:', num_groups)
+    print('split_channels:', split_channels)
     return split_channels
 
 
