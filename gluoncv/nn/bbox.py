@@ -59,7 +59,7 @@ class BBoxCornerToCenter(gluon.HybridBlock):
      A BxNx4 NDArray if split is False, or 4 BxNx1 NDArray if split is True
     """
 
-    def __init__(self, axis=-1, split=False, boundary_mode=0.0):
+    def __init__(self, axis=-1, split=False):
         super(BBoxCornerToCenter, self).__init__()
         self._split = split
         self._axis = axis
