@@ -324,6 +324,26 @@ class MixNet(HybridBlock):
                 (200, 200, [3, 5, 7, 9], 1, 6, 'swish', 2),
                 (200, 200, [3, 5, 7, 9], 1, 6, 'swish', 2)]
 
+    mixnet_l = [(24, 24, [3], 1, 1, 'relu', 0),
+                (24, 32, [3, 5, 7], 2, 6, 'relu', 0),
+                (32, 32, [3], 1, 3, 'relu', 0),
+                (32, 40, [3, 5, 7, 9], 2, 6, 'swish', 2),
+                (40, 40, [3, 5], 1, 6, 'swish', 2),
+                (40, 40, [3, 5], 1, 6, 'swish', 2),
+                (40, 40, [3, 5], 1, 6, 'swish', 2),
+                (40, 80, [3, 5, 7], 2, 6, 'swish', 4),
+                (80, 80, [3, 5, 7, 9], 1, 6, 'swish', 4),
+                (80, 80, [3, 5, 7, 9], 1, 6, 'swish', 4),
+                (80, 80, [3, 5, 7, 9], 1, 6, 'swish', 4),
+                (80, 120, [3], 1, 6, 'swish', 2),
+                (120, 120, [3, 5, 7, 9], 1, 3, 'swish', 2),
+                (120, 120, [3, 5, 7, 9], 1, 3, 'swish', 2),
+                (120, 120, [3, 5, 7, 9], 1, 3, 'swish', 2),
+                (120, 200, [3, 5, 7, 9], 2, 6, 'swish', 2),
+                (200, 200, [3, 5, 7, 9], 1, 6, 'swish', 2),
+                (200, 200, [3, 5, 7, 9], 1, 6, 'swish', 2),
+                (200, 200, [3, 5, 7, 9], 1, 6, 'swish', 2)]
+
     def __init__(self, net_type='mixnet_s', input_size=224, input_channels=3, \
                  stem_channels=16, feature_size=1536, num_classes=1000, \
                  depth_multiplier=1.0, norm_layer=BatchNorm, \
@@ -336,15 +356,15 @@ class MixNet(HybridBlock):
 
         # net type
         if net_type == 'mixnet_s':
-            self.config = self.mixnet_s
+            config = self.mixnet_s
             stem_channels = 16
             dropout_rate = 0.2
         elif net_type == 'mixnet_m':
-            self.config = self.mixnet_m
+            config = self.mixnet_m
             stem_channels = 24
             dropout_rate = 0.25
         elif net_type == 'mixnet_l':
-            self.config = self.mixnet_m
+            config = self.mixnet_l
             stem_channels = 24
             dropout_rate = 0.25
         else:
@@ -357,15 +377,15 @@ class MixNet(HybridBlock):
             print('iiiiiiiiiiiiiiiiiiiiiiiiiiiiii')
             depth_multiplier *= 1.3
             stem_channels = _round_filters(stem_channels * depth_multiplier)
-            for i, conf in enumerate(self.config):
+            for i, conf in enumerate(config):
                 print('ffffffffffffffffffffffffffff')
                 conf_ls = list(conf)
                 conf_ls[0] = _round_filters(conf_ls[0] * depth_multiplier)
                 conf_ls[1] = _round_filters(conf_ls[1] * depth_multiplier)
-                self.config[i] = tuple(conf_ls)
+                config[i] = tuple(conf_ls)
 
         print('net_type', net_type)
-        print('self.config', self.config)
+        print('self.config', config)
 
         # stem convolution
         self.stem_conv = nn.HybridSequential(prefix='')
@@ -375,13 +395,13 @@ class MixNet(HybridBlock):
 
         # building MixNet blocks
         self.mix_layers = nn.HybridSequential(prefix='')
-        for in_chs, out_chs, k_size, s, exp_ratio, act_type, se_ratio in self.config:
+        for in_chs, out_chs, k_size, s, exp_ratio, act_type, se_ratio in config:
             self.mix_layers.add(MixNetBlock(in_chs, out_chs, k_size, s, \
                                             exp_ratio, act_type, se_ratio))
 
         # head layers
         self.head_layers = nn.HybridSequential(prefix='')
-        self.head_layers.add(_conv1x1(self.config[-1][1], feature_size))
+        self.head_layers.add(_conv1x1(config[-1][1], feature_size))
         self.head_layers.add(norm_layer(in_channels=feature_size, **(self.norm_kwargs)))
         self.head_layers.add(Activation('relu'))
         self.head_layers.add(nn.GlobalAvgPool2D())
