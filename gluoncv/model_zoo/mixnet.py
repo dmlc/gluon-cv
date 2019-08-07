@@ -365,6 +365,7 @@ class MixNet(HybridBlock):
             dropout_rate = 0.25
         elif net_type == 'mixnet_l':
             config = self.mixnet_l
+            print('mixnet_l config_1:', config)
             stem_channels = 24
             dropout_rate = 0.25
         else:
@@ -379,6 +380,7 @@ class MixNet(HybridBlock):
             depth_multiplier *= 1.3
             stem_channels = _round_filters(stem_channels * depth_multiplier)
             print('stem_channels_2:', stem_channels)
+            print('mixnet_l config_2:', config)
             for i, conf in enumerate(config):
                 print('ffffffffffffffffffffffffffff')
                 conf_ls = list(conf)
