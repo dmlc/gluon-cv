@@ -68,9 +68,9 @@ def _split_channels(total_filters, num_groups):
     """Get groups list."""
     split_channels = [total_filters // num_groups for _ in range(num_groups)]
     split_channels[0] += total_filters - sum(split_channels)
-    print('total_filters:', total_filters)
-    print('num_groups:', num_groups)
-    print('split_channels:', split_channels)
+    # print('total_filters:', total_filters)
+    # print('num_groups:', num_groups)
+    # print('split_channels:', split_channels)
     return split_channels
 
 
@@ -372,6 +372,9 @@ class MixNet(HybridBlock):
         self.stem_conv.add(_conv3x3(input_channels, stem_channels, stride=2))
         self.stem_conv.add(norm_layer(in_channels=stem_channels, **(self.norm_kwargs)))
         self.stem_conv.add(Activation('relu'))
+
+        print('net_type:', net_type)
+        print('config:', config)
 
         # building MixNet blocks
         self.mix_layers = nn.HybridSequential(prefix='')
