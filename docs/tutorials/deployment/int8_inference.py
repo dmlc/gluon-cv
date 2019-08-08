@@ -122,6 +122,7 @@ Calibration Tool
 GluonCV also delievered calibration tool for users to quantize their models into int8 with their own dataset. Currently, calibration tool only support hybridized gluon models. Below is a example of quantizing SSD model.
 
 .. code:: bash
+
    # Calibration
    python eval_ssd.py --network=mobilenet1.0 --data-shape=512 --batch-size=224 --dataset=voc --calibration --num-calib-batches=5 --calib-mode=naive
    # INT8 Inference
@@ -150,7 +151,8 @@ API:
                   Defines the structure of a neural network for FP32 data types.
       quantized_dtype : str
                   The quantized destination type for input data. Currently support 'int8'
-                  , 'uint8' and 'auto'. 'auto' means automatically select output type according to calibration result.
+                  , 'uint8' and 'auto'.
+                  'auto' means automatically select output type according to calibration result.
                   Default value is 'int8'.
       exclude_layers : list of strings
                   A list of strings representing the names of the symbols that users want to excluding
@@ -177,8 +179,8 @@ API:
                   otherwise, no information of the layer's output will be collected. If not provided,
                   all the layers' outputs that need requantization will be collected.
       num_calib_examples : int or None
-                  The maximum number of examples that user would like to use for calibration. If not provided,
-                  the whole calibration dataset will be used.
+                  The maximum number of examples that user would like to use for calibration.
+                  If not provided, the whole calibration dataset will be used.
       ctx : Context
                   Defines the device that users want to run forward propagation on the calibration
                   dataset for collecting layer output statistics. Currently, only supports single context.
