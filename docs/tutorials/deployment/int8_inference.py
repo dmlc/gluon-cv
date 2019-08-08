@@ -119,7 +119,7 @@ Usage:
 Calibration Tool
 ----------------
 
-GluonCV also delievered calibration tool for users to quantize their models into int8 with their own dataset. Currently, calibration tool only support hybridized gluon models. Below is a example of quantizing SSD model.
+GluonCV also delivered calibration tool for users to quantize their models into int8 with their own dataset. Currently, calibration tool only supports hybridized gluon models. Below is an example of quantizing SSD model.
 
 .. code:: bash
 
