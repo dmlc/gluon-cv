@@ -1,4 +1,5 @@
 import os
+import logging
 from tqdm import tqdm
 import numpy as np
 import argparse
@@ -8,6 +9,7 @@ import sys
 import mxnet as mx
 from mxnet import gluon, ndarray as nd
 from mxnet.gluon.data.vision import transforms
+from mxnet.contrib.quantization import *
 
 import gluoncv
 from gluoncv.model_zoo.segbase import *
@@ -18,10 +20,14 @@ from gluoncv.utils.viz import get_color_pallete
 def parse_args():
     parser = argparse.ArgumentParser(description='Validation on Segmentation model')
     # model and dataset
-    parser.add_argument('--model', type=str, default='fcn',
-                        help='model name (default: fcn)')
+    parser.add_argument('--network', type=str, default='fcn',
+                        help='network name (default: fcn)')
     parser.add_argument('--backbone', type=str, default='resnet101',
                         help='base network')
+    parser.add_argument('--deploy', action='store_true',
+                        help='whether load static model for deployment')
+    parser.add_argument('--model-prefix', type=str, required=False,
+                        help='load static model as hybridblock.')
     parser.add_argument('--image-shape', type=int, default=480,
                         help='image shape')
     parser.add_argument('--base-size', type=int, default=520,
@@ -33,8 +39,8 @@ def parse_args():
     parser.add_argument('--dataset', type=str, default='pascal_voc',
                         help='dataset used for validation [pascal_voc, pascal_aug, coco, ade20k]')
     parser.add_argument('--quantized', action='store_true', 
-                        help='whether to use quantized model')
-    parser.add_argument('--batch-size', type=int, default=16)
+                        help='whether to use int8 pretrained  model')
+    parser.add_argument('--batch-size', type=int, default=32)
     parser.add_argument('--num-iterations', type=int, default=100,
                         help='number of benchmarking iterations.')
     parser.add_argument('--workers', type=int, default=4,
@@ -57,6 +63,27 @@ def parse_args():
     # dummy benchmark
     parser.add_argument('--benchmark', action='store_true', default=False,
                         help='whether to use dummy data for benchmark')
+    # calibration
+    parser.add_argument('--calibration', action='store_true',
+                        help='quantize model')
+    parser.add_argument('--num-calib-batches', type=int, default=5,
+                        help='number of batches for calibration')
+    parser.add_argument('--quantized-dtype', type=str, default='auto', 
+                        choices=['auto', 'int8', 'uint8'],
+                        help='quantization destination data type for input data')
+    parser.add_argument('--calib-mode', type=str, default='naive',
+                        help='calibration mode used for generating calibration table for the quantized symbol; supports'
+                             ' 1. none: no calibration will be used. The thresholds for quantization will be calculated'
+                             ' on the fly. This will result in inference speed slowdown and loss of accuracy'
+                             ' in general.'
+                             ' 2. naive: simply take min and max values of layer outputs as thresholds for'
+                             ' quantization. In general, the inference accuracy worsens with more examples used in'
+                             ' calibration. It is recommended to use `entropy` mode as it produces more accurate'
+                             ' inference results.'
+                             ' 3. entropy: calculate KL divergence of the fp32 output and quantized output for optimal'
+                             ' thresholds. This mode is expected to produce the best inference accuracy of all three'
+                             ' kinds of quantized models if the calibration dataset is representative enough of the'
+                             ' inference dataset.')
 
     args = parser.parse_args()
     
@@ -69,7 +96,7 @@ def parse_args():
     return args
     
 
-def test(model, args, input_transform):
+def test(net, args, input_transform):
     # output folder
     outdir = 'outdir'
     if not os.path.exists(outdir):
@@ -86,8 +113,8 @@ def test(model, args, input_transform):
     test_data = gluon.data.DataLoader(
         testset, args.batch_size, shuffle=False, last_batch='keep',
         batchify_fn=ms_batchify_fn, num_workers=args.workers)
-    print(model)
-    evaluator = MultiEvalModel(model, testset.num_class, ctx_list=args.ctx)
+    print(net)
+    evaluator = MultiEvalModel(net, testset.num_class, ctx_list=args.ctx)
     metric = gluoncv.utils.metrics.SegmentationMetric(testset.num_class)
 
     tbar = tqdm(test_data)
@@ -110,28 +137,13 @@ def test(model, args, input_transform):
                 mask.save(os.path.join(outdir, outname))
 
 
-def test_quantization(model, args, input_transform):
+def test_quantization(net, args, test_data, size, num_class, pred_offset):
     # output folder
     outdir = 'outdir_int8'
     if not os.path.exists(outdir):
         os.makedirs(outdir)
-    # hybridize
-    model.hybridize(static_alloc=True, static_shape=True)
-
-    # get dataset
-    if args.eval:
-        testset = get_segmentation_dataset(
-            args.dataset, split='val', mode=args.mode, transform=input_transform)
-    else:
-        testset = get_segmentation_dataset(
-            args.dataset, split='test', mode=args.mode, transform=input_transform)
-    size = len(testset)
-    batchify_fn = ms_batchify_fn if testset.mode == 'test' else None
-    test_data = gluon.data.DataLoader(
-            testset, args.batch_size, batchify_fn=batchify_fn, last_batch='keep',
-            shuffle=False, num_workers=args.workers)
-    print(model)
-    metric = gluoncv.utils.metrics.SegmentationMetric(testset.num_class)
+    print(net)
+    metric = gluoncv.utils.metrics.SegmentationMetric(num_class)
 
     tbar = tqdm(test_data)
     metric.reset()
@@ -142,7 +154,7 @@ def test_quantization(model, args, input_transform):
             data = mx.gluon.utils.split_and_load(batch, ctx_list=args.ctx, batch_axis=0, even_split=False)
             outputs = None
             for x in data:
-                output = model(x)
+                output = net(x)
                 outputs = output if outputs is None else nd.concat(outputs, output, axis=0)
             metric.update(targets, outputs)
             pixAcc, mIoU = metric.get()
@@ -152,9 +164,8 @@ def test_quantization(model, args, input_transform):
                 data = data.as_in_context(args.ctx[0])
                 if len(data.shape) < 4:
                     data = nd.expand_dims(data, axis=0)
-                predict = model(data)[0]
-                predict = mx.nd.squeeze(mx.nd.argmax(predict, 1)).asnumpy() + \
-                    testset.pred_offset
+                predict = net(data)[0]
+                predict = mx.nd.squeeze(mx.nd.argmax(predict, 1)).asnumpy() + pred_offset
                 mask = get_color_pallete(predict, args.dataset)
                 outname = os.path.splitext(impath)[0] + '.png'
                 mask.save(os.path.join(outdir, outname))
@@ -162,12 +173,7 @@ def test_quantization(model, args, input_transform):
     print('Inference speed with batchsize %d is %.2f img/sec' % (args.batch_size, speed))
 
 
-def benchmarking(model, args):
-    if args.quantized:
-        model.hybridize(static_alloc=True, static_shape=True)
-    else:
-        model.hybridize()
-    
+def benchmarking(net, args):
     bs = args.batch_size
     num_iterations = args.num_iterations
     input_shape = (bs, 3, args.image_shape, args.image_shape)
@@ -178,7 +184,7 @@ def benchmarking(model, args):
         for n in range(dry_run + num_iterations):
             if n == dry_run:
                 tic = time.time()
-            outputs = model(data)
+            outputs = net(data)
             for output in outputs:
                 output.wait_to_read()
             pbar.update(bs)
@@ -188,56 +194,110 @@ def benchmarking(model, args):
 
 if __name__ == "__main__":
     args = parse_args()
+    logging.basicConfig()
+    logger = logging.getLogger('logger')
+    logger.setLevel(logging.INFO)
+    logging.info(args)
 
     withQuantization = False
-    model_prefix = args.model + '_' + args.backbone
+    net_name = args.network + '_' + args.backbone
     if 'pascal' in args.dataset:
-        model_prefix += '_voc'
+        net_name += '_voc'
         withQuantization = True if (args.backbone in ['resnet101'] and args.ngpus == 0) else withQuantization
     elif args.dataset == 'coco':
-        model_prefix += '_coco'
+        net_name += '_coco'
         withQuantization = True if (args.backbone in ['resnet101'] and args.ngpus == 0) else withQuantization
     elif args.dataset == 'ade20k':
-        model_prefix += 'ade'
+        net_name += 'ade'
     elif args.dataset == 'citys':
-        model_prefix += 'citys'
+        net_name += 'citys'
     else:
         raise ValueError('Unsupported dataset {} used'.format(args.dataset))
 
     if withQuantization and args.quantized:
-        model_prefix += '_int8'
+        net_name += '_int8'
 
-    # create network
-    if args.pretrained:
-        model = get_model(model_prefix, pretrained=True)
-        model.collect_params().reset_ctx(ctx=args.ctx)
-    else:
-        assert "_in8" not in model_prefix, "Currently, Int8 models are not supported when pretrained=False"
-        model = get_segmentation_model(model=args.model, dataset=args.dataset, ctx=args.ctx,
-                                       backbone=args.backbone, norm_layer=args.norm_layer,
-                                       norm_kwargs=args.norm_kwargs, aux=args.aux,
-                                       base_size=args.base_size, crop_size=args.crop_size)
-        # load local pretrained weight
-        assert args.resume is not None, '=> Please provide the checkpoint using --resume'
-        if os.path.isfile(args.resume):
-            model.load_parameters(args.resume, ctx=args.ctx)
+    if not args.deploy:
+        if args.calibration:
+            args.pretrained = True
+        # create network
+        if args.pretrained:
+            net = get_model(net_name, pretrained=True)
+            net.collect_params().reset_ctx(ctx=args.ctx)
         else:
-            raise RuntimeError("=> no checkpoint found at '{}'" \
-                .format(args.resume))
+            assert "_in8" not in net_name, "Currently, Int8 models are not supported when pretrained=False"
+            net = get_segmentation_model(model=args.network, dataset=args.dataset, ctx=args.ctx,
+                                        backbone=args.backbone, norm_layer=args.norm_layer,
+                                        norm_kwargs=args.norm_kwargs, aux=args.aux,
+                                        base_size=args.base_size, crop_size=args.crop_size)
+            # load local pretrained weight
+            assert args.resume is not None, '=> Please provide the checkpoint using --resume'
+            if os.path.isfile(args.resume):
+                net.load_parameters(args.resume, ctx=args.ctx)
+            else:
+                raise RuntimeError("=> no checkpoint found at '{}'" \
+                    .format(args.resume))
+        if args.quantized:
+            net.hybridize(static_alloc=True, static_shape=True)
+        else:
+            net.hybridize()
+    else:
+        net_name = 'deploy_int8' if args.quantized else 'deploy'
+        net = mx.gluon.SymbolBlock.imports('{}-symbol.json'.format(args.model_prefix),
+              ['data'], '{}-0000.params'.format(args.model_prefix))
+        net.hybridize(static_alloc=True, static_shape=True)
 
-    print("Successfully loaded %s model" % model_prefix)
+    print("Successfully loaded %s model" % net_name)
     print('Testing model: ', args.resume)
+
+    # benchmark
+    if args.benchmark:
+        print('------benchmarking on %s model------' % net_name)
+        benchmarking(net, args)
+        sys.exit()
+
     # image transform
     input_transform = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize([.485, .456, .406], [.229, .224, .225]),
     ])
 
-    if not args.benchmark:
-        if '_int8' in model_prefix:
-            test_quantization(model, args, input_transform)
+    if args.calibration or '_int8' in net_name:
+        # get dataset
+        if args.eval:
+            testset = get_segmentation_dataset(
+                args.dataset, split='val', mode=args.mode, transform=input_transform)
         else:
-            test(model, args, input_transform)
+            testset = get_segmentation_dataset(
+                args.dataset, split='test', mode=args.mode, transform=input_transform)
+        size = len(testset)
+        batchify_fn = ms_batchify_fn if testset.mode == 'test' else None
+        # get dataloader
+        test_data = gluon.data.DataLoader(
+                testset, args.batch_size, batchify_fn=batchify_fn, last_batch='rollover',
+                shuffle=False, num_workers=args.workers)
+        
+        # calibration
+        if not args.quantized:
+            assert args.eval and args.mode == 'val', "Only val dataset can used for calibration."
+            exclude_sym_layer = []
+            exclude_match_layer = []
+            if args.ngpus > 0:
+                raise ValueError('currently only supports CPU with MKL-DNN backend')
+            net = quantize_net(net, calib_data=test_data, quantized_dtype=args.quantized_dtype, calib_mode=args.calib_mode, 
+                               exclude_layers=exclude_sym_layer, num_calib_examples=args.batch_size * args.num_calib_batches,
+                               exclude_layers_match=exclude_match_layer, ctx=args.ctx[0], logger=logger)
+            dir_path = os.path.dirname(os.path.realpath(__file__))
+            dst_dir = os.path.join(dir_path, 'model')
+            if not os.path.isdir(dst_dir):
+                os.mkdir(dst_dir)
+            prefix = os.path.join(dst_dir, net_name + '-quantized-' + args.calib_mode)
+            logger.info('Saving quantized model at %s' % dst_dir)
+            net.export(prefix, epoch=0)
+            sys.exit()
+    
+    # validation
+    if '_int8' in net_name:
+        test_quantization(net, args, test_data, size, testset.num_class, testset.pred_offset)
     else:
-        print('-----benchmarking on %s -----' % model_prefix)
-        benchmarking(model, args)
+        test(net, args, input_transform)     
