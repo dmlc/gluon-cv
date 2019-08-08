@@ -1,7 +1,5 @@
 # Semantic Segmentation
 
-[GluonCV Model Zoo](http://gluon-cv.mxnet.io/model_zoo/index.html#semantic-segmentation)
-
 ## Inference/Calibration Tutorial
 
 ### FP32 inference
@@ -44,15 +42,16 @@ python test.py --network=fcn --backbone=resnet101 --mode=val --eval --batch-size
 # deploy int8 model
 python test.py --quantized --eval --deploy --model-prefix=./model/fcn_resnet101_voc-quantized-naive
 ```
-Uses also are recommended to bind processes to specific cores via `numactal` or `taskset` for better performance. 
+Users also are recommended to bind processes to specific cores via `numactal` or `taskset` for better performance. 
 
 ## Performance
 
 model | fp32 latency(ms) | s8 latency(ms) | fp32 pixAcc | s8 pixAcc
 -- | -- | -- | -- | -- |
-fcn_resnet101_voc   | | | | |
-fcn_resnet101_coco  | | | | |
+fcn_resnet101_voc   |182.91 |37.97 |97.97% |96.53%  |
+fcn_resnet101_coco  |192.65 |43.23 |91.28% |90.96%  |
 
+Please refer to [GluonCV Model Zoo](http://gluon-cv.mxnet.io/model_zoo/index.html#semantic-segmentation) for more avaliable pretrained models.
 
 ## References
 1. Long, Jonathan, Evan Shelhamer, and Trevor Darrell. “Fully convolutional networks for semantic segmentation.” CVPR 2015.
