@@ -22,8 +22,6 @@
 from __future__ import division
 
 import numpy as np
-# import mxnet as mx
-# from mxnet import nd
 from mxnet.gluon import nn
 from mxnet.gluon.nn import BatchNorm
 from mxnet.gluon.block import HybridBlock
@@ -78,12 +76,10 @@ def _group_split(x, split_groups, axis=1):
     x_splits = []
     begin = 0
     end = split_groups[0]
-    # x_splits.append(nd.slice_axis(x, begin=begin, end=end, axis=axis))
     x_splits.append(x.slice_axis(begin=begin, end=end, axis=axis))
     for i in range(1, len(split_groups)):
         begin += split_groups[i - 1]
         end += split_groups[i]
-        # x_splits.append(nd.slice_axis(x, begin=begin, end=end, axis=axis))
         x_splits.append(x.slice_axis(begin=begin, end=end, axis=axis))
     return x_splits
 
@@ -170,14 +166,7 @@ class MDConv(HybridBlock):
         if self.num_groups == 1:
             return self.mix_dw_conv[0](x)
 
-        # For unequal arbitrary contiguous groups.
         x_splits = _group_split(x, self.split_channels, axis=1)
-
-        # For equal contiguous groups.
-        # But the MDConv convolution param # is 0, debugging.
-        # x_splits = nd.split(x, num_outputs=self.num_groups, axis=1) # for NDArray data
-        # x_splits = x.split(num_outputs=self.num_groups, axis=1) # for Symbol data
-
         x = [conv(t) for conv, t in zip(self.mix_dw_conv, x_splits)]
         x = F.concat(*x, dim=1)
         return x
@@ -290,7 +279,7 @@ class MixNet(HybridBlock):
                  norm_kwargs=None, use_global_stats=False, **kwargs):
         super(MixNet, self).__init__(**kwargs)
 
-    # [in_channels, out_channels, kernel_size, stride, expand_ratio, act_type, se_ratio]
+        # [in_channels, out_channels, kernel_size, stride, expand_ratio, act_type, se_ratio]
         self.mixnet_s = [(16, 16, [3], 1, 1, 'relu', 0),
                          (16, 24, [3], 2, 6, 'relu', 0),
                          (24, 24, [3], 1, 3, 'relu', 0),
