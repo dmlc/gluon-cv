@@ -101,8 +101,12 @@ def parse_args():
     parser.add_argument('--horovod', action='store_true',
                         help='Use MXNet Horovod for distributed training. Must be run with OpenMPI. '
                              '--gpus is ignored when using --horovod.')
+    parser.add_argument('--executor-threads', type=int, default=1,
+                        help='Number of threads for executor for scheduling ops. '
+                             'More threads may incur higher GPU memory footprint, '
+                             'but may speed up throughput.')
     parser.add_argument('--kv-store', type=str, default='nccl',
-                        help='kv store options. local, device, nccl, dist_sync, dist_device_sync, '
+                        help='KV store options. local, device, nccl, dist_sync, dist_device_sync, '
                              'dist_async are available.')
 
     args = parser.parse_args()
@@ -360,7 +364,7 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
             net.hybridize(static_alloc=args.static_alloc)
         rcnn_task = ForwardBackwardTask(net, trainer, rpn_cls_loss, rpn_box_loss, rcnn_cls_loss,
                                         rcnn_box_loss, mix_ratio=1.0)
-        executor = Parallel(1 if args.horovod else len(ctx), rcnn_task)
+        executor = Parallel(1 if args.horovod else args.num_threads, rcnn_task)
         if args.mixup:
             # TODO(zhreshold) only support evenly mixup now, target generator needs to be modified otherwise
             train_data._dataset._data.set_mixup(np.random.uniform, 0.5, 0.5)
