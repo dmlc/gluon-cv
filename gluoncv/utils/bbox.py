@@ -3,6 +3,7 @@ from __future__ import division
 
 import numpy as np
 
+
 def bbox_iou(bbox_a, bbox_b, offset=0):
     """Calculate Intersection-Over-Union(IOU) of two bounding boxes.
 
@@ -35,8 +36,9 @@ def bbox_iou(bbox_a, bbox_b, offset=0):
     area_b = np.prod(bbox_b[:, 2:4] - bbox_b[:, :2] + offset, axis=1)
     return area_i / (area_a[:, None] + area_b - area_i)
 
+
 def bbox_xywh_to_xyxy(xywh):
-    """Convert bounding boxes from format (x, y, w, h) to (xmin, ymin, xmax, ymax)
+    """Convert bounding boxes from format (xmin, ymin, w, h) to (xmin, ymin, xmax, ymax)
 
     Parameters
     ----------
@@ -57,7 +59,7 @@ def bbox_xywh_to_xyxy(xywh):
             raise IndexError(
                 "Bounding boxes must have 4 elements, given {}".format(len(xywh)))
         w, h = np.maximum(xywh[2] - 1, 0), np.maximum(xywh[3] - 1, 0)
-        return (xywh[0], xywh[1], xywh[0] + w, xywh[1] + h)
+        return xywh[0], xywh[1], xywh[0] + w, xywh[1] + h
     elif isinstance(xywh, np.ndarray):
         if not xywh.size % 4 == 0:
             raise IndexError(
@@ -67,6 +69,7 @@ def bbox_xywh_to_xyxy(xywh):
     else:
         raise TypeError(
             'Expect input xywh a list, tuple or numpy.ndarray, given {}'.format(type(xywh)))
+
 
 def bbox_xyxy_to_xywh(xyxy):
     """Convert bounding boxes from format (xmin, ymin, xmax, ymax) to (x, y, w, h).
@@ -91,7 +94,7 @@ def bbox_xyxy_to_xywh(xyxy):
                 "Bounding boxes must have 4 elements, given {}".format(len(xyxy)))
         x1, y1 = xyxy[0], xyxy[1]
         w, h = xyxy[2] - x1 + 1, xyxy[3] - y1 + 1
-        return (x1, y1, w, h)
+        return x1, y1, w, h
     elif isinstance(xyxy, np.ndarray):
         if not xyxy.size % 4 == 0:
             raise IndexError(
@@ -100,6 +103,7 @@ def bbox_xyxy_to_xywh(xyxy):
     else:
         raise TypeError(
             'Expect input xywh a list, tuple or numpy.ndarray, given {}'.format(type(xyxy)))
+
 
 def bbox_clip_xyxy(xyxy, width, height):
     """Clip bounding box with format (xmin, ymin, xmax, ymax) to specified boundary.
@@ -131,7 +135,7 @@ def bbox_clip_xyxy(xyxy, width, height):
         y1 = np.minimum(height - 1, np.maximum(0, xyxy[1]))
         x2 = np.minimum(width - 1, np.maximum(0, xyxy[2]))
         y2 = np.minimum(height - 1, np.maximum(0, xyxy[3]))
-        return (x1, y1, x2, y2)
+        return x1, y1, x2, y2
     elif isinstance(xyxy, np.ndarray):
         if not xyxy.size % 4 == 0:
             raise IndexError(

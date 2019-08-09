@@ -3,6 +3,7 @@ from __future__ import absolute_import
 
 from mxnet import autograd
 from mxnet import gluon
+
 from ...nn.bbox import BBoxCornerToCenter, BBoxClipToImage
 from ...nn.coder import NormalizedBoxCenterDecoder
 
@@ -11,7 +12,7 @@ class RPNProposal(gluon.HybridBlock):
     """Proposal generator for RPN.
 
     RPNProposal takes RPN anchors, RPN prediction scores and box regression predictions.
-    It will transform anchors, apply NMS to get clean foreground proposals.
+    It will transform anchors, apply NMS (if set to true) to get clean foreground proposals.
 
     Parameters
     ----------
@@ -52,8 +53,8 @@ class RPNProposal(gluon.HybridBlock):
             # width = roi.slice_axis(axis=-1, begin=2, end=3)
             # height = roi.slice_axis(axis=-1, begin=3, end=None)
             xmin, ymin, xmax, ymax = roi.split(axis=-1, num_outputs=4)
-            width = xmax - xmin
-            height = ymax - ymin
+            width = xmax - xmin + 1.0
+            height = ymax - ymin + 1.0
             # TODO:(zhreshold), there's im_ratio to handle here, but it requires
             # add' info, and we don't expect big difference
             invalid = (width < self._min_size) + (height < self._min_size)

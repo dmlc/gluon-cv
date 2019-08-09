@@ -126,7 +126,7 @@ def resize(bbox, in_size, out_size):
     if not len(out_size) == 2:
         raise ValueError("out_size requires length 2 tuple, given {}".format(len(out_size)))
 
-    bbox = bbox.copy()
+    bbox = bbox.copy().astype(float)
     x_scale = out_size[0] / in_size[0]
     y_scale = out_size[1] / in_size[1]
     bbox[:, 1] = y_scale * bbox[:, 1]
