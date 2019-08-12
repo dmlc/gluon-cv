@@ -9,10 +9,10 @@ export OMP_NUM_THREADS=$(vCPUs/2)
 export KMP_AFFINITY=granularity=fine,noduplicates,compact,1,0
 
 # dummy data
-python test.py --network=fcn --backbone=resnet101 --eval --batch-size=1 --pretrained --benchmark
+python test.py --model=fcn --backbone=resnet101 --eval --batch-size=1 --pretrained --benchmark
 
 # real data
-python test.py --network=fcn --backbone=resnet101 --eval --batch-size=1 --pretrained
+python test.py --model=fcn --backbone=resnet101 --eval --batch-size=1 --pretrained
 ```
 
 ### Calibration
@@ -20,10 +20,10 @@ Naive calibrated model by using 5 batch data (32 images per batch). Quantized mo
 
 ```
 # pascal-voc
-python test.py --network=fcn --backbone=resnet101 --eval --batch-size=1 --pretrained --calibration --dataset=voc
+python test.py --model=fcn --backbone=resnet101 --eval --batch-size=1 --pretrained --calibration --dataset=voc
 
 # coco
-python test.py --network=fcn --backbone=resnet101 --eval --batch-size=1 --pretrained --calibration --dataset=coco
+python test.py --model=fcn --backbone=resnet101 --eval --batch-size=1 --pretrained --calibration --dataset=coco
 ```
 
 ### INT8 Inference
@@ -34,10 +34,10 @@ export OMP_NUM_THREADS=$(vCPUs/2)
 export KMP_AFFINITY=granularity=fine,noduplicates,compact,1,0
 
 # dummy data
-python test.py --network=fcn --backbone=resnet101 --mode=val --eval --batch-size=1 --pretrained --quantized --benchmark
+python test.py --model=fcn --backbone=resnet101 --mode=val --eval --batch-size=1 --pretrained --quantized --benchmark
 
 # real data
-python test.py --network=fcn --backbone=resnet101 --mode=val --eval --batch-size=1 --pretrained --quantized
+python test.py --model=fcn --backbone=resnet101 --mode=val --eval --batch-size=1 --pretrained --quantized
 
 # deploy int8 model
 python test.py --quantized --eval --deploy --model-prefix=./model/fcn_resnet101_voc-quantized-naive
