@@ -64,7 +64,12 @@ Parameters with :greytag:`a grey name` can be downloaded by passing the correspo
    +--------------------------------------------------+----------------+--------------------+----------+---------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
    | simple_pose_resnet152_v1d [1]_ :gray:`(384x288)` | 74.8/92.3/82.0 | 76.1/92.4/83.2     | 2f544338 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/pose/simple_pose_resnet152_v1d_large_coco.sh>`_    | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/pose/simple_pose_resnet152_v1d_large_coco.log>`_    |
    +--------------------------------------------------+----------------+--------------------+----------+---------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
+   | alpha_pose_resnet101_v1b_coco [2]_               | 74.8/92.3/82.0 | 76.1/92.4/83.2     | 2f544338 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/pose/simple_pose_resnet152_v1d_large_coco.sh>`_    | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/pose/simple_pose_resnet152_v1d_large_coco.log>`_    |
+   +--------------------------------------------------+----------------+--------------------+----------+---------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
 
 .. [1] Xiao, Bin, Haiping Wu, and Yichen Wei. \
        "Simple baselines for human pose estimation and tracking." \
        Proceedings of the European Conference on Computer Vision (ECCV). 2018.
+.. [2] Fang, Hao-Shu, et al. \
+       "Rmpe: Regional multi-person pose estimation." \
+       Proceedings of the IEEE International Conference on Computer Vision. 2017.
