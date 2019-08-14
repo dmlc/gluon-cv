@@ -25,7 +25,8 @@ Below CPU performance is collected with dummy input from AWS EC2 C5.24xlarge ins
 .. figure:: https://user-images.githubusercontent.com/34727741/62687942-5a551a00-b9fa-11e9-9c9a-0b6dfa380cdb.png
    :alt: Gluon Quantization Performance
 
-   Gluon Quantization Performance
+.. table::
+   :widths: 45 5 5 10 10 5 10 10
 
 +-----------------------+----------+------------+------------------+------------------+---------+-----------------+-----------------+
 |  Model                | Dataset  | Batch Size | C5.24xlarge FP32 | C5.24xlarge INT8 | Speedup | FP32 Accuracy   | INT8 Accuracy   |
