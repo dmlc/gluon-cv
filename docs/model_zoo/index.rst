@@ -27,6 +27,12 @@ Model Zoo
 
         Select your models from charts and tables of the pose estimation models
 
+    .. card::
+        :title: Action Recognition
+        :link: action_recognition.html
+
+        Select your models from charts and tables of the action recognition models
+
 
 .. toctree::
     :hidden:
@@ -36,3 +42,4 @@ Model Zoo
     detection
     segmentation
     pose
+    action_recognition

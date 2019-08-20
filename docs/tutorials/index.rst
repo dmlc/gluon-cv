@@ -174,6 +174,22 @@ Pose Estimation
 
         Estimate human pose in real-world images with pre-trained Simple Pose models
 
+Action Recognition
+---------------------
+
+.. container:: cards
+
+    .. card::
+        :title: Pre-trained TSN Models on UCF101
+        :link: ../build/examples_action_recognition/demo_ucf101.html
+
+        Recognize human actions in real-world videos with pre-trained TSN-VGG16 models
+
+    .. card::
+        :title: Training TSN models on UCF101
+        :link: ../build/examples_action_recognition/dive_deep_ucf101.html
+
+        Hands on TSN-VGG16 action recognition model training on UCF101 dataset
 
 Dataset Preparation
 -------------------
@@ -208,6 +224,10 @@ Dataset Preparation
         :title: Prepare ImageNet Dataset in ImageRecord Format
         :link: ../build/examples_datasets/recordio.html
 
+    .. card::
+        :title: Prepare UCF101 Dataset
+        :link: ../build/examples_datasets/ucf101.html
+
 
 Deployment
 ----------
@@ -235,5 +255,6 @@ Deployment
     ../build/examples_instance/index
     ../build/examples_segmentation/index
     ../build/examples_pose/index
+    ../build/examples_action_recognition/index
     ../build/examples_datasets/index
     ../build/examples_deployment/index

@@ -239,13 +239,15 @@ class NormalizedBoxCenterDecoder(gluon.HybridBlock):
         p = F.split(x, axis=-1, num_outputs=4)
         ox = F.broadcast_add(F.broadcast_mul(p[0] * self._stds[0] + self._means[0], a[2]), a[0])
         oy = F.broadcast_add(F.broadcast_mul(p[1] * self._stds[1] + self._means[1], a[3]), a[1])
-        tw = F.exp(p[2] * self._stds[2] + self._means[2])
-        th = F.exp(p[3] * self._stds[3] + self._means[3])
+        dw = p[2] * self._stds[2] + self._means[2]
+        dh = p[3] * self._stds[3] + self._means[3]
         if self._clip:
-            tw = F.minimum(tw, self._clip)
-            th = F.minimum(th, self._clip)
-        ow = F.broadcast_mul(tw, a[2]) / 2
-        oh = F.broadcast_mul(th, a[3]) / 2
+            dw = F.minimum(dw, self._clip)
+            dh = F.minimum(dh, self._clip)
+        dw = F.exp(dw)
+        dh = F.exp(dh)
+        ow = F.broadcast_mul(dw, a[2]) / 2
+        oh = F.broadcast_mul(dh, a[3]) / 2
         return F.concat(ox - ow, oy - oh, ox + ow, oy + oh, dim=-1)
 
 

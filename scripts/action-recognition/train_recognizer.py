@@ -10,20 +10,25 @@ from mxnet.gluon.data.vision import transforms
 from mxboard import SummaryWriter
 
 from gluoncv.data.transforms import video
-from gluoncv.data import ucf101
+from gluoncv.data import ucf101, kinetics400
 from gluoncv.model_zoo import get_model
 from gluoncv.utils import makedirs, LRSequential, LRScheduler, split_and_load
+from gluoncv.data.dataloader import tsn_mp_batchify_fn
 
 # CLI
 def parse_args():
     parser = argparse.ArgumentParser(description='Train a model for action recognition.')
-    parser.add_argument('--data-dir', type=str, default='~/.mxnet/datasets/ucf101',
-                        help='training and validation pictures to use.')
+    parser.add_argument('--dataset', type=str, default='ucf101', choices=['ucf101', 'kinetics400'],
+                        help='which dataset to use.')
+    parser.add_argument('--data-dir', type=str, default='~/.mxnet/datasets/ucf101/rawframes',
+                        help='training (and validation) pictures to use.')
+    parser.add_argument('--val-data-dir', type=str, default='~/.mxnet/datasets/ucf101/rawframes',
+                        help='validation pictures to use.')
     parser.add_argument('--train-list', type=str, default='~/.mxnet/datasets/ucf101/ucfTrainTestlist/ucf101_train_rgb_split1.txt',
                         help='the list of training data')
     parser.add_argument('--val-list', type=str, default='~/.mxnet/datasets/ucf101/ucfTrainTestlist/ucf101_val_rgb_split1.txt',
                         help='the list of validation data')
-    parser.add_argument('--batch-size', type=int, default=32,
+    parser.add_argument('--batch-size', type=int, default=25,
                         help='training batch size per device (CPU/GPU).')
     parser.add_argument('--dtype', type=str, default='float32',
                         help='data type for training. default is float32')
@@ -115,28 +120,16 @@ def parse_args():
                         help='whether to freeze bn layers except the first layer.')
     parser.add_argument('--num-classes', type=int, default=101,
                         help='number of classes.')
+    parser.add_argument('--scale-ratios', type=str, default='1.0, 0.875, 0.75, 0.66',
+                        help='Scale ratios used in multi-scale cropping data augmentation technique.')
     opt = parser.parse_args()
     return opt
 
-def tsn_mp_batchify_fn(data):
-    """Collate data into batch. Use shared memory for stacking.
-    Modify default batchify function for temporal segment networks.
-    Change `nd.stack` to `nd.concat` since batch dimension already exists.
-    """
-    if isinstance(data[0], nd.NDArray):
-        return nd.concat(*data, dim=0)
-    elif isinstance(data[0], tuple):
-        data = zip(*data)
-        return [tsn_mp_batchify_fn(i) for i in data]
-    else:
-        data = np.asarray(data)
-        return nd.array(data, dtype=data.dtype,
-                        ctx=context.Context('cpu_shared', 0))
-
 def get_data_loader(opt, batch_size, num_workers, logger):
     data_dir = opt.data_dir
+    val_data_dir = opt.val_data_dir
     normalize = video.VideoNormalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-    scale_ratios = [1.0, 0.875, 0.75, 0.66]
+    scale_ratios = [float(i) for i in opt.scale_ratios.split(',')]
     input_size = opt.input_size
 
     def batch_fn(batch, ctx):
@@ -159,14 +152,27 @@ def get_data_loader(opt, batch_size, num_workers, logger):
         normalize
     ])
 
-    train_dataset = ucf101.classification.UCF101(setting=opt.train_list, root=data_dir, train=True,
-                                                 new_width=opt.new_width, new_height=opt.new_height,
-                                                 target_width=input_size, target_height=input_size,
-                                                 num_segments=opt.num_segments, transform=transform_train)
-    val_dataset = ucf101.classification.UCF101(setting=opt.val_list, root=data_dir, train=False,
-                                               new_width=opt.new_width, new_height=opt.new_height,
-                                               target_width=input_size, target_height=input_size,
-                                               num_segments=opt.num_segments, transform=transform_test)
+    if opt.dataset == 'kinetics400':
+        train_dataset = kinetics400.classification.Kinetics400(setting=opt.train_list, root=data_dir, train=True,
+                                                     new_width=opt.new_width, new_height=opt.new_height,
+                                                     target_width=input_size, target_height=input_size,
+                                                     num_segments=opt.num_segments, transform=transform_train)
+        val_dataset = kinetics400.classification.Kinetics400(setting=opt.val_list, root=val_data_dir, train=False,
+                                                   new_width=opt.new_width, new_height=opt.new_height,
+                                                   target_width=input_size, target_height=input_size,
+                                                   num_segments=opt.num_segments, transform=transform_test)
+    elif opt.dataset == 'ucf101':
+        train_dataset = ucf101.classification.UCF101(setting=opt.train_list, root=data_dir, train=True,
+                                                     new_width=opt.new_width, new_height=opt.new_height,
+                                                     target_width=input_size, target_height=input_size,
+                                                     num_segments=opt.num_segments, transform=transform_train)
+        val_dataset = ucf101.classification.UCF101(setting=opt.val_list, root=data_dir, train=False,
+                                                   new_width=opt.new_width, new_height=opt.new_height,
+                                                   target_width=input_size, target_height=input_size,
+                                                   num_segments=opt.num_segments, transform=transform_test)
+    else:
+        logger.info('Dataset %s is not supported yet.' % (opt.dataset))
+
     logger.info('Load %d training samples and %d validation samples.' % (len(train_dataset), len(val_dataset)))
 
     if opt.num_segments > 1:
@@ -315,24 +321,24 @@ def main():
             if acc_top1_val > best_val_score:
                 best_val_score = acc_top1_val
                 if opt.use_tsn:
-                    net.basenet.save_parameters('%s/%.4f-ucf101-%s-%03d-best.params'%(opt.save_dir, best_val_score, model_name, epoch))
+                    net.basenet.save_parameters('%s/%.4f-%s-%s-%03d-best.params'%(opt.save_dir, best_val_score, opt.dataset, model_name, epoch))
                 else:
-                    net.save_parameters('%s/%.4f-ucf101-%s-%03d-best.params'%(opt.save_dir, best_val_score, model_name, epoch))
-                trainer.save_states('%s/%.4f-ucf101-%s-%03d-best.states'%(opt.save_dir, best_val_score, model_name, epoch))
+                    net.save_parameters('%s/%.4f-%s-%s-%03d-best.params'%(opt.save_dir, best_val_score, opt.dataset, model_name, epoch))
+                trainer.save_states('%s/%.4f-%s-%s-%03d-best.states'%(opt.save_dir, best_val_score, opt.dataset, model_name, epoch))
 
             if opt.save_frequency and opt.save_dir and (epoch + 1) % opt.save_frequency == 0:
                 if opt.use_tsn:
-                    net.basenet.save_parameters('%s/ucf101-%s-%03d.params'%(opt.save_dir, model_name, epoch))
+                    net.basenet.save_parameters('%s/%s-%s-%03d.params'%(opt.save_dir, opt.dataset, model_name, epoch))
                 else:
-                    net.save_parameters('%s/ucf101-%s-%03d.params'%(opt.save_dir, model_name, epoch))
-                trainer.save_states('%s/ucf101-%s-%03d.states'%(opt.save_dir, model_name, epoch))
+                    net.save_parameters('%s/%s-%s-%03d.params'%(opt.save_dir, opt.dataset, model_name, epoch))
+                trainer.save_states('%s/%-%s-%03d.states'%(opt.save_dir, opt.dataset, model_name, epoch))
 
         # save the last model
         if opt.use_tsn:
-            net.basenet.save_parameters('%s/ucf101-%s-%03d.params'%(opt.save_dir, model_name, opt.num_epochs-1))
+            net.basenet.save_parameters('%s/%s-%s-%03d.params'%(opt.save_dir, opt.dataset, model_name, opt.num_epochs-1))
         else:
-            net.save_parameters('%s/ucf101-%s-%03d.params'%(opt.save_dir, model_name, opt.num_epochs-1))
-        trainer.save_states('%s/ucf101-%s-%03d.states'%(opt.save_dir, model_name, opt.num_epochs-1))
+            net.save_parameters('%s/%s-%s-%03d.params'%(opt.save_dir, opt.dataset, model_name, opt.num_epochs-1))
+        trainer.save_states('%s/%s-%s-%03d.states'%(opt.save_dir, opt.dataset, model_name, opt.num_epochs-1))
 
     if opt.mode == 'hybrid':
         net.hybridize(static_alloc=True, static_shape=True)

@@ -10,6 +10,7 @@ import numpy as np
 import mxnet as mx
 from mxnet import gluon
 from mxnet import autograd
+from mxnet.contrib import amp
 import gluoncv as gcv
 from gluoncv import data as gdata
 from gluoncv import utils as gutils
@@ -18,7 +19,13 @@ from gluoncv.data import batchify
 from gluoncv.data.transforms.presets.rcnn import MaskRCNNDefaultTrainTransform, \
     MaskRCNNDefaultValTransform
 from gluoncv.utils.metrics.coco_instance import COCOInstanceMetric
+from gluoncv.utils.metrics.rcnn import RPNAccMetric, RPNL1LossMetric, RCNNAccMetric, \
+    RCNNL1LossMetric, MaskAccMetric, MaskFGAccMetric
 
+try:
+    import horovod.mxnet as hvd
+except ImportError:
+    hvd = None
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train Mask R-CNN network end to end.')
@@ -81,148 +88,30 @@ def parse_args():
                              'Memory usage and speed will decrese.')
     parser.add_argument('--static-alloc', action='store_true',
                         help='Whether to use static memory allocation. Memory usage will increase.')
+    parser.add_argument('--amp', action='store_true',
+                        help='Use MXNet AMP for mixed precision training.')
+    parser.add_argument('--horovod', action='store_true',
+                        help='Use MXNet Horovod for distributed training. Must be run with OpenMPI. '
+                        '--gpus is ignored when using --horovod.')
+
 
     args = parser.parse_args()
+    if args.horovod:
+        if hvd is None:
+            raise SystemExit("Horovod not found, please check if you installed it correctly.")
+        hvd.init()
     args.epochs = int(args.epochs) if args.epochs else 26
     args.lr_decay_epoch = args.lr_decay_epoch if args.lr_decay_epoch else '17,23'
     args.lr = float(args.lr) if args.lr else 0.00125
     args.lr_warmup = args.lr_warmup if args.lr_warmup else 8000
     args.wd = float(args.wd) if args.wd else 1e-4
-    num_gpus = len(args.gpus.split(','))
+    num_gpus = hvd.size() if args.horovod else len(args.gpus.split(','))
     if num_gpus == 1:
         args.lr_warmup = -1
     else:
         args.lr *= num_gpus
         args.lr_warmup /= num_gpus
     return args
-
-
-class RPNAccMetric(mx.metric.EvalMetric):
-    def __init__(self):
-        super(RPNAccMetric, self).__init__('RPNAcc')
-
-    def update(self, labels, preds):
-        # label: [rpn_label, rpn_weight]
-        # preds: [rpn_cls_logits]
-        rpn_label, rpn_weight = labels
-        rpn_cls_logits = preds[0]
-
-        # calculate num_inst (average on those fg anchors)
-        num_inst = mx.nd.sum(rpn_weight)
-
-        # cls_logits (b, na*h*w, 1)
-        pred_label = mx.nd.sigmoid(rpn_cls_logits) >= 0.5
-        # label (b, na*h*w, 1)
-        num_acc = mx.nd.sum((pred_label == rpn_label) * rpn_weight)
-
-        self.sum_metric += num_acc.asscalar()
-        self.num_inst += num_inst.asscalar()
-
-
-class RPNL1LossMetric(mx.metric.EvalMetric):
-    def __init__(self):
-        super(RPNL1LossMetric, self).__init__('RPNL1Loss')
-
-    def update(self, labels, preds):
-        # label = [rpn_bbox_target, rpn_bbox_weight]
-        # pred = [rpn_bbox_reg]
-        rpn_bbox_target, rpn_bbox_weight = labels
-        rpn_bbox_reg = preds[0]
-
-        # calculate num_inst (average on those fg anchors)
-        num_inst = mx.nd.sum(rpn_bbox_weight) / 4
-
-        # calculate smooth_l1
-        loss = mx.nd.sum(
-            rpn_bbox_weight * mx.nd.smooth_l1(rpn_bbox_reg - rpn_bbox_target, scalar=3))
-
-        self.sum_metric += loss.asscalar()
-        self.num_inst += num_inst.asscalar()
-
-
-class RCNNAccMetric(mx.metric.EvalMetric):
-    def __init__(self):
-        super(RCNNAccMetric, self).__init__('RCNNAcc')
-
-    def update(self, labels, preds):
-        # label = [rcnn_label]
-        # pred = [rcnn_cls]
-        rcnn_label = labels[0]
-        rcnn_cls = preds[0]
-
-        # calculate num_acc
-        pred_label = mx.nd.argmax(rcnn_cls, axis=-1)
-        num_acc = mx.nd.sum(pred_label == rcnn_label)
-
-        self.sum_metric += num_acc.asscalar()
-        self.num_inst += rcnn_label.size
-
-
-class RCNNL1LossMetric(mx.metric.EvalMetric):
-    def __init__(self):
-        super(RCNNL1LossMetric, self).__init__('RCNNL1Loss')
-
-    def update(self, labels, preds):
-        # label = [rcnn_bbox_target, rcnn_bbox_weight]
-        # pred = [rcnn_reg]
-        rcnn_bbox_target, rcnn_bbox_weight = labels
-        rcnn_bbox_reg = preds[0]
-
-        # calculate num_inst
-        num_inst = mx.nd.sum(rcnn_bbox_weight) / 4
-
-        # calculate smooth_l1
-        loss = mx.nd.sum(
-            rcnn_bbox_weight * mx.nd.smooth_l1(rcnn_bbox_reg - rcnn_bbox_target, scalar=1))
-
-        self.sum_metric += loss.asscalar()
-        self.num_inst += num_inst.asscalar()
-
-
-class MaskAccMetric(mx.metric.EvalMetric):
-    def __init__(self):
-        super(MaskAccMetric, self).__init__('MaskAcc')
-
-    def update(self, labels, preds):
-        # label = [rcnn_mask_target, rcnn_mask_weight]
-        # pred = [rcnn_mask]
-        rcnn_mask_target, rcnn_mask_weight = labels
-        rcnn_mask = preds[0]
-
-        # calculate num_inst
-        num_inst = mx.nd.sum(rcnn_mask_weight)
-
-        # rcnn_mask (b, n, c, h, w)
-        pred_label = mx.nd.sigmoid(rcnn_mask) >= 0.5
-        label = rcnn_mask_target >= 0.5
-        # label (b, n, c, h, w)
-        num_acc = mx.nd.sum((pred_label == label) * rcnn_mask_weight)
-
-        self.sum_metric += num_acc.asscalar()
-        self.num_inst += num_inst.asscalar()
-
-
-class MaskFGAccMetric(mx.metric.EvalMetric):
-    def __init__(self):
-        super(MaskFGAccMetric, self).__init__('MaskFGAcc')
-
-    def update(self, labels, preds):
-        # label = [rcnn_mask_target, rcnn_mask_weight]
-        # pred = [rcnn_mask]
-        rcnn_mask_target, rcnn_mask_weight = labels
-        rcnn_mask = preds[0]
-
-        # calculate num_inst
-        num_inst = mx.nd.sum(rcnn_mask_target)
-
-        # rcnn_mask (b, n, c, h, w)
-        pred_label = mx.nd.sigmoid(rcnn_mask) >= 0.5
-        label = rcnn_mask_target >= 0.5
-        # label (b, n, c, h, w)
-        num_acc = mx.nd.sum((pred_label == label) * label)
-
-        self.sum_metric += num_acc.asscalar()
-        self.num_inst += num_inst.asscalar()
 
 
 def get_dataset(dataset, args):
@@ -236,18 +125,20 @@ def get_dataset(dataset, args):
 
 
 def get_dataloader(net, train_dataset, val_dataset, train_transform, val_transform, batch_size,
-                   num_workers, multi_stage):
+                   args):
     """Get dataloader."""
     train_bfn = batchify.Tuple(*[batchify.Append() for _ in range(6)])
+    train_sampler = gcv.nn.sampler.SplitSampler(len(train_dataset), hvd.size(), hvd.rank()) if args.horovod else None
     train_loader = mx.gluon.data.DataLoader(
         train_dataset.transform(train_transform(net.short, net.max_size, net, ashape=net.ashape,
-                                                multi_stage=multi_stage)),
-        batch_size, True, batchify_fn=train_bfn, last_batch='rollover', num_workers=num_workers)
+                                                multi_stage=args.use_fpn)),
+        batch_size, train_sampler is None, sampler=train_sampler, batchify_fn=train_bfn,
+        last_batch='rollover', num_workers=args.num_workers)
     val_bfn = batchify.Tuple(*[batchify.Append() for _ in range(2)])
     short = net.short[-1] if isinstance(net.short, (tuple, list)) else net.short
     val_loader = mx.gluon.data.DataLoader(
         val_dataset.transform(val_transform(short, net.max_size)),
-        batch_size, False, batchify_fn=val_bfn, last_batch='keep', num_workers=num_workers)
+        batch_size, False, batchify_fn=val_bfn, last_batch='keep', num_workers=args.num_workers)
     return train_loader, val_loader
 
 
@@ -335,12 +226,22 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
     net.collect_train_params().setattr('grad_req', 'write')
     for k, v in net.collect_params('.*beta|.*bias').items():
         v.wd_mult = 0.0
-    trainer = gluon.Trainer(
-        net.collect_train_params(),  # fix batchnorm, fix first stage, etc...
-        'sgd',
-        {'learning_rate': args.lr,
-         'wd': args.wd,
-         'momentum': args.momentum})
+
+    if args.horovod:
+        hvd.broadcast_parameters(net.collect_params(), root_rank=0)
+        trainer = hvd.DistributedTrainer(
+                        net.collect_train_params(), # fix batchnorm, fix first stage, etc...
+                        'sgd',
+                        {'learning_rate': args.lr, 'wd': args.wd, 'momentum': args.momentum})
+    else:
+        trainer = gluon.Trainer(
+                    net.collect_train_params(), # fix batchnorm, fix first stage, etc...
+                    'sgd',
+                    {'learning_rate': args.lr, 'wd': args.wd, 'momentum': args.momentum},
+                    update_on_kvstore=(False if args.amp else None))
+
+    if args.amp:
+        amp.init_trainer(trainer)
 
     # lr decay policy
     lr_decay = float(args.lr_decay)
@@ -446,43 +347,50 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
                                 mask_targets.size / mask_targets.shape[0] / mask_masks.sum()
                     # overall losses
                     losses.append(rpn_loss.sum() + rcnn_loss.sum() + mask_loss.sum())
-                    metric_losses[0].append(rpn_loss1.sum())
-                    metric_losses[1].append(rpn_loss2.sum())
-                    metric_losses[2].append(rcnn_loss1.sum())
-                    metric_losses[3].append(rcnn_loss2.sum())
-                    metric_losses[4].append(mask_loss.sum())
-                    add_losses[0].append([[rpn_cls_targets, rpn_cls_targets >= 0], [rpn_score]])
-                    add_losses[1].append([[rpn_box_targets, rpn_box_masks], [rpn_box]])
-                    add_losses[2].append([[cls_targets], [cls_pred]])
-                    add_losses[3].append([[box_targets, box_masks], [box_pred]])
-                    add_losses[4].append([[mask_targets, mask_masks], [mask_pred]])
-                    add_losses[5].append([[mask_targets, mask_masks], [mask_pred]])
-                autograd.backward(losses)
-                for metric, record in zip(metrics, metric_losses):
-                    metric.update(0, record)
-                for metric, records in zip(metrics2, add_losses):
-                    for pred in records:
-                        metric.update(pred[0], pred[1])
+                    if (not args.horovod or hvd.rank() == 0):
+                        metric_losses[0].append(rpn_loss1.sum())
+                        metric_losses[1].append(rpn_loss2.sum())
+                        metric_losses[2].append(rcnn_loss1.sum())
+                        metric_losses[3].append(rcnn_loss2.sum())
+                        metric_losses[4].append(mask_loss.sum())
+                        add_losses[0].append([[rpn_cls_targets, rpn_cls_targets >= 0], [rpn_score]])
+                        add_losses[1].append([[rpn_box_targets, rpn_box_masks], [rpn_box]])
+                        add_losses[2].append([[cls_targets], [cls_pred]])
+                        add_losses[3].append([[box_targets, box_masks], [box_pred]])
+                        add_losses[4].append([[mask_targets, mask_masks], [mask_pred]])
+                        add_losses[5].append([[mask_targets, mask_masks], [mask_pred]])
+                if args.amp:
+                    with amp.scale_loss(losses, trainer) as scaled_losses:
+                        autograd.backward(scaled_losses)
+                else:
+                    autograd.backward(losses)
+                if (not args.horovod or hvd.rank() == 0):
+                    for metric, record in zip(metrics, metric_losses):
+                        metric.update(0, record)
+                    for metric, records in zip(metrics2, add_losses):
+                        for pred in records:
+                            metric.update(pred[0], pred[1])
             trainer.step(batch_size)
             # update metrics
-            if args.log_interval and not (i + 1) % args.log_interval:
+            if (not args.horovod or hvd.rank() == 0) and args.log_interval and not (i + 1) % args.log_interval:
                 msg = ','.join(['{}={:.3f}'.format(*metric.get()) for metric in metrics + metrics2])
                 logger.info('[Epoch {}][Batch {}], Speed: {:.3f} samples/sec, {}'.format(
-                    epoch, i, args.log_interval * batch_size / (time.time() - btic), msg))
+                    epoch, i, args.log_interval * args.batch_size / (time.time() - btic), msg))
                 btic = time.time()
-
-        msg = ','.join(['{}={:.3f}'.format(*metric.get()) for metric in metrics])
-        logger.info('[Epoch {}] Training cost: {:.3f}, {}'.format(
-            epoch, (time.time() - tic), msg))
-        if not (epoch + 1) % args.val_interval:
-            # consider reduce the frequency of validation to save time
-            map_name, mean_ap = validate(net, val_data, ctx, eval_metric, args)
-            val_msg = '\n'.join(['{}={}'.format(k, v) for k, v in zip(map_name, mean_ap)])
-            logger.info('[Epoch {}] Validation: \n{}'.format(epoch, val_msg))
-            current_map = float(mean_ap[-1])
-        else:
-            current_map = 0.
-        save_params(net, logger, best_map, current_map, epoch, args.save_interval, args.save_prefix)
+        # validate and save params
+        if (not args.horovod or hvd.rank() == 0):
+            msg = ','.join(['{}={:.3f}'.format(*metric.get()) for metric in metrics])
+            logger.info('[Epoch {}] Training cost: {:.3f}, {}'.format(
+                epoch, (time.time() - tic), msg))
+            if not (epoch + 1) % args.val_interval:
+                # consider reduce the frequency of validation to save time
+                map_name, mean_ap = validate(net, val_data, ctx, eval_metric, args)
+                val_msg = '\n'.join(['{}={}'.format(k, v) for k, v in zip(map_name, mean_ap)])
+                logger.info('[Epoch {}] Validation: \n{}'.format(epoch, val_msg))
+                current_map = float(mean_ap[-1])
+            else:
+                current_map = 0.
+            save_params(net, logger, best_map, current_map, epoch, args.save_interval, args.save_prefix)
 
 
 if __name__ == '__main__':
@@ -490,10 +398,17 @@ if __name__ == '__main__':
     # fix seed for mxnet, numpy and python builtin random generator.
     gutils.random.seed(args.seed)
 
+    if args.amp:
+        amp.init()
+
     # training contexts
-    ctx = [mx.gpu(int(i)) for i in args.gpus.split(',') if i.strip()]
-    ctx = ctx if ctx else [mx.cpu()]
-    args.batch_size = len(ctx)  # 1 batch per device
+    if args.horovod:
+        ctx = [mx.gpu(hvd.local_rank())]
+        args.batch_size = hvd.size()
+    else:
+        ctx = [mx.gpu(int(i)) for i in args.gpus.split(',') if i.strip()]
+        ctx = ctx if ctx else [mx.cpu()]
+        args.batch_size = len(ctx)  # 1 batch per device
 
     # network
     kwargs = {}
@@ -518,9 +433,10 @@ if __name__ == '__main__':
 
     # training data
     train_dataset, val_dataset, eval_metric = get_dataset(args.dataset, args)
+    batch_size = 1 if args.horovod else args.batch_size
     train_data, val_data = get_dataloader(
         net, train_dataset, val_dataset, MaskRCNNDefaultTrainTransform, MaskRCNNDefaultValTransform,
-        args.batch_size, args.num_workers, args.use_fpn)
+        batch_size, args)
 
     # training
     train(net, train_data, val_data, eval_metric, ctx, args)

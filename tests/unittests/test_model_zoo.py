@@ -20,9 +20,9 @@
 from __future__ import print_function
 
 import warnings
-import unittest
 
 import mxnet as mx
+from mxnet.contrib.quantization import *
 from common import try_gpu, with_cpu
 
 import gluoncv as gcv
@@ -31,8 +31,6 @@ import gluoncv as gcv
 def test_get_all_models():
     names = gcv.model_zoo.get_model_list()
     for name in names:
-        if 'int8' in name:
-            continue
         kwargs = {}
         if 'custom' in name:
             kwargs['classes'] = ['a', 'b']
@@ -54,6 +52,30 @@ def _test_model_list(model_list, ctx, x, pretrained=True, **kwargs):
         net(x)
         mx.nd.waitall()
 
+def _calib_model_list(model_list, ctx, x, pretrained=True, **kwargs):
+    pretrained_models = gcv.model_zoo.pretrained_model_list()
+    for model in model_list:
+        if model in pretrained_models:
+            net = gcv.model_zoo.get_model(model, pretrained=True, **kwargs)
+        else:
+            net = gcv.model_zoo.get_model(model, **kwargs)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                net.initialize()
+        net.collect_params().reset_ctx(ctx)
+        exclude_layers_match = ['flatten']
+        if model.find('ssd') != -1:
+            exclude_layers_match += ['concat']
+        random_label = mx.random.uniform(shape=(x.shape[0],1))
+        dataset = mx.gluon.data.dataset.ArrayDataset(x, random_label)
+        calib_data = mx.gluon.data.DataLoader(dataset, batch_size=1)
+        net = quantize_net(net, quantized_dtype='auto',
+                           exclude_layers=None,
+                           exclude_layers_match=exclude_layers_match,
+                           calib_data=calib_data, calib_mode='naive',
+                           num_calib_examples=1, ctx=ctx)
+        net(x)
+        mx.nd.waitall()
 
 @with_cpu(0)
 def _test_bn_global_stats(model_list, **kwargs):
@@ -207,8 +229,10 @@ def test_yolo3_reset_class():
     x = mx.random.uniform(shape=(1, 3, 512, 544), ctx=ctx)  # allow non-squre and larger inputs
     model_name = 'yolo3_darknet53_voc'
     net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
+    net.hybridize()
     net.reset_class(["bus", "car", "bird"], reuse_weights=["bus", "car", "bird"])
     net(x)
+    mx.nd.waitall()
 
     # for GPU
     ctx = mx.gpu(0)
@@ -217,8 +241,10 @@ def test_yolo3_reset_class():
     except Exception:
         return
     net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
+    net.hybridize()
     net.reset_class(["bus", "car", "bird"])
     net(x)
+    mx.nd.waitall()
 
 
 def test_faster_rcnn_reset_class():
@@ -394,7 +420,6 @@ def test_mobilenet_sync_bn():
                                   norm_kwargs={'num_devices': 2})
     net.load_parameters(model_name + '.params')
 
-@unittest.skip("temporarily disabled to fallback to non-mkl version")
 @with_cpu(0)
 def test_quantized_imagenet_models():
     model_list = ['mobilenet1.0_int8', 'resnet50_v1_int8']
@@ -402,13 +427,44 @@ def test_quantized_imagenet_models():
     x = mx.random.uniform(shape=(1, 3, 224, 224), ctx=ctx)
     _test_model_list(model_list, ctx, x)
 
-@unittest.skip("temporarily disabled to fallback to non-mkl version")
 @with_cpu(0)
 def test_quantized_ssd_models():
     model_list = ['ssd_300_vgg16_atrous_voc_int8', 'ssd_512_mobilenet1.0_voc_int8',
                   'ssd_512_resnet50_v1_voc_int8', 'ssd_512_vgg16_atrous_voc_int8']
     ctx = mx.context.current_context()
     x = mx.random.uniform(shape=(1, 3, 512, 544), ctx=ctx)
+    _test_model_list(model_list, ctx, x)
+
+@with_cpu(0)
+def test_calib_models():
+    model_list = ['resnet50_v1', 'resnet50_v1d_0.11',
+                  'mobilenet1.0', 'mobilenetv2_1.0',
+                  'squeezenet1.0', 'squeezenet1.1',
+                  'vgg16']
+    ctx = mx.context.current_context()
+    x = mx.random.uniform(shape=(1, 3, 224, 224), ctx=ctx)
+    _calib_model_list(model_list, ctx, x)
+
+    model_list = ['inceptionv3']
+    x = mx.random.uniform(shape=(1, 3, 299, 299), ctx=ctx)
+    _calib_model_list(model_list, ctx, x)
+
+    model_list = ['ssd_300_vgg16_atrous_voc', 'ssd_512_mobilenet1.0_voc',
+                  'ssd_512_resnet50_v1_voc', 'ssd_512_vgg16_atrous_voc']
+    ctx = mx.context.current_context()
+    x = mx.random.uniform(shape=(1, 3, 512, 544), ctx=ctx)
+    _calib_model_list(model_list, ctx, x)
+
+    model_list = ['fcn_resnet101_voc', 'fcn_resnet101_coco']
+    ctx = mx.context.current_context()
+    x = mx.random.uniform(shape=(1, 3, 520, 480), ctx=ctx)
+    _calib_model_list(model_list, ctx, x)
+
+@with_cpu(0)
+def test_quantized_fcn_models():
+    model_list = ['fcn_resnet101_voc_int8', 'fcn_resnet101_coco_int8']
+    ctx = mx.context.current_context()
+    x = mx.random.uniform(shape=(1, 3, 480, 480), ctx=ctx)
     _test_model_list(model_list, ctx, x)
 
 
