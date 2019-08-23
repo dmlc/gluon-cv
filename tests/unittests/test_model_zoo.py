@@ -207,7 +207,7 @@ def test_ssd_reset_class():
     net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
     net.reset_class(["person", "car", "bird"], reuse_weights={0: "person"})
     test_classes = ['bench', 'bicycle', 'bus', 'car', 'cat']
-    test_classes_dict = dict(zip(classes, classes))
+    test_classes_dict = dict(zip(test_classes, test_classes))
     net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
     net.reset_class(test_classes, reuse_weights=test_classes_dict)
     net(x)
