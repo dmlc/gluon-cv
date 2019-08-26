@@ -176,6 +176,15 @@ def test_simple_pose_resnet_models():
     x = mx.random.uniform(shape=(2, 3, 288, 384), ctx=ctx)
     _test_model_list(models, ctx, x)
 
+@try_gpu(0)
+def test_alpha_pose_resnet_models():
+    ctx = mx.context.current_context()
+    models = ['alpha_pose_resnet101_v1b_coco']
+
+    # 256x320
+    x = mx.random.uniform(shape=(2, 3, 256, 320), ctx=ctx)
+    _test_model_list(models, ctx, x)
+
 
 def test_imagenet_models_bn_global_stats():
     models = ['resnet18_v1b', 'resnet34_v1b', 'resnet50_v1b',
