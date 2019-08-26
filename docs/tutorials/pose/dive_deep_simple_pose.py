@@ -1,7 +1,7 @@
 """4. Dive deep into Training a Simple Pose Model on COCO Keypoints
 ===================================================================
 
-In this tutorial, we show you how to train a pose estimation model [1]_ on your own data.
+In this tutorial, we show you how to train a pose estimation model [1]_ on the COCO dataset.
 
 First let's import some necessary modules.
 """
