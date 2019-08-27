@@ -15,13 +15,13 @@ from gluoncv.data.transforms.pose import detector_to_alpha_pose, heatmap_to_coor
 # Load a pretrained model
 # -------------------------
 #
-# Let's get a Simple Pose model trained with input images of size 256x192 on MS COCO
-# dataset. We pick the one using ResNet-18 V1b as the base model. By specifying
+# Let's get a Alpha Pose model trained with input images of size 256x192 on MS COCO
+# dataset. We pick the one using ResNet-101 V1b as the base model. By specifying
 # ``pretrained=True``, it will automatically download the model from the model
 # zoo if necessary. For more pretrained models, please refer to
 # :doc:`../../model_zoo/index`.
 #
-# Note that a Simple Pose model takes a top-down strategy to estimate
+# Note that a Alpha Pose model takes a top-down strategy to estimate
 # human pose in detected bounding boxes from an object detection model.
 
 detector = model_zoo.get_model('yolo3_mobilenet1.0_coco', pretrained=True)
@@ -60,7 +60,7 @@ class_IDs, scores, bounding_boxs = detector(x)
 #
 # Next we process the output from the detector.
 #
-# For a Simple Pose network, it expects the input has the size 256x192,
+# For a Alpha Pose network, it expects the input has the size 256x192,
 # and the human is centered. We crop the bounding boxed area
 # for each human, and resize it to 256x192, then finally normalize it.
 #
@@ -70,12 +70,12 @@ class_IDs, scores, bounding_boxs = detector(x)
 pose_input, upscale_bbox = detector_to_alpha_pose(img, class_IDs, scores, bounding_boxs)
 
 ######################################################################
-# Predict with a Simple Pose network
+# Predict with a Alpha Pose network
 # --------------------
 #
 # Now we can make prediction.
 #
-# A Simple Pose network predicts the heatmap for each joint (i.e. keypoint).
+# A Alpha Pose network predicts the heatmap for each joint (i.e. keypoint).
 # After the inference we search for the highest value in the heatmap and map it to the
 # coordinates on the original image.
 
