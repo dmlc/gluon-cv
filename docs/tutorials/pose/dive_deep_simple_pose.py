@@ -1,7 +1,7 @@
-"""2. Dive deep into Training a Simple Pose Model on COCO Keypoints
+"""4. Dive deep into Training a Simple Pose Model on COCO Keypoints
 ===================================================================
 
-In this tutorial, we show you how to train a pose estimation model [1]_ on your own data.
+In this tutorial, we show you how to train a pose estimation model [1]_ on the COCO dataset.
 
 First let's import some necessary modules.
 """
@@ -37,16 +37,16 @@ train_dataset = mscoco.keypoints.COCOKeyPoints('~/.mxnet/datasets/coco',
 #############################################################################
 # The dataset object enables us to retrieve images containing a person,
 # the person's keypoints, and meta-information.
-# 
+#
 # Following the original paper, we resize the input to be ``(256, 192)``.
 # For augmentation, we randomly scale, rotate or flip the input.
 # Finally we normalize it with the standard ImageNet statistics.
-# 
-# The COCO keypoints dataset contains 17 keypoints for a person. 
+#
+# The COCO keypoints dataset contains 17 keypoints for a person.
 # Each keypoint is annotated with three numbers ``(x, y, v)``, where ``x`` and ``y``
 # mark the coordinates, and ``v`` indicates if the keypoint is visible.
 #
-# For each keypoint, we generate a gaussian kernel centered at the ``(x, y)`` coordinate, and use 
+# For each keypoint, we generate a gaussian kernel centered at the ``(x, y)`` coordinate, and use
 # it as the training label. This means the model predicts a gaussian distribution on a feature map.
 #
 
@@ -73,7 +73,7 @@ train_data = gluon.data.DataLoader(
 #
 # A deconvolution layer enlarges the feature map size of the input,
 # so that it can be seen as a layer upsamling the input feature map.
-# 
+#
 # .. image:: https://raw.githubusercontent.com/vdumoulin/conv_arithmetic/master/gif/no_padding_no_strides_transposed.gif
 #     :width: 40%
 #     :align: center
@@ -110,10 +110,10 @@ x = mx.nd.ones((1, 3, 256, 192), ctx=context)
 net.summary(x)
 
 #############################################################################
-# 
+#
 # .. note::
-# 
-#     The Batch Normalization implementation from cuDNN has a negative impact on the model training, 
+#
+#     The Batch Normalization implementation from cuDNN has a negative impact on the model training,
 #     as reported in these issues [2]_, [3]_ .
 #
 #     Since similar behavior is observed, we implement a ``BatchNormCudnnOff`` layer as a temporary solution.
@@ -124,7 +124,7 @@ net.summary(x)
 # --------------
 #
 # Next, we can set up everything for the training.
-# 
+#
 # - Loss:
 #
 #     We apply a weighted ``L2Loss`` on the predicted heatmap, where the weight is
@@ -148,7 +148,7 @@ lr_scheduler = LRScheduler(mode='step', base_lr=0.001,
 
 
 #############################################################################
-# 
+#
 #     For this model we use ``adam`` as the optimizer.
 
 
@@ -197,7 +197,7 @@ for epoch in range(1):
 
 #############################################################################
 # Due to limitation on the resources, we only train the model for one batch in this tutorial.
-# 
+#
 # Please checkout the full :download:`training script
 # <../../../scripts/pose/simple_pose/train_simple_pose.py>` to reproduce our results.
 #
