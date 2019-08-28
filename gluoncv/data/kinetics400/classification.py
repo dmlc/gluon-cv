@@ -121,7 +121,7 @@ class Kinetics400(dataset.Dataset):
                     offsets.append(0)
 
         # N x H x W, where N = num_oversample * num_segments * new_length * channel
-        clip_input = self._TSN_RGB(directory, offsets, self.new_height, self.new_width, self.skip_length, self.is_color, self.name_pattern, self.new_step)
+        clip_input = self._TSN_RGB(directory, offsets, self.new_height, self.new_width, self.skip_length, self.name_pattern, self.new_step)
 
         if self.transform is not None:
             clip_input = self.transform(clip_input)
@@ -169,7 +169,7 @@ class Kinetics400(dataset.Dataset):
                 clips.append(item)
         return clips
 
-    def _TSN_RGB(self, directory, offsets, new_height, new_width, skip_length, is_color, name_pattern, new_step):
+    def _TSN_RGB(self, directory, offsets, new_height, new_width, skip_length, name_pattern, new_step):
         sampled_list = []
         for _, offset in enumerate(offsets):
             for length_id in range(1, skip_length + 1, new_step):
@@ -178,10 +178,8 @@ class Kinetics400(dataset.Dataset):
                 if cv_img is None:
                     if length_id == 1:
                         raise(RuntimeError("Could not load file %s starting at frame %d. Check data path." % (frame_path, offset)))
-                    else:
-                        # pad black frames if this video clip does not have `skip_length` frames
-                        sampled_list.append(np.zeros((new_height, new_width, 3)))
-                        continue
+                    sampled_list.append(np.zeros((new_height, new_width, 3)))   # pad black frames if this video clip does not have `skip_length` frames
+                    continue
                 if new_width > 0 and new_height > 0:
                     h, w, _ = cv_img.shape
                     if h != new_height or w != new_width:

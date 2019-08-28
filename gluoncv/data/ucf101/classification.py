@@ -125,7 +125,7 @@ class UCF101(dataset.Dataset):
                 else:
                     offsets.append(0)
 
-        clip_input = self._TSN_RGB(directory, offsets, self.new_height, self.new_width, self.new_length, self.is_color, self.name_pattern)
+        clip_input = self._TSN_RGB(directory, offsets, self.new_height, self.new_width, self.new_length, self.name_pattern)
 
         if self.transform is not None:
             clip_input = self.transform(clip_input)
@@ -161,7 +161,7 @@ class UCF101(dataset.Dataset):
                 clips.append(item)
         return clips
 
-    def _TSN_RGB(self, directory, offsets, new_height, new_width, new_length, is_color, name_pattern):
+    def _TSN_RGB(self, directory, offsets, new_height, new_width, new_length, name_pattern):
         sampled_list = []
         for _, offset in enumerate(offsets):
             for length_id in range(1, new_length + 1):

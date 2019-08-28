@@ -1,5 +1,6 @@
-from mxnet import gluon
+# pylint: disable=line-too-long,too-many-lines,missing-docstring
 import random
+from mxnet import gluon
 
 __all__ = ['SplitSampler']
 
