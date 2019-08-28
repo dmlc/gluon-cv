@@ -110,7 +110,7 @@ kwargs = {'ctx': context,
 
 net = get_model(model_name, **kwargs)
 if opt.load_model:
-    print(f'Loading model from {opt.load_model}')
+    print('Loading model from {}'.format(opt.load_model))
     net.load_parameters(opt.load_model, ctx=context)
 net.collect_params().reset_ctx(context)
 net.cast(opt.dtype)
@@ -241,10 +241,10 @@ def train(ctx):
             logger.info(res)
             if res['AP'] > best_ap:
                 bestAP = res['AP']
-                net.save_parameters(f'{save_dir}/best-{round(bestAP, 3)}.params')
-                if os.path.islink(f'{save_dir}/final.params'):
-                    os.remove(f'{save_dir}/final.params')
-                os.symlink(f'./best-{round(bestAP, 3)}.params', f'{save_dir}/final.params')
+                net.save_parameters('{}/best-{}.params'.format(save_dir, round(bestAP, 3)))
+                if os.path.islink('{}/final.params'.format(save_dir)):
+                    os.remove('{}/final.params'.format(save_dir))
+                os.symlink('./best-{}.params'.format(round(bestAP, 3)), '{}/final.params'.format(save_dir))
 
     if save_frequency and save_dir:
         net.save_parameters('%s/%s-%d.params'%(save_dir, model_name, opt.num_epochs-1))

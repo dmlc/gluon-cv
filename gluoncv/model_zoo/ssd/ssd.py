@@ -256,22 +256,32 @@ class SSD(HybridBlock):
         if isinstance(reuse_weights, (dict, list)):
             if isinstance(reuse_weights, dict):
                 # trying to replace str with indices
+                new_keys = []
+                new_vals = []
                 for k, v in reuse_weights.items():
                     if isinstance(v, str):
                         try:
-                            v = old_classes.index(v)  # raise ValueError if not found
+                            new_vals.append(old_classes.index(v))  # raise ValueError if not found
                         except ValueError:
                             raise ValueError(
                                 "{} not found in old class names {}".format(v, old_classes))
-                        reuse_weights[k] = v
+                    else:
+                        if v < 0 or v >= len(old_classes):
+                            raise ValueError(
+                                "Index {} out of bounds for old class names".format(v))
+                        new_vals.append(v)
                     if isinstance(k, str):
                         try:
-                            new_idx = self.classes.index(k)  # raise ValueError if not found
+                            new_keys.append(self.classes.index(k))  # raise ValueError if not found
                         except ValueError:
                             raise ValueError(
                                 "{} not found in new class names {}".format(k, self.classes))
-                        reuse_weights.pop(k)
-                        reuse_weights[new_idx] = v
+                    else:
+                        if k < 0 or k >= len(self.classes):
+                            raise ValueError(
+                                "Index {} out of bounds for new class names".format(k))
+                        new_keys.append(k)
+                reuse_weights = dict(zip(new_keys, new_vals))
             else:
                 new_map = {}
                 for x in reuse_weights:
