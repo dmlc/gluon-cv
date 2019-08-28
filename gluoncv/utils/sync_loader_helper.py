@@ -38,6 +38,11 @@ def split_data(data, num_slice, batch_axis=0, even_split=True, multiplier=1):
 
     step = (int(size / multiplier) // num_slice) * multiplier
 
+    # # TODO: need to make sure the last batch size is smaller than the rest, e.g., 42, 58,
+    # # otherwise there will be chances that the last batch causes OOM issue. Need smarter way to handle this.
+    # if size % num_slice != 0:
+    #     step += multiplier
+
     # If size < num_slice, make fewer slices
     if not even_split and size < num_slice:
         step = 1

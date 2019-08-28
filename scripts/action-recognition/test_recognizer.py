@@ -113,10 +113,20 @@ def parse_args():
                         help='new height of the resize image. default is 256')
     parser.add_argument('--new-width', type=int, default=340,
                         help='new width of the resize image. default is 340')
+    parser.add_argument('--new-length', type=int, default=1,
+                        help='new length of video sequence. default is 1')
+    parser.add_argument('--new-step', type=int, default=1,
+                        help='new step to skip video sequence. default is 1')
     parser.add_argument('--num-classes', type=int, default=101,
                         help='number of classes.')
     parser.add_argument('--ten-crop', action='store_true',
                         help='whether to use ten crop evaluation.')
+    parser.add_argument('--use-amp', action='store_true',
+                        help='whether to use automatic mixed precision.')
+    parser.add_argument('--prefetch-ratio', type=float, default=2.0,
+                        help='set number of workers to prefetch data batch, default is 2 in MXNet.')
+    parser.add_argument('--input-5d', action='store_true',
+                        help='the input is 4d or 5d tensor. 5d is for 3D CNN models.')
     opt = parser.parse_args()
     return opt
 
@@ -127,6 +137,7 @@ def batch_fn(batch, ctx):
 
 def main():
     opt = parse_args()
+    print(opt)
 
     # set env
     num_gpus = opt.num_gpus
@@ -139,7 +150,7 @@ def main():
     # get model
     classes = opt.num_classes
     model_name = opt.model
-    net = get_model(name=model_name, nclass=classes, pretrained=opt.use_pretrained, tsn=opt.use_tsn)
+    net = get_model(name=model_name, nclass=classes, pretrained=opt.use_pretrained)
     net.cast(opt.dtype)
     net.collect_params().reset_ctx(context)
     if opt.mode == 'hybrid':
@@ -151,27 +162,33 @@ def main():
         print('Pre-trained model is successfully loaded from the model zoo.')
 
     # get data
-    normalize = video.VideoNormalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-    transform_test = transforms.Compose([
-        video.VideoTenCrop(opt.input_size),
-        video.VideoToTensor(),
-        normalize
-    ])
+    if opt.ten_crop:
+        transform_test = transforms.Compose([
+            video.VideoTenCrop(opt.input_size),
+            video.VideoToTensor(),
+            video.VideoNormalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+        ])
+    else:
+        transform_test = transforms.Compose([
+            video.VideoCenterCrop(opt.input_size),
+            video.VideoToTensor(),
+            video.VideoNormalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+        ])
 
     if opt.dataset == 'ucf101':
         val_dataset = ucf101.classification.UCF101(setting=opt.val_list, root=opt.data_dir, train=False,
-                                               new_width=opt.new_width, new_height=opt.new_height,
+                                               new_width=opt.new_width, new_height=opt.new_height, new_length=opt.new_length,
                                                target_width=opt.input_size, target_height=opt.input_size,
                                                test_mode=True, num_segments=opt.num_segments, transform=transform_test)
     elif opt.dataset == 'kinetics400':
         val_dataset = kinetics400.classification.Kinetics400(setting=opt.val_list, root=opt.data_dir, train=False,
-                                               new_width=opt.new_width, new_height=opt.new_height,
+                                               new_width=opt.new_width, new_height=opt.new_height, new_length=opt.new_length, new_step=opt.new_step,
                                                target_width=opt.input_size, target_height=opt.input_size,
                                                test_mode=True, num_segments=opt.num_segments, transform=transform_test)
     else:
         logger.info('Dataset %s is not supported yet.' % (opt.dataset))
 
-    val_data = gluon.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
+    val_data = gluon.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, prefetch=int(opt.prefetch_ratio * num_workers))
     print('Load %d test samples.' % len(val_dataset))
 
     # start evaluation
@@ -179,11 +196,17 @@ def main():
     acc_top5 = mx.metric.TopKAccuracy(5)
 
     """Common practice during evaluation is to evenly sample 25 frames from a single video, and then perform 10-crop data augmentation.
-    This leads to 250 samples per video (750 channels). If this is too large to fit into one GPU, we can split it into multiple data bacthes.
-    `num_split_frames` has to be multiples of 3.
+    This leads to 250 samples per video (750 channels). If this is too large to fit into one GPU, we can split it into multiple data batches.
+    `num_data_batches` has to be set to a value as long as `num_split_frames` is multiples of 3.
+    For example, when `num_data_batches` is set to 10,  `num_split_frames` will be 750/10=75, which is multiples of 3.
+    If you have enough GPU memory and prefer faster evaluation speed, you can set `num_data_batches` to 1.
     """
     num_data_batches = 10
-    num_split_frames = int(750 / num_data_batches)
+    if opt.ten_crop:
+        num_frames = opt.num_segments * 10
+    else:
+        num_frames = opt.num_segments
+    num_split_frames = int(num_frames * 3 / num_data_batches)
 
     def test(ctx, val_data):
         acc_top1.reset()
@@ -193,24 +216,34 @@ def main():
             for seg_id in range(num_data_batches):
                 bs = seg_id * num_split_frames
                 be = (seg_id + 1) * num_split_frames
-                new_batch = [batch[0][:,bs:be,:,:], batch[1]]
+                if opt.input_5d:
+                    new_batch = [batch[0][:,bs:be,:,:,:], batch[1]]
+                else:
+                    new_batch = [batch[0][:,bs:be,:,:], batch[1]]
                 data, label = batch_fn(new_batch, ctx)
                 for gpu_id, X in enumerate(data):
-                    X_reshaped = X.reshape((-1, 3, opt.input_size, opt.input_size))
-                    pred = net(X_reshaped.astype(opt.dtype, copy=False))
+                    if opt.input_5d:
+                        new_X = X.reshape((-1, 3, opt.new_length, opt.input_size, opt.input_size))
+                    else:
+                        new_X = X.reshape((-1, 3, opt.input_size, opt.input_size))
+                    pred = net(new_X)
                     if seg_id == 0:
                         outputs.append(pred)
                     else:
                         outputs[gpu_id] = nd.concat(outputs[gpu_id], pred, dim=0)
-            # Perform the mean operation on 250 samples of each video
+            # Perform the mean operation on 'num_frames' samples of each video
             for gpu_id, out in enumerate(outputs):
                 outputs[gpu_id] = nd.expand_dims(out.mean(axis=0), axis=0)
 
             acc_top1.update(label, outputs)
             acc_top5.update(label, outputs)
+            mx.ndarray.waitall()
+
+            _, cur_top1 = acc_top1.get()
+            _, cur_top5 = acc_top5.get()
 
             if i > 0 and i % opt.log_interval == 0:
-                print('%04d/%04d is done' % (i, len(val_data)))
+                print('%04d/%04d is done: acc-top1=%f acc-top5=%f' % (i, len(val_data), cur_top1*100, cur_top5*100))
 
         _, top1 = acc_top1.get()
         _, top5 = acc_top5.get()
