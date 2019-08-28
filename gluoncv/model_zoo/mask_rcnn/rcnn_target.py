@@ -85,7 +85,7 @@ class MaskTargetGenerator(gluon.HybridBlock):
             same_cids = same_cids.reshape((-2, 1, 1))
 
             # (N, MS, MS) -> (C, N, 1, 1) -> (C, N, MS, MS)
-            mask_mask = F.broadcast_mul(F.ones_like(pooled_mask), same_cids)
+            mask_mask = F.broadcast_like(same_cids, pooled_mask, lhs_axes=(2, 3), rhs_axes=(1, 2))
 
             # (N, MS, MS) -> (C, N, MS, MS)
             mask_target = F.expand_dims(pooled_mask, 0)
