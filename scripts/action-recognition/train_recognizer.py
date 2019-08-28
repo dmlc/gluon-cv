@@ -193,7 +193,7 @@ def get_data_loader(opt, batch_size, num_workers, logger, kvstore=None):
         if kvstore is not None:
             train_data = gluon.data.DataLoader(train_dataset, batch_size=batch_size, num_workers=num_workers, prefetch=int(opt.prefetch_ratio * num_workers),
                                            sampler=SplitSampler(len(train_dataset), num_parts=kvstore.num_workers, part_index=kvstore.rank), last_batch='rollover')
-            val_data = gluon.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, prefetch=int(opt.prefetch_ratio * num_workers),
+            val_data = gluon.data.DataLoader(val_dataset, batch_size=batch_size, num_workers=num_workers, prefetch=int(opt.prefetch_ratio * num_workers),
                                            sampler=SplitSampler(len(val_dataset), num_parts=kvstore.num_workers, part_index=kvstore.rank), last_batch='keep')
         else:
             train_data = gluon.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers, prefetch=int(opt.prefetch_ratio * num_workers), last_batch='rollover')
