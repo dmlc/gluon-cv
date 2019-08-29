@@ -71,6 +71,10 @@ class MaskTargetGenerator(gluon.HybridBlock):
             cls_targets = _split(cls_targets, axis=0, num_outputs=self._num_images,
                                  squeeze_axis=True)
 
+            # (C, 1)
+            cids = F.arange(1, self._num_classes + 1)
+            cids = cids.reshape((-1, 1))
+
             mask_targets = []
             mask_masks = []
             for roi, gt_mask, match, cls_target in zip(rois, gt_masks, matches, cls_targets):
@@ -80,19 +84,23 @@ class MaskTargetGenerator(gluon.HybridBlock):
                 pooled_mask = F.contrib.ROIAlign(gt_mask, padded_rois,
                                                  self._mask_size, 1.0, sample_ratio=2)
                 pooled_mask = pooled_mask.reshape((-3, 0, 0))
-                # duplicate to C * (N, MS, MS)
-                mask_target = []
-                mask_mask = []
-                for cid in range(1, self._num_classes + 1):
-                    # boolean array (N,) -> (N, 1, 1)
-                    same_cid = (cls_target == cid).reshape((-1, 1, 1))
-                    # keep orig targets
-                    mask_target.append(pooled_mask)
-                    # but mask out the one not belong to this class [N, MS, MS]
-                    mask_mask.append(F.broadcast_mul(F.ones_like(pooled_mask), same_cid))
+
+                # (N,) -> (C, 1) -> (C, N, 1, 1)
+                cls_target = F.expand_dims(cls_target, 0)
+                same_cids = F.broadcast_equal(cls_target, cids)
+                same_cids = same_cids.reshape((-2, 1, 1))
+
+                # (N, MS, MS) -> (C, N, 1, 1) -> (C, N, MS, MS)
+                mask_mask = F.broadcast_like(same_cids, pooled_mask, lhs_axes=(2, 3),
+                                             rhs_axes=(1, 2))
+
+                # (N, MS, MS) -> (C, N, MS, MS)
+                mask_target = F.expand_dims(pooled_mask, 0)
+                mask_target = F.broadcast_axis(mask_target, size=self._num_classes, axis=0)
+
                 # (C, N, MS, MS) -> (N, C, MS, MS)
-                mask_targets.append(F.stack(*mask_target, axis=0).transpose((1, 0, 2, 3)))
-                mask_masks.append(F.stack(*mask_mask, axis=0).transpose((1, 0, 2, 3)))
+                mask_targets.append(mask_target.transpose((1, 0, 2, 3)))
+                mask_masks.append(mask_mask.transpose((1, 0, 2, 3)))
 
             # B * (N, C, MS, MS) -> (B, N, C, MS, MS)
             mask_targets = F.stack(*mask_targets, axis=0)

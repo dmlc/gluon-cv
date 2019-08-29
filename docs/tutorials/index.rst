@@ -246,6 +246,10 @@ Dataset Preparation
         :title: Prepare UCF101 Dataset
         :link: ../build/examples_datasets/ucf101.html
 
+    .. card::
+        :title: Prepare Kinetics400 Dataset
+        :link: ../build/examples_datasets/kinetics400.html
+
 
 Deployment
 ----------

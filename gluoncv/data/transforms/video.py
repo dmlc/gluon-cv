@@ -7,20 +7,21 @@ import numpy as np
 from mxnet import nd
 from mxnet.gluon import Block
 
-__all__ = ['VideoToTensor', 'VideoNormalize', 'VideoRandomHorizontalFlip', 'VideoMultiScaleCrop',
-           'VideoCenterCrop', 'VideoTenCrop']
+__all__ = ['VideoToTensor', 'VideoNormalize', 'VideoRandomHorizontalFlip',
+           'VideoMultiScaleCrop', 'VideoCenterCrop', 'VideoTenCrop']
 
 class VideoToTensor(Block):
-    """Converts a video clip NDArray to a tensor NDArray.
+    """Converts a video clip NDArray to a tensor.
 
     Converts a video clip NDArray of shape (H x W x C) in the range
-    [0, 255] to a float32 tensor NDArray of shape (C x H x W) in
+    [0, 255] to a float32 tensor of shape (C x H x W) in
     the range [0, 1).
 
     Parameters
     ----------
     max_intensity : float
-        The maximum intensity value to be divided.
+        The maximum intensity value to be divided in order to
+        fit the output tensor in the range [0, 1).
 
     Inputs:
         - **data**: input tensor with (H x W x C) shape and uint8 type.
@@ -36,7 +37,7 @@ class VideoToTensor(Block):
         return nd.transpose(clips, axes=(2, 0, 1)) / self.max_intensity
 
 class VideoNormalize(Block):
-    """Normalize an tensor of shape (C x H x W) with mean and standard deviation.
+    """Normalize a tensor of shape (C x H x W) with mean and standard deviation.
 
     Given mean `(m1, ..., mn)` and std `(s1, ..., sn)` for `n` channels,
     this transform normalizes each channel of the input tensor with::
@@ -72,15 +73,15 @@ class VideoNormalize(Block):
         clip_std = self.std * num_images
         clip_mean = nd.array(np.asarray(clip_mean).reshape((c, 1, 1)))
         clip_std = nd.array(np.asarray(clip_std).reshape((c, 1, 1)))
-
         return (clips - clip_mean) / clip_std
 
 class VideoRandomHorizontalFlip(Block):
-    """Randomly flip the input video clip left to right with a probability of 0.5.
+    """Randomly flip the input video clip left to right
+    with a probability of 0.5.
 
     Parameters
     ----------
-    px : float
+    prob : float
         The probability value to flip the input tensor.
 
     Inputs:
@@ -90,12 +91,12 @@ class VideoRandomHorizontalFlip(Block):
         - **out**: output tensor with same shape as `data`.
     """
 
-    def __init__(self, px=0):
+    def __init__(self, prob=0.5):
         super(VideoRandomHorizontalFlip, self).__init__()
-        self.px = px
+        self.prob = prob
 
     def forward(self, clips):
-        if random.random() < 0.5:
+        if random.random() < self.prob:
             clips = nd.flip(clips, axis=1)
         return clips
 
@@ -130,6 +131,8 @@ class VideoMultiScaleCrop(Block):
     def __init__(self, size, scale_ratios, fix_crop=True,
                  more_fix_crop=True, max_distort=1):
         super(VideoMultiScaleCrop, self).__init__()
+        from ...utils.filesystem import try_import_cv2
+        self.cv2 = try_import_cv2()
         self.height = size[0]
         self.width = size[1]
         self.scale_ratios = scale_ratios
@@ -194,15 +197,8 @@ class VideoMultiScaleCrop(Block):
         return crop_sizes
 
     def forward(self, clips):
-
-        from ...utils.filesystem import try_import_cv2
-        cv2 = try_import_cv2()
-
         clips = clips.asnumpy()
         h, w, c = clips.shape
-        is_color = False
-        if c % 3 == 0:
-            is_color = True
 
         crop_size_pairs = self.fillCropSize(h, w)
         size_sel = random.randint(0, len(crop_size_pairs)-1)
@@ -219,23 +215,13 @@ class VideoMultiScaleCrop(Block):
             w_off = random.randint(0, w - self.width)
 
         scaled_clips = np.zeros((self.height, self.width, c))
-        if is_color:
-            num_imgs = int(c / 3)
-            for frame_id in range(num_imgs):
-                cur_img = clips[:, :, frame_id*3:frame_id*3+3]
-                crop_img = cur_img[h_off:h_off+crop_height, w_off:w_off+crop_width, :]
-                scaled_clips[:, :, frame_id*3:frame_id*3+3] = \
-                	cv2.resize(crop_img, (self.width, self.height), cv2.INTER_LINEAR)
-        else:
-            num_imgs = int(c / 1)
-            for frame_id in range(num_imgs):
-                cur_img = clips[:, :, frame_id:frame_id+1]
-                crop_img = cur_img[h_off:h_off+crop_height, w_off:w_off+crop_width, :]
-                scaled_clips[:, :, frame_id:frame_id+1] = np.expand_dims(\
-                	cv2.resize(crop_img, (self.width, self.height), cv2.INTER_LINEAR), axis=2)
-
+        num_imgs = int(c / 3)
+        for frame_id in range(num_imgs):
+            cur_img = clips[:, :, frame_id*3:frame_id*3+3]
+            crop_img = cur_img[h_off:h_off+crop_height, w_off:w_off+crop_width, :]
+            scaled_clips[:, :, frame_id*3:frame_id*3+3] = \
+            	self.cv2.resize(crop_img, (self.width, self.height))
         return nd.array(scaled_clips)
-
 
 class VideoCenterCrop(Block):
     """Crops the given numpy array at the center to have a region of
@@ -267,27 +253,14 @@ class VideoCenterCrop(Block):
         x1 = int(round((w - tw) / 2.))
         y1 = int(round((h - th) / 2.))
 
-        is_color = False
-        if c % 3 == 0:
-            is_color = True
-
         scaled_clips = nd.zeros((th, tw, c))
-        if is_color:
-            num_imgs = int(c / 3)
-            for frame_id in range(num_imgs):
-                cur_img = clips[:, :, frame_id*3:frame_id*3+3]
-                crop_img = cur_img[y1:y1+th, x1:x1+tw, :]
-                assert(crop_img.shape == (th, tw, 3))
-                scaled_clips[:, :, frame_id*3:frame_id*3+3] = crop_img
-        else:
-            num_imgs = int(c / 1)
-            for frame_id in range(num_imgs):
-                cur_img = clips[:, :, frame_id:frame_id+1]
-                crop_img = cur_img[y1:y1+th, x1:x1+tw, :]
-                assert(crop_img.shape == (th, tw, 1))
-                scaled_clips[:, :, frame_id:frame_id+1] = crop_img
+        num_imgs = int(c / 3)
+        for frame_id in range(num_imgs):
+            cur_img = clips[:, :, frame_id*3:frame_id*3+3]
+            crop_img = cur_img[y1:y1+th, x1:x1+tw, :]
+            assert(crop_img.shape == (th, tw, 3))
+            scaled_clips[:, :, frame_id*3:frame_id*3+3] = crop_img
         return scaled_clips
-
 
 class VideoTenCrop(Block):
     """Crop 10 regions from an array.

@@ -28,8 +28,12 @@ def dump_frames(vid_item):
     vr = mmcv.VideoReader(full_path)
     for i in range(len(vr)):
         if vr[i] is not None:
+            if args.new_width > 0 and args.new_height > 0:
+                cur_img = mmcv.imresize(vr[i], (args.new_width, args.new_height))
+            else:
+                cur_img = vr[i]
             mmcv.imwrite(
-                vr[i], '{}/img_{:05d}.jpg'.format(out_full_path, i + 1))
+                cur_img, '{}/img_{:05d}.jpg'.format(out_full_path, i + 1))
         else:
             print('[Warning] length inconsistent!'
                   'Early stop with {} out of {} frames'.format(i + 1, len(vr)))
@@ -405,6 +409,7 @@ def download_kinetics400_videos(args):
         at https://github.com/activitynet/ActivityNet/tree/master/Crawler/Kinetics. ')
 
 if __name__ == '__main__':
+    global args
     args = parse_args()
 
     if args.download:
