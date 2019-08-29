@@ -1,14 +1,17 @@
 """MS COCO object detection dataset."""
 from __future__ import absolute_import
 from __future__ import division
+
 import os
-import numpy as np
+
 import mxnet as mx
+import numpy as np
+from PIL import Image
+
 from .utils import try_import_pycocotools
 from ..base import VisionDataset
-from ...utils.bbox import bbox_xywh_to_xyxy, bbox_clip_xyxy
-
 from ...utils import try_import_dali
+from ...utils.bbox import bbox_xywh_to_xyxy, bbox_clip_xyxy
 
 dali = try_import_dali()
 
@@ -73,6 +76,7 @@ class COCODetection(VisionDataset):
         self.contiguous_id_to_json = None
         self._coco = []
         self._items, self._labels = self._load_jsons()
+        self._im_aspect_ratios = None
 
     def __str__(self):
         detail = ','.join([str(s) for s in self._splits])
@@ -103,6 +107,18 @@ class COCODetection(VisionDataset):
         You can override if custom dataset don't follow the same pattern
         """
         return 'annotations'
+
+    def get_im_aspect_ratio(self):
+        """Return the aspect ratio of each image in the order of the raw data."""
+        if self._im_aspect_ratios is not None:
+            return self._im_aspect_ratios
+        self._im_aspect_ratios = [None] * len(self._items)
+        for i, img_path in enumerate(self._items):
+            with Image.open(img_path) as im:
+                w, h = im.size
+                self._im_aspect_ratios[i] = 1.0 * w / h
+
+        return self._im_aspect_ratios
 
     def _parse_image_path(self, entry):
         """How to parse image dir and path from entry.
@@ -200,6 +216,7 @@ class COCODetection(VisionDataset):
                 valid_objs.append([-1, -1, -1, -1, -1])
         return valid_objs
 
+
 class COCODetectionDALI(object):
     """DALI partial pipeline with COCO Reader and loader. To be passed as
     a parameter of a DALI transform pipeline.
@@ -216,6 +233,7 @@ class COCODetectionDALI(object):
     annotations_file
         The COCO annotation file to read from.
     """
+
     def __init__(self, num_shards, shard_id, file_root, annotations_file):
         self.input = dali.ops.COCOReader(
             file_root=file_root,
@@ -236,6 +254,7 @@ class COCODetectionDALI(object):
             """ Dummy pipeline which sole purpose is to build COCOReader
             and get the epoch size. To be replaced by DALI standalone op, when available.
             """
+
             def __init__(self):
                 super(DummyMicroPipe, self).__init__(batch_size=1,
                                                      device_id=0,
@@ -243,6 +262,7 @@ class COCODetectionDALI(object):
                 self.input = dali.ops.COCOReader(
                     file_root=file_root,
                     annotations_file=annotations_file)
+
             def define_graph(self):
                 inputs, bboxes, labels = self.input(name="Reader")
                 return (inputs, bboxes, labels)
@@ -259,6 +279,7 @@ class COCODetectionDALI(object):
         inputs, bboxes, labels = self.input(name="Reader")
         images = self.decode(inputs)
         return (images, bboxes, labels)
+
     def size(self):
         """Returns size of COCO dataset
         """

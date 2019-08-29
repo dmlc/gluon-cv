@@ -132,7 +132,7 @@ plt.show()
 # :py:class:`gluoncv.data.batchify.Append`, which neither stack or pad images, but instead return lists.
 # In such way, image tensors and labels returned have their own shapes, unaware of the rest in the same batch.
 
-from gluoncv.data.batchify import Tuple, Append
+from gluoncv.data.batchify import Tuple, Append, FasterRCNNTrainBatchify
 from mxnet.gluon.data import DataLoader
 
 batch_size = 2  # for tutorial, we use smaller batch-size
@@ -225,7 +225,7 @@ rcnn_box_loss = mx.gluon.loss.HuberLoss()  # == smoothl1
 # If we provide network to the training transform function, it will compute training targets
 train_transform = presets.rcnn.FasterRCNNDefaultTrainTransform(short, max_size, net)
 # Return images, labels, rpn_cls_targets, rpn_box_targets, rpn_box_masks loosely
-batchify_fn = Tuple(*[Append() for _ in range(5)])
+batchify_fn = FasterRCNNTrainBatchify(net)
 # For the next part, we only use batch size 1
 batch_size = 1
 train_loader = DataLoader(train_dataset.transform(train_transform), batch_size, shuffle=True,

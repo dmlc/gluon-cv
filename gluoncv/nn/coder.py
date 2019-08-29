@@ -50,6 +50,7 @@ class NumPyNormalizedBoxCenterEncoder(object):
         masks: (B, N, 4) only positive anchors has targets
 
         """
+
         # refs [B, M, 4], anchors [B, N, 4], samples [B, N], matches [B, N]
         ref_boxes = np.repeat(refs.reshape((refs.shape[0], 1, -1, 4)), axis=1,
                               repeats=matches.shape[1])
@@ -71,6 +72,9 @@ class NumPyNormalizedBoxCenterEncoder(object):
         targets = np.where(temp, codecs, 0.0)
         masks = np.where(temp, 1.0, 0.0)
         return targets, masks
+        # return np_normalized_box_encoder(samples, matches, anchors, refs,
+        #                                 np.array(self._means, dtype=np.float32),
+        #                                 np.array(self._stds, dtype=np.float32))
 
 
 class NormalizedBoxCenterEncoder(gluon.Block):

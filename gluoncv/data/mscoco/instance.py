@@ -1,9 +1,13 @@
 """MS COCO object detection dataset."""
 from __future__ import absolute_import
 from __future__ import division
+
 import os
-import numpy as np
+
 import mxnet as mx
+import numpy as np
+from PIL import Image
+
 from .utils import try_import_pycocotools
 from ..base import VisionDataset
 
@@ -65,6 +69,7 @@ class COCOInstance(VisionDataset):
         self.contiguous_id_to_json = None
         self._coco = []
         self._items, self._labels, self._segms = self._load_jsons()
+        self._im_aspect_ratios = None
 
     def __str__(self):
         detail = ','.join([str(s) for s in self._splits])
@@ -84,6 +89,18 @@ class COCOInstance(VisionDataset):
     def classes(self):
         """Category names."""
         return type(self).CLASSES
+
+    def get_im_aspect_ratio(self):
+        """Return the aspect ratio of each image in the order of the raw data."""
+        if self._im_aspect_ratios is not None:
+            return self._im_aspect_ratios
+        self._im_aspect_ratios = [None] * len(self._items)
+        for i, img_path in enumerate(self._items):
+            with Image.open(img_path) as im:
+                w, h = im.size
+                self._im_aspect_ratios[i] = 1.0 * w / h
+
+        return self._im_aspect_ratios
 
     def __len__(self):
         return len(self._items)

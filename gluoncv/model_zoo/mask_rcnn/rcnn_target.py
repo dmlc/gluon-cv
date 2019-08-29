@@ -19,6 +19,7 @@ class MaskTargetGenerator(gluon.HybridBlock):
         Size of generated masks, for example (14, 14).
 
     """
+
     def __init__(self, num_images, num_rois, num_classes, mask_size, **kwargs):
         super(MaskTargetGenerator, self).__init__(**kwargs)
         self._num_images = num_images
@@ -26,7 +27,7 @@ class MaskTargetGenerator(gluon.HybridBlock):
         self._num_classes = num_classes
         self._mask_size = mask_size
 
-    #pylint: disable=arguments-differ
+    # pylint: disable=arguments-differ
     def hybrid_forward(self, F, rois, gt_masks, matches, cls_targets):
         """Handle B=self._num_image by a for loop.
         There is no way to know number of gt_masks.
@@ -45,11 +46,14 @@ class MaskTargetGenerator(gluon.HybridBlock):
         box_weight: (B, N, C, 4), only foreground class has nonzero weight.
 
         """
+
         # cannot know M (num_gt) to have accurate batch id B * M, must split batch dim
         def _split(x, axis, num_outputs, squeeze_axis):
             x = F.split(x, axis=axis, num_outputs=num_outputs, squeeze_axis=squeeze_axis)
             if isinstance(x, list):
                 return x
+            elif self._num_images > 1:
+                return list(x)
             else:
                 return [x]
 
@@ -59,7 +63,7 @@ class MaskTargetGenerator(gluon.HybridBlock):
         # rois (B, N, 4) -> B * (N, 4)
         rois = _split(rois, axis=0, num_outputs=self._num_images, squeeze_axis=True)
         # remove possible -1 match
-        matches = F.where(matches >= 0, matches, F.zeros_like(matches))
+        matches = F.relu(matches)
         # matches (B, N) -> B * (N,)
         matches = _split(matches, axis=0, num_outputs=self._num_images, squeeze_axis=True)
         # cls_targets (B, N) -> B * (N,)
