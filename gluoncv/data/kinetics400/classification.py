@@ -55,11 +55,12 @@ class Kinetics400(dataset.Dataset):
                  root=os.path.expanduser('~/.mxnet/datasets/kinetics400/rawframes_train'),
                  train=True,
                  test_mode=False,
-                 name_pattern=None,
+                 name_pattern='img_%05d.jpg',
                  is_color=True,
                  modality='rgb',
                  num_segments=1,
                  new_length=1,
+                 new_step=1,
                  new_width=340,
                  new_height=256,
                  target_width=224,
@@ -68,6 +69,8 @@ class Kinetics400(dataset.Dataset):
 
         super(Kinetics400, self).__init__()
 
+        from ...utils.filesystem import try_import_cv2
+        self.cv2 = try_import_cv2()
         self.root = root
         self.setting = setting
         self.train = train
@@ -77,24 +80,19 @@ class Kinetics400(dataset.Dataset):
         self.num_segments = num_segments
         self.new_height = new_height
         self.new_width = new_width
+        self.new_length = new_length
+        self.new_step = new_step
+        self.skip_length = self.new_length * self.new_step
         self.target_height = target_height
         self.target_width = target_width
-        self.new_length = new_length
         self.transform = transform
+        self.name_pattern = name_pattern
 
         self.classes, self.class_to_idx = self._find_classes(root)
         self.clips = self._make_dataset(root, setting)
         if len(self.clips) == 0:
             raise(RuntimeError("Found 0 video clips in subfolders of: " + root + "\n"
                                "Check your data directory (opt.data-dir)."))
-
-        if name_pattern:
-            self.name_pattern = name_pattern
-        else:
-            if self.modality == "rgb":
-                self.name_pattern = "img_%05d.jpg"
-            elif self.modality == "flow":
-                self.name_pattern = "flow_%s_%05d.jpg"
 
     def __getitem__(self, index):
 
@@ -103,34 +101,44 @@ class Kinetics400(dataset.Dataset):
         offsets = []
         for seg_id in range(self.num_segments):
             if self.train and not self.test_mode:
-                # training
-                if average_duration >= self.new_length:
-                    offset = random.randint(0, average_duration - self.new_length)
-                    # No +1 because randint(a,b) return a random integer N such that a <= N <= b.
+                # train
+                if average_duration >= self.skip_length:
+                    offset = random.randint(0, average_duration - self.skip_length)
                     offsets.append(offset + seg_id * average_duration)
                 else:
                     offsets.append(0)
             elif not self.train and not self.test_mode:
                 # validation
-                if average_duration >= self.new_length:
-                    offsets.append(int((average_duration - self.new_length + 1)/2 + seg_id * average_duration))
+                if average_duration >= self.skip_length:
+                    offsets.append(int((average_duration - self.skip_length + 1)/2 + seg_id * average_duration))
                 else:
                     offsets.append(0)
             else:
                 # test
-                if average_duration >= self.new_length:
-                    offsets.append(int((average_duration - self.new_length + 1)/2 + seg_id * average_duration))
+                if average_duration >= self.skip_length:
+                    offsets.append(int((average_duration - self.skip_length + 1)/2 + seg_id * average_duration))
                 else:
                     offsets.append(0)
 
-        clip_input = self._TSN_RGB(directory, offsets, self.new_height, self.new_width, self.new_length, self.is_color, self.name_pattern)
+        # N x H x W, where N = num_oversample * num_segments * new_length * channel
+        clip_input = self._TSN_RGB(directory, offsets, self.new_height, self.new_width, self.skip_length, self.name_pattern, self.new_step)
 
         if self.transform is not None:
             clip_input = self.transform(clip_input)
 
-        if self.num_segments > 1 and not self.test_mode:
-            # For TSN training, reshape the input to B x 3 x H x W. Here, B = batch_size * num_segments
-            clip_input = clip_input.reshape((-1, 3 * self.new_length, self.target_height, self.target_width))
+        if self.new_length > 1 and self.num_segments > 1:
+            clip_input = clip_input.reshape((-1, self.num_segments) + (3, self.new_length, self.target_height, self.target_width))
+            if not self.test_mode:
+                # reshape: N' x C x L x H x W, where N' = num_oversample x num_segments
+                clip_input = clip_input.reshape((-1,) + clip_input.shape[2:])
+            else:
+                # reshape: N' x L x H x W, where N' = num_oversample x num_segments x channel
+                clip_input = clip_input.reshape((-1,) + (self.new_length, self.target_height, self.target_width))
+        elif self.new_length > 1 and self.num_segments == 1:
+            clip_input = clip_input.reshape((3, self.new_length, self.target_height, self.target_width))
+        elif self.num_segments > 1 and self.new_length == 1:
+            if not self.test_mode:
+                clip_input = clip_input.reshape((-1, 3, self.target_height, self.target_width))
 
         return clip_input, target
 
@@ -138,14 +146,12 @@ class Kinetics400(dataset.Dataset):
         return len(self.clips)
 
     def _find_classes(self, directory):
-
         classes = [d for d in os.listdir(directory) if os.path.isdir(os.path.join(directory, d))]
         classes.sort()
         class_to_idx = {classes[i]: i for i in range(len(classes))}
         return classes, class_to_idx
 
     def _make_dataset(self, directory, setting):
-
         if not os.path.exists(setting):
             raise(RuntimeError("Setting file %s doesn't exist. Check opt.train-list and opt.val-list. " % (setting)))
         clips = []
@@ -155,8 +161,7 @@ class Kinetics400(dataset.Dataset):
                 line_info = line.split()
                 # line format: video_path, video_duration, video_label
                 if len(line_info) < 3:
-                    print('Video input format is not correct, missing one or more element. %s' % line)
-                    continue
+                    raise(RuntimeError('Video input format is not correct, missing one or more element. %s' % line))
                 clip_path = os.path.join(directory, line_info[0])
                 duration = int(line_info[1])
                 target = int(line_info[2])
@@ -164,32 +169,23 @@ class Kinetics400(dataset.Dataset):
                 clips.append(item)
         return clips
 
-    def _TSN_RGB(self, directory, offsets, new_height, new_width, new_length, is_color, name_pattern):
-
-        from ...utils.filesystem import try_import_cv2
-        cv2 = try_import_cv2()
-
-        if is_color:
-            cv_read_flag = cv2.IMREAD_COLOR
-        else:
-            cv_read_flag = cv2.IMREAD_GRAYSCALE
-        interpolation = cv2.INTER_LINEAR
-
+    def _TSN_RGB(self, directory, offsets, new_height, new_width, skip_length, name_pattern, new_step):
         sampled_list = []
         for _, offset in enumerate(offsets):
-            for length_id in range(1, new_length+1):
-                frame_name = name_pattern % (length_id + offset)
-                frame_path = directory + "/" + frame_name
-                cv_img_origin = cv2.imread(frame_path, cv_read_flag)
-                if cv_img_origin is None:
-                    raise(RuntimeError("Could not load file %s. Check data path." % (frame_path)))
+            for length_id in range(1, skip_length + 1, new_step):
+                frame_path = os.path.join(directory, name_pattern % (length_id + offset))
+                cv_img = self.cv2.imread(frame_path)
+                if cv_img is None:
+                    if length_id == 1:
+                        raise(RuntimeError("Could not load file %s starting at frame %d. Check data path." % (frame_path, offset)))
+                    sampled_list.append(np.zeros((new_height, new_width, 3)))   # pad black frames if this video clip does not have `skip_length` frames
+                    continue
                 if new_width > 0 and new_height > 0:
-                    cv_img = cv2.resize(cv_img_origin, (new_width, new_height), interpolation)
-                else:
-                    cv_img = cv_img_origin
-                cv_img = cv2.cvtColor(cv_img, cv2.COLOR_BGR2RGB)
+                    h, w, _ = cv_img.shape
+                    if h != new_height or w != new_width:
+                        cv_img = self.cv2.resize(cv_img, (new_width, new_height))
+                cv_img = cv_img[:, :, ::-1]
                 sampled_list.append(cv_img)
-        # the shape of clip_input will be H x W x C, and C = num_segments * new_length * 3
         clip_input = np.concatenate(sampled_list, axis=2)
         return nd.array(clip_input)
 

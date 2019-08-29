@@ -21,6 +21,7 @@ from .lst.detection import LstDetection
 from .mixup.detection import MixupDetection
 from .ucf101.classification import UCF101, UCF101Attr
 from .kinetics400.classification import Kinetics400, Kinetics400Attr
+from .sampler import SplitSampler
 
 datasets = {
     'ade20k': ADE20KSegmentation,

@@ -68,6 +68,8 @@ class UCF101(dataset.Dataset):
 
         super(UCF101, self).__init__()
 
+        from ...utils.filesystem import try_import_cv2
+        self.cv2 = try_import_cv2()
         self.root = root
         self.setting = setting
         self.train = train
@@ -123,7 +125,7 @@ class UCF101(dataset.Dataset):
                 else:
                     offsets.append(0)
 
-        clip_input = self._TSN_RGB(directory, offsets, self.new_height, self.new_width, self.new_length, self.is_color, self.name_pattern)
+        clip_input = self._TSN_RGB(directory, offsets, self.new_height, self.new_width, self.new_length, self.name_pattern)
 
         if self.transform is not None:
             clip_input = self.transform(clip_input)
@@ -138,14 +140,12 @@ class UCF101(dataset.Dataset):
         return len(self.clips)
 
     def _find_classes(self, directory):
-
         classes = [d for d in os.listdir(directory) if os.path.isdir(os.path.join(directory, d))]
         classes.sort()
         class_to_idx = {classes[i]: i for i in range(len(classes))}
         return classes, class_to_idx
 
     def _make_dataset(self, directory, setting):
-
         if not os.path.exists(setting):
             raise(RuntimeError("Setting file %s doesn't exist. Check opt.train-list and opt.val-list. " % (setting)))
         clips = []
@@ -161,32 +161,20 @@ class UCF101(dataset.Dataset):
                 clips.append(item)
         return clips
 
-    def _TSN_RGB(self, directory, offsets, new_height, new_width, new_length, is_color, name_pattern):
-
-        from ...utils.filesystem import try_import_cv2
-        cv2 = try_import_cv2()
-
-        if is_color:
-            cv_read_flag = cv2.IMREAD_COLOR
-        else:
-            cv_read_flag = cv2.IMREAD_GRAYSCALE
-        interpolation = cv2.INTER_LINEAR
-
+    def _TSN_RGB(self, directory, offsets, new_height, new_width, new_length, name_pattern):
         sampled_list = []
         for _, offset in enumerate(offsets):
-            for length_id in range(1, new_length+1):
-                frame_name = name_pattern % (length_id + offset)
-                frame_path = directory + "/" + frame_name
-                cv_img_origin = cv2.imread(frame_path, cv_read_flag)
+            for length_id in range(1, new_length + 1):
+                frame_path = os.path.join(directory, name_pattern % (length_id + offset))
+                cv_img_origin = self.cv2.imread(frame_path)
                 if cv_img_origin is None:
                     raise(RuntimeError("Could not load file %s. Check data path." % (frame_path)))
                 if new_width > 0 and new_height > 0:
-                    cv_img = cv2.resize(cv_img_origin, (new_width, new_height), interpolation)
+                    cv_img = self.cv2.resize(cv_img_origin, (new_width, new_height))
                 else:
                     cv_img = cv_img_origin
-                cv_img = cv2.cvtColor(cv_img, cv2.COLOR_BGR2RGB)
+                cv_img = cv_img[:, :, ::-1]
                 sampled_list.append(cv_img)
-        # the shape of clip_input will be H x W x C, and C = num_segments * new_length * 3
         clip_input = np.concatenate(sampled_list, axis=2)
         return nd.array(clip_input)
 

@@ -73,7 +73,8 @@ net = get_model('vgg16_ucf101', nclass=101, pretrained=True)
 
 ################################################################
 #
-# Finally, we prepare the image and feed it to the model
+# Note that if you want to use InceptionV3 series model, please change input size to 299
+# in the transform function. Finally, we prepare the image and feed it to the model.
 
 pred = net(img.expand_dims(axis=0))
 
