@@ -236,13 +236,12 @@ train_loader = DataLoader(train_dataset.transform(train_transform), batch_size, 
 # Then it is very naturally a gluon training loop with Trainer and let it update the weights.
 
 for ib, batch in enumerate(train_loader):
-    batch = [batch]
     if ib > 0:
         break
     with autograd.train_mode():
         for data, label, rpn_cls_targets, rpn_box_targets, rpn_box_masks in zip(*batch):
-            gt_label = label[:, :, 4:5]
-            gt_box = label[:, :, :4]
+            gt_label = label[:, 4:5]
+            gt_box = label[:, :4]
             print('data:', data.shape)
             # box and class labels
             print('box:', gt_box.shape)
@@ -259,13 +258,12 @@ for ib, batch in enumerate(train_loader):
 # RCNN targets are generated with the intermediate outputs with the stored target generator.
 
 for ib, batch in enumerate(train_loader):
-    batch = [batch]
     if ib > 0:
         break
     with autograd.train_mode():
         for data, label, rpn_cls_targets, rpn_box_targets, rpn_box_masks in zip(*batch):
-            gt_label = label[:, :, 4:5]
-            gt_box = label[:, :, :4]
+            gt_label = label[:, 4:5]
+            gt_box = label[:, :4]
             # network forward
             cls_preds, box_preds, roi, samples, matches, rpn_score, rpn_box, anchors = net(batch[0][0], gt_box)
             # generate targets for rcnn
@@ -287,13 +285,12 @@ for ib, batch in enumerate(train_loader):
 # After we have defined loss function and generated training targets, we can write the training loop.
 
 for ib, batch in enumerate(train_loader):
-    batch = [batch]
     if ib > 0:
         break
     with autograd.record():
         for data, label, rpn_cls_targets, rpn_box_targets, rpn_box_masks in zip(*batch):
-            gt_label = label[:, :, 4:5]
-            gt_box = label[:, :, :4]
+            gt_label = label[:, 4:5]
+            gt_box = label[:, :4]
             # network forward
             cls_preds, box_preds, roi, samples, matches, rpn_score, rpn_box, anchors = net(data, gt_box)
             # generate targets for rcnn

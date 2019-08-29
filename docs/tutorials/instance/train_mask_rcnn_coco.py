@@ -245,13 +245,12 @@ train_loader = DataLoader(train_dataset.transform(train_transform), batch_size, 
 # Mask targets are generated with the intermediate outputs after rcnn target is generated.
 
 for ib, batch in enumerate(train_loader):
-    batch = [batch]
     if ib > 0:
         break
     with autograd.train_mode():
         for data, label, masks, rpn_cls_targets, rpn_box_targets, rpn_box_masks in zip(*batch):
-            gt_label = label[:, :, 4:5]
-            gt_box = label[:, :, :4]
+            gt_label = label[:, 4:5]
+            gt_box = label[:, :4]
             # network forward
             cls_preds, box_preds, mask_preds, roi, samples, matches, rpn_score, rpn_box, anchors = net(data, gt_box)
             # generate targets for rcnn
@@ -281,13 +280,12 @@ for ib, batch in enumerate(train_loader):
 # After we have defined loss function and generated training targets, we can write the training loop.
 
 for ib, batch in enumerate(train_loader):
-    batch = [batch]
     if ib > 0:
         break
     with autograd.record():
         for data, label, masks, rpn_cls_targets, rpn_box_targets, rpn_box_masks in zip(*batch):
-            gt_label = label[:, :, 4:5]
-            gt_box = label[:, :, :4]
+            gt_label = label[:, 4:5]
+            gt_box = label[:, :4]
             # network forward
             cls_preds, box_preds, mask_preds, roi, samples, matches, rpn_score, rpn_box, anchors = net(data, gt_box)
             # generate targets for rcnn
