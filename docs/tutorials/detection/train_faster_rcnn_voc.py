@@ -236,6 +236,7 @@ train_loader = DataLoader(train_dataset.transform(train_transform), batch_size, 
 # Then it is very naturally a gluon training loop with Trainer and let it update the weights.
 
 for ib, batch in enumerate(train_loader):
+    batch = [batch]
     if ib > 0:
         break
     with autograd.train_mode():
@@ -258,6 +259,7 @@ for ib, batch in enumerate(train_loader):
 # RCNN targets are generated with the intermediate outputs with the stored target generator.
 
 for ib, batch in enumerate(train_loader):
+    batch = [batch]
     if ib > 0:
         break
     with autograd.train_mode():
@@ -285,6 +287,7 @@ for ib, batch in enumerate(train_loader):
 # After we have defined loss function and generated training targets, we can write the training loop.
 
 for ib, batch in enumerate(train_loader):
+    batch = [batch]
     if ib > 0:
         break
     with autograd.record():

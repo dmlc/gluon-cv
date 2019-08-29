@@ -152,7 +152,7 @@ plt.show()
 # -----------
 # Data loader is identical to Faster R-CNN with the difference of mask input and output.
 
-from gluoncv.data.batchify import Tuple, Append
+from gluoncv.data.batchify import Tuple, Append, MaskRCNNTrainBatchify
 from mxnet.gluon.data import DataLoader
 
 batch_size = 2  # for tutorial, we use smaller batch-size
@@ -235,7 +235,7 @@ rcnn_mask_loss = mx.gluon.loss.SigmoidBinaryCrossEntropyLoss(from_sigmoid=False)
 # We also push RPN targets computation to CPU workers, so network is passed to transforms
 train_transform = presets.rcnn.MaskRCNNDefaultTrainTransform(short, max_size, net)
 # return images, labels, masks, rpn_cls_targets, rpn_box_targets, rpn_box_masks loosely
-batchify_fn = Tuple(*[Append() for _ in range(6)])
+batchify_fn = MaskRCNNTrainBatchify(net)
 # For the next part, we only use batch size 1
 batch_size = 1
 train_loader = DataLoader(train_dataset.transform(train_transform), batch_size, shuffle=True,
@@ -245,6 +245,7 @@ train_loader = DataLoader(train_dataset.transform(train_transform), batch_size, 
 # Mask targets are generated with the intermediate outputs after rcnn target is generated.
 
 for ib, batch in enumerate(train_loader):
+    batch = [batch]
     if ib > 0:
         break
     with autograd.train_mode():
@@ -280,6 +281,7 @@ for ib, batch in enumerate(train_loader):
 # After we have defined loss function and generated training targets, we can write the training loop.
 
 for ib, batch in enumerate(train_loader):
+    batch = [batch]
     if ib > 0:
         break
     with autograd.record():
