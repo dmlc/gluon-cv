@@ -68,8 +68,7 @@ class COCOInstance(VisionDataset):
         self.json_id_to_contiguous = None
         self.contiguous_id_to_json = None
         self._coco = []
-        self._items, self._labels, self._segms = self._load_jsons()
-        self._im_aspect_ratios = None
+        self._items, self._labels, self._segms, self._im_aspect_ratios = self._load_jsons()
 
     def __str__(self):
         detail = ','.join([str(s) for s in self._splits])
@@ -119,6 +118,7 @@ class COCOInstance(VisionDataset):
         items = []
         labels = []
         segms = []
+        im_aspect_ratios = []
         # lazy import pycocotools
         try_import_pycocotools()
         from pycocotools.coco import COCO
@@ -150,10 +150,11 @@ class COCOInstance(VisionDataset):
                 # skip images without objects
                 if self._skip_empty and label is None:
                     continue
+                im_aspect_ratios.append(float(entry['width']) / entry['height'])
                 items.append(abs_path)
                 labels.append(label)
                 segms.append(segm)
-        return items, labels, segms
+        return items, labels, segms, im_aspect_ratios
 
     def _check_load_bbox(self, coco, entry):
         """Check and load ground-truth labels"""

@@ -75,8 +75,7 @@ class COCODetection(VisionDataset):
         self.json_id_to_contiguous = None
         self.contiguous_id_to_json = None
         self._coco = []
-        self._items, self._labels = self._load_jsons()
-        self._im_aspect_ratios = None
+        self._items, self._labels, self._im_aspect_ratios = self._load_jsons()
 
     def __str__(self):
         detail = ','.join([str(s) for s in self._splits])
@@ -153,6 +152,7 @@ class COCODetection(VisionDataset):
         """Load all image paths and labels from JSON annotation files into buffer."""
         items = []
         labels = []
+        im_aspect_ratios = []
         # lazy import pycocotools
         try_import_pycocotools()
         from pycocotools.coco import COCO
@@ -182,9 +182,10 @@ class COCODetection(VisionDataset):
                 label = self._check_load_bbox(_coco, entry)
                 if not label:
                     continue
+                im_aspect_ratios.append(float(entry['width']) / entry['height'])
                 items.append(abs_path)
                 labels.append(label)
-        return items, labels
+        return items, labels, im_aspect_ratios
 
     def _check_load_bbox(self, coco, entry):
         """Check and load ground-truth labels"""

@@ -424,12 +424,9 @@ class FasterRCNNTrainBatchify(object):
             for feat_sym, cls_target, box_target, box_mask in zip(self._feat_sym, cls_targets,
                                                                   box_targets, box_masks):
                 _, _, w, h = feat_sym.infer_shape(data=(1, 3, in_shape[0], in_shape[1]))[1][0]
-                padded_cls_target = mx.nd.ones(shape=(w, h, cls_target.shape[-1]),
-                                               ctx=mx.Context('cpu_shared', 0)) * -1.0
-                padded_box_target = mx.nd.zeros(shape=(w, h, box_target.shape[-1]),
-                                                ctx=mx.Context('cpu_shared', 0))
-                padded_box_mask = mx.nd.zeros(shape=(w, h, box_mask.shape[-1]),
-                                              ctx=mx.Context('cpu_shared', 0))
+                padded_cls_target = mx.nd.ones(shape=(w, h, cls_target.shape[-1])) * -1.0
+                padded_box_target = mx.nd.zeros(shape=(w, h, box_target.shape[-1]))
+                padded_box_mask = mx.nd.zeros(shape=(w, h, box_mask.shape[-1]))
                 padded_cls_target[:cls_target.shape[0], :cls_target.shape[1]] = cls_target
                 padded_box_target[:box_target.shape[0], :box_target.shape[1]] = box_target
                 padded_box_mask[:box_mask.shape[0], :box_mask.shape[1]] = box_mask
@@ -444,9 +441,12 @@ class FasterRCNNTrainBatchify(object):
             start_ind = int(i * shard_size)
             end_ind = int(start_ind + shard_size)
             sharded_cls_targets[i], sharded_box_targets[i], sharded_box_masks[i] \
-                = mx.nd.concat(*sharded_cls_targets[start_ind:end_ind], dim=0), \
-                  mx.nd.concat(*sharded_box_targets[start_ind:end_ind], dim=0), \
-                  mx.nd.concat(*sharded_box_masks[start_ind:end_ind], dim=0)
+                = mx.nd.concat(*sharded_cls_targets[start_ind:end_ind], dim=0).as_in_context(
+                    mx.Context('cpu_shared', 0)), \
+                  mx.nd.concat(*sharded_box_targets[start_ind:end_ind], dim=0).as_in_context(
+                      mx.Context('cpu_shared', 0)), \
+                  mx.nd.concat(*sharded_box_masks[start_ind:end_ind], dim=0).as_in_context(
+                      mx.Context('cpu_shared', 0))
 
         return sharded_img, sharded_label, tuple(sharded_cls_targets[:self._num_shards]), \
                tuple(sharded_box_targets[:self._num_shards]), \

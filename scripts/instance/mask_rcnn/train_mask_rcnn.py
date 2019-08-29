@@ -96,8 +96,6 @@ def parse_args():
                         help='Whether to use static memory allocation. Memory usage will increase.')
     parser.add_argument('--amp', action='store_true',
                         help='Use MXNet AMP for mixed precision training.')
-    parser.add_argument('--dtype', type=str, default='float32',
-                        help='data type for training. default is float32')
     parser.add_argument('--horovod', action='store_true',
                         help='Use MXNet Horovod for distributed training. Must be run with OpenMPI. '
                              '--gpus is ignored when using --horovod.')
