@@ -68,7 +68,8 @@ class MaskTargetGenerator(gluon.HybridBlock):
             # matches (B, N) -> B * (N,)
             matches = _split(matches, axis=0, num_outputs=self._num_images, squeeze_axis=True)
             # cls_targets (B, N) -> B * (N,)
-            cls_targets = _split(cls_targets, axis=0, num_outputs=self._num_images, squeeze_axis=True)
+            cls_targets = _split(cls_targets, axis=0, num_outputs=self._num_images,
+                                 squeeze_axis=True)
 
             mask_targets = []
             mask_masks = []
