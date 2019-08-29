@@ -58,3 +58,4 @@ Now you can start training your action recognition models on Kinetics400 dataset
    (Solid-state disks) is preferred over HDD because of faster speed.
 
    You may need to install ``Cython`` and ``mmcv`` by ``pip install Cython mmcv``.
+"""
