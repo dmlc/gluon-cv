@@ -136,7 +136,7 @@ _model_sha1 = {name: checksum for checksum, name in [
     ('d6dc1bbaaf3cbe0be19f02362706393f62ce76fa', 'vgg16_ucf101'),
     ('13ef5c3bd40141f11c5b4e471f8f2ad0c1ac6299', 'inceptionv3_ucf101'),
     ('de56b871543847d586deeca488b5bfe1b77bb5c5', 'alpha_pose_resnet101_v1b_coco'),
-    # ('8a4a6946893de23937b5e5e4a1a449800d57ff71', 'inceptionv3_kinetics400'),
+    ('8a4a6946893de23937b5e5e4a1a449800d57ff71', 'inceptionv3_kinetics400'),
 ]}
 
 apache_repo_url = 'https://apache-mxnet.s3-accelerate.dualstack.amazonaws.com/'
