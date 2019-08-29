@@ -1,4 +1,4 @@
-# pylint: disable= missing-docstring,arguments-differ,line-too-long
+# pylint: disable= missing-docstring,arguments-differ
 """Extended image transformations to video transformations."""
 from __future__ import division
 import random
@@ -7,8 +7,8 @@ import numpy as np
 from mxnet import nd
 from mxnet.gluon import Block
 
-__all__ = ['VideoToTensor', 'VideoNormalize', 'VideoRandomHorizontalFlip', 'VideoMultiScaleCrop',
-           'VideoCenterCrop', 'VideoTenCrop']
+__all__ = ['VideoToTensor', 'VideoNormalize', 'VideoRandomHorizontalFlip',
+           'VideoMultiScaleCrop', 'VideoCenterCrop', 'VideoTenCrop']
 
 class VideoToTensor(Block):
     """Converts a video clip NDArray to a tensor.
@@ -20,7 +20,8 @@ class VideoToTensor(Block):
     Parameters
     ----------
     max_intensity : float
-        The maximum intensity value to be divided in order to fit the output tensor in the range [0, 1).
+        The maximum intensity value to be divided in order to
+        fit the output tensor in the range [0, 1).
 
     Inputs:
         - **data**: input tensor with (H x W x C) shape and uint8 type.
@@ -75,7 +76,8 @@ class VideoNormalize(Block):
         return (clips - clip_mean) / clip_std
 
 class VideoRandomHorizontalFlip(Block):
-    """Randomly flip the input video clip left to right with a probability of 0.5.
+    """Randomly flip the input video clip left to right
+    with a probability of 0.5.
 
     Parameters
     ----------

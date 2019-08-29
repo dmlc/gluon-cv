@@ -12,10 +12,10 @@ Download
 --------
 
 Please refer to the `official website <https://github.com/activitynet/ActivityNet/tree/master/Crawler/Kinetics>`_ on how to download the videos.
-Note that all videos will consume about 450G disk space, make sure there is enough space before downloading. The crawling process can take several days.
+Note that the downloaded videos will consume about 450G disk space, make sure there is enough space before downloading. The crawling process can take several days.
 
 Once download is complete, please rename the folder names (since class names have white space) for ease of processing. Suppose the videos are
-downloaded to ``~/.mxnet/datasets/kinetics400``, there will be three folders in it: annotations, train and val. You can use the following command to
+downloaded to ``~/.mxnet/datasets/kinetics400``, there will be three folders in it: ``annotations``, ``train`` and ``val``. You can use the following command to
 rename the folder names:
 
 .. code-block:: bash
