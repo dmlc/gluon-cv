@@ -11,7 +11,7 @@ from mxnet import gluon
 from mxnet import nd
 
 from .bbox import BBoxCornerToCenter, NumPyBBoxCornerToCenter
-from .cython_bbox import np_normalized_box_encoder
+from gluoncv.nn.cython_bbox import np_normalized_box_encoder
 
 class NumPyNormalizedBoxCenterEncoder(object):
     """Encode bounding boxes training target with normalized center offsets using numpy.
