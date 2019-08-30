@@ -42,6 +42,7 @@ requirements = [
     'matplotlib',
     'Pillow',
     'scipy',
+    'cython',
 ]
 
 _NP_INCLUDE_DIRS = np.get_include()

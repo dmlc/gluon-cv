@@ -379,8 +379,6 @@ def train(net, train_data, val_data, eval_metric, batch_size, ctx, args):
         rcnn_task = ForwardBackwardTask(net, trainer, rpn_cls_loss, rpn_box_loss, rcnn_cls_loss,
                                         rcnn_box_loss, rcnn_mask_loss)
         executor = Parallel(args.executor_threads, rcnn_task) if not args.horovod else None
-        if executor:
-            logger.info('using parallel executor with %d threads', args.executor_threads)
         while lr_steps and epoch >= lr_steps[0]:
             new_lr = trainer.learning_rate * lr_decay
             lr_steps.pop(0)
