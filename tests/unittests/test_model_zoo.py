@@ -143,7 +143,8 @@ def test_imagenet_models():
               'residualattentionnet200', 'residualattentionnet236', 'residualattentionnet452',
               'resnet18_v1b_0.89', 'resnet50_v1d_0.86', 'resnet50_v1d_0.48',
               'resnet50_v1d_0.37', 'resnet50_v1d_0.11',
-              'resnet101_v1d_0.76', 'resnet101_v1d_0.73']
+              'resnet101_v1d_0.76', 'resnet101_v1d_0.73',
+              'mixnet_s', 'mixnet_m', 'mixnet_l']
     _test_model_list(models, ctx, x)
 
     # 299x299

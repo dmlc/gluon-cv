@@ -31,6 +31,7 @@ from .xception import *
 from .yolo import *
 from .alpha_pose import *
 from .action_recognition import *
+from .mixnet import *
 
 __all__ = ['get_model', 'get_model_list']
 
@@ -225,6 +226,9 @@ _models = {
     'inceptionv3_kinetics400': inceptionv3_kinetics400,
     'fcn_resnet101_voc_int8': fcn_resnet101_voc_int8,
     'fcn_resnet101_coco_int8':fcn_resnet101_coco_int8,
+    'mixnet_s': mixnet_s,
+    'mixnet_m': mixnet_m,
+    'mixnet_l': mixnet_l,
 }
 
 
