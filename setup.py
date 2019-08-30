@@ -2,10 +2,16 @@
 import io
 import os
 import re
+import sys
 
 import numpy as np
-from Cython.Build import build_ext
+from Cython.Build import cythonize
 from setuptools import setup, find_packages, Extension
+
+with_cython = False
+if '--with-cython' in sys.argv:
+    with_cython = True
+    sys.argv.remove('--with-cython')
 
 
 def read(*names, **kwargs):
@@ -44,23 +50,26 @@ requirements = [
     'scipy',
 ]
 
-_NP_INCLUDE_DIRS = np.get_include()
+if with_cython:
+    _NP_INCLUDE_DIRS = np.get_include()
 
-# Extension modules
-ext_modules = [
-    Extension(
-        name='gluoncv.nn.cython_bbox',
-        sources=[
-            'gluoncv/nn/cython_bbox.pyx'
-        ],
-        extra_compile_args=[
-            '-Wno-cpp', '-O2'
-        ],
-        include_dirs=[
-            _NP_INCLUDE_DIRS
-        ]
-    ),
-]
+    # Extension modules
+    ext_modules = cythonize([
+        Extension(
+            name='gluoncv.nn.cython_bbox',
+            sources=[
+                'gluoncv/nn/cython_bbox.pyx'
+            ],
+            extra_compile_args=[
+                '-Wno-cpp', '-O2'
+            ],
+            include_dirs=[
+                _NP_INCLUDE_DIRS
+            ]
+        ),
+    ])
+else:
+    ext_modules = []
 
 setup(
     # Metadata
@@ -77,6 +86,5 @@ setup(
     zip_safe=True,
     include_package_data=True,
     install_requires=requirements,
-    ext_modules=ext_modules,
-    cmdclass={'build_ext': build_ext}
+    ext_modules=ext_modules
 )
