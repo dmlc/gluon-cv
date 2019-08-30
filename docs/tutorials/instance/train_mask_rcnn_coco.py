@@ -256,8 +256,9 @@ for ib, batch in enumerate(train_loader):
         break
     with autograd.train_mode():
         for data, label, masks, rpn_cls_targets, rpn_box_targets, rpn_box_masks in zip(*batch):
-            gt_label = label[:, 4:5]
-            gt_box = label[:, :4]
+            label = label.expand_dims(0)
+            gt_label = label[:, :, 4:5]
+            gt_box = label[:, :, :4]
             # network forward
             cls_preds, box_preds, mask_preds, roi, samples, matches, rpn_score, rpn_box, anchors = \
                 net(data.expand_dims(0), gt_box)
@@ -293,8 +294,9 @@ for ib, batch in enumerate(train_loader):
         break
     with autograd.record():
         for data, label, masks, rpn_cls_targets, rpn_box_targets, rpn_box_masks in zip(*batch):
-            gt_label = label[:, 4:5]
-            gt_box = label[:, :4]
+            label = label.expand_dims(0)
+            gt_label = label[:, :, 4:5]
+            gt_box = label[:, :, :4]
             # network forward
             cls_preds, box_preds, mask_preds, roi, samples, matches, rpn_score, rpn_box, anchors = \
                 net(data.expand_dims(0), gt_box)
