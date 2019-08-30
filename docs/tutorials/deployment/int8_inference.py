@@ -19,17 +19,17 @@ Performance
 -----------
 
 GluonCV supports some quantized classification models, detection models and segmentation models.
-For the throughput, the target is to achieve the maximum machine efficiency to combine the inference requests together and get the results by one iteration. From the bar-chart, it is clearly that the fusion and quantization approach improved the throughput from 3.22X to 7.24X for selected models.
-Below CPU performance is collected with dummy input from AWS EC2 C5.24xlarge instance with 24 physical cores.
+For the throughput, the target is to achieve the maximum machine efficiency to combine the inference requests together and get the results by one iteration. From the bar-chart, it is clearly that the fusion and quantization approach improved the throughput from 2.68X to 7.24X for selected models.
+Below CPU performance is collected with dummy input from AWS EC2 C5.12xlarge instance with 24 physical cores.
 
-.. figure:: https://user-images.githubusercontent.com/34727741/63999978-5028c600-cb37-11e9-8f55-9a6b7e575056.png
+.. figure:: https://user-images.githubusercontent.com/34727741/64021961-a9105280-cb67-11e9-989e-76a29e58530d.png
    :alt: Gluon Quantization Performance
 
 .. table::
    :widths: 45 5 5 10 10 5 10 10
 
 +-----------------------+----------+------------+------------------+------------------+---------+-----------------+-----------------+
-|  Model                | Dataset  | Batch Size | C5.24xlarge FP32 | C5.24xlarge INT8 | Speedup | FP32 Accuracy   | INT8 Accuracy   |
+|  Model                | Dataset  | Batch Size | C5.12xlarge FP32 | C5.12xlarge INT8 | Speedup | FP32 Accuracy   | INT8 Accuracy   |
 +=======================+==========+============+==================+==================+=========+=================+=================+
 | ResNet50 V1           | ImageNet | 128        | 191.17           | 1384.4           | 7.24    | 77.21%/93.55%   | 76.08%/93.04%   |
 +-----------------------+----------+------------+------------------+------------------+---------+-----------------+-----------------+
