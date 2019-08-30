@@ -266,7 +266,8 @@ for ib, batch in enumerate(train_loader):
             cls_targets, box_targets, box_masks = net.target_generator(roi, samples, matches,
                                                                        gt_label, gt_box)
             # generate targets for mask head
-            mask_targets, mask_masks = net.mask_target(roi, masks, matches, cls_targets)
+            mask_targets, mask_masks = net.mask_target(roi, masks.expand_dims(0), matches,
+                                                       cls_targets)
             print('data:', data.shape)
             # box and class labels
             print('box:', gt_box.shape)
@@ -304,7 +305,8 @@ for ib, batch in enumerate(train_loader):
             cls_targets, box_targets, box_masks = net.target_generator(roi, samples, matches,
                                                                        gt_label, gt_box)
             # generate targets for mask head
-            mask_targets, mask_masks = net.mask_target(roi, masks, matches, cls_targets)
+            mask_targets, mask_masks = net.mask_target(roi, masks.expand_dims(0), matches,
+                                                       cls_targets)
 
             # losses of rpn
             rpn_score = rpn_score.squeeze(axis=-1)
