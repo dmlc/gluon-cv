@@ -10,8 +10,9 @@ import numpy as np
 from mxnet import gluon
 from mxnet import nd
 
-from .bbox import BBoxCornerToCenter, NumPyBBoxCornerToCenter
 from gluoncv.nn.cython_bbox import np_normalized_box_encoder
+from .bbox import BBoxCornerToCenter
+
 
 class NumPyNormalizedBoxCenterEncoder(object):
     """Encode bounding boxes training target with normalized center offsets using numpy.
@@ -32,7 +33,6 @@ class NumPyNormalizedBoxCenterEncoder(object):
         assert len(stds) == 4, "Box Encoder requires 4 std values."
         self._stds = stds
         self._means = means
-        self.corner_to_center = NumPyBBoxCornerToCenter(split=True)
 
     def __call__(self, samples, matches, anchors, refs):
         """Not HybridBlock due to use of matches.shape
