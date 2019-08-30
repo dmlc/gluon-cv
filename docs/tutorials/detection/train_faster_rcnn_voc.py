@@ -54,6 +54,7 @@ Appendix from [He16]_ and experiment detail from [Lin17]_ may also be useful ref
 # Then, we are ready to load training and validation images.
 
 from gluoncv.data import VOCDetection
+
 # typically we use 2007+2012 trainval splits for training data
 train_dataset = VOCDetection(splits=[(2007, 'trainval'), (2012, 'trainval')])
 # and use 2007 test as validation data
@@ -112,7 +113,8 @@ print('box and id shape:', train_label2.shape)
 ##############################################################################
 # Images in tensor are distorted because they no longer sit in (0, 255) range.
 # Let's convert them back so we can see them clearly.
-train_image2 = train_image2.transpose((1, 2, 0)) * nd.array((0.229, 0.224, 0.225)) + nd.array((0.485, 0.456, 0.406))
+train_image2 = train_image2.transpose((1, 2, 0)) * nd.array((0.229, 0.224, 0.225)) + nd.array(
+    (0.485, 0.456, 0.406))
 train_image2 = (train_image2 * 255).asnumpy().astype('uint8')
 ax = viz.plot_bbox(train_image2, train_label2[:, :4],
                    labels=train_label2[:, 4:5],
@@ -168,12 +170,14 @@ for ib, batch in enumerate(train_loader):
 #    in practice we usually want to load pre-trained imagenet models by setting
 #    ``pretrained_base=True``.
 from gluoncv import model_zoo
+
 net = model_zoo.get_model('faster_rcnn_resnet50_v1b_voc', pretrained_base=False)
 print(net)
 
 ##############################################################################
 # Faster-RCNN network is callable with image tensor
 import mxnet as mx
+
 x = mx.nd.zeros(shape=(1, 3, 600, 800))
 net.initialize()
 cids, scores, bboxes = net(x)
@@ -186,6 +190,7 @@ cids, scores, bboxes = net(x)
 ##############################################################################
 # Faster-RCNN network behave differently during training mode:
 from mxnet import autograd
+
 with autograd.train_mode():
     # this time we need ground-truth to generate high quality roi proposals during training
     gt_box = mx.nd.zeros(shape=(1, 1, 4))
@@ -208,7 +213,7 @@ with autograd.train_mode():
 # the loss to penalize incorrect foreground/background prediction
 rpn_cls_loss = mx.gluon.loss.SigmoidBinaryCrossEntropyLoss(from_sigmoid=False)
 # the loss to penalize inaccurate anchor boxes
-rpn_box_loss = mx.gluon.loss.HuberLoss(rho=1/9.)  # == smoothl1
+rpn_box_loss = mx.gluon.loss.HuberLoss(rho=1 / 9.)  # == smoothl1
 # the loss to penalize incorrect classification prediction.
 rcnn_cls_loss = mx.gluon.loss.SoftmaxCrossEntropyLoss()
 # and finally the loss to penalize inaccurate proposals
@@ -265,9 +270,11 @@ for ib, batch in enumerate(train_loader):
             gt_label = label[:, 4:5]
             gt_box = label[:, :4]
             # network forward
-            cls_preds, box_preds, roi, samples, matches, rpn_score, rpn_box, anchors = net(batch[0][0], gt_box)
+            cls_preds, box_preds, roi, samples, matches, rpn_score, rpn_box, anchors = net(
+                data.expand_dims(0), gt_box)
             # generate targets for rcnn
-            cls_targets, box_targets, box_masks = net.target_generator(roi, samples, matches, gt_label, gt_box)
+            cls_targets, box_targets, box_masks = net.target_generator(roi, samples, matches,
+                                                                       gt_label, gt_box)
 
             print('data:', data.shape)
             # box and class labels
@@ -292,20 +299,27 @@ for ib, batch in enumerate(train_loader):
             gt_label = label[:, 4:5]
             gt_box = label[:, :4]
             # network forward
-            cls_preds, box_preds, roi, samples, matches, rpn_score, rpn_box, anchors = net(data, gt_box)
+            cls_preds, box_preds, roi, samples, matches, rpn_score, rpn_box, anchors = net(
+                data.expand_dims(0), gt_box)
             # generate targets for rcnn
-            cls_targets, box_targets, box_masks = net.target_generator(roi, samples, matches, gt_label, gt_box)
+            cls_targets, box_targets, box_masks = net.target_generator(roi, samples, matches,
+                                                                       gt_label, gt_box)
 
             # losses of rpn
             rpn_score = rpn_score.squeeze(axis=-1)
             num_rpn_pos = (rpn_cls_targets >= 0).sum()
-            rpn_loss1 = rpn_cls_loss(rpn_score, rpn_cls_targets, rpn_cls_targets >= 0) * rpn_cls_targets.size / num_rpn_pos
-            rpn_loss2 = rpn_box_loss(rpn_box, rpn_box_targets, rpn_box_masks) * rpn_box.size / num_rpn_pos
+            rpn_loss1 = rpn_cls_loss(rpn_score, rpn_cls_targets,
+                                     rpn_cls_targets >= 0) * rpn_cls_targets.size / num_rpn_pos
+            rpn_loss2 = rpn_box_loss(rpn_box, rpn_box_targets,
+                                     rpn_box_masks) * rpn_box.size / num_rpn_pos
 
             # losses of rcnn
             num_rcnn_pos = (cls_targets >= 0).sum()
-            rcnn_loss1 = rcnn_cls_loss(cls_preds, cls_targets, cls_targets >= 0) * cls_targets.size / cls_targets.shape[0] / num_rcnn_pos
-            rcnn_loss2 = rcnn_box_loss(box_preds, box_targets, box_masks) * box_preds.size / box_preds.shape[0] / num_rcnn_pos
+            rcnn_loss1 = rcnn_cls_loss(cls_preds, cls_targets,
+                                       cls_targets >= 0) * cls_targets.size / cls_targets.shape[
+                             0] / num_rcnn_pos
+            rcnn_loss2 = rcnn_box_loss(box_preds, box_targets, box_masks) * box_preds.size / \
+                         box_preds.shape[0] / num_rcnn_pos
 
         # some standard gluon training steps:
         # autograd.backward([rpn_loss1, rpn_loss2, rcnn_loss1, rcnn_loss2])
