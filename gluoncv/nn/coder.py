@@ -11,7 +11,7 @@ from mxnet import gluon
 from mxnet import nd
 
 from .bbox import BBoxCornerToCenter, NumPyBBoxCornerToCenter
-
+from .cython_bbox import np_normalized_box_encoder
 
 class NumPyNormalizedBoxCenterEncoder(object):
     """Encode bounding boxes training target with normalized center offsets using numpy.
@@ -50,31 +50,9 @@ class NumPyNormalizedBoxCenterEncoder(object):
         masks: (B, N, 4) only positive anchors has targets
 
         """
-
-        # refs [B, M, 4], anchors [B, N, 4], samples [B, N], matches [B, N]
-        ref_boxes = np.repeat(refs.reshape((refs.shape[0], 1, -1, 4)), axis=1,
-                              repeats=matches.shape[1])
-        # refs [B, N, M, 4] -> [B, N, 4]
-        ref_boxes = \
-            ref_boxes[:, range(matches.shape[1]), matches, :] \
-                .reshape(matches.shape[0], -1, 4)
-        # g [B, N, 4], a [B, N, 4] -> codecs [B, N, 4]
-        g = self.corner_to_center(ref_boxes)
-        a = self.corner_to_center(anchors)
-        t0 = ((g[0] - a[0]) / a[2] - self._means[0]) / self._stds[0]
-        t1 = ((g[1] - a[1]) / a[3] - self._means[1]) / self._stds[1]
-        t2 = (np.log(g[2] / a[2]) - self._means[2]) / self._stds[2]
-        t3 = (np.log(g[3] / a[3]) - self._means[3]) / self._stds[3]
-        codecs = np.concatenate((t0, t1, t2, t3), axis=2)
-        # samples [B, N] -> [B, N, 1] -> [B, N, 4] -> boolean
-        temp = np.tile(samples.reshape((samples.shape[0], -1, 1)), reps=(1, 1, 4)) > 0.5
-        # fill targets and masks [B, N, 4]
-        targets = np.where(temp, codecs, 0.0)
-        masks = np.where(temp, 1.0, 0.0)
-        return targets, masks
-        # return np_normalized_box_encoder(samples, matches, anchors, refs,
-        #                                 np.array(self._means, dtype=np.float32),
-        #                                 np.array(self._stds, dtype=np.float32))
+        return np_normalized_box_encoder(samples, matches, anchors, refs,
+                                         np.array(self._means, dtype=np.float32),
+                                         np.array(self._stds, dtype=np.float32))
 
 
 class NormalizedBoxCenterEncoder(gluon.Block):
