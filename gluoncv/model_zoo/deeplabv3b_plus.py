@@ -1,8 +1,8 @@
 """DeepLabV3+ with wideresnet backbone for semantic segmentation"""
+# pylint: disable=missing-docstring,arguments-differ,unused-argument
 from mxnet.gluon import nn
 from mxnet.context import cpu
 from mxnet.gluon.nn import HybridBlock
-from mxnet import gluon
 from .wideresnet import wider_resnet38_a2
 
 __all__ = ['DeepLabWV3Plus', 'get_deeplabv3b_plus', 'get_deeplab_v3b_plus_wideresnet_citys']
@@ -91,23 +91,26 @@ class _DeepLabHead(HybridBlock):
         super(_DeepLabHead, self).__init__()
         self._up_kwargs = {'height': height, 'width': width}
         with self.name_scope():
-            self.aspp = _ASPP(in_channels=4096, atrous_rates=[12, 24, 36], norm_layer=norm_layer, norm_kwargs=norm_kwargs,
-                              height=height//4, width=width//4, **kwargs)
+            self.aspp = _ASPP(in_channels=4096, atrous_rates=[12, 24, 36], norm_layer=norm_layer,
+                              norm_kwargs=norm_kwargs, height=height//4, width=width//4, **kwargs)
 
             self.c1_block = nn.HybridSequential(prefix='bot_fine_')
             self.c1_block.add(nn.Conv2D(in_channels=c1_channels, channels=48,
-                                     kernel_size=1, use_bias=False))
+                                        kernel_size=1, use_bias=False))
 
             self.block = nn.HybridSequential(prefix='final_')
             self.block.add(nn.Conv2D(in_channels=304, channels=256,
                                      kernel_size=3, padding=1, use_bias=False))
-            self.block.add(norm_layer(in_channels=256, **({} if norm_kwargs is None else norm_kwargs)))
+            self.block.add(norm_layer(in_channels=256,
+                                      **({} if norm_kwargs is None else norm_kwargs)))
             self.block.add(nn.Activation('relu'))
             self.block.add(nn.Conv2D(in_channels=256, channels=256,
                                      kernel_size=3, padding=1, use_bias=False))
-            self.block.add(norm_layer(in_channels=256, **({} if norm_kwargs is None else norm_kwargs)))
+            self.block.add(norm_layer(in_channels=256,
+                                      **({} if norm_kwargs is None else norm_kwargs)))
             self.block.add(nn.Activation('relu'))
-            self.block.add(nn.Conv2D(in_channels=256, channels=nclass, kernel_size=1, use_bias=False))
+            self.block.add(nn.Conv2D(in_channels=256, channels=nclass,
+                                     kernel_size=1, use_bias=False))
 
     def hybrid_forward(self, F, x, c1):
         c1 = self.c1_block(c1)
@@ -131,7 +134,8 @@ def _ASPPConv(in_channels, out_channels, atrous_rate, norm_layer, norm_kwargs):
         block.add(nn.Conv2D(in_channels=in_channels, channels=out_channels,
                             kernel_size=3, padding=atrous_rate,
                             dilation=atrous_rate, use_bias=False))
-        block.add(norm_layer(in_channels=out_channels, **({} if norm_kwargs is None else norm_kwargs)))
+        block.add(norm_layer(in_channels=out_channels,
+                             **({} if norm_kwargs is None else norm_kwargs)))
         block.add(nn.Activation('relu'))
     return block
 
@@ -167,8 +171,10 @@ class _ASPP(nn.HybridBlock):
         super(_ASPP, self).__init__()
         out_channels = 256
         self.b0 = nn.HybridSequential()
-        self.b0.add(nn.Conv2D(in_channels=in_channels, channels=out_channels, kernel_size=1, use_bias=False))
-        self.b0.add(norm_layer(in_channels=out_channels, **({} if norm_kwargs is None else norm_kwargs)))
+        self.b0.add(nn.Conv2D(in_channels=in_channels, channels=out_channels,
+                              kernel_size=1, use_bias=False))
+        self.b0.add(norm_layer(in_channels=out_channels,
+                               **({} if norm_kwargs is None else norm_kwargs)))
         self.b0.add(nn.Activation("relu"))
 
         rate1, rate2, rate3 = tuple(atrous_rates)
@@ -176,11 +182,11 @@ class _ASPP(nn.HybridBlock):
         self.b2 = _ASPPConv(in_channels, out_channels, rate2, norm_layer, norm_kwargs)
         self.b3 = _ASPPConv(in_channels, out_channels, rate3, norm_layer, norm_kwargs)
         self.b4 = _AsppPooling(in_channels, out_channels, norm_layer=norm_layer,
-                          norm_kwargs=norm_kwargs, height=height, width=width)
+                               norm_kwargs=norm_kwargs, height=height, width=width)
 
         self.project = nn.HybridSequential(prefix='bot_aspp_')
         self.project.add(nn.Conv2D(in_channels=5*out_channels, channels=out_channels,
-                                       kernel_size=1, use_bias=False))
+                                   kernel_size=1, use_bias=False))
 
     def hybrid_forward(self, F, x):
         feat1 = self.b0(x)
@@ -202,7 +208,7 @@ class _ASPP(nn.HybridBlock):
         return self.project(x)
 
 def get_deeplabv3b_plus(dataset='citys', backbone='wideresnet', pretrained=False,
-            root='~/.mxnet/models', ctx=cpu(0), **kwargs):
+                        root='~/.mxnet/models', ctx=cpu(0), **kwargs):
     r"""DeepLabWV3Plus
     Parameters
     ----------

@@ -32,15 +32,13 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
+# pylint: disable=missing-docstring,arguments-differ,unused-argument
 
 import sys
 from collections import OrderedDict
 from functools import partial
-
 from mxnet.gluon import nn
-from mxnet.context import cpu
 from mxnet.gluon.nn import HybridBlock
-from mxnet import gluon
 
 def bnrelu(channels, norm_layer=nn.BatchNorm, norm_kwargs=None, **kwargs):
     """
@@ -167,7 +165,7 @@ class IdentityResidualBlock(HybridBlock):
                                        padding=0,
                                        use_bias=False)
 
-    def forward(self, x):
+    def hybrid_forward(self, F, x):
         """
         This is the standard forward function for non-distributed batch norm
         """
@@ -221,7 +219,8 @@ class WiderResNetA2(HybridBlock):
             raise ValueError("Expected a structure with six values")
 
         self.mod1 = nn.HybridSequential(prefix='mod1')
-        self.mod1.add(nn.Conv2D(in_channels=3, channels=64, kernel_size=3, strides=1, padding=1, use_bias=False))
+        self.mod1.add(nn.Conv2D(in_channels=3, channels=64,
+                                kernel_size=3, strides=1, padding=1, use_bias=False))
 
         # Groups of residual blocks
         in_channels = 64
@@ -311,7 +310,7 @@ class WiderResNetA2(HybridBlock):
             self.classifier.add(nn.GlobalAvgPool2D())
             self.classifier.add(nn.Dense(in_units=in_channels, units=classes))
 
-    def forward(self, img):
+    def hybrid_forward(self, F, img):
         out = self.mod1(img)
         out = self.mod2(self.pool2(out))
         out = self.mod3(self.pool3(out))
