@@ -107,7 +107,10 @@ class VOCDetection(VisionDataset):
             self._im_shapes[idx] = (width, height)
         label = []
         for obj in root.iter('object'):
-            difficult = int(obj.find('difficult').text)
+            try:
+                difficult = int(obj.find('difficult').text)
+            except ValueError:
+                difficult = 0
             cls_name = obj.find('name').text.strip().lower()
             if cls_name not in self.classes:
                 continue
