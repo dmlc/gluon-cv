@@ -71,7 +71,7 @@ def parse_args():
     parser.add_argument('--quantized-dtype', type=str, default='auto', 
                         choices=['auto', 'int8', 'uint8'],
                         help='quantization destination data type for input data')
-    parser.add_argument('--calib-mode', type=str, default='naive',
+    parser.add_argument('--calib-mode', type=str, default='entropy',
                         help='calibration mode used for generating calibration table for the quantized symbol; supports'
                              ' 1. none: no calibration will be used. The thresholds for quantization will be calculated'
                              ' on the fly. This will result in inference speed slowdown and loss of accuracy'
@@ -180,6 +180,7 @@ def benchmarking(model, args):
     size = num_iterations * bs
     data = mx.random.uniform(-1.0, 1.0, shape=input_shape, ctx=args.ctx[0], dtype='float32')
     dry_run = 5
+
     with tqdm(total=size+dry_run*bs) as pbar:
         for n in range(dry_run + num_iterations):
             if n == dry_run:
@@ -189,7 +190,7 @@ def benchmarking(model, args):
                 output.wait_to_read()
             pbar.update(bs)
     speed = size / (time.time() - tic)
-    print('Throughput is %f imgs/sec' % speed)
+    print('With batch size %d , %d batches, throughput is %f imgs/sec' % (bs, num_iterations, speed))
 
 
 if __name__ == "__main__":
@@ -203,16 +204,19 @@ if __name__ == "__main__":
     model_prefix = args.model + '_' + args.backbone
     if 'pascal' in args.dataset:
         model_prefix += '_voc'
-        withQuantization = True if (args.backbone in ['resnet101'] and args.ngpus == 0) else withQuantization
+        withQuantization = True if (args.backbone in ['resnet101']) else withQuantization
     elif args.dataset == 'coco':
         model_prefix += '_coco'
-        withQuantization = True if (args.backbone in ['resnet101'] and args.ngpus == 0) else withQuantization
+        withQuantization = True if (args.backbone in ['resnet101']) else withQuantization
     elif args.dataset == 'ade20k':
-        model_prefix += 'ade'
+        model_prefix += '_ade'
     elif args.dataset == 'citys':
-        model_prefix += 'citys'
+        model_prefix += '_citys'
     else:
         raise ValueError('Unsupported dataset {} used'.format(args.dataset))
+
+    if args.ngpus > 0:
+        withQuantization = False
 
     if withQuantization and args.quantized:
         model_prefix += '_int8'
@@ -281,7 +285,7 @@ if __name__ == "__main__":
         if not args.quantized:
             assert args.eval and args.mode == 'val', "Only val dataset can used for calibration."
             exclude_sym_layer = []
-            exclude_match_layer = []
+            exclude_match_layer = ['concat']
             if args.ngpus > 0:
                 raise ValueError('currently only supports CPU with MKL-DNN backend')
             model = quantize_net(model, calib_data=test_data, quantized_dtype=args.quantized_dtype, calib_mode=args.calib_mode, 
