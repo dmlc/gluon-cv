@@ -13,7 +13,7 @@ from mxnet import nd
 from .bbox import BBoxCornerToCenter, NumPyBBoxCornerToCenter
 
 try:
-    import gluoncv.nn.cython_bbox as cython_bbox
+    import cython_bbox
 except ImportError:
     cython_bbox = None
 
