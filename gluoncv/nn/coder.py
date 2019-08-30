@@ -10,7 +10,7 @@ import numpy as np
 from mxnet import gluon
 from mxnet import nd
 
-from gluoncv.nn.cython_bbox import np_normalized_box_encoder
+import gluoncv.nn.cython_bbox as cython_bbox
 from .bbox import BBoxCornerToCenter
 
 
@@ -50,9 +50,9 @@ class NumPyNormalizedBoxCenterEncoder(object):
         masks: (B, N, 4) only positive anchors has targets
 
         """
-        return np_normalized_box_encoder(samples, matches, anchors, refs,
-                                         np.array(self._means, dtype=np.float32),
-                                         np.array(self._stds, dtype=np.float32))
+        return cython_bbox.np_normalized_box_encoder(samples, matches, anchors, refs,
+                                                     np.array(self._means, dtype=np.float32),
+                                                     np.array(self._stds, dtype=np.float32))
 
 
 class NormalizedBoxCenterEncoder(gluon.Block):
