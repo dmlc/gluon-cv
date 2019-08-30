@@ -4,7 +4,7 @@ import os
 import re
 
 import numpy as np
-from Cython.Build import cythonize
+from Cython.Build import build_ext
 from setuptools import setup, find_packages, Extension
 
 
@@ -42,7 +42,6 @@ requirements = [
     'matplotlib',
     'Pillow',
     'scipy',
-    'cython',
 ]
 
 _NP_INCLUDE_DIRS = np.get_include()
@@ -78,5 +77,6 @@ setup(
     zip_safe=True,
     include_package_data=True,
     install_requires=requirements,
-    ext_modules=cythonize(ext_modules)
+    ext_modules=ext_modules,
+    cmdclass={'build_ext': build_ext}
 )
