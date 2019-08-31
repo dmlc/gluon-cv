@@ -64,7 +64,7 @@ def _calib_model_list(model_list, ctx, x, pretrained=True, **kwargs):
                 net.initialize()
         net.collect_params().reset_ctx(ctx)
         exclude_layers_match = ['flatten']
-        if model.find('ssd') != -1:
+        if model.find('ssd') != -1 or model.find('psp') != -1 or model.find('deeplab') != -1:
             exclude_layers_match += ['concat']
         random_label = mx.random.uniform(shape=(x.shape[0],1))
         dataset = mx.gluon.data.dataset.ArrayDataset(x, random_label)
@@ -482,14 +482,18 @@ def test_calib_models():
     x = mx.random.uniform(shape=(1, 3, 512, 544), ctx=ctx)
     _calib_model_list(model_list, ctx, x)
 
-    model_list = ['fcn_resnet101_voc', 'fcn_resnet101_coco']
+    model_list = ['fcn_resnet101_voc', 'fcn_resnet101_coco',
+                  'psp_resnet101_voc', 'psp_resnet101_coco',
+                  'deeplab_resnet101_voc', 'deeplab_resnet101_coco']
     ctx = mx.context.current_context()
-    x = mx.random.uniform(shape=(1, 3, 520, 480), ctx=ctx)
+    x = mx.random.uniform(shape=(1, 3, 480, 480), ctx=ctx)
     _calib_model_list(model_list, ctx, x)
 
 @with_cpu(0)
-def test_quantized_fcn_models():
-    model_list = ['fcn_resnet101_voc_int8', 'fcn_resnet101_coco_int8']
+def test_quantized_segmentation_models():
+    model_list = ['fcn_resnet101_voc_int8', 'fcn_resnet101_coco_int8',
+                  'psp_resnet101_voc_int8', 'psp_resnet101_coco_int8',
+                  'deeplab_resnet101_voc_int8', 'deeplab_resnet101_coco_int8']
     ctx = mx.context.current_context()
     x = mx.random.uniform(shape=(1, 3, 480, 480), ctx=ctx)
     _test_model_list(model_list, ctx, x)

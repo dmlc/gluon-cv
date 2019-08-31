@@ -46,10 +46,14 @@ Users also are recommended to bind processes to specific cores via `numactal` or
 
 ## Performance
 
-model | fp32 latency(ms) | s8 latency(ms) | fp32 pixAcc | s8 pixAcc
--- | -- | -- | -- | -- |
-fcn_resnet101_voc   |182.91 |37.97 |97.97% |96.53%  |
-fcn_resnet101_coco  |192.65 |43.23 |91.28% |90.96%  |
+model | fp32 latency(ms) | s8 latency(ms) | fp32 pixAcc | fp32 mIoU | s8 pixAcc | s8 mIoU
+-- | -- | -- | -- | -- | -- | -- |
+fcn_resnet101_voc   |182.91 |37.97 |97.97% | 90.77 |98.00%  | 91.02 |
+fcn_resnet101_coco  |192.65 |43.23 |91.28% | 62.40 |90.96%  | 61.73 |
+psp_resnet101_voc   |252.17 | 94.06 | 98.46% | 93.29  | 98.45% | 93.26 |
+psp_resnet101_coco  |253.49 | 94.32 | 91.82% | 69.48 | 91.88% | 69.92|
+deeplab_resnet101_voc   |239.82 | 74.91 | 98.36% | 92.84 | 98.34% | 92.76 |
+deeplab_resnet101_coco  |241.02 | 73.74 | 91.86% | 69.82 | 91.98% | 70.75 |
 
 Please refer to [GluonCV Model Zoo](http://gluon-cv.mxnet.io/model_zoo/index.html#semantic-segmentation) for more avaliable pretrained models.
 

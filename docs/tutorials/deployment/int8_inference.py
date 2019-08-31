@@ -4,7 +4,7 @@
 This is a tutorial which illustrates how to use quantized GluonCV
 models for inference on Intel Xeon Processors to gain higher performance.
 
-The following example requires ``GluonCV>=0.4`` and ``MXNet-mkl>=1.5.0b20190807``. Please follow `our installation guide <../../index.html#installation>`__ to install or upgrade GluonCV and nightly build of MXNet if necessary.
+The following example requires ``GluonCV>=0.4`` and ``MXNet-mkl>=1.6.0b20190829``. Please follow `our installation guide <../../index.html#installation>`__ to install or upgrade GluonCV and nightly build of MXNet if necessary.
 
 Introduction
 ------------
@@ -19,17 +19,17 @@ Performance
 -----------
 
 GluonCV supports some quantized classification models, detection models and segmentation models.
-For the throughput, the target is to achieve the maximum machine efficiency to combine the inference requests together and get the results by one iteration. From the bar-chart, it is clearly that the fusion and quantization approach improved the throughput from 3.22X to 7.24X for selected models.
-Below CPU performance is collected with dummy input from AWS EC2 C5.24xlarge instance with 24 physical cores.
+For the throughput, the target is to achieve the maximum machine efficiency to combine the inference requests together and get the results by one iteration. From the bar-chart, it is clearly that the fusion and quantization approach improved the throughput from 2.68X to 7.24X for selected models.
+Below CPU performance is collected with dummy input from AWS EC2 C5.12xlarge instance with 24 physical cores.
 
-.. figure:: https://user-images.githubusercontent.com/34727741/62687942-5a551a00-b9fa-11e9-9c9a-0b6dfa380cdb.png
+.. figure:: https://user-images.githubusercontent.com/34727741/64021961-a9105280-cb67-11e9-989e-76a29e58530d.png
    :alt: Gluon Quantization Performance
 
 .. table::
    :widths: 45 5 5 10 10 5 10 10
 
 +-----------------------+----------+------------+------------------+------------------+---------+-----------------+-----------------+
-|  Model                | Dataset  | Batch Size | C5.24xlarge FP32 | C5.24xlarge INT8 | Speedup | FP32 Accuracy   | INT8 Accuracy   |
+|  Model                | Dataset  | Batch Size | C5.12xlarge FP32 | C5.12xlarge INT8 | Speedup | FP32 Accuracy   | INT8 Accuracy   |
 +=======================+==========+============+==================+==================+=========+=================+=================+
 | ResNet50 V1           | ImageNet | 128        | 191.17           | 1384.4           | 7.24    | 77.21%/93.55%   | 76.08%/93.04%   |
 +-----------------------+----------+------------+------------------+------------------+---------+-----------------+-----------------+
@@ -43,13 +43,21 @@ Below CPU performance is collected with dummy input from AWS EC2 C5.24xlarge ins
 +-----------------------+----------+------------+------------------+------------------+---------+-----------------+-----------------+
 | SSD-mobilenet1.0 512* | VOC      | 224        | 65.97            | 212.59           | 3.22    | 75.42           | 74.70           |
 +-----------------------+----------+------------+------------------+------------------+---------+-----------------+-----------------+
-| FCN_resnet101         | VOC      | 1          | 5.46             | 26.33            | 4.82    | 97.97%          | 96.53%          |
+| FCN_resnet101         | VOC      | 1          | 5.46             | 26.33            | 4.82    | 97.97%          | 98.00%          |
++-----------------------+----------+------------+------------------+------------------+---------+-----------------+-----------------+
+| PSP_resnet101         | VOC      | 1          | 3.96             | 10.63            | 2.68    | 98.46%          | 98.45%          |
++-----------------------+----------+------------+------------------+------------------+---------+-----------------+-----------------+
+| Deeplab_resnet101     | VOC      | 1          | 4.17             | 13.35            | 3.20    | 98.36%          | 98.34%          |
 +-----------------------+----------+------------+------------------+------------------+---------+-----------------+-----------------+
 | FCN_resnet101         | COCO     | 1          | 5.19             | 26.22            | 5.05    | 91.28%          | 90.96%          |
 +-----------------------+----------+------------+------------------+------------------+---------+-----------------+-----------------+
+| PSP_resnet101         | COCO     | 1          | 3.94             | 10.60            | 2.69    | 91.82%          | 91.88%          |
++-----------------------+----------+------------+------------------+------------------+---------+-----------------+-----------------+
+| Deeplab_resnet101     | COCO     | 1          | 4.15             | 13.56            | 3.27    | 91.86%          | 91.98%          |
++-----------------------+----------+------------+------------------+------------------+---------+-----------------+-----------------+
 
 
-Quantized SSD models are evaluated with ``nms_thresh=0.45``, ``nms_topk=200``. For FCN models, the accuracy metric is pixAcc.
+Quantized SSD models are evaluated with ``nms_thresh=0.45``, ``nms_topk=200``. For segmentation models, the accuracy metric is pixAcc.
 
 Demo usage for SSD
 ------------------
