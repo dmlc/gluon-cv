@@ -252,7 +252,7 @@ class FasterRCNN(RCNN):
 
         """
         super(FasterRCNN, self).reset_class(classes, reuse_weights)
-        self._target_generator = {RCNNTargetGenerator(self.num_class)}
+        self._target_generator = RCNNTargetGenerator(self.num_class)
 
     def _pyramid_roi_feats(self, F, features, rpn_rois, roi_size, strides, roi_mode='align',
                            roi_canonical_scale=224.0, eps=1e-6):
