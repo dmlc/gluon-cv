@@ -12,6 +12,11 @@ from mxnet import nd
 
 from .bbox import BBoxCornerToCenter, NumPyBBoxCornerToCenter
 
+try:
+    import cython_bbox
+except ImportError:
+    cython_bbox = None
+
 
 class NumPyNormalizedBoxCenterEncoder(object):
     """Encode bounding boxes training target with normalized center offsets using numpy.
@@ -50,6 +55,10 @@ class NumPyNormalizedBoxCenterEncoder(object):
         masks: (B, N, 4) only positive anchors has targets
 
         """
+        if cython_bbox is not None:
+            return cython_bbox.np_normalized_box_encoder(samples, matches, anchors, refs,
+                                                         np.array(self._means, dtype=np.float32),
+                                                         np.array(self._stds, dtype=np.float32))
         # refs [B, M, 4], anchors [B, N, 4], samples [B, N], matches [B, N]
         ref_boxes = np.repeat(refs.reshape((refs.shape[0], 1, -1, 4)), axis=1,
                               repeats=matches.shape[1])

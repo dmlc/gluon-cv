@@ -207,22 +207,41 @@ class FasterRCNNDefaultTrainTransform(object):
         # feat_h, feat_w = (img.shape[1] // self._stride, img.shape[2] // self._stride)
         gt_bboxes = mx.nd.array(bbox[:, :4])
         if self._multi_stage:
-            oshapes = []
             anchor_targets = []
-            for feat_sym in self._feat_sym:
-                oshapes.append(feat_sym.infer_shape(data=(1, 3, img.shape[1], img.shape[2]))[1][0])
-            for anchor, oshape in zip(self._anchors, oshapes):
-                anchor = anchor[:, :, :oshape[2], :oshape[3], :].reshape((-1, 4))
-                anchor_targets.append(anchor)
+            oshapes = []
+            cls_targets, box_targets, box_masks = [], [], []
+            for anchor, feat_sym in zip(self._anchors, self._feat_sym):
+                oshape = feat_sym.infer_shape(data=(1, 3, img.shape[1], img.shape[2]))[1][0]
+                anchor = anchor[:, :, :oshape[2], :oshape[3], :]
+                oshapes.append(anchor.shape)
+                anchor_targets.append(anchor.reshape((-1, 4)))
             anchor_targets = mx.nd.concat(*anchor_targets, dim=0)
             cls_target, box_target, box_mask = self._target_generator(
                 gt_bboxes, anchor_targets, img.shape[2], img.shape[1])
+            start_ind = 0
+            for oshape in oshapes:
+                size = oshape[2] * oshape[3] * (oshape[4] // 4)
+                lvl_cls_target = cls_target[start_ind:start_ind + size] \
+                    .reshape(oshape[2], oshape[3], -1)
+                lvl_box_target = box_target[start_ind:start_ind + size] \
+                    .reshape(oshape[2], oshape[3], -1)
+                lvl_box_mask = box_mask[start_ind:start_ind + size] \
+                    .reshape(oshape[2], oshape[3], -1)
+                start_ind += size
+                cls_targets.append(lvl_cls_target)
+                box_targets.append(lvl_box_target)
+                box_masks.append(lvl_box_mask)
         else:
             oshape = self._feat_sym.infer_shape(data=(1, 3, img.shape[1], img.shape[2]))[1][0]
-            anchor = self._anchors[:, :, :oshape[2], :oshape[3], :].reshape((-1, 4))
+            anchor = self._anchors[:, :, :oshape[2], :oshape[3], :]
+            oshape = anchor.shape
             cls_target, box_target, box_mask = self._target_generator(
-                gt_bboxes, anchor, img.shape[2], img.shape[1])
-        return img, bbox.astype(img.dtype), cls_target, box_target, box_mask
+                gt_bboxes, anchor.reshape((-1, 4)), img.shape[2], img.shape[1])
+            size = oshape[2] * oshape[3] * (oshape[4] // 4)
+            cls_targets = [cls_target[0:size].reshape(oshape[2], oshape[3], -1)]
+            box_targets = [box_target[0:size].reshape(oshape[2], oshape[3], -1)]
+            box_masks = [box_mask[0:size].reshape(oshape[2], oshape[3], -1)]
+        return img, bbox.astype(img.dtype), cls_targets, box_targets, box_masks
 
 
 class FasterRCNNDefaultValTransform(object):
@@ -376,23 +395,41 @@ class MaskRCNNDefaultTrainTransform(object):
         # feat_h, feat_w = (img.shape[1] // self._stride, img.shape[2] // self._stride)
         gt_bboxes = mx.nd.array(bbox[:, :4])
         if self._multi_stage:
-            oshapes = []
             anchor_targets = []
-            for feat_sym in self._feat_sym:
-                oshapes.append(feat_sym.infer_shape(data=(1, 3, img.shape[1], img.shape[2]))[1][0])
-            for anchor, oshape in zip(self._anchors, oshapes):
-                anchor = anchor[:, :, :oshape[2], :oshape[3], :].reshape((-1, 4))
-                anchor_targets.append(anchor)
+            oshapes = []
+            cls_targets, box_targets, box_masks = [], [], []
+            for anchor, feat_sym in zip(self._anchors, self._feat_sym):
+                oshape = feat_sym.infer_shape(data=(1, 3, img.shape[1], img.shape[2]))[1][0]
+                anchor = anchor[:, :, :oshape[2], :oshape[3], :]
+                oshapes.append(anchor.shape)
+                anchor_targets.append(anchor.reshape((-1, 4)))
             anchor_targets = mx.nd.concat(*anchor_targets, dim=0)
             cls_target, box_target, box_mask = self._target_generator(
                 gt_bboxes, anchor_targets, img.shape[2], img.shape[1])
+            start_ind = 0
+            for oshape in oshapes:
+                size = oshape[2] * oshape[3] * (oshape[4] // 4)
+                lvl_cls_target = cls_target[start_ind:start_ind + size] \
+                    .reshape(oshape[2], oshape[3], -1)
+                lvl_box_target = box_target[start_ind:start_ind + size] \
+                    .reshape(oshape[2], oshape[3], -1)
+                lvl_box_mask = box_mask[start_ind:start_ind + size] \
+                    .reshape(oshape[2], oshape[3], -1)
+                start_ind += size
+                cls_targets.append(lvl_cls_target)
+                box_targets.append(lvl_box_target)
+                box_masks.append(lvl_box_mask)
         else:
             oshape = self._feat_sym.infer_shape(data=(1, 3, img.shape[1], img.shape[2]))[1][0]
-            anchor = self._anchors[:, :, :oshape[2], :oshape[3], :].reshape((-1, 4))
-
+            anchor = self._anchors[:, :, :oshape[2], :oshape[3], :]
+            oshape = anchor.shape
             cls_target, box_target, box_mask = self._target_generator(
-                gt_bboxes, anchor, img.shape[2], img.shape[1])
-        return img, bbox.astype(img.dtype), masks, cls_target, box_target, box_mask
+                gt_bboxes, anchor.reshape((-1, 4)), img.shape[2], img.shape[1])
+            size = oshape[2] * oshape[3] * (oshape[4] // 4)
+            cls_targets = [cls_target[0:size].reshape(oshape[2], oshape[3], -1)]
+            box_targets = [box_target[0:size].reshape(oshape[2], oshape[3], -1)]
+            box_masks = [box_mask[0:size].reshape(oshape[2], oshape[3], -1)]
+        return img, bbox.astype(img.dtype), cls_targets, box_targets, box_masks, masks
 
 
 class MaskRCNNDefaultValTransform(object):
