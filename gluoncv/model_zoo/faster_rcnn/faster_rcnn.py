@@ -198,7 +198,7 @@ class FasterRCNN(RCNN):
         self._batch_size = per_device_batch_size
         self._num_sample = num_sample
         self._rpn_test_post_nms = rpn_test_post_nms
-        self._target_generator = {RCNNTargetGenerator(self.num_class)}
+        self._target_generator = RCNNTargetGenerator(self.num_class)
         self._additional_output = additional_output
         with self.name_scope():
             self.rpn = RPN(
@@ -223,7 +223,7 @@ class FasterRCNN(RCNN):
             The RCNN target generator
 
         """
-        return list(self._target_generator)[0]
+        return self._target_generator
 
     def reset_class(self, classes, reuse_weights=None):
         """Reset class categories and class predictors.
@@ -255,7 +255,7 @@ class FasterRCNN(RCNN):
         self._target_generator = {RCNNTargetGenerator(self.num_class)}
 
     def _pyramid_roi_feats(self, F, features, rpn_rois, roi_size, strides, roi_mode='align',
-                           eps=1e-6):
+                           roi_canonical_scale=224.0, eps=1e-6):
         """Assign rpn_rois to specific FPN layers according to its area
            and then perform `ROIPooling` or `ROIAlign` to generate final
            region proposals aggregated features.
@@ -272,6 +272,8 @@ class FasterRCNN(RCNN):
             Define the gap that ori image and feature map have
         roi_mode : str, default is align
             ROI pooling mode. Currently support 'pool' and 'align'.
+        roi_canonical_scale : float, default is 224.0
+            Hyperparameters for the RoI-to-FPN level mapping heuristic.
         Returns
         -------
         Pooled roi features aggregated according to its roi_level
@@ -282,7 +284,7 @@ class FasterRCNN(RCNN):
         _, x1, y1, x2, y2 = F.split(rpn_rois, axis=-1, num_outputs=5)
         h = y2 - y1 + 1
         w = x2 - x1 + 1
-        roi_level = F.floor(4 + F.log2(F.sqrt(w * h) / 224.0 + eps))
+        roi_level = F.floor(4 + F.log2(F.sqrt(w * h) / roi_canonical_scale + eps))
         roi_level = F.squeeze(F.clip(roi_level, self._min_stage, max_stage))
         # [2,2,..,3,3,...,4,4,...,5,5,...] ``Prohibit swap order here``
         # roi_level_sorted_args = F.argsort(roi_level, is_ascend=True)
