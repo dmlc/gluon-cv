@@ -156,7 +156,7 @@ class RCNNTargetGenerator(gluon.HybridBlock):
         self._box_encoder = NormalizedPerClassBoxCenterEncoder(
             num_class=num_class, means=means, stds=stds)
 
-    # pylint: disable=arguments-differ
+    # pylint: disable=arguments-differ, unused-argument
     def hybrid_forward(self, F, roi, samples, matches, gt_label, gt_box):
         """Components can handle batch images
 
