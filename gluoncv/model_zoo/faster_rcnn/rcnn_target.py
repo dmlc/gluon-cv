@@ -136,7 +136,7 @@ class RCNNTargetSampler(gluon.HybridBlock):
         return new_rois, new_samples, new_matches
 
 
-class RCNNTargetGenerator(gluon.Block):
+class RCNNTargetGenerator(gluon.HybridBlock):
     """RCNN target encoder to generate matching target and regression target values.
 
     Parameters
@@ -156,8 +156,8 @@ class RCNNTargetGenerator(gluon.Block):
         self._box_encoder = NormalizedPerClassBoxCenterEncoder(
             num_class=num_class, means=means, stds=stds)
 
-    # pylint: disable=arguments-differ
-    def forward(self, roi, samples, matches, gt_label, gt_box):
+    # pylint: disable=arguments-differ, unused-argument
+    def hybrid_forward(self, F, roi, samples, matches, gt_label, gt_box):
         """Components can handle batch images
 
         Parameters
@@ -181,8 +181,4 @@ class RCNNTargetGenerator(gluon.Block):
             # box_target, box_weight (C, B, N, 4)
             box_target, box_mask = self._box_encoder(
                 samples, matches, roi, gt_label, gt_box)
-            # modify shapes to match predictions
-            # box (C, B, N, 4) -> (B, N, C, 4)
-            box_target = box_target.transpose((1, 2, 0, 3))
-            box_mask = box_mask.transpose((1, 2, 0, 3))
         return cls_target, box_target, box_mask

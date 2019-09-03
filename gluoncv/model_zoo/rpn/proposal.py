@@ -70,7 +70,7 @@ class RPNProposal(gluon.HybridBlock):
             #    F.broadcast_greater(aymax, hrange)
             # avoid invalid anchors suppress anchors with 0 confidence
             score = F.where(invalid, F.ones_like(invalid) * -1, score)
-            invalid = F.repeat(invalid, axis=-1, repeats=4)
+            invalid = F.broadcast_axes(invalid, axis=2, size=4)
             roi = F.where(invalid, F.ones_like(invalid) * -1, roi)
 
             pre = F.concat(score, roi, dim=-1)
