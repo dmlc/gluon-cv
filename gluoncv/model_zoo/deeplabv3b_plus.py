@@ -28,14 +28,14 @@ class DeepLabWV3Plus(HybridBlock):
         Image Segmentation.", https://arxiv.org/abs/1802.02611, ECCV 2018
     """
     def __init__(self, nclass, backbone='wideresnet', aux=False, ctx=cpu(), pretrained_base=True,
-                 height=None, width=None, base_size=576, crop_size=512, dilated=True, **kwargs):
-        super(DeepLabWV3Plus, self).__init__(nclass, backbone, aux, ctx=ctx, base_size=base_size,
-                                             crop_size=crop_size, pretrained_base=pretrained_base,
-                                             **kwargs)
+                 height=None, width=None, base_size=520, crop_size=480, dilated=True, **kwargs):
+        super(DeepLabWV3Plus, self).__init__()
 
         height = height if height is not None else crop_size
         width = width if width is not None else crop_size
         self._up_kwargs = {'height': height, 'width': width}
+        self.base_size = base_size
+        self.crop_size = crop_size
         print('self.crop_size', self.crop_size)
 
         with self.name_scope():
@@ -87,7 +87,7 @@ class DeepLabWV3Plus(HybridBlock):
 
 class _DeepLabHead(HybridBlock):
     def __init__(self, nclass, c1_channels=128, norm_layer=nn.BatchNorm, norm_kwargs=None,
-                 height=256, width=256, **kwargs):
+                 height=240, width=240, **kwargs):
         super(_DeepLabHead, self).__init__()
         self._up_kwargs = {'height': height, 'width': width}
         with self.name_scope():
@@ -141,7 +141,7 @@ def _ASPPConv(in_channels, out_channels, atrous_rate, norm_layer, norm_kwargs):
 
 class _AsppPooling(nn.HybridBlock):
     def __init__(self, in_channels, out_channels, norm_layer, norm_kwargs,
-                 height=64, width=64, **kwargs):
+                 height=60, width=60, **kwargs):
         super(_AsppPooling, self).__init__()
         self.gap = nn.HybridSequential()
         self._up_kwargs = {'height': height, 'width': width}
@@ -167,7 +167,7 @@ class _AsppPooling(nn.HybridBlock):
 
 class _ASPP(nn.HybridBlock):
     def __init__(self, in_channels, atrous_rates, norm_layer, norm_kwargs,
-                 height=64, width=64):
+                 height=60, width=60):
         super(_ASPP, self).__init__()
         out_channels = 256
         self.b0 = nn.HybridSequential()
