@@ -17,11 +17,13 @@ def get_segmentation_model(model, **kwargs):
     from .pspnet import get_psp
     from .deeplabv3 import get_deeplab
     from .deeplabv3_plus import get_deeplab_plus
+    from .deeplabv3b_plus import get_deeplabv3b_plus
     models = {
         'fcn': get_fcn,
         'psp': get_psp,
         'deeplab': get_deeplab,
         'deeplabplus': get_deeplab_plus,
+        'deeplabplusv3b': get_deeplabv3b_plus,
     }
     return models[model](**kwargs)
 
