@@ -8,9 +8,13 @@ from __future__ import absolute_import
 
 import numpy as np
 from mxnet import gluon
-from mxnet import nd
 
 from .bbox import BBoxCornerToCenter, NumPyBBoxCornerToCenter
+
+try:
+    import cython_bbox
+except ImportError:
+    cython_bbox = None
 
 
 class NumPyNormalizedBoxCenterEncoder(object):
@@ -50,6 +54,10 @@ class NumPyNormalizedBoxCenterEncoder(object):
         masks: (B, N, 4) only positive anchors has targets
 
         """
+        if cython_bbox is not None:
+            return cython_bbox.np_normalized_box_encoder(samples, matches, anchors, refs,
+                                                         np.array(self._means, dtype=np.float32),
+                                                         np.array(self._stds, dtype=np.float32))
         # refs [B, M, 4], anchors [B, N, 4], samples [B, N], matches [B, N]
         ref_boxes = np.repeat(refs.reshape((refs.shape[0], 1, -1, 4)), axis=1,
                               repeats=matches.shape[1])
@@ -73,7 +81,7 @@ class NumPyNormalizedBoxCenterEncoder(object):
         return targets, masks
 
 
-class NormalizedBoxCenterEncoder(gluon.Block):
+class NormalizedBoxCenterEncoder(gluon.HybridBlock):
     """Encode bounding boxes training target with normalized center offsets.
 
     Input bounding boxes are using corner type: `x_{min}, y_{min}, x_{max}, y_{max}`.
@@ -95,7 +103,7 @@ class NormalizedBoxCenterEncoder(gluon.Block):
         with self.name_scope():
             self.corner_to_center = BBoxCornerToCenter(split=True)
 
-    def forward(self, samples, matches, anchors, refs):
+    def hybrid_forward(self, F, samples, matches, anchors, refs):
         """Not HybridBlock due to use of matches.shape
 
         Parameters
@@ -111,11 +119,10 @@ class NormalizedBoxCenterEncoder(gluon.Block):
         masks: (B, N, 4) only positive anchors has targets
 
         """
-        F = nd
         # TODO(zhreshold): batch_pick, take multiple elements?
         # refs [B, M, 4], anchors [B, N, 4], samples [B, N], matches [B, N]
         # refs [B, M, 4] -> reshape [B, 1, M, 4] -> repeat [B, N, M, 4]
-        ref_boxes = F.repeat(refs.reshape((0, 1, -1, 4)), axis=1, repeats=matches.shape[1])
+        ref_boxes = F.broadcast_like(refs.reshape((0, 1, -1, 4)), matches, lhs_axes=1, rhs_axes=1)
         # refs [B, N, M, 4] -> 4 * [B, N, M]
         ref_boxes = F.split(ref_boxes, axis=-1, num_outputs=4, squeeze_axis=True)
         # refs 4 * [B, N, M] -> pick from matches [B, N, 1] -> concat to [B, N, 4]
@@ -138,7 +145,7 @@ class NormalizedBoxCenterEncoder(gluon.Block):
         return targets, masks
 
 
-class NormalizedPerClassBoxCenterEncoder(gluon.Block):
+class NormalizedPerClassBoxCenterEncoder(gluon.HybridBlock):
     """Encode bounding boxes training target with normalized center offsets.
 
     Input bounding boxes are using corner type: `x_{min}, y_{min}, x_{max}, y_{max}`.
@@ -160,7 +167,7 @@ class NormalizedPerClassBoxCenterEncoder(gluon.Block):
         with self.name_scope():
             self.class_agnostic_encoder = NormalizedBoxCenterEncoder(stds=stds, means=means)
 
-    def forward(self, samples, matches, anchors, labels, refs):
+    def hybrid_forward(self, F, samples, matches, anchors, labels, refs):
         """Encode BBox One entry per category
 
         Parameters
@@ -173,31 +180,24 @@ class NormalizedPerClassBoxCenterEncoder(gluon.Block):
 
         Returns
         -------
-        targets: (C, B, N, 4) transform anchors to refs picked according to matches
-        masks: (C, B, N, 4) only positive anchors of the correct class has targets
+        targets: (B, N, C, 4) transform anchors to refs picked according to matches
+        masks: (B, N, C, 4) only positive anchors of the correct class has targets
 
         """
-        F = nd
         # refs [B, M, 4], anchors [B, N, 4], samples [B, N], matches [B, N]
         # encoded targets [B, N, 4], masks [B, N, 4]
         targets, masks = self.class_agnostic_encoder(samples, matches, anchors, refs)
         # labels [B, M] -> [B, N, M]
-        ref_labels = F.repeat(labels.reshape((0, 1, -1)), axis=1, repeats=matches.shape[1])
+        ref_labels = F.broadcast_like(labels.reshape((0, 1, -1)), matches, lhs_axes=1, rhs_axes=1)
         # labels [B, N, M] -> pick from matches [B, N] -> [B, N, 1]
-        ref_labels = F.pick(ref_labels, matches, axis=2).reshape((0, -1, 1))
-        # expand class agnostic targets to per class targets
-        out_targets = []
-        out_masks = []
-        for cid in range(self._num_class):
-            # boolean array [B, N, 1]
-            same_cid = ref_labels == cid
-            # keep orig targets
-            out_targets.append(targets)
-            # but mask out the one not belong to this class [B, N, 1] -> [B, N, 4]
-            out_masks.append(masks * same_cid.repeat(axis=-1, repeats=4))
-        # targets, masks C * [B, N, 4] -> [C, B, N, 4] -> [B, N, C, 4]
-        all_targets = F.stack(*out_targets, axis=0)
-        all_masks = F.stack(*out_masks, axis=0)
+        ref_labels = F.pick(ref_labels, matches, axis=2).reshape((0, -1)).expand_dims(2)
+        # boolean array [B, N, C, 1]
+        same_cids = F.broadcast_equal(ref_labels, F.reshape(F.arange(self._num_class),
+                                                            shape=(1, 1, -1))).expand_dims(-1)
+        # targets, masks [B, N, C, 4]
+        all_targets = F.broadcast_to(targets.expand_dims(2), shape=(0, 0, self._num_class, 0))
+        all_masks = F.broadcast_mul(masks.expand_dims(2),
+                                    F.broadcast_to(same_cids, shape=(0, 0, 0, 4)))
         return all_targets, all_masks
 
 
@@ -286,13 +286,13 @@ class MultiClassEncoder(gluon.HybridBlock):
         """
         # samples (B, N) (+1, -1, 0: ignore), matches (B, N) [0, M), refs (B, M)
         # reshape refs (B, M) -> (B, 1, M) -> (B, N, M)
-        refs = F.repeat(refs.reshape((0, 1, -1)), axis=1, repeats=matches.shape[1])
+        refs = F.broadcast_like(refs.reshape((0, 1, -1)), matches, lhs_axes=1, rhs_axes=1)
         # ids (B, N, M) -> (B, N), value [0, M + 1), 0 reserved for background class
         target_ids = F.pick(refs, matches, axis=2) + 1
         # samples 0: set ignore samples to ignore_label
-        targets = F.where(samples > 0.5, target_ids, nd.ones_like(target_ids) * self._ignore_label)
+        targets = F.where(samples > 0.5, target_ids, F.ones_like(target_ids) * self._ignore_label)
         # samples -1: set negative samples to 0
-        targets = F.where(samples < -0.5, nd.zeros_like(targets), targets)
+        targets = F.where(samples < -0.5, F.zeros_like(targets), targets)
         return targets
 
 
