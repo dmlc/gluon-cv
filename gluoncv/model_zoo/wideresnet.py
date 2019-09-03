@@ -173,7 +173,7 @@ class IdentityResidualBlock(HybridBlock):
             bn1 = self.bn1(x)
             shortcut = self.proj_conv(bn1)
         else:
-            shortcut = x.copy()
+            shortcut = x
             bn1 = self.bn1(x)
 
         out = self.convs(bn1)
