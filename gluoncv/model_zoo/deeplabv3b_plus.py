@@ -29,14 +29,13 @@ class DeepLabWV3Plus(HybridBlock):
     """
     def __init__(self, nclass, backbone='wideresnet', aux=False, ctx=cpu(), pretrained_base=True,
                  height=None, width=None, base_size=576, crop_size=512, dilated=True, **kwargs):
-        super(DeepLabWV3Plus, self).__init__()
+        super(DeepLabWV3Plus, self).__init__(nclass, backbone, aux, ctx=ctx, base_size=base_size,
+                                     crop_size=crop_size, pretrained_base=pretrained_base, **kwargs)
 
-        self.height = height if height is not None else crop_size
-        self.width = width if width is not None else crop_size
-        self.aux = aux
-        self._up_kwargs = {'height': self.height, 'width': self.width}
-        self.base_size = base_size
-        self.crop_size = crop_size
+        height = height if height is not None else crop_size
+        width = width if width is not None else crop_size
+        self._up_kwargs = {'height': height, 'width': width}
+        print('self.crop_size', self.crop_size)
 
         with self.name_scope():
             pretrained = wider_resnet38_a2(classes=1000, dilation=True)
@@ -50,7 +49,7 @@ class DeepLabWV3Plus(HybridBlock):
             self.pool2 = pretrained.pool2
             self.pool3 = pretrained.pool3
             del pretrained
-            self.head = _DeepLabHead(nclass, height=self.height//2, width=self.width//2, **kwargs)
+            self.head = _DeepLabHead(nclass, height=height//2, width=width//2, **kwargs)
 
     def hybrid_forward(self, F, x):
         outputs = []
