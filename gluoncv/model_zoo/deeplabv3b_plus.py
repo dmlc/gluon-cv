@@ -40,6 +40,7 @@ class DeepLabWV3Plus(HybridBlock):
 
         with self.name_scope():
             pretrained = wider_resnet38_a2(classes=1000, dilation=True)
+            pretrained.initialize(ctx=ctx)
             self.mod1 = pretrained.mod1
             self.mod2 = pretrained.mod2
             self.mod3 = pretrained.mod3
@@ -51,6 +52,7 @@ class DeepLabWV3Plus(HybridBlock):
             self.pool3 = pretrained.pool3
             del pretrained
             self.head = _DeepLabHead(nclass, height=height//2, width=width//2, **kwargs)
+            self.head.initialize(ctx=ctx)
 
     def hybrid_forward(self, F, x):
         outputs = []

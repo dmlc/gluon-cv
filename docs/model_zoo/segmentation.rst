@@ -86,6 +86,17 @@ Pascal VOC Dataset
 .. _86.2:  http://host.robots.ox.ac.uk:8080/anonymous/ZPN6II.html
 .. _86.7:  http://host.robots.ox.ac.uk:8080/anonymous/XZEXL2.html
 
+Cityscapes Dataset
+------------------
+
++-------------------------------------+-----------------+-----------+-----------+---------------------------------------------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------+
+| Name                                | Method          | pixAcc    | mIoU      | Command                                                                                                                                     | log                                                                                                                                |
++=====================================+=================+===========+===========+=============================================================================================================================================+====================================================================================================================================+
+| psp_resnet101_citys                 | PSP [3]_        | N/A       | 77.1      | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/psp_resnet101_city.sh>`_                    | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/psp_resnet101_city.log>`_                   |
++-------------------------------------+-----------------+-----------+-----------+---------------------------------------------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------+
+| deeplab_v3b_plus_wideresnet_citys   | VPLR [5]_       | N/A       | 83.5      | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/deeplab_v3b_plus_wideresnet_citys.sh>`_     | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/deeplab_v3b_plus_wideresnet_citys.log>`_    |
++-------------------------------------+-----------------+-----------+-----------+---------------------------------------------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------+
+
 
 Instance Segmentation
 ~~~~~~~~~~~~~~~~~~~~~
@@ -134,3 +145,5 @@ MS COCO
        "Pyramid scene parsing network." *CVPR*, 2017
 .. [4] Chen, Liang-Chieh, et al. "Rethinking atrous convolution for semantic image segmentation." \
        arXiv preprint arXiv:1706.05587 (2017).
+.. [5] Zhu, Yi, et al. "Improving Semantic Segmentation via Video Propagation and Label Relaxation." \
+       CVPR 2019.
