@@ -177,7 +177,7 @@ class IdentityResidualBlock(HybridBlock):
             bn1 = self.bn1(x)
 
         out = self.convs(bn1)
-        out += shortcut
+        out = out + shortcut
         return out
 
 class WiderResNetA2(HybridBlock):
