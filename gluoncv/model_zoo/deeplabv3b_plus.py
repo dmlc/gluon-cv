@@ -30,7 +30,7 @@ class DeepLabWV3Plus(HybridBlock):
     def __init__(self, nclass, backbone='wideresnet', aux=False, ctx=cpu(), pretrained_base=True,
                  height=None, width=None, base_size=576, crop_size=512, dilated=True, **kwargs):
         super(DeepLabWV3Plus, self).__init__(nclass, backbone, aux, ctx=ctx, base_size=base_size,
-                                     crop_size=crop_size, pretrained_base=pretrained_base, **kwargs)
+                                             crop_size=crop_size, pretrained_base=pretrained_base, **kwargs)
 
         height = height if height is not None else crop_size
         width = width if width is not None else crop_size
