@@ -5,11 +5,17 @@ import re
 import sys
 
 import numpy as np
-from Cython.Build import cythonize
+try:
+    from Cython.Build import cythonize
+except ImportError:
+    cythonize = None
 from setuptools import setup, find_packages, Extension
 
 with_cython = False
 if '--with-cython' in sys.argv:
+    if not cythonize:
+        print("Cython not found, please run `pip install Cython`")
+        exit(1)
     with_cython = True
     sys.argv.remove('--with-cython')
 
