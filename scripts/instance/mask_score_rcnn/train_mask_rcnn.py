@@ -123,8 +123,10 @@ def parse_args():
 
 def get_dataset(dataset, args):
     if dataset.lower() == 'coco':
-        train_dataset = gdata.COCOInstance(splits='instances_train2017')
-        val_dataset = gdata.COCOInstance(splits='instances_val2017', skip_empty=False)
+        #train_dataset = gdata.COCOInstance(splits='instances_train2017')
+        #val_dataset = gdata.COCOInstance(splits='instances_val2017', skip_empty=False)
+        train_dataset = gdata.COCOInstance(splits='instances_train2017_small')
+        val_dataset = gdata.COCOInstance(splits='instances_train2017_small', skip_empty=False)
         val_metric = COCOInstanceMetric(val_dataset, args.save_prefix + '_eval', cleanup=True)
     else:
         raise NotImplementedError('Dataset: {} not implemented.'.format(dataset))
@@ -470,7 +472,7 @@ if __name__ == '__main__':
         if args.norm_layer == 'bn':
             kwargs['num_devices'] = len(ctx)
     num_gpus = hvd.size() if args.horovod else len(ctx)
-    net_name = '_'.join(('mask_rcnn', *module_list, args.network, args.dataset))
+    net_name = '_'.join(('mask_score_rcnn', *module_list, args.network, args.dataset))
     args.save_prefix += net_name
     net = get_model(net_name, pretrained_base=True,
                     per_device_batch_size=args.batch_size // num_gpus, **kwargs)

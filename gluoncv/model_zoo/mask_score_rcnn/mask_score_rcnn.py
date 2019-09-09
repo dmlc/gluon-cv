@@ -14,14 +14,14 @@ from ..faster_rcnn.faster_rcnn import FasterRCNN
 from ...nn.feature import FPNFeatureExpander
 
 __all__ = ['MaskRCNN', 'get_mask_rcnn',
-           'mask_rcnn_resnet50_v1b_coco',
-           'mask_rcnn_fpn_resnet50_v1b_coco',
-           'mask_rcnn_resnet101_v1d_coco',
-           'mask_rcnn_fpn_resnet101_v1d_coco',
-           'mask_rcnn_resnet18_v1b_coco',
-           'mask_rcnn_fpn_resnet18_v1b_coco',
-           'mask_rcnn_fpn_bn_resnet18_v1b_coco',
-           'mask_rcnn_fpn_bn_mobilenet1_0_coco']
+           'mask_score_rcnn_resnet50_v1b_coco',
+           'mask_score_rcnn_fpn_resnet50_v1b_coco',
+           'mask_score_rcnn_resnet101_v1d_coco',
+           'mask_score_rcnn_fpn_resnet101_v1d_coco',
+           'mask_score_rcnn_resnet18_v1b_coco',
+           'mask_score_rcnn_fpn_resnet18_v1b_coco',
+           'mask_score_rcnn_fpn_bn_resnet18_v1b_coco',
+           'mask_score_rcnn_fpn_bn_mobilenet1_0_coco']
 
 
 class Mask(nn.HybridBlock):
@@ -364,7 +364,7 @@ def get_mask_rcnn(name, dataset, pretrained=False, ctx=mx.cpu(),
     return net
 
 
-def mask_rcnn_resnet50_v1b_coco(pretrained=False, pretrained_base=True, **kwargs):
+def mask_score_rcnn_resnet50_v1b_coco(pretrained=False, pretrained_base=True, **kwargs):
     r"""Mask RCNN model from the paper
     "He, K., Gkioxari, G., Doll&ar, P., & Girshick, R. (2017). Mask R-CNN"
 
@@ -414,7 +414,7 @@ def mask_rcnn_resnet50_v1b_coco(pretrained=False, pretrained_base=True, **kwargs
         **kwargs)
 
 
-def mask_rcnn_fpn_resnet50_v1b_coco(pretrained=False, pretrained_base=True, **kwargs):
+def mask_score_rcnn_fpn_resnet50_v1b_coco(pretrained=False, pretrained_base=True, **kwargs):
     r"""Mask RCNN model from the paper
     "He, K., Gkioxari, G., Doll&ar, P., & Girshick, R. (2017). Mask R-CNN"
 
@@ -469,7 +469,7 @@ def mask_rcnn_fpn_resnet50_v1b_coco(pretrained=False, pretrained_base=True, **kw
         num_fcn_convs=4, **kwargs)
 
 
-def mask_rcnn_resnet101_v1d_coco(pretrained=False, pretrained_base=True, **kwargs):
+def mask_score_rcnn_resnet101_v1d_coco(pretrained=False, pretrained_base=True, **kwargs):
     r"""Mask RCNN model from the paper
     "He, K., Gkioxari, G., Doll&ar, P., & Girshick, R. (2017). Mask R-CNN"
 
@@ -519,7 +519,7 @@ def mask_rcnn_resnet101_v1d_coco(pretrained=False, pretrained_base=True, **kwarg
         **kwargs)
 
 
-def mask_rcnn_fpn_resnet101_v1d_coco(pretrained=False, pretrained_base=True, **kwargs):
+def mask_score_rcnn_fpn_resnet101_v1d_coco(pretrained=False, pretrained_base=True, **kwargs):
     r"""Mask RCNN model from the paper
     "He, K., Gkioxari, G., Doll&ar, P., & Girshick, R. (2017). Mask R-CNN"
 
@@ -574,7 +574,7 @@ def mask_rcnn_fpn_resnet101_v1d_coco(pretrained=False, pretrained_base=True, **k
         num_fcn_convs=4, **kwargs)
 
 
-def mask_rcnn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, rcnn_max_dets=1000,
+def mask_score_rcnn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, rcnn_max_dets=1000,
                                 rpn_test_pre_nms=6000, rpn_test_post_nms=1000, **kwargs):
     r"""Mask RCNN model from the paper
     "He, K., Gkioxari, G., Doll&ar, P., & Girshick, R. (2017). Mask R-CNN"
@@ -632,7 +632,7 @@ def mask_rcnn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, rcnn_max
         **kwargs)
 
 
-def mask_rcnn_fpn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, rcnn_max_dets=1000,
+def mask_score_rcnn_fpn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, rcnn_max_dets=1000,
                                     rpn_test_pre_nms=6000, rpn_test_post_nms=1000, **kwargs):
     r"""Mask RCNN model from the paper
     "He, K., Gkioxari, G., Doll&ar, P., & Girshick, R. (2017). Mask R-CNN"
@@ -694,7 +694,7 @@ def mask_rcnn_fpn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, rcnn
         target_roi_scale=2, num_fcn_convs=2, **kwargs)
 
 
-def mask_rcnn_fpn_bn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, num_devices=0,
+def mask_score_rcnn_fpn_bn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, num_devices=0,
                                        rcnn_max_dets=1000, rpn_test_pre_nms=6000,
                                        rpn_test_post_nms=1000, **kwargs):
     r"""Mask RCNN model from the paper
@@ -765,7 +765,7 @@ def mask_rcnn_fpn_bn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, n
         norm_kwargs=gluon_norm_kwargs, **kwargs)
 
 
-def mask_rcnn_fpn_bn_mobilenet1_0_coco(pretrained=False, pretrained_base=True, num_devices=0,
+def mask_score_rcnn_fpn_bn_mobilenet1_0_coco(pretrained=False, pretrained_base=True, num_devices=0,
                                        rcnn_max_dets=1000, rpn_test_pre_nms=6000,
                                        rpn_test_post_nms=1000, **kwargs):
     r"""Mask RCNN model from the paper

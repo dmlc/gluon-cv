@@ -13,6 +13,7 @@ from .faster_rcnn import *
 from .fcn import *
 from .inception import *
 from .mask_rcnn import *
+from .mask_score_rcnn import *
 from .mobilenet import *
 from .mobilenetv3 import *
 from .nasnet import *
@@ -105,6 +106,7 @@ _models = {
     'ssd_300_mobilenet0.25_custom': ssd_300_mobilenet0_25_custom,
     'faster_rcnn_resnet50_v1b_voc': faster_rcnn_resnet50_v1b_voc,
     'mask_rcnn_resnet18_v1b_coco': mask_rcnn_resnet18_v1b_coco,
+    'mask_score_cnn_resnet18_v1b_coco': mask_score_rcnn_resnet18_v1b_coco,
     'faster_rcnn_resnet50_v1b_coco': faster_rcnn_resnet50_v1b_coco,
     'faster_rcnn_fpn_resnet50_v1b_coco': faster_rcnn_fpn_resnet50_v1b_coco,
     'faster_rcnn_fpn_bn_resnet50_v1b_coco': faster_rcnn_fpn_bn_resnet50_v1b_coco,
@@ -120,6 +122,13 @@ _models = {
     'mask_rcnn_fpn_resnet18_v1b_coco': mask_rcnn_fpn_resnet18_v1b_coco,
     'mask_rcnn_fpn_bn_resnet18_v1b_coco': mask_rcnn_fpn_bn_resnet18_v1b_coco,
     'mask_rcnn_fpn_bn_mobilenet1_0_coco': mask_rcnn_fpn_bn_mobilenet1_0_coco,
+    'mask_score_rcnn_resnet50_v1b_coco': mask_score_rcnn_resnet50_v1b_coco,
+    'mask_score_rcnn_fpn_resnet50_v1b_coco': mask_score_rcnn_fpn_resnet50_v1b_coco,
+    'mask_score_rcnn_resnet101_v1d_coco': mask_score_rcnn_resnet101_v1d_coco,
+    'mask_score_rcnn_fpn_resnet101_v1d_coco': mask_score_rcnn_fpn_resnet101_v1d_coco,
+    'mask_score_rcnn_fpn_resnet18_v1b_coco': mask_score_rcnn_fpn_resnet18_v1b_coco,
+    'mask_score_rcnn_fpn_bn_resnet18_v1b_coco': mask_score_rcnn_fpn_bn_resnet18_v1b_coco,
+    'mask_score_rcnn_fpn_bn_mobilenet1_0_coco': mask_score_rcnn_fpn_bn_mobilenet1_0_coco,
     'cifar_resnet20_v1': cifar_resnet20_v1,
     'cifar_resnet56_v1': cifar_resnet56_v1,
     'cifar_resnet110_v1': cifar_resnet110_v1,
