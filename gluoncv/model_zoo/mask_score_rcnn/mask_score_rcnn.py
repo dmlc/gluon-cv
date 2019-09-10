@@ -13,7 +13,7 @@ from .rcnn_target import MaskTargetGenerator
 from ..faster_rcnn.faster_rcnn import FasterRCNN
 from ...nn.feature import FPNFeatureExpander
 
-__all__ = ['MaskRCNN', 'get_mask_rcnn',
+__all__ = ['MaskScoreRCNN', 'get_mask_score_rcnn',
            'mask_score_rcnn_resnet50_v1b_coco',
            'mask_score_rcnn_fpn_resnet50_v1b_coco',
            'mask_score_rcnn_resnet101_v1d_coco',
@@ -156,7 +156,7 @@ class Mask(nn.HybridBlock):
                     new_params.set_data(new_data)
 
 
-class MaskRCNN(FasterRCNN):
+class MaskScoreRCNN(FasterRCNN):
     r"""Mask RCNN network.
 
     Parameters
@@ -186,7 +186,7 @@ class MaskRCNN(FasterRCNN):
     def __init__(self, features, top_features, classes, mask_channels=256, rcnn_max_dets=1000,
                  rpn_test_pre_nms=6000, rpn_test_post_nms=1000, target_roi_scale=1, num_fcn_convs=0,
                  norm_layer=None, norm_kwargs=None, **kwargs):
-        super(MaskRCNN, self).__init__(features, top_features, classes,
+        super(MaskScoreRCNN, self).__init__(features, top_features, classes,
                                        rpn_test_pre_nms=rpn_test_pre_nms,
                                        rpn_test_post_nms=rpn_test_post_nms,
                                        additional_output=True, **kwargs)
@@ -223,14 +223,14 @@ class MaskRCNN(FasterRCNN):
         if autograd.is_training():
             cls_pred, box_pred, rpn_box, samples, matches, \
             raw_rpn_score, raw_rpn_box, anchors, top_feat = \
-                super(MaskRCNN, self).hybrid_forward(F, x, gt_box)
+                super(MaskScoreRCNN, self).hybrid_forward(F, x, gt_box)
             mask_pred = self.mask(top_feat)
             return cls_pred, box_pred, mask_pred, rpn_box, samples, matches, \
                    raw_rpn_score, raw_rpn_box, anchors
         else:
             batch_size = 1
             ids, scores, boxes, feat = \
-                super(MaskRCNN, self).hybrid_forward(F, x)
+                super(MaskScoreRCNN, self).hybrid_forward(F, x)
 
             # (B, N * (C - 1), 1) -> (B, N * (C - 1)) -> (B, topk)
             num_rois = self._rcnn_max_dets
@@ -326,7 +326,7 @@ class MaskRCNN(FasterRCNN):
             self._batch_size, self._num_sample, self.num_class, self._target_roi_size)
 
 
-def get_mask_rcnn(name, dataset, pretrained=False, ctx=mx.cpu(),
+def get_mask_score_rcnn(name, dataset, pretrained=False, ctx=mx.cpu(),
                   root=os.path.join('~', '.mxnet', 'models'), **kwargs):
     r"""Utility function to return mask rcnn networks.
 
@@ -350,7 +350,7 @@ def get_mask_rcnn(name, dataset, pretrained=False, ctx=mx.cpu(),
         The Mask RCNN network.
 
     """
-    net = MaskRCNN(**kwargs)
+    net = MaskScoreRCNN(**kwargs)
     if pretrained:
         from ..model_store import get_model_file
         full_name = '_'.join(('mask_rcnn', name, dataset))
@@ -399,7 +399,7 @@ def mask_score_rcnn_resnet50_v1b_coco(pretrained=False, pretrained_base=True, **
         top_features.add(getattr(base_network, layer))
     train_patterns = '|'.join(['.*dense', '.*rpn', '.*mask',
                                '.*down(2|3|4)_conv', '.*layers(2|3|4)_conv'])
-    return get_mask_rcnn(
+    return get_mask_score_rcnn(
         name='resnet50_v1b', dataset='coco', pretrained=pretrained,
         features=features, top_features=top_features, classes=classes,
         mask_channels=256, rcnn_max_dets=1000,
@@ -454,7 +454,7 @@ def mask_score_rcnn_fpn_resnet50_v1b_coco(pretrained=False, pretrained_base=True
                          nn.Activation('relu'))
     train_patterns = '|'.join(['.*dense', '.*rpn', '.*mask', 'P',
                                '.*down(2|3|4)_conv', '.*layers(2|3|4)_conv'])
-    return get_mask_rcnn(
+    return get_mask_score_rcnn(
         name='fpn_resnet50_v1b', dataset='coco', pretrained=pretrained,
         features=features, top_features=top_features, classes=classes,
         box_features=box_features, mask_channels=256, rcnn_max_dets=1000,
@@ -504,7 +504,7 @@ def mask_score_rcnn_resnet101_v1d_coco(pretrained=False, pretrained_base=True, *
         top_features.add(getattr(base_network, layer))
     train_patterns = '|'.join(['.*dense', '.*rpn', '.*mask',
                                '.*down(2|3|4)_conv', '.*layers(2|3|4)_conv'])
-    return get_mask_rcnn(
+    return get_mask_score_rcnn(
         name='resnet101_v1d', dataset='coco', pretrained=pretrained,
         features=features, top_features=top_features, classes=classes,
         mask_channels=256, rcnn_max_dets=1000,
@@ -559,7 +559,7 @@ def mask_score_rcnn_fpn_resnet101_v1d_coco(pretrained=False, pretrained_base=Tru
                          nn.Activation('relu'))
     train_patterns = '|'.join(['.*dense', '.*rpn', '.*mask', 'P',
                                '.*down(2|3|4)_conv', '.*layers(2|3|4)_conv'])
-    return get_mask_rcnn(
+    return get_mask_score_rcnn(
         name='fpn_resnet101_v1d', dataset='coco', pretrained=pretrained,
         features=features, top_features=top_features, classes=classes,
         box_features=box_features, mask_channels=256, rcnn_max_dets=1000,
@@ -617,7 +617,7 @@ def mask_score_rcnn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, rc
         top_features.add(getattr(base_network, layer))
     train_patterns = '|'.join(['.*dense', '.*rpn', '.*mask',
                                '.*down(2|3|4)_conv', '.*layers(2|3|4)_conv'])
-    return get_mask_rcnn(
+    return get_mask_score_rcnn(
         name='resnet18_v1b', dataset='coco', pretrained=pretrained,
         features=features, top_features=top_features, classes=classes,
         mask_channels=256, rcnn_max_dets=rcnn_max_dets,
@@ -679,7 +679,7 @@ def mask_score_rcnn_fpn_resnet18_v1b_coco(pretrained=False, pretrained_base=True
                          nn.Activation('relu'))
     train_patterns = '|'.join(['.*dense', '.*rpn', '.*mask', 'P',
                                '.*down(2|3|4)_conv', '.*layers(2|3|4)_conv'])
-    return get_mask_rcnn(
+    return get_mask_score_rcnn(
         name='fpn_resnet18_v1b', dataset='coco', pretrained=pretrained,
         features=features, top_features=top_features, classes=classes,
         box_features=box_features, mask_channels=256, rcnn_max_dets=rcnn_max_dets,
@@ -749,7 +749,7 @@ def mask_score_rcnn_fpn_bn_resnet18_v1b_coco(pretrained=False, pretrained_base=T
                      nn.Dense(1024, weight_initializer=mx.init.Normal(0.01)),
                      nn.Activation('relu'))
     train_patterns = '(?!.*moving)'
-    return get_mask_rcnn(
+    return get_mask_score_rcnn(
         name='fpn_bn_resnet18_v1b', dataset='coco', pretrained=pretrained,
         features=features, top_features=top_features, classes=classes,
         box_features=box_features, mask_channels=256, rcnn_max_dets=rcnn_max_dets,
@@ -821,7 +821,7 @@ def mask_score_rcnn_fpn_bn_mobilenet1_0_coco(pretrained=False, pretrained_base=T
                      nn.Dense(1024, weight_initializer=mx.init.Normal(0.01)),
                      nn.Activation('relu'))
     train_patterns = '(?!.*moving)'
-    return get_mask_rcnn(
+    return get_mask_score_rcnn(
         name='fpn_bn_mobilenet1_0', dataset='coco', pretrained=pretrained, features=features,
         top_features=top_features, classes=classes, box_features=box_features, mask_channels=256,
         rcnn_max_dets=rcnn_max_dets, short=(640, 800), max_size=1333, min_stage=2, max_stage=6,
