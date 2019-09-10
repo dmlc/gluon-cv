@@ -208,8 +208,6 @@ def train(ctx):
                     l5 = nd.cast(L(nd.cast(yhat[5], 'float32'), y, w), opt.dtype)
                     loss.append(l0 + l1 + l2 + l3 + l4 + l5)
 
-                loss = [nd.cast(L(nd.cast(yhat, 'float32'), y, w), opt.dtype)
-                        for yhat, y, w in zip(outputs, label, weight)]
             ag.backward(loss)
             trainer.step(batch_size)
 

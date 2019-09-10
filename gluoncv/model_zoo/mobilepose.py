@@ -26,20 +26,21 @@ from mxnet.gluon import nn
 from mxnet.gluon.nn import BatchNorm
 from mxnet.gluon.block import HybridBlock
 from mxnet.context import cpu
-from ..nn import ReLU6, HardSigmoid, HardSwish
 
 from .mobilenetv3 import _ResUnit
-from .model_zoo import get_model
 
 class MobilePose(HybridBlock):
     """Pose Estimation for Mobile Device"""
-    def __init__(self, num_joints, base_name, num_stages=6, use_pretrained_base=False, **kwargs):
+    def __init__(self, base_name, num_stages=6, num_joints=17,
+                 pretrained_base=False, pretrained_ctx=cpu(), **kwargs):
         super(MobilePose, self).__init__(**kwargs)
         self.num_stages = num_stages
         assert self.num_stages >= 1
 
         with self.name_scope():
-            base_model = get_model(baes_name, pretrained=use_pretrained_base)
+            from .model_zoo import get_model
+            base_model = get_model(base_name, pretrained=pretrained_base,
+                                   ctx=pretrained_ctx)
             self.base_model1 = base_model.features[:4]
             self.base_model_pool1 = nn.MaxPool2D(4, 4)
             self.base_model2 = base_model.features[4:6]
@@ -83,9 +84,9 @@ class MobilePose(HybridBlock):
 
         return res
 
-def get_mobilepose(num_joints, base_name, ctx=cpu(),
-                       root='~/.mxnet/models', **kwargs):
-    net = MobilePose(num_joints, base_name, **kwargs)
+def get_mobilepose(base_name, ctx=cpu(), pretrained=False,
+                   root='~/.mxnet/models', **kwargs):
+    net = MobilePose(base_name, **kwargs)
 
     if pretrained:
         from .model_store import get_model_file
@@ -95,4 +96,4 @@ def get_mobilepose(num_joints, base_name, ctx=cpu(),
     return net
 
 def mobilepose(**kwargs):
-    return get_mobilepose(17, 'mobilenetv3_large', **kwargs)
+    return get_mobilepose('mobilenetv3_large', **kwargs)
