@@ -3,7 +3,6 @@ from __future__ import absolute_import, division
 
 import mxnet as mx
 import numpy as np
-import matplotlib.pyplot as plt
 
 from . import plot_bbox, cv_plot_bbox
 
@@ -37,6 +36,8 @@ def plot_keypoints(img, coords, confidence, class_ids, bboxes, scores,
         The ploted axes.
 
     """
+    import matplotlib.pyplot as plt
+
     if isinstance(coords, mx.nd.NDArray):
         coords = coords.asnumpy()
     if isinstance(class_ids, mx.nd.NDArray):
@@ -101,6 +102,8 @@ def cv_plot_keypoints(img, coords, confidence, class_ids, bboxes, scores,
         The image with estimated pose.
 
     """
+    import matplotlib.pyplot as plt
+
     from ..filesystem import try_import_cv2
     cv2 = try_import_cv2()
 
