@@ -277,7 +277,8 @@ class ForwardBackwardTask(Parallelizable):
             rcnn_loss = rcnn_loss1 + rcnn_loss2
 
             # generate targets for mask
-            mask_targets, mask_masks = self.net.mask_target(roi, gt_mask, matches, cls_targets)
+            mask_targets, mask_masks, mask_score_targets, mask_score_masks = \
+                        self.net.mask_target(roi, gt_mask, matches, cls_targets, mask_pred)
             # loss of mask
             mask_loss = self.rcnn_mask_loss(mask_pred, mask_targets, mask_masks) * \
                         mask_targets.size / mask_masks.sum()
