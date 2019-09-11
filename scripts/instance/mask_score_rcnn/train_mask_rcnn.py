@@ -19,14 +19,17 @@ from gluoncv.data import batchify
 from gluoncv.data.transforms.presets.rcnn import MaskRCNNDefaultTrainTransform, \
     MaskRCNNDefaultValTransform
 from gluoncv.utils.metrics.coco_instance import COCOInstanceMetric
+from gluoncv.utils.metrics.coco_instance_mask_iou import COCOInstanceMaskScoreMetric
 from gluoncv.utils.metrics.rcnn import RPNAccMetric, RPNL1LossMetric, RCNNAccMetric, \
-    RCNNL1LossMetric, MaskAccMetric, MaskFGAccMetric
+    RCNNL1LossMetric, MaskAccMetric, MaskFGAccMetric, MaskScoreL2LossMetric
 from gluoncv.utils.parallel import Parallelizable, Parallel
 
 try:
     import horovod.mxnet as hvd
 except ImportError:
     hvd = None
+
+import pdb
 
 
 def parse_args():
@@ -123,11 +126,12 @@ def parse_args():
 
 def get_dataset(dataset, args):
     if dataset.lower() == 'coco':
-        #train_dataset = gdata.COCOInstance(splits='instances_train2017')
-        #val_dataset = gdata.COCOInstance(splits='instances_val2017', skip_empty=False)
-        train_dataset = gdata.COCOInstance(splits='instances_train2017_small')
-        val_dataset = gdata.COCOInstance(splits='instances_train2017_small', skip_empty=False)
-        val_metric = COCOInstanceMetric(val_dataset, args.save_prefix + '_eval', cleanup=True)
+        train_dataset = gdata.COCOInstance(splits='instances_train2017')
+        val_dataset = gdata.COCOInstance(splits='instances_val2017', skip_empty=False)
+        #train_dataset = gdata.COCOInstance(splits='instances_train2017_small')
+        #val_dataset = gdata.COCOInstance(splits='instances_train2017_small', skip_empty=False)
+        #val_metric = COCOInstanceMetric(val_dataset, args.save_prefix + '_eval', cleanup=True)
+        val_metric = COCOInstanceMaskScoreMetric(val_dataset, args.save_prefix + '_eval', cleanup=True)
     else:
         raise NotImplementedError('Dataset: {} not implemented.'.format(dataset))
     return train_dataset, val_dataset, val_metric
@@ -194,24 +198,27 @@ def validate(net, val_data, ctx, eval_metric, args):
         det_ids = []
         det_scores = []
         det_masks = []
+        det_mask_scores = []
         det_infos = []
         for x, im_info in zip(*batch):
             # get prediction results
-            ids, scores, bboxes, masks = net(x)
+            ids, scores, bboxes, masks, mask_scores = net(x)
             det_bboxes.append(clipper(bboxes, x))
             det_ids.append(ids)
             det_scores.append(scores)
             det_masks.append(masks)
+            det_mask_scores.append(mask_scores)
             det_infos.append(im_info)
         # update metric
-        for det_bbox, det_id, det_score, det_mask, det_info in zip(det_bboxes, det_ids, det_scores,
-                                                                   det_masks, det_infos):
+        for det_bbox, det_id, det_score, det_mask, det_mask_score, det_info \
+                in zip(det_bboxes, det_ids, det_scores, det_masks, det_mask_scores, det_infos):
             for i in range(det_info.shape[0]):
                 # numpy everything
                 det_bbox = det_bbox[i].asnumpy()
                 det_id = det_id[i].asnumpy()
                 det_score = det_score[i].asnumpy()
                 det_mask = det_mask[i].asnumpy()
+                det_mask_score = det_mask_score[i].asnumpy()
                 det_info = det_info[i].asnumpy()
                 # filter by conf threshold
                 im_height, im_width, im_scale = det_info
@@ -220,6 +227,7 @@ def validate(net, val_data, ctx, eval_metric, args):
                 det_score = det_score[valid]
                 det_bbox = det_bbox[valid] / im_scale
                 det_mask = det_mask[valid]
+                det_mask_score = det_mask_score[valid]
                 # fill full mask
                 im_height, im_width = int(round(im_height / im_scale)), int(
                     round(im_width / im_scale))
@@ -227,7 +235,7 @@ def validate(net, val_data, ctx, eval_metric, args):
                 for bbox, mask in zip(det_bbox, det_mask):
                     full_masks.append(gdata.transforms.mask.fill(mask, bbox, (im_width, im_height)))
                 full_masks = np.array(full_masks)
-                eval_metric.update(det_bbox, det_id, det_score, full_masks)
+                eval_metric.update(det_bbox, det_id, det_score, full_masks, det_mask_score)
     return eval_metric.get()
 
 
@@ -237,7 +245,7 @@ def get_lr_at_iter(alpha, lr_warmup_factor=1. / 3.):
 
 class ForwardBackwardTask(Parallelizable):
     def __init__(self, net, optimizer, rpn_cls_loss, rpn_box_loss, rcnn_cls_loss, rcnn_box_loss,
-                 rcnn_mask_loss):
+                 rcnn_mask_loss, rcnn_mask_score_loss):
         super(ForwardBackwardTask, self).__init__()
         self.net = net
         self._optimizer = optimizer
@@ -246,14 +254,15 @@ class ForwardBackwardTask(Parallelizable):
         self.rcnn_cls_loss = rcnn_cls_loss
         self.rcnn_box_loss = rcnn_box_loss
         self.rcnn_mask_loss = rcnn_mask_loss
+        self.rcnn_mask_score_loss = rcnn_mask_score_loss
 
     def forward_backward(self, x):
         data, label, gt_mask, rpn_cls_targets, rpn_box_targets, rpn_box_masks = x
         with autograd.record():
             gt_label = label[:, :, 4:5]
             gt_box = label[:, :, :4]
-            cls_pred, box_pred, mask_pred, roi, samples, matches, rpn_score, rpn_box, anchors = net(
-                data, gt_box)
+            cls_pred, box_pred, mask_pred, roi, samples, matches, rpn_score, \
+                rpn_box, anchors, top_feat = net(data, gt_box)
             # losses of rpn
             rpn_score = rpn_score.squeeze(axis=-1)
             num_rpn_pos = (rpn_cls_targets >= 0).sum()
@@ -283,9 +292,18 @@ class ForwardBackwardTask(Parallelizable):
             # loss of mask
             mask_loss = self.rcnn_mask_loss(mask_pred, mask_targets, mask_masks) * \
                         mask_targets.size / mask_masks.sum()
+            
+            mask_score_pred = self.net.mask_score(top_feat, mask_pred, cls_targets)
+
+            mask_score_masks_sum = mask_score_masks.sum() 
+            if mask_score_masks_sum==0:
+                mask_score_masks_sum = 1
+
+            mask_score_loss = self.rcnn_mask_score_loss(mask_score_pred, mask_score_targets, mask_score_masks) * \
+                                   mask_score_targets.size / mask_score_targets.shape[0] / mask_score_masks_sum
 
             # overall losses
-            total_loss = rpn_loss.sum() + rcnn_loss.sum() + mask_loss.sum()
+            total_loss = rpn_loss.sum() + rcnn_loss.sum() + mask_loss.sum() + mask_score_loss.sum()
 
             rpn_loss1_metric = rpn_loss1.mean()
             rpn_loss2_metric = rpn_loss2.mean()
@@ -345,6 +363,7 @@ def train(net, train_data, val_data, eval_metric, batch_size, ctx, args):
     rcnn_cls_loss = mx.gluon.loss.SoftmaxCrossEntropyLoss()
     rcnn_box_loss = mx.gluon.loss.HuberLoss()  # == smoothl1
     rcnn_mask_loss = mx.gluon.loss.SigmoidBinaryCrossEntropyLoss(from_sigmoid=False)
+    rcnn_mask_score_loss = mx.gluon.loss.L2Loss()
     metrics = [mx.metric.Loss('RPN_Conf'),
                mx.metric.Loss('RPN_SmoothL1'),
                mx.metric.Loss('RCNN_CrossEntropy'),
@@ -357,6 +376,7 @@ def train(net, train_data, val_data, eval_metric, batch_size, ctx, args):
     rcnn_bbox_metric = RCNNL1LossMetric()
     rcnn_mask_metric = MaskAccMetric()
     rcnn_fgmask_metric = MaskFGAccMetric()
+    rcnn_mask_score_metric = MaskScoreL2LossMetric()
     metrics2 = [rpn_acc_metric, rpn_bbox_metric,
                 rcnn_acc_metric, rcnn_bbox_metric,
                 rcnn_mask_metric, rcnn_fgmask_metric]
@@ -381,7 +401,7 @@ def train(net, train_data, val_data, eval_metric, batch_size, ctx, args):
         if not args.disable_hybridization:
             net.hybridize(static_alloc=args.static_alloc)
         rcnn_task = ForwardBackwardTask(net, trainer, rpn_cls_loss, rpn_box_loss, rcnn_cls_loss,
-                                        rcnn_box_loss, rcnn_mask_loss)
+                                        rcnn_box_loss, rcnn_mask_loss, rcnn_mask_score_loss)
         executor = Parallel(args.executor_threads, rcnn_task) if not args.horovod else None
         while lr_steps and epoch >= lr_steps[0]:
             new_lr = trainer.learning_rate * lr_decay

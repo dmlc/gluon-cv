@@ -7,8 +7,8 @@ import mxnet as mx
 import pdb
 
 
-class MaskTargetGenerator(gluon.HybridBlock):
-#class MaskTargetGenerator(gluon.Block):
+#class MaskTargetGenerator(gluon.HybridBlock):
+class MaskTargetGenerator(gluon.Block):
     """Mask RCNN target encoder to generate mask targets.
 
     Parameters
@@ -24,7 +24,7 @@ class MaskTargetGenerator(gluon.HybridBlock):
 
     """
 
-    def __init__(self, num_images, num_rois, num_classes, mask_size, use_mask_ratio=False, **kwargs):
+    def __init__(self, num_images, num_rois, num_classes, mask_size, use_mask_ratio=True, **kwargs):
         super(MaskTargetGenerator, self).__init__(**kwargs)
         self._num_images = num_images
         self._num_rois = num_rois
@@ -116,7 +116,8 @@ class MaskTargetGenerator(gluon.HybridBlock):
         return mask_ratios
 
     # pylint: disable=arguments-differ
-    def hybrid_forward(self, F, rois, gt_masks, matches, cls_targets, mask_preds):
+    #def hybrid_forward(self, F, rois, gt_masks, matches, cls_targets, mask_preds):
+    def forward(self, rois, gt_masks, matches, cls_targets, mask_preds):
         """Handle B=self._num_image by a for loop.
         There is no way to know number of gt_masks.
 
@@ -135,7 +136,7 @@ class MaskTargetGenerator(gluon.HybridBlock):
 
         """
 
-        #F = mx.nd
+        F = mx.nd
 
         # cannot know M (num_gt) to have accurate batch id B * M, must split batch dim
         def _split(x, axis, num_outputs, squeeze_axis):
@@ -164,15 +165,16 @@ class MaskTargetGenerator(gluon.HybridBlock):
             # mask_pred (B, N, C, MS, MS) -> B * (N, C, MS, MS) 
             mask_preds = _split(mask_preds, axis=0, num_outputs=self._num_images, squeeze_axis=True)
 
-            # (1, C)
-            cids = F.arange(1, self._num_classes + 1)
-            cids = cids.reshape((1, -1))
 
             mask_targets = []
             mask_masks = []
             mask_score_targets = []
             mask_score_masks = []
             for roi, gt_mask, match, cls_target, mask_pred in zip(rois, gt_masks, matches, cls_targets, mask_preds):
+                # (1, C)
+                cids = F.arange(1, self._num_classes + 1, ctx=cls_target.context)
+                cids = cids.reshape((1, -1))
+
                 # batch id = match
                 padded_rois = F.concat(match.reshape((-1, 1)), roi, dim=-1)
                 # pooled_mask (N, 1, MS, MS)
@@ -184,7 +186,7 @@ class MaskTargetGenerator(gluon.HybridBlock):
                 #TODO: over to intersection
                 #TODO: check shape for pooled_mask below when multi-input size = 2
                 cls_target_object = F.where(cls_target>0, cls_target-1, F.zeros_like(cls_target))
-                selected_index = F.arange(self._num_rois)
+                selected_index = F.arange(self._num_rois, ctx=cls_target_object.context)
                 indices = F.stack(selected_index, cls_target_object, axis=0)
                 selected_mask = F.gather_nd(mask_pred, indices) 
                 #pdb.set_trace()

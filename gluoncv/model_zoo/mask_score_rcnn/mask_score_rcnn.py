@@ -155,6 +155,153 @@ class Mask(nn.HybridBlock):
                     # set data to new conv layers
                     new_params.set_data(new_data)
 
+class MaskScore(nn.HybridBlock):
+#class MaskScore(nn.Block):
+    r"""Mask predictor head
+    Parameters
+    ----------
+    batch_images : int
+        Used to reshape output
+    classes : iterable of str
+        Used to determine number of output channels, and store class names
+    mask_channels : int
+        Used to determine number of hidden channels
+    """
+    
+    r"""
+    mask branch containing several conv layers
+    """
+
+    def __init__(self, batch_images, classes, mask_channels, 
+                 rcnn_max_dets=0, **kwargs):
+        super(MaskScore, self).__init__(**kwargs)
+        #TODO:
+        self._batch_images = batch_images
+        self._rcnn_max_dets = rcnn_max_dets
+        self.classes = classes
+        init = mx.init.Xavier(rnd_type='gaussian', factor_type='out', magnitude=2)
+
+
+        with self.name_scope():
+            self.maskiou_branch = nn.HybridSequential()
+            self.maskiou_branch.add(
+                nn.Conv2D(mask_channels, kernel_size=(3, 3), strides=(1, 1),
+                        padding=(1, 1), weight_initializer=init))
+            self.maskiou_branch.add(nn.Activation('relu'))
+            for _ in range(2):
+                self.maskiou_branch.add(
+                    nn.Conv2D(mask_channels, kernel_size=(3, 3), strides=(1, 1),
+                            padding=(1, 1), weight_initializer=init))
+                self.maskiou_branch.add(nn.Activation('relu'))
+
+            self.maskiou_branch.add(
+                nn.Conv2D(mask_channels, kernel_size=(3, 3), strides=(2, 2),
+                        padding=(1, 1), weight_initializer=init))
+            self.maskiou_branch.add(nn.Activation('relu'))
+
+            self.maskiou_branch.add(nn.Dense(1024, weight_initializer=mx.init.Normal(0.01)),
+                            nn.Activation('relu'))
+            self.maskiou_branch.add(nn.Dense(1024, weight_initializer=mx.init.Normal(0.01)),
+                            nn.Activation('relu'))
+            
+
+            self.maxpool = nn.HybridSequential()
+            self.maxpool.add(nn.MaxPool2D(pool_size=2, strides=2))
+
+            self.mask_score_final = nn.HybridSequential()
+            self.mask_score_final.add(nn.Dense(len(self.classes), weight_initializer=mx.init.Normal(0.01)))
+            
+
+    # pylint: disable=arguments-differ
+    def hybrid_forward(self, F, top_feat, mask_pred, cls_targets=None):
+    #def forward(self, top_feat, mask_pred, cls_targets=None):
+        """Forward Mask Head.
+        The behavior during training and inference is different.
+        Parameters
+        ----------
+        x : mxnet.nd.NDArray or mxnet.symbol
+            The network input tensor of shape (B * N, fC, fH, fW).
+        Returns
+        -------
+        x : mxnet.nd.NDArray or mxnet.symbol
+            Mask prediction of shape (B, N, C, MS, MS)
+        """
+
+        r"""
+        #FIXME: 为什么 top_feat 没有显示图的信息
+        top_feat:  (512, 256, 14, 14)
+        mask_pred: (1, 512, 80, 28, 28)
+        cls_targets: (1, 512)
+        """
+        # (B * N, mask_channels, MS, MS)
+        
+        """
+        train: 
+            mask_pred: (1, 512, 80, 28, 28) -> (512, 80, 28, 28)
+            top_feat: (512, 256, 14, 14)
+        inference:
+            mask_pred: (1, 1000, 28, 28) ->  (1000, 1, 28, 28)
+            top_feat:  (1000, 256, 14, 14) 
+        """
+        
+        #pdb.set_trace()
+
+        #2mask_pred = mask_pred[0]
+        #F = mx.nd
+
+        if autograd.is_training():
+            """
+            #TODO:      用 mx.gather_nd()
+            selected_index = mx.nd.arange(512)
+            #selected_mask = mask_pred[selected_index, bb]  # (512, 28, 28)
+            #pdb.set_trace()
+            selected_mask = mask_pred[selected_index, mx.nd.clip(cls_targets[0]-1, 0, 80)]  # (512, 28, 28)
+            #selected_mask = F.gather_nd(mask_pred, indices) 
+            """
+
+            #pdb.set_trace()
+            #mask_pred = mask_pred.reshape(-3, 0, 0, 0)
+            mask_pred = mask_pred.reshape((-3, 0, 0, 0))
+            cls_targets = cls_targets.reshape((-3))
+            
+            #zeros = mx.nd.zeros((512,), ctx=top_feat.context)
+            #cls_target_object = F.where(cls_targets[0]>0, cls_targets[0]-1, zeros)
+            cls_target_object = F.where(cls_targets>0, cls_targets-1, F.zeros_like(cls_targets))
+            #cls_target_object = F.where(cls_targets>0, cls_targets-1, zeros)
+
+            selected_index = F.contrib.arange_like(cls_targets)
+            #selected_index = F.contrib.arange_like(cls_targets)
+            #selected_index = mx.nd.arange(start=0, stop=512, ctx=top_feat.context)
+
+            indices = F.stack(selected_index, cls_target_object, axis=0)
+            #indices = mx.nd.stack(selected_index, cls_target_object, axis=0)
+            selected_mask = F.gather_nd(mask_pred, indices) 
+            #selected_mask = mx.nd.gather_nd(mask_pred, indices) 
+            
+            #pdb.set_trace()
+            selected_mask = selected_mask.reshape((-4, -1, 1, 0, 0))  # (512, 1, 28, 28)
+        else:
+            # mask_pred -> (1000, 28, 28)
+            selected_mask = mask_pred.reshape((-4, self._rcnn_max_dets, -1, 0, 0))
+        
+        # convert it to mask
+        #selected_mask = mx.nd.sigmoid(selected_mask)
+        selected_mask = F.sigmoid(selected_mask)
+
+        #pdb.set_trace()
+        selected_mask = self.maxpool(selected_mask)   #(512, 1, 14, 14)
+
+        #x = mx.nd.concat(top_feat, selected_mask, dim=1)  #(512, 257, 14, 14)
+        x = F.concat(top_feat, selected_mask, dim=1)  #(512, 257, 14, 14)
+        
+        x = self.maskiou_branch(x)
+        x = self.mask_score_final(x)
+        
+        # (B * N, C) -> (B, N, C)
+        x = x.reshape((-4, self._batch_images, -1, 0))
+        return x 
+
+
 
 #class MaskScoreRCNN(FasterRCNN):
 class MaskScoreRCNN(nn.Block):
@@ -220,6 +367,8 @@ class MaskScoreRCNN(nn.Block):
         with self.name_scope():
             self.mask = Mask(self._batch_size, classes, mask_channels, num_fcn_convs=num_fcn_convs,
                              norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+            self.mask_score = MaskScore(self._batch_size, classes, mask_channels, rcnn_max_dets=rcnn_max_dets)
+
             roi_size = (self._roi_size[0] * target_roi_scale, self._roi_size[1] * target_roi_scale)
             self._target_roi_size = roi_size
             self.mask_target = MaskTargetGenerator(
@@ -253,7 +402,7 @@ class MaskScoreRCNN(nn.Block):
 
             mask_pred = self.mask(top_feat)
             return cls_pred, box_pred, mask_pred, rpn_box, samples, matches, \
-                   raw_rpn_score, raw_rpn_box, anchors
+                   raw_rpn_score, raw_rpn_box, anchors, top_feat
         else:
             F = mx.nd
 
@@ -315,13 +464,24 @@ class MaskScoreRCNN(nn.Block):
             # pick from (B, N, C, PS*2, PS*2) -> (B * N, PS*2, PS*2)
             indices = F.stack(batch_ids, roi_ids, class_ids, axis=0)
             masks = F.gather_nd(rcnn_mask, indices)
+
+
+            rcnn_mask_score = self.mask_score(top_feat, masks)
+
+            mask_scores = F.gather_nd(rcnn_mask_score, indices)
+            mask_scores = mask_scores.reshape((-4, batch_size, num_rois, 1))
+
+            mask_scores = mask_scores * scores
+
             # (B * N, PS*2, PS*2) -> (B, N, PS*2, PS*2)
             masks = masks.reshape((-4, batch_size, num_rois, 0, 0))
-            # output prob
             masks = F.sigmoid(masks)
+            # output prob
+            #masks = F.sigmoid(masks)
 
             # ids (B, N, 1), scores (B, N, 1), boxes (B, N, 4), masks (B, N, PS*2, PS*2)
-            return ids, scores, boxes, masks
+            return ids, scores, boxes, masks, mask_scores
+
     
     def collect_train_params(self, select=None):
         """Collect trainable params.
