@@ -264,9 +264,10 @@ class ForwardBackwardTask(Parallelizable):
             # rpn overall loss, use sum rather than average
             rpn_loss = rpn_loss1 + rpn_loss2
             # generate targets for rcnn
-            cls_targets, box_targets, box_masks = self.net.target_generator(roi, samples,
-                                                                            matches, gt_label,
-                                                                            gt_box)
+            cls_targets, box_targets, box_masks = \
+                    self.net.FasterRCNN.target_generator(roi, samples,
+                                                         matches, gt_label,
+                                                         gt_box)
             # losses of rcnn
             num_rcnn_pos = (cls_targets >= 0).sum()
             rcnn_loss1 = self.rcnn_cls_loss(cls_pred, cls_targets,

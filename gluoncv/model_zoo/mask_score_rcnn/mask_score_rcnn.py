@@ -156,7 +156,9 @@ class Mask(nn.HybridBlock):
                     new_params.set_data(new_data)
 
 
-class MaskScoreRCNN(FasterRCNN):
+#class MaskScoreRCNN(FasterRCNN):
+class MaskScoreRCNN(nn.Block):
+ 
     r"""Mask RCNN network.
 
     Parameters
@@ -186,10 +188,32 @@ class MaskScoreRCNN(FasterRCNN):
     def __init__(self, features, top_features, classes, mask_channels=256, rcnn_max_dets=1000,
                  rpn_test_pre_nms=6000, rpn_test_post_nms=1000, target_roi_scale=1, num_fcn_convs=0,
                  norm_layer=None, norm_kwargs=None, **kwargs):
-        super(MaskScoreRCNN, self).__init__(features, top_features, classes,
-                                       rpn_test_pre_nms=rpn_test_pre_nms,
-                                       rpn_test_post_nms=rpn_test_post_nms,
-                                       additional_output=True, **kwargs)
+        super(MaskScoreRCNN, self).__init__()
+
+        self.FasterRCNN = FasterRCNN(features, top_features, classes,
+                            rpn_test_pre_nms=rpn_test_pre_nms,
+                            rpn_test_post_nms=rpn_test_post_nms,
+                            additional_output=True, **kwargs)
+
+        #pdb.set_trace()
+
+        self.top_features = self.FasterRCNN.top_features
+        self._roi_mode   = self.FasterRCNN._roi_mode
+        self._strides    = self.FasterRCNN._strides
+        self._pyramid_roi_feats = self.FasterRCNN._pyramid_roi_feats
+        self.num_stages  = self.FasterRCNN.num_stages
+        #self._max_batch  = self.FasterRCNN._max_batch                         
+        self._batch_size  = self.FasterRCNN._batch_size
+        self._num_sample = self.FasterRCNN._num_sample
+        self.num_class   = self.FasterRCNN.num_class 
+        self.ashape      = self.FasterRCNN.ashape
+        self.rpn         = self.FasterRCNN.rpn
+        self.features    = features
+        self._roi_size   = kwargs['roi_size']
+        self.short       = kwargs['short']
+        self.max_size    = kwargs['max_size']
+        self.train_patterns = kwargs['train_patterns']
+
         if min(rpn_test_pre_nms, rpn_test_post_nms) < rcnn_max_dets:
             rcnn_max_dets = min(rpn_test_pre_nms, rpn_test_post_nms)
         self._rcnn_max_dets = rcnn_max_dets
@@ -201,7 +225,9 @@ class MaskScoreRCNN(FasterRCNN):
             self.mask_target = MaskTargetGenerator(
                 self._batch_size, self._num_sample, self.num_class, self._target_roi_size)
 
-    def hybrid_forward(self, F, x, gt_box=None):
+    #def hybrid_forward(self, F, x, gt_box=None):
+    def forward(self, x, gt_box=None):
+
         """Forward Mask RCNN network.
 
         The behavior during training and inference is different.
@@ -223,14 +249,17 @@ class MaskScoreRCNN(FasterRCNN):
         if autograd.is_training():
             cls_pred, box_pred, rpn_box, samples, matches, \
             raw_rpn_score, raw_rpn_box, anchors, top_feat = \
-                super(MaskScoreRCNN, self).hybrid_forward(F, x, gt_box)
+                self.FasterRCNN(x, gt_box)
+
             mask_pred = self.mask(top_feat)
             return cls_pred, box_pred, mask_pred, rpn_box, samples, matches, \
                    raw_rpn_score, raw_rpn_box, anchors
         else:
+            F = mx.nd
+
             batch_size = 1
             ids, scores, boxes, feat = \
-                super(MaskScoreRCNN, self).hybrid_forward(F, x)
+                self.FasterRCNN(x)
 
             # (B, N * (C - 1), 1) -> (B, N * (C - 1)) -> (B, topk)
             num_rois = self._rcnn_max_dets
@@ -239,7 +268,7 @@ class MaskScoreRCNN(FasterRCNN):
 
             # pick from (B, N * (C - 1), X) to (B * topk, X) -> (B, topk, X)
             # roi_batch_id = F.arange(0, self._max_batch, repeat=num_rois)
-            roi_batch_id = F.arange(0, batch_size)
+            roi_batch_id = F.arange(0, batch_size, ctx=ids.context)
             roi_batch_id = F.repeat(roi_batch_id, num_rois)
             indices = F.stack(roi_batch_id, topk.reshape((-1,)), axis=0)
             ids = F.gather_nd(ids, indices).reshape((-4, batch_size, num_rois, 1))
@@ -274,10 +303,11 @@ class MaskScoreRCNN(FasterRCNN):
             rcnn_mask = self.mask(top_feat)
             # index the B dimension (B * N,)
             # batch_ids = F.arange(0, self._max_batch, repeat=num_rois)
-            batch_ids = F.arange(0, batch_size)
+            batch_ids = F.arange(0, batch_size, ctx=top_feat.context)
             batch_ids = F.repeat(batch_ids, num_rois)
             # index the N dimension (B * N,)
             roi_ids = F.tile(F.arange(0, num_rois), reps=batch_size)
+            roi_ids = roi_ids.copyto(top_feat.context)
             # index the C dimension (B * N,)
             class_ids = ids.reshape((-1,))
             # clip to 0 to max class
@@ -292,6 +322,26 @@ class MaskScoreRCNN(FasterRCNN):
 
             # ids (B, N, 1), scores (B, N, 1), boxes (B, N, 4), masks (B, N, PS*2, PS*2)
             return ids, scores, boxes, masks
+    
+    def collect_train_params(self, select=None):
+        """Collect trainable params.
+        This function serves as a help utility function to return only
+        trainable parameters if predefined by experienced developer/researcher.
+        For example, if cross-device BatchNorm is not enabled, we will definitely
+        want to fix BatchNorm statistics to avoid scaling problem because RCNN training
+        batch size is usually very small.
+        Parameters
+        ----------
+        select : select : str
+            Regular expressions for parameter match pattern
+        Returns
+        -------
+        The selected :py:class:`mxnet.gluon.ParameterDict`
+        """
+        if select is None:
+            return self.collect_params(self.train_patterns)
+        return self.collect_params(select)
+
 
     def reset_class(self, classes, reuse_weights=None):
         """Reset class categories and class predictors.
