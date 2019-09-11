@@ -13,6 +13,8 @@ from .rcnn_target import MaskTargetGenerator
 from ..faster_rcnn.faster_rcnn import FasterRCNN
 from ...nn.feature import FPNFeatureExpander
 
+import pdb
+
 __all__ = ['MaskScoreRCNN', 'get_mask_score_rcnn',
            'mask_score_rcnn_resnet50_v1b_coco',
            'mask_score_rcnn_fpn_resnet50_v1b_coco',
@@ -375,7 +377,7 @@ class MaskScoreRCNN(nn.Block):
                 self._batch_size, self._num_sample, self.num_class, self._target_roi_size)
 
     #def hybrid_forward(self, F, x, gt_box=None):
-    def forward(self, x, gt_box=None):
+    def forward(self, x, gt_box=None, gt_label=None, gt_mask=None):
 
         """Forward Mask RCNN network.
 
@@ -396,13 +398,26 @@ class MaskScoreRCNN(nn.Block):
 
         """
         if autograd.is_training():
-            cls_pred, box_pred, rpn_box, samples, matches, \
+            cls_pred, box_pred, roi, samples, matches, \
             raw_rpn_score, raw_rpn_box, anchors, top_feat = \
                 self.FasterRCNN(x, gt_box)
 
             mask_pred = self.mask(top_feat)
-            return cls_pred, box_pred, mask_pred, rpn_box, samples, matches, \
-                   raw_rpn_score, raw_rpn_box, anchors, top_feat
+            
+            # generate targets for rcnn
+            cls_targets, box_targets, box_masks = \
+                    self.FasterRCNN.target_generator(roi, samples, matches, gt_label, gt_box)
+
+            # generate targets for mask
+            mask_targets, mask_masks, mask_score_targets, mask_score_masks = \
+                        self.mask_target(roi, gt_mask, matches, cls_targets, mask_pred)
+            
+            mask_score_pred = self.mask_score(top_feat, mask_pred, cls_targets)
+
+            return cls_pred, box_pred, mask_pred, raw_rpn_score, raw_rpn_box, \
+                    cls_targets, box_targets, box_masks, mask_targets, mask_masks, \
+                    mask_score_targets, mask_score_masks, mask_score_pred 
+                    
         else:
             F = mx.nd
 
