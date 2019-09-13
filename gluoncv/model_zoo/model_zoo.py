@@ -106,7 +106,7 @@ _models = {
     'ssd_300_mobilenet0.25_custom': ssd_300_mobilenet0_25_custom,
     'faster_rcnn_resnet50_v1b_voc': faster_rcnn_resnet50_v1b_voc,
     'mask_rcnn_resnet18_v1b_coco': mask_rcnn_resnet18_v1b_coco,
-    'mask_score_cnn_resnet18_v1b_coco': mask_score_rcnn_resnet18_v1b_coco,
+    'mask_score_rcnn_resnet18_v1b_coco': mask_score_rcnn_resnet18_v1b_coco,
     'faster_rcnn_resnet50_v1b_coco': faster_rcnn_resnet50_v1b_coco,
     'faster_rcnn_fpn_resnet50_v1b_coco': faster_rcnn_fpn_resnet50_v1b_coco,
     'faster_rcnn_fpn_bn_resnet50_v1b_coco': faster_rcnn_fpn_bn_resnet50_v1b_coco,
