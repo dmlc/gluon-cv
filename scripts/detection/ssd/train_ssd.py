@@ -24,7 +24,10 @@ from gluoncv.utils.metrics.accuracy import Accuracy
 
 from mxnet.contrib import amp
 
-import horovod.mxnet as hvd
+try:
+    import horovod.mxnet as hvd
+except ImportError:
+    hvd = None
 
 try:
     from nvidia.dali.plugin.mxnet import DALIGenericIterator
@@ -90,6 +93,8 @@ def parse_args():
                         '--gpus is ignored when using --horovod.')
 
     args = parser.parse_args()
+    if args.horovod:
+        assert hvd, "You are trying to use horovod support but it's not installed"
     return args
 
 def get_dataset(dataset, args):
