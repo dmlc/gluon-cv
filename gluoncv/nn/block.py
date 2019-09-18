@@ -2,6 +2,7 @@
 """Customized Layers.
 """
 from __future__ import absolute_import
+from mxnet.gluon import nn, contrib
 from mxnet.gluon.nn import BatchNorm, HybridBlock
 
 __all__ = ['BatchNormCudnnOff', 'Consensus', 'ReLU6', 'HardSigmoid', 'HardSwish']
@@ -81,3 +82,69 @@ class HardSwish(HybridBlock):
 
     def hybrid_forward(self, F, x):
         return x * self.act(x)
+
+class SoftmaxHD(HybridBlock):
+    """Softmax on multiple dimensions
+
+    Parameters
+    ----------
+    axis : the axis for softmax normalization
+    """
+    def __init__(self, axis=(2, 3), **kwargs):
+        super(SoftmaxHD, self).__init__(**kwargs)
+        self.axis = axis
+
+    def hybrid_forward(self, F, x):
+        x_max = F.max(x, axis=self.axis, keepdims=True)
+        x_exp = F.exp(F.broadcast_minus(x, x_max))
+        norm = F.sum(x_exp, axis=self.axis, keepdims=True)
+        res = F.broadcast_div(x_exp, norm)
+        return res
+
+class DSNT(HybridBlock):
+    '''DSNT module to translate heatmap to coordinates
+
+    Parameters
+    ----------
+    size : int or tuple,
+        (width, height) of the input heatmap
+    axis : the axis for input heatmap
+    '''
+    def __init__(self, size, axis=(2,3), **kwargs):
+        super(DSNT, self).__init__(**kwargs)
+        if isinstance(size, int):
+            self.size = (size, size)
+        elif isinstance(size, tuple):
+            self.size = size
+        self.axis = axis
+        self.softmax = SoftmaxHD(self.axis)
+
+        self.wfirst = -(self.size[0] - 1) / self.size[0]
+        self.wlast = (self.size[0] - 1) / self.size[0]
+        self.hfirst = -(self.size[1] - 1) / self.size[1]
+        self.hlast = (self.size[1] - 1) / self.size[1]
+
+    def hybrid_forward(self, F, M):
+        Z = self.softmax(M)
+        x = F.linspace(self.wfirst, self.wlast, self.size[0]).expand_dims(0)
+        y = F.linspace(self.hfirst, self.hlast, self.size[1]).expand_dims(0).transpose()
+        output_x = F.sum(F.broadcast_mul(Z, x), axis=self.axis)
+        output_y = F.sum(F.broadcast_mul(Z, y), axis=self.axis)
+        res = F.stack(output_x, output_y, axis=2)
+        return res, Z
+
+class DUC(HybridBlock):
+    def __init__(self, planes, upscale_factor=2, **kwargs):
+        super(DUC, self).__init__(**kwargs)
+        self.conv = nn.Conv2D(planes, kernel_size=3, padding=1, use_bias=False)
+        self.bn = nn.BatchNorm()
+        self.relu = nn.Activation('relu')
+        self.pixel_shuffle = contrib.nn.PixelShuffle2D(upscale_factor)
+
+    def hybrid_forward(self, F, x):
+        x = self.conv(x)
+        x = self.bn(x)
+        x = self.relu(x)
+        x = self.pixel_shuffle(x)
+        return x
+

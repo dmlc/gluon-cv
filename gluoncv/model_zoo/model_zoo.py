@@ -85,7 +85,7 @@ _models = {
     'mobilenetv2_0.25': mobilenet_v2_0_25,
     'mobilenetv3_large': mobilenet_v3_large,
     'mobilenetv3_small': mobilenet_v3_small,
-    'mobilepose': mobilepose,
+    'mobilepose_resnet18_v1b': mobilepose_resnet18_v1b,
     'ssd_300_vgg16_atrous_voc': ssd_300_vgg16_atrous_voc,
     'ssd_300_vgg16_atrous_coco': ssd_300_vgg16_atrous_coco,
     'ssd_300_vgg16_atrous_custom': ssd_300_vgg16_atrous_custom,

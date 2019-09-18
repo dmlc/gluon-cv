@@ -7,6 +7,7 @@ import mxnet as mx
 from mxnet import gluon, nd
 from mxnet import autograd as ag
 from mxnet.gluon import nn
+from mxnet.metric import MAE
 from mxnet.gluon.data.vision import transforms
 
 from gluoncv.data import mscoco
@@ -109,13 +110,22 @@ def get_data_loader(data_dir, batch_size, num_workers, input_size):
 
     def train_batch_fn(batch, ctx):
         data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
-        label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0)
-        weight = gluon.utils.split_and_load(batch[2], ctx_list=ctx, batch_axis=0)
-        imgid = gluon.utils.split_and_load(batch[3], ctx_list=ctx, batch_axis=0)
-        return data, label, weight, imgid
+        joints = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0)
+        label = gluon.utils.split_and_load(batch[2], ctx_list=ctx, batch_axis=0)
+        weights = gluon.utils.split_and_load(batch[3], ctx_list=ctx, batch_axis=0)
+        imgid = gluon.utils.split_and_load(batch[4], ctx_list=ctx, batch_axis=0)
+
+        # joint_scale = [mx.nd.array([256, 192], ctx=cc) for cc in ctx]
+        # joint_rescale = [(y[:, :, 1::-1, 0]/js)*2-1 for y, js in zip(joints, joint_scale)]
+        joint_scale = [mx.nd.array([192, 256], ctx=cc) for cc in ctx]
+        joint_rescale = [(y[:, :, 0:2, 0]/js)*2-1 for y, js in zip(joints, joint_scale)]
+
+        weights = [w.squeeze(axis=3) for w in weights]
+
+        return data, joint_rescale, label, weights, imgid
 
     train_dataset = mscoco.keypoints.COCOKeyPoints(data_dir, splits=('person_keypoints_train2017'))
-    heatmap_size = [int(i/8) for i in input_size]
+    heatmap_size = [int(i/4) for i in input_size]
 
     meanvec = [float(i) for i in opt.mean.split(',')]
     stdvec = [float(i) for i in opt.std.split(',')]
@@ -173,14 +183,17 @@ def train(ctx):
     if isinstance(ctx, mx.Context):
         ctx = [ctx]
     if opt.use_pretrained_base:
-        net.branch.initialize(ctx=ctx)
+        net.upsampling.initialize(mx.init.MSRAPrelu(), ctx=ctx)
+        net.dsnt.initialize(mx.init.MSRAPrelu(), ctx=ctx)
     else:
         net.initialize(mx.init.MSRAPrelu(), ctx=ctx)
 
     trainer = gluon.Trainer(net.collect_params(), optimizer, optimizer_params)
 
-    L = gluon.loss.L2Loss()
+    L_euc = gluon.loss.L2Loss()
+    L_map = gluon.loss.L2Loss()
     metric = HeatmapAccuracy()
+    metric_euc = MAE()
 
     best_val_score = 1
 
@@ -192,33 +205,34 @@ def train(ctx):
         tic = time.time()
         btic = time.time()
         metric.reset()
+        metric_euc.reset()
 
         for i, batch in enumerate(train_data):
-            data, label, weight, imgid = train_batch_fn(batch, ctx)
+            data, joints, label, weight, imgid = train_batch_fn(batch, ctx)
 
             with ag.record():
                 outputs = [net(X.astype(opt.dtype, copy=False)) for X in data]
                 loss = []
-                for yhat, y, w in zip(outputs, label, weight):
-                    l0 = nd.cast(L(nd.cast(yhat[0], 'float32'), y, w), opt.dtype)
-                    l1 = nd.cast(L(nd.cast(yhat[1], 'float32'), y, w), opt.dtype)
-                    l2 = nd.cast(L(nd.cast(yhat[2], 'float32'), y, w), opt.dtype)
-                    l3 = nd.cast(L(nd.cast(yhat[3], 'float32'), y, w), opt.dtype)
-                    l4 = nd.cast(L(nd.cast(yhat[4], 'float32'), y, w), opt.dtype)
-                    l5 = nd.cast(L(nd.cast(yhat[5], 'float32'), y, w), opt.dtype)
-                    loss.append(l0 + l1 + l2 + l3 + l4 + l5)
+                for yhat, y, hm, w in zip(outputs, joints, label, weight):
+                    l_euc = nd.cast(L_euc(nd.cast(yhat[0], 'float32'), y, w), opt.dtype)
+                    l_map = nd.cast(L_map(nd.cast(yhat[1], 'float32'), hm, w.expand_dims(axis=3)), opt.dtype)
+                    # import pdb; pdb.set_trace()
+                    loss.append(l_euc + l_map*10)
 
             ag.backward(loss)
             trainer.step(batch_size)
 
-            metric.update(label, [o[5] for o in outputs])
+            metric.update(label, [o[1] for o in outputs])
+            metric_euc.update(joints, [o[0]*w for o, w in zip(outputs, weight)])
 
             loss_val += sum([l.mean().asscalar() for l in loss]) / num_gpus
             if opt.log_interval and not (i+1)%opt.log_interval:
                 metric_name, metric_score = metric.get()
-                logger.info('Epoch[%d] Batch [%d]\tSpeed: %f samples/sec\tloss=%f\tlr=%f\t%s=%.3f'%(
+                metric_euc_name, metric_euc_score = metric_euc.get()
+                logger.info('Epoch[%d] Batch [%d]\tSpeed: %f samples/sec\tloss=%f\tlr=%f\t%s=%.3f\t%s=%.3f'%(
                              epoch, i, batch_size*opt.log_interval/(time.time()-btic),
-                             loss_val / (i+1), trainer.learning_rate, metric_name, metric_score))
+                             loss_val / (i+1), trainer.learning_rate,
+                             metric_name, metric_score, metric_euc_name, metric_euc_score*256))
                 btic = time.time()
 
         time_elapsed = time.time() - tic
