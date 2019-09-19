@@ -107,6 +107,7 @@ _model_sha1 = {name: checksum for checksum, name in [
     ('3f220f537400dfa607c3d041ed3b172db39b0b01', 'psp_resnet50_ade'),
     ('240a4758b506447faf7c55cd7a7837d66f5039a6', 'psp_resnet101_ade'),
     ('0f49fb59180c4d91305b858380a4fd6eaf068b6c', 'psp_resnet101_citys'),
+    ('ef2bb40ad8f8f59f451969b2fabe4e548394e80a', 'deeplab_v3b_plus_wideresnet_citys'),
     ('f5ece5ce1422eeca3ce2908004e469ffdf91fd41', 'yolo3_darknet53_voc'),
     ('3b47835ac3dd80f29576633949aa58aee3094353', 'yolo3_mobilenet1.0_voc'),
     ('66dbbae67be8f1e3cd3c995ce626a2bdc89769c6', 'yolo3_mobilenet1.0_coco'),

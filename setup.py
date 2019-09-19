@@ -1,16 +1,29 @@
 #!/usr/bin/env python
-import os
 import io
+import os
 import re
-import shutil
 import sys
-from setuptools import setup, find_packages
+
+import numpy as np
+try:
+    from Cython.Build import cythonize
+except ImportError:
+    cythonize = None
+from setuptools import setup, find_packages, Extension
+
+with_cython = False
+if '--with-cython' in sys.argv:
+    if not cythonize:
+        print("Cython not found, please run `pip install Cython`")
+        exit(1)
+    with_cython = True
+    sys.argv.remove('--with-cython')
 
 
 def read(*names, **kwargs):
     with io.open(
-        os.path.join(os.path.dirname(__file__), *names),
-        encoding=kwargs.get("encoding", "utf8")
+            os.path.join(os.path.dirname(__file__), *names),
+            encoding=kwargs.get("encoding", "utf8")
     ) as fp:
         return fp.read()
 
@@ -23,8 +36,10 @@ def find_version(*file_paths):
         return version_match.group(1)
     raise RuntimeError("Unable to find version string.")
 
+
 try:
     import pypandoc
+
     long_description = pypandoc.convert('README.md', 'rst')
 except(IOError, ImportError):
     long_description = open('README.md').read()
@@ -41,6 +56,27 @@ requirements = [
     'scipy',
 ]
 
+if with_cython:
+    _NP_INCLUDE_DIRS = np.get_include()
+
+    # Extension modules
+    ext_modules = cythonize([
+        Extension(
+            name='gluoncv.nn.cython_bbox',
+            sources=[
+                'gluoncv/nn/cython_bbox.pyx'
+            ],
+            extra_compile_args=[
+                '-Wno-cpp', '-O2'
+            ],
+            include_dirs=[
+                _NP_INCLUDE_DIRS
+            ]
+        ),
+    ])
+else:
+    ext_modules = []
+
 setup(
     # Metadata
     name='gluoncv',
@@ -56,4 +92,5 @@ setup(
     zip_safe=True,
     include_package_data=True,
     install_requires=requirements,
+    ext_modules=ext_modules
 )

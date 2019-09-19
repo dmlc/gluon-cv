@@ -21,7 +21,7 @@ except ImportError:
         "A quick tip is to install via `pip install mxnet-mkl/mxnet-cu90mkl --pre`. "
         "please refer to https://gluon-cv.mxnet.io/#installation for details.")
 
-__version__ = '0.5.0'
+__version__ = '0.6.0'
 
 from . import data
 from . import model_zoo

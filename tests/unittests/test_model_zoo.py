@@ -403,7 +403,8 @@ def test_segmentation_models():
               'fcn_resnet101_voc', 'psp_resnet101_voc', 'deeplab_resnet101_voc',
               'fcn_resnet50_ade', 'psp_resnet50_ade', 'deeplab_resnet50_ade',
               'fcn_resnet101_ade', 'psp_resnet101_ade', 'deeplab_resnet101_ade',
-              'psp_resnet101_citys', 'deeplab_resnet152_voc', 'deeplab_resnet152_coco']
+              'psp_resnet101_citys', 'deeplab_resnet152_voc', 'deeplab_resnet152_coco',
+              'deeplab_v3b_plus_wideresnet_citys']
     _test_model_list(models, ctx, x, pretrained=True, pretrained_base=True)
     _test_model_list(models, ctx, x, pretrained=False, pretrained_base=False)
     _test_model_list(models, ctx, x, pretrained=False, pretrained_base=True)
@@ -432,6 +433,11 @@ def test_segmentation_models_custom_size():
     assert result[0].shape == (1, num_classes, height, width)
 
     net = gcv.model_zoo.DeepLabV3Plus(num_classes, backbone='resnet50', aux=False, ctx=ctx, pretrained_base=True,
+                                  height=height, width=width)
+    result = net.forward(x)
+    assert result[0].shape == (1, num_classes, height, width)
+
+    net = gcv.model_zoo.DeepLabWV3Plus(num_classes, backbone='resnet50', aux=False, ctx=ctx, pretrained_base=True,
                                   height=height, width=width)
     result = net.forward(x)
     assert result[0].shape == (1, num_classes, height, width)
