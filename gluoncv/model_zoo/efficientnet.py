@@ -277,6 +277,7 @@ class EfficientNet(nn.Block):
         r"""EfficientNet model from the
             `"EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks"
             <https://arxiv.org/abs/1905.11946>`_ paper.
+
             Parameters
             ----------
             blocks_args: nametuple, it concludes the hyperparameters of the MBConv block.
@@ -288,6 +289,7 @@ class EfficientNet(nn.Block):
             depth_divisor:int , it is used for reducing the number of filters.
             min_depth: int, used for deciding the minimum depth of the filters.
             drop_connect_rate: used for dropout.
+
             """
         super(EfficientNet, self).__init__(**kwargs)
         assert isinstance(blocks_args, list), 'blocks_args should be a list'
@@ -295,7 +297,7 @@ class EfficientNet(nn.Block):
         self._blocks_args = blocks_args
         self.input_size = None
         with self.name_scope():
-            self.features = nn.HybridSequential(prefix='features_')
+            self.features = nn.Sequential(prefix='features_')
             with self.features.name_scope():
                 # stem conv
                 out_channels = round_filters(32,
@@ -309,7 +311,7 @@ class EfficientNet(nn.Block):
                     stride=2,
                     active=True,
                     batchnorm=True)
-            self._blocks = nn.HybridSequential(prefix='blocks_')
+            self._blocks = nn.Sequential(prefix='blocks_')
             with self._blocks.name_scope():
                 for block_arg in self._blocks_args:
                     # Update block input and output filters based on depth
@@ -354,7 +356,7 @@ class EfficientNet(nn.Block):
             # Head
             out_channels = round_filters(1280, width_coefficient,
                                          depth_divisor, min_depth)
-            self._conv_head = nn.HybridSequential(prefix='conv_head_')
+            self._conv_head = nn.Sequential(prefix='conv_head_')
             with self._conv_head.name_scope():
                 _add_conv(
                     self._conv_head,
@@ -365,7 +367,7 @@ class EfficientNet(nn.Block):
             self._dropout = dropout_rate
             self._fc = nn.Dense(num_classes, use_bias=False)
 
-    def hybrid_forward(self, F, x):
+    def forward(self, F, x):
         x = self.features(x)
         for block in self._blocks:
             x = block(x)
@@ -409,6 +411,7 @@ def efficientnet_b0(pretrained=False,
     r"""EfficientNet model from the
         `"EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks"
         <https://arxiv.org/abs/1905.11946>`_ paper.
+
         Parameters
         ----------
         pretrained : bool or str
@@ -428,6 +431,7 @@ def efficientnet_b0(pretrained=False,
             Used for deciding the minimum depth of the filters.
         drop_connect_rate : float
             Used for dropout.
+
         """
     if pretrained:
         pass
@@ -455,6 +459,7 @@ def efficientnet_b1(pretrained=False,
     r"""EfficientNet model from the
             `"EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks"
             <https://arxiv.org/abs/1905.11946>`_ paper.
+
             Parameters
             ----------
             pretrained : bool or str
@@ -474,6 +479,7 @@ def efficientnet_b1(pretrained=False,
                 Used for deciding the minimum depth of the filters.
             drop_connect_rate : float
                 Used for dropout.
+
             """
     if pretrained:
         pass
@@ -501,6 +507,7 @@ def efficientnet_b2(pretrained=False,
     r"""EfficientNet model from the
             `"EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks"
             <https://arxiv.org/abs/1905.11946>`_ paper.
+
             Parameters
             ----------
             pretrained : bool or str
@@ -520,6 +527,7 @@ def efficientnet_b2(pretrained=False,
                 Used for deciding the minimum depth of the filters.
             drop_connect_rate : float
                 Used for dropout.
+
             """
     if pretrained:
         pass
@@ -547,6 +555,7 @@ def efficientnet_b3(pretrained=False,
     r"""EfficientNet model from the
             `"EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks"
             <https://arxiv.org/abs/1905.11946>`_ paper.
+
             Parameters
             ----------
             pretrained : bool or str
@@ -566,6 +575,7 @@ def efficientnet_b3(pretrained=False,
                 Used for deciding the minimum depth of the filters.
             drop_connect_rate : float
                 Used for dropout.
+
             """
     if pretrained:
         pass
@@ -593,6 +603,7 @@ def efficientnet_b4(pretrained=False,
     r"""EfficientNet model from the
             `"EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks"
             <https://arxiv.org/abs/1905.11946>`_ paper.
+
             Parameters
             ----------
             pretrained : bool or str
@@ -612,6 +623,7 @@ def efficientnet_b4(pretrained=False,
                 Used for deciding the minimum depth of the filters.
             drop_connect_rate : float
                 Used for dropout.
+
             """
     if pretrained:
         pass
@@ -640,6 +652,7 @@ def efficientnet_b5(pretrained=False,
     r"""EfficientNet model from the
             `"EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks"
             <https://arxiv.org/abs/1905.11946>`_ paper.
+
             Parameters
             ----------
             pretrained : bool or str
@@ -659,6 +672,7 @@ def efficientnet_b5(pretrained=False,
                 Used for deciding the minimum depth of the filters.
             drop_connect_rate : float
                 Used for dropout.
+
             """
     if pretrained:
         pass
@@ -686,6 +700,7 @@ def efficientnet_b6(pretrained=False,
     r"""EfficientNet model from the
             `"EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks"
             <https://arxiv.org/abs/1905.11946>`_ paper.
+
             Parameters
             ----------
             pretrained : bool or str
@@ -705,6 +720,7 @@ def efficientnet_b6(pretrained=False,
                 Used for deciding the minimum depth of the filters.
             drop_connect_rate : float
                 Used for dropout.
+
             """
     if pretrained:
         pass
@@ -732,6 +748,7 @@ def efficientnet_b7(pretrained=False,
     r"""EfficientNet model from the
             `"EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks"
             <https://arxiv.org/abs/1905.11946>`_ paper.
+
             Parameters
             ----------
             pretrained : bool or str
@@ -751,6 +768,7 @@ def efficientnet_b7(pretrained=False,
                 Used for deciding the minimum depth of the filters.
             drop_connect_rate : float
                 Used for dropout.
+
             """
     if pretrained:
         pass
