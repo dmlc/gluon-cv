@@ -22,6 +22,7 @@
 from __future__ import division
 
 import numpy as np
+from mxnet import initializer
 from mxnet.gluon import nn
 from mxnet.gluon.nn import BatchNorm
 from mxnet.gluon.block import HybridBlock
@@ -49,21 +50,22 @@ class MobilePose(HybridBlock):
                 nn.Conv2D(256, 1, 1, 0, use_bias=False),
                 DUC(512, 2),
                 DUC(256, 2),
-                DUC(128, 2)
+                DUC(128, 2),
+                nn.Conv2D(num_joints, 1, use_bias=False,
+                          weight_initializer=initializer.Normal(0.001)),
             )
 
             self.dsnt = nn.HybridSequential()
             self.dsnt.add(
-                nn.Conv2D(num_joints, 1, use_bias=False),
                 DSNT(hm_size)
             )
 
     def hybrid_forward(self, F, x):
         x = self.features(x)
-        x = self.upsampling(x)
-        coords, hm = self.dsnt(x)
+        hm = self.upsampling(x)
+        coords, hm_norm = self.dsnt(hm)
 
-        return coords, hm
+        return coords, hm, hm_norm
 
 def get_mobilepose(base_name, ctx=cpu(), pretrained=False,
                    root='~/.mxnet/models', **kwargs):

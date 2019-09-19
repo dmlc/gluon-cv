@@ -101,10 +101,10 @@ def validate(val_data, val_dataset, net, ctx):
     for batch in tqdm(val_data):
         data, scale, center, score, imgid = val_batch_fn(batch, ctx)
 
-        outputs = [net(X)[5] for X in data]
+        outputs = [net(X)[1] for X in data]
         if opt.flip_test:
             data_flip = [nd.flip(X, axis=3) for X in data]
-            outputs_flip = [net(X)[5] for X in data_flip]
+            outputs_flip = [net(X)[1] for X in data_flip]
             outputs_flipback = [flip_heatmap(o, val_dataset.joint_pairs, shift=True) for o in outputs_flip]
             outputs = [(o + o_flip)/2 for o, o_flip in zip(outputs, outputs_flipback)]
 

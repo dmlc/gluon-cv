@@ -119,10 +119,10 @@ class DSNT(HybridBlock):
         self.axis = axis
         self.softmax = SoftmaxHD(self.axis)
 
-        self.wfirst = -(self.size[0] - 1) / self.size[0]
-        self.wlast = (self.size[0] - 1) / self.size[0]
-        self.hfirst = -(self.size[1] - 1) / self.size[1]
-        self.hlast = (self.size[1] - 1) / self.size[1]
+        self.wfirst = 1 / (2 * self.size[0])
+        self.wlast = 1 - 1 / (2 * self.size[0])
+        self.hfirst = 1 / (2 * self.size[1])
+        self.hlast = 1 - 1 / (2 * self.size[1])
 
     def hybrid_forward(self, F, M):
         Z = self.softmax(M)

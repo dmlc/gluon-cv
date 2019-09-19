@@ -7,7 +7,7 @@ import mxnet as mx
 from mxnet import gluon, nd
 from mxnet import autograd as ag
 from mxnet.gluon import nn
-from mxnet.metric import MAE
+from mxnet.metric import RMSE
 from mxnet.gluon.data.vision import transforms
 
 from gluoncv.data import mscoco
@@ -111,18 +111,16 @@ def get_data_loader(data_dir, batch_size, num_workers, input_size):
     def train_batch_fn(batch, ctx):
         data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
         joints = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0)
-        label = gluon.utils.split_and_load(batch[2], ctx_list=ctx, batch_axis=0)
+        heatmap = gluon.utils.split_and_load(batch[2], ctx_list=ctx, batch_axis=0)
         weights = gluon.utils.split_and_load(batch[3], ctx_list=ctx, batch_axis=0)
         imgid = gluon.utils.split_and_load(batch[4], ctx_list=ctx, batch_axis=0)
 
-        # joint_scale = [mx.nd.array([256, 192], ctx=cc) for cc in ctx]
-        # joint_rescale = [(y[:, :, 1::-1, 0]/js)*2-1 for y, js in zip(joints, joint_scale)]
         joint_scale = [mx.nd.array([192, 256], ctx=cc) for cc in ctx]
-        joint_rescale = [(y[:, :, 0:2, 0]/js)*2-1 for y, js in zip(joints, joint_scale)]
+        joint_rescale = [(y[:, :, 0:2, 0]/js) for y, js in zip(joints, joint_scale)]
 
         weights = [w.squeeze(axis=3) for w in weights]
 
-        return data, joint_rescale, label, weights, imgid
+        return data, joint_rescale, heatmap, weights, imgid
 
     train_dataset = mscoco.keypoints.COCOKeyPoints(data_dir, splits=('person_keypoints_train2017'))
     heatmap_size = [int(i/4) for i in input_size]
@@ -193,7 +191,7 @@ def train(ctx):
     L_euc = gluon.loss.L2Loss()
     L_map = gluon.loss.L2Loss()
     metric = HeatmapAccuracy()
-    metric_euc = MAE()
+    metric_euc = RMSE()
 
     best_val_score = 1
 
@@ -202,36 +200,46 @@ def train(ctx):
 
     for epoch in range(opt.num_epochs):
         loss_val = 0
+        loss_euc_val = 0
+        loss_map_val = 0
         tic = time.time()
         btic = time.time()
         metric.reset()
         metric_euc.reset()
 
         for i, batch in enumerate(train_data):
-            data, joints, label, weight, imgid = train_batch_fn(batch, ctx)
+            data, joints, heatmap, weight, imgid = train_batch_fn(batch, ctx)
 
             with ag.record():
                 outputs = [net(X.astype(opt.dtype, copy=False)) for X in data]
                 loss = []
-                for yhat, y, hm, w in zip(outputs, joints, label, weight):
+                loss_euc = []
+                loss_map = []
+                for yhat, y, hm, w in zip(outputs, joints, heatmap, weight):
+                    # import pdb; pdb.set_trace()
                     l_euc = nd.cast(L_euc(nd.cast(yhat[0], 'float32'), y, w), opt.dtype)
                     l_map = nd.cast(L_map(nd.cast(yhat[1], 'float32'), hm, w.expand_dims(axis=3)), opt.dtype)
-                    # import pdb; pdb.set_trace()
-                    loss.append(l_euc + l_map*10)
+                    loss_euc.append(l_euc)
+                    loss_map.append(l_map)
+                    loss.append(l_euc + l_map*0)
 
             ag.backward(loss)
             trainer.step(batch_size)
 
-            metric.update(label, [o[1] for o in outputs])
+            metric.update(heatmap, [o[1] for o in outputs])
             metric_euc.update(joints, [o[0]*w for o, w in zip(outputs, weight)])
 
             loss_val += sum([l.mean().asscalar() for l in loss]) / num_gpus
+            loss_euc_val += sum([l.mean().asscalar() for l in loss_euc]) / num_gpus
+            loss_map_val += sum([l.mean().asscalar() for l in loss_map]) / num_gpus
             if opt.log_interval and not (i+1)%opt.log_interval:
                 metric_name, metric_score = metric.get()
                 metric_euc_name, metric_euc_score = metric_euc.get()
-                logger.info('Epoch[%d] Batch [%d]\tSpeed: %f samples/sec\tloss=%f\tlr=%f\t%s=%.3f\t%s=%.3f'%(
+                logger.info('Epoch[%d] Batch [%d]\tSpeed: %f samples/sec\tlr=%f'
+                            '\tloss:total=%f,euc=%f,map=%f\tmetric:%s=%.3f\t%s=%.3f'%(
                              epoch, i, batch_size*opt.log_interval/(time.time()-btic),
-                             loss_val / (i+1), trainer.learning_rate,
+                             trainer.learning_rate,
+                             loss_val / (i+1), loss_euc_val / (i+1), loss_map_val / (i+1), 
                              metric_name, metric_score, metric_euc_name, metric_euc_score*256))
                 btic = time.time()
 
