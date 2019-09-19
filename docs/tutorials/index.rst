@@ -192,6 +192,16 @@ Pose Estimation
 
         Train a pose estimation model on the COCO dataset
 
+Action Recognition
+---------------------
+
+.. container:: cards
+
+    .. card::
+        :title: Training TSN models on UCF101
+        :link: ../build/examples_action_recognition/dive_deep_ucf101.html
+
+        Hands on TSN-VGG16 action recognition model training on UCF101 dataset
 
 Dataset Preparation
 -------------------
@@ -226,6 +236,10 @@ Dataset Preparation
         :title: Prepare ImageNet Dataset in ImageRecord Format
         :link: ../build/examples_datasets/recordio.html
 
+    .. card::
+        :title: Prepare Kinetics400 Dataset
+        :link: ../build/examples_datasets/kinetics400.html
+
 
 Deployment
 ----------
@@ -253,5 +267,6 @@ Deployment
     ../build/examples_instance/index
     ../build/examples_segmentation/index
     ../build/examples_pose/index
+    ../build/examples_action_recognition/index
     ../build/examples_datasets/index
     ../build/examples_deployment/index
