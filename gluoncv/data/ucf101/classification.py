@@ -130,11 +130,13 @@ class UCF101(dataset.Dataset):
         if self.transform is not None:
             clip_input = self.transform(clip_input)
 
-        if self.num_segments > 1 and not self.test_mode:
-            # For TSN training, reshape the input to B x 3 x H x W. Here, B = batch_size * num_segments
-            clip_input = clip_input.reshape((-1, 3 * self.new_length, self.target_height, self.target_width))
+        clip_input = np.stack(clip_input, axis=0)
+        clip_input = clip_input.reshape((-1,) + (self.new_length, 3, self.target_height, self.target_width))
+        clip_input = np.transpose(clip_input, (0, 2, 1, 3, 4))
+        if self.new_length == 1:
+            clip_input = np.squeeze(clip_input, axis=2)    # this is for 2D input case
 
-        return clip_input, target
+        return nd.array(clip_input), target
 
     def __len__(self):
         return len(self.clips)
@@ -166,17 +168,16 @@ class UCF101(dataset.Dataset):
         for _, offset in enumerate(offsets):
             for length_id in range(1, new_length + 1):
                 frame_path = os.path.join(directory, name_pattern % (length_id + offset))
-                cv_img_origin = self.cv2.imread(frame_path)
-                if cv_img_origin is None:
+                cv_img = self.cv2.imread(frame_path)
+                if cv_img is None:
                     raise(RuntimeError("Could not load file %s. Check data path." % (frame_path)))
                 if new_width > 0 and new_height > 0:
-                    cv_img = self.cv2.resize(cv_img_origin, (new_width, new_height))
-                else:
-                    cv_img = cv_img_origin
+                    h, w, _ = cv_img.shape
+                    if h != new_height or w != new_width:
+                        cv_img = self.cv2.resize(cv_img, (new_width, new_height))
                 cv_img = cv_img[:, :, ::-1]
                 sampled_list.append(cv_img)
-        clip_input = np.concatenate(sampled_list, axis=2)
-        return nd.array(clip_input)
+        return sampled_list
 
 class UCF101Attr(object):
     def __init__(self):

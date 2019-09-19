@@ -1,7 +1,9 @@
 import argparse, time, logging, os, sys, math
+import gc
 
 import numpy as np
 import mxnet as mx
+import mxnet.ndarray as F
 import gluoncv as gcv
 from mxnet import gluon, nd, gpu, init, context
 from mxnet import autograd as ag
@@ -13,6 +15,7 @@ from gluoncv.data.transforms import video
 from gluoncv.data import ucf101, kinetics400
 from gluoncv.model_zoo import get_model
 from gluoncv.utils import makedirs, LRSequential, LRScheduler, split_and_load
+from gluoncv.data.dataloader import tsn_mp_batchify_fn
 
 # CLI
 def parse_args():
@@ -121,12 +124,16 @@ def parse_args():
                         help='number of classes.')
     parser.add_argument('--ten-crop', action='store_true',
                         help='whether to use ten crop evaluation.')
+    parser.add_argument('--three-crop', action='store_true',
+                        help='whether to use three crop evaluation.')
     parser.add_argument('--use-amp', action='store_true',
                         help='whether to use automatic mixed precision.')
     parser.add_argument('--prefetch-ratio', type=float, default=2.0,
                         help='set number of workers to prefetch data batch, default is 2 in MXNet.')
     parser.add_argument('--input-5d', action='store_true',
                         help='the input is 4d or 5d tensor. 5d is for 3D CNN models.')
+    parser.add_argument('--use-softmax', action='store_true',
+                        help='whether to use softmax scores.')
     opt = parser.parse_args()
     return opt
 
@@ -135,9 +142,41 @@ def batch_fn(batch, ctx):
     label = split_and_load(batch[1], ctx_list=ctx, batch_axis=0, even_split=False)
     return data, label
 
+def test(ctx, val_data, opt, net):
+    acc_top1 = mx.metric.Accuracy()
+    acc_top5 = mx.metric.TopKAccuracy(5)
+
+    for i, batch in enumerate(val_data):
+        data, label = batch_fn(batch, ctx)
+        outputs = []
+        for X in data:
+            pred = net(X.astype(opt.dtype, copy=False))
+            if opt.use_softmax:
+                pred = F.softmax(pred, axis=1)
+            pred = F.mean(pred, axis=0, keepdims=True)
+            outputs.append(pred)
+
+        acc_top1.update(label, outputs)
+        acc_top5.update(label, outputs)
+        mx.ndarray.waitall()
+
+        _, cur_top1 = acc_top1.get()
+        _, cur_top5 = acc_top5.get()
+
+        if i > 0 and i % opt.log_interval == 0:
+            print('%04d/%04d is done: acc-top1=%f acc-top5=%f' % (i, len(val_data), cur_top1*100, cur_top5*100))
+
+    _, top1 = acc_top1.get()
+    _, top5 = acc_top5.get()
+    return (top1, top5)
+
 def main():
     opt = parse_args()
     print(opt)
+
+    # Garbage collection, default threshold is (700, 10, 10).
+    # Set threshold lower to collect garbage more frequently and release more CPU memory for heavy data loading.
+    gc.set_threshold(100, 5, 5)
 
     # set env
     num_gpus = opt.num_gpus
@@ -150,7 +189,7 @@ def main():
     # get model
     classes = opt.num_classes
     model_name = opt.model
-    net = get_model(name=model_name, nclass=classes, pretrained=opt.use_pretrained)
+    net = get_model(name=model_name, nclass=classes, pretrained=opt.use_pretrained, num_segments=opt.num_segments)
     net.cast(opt.dtype)
     net.collect_params().reset_ctx(context)
     if opt.mode == 'hybrid':
@@ -168,12 +207,14 @@ def main():
             video.VideoToTensor(),
             video.VideoNormalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ])
-    else:
+    elif opt.three_crop:
         transform_test = transforms.Compose([
-            video.VideoCenterCrop(opt.input_size),
+            video.VideoThreeCrop(opt.input_size),
             video.VideoToTensor(),
             video.VideoNormalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ])
+    else:
+        transform_test = video.VideoGroupValTransform(size=opt.input_size, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
     if opt.dataset == 'ucf101':
         val_dataset = ucf101.classification.UCF101(setting=opt.val_list, root=opt.data_dir, train=False,
@@ -188,69 +229,12 @@ def main():
     else:
         logger.info('Dataset %s is not supported yet.' % (opt.dataset))
 
-    val_data = gluon.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, prefetch=int(opt.prefetch_ratio * num_workers))
+    val_data = gluon.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers,
+                                     prefetch=int(opt.prefetch_ratio * num_workers), batchify_fn=tsn_mp_batchify_fn, last_batch='discard')
     print('Load %d test samples.' % len(val_dataset))
 
-    # start evaluation
-    acc_top1 = mx.metric.Accuracy()
-    acc_top5 = mx.metric.TopKAccuracy(5)
-
-    """Common practice during evaluation is to evenly sample 25 frames from a single video, and then perform 10-crop data augmentation.
-    This leads to 250 samples per video (750 channels). If this is too large to fit into one GPU, we can split it into multiple data batches.
-    `num_data_batches` has to be set to a value as long as `num_split_frames` is multiples of 3.
-    For example, when `num_data_batches` is set to 10,  `num_split_frames` will be 750/10=75, which is multiples of 3.
-    If you have enough GPU memory and prefer faster evaluation speed, you can set `num_data_batches` to 1.
-    """
-    num_data_batches = 10
-    if opt.ten_crop:
-        num_frames = opt.num_segments * 10
-    else:
-        num_frames = opt.num_segments
-    num_split_frames = int(num_frames * 3 / num_data_batches)
-
-    def test(ctx, val_data):
-        acc_top1.reset()
-        acc_top5.reset()
-        for i, batch in enumerate(val_data):
-            outputs = []
-            for seg_id in range(num_data_batches):
-                bs = seg_id * num_split_frames
-                be = (seg_id + 1) * num_split_frames
-                if opt.input_5d:
-                    new_batch = [batch[0][:,bs:be,:,:,:], batch[1]]
-                else:
-                    new_batch = [batch[0][:,bs:be,:,:], batch[1]]
-                data, label = batch_fn(new_batch, ctx)
-                for gpu_id, X in enumerate(data):
-                    if opt.input_5d:
-                        new_X = X.reshape((-1, 3, opt.new_length, opt.input_size, opt.input_size))
-                    else:
-                        new_X = X.reshape((-1, 3, opt.input_size, opt.input_size))
-                    pred = net(new_X)
-                    if seg_id == 0:
-                        outputs.append(pred)
-                    else:
-                        outputs[gpu_id] = nd.concat(outputs[gpu_id], pred, dim=0)
-            # Perform the mean operation on 'num_frames' samples of each video
-            for gpu_id, out in enumerate(outputs):
-                outputs[gpu_id] = nd.expand_dims(out.mean(axis=0), axis=0)
-
-            acc_top1.update(label, outputs)
-            acc_top5.update(label, outputs)
-            mx.ndarray.waitall()
-
-            _, cur_top1 = acc_top1.get()
-            _, cur_top5 = acc_top5.get()
-
-            if i > 0 and i % opt.log_interval == 0:
-                print('%04d/%04d is done: acc-top1=%f acc-top5=%f' % (i, len(val_data), cur_top1*100, cur_top5*100))
-
-        _, top1 = acc_top1.get()
-        _, top5 = acc_top5.get()
-        return (top1, top5)
-
     start_time = time.time()
-    acc_top1_val, acc_top5_val = test(context, val_data)
+    acc_top1_val, acc_top5_val = test(context, val_data, opt, net)
     end_time = time.time()
 
     print('Test accuracy: acc-top1=%f acc-top5=%f' % (acc_top1_val*100, acc_top5_val*100))

@@ -1,7 +1,7 @@
 # pylint: disable=line-too-long,too-many-lines,missing-docstring
-"""Kinetics400 action classification dataset."""
+"""Kinetics400 action classification dataset.
+Code partially borrowed from https://github.com/open-mmlab/mmaction."""
 import os
-import random
 import numpy as np
 from mxnet import nd
 from mxnet.gluon.data import dataset
@@ -39,6 +39,9 @@ class Kinetics400(dataset.Dataset):
     new_length : int, default 1
         The length of input video clip. Default is a single image, but it can be multiple video frames.
         For example, new_length=16 means we will extract a video clip of consecutive 16 frames.
+    new_step : int, default 1
+        Temporal sampling rate. For example, new_step=1 means we will extract a video clip of consecutive frames.
+        new_step=2 means we will extract a video clip of every other frame.
     new_width : int, default 340
         Scale the width of loaded image to 'new_width' for later multiscale cropping and resizing.
     new_height : int, default 256
@@ -47,6 +50,8 @@ class Kinetics400(dataset.Dataset):
         Scale the width of transformed image to the same 'target_width' for batch forwarding.
     target_height : int, default 224
         Scale the height of transformed image to the same 'target_height' for batch forwarding.
+    temporal_jitter : bool, default False
+        Whether to temporally jitter if new_step > 1.
     transform : function, default None
         A function that takes data and label and transforms them.
     """
@@ -65,6 +70,7 @@ class Kinetics400(dataset.Dataset):
                  new_height=256,
                  target_width=224,
                  target_height=224,
+                 temporal_jitter=False,
                  transform=None):
 
         super(Kinetics400, self).__init__()
@@ -86,6 +92,7 @@ class Kinetics400(dataset.Dataset):
         self.target_height = target_height
         self.target_width = target_width
         self.transform = transform
+        self.temporal_jitter = temporal_jitter
         self.name_pattern = name_pattern
 
         self.classes, self.class_to_idx = self._find_classes(root)
@@ -97,50 +104,27 @@ class Kinetics400(dataset.Dataset):
     def __getitem__(self, index):
 
         directory, duration, target = self.clips[index]
-        average_duration = int(duration / self.num_segments)
-        offsets = []
-        for seg_id in range(self.num_segments):
-            if self.train and not self.test_mode:
-                # train
-                if average_duration >= self.skip_length:
-                    offset = random.randint(0, average_duration - self.skip_length)
-                    offsets.append(offset + seg_id * average_duration)
-                else:
-                    offsets.append(0)
-            elif not self.train and not self.test_mode:
-                # validation
-                if average_duration >= self.skip_length:
-                    offsets.append(int((average_duration - self.skip_length + 1)/2 + seg_id * average_duration))
-                else:
-                    offsets.append(0)
-            else:
-                # test
-                if average_duration >= self.skip_length:
-                    offsets.append(int((average_duration - self.skip_length + 1)/2 + seg_id * average_duration))
-                else:
-                    offsets.append(0)
 
-        # N x H x W, where N = num_oversample * num_segments * new_length * channel
-        clip_input = self._TSN_RGB(directory, offsets, self.new_height, self.new_width, self.skip_length, self.name_pattern, self.new_step)
+        if self.train and not self.test_mode:
+            segment_indices, skip_offsets = self._sample_train_indices(duration)
+        elif not self.train and not self.test_mode:
+            segment_indices, skip_offsets = self._sample_val_indices(duration)
+        else:
+            segment_indices, skip_offsets = self._sample_test_indices(duration)
+
+        # N frames of shape H x W x C, where N = num_oversample * num_segments * new_length
+        clip_input = self._TSN_loader(directory, duration, segment_indices, skip_offsets)
 
         if self.transform is not None:
             clip_input = self.transform(clip_input)
 
-        if self.new_length > 1 and self.num_segments > 1:
-            clip_input = clip_input.reshape((-1, self.num_segments) + (3, self.new_length, self.target_height, self.target_width))
-            if not self.test_mode:
-                # reshape: N' x C x L x H x W, where N' = num_oversample x num_segments
-                clip_input = clip_input.reshape((-1,) + clip_input.shape[2:])
-            else:
-                # reshape: N' x L x H x W, where N' = num_oversample x num_segments x channel
-                clip_input = clip_input.reshape((-1,) + (self.new_length, self.target_height, self.target_width))
-        elif self.new_length > 1 and self.num_segments == 1:
-            clip_input = clip_input.reshape((3, self.new_length, self.target_height, self.target_width))
-        elif self.num_segments > 1 and self.new_length == 1:
-            if not self.test_mode:
-                clip_input = clip_input.reshape((-1, 3, self.target_height, self.target_width))
+        clip_input = np.stack(clip_input, axis=0)
+        clip_input = clip_input.reshape((-1,) + (self.new_length, 3, self.target_height, self.target_width))
+        clip_input = np.transpose(clip_input, (0, 2, 1, 3, 4))
+        if self.new_length == 1:
+            clip_input = np.squeeze(clip_input, axis=2)    # this is for 2D input case
 
-        return clip_input, target
+        return nd.array(clip_input), target
 
     def __len__(self):
         return len(self.clips)
@@ -169,25 +153,83 @@ class Kinetics400(dataset.Dataset):
                 clips.append(item)
         return clips
 
-    def _TSN_RGB(self, directory, offsets, new_height, new_width, skip_length, name_pattern, new_step):
+    def _sample_train_indices(self, num_frames):
+        average_duration = (num_frames - self.skip_length + 1) // self.num_segments
+        if average_duration > 0:
+            offsets = np.multiply(list(range(self.num_segments)),
+                                  average_duration)
+            offsets = offsets + np.random.randint(average_duration,
+                                                  size=self.num_segments)
+        elif num_frames > max(self.num_segments, self.skip_length):
+            offsets = np.sort(np.random.randint(
+                num_frames - self.skip_length + 1,
+                size=self.num_segments))
+        else:
+            offsets = np.zeros((self.num_segments,))
+
+        if self.temporal_jitter:
+            skip_offsets = np.random.randint(
+                self.new_step, size=self.skip_length // self.new_step)
+        else:
+            skip_offsets = np.zeros(
+                self.skip_length // self.new_step, dtype=int)
+        return offsets + 1, skip_offsets
+
+    def _sample_val_indices(self, num_frames):
+        if num_frames > self.num_segments + self.skip_length - 1:
+            tick = (num_frames - self.skip_length + 1) / \
+                float(self.num_segments)
+            offsets = np.array([int(tick / 2.0 + tick * x)
+                                for x in range(self.num_segments)])
+        else:
+            offsets = np.zeros((self.num_segments,))
+
+        if self.temporal_jitter:
+            skip_offsets = np.random.randint(
+                self.new_step, size=self.skip_length // self.new_step)
+        else:
+            skip_offsets = np.zeros(
+                self.skip_length // self.new_step, dtype=int)
+        return offsets + 1, skip_offsets
+
+    def _sample_test_indices(self, num_frames):
+        if num_frames > self.skip_length - 1:
+            tick = (num_frames - self.skip_length + 1) / \
+                float(self.num_segments)
+            offsets = np.array([int(tick / 2.0 + tick * x)
+                                for x in range(self.num_segments)])
+        else:
+            offsets = np.zeros((self.num_segments,))
+
+        if self.temporal_jitter:
+            skip_offsets = np.random.randint(
+                self.new_step, size=self.skip_length // self.new_step)
+        else:
+            skip_offsets = np.zeros(
+                self.skip_length // self.new_step, dtype=int)
+        return offsets + 1, skip_offsets
+
+    def _TSN_loader(self, directory, duration, indices, skip_offsets):
         sampled_list = []
-        for _, offset in enumerate(offsets):
-            for length_id in range(1, skip_length + 1, new_step):
-                frame_path = os.path.join(directory, name_pattern % (length_id + offset))
+        for seg_ind in indices:
+            offset = int(seg_ind)
+            for i, _ in enumerate(range(0, self.skip_length, self.new_step)):
+                if offset + skip_offsets[i] <= duration:
+                    frame_path = os.path.join(directory, self.name_pattern % (offset + skip_offsets[i]))
+                else:
+                    frame_path = os.path.join(directory, self.name_pattern % (offset))
                 cv_img = self.cv2.imread(frame_path)
                 if cv_img is None:
-                    if length_id == 1:
-                        raise(RuntimeError("Could not load file %s starting at frame %d. Check data path." % (frame_path, offset)))
-                    sampled_list.append(np.zeros((new_height, new_width, 3)))   # pad black frames if this video clip does not have `skip_length` frames
-                    continue
-                if new_width > 0 and new_height > 0:
+                    raise(RuntimeError("Could not load file %s starting at frame %d. Check data path." % (frame_path, offset)))
+                if self.new_width > 0 and self.new_height > 0:
                     h, w, _ = cv_img.shape
-                    if h != new_height or w != new_width:
-                        cv_img = self.cv2.resize(cv_img, (new_width, new_height))
+                    if h != self.new_height or w != self.new_width:
+                        cv_img = self.cv2.resize(cv_img, (self.new_width, self.new_height))
                 cv_img = cv_img[:, :, ::-1]
                 sampled_list.append(cv_img)
-        clip_input = np.concatenate(sampled_list, axis=2)
-        return nd.array(clip_input)
+                if offset + self.new_step < duration:
+                    offset += self.new_step
+        return sampled_list
 
 class Kinetics400Attr(object):
     def __init__(self):
