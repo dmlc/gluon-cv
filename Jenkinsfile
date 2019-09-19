@@ -105,6 +105,7 @@ stage("Build Docs") {
         export LD_LIBRARY_PATH=/usr/local/cuda-9.2/lib64
         git submodule update --init --recursive
         git clean -fx
+        export OMP_NUM_THREADS=1
         cd docs && make clean && make html
         sed -i.bak 's/33\\,150\\,243/23\\,141\\,201/g' build/html/_static/material-design-lite-1.3.0/material.blue-deep_orange.min.css;
         sed -i.bak 's/2196f3/178dc9/g' build/html/_static/sphinx_materialdesign_theme.css;
