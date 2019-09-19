@@ -194,7 +194,10 @@ import sys
 import subprocess
 im2rec = utils.download('https://raw.githubusercontent.com/apache/incubator-mxnet/' +
                         '6843914f642c8343aaa9a09db803b6af6f5d94a2/tools/im2rec.py', 'im2rec.py')
-subprocess.check_output([sys.executable, 'im2rec.py', 'val', '.', '--no-shuffle', '--pass-through', '--pack-label'])
+# In this tutorial we skip generating in subprocess but instead download a prepared val.rec
+# subprocess.check_output([sys.executable, 'im2rec.py', 'val', '.', '--no-shuffle', '--pass-through', '--pack-label'])
+utils.download('https://gist.github.com/zhreshold/599999eab290e951fcfb26cdd59885e2/raw/0d945eeea2a71ba7bd3e39d463f39921acb786d1/val.rec', 'val.rec')
+utils.download('https://gist.github.com/zhreshold/599999eab290e951fcfb26cdd59885e2/raw/0d945eeea2a71ba7bd3e39d463f39921acb786d1/val.idx', 'val.idx')
 
 ##############################################################################
 # Now similarly, we can create a dataset from the binary file we just created with on line of code:
