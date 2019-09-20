@@ -2,6 +2,7 @@ import argparse
 import time
 
 import gluoncv as gcv
+gcv.utils.check_version('0.4.0')
 from gluoncv.utils import try_import_cv2
 cv2 = try_import_cv2()
 import mxnet as mx

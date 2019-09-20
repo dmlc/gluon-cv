@@ -3,6 +3,7 @@ import argparse, time, logging, os, sys, math
 import numpy as np
 import mxnet as mx
 import gluoncv as gcv
+gcv.utils.check_version('0.5.0')
 from mxnet import gluon, nd, init, context
 from mxnet import autograd as ag
 from mxnet.gluon import nn
