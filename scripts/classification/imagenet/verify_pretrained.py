@@ -8,7 +8,7 @@ from mxnet.gluon.data.vision import transforms
 from mxnet.contrib.quantization import *
 
 import gluoncv as gcv
-gcv.utils.check_version('0.3.0')
+gcv.utils.check_version('0.6.0')
 from gluoncv.data import imagenet
 from gluoncv.model_zoo import get_model
 

@@ -12,7 +12,7 @@ from mxnet import autograd
 
 from networks import resnet18, resnet34, resnet50
 import gluoncv as gcv
-gcv.utils.check_version('0.4.0')
+gcv.utils.check_version('0.6.0')
 from gluoncv.data.market1501.data_read import ImageTxtDataset
 from gluoncv.data.market1501.label_read import LabelList
 from gluoncv.data.transforms.block import RandomCrop

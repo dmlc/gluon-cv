@@ -12,7 +12,7 @@ from mxnet.gluon.data.vision import transforms
 from mxnet.contrib.quantization import *
 
 import gluoncv
-gluoncv.utils.check_version('0.4.0')
+gluoncv.utils.check_version('0.6.0')
 from gluoncv.model_zoo.segbase import *
 from gluoncv.model_zoo import get_model
 from gluoncv.data import get_segmentation_dataset, ms_batchify_fn

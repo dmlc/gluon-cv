@@ -12,7 +12,7 @@ from mxnet.gluon import nn
 from mxnet.gluon.data.vision import transforms
 
 import gluoncv as gcv
-gcv.utils.check_version('0.3.0')
+gcv.utils.check_version('0.6.0')
 from gluoncv.model_zoo import get_model
 from gluoncv.utils import makedirs, TrainingHistory
 from gluoncv.data import transforms as gcv_transforms

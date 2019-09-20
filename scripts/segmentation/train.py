@@ -9,7 +9,7 @@ from mxnet import gluon, autograd
 from mxnet.gluon.data.vision import transforms
 
 import gluoncv
-gluoncv.utils.check_version('0.4.0')
+gluoncv.utils.check_version('0.6.0')
 from gluoncv.loss import *
 from gluoncv.utils import LRScheduler
 from gluoncv.model_zoo.segbase import *

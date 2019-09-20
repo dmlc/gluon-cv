@@ -4,7 +4,7 @@ from mxnet import gluon, image,autograd
 from mxnet.gluon.data.vision import transforms
 from mxnet.base import numeric_types
 import gluoncv as gcv
-gcv.utils.check_version('0.4.0')
+gcv.utils.check_version('0.6.0')
 from gluoncv import utils as gutils
 from mxnet.gluon.data import DataLoader
 from mxnet.gluon import nn
