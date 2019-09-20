@@ -11,8 +11,8 @@ from __future__ import absolute_import
 
 import random
 
-import mxnet as mx
 import numpy as np
+import mxnet as mx
 from mxnet import gluon, nd
 from mxnet.gluon.data import Sampler
 
