@@ -20,7 +20,7 @@ to install ``MXNet`` and ``GluonCV`` if you haven't done so yet.
 """
 
 import matplotlib.pyplot as plt
-
+import numpy as np
 import mxnet as mx
 from mxnet import gluon, nd, image
 from mxnet.gluon.data.vision import transforms
@@ -59,8 +59,8 @@ transform_fn = transforms.Compose([
 #
 # What does the transformed image look like?
 
-img = transform_fn(img)
-plt.imshow(nd.transpose(img, (1,2,0)).asnumpy())
+img_list = transform_fn([img.asnumpy()])
+plt.imshow(np.transpose(img_list[0], (1,2,0)))
 plt.show()
 
 ################################################################
@@ -77,7 +77,7 @@ net = get_model('vgg16_ucf101', nclass=101, pretrained=True)
 # both dimensions larger than 299 (e.g., 340x450) and change input size from 224 to 299
 # in the transform function. Finally, we prepare the image and feed it to the model.
 
-pred = net(img.expand_dims(axis=0))
+pred = net(nd.array(img_list[0]).expand_dims(axis=0))
 
 classes = net.classes
 topK = 5
@@ -131,10 +131,10 @@ print('We evenly extract %d frames from the video %s.' % (len(video_frames), vid
 # Now we transform each video frame and feed them into the model.
 # In the end, we average the predictions from multiple video frames to get a reasonable prediction.
 
+video_frames_transformed = transform_fn(video_frames)
 final_pred = 0
-for frame_id, frame_img in enumerate(video_frames):
-    frame_img = transform_fn(frame_img)
-    pred = net(frame_img.expand_dims(axis=0))
+for _, frame_img in enumerate(video_frames_transformed):
+    pred = net(nd.array(frame_img).expand_dims(axis=0))
     final_pred += pred
 final_pred /= len(video_frames)
 

@@ -134,6 +134,10 @@ def parse_args():
                         help='set number of workers to prefetch data batch, default is 2 in MXNet.')
     parser.add_argument('--kvstore', type=str, default=None,
                         help='KVStore type. Supports local, device, dist_sync_device, dist_async_device')
+    parser.add_argument('--input-5d', action='store_true',
+                        help='the input is 4d or 5d tensor. 5d is for 3D CNN models.')
+    parser.add_argument('--accumulate', type=int, default=1,
+                        help='new step to accumulate gradient. If >1, the batch size is enlarged.')
     opt = parser.parse_args()
     return opt
 
@@ -151,17 +155,8 @@ def get_data_loader(opt, batch_size, num_workers, logger, kvstore=None):
         label = split_and_load(batch[1], ctx_list=ctx, batch_axis=0, even_split=False)
         return data, label
 
-    transform_train = transforms.Compose([
-        video.VideoMultiScaleCrop(size=(input_size, input_size), scale_ratios=scale_ratios),
-        video.VideoRandomHorizontalFlip(),
-        video.VideoToTensor(),
-        video.VideoNormalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-    ])
-    transform_test = transforms.Compose([
-        video.VideoCenterCrop(size=input_size),
-        video.VideoToTensor(),
-        video.VideoNormalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-    ])
+    transform_train = video.VideoGroupTrainTransform(size=(input_size, input_size), scale_ratios=scale_ratios, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    transform_test = video.VideoGroupValTransform(size=input_size, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
     if opt.dataset == 'kinetics400':
         train_dataset = kinetics400.classification.Kinetics400(setting=opt.train_list, root=data_dir, train=True,
@@ -186,18 +181,18 @@ def get_data_loader(opt, batch_size, num_workers, logger, kvstore=None):
 
     logger.info('Load %d training samples and %d validation samples.' % (len(train_dataset), len(val_dataset)))
 
-    if opt.num_segments > 1:
-        train_data = gluon.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers, batchify_fn=tsn_mp_batchify_fn, last_batch='rollover')
-        val_data = gluon.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, batchify_fn=tsn_mp_batchify_fn, last_batch='keep')
+    if kvstore is not None:
+        train_data = gluon.data.DataLoader(train_dataset, batch_size=batch_size, num_workers=num_workers,
+                                           sampler=SplitSampler(len(train_dataset), num_parts=kvstore.num_workers, part_index=kvstore.rank),
+                                           batchify_fn=tsn_mp_batchify_fn, prefetch=int(opt.prefetch_ratio * num_workers), last_batch='rollover')
+        val_data = gluon.data.DataLoader(val_dataset, batch_size=batch_size, num_workers=num_workers,
+                                         sampler=SplitSampler(len(val_dataset), num_parts=kvstore.num_workers, part_index=kvstore.rank),
+                                         batchify_fn=tsn_mp_batchify_fn, prefetch=int(opt.prefetch_ratio * num_workers), last_batch='discard')
     else:
-        if kvstore is not None:
-            train_data = gluon.data.DataLoader(train_dataset, batch_size=batch_size, num_workers=num_workers, prefetch=int(opt.prefetch_ratio * num_workers),
-                                           sampler=SplitSampler(len(train_dataset), num_parts=kvstore.num_workers, part_index=kvstore.rank), last_batch='rollover')
-            val_data = gluon.data.DataLoader(val_dataset, batch_size=batch_size, num_workers=num_workers, prefetch=int(opt.prefetch_ratio * num_workers),
-                                           sampler=SplitSampler(len(val_dataset), num_parts=kvstore.num_workers, part_index=kvstore.rank), last_batch='keep')
-        else:
-            train_data = gluon.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers, prefetch=int(opt.prefetch_ratio * num_workers), last_batch='rollover')
-            val_data = gluon.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, prefetch=int(opt.prefetch_ratio * num_workers), last_batch='keep')
+        train_data = gluon.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers,
+                                           batchify_fn=tsn_mp_batchify_fn, prefetch=int(opt.prefetch_ratio * num_workers), last_batch='rollover')
+        val_data = gluon.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers,
+                                           batchify_fn=tsn_mp_batchify_fn, prefetch=int(opt.prefetch_ratio * num_workers), last_batch='discard')
 
     return train_data, val_data, batch_fn
 
@@ -263,6 +258,18 @@ def main():
     else:
         train_data, val_data, batch_fn = get_data_loader(opt, batch_size, num_workers, logger)
 
+    num_batches = len(train_data)
+    lr_scheduler = LRSequential([
+        LRScheduler('linear', base_lr=0, target_lr=opt.lr,
+                    nepochs=opt.warmup_epochs, iters_per_epoch=num_batches),
+        LRScheduler(opt.lr_mode, base_lr=opt.lr, target_lr=0,
+                    nepochs=opt.num_epochs - opt.warmup_epochs,
+                    iters_per_epoch=num_batches,
+                    step_epoch=lr_decay_epoch,
+                    step_factor=lr_decay, power=2)
+    ])
+    optimizer_params['lr_scheduler'] = lr_scheduler
+
     train_metric = mx.metric.Accuracy()
     acc_top1 = mx.metric.Accuracy()
     acc_top5 = mx.metric.TopKAccuracy(5)
@@ -320,6 +327,11 @@ def main():
             else:
                 trainer = gluon.Trainer(net.collect_params(), optimizer, optimizer_params, update_on_kvstore=False)
 
+        if opt.accumulate > 1:
+            params = [p for p in net.collect_params().values() if p.grad_req != 'null']
+            for p in params:
+                p.grad_req = 'add'
+
         if opt.resume_states is not '':
             trainer.load_states(opt.resume_states)
 
@@ -337,10 +349,6 @@ def main():
             btic = time.time()
             num_train_iter = len(train_data)
 
-            if epoch == lr_decay_epoch[lr_decay_count]:
-                trainer.set_learning_rate(trainer.learning_rate * lr_decay)
-                lr_decay_count += 1
-
             for i, batch in enumerate(train_data):
                 data, label = batch_fn(batch, ctx)
 
@@ -354,10 +362,17 @@ def main():
                     else:
                         ag.backward(loss)
 
-                if opt.kvstore is not None:
-                    trainer.step(batch_size * kv.num_workers)
+                if opt.accumulate > 1 and (i + 1) % opt.accumulate == 0:
+                    if opt.kvstore is not None:
+                        trainer.step(batch_size * kv.num_workers * opt.accumulate)
+                    else:
+                        trainer.step(batch_size * opt.accumulate)
+                        net.collect_params().zero_grad()
                 else:
-                    trainer.step(batch_size)
+                    if opt.kvstore is not None:
+                        trainer.step(batch_size * kv.num_workers)
+                    else:
+                        trainer.step(batch_size)
 
                 train_metric.update(label, outputs)
 
@@ -395,13 +410,13 @@ def main():
                 else:
                     net.save_parameters('%s/%.4f-%s-%s-%03d-best.params'%(opt.save_dir, best_val_score, opt.dataset, model_name, epoch))
                 trainer.save_states('%s/%.4f-%s-%s-%03d-best.states'%(opt.save_dir, best_val_score, opt.dataset, model_name, epoch))
-
-            if opt.save_frequency and opt.save_dir and (epoch + 1) % opt.save_frequency == 0:
-                if opt.use_tsn:
-                    net.basenet.save_parameters('%s/%s-%s-%03d.params'%(opt.save_dir, opt.dataset, model_name, epoch))
-                else:
-                    net.save_parameters('%s/%s-%s-%03d.params'%(opt.save_dir, opt.dataset, model_name, epoch))
-                trainer.save_states('%s/%-%s-%03d.states'%(opt.save_dir, opt.dataset, model_name, epoch))
+            else:
+                if opt.save_frequency and opt.save_dir and (epoch + 1) % opt.save_frequency == 0:
+                    if opt.use_tsn:
+                        net.basenet.save_parameters('%s/%s-%s-%03d.params'%(opt.save_dir, opt.dataset, model_name, epoch))
+                    else:
+                        net.save_parameters('%s/%s-%s-%03d.params'%(opt.save_dir, opt.dataset, model_name, epoch))
+                    trainer.save_states('%s/%s-%s-%03d.states'%(opt.save_dir, opt.dataset, model_name, epoch))
 
         # save the last model
         if opt.use_tsn:
