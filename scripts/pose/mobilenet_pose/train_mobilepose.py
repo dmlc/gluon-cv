@@ -10,10 +10,11 @@ from mxnet.gluon import nn
 from mxnet.metric import RMSE
 from mxnet.gluon.data.vision import transforms
 
+from gluoncv.loss import JSLoss
 from gluoncv.data import mscoco
 from gluoncv.model_zoo import get_model
 from gluoncv.utils import makedirs, LRScheduler, LRSequential
-from gluoncv.data.transforms.presets.simple_pose import SimplePoseDefaultTrainTransform
+from gluoncv.data.transforms.presets.mobile_pose import MobilePoseDefaultTrainTransform
 from gluoncv.utils.metrics import HeatmapAccuracy
 
 # CLI
@@ -70,8 +71,7 @@ parser.add_argument('--no-wd', action='store_true',
                     help='whether to remove weight decay on bias, and beta/gamma for batchnorm layers.')
 parser.add_argument('--save-frequency', type=int, default=1,
                     help='frequency of model saving.')
-parser.add_argument('--save-dir', type=str, default='params',
-                    help='directory of saved models')
+parser.add_argument('--save-dir', type=str, default='params', help='directory of saved models')
 parser.add_argument('--log-interval', type=int, default=20,
                     help='Number of batches to wait before logging.')
 parser.add_argument('--logging-file', type=str, default='keypoints.log',
@@ -127,7 +127,7 @@ def get_data_loader(data_dir, batch_size, num_workers, input_size):
 
     meanvec = [float(i) for i in opt.mean.split(',')]
     stdvec = [float(i) for i in opt.std.split(',')]
-    transform_train = SimplePoseDefaultTrainTransform(num_joints=train_dataset.num_joints,
+    transform_train = MobilePoseDefaultTrainTransform(num_joints=train_dataset.num_joints,
                                                       joint_pairs=train_dataset.joint_pairs,
                                                       image_size=input_size, heatmap_size=heatmap_size,
                                                       sigma=opt.sigma, scale_factor=0.30, rotation_factor=40,
@@ -188,8 +188,10 @@ def train(ctx):
 
     trainer = gluon.Trainer(net.collect_params(), optimizer, optimizer_params)
 
-    L_euc = gluon.loss.L2Loss()
-    L_map = gluon.loss.L2Loss()
+    L_euc = gluon.loss.L1Loss()
+    # L_map = gluon.loss.L2Loss()
+    L_map_norm = gluon.loss.L2Loss()
+    # L_map_norm = JSLoss()
     metric = HeatmapAccuracy()
     metric_euc = RMSE()
 
@@ -216,17 +218,17 @@ def train(ctx):
                 loss_euc = []
                 loss_map = []
                 for yhat, y, hm, w in zip(outputs, joints, heatmap, weight):
-                    # import pdb; pdb.set_trace()
                     l_euc = nd.cast(L_euc(nd.cast(yhat[0], 'float32'), y, w), opt.dtype)
-                    l_map = nd.cast(L_map(nd.cast(yhat[1], 'float32'), hm, w.expand_dims(axis=3)), opt.dtype)
+                    # l_map = nd.cast(L_map(nd.cast(yhat[1], 'float32'), hm, w.expand_dims(axis=3)), opt.dtype)
+                    l_map_norm = nd.cast(L_map_norm(nd.cast(yhat[2], 'float32'), hm, w.expand_dims(axis=3)), opt.dtype)
                     loss_euc.append(l_euc)
-                    loss_map.append(l_map)
-                    loss.append(l_euc + l_map*0)
+                    loss_map.append(l_map_norm)
+                    loss.append(l_euc*0 + l_map_norm*1)
 
             ag.backward(loss)
             trainer.step(batch_size)
 
-            metric.update(heatmap, [o[1] for o in outputs])
+            metric.update(heatmap, [o[2] for o in outputs])
             metric_euc.update(joints, [o[0]*w for o, w in zip(outputs, weight)])
 
             loss_val += sum([l.mean().asscalar() for l in loss]) / num_gpus
@@ -235,12 +237,12 @@ def train(ctx):
             if opt.log_interval and not (i+1)%opt.log_interval:
                 metric_name, metric_score = metric.get()
                 metric_euc_name, metric_euc_score = metric_euc.get()
-                logger.info('Epoch[%d] Batch [%d]\tSpeed: %f samples/sec\tlr=%f'
-                            '\tloss:total=%f,euc=%f,map=%f\tmetric:%s=%.3f\t%s=%.3f'%(
-                             epoch, i, batch_size*opt.log_interval/(time.time()-btic),
+                logger.info('Epoch[%d] Batch [%d]\tSpeed: %d samples/sec\tlr=%.3f'
+                            '    loss:total=%f,l1=%f,l2=%f    metric:hm=%.3f,%s=%.3f'%(
+                             epoch, i, int(batch_size*opt.log_interval/(time.time()-btic)),
                              trainer.learning_rate,
                              loss_val / (i+1), loss_euc_val / (i+1), loss_map_val / (i+1), 
-                             metric_name, metric_score, metric_euc_name, metric_euc_score*256))
+                             metric_score, metric_euc_name, metric_euc_score*256))
                 btic = time.time()
 
         time_elapsed = time.time() - tic

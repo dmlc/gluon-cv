@@ -20,7 +20,7 @@ from .nasnet import *
 from .simple_pose.simple_pose_resnet import *
 from .action_recognition import *
 from .wideresnet import *
-from .mobilepose import *
+from .mobile_pose.mobilepose import *
 
 from .alexnet import *
 from .densenet import *

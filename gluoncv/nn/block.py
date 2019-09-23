@@ -2,6 +2,7 @@
 """Customized Layers.
 """
 from __future__ import absolute_import
+from mxnet import initializer
 from mxnet.gluon import nn, contrib
 from mxnet.gluon.nn import BatchNorm, HybridBlock
 
@@ -137,7 +138,8 @@ class DUC(HybridBlock):
     def __init__(self, planes, upscale_factor=2, **kwargs):
         super(DUC, self).__init__(**kwargs)
         self.conv = nn.Conv2D(planes, kernel_size=3, padding=1, use_bias=False)
-        self.bn = nn.BatchNorm()
+        self.bn = BatchNormCudnnOff(gamma_initializer=initializer.One(),
+                                    beta_initializer=initializer.Zero())
         self.relu = nn.Activation('relu')
         self.pixel_shuffle = contrib.nn.PixelShuffle2D(upscale_factor)
 

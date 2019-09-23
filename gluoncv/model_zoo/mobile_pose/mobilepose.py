@@ -28,22 +28,25 @@ from mxnet.gluon.nn import BatchNorm
 from mxnet.gluon.block import HybridBlock
 from mxnet.context import cpu
 
-from .mobilenetv3 import _ResUnit
-from ..nn.block import DSNT, DUC
+from ..mobilenetv3 import _ResUnit
+from ...nn.block import DSNT, DUC
 
 class MobilePose(HybridBlock):
     """Pose Estimation for Mobile Device"""
-    def __init__(self, base_name, base_attrs=('features',), num_joints=17, hm_size=(48, 64),
+    def __init__(self, base_name, base_attrs=('features',), num_joints=17, hm_size=(56, 56),
                  pretrained_base=False, pretrained_ctx=cpu(), **kwargs):
         super(MobilePose, self).__init__(**kwargs)
 
         with self.name_scope():
-            from .model_zoo import get_model
+            from ..model_zoo import get_model
             base_model = get_model(base_name, pretrained=pretrained_base,
                                    ctx=pretrained_ctx)
             self.features = nn.HybridSequential()
-            for layer in base_attrs:
-                self.features.add(getattr(base_model, layer))
+            if base_name.startswith('mobilenetv1') or base_name.startswith('mobilenetv2'):
+                self.features.add(base_model.features[:-2])
+            else:
+                for layer in base_attrs:
+                    self.features.add(getattr(base_model, layer))
 
             self.upsampling = nn.HybridSequential()
             self.upsampling.add(
@@ -81,3 +84,7 @@ def get_mobilepose(base_name, ctx=cpu(), pretrained=False,
 def mobilepose_resnet18_v1b(**kwargs):
     return get_mobilepose('resnet18_v1b', base_attrs=['conv1', 'bn1', 'relu', 'maxpool',
                           'layer1', 'layer2', 'layer3', 'layer4'], **kwargs)
+
+def mobilepose_mobilenetv2_1_0(**kwargs):
+    return get_mobilepose('mobilenetv2_1.0', base_attrs=['features'], **kwargs)
+

@@ -9,7 +9,7 @@ from mxnet.gluon.loss import Loss, _apply_weighting, _reshape_like
 
 __all__ = ['FocalLoss', 'SSDMultiBoxLoss', 'YOLOV3Loss',
            'MixSoftmaxCrossEntropyLoss', 'MixSoftmaxCrossEntropyOHEMLoss',
-           'DistillationSoftmaxCrossEntropyLoss']
+           'DistillationSoftmaxCrossEntropyLoss', 'JSLoss']
 
 class FocalLoss(Loss):
     """Focal Loss for inbalanced classification.
@@ -457,3 +457,16 @@ class DistillationSoftmaxCrossEntropyLoss(gluon.HybridBlock):
                                                                   soft_target)
             hard_loss = self.hard_loss(output, label)
             return (1 - self._hard_weight) * soft_loss  + self._hard_weight * hard_loss
+
+class JSLoss(Loss):
+    def __init__(self, axis=-1, weight=None, batch_axis=0, **kwargs):
+        super(JSLoss, self).__init__(weight, batch_axis, **kwargs)
+        self._axis = axis
+
+    def hybrid_forward(self, F, pred, label, sample_weight=None):
+        mix = F.log((pred + label) / 2 + 1e-12)
+        loss = (label * (F.log(label + 1e-12) - mix) + \
+               pred * (F.log(pred + 1e-12) - mix)) / 2
+        loss = _apply_weighting(F, loss, self._weight, sample_weight)
+        return F.mean(loss, axis=self._batch_axis, exclude=True)
+

@@ -15,7 +15,7 @@ from .inception import *
 from .mask_rcnn import *
 from .mobilenet import *
 from .mobilenetv3 import *
-from .mobilepose import *
+from .mobile_pose.mobilepose import *
 from .nasnet import *
 from .pruned_resnet.resnetv1b_pruned import *
 from .pspnet import *
@@ -86,6 +86,7 @@ _models = {
     'mobilenetv3_large': mobilenet_v3_large,
     'mobilenetv3_small': mobilenet_v3_small,
     'mobilepose_resnet18_v1b': mobilepose_resnet18_v1b,
+    'mobilepose_mobilenetv2_1.0': mobilepose_mobilenetv2_1_0,
     'ssd_300_vgg16_atrous_voc': ssd_300_vgg16_atrous_voc,
     'ssd_300_vgg16_atrous_coco': ssd_300_vgg16_atrous_coco,
     'ssd_300_vgg16_atrous_custom': ssd_300_vgg16_atrous_custom,
