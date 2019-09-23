@@ -18,7 +18,6 @@ from gluoncv.model_zoo import get_model
 from gluoncv.data import batchify
 from gluoncv.data.transforms.presets.rcnn import MaskRCNNDefaultTrainTransform, \
     MaskRCNNDefaultValTransform
-from gluoncv.utils.metrics.coco_instance import COCOInstanceMetric
 from gluoncv.utils.metrics.coco_instance_mask_iou import COCOInstanceMaskScoreMetric
 from gluoncv.utils.metrics.rcnn import RPNAccMetric, RPNL1LossMetric, RCNNAccMetric, \
     RCNNL1LossMetric, MaskAccMetric, MaskFGAccMetric, MaskScoreL2LossMetric
@@ -128,9 +127,6 @@ def get_dataset(dataset, args):
     if dataset.lower() == 'coco':
         train_dataset = gdata.COCOInstance(splits='instances_train2017')
         val_dataset = gdata.COCOInstance(splits='instances_val2017', skip_empty=False)
-        #train_dataset = gdata.COCOInstance(splits='instances_train2017_small')
-        #val_dataset = gdata.COCOInstance(splits='instances_train2017_small', skip_empty=False)
-        #val_metric = COCOInstanceMetric(val_dataset, args.save_prefix + '_eval', cleanup=True)
         val_metric = COCOInstanceMaskScoreMetric(val_dataset, args.save_prefix + '_eval', cleanup=True)
     else:
         raise NotImplementedError('Dataset: {} not implemented.'.format(dataset))
@@ -261,14 +257,10 @@ class ForwardBackwardTask(Parallelizable):
         with autograd.record():
             gt_label = label[:, :, 4:5]
             gt_box = label[:, :, :4]
-            """
-            cls_pred, box_pred, mask_pred, roi, samples, matches, rpn_score, \
-                rpn_box, anchors, top_feat = net(data, gt_box)
-            """
-            cls_pred, box_pred, mask_pred, rpn_score, rpn_box, \
-                    cls_targets, box_targets, box_masks, mask_targets, mask_masks, \
-                    mask_score_targets, mask_score_masks, mask_score_pred \
-                        = net(data, gt_box, gt_label, gt_mask)
+
+            cls_pred, box_pred, mask_pred, rpn_score, rpn_box, cls_targets, box_targets, box_masks, \
+                mask_targets, mask_masks, mask_score_targets, mask_score_masks, mask_score_pred \
+                    = net(data, gt_box, gt_label, gt_mask)
 
             # losses of rpn
             rpn_score = rpn_score.squeeze(axis=-1)
@@ -279,13 +271,7 @@ class ForwardBackwardTask(Parallelizable):
                                           rpn_box_masks) * rpn_box.size / num_rpn_pos
             # rpn overall loss, use sum rather than average
             rpn_loss = rpn_loss1 + rpn_loss2
-            """
-            # generate targets for rcnn
-            cls_targets, box_targets, box_masks = \
-                    self.net.FasterRCNN.target_generator(roi, samples,
-                                                         matches, gt_label,
-                                                         gt_box)
-            """
+
             # losses of rcnn
             num_rcnn_pos = (cls_targets >= 0).sum()
             rcnn_loss1 = self.rcnn_cls_loss(cls_pred, cls_targets,
@@ -295,17 +281,13 @@ class ForwardBackwardTask(Parallelizable):
                          num_rcnn_pos
             rcnn_loss = rcnn_loss1 + rcnn_loss2
 
-            """
-            # generate targets for mask
-            mask_targets, mask_masks, mask_score_targets, mask_score_masks = \
-                        self.net.mask_target(roi, gt_mask, matches, cls_targets, mask_pred)
-            """
             # loss of mask
             mask_loss = self.rcnn_mask_loss(mask_pred, mask_targets, mask_masks) * \
                         mask_targets.size / mask_masks.sum()
             
-            #mask_score_pred = self.net.mask_score(top_feat, mask_pred, cls_targets)
-
+            # avoid mask_score_loss to be nan.
+            # mask_score_masks might be full of zeros when all maskiou_targets are below thresholds 
+            # check mask_score_rcnn/rnn_target.py for details
             mask_score_masks_sum = mask_score_masks.sum() 
             if mask_score_masks_sum==0:
                 mask_score_masks_sum = 1

@@ -158,8 +158,7 @@ class Mask(nn.HybridBlock):
                     new_params.set_data(new_data)
 
 class MaskScore(nn.HybridBlock):
-#class MaskScore(nn.Block):
-    r"""Mask predictor head
+    r"""Mask score predictor head
     Parameters
     ----------
     batch_images : int
@@ -177,7 +176,6 @@ class MaskScore(nn.HybridBlock):
     def __init__(self, batch_images, classes, mask_channels, 
                  rcnn_max_dets=0, **kwargs):
         super(MaskScore, self).__init__(**kwargs)
-        #TODO:
         self._batch_images = batch_images
         self._rcnn_max_dets = rcnn_max_dets
         self.classes = classes
@@ -210,14 +208,12 @@ class MaskScore(nn.HybridBlock):
             self.maxpool = nn.HybridSequential()
             self.maxpool.add(nn.MaxPool2D(pool_size=2, strides=2))
 
-            self.mask_score_final = nn.HybridSequential()
-            self.mask_score_final.add(nn.Dense(len(self.classes), weight_initializer=mx.init.Normal(0.01)))
+            self.mask_score_final = nn.Dense(len(self.classes), weight_initializer=mx.init.Normal(0.01)))
             
 
     # pylint: disable=arguments-differ
     def hybrid_forward(self, F, top_feat, mask_pred, cls_targets=None):
-    #def forward(self, top_feat, mask_pred, cls_targets=None):
-        """Forward Mask Head.
+        """Forward Mask Score Head.
         The behavior during training and inference is different.
         Parameters
         ----------
@@ -229,72 +225,34 @@ class MaskScore(nn.HybridBlock):
             Mask prediction of shape (B, N, C, MS, MS)
         """
 
-        r"""
-        #FIXME: 为什么 top_feat 没有显示图的信息
-        top_feat:  (512, 256, 14, 14)
-        mask_pred: (1, 512, 80, 28, 28)
-        cls_targets: (1, 512)
-        """
-        # (B * N, mask_channels, MS, MS)
-        
-        """
-        train: 
-            mask_pred: (1, 512, 80, 28, 28) -> (512, 80, 28, 28)
-            top_feat: (512, 256, 14, 14)
-        inference:
-            mask_pred: (1, 1000, 28, 28) ->  (1000, 1, 28, 28)
-            top_feat:  (1000, 256, 14, 14) 
-        """
-        
-        #pdb.set_trace()
-
-        #2mask_pred = mask_pred[0]
-        #F = mx.nd
-
         if autograd.is_training():
-            """
-            #TODO:      用 mx.gather_nd()
-            selected_index = mx.nd.arange(512)
-            #selected_mask = mask_pred[selected_index, bb]  # (512, 28, 28)
-            #pdb.set_trace()
-            selected_mask = mask_pred[selected_index, mx.nd.clip(cls_targets[0]-1, 0, 80)]  # (512, 28, 28)
-            #selected_mask = F.gather_nd(mask_pred, indices) 
-            """
 
-            #pdb.set_trace()
-            #mask_pred = mask_pred.reshape(-3, 0, 0, 0)
+            # (B*N, C, MS, MS)
             mask_pred = mask_pred.reshape((-3, 0, 0, 0))
+            # (B*N)
             cls_targets = cls_targets.reshape((-3))
-            
-            #zeros = mx.nd.zeros((512,), ctx=top_feat.context)
-            #cls_target_object = F.where(cls_targets[0]>0, cls_targets[0]-1, zeros)
+        
+            # select category for foreground object. indexes start from 0. 
+            # keep zeros for back-ground category
             cls_target_object = F.where(cls_targets>0, cls_targets-1, F.zeros_like(cls_targets))
-            #cls_target_object = F.where(cls_targets>0, cls_targets-1, zeros)
-
+            # generate list [0, 1, 2, 3, ..., len(cls_targets)]
             selected_index = F.contrib.arange_like(cls_targets)
-            #selected_index = F.contrib.arange_like(cls_targets)
-            #selected_index = mx.nd.arange(start=0, stop=512, ctx=top_feat.context)
-
             indices = F.stack(selected_index, cls_target_object, axis=0)
-            #indices = mx.nd.stack(selected_index, cls_target_object, axis=0)
+            # (B*N, MS, MS)
             selected_mask = F.gather_nd(mask_pred, indices) 
-            #selected_mask = mx.nd.gather_nd(mask_pred, indices) 
-            
-            #pdb.set_trace()
-            selected_mask = selected_mask.reshape((-4, -1, 1, 0, 0))  # (512, 1, 28, 28)
+            # (B, N, MS, MS)
+            selected_mask = selected_mask.reshape((-4, -1, 1, 0, 0))  
         else:
-            # mask_pred -> (1000, 28, 28)
             selected_mask = mask_pred.reshape((-4, self._rcnn_max_dets, -1, 0, 0))
         
-        # convert it to mask
-        #selected_mask = mx.nd.sigmoid(selected_mask)
+        # convert feature map to mask [0,1]
+        # (B*N, C, MS, MS)
         selected_mask = F.sigmoid(selected_mask)
 
-        #pdb.set_trace()
-        selected_mask = self.maxpool(selected_mask)   #(512, 1, 14, 14)
-
-        #x = mx.nd.concat(top_feat, selected_mask, dim=1)  #(512, 257, 14, 14)
-        x = F.concat(top_feat, selected_mask, dim=1)  #(512, 257, 14, 14)
+        # (B*N, C, MS/2, MS/2 )
+        selected_mask = self.maxpool(selected_mask)   
+        # (B*N, C+1, MS/2, MS/2)
+        x = F.concat(top_feat, selected_mask, dim=1)  
         
         x = self.maskiou_branch(x)
         x = self.mask_score_final(x)
@@ -303,12 +261,72 @@ class MaskScore(nn.HybridBlock):
         x = x.reshape((-4, self._batch_images, -1, 0))
         return x 
 
+    def reset_class(self, classes, reuse_weights=None):
+        """Reset class for mask branch."""
+        if reuse_weights:
+            assert hasattr(self, 'classes'), "require old classes to reuse weights"
+        old_classes = getattr(self, 'classes', [])
+        self.classes = classes
+        if isinstance(reuse_weights, (dict, list)):
+            if isinstance(reuse_weights, dict):
+                # trying to replace str with indices
+                for k, v in reuse_weights.items():
+                    if isinstance(v, str):
+                        try:
+                            v = old_classes.index(v)  # raise ValueError if not found
+                        except ValueError:
+                            raise ValueError(
+                                "{} not found in old class names {}".format(v, old_classes))
+                        reuse_weights[k] = v
+                    if isinstance(k, str):
+                        try:
+                            new_idx = self.classes.index(k)  # raise ValueError if not found
+                        except ValueError:
+                            raise ValueError(
+                                "{} not found in new class names {}".format(k, self.classes))
+                        reuse_weights.pop(k)
+                        reuse_weights[new_idx] = v
+            else:
+                new_map = {}
+                for x in reuse_weights:
+                    try:
+                        new_idx = self.classes.index(x)
+                        old_idx = old_classes.index(x)
+                        new_map[new_idx] = old_idx
+                    except ValueError:
+                        warnings.warn("{} not found in old: {} or new class names: {}".format(
+                            x, old_classes, self.classes))
+                reuse_weights = new_map
+        with self.name_scope():
+            old_mask = self.mask_score_final
+            ctx = list(old_mask.params.values())[0].list_ctx()
+            # to avoid deferred init, number of in_channels must be defined
+            in_channels = list(old_mask.params.values())[0].shape[1]
+            init = mx.init.Xavier(rnd_type='gaussian', factor_type='out', magnitude=2)
+            self.mask_score_final = nn.Dense(len(self.classes), weight_initializer=mx.init.Normal(0.01)))
+            
+            self.mask_score_final.initialize(ctx=ctx)
+            if reuse_weights:
+                assert isinstance(reuse_weights, dict)
+                for old_params, new_params in zip(old_mask.params.values(),
+                                                  self.mask_score_final.params.values()):
+                    # slice and copy weights
+                    old_data = old_params.data()
+                    new_data = new_params.data()
+
+                    for k, v in reuse_weights.items():
+                        if k >= len(self.classes) or v >= len(old_classes):
+                            warnings.warn("reuse mapping {}/{} -> {}/{} out of range".format(
+                                k, self.classes, v, old_classes))
+                            continue
+                        new_data[k:k + 1] = old_data[v:v + 1]
+                    # set data to new conv layers
+                    new_params.set_data(new_data)
 
 
-#class MaskScoreRCNN(FasterRCNN):
 class MaskScoreRCNN(nn.Block):
- 
-    r"""Mask RCNN network.
+
+    r"""Mask Scoring RCNN network.
 
     Parameters
     ----------
@@ -344,14 +362,11 @@ class MaskScoreRCNN(nn.Block):
                             rpn_test_post_nms=rpn_test_post_nms,
                             additional_output=True, **kwargs)
 
-        #pdb.set_trace()
-
         self.top_features = self.FasterRCNN.top_features
         self._roi_mode   = self.FasterRCNN._roi_mode
         self._strides    = self.FasterRCNN._strides
         self._pyramid_roi_feats = self.FasterRCNN._pyramid_roi_feats
         self.num_stages  = self.FasterRCNN.num_stages
-        #self._max_batch  = self.FasterRCNN._max_batch                         
         self._batch_size  = self.FasterRCNN._batch_size
         self._num_sample = self.FasterRCNN._num_sample
         self.num_class   = self.FasterRCNN.num_class 
@@ -376,7 +391,6 @@ class MaskScoreRCNN(nn.Block):
             self.mask_target = MaskTargetGenerator(
                 self._batch_size, self._num_sample, self.num_class, self._target_roi_size)
 
-    #def hybrid_forward(self, F, x, gt_box=None):
     def forward(self, x, gt_box=None, gt_label=None, gt_mask=None):
 
         """Forward Mask RCNN network.
@@ -480,19 +494,18 @@ class MaskScoreRCNN(nn.Block):
             indices = F.stack(batch_ids, roi_ids, class_ids, axis=0)
             masks = F.gather_nd(rcnn_mask, indices)
 
-
+            # (B, N, C)
             rcnn_mask_score = self.mask_score(top_feat, masks)
-
+            # (B * N)
             mask_scores = F.gather_nd(rcnn_mask_score, indices)
+            # (B, N, 1)
             mask_scores = mask_scores.reshape((-4, batch_size, num_rois, 1))
-
+            # update score for mask
             mask_scores = mask_scores * scores
 
             # (B * N, PS*2, PS*2) -> (B, N, PS*2, PS*2)
             masks = masks.reshape((-4, batch_size, num_rois, 0, 0))
             masks = F.sigmoid(masks)
-            # output prob
-            #masks = F.sigmoid(masks)
 
             # ids (B, N, 1), scores (B, N, 1), boxes (B, N, 4), masks (B, N, PS*2, PS*2)
             return ids, scores, boxes, masks, mask_scores
@@ -545,8 +558,9 @@ class MaskScoreRCNN(nn.Block):
 
         """
         self._clear_cached_op()
-        super(MaskRCNN, self).reset_class(classes=classes, reuse_weights=reuse_weights)
+        self.FasterRCNN.reset_class(classes=classes, reuse_weights=reuse_weights)
         self.mask.reset_class(classes=classes, reuse_weights=reuse_weights)
+        self.mask_score.reset_class(classes=classes, reuse_weights=reuse_weights)
         self.mask_target = MaskTargetGenerator(
             self._batch_size, self._num_sample, self.num_class, self._target_roi_size)
 

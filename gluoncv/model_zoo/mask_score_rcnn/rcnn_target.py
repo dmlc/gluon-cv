@@ -4,10 +4,8 @@ from __future__ import absolute_import
 from mxnet import gluon, autograd
 import numpy as np
 import mxnet as mx
-import pdb
 
 
-#class MaskTargetGenerator(gluon.HybridBlock):
 class MaskTargetGenerator(gluon.Block):
     """Mask RCNN target encoder to generate mask targets.
 
@@ -33,67 +31,20 @@ class MaskTargetGenerator(gluon.Block):
         self._use_mask_ratio = use_mask_ratio
 
     def _get_maskiou_ratio(self, F, roi, cls_target, gt_mask, match):
-        #wu     did not use gpu since it would result in out of gpu memory 
         
         """
-        roi_cpu = roi.copyto(mx.cpu()).astype('int32').asnumpy()  # (512, 4)
-        
-        cls_target_cpu = cls_target.copyto(mx.cpu()).asnumpy()
-        # gt_mask_cpu: (N, 1, H, W)   N: 有多少 gt object, H，W 原图大小
-        gt_mask_cpu = gt_mask.copyto(mx.cpu()).asnumpy()
-        gt_mask_area_cpu = gt_mask_cpu.sum((1,2,3))
-        match_cpu = match.copyto(mx.cpu()).astype('int32').asnumpy()
+        compute the ratio between mask in the proposal and mask of the whole object
         """
-
-        #roi = F.round(roi)
 
         roi_cpu = roi.asnumpy().astype(np.int32)  # (512, 4)
-        
         cls_target_cpu = cls_target.asnumpy()
-        # gt_mask_cpu: (N, 1, H, W)   N: 有多少 gt object, H，W 原图大小
+        # gt_mask_cpu: (N, 1, H, W)  H，W: original size
         gt_mask_cpu = gt_mask.asnumpy()
         gt_mask_area_cpu = gt_mask_cpu.sum((1,2,3))
         match_cpu = match.asnumpy().astype(np.int32)
         
-        """
-        roi_cpu = roi.astype(np.int32)  # (512, 4)
-        #roi_cpu = F.round(roi)  # (512, 4)
-        
-        cls_target_cpu = cls_target
-        # gt_mask_cpu: (N, 1, H, W)   N: 有多少 gt object, H，W 原图大小
-        gt_mask_cpu = gt_mask
-        gt_mask_area_cpu = gt_mask_cpu.sum((1,2,3))
-        match_cpu = match.astype(np.int32)
-        """
-
-
         mask_ratios = []
         for ind in range(len(cls_target)):
-            #wu gt_mask: (12, 1, 824, 1067)
-
-            #pdb.set_trace()
-            #match_id = F.slice(match, begin=(ind,), end=(ind+1,), step=(1,))
-            #roi_begin_0 = F.slice(roi, begin=())
-            #mask_inside =  F.slice(gt_mask, begin=(,None, , ), end=(,None, , ), step=(1,1,1,1) )
-
-            """
-            if cls_target_cpu[ind].asscalar()>0:
-                mask_inside = gt_mask_cpu[match_cpu[ind].asscalar(), :, roi_cpu[ind,1].asscalar():roi_cpu[ind, 3].asscalar(), roi_cpu[ind, 0].asscalar():roi_cpu[ind, 2].asscalar()]
-                
-                mask_inside_sum = mask_inside.sum()
-                #pdb.set_trace()
-                mask_full_sum = gt_mask_area_cpu[match_cpu[ind]]
-                mask_ratio = mask_inside_sum / (mask_full_sum + 1e-7)
-                mask_ratios.append( mask_ratio.asscalar() )
-            else:
-                #pdb.set_trace()
-                #mask_ratios.append(0)
-                #temp = [F.zeros(1)] * (512 - ind)
-                temp = [0] * (512 - ind )
-                mask_ratios += temp
-                break
-            """
-
             if cls_target_cpu[ind]>0:
                 mask_inside = gt_mask_cpu[match_cpu[ind], :, roi_cpu[ind,1]:roi_cpu[ind, 3]+1, roi_cpu[ind, 0]:roi_cpu[ind, 2]+1]
                 
@@ -102,21 +53,14 @@ class MaskTargetGenerator(gluon.Block):
                 mask_ratio = mask_inside_sum / (mask_full_sum + 1e-7)
                 mask_ratios.append( mask_ratio )
             else:
-                #pdb.set_trace()
                 mask_ratios.append(0)
-                #temp = [0] * (512 - ind)
-                #mask_ratios += temp
-                #break
 
-        #wu     to_gpu
-        #mask_ratios_numpy = np.asarray(mask_ratios)
-        mask_ratios = F.array(mask_ratios, ctx=cls_target.context)  # mask_ratios is on gpu? why?  
-        #pdb.set_trace()
+        # transfer mask_ratios to gpu
+        mask_ratios = F.array(mask_ratios, ctx=cls_target.context)  
 
         return mask_ratios
 
     # pylint: disable=arguments-differ
-    #def hybrid_forward(self, F, rois, gt_masks, matches, cls_targets, mask_preds):
     def forward(self, rois, gt_masks, matches, cls_targets, mask_preds):
         """Handle B=self._num_image by a for loop.
         There is no way to know number of gt_masks.
@@ -127,13 +71,14 @@ class MaskTargetGenerator(gluon.Block):
         gt_masks: (B, M, H, W), input masks of full image size
         matches: (B, N), value [0, M), index to gt_label and gt_box.
         cls_targets: (B, N), value [0, num_class), excluding background class.
+        mask_preds: (B, N, MS, MS), predicted mask 
 
         Returns
         -------
         mask_targets: (B, N, C, MS, MS), sampled masks.
-        box_target: (B, N, C, 4), only foreground class has nonzero target.
-        box_weight: (B, N, C, 4), only foreground class has nonzero weight.
-
+        mask_masks:   (B, N, C, MS, MS), masks to determine which values are involved in computing loss 
+        mask_score_targets: (B, N, C), predicted mask score 
+        mask_score_masks: (B, N, C), masks to determine which values are involved in computing loss 
         """
 
         F = mx.nd
@@ -182,21 +127,22 @@ class MaskTargetGenerator(gluon.Block):
                                                  self._mask_size, 1.0, sample_ratio=2)
 
                 # For mask score 
-                #TODO: to add comments
-                #TODO: over to intersection
-                #TODO: check shape for pooled_mask below when multi-input size = 2
+                # select category for foreground object. indexes start from 0. 
+                # keep zeros for back-ground category
                 cls_target_object = F.where(cls_target>0, cls_target-1, F.zeros_like(cls_target))
+                # select mask on the groundtruth channel
                 selected_index = F.arange(self._num_rois, ctx=cls_target_object.context)
                 indices = F.stack(selected_index, cls_target_object, axis=0)
+                # (B*N, MS, MS)
                 selected_mask = F.gather_nd(mask_pred, indices) 
-                #pdb.set_trace()
+                # (B, N, MS, MS)
                 selected_mask = selected_mask.reshape((-4, -1, 1, 0, 0))
-                #selected_mask = selected_mask.expand_dims(selected_mask, 1)
-                # selected_mask: (512, 1, 28, 28)
 
                 pooled_mask_one   =  (pooled_mask > 0) 
+                # values of selected_mask are logits, so we use 0 as threshold
                 selected_mask_one =  (selected_mask > 0)               
 
+                # compute intersection 
                 mask_intersection = pooled_mask_one * selected_mask_one 
                 mask_intersection_area = mask_intersection.sum([1,2,3])
 
@@ -204,22 +150,21 @@ class MaskTargetGenerator(gluon.Block):
                 selected_mask_one_area =  selected_mask_one.sum([1,2,3])
 
                 if self._use_mask_ratio:
+                    # compute the ratio between mask in the proposal and mask of the whole object
                     mask_ratios = self._get_maskiou_ratio(F, roi, cls_target, gt_mask, match)
-                    #pdb.set_trace()
                     pooled_mask_one_area_full =  pooled_mask_one_area / (mask_ratios + 1e-7)
                 else:
                     pooled_mask_one_area_full =  pooled_mask_one_area 
 
-
+                # compute union
                 mask_union_area = selected_mask_one_area + pooled_mask_one_area_full - mask_intersection_area
-
+                # avoid mask_union_area to be zero, otherwise maskiou_targets will be overflowed. 
                 mask_union_area_final =  F.where((mask_union_area>0), mask_union_area, F.ones_like(mask_union_area))
                 maskiou_targets = mask_intersection_area / mask_union_area_final
-                #wu maskout_targets: (512, 1)
+                # (N, 1)
                 maskiou_targets = maskiou_targets.reshape((-4, -1, 1))
                 # remove very small value(bias)
                 maskiou_targets_flag = (maskiou_targets > 0.05)
-
 
 
                 # collect targets

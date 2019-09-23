@@ -16,7 +16,7 @@ import gluoncv as gcv
 from gluoncv import data as gdata
 from gluoncv.data import batchify
 from gluoncv.data.transforms.presets.rcnn import MaskRCNNDefaultValTransform
-from gluoncv.utils.metrics.coco_instance import COCOInstanceMetric
+from gluoncv.utils.metrics.coco_instance_mask_iou import COCOInstanceMaskScoreMetric
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Validate Mask RCNN networks.')
@@ -42,7 +42,7 @@ def parse_args():
 def get_dataset(dataset, args):
     if dataset.lower() == 'coco':
         val_dataset = gdata.COCOInstance(splits='instances_val2017', skip_empty=False)
-        val_metric = COCOInstanceMetric(val_dataset, args.save_prefix + '_eval',
+        val_metric = COCOInstanceMaskScoreMetric(val_dataset, args.save_prefix + '_eval', 
                                         cleanup=not args.save_json)
     else:
         raise NotImplementedError('Dataset: {} not implemented.'.format(dataset))
@@ -77,23 +77,27 @@ def validate(net, val_data, ctx, eval_metric, size):
             det_ids = []
             det_scores = []
             det_masks = []
+            det_mask_scores = []
             det_infos = []
             for x, im_info in zip(*batch):
                 # get prediction results
-                ids, scores, bboxes, masks = net(x)
+                ids, scores, bboxes, masks, mask_scores = net(x)
                 det_bboxes.append(clipper(bboxes, x))
                 det_ids.append(ids)
                 det_scores.append(scores)
                 det_masks.append(masks)
+                det_mask_scores.append(mask_scores)
                 det_infos.append(im_info)
             # update metric
-            for det_bbox, det_id, det_score, det_mask, det_info in zip(det_bboxes, det_ids, det_scores, det_masks, det_infos):
+            for det_bbox, det_id, det_score, det_mask, det_mask_score, det_info \
+                    in zip(det_bboxes, det_ids, det_scores, det_masks, det_mask_scores, det_infos):
                 for i in range(det_info.shape[0]):
                     # numpy everything
                     det_bbox = det_bbox[i].asnumpy()
                     det_id = det_id[i].asnumpy()
                     det_score = det_score[i].asnumpy()
                     det_mask = det_mask[i].asnumpy()
+                    det_mask_score = det_mask_score[i].asnumpy()
                     det_info = det_info[i].asnumpy()
                     # filter by conf threshold
                     im_height, im_width, im_scale = det_info
@@ -102,13 +106,14 @@ def validate(net, val_data, ctx, eval_metric, size):
                     det_score = det_score[valid]
                     det_bbox = det_bbox[valid] / im_scale
                     det_mask = det_mask[valid]
+                    det_mask_score = det_mask_score[valid]
                     # fill full mask
                     im_height, im_width = int(round(im_height / im_scale)), int(round(im_width / im_scale))
                     full_masks = []
                     for bbox, mask in zip(det_bbox, det_mask):
                         full_masks.append(gcv.data.transforms.mask.fill(mask, bbox, (im_width, im_height)))
                     full_masks = np.array(full_masks)
-                    eval_metric.update(det_bbox, det_id, det_score, full_masks)
+                    eval_metric.update(det_bbox, det_id, det_score, full_masks, det_mask_score)
             pbar.update(len(ctx))
     return eval_metric.get()
 
@@ -121,7 +126,7 @@ if __name__ == '__main__':
     args.batch_size = len(ctx)  # 1 batch per device
 
     # network
-    net_name = '_'.join(('mask_rcnn', args.network, args.dataset))
+    net_name = '_'.join(('mask_score_rcnn', args.network, args.dataset))
     args.save_prefix += net_name
     if args.pretrained.lower() in ['true', '1', 'yes', 't']:
         net = gcv.model_zoo.get_model(net_name, pretrained=True)
