@@ -256,7 +256,7 @@ class FPNFeatureExpander(SymbolBlock):
                     # method 1 : mx.sym.Crop
                     # y = mx.sym.Crop(*[y, bf], name="P{}_clip".format(num_stages-i))
                     # method 2 : mx.sym.slice_like
-                    y = mx.sym.slice_like(y, bf * 0, axes=(2, 3),
+                    y = mx.sym.slice_like(y, bf, axes=(2, 3),
                                           name="P{}_clip".format(num_stages - i))
                     y = mx.sym.ElementWiseSum(bf, y, name="P{}_sum".format(num_stages - i))
             # Reduce the aliasing effect of upsampling described in ori paper

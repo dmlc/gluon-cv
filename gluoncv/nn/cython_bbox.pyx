@@ -12,7 +12,6 @@ def np_normalized_box_encoder(np.ndarray[float, ndim=2] samples, np.ndarray[long
                               np.ndarray[float, ndim=3] anchors, np.ndarray[float, ndim=3] refs,
                               np.ndarray[float, ndim=1] means, np.ndarray[float, ndim=1] stds):
     cdef int b = refs.shape[0]
-    cdef int m = refs.shape[1]
     cdef int n = anchors.shape[1]
     cdef float ref_width, ref_height, ref_x, ref_y, ref_xmin, ref_ymin
     cdef float a_width, a_height, a_x, a_y, a_xmin, a_ymin

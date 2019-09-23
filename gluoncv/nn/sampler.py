@@ -427,7 +427,8 @@ class SplitSortedBucketSampler(Sampler):
     [-etc-]
     """
 
-    def __init__(self, sort_keys, batch_size, mult=32, num_parts=1, part_index=0, shuffle=False):
+    def __init__(self, sort_keys, batch_size, mult=32, num_parts=1, part_index=0, shuffle=False,
+                 seed=233):
         assert len(sort_keys) > 0
         assert batch_size > 0
         assert mult >= 1, 'Bucket size multiplier must be greater or equal to 1'
@@ -444,10 +445,16 @@ class SplitSortedBucketSampler(Sampler):
         self._end = self._start + part_len
         if part_index == num_parts - 1:
             self._end = length
+        self._num_parts = num_parts
+        self._seed = seed
+        self._shuffled_ids = np.random.RandomState(seed=self._seed).permutation(range(length))
 
     def __iter__(self):
+        if self._num_parts > 1:
+            self._shuffled_ids = np.random.RandomState(seed=self._seed).permutation(
+                self._shuffled_ids)
         if self._shuffle:
-            sample_ids = np.random.permutation(range(self._start, self._end))
+            sample_ids = np.random.permutation(self._shuffled_ids[self._start:self._end])
         else:
             sample_ids = list(range(self._start, self._end))
         bucket_size = int(self._mult * self._batch_size)
