@@ -208,7 +208,7 @@ class MaskScore(nn.HybridBlock):
             self.maxpool = nn.HybridSequential()
             self.maxpool.add(nn.MaxPool2D(pool_size=2, strides=2))
 
-            self.mask_score_final = nn.Dense(len(self.classes), weight_initializer=mx.init.Normal(0.01)))
+            self.mask_score_final = nn.Dense(len(self.classes), weight_initializer=mx.init.Normal(0.01))
             
 
     # pylint: disable=arguments-differ
@@ -303,7 +303,7 @@ class MaskScore(nn.HybridBlock):
             # to avoid deferred init, number of in_channels must be defined
             in_channels = list(old_mask.params.values())[0].shape[1]
             init = mx.init.Xavier(rnd_type='gaussian', factor_type='out', magnitude=2)
-            self.mask_score_final = nn.Dense(len(self.classes), weight_initializer=mx.init.Normal(0.01)))
+            self.mask_score_final = nn.Dense(len(self.classes), weight_initializer=mx.init.Normal(0.01))
             
             self.mask_score_final.initialize(ctx=ctx)
             if reuse_weights:
@@ -592,7 +592,7 @@ def get_mask_score_rcnn(name, dataset, pretrained=False, ctx=mx.cpu(),
     net = MaskScoreRCNN(**kwargs)
     if pretrained:
         from ..model_store import get_model_file
-        full_name = '_'.join(('mask_rcnn', name, dataset))
+        full_name = '_'.join(('mask_score_rcnn', name, dataset))
         net.load_parameters(get_model_file(full_name, tag=pretrained, root=root), ctx=ctx)
     else:
         for v in net.collect_params().values():
