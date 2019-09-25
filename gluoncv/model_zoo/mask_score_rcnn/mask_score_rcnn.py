@@ -205,7 +205,6 @@ class MaskScore(nn.HybridBlock):
 
             self.mask_score_final = nn.Dense(len(self.classes), \
                                                 weight_initializer=mx.init.Normal(0.01))
-            
 
     # pylint: disable=arguments-differ
     def hybrid_forward(self, F, top_feat, mask_pred, cls_targets=None):
@@ -235,7 +234,7 @@ class MaskScore(nn.HybridBlock):
             selected_index = F.contrib.arange_like(cls_targets)
             indices = F.stack(selected_index, cls_target_object, axis=0)
             # (B*N, MS, MS)
-            selected_mask = F.gather_nd(mask_pred, indices) 
+            selected_mask = F.gather_nd(mask_pred, indices)
             # (B, N, MS, MS)
             selected_mask = selected_mask.reshape((-4, -1, 1, 0, 0))
         else:
@@ -246,16 +245,16 @@ class MaskScore(nn.HybridBlock):
         selected_mask = F.sigmoid(selected_mask)
 
         # (B*N, C, MS/2, MS/2 )
-        selected_mask = self.maxpool(selected_mask)   
+        selected_mask = self.maxpool(selected_mask)
         # (B*N, C+1, MS/2, MS/2)
-        x = F.concat(top_feat, selected_mask, dim=1)  
+        x = F.concat(top_feat, selected_mask, dim=1)
 
         x = self.maskiou_branch(x)
         x = self.mask_score_final(x)
 
         # (B * N, C) -> (B, N, C)
         x = x.reshape((-4, self._batch_images, -1, 0))
-        return x 
+        return x
 
     def reset_class(self, classes, reuse_weights=None):
         """Reset class for mask branch."""
@@ -302,7 +301,7 @@ class MaskScore(nn.HybridBlock):
             self.mask_score_final = nn.Dense(len(self.classes), \
                                             weight_initializer=mx.init.Normal(0.01),\
                                             in_channels=in_channels)
-            
+
             self.mask_score_final.initialize(ctx=ctx)
             if reuse_weights:
                 assert isinstance(reuse_weights, dict)
@@ -356,9 +355,9 @@ class MaskScoreRCNN(nn.Block):
         super(MaskScoreRCNN, self).__init__()
 
         self.FasterRCNN = FasterRCNN(features, top_features, classes,
-                            rpn_test_pre_nms=rpn_test_pre_nms,
-                            rpn_test_post_nms=rpn_test_post_nms,
-                            additional_output=True, **kwargs)
+                                     rpn_test_pre_nms=rpn_test_pre_nms,
+                                     rpn_test_post_nms=rpn_test_post_nms,
+                                     additional_output=True, **kwargs)
 
         self.top_features = self.FasterRCNN.top_features
         self._roi_mode = self.FasterRCNN._roi_mode
@@ -367,7 +366,7 @@ class MaskScoreRCNN(nn.Block):
         self.num_stages = self.FasterRCNN.num_stages
         self._batch_size = self.FasterRCNN._batch_size
         self._num_sample = self.FasterRCNN._num_sample
-        self.num_class = self.FasterRCNN.num_class 
+        self.num_class = self.FasterRCNN.num_class
         self.ashape = self.FasterRCNN.ashape
         self.rpn = self.FasterRCNN.rpn
         self.features = features
@@ -382,7 +381,8 @@ class MaskScoreRCNN(nn.Block):
         with self.name_scope():
             self.mask = Mask(self._batch_size, classes, mask_channels, num_fcn_convs=num_fcn_convs,
                              norm_layer=norm_layer, norm_kwargs=norm_kwargs)
-            self.mask_score = MaskScore(self._batch_size, classes, mask_channels, rcnn_max_dets=rcnn_max_dets)
+            self.mask_score = MaskScore(self._batch_size, classes, 
+                                        mask_channels, rcnn_max_dets=rcnn_max_dets)
 
             roi_size = (self._roi_size[0] * target_roi_scale, self._roi_size[1] * target_roi_scale)
             self._target_roi_size = roi_size
@@ -415,7 +415,7 @@ class MaskScoreRCNN(nn.Block):
                 self.FasterRCNN(x, gt_box)
 
             mask_pred = self.mask(top_feat)
-            
+
             # generate targets for rcnn
             cls_targets, box_targets, box_masks = \
                     self.FasterRCNN.target_generator(roi, samples, matches, gt_label, gt_box)
@@ -423,13 +423,12 @@ class MaskScoreRCNN(nn.Block):
             # generate targets for mask
             mask_targets, mask_masks, mask_score_targets, mask_score_masks = \
                         self.mask_target(roi, gt_mask, matches, cls_targets, mask_pred)
-            
+
             mask_score_pred = self.mask_score(top_feat, mask_pred, cls_targets)
 
             return cls_pred, box_pred, mask_pred, raw_rpn_score, raw_rpn_box, \
                     cls_targets, box_targets, box_masks, mask_targets, mask_masks, \
-                    mask_score_targets, mask_score_masks, mask_score_pred 
-                    
+                    mask_score_targets, mask_score_masks, mask_score_pred
         else:
             F = mx.nd
 
@@ -508,7 +507,6 @@ class MaskScoreRCNN(nn.Block):
             # ids (B, N, 1), scores (B, N, 1), boxes (B, N, 4), masks (B, N, PS*2, PS*2)
             return ids, scores, boxes, masks, mask_scores
 
-    
     def collect_train_params(self, select=None):
         """Collect trainable params.
         This function serves as a help utility function to return only
@@ -564,7 +562,7 @@ class MaskScoreRCNN(nn.Block):
 
 
 def get_mask_score_rcnn(name, dataset, pretrained=False, ctx=mx.cpu(),
-                  root=os.path.join('~', '.mxnet', 'models'), **kwargs):
+                        root=os.path.join('~', '.mxnet', 'models'), **kwargs):
     r"""Utility function to return mask rcnn networks.
 
     Parameters
@@ -812,7 +810,7 @@ def mask_score_rcnn_fpn_resnet101_v1d_coco(pretrained=False, pretrained_base=Tru
 
 
 def mask_score_rcnn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, rcnn_max_dets=1000,
-                                rpn_test_pre_nms=6000, rpn_test_post_nms=1000, **kwargs):
+                                        rpn_test_pre_nms=6000, rpn_test_post_nms=1000, **kwargs):
     r"""Mask RCNN model from the paper
     "He, K., Gkioxari, G., Doll&ar, P., & Girshick, R. (2017). Mask R-CNN"
 
@@ -870,7 +868,7 @@ def mask_score_rcnn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, rc
 
 
 def mask_score_rcnn_fpn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, rcnn_max_dets=1000,
-                                    rpn_test_pre_nms=6000, rpn_test_post_nms=1000, **kwargs):
+                                            rpn_test_pre_nms=6000, rpn_test_post_nms=1000, **kwargs):
     r"""Mask RCNN model from the paper
     "He, K., Gkioxari, G., Doll&ar, P., & Girshick, R. (2017). Mask R-CNN"
 
@@ -932,8 +930,8 @@ def mask_score_rcnn_fpn_resnet18_v1b_coco(pretrained=False, pretrained_base=True
 
 
 def mask_score_rcnn_fpn_bn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, num_devices=0,
-                                       rcnn_max_dets=1000, rpn_test_pre_nms=6000,
-                                       rpn_test_post_nms=1000, **kwargs):
+                                             rcnn_max_dets=1000, rpn_test_pre_nms=6000,
+                                             rpn_test_post_nms=1000, **kwargs):
     r"""Mask RCNN model from the paper
     "He, K., Gkioxari, G., Doll&ar, P., & Girshick, R. (2017). Mask R-CNN"
 
@@ -1003,8 +1001,8 @@ def mask_score_rcnn_fpn_bn_resnet18_v1b_coco(pretrained=False, pretrained_base=T
 
 
 def mask_score_rcnn_fpn_bn_mobilenet1_0_coco(pretrained=False, pretrained_base=True, num_devices=0,
-                                       rcnn_max_dets=1000, rpn_test_pre_nms=6000,
-                                       rpn_test_post_nms=1000, **kwargs):
+                                             rcnn_max_dets=1000, rpn_test_pre_nms=6000,
+                                             rpn_test_post_nms=1000, **kwargs):
     r"""Mask RCNN model from the paper
     "He, K., Gkioxari, G., Doll&ar, P., & Girshick, R. (2017). Mask R-CNN"
 
