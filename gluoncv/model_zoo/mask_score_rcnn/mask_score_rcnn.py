@@ -410,7 +410,7 @@ class MaskScoreRCNN(nn.Block):
         """
         if autograd.is_training():
             cls_pred, box_pred, roi, samples, matches, \
-            raw_rpn_score, raw_rpn_box, ~, top_feat = \
+            raw_rpn_score, raw_rpn_box, _anchors, top_feat = \
                 self.FasterRCNN(x, gt_box)
 
             mask_pred = self.mask(top_feat)

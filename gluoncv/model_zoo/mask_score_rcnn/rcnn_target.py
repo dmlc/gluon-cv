@@ -162,7 +162,9 @@ class MaskTargetGenerator(gluon.Block):
                                   + pooled_mask_one_area_full \
                                   - mask_intersection_area
                 # avoid mask_union_area to be zero, otherwise maskiou_targets will be overflowed.
-                mask_union_area_final = F.where((mask_union_area > 0), mask_union_area, F.ones_like(mask_union_area))
+                mask_union_area_final = F.where((mask_union_area > 0), 
+                                                mask_union_area, 
+                                                F.ones_like(mask_union_area))
                 maskiou_targets = mask_intersection_area / mask_union_area_final
                 # (N, 1)
                 maskiou_targets = maskiou_targets.reshape((-4, -1, 1))
