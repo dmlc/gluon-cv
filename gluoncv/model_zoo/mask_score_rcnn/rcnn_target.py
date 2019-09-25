@@ -37,7 +37,7 @@ class MaskTargetGenerator(gluon.Block):
 
         roi_cpu = roi.asnumpy().astype(np.int32)  # (512, 4)
         cls_target_cpu = cls_target.asnumpy()
-        # gt_mask_cpu: (N, 1, H, W)  H，W: original size
+        # (N, 1, H, W)   H,W: original size
         gt_mask_cpu = gt_mask.asnumpy()
         gt_mask_area_cpu = gt_mask_cpu.sum((1, 2, 3))
         match_cpu = match.asnumpy().astype(np.int32)
