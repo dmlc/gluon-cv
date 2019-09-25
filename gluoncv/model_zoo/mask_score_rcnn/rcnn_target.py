@@ -1,9 +1,9 @@
 """Mask Target Generator."""
 from __future__ import absolute_import
 
+import mxnet as mx
 from mxnet import gluon, autograd
 import numpy as np
-import mxnet as mx
 
 
 class MaskTargetGenerator(gluon.Block):
@@ -41,7 +41,7 @@ class MaskTargetGenerator(gluon.Block):
         gt_mask_cpu = gt_mask.asnumpy()
         gt_mask_area_cpu = gt_mask_cpu.sum((1, 2, 3))
         match_cpu = match.asnumpy().astype(np.int32)
-        
+
         mask_ratios = []
         for ind in range(len(cls_target)):
             if cls_target_cpu[ind] > 0:
@@ -76,7 +76,7 @@ class MaskTargetGenerator(gluon.Block):
         Returns
         -------
         mask_targets: (B, N, C, MS, MS), sampled masks.
-        mask_masks:   (B, N, C, MS, MS), masks to determine which values are involved in computing loss
+        mask_masks: (B, N, C, MS, MS), masks to determine which values are involved in computing loss
         mask_score_targets: (B, N, C), predicted mask score
         mask_score_masks: (B, N, C), masks to determine which values are involved in computing loss
         """
@@ -141,14 +141,14 @@ class MaskTargetGenerator(gluon.Block):
 
                 pooled_mask_one = (pooled_mask > 0.3)
                 # values of selected_mask are logits, so we use 0 as threshold
-                selected_mask_one =  (selected_mask > 0)
+                selected_mask_one = (selected_mask > 0)
 
                 # compute intersection
                 mask_intersection = pooled_mask_one * selected_mask_one
                 mask_intersection_area = mask_intersection.sum([1, 2, 3])
 
                 pooled_mask_one_area = pooled_mask_one.sum([1, 2, 3])
-                selected_mask_one_area =  selected_mask_one.sum([1, 2, 3])
+                selected_mask_one_area = selected_mask_one.sum([1, 2, 3])
 
                 if self._use_mask_ratio:
                     # compute the ratio between mask in the proposal and mask of the whole object
@@ -158,9 +158,11 @@ class MaskTargetGenerator(gluon.Block):
                     pooled_mask_one_area_full = pooled_mask_one_area
 
                 # compute union
-                mask_union_area = selected_mask_one_area + pooled_mask_one_area_full - mask_intersection_area
+                mask_union_area = selected_mask_one_area \
+                                  + pooled_mask_one_area_full \
+                                  - mask_intersection_area
                 # avoid mask_union_area to be zero, otherwise maskiou_targets will be overflowed.
-                mask_union_area_final = F.where((mask_union_area>0), mask_union_area, F.ones_like(mask_union_area))
+                mask_union_area_final = F.where((mask_union_area > 0), mask_union_area, F.ones_like(mask_union_area))
                 maskiou_targets = mask_intersection_area / mask_union_area_final
                 # (N, 1)
                 maskiou_targets = maskiou_targets.reshape((-4, -1, 1))
@@ -171,7 +173,9 @@ class MaskTargetGenerator(gluon.Block):
                 # collect targets
                 # (N, 1, MS, MS) -> (N, C, MS, MS)
                 mask_target = F.broadcast_axis(pooled_mask, size=self._num_classes, axis=1)
-                mask_score_target = F.broadcast_axis(maskiou_targets, size=self._num_classes, axis=1)
+                mask_score_target = F.broadcast_axis(maskiou_targets, \
+                                                     size=self._num_classes, \
+                                                     axis=1)
                 #wu maskout_targets: (512, 80)
 
                 # (N,) -> (1, C) -> (N, C, 1, 1)
@@ -182,7 +186,7 @@ class MaskTargetGenerator(gluon.Block):
                 # (N, MS, MS) -> (N, C, 1, 1) -> (N, C, MS, MS)
                 mask_mask = F.broadcast_like(same_cids, pooled_mask,
                                              lhs_axes=(2, 3), rhs_axes=(2, 3))
-                
+
                 cls_target = cls_target  * maskiou_targets_flag
                 mask_score_mask = F.broadcast_equal(cls_target, cids)
 

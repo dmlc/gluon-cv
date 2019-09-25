@@ -13,8 +13,6 @@ from .rcnn_target import MaskTargetGenerator
 from ..faster_rcnn.faster_rcnn import FasterRCNN
 from ...nn.feature import FPNFeatureExpander
 
-import pdb
-
 __all__ = ['MaskScoreRCNN', 'get_mask_score_rcnn',
            'mask_score_rcnn_resnet50_v1b_coco',
            'mask_score_rcnn_fpn_resnet50_v1b_coco',
@@ -171,7 +169,7 @@ class MaskScore(nn.HybridBlock):
         Used to determine number of hidden channels
     """
 
-    def __init__(self, batch_images, classes, mask_channels, 
+    def __init__(self, batch_images, classes, mask_channels,
                  rcnn_max_dets=0, **kwargs):
         super(MaskScore, self).__init__(**kwargs)
         self._batch_images = batch_images
@@ -198,14 +196,15 @@ class MaskScore(nn.HybridBlock):
             self.maskiou_branch.add(nn.Activation('relu'))
 
             self.maskiou_branch.add(nn.Dense(1024, weight_initializer=mx.init.Normal(0.01)),
-                                             nn.Activation('relu'))
+                                            nn.Activation('relu'))
             self.maskiou_branch.add(nn.Dense(1024, weight_initializer=mx.init.Normal(0.01)),
-                                             nn.Activation('relu'))
+                                            nn.Activation('relu'))
 
             self.maxpool = nn.HybridSequential()
             self.maxpool.add(nn.MaxPool2D(pool_size=2, strides=2))
 
-            self.mask_score_final = nn.Dense(len(self.classes), weight_initializer=mx.init.Normal(0.01))
+            self.mask_score_final = nn.Dense(len(self.classes), \
+                                                weight_initializer=mx.init.Normal(0.01))
             
 
     # pylint: disable=arguments-differ
@@ -228,7 +227,7 @@ class MaskScore(nn.HybridBlock):
             mask_pred = mask_pred.reshape((-3, 0, 0, 0))
             # (B*N)
             cls_targets = cls_targets.reshape((-3))
-        
+
             # select category for foreground object. indexes start from 0.
             # keep zeros for back-ground category
             cls_target_object = F.where(cls_targets > 0, cls_targets-1, F.zeros_like(cls_targets))
@@ -241,7 +240,7 @@ class MaskScore(nn.HybridBlock):
             selected_mask = selected_mask.reshape((-4, -1, 1, 0, 0))
         else:
             selected_mask = mask_pred.reshape((-4, self._rcnn_max_dets, -1, 0, 0))
-        
+
         # convert feature map to mask [0,1]
         # (B*N, C, MS, MS)
         selected_mask = F.sigmoid(selected_mask)
@@ -250,10 +249,10 @@ class MaskScore(nn.HybridBlock):
         selected_mask = self.maxpool(selected_mask)   
         # (B*N, C+1, MS/2, MS/2)
         x = F.concat(top_feat, selected_mask, dim=1)  
-        
+
         x = self.maskiou_branch(x)
         x = self.mask_score_final(x)
-        
+
         # (B * N, C) -> (B, N, C)
         x = x.reshape((-4, self._batch_images, -1, 0))
         return x 
@@ -300,7 +299,9 @@ class MaskScore(nn.HybridBlock):
             # to avoid deferred init, number of in_channels must be defined
             in_channels = list(old_mask.params.values())[0].shape[1]
             init = mx.init.Xavier(rnd_type='gaussian', factor_type='out', magnitude=2)
-            self.mask_score_final = nn.Dense(len(self.classes), weight_initializer=mx.init.Normal(0.01))
+            self.mask_score_final = nn.Dense(len(self.classes), \
+                                            weight_initializer=mx.init.Normal(0.01),\
+                                            in_channels=in_channels)
             
             self.mask_score_final.initialize(ctx=ctx)
             if reuse_weights:

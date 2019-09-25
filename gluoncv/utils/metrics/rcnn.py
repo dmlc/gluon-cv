@@ -156,6 +156,7 @@ class MaskScoreL2LossMetric(mx.metric.EvalMetric):
         super(MaskScoreL2LossMetric, self).__init__('MaskScoreL2Loss')
 
     def update(self, labels, preds):
+        """ Updates the internal evaluation result. """
         # label = [rcnn_mask_target, rcnn_mask_weight]
         # pred = [rcnn_mask]
         rcnn_mask_score_target, rcnn_mask_score_weight = labels
@@ -169,5 +170,4 @@ class MaskScoreL2LossMetric(mx.metric.EvalMetric):
 
         self.sum_metric += loss.asscalar()
         self.num_inst += num_inst.asscalar()
-
 

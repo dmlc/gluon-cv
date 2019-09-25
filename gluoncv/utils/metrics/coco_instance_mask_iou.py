@@ -193,7 +193,7 @@ class COCOInstanceMaskScoreMetric(mx.metric.EvalMetric):
 
         # mask must be the same as image shape, so no batch dimension is supported
         pred_bbox, pred_label, pred_score, pred_mask, pred_mask_score = [
-            as_numpy(x) for x in [pred_bboxes, pred_labels, pred_scores, 
+            as_numpy(x) for x in [pred_bboxes, pred_labels, pred_scores,
                                   pred_masks, pred_mask_scores]]
 
         # filter out padded detection & low confidence detections
@@ -228,6 +228,7 @@ class COCOInstanceMaskScoreMetric(mx.metric.EvalMetric):
 
             self._results_maskscore.append({'image_id': imgid,
                                             'category_id': category_id,
-                                            'bbox': list(map(lambda x: float(round(x, 2)), bbox[:4])),
+                                            'bbox': list(map(lambda x: float(round(x, 2)), 
+                                                        bbox[:4])),
                                             'score': float(round(mask_score, 3)),
                                             'segmentation': rle})
