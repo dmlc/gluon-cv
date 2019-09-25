@@ -196,9 +196,9 @@ class MaskScore(nn.HybridBlock):
             self.maskiou_branch.add(nn.Activation('relu'))
 
             self.maskiou_branch.add(nn.Dense(1024, weight_initializer=mx.init.Normal(0.01)),
-                                            nn.Activation('relu'))
+                                    nn.Activation('relu'))
             self.maskiou_branch.add(nn.Dense(1024, weight_initializer=mx.init.Normal(0.01)),
-                                            nn.Activation('relu'))
+                                    nn.Activation('relu'))
 
             self.maxpool = nn.HybridSequential()
             self.maxpool.add(nn.MaxPool2D(pool_size=2, strides=2))
@@ -297,7 +297,6 @@ class MaskScore(nn.HybridBlock):
             ctx = list(old_mask.params.values())[0].list_ctx()
             # to avoid deferred init, number of in_channels must be defined
             in_channels = list(old_mask.params.values())[0].shape[1]
-            init = mx.init.Xavier(rnd_type='gaussian', factor_type='out', magnitude=2)
             self.mask_score_final = nn.Dense(len(self.classes), \
                                             weight_initializer=mx.init.Normal(0.01),\
                                             in_channels=in_channels)
@@ -381,7 +380,7 @@ class MaskScoreRCNN(nn.Block):
         with self.name_scope():
             self.mask = Mask(self._batch_size, classes, mask_channels, num_fcn_convs=num_fcn_convs,
                              norm_layer=norm_layer, norm_kwargs=norm_kwargs)
-            self.mask_score = MaskScore(self._batch_size, classes, 
+            self.mask_score = MaskScore(self._batch_size, classes,
                                         mask_channels, rcnn_max_dets=rcnn_max_dets)
 
             roi_size = (self._roi_size[0] * target_roi_scale, self._roi_size[1] * target_roi_scale)
@@ -411,7 +410,7 @@ class MaskScoreRCNN(nn.Block):
         """
         if autograd.is_training():
             cls_pred, box_pred, roi, samples, matches, \
-            raw_rpn_score, raw_rpn_box, anchors, top_feat = \
+            raw_rpn_score, raw_rpn_box, ~, top_feat = \
                 self.FasterRCNN(x, gt_box)
 
             mask_pred = self.mask(top_feat)
@@ -810,7 +809,7 @@ def mask_score_rcnn_fpn_resnet101_v1d_coco(pretrained=False, pretrained_base=Tru
 
 
 def mask_score_rcnn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, rcnn_max_dets=1000,
-                                        rpn_test_pre_nms=6000, rpn_test_post_nms=1000, **kwargs):
+                                      rpn_test_pre_nms=6000, rpn_test_post_nms=1000, **kwargs):
     r"""Mask RCNN model from the paper
     "He, K., Gkioxari, G., Doll&ar, P., & Girshick, R. (2017). Mask R-CNN"
 
@@ -867,8 +866,9 @@ def mask_score_rcnn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, rc
         **kwargs)
 
 
-def mask_score_rcnn_fpn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, rcnn_max_dets=1000,
-                                            rpn_test_pre_nms=6000, rpn_test_post_nms=1000, **kwargs):
+def mask_score_rcnn_fpn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, 
+                                          rcnn_max_dets=1000, rpn_test_pre_nms=6000, 
+                                          rpn_test_post_nms=1000, **kwargs):
     r"""Mask RCNN model from the paper
     "He, K., Gkioxari, G., Doll&ar, P., & Girshick, R. (2017). Mask R-CNN"
 

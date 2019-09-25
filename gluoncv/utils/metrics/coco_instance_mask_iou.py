@@ -228,7 +228,7 @@ class COCOInstanceMaskScoreMetric(mx.metric.EvalMetric):
 
             self._results_maskscore.append({'image_id': imgid,
                                             'category_id': category_id,
-                                            'bbox': list(map(lambda x: float(round(x, 2)), 
-                                                        bbox[:4])),
+                                            'bbox': list(map(lambda x: float(round(x, 2)),
+                                                             bbox[:4])),
                                             'score': float(round(mask_score, 3)),
                                             'segmentation': rle})

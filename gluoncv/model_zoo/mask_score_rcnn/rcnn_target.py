@@ -76,9 +76,9 @@ class MaskTargetGenerator(gluon.Block):
         Returns
         -------
         mask_targets: (B, N, C, MS, MS), sampled masks.
-        mask_masks: (B, N, C, MS, MS), masks to determine which values are involved in computing loss
+        mask_masks: (B, N, C, MS, MS), determine which values are involved in computing loss
         mask_score_targets: (B, N, C), predicted mask score
-        mask_score_masks: (B, N, C), masks to determine which values are involved in computing loss
+        mask_score_masks: (B, N, C), determine which values are involved in computing loss
         """
 
         F = mx.nd
@@ -202,5 +202,3 @@ class MaskTargetGenerator(gluon.Block):
             mask_score_masks = F.stack(*mask_score_masks, axis=0)
 
         return mask_targets, mask_masks, mask_score_targets, mask_score_masks
-
-

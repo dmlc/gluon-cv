@@ -170,4 +170,3 @@ class MaskScoreL2LossMetric(mx.metric.EvalMetric):
 
         self.sum_metric += loss.asscalar()
         self.num_inst += num_inst.asscalar()
-
