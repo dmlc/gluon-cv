@@ -138,7 +138,7 @@ class MaskTargetGenerator(gluon.Block):
                 # (B, N, MS, MS)
                 selected_mask = selected_mask.reshape((-4, -1, 1, 0, 0))
 
-                pooled_mask_one   =  (pooled_mask > 0) 
+                pooled_mask_one   =  (pooled_mask > 0.3) 
                 # values of selected_mask are logits, so we use 0 as threshold
                 selected_mask_one =  (selected_mask > 0)               
 
@@ -164,7 +164,7 @@ class MaskTargetGenerator(gluon.Block):
                 # (N, 1)
                 maskiou_targets = maskiou_targets.reshape((-4, -1, 1))
                 # remove very small value(bias)
-                maskiou_targets_flag = (maskiou_targets > 0.05)
+                maskiou_targets_flag = (maskiou_targets > 0.01)
 
 
                 # collect targets
