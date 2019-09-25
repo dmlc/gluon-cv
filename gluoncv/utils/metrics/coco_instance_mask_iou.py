@@ -191,14 +191,6 @@ class COCOInstanceMaskScoreMetric(mx.metric.EvalMetric):
             return a
 
         # mask must be the same as image shape, so no batch dimension is supported
-        """
-        (Pdb) pred_bbox.shape
-            (1000, 4)
-        (Pdb) pred_label.shape
-            (1000, 1)
-        (Pdb) pred_mask.shape
-            (1000, 426, 640)
-        """
         pred_bbox, pred_label, pred_score, pred_mask, pred_mask_score = [
             as_numpy(x) for x in [pred_bboxes, pred_labels, pred_scores, pred_masks, pred_mask_scores]]
 
