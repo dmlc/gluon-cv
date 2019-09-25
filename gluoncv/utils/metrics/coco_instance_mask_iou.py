@@ -9,7 +9,6 @@ import warnings
 import numpy as np
 import mxnet as mx
 from ...data.mscoco.utils import try_import_pycocotools
-import pdb
 
 
 class COCOInstanceMaskScoreMetric(mx.metric.EvalMetric):
@@ -51,9 +50,10 @@ class COCOInstanceMaskScoreMetric(mx.metric.EvalMetric):
         else:
             t = ''
         self._filename_bbox = osp.abspath(osp.expanduser(save_prefix) + t + '_bbox' + '.json')
-        self._filename_maskscore = osp.abspath(osp.expanduser(save_prefix) + t + '_maskscore' + '.json')
+        self._filename_maskscore = osp.abspath(osp.expanduser(save_prefix) + \
+                                                t + '_maskscore' + '.json')
         try:
-            f_bbox      = open(self._filename_bbox, 'w')
+            f_bbox = open(self._filename_bbox, 'w')
             f_maskscore = open(self._filename_maskscore, 'w')
         except IOError as e:
             raise RuntimeError("Unable to open json file to dump. What(): {}".format(str(e)))
@@ -116,11 +116,11 @@ class COCOInstanceMaskScoreMetric(mx.metric.EvalMetric):
         if annType in ['bbox', 'segm']:
             showType = annType
             pred = self.dataset.coco.loadRes(self._filename_bbox)
-        elif annType=='bbox_new_score':
+        elif annType == 'bbox_new_score':
             annType = 'bbox'
             showType = annType + ' with new score'
             pred = self.dataset.coco.loadRes(self._filename_maskscore)
-        elif annType=='segm_score':
+        elif annType == 'segm_score':
             annType = 'segm'  #wu type for cocoapi
             showType = annType + ' with new score'
             pred = self.dataset.coco.loadRes(self._filename_maskscore)
@@ -155,7 +155,7 @@ class COCOInstanceMaskScoreMetric(mx.metric.EvalMetric):
         mask_names, mask_values = self._update('segm')
         mask_score_names, mask_score_values = self._update('segm_score')
 
-        names  = bbox_names  + bbox_new_names  + mask_names  + mask_score_names
+        names = bbox_names  + bbox_new_names  + mask_names  + mask_score_names
         values = bbox_values + bbox_new_values + mask_values + mask_score_values
         return names, values
 
@@ -166,7 +166,8 @@ class COCOInstanceMaskScoreMetric(mx.metric.EvalMetric):
         return rle
 
     # pylint: disable=arguments-differ, unused-argument
-    def update(self, pred_bboxes, pred_labels, pred_scores, pred_masks, pred_mask_scores, *args, **kwargs):
+    def update(self, pred_bboxes, pred_labels, pred_scores, \
+                pred_masks, pred_mask_scores, *args, **kwargs):
         """Update internal buffer with latest predictions.
         Note that the statistics are not available until you call self.get() to return
         the metrics.
@@ -192,7 +193,8 @@ class COCOInstanceMaskScoreMetric(mx.metric.EvalMetric):
 
         # mask must be the same as image shape, so no batch dimension is supported
         pred_bbox, pred_label, pred_score, pred_mask, pred_mask_score = [
-            as_numpy(x) for x in [pred_bboxes, pred_labels, pred_scores, pred_masks, pred_mask_scores]]
+            as_numpy(x) for x in [pred_bboxes, pred_labels, pred_scores, 
+                                  pred_masks, pred_mask_scores]]
 
         # filter out padded detection & low confidence detections
         valid_pred = np.where((pred_label >= 0) & (pred_score >= self._score_thresh))[0]
@@ -205,7 +207,8 @@ class COCOInstanceMaskScoreMetric(mx.metric.EvalMetric):
         imgid = self._img_ids[self._current_id]
         self._current_id += 1
         # for each bbox detection in each image
-        for bbox, label, score, mask, mask_score in zip(pred_bbox, pred_label, pred_score, pred_mask, pred_mask_score):
+        for bbox, label, score, mask, mask_score in \
+                zip(pred_bbox, pred_label, pred_score, pred_mask, pred_mask_score):
             if label not in self.dataset.contiguous_id_to_json:
                 # ignore non-exist class
                 continue
@@ -218,10 +221,10 @@ class COCOInstanceMaskScoreMetric(mx.metric.EvalMetric):
             # coco format full image mask to rle
             rle = self._encode_mask(mask)
             self._results_bbox.append({'image_id': imgid,
-                                        'category_id': category_id,
-                                        'bbox': list(map(lambda x: float(round(x, 2)), bbox[:4])),
-                                        'score': float(round(score, 3)),
-                                        'segmentation': rle})
+                                       'category_id': category_id,
+                                       'bbox': list(map(lambda x: float(round(x, 2)), bbox[:4])),
+                                       'score': float(round(score, 3)),
+                                       'segmentation': rle})
 
             self._results_maskscore.append({'image_id': imgid,
                                             'category_id': category_id,

@@ -159,6 +159,8 @@ class Mask(nn.HybridBlock):
 
 class MaskScore(nn.HybridBlock):
     r"""Mask score predictor head
+    mask score branch containing several conv layers
+
     Parameters
     ----------
     batch_images : int
@@ -167,10 +169,6 @@ class MaskScore(nn.HybridBlock):
         Used to determine number of output channels, and store class names
     mask_channels : int
         Used to determine number of hidden channels
-    """
-    
-    r"""
-    mask branch containing several conv layers
     """
 
     def __init__(self, batch_images, classes, mask_channels, 
@@ -186,24 +184,23 @@ class MaskScore(nn.HybridBlock):
             self.maskiou_branch = nn.HybridSequential()
             self.maskiou_branch.add(
                 nn.Conv2D(mask_channels, kernel_size=(3, 3), strides=(1, 1),
-                        padding=(1, 1), weight_initializer=init))
+                          padding=(1, 1), weight_initializer=init))
             self.maskiou_branch.add(nn.Activation('relu'))
             for _ in range(2):
                 self.maskiou_branch.add(
                     nn.Conv2D(mask_channels, kernel_size=(3, 3), strides=(1, 1),
-                            padding=(1, 1), weight_initializer=init))
+                              padding=(1, 1), weight_initializer=init))
                 self.maskiou_branch.add(nn.Activation('relu'))
 
             self.maskiou_branch.add(
                 nn.Conv2D(mask_channels, kernel_size=(3, 3), strides=(2, 2),
-                        padding=(1, 1), weight_initializer=init))
+                          padding=(1, 1), weight_initializer=init))
             self.maskiou_branch.add(nn.Activation('relu'))
 
             self.maskiou_branch.add(nn.Dense(1024, weight_initializer=mx.init.Normal(0.01)),
-                            nn.Activation('relu'))
+                                             nn.Activation('relu'))
             self.maskiou_branch.add(nn.Dense(1024, weight_initializer=mx.init.Normal(0.01)),
-                            nn.Activation('relu'))
-            
+                                             nn.Activation('relu'))
 
             self.maxpool = nn.HybridSequential()
             self.maxpool.add(nn.MaxPool2D(pool_size=2, strides=2))
@@ -232,16 +229,16 @@ class MaskScore(nn.HybridBlock):
             # (B*N)
             cls_targets = cls_targets.reshape((-3))
         
-            # select category for foreground object. indexes start from 0. 
+            # select category for foreground object. indexes start from 0.
             # keep zeros for back-ground category
-            cls_target_object = F.where(cls_targets>0, cls_targets-1, F.zeros_like(cls_targets))
+            cls_target_object = F.where(cls_targets > 0, cls_targets-1, F.zeros_like(cls_targets))
             # generate list [0, 1, 2, 3, ..., len(cls_targets)]
             selected_index = F.contrib.arange_like(cls_targets)
             indices = F.stack(selected_index, cls_target_object, axis=0)
             # (B*N, MS, MS)
             selected_mask = F.gather_nd(mask_pred, indices) 
             # (B, N, MS, MS)
-            selected_mask = selected_mask.reshape((-4, -1, 1, 0, 0))  
+            selected_mask = selected_mask.reshape((-4, -1, 1, 0, 0))
         else:
             selected_mask = mask_pred.reshape((-4, self._rcnn_max_dets, -1, 0, 0))
         
@@ -363,19 +360,19 @@ class MaskScoreRCNN(nn.Block):
                             additional_output=True, **kwargs)
 
         self.top_features = self.FasterRCNN.top_features
-        self._roi_mode   = self.FasterRCNN._roi_mode
-        self._strides    = self.FasterRCNN._strides
+        self._roi_mode = self.FasterRCNN._roi_mode
+        self._strides = self.FasterRCNN._strides
         self._pyramid_roi_feats = self.FasterRCNN._pyramid_roi_feats
-        self.num_stages  = self.FasterRCNN.num_stages
-        self._batch_size  = self.FasterRCNN._batch_size
+        self.num_stages = self.FasterRCNN.num_stages
+        self._batch_size = self.FasterRCNN._batch_size
         self._num_sample = self.FasterRCNN._num_sample
-        self.num_class   = self.FasterRCNN.num_class 
-        self.ashape      = self.FasterRCNN.ashape
-        self.rpn         = self.FasterRCNN.rpn
-        self.features    = features
-        self._roi_size   = kwargs['roi_size']
-        self.short       = kwargs['short']
-        self.max_size    = kwargs['max_size']
+        self.num_class = self.FasterRCNN.num_class 
+        self.ashape = self.FasterRCNN.ashape
+        self.rpn = self.FasterRCNN.rpn
+        self.features = features
+        self._roi_size = kwargs['roi_size']
+        self.short = kwargs['short']
+        self.max_size = kwargs['max_size']
         self.train_patterns = kwargs['train_patterns']
 
         if min(rpn_test_pre_nms, rpn_test_post_nms) < rcnn_max_dets:

@@ -150,15 +150,12 @@ class MaskFGAccMetric(mx.metric.EvalMetric):
 
 
 class MaskScoreL2LossMetric(mx.metric.EvalMetric):
+    """ RCNN mask score loss """
+
     def __init__(self):
         super(MaskScoreL2LossMetric, self).__init__('MaskScoreL2Loss')
 
     def update(self, labels, preds):
-        """
-            rcnn_mask_score_target: (1, 512, 80) 
-            rcnn_mask_score_weight: (1, 512, 80) 
-            preds:  (1, 512, 80) 
-        """
         # label = [rcnn_mask_target, rcnn_mask_weight]
         # pred = [rcnn_mask]
         rcnn_mask_score_target, rcnn_mask_score_weight = labels
@@ -172,3 +169,5 @@ class MaskScoreL2LossMetric(mx.metric.EvalMetric):
 
         self.sum_metric += loss.asscalar()
         self.num_inst += num_inst.asscalar()
+
+
