@@ -18,7 +18,7 @@ from gluoncv.model_zoo import get_model
 from gluoncv.data import batchify
 from gluoncv.data.transforms.presets.rcnn import MaskRCNNDefaultTrainTransform, \
     MaskRCNNDefaultValTransform
-from gluoncv.utils.metrics.coco_instance_mask_iou import COCOInstanceMaskScoreMetric
+from gluoncv.utils.metrics.coco_instance_mask_score import COCOInstanceMaskScoreMetric
 from gluoncv.utils.metrics.rcnn import RPNAccMetric, RPNL1LossMetric, RCNNAccMetric, \
     RCNNL1LossMetric, MaskAccMetric, MaskFGAccMetric, MaskScoreL2LossMetric
 from gluoncv.utils.parallel import Parallelizable, Parallel

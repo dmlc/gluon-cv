@@ -1,3 +1,4 @@
+# pylint: disable=too-many-lines
 """Mask R-CNN Model."""
 from __future__ import absolute_import
 
@@ -415,6 +416,7 @@ class MaskScoreRCNN(nn.Block):
 
             mask_pred = self.mask(top_feat)
 
+            # pylint: disable=not-callable
             # generate targets for rcnn
             cls_targets, box_targets, box_masks = \
                     self.FasterRCNN.target_generator(roi, samples, matches, gt_label, gt_box)

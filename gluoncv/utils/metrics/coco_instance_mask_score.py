@@ -1,4 +1,9 @@
-"""MS COCO Instance Segmentation Evaluate Metrics."""
+"""
+This file is for Mask Scoring RCNN
+
+MS COCO Instance Segmentation Evaluate Metrics.
+"""
+
 from __future__ import absolute_import
 
 import sys

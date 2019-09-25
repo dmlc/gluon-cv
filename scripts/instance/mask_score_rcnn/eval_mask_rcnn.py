@@ -16,7 +16,7 @@ import gluoncv as gcv
 from gluoncv import data as gdata
 from gluoncv.data import batchify
 from gluoncv.data.transforms.presets.rcnn import MaskRCNNDefaultValTransform
-from gluoncv.utils.metrics.coco_instance_mask_iou import COCOInstanceMaskScoreMetric
+from gluoncv.utils.metrics.coco_instance_mask_score import COCOInstanceMaskScoreMetric
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Validate Mask RCNN networks.')
