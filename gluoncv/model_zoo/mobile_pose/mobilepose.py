@@ -42,7 +42,11 @@ class MobilePose(HybridBlock):
             base_model = get_model(base_name, pretrained=pretrained_base,
                                    ctx=pretrained_ctx, norm_layer=BatchNormCudnnOff)
             self.features = nn.HybridSequential()
-            if base_name.startswith('mobilenetv1') or base_name.startswith('mobilenetv2'):
+            if base_name.startswith('mobilenetv2'):
+                self.features.add(base_model.features[:-1])
+            elif base_name.startswith('mobilenetv3'):
+                self.features.add(base_model.features[:-3])
+            elif base_name.startswith('mobilenet'):
                 self.features.add(base_model.features[:-2])
             else:
                 for layer in base_attrs:
@@ -85,6 +89,15 @@ def mobilepose_resnet18_v1b(**kwargs):
     return get_mobilepose('resnet18_v1b', base_attrs=['conv1', 'bn1', 'relu', 'maxpool',
                           'layer1', 'layer2', 'layer3', 'layer4'], **kwargs)
 
+def mobilepose_mobilenet1_0(**kwargs):
+    return get_mobilepose('mobilenet1.0', base_attrs=['features'], **kwargs)
+
 def mobilepose_mobilenetv2_1_0(**kwargs):
     return get_mobilepose('mobilenetv2_1.0', base_attrs=['features'], **kwargs)
+
+def mobilepose_mobilenetv3_small(**kwargs):
+    return get_mobilepose('mobilenetv3_small', base_attrs=['features'], **kwargs)
+
+def mobilepose_mobilenetv3_large(**kwargs):
+    return get_mobilepose('mobilenetv3_large', base_attrs=['features'], **kwargs)
 
