@@ -441,18 +441,18 @@ class I3D_ResNetV1(HybridBlock):
                     temporal_dim = weights3d[key3d].shape[2]
                     temporal_2d = nd.expand_dims(weights2d[key2d].data(), axis=2)
                     inflated_2d = nd.broadcast_to(temporal_2d, shape=[0, 0, temporal_dim, 0, 0]) / temporal_dim
-                    assert inflated_2d.shape == weights3d[key3d].shape, 'the shape of %s and %s does not match. ' % (key_2d, key_3d)
+                    assert inflated_2d.shape == weights3d[key3d].shape, 'the shape of %s and %s does not match. ' % (key2d, key3d)
                     weights3d[key3d].set_data(inflated_2d)
                     cnt += 1
                     print('%s is done with shape: ' % (key3d), weights3d[key3d].shape)
                 if 'batchnorm' in key3d:
-                    assert weights2d[key2d].shape == weights3d[key3d].shape, 'the shape of %s and %s does not match. ' % (key_2d, key_3d)
+                    assert weights2d[key2d].shape == weights3d[key3d].shape, 'the shape of %s and %s does not match. ' % (key2d, key3d)
                     weights3d[key3d].set_data(weights2d[key2d].data())
                     cnt += 1
                     print('%s is done with shape: ' % (key3d), weights3d[key3d].shape)
                 if 'dense' in key3d:
                     cnt += 1
-                    print('%s is skipped' % key3d)
+                    print('%s is skipped with shape: ' % (key3d), weights3d[key3d].shape)
 
             assert cnt == len(weights2d.keys()), 'Not all parameters have been ported, check the initialization.'
 
