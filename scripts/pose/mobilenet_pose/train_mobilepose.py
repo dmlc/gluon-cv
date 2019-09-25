@@ -10,7 +10,7 @@ from mxnet.gluon import nn
 from mxnet.metric import RMSE
 from mxnet.gluon.data.vision import transforms
 
-from gluoncv.loss import JSLoss
+from gluoncv.loss import JSLoss, L2LossSum
 from gluoncv.data import mscoco
 from gluoncv.model_zoo import get_model
 from gluoncv.utils import makedirs, LRScheduler, LRSequential
@@ -115,12 +115,12 @@ def get_data_loader(data_dir, batch_size, num_workers, input_size):
         weights = gluon.utils.split_and_load(batch[3], ctx_list=ctx, batch_axis=0)
         imgid = gluon.utils.split_and_load(batch[4], ctx_list=ctx, batch_axis=0)
 
-        joint_scale = [mx.nd.array([192, 256], ctx=cc) for cc in ctx]
-        joint_rescale = [(y[:, :, 0:2, 0]/js) for y, js in zip(joints, joint_scale)]
+        # joint_scale = [mx.nd.array([224, 224], ctx=cc) for cc in ctx]
+        joints_rescale = [(y[:, :, 0:2, 0]/224) for y in joints]
 
         weights = [w.squeeze(axis=3) for w in weights]
 
-        return data, joint_rescale, heatmap, weights, imgid
+        return data, joints_rescale, heatmap, weights, imgid
 
     train_dataset = mscoco.keypoints.COCOKeyPoints(data_dir, splits=('person_keypoints_train2017'))
     heatmap_size = [int(i/4) for i in input_size]
@@ -188,10 +188,10 @@ def train(ctx):
 
     trainer = gluon.Trainer(net.collect_params(), optimizer, optimizer_params)
 
-    L_euc = gluon.loss.L1Loss()
+    L_euc = L2LossSum()
     # L_map = gluon.loss.L2Loss()
-    L_map_norm = gluon.loss.L2Loss()
-    # L_map_norm = JSLoss()
+    # L_map_norm = gluon.loss.L2Loss()
+    L_map_norm = JSLoss()
     metric = HeatmapAccuracy()
     metric_euc = RMSE()
 
@@ -219,16 +219,16 @@ def train(ctx):
                 loss_map = []
                 for yhat, y, hm, w in zip(outputs, joints, heatmap, weight):
                     l_euc = nd.cast(L_euc(nd.cast(yhat[0], 'float32'), y, w), opt.dtype)
-                    # l_map = nd.cast(L_map(nd.cast(yhat[1], 'float32'), hm, w.expand_dims(axis=3)), opt.dtype)
-                    l_map_norm = nd.cast(L_map_norm(nd.cast(yhat[2], 'float32'), hm, w.expand_dims(axis=3)), opt.dtype)
+                    l_map_norm = nd.cast(L_map_norm(nd.cast(yhat[1], 'float32'),
+                                                    hm, w.expand_dims(axis=3)), opt.dtype)
                     loss_euc.append(l_euc)
                     loss_map.append(l_map_norm)
-                    loss.append(l_euc*0 + l_map_norm*1)
+                    loss.append(l_euc*1 + l_map_norm*1)
 
             ag.backward(loss)
             trainer.step(batch_size)
 
-            metric.update(heatmap, [o[2] for o in outputs])
+            metric.update(heatmap, [o[1] for o in outputs])
             metric_euc.update(joints, [o[0]*w for o, w in zip(outputs, weight)])
 
             loss_val += sum([l.mean().asscalar() for l in loss]) / num_gpus
@@ -238,7 +238,7 @@ def train(ctx):
                 metric_name, metric_score = metric.get()
                 metric_euc_name, metric_euc_score = metric_euc.get()
                 logger.info('Epoch[%d] Batch [%d]\tSpeed: %d samples/sec\tlr=%.3f'
-                            '    loss:total=%f,l1=%f,l2=%f    metric:hm=%.3f,%s=%.3f'%(
+                            '  loss:total=%f,coord=%f,map=%f  metric:hm=%f,%s=%.3f'%(
                              epoch, i, int(batch_size*opt.log_interval/(time.time()-btic)),
                              trainer.learning_rate,
                              loss_val / (i+1), loss_euc_val / (i+1), loss_map_val / (i+1), 

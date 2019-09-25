@@ -24,12 +24,12 @@ from __future__ import division
 import numpy as np
 from mxnet import initializer
 from mxnet.gluon import nn
-from mxnet.gluon.nn import BatchNorm
+# from mxnet.gluon.nn import BatchNorm
 from mxnet.gluon.block import HybridBlock
 from mxnet.context import cpu
 
 from ..mobilenetv3 import _ResUnit
-from ...nn.block import DSNT, DUC
+from ...nn.block import DSNT, DUC, BatchNormCudnnOff
 
 class MobilePose(HybridBlock):
     """Pose Estimation for Mobile Device"""
@@ -40,7 +40,7 @@ class MobilePose(HybridBlock):
         with self.name_scope():
             from ..model_zoo import get_model
             base_model = get_model(base_name, pretrained=pretrained_base,
-                                   ctx=pretrained_ctx)
+                                   ctx=pretrained_ctx, norm_layer=BatchNormCudnnOff)
             self.features = nn.HybridSequential()
             if base_name.startswith('mobilenetv1') or base_name.startswith('mobilenetv2'):
                 self.features.add(base_model.features[:-2])
@@ -68,7 +68,7 @@ class MobilePose(HybridBlock):
         hm = self.upsampling(x)
         coords, hm_norm = self.dsnt(hm)
 
-        return coords, hm, hm_norm
+        return coords, hm_norm
 
 def get_mobilepose(base_name, ctx=cpu(), pretrained=False,
                    root='~/.mxnet/models', **kwargs):

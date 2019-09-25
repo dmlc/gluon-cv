@@ -101,19 +101,26 @@ def validate(val_data, val_dataset, net, ctx):
     for batch in tqdm(val_data):
         data, scale, center, score, imgid = val_batch_fn(batch, ctx)
 
-        outputs = [net(X)[1] for X in data]
+        coords = [net(X)[0] for X in data]
+        heatmaps = [net(X)[1] for X in data]
         if opt.flip_test:
             data_flip = [nd.flip(X, axis=3) for X in data]
-            outputs_flip = [net(X)[1] for X in data_flip]
-            outputs_flipback = [flip_heatmap(o, val_dataset.joint_pairs, shift=True) for o in outputs_flip]
-            outputs = [(o + o_flip)/2 for o, o_flip in zip(outputs, outputs_flipback)]
+            res_flip = [net(X) for X in data_flip]
+            coords = [(o + o_flip[0][:,:,::-1])/2 for o, o_flip in zip(coords, res_flip)]
+            heatmaps = [flip_heatmap(o[1], val_dataset.joint_pairs, shift=True) for o in res_flip]
 
-        if len(outputs) > 1:
-            outputs_stack = nd.concat(*[o.as_in_context(mx.cpu()) for o in outputs], dim=0)
+        if len(coords) > 1:
+            coords_stack = nd.concat(*[o.as_in_context(mx.cpu()) for o in coords], dim=0)
+            heatmaps_stack = nd.concat(*[o.as_in_context(mx.cpu()) for o in heatmaps], dim=0)
         else:
-            outputs_stack = outputs[0].as_in_context(mx.cpu())
+            coords_stack = coords[0].as_in_context(mx.cpu())
+            heatmaps_stack = heatmaps[0].as_in_context(mx.cpu())
 
-        preds, maxvals = get_final_preds(outputs_stack, center.asnumpy(), scale.asnumpy())
+        # norm
+        # import pdb; pdb.set_trace()
+        heatmaps_stack = heatmaps_stack / heatmaps_stack.max(axis=(2, 3), keepdims=True)
+
+        preds, maxvals = get_final_preds(heatmaps_stack, center.asnumpy(), scale.asnumpy())
         val_metric.update(preds, maxvals, score, imgid)
 
     res = val_metric.get()
