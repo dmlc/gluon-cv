@@ -2,7 +2,6 @@ from __future__ import print_function
 
 import numpy as np
 import gluoncv as gcv
-import numpy as np
 import mxnet as mx
 from mxnet import autograd, gluon
 from gluoncv.utils import download, viz
@@ -18,19 +17,17 @@ def test_voc07_metric_difficult():
     net = gcv.model_zoo.get_model('yolo3_darknet53_custom', classes=classes,
                                   pretrained_base=False, transfer='voc')
 
-    def get_dataloader(net, val_dataset, data_shape, batch_size, num_workers):
-
+    def get_dataloader(val_dataset, data_shape, batch_size, num_workers):
         from gluoncv.data.batchify import Tuple, Stack, Pad
-        from gluoncv.data.transforms.presets.yolo import YOLO3DefaultTrainTransform, YOLO3DefaultValTransform
-        from gluoncv.data.dataloader import RandomTransformDataLoader
+        from gluoncv.data.transforms.presets.yolo import YOLO3DefaultValTransform
 
         val_batchify_fn = Tuple(Stack(), Pad(pad_val=-1))
         val_loader = gluon.data.DataLoader(
-            val_dataset.transform(YOLO3DefaultValTransform(width, height)),
+            val_dataset.transform(YOLO3DefaultValTransform(data_shape, data_shape)),
             batch_size, False, batchify_fn=val_batchify_fn, last_batch='keep', num_workers=num_workers)
         return val_loader
 
-    val_data = get_dataloader(net, dataset, 416, 16, 0)
+    val_data = get_dataloader(dataset, 416, 16, 0)
 
     try:
         a = mx.nd.zeros((1,), ctx=mx.gpu(0))
