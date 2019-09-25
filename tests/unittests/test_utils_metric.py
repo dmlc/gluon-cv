@@ -12,6 +12,7 @@ def test_voc07_metric_difficult():
     idx_url = 'https://apache-mxnet.s3-accelerate.amazonaws.com/gluon/dataset/pikachu/train.idx'
     download(url, path='pikachu_train.rec', overwrite=False)
     download(idx_url, path='pikachu_train.idx', overwrite=False)
+    classes = ['pikachu']
 
     dataset = gcv.data.RecordFileDetection('pikachu_train.rec')
     net = gcv.model_zoo.get_model('yolo3_darknet53_custom', classes=classes,
