@@ -866,8 +866,8 @@ def mask_score_rcnn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, rc
         **kwargs)
 
 
-def mask_score_rcnn_fpn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, 
-                                          rcnn_max_dets=1000, rpn_test_pre_nms=6000, 
+def mask_score_rcnn_fpn_resnet18_v1b_coco(pretrained=False, pretrained_base=True,
+                                          rcnn_max_dets=1000, rpn_test_pre_nms=6000,
                                           rpn_test_post_nms=1000, **kwargs):
     r"""Mask RCNN model from the paper
     "He, K., Gkioxari, G., Doll&ar, P., & Girshick, R. (2017). Mask R-CNN"
