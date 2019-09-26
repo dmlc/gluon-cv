@@ -57,12 +57,12 @@ class MobilePoseGaussianTargetGenerator(object):
 
         size = (self._heatmap_size[1], self._heatmap_size[0])
         x_linspace = np.stack([np.linspace(1 / (2*size[0]), 1-1/(2*size[0]), size[0]) \
-                               for i in range(size[1])]).transpose()
+                               for i in range(size[1])])
         y_linspace = np.stack([np.linspace(1 / (2*size[1]), 1-1/(2*size[1]), size[1]) \
-                               for i in range(size[0])])
+                               for i in range(size[0])]).transpose()
         denom = - 1 / (2 * self._sigma ** 2)
         for i in range(self._num_joints):
-            dists = (x_linspace - joints_3d[i, 0, 0]) ** 2 + (y_linspace - joints_3d[i, 1, 0]) ** 2
+            dists = (x_linspace - joints_3d[i, 0, 0]/self._image_size[1]) ** 2 + (y_linspace - joints_3d[i, 1, 0]/self._image_size[0]) ** 2
             gauss = np.exp(dists * denom)
             if not self._normalize:
                 target[i, :, :] = gauss
