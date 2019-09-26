@@ -45,7 +45,7 @@ class MobilePose(HybridBlock):
             if base_name.startswith('mobilenetv2'):
                 self.features.add(base_model.features[:-1])
             elif base_name.startswith('mobilenetv3'):
-                self.features.add(base_model.features[:-3])
+                self.features.add(base_model.features[:-4])
             elif base_name.startswith('mobilenet'):
                 self.features.add(base_model.features[:-2])
             else:

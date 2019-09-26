@@ -121,7 +121,8 @@ def validate(val_data, val_dataset, net, ctx):
         heatmaps_stack = heatmaps_stack / heatmaps_stack.max(axis=(2, 3), keepdims=True)
 
         preds, maxvals = get_final_preds(heatmaps_stack, center.asnumpy(), scale.asnumpy())
-        val_metric.update(preds, maxvals, score, imgid)
+        # val_metric.update(preds, maxvals, score, imgid)
+        val_metric.update(coords_stack, score, imgid)
 
     res = val_metric.get()
     return
