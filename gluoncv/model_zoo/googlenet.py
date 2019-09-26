@@ -16,7 +16,7 @@
 # under the License.
 
 # coding: utf-8
-# pylint: disable=arguments-differ,unused-argument
+# pylint: disable=missing-docstring,arguments-differ,unused-argument
 """GoogleNet, implemented in Gluon."""
 
 __all__ = ['GoogLeNet', 'googlenet']
