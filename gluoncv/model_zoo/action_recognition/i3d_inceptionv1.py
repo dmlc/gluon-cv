@@ -248,7 +248,7 @@ class I3D_InceptionV1(HybridBlock):
             self.head.initialize()
 
             if pretrained_base:
-                inceptionv1_2d = googlenet(pretrained=true)
+                inceptionv1_2d = googlenet(pretrained=True)
                 weights2d = inceptionv1_2d.collect_params()
                 weights3d = self.collect_params()
                 assert len(weights2d.keys()) == len(weights3d.keys()), 'Number of parameters should be same.'
