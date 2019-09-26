@@ -291,7 +291,7 @@ def i3d_inceptionv3_kinetics400(nclass=400, pretrained=False, pretrained_base=Tr
                             pretrained_base=pretrained_base, ctx=ctx, **kwargs)
 
     if pretrained:
-        from .model_store import get_model_file
+        from ..model_store import get_model_file
         model.load_parameters(get_model_file('i3d_inceptionv3_kinetics400',
                                              tag=pretrained, root=root), ctx=ctx)
         from ...data import Kinetics400Attr
