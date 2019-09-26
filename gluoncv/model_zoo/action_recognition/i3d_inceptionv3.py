@@ -205,8 +205,8 @@ class I3D_InceptionV3(HybridBlock):
             self.output = nn.Dense(units=nclass, in_units=self.feat_dim, weight_initializer=init.Normal(sigma=self.init_std))
             self.head.add(self.output)
 
-            self.features.initialize()
-            self.head.initialize()
+            self.features.initialize(ctx=ctx)
+            self.head.initialize(ctx=ctx)
 
             if pretrained_base:
                 inceptionv3_2d = inception_v3(pretrained=True)
