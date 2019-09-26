@@ -339,7 +339,7 @@ def googlenet(classes=1000, pretrained=False, pretrained_base=True, ctx=cpu(),
     if pretrained:
         from .model_store import get_model_file
         net.load_parameters(get_model_file('googlenet',
-                                           tag=pretrained, root=root), ctx=ctx)
+                                           tag=pretrained, root=root), ctx=ctx, cast_dtype=True)
         from ..data import ImageNet1kAttr
         attrib = ImageNet1kAttr()
         net.synset = attrib.synset
