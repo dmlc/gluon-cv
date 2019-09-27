@@ -42,7 +42,7 @@ Supported Applications
 ----------------------
 
 .. raw:: html
-   :file: /_static/applications.html
+   :file: _static/applications.html
 
 .. raw:: html
 

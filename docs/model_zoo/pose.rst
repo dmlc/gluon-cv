@@ -9,7 +9,7 @@ Visualization of Inference Throughputs vs. Validation AP of COCO pre-trained mod
   :width: 100%
 
 .. raw:: html
-   :file: /_static/pose_throughputs.html
+   :file: _static/pose_throughputs.html
 
 .. note::
 

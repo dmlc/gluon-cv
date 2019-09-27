@@ -11,12 +11,12 @@ Visualization of Inference Throughputs vs. Validation mAP of COCO pre-trained mo
   :width: 100%
 
 .. raw:: html
-   :file: /_static/detection_throughputs.html
+   :file: _static/detection_throughputs.html
 
 We also provide a detailed interactive analysis of all 80 object categories.
 
 .. raw:: html
-   :file: /_static/detection_coco_per_class.html
+   :file: _static/detection_coco_per_class.html
 
 The following tables list pre-trained models for object detection
 and their performances with more details.
