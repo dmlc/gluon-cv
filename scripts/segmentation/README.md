@@ -42,7 +42,7 @@ python test.py --model=fcn --backbone=resnet101 --mode=val --eval --batch-size=1
 # deploy int8 model
 python test.py --quantized --eval --deploy --model-prefix=./model/fcn_resnet101_voc-quantized-naive
 ```
-Users also are recommended to bind processes to specific cores via `numactal` or `taskset` for better performance. 
+Users also are recommended to bind processes to specific cores via `numactl` or `taskset` for better performance. 
 
 ## Performance
 
