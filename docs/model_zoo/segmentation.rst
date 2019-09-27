@@ -9,7 +9,7 @@ Visualization of Inference Throughputs vs. Validation mIoU of COCO pre-trained m
   :width: 100%
 
 .. raw:: html
-   :file: _static/semantic_segmentation_throughputs.html
+   :file: ../_static/semantic_segmentation_throughputs.html
 
 .. hint::
 
