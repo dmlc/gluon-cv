@@ -14,7 +14,7 @@ from gluoncv.model_zoo.inception import inception_v3
 def _make_basic_conv(in_channels, channels, norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
     out = nn.HybridSequential(prefix='')
     out.add(nn.Conv3D(in_channels=in_channels, channels=channels, use_bias=False, **kwargs))
-    out.add(norm_layer(in_channels=channels, **({} if norm_kwargs is None else norm_kwargs)))
+    out.add(norm_layer(in_channels=channels, epsilon=0.001, **({} if norm_kwargs is None else norm_kwargs)))
     out.add(nn.Activation('relu'))
     return out
 
