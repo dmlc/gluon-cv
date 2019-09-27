@@ -3,6 +3,14 @@
 Segmentation
 ============
 
+Visualization of Inference Throughputs vs. Validation mIoU of COCO pre-trained models is illustrated in the following graph. Throughputs are measured with single V100 GPU and batch size 16.
+
+.. image:: /_static/plot_help.png
+  :width: 100%
+
+.. raw:: html
+   :file: /_static/semantic_segmentation_throughputs.html
+
 .. hint::
 
   The model names contain the training information. For instance, ``fcn_resnet50_voc``:
