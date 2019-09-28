@@ -226,9 +226,8 @@ def benchmarking(net, opt, ctx):
         for n in range(dry_run + num_iterations):
             if n == dry_run:
                 tic = time.time()
-            outputs = net(data)
-            for output in outputs:
-                output.wait_to_read()
+            output = net(data)
+            output.wait_to_read()
             pbar.update(bs)
     speed = size / (time.time() - tic)
     print('With batch size %d , %d batches, throughput is %f imgs/sec' % (bs, num_iterations, speed))

@@ -7,7 +7,8 @@
 
 ```
 
-export OMP_NUM_THREADS=$(vCPUs/2)
+export CPUs=`lscpu | grep 'Core(s) per socket' | awk '{print $4}'`
+export OMP_NUM_THREADS=${CPUs}
 export KMP_AFFINITY=granularity=fine,noduplicates,compact,1,0
 
 # dummy data
@@ -30,7 +31,8 @@ python validate.py --model simple_pose_resnet50_v1b --batch-size=1 --num-joints 
 
 ```
 
-export OMP_NUM_THREADS=$(vCPUs/2)
+export CPUs=`lscpu | grep 'Core(s) per socket' | awk '{print $4}'`
+export OMP_NUM_THREADS=${CPUs}
 export KMP_AFFINITY=granularity=fine,noduplicates,compact,1,0
 
 # dummy data
@@ -52,15 +54,14 @@ numactl --physcpubind=0-27 --membind=0 python validate.py ...
 
 ## Performance
 
-model | fp32 latency(ms) | s8 latency(ms) | fp32 pixAcc | fp32 mIoU | s8 pixAcc | s8 mIoU
+model | fp32 latency(ms) | s8 latency(ms) | fp32 OKS AP | s8 OKS AP |
 -- | -- | -- | -- | -- | -- | -- |
-simple_pose_resnet18_v1b    | | |97.97% | 90.77 |98.00%  | 91.02 |
-simple_pose_resnet50_v1b    | | |91.28% | 62.40 |90.96%  | 61.73 |
-simple_pose_resnet50_v1d    | |  | 98.46% | 93.29  | 98.45% | 93.26 |
-simple_pose_resnet101_v1b   | | 94.32 | 91.82% | 69.48 | 91.88% | 69.92|
-simple_pose_resnet101_v1d   | | 74.91 | 98.36% | 92.84 | 98.34% | 92.76 |
-
-
+simple_pose_resnet18_v1b    |5.55  |2.38 |66.3 | 65.9 |
+simple_pose_resnet50_v1b    |12.68 |4.65 |71.0 | 70.6 |
+simple_pose_resnet50_v1d    |18.91 |4.80 |71.6 | 71.4 |
+simple_pose_resnet101_v1b   |21.84 |6.97 |72.4 | 72.2 |
+simple_pose_resnet101_v1d   |27.15 |7.15 |73.0 | 72.7 |
 
 ## References
 
+1. Xiao, Bin, Haiping Wu, and Yichen Wei. “Simple baselines for human pose estimation and tracking.” Proceedings of the European Conference on Computer Vision (ECCV). 2018
