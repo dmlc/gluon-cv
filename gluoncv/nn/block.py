@@ -111,11 +111,11 @@ class DSNT(HybridBlock):
         (width, height) of the input heatmap
     axis : the axis for input heatmap
     '''
-    def __init__(self, size, axis=(2,3), **kwargs):
+    def __init__(self, size, axis=(2, 3), **kwargs):
         super(DSNT, self).__init__(**kwargs)
         if isinstance(size, int):
             self.size = (size, size)
-        elif isinstance(size, tuple):
+        else:
             self.size = size
         self.axis = axis
         self.softmax = SoftmaxHD(self.axis)

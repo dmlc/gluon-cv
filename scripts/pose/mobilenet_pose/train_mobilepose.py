@@ -102,7 +102,9 @@ kwargs = {'ctx': context, 'num_joints': num_joints,
           'pretrained_base': opt.use_pretrained_base,
           'pretrained_ctx': context}
 
-net = get_model(model_name, **kwargs)
+input_size = [int(i) for i in opt.input_size.split(',')]
+heatmap_size = [int(i/4) for i in input_size]
+net = get_model(model_name, hm_size=heatmap_size[::-1], **kwargs)
 net.cast(opt.dtype)
 
 def get_data_loader(data_dir, batch_size, num_workers, input_size):
@@ -122,7 +124,6 @@ def get_data_loader(data_dir, batch_size, num_workers, input_size):
         return data, joints_rescale, heatmap, weights, imgid
 
     train_dataset = mscoco.keypoints.COCOKeyPoints(data_dir, splits=('person_keypoints_train2017'))
-    heatmap_size = [int(i/4) for i in input_size]
 
     meanvec = [float(i) for i in opt.mean.split(',')]
     stdvec = [float(i) for i in opt.std.split(',')]
@@ -138,7 +139,6 @@ def get_data_loader(data_dir, batch_size, num_workers, input_size):
 
     return train_dataset, train_data, train_batch_fn
 
-input_size = [int(i) for i in opt.input_size.split(',')]
 train_dataset, train_data,  train_batch_fn = get_data_loader(opt.data_dir, batch_size,
                                                              num_workers, input_size)
 
@@ -193,8 +193,10 @@ def train(ctx):
 
     best_val_score = 1
 
+    '''
     if opt.mode == 'hybrid':
         net.hybridize(static_alloc=True, static_shape=True)
+    '''
 
     for epoch in range(opt.num_epochs):
         loss_val = 0
@@ -235,7 +237,7 @@ def train(ctx):
                              epoch, i, int(batch_size*opt.log_interval/(time.time()-btic)),
                              trainer.learning_rate,
                              loss_val / (i+1), loss_euc_val / (i+1), loss_map_val / (i+1), 
-                             metric_name, metric_score*input_size[0]))
+                             metric_name, metric_score*(input_size[0] + input_size[1])/2))
                 btic = time.time()
 
         time_elapsed = time.time() - tic

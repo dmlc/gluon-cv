@@ -102,27 +102,23 @@ def validate(val_data, val_dataset, net, ctx):
         data, scale, center, score, imgid = val_batch_fn(batch, ctx)
 
         coords = [net(X)[0] for X in data]
-        heatmaps = [net(X)[1] for X in data]
         if opt.flip_test:
             data_flip = [nd.flip(X, axis=3) for X in data]
-            res_flip = [net(X) for X in data_flip]
-            coords = [(o + o_flip[0][:,:,::-1])/2 for o, o_flip in zip(coords, res_flip)]
-            heatmaps = [flip_heatmap(o[1], val_dataset.joint_pairs, shift=True) for o in res_flip]
+            coords_flip = [net(X)[0] for X in data_flip]
+            for o_flip in coords_flip:
+                o_flip[:,:,0] = 1 - o_flip[:,:,0]
+            # import pdb; pdb.set_trace()
+            coords = [(o + o_flip)/2 for o, o_flip in zip(coords, coords_flip)]
 
         if len(coords) > 1:
             coords_stack = nd.concat(*[o.as_in_context(mx.cpu()) for o in coords], dim=0)
-            heatmaps_stack = nd.concat(*[o.as_in_context(mx.cpu()) for o in heatmaps], dim=0)
         else:
             coords_stack = coords[0].as_in_context(mx.cpu())
-            heatmaps_stack = heatmaps[0].as_in_context(mx.cpu())
 
-        # norm
         # import pdb; pdb.set_trace()
-        heatmaps_stack = heatmaps_stack / heatmaps_stack.max(axis=(2, 3), keepdims=True)
-
-        preds, maxvals = get_final_preds(heatmaps_stack, center.asnumpy(), scale.asnumpy())
-        # val_metric.update(preds, maxvals, score, imgid)
-        val_metric.update(coords_stack, score, imgid)
+        preds = coords_stack = (coords_stack-0.5)*scale.expand_dims(axis=1) + center.expand_dims(axis=1)
+        maxvals = nd.ones(preds.shape[0:2]+(1, ))
+        val_metric.update(preds, maxvals, score, imgid)
 
     res = val_metric.get()
     return

@@ -109,7 +109,7 @@ class COCOKeyPointsMetric(mx.metric.EvalMetric):
         return name_value, name_value['AP']
 
     # pylint: disable=arguments-differ, unused-argument, missing-docstring
-    def update(self, preds, maxvals, score, imgid, *args, **kwargs):
+    def update(self, preds, maxvals, score, imgid, fixed_score=False, *args, **kwargs):
         # import pdb; pdb.set_trace()
         num_joints = preds.shape[1]
         in_vis_thresh = self._in_vis_thresh
@@ -128,6 +128,8 @@ class COCOKeyPointsMetric(mx.metric.EvalMetric):
             if count > 0:
                 kpt_score /= count
             rescore = kpt_score * score[idx].asscalar()
+            if fixed_score:
+                rescore = 2
 
             self._results.append({'image_id': int(imgid[idx].asscalar()),
                                   'category_id': 1,
