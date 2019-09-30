@@ -10,7 +10,8 @@ Visualization of Inference Throughputs vs. Validation Accuracy of ImageNet pre-t
 .. image:: /_static/plot_help.png
   :width: 100%
 
-.. include:: /_static/classification_throughputs.html
+.. raw:: html
+   :file: ../_static/classification_throughputs.html
 
 How To Use Pretrained Models
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
