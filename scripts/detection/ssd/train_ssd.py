@@ -147,10 +147,10 @@ def get_dali_dataset(dataset_name, devices, args):
                                         'instances_train2017.json')
         if args.horovod:
             train_dataset = [gdata.COCODetectionDALI(num_shards=hvd.size(), shard_id=hvd.rank(), file_root=coco_root,
-                                                     annotations_file=coco_annotations)]
+                                                     annotations_file=coco_annotations, device_id=hvd.local_rank())]
         else:
             train_dataset = [gdata.COCODetectionDALI(num_shards= len(devices), shard_id=i, file_root=coco_root,
-                                                     annotations_file=coco_annotations) for i, _ in enumerate(devices)]
+                                                     annotations_file=coco_annotations, device_id=i) for i, _ in enumerate(devices)]
 
         # validation
         if (not args.horovod or hvd.rank() == 0):

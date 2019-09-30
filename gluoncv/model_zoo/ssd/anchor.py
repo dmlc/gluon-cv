@@ -1,4 +1,4 @@
-# pylint: disable=unused-import
+# pylint: disable=unused-import,too-many-function-args
 """Anchor box generator for SSD detector."""
 from __future__ import absolute_import
 

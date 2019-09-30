@@ -308,7 +308,7 @@ class ForwardBackwardTask(Parallelizable):
 
 def train(net, train_data, val_data, eval_metric, batch_size, ctx, args):
     """Training pipeline"""
-    kv = mx.kvstore.create(args.kv_store)
+    kv = mx.kvstore.create('device' if (args.amp and 'nccl' in args.kv_store) else args.kv_store)
     net.collect_params().setattr('grad_req', 'null')
     net.collect_train_params().setattr('grad_req', 'write')
     for k, v in net.collect_params('.*bias').items():
@@ -326,7 +326,8 @@ def train(net, train_data, val_data, eval_metric, batch_size, ctx, args):
             net.collect_train_params(),  # fix batchnorm, fix first stage, etc...
             'sgd',
             optimizer_params,
-            update_on_kvstore=(False if args.amp else None), kvstore=kv)
+            update_on_kvstore=(False if args.amp else None),
+            kvstore=kv)
 
     if args.amp:
         amp.init_trainer(trainer)

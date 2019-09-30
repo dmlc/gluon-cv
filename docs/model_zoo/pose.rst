@@ -3,6 +3,14 @@
 Pose Estimation
 ====================
 
+Visualization of Inference Throughputs vs. Validation AP of COCO pre-trained models is illustrated in the following graph. Throughputs are measured with single V100 GPU and batch size 64.
+
+.. image:: /_static/plot_help.png
+  :width: 100%
+
+.. raw:: html
+   :file: ../_static/pose_throughputs.html
+
 .. note::
 
     Pose Estimation is released in GluonCV 0.4. Please be sure to update your installation by
