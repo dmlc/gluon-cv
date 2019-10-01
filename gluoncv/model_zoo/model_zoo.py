@@ -11,6 +11,7 @@ from .deeplabv3b_plus import *
 from .densenet import *
 from .faster_rcnn import *
 from .fcn import *
+from .googlenet import *
 from .inception import *
 from .mask_rcnn import *
 from .mobilenet import *
@@ -71,6 +72,7 @@ _models = {
     'densenet201': densenet201,
     'squeezenet1.0': squeezenet1_0,
     'squeezenet1.1': squeezenet1_1,
+    'googlenet': googlenet,
     'inceptionv3': inception_v3,
     'xception': get_xcetption,
     'xception71': get_xcetption_71,
@@ -227,6 +229,8 @@ _models = {
     'inceptionv3_kinetics400': inceptionv3_kinetics400,
     'i3d_resnet50_v1_kinetics400': i3d_resnet50_v1_kinetics400,
     'i3d_resnet101_v1_kinetics400': i3d_resnet101_v1_kinetics400,
+    'i3d_inceptionv1_kinetics400': i3d_inceptionv1_kinetics400,
+    'i3d_inceptionv3_kinetics400': i3d_inceptionv3_kinetics400,
     'fcn_resnet101_voc_int8': fcn_resnet101_voc_int8,
     'fcn_resnet101_coco_int8': fcn_resnet101_coco_int8,
     'psp_resnet101_voc_int8': psp_resnet101_voc_int8,

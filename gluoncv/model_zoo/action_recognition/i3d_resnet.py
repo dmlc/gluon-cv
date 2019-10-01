@@ -273,6 +273,9 @@ def make_res_layer(block,
 
 class I3D_ResNetV1(HybridBlock):
     """ResNet_I3D backbone.
+    Inflated 3D model (I3D) from
+    `"Quo Vadis, Action Recognition? A New Model and the Kinetics Dataset"
+    <https://arxiv.org/abs/1705.07750>`_ paper.
 
     Args:
         depth (int): Depth of resnet, from {18, 34, 50, 101, 152}.
@@ -299,6 +302,7 @@ class I3D_ResNetV1(HybridBlock):
                  nclass,
                  depth,
                  num_stages=4,
+                 pretrained=False,
                  pretrained_base=True,
                  num_segments=1,
                  spatial_strides=(1, 2, 2, 2),
@@ -333,6 +337,7 @@ class I3D_ResNetV1(HybridBlock):
         self.nclass = nclass
         self.depth = depth
         self.num_stages = num_stages
+        self.pretrained = pretrained
         self.pretrained_base = pretrained_base
         self.num_segments = num_segments
         self.spatial_strides = spatial_strides
@@ -404,13 +409,13 @@ class I3D_ResNetV1(HybridBlock):
         self.fc = nn.Dense(in_units=self.feat_dim, units=nclass, weight_initializer=init.Normal(sigma=self.init_std))
         self.head.add(self.fc)
 
-        self.init_weights()
+        self.init_weights(ctx)
 
-    def init_weights(self):
+    def init_weights(self, ctx):
 
-        self.first_stage.initialize()
-        self.res_layers.initialize()
-        self.head.initialize()
+        self.first_stage.initialize(ctx=ctx)
+        self.res_layers.initialize(ctx=ctx)
+        self.head.initialize(ctx=ctx)
 
         if self.pretrained_base:
             if self.depth == 50:
@@ -441,18 +446,18 @@ class I3D_ResNetV1(HybridBlock):
                     temporal_dim = weights3d[key3d].shape[2]
                     temporal_2d = nd.expand_dims(weights2d[key2d].data(), axis=2)
                     inflated_2d = nd.broadcast_to(temporal_2d, shape=[0, 0, temporal_dim, 0, 0]) / temporal_dim
-                    assert inflated_2d.shape == weights3d[key3d].shape, 'the shape of %s and %s does not match. ' % (key_2d, key_3d)
+                    assert inflated_2d.shape == weights3d[key3d].shape, 'the shape of %s and %s does not match. ' % (key2d, key3d)
                     weights3d[key3d].set_data(inflated_2d)
                     cnt += 1
                     print('%s is done with shape: ' % (key3d), weights3d[key3d].shape)
                 if 'batchnorm' in key3d:
-                    assert weights2d[key2d].shape == weights3d[key3d].shape, 'the shape of %s and %s does not match. ' % (key_2d, key_3d)
+                    assert weights2d[key2d].shape == weights3d[key3d].shape, 'the shape of %s and %s does not match. ' % (key2d, key3d)
                     weights3d[key3d].set_data(weights2d[key2d].data())
                     cnt += 1
                     print('%s is done with shape: ' % (key3d), weights3d[key3d].shape)
                 if 'dense' in key3d:
                     cnt += 1
-                    print('%s is skipped' % key3d)
+                    print('%s is skipped with shape: ' % (key3d), weights3d[key3d].shape)
 
             assert cnt == len(weights2d.keys()), 'Not all parameters have been ported, check the initialization.'
 
@@ -506,6 +511,7 @@ def i3d_resnet50_v1_kinetics400(nclass=400, pretrained=False, pretrained_base=Tr
 
     model = I3D_ResNetV1(nclass=nclass,
                          depth=50,
+                         pretrained=pretrained,
                          pretrained_base=pretrained_base,
                          num_segments=num_segments,
                          out_indices=[3],
@@ -516,7 +522,7 @@ def i3d_resnet50_v1_kinetics400(nclass=400, pretrained=False, pretrained_base=Tr
                          **kwargs)
 
     if pretrained:
-        from .model_store import get_model_file
+        from ..model_store import get_model_file
         model.load_parameters(get_model_file('i3d_resnet50_v1_kinetics400',
                                              tag=pretrained, root=root), ctx=ctx)
         from ...data import Kinetics400Attr
@@ -553,6 +559,7 @@ def i3d_resnet101_v1_kinetics400(nclass=400, pretrained=False, pretrained_base=T
 
     model = I3D_ResNetV1(nclass=nclass,
                          depth=101,
+                         pretrained=pretrained,
                          pretrained_base=pretrained_base,
                          num_segments=num_segments,
                          out_indices=[3],
@@ -563,7 +570,7 @@ def i3d_resnet101_v1_kinetics400(nclass=400, pretrained=False, pretrained_base=T
                          **kwargs)
 
     if pretrained:
-        from .model_store import get_model_file
+        from ..model_store import get_model_file
         model.load_parameters(get_model_file('i3d_resnet101_v1_kinetics400',
                                              tag=pretrained, root=root), ctx=ctx)
         from ...data import Kinetics400Attr
