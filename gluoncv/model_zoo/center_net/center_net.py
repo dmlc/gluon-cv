@@ -1,0 +1,73 @@
+"""CenterNet object detector: Objects as Points, https://arxiv.org/abs/1904.07850"""
+from __future__ import absolute_import
+
+import os
+import warnings
+from collections import OrderedDict
+
+import mxnet as mx
+from mxnet.context import cpu
+from mxnet.gluon import nn
+
+__all__ = ['CenterNet', 'get_center_net', 'center_net_resnet18_v1b_voc']
+
+class CenterNet(nn.HybridBlock):
+    def __init__(self, base_network, heads, head_conv_channel=0, **kwargs):
+        super(CenterNet, self).__init__(**kwargs)
+        assert isinstance(heads, OrderedDict), \
+            "Expecting heads to be a OrderedDict of {head_name: # outputs} per head, given {}" \
+            .format(type(heads))
+        with self.name_scope():
+            self.base_network = base_network
+            self.heads = nn.HybridSequential('heads')
+            for name, values in heads.items():
+                head = nn.HybridSequential(name)
+                num_output = values['num_output']
+                bias = values.get('bias', 0)
+                if head_conv_channel > 0:
+                    head.add(nn.Conv2D(head_conv_channel, kernel_size=3, padding=1, use_bias=True,
+                             weight_initializer=mx.init.Normal(0.001), bias_initializer='zeros'))
+                    head.add(nn.Activation('relu'))
+                head.add(nn.Conv2D(num_output, kernel_size=1, strides=1, padding=0, use_bias=True,
+                                   weight_initializer=mx.init.Normal(0.001),
+                                   bias_initializer=mx.init.Constant(bias)))
+
+                self.heads.add(head)
+
+
+    def hybrid_forward(self, F, x):
+        y = self.base_network(x)
+        out = [head(y) for head in self.heads]
+        return tuple(out)
+
+def get_center_net(name, dataset, pretrained=False, ctx=mx.cpu(),
+                   root=os.path.join('~', '.mxnet', 'models'), **kwargs):
+    net = CenterNet(**kwargs)
+    if pretrained:
+        from ..model_store import get_model_file
+        full_name = '_'.join(('center_net', name, dataset))
+        net.load_parameters(get_model_file(full_name, tag=pretrained, root=root), ctx=ctx)
+    else:
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            net.initialize()
+        for v in net.collect_params().values():
+            try:
+                v.reset_ctx(ctx)
+            except ValueError:
+                pass
+    return net
+
+def center_net_resnet18_v1b_voc(pretrained=False, pretrained_base=True, **kwargs):
+    from .deconv_resnet import deconv_resnet18_v1b
+    from ...data import VOCDetection
+    classes = VOCDetection.CLASSES
+    pretrained_base = False if pretrained else pretrained_base
+    base_network = deconv_resnet18_v1b(pretrained=pretrained_base, **kwargs)
+    heads = OrderedDict({
+        'heatmap': {'num_output': len(classes), 'bias': -2.19},  # use bias = -log((1 - 0.1) / 0.1)
+        'wh': {'num_output': 2},
+        'reg': {'num_output': 2}
+    })
+    return get_center_net('resnet18_v1b', 'voc', base_network=base_network, heads=heads,
+                          head_conv_channel=256, pretrained=pretrained, **kwargs)
