@@ -5,6 +5,7 @@ import os
 import numpy as np
 from mxnet import nd
 from mxnet.gluon.data import dataset
+from decord import VideoReader
 
 __all__ = ['Kinetics400']
 
@@ -61,6 +62,7 @@ class Kinetics400(dataset.Dataset):
                  train=True,
                  test_mode=False,
                  name_pattern='img_%05d.jpg',
+                 video_ext='mp4',
                  is_color=True,
                  modality='rgb',
                  num_segments=1,
@@ -71,6 +73,7 @@ class Kinetics400(dataset.Dataset):
                  target_width=224,
                  target_height=224,
                  temporal_jitter=False,
+                 video_loader=False,
                  transform=None):
 
         super(Kinetics400, self).__init__()
@@ -94,6 +97,8 @@ class Kinetics400(dataset.Dataset):
         self.transform = transform
         self.temporal_jitter = temporal_jitter
         self.name_pattern = name_pattern
+        self.video_loader = video_loader
+        self.video_ext = video_ext
 
         self.classes, self.class_to_idx = self._find_classes(root)
         self.clips = self._make_dataset(root, setting)
@@ -104,6 +109,9 @@ class Kinetics400(dataset.Dataset):
     def __getitem__(self, index):
 
         directory, duration, target = self.clips[index]
+        if self.video_loader:
+            decord_vr = VideoReader('{}.{}'.format(directory, self.video_ext), width=self.new_width, height=self.new_height)
+            duration = len(decord_vr)
 
         if self.train and not self.test_mode:
             segment_indices, skip_offsets = self._sample_train_indices(duration)
@@ -113,7 +121,10 @@ class Kinetics400(dataset.Dataset):
             segment_indices, skip_offsets = self._sample_test_indices(duration)
 
         # N frames of shape H x W x C, where N = num_oversample * num_segments * new_length
-        clip_input = self._TSN_loader(directory, duration, segment_indices, skip_offsets)
+        if self.video_loader:
+            clip_input = self._video_TSN_batch_loader(directory, decord_vr, duration, segment_indices, skip_offsets)
+        else:
+            clip_input = self._TSN_loader(directory, duration, segment_indices, skip_offsets)
 
         if self.transform is not None:
             clip_input = self.transform(clip_input)
@@ -121,6 +132,7 @@ class Kinetics400(dataset.Dataset):
         clip_input = np.stack(clip_input, axis=0)
         clip_input = clip_input.reshape((-1,) + (self.new_length, 3, self.target_height, self.target_width))
         clip_input = np.transpose(clip_input, (0, 2, 1, 3, 4))
+
         if self.new_length == 1:
             clip_input = np.squeeze(clip_input, axis=2)    # this is for 2D input case
 
@@ -229,6 +241,44 @@ class Kinetics400(dataset.Dataset):
                 sampled_list.append(cv_img)
                 if offset + self.new_step < duration:
                     offset += self.new_step
+        return sampled_list
+
+    def _video_TSN_frame_loader(self, directory, video_reader, duration, indices, skip_offsets):
+        sampled_list = []
+        for seg_ind in indices:
+            offset = int(seg_ind)
+            if offset > 1:
+                video_reader.seek(offset - 1)
+            cur_content = video_reader.next().asnumpy()
+            for i, _ in enumerate(range(0, self.skip_length, self.new_step)):
+                if skip_offsets[i] > 0 and offset + skip_offsets[i] <= duration:
+                    if skip_offsets[i] > 1:
+                        video_reader.skip_frames(skip_offsets[i] - 1)
+                    cur_content = video_reader.next().asnumpy()
+                sampled_list.append(cur_content)
+                if self.new_step > 1 and offset + self.new_step <= duration:
+                    video_reader.skip_frames(self.new_step - 1)
+                offset += self.new_step
+        return sampled_list
+
+    def _video_TSN_batch_loader(self, directory, video_reader, duration, indices, skip_offsets):
+        sampled_list = []
+        frame_id_list = []
+        for seg_ind in indices:
+            offset = int(seg_ind)
+            for i, _ in enumerate(range(0, self.skip_length, self.new_step)):
+                if offset + skip_offsets[i] <= duration:
+                    frame_id = offset + skip_offsets[i]
+                else:
+                    frame_id = offset
+                frame_id_list.append(frame_id)
+                if offset + self.new_step < duration:
+                    offset += self.new_step
+        try:
+            video_data = video_reader.get_batch(frame_id_list).asnumpy()
+            sampled_list = [video_data[vid, :, :, :] for vid, _ in enumerate(frame_id_list)]
+        except:
+            raise RuntimeError('Error occured in reading frames {} from video {} of duration {}.'.format(frame_id_list, directory, duration))
         return sampled_list
 
 class Kinetics400Attr(object):
