@@ -168,14 +168,39 @@ def save_params(net, logger, best_map, current_map, epoch, save_interval, prefix
         net.save_parameters('{:s}_{:04d}_{:.4f}.params'.format(prefix, epoch, current_map))
 
 
+pinned_data_stage = {}
+
+def _stage_data(i, data, ctx_list, stage_data):
+    def _get_chunk(data, storage):
+        s = storage.reshape(shape=(storage.size,))
+        s = s[:data.size]
+        s = s.reshape(shape=data.shape)
+        data.copyto(s)
+        return s
+    if ctx_list[0].device_type == "cpu":
+        return data
+    if i not in pinned_data_stage:
+        pinned_data_stage[i] = [d.as_in_context(mx.cpu_pinned()) for d in data]
+        return pinned_data_stage[i]
+
+    storage = pinned_data_stage[i]
+
+    for j in range(len(storage)):
+        if data[j].size > storage[j].size:
+            storage[j] = data[j].as_in_context(mx.cpu_pinned())
+
+    return [_get_chunk(d, s) for d,s in zip(data, storage)]
+
 def split_and_load(batch, ctx_list):
     """Split data to 1 batch each device."""
     new_batch = []
     for i, data in enumerate(batch):
         if isinstance(data, (list, tuple)):
-            new_data = [x.as_in_context(ctx) for x, ctx in zip(data, ctx_list)]
+            staged_data = _stage_data(i, data, ctx_list, pinned_data_stage)
+            new_data = [x.as_in_context(ctx) for x, ctx in zip(staged_data, ctx_list)]
         else:
-            new_data = [data.as_in_context(ctx_list[0])]
+            staged_data = _stage_data(i, [data], ctx_list, pinned_data_stage)
+            new_data = [staged_data[0].as_in_context(ctx_list[0])]
         new_batch.append(new_data)
     return new_batch
 
@@ -390,7 +415,13 @@ def train(net, train_data, val_data, eval_metric, batch_size, ctx, args):
         tic = time.time()
         btic = time.time()
         base_lr = trainer.learning_rate
-        for i, batch in enumerate(train_data):
+        train_data_iter = iter(train_data)
+        end_of_batch = False
+        next_data_batch = next(train_data_iter)
+        next_data_batch = split_and_load(next_data_batch, ctx_list=ctx)
+        i = 0
+        while not end_of_batch:
+            batch = next_data_batch
             if epoch == 0 and i <= lr_warmup:
                 # adjust based on real percentage
                 new_lr = base_lr * get_lr_at_iter(i / lr_warmup, args.lr_warmup_factor)
@@ -399,7 +430,6 @@ def train(net, train_data, val_data, eval_metric, batch_size, ctx, args):
                         logger.info(
                             '[Epoch 0 Iteration {}] Set learning rate to {}'.format(i, new_lr))
                     trainer.set_learning_rate(new_lr)
-            batch = split_and_load(batch, ctx_list=ctx)
             metric_losses = [[] for _ in metrics]
             add_losses = [[] for _ in metrics2]
             # losses = []
@@ -416,6 +446,13 @@ def train(net, train_data, val_data, eval_metric, batch_size, ctx, args):
                         metric_losses[k].append(result[k])
                     for k in range(len(add_losses)):
                         add_losses[k].append(result[len(metric_losses) + k])
+            try:
+                # prefetch next batch
+                next_data_batch = next(train_data_iter)
+                next_data_batch = split_and_load(next_data_batch, ctx_list=ctx)
+            except StopIteration:
+                end_of_batch = True
+
             for metric, record in zip(metrics, metric_losses):
                 metric.update(0, record)
             for metric, records in zip(metrics2, add_losses):
@@ -429,6 +466,7 @@ def train(net, train_data, val_data, eval_metric, batch_size, ctx, args):
                 logger.info('[Epoch {}][Batch {}], Speed: {:.3f} samples/sec, {}'.format(
                     epoch, i, args.log_interval * args.batch_size / (time.time() - btic), msg))
                 btic = time.time()
+            i = i + 1
         # validate and save params
         if (not args.horovod) or hvd.rank() == 0:
             msg = ','.join(['{}={:.3f}'.format(*metric.get()) for metric in metrics])
