@@ -9,7 +9,8 @@ import mxnet as mx
 from mxnet.context import cpu
 from mxnet.gluon import nn
 
-__all__ = ['CenterNet', 'get_center_net', 'center_net_resnet18_v1b_voc']
+__all__ = ['CenterNet', 'get_center_net',
+           'center_net_resnet18_v1b_voc', 'center_net_resnet18_v1b_coco']
 
 class CenterNet(nn.HybridBlock):
     def __init__(self, base_network, heads, head_conv_channel=0, **kwargs):
@@ -70,4 +71,18 @@ def center_net_resnet18_v1b_voc(pretrained=False, pretrained_base=True, **kwargs
         'reg': {'num_output': 2}
     })
     return get_center_net('resnet18_v1b', 'voc', base_network=base_network, heads=heads,
-                          head_conv_channel=256, pretrained=pretrained, **kwargs)
+                          head_conv_channel=64, pretrained=pretrained, **kwargs)
+
+def center_net_resnet18_v1b_coco(pretrained=False, pretrained_base=True, **kwargs):
+    from .deconv_resnet import deconv_resnet18_v1b
+    from ...data import COCODetection
+    classes = COCODetection.CLASSES
+    pretrained_base = False if pretrained else pretrained_base
+    base_network = deconv_resnet18_v1b(pretrained=pretrained_base, **kwargs)
+    heads = OrderedDict({
+        'heatmap': {'num_output': len(classes), 'bias': -2.19},  # use bias = -log((1 - 0.1) / 0.1)
+        'wh': {'num_output': 2},
+        'reg': {'num_output': 2}
+    })
+    return get_center_net('resnet18_v1b', 'coco', base_network=base_network, heads=heads,
+                          head_conv_channel=64, pretrained=pretrained, **kwargs)

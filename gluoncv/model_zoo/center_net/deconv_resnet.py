@@ -9,6 +9,7 @@ import mxnet as mx
 from mxnet.context import cpu
 from mxnet import autograd
 from mxnet.gluon import nn
+from mxnet.gluon import contrib
 from .. model_zoo import get_model
 
 __all__ = ['DeconvResnet', 'get_deconv_resnet', 'deconv_resnet18_v1b']
@@ -90,13 +91,22 @@ class DeconvResnet(nn.HybridBlock):
         in_planes = self.base_network(mx.nd.zeros((1, 3, 256, 256))).shape[1]
         for planes, k in zip(num_filters, num_kernels):
             kernel, padding, output_padding = self._get_deconv_cfg(k)
+            layers.add(contrib.cnn.ModulatedDeformableConvolution(planes,
+                                                                  kernel_size=3,
+                                                                  strides=1,
+                                                                  padding=1,
+                                                                  dilation=1,
+                                                                  num_deformable_group=1,
+                                                                  in_channels=in_planes))
+            layers.add(nn.BatchNorm(momentum=0.9))
+            layers.add(nn.Activation('relu'))
             layers.add(nn.Conv2DTranspose(channels=planes,
                                           kernel_size=kernel,
                                           strides=2,
                                           padding=padding,
                                           output_padding=output_padding,
                                           use_bias=False,
-                                          in_channels=in_planes,
+                                          in_channels=planes,
                                           weight_initializer=BilinearUpSample()))
             layers.add(nn.BatchNorm(momentum=0.9))
             layers.add(nn.Activation('relu'))
