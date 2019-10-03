@@ -28,6 +28,8 @@ class Kinetics400(dataset.Dataset):
     name_pattern : str, default None
         The naming pattern of the decoded video frames.
         For example, img_00012.jpg
+    video_ext : str, default 'mp4'
+        If video_loader is set to True, please specify the video format accordinly.
     is_color : bool, default True
         Whether the loaded image is color or grayscale
     modality : str, default 'rgb'
@@ -53,6 +55,8 @@ class Kinetics400(dataset.Dataset):
         Scale the height of transformed image to the same 'target_height' for batch forwarding.
     temporal_jitter : bool, default False
         Whether to temporally jitter if new_step > 1.
+    video_loader : bool, default False
+        Whether to use Decord video loader to load data.
     transform : function, default None
         A function that takes data and label and transforms them.
     """
@@ -247,18 +251,14 @@ class Kinetics400(dataset.Dataset):
         sampled_list = []
         for seg_ind in indices:
             offset = int(seg_ind)
-            if offset > 1:
-                video_reader.seek(offset - 1)
-            cur_content = video_reader.next().asnumpy()
             for i, _ in enumerate(range(0, self.skip_length, self.new_step)):
-                if skip_offsets[i] > 0 and offset + skip_offsets[i] <= duration:
-                    if skip_offsets[i] > 1:
-                        video_reader.skip_frames(skip_offsets[i] - 1)
-                    cur_content = video_reader.next().asnumpy()
-                sampled_list.append(cur_content)
-                if self.new_step > 1 and offset + self.new_step <= duration:
-                    video_reader.skip_frames(self.new_step - 1)
-                offset += self.new_step
+                if offset + skip_offsets[i] <= duration:
+                    vid_frame = video_reader[offset + skip_offsets[i] - 1].asnumpy()
+                else:
+                    vid_frame = video_reader[offset - 1].asnumpy()
+                sampled_list.append(vid_frame)
+                if offset + self.new_step < duration:
+                    offset += self.new_step
         return sampled_list
 
     def _video_TSN_batch_loader(self, directory, video_reader, duration, indices, skip_offsets):
