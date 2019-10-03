@@ -178,7 +178,6 @@ def main():
                 best_val_score = val_acc
                 net.save_parameters('%s/%.4f-cifar-%s-%d-best.params'%(save_dir, best_val_score, model_name, epoch))
 
-            name, val_acc = test(ctx, val_data)
             logging.info('[Epoch %d] train=%f val=%f loss=%f time: %f' %
                 (epoch, acc, val_acc, train_loss, time.time()-tic))
 
