@@ -5,7 +5,6 @@ import os
 import numpy as np
 from mxnet import nd
 from mxnet.gluon.data import dataset
-from decord import VideoReader
 
 __all__ = ['Kinetics400']
 
@@ -82,8 +81,9 @@ class Kinetics400(dataset.Dataset):
 
         super(Kinetics400, self).__init__()
 
-        from ...utils.filesystem import try_import_cv2
+        from ...utils.filesystem import try_import_cv2, try_import_decord
         self.cv2 = try_import_cv2()
+        self.decord = try_import_decord()
         self.root = root
         self.setting = setting
         self.train = train
@@ -114,7 +114,7 @@ class Kinetics400(dataset.Dataset):
 
         directory, duration, target = self.clips[index]
         if self.video_loader:
-            decord_vr = VideoReader('{}.{}'.format(directory, self.video_ext), width=self.new_width, height=self.new_height)
+            decord_vr = self.decord.VideoReader('{}.{}'.format(directory, self.video_ext), width=self.new_width, height=self.new_height)
             duration = len(decord_vr)
 
         if self.train and not self.test_mode:
