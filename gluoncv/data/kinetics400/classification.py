@@ -252,10 +252,13 @@ class Kinetics400(dataset.Dataset):
         for seg_ind in indices:
             offset = int(seg_ind)
             for i, _ in enumerate(range(0, self.skip_length, self.new_step)):
-                if offset + skip_offsets[i] <= duration:
-                    vid_frame = video_reader[offset + skip_offsets[i] - 1].asnumpy()
-                else:
-                    vid_frame = video_reader[offset - 1].asnumpy()
+                try:
+                    if offset + skip_offsets[i] <= duration:
+                        vid_frame = video_reader[offset + skip_offsets[i] - 1].asnumpy()
+                    else:
+                        vid_frame = video_reader[offset - 1].asnumpy()
+                except:
+                    raise RuntimeError('Error occured in reading frames from video {} of duration {}.'.format(directory, duration))
                 sampled_list.append(vid_frame)
                 if offset + self.new_step < duration:
                     offset += self.new_step
