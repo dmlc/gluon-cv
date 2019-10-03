@@ -8,6 +8,7 @@ from __future__ import absolute_import
 
 import numpy as np
 from mxnet import gluon
+from mxnet import nd
 
 from .bbox import BBoxCornerToCenter, NumPyBBoxCornerToCenter
 
@@ -95,14 +96,16 @@ class NormalizedBoxCenterEncoder(gluon.HybridBlock):
 
     """
 
-    def __init__(self, stds=(0.1, 0.1, 0.2, 0.2), means=(0., 0., 0., 0.)):
-        super(NormalizedBoxCenterEncoder, self).__init__()
+    def __init__(self, stds=(0.1, 0.1, 0.2, 0.2), means=(0., 0., 0., 0.), **kwargs):
+        super(NormalizedBoxCenterEncoder, self).__init__(**kwargs)
         assert len(stds) == 4, "Box Encoder requires 4 std values."
-        self._stds = stds
+        assert len(means) == 4, "Box Encoder requires 4 std values."
         self._means = means
+        self._stds = stds
         with self.name_scope():
             self.corner_to_center = BBoxCornerToCenter(split=True)
 
+    # pylint: disable=arguments-differ
     def hybrid_forward(self, F, samples, matches, anchors, refs):
         """Not HybridBlock due to use of matches.shape
 
@@ -166,8 +169,11 @@ class NormalizedPerClassBoxCenterEncoder(gluon.HybridBlock):
         self._num_class = num_class
         with self.name_scope():
             self.class_agnostic_encoder = NormalizedBoxCenterEncoder(stds=stds, means=means)
+            if 'box_encode' in nd.contrib.__dict__:
+                self.means = self.params.get_constant('means', means)
+                self.stds = self.params.get_constant('stds', stds)
 
-    def hybrid_forward(self, F, samples, matches, anchors, labels, refs):
+    def hybrid_forward(self, F, samples, matches, anchors, labels, refs, means=None, stds=None):
         """Encode BBox One entry per category
 
         Parameters
@@ -186,7 +192,11 @@ class NormalizedPerClassBoxCenterEncoder(gluon.HybridBlock):
         """
         # refs [B, M, 4], anchors [B, N, 4], samples [B, N], matches [B, N]
         # encoded targets [B, N, 4], masks [B, N, 4]
-        targets, masks = self.class_agnostic_encoder(samples, matches, anchors, refs)
+        if 'box_encode' in F.contrib.__dict__:
+            targets, masks = F.contrib.box_encode(samples, matches, anchors, refs, means, stds)
+        else:
+            targets, masks = self.class_agnostic_encoder(samples, matches, anchors, refs)
+
         # labels [B, M] -> [B, N, M]
         ref_labels = F.broadcast_like(labels.reshape((0, 1, -1)), matches, lhs_axes=1, rhs_axes=1)
         # labels [B, N, M] -> pick from matches [B, N] -> [B, N, 1]
@@ -212,42 +222,45 @@ class NormalizedBoxCenterDecoder(gluon.HybridBlock):
     ----------
     stds : array-like of size 4
         Std value to be divided from encoded values, default is (0.1, 0.1, 0.2, 0.2).
-    means : array-like of size 4
-        Mean value to be subtracted from encoded values, default is (0., 0., 0., 0.).
-    clip: float, default is None
+    clip : float, default is None
         If given, bounding box target will be clipped to this value.
+    convert_anchor : boolean, default is False
+        Whether to convert anchor from corner to center format.
 
     """
 
-    def __init__(self, stds=(0.1, 0.1, 0.2, 0.2), means=(0., 0., 0., 0.),
-                 convert_anchor=False, clip=None):
+    def __init__(self, stds=(0.1, 0.1, 0.2, 0.2), convert_anchor=False, clip=None):
         super(NormalizedBoxCenterDecoder, self).__init__()
         assert len(stds) == 4, "Box Encoder requires 4 std values."
         self._stds = stds
-        self._means = means
         self._clip = clip
         if convert_anchor:
             self.corner_to_center = BBoxCornerToCenter(split=True)
         else:
             self.corner_to_center = None
+        self._format = 'corner' if convert_anchor else 'center'
 
     def hybrid_forward(self, F, x, anchors):
+        if 'box_decode' in F.contrib.__dict__:
+            x, anchors = F.amp_multicast(x, anchors, num_outputs=2, cast_narrow=True)
+            return F.contrib.box_decode(x, anchors, self._stds[0], self._stds[1], self._stds[2],
+                                        self._stds[3], clip=self._clip, format=self._format)
         if self.corner_to_center is not None:
             a = self.corner_to_center(anchors)
         else:
             a = anchors.split(axis=-1, num_outputs=4)
         p = F.split(x, axis=-1, num_outputs=4)
-        ox = F.broadcast_add(F.broadcast_mul(p[0] * self._stds[0] + self._means[0], a[2]), a[0])
-        oy = F.broadcast_add(F.broadcast_mul(p[1] * self._stds[1] + self._means[1], a[3]), a[1])
-        dw = p[2] * self._stds[2] + self._means[2]
-        dh = p[3] * self._stds[3] + self._means[3]
+        ox = F.broadcast_add(F.broadcast_mul(p[0] * self._stds[0], a[2]), a[0])
+        oy = F.broadcast_add(F.broadcast_mul(p[1] * self._stds[1], a[3]), a[1])
+        dw = p[2] * self._stds[2]
+        dh = p[3] * self._stds[3]
         if self._clip:
             dw = F.minimum(dw, self._clip)
             dh = F.minimum(dh, self._clip)
         dw = F.exp(dw)
         dh = F.exp(dh)
-        ow = F.broadcast_mul(dw, a[2]) / 2
-        oh = F.broadcast_mul(dh, a[3]) / 2
+        ow = F.broadcast_mul(dw, a[2]) * 0.5
+        oh = F.broadcast_mul(dh, a[3]) * 0.5
         return F.concat(ox - ow, oy - oh, ox + ow, oy + oh, dim=-1)
 
 
@@ -366,10 +379,8 @@ class MultiPerClassDecoder(gluon.HybridBlock):
     def hybrid_forward(self, F, x):
         scores = x.slice_axis(axis=self._axis, begin=1, end=None)  # b x N x fg_class
         template = F.zeros_like(x.slice_axis(axis=-1, begin=0, end=1))
-        cls_ids = []
-        for i in range(self._fg_class):
-            cls_ids.append(template + i)  # b x N x 1
-        cls_id = F.concat(*cls_ids, dim=-1)  # b x N x fg_class
+        cls_id = F.broadcast_add(template,
+                                 F.reshape(F.arange(self._fg_class), shape=(1, 1, self._fg_class)))
         mask = scores > self._thresh
         cls_id = F.where(mask, cls_id, F.ones_like(cls_id) * -1)
         scores = F.where(mask, scores, F.zeros_like(scores))

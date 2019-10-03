@@ -45,8 +45,8 @@ class RCNNTargetSampler(gluon.HybridBlock):
 
         Parameters
         ----------
-        rois: (B, self._num_input, 4) encoded in (x1, y1, x2, y2).
-        scores: (B, self._num_input, 1), value range [0, 1] with ignore value -1.
+        rois: (B, self._num_proposal, 4) encoded in (x1, y1, x2, y2).
+        scores: (B, self._num_proposal, 1), value range [0, 1] with ignore value -1.
         gt_boxes: (B, M, 4) encoded in (x1, y1, x2, y2), invalid box should have area of 0.
 
         Returns
@@ -65,7 +65,7 @@ class RCNNTargetSampler(gluon.HybridBlock):
                 roi = F.squeeze(F.slice_axis(rois, axis=0, begin=i, end=i + 1), axis=0)
                 score = F.squeeze(F.slice_axis(scores, axis=0, begin=i, end=i + 1), axis=0)
                 gt_box = F.squeeze(F.slice_axis(gt_boxes, axis=0, begin=i, end=i + 1), axis=0)
-                gt_score = F.ones_like(F.sum(gt_box, axis=-1, keepdims=True))
+                gt_score = F.sign(F.sum(gt_box, axis=-1, keepdims=True) + 1)
 
                 # concat rpn roi with ground truth. mix gt with generated boxes.
                 all_roi = F.concat(roi, gt_box, dim=0)
@@ -126,9 +126,13 @@ class RCNNTargetSampler(gluon.HybridBlock):
                 samples = F.concat(topk_samples, bottomk_samples, dim=0)
                 matches = F.concat(topk_matches, bottomk_matches, dim=0)
 
-                new_rois.append(all_roi.take(indices))
-                new_samples.append(samples)
-                new_matches.append(matches)
+                sampled_rois = all_roi.take(indices)
+                x1, y1, x2, y2 = F.split(sampled_rois, axis=-1, num_outputs=4, squeeze_axis=True)
+                rois_area = (x2 - x1) * (y2 - y1)
+                ind = F.argsort(rois_area)
+                new_rois.append(sampled_rois.take(ind))
+                new_samples.append(samples.take(ind))
+                new_matches.append(matches.take(ind))
             # stack all samples together
             new_rois = F.stack(*new_rois, axis=0)
             new_samples = F.stack(*new_samples, axis=0)
@@ -179,6 +183,5 @@ class RCNNTargetGenerator(gluon.HybridBlock):
             # cls_target (B, N)
             cls_target = self._cls_encoder(samples, matches, gt_label)
             # box_target, box_weight (C, B, N, 4)
-            box_target, box_mask = self._box_encoder(
-                samples, matches, roi, gt_label, gt_box)
+            box_target, box_mask = self._box_encoder(samples, matches, roi, gt_label, gt_box)
         return cls_target, box_target, box_mask

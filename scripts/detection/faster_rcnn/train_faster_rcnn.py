@@ -264,8 +264,8 @@ class ForwardBackwardTask(Parallelizable):
         with autograd.record():
             gt_label = label[:, :, 4:5]
             gt_box = label[:, :, :4]
-            cls_pred, box_pred, roi, samples, matches, rpn_score, rpn_box, anchors = net(
-                data, gt_box)
+            cls_pred, box_pred, roi, samples, matches, rpn_score, rpn_box, anchors, cls_targets, \
+                box_targets, box_masks = net(data, gt_box, gt_label)
             # losses of rpn
             rpn_score = rpn_score.squeeze(axis=-1)
             num_rpn_pos = (rpn_cls_targets >= 0).sum()
@@ -275,10 +275,6 @@ class ForwardBackwardTask(Parallelizable):
                                           rpn_box_masks) * rpn_box.size / num_rpn_pos
             # rpn overall loss, use sum rather than average
             rpn_loss = rpn_loss1 + rpn_loss2
-            # generate targets for rcnn
-            cls_targets, box_targets, box_masks = self.net.target_generator(roi, samples,
-                                                                            matches, gt_label,
-                                                                            gt_box)
             # losses of rcnn
             num_rcnn_pos = (cls_targets >= 0).sum()
             rcnn_loss1 = self.rcnn_cls_loss(cls_pred, cls_targets,
