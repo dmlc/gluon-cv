@@ -1,7 +1,9 @@
 # pylint: disable=line-too-long,too-many-lines,missing-docstring,arguments-differ,unused-argument
 # Code partially borrowed from https://github.com/open-mmlab/mmaction.
 
-__all__ = ['I3D_ResNetV1', 'i3d_resnet50_v1_kinetics400', 'i3d_resnet101_v1_kinetics400']
+__all__ = ['I3D_ResNetV1', 'i3d_resnet50_v1_kinetics400', 'i3d_resnet101_v1_kinetics400',
+           'i3d_nl5_resnet50_v1_kinetics400', 'i3d_nl10_resnet50_v1_kinetics400',
+           'i3d_nl5_resnet101_v1_kinetics400', 'i3d_nl10_resnet101_v1_kinetics400']
 
 from mxnet import nd
 from mxnet import init
@@ -10,6 +12,7 @@ from mxnet.gluon.block import HybridBlock
 from mxnet.gluon import nn
 from mxnet.gluon.nn import BatchNorm
 from ..resnetv1b import resnet50_v1b, resnet101_v1b
+from .non_local import build_nonlocal_block
 
 def conv3x3x3(in_planes, out_planes, spatial_stride=1, temporal_stride=1, dilation=1):
     "3x3x3 convolution with padding"
@@ -185,6 +188,7 @@ class Bottleneck(HybridBlock):
                 nonlocal_cfg_ = nonlocal_cfg.copy()
                 nonlocal_cfg_['in_channels'] = planes * self.expansion
                 self.nonlocal_block = build_nonlocal_block(nonlocal_cfg_)
+                self.bottleneck.add(self.nonlocal_block)
             else:
                 self.nonlocal_block = None
 
@@ -424,8 +428,19 @@ class I3D_ResNetV1(HybridBlock):
                 resnet2d = resnet101_v1b(pretrained=True)
             else:
                 print('No such 2D pre-trained network of depth %d.' % (self.depth))
+
             weights2d = resnet2d.collect_params()
-            weights3d = self.collect_params()
+            if self.nonlocal_cfg is None:
+                weights3d = self.collect_params()
+            else:
+                train_params_list = []
+                raw_params = self.collect_params()
+                for raw_name in raw_params.keys():
+                    if 'nonlocal' in raw_name:
+                        continue
+                    train_params_list.append(raw_name)
+                init_patterns = '|'.join(train_params_list)
+                weights3d = self.collect_params(init_patterns)
             assert len(weights2d.keys()) == len(weights3d.keys()), 'Number of parameters should be same.'
 
             dict2d = {}
@@ -572,6 +587,210 @@ def i3d_resnet101_v1_kinetics400(nclass=400, pretrained=False, pretrained_base=T
     if pretrained:
         from ..model_store import get_model_file
         model.load_parameters(get_model_file('i3d_resnet101_v1_kinetics400',
+                                             tag=pretrained, root=root), ctx=ctx)
+        from ...data import Kinetics400Attr
+        attrib = Kinetics400Attr()
+        model.classes = attrib.classes
+    model.collect_params().reset_ctx(ctx)
+
+    return model
+
+def i3d_nl5_resnet50_v1_kinetics400(nclass=400, pretrained=False, pretrained_base=True, ctx=cpu(),
+                                    root='~/.mxnet/models', tsn=False, num_segments=1, partial_bn=False, **kwargs):
+    r"""Inflated 3D model (I3D) from
+    `"Quo Vadis, Action Recognition? A New Model and the Kinetics Dataset"
+    <https://arxiv.org/abs/1705.07750>`_ paper.
+
+    Parameters
+    ----------
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default $MXNET_HOME/models
+        Location for keeping the model parameters.
+    partial_bn : bool, default False
+        Freeze all batch normalization layers during training except the first layer.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    """
+
+    model = I3D_ResNetV1(nclass=nclass,
+                         depth=50,
+                         pretrained=pretrained,
+                         pretrained_base=pretrained_base,
+                         num_segments=num_segments,
+                         out_indices=[3],
+                         inflate_freq=((1, 1, 1), (1, 0, 1, 0), (1, 0, 1, 0, 1, 0), (0, 1, 0)),
+                         nonlocal_stages=(1, 2),
+                         nonlocal_cfg=dict(nonlocal_type="gaussian"),
+                         nonlocal_freq=((0, 0, 0), (0, 1, 0, 1), (0, 1, 0, 1, 0, 1), (0, 0, 0)),
+                         bn_eval=False,
+                         partial_bn=partial_bn,
+                         ctx=ctx,
+                         **kwargs)
+
+    if pretrained:
+        from ..model_store import get_model_file
+        model.load_parameters(get_model_file('i3d_nl5_resnet50_v1_kinetics400',
+                                             tag=pretrained, root=root), ctx=ctx)
+        from ...data import Kinetics400Attr
+        attrib = Kinetics400Attr()
+        model.classes = attrib.classes
+    model.collect_params().reset_ctx(ctx)
+
+    return model
+
+def i3d_nl10_resnet50_v1_kinetics400(nclass=400, pretrained=False, pretrained_base=True, ctx=cpu(),
+                                     root='~/.mxnet/models', tsn=False, num_segments=1, partial_bn=False, **kwargs):
+    r"""Inflated 3D model (I3D) from
+    `"Quo Vadis, Action Recognition? A New Model and the Kinetics Dataset"
+    <https://arxiv.org/abs/1705.07750>`_ paper.
+
+    Parameters
+    ----------
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default $MXNET_HOME/models
+        Location for keeping the model parameters.
+    partial_bn : bool, default False
+        Freeze all batch normalization layers during training except the first layer.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    """
+
+    model = I3D_ResNetV1(nclass=nclass,
+                         depth=50,
+                         pretrained=pretrained,
+                         pretrained_base=pretrained_base,
+                         num_segments=num_segments,
+                         out_indices=[3],
+                         inflate_freq=((1, 1, 1), (1, 0, 1, 0), (1, 0, 1, 0, 1, 0), (0, 1, 0)),
+                         nonlocal_stages=(1, 2),
+                         nonlocal_cfg=dict(nonlocal_type="gaussian"),
+                         nonlocal_freq=((0, 0, 0), (1, 1, 1, 1), (1, 1, 1, 1, 1, 1), (0, 0, 0)),
+                         bn_eval=False,
+                         partial_bn=partial_bn,
+                         ctx=ctx,
+                         **kwargs)
+
+    if pretrained:
+        from ..model_store import get_model_file
+        model.load_parameters(get_model_file('i3d_nl10_resnet50_v1_kinetics400',
+                                             tag=pretrained, root=root), ctx=ctx)
+        from ...data import Kinetics400Attr
+        attrib = Kinetics400Attr()
+        model.classes = attrib.classes
+    model.collect_params().reset_ctx(ctx)
+
+    return model
+
+def i3d_nl5_resnet101_v1_kinetics400(nclass=400, pretrained=False, pretrained_base=True, ctx=cpu(),
+                                     root='~/.mxnet/models', tsn=False, num_segments=1, partial_bn=False, **kwargs):
+    r"""Inflated 3D model (I3D) from
+    `"Quo Vadis, Action Recognition? A New Model and the Kinetics Dataset"
+    <https://arxiv.org/abs/1705.07750>`_ paper.
+
+    Parameters
+    ----------
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default $MXNET_HOME/models
+        Location for keeping the model parameters.
+    partial_bn : bool, default False
+        Freeze all batch normalization layers during training except the first layer.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    """
+
+    model = I3D_ResNetV1(nclass=nclass,
+                         depth=101,
+                         pretrained=pretrained,
+                         pretrained_base=pretrained_base,
+                         num_segments=num_segments,
+                         out_indices=[3],
+                         inflate_freq=((1, 1, 1), (1, 0, 1, 0), (1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1), (0, 1, 0)),
+                         nonlocal_stages=(1, 2),
+                         nonlocal_cfg=dict(nonlocal_type="gaussian"),
+                         nonlocal_freq=((0, 0, 0), (0, 1, 0, 1), (0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0), (0, 0, 0)),
+                         bn_eval=False,
+                         partial_bn=partial_bn,
+                         ctx=ctx,
+                         **kwargs)
+
+    if pretrained:
+        from ..model_store import get_model_file
+        model.load_parameters(get_model_file('i3d_nl5_resnet101_v1_kinetics400',
+                                             tag=pretrained, root=root), ctx=ctx)
+        from ...data import Kinetics400Attr
+        attrib = Kinetics400Attr()
+        model.classes = attrib.classes
+    model.collect_params().reset_ctx(ctx)
+
+    return model
+
+def i3d_nl10_resnet101_v1_kinetics400(nclass=400, pretrained=False, pretrained_base=True, ctx=cpu(),
+                                      root='~/.mxnet/models', tsn=False, num_segments=1, partial_bn=False, **kwargs):
+    r"""Inflated 3D model (I3D) from
+    `"Quo Vadis, Action Recognition? A New Model and the Kinetics Dataset"
+    <https://arxiv.org/abs/1705.07750>`_ paper.
+
+    Parameters
+    ----------
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default $MXNET_HOME/models
+        Location for keeping the model parameters.
+    partial_bn : bool, default False
+        Freeze all batch normalization layers during training except the first layer.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    """
+
+    model = I3D_ResNetV1(nclass=nclass,
+                         depth=101,
+                         pretrained=pretrained,
+                         pretrained_base=pretrained_base,
+                         num_segments=num_segments,
+                         out_indices=[3],
+                         inflate_freq=((1, 1, 1), (1, 0, 1, 0), (1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1), (0, 1, 0)),
+                         nonlocal_stages=(1, 2),
+                         nonlocal_cfg=dict(nonlocal_type="gaussian"),
+                         nonlocal_freq=((0, 0, 0), (1, 1, 1, 1), (0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1), (0, 0, 0)),
+                         bn_eval=False,
+                         partial_bn=partial_bn,
+                         ctx=ctx,
+                         **kwargs)
+
+    if pretrained:
+        from ..model_store import get_model_file
+        model.load_parameters(get_model_file('i3d_nl10_resnet101_v1_kinetics400',
                                              tag=pretrained, root=root), ctx=ctx)
         from ...data import Kinetics400Attr
         attrib = Kinetics400Attr()
