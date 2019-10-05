@@ -15,16 +15,18 @@ __all__ = ['CenterNet', 'get_center_net',
            'center_net_resnet18_v1b_voc', 'center_net_resnet18_v1b_coco']
 
 class CenterNet(nn.HybridBlock):
-    def __init__(self, base_network, heads, classes, head_conv_channel=0, **kwargs):
+    def __init__(self, base_network, heads, classes,
+                 head_conv_channel=0, scale=4.0, topk=40, **kwargs):
         super(CenterNet, self).__init__(**kwargs)
         assert isinstance(heads, OrderedDict), \
             "Expecting heads to be a OrderedDict of {head_name: # outputs} per head, given {}" \
             .format(type(heads))
         self.classes = classes
+        self.scale = scale
         with self.name_scope():
             self.base_network = base_network
             self.heatmap_nms = nn.MaxPool2D(pool_size=3, strides=1, padding=1)
-            self.decoder = CenterNetDecoder(topk=40)
+            self.decoder = CenterNetDecoder(topk=topk, scale=scale)
             self.heads = nn.HybridSequential('heads')
             for name, values in heads.items():
                 head = nn.HybridSequential(name)
@@ -81,7 +83,8 @@ def center_net_resnet18_v1b_voc(pretrained=False, pretrained_base=True, **kwargs
         'reg': {'num_output': 2}
     })
     return get_center_net('resnet18_v1b', 'voc', base_network=base_network, heads=heads,
-                          head_conv_channel=64, pretrained=pretrained, classes=classes, **kwargs)
+                          head_conv_channel=64, pretrained=pretrained, classes=classes,
+                          scale=4.0, topk=40, **kwargs)
 
 def center_net_resnet18_v1b_coco(pretrained=False, pretrained_base=True, **kwargs):
     from .deconv_resnet import deconv_resnet18_v1b
@@ -95,4 +98,5 @@ def center_net_resnet18_v1b_coco(pretrained=False, pretrained_base=True, **kwarg
         'reg': {'num_output': 2}
     })
     return get_center_net('resnet18_v1b', 'coco', base_network=base_network, heads=heads,
-                          head_conv_channel=64, pretrained=pretrained, classes=classes, **kwargs)
+                          head_conv_channel=64, pretrained=pretrained, classes=classes,
+                          scale=4.0, topk=40, **kwargs)

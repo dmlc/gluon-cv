@@ -457,3 +457,28 @@ class DistillationSoftmaxCrossEntropyLoss(gluon.HybridBlock):
                                                                   soft_target)
             hard_loss = self.hard_loss(output, label)
             return (1 - self._hard_weight) * soft_loss  + self._hard_weight * hard_loss
+
+
+class HeatmapFocalLoss(Loss):
+    def __init__(self, from_logits=False, batch_axis=0, weight=None, **kwargs):
+        super(HeatmapFocalLoss, self).__init__(weight, batch_axis, **kwargs)
+        self._from_logits = from_logits
+
+    def hybrid_forward(self, F, pred, label, sample_weight=None):
+        """Loss forward"""
+        if not self._from_logits:
+            pred = F.sigmoid(pred)
+        pos_inds = label >= 1
+        neg_inds = label < 1
+        neg_weights = F.power(1 - label, 4)
+        pos_loss = F.log(pred) * F.power(1 - pred, 2) * pos_inds
+        neg_loss = F.log(1 - pred) * F.power(pred, 2) * neg_weights * neg_inds
+
+        # normalize
+        num_pos = F.sum(pos_inds)
+        pos_loss = F.sum(pos_loss, axis=self._batch_axis, exclude=True)
+        neg_loss = F.sum(neg_loss, axis=self._batch_axis, exclude=True)
+        loss = F.contrib.cond(num_pos > 0,
+                              lambda: -(pos_loss + neg_loss) / num_pos,
+                              lambda: -neg_loss)
+        return loss
