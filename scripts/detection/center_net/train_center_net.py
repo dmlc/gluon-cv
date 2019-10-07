@@ -151,16 +151,15 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
     net.collect_params().reset_ctx(ctx)
     trainer = gluon.Trainer(
                 net.collect_params(), 'sgd',
-                {'learning_rate': args.lr, 'wd': args.wd, 'momentum': args.momentum},
-                update_on_kvstore=(False if args.amp else None))
+                {'learning_rate': args.lr, 'wd': args.wd, 'momentum': args.momentum})
 
     # lr decay policy
     lr_decay = float(args.lr_decay)
     lr_steps = sorted([float(ls) for ls in args.lr_decay_epoch.split(',') if ls.strip()])
 
     heatmap_loss = gcv.loss.HeatmapFocalLoss()
-    wh_loss = gluon.loss.SmoothL1()
-    center_reg_loss = gluon.loss.SmoothL1()
+    wh_loss = mx.gluon.loss.HuberLoss()  # == smoothl1
+    center_reg_loss = mx.gluon.loss.HuberLoss()  # == smoothl1
     heatmap_metric = gcv.utils.metrics.HeatmapAccuracy()
     wh_metric = mx.metric.Loss('WHSmoothL1')
     center_reg_metric = mx.metric.Loss('CenterRegSmoothL1')
@@ -195,18 +194,18 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
         for i, batch in enumerate(train_data):
             split_data = [gluon.utils.split_and_load(batch[ind], ctx_list=ctx, batch_axis=0) for ind in range(6)]
             data, heatmap_targets, wh_targets, wh_masks, center_reg_targets, center_reg_masks = split_data
-            batch_size = data.shape[0]
+            batch_size = args.batch_size
             with autograd.record():
                 sum_losses = []
                 wh_losses = []
                 center_reg_losses = []
                 heatmap_preds = []
-                wd_preds = []
+                wh_preds = []
                 center_reg_preds = []
                 for x, heatmap_target, wh_target, wh_mask, center_reg_target, center_reg_mask in zip(*split_data):
                     heatmap_pred, wh_pred, center_reg_pred = net(x)
                     heatmap_preds.append(heatmap_pred)
-                    wd_preds.append(wd_pred)
+                    wh_preds.append(wh_pred)
                     center_reg_preds.append(center_reg_pred)
                     wh_losses.append(wh_loss(wh_pred * wh_mask, wh_target))
                     center_reg_losses.append(center_reg_loss(center_reg_pred * center_reg_mask, center_reg_target))
@@ -223,7 +222,7 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
                 name2, loss2 = wh_metric.get()
                 name3, loss3 = center_reg_metric.get()
                 logger.info('[Epoch {}][Batch {}], Speed: {:.3f} samples/sec, {}={:.3f}, {}={:.3f}, {}={:.3f}'.format(
-                    epoch, i, args.batch_size/(time.time()-btic), name1, loss1, name2, loss2, name3, loss3))
+                    epoch, i, batch_size/(time.time()-btic), name1, loss1, name2, loss2, name3, loss3))
             btic = time.time()
 
         name1, loss1 = heatmap_metric.get()
@@ -252,7 +251,7 @@ if __name__ == '__main__':
     ctx = ctx if ctx else [mx.cpu()]
 
     # network
-    net_name = '_'.join(('center_net', str(args.data_shape), args.network, args.dataset))
+    net_name = '_'.join(('center_net', args.network, args.dataset))
     args.save_prefix += net_name
     net = get_model(net_name, pretrained_base=True, norm_layer=gluon.nn.BatchNorm)
     if args.resume.strip():
@@ -266,9 +265,9 @@ if __name__ == '__main__':
 
     # training data
     train_dataset, val_dataset, eval_metric = get_dataset(args.dataset, args)
-    batch_size = (args.batch_size // hvd.size()) if args.horovod else args.batch_size
+    batch_size = args.batch_size
     train_data, val_data = get_dataloader(
-        async_net, train_dataset, val_dataset, args.data_shape, batch_size, args.num_workers, ctx[0])
+        net, train_dataset, val_dataset, args.data_shape, batch_size, args.num_workers, ctx[0])
 
 
 

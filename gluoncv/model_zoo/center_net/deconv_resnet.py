@@ -48,10 +48,12 @@ class BilinearUpSample(mx.init.Initializer):
 class DeconvResnet(nn.HybridBlock):
     def __init__(self, base_network='resnet18_v1b', use_dcn=False,
                  deconv_filters=(256, 128, 64), deconv_kernels=(4, 4, 4),
-                 pretrained_base=True, **kwargs):
+                 pretrained_base=True, norm_layer=nn.BatchNorm, norm_kwargs=None, **kwargs):
         super(DeconvResnet, self).__init__(**kwargs)
         assert 'resnet' in base_network
         net = get_model(base_network, pretrained=pretrained_base)
+        self._norm_layer = norm_layer
+        self._norm_kwargs = norm_kwargs if norm_kwargs is not None else {}
         if 'v1b' in base_network:
             feat = nn.HybridSequential()
             feat.add(*[net.conv1,
@@ -98,7 +100,7 @@ class DeconvResnet(nn.HybridBlock):
                                                                   dilation=1,
                                                                   num_deformable_group=1,
                                                                   in_channels=in_planes))
-            layers.add(nn.BatchNorm(momentum=0.9))
+            layers.add(self._norm_layer(momentum=0.9, **self._norm_kwargs))
             layers.add(nn.Activation('relu'))
             layers.add(nn.Conv2DTranspose(channels=planes,
                                           kernel_size=kernel,
@@ -108,7 +110,7 @@ class DeconvResnet(nn.HybridBlock):
                                           use_bias=False,
                                           in_channels=planes,
                                           weight_initializer=BilinearUpSample()))
-            layers.add(nn.BatchNorm(momentum=0.9))
+            layers.add(self._norm_layer(momentum=0.9, **self._norm_kwargs))
             layers.add(nn.Activation('relu'))
             in_planes = planes
 

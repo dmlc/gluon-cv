@@ -17,6 +17,10 @@ __all__ = ['CenterNet', 'get_center_net',
 class CenterNet(nn.HybridBlock):
     def __init__(self, base_network, heads, classes,
                  head_conv_channel=0, scale=4.0, topk=40, **kwargs):
+        if 'norm_layer' in kwargs:
+            kwargs.pop('norm_layer')
+        if 'norm_kwargs' in kwargs:
+            kwargs.pop('norm_kwargs')
         super(CenterNet, self).__init__(**kwargs)
         assert isinstance(heads, OrderedDict), \
             "Expecting heads to be a OrderedDict of {head_name: # outputs} per head, given {}" \

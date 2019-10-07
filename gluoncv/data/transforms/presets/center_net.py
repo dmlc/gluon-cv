@@ -4,6 +4,7 @@ import numpy as np
 import mxnet as mx
 from .. import bbox as tbbox
 from .. import image as timage
+from .. import experimental
 
 __all__ = ['CenterNetDefaultTrainTransform', 'CenterNetDefaultValTransform']
 
@@ -73,10 +74,10 @@ class CenterNetDefaultTrainTransform(object):
         img = mx.nd.image.normalize(img, mean=self._mean, std=self._std)
 
         # generate training target so cpu workers can help reduce the workload on gpu
-        gt_bboxes = mx.nd.array(bbox[np.newaxis, :, :4])
-        gt_ids = mx.nd.array(bbox[np.newaxis, :, 4:5])
+        gt_bboxes = bbox[:, :4]
+        gt_ids = bbox[:, 4:5]
         heatmap, wh_target, wh_mask, center_reg, center_reg_mask = self._target_generator(
-            img.shape[3], img.shape[2], gt_bboxes, gt_ids)
+            img.shape[2], img.shape[1], gt_bboxes, gt_ids)
         return img, heatmap, wh_target, wh_mask, center_reg, center_reg_mask
 
 

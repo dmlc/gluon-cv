@@ -34,6 +34,7 @@ from .xception import *
 from .yolo import *
 from .alpha_pose import *
 from .action_recognition import *
+from .center_net import *
 
 __all__ = ['get_model', 'get_model_list']
 
@@ -259,7 +260,9 @@ _models = {
     'psp_resnet101_voc_int8': psp_resnet101_voc_int8,
     'psp_resnet101_coco_int8': psp_resnet101_coco_int8,
     'deeplab_resnet101_voc_int8': deeplab_resnet101_voc_int8,
-    'deeplab_resnet101_coco_int8': deeplab_resnet101_coco_int8
+    'deeplab_resnet101_coco_int8': deeplab_resnet101_coco_int8,
+    'center_net_resnet18_v1b_voc': center_net_resnet18_v1b_voc,
+    'center_net_resnet18_v1b_coco': center_net_resnet18_v1b_coco
 }
 
 
