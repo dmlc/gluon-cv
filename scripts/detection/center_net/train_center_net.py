@@ -204,6 +204,7 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
                 center_reg_preds = []
                 for x, heatmap_target, wh_target, wh_mask, center_reg_target, center_reg_mask in zip(*split_data):
                     heatmap_pred, wh_pred, center_reg_pred = net(x)
+                    heatmap_pred = nd.sigmoid(heatmap_pred)
                     heatmap_preds.append(heatmap_pred)
                     wh_preds.append(wh_pred)
                     center_reg_preds.append(center_reg_pred)
