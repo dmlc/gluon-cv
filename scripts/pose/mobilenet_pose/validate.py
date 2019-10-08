@@ -86,7 +86,8 @@ val_metric = COCOKeyPointsMetric(val_dataset, 'coco_keypoints',
 
 use_pretrained = True if not opt.params_file else False
 model_name = opt.model
-net = get_model(model_name, ctx=context, num_joints=num_joints, pretrained=use_pretrained)
+heatmap_size = [int(i/4) for i in input_size]
+net = get_model(model_name, hm_size=heatmap_size[::-1], ctx=context, num_joints=num_joints, pretrained=use_pretrained)
 if not use_pretrained:
     net.load_parameters(opt.params_file, ctx=context)
 net.hybridize()
@@ -102,20 +103,11 @@ def validate(val_data, val_dataset, net, ctx):
         data, scale, center, score, imgid = val_batch_fn(batch, ctx)
 
         coords = [net(X)[0] for X in data]
-        if opt.flip_test:
-            data_flip = [nd.flip(X, axis=3) for X in data]
-            coords_flip = [net(X)[0] for X in data_flip]
-            for o_flip in coords_flip:
-                o_flip[:,:,0] = 1 - o_flip[:,:,0]
-            # import pdb; pdb.set_trace()
-            coords = [(o + o_flip)/2 for o, o_flip in zip(coords, coords_flip)]
-
         if len(coords) > 1:
             coords_stack = nd.concat(*[o.as_in_context(mx.cpu()) for o in coords], dim=0)
         else:
             coords_stack = coords[0].as_in_context(mx.cpu())
 
-        # import pdb; pdb.set_trace()
         preds = coords_stack = (coords_stack-0.5)*scale.expand_dims(axis=1) + center.expand_dims(axis=1)
         maxvals = nd.ones(preds.shape[0:2]+(1, ))
         val_metric.update(preds, maxvals, score, imgid)
