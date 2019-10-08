@@ -81,11 +81,11 @@ def center_net_resnet18_v1b_voc(pretrained=False, pretrained_base=True, **kwargs
     classes = VOCDetection.CLASSES
     pretrained_base = False if pretrained else pretrained_base
     base_network = deconv_resnet18_v1b(pretrained=pretrained_base, **kwargs)
-    heads = OrderedDict({
-        'heatmap': {'num_output': len(classes), 'bias': -2.19},  # use bias = -log((1 - 0.1) / 0.1)
-        'wh': {'num_output': 2},
-        'reg': {'num_output': 2}
-    })
+    heads = OrderedDict([
+        ('heatmap', {'num_output': len(classes), 'bias': -2.19}),  # use bias = -log((1 - 0.1) / 0.1)
+        ('wh', {'num_output': 2}),
+        ('reg', {'num_output': 2})
+        ])
     return get_center_net('resnet18_v1b', 'voc', base_network=base_network, heads=heads,
                           head_conv_channel=64, pretrained=pretrained, classes=classes,
                           scale=4.0, topk=40, **kwargs)
@@ -96,11 +96,11 @@ def center_net_resnet18_v1b_coco(pretrained=False, pretrained_base=True, **kwarg
     classes = COCODetection.CLASSES
     pretrained_base = False if pretrained else pretrained_base
     base_network = deconv_resnet18_v1b(pretrained=pretrained_base, **kwargs)
-    heads = OrderedDict({
-        'heatmap': {'num_output': len(classes), 'bias': -2.19},  # use bias = -log((1 - 0.1) / 0.1)
-        'wh': {'num_output': 2},
-        'reg': {'num_output': 2}
-    })
+    heads = OrderedDict([
+        ('heatmap', {'num_output': len(classes), 'bias': -2.19}),  # use bias = -log((1 - 0.1) / 0.1)
+        ('wh', {'num_output': 2}),
+        ('reg', {'num_output': 2})
+        ])
     return get_center_net('resnet18_v1b', 'coco', base_network=base_network, heads=heads,
                           head_conv_channel=64, pretrained=pretrained, classes=classes,
                           scale=4.0, topk=40, **kwargs)

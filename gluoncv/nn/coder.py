@@ -456,10 +456,10 @@ class CenterNetDecoder(gluon.HybridBlock):
         b, c, out_h, out_w = x.shape_array().split(num_outputs=4, axis=0)
         scores, indices = x.reshape((0, -1)).topk(k=self._topk, ret_typ='both')
         indices = F.cast(indices, 'int64')
-        topk_classes = F.cast(indices / (out_h * out_w), 'float32')
-        topk_indices = indices % (out_h * out_w)
-        topk_ys = topk_indices / out_w
-        topk_xs = topk_indices % out_w
+        topk_classes = F.cast(F.broadcast_div(indices, (out_h * out_w)), 'float32')
+        topk_indices = F.broadcast_mod(indices, (out_h * out_w))
+        topk_ys = F.broadcast_div(topk_indices, out_w)
+        topk_xs = F.broadcast_mod(topk_indices, out_w)
         center = reg.transpose((0, 2, 3, 1)).reshape((0, -1, 2))
         wh = wh.transpose((0, 2, 3, 1)).reshape((0, -1, 2))
         batch_indices = F.cast(F.arange(256).slice_like(
