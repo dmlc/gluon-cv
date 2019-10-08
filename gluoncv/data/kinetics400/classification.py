@@ -55,7 +55,9 @@ class Kinetics400(dataset.Dataset):
     temporal_jitter : bool, default False
         Whether to temporally jitter if new_step > 1.
     video_loader : bool, default False
-        Whether to use Decord video loader to load data.
+        Whether to use video loader to load data.
+    use_decord : bool, default True
+        Whether to use Decord video loader to load data. Otherwise use mmcv video loader.
     transform : function, default None
         A function that takes data and label and transforms them.
     """
@@ -77,13 +79,13 @@ class Kinetics400(dataset.Dataset):
                  target_height=224,
                  temporal_jitter=False,
                  video_loader=False,
+                 use_decord=False,
                  transform=None):
 
         super(Kinetics400, self).__init__()
 
-        from ...utils.filesystem import try_import_cv2, try_import_decord
+        from ...utils.filesystem import try_import_cv2, try_import_decord, try_import_mmcv
         self.cv2 = try_import_cv2()
-        self.decord = try_import_decord()
         self.root = root
         self.setting = setting
         self.train = train
@@ -103,6 +105,13 @@ class Kinetics400(dataset.Dataset):
         self.name_pattern = name_pattern
         self.video_loader = video_loader
         self.video_ext = video_ext
+        self.use_decord = use_decord
+
+        if self.video_loader:
+            if self.use_decord:
+                self.decord = try_import_decord()
+            else:
+                self.mmcv = try_import_mmcv()
 
         self.classes, self.class_to_idx = self._find_classes(root)
         self.clips = self._make_dataset(root, setting)
@@ -114,8 +123,12 @@ class Kinetics400(dataset.Dataset):
 
         directory, duration, target = self.clips[index]
         if self.video_loader:
-            decord_vr = self.decord.VideoReader('{}.{}'.format(directory, self.video_ext), width=self.new_width, height=self.new_height)
-            duration = len(decord_vr)
+            if self.use_decord:
+                decord_vr = self.decord.VideoReader('{}.{}'.format(directory, self.video_ext), width=self.new_width, height=self.new_height)
+                duration = len(decord_vr)
+            else:
+                mmcv_vr = self.mmcv.VideoReader('{}.{}'.format(directory, self.video_ext))
+                duration = len(mmcv_vr)
 
         if self.train and not self.test_mode:
             segment_indices, skip_offsets = self._sample_train_indices(duration)
@@ -126,9 +139,12 @@ class Kinetics400(dataset.Dataset):
 
         # N frames of shape H x W x C, where N = num_oversample * num_segments * new_length
         if self.video_loader:
-            clip_input = self._video_TSN_batch_loader(directory, decord_vr, duration, segment_indices, skip_offsets)
+            if self.use_decord:
+                clip_input = self._video_TSN_decord_batch_loader(directory, decord_vr, duration, segment_indices, skip_offsets)
+            else:
+                clip_input = self._video_TSN_mmcv_loader(directory, mmcv_vr, duration, segment_indices, skip_offsets)
         else:
-            clip_input = self._TSN_loader(directory, duration, segment_indices, skip_offsets)
+            clip_input = self._image_TSN_cv2_loader(directory, duration, segment_indices, skip_offsets)
 
         if self.transform is not None:
             clip_input = self.transform(clip_input)
@@ -225,7 +241,7 @@ class Kinetics400(dataset.Dataset):
                 self.skip_length // self.new_step, dtype=int)
         return offsets + 1, skip_offsets
 
-    def _TSN_loader(self, directory, duration, indices, skip_offsets):
+    def _image_TSN_cv2_loader(self, directory, duration, indices, skip_offsets):
         sampled_list = []
         for seg_ind in indices:
             offset = int(seg_ind)
@@ -247,7 +263,29 @@ class Kinetics400(dataset.Dataset):
                     offset += self.new_step
         return sampled_list
 
-    def _video_TSN_frame_loader(self, directory, video_reader, duration, indices, skip_offsets):
+    def _video_TSN_mmcv_loader(self, directory, video_reader, duration, indices, skip_offsets):
+        sampled_list = []
+        for seg_ind in indices:
+            offset = int(seg_ind)
+            for i, _ in enumerate(range(0, self.skip_length, self.new_step)):
+                try:
+                    if offset + skip_offsets[i] <= duration:
+                        vid_frame = video_reader[offset + skip_offsets[i] - 1]
+                    else:
+                        vid_frame = video_reader[offset - 1]
+                except:
+                    raise RuntimeError('Error occured in reading frames from video {} of duration {}.'.format(directory, duration))
+                if self.new_width > 0 and self.new_height > 0:
+                    h, w, _ = vid_frame.shape
+                    if h != self.new_height or w != self.new_width:
+                        vid_frame = self.cv2.resize(vid_frame, (self.new_width, self.new_height))
+                vid_frame = vid_frame[:, :, ::-1]
+                sampled_list.append(vid_frame)
+                if offset + self.new_step < duration:
+                    offset += self.new_step
+        return sampled_list
+
+    def _video_TSN_decord_loader(self, directory, video_reader, duration, indices, skip_offsets):
         sampled_list = []
         for seg_ind in indices:
             offset = int(seg_ind)
@@ -264,7 +302,7 @@ class Kinetics400(dataset.Dataset):
                     offset += self.new_step
         return sampled_list
 
-    def _video_TSN_batch_loader(self, directory, video_reader, duration, indices, skip_offsets):
+    def _video_TSN_decord_batch_loader(self, directory, video_reader, duration, indices, skip_offsets):
         sampled_list = []
         frame_id_list = []
         for seg_ind in indices:
