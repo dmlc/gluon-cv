@@ -11,8 +11,7 @@ Written by Bin Xiao (Bin.Xiao@microsoft.com)
 import numpy as np
 
 class MobilePoseGaussianTargetGenerator(object):
-    """Gaussian heatmap target generator for simple pose.
-    Adapted from https://github.com/Microsoft/human-pose-estimation.pytorch
+    """Gaussian heatmap target generator for mobile pose.
 
     Parameters
     ----------
@@ -55,7 +54,6 @@ class MobilePoseGaussianTargetGenerator(object):
         target = np.zeros((self._num_joints, self._heatmap_size[1], self._heatmap_size[0]),
                           dtype=np.float32)
 
-        # size = (self._heatmap_size[1], self._heatmap_size[0])
         size = self._heatmap_size
         x_linspace = np.stack([np.linspace(1 / (2*size[0]), 1-1/(2*size[0]), size[0]) \
                                for i in range(size[1])])

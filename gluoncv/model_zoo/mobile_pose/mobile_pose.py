@@ -74,30 +74,30 @@ class MobilePose(HybridBlock):
 
         return coords, hm_norm
 
-def get_mobilepose(base_name, ctx=cpu(), pretrained=False,
+def get_mobile_pose(base_name, ctx=cpu(), pretrained=False,
                    root='~/.mxnet/models', **kwargs):
     net = MobilePose(base_name, **kwargs)
 
     if pretrained:
         from .model_store import get_model_file
-        net.load_parameters(get_model_file('mobilepose_%s'%(base_name),
+        net.load_parameters(get_model_file('mobile_pose_%s'%(base_name),
                                            tag=pretrained, root=root), ctx=ctx)
 
     return net
 
-def mobilepose_resnet18_v1b(**kwargs):
-    return get_mobilepose('resnet18_v1b', base_attrs=['conv1', 'bn1', 'relu', 'maxpool',
+def mobile_pose_resnet18_v1b(**kwargs):
+    return get_mobile_pose('resnet18_v1b', base_attrs=['conv1', 'bn1', 'relu', 'maxpool',
                           'layer1', 'layer2', 'layer3', 'layer4'], **kwargs)
 
-def mobilepose_mobilenet1_0(**kwargs):
-    return get_mobilepose('mobilenet1.0', base_attrs=['features'], **kwargs)
+def mobile_pose_mobilenet1_0(**kwargs):
+    return get_mobile_pose('mobilenet1.0', base_attrs=['features'], **kwargs)
 
-def mobilepose_mobilenetv2_1_0(**kwargs):
-    return get_mobilepose('mobilenetv2_1.0', base_attrs=['features'], **kwargs)
+def mobile_pose_mobilenetv2_1_0(**kwargs):
+    return get_mobile_pose('mobilenetv2_1.0', base_attrs=['features'], **kwargs)
 
-def mobilepose_mobilenetv3_small(**kwargs):
-    return get_mobilepose('mobilenetv3_small', base_attrs=['features'], **kwargs)
+def mobile_pose_mobilenetv3_small(**kwargs):
+    return get_mobile_pose('mobilenetv3_small', base_attrs=['features'], **kwargs)
 
-def mobilepose_mobilenetv3_large(**kwargs):
-    return get_mobilepose('mobilenetv3_large', base_attrs=['features'], **kwargs)
+def mobile_pose_mobilenetv3_large(**kwargs):
+    return get_mobile_pose('mobilenetv3_large', base_attrs=['features'], **kwargs)
 

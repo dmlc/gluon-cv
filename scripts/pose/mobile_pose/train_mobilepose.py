@@ -10,7 +10,7 @@ from mxnet.gluon import nn
 from mxnet.metric import RMSE
 from mxnet.gluon.data.vision import transforms
 
-from gluoncv.loss import JSLoss, L2LossSum
+from gluoncv.loss import JSDivLoss, L2LossSum
 from gluoncv.data import mscoco
 from gluoncv.model_zoo import get_model
 from gluoncv.utils import makedirs, LRScheduler, LRSequential
@@ -188,7 +188,7 @@ def train(ctx):
     trainer = gluon.Trainer(net.collect_params(), optimizer, optimizer_params)
 
     L_euc = L2LossSum()
-    L_map = JSLoss()
+    L_map = JSDivLoss()
     metric = RMSE()
 
     best_val_score = 1

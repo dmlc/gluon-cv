@@ -108,7 +108,7 @@ class SimplePoseDefaultTrainTransform(object):
         # to tensor
         img = mx.nd.image.to_tensor(mx.nd.array(img))
         img = mx.nd.image.normalize(img, mean=self._mean, std=self._std)
-        return img, joints, target, target_weight, img_path
+        return img, target, target_weight, img_path
 
 
 class SimplePoseDefaultValTransform(object):
