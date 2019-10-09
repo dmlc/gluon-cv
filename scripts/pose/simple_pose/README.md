@@ -1,5 +1,5 @@
 # Pose Estimation[1]
-[GluonCV Model Zoo](http://gluon-cv.mxnet.io/model_zoo/index.html#semantic-segmentation)
+[GluonCV Model Zoo](http://gluon-cv.mxnet.io/model_zoo/index.html#pose-estimation)
 
 ## Inference/Calibration Tutorial
 
@@ -54,8 +54,8 @@ numactl --physcpubind=0-27 --membind=0 python validate.py ...
 
 ## Performance
 
-model | fp32 latency(ms) | s8 latency(ms) | fp32 OKS AP | s8 OKS AP |
--- | -- | -- | -- | -- | -- | -- |
+|model | fp32 latency(ms) | s8 latency(ms) | fp32 OKS AP | s8 OKS AP |
+|-- | -- | -- | -- | -- |
 simple_pose_resnet18_v1b    |5.55  |2.38 |66.3 | 65.9 |
 simple_pose_resnet50_v1b    |12.68 |4.65 |71.0 | 70.6 |
 simple_pose_resnet50_v1d    |18.91 |4.80 |71.6 | 71.4 |
