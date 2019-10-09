@@ -155,6 +155,10 @@ class NormalizedPerClassBoxCenterEncoder(gluon.HybridBlock):
 
     Parameters
     ----------
+    max_pos : int, default is 128
+        Upper bound of Number of positive samples.
+    per_device_batch_size : int, default is 1
+        Per device batch size
     stds : array-like of size 4
         Std value to be divided from encoded values, default is (0.1, 0.1, 0.2, 0.2).
     means : array-like of size 4
@@ -162,11 +166,14 @@ class NormalizedPerClassBoxCenterEncoder(gluon.HybridBlock):
 
     """
 
-    def __init__(self, num_class, stds=(0.1, 0.1, 0.2, 0.2), means=(0., 0., 0., 0.)):
+    def __init__(self, num_class, max_pos=128, per_device_batch_size=1, stds=(0.1, 0.1, 0.2, 0.2),
+                 means=(0., 0., 0., 0.)):
         super(NormalizedPerClassBoxCenterEncoder, self).__init__()
         assert len(stds) == 4, "Box Encoder requires 4 std values."
         assert num_class > 0, "Number of classes must be positive"
         self._num_class = num_class
+        self._max_pos = max_pos
+        self._batch_size = per_device_batch_size
         with self.name_scope():
             self.class_agnostic_encoder = NormalizedBoxCenterEncoder(stds=stds, means=means)
             if 'box_encode' in nd.contrib.__dict__:
@@ -186,8 +193,9 @@ class NormalizedPerClassBoxCenterEncoder(gluon.HybridBlock):
 
         Returns
         -------
-        targets: (B, N, C, 4) transform anchors to refs picked according to matches
-        masks: (B, N, C, 4) only positive anchors of the correct class has targets
+        targets: (B, N_pos, C, 4) transform anchors to refs picked according to matches
+        masks: (B, N_pos, C, 4) only positive anchors of the correct class has targets
+        indices : (B, N_pos) positive sample indices
 
         """
         # refs [B, M, 4], anchors [B, N, 4], samples [B, N], matches [B, N]
@@ -201,14 +209,34 @@ class NormalizedPerClassBoxCenterEncoder(gluon.HybridBlock):
         ref_labels = F.broadcast_like(labels.reshape((0, 1, -1)), matches, lhs_axes=1, rhs_axes=1)
         # labels [B, N, M] -> pick from matches [B, N] -> [B, N, 1]
         ref_labels = F.pick(ref_labels, matches, axis=2).reshape((0, -1)).expand_dims(2)
-        # boolean array [B, N, C, 1]
+        # boolean array [B, N, C]
         same_cids = F.broadcast_equal(ref_labels, F.reshape(F.arange(self._num_class),
-                                                            shape=(1, 1, -1))).expand_dims(-1)
-        # targets, masks [B, N, C, 4]
-        all_targets = F.broadcast_to(targets.expand_dims(2), shape=(0, 0, self._num_class, 0))
+                                                            shape=(1, 1, -1)))
+
+        # reduce box targets to positive samples only
+        indices = F.slice_axis(F.argsort(F.slice_axis(masks, axis=-1, begin=0, end=1), axis=1,
+                                         is_ascend=False).squeeze(),
+                               axis=1, begin=0, end=self._max_pos)
+        targets_tmp = []
+        masks_tmp = []
+        same_cids_tmp = []
+        for i in range(self._batch_size):
+            ind = F.slice_axis(indices, axis=0, begin=i, end=i + 1).squeeze(axis=0)
+            target = F.slice_axis(targets, axis=0, begin=i, end=i + 1).squeeze(axis=0)
+            mask = F.slice_axis(masks, axis=0, begin=i, end=i + 1).squeeze(axis=0)
+            same_cid = F.slice_axis(same_cids, axis=0, begin=i, end=i + 1).squeeze(axis=0)
+            targets_tmp.append(F.take(target, ind).expand_dims(axis=0))
+            masks_tmp.append(F.take(mask, ind).expand_dims(axis=0))
+            same_cids_tmp.append(F.take(same_cid, ind).expand_dims(axis=0))
+        targets = F.concat(*targets_tmp, dim=0)
+        masks = F.concat(*masks_tmp, dim=0)
+        same_cids = F.concat(*same_cids_tmp, dim=0).expand_dims(3)
+
+        # targets, masks [B, N_pos, C, 4]
+        all_targets = F.broadcast_axes(targets.expand_dims(2), axis=2, size=self._num_class)
         all_masks = F.broadcast_mul(masks.expand_dims(2),
-                                    F.broadcast_to(same_cids, shape=(0, 0, 0, 4)))
-        return all_targets, all_masks
+                                    F.broadcast_axes(same_cids, axis=3, size=4))
+        return all_targets, all_masks, indices
 
 
 class NormalizedBoxCenterDecoder(gluon.HybridBlock):

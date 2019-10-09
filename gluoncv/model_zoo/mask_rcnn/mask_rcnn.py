@@ -226,11 +226,17 @@ class MaskRCNN(FasterRCNN):
         """
         if autograd.is_training():
             cls_pred, box_pred, rpn_box, samples, matches, raw_rpn_score, raw_rpn_box, anchors, \
-                cls_targets, box_targets, box_masks, top_feat = \
+            cls_targets, box_targets, box_masks, top_feat, indices = \
                 super(MaskRCNN, self).hybrid_forward(F, x, gt_box, gt_label)
-            mask_pred = self.mask(top_feat)
-            return cls_pred, box_pred, mask_pred, rpn_box, samples, matches, \
-                raw_rpn_score, raw_rpn_box, anchors, cls_targets, box_targets, box_masks
+            top_feat = F.reshape(top_feat.expand_dims(0), (self._batch_size, -1, 0, 0, 0))
+            top_feat = F.concat(
+                *[F.take(F.slice_axis(top_feat, axis=0, begin=i, end=i + 1).squeeze(),
+                         F.slice_axis(indices, axis=0, begin=i, end=i + 1).squeeze()).expand_dims(0)
+                  for i in range(self._batch_size)], dim=0)
+            mask_pred = self.mask(F.reshape(top_feat, (-3, 0, 0, 0)))
+
+            return cls_pred, box_pred, mask_pred, rpn_box, samples, matches, raw_rpn_score, \
+                   raw_rpn_box, anchors, cls_targets, box_targets, box_masks, indices
         else:
             batch_size = 1
             ids, scores, boxes, feat = \
@@ -465,7 +471,7 @@ def mask_rcnn_fpn_resnet50_v1b_coco(pretrained=False, pretrained_base=True, **kw
         short=800, max_size=1333, min_stage=2, max_stage=6,
         train_patterns=train_patterns, nms_thresh=0.5, nms_topk=-1,
         post_nms=-1, roi_mode='align', roi_size=(14, 14),
-        strides=(4, 8, 16, 32, 64), clip=4.42, rpn_channel=1024, base_size=16,
+        strides=(4, 8, 16, 32, 64), clip=4.42, rpn_channel=256, base_size=16,
         scales=(2, 4, 8, 16, 32), ratios=(0.5, 1, 2), alloc_size=(384, 384),
         rpn_nms_thresh=0.7, rpn_train_pre_nms=12000, rpn_train_post_nms=2000,
         rpn_test_pre_nms=6000, rpn_test_post_nms=1000, rpn_min_size=1,

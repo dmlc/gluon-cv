@@ -281,7 +281,7 @@ class ForwardBackwardTask(Parallelizable):
             gt_label = label[:, :, 4:5]
             gt_box = label[:, :, :4]
             cls_pred, box_pred, mask_pred, roi, samples, matches, rpn_score, rpn_box, anchors, \
-            cls_targets, box_targets, box_masks = net(data, gt_box, gt_label)
+            cls_targets, box_targets, box_masks, indices = net(data, gt_box, gt_label)
             # losses of rpn
             rpn_score = rpn_score.squeeze(axis=-1)
             num_rpn_pos = (rpn_cls_targets >= 0).sum()
@@ -302,7 +302,16 @@ class ForwardBackwardTask(Parallelizable):
             rcnn_loss = rcnn_loss1 + rcnn_loss2
 
             # generate targets for mask
-            mask_targets, mask_masks = self.net.mask_target(roi, gt_mask, matches, cls_targets)
+            roi = mx.nd.concat(
+                *[mx.nd.take(roi[i], indices[i]) for i in range(indices.shape[0])], dim=0) \
+                .reshape((indices.shape[0], -1, 4))
+            m_cls_targets = mx.nd.concat(
+                *[mx.nd.take(cls_targets[i], indices[i]) for i in range(indices.shape[0])], dim=0) \
+                .reshape((indices.shape[0], -1))
+            matches = mx.nd.concat(
+                *[mx.nd.take(matches[i], indices[i]) for i in range(indices.shape[0])], dim=0) \
+                .reshape((indices.shape[0], -1))
+            mask_targets, mask_masks = self.net.mask_target(roi, gt_mask, matches, m_cls_targets)
             # loss of mask
             mask_loss = self.rcnn_mask_loss(mask_pred, mask_targets, mask_masks) * \
                         mask_targets.size / mask_masks.sum()
@@ -337,11 +346,11 @@ def train(net, train_data, val_data, eval_metric, batch_size, ctx, args):
     """Training pipeline"""
     kv = mx.kvstore.create('device' if (args.amp and 'nccl' in args.kv_store) else args.kv_store)
     net.collect_params().setattr('grad_req', 'null')
-    net.collect_train_params().setattr('grad_req', 'add')
+    net.collect_train_params().setattr('grad_req', 'write')
     for k, v in net.collect_params('.*bias').items():
         v.wd_mult = 0.0
-    optimizer_params = {'learning_rate': args.lr, 'wd': args.wd, 'momentum': args.momentum,}
-                        #'clip_gradient': 1.5}
+    optimizer_params = {'learning_rate': args.lr, 'wd': args.wd, 'momentum': args.momentum, }
+    # 'clip_gradient': 1.5}
     if args.horovod:
         hvd.broadcast_parameters(net.collect_params(), root_rank=0)
         trainer = hvd.DistributedTrainer(
@@ -423,9 +432,10 @@ def train(net, train_data, val_data, eval_metric, batch_size, ctx, args):
         next_data_batch = split_and_load(next_data_batch, ctx_list=ctx)
         for i in range(len(train_data)):
             batch = next_data_batch
-            if epoch == 0 and i <= lr_warmup:
+            if i + epoch * len(train_data) <= lr_warmup:
                 # adjust based on real percentage
-                new_lr = base_lr * get_lr_at_iter(i / lr_warmup, args.lr_warmup_factor)
+                new_lr = base_lr * get_lr_at_iter((i + epoch * len(train_data)) / lr_warmup,
+                                                  args.lr_warmup_factor)
                 if new_lr != trainer.learning_rate:
                     if i % args.log_interval == 0:
                         logger.info(
@@ -458,9 +468,7 @@ def train(net, train_data, val_data, eval_metric, batch_size, ctx, args):
             for metric, records in zip(metrics2, add_losses):
                 for pred in records:
                     metric.update(pred[0], pred[1])
-            if i % 4 == 0:
-                trainer.step(batch_size * 4)
-                net.collect_train_params().zero_grad()
+            trainer.step(batch_size)
 
             if (not args.horovod or hvd.rank() == 0) and args.log_interval \
                     and not (i + 1) % args.log_interval:

@@ -438,7 +438,7 @@ class SplitSortedBucketSampler(Sampler):
         self._mult = mult
         self._shuffle = shuffle
         # Compute the length of each partition
-        part_len = np.ceil(float(length) / num_parts)
+        part_len = int(np.ceil(float(length) / num_parts))
         # Compute the start index for this partition
         self._start = part_len * part_index
         # Compute the end index for this partition

@@ -198,7 +198,8 @@ class FasterRCNN(RCNN):
         self._batch_size = per_device_batch_size
         self._num_sample = num_sample
         self._rpn_test_post_nms = rpn_test_post_nms
-        self._target_generator = RCNNTargetGenerator(self.num_class)
+        self._target_generator = RCNNTargetGenerator(self.num_class, int(num_sample * pos_ratio),
+                                                     self._batch_size)
         self._additional_output = additional_output
         with self.name_scope():
             self.rpn = RPN(
@@ -207,7 +208,7 @@ class FasterRCNN(RCNN):
                 clip=clip, nms_thresh=rpn_nms_thresh, train_pre_nms=rpn_train_pre_nms,
                 train_post_nms=rpn_train_post_nms, test_pre_nms=rpn_test_pre_nms,
                 test_post_nms=rpn_test_post_nms, min_size=rpn_min_size,
-                multi_level=self.num_stages > 1, per_level_nms=True)
+                multi_level=self.num_stages > 1, per_level_nms=False)
             self.sampler = RCNNTargetSampler(num_image=self._batch_size,
                                              num_proposal=rpn_train_post_nms, num_sample=num_sample,
                                              pos_iou_thresh=pos_iou_thresh, pos_ratio=pos_ratio,
@@ -252,7 +253,8 @@ class FasterRCNN(RCNN):
 
         """
         super(FasterRCNN, self).reset_class(classes, reuse_weights)
-        self._target_generator = RCNNTargetGenerator(self.num_class)
+        self._target_generator = RCNNTargetGenerator(self.num_class, self.sampler._max_pos,
+                                                     self._batch_size)
 
     def _pyramid_roi_feats(self, F, features, rpn_rois, roi_size, strides, roi_mode='align',
                            roi_canonical_scale=224.0, eps=1e-6):
@@ -299,11 +301,11 @@ class FasterRCNN(RCNN):
                 pooled_feature = F.where(roi_level == l, pooled_feature,
                                          F.zeros_like(pooled_feature))
             elif roi_mode == 'align':
-                masked_rpn_rois = F.where(roi_level == l, rpn_rois, F.ones_like(rpn_rois) * -1.)
-                pooled_feature = F.contrib.ROIAlign(features[i], masked_rpn_rois, roi_size,
+                # masked_rpn_rois = F.where(roi_level == l, rpn_rois, F.ones_like(rpn_rois) * -1.)
+                pooled_feature = F.contrib.ROIAlign(features[i], rpn_rois, roi_size,
                                                     1. / strides[i], sample_ratio=2)
-                #                 pooled_feature = F.where(roi_level == l, pooled_feature,
-                #                                          F.zeros_like(pooled_feature))
+                pooled_feature = F.where(roi_level == l, pooled_feature,
+                                         F.zeros_like(pooled_feature))
             else:
                 raise ValueError("Invalid roi mode: {}".format(roi_mode))
             pooled_roi_feats.append(pooled_feature)
@@ -391,22 +393,29 @@ class FasterRCNN(RCNN):
         else:
             box_feat = self.box_features(top_feat)
         cls_pred = self.class_predictor(box_feat)
-        box_pred = self.box_predictor(box_feat)
         # cls_pred (B * N, C) -> (B, N, C)
         cls_pred = cls_pred.reshape((batch_size, num_roi, self.num_class + 1))
-        # box_pred (B * N, C * 4) -> (B, N, C, 4)
-        box_pred = box_pred.reshape((batch_size, num_roi, self.num_class, 4))
 
         # no need to convert bounding boxes in training, just return
         if autograd.is_training():
-            cls_targets, box_targets, box_masks = self.target_generator(rpn_box, samples, matches,
-                                                                        gt_label, gt_box)
+            cls_targets, box_targets, box_masks, indices = \
+                self.target_generator(rpn_box, samples, matches, gt_label, gt_box)
+            box_feat = F.reshape(box_feat.expand_dims(0), (batch_size, -1, 0))
+            box_pred = self.box_predictor(F.concat(
+                *[F.take(F.slice_axis(box_feat, axis=0, begin=i, end=i + 1).squeeze(),
+                         F.slice_axis(indices, axis=0, begin=i, end=i + 1).squeeze())
+                  for i in range(batch_size)], dim=0))
+            # box_pred (B * N, C * 4) -> (B, N, C, 4)
+            box_pred = box_pred.reshape((batch_size, -1, self.num_class, 4))
             if self._additional_output:
                 return (cls_pred, box_pred, rpn_box, samples, matches, raw_rpn_score, raw_rpn_box,
-                        anchors, cls_targets, box_targets, box_masks, top_feat)
+                        anchors, cls_targets, box_targets, box_masks, top_feat, indices)
             return (cls_pred, box_pred, rpn_box, samples, matches, raw_rpn_score, raw_rpn_box,
-                    anchors, cls_targets, box_targets, box_masks)
+                    anchors, cls_targets, box_targets, box_masks, indices)
 
+        box_pred = self.box_predictor(box_feat)
+        # box_pred (B * N, C * 4) -> (B, N, C, 4)
+        box_pred = box_pred.reshape((batch_size, num_roi, self.num_class, 4))
         # cls_ids (B, N, C), scores (B, N, C)
         cls_ids, scores = self.cls_decoder(F.softmax(cls_pred, axis=-1))
         # cls_ids, scores (B, N, C) -> (B, C, N) -> (B, C, N, 1)
@@ -639,7 +648,7 @@ def faster_rcnn_fpn_resnet50_v1b_coco(pretrained=False, pretrained_base=True, **
         top_features=top_features, classes=classes, box_features=box_features,
         short=800, max_size=1333, min_stage=2, max_stage=6, train_patterns=train_patterns,
         nms_thresh=0.5, nms_topk=-1, post_nms=-1, roi_mode='align', roi_size=(7, 7),
-        strides=(4, 8, 16, 32, 64), clip=4.14, rpn_channel=1024, base_size=16,
+        strides=(4, 8, 16, 32, 64), clip=4.14, rpn_channel=256, base_size=16,
         scales=(2, 4, 8, 16, 32), ratios=(0.5, 1, 2), alloc_size=(384, 384),
         rpn_nms_thresh=0.7, rpn_train_pre_nms=12000, rpn_train_post_nms=2000,
         rpn_test_pre_nms=6000, rpn_test_post_nms=1000, rpn_min_size=1, num_sample=512,

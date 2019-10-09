@@ -147,6 +147,10 @@ class RCNNTargetGenerator(gluon.HybridBlock):
     ----------
     num_class : int
         Number of total number of positive classes.
+    max_pos : int, default is 128
+        Upper bound of Number of positive samples.
+    per_device_batch_size : int, default is 1
+        Per device batch size
     means : iterable of float, default is (0., 0., 0., 0.)
         Mean values to be subtracted from regression targets.
     stds : iterable of float, default is (.1, .1, .2, .2)
@@ -154,11 +158,13 @@ class RCNNTargetGenerator(gluon.HybridBlock):
 
     """
 
-    def __init__(self, num_class, means=(0., 0., 0., 0.), stds=(.1, .1, .2, .2)):
+    def __init__(self, num_class, max_pos=128, per_device_batch_size=1, means=(0., 0., 0., 0.),
+                 stds=(.1, .1, .2, .2)):
         super(RCNNTargetGenerator, self).__init__()
         self._cls_encoder = MultiClassEncoder()
         self._box_encoder = NormalizedPerClassBoxCenterEncoder(
-            num_class=num_class, means=means, stds=stds)
+            num_class=num_class, max_pos=max_pos, per_device_batch_size=per_device_batch_size,
+            means=means, stds=stds)
 
     # pylint: disable=arguments-differ, unused-argument
     def hybrid_forward(self, F, roi, samples, matches, gt_label, gt_box):
@@ -183,5 +189,7 @@ class RCNNTargetGenerator(gluon.HybridBlock):
             # cls_target (B, N)
             cls_target = self._cls_encoder(samples, matches, gt_label)
             # box_target, box_weight (C, B, N, 4)
-            box_target, box_mask = self._box_encoder(samples, matches, roi, gt_label, gt_box)
-        return cls_target, box_target, box_mask
+            box_target, box_mask, indices = self._box_encoder(samples, matches, roi, gt_label,
+                                                              gt_box)
+
+        return cls_target, box_target, box_mask, indices
