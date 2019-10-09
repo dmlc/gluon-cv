@@ -36,12 +36,13 @@ class CenterNet(nn.HybridBlock):
                 head = nn.HybridSequential(name)
                 num_output = values['num_output']
                 bias = values.get('bias', 0)
+                weight_initializer = mx.init.Normal(0.001) if bias == 0 else mx.init.Xavier()
                 if head_conv_channel > 0:
                     head.add(nn.Conv2D(head_conv_channel, kernel_size=3, padding=1, use_bias=True,
                              weight_initializer=mx.init.Normal(0.001), bias_initializer='zeros'))
                     head.add(nn.Activation('relu'))
                 head.add(nn.Conv2D(num_output, kernel_size=1, strides=1, padding=0, use_bias=True,
-                                   weight_initializer=mx.init.Normal(0.001),
+                                   weight_initializer=weight_initializer,
                                    bias_initializer=mx.init.Constant(bias)))
 
                 self.heads.add(head)
