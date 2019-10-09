@@ -27,6 +27,8 @@ class Kinetics400(dataset.Dataset):
     name_pattern : str, default None
         The naming pattern of the decoded video frames.
         For example, img_00012.jpg
+    video_ext : str, default 'mp4'
+        If video_loader is set to True, please specify the video format accordinly.
     is_color : bool, default True
         Whether the loaded image is color or grayscale
     modality : str, default 'rgb'
@@ -52,6 +54,10 @@ class Kinetics400(dataset.Dataset):
         Scale the height of transformed image to the same 'target_height' for batch forwarding.
     temporal_jitter : bool, default False
         Whether to temporally jitter if new_step > 1.
+    video_loader : bool, default False
+        Whether to use video loader to load data.
+    use_decord : bool, default True
+        Whether to use Decord video loader to load data. Otherwise use mmcv video loader.
     transform : function, default None
         A function that takes data and label and transforms them.
     """
@@ -61,6 +67,7 @@ class Kinetics400(dataset.Dataset):
                  train=True,
                  test_mode=False,
                  name_pattern='img_%05d.jpg',
+                 video_ext='mp4',
                  is_color=True,
                  modality='rgb',
                  num_segments=1,
@@ -71,11 +78,13 @@ class Kinetics400(dataset.Dataset):
                  target_width=224,
                  target_height=224,
                  temporal_jitter=False,
+                 video_loader=False,
+                 use_decord=False,
                  transform=None):
 
         super(Kinetics400, self).__init__()
 
-        from ...utils.filesystem import try_import_cv2
+        from ...utils.filesystem import try_import_cv2, try_import_decord, try_import_mmcv
         self.cv2 = try_import_cv2()
         self.root = root
         self.setting = setting
@@ -94,6 +103,15 @@ class Kinetics400(dataset.Dataset):
         self.transform = transform
         self.temporal_jitter = temporal_jitter
         self.name_pattern = name_pattern
+        self.video_loader = video_loader
+        self.video_ext = video_ext
+        self.use_decord = use_decord
+
+        if self.video_loader:
+            if self.use_decord:
+                self.decord = try_import_decord()
+            else:
+                self.mmcv = try_import_mmcv()
 
         self.classes, self.class_to_idx = self._find_classes(root)
         self.clips = self._make_dataset(root, setting)
@@ -104,6 +122,13 @@ class Kinetics400(dataset.Dataset):
     def __getitem__(self, index):
 
         directory, duration, target = self.clips[index]
+        if self.video_loader:
+            if self.use_decord:
+                decord_vr = self.decord.VideoReader('{}.{}'.format(directory, self.video_ext), width=self.new_width, height=self.new_height)
+                duration = len(decord_vr)
+            else:
+                mmcv_vr = self.mmcv.VideoReader('{}.{}'.format(directory, self.video_ext))
+                duration = len(mmcv_vr)
 
         if self.train and not self.test_mode:
             segment_indices, skip_offsets = self._sample_train_indices(duration)
@@ -113,7 +138,13 @@ class Kinetics400(dataset.Dataset):
             segment_indices, skip_offsets = self._sample_test_indices(duration)
 
         # N frames of shape H x W x C, where N = num_oversample * num_segments * new_length
-        clip_input = self._TSN_loader(directory, duration, segment_indices, skip_offsets)
+        if self.video_loader:
+            if self.use_decord:
+                clip_input = self._video_TSN_decord_batch_loader(directory, decord_vr, duration, segment_indices, skip_offsets)
+            else:
+                clip_input = self._video_TSN_mmcv_loader(directory, mmcv_vr, duration, segment_indices, skip_offsets)
+        else:
+            clip_input = self._image_TSN_cv2_loader(directory, duration, segment_indices, skip_offsets)
 
         if self.transform is not None:
             clip_input = self.transform(clip_input)
@@ -121,6 +152,7 @@ class Kinetics400(dataset.Dataset):
         clip_input = np.stack(clip_input, axis=0)
         clip_input = clip_input.reshape((-1,) + (self.new_length, 3, self.target_height, self.target_width))
         clip_input = np.transpose(clip_input, (0, 2, 1, 3, 4))
+
         if self.new_length == 1:
             clip_input = np.squeeze(clip_input, axis=2)    # this is for 2D input case
 
@@ -209,7 +241,7 @@ class Kinetics400(dataset.Dataset):
                 self.skip_length // self.new_step, dtype=int)
         return offsets + 1, skip_offsets
 
-    def _TSN_loader(self, directory, duration, indices, skip_offsets):
+    def _image_TSN_cv2_loader(self, directory, duration, indices, skip_offsets):
         sampled_list = []
         for seg_ind in indices:
             offset = int(seg_ind)
@@ -229,6 +261,65 @@ class Kinetics400(dataset.Dataset):
                 sampled_list.append(cv_img)
                 if offset + self.new_step < duration:
                     offset += self.new_step
+        return sampled_list
+
+    def _video_TSN_mmcv_loader(self, directory, video_reader, duration, indices, skip_offsets):
+        sampled_list = []
+        for seg_ind in indices:
+            offset = int(seg_ind)
+            for i, _ in enumerate(range(0, self.skip_length, self.new_step)):
+                try:
+                    if offset + skip_offsets[i] <= duration:
+                        vid_frame = video_reader[offset + skip_offsets[i] - 1]
+                    else:
+                        vid_frame = video_reader[offset - 1]
+                except:
+                    raise RuntimeError('Error occured in reading frames from video {} of duration {}.'.format(directory, duration))
+                if self.new_width > 0 and self.new_height > 0:
+                    h, w, _ = vid_frame.shape
+                    if h != self.new_height or w != self.new_width:
+                        vid_frame = self.cv2.resize(vid_frame, (self.new_width, self.new_height))
+                vid_frame = vid_frame[:, :, ::-1]
+                sampled_list.append(vid_frame)
+                if offset + self.new_step < duration:
+                    offset += self.new_step
+        return sampled_list
+
+    def _video_TSN_decord_loader(self, directory, video_reader, duration, indices, skip_offsets):
+        sampled_list = []
+        for seg_ind in indices:
+            offset = int(seg_ind)
+            for i, _ in enumerate(range(0, self.skip_length, self.new_step)):
+                try:
+                    if offset + skip_offsets[i] <= duration:
+                        vid_frame = video_reader[offset + skip_offsets[i] - 1].asnumpy()
+                    else:
+                        vid_frame = video_reader[offset - 1].asnumpy()
+                except:
+                    raise RuntimeError('Error occured in reading frames from video {} of duration {}.'.format(directory, duration))
+                sampled_list.append(vid_frame)
+                if offset + self.new_step < duration:
+                    offset += self.new_step
+        return sampled_list
+
+    def _video_TSN_decord_batch_loader(self, directory, video_reader, duration, indices, skip_offsets):
+        sampled_list = []
+        frame_id_list = []
+        for seg_ind in indices:
+            offset = int(seg_ind)
+            for i, _ in enumerate(range(0, self.skip_length, self.new_step)):
+                if offset + skip_offsets[i] <= duration:
+                    frame_id = offset + skip_offsets[i]
+                else:
+                    frame_id = offset
+                frame_id_list.append(frame_id)
+                if offset + self.new_step < duration:
+                    offset += self.new_step
+        try:
+            video_data = video_reader.get_batch(frame_id_list).asnumpy()
+            sampled_list = [video_data[vid, :, :, :] for vid, _ in enumerate(frame_id_list)]
+        except:
+            raise RuntimeError('Error occured in reading frames {} from video {} of duration {}.'.format(frame_id_list, directory, duration))
         return sampled_list
 
 class Kinetics400Attr(object):

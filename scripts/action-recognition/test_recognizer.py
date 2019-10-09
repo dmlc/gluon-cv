@@ -134,6 +134,10 @@ def parse_args():
                         help='the input is 4d or 5d tensor. 5d is for 3D CNN models.')
     parser.add_argument('--use-softmax', action='store_true',
                         help='whether to use softmax scores.')
+    parser.add_argument('--video-loader', action='store_true',
+                        help='if set to True, read videos directly instead of reading frames.')
+    parser.add_argument('--use-decord', action='store_true',
+                        help='if set to True, use Decord video loader to load data. Otherwise use mmcv video loader.')
     opt = parser.parse_args()
     return opt
 
@@ -224,14 +228,14 @@ def main():
     elif opt.dataset == 'kinetics400':
         val_dataset = kinetics400.classification.Kinetics400(setting=opt.val_list, root=opt.data_dir, train=False,
                                                new_width=opt.new_width, new_height=opt.new_height, new_length=opt.new_length, new_step=opt.new_step,
-                                               target_width=opt.input_size, target_height=opt.input_size,
+                                               target_width=opt.input_size, target_height=opt.input_size, video_loader=opt.video_loader, use_decord=opt.use_decord,
                                                test_mode=True, num_segments=opt.num_segments, transform=transform_test)
     else:
         logger.info('Dataset %s is not supported yet.' % (opt.dataset))
 
     val_data = gluon.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers,
                                      prefetch=int(opt.prefetch_ratio * num_workers), batchify_fn=tsn_mp_batchify_fn, last_batch='discard')
-    print('Load %d test samples.' % len(val_dataset))
+    print('Load %d test samples in %d iterations.' % (len(val_dataset), len(val_data)))
 
     start_time = time.time()
     acc_top1_val, acc_top5_val = test(context, val_data, opt, net)
