@@ -1,4 +1,4 @@
-"""Utils for video action recognition"""
+"""Non-local block for video action recognition"""
 # pylint: disable=line-too-long,too-many-lines,missing-docstring,arguments-differ,unused-argument
 from mxnet.gluon.block import HybridBlock
 from mxnet import init
@@ -21,7 +21,6 @@ class NonLocal(HybridBlock):
         super(NonLocal, self).__init__()
 
         assert nonlocal_type in ['gaussian', 'dot', 'concat']
-        assert dim == 2 or dim == 3
         self.nonlocal_type = nonlocal_type
         self.embed = embed
         self.embed_dim = embed_dim if embed_dim is not None else in_channels // 2
@@ -106,11 +105,11 @@ class NonLocal(HybridBlock):
             theta_phi = F.batch_dot(theta, phi, transpose_a=True)
             attn = F.softmax(theta_phi, axis=2)
         elif self.non_local_type == 'concat':
-            NotImplementedError
+            raise NotImplementedError
         elif self.non_local_type == 'dot':
-            NotImplementedError
+            raise NotImplementedError
         else:
-            NotImplementedError
+            raise NotImplementedError
 
         y = F.batch_dot(g, attn, transpose_b=True)
         # reshape [BxC’xTHW] to [BxC‘xTxHxW]

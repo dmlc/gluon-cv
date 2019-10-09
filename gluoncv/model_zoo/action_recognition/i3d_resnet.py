@@ -600,6 +600,8 @@ def i3d_nl5_resnet50_v1_kinetics400(nclass=400, pretrained=False, pretrained_bas
     r"""Inflated 3D model (I3D) from
     `"Quo Vadis, Action Recognition? A New Model and the Kinetics Dataset"
     <https://arxiv.org/abs/1705.07750>`_ paper.
+    `"Non-local Neural Networks"
+    <https://arxiv.org/abs/1711.07971>`_ paper.
 
     Parameters
     ----------
@@ -651,6 +653,8 @@ def i3d_nl10_resnet50_v1_kinetics400(nclass=400, pretrained=False, pretrained_ba
     r"""Inflated 3D model (I3D) from
     `"Quo Vadis, Action Recognition? A New Model and the Kinetics Dataset"
     <https://arxiv.org/abs/1705.07750>`_ paper.
+    `"Non-local Neural Networks"
+    <https://arxiv.org/abs/1711.07971>`_ paper.
 
     Parameters
     ----------
@@ -702,6 +706,8 @@ def i3d_nl5_resnet101_v1_kinetics400(nclass=400, pretrained=False, pretrained_ba
     r"""Inflated 3D model (I3D) from
     `"Quo Vadis, Action Recognition? A New Model and the Kinetics Dataset"
     <https://arxiv.org/abs/1705.07750>`_ paper.
+    `"Non-local Neural Networks"
+    <https://arxiv.org/abs/1711.07971>`_ paper.
 
     Parameters
     ----------
@@ -753,6 +759,8 @@ def i3d_nl10_resnet101_v1_kinetics400(nclass=400, pretrained=False, pretrained_b
     r"""Inflated 3D model (I3D) from
     `"Quo Vadis, Action Recognition? A New Model and the Kinetics Dataset"
     <https://arxiv.org/abs/1705.07750>`_ paper.
+    `"Non-local Neural Networks"
+    <https://arxiv.org/abs/1711.07971>`_ paper.
 
     Parameters
     ----------
