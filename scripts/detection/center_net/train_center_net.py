@@ -165,7 +165,6 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
     wh_loss = gcv.loss.MaskedL1Loss(weight=args.wh_weight)
     center_reg_loss = gcv.loss.MaskedL1Loss(weight=args.center_reg_weight)
     heatmap_loss_metric = mx.metric.Loss('HeatmapFocal')
-    heatmap_metric = gcv.utils.metrics.HeatmapAccuracy(threshold=0.1)
     wh_metric = mx.metric.Loss('WHL1')
     center_reg_metric = mx.metric.Loss('CenterRegL1')
 
@@ -205,13 +204,10 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
                 heatmap_losses = []
                 wh_losses = []
                 center_reg_losses = []
-                heatmap_preds = []
                 wh_preds = []
                 center_reg_preds = []
                 for x, heatmap_target, wh_target, wh_mask, center_reg_target, center_reg_mask in zip(*split_data):
                     heatmap_pred, wh_pred, center_reg_pred = net(x)
-                    heatmap_pred = nd.sigmoid(heatmap_pred)
-                    heatmap_preds.append(heatmap_pred)
                     wh_preds.append(wh_pred)
                     center_reg_preds.append(center_reg_pred)
                     wh_losses.append(wh_loss(wh_pred, wh_target, wh_mask))
@@ -222,25 +218,22 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
                 autograd.backward(sum_losses)
             trainer.step(batch_size)
 
-            heatmap_metric.update(heatmap_targets, heatmap_preds)
             heatmap_loss_metric.update(0, heatmap_losses)
             wh_metric.update(0, wh_losses)
             center_reg_metric.update(0, center_reg_losses)
             if args.log_interval and not (i + 1) % args.log_interval:
-                name1, loss1 = heatmap_metric.get()
                 name2, loss2 = wh_metric.get()
                 name3, loss3 = center_reg_metric.get()
                 name4, loss4 = heatmap_loss_metric.get()
-                logger.info('[Epoch {}][Batch {}], Speed: {:.3f} samples/sec, {}={:.3f}, {}={:.3f}, {}={:.3f}, {}={:.3f}'.format(
-                    epoch, i, batch_size/(time.time()-btic), name1, loss1, name2, loss2, name3, loss3, name4, loss4))
+                logger.info('[Epoch {}][Batch {}], Speed: {:.3f} samples/sec, {}={:.3f}, {}={:.3f}, {}={:.3f}'.format(
+                    epoch, i, batch_size/(time.time()-btic), name2, loss2, name3, loss3, name4, loss4))
             btic = time.time()
 
-        name1, loss1 = heatmap_metric.get()
         name2, loss2 = wh_metric.get()
         name3, loss3 = center_reg_metric.get()
         name4, loss4 = heatmap_loss_metric.get()
-        logger.info('[Epoch {}] Training cost: {:.3f}, {}={:.3f}, {}={:.3f}, {}={:.3f}, {}={:.3f}'.format(
-            epoch, (time.time()-tic), name1, loss1, name2, loss2, name3, loss3, name4, loss4))
+        logger.info('[Epoch {}] Training cost: {:.3f}, {}={:.3f}, {}={:.3f}, {}={:.3f}'.format(
+            epoch, (time.time()-tic), name2, loss2, name3, loss3, name4, loss4))
         if (epoch % args.val_interval == 0) or (args.save_interval and epoch % args.save_interval == 0):
             # consider reduce the frequency of validation to save time
             map_name, mean_ap = validate(net, val_data, ctx, eval_metric)

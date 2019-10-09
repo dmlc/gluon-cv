@@ -51,9 +51,10 @@ class CenterNet(nn.HybridBlock):
     def hybrid_forward(self, F, x):
         y = self.base_network(x)
         out = [head(y) for head in self.heads]
+        out[0] = F.sigmoid(out[0])
         if autograd.is_training():
             return tuple(out)
-        heatmap = F.sigmoid(out[0])
+        heatmap = out[0]
         keep = self.heatmap_nms(heatmap) == heatmap
         results = self.decoder(keep * heatmap, out[1], out[2])
         return results
