@@ -522,5 +522,5 @@ class MaskedL1Loss(Loss):
         label = _reshape_like(F, label, pred)
         loss = F.abs((label - pred) * mask)
         loss = _apply_weighting(F, loss, self._weight, sample_weight)
-        norm = F.sum(mask, axis=self._batch_axis, exclude=True)
+        norm = F.stop_gradient(F.sum(mask, axis=self._batch_axis, exclude=True))
         return F.sum(loss, axis=self._batch_axis, exclude=True) / norm

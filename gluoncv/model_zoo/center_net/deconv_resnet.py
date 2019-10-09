@@ -93,13 +93,18 @@ class DeconvResnet(nn.HybridBlock):
         in_planes = self.base_network(mx.nd.zeros((1, 3, 256, 256))).shape[1]
         for planes, k in zip(num_filters, num_kernels):
             kernel, padding, output_padding = self._get_deconv_cfg(k)
-            layers.add(contrib.cnn.ModulatedDeformableConvolution(planes,
-                                                                  kernel_size=3,
-                                                                  strides=1,
-                                                                  padding=1,
-                                                                  dilation=1,
-                                                                  num_deformable_group=1,
-                                                                  in_channels=in_planes))
+            # layers.add(contrib.cnn.ModulatedDeformableConvolution(planes,
+            #                                                       kernel_size=3,
+            #                                                       strides=1,
+            #                                                       padding=1,
+            #                                                       dilation=1,
+            #                                                       num_deformable_group=1,
+            #                                                       in_channels=in_planes))
+            layers.add(nn.Conv2DTranspose(channels=planes,
+                                          kernel_size=3,
+                                          strides=1,
+                                          padding=1,
+                                          in_channels=in_planes))
             layers.add(self._norm_layer(momentum=0.9, **self._norm_kwargs))
             layers.add(nn.Activation('relu'))
             layers.add(nn.Conv2DTranspose(channels=planes,
