@@ -463,7 +463,7 @@ class CenterNetDecoder(gluon.HybridBlock):
         center = reg.transpose((0, 2, 3, 1)).reshape((0, -1, 2))
         wh = wh.transpose((0, 2, 3, 1)).reshape((0, -1, 2))
         batch_indices = F.cast(F.arange(256).slice_like(
-            center, axes=(0)).tile(reps=(1, self._topk)), 'int64')
+            center, axes=(0)).expand_dims(-1).tile(reps=(1, self._topk)), 'int64')
         reg_xs_indices = F.zeros_like(batch_indices, dtype='int64')
         reg_ys_indices = F.ones_like(batch_indices, dtype='int64')
         reg_xs = F.concat(batch_indices, topk_indices, reg_xs_indices, dim=0).reshape((3, -1))
