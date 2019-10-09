@@ -112,7 +112,6 @@ class NonLocal(HybridBlock):
             raise NotImplementedError
 
         y = F.batch_dot(g, attn, transpose_b=True)
-        # reshape [BxC’xTHW] to [BxC‘xTxHxW]
         y = F.reshape_like(y, x, lhs_begin=2, lhs_end=None, rhs_begin=2, rhs_end=None)
 
         if self.use_bn:
