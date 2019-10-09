@@ -13,7 +13,6 @@ import gluoncv as gcv
 from gluoncv import data as gdata
 from gluoncv import utils as gutils
 from gluoncv.model_zoo import get_model
-from gluoncv.loss import RegulatedL1Loss
 from gluoncv.data.batchify import Tuple, Stack, Pad
 from gluoncv.data.transforms.presets.center_net import CenterNetDefaultTrainTransform
 from gluoncv.data.transforms.presets.center_net import CenterNetDefaultValTransform
@@ -159,8 +158,8 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
     lr_steps = sorted([float(ls) for ls in args.lr_decay_epoch.split(',') if ls.strip()])
 
     heatmap_loss = gcv.loss.HeatmapFocalLoss()
-    wh_loss = mx.gluon.loss.RegulatedL1Loss()
-    center_reg_loss = mx.gluon.loss.RegulatedL1Loss()
+    wh_loss = gcv.loss.RegulatedL1Loss()
+    center_reg_loss = gcv.loss.RegulatedL1Loss()
     heatmap_metric = gcv.utils.metrics.HeatmapAccuracy()
     wh_metric = mx.metric.Loss('WHSmoothL1')
     center_reg_metric = mx.metric.Loss('CenterRegSmoothL1')
