@@ -161,7 +161,7 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
     lr_decay = float(args.lr_decay)
     lr_steps = sorted([float(ls) for ls in args.lr_decay_epoch.split(',') if ls.strip()])
 
-    heatmap_loss = gcv.loss.HeatmapFocalLoss()
+    heatmap_loss = gcv.loss.HeatmapFocalLoss(from_logits=True)
     wh_loss = gcv.loss.MaskedL1Loss(weight=args.wh_weight)
     center_reg_loss = gcv.loss.MaskedL1Loss(weight=args.center_reg_weight)
     heatmap_loss_metric = mx.metric.Loss('HeatmapFocal')
