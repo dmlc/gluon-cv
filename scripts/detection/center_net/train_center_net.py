@@ -39,7 +39,7 @@ def parse_args():
                         'number to accelerate data loading, if you CPU and GPUs are powerful.')
     parser.add_argument('--gpus', type=str, default='0',
                         help='Training with GPUs, you can specify 1,3 for example.')
-    parser.add_argument('--epochs', type=int, default=240,
+    parser.add_argument('--epochs', type=int, default=140,
                         help='Training epochs.')
     parser.add_argument('--resume', type=str, default='',
                         help='Resume from previously saved parameters if not None. '
@@ -47,12 +47,12 @@ def parse_args():
     parser.add_argument('--start-epoch', type=int, default=0,
                         help='Starting epoch for resuming, default is 0 for new training.'
                         'You can specify it to 100 for example to start from 100 epoch.')
-    parser.add_argument('--lr', type=float, default=0.001,
-                        help='Learning rate, default is 0.001')
+    parser.add_argument('--lr', type=float, default=1.25e-4,
+                        help='Learning rate, default is 0.000125')
     parser.add_argument('--lr-decay', type=float, default=0.1,
                         help='decay rate of learning rate. default is 0.1.')
-    parser.add_argument('--lr-decay-epoch', type=str, default='160,200',
-                        help='epochs at which learning rate decays. default is 160,200.')
+    parser.add_argument('--lr-decay-epoch', type=str, default='90,120',
+                        help='epochs at which learning rate decays. default is 90,120.')
     parser.add_argument('--momentum', type=float, default=0.9,
                         help='SGD momentum, default is 0.9')
     parser.add_argument('--wd', type=float, default=0.0005,
@@ -165,7 +165,7 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
     wh_loss = gcv.loss.MaskedL1Loss(weight=args.wh_weight)
     center_reg_loss = gcv.loss.MaskedL1Loss(weight=args.center_reg_weight)
     heatmap_loss_metric = mx.metric.Loss('HeatmapFocal')
-    heatmap_metric = gcv.utils.metrics.HeatmapAccuracy()
+    heatmap_metric = gcv.utils.metrics.HeatmapAccuracy(threshold=0.1)
     wh_metric = mx.metric.Loss('WHL1')
     center_reg_metric = mx.metric.Loss('CenterRegL1')
 
