@@ -484,7 +484,7 @@ class HeatmapFocalLoss(Loss):
         return loss
 
 
-class RegulatedL1Loss(Loss):
+class MaskedL1Loss(Loss):
     r"""Calculates the mean absolute error between `label` and `pred` with `mask`.
 
     .. math:: L = \sum_i \vert ({label}_i - {pred}_i) * {mask}_i \vert / \sum_i {mask}_i.
@@ -514,7 +514,7 @@ class RegulatedL1Loss(Loss):
     """
 
     def __init__(self, weight=None, batch_axis=0, **kwargs):
-        super(RegulatedL1Loss, self).__init__(weight, batch_axis, **kwargs)
+        super(MaskedL1Loss, self).__init__(weight, batch_axis, **kwargs)
 
 
     def hybrid_forward(self, F, pred, label, mask, sample_weight=None):

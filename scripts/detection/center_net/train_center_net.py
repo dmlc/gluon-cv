@@ -68,6 +68,10 @@ def parse_args():
                              'training time if validation is slow.')
     parser.add_argument('--seed', type=int, default=233,
                         help='Random seed to be fixed.')
+    parser.add_argument('--wh-weight', type=float, default=0.1,
+                        help='Loss weight for width/height')
+    parser.add_argument('--center-reg-weight', type=float, default=1.0,
+                        help='Center regression loss weight')
 
     args = parser.parse_args()
     return args
@@ -158,8 +162,8 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
     lr_steps = sorted([float(ls) for ls in args.lr_decay_epoch.split(',') if ls.strip()])
 
     heatmap_loss = gcv.loss.HeatmapFocalLoss()
-    wh_loss = gcv.loss.RegulatedL1Loss()
-    center_reg_loss = gcv.loss.RegulatedL1Loss()
+    wh_loss = gcv.loss.MaskedL1Loss(weight=args.wh_weight)
+    center_reg_loss = gcv.loss.MaskedL1Loss(weight=args.center_reg_weight)
     heatmap_metric = gcv.utils.metrics.HeatmapAccuracy()
     wh_metric = mx.metric.Loss('WHL1')
     center_reg_metric = mx.metric.Loss('CenterRegL1')
@@ -239,7 +243,7 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
             current_map = float(mean_ap[-1])
         else:
             current_map = 0.
-        save_params(net, best_map, current_map, epoch, args.save_interval, args.save_prefix)
+        save_parameters(net, best_map, current_map, epoch, args.save_interval, args.save_prefix)
 
 if __name__ == '__main__':
     args = parse_args()
