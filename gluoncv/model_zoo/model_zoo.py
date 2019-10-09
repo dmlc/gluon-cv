@@ -15,7 +15,6 @@ from .inception import *
 from .mask_rcnn import *
 from .mobilenet import *
 from .mobilenetv3 import *
-from .mobile_pose.mobile_pose import *
 from .nasnet import *
 from .pruned_resnet.resnetv1b_pruned import *
 from .pspnet import *
@@ -26,6 +25,7 @@ from .resnetv1b import *
 from .resnext import *
 from .senet import *
 from .simple_pose.simple_pose_resnet import *
+from .simple_pose.mobile_pose import *
 from .squeezenet import *
 from .ssd import *
 from .vgg import *
