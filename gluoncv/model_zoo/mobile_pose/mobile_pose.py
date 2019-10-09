@@ -29,11 +29,11 @@ from mxnet.gluon.block import HybridBlock
 from mxnet.context import cpu
 
 from ..mobilenetv3 import _ResUnit
-from ...nn.block import DSNT, DUC, BatchNormCudnnOff
+from ...nn.block import DUC, BatchNormCudnnOff
 
 class MobilePose(HybridBlock):
     """Pose Estimation for Mobile Device"""
-    def __init__(self, base_name, base_attrs=('features',), num_joints=17, hm_size=(56, 56),
+    def __init__(self, base_name, base_attrs=('features',), num_joints=17,
                  pretrained_base=False, pretrained_ctx=cpu(), **kwargs):
         super(MobilePose, self).__init__(**kwargs)
 
@@ -62,17 +62,11 @@ class MobilePose(HybridBlock):
                           weight_initializer=initializer.Normal(0.001)),
             )
 
-            self.dsnt = nn.HybridSequential()
-            self.dsnt.add(
-                DSNT(hm_size)
-            )
-
     def hybrid_forward(self, F, x):
         x = self.features(x)
         hm = self.upsampling(x)
-        coords, hm_norm = self.dsnt(hm)
 
-        return coords, hm_norm
+        return hm
 
 def get_mobile_pose(base_name, ctx=cpu(), pretrained=False,
                    root='~/.mxnet/models', **kwargs):

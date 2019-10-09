@@ -9,7 +9,7 @@ from mxnet.gluon.loss import Loss, _apply_weighting, _reshape_like
 
 __all__ = ['FocalLoss', 'SSDMultiBoxLoss', 'YOLOV3Loss',
            'MixSoftmaxCrossEntropyLoss', 'MixSoftmaxCrossEntropyOHEMLoss',
-           'DistillationSoftmaxCrossEntropyLoss', 'JSLoss']
+           'DistillationSoftmaxCrossEntropyLoss']
 
 class FocalLoss(Loss):
     """Focal Loss for inbalanced classification.
@@ -458,102 +458,3 @@ class DistillationSoftmaxCrossEntropyLoss(gluon.HybridBlock):
             hard_loss = self.hard_loss(output, label)
             return (1 - self._hard_weight) * soft_loss  + self._hard_weight * hard_loss
 
-class JSDivLoss(Loss):
-    r"""The Jensen-Shannon Loss.
-    .. math:: 
-
-        L = \sum_i {label}_i * \big[\log({label}_i) - {pred}_i\big]
-        L = KL(label, M) * 0.5 + KL(pred, M) * 0.5
-
-    where M = (`label` + `pred`) / 2
-
-    If `from_logits` is False, loss is defined as:
-
-    .. math::
-
-        \DeclareMathOperator{softmax}{softmax}
-
-        prob = \softmax({pred})
-
-        L = \sum_i {label}_i * \big[\log({label}_i) - \log({prob}_i)\big]
-
-    `label` and `pred` can have arbitrary shape as long as they have the same
-    number of elements.
-
-    Parameters
-    ----------
-    from_logits : bool, default is `True`
-        Whether the input is log probability (usually from log_softmax) instead
-        of unnormalized numbers.
-    axis : int, default -1
-        The dimension along with to compute softmax. Only used when `from_logits`
-        is False.
-    weight : float or None
-        Global scalar weight for loss.
-    batch_axis : int, default 0
-        The axis that represents mini-batch.
-
-    Inputs:
-        - **pred**: prediction tensor with arbitrary shape. If `from_logits` is
-          True, `pred` should be log probabilities. Otherwise, it should be
-          unnormalized predictions, i.e. from a dense layer.
-        - **label**: truth tensor with values in range `(0, 1)`. Must have
-          the same size as `pred`.
-        - **sample_weight**: element-wise weighting tensor. Must be broadcastable
-          to the same shape as pred. For example, if pred has shape (64, 10)
-          and you want to weigh each sample in the batch separately,
-          sample_weight should have shape (64, 1).
-    Outputs:
-        - **loss**: loss tensor with shape (batch_size,). Dimenions other than
-          batch_axis are averaged out.
-
-    References
-    ----------
-        `Jensen-Shannon divergence
-        <https://en.wikipedia.org/wiki/Jensen%E2%80%93Shannon_divergence>`_
-    """
-    def __init__(self, from_logits=True, axis=-1, weight=None, batch_axis=0, **kwargs):
-        super(JSDivLoss, self).__init__(weight, batch_axis, **kwargs)
-        self._axis = axis
-        self._from_logits = from_logits
-
-    def hybrid_forward(self, F, pred, label, sample_weight=None):
-        if not self._from_logits:
-            pred = F.log_softmax(pred, self._axis)
-        mix = F.log((pred + label) / 2 + 1e-12)
-        loss = (label * (F.log(label + 1e-12) - mix) + \
-               pred * (F.log(pred + 1e-12) - mix)) / 2
-        loss = _apply_weighting(F, loss, self._weight, sample_weight)
-        return F.sum(loss, axis=self._batch_axis, exclude=True)
-
-class L2LossSum(Loss):
-    r"""Calculates the mean squared error between `label` and `pred`.
-    .. math:: L = \frac{1}{2} \sum_i \vert {label}_i - {pred}_i \vert^2.
-    `label` and `pred` can have arbitrary shape as long as they have the same
-    number of elements. It instead return the sum of loss instead of the mean.
-    Parameters
-    ----------
-    weight : float or None
-        Global scalar weight for loss.
-    batch_axis : int, default 0
-        The axis that represents mini-batch.
-    Inputs:
-        - **pred**: prediction tensor with arbitrary shape
-        - **label**: target tensor with the same size as pred.
-        - **sample_weight**: element-wise weighting tensor. Must be broadcastable
-          to the same shape as pred. For example, if pred has shape (64, 10)
-          and you want to weigh each sample in the batch separately,
-          sample_weight should have shape (64, 1).
-    Outputs:
-        - **loss**: loss tensor with shape (batch_size,). Dimenions other than
-          batch_axis are averaged out.
-    """
-
-    def __init__(self, weight=1., batch_axis=0, **kwargs):
-        super(L2LossSum, self).__init__(weight, batch_axis, **kwargs)
-
-    def hybrid_forward(self, F, pred, label, sample_weight=None):
-        label = _reshape_like(F, label, pred)
-        loss = F.square(label - pred)
-        loss = _apply_weighting(F, loss, self._weight / 2, sample_weight)
-        return F.sum(loss, axis=self._batch_axis, exclude=True)

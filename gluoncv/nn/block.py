@@ -109,16 +109,22 @@ class DSNT(HybridBlock):
     ----------
     size : int or tuple,
         (width, height) of the input heatmap
+    norm : str, the normalization method for heatmap
+        available methods are 'softmax', or 'sum'
     axis : the axis for input heatmap
     '''
-    def __init__(self, size, axis=(2, 3), **kwargs):
+    def __init__(self, size, norm='softmax', axis=(2, 3), **kwargs):
         super(DSNT, self).__init__(**kwargs)
         if isinstance(size, int):
             self.size = (size, size)
         else:
             self.size = size
         self.axis = axis
-        self.softmax = SoftmaxHD(self.axis)
+        self.norm = normalization
+        if self.norm == 'softmax':
+            self.softmax = SoftmaxHD(self.axis)
+        elif self.norm != 'sum':
+            raise ValueError("argument `norm` only accepts 'softmax' or 'sum'.")
 
         self.wfirst = 1 / (2 * self.size[0])
         self.wlast = 1 - 1 / (2 * self.size[0])
@@ -126,7 +132,13 @@ class DSNT(HybridBlock):
         self.hlast = 1 - 1 / (2 * self.size[1])
 
     def hybrid_forward(self, F, M):
-        Z = self.softmax(M)
+        if self.norm == 'softmax':
+            Z = self.softmax(M)
+        elif self.norm == 'max':
+            norm = F.sum(M, axis=self.axis, keepdims=True)
+            Z = F.broadcast_div(M, norm)
+        else:
+            Z = M
         x = F.linspace(self.wfirst, self.wlast, self.size[0]).expand_dims(0)
         y = F.linspace(self.hfirst, self.hlast, self.size[1]).expand_dims(0).transpose()
         output_x = F.sum(F.broadcast_mul(Z, x), axis=self.axis)
