@@ -516,11 +516,11 @@ class MaskedL1Loss(Loss):
 
     def __init__(self, weight=None, batch_axis=0, **kwargs):
         super(MaskedL1Loss, self).__init__(weight, batch_axis, **kwargs)
-
+        self._l1_loss = gluon.loss.L1Loss()
 
     def hybrid_forward(self, F, pred, label, mask, sample_weight=None):
         label = _reshape_like(F, label, pred)
-        loss = F.abs((label - pred) * mask)
+        loss = self._l1_loss(label * mask, pred * mask)
         loss = _apply_weighting(F, loss, self._weight, sample_weight)
         norm = F.stop_gradient(F.sum(mask, axis=self._batch_axis, exclude=True))
         return F.sum(loss, axis=self._batch_axis, exclude=True) / norm
