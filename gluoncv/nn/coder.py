@@ -214,9 +214,10 @@ class NormalizedPerClassBoxCenterEncoder(gluon.HybridBlock):
                                                             shape=(1, 1, -1)))
 
         # reduce box targets to positive samples only
-        indices = F.slice_axis(F.argsort(F.slice_axis(masks, axis=-1, begin=0, end=1), axis=1,
-                                         is_ascend=False).squeeze(),
-                               axis=1, begin=0, end=self._max_pos)
+        indices = F.slice_axis(
+            F.reshape(F.argsort(F.slice_axis(masks, axis=-1, begin=0, end=1), axis=1,
+                                is_ascend=False), (self._batch_size, -1)),
+            axis=1, begin=0, end=self._max_pos)
         targets_tmp = []
         masks_tmp = []
         same_cids_tmp = []

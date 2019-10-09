@@ -159,9 +159,12 @@ def get_dataloader(net, train_dataset, val_dataset, train_transform, val_transfo
                    num_shards, args):
     """Get dataloader."""
     train_bfn = FasterRCNNTrainBatchify(net, num_shards)
+    if hasattr(train_dataset, 'get_im_aspect_ratio'):
+        im_aspect_ratio = train_dataset.get_im_aspect_ratio()
+    else:
+        im_aspect_ratio = [1.] * len(train_dataset)
     train_sampler = \
-        gcv.nn.sampler.SplitSortedBucketSampler(train_dataset.get_im_aspect_ratio(),
-                                                batch_size,
+        gcv.nn.sampler.SplitSortedBucketSampler(im_aspect_ratio, batch_size,
                                                 num_parts=hvd.size() if args.horovod else 1,
                                                 part_index=hvd.rank() if args.horovod else 0,
                                                 shuffle=True)
@@ -307,7 +310,7 @@ class ForwardBackwardTask(Parallelizable):
 
 def train(net, train_data, val_data, eval_metric, batch_size, ctx, args):
     """Training pipeline"""
-    kv = mx.kvstore.create(args.kv_store)
+    kv = mx.kvstore.create('device' if (args.amp and 'nccl' in args.kv_store) else args.kv_store)
     net.collect_params().setattr('grad_req', 'null')
     net.collect_train_params().setattr('grad_req', 'write')
     optimizer_params = {'learning_rate': args.lr, 'wd': args.wd, 'momentum': args.momentum}
@@ -444,7 +447,6 @@ def train(net, train_data, val_data, eval_metric, batch_size, ctx, args):
                 current_map = 0.
             save_params(net, logger, best_map, current_map, epoch, args.save_interval,
                         args.save_prefix)
-        executor.__del__()
 
 
 if __name__ == '__main__':

@@ -231,9 +231,9 @@ class MaskRCNN(FasterRCNN):
             top_feat = F.reshape(top_feat.expand_dims(0), (self._batch_size, -1, 0, 0, 0))
             top_feat = F.concat(
                 *[F.take(F.slice_axis(top_feat, axis=0, begin=i, end=i + 1).squeeze(),
-                         F.slice_axis(indices, axis=0, begin=i, end=i + 1).squeeze()).expand_dims(0)
+                         F.slice_axis(indices, axis=0, begin=i, end=i + 1).squeeze())
                   for i in range(self._batch_size)], dim=0)
-            mask_pred = self.mask(F.reshape(top_feat, (-3, 0, 0, 0)))
+            mask_pred = self.mask(top_feat)
 
             return cls_pred, box_pred, mask_pred, rpn_box, samples, matches, raw_rpn_score, \
                    raw_rpn_box, anchors, cls_targets, box_targets, box_masks, indices

@@ -281,7 +281,7 @@ class ForwardBackwardTask(Parallelizable):
             gt_label = label[:, :, 4:5]
             gt_box = label[:, :, :4]
             cls_pred, box_pred, mask_pred, roi, samples, matches, rpn_score, rpn_box, anchors, \
-            cls_targets, box_targets, box_masks, indices = net(data, gt_box, gt_label)
+                cls_targets, box_targets, box_masks, indices = net(data, gt_box, gt_label)
             # losses of rpn
             rpn_score = rpn_score.squeeze(axis=-1)
             num_rpn_pos = (rpn_cls_targets >= 0).sum()
@@ -530,15 +530,6 @@ if __name__ == '__main__':
                 continue
             param.initialize()
     net.collect_params().reset_ctx(ctx)
-    '''
-    sym = net(mx.sym.var(name='data'))
-    print(sym)
-    a = mx.viz.plot_network(mx.sym.concat(*sym),
-                            node_attrs={'shape': 'rect', 'fixedsize': 'false'})
-    import tempfile
-
-    a.view(tempfile.mktemp('.gv'))
-    a.render('fpn')'''
 
     # training data
     train_dataset, val_dataset, eval_metric = get_dataset(args.dataset, args)
