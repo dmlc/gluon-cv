@@ -43,20 +43,22 @@ class CenterNetDefaultTrainTransform(object):
     def __call__(self, src, label):
         """Apply transform to training image/label."""
         # random color jittering
-        img = experimental.image.random_color_distort(src)
+        # img = experimental.image.random_color_distort(src)
+        img = src
+        bbox = label
 
         # random expansion with prob 0.5
-        if np.random.uniform(0, 1) > 0.5:
-            img, expand = timage.random_expand(img, fill=[m * 255 for m in self._mean])
-            bbox = tbbox.translate(label, x_offset=expand[0], y_offset=expand[1])
-        else:
-            img, bbox = img, label
+        # if np.random.uniform(0, 1) > 0.5:
+        #     img, expand = timage.random_expand(img, fill=[m * 255 for m in self._mean])
+        #     bbox = tbbox.translate(label, x_offset=expand[0], y_offset=expand[1])
+        # else:
+        #     img, bbox = img, label
 
         # random cropping
-        h, w, _ = img.shape
-        bbox, crop = experimental.bbox.random_crop_with_constraints(bbox, (w, h))
-        x0, y0, w, h = crop
-        img = mx.image.fixed_crop(img, x0, y0, w, h)
+        # h, w, _ = img.shape
+        # bbox, crop = experimental.bbox.random_crop_with_constraints(bbox, (w, h))
+        # x0, y0, w, h = crop
+        # img = mx.image.fixed_crop(img, x0, y0, w, h)
 
         # resize with random interpolation
         h, w, _ = img.shape
