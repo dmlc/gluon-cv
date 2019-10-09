@@ -188,7 +188,6 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
             lr_steps.pop(0)
             trainer.set_learning_rate(new_lr)
             logger.info("[Epoch {}] Set learning rate to {}".format(epoch, new_lr))
-        heatmap_metric.reset()
         wh_metric.reset()
         center_reg_metric.reset()
         tic = time.time()
