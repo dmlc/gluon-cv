@@ -136,6 +136,10 @@ def parse_args():
                         help='KVStore type. Supports local, device, dist_sync_device, dist_async_device')
     parser.add_argument('--input-5d', action='store_true',
                         help='the input is 4d or 5d tensor. 5d is for 3D CNN models.')
+    parser.add_argument('--video-loader', action='store_true',
+                        help='if set to True, read videos directly instead of reading frames.')
+    parser.add_argument('--use-decord', action='store_true',
+                        help='if set to True, use Decord video loader to load data. Otherwise use mmcv video loader.')
     parser.add_argument('--accumulate', type=int, default=1,
                         help='new step to accumulate gradient. If >1, the batch size is enlarged.')
     opt = parser.parse_args()
@@ -161,11 +165,11 @@ def get_data_loader(opt, batch_size, num_workers, logger, kvstore=None):
     if opt.dataset == 'kinetics400':
         train_dataset = kinetics400.classification.Kinetics400(setting=opt.train_list, root=data_dir, train=True,
                                                      new_width=opt.new_width, new_height=opt.new_height, new_length=opt.new_length, new_step=opt.new_step,
-                                                     target_width=input_size, target_height=input_size,
+                                                     target_width=input_size, target_height=input_size, video_loader=opt.video_loader, use_decord=opt.use_decord,
                                                      num_segments=opt.num_segments, transform=transform_train)
         val_dataset = kinetics400.classification.Kinetics400(setting=opt.val_list, root=val_data_dir, train=False,
                                                    new_width=opt.new_width, new_height=opt.new_height, new_length=opt.new_length, new_step=opt.new_step,
-                                                   target_width=input_size, target_height=input_size,
+                                                   target_width=input_size, target_height=input_size, video_loader=opt.video_loader, use_decord=opt.use_decord,
                                                    num_segments=opt.num_segments, transform=transform_test)
     elif opt.dataset == 'ucf101':
         train_dataset = ucf101.classification.UCF101(setting=opt.train_list, root=data_dir, train=True,
