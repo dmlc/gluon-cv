@@ -86,6 +86,7 @@ _models = {
     'mobilenetv3_large': mobilenet_v3_large,
     'mobilenetv3_small': mobilenet_v3_small,
     'mobile_pose_resnet18_v1b': mobile_pose_resnet18_v1b,
+    'mobile_pose_resnet50_v1b': mobile_pose_resnet50_v1b,
     'mobile_pose_mobilenet1.0': mobile_pose_mobilenet1_0,
     'mobile_pose_mobilenetv2_1.0': mobile_pose_mobilenetv2_1_0,
     'mobile_pose_mobilenetv3_large': mobile_pose_mobilenetv3_large,

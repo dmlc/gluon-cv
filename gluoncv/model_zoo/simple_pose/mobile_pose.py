@@ -83,6 +83,10 @@ def mobile_pose_resnet18_v1b(**kwargs):
     return get_mobile_pose('resnet18_v1b', base_attrs=['conv1', 'bn1', 'relu', 'maxpool',
                           'layer1', 'layer2', 'layer3', 'layer4'], **kwargs)
 
+def mobile_pose_resnet50_v1b(**kwargs):
+    return get_mobile_pose('resnet50_v1b', base_attrs=['conv1', 'bn1', 'relu', 'maxpool',
+                          'layer1', 'layer2', 'layer3', 'layer4'], **kwargs)
+
 def mobile_pose_mobilenet1_0(**kwargs):
     return get_mobile_pose('mobilenet1.0', base_attrs=['features'], **kwargs)
 

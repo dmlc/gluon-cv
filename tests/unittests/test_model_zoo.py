@@ -162,7 +162,10 @@ def test_simple_pose_resnet_models():
     ctx = mx.context.current_context()
     models = ['simple_pose_resnet18_v1b',
               'simple_pose_resnet50_v1b', 'simple_pose_resnet101_v1b', 'simple_pose_resnet152_v1b',
-              'simple_pose_resnet50_v1d', 'simple_pose_resnet101_v1d', 'simple_pose_resnet152_v1d']
+              'simple_pose_resnet50_v1d', 'simple_pose_resnet101_v1d', 'simple_pose_resnet152_v1d',
+              'mobile_pose_resnet18_v1b', 'mobile_pose_resnet50_v1b',
+              'mobile_pose_mobilenet1.0', 'mobile_pose_mobilenetv2_1.0',
+              'mobile_pose_mobilenetv3_large', 'mobile_pose_mobilenetv3_small']
 
     # 192x256
     x = mx.random.uniform(shape=(2, 3, 192, 256), ctx=ctx)
