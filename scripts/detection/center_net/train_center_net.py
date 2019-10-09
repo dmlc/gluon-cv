@@ -13,6 +13,7 @@ import gluoncv as gcv
 from gluoncv import data as gdata
 from gluoncv import utils as gutils
 from gluoncv.model_zoo import get_model
+from gluoncv.loss import RegulatedL1Loss
 from gluoncv.data.batchify import Tuple, Stack, Pad
 from gluoncv.data.transforms.presets.center_net import CenterNetDefaultTrainTransform
 from gluoncv.data.transforms.presets.center_net import CenterNetDefaultValTransform
@@ -158,8 +159,8 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
     lr_steps = sorted([float(ls) for ls in args.lr_decay_epoch.split(',') if ls.strip()])
 
     heatmap_loss = gcv.loss.HeatmapFocalLoss()
-    wh_loss = mx.gluon.loss.HuberLoss()  # == smoothl1
-    center_reg_loss = mx.gluon.loss.HuberLoss()  # == smoothl1
+    wh_loss = mx.gluon.loss.RegulatedL1Loss()
+    center_reg_loss = mx.gluon.loss.RegulatedL1Loss()
     heatmap_metric = gcv.utils.metrics.HeatmapAccuracy()
     wh_metric = mx.metric.Loss('WHSmoothL1')
     center_reg_metric = mx.metric.Loss('CenterRegSmoothL1')
@@ -208,8 +209,8 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
                     heatmap_preds.append(heatmap_pred)
                     wh_preds.append(wh_pred)
                     center_reg_preds.append(center_reg_pred)
-                    wh_losses.append(wh_loss(wh_pred * wh_mask, wh_target))
-                    center_reg_losses.append(center_reg_loss(center_reg_pred * center_reg_mask, center_reg_target))
+                    wh_losses.append(wh_loss(wh_pred, wh_target, wh_mask))
+                    center_reg_losses.append(center_reg_loss(center_reg_pred, center_reg_target, center_reg_mask))
                     curr_loss = heatmap_loss(heatmap_pred, heatmap_target) + wh_losses[-1] + center_reg_losses[-1]
                     sum_losses.append(curr_loss)
                 autograd.backward(sum_losses)

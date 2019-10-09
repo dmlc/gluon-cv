@@ -482,3 +482,44 @@ class HeatmapFocalLoss(Loss):
                               lambda: -(pos_loss + neg_loss) / num_pos,
                               lambda: -neg_loss)
         return loss
+
+
+class RegulatedL1Loss(Loss):
+    r"""Calculates the mean absolute error between `label` and `pred` with `mask`.
+
+    .. math:: L = \sum_i \vert ({label}_i - {pred}_i) * {mask}_i \vert / \sum_i {mask}_i.
+
+    `label`, `pred` and `mask` can have arbitrary shape as long as they have the same
+    number of elements. The final loss is normalized by the number of non-zero elements in mask.
+
+    Parameters
+    ----------
+    weight : float or None
+        Global scalar weight for loss.
+    batch_axis : int, default 0
+        The axis that represents mini-batch.
+
+
+    Inputs:
+        - **pred**: prediction tensor with arbitrary shape
+        - **label**: target tensor with the same size as pred.
+        - **sample_weight**: element-wise weighting tensor. Must be broadcastable
+          to the same shape as pred. For example, if pred has shape (64, 10)
+          and you want to weigh each sample in the batch separately,
+          sample_weight should have shape (64, 1).
+
+    Outputs:
+        - **loss**: loss tensor with shape (batch_size,). Dimenions other than
+          batch_axis are averaged out.
+    """
+
+    def __init__(self, weight=None, batch_axis=0, **kwargs):
+        super(L1Loss, self).__init__(weight, batch_axis, **kwargs)
+
+
+    def hybrid_forward(self, F, pred, label, mask, sample_weight=None):
+        label = _reshape_like(F, label, pred)
+        loss = F.abs((label - pred) * mask)
+        loss = _apply_weighting(F, loss, self._weight, sample_weight)
+        norm = F.sum(mask, axis=self._batch_axis, exclude=True)
+        return F.sum(loss, axis=self._batch_axis, exclude=True) / norm
