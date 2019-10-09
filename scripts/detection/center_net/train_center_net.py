@@ -161,8 +161,8 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
     wh_loss = gcv.loss.RegulatedL1Loss()
     center_reg_loss = gcv.loss.RegulatedL1Loss()
     heatmap_metric = gcv.utils.metrics.HeatmapAccuracy()
-    wh_metric = mx.metric.Loss('WHSmoothL1')
-    center_reg_metric = mx.metric.Loss('CenterRegSmoothL1')
+    wh_metric = mx.metric.Loss('WHL1')
+    center_reg_metric = mx.metric.Loss('CenterRegL1')
 
     # set up logger
     logging.basicConfig()
@@ -216,8 +216,8 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
             trainer.step(batch_size)
 
             heatmap_metric.update(heatmap_targets, heatmap_preds)
-            wh_metric.update(0, [xx.sum() for xx in wh_losses])
-            center_reg_metric.update(0, [xx.sum() for xx in center_reg_losses])
+            wh_metric.update(0, wh_losses)
+            center_reg_metric.update(0, center_reg_losses)
             if args.log_interval and not (i + 1) % args.log_interval:
                 name1, loss1 = heatmap_metric.get()
                 name2, loss2 = wh_metric.get()
