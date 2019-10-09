@@ -475,12 +475,13 @@ class HeatmapFocalLoss(Loss):
         neg_loss = F.log(1 - pred) * F.power(pred, 2) * neg_weights * neg_inds
 
         # normalize
-        num_pos = F.sum(pos_inds)
+        num_pos = F.stop_gradient(F.clip(F.sum(pos_inds), a_min=1, a_max=1e30))
         pos_loss = F.sum(pos_loss, axis=self._batch_axis, exclude=True)
         neg_loss = F.sum(neg_loss, axis=self._batch_axis, exclude=True)
-        loss = F.contrib.cond(num_pos > 0,
-                              lambda: -(pos_loss + neg_loss) / num_pos,
-                              lambda: -neg_loss)
+        # loss = F.contrib.cond(num_pos > 0,
+        #                       lambda: -(pos_loss + neg_loss) / num_pos,
+        #                       lambda: -neg_loss)
+        loss = -(pos_loss + neg_loss) / num_pos
         return loss
 
 
