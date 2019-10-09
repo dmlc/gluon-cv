@@ -514,7 +514,7 @@ class RegulatedL1Loss(Loss):
     """
 
     def __init__(self, weight=None, batch_axis=0, **kwargs):
-        super(L1Loss, self).__init__(weight, batch_axis, **kwargs)
+        super(RegulatedL1Loss, self).__init__(weight, batch_axis, **kwargs)
 
 
     def hybrid_forward(self, F, pred, label, mask, sample_weight=None):
