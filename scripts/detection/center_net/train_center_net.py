@@ -273,6 +273,5 @@ if __name__ == '__main__':
         net, train_dataset, val_dataset, args.data_shape, batch_size, args.num_workers, ctx[0])
 
 
-
     # training
     train(net, train_data, val_data, eval_metric, ctx, args)
