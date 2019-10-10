@@ -103,22 +103,22 @@ class CenterNetDefaultTrainTransform(object):
     def __call__(self, src, label):
         """Apply transform to training image/label."""
         # random color jittering
-        # img = experimental.image.random_color_distort(src)
-        img = src
-        bbox = label
+        img = experimental.image.random_color_distort(src)
+        # img = src
+        # bbox = label
 
         # random expansion with prob 0.5
-        # if np.random.uniform(0, 1) > 0.5:
-        #     img, expand = timage.random_expand(img, fill=[m * 255 for m in self._mean])
-        #     bbox = tbbox.translate(label, x_offset=expand[0], y_offset=expand[1])
-        # else:
-        #     img, bbox = img, label
+        if np.random.uniform(0, 1) > 0.5:
+            img, expand = timage.random_expand(img, fill=[m * 255 for m in self._mean])
+            bbox = tbbox.translate(label, x_offset=expand[0], y_offset=expand[1])
+        else:
+            img, bbox = img, label
 
         # random cropping
-        # h, w, _ = img.shape
-        # bbox, crop = experimental.bbox.random_crop_with_constraints(bbox, (w, h))
-        # x0, y0, w, h = crop
-        # img = mx.image.fixed_crop(img, x0, y0, w, h)
+        h, w, _ = img.shape
+        bbox, crop = experimental.bbox.random_crop_with_constraints(bbox, (w, h))
+        x0, y0, w, h = crop
+        img = mx.image.fixed_crop(img, x0, y0, w, h)
 
         # random horizontal flip
         h, w, _ = img.shape
@@ -127,31 +127,31 @@ class CenterNetDefaultTrainTransform(object):
 
         # resize with random interpolation
         h, w, _ = img.shape
-        # interp = np.random.randint(0, 5)
-        # img = timage.imresize(img, self._width, self._height, interp=interp)
-        # bbox = tbbox.resize(bbox, (w, h), (self._width, self._height))
-        cv2 = try_import_cv2()
-        input_h, input_w = self._height, self._width
-        s = max(h, w) * 1.0
-        c = np.array([w / 2., h / 2.], dtype=np.float32)
-        sf = 0.4
-        cf = 0.1
-        w_border = _get_border(128, img.shape[1])
-        h_border = _get_border(128, img.shape[0])
-        c[0] = np.random.randint(low=w_border, high=img.shape[1] - w_border)
-        c[1] = np.random.randint(low=h_border, high=img.shape[0] - h_border)
-        s = s * np.clip(np.random.randn()*sf + 1, 1 - sf, 1 + sf)
-        trans_input = _get_affine_transform(c, s, 0, [input_w, input_h])
-        inp = cv2.warpAffine(img.asnumpy(), trans_input, (input_w, input_h), flags=cv2.INTER_LINEAR)
-        output_w = input_w // self._scale_factor
-        output_h = input_h // self._scale_factor
-        trans_output = _get_affine_transform(c, s, 0, [output_w, output_h])
-        for i in range(bbox.shape[0]):
-            bbox[i, :2] = _affine_transform(bbox[i, :2], trans_output)
-            bbox[i, 2:4] = _affine_transform(bbox[i, 2:4], trans_output)
-        bbox[:, :2] = np.clip(bbox[:, :2], 0, output_w - 1)
-        bbox[:, 2:4] = np.clip(bbox[:, 2:4], 0, output_h - 1)
-        img = mx.nd.array(inp)
+        interp = np.random.randint(0, 5)
+        img = timage.imresize(img, self._width, self._height, interp=interp)
+        bbox = tbbox.resize(bbox, (w, h), (self._width, self._height))
+        # cv2 = try_import_cv2()
+        # input_h, input_w = self._height, self._width
+        # s = max(h, w) * 1.0
+        # c = np.array([w / 2., h / 2.], dtype=np.float32)
+        # sf = 0.4
+        # cf = 0.1
+        # w_border = _get_border(128, img.shape[1])
+        # h_border = _get_border(128, img.shape[0])
+        # c[0] = np.random.randint(low=w_border, high=img.shape[1] - w_border)
+        # c[1] = np.random.randint(low=h_border, high=img.shape[0] - h_border)
+        # s = s * np.clip(np.random.randn()*sf + 1, 1 - sf, 1 + sf)
+        # trans_input = _get_affine_transform(c, s, 0, [input_w, input_h])
+        # inp = cv2.warpAffine(img.asnumpy(), trans_input, (input_w, input_h), flags=cv2.INTER_LINEAR)
+        # output_w = input_w // self._scale_factor
+        # output_h = input_h // self._scale_factor
+        # trans_output = _get_affine_transform(c, s, 0, [output_w, output_h])
+        # for i in range(bbox.shape[0]):
+        #     bbox[i, :2] = _affine_transform(bbox[i, :2], trans_output)
+        #     bbox[i, 2:4] = _affine_transform(bbox[i, 2:4], trans_output)
+        # bbox[:, :2] = np.clip(bbox[:, :2], 0, output_w - 1)
+        # bbox[:, 2:4] = np.clip(bbox[:, 2:4], 0, output_h - 1)
+        # img = mx.nd.array(inp)
 
         # to tensor
         img = mx.nd.image.to_tensor(img)
