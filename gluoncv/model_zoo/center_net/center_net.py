@@ -53,6 +53,7 @@ class CenterNet(nn.HybridBlock):
         out = [head(y) for head in self.heads]
         out[0] = F.sigmoid(out[0])
         if autograd.is_training():
+            out[0] = F.clip(out[0], 1e-4, 1 - 1e-4)
             return tuple(out)
         heatmap = out[0]
         keep = self.heatmap_nms(heatmap) == heatmap
