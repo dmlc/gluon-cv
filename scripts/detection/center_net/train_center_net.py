@@ -20,6 +20,7 @@ from gluoncv.data.transforms.presets.center_net import CenterNetDefaultValTransf
 from gluoncv.utils.metrics.voc_detection import VOC07MApMetric
 from gluoncv.utils.metrics.coco_detection import COCODetectionMetric
 from gluoncv.utils.metrics.accuracy import Accuracy
+from gluoncv.utils import LRScheduler, LRSequential
 
 
 def parse_args():
@@ -53,12 +54,20 @@ def parse_args():
                         help='decay rate of learning rate. default is 0.1.')
     parser.add_argument('--lr-decay-epoch', type=str, default='90,120',
                         help='epochs at which learning rate decays. default is 90,120.')
+    parser.add_argument('--lr-mode', type=str, default='step',
+                        help='learning rate scheduler mode. options are step, poly and cosine.')
+    parser.add_argument('--warmup-lr', type=float, default=0.0,
+                        help='starting warmup learning rate. default is 0.0.')
+    parser.add_argument('--warmup-epochs', type=int, default=0,
+                        help='number of warmup epochs.')
     parser.add_argument('--momentum', type=float, default=0.9,
                         help='SGD momentum, default is 0.9')
     parser.add_argument('--wd', type=float, default=0.0005,
                         help='Weight decay, default is 5e-4')
     parser.add_argument('--log-interval', type=int, default=100,
                         help='Logging mini-batch interval. Default is 100.')
+    parser.add_argument('--num-samples', type=int, default=-1,
+                        help='Training images. Use -1 to automatically get the number.')
     parser.add_argument('--save-prefix', type=str, default='',
                         help='Saving parameter prefix')
     parser.add_argument('--save-interval', type=int, default=10,
@@ -94,6 +103,8 @@ def get_dataset(dataset, args):
             args.val_interval = 10
     else:
         raise NotImplementedError('Dataset: {} not implemented.'.format(dataset))
+    if args.num_samples < 0:
+        args.num_samples = len(train_dataset)
     return train_dataset, val_dataset, val_metric
 
 def get_dataloader(net, train_dataset, val_dataset, data_shape, batch_size, num_workers, ctx):
@@ -153,13 +164,24 @@ def validate(net, val_data, ctx, eval_metric):
 def train(net, train_data, val_data, eval_metric, ctx, args):
     """Training pipeline"""
     net.collect_params().reset_ctx(ctx)
-    trainer = gluon.Trainer(
-                net.collect_params(), 'sgd',
-                {'learning_rate': args.lr, 'wd': args.wd, 'momentum': args.momentum})
-
     # lr decay policy
     lr_decay = float(args.lr_decay)
-    lr_steps = sorted([float(ls) for ls in args.lr_decay_epoch.split(',') if ls.strip()])
+    lr_steps = sorted([int(ls) for ls in args.lr_decay_epoch.split(',') if ls.strip()])
+    lr_decay_epoch = [e - args.warmup_epochs for e in lr_steps]
+    num_batches = args.num_samples // args.batch_size
+    lr_scheduler = LRSequential([
+        LRScheduler('linear', base_lr=0, target_lr=args.lr,
+                    nepochs=args.warmup_epochs, iters_per_epoch=num_batches),
+        LRScheduler(args.lr_mode, base_lr=args.lr,
+                    nepochs=args.epochs - args.warmup_epochs,
+                    iters_per_epoch=num_batches,
+                    step_epoch=lr_decay_epoch,
+                    step_factor=args.lr_decay, power=2),
+    ])
+    trainer = gluon.Trainer(
+                net.collect_params(), 'sgd',
+                {'learning_rate': args.lr, 'wd': args.wd, 'momentum': args.momentum,
+                 'lr_scheduler': lr_scheduler})
 
     heatmap_loss = gcv.loss.HeatmapFocalLoss(from_logits=True)
     wh_loss = gcv.loss.MaskedL1Loss(weight=args.wh_weight)
@@ -215,7 +237,7 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
                     curr_loss = heatmap_losses[-1]+ wh_losses[-1] + center_reg_losses[-1]
                     sum_losses.append(curr_loss)
                 autograd.backward(sum_losses)
-            trainer.step(batch_size)
+            trainer.step(len(sum_losses))  # step with # gpus
 
             heatmap_loss_metric.update(0, heatmap_losses)
             wh_metric.update(0, wh_losses)

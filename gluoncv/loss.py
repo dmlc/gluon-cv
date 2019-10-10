@@ -475,13 +475,19 @@ class HeatmapFocalLoss(Loss):
         neg_loss = F.log(1 - pred) * F.power(pred, 2) * neg_weights * neg_inds
 
         # normalize
-        num_pos = F.stop_gradient(F.clip(F.sum(pos_inds), a_min=1, a_max=1e30))
-        pos_loss = F.sum(pos_loss, axis=self._batch_axis, exclude=True)
-        neg_loss = F.sum(neg_loss, axis=self._batch_axis, exclude=True)
+        # num_pos = F.stop_gradient(F.clip(F.sum(pos_inds), a_min=1, a_max=1e30))
+        num_pos = F.sum(pos_inds).asscalar()
+        pos_loss = F.sum(pos_loss)
+        neg_loss = F.sum(neg_loss)
+        # pos_loss = F.sum(pos_loss, axis=self._batch_axis, exclude=True)
+        # neg_loss = F.sum(neg_loss, axis=self._batch_axis, exclude=True)
         # loss = F.contrib.cond(num_pos > 0,
         #                       lambda: -(pos_loss + neg_loss) / num_pos,
         #                       lambda: -neg_loss)
-        loss = -(pos_loss + neg_loss) / num_pos
+        if num_pos > 0:
+            loss = -(pos_loss + neg_loss) / num_pos
+        else:
+            loss = -neg_loss
         return loss
 
 
@@ -521,5 +527,7 @@ class MaskedL1Loss(Loss):
         label = _reshape_like(F, label, pred)
         loss = F.abs(label * mask - pred * mask)
         loss = _apply_weighting(F, loss, self._weight, sample_weight)
-        norm = F.stop_gradient(F.sum(mask, axis=self._batch_axis, exclude=True))
-        return F.sum(loss, axis=self._batch_axis, exclude=True) / norm
+        # norm = F.stop_gradient(F.sum(mask, axis=self._batch_axis, exclude=True))
+        norm = F.sum(mask).asscalar()
+        # return F.sum(loss, axis=self._batch_axis, exclude=True) / norm
+        return F.sum(loss) / max(1, norm)
