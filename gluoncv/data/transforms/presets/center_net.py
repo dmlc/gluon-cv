@@ -5,7 +5,7 @@ import mxnet as mx
 from .. import bbox as tbbox
 from .. import image as timage
 from .. import experimental
-from ...utils.filesystem import try_import_cv2
+from ....utils.filesystem import try_import_cv2
 
 __all__ = ['CenterNetDefaultTrainTransform', 'CenterNetDefaultValTransform']
 
