@@ -9,6 +9,11 @@ from ....utils.filesystem import try_import_cv2
 
 __all__ = ['CenterNetDefaultTrainTransform', 'CenterNetDefaultValTransform']
 
+def _get_border(border, size):
+    i = 1
+    while size - border // i <= border // i:
+        i *= 2
+    return border // i
 
 def get_dir(src_point, rot_rad):
     sn, cs = np.sin(rot_rad), np.cos(rot_rad)
@@ -131,8 +136,10 @@ class CenterNetDefaultTrainTransform(object):
         c = np.array([w / 2., h / 2.], dtype=np.float32)
         sf = 0.4
         cf = 0.1
-        c[0] += s * np.clip(np.random.randn()*cf, -2*cf, 2*cf)
-        c[1] += s * np.clip(np.random.randn()*cf, -2*cf, 2*cf)
+        w_border = _get_border(128, img.shape[1])
+        h_border = _get_border(128, img.shape[0])
+        c[0] = np.random.randint(low=w_border, high=img.shape[1] - w_border)
+        c[1] = np.random.randint(low=h_border, high=img.shape[0] - h_border)
         s = s * np.clip(np.random.randn()*sf + 1, 1 - sf, 1 + sf)
         trans_input = _get_affine_transform(c, s, 0, [input_w, input_h])
         inp = cv2.warpAffine(img.asnumpy(), trans_input, (input_w, input_h), flags=cv2.INTER_LINEAR)
