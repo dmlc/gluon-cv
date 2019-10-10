@@ -105,7 +105,7 @@ class DeconvResnet(nn.HybridBlock):
             #                               strides=1,
             #                               padding=1,
             #                               in_channels=in_planes))
-            layers.add(self._norm_layer(momentum=0.9, gamma_initializer='zeros', **self._norm_kwargs))
+            layers.add(self._norm_layer(momentum=0.9, **self._norm_kwargs))
             layers.add(nn.Activation('relu'))
             layers.add(nn.Conv2DTranspose(channels=planes,
                                           kernel_size=kernel,
@@ -115,7 +115,7 @@ class DeconvResnet(nn.HybridBlock):
                                           use_bias=False,
                                           in_channels=planes,
                                           weight_initializer=BilinearUpSample()))
-            layers.add(self._norm_layer(momentum=0.9, gamma_initializer='zeros', **self._norm_kwargs))
+            layers.add(self._norm_layer(momentum=0.9, **self._norm_kwargs))
             layers.add(nn.Activation('relu'))
             in_planes = planes
 
