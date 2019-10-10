@@ -71,7 +71,7 @@ def get_mobile_pose(base_name, ctx=cpu(), pretrained=False,
     net = MobilePose(base_name, **kwargs)
 
     if pretrained:
-        from .model_store import get_model_file
+        from ..model_store import get_model_file
         net.load_parameters(get_model_file('mobile_pose_%s'%(base_name),
                                            tag=pretrained, root=root), ctx=ctx)
 
