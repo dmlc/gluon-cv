@@ -21,14 +21,12 @@
 
 from __future__ import division
 
-import numpy as np
 from mxnet import initializer
 from mxnet.gluon import nn
 # from mxnet.gluon.nn import BatchNorm
 from mxnet.gluon.block import HybridBlock
 from mxnet.context import cpu
 
-from ..mobilenetv3 import _ResUnit
 from ...nn.block import DUC, BatchNormCudnnOff
 
 class MobilePose(HybridBlock):
@@ -69,7 +67,7 @@ class MobilePose(HybridBlock):
         return hm
 
 def get_mobile_pose(base_name, ctx=cpu(), pretrained=False,
-                   root='~/.mxnet/models', **kwargs):
+                    root='~/.mxnet/models', **kwargs):
     net = MobilePose(base_name, **kwargs)
 
     if pretrained:
@@ -81,11 +79,11 @@ def get_mobile_pose(base_name, ctx=cpu(), pretrained=False,
 
 def mobile_pose_resnet18_v1b(**kwargs):
     return get_mobile_pose('resnet18_v1b', base_attrs=['conv1', 'bn1', 'relu', 'maxpool',
-                          'layer1', 'layer2', 'layer3', 'layer4'], **kwargs)
+                           'layer1', 'layer2', 'layer3', 'layer4'], **kwargs)
 
 def mobile_pose_resnet50_v1b(**kwargs):
     return get_mobile_pose('resnet50_v1b', base_attrs=['conv1', 'bn1', 'relu', 'maxpool',
-                          'layer1', 'layer2', 'layer3', 'layer4'], **kwargs)
+                           'layer1', 'layer2', 'layer3', 'layer4'], **kwargs)
 
 def mobile_pose_mobilenet1_0(**kwargs):
     return get_mobile_pose('mobilenet1.0', base_attrs=['features'], **kwargs)
@@ -98,4 +96,3 @@ def mobile_pose_mobilenetv3_small(**kwargs):
 
 def mobile_pose_mobilenetv3_large(**kwargs):
     return get_mobile_pose('mobilenetv3_large', base_attrs=['features'], **kwargs)
-

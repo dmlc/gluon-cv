@@ -132,6 +132,7 @@ class DSNT(HybridBlock):
         self.hlast = 1 - 1 / (2 * self.size[1])
 
     def hybrid_forward(self, F, M):
+        # pylint: disable=missing-function-docstring
         if self.norm == 'softmax':
             Z = self.softmax(M)
         elif self.norm == 'sum':
@@ -147,6 +148,8 @@ class DSNT(HybridBlock):
         return res, Z
 
 class DUC(HybridBlock):
+    '''Upsampling layer with pixel shuffle
+    '''
     def __init__(self, planes, upscale_factor=2, **kwargs):
         super(DUC, self).__init__(**kwargs)
         self.conv = nn.Conv2D(planes, kernel_size=3, padding=1, use_bias=False)
@@ -161,4 +164,3 @@ class DUC(HybridBlock):
         x = self.relu(x)
         x = self.pixel_shuffle(x)
         return x
-
