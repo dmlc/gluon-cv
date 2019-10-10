@@ -113,14 +113,14 @@ class DSNT(HybridBlock):
         available methods are 'softmax', or 'sum'
     axis : the axis for input heatmap
     '''
-    def __init__(self, size, norm='softmax', axis=(2, 3), **kwargs):
+    def __init__(self, size, norm='sum', axis=(2, 3), **kwargs):
         super(DSNT, self).__init__(**kwargs)
         if isinstance(size, int):
             self.size = (size, size)
         else:
             self.size = size
         self.axis = axis
-        self.norm = normalization
+        self.norm = norm
         if self.norm == 'softmax':
             self.softmax = SoftmaxHD(self.axis)
         elif self.norm != 'sum':
@@ -134,7 +134,7 @@ class DSNT(HybridBlock):
     def hybrid_forward(self, F, M):
         if self.norm == 'softmax':
             Z = self.softmax(M)
-        elif self.norm == 'max':
+        elif self.norm == 'sum':
             norm = F.sum(M, axis=self.axis, keepdims=True)
             Z = F.broadcast_div(M, norm)
         else:
