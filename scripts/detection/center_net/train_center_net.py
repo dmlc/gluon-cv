@@ -62,8 +62,8 @@ def parse_args():
                         help='number of warmup epochs.')
     parser.add_argument('--momentum', type=float, default=0.9,
                         help='SGD momentum, default is 0.9')
-    parser.add_argument('--wd', type=float, default=0.0005,
-                        help='Weight decay, default is 5e-4')
+    parser.add_argument('--wd', type=float, default=0.0001,
+                        help='Weight decay, default is 1e-4')
     parser.add_argument('--log-interval', type=int, default=100,
                         help='Logging mini-batch interval. Default is 100.')
     parser.add_argument('--num-samples', type=int, default=-1,
@@ -178,6 +178,11 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
                     step_epoch=lr_decay_epoch,
                     step_factor=args.lr_decay, power=2),
     ])
+
+    for k, v in net.collect_params(select='.*heads').items():
+        v.wd_mult = 0.0
+    for k, v in net.collect_params('.*bias').items():
+        v.wd_mult = 0.0
     trainer = gluon.Trainer(
                 net.collect_params(), 'sgd',
                 {'learning_rate': args.lr, 'wd': args.wd, 'momentum': args.momentum,
