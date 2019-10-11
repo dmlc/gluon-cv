@@ -42,7 +42,7 @@ class CenterNetTargetGenerator(gluon.Block):
                 center_reg_mask[:, center_y, center_x] = 1.0
         return tuple([nd.array(x) for x in (heatmap, wh_target, wh_mask, center_reg, center_reg_mask)])
 
-class CenterNetTargetGenerator(gluon.Block):
+class CenterNetTargetGeneratorDebug(gluon.Block):
     def __init__(self, num_class, output_width, output_height):
         super(CenterNetTargetGenerator, self).__init__()
         self._num_class = num_class

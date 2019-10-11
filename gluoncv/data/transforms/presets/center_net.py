@@ -191,8 +191,8 @@ class CenterNetDefaultTrainTransformDebug(object):
         self._mean = mean
         self._std = std
 
-        from ....model_zoo.center_net.target_generator import CenterNetTargetGenerator
-        self._target_generator = CenterNetTargetGenerator(
+        from ....model_zoo.center_net.target_generator import CenterNetTargetGeneratorDebug
+        self._target_generator = CenterNetTargetGeneratorDebug(
             num_class, width // scale_factor, height // scale_factor)
 
     def __call__(self, src, label):
