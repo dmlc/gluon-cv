@@ -182,8 +182,8 @@ class CenterNetDefaultTrainTransformDebug(object):
     std : array-like of size 3
         Standard deviation to be divided from image. Default is [0.229, 0.224, 0.225].
     """
-    def __init__(self, width, height, num_class, scale_factor=4, mean=(0.408, 0.447, 0.470),
-                 std=(0.289, 0.274, 0.278), **kwargs):
+    def __init__(self, width, height, num_class, scale_factor=4, mean=(0.485, 0.456, 0.406),
+                 std=(0.229, 0.224, 0.225), **kwargs):
         self._width = width
         self._height = height
         self._num_class = num_class
