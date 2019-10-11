@@ -256,7 +256,7 @@ class CenterNetDefaultTrainTransformDebug(object):
         gt_bboxes = bbox[:, :4]
         gt_ids = bbox[:, 4:5]
         ret = self._target_generator(img.shape[2], img.shape[1], gt_bboxes, gt_ids)
-        ret.update({'input': img.asnumpy())
+        ret.update({'input': img.asnumpy()})
         return ret
 
 
