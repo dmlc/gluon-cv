@@ -182,8 +182,8 @@ class CenterNetDefaultTrainTransformDebug(object):
     std : array-like of size 3
         Standard deviation to be divided from image. Default is [0.229, 0.224, 0.225].
     """
-    def __init__(self, width, height, num_class, scale_factor=4, mean=(0.485, 0.456, 0.406),
-                 std=(0.229, 0.224, 0.225), **kwargs):
+    def __init__(self, width, height, num_class, scale_factor=4, mean=(0.408, 0.447, 0.470),
+                 std=(0.289, 0.274, 0.278), **kwargs):
         self._width = width
         self._height = height
         self._num_class = num_class
@@ -249,14 +249,17 @@ class CenterNetDefaultTrainTransformDebug(object):
         # img = mx.nd.array(inp)
 
         # to tensor
-        img = mx.nd.image.to_tensor(img)
-        img = mx.nd.image.normalize(img, mean=self._mean, std=self._std)
+        img = img.asnumpy().astype(np.float32) / 255.
+        img = (img - self.mean) / self.std
+        img = img.transpose(2, 0, 1)
+        # img = mx.nd.image.to_tensor(img)
+        # img = mx.nd.image.normalize(img, mean=self._mean, std=self._std)
 
         # generate training target so cpu workers can help reduce the workload on gpu
         gt_bboxes = bbox[:, :4]
         gt_ids = bbox[:, 4:5]
         ret = self._target_generator(img.shape[2], img.shape[1], gt_bboxes, gt_ids)
-        ret.update({'input': img.asnumpy()})
+        ret.update({'input': img})
         return ret
 
 
