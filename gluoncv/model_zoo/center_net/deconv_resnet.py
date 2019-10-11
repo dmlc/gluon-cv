@@ -90,6 +90,9 @@ class DeconvResnet(nn.HybridBlock):
             'Deconv filters and kernels number mismatch: {} vs. {}'.format(len(num_filters), len(num_kernels))
 
         layers = nn.HybridSequential('deconv_')
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            self.base_network.initialize()
         in_planes = self.base_network(mx.nd.zeros((1, 3, 256, 256))).shape[1]
         for planes, k in zip(num_filters, num_kernels):
             kernel, padding, output_padding = self._get_deconv_cfg(k)
