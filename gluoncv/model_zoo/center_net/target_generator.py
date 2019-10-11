@@ -81,8 +81,8 @@ class CenterNetTargetGenerator(gluon.Block):
                 # wh_mask[:, center_y, center_x] = 1.0
                 # center_reg[:, center_y, center_x] = center - center_int
                 # center_reg_mask[:, center_y, center_x] = 1.0
-                wh_target[k] = box_w, box_h
-                ind[k] = center_int[1] * output_w + center_int[0]
+                wh_target[k] = box_w * w_scale, box_h * h_scale
+                ind[k] = center_int[1] * self._output_width + center_int[0]
                 center_reg[k] = center - center_int
                 reg_mask[k] = 1
             k += 1
