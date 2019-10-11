@@ -251,7 +251,7 @@ class CenterNetDefaultTrainTransformDebug(object):
         # to tensor
         img = img.asnumpy().astype(np.float32) / 255.
         img = (img - self._mean) / self._std
-        img = img.transpose(2, 0, 1)
+        img = img.transpose(2, 0, 1).astype(np.float32)
         # img = mx.nd.image.to_tensor(img)
         # img = mx.nd.image.normalize(img, mean=self._mean, std=self._std)
 
