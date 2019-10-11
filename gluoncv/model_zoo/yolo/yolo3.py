@@ -955,5 +955,5 @@ def yolo3_mobilenet0_25_coco(pretrained_base=True, pretrained=False, norm_layer=
     strides = [8, 16, 32]
     classes = COCODetection.CLASSES
     return get_yolov3(
-        'mobilenet1.0', stages, [256, 128, 128], anchors, strides, classes, 'coco',
+        'mobilenet0.25', stages, [256, 128, 128], anchors, strides, classes, 'coco',
         pretrained=pretrained, norm_layer=norm_layer, norm_kwargs=norm_kwargs, **kwargs)
