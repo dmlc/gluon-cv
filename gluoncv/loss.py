@@ -468,7 +468,7 @@ class HeatmapFocalLoss(Loss):
         """Loss forward"""
         if not self._from_logits:
             pred = F.sigmoid(pred)
-        pos_inds = label >= 1
+        pos_inds = label == 1
         neg_inds = label < 1
         neg_weights = F.power(1 - label, 4)
         pos_loss = F.log(pred) * F.power(1 - pred, 2) * pos_inds
