@@ -35,7 +35,7 @@ class RPN(gluon.HybridBlock):
         The aspect ratios of anchor boxes. We expect it to be a list or tuple.
     alloc_size : tuple of int
         Allocate size for the anchor boxes as (H, W).
-        Usually we generate enough anchors flt is or large feature map, e.g. 128x128.
+        Usually we generate enough anchors for large feature map, e.g. 128x128.
         Later in inference we can have variable input sizes,
         at which time we can crop corresponding anchors from this large
         anchor map so we can skip re-generating anchors for each input.

@@ -328,7 +328,7 @@ class MultiClassEncoder(gluon.HybridBlock):
         """
         # samples (B, N) (+1, -1, 0: ignore), matches (B, N) [0, M), refs (B, M)
         # reshape refs (B, M) -> (B, 1, M) -> (B, N, M)
-        refs = F.broadcast_like(refs.reshape((0, 1, -1)), matches, lhs_axes=1, rhs_axes=1)
+        refs = F.broadcast_like(F.reshape(refs, (0, 1, -1)), matches, lhs_axes=1, rhs_axes=1)
         # ids (B, N, M) -> (B, N), value [0, M + 1), 0 reserved for background class
         target_ids = F.pick(refs, matches, axis=2) + 1
         # samples 0: set ignore samples to ignore_label

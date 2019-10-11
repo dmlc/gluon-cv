@@ -244,8 +244,8 @@ class FPNFeatureExpander(SymbolBlock):
                                             attr={'__init__': weight_init})
                     if norm_layer is not None:
                         if norm_layer is SyncBatchNorm:
-                            norm_kwargs['key'] = "P{}_lat_bn".format(num_stages - i)
-                            norm_kwargs['name'] = "P{}_lat_bn".format(num_stages - i)
+                            norm_kwargs['key'] = "P{}_conv1_bn".format(num_stages - i)
+                            norm_kwargs['name'] = "P{}_conv1_bn".format(num_stages - i)
                         bf = norm_layer(bf, **norm_kwargs)
                 if use_upsample:
                     y = mx.sym.UpSampling(y, scale=2, sample_type='nearest',
