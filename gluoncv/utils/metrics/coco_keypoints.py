@@ -128,9 +128,6 @@ class COCOKeyPointsMetric(mx.metric.EvalMetric):
             if count > 0:
                 kpt_score /= count
             rescore = kpt_score * score[idx].asscalar()
-            fixed_score = kwargs.get('fixed_score', False)
-            if fixed_score:
-                rescore = 2
 
             self._results.append({'image_id': int(imgid[idx].asscalar()),
                                   'category_id': 1,
