@@ -543,6 +543,14 @@ def test_calib_models():
     x = mx.random.uniform(shape=(1, 3, 480, 480), ctx=ctx)
     _calib_model_list(model_list, ctx, x)
 
+    model_list = ['simple_pose_resnet18_v1b',
+                  'simple_pose_resnet50_v1b', 'simple_pose_resnet50_v1d',
+                  'simple_pose_resnet101_v1b', 'simple_pose_resnet101_v1d']
+    ctx = mx.context.current_context()
+    x = mx.random.uniform(shape=(1, 3, 256, 192), ctx=ctx)
+    _calib_model_list(model_list, ctx, x)
+
+
 @with_cpu(0)
 def test_quantized_segmentation_models():
     model_list = ['fcn_resnet101_voc_int8', 'fcn_resnet101_coco_int8',
@@ -552,6 +560,15 @@ def test_quantized_segmentation_models():
     x = mx.random.uniform(shape=(1, 3, 480, 480), ctx=ctx)
     _test_model_list(model_list, ctx, x)
 
+
+@with_cpu(0)
+def test_quantized_pose_estimation_models():
+    model_list = ['simple_pose_resnet18_v1b_int8',
+                  'simple_pose_resnet50_v1b_int8', 'simple_pose_resnet50_v1d_int8',
+                  'simple_pose_resnet101_v1b_int8', 'simple_pose_resnet101_v1d_int8']
+    ctx = mx.context.current_context()
+    x = mx.random.uniform(shape=(1, 3, 256, 192), ctx=ctx)
+    _test_model_list(model_list, ctx, x)
 
 if __name__ == '__main__':
     import nose
