@@ -36,6 +36,7 @@ class BilinearUpSample(mx.init.Initializer):
         super(BilinearUpSample, self).__init__()
 
     def _init_weight(self, _, arr):
+        mx.nd.random.normal(0, 0.01, arr.shape, out=arr)
         f = math.ceil(arr.shape[2] / 2)
         c = (2 * f - 1 - f % 2) / (2. * f)
         for i in range(arr.shape[2]):
