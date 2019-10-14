@@ -53,6 +53,7 @@ numactl --physcpubind=0-27 --membind=0 python validate.py ...
 ```
 
 ## Performance
+Below results are collected based on Intel(R) VNNI enabled C5.12xlarge with 24 physical cores.
 
 |model | fp32 latency(ms) | s8 latency(ms) | fp32 OKS AP | s8 OKS AP |
 |-- | -- | -- | -- | -- |
