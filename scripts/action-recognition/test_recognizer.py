@@ -12,7 +12,7 @@ from mxnet.gluon.data.vision import transforms
 from mxboard import SummaryWriter
 
 from gluoncv.data.transforms import video
-from gluoncv.data import ucf101, kinetics400, somethingsomethingv2
+from gluoncv.data import UCF101, Kinetics400, SomethingSomethingV2
 from gluoncv.model_zoo import get_model
 from gluoncv.utils import makedirs, LRSequential, LRScheduler, split_and_load
 from gluoncv.data.dataloader import tsn_mp_batchify_fn
@@ -221,20 +221,20 @@ def main():
         transform_test = video.VideoGroupValTransform(size=opt.input_size, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
     if opt.dataset == 'ucf101':
-        val_dataset = ucf101.classification.UCF101(setting=opt.val_list, root=opt.data_dir, train=False,
-                                               new_width=opt.new_width, new_height=opt.new_height, new_length=opt.new_length,
-                                               target_width=opt.input_size, target_height=opt.input_size,
-                                               test_mode=True, num_segments=opt.num_segments, transform=transform_test)
+        val_dataset = UCF101(setting=opt.val_list, root=opt.data_dir, train=False,
+                             new_width=opt.new_width, new_height=opt.new_height, new_length=opt.new_length,
+                             target_width=opt.input_size, target_height=opt.input_size,
+                             test_mode=True, num_segments=opt.num_segments, transform=transform_test)
     elif opt.dataset == 'kinetics400':
-        val_dataset = kinetics400.classification.Kinetics400(setting=opt.val_list, root=opt.data_dir, train=False,
-                                               new_width=opt.new_width, new_height=opt.new_height, new_length=opt.new_length, new_step=opt.new_step,
-                                               target_width=opt.input_size, target_height=opt.input_size, video_loader=opt.video_loader, use_decord=opt.use_decord,
-                                               test_mode=True, num_segments=opt.num_segments, transform=transform_test)
+        val_dataset = Kinetics400(setting=opt.val_list, root=opt.data_dir, train=False,
+                                  new_width=opt.new_width, new_height=opt.new_height, new_length=opt.new_length, new_step=opt.new_step,
+                                  target_width=opt.input_size, target_height=opt.input_size, video_loader=opt.video_loader, use_decord=opt.use_decord,
+                                  test_mode=True, num_segments=opt.num_segments, transform=transform_test)
     elif opt.dataset == 'somethingsomethingv2':
-        val_dataset = somethingsomethingv2.classification.SomethingSomethingV2(setting=opt.val_list, root=opt.data_dir, train=False,
-                                                   new_width=opt.new_width, new_height=opt.new_height, new_length=opt.new_length, new_step=opt.new_step,
-                                                   target_width=opt.input_size, target_height=opt.input_size, video_loader=opt.video_loader, use_decord=opt.use_decord,
-                                                   num_segments=opt.num_segments, transform=transform_test)
+        val_dataset = SomethingSomethingV2(setting=opt.val_list, root=opt.data_dir, train=False,
+                                           new_width=opt.new_width, new_height=opt.new_height, new_length=opt.new_length, new_step=opt.new_step,
+                                           target_width=opt.input_size, target_height=opt.input_size, video_loader=opt.video_loader, use_decord=opt.use_decord,
+                                           num_segments=opt.num_segments, transform=transform_test)
     else:
         logger.info('Dataset %s is not supported yet.' % (opt.dataset))
 

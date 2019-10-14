@@ -15,7 +15,7 @@ class SomethingSomethingV2(dataset.Dataset):
 
     Parameters
     ----------
-    root : str, default '~/.mxnet/datasets/somethingsomethingv2'
+    root : str, default '~/.mxnet/datasets/somethingsomethingv2/20bn-something-something-v2-frames'
         Path to the folder stored the dataset.
     setting : str, required
         Config file of the prepared dataset.
@@ -61,8 +61,8 @@ class SomethingSomethingV2(dataset.Dataset):
         A function that takes data and label and transforms them.
     """
     def __init__(self,
-                 setting=os.path.expanduser('~/.mxnet/datasets/somethingsomethingv2/train_videofolder.txt'),
                  root=os.path.expanduser('~/.mxnet/datasets/somethingsomethingv2/20bn-something-something-v2-frames'),
+                 setting=os.path.expanduser('~/.mxnet/datasets/somethingsomethingv2/train_videofolder.txt'),
                  train=True,
                  test_mode=False,
                  name_pattern='%06d.jpg',
