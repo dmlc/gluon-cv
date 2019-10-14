@@ -301,11 +301,16 @@ class FasterRCNN(RCNN):
                 pooled_feature = F.where(roi_level == l, pooled_feature,
                                          F.zeros_like(pooled_feature))
             elif roi_mode == 'align':
-                # masked_rpn_rois = F.where(roi_level == l, rpn_rois, F.ones_like(rpn_rois) * -1.)
-                pooled_feature = F.contrib.ROIAlign(features[i], rpn_rois, roi_size,
-                                                    1. / strides[i], sample_ratio=2)
-                pooled_feature = F.where(roi_level == l, pooled_feature,
-                                         F.zeros_like(pooled_feature))
+                if 'box_encode' in F.contrib.__dict__ and 'box_decode' in F.contrib.__dict__:
+                    # TODO(jerryzcn): clean this up for once mx 1.6 is released.
+                    masked_rpn_rois = F.where(roi_level == l, rpn_rois, F.ones_like(rpn_rois) * -1.)
+                    pooled_feature = F.contrib.ROIAlign(features[i], masked_rpn_rois, roi_size,
+                                                        1. / strides[i], sample_ratio=2)
+                else:
+                    pooled_feature = F.contrib.ROIAlign(features[i], rpn_rois, roi_size,
+                                                        1. / strides[i], sample_ratio=2)
+                    pooled_feature = F.where(roi_level == l, pooled_feature,
+                                             F.zeros_like(pooled_feature))
             else:
                 raise ValueError("Invalid roi mode: {}".format(roi_mode))
             pooled_roi_feats.append(pooled_feature)

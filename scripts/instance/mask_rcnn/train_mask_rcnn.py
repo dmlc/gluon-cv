@@ -4,6 +4,9 @@ import os
 
 # disable autotune
 os.environ['MXNET_CUDNN_AUTOTUNE_DEFAULT'] = '0'
+os.environ['MXNET_GPU_MEM_POOL_TYPE'] = 'Round'
+os.environ['MXNET_GPU_MEM_POOL_ROUND_LINEAR_CUTOFF'] = '28'
+
 import logging
 import time
 import numpy as np
@@ -201,11 +204,9 @@ def split_and_load(batch, ctx_list):
     new_batch = []
     for i, data in enumerate(batch):
         if isinstance(data, (list, tuple)):
-            staged_data = _stage_data(i, data, ctx_list, pinned_data_stage)
-            new_data = [x.as_in_context(ctx) for x, ctx in zip(staged_data, ctx_list)]
+            new_data = [x.as_in_context(ctx) for x, ctx in zip(data, ctx_list)]
         else:
-            staged_data = _stage_data(i, [data], ctx_list, pinned_data_stage)
-            new_data = [staged_data[0].as_in_context(ctx_list[0])]
+            new_data = [data.as_in_context(ctx_list[0])]
         new_batch.append(new_data)
     return new_batch
 
@@ -344,7 +345,8 @@ class ForwardBackwardTask(Parallelizable):
 
 def train(net, train_data, val_data, eval_metric, batch_size, ctx, args):
     """Training pipeline"""
-    kv = mx.kvstore.create('device' if (args.amp and 'nccl' in args.kv_store) else args.kv_store)
+    args.kv_store = 'device' if (args.amp and 'nccl' in args.kv_store) else args.kv_store
+    kv = mx.kvstore.create(args.kv_store)
     net.collect_params().setattr('grad_req', 'null')
     net.collect_train_params().setattr('grad_req', 'write')
     for k, v in net.collect_params('.*bias').items():
@@ -434,7 +436,7 @@ def train(net, train_data, val_data, eval_metric, batch_size, ctx, args):
             batch = next_data_batch
             if i + epoch * len(train_data) <= lr_warmup:
                 # adjust based on real percentage
-                new_lr = base_lr * get_lr_at_iter((i + epoch * len(train_data)) / lr_warmup,
+                new_lr = base_lr * get_lr_at_iter((i + epoch * float(len(train_data))) / lr_warmup,
                                                   args.lr_warmup_factor)
                 if new_lr != trainer.learning_rate:
                     if i % args.log_interval == 0:
