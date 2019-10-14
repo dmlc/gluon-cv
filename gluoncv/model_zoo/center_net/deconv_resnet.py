@@ -12,7 +12,8 @@ from mxnet.gluon import nn
 from mxnet.gluon import contrib
 from .. model_zoo import get_model
 
-__all__ = ['DeconvResnet', 'get_deconv_resnet', 'deconv_resnet18_v1b']
+__all__ = ['DeconvResnet', 'get_deconv_resnet',
+           'resnet18_v1b_deconv', 'resnet18_v1b_deconv_dcnv2']
 
 
 class BilinearUpSample(mx.init.Initializer):
@@ -49,12 +50,14 @@ class BilinearUpSample(mx.init.Initializer):
 class DeconvResnet(nn.HybridBlock):
     def __init__(self, base_network='resnet18_v1b', use_dcn=False,
                  deconv_filters=(256, 128, 64), deconv_kernels=(4, 4, 4),
-                 pretrained_base=True, norm_layer=nn.BatchNorm, norm_kwargs=None, **kwargs):
+                 pretrained_base=True, norm_layer=nn.BatchNorm, norm_kwargs=None,
+                 use_dcnv2=False, **kwargs):
         super(DeconvResnet, self).__init__(**kwargs)
         assert 'resnet' in base_network
         net = get_model(base_network, pretrained=pretrained_base)
         self._norm_layer = norm_layer
         self._norm_kwargs = norm_kwargs if norm_kwargs is not None else {}
+        self._use_dcnv2 = use_dcnv2
         if 'v1b' in base_network:
             feat = nn.HybridSequential()
             feat.add(*[net.conv1,
@@ -97,18 +100,20 @@ class DeconvResnet(nn.HybridBlock):
         in_planes = self.base_network(mx.nd.zeros((1, 3, 256, 256))).shape[1]
         for planes, k in zip(num_filters, num_kernels):
             kernel, padding, output_padding = self._get_deconv_cfg(k)
-            layers.add(contrib.cnn.ModulatedDeformableConvolution(planes,
-                                                                  kernel_size=3,
-                                                                  strides=1,
-                                                                  padding=1,
-                                                                  dilation=1,
-                                                                  num_deformable_group=1,
-                                                                  in_channels=in_planes))
-            # layers.add(nn.Conv2DTranspose(channels=planes,
-            #                               kernel_size=3,
-            #                               strides=1,
-            #                               padding=1,
-            #                               in_channels=in_planes))
+            if self._use_dcnv2:
+                layers.add(contrib.cnn.ModulatedDeformableConvolution(planes,
+                                                                      kernel_size=3,
+                                                                      strides=1,
+                                                                      padding=1,
+                                                                      dilation=1,
+                                                                      num_deformable_group=1,
+                                                                      in_channels=in_planes))
+            else:
+                layers.add(nn.Conv2D(channels=planes,
+                                     kernel_size=3,
+                                     strides=1,
+                                     padding=1,
+                                     in_channels=in_planes))
             layers.add(self._norm_layer(momentum=0.9, **self._norm_kwargs))
             layers.add(nn.Activation('relu'))
             layers.add(nn.Conv2DTranspose(channels=planes,
@@ -130,13 +135,19 @@ class DeconvResnet(nn.HybridBlock):
         out = self.deconv(y)
         return out
 
-def get_deconv_resnet(base_network, pretrained=False, ctx=cpu(), **kwargs):
-    net = DeconvResnet(base_network=base_network, pretrained_base=pretrained, **kwargs)
+def get_deconv_resnet(base_network, pretrained=False, ctx=cpu(), use_dcnv2=False, **kwargs):
+    net = DeconvResnet(base_network=base_network, pretrained_base=pretrained,
+                       use_dcnv2=use_dcnv2, **kwargs)
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always")
         net.initialize()
     net.collect_params().reset_ctx(ctx)
     return net
 
-def deconv_resnet18_v1b(**kwargs):
+def resnet18_v1b_deconv(**kwargs):
+    kwargs['use_dcnv2'] = False
+    return get_deconv_resnet('resnet18_v1b', **kwargs)
+
+def resnet18_v1b_deconv_dcnv2(**kwargs):
+    kwargs['use_dcnv2'] = True
     return get_deconv_resnet('resnet18_v1b', **kwargs)
