@@ -16,7 +16,7 @@ __all__ = ['CenterNet', 'get_center_net',
 
 class CenterNet(nn.HybridBlock):
     def __init__(self, base_network, heads, classes,
-                 head_conv_channel=0, scale=4.0, topk=40, **kwargs):
+                 head_conv_channel=0, scale=4.0, topk=40, flip_test=False, **kwargs):
         if 'norm_layer' in kwargs:
             kwargs.pop('norm_layer')
         if 'norm_kwargs' in kwargs:
@@ -27,6 +27,7 @@ class CenterNet(nn.HybridBlock):
             .format(type(heads))
         self.classes = classes
         self.scale = scale
+        self.flip_test = flip_test
         with self.name_scope():
             self.base_network = base_network
             self.heatmap_nms = nn.MaxPool2D(pool_size=3, strides=1, padding=1)
@@ -55,6 +56,12 @@ class CenterNet(nn.HybridBlock):
         if autograd.is_training():
             out[0] = F.clip(out[0], 1e-4, 1 - 1e-4)
             return tuple(out)
+        if self.flip_test:
+            y_flip = self.base_network(x.flip(axis=3))
+            out_flip = [head(y_flip) for head in self.heads]
+            out_flip[0] = F.sigmoid(out_flip[0])
+            out[0] = (out[0] + out_flip[0].flip(axis=3)) * 0.5
+            out[1] = (out[1] + out_flip[1].flip(axis=3)) * 0.5
         heatmap = out[0]
         keep = self.heatmap_nms(heatmap) == heatmap
         results = self.decoder(keep * heatmap, out[1], out[2])

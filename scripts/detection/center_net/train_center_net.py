@@ -259,7 +259,7 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
         name4, loss4 = heatmap_loss_metric.get()
         logger.info('[Epoch {}] Training cost: {:.3f}, {}={:.3f}, {}={:.3f}, {}={:.3f}'.format(
             epoch, (time.time()-tic), name2, loss2, name3, loss3, name4, loss4))
-        if (epoch % args.val_interval == 0) or (args.save_interval and epoch % args.save_interval == 0):
+        if (epoch % args.val_interval == 0) or (args.save_interval and epoch % args.save_interval == 0) or (epoch == args.epochs - 1):
             # consider reduce the frequency of validation to save time
             map_name, mean_ap = validate(net, val_data, ctx, eval_metric)
             val_msg = '\n'.join(['{}={}'.format(k, v) for k, v in zip(map_name, mean_ap)])
