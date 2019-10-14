@@ -81,6 +81,8 @@ def parse_args():
                         help='Loss weight for width/height')
     parser.add_argument('--center-reg-weight', type=float, default=1.0,
                         help='Center regression loss weight')
+    parser.add_argument('--flip-validation', action='store_true',
+                        help='flip data augmentation in validation.')
 
     args = parser.parse_args()
     return args
@@ -132,9 +134,10 @@ def save_params(net, best_map, current_map, epoch, save_interval, prefix):
     if save_interval and epoch % save_interval == 0:
         net.save_parameters('{:s}_{:04d}_{:.4f}.params'.format(prefix, epoch, current_map))
 
-def validate(net, val_data, ctx, eval_metric):
+def validate(net, val_data, ctx, eval_metric, flip_test=False):
     """Test on validation dataset."""
     eval_metric.reset()
+    net.flip_test = flip_test
     net.hybridize(static_alloc=True, static_shape=True)
     for batch in val_data:
         data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0, even_split=False)
@@ -261,7 +264,7 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
             epoch, (time.time()-tic), name2, loss2, name3, loss3, name4, loss4))
         if (epoch % args.val_interval == 0) or (args.save_interval and epoch % args.save_interval == 0) or (epoch == args.epochs - 1):
             # consider reduce the frequency of validation to save time
-            map_name, mean_ap = validate(net, val_data, ctx, eval_metric)
+            map_name, mean_ap = validate(net, val_data, ctx, eval_metric, flip_test=args.flip_validation)
             val_msg = '\n'.join(['{}={}'.format(k, v) for k, v in zip(map_name, mean_ap)])
             logger.info('[Epoch {}] Validation: \n{}'.format(epoch, val_msg))
             current_map = float(mean_ap[-1])
