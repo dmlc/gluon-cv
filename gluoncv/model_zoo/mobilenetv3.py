@@ -105,25 +105,26 @@ class _ResUnit(HybridBlock):
                  kernel_size, act_type="relu", \
                  use_se=False, strides=1, prefix='', norm_layer=BatchNorm, **kwargs):
         super(_ResUnit, self).__init__(**kwargs)
-        self.use_se = use_se
-        self.first_conv = (num_out != num_mid)
-        self.use_short_cut_conv = True
-        if self.first_conv:
-            self.expand = _Unit(num_mid, kernel_size=1, \
-                                strides=1, pad=0, act_type=act_type, \
-                                prefix='%s-exp'%prefix, norm_layer=norm_layer)
-        self.conv1 = _Unit(num_mid, kernel_size=kernel_size, strides=strides,
-                           pad=self._get_pad(kernel_size), \
-                           act_type=act_type, num_groups=num_mid, \
-                           prefix='%s-depthwise'%prefix, norm_layer=norm_layer)
-        if use_se:
-            self.se = _SE(num_mid, prefix='%s-se'%prefix)
-        self.conv2 = _Unit(num_out, kernel_size=1, \
-                           strides=1, pad=0, \
-                           act_type=act_type, use_act=False, \
-                           prefix='%s-linear'%prefix, norm_layer=norm_layer)
-        if num_in != num_out or strides != 1:
-            self.use_short_cut_conv = False
+        with self.name_scope():
+            self.use_se = use_se
+            self.first_conv = (num_out != num_mid)
+            self.use_short_cut_conv = True
+            if self.first_conv:
+                self.expand = _Unit(num_mid, kernel_size=1, \
+                                    strides=1, pad=0, act_type=act_type, \
+                                    prefix='%s-exp'%prefix, norm_layer=norm_layer)
+            self.conv1 = _Unit(num_mid, kernel_size=kernel_size, strides=strides,
+                               pad=self._get_pad(kernel_size), \
+                               act_type=act_type, num_groups=num_mid, \
+                               prefix='%s-depthwise'%prefix, norm_layer=norm_layer)
+            if use_se:
+                self.se = _SE(num_mid, prefix='%s-se'%prefix)
+            self.conv2 = _Unit(num_out, kernel_size=1, \
+                               strides=1, pad=0, \
+                               act_type=act_type, use_act=False, \
+                               prefix='%s-linear'%prefix, norm_layer=norm_layer)
+            if num_in != num_out or strides != 1:
+                self.use_short_cut_conv = False
 
     def hybrid_forward(self, F, x):
         out = self.expand(x) if self.first_conv else x
