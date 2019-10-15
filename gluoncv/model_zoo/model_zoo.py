@@ -26,6 +26,7 @@ from .resnetv1b import *
 from .resnext import *
 from .senet import *
 from .simple_pose.simple_pose_resnet import *
+from .simple_pose.mobile_pose import *
 from .squeezenet import *
 from .ssd import *
 from .vgg import *
@@ -86,6 +87,12 @@ _models = {
     'mobilenetv2_0.25': mobilenet_v2_0_25,
     'mobilenetv3_large': mobilenet_v3_large,
     'mobilenetv3_small': mobilenet_v3_small,
+    'mobile_pose_resnet18_v1b': mobile_pose_resnet18_v1b,
+    'mobile_pose_resnet50_v1b': mobile_pose_resnet50_v1b,
+    'mobile_pose_mobilenet1.0': mobile_pose_mobilenet1_0,
+    'mobile_pose_mobilenetv2_1.0': mobile_pose_mobilenetv2_1_0,
+    'mobile_pose_mobilenetv3_large': mobile_pose_mobilenetv3_large,
+    'mobile_pose_mobilenetv3_small': mobile_pose_mobilenetv3_small,
     'ssd_300_vgg16_atrous_voc': ssd_300_vgg16_atrous_voc,
     'ssd_300_vgg16_atrous_coco': ssd_300_vgg16_atrous_coco,
     'ssd_300_vgg16_atrous_custom': ssd_300_vgg16_atrous_custom,

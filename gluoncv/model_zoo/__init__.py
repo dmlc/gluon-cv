@@ -18,6 +18,7 @@ from .resnetv1b import *
 from .se_resnet import *
 from .nasnet import *
 from .simple_pose.simple_pose_resnet import *
+from .simple_pose.mobile_pose import *
 from .action_recognition import *
 from .wideresnet import *
 

@@ -73,6 +73,35 @@ Parameters with :greytag:`a grey name` can be downloaded by passing the correspo
    | simple_pose_resnet152_v1d [1]_ :gray:`(384x288)`    | 74.8/92.3/82.0 | 76.1/92.4/83.2     | 2f544338 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/pose/simple_pose_resnet152_v1d_large_coco.sh>`_    | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/pose/simple_pose_resnet152_v1d_large_coco.log>`_    |
    +-----------------------------------------------------+----------------+--------------------+----------+---------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
 
+Mobile Pose Models
+------
+
+By replacing the backbone network, and use pixel shuffle layer instead of deconvolution, we can have models that are very fast.
+
+These models are suitable for edge device applications, tutorials on deployment will come soon.
+
+Models are trained with input size 256x192, unless specified.
+
+
+.. table::
+   :widths: 45 5 5 10 20 15
+
+   +-----------------------------------------------------+----------------+--------------------+----------+---------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
+   | Model                                               | OKS AP         | OKS AP (with flip) | Hashtag  | Training Command                                                                                                                      | Training log                                                                                                                  |
+   +=====================================================+================+====================+==========+=======================================================================================================================================+===============================================================================================================================+
+   | mobile_pose_resnet18_v1b [1]_                       | 66.2/89.2/74.3 | 67.9/90.3/75.7     | dd6644eb | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/pose/mobile_pose_resnet18_v1b.sh>`_                | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/pose/mobile_pose_resnet18_v1b.log>`_                |
+   +-----------------------------------------------------+----------------+--------------------+----------+---------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
+   | mobile_pose_resnet50_v1b [1]_                       | 71.1/91.3/78.7 | 72.4/92.3/79.8     | ec8809df | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/pose/mobile_pose_resnet50_v1b.sh>`_                | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/pose/mobile_pose_resnet50_v1b.log>`_                |
+   +-----------------------------------------------------+----------------+--------------------+----------+---------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
+   | mobile_pose_mobilenet1.0 [1]_                       | 64.1/88.1/71.2 | 65.7/89.2/73.4     | b399bac7 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/pose/mobile_pose_mobilenet1.sh>`_                  | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/pose/mobile_pose_mobilenet1.log>`_                  |
+   +-----------------------------------------------------+----------------+--------------------+----------+---------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
+   | mobile_pose_mobilenetv2_1.0 [1]_                    | 63.7/88.1/71.0 | 65.0/89.2/72.3     | 4acdc130 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/pose/mobile_pose_mobilenetv2_1.sh>`_               | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/pose/mobile_pose_mobilenetv2_1.log>`_               |
+   +-----------------------------------------------------+----------------+--------------------+----------+---------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
+   | mobile_pose_mobilenetv3_large [1]_                  | 63.7/88.9/70.8 | 64.5/89.0/72.0     | 1ca004dc | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/pose/mobile_pose_mobilenetv3_large.sh>`_           | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/pose/mobile_pose_mobilenetv3_large.log>`_           |
+   +-----------------------------------------------------+----------------+--------------------+----------+---------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
+   | mobile_pose_mobilenetv3_small [1]_                  | 54.3/83.7/59.4 | 55.6/84.7/61.7     | b1b148a9 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/pose/mobile_pose_mobilenetv3_small.sh>`_           | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/pose/mobile_pose_mobilenetv3_small.log>`_           |
+   +-----------------------------------------------------+----------------+--------------------+----------+---------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
+
 AlphaPose
 ---------
 Checkout the demo tutorial here: :ref:`sphx_glr_build_examples_pose_demo_alpha_pose.py`
