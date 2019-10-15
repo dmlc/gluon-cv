@@ -282,7 +282,7 @@ class ForwardBackwardTask(Parallelizable):
             gt_label = label[:, :, 4:5]
             gt_box = label[:, :, :4]
             cls_pred, box_pred, mask_pred, roi, samples, matches, rpn_score, rpn_box, anchors, \
-                cls_targets, box_targets, box_masks, indices = net(data, gt_box, gt_label)
+            cls_targets, box_targets, box_masks, indices = net(data, gt_box, gt_label)
             # losses of rpn
             rpn_score = rpn_score.squeeze(axis=-1)
             num_rpn_pos = (rpn_cls_targets >= 0).sum()
@@ -440,8 +440,8 @@ def train(net, train_data, val_data, eval_metric, batch_size, ctx, args):
                                                   args.lr_warmup_factor)
                 if new_lr != trainer.learning_rate:
                     if i % args.log_interval == 0:
-                        logger.info(
-                            '[Epoch 0 Iteration {}] Set learning rate to {}'.format(i, new_lr))
+                        logger.info('[Epoch {} Iteration {}] Set learning rate to {}'
+                                    .format(epoch, i, new_lr))
                     trainer.set_learning_rate(new_lr)
             metric_losses = [[] for _ in metrics]
             add_losses = [[] for _ in metrics2]
