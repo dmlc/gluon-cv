@@ -216,7 +216,7 @@ with autograd.train_mode():
     gt_box = mx.nd.zeros(shape=(1, 1, 4))
     gt_label = mx.nd.zeros(shape=(1, 1, 1))
     cls_pred, box_pred, mask_pred, roi, samples, matches, rpn_score, rpn_box, anchors, \
-        cls_targets, box_targets, box_masks, indices = net(x, gt_box, gt_label)
+    cls_targets, box_targets, box_masks, indices = net(x, gt_box, gt_label)
 
 ##########################################################
 # Training losses
@@ -262,7 +262,7 @@ for ib, batch in enumerate(train_loader):
             gt_box = label[:, :, :4]
             # network forward
             cls_pred, box_pred, mask_pred, roi, samples, matches, rpn_score, rpn_box, anchors, \
-                cls_targets, box_targets, box_masks, indices = \
+            cls_targets, box_targets, box_masks, indices = \
                 net(data.expand_dims(0), gt_box, gt_label)
 
             # generate targets for mask head
@@ -314,8 +314,17 @@ for ib, batch in enumerate(train_loader):
                 net(data.expand_dims(0), gt_box, gt_label)
 
             # generate targets for mask head
+            roi = mx.nd.concat(
+                *[mx.nd.take(roi[i], indices[i]) for i in range(indices.shape[0])], dim=0) \
+                .reshape((indices.shape[0], -1, 4))
+            m_cls_targets = mx.nd.concat(
+                *[mx.nd.take(cls_targets[i], indices[i]) for i in range(indices.shape[0])], dim=0) \
+                .reshape((indices.shape[0], -1))
+            matches = mx.nd.concat(
+                *[mx.nd.take(matches[i], indices[i]) for i in range(indices.shape[0])], dim=0) \
+                .reshape((indices.shape[0], -1))
             mask_targets, mask_masks = net.mask_target(roi, masks.expand_dims(0), matches,
-                                                       cls_targets)
+                                                       m_cls_targets)
 
             # losses of rpn
             rpn_score = rpn_score.squeeze(axis=-1)
