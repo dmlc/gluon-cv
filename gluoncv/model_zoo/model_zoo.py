@@ -262,7 +262,7 @@ _models = {
     'deeplab_resnet101_voc_int8': deeplab_resnet101_voc_int8,
     'deeplab_resnet101_coco_int8': deeplab_resnet101_coco_int8,
     'center_net_resnet18_v1b_voc': center_net_resnet18_v1b_voc,
-    'center_net_resnet18_v1b_dcnv2_voc', center_net_resnet18_v1b_dcnv2_voc,
+    'center_net_resnet18_v1b_dcnv2_voc': center_net_resnet18_v1b_dcnv2_voc,
     'center_net_resnet18_v1b_coco': center_net_resnet18_v1b_coco,
     'center_net_resnet18_v1b_dcnv2_coco': center_net_resnet18_v1b_dcnv2_coco
 }
