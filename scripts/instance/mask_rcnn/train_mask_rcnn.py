@@ -65,6 +65,7 @@ def parse_args():
                         help='warmup iterations to adjust learning rate, default is 1000 for coco.')
     parser.add_argument('--lr-warmup-factor', type=float, default=1. / 3.,
                         help='warmup factor of base lr.')
+    parser.add_argument('--clip-gradient', type=float, default=-1., help='gradient clipping.')
     parser.add_argument('--momentum', type=float, default=0.9,
                         help='SGD momentum, default is 0.9')
     parser.add_argument('--wd', type=str, default='',
@@ -352,7 +353,8 @@ def train(net, train_data, val_data, eval_metric, batch_size, ctx, args):
     for k, v in net.collect_params('.*bias').items():
         v.wd_mult = 0.0
     optimizer_params = {'learning_rate': args.lr, 'wd': args.wd, 'momentum': args.momentum, }
-    # 'clip_gradient': 1.5}
+    if args.clip_gradient > 0.0:
+        optimizer_params['clip_gradient'] = args.clip_gradient
     if args.horovod:
         hvd.broadcast_parameters(net.collect_params(), root_rank=0)
         trainer = hvd.DistributedTrainer(
@@ -413,6 +415,7 @@ def train(net, train_data, val_data, eval_metric, batch_size, ctx, args):
         logger.info(net.collect_train_params().keys())
     logger.info('Start training from [Epoch {}]'.format(args.start_epoch))
     best_map = [0]
+    base_lr = trainer.learning_rate
     for epoch in range(args.start_epoch, args.epochs):
         if not args.disable_hybridization:
             net.hybridize(static_alloc=args.static_alloc)
@@ -428,7 +431,6 @@ def train(net, train_data, val_data, eval_metric, batch_size, ctx, args):
             metric.reset()
         tic = time.time()
         btic = time.time()
-        base_lr = trainer.learning_rate
         train_data_iter = iter(train_data)
         next_data_batch = next(train_data_iter)
         next_data_batch = split_and_load(next_data_batch, ctx_list=ctx)
@@ -436,7 +438,7 @@ def train(net, train_data, val_data, eval_metric, batch_size, ctx, args):
             batch = next_data_batch
             if i + epoch * len(train_data) <= lr_warmup:
                 # adjust based on real percentage
-                new_lr = base_lr * get_lr_at_iter((i + epoch * float(len(train_data))) / lr_warmup,
+                new_lr = base_lr * get_lr_at_iter((i + epoch * len(train_data)) / lr_warmup,
                                                   args.lr_warmup_factor)
                 if new_lr != trainer.learning_rate:
                     if i % args.log_interval == 0:

@@ -478,4 +478,4 @@ class SplitSortedBucketSampler(Sampler):
                     yield sorted_sample_ids[batch_begin:batch_end]
 
     def __len__(self):
-        return (self._end - self._start + self._batch_size - 1) // self._batch_size
+        return int(np.ceil(float(self._end - self._start) / self._batch_size))
