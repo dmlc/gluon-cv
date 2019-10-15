@@ -82,6 +82,28 @@ The following table lists pre-trained models trained on Kinetics400.
     | i3d_resnet101_v1_kinetics400 [4]_           |   ImageNet       |      1       |    32 (64/2)   | 74.8      | c5721407  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/action_recognition/kinetics400/i3d_resnet101_v1_kinetics400.sh>`_     | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/action_recognition/kinetics400/i3d_resnet101_v1_kinetics400.log>`_     |
     +---------------------------------------------+------------------+--------------+----------------+-----------+-----------+----------------------------------------------------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------+
 
+Something-Something-V2 Dataset
+-------------------
+
+The following table lists pre-trained models trained on Something-Something-V2.
+
+.. note::
+
+  Our pre-trained models reproduce results from "Temporal Segment Networks (TSN)" [2]_ , "Inflated 3D Networks (I3D)" [3]_ . Please check the reference paper for further information.
+
+
+.. table::
+    :widths: 40 8 8 8 10 8 8 10
+
+    +--------------------------------------+------------------+--------------+----------------+-----------+-----------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------+
+    | Name                                 |   Pretrained     |    Segments  |   Clip Length  | Top-1     | Hashtag   | Train Command                                                                                                                                                     | Train Log                                                                                                                                               |
+    +======================================+==================+==============+================+===========+===========+===================================================================================================================================================================+=========================================================================================================================================================+
+    | resnet50_v1b_sthsthv2 [2]_           |   ImageNet       |      8       |       1        | 35.5      | 80ee0c6b  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/action_recognition/somethingsomethingv2/resnet50_v1b_sthsthv2_tsn.sh>`_        | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/action_recognition/somethingsomethingv2/resnet50_v1b_sthsthv2_tsn.log>`_      |
+    +--------------------------------------+------------------+--------------+----------------+-----------+-----------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------+
+    | i3d_resnet50_v1_sthsthv2 [3]_        |   ImageNet       |      1       |    16 (32/2)   | 50.6      | 01961e4c  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/action_recognition/somethingsomethingv2/i3d_resnet50_v1_sthsthv2.sh>`_         | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/action_recognition/somethingsomethingv2/i3d_resnet50_v1_sthsthv2.log>`_       |
+    +--------------------------------------+------------------+--------------+----------------+-----------+-----------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------+
+
+
 .. [1] Limin Wang, Yuanjun Xiong, Zhe Wang and Yu Qiao. \
        "Towards Good Practices for Very Deep Two-Stream ConvNets." \
        arXiv preprint arXiv:1507.02159, 2015.
