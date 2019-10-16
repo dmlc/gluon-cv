@@ -1,5 +1,6 @@
 """Transforms described in https://arxiv.org/abs/1904.07850."""
 from __future__ import absolute_import
+import random
 import numpy as np
 import mxnet as mx
 from .. import bbox as tbbox
