@@ -294,7 +294,7 @@ class CenterNetDefaultTrainTransformDebug(object):
 
         # to tensor
         img = img.astype(np.float32) / 255.
-        color_aug(self._data_rng, inp, self._eig_val, self._eig_vec)
+        color_aug(self._data_rng, img, self._eig_val, self._eig_vec)
         img = (img - self._mean) / self._std
         img = img.transpose(2, 0, 1).astype(np.float32)
         # img = mx.nd.image.to_tensor(img)
