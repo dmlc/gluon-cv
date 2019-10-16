@@ -50,9 +50,9 @@ class CenterNetTargetGeneratorDebug(gluon.Block):
         self._output_height = int(output_height)
 
     def forward(self, im_width, im_height, gt_boxes, gt_ids):
-        max_objs = 128
-        h_scale = float(self._output_height) / im_height
-        w_scale = float(self._output_width) / im_width
+        max_objs = 50
+        h_scale = 1.0 #float(self._output_height) / im_height
+        w_scale = 1.0 #float(self._output_width) / im_width
         heatmap = np.zeros((self._num_class, self._output_height, self._output_width), dtype=np.float32)
         # wh_target = np.zeros((2, self._output_height, self._output_width), dtype=np.float32)
         # wh_mask = np.zeros((2, self._output_height, self._output_width), dtype=np.float32)
@@ -64,6 +64,8 @@ class CenterNetTargetGeneratorDebug(gluon.Block):
         reg_mask = np.zeros((max_objs), dtype=np.uint8)
         k = 0
         for bbox, cid in zip(gt_boxes, gt_ids):
+            if k >= max_objs:
+                break
             cid = int(cid)
             box_h, box_w = bbox[3] - bbox[1], bbox[2] - bbox[0]
             if box_h > 0 and box_w > 0:
