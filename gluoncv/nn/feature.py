@@ -210,7 +210,7 @@ class FPNFeatureExpander(SymbolBlock):
         y = outputs[-1]
         base_features = outputs[::-1]
         num_stages = len(num_filters) + 1  # usually 5
-        weight_init = mx.init.Xavier(rnd_type='gaussian', factor_type='out', magnitude=2.)
+        weight_init = mx.init.Xavier(rnd_type='uniform', factor_type='in', magnitude=1.)
         tmp_outputs = []
         # num_filter is 256 in ori paper
         for i, (bf, f) in enumerate(zip(base_features, num_filters)):

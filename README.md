@@ -53,8 +53,8 @@ The following commands install the stable version of GluonCV and MXNet:
 ```bash
 pip install gluoncv --upgrade
 pip install mxnet-mkl --upgrade
-# if cuda 9.2 is installed
-pip install mxnet-cu92mkl --upgrade
+# if cuda 10.1 is installed
+pip install mxnet-cu101mkl --upgrade
 ```
 
 **The latest stable version of GluonCV is 0.4 and depends on mxnet >= 1.4.0**
@@ -66,8 +66,8 @@ You may get access to latest features and bug fixes with the following commands 
 ```bash
 pip install gluoncv --pre --upgrade
 pip install mxnet-mkl --pre --upgrade
-# if cuda 9.2 is installed
-pip install mxnet-cu92mkl --pre --upgrade
+# if cuda 10.1 is installed
+pip install mxnet-cu101mkl --pre --upgrade
 ```
 
 There are multiple versions of MXNet pre-built package available. Please refer to [mxnet packages](https://gluon-crash-course.mxnet.io/mxnet_packages.html) if you need more details about MXNet versions.
