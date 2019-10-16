@@ -44,7 +44,7 @@ class CenterNetTargetGenerator(gluon.Block):
 
 class CenterNetTargetGeneratorDebug(gluon.Block):
     def __init__(self, num_class, output_width, output_height):
-        super(CenterNetTargetGenerator, self).__init__()
+        super(CenterNetTargetGeneratorDebug, self).__init__()
         self._num_class = num_class
         self._output_width = int(output_width)
         self._output_height = int(output_height)
