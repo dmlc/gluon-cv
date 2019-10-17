@@ -182,8 +182,6 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
                     step_factor=args.lr_decay, power=2),
     ])
 
-    for k, v in net.collect_params(select='.*heads').items():
-        v.wd_mult = 0.0
     for k, v in net.collect_params('.*bias').items():
         v.wd_mult = 0.0
     # trainer = gluon.Trainer(
