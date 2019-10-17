@@ -35,6 +35,8 @@ def parse_args():
                         help='Load weights from previously saved parameters.')
     parser.add_argument('--save-prefix', type=str, default='',
                         help='Saving parameter prefix')
+    parser.add_argument('--flip-test', action='store_true',
+                        help='Use horizontal flip test during validation')
     args = parser.parse_args()
     return args
 
@@ -60,9 +62,10 @@ def get_dataloader(val_dataset, data_shape, batch_size, num_workers):
         batch_size, False, last_batch='keep', num_workers=num_workers, batchify_fn=batchify_fn,)
     return val_loader
 
-def validate(net, val_data, ctx, classes, size, metric):
+def validate(net, val_data, ctx, classes, size, metric, flip_test=False):
     """Test on validation dataset."""
     net.collect_params().reset_ctx(ctx)
+    net.flip_test = flip_test
     metric.reset()
     net.hybridize(static_shape=True, static_alloc=True)
     with tqdm(total=size) as pbar:
@@ -113,6 +116,6 @@ if __name__ == '__main__':
     classes = val_dataset.classes  # class names
 
     # training
-    names, values = validate(net, val_data, ctx, classes, len(val_dataset), val_metric)
+    names, values = validate(net, val_data, ctx, classes, len(val_dataset), val_metric, flip_test=args.flip_test)
     for k, v in zip(names, values):
         print(k, v)
