@@ -235,7 +235,7 @@ class CenterNetDefaultTrainTransformDebug(object):
         # random color jittering
         # img = experimental.image.random_color_distort(src)
         img = src
-        bbox = label.copy()
+        bbox = label
 
         # random expansion with prob 0.5
         # if np.random.uniform(0, 1) > 0.5:
@@ -324,7 +324,7 @@ class CenterNetDefaultValTransform(object):
     def __call__(self, src, label):
         """Apply transform to validation image/label."""
         # resize
-        img, bbox = src.asnumpy(), label.copy()
+        img, bbox = src.asnumpy(), label
         cv2 = try_import_cv2()
         input_h, input_w = self._height, self._width
         h, w, _ = src.shape
