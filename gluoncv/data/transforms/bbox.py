@@ -160,3 +160,23 @@ def translate(bbox, x_offset=0, y_offset=0):
     bbox[:, :2] += (x_offset, y_offset)
     bbox[:, 2:4] += (x_offset, y_offset)
     return bbox
+
+def affine_transform(pt, t):
+    """Apply affine transform to a bounding box given transform matrix t.
+
+    Parameters
+    ----------
+    pt : numpy.ndarray
+        Bounding box with shape (1, 2).
+    t : numpy.ndarray
+        Transformation matrix with shape (2, 3).
+
+    Returns
+    -------
+    numpy.ndarray
+        New bounding box with shape (1, 2).
+
+    """
+    new_pt = np.array([pt[0], pt[1], 1.], dtype=np.float32).T
+    new_pt = np.dot(t, new_pt)
+    return new_pt[:2]
