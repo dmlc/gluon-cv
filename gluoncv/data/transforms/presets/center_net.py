@@ -62,7 +62,6 @@ def _get_affine_transform(center,
         trans = cv2.getAffineTransform(np.float32(dst), np.float32(src))
     else:
         trans = cv2.getAffineTransform(np.float32(src), np.float32(dst))
-
     return trans
 
 def _affine_transform(pt, t):
@@ -319,16 +318,33 @@ class CenterNetDefaultValTransform(object):
     def __init__(self, width, height, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)):
         self._width = width
         self._height = height
-        self._mean = mean
-        self._std = std
+        self._mean = np.array(mean, dtype=np.float32).reshape(1, 1, 3)
+        self._std = np.array(std, dtype=np.float32).reshape(1, 1, 3)
 
     def __call__(self, src, label):
         """Apply transform to validation image/label."""
         # resize
+        img, bbox = src, label
+        cv2 = try_import_cv2()
+        input_h, input_w = self._height, self._width
         h, w, _ = src.shape
-        img = timage.imresize(src, self._width, self._height, interp=9)
-        bbox = tbbox.resize(label, in_size=(w, h), out_size=(self._width, self._height))
+        s = max(h, w) * 1.0
+        c = np.array([w / 2., h / 2.], dtype=np.float32)
+        trans_input = _get_affine_transform(c, s, 0, [input_w, input_h])
+        inp = cv2.warpAffine(img.asnumpy(), trans_input, (input_w, input_h), flags=cv2.INTER_LINEAR)
+        output_w = input_w
+        output_h = input_h
+        trans_output = _get_affine_transform(c, s, 0, [output_w, output_h])
+        for i in range(bbox.shape[0]):
+            bbox[i, :2] = _affine_transform(bbox[i, :2], trans_output)
+            bbox[i, 2:4] = _affine_transform(bbox[i, 2:4], trans_output)
+        bbox[:, :2] = np.clip(bbox[:, :2], 0, output_w - 1)
+        bbox[:, 2:4] = np.clip(bbox[:, 2:4], 0, output_h - 1)
+        img = inp
 
-        img = mx.nd.image.to_tensor(img)
-        img = mx.nd.image.normalize(img, mean=self._mean, std=self._std)
+        # to tensor
+        img = img.astype(np.float32) / 255.
+        img = (img - self._mean) / self._std
+        img = img.transpose(2, 0, 1).astype(np.float32)
+        img = mx.nd.array(img)
         return img, bbox.astype(img.dtype)
