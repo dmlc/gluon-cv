@@ -1,7 +1,6 @@
 """Bounding boxes transformation functions."""
 from __future__ import division
 import numpy as np
-from ...utils.filesystem import try_import_cv2
 
 __all__ = ['crop', 'flip', 'resize', 'translate', 'affine_transform', 'get_affine_transform']
 
@@ -201,6 +200,7 @@ def get_affine_transform(center,
                          output_size,
                          shift=np.array([0, 0], dtype=np.float32),
                          inv=0):
+    from ...utils.filesystem import try_import_cv2
     cv2 = try_import_cv2()
     if not isinstance(scale, np.ndarray) and not isinstance(scale, list):
         scale = np.array([scale, scale], dtype=np.float32)
