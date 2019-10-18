@@ -8,7 +8,7 @@ from .. import image as timage
 from .. import experimental
 from ....utils.filesystem import try_import_cv2
 
-__all__ = ['CenterNetDefaultTrainTransform', 'CenterNetDefaultValTransform']
+__all__ = ['CenterNetDefaultTrainTransform', 'CenterNetDefaultValTransform', 'get_post_transform']
 
 def _get_border(border, size):
     i = 1
@@ -348,3 +348,8 @@ class CenterNetDefaultValTransform(object):
         img = img.transpose(2, 0, 1).astype(np.float32)
         img = mx.nd.array(img)
         return img, bbox.astype(img.dtype)
+
+def get_post_transform(orig_w, orig_h, out_w, out_h):
+    s = max(orig_w, orig_h) * 1.0
+    c = np.array([orig_w / 2., orig_h / 2.], dtype=np.float32)
+    trans_output = _get_affine_transform(c, s, 0, [out_w, out_h])

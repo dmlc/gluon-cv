@@ -15,7 +15,7 @@ from gluoncv import utils as gutils
 from gluoncv.model_zoo import get_model
 from gluoncv.data.batchify import Tuple, Stack, Pad
 from gluoncv.data.transforms.presets.center_net import CenterNetDefaultTrainTransform
-from gluoncv.data.transforms.presets.center_net import CenterNetDefaultValTransform
+from gluoncv.data.transforms.presets.center_net import CenterNetDefaultValTransform, get_post_transform
 
 from gluoncv.utils.metrics.voc_detection import VOC07MApMetric
 from gluoncv.utils.metrics.coco_detection import COCODetectionMetric
@@ -99,7 +99,7 @@ def get_dataset(dataset, args):
         val_dataset = gdata.COCODetection(root=args.dataset_root + "/coco", splits='instances_val2017', skip_empty=False)
         val_metric = COCODetectionMetric(
             val_dataset, args.save_prefix + '_eval', cleanup=True,
-            data_shape=(args.data_shape, args.data_shape))
+            data_shape=(args.data_shape, args.data_shape), post_affine=get_post_transform)
         # coco validation is slow, consider increase the validation interval
         if args.val_interval == 1:
             args.val_interval = 10

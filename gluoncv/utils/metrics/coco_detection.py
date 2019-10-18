@@ -12,6 +12,7 @@ import warnings
 import numpy as np
 import mxnet as mx
 from ...data.mscoco.utils import try_import_pycocotools
+from ...data.transforms.bbox import affine_transform
 
 
 class COCODetectionMetric(mx.metric.EvalMetric):
@@ -35,10 +36,12 @@ class COCODetectionMetric(mx.metric.EvalMetric):
         saving the predictions.
         This is helpful when SSD/YOLO box predictions cannot be rescaled conveniently. Note that
         the data_shape must be fixed for all validation images.
+    post_affine : a callable function with input signature (orig_w, orig_h, out_w, out_h)
+        If not None, the bounding boxes will be affine transformed rather than simply scaled.
 
     """
     def __init__(self, dataset, save_prefix, use_time=True, cleanup=False, score_thresh=0.05,
-                 data_shape=None):
+                 data_shape=None, post_affine=None):
         super(COCODetectionMetric, self).__init__('COCOMeanAP')
         self.dataset = dataset
         self._img_ids = sorted(dataset.coco.getImgIds())
@@ -53,6 +56,11 @@ class COCODetectionMetric(mx.metric.EvalMetric):
         else:
             raise ValueError("data_shape must be None or tuple of int as (height, width)")
         self._data_shape = data_shape
+        if post_affine is not None:
+            assert self._data_shape is not None, "Using post affine transform requires data_shape"
+            self._post_affine = post_affine
+        else:
+            self._post_affine = None
 
         if use_time:
             import datetime
@@ -196,6 +204,11 @@ class COCODetectionMetric(mx.metric.EvalMetric):
                 orig_width = entry['width']
                 height_scale = float(orig_height) / self._data_shape[0]
                 width_scale = float(orig_width) / self._data_shape[1]
+                if self._post_affine is not None:
+                    affine_mat = self._post_affine(orig_width, orig_height,
+                                                   self._data_shape[1], self._data_shape[0])
+                else:
+                    affine_mat = None
             else:
                 height_scale, width_scale = (1., 1.)
             # for each bbox detection in each image
@@ -206,9 +219,13 @@ class COCODetectionMetric(mx.metric.EvalMetric):
                 if score < self._score_thresh:
                     continue
                 category_id = self.dataset.contiguous_id_to_json[label]
-                # rescale bboxes
-                bbox[[0, 2]] *= width_scale
-                bbox[[1, 3]] *= height_scale
+                # rescale bboxes/affine transform bboxes
+                if affine_mat is not None:
+                    bbox[:2] = affine_transform(bbox[:2], affine_mat)
+                    bbox[2:4] = affine_transform(bbox[:2], affine_mat)
+                else:
+                    bbox[[0, 2]] *= width_scale
+                    bbox[[1, 3]] *= height_scale
                 # convert [xmin, ymin, xmax, ymax]  to [xmin, ymin, w, h]
                 bbox[2:4] -= (bbox[:2] - 1)
                 self._results.append({'image_id': imgid,

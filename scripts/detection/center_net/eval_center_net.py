@@ -13,7 +13,7 @@ from mxnet import gluon
 import gluoncv as gcv
 from gluoncv import data as gdata
 from gluoncv.data.batchify import Tuple, Stack, Pad
-from gluoncv.data.transforms.presets.center_net import CenterNetDefaultValTransform
+from gluoncv.data.transforms.presets.center_net import CenterNetDefaultValTransform, get_post_transform
 from gluoncv.utils.metrics.voc_detection import VOC07MApMetric
 from gluoncv.utils.metrics.coco_detection import COCODetectionMetric
 
@@ -48,7 +48,7 @@ def get_dataset(dataset, data_shape):
         val_dataset = gdata.COCODetection(splits='instances_val2017', skip_empty=False)
         val_metric = COCODetectionMetric(
             val_dataset, args.save_prefix + '_eval', cleanup=True,
-            data_shape=(data_shape, data_shape))
+            data_shape=(data_shape, data_shape), post_affine=get_post_transform)
     else:
         raise NotImplementedError('Dataset: {} not implemented.'.format(dataset))
     return val_dataset, val_metric
