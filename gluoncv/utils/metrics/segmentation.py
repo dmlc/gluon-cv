@@ -83,6 +83,7 @@ class SegmentationMetric(EvalMetric):
 def batch_pix_accuracy(output, target):
     """PixAcc"""
     # inputs are NDarray, output 4D, target 3D
+    # add new axis if missing batch dimension
     # the category -1 is ignored class, typically for background / boundary
     if len(output.shape) == 3:
         output = output[np.newaxis, :]
@@ -102,6 +103,7 @@ def batch_pix_accuracy(output, target):
 def batch_intersection_union(output, target, nclass):
     """mIoU"""
     # inputs are NDarray, output 4D, target 3D
+    # add new axis if missing batch dimension
     # the category -1 is ignored class, typically for background / boundary
     if len(output.shape) == 3:
         output = output[np.newaxis, :]
