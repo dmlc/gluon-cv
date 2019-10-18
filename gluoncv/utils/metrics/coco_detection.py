@@ -198,6 +198,7 @@ class COCODetectionMetric(mx.metric.EvalMetric):
 
             imgid = self._img_ids[self._current_id]
             self._current_id += 1
+            affine_mat = None
             if self._data_shape is not None:
                 entry = self.dataset.coco.loadImgs(imgid)[0]
                 orig_height = entry['height']
@@ -207,8 +208,6 @@ class COCODetectionMetric(mx.metric.EvalMetric):
                 if self._post_affine is not None:
                     affine_mat = self._post_affine(orig_width, orig_height,
                                                    self._data_shape[1], self._data_shape[0])
-                else:
-                    affine_mat = None
             else:
                 height_scale, width_scale = (1., 1.)
             # for each bbox detection in each image
@@ -221,8 +220,8 @@ class COCODetectionMetric(mx.metric.EvalMetric):
                 category_id = self.dataset.contiguous_id_to_json[label]
                 # rescale bboxes/affine transform bboxes
                 if affine_mat is not None:
-                    bbox[:2] = affine_transform(bbox[:2], affine_mat)
-                    bbox[2:4] = affine_transform(bbox[:2], affine_mat)
+                    bbox[0:2] = affine_transform(bbox[0:2], affine_mat)
+                    bbox[2:4] = affine_transform(bbox[2:4], affine_mat)
                 else:
                     bbox[[0, 2]] *= width_scale
                     bbox[[1, 3]] *= height_scale

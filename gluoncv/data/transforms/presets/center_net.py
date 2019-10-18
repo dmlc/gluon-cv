@@ -352,4 +352,5 @@ class CenterNetDefaultValTransform(object):
 def get_post_transform(orig_w, orig_h, out_w, out_h):
     s = max(orig_w, orig_h) * 1.0
     c = np.array([orig_w / 2., orig_h / 2.], dtype=np.float32)
-    trans_output = _get_affine_transform(c, s, 0, [out_w, out_h])
+    trans_output = _get_affine_transform(c, s, 0, [out_w, out_h], inv=True)
+    return trans_output
