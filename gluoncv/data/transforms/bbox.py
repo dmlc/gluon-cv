@@ -3,7 +3,7 @@ from __future__ import division
 import numpy as np
 from ...utils.filesystem import try_import_cv2
 
-__all__ = ['crop', 'flip', 'resize', 'translate']
+__all__ = ['crop', 'flip', 'resize', 'translate', 'affine_transform', 'get_affine_transform']
 
 def crop(bbox, crop_box=None, allow_outside_center=True):
     """Crop bounding boxes according to slice area.
