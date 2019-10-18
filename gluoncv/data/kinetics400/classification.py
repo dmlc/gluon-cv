@@ -80,6 +80,9 @@ class Kinetics400(dataset.Dataset):
                  temporal_jitter=False,
                  video_loader=False,
                  use_decord=False,
+                 slowfast=False,
+                 slow_temporal_stride=16,
+                 fast_temporal_stride=2,
                  transform=None):
 
         super(Kinetics400, self).__init__()
@@ -106,6 +109,14 @@ class Kinetics400(dataset.Dataset):
         self.video_loader = video_loader
         self.video_ext = video_ext
         self.use_decord = use_decord
+        self.slowfast = slowfast
+        self.slow_temporal_stride = slow_temporal_stride
+        self.fast_temporal_stride = fast_temporal_stride
+
+        if self.slowfast:
+            assert slow_temporal_stride % fast_temporal_stride == 0, 'slow_temporal_stride needs to be multiples of slow_temporal_stride, please set it accordinly.'
+            assert not temporal_jitter, 'Slowfast dataloader does not support temporal jitter. Please set temporal_jitter=False.'
+            assert new_step == 1, 'Slowfast dataloader only support consecutive frames reading, please set new_step=1.'
 
         if self.video_loader:
             if self.use_decord:
@@ -144,14 +155,23 @@ class Kinetics400(dataset.Dataset):
             else:
                 clip_input = self._video_TSN_mmcv_loader(directory, mmcv_vr, duration, segment_indices, skip_offsets)
         else:
-            clip_input = self._image_TSN_cv2_loader(directory, duration, segment_indices, skip_offsets)
+            if self.slowfast:
+                clip_input = self._image_slowfast_cv2_loader(directory, duration, segment_indices, skip_offsets)
+            else:
+                clip_input = self._image_TSN_cv2_loader(directory, duration, segment_indices, skip_offsets)
 
         if self.transform is not None:
             clip_input = self.transform(clip_input)
 
-        clip_input = np.stack(clip_input, axis=0)
-        clip_input = clip_input.reshape((-1,) + (self.new_length, 3, self.target_height, self.target_width))
-        clip_input = np.transpose(clip_input, (0, 2, 1, 3, 4))
+        if self.slowfast:
+            sparse_sampels = len(clip_input) // self.num_segments
+            clip_input = np.stack(clip_input, axis=0)
+            clip_input = clip_input.reshape((-1,) + (sparse_sampels, 3, self.target_height, self.target_width))
+            clip_input = np.transpose(clip_input, (0, 2, 1, 3, 4))
+        else:
+            clip_input = np.stack(clip_input, axis=0)
+            clip_input = clip_input.reshape((-1,) + (self.new_length, 3, self.target_height, self.target_width))
+            clip_input = np.transpose(clip_input, (0, 2, 1, 3, 4))
 
         if self.new_length == 1:
             clip_input = np.squeeze(clip_input, axis=2)    # this is for 2D input case
@@ -261,6 +281,37 @@ class Kinetics400(dataset.Dataset):
                 sampled_list.append(cv_img)
                 if offset + self.new_step < duration:
                     offset += self.new_step
+        return sampled_list
+
+    def _image_slowfast_cv2_loader(self, directory, duration, indices, skip_offsets):
+        sampled_list = []
+        for seg_ind in indices:
+            offset = int(seg_ind)
+            fast_list = []
+            slow_list = []
+            for i, _ in enumerate(range(0, self.skip_length, self.new_step)):
+                if offset + skip_offsets[i] <= duration:
+                    frame_path = os.path.join(directory, self.name_pattern % (offset + skip_offsets[i]))
+                else:
+                    frame_path = os.path.join(directory, self.name_pattern % (offset))
+                if (i + 1) % self.fast_temporal_stride == 0:
+                    cv_img = self.cv2.imread(frame_path)
+                    if cv_img is None:
+                        raise(RuntimeError("Could not load file %s starting at frame %d. Check data path." % (frame_path, offset)))
+                    if self.new_width > 0 and self.new_height > 0:
+                        h, w, _ = cv_img.shape
+                        if h != self.new_height or w != self.new_width:
+                            cv_img = self.cv2.resize(cv_img, (self.new_width, self.new_height))
+                    cv_img = cv_img[:, :, ::-1]
+                    fast_list.append(cv_img)
+
+                    if (i + 1) % self.slow_temporal_stride == 0:
+                        slow_list.append(cv_img)
+
+                if offset + self.new_step < duration:
+                    offset += self.new_step
+            fast_list.extend(slow_list)
+            sampled_list.extend(fast_list)
         return sampled_list
 
     def _video_TSN_mmcv_loader(self, directory, video_reader, duration, indices, skip_offsets):

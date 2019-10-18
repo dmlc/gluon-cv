@@ -8,3 +8,4 @@ from .i3d_resnet import *
 from .i3d_inceptionv1 import *
 from .i3d_inceptionv3 import *
 from .actionrec_resnetv1b import *
+from .slowfast import *
