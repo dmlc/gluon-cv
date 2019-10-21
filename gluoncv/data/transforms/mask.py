@@ -1,8 +1,8 @@
 """Mask transformation functions."""
 import copy
 
-import mxnet as mx
 import numpy as np
+from PIL import Image
 from scipy import interpolate
 
 from ..mscoco.utils import try_import_pycocotools
@@ -138,11 +138,8 @@ def fill(mask, bbox, size, fast_fill=True):
         # quantize
         x1, y1, x2, y2 = map(int, (x1 + 0.5, y1 + 0.5, x2 + 0.5, y2 + 0.5))
         w, h = (x2 - x1 + 1), (y2 - y1 + 1)
-        mask = mx.nd.array(mask)
-        mask = mask.reshape((0, 0, 1))
-        mask = mx.image.imresize(mask, w=w, h=h, interp=1)
-        mask = mask.reshape((0, 0))
-        mask = mask.asnumpy()
+        mask = Image.fromarray(mask)
+        mask = np.array(mask.resize((w, h), Image.BILINEAR))
         # binarize and fill
         mask = (mask > 0.5).astype('uint8')
         ret = np.zeros((height, width), dtype='uint8')
