@@ -1,22 +1,23 @@
 from __future__ import division
+
 import os
+
 # disable autotune
 os.environ['MXNET_CUDNN_AUTOTUNE_DEFAULT'] = '0'
 import argparse
 import glob
 import logging
+
 logging.basicConfig(level=logging.INFO)
-import time
 import numpy as np
 import mxnet as mx
 from tqdm import tqdm
-from mxnet import nd
-from mxnet import gluon
 import gluoncv as gcv
 from gluoncv import data as gdata
 from gluoncv.data import batchify
 from gluoncv.data.transforms.presets.rcnn import MaskRCNNDefaultValTransform
 from gluoncv.utils.metrics.coco_instance import COCOInstanceMetric
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Validate Mask RCNN networks.')
@@ -39,6 +40,7 @@ def parse_args():
     args = parser.parse_args()
     return args
 
+
 def get_dataset(dataset, args):
     if dataset.lower() == 'coco':
         val_dataset = gdata.COCOInstance(splits='instances_val2017', skip_empty=False)
@@ -48,6 +50,7 @@ def get_dataset(dataset, args):
         raise NotImplementedError('Dataset: {} not implemented.'.format(dataset))
     return val_dataset, val_metric
 
+
 def get_dataloader(net, val_dataset, batch_size, num_workers):
     """Get dataloader."""
     val_bfn = batchify.Tuple(*[batchify.Append() for _ in range(2)])
@@ -55,6 +58,7 @@ def get_dataloader(net, val_dataset, batch_size, num_workers):
         val_dataset.transform(MaskRCNNDefaultValTransform(net.short, net.max_size)),
         batch_size, False, batchify_fn=val_bfn, last_batch='keep', num_workers=num_workers)
     return val_loader
+
 
 def split_and_load(batch, ctx_list):
     """Split data to 1 batch each device."""
@@ -64,6 +68,7 @@ def split_and_load(batch, ctx_list):
         new_data = [x.as_in_context(ctx) for x, ctx in zip(data, ctx_list)]
         new_batch.append(new_data)
     return new_batch
+
 
 def validate(net, val_data, ctx, eval_metric, size):
     """Test on validation dataset."""
@@ -87,7 +92,8 @@ def validate(net, val_data, ctx, eval_metric, size):
                 det_masks.append(masks)
                 det_infos.append(im_info)
             # update metric
-            for det_bbox, det_id, det_score, det_mask, det_info in zip(det_bboxes, det_ids, det_scores, det_masks, det_infos):
+            for det_bbox, det_id, det_score, det_mask, det_info in \
+                    zip(det_bboxes, det_ids, det_scores, det_masks, det_infos):
                 for i in range(det_info.shape[0]):
                     # numpy everything
                     det_bbox = det_bbox[i].asnumpy()
@@ -103,14 +109,18 @@ def validate(net, val_data, ctx, eval_metric, size):
                     det_bbox = det_bbox[valid] / im_scale
                     det_mask = det_mask[valid]
                     # fill full mask
-                    im_height, im_width = int(round(im_height / im_scale)), int(round(im_width / im_scale))
+                    im_height, im_width = int(round(im_height / im_scale)), int(
+                        round(im_width / im_scale))
                     full_masks = []
                     for bbox, mask in zip(det_bbox, det_mask):
-                        full_masks.append(gcv.data.transforms.mask.fill(mask, bbox, (im_width, im_height)))
+                        full_masks.append(
+                            gcv.data.transforms.mask.fill(mask, bbox, (im_width, im_height),
+                                                          fast_fill=False))
                     full_masks = np.array(full_masks)
                     eval_metric.update(det_bbox, det_id, det_score, full_masks)
             pbar.update(len(ctx))
     return eval_metric.get()
+
 
 if __name__ == '__main__':
     args = parse_args()
@@ -150,5 +160,5 @@ if __name__ == '__main__':
             val_msg = '\n'.join(['{}={}'.format(k, v) for k, v in zip(map_name, mean_ap)])
             print('[Epoch {}] Validation: \n{}'.format(epoch, val_msg))
             current_map = float(mean_ap[-1])
-            with open(args.save_prefix+'_best_map.log', 'a') as f:
+            with open(args.save_prefix + '_best_map.log', 'a') as f:
                 f.write('\n{:04d}:\t{:.4f}'.format(epoch, current_map))
