@@ -138,6 +138,12 @@ def parse_args():
                         help='if set to True, read videos directly instead of reading frames.')
     parser.add_argument('--use-decord', action='store_true',
                         help='if set to True, use Decord video loader to load data. Otherwise use mmcv video loader.')
+    parser.add_argument('--slowfast', action='store_true',
+                        help='if set to True, use data loader designed for SlowFast network.')
+    parser.add_argument('--slow-temporal-stride', type=int, default=16,
+                        help='the temporal stride for sparse sampling of video frames for slow branch in SlowFast network.')
+    parser.add_argument('--fast-temporal-stride', type=int, default=2,
+                        help='the temporal stride for sparse sampling of video frames for fast branch in SlowFast network.')
     opt = parser.parse_args()
     return opt
 
@@ -229,6 +235,7 @@ def main():
         val_dataset = Kinetics400(setting=opt.val_list, root=opt.data_dir, train=False,
                                   new_width=opt.new_width, new_height=opt.new_height, new_length=opt.new_length, new_step=opt.new_step,
                                   target_width=opt.input_size, target_height=opt.input_size, video_loader=opt.video_loader, use_decord=opt.use_decord,
+                                  slowfast=opt.slowfast, slow_temporal_stride=opt.slow_temporal_stride, fast_temporal_stride=opt.fast_temporal_stride,
                                   test_mode=True, num_segments=opt.num_segments, transform=transform_test)
     elif opt.dataset == 'somethingsomethingv2':
         val_dataset = SomethingSomethingV2(setting=opt.val_list, root=opt.data_dir, train=False,

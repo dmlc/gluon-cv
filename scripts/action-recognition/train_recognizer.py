@@ -413,9 +413,9 @@ def main():
                 train_loss_epoch += train_loss_iter
 
                 train_metric_name, train_metric_score = train_metric.get()
-                sw.add_scalar(tag='train_acc_top1', value=train_metric_score*100, global_step=epoch * num_train_iter + i)
+                sw.add_scalar(tag='train_acc_iter_top1', value=train_metric_score*100, global_step=epoch * num_train_iter + i)
                 sw.add_scalar(tag='train_loss_iter', value=train_loss_iter, global_step=epoch * num_train_iter + i)
-                sw.add_scalar(tag='learning_rate', value=trainer.learning_rate, global_step=epoch * num_train_iter + i)
+                sw.add_scalar(tag='learning_rate_iter', value=trainer.learning_rate, global_step=epoch * num_train_iter + i)
 
                 if opt.log_interval and not (i+1) % opt.log_interval:
                     logger.info('Epoch[%03d] Batch [%04d]/[%04d]\tSpeed: %f samples/sec\t %s=%f\t loss=%f\t lr=%f' % (
@@ -443,7 +443,7 @@ def main():
 
             sw.add_scalar(tag='train_loss_epoch', value=train_loss_epoch/num_train_iter, global_step=epoch)
             sw.add_scalar(tag='val_loss_epoch', value=loss_val, global_step=epoch)
-            sw.add_scalar(tag='valid_acc_top1', value=acc_top1_val*100, global_step=epoch)
+            sw.add_scalar(tag='val_acc_epoch_top1', value=acc_top1_val*100, global_step=epoch)
 
             if acc_top1_val > best_val_score:
                 best_val_score = acc_top1_val
