@@ -145,7 +145,7 @@ class CenterNetDefaultTrainTransform(object):
 
         # to tensor
         img = img.astype(np.float32) / 255.
-        experimental.np_random_color_distort(img, data_rng=self._data_rng)
+        experimental.image.np_random_color_distort(img, data_rng=self._data_rng)
         img = (img - self._mean) / self._std
         img = img.transpose(2, 0, 1).astype(np.float32)
         img = mx.nd.array(img)
@@ -251,7 +251,7 @@ class CenterNetDefaultTrainTransformDebug(object):
 
         # to tensor
         img = img.astype(np.float32) / 255.
-        experimental.np_random_color_distort(img, data_rng=self._data_rng)
+        experimental.image.np_random_color_distort(img, data_rng=self._data_rng)
         img = (img - self._mean) / self._std
         img = img.transpose(2, 0, 1).astype(np.float32)
         # img = mx.nd.image.to_tensor(img)
