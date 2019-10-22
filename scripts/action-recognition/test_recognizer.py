@@ -9,6 +9,7 @@ from mxnet import gluon, nd, gpu, init, context
 from mxnet import autograd as ag
 from mxnet.gluon import nn
 from mxnet.gluon.data.vision import transforms
+from mxnet.contrib.quantization import *
 
 from gluoncv.data.transforms import video
 from gluoncv.data import UCF101, Kinetics400, SomethingSomethingV2, HMDB51
@@ -20,18 +21,26 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Test a trained model for action recognition.')
     parser.add_argument('--dataset', type=str, default='ucf101', choices=['ucf101', 'kinetics400', 'somethingsomethingv2', 'hmdb51'],
                         help='which dataset to use.')
-    parser.add_argument('--data-dir', type=str, default='~/.mxnet/datasets/ucf101/rawframes',
+    parser.add_argument('--data-dir', type=str, default=os.path.expanduser('~/.mxnet/datasets/ucf101/rawframes'),
                         help='training (and validation) pictures to use.')
-    parser.add_argument('--val-data-dir', type=str, default='~/.mxnet/datasets/ucf101/rawframes',
+    parser.add_argument('--val-data-dir', type=str, default=os.path.expanduser('~/.mxnet/datasets/ucf101/rawframes'),
                         help='validation pictures to use.')
-    parser.add_argument('--train-list', type=str, default='~/.mxnet/datasets/ucf101/ucfTrainTestlist/ucf101_train_rgb_split1.txt',
+    parser.add_argument('--train-list', type=str, default=os.path.expanduser('~/.mxnet/datasets/ucf101/ucfTrainTestlist/ucf101_train_split_1_rawframes.txt'),
                         help='the list of training data')
-    parser.add_argument('--val-list', type=str, default='~/.mxnet/datasets/ucf101/ucfTrainTestlist/ucf101_val_rgb_split1.txt',
+    parser.add_argument('--val-list', type=str, default=os.path.expanduser('~/.mxnet/datasets/ucf101/ucfTrainTestlist/ucf101_val_split_1_rawframes.txt'),
                         help='the list of validation data')
     parser.add_argument('--batch-size', type=int, default=32,
                         help='training batch size per device (CPU/GPU).')
     parser.add_argument('--dtype', type=str, default='float32',
                         help='data type for training. default is float32')
+    parser.add_argument('--model-prefix', type=str, required=False,
+                    help='load static model as hybridblock.')
+    parser.add_argument('--deploy', action='store_true',
+                        help='whether load static model for deployment')
+    parser.add_argument('--quantized', action='store_true', 
+                        help='whether to use int8 pretrained  model')
+    parser.add_argument('--num-iterations', type=int, default=100,
+                        help='number of benchmarking iterations.')
     parser.add_argument('--num-gpus', type=int, default=0,
                         help='number of gpus to use.')
     parser.add_argument('-j', '--num-data-workers', dest='num_workers', default=4, type=int,
@@ -146,6 +155,30 @@ def parse_args():
                         help='the temporal stride for sparse sampling of video frames for fast branch in SlowFast network.')
     parser.add_argument('--num-crop', type=int, default=1,
                         help='number of crops for each image. default is 1')
+    # dummy benchmark
+    parser.add_argument('--benchmark', action='store_true',
+                        help='whether to use dummy data for benchmarking performance.')
+    # calibration
+    parser.add_argument('--calibration', action='store_true',
+                        help='quantize model')
+    parser.add_argument('--num-calib-batches', type=int, default=5,
+                        help='number of batches for calibration')
+    parser.add_argument('--quantized-dtype', type=str, default='auto', 
+                        choices=['auto', 'int8', 'uint8'],
+                        help='quantization destination data type for input data')
+    parser.add_argument('--calib-mode', type=str, default='naive',
+                        help='calibration mode used for generating calibration table for the quantized symbol; supports'
+                            ' 1. none: no calibration will be used. The thresholds for quantization will be calculated'
+                            ' on the fly. This will result in inference speed slowdown and loss of accuracy'
+                            ' in general.'
+                            ' 2. naive: simply take min and max values of layer outputs as thresholds for'
+                            ' quantization. In general, the inference accuracy worsens with more examples used in'
+                            ' calibration. It is recommended to use `entropy` mode as it produces more accurate'
+                            ' inference results.'
+                            ' 3. entropy: calculate KL divergence of the fp32 output and quantized output for optimal'
+                            ' thresholds. This mode is expected to produce the best inference accuracy of all three'
+                            ' kinds of quantized models if the calibration dataset is representative enough of the'
+                            ' inference dataset.')
     opt = parser.parse_args()
     return opt
 
@@ -182,7 +215,47 @@ def test(ctx, val_data, opt, net):
     _, top5 = acc_top5.get()
     return (top1, top5)
 
-def main():
+
+def benchmarking(opt, net, ctx):
+    bs = opt.batch_size
+    num_iterations = opt.num_iterations
+    input_size = opt.input_size
+    input_shape = (bs, 3, ) + tuple([input_size, input_size])
+    size = num_iterations * bs
+    data = mx.random.uniform(-1.0, 1.0, shape=input_shape, ctx=ctx[0], dtype='float32')
+    dry_run = 5
+
+    from tqdm import tqdm
+    with tqdm(total=size + dry_run * bs) as pbar:
+        for n in range(dry_run + num_iterations):
+            if n == dry_run:
+                tic = time.time()
+            output = net(data)
+            output.wait_to_read()
+            pbar.update(bs)
+    speed = size / (time.time() - tic)
+    print('With batch size %d , %d batches, throughput is %f imgs/sec' % (bs, num_iterations, speed))
+
+def calibration(net, val_data, opt, ctx, logger):
+    if isinstance(ctx, list):
+        ctx = ctx[0]
+    exclude_sym_layer = []
+    exclude_match_layer = []
+    if opt.num_gpus > 0:
+        raise ValueError('currently only supports CPU with MKL-DNN backend')
+    net = quantize_net(net, calib_data=val_data, quantized_dtype=opt.quantized_dtype, calib_mode=opt.calib_mode, 
+                       exclude_layers=exclude_sym_layer, num_calib_examples=opt.batch_size * opt.num_calib_batches,
+                       exclude_layers_match=exclude_match_layer, ctx=ctx, logger=logger)
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    dst_dir = os.path.join(dir_path, 'model')
+    if not os.path.isdir(dst_dir):
+        os.mkdir(dst_dir)
+    prefix = os.path.join(dst_dir, opt.model + '-quantized-' + opt.calib_mode)
+    logger.info('Saving quantized model at %s' % dst_dir)
+    net.export(prefix, epoch=0)
+
+
+def main(logger):
     opt = parse_args()
     print(opt)
 
@@ -193,10 +266,45 @@ def main():
     # set env
     num_gpus = opt.num_gpus
     batch_size = opt.batch_size
-    batch_size *= max(1, num_gpus)
-    context = [mx.gpu(i) for i in range(num_gpus)] if num_gpus > 0 else [mx.cpu()]
+    context = [mx.cpu()]
+    if num_gpus > 0:
+        batch_size *= max(1, num_gpus)
+        context = [mx.gpu(i) for i in range(num_gpus)]
+    
     num_workers = opt.num_workers
     print('Total batch size is set to %d on %d GPUs' % (batch_size, num_gpus))
+
+    # get model
+    classes = opt.num_classes
+    model_name = opt.model
+    use_pretrained = opt.use_pretrained
+
+    if opt.quantized:
+        model_name += '_int8'
+        use_pretrained = True
+
+    if not opt.deploy:
+        net = get_model(name=model_name, nclass=classes, pretrained=use_pretrained, num_segments=opt.num_segments)
+        net.cast(opt.dtype)
+        net.collect_params().reset_ctx(context)
+        if opt.mode == 'hybrid' or opt.quantized:
+            net.hybridize(static_alloc=True, static_shape=True)
+        if opt.resume_params is not '' and not use_pretrained:
+            net.load_parameters(opt.resume_params, ctx=context)
+            print('Pre-trained model %s is successfully loaded.' % (opt.resume_params))
+        else:
+            print('Pre-trained model is successfully loaded from the model zoo.')
+    else:
+        model_name = 'deploy'
+        net = mx.gluon.SymbolBlock.imports('{}-symbol.json'.format(opt.model_prefix),
+                ['data'], '{}-0000.params'.format(opt.model_prefix))
+        net.hybridize(static_alloc=True, static_shape=True)
+
+    print("Successfully loaded model {}".format(model_name))
+    # dummy data for benchmarking performance
+    if opt.benchmark:
+        benchmarking(opt, net, context)
+        sys.exit()
 
     # get data
     image_norm_mean = [0.485, 0.456, 0.406]
@@ -263,6 +371,11 @@ def main():
                                      prefetch=int(opt.prefetch_ratio * num_workers), last_batch='discard')
     print('Load %d test samples in %d iterations.' % (len(val_dataset), len(val_data)))
 
+    # calibrate FP32 model into INT8 model
+    if opt.calibration:
+        calibration(net, val_data, opt, context, logger)
+        sys.exit()
+
     start_time = time.time()
     acc_top1_val, acc_top5_val = test(context, val_data, opt, net)
     end_time = time.time()
@@ -271,4 +384,8 @@ def main():
     print('Total evaluation time is %4.2f minutes' % ((end_time - start_time) / 60))
 
 if __name__ == '__main__':
-    main()
+    logging.basicConfig()
+    logger = logging.getLogger('logger')
+    logger.setLevel(logging.INFO)
+
+    main(logger)

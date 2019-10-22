@@ -264,7 +264,6 @@ _models = {
     'psp_resnet101_coco_int8': psp_resnet101_coco_int8,
     'deeplab_resnet101_voc_int8': deeplab_resnet101_voc_int8,
     'deeplab_resnet101_coco_int8': deeplab_resnet101_coco_int8,
-<<<<<<< HEAD
     'center_net_resnet18_v1b_voc': center_net_resnet18_v1b_voc,
     'center_net_resnet18_v1b_dcnv2_voc': center_net_resnet18_v1b_dcnv2_voc,
     'center_net_resnet18_v1b_coco': center_net_resnet18_v1b_coco,
@@ -282,13 +281,13 @@ _models = {
     'center_net_dla34_coco': center_net_dla34_coco,
     'center_net_dla34_dcnv2_coco': center_net_dla34_dcnv2_coco,
     'dla34': dla34
-=======
     'simple_pose_resnet18_v1b_int8': simple_pose_resnet18_v1b_int8,
     'simple_pose_resnet50_v1b_int8': simple_pose_resnet50_v1b_int8,
     'simple_pose_resnet50_v1d_int8': simple_pose_resnet50_v1d_int8,
     'simple_pose_resnet101_v1b_int8': simple_pose_resnet101_v1b_int8,
     'simple_pose_resnet101_v1d_int8': simple_pose_resnet101_v1d_int8,
->>>>>>> Add quantized pose estimation models
+    'vgg16_ucf101_int8': vgg16_ucf101_int8,
+    'inceptionv3_ucf101_int8': inceptionv3_ucf101_int8
 }
 
 

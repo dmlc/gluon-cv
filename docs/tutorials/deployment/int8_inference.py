@@ -4,7 +4,7 @@
 This is a tutorial which illustrates how to use quantized GluonCV
 models for inference on Intel Xeon Processors to gain higher performance.
 
-The following example requires ``GluonCV>=0.5`` and ``MXNet-mkl>=1.6.0b20190829``. Please follow `our installation guide <../../index.html#installation>`__ to install or upgrade GluonCV and nightly build of MXNet if necessary.
+The following example requires ``GluonCV>=0.5`` and ``MXNet-mkl>=1.6.0b20191010``. Please follow `our installation guide <../../index.html#installation>`__ to install or upgrade GluonCV and nightly build of MXNet if necessary.
 
 Introduction
 ------------
@@ -13,16 +13,17 @@ GluonCV delivered some quantized models to improve the performance and reduce th
 
 Please checkout `verify_pretrained.py <https://raw.githubusercontent.com/dmlc/gluon-cv/master/scripts/classification/imagenet/verify_pretrained.py>`_ for imagenet inference,
 `eval_ssd.py <https://raw.githubusercontent.com/dmlc/gluon-cv/master/scripts/detection/ssd/eval_ssd.py>`_ for SSD inference, `test.py <https://raw.githubusercontent.com/dmlc/gluon-cv/master/scripts/segmentation/test.py>`_ 
-for segmentation inference, and `validate.py` <https://raw.githubusercontent.com/dmlc/gluon-cv/master/scripts/pose/simple_pose/validate.py> for pose estimation inference.
+for segmentation inference, `validate.py` <https://raw.githubusercontent.com/dmlc/gluon-cv/master/scripts/pose/simple_pose/validate.py> for pose estimation inference, and `test_recognizer.py <https://github.com/dmlc/gluon-cv/blob/master/scripts/action-recognition/test_recognizer.py>`
+ for video action recognition.
 
 Performance
 -----------
 
 GluonCV supports some quantized classification models, detection models and segmentation models.
 For the throughput, the target is to achieve the maximum machine efficiency to combine the inference requests together and get the results by one iteration. From the bar-chart, it is clearly that the fusion and quantization approach improved the throughput from 2.68X to 7.24X for selected models.
-Below CPU performance is collected with dummy input from AWS EC2 C5.12xlarge instance with 24 physical cores.
+Below CPU performance is collected with dummy input from Intel(R) VNNI enabled AWS EC2 C5.12xlarge instance with 24 physical cores.
 
-.. figure:: https://user-images.githubusercontent.com/34727741/66732052-f1bc6a80-ee8c-11e9-820a-4aa1fd3988ea.png
+.. figure:: https://user-images.githubusercontent.com/34727741/67351790-ecdc7280-f580-11e9-8b44-1b4548cb6031.png
    :alt: Gluon Quantization Performance
 
 Gluon Quantization Performance
@@ -66,7 +67,10 @@ Gluon Quantization Performance
 +-----------------------------+----------------+------------+---------------------+-----------------+-----------------+
 | simple_pose_resnet101_v1d   | COCO Keypoint  | 128        | 5.97                | 73.0            | 72.7            |
 +-----------------------------+----------------+------------+---------------------+-----------------+-----------------+
-
+| vgg16_ucf101                | UCF101         | 64         | 4.46                | 77.40           | 77.19           |
++-----------------------------+----------------+------------+---------------------+-----------------+-----------------+
+| inceptionv3_ucf101          | UCF101         | 64         | 5.16                | 82.87           | 82.77           |
++-----------------------------+----------------+------------+---------------------+-----------------+-----------------+
 
 Quantized SSD models are evaluated with ``nms_thresh=0.45``, ``nms_topk=200``. For segmentation models, the accuracy metric is pixAcc, and for pose-estimation models, the accuracy metric is OKS AP w/o flip.
 

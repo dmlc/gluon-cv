@@ -550,6 +550,16 @@ def test_calib_models():
     x = mx.random.uniform(shape=(1, 3, 256, 192), ctx=ctx)
     _calib_model_list(model_list, ctx, x)
 
+    model_list = ['vgg16_ucf101']
+    ctx = mx.context.current_context()
+    x = mx.random.uniform(shape=(1, 3, 224, 224), ctx=ctx)
+    _calib_model_list(model_list, ctx, x)
+
+    model_list = ['inceptionv3_ucf101']
+    ctx = mx.context.current_context()
+    x = mx.random.uniform(shape=(1, 3, 299, 299), ctx=ctx)
+    _calib_model_list(model_list, ctx, x)
+
 
 @with_cpu(0)
 def test_quantized_segmentation_models():
@@ -569,6 +579,19 @@ def test_quantized_pose_estimation_models():
     ctx = mx.context.current_context()
     x = mx.random.uniform(shape=(1, 3, 256, 192), ctx=ctx)
     _test_model_list(model_list, ctx, x)
+
+
+@with_cpu(0)
+def test_quantized_action_recognition_models():
+    model_list = ['vgg16_ucf101_int8']
+    ctx = mx.context.current_context()
+    x = mx.random.uniform(shape=(1, 3, 224, 224), ctx=ctx)
+    _test_model_list(model_list, ctx, x)
+
+    model_list = ['inceptionv3_ucf101_int8']
+    x = mx.random.uniform(shape=(1, 3, 299, 299), ctx=ctx)
+    _test_model_list(model_list, ctx, x)
+
 
 if __name__ == '__main__':
     import nose
