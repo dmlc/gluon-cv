@@ -13,7 +13,8 @@ from mxnet.gluon import contrib
 from .. model_zoo import get_model
 
 __all__ = ['DeconvResnet', 'get_deconv_resnet',
-           'resnet18_v1b_deconv', 'resnet18_v1b_deconv_dcnv2']
+           'resnet18_v1b_deconv', 'resnet18_v1b_deconv_dcnv2',
+           'resnet101_v1b_deconv', 'resnet101_v1b_deconv_dcnv2']
 
 
 class BilinearUpSample(mx.init.Initializer):
@@ -151,3 +152,11 @@ def resnet18_v1b_deconv(**kwargs):
 def resnet18_v1b_deconv_dcnv2(**kwargs):
     kwargs['use_dcnv2'] = True
     return get_deconv_resnet('resnet18_v1b', **kwargs)
+
+def resnet101_v1b_deconv(**kwargs):
+    kwargs['use_dcnv2'] = False
+    return get_deconv_resnet('resnet101_v1b', **kwargs)
+
+def resnet101_v1b_deconv_dcnv2(**kwargs):
+    kwargs['use_dcnv2'] = True
+    return get_deconv_resnet('resnet101_v1b', **kwargs)
