@@ -13,8 +13,7 @@ GluonCV delivered some quantized models to improve the performance and reduce th
 
 Please checkout `verify_pretrained.py <https://raw.githubusercontent.com/dmlc/gluon-cv/master/scripts/classification/imagenet/verify_pretrained.py>`_ for imagenet inference,
 `eval_ssd.py <https://raw.githubusercontent.com/dmlc/gluon-cv/master/scripts/detection/ssd/eval_ssd.py>`_ for SSD inference, `test.py <https://raw.githubusercontent.com/dmlc/gluon-cv/master/scripts/segmentation/test.py>`_ 
-for segmentation inference, `validate.py` <https://raw.githubusercontent.com/dmlc/gluon-cv/master/scripts/pose/simple_pose/validate.py> for pose estimation inference, and `test_recognizer.py <https://github.com/dmlc/gluon-cv/blob/master/scripts/action-recognition/test_recognizer.py>`
- for video action recognition.
+for segmentation inference, `validate.py <https://raw.githubusercontent.com/dmlc/gluon-cv/master/scripts/pose/simple_pose/validate.py>`_ for pose estimation inference, and `test_recognizer.py <https://github.com/dmlc/gluon-cv/blob/master/scripts/action-recognition/test_recognizer.py>`_ for video action recognition.
 
 Performance
 -----------
@@ -26,9 +25,6 @@ Below CPU performance is collected with dummy input from Intel(R) VNNI enabled A
 .. figure:: https://user-images.githubusercontent.com/34727741/67351790-ecdc7280-f580-11e9-8b44-1b4548cb6031.png
    :alt: Gluon Quantization Performance
 
-Gluon Quantization Performance
-
-
 
 +-----------------------------+----------------+------------+---------------------+-----------------+-----------------+
 |  Model                      | Dataset        | Batch Size | Speedup (INT8/FP32) | FP32 Accuracy   | INT8 Accuracy   |
@@ -38,7 +34,7 @@ Gluon Quantization Performance
 | MobileNet 1.0               | ImageNet       | 128        | 7.00                | 73.28%/91.22%   | 71.94%/90.47%   |
 +-----------------------------+----------------+------------+---------------------+-----------------+-----------------+
 | SSD-VGG 300*                | VOC            | 224        | 5.96                | 77.4            | 77.38           |
-+----------------------------+-----------------+------------+---------------------+-----------------+-----------------+
++-----------------------------+----------------+------------+---------------------+-----------------+-----------------+
 | SSD-VGG 512*                | VOC            | 224        | 5.55                | 78.41           | 78.38           |
 +-----------------------------+----------------+------------+---------------------+-----------------+-----------------+
 | SSD-resnet50_v1 512*        | VOC            | 224        | 5.03                | 80.21           | 80.25           |
