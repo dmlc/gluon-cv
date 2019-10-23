@@ -7,7 +7,9 @@ from ...nn.block import Consensus
 from ..resnetv1b import resnet18_v1b, resnet34_v1b, resnet50_v1b, resnet101_v1b, resnet152_v1b
 
 __all__ = ['resnet18_v1b_sthsthv2', 'resnet34_v1b_sthsthv2', 'resnet50_v1b_sthsthv2',
-           'resnet101_v1b_sthsthv2', 'resnet152_v1b_sthsthv2']
+           'resnet101_v1b_sthsthv2', 'resnet152_v1b_sthsthv2', 'resnet18_v1b_kinetics400',
+           'resnet34_v1b_kinetics400', 'resnet50_v1b_kinetics400', 'resnet101_v1b_kinetics400',
+           'resnet152_v1b_kinetics400']
 
 class ActionRecResNetV1b(HybridBlock):
     r"""ResNet models for video action recognition
@@ -220,6 +222,116 @@ def resnet152_v1b_sthsthv2(nclass=174, pretrained=False, tsn=False, partial_bn=F
                                              tag=pretrained, root=root))
         from ...data import SomethingSomethingV2Attr
         attrib = SomethingSomethingV2Attr()
+        model.classes = attrib.classes
+    model.collect_params().reset_ctx(ctx)
+    return model
+
+def resnet18_v1b_kinetics400(nclass=400, pretrained=False, tsn=False, partial_bn=False,
+                             num_segments=1, root='~/.mxnet/models', ctx=mx.cpu(), **kwargs):
+    if tsn:
+        model = ActionRecResNetV1bTSN(depth=18,
+                                      nclass=nclass,
+                                      partial_bn=partial_bn,
+                                      num_segments=num_segments)
+    else:
+        model = ActionRecResNetV1b(depth=18,
+                                   nclass=nclass,
+                                   partial_bn=partial_bn)
+
+    if pretrained:
+        from ..model_store import get_model_file
+        model.load_parameters(get_model_file('resnet18_v1b_kinetics400',
+                                             tag=pretrained, root=root))
+        from ...data import Kinetics400Attr
+        attrib = Kinetics400Attr()
+        model.classes = attrib.classes
+    model.collect_params().reset_ctx(ctx)
+    return model
+
+def resnet34_v1b_kinetics400(nclass=400, pretrained=False, tsn=False, partial_bn=False,
+                             num_segments=1, root='~/.mxnet/models', ctx=mx.cpu(), **kwargs):
+    if tsn:
+        model = ActionRecResNetV1bTSN(depth=34,
+                                      nclass=nclass,
+                                      partial_bn=partial_bn,
+                                      num_segments=num_segments)
+    else:
+        model = ActionRecResNetV1b(depth=34,
+                                   nclass=nclass,
+                                   partial_bn=partial_bn)
+
+    if pretrained:
+        from ..model_store import get_model_file
+        model.load_parameters(get_model_file('resnet34_v1b_kinetics400',
+                                             tag=pretrained, root=root))
+        from ...data import Kinetics400Attr
+        attrib = Kinetics400Attr()
+        model.classes = attrib.classes
+    model.collect_params().reset_ctx(ctx)
+    return model
+
+def resnet50_v1b_kinetics400(nclass=400, pretrained=False, tsn=False, partial_bn=False,
+                             num_segments=1, root='~/.mxnet/models', ctx=mx.cpu(), **kwargs):
+    if tsn:
+        model = ActionRecResNetV1bTSN(depth=50,
+                                      nclass=nclass,
+                                      partial_bn=partial_bn,
+                                      num_segments=num_segments)
+    else:
+        model = ActionRecResNetV1b(depth=50,
+                                   nclass=nclass,
+                                   partial_bn=partial_bn)
+
+    if pretrained:
+        from ..model_store import get_model_file
+        model.load_parameters(get_model_file('resnet50_v1b_kinetics400',
+                                             tag=pretrained, root=root))
+        from ...data import Kinetics400Attr
+        attrib = Kinetics400Attr()
+        model.classes = attrib.classes
+    model.collect_params().reset_ctx(ctx)
+    return model
+
+def resnet101_v1b_kinetics400(nclass=400, pretrained=False, tsn=False, partial_bn=False,
+                              num_segments=1, root='~/.mxnet/models', ctx=mx.cpu(), **kwargs):
+    if tsn:
+        model = ActionRecResNetV1bTSN(depth=101,
+                                      nclass=nclass,
+                                      partial_bn=partial_bn,
+                                      num_segments=num_segments)
+    else:
+        model = ActionRecResNetV1b(depth=101,
+                                   nclass=nclass,
+                                   partial_bn=partial_bn)
+
+    if pretrained:
+        from ..model_store import get_model_file
+        model.load_parameters(get_model_file('resnet101_v1b_kinetics400',
+                                             tag=pretrained, root=root))
+        from ...data import Kinetics400Attr
+        attrib = Kinetics400Attr()
+        model.classes = attrib.classes
+    model.collect_params().reset_ctx(ctx)
+    return model
+
+def resnet152_v1b_kinetics400(nclass=400, pretrained=False, tsn=False, partial_bn=False,
+                              num_segments=1, root='~/.mxnet/models', ctx=mx.cpu(), **kwargs):
+    if tsn:
+        model = ActionRecResNetV1bTSN(depth=152,
+                                      nclass=nclass,
+                                      partial_bn=partial_bn,
+                                      num_segments=num_segments)
+    else:
+        model = ActionRecResNetV1b(depth=152,
+                                   nclass=nclass,
+                                   partial_bn=partial_bn)
+
+    if pretrained:
+        from ..model_store import get_model_file
+        model.load_parameters(get_model_file('resnet152_v1b_kinetics400',
+                                             tag=pretrained, root=root))
+        from ...data import Kinetics400Attr
+        attrib = Kinetics400Attr()
         model.classes = attrib.classes
     model.collect_params().reset_ctx(ctx)
     return model
