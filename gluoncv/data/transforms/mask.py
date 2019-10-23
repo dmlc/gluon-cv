@@ -1,10 +1,14 @@
 """Mask transformation functions."""
 import copy
+
 import numpy as np
-import mxnet as mx
+from PIL import Image
+from scipy import interpolate
+
 from ..mscoco.utils import try_import_pycocotools
 
 __all__ = ['flip', 'resize', 'to_mask', 'fill']
+
 
 def flip(polys, size, flip_x=False, flip_y=False):
     """Flip polygons according to image flipping directions.
@@ -99,7 +103,7 @@ def to_mask(polys, size):
     return cocomask.decode(rle)
 
 
-def fill(mask, bbox, size):
+def fill(mask, bbox, size, fast_fill=True):
     """Fill mask to full image size
 
     Parameters
@@ -110,6 +114,8 @@ def fill(mask, bbox, size):
         They are :math:`(xmin, ymin, xmax, ymax)`.
     size : tuple
         Tuple of length 2: (width, height).
+    fast_fill : boolean, default is True.
+        Whether to use fast fill. Fast fill is less accurate.g
 
     Returns
     -------
@@ -125,22 +131,28 @@ def fill(mask, bbox, size):
     # expand boxes
     x1, y1, x2, y2 = bbox
     x, y, hw, hh = (x1 + x2) / 2, (y1 + y2) / 2, (x2 - x1) / 2, (y2 - y1) / 2
-    hw = hw * ((M + 2) * 1.0 / M)
-    hh = hh * ((M + 2) * 1.0 / M)
+    hw = hw * (float(M + 2) / M)
+    hh = hh * (float(M + 2) / M)
     x1, y1, x2, y2 = x - hw, y - hh, x + hw, y + hh
-    # quantize
-    x1, y1, x2, y2 = map(int, (x1, y1, x2, y2))
-    w, h = (x2 - x1 + 1), (y2 - y1 + 1)
+    if fast_fill:
+        # quantize
+        x1, y1, x2, y2 = map(int, (x1 + 0.5, y1 + 0.5, x2 + 0.5, y2 + 0.5))
+        w, h = (x2 - x1 + 1), (y2 - y1 + 1)
+        mask = Image.fromarray(mask)
+        mask = np.array(mask.resize((w, h), Image.BILINEAR))
+        # binarize and fill
+        mask = (mask > 0.5).astype('uint8')
+        ret = np.zeros((height, width), dtype='uint8')
+        xx1, yy1 = max(0, x1), max(0, y1)
+        xx2, yy2 = min(width, x2 + 1), min(height, y2 + 1)
+        ret[yy1:yy2, xx1:xx2] = mask[yy1 - y1:yy2 - y1, xx1 - x1:xx2 - x1]
+        return ret
     # resize mask
-    mask = mx.nd.array(mask)
-    mask = mask.reshape((0, 0, 1))
-    mask = mx.image.imresize(mask, w=w, h=h, interp=1)
-    mask = mask.reshape((0, 0))
-    mask = mask.asnumpy()
-    # binarize and fill
-    mask = (mask > 0.5).astype('uint8')
-    ret = np.zeros((height, width), dtype='uint8')
-    xx1, yy1 = max(0, x1), max(0, y1)
-    xx2, yy2 = min(width, x2 + 1), min(height, y2 + 1)
-    ret[yy1:yy2, xx1:xx2] = mask[yy1 - y1:yy2 - y1, xx1 - x1:xx2 - x1]
-    return ret
+    mask_pixels = np.arange(0.5, mask.shape[0] + 0.5)
+    mask_continuous = interpolate.interp2d(mask_pixels, mask_pixels, mask, fill_value=0.0)
+    ys = np.arange(0.5, height + 0.5)
+    xs = np.arange(0.5, width + 0.5)
+    ys = (ys - y1) / (y2 - y1) * mask.shape[0]
+    xs = (xs - x1) / (x2 - x1) * mask.shape[1]
+    res = mask_continuous(xs, ys)
+    return (res >= 0.5).astype('uint8')
