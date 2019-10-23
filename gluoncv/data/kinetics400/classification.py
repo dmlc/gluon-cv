@@ -62,8 +62,8 @@ class Kinetics400(dataset.Dataset):
         A function that takes data and label and transforms them.
     """
     def __init__(self,
-                 setting=os.path.expanduser('~/.mxnet/datasets/kinetics400/kinetics400_train_list_rawframes.txt'),
                  root=os.path.expanduser('~/.mxnet/datasets/kinetics400/rawframes_train'),
+                 setting=os.path.expanduser('~/.mxnet/datasets/kinetics400/kinetics400_train_list_rawframes.txt'),
                  train=True,
                  test_mode=False,
                  name_pattern='img_%05d.jpg',

@@ -14,7 +14,7 @@ from gluoncv.data.transforms import video
 from gluoncv.data import UCF101, Kinetics400, SomethingSomethingV2
 from gluoncv.model_zoo import get_model
 from gluoncv.utils import makedirs, LRSequential, LRScheduler, split_and_load
-from gluoncv.data.dataloader import tsn_mp_batchify_fn
+# from gluoncv.data.dataloader import tsn_mp_batchify_fn
 from gluoncv.data.sampler import SplitSampler
 
 # CLI
@@ -152,10 +152,7 @@ def get_data_loader(opt, batch_size, num_workers, logger, kvstore=None):
     input_size = opt.input_size
 
     def batch_fn(batch, ctx):
-        if opt.num_segments > 1:
-            data = split_and_load(batch[0], ctx_list=ctx, batch_axis=0, even_split=False, multiplier=opt.num_segments)
-        else:
-            data = split_and_load(batch[0], ctx_list=ctx, batch_axis=0, even_split=False)
+        data = split_and_load(batch[0], ctx_list=ctx, batch_axis=0, even_split=False)
         label = split_and_load(batch[1], ctx_list=ctx, batch_axis=0, even_split=False)
         return data, label
 
@@ -197,15 +194,15 @@ def get_data_loader(opt, batch_size, num_workers, logger, kvstore=None):
     if kvstore is not None:
         train_data = gluon.data.DataLoader(train_dataset, batch_size=batch_size, num_workers=num_workers,
                                            sampler=SplitSampler(len(train_dataset), num_parts=kvstore.num_workers, part_index=kvstore.rank),
-                                           batchify_fn=tsn_mp_batchify_fn, prefetch=int(opt.prefetch_ratio * num_workers), last_batch='rollover')
+                                           prefetch=int(opt.prefetch_ratio * num_workers), last_batch='rollover')
         val_data = gluon.data.DataLoader(val_dataset, batch_size=batch_size, num_workers=num_workers,
                                          sampler=SplitSampler(len(val_dataset), num_parts=kvstore.num_workers, part_index=kvstore.rank),
-                                         batchify_fn=tsn_mp_batchify_fn, prefetch=int(opt.prefetch_ratio * num_workers), last_batch='discard')
+                                         prefetch=int(opt.prefetch_ratio * num_workers), last_batch='discard')
     else:
         train_data = gluon.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers,
-                                           batchify_fn=tsn_mp_batchify_fn, prefetch=int(opt.prefetch_ratio * num_workers), last_batch='rollover')
+                                           prefetch=int(opt.prefetch_ratio * num_workers), last_batch='rollover')
         val_data = gluon.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers,
-                                           batchify_fn=tsn_mp_batchify_fn, prefetch=int(opt.prefetch_ratio * num_workers), last_batch='discard')
+                                         prefetch=int(opt.prefetch_ratio * num_workers), last_batch='discard')
 
     return train_data, val_data, batch_fn
 
@@ -293,7 +290,11 @@ def main():
         num_test_iter = len(val_data)
         for i, batch in enumerate(val_data):
             data, label = batch_fn(batch, ctx)
-            outputs = [net(X.astype(opt.dtype, copy=False)) for X in data]
+            outputs = []
+            for _, X in enumerate(data):
+                X = X.reshape((-1,) + X.shape[2:])
+                pred = net(X.astype(opt.dtype, copy=False))
+                outputs.append(pred)
             acc_top1.update(label, outputs)
             acc_top5.update(label, outputs)
 
@@ -366,7 +367,11 @@ def main():
                 data, label = batch_fn(batch, ctx)
 
                 with ag.record():
-                    outputs = [net(X.astype(opt.dtype, copy=False)) for X in data]
+                    outputs = []
+                    for _, X in enumerate(data):
+                        X = X.reshape((-1,) + X.shape[2:])
+                        pred = net(X.astype(opt.dtype, copy=False))
+                        outputs.append(pred)
                     loss = [L(yhat, y.astype(opt.dtype, copy=False)) for yhat, y in zip(outputs, label)]
 
                     if opt.use_amp:

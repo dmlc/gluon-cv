@@ -9,13 +9,11 @@ from mxnet import gluon, nd, gpu, init, context
 from mxnet import autograd as ag
 from mxnet.gluon import nn
 from mxnet.gluon.data.vision import transforms
-from mxboard import SummaryWriter
 
 from gluoncv.data.transforms import video
 from gluoncv.data import UCF101, Kinetics400, SomethingSomethingV2
 from gluoncv.model_zoo import get_model
 from gluoncv.utils import makedirs, LRSequential, LRScheduler, split_and_load
-from gluoncv.data.dataloader import tsn_mp_batchify_fn
 
 # CLI
 def parse_args():
@@ -138,6 +136,8 @@ def parse_args():
                         help='if set to True, read videos directly instead of reading frames.')
     parser.add_argument('--use-decord', action='store_true',
                         help='if set to True, use Decord video loader to load data. Otherwise use mmcv video loader.')
+    parser.add_argument('--num-crop', type=int, default=1,
+                        help='number of crops for each image. default is 1')
     opt = parser.parse_args()
     return opt
 
@@ -151,13 +151,14 @@ def test(ctx, val_data, opt, net):
     acc_top5 = mx.metric.TopKAccuracy(5)
 
     for i, batch in enumerate(val_data):
+        # print(batch[0])
         data, label = batch_fn(batch, ctx)
         outputs = []
-        for X in data:
+        for _, X in enumerate(data):
+            X = X.reshape((-1,) + X.shape[2:])
             pred = net(X.astype(opt.dtype, copy=False))
             if opt.use_softmax:
                 pred = F.softmax(pred, axis=1)
-            pred = F.mean(pred, axis=0, keepdims=True)
             outputs.append(pred)
 
         acc_top1.update(label, outputs)
@@ -190,10 +191,29 @@ def main():
     num_workers = opt.num_workers
     print('Total batch size is set to %d on %d GPUs' % (batch_size, num_gpus))
 
+    # get data
+    if opt.ten_crop:
+        transform_test = transforms.Compose([
+            video.VideoTenCrop(opt.input_size),
+            video.VideoToTensor(),
+            video.VideoNormalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+        ])
+        opt.num_crop = 10
+    elif opt.three_crop:
+        transform_test = transforms.Compose([
+            video.VideoThreeCrop(opt.input_size),
+            video.VideoToTensor(),
+            video.VideoNormalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+        ])
+        opt.num_crop = 3
+    else:
+        transform_test = video.VideoGroupValTransform(size=opt.input_size, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        opt.num_crop = 1
+
     # get model
     classes = opt.num_classes
     model_name = opt.model
-    net = get_model(name=model_name, nclass=classes, pretrained=opt.use_pretrained, num_segments=opt.num_segments)
+    net = get_model(name=model_name, nclass=classes, pretrained=opt.use_pretrained, num_segments=opt.num_segments, num_crop=opt.num_crop)
     net.cast(opt.dtype)
     net.collect_params().reset_ctx(context)
     if opt.mode == 'hybrid':
@@ -203,22 +223,6 @@ def main():
         print('Pre-trained model %s is successfully loaded.' % (opt.resume_params))
     else:
         print('Pre-trained model is successfully loaded from the model zoo.')
-
-    # get data
-    if opt.ten_crop:
-        transform_test = transforms.Compose([
-            video.VideoTenCrop(opt.input_size),
-            video.VideoToTensor(),
-            video.VideoNormalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-        ])
-    elif opt.three_crop:
-        transform_test = transforms.Compose([
-            video.VideoThreeCrop(opt.input_size),
-            video.VideoToTensor(),
-            video.VideoNormalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-        ])
-    else:
-        transform_test = video.VideoGroupValTransform(size=opt.input_size, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
     if opt.dataset == 'ucf101':
         val_dataset = UCF101(setting=opt.val_list, root=opt.data_dir, train=False,
@@ -239,7 +243,7 @@ def main():
         logger.info('Dataset %s is not supported yet.' % (opt.dataset))
 
     val_data = gluon.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers,
-                                     prefetch=int(opt.prefetch_ratio * num_workers), batchify_fn=tsn_mp_batchify_fn, last_batch='discard')
+                                     prefetch=int(opt.prefetch_ratio * num_workers), last_batch='discard')
     print('Load %d test samples in %d iterations.' % (len(val_dataset), len(val_data)))
 
     start_time = time.time()
