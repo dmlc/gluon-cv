@@ -151,7 +151,6 @@ def test(ctx, val_data, opt, net):
     acc_top5 = mx.metric.TopKAccuracy(5)
 
     for i, batch in enumerate(val_data):
-        # print(batch[0])
         data, label = batch_fn(batch, ctx)
         outputs = []
         for _, X in enumerate(data):

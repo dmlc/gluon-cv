@@ -14,7 +14,6 @@ from gluoncv.data.transforms import video
 from gluoncv.data import UCF101, Kinetics400, SomethingSomethingV2
 from gluoncv.model_zoo import get_model
 from gluoncv.utils import makedirs, LRSequential, LRScheduler, split_and_load
-# from gluoncv.data.dataloader import tsn_mp_batchify_fn
 from gluoncv.data.sampler import SplitSampler
 
 # CLI
@@ -255,7 +254,7 @@ def main():
 
     model_name = opt.model
     net = get_model(name=model_name, nclass=classes, pretrained=opt.use_pretrained,
-                    tsn=opt.use_tsn, num_segments=opt.num_segments, partial_bn=opt.partial_bn)
+                    use_tsn=opt.use_tsn, num_segments=opt.num_segments, partial_bn=opt.partial_bn)
     net.cast(opt.dtype)
     net.collect_params().reset_ctx(context)
     logger.info(net)
@@ -423,24 +422,15 @@ def main():
 
             if acc_top1_val > best_val_score:
                 best_val_score = acc_top1_val
-                if opt.use_tsn:
-                    net.basenet.save_parameters('%s/%.4f-%s-%s-%03d-best.params'%(opt.save_dir, best_val_score, opt.dataset, model_name, epoch))
-                else:
-                    net.save_parameters('%s/%.4f-%s-%s-%03d-best.params'%(opt.save_dir, best_val_score, opt.dataset, model_name, epoch))
+                net.save_parameters('%s/%.4f-%s-%s-%03d-best.params'%(opt.save_dir, best_val_score, opt.dataset, model_name, epoch))
                 trainer.save_states('%s/%.4f-%s-%s-%03d-best.states'%(opt.save_dir, best_val_score, opt.dataset, model_name, epoch))
             else:
                 if opt.save_frequency and opt.save_dir and (epoch + 1) % opt.save_frequency == 0:
-                    if opt.use_tsn:
-                        net.basenet.save_parameters('%s/%s-%s-%03d.params'%(opt.save_dir, opt.dataset, model_name, epoch))
-                    else:
-                        net.save_parameters('%s/%s-%s-%03d.params'%(opt.save_dir, opt.dataset, model_name, epoch))
+                    net.save_parameters('%s/%s-%s-%03d.params'%(opt.save_dir, opt.dataset, model_name, epoch))
                     trainer.save_states('%s/%s-%s-%03d.states'%(opt.save_dir, opt.dataset, model_name, epoch))
 
         # save the last model
-        if opt.use_tsn:
-            net.basenet.save_parameters('%s/%s-%s-%03d.params'%(opt.save_dir, opt.dataset, model_name, opt.num_epochs-1))
-        else:
-            net.save_parameters('%s/%s-%s-%03d.params'%(opt.save_dir, opt.dataset, model_name, opt.num_epochs-1))
+        net.save_parameters('%s/%s-%s-%03d.params'%(opt.save_dir, opt.dataset, model_name, opt.num_epochs-1))
         trainer.save_states('%s/%s-%s-%03d.states'%(opt.save_dir, opt.dataset, model_name, opt.num_epochs-1))
 
     if opt.mode == 'hybrid':

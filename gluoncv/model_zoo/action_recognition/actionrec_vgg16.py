@@ -3,22 +3,30 @@ import mxnet as mx
 from mxnet import init
 from mxnet.gluon import nn
 from mxnet.gluon.nn import HybridBlock
-from ...nn.block import Consensus
 from ..vgg import vgg16
 
 __all__ = ['vgg16_ucf101']
 
 class ActionRecVGG16(HybridBlock):
     r"""VGG16 model for video action recognition
+    Karen Simonyan and Andrew Zisserman, Very Deep Convolutional Networks for Large-Scale Image Recognition, arXiv 2014
+    https://arxiv.org/abs/1409.1556
     Limin Wang, etal, Towards Good Practices for Very Deep Two-Stream ConvNets, arXiv 2015
     https://arxiv.org/abs/1507.02159
+    Limin Wang, etal, Temporal Segment Networks: Towards Good Practices for Deep Action Recognition, ECCV 2016
+    https://arxiv.org/abs/1608.00859
 
     Parameters
     ----------
     nclass : int, number of classes
     pretrained_base : bool, load pre-trained weights or not
+    dropout_ratio : float, add a dropout layer to prevent overfitting on small datasets, such as UCF101
+    init_std : float, standard deviation value when initialize the last classification layer
+    feat_dim : int, feature dimension. Default is 4096 for VGG16 network
+    num_segments : int, number of segments used
+    num_crop : int, number of crops used during evaluation. Default choice is 1, 3 or 10
 
-    Input: a single video frame
+    Input: a single video frame or N images from N segments when num_segments > 1
     Output: a single predicted action label
     """
     def __init__(self, nclass, pretrained_base=True,
@@ -51,41 +59,15 @@ class ActionRecVGG16(HybridBlock):
         x = self.output(x)
         return x
 
-class ActionRecVGG16TSN(HybridBlock):
-    r"""VGG16 model with temporal segments for video action recognition
-    Limin Wang, etal, Temporal Segment Networks: Towards Good Practices for Deep Action Recognition, ECCV 2016
-    https://arxiv.org/abs/1608.00859
-
-    Parameters
-    ----------
-    nclass : int, number of classes
-    pretrained_base : bool, load pre-trained weights or not
-
-    Input: N images from N segments in a single video
-    Output: a single predicted action label
-    """
-    def __init__(self, nclass, pretrained_base=True, num_segments=3, **kwargs):
-        super(ActionRecVGG16TSN, self).__init__()
-
-        self.basenet = ActionRecVGG16(nclass=nclass, pretrained_base=pretrained_base)
-        self.tsn_consensus = Consensus(nclass=nclass, num_segments=num_segments)
-
-    def hybrid_forward(self, F, x):
-        pred = self.basenet(x)
-        consensus_out = self.tsn_consensus(pred)
-        return consensus_out
-
 def vgg16_ucf101(nclass=101, pretrained=False, pretrained_base=True,
-                 tsn=False, num_segments=1, num_crop=1,
+                 use_tsn=False, num_segments=1, num_crop=1,
                  ctx=mx.cpu(), root='~/.mxnet/models', **kwargs):
-    if tsn:
-        model = ActionRecVGG16TSN(nclass=nclass,
-                                  num_segments=num_segments)
-    else:
-        model = ActionRecVGG16(nclass=nclass,
-                               pretrained_base=pretrained_base,
-                               num_segments=num_segments,
-                               num_crop=num_crop)
+    model = ActionRecVGG16(nclass=nclass,
+                           pretrained_base=pretrained_base,
+                           num_segments=num_segments,
+                           num_crop=num_crop,
+                           dropout_ratio=0.9,
+                           init_std=0.001)
 
     if pretrained:
         from ..model_store import get_model_file
