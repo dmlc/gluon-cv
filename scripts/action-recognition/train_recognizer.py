@@ -141,6 +141,8 @@ def parse_args():
                         help='if set to True, use Decord video loader to load data. Otherwise use mmcv video loader.')
     parser.add_argument('--accumulate', type=int, default=1,
                         help='new step to accumulate gradient. If >1, the batch size is enlarged.')
+    parser.add_argument('--num-crop', type=int, default=1,
+                        help='number of crops for each image. default is 1')
     opt = parser.parse_args()
     return opt
 

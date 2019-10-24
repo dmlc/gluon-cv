@@ -503,7 +503,7 @@ class I3D_ResNetV1(HybridBlock):
         return x
 
 def i3d_resnet50_v1_kinetics400(nclass=400, pretrained=False, pretrained_base=True, ctx=cpu(),
-                                root='~/.mxnet/models', tsn=False, num_segments=1, num_crop=1,
+                                root='~/.mxnet/models', use_tsn=False, num_segments=1, num_crop=1,
                                 partial_bn=False, **kwargs):
     r"""Inflated 3D model (I3D) from
     `"Quo Vadis, Action Recognition? A New Model and the Kinetics Dataset"
@@ -553,7 +553,7 @@ def i3d_resnet50_v1_kinetics400(nclass=400, pretrained=False, pretrained_base=Tr
     return model
 
 def i3d_resnet101_v1_kinetics400(nclass=400, pretrained=False, pretrained_base=True, ctx=cpu(),
-                                 root='~/.mxnet/models', tsn=False, num_segments=1, num_crop=1,
+                                 root='~/.mxnet/models', use_tsn=False, num_segments=1, num_crop=1,
                                  partial_bn=False, **kwargs):
     r"""Inflated 3D model (I3D) from
     `"Quo Vadis, Action Recognition? A New Model and the Kinetics Dataset"
@@ -603,7 +603,7 @@ def i3d_resnet101_v1_kinetics400(nclass=400, pretrained=False, pretrained_base=T
     return model
 
 def i3d_nl5_resnet50_v1_kinetics400(nclass=400, pretrained=False, pretrained_base=True, ctx=cpu(),
-                                    root='~/.mxnet/models', tsn=False, num_segments=1, num_crop=1,
+                                    root='~/.mxnet/models', use_tsn=False, num_segments=1, num_crop=1,
                                     partial_bn=False, **kwargs):
     r"""Inflated 3D model (I3D) from
     `"Quo Vadis, Action Recognition? A New Model and the Kinetics Dataset"
@@ -658,7 +658,7 @@ def i3d_nl5_resnet50_v1_kinetics400(nclass=400, pretrained=False, pretrained_bas
     return model
 
 def i3d_nl10_resnet50_v1_kinetics400(nclass=400, pretrained=False, pretrained_base=True, ctx=cpu(),
-                                     root='~/.mxnet/models', tsn=False, num_segments=1, num_crop=1,
+                                     root='~/.mxnet/models', use_tsn=False, num_segments=1, num_crop=1,
                                      partial_bn=False, **kwargs):
     r"""Inflated 3D model (I3D) from
     `"Quo Vadis, Action Recognition? A New Model and the Kinetics Dataset"
@@ -713,7 +713,7 @@ def i3d_nl10_resnet50_v1_kinetics400(nclass=400, pretrained=False, pretrained_ba
     return model
 
 def i3d_nl5_resnet101_v1_kinetics400(nclass=400, pretrained=False, pretrained_base=True, ctx=cpu(),
-                                     root='~/.mxnet/models', tsn=False, num_segments=1, num_crop=1,
+                                     root='~/.mxnet/models', use_tsn=False, num_segments=1, num_crop=1,
                                      partial_bn=False, **kwargs):
     r"""Inflated 3D model (I3D) from
     `"Quo Vadis, Action Recognition? A New Model and the Kinetics Dataset"
@@ -768,7 +768,7 @@ def i3d_nl5_resnet101_v1_kinetics400(nclass=400, pretrained=False, pretrained_ba
     return model
 
 def i3d_nl10_resnet101_v1_kinetics400(nclass=400, pretrained=False, pretrained_base=True, ctx=cpu(),
-                                      root='~/.mxnet/models', tsn=False, num_segments=1, num_crop=1,
+                                      root='~/.mxnet/models', use_tsn=False, num_segments=1, num_crop=1,
                                       partial_bn=False, **kwargs):
     r"""Inflated 3D model (I3D) from
     `"Quo Vadis, Action Recognition? A New Model and the Kinetics Dataset"
@@ -823,7 +823,7 @@ def i3d_nl10_resnet101_v1_kinetics400(nclass=400, pretrained=False, pretrained_b
     return model
 
 def i3d_resnet50_v1_sthsthv2(nclass=174, pretrained=False, pretrained_base=True, ctx=cpu(),
-                             root='~/.mxnet/models', tsn=False, num_segments=1, num_crop=1,
+                             root='~/.mxnet/models', use_tsn=False, num_segments=1, num_crop=1,
                              partial_bn=False, **kwargs):
     r"""Inflated 3D model (I3D) from
     `"Quo Vadis, Action Recognition? A New Model and the Kinetics Dataset"
