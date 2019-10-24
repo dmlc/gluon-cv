@@ -34,8 +34,8 @@ class NumPyBBoxCornerToCenter(object):
         # this is different that detectron.
         width = xmax - xmin
         height = ymax - ymin
-        x = xmin + width / 2
-        y = ymin + height / 2
+        x = xmin + width * 0.5
+        y = ymin + height * 0.5
         if not self._split:
             return np.concatenate((x, y, width, height), axis=self._axis)
         else:
@@ -71,8 +71,8 @@ class BBoxCornerToCenter(gluon.HybridBlock):
         # this is different that detectron.
         width = xmax - xmin
         height = ymax - ymin
-        x = xmin + width / 2
-        y = ymin + height / 2
+        x = xmin + width * 0.5
+        y = ymin + height * 0.5
         if not self._split:
             return F.concat(x, y, width, height, dim=self._axis)
         else:
@@ -104,8 +104,8 @@ class BBoxCenterToCorner(gluon.HybridBlock):
     def hybrid_forward(self, F, x):
         """Hybrid forward"""
         x, y, w, h = F.split(x, axis=self._axis, num_outputs=4)
-        hw = w / 2
-        hh = h / 2
+        hw = w * 0.5
+        hh = h * 0.5
         xmin = x - hw
         ymin = y - hh
         xmax = x + hw

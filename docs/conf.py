@@ -256,7 +256,7 @@ texinfo_documents = [
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
-    'mxnet':('http://mxnet.incubator.apache.org/versions/master/', None),
+    'mxnet':('https://mxnet.apache.org/api/python/docs/', None),
     'python':('https://docs.python.org/', None),
     'numpy': ('http://docs.scipy.org/doc/numpy/', None),
     'matplotlib': ('http://matplotlib.sourceforge.net/', None)

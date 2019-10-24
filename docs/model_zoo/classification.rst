@@ -10,7 +10,8 @@ Visualization of Inference Throughputs vs. Validation Accuracy of ImageNet pre-t
 .. image:: /_static/plot_help.png
   :width: 100%
 
-.. include:: /_static/classification_throughputs.html
+.. raw:: html
+   :file: ../_static/classification_throughputs.html
 
 How To Use Pretrained Models
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -322,6 +323,8 @@ Others
    +-------------------------+--------+--------+----------+------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
    | InceptionV3 [8]_        | 78.77  | 94.39  | a5050dbc | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/inceptionv3-mixup.sh>`_ | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/inceptionv3-mixup.log>`_    |
    +-------------------------+--------+--------+----------+------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
+   | GoogLeNet [16]_         | 72.87  | 91.17  | c7c89366 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/googlenet-mixup.sh>`_   | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/googlenet-mixup.log>`_      |
+   +-------------------------+--------+--------+----------+------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
    | Xception [8]_           | 79.56  | 94.77  | 37c1c90b | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/train_xception.sh>`_    |  `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/xception.log>`_            |
    +-------------------------+--------+--------+----------+------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
    | :tag:`InceptionV3` [8]_ | 78.41  | 94.13  | e132adf2 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/inceptionv3.sh>`_       | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/inceptionv3.log>`_          |
@@ -414,3 +417,6 @@ The following table lists pre-trained models trained on CIFAR10.
 .. [15] Howard, Andrew, Mark Sandler, Grace Chu, Liang-Chieh Chen, Bo Chen, Mingxing Tan, Weijun Wang et al. \
        "Searching for mobilenetv3." \
        arXiv preprint arXiv:1905.02244 (2019).
+.. [16] Christian Szegedy, Wei Liu, Yangqing Jia, Pierre Sermanet, Scott Reed, Dragomir Anguelov, Dumitru Erhan, Vincent Vanhoucke, Andrew Rabinovich \
+        "Going Deeper with Convolutions" \
+        arXiv preprint arXiv:1409.4842 (2014).

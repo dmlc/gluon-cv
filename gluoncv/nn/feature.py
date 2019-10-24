@@ -210,7 +210,7 @@ class FPNFeatureExpander(SymbolBlock):
         y = outputs[-1]
         base_features = outputs[::-1]
         num_stages = len(num_filters) + 1  # usually 5
-        weight_init = mx.init.Xavier(rnd_type='gaussian', factor_type='out', magnitude=2.)
+        weight_init = mx.init.Xavier(rnd_type='uniform', factor_type='in', magnitude=1.)
         tmp_outputs = []
         # num_filter is 256 in ori paper
         for i, (bf, f) in enumerate(zip(base_features, num_filters)):
@@ -256,7 +256,7 @@ class FPNFeatureExpander(SymbolBlock):
                     # method 1 : mx.sym.Crop
                     # y = mx.sym.Crop(*[y, bf], name="P{}_clip".format(num_stages-i))
                     # method 2 : mx.sym.slice_like
-                    y = mx.sym.slice_like(y, bf * 0, axes=(2, 3),
+                    y = mx.sym.slice_like(y, bf, axes=(2, 3),
                                           name="P{}_clip".format(num_stages - i))
                     y = mx.sym.ElementWiseSum(bf, y, name="P{}_sum".format(num_stages - i))
             # Reduce the aliasing effect of upsampling described in ori paper

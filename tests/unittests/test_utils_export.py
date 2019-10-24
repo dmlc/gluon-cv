@@ -8,6 +8,7 @@ from common import try_gpu
 @try_gpu(0)
 def test_export_model_zoo():
     for model in pretrained_model_list():
+        if 'i3d' in model: continue    # 3D model do not support it now, skip. Data shape is 5D.
         print('exporting:', model)
         kwargs = {'data_shape':(480, 480, 3)} if 'deeplab' in model or 'psp' in model else {}
         if '_gn' in model:

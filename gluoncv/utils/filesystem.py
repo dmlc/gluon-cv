@@ -52,6 +52,18 @@ def try_import_cv2():
         or `pip install opencv-python --user` (note that this is unofficial PYPI package)."
     return try_import('cv2', msg)
 
+def try_import_decord():
+    """Try import decord at runtime.
+
+    Returns
+    -------
+    Decord module if found. Raise ImportError otherwise
+
+    """
+    msg = "Decord is required, you can install by `pip install decord --user` \
+        (note that this is unofficial PYPI package)."
+    return try_import('decord', msg)
+
 def try_import_mmcv():
     """Try import mmcv at runtime.
 

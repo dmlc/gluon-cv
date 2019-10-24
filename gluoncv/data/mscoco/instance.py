@@ -1,9 +1,13 @@
 """MS COCO object detection dataset."""
 from __future__ import absolute_import
 from __future__ import division
+
 import os
-import numpy as np
+
 import mxnet as mx
+import numpy as np
+from PIL import Image
+
 from .utils import try_import_pycocotools
 from ..base import VisionDataset
 
@@ -64,7 +68,7 @@ class COCOInstance(VisionDataset):
         self.json_id_to_contiguous = None
         self.contiguous_id_to_json = None
         self._coco = []
-        self._items, self._labels, self._segms = self._load_jsons()
+        self._items, self._labels, self._segms, self._im_aspect_ratios = self._load_jsons()
 
     def __str__(self):
         detail = ','.join([str(s) for s in self._splits])
@@ -85,6 +89,18 @@ class COCOInstance(VisionDataset):
         """Category names."""
         return type(self).CLASSES
 
+    def get_im_aspect_ratio(self):
+        """Return the aspect ratio of each image in the order of the raw data."""
+        if self._im_aspect_ratios is not None:
+            return self._im_aspect_ratios
+        self._im_aspect_ratios = [None] * len(self._items)
+        for i, img_path in enumerate(self._items):
+            with Image.open(img_path) as im:
+                w, h = im.size
+                self._im_aspect_ratios[i] = 1.0 * w / h
+
+        return self._im_aspect_ratios
+
     def __len__(self):
         return len(self._items)
 
@@ -102,6 +118,7 @@ class COCOInstance(VisionDataset):
         items = []
         labels = []
         segms = []
+        im_aspect_ratios = []
         # lazy import pycocotools
         try_import_pycocotools()
         from pycocotools.coco import COCO
@@ -133,10 +150,11 @@ class COCOInstance(VisionDataset):
                 # skip images without objects
                 if self._skip_empty and label is None:
                     continue
+                im_aspect_ratios.append(float(entry['width']) / entry['height'])
                 items.append(abs_path)
                 labels.append(label)
                 segms.append(segm)
-        return items, labels, segms
+        return items, labels, segms, im_aspect_ratios
 
     def _check_load_bbox(self, coco, entry):
         """Check and load ground-truth labels"""

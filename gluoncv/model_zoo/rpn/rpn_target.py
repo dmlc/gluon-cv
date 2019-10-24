@@ -15,7 +15,7 @@ class RPNTargetSampler(object):
     Parameters
     ----------
     num_sample : int
-        Number of samples for RCNN targets.
+        Number of samples for RPN targets.
     pos_iou_thresh : float
         Proposal whose IOU larger than ``pos_iou_thresh`` is regarded as positive samples.
     neg_iou_thresh : float
@@ -160,6 +160,4 @@ class RPNTargetGenerator(gluon.Block):
             box_target, box_mask = self._box_encoder(
                 np.expand_dims(samples, axis=0), np.expand_dims(matches, axis=0),
                 np.expand_dims(anchor.asnumpy(), axis=0), np.expand_dims(bbox.asnumpy(), axis=0))
-        return mx.nd.array(cls_target, ctx=bbox.context), \
-               mx.nd.array(box_target[0], ctx=bbox.context), \
-               mx.nd.array(box_mask[0], ctx=bbox.context)
+        return cls_target, box_target[0], box_mask[0]

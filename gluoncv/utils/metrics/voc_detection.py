@@ -106,7 +106,8 @@ class VOCMApMetric(mx.metric.EvalMetric):
             gt_difficults = [None for _ in as_numpy(gt_labels)]
 
         if isinstance(gt_labels, list):
-            if len(gt_difficults) * gt_difficults[0].shape[0] != \
+            gt_diff_shape = gt_difficults[0].shape[0] if hasattr(gt_difficults[0], 'shape') else 0
+            if len(gt_difficults) * gt_diff_shape != \
                     len(gt_labels) * gt_labels[0].shape[0]:
                 gt_difficults = [None] * len(gt_labels) * gt_labels[0].shape[0]
 

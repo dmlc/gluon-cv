@@ -3,6 +3,14 @@
 Segmentation
 ============
 
+Visualization of Inference Throughputs vs. Validation mIoU of COCO pre-trained models is illustrated in the following graph. Throughputs are measured with single V100 GPU and batch size 16.
+
+.. image:: /_static/plot_help.png
+  :width: 100%
+
+.. raw:: html
+   :file: ../_static/semantic_segmentation_throughputs.html
+
 .. hint::
 
   The model names contain the training information. For instance, ``fcn_resnet50_voc``:
@@ -78,13 +86,22 @@ Pascal VOC Dataset
 +-----------------------+-----------------+-----------+-----------+------------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
 | deeplab_resnet152_voc | DeepLabV3 [4]_  | N/A       | 86.7_     | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/deeplab_resnet152_voc.sh>`_  | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/deeplab_resnet152_voc.log>`_ |
 +-----------------------+-----------------+-----------+-----------+------------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
-| psp_resnet101_citys   | PSP [3]_        | N/A       | 77.1      | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/psp_resnet101_city.sh>`_     | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/psp_resnet101_city.log>`_    |
-+-----------------------+-----------------+-----------+-----------+------------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
 
 .. _83.6:  http://host.robots.ox.ac.uk:8080/anonymous/YB1AN5.html
 .. _85.1:  http://host.robots.ox.ac.uk:8080/anonymous/9RTTZC.html
 .. _86.2:  http://host.robots.ox.ac.uk:8080/anonymous/ZPN6II.html
 .. _86.7:  http://host.robots.ox.ac.uk:8080/anonymous/XZEXL2.html
+
+Cityscapes Dataset
+------------------
+
++-------------------------------------+-----------------+-----------+-----------+---------------------------------------------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------+
+| Name                                | Method          | pixAcc    | mIoU      | Command                                                                                                                                     | log                                                                                                                                |
++=====================================+=================+===========+===========+=============================================================================================================================================+====================================================================================================================================+
+| psp_resnet101_citys                 | PSP [3]_        | N/A       | 77.1      | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/psp_resnet101_city.sh>`_                    | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/psp_resnet101_city.log>`_                   |
++-------------------------------------+-----------------+-----------+-----------+---------------------------------------------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------+
+| deeplab_v3b_plus_wideresnet_citys   | VPLR [5]_       | N/A       | 83.5      | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/deeplab_v3b_plus_wideresnet_citys.sh>`_     | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/deeplab_v3b_plus_wideresnet_citys.log>`_    |
++-------------------------------------+-----------------+-----------+-----------+---------------------------------------------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------+
 
 
 Instance Segmentation
@@ -125,12 +142,14 @@ MS COCO
 +------------------------------------+---------------------------+--------------------------+------------------------------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------+
 
 .. [1] He, Kaming, Georgia Gkioxari, Piotr Dollár and Ross Girshick. \
-        "Mask R-CNN." \
-        In IEEE International Conference on Computer Vision (ICCV), 2017.
+       "Mask R-CNN." \
+       In IEEE International Conference on Computer Vision (ICCV), 2017.
 .. [2] Long, Jonathan, Evan Shelhamer, and Trevor Darrell. \
        "Fully convolutional networks for semantic segmentation." \
        Proceedings of the IEEE conference on computer vision and pattern recognition. 2015.
 .. [3] Zhao, Hengshuang, Jianping Shi, Xiaojuan Qi, Xiaogang Wang, and Jiaya Jia. \
-       "Pyramid scene parsing network." *CVPR*, 2017
+       "Pyramid scene parsing network." *CVPR*, 2017.
 .. [4] Chen, Liang-Chieh, et al. "Rethinking atrous convolution for semantic image segmentation." \
        arXiv preprint arXiv:1706.05587 (2017).
+.. [5] Zhu, Yi, et al. "Improving Semantic Segmentation via Video Propagation and Label Relaxation." \
+       CVPR 2019.

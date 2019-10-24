@@ -174,6 +174,24 @@ Pose Estimation
 
         Estimate human pose in real-world images with pre-trained Simple Pose models
 
+    .. card::
+        :title: Pre-trained AlphaPose Models
+        :link: ../build/examples_pose/demo_alpha_pose.html
+
+        Estimate human pose in real-world images with pre-trained AlphaPose models
+
+    .. card::
+        :title: Estimate pose from your webcam
+        :link: ../build/examples_pose/cam_demo.html
+
+        Estimate human pose from your webcam video stream
+
+    .. card::
+        :title: Dive deep into Training a Simple Pose Model on COCO Keypoints
+        :link: ../build/examples_pose/dive_deep_simple_pose.html
+
+        Train a pose estimation model on the COCO dataset
+
 Action Recognition
 ---------------------
 
@@ -227,6 +245,10 @@ Dataset Preparation
     .. card::
         :title: Prepare UCF101 Dataset
         :link: ../build/examples_datasets/ucf101.html
+
+    .. card::
+        :title: Prepare Kinetics400 Dataset
+        :link: ../build/examples_datasets/kinetics400.html
 
 
 Deployment

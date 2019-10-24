@@ -10,6 +10,7 @@ from mxnet.gluon.data.vision import transforms
 from gluoncv.data import mscoco
 from gluoncv.model_zoo import get_model
 from gluoncv.utils import makedirs
+from gluoncv.nn.block import DSNT
 from gluoncv.data.transforms.pose import transform_preds, get_final_preds, flip_heatmap
 from gluoncv.data.transforms.presets.simple_pose import SimplePoseDefaultTrainTransform, SimplePoseDefaultValTransform
 from gluoncv.utils.metrics.coco_keypoints import COCOKeyPointsMetric
@@ -34,6 +35,8 @@ parser.add_argument('--params-file', type=str,
                     help='local parameters to load.')
 parser.add_argument('--flip-test', action='store_true',
                     help='Whether to flip test input to ensemble results.')
+parser.add_argument('--dsnt', action='store_true',
+                    help='Whether to use dsnt to approximate coordinates.')
 parser.add_argument('--mean', type=str, default='0.485,0.456,0.406',
                     help='mean vector for normalization')
 parser.add_argument('--std', type=str, default='0.229,0.224,0.225',
@@ -91,6 +94,12 @@ if not use_pretrained:
     net.load_parameters(opt.params_file, ctx=context)
 net.hybridize()
 
+if opt.dsnt:
+    heatmap_size = [int(i/4) for i in input_size]
+    net_dsnt = DSNT(size=heatmap_size[::-1])
+    net_dsnt.initialize(ctx=context)
+    net_dsnt.hybridize()
+
 def validate(val_data, val_dataset, net, ctx):
     if isinstance(ctx, mx.Context):
         ctx = [ctx]
@@ -108,12 +117,19 @@ def validate(val_data, val_dataset, net, ctx):
             outputs_flipback = [flip_heatmap(o, val_dataset.joint_pairs, shift=True) for o in outputs_flip]
             outputs = [(o + o_flip)/2 for o, o_flip in zip(outputs, outputs_flipback)]
 
+        if opt.dsnt:
+            outputs = [net_dsnt(X)[0] for X in outputs]
+
         if len(outputs) > 1:
             outputs_stack = nd.concat(*[o.as_in_context(mx.cpu()) for o in outputs], dim=0)
         else:
             outputs_stack = outputs[0].as_in_context(mx.cpu())
 
-        preds, maxvals = get_final_preds(outputs_stack, center.asnumpy(), scale.asnumpy())
+        if opt.dsnt:
+            preds = (outputs_stack - 0.5) * scale.expand_dims(axis=1) + center.expand_dims(axis=1)
+            maxvals = nd.ones(preds.shape[0:2]+(1, ))
+        else:
+            preds, maxvals = get_final_preds(outputs_stack, center.asnumpy(), scale.asnumpy())
         val_metric.update(preds, maxvals, score, imgid)
 
     res = val_metric.get()

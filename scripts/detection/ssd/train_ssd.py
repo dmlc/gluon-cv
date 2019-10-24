@@ -24,7 +24,10 @@ from gluoncv.utils.metrics.accuracy import Accuracy
 
 from mxnet.contrib import amp
 
-import horovod.mxnet as hvd
+try:
+    import horovod.mxnet as hvd
+except ImportError:
+    hvd = None
 
 try:
     from nvidia.dali.plugin.mxnet import DALIGenericIterator
@@ -90,6 +93,8 @@ def parse_args():
                         '--gpus is ignored when using --horovod.')
 
     args = parser.parse_args()
+    if args.horovod:
+        assert hvd, "You are trying to use horovod support but it's not installed"
     return args
 
 def get_dataset(dataset, args):
@@ -142,10 +147,10 @@ def get_dali_dataset(dataset_name, devices, args):
                                         'instances_train2017.json')
         if args.horovod:
             train_dataset = [gdata.COCODetectionDALI(num_shards=hvd.size(), shard_id=hvd.rank(), file_root=coco_root,
-                                                     annotations_file=coco_annotations)]
+                                                     annotations_file=coco_annotations, device_id=hvd.local_rank())]
         else:
             train_dataset = [gdata.COCODetectionDALI(num_shards= len(devices), shard_id=i, file_root=coco_root,
-                                                     annotations_file=coco_annotations) for i, _ in enumerate(devices)]
+                                                     annotations_file=coco_annotations, device_id=i) for i, _ in enumerate(devices)]
 
         # validation
         if (not args.horovod or hvd.rank() == 0):

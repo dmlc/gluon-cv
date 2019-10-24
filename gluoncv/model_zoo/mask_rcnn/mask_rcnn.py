@@ -194,14 +194,14 @@ class MaskRCNN(FasterRCNN):
             rcnn_max_dets = min(rpn_test_pre_nms, rpn_test_post_nms)
         self._rcnn_max_dets = rcnn_max_dets
         with self.name_scope():
-            self.mask = Mask(self._max_batch, classes, mask_channels, num_fcn_convs=num_fcn_convs,
+            self.mask = Mask(self._batch_size, classes, mask_channels, num_fcn_convs=num_fcn_convs,
                              norm_layer=norm_layer, norm_kwargs=norm_kwargs)
             roi_size = (self._roi_size[0] * target_roi_scale, self._roi_size[1] * target_roi_scale)
             self._target_roi_size = roi_size
             self.mask_target = MaskTargetGenerator(
-                self._max_batch, self._num_sample, self.num_class, self._target_roi_size)
+                self._batch_size, self._num_sample, self.num_class, self._target_roi_size)
 
-    def hybrid_forward(self, F, x, gt_box=None):
+    def hybrid_forward(self, F, x, gt_box=None, gt_label=None):
         """Forward Mask RCNN network.
 
         The behavior during training and inference is different.
@@ -212,6 +212,8 @@ class MaskRCNN(FasterRCNN):
             The network input tensor.
         gt_box : type, only required during training
             The ground-truth bbox tensor with shape (1, N, 4).
+        gt_label : type, only required during training
+            The ground-truth label tensor with shape (B, 1, 4).
 
         Returns
         -------
@@ -221,13 +223,20 @@ class MaskRCNN(FasterRCNN):
 
         """
         if autograd.is_training():
-            cls_pred, box_pred, rpn_box, samples, matches, \
-            raw_rpn_score, raw_rpn_box, anchors, top_feat = \
-                super(MaskRCNN, self).hybrid_forward(F, x, gt_box)
+            cls_pred, box_pred, rpn_box, samples, matches, raw_rpn_score, raw_rpn_box, anchors, \
+            cls_targets, box_targets, box_masks, top_feat, indices = \
+                super(MaskRCNN, self).hybrid_forward(F, x, gt_box, gt_label)
+            top_feat = F.reshape(top_feat.expand_dims(0), (self._batch_size, -1, 0, 0, 0))
+            top_feat = F.concat(
+                *[F.take(F.slice_axis(top_feat, axis=0, begin=i, end=i + 1).squeeze(),
+                         F.slice_axis(indices, axis=0, begin=i, end=i + 1).squeeze())
+                  for i in range(self._batch_size)], dim=0)
             mask_pred = self.mask(top_feat)
-            return cls_pred, box_pred, mask_pred, rpn_box, samples, matches, \
-                   raw_rpn_score, raw_rpn_box, anchors
+
+            return cls_pred, box_pred, mask_pred, rpn_box, samples, matches, raw_rpn_score, \
+                   raw_rpn_box, anchors, cls_targets, box_targets, box_masks, indices
         else:
+            batch_size = 1
             ids, scores, boxes, feat = \
                 super(MaskRCNN, self).hybrid_forward(F, x)
 
@@ -238,12 +247,12 @@ class MaskRCNN(FasterRCNN):
 
             # pick from (B, N * (C - 1), X) to (B * topk, X) -> (B, topk, X)
             # roi_batch_id = F.arange(0, self._max_batch, repeat=num_rois)
-            roi_batch_id = F.arange(0, self._max_batch)
+            roi_batch_id = F.arange(0, batch_size)
             roi_batch_id = F.repeat(roi_batch_id, num_rois)
             indices = F.stack(roi_batch_id, topk.reshape((-1,)), axis=0)
-            ids = F.gather_nd(ids, indices).reshape((-4, self._max_batch, num_rois, 1))
-            scores = F.gather_nd(scores, indices).reshape((-4, self._max_batch, num_rois, 1))
-            boxes = F.gather_nd(boxes, indices).reshape((-4, self._max_batch, num_rois, 4))
+            ids = F.gather_nd(ids, indices).reshape((-4, batch_size, num_rois, 1))
+            scores = F.gather_nd(scores, indices).reshape((-4, batch_size, num_rois, 1))
+            boxes = F.gather_nd(boxes, indices).reshape((-4, batch_size, num_rois, 4))
 
             # create batch id and reshape for roi pooling
             padded_rois = F.concat(roi_batch_id.reshape((-1, 1)), boxes.reshape((-3, 0)), dim=-1)
@@ -273,10 +282,10 @@ class MaskRCNN(FasterRCNN):
             rcnn_mask = self.mask(top_feat)
             # index the B dimension (B * N,)
             # batch_ids = F.arange(0, self._max_batch, repeat=num_rois)
-            batch_ids = F.arange(0, self._max_batch)
+            batch_ids = F.arange(0, batch_size)
             batch_ids = F.repeat(batch_ids, num_rois)
             # index the N dimension (B * N,)
-            roi_ids = F.tile(F.arange(0, num_rois), reps=self._max_batch)
+            roi_ids = F.tile(F.arange(0, num_rois), reps=batch_size)
             # index the C dimension (B * N,)
             class_ids = ids.reshape((-1,))
             # clip to 0 to max class
@@ -285,7 +294,7 @@ class MaskRCNN(FasterRCNN):
             indices = F.stack(batch_ids, roi_ids, class_ids, axis=0)
             masks = F.gather_nd(rcnn_mask, indices)
             # (B * N, PS*2, PS*2) -> (B, N, PS*2, PS*2)
-            masks = masks.reshape((-4, self._max_batch, num_rois, 0, 0))
+            masks = masks.reshape((-4, batch_size, num_rois, 0, 0))
             # output prob
             masks = F.sigmoid(masks)
 
@@ -322,7 +331,7 @@ class MaskRCNN(FasterRCNN):
         super(MaskRCNN, self).reset_class(classes=classes, reuse_weights=reuse_weights)
         self.mask.reset_class(classes=classes, reuse_weights=reuse_weights)
         self.mask_target = MaskTargetGenerator(
-            self._max_batch, self._num_sample, self.num_class, self._target_roi_size)
+            self._batch_size, self._num_sample, self.num_class, self._target_roi_size)
 
 
 def get_mask_rcnn(name, dataset, pretrained=False, ctx=mx.cpu(),
@@ -408,7 +417,7 @@ def mask_rcnn_resnet50_v1b_coco(pretrained=False, pretrained_base=True, **kwargs
         rpn_channel=1024, base_size=16, scales=(2, 4, 8, 16, 32),
         ratios=(0.5, 1, 2), alloc_size=(128, 128), rpn_nms_thresh=0.7,
         rpn_train_pre_nms=12000, rpn_train_post_nms=2000,
-        rpn_test_pre_nms=6000, rpn_test_post_nms=1000, rpn_min_size=0,
+        rpn_test_pre_nms=6000, rpn_test_post_nms=1000, rpn_min_size=1,
         num_sample=128, pos_iou_thresh=0.5, pos_ratio=0.25,
         **kwargs)
 
@@ -463,7 +472,7 @@ def mask_rcnn_fpn_resnet50_v1b_coco(pretrained=False, pretrained_base=True, **kw
         strides=(4, 8, 16, 32, 64), clip=4.42, rpn_channel=1024, base_size=16,
         scales=(2, 4, 8, 16, 32), ratios=(0.5, 1, 2), alloc_size=(384, 384),
         rpn_nms_thresh=0.7, rpn_train_pre_nms=12000, rpn_train_post_nms=2000,
-        rpn_test_pre_nms=6000, rpn_test_post_nms=1000, rpn_min_size=0,
+        rpn_test_pre_nms=6000, rpn_test_post_nms=1000, rpn_min_size=1,
         num_sample=512, pos_iou_thresh=0.5, pos_ratio=0.25, target_roi_scale=2,
         num_fcn_convs=4, **kwargs)
 
@@ -513,7 +522,7 @@ def mask_rcnn_resnet101_v1d_coco(pretrained=False, pretrained_base=True, **kwarg
         rpn_channel=1024, base_size=16, scales=(2, 4, 8, 16, 32),
         ratios=(0.5, 1, 2), alloc_size=(128, 128), rpn_nms_thresh=0.7,
         rpn_train_pre_nms=12000, rpn_train_post_nms=2000,
-        rpn_test_pre_nms=6000, rpn_test_post_nms=1000, rpn_min_size=0,
+        rpn_test_pre_nms=6000, rpn_test_post_nms=1000, rpn_min_size=1,
         num_sample=128, pos_iou_thresh=0.5, pos_ratio=0.25,
         **kwargs)
 
@@ -568,7 +577,7 @@ def mask_rcnn_fpn_resnet101_v1d_coco(pretrained=False, pretrained_base=True, **k
         strides=(4, 8, 16, 32, 64), clip=4.42, rpn_channel=1024, base_size=16,
         scales=(2, 4, 8, 16, 32), ratios=(0.5, 1, 2), alloc_size=(384, 384),
         rpn_nms_thresh=0.7, rpn_train_pre_nms=12000, rpn_train_post_nms=2000,
-        rpn_test_pre_nms=6000, rpn_test_post_nms=1000, rpn_min_size=0,
+        rpn_test_pre_nms=6000, rpn_test_post_nms=1000, rpn_min_size=1,
         num_sample=512, pos_iou_thresh=0.5, pos_ratio=0.25, target_roi_scale=2,
         num_fcn_convs=4, **kwargs)
 
@@ -627,7 +636,7 @@ def mask_rcnn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, rcnn_max
         ratios=(0.5, 1, 2), alloc_size=(128, 128), rpn_nms_thresh=0.7,
         rpn_train_pre_nms=12000, rpn_train_post_nms=2000,
         rpn_test_pre_nms=rpn_test_pre_nms, rpn_test_post_nms=rpn_test_post_nms,
-        rpn_min_size=0, num_sample=256, pos_iou_thresh=0.5, pos_ratio=0.25,
+        rpn_min_size=1, num_sample=256, pos_iou_thresh=0.5, pos_ratio=0.25,
         **kwargs)
 
 
@@ -689,7 +698,7 @@ def mask_rcnn_fpn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, rcnn
         scales=(2, 4, 8, 16, 32), ratios=(0.5, 1, 2), alloc_size=(384, 384),
         rpn_nms_thresh=0.7, rpn_train_pre_nms=12000, rpn_train_post_nms=2000,
         rpn_test_pre_nms=rpn_test_pre_nms, rpn_test_post_nms=rpn_test_post_nms,
-        rpn_min_size=0, num_sample=512, pos_iou_thresh=0.5, pos_ratio=0.25,
+        rpn_min_size=1, num_sample=512, pos_iou_thresh=0.5, pos_ratio=0.25,
         target_roi_scale=2, num_fcn_convs=2, **kwargs)
 
 
@@ -759,7 +768,7 @@ def mask_rcnn_fpn_bn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, n
         scales=(2, 4, 8, 16, 32), ratios=(0.5, 1, 2), alloc_size=(384, 384),
         rpn_nms_thresh=0.7, rpn_train_pre_nms=12000, rpn_train_post_nms=2000,
         rpn_test_pre_nms=rpn_test_pre_nms, rpn_test_post_nms=rpn_test_post_nms,
-        rpn_min_size=0, num_sample=512, pos_iou_thresh=0.5, pos_ratio=0.25,
+        rpn_min_size=1, num_sample=512, pos_iou_thresh=0.5, pos_ratio=0.25,
         target_roi_scale=2, num_fcn_convs=2, norm_layer=SyncBatchNorm,
         norm_kwargs=gluon_norm_kwargs, **kwargs)
 
@@ -828,6 +837,6 @@ def mask_rcnn_fpn_bn_mobilenet1_0_coco(pretrained=False, pretrained_base=True, n
         roi_size=(14, 14), strides=(4, 8, 16, 32, 64), clip=4.42, rpn_channel=1024, base_size=16,
         scales=(2, 4, 8, 16, 32), ratios=(0.5, 1, 2), alloc_size=(384, 384),
         rpn_nms_thresh=0.7, rpn_train_pre_nms=12000, rpn_train_post_nms=2000,
-        rpn_test_pre_nms=rpn_test_pre_nms, rpn_test_post_nms=rpn_test_post_nms, rpn_min_size=0,
+        rpn_test_pre_nms=rpn_test_pre_nms, rpn_test_post_nms=rpn_test_post_nms, rpn_min_size=1,
         num_sample=512, pos_iou_thresh=0.5, pos_ratio=0.25, target_roi_scale=2, num_fcn_convs=2,
         norm_layer=SyncBatchNorm, norm_kwargs=gluon_norm_kwargs, **kwargs)

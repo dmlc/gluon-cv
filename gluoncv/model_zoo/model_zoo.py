@@ -7,9 +7,11 @@ from .cifarresnet import *
 from .cifarresnext import *
 from .cifarwideresnet import *
 from .deeplabv3 import *
+from .deeplabv3b_plus import *
 from .densenet import *
 from .faster_rcnn import *
 from .fcn import *
+from .googlenet import *
 from .inception import *
 from .mask_rcnn import *
 from .mobilenet import *
@@ -24,6 +26,7 @@ from .resnetv1b import *
 from .resnext import *
 from .senet import *
 from .simple_pose.simple_pose_resnet import *
+from .simple_pose.mobile_pose import *
 from .squeezenet import *
 from .ssd import *
 from .vgg import *
@@ -70,6 +73,7 @@ _models = {
     'densenet201': densenet201,
     'squeezenet1.0': squeezenet1_0,
     'squeezenet1.1': squeezenet1_1,
+    'googlenet': googlenet,
     'inceptionv3': inception_v3,
     'xception': get_xcetption,
     'xception71': get_xcetption_71,
@@ -83,6 +87,12 @@ _models = {
     'mobilenetv2_0.25': mobilenet_v2_0_25,
     'mobilenetv3_large': mobilenet_v3_large,
     'mobilenetv3_small': mobilenet_v3_small,
+    'mobile_pose_resnet18_v1b': mobile_pose_resnet18_v1b,
+    'mobile_pose_resnet50_v1b': mobile_pose_resnet50_v1b,
+    'mobile_pose_mobilenet1.0': mobile_pose_mobilenet1_0,
+    'mobile_pose_mobilenetv2_1.0': mobile_pose_mobilenetv2_1_0,
+    'mobile_pose_mobilenetv3_large': mobile_pose_mobilenetv3_large,
+    'mobile_pose_mobilenetv3_small': mobile_pose_mobilenetv3_small,
     'ssd_300_vgg16_atrous_voc': ssd_300_vgg16_atrous_voc,
     'ssd_300_vgg16_atrous_coco': ssd_300_vgg16_atrous_coco,
     'ssd_300_vgg16_atrous_custom': ssd_300_vgg16_atrous_custom,
@@ -146,6 +156,7 @@ _models = {
     'deeplab_resnet152_voc': get_deeplab_resnet152_voc,
     'deeplab_resnet50_ade': get_deeplab_resnet50_ade,
     'deeplab_resnet101_ade': get_deeplab_resnet101_ade,
+    'deeplab_v3b_plus_wideresnet_citys': get_deeplab_v3b_plus_wideresnet_citys,
     'resnet18_v1b': resnet18_v1b,
     'resnet34_v1b': resnet34_v1b,
     'resnet50_v1b': resnet50_v1b,
@@ -223,8 +234,27 @@ _models = {
     'vgg16_ucf101': vgg16_ucf101,
     'inceptionv3_ucf101': inceptionv3_ucf101,
     'inceptionv3_kinetics400': inceptionv3_kinetics400,
+    'i3d_resnet50_v1_kinetics400': i3d_resnet50_v1_kinetics400,
+    'i3d_resnet101_v1_kinetics400': i3d_resnet101_v1_kinetics400,
+    'i3d_inceptionv1_kinetics400': i3d_inceptionv1_kinetics400,
+    'i3d_inceptionv3_kinetics400': i3d_inceptionv3_kinetics400,
+    'i3d_nl5_resnet50_v1_kinetics400': i3d_nl5_resnet50_v1_kinetics400,
+    'i3d_nl10_resnet50_v1_kinetics400': i3d_nl10_resnet50_v1_kinetics400,
+    'i3d_nl5_resnet101_v1_kinetics400': i3d_nl5_resnet101_v1_kinetics400,
+    'i3d_nl10_resnet101_v1_kinetics400': i3d_nl10_resnet101_v1_kinetics400,
+    'i3d_resnet50_v1_sthsthv2': i3d_resnet50_v1_sthsthv2,
+    'resnet18_v1b_kinetics400': resnet18_v1b_kinetics400,
+    'resnet34_v1b_kinetics400': resnet34_v1b_kinetics400,
+    'resnet50_v1b_kinetics400': resnet50_v1b_kinetics400,
+    'resnet101_v1b_kinetics400': resnet101_v1b_kinetics400,
+    'resnet152_v1b_kinetics400': resnet152_v1b_kinetics400,
+    'resnet50_v1b_sthsthv2': resnet50_v1b_sthsthv2,
     'fcn_resnet101_voc_int8': fcn_resnet101_voc_int8,
-    'fcn_resnet101_coco_int8':fcn_resnet101_coco_int8,
+    'fcn_resnet101_coco_int8': fcn_resnet101_coco_int8,
+    'psp_resnet101_voc_int8': psp_resnet101_voc_int8,
+    'psp_resnet101_coco_int8': psp_resnet101_coco_int8,
+    'deeplab_resnet101_voc_int8': deeplab_resnet101_voc_int8,
+    'deeplab_resnet101_coco_int8': deeplab_resnet101_coco_int8
 }
 
 

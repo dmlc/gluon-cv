@@ -64,7 +64,7 @@ def _calib_model_list(model_list, ctx, x, pretrained=True, **kwargs):
                 net.initialize()
         net.collect_params().reset_ctx(ctx)
         exclude_layers_match = ['flatten']
-        if model.find('ssd') != -1:
+        if model.find('ssd') != -1 or model.find('psp') != -1 or model.find('deeplab') != -1:
             exclude_layers_match += ['concat']
         random_label = mx.random.uniform(shape=(x.shape[0],1))
         dataset = mx.gluon.data.dataset.ArrayDataset(x, random_label)
@@ -135,7 +135,7 @@ def test_imagenet_models():
               'mobilenetv2_1.0', 'mobilenetv2_0.75', 'mobilenetv2_0.5', 'mobilenetv2_0.25',
               'mobilenetv3_large', 'mobilenetv3_small',
               'densenet121', 'densenet161', 'densenet169', 'densenet201',
-              'darknet53', 'alexnet',
+              'darknet53', 'alexnet', 'googlenet',
               'vgg11', 'vgg11_bn', 'vgg13', 'vgg13_bn',
               'vgg16', 'vgg16_bn', 'vgg19', 'vgg19_bn',
               'residualattentionnet56', 'residualattentionnet92',
@@ -162,7 +162,10 @@ def test_simple_pose_resnet_models():
     ctx = mx.context.current_context()
     models = ['simple_pose_resnet18_v1b',
               'simple_pose_resnet50_v1b', 'simple_pose_resnet101_v1b', 'simple_pose_resnet152_v1b',
-              'simple_pose_resnet50_v1d', 'simple_pose_resnet101_v1d', 'simple_pose_resnet152_v1d']
+              'simple_pose_resnet50_v1d', 'simple_pose_resnet101_v1d', 'simple_pose_resnet152_v1d',
+              'mobile_pose_resnet18_v1b', 'mobile_pose_resnet50_v1b',
+              'mobile_pose_mobilenet1.0', 'mobile_pose_mobilenetv2_1.0',
+              'mobile_pose_mobilenetv3_large', 'mobile_pose_mobilenetv3_small']
 
     # 192x256
     x = mx.random.uniform(shape=(2, 3, 192, 256), ctx=ctx)
@@ -174,6 +177,15 @@ def test_simple_pose_resnet_models():
 
     # 288x384
     x = mx.random.uniform(shape=(2, 3, 288, 384), ctx=ctx)
+    _test_model_list(models, ctx, x)
+
+@try_gpu(0)
+def test_alpha_pose_resnet_models():
+    ctx = mx.context.current_context()
+    models = ['alpha_pose_resnet101_v1b_coco']
+
+    # 256x320
+    x = mx.random.uniform(shape=(2, 3, 256, 320), ctx=ctx)
     _test_model_list(models, ctx, x)
 
 
@@ -206,7 +218,10 @@ def test_ssd_reset_class():
     net.reset_class(["person", "car", "bird"], reuse_weights={0: 14})
     net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
     net.reset_class(["person", "car", "bird"], reuse_weights={0: "person"})
-
+    test_classes = ['bird', 'bicycle', 'bus', 'car', 'cat']
+    test_classes_dict = dict(zip(test_classes, test_classes))
+    net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
+    net.reset_class(test_classes, reuse_weights=test_classes_dict)
     net(x)
 
 
@@ -225,12 +240,21 @@ def test_ssd_reset_class_on_gpu():
 
 
 def test_yolo3_reset_class():
+    test_classes = ['bird', 'bicycle', 'bus', 'car', 'cat']
+    test_classes_dict = dict(zip(test_classes, test_classes))
+
     ctx = mx.context.current_context()
-    x = mx.random.uniform(shape=(1, 3, 512, 544), ctx=ctx)  # allow non-squre and larger inputs
+    x = mx.random.uniform(shape=(1, 3, 512, 544), ctx=ctx)  # allow non-square and larger inputs
     model_name = 'yolo3_darknet53_voc'
     net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
     net.hybridize()
     net.reset_class(["bus", "car", "bird"], reuse_weights=["bus", "car", "bird"])
+    net(x)
+    mx.nd.waitall()
+
+    net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
+    net.hybridize()
+    net.reset_class(test_classes, reuse_weights=test_classes_dict)
     net(x)
     mx.nd.waitall()
 
@@ -243,6 +267,12 @@ def test_yolo3_reset_class():
     net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
     net.hybridize()
     net.reset_class(["bus", "car", "bird"])
+    net(x)
+    mx.nd.waitall()
+
+    net = gcv.model_zoo.get_model(model_name, pretrained=True, ctx=ctx)
+    net.hybridize()
+    net.reset_class(test_classes, reuse_weights=test_classes_dict)
     net(x)
     mx.nd.waitall()
 
@@ -376,7 +406,8 @@ def test_segmentation_models():
               'fcn_resnet101_voc', 'psp_resnet101_voc', 'deeplab_resnet101_voc',
               'fcn_resnet50_ade', 'psp_resnet50_ade', 'deeplab_resnet50_ade',
               'fcn_resnet101_ade', 'psp_resnet101_ade', 'deeplab_resnet101_ade',
-              'psp_resnet101_citys', 'deeplab_resnet152_voc', 'deeplab_resnet152_coco']
+              'psp_resnet101_citys', 'deeplab_resnet152_voc', 'deeplab_resnet152_coco',
+              'deeplab_v3b_plus_wideresnet_citys']
     _test_model_list(models, ctx, x, pretrained=True, pretrained_base=True)
     _test_model_list(models, ctx, x, pretrained=False, pretrained_base=False)
     _test_model_list(models, ctx, x, pretrained=False, pretrained_base=True)
@@ -405,6 +436,11 @@ def test_segmentation_models_custom_size():
     assert result[0].shape == (1, num_classes, height, width)
 
     net = gcv.model_zoo.DeepLabV3Plus(num_classes, backbone='resnet50', aux=False, ctx=ctx, pretrained_base=True,
+                                  height=height, width=width)
+    result = net.forward(x)
+    assert result[0].shape == (1, num_classes, height, width)
+
+    net = gcv.model_zoo.DeepLabWV3Plus(num_classes, backbone='resnet50', aux=False, ctx=ctx, pretrained_base=True,
                                   height=height, width=width)
     result = net.forward(x)
     assert result[0].shape == (1, num_classes, height, width)
@@ -455,14 +491,18 @@ def test_calib_models():
     x = mx.random.uniform(shape=(1, 3, 512, 544), ctx=ctx)
     _calib_model_list(model_list, ctx, x)
 
-    model_list = ['fcn_resnet101_voc', 'fcn_resnet101_coco']
+    model_list = ['fcn_resnet101_voc', 'fcn_resnet101_coco',
+                  'psp_resnet101_voc', 'psp_resnet101_coco',
+                  'deeplab_resnet101_voc', 'deeplab_resnet101_coco']
     ctx = mx.context.current_context()
-    x = mx.random.uniform(shape=(1, 3, 520, 480), ctx=ctx)
+    x = mx.random.uniform(shape=(1, 3, 480, 480), ctx=ctx)
     _calib_model_list(model_list, ctx, x)
 
 @with_cpu(0)
-def test_quantized_fcn_models():
-    model_list = ['fcn_resnet101_voc_int8', 'fcn_resnet101_coco_int8']
+def test_quantized_segmentation_models():
+    model_list = ['fcn_resnet101_voc_int8', 'fcn_resnet101_coco_int8',
+                  'psp_resnet101_voc_int8', 'psp_resnet101_coco_int8',
+                  'deeplab_resnet101_voc_int8', 'deeplab_resnet101_coco_int8']
     ctx = mx.context.current_context()
     x = mx.random.uniform(shape=(1, 3, 480, 480), ctx=ctx)
     _test_model_list(model_list, ctx, x)
