@@ -3,7 +3,6 @@ import mxnet as mx
 from mxnet import init
 from mxnet.gluon import nn
 from mxnet.gluon.nn import HybridBlock
-from ...nn.block import Consensus
 from ..resnetv1b import resnet18_v1b, resnet34_v1b, resnet50_v1b, resnet101_v1b, resnet152_v1b
 
 __all__ = ['resnet18_v1b_sthsthv2', 'resnet34_v1b_sthsthv2', 'resnet50_v1b_sthsthv2',

@@ -49,7 +49,6 @@ from gluoncv.data.transforms import video
 from gluoncv.data import ucf101
 from gluoncv.model_zoo import get_model
 from gluoncv.utils import makedirs, LRSequential, LRScheduler, split_and_load, TrainingHistory
-from gluoncv.data.dataloader import tsn_mp_batchify_fn
 
 
 ################################################################
@@ -64,7 +63,7 @@ num_gpus = 1
 ctx = [mx.gpu(i) for i in range(num_gpus)]
 
 # Get the model vgg16_ucf101 with temporal segment network, with 101 output classes, without pre-trained weights
-net = get_model(name='vgg16_ucf101', nclass=101, tsn=True, num_segments=3)
+net = get_model(name='vgg16_ucf101', nclass=101, num_segments=3)
 net.collect_params().reset_ctx(ctx)
 print(net)
 
@@ -107,15 +106,8 @@ batch_size = per_device_batch_size * num_gpus
 # The subset has 101 training samples, one sample per class.
 train_dataset = ucf101.classification.UCF101(train=True, num_segments=3, transform=transform_train)
 print('Load %d training samples.' % len(train_dataset))
-
-##################################################################
-# When temporal segment option is turned on, the training samples from ``train_dataset``
-# have a dimention of ``num_segments x 3 x 224 x 224``.
-# Hence, we can't use default batchify function because we already have a batch dimention.
-# We modify the default batchify function to ``tsn_mp_batchify_fn``, basically changing ``nd.stack`` to ``nd.concat``.
-
 train_data = gluon.data.DataLoader(train_dataset, batch_size=batch_size,
-                                   shuffle=True, num_workers=num_workers, batchify_fn=tsn_mp_batchify_fn)
+                                   shuffle=True, num_workers=num_workers)
 
 ################################################################
 # Optimizer, Loss and Metric
@@ -176,12 +168,16 @@ for epoch in range(epochs):
     # Loop through each batch of training data
     for i, batch in enumerate(train_data):
         # Extract data and label
-        data = split_and_load(batch[0], ctx_list=ctx, batch_axis=0, multiplier=3)
+        data = split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
         label = split_and_load(batch[1], ctx_list=ctx, batch_axis=0)
 
         # AutoGrad
         with ag.record():
-            output = [net(X) for X in data]
+            output = []
+            for _, X in enumerate(data):
+                X = X.reshape((-1,) + X.shape[2:])
+                pred = net(X)
+                output.append(pred)
             loss = [loss_fn(yhat, y) for yhat, y in zip(output, label)]
 
         # Backpropagation
@@ -192,7 +188,7 @@ for epoch in range(epochs):
         trainer.step(batch_size)
 
         # Update metrics
-        train_loss += sum([l.sum().asscalar() for l in loss])
+        train_loss += sum([l.mean().asscalar() for l in loss])
         train_metric.update(label, output)
 
     name, acc = train_metric.get()
@@ -200,7 +196,7 @@ for epoch in range(epochs):
     # Update history and print metrics
     train_history.update([acc])
     print('[Epoch %d] train=%f loss=%f time: %f' %
-        (epoch, acc, train_loss, time.time()-tic))
+        (epoch, acc, train_loss / (i+1), time.time()-tic))
 
 # We can plot the metric scores with:
 train_history.plot()
