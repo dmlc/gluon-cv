@@ -63,12 +63,13 @@ Below CPU performance is collected with dummy input from Intel(R) VNNI enabled A
 +-----------------------------+----------------+------------+---------------------+-----------------+-----------------+
 | simple_pose_resnet101_v1d   | COCO Keypoint  | 128        | 5.97                | 73.0            | 72.7            |
 +-----------------------------+----------------+------------+---------------------+-----------------+-----------------+
-| vgg16_ucf101                | UCF101         | 64         | 4.46                | 77.40           | 77.19           |
+| vgg16_ucf101                | UCF101         | 64         | 4.46                | 81.86           | 81.41           |
 +-----------------------------+----------------+------------+---------------------+-----------------+-----------------+
-| inceptionv3_ucf101          | UCF101         | 64         | 5.16                | 82.87           | 82.77           |
+| inceptionv3_ucf101          | UCF101         | 64         | 5.16                | 86.92           | 86.55           |
 +-----------------------------+----------------+------------+---------------------+-----------------+-----------------+
 
 Quantized SSD models are evaluated with ``nms_thresh=0.45``, ``nms_topk=200``. For segmentation models, the accuracy metric is pixAcc, and for pose-estimation models, the accuracy metric is OKS AP w/o flip.
+Quantized video action recognition 2D and 3D models (with tsn) are calibrated with `num-segments=3` and `num-segments=1` separately.
 
 Demo usage for SSD
 ------------------

@@ -241,7 +241,7 @@ def calibration(net, val_data, opt, ctx, logger):
     if isinstance(ctx, list):
         ctx = ctx[0]
     exclude_sym_layer = []
-    exclude_match_layer = []
+    exclude_match_layer = ['concat']
     if opt.num_gpus > 0:
         raise ValueError('currently only supports CPU with MKL-DNN backend')
     net = quantize_net(net, calib_data=val_data, quantized_dtype=opt.quantized_dtype, calib_mode=opt.calib_mode, 
@@ -284,29 +284,6 @@ def main(logger):
         model_name += '_int8'
         use_pretrained = True
 
-    if not opt.deploy:
-        net = get_model(name=model_name, nclass=classes, pretrained=use_pretrained, num_segments=opt.num_segments)
-        net.cast(opt.dtype)
-        net.collect_params().reset_ctx(context)
-        if opt.mode == 'hybrid' or opt.quantized:
-            net.hybridize(static_alloc=True, static_shape=True)
-        if opt.resume_params is not '' and not use_pretrained:
-            net.load_parameters(opt.resume_params, ctx=context)
-            print('Pre-trained model %s is successfully loaded.' % (opt.resume_params))
-        else:
-            print('Pre-trained model is successfully loaded from the model zoo.')
-    else:
-        model_name = 'deploy'
-        net = mx.gluon.SymbolBlock.imports('{}-symbol.json'.format(opt.model_prefix),
-                ['data'], '{}-0000.params'.format(opt.model_prefix))
-        net.hybridize(static_alloc=True, static_shape=True)
-
-    print("Successfully loaded model {}".format(model_name))
-    # dummy data for benchmarking performance
-    if opt.benchmark:
-        benchmarking(opt, net, context)
-        sys.exit()
-
     # get data
     image_norm_mean = [0.485, 0.456, 0.406]
     image_norm_std = [0.229, 0.224, 0.225]
@@ -328,21 +305,33 @@ def main(logger):
         transform_test = video.VideoGroupValTransform(size=opt.input_size, mean=image_norm_mean, std=image_norm_std)
         opt.num_crop = 1
 
-    # get model
-    if opt.use_pretrained and len(opt.hashtag) > 0:
-        opt.use_pretrained = opt.hashtag
-    classes = opt.num_classes
-    model_name = opt.model
-    net = get_model(name=model_name, nclass=classes, pretrained=opt.use_pretrained, num_segments=opt.num_segments, num_crop=opt.num_crop)
-    net.cast(opt.dtype)
-    net.collect_params().reset_ctx(context)
-    if opt.mode == 'hybrid':
-        net.hybridize(static_alloc=True, static_shape=True)
-    if opt.resume_params is not '' and not opt.use_pretrained:
-        net.load_parameters(opt.resume_params, ctx=context)
-        print('Pre-trained model %s is successfully loaded.' % (opt.resume_params))
+    if not opt.deploy:
+        # get model
+        if opt.use_pretrained and len(opt.hashtag) > 0:
+            opt.use_pretrained = opt.hashtag
+        classes = opt.num_classes
+        model_name = opt.model
+        net = get_model(name=model_name, nclass=classes, pretrained=opt.use_pretrained, num_segments=opt.num_segments, num_crop=opt.num_crop)
+        net.cast(opt.dtype)
+        net.collect_params().reset_ctx(context)
+        if opt.mode == 'hybrid':
+            net.hybridize(static_alloc=True, static_shape=True)
+        if opt.resume_params is not '' and not opt.use_pretrained:
+            net.load_parameters(opt.resume_params, ctx=context)
+            print('Pre-trained model %s is successfully loaded.' % (opt.resume_params))
+        else:
+            print('Pre-trained model is successfully loaded from the model zoo.')
     else:
-        print('Pre-trained model is successfully loaded from the model zoo.')
+        model_name = 'deploy'
+        net = mx.gluon.SymbolBlock.imports('{}-symbol.json'.format(opt.model_prefix),
+                ['data'], '{}-0000.params'.format(opt.model_prefix))
+        net.hybridize(static_alloc=True, static_shape=True)
+
+    print("Successfully loaded model {}".format(model_name))
+    # dummy data for benchmarking performance
+    if opt.benchmark:
+        benchmarking(opt, net, context)
+        sys.exit()
 
     if opt.dataset == 'ucf101':
         val_dataset = UCF101(setting=opt.val_list, root=opt.data_dir, train=False,

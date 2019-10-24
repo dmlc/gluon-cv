@@ -12,10 +12,10 @@ export OMP_NUM_THREADS=${CPUs}
 export KMP_AFFINITY=granularity=fine,noduplicates,compact,1,0
 
 # dummy data
-python test_recognizer.py --model inceptionv3_ucf101 --use-pretrained --mode hybrid --input-size 299 --new-height 340 --new-width 450 --batch-size 64 --benchmark
+python test_recognizer.py --model inceptionv3_ucf101 --use-pretrained --use-tsn --mode hybrid --input-size 299 --new-height 340 --new-width 450 --num-segments 3 --batch-size 64 --benchmark
 
 # real data
-python test_recognizer.py --model inceptionv3_ucf101 --use-pretrained --mode hybrid --input-size 299 --new-height 340 --new-width 450 --batch-size 64
+python test_recognizer.py --model inceptionv3_ucf101 --use-pretrained --use-tsn --mode hybrid --input-size 299 --new-height 340 --new-width 450 --num-segments 3 --batch-size 64
 ```
 
 ### Calibration
@@ -24,7 +24,7 @@ Naive calibrated model by using 5 batch data (32 images per batch). Quantized mo
 
 ```
 # ucf101 dataset
-python test_recognizer.py --model inceptionv3_ucf101 --new-height 340 --new-width 450 --input-size 299 --use-pretrained --calibration
+python test_recognizer.py --model inceptionv3_ucf101 --new-height 340 --new-width 450 --input-size 299 --num-segments 3 --use-pretrained --use-tsn --calibration
 ```
 
 ### INT8 Inference
@@ -36,13 +36,13 @@ export OMP_NUM_THREADS=${CPUs}
 export KMP_AFFINITY=granularity=fine,noduplicates,compact,1,0
 
 # dummy data
-python test_recognizer.py --model inceptionv3_ucf101 --mode hybrid --input-size 299 --new-height 340 --new-width 450 --batch-size 64 --quantized --benchmark
+python test_recognizer.py --model inceptionv3_ucf101 --mode hybrid --input-size 299 --new-height 340 --new-width 450 --batch-size 64 --num-segments 3 --quantized --benchmark
 
 # real data
-python test_recognizer.py --model inceptionv3_ucf101 --mode hybrid --input-size 299 --new-height 340 --new-width 450 --batch-size 64 --quantized
+python test_recognizer.py --model inceptionv3_ucf101 --mode hybrid --input-size 299 --new-height 340 --new-width 450 --batch-size 64 --num-segments 3 --quantized
 
 # deploy static model
-python test_recognizer.py --model ucf --model-prefix ./model/inceptionv3_ucf101-quantized-naive --input-size 299 --batch-size 64 --deploy --new-height 340 --new-width 450 --benchmark --deploy
+python test_recognizer.py --model ucf --deploy --model-prefix ./model/inceptionv3_ucf101-quantized-naive --input-size 299 --new-height 340 --new-width 450 --batch-size 64 --num-segments 3 --benchmark
 
 ```
 
@@ -57,8 +57,8 @@ Below results are collected based on Intel(R) VNNI enabled C5.12xlarge with 24 p
 
 |model | fp32 latency(ms) | s8 latency(ms) | fp32 Top-1 | s8 Top-1 |
 |-- | -- | -- | -- | -- |
-inceptionv3_ucf101    |13.02  |4.70 |82.87 | 82.77 |
-vgg16_ucf101          |15.68  |4.58 |77.40 | 77.19 |
+inceptionv3_ucf101    |13.02  |4.70 |86.92 | 86.55 |
+vgg16_ucf101          |15.68  |4.58 |81.86 | 81.41 |
 
 ## References
 
