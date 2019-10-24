@@ -236,6 +236,7 @@ def benchmarking(opt, net, ctx):
     speed = size / (time.time() - tic)
     print('With batch size %d , %d batches, throughput is %f imgs/sec' % (bs, num_iterations, speed))
 
+
 def calibration(net, val_data, opt, ctx, logger):
     if isinstance(ctx, list):
         ctx = ctx[0]
