@@ -57,20 +57,21 @@ class ActionRecResNetV1b(HybridBlock):
         self.num_segments = num_segments
         self.num_crop = num_crop
 
-        self.conv1 = pretrained_model.conv1
-        self.bn1 = pretrained_model.bn1
-        self.relu = pretrained_model.relu
-        self.maxpool = pretrained_model.maxpool
-        self.layer1 = pretrained_model.layer1
-        self.layer2 = pretrained_model.layer2
-        self.layer3 = pretrained_model.layer3
-        self.layer4 = pretrained_model.layer4
-        self.avgpool = pretrained_model.avgpool
-        self.flat = pretrained_model.flat
-        self.drop = nn.Dropout(rate=self.dropout_ratio)
-        self.output = nn.Dense(units=nclass, in_units=self.feat_dim,
-                               weight_initializer=init.Normal(sigma=self.init_std))
-        self.output.initialize()
+        with self.name_scope():
+            self.conv1 = pretrained_model.conv1
+            self.bn1 = pretrained_model.bn1
+            self.relu = pretrained_model.relu
+            self.maxpool = pretrained_model.maxpool
+            self.layer1 = pretrained_model.layer1
+            self.layer2 = pretrained_model.layer2
+            self.layer3 = pretrained_model.layer3
+            self.layer4 = pretrained_model.layer4
+            self.avgpool = pretrained_model.avgpool
+            self.flat = pretrained_model.flat
+            self.drop = nn.Dropout(rate=self.dropout_ratio)
+            self.output = nn.Dense(units=nclass, in_units=self.feat_dim,
+                                   weight_initializer=init.Normal(sigma=self.init_std))
+            self.output.initialize()
 
     def hybrid_forward(self, F, x):
         x = self.conv1(x)
