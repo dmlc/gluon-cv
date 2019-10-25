@@ -220,7 +220,7 @@ def main():
     logger.addHandler(streamhandler)
     logger.info(opt)
 
-    sw = SummaryWriter(logdir=opt.save_dir, flush_secs=5)
+    sw = SummaryWriter(logdir=opt.save_dir, flush_secs=5, verbose=False)
 
     if opt.kvstore is not None:
         kv = mx.kvstore.create(opt.kvstore)
@@ -288,7 +288,9 @@ def main():
     def test(ctx, val_data, kvstore=None):
         acc_top1.reset()
         acc_top5.reset()
+        L = gluon.loss.SoftmaxCrossEntropyLoss()
         num_test_iter = len(val_data)
+        val_loss_epoch = 0
         for i, batch in enumerate(val_data):
             data, label = batch_fn(batch, ctx)
             outputs = []
@@ -296,26 +298,36 @@ def main():
                 X = X.reshape((-1,) + X.shape[2:])
                 pred = net(X.astype(opt.dtype, copy=False))
                 outputs.append(pred)
+
+            loss = [L(yhat, y.astype(opt.dtype, copy=False)) for yhat, y in zip(outputs, label)]
+
             acc_top1.update(label, outputs)
             acc_top5.update(label, outputs)
+
+            val_loss_epoch += sum([l.mean().asscalar() for l in loss]) / len(loss)
 
             if opt.log_interval and not (i+1) % opt.log_interval:
                 logger.info('Batch [%04d]/[%04d]: evaluated' % (i, num_test_iter))
 
         _, top1 = acc_top1.get()
         _, top5 = acc_top5.get()
+        val_loss = val_loss_epoch / num_test_iter
 
         if kvstore is not None:
             top1_nd = nd.zeros(1)
             top5_nd = nd.zeros(1)
+            val_loss_nd = nd.zeros(1)
             kvstore.push(111111, nd.array(np.array([top1])))
             kvstore.pull(111111, out=top1_nd)
             kvstore.push(555555, nd.array(np.array([top5])))
             kvstore.pull(555555, out=top5_nd)
+            kvstore.push(999999, nd.array(np.array([val_loss])))
+            kvstore.pull(999999, out=val_loss_nd)
             top1 = top1_nd.asnumpy() / kvstore.num_workers
             top5 = top5_nd.asnumpy() / kvstore.num_workers
+            val_loss = val_loss_nd.asnumpy() / kvstore.num_workers
 
-        return (top1, top5)
+        return (top1, top5, val_loss)
 
     def train(ctx):
         if isinstance(ctx, mx.Context):
@@ -363,6 +375,8 @@ def main():
             train_metric.reset()
             btic = time.time()
             num_train_iter = len(train_data)
+            train_loss_epoch = 0
+            train_loss_iter = 0
 
             for i, batch in enumerate(train_data):
                 data, label = batch_fn(batch, ctx)
@@ -394,12 +408,18 @@ def main():
                         trainer.step(batch_size)
 
                 train_metric.update(label, outputs)
+                train_loss_iter = sum([l.mean().asscalar() for l in loss]) / len(loss)
+                train_loss_epoch += train_loss_iter
+
+                train_metric_name, train_metric_score = train_metric.get()
+                sw.add_scalar(tag='train_acc_top1_iter', value=train_metric_score*100, global_step=epoch * num_train_iter + i)
+                sw.add_scalar(tag='train_loss_iter', value=train_loss_iter, global_step=epoch * num_train_iter + i)
+                sw.add_scalar(tag='learning_rate_iter', value=trainer.learning_rate, global_step=epoch * num_train_iter + i)
 
                 if opt.log_interval and not (i+1) % opt.log_interval:
-                    train_metric_name, train_metric_score = train_metric.get()
-                    logger.info('Epoch[%03d] Batch [%04d]/[%04d]\tSpeed: %f samples/sec\t%s=%f\tlr=%f' % (
+                    logger.info('Epoch[%03d] Batch [%04d]/[%04d]\tSpeed: %f samples/sec\t %s=%f\t loss=%f\t lr=%f' % (
                                 epoch, i, num_train_iter, batch_size*opt.log_interval/(time.time()-btic),
-                                train_metric_name, train_metric_score*100, trainer.learning_rate))
+                                train_metric_name, train_metric_score*100, train_loss_epoch/(i+1), trainer.learning_rate))
                     btic = time.time()
 
             train_metric_name, train_metric_score = train_metric.get()
@@ -409,18 +429,20 @@ def main():
             if opt.kvstore is not None and epoch == opt.resume_epoch:
                 kv.init(111111, nd.zeros(1))
                 kv.init(555555, nd.zeros(1))
+                kv.init(999999, nd.zeros(1))
 
             if opt.kvstore is not None:
-                acc_top1_val, acc_top5_val = test(ctx, val_data, kv)
+                acc_top1_val, acc_top5_val, loss_val = test(ctx, val_data, kv)
             else:
-                acc_top1_val, acc_top5_val = test(ctx, val_data)
+                acc_top1_val, acc_top5_val, loss_val = test(ctx, val_data)
 
-            logger.info('[Epoch %03d] training: %s=%f' % (epoch, train_metric_name, train_metric_score*100))
+            logger.info('[Epoch %03d] training: %s=%f\t loss=%f' % (epoch, train_metric_name, train_metric_score*100, train_loss_epoch/num_train_iter))
             logger.info('[Epoch %03d] speed: %d samples/sec\ttime cost: %f' % (epoch, throughput, time.time()-tic))
-            logger.info('[Epoch %03d] validation: acc-top1=%f acc-top5=%f' % (epoch, acc_top1_val*100, acc_top5_val*100))
+            logger.info('[Epoch %03d] validation: acc-top1=%f acc-top5=%f loss=%f' % (epoch, acc_top1_val*100, acc_top5_val*100, loss_val))
 
-            sw.add_scalar(tag='train_acc', value=train_metric_score*100, global_step=epoch)
-            sw.add_scalar(tag='valid_acc', value=acc_top1_val*100, global_step=epoch)
+            sw.add_scalar(tag='train_loss_epoch', value=train_loss_epoch/num_train_iter, global_step=epoch)
+            sw.add_scalar(tag='val_loss_epoch', value=loss_val, global_step=epoch)
+            sw.add_scalar(tag='val_acc_top1_epoch', value=acc_top1_val*100, global_step=epoch)
 
             if acc_top1_val > best_val_score:
                 best_val_score = acc_top1_val
