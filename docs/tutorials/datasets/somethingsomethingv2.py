@@ -1,5 +1,5 @@
 """Prepare the 20BN-something-something Dataset V2
-============================
+==================================================
 
 `Something-something-v2 <https://20bn.com/datasets/something-something>`_  is an action recognition dataset
 of realistic action videos, collected from YouTube. With 220,847 short trimmed videos
@@ -74,3 +74,4 @@ This script will help you decode the videos to raw frames and generate training 
 The data preparation process may take a while. The total time to prepare the dataset depends on your machine.
 
 Once the script is done, you can start training your action recognition models on something-something-v2 dataset.
+"""
