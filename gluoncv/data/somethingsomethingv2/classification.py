@@ -10,7 +10,7 @@ __all__ = ['SomethingSomethingV2']
 class SomethingSomethingV2(dataset.Dataset):
     """Load the something-something-v2 action recognition dataset.
 
-    Refer to :doc:`../build/examples_datasets/something-something-v2` for the description of
+    Refer to :doc:`../build/examples_datasets/somethingsomethingv2` for the description of
     this dataset and how to prepare it.
 
     Parameters

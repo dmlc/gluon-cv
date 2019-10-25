@@ -8,9 +8,6 @@ import sys
 import threading
 import argparse
 
-VIDEO_ROOT = '~/.mxnet/datasets/somethingsomethingv2/20bn-something-something-v2'
-FRAME_ROOT = '~/.mxnet/datasets/somethingsomethingv2/20bn-something-something-v2-frames'
-
 def parse_args():
     parser = argparse.ArgumentParser(description='prepare something-something-v2 dataset')
     parser.add_argument('--video_root', type=str, default='~/.mxnet/datasets/somethingsomethingv2/20bn-something-something-v2')
@@ -21,33 +18,34 @@ def parse_args():
     parser.add_argument('--build_file_list', action='store_true', default=False)
     args = parser.parse_args()
 
-    VIDEO_ROOT = os.path.expanduser(args.video_root)
-    FRAME_ROOT = os.path.expanduser(args.frame_root)
+    args.video_root = os.path.expanduser(args.video_root)
+    args.frame_root = os.path.expanduser(args.frame_root)
     args.anno_root = os.path.expanduser(args.anno_root)
     return args
 
-def split(l, n):
+def split_func(l, n):
     """Yield successive n-sized chunks from l."""
     for i in range(0, len(l), n):
         yield l[i:i + n]
 
 def extract(video, tmpl='%06d.jpg'):
-    cmd = 'ffmpeg -i \"{}/{}\" -threads 1 -vf scale=-1:256 -q:v 0 \"{}/{}/%06d.jpg\"'.format(VIDEO_ROOT, video, FRAME_ROOT, video[:-5])
+    cmd = 'ffmpeg -i \"{}/{}\" -threads 1 -vf scale=-1:256 -q:v 0 \"{}/{}/%06d.jpg\"'.format(args.video_root, video, args.frame_root, video[:-5])
     os.system(cmd)
 
 def target(video_list):
     for video in video_list:
-        os.makedirs(os.path.join(FRAME_ROOT, video[:-5]))
+        os.makedirs(os.path.join(args.frame_root, video[:-5]))
         extract(video)
 
 def decode_video(args):
-    if not os.path.exists(VIDEO_ROOT):
-        raise ValueError('Please download videos and set VIDEO_ROOT variable.')
-    if not os.path.exists(FRAME_ROOT):
-        os.makedirs(FRAME_ROOT)
+    print(args.video_root)
+    if not os.path.exists(args.video_root):
+        raise ValueError('Please download videos and set video_root variable.')
+    if not os.path.exists(args.frame_root):
+        os.makedirs(args.frame_root)
 
-    video_list = os.listdir(VIDEO_ROOT)
-    splits = list(split(video_list, args.num_threads))
+    video_list = os.listdir(args.video_root)
+    splits = list(split_func(video_list, args.num_threads))
 
     threads = []
     for i, split in enumerate(splits):
@@ -59,12 +57,11 @@ def decode_video(args):
         thread.join()
 
 def build_file_list(args):
-    anno_root = args.anno_root
-    if not os.path.exists(anno_root):
+    if not os.path.exists(args.anno_root):
         raise ValueError('Please download annotations and set anno_root variable.')
 
     dataset_name = 'something-something-v2'
-    with open(anno_root + '%s-labels.json' % dataset_name) as f:
+    with open(args.anno_root + '%s-labels.json' % dataset_name) as f:
         data = json.load(f)
     categories = []
     for i, (cat, idx) in enumerate(data.items()):
@@ -78,7 +75,7 @@ def build_file_list(args):
     for i, category in enumerate(categories):
         dict_categories[category] = i
 
-    files_input = [anno_root + '%s-validation.json' % dataset_name, anno_root + '%s-train.json' % dataset_name, anno_root + '%s-test.json' % dataset_name]
+    files_input = [args.anno_root + '%s-validation.json' % dataset_name, args.anno_root + '%s-train.json' % dataset_name, args.anno_root + '%s-test.json' % dataset_name]
     files_output = ['val_videofolder.txt', 'train_videofolder.txt', 'test_videofolder.txt']
     for (filename_input, filename_output) in zip(files_input, files_output):
         with open(filename_input) as f:
@@ -96,7 +93,7 @@ def build_file_list(args):
             curFolder = folders[i]
             curIDX = idx_categories[i]
             # counting the number of frames in each video folders
-            dir_files = os.listdir(os.path.join(FRAME_ROOT, curFolder))
+            dir_files = os.listdir(os.path.join(args.frame_root, curFolder))
             if len(dir_files) == 0:
                 print('video decoding fails at %s' (curFolder))
                 sys.exit()

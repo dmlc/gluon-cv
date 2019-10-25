@@ -44,11 +44,12 @@ Filename                                        Size
 Once confirmed, you can use the following command to unzip the videos.
 
 .. code-block:: bash
+
    cat 20bn-something-something-v2-?? | tar zx
 
-Suppose the root directory for your data is ``~/.mxnet/datasets/somethingsomethingv2`` by default,
-all the videos will be stored at ``~/.mxnet/datasets/somethingsomethingv2/20bn-something-something-v2`` now.
-Then, download the annotations and put them into folder ``~/.mxnet/datasets/somethingsomethingv2/annotations``.
+Suppose by default the root directory for your data is ``ROOT=~/.mxnet/datasets/somethingsomethingv2``,
+all the videos will be stored at ``ROOT/20bn-something-something-v2`` now.
+Then, download the annotations and put them into folder ``ROOT/annotations``.
 
 ============================================== ======
 Filename                                        Size
@@ -72,6 +73,7 @@ The easiest way to prepare the dataset is to download helper script
 
 This script will help you decode the videos to raw frames and generate training files for standard data loading.
 The data preparation process may take a while. The total time to prepare the dataset depends on your machine.
+The video frames will be saved at ``ROOT/20bn-something-something-v2-frames``.
 
 Once the script is done, you can start training your action recognition models on something-something-v2 dataset.
 """
