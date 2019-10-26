@@ -1,5 +1,5 @@
 """Prepare the Kinetics400 dataset
-============================
+==================================
 
 `Kinetics400 <https://deepmind.com/research/open-source/kinetics>`_  is an action recognition dataset
 of realistic action videos, collected from YouTube. With 306,245 short trimmed videos
