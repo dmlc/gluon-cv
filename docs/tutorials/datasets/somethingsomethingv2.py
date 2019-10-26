@@ -69,11 +69,12 @@ The easiest way to prepare the dataset is to download helper script
 
 .. code-block:: bash
 
-   python somethingsomethingv2.py --decode_video --build_file_list
+   python somethingsomethingv2.py
 
 This script will help you decode the videos to raw frames and generate training files for standard data loading.
-The data preparation process may take a while. The total time to prepare the dataset depends on your machine.
-The video frames will be saved at ``ROOT/20bn-something-something-v2-frames``.
+The video frames will be saved at ``ROOT/20bn-something-something-v2-frames``. The training files will be
+saved at ``ROOT/annotations``. The data preparation process may take a while. The total time to prepare
+the dataset depends on your machine. For example, it takes about 6 hours on an AWS EC2 instance with EBS.
 
 Once the script is done, you can start training your action recognition models on something-something-v2 dataset.
 """

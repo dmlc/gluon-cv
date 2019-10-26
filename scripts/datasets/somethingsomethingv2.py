@@ -7,6 +7,7 @@ import os
 import sys
 import threading
 import argparse
+import json
 
 def parse_args():
     parser = argparse.ArgumentParser(description='prepare something-something-v2 dataset')
@@ -14,8 +15,8 @@ def parse_args():
     parser.add_argument('--frame_root', type=str, default='~/.mxnet/datasets/somethingsomethingv2/20bn-something-something-v2-frames')
     parser.add_argument('--anno_root', type=str, default='~/.mxnet/datasets/somethingsomethingv2/annotations')
     parser.add_argument('--num_threads', type=int, default=100)
-    parser.add_argument('--decode_video', action='store_true', default=False)
-    parser.add_argument('--build_file_list', action='store_true', default=False)
+    parser.add_argument('--decode_video', action='store_true', default=True)
+    parser.add_argument('--build_file_list', action='store_true', default=True)
     args = parser.parse_args()
 
     args.video_root = os.path.expanduser(args.video_root)
@@ -61,7 +62,7 @@ def build_file_list(args):
         raise ValueError('Please download annotations and set anno_root variable.')
 
     dataset_name = 'something-something-v2'
-    with open(args.anno_root + '%s-labels.json' % dataset_name) as f:
+    with open(os.path.join(args.anno_root, '%s-labels.json' % dataset_name)) as f:
         data = json.load(f)
     categories = []
     for i, (cat, idx) in enumerate(data.items()):
@@ -75,8 +76,12 @@ def build_file_list(args):
     for i, category in enumerate(categories):
         dict_categories[category] = i
 
-    files_input = [args.anno_root + '%s-validation.json' % dataset_name, args.anno_root + '%s-train.json' % dataset_name, args.anno_root + '%s-test.json' % dataset_name]
-    files_output = ['val_videofolder.txt', 'train_videofolder.txt', 'test_videofolder.txt']
+    files_input = [os.path.join(args.anno_root, '%s-validation.json' % dataset_name),
+                   os.path.join(args.anno_root, '%s-train.json' % dataset_name),
+                   os.path.join(args.anno_root, '%s-test.json' % dataset_name)]
+    files_output = [os.path.join(args.anno_root, 'val_videofolder.txt'),
+                    os.path.join(args.anno_root, 'train_videofolder.txt'),
+                    os.path.join(args.anno_root, 'test_videofolder.txt')]
     for (filename_input, filename_output) in zip(files_input, files_output):
         with open(filename_input) as f:
             data = json.load(f)
