@@ -254,6 +254,10 @@ Dataset Preparation
         :title: Prepare Something-Something-V2 Dataset
         :link: ../build/examples_datasets/somethingsomethingv2.html
 
+    .. card::
+        :title: Prepare HMDB51 Dataset
+        :link: ../build/examples_datasets/hmdb51.html
+
 
 Deployment
 ----------
