@@ -11,7 +11,7 @@ from mxboard import SummaryWriter
 from mxnet.contrib import amp
 
 from gluoncv.data.transforms import video
-from gluoncv.data import UCF101, Kinetics400, SomethingSomethingV2
+from gluoncv.data import UCF101, Kinetics400, SomethingSomethingV2, HMDB51
 from gluoncv.model_zoo import get_model
 from gluoncv.utils import makedirs, LRSequential, LRScheduler, split_and_load
 from gluoncv.data.sampler import SplitSampler
@@ -19,7 +19,7 @@ from gluoncv.data.sampler import SplitSampler
 # CLI
 def parse_args():
     parser = argparse.ArgumentParser(description='Train a model for action recognition.')
-    parser.add_argument('--dataset', type=str, default='ucf101', choices=['ucf101', 'kinetics400', 'somethingsomethingv2'],
+    parser.add_argument('--dataset', type=str, default='ucf101', choices=['ucf101', 'kinetics400', 'somethingsomethingv2', 'hmdb51'],
                         help='which dataset to use.')
     parser.add_argument('--data-dir', type=str, default='~/.mxnet/datasets/ucf101/rawframes',
                         help='training (and validation) pictures to use.')
@@ -187,6 +187,15 @@ def get_data_loader(opt, batch_size, num_workers, logger, kvstore=None):
                                            new_width=opt.new_width, new_height=opt.new_height, new_length=opt.new_length, new_step=opt.new_step,
                                            target_width=input_size, target_height=input_size, video_loader=opt.video_loader, use_decord=opt.use_decord,
                                            num_segments=opt.num_segments, transform=transform_test)
+    elif opt.dataset == 'hmdb51':
+        train_dataset = HMDB51(setting=opt.train_list, root=data_dir, train=True,
+                               new_width=opt.new_width, new_height=opt.new_height, new_length=opt.new_length, new_step=opt.new_step,
+                               target_width=input_size, target_height=input_size, video_loader=opt.video_loader, use_decord=opt.use_decord,
+                               num_segments=opt.num_segments, transform=transform_train)
+        val_dataset = HMDB51(setting=opt.val_list, root=data_dir, train=False,
+                             new_width=opt.new_width, new_height=opt.new_height, new_length=opt.new_length, new_step=opt.new_step,
+                             target_width=input_size, target_height=input_size, video_loader=opt.video_loader, use_decord=opt.use_decord,
+                             num_segments=opt.num_segments, transform=transform_test)
     else:
         logger.info('Dataset %s is not supported yet.' % (opt.dataset))
 
