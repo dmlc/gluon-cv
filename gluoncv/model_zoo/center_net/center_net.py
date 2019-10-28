@@ -18,8 +18,44 @@ __all__ = ['CenterNet', 'get_center_net',
            'center_net_resnet101_v1b_coco', 'center_net_resnet101_v1b_dcnv2_coco']
 
 class CenterNet(nn.HybridBlock):
+    """Objects as Points. https://arxiv.org/abs/1904.07850v2
+
+    Parameters
+    ----------
+    base_network : mxnet.gluon.nn.HybridBlock
+        The base feature extraction network.
+    heads : OrderedDict
+        OrderedDict with specifications for each head.
+        For example: OrderedDict([
+            ('heatmap', {'num_output': len(classes), 'bias': -2.19}),
+            ('wh', {'num_output': 2}),
+            ('reg', {'num_output': 2})
+            ])
+    classes : list of str
+        Category names.
+    head_conv_channel : int, default is 0
+        If > 0, will use an extra conv layer before each of the real heads.
+    scale : float, default is 4.0
+        The downsampling ratio of the entire network.
+    topk : int, default is 100
+        Number of outputs .
+    flip_test : bool
+        Whether apply flip test in inference (training mode not affected).
+    nms_thresh : float, default is 0.
+        Non-maximum suppression threshold. You can specify < 0 or > 1 to disable NMS.
+        By default nms is disabled.
+    nms_topk : int, default is 400
+        Apply NMS to top k detection results, use -1 to disable so that every Detection
+         result is used in NMS.
+    post_nms : int, default is 100
+        Only return top `post_nms` detection results, the rest is discarded. The number is
+        based on COCO dataset which has maximum 100 objects per image. You can adjust this
+        number if expecting more objects. You can use -1 to return all detections.
+
+    """
     def __init__(self, base_network, heads, classes,
-                 head_conv_channel=0, scale=4.0, topk=40, flip_test=False, **kwargs):
+                 head_conv_channel=0, scale=4.0, topk=100, flip_test=False,
+                 nms_thresh=0, nms_topk=400, post_nms=100, **kwargs):
         if 'norm_layer' in kwargs:
             kwargs.pop('norm_layer')
         if 'norm_kwargs' in kwargs:
@@ -29,6 +65,11 @@ class CenterNet(nn.HybridBlock):
             "Expecting heads to be a OrderedDict of {head_name: # outputs} per head, given {}" \
             .format(type(heads))
         self.classes = classes
+        self.topk = topk
+        self.nms_thresh = nms_thresh
+        self.nms_topk = nms_topk
+        post_nms = min(post_nms, topk)
+        self.post_nms = post_nms
         self.scale = scale
         self.flip_test = flip_test
         with self.name_scope():
@@ -51,6 +92,44 @@ class CenterNet(nn.HybridBlock):
 
                 self.heads.add(head)
 
+    @property
+    def num_classes(self):
+        """Return number of foreground classes.
+
+        Returns
+        -------
+        int
+            Number of foreground classes
+
+        """
+        return len(self.classes)
+
+    def set_nms(self, nms_thresh=0, nms_topk=400, post_nms=100):
+        """Set non-maximum suppression parameters.
+
+        Parameters
+        ----------
+        nms_thresh : float, default is 0.
+            Non-maximum suppression threshold. You can specify < 0 or > 1 to disable NMS.
+            By default NMS is disabled.
+        nms_topk : int, default is 400
+            Apply NMS to top k detection results, use -1 to disable so that every Detection
+             result is used in NMS.
+        post_nms : int, default is 100
+            Only return top `post_nms` detection results, the rest is discarded. The number is
+            based on COCO dataset which has maximum 100 objects per image. You can adjust this
+            number if expecting more objects. You can use -1 to return all detections.
+
+        Returns
+        -------
+        None
+
+        """
+        self._clear_cached_op()
+        self.nms_thresh = nms_thresh
+        self.nms_topk = nms_topk
+        post_nms = min(post_nms, topk)
+        self.post_nms = post_nms
 
     def hybrid_forward(self, F, x):
         y = self.base_network(x)
@@ -72,6 +151,29 @@ class CenterNet(nn.HybridBlock):
 
 def get_center_net(name, dataset, pretrained=False, ctx=mx.cpu(),
                    root=os.path.join('~', '.mxnet', 'models'), **kwargs):
+    """Get a center net instance.
+
+    Parameters
+    ----------
+    name : str or None
+        Model name, if `None` is used, you must specify `features` to be a `HybridBlock`.
+    dataset : str
+        Name of dataset. This is used to identify model name because models trained on
+        different datasets are going to be very different.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    ctx : mxnet.Context
+        Context such as mx.cpu(), mx.gpu(0).
+    root : str
+        Model weights storing path.
+
+    Returns
+    -------
+    HybridBlock
+        A CenterNet detection network.
+
+    """
     net = CenterNet(**kwargs)
     if pretrained:
         from ..model_store import get_model_file
@@ -89,6 +191,21 @@ def get_center_net(name, dataset, pretrained=False, ctx=mx.cpu(),
     return net
 
 def center_net_resnet18_v1b_voc(pretrained=False, pretrained_base=True, **kwargs):
+    """Center net with resnet18_v1b base network on voc dataset.
+
+    Parameters
+    ----------
+    classes : iterable of str
+        Names of custom foreground classes. `len(classes)` is the number of foreground classes.
+    pretrained_base : bool or str, optional, default is True
+        Load pretrained base network, the extra layers are randomized.
+
+    Returns
+    -------
+    HybridBlock
+        A CenterNet detection network.
+
+    """
     from .deconv_resnet import resnet18_v1b_deconv
     from ...data import VOCDetection
     classes = VOCDetection.CLASSES
@@ -104,6 +221,21 @@ def center_net_resnet18_v1b_voc(pretrained=False, pretrained_base=True, **kwargs
                           scale=4.0, topk=40, **kwargs)
 
 def center_net_resnet18_v1b_dcnv2_voc(pretrained=False, pretrained_base=True, **kwargs):
+    """Center net with resnet18_v1b base network with deformable v2 conv layers on voc dataset.
+
+    Parameters
+    ----------
+    classes : iterable of str
+        Names of custom foreground classes. `len(classes)` is the number of foreground classes.
+    pretrained_base : bool or str, optional, default is True
+        Load pretrained base network, the extra layers are randomized.
+
+    Returns
+    -------
+    HybridBlock
+        A CenterNet detection network.
+
+    """
     from .deconv_resnet import resnet18_v1b_deconv_dcnv2
     from ...data import VOCDetection
     classes = VOCDetection.CLASSES
@@ -119,6 +251,21 @@ def center_net_resnet18_v1b_dcnv2_voc(pretrained=False, pretrained_base=True, **
                           scale=4.0, topk=40, **kwargs)
 
 def center_net_resnet18_v1b_coco(pretrained=False, pretrained_base=True, **kwargs):
+    """Center net with resnet18_v1b base network on coco dataset.
+
+    Parameters
+    ----------
+    classes : iterable of str
+        Names of custom foreground classes. `len(classes)` is the number of foreground classes.
+    pretrained_base : bool or str, optional, default is True
+        Load pretrained base network, the extra layers are randomized.
+
+    Returns
+    -------
+    HybridBlock
+        A CenterNet detection network.
+
+    """
     from .deconv_resnet import resnet18_v1b_deconv
     from ...data import COCODetection
     classes = COCODetection.CLASSES
@@ -134,6 +281,21 @@ def center_net_resnet18_v1b_coco(pretrained=False, pretrained_base=True, **kwarg
                           scale=4.0, topk=40, **kwargs)
 
 def center_net_resnet18_v1b_dcnv2_coco(pretrained=False, pretrained_base=True, **kwargs):
+    """Center net with resnet18_v1b base network with deformable v2 conv layer on coco dataset.
+
+    Parameters
+    ----------
+    classes : iterable of str
+        Names of custom foreground classes. `len(classes)` is the number of foreground classes.
+    pretrained_base : bool or str, optional, default is True
+        Load pretrained base network, the extra layers are randomized.
+
+    Returns
+    -------
+    HybridBlock
+        A CenterNet detection network.
+
+    """
     from .deconv_resnet import resnet18_v1b_deconv_dcnv2
     from ...data import COCODetection
     classes = COCODetection.CLASSES
@@ -149,6 +311,21 @@ def center_net_resnet18_v1b_dcnv2_coco(pretrained=False, pretrained_base=True, *
                           scale=4.0, topk=40, **kwargs)
 
 def center_net_resnet101_v1b_voc(pretrained=False, pretrained_base=True, **kwargs):
+    """Center net with resnet101_v1b base network on voc dataset.
+
+    Parameters
+    ----------
+    classes : iterable of str
+        Names of custom foreground classes. `len(classes)` is the number of foreground classes.
+    pretrained_base : bool or str, optional, default is True
+        Load pretrained base network, the extra layers are randomized.
+
+    Returns
+    -------
+    HybridBlock
+        A CenterNet detection network.
+
+    """
     from .deconv_resnet import resnet101_v1b_deconv
     from ...data import VOCDetection
     classes = VOCDetection.CLASSES
@@ -164,6 +341,21 @@ def center_net_resnet101_v1b_voc(pretrained=False, pretrained_base=True, **kwarg
                           scale=4.0, topk=40, **kwargs)
 
 def center_net_resnet101_v1b_dcnv2_voc(pretrained=False, pretrained_base=True, **kwargs):
+    """Center net with resnet101_v1b base network with deformable conv layers on voc dataset.
+
+    Parameters
+    ----------
+    classes : iterable of str
+        Names of custom foreground classes. `len(classes)` is the number of foreground classes.
+    pretrained_base : bool or str, optional, default is True
+        Load pretrained base network, the extra layers are randomized.
+
+    Returns
+    -------
+    HybridBlock
+        A CenterNet detection network.
+
+    """
     from .deconv_resnet import resnet101_v1b_deconv_dcnv2
     from ...data import VOCDetection
     classes = VOCDetection.CLASSES
@@ -179,6 +371,21 @@ def center_net_resnet101_v1b_dcnv2_voc(pretrained=False, pretrained_base=True, *
                           scale=4.0, topk=40, **kwargs)
 
 def center_net_resnet101_v1b_coco(pretrained=False, pretrained_base=True, **kwargs):
+    """Center net with resnet101_v1b base network on coco dataset.
+
+    Parameters
+    ----------
+    classes : iterable of str
+        Names of custom foreground classes. `len(classes)` is the number of foreground classes.
+    pretrained_base : bool or str, optional, default is True
+        Load pretrained base network, the extra layers are randomized.
+
+    Returns
+    -------
+    HybridBlock
+        A CenterNet detection network.
+
+    """
     from .deconv_resnet import resnet101_v1b_deconv
     from ...data import COCODetection
     classes = COCODetection.CLASSES
@@ -194,6 +401,21 @@ def center_net_resnet101_v1b_coco(pretrained=False, pretrained_base=True, **kwar
                           scale=4.0, topk=40, **kwargs)
 
 def center_net_resnet101_v1b_dcnv2_coco(pretrained=False, pretrained_base=True, **kwargs):
+    """Center net with resnet101_v1b base network with deformable v2 conv layers on coco dataset.
+
+    Parameters
+    ----------
+    classes : iterable of str
+        Names of custom foreground classes. `len(classes)` is the number of foreground classes.
+    pretrained_base : bool or str, optional, default is True
+        Load pretrained base network, the extra layers are randomized.
+
+    Returns
+    -------
+    HybridBlock
+        A CenterNet detection network.
+
+    """
     from .deconv_resnet import resnet101_v1b_deconv_dcnv2
     from ...data import COCODetection
     classes = COCODetection.CLASSES

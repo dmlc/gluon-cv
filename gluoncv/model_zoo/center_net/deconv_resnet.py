@@ -49,7 +49,27 @@ class BilinearUpSample(mx.init.Initializer):
             arr[c, 0, :, :] = arr[0, 0, :, :]
 
 class DeconvResnet(nn.HybridBlock):
-    def __init__(self, base_network='resnet18_v1b', use_dcn=False,
+    """Deconvolutional ResNet.
+
+    Parameters
+    ----------
+    base_network : str
+        Name of the base feature extraction network.
+    deconv_filters : list of int
+        Number of filters for deconv layers.
+    deconv_kernels : list of int
+        Kernel sizes for deconv layers.
+    pretrained_base : bool
+        Whether load pretrained base network.
+    norm_layer : mxnet.gluon.nn.HybridBlock
+        Type of Norm layers, can be BatchNorm, SyncBatchNorm, GroupNorm, etc.
+    norm_kwargs : dict
+        Additional kwargs for `norm_layer`.
+    use_dcnv2 : bool
+        If true, will use DCNv2 layers in upsampling blocks
+
+    """
+    def __init__(self, base_network='resnet18_v1b',
                  deconv_filters=(256, 128, 64), deconv_kernels=(4, 4, 4),
                  pretrained_base=True, norm_layer=nn.BatchNorm, norm_kwargs=None,
                  use_dcnv2=False, **kwargs):
@@ -76,6 +96,7 @@ class DeconvResnet(nn.HybridBlock):
             self.deconv = self._make_deconv_layer(deconv_filters, deconv_kernels, use_dcn=use_dcn)
 
     def _get_deconv_cfg(self, deconv_kernel):
+        """Get the deconv configs using presets"""
         if deconv_kernel == 4:
             padding = 1
             output_padding = 0
@@ -91,6 +112,7 @@ class DeconvResnet(nn.HybridBlock):
         return deconv_kernel, padding, output_padding
 
     def _make_deconv_layer(self, num_filters, num_kernels, use_dcn=False):
+        """Make deconv layers using the configs"""
         assert len(num_kernels) == len(num_filters), \
             'Deconv filters and kernels number mismatch: {} vs. {}'.format(len(num_filters), len(num_kernels))
 
@@ -132,11 +154,32 @@ class DeconvResnet(nn.HybridBlock):
         return layers
 
     def hybrid_forward(self, F, x):
+        """HybridForward"""
         y = self.base_network(x)
         out = self.deconv(y)
         return out
 
 def get_deconv_resnet(base_network, pretrained=False, ctx=cpu(), use_dcnv2=False, **kwargs):
+    """Get resnet with deconv layers.
+
+    Parameters
+    ----------
+    base_network : str
+        Name of the base feature extraction network.
+    pretrained : bool
+        Whether load pretrained base network.
+    ctx : mxnet.Context
+        mx.cpu() or mx.gpu()
+    use_dcnv2 : bool
+        If true, will use DCNv2 layers in upsampling blocks
+    pretrained : type
+        Description of parameter `pretrained`.
+    Returns
+    -------
+    get_deconv_resnet(base_network, pretrained=False,
+        Description of returned object.
+
+    """
     net = DeconvResnet(base_network=base_network, pretrained_base=pretrained,
                        use_dcnv2=use_dcnv2, **kwargs)
     with warnings.catch_warnings(record=True) as w:
@@ -146,17 +189,49 @@ def get_deconv_resnet(base_network, pretrained=False, ctx=cpu(), use_dcnv2=False
     return net
 
 def resnet18_v1b_deconv(**kwargs):
+    """Resnet18 v1b model with deconv layers.
+
+    Returns
+    -------
+    HybridBlock
+        A Resnet18 v1b model with deconv layers.
+
+    """
     kwargs['use_dcnv2'] = False
     return get_deconv_resnet('resnet18_v1b', **kwargs)
 
 def resnet18_v1b_deconv_dcnv2(**kwargs):
+    """Resnet18 v1b model with deconv layers and deformable v2 conv layers.
+
+    Returns
+    -------
+    HybridBlock
+        A Resnet18 v1b model with deconv layers and deformable v2 conv layers.
+
+    """
     kwargs['use_dcnv2'] = True
     return get_deconv_resnet('resnet18_v1b', **kwargs)
 
 def resnet101_v1b_deconv(**kwargs):
+    """Resnet101 v1b model with deconv layers.
+
+    Returns
+    -------
+    HybridBlock
+        A Resnet101 v1b model with deconv layers.
+
+    """
     kwargs['use_dcnv2'] = False
     return get_deconv_resnet('resnet101_v1b', **kwargs)
 
 def resnet101_v1b_deconv_dcnv2(**kwargs):
+    """Resnet101 v1b model with deconv layers and deformable v2 conv layers.
+
+    Returns
+    -------
+    HybridBlock
+        A Resnet101 v1b model with deconv layers and deformable v2 conv layers.
+
+    """
     kwargs['use_dcnv2'] = True
     return get_deconv_resnet('resnet101_v1b', **kwargs)
