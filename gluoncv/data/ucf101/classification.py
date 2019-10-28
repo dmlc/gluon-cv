@@ -1,5 +1,5 @@
 # pylint: disable=line-too-long,too-many-lines,missing-docstring
-"""UCF101 action classification dataset."""
+"""UCF101 video action classification dataset."""
 import os
 import random
 import numpy as np
@@ -9,14 +9,14 @@ from mxnet.gluon.data import dataset
 __all__ = ['UCF101']
 
 class UCF101(dataset.Dataset):
-    """Load the UCF101 action recognition dataset.
+    """Load the UCF101 video action recognition dataset.
 
     Refer to :doc:`../build/examples_datasets/ucf101` for the description of
     this dataset and how to prepare it.
 
     Parameters
     ----------
-    root : str, default '~/.mxnet/datasets/ucf101'
+    root : str, default '~/.mxnet/datasets/ucf101/rawframes'
         Path to the folder stored the dataset.
     setting : str, required
         Config file of the prepared dataset.
@@ -51,8 +51,8 @@ class UCF101(dataset.Dataset):
         A function that takes data and label and transforms them.
     """
     def __init__(self,
-                 setting=os.path.expanduser('~/.mxnet/datasets/ucf101/ucfTrainTestlist/ucf101_train_split_2_rawframes.txt'),
                  root=os.path.expanduser('~/.mxnet/datasets/ucf101/rawframes'),
+                 setting=os.path.expanduser('~/.mxnet/datasets/ucf101/ucfTrainTestlist/ucf101_train_split_2_rawframes.txt'),
                  train=True,
                  test_mode=False,
                  name_pattern=None,

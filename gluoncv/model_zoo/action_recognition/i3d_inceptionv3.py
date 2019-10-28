@@ -156,12 +156,14 @@ class I3D_InceptionV3(HybridBlock):
     partial_bn : bool, default False
         Freeze all batch normalization layers during training except the first layer.
     """
-    def __init__(self, nclass=1000, norm_layer=BatchNorm, num_segments=1,
-                 norm_kwargs=None, partial_bn=False, pretrained_base=True,
-                 dropout_ratio=0.5, init_std=0.01,
-                 ctx=None, **kwargs):
+    def __init__(self, nclass=1000, pretrained_base=True,
+                 num_segments=1, num_crop=1,
+                 dropout_ratio=0.5, init_std=0.01, partial_bn=False,
+                 ctx=None, norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
         super(I3D_InceptionV3, self).__init__(**kwargs)
+
         self.num_segments = num_segments
+        self.num_crop = num_crop
         self.feat_dim = 2048
         self.dropout_ratio = dropout_ratio
         self.init_std = init_std
@@ -252,14 +254,15 @@ class I3D_InceptionV3(HybridBlock):
         x = F.squeeze(x, axis=(2, 3, 4))
 
         # segmental consensus
-        x = F.reshape(x, shape=(-1, self.num_segments, self.feat_dim))
+        x = F.reshape(x, shape=(-1, self.num_segments * self.num_crop, self.feat_dim))
         x = F.mean(x, axis=1)
 
         x = self.head(x)
         return x
 
-def i3d_inceptionv3_kinetics400(nclass=400, pretrained=False, pretrained_base=True, ctx=cpu(),
-                                root='~/.mxnet/models', tsn=False, num_segments=1, partial_bn=False, **kwargs):
+def i3d_inceptionv3_kinetics400(nclass=400, pretrained=False, pretrained_base=True,
+                                ctx=cpu(), root='~/.mxnet/models', use_tsn=False,
+                                num_segments=1, num_crop=1, partial_bn=False, **kwargs):
     r"""Inception v3 model from
     `"Rethinking the Inception Architecture for Computer Vision"
     <http://arxiv.org/abs/1512.00567>`_ paper.
@@ -287,8 +290,15 @@ def i3d_inceptionv3_kinetics400(nclass=400, pretrained=False, pretrained_base=Tr
         for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
 
-    model = I3D_InceptionV3(nclass=nclass, partial_bn=partial_bn, num_segments=num_segments,
-                            pretrained_base=pretrained_base, ctx=ctx, **kwargs)
+    model = I3D_InceptionV3(nclass=nclass,
+                            partial_bn=partial_bn,
+                            pretrained_base=pretrained_base,
+                            num_segments=num_segments,
+                            num_crop=num_crop,
+                            dropout_ratio=0.5,
+                            init_std=0.01,
+                            ctx=ctx,
+                            **kwargs)
 
     if pretrained:
         from ..model_store import get_model_file

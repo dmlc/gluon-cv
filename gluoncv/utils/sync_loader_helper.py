@@ -71,7 +71,7 @@ def split_and_load(data, ctx_list, batch_axis=0, even_split=True, multiplier=1):
     even_split : bool, default True
         Whether to force all slices to have the same number of elements.
     multiplier : int, default 1
-        The batch size has to be the multiples of channel multiplier
+        The batch size has to be the multiples of channel multiplier. Need to investigate further.
 
     Returns
     -------
