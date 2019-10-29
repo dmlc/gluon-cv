@@ -4,7 +4,7 @@
 __all__ = ['I3D_ResNetV1', 'i3d_resnet50_v1_kinetics400', 'i3d_resnet101_v1_kinetics400',
            'i3d_nl5_resnet50_v1_kinetics400', 'i3d_nl10_resnet50_v1_kinetics400',
            'i3d_nl5_resnet101_v1_kinetics400', 'i3d_nl10_resnet101_v1_kinetics400',
-           'i3d_resnet50_v1_sthsthv2']
+           'i3d_resnet50_v1_sthsthv2', 'i3d_resnet50_v1_hmdb51']
 
 from mxnet import nd
 from mxnet import init
@@ -378,6 +378,13 @@ class I3D_ResNetV1(HybridBlock):
 
         self.pool2 = nn.MaxPool3D(pool_size=(2, 1, 1), strides=(2, 1, 1), padding=(0, 0, 0))
 
+        if self.partial_bn:
+            if norm_kwargs is not None:
+                norm_kwargs['use_global_stats'] = True
+            else:
+                norm_kwargs = {}
+                norm_kwargs['use_global_stats'] = True
+
         self.res_layers = nn.HybridSequential(prefix='')
         for i, num_blocks in enumerate(self.stage_blocks):
             spatial_stride = spatial_strides[i]
@@ -424,7 +431,7 @@ class I3D_ResNetV1(HybridBlock):
         self.res_layers.initialize(ctx=ctx)
         self.head.initialize(ctx=ctx)
 
-        if self.pretrained_base:
+        if self.pretrained_base and not self.pretrained:
             if self.depth == 50:
                 resnet2d = resnet50_v1b(pretrained=True)
             elif self.depth == 101:
@@ -867,6 +874,75 @@ def i3d_resnet50_v1_sthsthv2(nclass=174, pretrained=False, pretrained_base=True,
                                              tag=pretrained, root=root), ctx=ctx)
         from ...data import SomethingSomethingV2Attr
         attrib = SomethingSomethingV2Attr()
+        model.classes = attrib.classes
+    model.collect_params().reset_ctx(ctx)
+
+    return model
+
+def i3d_resnet50_v1_hmdb51(nclass=51, pretrained=False, pretrained_base=True, ctx=cpu(),
+                           root='~/.mxnet/models', use_tsn=False, num_segments=1, num_crop=1,
+                           partial_bn=False, use_kinetics_pretrain=True, **kwargs):
+    r"""Inflated 3D model (I3D) from
+    `"Quo Vadis, Action Recognition? A New Model and the Kinetics Dataset"
+    <https://arxiv.org/abs/1705.07750>`_ paper.
+
+    Parameters
+    ----------
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default $MXNET_HOME/models
+        Location for keeping the model parameters.
+    partial_bn : bool, default False
+        Freeze all batch normalization layers during training except the first layer.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    """
+
+    model = I3D_ResNetV1(nclass=nclass,
+                         depth=50,
+                         pretrained=pretrained,
+                         pretrained_base=pretrained_base,
+                         num_segments=num_segments,
+                         num_crop=num_crop,
+                         out_indices=[3],
+                         inflate_freq=((1, 1, 1), (1, 0, 1, 0), (1, 0, 1, 0, 1, 0), (0, 1, 0)),
+                         bn_eval=False,
+                         partial_bn=False,
+                         ctx=ctx,
+                         dropout_ratio=0.8,
+                         init_std=0.001,
+                         **kwargs)
+
+    if use_kinetics_pretrain and not pretrained:
+        from gluoncv.model_zoo import get_model
+        kinetics_model = get_model('i3d_resnet50_v1_kinetics400', nclass=400, pretrained=True)
+        source_params = kinetics_model.collect_params()
+        target_params = model.collect_params()
+        assert len(source_params.keys()) == len(target_params.keys())
+
+        pretrained_weights = []
+        for layer_name in source_params.keys():
+            pretrained_weights.append(source_params[layer_name].data())
+
+        for i, layer_name in enumerate(target_params.keys()):
+            if i + 2 == len(source_params.keys()):
+                # skip the last dense layer
+                break
+            target_params[layer_name].set_data(pretrained_weights[i])
+
+    if pretrained:
+        from ..model_store import get_model_file
+        model.load_parameters(get_model_file('i3d_resnet50_v1_hmdb51',
+                                             tag=pretrained, root=root), ctx=ctx)
+        from ...data import HMDB51Attr
+        attrib = HMDB51Attr()
         model.classes = attrib.classes
     model.collect_params().reset_ctx(ctx)
 
