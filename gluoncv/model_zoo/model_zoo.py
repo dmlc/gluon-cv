@@ -250,6 +250,7 @@ _models = {
     'resnet152_v1b_kinetics400': resnet152_v1b_kinetics400,
     'resnet50_v1b_sthsthv2': resnet50_v1b_sthsthv2,
     'resnet50_v1b_hmdb51':resnet50_v1b_hmdb51,
+    'i3d_resnet50_v1_hmdb51':i3d_resnet50_v1_hmdb51,
     'fcn_resnet101_voc_int8': fcn_resnet101_voc_int8,
     'fcn_resnet101_coco_int8': fcn_resnet101_coco_int8,
     'psp_resnet101_voc_int8': psp_resnet101_voc_int8,

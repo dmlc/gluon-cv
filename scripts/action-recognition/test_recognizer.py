@@ -11,14 +11,14 @@ from mxnet.gluon import nn
 from mxnet.gluon.data.vision import transforms
 
 from gluoncv.data.transforms import video
-from gluoncv.data import UCF101, Kinetics400, SomethingSomethingV2
+from gluoncv.data import UCF101, Kinetics400, SomethingSomethingV2, HMDB51
 from gluoncv.model_zoo import get_model
 from gluoncv.utils import makedirs, LRSequential, LRScheduler, split_and_load
 
 # CLI
 def parse_args():
     parser = argparse.ArgumentParser(description='Test a trained model for action recognition.')
-    parser.add_argument('--dataset', type=str, default='ucf101', choices=['ucf101', 'kinetics400', 'somethingsomethingv2'],
+    parser.add_argument('--dataset', type=str, default='ucf101', choices=['ucf101', 'kinetics400', 'somethingsomethingv2', 'hmdb51'],
                         help='which dataset to use.')
     parser.add_argument('--data-dir', type=str, default='~/.mxnet/datasets/ucf101/rawframes',
                         help='training (and validation) pictures to use.')
@@ -238,6 +238,11 @@ def main():
                                            new_width=opt.new_width, new_height=opt.new_height, new_length=opt.new_length, new_step=opt.new_step,
                                            target_width=opt.input_size, target_height=opt.input_size, video_loader=opt.video_loader, use_decord=opt.use_decord,
                                            num_segments=opt.num_segments, transform=transform_test)
+    elif opt.dataset == 'hmdb51':
+        val_dataset = HMDB51(setting=opt.val_list, root=opt.data_dir, train=False,
+                             new_width=opt.new_width, new_height=opt.new_height, new_length=opt.new_length, new_step=opt.new_step,
+                             target_width=opt.input_size, target_height=opt.input_size, video_loader=opt.video_loader, use_decord=opt.use_decord,
+                             num_segments=opt.num_segments, transform=transform_test)
     else:
         logger.info('Dataset %s is not supported yet.' % (opt.dataset))
 
