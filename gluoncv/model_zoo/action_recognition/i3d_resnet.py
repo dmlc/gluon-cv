@@ -1016,4 +1016,3 @@ def i3d_resnet50_v1_ucf101(nclass=101, pretrained=False, pretrained_base=True, c
     model.collect_params().reset_ctx(ctx)
 
     return model
-

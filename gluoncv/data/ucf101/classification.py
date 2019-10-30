@@ -1,7 +1,6 @@
 # pylint: disable=line-too-long,too-many-lines,missing-docstring
 """UCF101 video action classification dataset."""
 import os
-import random
 import numpy as np
 from mxnet import nd
 from mxnet.gluon.data import dataset
