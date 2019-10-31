@@ -11,16 +11,15 @@ from mxboard import SummaryWriter
 from mxnet.contrib import amp
 
 from gluoncv.data.transforms import video
-from gluoncv.data import UCF101, Kinetics400, SomethingSomethingV2
+from gluoncv.data import UCF101, Kinetics400, SomethingSomethingV2, HMDB51
 from gluoncv.model_zoo import get_model
 from gluoncv.utils import makedirs, LRSequential, LRScheduler, split_and_load
-from gluoncv.data.dataloader import tsn_mp_batchify_fn
 from gluoncv.data.sampler import SplitSampler
 
 # CLI
 def parse_args():
     parser = argparse.ArgumentParser(description='Train a model for action recognition.')
-    parser.add_argument('--dataset', type=str, default='ucf101', choices=['ucf101', 'kinetics400', 'somethingsomethingv2'],
+    parser.add_argument('--dataset', type=str, default='ucf101', choices=['ucf101', 'kinetics400', 'somethingsomethingv2', 'hmdb51'],
                         help='which dataset to use.')
     parser.add_argument('--data-dir', type=str, default='~/.mxnet/datasets/ucf101/rawframes',
                         help='training (and validation) pictures to use.')
@@ -70,6 +69,8 @@ def parse_args():
                         help='Crop ratio during validation. default is 0.875')
     parser.add_argument('--use-pretrained', action='store_true',
                         help='enable using pretrained model from gluon.')
+    parser.add_argument('--hashtag', type=str, default='',
+                        help='hashtag for pretrained models.')
     parser.add_argument('--use_se', action='store_true',
                         help='use SE layers or not in resnext. default is false.')
     parser.add_argument('--mixup', action='store_true',
@@ -148,6 +149,8 @@ def parse_args():
                         help='the temporal stride for sparse sampling of video frames for slow branch in SlowFast network.')
     parser.add_argument('--fast-temporal-stride', type=int, default=2,
                         help='the temporal stride for sparse sampling of video frames for fast branch in SlowFast network.')
+    parser.add_argument('--num-crop', type=int, default=1,
+                        help='number of crops for each image. default is 1')
     opt = parser.parse_args()
     return opt
 
@@ -158,10 +161,7 @@ def get_data_loader(opt, batch_size, num_workers, logger, kvstore=None):
     input_size = opt.input_size
 
     def batch_fn(batch, ctx):
-        if opt.num_segments > 1:
-            data = split_and_load(batch[0], ctx_list=ctx, batch_axis=0, even_split=False, multiplier=opt.num_segments)
-        else:
-            data = split_and_load(batch[0], ctx_list=ctx, batch_axis=0, even_split=False)
+        data = split_and_load(batch[0], ctx_list=ctx, batch_axis=0, even_split=False)
         label = split_and_load(batch[1], ctx_list=ctx, batch_axis=0, even_split=False)
         return data, label
 
@@ -197,6 +197,15 @@ def get_data_loader(opt, batch_size, num_workers, logger, kvstore=None):
                                            new_width=opt.new_width, new_height=opt.new_height, new_length=opt.new_length, new_step=opt.new_step,
                                            target_width=input_size, target_height=input_size, video_loader=opt.video_loader, use_decord=opt.use_decord,
                                            num_segments=opt.num_segments, transform=transform_test)
+    elif opt.dataset == 'hmdb51':
+        train_dataset = HMDB51(setting=opt.train_list, root=data_dir, train=True,
+                               new_width=opt.new_width, new_height=opt.new_height, new_length=opt.new_length, new_step=opt.new_step,
+                               target_width=input_size, target_height=input_size, video_loader=opt.video_loader, use_decord=opt.use_decord,
+                               num_segments=opt.num_segments, transform=transform_train)
+        val_dataset = HMDB51(setting=opt.val_list, root=data_dir, train=False,
+                             new_width=opt.new_width, new_height=opt.new_height, new_length=opt.new_length, new_step=opt.new_step,
+                             target_width=input_size, target_height=input_size, video_loader=opt.video_loader, use_decord=opt.use_decord,
+                             num_segments=opt.num_segments, transform=transform_test)
     else:
         logger.info('Dataset %s is not supported yet.' % (opt.dataset))
 
@@ -205,15 +214,15 @@ def get_data_loader(opt, batch_size, num_workers, logger, kvstore=None):
     if kvstore is not None:
         train_data = gluon.data.DataLoader(train_dataset, batch_size=batch_size, num_workers=num_workers,
                                            sampler=SplitSampler(len(train_dataset), num_parts=kvstore.num_workers, part_index=kvstore.rank),
-                                           batchify_fn=tsn_mp_batchify_fn, prefetch=int(opt.prefetch_ratio * num_workers), last_batch='rollover')
+                                           prefetch=int(opt.prefetch_ratio * num_workers), last_batch='rollover')
         val_data = gluon.data.DataLoader(val_dataset, batch_size=batch_size, num_workers=num_workers,
                                          sampler=SplitSampler(len(val_dataset), num_parts=kvstore.num_workers, part_index=kvstore.rank),
-                                         batchify_fn=tsn_mp_batchify_fn, prefetch=int(opt.prefetch_ratio * num_workers), last_batch='discard')
+                                         prefetch=int(opt.prefetch_ratio * num_workers), last_batch='discard')
     else:
         train_data = gluon.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers,
-                                           batchify_fn=tsn_mp_batchify_fn, prefetch=int(opt.prefetch_ratio * num_workers), last_batch='rollover')
+                                           prefetch=int(opt.prefetch_ratio * num_workers), last_batch='rollover')
         val_data = gluon.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers,
-                                           batchify_fn=tsn_mp_batchify_fn, prefetch=int(opt.prefetch_ratio * num_workers), last_batch='discard')
+                                         prefetch=int(opt.prefetch_ratio * num_workers), last_batch='discard')
 
     return train_data, val_data, batch_fn
 
@@ -269,8 +278,10 @@ def main():
         optimizer_params['multi_precision'] = True
 
     model_name = opt.model
+    if opt.use_pretrained and len(opt.hashtag) > 0:
+        opt.use_pretrained = opt.hashtag
     net = get_model(name=model_name, nclass=classes, pretrained=opt.use_pretrained,
-                    tsn=opt.use_tsn, num_segments=opt.num_segments, partial_bn=opt.partial_bn)
+                    use_tsn=opt.use_tsn, num_segments=opt.num_segments, partial_bn=opt.partial_bn)
     net.cast(opt.dtype)
     net.collect_params().reset_ctx(context)
     logger.info(net)
@@ -307,8 +318,14 @@ def main():
         val_loss_epoch = 0
         for i, batch in enumerate(val_data):
             data, label = batch_fn(batch, ctx)
-            outputs = [net(X.astype(opt.dtype, copy=False)) for X in data]
+            outputs = []
+            for _, X in enumerate(data):
+                X = X.reshape((-1,) + X.shape[2:])
+                pred = net(X.astype(opt.dtype, copy=False))
+                outputs.append(pred)
+
             loss = [L(yhat, y.astype(opt.dtype, copy=False)) for yhat, y in zip(outputs, label)]
+
             acc_top1.update(label, outputs)
             acc_top5.update(label, outputs)
 
@@ -390,7 +407,11 @@ def main():
                 data, label = batch_fn(batch, ctx)
 
                 with ag.record():
-                    outputs = [net(X.astype(opt.dtype, copy=False)) for X in data]
+                    outputs = []
+                    for _, X in enumerate(data):
+                        X = X.reshape((-1,) + X.shape[2:])
+                        pred = net(X.astype(opt.dtype, copy=False))
+                        outputs.append(pred)
                     loss = [L(yhat, y.astype(opt.dtype, copy=False)) for yhat, y in zip(outputs, label)]
 
                     if opt.use_amp:
@@ -450,24 +471,15 @@ def main():
 
             if acc_top1_val > best_val_score:
                 best_val_score = acc_top1_val
-                if opt.use_tsn:
-                    net.basenet.save_parameters('%s/%.4f-%s-%s-%03d-best.params'%(opt.save_dir, best_val_score, opt.dataset, model_name, epoch))
-                else:
-                    net.save_parameters('%s/%.4f-%s-%s-%03d-best.params'%(opt.save_dir, best_val_score, opt.dataset, model_name, epoch))
+                net.save_parameters('%s/%.4f-%s-%s-%03d-best.params'%(opt.save_dir, best_val_score, opt.dataset, model_name, epoch))
                 trainer.save_states('%s/%.4f-%s-%s-%03d-best.states'%(opt.save_dir, best_val_score, opt.dataset, model_name, epoch))
             else:
                 if opt.save_frequency and opt.save_dir and (epoch + 1) % opt.save_frequency == 0:
-                    if opt.use_tsn:
-                        net.basenet.save_parameters('%s/%s-%s-%03d.params'%(opt.save_dir, opt.dataset, model_name, epoch))
-                    else:
-                        net.save_parameters('%s/%s-%s-%03d.params'%(opt.save_dir, opt.dataset, model_name, epoch))
+                    net.save_parameters('%s/%s-%s-%03d.params'%(opt.save_dir, opt.dataset, model_name, epoch))
                     trainer.save_states('%s/%s-%s-%03d.states'%(opt.save_dir, opt.dataset, model_name, epoch))
 
         # save the last model
-        if opt.use_tsn:
-            net.basenet.save_parameters('%s/%s-%s-%03d.params'%(opt.save_dir, opt.dataset, model_name, opt.num_epochs-1))
-        else:
-            net.save_parameters('%s/%s-%s-%03d.params'%(opt.save_dir, opt.dataset, model_name, opt.num_epochs-1))
+        net.save_parameters('%s/%s-%s-%03d.params'%(opt.save_dir, opt.dataset, model_name, opt.num_epochs-1))
         trainer.save_states('%s/%s-%s-%03d.states'%(opt.save_dir, opt.dataset, model_name, opt.num_epochs-1))
 
     if opt.mode == 'hybrid':

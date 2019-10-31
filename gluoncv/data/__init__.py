@@ -22,6 +22,7 @@ from .mixup.detection import MixupDetection
 from .ucf101.classification import UCF101, UCF101Attr
 from .kinetics400.classification import Kinetics400, Kinetics400Attr
 from .somethingsomethingv2.classification import SomethingSomethingV2, SomethingSomethingV2Attr
+from .hmdb51.classification import HMDB51, HMDB51Attr
 from .sampler import SplitSampler
 
 datasets = {

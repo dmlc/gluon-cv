@@ -67,7 +67,7 @@ if with_cython:
                 'gluoncv/nn/cython_bbox.pyx'
             ],
             extra_compile_args=[
-                '-Wno-cpp', '-O2'
+                '-Wno-cpp', '-O3'
             ],
             include_dirs=[
                 _NP_INCLUDE_DIRS

@@ -30,7 +30,7 @@ class RPNProposal(gluon.HybridBlock):
     def __init__(self, clip, min_size, stds):
         super(RPNProposal, self).__init__()
         self._box_to_center = BBoxCornerToCenter()
-        self._box_decoder = NormalizedBoxCenterDecoder(stds=stds, clip=clip)
+        self._box_decoder = NormalizedBoxCenterDecoder(stds=stds, clip=clip, convert_anchor=True)
         self._clipper = BBoxClipToImage()
         # self._compute_area = BBoxArea()
         self._min_size = min_size
@@ -38,11 +38,11 @@ class RPNProposal(gluon.HybridBlock):
     # pylint: disable=arguments-differ
     def hybrid_forward(self, F, anchor, score, bbox_pred, img):
         """
-        Generate proposals. Limit to batch-size=1 in current implementation.
+        Generate proposals.
         """
         with autograd.pause():
             # restore bounding boxes
-            roi = self._box_decoder(bbox_pred, self._box_to_center(anchor))
+            roi = self._box_decoder(bbox_pred, anchor)
 
             # clip rois to image's boundary
             # roi = F.Custom(roi, img, op_type='bbox_clip_to_image')

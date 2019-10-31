@@ -194,7 +194,9 @@ from mxnet import autograd
 with autograd.train_mode():
     # this time we need ground-truth to generate high quality roi proposals during training
     gt_box = mx.nd.zeros(shape=(1, 1, 4))
-    cls_preds, box_preds, roi, samples, matches, rpn_score, rpn_box, anchors = net(x, gt_box)
+    gt_label = mx.nd.zeros(shape=(1, 1, 1))
+    cls_pred, box_pred, roi, samples, matches, rpn_score, rpn_box, anchors, cls_targets, \
+        box_targets, box_masks, _ = net(x, gt_box, gt_label)
 
 ##############################################################################
 # In training mode, Faster-RCNN returns a lot of intermediate values, which we require to train in an end-to-end flavor,
@@ -272,11 +274,8 @@ for ib, batch in enumerate(train_loader):
             gt_label = label[:, :, 4:5]
             gt_box = label[:, :, :4]
             # network forward
-            cls_preds, box_preds, roi, samples, matches, rpn_score, rpn_box, anchors = net(
-                data.expand_dims(0), gt_box)
-            # generate targets for rcnn
-            cls_targets, box_targets, box_masks = net.target_generator(roi, samples, matches,
-                                                                       gt_label, gt_box)
+            cls_pred, box_pred, roi, samples, matches, rpn_score, rpn_box, anchors, cls_targets, \
+                box_targets, box_masks, _ = net(data.expand_dims(0), gt_box, gt_label)
 
             print('data:', data.shape)
             # box and class labels
@@ -302,11 +301,8 @@ for ib, batch in enumerate(train_loader):
             gt_label = label[:, :, 4:5]
             gt_box = label[:, :, :4]
             # network forward
-            cls_preds, box_preds, roi, samples, matches, rpn_score, rpn_box, anchors = net(
-                data.expand_dims(0), gt_box)
-            # generate targets for rcnn
-            cls_targets, box_targets, box_masks = net.target_generator(roi, samples, matches,
-                                                                       gt_label, gt_box)
+            cls_preds, box_preds, roi, samples, matches, rpn_score, rpn_box, anchors, cls_targets, \
+                box_targets, box_masks, _ = net(data.expand_dims(0), gt_box, gt_label)
 
             # losses of rpn
             rpn_score = rpn_score.squeeze(axis=-1)

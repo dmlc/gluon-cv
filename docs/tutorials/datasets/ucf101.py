@@ -1,5 +1,5 @@
 """Prepare the UCF101 dataset
-============================
+=============================
 
 `UCF101 <https://www.crcv.ucf.edu/data/UCF101.php>`_  is an action recognition dataset
 of realistic action videos, collected from YouTube. With 13,320 short trimmed videos

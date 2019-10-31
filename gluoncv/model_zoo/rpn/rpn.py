@@ -55,15 +55,21 @@ class RPN(gluon.HybridBlock):
         Proposals whose size is smaller than ``min_size`` will be discarded.
         multi_level : boolean
         Whether to extract feature from multiple level. This is used in FPN.
+    multi_level : boolean, default is False.
+        Whether to use multiple feature maps for RPN. eg. FPN.
+    per_level_nms : boollean, default is False
+        Whether to apply nms on each level's rois instead of applying nms after aggregation.
 
     """
 
     def __init__(self, channels, strides, base_size, scales, ratios, alloc_size,
                  clip, nms_thresh, train_pre_nms, train_post_nms,
-                 test_pre_nms, test_post_nms, min_size, multi_level=False, **kwargs):
+                 test_pre_nms, test_post_nms, min_size, multi_level=False, per_level_nms=False,
+                 **kwargs):
         super(RPN, self).__init__(**kwargs)
         self._nms_thresh = nms_thresh
         self._multi_level = multi_level
+        self._per_level_nms = per_level_nms
         self._train_pre_nms = max(1, train_pre_nms)
         self._train_post_nms = max(1, train_post_nms)
         self._test_pre_nms = max(1, test_pre_nms)
@@ -131,8 +137,13 @@ class RPN(gluon.HybridBlock):
                 anchor = ag(feat)
                 rpn_score, rpn_box, raw_rpn_score, raw_rpn_box = \
                     self.rpn_head(feat)
-                rpn_pre = self.region_proposer(anchor, rpn_score,
-                                               rpn_box, img)
+                rpn_pre = self.region_proposer(anchor, rpn_score, rpn_box, img)
+                if self._per_level_nms:
+                    with autograd.pause():
+                        # Non-maximum suppression
+                        rpn_pre = F.contrib.box_nms(rpn_pre, overlap_thresh=self._nms_thresh,
+                                                    topk=pre_nms // len(x), coord_start=1,
+                                                    score_index=0, id_index=-1)
                 anchors.append(anchor)
                 rpn_pre_nms_proposals.append(rpn_pre)
                 raw_rpn_scores.append(raw_rpn_score)
@@ -151,11 +162,17 @@ class RPN(gluon.HybridBlock):
             rpn_pre_nms_proposals = self.region_proposer(
                 anchors, rpn_scores, rpn_boxes, img)
 
-        # Non-maximum suppression
         with autograd.pause():
-            tmp = F.contrib.box_nms(rpn_pre_nms_proposals, overlap_thresh=self._nms_thresh,
-                                    topk=pre_nms, coord_start=1, score_index=0, id_index=-1,
-                                    force_suppress=True)
+            if self._per_level_nms and self._multi_level:
+                # sort by scores
+                tmp = F.contrib.box_nms(rpn_pre_nms_proposals, overlap_thresh=2.,
+                                        topk=pre_nms + 1, coord_start=1, score_index=0, id_index=-1,
+                                        force_suppress=True)
+            else:
+                # Non-maximum suppression
+                tmp = F.contrib.box_nms(rpn_pre_nms_proposals, overlap_thresh=self._nms_thresh,
+                                        topk=pre_nms, coord_start=1, score_index=0, id_index=-1,
+                                        force_suppress=True)
 
             # slice post_nms number of boxes
             result = F.slice_axis(tmp, axis=1, begin=0, end=post_nms)

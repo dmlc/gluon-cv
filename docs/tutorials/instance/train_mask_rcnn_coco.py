@@ -214,8 +214,9 @@ from mxnet import autograd
 with autograd.train_mode():
     # this time we need ground-truth to generate high quality roi proposals during training
     gt_box = mx.nd.zeros(shape=(1, 1, 4))
-    cls_preds, box_preds, mask_preds, roi, samples, matches, rpn_score, rpn_box, anchors = net(x,
-                                                                                               gt_box)
+    gt_label = mx.nd.zeros(shape=(1, 1, 1))
+    cls_pred, box_pred, mask_pred, roi, samples, matches, rpn_score, rpn_box, anchors, \
+    cls_targets, box_targets, box_masks, indices = net(x, gt_box, gt_label)
 
 ##########################################################
 # Training losses
@@ -260,14 +261,23 @@ for ib, batch in enumerate(train_loader):
             gt_label = label[:, :, 4:5]
             gt_box = label[:, :, :4]
             # network forward
-            cls_preds, box_preds, mask_preds, roi, samples, matches, rpn_score, rpn_box, anchors = \
-                net(data.expand_dims(0), gt_box)
-            # generate targets for rcnn
-            cls_targets, box_targets, box_masks = net.target_generator(roi, samples, matches,
-                                                                       gt_label, gt_box)
+            cls_pred, box_pred, mask_pred, roi, samples, matches, rpn_score, rpn_box, anchors, \
+            cls_targets, box_targets, box_masks, indices = \
+                net(data.expand_dims(0), gt_box, gt_label)
+
             # generate targets for mask head
+            roi = mx.nd.concat(
+                *[mx.nd.take(roi[i], indices[i]) for i in range(indices.shape[0])], dim=0) \
+                .reshape((indices.shape[0], -1, 4))
+            m_cls_targets = mx.nd.concat(
+                *[mx.nd.take(cls_targets[i], indices[i]) for i in range(indices.shape[0])], dim=0) \
+                .reshape((indices.shape[0], -1))
+            matches = mx.nd.concat(
+                *[mx.nd.take(matches[i], indices[i]) for i in range(indices.shape[0])], dim=0) \
+                .reshape((indices.shape[0], -1))
             mask_targets, mask_masks = net.mask_target(roi, masks.expand_dims(0), matches,
-                                                       cls_targets)
+                                                       m_cls_targets)
+
             print('data:', data.shape)
             # box and class labels
             print('box:', gt_box.shape)
@@ -299,14 +309,22 @@ for ib, batch in enumerate(train_loader):
             gt_label = label[:, :, 4:5]
             gt_box = label[:, :, :4]
             # network forward
-            cls_preds, box_preds, mask_preds, roi, samples, matches, rpn_score, rpn_box, anchors = \
-                net(data.expand_dims(0), gt_box)
-            # generate targets for rcnn
-            cls_targets, box_targets, box_masks = net.target_generator(roi, samples, matches,
-                                                                       gt_label, gt_box)
+            cls_preds, box_preds, mask_preds, roi, samples, matches, rpn_score, rpn_box, anchors, \
+                cls_targets, box_targets, box_masks, indices = \
+                net(data.expand_dims(0), gt_box, gt_label)
+
             # generate targets for mask head
+            roi = mx.nd.concat(
+                *[mx.nd.take(roi[i], indices[i]) for i in range(indices.shape[0])], dim=0) \
+                .reshape((indices.shape[0], -1, 4))
+            m_cls_targets = mx.nd.concat(
+                *[mx.nd.take(cls_targets[i], indices[i]) for i in range(indices.shape[0])], dim=0) \
+                .reshape((indices.shape[0], -1))
+            matches = mx.nd.concat(
+                *[mx.nd.take(matches[i], indices[i]) for i in range(indices.shape[0])], dim=0) \
+                .reshape((indices.shape[0], -1))
             mask_targets, mask_masks = net.mask_target(roi, masks.expand_dims(0), matches,
-                                                       cls_targets)
+                                                       m_cls_targets)
 
             # losses of rpn
             rpn_score = rpn_score.squeeze(axis=-1)

@@ -4,6 +4,9 @@ import os
 
 # disable autotune
 os.environ['MXNET_CUDNN_AUTOTUNE_DEFAULT'] = '0'
+os.environ['MXNET_GPU_MEM_POOL_TYPE'] = 'Round'
+os.environ['MXNET_GPU_MEM_POOL_ROUND_LINEAR_CUTOFF'] = '28'
+
 import logging
 import time
 import numpy as np
@@ -29,6 +32,8 @@ except ImportError:
     hvd = None
 
 
+# from mxnet import profiler
+
 def parse_args():
     parser = argparse.ArgumentParser(description='Train Mask R-CNN network end to end.')
     parser.add_argument('--network', type=str, default='resnet50_v1b',
@@ -51,15 +56,16 @@ def parse_args():
                         help='Starting epoch for resuming, default is 0 for new training.'
                              'You can specify it to 100 for example to start from 100 epoch.')
     parser.add_argument('--lr', type=str, default='',
-                        help='Learning rate, default is 0.00125 for coco single gpu training.')
+                        help='Learning rate, default is 0.01 for coco 8 gpus training.')
     parser.add_argument('--lr-decay', type=float, default=0.1,
                         help='decay rate of learning rate. default is 0.1.')
     parser.add_argument('--lr-decay-epoch', type=str, default='',
                         help='epochs at which learning rate decays. default is 17,23 for coco.')
     parser.add_argument('--lr-warmup', type=str, default='',
-                        help='warmup iterations to adjust learning rate, default is 8000 for coco.')
+                        help='warmup iterations to adjust learning rate, default is 1000 for coco.')
     parser.add_argument('--lr-warmup-factor', type=float, default=1. / 3.,
                         help='warmup factor of base lr.')
+    parser.add_argument('--clip-gradient', type=float, default=-1., help='gradient clipping.')
     parser.add_argument('--momentum', type=float, default=0.9,
                         help='SGD momentum, default is 0.9')
     parser.add_argument('--wd', type=str, default='',
@@ -168,15 +174,14 @@ def save_params(net, logger, best_map, current_map, epoch, save_interval, prefix
         net.save_parameters('{:s}_{:04d}_{:.4f}.params'.format(prefix, epoch, current_map))
 
 
-pinned_data_stage = {}
-
-def _stage_data(i, data, ctx_list, stage_data):
+def _stage_data(i, data, ctx_list, pinned_data_stage):
     def _get_chunk(data, storage):
         s = storage.reshape(shape=(storage.size,))
         s = s[:data.size]
         s = s.reshape(shape=data.shape)
         data.copyto(s)
         return s
+
     if ctx_list[0].device_type == "cpu":
         return data
     if i not in pinned_data_stage:
@@ -189,18 +194,20 @@ def _stage_data(i, data, ctx_list, stage_data):
         if data[j].size > storage[j].size:
             storage[j] = data[j].as_in_context(mx.cpu_pinned())
 
-    return [_get_chunk(d, s) for d,s in zip(data, storage)]
+    return [_get_chunk(d, s) for d, s in zip(data, storage)]
+
+
+pinned_data_stage = {}
+
 
 def split_and_load(batch, ctx_list):
     """Split data to 1 batch each device."""
     new_batch = []
     for i, data in enumerate(batch):
         if isinstance(data, (list, tuple)):
-            staged_data = _stage_data(i, data, ctx_list, pinned_data_stage)
-            new_data = [x.as_in_context(ctx) for x, ctx in zip(staged_data, ctx_list)]
+            new_data = [x.as_in_context(ctx) for x, ctx in zip(data, ctx_list)]
         else:
-            staged_data = _stage_data(i, [data], ctx_list, pinned_data_stage)
-            new_data = [staged_data[0].as_in_context(ctx_list[0])]
+            new_data = [data.as_in_context(ctx_list[0])]
         new_batch.append(new_data)
     return new_batch
 
@@ -275,8 +282,8 @@ class ForwardBackwardTask(Parallelizable):
         with autograd.record():
             gt_label = label[:, :, 4:5]
             gt_box = label[:, :, :4]
-            cls_pred, box_pred, mask_pred, roi, samples, matches, rpn_score, rpn_box, anchors = net(
-                data, gt_box)
+            cls_pred, box_pred, mask_pred, roi, samples, matches, rpn_score, rpn_box, anchors, \
+            cls_targets, box_targets, box_masks, indices = net(data, gt_box, gt_label)
             # losses of rpn
             rpn_score = rpn_score.squeeze(axis=-1)
             num_rpn_pos = (rpn_cls_targets >= 0).sum()
@@ -286,10 +293,7 @@ class ForwardBackwardTask(Parallelizable):
                                           rpn_box_masks) * rpn_box.size / num_rpn_pos
             # rpn overall loss, use sum rather than average
             rpn_loss = rpn_loss1 + rpn_loss2
-            # generate targets for rcnn
-            cls_targets, box_targets, box_masks = self.net.target_generator(roi, samples,
-                                                                            matches, gt_label,
-                                                                            gt_box)
+
             # losses of rcnn
             num_rcnn_pos = (cls_targets >= 0).sum()
             rcnn_loss1 = self.rcnn_cls_loss(cls_pred, cls_targets,
@@ -300,7 +304,16 @@ class ForwardBackwardTask(Parallelizable):
             rcnn_loss = rcnn_loss1 + rcnn_loss2
 
             # generate targets for mask
-            mask_targets, mask_masks = self.net.mask_target(roi, gt_mask, matches, cls_targets)
+            roi = mx.nd.concat(
+                *[mx.nd.take(roi[i], indices[i]) for i in range(indices.shape[0])], dim=0) \
+                .reshape((indices.shape[0], -1, 4))
+            m_cls_targets = mx.nd.concat(
+                *[mx.nd.take(cls_targets[i], indices[i]) for i in range(indices.shape[0])], dim=0) \
+                .reshape((indices.shape[0], -1))
+            matches = mx.nd.concat(
+                *[mx.nd.take(matches[i], indices[i]) for i in range(indices.shape[0])], dim=0) \
+                .reshape((indices.shape[0], -1))
+            mask_targets, mask_masks = self.net.mask_target(roi, gt_mask, matches, m_cls_targets)
             # loss of mask
             mask_loss = self.rcnn_mask_loss(mask_pred, mask_targets, mask_masks) * \
                         mask_targets.size / mask_masks.sum()
@@ -333,12 +346,15 @@ class ForwardBackwardTask(Parallelizable):
 
 def train(net, train_data, val_data, eval_metric, batch_size, ctx, args):
     """Training pipeline"""
-    kv = mx.kvstore.create('device' if (args.amp and 'nccl' in args.kv_store) else args.kv_store)
+    args.kv_store = 'device' if (args.amp and 'nccl' in args.kv_store) else args.kv_store
+    kv = mx.kvstore.create(args.kv_store)
     net.collect_params().setattr('grad_req', 'null')
     net.collect_train_params().setattr('grad_req', 'write')
     for k, v in net.collect_params('.*bias').items():
         v.wd_mult = 0.0
-    optimizer_params = {'learning_rate': args.lr, 'wd': args.wd, 'momentum': args.momentum}
+    optimizer_params = {'learning_rate': args.lr, 'wd': args.wd, 'momentum': args.momentum, }
+    if args.clip_gradient > 0.0:
+        optimizer_params['clip_gradient'] = args.clip_gradient
     if args.horovod:
         hvd.broadcast_parameters(net.collect_params(), root_rank=0)
         trainer = hvd.DistributedTrainer(
@@ -399,6 +415,7 @@ def train(net, train_data, val_data, eval_metric, batch_size, ctx, args):
         logger.info(net.collect_train_params().keys())
     logger.info('Start training from [Epoch {}]'.format(args.start_epoch))
     best_map = [0]
+    base_lr = trainer.learning_rate
     for epoch in range(args.start_epoch, args.epochs):
         if not args.disable_hybridization:
             net.hybridize(static_alloc=args.static_alloc)
@@ -414,25 +431,22 @@ def train(net, train_data, val_data, eval_metric, batch_size, ctx, args):
             metric.reset()
         tic = time.time()
         btic = time.time()
-        base_lr = trainer.learning_rate
         train_data_iter = iter(train_data)
-        end_of_batch = False
         next_data_batch = next(train_data_iter)
         next_data_batch = split_and_load(next_data_batch, ctx_list=ctx)
-        i = 0
-        while not end_of_batch:
+        for i in range(len(train_data)):
             batch = next_data_batch
-            if epoch == 0 and i <= lr_warmup:
+            if i + epoch * len(train_data) <= lr_warmup:
                 # adjust based on real percentage
-                new_lr = base_lr * get_lr_at_iter(i / lr_warmup, args.lr_warmup_factor)
+                new_lr = base_lr * get_lr_at_iter((i + epoch * len(train_data)) / lr_warmup,
+                                                  args.lr_warmup_factor)
                 if new_lr != trainer.learning_rate:
                     if i % args.log_interval == 0:
-                        logger.info(
-                            '[Epoch 0 Iteration {}] Set learning rate to {}'.format(i, new_lr))
+                        logger.info('[Epoch {} Iteration {}] Set learning rate to {}'
+                                    .format(epoch, i, new_lr))
                     trainer.set_learning_rate(new_lr)
             metric_losses = [[] for _ in metrics]
             add_losses = [[] for _ in metrics2]
-            # losses = []
             if executor is not None:
                 for data in zip(*batch):
                     executor.put(data)
@@ -451,7 +465,7 @@ def train(net, train_data, val_data, eval_metric, batch_size, ctx, args):
                 next_data_batch = next(train_data_iter)
                 next_data_batch = split_and_load(next_data_batch, ctx_list=ctx)
             except StopIteration:
-                end_of_batch = True
+                pass
 
             for metric, record in zip(metrics, metric_losses):
                 metric.update(0, record)
@@ -459,14 +473,13 @@ def train(net, train_data, val_data, eval_metric, batch_size, ctx, args):
                 for pred in records:
                     metric.update(pred[0], pred[1])
             trainer.step(batch_size)
-            # update metrics
+
             if (not args.horovod or hvd.rank() == 0) and args.log_interval \
                     and not (i + 1) % args.log_interval:
                 msg = ','.join(['{}={:.3f}'.format(*metric.get()) for metric in metrics + metrics2])
                 logger.info('[Epoch {}][Batch {}], Speed: {:.3f} samples/sec, {}'.format(
                     epoch, i, args.log_interval * args.batch_size / (time.time() - btic), msg))
                 btic = time.time()
-            i = i + 1
         # validate and save params
         if (not args.horovod) or hvd.rank() == 0:
             msg = ','.join(['{}={:.3f}'.format(*metric.get()) for metric in metrics])

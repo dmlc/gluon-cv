@@ -1,22 +1,22 @@
 # pylint: disable=line-too-long,too-many-lines,missing-docstring
-"""Kinetics400 action classification dataset.
-Code partially borrowed from https://github.com/open-mmlab/mmaction."""
+"""HMDB51 action classification dataset.
+http://serre-lab.clps.brown.edu/resource/hmdb-a-large-human-motion-database/"""
 import os
 import numpy as np
 from mxnet import nd
 from mxnet.gluon.data import dataset
 
-__all__ = ['Kinetics400']
+__all__ = ['HMDB51']
 
-class Kinetics400(dataset.Dataset):
-    """Load the Kinetics400 action recognition dataset.
+class HMDB51(dataset.Dataset):
+    """Load the HMDB51 action recognition dataset.
 
-    Refer to :doc:`../build/examples_datasets/kinetics400` for the description of
+    Refer to :doc:`../build/examples_datasets/hmdb51` for the description of
     this dataset and how to prepare it.
 
     Parameters
     ----------
-    root : str, default '~/.mxnet/datasets/kinetics400'
+    root : str, default '~/.mxnet/datasets/hmdb51'
         Path to the folder stored the dataset.
     setting : str, required
         Config file of the prepared dataset.
@@ -62,8 +62,8 @@ class Kinetics400(dataset.Dataset):
         A function that takes data and label and transforms them.
     """
     def __init__(self,
-                 root=os.path.expanduser('~/.mxnet/datasets/kinetics400/rawframes_train'),
-                 setting=os.path.expanduser('~/.mxnet/datasets/kinetics400/kinetics400_train_list_rawframes.txt'),
+                 root=os.path.expanduser('~/.mxnet/datasets/hmdb51/rawframes'),
+                 setting=os.path.expanduser('~/.mxnet/datasets/hmdb51/testTrainMulti_7030_splits/hmdb51_train_split_1_rawframes.txt'),
                  train=True,
                  test_mode=False,
                  name_pattern='img_%05d.jpg',
@@ -80,12 +80,9 @@ class Kinetics400(dataset.Dataset):
                  temporal_jitter=False,
                  video_loader=False,
                  use_decord=False,
-                 slowfast=False,
-                 slow_temporal_stride=16,
-                 fast_temporal_stride=2,
                  transform=None):
 
-        super(Kinetics400, self).__init__()
+        super(HMDB51, self).__init__()
 
         from ...utils.filesystem import try_import_cv2, try_import_decord, try_import_mmcv
         self.cv2 = try_import_cv2()
@@ -109,14 +106,6 @@ class Kinetics400(dataset.Dataset):
         self.video_loader = video_loader
         self.video_ext = video_ext
         self.use_decord = use_decord
-        self.slowfast = slowfast
-        self.slow_temporal_stride = slow_temporal_stride
-        self.fast_temporal_stride = fast_temporal_stride
-
-        if self.slowfast:
-            assert slow_temporal_stride % fast_temporal_stride == 0, 'slow_temporal_stride needs to be multiples of slow_temporal_stride, please set it accordinly.'
-            assert not temporal_jitter, 'Slowfast dataloader does not support temporal jitter. Please set temporal_jitter=False.'
-            assert new_step == 1, 'Slowfast dataloader only support consecutive frames reading, please set new_step=1.'
 
         if self.video_loader:
             if self.use_decord:
@@ -155,23 +144,14 @@ class Kinetics400(dataset.Dataset):
             else:
                 clip_input = self._video_TSN_mmcv_loader(directory, mmcv_vr, duration, segment_indices, skip_offsets)
         else:
-            if self.slowfast:
-                clip_input = self._image_slowfast_cv2_loader(directory, duration, segment_indices, skip_offsets)
-            else:
-                clip_input = self._image_TSN_cv2_loader(directory, duration, segment_indices, skip_offsets)
+            clip_input = self._image_TSN_cv2_loader(directory, duration, segment_indices, skip_offsets)
 
         if self.transform is not None:
             clip_input = self.transform(clip_input)
 
-        if self.slowfast:
-            sparse_sampels = len(clip_input) // self.num_segments
-            clip_input = np.stack(clip_input, axis=0)
-            clip_input = clip_input.reshape((-1,) + (sparse_sampels, 3, self.target_height, self.target_width))
-            clip_input = np.transpose(clip_input, (0, 2, 1, 3, 4))
-        else:
-            clip_input = np.stack(clip_input, axis=0)
-            clip_input = clip_input.reshape((-1,) + (self.new_length, 3, self.target_height, self.target_width))
-            clip_input = np.transpose(clip_input, (0, 2, 1, 3, 4))
+        clip_input = np.stack(clip_input, axis=0)
+        clip_input = clip_input.reshape((-1,) + (self.new_length, 3, self.target_height, self.target_width))
+        clip_input = np.transpose(clip_input, (0, 2, 1, 3, 4))
 
         if self.new_length == 1:
             clip_input = np.squeeze(clip_input, axis=2)    # this is for 2D input case
@@ -283,37 +263,6 @@ class Kinetics400(dataset.Dataset):
                     offset += self.new_step
         return sampled_list
 
-    def _image_slowfast_cv2_loader(self, directory, duration, indices, skip_offsets):
-        sampled_list = []
-        for seg_ind in indices:
-            offset = int(seg_ind)
-            fast_list = []
-            slow_list = []
-            for i, _ in enumerate(range(0, self.skip_length, self.new_step)):
-                if offset + skip_offsets[i] <= duration:
-                    frame_path = os.path.join(directory, self.name_pattern % (offset + skip_offsets[i]))
-                else:
-                    frame_path = os.path.join(directory, self.name_pattern % (offset))
-                if (i + 1) % self.fast_temporal_stride == 0:
-                    cv_img = self.cv2.imread(frame_path)
-                    if cv_img is None:
-                        raise(RuntimeError("Could not load file %s starting at frame %d. Check data path." % (frame_path, offset)))
-                    if self.new_width > 0 and self.new_height > 0:
-                        h, w, _ = cv_img.shape
-                        if h != self.new_height or w != self.new_width:
-                            cv_img = self.cv2.resize(cv_img, (self.new_width, self.new_height))
-                    cv_img = cv_img[:, :, ::-1]
-                    fast_list.append(cv_img)
-
-                    if (i + 1) % self.slow_temporal_stride == 0:
-                        slow_list.append(cv_img)
-
-                if offset + self.new_step < duration:
-                    offset += self.new_step
-            fast_list.extend(slow_list)
-            sampled_list.extend(fast_list)
-        return sampled_list
-
     def _video_TSN_mmcv_loader(self, directory, video_reader, duration, indices, skip_offsets):
         sampled_list = []
         for seg_ind in indices:
@@ -373,70 +322,13 @@ class Kinetics400(dataset.Dataset):
             raise RuntimeError('Error occured in reading frames {} from video {} of duration {}.'.format(frame_id_list, directory, duration))
         return sampled_list
 
-class Kinetics400Attr(object):
+class HMDB51Attr(object):
     def __init__(self):
-        self.num_class = 400
-        self.classes = ['abseiling', 'air_drumming', 'answering_questions', 'applauding', 'applying_cream', 'archery',
-                        'arm_wrestling', 'arranging_flowers', 'assembling_computer', 'auctioning', 'baby_waking_up', 'baking_cookies',
-                        'balloon_blowing', 'bandaging', 'barbequing', 'bartending', 'beatboxing', 'bee_keeping', 'belly_dancing',
-                        'bench_pressing', 'bending_back', 'bending_metal', 'biking_through_snow', 'blasting_sand', 'blowing_glass',
-                        'blowing_leaves', 'blowing_nose', 'blowing_out_candles', 'bobsledding', 'bookbinding', 'bouncing_on_trampoline',
-                        'bowling', 'braiding_hair', 'breading_or_breadcrumbing', 'breakdancing', 'brush_painting', 'brushing_hair',
-                        'brushing_teeth', 'building_cabinet', 'building_shed', 'bungee_jumping', 'busking', 'canoeing_or_kayaking',
-                        'capoeira', 'carrying_baby', 'cartwheeling', 'carving_pumpkin', 'catching_fish', 'catching_or_throwing_baseball',
-                        'catching_or_throwing_frisbee', 'catching_or_throwing_softball', 'celebrating', 'changing_oil', 'changing_wheel',
-                        'checking_tires', 'cheerleading', 'chopping_wood', 'clapping', 'clay_pottery_making', 'clean_and_jerk',
-                        'cleaning_floor', 'cleaning_gutters', 'cleaning_pool', 'cleaning_shoes', 'cleaning_toilet', 'cleaning_windows',
-                        'climbing_a_rope', 'climbing_ladder', 'climbing_tree', 'contact_juggling', 'cooking_chicken', 'cooking_egg',
-                        'cooking_on_campfire', 'cooking_sausages', 'counting_money', 'country_line_dancing', 'cracking_neck', 'crawling_baby',
-                        'crossing_river', 'crying', 'curling_hair', 'cutting_nails', 'cutting_pineapple', 'cutting_watermelon',
-                        'dancing_ballet', 'dancing_charleston', 'dancing_gangnam_style', 'dancing_macarena', 'deadlifting',
-                        'decorating_the_christmas_tree', 'digging', 'dining', 'disc_golfing', 'diving_cliff', 'dodgeball', 'doing_aerobics',
-                        'doing_laundry', 'doing_nails', 'drawing', 'dribbling_basketball', 'drinking', 'drinking_beer', 'drinking_shots',
-                        'driving_car', 'driving_tractor', 'drop_kicking', 'drumming_fingers', 'dunking_basketball', 'dying_hair',
-                        'eating_burger', 'eating_cake', 'eating_carrots', 'eating_chips', 'eating_doughnuts', 'eating_hotdog',
-                        'eating_ice_cream', 'eating_spaghetti', 'eating_watermelon', 'egg_hunting', 'exercising_arm',
-                        'exercising_with_an_exercise_ball', 'extinguishing_fire', 'faceplanting', 'feeding_birds', 'feeding_fish',
-                        'feeding_goats', 'filling_eyebrows', 'finger_snapping', 'fixing_hair', 'flipping_pancake', 'flying_kite',
-                        'folding_clothes', 'folding_napkins', 'folding_paper', 'front_raises', 'frying_vegetables', 'garbage_collecting',
-                        'gargling', 'getting_a_haircut', 'getting_a_tattoo', 'giving_or_receiving_award', 'golf_chipping', 'golf_driving',
-                        'golf_putting', 'grinding_meat', 'grooming_dog', 'grooming_horse', 'gymnastics_tumbling', 'hammer_throw',
-                        'headbanging', 'headbutting', 'high_jump', 'high_kick', 'hitting_baseball', 'hockey_stop', 'holding_snake',
-                        'hopscotch', 'hoverboarding', 'hugging', 'hula_hooping', 'hurdling', 'hurling_-sport-', 'ice_climbing', 'ice_fishing',
-                        'ice_skating', 'ironing', 'javelin_throw', 'jetskiing', 'jogging', 'juggling_balls', 'juggling_fire',
-                        'juggling_soccer_ball', 'jumping_into_pool', 'jumpstyle_dancing', 'kicking_field_goal', 'kicking_soccer_ball',
-                        'kissing', 'kitesurfing', 'knitting', 'krumping', 'laughing', 'laying_bricks', 'long_jump', 'lunge', 'making_a_cake',
-                        'making_a_sandwich', 'making_bed', 'making_jewelry', 'making_pizza', 'making_snowman', 'making_sushi', 'making_tea',
-                        'marching', 'massaging_back', 'massaging_feet', 'massaging_legs', "massaging_person's_head", 'milking_cow',
-                        'mopping_floor', 'motorcycling', 'moving_furniture', 'mowing_lawn', 'news_anchoring', 'opening_bottle',
-                        'opening_present', 'paragliding', 'parasailing', 'parkour', 'passing_American_football_-in_game-',
-                        'passing_American_football_-not_in_game-', 'peeling_apples', 'peeling_potatoes', 'petting_animal_-not_cat-',
-                        'petting_cat', 'picking_fruit', 'planting_trees', 'plastering', 'playing_accordion', 'playing_badminton',
-                        'playing_bagpipes', 'playing_basketball', 'playing_bass_guitar', 'playing_cards', 'playing_cello', 'playing_chess',
-                        'playing_clarinet', 'playing_controller', 'playing_cricket', 'playing_cymbals', 'playing_didgeridoo', 'playing_drums',
-                        'playing_flute', 'playing_guitar', 'playing_harmonica', 'playing_harp', 'playing_ice_hockey', 'playing_keyboard',
-                        'playing_kickball', 'playing_monopoly', 'playing_organ', 'playing_paintball', 'playing_piano', 'playing_poker',
-                        'playing_recorder', 'playing_saxophone', 'playing_squash_or_racquetball', 'playing_tennis', 'playing_trombone',
-                        'playing_trumpet', 'playing_ukulele', 'playing_violin', 'playing_volleyball', 'playing_xylophone', 'pole_vault',
-                        'presenting_weather_forecast', 'pull_ups', 'pumping_fist', 'pumping_gas', 'punching_bag', 'punching_person_-boxing-',
-                        'push_up', 'pushing_car', 'pushing_cart', 'pushing_wheelchair', 'reading_book', 'reading_newspaper', 'recording_music',
-                        'riding_a_bike', 'riding_camel', 'riding_elephant', 'riding_mechanical_bull', 'riding_mountain_bike', 'riding_mule',
-                        'riding_or_walking_with_horse', 'riding_scooter', 'riding_unicycle', 'ripping_paper', 'robot_dancing', 'rock_climbing',
-                        'rock_scissors_paper', 'roller_skating', 'running_on_treadmill', 'sailing', 'salsa_dancing', 'sanding_floor',
-                        'scrambling_eggs', 'scuba_diving', 'setting_table', 'shaking_hands', 'shaking_head', 'sharpening_knives',
-                        'sharpening_pencil', 'shaving_head', 'shaving_legs', 'shearing_sheep', 'shining_shoes', 'shooting_basketball',
-                        'shooting_goal_-soccer-', 'shot_put', 'shoveling_snow', 'shredding_paper', 'shuffling_cards', 'side_kick',
-                        'sign_language_interpreting', 'singing', 'situp', 'skateboarding', 'ski_jumping', 'skiing_-not_slalom_or_crosscountry-',
-                        'skiing_crosscountry', 'skiing_slalom', 'skipping_rope', 'skydiving', 'slacklining', 'slapping', 'sled_dog_racing',
-                        'smoking', 'smoking_hookah', 'snatch_weight_lifting', 'sneezing', 'sniffing', 'snorkeling', 'snowboarding', 'snowkiting',
-                        'snowmobiling', 'somersaulting', 'spinning_poi', 'spray_painting', 'spraying', 'springboard_diving', 'squat',
-                        'sticking_tongue_out', 'stomping_grapes', 'stretching_arm', 'stretching_leg', 'strumming_guitar', 'surfing_crowd',
-                        'surfing_water', 'sweeping_floor', 'swimming_backstroke', 'swimming_breast_stroke', 'swimming_butterfly_stroke',
-                        'swing_dancing', 'swinging_legs', 'swinging_on_something', 'sword_fighting', 'tai_chi', 'taking_a_shower', 'tango_dancing',
-                        'tap_dancing', 'tapping_guitar', 'tapping_pen', 'tasting_beer', 'tasting_food', 'testifying', 'texting', 'throwing_axe',
-                        'throwing_ball', 'throwing_discus', 'tickling', 'tobogganing', 'tossing_coin', 'tossing_salad', 'training_dog',
-                        'trapezing', 'trimming_or_shaving_beard', 'trimming_trees', 'triple_jump', 'tying_bow_tie', 'tying_knot_-not_on_a_tie-',
-                        'tying_tie', 'unboxing', 'unloading_truck', 'using_computer', 'using_remote_controller_-not_gaming-', 'using_segway',
-                        'vault', 'waiting_in_line', 'walking_the_dog', 'washing_dishes', 'washing_feet', 'washing_hair', 'washing_hands',
-                        'water_skiing', 'water_sliding', 'watering_plants', 'waxing_back', 'waxing_chest', 'waxing_eyebrows', 'waxing_legs',
-                        'weaving_basket', 'welding', 'whistling', 'windsurfing', 'wrapping_present', 'wrestling', 'writing', 'yawning', 'yoga', 'zumba']
+        self.num_class = 51
+        self.classes = ['brush_hair', 'cartwheel', 'catch', 'chew', 'clap', 'climb', 'climb_stairs',
+                        'dive', 'draw_sword', 'dribble', 'drink', 'eat', 'fall_floor', 'fencing',
+                        'flic_flac', 'golf', 'handstand', 'hit', 'hug', 'jump', 'kick', 'kick_ball',
+                        'kiss', 'laugh', 'pick', 'pour', 'pullup', 'punch', 'push', 'pushup',
+                        'ride_bike', 'ride_horse', 'run', 'shake_hands', 'shoot_ball', 'shoot_bow',
+                        'shoot_gun', 'sit', 'situp', 'smile', 'smoke', 'somersault', 'stand',
+                        'swing_baseball', 'sword', 'sword_exercise', 'talk', 'throw', 'turn', 'walk', 'wave']

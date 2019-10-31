@@ -438,13 +438,15 @@ class SplitSortedBucketSampler(Sampler):
         self._mult = mult
         self._shuffle = shuffle
         # Compute the length of each partition
-        part_len = length // num_parts
+        part_len = int(np.ceil(float(length) / num_parts))
         # Compute the start index for this partition
         self._start = part_len * part_index
         # Compute the end index for this partition
         self._end = self._start + part_len
         if part_index == num_parts - 1:
+            # last part
             self._end = length
+            self._start = length - part_len
         self._num_parts = num_parts
         self._seed = seed
         self._shuffled_ids = np.random.RandomState(seed=self._seed).permutation(range(length))
@@ -476,4 +478,4 @@ class SplitSortedBucketSampler(Sampler):
                     yield sorted_sample_ids[batch_begin:batch_end]
 
     def __len__(self):
-        return (self._end - self._start + self._batch_size - 1) // self._batch_size
+        return int(np.ceil(float(self._end - self._start) / self._batch_size))
