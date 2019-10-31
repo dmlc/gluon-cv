@@ -3,14 +3,11 @@
 
 __all__ = ['SlowFast', 'slowfast_4x16_resnet50_kinetics400']
 
-from mxnet import nd
 from mxnet import init
 from mxnet.context import cpu
 from mxnet.gluon.block import HybridBlock
 from mxnet.gluon import nn
 from mxnet.gluon.nn import BatchNorm
-from ..resnetv1b import resnet50_v1b, resnet101_v1b
-from .non_local import build_nonlocal_block
 
 class Bottleneck(HybridBlock):
     expansion = 4
@@ -76,8 +73,8 @@ class SlowFast(HybridBlock):
                  init_std=0.01,
                  slow_temporal_stride=16,
                  fast_temporal_stride=2,
-                 slow_frames = 4,
-                 fast_frames = 32,
+                 slow_frames=4,
+                 fast_frames=32,
                  norm_layer=BatchNorm,
                  norm_kwargs=None,
                  ctx=None,
@@ -144,7 +141,7 @@ class SlowFast(HybridBlock):
     def hybrid_forward(self, F, x):
         fast_input = F.slice(x, begin=(None, None, 0, None, None), end=(None, None, self.fast_frames, None, None))
         slow_input = F.slice(x, begin=(None, None, self.fast_frames, None, None), end=(None, None, self.fast_frames + self.slow_frames, None, None))
-        # print(fast_input.shape, slow_input.shape)
+
         fast, lateral = self.FastPath(F, fast_input)
         slow = self.SlowPath(F, slow_input, lateral)
         x = F.concat(slow, fast, dim=1)                 # bx2304
@@ -218,10 +215,10 @@ class SlowFast(HybridBlock):
             downsample = nn.HybridSequential(prefix=layer_name+'downsample_')
             with downsample.name_scope():
                 downsample.add(nn.Conv3D(in_channels=self.fast_inplanes,
-                                     channels=planes * block.expansion,
-                                     kernel_size=1,
-                                     strides=(1, strides, strides),
-                                     use_bias=False))
+                                         channels=planes * block.expansion,
+                                         kernel_size=1,
+                                         strides=(1, strides, strides),
+                                         use_bias=False))
                 downsample.add(norm_layer(in_channels=planes * block.expansion, **({} if norm_kwargs is None else norm_kwargs)))
 
         layers = nn.HybridSequential(prefix=layer_name)
@@ -240,6 +237,7 @@ class SlowFast(HybridBlock):
                                  planes=planes,
                                  head_conv=head_conv,
                                  layer_name='block%d_' % cnt))
+                assert i == cnt
                 cnt += 1
         return layers
 
@@ -257,10 +255,10 @@ class SlowFast(HybridBlock):
             downsample = nn.HybridSequential(prefix=layer_name+'downsample_')
             with downsample.name_scope():
                 downsample.add(nn.Conv3D(in_channels=self.slow_inplanes,
-                                     channels=planes * block.expansion,
-                                     kernel_size=1,
-                                     strides=(1, strides, strides),
-                                     use_bias=False))
+                                         channels=planes * block.expansion,
+                                         kernel_size=1,
+                                         strides=(1, strides, strides),
+                                         use_bias=False))
                 downsample.add(norm_layer(in_channels=planes * block.expansion, **({} if norm_kwargs is None else norm_kwargs)))
 
         layers = nn.HybridSequential(prefix=layer_name)
@@ -279,6 +277,7 @@ class SlowFast(HybridBlock):
                                  planes=planes,
                                  head_conv=head_conv,
                                  layer_name='block%d_' % cnt))
+                assert i == cnt
                 cnt += 1
         self.slow_inplanes = planes * block.expansion + planes * block.expansion // 8 * 2
         return layers
