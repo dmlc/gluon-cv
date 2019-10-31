@@ -155,6 +155,9 @@ _model_sha1 = {name: checksum for checksum, name in [
     ('26b41dd6b04b3cd17057b3bff0ff9800ed8f6d7e', 'i3d_nl10_resnet50_v1_kinetics400'),
     ('8b25d02f327838b71d0d986f3394753c15fd40fd', 'i3d_nl5_resnet101_v1_kinetics400'),
     ('77d7ed77ca63c56660b188fd9165a5a3eb6ffe4d', 'i3d_nl10_resnet101_v1_kinetics400'),
+    ('2ec6bf01a55af38579380e6531d0ecc816862abe', 'i3d_resnet50_v1_hmdb51'),
+    ('760d0981094787b8789ee4a8c382d09d493c7413', 'i3d_resnet50_v1_ucf101'),
+    ('682591e23ce4b92fbd3222c0710ebb52166fddca', 'resnet50_v1b_hmdb51'),
 ]}
 
 apache_repo_url = 'https://apache-mxnet.s3-accelerate.dualstack.amazonaws.com/'
