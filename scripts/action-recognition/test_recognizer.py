@@ -68,6 +68,8 @@ def parse_args():
                         help='Crop ratio during validation. default is 0.875')
     parser.add_argument('--use-pretrained', action='store_true',
                         help='enable using pretrained model from gluon.')
+    parser.add_argument('--hashtag', type=str, default='',
+                        help='hashtag for pretrained models.')
     parser.add_argument('--use_se', action='store_true',
                         help='use SE layers or not in resnext. default is false.')
     parser.add_argument('--mixup', action='store_true',
@@ -210,6 +212,8 @@ def main():
         opt.num_crop = 1
 
     # get model
+    if opt.use_pretrained and len(opt.hashtag) > 0:
+        opt.use_pretrained = opt.hashtag
     classes = opt.num_classes
     model_name = opt.model
     net = get_model(name=model_name, nclass=classes, pretrained=opt.use_pretrained, num_segments=opt.num_segments, num_crop=opt.num_crop)

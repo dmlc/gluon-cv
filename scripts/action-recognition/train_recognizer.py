@@ -69,6 +69,8 @@ def parse_args():
                         help='Crop ratio during validation. default is 0.875')
     parser.add_argument('--use-pretrained', action='store_true',
                         help='enable using pretrained model from gluon.')
+    parser.add_argument('--hashtag', type=str, default='',
+                        help='hashtag for pretrained models.')
     parser.add_argument('--use_se', action='store_true',
                         help='use SE layers or not in resnext. default is false.')
     parser.add_argument('--mixup', action='store_true',
@@ -264,6 +266,8 @@ def main():
         optimizer_params['multi_precision'] = True
 
     model_name = opt.model
+    if opt.use_pretrained and len(opt.hashtag) > 0:
+        opt.use_pretrained = opt.hashtag
     net = get_model(name=model_name, nclass=classes, pretrained=opt.use_pretrained,
                     use_tsn=opt.use_tsn, num_segments=opt.num_segments, partial_bn=opt.partial_bn)
     net.cast(opt.dtype)
