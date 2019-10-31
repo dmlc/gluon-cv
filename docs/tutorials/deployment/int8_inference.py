@@ -69,7 +69,7 @@ Below CPU performance is collected with dummy input from Intel(R) VNNI enabled A
 +-----------------------------+----------------+------------+---------------------+-----------------+-----------------+
 
 Quantized SSD models are evaluated with ``nms_thresh=0.45``, ``nms_topk=200``. For segmentation models, the accuracy metric is pixAcc, and for pose-estimation models, the accuracy metric is OKS AP w/o flip.
-Quantized video action recognition 2D and 3D models (with tsn) are calibrated with `num-segments=3` and `num-segments=1` separately.
+Quantized 2D video action recognition models (with tsn) are calibrated with ``num-segments=3``.
 
 Demo usage for SSD
 ------------------
