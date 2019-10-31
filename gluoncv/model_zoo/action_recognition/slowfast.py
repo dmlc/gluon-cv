@@ -67,6 +67,7 @@ class SlowFast(HybridBlock):
                  pretrained=False,
                  pretrained_base=True,
                  num_segments=1,
+                 num_crop=1,
                  bn_eval=True,
                  bn_frozen=False,
                  partial_bn=False,
@@ -86,6 +87,10 @@ class SlowFast(HybridBlock):
         self.fast_temporal_stride = fast_temporal_stride
         self.slow_frames = slow_frames
         self.fast_frames = fast_frames
+        self.num_segments = num_segments
+        self.num_crop = num_crop
+        self.dropout_ratio = dropout_ratio
+        self.init_std = init_std
 
         with self.name_scope():
             # build fast pathway
@@ -130,8 +135,9 @@ class SlowFast(HybridBlock):
 
             # build classifier
             self.avg = nn.GlobalAvgPool3D()
-            self.dp = nn.Dropout(rate=dropout_ratio)
-            self.fc = nn.Dense(in_units=self.fast_inplanes + 2048, units=nclass, weight_initializer=init.Normal(sigma=init_std), use_bias=False)
+            self.dp = nn.Dropout(rate=self.dropout_ratio)
+            self.feat_dim = self.fast_inplanes + 2048
+            self.fc = nn.Dense(in_units=self.feat_dim, units=nclass, weight_initializer=init.Normal(sigma=self.init_std), use_bias=False)
 
             self.initialize(init.MSRAPrelu(), ctx=ctx)
 
@@ -142,6 +148,11 @@ class SlowFast(HybridBlock):
         fast, lateral = self.FastPath(F, fast_input)
         slow = self.SlowPath(F, slow_input, lateral)
         x = F.concat(slow, fast, dim=1)                 # bx2304
+
+        # segmental consensus
+        x = F.reshape(x, shape=(-1, self.num_segments * self.num_crop, self.feat_dim))
+        x = F.mean(x, axis=1)
+
         x = self.dp(x)
         x = self.fc(x)                                  # bxnclass
         return x
@@ -272,11 +283,13 @@ class SlowFast(HybridBlock):
         self.slow_inplanes = planes * block.expansion + planes * block.expansion // 8 * 2
         return layers
 
-def slowfast_4x16_resnet50_kinetics400(nclass=400, pretrained=False, pretrained_base=True, ctx=cpu(),
-                                       root='~/.mxnet/models', tsn=False, num_segments=1, partial_bn=False, **kwargs):
-    r"""Inflated 3D model (I3D) from
-    `"Quo Vadis, Action Recognition? A New Model and the Kinetics Dataset"
-    <https://arxiv.org/abs/1705.07750>`_ paper.
+def slowfast_4x16_resnet50_kinetics400(nclass=400, pretrained=False, pretrained_base=True,
+                                       use_tsn=False, num_segments=1, num_crop=1,
+                                       partial_bn=False,
+                                       root='~/.mxnet/models', ctx=cpu(), **kwargs):
+    r"""SlowFast networks (SlowFast) from
+    `"SlowFast Networks for Video Recognition"
+    <https://arxiv.org/abs/1812.03982>`_ paper.
 
     Parameters
     ----------
@@ -302,6 +315,7 @@ def slowfast_4x16_resnet50_kinetics400(nclass=400, pretrained=False, pretrained_
                      pretrained=pretrained,
                      pretrained_base=pretrained_base,
                      num_segments=num_segments,
+                     num_crop=num_crop,
                      partial_bn=partial_bn,
                      ctx=ctx,
                      **kwargs)

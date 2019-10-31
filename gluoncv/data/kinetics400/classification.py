@@ -38,6 +38,9 @@ class Kinetics400(dataset.Dataset):
         Number of segments to evenly divide the video into clips.
         A useful technique to obtain global video-level information.
         Limin Wang, etal, Temporal Segment Networks: Towards Good Practices for Deep Action Recognition, ECCV 2016
+    num_crop : int, default 1
+        Number of crops for each image. default is 1.
+        Common choices are three crops and ten crops during evaluation.
     new_length : int, default 1
         The length of input video clip. Default is a single image, but it can be multiple video frames.
         For example, new_length=16 means we will extract a video clip of consecutive 16 frames.
@@ -71,6 +74,7 @@ class Kinetics400(dataset.Dataset):
                  is_color=True,
                  modality='rgb',
                  num_segments=1,
+                 num_crop=1,
                  new_length=1,
                  new_step=1,
                  new_width=340,
@@ -96,6 +100,7 @@ class Kinetics400(dataset.Dataset):
         self.is_color = is_color
         self.modality = modality
         self.num_segments = num_segments
+        self.num_crop = num_crop
         self.new_height = new_height
         self.new_width = new_width
         self.new_length = new_length
@@ -164,7 +169,7 @@ class Kinetics400(dataset.Dataset):
             clip_input = self.transform(clip_input)
 
         if self.slowfast:
-            sparse_sampels = len(clip_input) // self.num_segments
+            sparse_sampels = len(clip_input) // (self.num_segments * self.num_crop)
             clip_input = np.stack(clip_input, axis=0)
             clip_input = clip_input.reshape((-1,) + (sparse_sampels, 3, self.target_height, self.target_width))
             clip_input = np.transpose(clip_input, (0, 2, 1, 3, 4))
