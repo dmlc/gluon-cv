@@ -36,7 +36,7 @@ class Bottleneck(HybridBlock):
             self.conv2 = nn.Conv3D(in_channels=planes, channels=planes, kernel_size=(1, 3, 3), strides=(1, strides, strides), padding=(0, 1, 1), use_bias=False)
             self.bn2 = norm_layer(in_channels=planes, **({} if norm_kwargs is None else norm_kwargs))
             self.conv3 = nn.Conv3D(in_channels=planes, channels=planes * 4, kernel_size=1, use_bias=False)
-            self.bn3 = norm_layer(in_channels=planes * self.expansion, **({} if norm_kwargs is None else norm_kwargs))
+            self.bn3 = norm_layer(in_channels=planes * self.expansion, gamma_initializer='zeros', **({} if norm_kwargs is None else norm_kwargs))
             self.relu = nn.Activation('relu')
             self.downsample = downsample
 
@@ -102,24 +102,33 @@ class SlowFast(HybridBlock):
                 self.fast_bn1 = norm_layer(in_channels=8, **({} if norm_kwargs is None else norm_kwargs))
                 self.fast_relu = nn.Activation('relu')
                 self.fast_maxpool = nn.MaxPool3D(pool_size=(1, 3, 3), strides=(1, 2, 2), padding=(0, 1, 1))
+                self.fast_maxpool2 = nn.MaxPool3D(pool_size=(1, 1, 1), strides=(1, 1, 1), padding=(0, 0, 0))
             self.fast_res2 = self._make_layer_fast(block, planes=8, blocks=layers[0], head_conv=3, norm_layer=norm_layer, norm_kwargs=norm_kwargs, layer_name='fast_res2_')
             self.fast_res3 = self._make_layer_fast(block, planes=16, blocks=layers[1], strides=2, head_conv=3, norm_layer=norm_layer, norm_kwargs=norm_kwargs, layer_name='fast_res3_')
             self.fast_res4 = self._make_layer_fast(block, planes=32, blocks=layers[2], strides=2, head_conv=3, norm_layer=norm_layer, norm_kwargs=norm_kwargs, layer_name='fast_res4_')
             self.fast_res5 = self._make_layer_fast(block, planes=64, blocks=layers[3], strides=2, head_conv=3, norm_layer=norm_layer, norm_kwargs=norm_kwargs, layer_name='fast_res5_')
 
             # build lateral connections
-            lateral_p1 = nn.HybridSequential(prefix='lateral_p1_')
-            with lateral_p1.name_scope():
-                self.lateral_p1 = nn.Conv3D(in_channels=8, channels=8*2, kernel_size=(5, 1, 1), strides=(8, 1, 1), padding=(2, 0, 0), use_bias=False)
-            lateral_res2 = nn.HybridSequential(prefix='lateral_res2_')
-            with lateral_res2.name_scope():
-                self.lateral_res2 = nn.Conv3D(in_channels=32, channels=32*2, kernel_size=(5, 1, 1), strides=(8, 1, 1), padding=(2, 0, 0), use_bias=False)
-            lateral_res3 = nn.HybridSequential(prefix='lateral_res3_')
-            with lateral_res3.name_scope():
-                self.lateral_res3 = nn.Conv3D(in_channels=64, channels=64*2, kernel_size=(5, 1, 1), strides=(8, 1, 1), padding=(2, 0, 0), use_bias=False)
-            lateral_res4 = nn.HybridSequential(prefix='lateral_res4_')
-            with lateral_res4.name_scope():
-                self.lateral_res4 = nn.Conv3D(in_channels=128, channels=128*2, kernel_size=(5, 1, 1), strides=(8, 1, 1), padding=(2, 0, 0), use_bias=False)
+            self.lateral_p1 = nn.HybridSequential(prefix='lateral_p1_')
+            with self.lateral_p1.name_scope():
+                self.lateral_p1.add(nn.Conv3D(in_channels=8, channels=8*2, kernel_size=(5, 1, 1), strides=(8, 1, 1), padding=(2, 0, 0), use_bias=False))
+                self.lateral_p1.add(norm_layer(in_channels=8*2, **({} if norm_kwargs is None else norm_kwargs)))
+                self.lateral_p1.add(nn.Activation('relu'))
+            self.lateral_res2 = nn.HybridSequential(prefix='lateral_res2_')
+            with self.lateral_res2.name_scope():
+                self.lateral_res2.add(nn.Conv3D(in_channels=32, channels=32*2, kernel_size=(5, 1, 1), strides=(8, 1, 1), padding=(2, 0, 0), use_bias=False))
+                self.lateral_res2.add(norm_layer(in_channels=32*2, **({} if norm_kwargs is None else norm_kwargs)))
+                self.lateral_res2.add(nn.Activation('relu'))
+            self.lateral_res3 = nn.HybridSequential(prefix='lateral_res3_')
+            with self.lateral_res3.name_scope():
+                self.lateral_res3.add(nn.Conv3D(in_channels=64, channels=64*2, kernel_size=(5, 1, 1), strides=(8, 1, 1), padding=(2, 0, 0), use_bias=False))
+                self.lateral_res3.add(norm_layer(in_channels=64*2, **({} if norm_kwargs is None else norm_kwargs)))
+                self.lateral_res3.add(nn.Activation('relu'))
+            self.lateral_res4 = nn.HybridSequential(prefix='lateral_res4_')
+            with self.lateral_res4.name_scope():
+                self.lateral_res4.add(nn.Conv3D(in_channels=128, channels=128*2, kernel_size=(5, 1, 1), strides=(8, 1, 1), padding=(2, 0, 0), use_bias=False))
+                self.lateral_res4.add(norm_layer(in_channels=128*2, **({} if norm_kwargs is None else norm_kwargs)))
+                self.lateral_res4.add(nn.Activation('relu'))
 
             # build slow pathway
             self.slow_inplanes = 64 + 64 // 8 * 2
@@ -129,6 +138,7 @@ class SlowFast(HybridBlock):
                 self.slow_bn1 = norm_layer(in_channels=64, **({} if norm_kwargs is None else norm_kwargs))
                 self.slow_relu = nn.Activation('relu')
                 self.slow_maxpool = nn.MaxPool3D(pool_size=(1, 3, 3), strides=(1, 2, 2), padding=(0, 1, 1))
+                self.slow_maxpool2 = nn.MaxPool3D(pool_size=(1, 1, 1), strides=(1, 1, 1), padding=(0, 0, 0))
             self.slow_res2 = self._make_layer_slow(block, planes=64, blocks=layers[0], head_conv=1, norm_layer=norm_layer, norm_kwargs=norm_kwargs, layer_name='slow_res2_')
             self.slow_res3 = self._make_layer_slow(block, planes=128, blocks=layers[1], strides=2, head_conv=1, norm_layer=norm_layer, norm_kwargs=norm_kwargs, layer_name='slow_res3_')
             self.slow_res4 = self._make_layer_slow(block, planes=256, blocks=layers[2], strides=2, head_conv=3, norm_layer=norm_layer, norm_kwargs=norm_kwargs, layer_name='slow_res4_')
@@ -138,7 +148,7 @@ class SlowFast(HybridBlock):
             self.avg = nn.GlobalAvgPool3D()
             self.dp = nn.Dropout(rate=self.dropout_ratio)
             self.feat_dim = self.fast_inplanes + 2048
-            self.fc = nn.Dense(in_units=self.feat_dim, units=nclass, weight_initializer=init.Normal(sigma=self.init_std), use_bias=False)
+            self.fc = nn.Dense(in_units=self.feat_dim, units=nclass, weight_initializer=init.Normal(sigma=self.init_std), use_bias=True)
 
             self.initialize(init.MSRAPrelu(), ctx=ctx)
 
@@ -168,6 +178,8 @@ class SlowFast(HybridBlock):
         res2 = self.slow_res2(pool1_lat)                # bx256x4x56x56
         res2_lat = F.concat(res2, lateral[1], dim=1)    # bx320x4x56x56
 
+        res2_lat = self.slow_maxpool2(res2_lat)         # bx320x4x56x56
+
         res3 = self.slow_res3(res2_lat)                 # bx512x4x28x28
         res3_lat = F.concat(res3, lateral[2], dim=1)    # bx640x4x28x28
 
@@ -191,6 +203,8 @@ class SlowFast(HybridBlock):
         res2 = self.fast_res2(pool1)                    # bx32x32x56x56
         lateral_res2 = self.lateral_res2(res2)          # bx64x4x56x56
         lateral.append(lateral_res2)
+
+        res2 = self.fast_maxpool2(res2)                 # bx32x32x56x56
 
         res3 = self.fast_res3(res2)                     # bx64x32x28x28
         lateral_res3 = self.lateral_res3(res3)          # bx128x4x28x28
@@ -236,12 +250,11 @@ class SlowFast(HybridBlock):
                              layer_name='block%d_' % cnt))
             self.fast_inplanes = planes * block.expansion
             cnt += 1
-            for i in range(1, blocks):
+            for _ in range(1, blocks):
                 layers.add(block(inplanes=self.fast_inplanes,
                                  planes=planes,
                                  head_conv=head_conv,
                                  layer_name='block%d_' % cnt))
-                assert i == cnt
                 cnt += 1
         return layers
 
@@ -276,12 +289,11 @@ class SlowFast(HybridBlock):
                              layer_name='block%d_' % cnt))
             self.slow_inplanes = planes * block.expansion
             cnt += 1
-            for i in range(1, blocks):
+            for _ in range(1, blocks):
                 layers.add(block(inplanes=self.slow_inplanes,
                                  planes=planes,
                                  head_conv=head_conv,
                                  layer_name='block%d_' % cnt))
-                assert i == cnt
                 cnt += 1
         self.slow_inplanes = planes * block.expansion + planes * block.expansion // 8 * 2
         return layers
