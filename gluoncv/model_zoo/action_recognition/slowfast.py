@@ -57,10 +57,14 @@ class Bottleneck(HybridBlock):
 
 
 class SlowFast(HybridBlock):
+    """SlowFast networks (SlowFast) from
+    `"SlowFast Networks for Video Recognition"
+    <https://arxiv.org/abs/1812.03982>`_ paper.
+    """
     def __init__(self,
                  nclass,
                  block=Bottleneck,
-                 layers=[3, 4, 6, 3],
+                 layers=None,
                  pretrained=False,
                  pretrained_base=True,
                  num_segments=1,
