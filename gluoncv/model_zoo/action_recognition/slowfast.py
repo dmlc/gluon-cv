@@ -102,7 +102,6 @@ class SlowFast(HybridBlock):
                 self.fast_bn1 = norm_layer(in_channels=8, **({} if norm_kwargs is None else norm_kwargs))
                 self.fast_relu = nn.Activation('relu')
                 self.fast_maxpool = nn.MaxPool3D(pool_size=(1, 3, 3), strides=(1, 2, 2), padding=(0, 1, 1))
-                self.fast_maxpool2 = nn.MaxPool3D(pool_size=(1, 1, 1), strides=(1, 1, 1), padding=(0, 0, 0))
             self.fast_res2 = self._make_layer_fast(block, planes=8, blocks=layers[0], head_conv=3, norm_layer=norm_layer, norm_kwargs=norm_kwargs, layer_name='fast_res2_')
             self.fast_res3 = self._make_layer_fast(block, planes=16, blocks=layers[1], strides=2, head_conv=3, norm_layer=norm_layer, norm_kwargs=norm_kwargs, layer_name='fast_res3_')
             self.fast_res4 = self._make_layer_fast(block, planes=32, blocks=layers[2], strides=2, head_conv=3, norm_layer=norm_layer, norm_kwargs=norm_kwargs, layer_name='fast_res4_')
@@ -138,7 +137,6 @@ class SlowFast(HybridBlock):
                 self.slow_bn1 = norm_layer(in_channels=64, **({} if norm_kwargs is None else norm_kwargs))
                 self.slow_relu = nn.Activation('relu')
                 self.slow_maxpool = nn.MaxPool3D(pool_size=(1, 3, 3), strides=(1, 2, 2), padding=(0, 1, 1))
-                self.slow_maxpool2 = nn.MaxPool3D(pool_size=(1, 1, 1), strides=(1, 1, 1), padding=(0, 0, 0))
             self.slow_res2 = self._make_layer_slow(block, planes=64, blocks=layers[0], head_conv=1, norm_layer=norm_layer, norm_kwargs=norm_kwargs, layer_name='slow_res2_')
             self.slow_res3 = self._make_layer_slow(block, planes=128, blocks=layers[1], strides=2, head_conv=1, norm_layer=norm_layer, norm_kwargs=norm_kwargs, layer_name='slow_res3_')
             self.slow_res4 = self._make_layer_slow(block, planes=256, blocks=layers[2], strides=2, head_conv=3, norm_layer=norm_layer, norm_kwargs=norm_kwargs, layer_name='slow_res4_')
@@ -178,8 +176,6 @@ class SlowFast(HybridBlock):
         res2 = self.slow_res2(pool1_lat)                # bx256x4x56x56
         res2_lat = F.concat(res2, lateral[1], dim=1)    # bx320x4x56x56
 
-        res2_lat = self.slow_maxpool2(res2_lat)         # bx320x4x56x56
-
         res3 = self.slow_res3(res2_lat)                 # bx512x4x28x28
         res3_lat = F.concat(res3, lateral[2], dim=1)    # bx640x4x28x28
 
@@ -203,8 +199,6 @@ class SlowFast(HybridBlock):
         res2 = self.fast_res2(pool1)                    # bx32x32x56x56
         lateral_res2 = self.lateral_res2(res2)          # bx64x4x56x56
         lateral.append(lateral_res2)
-
-        res2 = self.fast_maxpool2(res2)                 # bx32x32x56x56
 
         res3 = self.fast_res3(res2)                     # bx64x32x28x28
         lateral_res3 = self.lateral_res3(res3)          # bx128x4x28x28
