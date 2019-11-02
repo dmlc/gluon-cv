@@ -47,8 +47,8 @@ The last step is to generate training files for standard data loading. You can r
 
 .. code-block:: bash
 
-   python kinetics.py --build_file_list --frame_path ~/.mxnet/datasets/kinetics400/rawframes_train --subset train --shuffle
-   python kinetics.py --build_file_list --frame_path  ~/.mxnet/datasets/kinetics400/rawframes_val --subset val --shuffle
+   python kinetics400.py --build_file_list --frame_path ~/.mxnet/datasets/kinetics400/rawframes_train --subset train --shuffle
+   python kinetics400.py --build_file_list --frame_path  ~/.mxnet/datasets/kinetics400/rawframes_val --subset val --shuffle
 
 Now you can start training your action recognition models on Kinetics400 dataset.
 
