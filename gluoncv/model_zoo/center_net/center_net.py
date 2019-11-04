@@ -6,7 +6,6 @@ import warnings
 from collections import OrderedDict
 
 import mxnet as mx
-from mxnet.context import cpu
 from mxnet.gluon import nn
 from mxnet import autograd
 from ...nn.coder import CenterNetDecoder
@@ -14,6 +13,8 @@ from ...nn.coder import CenterNetDecoder
 __all__ = ['CenterNet', 'get_center_net',
            'center_net_resnet18_v1b_voc', 'center_net_resnet18_v1b_dcnv2_voc',
            'center_net_resnet18_v1b_coco', 'center_net_resnet18_v1b_dcnv2_coco',
+           'center_net_resnet50_v1b_voc', 'center_net_resnet50_v1b_dcnv2_voc',
+           'center_net_resnet50_v1b_coco', 'center_net_resnet50_v1b_dcnv2_coco',
            'center_net_resnet101_v1b_voc', 'center_net_resnet101_v1b_dcnv2_voc',
            'center_net_resnet101_v1b_coco', 'center_net_resnet101_v1b_dcnv2_coco']
 
@@ -62,7 +63,7 @@ class CenterNet(nn.HybridBlock):
             kwargs.pop('norm_kwargs')
         super(CenterNet, self).__init__(**kwargs)
         assert isinstance(heads, OrderedDict), \
-            "Expecting heads to be a OrderedDict of {head_name: # outputs} per head, given {}" \
+            "Expecting heads to be a OrderedDict per head, given {}" \
             .format(type(heads))
         self.classes = classes
         self.topk = topk
@@ -83,8 +84,9 @@ class CenterNet(nn.HybridBlock):
                 bias = values.get('bias', 0.0)
                 weight_initializer = mx.init.Normal(0.001) if bias == 0 else mx.init.Xavier()
                 if head_conv_channel > 0:
-                    head.add(nn.Conv2D(head_conv_channel, kernel_size=3, padding=1, use_bias=True,
-                             weight_initializer=weight_initializer, bias_initializer='zeros'))
+                    head.add(nn.Conv2D(
+                        head_conv_channel, kernel_size=3, padding=1, use_bias=True,
+                        weight_initializer=weight_initializer, bias_initializer='zeros'))
                     head.add(nn.Activation('relu'))
                 head.add(nn.Conv2D(num_output, kernel_size=1, strides=1, padding=0, use_bias=True,
                                    weight_initializer=weight_initializer,
@@ -132,6 +134,7 @@ class CenterNet(nn.HybridBlock):
         self.post_nms = post_nms
 
     def hybrid_forward(self, F, x):
+        """Hybrid forward of center net"""
         y = self.base_network(x)
         out = [head(y) for head in self.heads]
         out[0] = F.sigmoid(out[0])
@@ -174,6 +177,7 @@ def get_center_net(name, dataset, pretrained=False, ctx=mx.cpu(),
         A CenterNet detection network.
 
     """
+    # pylint: disable=unused-variable
     net = CenterNet(**kwargs)
     if pretrained:
         from ..model_store import get_model_file
@@ -212,7 +216,7 @@ def center_net_resnet18_v1b_voc(pretrained=False, pretrained_base=True, **kwargs
     pretrained_base = False if pretrained else pretrained_base
     base_network = resnet18_v1b_deconv(pretrained=pretrained_base, **kwargs)
     heads = OrderedDict([
-        ('heatmap', {'num_output': len(classes), 'bias': -2.19}),  # use bias = -log((1 - 0.1) / 0.1)
+        ('heatmap', {'num_output': len(classes), 'bias': -2.19}), # use bias = -log((1 - 0.1) / 0.1)
         ('wh', {'num_output': 2}),
         ('reg', {'num_output': 2})
         ])
@@ -242,7 +246,7 @@ def center_net_resnet18_v1b_dcnv2_voc(pretrained=False, pretrained_base=True, **
     pretrained_base = False if pretrained else pretrained_base
     base_network = resnet18_v1b_deconv_dcnv2(pretrained=pretrained_base, **kwargs)
     heads = OrderedDict([
-        ('heatmap', {'num_output': len(classes), 'bias': -2.19}),  # use bias = -log((1 - 0.1) / 0.1)
+        ('heatmap', {'num_output': len(classes), 'bias': -2.19}), # use bias = -log((1 - 0.1) / 0.1)
         ('wh', {'num_output': 2}),
         ('reg', {'num_output': 2})
         ])
@@ -272,7 +276,7 @@ def center_net_resnet18_v1b_coco(pretrained=False, pretrained_base=True, **kwarg
     pretrained_base = False if pretrained else pretrained_base
     base_network = resnet18_v1b_deconv(pretrained=pretrained_base, **kwargs)
     heads = OrderedDict([
-        ('heatmap', {'num_output': len(classes), 'bias': -2.19}),  # use bias = -log((1 - 0.1) / 0.1)
+        ('heatmap', {'num_output': len(classes), 'bias': -2.19}), # use bias = -log((1 - 0.1) / 0.1)
         ('wh', {'num_output': 2}),
         ('reg', {'num_output': 2})
         ])
@@ -302,11 +306,131 @@ def center_net_resnet18_v1b_dcnv2_coco(pretrained=False, pretrained_base=True, *
     pretrained_base = False if pretrained else pretrained_base
     base_network = resnet18_v1b_deconv_dcnv2(pretrained=pretrained_base, **kwargs)
     heads = OrderedDict([
-        ('heatmap', {'num_output': len(classes), 'bias': -2.19}),  # use bias = -log((1 - 0.1) / 0.1)
+        ('heatmap', {'num_output': len(classes), 'bias': -2.19}), # use bias = -log((1 - 0.1) / 0.1)
         ('wh', {'num_output': 2}),
         ('reg', {'num_output': 2})
         ])
     return get_center_net('resnet18_v1b_dcnv2', 'coco', base_network=base_network, heads=heads,
+                          head_conv_channel=64, pretrained=pretrained, classes=classes,
+                          scale=4.0, topk=40, **kwargs)
+
+def center_net_resnet50_v1b_voc(pretrained=False, pretrained_base=True, **kwargs):
+    """Center net with resnet50_v1b base network on voc dataset.
+
+    Parameters
+    ----------
+    classes : iterable of str
+        Names of custom foreground classes. `len(classes)` is the number of foreground classes.
+    pretrained_base : bool or str, optional, default is True
+        Load pretrained base network, the extra layers are randomized.
+
+    Returns
+    -------
+    HybridBlock
+        A CenterNet detection network.
+
+    """
+    from .deconv_resnet import resnet50_v1b_deconv
+    from ...data import VOCDetection
+    classes = VOCDetection.CLASSES
+    pretrained_base = False if pretrained else pretrained_base
+    base_network = resnet50_v1b_deconv(pretrained=pretrained_base, **kwargs)
+    heads = OrderedDict([
+        ('heatmap', {'num_output': len(classes), 'bias': -2.19}), # use bias = -log((1 - 0.1) / 0.1)
+        ('wh', {'num_output': 2}),
+        ('reg', {'num_output': 2})
+        ])
+    return get_center_net('resnet50_v1b', 'voc', base_network=base_network, heads=heads,
+                          head_conv_channel=64, pretrained=pretrained, classes=classes,
+                          scale=4.0, topk=40, **kwargs)
+
+def center_net_resnet50_v1b_dcnv2_voc(pretrained=False, pretrained_base=True, **kwargs):
+    """Center net with resnet50_v1b base network with deformable conv layers on voc dataset.
+
+    Parameters
+    ----------
+    classes : iterable of str
+        Names of custom foreground classes. `len(classes)` is the number of foreground classes.
+    pretrained_base : bool or str, optional, default is True
+        Load pretrained base network, the extra layers are randomized.
+
+    Returns
+    -------
+    HybridBlock
+        A CenterNet detection network.
+
+    """
+    from .deconv_resnet import resnet50_v1b_deconv_dcnv2
+    from ...data import VOCDetection
+    classes = VOCDetection.CLASSES
+    pretrained_base = False if pretrained else pretrained_base
+    base_network = resnet50_v1b_deconv_dcnv2(pretrained=pretrained_base, **kwargs)
+    heads = OrderedDict([
+        ('heatmap', {'num_output': len(classes), 'bias': -2.19}), # use bias = -log((1 - 0.1) / 0.1)
+        ('wh', {'num_output': 2}),
+        ('reg', {'num_output': 2})
+        ])
+    return get_center_net('resnet50_v1b_dcnv2', 'voc', base_network=base_network, heads=heads,
+                          head_conv_channel=64, pretrained=pretrained, classes=classes,
+                          scale=4.0, topk=40, **kwargs)
+
+def center_net_resnet50_v1b_coco(pretrained=False, pretrained_base=True, **kwargs):
+    """Center net with resnet50_v1b base network on coco dataset.
+
+    Parameters
+    ----------
+    classes : iterable of str
+        Names of custom foreground classes. `len(classes)` is the number of foreground classes.
+    pretrained_base : bool or str, optional, default is True
+        Load pretrained base network, the extra layers are randomized.
+
+    Returns
+    -------
+    HybridBlock
+        A CenterNet detection network.
+
+    """
+    from .deconv_resnet import resnet50_v1b_deconv
+    from ...data import COCODetection
+    classes = COCODetection.CLASSES
+    pretrained_base = False if pretrained else pretrained_base
+    base_network = resnet50_v1b_deconv(pretrained=pretrained_base, **kwargs)
+    heads = OrderedDict([
+        ('heatmap', {'num_output': len(classes), 'bias': -2.19}), # use bias = -log((1 - 0.1) / 0.1)
+        ('wh', {'num_output': 2}),
+        ('reg', {'num_output': 2})
+        ])
+    return get_center_net('resnet50_v1b', 'coco', base_network=base_network, heads=heads,
+                          head_conv_channel=64, pretrained=pretrained, classes=classes,
+                          scale=4.0, topk=40, **kwargs)
+
+def center_net_resnet50_v1b_dcnv2_coco(pretrained=False, pretrained_base=True, **kwargs):
+    """Center net with resnet50_v1b base network with deformable v2 conv layers on coco dataset.
+
+    Parameters
+    ----------
+    classes : iterable of str
+        Names of custom foreground classes. `len(classes)` is the number of foreground classes.
+    pretrained_base : bool or str, optional, default is True
+        Load pretrained base network, the extra layers are randomized.
+
+    Returns
+    -------
+    HybridBlock
+        A CenterNet detection network.
+
+    """
+    from .deconv_resnet import resnet50_v1b_deconv_dcnv2
+    from ...data import COCODetection
+    classes = COCODetection.CLASSES
+    pretrained_base = False if pretrained else pretrained_base
+    base_network = resnet50_v1b_deconv_dcnv2(pretrained=pretrained_base, **kwargs)
+    heads = OrderedDict([
+        ('heatmap', {'num_output': len(classes), 'bias': -2.19}), # use bias = -log((1 - 0.1) / 0.1)
+        ('wh', {'num_output': 2}),
+        ('reg', {'num_output': 2})
+        ])
+    return get_center_net('resnet50_v1b_dcnv2', 'coco', base_network=base_network, heads=heads,
                           head_conv_channel=64, pretrained=pretrained, classes=classes,
                           scale=4.0, topk=40, **kwargs)
 
@@ -332,7 +456,7 @@ def center_net_resnet101_v1b_voc(pretrained=False, pretrained_base=True, **kwarg
     pretrained_base = False if pretrained else pretrained_base
     base_network = resnet101_v1b_deconv(pretrained=pretrained_base, **kwargs)
     heads = OrderedDict([
-        ('heatmap', {'num_output': len(classes), 'bias': -2.19}),  # use bias = -log((1 - 0.1) / 0.1)
+        ('heatmap', {'num_output': len(classes), 'bias': -2.19}), # use bias = -log((1 - 0.1) / 0.1)
         ('wh', {'num_output': 2}),
         ('reg', {'num_output': 2})
         ])
@@ -362,7 +486,7 @@ def center_net_resnet101_v1b_dcnv2_voc(pretrained=False, pretrained_base=True, *
     pretrained_base = False if pretrained else pretrained_base
     base_network = resnet101_v1b_deconv_dcnv2(pretrained=pretrained_base, **kwargs)
     heads = OrderedDict([
-        ('heatmap', {'num_output': len(classes), 'bias': -2.19}),  # use bias = -log((1 - 0.1) / 0.1)
+        ('heatmap', {'num_output': len(classes), 'bias': -2.19}), # use bias = -log((1 - 0.1) / 0.1)
         ('wh', {'num_output': 2}),
         ('reg', {'num_output': 2})
         ])
@@ -392,7 +516,7 @@ def center_net_resnet101_v1b_coco(pretrained=False, pretrained_base=True, **kwar
     pretrained_base = False if pretrained else pretrained_base
     base_network = resnet101_v1b_deconv(pretrained=pretrained_base, **kwargs)
     heads = OrderedDict([
-        ('heatmap', {'num_output': len(classes), 'bias': -2.19}),  # use bias = -log((1 - 0.1) / 0.1)
+        ('heatmap', {'num_output': len(classes), 'bias': -2.19}), # use bias = -log((1 - 0.1) / 0.1)
         ('wh', {'num_output': 2}),
         ('reg', {'num_output': 2})
         ])
@@ -422,7 +546,7 @@ def center_net_resnet101_v1b_dcnv2_coco(pretrained=False, pretrained_base=True, 
     pretrained_base = False if pretrained else pretrained_base
     base_network = resnet101_v1b_deconv_dcnv2(pretrained=pretrained_base, **kwargs)
     heads = OrderedDict([
-        ('heatmap', {'num_output': len(classes), 'bias': -2.19}),  # use bias = -log((1 - 0.1) / 0.1)
+        ('heatmap', {'num_output': len(classes), 'bias': -2.19}), # use bias = -log((1 - 0.1) / 0.1)
         ('wh', {'num_output': 2}),
         ('reg', {'num_output': 2})
         ])

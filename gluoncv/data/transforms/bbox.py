@@ -182,6 +182,21 @@ def affine_transform(pt, t):
     return new_pt[:2]
 
 def get_dir(src_point, rot_rad):
+    """Get rotation direction.
+
+    Parameters
+    ----------
+    src_point : tuple of float
+        Original point.
+    rot_rad : float
+        Rotation radian.
+
+    Returns
+    -------
+    tuple of float
+        Rotation.
+
+    """
     sn, cs = np.sin(rot_rad), np.cos(rot_rad)
 
     src_result = [0, 0]
@@ -191,6 +206,21 @@ def get_dir(src_point, rot_rad):
     return src_result
 
 def get_3rd_point(a, b):
+    """Get the 3rd point position given first two points.
+
+    Parameters
+    ----------
+    a : tuple of float
+        First point.
+    b : tuple of float
+        Second point.
+
+    Returns
+    -------
+    tuple of float
+        Third point.
+
+    """
     direct = a - b
     return b + np.array([-direct[1], direct[0]], dtype=np.float32)
 
@@ -200,6 +230,29 @@ def get_affine_transform(center,
                          output_size,
                          shift=np.array([0, 0], dtype=np.float32),
                          inv=0):
+    """Get affine transform matrix given center, scale and rotation.
+
+    Parameters
+    ----------
+    center : tuple of float
+        Center point.
+    scale : float
+        Scaling factor.
+    rot : float
+        Rotation degree.
+    output_size : tuple of int
+        (width, height) of the output size.
+    shift : float
+        Shift factor.
+    inv : bool
+        Whether inverse the computation.
+
+    Returns
+    -------
+    numpy.ndarray
+        Affine matrix.
+
+    """
     from ...utils.filesystem import try_import_cv2
     cv2 = try_import_cv2()
     if not isinstance(scale, np.ndarray) and not isinstance(scale, list):

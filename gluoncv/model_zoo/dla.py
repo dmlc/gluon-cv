@@ -44,7 +44,7 @@ class DLA(HybridBlock):
         #         m.weight.data.fill_(1)
         #         m.bias.data.zero_()
 
-    def _make_level(self, block, inplanes, planes, blocks, stride=1, norm_layer, norm_kwargs):
+    def _make_level(self, block, inplanes, planes, blocks, norm_layer, norm_kwargs, stride=1):
         downsample = None
         if stride != 1 or inplanes != planes:
             downsample = nn.HybridSequential()

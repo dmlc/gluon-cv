@@ -460,11 +460,23 @@ class DistillationSoftmaxCrossEntropyLoss(gluon.HybridBlock):
 
 
 class HeatmapFocalLoss(Loss):
+    """Focal loss for heatmaps.
+
+    Parameters
+    ----------
+    from_logits : bool
+        Whether predictions are after sigmoid or softmax.
+    batch_axis : int
+        Batch axis.
+    weight : float
+        Loss weight.
+
+    """
     def __init__(self, from_logits=False, batch_axis=0, weight=None, **kwargs):
         super(HeatmapFocalLoss, self).__init__(weight, batch_axis, **kwargs)
         self._from_logits = from_logits
 
-    def hybrid_forward(self, F, pred, label, sample_weight=None):
+    def hybrid_forward(self, F, pred, label):
         """Loss forward"""
         if not self._from_logits:
             pred = F.sigmoid(pred)

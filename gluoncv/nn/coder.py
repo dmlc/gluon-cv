@@ -447,13 +447,24 @@ class SigmoidClassEncoder(object):
 
 
 class CenterNetDecoder(gluon.HybridBlock):
+    """Decorder for centernet.
+
+    Parameters
+    ----------
+    topk : int
+        Only keep `topk` results.
+    scale : float, default is 4.0
+        Downsampling scale for the network.
+
+    """
     def __init__(self, topk=100, scale=4.0):
         super(CenterNetDecoder, self).__init__()
         self._topk = topk
         self._scale = scale
 
     def hybrid_forward(self, F, x, wh, reg):
-        b, c, out_h, out_w = x.shape_array().split(num_outputs=4, axis=0)
+        """Forward of decoder"""
+        _, _, out_h, out_w = x.shape_array().split(num_outputs=4, axis=0)
         scores, indices = x.reshape((0, -1)).topk(k=self._topk, ret_typ='both')
         indices = F.cast(indices, 'int64')
         topk_classes = F.cast(F.broadcast_div(indices, (out_h * out_w)), 'float32')

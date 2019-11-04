@@ -1,19 +1,18 @@
 """ResNet with Deconvolution layers for CenterNet object detection."""
 from __future__ import absolute_import
 
-import os
 import warnings
 import math
 
 import mxnet as mx
 from mxnet.context import cpu
-from mxnet import autograd
 from mxnet.gluon import nn
 from mxnet.gluon import contrib
 from .. model_zoo import get_model
 
 __all__ = ['DeconvResnet', 'get_deconv_resnet',
            'resnet18_v1b_deconv', 'resnet18_v1b_deconv_dcnv2',
+           'resnet50_v1b_deconv', 'resnet50_v1b_deconv_dcnv2',
            'resnet101_v1b_deconv', 'resnet101_v1b_deconv_dcnv2']
 
 
@@ -22,8 +21,8 @@ class BilinearUpSample(mx.init.Initializer):
 
     Example
     -------
-    >>> # Given 'module', an instance of 'mxnet.module.Module', initialize weights to bilinear upsample.
-    ...
+    >>> # Given 'module', an instance of 'mxnet.module.Module',
+    initialize weights to bilinear upsample...
     >>> init = mx.initializer.BilinearUpSample()
     >>> module.init_params(init)
     >>> for dictionary in module.get_params():
@@ -82,18 +81,18 @@ class DeconvResnet(nn.HybridBlock):
         if 'v1b' in base_network:
             feat = nn.HybridSequential()
             feat.add(*[net.conv1,
-                      net.bn1,
-                      net.relu,
-                      net.maxpool,
-                      net.layer1,
-                      net.layer2,
-                      net.layer3,
-                      net.layer4])
+                       net.bn1,
+                       net.relu,
+                       net.maxpool,
+                       net.layer1,
+                       net.layer2,
+                       net.layer3,
+                       net.layer4])
             self.base_network = feat
         else:
             raise NotImplementedError()
         with self.name_scope():
-            self.deconv = self._make_deconv_layer(deconv_filters, deconv_kernels, use_dcn=use_dcn)
+            self.deconv = self._make_deconv_layer(deconv_filters, deconv_kernels)
 
     def _get_deconv_cfg(self, deconv_kernel):
         """Get the deconv configs using presets"""
@@ -111,10 +110,12 @@ class DeconvResnet(nn.HybridBlock):
 
         return deconv_kernel, padding, output_padding
 
-    def _make_deconv_layer(self, num_filters, num_kernels, use_dcn=False):
+    def _make_deconv_layer(self, num_filters, num_kernels):
+        # pylint: disable=unused-variable
         """Make deconv layers using the configs"""
         assert len(num_kernels) == len(num_filters), \
-            'Deconv filters and kernels number mismatch: {} vs. {}'.format(len(num_filters), len(num_kernels))
+            'Deconv filters and kernels number mismatch: {} vs. {}'.format(
+                len(num_filters), len(num_kernels))
 
         layers = nn.HybridSequential('deconv_')
         with warnings.catch_warnings(record=True) as w:
@@ -211,6 +212,30 @@ def resnet18_v1b_deconv_dcnv2(**kwargs):
     """
     kwargs['use_dcnv2'] = True
     return get_deconv_resnet('resnet18_v1b', **kwargs)
+
+def resnet50_v1b_deconv(**kwargs):
+    """Resnet50 v1b model with deconv layers.
+
+    Returns
+    -------
+    HybridBlock
+        A Resnet50 v1b model with deconv layers.
+
+    """
+    kwargs['use_dcnv2'] = False
+    return get_deconv_resnet('resnet50_v1b', **kwargs)
+
+def resnet50_v1b_deconv_dcnv2(**kwargs):
+    """Resnet50 v1b model with deconv layers and deformable v2 conv layers.
+
+    Returns
+    -------
+    HybridBlock
+        A Resnet50 v1b model with deconv layers and deformable v2 conv layers.
+
+    """
+    kwargs['use_dcnv2'] = True
+    return get_deconv_resnet('resnet50_v1b', **kwargs)
 
 def resnet101_v1b_deconv(**kwargs):
     """Resnet101 v1b model with deconv layers.
