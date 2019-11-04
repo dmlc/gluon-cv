@@ -94,7 +94,7 @@ class CenterNetDefaultTrainTransform(object):
         gt_bboxes = bbox[:, :4]
         gt_ids = bbox[:, 4:5]
         heatmap, wh_target, wh_mask, center_reg, center_reg_mask = self._target_generator(
-            img.shape[2], img.shape[1], gt_bboxes, gt_ids)
+            gt_bboxes, gt_ids)
         return img, heatmap, wh_target, wh_mask, center_reg, center_reg_mask
 
 
