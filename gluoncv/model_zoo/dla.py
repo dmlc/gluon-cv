@@ -229,7 +229,7 @@ class Tree(HybridBlock):
         return x
 
 class DLA(HybridBlock):
-    def __init__(self, levels, channels, num_classes=1000,
+    def __init__(self, levels, channels, classes=1000,
                  block=BasicBlock, momentum=0.9,
                  norm_layer=BatchNorm, norm_kwargs=None,
                  residual_root=False, linear_root=False, **kwargs):
