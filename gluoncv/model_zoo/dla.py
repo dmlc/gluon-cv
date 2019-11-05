@@ -2,12 +2,226 @@
 # pylint: disable=arguments-differ,unused-argument,missing-docstring
 from __future__ import division
 
-from mxnet.context import cpu
 from mxnet.gluon.block import HybridBlock
 from mxnet.gluon import nn
 from mxnet.gluon.nn import BatchNorm
 
-__all__ = ['DLA', 'dla_34']
+__all__ = ['DLA', 'get_dla', 'dla34']
+
+
+def conv3x3(in_planes, out_planes, stride=1):
+    "3x3 convolution with padding"
+    return nn.Conv2D(channels=out_planes, kernel_size=3, stride=stride,
+                     padding=1, bias=False, in_channels=in_planes)
+
+
+class BasicBlock(HybridBlock):
+    def __init__(self, inplanes, planes, stride=1, dilation=1,
+                 norm_layer=BatchNorm, norm_kwargs=None):
+        super(BasicBlock, self).__init__()
+        if norm_kwargs is None:
+            norm_kwargs = {}
+        self.conv1 = nn.Conv2D(in_channels=inplanes, channels=planes, kernel_size=3,
+                               stride=stride, padding=dilation,
+                               bias=False, dilation=dilation)
+        self.bn1 = norm_layer(in_channels=planes, **norm_kwargs)
+        self.relu = nn.Activation('relu')
+        self.conv2 = nn.Conv2D(in_channels=planes, channels=planes, kernel_size=3,
+                               stride=1, padding=dilation,
+                               bias=False, dilation=dilation)
+        self.bn2 = norm_layer(in_channels=planes, **norm_kwargs)
+        self.stride = stride
+
+    def forward(self, x, residual=None):
+        if residual is None:
+            residual = x
+
+        out = self.conv1(x)
+        out = self.bn1(out)
+        out = self.relu(out)
+
+        out = self.conv2(out)
+        out = self.bn2(out)
+
+        out += residual
+        out = self.relu(out)
+
+        return out
+
+
+class Bottleneck(HybridBlock):
+    expansion = 2
+
+    def __init__(self, inplanes, planes, stride=1, dilation=1,
+                 norm_layer=BatchNorm, norm_kwargs=None):
+        super(Bottleneck, self).__init__()
+        if norm_kwargs is None:
+            norm_kwargs = {}
+        expansion = Bottleneck.expansion
+        bottle_planes = planes // expansion
+        self.conv1 = nn.Conv2D(in_channels=inplanes, channels=bottle_planes,
+                               kernel_size=1, bias=False)
+        self.bn1 = norm_layer(in_channels=bottle_planes, **norm_kwargs)
+        self.conv2 = nn.Conv2D(in_channels=bottle_planes, channels=bottle_planes, kernel_size=3,
+                               stride=stride, padding=dilation,
+                               bias=False, dilation=dilation)
+        self.bn2 = norm_layer(in_channels=bottle_planes, **norm_kwargs)
+        self.conv3 = nn.Conv2D(in_channels=bottle_planes, channels=planes,
+                               kernel_size=1, bias=False)
+        self.bn3 = norm_layer(**norm_kwargs)
+        self.relu = nn.Activation('relu')
+        self.stride = stride
+
+    def forward(self, x, residual=None):
+        if residual is None:
+            residual = x
+
+        out = self.conv1(x)
+        out = self.bn1(out)
+        out = self.relu(out)
+
+        out = self.conv2(out)
+        out = self.bn2(out)
+        out = self.relu(out)
+
+        out = self.conv3(out)
+        out = self.bn3(out)
+
+        out += residual
+        out = self.relu(out)
+
+        return out
+
+
+class BottleneckX(HybridBlock):
+    expansion = 2
+    cardinality = 32
+
+    def __init__(self, inplanes, planes, stride=1, dilation=1,
+                 norm_layer=BatchNorm, norm_kwargs=None):
+        super(BottleneckX, self).__init__()
+        if norm_kwargs is None:
+            norm_kwargs = {}
+        cardinality = BottleneckX.cardinality
+        # dim = int(math.floor(planes * (BottleneckV5.expansion / 64.0)))
+        # bottle_planes = dim * cardinality
+        bottle_planes = planes * cardinality // 32
+        self.conv1 = nn.Conv2D(in_channels=inplanes, channels=bottle_planes,
+                               kernel_size=1, bias=False)
+        self.bn1 = norm_layer(in_channels=bottle_planes, **norm_kwargs)
+        self.conv2 = nn.Conv2D(in_channels=bottle_planes, channels=bottle_planes, kernel_size=3,
+                               stride=stride, padding=dilation, bias=False,
+                               dilation=dilation, groups=cardinality)
+        self.bn2 = norm_layer(in_channels=bottle_planes, **norm_kwargs)
+        self.conv3 = nn.Conv2D(in_channels=bottle_planes, channels=planes,
+                               kernel_size=1, bias=False)
+        self.bn3 = norm_layer(**norm_kwargs)
+        self.relu = nn.Activation('relu')
+        self.stride = stride
+
+    def forward(self, x, residual=None):
+        if residual is None:
+            residual = x
+
+        out = self.conv1(x)
+        out = self.bn1(out)
+        out = self.relu(out)
+
+        out = self.conv2(out)
+        out = self.bn2(out)
+        out = self.relu(out)
+
+        out = self.conv3(out)
+        out = self.bn3(out)
+
+        out += residual
+        out = self.relu(out)
+
+        return out
+
+
+class Root(HybridBlock):
+    def __init__(self, in_channels, out_channels, kernel_size, residual,
+                 norm_layer=BatchNorm, norm_kwargs=None):
+        super(Root, self).__init__()
+        if norm_kwargs is None:
+            norm_kwargs = {}
+        self.conv = nn.Conv2D(
+            in_channels=in_channels, channels=out_channels, 1,
+            stride=1, bias=False, padding=(kernel_size - 1) // 2)
+        self.bn = norm_layer(in_channels=out_channels, **norm_kwargs)
+        self.relu = nn.Activation('relu')
+        self.residual = residual
+
+    def forward(self, *x):
+        children = x
+        x = self.conv(torch.cat(x, 1))
+        x = self.bn(x)
+        if self.residual:
+            x += children[0]
+        x = self.relu(x)
+
+        return x
+
+
+class Tree(HybridBlock):
+    def __init__(self, levels, block, in_channels, out_channels, stride=1,
+                 level_root=False, root_dim=0, root_kernel_size=1,
+                 dilation=1, root_residual=False, norm_layer=BatchNorm, norm_kwargs=None):
+        super(Tree, self).__init__()
+        if norm_kwargs is None:
+            norm_kwargs = {}
+        if root_dim == 0:
+            root_dim = 2 * out_channels
+        if level_root:
+            root_dim += in_channels
+        if levels == 1:
+            self.tree1 = block(in_channels, out_channels, stride,
+                               dilation=dilation, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+            self.tree2 = block(out_channels, out_channels, 1,
+                               dilation=dilation, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+        else:
+            self.tree1 = Tree(levels - 1, block, in_channels, out_channels,
+                              stride, root_dim=0,
+                              root_kernel_size=root_kernel_size,
+                              dilation=dilation, root_residual=root_residual,
+                              norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+            self.tree2 = Tree(levels - 1, block, out_channels, out_channels,
+                              root_dim=root_dim + out_channels,
+                              root_kernel_size=root_kernel_size,
+                              dilation=dilation, root_residual=root_residual,
+                              norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+        if levels == 1:
+            self.root = Root(root_dim, out_channels, root_kernel_size,
+                             root_residual, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+        self.level_root = level_root
+        self.root_dim = root_dim
+        self.downsample = None
+        self.project = None
+        self.levels = levels
+        if stride > 1:
+            self.downsample = nn.MaxPool2d(stride, stride=stride)
+        if in_channels != out_channels:
+            self.project = nn.Sequential(
+                nn.Conv2D(in_channels=in_channels, channels=out_channels,
+                          kernel_size=1, stride=1, bias=False),
+                norm_layer(in_channels=out_channels, **norm_kwargs)
+            )
+
+    def forward(self, x, residual=None, children=None):
+        children = [] if children is None else children
+        bottom = self.downsample(x) if self.downsample else x
+        residual = self.project(bottom) if self.project else bottom
+        if self.level_root:
+            children.append(bottom)
+        x1 = self.tree1(x, residual)
+        if self.levels == 1:
+            x2 = self.tree2(x1)
+            x = self.root(x2, x1, *children)
+        else:
+            children.append(x1)
+            x = self.tree2(x1, children=children)
+        return x
 
 class DLA(HybridBlock):
     def __init__(self, levels, channels, num_classes=1000,
@@ -15,34 +229,32 @@ class DLA(HybridBlock):
                  norm_layer=BatchNorm, norm_kwargs=None,
                  residual_root=False, linear_root=False, **kwargs):
         super(DLA, self).__init__(**kwargs)
+        if norm_kwargs is None:
+            norm_kwargs = {}
         norm_kwargs['momentum'] = momentum
         self.base_layer = nn.HybridSequential('base')
-        self.base_layer.add(nn.Conv2d(3, channels[0], kernel_size=7, stride=1,
+        self.base_layer.add(nn.Conv2D(in_channels=3, channels=channels[0], kernel_size=7, stride=1,
                             padding=3, bias=False))
         self.base_layer.add(norm_layer(in_channels=channels[0], **norm_kwargs))
         self.base_layer.add(nn.Activation('relu'))
 
         self.level0 = self._make_conv_level(
-            channels[0], channels[0], levels[0])
+            channels[0], channels[0], levels[0], norm_layer, norm_kwargs)
         self.level1 = self._make_conv_level(
-            channels[0], channels[1], levels[1], stride=2)
+            channels[0], channels[1], levels[1], norm_layer, norm_kwargs, stride=2)
         self.level2 = Tree(levels[2], block, channels[1], channels[2], 2,
                            level_root=False,
-                           root_residual=residual_root)
+                           root_residual=residual_root,
+                           norm_layer=norm_layer, norm_kwargs=norm_kwargs)
         self.level3 = Tree(levels[3], block, channels[2], channels[3], 2,
-                           level_root=True, root_residual=residual_root)
+                           level_root=True, root_residual=residual_root,
+                           norm_layer=norm_layer, norm_kwargs=norm_kwargs)
         self.level4 = Tree(levels[4], block, channels[3], channels[4], 2,
-                           level_root=True, root_residual=residual_root)
+                           level_root=True, root_residual=residual_root,
+                           norm_layer=norm_layer, norm_kwargs=norm_kwargs)
         self.level5 = Tree(levels[5], block, channels[4], channels[5], 2,
-                           level_root=True, root_residual=residual_root)
-
-        # for m in self.modules():
-        #     if isinstance(m, nn.Conv2d):
-        #         n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
-        #         m.weight.data.normal_(0, math.sqrt(2. / n))
-        #     elif isinstance(m, nn.BatchNorm2d):
-        #         m.weight.data.fill_(1)
-        #         m.bias.data.zero_()
+                           level_root=True, root_residual=residual_root,
+                           norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
     def _make_level(self, block, inplanes, planes, blocks, norm_layer, norm_kwargs, stride=1):
         downsample = None
@@ -50,27 +262,29 @@ class DLA(HybridBlock):
             downsample = nn.HybridSequential()
             downsample.add([
                 nn.MaxPool2D(stride, stride=stride),
-                nn.Conv2D(planes, in_channels=inplanes,
+                nn.Conv2D(channels=planes, in_channels=inplanes,
                           kernel_size=1, stride=1, use_bias=False),
                 norm_layer(in_channels=planes, **norm_kwargs)]
             )
 
         layers = []
-        layers.append(block(inplanes, planes, stride, downsample=downsample))
+        layers.append(block(inplanes, planes, stride,
+                            norm_layer=norm_layer, norm_kwargs=norm_kwargs,downsample=downsample))
         for i in range(1, blocks):
-            layers.append(block(inplanes, planes))
+            layers.append(block(inplanes, planes, norm_layer=norm_layer, norm_kwargs=norm_kwargs))
 
         return nn.Sequential(*layers)
 
-    def _make_conv_level(self, inplanes, planes, convs, stride=1, dilation=1):
+    def _make_conv_level(self, inplanes, planes, convs, norm_layer, norm_kwargs,
+                         stride=1, dilation=1):
         modules = []
         for i in range(convs):
             modules.extend([
-                nn.Conv2d(inplanes, planes, kernel_size=3,
+                nn.Conv2D(in_channels=inplanes, channels=planes, kernel_size=3,
                           stride=stride if i == 0 else 1,
                           padding=dilation, bias=False, dilation=dilation),
-                nn.BatchNorm2d(planes, momentum=BN_MOMENTUM),
-                nn.ReLU(inplace=True)])
+                norm_layer(**norm_kwargs),
+                nn.Activation('relu')])
             inplanes = planes
         return nn.Sequential(*modules)
 
@@ -81,3 +295,56 @@ class DLA(HybridBlock):
             x = getattr(self, 'level{}'.format(i))(x)
             y.append(x)
         return y
+
+def get_dla(layers, pretrained=False, ctx=mx.cpu(),
+            root=os.path.join('~', '.mxnet', 'models'), **kwargs):
+    """Get a center net instance.
+
+    Parameters
+    ----------
+    name : str or int
+        Layers of the network.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    ctx : mxnet.Context
+        Context such as mx.cpu(), mx.gpu(0).
+    root : str
+        Model weights storing path.
+
+    Returns
+    -------
+    HybridBlock
+        A DLA network.
+
+    """
+    # pylint: disable=unused-variable
+    net = DLA(**kwargs)
+    if pretrained:
+        from ..model_store import get_model_file
+        full_name = 'dla{}'.format(layers)
+        net.load_parameters(get_model_file(full_name, tag=pretrained, root=root), ctx=ctx)
+    else:
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            net.initialize()
+        for v in net.collect_params().values():
+            try:
+                v.reset_ctx(ctx)
+            except ValueError:
+                pass
+    return net
+
+def dla34(**kwargs):
+    """DLA 34 layer network for image classification.
+
+    Returns
+    -------
+    HybridBlock
+        A DLA34 network.
+
+    """
+    model = get_dla(34, levels=[1, 1, 1, 2, 2, 1],
+                    channels=[16, 32, 64, 128, 256, 512],
+                    block=BasicBlock, **kwargs)
+    return model
