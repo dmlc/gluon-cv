@@ -2,6 +2,10 @@
 # pylint: disable=arguments-differ,unused-argument,missing-docstring
 from __future__ import division
 
+import os
+import warnings
+
+import mxnet as mx
 from mxnet.gluon.block import HybridBlock
 from mxnet.gluon import nn
 from mxnet.gluon.nn import BatchNorm
@@ -10,9 +14,9 @@ __all__ = ['DLA', 'get_dla', 'dla34']
 
 
 def conv3x3(in_planes, out_planes, stride=1):
-    "3x3 convolution with padding"
-    return nn.Conv2D(channels=out_planes, kernel_size=3, stride=stride,
-                     padding=1, bias=False, in_channels=in_planes)
+    """3x3 convolution with padding"""
+    return nn.Conv2D(channels=out_planes, kernel_size=3, strides=stride,
+                     padding=1, use_bias=False, in_channels=in_planes)
 
 
 class BasicBlock(HybridBlock):
@@ -22,17 +26,17 @@ class BasicBlock(HybridBlock):
         if norm_kwargs is None:
             norm_kwargs = {}
         self.conv1 = nn.Conv2D(in_channels=inplanes, channels=planes, kernel_size=3,
-                               stride=stride, padding=dilation,
-                               bias=False, dilation=dilation)
+                               strides=stride, padding=dilation,
+                               use_bias=False, dilation=dilation)
         self.bn1 = norm_layer(in_channels=planes, **norm_kwargs)
         self.relu = nn.Activation('relu')
         self.conv2 = nn.Conv2D(in_channels=planes, channels=planes, kernel_size=3,
-                               stride=1, padding=dilation,
-                               bias=False, dilation=dilation)
+                               strides=1, padding=dilation,
+                               use_bias=False, dilation=dilation)
         self.bn2 = norm_layer(in_channels=planes, **norm_kwargs)
         self.stride = stride
 
-    def forward(self, x, residual=None):
+    def hybrid_forward(self, F, x, residual=None):
         if residual is None:
             residual = x
 
@@ -60,19 +64,19 @@ class Bottleneck(HybridBlock):
         expansion = Bottleneck.expansion
         bottle_planes = planes // expansion
         self.conv1 = nn.Conv2D(in_channels=inplanes, channels=bottle_planes,
-                               kernel_size=1, bias=False)
+                               kernel_size=1, use_bias=False)
         self.bn1 = norm_layer(in_channels=bottle_planes, **norm_kwargs)
         self.conv2 = nn.Conv2D(in_channels=bottle_planes, channels=bottle_planes, kernel_size=3,
-                               stride=stride, padding=dilation,
-                               bias=False, dilation=dilation)
+                               strides=stride, padding=dilation,
+                               use_bias=False, dilation=dilation)
         self.bn2 = norm_layer(in_channels=bottle_planes, **norm_kwargs)
         self.conv3 = nn.Conv2D(in_channels=bottle_planes, channels=planes,
-                               kernel_size=1, bias=False)
+                               kernel_size=1, use_bias=False)
         self.bn3 = norm_layer(**norm_kwargs)
         self.relu = nn.Activation('relu')
         self.stride = stride
 
-    def forward(self, x, residual=None):
+    def hybrid_forward(self, F, x, residual=None):
         if residual is None:
             residual = x
 
@@ -107,19 +111,19 @@ class BottleneckX(HybridBlock):
         # bottle_planes = dim * cardinality
         bottle_planes = planes * cardinality // 32
         self.conv1 = nn.Conv2D(in_channels=inplanes, channels=bottle_planes,
-                               kernel_size=1, bias=False)
+                               kernel_size=1, use_bias=False)
         self.bn1 = norm_layer(in_channels=bottle_planes, **norm_kwargs)
         self.conv2 = nn.Conv2D(in_channels=bottle_planes, channels=bottle_planes, kernel_size=3,
-                               stride=stride, padding=dilation, bias=False,
+                               strides=stride, padding=dilation, use_bias=False,
                                dilation=dilation, groups=cardinality)
         self.bn2 = norm_layer(in_channels=bottle_planes, **norm_kwargs)
         self.conv3 = nn.Conv2D(in_channels=bottle_planes, channels=planes,
-                               kernel_size=1, bias=False)
+                               kernel_size=1, use_bias=False)
         self.bn3 = norm_layer(**norm_kwargs)
         self.relu = nn.Activation('relu')
         self.stride = stride
 
-    def forward(self, x, residual=None):
+    def hybrid_forward(self, F, x, residual=None):
         if residual is None:
             residual = x
 
@@ -147,15 +151,15 @@ class Root(HybridBlock):
         if norm_kwargs is None:
             norm_kwargs = {}
         self.conv = nn.Conv2D(
-            in_channels=in_channels, channels=out_channels, 1,
-            stride=1, bias=False, padding=(kernel_size - 1) // 2)
+            in_channels=in_channels, channels=out_channels, kernel_size=1,
+            strides=1, use_bias=False, padding=(kernel_size - 1) // 2)
         self.bn = norm_layer(in_channels=out_channels, **norm_kwargs)
         self.relu = nn.Activation('relu')
         self.residual = residual
 
-    def forward(self, *x):
+    def hybrid_forward(self, F, *x):
         children = x
-        x = self.conv(torch.cat(x, 1))
+        x = self.conv(F.concat(*x, dim=1))
         x = self.bn(x)
         if self.residual:
             x += children[0]
@@ -200,15 +204,16 @@ class Tree(HybridBlock):
         self.project = None
         self.levels = levels
         if stride > 1:
-            self.downsample = nn.MaxPool2d(stride, stride=stride)
+            self.downsample = nn.MaxPool2D(stride, strides=stride)
         if in_channels != out_channels:
-            self.project = nn.Sequential(
+            self.project = nn.HybridSequential()
+            self.project.add(*[
                 nn.Conv2D(in_channels=in_channels, channels=out_channels,
-                          kernel_size=1, stride=1, bias=False),
-                norm_layer(in_channels=out_channels, **norm_kwargs)
+                          kernel_size=1, strides=1, use_bias=False),
+                norm_layer(in_channels=out_channels, **norm_kwargs)]
             )
 
-    def forward(self, x, residual=None, children=None):
+    def hybrid_forward(self, F, x, residual=None, children=None):
         children = [] if children is None else children
         bottom = self.downsample(x) if self.downsample else x
         residual = self.project(bottom) if self.project else bottom
@@ -220,7 +225,7 @@ class Tree(HybridBlock):
             x = self.root(x2, x1, *children)
         else:
             children.append(x1)
-            x = self.tree2(x1, children=children)
+            x = self.tree2(x1, None, children)
         return x
 
 class DLA(HybridBlock):
@@ -233,8 +238,8 @@ class DLA(HybridBlock):
             norm_kwargs = {}
         norm_kwargs['momentum'] = momentum
         self.base_layer = nn.HybridSequential('base')
-        self.base_layer.add(nn.Conv2D(in_channels=3, channels=channels[0], kernel_size=7, stride=1,
-                            padding=3, bias=False))
+        self.base_layer.add(nn.Conv2D(in_channels=3, channels=channels[0], kernel_size=7, strides=1,
+                            padding=3, use_bias=False))
         self.base_layer.add(norm_layer(in_channels=channels[0], **norm_kwargs))
         self.base_layer.add(nn.Activation('relu'))
 
@@ -256,14 +261,17 @@ class DLA(HybridBlock):
                            level_root=True, root_residual=residual_root,
                            norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
+        self.global_avg_pool = nn.GlobalAvgPool2D()
+        self.fc = nn.Dense(units=num_classes)
+
     def _make_level(self, block, inplanes, planes, blocks, norm_layer, norm_kwargs, stride=1):
         downsample = None
         if stride != 1 or inplanes != planes:
             downsample = nn.HybridSequential()
-            downsample.add([
-                nn.MaxPool2D(stride, stride=stride),
+            downsample.add(*[
+                nn.MaxPool2D(stride, strides=stride),
                 nn.Conv2D(channels=planes, in_channels=inplanes,
-                          kernel_size=1, stride=1, use_bias=False),
+                          kernel_size=1, strides=1, use_bias=False),
                 norm_layer(in_channels=planes, **norm_kwargs)]
             )
 
@@ -273,7 +281,9 @@ class DLA(HybridBlock):
         for i in range(1, blocks):
             layers.append(block(inplanes, planes, norm_layer=norm_layer, norm_kwargs=norm_kwargs))
 
-        return nn.Sequential(*layers)
+        curr_level = nn.HybridSequential()
+        curr_level.add(*layers)
+        return curr_level
 
     def _make_conv_level(self, inplanes, planes, convs, norm_layer, norm_kwargs,
                          stride=1, dilation=1):
@@ -281,20 +291,24 @@ class DLA(HybridBlock):
         for i in range(convs):
             modules.extend([
                 nn.Conv2D(in_channels=inplanes, channels=planes, kernel_size=3,
-                          stride=stride if i == 0 else 1,
-                          padding=dilation, bias=False, dilation=dilation),
+                          strides=stride if i == 0 else 1,
+                          padding=dilation, use_bias=False, dilation=dilation),
                 norm_layer(**norm_kwargs),
                 nn.Activation('relu')])
             inplanes = planes
-        return nn.Sequential(*modules)
+        curr_level = nn.HybridSequential()
+        curr_level.add(*modules)
+        return curr_level
 
     def hybrid_forward(self, F, x):
         y = []
         x = self.base_layer(x)
         for i in range(6):
             x = getattr(self, 'level{}'.format(i))(x)
-            y.append(x)
-        return y
+            y.append(F.flatten(self.global_avg_pool(x)))
+        flat = F.concat(*y, dim=1)
+        out = self.fc(flat)
+        return out
 
 def get_dla(layers, pretrained=False, ctx=mx.cpu(),
             root=os.path.join('~', '.mxnet', 'models'), **kwargs):
@@ -324,6 +338,11 @@ def get_dla(layers, pretrained=False, ctx=mx.cpu(),
         from ..model_store import get_model_file
         full_name = 'dla{}'.format(layers)
         net.load_parameters(get_model_file(full_name, tag=pretrained, root=root), ctx=ctx)
+        from ..data import ImageNet1kAttr
+        attrib = ImageNet1kAttr()
+        net.synset = attrib.synset
+        net.classes = attrib.classes
+        net.classes_long = attrib.classes_long
     else:
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")

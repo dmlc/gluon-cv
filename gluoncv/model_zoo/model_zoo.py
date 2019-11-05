@@ -9,6 +9,7 @@ from .cifarwideresnet import *
 from .deeplabv3 import *
 from .deeplabv3b_plus import *
 from .densenet import *
+from .dla import *
 from .faster_rcnn import *
 from .fcn import *
 from .googlenet import *
@@ -272,7 +273,8 @@ _models = {
     'center_net_resnet101_v1b_voc': center_net_resnet101_v1b_voc,
     'center_net_resnet101_v1b_dcnv2_voc': center_net_resnet101_v1b_dcnv2_voc,
     'center_net_resnet101_v1b_coco': center_net_resnet101_v1b_coco,
-    'center_net_resnet101_v1b_dcnv2_coco': center_net_resnet101_v1b_dcnv2_coco
+    'center_net_resnet101_v1b_dcnv2_coco': center_net_resnet101_v1b_dcnv2_coco,
+    'dla34': dla34
 }
 
 
