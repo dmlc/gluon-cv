@@ -262,7 +262,7 @@ class DLA(HybridBlock):
                            norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
         self.global_avg_pool = nn.GlobalAvgPool2D()
-        self.fc = nn.Dense(units=num_classes)
+        self.fc = nn.Dense(units=classes)
 
     def _make_level(self, block, inplanes, planes, blocks, norm_layer, norm_kwargs, stride=1):
         downsample = None
