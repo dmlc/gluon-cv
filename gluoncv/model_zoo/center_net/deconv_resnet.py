@@ -125,6 +125,8 @@ class DeconvResnet(nn.HybridBlock):
         for planes, k in zip(num_filters, num_kernels):
             kernel, padding, output_padding = self._get_deconv_cfg(k)
             if self._use_dcnv2:
+                assert hasattr(contrib.cnn, 'ModulatedDeformableConvolution'), \
+                    "No ModulatedDeformableConvolution found in mxnet, consider upgrade..."
                 layers.add(contrib.cnn.ModulatedDeformableConvolution(planes,
                                                                       kernel_size=3,
                                                                       strides=1,

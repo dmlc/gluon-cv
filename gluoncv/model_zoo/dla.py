@@ -239,11 +239,14 @@ class DLA(HybridBlock):
     def __init__(self, levels, channels, classes=1000,
                  block=BasicBlock, momentum=0.9,
                  norm_layer=BatchNorm, norm_kwargs=None,
-                 residual_root=False, linear_root=False, **kwargs):
+                 residual_root=False, linear_root=False,
+                 use_feature=False, **kwargs):
         super(DLA, self).__init__(**kwargs)
         if norm_kwargs is None:
             norm_kwargs = {}
         norm_kwargs['momentum'] = momentum
+        self._use_feature = use_feature
+        self.channels = channels
         self.base_layer = nn.HybridSequential('base')
         self.base_layer.add(nn.Conv2D(in_channels=3, channels=channels[0], kernel_size=7, strides=1,
                             padding=3, use_bias=False))
@@ -267,8 +270,9 @@ class DLA(HybridBlock):
                            level_root=True, root_residual=residual_root,
                            norm_layer=norm_layer, norm_kwargs=norm_kwargs, prefix='level5_')
 
-        self.global_avg_pool = nn.GlobalAvgPool2D()
-        self.fc = nn.Dense(units=classes)
+        if not self._use_feature:
+            self.global_avg_pool = nn.GlobalAvgPool2D()
+            self.fc = nn.Dense(units=classes)
 
     def _make_level(self, block, inplanes, planes, blocks, norm_layer, norm_kwargs, stride=1):
         downsample = None
@@ -311,7 +315,12 @@ class DLA(HybridBlock):
         x = self.base_layer(x)
         for i in range(6):
             x = getattr(self, 'level{}'.format(i))(x)
-            y.append(F.flatten(self.global_avg_pool(x)))
+            if self._use_feature:
+                y.append(x)
+            else:
+                y.append(F.flatten(self.global_avg_pool(x)))
+        if self._use_feature:
+            return y
         flat = F.concat(*y, dim=1)
         out = self.fc(flat)
         return out
@@ -341,7 +350,7 @@ def get_dla(layers, pretrained=False, ctx=mx.cpu(),
     # pylint: disable=unused-variable
     net = DLA(**kwargs)
     if pretrained:
-        from ..model_store import get_model_file
+        from .model_store import get_model_file
         full_name = 'dla{}'.format(layers)
         net.load_parameters(get_model_file(full_name, tag=pretrained, root=root), ctx=ctx)
         from ..data import ImageNet1kAttr

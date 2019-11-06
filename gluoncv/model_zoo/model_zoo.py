@@ -274,6 +274,10 @@ _models = {
     'center_net_resnet101_v1b_dcnv2_voc': center_net_resnet101_v1b_dcnv2_voc,
     'center_net_resnet101_v1b_coco': center_net_resnet101_v1b_coco,
     'center_net_resnet101_v1b_dcnv2_coco': center_net_resnet101_v1b_dcnv2_coco,
+    'center_net_dla34_voc': center_net_dla34_voc,
+    'center_net_dla34_dcnv2_voc': center_net_dla34_dcnv2_voc,
+    'center_net_dla34_coco': center_net_dla34_coco,
+    'center_net_dla34_dcnv2_coco': center_net_dla34_dcnv2_coco,
     'dla34': dla34
 }
 
