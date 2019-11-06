@@ -16,7 +16,8 @@ def build_nonlocal_block(cfg):
     return NonLocal(**cfg_)
 
 class NonLocal(HybridBlock):
-    def __init__(self, in_channels=1024, nonlocal_type="gaussian", dim=3, embed=True, embed_dim=None, sub_sample=True, use_bn=True,
+    def __init__(self, in_channels=1024, nonlocal_type="gaussian", dim=3,
+                 embed=True, embed_dim=None, sub_sample=False, use_bn=True,
                  norm_layer=BatchNorm, norm_kwargs=None, ctx=None, **kwargs):
         super(NonLocal, self).__init__()
 
@@ -103,6 +104,8 @@ class NonLocal(HybridBlock):
             # Direct transpose is slow, merge it into `batch_dot` operation.
             # theta_phi = nd.batch_dot(F.transpose(theta, axes=(0, 2, 1)), phi)
             theta_phi = F.batch_dot(theta, phi, transpose_a=True)
+            # Normalizing the affinity tensor theta_phi before softmax.
+            theta_phi = theta_phi * (self.embed_dim ** -0.5)
             attn = F.softmax(theta_phi, axis=2)
         elif self.non_local_type == 'concat':
             raise NotImplementedError

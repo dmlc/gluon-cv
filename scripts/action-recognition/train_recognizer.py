@@ -143,6 +143,12 @@ def parse_args():
                         help='if set to True, use Decord video loader to load data. Otherwise use mmcv video loader.')
     parser.add_argument('--accumulate', type=int, default=1,
                         help='new step to accumulate gradient. If >1, the batch size is enlarged.')
+    parser.add_argument('--slowfast', action='store_true',
+                        help='if set to True, use data loader designed for SlowFast network.')
+    parser.add_argument('--slow-temporal-stride', type=int, default=16,
+                        help='the temporal stride for sparse sampling of video frames for slow branch in SlowFast network.')
+    parser.add_argument('--fast-temporal-stride', type=int, default=2,
+                        help='the temporal stride for sparse sampling of video frames for fast branch in SlowFast network.')
     parser.add_argument('--num-crop', type=int, default=1,
                         help='number of crops for each image. default is 1')
     opt = parser.parse_args()
@@ -166,10 +172,12 @@ def get_data_loader(opt, batch_size, num_workers, logger, kvstore=None):
         train_dataset = Kinetics400(setting=opt.train_list, root=data_dir, train=True,
                                     new_width=opt.new_width, new_height=opt.new_height, new_length=opt.new_length, new_step=opt.new_step,
                                     target_width=input_size, target_height=input_size, video_loader=opt.video_loader, use_decord=opt.use_decord,
+                                    slowfast=opt.slowfast, slow_temporal_stride=opt.slow_temporal_stride, fast_temporal_stride=opt.fast_temporal_stride,
                                     num_segments=opt.num_segments, transform=transform_train)
         val_dataset = Kinetics400(setting=opt.val_list, root=val_data_dir, train=False,
                                   new_width=opt.new_width, new_height=opt.new_height, new_length=opt.new_length, new_step=opt.new_step,
                                   target_width=input_size, target_height=input_size, video_loader=opt.video_loader, use_decord=opt.use_decord,
+                                  slowfast=opt.slowfast, slow_temporal_stride=opt.slow_temporal_stride, fast_temporal_stride=opt.fast_temporal_stride,
                                   num_segments=opt.num_segments, transform=transform_test)
     elif opt.dataset == 'ucf101':
         train_dataset = UCF101(setting=opt.train_list, root=data_dir, train=True,
@@ -256,7 +264,11 @@ def main():
         lr_decay_epoch = [int(i) for i in opt.lr_decay_epoch.split(',')]
     lr_decay_epoch = [e - opt.warmup_epochs for e in lr_decay_epoch]
 
-    optimizer = 'sgd'
+    if opt.slowfast:
+        optimizer = 'nag'
+    else:
+        optimizer = 'sgd'
+
     if opt.clip_grad > 0:
         optimizer_params = {'learning_rate': opt.lr, 'wd': opt.wd, 'momentum': opt.momentum, 'clip_gradient': opt.clip_grad}
     else:
