@@ -251,14 +251,14 @@ class NormalizedBoxCenterDecoder(gluon.HybridBlock):
     ----------
     stds : array-like of size 4
         Std value to be divided from encoded values, default is (0.1, 0.1, 0.2, 0.2).
-    clip : float, default is None
+    clip : float, default is -1.0
         If given, bounding box target will be clipped to this value.
     convert_anchor : boolean, default is False
         Whether to convert anchor from corner to center format.
 
     """
 
-    def __init__(self, stds=(0.1, 0.1, 0.2, 0.2), convert_anchor=False, clip=None):
+    def __init__(self, stds=(0.1, 0.1, 0.2, 0.2), convert_anchor=False, clip=-1.0):
         super(NormalizedBoxCenterDecoder, self).__init__()
         assert len(stds) == 4, "Box Encoder requires 4 std values."
         self._stds = stds
