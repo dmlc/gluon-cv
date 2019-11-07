@@ -352,7 +352,8 @@ def get_dla(layers, pretrained=False, ctx=mx.cpu(),
     if pretrained:
         from .model_store import get_model_file
         full_name = 'dla{}'.format(layers)
-        net.load_parameters(get_model_file(full_name, tag=pretrained, root=root), ctx=ctx)
+        net.load_parameters(get_model_file(full_name, tag=pretrained, root=root),
+                            ctx=ctx, ignore_extra=True)
         from ..data import ImageNet1kAttr
         attrib = ImageNet1kAttr()
         net.synset = attrib.synset
