@@ -54,6 +54,8 @@ class IDAUp(nn.HybridBlock):
     def __init__(self, out_channels, in_channels, up_f,
                  use_dcnv2=False, norm_layer=nn.BatchNorm, norm_kwargs=None, **kwargs):
         super(IDAUp, self).__init__(**kwargs)
+        self.startp = 0
+        self.endp = 1
         with self.name_scope():
             self.projs = nn.HybridSequential('ida_proj')
             self.ups = nn.HybridSequential('ida_ups')
@@ -77,12 +79,12 @@ class IDAUp(nn.HybridBlock):
                 self.nodes.add(node)
 
 
-    def hybrid_forward(self, F, layers, startp, endp):
-        for i in range(startp + 1, endp):
-            upsample = self.ups[i - startp - 1]
-            project = self.projs[i - startp - 1]
+    def hybrid_forward(self, F, layers):
+        for i in range(self.startp + 1, self.endp):
+            upsample = self.ups[i - self.startp - 1]
+            project = self.projs[i - self.startp - 1]
             layers[i] = upsample(project(layers[i]))
-            node = self.nodes[i - startp - 1]
+            node = self.nodes[i - self.startp - 1]
             layers[i] = node(layers[i] + layers[i - 1])
         return layers
 
@@ -110,7 +112,9 @@ class DLAUp(nn.HybridBlock):
         out = [layers[-1]] # start with 32
         for i in range(len(layers) - self.startp - 1):
             ida = self.idas[i]
-            layers = ida(layers, len(layers) -i - 2, len(layers))
+            ida.startp = len(layers) -i - 2
+            ida.endp = len(layers)
+            layers = ida(layers)
             out.insert(0, layers[-1])
         return out
 
@@ -143,7 +147,9 @@ class DLASeg(nn.HybridBlock):
         y = []
         for i in range(self.last_level - self.first_level):
             y.append(x[i])
-        self.ida_up(y, 0, len(y))
+        self.ida_up.startp = 0
+        self.ida_up.endp = len(y)
+        self.ida_up(y)
 
         return y[-1]
 
