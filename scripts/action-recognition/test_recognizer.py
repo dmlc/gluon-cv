@@ -11,14 +11,14 @@ from mxnet.gluon import nn
 from mxnet.gluon.data.vision import transforms
 
 from gluoncv.data.transforms import video
-from gluoncv.data import UCF101, Kinetics400, SomethingSomethingV2
+from gluoncv.data import UCF101, Kinetics400, SomethingSomethingV2, HMDB51
 from gluoncv.model_zoo import get_model
 from gluoncv.utils import makedirs, LRSequential, LRScheduler, split_and_load
 
 # CLI
 def parse_args():
     parser = argparse.ArgumentParser(description='Test a trained model for action recognition.')
-    parser.add_argument('--dataset', type=str, default='ucf101', choices=['ucf101', 'kinetics400', 'somethingsomethingv2'],
+    parser.add_argument('--dataset', type=str, default='ucf101', choices=['ucf101', 'kinetics400', 'somethingsomethingv2', 'hmdb51'],
                         help='which dataset to use.')
     parser.add_argument('--data-dir', type=str, default='~/.mxnet/datasets/ucf101/rawframes',
                         help='training (and validation) pictures to use.')
@@ -68,6 +68,8 @@ def parse_args():
                         help='Crop ratio during validation. default is 0.875')
     parser.add_argument('--use-pretrained', action='store_true',
                         help='enable using pretrained model from gluon.')
+    parser.add_argument('--hashtag', type=str, default='',
+                        help='hashtag for pretrained models.')
     parser.add_argument('--use_se', action='store_true',
                         help='use SE layers or not in resnext. default is false.')
     parser.add_argument('--mixup', action='store_true',
@@ -136,6 +138,12 @@ def parse_args():
                         help='if set to True, read videos directly instead of reading frames.')
     parser.add_argument('--use-decord', action='store_true',
                         help='if set to True, use Decord video loader to load data. Otherwise use mmcv video loader.')
+    parser.add_argument('--slowfast', action='store_true',
+                        help='if set to True, use data loader designed for SlowFast network.')
+    parser.add_argument('--slow-temporal-stride', type=int, default=16,
+                        help='the temporal stride for sparse sampling of video frames for slow branch in SlowFast network.')
+    parser.add_argument('--fast-temporal-stride', type=int, default=2,
+                        help='the temporal stride for sparse sampling of video frames for fast branch in SlowFast network.')
     parser.add_argument('--num-crop', type=int, default=1,
                         help='number of crops for each image. default is 1')
     opt = parser.parse_args()
@@ -210,6 +218,8 @@ def main():
         opt.num_crop = 1
 
     # get model
+    if opt.use_pretrained and len(opt.hashtag) > 0:
+        opt.use_pretrained = opt.hashtag
     classes = opt.num_classes
     model_name = opt.model
     net = get_model(name=model_name, nclass=classes, pretrained=opt.use_pretrained, num_segments=opt.num_segments, num_crop=opt.num_crop)
@@ -232,12 +242,18 @@ def main():
         val_dataset = Kinetics400(setting=opt.val_list, root=opt.data_dir, train=False,
                                   new_width=opt.new_width, new_height=opt.new_height, new_length=opt.new_length, new_step=opt.new_step,
                                   target_width=opt.input_size, target_height=opt.input_size, video_loader=opt.video_loader, use_decord=opt.use_decord,
-                                  test_mode=True, num_segments=opt.num_segments, transform=transform_test)
+                                  slowfast=opt.slowfast, slow_temporal_stride=opt.slow_temporal_stride, fast_temporal_stride=opt.fast_temporal_stride,
+                                  test_mode=True, num_segments=opt.num_segments, num_crop=opt.num_crop, transform=transform_test)
     elif opt.dataset == 'somethingsomethingv2':
         val_dataset = SomethingSomethingV2(setting=opt.val_list, root=opt.data_dir, train=False,
                                            new_width=opt.new_width, new_height=opt.new_height, new_length=opt.new_length, new_step=opt.new_step,
                                            target_width=opt.input_size, target_height=opt.input_size, video_loader=opt.video_loader, use_decord=opt.use_decord,
                                            num_segments=opt.num_segments, transform=transform_test)
+    elif opt.dataset == 'hmdb51':
+        val_dataset = HMDB51(setting=opt.val_list, root=opt.data_dir, train=False,
+                             new_width=opt.new_width, new_height=opt.new_height, new_length=opt.new_length, new_step=opt.new_step,
+                             target_width=opt.input_size, target_height=opt.input_size, video_loader=opt.video_loader, use_decord=opt.use_decord,
+                             num_segments=opt.num_segments, transform=transform_test)
     else:
         logger.info('Dataset %s is not supported yet.' % (opt.dataset))
 
