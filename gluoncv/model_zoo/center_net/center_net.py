@@ -133,7 +133,7 @@ class CenterNet(nn.HybridBlock):
         self._clear_cached_op()
         self.nms_thresh = nms_thresh
         self.nms_topk = nms_topk
-        post_nms = min(post_nms, topk)
+        post_nms = min(post_nms, self.nms_topk)
         self.post_nms = post_nms
 
     def hybrid_forward(self, F, x):
