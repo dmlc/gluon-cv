@@ -47,12 +47,6 @@ class MaskTargetGenerator(gluon.HybridBlock):
 
         """
 
-        if hasattr(F.contrib, 'mrcnn_mask_target'):
-            return F.contrib.mrcnn_mask_target(rois, gt_masks, matches, cls_targets,
-                                               num_rois=self._num_rois,
-                                               num_classes=self._num_classes,
-                                               mask_size=self._mask_size)
-
         # cannot know M (num_gt) to have accurate batch id B * M, must split batch dim
         def _split(x, axis, num_outputs, squeeze_axis):
             x = F.split(x, axis=axis, num_outputs=num_outputs, squeeze_axis=squeeze_axis)
