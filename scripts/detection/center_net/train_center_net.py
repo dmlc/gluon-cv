@@ -139,7 +139,7 @@ def validate(net, val_data, ctx, eval_metric, flip_test=False):
     eval_metric.reset()
     net.flip_test = flip_test
     mx.nd.waitall()
-    net.hybridize(static_alloc=True, static_shape=True)
+    net.hybridize()
     for batch in val_data:
         data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0, even_split=False)
         label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0, even_split=False)
@@ -220,7 +220,7 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
         center_reg_metric.reset()
         tic = time.time()
         btic = time.time()
-        net.hybridize(static_alloc=True, static_shape=True)
+        net.hybridize()
 
         for i, batch in enumerate(train_data):
             split_data = [gluon.utils.split_and_load(batch[ind], ctx_list=ctx, batch_axis=0) for ind in range(6)]
