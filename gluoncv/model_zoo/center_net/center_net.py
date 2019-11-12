@@ -136,6 +136,34 @@ class CenterNet(nn.HybridBlock):
         post_nms = min(post_nms, self.nms_topk)
         self.post_nms = post_nms
 
+    def reset_class(self, classes, reuse_weights=None):
+        """Reset class categories and class predictors.
+
+        Parameters
+        ----------
+        classes : iterable of str
+            The new categories. ['apple', 'orange'] for example.
+        reuse_weights : dict
+            A {new_integer : old_integer} or mapping dict or {new_name : old_name} mapping dict,
+            or a list of [name0, name1,...] if class names don't change.
+            This allows the new predictor to reuse the
+            previously trained weights specified.
+
+        Example
+        -------
+        >>> net = gluoncv.model_zoo.get_model('center_net_resnet50_v1b_voc', pretrained=True)
+        >>> # use direct name to name mapping to reuse weights
+        >>> net.reset_class(classes=['person'], reuse_weights={'person':'person'})
+        >>> # or use interger mapping, person is the 14th category in VOC
+        >>> net.reset_class(classes=['person'], reuse_weights={0:14})
+        >>> # you can even mix them
+        >>> net.reset_class(classes=['person'], reuse_weights={'person':14})
+        >>> # or use a list of string if class name don't change
+        >>> net.reset_class(classes=['person'], reuse_weights=['person'])
+
+        """
+        raise NotImplementedError("Not yet implemented, please wait for future updates.")
+
     def hybrid_forward(self, F, x):
         """Hybrid forward of center net"""
         y = self.base_network(x)
