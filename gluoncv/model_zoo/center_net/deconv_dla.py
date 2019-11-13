@@ -15,6 +15,24 @@ from .. model_zoo import get_model
 __all__ = ['get_deconv_dla', 'dla34_deconv']
 
 class CustomConv(nn.HybridBlock):
+    """Custom Conv Block.
+
+    Parameters
+    ----------
+    in_channels : int
+        Input channels of conv layer.
+    out_channels : int
+        Output channels of conv layer.
+    use_dcnv2 : bool
+        Whether use modulated deformable convolution(DCN version2).
+    momentum : float, default is 0.9
+        Momentum for Norm layer.
+    norm_layer : nn.HybridBlock, default is BatchNorm.
+        The norm_layer instance.
+    norm_kwargs : dict
+        Extra arguments for norm layer.
+
+    """
     def __init__(self, in_channels, out_channels,
                  use_dcnv2=False, momentum=0.9,
                  norm_layer=nn.BatchNorm, norm_kwargs=None, **kwargs):
@@ -51,6 +69,24 @@ class CustomConv(nn.HybridBlock):
 
 
 class IDAUp(nn.HybridBlock):
+    """Iterative deep aggregation layer.
+
+    Parameters
+    ----------
+    out_channels : iterable of int
+        Output channels for multiple layers.
+    in_channels : iterable of int
+        Input channels for multiple layers.
+    up_f : iterable of float
+        Upsampling ratios.
+    use_dcnv2 : bool
+        Whether use modulated deformable convolution(DCN version2).
+    norm_layer : nn.HybridBlock, default is BatchNorm.
+        The norm_layer instance.
+    norm_kwargs : dict
+        Extra arguments for norm layer.
+
+    """
     def __init__(self, out_channels, in_channels, up_f,
                  use_dcnv2=False, norm_layer=nn.BatchNorm, norm_kwargs=None, **kwargs):
         super(IDAUp, self).__init__(**kwargs)
