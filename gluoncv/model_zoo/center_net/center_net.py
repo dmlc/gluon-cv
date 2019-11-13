@@ -165,6 +165,7 @@ class CenterNet(nn.HybridBlock):
         raise NotImplementedError("Not yet implemented, please wait for future updates.")
 
     def hybrid_forward(self, F, x):
+        # pylint: disable=arguments-differ
         """Hybrid forward of center net"""
         y = self.base_network(x)
         out = [head(y) for head in self.heads]
@@ -631,7 +632,7 @@ def center_net_dla34_dcnv2_voc(pretrained=False, pretrained_base=True, **kwargs)
         A CenterNet detection network.
 
     """
-    from .deconv_dla import dla34_deconv
+    from .deconv_dla import dla34_deconv_dcnv2
     from ...data import VOCDetection
     classes = VOCDetection.CLASSES
     pretrained_base = False if pretrained else pretrained_base

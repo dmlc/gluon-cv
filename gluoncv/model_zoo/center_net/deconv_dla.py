@@ -1,11 +1,10 @@
 """DLA network with Deconvolution layers for CenterNet object detection."""
+# pylint: disable=arguments-differ
 from __future__ import absolute_import
 
 import warnings
-import math
 
 import numpy as np
-import mxnet as mx
 from mxnet.context import cpu
 from mxnet.gluon import nn
 from mxnet.gluon import contrib
@@ -125,6 +124,26 @@ class IDAUp(nn.HybridBlock):
         return layers
 
 class DLAUp(nn.HybridBlock):
+    """Deep layer aggregation upsampling layer.
+
+    Parameters
+    ----------
+    startp : int
+        Start index.
+    channels : iterable of int
+        Output channels.
+    scales : iterable of int
+        Upsampling scales.
+    in_channels : iterable of int
+        Input channels.
+    use_dcnv2 : bool
+        Whether use ModulatedDeformableConvolution(DCN version 2).
+    norm_layer : nn.HybridBlock, default is BatchNorm
+        The norm layer type.
+    norm_kwargs : dict
+        Extra arguments to norm layer.
+
+    """
     def __init__(self, startp, channels, scales, in_channels=None,
                  use_dcnv2=False, norm_layer=nn.BatchNorm, norm_kwargs=None, **kwargs):
         super(DLAUp, self).__init__(**kwargs)
@@ -156,6 +175,28 @@ class DLAUp(nn.HybridBlock):
 
 
 class DLASeg(nn.HybridBlock):
+    """Short summary.
+
+    Parameters
+    ----------
+    base_network : str
+        Name of the base feature extraction network, must be DLA networks.
+    pretrained_base : bool
+        Whether load pretrained base network.
+    down_ratio : int
+        The downsampling ratio of the network, must be one of [2, 4, 8, 16].
+    last_level : int
+        Index of the last output.
+    out_channel : int
+        The channel number of last output. If `0`, will use the channels of the first input.
+    use_dcnv2 : bool
+        Whether use ModulatedDeformableConvolution(DCN version 2).
+    norm_layer : nn.HybridBlock, default is BatchNorm
+        The norm layer type.
+    norm_kwargs : dict
+        Extra arguments to norm layer.
+
+    """
     def __init__(self, base_network, pretrained_base, down_ratio,
                  last_level, out_channel=0, use_dcnv2=False,
                  norm_layer=nn.BatchNorm, norm_kwargs=None, **kwargs):
@@ -215,7 +256,7 @@ def get_deconv_dla(base_network, pretrained=False, ctx=cpu(), scale=4.0, use_dcn
     assert int(scale) in [2, 4, 8, 16], "scale must be one of [2, 4, 8, 16]"
     net = DLASeg(base_network=base_network, pretrained_base=pretrained,
                  down_ratio=int(scale), last_level=5, use_dcnv2=use_dcnv2, **kwargs)
-    with warnings.catch_warnings(record=True) as w:
+    with warnings.catch_warnings(record=True) as _:
         warnings.simplefilter("always")
         net.initialize()
     net.collect_params().reset_ctx(ctx)

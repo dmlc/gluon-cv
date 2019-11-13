@@ -3,7 +3,6 @@
 from __future__ import division
 
 import os
-import warnings
 
 import mxnet as mx
 from mxnet.gluon.block import HybridBlock
@@ -188,17 +187,16 @@ class Tree(HybridBlock):
             self.project = nn.HybridSequential()
             if levels == 1:
                 self.tree1 = block(in_channels, out_channels, stride,
-                                   dilation=dilation, norm_layer=norm_layer, norm_kwargs=norm_kwargs,
-                                   prefix='block_tree_1_')
+                                   dilation=dilation, norm_layer=norm_layer,
+                                   norm_kwargs=norm_kwargs, prefix='block_tree_1_')
                 self.tree2 = block(out_channels, out_channels, 1,
-                                   dilation=dilation, norm_layer=norm_layer, norm_kwargs=norm_kwargs,
-                                   prefix='block_tree_2_')
+                                   dilation=dilation, norm_layer=norm_layer,
+                                   norm_kwargs=norm_kwargs, prefix='block_tree_2_')
                 if in_channels != out_channels:
                     self.project.add(*[
                         nn.Conv2D(in_channels=in_channels, channels=out_channels,
                                   kernel_size=1, strides=1, use_bias=False, prefix='proj_conv0_'),
-                        norm_layer(in_channels=out_channels, prefix='proj_bn0_', **norm_kwargs)]
-                    )
+                        norm_layer(in_channels=out_channels, prefix='proj_bn0_', **norm_kwargs)])
             else:
                 self.tree1 = Tree(levels - 1, block, in_channels, out_channels,
                                   stride, root_dim=0,
@@ -249,7 +247,7 @@ class DLA(HybridBlock):
         self.channels = channels
         self.base_layer = nn.HybridSequential('base')
         self.base_layer.add(nn.Conv2D(in_channels=3, channels=channels[0], kernel_size=7, strides=1,
-                            padding=3, use_bias=False))
+                                      padding=3, use_bias=False))
         self.base_layer.add(norm_layer(in_channels=channels[0], **norm_kwargs))
         self.base_layer.add(nn.Activation('relu'))
 
@@ -282,13 +280,12 @@ class DLA(HybridBlock):
                 nn.MaxPool2D(stride, strides=stride),
                 nn.Conv2D(channels=planes, in_channels=inplanes,
                           kernel_size=1, strides=1, use_bias=False),
-                norm_layer(in_channels=planes, **norm_kwargs)]
-            )
+                norm_layer(in_channels=planes, **norm_kwargs)])
 
         layers = []
         layers.append(block(inplanes, planes, stride,
-                            norm_layer=norm_layer, norm_kwargs=norm_kwargs,downsample=downsample))
-        for i in range(1, blocks):
+                            norm_layer=norm_layer, norm_kwargs=norm_kwargs, downsample=downsample))
+        for _ in range(1, blocks):
             layers.append(block(inplanes, planes, norm_layer=norm_layer, norm_kwargs=norm_kwargs))
 
         curr_level = nn.HybridSequential()

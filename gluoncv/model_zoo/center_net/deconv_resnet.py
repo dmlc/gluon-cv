@@ -157,6 +157,7 @@ class DeconvResnet(nn.HybridBlock):
         return layers
 
     def hybrid_forward(self, F, x):
+        # pylint: disable=arguments-differ
         """HybridForward"""
         y = self.base_network(x)
         out = self.deconv(y)
@@ -185,7 +186,7 @@ def get_deconv_resnet(base_network, pretrained=False, ctx=cpu(), use_dcnv2=False
     """
     net = DeconvResnet(base_network=base_network, pretrained_base=pretrained,
                        use_dcnv2=use_dcnv2, **kwargs)
-    with warnings.catch_warnings(record=True) as w:
+    with warnings.catch_warnings(record=True) as _:
         warnings.simplefilter("always")
         net.initialize()
     net.collect_params().reset_ctx(ctx)
