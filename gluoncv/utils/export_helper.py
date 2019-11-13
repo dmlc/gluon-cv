@@ -99,9 +99,9 @@ def export_block(path, block, data_shape=None, epoch=0, preprocess=True, layout=
     # try different data_shape if possible, until one fits the network
     last_exception = None
     for dshape in data_shapes:
-        if layout == 'HWC' or layout == 'CHW':
+        if layout in ('HWC', 'CHW'):
             h, w, c = dshape
-        elif layout == 'THWC' or layout == 'CTHW':
+        elif layout in ('THWC', 'CTHW'):
             t, h, w, c = dshape
         else:
             raise RuntimeError('Input layout %s is not supported yet.' % (layout))
