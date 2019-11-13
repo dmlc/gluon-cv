@@ -27,6 +27,7 @@ class CenterNetTargetGenerator(gluon.Block):
         self._output_height = int(output_height)
 
     def forward(self, gt_boxes, gt_ids):
+        """Target generation"""
         # pylint: disable=arguments-differ
         h_scale = 1.0  # already scaled in affinetransform
         w_scale = 1.0  # already scaled in affinetransform

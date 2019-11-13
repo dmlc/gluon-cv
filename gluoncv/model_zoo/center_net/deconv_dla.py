@@ -218,6 +218,7 @@ class DLASeg(nn.HybridBlock):
                             use_dcnv2=use_dcnv2, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
     def hybrid_forward(self, F, x):
+        """Forward pass"""
         x = self.base(x)
         x = self.dla_up(x)
 
