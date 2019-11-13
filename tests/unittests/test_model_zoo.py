@@ -34,6 +34,8 @@ def test_get_all_models():
         kwargs = {}
         if 'custom' in name:
             kwargs['classes'] = ['a', 'b']
+        if 'dcnv2' in name and not hasattr(mx.gluon.contrib.cnn, 'ModulatedDeformableConvolution'):
+            continue
         net = gcv.model_zoo.get_model(name, pretrained=False, **kwargs)
         assert isinstance(net, mx.gluon.Block), '{}'.format(name)
 
@@ -209,8 +211,8 @@ def test_center_net_models():
     models = ['center_net_resnet18_v1b_voc', 'center_net_resnet50_v1b_coco']
     if not mx.context.current_context().device_type == 'gpu':
         models = ['center_net_resnet18_v1b_voc']
-    # if hasattr(mx.gluon.contrib.cnn, 'ModulatedDeformableConvolution'):
-    #     models.append('center_net_resnet18_v1b_dcnv2_voc')
+    if hasattr(mx.gluon.contrib.cnn, 'ModulatedDeformableConvolution'):
+        models.append('center_net_resnet18_v1b_dcnv2_voc')
     _test_model_list(models, ctx, x)
 
 def test_ssd_reset_class():
