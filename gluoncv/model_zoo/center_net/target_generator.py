@@ -62,6 +62,21 @@ class CenterNetTargetGenerator(gluon.Block):
 
 
 def _gaussian_radius(det_size, min_overlap=0.7):
+    """Calculate gaussian radius for foreground objects.
+
+    Parameters
+    ----------
+    det_size : tuple of int
+        Object size (h, w).
+    min_overlap : float
+        Minimal overlap between objects.
+
+    Returns
+    -------
+    float
+        Gaussian radius.
+
+    """
     height, width = det_size
 
     a1 = 1
@@ -84,6 +99,21 @@ def _gaussian_radius(det_size, min_overlap=0.7):
     return min(r1, r2, r3)
 
 def _gaussian_2d(shape, sigma=1):
+    """Generate 2d gaussian.
+
+    Parameters
+    ----------
+    shape : tuple of int
+        The shape of the gaussian.
+    sigma : float
+        Sigma for gaussian.
+
+    Returns
+    -------
+    float
+        2D gaussian kernel.
+
+    """
     m, n = [(ss - 1.) / 2. for ss in shape]
     y, x = np.ogrid[-m:m+1, -n:n+1]
 
@@ -92,6 +122,23 @@ def _gaussian_2d(shape, sigma=1):
     return h
 
 def _draw_umich_gaussian(heatmap, center, radius, k=1):
+    """Draw a 2D gaussian heatmap.
+
+    Parameters
+    ----------
+    heatmap : numpy.ndarray
+        Heatmap to be write inplace.
+    center : tuple of int
+        Center of object (h, w).
+    radius : type
+        The radius of gaussian.
+
+    Returns
+    -------
+    numpy.ndarray
+        Drawn gaussian heatmap.
+
+    """
     diameter = 2 * radius + 1
     gaussian = _gaussian_2d((diameter, diameter), sigma=diameter / 6)
 

@@ -1,4 +1,5 @@
 """ResNet with Deconvolution layers for CenterNet object detection."""
+# pylint: disable=unused-argument
 from __future__ import absolute_import
 
 import warnings

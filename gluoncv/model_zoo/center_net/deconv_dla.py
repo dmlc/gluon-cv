@@ -1,5 +1,5 @@
 """DLA network with Deconvolution layers for CenterNet object detection."""
-# pylint: disable=arguments-differ
+# pylint: disable=arguments-differ,unused-argument
 from __future__ import absolute_import
 
 import warnings

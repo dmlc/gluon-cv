@@ -1,4 +1,5 @@
 """Transforms described in https://arxiv.org/abs/1904.07850."""
+# pylint: disable=too-many-function-args
 from __future__ import absolute_import
 import numpy as np
 import mxnet as mx
