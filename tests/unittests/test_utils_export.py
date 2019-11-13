@@ -8,11 +8,26 @@ from common import try_gpu
 @try_gpu(0)
 def test_export_model_zoo():
     for model in pretrained_model_list():
-        if 'i3d' in model: continue    # 3D model do not support it now, skip. Data shape is 5D.
         print('exporting:', model)
-        kwargs = {'data_shape':(480, 480, 3)} if 'deeplab' in model or 'psp' in model else {}
+
+        if 'deeplab' in model or 'psp' in model:
+            # semantic segmentation models require fixed data shape
+            kwargs = {'data_shape':(480, 480, 3)}
+        elif '3d' in model:
+            # video action recognition models require 4d data shape
+            kwargs = {'data_shape':(32, 224, 224, 3), 'layout':'CTHW', 'preprocess':None}
+        elif 'slowfast_4x16' in model:
+            # video action recognition models require 4d data shape
+            kwargs = {'data_shape':(36, 224, 224, 3), 'layout':'CTHW', 'preprocess':None}
+        elif 'slowfast_8x8' in model:
+            # video action recognition models require 4d data shape
+            kwargs = {'data_shape':(40, 224, 224, 3), 'layout':'CTHW', 'preprocess':None}
+        else:
+            kwargs = {}
+
         if '_gn' in model:
             continue
+
         try:
             gcv.utils.export_block(model, gcv.model_zoo.get_model(model, pretrained=True), **kwargs)
         except ValueError:
