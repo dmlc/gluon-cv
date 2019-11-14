@@ -99,20 +99,18 @@ def export_block(path, block, data_shape=None, epoch=0, preprocess=True, layout=
     # try different data_shape if possible, until one fits the network
     last_exception = None
     for dshape in data_shapes:
-        if layout in ('HWC', 'CHW'):
-            h, w, c = dshape
-        elif layout in ('THWC', 'CTHW'):
-            t, h, w, c = dshape
-        else:
-            raise RuntimeError('Input layout %s is not supported yet.' % (layout))
 
         if layout == 'HWC':
+            h, w, c = dshape
             x = mx.nd.zeros((1, h, w, c), ctx=ctx)
         elif layout == 'CHW':
+            c, h, w = dshape
             x = mx.nd.zeros((1, c, h, w), ctx=ctx)
         elif layout == 'THWC':
+            t, h, w, c = dshape
             x = mx.nd.zeros((1, t, h, w, c), ctx=ctx)
         elif layout == 'CTHW':
+            c, t, h, w = dshape
             x = mx.nd.zeros((1, c, t, h, w), ctx=ctx)
         else:
             raise RuntimeError('Input layout %s is not supported yet.' % (layout))

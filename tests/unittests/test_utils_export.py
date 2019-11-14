@@ -15,13 +15,13 @@ def test_export_model_zoo():
             kwargs = {'data_shape':(480, 480, 3)}
         elif '3d' in model:
             # video action recognition models require 4d data shape
-            kwargs = {'data_shape':(32, 224, 224, 3), 'layout':'CTHW', 'preprocess':None}
+            kwargs = {'data_shape':(3, 32, 224, 224), 'layout':'CTHW', 'preprocess':None}
         elif 'slowfast_4x16' in model:
             # video action recognition models require 4d data shape
-            kwargs = {'data_shape':(36, 224, 224, 3), 'layout':'CTHW', 'preprocess':None}
+            kwargs = {'data_shape':(3, 36, 224, 224), 'layout':'CTHW', 'preprocess':None}
         elif 'slowfast_8x8' in model:
             # video action recognition models require 4d data shape
-            kwargs = {'data_shape':(40, 224, 224, 3), 'layout':'CTHW', 'preprocess':None}
+            kwargs = {'data_shape':(3, 40, 224, 224), 'layout':'CTHW', 'preprocess':None}
         else:
             kwargs = {}
 
