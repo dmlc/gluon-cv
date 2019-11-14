@@ -185,10 +185,6 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
 
     for k, v in net.collect_params('.*bias').items():
         v.wd_mult = 0.0
-    # trainer = gluon.Trainer(
-    #             net.collect_params(), 'sgd',
-    #             {'learning_rate': args.lr, 'wd': args.wd, 'momentum': args.momentum,
-    #              'lr_scheduler': lr_scheduler})
     trainer = gluon.Trainer(
                 net.collect_params(), 'adam',
                 {'learning_rate': args.lr, 'wd': args.wd,

@@ -108,8 +108,6 @@ class BottleneckX(HybridBlock):
         if norm_kwargs is None:
             norm_kwargs = {}
         cardinality = BottleneckX.cardinality
-        # dim = int(math.floor(planes * (BottleneckV5.expansion / 64.0)))
-        # bottle_planes = dim * cardinality
         bottle_planes = planes * cardinality // 32
         with self.name_scope():
             self.conv1 = nn.Conv2D(in_channels=inplanes, channels=bottle_planes,

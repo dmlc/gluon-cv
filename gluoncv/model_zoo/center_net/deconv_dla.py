@@ -174,8 +174,9 @@ class DLAUp(nn.HybridBlock):
         return out
 
 
-class DLASeg(nn.HybridBlock):
-    """Short summary.
+class DeconvDLA(nn.HybridBlock):
+    """Deep layer aggregation network with deconv layers(smaller strides) which produce larger
+    feature map.
 
     Parameters
     ----------
@@ -200,7 +201,7 @@ class DLASeg(nn.HybridBlock):
     def __init__(self, base_network, pretrained_base, down_ratio,
                  last_level, out_channel=0, use_dcnv2=False,
                  norm_layer=nn.BatchNorm, norm_kwargs=None, **kwargs):
-        super(DLASeg, self).__init__(**kwargs)
+        super(DeconvDLA, self).__init__(**kwargs)
         assert down_ratio in [2, 4, 8, 16]
         self.first_level = int(np.log2(down_ratio))
         self.last_level = last_level
@@ -255,7 +256,7 @@ def get_deconv_dla(base_network, pretrained=False, ctx=cpu(), scale=4.0, use_dcn
 
     """
     assert int(scale) in [2, 4, 8, 16], "scale must be one of [2, 4, 8, 16]"
-    net = DLASeg(base_network=base_network, pretrained_base=pretrained,
+    net = DeconvDLA(base_network=base_network, pretrained_base=pretrained,
                  down_ratio=int(scale), last_level=5, use_dcnv2=use_dcnv2, **kwargs)
     with warnings.catch_warnings(record=True) as _:
         warnings.simplefilter("always")
