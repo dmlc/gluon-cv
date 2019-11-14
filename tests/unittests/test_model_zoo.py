@@ -537,6 +537,7 @@ def test_quantized_segmentation_models():
     x = mx.random.uniform(shape=(1, 3, 480, 480), ctx=ctx)
     _test_model_list(model_list, ctx, x)
 
+
 if __name__ == '__main__':
     import nose
 
