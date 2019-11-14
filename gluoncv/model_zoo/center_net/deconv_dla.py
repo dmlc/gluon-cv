@@ -257,7 +257,7 @@ def get_deconv_dla(base_network, pretrained=False, ctx=cpu(), scale=4.0, use_dcn
     """
     assert int(scale) in [2, 4, 8, 16], "scale must be one of [2, 4, 8, 16]"
     net = DeconvDLA(base_network=base_network, pretrained_base=pretrained,
-                 down_ratio=int(scale), last_level=5, use_dcnv2=use_dcnv2, **kwargs)
+                    down_ratio=int(scale), last_level=5, use_dcnv2=use_dcnv2, **kwargs)
     with warnings.catch_warnings(record=True) as _:
         warnings.simplefilter("always")
         net.initialize()
