@@ -37,6 +37,7 @@ def test_get_all_models():
         net = gcv.model_zoo.get_model(name, pretrained=False, **kwargs)
         assert isinstance(net, mx.gluon.Block), '{}'.format(name)
 
+
 def _test_model_list(model_list, ctx, x, pretrained=True, **kwargs):
     pretrained_models = gcv.model_zoo.pretrained_model_list()
     for model in model_list:
@@ -396,6 +397,7 @@ def test_set_nms():
         net.set_nms(nms_thresh=0.3, nms_topk=200, post_nms=50)
         net(x)
 
+
 @try_gpu(0)
 def test_segmentation_models():
     ctx = mx.context.current_context()
@@ -409,6 +411,7 @@ def test_segmentation_models():
     _test_model_list(models, ctx, x, pretrained=True, pretrained_base=True)
     _test_model_list(models, ctx, x, pretrained=False, pretrained_base=False)
     _test_model_list(models, ctx, x, pretrained=False, pretrained_base=True)
+
 
 @try_gpu(0)
 def test_segmentation_models_custom_size():
