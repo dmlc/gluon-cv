@@ -37,7 +37,6 @@ def test_get_all_models():
         net = gcv.model_zoo.get_model(name, pretrained=False, **kwargs)
         assert isinstance(net, mx.gluon.Block), '{}'.format(name)
 
-
 def _test_model_list(model_list, ctx, x, pretrained=True, **kwargs):
     pretrained_models = gcv.model_zoo.pretrained_model_list()
     for model in model_list:
@@ -397,7 +396,6 @@ def test_set_nms():
         net.set_nms(nms_thresh=0.3, nms_topk=200, post_nms=50)
         net(x)
 
-
 @try_gpu(0)
 def test_segmentation_models():
     ctx = mx.context.current_context()
@@ -411,7 +409,6 @@ def test_segmentation_models():
     _test_model_list(models, ctx, x, pretrained=True, pretrained_base=True)
     _test_model_list(models, ctx, x, pretrained=False, pretrained_base=False)
     _test_model_list(models, ctx, x, pretrained=False, pretrained_base=True)
-
 
 @try_gpu(0)
 def test_segmentation_models_custom_size():
@@ -445,6 +442,39 @@ def test_segmentation_models_custom_size():
     result = net.forward(x)
     assert result[0].shape == (1, num_classes, height, width)
 
+@try_gpu(0)
+def test_action_recognition_vgg_models():
+    ctx = mx.context.current_context()
+    models = ['vgg16_ucf101']
+
+    # 224x224
+    x = mx.random.uniform(shape=(2, 3, 224, 224), ctx=ctx)
+    _test_model_list(models, ctx, x, pretrained=True, pretrained_base=True)
+    _test_model_list(models, ctx, x, pretrained=False, pretrained_base=False)
+    _test_model_list(models, ctx, x, pretrained=False, pretrained_base=True)
+
+def test_action_recognition_inceptionv3_models():
+    ctx = mx.context.current_context()
+    models = ['inceptionv3_ucf101', 'inceptionv3_kinetics400']
+
+    # 299x299
+    x = mx.random.uniform(shape=(2, 3, 299, 299), ctx=ctx)
+    _test_model_list(models, ctx, x, pretrained=True, pretrained_base=True)
+    _test_model_list(models, ctx, x, pretrained=False, pretrained_base=False)
+    _test_model_list(models, ctx, x, pretrained=False, pretrained_base=True)
+
+@try_gpu(0)
+def test_action_recognition_i3d_models():
+    ctx = mx.context.current_context()
+    models = ['i3d_resnet50_v1_kinetics400', 'i3d_resnet101_v1_kinetics400', 'i3d_inceptionv1_kinetics400',
+              'i3d_inceptionv3_kinetics400', 'i3d_resnet50_v1_sthsthv2', 'i3d_resnet50_v1_hmdb51',
+              'i3d_resnet50_v1_ucf101']
+
+    # 224x224
+    x = mx.random.uniform(shape=(2, 3, 32, 224, 224), ctx=ctx)
+    _test_model_list(models, ctx, x, pretrained=True, pretrained_base=True)
+    _test_model_list(models, ctx, x, pretrained=False, pretrained_base=False)
+    _test_model_list(models, ctx, x, pretrained=False, pretrained_base=True)
 
 @with_cpu(0)
 def test_mobilenet_sync_bn():
@@ -506,7 +536,6 @@ def test_quantized_segmentation_models():
     ctx = mx.context.current_context()
     x = mx.random.uniform(shape=(1, 3, 480, 480), ctx=ctx)
     _test_model_list(model_list, ctx, x)
-
 
 if __name__ == '__main__':
     import nose
