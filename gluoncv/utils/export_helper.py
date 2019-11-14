@@ -50,7 +50,8 @@ def export_block(path, block, data_shape=None, epoch=0, preprocess=True, layout=
     block : mxnet.gluon.HybridBlock
         The hybridizable block. Note that normal gluon.Block is not supported.
     data_shape : tuple of int, default is None
-        Fake data shape just for export purpose, in format (H, W, C).
+        Fake data shape just for export purpose, in format (H, W, C) for 2D data
+        or (T, H, W, C) for 3D data.
         If you don't specify ``data_shape``, `export_block` will try use some common data_shapes,
         e.g., (224, 224, 3), (256, 256, 3), (299, 299, 3), (512, 512, 3)...
         If any of this ``data_shape`` goes through, the export will succeed.
@@ -64,7 +65,7 @@ def export_block(path, block, data_shape=None, epoch=0, preprocess=True, layout=
         pre-trained models.
         You can use custom pre-process hybrid block or disable by set ``preprocess=None``.
     layout : str, default is 'HWC'
-        The layout for raw input data. By default is HWC. Supports 'HWC' and 'CHW'.
+        The layout for raw input data. By default is HWC. Supports 'HWC', 'CHW', 'THWC' and 'CTHW'.
         Note that image channel order is always RGB.
     ctx: mx.Context, default mx.cpu()
         Network context.
@@ -98,11 +99,21 @@ def export_block(path, block, data_shape=None, epoch=0, preprocess=True, layout=
     # try different data_shape if possible, until one fits the network
     last_exception = None
     for dshape in data_shapes:
-        h, w, c = dshape
+
         if layout == 'HWC':
+            h, w, c = dshape
             x = mx.nd.zeros((1, h, w, c), ctx=ctx)
         elif layout == 'CHW':
+            c, h, w = dshape
             x = mx.nd.zeros((1, c, h, w), ctx=ctx)
+        elif layout == 'THWC':
+            t, h, w, c = dshape
+            x = mx.nd.zeros((1, t, h, w, c), ctx=ctx)
+        elif layout == 'CTHW':
+            c, t, h, w = dshape
+            x = mx.nd.zeros((1, c, t, h, w), ctx=ctx)
+        else:
+            raise RuntimeError('Input layout %s is not supported yet.' % (layout))
 
         # hybridize and forward once
         wrapper_block.hybridize()
