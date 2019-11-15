@@ -111,6 +111,8 @@ def parse_args():
     parser.add_argument('--horovod', action='store_true',
                         help='Use MXNet Horovod for distributed training. Must be run with OpenMPI. '
                              '--gpus is ignored when using --horovod.')
+    parser.add_argument('--use-ext', action='store_true',
+                        help='Use NVIDIA MSCOCO API. Make sure you install first')
     parser.add_argument('--executor-threads', type=int, default=1,
                         help='Number of threads for executor for scheduling ops. '
                              'More threads may incur higher GPU memory footprint, '
@@ -138,8 +140,8 @@ def get_dataset(dataset, args):
         train_dataset = gdata.COCOInstance(splits='instances_train2017')
         val_dataset = gdata.COCOInstance(splits='instances_val2017', skip_empty=False)
         starting_id = int(len(val_dataset) // hvd.size() * hvd.rank()) if args.horovod else 0
-        val_metric = COCOInstanceMetric(val_dataset, args.save_prefix + '_eval', use_ext=True,
-                                        starting_id=starting_id)
+        val_metric = COCOInstanceMetric(val_dataset, args.save_prefix + '_eval',
+                                        use_ext=args.use_ext, starting_id=starting_id)
     else:
         raise NotImplementedError('Dataset: {} not implemented.'.format(dataset))
     return train_dataset, val_dataset, val_metric
