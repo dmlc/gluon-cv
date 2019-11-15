@@ -6,6 +6,10 @@ from PIL import Image
 from scipy import interpolate
 
 from ..mscoco.utils import try_import_pycocotools
+try:
+    from .cython_mask import cython_mask_fill
+except ImportError:
+    cython_mask_fill = None
 
 __all__ = ['flip', 'resize', 'to_mask', 'fill']
 
@@ -115,7 +119,7 @@ def fill(mask, bbox, size, fast_fill=True):
     size : tuple
         Tuple of length 2: (width, height).
     fast_fill : boolean, default is True.
-        Whether to use fast fill. Fast fill is less accurate.g
+        Whether to use fast fill. Fast fill is less accurate.
 
     Returns
     -------
@@ -123,16 +127,14 @@ def fill(mask, bbox, size, fast_fill=True):
         Full size binary mask of shape (height, width)
     """
     width, height = size
-    # pad mask
-    M = mask.shape[0]
-    padded_mask = np.zeros((M + 2, M + 2))
-    padded_mask[1:-1, 1:-1] = mask
-    mask = padded_mask
-    # expand boxes
     x1, y1, x2, y2 = bbox
+    m_h, m_w = mask.shape
+    # pad mask
+    mask = np.pad(mask, [(1, 1), (1, 1)], mode='constant')
+    # expand boxes
     x, y, hw, hh = (x1 + x2) / 2, (y1 + y2) / 2, (x2 - x1) / 2, (y2 - y1) / 2
-    hw = hw * (float(M + 2) / M)
-    hh = hh * (float(M + 2) / M)
+    hw = hw * (float(m_w + 2) / m_w)
+    hh = hh * (float(m_h + 2) / m_h)
     x1, y1, x2, y2 = x - hw, y - hh, x + hw, y + hh
     if fast_fill:
         # quantize

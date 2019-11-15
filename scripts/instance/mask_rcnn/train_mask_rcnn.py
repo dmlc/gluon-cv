@@ -7,6 +7,7 @@ os.environ['MXNET_CUDNN_AUTOTUNE_DEFAULT'] = '0'
 os.environ['MXNET_GPU_MEM_POOL_TYPE'] = 'Round'
 os.environ['MXNET_GPU_MEM_POOL_ROUND_LINEAR_CUTOFF'] = '28'
 
+import threading
 import logging
 import time
 import numpy as np
@@ -30,6 +31,11 @@ try:
     import horovod.mxnet as hvd
 except ImportError:
     hvd = None
+
+try:
+    from mpi4py import MPI
+except ImportError:
+    MPI = None
 
 
 # from mxnet import profiler
@@ -131,16 +137,18 @@ def get_dataset(dataset, args):
     if dataset.lower() == 'coco':
         train_dataset = gdata.COCOInstance(splits='instances_train2017')
         val_dataset = gdata.COCOInstance(splits='instances_val2017', skip_empty=False)
-        val_metric = COCOInstanceMetric(val_dataset, args.save_prefix + '_eval', cleanup=True)
+        starting_id = int(len(val_dataset) // hvd.size() * hvd.rank()) if args.horovod else 0
+        val_metric = COCOInstanceMetric(val_dataset, args.save_prefix + '_eval', use_ext=True,
+                                        starting_id=starting_id)
     else:
         raise NotImplementedError('Dataset: {} not implemented.'.format(dataset))
     return train_dataset, val_dataset, val_metric
 
 
 def get_dataloader(net, train_dataset, val_dataset, train_transform, val_transform, batch_size,
-                   num_shards, args):
+                   num_shards_per_process, args):
     """Get dataloader."""
-    train_bfn = batchify.MaskRCNNTrainBatchify(net, num_shards)
+    train_bfn = batchify.MaskRCNNTrainBatchify(net, num_shards_per_process)
     train_sampler = \
         gcv.nn.sampler.SplitSortedBucketSampler(train_dataset.get_im_aspect_ratio(),
                                                 batch_size,
@@ -150,11 +158,13 @@ def get_dataloader(net, train_dataset, val_dataset, train_transform, val_transfo
     train_loader = mx.gluon.data.DataLoader(train_dataset.transform(
         train_transform(net.short, net.max_size, net, ashape=net.ashape, multi_stage=args.use_fpn)),
         batch_sampler=train_sampler, batchify_fn=train_bfn, num_workers=args.num_workers)
+    if args.horovod:
+        val_dataset = val_dataset.shard(hvd.size(), hvd.rank())
     val_bfn = batchify.Tuple(*[batchify.Append() for _ in range(2)])
     short = net.short[-1] if isinstance(net.short, (tuple, list)) else net.short
     # validation use 1 sample per device
     val_loader = mx.gluon.data.DataLoader(
-        val_dataset.transform(val_transform(short, net.max_size)), num_shards, False,
+        val_dataset.transform(val_transform(short, net.max_size)), num_shards_per_process, False,
         batchify_fn=val_bfn, last_batch='keep', num_workers=args.num_workers)
     return train_loader, val_loader
 
@@ -212,12 +222,13 @@ def split_and_load(batch, ctx_list):
     return new_batch
 
 
-def validate(net, val_data, ctx, eval_metric, args):
+def validate(net, val_data, async_eval_threads, ctx, eval_metric, logger, epoch, best_map, args):
     """Test on validation dataset."""
     clipper = gcv.nn.bbox.BBoxClipToImage()
     eval_metric.reset()
     if not args.disable_hybridization:
         net.hybridize(static_alloc=args.static_alloc)
+    tic = time.time()
     for ib, batch in enumerate(val_data):
         batch = split_and_load(batch, ctx_list=ctx)
         det_bboxes = []
@@ -258,7 +269,33 @@ def validate(net, val_data, ctx, eval_metric, args):
                     full_masks.append(gdata.transforms.mask.fill(mask, bbox, (im_width, im_height)))
                 full_masks = np.array(full_masks)
                 eval_metric.update(det_bbox, det_id, det_score, full_masks)
-    return eval_metric.get()
+    if args.horovod and MPI is not None:
+        comm = MPI.COMM_WORLD
+        res = comm.gather(eval_metric.get_result(), root=0)
+        if hvd.rank() == 0:
+            logger.info('[Epoch {}] Validation Inference cost: {:.3f}'
+                        .format(epoch, (time.time() - tic)))
+            rank0_res = eval_metric.get_result()
+            if len(rank0_res) == 2:
+                res = res[1:]
+                rank0_res[0].extend([item for res_tuple in res for item in res_tuple[0]])
+                rank0_res[1].extend([item for res_tuple in res for item in res_tuple[1]])
+            else:
+                rank0_res.extend([item for r in res for item in r])
+
+    def coco_eval_save_task(eval_metric, logger):
+        map_name, mean_ap = eval_metric.get()
+        if map_name and mean_ap is not None:
+            val_msg = '\n'.join(['{}={}'.format(k, v) for k, v in zip(map_name, mean_ap)])
+            logger.info('[Epoch {}] Validation: \n{}'.format(epoch, val_msg))
+            current_map = float(mean_ap[-1])
+            save_params(net, logger, best_map, current_map, epoch, args.save_interval,
+                        args.save_prefix)
+
+    if not args.horovod or hvd.rank() == 0:
+        t = threading.Thread(target=coco_eval_save_task, args=(eval_metric, logger))
+        async_eval_threads.append(t)
+        t.start()
 
 
 def get_lr_at_iter(alpha, lr_warmup_factor=1. / 3.):
@@ -398,6 +435,7 @@ def train(net, train_data, val_data, eval_metric, batch_size, ctx, args):
     metrics2 = [rpn_acc_metric, rpn_bbox_metric,
                 rcnn_acc_metric, rcnn_bbox_metric,
                 rcnn_mask_metric, rcnn_fgmask_metric]
+    async_eval_threads = []
 
     # set up logger
     logging.basicConfig()
@@ -473,7 +511,6 @@ def train(net, train_data, val_data, eval_metric, batch_size, ctx, args):
                 for pred in records:
                     metric.update(pred[0], pred[1])
             trainer.step(batch_size)
-
             if (not args.horovod or hvd.rank() == 0) and args.log_interval \
                     and not (i + 1) % args.log_interval:
                 msg = ','.join(['{}={:.3f}'.format(*metric.get()) for metric in metrics + metrics2])
@@ -485,16 +522,16 @@ def train(net, train_data, val_data, eval_metric, batch_size, ctx, args):
             msg = ','.join(['{}={:.3f}'.format(*metric.get()) for metric in metrics])
             logger.info('[Epoch {}] Training cost: {:.3f}, {}'.format(
                 epoch, (time.time() - tic), msg))
-            if not (epoch + 1) % args.val_interval:
-                # consider reduce the frequency of validation to save time
-                map_name, mean_ap = validate(net, val_data, ctx, eval_metric, args)
-                val_msg = '\n'.join(['{}={}'.format(k, v) for k, v in zip(map_name, mean_ap)])
-                logger.info('[Epoch {}] Validation: \n{}'.format(epoch, val_msg))
-                current_map = float(mean_ap[-1])
-            else:
-                current_map = 0.
+        if not (epoch + 1) % args.val_interval:
+            # consider reduce the frequency of validation to save time
+            validate(net, val_data, async_eval_threads, ctx, eval_metric, logger, epoch, best_map,
+                     args)
+        elif (not args.horovod) or hvd.rank() == 0:
+            current_map = 0.
             save_params(net, logger, best_map, current_map, epoch, args.save_interval,
                         args.save_prefix)
+    for thread in async_eval_threads:
+        thread.join()
 
 
 if __name__ == '__main__':
