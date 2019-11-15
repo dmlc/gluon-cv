@@ -120,6 +120,7 @@ class COCOInstanceMetric(mx.metric.EvalMetric):
         ap_default = np.mean(precision[precision > -1])
         return ap_default
 
+    # pylint: disable=unexpected-keyword-arg
     def _update(self, annType='bbox'):
         """Use coco to get real scores. """
         if self._use_ext:
