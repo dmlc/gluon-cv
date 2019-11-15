@@ -126,7 +126,7 @@ def fill(mask, bbox, size, fast_fill=True):
     x1, y1, x2, y2 = bbox
     m_h, m_w = mask.shape
     # pad mask
-    mask = np.pad(mask, [(1, 1), (1, 1)], mode='constant')
+    mask = np.pad(mask, [(1, 1), (1, 1)], mode='constant').astype(np.float32)
     # expand boxes
     x, y, hw, hh = (x1 + x2) / 2, (y1 + y2) / 2, (x2 - x1) / 2, (y2 - y1) / 2
     hw = hw * (float(m_w + 2) / m_w)
