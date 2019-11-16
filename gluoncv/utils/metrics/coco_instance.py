@@ -67,7 +67,7 @@ class COCOInstanceMetric(mx.metric.EvalMetric):
         self._cocomask = cocomask
         self._filename = osp.abspath(osp.expanduser(save_prefix) + t + '.json')
 
-    def get_result(self):
+    def get_result_buffer(self):
         if self._use_ext:
             return self._bbox_result, self._segm_result
         return self._results

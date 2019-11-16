@@ -273,11 +273,11 @@ def validate(net, val_data, async_eval_threads, ctx, eval_metric, logger, epoch,
                 eval_metric.update(det_bbox, det_id, det_score, full_masks)
     if args.horovod and MPI is not None:
         comm = MPI.COMM_WORLD
-        res = comm.gather(eval_metric.get_result(), root=0)
+        res = comm.gather(eval_metric.get_result_buffer(), root=0)
         if hvd.rank() == 0:
             logger.info('[Epoch {}] Validation Inference cost: {:.3f}'
                         .format(epoch, (time.time() - tic)))
-            rank0_res = eval_metric.get_result()
+            rank0_res = eval_metric.get_result_buffer()
             if len(rank0_res) == 2:
                 res = res[1:]
                 rank0_res[0].extend([item for res_tuple in res for item in res_tuple[0]])
