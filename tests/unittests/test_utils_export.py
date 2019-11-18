@@ -27,7 +27,8 @@ def test_export_model_zoo():
 
         if '_gn' in model:
             continue
-
+        if '_dcnv2' in model:
+            continue
         try:
             gcv.utils.export_block(model, gcv.model_zoo.get_model(model, pretrained=True), **kwargs)
         except ValueError:

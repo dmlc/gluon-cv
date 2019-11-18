@@ -9,6 +9,7 @@ from .cifarwideresnet import *
 from .deeplabv3 import *
 from .deeplabv3b_plus import *
 from .densenet import *
+from .dla import *
 from .faster_rcnn import *
 from .fcn import *
 from .googlenet import *
@@ -34,6 +35,7 @@ from .xception import *
 from .yolo import *
 from .alpha_pose import *
 from .action_recognition import *
+from .center_net import *
 
 __all__ = ['get_model', 'get_model_list']
 
@@ -259,7 +261,24 @@ _models = {
     'psp_resnet101_voc_int8': psp_resnet101_voc_int8,
     'psp_resnet101_coco_int8': psp_resnet101_coco_int8,
     'deeplab_resnet101_voc_int8': deeplab_resnet101_voc_int8,
-    'deeplab_resnet101_coco_int8': deeplab_resnet101_coco_int8
+    'deeplab_resnet101_coco_int8': deeplab_resnet101_coco_int8,
+    'center_net_resnet18_v1b_voc': center_net_resnet18_v1b_voc,
+    'center_net_resnet18_v1b_dcnv2_voc': center_net_resnet18_v1b_dcnv2_voc,
+    'center_net_resnet18_v1b_coco': center_net_resnet18_v1b_coco,
+    'center_net_resnet18_v1b_dcnv2_coco': center_net_resnet18_v1b_dcnv2_coco,
+    'center_net_resnet50_v1b_voc': center_net_resnet50_v1b_voc,
+    'center_net_resnet50_v1b_dcnv2_voc': center_net_resnet50_v1b_dcnv2_voc,
+    'center_net_resnet50_v1b_coco': center_net_resnet50_v1b_coco,
+    'center_net_resnet50_v1b_dcnv2_coco': center_net_resnet50_v1b_dcnv2_coco,
+    'center_net_resnet101_v1b_voc': center_net_resnet101_v1b_voc,
+    'center_net_resnet101_v1b_dcnv2_voc': center_net_resnet101_v1b_dcnv2_voc,
+    'center_net_resnet101_v1b_coco': center_net_resnet101_v1b_coco,
+    'center_net_resnet101_v1b_dcnv2_coco': center_net_resnet101_v1b_dcnv2_coco,
+    'center_net_dla34_voc': center_net_dla34_voc,
+    'center_net_dla34_dcnv2_voc': center_net_dla34_dcnv2_voc,
+    'center_net_dla34_coco': center_net_dla34_coco,
+    'center_net_dla34_dcnv2_coco': center_net_dla34_dcnv2_coco,
+    'dla34': dla34
 }
 
 

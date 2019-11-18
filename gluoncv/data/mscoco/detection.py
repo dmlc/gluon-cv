@@ -146,7 +146,7 @@ class COCODetection(VisionDataset):
         img = mx.image.imread(img_path, 1)
         if self._transform is not None:
             return self._transform(img, label)
-        return img, np.array(label)
+        return img, np.array(label).copy()
 
     def _load_jsons(self):
         """Load all image paths and labels from JSON annotation files into buffer."""
