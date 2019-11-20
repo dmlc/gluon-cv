@@ -7,11 +7,6 @@ from scipy import interpolate
 
 from ..mscoco.utils import try_import_pycocotools
 
-try:
-    from .cython_mask import cython_mask_fill
-except ImportError:
-    cython_mask_fill = None
-
 __all__ = ['flip', 'resize', 'to_mask', 'fill']
 
 
