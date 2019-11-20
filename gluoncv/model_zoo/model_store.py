@@ -1,4 +1,4 @@
-    """Model store which provides pretrained models."""
+"""Model store which provides pretrained models."""
 from __future__ import print_function
 
 __all__ = ['get_model_file', 'purge']
@@ -6,7 +6,8 @@ import os
 import zipfile
 
 from ..utils import download, check_sha1
-import fasteners
+import portalocker
+import logging
 
 _model_sha1 = {name: checksum for checksum, name in [
     ('44335d1f0046b328243b32a26a4fbd62d9057b45', 'alexnet'),
@@ -213,19 +214,21 @@ def get_model_file(name, tag=None, root=os.path.join('~', '.mxnet', 'models')):
         file_name = '{name}-{short_hash}'.format(name=name,
                                                  short_hash=short_hash(name))
     root = os.path.expanduser(root)
-    file_path = os.path.join(root, file_name + '.params')
+    params_path = os.path.join(root, file_name + '.params')
+    lockfile = os.path.join(root, file_name + '.lock')
     if use_tag:
         sha1_hash = tag
     else:
         sha1_hash = _model_sha1[name]
-    with fasteners.InterProcessLock(file_path):
-        if os.path.exists(file_path):
-            if check_sha1(file_path, sha1_hash):
-                return file_path
+    with portalocker.Lock(lockfile, timeout=int(os.environ.get('GLUON_MODEL_LOCK_TIMEOUT', 300))):
+        if os.path.exists(params_path):
+            if check_sha1(params_path, sha1_hash):
+                return params_path
             else:
-                print('Mismatch in the content of model file detected. Downloading again.')
+                logging.warning("Hash mismatch in the content of model file '%s' detected. Downloading again.",
+                                params_path)
         else:
-            print('Model file is not found. Downloading.')
+            logging.info('Model file not found. Downloading.')
 
         if not os.path.exists(root):
             os.makedirs(root)
@@ -240,9 +243,10 @@ def get_model_file(name, tag=None, root=os.path.join('~', '.mxnet', 'models')):
         with zipfile.ZipFile(zip_file_path) as zf:
             zf.extractall(root)
         os.remove(zip_file_path)
-
-        if check_sha1(file_path, sha1_hash):
-            return file_path
+        # Make sure we write the model file on networked filesystems
+        os.sync()
+        if check_sha1(params_path, sha1_hash):
+            return params_path
         else:
             raise ValueError('Downloaded file has different hash. Please try again.')
 

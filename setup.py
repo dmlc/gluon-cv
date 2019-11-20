@@ -53,7 +53,7 @@ requirements = [
     'requests',
     # 'mxnet',
     'matplotlib',
-    'fasteners',
+    'portalocker',
     'Pillow',
     'scipy',
 ]
