@@ -139,11 +139,19 @@ def get_dataset(dataset, args):
     if dataset.lower() == 'coco':
         train_dataset = gdata.COCOInstance(splits='instances_train2017')
         val_dataset = gdata.COCOInstance(splits='instances_val2017', skip_empty=False)
-        starting_id = int(len(val_dataset) // hvd.size() * hvd.rank()) if args.horovod else 0
+        starting_id = 0
+        if args.horovod and MPI:
+            length = len(val_dataset)
+            shard_len = length // hvd.size()
+            rest = length % hvd.size()
+            # Compute the start index for this partition
+            starting_id = shard_len * hvd.rank() + min(hvd.rank(), rest)
         val_metric = COCOInstanceMetric(val_dataset, args.save_prefix + '_eval',
                                         use_ext=args.use_ext, starting_id=starting_id)
     else:
         raise NotImplementedError('Dataset: {} not implemented.'.format(dataset))
+    if args.horovod and MPI:
+        val_dataset = val_dataset.shard(hvd.size(), hvd.rank())
     return train_dataset, val_dataset, val_metric
 
 
@@ -160,8 +168,6 @@ def get_dataloader(net, train_dataset, val_dataset, train_transform, val_transfo
     train_loader = mx.gluon.data.DataLoader(train_dataset.transform(
         train_transform(net.short, net.max_size, net, ashape=net.ashape, multi_stage=args.use_fpn)),
         batch_sampler=train_sampler, batchify_fn=train_bfn, num_workers=args.num_workers)
-    if args.horovod:
-        val_dataset = val_dataset.shard(hvd.size(), hvd.rank())
     val_bfn = batchify.Tuple(*[batchify.Append() for _ in range(2)])
     short = net.short[-1] if isinstance(net.short, (tuple, list)) else net.short
     # validation use 1 sample per device
@@ -266,10 +272,7 @@ def validate(net, val_data, async_eval_threads, ctx, eval_metric, logger, epoch,
                 # fill full mask
                 im_height, im_width = int(round(im_height / im_scale)), int(
                     round(im_width / im_scale))
-                full_masks = []
-                for bbox, mask in zip(det_bbox, det_mask):
-                    full_masks.append(gdata.transforms.mask.fill(mask, bbox, (im_width, im_height)))
-                full_masks = np.array(full_masks)
+                full_masks = gdata.transforms.mask.fill(det_mask, det_bbox, (im_width, im_height))
                 eval_metric.update(det_bbox, det_id, det_score, full_masks)
     if args.horovod and MPI is not None:
         comm = MPI.COMM_WORLD
@@ -298,7 +301,6 @@ def validate(net, val_data, async_eval_threads, ctx, eval_metric, logger, epoch,
         t = threading.Thread(target=coco_eval_save_task, args=(eval_metric, logger))
         async_eval_threads.append(t)
         t.start()
-
 
 def get_lr_at_iter(alpha, lr_warmup_factor=1. / 3.):
     return lr_warmup_factor * (1 - alpha) + alpha
@@ -383,7 +385,7 @@ class ForwardBackwardTask(Parallelizable):
                rcnn_l1_loss_metric, rcnn_mask_metric, rcnn_fgmask_metric
 
 
-def train(net, train_data, val_data, eval_metric, batch_size, ctx, args):
+def train(net, train_data, val_data, eval_metric, batch_size, ctx, logger, args):
     """Training pipeline"""
     args.kv_store = 'device' if (args.amp and 'nccl' in args.kv_store) else args.kv_store
     kv = mx.kvstore.create(args.kv_store)
@@ -438,18 +440,8 @@ def train(net, train_data, val_data, eval_metric, batch_size, ctx, args):
                 rcnn_acc_metric, rcnn_bbox_metric,
                 rcnn_mask_metric, rcnn_fgmask_metric]
     async_eval_threads = []
-
-    # set up logger
-    logging.basicConfig()
-    logger = logging.getLogger()
-    logger.setLevel(logging.INFO)
-    log_file_path = args.save_prefix + '_train.log'
-    log_dir = os.path.dirname(log_file_path)
-    if log_dir and not os.path.exists(log_dir):
-        os.makedirs(log_dir)
-    fh = logging.FileHandler(log_file_path)
-    logger.addHandler(fh)
     logger.info(args)
+
     if args.verbose:
         logger.info('Trainable parameters:')
         logger.info(net.collect_train_params().keys())
@@ -519,6 +511,8 @@ def train(net, train_data, val_data, eval_metric, batch_size, ctx, args):
                 logger.info('[Epoch {}][Batch {}], Speed: {:.3f} samples/sec, {}'.format(
                     epoch, i, args.log_interval * args.batch_size / (time.time() - btic), msg))
                 btic = time.time()
+            # if (i + 1) % 20 == 0:
+            #    break
         # validate and save params
         if (not args.horovod) or hvd.rank() == 0:
             msg = ','.join(['{}={:.3f}'.format(*metric.get()) for metric in metrics])
@@ -574,6 +568,19 @@ if __name__ == '__main__':
             param.initialize()
     net.collect_params().reset_ctx(ctx)
 
+    # set up logger
+    logging.basicConfig()
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+    log_file_path = args.save_prefix + '_train.log'
+    log_dir = os.path.dirname(log_file_path)
+    if log_dir and not os.path.exists(log_dir):
+        os.makedirs(log_dir)
+    fh = logging.FileHandler(log_file_path)
+    logger.addHandler(fh)
+    if MPI is None and args.horovod:
+        logger.warning('mpi4py is not installed, validation result may be incorrect.')
+
     # training data
     train_dataset, val_dataset, eval_metric = get_dataset(args.dataset, args)
     batch_size = args.batch_size // num_gpus if args.horovod else args.batch_size
@@ -582,4 +589,4 @@ if __name__ == '__main__':
         batch_size, len(ctx), args)
 
     # training
-    train(net, train_data, val_data, eval_metric, batch_size, ctx, args)
+    train(net, train_data, val_data, eval_metric, batch_size, ctx, logger, args)

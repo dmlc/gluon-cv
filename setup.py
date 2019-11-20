@@ -65,14 +65,12 @@ if with_cython:
             name='gluoncv.nn.cython_bbox',
             sources=['gluoncv/nn/cython_bbox.pyx'],
             extra_compile_args=['-Wno-cpp', '-O3'],
-            include_dirs=[_NP_INCLUDE_DIRS]
-        ),
+            include_dirs=[_NP_INCLUDE_DIRS]),
         Extension(
             name='gluoncv.model_zoo.rpn.cython_rpn_target',
             sources=['gluoncv/model_zoo/rpn/cython_rpn_target.pyx'],
             extra_compile_args=['-Wno-cpp', '-O3'],
-            include_dirs=[_NP_INCLUDE_DIRS]
-        ),
+            include_dirs=[_NP_INCLUDE_DIRS]),
     ])
 else:
     ext_modules = []
