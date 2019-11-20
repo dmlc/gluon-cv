@@ -4,9 +4,9 @@ from __future__ import print_function
 __all__ = ['get_model_file', 'purge']
 import os
 import zipfile
+import logging
 
 from ..utils import download, check_sha1
-import logging
 import portalocker
 
 _model_sha1 = {name: checksum for checksum, name in [
