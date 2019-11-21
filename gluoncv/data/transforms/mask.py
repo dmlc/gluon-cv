@@ -110,7 +110,7 @@ def fill(masks, bboxes, size, fast_fill=True):
     ----------
     mask : numpy.ndarray with dtype=uint8
         Binary mask prediction of a box
-    bbox : iterable of float
+    bbox : numpy.ndarray of float
         They are :math:`(xmin, ymin, xmax, ymax)`.
     size : tuple
         Tuple of length 2: (width, height).
