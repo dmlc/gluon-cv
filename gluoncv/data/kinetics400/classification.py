@@ -155,10 +155,13 @@ class Kinetics400(dataset.Dataset):
 
         # N frames of shape H x W x C, where N = num_oversample * num_segments * new_length
         if self.video_loader:
-            if self.use_decord:
-                clip_input = self._video_TSN_decord_batch_loader(directory, decord_vr, duration, segment_indices, skip_offsets)
+            if self.slowfast:
+                clip_input = self._video_TSN_decord_slowfast_loader(directory, decord_vr, duration, segment_indices, skip_offsets)
             else:
-                clip_input = self._video_TSN_mmcv_loader(directory, mmcv_vr, duration, segment_indices, skip_offsets)
+                if self.use_decord:
+                    clip_input = self._video_TSN_decord_batch_loader(directory, decord_vr, duration, segment_indices, skip_offsets)
+                else:
+                    clip_input = self._video_TSN_mmcv_loader(directory, mmcv_vr, duration, segment_indices, skip_offsets)
         else:
             if self.slowfast:
                 clip_input = self._image_slowfast_cv2_loader(directory, duration, segment_indices, skip_offsets)
@@ -371,6 +374,37 @@ class Kinetics400(dataset.Dataset):
                 frame_id_list.append(frame_id)
                 if offset + self.new_step < duration:
                     offset += self.new_step
+        try:
+            video_data = video_reader.get_batch(frame_id_list).asnumpy()
+            sampled_list = [video_data[vid, :, :, :] for vid, _ in enumerate(frame_id_list)]
+        except:
+            raise RuntimeError('Error occured in reading frames {} from video {} of duration {}.'.format(frame_id_list, directory, duration))
+        return sampled_list
+
+    def _video_TSN_decord_slowfast_loader(self, directory, video_reader, duration, indices, skip_offsets):
+        sampled_list = []
+        frame_id_list = []
+        for seg_ind in indices:
+            fast_id_list = []
+            slow_id_list = []
+            offset = int(seg_ind)
+            for i, _ in enumerate(range(0, self.skip_length, self.new_step)):
+                if offset + skip_offsets[i] <= duration:
+                    frame_id = offset + skip_offsets[i]
+                else:
+                    frame_id = offset
+
+                if (i + 1) % self.fast_temporal_stride == 0:
+                    fast_id_list.append(frame_id)
+
+                    if (i + 1) % self.slow_temporal_stride == 0:
+                        slow_id_list.append(frame_id)
+
+                if offset + self.new_step < duration:
+                    offset += self.new_step
+
+            fast_id_list.extend(slow_id_list)
+            frame_id_list.extend(fast_id_list)
         try:
             video_data = video_reader.get_batch(frame_id_list).asnumpy()
             sampled_list = [video_data[vid, :, :, :] for vid, _ in enumerate(frame_id_list)]
