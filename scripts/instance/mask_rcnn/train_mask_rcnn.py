@@ -7,7 +7,6 @@ os.environ['MXNET_CUDNN_AUTOTUNE_DEFAULT'] = '0'
 os.environ['MXNET_GPU_MEM_POOL_TYPE'] = 'Round'
 os.environ['MXNET_GPU_MEM_POOL_ROUND_LINEAR_CUTOFF'] = '28'
 
-import threading
 import logging
 import time
 import numpy as np
@@ -26,6 +25,7 @@ from gluoncv.utils.metrics.coco_instance import COCOInstanceMetric
 from gluoncv.utils.metrics.rcnn import RPNAccMetric, RPNL1LossMetric, RCNNAccMetric, \
     RCNNL1LossMetric, MaskAccMetric, MaskFGAccMetric
 from gluoncv.utils.parallel import Parallelizable, Parallel
+from multiprocessing import Process
 
 try:
     import horovod.mxnet as hvd
@@ -298,7 +298,7 @@ def validate(net, val_data, async_eval_threads, ctx, eval_metric, logger, epoch,
                         args.save_prefix)
 
     if not args.horovod or hvd.rank() == 0:
-        t = threading.Thread(target=coco_eval_save_task, args=(eval_metric, logger))
+        t = Process(target=coco_eval_save_task, args=(eval_metric, logger))
         async_eval_threads.append(t)
         t.start()
 
