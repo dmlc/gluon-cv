@@ -220,9 +220,14 @@ def benchmarking(opt, net, ctx):
     bs = opt.batch_size
     num_iterations = opt.num_iterations
     input_size = opt.input_size
-    input_shape = (bs, 3, ) + tuple([input_size, input_size])
+    input_shape = (bs, opt.num_segments, opt.new_length,) + tuple([3, input_size, input_size])
     size = num_iterations * bs
     data = mx.random.uniform(-1.0, 1.0, shape=input_shape, ctx=ctx[0], dtype='float32')
+    data = nd.reshape(data, shape=(-1,) + data.shape[2:])
+    data = nd.transpose(data, (0, 2, 1, 3, 4))
+    if opt.new_length == 1:
+        # this is for 2D input case
+        data = nd.squeeze(data, axis=2)
     dry_run = 5
 
     from tqdm import tqdm
@@ -241,10 +246,12 @@ def calibration(net, val_data, opt, ctx, logger):
     if isinstance(ctx, list):
         ctx = ctx[0]
     exclude_sym_layer = []
-    exclude_match_layer = ['concat']
+    exclude_match_layer = []
+    if 'inceptionv3' not in opt.model:
+        exclude_match_layer += ['concat']
     if opt.num_gpus > 0:
         raise ValueError('currently only supports CPU with MKL-DNN backend')
-    net = quantize_net(net, calib_data=val_data, quantized_dtype=opt.quantized_dtype, calib_mode=opt.calib_mode, 
+    net = quantize_net(net, calib_data=val_data, quantized_dtype=opt.quantized_dtype, quantize_mode='full', calib_mode=opt.calib_mode, 
                        exclude_layers=exclude_sym_layer, num_calib_examples=opt.batch_size * opt.num_calib_batches,
                        exclude_layers_match=exclude_match_layer, ctx=ctx, logger=logger)
     dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -275,15 +282,6 @@ def main(logger):
     num_workers = opt.num_workers
     print('Total batch size is set to %d on %d GPUs' % (batch_size, num_gpus))
 
-    # get model
-    classes = opt.num_classes
-    model_name = opt.model
-    use_pretrained = opt.use_pretrained
-
-    if opt.quantized:
-        model_name += '_int8'
-        use_pretrained = True
-
     # get data
     image_norm_mean = [0.485, 0.456, 0.406]
     image_norm_std = [0.229, 0.224, 0.225]
@@ -311,6 +309,11 @@ def main(logger):
             opt.use_pretrained = opt.hashtag
         classes = opt.num_classes
         model_name = opt.model
+        # Currently, these is no hashtag for int8 models.
+        if opt.quantized:
+            model_name += '_int8'
+            opt.use_pretrained = True
+        
         net = get_model(name=model_name, nclass=classes, pretrained=opt.use_pretrained, num_segments=opt.num_segments, num_crop=opt.num_crop)
         net.cast(opt.dtype)
         net.collect_params().reset_ctx(context)
@@ -324,7 +327,7 @@ def main(logger):
     else:
         model_name = 'deploy'
         net = mx.gluon.SymbolBlock.imports('{}-symbol.json'.format(opt.model_prefix),
-                ['data'], '{}-0000.params'.format(opt.model_prefix))
+                    ['data'], '{}-0000.params'.format(opt.model_prefix))
         net.hybridize(static_alloc=True, static_shape=True)
 
     print("Successfully loaded model {}".format(model_name))

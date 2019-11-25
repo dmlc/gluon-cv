@@ -239,6 +239,7 @@ if __name__ == '__main__':
         sys.exit()
 
     if opt.benchmark:
+        print("---------- Benchmarking on %s model -------------" % model_name)
         benchmarking(net, opt, context)
     else:
         validate(val_data, val_dataset, net, context)

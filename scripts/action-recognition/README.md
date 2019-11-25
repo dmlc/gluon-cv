@@ -55,10 +55,10 @@ numactl --physcpubind=0-27 --membind=0 python test_recognizer.py ...
 ## Performance
 Below results are collected based on Intel(R) VNNI enabled C5.12xlarge with 24 physical cores.
 
-|model | fp32 latency(ms) | s8 latency(ms) | fp32 Top-1 | s8 Top-1 |
-|-- | -- | -- | -- | -- |
-inceptionv3_ucf101    |13.02  |4.70 |86.92 | 86.55 |
-vgg16_ucf101          |15.68  |4.58 |81.86 | 81.41 |
+|model | fp32 Top-1 | s8 Top-1 |
+|-- | -- | -- |
+inceptionv3_ucf101    |86.92 | 86.55 |
+vgg16_ucf101          |81.86 | 81.41 |
 
 ## References
 

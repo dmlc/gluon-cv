@@ -280,7 +280,7 @@ _models = {
     'center_net_dla34_dcnv2_voc': center_net_dla34_dcnv2_voc,
     'center_net_dla34_coco': center_net_dla34_coco,
     'center_net_dla34_dcnv2_coco': center_net_dla34_dcnv2_coco,
-    'dla34': dla34
+    'dla34': dla34,
     'simple_pose_resnet18_v1b_int8': simple_pose_resnet18_v1b_int8,
     'simple_pose_resnet50_v1b_int8': simple_pose_resnet50_v1b_int8,
     'simple_pose_resnet50_v1d_int8': simple_pose_resnet50_v1d_int8,
