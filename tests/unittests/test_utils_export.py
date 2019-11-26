@@ -38,6 +38,13 @@ def test_export_model_zoo():
             # deeplab model do not support it now, skip
             pass
 
+@try_gpu(0)
+def test_export_model_zoo_no_preprocess():
+    # special cases
+    # 1. no preprocess 2d model
+    model_name = 'resnet18_v1b'
+    gcv.utils.export_block(model_name, gcv.model_zoo.get_model(model_name, pretrained=True), preprocess=None, layout='CHW')
+
 if __name__ == '__main__':
     import nose
     nose.runmodule()
