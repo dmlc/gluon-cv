@@ -225,8 +225,8 @@ def get_model_file(name, tag=None, root=os.path.join('~', '.mxnet', 'models')):
             if check_sha1(params_path, sha1_hash):
                 return params_path
             else:
-                logging.warning("Hash mismatch in the content of model file '%s' detected. Downloading again.",
-                                params_path)
+                logging.warning("Hash mismatch in the content of model file '%s' detected. "
+                                "Downloading again.", params_path)
         else:
             logging.info('Model file not found. Downloading.')
 
