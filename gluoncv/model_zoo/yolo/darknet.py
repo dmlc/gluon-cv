@@ -78,7 +78,7 @@ class DarknetV3(gluon.HybridBlock):
     """
     def __init__(self, layers, channels, classes=1000,
                  norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
-        super(DarknetV3, self).__init__(**kwargs)
+        super(DarknetV3, self).__init__(kwargs.get('prefix', None), kwargs.get('params', None))
         assert len(layers) == len(channels) - 1, (
             "len(channels) should equal to len(layers) + 1, given {} vs {}".format(
                 len(channels), len(layers)))
