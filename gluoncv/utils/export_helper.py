@@ -103,7 +103,7 @@ def export_block(path, block, data_shape=None, epoch=0, preprocess=True, layout=
     else:
         wrapper_block = block
         assert layout in ('CHW', 'CTHW'), \
-            "Default layout is CHW for 2D models and TCHW for 3D models if preprocess is None," \
+            "Default layout is CHW for 2D models and CTHW for 3D models if preprocess is None," \
             + " provided {}.".format(layout)
     wrapper_block.collect_params().reset_ctx(ctx)
 
