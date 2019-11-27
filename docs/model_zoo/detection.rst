@@ -132,6 +132,8 @@ CenterNet
 CenterNet models are evaluated at 512x512 resolution. mAPs with flipped inference(F) are also reported, however, the models are identical.
 Checkout CenterNet demo tutorial here: :ref:`sphx_glr_build_examples_detection_demo_center_net.py`
 
+Note that ``dcnv2`` indicate that models include Modulated Deformable Convolution (DCNv2) layers, you may need to upgrade MXNet in order to use them.
+
 .. table::
   :widths: 50 5 25 20
 
@@ -239,7 +241,9 @@ CenterNet
 ---------
 
 CenterNet models are evaluated at 512x512 resolution. mAPs with flipped inference(F) are also reported, however, the models are identical.
-Checkout CenterNet demo tutorial here: :ref:`sphx_glr_build_examples_detection_demo_center_net.py`
+Checkout CenterNet demo tutorial here: :ref:`sphx_glr_build_examples_detection_demo_center_net.py`.
+
+Note that ``dcnv2`` indicate that models include Modulated Deformable Convolution (DCNv2) layers, you may need to upgrade MXNet in order to use them.
 
 .. table::
  :widths: 50 5 25 20
