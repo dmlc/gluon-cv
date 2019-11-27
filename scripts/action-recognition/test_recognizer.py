@@ -220,11 +220,9 @@ def benchmarking(opt, net, ctx):
     bs = opt.batch_size
     num_iterations = opt.num_iterations
     input_size = opt.input_size
-    input_shape = (bs, opt.num_segments, opt.new_length,) + tuple([3, input_size, input_size])
     size = num_iterations * bs
+    input_shape = (bs * opt.num_segments, 3, opt.new_length, input_size, input_size)
     data = mx.random.uniform(-1.0, 1.0, shape=input_shape, ctx=ctx[0], dtype='float32')
-    data = nd.reshape(data, shape=(-1,) + data.shape[2:])
-    data = nd.transpose(data, (0, 2, 1, 3, 4))
     if opt.new_length == 1:
         # this is for 2D input case
         data = nd.squeeze(data, axis=2)
