@@ -34,6 +34,8 @@ def test_get_all_models():
         kwargs = {}
         if 'custom' in name:
             kwargs['classes'] = ['a', 'b']
+        if 'dcnv2' in name and not hasattr(mx.gluon.contrib.cnn, 'ModulatedDeformableConvolution'):
+            continue
         net = gcv.model_zoo.get_model(name, pretrained=False, **kwargs)
         assert isinstance(net, mx.gluon.Block), '{}'.format(name)
 
@@ -203,6 +205,15 @@ def test_ssd_models():
         models = ['ssd_512_resnet50_v1_voc']
     _test_model_list(models, ctx, x)
 
+def test_center_net_models():
+    ctx = mx.context.current_context()
+    x = mx.random.uniform(shape=(1, 3, 512, 512), ctx=ctx)  # allow non-squre and larger inputs
+    models = ['center_net_resnet18_v1b_voc', 'center_net_resnet50_v1b_coco']
+    if not mx.context.current_context().device_type == 'gpu':
+        models = ['center_net_resnet18_v1b_voc']
+    if hasattr(mx.gluon.contrib.cnn, 'ModulatedDeformableConvolution'):
+        models.append('center_net_resnet18_v1b_dcnv2_voc')
+    _test_model_list(models, ctx, x)
 
 def test_ssd_reset_class():
     ctx = mx.context.current_context()
@@ -445,6 +456,40 @@ def test_segmentation_models_custom_size():
     result = net.forward(x)
     assert result[0].shape == (1, num_classes, height, width)
 
+@try_gpu(0)
+def test_action_recognition_vgg_models():
+    ctx = mx.context.current_context()
+    models = ['vgg16_ucf101']
+
+    # 224x224
+    x = mx.random.uniform(shape=(2, 3, 224, 224), ctx=ctx)
+    _test_model_list(models, ctx, x, pretrained=True, pretrained_base=True)
+    _test_model_list(models, ctx, x, pretrained=False, pretrained_base=False)
+    _test_model_list(models, ctx, x, pretrained=False, pretrained_base=True)
+
+@try_gpu(0)
+def test_action_recognition_inceptionv3_models():
+    ctx = mx.context.current_context()
+    models = ['inceptionv3_ucf101', 'inceptionv3_kinetics400']
+
+    # 299x299
+    x = mx.random.uniform(shape=(2, 3, 299, 299), ctx=ctx)    # only allow 299x299 input
+    _test_model_list(models, ctx, x, pretrained=True, pretrained_base=True)
+    _test_model_list(models, ctx, x, pretrained=False, pretrained_base=False)
+    _test_model_list(models, ctx, x, pretrained=False, pretrained_base=True)
+
+@try_gpu(0)
+def test_action_recognition_i3d_models():
+    ctx = mx.context.current_context()
+    models = ['i3d_resnet50_v1_kinetics400', 'i3d_resnet101_v1_kinetics400', 'i3d_inceptionv1_kinetics400',
+              'i3d_inceptionv3_kinetics400', 'i3d_resnet50_v1_sthsthv2', 'i3d_resnet50_v1_hmdb51',
+              'i3d_resnet50_v1_ucf101']
+
+    # 224x224
+    x = mx.random.uniform(shape=(2, 3, 32, 224, 224), ctx=ctx)
+    _test_model_list(models, ctx, x, pretrained=True, pretrained_base=True)
+    _test_model_list(models, ctx, x, pretrained=False, pretrained_base=False)
+    _test_model_list(models, ctx, x, pretrained=False, pretrained_base=True)
 
 @with_cpu(0)
 def test_mobilenet_sync_bn():

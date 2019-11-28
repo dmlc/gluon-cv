@@ -5,6 +5,7 @@ import re
 import sys
 
 import numpy as np
+
 try:
     from Cython.Build import cythonize
 except ImportError:
@@ -52,10 +53,10 @@ requirements = [
     'requests',
     # 'mxnet',
     'matplotlib',
+    'portalocker',
     'Pillow',
     'scipy',
 ]
-
 if with_cython:
     _NP_INCLUDE_DIRS = np.get_include()
 
@@ -63,15 +64,15 @@ if with_cython:
     ext_modules = cythonize([
         Extension(
             name='gluoncv.nn.cython_bbox',
-            sources=[
-                'gluoncv/nn/cython_bbox.pyx'
-            ],
-            extra_compile_args=[
-                '-Wno-cpp', '-O3'
-            ],
-            include_dirs=[
-                _NP_INCLUDE_DIRS
-            ]
+            sources=['gluoncv/nn/cython_bbox.pyx'],
+            extra_compile_args=['-Wno-cpp', '-O3'],
+            include_dirs=[_NP_INCLUDE_DIRS]
+        ),
+        Extension(
+            name='gluoncv.model_zoo.rpn.cython_rpn_target',
+            sources=['gluoncv/model_zoo/rpn/cython_rpn_target.pyx'],
+            extra_compile_args=['-Wno-cpp', '-O3'],
+            include_dirs=[_NP_INCLUDE_DIRS]
         ),
     ])
 else:

@@ -2,7 +2,8 @@ from train_srgan import SRGenerator
 import mxnet as mx
 from mxnet.gluon.data.vision import transforms
 from matplotlib import pyplot as plt
-import cv2
+from gluoncv.utils import try_import_cv2
+cv2 = try_import_cv2()
 from mxnet import image
 import argparse
 

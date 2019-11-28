@@ -9,6 +9,7 @@ from .cifarwideresnet import *
 from .deeplabv3 import *
 from .deeplabv3b_plus import *
 from .densenet import *
+from .dla import *
 from .faster_rcnn import *
 from .fcn import *
 from .googlenet import *
@@ -34,6 +35,7 @@ from .xception import *
 from .yolo import *
 from .alpha_pose import *
 from .action_recognition import *
+from .center_net import *
 
 __all__ = ['get_model', 'get_model_list']
 
@@ -242,6 +244,10 @@ _models = {
     'i3d_nl10_resnet50_v1_kinetics400': i3d_nl10_resnet50_v1_kinetics400,
     'i3d_nl5_resnet101_v1_kinetics400': i3d_nl5_resnet101_v1_kinetics400,
     'i3d_nl10_resnet101_v1_kinetics400': i3d_nl10_resnet101_v1_kinetics400,
+    'slowfast_4x16_resnet50_kinetics400': slowfast_4x16_resnet50_kinetics400,
+    'slowfast_8x8_resnet50_kinetics400': slowfast_8x8_resnet50_kinetics400,
+    'slowfast_8x8_resnet101_kinetics400': slowfast_8x8_resnet101_kinetics400,
+    'slowfast_16x8_resnet101_kinetics400': slowfast_16x8_resnet101_kinetics400,
     'i3d_resnet50_v1_sthsthv2': i3d_resnet50_v1_sthsthv2,
     'resnet18_v1b_kinetics400': resnet18_v1b_kinetics400,
     'resnet34_v1b_kinetics400': resnet34_v1b_kinetics400,
@@ -249,12 +255,32 @@ _models = {
     'resnet101_v1b_kinetics400': resnet101_v1b_kinetics400,
     'resnet152_v1b_kinetics400': resnet152_v1b_kinetics400,
     'resnet50_v1b_sthsthv2': resnet50_v1b_sthsthv2,
+    'resnet50_v1b_hmdb51': resnet50_v1b_hmdb51,
+    'i3d_resnet50_v1_hmdb51': i3d_resnet50_v1_hmdb51,
+    'i3d_resnet50_v1_ucf101': i3d_resnet50_v1_ucf101,
     'fcn_resnet101_voc_int8': fcn_resnet101_voc_int8,
     'fcn_resnet101_coco_int8': fcn_resnet101_coco_int8,
     'psp_resnet101_voc_int8': psp_resnet101_voc_int8,
     'psp_resnet101_coco_int8': psp_resnet101_coco_int8,
     'deeplab_resnet101_voc_int8': deeplab_resnet101_voc_int8,
-    'deeplab_resnet101_coco_int8': deeplab_resnet101_coco_int8
+    'deeplab_resnet101_coco_int8': deeplab_resnet101_coco_int8,
+    'center_net_resnet18_v1b_voc': center_net_resnet18_v1b_voc,
+    'center_net_resnet18_v1b_dcnv2_voc': center_net_resnet18_v1b_dcnv2_voc,
+    'center_net_resnet18_v1b_coco': center_net_resnet18_v1b_coco,
+    'center_net_resnet18_v1b_dcnv2_coco': center_net_resnet18_v1b_dcnv2_coco,
+    'center_net_resnet50_v1b_voc': center_net_resnet50_v1b_voc,
+    'center_net_resnet50_v1b_dcnv2_voc': center_net_resnet50_v1b_dcnv2_voc,
+    'center_net_resnet50_v1b_coco': center_net_resnet50_v1b_coco,
+    'center_net_resnet50_v1b_dcnv2_coco': center_net_resnet50_v1b_dcnv2_coco,
+    'center_net_resnet101_v1b_voc': center_net_resnet101_v1b_voc,
+    'center_net_resnet101_v1b_dcnv2_voc': center_net_resnet101_v1b_dcnv2_voc,
+    'center_net_resnet101_v1b_coco': center_net_resnet101_v1b_coco,
+    'center_net_resnet101_v1b_dcnv2_coco': center_net_resnet101_v1b_dcnv2_coco,
+    'center_net_dla34_voc': center_net_dla34_voc,
+    'center_net_dla34_dcnv2_voc': center_net_dla34_dcnv2_voc,
+    'center_net_dla34_coco': center_net_dla34_coco,
+    'center_net_dla34_dcnv2_coco': center_net_dla34_dcnv2_coco,
+    'dla34': dla34
 }
 
 

@@ -21,8 +21,9 @@ First, import the necessary libraries into python.
 
     import time
 
-    import cv2
     import gluoncv as gcv
+    from gluoncv.utils import try_import_cv2
+    cv2 = try_import_cv2()
     import mxnet as mx
 
 

@@ -96,3 +96,78 @@ def random_color_distort(src, brightness_delta=32, contrast_low=0.5, contrast_hi
         src = hue(src, hue_delta)
         src = contrast(src, contrast_low, contrast_high)
     return src
+
+_data_rng = np.random.RandomState(None)
+
+def np_random_color_distort(image, data_rng=None, eig_val=None,
+                            eig_vec=None, var=0.4, alphastd=0.1):
+    """Numpy version of random color jitter.
+
+    Parameters
+    ----------
+    image : numpy.ndarray
+        original image.
+    data_rng : numpy.random.rng
+        Numpy random number generator.
+    eig_val : numpy.ndarray
+        Eigen values.
+    eig_vec : numpy.ndarray
+        Eigen vectors.
+    var : float
+        Variance for the color jitters.
+    alphastd : type
+        Jitter for the brightness.
+
+    Returns
+    -------
+    numpy.ndarray
+        The jittered image
+
+    """
+    from ....utils.filesystem import try_import_cv2
+    cv2 = try_import_cv2()
+    if data_rng is None:
+        data_rng = _data_rng
+    if eig_val is None:
+        eig_val = np.array([0.2141788, 0.01817699, 0.00341571],
+                           dtype=np.float32)
+    if eig_vec is None:
+        eig_vec = np.array([[-0.58752847, -0.69563484, 0.41340352],
+                            [-0.5832747, 0.00994535, -0.81221408],
+                            [-0.56089297, 0.71832671, 0.41158938]], dtype=np.float32)
+    def grayscale(image):
+        return cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+    def lighting_(data_rng, image, alphastd, eigval, eigvec):
+        alpha = data_rng.normal(scale=alphastd, size=(3, ))
+        image += np.dot(eigvec, eigval * alpha)
+
+    def blend_(alpha, image1, image2):
+        image1 *= alpha
+        image2 *= (1 - alpha)
+        image1 += image2
+
+    def saturation_(data_rng, image, gs, gs_mean, var):
+        # pylint: disable=unused-argument
+        alpha = 1. + data_rng.uniform(low=-var, high=var)
+        blend_(alpha, image, gs[:, :, None])
+
+    def brightness_(data_rng, image, gs, gs_mean, var):
+        # pylint: disable=unused-argument
+        alpha = 1. + data_rng.uniform(low=-var, high=var)
+        image *= alpha
+
+    def contrast_(data_rng, image, gs, gs_mean, var):
+        # pylint: disable=unused-argument
+        alpha = 1. + data_rng.uniform(low=-var, high=var)
+        blend_(alpha, image, gs_mean)
+
+    functions = [brightness_, contrast_, saturation_]
+    random.shuffle(functions)
+
+    gs = grayscale(image)
+    gs_mean = gs.mean()
+    for f in functions:
+        f(data_rng, image, gs, gs_mean, var)
+    lighting_(data_rng, image, alphastd, eig_val, eig_vec)
+    return image

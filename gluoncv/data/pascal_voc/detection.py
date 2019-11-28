@@ -82,7 +82,7 @@ class VOCDetection(VisionDataset):
         img = mx.image.imread(img_path, 1)
         if self._transform is not None:
             return self._transform(img, label)
-        return img, label
+        return img, label.copy()
 
     def _load_items(self, splits):
         """Load individual image indices from splits."""

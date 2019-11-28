@@ -9,18 +9,16 @@ from mxnet import gluon, nd, gpu, init, context
 from mxnet import autograd as ag
 from mxnet.gluon import nn
 from mxnet.gluon.data.vision import transforms
-from mxboard import SummaryWriter
 
 from gluoncv.data.transforms import video
-from gluoncv.data import UCF101, Kinetics400, SomethingSomethingV2
+from gluoncv.data import UCF101, Kinetics400, SomethingSomethingV2, HMDB51
 from gluoncv.model_zoo import get_model
 from gluoncv.utils import makedirs, LRSequential, LRScheduler, split_and_load
-from gluoncv.data.dataloader import tsn_mp_batchify_fn
 
 # CLI
 def parse_args():
     parser = argparse.ArgumentParser(description='Test a trained model for action recognition.')
-    parser.add_argument('--dataset', type=str, default='ucf101', choices=['ucf101', 'kinetics400', 'somethingsomethingv2'],
+    parser.add_argument('--dataset', type=str, default='ucf101', choices=['ucf101', 'kinetics400', 'somethingsomethingv2', 'hmdb51'],
                         help='which dataset to use.')
     parser.add_argument('--data-dir', type=str, default='~/.mxnet/datasets/ucf101/rawframes',
                         help='training (and validation) pictures to use.')
@@ -70,6 +68,8 @@ def parse_args():
                         help='Crop ratio during validation. default is 0.875')
     parser.add_argument('--use-pretrained', action='store_true',
                         help='enable using pretrained model from gluon.')
+    parser.add_argument('--hashtag', type=str, default='',
+                        help='hashtag for pretrained models.')
     parser.add_argument('--use_se', action='store_true',
                         help='use SE layers or not in resnext. default is false.')
     parser.add_argument('--mixup', action='store_true',
@@ -138,6 +138,14 @@ def parse_args():
                         help='if set to True, read videos directly instead of reading frames.')
     parser.add_argument('--use-decord', action='store_true',
                         help='if set to True, use Decord video loader to load data. Otherwise use mmcv video loader.')
+    parser.add_argument('--slowfast', action='store_true',
+                        help='if set to True, use data loader designed for SlowFast network.')
+    parser.add_argument('--slow-temporal-stride', type=int, default=16,
+                        help='the temporal stride for sparse sampling of video frames for slow branch in SlowFast network.')
+    parser.add_argument('--fast-temporal-stride', type=int, default=2,
+                        help='the temporal stride for sparse sampling of video frames for fast branch in SlowFast network.')
+    parser.add_argument('--num-crop', type=int, default=1,
+                        help='number of crops for each image. default is 1')
     opt = parser.parse_args()
     return opt
 
@@ -153,11 +161,11 @@ def test(ctx, val_data, opt, net):
     for i, batch in enumerate(val_data):
         data, label = batch_fn(batch, ctx)
         outputs = []
-        for X in data:
+        for _, X in enumerate(data):
+            X = X.reshape((-1,) + X.shape[2:])
             pred = net(X.astype(opt.dtype, copy=False))
             if opt.use_softmax:
                 pred = F.softmax(pred, axis=1)
-            pred = F.mean(pred, axis=0, keepdims=True)
             outputs.append(pred)
 
         acc_top1.update(label, outputs)
@@ -190,10 +198,31 @@ def main():
     num_workers = opt.num_workers
     print('Total batch size is set to %d on %d GPUs' % (batch_size, num_gpus))
 
+    # get data
+    if opt.ten_crop:
+        transform_test = transforms.Compose([
+            video.VideoTenCrop(opt.input_size),
+            video.VideoToTensor(),
+            video.VideoNormalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+        ])
+        opt.num_crop = 10
+    elif opt.three_crop:
+        transform_test = transforms.Compose([
+            video.VideoThreeCrop(opt.input_size),
+            video.VideoToTensor(),
+            video.VideoNormalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+        ])
+        opt.num_crop = 3
+    else:
+        transform_test = video.VideoGroupValTransform(size=opt.input_size, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        opt.num_crop = 1
+
     # get model
+    if opt.use_pretrained and len(opt.hashtag) > 0:
+        opt.use_pretrained = opt.hashtag
     classes = opt.num_classes
     model_name = opt.model
-    net = get_model(name=model_name, nclass=classes, pretrained=opt.use_pretrained, num_segments=opt.num_segments)
+    net = get_model(name=model_name, nclass=classes, pretrained=opt.use_pretrained, num_segments=opt.num_segments, num_crop=opt.num_crop)
     net.cast(opt.dtype)
     net.collect_params().reset_ctx(context)
     if opt.mode == 'hybrid':
@@ -204,22 +233,6 @@ def main():
     else:
         print('Pre-trained model is successfully loaded from the model zoo.')
 
-    # get data
-    if opt.ten_crop:
-        transform_test = transforms.Compose([
-            video.VideoTenCrop(opt.input_size),
-            video.VideoToTensor(),
-            video.VideoNormalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-        ])
-    elif opt.three_crop:
-        transform_test = transforms.Compose([
-            video.VideoThreeCrop(opt.input_size),
-            video.VideoToTensor(),
-            video.VideoNormalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-        ])
-    else:
-        transform_test = video.VideoGroupValTransform(size=opt.input_size, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-
     if opt.dataset == 'ucf101':
         val_dataset = UCF101(setting=opt.val_list, root=opt.data_dir, train=False,
                              new_width=opt.new_width, new_height=opt.new_height, new_length=opt.new_length,
@@ -229,17 +242,23 @@ def main():
         val_dataset = Kinetics400(setting=opt.val_list, root=opt.data_dir, train=False,
                                   new_width=opt.new_width, new_height=opt.new_height, new_length=opt.new_length, new_step=opt.new_step,
                                   target_width=opt.input_size, target_height=opt.input_size, video_loader=opt.video_loader, use_decord=opt.use_decord,
-                                  test_mode=True, num_segments=opt.num_segments, transform=transform_test)
+                                  slowfast=opt.slowfast, slow_temporal_stride=opt.slow_temporal_stride, fast_temporal_stride=opt.fast_temporal_stride,
+                                  test_mode=True, num_segments=opt.num_segments, num_crop=opt.num_crop, transform=transform_test)
     elif opt.dataset == 'somethingsomethingv2':
         val_dataset = SomethingSomethingV2(setting=opt.val_list, root=opt.data_dir, train=False,
                                            new_width=opt.new_width, new_height=opt.new_height, new_length=opt.new_length, new_step=opt.new_step,
                                            target_width=opt.input_size, target_height=opt.input_size, video_loader=opt.video_loader, use_decord=opt.use_decord,
                                            num_segments=opt.num_segments, transform=transform_test)
+    elif opt.dataset == 'hmdb51':
+        val_dataset = HMDB51(setting=opt.val_list, root=opt.data_dir, train=False,
+                             new_width=opt.new_width, new_height=opt.new_height, new_length=opt.new_length, new_step=opt.new_step,
+                             target_width=opt.input_size, target_height=opt.input_size, video_loader=opt.video_loader, use_decord=opt.use_decord,
+                             num_segments=opt.num_segments, transform=transform_test)
     else:
         logger.info('Dataset %s is not supported yet.' % (opt.dataset))
 
     val_data = gluon.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers,
-                                     prefetch=int(opt.prefetch_ratio * num_workers), batchify_fn=tsn_mp_batchify_fn, last_batch='discard')
+                                     prefetch=int(opt.prefetch_ratio * num_workers), last_batch='discard')
     print('Load %d test samples in %d iterations.' % (len(val_dataset), len(val_data)))
 
     start_time = time.time()

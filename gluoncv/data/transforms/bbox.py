@@ -2,7 +2,7 @@
 from __future__ import division
 import numpy as np
 
-__all__ = ['crop', 'flip', 'resize', 'translate']
+__all__ = ['crop', 'flip', 'resize', 'translate', 'affine_transform', 'get_affine_transform']
 
 def crop(bbox, crop_box=None, allow_outside_center=True):
     """Crop bounding boxes according to slice area.
@@ -160,3 +160,125 @@ def translate(bbox, x_offset=0, y_offset=0):
     bbox[:, :2] += (x_offset, y_offset)
     bbox[:, 2:4] += (x_offset, y_offset)
     return bbox
+
+def affine_transform(pt, t):
+    """Apply affine transform to a bounding box given transform matrix t.
+
+    Parameters
+    ----------
+    pt : numpy.ndarray
+        Bounding box with shape (1, 2).
+    t : numpy.ndarray
+        Transformation matrix with shape (2, 3).
+
+    Returns
+    -------
+    numpy.ndarray
+        New bounding box with shape (1, 2).
+
+    """
+    new_pt = np.array([pt[0], pt[1], 1.], dtype=np.float32).T
+    new_pt = np.dot(t, new_pt)
+    return new_pt[:2]
+
+def get_rot_dir(src_point, rot_rad):
+    """Get rotation direction.
+
+    Parameters
+    ----------
+    src_point : tuple of float
+        Original point.
+    rot_rad : float
+        Rotation radian.
+
+    Returns
+    -------
+    tuple of float
+        Rotation.
+
+    """
+    sn, cs = np.sin(rot_rad), np.cos(rot_rad)
+
+    src_result = [0, 0]
+    src_result[0] = src_point[0] * cs - src_point[1] * sn
+    src_result[1] = src_point[0] * sn + src_point[1] * cs
+
+    return src_result
+
+def get_3rd_point(a, b):
+    """Get the 3rd point position given first two points.
+
+    Parameters
+    ----------
+    a : tuple of float
+        First point.
+    b : tuple of float
+        Second point.
+
+    Returns
+    -------
+    tuple of float
+        Third point.
+
+    """
+    direct = a - b
+    return b + np.array([-direct[1], direct[0]], dtype=np.float32)
+
+def get_affine_transform(center,
+                         scale,
+                         rot,
+                         output_size,
+                         shift=np.array([0, 0], dtype=np.float32),
+                         inv=0):
+    """Get affine transform matrix given center, scale and rotation.
+
+    Parameters
+    ----------
+    center : tuple of float
+        Center point.
+    scale : float
+        Scaling factor.
+    rot : float
+        Rotation degree.
+    output_size : tuple of int
+        (width, height) of the output size.
+    shift : float
+        Shift factor.
+    inv : bool
+        Whether inverse the computation.
+
+    Returns
+    -------
+    numpy.ndarray
+        Affine matrix.
+
+    """
+    from ...utils.filesystem import try_import_cv2
+    cv2 = try_import_cv2()
+    if not isinstance(scale, np.ndarray) and not isinstance(scale, list):
+        scale = np.array([scale, scale], dtype=np.float32)
+
+    scale_tmp = scale
+    src_w = scale_tmp[0]
+    dst_w = output_size[0]
+    dst_h = output_size[1]
+
+    rot_rad = np.pi * rot / 180
+    src_dir = get_rot_dir([0, src_w * -0.5], rot_rad)
+    dst_dir = np.array([0, dst_w * -0.5], np.float32)
+
+    src = np.zeros((3, 2), dtype=np.float32)
+    dst = np.zeros((3, 2), dtype=np.float32)
+    src[0, :] = center + scale_tmp * shift
+    src[1, :] = center + src_dir + scale_tmp * shift
+    dst[0, :] = [dst_w * 0.5, dst_h * 0.5]
+    dst[1, :] = np.array([dst_w * 0.5, dst_h * 0.5], np.float32) + dst_dir
+
+    src[2:, :] = get_3rd_point(src[0, :], src[1, :])
+    dst[2:, :] = get_3rd_point(dst[0, :], dst[1, :])
+
+    if inv:
+        trans = cv2.getAffineTransform(np.float32(dst), np.float32(src))
+    else:
+        trans = cv2.getAffineTransform(np.float32(src), np.float32(dst))
+    return trans

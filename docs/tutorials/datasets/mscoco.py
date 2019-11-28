@@ -36,7 +36,8 @@ The easiest way to download and unpack these files is to download helper script
 the following command:
 
 .. code-block:: bash
-
+    pip install cython
+    pip install pycocotools
     python mscoco.py
 
 which will automatically download and extract the data into ``~/.mxnet/datasets/coco``.

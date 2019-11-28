@@ -18,3 +18,4 @@ dependencies:
   - requests
   - Pillow
   - opencv-python
+  - portalocker
