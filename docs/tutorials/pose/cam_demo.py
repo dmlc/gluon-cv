@@ -50,7 +50,7 @@ To speed up the detector, we can reset the prediction head to only include the c
 .. code-block:: python
 
     detector.reset_class(classes=['person'], reuse_weights={'person':'person'})
-
+    detector.hybridize()
 
 Next for the estimator, we choose ``simple_pose_resnet18_v1b`` for it is light-weighted.
 
@@ -62,7 +62,7 @@ Remember that we can load an optional pre-trained model by passing its shasum to
 .. code-block:: python
 
     estimator = get_model('simple_pose_resnet18_v1b', pretrained='ccd24037', ctx=ctx)
-
+    estimator.hybridize()
 
 With OpenCV, we can easily retrieve frames from the webcam.
 
