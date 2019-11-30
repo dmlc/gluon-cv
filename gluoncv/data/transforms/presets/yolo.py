@@ -47,7 +47,7 @@ def transform_test(imgs, short=416, max_size=1024, stride=1, mean=(0.485, 0.456,
         dim_imgs = imgs.ndim
         assert dim_imgs in (3, 4), \
         "Expect 3 or 4-dimensional NDArray, got {}-dimensional".format(dim_imgs)
-        if dim_imgs == 3 :
+        if dim_imgs == 3:
             imgs = [imgs]
         elif dim_imgs == 4:
             imgs = [*imgs]
