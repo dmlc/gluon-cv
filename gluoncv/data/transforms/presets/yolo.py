@@ -50,7 +50,7 @@ def transform_test(imgs, short=416, max_size=1024, stride=1, mean=(0.485, 0.456,
         if dim_imgs == 3:
             imgs = [imgs]
         elif dim_imgs == 4:
-            imgs = [img for img in imgs]
+            imgs = list(imgs)
 
     for im in imgs:
         assert isinstance(im, mx.nd.NDArray), "Expect NDArray, got {}".format(type(im))
