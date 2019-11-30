@@ -44,7 +44,10 @@ def transform_test(imgs, short=416, max_size=1024, stride=1, mean=(0.485, 0.456,
 
     """
     if isinstance(imgs, mx.nd.NDArray):
-        imgs = [imgs]
+        dim_imgs = imgs.ndim
+        assert dim_imgs == 3 or dim_imgs == 4, "Expect 3 or 4-dimensional NDArray, got {}-dimensional".format(dim_imgs)
+        imgs = [imgs] if dim_imgs == 3 else [*imgs]
+        
     for im in imgs:
         assert isinstance(im, mx.nd.NDArray), "Expect NDArray, got {}".format(type(im))
 
