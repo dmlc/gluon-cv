@@ -37,7 +37,7 @@ def transform_eval(imgs, resize_short=256, crop_size=224,
         if dim_imgs == 3:
             imgs = [imgs]
         elif dim_imgs == 4:
-            imgs = [img for img in imgs]
+            imgs = list(imgs)
 
     for im in imgs:
         assert isinstance(im, mx.nd.NDArray), "Expect NDArray, got {}".format(type(im))
