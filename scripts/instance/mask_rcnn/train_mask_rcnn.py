@@ -6,6 +6,10 @@ import os
 os.environ['MXNET_CUDNN_AUTOTUNE_DEFAULT'] = '0'
 os.environ['MXNET_GPU_MEM_POOL_TYPE'] = 'Round'
 os.environ['MXNET_GPU_MEM_POOL_ROUND_LINEAR_CUTOFF'] = '28'
+os.environ['MXNET_EXEC_BULK_EXEC_MAX_NODE_TRAIN_FWD'] = '999'
+os.environ['MXNET_EXEC_BULK_EXEC_MAX_NODE_TRAIN_BWD'] = '25'
+os.environ['MXNET_GPU_COPY_NTHREADS'] = '1'
+os.environ['MXNET_OPTIMIZER_AGGREGATION_SIZE'] = '54'
 
 import logging
 import time
@@ -298,9 +302,9 @@ def validate(net, val_data, async_eval_threads, ctx, eval_metric, logger, epoch,
                         args.save_prefix)
 
     if not args.horovod or hvd.rank() == 0:
-        t = Process(target=coco_eval_save_task, args=(eval_metric, logger))
-        async_eval_threads.append(t)
-        t.start()
+        p = Process(target=coco_eval_save_task, args=(eval_metric, logger))
+        async_eval_processes.append(p)
+        p.start()
 
 def get_lr_at_iter(alpha, lr_warmup_factor=1. / 3.):
     return lr_warmup_factor * (1 - alpha) + alpha
@@ -439,7 +443,7 @@ def train(net, train_data, val_data, eval_metric, batch_size, ctx, logger, args)
     metrics2 = [rpn_acc_metric, rpn_bbox_metric,
                 rcnn_acc_metric, rcnn_bbox_metric,
                 rcnn_mask_metric, rcnn_fgmask_metric]
-    async_eval_threads = []
+    async_eval_processes = []
     logger.info(args)
 
     if args.verbose:
@@ -518,13 +522,13 @@ def train(net, train_data, val_data, eval_metric, batch_size, ctx, logger, args)
                 epoch, (time.time() - tic), msg))
         if not (epoch + 1) % args.val_interval:
             # consider reduce the frequency of validation to save time
-            validate(net, val_data, async_eval_threads, ctx, eval_metric, logger, epoch, best_map,
+            validate(net, val_data, async_eval_processes, ctx, eval_metric, logger, epoch, best_map,
                      args)
         elif (not args.horovod) or hvd.rank() == 0:
             current_map = 0.
             save_params(net, logger, best_map, current_map, epoch, args.save_interval,
                         args.save_prefix)
-    for thread in async_eval_threads:
+    for thread in async_eval_processes:
         thread.join()
 
 
