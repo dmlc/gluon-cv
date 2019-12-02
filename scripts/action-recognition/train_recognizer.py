@@ -232,7 +232,7 @@ def get_data_loader(opt, batch_size, num_workers, logger, kvstore=None):
 def main():
     opt = parse_args()
     # fix seed for mxnet, numpy and python builtin random generator.
-    gutils.random.seed(args.seed)
+    gutils.random.seed(opt.seed)
 
     makedirs(opt.save_dir)
 
