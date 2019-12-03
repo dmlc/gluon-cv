@@ -13,7 +13,6 @@ from mxnet.contrib import amp
 from gluoncv.data.transforms import video
 from gluoncv.data import UCF101, Kinetics400, SomethingSomethingV2, HMDB51
 from gluoncv.model_zoo import get_model
-from gluoncv import utils as gutils
 from gluoncv.utils import makedirs, LRSequential, LRScheduler, split_and_load
 from gluoncv.data.sampler import SplitSampler
 
@@ -152,8 +151,6 @@ def parse_args():
                         help='the temporal stride for sparse sampling of video frames for fast branch in SlowFast network.')
     parser.add_argument('--num-crop', type=int, default=1,
                         help='number of crops for each image. default is 1')
-    parser.add_argument('--seed', type=int, default=233,
-                        help='Random seed to be fixed.')
     opt = parser.parse_args()
     return opt
 
@@ -231,8 +228,6 @@ def get_data_loader(opt, batch_size, num_workers, logger, kvstore=None):
 
 def main():
     opt = parse_args()
-    # fix seed for mxnet, numpy and python builtin random generator.
-    gutils.random.seed(opt.seed)
 
     makedirs(opt.save_dir)
 
@@ -293,6 +288,7 @@ def main():
 
     if opt.resume_params is not '':
         net.load_parameters(opt.resume_params, ctx=context)
+        print('Continue training from model %s.' % (opt.resume_params))
 
     if opt.kvstore is not None:
         train_data, val_data, batch_fn = get_data_loader(opt, batch_size, num_workers, logger, kv)
@@ -492,7 +488,6 @@ def main():
 
     train(context)
     sw.close()
-
 
 if __name__ == '__main__':
     main()
