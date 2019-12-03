@@ -39,6 +39,7 @@ except ImportError:
 try:
     from mpi4py import MPI
 except ImportError:
+    logging.info('mpi4py is not installed. Use "pip install --no-cache mpi4py" to install')
     MPI = None
 
 
@@ -234,7 +235,7 @@ def split_and_load(batch, ctx_list):
     return new_batch
 
 
-def validate(net, val_data, async_eval_threads, ctx, eval_metric, logger, epoch, best_map, args):
+def validate(net, val_data, async_eval_processes, ctx, eval_metric, logger, epoch, best_map, args):
     """Test on validation dataset."""
     clipper = gcv.nn.bbox.BBoxClipToImage()
     eval_metric.reset()
@@ -305,6 +306,7 @@ def validate(net, val_data, async_eval_threads, ctx, eval_metric, logger, epoch,
         p = Process(target=coco_eval_save_task, args=(eval_metric, logger))
         async_eval_processes.append(p)
         p.start()
+
 
 def get_lr_at_iter(alpha, lr_warmup_factor=1. / 3.):
     return lr_warmup_factor * (1 - alpha) + alpha
