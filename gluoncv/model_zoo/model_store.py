@@ -4,6 +4,8 @@ from __future__ import print_function
 __all__ = ['get_model_file', 'purge']
 import os
 import zipfile
+import logging
+import portalocker
 
 from ..utils import download, check_sha1
 
@@ -158,6 +160,19 @@ _model_sha1 = {name: checksum for checksum, name in [
     ('2ec6bf01a55af38579380e6531d0ecc816862abe', 'i3d_resnet50_v1_hmdb51'),
     ('760d0981094787b8789ee4a8c382d09d493c7413', 'i3d_resnet50_v1_ucf101'),
     ('682591e23ce4b92fbd3222c0710ebb52166fddca', 'resnet50_v1b_hmdb51'),
+    ('5fd8d651eea4b8f3767174ea63bd0afc1fa541d8', 'dla34'),
+    ('38c509d456a6e14e4c54e961ed43bffe8cf62840', 'center_net_resnet18_v1b_voc'),
+    ('04d1ed20ae3f8a150bc06d8007775a6df99e40b2', 'center_net_resnet18_v1b_dcnv2_voc'),
+    ('f108427bc62c85f7bcbdba45db4c94a31fd4d4f6', 'center_net_resnet50_v1b_voc'),
+    ('61eb866d36ef68b1145a74a5b4e76ba262dbb4e4', 'center_net_resnet50_v1b_dcnv2_voc'),
+    ('5bf8b91f8813e82a2f2660c83560ffdfebf835a0', 'center_net_resnet101_v1b_voc'),
+    ('a0e707225164fc578b5bb7187a79e6b492da8fb4', 'center_net_resnet101_v1b_dcnv2_voc'),
+    ('dccae71d1f069343326750bc9b0508a2a760dd80', 'center_net_resnet18_v1b_coco'),
+    ('0874df9a5236297fd32ed401f0a699602ee6b42b', 'center_net_resnet18_v1b_dcnv2_coco'),
+    ('28c64aaeaf9d5e4404afd2b96bf8812973d79eb9', 'center_net_resnet50_v1b_coco'),
+    ('2713a7ba29ab4da5f1939da5a53f97ed079441ca', 'center_net_resnet50_v1b_dcnv2_coco'),
+    ('6f9cd4a945cb554c38539009eede20f45786519e', 'center_net_resnet101_v1b_coco'),
+    ('52daf2d9faca82c08924d08e7e0c253a782a1653', 'center_net_resnet101_v1b_dcnv2_coco'),
 ]}
 
 apache_repo_url = 'https://apache-mxnet.s3-accelerate.dualstack.amazonaws.com/'
@@ -199,37 +214,41 @@ def get_model_file(name, tag=None, root=os.path.join('~', '.mxnet', 'models')):
         file_name = '{name}-{short_hash}'.format(name=name,
                                                  short_hash=short_hash(name))
     root = os.path.expanduser(root)
-    file_path = os.path.join(root, file_name + '.params')
+    params_path = os.path.join(root, file_name + '.params')
+    lockfile = os.path.join(root, file_name + '.lock')
     if use_tag:
         sha1_hash = tag
     else:
         sha1_hash = _model_sha1[name]
-    if os.path.exists(file_path):
-        if check_sha1(file_path, sha1_hash):
-            return file_path
+    with portalocker.Lock(lockfile, timeout=int(os.environ.get('GLUON_MODEL_LOCK_TIMEOUT', 300))):
+        if os.path.exists(params_path):
+            if check_sha1(params_path, sha1_hash):
+                return params_path
+            else:
+                logging.warning("Hash mismatch in the content of model file '%s' detected. "
+                                "Downloading again.", params_path)
         else:
-            print('Mismatch in the content of model file detected. Downloading again.')
-    else:
-        print('Model file is not found. Downloading.')
+            logging.info('Model file not found. Downloading.')
 
-    if not os.path.exists(root):
-        os.makedirs(root)
+        if not os.path.exists(root):
+            os.makedirs(root)
 
-    zip_file_path = os.path.join(root, file_name + '.zip')
-    repo_url = os.environ.get('MXNET_GLUON_REPO', apache_repo_url)
-    if repo_url[-1] != '/':
-        repo_url = repo_url + '/'
-    download(_url_format.format(repo_url=repo_url, file_name=file_name),
-             path=zip_file_path,
-             overwrite=True)
-    with zipfile.ZipFile(zip_file_path) as zf:
-        zf.extractall(root)
-    os.remove(zip_file_path)
-
-    if check_sha1(file_path, sha1_hash):
-        return file_path
-    else:
-        raise ValueError('Downloaded file has different hash. Please try again.')
+        zip_file_path = os.path.join(root, file_name + '.zip')
+        repo_url = os.environ.get('MXNET_GLUON_REPO', apache_repo_url)
+        if repo_url[-1] != '/':
+            repo_url = repo_url + '/'
+        download(_url_format.format(repo_url=repo_url, file_name=file_name),
+                 path=zip_file_path,
+                 overwrite=True)
+        with zipfile.ZipFile(zip_file_path) as zf:
+            zf.extractall(root)
+        os.remove(zip_file_path)
+        # Make sure we write the model file on networked filesystems
+        os.sync()
+        if check_sha1(params_path, sha1_hash):
+            return params_path
+        else:
+            raise ValueError('Downloaded file has different hash. Please try again.')
 
 
 def purge(root=os.path.join('~', '.mxnet', 'models')):

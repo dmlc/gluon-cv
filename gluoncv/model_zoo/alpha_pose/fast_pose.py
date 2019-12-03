@@ -1,4 +1,5 @@
 """Fast pose network for alpha pose"""
+# pylint: disable=arguments-differ
 import math
 import os
 

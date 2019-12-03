@@ -21,8 +21,9 @@ First, import the necessary libraries into python.
 
     import time
 
-    import cv2
     import gluoncv as gcv
+    from gluoncv.utils import try_import_cv2
+    cv2 = try_import_cv2()
     import mxnet as mx
 
 
@@ -34,6 +35,8 @@ the `Gluon Model Zoo <../../model_zoo/detection.html>`__ !
 
     # Load the model
     net = gcv.model_zoo.get_model('ssd_512_mobilenet1.0_voc', pretrained=True)
+    # Compile the model for faster speed
+    net.hybridize()
 
 
 We create the webcam handler in opencv to be able to acquire the frames:

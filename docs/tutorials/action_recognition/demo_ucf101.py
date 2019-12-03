@@ -108,7 +108,8 @@ for i in range(topK):
 #
 #     <br>
 
-import cv2
+from gluoncv.utils import try_import_cv2
+cv2 = try_import_cv2()
 
 url = 'https://github.com/bryanyzhu/tiny-ucf101/raw/master/v_Basketball_g01_c01.avi'
 video_fname = utils.download(url)

@@ -444,3 +444,49 @@ class SigmoidClassEncoder(object):
         # output: 1: pos, 0: negative, -1: ignore
         mask = np.where(np.abs(samples) > 1e-5, 1.0, 0.0)
         return target, mask
+
+
+class CenterNetDecoder(gluon.HybridBlock):
+    """Decorder for centernet.
+
+    Parameters
+    ----------
+    topk : int
+        Only keep `topk` results.
+    scale : float, default is 4.0
+        Downsampling scale for the network.
+
+    """
+    def __init__(self, topk=100, scale=4.0):
+        super(CenterNetDecoder, self).__init__()
+        self._topk = topk
+        self._scale = scale
+
+    def hybrid_forward(self, F, x, wh, reg):
+        """Forward of decoder"""
+        _, _, out_h, out_w = x.shape_array().split(num_outputs=4, axis=0)
+        scores, indices = x.reshape((0, -1)).topk(k=self._topk, ret_typ='both')
+        indices = F.cast(indices, 'int64')
+        topk_classes = F.cast(F.broadcast_div(indices, (out_h * out_w)), 'float32')
+        topk_indices = F.broadcast_mod(indices, (out_h * out_w))
+        topk_ys = F.broadcast_div(topk_indices, out_w)
+        topk_xs = F.broadcast_mod(topk_indices, out_w)
+        center = reg.transpose((0, 2, 3, 1)).reshape((0, -1, 2))
+        wh = wh.transpose((0, 2, 3, 1)).reshape((0, -1, 2))
+        batch_indices = F.cast(F.arange(256).slice_like(
+            center, axes=(0)).expand_dims(-1).tile(reps=(1, self._topk)), 'int64')
+        reg_xs_indices = F.zeros_like(batch_indices, dtype='int64')
+        reg_ys_indices = F.ones_like(batch_indices, dtype='int64')
+        reg_xs = F.concat(batch_indices, topk_indices, reg_xs_indices, dim=0).reshape((3, -1))
+        reg_ys = F.concat(batch_indices, topk_indices, reg_ys_indices, dim=0).reshape((3, -1))
+        xs = F.cast(F.gather_nd(center, reg_xs).reshape((-1, self._topk)), 'float32')
+        ys = F.cast(F.gather_nd(center, reg_ys).reshape((-1, self._topk)), 'float32')
+        topk_xs = F.cast(topk_xs, 'float32') + xs
+        topk_ys = F.cast(topk_ys, 'float32') + ys
+        w = F.cast(F.gather_nd(wh, reg_xs).reshape((-1, self._topk)), 'float32')
+        h = F.cast(F.gather_nd(wh, reg_ys).reshape((-1, self._topk)), 'float32')
+        half_w = w / 2
+        half_h = h / 2
+        results = [topk_xs - half_w, topk_ys - half_h, topk_xs + half_w, topk_ys + half_h]
+        results = F.concat(*[tmp.expand_dims(-1) for tmp in results], dim=-1)
+        return topk_classes, scores, results * self._scale
