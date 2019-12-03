@@ -76,14 +76,22 @@ def export_block(path, block, data_shape=None, epoch=0, preprocess=True, layout=
 
     """
     # input image layout
+    layout = layout.upper()
     if data_shape is None:
-        data_shapes = [(s, s, 3) for s in (224, 256, 299, 300, 320, 416, 512, 600)]
+        if layout == 'HWC':
+            data_shapes = [(s, s, 3) for s in (224, 256, 299, 300, 320, 416, 512, 600)]
+        elif layout == 'CHW':
+            data_shapes = [(3, s, s) for s in (224, 256, 299, 300, 320, 416, 512, 600)]
+        else:
+            raise ValueError('Unable to predict data_shape, please specify.')
     else:
         data_shapes = [data_shape]
 
     if preprocess:
         # add preprocess block
         if preprocess is True:
+            assert layout == 'HWC', \
+                "Default preprocess only supports input as HWC, provided {}.".format(layout)
             preprocess = _DefaultPreprocess()
         else:
             if not isinstance(preprocess, HybridBlock):
@@ -94,6 +102,9 @@ def export_block(path, block, data_shape=None, epoch=0, preprocess=True, layout=
         wrapper_block.add(block)
     else:
         wrapper_block = block
+        assert layout in ('CHW', 'CTHW'), \
+            "Default layout is CHW for 2D models and CTHW for 3D models if preprocess is None," \
+            + " provided {}.".format(layout)
     wrapper_block.collect_params().reset_ctx(ctx)
 
     # try different data_shape if possible, until one fits the network
