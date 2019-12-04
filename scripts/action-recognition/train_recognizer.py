@@ -333,7 +333,9 @@ def main():
             val_loss_epoch += sum([l.mean().asscalar() for l in loss]) / len(loss)
 
             if opt.log_interval and not (i+1) % opt.log_interval:
-                logger.info('Batch [%04d]/[%04d]: evaluated' % (i, num_test_iter))
+                _, top1 = acc_top1.get()
+                _, top5 = acc_top5.get()
+                logger.info('Batch [%04d]/[%04d]: acc-top1=%f acc-top5=%f' % (i, num_test_iter, top1*100, top5*100))
 
         _, top1 = acc_top1.get()
         _, top5 = acc_top5.get()
