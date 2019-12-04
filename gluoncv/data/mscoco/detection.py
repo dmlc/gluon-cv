@@ -248,7 +248,7 @@ class COCODetectionDALI(object):
             ltrb=True,
             shuffle_after_epoch=True)
 
-        self.decode = dali.ops.HostDecoder(device="cpu", output_type=dali.types.RGB)
+        self.decode = dali.ops.ImageDecoder(device="cpu", output_type=dali.types.RGB)
 
         # We need to build the COCOReader ops to parse the annotations
         # and have acces to the dataset size.
