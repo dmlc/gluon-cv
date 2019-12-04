@@ -241,15 +241,13 @@ if __name__ == "__main__":
             else:
                 raise RuntimeError("=> no checkpoint found at '{}'" \
                     .format(args.resume))
-        # if args.quantized:
-        #    model.hybridize(static_alloc=True, static_shape=True)
-        # else:
-        #    model.hybridize()
+        if args.quantized:
+           model.hybridize(static_alloc=True, static_shape=True)
     else:
         model_prefix = 'deploy_int8' if args.quantized else 'deploy'
         model = mx.gluon.SymbolBlock.imports('{}-symbol.json'.format(args.model_prefix),
               ['data'], '{}-0000.params'.format(args.model_prefix))
-        # model.hybridize(static_alloc=True, static_shape=True)
+        model.hybridize(static_alloc=True, static_shape=True)
 
     print("Successfully loaded %s model" % model_prefix)
     print('Testing model: ', args.resume)
