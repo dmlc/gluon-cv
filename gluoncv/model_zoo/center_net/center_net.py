@@ -644,7 +644,7 @@ def center_net_dla34_dcnv2_voc(pretrained=False, pretrained_base=True, **kwargs)
         ('wh', {'num_output': 2}),
         ('reg', {'num_output': 2})
         ])
-    return get_center_net('dla34', 'voc', base_network=base_network, heads=heads,
+    return get_center_net('dla34_dcnv2', 'voc', base_network=base_network, heads=heads,
                           head_conv_channel=64, pretrained=pretrained, classes=classes,
                           scale=4.0, topk=40, **kwargs)
 
@@ -704,7 +704,7 @@ def center_net_dla34_dcnv2_coco(pretrained=False, pretrained_base=True, **kwargs
         ('wh', {'num_output': 2}),
         ('reg', {'num_output': 2})
         ])
-    return get_center_net('dla34', 'coco', base_network=base_network, heads=heads,
+    return get_center_net('dla34_dcnv2', 'coco', base_network=base_network, heads=heads,
                           head_conv_channel=64, pretrained=pretrained, classes=classes,
                           scale=4.0, topk=100, **kwargs)
 
@@ -734,7 +734,7 @@ def center_net_mobilenetv3_large_duc_voc(pretrained=False, pretrained_base=True,
         ('wh', {'num_output': 2}),
         ('reg', {'num_output': 2})
         ])
-    return get_center_net('mobilenetv3_large', 'voc', base_network=base_network, heads=heads,
+    return get_center_net('mobilenetv3_large_duc', 'voc', base_network=base_network, heads=heads,
                           head_conv_channel=64, pretrained=pretrained, classes=classes,
                           scale=4.0, topk=40, **kwargs)
 
@@ -764,7 +764,7 @@ def center_net_mobilenetv3_small_duc_voc(pretrained=False, pretrained_base=True,
         ('wh', {'num_output': 2}),
         ('reg', {'num_output': 2})
         ])
-    return get_center_net('mobilenetv3_small', 'voc', base_network=base_network, heads=heads,
+    return get_center_net('mobilenetv3_small_duc', 'voc', base_network=base_network, heads=heads,
                           head_conv_channel=64, pretrained=pretrained, classes=classes,
                           scale=4.0, topk=40, **kwargs)
 
@@ -794,7 +794,7 @@ def center_net_mobilenetv3_large_duc_coco(pretrained=False, pretrained_base=True
         ('wh', {'num_output': 2}),
         ('reg', {'num_output': 2})
         ])
-    return get_center_net('mobilenetv3_large', 'coco', base_network=base_network, heads=heads,
+    return get_center_net('mobilenetv3_large_duc', 'coco', base_network=base_network, heads=heads,
                           head_conv_channel=64, pretrained=pretrained, classes=classes,
                           scale=4.0, topk=100, **kwargs)
 
@@ -824,6 +824,6 @@ def center_net_mobilenetv3_small_duc_coco(pretrained=False, pretrained_base=True
         ('wh', {'num_output': 2}),
         ('reg', {'num_output': 2})
         ])
-    return get_center_net('mobilenetv3_small', 'coco', base_network=base_network, heads=heads,
+    return get_center_net('mobilenetv3_small_duc', 'coco', base_network=base_network, heads=heads,
                           head_conv_channel=64, pretrained=pretrained, classes=classes,
                           scale=4.0, topk=100, **kwargs)
