@@ -12,19 +12,19 @@ export OMP_NUM_THREADS=${CPUs}
 export KMP_AFFINITY=granularity=fine,noduplicates,compact,1,0
 
 # dummy data
-python test_recognizer.py --model inceptionv3_ucf101 --use-pretrained --use-tsn --mode hybrid --input-size 299 --new-height 340 --new-width 450 --num-segments 3 --batch-size 64 --benchmark
+python test_recognizer.py --model inceptionv3_ucf101 --use-pretrained --mode hybrid --input-size 299 --new-height 340 --new-width 450 --num-segments 3 --batch-size 64 --benchmark
 
 # real data
-python test_recognizer.py --model inceptionv3_ucf101 --use-pretrained --use-tsn --mode hybrid --input-size 299 --new-height 340 --new-width 450 --num-segments 3 --batch-size 64
+python test_recognizer.py --model inceptionv3_ucf101 --use-pretrained --mode hybrid --input-size 299 --new-height 340 --new-width 450 --num-segments 3 --batch-size 64
 ```
 
 ### Calibration
 
-Naive calibrated model by using 5 batch data (32 images per batch). Quantized model will be saved into `./model/`.
+In naive mode, FP32 models are calibrated by using 5 mini-batches of data (32 images per batch). Quantized models will be saved into `./model/`.
 
 ```
 # ucf101 dataset
-python test_recognizer.py --model inceptionv3_ucf101 --new-height 340 --new-width 450 --input-size 299 --num-segments 3 --use-pretrained --use-tsn --calibration
+python test_recognizer.py --model inceptionv3_ucf101 --new-height 340 --new-width 450 --input-size 299 --num-segments 3 --use-pretrained --calibration
 ```
 
 ### INT8 Inference
@@ -42,7 +42,7 @@ python test_recognizer.py --model inceptionv3_ucf101 --mode hybrid --input-size 
 python test_recognizer.py --model inceptionv3_ucf101 --mode hybrid --input-size 299 --new-height 340 --new-width 450 --batch-size 64 --num-segments 3 --quantized
 
 # deploy static model
-python test_recognizer.py --model ucf --deploy --model-prefix ./model/inceptionv3_ucf101-quantized-naive --input-size 299 --new-height 340 --new-width 450 --batch-size 64 --num-segments 3 --benchmark
+python test_recognizer.py --model inceptionv3_ucf101 --deploy --model-prefix ./model/inceptionv3_ucf101-quantized-naive --input-size 299 --new-height 340 --new-width 450 --batch-size 64 --num-segments 3 --benchmark
 
 ```
 
@@ -55,7 +55,7 @@ numactl --physcpubind=0-27 --membind=0 python test_recognizer.py ...
 ## Performance
 Below results are collected based on Intel(R) VNNI enabled C5.12xlarge with 24 physical cores.
 
-|model | fp32 Top-1 | s8 Top-1 |
+|model | fp32 Top-1 | int8 Top-1 |
 |-- | -- | -- |
 inceptionv3_ucf101    |86.92 | 86.55 |
 vgg16_ucf101          |81.86 | 81.41 |

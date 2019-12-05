@@ -163,7 +163,7 @@ def parse_args():
                         help='quantize model')
     parser.add_argument('--num-calib-batches', type=int, default=5,
                         help='number of batches for calibration')
-    parser.add_argument('--quantized-dtype', type=str, default='auto', 
+    parser.add_argument('--quantized-dtype', type=str, default='auto',
                         choices=['auto', 'int8', 'uint8'],
                         help='quantization destination data type for input data')
     parser.add_argument('--calib-mode', type=str, default='naive',
@@ -249,7 +249,7 @@ def calibration(net, val_data, opt, ctx, logger):
         exclude_match_layer += ['concat']
     if opt.num_gpus > 0:
         raise ValueError('currently only supports CPU with MKL-DNN backend')
-    net = quantize_net(net, calib_data=val_data, quantized_dtype=opt.quantized_dtype, quantize_mode='full', calib_mode=opt.calib_mode, 
+    net = quantize_net(net, calib_data=val_data, quantized_dtype=opt.quantized_dtype, quantize_mode='full', calib_mode=opt.calib_mode,
                        exclude_layers=exclude_sym_layer, num_calib_examples=opt.batch_size * opt.num_calib_batches,
                        exclude_layers_match=exclude_match_layer, ctx=ctx, logger=logger)
     dir_path = os.path.dirname(os.path.realpath(__file__))
