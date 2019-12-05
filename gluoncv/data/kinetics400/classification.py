@@ -139,11 +139,18 @@ class Kinetics400(dataset.Dataset):
 
         directory, duration, target = self.clips[index]
         if self.video_loader:
+            if '.' in directory.split('/')[-1]:
+                # data in the "setting" file already have extension, e.g., demo.mp4
+                video_name = directory
+            else:
+                # data in the "setting" file do not have extension, e.g., demo
+                # So we need to provide extension (i.e., .mp4) to complete the file name.
+                video_name = '{}.{}'.format(directory, self.video_ext)
             if self.use_decord:
-                decord_vr = self.decord.VideoReader('{}.{}'.format(directory, self.video_ext), width=self.new_width, height=self.new_height)
+                decord_vr = self.decord.VideoReader(video_name, width=self.new_width, height=self.new_height)
                 duration = len(decord_vr)
             else:
-                mmcv_vr = self.mmcv.VideoReader('{}.{}'.format(directory, self.video_ext))
+                mmcv_vr = self.mmcv.VideoReader(video_name)
                 duration = len(mmcv_vr)
 
         if self.train and not self.test_mode:

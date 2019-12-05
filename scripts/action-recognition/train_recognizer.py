@@ -288,6 +288,7 @@ def main():
 
     if opt.resume_params is not '':
         net.load_parameters(opt.resume_params, ctx=context)
+        print('Continue training from model %s.' % (opt.resume_params))
 
     if opt.kvstore is not None:
         train_data, val_data, batch_fn = get_data_loader(opt, batch_size, num_workers, logger, kv)
@@ -332,7 +333,9 @@ def main():
             val_loss_epoch += sum([l.mean().asscalar() for l in loss]) / len(loss)
 
             if opt.log_interval and not (i+1) % opt.log_interval:
-                logger.info('Batch [%04d]/[%04d]: evaluated' % (i, num_test_iter))
+                _, top1 = acc_top1.get()
+                _, top5 = acc_top5.get()
+                logger.info('Batch [%04d]/[%04d]: acc-top1=%f acc-top5=%f' % (i, num_test_iter, top1*100, top5*100))
 
         _, top1 = acc_top1.get()
         _, top5 = acc_top5.get()
@@ -487,7 +490,6 @@ def main():
 
     train(context)
     sw.close()
-
 
 if __name__ == '__main__':
     main()
