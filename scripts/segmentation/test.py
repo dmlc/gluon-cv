@@ -285,7 +285,7 @@ if __name__ == "__main__":
         if not args.quantized:
             assert args.eval and args.mode == 'val', "Only val dataset can used for calibration."
             exclude_sym_layer = []
-            exclude_match_layer = ['concat']
+            exclude_match_layer = []
             if args.ngpus > 0:
                 raise ValueError('currently only supports CPU with MKL-DNN backend')
             model = quantize_net(model, calib_data=test_data, quantized_dtype=args.quantized_dtype, calib_mode=args.calib_mode, 
