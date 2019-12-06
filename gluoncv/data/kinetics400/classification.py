@@ -2,8 +2,8 @@
 """Kinetics400 action classification dataset.
 Code partially borrowed from https://github.com/open-mmlab/mmaction."""
 import os
-import numpy as np
 import random
+import numpy as np
 from mxnet import nd
 from mxnet.gluon.data import dataset
 
@@ -209,7 +209,8 @@ class Kinetics400(dataset.Dataset):
         clips = []
         with open(setting) as split_f:
             data = split_f.readlines()
-            random.shuffle(data)
+            if not self.test_mode:
+                random.shuffle(data)
             for line in data:
                 line_info = line.split()
                 # line format: video_path, video_duration, video_label
