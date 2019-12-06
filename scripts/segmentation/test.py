@@ -88,7 +88,7 @@ def parse_args():
     args = parser.parse_args()
     
     args.ctx = [mx.cpu(0)]
-    args.ctx = [mx.gpu(i) for i in range(args.ngpus)] if args.ngpus > 0 else args.ctx
+    args.ctx = [mx.gpu(i+4) for i in range(args.ngpus)] if args.ngpus > 0 else args.ctx
 
     args.norm_layer = mx.gluon.contrib.nn.SyncBatchNorm if args.syncbn \
         else mx.gluon.nn.BatchNorm
@@ -242,7 +242,7 @@ if __name__ == "__main__":
                 raise RuntimeError("=> no checkpoint found at '{}'" \
                     .format(args.resume))
         if args.quantized:
-           model.hybridize(static_alloc=True, static_shape=True)
+            model.hybridize(static_alloc=True, static_shape=True)
     else:
         model_prefix = 'deploy_int8' if args.quantized else 'deploy'
         model = mx.gluon.SymbolBlock.imports('{}-symbol.json'.format(args.model_prefix),
