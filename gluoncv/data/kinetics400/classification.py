@@ -3,6 +3,7 @@
 Code partially borrowed from https://github.com/open-mmlab/mmaction."""
 import os
 import numpy as np
+import random
 from mxnet import nd
 from mxnet.gluon.data import dataset
 
@@ -208,6 +209,7 @@ class Kinetics400(dataset.Dataset):
         clips = []
         with open(setting) as split_f:
             data = split_f.readlines()
+            random.shuffle(data)
             for line in data:
                 line_info = line.split()
                 # line format: video_path, video_duration, video_label
