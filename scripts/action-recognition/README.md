@@ -25,6 +25,9 @@ In naive mode, FP32 models are calibrated by using 5 mini-batches of data (32 im
 ```
 # ucf101 dataset
 python test_recognizer.py --model inceptionv3_ucf101 --new-height 340 --new-width 450 --input-size 299 --num-segments 3 --use-pretrained --calibration
+
+# kinetics400 dataset
+python test_recognizer.py --dataset kinetics400 --data-dir path/to/datasets --model resnet18_v1b_kinetics400 --use-pretrained --num-classes 400 --new-height 256 --new-width 340 --input-size 224 --num-segments 7 --calibration
 ```
 
 ### INT8 Inference
@@ -57,8 +60,11 @@ Below results are collected based on Intel(R) VNNI enabled C5.12xlarge with 24 p
 
 |model | fp32 Top-1 | int8 Top-1 |
 |-- | -- | -- |
-inceptionv3_ucf101    |86.92 | 86.55 |
-vgg16_ucf101          |81.86 | 81.41 |
+inceptionv3_ucf101          |86.92 | 86.55 |
+vgg16_ucf101                |81.86 | 81.41 |
+resnet18_v1b_kinetics400    |63.29 | 63.14 |
+resnet50_v1b_kinetics400    |68.08 | 68.15 |
+inceptionv3_kinetics400     |67.93 | 67.92 |
 
 ## References
 

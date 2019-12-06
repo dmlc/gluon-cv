@@ -244,7 +244,7 @@ def calibration(net, val_data, opt, ctx, logger):
     if isinstance(ctx, list):
         ctx = ctx[0]
     exclude_sym_layer = []
-    exclude_match_layer = []
+    exclude_match_layer = ['flatten']
     if 'inceptionv3' not in opt.model:
         exclude_match_layer += ['concat']
     if opt.num_gpus > 0:

@@ -550,13 +550,12 @@ def test_calib_models():
     x = mx.random.uniform(shape=(1, 3, 256, 192), ctx=ctx)
     _calib_model_list(model_list, ctx, x)
 
-    model_list = ['vgg16_ucf101']
+    model_list = ['vgg16_ucf101', 'resnet18_v1b_kinetics400', 'resnet50_v1b_kinetics400']
     ctx = mx.context.current_context()
     x = mx.random.uniform(shape=(1, 3, 224, 224), ctx=ctx)
     _calib_model_list(model_list, ctx, x)
 
-    model_list = ['inceptionv3_ucf101']
-    ctx = mx.context.current_context()
+    model_list = ['inceptionv3_ucf101', 'inceptionv3_kinetics400']
     x = mx.random.uniform(shape=(1, 3, 299, 299), ctx=ctx)
     _calib_model_list(model_list, ctx, x)
 
@@ -587,11 +586,16 @@ def test_quantized_action_recognition_models():
     num_segments = 3
     model_list = ['vgg16_ucf101_int8']
     ctx = mx.context.current_context()
-    x = mx.random.uniform(shape=(1*num_segments, 3, 224, 224), ctx=ctx)
+    x = mx.random.uniform(shape=(1 * num_segments, 3, 224, 224), ctx=ctx)
     _test_model_list(model_list, ctx, x)
 
-    model_list = ['inceptionv3_ucf101_int8']
-    x = mx.random.uniform(shape=(1*num_segments, 3, 299, 299), ctx=ctx)
+    model_list = ['inceptionv3_ucf101_int8', 'inceptionv3_kinetics400_int8']
+    x = mx.random.uniform(shape=(1 * num_segments, 3, 299, 299), ctx=ctx)
+    _test_model_list(model_list, ctx, x)
+
+    num_segments = 7
+    model_list = ['resnet18_v1b_kinetics400_int8', 'resnet50_v1b_kinetics400_int8']
+    x = mx.random.uniform(shape=(1 * num_segments, 3, 224, 224), ctx=ctx)
     _test_model_list(model_list, ctx, x)
 
 
