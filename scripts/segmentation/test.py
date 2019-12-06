@@ -243,8 +243,6 @@ if __name__ == "__main__":
                     .format(args.resume))
         if args.quantized:
             model.hybridize(static_alloc=True, static_shape=True)
-        else:
-            model.hybridize()
     else:
         model_prefix = 'deploy_int8' if args.quantized else 'deploy'
         model = mx.gluon.SymbolBlock.imports('{}-symbol.json'.format(args.model_prefix),
