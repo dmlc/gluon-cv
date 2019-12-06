@@ -92,7 +92,7 @@ stage("Build Docs") {
     ws('workspace/gluon-cv-docs') {
       timeout(time: max_time, unit: 'MINUTES') {
         checkout scm
-        VISIBLE_GPU=env.EXECUTOR_NUMBER.toInteger() % 4
+        VISIBLE_GPU=env.EXECUTOR_NUMBER.toInteger() % 8
         sh """#!/bin/bash
         # conda env remove -n gluon_vision_docs -y
         set -ex
