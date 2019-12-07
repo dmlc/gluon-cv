@@ -227,6 +227,10 @@ def get_model_file(name, tag=None, root=os.path.join('~', '.mxnet', 'models')):
         sha1_hash = tag
     else:
         sha1_hash = _model_sha1[name]
+
+    if not os.path.exists(root):
+        os.makedirs(root)
+    
     with portalocker.Lock(lockfile, timeout=int(os.environ.get('GLUON_MODEL_LOCK_TIMEOUT', 300))):
         if os.path.exists(params_path):
             if check_sha1(params_path, sha1_hash):
@@ -236,9 +240,6 @@ def get_model_file(name, tag=None, root=os.path.join('~', '.mxnet', 'models')):
                                 "Downloading again.", params_path)
         else:
             logging.info('Model file not found. Downloading.')
-
-        if not os.path.exists(root):
-            os.makedirs(root)
 
         zip_file_path = os.path.join(root, file_name + '.zip')
         repo_url = os.environ.get('MXNET_GLUON_REPO', apache_repo_url)
