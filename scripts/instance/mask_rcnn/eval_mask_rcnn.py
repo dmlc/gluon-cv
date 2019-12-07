@@ -111,12 +111,9 @@ def validate(net, val_data, ctx, eval_metric, size):
                     # fill full mask
                     im_height, im_width = int(round(im_height / im_scale)), int(
                         round(im_width / im_scale))
-                    full_masks = []
-                    for bbox, mask in zip(det_bbox, det_mask):
-                        full_masks.append(
-                            gcv.data.transforms.mask.fill(mask, bbox, (im_width, im_height),
-                                                          fast_fill=False))
-                    full_masks = np.array(full_masks)
+                    full_masks = gcv.data.transforms.mask.fill(det_mask, det_bbox,
+                                                               (im_width, im_height),
+                                                               fast_fill=False)
                     eval_metric.update(det_bbox, det_id, det_score, full_masks)
             pbar.update(len(ctx))
     return eval_metric.get()
