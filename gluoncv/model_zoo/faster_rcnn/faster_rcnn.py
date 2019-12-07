@@ -495,6 +495,7 @@ def get_faster_rcnn(name, dataset, pretrained=False, ctx=mx.cpu(),
         full_name = '_'.join(('faster_rcnn', name, dataset))
         net.load_parameters(get_model_file(full_name, tag=pretrained, root=root), ctx=ctx,
                             ignore_extra=True, allow_missing=True)
+        net.collect_params(select='normalizedperclassboxcenterencoder*').initialize()
     else:
         for v in net.collect_params().values():
             try:
