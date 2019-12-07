@@ -24,8 +24,9 @@ class COCOInstanceMetric(mx.metric.EvalMetric):
         Prefix for the saved JSON results.
     use_time : bool
         Append unique datetime string to created JSON file name if ``True``.
-    dump_json : bool
-        Dump evaluation JSON file if ``True``. When use_ext is true, evaluation is always dumped
+    cleanup : bool
+        Remove created JSON file if ``True``. When cleanup is True, we do not output json to save
+        computation.
     use_ext : bool
         Whether to use external module built by NVIDIA, which is significantly faster.
         Make sure NVIDIA MSCOCO API is installed!
@@ -37,28 +38,20 @@ class COCOInstanceMetric(mx.metric.EvalMetric):
 
     """
 
-    def __init__(self, dataset, save_prefix, use_time=True, dump_json=True, use_ext=False,
-                 starting_id=0, score_thresh=1e-3):
+    def __init__(self, dataset, save_prefix, use_time=True, cleanup=False,
+                 use_ext=False, starting_id=0, score_thresh=1e-3):
         self._starting_id = starting_id
         self._use_ext = use_ext
         super(COCOInstanceMetric, self).__init__('COCOInstance')
         self.dataset = dataset
+        self._dump_to_file = not cleanup
         if use_time:
             import datetime
             t = datetime.datetime.now().strftime('_%Y_%m_%d_%H_%M_%S')
         else:
             t = ''
-        if use_ext:
-            self.dataset.coco.createIndex(use_ext=use_ext)
-            self._bbox_result = []
-            self._segm_result = []
-            self._bbox_filename = osp.abspath(osp.expanduser(save_prefix) + t + '_bbox.json')
-            self._segm_filename = osp.abspath(osp.expanduser(save_prefix) + t + '_segm.json')
-            if not dump_json:
-                warnings.warn('When using external module, eval json is always dumped.')
         self._img_ids = sorted(dataset.coco.getImgIds())
         self._current_id = starting_id
-        self._dump_to_file = dump_json
         self._results = []
         self._score_thresh = score_thresh
 
@@ -66,6 +59,19 @@ class COCOInstanceMetric(mx.metric.EvalMetric):
         import pycocotools.mask as cocomask
         self._cocomask = cocomask
         self._filename = osp.abspath(osp.expanduser(save_prefix) + t + '.json')
+        if use_ext:
+            from pycocotools import coco
+            if not hasattr(coco, 'ext'):
+                raise AttributeError('external module is not support by the COCO API installed. '
+                                     'Consider install NVIDIA MSCOCO API here '
+                                     'https://github.com/NVIDIA/cocoapi.git')
+            self.dataset.coco.createIndex(use_ext=use_ext)
+            self._bbox_result = []
+            self._segm_result = []
+            self._bbox_filename = osp.abspath(osp.expanduser(save_prefix) + t + '_bbox.json')
+            self._segm_filename = osp.abspath(osp.expanduser(save_prefix) + t + '_segm.json')
+            if not self._dump_to_file:
+                warnings.warn('When using external module, eval json is always dumped.')
 
     def get_result_buffer(self):
         if self._use_ext:
