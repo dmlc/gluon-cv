@@ -51,11 +51,11 @@ stored at ``~/.mxnet/datasets/ucf101`` by default.
 ###################
 # Read with GluonCV
 # -----------------
-
+#
 # The prepared dataset can be loaded with utility class :py:class:`gluoncv.data.UCF101`
-# directly. Here we provide three examples to read data from the dataset, (1) load one frame per video;
+# directly. In this tutorial, we provide three examples to read data from the dataset, (1) load one frame per video;
 # (2) load one clip per video, the clip contains five consecutive frames; (3) load three clips evenly per video,
-# each clip contains 5 frames.
+# each clip contains 12 frames.
 
 
 #########################################################################
@@ -92,14 +92,14 @@ viz.plot_image(train_dataset[7][0].squeeze().transpose((1,2,0))*255.0)   # Baske
 viz.plot_image(train_dataset[22][0].squeeze().transpose((1,2,0))*255.0)  # CricketBowling
 
 #########################################################################
-"""Here is another example that randomly reads 25 videos each time, randomly selects one clip per video and
-performs center cropping. A clip can contain N consecutive frames, e.g., N=5.
-"""
+# Here is the second example that randomly reads 25 videos each time, randomly selects one clip per video and
+# performs center cropping. A clip can contain N consecutive frames, e.g., N=5.
+
 train_dataset = UCF101(train=True, new_length=5, transform=transform_train)
 train_data = DataLoader(train_dataset, batch_size=25, shuffle=True)
 
 #########################################################################
-# Now we can see the shape of our loaded data as below. We have another ``depth`` dimension which
+# We can see the shape of our loaded data as below. Now we have another ``depth`` dimension which
 # indicates how many frames in each clip (a.k.a, the temporal dimension).
 for x, y in train_data:
     print('Video frame size (batch, extra, channel, depth, height, width):', x.shape)
@@ -134,9 +134,9 @@ plt.imshow(frame5.astype('uint8'))
 plt.show()
 
 #########################################################################
-"""The last example is that we randomly read 25 videos each time, select three clips evenly per video and
-performs center cropping. A clip contains 12 consecutive frames.
-"""
+# The last example is that we randomly read 25 videos each time, select three clips evenly per video and
+# performs center cropping. A clip contains 12 consecutive frames.
+
 train_dataset = UCF101(train=True, new_length=12, num_segments=3, transform=transform_train)
 train_data = DataLoader(train_dataset, batch_size=25, shuffle=True)
 
@@ -147,3 +147,7 @@ for x, y in train_data:
     print('Video frame size (batch, extra, channel, depth, height, width):', x.shape)
     print('Video label:', y.shape)
     break
+
+#########################################################################
+# There are many other options to load the data, we refer the readers to
+# `classification.py <../../../gluoncv/data/ucf101/classification.py>`__ for more information.
