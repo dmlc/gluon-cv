@@ -45,17 +45,16 @@ stored at ``~/.mxnet/datasets/ucf101`` by default.
 
    The data preparation process may take a while. The total time to prepare the dataset depends on
    your Internet speed and disk performance. For example, it takes about 30min on an AWS EC2 instance with EBS.
-
 """
 
 ###################
 # Read with GluonCV
 # -----------------
 #
-# The prepared dataset can be loaded with utility class :py:class:`gluoncv.data.UCF101`
-# directly. In this tutorial, we provide three examples to read data from the dataset, (1) load one frame per video;
-# (2) load one clip per video, the clip contains five consecutive frames; (3) load three clips evenly per video,
-# each clip contains 12 frames.
+# The prepared dataset can be loaded with utility class :py:class:`gluoncv.data.UCF101` directly.
+# In this tutorial, we provide three examples to read data from the dataset, (1) load one frame per video;
+# (2) load one clip per video, the clip contains five consecutive frames;
+# (3) load three clips evenly per video, each clip contains 12 frames.
 
 
 #########################################################################
@@ -149,5 +148,4 @@ for x, y in train_data:
     break
 
 #########################################################################
-# There are many other options to load the data, we refer the readers to
-# `classification.py <../../../gluoncv/data/ucf101/classification.py>`__ for more information.
+# There are many ways to load the data, we refer the users to read the arguments for more information.
