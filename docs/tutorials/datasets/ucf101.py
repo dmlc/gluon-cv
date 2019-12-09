@@ -55,11 +55,10 @@ performs center cropping.
 """
 
 
-from gluoncv.data import ucf101
+from gluoncv.data import UCF101
 from mxnet.gluon.data import DataLoader
 from mxnet.gluon.data.vision import transforms
 from gluoncv.data.transforms import video
-from gluoncv.data.dataloader import tsn_mp_batchify_fn
 
 transform_train = transforms.Compose([
     video.VideoCenterCrop(size=224),
@@ -68,17 +67,19 @@ transform_train = transforms.Compose([
 
 # Default location of the data is stored on ~/.mxnet/datasets/ucf101
 # You need to specify ``setting`` and ``root`` for UCF101 if you decoded the video frames into a different folder.
-train_dataset = ucf101.classification.UCF101(train=True, transform=transform_train)
-train_data = DataLoader(train_dataset, batch_size=25, shuffle=True, batchify_fn=tsn_mp_batchify_fn)
+train_dataset = UCF101(train=True, transform=transform_train)
+train_data = DataLoader(train_dataset, batch_size=25, shuffle=True)
 
 #########################################################################
+# We can see the shape of our loaded data as below. ``extra`` indicates if we select multiple crops or multiple segments
+# from a video. Here, we only pick one frame per video, so the ``extra`` dimension is 1.
 for x, y in train_data:
-    print('Video frame size (batch, channel, height, width):', x.shape)
+    print('Video frame size (batch, extra, channel, height, width):', x.shape)
     print('Video label:', y.shape)
     break
 
 #########################################################################
-# Plot several training samples. index 0 is image, 1 is label
+# Let's plot several training samples. index 0 is image, 1 is label
 from gluoncv.utils import viz
 viz.plot_image(train_dataset[7][0].squeeze().transpose((1,2,0))*255.0)   # Basketball
 viz.plot_image(train_dataset[22][0].squeeze().transpose((1,2,0))*255.0)  # CricketBowling
@@ -87,17 +88,19 @@ viz.plot_image(train_dataset[22][0].squeeze().transpose((1,2,0))*255.0)  # Crick
 """Here is another example that randomly reads 25 videos each time, randomly selects one clip per video and
 performs center cropping. A clip can contain N consecutive frames, e.g., N=5.
 """
-train_dataset = ucf101.classification.UCF101(train=True, new_length=5, transform=transform_train)
-train_data = DataLoader(train_dataset, batch_size=25, shuffle=True, batchify_fn=tsn_mp_batchify_fn)
+train_dataset = UCF101(train=True, new_length=5, transform=transform_train)
+train_data = DataLoader(train_dataset, batch_size=25, shuffle=True)
 
 #########################################################################
+# Now we can see the shape of our loaded data as below. We have another ``depth`` dimension which
+# indicates how many frames in each clip (a.k.a, the temporal dimension).
 for x, y in train_data:
-    print('Video frame size (batch, channel, depth, height, width):', x.shape)
+    print('Video frame size (batch, extra, channel, depth, height, width):', x.shape)
     print('Video label:', y.shape)
     break
 
 #######################################################################################
-# Plot 1 training sample, with 5 consecutive video frames. index 0 is image, 1 is label
+# Let's plot one training sample with 5 consecutive video frames. index 0 is image, 1 is label
 from matplotlib import pyplot as plt
 # subplot 1 for video frame 1
 fig = plt.figure()
