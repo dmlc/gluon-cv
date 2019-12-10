@@ -69,10 +69,12 @@ stage("Unit Test") {
           export LD_LIBRARY_PATH=/usr/local/cuda-9.2/lib64
           export MPLBACKEND=Agg
           export MXNET_CUDNN_AUTOTUNE_DEFAULT=0
-          rm -rf ~/.mxnet/datasets/kinetics400/
-          rm -rf ~/.mxnet/datasets/hmdb51/
-          wget https://yizhu-data.s3.amazonaws.com/tiny_k400_train.zip
-          unzip tiny_k400_train.zip -d ~/.mxnet/datasets/kinetics400/
+          pip install Cython
+          pip install mmcv
+          wget https://raw.githubusercontent.com/bryanyzhu/gluon-cv/master/scripts/datasets/kinetics400.py
+          python kinetics400.py --src_dir ~/.mxnet/datasets/kinetics400/tiny_train_videos --out_dir ~/.mxnet/datasets/kinetics400/rawframes_train --decode_video --new_width 450 --new_height 340
+          wget https://yizhu-data.s3.amazonaws.com/tiny_k400_val.zip
+          unzip tiny_k400_val.zip -d ~/.mxnet/datasets/kinetics400/
           nosetests --with-timer --timer-ok 5 --timer-warning 20 -x --with-coverage --cover-package gluoncv -v tests/unittests
           rm -f coverage.svg
           coverage-badge -o coverage.svg
