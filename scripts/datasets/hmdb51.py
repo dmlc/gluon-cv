@@ -117,7 +117,7 @@ def parse_args():
     parser.add_argument('--format', type=str, default='rawframes', choices=['rawframes', 'videos'])
     parser.add_argument('--shuffle', action='store_true', default=False)
     parser.add_argument('--tiny_dataset', action='store_true', default=False)
-    parser.add_argument('--download', action='store_true', default=True)
+    parser.add_argument('--download', action='store_true', default=False)
     parser.add_argument('--decode_video', action='store_true', default=True)
     parser.add_argument('--build_file_list', action='store_true', default=True)
     args = parser.parse_args()
