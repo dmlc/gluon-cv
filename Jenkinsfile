@@ -69,14 +69,11 @@ stage("Unit Test") {
           export LD_LIBRARY_PATH=/usr/local/cuda-9.2/lib64
           export MPLBACKEND=Agg
           export MXNET_CUDNN_AUTOTUNE_DEFAULT=0
-          pip install Cython
-          pip install mmcv
-          rm -rf ~/.mxnet/datasets/kinetics400/.*txt
           cd ~/.mxnet/datasets/kinetics400
-          mkdir annotations
-          cd annotations
-          wget https://yizhu-data.s3.amazonaws.com/kinetics_train.csv
-          wget ttps://yizhu-data.s3.amazonaws.com/kinetics_val.csv
+          rm -rf ./rawframes_train
+          wget https://yizhu-data.s3.amazonaws.com/kinetics_val.csv
+          wget https://yizhu-data.s3.amazonaws.com/tiny_rawframes_train.zip
+          unzip tiny_rawframes_train.zip
           nosetests --with-timer --timer-ok 5 --timer-warning 20 -x --with-coverage --cover-package gluoncv -v tests/unittests
           rm -f coverage.svg
           coverage-badge -o coverage.svg
