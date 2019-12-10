@@ -175,6 +175,10 @@ for x, y in train_data:
 # For example, if we want to randomly read 5 videos, randomly selects one frame per video and
 # performs center cropping.
 
+from gluoncv.utils.filesystem import import_try_install
+import_try_install('decord')
+
+# Since we are loading videos directly, we need to change the ``root`` location.
 train_dataset = Kinetics400(root=os.path.expanduser('~/.mxnet/datasets/kinetics400/train'), train=True,
                             transform=transform_train, video_loader=True, use_decord=True)
 train_data = DataLoader(train_dataset, batch_size=5, shuffle=True)
@@ -217,5 +221,5 @@ for x, y in train_data:
     break
 
 #########################################################################
-# We also support other video loaders, e.g., OpenCV VideoReader.
-# We refer the users to read the documents for more information.
+# We also support other video loaders, e.g., OpenCV VideoReader, but Decord is significantly faster.
+# We refer the users to read the documentations for more information.
