@@ -69,12 +69,8 @@ stage("Unit Test") {
           export LD_LIBRARY_PATH=/usr/local/cuda-9.2/lib64
           export MPLBACKEND=Agg
           export MXNET_CUDNN_AUTOTUNE_DEFAULT=0
-          sudo apt install unrar
-          pip install rarfile
-          pip install zipfile
-          pip install mmcv
-          pip install Cython
-          python scripts/datasets/hmdb51.py
+          wget https://yizhu-data.s3.amazonaws.com/kinetics400_240618_19761.zip
+          unzip kinetics400_240618_19761.zip -d ~/.mxnet/datasets/
           nosetests --with-timer --timer-ok 5 --timer-warning 20 -x --with-coverage --cover-package gluoncv -v tests/unittests
           rm -f coverage.svg
           coverage-badge -o coverage.svg
