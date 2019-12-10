@@ -287,7 +287,10 @@ _models = {
     'simple_pose_resnet101_v1b_int8': simple_pose_resnet101_v1b_int8,
     'simple_pose_resnet101_v1d_int8': simple_pose_resnet101_v1d_int8,
     'vgg16_ucf101_int8': vgg16_ucf101_int8,
-    'inceptionv3_ucf101_int8': inceptionv3_ucf101_int8
+    'inceptionv3_ucf101_int8': inceptionv3_ucf101_int8,
+    'resnet18_v1b_kinetics400_int8': resnet18_v1b_kinetics400_int8,
+    'resnet50_v1b_kinetics400_int8': resnet50_v1b_kinetics400_int8,
+    'inceptionv3_kinetics400_int8': inceptionv3_kinetics400_int8
 }
 
 
