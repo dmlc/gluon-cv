@@ -390,8 +390,8 @@ def download_hmdb51(args):
     if not os.path.exists(target_video_dir):
         os.makedirs(target_video_dir)
 
-    # video_url = 'http://serre-lab.clps.brown.edu/wp-content/uploads/2013/10/hmdb51_org.rar'
-    # os.system('wget -P %s %s' % (target_dir, video_url))
+    video_url = 'http://serre-lab.clps.brown.edu/wp-content/uploads/2013/10/hmdb51_org.rar'
+    os.system('wget -P %s %s' % (target_dir, video_url))
     with rarfile.RarFile(os.path.join(target_dir, 'hmdb51_org.rar')) as rf:
         rf.extractall(path=target_rar_dir)
 
