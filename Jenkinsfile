@@ -69,8 +69,10 @@ stage("Unit Test") {
           export LD_LIBRARY_PATH=/usr/local/cuda-9.2/lib64
           export MPLBACKEND=Agg
           export MXNET_CUDNN_AUTOTUNE_DEFAULT=0
-          wget https://yizhu-data.s3.amazonaws.com/kinetics400_240618_19761.zip
-          unzip kinetics400_240618_19761.zip -d ~/.mxnet/datasets/
+          rm -rf ~/.mxnet/datasets/kinetics400/
+          rm -rf ~/.mxnet/datasets/hmdb51/
+          wget https://yizhu-data.s3.amazonaws.com/tiny_k400_train.zip
+          unzip tiny_k400_train.zip -d ~/.mxnet/datasets/kinetics400/
           nosetests --with-timer --timer-ok 5 --timer-warning 20 -x --with-coverage --cover-package gluoncv -v tests/unittests
           rm -f coverage.svg
           coverage-badge -o coverage.svg
