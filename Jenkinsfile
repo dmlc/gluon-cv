@@ -69,9 +69,6 @@ stage("Unit Test") {
           export LD_LIBRARY_PATH=/usr/local/cuda-9.2/lib64
           export MPLBACKEND=Agg
           export MXNET_CUDNN_AUTOTUNE_DEFAULT=0
-          cd ~/.mxnet/datasets/kinetics400
-          mv tiny_train_videos train
-          mv tiny_val_videos val
           nosetests --with-timer --timer-ok 5 --timer-warning 20 -x --with-coverage --cover-package gluoncv -v tests/unittests
           rm -f coverage.svg
           coverage-badge -o coverage.svg
