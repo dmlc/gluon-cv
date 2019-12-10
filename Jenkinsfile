@@ -71,10 +71,12 @@ stage("Unit Test") {
           export MXNET_CUDNN_AUTOTUNE_DEFAULT=0
           pip install Cython
           pip install mmcv
-          wget https://raw.githubusercontent.com/bryanyzhu/gluon-cv/master/scripts/datasets/kinetics400.py
-          python kinetics400.py --src_dir ~/.mxnet/datasets/kinetics400/tiny_val_videos --out_dir ~/.mxnet/datasets/kinetics400/rawframes_val --decode_video --new_width 450 --new_height 340
-          python kinetics400.py --build_file_list --frame_path ~/.mxnet/datasets/kinetics400/rawframes_train --subset train --shuffle
-          python kinetics400.py --build_file_list --frame_path ~/.mxnet/datasets/kinetics400/rawframes_val --subset val --shuffle
+          rm -rf ~/.mxnet/datasets/kinetics400/.*txt
+          cd ~/.mxnet/datasets/kinetics400
+          mkdir annotations
+          cd annotations
+          wget https://yizhu-data.s3.amazonaws.com/kinetics_train.csv
+          wget ttps://yizhu-data.s3.amazonaws.com/kinetics_val.csv
           nosetests --with-timer --timer-ok 5 --timer-warning 20 -x --with-coverage --cover-package gluoncv -v tests/unittests
           rm -f coverage.svg
           coverage-badge -o coverage.svg
