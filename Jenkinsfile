@@ -70,7 +70,8 @@ stage("Unit Test") {
           export MPLBACKEND=Agg
           export MXNET_CUDNN_AUTOTUNE_DEFAULT=0
           cd ~/.mxnet/datasets/kinetics400
-          wget https://yizhu-data.s3.amazonaws.com/kinetics400_train_list_rawframes.txt
+          mv tiny_train_videos train
+          mv tiny_val_videos val
           nosetests --with-timer --timer-ok 5 --timer-warning 20 -x --with-coverage --cover-package gluoncv -v tests/unittests
           rm -f coverage.svg
           coverage-badge -o coverage.svg
