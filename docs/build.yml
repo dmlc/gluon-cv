@@ -19,3 +19,4 @@ dependencies:
   - Pillow
   - opencv-python
   - portalocker
+  - decord
