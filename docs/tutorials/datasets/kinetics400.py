@@ -102,12 +102,6 @@ for x, y in train_data:
     break
 
 #########################################################################
-# Let's plot several training samples. index 0 is image, 1 is label
-from gluoncv.utils import viz
-viz.plot_image(train_dataset[50][0].squeeze().transpose((1,2,0))*255.0)   # sign_language_interpreting
-viz.plot_image(train_dataset[150][0].squeeze().transpose((1,2,0))*255.0)  # water_skiing
-
-#########################################################################
 # Here is the second example that randomly reads 25 videos each time, randomly selects one clip per video and
 # performs center cropping. A clip can contain N consecutive frames, e.g., N=5.
 
