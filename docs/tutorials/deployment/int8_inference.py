@@ -67,9 +67,15 @@ Below CPU performance is collected with dummy input from Intel(R) VNNI enabled A
 +-----------------------------+----------------+------------+---------------------+-----------------+-----------------+
 | inceptionv3_ucf101          | UCF101         | 64         | 5.16                | 86.92           | 86.55           |
 +-----------------------------+----------------+------------+---------------------+-----------------+-----------------+
+| resnet18_v1b_kinetics400    | Kinetics400    | 64         | 5.24                | 63.29           | 63.14           |
++-----------------------------+----------------+------------+---------------------+-----------------+-----------------+
+| resnet50_v1b_kinetics400    | Kinetics400    | 64         | 6.78                | 68.08           | 68.15           |
++-----------------------------+----------------+------------+---------------------+-----------------+-----------------+
+| inceptionv3_kinetics400     | Kinetics400    | 64         | 5.29                | 67.93           | 67.92           |
++-----------------------------+----------------+------------+---------------------+-----------------+-----------------+
 
 Quantized SSD models are evaluated with ``nms_thresh=0.45``, ``nms_topk=200``. For segmentation models, the accuracy metric is pixAcc, and for pose-estimation models, the accuracy metric is OKS AP w/o flip.
-Quantized 2D video action recognition models (with tsn) are calibrated with ``num-segments=3``.
+Quantized 2D video action recognition models are calibrated with ``num-segments=3`` (7 is for resnet-based models).
 
 Demo usage for SSD
 ------------------
