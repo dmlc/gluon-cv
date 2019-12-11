@@ -134,8 +134,8 @@ def parse_args():
         hvd.init()
     args.epochs = int(args.epochs) if args.epochs else 26
     args.lr_decay_epoch = args.lr_decay_epoch if args.lr_decay_epoch else '17,23'
-    args.lr = float(args.lr) if args.lr else 0.01
-    args.lr_warmup = args.lr_warmup if args.lr_warmup else 1000
+    args.lr = float(args.lr) if args.lr else (0.00125 * args.batch_size)
+    args.lr_warmup = args.lr_warmup if args.lr_warmup else max((8000 / args.batch_size), 1000)
     args.wd = float(args.wd) if args.wd else 1e-4
     return args
 
