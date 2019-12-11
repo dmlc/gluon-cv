@@ -91,8 +91,8 @@ for x, y in train_data:
 #########################################################################
 # Let's plot several training samples. index 0 is image, 1 is label
 from gluoncv.utils import viz
-viz.plot_image(train_dataset[7][0].squeeze().transpose((1,2,0))*255.0)   # Basketball
-viz.plot_image(train_dataset[22][0].squeeze().transpose((1,2,0))*255.0)  # CricketBowling
+viz.plot_image(train_dataset[500][0].squeeze().transpose((1,2,0))*255.0)   # dive
+viz.plot_image(train_dataset[2500][0].squeeze().transpose((1,2,0))*255.0)  # shoot_bow
 
 #########################################################################
 # Here is the second example that randomly reads 25 videos each time, randomly selects one clip per video and
@@ -115,23 +115,23 @@ from matplotlib import pyplot as plt
 # subplot 1 for video frame 1
 fig = plt.figure()
 fig.add_subplot(1,5,1)
-frame1 = train_dataset[7][0][0,:,0,:,:].transpose((1,2,0)).asnumpy()*255.0
+frame1 = train_dataset[500][0][0,:,0,:,:].transpose((1,2,0)).asnumpy()*255.0
 plt.imshow(frame1.astype('uint8'))
 # subplot 2 for video frame 2
 fig.add_subplot(1,5,2)
-frame2 = train_dataset[7][0][0,:,1,:,:].transpose((1,2,0)).asnumpy()*255.0
+frame2 = train_dataset[500][0][0,:,1,:,:].transpose((1,2,0)).asnumpy()*255.0
 plt.imshow(frame2.astype('uint8'))
 # subplot 3 for video frame 3
 fig.add_subplot(1,5,3)
-frame3 = train_dataset[7][0][0,:,2,:,:].transpose((1,2,0)).asnumpy()*255.0
+frame3 = train_dataset[500][0][0,:,2,:,:].transpose((1,2,0)).asnumpy()*255.0
 plt.imshow(frame3.astype('uint8'))
 # subplot 4 for video frame 4
 fig.add_subplot(1,5,4)
-frame4 = train_dataset[7][0][0,:,3,:,:].transpose((1,2,0)).asnumpy()*255.0
+frame4 = train_dataset[500][0][0,:,3,:,:].transpose((1,2,0)).asnumpy()*255.0
 plt.imshow(frame4.astype('uint8'))
 # subplot 5 for video frame 5
 fig.add_subplot(1,5,5)
-frame5 = train_dataset[7][0][0,:,4,:,:].transpose((1,2,0)).asnumpy()*255.0
+frame5 = train_dataset[500][0][0,:,4,:,:].transpose((1,2,0)).asnumpy()*255.0
 plt.imshow(frame5.astype('uint8'))
 # display
 plt.show()

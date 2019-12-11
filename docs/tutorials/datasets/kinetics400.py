@@ -104,8 +104,8 @@ for x, y in train_data:
 #########################################################################
 # Let's plot several training samples. index 0 is image, 1 is label
 from gluoncv.utils import viz
-viz.plot_image(train_dataset[7][0].squeeze().transpose((1,2,0))*255.0)   # Basketball
-viz.plot_image(train_dataset[22][0].squeeze().transpose((1,2,0))*255.0)  # CricketBowling
+viz.plot_image(train_dataset[50][0].squeeze().transpose((1,2,0))*255.0)   # sign_language_interpreting
+viz.plot_image(train_dataset[150][0].squeeze().transpose((1,2,0))*255.0)  # water_skiing
 
 #########################################################################
 # Here is the second example that randomly reads 25 videos each time, randomly selects one clip per video and
@@ -128,23 +128,23 @@ from matplotlib import pyplot as plt
 # subplot 1 for video frame 1
 fig = plt.figure()
 fig.add_subplot(1,5,1)
-frame1 = train_dataset[7][0][0,:,0,:,:].transpose((1,2,0)).asnumpy()*255.0
+frame1 = train_dataset[150][0][0,:,0,:,:].transpose((1,2,0)).asnumpy()*255.0
 plt.imshow(frame1.astype('uint8'))
 # subplot 2 for video frame 2
 fig.add_subplot(1,5,2)
-frame2 = train_dataset[7][0][0,:,1,:,:].transpose((1,2,0)).asnumpy()*255.0
+frame2 = train_dataset[150][0][0,:,1,:,:].transpose((1,2,0)).asnumpy()*255.0
 plt.imshow(frame2.astype('uint8'))
 # subplot 3 for video frame 3
 fig.add_subplot(1,5,3)
-frame3 = train_dataset[7][0][0,:,2,:,:].transpose((1,2,0)).asnumpy()*255.0
+frame3 = train_dataset[150][0][0,:,2,:,:].transpose((1,2,0)).asnumpy()*255.0
 plt.imshow(frame3.astype('uint8'))
 # subplot 4 for video frame 4
 fig.add_subplot(1,5,4)
-frame4 = train_dataset[7][0][0,:,3,:,:].transpose((1,2,0)).asnumpy()*255.0
+frame4 = train_dataset[150][0][0,:,3,:,:].transpose((1,2,0)).asnumpy()*255.0
 plt.imshow(frame4.astype('uint8'))
 # subplot 5 for video frame 5
 fig.add_subplot(1,5,5)
-frame5 = train_dataset[7][0][0,:,4,:,:].transpose((1,2,0)).asnumpy()*255.0
+frame5 = train_dataset[150][0][0,:,4,:,:].transpose((1,2,0)).asnumpy()*255.0
 plt.imshow(frame5.astype('uint8'))
 # display
 plt.show()
@@ -165,10 +165,10 @@ for x, y in train_data:
     break
 
 #########################################################################
-# Read with VideoLoader: Decord
-# -----------------------------
+# Read with VideoLoader
+# ---------------------
 #
-# In case you don't want to decode videos into frames, we provide a fast video loader, `Decord <https://github.com/zhreshold/decord>`_, to read the dataset as well.
+# In case you don't want to decode videos into frames, we provide a fast video loader, `Decord <https://github.com/zhreshold/decord>`_, to read the dataset.
 # We still use the utility class :py:class:`gluoncv.data.Kinetics400`. The usage is similar to using image loader.
 
 #########################################################################
@@ -195,7 +195,8 @@ for x, y in train_data:
 # performs center cropping. A clip can contain N consecutive frames, e.g., N=5.
 
 train_dataset = Kinetics400(root=os.path.expanduser('~/.mxnet/datasets/kinetics400/train'),
-                            train=True, new_length=5, transform=transform_train, video_loader=True, use_decord=True)
+                            train=True, new_length=5, transform=transform_train,
+                            video_loader=True, use_decord=True)
 train_data = DataLoader(train_dataset, batch_size=5, shuffle=True)
 
 #########################################################################
@@ -210,7 +211,8 @@ for x, y in train_data:
 # performs center cropping. A clip contains 12 consecutive frames.
 
 train_dataset = Kinetics400(root=os.path.expanduser('~/.mxnet/datasets/kinetics400/train'), train=True,
-                            new_length=12, num_segments=3, transform=transform_train, video_loader=True, use_decord=True)
+                            new_length=12, num_segments=3, transform=transform_train,
+                            video_loader=True, use_decord=True)
 train_data = DataLoader(train_dataset, batch_size=5, shuffle=True)
 
 #########################################################################
