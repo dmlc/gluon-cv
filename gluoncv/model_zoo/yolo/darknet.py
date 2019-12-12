@@ -95,7 +95,7 @@ class DarknetV3(gluon.HybridBlock):
                 # add nlayer basic blocks
                 for _ in range(nlayer):
                     self.features.add(DarknetBasicBlockV3(channel // 2,
-                                                          norm_layer=BatchNorm,
+                                                          norm_layer=norm_layer,
                                                           norm_kwargs=None))
             # output
             self.output = nn.Dense(classes)
