@@ -62,7 +62,7 @@ class UCF101(dataset.Dataset):
     """
     def __init__(self,
                  root=os.path.expanduser('~/.mxnet/datasets/ucf101/rawframes'),
-                 setting=os.path.expanduser('~/.mxnet/datasets/ucf101/ucfTrainTestlist/ucf101_train_split_2_rawframes.txt'),
+                 setting=os.path.expanduser('~/.mxnet/datasets/ucf101/ucfTrainTestlist/ucf101_train_split_1_rawframes.txt'),
                  train=True,
                  test_mode=False,
                  name_pattern='img_%05d.jpg',
