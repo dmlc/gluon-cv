@@ -12,6 +12,7 @@ from gluoncv.data.batchify import Tuple, Stack, Pad
 from gluoncv.data.transforms.presets import ssd
 from gluoncv.data.transforms.presets import rcnn
 from gluoncv.data.transforms.presets import yolo
+from gluoncv.data.transforms.presets import center_net
 
 def test_bbox_crop():
     bbox = np.array([[10, 20, 200, 500], [150, 200, 400, 300]])
@@ -276,6 +277,37 @@ def test_transforms_presets_yolo():
         batch_size, True, batchify_fn=val_batchify_fn, last_batch='rollover', num_workers=num_workers)
 
     for loader in [train_loader, val_loader, train_loader2]:
+        for i, batch in enumerate(loader):
+            if i > 1:
+                break
+            pass
+
+def test_transforms_presets_center_net():
+    im_fname = gcv.utils.download('https://github.com/dmlc/web-data/blob/master/' +
+                                  'gluoncv/detection/biking.jpg?raw=true', path='biking.jpg')
+    x, orig_img = center_net.load_test(im_fname, short=512)
+    x1, orig_img1 = center_net.transform_test(mx.image.imread(im_fname), short=512)
+    np.testing.assert_allclose(x.asnumpy(), x1.asnumpy())
+    np.testing.assert_allclose(orig_img, orig_img1)
+    if not osp.isdir(osp.expanduser('~/.mxnet/datasets/voc')):
+        return
+    train_dataset = gcv.data.VOCDetection(splits=((2007, 'trainval'), (2012, 'trainval')))
+    val_dataset = gcv.data.VOCDetection(splits=[(2007, 'test')])
+    width, height = (512, 512)
+    net = gcv.model_zoo.get_model('center_net_resnet18_v1b_voc', pretrained=False, pretrained_base=False)
+    net.initialize()
+    num_workers = 0
+    batch_size = 4
+    batchify_fn = Tuple([Stack() for _ in range(6)])
+    train_loader = gluon.data.DataLoader(
+        train_dataset.transform(center_net.CenterNetDefaultTrainTransform(width, height, num_class=len(train_dataset.classes), scale_factor=net.scale)),
+        batch_size, True, batchify_fn=batchify_fn, last_batch='rollover', num_workers=num_workers)
+    val_batchify_fn = Tuple(Stack(), Pad(pad_val=-1))
+    val_loader = gluon.data.DataLoader(
+        val_dataset.transform(center_net.CenterNetDefaultValTransform(width, height)),
+        batch_size, False, batchify_fn=val_batchify_fn, last_batch='keep', num_workers=num_workers)
+
+    for loader in [train_loader, val_loader]:
         for i, batch in enumerate(loader):
             if i > 1:
                 break

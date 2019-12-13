@@ -243,8 +243,6 @@ if __name__ == "__main__":
                     .format(args.resume))
         if args.quantized:
             model.hybridize(static_alloc=True, static_shape=True)
-        else:
-            model.hybridize()
     else:
         model_prefix = 'deploy_int8' if args.quantized else 'deploy'
         model = mx.gluon.SymbolBlock.imports('{}-symbol.json'.format(args.model_prefix),
@@ -285,7 +283,7 @@ if __name__ == "__main__":
         if not args.quantized:
             assert args.eval and args.mode == 'val', "Only val dataset can used for calibration."
             exclude_sym_layer = []
-            exclude_match_layer = ['concat']
+            exclude_match_layer = []
             if args.ngpus > 0:
                 raise ValueError('currently only supports CPU with MKL-DNN backend')
             model = quantize_net(model, calib_data=test_data, quantized_dtype=args.quantized_dtype, calib_mode=args.calib_mode, 

@@ -146,7 +146,7 @@ class COCODetection(VisionDataset):
         img = mx.image.imread(img_path, 1)
         if self._transform is not None:
             return self._transform(img, label)
-        return img, np.array(label)
+        return img, np.array(label).copy()
 
     def _load_jsons(self):
         """Load all image paths and labels from JSON annotation files into buffer."""
@@ -248,7 +248,7 @@ class COCODetectionDALI(object):
             ltrb=True,
             shuffle_after_epoch=True)
 
-        self.decode = dali.ops.HostDecoder(device="cpu", output_type=dali.types.RGB)
+        self.decode = dali.ops.ImageDecoder(device="cpu", output_type=dali.types.RGB)
 
         # We need to build the COCOReader ops to parse the annotations
         # and have acces to the dataset size.

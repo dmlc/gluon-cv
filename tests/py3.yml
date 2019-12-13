@@ -16,9 +16,10 @@ dependencies:
   - tqdm
   - pillow
   - pip:
-    - mxnet-cu92mkl==1.6.0b20190808
+    - mxnet-cu100mkl==1.6.0b20191010
     - coverage-badge
     - awscli
     - nose-timer
     - opencv-python
     - git+https://github.com/zhanghang1989/detail-api.git#subdirectory=PythonAPI
+    - portalocker

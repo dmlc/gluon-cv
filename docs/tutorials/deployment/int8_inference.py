@@ -4,7 +4,7 @@
 This is a tutorial which illustrates how to use quantized GluonCV
 models for inference on Intel Xeon Processors to gain higher performance.
 
-The following example requires ``GluonCV>=0.4`` and ``MXNet-mkl>=1.6.0b20190829``. Please follow `our installation guide <../../index.html#installation>`__ to install or upgrade GluonCV and nightly build of MXNet if necessary.
+The following example requires ``GluonCV>=0.5`` and ``MXNet-mkl>=1.6.0b20191010``. Please follow `our installation guide <../../index.html#installation>`__ to install or upgrade GluonCV and nightly build of MXNet if necessary.
 
 Introduction
 ------------
@@ -12,52 +12,70 @@ Introduction
 GluonCV delivered some quantized models to improve the performance and reduce the deployment costs for the computer vision inference tasks. In real production, there are two main benefits of lower precision (INT8). First, the computation can be accelerated by the low precision instruction, like Intel Vector Neural Network Instruction (VNNI). Second, lower precision data type would save the memory bandwidth and allow for better cache locality and save the power. The new feature can get up to 4X performance speedup in the latest `AWS EC2 C5 instances <https://aws.amazon.com/blogs/aws/now-available-new-c5-instance-sizes-and-bare-metal-instances/>`_ under the `Intel Deep Learning Boost (VNNI) <https://www.intel.ai/intel-deep-learning-boost/>`_ enabled hardware with less than 0.5% accuracy drop.
 
 Please checkout `verify_pretrained.py <https://raw.githubusercontent.com/dmlc/gluon-cv/master/scripts/classification/imagenet/verify_pretrained.py>`_ for imagenet inference,
-`eval_ssd.py <https://raw.githubusercontent.com/dmlc/gluon-cv/master/scripts/detection/ssd/eval_ssd.py>`_ for SSD inference, and `test.py <https://raw.githubusercontent.com/dmlc/gluon-cv/master/scripts/segmentation/test.py>`_ 
-for segmentation inference.
+`eval_ssd.py <https://raw.githubusercontent.com/dmlc/gluon-cv/master/scripts/detection/ssd/eval_ssd.py>`_ for SSD inference, `test.py <https://raw.githubusercontent.com/dmlc/gluon-cv/master/scripts/segmentation/test.py>`_ 
+for segmentation inference, `validate.py <https://raw.githubusercontent.com/dmlc/gluon-cv/master/scripts/pose/simple_pose/validate.py>`_ for pose estimation inference, and `test_recognizer.py <https://github.com/dmlc/gluon-cv/blob/master/scripts/action-recognition/test_recognizer.py>`_ for video action recognition.
 
 Performance
 -----------
 
 GluonCV supports some quantized classification models, detection models and segmentation models.
 For the throughput, the target is to achieve the maximum machine efficiency to combine the inference requests together and get the results by one iteration. From the bar-chart, it is clearly that the fusion and quantization approach improved the throughput from 2.68X to 7.24X for selected models.
-Below CPU performance is collected with dummy input from AWS EC2 C5.12xlarge instance with 24 physical cores.
+Below CPU performance is collected with dummy input from Intel(R) VNNI enabled AWS EC2 C5.12xlarge instance with 24 physical cores.
 
-.. figure:: https://user-images.githubusercontent.com/34727741/64021961-a9105280-cb67-11e9-989e-76a29e58530d.png
+.. figure:: https://user-images.githubusercontent.com/34727741/67351790-ecdc7280-f580-11e9-8b44-1b4548cb6031.png
    :alt: Gluon Quantization Performance
 
-.. table::
-   :widths: 45 5 5 10 10 5 10 10
 
-+-----------------------+----------+------------+------------------+------------------+---------+-----------------+-----------------+
-|  Model                | Dataset  | Batch Size | C5.12xlarge FP32 | C5.12xlarge INT8 | Speedup | FP32 Accuracy   | INT8 Accuracy   |
-+=======================+==========+============+==================+==================+=========+=================+=================+
-| ResNet50 V1           | ImageNet | 128        | 191.17           | 1384.4           | 7.24    | 77.21%/93.55%   | 76.08%/93.04%   |
-+-----------------------+----------+------------+------------------+------------------+---------+-----------------+-----------------+
-| MobileNet 1.0         | ImageNet | 128        | 565.21           | 3956.45          | 7.00    | 73.28%/91.22%   | 71.94%/90.47%   |
-+-----------------------+----------+------------+------------------+------------------+---------+-----------------+-----------------+
-| SSD-VGG 300*          | VOC      | 224        | 19.05            | 113.62           | 5.96    | 77.4            | 77.38           |
-+-----------------------+----------+------------+------------------+------------------+---------+-----------------+-----------------+
-| SSD-VGG 512*          | VOC      | 224        | 6.78             | 37.62            | 5.55    | 78.41           | 78.38           |
-+-----------------------+----------+------------+------------------+------------------+---------+-----------------+-----------------+
-| SSD-resnet50_v1 512*  | VOC      | 224        | 28.59            | 143.7            | 5.03    | 80.21           | 80.25           |
-+-----------------------+----------+------------+------------------+------------------+---------+-----------------+-----------------+
-| SSD-mobilenet1.0 512* | VOC      | 224        | 65.97            | 212.59           | 3.22    | 75.42           | 74.70           |
-+-----------------------+----------+------------+------------------+------------------+---------+-----------------+-----------------+
-| FCN_resnet101         | VOC      | 1          | 5.46             | 26.33            | 4.82    | 97.97%          | 98.00%          |
-+-----------------------+----------+------------+------------------+------------------+---------+-----------------+-----------------+
-| PSP_resnet101         | VOC      | 1          | 3.96             | 10.63            | 2.68    | 98.46%          | 98.45%          |
-+-----------------------+----------+------------+------------------+------------------+---------+-----------------+-----------------+
-| Deeplab_resnet101     | VOC      | 1          | 4.17             | 13.35            | 3.20    | 98.36%          | 98.34%          |
-+-----------------------+----------+------------+------------------+------------------+---------+-----------------+-----------------+
-| FCN_resnet101         | COCO     | 1          | 5.19             | 26.22            | 5.05    | 91.28%          | 90.96%          |
-+-----------------------+----------+------------+------------------+------------------+---------+-----------------+-----------------+
-| PSP_resnet101         | COCO     | 1          | 3.94             | 10.60            | 2.69    | 91.82%          | 91.88%          |
-+-----------------------+----------+------------+------------------+------------------+---------+-----------------+-----------------+
-| Deeplab_resnet101     | COCO     | 1          | 4.15             | 13.56            | 3.27    | 91.86%          | 91.98%          |
-+-----------------------+----------+------------+------------------+------------------+---------+-----------------+-----------------+
++-----------------------------+----------------+------------+---------------------+-----------------+-----------------+
+|  Model                      | Dataset        | Batch Size | Speedup (INT8/FP32) | FP32 Accuracy   | INT8 Accuracy   |
++=============================+================+============+=====================+=================+=================+
+| ResNet50 V1                 | ImageNet       | 128        | 7.24                | 77.21%/93.55%   | 76.08%/93.04%   |
++-----------------------------+----------------+------------+---------------------+-----------------+-----------------+
+| MobileNet 1.0               | ImageNet       | 128        | 7.00                | 73.28%/91.22%   | 71.94%/90.47%   |
++-----------------------------+----------------+------------+---------------------+-----------------+-----------------+
+| SSD-VGG 300*                | VOC            | 224        | 5.96                | 77.4            | 77.38           |
++-----------------------------+----------------+------------+---------------------+-----------------+-----------------+
+| SSD-VGG 512*                | VOC            | 224        | 5.55                | 78.41           | 78.38           |
++-----------------------------+----------------+------------+---------------------+-----------------+-----------------+
+| SSD-resnet50_v1 512*        | VOC            | 224        | 5.03                | 80.21           | 80.25           |
++-----------------------------+----------------+------------+---------------------+-----------------+-----------------+
+| SSD-mobilenet1.0 512*       | VOC            | 224        | 3.22                | 75.42           | 74.70           |
++-----------------------------+----------------+------------+---------------------+-----------------+-----------------+
+| FCN_resnet101               | VOC            | 1          | 4.82                | 97.97%          | 98.00%          |
++-----------------------------+----------------+------------+---------------------+-----------------+-----------------+
+| PSP_resnet101               | VOC            | 1          | 2.68                | 98.46%          | 98.45%          |
++-----------------------------+----------------+------------+---------------------+-----------------+-----------------+
+| Deeplab_resnet101           | VOC            | 1          | 3.20                | 98.36%          | 98.34%          |
++-----------------------------+----------------+------------+---------------------+-----------------+-----------------+
+| FCN_resnet101               | COCO           | 1          | 5.05                | 91.28%          | 90.96%          |
++-----------------------------+----------------+------------+---------------------+-----------------+-----------------+
+| PSP_resnet101               | COCO           | 1          | 2.69                | 91.82%          | 91.88%          |
++-----------------------------+----------------+------------+---------------------+-----------------+-----------------+
+| Deeplab_resnet101           | COCO           | 1          | 3.27                | 91.86%          | 91.98%          |
++-----------------------------+----------------+------------+---------------------+-----------------+-----------------+
+| simple_pose_resnet18_v1b    | COCO Keypoint  | 128        | 2.55                | 66.3            | 65.9            |
++-----------------------------+----------------+------------+---------------------+-----------------+-----------------+
+| simple_pose_resnet50_v1b    | COCO Keypoint  | 128        | 3.50                | 71.0            | 70.6            |
++-----------------------------+----------------+------------+---------------------+-----------------+-----------------+
+| simple_pose_resnet50_v1d    | COCO Keypoint  | 128        | 5.89                | 71.6            | 71.4            |
++-----------------------------+----------------+------------+---------------------+-----------------+-----------------+
+| simple_pose_resnet101_v1b   | COCO Keypoint  | 128        | 4.07                | 72.4            | 72.2            |
++-----------------------------+----------------+------------+---------------------+-----------------+-----------------+
+| simple_pose_resnet101_v1d   | COCO Keypoint  | 128        | 5.97                | 73.0            | 72.7            |
++-----------------------------+----------------+------------+---------------------+-----------------+-----------------+
+| vgg16_ucf101                | UCF101         | 64         | 4.46                | 81.86           | 81.41           |
++-----------------------------+----------------+------------+---------------------+-----------------+-----------------+
+| inceptionv3_ucf101          | UCF101         | 64         | 5.16                | 86.92           | 86.55           |
++-----------------------------+----------------+------------+---------------------+-----------------+-----------------+
+| resnet18_v1b_kinetics400    | Kinetics400    | 64         | 5.24                | 63.29           | 63.14           |
++-----------------------------+----------------+------------+---------------------+-----------------+-----------------+
+| resnet50_v1b_kinetics400    | Kinetics400    | 64         | 6.78                | 68.08           | 68.15           |
++-----------------------------+----------------+------------+---------------------+-----------------+-----------------+
+| inceptionv3_kinetics400     | Kinetics400    | 64         | 5.29                | 67.93           | 67.92           |
++-----------------------------+----------------+------------+---------------------+-----------------+-----------------+
 
-
-Quantized SSD models are evaluated with ``nms_thresh=0.45``, ``nms_topk=200``. For segmentation models, the accuracy metric is pixAcc.
+Quantized SSD models are evaluated with ``nms_thresh=0.45``, ``nms_topk=200``. For segmentation models, the accuracy metric is pixAcc, and for pose-estimation models, the accuracy metric is OKS AP w/o flip.
+Quantized 2D video action recognition models are calibrated with ``num-segments=3`` (7 is for resnet-based models).
 
 Demo usage for SSD
 ------------------

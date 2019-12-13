@@ -27,8 +27,8 @@ stage("Unit Test") {
           sh """#!/bin/bash
           # old pip packages won't be cleaned: https://github.com/conda/conda/issues/5887
           # remove and create new env instead
+          conda env remove -n gluon_cv_py2_test -y
           set -ex
-          conda env remove -n gluon_cv_py2_test
           conda env create -n gluon_cv_py2_test -f tests/py2.yml
           conda env update -n gluon_cv_py2_test -f tests/py2.yml --prune
           conda activate gluon_cv_py2_test
@@ -38,7 +38,7 @@ stage("Unit Test") {
           # from https://stackoverflow.com/questions/19548957/can-i-force-pip-to-reinstall-the-current-version
           pip install --upgrade --force-reinstall --no-deps .
           env
-          export LD_LIBRARY_PATH=/usr/local/cuda-9.2/lib64
+          export LD_LIBRARY_PATH=/usr/local/cuda-10.0/lib64
           export MPLBACKEND=Agg
           export MXNET_CUDNN_AUTOTUNE_DEFAULT=0
           nosetests --with-timer --timer-ok 5 --timer-warning 20 -x --with-coverage --cover-package gluoncv -v tests/unittests
@@ -54,9 +54,9 @@ stage("Unit Test") {
           checkout scm
           VISIBLE_GPU=env.EXECUTOR_NUMBER.toInteger() % 8
           sh """#!/bin/bash
+          conda env remove -n gluon_cv_py3_test -y
           set -ex
           # remove and create new env instead
-          conda env remove -n gluon_cv_py3_test
           conda env create -n gluon_cv_py3_test -f tests/py3.yml
           conda env update -n gluon_cv_py3_test -f tests/py3.yml --prune
           conda activate gluon_cv_py3_test
@@ -66,7 +66,7 @@ stage("Unit Test") {
           # from https://stackoverflow.com/questions/19548957/can-i-force-pip-to-reinstall-the-current-version
           pip install --upgrade --force-reinstall --no-deps .
           env
-          export LD_LIBRARY_PATH=/usr/local/cuda-9.2/lib64
+          export LD_LIBRARY_PATH=/usr/local/cuda-10.0/lib64
           export MPLBACKEND=Agg
           export MXNET_CUDNN_AUTOTUNE_DEFAULT=0
           nosetests --with-timer --timer-ok 5 --timer-warning 20 -x --with-coverage --cover-package gluoncv -v tests/unittests
@@ -92,17 +92,17 @@ stage("Build Docs") {
     ws('workspace/gluon-cv-docs') {
       timeout(time: max_time, unit: 'MINUTES') {
         checkout scm
-        VISIBLE_GPU=env.EXECUTOR_NUMBER.toInteger() % 4
+        VISIBLE_GPU=env.EXECUTOR_NUMBER.toInteger() % 8
         sh """#!/bin/bash
-        # conda env remove -n gluon_vision_docs -y
+        conda env remove -n gluon_vision_docs -y
         set -ex
-        export CUDA_VISIBLE_DEVICES=${VISIBLE_GPU}
-        # conda env create -n gluon_vision_docs -f docs/build.yml
+        conda env create -n gluon_vision_docs -f docs/build.yml
         conda env update -n gluon_vision_docs -f docs/build.yml --prune
         conda activate gluon_vision_docs
         export PYTHONPATH=\${PWD}
+        export CUDA_VISIBLE_DEVICES=${VISIBLE_GPU}
         env
-        export LD_LIBRARY_PATH=/usr/local/cuda-9.2/lib64
+        export LD_LIBRARY_PATH=/usr/local/cuda-10.0/lib64
         git submodule update --init --recursive
         git clean -fx
         cd docs && make clean && make html
