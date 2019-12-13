@@ -97,5 +97,5 @@ def purge_model_nan(net, nan=0.0, posinf=0.0, neginf=0.0, verbose=False):
             if verbose:
                 print(k, ': Overwritten {} values...'.format(
                     np_data.size - np.isfinite(np_data).sum()))
-            new_data = np.nan_to_num(np_data, nan=nan, posinf=posinf, neginf=posinf)
+            new_data = np.nan_to_num(np_data, nan=nan, posinf=posinf, neginf=neginf)
             v.set_data(new_data)
