@@ -559,6 +559,10 @@ def test_calib_models():
     x = mx.random.uniform(shape=(1, 3, 299, 299), ctx=ctx)
     _calib_model_list(model_list, ctx, x)
 
+    model_list = ['yolo3_darknet53_voc', 'yolo3_darknet53_coco',
+                  'yolo3_mobilenet1.0_voc', 'yolo3_mobilenet1.0_coco']
+    x = mx.random.uniform(shape=(1, 3, 416, 416), ctx=ctx)
+    _calib_model_list(model_list, ctx, x)
 
 @with_cpu(0)
 def test_quantized_segmentation_models():
