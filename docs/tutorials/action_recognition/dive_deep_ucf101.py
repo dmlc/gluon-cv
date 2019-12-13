@@ -96,7 +96,7 @@ transform_train = transforms.Compose([
 # training datasets.
 
 # Batch Size for Each GPU
-per_device_batch_size = 25
+per_device_batch_size = 5
 # Number of data loader workers
 num_workers = 8
 # Calculate effective total batch size
@@ -149,7 +149,7 @@ train_history = TrainingHistory(['training-acc'])
 # Following is the script.
 #
 # .. note::
-#   In order to finish the tutorial quickly, we only train for 3 epochs on the tiny subset.
+#   In order to finish the tutorial quickly, we only train for 3 epochs, and 100 iterations per epoch.
 #   In your experiments, we recommend setting ``epochs=80`` for the full UCF101 dataset.
 
 epochs = 3
@@ -190,6 +190,9 @@ for epoch in range(epochs):
         # Update metrics
         train_loss += sum([l.mean().asscalar() for l in loss])
         train_metric.update(label, output)
+
+        if i == 100:
+            break
 
     name, acc = train_metric.get()
 

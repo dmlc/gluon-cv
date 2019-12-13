@@ -479,14 +479,44 @@ def test_action_recognition_inceptionv3_models():
     _test_model_list(models, ctx, x, pretrained=False, pretrained_base=True)
 
 @try_gpu(0)
+def test_action_recognition_resnet_models():
+    ctx = mx.context.current_context()
+    models = ['resnet18_v1b_kinetics400', 'resnet34_v1b_kinetics400', 'resnet50_v1b_kinetics400',
+              'resnet101_v1b_kinetics400', 'resnet152_v1b_kinetics400', 'resnet50_v1b_sthsthv2',
+              'resnet50_v1b_hmdb51']
+
+    # 224x224
+    x = mx.random.uniform(shape=(2, 3, 224, 224), ctx=ctx)
+    _test_model_list(models, ctx, x, pretrained=True, pretrained_base=True)
+    _test_model_list(models, ctx, x, pretrained=False, pretrained_base=False)
+    _test_model_list(models, ctx, x, pretrained=False, pretrained_base=True)
+
+@try_gpu(0)
 def test_action_recognition_i3d_models():
     ctx = mx.context.current_context()
     models = ['i3d_resnet50_v1_kinetics400', 'i3d_resnet101_v1_kinetics400', 'i3d_inceptionv1_kinetics400',
               'i3d_inceptionv3_kinetics400', 'i3d_resnet50_v1_sthsthv2', 'i3d_resnet50_v1_hmdb51',
-              'i3d_resnet50_v1_ucf101']
+              'i3d_resnet50_v1_ucf101', 'i3d_nl5_resnet50_v1_kinetics400', 'i3d_nl10_resnet50_v1_kinetics400',
+              'i3d_nl5_resnet101_v1_kinetics400', 'i3d_nl10_resnet101_v1_kinetics400']
 
     # 224x224
     x = mx.random.uniform(shape=(2, 3, 32, 224, 224), ctx=ctx)
+    _test_model_list(models, ctx, x, pretrained=True, pretrained_base=True)
+    _test_model_list(models, ctx, x, pretrained=False, pretrained_base=False)
+    _test_model_list(models, ctx, x, pretrained=False, pretrained_base=True)
+
+@try_gpu(0)
+def test_action_recognition_slowfast_models():
+    ctx = mx.context.current_context()
+
+    models = ['slowfast_4x16_resnet50_kinetics400']
+    x = mx.random.uniform(shape=(2, 3, 36, 224, 224), ctx=ctx)
+    _test_model_list(models, ctx, x, pretrained=True, pretrained_base=True)
+    _test_model_list(models, ctx, x, pretrained=False, pretrained_base=False)
+    _test_model_list(models, ctx, x, pretrained=False, pretrained_base=True)
+
+    models = ['slowfast_8x8_resnet50_kinetics400']
+    x = mx.random.uniform(shape=(2, 3, 40, 224, 224), ctx=ctx)
     _test_model_list(models, ctx, x, pretrained=True, pretrained_base=True)
     _test_model_list(models, ctx, x, pretrained=False, pretrained_base=False)
     _test_model_list(models, ctx, x, pretrained=False, pretrained_base=True)
