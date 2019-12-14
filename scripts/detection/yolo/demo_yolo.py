@@ -3,6 +3,7 @@ import os
 import argparse
 import mxnet as mx
 import gluoncv as gcv
+gcv.utils.check_version('0.6.0')
 from gluoncv.data.transforms import presets
 from matplotlib import pyplot as plt
 
@@ -42,7 +43,7 @@ if __name__ == '__main__':
         net.load_parameters(args.pretrained)
     net.set_nms(0.45, 200)
     net.collect_params().reset_ctx(ctx = ctx)
-   
+
     for image in image_list:
         ax = None
         x, img = presets.yolo.load_test(image, short=512)

@@ -12,6 +12,7 @@ from mxnet import gluon
 from mxnet import autograd
 from mxnet.contrib import amp
 import gluoncv as gcv
+gcv.utils.check_version('0.6.0')
 from gluoncv import data as gdata
 from gluoncv import utils as gutils
 from gluoncv.model_zoo import get_model

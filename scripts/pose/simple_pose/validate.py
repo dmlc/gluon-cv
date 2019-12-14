@@ -8,6 +8,8 @@ from mxnet.gluon import nn
 from mxnet.gluon.data.vision import transforms
 from mxnet.contrib.quantization import *
 
+import gluoncv as gcv
+gcv.utils.check_version('0.6.0')
 from gluoncv.data import mscoco
 from gluoncv.model_zoo import get_model
 from gluoncv.utils import makedirs

@@ -12,6 +12,7 @@ from mxnet.gluon.data.vision import transforms
 from mxnet.contrib.quantization import *
 
 import gluoncv
+gluoncv.utils.check_version('0.6.0')
 from gluoncv.model_zoo.segbase import *
 from gluoncv.model_zoo import get_model
 from gluoncv.data import get_segmentation_dataset, ms_batchify_fn
@@ -38,7 +39,7 @@ def parse_args():
                         help='val, testval')
     parser.add_argument('--dataset', type=str, default='pascal_voc',
                         help='dataset used for validation [pascal_voc, pascal_aug, coco, ade20k]')
-    parser.add_argument('--quantized', action='store_true', 
+    parser.add_argument('--quantized', action='store_true',
                         help='whether to use int8 pretrained  model')
     parser.add_argument('--batch-size', type=int, default=32)
     parser.add_argument('--num-iterations', type=int, default=100,
@@ -68,7 +69,7 @@ def parse_args():
                         help='quantize model')
     parser.add_argument('--num-calib-batches', type=int, default=5,
                         help='number of batches for calibration')
-    parser.add_argument('--quantized-dtype', type=str, default='auto', 
+    parser.add_argument('--quantized-dtype', type=str, default='auto',
                         choices=['auto', 'int8', 'uint8'],
                         help='quantization destination data type for input data')
     parser.add_argument('--calib-mode', type=str, default='entropy',
@@ -86,7 +87,7 @@ def parse_args():
                              ' inference dataset.')
 
     args = parser.parse_args()
-    
+
     args.ctx = [mx.cpu(0)]
     args.ctx = [mx.gpu(i) for i in range(args.ngpus)] if args.ngpus > 0 else args.ctx
 
@@ -94,7 +95,7 @@ def parse_args():
         else mx.gluon.nn.BatchNorm
     args.norm_kwargs = {'num_devices': args.ngpus} if args.syncbn else {}
     return args
-    
+
 
 def test(model, args, input_transform):
     # output folder
@@ -278,7 +279,7 @@ if __name__ == "__main__":
         test_data = gluon.data.DataLoader(
                 testset, args.batch_size, batchify_fn=batchify_fn, last_batch='rollover',
                 shuffle=False, num_workers=args.workers)
-        
+
         # calibration
         if not args.quantized:
             assert args.eval and args.mode == 'val', "Only val dataset can used for calibration."
@@ -286,7 +287,7 @@ if __name__ == "__main__":
             exclude_match_layer = []
             if args.ngpus > 0:
                 raise ValueError('currently only supports CPU with MKL-DNN backend')
-            model = quantize_net(model, calib_data=test_data, quantized_dtype=args.quantized_dtype, calib_mode=args.calib_mode, 
+            model = quantize_net(model, calib_data=test_data, quantized_dtype=args.quantized_dtype, calib_mode=args.calib_mode,
                                  exclude_layers=exclude_sym_layer, num_calib_examples=args.batch_size * args.num_calib_batches,
                                  exclude_layers_match=exclude_match_layer, ctx=args.ctx[0], logger=logger)
             dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -297,9 +298,9 @@ if __name__ == "__main__":
             logger.info('Saving quantized model at %s' % dst_dir)
             model.export(prefix, epoch=0)
             sys.exit()
-    
+
     # validation
     if '_int8' in model_prefix:
         test_quantization(model, args, test_data, size, testset.num_class, testset.pred_offset)
     else:
-        test(model, args, input_transform)     
+        test(model, args, input_transform)

@@ -15,6 +15,7 @@ from tqdm import tqdm
 from mxnet import nd
 from mxnet import gluon
 import gluoncv as gcv
+gcv.utils.check_version('0.6.0')
 from gluoncv import data as gdata
 from gluoncv.data import batchify
 from gluoncv.data.transforms.presets.rcnn import FasterRCNNDefaultValTransform

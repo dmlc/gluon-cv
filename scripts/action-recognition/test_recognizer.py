@@ -5,6 +5,7 @@ import numpy as np
 import mxnet as mx
 import mxnet.ndarray as F
 import gluoncv as gcv
+gcv.utils.check_version('0.6.0')
 from mxnet import gluon, nd, gpu, init, context
 from mxnet import autograd as ag
 from mxnet.gluon import nn

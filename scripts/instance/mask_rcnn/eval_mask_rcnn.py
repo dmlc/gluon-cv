@@ -13,6 +13,7 @@ import numpy as np
 import mxnet as mx
 from tqdm import tqdm
 import gluoncv as gcv
+gcv.utils.check_version('0.6.0')
 from gluoncv import data as gdata
 from gluoncv.data import batchify
 from gluoncv.data.transforms.presets.rcnn import MaskRCNNDefaultValTransform

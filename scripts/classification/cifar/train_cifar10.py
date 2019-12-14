@@ -11,6 +11,8 @@ from mxnet import autograd as ag
 from mxnet.gluon import nn
 from mxnet.gluon.data.vision import transforms
 
+import gluoncv as gcv
+gcv.utils.check_version('0.6.0')
 from gluoncv.model_zoo import get_model
 from gluoncv.utils import makedirs, TrainingHistory
 from gluoncv.data import transforms as gcv_transforms
@@ -58,7 +60,7 @@ def parse_args():
 
 def main():
     opt = parse_args()
-    
+
     batch_size = opt.batch_size
     classes = 10
 

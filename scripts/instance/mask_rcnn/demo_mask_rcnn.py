@@ -3,6 +3,7 @@ import os
 import argparse
 import mxnet as mx
 import gluoncv as gcv
+gcv.utils.check_version('0.6.0')
 from gluoncv.data.transforms import presets
 from matplotlib import pyplot as plt
 

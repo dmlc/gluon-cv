@@ -3,6 +3,8 @@ import sys
 from tqdm import tqdm
 
 import mxnet as mx
+import gluoncv as gcv
+gcv.utils.check_version('0.6.0')
 from gluoncv.data import mscoco
 from gluoncv.data.transforms.pose import (flip_heatmap,
                                           heatmap_to_coord_alpha_pose)

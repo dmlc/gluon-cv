@@ -8,6 +8,8 @@ from mxnet.gluon import nn
 from mxnet.gluon.data.vision import transforms
 
 from networks import resnet18, resnet34, resnet50
+import gluoncv as gcv
+gcv.utils.check_version('0.6.0')
 from gluoncv.data.market1501.data_read import ImageTxtDataset
 
 import time, os, sys
@@ -84,7 +86,7 @@ def compute_mAP(index, good_index, junk_index):
     mask = np.in1d(index, good_index)
     rows_good = np.argwhere(mask==True)
     rows_good = rows_good.flatten()
-    
+
     cmc[rows_good[0]:] = 1
     for i in range(ngood):
         d_recall = 1.0/ngood
@@ -109,7 +111,7 @@ if __name__ == '__main__':
 
     test_set = [(osp.join(data_dir,'bounding_box_test',line), int(line.split('_')[0])) for line in os.listdir(data_dir+'bounding_box_test') if "jpg" in line and "-1" not in line]
     query_set = [(osp.join(data_dir,'query',line), int(line.split('_')[0])) for line in os.listdir(data_dir+'query') if "jpg" in line]
-    
+
     test_cam, test_label = get_id(test_set)
     query_cam, query_label = get_id(query_set)
 
@@ -144,7 +146,7 @@ if __name__ == '__main__':
 
         good_index = np.setdiff1d(query_index, camera_index, assume_unique=True)
         junk_index = np.intersect1d(query_index, camera_index)
-    
+
         ap_tmp, CMC_tmp = compute_mAP(index, good_index, junk_index)
         CMC = CMC + CMC_tmp
         ap += ap_tmp
