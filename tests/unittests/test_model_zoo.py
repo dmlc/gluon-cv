@@ -71,11 +71,12 @@ def _calib_model_list(model_list, ctx, x, pretrained=True, **kwargs):
         random_label = mx.random.uniform(shape=(x.shape[0],1))
         dataset = mx.gluon.data.dataset.ArrayDataset(x, random_label)
         calib_data = mx.gluon.data.DataLoader(dataset, batch_size=1)
+        dummy_logger = logging.getLogger('dummy')
         net = quantize_net(net, quantized_dtype='auto',
                            exclude_layers=None,
                            exclude_layers_match=exclude_layers_match,
                            calib_data=calib_data, calib_mode='naive',
-                           num_calib_examples=1, ctx=ctx)
+                           num_calib_examples=1, ctx=ctx, logger=dummy_logger)
         net(x)
         mx.nd.waitall()
 
