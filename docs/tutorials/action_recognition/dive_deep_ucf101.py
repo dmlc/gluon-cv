@@ -21,7 +21,7 @@ Start Training Now
         python train_recognizer.py --model vgg16_ucf101 --num-classes 101 --num-gpus 8 --lr-mode step --lr 0.001 --lr-decay 0.1 --lr-decay-epoch 30,60,80 --num-epochs 80
 
         # Finetune a pretrained VGG16 model using temporal segment network.
-        python train_recognizer.py --model vgg16_ucf101 --num-classes 101 --num-gpus 8 --num-segments 3 --use-tsn --lr-mode step --lr 0.001 --lr-decay 0.1 --lr-decay-epoch 30,60,80 --num-epochs 80
+        python train_recognizer.py --model vgg16_ucf101 --num-classes 101 --num-gpus 8 --num-segments 3 --lr-mode step --lr 0.001 --lr-decay 0.1 --lr-decay-epoch 30,60,80 --num-epochs 80
 
     For more training command options, please run ``python train_recognizer.py -h``
     Please checkout the `model_zoo <../model_zoo/index.html#action_recognition>`_ for training commands of reproducing the pretrained model.
@@ -46,7 +46,7 @@ from mxnet.gluon import nn
 from mxnet.gluon.data.vision import transforms
 
 from gluoncv.data.transforms import video
-from gluoncv.data import ucf101
+from gluoncv.data import UCF101
 from gluoncv.model_zoo import get_model
 from gluoncv.utils import makedirs, LRSequential, LRScheduler, split_and_load, TrainingHistory
 
@@ -102,9 +102,8 @@ num_workers = 8
 # Calculate effective total batch size
 batch_size = per_device_batch_size * num_gpus
 
-# Set train=True for training data. Here we only use a subset of UCF101 for demonstration purpose.
-# The subset has 101 training samples, one sample per class.
-train_dataset = ucf101.classification.UCF101(train=True, num_segments=3, transform=transform_train)
+# Set train=True for training the model.
+train_dataset = UCF101(train=True, num_segments=3, transform=transform_train)
 print('Load %d training samples.' % len(train_dataset))
 train_data = gluon.data.DataLoader(train_dataset, batch_size=batch_size,
                                    shuffle=True, num_workers=num_workers)
