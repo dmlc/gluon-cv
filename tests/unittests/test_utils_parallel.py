@@ -39,6 +39,7 @@ def test_data_parallel():
         for i in range(iters):
             x = mx.random.uniform(shape=(8, 1, 28, 28))
             y = net(x)
+        nd.waitall()
 
     test_net_sync(net, criterion, True, 1)
     test_net_sync(net, criterion, True, 2)

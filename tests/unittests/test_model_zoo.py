@@ -24,7 +24,7 @@ import logging
 
 import mxnet as mx
 from mxnet.contrib.quantization import *
-from common import try_gpu, with_cpu
+from common import try_gpu, with_cpu, CapturingStdout
 
 import gluoncv as gcv
 
@@ -72,13 +72,12 @@ def _calib_model_list(model_list, ctx, x, pretrained=True, **kwargs):
         random_label = mx.random.uniform(shape=(x.shape[0],1))
         dataset = mx.gluon.data.dataset.ArrayDataset(x, random_label)
         calib_data = mx.gluon.data.DataLoader(dataset, batch_size=1)
-        dummy_logger = logging.getLogger('dummy')
-        dummy_logger.setLevel(logging.ERROR)
-        net = quantize_net(net, quantized_dtype='auto',
-                           exclude_layers=None,
-                           exclude_layers_match=exclude_layers_match,
-                           calib_data=calib_data, calib_mode='naive',
-                           num_calib_examples=1, ctx=ctx, logger=dummy_logger)
+        with CapturingStdout() as cout:
+            net = quantize_net(net, quantized_dtype='auto',
+                               exclude_layers=None,
+                               exclude_layers_match=exclude_layers_match,
+                               calib_data=calib_data, calib_mode='naive',
+                               num_calib_examples=1, ctx=ctx)
         net(x)
         mx.nd.waitall()
 
