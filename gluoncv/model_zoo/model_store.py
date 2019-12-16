@@ -252,7 +252,10 @@ def get_model_file(name, tag=None, root=os.path.join('~', '.mxnet', 'models')):
             zf.extractall(root)
         os.remove(zip_file_path)
         # Make sure we write the model file on networked filesystems
-        os.sync()
+        try:
+            os.sync()
+        except:
+            pass
         if check_sha1(params_path, sha1_hash):
             return params_path
         else:
