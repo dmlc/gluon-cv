@@ -254,7 +254,7 @@ def get_model_file(name, tag=None, root=os.path.join('~', '.mxnet', 'models')):
         # Make sure we write the model file on networked filesystems
         try:
             os.sync()
-        except:
+        except AttributeError:
             pass
         if check_sha1(params_path, sha1_hash):
             return params_path
