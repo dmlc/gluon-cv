@@ -26,7 +26,7 @@ _model_sha1 = {name: checksum for checksum, name in [
     ('0803818513599fa1329524ee3607b708b4a4630f', 'mobilenetv2_0.5'),
     ('9b1d2cc38fed4cd171a7f7a0d17fe1a905573887', 'mobilenetv2_0.25'),
     ('eaa44578554ddffaf2a2630ced9093181ff79688', 'mobilenetv3_large'),
-    ('33c100a740c0a278ec06e8640b19f52b744d1f11', 'mobilenetv3_small'),
+    ('10430433698d18f49991e4a366c9fce8f9286298', 'mobilenetv3_small'),
     ('a0666292f0a30ff61f857b0b66efc0228eb6a54b', 'resnet18_v1'),
     ('48216ba99a8b1005d75c0f3a0c422301a0473233', 'resnet34_v1'),
     ('cc729d95031ca98cf2ff362eb57dee4d9994e4b2', 'resnet50_v1'),
@@ -134,7 +134,7 @@ _model_sha1 = {name: checksum for checksum, name in [
     ('b399bac75ebbd1b9d04a16906bddc64f1e33496b', 'mobile_pose_mobilenet1.0'),
     ('4acdc130ebee695b1181fb7e4eee8f2c4d91a614', 'mobile_pose_mobilenetv2_1.0'),
     ('1ca004dc5ab2bd0e10d782734d3efbefff23180c', 'mobile_pose_mobilenetv3_large'),
-    ('b1b148a9650cd5dbed07e3177436185fec1da5b7', 'mobile_pose_mobilenetv3_small'),
+    ('c2a11fae8970c2c2e79e2b77a4c4d62e3d3e054f', 'mobile_pose_mobilenetv3_small'),
     ('54f7742b1f8939ef8e59ede3469bfa5eb6e247fa', 'resnet18_v1b_2.6x'),
     ('a230c33f7966ab761597328686b28d0545e4ea30', 'resnet50_v1d_1.8x'),
     ('0d3e69bb033d1375c3734419bbc653c3a474ea53', 'resnet50_v1d_3.6x'),
@@ -252,7 +252,10 @@ def get_model_file(name, tag=None, root=os.path.join('~', '.mxnet', 'models')):
             zf.extractall(root)
         os.remove(zip_file_path)
         # Make sure we write the model file on networked filesystems
-        os.sync()
+        try:
+            os.sync()
+        except AttributeError:
+            pass
         if check_sha1(params_path, sha1_hash):
             return params_path
         else:

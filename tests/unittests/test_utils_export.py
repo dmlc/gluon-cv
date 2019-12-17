@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 import numpy as np
+import mxnet as mx
 import gluoncv as gcv
 from gluoncv.model_zoo.model_store import pretrained_model_list
 from common import try_gpu
@@ -30,7 +31,9 @@ def test_export_model_zoo():
         if '_dcnv2' in model:
             continue
         try:
-            gcv.utils.export_block(model, gcv.model_zoo.get_model(model, pretrained=True), **kwargs)
+            gcv.utils.export_block(model, gcv.model_zoo.get_model(model, pretrained=True),
+                                   ctx=mx.context.current_context(), **kwargs)
+            mx.nd.waitall()
         except ValueError:
             # ignore non defined model name
             pass
