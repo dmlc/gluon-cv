@@ -156,7 +156,7 @@ class I3D_InceptionV3(HybridBlock):
     partial_bn : bool, default False
         Freeze all batch normalization layers during training except the first layer.
     """
-    def __init__(self, nclass=1000, pretrained_base=True,
+    def __init__(self, nclass=1000, pretrained=False, pretrained_base=True,
                  num_segments=1, num_crop=1,
                  dropout_ratio=0.5, init_std=0.01, partial_bn=False,
                  ctx=None, norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
@@ -210,7 +210,7 @@ class I3D_InceptionV3(HybridBlock):
             self.features.initialize(ctx=ctx)
             self.head.initialize(ctx=ctx)
 
-            if pretrained_base:
+            if pretrained_base and not pretrained:
                 inceptionv3_2d = inception_v3(pretrained=True)
                 weights2d = inceptionv3_2d.collect_params()
                 weights3d = self.collect_params()
@@ -292,6 +292,7 @@ def i3d_inceptionv3_kinetics400(nclass=400, pretrained=False, pretrained_base=Tr
 
     model = I3D_InceptionV3(nclass=nclass,
                             partial_bn=partial_bn,
+                            pretrained=pretrained,
                             pretrained_base=pretrained_base,
                             num_segments=num_segments,
                             num_crop=num_crop,

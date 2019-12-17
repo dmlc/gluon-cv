@@ -97,8 +97,10 @@ num_workers = 8
 # Calculate effective total batch size
 batch_size = per_device_batch_size * num_gpus
 
-# Set train=True for training the model. Here we set num_segments to 3 to enable TSN training.
-train_dataset = Kinetics400(train=True, transform=transform_train)
+# Set train=True for training the model.
+# ``new_length`` indicates the number of frames we use as input.
+# ``new_step`` indicates we skip one frame to sample the input data.
+train_dataset = Kinetics400(train=True, new_length=32, new_step=2, transform=transform_train)
 print('Load %d training samples.' % len(train_dataset))
 train_data = gluon.data.DataLoader(train_dataset, batch_size=batch_size,
                                    shuffle=True, num_workers=num_workers)
@@ -143,8 +145,8 @@ train_history = TrainingHistory(['training-acc'])
 # Following is the script.
 #
 # .. note::
-#   In order to finish the tutorial quickly, we only train for 3 epochs, and 100 iterations per epoch.
-#   In your experiments, we recommend setting ``epochs=100`` for the full Kinetics400 dataset.
+#   In order to finish the tutorial quickly, we only train for 3 epochs on a tiny subset of Kinetics400,
+#   and 100 iterations per epoch. In your experiments, we recommend setting ``epochs=100`` for the full Kinetics400 dataset.
 
 epochs = 3
 lr_decay_count = 0
@@ -199,7 +201,8 @@ for epoch in range(epochs):
 train_history.plot()
 
 ##############################################################################
-# You can `Start Training Now`_.
+# Due to the tiny subset, the accuracy number is quite low.
+# You can `Start Training Now`_ on the full Kinetics400 dataset.
 #
 # References
 # ----------

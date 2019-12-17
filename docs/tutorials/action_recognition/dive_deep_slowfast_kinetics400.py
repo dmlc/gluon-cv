@@ -97,8 +97,11 @@ num_workers = 8
 # Calculate effective total batch size
 batch_size = per_device_batch_size * num_gpus
 
-# Set train=True for training the model. Here we set num_segments to 3 to enable TSN training.
-train_dataset = Kinetics400(train=True, transform=transform_train)
+# Set train=True for training the model.
+# ``new_length`` indicates the number of frames we will cover.
+# For SlowFast network, we evenly sample 32 frames for the fast branch and 4 frames for the slow branch.
+# This leads to the actual input length of 36 video frames.
+train_dataset = Kinetics400(train=True, new_length=64, slowfast=True, transform=transform_train)
 print('Load %d training samples.' % len(train_dataset))
 train_data = gluon.data.DataLoader(train_dataset, batch_size=batch_size,
                                    shuffle=True, num_workers=num_workers)
@@ -119,13 +122,12 @@ lr_scheduler = LRSequential([
                 iters_per_epoch=num_batches,
                 step_factor=lr_decay, power=2)
 ])
-optimizer_params['lr_scheduler'] = lr_scheduler
-
 
 # Stochastic gradient descent
 optimizer = 'sgd'
 # Set parameters
 optimizer_params = {'learning_rate': 0.01, 'wd': 0.0001, 'momentum': 0.9}
+optimizer_params['lr_scheduler'] = lr_scheduler
 
 # Define our trainer for net
 trainer = gluon.Trainer(net.collect_params(), optimizer, optimizer_params)
@@ -153,21 +155,15 @@ train_history = TrainingHistory(['training-acc'])
 # Following is the script.
 #
 # .. note::
-#   In order to finish the tutorial quickly, we only train for 3 epochs, and 100 iterations per epoch.
-#   In your experiments, we recommend setting ``epochs=100`` for the full Kinetics400 dataset.
+#   In order to finish the tutorial quickly, we only train for 3 epochs on a tiny subset of Kinetics400,
+#   and 100 iterations per epoch. In your experiments, we recommend setting ``epochs=100`` for the full Kinetics400 dataset.
 
 epochs = 3
-lr_decay_count = 0
 
 for epoch in range(epochs):
     tic = time.time()
     train_metric.reset()
     train_loss = 0
-
-    # Learning rate decay
-    if epoch == lr_decay_epoch[lr_decay_count]:
-        trainer.set_learning_rate(trainer.learning_rate*lr_decay)
-        lr_decay_count += 1
 
     # Loop through each batch of training data
     for i, batch in enumerate(train_data):
@@ -209,7 +205,8 @@ for epoch in range(epochs):
 train_history.plot()
 
 ##############################################################################
-# You can `Start Training Now`_.
+# Due to the tiny subset, the accuracy number is quite low.
+# You can `Start Training Now`_ on the full Kinetics400 dataset.
 #
 # References
 # ----------
