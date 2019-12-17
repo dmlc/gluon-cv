@@ -138,10 +138,13 @@ def try_import_dali():
     try:
         dali = __import__('nvidia.dali', fromlist=['pipeline', 'ops', 'types'])
         dali.Pipeline = dali.pipeline.Pipeline
-    except ImportError:
+    except (ImportError, RuntimeError) as e:
+        if isinstance(e, ImportError):
+            msg = "DALI not found, please check if you installed it correctly."
+        elif isinstance(e, RuntimeError):
+            msg = "No CUDA-capable device is detected ({}).".format(e)
         class dali:
             class Pipeline:
                 def __init__(self):
-                    raise NotImplementedError(
-                        "DALI not found, please check if you installed it correctly.")
+                    raise NotImplementedError(msg)
     return dali
