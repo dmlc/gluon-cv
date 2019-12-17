@@ -1,10 +1,17 @@
-"""3. Getting Started with Pre-trained SlowFast Models on Kinetcis400
+"""5. Getting Started with Pre-trained SlowFast Models on Kinetcis400
 =====================================================================
 
 `Kinetics400 <https://deepmind.com/research/open-source/kinetics>`_  is an action recognition dataset
 of realistic action videos, collected from YouTube. With 306,245 short trimmed videos
 from 400 action categories, it is one of the largest and most widely used dataset in the research
 community for benchmarking state-of-the-art video action recognition models.
+
+`SlowFast <https://arxiv.org/abs/1812.03982>`_ is a new 3D video classification model,
+aiming for best trade-off between accuracy and efficiency. It proposes two branches,
+fast branch and slow branch, to handle different aspects in a video.
+Fast branch is to capture motion dynamics by using many but small video frames.
+Slow branch is to capture fine apperance details by using few but large video frames.
+Features from two branches are combined using lateral connections.
 
 In this tutorial, we will demonstrate how to load a pre-trained SlowFast model from :ref:`gluoncv-model-zoo`
 and classify a video clip from the Internet or your local disk into one of the 400 action classes.

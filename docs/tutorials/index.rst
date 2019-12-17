@@ -216,10 +216,22 @@ Action Recognition
         Recognize human actions in real-world videos with pre-trained I3D models
 
     .. card::
+        :title: Training I3D Models on Kinetics400
+        :link: ../build/examples_action_recognition/dive_deep_i3d_kinetics400.html
+
+        Hands on I3D action recognition model training on Kinetics400 dataset
+
+    .. card::
         :title: Pre-trained SlowFast Models on Kinetics400
         :link: ../build/examples_action_recognition/demo_slowfast_kinetics400.html
 
         Recognize human actions in real-world videos with pre-trained SlowFast models
+
+    .. card::
+        :title: Training SlowFast Models on Kinetics400
+        :link: ../build/examples_action_recognition/dive_deep_slowfast_kinetics400.html
+
+        Hands on SlowFast action recognition model training on Kinetics400 dataset
 
 Dataset Preparation
 -------------------
