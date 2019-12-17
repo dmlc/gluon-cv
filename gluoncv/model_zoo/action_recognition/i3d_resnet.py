@@ -1018,7 +1018,7 @@ def i3d_resnet50_v1_ucf101(nclass=101, pretrained=False, pretrained_base=True, c
 
     return model
 
-def i3d_resnet50_v1_custom(nclass=-1, pretrained=False, pretrained_base=True, ctx=cpu(),
+def i3d_resnet50_v1_custom(nclass=400, pretrained=False, pretrained_base=True, ctx=cpu(),
                            root='~/.mxnet/models', use_tsn=False, num_segments=1, num_crop=1,
                            partial_bn=False, use_kinetics_pretrain=True, **kwargs):
     r"""Inflated 3D model (I3D) from
