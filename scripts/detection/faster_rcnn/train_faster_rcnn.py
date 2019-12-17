@@ -497,6 +497,7 @@ if __name__ == '__main__':
 
     if args.dtype == 'float16':
          net.cast(args.dtype)
+         # This layers doesn't support type 'float16'
          net.collect_params('.*batchnorm.*').setattr('dtype', 'float32')
          net.collect_params('.*normalizedperclassboxcenterencoder.*').setattr('dtype', 'float32')
 
