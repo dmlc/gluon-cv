@@ -1,5 +1,5 @@
-"""2. Dive Deep into Training TSN mdoels on UCF101
-==================================================
+"""6. Dive Deep into Training SlowFast mdoels on Kinetcis400
+============================================================
 
 This is a video action recognition tutorial using Gluon CV toolkit, a step-by-step example.
 The readers should have basic knowledge of deep learning and should be familiar with Gluon API.
@@ -14,14 +14,6 @@ Start Training Now
     Feel free to skip the tutorial because the training script is self-complete and ready to launch.
 
     :download:`Download Full Python Script: train_recognizer.py<../../../scripts/action-recognition/train_recognizer.py>`
-
-    Example training command::
-
-        # Finetune a pretrained VGG16 model without using temporal segment network.
-        python train_recognizer.py --model vgg16_ucf101 --num-classes 101 --num-gpus 8 --lr-mode step --lr 0.001 --lr-decay 0.1 --lr-decay-epoch 30,60,80 --num-epochs 80
-
-        # Finetune a pretrained VGG16 model using temporal segment network.
-        python train_recognizer.py --model vgg16_ucf101 --num-classes 101 --num-gpus 8 --num-segments 3 --lr-mode step --lr 0.001 --lr-decay 0.1 --lr-decay-epoch 30,60,80 --num-epochs 80
 
     For more training command options, please run ``python train_recognizer.py -h``
     Please checkout the `model_zoo <../model_zoo/index.html#action_recognition>`_ for training commands of reproducing the pretrained model.
@@ -46,31 +38,27 @@ from mxnet.gluon import nn
 from mxnet.gluon.data.vision import transforms
 
 from gluoncv.data.transforms import video
-from gluoncv.data import UCF101
+from gluoncv.data import Kinetics400
 from gluoncv.model_zoo import get_model
 from gluoncv.utils import makedirs, LRSequential, LRScheduler, split_and_load, TrainingHistory
 
 
 ################################################################
 #
-# Video action recognition is a classification problem.
-# Here we pick a simple yet well-performing structure, ``vgg16_ucf101``, for the
-# tutorial. In addition, we use the the idea of temporal segments (TSN) [Wang16]_
-# to wrap the backbone VGG16 network for adaptation to video domain.
-#
-# `TSN <https://arxiv.org/abs/1608.00859>`_ is a widely adopted video
-# classification method. It is proposed to incoporate temporal information from an entire video.
-# The idea is straightforward: we can evenly divide the video into several segments,
-# process each segment individually, obtain segmental consensus from each segment, and perform
-# final prediction. TSN is more like a general algorithm, rather than a specific network architecture.
-# It can work with both 2D and 3D neural networks.
+# Here we pick a widely adopted model, ``SlowFast``, for the tutorial.
+# `SlowFast <https://arxiv.org/abs/1812.03982>`_ is a new 3D video
+# classification model, aiming for best trade-off between accuracy and efficiency.
+# It proposes two branches, fast branch and slow branch, to handle different aspects in a video.
+# Fast branch is to capture motion dynamics by using many but small video frames.
+# Slow branch is to capture fine apperance details by using few but large video frames.
+# Features from two branches are combined using lateral connections.
 
 # number of GPUs to use
 num_gpus = 1
 ctx = [mx.gpu(i) for i in range(num_gpus)]
 
-# Get the model vgg16_ucf101 with temporal segment network, with 101 output classes, without pre-trained weights
-net = get_model(name='vgg16_ucf101', nclass=101, num_segments=3)
+# Get the model slowfast_4x16_resnet50_kinetics400 with 400 output classes, without pre-trained weights
+net = get_model(name='slowfast_4x16_resnet50_kinetics400', nclass=400)
 net.collect_params().reset_ctx(ctx)
 print(net)
 
@@ -109,8 +97,11 @@ num_workers = 8
 # Calculate effective total batch size
 batch_size = per_device_batch_size * num_gpus
 
-# Set train=True for training the model. Here we set num_segments to 3 to enable TSN training.
-train_dataset = UCF101(train=True, num_segments=3, transform=transform_train)
+# Set train=True for training the model.
+# ``new_length`` indicates the number of frames we will cover.
+# For SlowFast network, we evenly sample 32 frames for the fast branch and 4 frames for the slow branch.
+# This leads to the actual input length of 36 video frames.
+train_dataset = Kinetics400(train=True, new_length=64, slowfast=True, transform=transform_train)
 print('Load %d training samples.' % len(train_dataset))
 train_data = gluon.data.DataLoader(train_dataset, batch_size=batch_size,
                                    shuffle=True, num_workers=num_workers)
@@ -119,15 +110,24 @@ train_data = gluon.data.DataLoader(train_dataset, batch_size=batch_size,
 # Optimizer, Loss and Metric
 # --------------------------
 
-# Learning rate decay factor
 lr_decay = 0.1
-# Epochs where learning rate decays
-lr_decay_epoch = [30, 60, np.inf]
+warmup_epoch = 34
+total_epoch = 196
+num_batches = len(train_data)
+lr_scheduler = LRSequential([
+    LRScheduler('linear', base_lr=0.01, target_lr=0.1,
+                nepochs=warmup_epoch, iters_per_epoch=num_batches),
+    LRScheduler('cosine', base_lr=0.1, target_lr=0,
+                nepochs=total_epoch - warmup_epoch,
+                iters_per_epoch=num_batches,
+                step_factor=lr_decay, power=2)
+])
 
 # Stochastic gradient descent
 optimizer = 'sgd'
 # Set parameters
-optimizer_params = {'learning_rate': 0.001, 'wd': 0.0001, 'momentum': 0.9}
+optimizer_params = {'learning_rate': 0.01, 'wd': 0.0001, 'momentum': 0.9}
+optimizer_params['lr_scheduler'] = lr_scheduler
 
 # Define our trainer for net
 trainer = gluon.Trainer(net.collect_params(), optimizer, optimizer_params)
@@ -155,21 +155,15 @@ train_history = TrainingHistory(['training-acc'])
 # Following is the script.
 #
 # .. note::
-#   In order to finish the tutorial quickly, we only train for 3 epochs, and 100 iterations per epoch.
-#   In your experiments, we recommend setting ``epochs=80`` for the full UCF101 dataset.
+#   In order to finish the tutorial quickly, we only train for 3 epochs on a tiny subset of Kinetics400,
+#   and 100 iterations per epoch. In your experiments, we recommend setting ``epochs=100`` for the full Kinetics400 dataset.
 
 epochs = 3
-lr_decay_count = 0
 
 for epoch in range(epochs):
     tic = time.time()
     train_metric.reset()
     train_loss = 0
-
-    # Learning rate decay
-    if epoch == lr_decay_epoch[lr_decay_count]:
-        trainer.set_learning_rate(trainer.learning_rate*lr_decay)
-        lr_decay_count += 1
 
     # Loop through each batch of training data
     for i, batch in enumerate(train_data):
@@ -211,7 +205,8 @@ for epoch in range(epochs):
 train_history.plot()
 
 ##############################################################################
-# You can `Start Training Now`_.
+# Due to the tiny subset, the accuracy number is quite low.
+# You can `Start Training Now`_ on the full Kinetics400 dataset.
 #
 # References
 # ----------
@@ -219,7 +214,3 @@ train_history.plot()
 # .. [Wang15] Limin Wang, Yuanjun Xiong, Zhe Wang, and Yu Qiao. \
 #     "Towards Good Practices for Very Deep Two-Stream ConvNets." \
 #     arXiv preprint arXiv:1507.02159 (2015).
-#
-# .. [Wang16] Limin Wang, Yuanjun Xiong, Zhe Wang, Yu Qiao, Dahua Lin, Xiaoou Tang and Luc Van Gool. \
-#     "Temporal Segment Networks: Towards Good Practices for Deep Action Recognition." \
-#     In European Conference on Computer Vision (ECCV). 2016.

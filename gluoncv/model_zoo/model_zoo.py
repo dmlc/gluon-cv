@@ -236,6 +236,7 @@ _models = {
     'vgg16_ucf101': vgg16_ucf101,
     'inceptionv3_ucf101': inceptionv3_ucf101,
     'inceptionv3_kinetics400': inceptionv3_kinetics400,
+    'i3d_resnet50_v1_custom': i3d_resnet50_v1_custom,
     'i3d_resnet50_v1_kinetics400': i3d_resnet50_v1_kinetics400,
     'i3d_resnet101_v1_kinetics400': i3d_resnet101_v1_kinetics400,
     'i3d_inceptionv1_kinetics400': i3d_inceptionv1_kinetics400,
