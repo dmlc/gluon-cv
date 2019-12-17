@@ -38,6 +38,8 @@ def parse_args():
                         help='Save coco output json')
     parser.add_argument('--eval-all', action='store_true',
                         help='Eval all models begins with save prefix. Use with pretrained.')
+    parser.add_argument('--use-fpn', action='store_true',
+                        help='Whether to load model with feature pyramid network.')
     args = parser.parse_args()
     return args
 
@@ -113,8 +115,7 @@ def validate(net, val_data, ctx, eval_metric, size):
                     im_height, im_width = int(round(im_height / im_scale)), int(
                         round(im_width / im_scale))
                     full_masks = gcv.data.transforms.mask.fill(det_mask, det_bbox,
-                                                               (im_width, im_height),
-                                                               fast_fill=False)
+                                                               (im_width, im_height))
                     eval_metric.update(det_bbox, det_id, det_score, full_masks)
             pbar.update(len(ctx))
     return eval_metric.get()
@@ -129,13 +130,16 @@ if __name__ == '__main__':
     args.batch_size = len(ctx)  # 1 batch per device
 
     # network
-    net_name = '_'.join(('mask_rcnn', args.network, args.dataset))
+    module_list = []
+    if args.use_fpn:
+        module_list.append('fpn')
+    net_name = '_'.join(('mask_rcnn', *module_list, args.network, args.dataset))
     args.save_prefix += net_name
     if args.pretrained.lower() in ['true', '1', 'yes', 't']:
         net = gcv.model_zoo.get_model(net_name, pretrained=True)
     else:
         net = gcv.model_zoo.get_model(net_name, pretrained=False)
-        net.load_parameters(args.pretrained.strip())
+        net.load_parameters(args.pretrained.strip(), cast_dtype=True)
     net.collect_params().reset_ctx(ctx)
 
     # training data

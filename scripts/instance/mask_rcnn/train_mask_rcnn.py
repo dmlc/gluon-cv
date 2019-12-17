@@ -127,6 +127,8 @@ def parse_args():
     parser.add_argument('--kv-store', type=str, default='nccl',
                         help='KV store options. local, device, nccl, dist_sync, dist_device_sync, '
                              'dist_async are available.')
+    parser.add_argument('--dtype', type=str, default='float32',
+                         help='data type for training. default is float32')
 
     args = parser.parse_args()
     if args.horovod:
@@ -403,6 +405,8 @@ def train(net, train_data, val_data, eval_metric, batch_size, ctx, logger, args)
     optimizer_params = {'learning_rate': args.lr, 'wd': args.wd, 'momentum': args.momentum, }
     if args.clip_gradient > 0.0:
         optimizer_params['clip_gradient'] = args.clip_gradient
+    if args.dtype == 'float16':
+         optimizer_params['multi_precision'] = True
     if args.horovod:
         hvd.broadcast_parameters(net.collect_params(), root_rank=0)
         trainer = hvd.DistributedTrainer(
@@ -572,6 +576,12 @@ if __name__ == '__main__':
                 continue
             param.initialize()
     net.collect_params().reset_ctx(ctx)
+
+    if args.dtype == 'float16':
+         net.cast(args.dtype)
+         # This layers doesn't support type 'float16'
+         net.collect_params('.*batchnorm.*').setattr('dtype', 'float32')
+         net.collect_params('.*normalizedperclassboxcenterencoder.*').setattr('dtype', 'float32')
 
     # set up logger
     logging.basicConfig()

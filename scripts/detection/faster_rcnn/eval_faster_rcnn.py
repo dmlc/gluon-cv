@@ -138,7 +138,7 @@ if __name__ == '__main__':
         net = gcv.model_zoo.get_model(net_name, pretrained=True, **kwargs)
     else:
         net = gcv.model_zoo.get_model(net_name, pretrained=False, **kwargs)
-        net.load_parameters(args.pretrained.strip())
+        net.load_parameters(args.pretrained.strip(), cast_dtype=True)
     net.collect_params().reset_ctx(ctx)
 
     # validation data
