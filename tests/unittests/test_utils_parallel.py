@@ -41,9 +41,9 @@ def test_data_parallel():
             y = net(x)
         nd.waitall()
 
-    test_net_sync(net, criterion, True, 1)
+    # test_net_sync(net, criterion, True, 1)
     test_net_sync(net, criterion, True, 2)
-    test_net_sync(net, criterion, False, 1)
+    # test_net_sync(net, criterion, False, 1)
     test_net_sync(net, criterion, False, 2)
 
 
