@@ -48,41 +48,49 @@ from gluoncv.utils import makedirs, LRSequential, LRScheduler, split_and_load, T
 # can be stored in either video format or already decoded to frames. The only thing you need
 # to prepare is a text file, ``train.txt``.
 #
-# If your data is stored in image format (already decoded to frames). Your``train.txt`` should look like:
+# If your data is stored in image format (already decoded to frames). Your ``train.txt`` should look like:
 #
-# video_001 200 0
-# video_002 300 0
-# video_003 100 1
-# video_004 400 2
-# ......
-# video_100 200 10
+# ::
+#
+#     video_001 200 0
+#     video_001 200 0
+#     video_002 300 0
+#     video_003 100 1
+#     video_004 400 2
+#     ......
+#     video_100 200 10
 #
 # There are three items in each line, separated by spaces.
 # The first item is the path to your training videos, e.g., video_001.
-# It should be a folder containing the frames of that video video_001.mp4.
-# The second item is the number of frames of each video, e.g., 200.
-# The third item is the label of that video, e.g., 0.
+# It should be a folder containing the frames of video_001.mp4.
+# The second item is the number of frames in each video, e.g., 200.
+# The third item is the label of the videos, e.g., 0.
 #
-# If your data is stored in video format. Your``train.txt`` should look like:
+# If your data is stored in video format. Your ``train.txt`` should look like:
 #
-# video_001.mp4 200 0
-# video_002.mp4 300 0
-# video_003.mp4 100 1
-# video_004.mp4 400 2
-# ......
-# video_100.mp4 200 10
+# ::
+#
+#     video_001.mp4 200 0
+#     video_001.mp4 200 0
+#     video_002.mp4 300 0
+#     video_003.mp4 100 1
+#     video_004.mp4 400 2
+#     ......
+#     video_100.mp4 200 10
 #
 # Similarly, there are three items in each line, separated by spaces.
 # The first item is the path to your training videos, e.g., video_001.mp4.
-# The second item is the number of frames of each video. But you can put any number here
+# The second item is the number of frames in each video. But you can put any number here
 # because our video loader will compute the number of frames again automatically during training.
 # The third item is the label of that video, e.g., 0.
 #
 #
-# Once you prepare the ``train.txt``, you are good to go. Just use our general dataloader to load your data.
+# Once you prepare the ``train.txt``, you are good to go.
+# Just use our general dataloader `VideoClsCustom <https://github.com/dmlc/gluon-cv/blob/master/gluoncv/data/kinetics400/classification.py>`_ to load your data.
 #
 # In this tutorial, we will use UCF101 dataset as an example.
-# Let's first define some basics and load the dataset.
+# For your own dataset, you can just replace the value of ``root`` and ``setting`` to your data directory and your prepared text file.
+# Let's first define some basics.
 
 num_gpus = 1
 ctx = [mx.gpu(i) for i in range(num_gpus)]
@@ -100,18 +108,16 @@ print('Load %d training samples.' % len(train_dataset))
 train_data = gluon.data.DataLoader(train_dataset, batch_size=batch_size,
                                    shuffle=True, num_workers=num_workers)
 
-# For your own dataset, you can just replace the value of ``root`` and ``setting`` to your data directory and your prepared text file.
-
 
 ################################################################
 # Custom Network
 # --------------
 #
 # You can always define your own network architecture. Here, we want to show how to fine-tune on a pre-trained model.
-# Since I3D model is a very popular network, we will use I3D with ResNet50 backbone trained on Kinetics400 dataset as an example.
+# Since I3D model is a very popular network, we will use I3D with ResNet50 backbone trained on Kinetics400 dataset (i.e., ``i3d_resnet50_v1_kinetics400``) as an example.
 #
 # For simple fine-tuning, people usually just replace the last classification (dense) layer to the number of classes in your dataset
-# without changing other architecture. In GluonCV, you can get the model with one line of code.
+# without changing other things. In GluonCV, you can get your customized model with one line of code.
 net = get_model(name='i3d_resnet50_v1_custom', nclass=101)
 net.collect_params().reset_ctx(ctx)
 print(net)
@@ -165,7 +171,7 @@ train_history = TrainingHistory(['training-acc'])
 #
 # .. note::
 #   In order to finish the tutorial quickly, we only fine tune for 3 epochs, and 100 iterations per epoch for UCF101.
-#   In your experiments, you can set the hyper-parameters according to your dataset.
+#   In your experiments, you can set the hyper-parameters depending on your dataset.
 
 epochs = 3
 lr_decay_count = 0
