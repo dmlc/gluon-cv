@@ -1,5 +1,6 @@
 # pylint: disable=line-too-long,too-many-lines,missing-docstring
-"""UCF101 video action classification dataset."""
+"""UCF101 video action classification dataset.
+Code partially borrowed from https://github.com/bryanyzhu/two-stream-pytorch"""
 import os
 import numpy as np
 from mxnet import nd

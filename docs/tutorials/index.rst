@@ -199,13 +199,13 @@ Action Recognition
 
     .. card::
         :title: Pre-trained TSN Models on UCF101
-        :link: ../build/examples_action_recognition/demo_ucf101.html
+        :link: ../build/examples_action_recognition/demo_tsn_ucf101.html
 
         Recognize human actions in real-world videos with pre-trained TSN models
 
     .. card::
         :title: Training TSN models on UCF101
-        :link: ../build/examples_action_recognition/dive_deep_ucf101.html
+        :link: ../build/examples_action_recognition/dive_deep_tsn_ucf101.html
 
         Hands on TSN action recognition model training on UCF101 dataset
 
@@ -232,6 +232,12 @@ Action Recognition
         :link: ../build/examples_action_recognition/dive_deep_slowfast_kinetics400.html
 
         Hands on SlowFast action recognition model training on Kinetics400 dataset
+
+    .. card::
+        :title: Fine-tuning I3D mdoels on Your Own Dataset
+        :link: ../build/examples_action_recognition/finetune_i3d_custom.html
+
+        Hands on I3D models fine-tuning on your own dataset
 
 Dataset Preparation
 -------------------
