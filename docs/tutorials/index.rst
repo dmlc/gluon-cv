@@ -239,6 +239,12 @@ Action Recognition
 
         Hands on I3D models fine-tuning on your own dataset
 
+    .. card::
+        :title: Extracting features from I3D models
+        :link: ../build/examples_action_recognition/feat_i3d_custom.html
+
+        Extracting video features from pre-trained I3D models on your own videos
+
 Dataset Preparation
 -------------------
 
