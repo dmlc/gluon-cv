@@ -128,7 +128,6 @@ class VideoClsCustom(dataset.Dataset):
             else:
                 self.mmcv = try_import_mmcv()
 
-        self.classes, self.class_to_idx = self._find_classes(root)
         self.clips = self._make_dataset(root, setting)
         if len(self.clips) == 0:
             raise(RuntimeError("Found 0 video clips in subfolders of: " + root + "\n"
