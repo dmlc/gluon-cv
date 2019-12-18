@@ -403,6 +403,8 @@ def train(net, train_data, val_data, eval_metric, batch_size, ctx, logger, args)
     optimizer_params = {'learning_rate': args.lr, 'wd': args.wd, 'momentum': args.momentum, }
     if args.clip_gradient > 0.0:
         optimizer_params['clip_gradient'] = args.clip_gradient
+    if args.amp:
+         optimizer_params['multi_precision'] = True
     if args.horovod:
         hvd.broadcast_parameters(net.collect_params(), root_rank=0)
         trainer = hvd.DistributedTrainer(
@@ -572,6 +574,13 @@ if __name__ == '__main__':
                 continue
             param.initialize()
     net.collect_params().reset_ctx(ctx)
+
+    if args.amp:
+        # Cast both weights and gradients to 'float16'
+        net.cast('float16')
+        # This layers doesn't support type 'float16'
+        net.collect_params('.*batchnorm.*').setattr('dtype', 'float32')
+        net.collect_params('.*normalizedperclassboxcenterencoder.*').setattr('dtype', 'float32')
 
     # set up logger
     logging.basicConfig()
