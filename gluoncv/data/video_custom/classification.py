@@ -1,22 +1,21 @@
 # pylint: disable=line-too-long,too-many-lines,missing-docstring
-"""UCF101 video action classification dataset.
-Code partially borrowed from https://github.com/bryanyzhu/two-stream-pytorch"""
+"""Custom data loader for general video classification problems.
+Code partially borrowed from https://github.com/open-mmlab/mmaction
+and https://github.com/bryanyzhu/two-stream-pytorch"""
 import os
+import random
 import numpy as np
 from mxnet import nd
 from mxnet.gluon.data import dataset
 
-__all__ = ['UCF101']
+__all__ = ['VideoClsCustom']
 
-class UCF101(dataset.Dataset):
-    """Load the UCF101 video action recognition dataset.
-
-    Refer to :doc:`../build/examples_datasets/ucf101` for the description of
-    this dataset and how to prepare it.
+class VideoClsCustom(dataset.Dataset):
+    """Load your own video classification dataset.
 
     Parameters
     ----------
-    root : str, default '~/.mxnet/datasets/ucf101/rawframes'
+    root : str, required,
         Path to the folder stored the dataset.
     setting : str, required
         Config file of the prepared dataset.
@@ -38,6 +37,9 @@ class UCF101(dataset.Dataset):
         Number of segments to evenly divide the video into clips.
         A useful technique to obtain global video-level information.
         Limin Wang, etal, Temporal Segment Networks: Towards Good Practices for Deep Action Recognition, ECCV 2016
+    num_crop : int, default 1
+        Number of crops for each image. default is 1.
+        Common choices are three crops and ten crops during evaluation.
     new_length : int, default 1
         The length of input video clip. Default is a single image, but it can be multiple video frames.
         For example, new_length=16 means we will extract a video clip of consecutive 16 frames.
@@ -62,8 +64,8 @@ class UCF101(dataset.Dataset):
         A function that takes data and label and transforms them.
     """
     def __init__(self,
-                 root=os.path.expanduser('~/.mxnet/datasets/ucf101/rawframes'),
-                 setting=os.path.expanduser('~/.mxnet/datasets/ucf101/ucfTrainTestlist/ucf101_train_split_1_rawframes.txt'),
+                 root,
+                 setting,
                  train=True,
                  test_mode=False,
                  name_pattern='img_%05d.jpg',
@@ -71,6 +73,7 @@ class UCF101(dataset.Dataset):
                  is_color=True,
                  modality='rgb',
                  num_segments=1,
+                 num_crop=1,
                  new_length=1,
                  new_step=1,
                  new_width=340,
@@ -80,9 +83,12 @@ class UCF101(dataset.Dataset):
                  temporal_jitter=False,
                  video_loader=False,
                  use_decord=False,
+                 slowfast=False,
+                 slow_temporal_stride=16,
+                 fast_temporal_stride=2,
                  transform=None):
 
-        super(UCF101, self).__init__()
+        super(VideoClsCustom, self).__init__()
 
         from ...utils.filesystem import try_import_cv2, try_import_decord, try_import_mmcv
         self.cv2 = try_import_cv2()
@@ -93,6 +99,7 @@ class UCF101(dataset.Dataset):
         self.is_color = is_color
         self.modality = modality
         self.num_segments = num_segments
+        self.num_crop = num_crop
         self.new_height = new_height
         self.new_width = new_width
         self.new_length = new_length
@@ -102,9 +109,18 @@ class UCF101(dataset.Dataset):
         self.target_width = target_width
         self.transform = transform
         self.temporal_jitter = temporal_jitter
+        self.name_pattern = name_pattern
         self.video_loader = video_loader
         self.video_ext = video_ext
         self.use_decord = use_decord
+        self.slowfast = slowfast
+        self.slow_temporal_stride = slow_temporal_stride
+        self.fast_temporal_stride = fast_temporal_stride
+
+        if self.slowfast:
+            assert slow_temporal_stride % fast_temporal_stride == 0, 'slow_temporal_stride needs to be multiples of slow_temporal_stride, please set it accordinly.'
+            assert not temporal_jitter, 'Slowfast dataloader does not support temporal jitter. Please set temporal_jitter=False.'
+            assert new_step == 1, 'Slowfast dataloader only support consecutive frames reading, please set new_step=1.'
 
         if self.video_loader:
             if self.use_decord:
@@ -112,29 +128,27 @@ class UCF101(dataset.Dataset):
             else:
                 self.mmcv = try_import_mmcv()
 
-        self.classes, self.class_to_idx = self._find_classes(root)
         self.clips = self._make_dataset(root, setting)
         if len(self.clips) == 0:
             raise(RuntimeError("Found 0 video clips in subfolders of: " + root + "\n"
                                "Check your data directory (opt.data-dir)."))
 
-        if name_pattern:
-            self.name_pattern = name_pattern
-        else:
-            if self.modality == "rgb":
-                self.name_pattern = "img_%05d.jpg"
-            elif self.modality == "flow":
-                self.name_pattern = "flow_%s_%05d.jpg"
-
     def __getitem__(self, index):
 
         directory, duration, target = self.clips[index]
         if self.video_loader:
+            if '.' in directory.split('/')[-1]:
+                # data in the "setting" file already have extension, e.g., demo.mp4
+                video_name = directory
+            else:
+                # data in the "setting" file do not have extension, e.g., demo
+                # So we need to provide extension (i.e., .mp4) to complete the file name.
+                video_name = '{}.{}'.format(directory, self.video_ext)
             if self.use_decord:
-                decord_vr = self.decord.VideoReader('{}.{}'.format(directory, self.video_ext), width=self.new_width, height=self.new_height)
+                decord_vr = self.decord.VideoReader(video_name, width=self.new_width, height=self.new_height)
                 duration = len(decord_vr)
             else:
-                mmcv_vr = self.mmcv.VideoReader('{}.{}'.format(directory, self.video_ext))
+                mmcv_vr = self.mmcv.VideoReader(video_name)
                 duration = len(mmcv_vr)
 
         if self.train and not self.test_mode:
@@ -146,19 +160,31 @@ class UCF101(dataset.Dataset):
 
         # N frames of shape H x W x C, where N = num_oversample * num_segments * new_length
         if self.video_loader:
-            if self.use_decord:
-                clip_input = self._video_TSN_decord_batch_loader(directory, decord_vr, duration, segment_indices, skip_offsets)
+            if self.slowfast:
+                clip_input = self._video_TSN_decord_slowfast_loader(directory, decord_vr, duration, segment_indices, skip_offsets)
             else:
-                clip_input = self._video_TSN_mmcv_loader(directory, mmcv_vr, duration, segment_indices, skip_offsets)
+                if self.use_decord:
+                    clip_input = self._video_TSN_decord_batch_loader(directory, decord_vr, duration, segment_indices, skip_offsets)
+                else:
+                    clip_input = self._video_TSN_mmcv_loader(directory, mmcv_vr, duration, segment_indices, skip_offsets)
         else:
-            clip_input = self._image_TSN_cv2_loader(directory, duration, segment_indices, skip_offsets)
+            if self.slowfast:
+                clip_input = self._image_slowfast_cv2_loader(directory, duration, segment_indices, skip_offsets)
+            else:
+                clip_input = self._image_TSN_cv2_loader(directory, duration, segment_indices, skip_offsets)
 
         if self.transform is not None:
             clip_input = self.transform(clip_input)
 
-        clip_input = np.stack(clip_input, axis=0)
-        clip_input = clip_input.reshape((-1,) + (self.new_length, 3, self.target_height, self.target_width))
-        clip_input = np.transpose(clip_input, (0, 2, 1, 3, 4))
+        if self.slowfast:
+            sparse_sampels = len(clip_input) // (self.num_segments * self.num_crop)
+            clip_input = np.stack(clip_input, axis=0)
+            clip_input = clip_input.reshape((-1,) + (sparse_sampels, 3, self.target_height, self.target_width))
+            clip_input = np.transpose(clip_input, (0, 2, 1, 3, 4))
+        else:
+            clip_input = np.stack(clip_input, axis=0)
+            clip_input = clip_input.reshape((-1,) + (self.new_length, 3, self.target_height, self.target_width))
+            clip_input = np.transpose(clip_input, (0, 2, 1, 3, 4))
 
         if self.new_length == 1:
             clip_input = np.squeeze(clip_input, axis=2)    # this is for 2D input case
@@ -180,6 +206,8 @@ class UCF101(dataset.Dataset):
         clips = []
         with open(setting) as split_f:
             data = split_f.readlines()
+            if not self.test_mode:
+                random.shuffle(data)
             for line in data:
                 line_info = line.split()
                 # line format: video_path, video_duration, video_label
@@ -270,6 +298,37 @@ class UCF101(dataset.Dataset):
                     offset += self.new_step
         return sampled_list
 
+    def _image_slowfast_cv2_loader(self, directory, duration, indices, skip_offsets):
+        sampled_list = []
+        for seg_ind in indices:
+            offset = int(seg_ind)
+            fast_list = []
+            slow_list = []
+            for i, _ in enumerate(range(0, self.skip_length, self.new_step)):
+                if offset + skip_offsets[i] <= duration:
+                    frame_path = os.path.join(directory, self.name_pattern % (offset + skip_offsets[i]))
+                else:
+                    frame_path = os.path.join(directory, self.name_pattern % (offset))
+                if (i + 1) % self.fast_temporal_stride == 0:
+                    cv_img = self.cv2.imread(frame_path)
+                    if cv_img is None:
+                        raise(RuntimeError("Could not load file %s starting at frame %d. Check data path." % (frame_path, offset)))
+                    if self.new_width > 0 and self.new_height > 0:
+                        h, w, _ = cv_img.shape
+                        if h != self.new_height or w != self.new_width:
+                            cv_img = self.cv2.resize(cv_img, (self.new_width, self.new_height))
+                    cv_img = cv_img[:, :, ::-1]
+                    fast_list.append(cv_img)
+
+                    if (i + 1) % self.slow_temporal_stride == 0:
+                        slow_list.append(cv_img)
+
+                if offset + self.new_step < duration:
+                    offset += self.new_step
+            fast_list.extend(slow_list)
+            sampled_list.extend(fast_list)
+        return sampled_list
+
     def _video_TSN_mmcv_loader(self, directory, video_reader, duration, indices, skip_offsets):
         sampled_list = []
         for seg_ind in indices:
@@ -329,24 +388,33 @@ class UCF101(dataset.Dataset):
             raise RuntimeError('Error occured in reading frames {} from video {} of duration {}.'.format(frame_id_list, directory, duration))
         return sampled_list
 
-class UCF101Attr(object):
-    def __init__(self):
-        self.num_class = 101
-        self.classes = ['ApplyEyeMakeup', 'ApplyLipstick', 'Archery', 'BabyCrawling', 'BalanceBeam',
-                        'BandMarching', 'BaseballPitch', 'Basketball', 'BasketballDunk', 'BenchPress',
-                        'Biking', 'Billiards', 'BlowDryHair', 'BlowingCandles', 'BodyWeightSquats',
-                        'Bowling', 'BoxingPunchingBag', 'BoxingSpeedBag', 'BreastStroke', 'BrushingTeeth',
-                        'CleanAndJerk', 'CliffDiving', 'CricketBowling', 'CricketShot', 'CuttingInKitchen',
-                        'Diving', 'Drumming', 'Fencing', 'FieldHockeyPenalty', 'FloorGymnastics', 'FrisbeeCatch',
-                        'FrontCrawl', 'GolfSwing', 'Haircut', 'HammerThrow', 'Hammering', 'HandstandPushups',
-                        'HandstandWalking', 'HeadMassage', 'HighJump', 'HorseRace', 'HorseRiding', 'HulaHoop',
-                        'IceDancing', 'JavelinThrow', 'JugglingBalls', 'JumpRope', 'JumpingJack', 'Kayaking',
-                        'Knitting', 'LongJump', 'Lunges', 'MilitaryParade', 'Mixing', 'MoppingFloor', 'Nunchucks',
-                        'ParallelBars', 'PizzaTossing', 'PlayingCello', 'PlayingDaf', 'PlayingDhol', 'PlayingFlute',
-                        'PlayingGuitar', 'PlayingPiano', 'PlayingSitar', 'PlayingTabla', 'PlayingViolin',
-                        'PoleVault', 'PommelHorse', 'PullUps', 'Punch', 'PushUps', 'Rafting', 'RockClimbingIndoor',
-                        'RopeClimbing', 'Rowing', 'SalsaSpin', 'ShavingBeard', 'Shotput', 'SkateBoarding',
-                        'Skiing', 'Skijet', 'SkyDiving', 'SoccerJuggling', 'SoccerPenalty', 'StillRings',
-                        'SumoWrestling', 'Surfing', 'Swing', 'TableTennisShot', 'TaiChi', 'TennisSwing',
-                        'ThrowDiscus', 'TrampolineJumping', 'Typing', 'UnevenBars', 'VolleyballSpiking',
-                        'WalkingWithDog', 'WallPushups', 'WritingOnBoard', 'YoYo']
+    def _video_TSN_decord_slowfast_loader(self, directory, video_reader, duration, indices, skip_offsets):
+        sampled_list = []
+        frame_id_list = []
+        for seg_ind in indices:
+            fast_id_list = []
+            slow_id_list = []
+            offset = int(seg_ind)
+            for i, _ in enumerate(range(0, self.skip_length, self.new_step)):
+                if offset + skip_offsets[i] <= duration:
+                    frame_id = offset + skip_offsets[i]
+                else:
+                    frame_id = offset
+
+                if (i + 1) % self.fast_temporal_stride == 0:
+                    fast_id_list.append(frame_id)
+
+                    if (i + 1) % self.slow_temporal_stride == 0:
+                        slow_id_list.append(frame_id)
+
+                if offset + self.new_step < duration:
+                    offset += self.new_step
+
+            fast_id_list.extend(slow_id_list)
+            frame_id_list.extend(fast_id_list)
+        try:
+            video_data = video_reader.get_batch(frame_id_list).asnumpy()
+            sampled_list = [video_data[vid, :, :, :] for vid, _ in enumerate(frame_id_list)]
+        except:
+            raise RuntimeError('Error occured in reading frames {} from video {} of duration {}.'.format(frame_id_list, directory, duration))
+        return sampled_list

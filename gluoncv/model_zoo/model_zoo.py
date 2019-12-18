@@ -250,6 +250,7 @@ _models = {
     'slowfast_8x8_resnet101_kinetics400': slowfast_8x8_resnet101_kinetics400,
     'slowfast_16x8_resnet101_kinetics400': slowfast_16x8_resnet101_kinetics400,
     'i3d_resnet50_v1_sthsthv2': i3d_resnet50_v1_sthsthv2,
+    'resnet50_v1b_custom': resnet50_v1b_custom,
     'resnet18_v1b_kinetics400': resnet18_v1b_kinetics400,
     'resnet34_v1b_kinetics400': resnet34_v1b_kinetics400,
     'resnet50_v1b_kinetics400': resnet50_v1b_kinetics400,
