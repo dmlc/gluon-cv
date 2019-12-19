@@ -310,6 +310,7 @@ class I3D_ResNetV1(HybridBlock):
                  num_stages=4,
                  pretrained=False,
                  pretrained_base=True,
+                 feat_ext=False,
                  num_segments=1,
                  num_crop=1,
                  spatial_strides=(1, 2, 2, 2),
@@ -346,6 +347,7 @@ class I3D_ResNetV1(HybridBlock):
         self.num_stages = num_stages
         self.pretrained = pretrained
         self.pretrained_base = pretrained_base
+        self.feat_ext = feat_ext
         self.num_segments = num_segments
         self.num_crop = num_crop
         self.spatial_strides = spatial_strides
@@ -507,12 +509,15 @@ class I3D_ResNetV1(HybridBlock):
         x = F.reshape(x, shape=(-1, self.num_segments * self.num_crop, self.feat_dim))
         x = F.mean(x, axis=1)
 
+        if self.feat_ext:
+            return x
+
         x = self.head(x)
         return x
 
 def i3d_resnet50_v1_kinetics400(nclass=400, pretrained=False, pretrained_base=True, ctx=cpu(),
                                 root='~/.mxnet/models', use_tsn=False, num_segments=1, num_crop=1,
-                                partial_bn=False, **kwargs):
+                                partial_bn=False, feat_ext=False, **kwargs):
     r"""Inflated 3D model (I3D) from
     `"Quo Vadis, Action Recognition? A New Model and the Kinetics Dataset"
     <https://arxiv.org/abs/1705.07750>`_ paper.
@@ -540,6 +545,7 @@ def i3d_resnet50_v1_kinetics400(nclass=400, pretrained=False, pretrained_base=Tr
                          depth=50,
                          pretrained=pretrained,
                          pretrained_base=pretrained_base,
+                         feat_ext=feat_ext,
                          num_segments=num_segments,
                          num_crop=num_crop,
                          out_indices=[3],
