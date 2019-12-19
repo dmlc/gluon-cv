@@ -41,6 +41,24 @@ You can extract all kinds of features from many popular pre-trained models using
 #     /home/ubuntu/your_data/video_100.mp4
 #
 # Each line is the path to each video you want to extract features from.
+#
+# You can also use the format we used for training models in other tutorials,
+# ::
+#
+#     /home/ubuntu/your_data/video_001.mp4 200 0
+#     /home/ubuntu/your_data/video_001.mp4 300 1
+#     /home/ubuntu/your_data/video_002.mp4 100 2
+#     /home/ubuntu/your_data/video_003.mp4 400 2
+#     /home/ubuntu/your_data/video_004.mp4 200 1
+#     ......
+#     /home/ubuntu/your_data/video_100.mp4.100 3
+#
+# Each line has three things, the path to each video, the number of video frames and the video label.
+# However, the second and third things are not gonna used in the code, they are just a placeholder.
+# So you can put any postive number in these two places.
+#
+
+######################################################################
 # Once you prepare the ``video.txt``, you can start extracting feature by:
 #
 # ::

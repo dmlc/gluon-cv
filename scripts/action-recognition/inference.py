@@ -17,7 +17,7 @@ from gluoncv.model_zoo import get_model
 from gluoncv.data import VideoClsCustom
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='Extract features from pre-trained models for video related tasks.')
+    parser = argparse.ArgumentParser(description='Make predictions on your own videos.')
     parser.add_argument('--data-dir', type=str, default='',
                         help='the root path to your data')
     parser.add_argument('--need-root', action='store_true',
@@ -208,7 +208,7 @@ def main(logger):
     classes = opt.num_classes
     model_name = opt.model
     net = get_model(name=model_name, nclass=classes, pretrained=opt.use_pretrained,
-                    feat_ext=True, num_segments=opt.num_segments, num_crop=opt.num_crop)
+                    num_segments=opt.num_segments, num_crop=opt.num_crop)
     net.cast(opt.dtype)
     net.collect_params().reset_ctx(context)
     if opt.mode == 'hybrid':
@@ -234,16 +234,13 @@ def main(logger):
             video_path = os.path.join(opt.data_dir, video_path)
         video_data = read_data(opt, video_path, transform_test)
         video_input = video_data.as_in_context(context)
-        video_feat = net(video_input.astype(opt.dtype, copy=False))
+        pred = net(video_input.astype(opt.dtype, copy=False))
+        pred_label = np.argmax(pred.asnumpy())
 
-        feat_file = '%s_%s_feat.npy' % (model_name, video_name)
-        np.save(os.path.join(opt.save_dir, feat_file), video_feat.asnumpy())
-
-        if vid > 0 and vid % opt.log_interval == 0:
-            logger.info('%04d/%04d is done' % (vid, len(data_list)))
+        logger.info('%04d/%04d: %s is predicted to class %d' % (vid, len(data_list), video_path, pred_label))
 
     end_time = time.time()
-    logger.info('Total feature extraction time is %4.2f minutes' % ((end_time - start_time) / 60))
+    logger.info('Total inference time is %4.2f minutes' % ((end_time - start_time) / 60))
 
 if __name__ == '__main__':
     logging.basicConfig()
