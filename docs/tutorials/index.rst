@@ -245,6 +245,12 @@ Action Recognition
 
         Extracting video features from pre-trained I3D models on your own videos
 
+    .. card::
+        :title: Inference on your own videos using pre-trained models
+        :link: ../build/examples_action_recognition/demo_i3d_custom.html
+
+        Inference on your own videos using pre-trained models and save the predictions.
+
 Dataset Preparation
 -------------------
 
