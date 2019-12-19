@@ -42,7 +42,7 @@ You can extract all kinds of features from many popular pre-trained models using
 #
 # Each line is the path to each video you want to extract features from.
 #
-# You can also use the format we used for training models in other tutorials,
+# Or you can also use the format we used for training models in other tutorials,
 # ::
 #
 #     /home/ubuntu/your_data/video_001.mp4 200 0

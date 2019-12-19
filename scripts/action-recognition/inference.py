@@ -15,6 +15,7 @@ from mxnet.gluon.data.vision import transforms
 from gluoncv.data.transforms import video
 from gluoncv.model_zoo import get_model
 from gluoncv.data import VideoClsCustom
+from gluoncv.utils import makedirs
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Make predictions on your own videos.')
@@ -70,8 +71,14 @@ def parse_args():
                         help='number of crops for each image. default is 1')
     parser.add_argument('--num-segments', type=int, default=1,
                         help='number of segments to evenly split the video.')
-    parser.add_argument('--save-dir', type=str, default='./',
+    parser.add_argument('--save-dir', type=str, default='./predictions',
                         help='directory of saved results')
+    parser.add_argument('--logging-file', type=str, default='predictions.log',
+                        help='name of predictions log file')
+    parser.add_argument('--save-logits', action='store_true',
+                        help='if set to True, save logits to .npy file for each video.')
+    parser.add_argument('--save-preds', action='store_true',
+                        help='if set to True, save predictions to .npy file for each video.')
     opt = parser.parse_args()
     return opt
 
@@ -171,11 +178,18 @@ def read_data(opt, video_name, transform):
 
 def main(logger):
     opt = parse_args()
-    logger.info(opt)
-    gc.set_threshold(100, 5, 5)
 
-    if not os.path.exists(opt.save_dir):
-        os.makedirs(opt.save_dir)
+    makedirs(opt.save_dir)
+
+    filehandler = logging.FileHandler(os.path.join(opt.save_dir, opt.logging_file))
+    streamhandler = logging.StreamHandler()
+    logger = logging.getLogger('')
+    logger.setLevel(logging.INFO)
+    logger.addHandler(filehandler)
+    logger.addHandler(streamhandler)
+    logger.info(opt)
+
+    gc.set_threshold(100, 5, 5)
 
     # set env
     gpu_id = opt.gpu_id
@@ -235,9 +249,15 @@ def main(logger):
         video_data = read_data(opt, video_path, transform_test)
         video_input = video_data.as_in_context(context)
         pred = net(video_input.astype(opt.dtype, copy=False))
+        if opt.save_logits:
+            logits_file = '%s_%s_logits.npy' % (model_name, video_name)
+            np.save(os.path.join(opt.save_dir, logits_file), pred.asnumpy())
         pred_label = np.argmax(pred.asnumpy())
+        if opt.save_preds:
+            preds_file = '%s_%s_preds.npy' % (model_name, video_name)
+            np.save(os.path.join(opt.save_dir, preds_file), pred_label)
 
-        logger.info('%04d/%04d: %s is predicted to class %d' % (vid, len(data_list), video_path, pred_label))
+        logger.info('%04d/%04d: %s is predicted to class %d' % (vid, len(data_list), video_name, pred_label))
 
     end_time = time.time()
     logger.info('Total inference time is %4.2f minutes' % ((end_time - start_time) / 60))
