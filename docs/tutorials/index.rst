@@ -251,6 +251,12 @@ Action Recognition
 
         Inference on your own videos using pre-trained models and save the predictions.
 
+    .. card::
+        :title: Introducing Decord: an efficient video reader
+        :link: ../build/examples_action_recognition/decord_loader.html
+
+        An efficient and flexible video reader for training deep video neural networks.
+
 Dataset Preparation
 -------------------
 
