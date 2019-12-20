@@ -257,6 +257,12 @@ Action Recognition
 
         An efficient and flexible video reader for training deep video neural networks.
 
+    .. card::
+        :title: Distributed training of deep video models
+        :link: ../build/examples_action_recognition/distributed_training.html
+
+        Hands on distributed training of SlowFast models on Kinetics400 dataset.
+
 Dataset Preparation
 -------------------
 
