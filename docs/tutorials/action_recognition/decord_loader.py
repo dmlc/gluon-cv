@@ -71,7 +71,13 @@ frames = vr.get_batch(frame_id_list).asnumpy()
 print(frames.shape)
 
 ################################################################
-# Pretty flexible, right?
+# There is another advanced functionality, you can get all the key frames as below,
+key_indices = vr.get_key_indices()
+key_frames = vr.get_batch(key_indices)
+print(key_frames.shape)
+
+################################################################
+# Pretty flexible, right? Try it on your videos.
 
 ################################################################
 # Speed comparison
