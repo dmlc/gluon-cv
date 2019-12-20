@@ -98,6 +98,8 @@ def parse_args():
 
 
 def test(model, args, input_transform):
+    # DO NOT modify!!! Only support batch_size=ngus
+    batch_size = args.ngpus
     # output folder
     outdir = 'outdir'
     if not os.path.exists(outdir):
@@ -112,7 +114,7 @@ def test(model, args, input_transform):
         testset = get_segmentation_dataset(
             args.dataset, split='test', mode='test', transform=input_transform)
     test_data = gluon.data.DataLoader(
-        testset, args.batch_size, shuffle=False, last_batch='keep',
+        testset, batch_size, shuffle=False, last_batch='keep',
         batchify_fn=ms_batchify_fn, num_workers=args.workers)
     print(model)
     evaluator = MultiEvalModel(model, testset.num_class, ctx_list=args.ctx)
