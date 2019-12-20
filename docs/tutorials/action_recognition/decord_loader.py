@@ -6,10 +6,17 @@ on Kinetics400 dataset using a server with 8 V100 GPUs takes more than 10 days. 
 and is not friendly for new comers and students to work on video related problems. There are several reasons causing the slowness,
 big batch of data, inefficiency of video reader and huge model computation.
 
-In this tutotial, we start to solve this problem by introduing a new video reader, `Decord <https://github.com/zhreshold/decord>`_.
+Another troubling matter is the complex data preprocessing and huge storage cost. Take Kinetics400 dataset as an example, this dataset
+has about 240K training and 20K validation videos. All the videos take 450G disk space.
+However, if we decode the videos to frames and use image loader to train the model, the decoded frames will take 6.8T disk space, which
+is unacceptable to most people. In addition, the decoding process is slow. It takes 1.5 days using 60 workers to decode all the videos to frames.
+If we use 8 workers (as in common laptop or standard workstation), it will take a week to perform such data preprocessing even before your actual training.
+
+Given the challenges aforementioned, in this tutotial, we introduce a new video reader, `Decord <https://github.com/zhreshold/decord>`_.
 Decord is efficient and flexible. It provides convenient video slicing methods based on a wrapper on top of hardware accelerated video decoders,
 e.g. FFMPEG/LibAV and Nvidia Codecs. It is designed to handle awkward video shuffling experience in order to provide smooth experiences
-similar to random image loader for deep learning. In additin, it works cross-platform, e.g., Linux, Windows and Mac OS.
+similar to random image loader for deep learning. In addition, it works cross-platform, e.g., Linux, Windows and Mac OS.
+With the new video reader, you don't need to decode videos to frames anymore, just start training on your video dataset with even higher training speed.
 
 """
 
