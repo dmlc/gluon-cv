@@ -1,7 +1,7 @@
-"""11. Distributed training of deep video models
+"""1. Distributed training of deep video models
 ================================================
 
-Training deep neural networks on videos is very time consuming. For example, training a state-of-the-art SlowFast network
+Training deep neural networks on videos is very time consuming. For example, training a state-of-the-art SlowFast network [Feichtenhofer18]_
 on Kinetics400 dataset using a server with 8 V100 GPUs takes more than 10 days. Slow training causes long research cycles
 and is not friendly for new comers and students to work on video related problems.
 
@@ -31,7 +31,7 @@ on Kinetics400 dataset.
 # Worker is a node actually performing training on a batch of training samples.
 # Before processing each batch, the workers pull weights from servers.
 # The workers also send gradients to the servers after each batch.
-# Scheduler is to set up the cluster for each node to communicate.
+# Scheduler is to set up the cluster for each node to communicate, and there is only one scheduler in the entire cluster
 # Kvstore, which is key-value store, is a critical component used for multi-device training.
 # It stores model parameters and optimizers, to receive gradient and update model.
 # In order to keep this tutorial concise, I wouldn't go into details.
@@ -50,6 +50,10 @@ on Kinetics400 dataset.
 # ::
 #
 #     pip install mxnet-cu100
+#
+# For more installation options (i.e., different versions of MXNet or CUDA),
+# please check `GluonCV installation guide <https://gluon-cv.mxnet.io/install/install-more.html> `_ for more information.
+
 
 ################################################################
 # We also need the script to launch the job, let's clone the repo as well.
@@ -98,13 +102,16 @@ on Kinetics400 dataset.
 
 ################################################################
 # Once you get the cluster and MXNet script ready, the next thing is to prepare your code and data in each node.
-# The code and data needs to be in the same directoty on every machine.
-# Let's clone the gluoncv repo and install it,
+# The code needs to be in the same directoty on every machine so that a single command can work on multiple machines.
+# Let's clone the GluonCV repo and install it,
 # ::
 #
 #     git clone https://github.com/dmlc/gluon-cv.git
 #     cd gluon-cv
 #     pip install -e .
+#
+# Similarly, the data needs to be in the same path on every machine as well so that the dataloader knows where to find the data.
+#
 
 
 ################################################################
@@ -135,12 +142,13 @@ on Kinetics400 dataset.
 # To find out more details, check out `this tutorial <https://mxnet.apache.org/api/faq/distributed_training>`_.
 #
 # Another thing to notice is the learning rate. For single node training, we set lr to 0.1. However, for multi-node training, we increase it to 0.4
-# because we have four machines. It's a good practice, called linear scaling rule, introduced in `this paper <https://arxiv.org/abs/1706.02677> `_.
+# because we have four machines. It's a good practice, called linear scaling rule, introduced in [Goyal17]_.
 # When the minibatch size is multiplied by k, multiply the learning rate by k. All other hyper-parameters (weight decay, etc.) are kept unchanged.
 # The linear scaling rule can help us to not only match the accuracy between using small and large minibatches, but equally importantly, to largely
 # match their training curves, which enables rapid debugging and comparison of experiments prior to convergence.
 #
-#
+# If everything is setup well, you will see the model is training now. All printed information will be captured and sent to the worker running launch.py
+# (which is the server node). Checkpoints will be saved locally on each machine.
 
 ################################################################
 # Speed
@@ -151,3 +159,16 @@ on Kinetics400 dataset.
 # For example, if you use our code on four P3.16xlarge machines on AWS in the same placement group, you will get 3x speed boost.
 # Similar speed up ratio (0.75) can be observed when you use 8 machines or more.
 # In our case, we use eight P3.16xlarge machines to train a ``slowfast_4x16_resnet50_kinetics400`` model. The training can be completed in 1.5 days.
+
+
+################################################################
+# References
+# ----------
+#
+# .. [Goyal17] Priya Goyal, Piotr Dollár, Ross Girshick, Pieter Noordhuis, Lukasz Wesolowski, Aapo Kyrola, Andrew Tulloch, Yangqing Jia, Kaiming He. \
+#     "Accurate, Large Minibatch SGD: Training ImageNet in 1 Hour." \
+#     arXiv preprint arXiv:1706.02677 (2017).
+#
+# .. [Feichtenhofer18] Christoph Feichtenhofer, Haoqi Fan, Jitendra Malik, Kaiming He. \
+#     "SlowFast Networks for Video Recognition." \
+#     arXiv preprint arXiv:1812.03982 (2018).
