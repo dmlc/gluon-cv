@@ -378,9 +378,9 @@ class Kinetics400(dataset.Dataset):
             offset = int(seg_ind)
             for i, _ in enumerate(range(0, self.skip_length, self.new_step)):
                 if offset + skip_offsets[i] <= duration:
-                    frame_id = offset + skip_offsets[i]
+                    frame_id = offset + skip_offsets[i] - 1
                 else:
-                    frame_id = offset
+                    frame_id = offset - 1
                 frame_id_list.append(frame_id)
                 if offset + self.new_step < duration:
                     offset += self.new_step
@@ -400,9 +400,9 @@ class Kinetics400(dataset.Dataset):
             offset = int(seg_ind)
             for i, _ in enumerate(range(0, self.skip_length, self.new_step)):
                 if offset + skip_offsets[i] <= duration:
-                    frame_id = offset + skip_offsets[i]
+                    frame_id = offset + skip_offsets[i] - 1
                 else:
-                    frame_id = offset
+                    frame_id = offset - 1
 
                 if (i + 1) % self.fast_temporal_stride == 0:
                     fast_id_list.append(frame_id)
