@@ -87,7 +87,7 @@ class BasicBlockV1(HybridBlock):
             self.se = nn.HybridSequential(prefix='')
             self.se.add(nn.Dense(channels // 4, use_bias=False))
             self.se.add(nn.Activation('relu'))
-            self.se.add(nn.Dense(channels * 4, use_bias=False))
+            self.se.add(nn.Dense(channels, use_bias=False))
             self.se.add(nn.Activation('sigmoid'))
         else:
             self.se = None
@@ -160,7 +160,7 @@ class BottleneckV1(HybridBlock):
             self.se = nn.HybridSequential(prefix='')
             self.se.add(nn.Dense(channels // 4, use_bias=False))
             self.se.add(nn.Activation('relu'))
-            self.se.add(nn.Dense(channels * 4, use_bias=False))
+            self.se.add(nn.Dense(channels, use_bias=False))
             self.se.add(nn.Activation('sigmoid'))
         else:
             self.se = None
@@ -240,7 +240,7 @@ class BasicBlockV2(HybridBlock):
             self.se = nn.HybridSequential(prefix='')
             self.se.add(nn.Dense(channels // 4, use_bias=False))
             self.se.add(nn.Activation('relu'))
-            self.se.add(nn.Dense(channels * 4, use_bias=False))
+            self.se.add(nn.Dense(channels, use_bias=False))
             self.se.add(nn.Activation('sigmoid'))
         else:
             self.se = None
@@ -316,7 +316,7 @@ class BottleneckV2(HybridBlock):
             self.se = nn.HybridSequential(prefix='')
             self.se.add(nn.Dense(channels // 4, use_bias=False))
             self.se.add(nn.Activation('relu'))
-            self.se.add(nn.Dense(channels * 4, use_bias=False))
+            self.se.add(nn.Dense(channels, use_bias=False))
             self.se.add(nn.Activation('sigmoid'))
         else:
             self.se = None
@@ -552,7 +552,7 @@ def get_resnet(version, num_layers, pretrained=False, ctx=cpu(),
         "Invalid resnet version: %d. Options are 1 and 2."%version
     resnet_class = resnet_net_versions[version-1]
     block_class = resnet_block_versions[version-1][block_type]
-    net = resnet_class(block_class, layers, channels, **kwargs)
+    net = resnet_class(block_class, layers, channels, use_se=use_se, **kwargs)
     if pretrained:
         from .model_store import get_model_file
         if not use_se:
