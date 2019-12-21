@@ -85,7 +85,7 @@ class BasicBlockV1(HybridBlock):
 
         if use_se:
             self.se = nn.HybridSequential(prefix='')
-            self.se.add(nn.Dense(channels // 4, use_bias=False))
+            self.se.add(nn.Dense(channels // 16, use_bias=False))
             self.se.add(nn.Activation('relu'))
             self.se.add(nn.Dense(channels, use_bias=False))
             self.se.add(nn.Activation('sigmoid'))
@@ -158,7 +158,7 @@ class BottleneckV1(HybridBlock):
 
         if use_se:
             self.se = nn.HybridSequential(prefix='')
-            self.se.add(nn.Dense(channels // 4, use_bias=False))
+            self.se.add(nn.Dense(channels // 16, use_bias=False))
             self.se.add(nn.Activation('relu'))
             self.se.add(nn.Dense(channels, use_bias=False))
             self.se.add(nn.Activation('sigmoid'))
@@ -238,7 +238,7 @@ class BasicBlockV2(HybridBlock):
 
         if use_se:
             self.se = nn.HybridSequential(prefix='')
-            self.se.add(nn.Dense(channels // 4, use_bias=False))
+            self.se.add(nn.Dense(channels // 16, use_bias=False))
             self.se.add(nn.Activation('relu'))
             self.se.add(nn.Dense(channels, use_bias=False))
             self.se.add(nn.Activation('sigmoid'))
@@ -314,7 +314,7 @@ class BottleneckV2(HybridBlock):
 
         if use_se:
             self.se = nn.HybridSequential(prefix='')
-            self.se.add(nn.Dense(channels // 4, use_bias=False))
+            self.se.add(nn.Dense(channels // 16, use_bias=False))
             self.se.add(nn.Activation('relu'))
             self.se.add(nn.Dense(channels, use_bias=False))
             self.se.add(nn.Activation('sigmoid'))
