@@ -52,7 +52,7 @@ on Kinetics400 dataset.
 #     pip install mxnet-cu100
 #
 # For more installation options (i.e., different versions of MXNet or CUDA),
-# please check `GluonCV installation guide <https://gluon-cv.mxnet.io/install/install-more.html> `_ for more information.
+# please check `GluonCV installation guide <https://gluon-cv.mxnet.io/install/install-more.html>`_ for more information.
 
 
 ################################################################
