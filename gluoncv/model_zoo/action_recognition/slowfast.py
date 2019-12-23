@@ -68,6 +68,7 @@ class SlowFast(HybridBlock):
                  layers=None,
                  pretrained=False,
                  pretrained_base=False,
+                 feat_ext=False,
                  num_segments=1,
                  num_crop=1,
                  bn_eval=True,
@@ -107,6 +108,7 @@ class SlowFast(HybridBlock):
         self.fast_temporal_stride = fast_temporal_stride
         self.slow_frames = slow_frames
         self.fast_frames = fast_frames
+        self.feat_ext = feat_ext
 
         with self.name_scope():
             # build fast pathway
@@ -260,6 +262,9 @@ class SlowFast(HybridBlock):
         x = F.reshape(x, shape=(-1, self.num_segments * self.num_crop, self.feat_dim))
         x = F.mean(x, axis=1)
 
+        if self.feat_ext:
+            return x
+
         x = self.dp(x)
         x = self.fc(x)                                  # bxnclass
         return x
@@ -394,7 +399,7 @@ class SlowFast(HybridBlock):
 
 def slowfast_4x16_resnet50_kinetics400(nclass=400, pretrained=False, pretrained_base=True,
                                        use_tsn=False, num_segments=1, num_crop=1,
-                                       partial_bn=False,
+                                       partial_bn=False, feat_ext=False,
                                        root='~/.mxnet/models', ctx=cpu(), **kwargs):
     r"""SlowFast networks (SlowFast) from
     `"SlowFast Networks for Video Recognition"
@@ -423,6 +428,7 @@ def slowfast_4x16_resnet50_kinetics400(nclass=400, pretrained=False, pretrained_
                      layers=[3, 4, 6, 3],
                      pretrained=pretrained,
                      pretrained_base=pretrained_base,
+                     feat_ext=feat_ext,
                      num_segments=num_segments,
                      num_crop=num_crop,
                      partial_bn=partial_bn,
@@ -452,7 +458,7 @@ def slowfast_4x16_resnet50_kinetics400(nclass=400, pretrained=False, pretrained_
 
 def slowfast_8x8_resnet50_kinetics400(nclass=400, pretrained=False, pretrained_base=True,
                                       use_tsn=False, num_segments=1, num_crop=1,
-                                      partial_bn=False,
+                                      partial_bn=False, feat_ext=False,
                                       root='~/.mxnet/models', ctx=cpu(), **kwargs):
     r"""SlowFast networks (SlowFast) from
     `"SlowFast Networks for Video Recognition"
@@ -481,6 +487,7 @@ def slowfast_8x8_resnet50_kinetics400(nclass=400, pretrained=False, pretrained_b
                      layers=[3, 4, 6, 3],
                      pretrained=pretrained,
                      pretrained_base=pretrained_base,
+                     feat_ext=feat_ext,
                      num_segments=num_segments,
                      num_crop=num_crop,
                      partial_bn=partial_bn,
@@ -510,7 +517,7 @@ def slowfast_8x8_resnet50_kinetics400(nclass=400, pretrained=False, pretrained_b
 
 def slowfast_8x8_resnet101_kinetics400(nclass=400, pretrained=False, pretrained_base=True,
                                        use_tsn=False, num_segments=1, num_crop=1,
-                                       partial_bn=False,
+                                       partial_bn=False, feat_ext=False,
                                        root='~/.mxnet/models', ctx=cpu(), **kwargs):
     r"""SlowFast networks (SlowFast) from
     `"SlowFast Networks for Video Recognition"
@@ -539,6 +546,7 @@ def slowfast_8x8_resnet101_kinetics400(nclass=400, pretrained=False, pretrained_
                      layers=[3, 4, 23, 3],
                      pretrained=pretrained,
                      pretrained_base=pretrained_base,
+                     feat_ext=feat_ext,
                      num_segments=num_segments,
                      num_crop=num_crop,
                      partial_bn=partial_bn,
@@ -568,7 +576,7 @@ def slowfast_8x8_resnet101_kinetics400(nclass=400, pretrained=False, pretrained_
 
 def slowfast_16x8_resnet101_kinetics400(nclass=400, pretrained=False, pretrained_base=True,
                                         use_tsn=False, num_segments=1, num_crop=1,
-                                        partial_bn=False,
+                                        partial_bn=False, feat_ext=False,
                                         root='~/.mxnet/models', ctx=cpu(), **kwargs):
     r"""SlowFast networks (SlowFast) from
     `"SlowFast Networks for Video Recognition"
@@ -597,6 +605,7 @@ def slowfast_16x8_resnet101_kinetics400(nclass=400, pretrained=False, pretrained
                      layers=[3, 4, 23, 3],
                      pretrained=pretrained,
                      pretrained_base=pretrained_base,
+                     feat_ext=feat_ext,
                      num_segments=num_segments,
                      num_crop=num_crop,
                      partial_bn=partial_bn,

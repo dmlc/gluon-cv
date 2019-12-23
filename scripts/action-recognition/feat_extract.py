@@ -94,9 +94,9 @@ def video_TSN_decord_batch_loader(opt, directory, video_reader, duration, indice
             offset = int(seg_ind)
             for i, _ in enumerate(range(0, opt.skip_length, opt.new_step)):
                 if offset + skip_offsets[i] <= duration:
-                    frame_id = offset + skip_offsets[i]
+                    frame_id = offset + skip_offsets[i] - 1
                 else:
-                    frame_id = offset
+                    frame_id = offset - 1
                 frame_id_list.append(frame_id)
                 if offset + opt.new_step < duration:
                     offset += opt.new_step
@@ -116,9 +116,9 @@ def video_TSN_decord_slowfast_loader(opt, directory, video_reader, duration, ind
         offset = int(seg_ind)
         for i, _ in enumerate(range(0, opt.skip_length, opt.new_step)):
             if offset + skip_offsets[i] <= duration:
-                frame_id = offset + skip_offsets[i]
+                frame_id = offset + skip_offsets[i] - 1
             else:
-                frame_id = offset
+                frame_id = offset - 1
 
             if (i + 1) % opt.fast_temporal_stride == 0:
                 fast_id_list.append(frame_id)

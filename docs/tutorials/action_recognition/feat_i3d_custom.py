@@ -1,15 +1,12 @@
-"""8. Extracting features from I3D models
-=========================================
+"""8. Extracting video features from pre-trained models
+=======================================================
 
-This is a video action recognition tutorial using Gluon CV toolkit, a step-by-step example.
-The readers should have basic knowledge of deep learning and should be familiar with Gluon API.
-New users may first go through `A 60-minute Gluon Crash Course <http://gluon-crash-course.mxnet.io/>`_.
-You can `Start Training Now`_ or `Dive into Deep`_.
-
-Feature extraction is a very useful tool to have when you don't have large annotated dataset or don't have the
-computing resources to train a model for your use cases. In this tutorial, we provide a simple solution.
-The only thing you need to prepare is a text file containing the video paths, we will take care of the rest.
-You can extract all kinds of features from many popular pre-trained models using a single command line.
+Feature extraction is a very useful tool when you don't have large annotated dataset or don't have the
+computing resources to train a model from scratch for your use case. It's also useful to visualize what the model have learned.
+In this tutorial, we provide a simple unified solution.
+The only thing you need to prepare is a text file containing the information of your videos (e.g., the path to your videos),
+we will take care of the rest.
+You can extract strong video features from many popular pre-trained models (e.g., I3D, I3D-nonlocal, SlowFast) using a single command line.
 
 .. note::
 
@@ -57,6 +54,7 @@ You can extract all kinds of features from many popular pre-trained models using
 # However, the second and third things are not gonna used in the code, they are just a placeholder.
 # So you can put any postive number in these two places.
 #
+# Note that, at this moment, we only support extracting features from videos directly.
 
 ######################################################################
 # Once you prepare the ``video.txt``, you can start extracting feature by:
@@ -96,4 +94,17 @@ You can extract all kinds of features from many popular pre-trained models using
 #     python feat_extract.py --data-list video.txt --model i3d_resnet50_v1_kinetics400 --save-dir ./features --num-segments 10 --new-length 64 --three-crop
 
 ######################################################################
-# There are also many other options and other models you can choose, please check ``feat_extract.py`` for more usage information.
+# We also provide pre-trained SlowFast models for you to extract video features. SlowFast is a recent state-of-the-art video model that
+# achieves the best accuracy-efficiency tradeoff. For example, if you want to extract features from model ``slowfast_4x16_resnet50_kinetics400``,
+#
+# ::
+#
+#     python feat_extract.py --data-list video.txt --model slowfast_4x16_resnet50_kinetics400 --save-dir ./features --slowfast --slow-temporal-stride 16 --fast-temporal-stride 2
+#
+# The model requires the input to be a 64-frame video clip.
+# We select 4 frames for the slow branch (temporal_stride = 16) and 32 frames for the fast branch (temporal_stride = 2).
+#
+
+######################################################################
+# Similarly, you can specify num_segments, new_legnth, etc. to obtain stronger features.
+# There are many other options and other models you can choose, please check ``feat_extract.py`` for more usage information.
