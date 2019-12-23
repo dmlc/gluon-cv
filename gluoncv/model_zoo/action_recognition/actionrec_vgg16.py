@@ -5,7 +5,7 @@ from mxnet.gluon import nn
 from mxnet.gluon.nn import HybridBlock
 from ..vgg import vgg16
 
-__all__ = ['vgg16_ucf101']
+__all__ = ['vgg16_ucf101', 'vgg16_hmdb51', 'vgg16_kinetics400', 'vgg16_sthsthv2']
 
 class ActionRecVGG16(HybridBlock):
     r"""VGG16 model for video action recognition
@@ -75,6 +75,66 @@ def vgg16_ucf101(nclass=101, pretrained=False, pretrained_base=True,
                                              tag=pretrained, root=root))
         from ...data import UCF101Attr
         attrib = UCF101Attr()
+        model.classes = attrib.classes
+    model.collect_params().reset_ctx(ctx)
+    return model
+
+def vgg16_hmdb51(nclass=51, pretrained=False, pretrained_base=True,
+                 use_tsn=False, num_segments=1, num_crop=1,
+                 ctx=mx.cpu(), root='~/.mxnet/models', **kwargs):
+    model = ActionRecVGG16(nclass=nclass,
+                           pretrained_base=pretrained_base,
+                           num_segments=num_segments,
+                           num_crop=num_crop,
+                           dropout_ratio=0.9,
+                           init_std=0.001)
+
+    if pretrained:
+        from ..model_store import get_model_file
+        model.load_parameters(get_model_file('vgg16_hmdb51',
+                                             tag=pretrained, root=root))
+        from ...data import HMDB51Attr
+        attrib = HMDB51Attr()
+        model.classes = attrib.classes
+    model.collect_params().reset_ctx(ctx)
+    return model
+
+def vgg16_kinetics400(nclass=400, pretrained=False, pretrained_base=True,
+                      use_tsn=False, num_segments=1, num_crop=1,
+                      ctx=mx.cpu(), root='~/.mxnet/models', **kwargs):
+    model = ActionRecVGG16(nclass=nclass,
+                           pretrained_base=pretrained_base,
+                           num_segments=num_segments,
+                           num_crop=num_crop,
+                           dropout_ratio=0.5,
+                           init_std=0.01)
+
+    if pretrained:
+        from ..model_store import get_model_file
+        model.load_parameters(get_model_file('vgg16_kinetics400',
+                                             tag=pretrained, root=root))
+        from ...data import Kinetics400Attr
+        attrib = Kinetics400Attr()
+        model.classes = attrib.classes
+    model.collect_params().reset_ctx(ctx)
+    return model
+
+def vgg16_sthsthv2(nclass=174, pretrained=False, pretrained_base=True,
+                   use_tsn=False, num_segments=1, num_crop=1,
+                   ctx=mx.cpu(), root='~/.mxnet/models', **kwargs):
+    model = ActionRecVGG16(nclass=nclass,
+                           pretrained_base=pretrained_base,
+                           num_segments=num_segments,
+                           num_crop=num_crop,
+                           dropout_ratio=0.5,
+                           init_std=0.01)
+
+    if pretrained:
+        from ..model_store import get_model_file
+        model.load_parameters(get_model_file('vgg16_sthsthv2',
+                                             tag=pretrained, root=root))
+        from ...data import SomethingSomethingV2Attr
+        attrib = SomethingSomethingV2Attr()
         model.classes = attrib.classes
     model.collect_params().reset_ctx(ctx)
     return model
