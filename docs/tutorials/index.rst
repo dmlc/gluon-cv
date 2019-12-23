@@ -306,6 +306,17 @@ Dataset Preparation
         :title: Prepare HMDB51 Dataset
         :link: ../build/examples_datasets/hmdb51.html
 
+Distributed Training
+--------------------
+
+.. container:: cards
+
+    .. card::
+        :title: Distributed training of deep video models: SlowFast
+        :link: ../build/examples_distributed/distributed_slowfast.html
+
+        Hands on distributed training of SlowFast models on Kinetics400 dataset.
+
 
 Deployment
 ----------
@@ -335,4 +346,5 @@ Deployment
     ../build/examples_pose/index
     ../build/examples_action_recognition/index
     ../build/examples_datasets/index
+    ../build/examples_distributed/index
     ../build/examples_deployment/index
