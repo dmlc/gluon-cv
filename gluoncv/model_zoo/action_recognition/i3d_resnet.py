@@ -568,7 +568,7 @@ def i3d_resnet50_v1_kinetics400(nclass=400, pretrained=False, pretrained_base=Tr
 
 def i3d_resnet101_v1_kinetics400(nclass=400, pretrained=False, pretrained_base=True, ctx=cpu(),
                                  root='~/.mxnet/models', use_tsn=False, num_segments=1, num_crop=1,
-                                 partial_bn=False, **kwargs):
+                                 partial_bn=False, feat_ext=False, **kwargs):
     r"""Inflated 3D model (I3D) from
     `"Quo Vadis, Action Recognition? A New Model and the Kinetics Dataset"
     <https://arxiv.org/abs/1705.07750>`_ paper.
@@ -596,6 +596,7 @@ def i3d_resnet101_v1_kinetics400(nclass=400, pretrained=False, pretrained_base=T
                          depth=101,
                          pretrained=pretrained,
                          pretrained_base=pretrained_base,
+                         feat_ext=feat_ext,
                          num_segments=num_segments,
                          num_crop=num_crop,
                          out_indices=[3],
@@ -618,7 +619,7 @@ def i3d_resnet101_v1_kinetics400(nclass=400, pretrained=False, pretrained_base=T
 
 def i3d_nl5_resnet50_v1_kinetics400(nclass=400, pretrained=False, pretrained_base=True, ctx=cpu(),
                                     root='~/.mxnet/models', use_tsn=False, num_segments=1, num_crop=1,
-                                    partial_bn=False, **kwargs):
+                                    partial_bn=False, feat_ext=False, **kwargs):
     r"""Inflated 3D model (I3D) from
     `"Quo Vadis, Action Recognition? A New Model and the Kinetics Dataset"
     <https://arxiv.org/abs/1705.07750>`_ paper.
@@ -648,6 +649,7 @@ def i3d_nl5_resnet50_v1_kinetics400(nclass=400, pretrained=False, pretrained_bas
                          depth=50,
                          pretrained=pretrained,
                          pretrained_base=pretrained_base,
+                         feat_ext=feat_ext,
                          num_segments=num_segments,
                          num_crop=num_crop,
                          out_indices=[3],
@@ -673,7 +675,7 @@ def i3d_nl5_resnet50_v1_kinetics400(nclass=400, pretrained=False, pretrained_bas
 
 def i3d_nl10_resnet50_v1_kinetics400(nclass=400, pretrained=False, pretrained_base=True, ctx=cpu(),
                                      root='~/.mxnet/models', use_tsn=False, num_segments=1, num_crop=1,
-                                     partial_bn=False, **kwargs):
+                                     partial_bn=False, feat_ext=False, **kwargs):
     r"""Inflated 3D model (I3D) from
     `"Quo Vadis, Action Recognition? A New Model and the Kinetics Dataset"
     <https://arxiv.org/abs/1705.07750>`_ paper.
@@ -703,6 +705,7 @@ def i3d_nl10_resnet50_v1_kinetics400(nclass=400, pretrained=False, pretrained_ba
                          depth=50,
                          pretrained=pretrained,
                          pretrained_base=pretrained_base,
+                         feat_ext=feat_ext,
                          num_segments=num_segments,
                          num_crop=num_crop,
                          out_indices=[3],
@@ -728,7 +731,7 @@ def i3d_nl10_resnet50_v1_kinetics400(nclass=400, pretrained=False, pretrained_ba
 
 def i3d_nl5_resnet101_v1_kinetics400(nclass=400, pretrained=False, pretrained_base=True, ctx=cpu(),
                                      root='~/.mxnet/models', use_tsn=False, num_segments=1, num_crop=1,
-                                     partial_bn=False, **kwargs):
+                                     partial_bn=False, feat_ext=False, **kwargs):
     r"""Inflated 3D model (I3D) from
     `"Quo Vadis, Action Recognition? A New Model and the Kinetics Dataset"
     <https://arxiv.org/abs/1705.07750>`_ paper.
@@ -758,6 +761,7 @@ def i3d_nl5_resnet101_v1_kinetics400(nclass=400, pretrained=False, pretrained_ba
                          depth=101,
                          pretrained=pretrained,
                          pretrained_base=pretrained_base,
+                         feat_ext=feat_ext,
                          num_segments=num_segments,
                          num_crop=num_crop,
                          out_indices=[3],
@@ -783,7 +787,7 @@ def i3d_nl5_resnet101_v1_kinetics400(nclass=400, pretrained=False, pretrained_ba
 
 def i3d_nl10_resnet101_v1_kinetics400(nclass=400, pretrained=False, pretrained_base=True, ctx=cpu(),
                                       root='~/.mxnet/models', use_tsn=False, num_segments=1, num_crop=1,
-                                      partial_bn=False, **kwargs):
+                                      partial_bn=False, feat_ext=False, **kwargs):
     r"""Inflated 3D model (I3D) from
     `"Quo Vadis, Action Recognition? A New Model and the Kinetics Dataset"
     <https://arxiv.org/abs/1705.07750>`_ paper.
@@ -813,6 +817,7 @@ def i3d_nl10_resnet101_v1_kinetics400(nclass=400, pretrained=False, pretrained_b
                          depth=101,
                          pretrained=pretrained,
                          pretrained_base=pretrained_base,
+                         feat_ext=feat_ext,
                          num_segments=num_segments,
                          num_crop=num_crop,
                          out_indices=[3],
@@ -838,7 +843,7 @@ def i3d_nl10_resnet101_v1_kinetics400(nclass=400, pretrained=False, pretrained_b
 
 def i3d_resnet50_v1_sthsthv2(nclass=174, pretrained=False, pretrained_base=True, ctx=cpu(),
                              root='~/.mxnet/models', use_tsn=False, num_segments=1, num_crop=1,
-                             partial_bn=False, **kwargs):
+                             partial_bn=False, feat_ext=False, **kwargs):
     r"""Inflated 3D model (I3D) from
     `"Quo Vadis, Action Recognition? A New Model and the Kinetics Dataset"
     <https://arxiv.org/abs/1705.07750>`_ paper.
@@ -866,6 +871,7 @@ def i3d_resnet50_v1_sthsthv2(nclass=174, pretrained=False, pretrained_base=True,
                          depth=50,
                          pretrained=pretrained,
                          pretrained_base=pretrained_base,
+                         feat_ext=feat_ext,
                          num_segments=num_segments,
                          num_crop=num_crop,
                          out_indices=[3],
@@ -888,7 +894,7 @@ def i3d_resnet50_v1_sthsthv2(nclass=174, pretrained=False, pretrained_base=True,
 
 def i3d_resnet50_v1_hmdb51(nclass=51, pretrained=False, pretrained_base=True, ctx=cpu(),
                            root='~/.mxnet/models', use_tsn=False, num_segments=1, num_crop=1,
-                           partial_bn=False, use_kinetics_pretrain=True, **kwargs):
+                           partial_bn=False, use_kinetics_pretrain=True, feat_ext=False, **kwargs):
     r"""Inflated 3D model (I3D) from
     `"Quo Vadis, Action Recognition? A New Model and the Kinetics Dataset"
     <https://arxiv.org/abs/1705.07750>`_ paper.
@@ -916,6 +922,7 @@ def i3d_resnet50_v1_hmdb51(nclass=51, pretrained=False, pretrained_base=True, ct
                          depth=50,
                          pretrained=pretrained,
                          pretrained_base=pretrained_base,
+                         feat_ext=feat_ext,
                          num_segments=num_segments,
                          num_crop=num_crop,
                          out_indices=[3],
@@ -957,7 +964,7 @@ def i3d_resnet50_v1_hmdb51(nclass=51, pretrained=False, pretrained_base=True, ct
 
 def i3d_resnet50_v1_ucf101(nclass=101, pretrained=False, pretrained_base=True, ctx=cpu(),
                            root='~/.mxnet/models', use_tsn=False, num_segments=1, num_crop=1,
-                           partial_bn=False, use_kinetics_pretrain=True, **kwargs):
+                           partial_bn=False, use_kinetics_pretrain=True, feat_ext=False, **kwargs):
     r"""Inflated 3D model (I3D) from
     `"Quo Vadis, Action Recognition? A New Model and the Kinetics Dataset"
     <https://arxiv.org/abs/1705.07750>`_ paper.
@@ -985,6 +992,7 @@ def i3d_resnet50_v1_ucf101(nclass=101, pretrained=False, pretrained_base=True, c
                          depth=50,
                          pretrained=pretrained,
                          pretrained_base=pretrained_base,
+                         feat_ext=feat_ext,
                          num_segments=num_segments,
                          num_crop=num_crop,
                          out_indices=[3],
@@ -1026,7 +1034,7 @@ def i3d_resnet50_v1_ucf101(nclass=101, pretrained=False, pretrained_base=True, c
 
 def i3d_resnet50_v1_custom(nclass=400, pretrained=False, pretrained_base=True, ctx=cpu(),
                            root='~/.mxnet/models', use_tsn=False, num_segments=1, num_crop=1,
-                           partial_bn=False, use_kinetics_pretrain=True, **kwargs):
+                           partial_bn=False, use_kinetics_pretrain=True, feat_ext=False, **kwargs):
     r"""Inflated 3D model (I3D) from
     `"Quo Vadis, Action Recognition? A New Model and the Kinetics Dataset"
     <https://arxiv.org/abs/1705.07750>`_ paper.
@@ -1054,6 +1062,7 @@ def i3d_resnet50_v1_custom(nclass=400, pretrained=False, pretrained_base=True, c
                          depth=50,
                          pretrained=pretrained,
                          pretrained_base=pretrained_base,
+                         feat_ext=feat_ext,
                          num_segments=num_segments,
                          num_crop=num_crop,
                          out_indices=[3],

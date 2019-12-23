@@ -1,13 +1,10 @@
 """9. Inference on your own videos using pre-trained models
 ===========================================================
 
-This is a video action recognition tutorial using Gluon CV toolkit, a step-by-step example.
-The readers should have basic knowledge of deep learning and should be familiar with Gluon API.
-New users may first go through `A 60-minute Gluon Crash Course <http://gluon-crash-course.mxnet.io/>`_.
-You can `Start Training Now`_ or `Dive into Deep`_.
-
-In this tutorial, we provide a script for you to make activity predictions on your own videos.
-The only thing you need to prepare is a text file, containing the list of videos you want to evaluate.
+In this tutorial, we provide a script for you to make human activity predictions on your own videos.
+The only thing you need to prepare is a text file containing the information of your videos (e.g., the path to your videos),
+we will take care of the rest.
+You can use many popular pre-trained models (e.g., I3D, I3D-nonlocal, SlowFast) in a single command line.
 
 .. note::
 
@@ -55,6 +52,7 @@ The only thing you need to prepare is a text file, containing the list of videos
 # However, the second and third things are not gonna used in the code, they are just a placeholder.
 # So you can put any postive number in these two places.
 #
+# Note that, at this moment, we only support inferencing on videos directly.
 
 ######################################################################
 # Once you prepare the ``video.txt``, you can start inferencing on your videos.
@@ -90,6 +88,7 @@ The only thing you need to prepare is a text file, containing the list of videos
 
 ######################################################################
 # Here we choose the basic slowfast_4x16_resnet50 configuration.
-# It requires the input to be a 64-frame video clip. We select 4 frames for the slow branch (stride=16) and 32 frames for the fast branch (stride=2).
+# It requires the input to be a 64-frame video clip. We select 4 frames for the slow branch (temporal_stride = 16) and 32 frames for the fast branch (temporal_stride = 2).
 #
-# There are also many other options and other models you can choose, please check ``inference.py`` for more usage information.
+# Similarly, you can specify num_segments, new_legnth, etc. as in previous tutorial to obtain more accurate predictions.
+# There are many other options and other models you can choose, please check ``inference.py`` for more usage information.
