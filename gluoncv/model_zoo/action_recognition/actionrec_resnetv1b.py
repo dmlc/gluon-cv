@@ -8,7 +8,8 @@ from ..resnetv1b import resnet18_v1b, resnet34_v1b, resnet50_v1b, resnet101_v1b,
 __all__ = ['resnet18_v1b_sthsthv2', 'resnet34_v1b_sthsthv2', 'resnet50_v1b_sthsthv2',
            'resnet101_v1b_sthsthv2', 'resnet152_v1b_sthsthv2', 'resnet18_v1b_kinetics400',
            'resnet34_v1b_kinetics400', 'resnet50_v1b_kinetics400', 'resnet101_v1b_kinetics400',
-           'resnet152_v1b_kinetics400', 'resnet50_v1b_hmdb51', 'resnet50_v1b_custom']
+           'resnet152_v1b_kinetics400', 'resnet50_v1b_ucf101', 'resnet50_v1b_hmdb51',
+           'resnet50_v1b_custom']
 
 class ActionRecResNetV1b(HybridBlock):
     r"""ResNet models for video action recognition
@@ -311,6 +312,28 @@ def resnet152_v1b_kinetics400(nclass=400, pretrained=False, pretrained_base=True
                                              tag=pretrained, root=root))
         from ...data import Kinetics400Attr
         attrib = Kinetics400Attr()
+        model.classes = attrib.classes
+    model.collect_params().reset_ctx(ctx)
+    return model
+
+def resnet50_v1b_ucf101(nclass=101, pretrained=False, pretrained_base=True,
+                        use_tsn=False, partial_bn=False,
+                        num_segments=1, num_crop=1, root='~/.mxnet/models',
+                        ctx=mx.cpu(), **kwargs):
+    model = ActionRecResNetV1b(depth=50,
+                               nclass=nclass,
+                               partial_bn=partial_bn,
+                               num_segments=num_segments,
+                               num_crop=num_crop,
+                               dropout_ratio=0.9,
+                               init_std=0.001)
+
+    if pretrained:
+        from ..model_store import get_model_file
+        model.load_parameters(get_model_file('resnet50_v1b_ucf101',
+                                             tag=pretrained, root=root))
+        from ...data import UCF101Attr
+        attrib = UCF101Attr()
         model.classes = attrib.classes
     model.collect_params().reset_ctx(ctx)
     return model

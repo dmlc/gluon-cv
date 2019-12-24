@@ -381,6 +381,8 @@ def main():
             train_patterns = None
             if 'inceptionv3' in opt.model:
                 train_patterns = '.*weight|.*bias|inception30_batchnorm0_gamma|inception30_batchnorm0_beta|inception30_batchnorm0_running_mean|inception30_batchnorm0_running_var'
+            elif 'inceptionv1' in opt.model:
+                train_patterns = '.*weight|.*bias|googlenet0_batchnorm0_gamma|googlenet0_batchnorm0_beta|googlenet0_batchnorm0_running_mean|googlenet0_batchnorm0_running_var'
             else:
                 logger.info('Current model does not support partial batch normalization.')
 
