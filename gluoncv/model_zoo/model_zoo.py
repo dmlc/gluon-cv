@@ -36,6 +36,7 @@ from .yolo import *
 from .alpha_pose import *
 from .action_recognition import *
 from .center_net import *
+from .hrnet import *
 
 __all__ = ['get_model', 'get_model_list']
 
@@ -292,7 +293,17 @@ _models = {
     'inceptionv3_ucf101_int8': inceptionv3_ucf101_int8,
     'resnet18_v1b_kinetics400_int8': resnet18_v1b_kinetics400_int8,
     'resnet50_v1b_kinetics400_int8': resnet50_v1b_kinetics400_int8,
-    'inceptionv3_kinetics400_int8': inceptionv3_kinetics400_int8
+    'inceptionv3_kinetics400_int8': inceptionv3_kinetics400_int8,
+    'hrnet_w18_small_v1_c' : hrnet_w18_small_v1_c,
+    'hrnet_w18_small_v2_c' : hrnet_w18_small_v2_c,
+    'hrnet_w30_c' : hrnet_w30_c,
+    'hrnet_w32_c' : hrnet_w32_c,
+    'hrnet_w40_c' : hrnet_w40_c,
+    'hrnet_w44_c' : hrnet_w44_c,
+    'hrnet_w48_c' : hrnet_w48_c,
+    'hrnet_w18_small_v1_s' : hrnet_w18_small_v1_s,
+    'hrnet_w18_small_v2_s' : hrnet_w18_small_v2_s,
+    'hrnet_w48_s' : hrnet_w48_s
 }
 
 

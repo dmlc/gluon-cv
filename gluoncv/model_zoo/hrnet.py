@@ -8,6 +8,9 @@ from mxnet.context import cpu
 
 from .resnet import BasicBlockV1, BottleneckV1
 
+__all__ = ['get_hrnet', 'hrnet_w18_small_v1_c', 'hrnet_w18_small_v2_c', 'hrnet_w30_c',
+             'hrnet_w32_c', 'hrnet_w40_c', 'hrnet_w44_c', 'hrnet_w48_c', 
+             'hrnet_w18_small_v1_s', 'hrnet_w18_small_v2_s', 'hrnet_w48_s']
 class HRBasicBlock(BasicBlockV1):
     expansion = 1
 
@@ -16,7 +19,7 @@ class HRBottleneck(BottleneckV1):
 
 class HighResolutionModule(nn.HybridBlock):
     '''
-    interp_type can be 'nearest'/'bilinear'/'bilinear_const'
+    interp_type can be 'nearest'/'bilinear'/'bilinear_like'
     '''
     def __init__(self, num_branches, blocks, num_blocks,num_channels, fuse_method,
             num_inchannels=None, multi_scale_output=True, interp_type='nearest',
@@ -140,7 +143,7 @@ class HighResolutionModule(nn.HybridBlock):
                             scale_width=2**(j-i),
                             align_corners=False
                         )
-                    elif self.interp_type == 'bilinear_const':
+                    elif self.interp_type == 'bilinear_like':
                         y = y + F.contrib.BilinearResize2D(
                             self.fuse_layers[i][j](X[j]),
                             like=X[i],
@@ -403,7 +406,7 @@ class HighResolutionClsNet(HighResolutionBaseNet):
         return incre_blocks, downsamp_blocks, final_layer
 
 class HighResolutionSegNet(HighResolutionBaseNet):
-    def __init__(self, config, stage_interp_type='bilinear_const', norm_layer=BatchNorm, norm_kwargs=None, num_classes=19, **kwargs):
+    def __init__(self, config, stage_interp_type='bilinear_like', norm_layer=BatchNorm, norm_kwargs=None, num_classes=19, **kwargs):
         super(HighResolutionSegNet, self).__init__(config, stage_interp_type=stage_interp_type,
             norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
@@ -451,7 +454,7 @@ class HighResolutionSegNet(HighResolutionBaseNet):
         return last_layer
 
 hrnet_spec = {}
-hrnet_spec['w18_small_V1'] = [
+hrnet_spec['w18_small_v1'] = [
     #modules, block_type, blocks, channels, fuse_method
     (1,    'BOTTLENECK', [1],           [32],           'SUM'),
     (1,    'BASIC',      [2]*2,         [16,32],        'SUM'),
@@ -459,7 +462,7 @@ hrnet_spec['w18_small_V1'] = [
     (1,    'BASIC',      [2]*4,         [16,32,64,128],' SUM')
 ]
 
-hrnet_spec['w18_small_V2'] = [
+hrnet_spec['w18_small_v2'] = [
     #modules, block_type, blocks, channels, fuse_method
     (1,    'BOTTLENECK', [2],           [64],           'SUM'),
     (1,    'BASIC',      [2]*2,         [18,36],        'SUM'),
@@ -517,10 +520,10 @@ def get_hrnet(model_name, stage_interp_type='nearest', purpose='cls', pretrained
     Parameters
     ----------
     model_name : string
-        The name of hrnet models: w18_small_V1/w18_small_V2/w30/w32/w40/w42/w48.
+        The name of hrnet models: w18_small_v1/w18_small_v2/w30/w32/w40/w42/w48.
     stage_interp_type : string
         The interpolation type for upsample in each stage, nearest, bilinear and
-        bilinear_const are supported.
+        bilinear_like are supported.
     purpose: string
         The purpose of model, cls and seg are supported.
     pretrained : bool or str
@@ -556,17 +559,35 @@ def get_hrnet(model_name, stage_interp_type='nearest', purpose='cls', pretrained
     
     return net
 
+def hrnet_w18_small_v1_c(**kwargs):
+    return get_hrnet('w18_small_v1', **kwargs)
 
+def hrnet_w18_small_v2_c(**kwargs):
+    return get_hrnet('w18_small_v2', **kwargs)
 
-if __name__ == '__main__':
+def hrnet_w30_c(**kwargs):
+    return get_hrnet('w30', **kwargs)
 
-    net = get_hrnet('w32')
-    
-    a = mx.nd.random.uniform(shape=(16,3,96,96))
+def hrnet_w32_c(**kwargs):
+    return get_hrnet('w32', **kwargs)
 
-    net.initialize()
-    # net.hybridize()
+def hrnet_w40_c(**kwargs):
+    return get_hrnet('w40', **kwargs)
 
-    y = net(a)
+def hrnet_w44_c(**kwargs):
+    return get_hrnet('w44', **kwargs)
 
-    net.summary(a)
+def hrnet_w48_c(**kwargs):
+    return get_hrnet('w48', **kwargs)
+
+def hrnet_w18_small_v1_s(**kwargs):
+    return get_hrnet('w18_small_v1', stage_interp_type='bilinear_like', purpose='seg',
+        norm_kwargs={'momentum': 0.99}, num_classes=19, **kwargs)
+
+def hrnet_w18_small_v2_s(**kwargs):
+    return get_hrnet('w18_small_v1', stage_interp_type='bilinear_like', purpose='seg',
+        norm_kwargs={'momentum': 0.99}, num_classes=19, **kwargs)
+
+def hrnet_w48_s(**kwargs):
+    return get_hrnet('w48', stage_interp_type='bilinear_like', purpose='seg',
+        norm_kwargs={'momentum': 0.99}, num_classes=19, **kwargs)
