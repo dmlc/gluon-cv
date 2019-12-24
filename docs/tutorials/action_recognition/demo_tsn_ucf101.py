@@ -6,7 +6,14 @@ of realistic action videos, collected from YouTube. With 13,320 short trimmed vi
 from 101 action categories, it is one of the most widely used dataset in the research
 community for benchmarking state-of-the-art video action recognition models.
 
-In this tutorial, we will demonstrate how to load a pre-trained model from :ref:`gluoncv-model-zoo`
+`TSN <https://arxiv.org/abs/1608.00859>`_ (Temporal Segment Network) is a widely adopted video
+classification method. It is proposed to incoporate temporal information from an entire video.
+The idea is straightforward: we can evenly divide the video into several segments,
+process each segment individually, obtain segmental consensus from each segment, and perform
+final prediction. TSN is more like a general algorithm, rather than a specific network architecture.
+It can work with both 2D and 3D neural networks.
+
+In this tutorial, we will demonstrate how to load a pre-trained TSN model from :ref:`gluoncv-model-zoo`
 and classify video frames from the Internet or your local disk into one of the 101 action classes.
 
 Step by Step
@@ -67,7 +74,7 @@ plt.show()
 # Can't recognize anything? *Don't panic!* Neither do I.
 # The transformation makes it more "model-friendly", instead of "human-friendly".
 #
-# Next, we load a pre-trained model.
+# Next, we load a pre-trained VGG16 model. The VGG16 model is trained using TSN.
 
 net = get_model('vgg16_ucf101', nclass=101, pretrained=True)
 
@@ -94,7 +101,8 @@ for i in range(topK):
 
 ################################################################
 #
-# The next example is how to perform video action recognition, e.g., use the same pre-trained model on an entire video.
+# The next example is how to perform video action recognition, e.g., use the same
+# pre-trained model on an entire video.
 
 ################################################################
 #

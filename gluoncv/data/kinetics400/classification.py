@@ -2,6 +2,7 @@
 """Kinetics400 action classification dataset.
 Code partially borrowed from https://github.com/open-mmlab/mmaction."""
 import os
+import random
 import numpy as np
 from mxnet import nd
 from mxnet.gluon.data import dataset
@@ -208,6 +209,8 @@ class Kinetics400(dataset.Dataset):
         clips = []
         with open(setting) as split_f:
             data = split_f.readlines()
+            if not self.test_mode:
+                random.shuffle(data)
             for line in data:
                 line_info = line.split()
                 # line format: video_path, video_duration, video_label
@@ -375,9 +378,9 @@ class Kinetics400(dataset.Dataset):
             offset = int(seg_ind)
             for i, _ in enumerate(range(0, self.skip_length, self.new_step)):
                 if offset + skip_offsets[i] <= duration:
-                    frame_id = offset + skip_offsets[i]
+                    frame_id = offset + skip_offsets[i] - 1
                 else:
-                    frame_id = offset
+                    frame_id = offset - 1
                 frame_id_list.append(frame_id)
                 if offset + self.new_step < duration:
                     offset += self.new_step
@@ -397,9 +400,9 @@ class Kinetics400(dataset.Dataset):
             offset = int(seg_ind)
             for i, _ in enumerate(range(0, self.skip_length, self.new_step)):
                 if offset + skip_offsets[i] <= duration:
-                    frame_id = offset + skip_offsets[i]
+                    frame_id = offset + skip_offsets[i] - 1
                 else:
-                    frame_id = offset
+                    frame_id = offset - 1
 
                 if (i + 1) % self.fast_temporal_stride == 0:
                     fast_id_list.append(frame_id)

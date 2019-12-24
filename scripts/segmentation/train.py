@@ -9,6 +9,7 @@ from mxnet import gluon, autograd
 from mxnet.gluon.data.vision import transforms
 
 import gluoncv
+gluoncv.utils.check_version('0.6.0')
 from gluoncv.loss import *
 from gluoncv.utils import LRScheduler
 from gluoncv.model_zoo.segbase import *
@@ -21,7 +22,7 @@ def parse_args():
     """Training Options for Segmentation Experiments"""
     parser = argparse.ArgumentParser(description='MXNet Gluon \
                                      Segmentation')
-    # model and dataset 
+    # model and dataset
     parser.add_argument('--model', type=str, default='fcn',
                         help='model name (default: fcn)')
     parser.add_argument('--backbone', type=str, default='resnet50',

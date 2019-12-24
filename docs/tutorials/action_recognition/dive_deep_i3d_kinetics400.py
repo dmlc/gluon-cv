@@ -1,5 +1,5 @@
-"""2. Dive Deep into Training TSN mdoels on UCF101
-==================================================
+"""4. Dive Deep into Training I3D mdoels on Kinetcis400
+=======================================================
 
 This is a video action recognition tutorial using Gluon CV toolkit, a step-by-step example.
 The readers should have basic knowledge of deep learning and should be familiar with Gluon API.
@@ -14,14 +14,6 @@ Start Training Now
     Feel free to skip the tutorial because the training script is self-complete and ready to launch.
 
     :download:`Download Full Python Script: train_recognizer.py<../../../scripts/action-recognition/train_recognizer.py>`
-
-    Example training command::
-
-        # Finetune a pretrained VGG16 model without using temporal segment network.
-        python train_recognizer.py --model vgg16_ucf101 --num-classes 101 --num-gpus 8 --lr-mode step --lr 0.001 --lr-decay 0.1 --lr-decay-epoch 30,60,80 --num-epochs 80
-
-        # Finetune a pretrained VGG16 model using temporal segment network.
-        python train_recognizer.py --model vgg16_ucf101 --num-classes 101 --num-gpus 8 --num-segments 3 --use-tsn --lr-mode step --lr 0.001 --lr-decay 0.1 --lr-decay-epoch 30,60,80 --num-epochs 80
 
     For more training command options, please run ``python train_recognizer.py -h``
     Please checkout the `model_zoo <../model_zoo/index.html#action_recognition>`_ for training commands of reproducing the pretrained model.
@@ -46,24 +38,27 @@ from mxnet.gluon import nn
 from mxnet.gluon.data.vision import transforms
 
 from gluoncv.data.transforms import video
-from gluoncv.data import ucf101
+from gluoncv.data import Kinetics400
 from gluoncv.model_zoo import get_model
 from gluoncv.utils import makedirs, LRSequential, LRScheduler, split_and_load, TrainingHistory
 
 
 ################################################################
 #
-# Video action recognition is a classification problem.
-# Here we pick a simple yet well-performing structure, ``vgg16_ucf101``, for the
-# tutorial. In addition, we use the the idea of temporal segments (TSN) [Wang16]_
-# to wrap the backbone VGG16 network for adaptation to video domain.
+# Here we pick a widely adopted model, ``I3D-InceptionV1``, for the tutorial.
+# `I3D <https://arxiv.org/abs/1705.07750>`_ (Inflated 3D Networks) is a widely adopted 3D video
+# classification network. It uses 3D convolution to learn spatiotemporal information directly from videos.
+# I3D is proposed to improve C3D model by inflating from 2D models.
+# We can not only reuse the 2D models' architecture (e.g., ResNet, Inception), but also bootstrap
+# the model weights from 2D pretrained models. In this manner, training 3D networks for video
+# classification is feasible and getting much better results.
 
 # number of GPUs to use
 num_gpus = 1
 ctx = [mx.gpu(i) for i in range(num_gpus)]
 
-# Get the model vgg16_ucf101 with temporal segment network, with 101 output classes, without pre-trained weights
-net = get_model(name='vgg16_ucf101', nclass=101, num_segments=3)
+# Get the model i3d_inceptionv1_kinetics400 with 400 output classes, without pre-trained weights
+net = get_model(name='i3d_inceptionv1_kinetics400', nclass=400)
 net.collect_params().reset_ctx(ctx)
 print(net)
 
@@ -96,15 +91,16 @@ transform_train = transforms.Compose([
 # training datasets.
 
 # Batch Size for Each GPU
-per_device_batch_size = 25
+per_device_batch_size = 5
 # Number of data loader workers
 num_workers = 8
 # Calculate effective total batch size
 batch_size = per_device_batch_size * num_gpus
 
-# Set train=True for training data. Here we only use a subset of UCF101 for demonstration purpose.
-# The subset has 101 training samples, one sample per class.
-train_dataset = ucf101.classification.UCF101(train=True, num_segments=3, transform=transform_train)
+# Set train=True for training the model.
+# ``new_length`` indicates the number of frames we use as input.
+# ``new_step`` indicates we skip one frame to sample the input data.
+train_dataset = Kinetics400(train=True, new_length=32, new_step=2, transform=transform_train)
 print('Load %d training samples.' % len(train_dataset))
 train_data = gluon.data.DataLoader(train_dataset, batch_size=batch_size,
                                    shuffle=True, num_workers=num_workers)
@@ -116,12 +112,12 @@ train_data = gluon.data.DataLoader(train_dataset, batch_size=batch_size,
 # Learning rate decay factor
 lr_decay = 0.1
 # Epochs where learning rate decays
-lr_decay_epoch = [30, 60, np.inf]
+lr_decay_epoch = [40, 80, 100]
 
 # Stochastic gradient descent
 optimizer = 'sgd'
 # Set parameters
-optimizer_params = {'learning_rate': 0.001, 'wd': 0.0001, 'momentum': 0.9}
+optimizer_params = {'learning_rate': 0.01, 'wd': 0.0001, 'momentum': 0.9}
 
 # Define our trainer for net
 trainer = gluon.Trainer(net.collect_params(), optimizer, optimizer_params)
@@ -149,8 +145,8 @@ train_history = TrainingHistory(['training-acc'])
 # Following is the script.
 #
 # .. note::
-#   In order to finish the tutorial quickly, we only train for 3 epochs on the tiny subset.
-#   In your experiments, we recommend setting ``epochs=80`` for the full UCF101 dataset.
+#   In order to finish the tutorial quickly, we only train for 3 epochs on a tiny subset of Kinetics400,
+#   and 100 iterations per epoch. In your experiments, we recommend setting ``epochs=100`` for the full Kinetics400 dataset.
 
 epochs = 3
 lr_decay_count = 0
@@ -191,6 +187,9 @@ for epoch in range(epochs):
         train_loss += sum([l.mean().asscalar() for l in loss])
         train_metric.update(label, output)
 
+        if i == 100:
+            break
+
     name, acc = train_metric.get()
 
     # Update history and print metrics
@@ -202,7 +201,8 @@ for epoch in range(epochs):
 train_history.plot()
 
 ##############################################################################
-# You can `Start Training Now`_.
+# Due to the tiny subset, the accuracy number is quite low.
+# You can `Start Training Now`_ on the full Kinetics400 dataset.
 #
 # References
 # ----------
@@ -210,7 +210,3 @@ train_history.plot()
 # .. [Wang15] Limin Wang, Yuanjun Xiong, Zhe Wang, and Yu Qiao. \
 #     "Towards Good Practices for Very Deep Two-Stream ConvNets." \
 #     arXiv preprint arXiv:1507.02159 (2015).
-#
-# .. [Wang16] Limin Wang, Yuanjun Xiong, Zhe Wang, Yu Qiao, Dahua Lin, Xiaoou Tang and Luc Van Gool. \
-#     "Temporal Segment Networks: Towards Good Practices for Deep Action Recognition." \
-#     In European Conference on Computer Vision (ECCV). 2016.

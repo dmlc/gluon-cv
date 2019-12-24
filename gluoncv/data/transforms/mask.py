@@ -103,19 +103,19 @@ def to_mask(polys, size):
     return cocomask.decode(rle)
 
 
-def fill(mask, bbox, size, fast_fill=True):
+def fill(masks, bboxes, size, fast_fill=True):
     """Fill mask to full image size
 
     Parameters
     ----------
     mask : numpy.ndarray with dtype=uint8
         Binary mask prediction of a box
-    bbox : iterable of float
+    bbox : numpy.ndarray of float
         They are :math:`(xmin, ymin, xmax, ymax)`.
     size : tuple
         Tuple of length 2: (width, height).
     fast_fill : boolean, default is True.
-        Whether to use fast fill. Fast fill is less accurate.g
+        Whether to use fast fill. Fast fill is less accurate.
 
     Returns
     -------
@@ -123,36 +123,40 @@ def fill(mask, bbox, size, fast_fill=True):
         Full size binary mask of shape (height, width)
     """
     width, height = size
+    x1, y1, x2, y2 = np.split(bboxes, 4, axis=1)
+    m_h, m_w = masks.shape[1:]
+    x1, y1, x2, y2 = x1.reshape((-1,)), y1.reshape((-1,)), x2.reshape((-1,)), y2.reshape((-1,))
     # pad mask
-    M = mask.shape[0]
-    padded_mask = np.zeros((M + 2, M + 2))
-    padded_mask[1:-1, 1:-1] = mask
-    mask = padded_mask
+    masks = np.pad(masks, [(0, 0), (1, 1), (1, 1)], mode='constant').astype(np.float32)
     # expand boxes
-    x1, y1, x2, y2 = bbox
     x, y, hw, hh = (x1 + x2) / 2, (y1 + y2) / 2, (x2 - x1) / 2, (y2 - y1) / 2
-    hw = hw * (float(M + 2) / M)
-    hh = hh * (float(M + 2) / M)
+    hw = hw * (float(m_w + 2) / m_w)
+    hh = hh * (float(m_h + 2) / m_h)
     x1, y1, x2, y2 = x - hw, y - hh, x + hw, y + hh
+    ret = np.zeros((masks.shape[0], height, width), dtype='uint8')
     if fast_fill:
         # quantize
-        x1, y1, x2, y2 = map(int, (x1 + 0.5, y1 + 0.5, x2 + 0.5, y2 + 0.5))
+        x1, y1, x2, y2 = np.round(x1).astype(int), np.round(y1).astype(int), \
+                         np.round(x2).astype(int), np.round(y2).astype(int)
         w, h = (x2 - x1 + 1), (y2 - y1 + 1)
-        mask = Image.fromarray(mask)
-        mask = np.array(mask.resize((w, h), Image.BILINEAR))
-        # binarize and fill
-        mask = (mask > 0.5).astype('uint8')
-        ret = np.zeros((height, width), dtype='uint8')
-        xx1, yy1 = max(0, x1), max(0, y1)
-        xx2, yy2 = min(width, x2 + 1), min(height, y2 + 1)
-        ret[yy1:yy2, xx1:xx2] = mask[yy1 - y1:yy2 - y1, xx1 - x1:xx2 - x1]
+        xx1, yy1 = np.maximum(0, x1), np.maximum(0, y1)
+        xx2, yy2 = np.minimum(width, x2 + 1), np.minimum(height, y2 + 1)
+        for i, mask in enumerate(masks):
+            mask = Image.fromarray(mask)
+            mask = np.array(mask.resize((w[i], h[i]), Image.BILINEAR))
+            # binarize and fill
+            mask = (mask > 0.5).astype('uint8')
+            ret[i, yy1[i]:yy2[i], xx1[i]:xx2[i]] = \
+                mask[yy1[i] - y1[i]:yy2[i] - y1[i], xx1[i] - x1[i]:xx2[i] - x1[i]]
         return ret
-    # resize mask
-    mask_pixels = np.arange(0.5, mask.shape[0] + 0.5)
-    mask_continuous = interpolate.interp2d(mask_pixels, mask_pixels, mask, fill_value=0.0)
-    ys = np.arange(0.5, height + 0.5)
-    xs = np.arange(0.5, width + 0.5)
-    ys = (ys - y1) / (y2 - y1) * mask.shape[0]
-    xs = (xs - x1) / (x2 - x1) * mask.shape[1]
-    res = mask_continuous(xs, ys)
-    return (res >= 0.5).astype('uint8')
+    for i, mask in enumerate(masks):
+        # resize mask
+        mask_pixels = np.arange(0.5, mask.shape[0] + 0.5)
+        mask_continuous = interpolate.interp2d(mask_pixels, mask_pixels, mask, fill_value=0.0)
+        ys = np.arange(0.5, height + 0.5)
+        xs = np.arange(0.5, width + 0.5)
+        ys = (ys - y1[i]) / (y2[i] - y1[i]) * mask.shape[0]
+        xs = (xs - x1[i]) / (x2[i] - x1[i]) * mask.shape[1]
+        res = mask_continuous(xs, ys)
+        ret[i, :, :] = (res >= 0.5).astype('uint8')
+    return ret

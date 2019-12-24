@@ -7,6 +7,7 @@ from mxnet import gluon, nd, image
 from mxnet.gluon.data.vision import transforms
 
 import gluoncv as gcv
+gcv.utils.check_version('0.6.0')
 from gluoncv import data
 from gluoncv.data import mscoco
 from gluoncv.model_zoo import get_model

@@ -3,6 +3,7 @@ import argparse, time, logging, os, sys, math
 import numpy as np
 import mxnet as mx
 import gluoncv as gcv
+gcv.utils.check_version('0.6.0')
 from mxnet import gluon, nd, init, context
 from mxnet import autograd as ag
 from mxnet.gluon import nn
@@ -11,15 +12,15 @@ from mxboard import SummaryWriter
 from mxnet.contrib import amp
 
 from gluoncv.data.transforms import video
-from gluoncv.data import UCF101, Kinetics400, SomethingSomethingV2, HMDB51
+from gluoncv.data import UCF101, Kinetics400, SomethingSomethingV2, HMDB51, VideoClsCustom
 from gluoncv.model_zoo import get_model
 from gluoncv.utils import makedirs, LRSequential, LRScheduler, split_and_load
-from gluoncv.data.sampler import SplitSampler
+from gluoncv.data.sampler import SplitSampler, ShuffleSplitSampler
 
 # CLI
 def parse_args():
     parser = argparse.ArgumentParser(description='Train a model for action recognition.')
-    parser.add_argument('--dataset', type=str, default='ucf101', choices=['ucf101', 'kinetics400', 'somethingsomethingv2', 'hmdb51'],
+    parser.add_argument('--dataset', type=str, default='ucf101', choices=['ucf101', 'kinetics400', 'somethingsomethingv2', 'hmdb51', 'custom'],
                         help='which dataset to use.')
     parser.add_argument('--data-dir', type=str, default='~/.mxnet/datasets/ucf101/rawframes',
                         help='training (and validation) pictures to use.')
@@ -206,6 +207,17 @@ def get_data_loader(opt, batch_size, num_workers, logger, kvstore=None):
                              new_width=opt.new_width, new_height=opt.new_height, new_length=opt.new_length, new_step=opt.new_step,
                              target_width=input_size, target_height=input_size, video_loader=opt.video_loader, use_decord=opt.use_decord,
                              num_segments=opt.num_segments, transform=transform_test)
+    elif opt.dataset == 'custom':
+        train_dataset = VideoClsCustom(setting=opt.train_list, root=data_dir, train=True,
+                                       new_width=opt.new_width, new_height=opt.new_height, new_length=opt.new_length, new_step=opt.new_step,
+                                       target_width=input_size, target_height=input_size, video_loader=opt.video_loader, use_decord=opt.use_decord,
+                                       slowfast=opt.slowfast, slow_temporal_stride=opt.slow_temporal_stride, fast_temporal_stride=opt.fast_temporal_stride,
+                                       num_segments=opt.num_segments, transform=transform_train)
+        val_dataset = VideoClsCustom(setting=opt.val_list, root=val_data_dir, train=False,
+                                     new_width=opt.new_width, new_height=opt.new_height, new_length=opt.new_length, new_step=opt.new_step,
+                                     target_width=input_size, target_height=input_size, video_loader=opt.video_loader, use_decord=opt.use_decord,
+                                     slowfast=opt.slowfast, slow_temporal_stride=opt.slow_temporal_stride, fast_temporal_stride=opt.fast_temporal_stride,
+                                     num_segments=opt.num_segments, transform=transform_test)
     else:
         logger.info('Dataset %s is not supported yet.' % (opt.dataset))
 
@@ -213,10 +225,10 @@ def get_data_loader(opt, batch_size, num_workers, logger, kvstore=None):
 
     if kvstore is not None:
         train_data = gluon.data.DataLoader(train_dataset, batch_size=batch_size, num_workers=num_workers,
-                                           sampler=SplitSampler(len(train_dataset), num_parts=kvstore.num_workers, part_index=kvstore.rank),
+                                           sampler=ShuffleSplitSampler(len(train_dataset), num_parts=kvstore.num_workers, part_index=kvstore.rank),
                                            prefetch=int(opt.prefetch_ratio * num_workers), last_batch='rollover')
         val_data = gluon.data.DataLoader(val_dataset, batch_size=batch_size, num_workers=num_workers,
-                                         sampler=SplitSampler(len(val_dataset), num_parts=kvstore.num_workers, part_index=kvstore.rank),
+                                         sampler=ShuffleSplitSampler(len(val_dataset), num_parts=kvstore.num_workers, part_index=kvstore.rank),
                                          prefetch=int(opt.prefetch_ratio * num_workers), last_batch='discard')
     else:
         train_data = gluon.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers,

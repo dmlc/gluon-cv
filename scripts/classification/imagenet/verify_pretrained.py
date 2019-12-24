@@ -7,6 +7,8 @@ from mxnet.gluon.nn import Block, HybridBlock
 from mxnet.gluon.data.vision import transforms
 from mxnet.contrib.quantization import *
 
+import gluoncv as gcv
+gcv.utils.check_version('0.6.0')
 from gluoncv.data import imagenet
 from gluoncv.model_zoo import get_model
 
@@ -49,7 +51,7 @@ def parse_args():
                         help='quantize model')
     parser.add_argument('--num-calib-batches', type=int, default=5,
                         help='number of batches for calibration')
-    parser.add_argument('--quantized-dtype', type=str, default='auto', 
+    parser.add_argument('--quantized-dtype', type=str, default='auto',
                         choices=['auto', 'int8', 'uint8'],
                         help='quantization destination data type for input data')
     parser.add_argument('--calib-mode', type=str, default='naive',
@@ -155,7 +157,7 @@ if __name__ == '__main__':
             net.hybridize(static_alloc=True, static_shape=True)
         else:
             net.hybridize()
-    
+
     normalize = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 
     """
@@ -223,7 +225,7 @@ if __name__ == '__main__':
         time_cost = benchmark(network=net, ctx=ctx[0], image_size=opt.input_size, batch_size=opt.batch_size,
             num_iter=opt.num_batches, datatype='float32')
         fps = (opt.batch_size*opt.num_batches)/time_cost
-        print('With batch size %s, %s batches, inference performance is %.2f img/sec' % (opt.batch_size, opt.num_batches, fps)) 
+        print('With batch size %s, %s batches, inference performance is %.2f img/sec' % (opt.batch_size, opt.num_batches, fps))
         sys.exit()
 
     if not opt.rec_dir:

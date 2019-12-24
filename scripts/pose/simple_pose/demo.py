@@ -8,6 +8,7 @@ from mxnet import gluon, nd, image
 import matplotlib.pyplot as plt
 
 import gluoncv as gcv
+gcv.utils.check_version('0.6.0')
 from gluoncv import data
 from gluoncv.model_zoo import get_model
 from gluoncv.data.transforms.pose import detector_to_simple_pose, heatmap_to_coord

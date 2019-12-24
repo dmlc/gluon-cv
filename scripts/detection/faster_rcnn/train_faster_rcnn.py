@@ -4,6 +4,13 @@ import os
 
 # disable autotune
 os.environ['MXNET_CUDNN_AUTOTUNE_DEFAULT'] = '0'
+os.environ['MXNET_GPU_MEM_POOL_TYPE'] = 'Round'
+os.environ['MXNET_GPU_MEM_POOL_ROUND_LINEAR_CUTOFF'] = '26'
+os.environ['MXNET_EXEC_BULK_EXEC_MAX_NODE_TRAIN_FWD'] = '999'
+os.environ['MXNET_EXEC_BULK_EXEC_MAX_NODE_TRAIN_BWD'] = '25'
+os.environ['MXNET_GPU_COPY_NTHREADS'] = '1'
+os.environ['MXNET_OPTIMIZER_AGGREGATION_SIZE'] = '54'
+
 import logging
 import time
 import numpy as np
@@ -12,6 +19,7 @@ from mxnet import gluon
 from mxnet import autograd
 from mxnet.contrib import amp
 import gluoncv as gcv
+gcv.utils.check_version('0.6.0')
 from gluoncv import data as gdata
 from gluoncv import utils as gutils
 from gluoncv.model_zoo import get_model
@@ -40,7 +48,7 @@ def parse_args():
                         default=4, help='Number of data workers, you can use larger '
                                         'number to accelerate data loading, '
                                         'if your CPU and GPUs are powerful.')
-    parser.add_argument('--batch-size', type=int, default=8, help='Training mini-batch size.')
+    parser.add_argument('--batch-size', type=int, default=1, help='Training mini-batch size.')
     parser.add_argument('--gpus', type=str, default='0',
                         help='Training with GPUs, you can specify 1,3 for example.')
     parser.add_argument('--epochs', type=str, default='',
@@ -315,6 +323,8 @@ def train(net, train_data, val_data, eval_metric, batch_size, ctx, args):
     net.collect_params().setattr('grad_req', 'null')
     net.collect_train_params().setattr('grad_req', 'write')
     optimizer_params = {'learning_rate': args.lr, 'wd': args.wd, 'momentum': args.momentum}
+    if args.amp:
+         optimizer_params['multi_precision'] = True
     if args.horovod:
         hvd.broadcast_parameters(net.collect_params(), root_rank=0)
         trainer = hvd.DistributedTrainer(
@@ -477,10 +487,11 @@ if __name__ == '__main__':
         module_list.append(args.norm_layer)
         if args.norm_layer == 'bn':
             kwargs['num_devices'] = len(args.gpus.split(','))
+    num_gpus = hvd.size() if args.horovod else len(ctx)
     net_name = '_'.join(('faster_rcnn', *module_list, args.network, args.dataset))
     args.save_prefix += net_name
     net = get_model(net_name, pretrained_base=True,
-                    per_device_batch_size=args.batch_size // len(ctx), **kwargs)
+                    per_device_batch_size=args.batch_size // num_gpus, **kwargs)
     if args.resume.strip():
         net.load_parameters(args.resume.strip())
     else:
@@ -490,9 +501,16 @@ if __name__ == '__main__':
             param.initialize()
     net.collect_params().reset_ctx(ctx)
 
+    if args.amp:
+        # Cast both weights and gradients to 'float16'
+        net.cast('float16')
+        # This layers doesn't support type 'float16'
+        net.collect_params('.*batchnorm.*').setattr('dtype', 'float32')
+        net.collect_params('.*normalizedperclassboxcenterencoder.*').setattr('dtype', 'float32')
+
     # training data
     train_dataset, val_dataset, eval_metric = get_dataset(args.dataset, args)
-    batch_size = args.batch_size // len(ctx) if args.horovod else args.batch_size
+    batch_size = args.batch_size // num_gpus if args.horovod else args.batch_size
     train_data, val_data = get_dataloader(
         net, train_dataset, val_dataset, FasterRCNNDefaultTrainTransform,
         FasterRCNNDefaultValTransform, batch_size, len(ctx), args)

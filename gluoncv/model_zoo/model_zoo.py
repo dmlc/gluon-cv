@@ -236,6 +236,7 @@ _models = {
     'vgg16_ucf101': vgg16_ucf101,
     'inceptionv3_ucf101': inceptionv3_ucf101,
     'inceptionv3_kinetics400': inceptionv3_kinetics400,
+    'i3d_resnet50_v1_custom': i3d_resnet50_v1_custom,
     'i3d_resnet50_v1_kinetics400': i3d_resnet50_v1_kinetics400,
     'i3d_resnet101_v1_kinetics400': i3d_resnet101_v1_kinetics400,
     'i3d_inceptionv1_kinetics400': i3d_inceptionv1_kinetics400,
@@ -249,6 +250,7 @@ _models = {
     'slowfast_8x8_resnet101_kinetics400': slowfast_8x8_resnet101_kinetics400,
     'slowfast_16x8_resnet101_kinetics400': slowfast_16x8_resnet101_kinetics400,
     'i3d_resnet50_v1_sthsthv2': i3d_resnet50_v1_sthsthv2,
+    'resnet50_v1b_custom': resnet50_v1b_custom,
     'resnet18_v1b_kinetics400': resnet18_v1b_kinetics400,
     'resnet34_v1b_kinetics400': resnet34_v1b_kinetics400,
     'resnet50_v1b_kinetics400': resnet50_v1b_kinetics400,
@@ -287,7 +289,10 @@ _models = {
     'simple_pose_resnet101_v1b_int8': simple_pose_resnet101_v1b_int8,
     'simple_pose_resnet101_v1d_int8': simple_pose_resnet101_v1d_int8,
     'vgg16_ucf101_int8': vgg16_ucf101_int8,
-    'inceptionv3_ucf101_int8': inceptionv3_ucf101_int8
+    'inceptionv3_ucf101_int8': inceptionv3_ucf101_int8,
+    'resnet18_v1b_kinetics400_int8': resnet18_v1b_kinetics400_int8,
+    'resnet50_v1b_kinetics400_int8': resnet50_v1b_kinetics400_int8,
+    'inceptionv3_kinetics400_int8': inceptionv3_kinetics400_int8
 }
 
 

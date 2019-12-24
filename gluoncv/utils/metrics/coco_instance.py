@@ -1,13 +1,14 @@
 """MS COCO Instance Segmentation Evaluate Metrics."""
 from __future__ import absolute_import
 
-import sys
 import io
-import os
-from os import path as osp
+import sys
 import warnings
-import numpy as np
+from os import path as osp
+
 import mxnet as mx
+import numpy as np
+
 from ...data.mscoco.utils import try_import_pycocotools
 
 
@@ -24,48 +25,65 @@ class COCOInstanceMetric(mx.metric.EvalMetric):
     use_time : bool
         Append unique datetime string to created JSON file name if ``True``.
     cleanup : bool
-        Remove created JSON file if ``True``.
+        Remove created JSON file if ``True``. When cleanup is True, we do not output json to save
+        computation.
+    use_ext : bool
+        Whether to use external module built by NVIDIA, which is significantly faster.
+        Make sure NVIDIA MSCOCO API is installed!
+    starting_id : int, default is 0
+        If using distributed evaluation, it need to be set to the start of each shard.
     score_thresh : float
         Detection results with confident scores smaller than ``score_thresh`` will
         be discarded before saving to results.
 
     """
-    def __init__(self, dataset, save_prefix, use_time=True, cleanup=False, score_thresh=1e-3):
+
+    def __init__(self, dataset, save_prefix, use_time=True, cleanup=False,
+                 use_ext=False, starting_id=0, score_thresh=1e-3):
+        self._starting_id = starting_id
+        self._use_ext = use_ext
         super(COCOInstanceMetric, self).__init__('COCOInstance')
         self.dataset = dataset
+        self._dump_to_file = not cleanup
+        if use_time:
+            import datetime
+            t = datetime.datetime.now().strftime('_%Y_%m_%d_%H_%M_%S')
+        else:
+            t = ''
         self._img_ids = sorted(dataset.coco.getImgIds())
-        self._current_id = 0
-        self._cleanup = cleanup
+        self._current_id = starting_id
         self._results = []
         self._score_thresh = score_thresh
 
         try_import_pycocotools()
         import pycocotools.mask as cocomask
         self._cocomask = cocomask
-
-        if use_time:
-            import datetime
-            t = datetime.datetime.now().strftime('_%Y_%m_%d_%H_%M_%S')
-        else:
-            t = ''
         self._filename = osp.abspath(osp.expanduser(save_prefix) + t + '.json')
-        try:
-            f = open(self._filename, 'w')
-        except IOError as e:
-            raise RuntimeError("Unable to open json file to dump. What(): {}".format(str(e)))
-        else:
-            f.close()
+        if use_ext:
+            from pycocotools import coco
+            if not hasattr(coco, 'ext'):
+                raise AttributeError('external module is not support by the COCO API installed. '
+                                     'Consider install NVIDIA MSCOCO API here '
+                                     'https://github.com/NVIDIA/cocoapi.git')
+            self.dataset.coco.createIndex(use_ext=use_ext)
+            self._bbox_result = []
+            self._segm_result = []
+            self._bbox_filename = osp.abspath(osp.expanduser(save_prefix) + t + '_bbox.json')
+            self._segm_filename = osp.abspath(osp.expanduser(save_prefix) + t + '_segm.json')
+            if not self._dump_to_file:
+                warnings.warn('When using external module, eval json is always dumped.')
 
-    def __del__(self):
-        if self._cleanup:
-            try:
-                os.remove(self._filename)
-            except IOError as err:
-                warnings.warn(str(err))
+    def get_result_buffer(self):
+        if self._use_ext:
+            return self._bbox_result, self._segm_result
+        return self._results
 
     def reset(self):
-        self._current_id = 0
+        self._current_id = self._starting_id
         self._results = []
+        if self._use_ext:
+            self._bbox_result = []
+            self._segm_result = []
 
     def _dump_json(self):
         """Write coco json file"""
@@ -75,13 +93,20 @@ class COCOInstanceMetric(mx.metric.EvalMetric):
                     self._current_id, len(self._img_ids)))
         import json
         try:
-            with open(self._filename, 'w') as f:
-                json.dump(self._results, f)
+            if self._use_ext:
+                with open(self._bbox_filename, 'w') as f:
+                    json.dump(self._bbox_result, f)
+                with open(self._segm_filename, 'w') as f:
+                    json.dump(self._segm_result, f)
+            else:
+                with open(self._filename, 'w') as f:
+                    json.dump(self._results, f)
         except IOError as e:
             raise RuntimeError("Unable to dump json file, ignored. What(): {}".format(str(e)))
 
     def _get_ap(self, coco_eval):
         """Return the default AP from coco_eval."""
+
         # Metric printing adapted from detectron/json_dataset_evaluator.
         def _get_thr_ind(coco_eval, thr):
             ind = np.where((coco_eval.params.iouThrs > thr - 1e-5) &
@@ -101,14 +126,27 @@ class COCOInstanceMetric(mx.metric.EvalMetric):
         ap_default = np.mean(precision[precision > -1])
         return ap_default
 
+    # pylint: disable=unexpected-keyword-arg
     def _update(self, annType='bbox'):
         """Use coco to get real scores. """
-        pred = self.dataset.coco.loadRes(self._filename)
+        if self._use_ext:
+            self.dataset.coco.createIndex(use_ext=True)
+            if annType == 'bbox':
+                pred = self.dataset.coco.loadRes(self._bbox_filename, use_ext=True)
+            else:
+                pred = self.dataset.coco.loadRes(self._segm_filename, use_ext=True)
+        else:
+            if self._results is not None and not self._dump_to_file:
+                pred = self.dataset.coco.loadRes(self._results)
+            else:
+                pred = self.dataset.coco.loadRes(self._filename)
         gt = self.dataset.coco
         # lazy import pycocotools
         try_import_pycocotools()
         from pycocotools.cocoeval import COCOeval
-        coco_eval = COCOeval(gt, pred, annType)
+        # only NVIDIA MSCOCO API support use_ext
+        coco_eval = COCOeval(gt, pred, annType, use_ext=self._use_ext) \
+            if self._use_ext else COCOeval(gt, pred, annType)
         coco_eval.evaluate()
         coco_eval.accumulate()
         names, values = [], []
@@ -126,7 +164,8 @@ class COCOInstanceMetric(mx.metric.EvalMetric):
 
     def get(self):
         """Get evaluation metrics. """
-        self._dump_json()
+        if self._dump_to_file:
+            self._dump_json()
         bbox_names, bbox_values = self._update('bbox')
         mask_names, mask_values = self._update('segm')
         names = bbox_names + mask_names
@@ -158,6 +197,7 @@ class COCOInstanceMetric(mx.metric.EvalMetric):
             Prediction masks with *original* shape `H, W`.
 
         """
+
         def as_numpy(a):
             """Convert a (list of) mx.NDArray into numpy.ndarray"""
             if isinstance(a, mx.nd.NDArray):
@@ -173,8 +213,7 @@ class COCOInstanceMetric(mx.metric.EvalMetric):
         pred_label = pred_label.flat[valid_pred].astype('int32')
         pred_score = pred_score.flat[valid_pred].astype('float32')
         pred_mask = pred_mask[valid_pred].astype('uint8')
-
-        imgid = self._img_ids[self._current_id]
+        imgid = self._img_ids[int(self._current_id)]
         self._current_id += 1
         # for each bbox detection in each image
         for bbox, label, score, mask in zip(pred_bbox, pred_label, pred_score, pred_mask):
@@ -188,8 +227,19 @@ class COCOInstanceMetric(mx.metric.EvalMetric):
             bbox[2:4] -= bbox[:2]
             # coco format full image mask to rle
             rle = self._encode_mask(mask)
-            self._results.append({'image_id': imgid,
-                                  'category_id': category_id,
-                                  'bbox': list(map(lambda x: float(round(x, 2)), bbox[:4])),
-                                  'score': float(round(score, 3)),
-                                  'segmentation': rle})
+            if self._use_ext:
+                self._bbox_result.append({'image_id': int(imgid),
+                                          'category_id': category_id,
+                                          'bbox': list(map(lambda x: float(round(x, 2)), bbox[:4])),
+                                          'score': float(round(score, 3))})
+                self._segm_result.append({'image_id': int(imgid),
+                                          'category_id': category_id,
+                                          'segmentation': rle,
+                                          'score': float(round(score, 3))})
+
+            else:
+                self._results.append({'image_id': int(imgid),
+                                      'category_id': category_id,
+                                      'bbox': list(map(lambda x: float(round(x, 2)), bbox[:4])),
+                                      'score': float(round(score, 3)),
+                                      'segmentation': rle})

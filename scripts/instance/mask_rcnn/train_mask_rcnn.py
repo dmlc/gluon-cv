@@ -6,6 +6,10 @@ import os
 os.environ['MXNET_CUDNN_AUTOTUNE_DEFAULT'] = '0'
 os.environ['MXNET_GPU_MEM_POOL_TYPE'] = 'Round'
 os.environ['MXNET_GPU_MEM_POOL_ROUND_LINEAR_CUTOFF'] = '28'
+os.environ['MXNET_EXEC_BULK_EXEC_MAX_NODE_TRAIN_FWD'] = '999'
+os.environ['MXNET_EXEC_BULK_EXEC_MAX_NODE_TRAIN_BWD'] = '25'
+os.environ['MXNET_GPU_COPY_NTHREADS'] = '1'
+os.environ['MXNET_OPTIMIZER_AGGREGATION_SIZE'] = '54'
 
 import logging
 import time
@@ -15,6 +19,7 @@ from mxnet import gluon
 from mxnet import autograd
 from mxnet.contrib import amp
 import gluoncv as gcv
+gcv.utils.check_version('0.6.0')
 from gluoncv import data as gdata
 from gluoncv import utils as gutils
 from gluoncv.model_zoo import get_model
@@ -25,11 +30,18 @@ from gluoncv.utils.metrics.coco_instance import COCOInstanceMetric
 from gluoncv.utils.metrics.rcnn import RPNAccMetric, RPNL1LossMetric, RCNNAccMetric, \
     RCNNL1LossMetric, MaskAccMetric, MaskFGAccMetric
 from gluoncv.utils.parallel import Parallelizable, Parallel
+from multiprocessing import Process
 
 try:
     import horovod.mxnet as hvd
 except ImportError:
     hvd = None
+
+try:
+    from mpi4py import MPI
+except ImportError:
+    logging.info('mpi4py is not installed. Use "pip install --no-cache mpi4py" to install')
+    MPI = None
 
 
 # from mxnet import profiler
@@ -105,6 +117,8 @@ def parse_args():
     parser.add_argument('--horovod', action='store_true',
                         help='Use MXNet Horovod for distributed training. Must be run with OpenMPI. '
                              '--gpus is ignored when using --horovod.')
+    parser.add_argument('--use-ext', action='store_true',
+                        help='Use NVIDIA MSCOCO API. Make sure you install first')
     parser.add_argument('--executor-threads', type=int, default=1,
                         help='Number of threads for executor for scheduling ops. '
                              'More threads may incur higher GPU memory footprint, '
@@ -121,8 +135,8 @@ def parse_args():
         hvd.init()
     args.epochs = int(args.epochs) if args.epochs else 26
     args.lr_decay_epoch = args.lr_decay_epoch if args.lr_decay_epoch else '17,23'
-    args.lr = float(args.lr) if args.lr else 0.01
-    args.lr_warmup = args.lr_warmup if args.lr_warmup else 1000
+    args.lr = float(args.lr) if args.lr else (0.00125 * args.batch_size)
+    args.lr_warmup = args.lr_warmup if args.lr_warmup else max((8000 / args.batch_size), 1000)
     args.wd = float(args.wd) if args.wd else 1e-4
     return args
 
@@ -131,16 +145,26 @@ def get_dataset(dataset, args):
     if dataset.lower() == 'coco':
         train_dataset = gdata.COCOInstance(splits='instances_train2017')
         val_dataset = gdata.COCOInstance(splits='instances_val2017', skip_empty=False)
-        val_metric = COCOInstanceMetric(val_dataset, args.save_prefix + '_eval', cleanup=True)
+        starting_id = 0
+        if args.horovod and MPI:
+            length = len(val_dataset)
+            shard_len = length // hvd.size()
+            rest = length % hvd.size()
+            # Compute the start index for this partition
+            starting_id = shard_len * hvd.rank() + min(hvd.rank(), rest)
+        val_metric = COCOInstanceMetric(val_dataset, args.save_prefix + '_eval',
+                                        use_ext=args.use_ext, starting_id=starting_id)
     else:
         raise NotImplementedError('Dataset: {} not implemented.'.format(dataset))
+    if args.horovod and MPI:
+        val_dataset = val_dataset.shard(hvd.size(), hvd.rank())
     return train_dataset, val_dataset, val_metric
 
 
 def get_dataloader(net, train_dataset, val_dataset, train_transform, val_transform, batch_size,
-                   num_shards, args):
+                   num_shards_per_process, args):
     """Get dataloader."""
-    train_bfn = batchify.MaskRCNNTrainBatchify(net, num_shards)
+    train_bfn = batchify.MaskRCNNTrainBatchify(net, num_shards_per_process)
     train_sampler = \
         gcv.nn.sampler.SplitSortedBucketSampler(train_dataset.get_im_aspect_ratio(),
                                                 batch_size,
@@ -154,7 +178,7 @@ def get_dataloader(net, train_dataset, val_dataset, train_transform, val_transfo
     short = net.short[-1] if isinstance(net.short, (tuple, list)) else net.short
     # validation use 1 sample per device
     val_loader = mx.gluon.data.DataLoader(
-        val_dataset.transform(val_transform(short, net.max_size)), num_shards, False,
+        val_dataset.transform(val_transform(short, net.max_size)), num_shards_per_process, False,
         batchify_fn=val_bfn, last_batch='keep', num_workers=args.num_workers)
     return train_loader, val_loader
 
@@ -212,12 +236,13 @@ def split_and_load(batch, ctx_list):
     return new_batch
 
 
-def validate(net, val_data, ctx, eval_metric, args):
+def validate(net, val_data, async_eval_processes, ctx, eval_metric, logger, epoch, best_map, args):
     """Test on validation dataset."""
     clipper = gcv.nn.bbox.BBoxClipToImage()
     eval_metric.reset()
     if not args.disable_hybridization:
         net.hybridize(static_alloc=args.static_alloc)
+    tic = time.time()
     for ib, batch in enumerate(val_data):
         batch = split_and_load(batch, ctx_list=ctx)
         det_bboxes = []
@@ -253,12 +278,35 @@ def validate(net, val_data, ctx, eval_metric, args):
                 # fill full mask
                 im_height, im_width = int(round(im_height / im_scale)), int(
                     round(im_width / im_scale))
-                full_masks = []
-                for bbox, mask in zip(det_bbox, det_mask):
-                    full_masks.append(gdata.transforms.mask.fill(mask, bbox, (im_width, im_height)))
-                full_masks = np.array(full_masks)
+                full_masks = gdata.transforms.mask.fill(det_mask, det_bbox, (im_width, im_height))
                 eval_metric.update(det_bbox, det_id, det_score, full_masks)
-    return eval_metric.get()
+    if args.horovod and MPI is not None:
+        comm = MPI.COMM_WORLD
+        res = comm.gather(eval_metric.get_result_buffer(), root=0)
+        if hvd.rank() == 0:
+            logger.info('[Epoch {}] Validation Inference cost: {:.3f}'
+                        .format(epoch, (time.time() - tic)))
+            rank0_res = eval_metric.get_result_buffer()
+            if len(rank0_res) == 2:
+                res = res[1:]
+                rank0_res[0].extend([item for res_tuple in res for item in res_tuple[0]])
+                rank0_res[1].extend([item for res_tuple in res for item in res_tuple[1]])
+            else:
+                rank0_res.extend([item for r in res for item in r])
+
+    def coco_eval_save_task(eval_metric, logger):
+        map_name, mean_ap = eval_metric.get()
+        if map_name and mean_ap is not None:
+            val_msg = '\n'.join(['{}={}'.format(k, v) for k, v in zip(map_name, mean_ap)])
+            logger.info('[Epoch {}] Validation: \n{}'.format(epoch, val_msg))
+            current_map = float(mean_ap[-1])
+            save_params(net, logger, best_map, current_map, epoch, args.save_interval,
+                        args.save_prefix)
+
+    if not args.horovod or hvd.rank() == 0:
+        p = Process(target=coco_eval_save_task, args=(eval_metric, logger))
+        async_eval_processes.append(p)
+        p.start()
 
 
 def get_lr_at_iter(alpha, lr_warmup_factor=1. / 3.):
@@ -344,7 +392,7 @@ class ForwardBackwardTask(Parallelizable):
                rcnn_l1_loss_metric, rcnn_mask_metric, rcnn_fgmask_metric
 
 
-def train(net, train_data, val_data, eval_metric, batch_size, ctx, args):
+def train(net, train_data, val_data, eval_metric, batch_size, ctx, logger, args):
     """Training pipeline"""
     args.kv_store = 'device' if (args.amp and 'nccl' in args.kv_store) else args.kv_store
     kv = mx.kvstore.create(args.kv_store)
@@ -355,6 +403,8 @@ def train(net, train_data, val_data, eval_metric, batch_size, ctx, args):
     optimizer_params = {'learning_rate': args.lr, 'wd': args.wd, 'momentum': args.momentum, }
     if args.clip_gradient > 0.0:
         optimizer_params['clip_gradient'] = args.clip_gradient
+    if args.amp:
+         optimizer_params['multi_precision'] = True
     if args.horovod:
         hvd.broadcast_parameters(net.collect_params(), root_rank=0)
         trainer = hvd.DistributedTrainer(
@@ -398,18 +448,9 @@ def train(net, train_data, val_data, eval_metric, batch_size, ctx, args):
     metrics2 = [rpn_acc_metric, rpn_bbox_metric,
                 rcnn_acc_metric, rcnn_bbox_metric,
                 rcnn_mask_metric, rcnn_fgmask_metric]
-
-    # set up logger
-    logging.basicConfig()
-    logger = logging.getLogger()
-    logger.setLevel(logging.INFO)
-    log_file_path = args.save_prefix + '_train.log'
-    log_dir = os.path.dirname(log_file_path)
-    if log_dir and not os.path.exists(log_dir):
-        os.makedirs(log_dir)
-    fh = logging.FileHandler(log_file_path)
-    logger.addHandler(fh)
+    async_eval_processes = []
     logger.info(args)
+
     if args.verbose:
         logger.info('Trainable parameters:')
         logger.info(net.collect_train_params().keys())
@@ -473,7 +514,6 @@ def train(net, train_data, val_data, eval_metric, batch_size, ctx, args):
                 for pred in records:
                     metric.update(pred[0], pred[1])
             trainer.step(batch_size)
-
             if (not args.horovod or hvd.rank() == 0) and args.log_interval \
                     and not (i + 1) % args.log_interval:
                 msg = ','.join(['{}={:.3f}'.format(*metric.get()) for metric in metrics + metrics2])
@@ -485,16 +525,16 @@ def train(net, train_data, val_data, eval_metric, batch_size, ctx, args):
             msg = ','.join(['{}={:.3f}'.format(*metric.get()) for metric in metrics])
             logger.info('[Epoch {}] Training cost: {:.3f}, {}'.format(
                 epoch, (time.time() - tic), msg))
-            if not (epoch + 1) % args.val_interval:
-                # consider reduce the frequency of validation to save time
-                map_name, mean_ap = validate(net, val_data, ctx, eval_metric, args)
-                val_msg = '\n'.join(['{}={}'.format(k, v) for k, v in zip(map_name, mean_ap)])
-                logger.info('[Epoch {}] Validation: \n{}'.format(epoch, val_msg))
-                current_map = float(mean_ap[-1])
-            else:
-                current_map = 0.
+        if not (epoch + 1) % args.val_interval:
+            # consider reduce the frequency of validation to save time
+            validate(net, val_data, async_eval_processes, ctx, eval_metric, logger, epoch, best_map,
+                     args)
+        elif (not args.horovod) or hvd.rank() == 0:
+            current_map = 0.
             save_params(net, logger, best_map, current_map, epoch, args.save_interval,
                         args.save_prefix)
+    for thread in async_eval_processes:
+        thread.join()
 
 
 if __name__ == '__main__':
@@ -535,6 +575,26 @@ if __name__ == '__main__':
             param.initialize()
     net.collect_params().reset_ctx(ctx)
 
+    if args.amp:
+        # Cast both weights and gradients to 'float16'
+        net.cast('float16')
+        # This layers doesn't support type 'float16'
+        net.collect_params('.*batchnorm.*').setattr('dtype', 'float32')
+        net.collect_params('.*normalizedperclassboxcenterencoder.*').setattr('dtype', 'float32')
+
+    # set up logger
+    logging.basicConfig()
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+    log_file_path = args.save_prefix + '_train.log'
+    log_dir = os.path.dirname(log_file_path)
+    if log_dir and not os.path.exists(log_dir):
+        os.makedirs(log_dir)
+    fh = logging.FileHandler(log_file_path)
+    logger.addHandler(fh)
+    if MPI is None and args.horovod:
+        logger.warning('mpi4py is not installed, validation result may be incorrect.')
+
     # training data
     train_dataset, val_dataset, eval_metric = get_dataset(args.dataset, args)
     batch_size = args.batch_size // num_gpus if args.horovod else args.batch_size
@@ -543,4 +603,4 @@ if __name__ == '__main__':
         batch_size, len(ctx), args)
 
     # training
-    train(net, train_data, val_data, eval_metric, batch_size, ctx, args)
+    train(net, train_data, val_data, eval_metric, batch_size, ctx, logger, args)
