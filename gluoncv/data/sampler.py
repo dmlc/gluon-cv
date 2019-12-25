@@ -1,6 +1,5 @@
 # pylint: disable=line-too-long,too-many-lines,missing-docstring
 import random
-import warnings
 from mxnet import gluon
 import numpy as np
 
@@ -51,7 +50,7 @@ class ShuffleSplitSampler(gluon.data.sampler.Sampler):
     """
     def __init__(self, length, num_parts=1, part_index=0, seed=0):
         if length % num_parts != 0:
-            warnings.warn('Length ({}) must be a multiple of the number of partitions ({}).'.format(length, num_parts))
+            print('Length ({}) must be a multiple of the number of partitions ({}).'.format(length, num_parts))
         self._seed = seed
         self._state = np.random.RandomState(seed)
         self._indices = list(range(length))

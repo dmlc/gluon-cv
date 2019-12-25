@@ -394,8 +394,7 @@ def main():
             else:
                 trainer = gluon.Trainer(net.collect_params(train_patterns), optimizer, optimizer_params, update_on_kvstore=False)
         elif opt.freeze_bn:
-            train_patterns = None
-
+            train_patterns = '.*weight|.*bias'
             if opt.kvstore is not None:
                 trainer = gluon.Trainer(net.collect_params(train_patterns), optimizer, optimizer_params, kvstore=kv, update_on_kvstore=False)
             else:
