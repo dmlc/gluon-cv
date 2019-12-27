@@ -372,6 +372,13 @@ class I3D_ResNetV1(HybridBlock):
         self.stage_blocks = stage_blocks[:num_stages]
         self.inplanes = 64
 
+        if self.bn_frozen:
+            if norm_kwargs is not None:
+                norm_kwargs['use_global_stats'] = True
+            else:
+                norm_kwargs = {}
+                norm_kwargs['use_global_stats'] = True
+
         self.first_stage = nn.HybridSequential(prefix='')
         self.first_stage.add(nn.Conv3D(in_channels=3, channels=64, kernel_size=(conv1_kernel_t, 7, 7),
                                        strides=(conv1_stride_t, 2, 2), padding=((conv1_kernel_t - 1)//2, 3, 3), use_bias=False))
@@ -517,7 +524,7 @@ class I3D_ResNetV1(HybridBlock):
 
 def i3d_resnet50_v1_kinetics400(nclass=400, pretrained=False, pretrained_base=True, ctx=cpu(),
                                 root='~/.mxnet/models', use_tsn=False, num_segments=1, num_crop=1,
-                                partial_bn=False, feat_ext=False, **kwargs):
+                                partial_bn=False, bn_frozen=False, feat_ext=False, **kwargs):
     r"""Inflated 3D model (I3D) from
     `"Quo Vadis, Action Recognition? A New Model and the Kinetics Dataset"
     <https://arxiv.org/abs/1705.07750>`_ paper.
@@ -552,6 +559,7 @@ def i3d_resnet50_v1_kinetics400(nclass=400, pretrained=False, pretrained_base=Tr
                          inflate_freq=((1, 1, 1), (1, 0, 1, 0), (1, 0, 1, 0, 1, 0), (0, 1, 0)),
                          bn_eval=False,
                          partial_bn=partial_bn,
+                         bn_frozen=bn_frozen,
                          ctx=ctx,
                          **kwargs)
 

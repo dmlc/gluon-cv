@@ -126,6 +126,8 @@ def parse_args():
                         help='clip gradient to a certain threshold. Set the value to be larger than zero to enable gradient clipping.')
     parser.add_argument('--partial-bn', action='store_true',
                         help='whether to freeze bn layers except the first layer.')
+    parser.add_argument('--freeze-bn', action='store_true',
+                        help='whether to freeze all the bn layers.')
     parser.add_argument('--num-classes', type=int, default=101,
                         help='number of classes.')
     parser.add_argument('--scale-ratios', type=str, default='1.0, 0.875, 0.75, 0.66',
@@ -293,7 +295,8 @@ def main():
     if opt.use_pretrained and len(opt.hashtag) > 0:
         opt.use_pretrained = opt.hashtag
     net = get_model(name=model_name, nclass=classes, pretrained=opt.use_pretrained,
-                    use_tsn=opt.use_tsn, num_segments=opt.num_segments, partial_bn=opt.partial_bn)
+                    use_tsn=opt.use_tsn, num_segments=opt.num_segments, partial_bn=opt.partial_bn,
+                    bn_frozen=opt.freeze_bn)
     net.cast(opt.dtype)
     net.collect_params().reset_ctx(context)
     logger.info(net)
@@ -386,6 +389,12 @@ def main():
             else:
                 logger.info('Current model does not support partial batch normalization.')
 
+            if opt.kvstore is not None:
+                trainer = gluon.Trainer(net.collect_params(train_patterns), optimizer, optimizer_params, kvstore=kv, update_on_kvstore=False)
+            else:
+                trainer = gluon.Trainer(net.collect_params(train_patterns), optimizer, optimizer_params, update_on_kvstore=False)
+        elif opt.freeze_bn:
+            train_patterns = '.*weight|.*bias'
             if opt.kvstore is not None:
                 trainer = gluon.Trainer(net.collect_params(train_patterns), optimizer, optimizer_params, kvstore=kv, update_on_kvstore=False)
             else:
