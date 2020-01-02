@@ -59,7 +59,7 @@ from gluoncv.utils import makedirs, LRSequential, LRScheduler, split_and_load, T
 # to wrap the backbone VGG16 network for adaptation to video domain.
 #
 # `TSN <https://arxiv.org/abs/1608.00859>`_ is a widely adopted video
-# classification method. It is proposed to incoporate temporal information from an entire video.
+# classification method. It is proposed to incorporate temporal information from an entire video.
 # The idea is straightforward: we can evenly divide the video into several segments,
 # process each segment individually, obtain segmental consensus from each segment, and perform
 # final prediction. TSN is more like a general algorithm, rather than a specific network architecture.
@@ -212,6 +212,9 @@ train_history.plot()
 
 ##############################################################################
 # You can `Start Training Now`_.
+#
+# If you would like to use a bigger 3D model (e.g., I3D) on a larger dataset (e.g., Kinetics400),
+# feel free to read the next `tutorial on Kinetics400 <demo_i3d_kinetics400.html>`__.
 #
 # References
 # ----------
