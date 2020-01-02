@@ -8,7 +8,7 @@ community for benchmarking state-of-the-art video action recognition models.
 
 `I3D <https://arxiv.org/abs/1705.07750>`_ (Inflated 3D Networks) is a widely adopted 3D video
 classification network. It uses 3D convolution to learn spatiotemporal information directly from videos.
-I3D is proposed to improve C3D model by inflating from 2D models.
+I3D is proposed to improve `C3D <https://arxiv.org/abs/1412.0767>`_ (Convolutional 3D Networks) by inflating from 2D models.
 We can not only reuse the 2D models' architecture (e.g., ResNet, Inception), but also bootstrap
 the model weights from 2D pretrained models. In this manner, training 3D networks for video
 classification is feasible and getting much better results.
