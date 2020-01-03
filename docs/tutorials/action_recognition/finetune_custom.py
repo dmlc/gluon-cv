@@ -1,10 +1,17 @@
-"""7. Fine-tuning I3D mdoels on your own dataset
-================================================
+"""7. Fine-tuning SOTA video models on your own dataset
+=======================================================
 
 This is a video action recognition tutorial using Gluon CV toolkit, a step-by-step example.
 The readers should have basic knowledge of deep learning and should be familiar with Gluon API.
 New users may first go through `A 60-minute Gluon Crash Course <http://gluon-crash-course.mxnet.io/>`_.
 You can `Start Training Now`_ or `Dive into Deep`_.
+
+Fine-tuning is an important way to obtain good video models on your own data when you don't have large annotated dataset or don't have the
+computing resources to train a model from scratch for your use case.
+In this tutorial, we provide a simple unified solution.
+The only thing you need to prepare is a text file containing the information of your videos (e.g., the path to your videos),
+we will take care of the rest.
+You can start fine-tuning from many popular pre-trained models (e.g., I3D, I3D-nonlocal, SlowFast) using a single command line.
 
 Start Training Now
 ~~~~~~~~~~~~~~~~~~
@@ -124,7 +131,7 @@ print(net)
 
 ################################################################
 # We also provide other customized network architectures for you to use on your own dataset. You can simply change the ``dataset`` part in
-# any pretrained model name to ``custom``, e.g., i3d_resnet50_v1_kinetics400 to i3d_resnet50_v1_custom.
+# any pretrained model name to ``custom``, e.g., ``slowfast_4x16_resnet50_kinetics400`` to ``slowfast_4x16_resnet50_custom``.
 #
 # Once you have the dataloader and network for your own dataset, the rest is the same as in previous tutorials.
 # Just define the optimizer, loss and metric, and kickstart the training.
@@ -224,3 +231,9 @@ for epoch in range(epochs):
 
 # We can plot the metric scores with:
 train_history.plot()
+
+######################################################################
+# We can see that the training accuracy increase quickly.
+# Actually, if you look back tutorial 4 (Dive Deep into Training I3D mdoels on Kinetcis400) and compare the training curve,
+# you will see fine-tuning can achieve much better result using much less time.
+# Try fine-tuning other SOTA video models on your own dataset and see how it goes.

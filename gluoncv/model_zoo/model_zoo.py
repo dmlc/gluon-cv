@@ -258,6 +258,7 @@ _models = {
     'i3d_nl5_resnet101_v1_kinetics400': i3d_nl5_resnet101_v1_kinetics400,
     'i3d_nl10_resnet101_v1_kinetics400': i3d_nl10_resnet101_v1_kinetics400,
     'slowfast_4x16_resnet50_kinetics400': slowfast_4x16_resnet50_kinetics400,
+    'slowfast_4x16_resnet50_custom': slowfast_4x16_resnet50_custom,
     'slowfast_8x8_resnet50_kinetics400': slowfast_8x8_resnet50_kinetics400,
     'slowfast_4x16_resnet101_kinetics400': slowfast_4x16_resnet101_kinetics400,
     'slowfast_8x8_resnet101_kinetics400': slowfast_8x8_resnet101_kinetics400,

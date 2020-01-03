@@ -234,20 +234,20 @@ Action Recognition
         Hands on SlowFast action recognition model training on Kinetics400 dataset
 
     .. card::
-        :title: Fine-tuning I3D mdoels on Your Own Dataset
-        :link: ../build/examples_action_recognition/finetune_i3d_custom.html
+        :title: Fine-tuning video mdoels on Your Own Dataset
+        :link: ../build/examples_action_recognition/finetune_custom.html
 
-        Hands on I3D models fine-tuning on your own dataset
+        Hands on SOTA video models fine-tuning on your own dataset
 
     .. card::
         :title: Extracting video features from pre-trained models
-        :link: ../build/examples_action_recognition/feat_i3d_custom.html
+        :link: ../build/examples_action_recognition/feat_custom.html
 
         Extracting video features from pre-trained models on your own videos
 
     .. card::
         :title: Inference on your own videos using pre-trained models
-        :link: ../build/examples_action_recognition/demo_i3d_custom.html
+        :link: ../build/examples_action_recognition/demo_custom.html
 
         Inference on your own videos using pre-trained models and save the predictions.
 
