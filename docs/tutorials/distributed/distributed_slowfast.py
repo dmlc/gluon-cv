@@ -2,7 +2,7 @@
 ================================================
 
 Training deep neural networks on videos is very time consuming. For example, training a state-of-the-art SlowFast network [Feichtenhofer18]_
-on Kinetics400 dataset using a server with 8 V100 GPUs takes more than 10 days. Slow training causes long research cycles
+on Kinetics400 dataset (with 240K 10-seconds short videos) using a server with 8 V100 GPUs takes more than 10 days. Slow training causes long research cycles
 and is not friendly for new comers and students to work on video related problems.
 
 Using distributed training is a natural choice. Spreading the huge computation over multiple machines can speed up training
@@ -27,7 +27,7 @@ on Kinetics400 dataset.
 # In this tutorial, we describe how to train a model with devices distributed across machines in a data parallel way.
 #
 # There are some key concepts in distributed training, such as server, worker, scheduler, kvstore, etc.
-# Server is a node to store model's parameters and communicate with workers.
+# Server is a node to store model's parameters or gradients, and communicate with workers.
 # Worker is a node actually performing training on a batch of training samples.
 # Before processing each batch, the workers pull weights from servers.
 # The workers also send gradients to the servers after each batch.
@@ -42,36 +42,17 @@ on Kinetics400 dataset.
 # How to use our code to train a SlowFast model in a distributed manner?
 # ----------------------------------------------------------------------
 #
-# In order to perform distributed training, you need to install MXNet and prepare the cluster ready.
-# MXNet provides a script ``tools/launch.py`` to make it easy to launch distributed training on a cluster with ssh, mpi, sge or yarn.
+# In order to perform distributed training, you need to (1) prepare the cluster ready; (2) install MXNet; and (3) prepare your code
+# and data ready.
 
 ################################################################
-# First, let's install MXNet.
-# ::
-#
-#     pip install mxnet-cu100
-#
-# For more installation options (i.e., different versions of MXNet or CUDA),
-# please check `GluonCV installation guide <https://gluon-cv.mxnet.io/install/install-more.html>`_ for more information.
-
-
-################################################################
-# We also need the script to launch the job, let's clone the repo as well.
-# ::
-#
-#     git clone https://github.com/apache/incubator-mxnet.git
-#
-# The script we need is under folder ``tools``, named ``launch.py``.
-# Note that, we only need to put MXNet on the server node, not on the worker nodes.
-
-################################################################
-# Now it is time to prepare the cluster. We need a cluster that the worker nodes can communicate with the server node.
+# We need a cluster that each node can communicate with each other.
 # The first step is to generate ssh keys for each machine.
 # For better illustration, let's assume we have four machines, node1, node2, node3 and node4.
-# We use node1 as server, and node1, node2, node3 and node4 as workers.
-# Note that, a node can either be a server or worker. We can also have multiple servers.
+# We use each of the machine as both server and worker.
+# Note that, we can also have dedicated CPU machines as servers.
 #
-# First, ssh into each node and type
+# First, ssh into node1 and type
 # ::
 #
 #     ssh-keygen -t rsa
@@ -82,26 +63,51 @@ on Kinetics400 dataset.
 #
 #     ssh-rsa XXXXXXXXXXXXXXXX node1@ip-123-123-1-123
 #
-# The content in the middle is the actuall ssh key, and the IP address in the end is the node's internal IP address.
+# The content in the middle is the actuall ssh key for node1, and the IP address in the end is the node1's internal IP address.
+# Similarly, ssh into other machines (node2, node3 and node4) and perform the same steps to generate the ``id_rsa.pub`` file for each machine.
 
 ################################################################
-# Second, copy the content in ``id_rsa.pub`` of the server and paste it into each workers' ``authorized_keys`` file.
-# The ``authorized_keys`` file is under ``~/.ssh/`` folder as well. This step will make all the workers accessible to the server.
-# Similarly, copy the content in ``id_rsa.pub`` of each worker and paste it into the server's ``authorized_keys`` file.
-# This step will make the server accessible to all the workers.
-# Note that, there is no need for the workers to connect with each other because they don't communicate.
-# Before kickstarting the actual distributed training, it is better to perform some sanity checks to make sure the communication is good.
-# For example, if you are inside worker node2 and want to test the connection to server node1,
+# Second, copy the content in ``id_rsa.pub`` of node1 and paste it into other machines' ``authorized_keys`` file.
+# The ``authorized_keys`` file is under ``~/.ssh/`` folder as well. This step will make all other machines accessible to node1.
+# Similarly, copy the content in ``id_rsa.pub`` of node2 and paste it into other machines' ``authorized_keys`` file.
+# And then node3, node4, so on so forth.
+# This step will make sure all the machines in the cluster is able to communicate with each other.
+
+################################################################
+# Before moving on to next step, it is better to perform some sanity checks to make sure the communication is good.
+# For example, if you are inside node1 and want to test the connection to node2,
 #
 # ::
 #
-#     ssh node1@123.123.1.123
+#     ssh node2@123.123.2.123
 #
-# If you can ssh into the server node1, it means they can communicate with each other now. You are good to go.
-
+# If you can successfully ssh into node2, it means they can communicate with each other now. You are good to go.
+# If there is any error during ssh, you can use option ``-vvv`` to get verbose information for debugging.
 
 ################################################################
-# Once you get the cluster and MXNet script ready, the next thing is to prepare your code and data in each node.
+# Once you get the cluster ready, it is time to install MXNet.
+# MXNet provides a script ``tools/launch.py`` to make it easy to launch distributed training on a cluster with ssh, mpi, sge or yarn.
+# Let's first install MXNet on all the machines.
+# ::
+#
+#     pip install mxnet-cu100
+#
+# For more installation options (i.e., different versions of MXNet or CUDA),
+# please check `GluonCV installation guide <https://gluon-cv.mxnet.io/install/install-more.html>`_ for more information.
+# One side note, `clush <https://clustershell.readthedocs.io/en/latest/tools/clush.html>`_ is a good tool for cluster setup.
+# It can be used for executing a command concurrently on a cluster of hosts, but we won't go into details here.
+
+################################################################
+# Next, We also need the script to launch the job, let's clone the repo as well.
+# ::
+#
+#     git clone https://github.com/apache/incubator-mxnet.git --recursive
+#
+# The script we need is under folder ``tools``, named ``launch.py``.
+# Note that, this script can be put on any of the node because we only need it to launch the job.
+
+################################################################
+# Now it is time to prepare your code and data in each node.
 # The code needs to be in the same directoty on every machine so that a single command can work on multiple machines.
 # Let's clone the GluonCV repo and install it,
 # ::
@@ -111,11 +117,9 @@ on Kinetics400 dataset.
 #     pip install -e .
 #
 # Similarly, the data needs to be in the same path on every machine as well so that the dataloader knows where to find the data.
-#
-
 
 ################################################################
-# Ok, now it is time to type the command and start the training.
+# Finally, we are ready to kickstart the training. Let's type the command below to start a training job with 4 machines.
 #
 # ::
 #
@@ -147,14 +151,14 @@ on Kinetics400 dataset.
 # The linear scaling rule can help us to not only match the accuracy between using small and large minibatches, but equally importantly, to largely
 # match their training curves, which enables rapid debugging and comparison of experiments prior to convergence.
 #
-# If everything is setup well, you will see the model is training now. All printed information will be captured and sent to the worker running launch.py
-# (which is the server node). Checkpoints will be saved locally on each machine.
+# If everything is setup well, you will see the model is training now. All printed information will be captured and sent to the machine running launch.py.
+# Checkpoints will be saved locally on each machine.
 
 ################################################################
 # Speed
 # -----
 #
-# Usually, the training will be faster when you use more machines, but not linear upscaling due to communication cost.
+# Usually, the training will be faster when you use more machines, but not linear upscaling due to the communication cost.
 # The actual speed up depends on the network bandwidth, server CPU capibility, dataloader efficiency, etc.
 # For example, if you use our code on four P3.16xlarge machines on AWS in the same placement group, you will get 3x speed boost.
 # Similar speed up ratio (0.75) can be observed when you use 8 machines or more.
