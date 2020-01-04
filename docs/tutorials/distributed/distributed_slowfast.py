@@ -42,8 +42,8 @@ on Kinetics400 dataset.
 # How to use our code to train a SlowFast model in a distributed manner?
 # ----------------------------------------------------------------------
 #
-# In order to perform distributed training, you need to (1) prepare the cluster ready; (2) install MXNet; and (3) prepare your code
-# and data ready.
+# In order to perform distributed training, you need to (1) prepare the cluster; (2) install MXNet; and (3) prepare your code
+# and data.
 
 ################################################################
 # We need a cluster that each node can communicate with each other.
@@ -62,7 +62,7 @@ on Kinetics400 dataset.
 
 ################################################################
 # Second, copy both files (``id_rsa`` and ``id_rsa.pub``) of node1 to all other machines.
-# For each machine, you will fine an ``authorized_keys`` file under ``~/.ssh/`` folder as well.
+# For each machine, you will find an ``authorized_keys`` file under ``~/.ssh/`` folder as well.
 # Append ``authorized_keys`` with the content of ``id_rsa.pub``
 # This step will make sure all the machines in the cluster is able to communicate with each other.
 
@@ -106,7 +106,7 @@ on Kinetics400 dataset.
 # Similarly, the data needs to be in the same path on every machine as well so that the dataloader knows where to find the data.
 
 ################################################################
-# Finally, we are ready to kickstart the training. Let's type the command below to start a training job with 4 machines.
+# Finally, we can kickstart the training. Let's type the command below to start a training job with 4 machines.
 #
 # ::
 #
@@ -151,6 +151,25 @@ on Kinetics400 dataset.
 # Similar speed up ratio (0.75) can be observed when you use 8 machines or more.
 # In our case, we use eight P3.16xlarge machines to train a ``slowfast_4x16_resnet50_kinetics400`` model. The training can be completed in 1.5 days.
 
+################################################################
+# FAQ
+# ---
+#
+# Q1: I see the error message below, what should I do?
+# ::
+#     Permissions for 'id_rsa' are too open.
+#     It is recommended that your private key files are NOT accessible by others.
+#     This private key will be ignored.
+#
+# Answer: you need to make sure the permission of id_rsa is good via ``chmod 400 id_rsa`` after the copy.
+#
+# Q2: I didn't find the file .ssh/authorized_keys
+#
+# Answer: Just create one with
+# ::
+#     touch ~/.ssh/authorized_keys
+#     chmod 600 ~/.ssh/authorized_keys
+#
 
 ################################################################
 # References
