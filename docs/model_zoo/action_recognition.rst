@@ -5,7 +5,12 @@ Action Recognition
 
 .. role:: greytag
 
-Table of pre-trained models for video action recognition and their performance.
+Visualization of inference throughputs vs. validation accuracy of Kinetics400 pre-trained models is illustrated in the graph below.
+
+.. raw:: html
+   :file: ../_static/ar_throughputs.html
+
+The following tables list pre-trained models for video action recognition and their performances with more details.
 
 .. hint::
 
