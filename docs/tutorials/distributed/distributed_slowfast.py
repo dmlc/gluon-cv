@@ -85,7 +85,7 @@ on Kinetics400 dataset.
 # It can be used for executing a command concurrently on a cluster of hosts, but we won't go into details here.
 
 ################################################################
-# Next, We also need the script to launch the job, let's clone the repo as well.
+# Next, we need the script to launch the job, let's clone the repo as well.
 # ::
 #
 #     git clone https://github.com/apache/incubator-mxnet.git --recursive
@@ -115,11 +115,12 @@ on Kinetics400 dataset.
 #     --data-dir ~/.mxnet/kinetics400/train --val-data-dir ~/.mxnet/kinetics400/val \
 #     --train-list ~/.mxnet/kinetics400/train.txt --val-list ~/.mxnet/kinetics400/val.txt \
 #     --dtype float32 --mode hybrid --prefetch-ratio 1.0 --kvstore dist_sync_device \
-#     --model slowfast_4x16_resnet50_kinetics400 --slowfast --slow-temporal-stride 16 --fast-temporal-stride 2 \
-#     --video-loader --use-decord --num-classes 400 --batch-size 8 --num-gpus 8 --num-data-workers 32 \
-#     --input-size 224 --new-height 256 --new-width 340 --new-length 64 --new-step 1 \
-#     --lr-mode cosine --lr 0.4 --momentum 0.9 --wd 0.0001 --num-epochs 196 --warmup-epochs 34 --warmup-lr 0.01 \
-#     --scale-ratios 1.0,0.8 --save-frequency 10 --log-interval 50 --logging-file slowfast_4x16.log --save-dir ./checkpoints
+#     --model slowfast_4x16_resnet50_kinetics400 --slowfast --slow-temporal-stride 16 \
+#     --fast-temporal-stride 2 --video-loader --use-decord --num-classes 400 --batch-size 8 \
+#     --num-gpus 8 --num-data-workers 32 --input-size 224 --new-height 256 --new-width 340 \
+#     --new-length 64 --new-step 1 --lr-mode cosine --lr 0.4 --momentum 0.9 --wd 0.0001 \
+#     --num-epochs 196 --warmup-epochs 34 --warmup-lr 0.01 --scale-ratios 1.0,0.8 \
+#     --save-frequency 10 --log-interval 50 --logging-file slowfast_4x16.log --save-dir ./checkpoints
 #
 # Here, the ``host.txt`` file contains the private IP addresses of all machines, e.g.,
 # ::
@@ -163,7 +164,7 @@ on Kinetics400 dataset.
 #
 # Answer: you need to make sure the permission of id_rsa is good via ``chmod 400 id_rsa`` after the copy.
 #
-# Q2: I didn't find the file .ssh/authorized_keys
+# Q2: I can't find the file ``.ssh/authorized_keys``.
 #
 # Answer: Just create one with
 # ::
