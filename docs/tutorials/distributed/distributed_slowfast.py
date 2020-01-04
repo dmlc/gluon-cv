@@ -57,31 +57,18 @@ on Kinetics400 dataset.
 #
 #     ssh-keygen -t rsa
 #
-# Just follow the default, you will have a file named ``id_rsa.pub`` under ``~/.ssh/`` folder.
-# The file's content usually looks like
-# ::
-#
-#     ssh-rsa XXXXXXXXXXXXXXXX node1@ip-123-123-1-123
-#
-# The content in the middle is the actuall ssh key for node1, and the IP address in the end is the node1's internal IP address.
-# Similarly, ssh into other machines (node2, node3 and node4) and perform the same steps to generate the ``id_rsa.pub`` file for each machine.
+# Just follow the default, you will have a file named ``id_rsa`` and a file named ``id_rsa.pub``, both under the ``~/.ssh/`` folder.
+# ``id_rsa`` is the private RSA key, and ``id_rsa.pub`` is its public key.
 
 ################################################################
-# Second, copy the content in ``id_rsa.pub`` of node1 and paste it into other machines' ``authorized_keys`` file.
-# The ``authorized_keys`` file is under ``~/.ssh/`` folder as well. This step will make all other machines accessible to node1.
-# Similarly, copy the content in ``id_rsa.pub`` of node2 and paste it into other machines' ``authorized_keys`` file.
-# And then node3, node4, so on so forth.
+# Second, copy both files (``id_rsa`` and ``id_rsa.pub``) of node1 to all other machines.
+# For each machine, you will fine an ``authorized_keys`` file under ``~/.ssh/`` folder as well.
+# Append ``authorized_keys`` with the content of ``id_rsa.pub``
 # This step will make sure all the machines in the cluster is able to communicate with each other.
 
 ################################################################
 # Before moving on to next step, it is better to perform some sanity checks to make sure the communication is good.
-# For example, if you are inside node1 and want to test the connection to node2,
-#
-# ::
-#
-#     ssh node2@123.123.2.123
-#
-# If you can successfully ssh into node2, it means they can communicate with each other now. You are good to go.
+# For example, if you can successfully ssh into other machines, it means they can communicate with each other now. You are good to go.
 # If there is any error during ssh, you can use option ``-vvv`` to get verbose information for debugging.
 
 ################################################################
@@ -134,7 +121,7 @@ on Kinetics400 dataset.
 #     --lr-mode cosine --lr 0.4 --momentum 0.9 --wd 0.0001 --num-epochs 196 --warmup-epochs 34 --warmup-lr 0.01 \
 #     --scale-ratios 1.0,0.8 --save-frequency 10 --log-interval 50 --logging-file slowfast_4x16.log --save-dir ./checkpoints
 #
-# Here, the ``host.txt`` file contains the IP addresses of all machines, e.g.,
+# Here, the ``host.txt`` file contains the private IP addresses of all machines, e.g.,
 # ::
 #     123.123.1.123
 #     123.123.2.123
