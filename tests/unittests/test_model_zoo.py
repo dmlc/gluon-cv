@@ -471,6 +471,17 @@ def test_action_recognition_vgg_models():
     _test_model_list(models, ctx, x, pretrained=False, pretrained_base=True)
 
 @try_gpu(0)
+def test_action_recognition_inceptionv1_models():
+    ctx = mx.context.current_context()
+    models = ['inceptionv1_kinetics400']
+
+    # 299x299
+    x = mx.random.uniform(shape=(2, 3, 224, 224), ctx=ctx)
+    _test_model_list(models, ctx, x, pretrained=True, pretrained_base=True)
+    _test_model_list(models, ctx, x, pretrained=False, pretrained_base=False)
+    _test_model_list(models, ctx, x, pretrained=False, pretrained_base=True)
+
+@try_gpu(0)
 def test_action_recognition_inceptionv3_models():
     ctx = mx.context.current_context()
     models = ['inceptionv3_ucf101', 'inceptionv3_kinetics400']
@@ -519,6 +530,12 @@ def test_action_recognition_slowfast_models():
     _test_model_list(models, ctx, x, pretrained=False, pretrained_base=True)
 
     models = ['slowfast_8x8_resnet50_kinetics400']
+    x = mx.random.uniform(shape=(2, 3, 40, 224, 224), ctx=ctx)
+    _test_model_list(models, ctx, x, pretrained=True, pretrained_base=True)
+    _test_model_list(models, ctx, x, pretrained=False, pretrained_base=False)
+    _test_model_list(models, ctx, x, pretrained=False, pretrained_base=True)
+
+    models = ['slowfast_8x8_resnet101_kinetics400']
     x = mx.random.uniform(shape=(2, 3, 40, 224, 224), ctx=ctx)
     _test_model_list(models, ctx, x, pretrained=True, pretrained_base=True)
     _test_model_list(models, ctx, x, pretrained=False, pretrained_base=False)
