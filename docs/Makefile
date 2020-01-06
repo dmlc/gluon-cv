@@ -22,5 +22,4 @@ help:
 	wget -O _static/detection_coco_per_class.html https://zhiz-cache.s3.amazonaws.com/gluoncv-throughput-benchmarks/detection_coco_per_class.html
 	wget -O _static/pose_throughputs.html https://zhiz-cache.s3.amazonaws.com/gluoncv-throughput-benchmarks/pose_throughputs.html
 	wget -O _static/semantic_segmentation_throughputs.html https://zhiz-cache.s3.amazonaws.com/gluoncv-throughput-benchmarks/semantic_segmentation_throughputs.html
-	wget -O _static/ar_throughputs.html https://zhiz-cache.s3.amazonaws.com/gluoncv-throughput-benchmarks/ar_throughputs.html
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)

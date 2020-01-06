@@ -5,11 +5,7 @@ Action Recognition
 
 .. role:: greytag
 
-Here is the model zoo for video action recognition task. We first show a visualization in the graph below, describing the inference throughputs vs. validation accuracy of Kinetics400 pre-trained models.
-
-.. raw:: html
-   :file: ../_static/ar_throughputs.html
-
+Table of pre-trained models for video action recognition and their performance.
 
 .. hint::
 
