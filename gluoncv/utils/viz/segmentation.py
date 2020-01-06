@@ -71,6 +71,19 @@ def _getvocpallete(num_cls):
 vocpallete = _getvocpallete(256)
 
 # pylint: disable=bad-whitespace
+
+"""
+The following numerical list is the color palette when visualizing a semantic segmentation mask.
+Every three numbers is a RGB combination, corresponding to a specific color for each class.
+For example, [0,0,0] is black indicating background. [120,120,120] is gray indicating wall.
+
+For complete information, please see the color encoding table for ADE20K at:
+https://docs.google.com/spreadsheets/d/1se8YEtb2detS7OuPE86fXGyD269pMycAWe2mtKUj2W8/edit#gid=0
+
+Please see the color encoding table for Cityscapes at:
+https://github.com/mcordts/cityscapesScripts/blob/master/cityscapesscripts/helpers/labels.py
+"""
+
 adepallete = [
     0,0,0,120,120,120,180,120,120,6,230,230,80,50,50,4,200,3,120,120,80,140,140,140,204,
     5,255,230,230,230,4,250,7,224,5,255,235,255,7,150,5,61,120,120,70,8,255,51,255,6,82,
