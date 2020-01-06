@@ -6,6 +6,8 @@ from mxnet import gluon, image, init, nd
 from mxnet import autograd as ag
 from mxnet.gluon import nn
 from mxnet.gluon.data.vision import transforms
+import gluoncv as gcv
+gcv.utils.check_version('0.6.0')
 from gluoncv.utils import makedirs
 from gluoncv.model_zoo import get_model
 

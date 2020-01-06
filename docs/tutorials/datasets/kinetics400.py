@@ -173,7 +173,8 @@ from gluoncv.utils.filesystem import import_try_install
 import_try_install('decord')
 
 # Since we are loading videos directly, we need to change the ``root`` location.
-train_dataset = Kinetics400(root=os.path.expanduser('~/.mxnet/datasets/kinetics400/train'), train=True,
+# ``tiny_train_videos`` contains a small subset of Kinetics400 dataset, which is used for demonstration only.
+train_dataset = Kinetics400(root=os.path.expanduser('~/.mxnet/datasets/kinetics400/tiny_train_videos'), train=True,
                             transform=transform_train, video_loader=True, use_decord=True)
 train_data = DataLoader(train_dataset, batch_size=5, shuffle=True)
 
@@ -188,7 +189,7 @@ for x, y in train_data:
 # Here is the second example that randomly reads 25 videos each time, randomly selects one clip per video and
 # performs center cropping. A clip can contain N consecutive frames, e.g., N=5.
 
-train_dataset = Kinetics400(root=os.path.expanduser('~/.mxnet/datasets/kinetics400/train'),
+train_dataset = Kinetics400(root=os.path.expanduser('~/.mxnet/datasets/kinetics400/tiny_train_videos'),
                             train=True, new_length=5, transform=transform_train,
                             video_loader=True, use_decord=True)
 train_data = DataLoader(train_dataset, batch_size=5, shuffle=True)
@@ -204,7 +205,7 @@ for x, y in train_data:
 # The last example is that we randomly read 5 videos each time, select 3 clips evenly per video and
 # performs center cropping. A clip contains 12 consecutive frames.
 
-train_dataset = Kinetics400(root=os.path.expanduser('~/.mxnet/datasets/kinetics400/train'), train=True,
+train_dataset = Kinetics400(root=os.path.expanduser('~/.mxnet/datasets/kinetics400/tiny_train_videos'), train=True,
                             new_length=12, num_segments=3, transform=transform_train,
                             video_loader=True, use_decord=True)
 train_data = DataLoader(train_dataset, batch_size=5, shuffle=True)

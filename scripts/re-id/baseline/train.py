@@ -11,6 +11,8 @@ from mxnet.gluon.data.vision import transforms
 from mxnet import autograd
 
 from networks import resnet18, resnet34, resnet50
+import gluoncv as gcv
+gcv.utils.check_version('0.6.0')
 from gluoncv.data.market1501.data_read import ImageTxtDataset
 from gluoncv.data.market1501.label_read import LabelList
 from gluoncv.data.transforms.block import RandomCrop
@@ -71,7 +73,7 @@ def get_data_iters(batch_size):
             transforms.Resize(size=(opt.img_width, opt.img_height), interpolation=1),
             transforms.ToTensor(),
             normalizer])
-            
+
         val_imgs = ImageTxtDataset(val_set, transform=transform_test)
         val_data = gluon.data.DataLoader(val_imgs, batch_size, shuffle=True, last_batch='discard', num_workers=opt.num_workers)
     else:

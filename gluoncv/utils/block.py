@@ -1,5 +1,6 @@
 """Utility functions for gluon parameters."""
 import re
+import numpy as np
 from mxnet.gluon.nn import BatchNorm
 
 def recursive_visit(net, callback, **kwargs):
@@ -66,3 +67,35 @@ def freeze_bn(net, use_global_stats=True):
 
     """
     recursive_visit(net, _freeze_bn_callback, use_global_stats=use_global_stats)
+
+def purge_model_nan(net, nan=0.0, posinf=0.0, neginf=0.0, verbose=False):
+    """Purge non infinite values in model parameters. GPU trained model may
+    contain nan/inf/-inf values which is hidden since CUDNN may handle nan
+    implicitly. This may cause model to produce nan during CPU inference.
+
+    Weights will be overwritten inplace.
+
+    Parameters
+    ----------
+    net : mxnet.gluon.Block
+        The network whose weights will be purged to remove nan/inf/-inf.
+    nan : float, default is 0.0
+        Value to be used to fill NaN values.
+        If no value is passed then NaN values will be replaced with 0.0.
+    posinf : float, default is 0.0
+        Value to be used to fill +Inf values.
+        If no value is passed then +Inf values will be replaced with 0.0.
+    neginf : float, default is 0.0
+        Value to be used to fill -Inf values.
+        If no value is passed then -Inf values will be replaced with 0.0.
+    verbose : bool
+        If True, will print out what parameters are modified.
+    """
+    for k, v in net.collect_params().items():
+        np_data = v.data().asnumpy()
+        if not np.isfinite(np_data).all():
+            if verbose:
+                print(k, ': Overwritten {} values...'.format(
+                    np_data.size - np.isfinite(np_data).sum()))
+            new_data = np.nan_to_num(np_data, nan=nan, posinf=posinf, neginf=neginf)
+            v.set_data(new_data)

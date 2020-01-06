@@ -21,7 +21,7 @@ Start Training Now
         python train_recognizer.py --model vgg16_ucf101 --num-classes 101 --num-gpus 8 --lr-mode step --lr 0.001 --lr-decay 0.1 --lr-decay-epoch 30,60,80 --num-epochs 80
 
         # Finetune a pretrained VGG16 model using temporal segment network.
-        python train_recognizer.py --model vgg16_ucf101 --num-classes 101 --num-gpus 8 --num-segments 3 --use-tsn --lr-mode step --lr 0.001 --lr-decay 0.1 --lr-decay-epoch 30,60,80 --num-epochs 80
+        python train_recognizer.py --model vgg16_ucf101 --num-classes 101 --num-gpus 8 --num-segments 3 --lr-mode step --lr 0.001 --lr-decay 0.1 --lr-decay-epoch 30,60,80 --num-epochs 80
 
     For more training command options, please run ``python train_recognizer.py -h``
     Please checkout the `model_zoo <../model_zoo/index.html#action_recognition>`_ for training commands of reproducing the pretrained model.
@@ -46,7 +46,7 @@ from mxnet.gluon import nn
 from mxnet.gluon.data.vision import transforms
 
 from gluoncv.data.transforms import video
-from gluoncv.data import ucf101
+from gluoncv.data import UCF101
 from gluoncv.model_zoo import get_model
 from gluoncv.utils import makedirs, LRSequential, LRScheduler, split_and_load, TrainingHistory
 
@@ -57,6 +57,13 @@ from gluoncv.utils import makedirs, LRSequential, LRScheduler, split_and_load, T
 # Here we pick a simple yet well-performing structure, ``vgg16_ucf101``, for the
 # tutorial. In addition, we use the the idea of temporal segments (TSN) [Wang16]_
 # to wrap the backbone VGG16 network for adaptation to video domain.
+#
+# `TSN <https://arxiv.org/abs/1608.00859>`_ is a widely adopted video
+# classification method. It is proposed to incorporate temporal information from an entire video.
+# The idea is straightforward: we can evenly divide the video into several segments,
+# process each segment individually, obtain segmental consensus from each segment, and perform
+# final prediction. TSN is more like a general algorithm, rather than a specific network architecture.
+# It can work with both 2D and 3D neural networks.
 
 # number of GPUs to use
 num_gpus = 1
@@ -96,15 +103,14 @@ transform_train = transforms.Compose([
 # training datasets.
 
 # Batch Size for Each GPU
-per_device_batch_size = 25
+per_device_batch_size = 5
 # Number of data loader workers
 num_workers = 8
 # Calculate effective total batch size
 batch_size = per_device_batch_size * num_gpus
 
-# Set train=True for training data. Here we only use a subset of UCF101 for demonstration purpose.
-# The subset has 101 training samples, one sample per class.
-train_dataset = ucf101.classification.UCF101(train=True, num_segments=3, transform=transform_train)
+# Set train=True for training the model. Here we set num_segments to 3 to enable TSN training.
+train_dataset = UCF101(train=True, num_segments=3, transform=transform_train)
 print('Load %d training samples.' % len(train_dataset))
 train_data = gluon.data.DataLoader(train_dataset, batch_size=batch_size,
                                    shuffle=True, num_workers=num_workers)
@@ -149,7 +155,7 @@ train_history = TrainingHistory(['training-acc'])
 # Following is the script.
 #
 # .. note::
-#   In order to finish the tutorial quickly, we only train for 3 epochs on the tiny subset.
+#   In order to finish the tutorial quickly, we only train for 3 epochs, and 100 iterations per epoch.
 #   In your experiments, we recommend setting ``epochs=80`` for the full UCF101 dataset.
 
 epochs = 3
@@ -191,6 +197,9 @@ for epoch in range(epochs):
         train_loss += sum([l.mean().asscalar() for l in loss])
         train_metric.update(label, output)
 
+        if i == 100:
+            break
+
     name, acc = train_metric.get()
 
     # Update history and print metrics
@@ -203,6 +212,9 @@ train_history.plot()
 
 ##############################################################################
 # You can `Start Training Now`_.
+#
+# If you would like to use a bigger 3D model (e.g., I3D) on a larger dataset (e.g., Kinetics400),
+# feel free to read the next `tutorial on Kinetics400 <demo_i3d_kinetics400.html>`__.
 #
 # References
 # ----------

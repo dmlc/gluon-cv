@@ -196,8 +196,8 @@ class I3D_InceptionV1(HybridBlock):
     partial_bn : bool, default False
         Freeze all batch normalization layers during training except the first layer.
     """
-    def __init__(self, nclass=1000, pretrained_base=True,
-                 num_segments=1, num_crop=1,
+    def __init__(self, nclass=1000, pretrained=False, pretrained_base=True,
+                 num_segments=1, num_crop=1, feat_ext=False,
                  dropout_ratio=0.5, init_std=0.01, partial_bn=False,
                  ctx=None, norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
         super(I3D_InceptionV1, self).__init__(**kwargs)
@@ -207,6 +207,7 @@ class I3D_InceptionV1(HybridBlock):
         self.feat_dim = 1024
         self.dropout_ratio = dropout_ratio
         self.init_std = init_std
+        self.feat_ext = feat_ext
 
         with self.name_scope():
             self.features = nn.HybridSequential(prefix='')
@@ -248,7 +249,7 @@ class I3D_InceptionV1(HybridBlock):
             self.features.initialize(ctx=ctx)
             self.head.initialize(ctx=ctx)
 
-            if pretrained_base:
+            if pretrained_base and not pretrained:
                 inceptionv1_2d = googlenet(pretrained=True)
                 weights2d = inceptionv1_2d.collect_params()
                 weights3d = self.collect_params()
@@ -295,12 +296,16 @@ class I3D_InceptionV1(HybridBlock):
         x = F.reshape(x, shape=(-1, self.num_segments * self.num_crop, self.feat_dim))
         x = F.mean(x, axis=1)
 
+        if self.feat_ext:
+            return x
+
         x = self.head(x)
         return x
 
 def i3d_inceptionv1_kinetics400(nclass=400, pretrained=False, pretrained_base=True,
                                 ctx=cpu(), root='~/.mxnet/models', use_tsn=False,
-                                num_segments=1, num_crop=1, partial_bn=False, **kwargs):
+                                num_segments=1, num_crop=1, partial_bn=False,
+                                feat_ext=False, **kwargs):
     r"""Inception v1 model from
     `"Going Deeper with Convolutions"
     <https://arxiv.org/abs/1409.4842>`_ paper.
@@ -330,7 +335,9 @@ def i3d_inceptionv1_kinetics400(nclass=400, pretrained=False, pretrained_base=Tr
 
     model = I3D_InceptionV1(nclass=nclass,
                             partial_bn=partial_bn,
+                            pretrained=pretrained,
                             pretrained_base=pretrained_base,
+                            feat_ext=feat_ext,
                             num_segments=num_segments,
                             num_crop=num_crop,
                             dropout_ratio=0.5,

@@ -5,7 +5,8 @@ from mxnet.gluon import nn
 from mxnet.gluon.nn import HybridBlock
 from ..inception import inception_v3
 
-__all__ = ['inceptionv3_ucf101', 'inceptionv3_kinetics400']
+__all__ = ['inceptionv3_ucf101', 'inceptionv3_hmdb51', 'inceptionv3_kinetics400',
+           'inceptionv3_sthsthv2']
 
 class ActionRecInceptionV3(HybridBlock):
     r"""InceptionV3 model for video action recognition
@@ -80,6 +81,27 @@ def inceptionv3_ucf101(nclass=101, pretrained=False, pretrained_base=True,
     model.collect_params().reset_ctx(ctx)
     return model
 
+def inceptionv3_hmdb51(nclass=51, pretrained=False, pretrained_base=True,
+                       use_tsn=False, num_segments=1, num_crop=1, partial_bn=True,
+                       ctx=mx.cpu(), root='~/.mxnet/models', **kwargs):
+    model = ActionRecInceptionV3(nclass=nclass,
+                                 partial_bn=partial_bn,
+                                 pretrained_base=pretrained_base,
+                                 num_segments=num_segments,
+                                 num_crop=num_crop,
+                                 dropout_ratio=0.8,
+                                 init_std=0.001)
+
+    if pretrained:
+        from ..model_store import get_model_file
+        model.load_parameters(get_model_file('inceptionv3_hmdb51',
+                                             tag=pretrained, root=root))
+        from ...data import HMDB51Attr
+        attrib = HMDB51Attr()
+        model.classes = attrib.classes
+    model.collect_params().reset_ctx(ctx)
+    return model
+
 def inceptionv3_kinetics400(nclass=400, pretrained=False, pretrained_base=True,
                             tsn=False, num_segments=1, num_crop=1, partial_bn=True,
                             ctx=mx.cpu(), root='~/.mxnet/models', **kwargs):
@@ -97,6 +119,27 @@ def inceptionv3_kinetics400(nclass=400, pretrained=False, pretrained_base=True,
                                              tag=pretrained, root=root))
         from ...data import Kinetics400Attr
         attrib = Kinetics400Attr()
+        model.classes = attrib.classes
+    model.collect_params().reset_ctx(ctx)
+    return model
+
+def inceptionv3_sthsthv2(nclass=174, pretrained=False, pretrained_base=True,
+                         tsn=False, num_segments=1, num_crop=1, partial_bn=True,
+                         ctx=mx.cpu(), root='~/.mxnet/models', **kwargs):
+    model = ActionRecInceptionV3(nclass=nclass,
+                                 partial_bn=partial_bn,
+                                 pretrained_base=pretrained_base,
+                                 num_segments=num_segments,
+                                 num_crop=num_crop,
+                                 dropout_ratio=0.5,
+                                 init_std=0.01)
+
+    if pretrained:
+        from ..model_store import get_model_file
+        model.load_parameters(get_model_file('inceptionv3_sthsthv2',
+                                             tag=pretrained, root=root))
+        from ...data import SomethingSomethingV2Attr
+        attrib = SomethingSomethingV2Attr()
         model.classes = attrib.classes
     model.collect_params().reset_ctx(ctx)
     return model

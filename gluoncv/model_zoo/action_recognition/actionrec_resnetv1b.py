@@ -8,7 +8,8 @@ from ..resnetv1b import resnet18_v1b, resnet34_v1b, resnet50_v1b, resnet101_v1b,
 __all__ = ['resnet18_v1b_sthsthv2', 'resnet34_v1b_sthsthv2', 'resnet50_v1b_sthsthv2',
            'resnet101_v1b_sthsthv2', 'resnet152_v1b_sthsthv2', 'resnet18_v1b_kinetics400',
            'resnet34_v1b_kinetics400', 'resnet50_v1b_kinetics400', 'resnet101_v1b_kinetics400',
-           'resnet152_v1b_kinetics400', 'resnet50_v1b_hmdb51']
+           'resnet152_v1b_kinetics400', 'resnet50_v1b_ucf101', 'resnet50_v1b_hmdb51',
+           'resnet50_v1b_custom']
 
 class ActionRecResNetV1b(HybridBlock):
     r"""ResNet models for video action recognition
@@ -315,6 +316,28 @@ def resnet152_v1b_kinetics400(nclass=400, pretrained=False, pretrained_base=True
     model.collect_params().reset_ctx(ctx)
     return model
 
+def resnet50_v1b_ucf101(nclass=101, pretrained=False, pretrained_base=True,
+                        use_tsn=False, partial_bn=False,
+                        num_segments=1, num_crop=1, root='~/.mxnet/models',
+                        ctx=mx.cpu(), **kwargs):
+    model = ActionRecResNetV1b(depth=50,
+                               nclass=nclass,
+                               partial_bn=partial_bn,
+                               num_segments=num_segments,
+                               num_crop=num_crop,
+                               dropout_ratio=0.9,
+                               init_std=0.001)
+
+    if pretrained:
+        from ..model_store import get_model_file
+        model.load_parameters(get_model_file('resnet50_v1b_ucf101',
+                                             tag=pretrained, root=root))
+        from ...data import UCF101Attr
+        attrib = UCF101Attr()
+        model.classes = attrib.classes
+    model.collect_params().reset_ctx(ctx)
+    return model
+
 def resnet50_v1b_hmdb51(nclass=51, pretrained=False, pretrained_base=True,
                         use_tsn=False, partial_bn=False,
                         num_segments=1, num_crop=1, root='~/.mxnet/models',
@@ -334,5 +357,36 @@ def resnet50_v1b_hmdb51(nclass=51, pretrained=False, pretrained_base=True,
         from ...data import HMDB51Attr
         attrib = HMDB51Attr()
         model.classes = attrib.classes
+    model.collect_params().reset_ctx(ctx)
+    return model
+
+def resnet50_v1b_custom(nclass=400, pretrained=False, pretrained_base=True,
+                        use_tsn=False, partial_bn=False,
+                        num_segments=1, num_crop=1, root='~/.mxnet/models',
+                        ctx=mx.cpu(), use_kinetics_pretrain=True, **kwargs):
+    model = ActionRecResNetV1b(depth=50,
+                               nclass=nclass,
+                               partial_bn=partial_bn,
+                               num_segments=num_segments,
+                               num_crop=num_crop,
+                               dropout_ratio=0.5,
+                               init_std=0.01)
+
+    if use_kinetics_pretrain and not pretrained:
+        from gluoncv.model_zoo import get_model
+        kinetics_model = get_model('resnet50_v1b_kinetics400', nclass=400, pretrained=True)
+        source_params = kinetics_model.collect_params()
+        target_params = model.collect_params()
+        assert len(source_params.keys()) == len(target_params.keys())
+
+        pretrained_weights = []
+        for layer_name in source_params.keys():
+            pretrained_weights.append(source_params[layer_name].data())
+
+        for i, layer_name in enumerate(target_params.keys()):
+            if i + 2 == len(source_params.keys()):
+                # skip the last dense layer
+                break
+            target_params[layer_name].set_data(pretrained_weights[i])
     model.collect_params().reset_ctx(ctx)
     return model

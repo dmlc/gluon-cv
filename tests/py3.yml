@@ -7,7 +7,7 @@ dependencies:
   - perl
   - sphinx=1.7.2
   - nose
-  - coverage
+  - coverage=4.5.4
   - scipy
   - cython
   - pip=19.1.1

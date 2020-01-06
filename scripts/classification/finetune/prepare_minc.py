@@ -1,4 +1,6 @@
 import os, argparse, shutil
+import gluoncv as gcv
+gcv.utils.check_version('0.6.0')
 from gluoncv.utils import makedirs
 
 def parse_opts():
