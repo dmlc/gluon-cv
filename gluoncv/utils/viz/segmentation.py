@@ -74,7 +74,7 @@ vocpallete = _getvocpallete(256)
 
 """
 The following numerical list is the color palette when visualizing a semantic segmentation mask.
-Every 3 numbers is a RGB combination, corresponding to a specific color for one class in the dataset.
+Every three numbers is a RGB combination, corresponding to a specific color for each class.
 For example, [0,0,0] is black indicating background. [120,120,120] is gray indicating wall.
 
 For complete information, please see the color encoding table for ADE20K at:
