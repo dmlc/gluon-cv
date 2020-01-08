@@ -24,6 +24,18 @@
 
   <!-- Custom Scripts -->
   <!-- <script src="_static/js/custom.js" type="text/javascript"></script> -->
+  <script>
+    $(document).ready(function() {
+      $.get("https://api.ipdata.co/?api-key=test", function (response) {
+        var vistor_country = JSON.stringify(response.country_name, null, 4);
+        console.log('Vistor:', vistor_country);
+        if (vistor_country.trim().replace(/\s+/g, "") == '"China"'.trim().replace(/\s+/g, "")) {
+          console.log("Play video from bilibili");
+          console.log($("#popup-video-iframe").attr('src', 'https://player.bilibili.com/player.html?aid=55619231&cid=97239492&page=1'));
+        }
+      }, "jsonp");
+    });
+  </script>
 
   <!-- Fonts and Material Icons -->
   <link rel="stylesheet" as="font"
@@ -325,7 +337,7 @@
             <div class="embedVideo popupContent">
               <iframe src="https://www.youtube.com/embed/nfpouVAzXt0?start=6" frameborder="0"
                 allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
-                allowfullscreen></iframe>
+                allowfullscreen id="popup-video-iframe"></iframe>
             </div>
           </div>
         </div>
