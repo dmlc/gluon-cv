@@ -24,7 +24,8 @@ class ICNetLoss(SoftmaxCrossEntropyLoss):
         super(ICNetLoss, self).__init__(**kwargs)
         self.weights = weights
 
-    def _weighted_forwarad(self, F, scale_pred1, scale_pred2, scale_pred3, scale_pred4, label, **kwargs):
+    def _weighted_forwarad(self, F, scale_pred1, scale_pred2,
+                           scale_pred3, scale_pred4, label, **kwargs):
         h, w = label.shape[1], label.shape[2]
 
         scale_pred = F.contrib.BilinearResize2D(scale_pred1, height=h, width=w)
@@ -69,8 +70,8 @@ class ICNet(SegBaseModel):
 
     Reference:
 
-        Hengshuang Zhao, Xiaojuan Qi, Xiaoyong Shen, Jianping Shi and Jiaya Jia. "ICNet for Real-Time
-        Semantic Segmentation on High-Resolution Images." *ECCV*, 2018
+        Hengshuang Zhao, Xiaojuan Qi, Xiaoyong Shen, Jianping Shi and Jiaya Jia.
+        "ICNet for Real-Time Semantic Segmentation on High-Resolution Images." *ECCV*, 2018
 
     Examples
     --------
@@ -80,14 +81,17 @@ class ICNet(SegBaseModel):
     # pylint: disable=arguments-differ
     def __init__(self, nclass, backbone='resnet50', aux=False, ctx=cpu(), pretrained_base=True,
                  base_size=520, crop_size=480, **kwargs):
-        super(ICNet, self).__init__(nclass, aux=aux, backbone=backbone, ctx=ctx, base_size=base_size,
-                                    crop_size=crop_size, pretrained_base=pretrained_base, **kwargs)
+        super(ICNet, self).__init__(nclass, aux=aux, backbone=backbone, ctx=ctx,
+                                    base_size=base_size, crop_size=crop_size,
+                                    pretrained_base=pretrained_base, **kwargs)
 
         with self.name_scope():
             self.maxpool = nn.MaxPool2D(pool_size=3, strides=2, padding=1, ceil_mode=True)
 
-            base_psp_head = _PSPHead(nclass, feature_map_height=int(round(self._up_kwargs['height'] / 32)),
-                                     feature_map_width=int(round(self._up_kwargs['width'] / 32)), **kwargs)
+            base_psp_head = _PSPHead(nclass,
+                                     feature_map_height=int(round(self._up_kwargs['height'] / 32)),
+                                     feature_map_width=int(round(self._up_kwargs['width'] / 32)),
+                                     **kwargs)
             self.psp_head = nn.HybridSequential()
             with self.psp_head.name_scope():
                 self.psp_head.add(
@@ -133,7 +137,9 @@ class ICNet(SegBaseModel):
         x_sub2_out = self.layer2(x)
 
         # sub 4
-        x_sub4 = F.contrib.BilinearResize2D(x_sub2_out, height=x_sub2_out.shape[2] // 2, width=x_sub2_out.shape[3] // 2)
+        x_sub4 = F.contrib.BilinearResize2D(x_sub2_out,
+                                            height=x_sub2_out.shape[2] // 2,
+                                            width=x_sub2_out.shape[3] // 2)
 
         x = self.layer3(x_sub4)
         x = self.layer4(x)
@@ -166,7 +172,9 @@ class ICNet(SegBaseModel):
         x_sub2_out = self.layer2(x)
 
         # sub 4
-        x_sub4 = F.contrib.BilinearResize2D(x_sub2_out, height=x_sub2_out.shape[2] // 2, width=x_sub2_out.shape[3] // 2)
+        x_sub4 = F.contrib.BilinearResize2D(x_sub2_out,
+                                            height=x_sub2_out.shape[2] // 2,
+                                            width=x_sub2_out.shape[3] // 2)
 
         x = self.layer3(x_sub4)
         x = self.layer4(x)
@@ -280,7 +288,8 @@ class _ICHead(HybridBlock):
         x_cff_12, x_12_cls = self.cff_12(x_cff_24, x_sub1)
         outputs.append(x_12_cls)
 
-        up_x2 = F.contrib.BilinearResize2D(x_cff_12, height=2*x_cff_12.shape[2], width=2*x_cff_12.shape[3])
+        up_x2 = F.contrib.BilinearResize2D(x_cff_12,
+                                           height=2*x_cff_12.shape[2], width=2*x_cff_12.shape[3])
         up_x2 = self.conv_cls(up_x2)
         outputs.append(up_x2)
         up_x8 = F.contrib.BilinearResize2D(up_x2, height=4*up_x2.shape[2], width=4*up_x2.shape[3])
@@ -298,7 +307,8 @@ class _ICHead(HybridBlock):
         outputs.append(x_12_cls)
 
         import mxnet.ndarray as F
-        up_x2 = F.contrib.BilinearResize2D(x_cff_12, height=2*x_cff_12.shape[2], width=2*x_cff_12.shape[3])
+        up_x2 = F.contrib.BilinearResize2D(x_cff_12,
+                                           height=2*x_cff_12.shape[2], width=2*x_cff_12.shape[3])
         up_x2 = self.conv_cls(up_x2)
         outputs.append(up_x2)
         up_x8 = F.contrib.BilinearResize2D(up_x2, height=4*up_x2.shape[2], width=4*up_x2.shape[3])
