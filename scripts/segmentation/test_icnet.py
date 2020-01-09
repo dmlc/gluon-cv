@@ -35,6 +35,7 @@ def test(model_prefix):
     num_workers = 48
 
     base_size = 2048
+    height, width = 1024, 2048
     crop_size = 768
 
     ######################### Dataset and DataLoader ###############################
@@ -45,18 +46,18 @@ def test(model_prefix):
     ])
 
     # ???
-    data_kwargs = {'transform': input_transform, 'base_size': base_size,
-                   'crop_size': crop_size}
+    # data_kwargs = {'transform': input_transform, 'base_size': base_size,
+    #                'crop_size': crop_size}
 
     # get dataset
-    valset = get_segmentation_dataset('citys', split='val', mode='testval', **data_kwargs)
+    valset = get_segmentation_dataset('citys', split='val', mode='testval', transform=input_transform)
     eval_data = gluon.data.DataLoader(dataset=valset, batch_size=batch_size, shuffle=False, last_batch='rollover', num_workers=num_workers)
 
     ######################### Testing Model ###############################
     ## get the model
     model = get_icnet(nclass=valset.NUM_CLASS, ctx=ctx,
                       norm_layer=norm_layer, norm_kwargs=norm_kwargs,
-                      base_size=base_size, crop_size=crop_size)
+                      base_size=base_size, height=height, width=width)
     model.collect_params().reset_ctx(ctx=ctx)
 
     resume_path = '/home/ubuntu/workspace/gluon-cv/scripts/segmentation/training/icnet_psp50/icnet_psp50.params'
@@ -68,20 +69,15 @@ def test(model_prefix):
     # print(model)
 
     # evaluator and error metric
-    # evaluator = MultiEvalModel(model, valset.num_class, ctx_list=ctx)
-
     evaluator = DataParallelModel(SegEvalModel(model), ctx_list=ctx)
-
     metric = gluoncv.utils.metrics.SegmentationMetric(valset.num_class)
 
     ######################### Testing Step ###############################
     tbar = tqdm(eval_data)
-    tic = time.time()
     pixAcc, mIoU, t_gpu = 0, 0, 0
     num = 0
     for i, (data, dsts) in enumerate(tbar):
         tic = time.time()
-        # predicts = [pred[0] for pred in evaluator.parallel_forward(data)]
         outputs = evaluator(data.astype('float32', copy=False))
         t_gpu += time.time() - tic
         num += 1
@@ -89,9 +85,6 @@ def test(model_prefix):
         outputs = [x[0] for x in outputs]
         targets = mx.gluon.utils.split_and_load(dsts, ctx_list=ctx, even_split=False)
         metric.update(targets, outputs)
-
-        # targets = [target.as_in_context(predicts[0].context) for target in dsts]
-        # metric.update(targets, predicts)
 
         pixAcc, mIoU = metric.get()
         tbar.set_description('pixAcc: %.4f, mIoU: %.4f' % (pixAcc, mIoU))
@@ -103,10 +96,11 @@ def test(model_prefix):
 
 
 if __name__ == "__main__":
-    # training log
+    # testing
     model_prefix = 'icnet_psp50_citys_'
     pixAcc, mIoU, t_gpu = test(model_prefix)
 
+    # testing performance
     output_directory = './testing/icnet_psp50/'
     output_filename = model_prefix
 
@@ -117,5 +111,5 @@ if __name__ == "__main__":
 
     # record accuracy
     with open(test_txt, 'w') as txtfile:
-        txtfile.write("pixAcc={:.3f}\nmIoU={:.3f}\nt_gpu={:.4f}".
-                      format(pixAcc, mIoU, t_gpu))
+        txtfile.write("pixAcc={:.3f}\nmIoU={:.3f}\nt_gpu={:.2f}ms".
+                      format(pixAcc, mIoU, t_gpu*1000))

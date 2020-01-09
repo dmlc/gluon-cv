@@ -8,6 +8,7 @@ from mxnet import gluon, autograd
 from mxnet.gluon.data.vision import transforms
 
 import gluoncv
+
 gluoncv.utils.check_version('0.6.0')
 from gluoncv.utils import LRScheduler
 
@@ -19,8 +20,8 @@ from gluoncv.data import get_segmentation_dataset
 
 
 class Trainer(object):
-    def __init__(self, ngpus=8, base_size=2048, crop_size=768, batch_size = 16,
-                 test_batch_size = 16, num_workers = 48, syncbn=True, epochs=120):
+    def __init__(self, ngpus=8, base_size=2048, crop_size=768, batch_size=16,
+                 test_batch_size=16, num_workers=48, syncbn=True, epochs=120):
         # gpus
         self.ngpus = ngpus
         self.ctx = [mx.cpu(0)]
@@ -63,6 +64,7 @@ class Trainer(object):
                           norm_layer=self.norm_layer, norm_kwargs=self.norm_kwargs,
                           base_size=self.base_size, crop_size=self.crop_size)
         model.cast('float32')
+        # model.hybridize()
 
         self.net = DataParallelModel(model, ctx_list=self.ctx, sync=self.syncbn)
         print('Training model ICNet-PSP50')
@@ -91,7 +93,7 @@ class Trainer(object):
         }
 
         self.optimizer = gluon.Trainer(self.net.module.collect_params(), 'sgd',
-                                  optimizer_params, kvstore=kv)
+                                       optimizer_params, kvstore=kv)
         # evaluation metrics
         self.metric = gluoncv.utils.metrics.SegmentationMetric(trainset.num_class)
 
@@ -108,7 +110,7 @@ class Trainer(object):
             self.optimizer.step(self.batch_size)
             for loss in losses:
                 train_loss += np.mean(loss.asnumpy()) / len(losses)
-            tbar.set_description('Epoch %d, training loss %.3f' % (epoch, train_loss/(i+1)))
+            tbar.set_description('Epoch %d, training loss %.3f' % (epoch, train_loss / (i + 1)))
             mx.nd.waitall()
 
         # save every epoch

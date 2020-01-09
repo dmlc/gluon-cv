@@ -249,14 +249,26 @@ def get_icnet(nclass, backbone='resnet50',
 
 
 if __name__ == '__main__':
-    crop_size = 480
-    i = nd.random.uniform(shape=(1, 3, crop_size, crop_size))
-    print(type(i))
-    model = get_icnet(nclass=19, pretrained_base=False, crop_size=crop_size)
-    model.initialize(force_reinit=True)
-    # print(model)
-    res = model(i)
+    ctx = mx.cpu()
+    # ctx = mx.gpu(0)
 
+    crop_size = 1024
+    x = nd.random.uniform(shape=(1, 3, 1024, 2048)).as_in_context(ctx)
+    # print(x)
+    model = get_icnet(nclass=19, pretrained_base=False, crop_size=crop_size, height=1024, width=2048)
+    model.initialize(force_reinit=True, ctx=ctx)
+    # print(model)
+    import time
+
+    t_cpu = 0.
+    num = 100
+    res = None
+    for i in range(num):
+        tic = time.time()
+        res = model(x)
+        t_cpu += time.time() - tic
+
+    print('compuational time: %0.2f ms' % (t_cpu*1000/num))
     print("ICnet output length: ", len(res))
     for i in res:
         print(i.shape)
