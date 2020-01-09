@@ -1,4 +1,4 @@
-# pylint: disable=unused-argument,abstract-method,missing-docstring
+# pylint: disable=unused-argument,abstract-method,missing-docstring,arguments-differ
 """Image Cascade Network (ICNet)"""
 from __future__ import division
 from mxnet.gluon import nn
