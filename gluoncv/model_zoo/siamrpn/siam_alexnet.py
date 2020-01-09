@@ -1,6 +1,6 @@
 """Alexnet, implemented in Gluon."""
-# pylint: disable=arguments-differ
 # coding: utf-8
+# pylint: disable= arguments-differ,unused-argument
 from __future__ import division
 from mxnet.gluon import nn
 from mxnet.gluon.block import HybridBlock

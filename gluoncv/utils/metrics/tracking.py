@@ -64,7 +64,7 @@ class OPEBenchmark:
         return self.convert_bb_to_center(bboxes) / (gt_wh+1e-16)
 
     def eval_success(self, eval_trackers=None):
-        """eval_success is  distance between the center point of the predicted position 
+        """eval_success is  distance between the center point of the predicted position
            and the center position marked in the benchmark
         Args:
             eval_trackers: list of tracker name or single tracker name
