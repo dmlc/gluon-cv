@@ -8,10 +8,8 @@ from gluoncv.model_zoo.segbase import SegBaseModel
 from gluoncv.model_zoo.pspnet import _PSPHead
 from gluoncv.loss import SoftmaxCrossEntropyLoss
 
-import mxnet as mx
-from mxnet import nd
 
-__all__ = ['ICNet', 'get_icnet', 'ICNetLoss']
+__all__ = ['ICNet', 'get_icnet', 'get_icnet_resnet50_citys', 'ICNetLoss']
 
 
 class ICNetLoss(SoftmaxCrossEntropyLoss):
@@ -148,6 +146,39 @@ class ICNet(SegBaseModel):
 
         return res
 
+    def demo(self, x):
+        return self.predict(x)
+
+    def predict(self, x):
+        import mxnet.ndarray as F
+        # sub 1
+        x_sub1_out = self.conv_sub1(x)
+
+        # sub_2
+        x_sub2 = F.contrib.BilinearResize2D(x, height=x.shape[2] // 2, width=x.shape[3] // 2)
+
+        x = self.conv1(x_sub2)
+        x = self.bn1(x)
+        x = self.relu(x)
+        x = self.maxpool(x)
+
+        x = self.layer1(x)
+        x_sub2_out = self.layer2(x)
+
+        # sub 4
+        x_sub4 = F.contrib.BilinearResize2D(x_sub2_out, height=x_sub2_out.shape[2] // 2, width=x_sub2_out.shape[3] // 2)
+
+        x = self.layer3(x_sub4)
+        x = self.layer4(x)
+        x_sub4_out = self.psp_head(x)
+
+        x_sub4_out = self.conv_sub4(x_sub4_out)
+        x_sub2_out = self.conv_sub2(x_sub2_out)
+
+        res = self.head(x_sub1_out, x_sub2_out, x_sub4_out)
+
+        return res[0]
+
 
 class ConvBnRelu(HybridBlock):
     def __init__(self, in_planes, out_planes, ksize, stride=1, pad=0, dilation=1,
@@ -167,6 +198,15 @@ class ConvBnRelu(HybridBlock):
                 self.relu = nn.Activation('relu')
 
     def hybrid_forward(self, F, x):
+        x = self.conv(x)
+        if self.has_bn:
+            x = self.bn(x)
+        if self.has_relu:
+            x = self.relu(x)
+
+        return x
+
+    def demo(self, x):
         x = self.conv(x)
         if self.has_bn:
             x = self.bn(x)
@@ -208,6 +248,17 @@ class CascadeFeatureFusion(HybridBlock):
 
         return x, x_low_cls
 
+    def demo(self, x_low, x_high):
+        import mxnet.ndarray as F
+        x_low = F.contrib.BilinearResize2D(x_low, height=x_high.shape[2], width=x_high.shape[3])
+        x_low = self.conv_low(x_low)
+        x_high = self.conv_hign(x_high)
+
+        x = x_low + x_high
+        x = F.relu(x)
+
+        return x
+
 
 class _ICHead(HybridBlock):
     # pylint: disable=redefined-outer-name
@@ -238,37 +289,83 @@ class _ICHead(HybridBlock):
         outputs.reverse()
         return tuple(outputs)
 
+    def demo(self, x_sub1, x_sub2, x_sub4):
+        outputs = []
 
-def get_icnet(nclass, backbone='resnet50',
-              ctx=cpu(0), pretrained_base=True, **kwargs):
-    model = ICNet(nclass=nclass, backbone=backbone,
+        x_cff_24, x_24_cls = self.cff_24(x_sub4, x_sub2)
+        outputs.append(x_24_cls)
+        x_cff_12, x_12_cls = self.cff_12(x_cff_24, x_sub1)
+        outputs.append(x_12_cls)
+
+        import mxnet.ndarray as F
+        up_x2 = F.contrib.BilinearResize2D(x_cff_12, height=2*x_cff_12.shape[2], width=2*x_cff_12.shape[3])
+        up_x2 = self.conv_cls(up_x2)
+        outputs.append(up_x2)
+        up_x8 = F.contrib.BilinearResize2D(up_x2, height=4*up_x2.shape[2], width=4*up_x2.shape[3])
+        outputs.append(up_x8)
+        # 1 -> 1/4 -> 1/8 -> 1/16
+        outputs.reverse()
+        return tuple(outputs)
+
+
+def get_icnet(dataset='citys', backbone='resnet50', pretrained=False,
+              root='~/.mxnet/models', pretrained_base=True, ctx=cpu(0), **kwargs):
+    r"""Image Cascade Network
+    Parameters
+    ----------
+    dataset : str, default citys
+        The dataset that model pretrained on. (cityscapes)
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+    pretrained_base : bool or str, default True
+        This will load pretrained backbone network, that was trained on ImageNet.
+
+    Examples
+    --------
+    >>> model = get_icnet(dataset='citys', backbone='resnet50', pretrained=False)
+    >>> print(model)
+    """
+    acronyms = {
+        'pascal_voc': 'voc',
+        'pascal_aug': 'voc',
+        'ade20k': 'ade',
+        'coco': 'coco',
+        'citys': 'citys',
+    }
+    from ..data import datasets
+    # infer number of classes
+    model = ICNet(datasets[dataset].NUM_CLASS, backbone=backbone,
                   pretrained_base=pretrained_base, ctx=ctx, **kwargs)
-    model.classes = nclass
+    model.classes = datasets[dataset].classes
+
+    if pretrained:
+        from .model_store import get_model_file
+        model.load_parameters(get_model_file('icnet_%s_%s'%(backbone, acronyms[dataset]),
+                                             tag=pretrained, root=root), ctx=ctx)
 
     return model
 
 
-if __name__ == '__main__':
-    ctx = mx.cpu()
-    # ctx = mx.gpu(0)
+def get_icnet_resnet50_citys(**kwargs):
+    r"""Image Cascade Network
+    Parameters
+    ----------
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
 
-    crop_size = 1024
-    x = nd.random.uniform(shape=(1, 3, 1024, 2048)).as_in_context(ctx)
-    # print(x)
-    model = get_icnet(nclass=19, pretrained_base=False, crop_size=crop_size, height=1024, width=2048)
-    model.initialize(force_reinit=True, ctx=ctx)
-    # print(model)
-    import time
-
-    t_cpu = 0.
-    num = 100
-    res = None
-    for i in range(num):
-        tic = time.time()
-        res = model(x)
-        t_cpu += time.time() - tic
-
-    print('compuational time: %0.2f ms' % (t_cpu*1000/num))
-    print("ICnet output length: ", len(res))
-    for i in res:
-        print(i.shape)
+    Examples
+    --------
+    >>> model = get_icnet_resnet50_citys(pretrained=True)
+    >>> print(model)
+    """
+    return get_icnet(dataset='citys', backbone='resnet50', **kwargs)
