@@ -1,5 +1,5 @@
 """SiamRPN network"""
-# pylint: disable=arguments-differ
+# pylint: disable=arguments-differ,unused-argument
 from mxnet.gluon.block import HybridBlock
 from gluoncv.model_zoo.siamrpn.siam_alexnet import alexnetlegacy
 from gluoncv.model_zoo.siamrpn.siam_rpn import DepthwiseRPN
