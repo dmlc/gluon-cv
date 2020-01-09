@@ -1,5 +1,7 @@
+""" SiamRPN metrics """
 import numpy as np
 from colorama import Style, Fore
+
 
 def overlap_ratio(rect1, rect2):
     '''Compute overlap ratio between two rects
@@ -8,36 +10,41 @@ def overlap_ratio(rect1, rect2):
     Return:
         iou
     '''
-    left = np.maximum(rect1[:,0], rect2[:,0])
-    right = np.minimum(rect1[:,0]+rect1[:,2], rect2[:,0]+rect2[:,2])
-    top = np.maximum(rect1[:,1], rect2[:,1])
-    bottom = np.minimum(rect1[:,1]+rect1[:,3], rect2[:,1]+rect2[:,3])
+    left = np.maximum(rect1[:, 0], rect2[:, 0])
+    right = np.minimum(rect1[:, 0]+rect1[:, 2], rect2[:, 0]+rect2[:, 2])
+    top = np.maximum(rect1[:, 1], rect2[:, 1])
+    bottom = np.minimum(rect1[:, 1]+rect1[:, 3], rect2[:, 1]+rect2[:, 3])
 
-    intersect = np.maximum(0,right - left) * np.maximum(0,bottom - top)
-    union = rect1[:,2]*rect1[:,3] + rect2[:,2]*rect2[:,3] - intersect
+    intersect = np.maximum(0, right - left) * np.maximum(0, bottom - top)
+    union = rect1[:, 2]*rect1[:, 3] + rect2[:, 2]*rect2[:, 3] - intersect
     iou = intersect / union
     iou = np.maximum(np.minimum(1, iou), 0)
     return iou
 
 def success_overlap(gt_bb, result_bb, n_frame):
+    '''Compute overlap ratio between two rects
+    Args
+        rect:2d array of N x [x,y,w,h]
+    Return:
+        iou
+    '''
     thresholds_overlap = np.arange(0, 1.05, 0.05)
     success = np.zeros(len(thresholds_overlap))
     iou = np.ones(len(gt_bb)) * (-1)
     mask = np.sum(gt_bb[:, 2:] > 0, axis=1) == 2
     iou[mask] = overlap_ratio(gt_bb[mask], result_bb[mask])
-    for i in range(len(thresholds_overlap)):
-        success[i] = np.sum(iou > thresholds_overlap[i]) / float(n_frame)
+    for i, per_threshold in enumerate(thresholds_overlap):
+        success[i] = np.sum(iou > per_threshold) / float(n_frame)
     return success
 
 def success_error(gt_center, result_center, thresholds, n_frame):
-    # n_frame = len(gt_center)
     success = np.zeros(len(thresholds))
     dist = np.ones(len(gt_center)) * (-1)
     mask = np.sum(gt_center > 0, axis=1) == 2
     dist[mask] = np.sqrt(np.sum(
         np.power(gt_center[mask] - result_center[mask], 2), axis=1))
-    for i in range(len(thresholds)):
-        success[i] = np.sum(dist <= thresholds[i]) / float(n_frame)
+    for i, per_threshold in enumerate(thresholds):
+        success[i] = np.sum(dist <= per_threshold) / float(n_frame)
     return success
 
 
@@ -45,7 +52,6 @@ class OPEBenchmark:
     """
     Args:
         result_path: result path of your tracker
-                should the same format like VOT
     """
     def __init__(self, dataset):
         self.dataset = dataset
@@ -58,8 +64,9 @@ class OPEBenchmark:
         return self.convert_bb_to_center(bboxes) / (gt_wh+1e-16)
 
     def eval_success(self, eval_trackers=None):
-        """
-        Args: 
+        """eval_success is  distance between the center point of the predicted position 
+           and the center position marked in the benchmark
+        Args:
             eval_trackers: list of tracker name or single tracker name
         Return:
             res: dict of results
@@ -76,7 +83,7 @@ class OPEBenchmark:
                 gt_traj = np.array(video.gt_traj)
                 if tracker_name not in video.pred_trajs:
                     tracker_traj = video.load_tracker(self.dataset.tracker_path,
-                            tracker_name, False)
+                                                      tracker_name, False)
                     tracker_traj = np.array(tracker_traj)
                 else:
                     tracker_traj = np.array(video.pred_trajs[tracker_name])
@@ -107,7 +114,7 @@ class OPEBenchmark:
                 gt_traj = np.array(video.gt_traj)
                 if tracker_name not in video.pred_trajs:
                     tracker_traj = video.load_tracker(self.dataset.tracker_path,
-                            tracker_name, False)
+                                                      tracker_name, False)
                     tracker_traj = np.array(tracker_traj)
                 else:
                     tracker_traj = np.array(video.pred_trajs[tracker_name])
@@ -119,7 +126,7 @@ class OPEBenchmark:
                 tracker_center = self.convert_bb_to_center(tracker_traj)
                 thresholds = np.arange(0, 51, 1)
                 precision_ret_[video.name] = success_error(gt_center, tracker_center,
-                        thresholds, n_frame)
+                                                           thresholds, n_frame)
             precision_ret[tracker_name] = precision_ret_
         return precision_ret
 
@@ -141,8 +148,8 @@ class OPEBenchmark:
             for video in self.dataset:
                 gt_traj = np.array(video.gt_traj)
                 if tracker_name not in video.pred_trajs:
-                    tracker_traj = video.load_tracker(self.dataset.tracker_path, 
-                            tracker_name, False)
+                    tracker_traj = video.load_tracker(self.dataset.tracker_path,
+                                                      tracker_name, False)
                     tracker_traj = np.array(tracker_traj)
                 else:
                     tracker_traj = np.array(video.pred_trajs[tracker_name])
@@ -154,12 +161,13 @@ class OPEBenchmark:
                 tracker_center_norm = self.convert_bb_to_norm_center(tracker_traj, gt_traj[:, 2:4])
                 thresholds = np.arange(0, 51, 1) / 100
                 norm_precision_ret_[video.name] = success_error(gt_center_norm,
-                        tracker_center_norm, thresholds, n_frame)
+                                                                tracker_center_norm,
+                                                                thresholds, n_frame)
             norm_precision_ret[tracker_name] = norm_precision_ret_
         return norm_precision_ret
 
     def show_result(self, success_ret, precision_ret=None,
-            norm_precision_ret=None, show_video_level=False, helight_threshold=0.6):
+                    norm_precision_ret=None, show_video_level=False, helight_threshold=0.6):
         """pretty print result
         Args:
             result: returned dict from function eval
@@ -170,14 +178,16 @@ class OPEBenchmark:
             auc = np.mean(list(success_ret[tracker_name].values()))
             tracker_auc[tracker_name] = auc
         tracker_auc_ = sorted(tracker_auc.items(),
-                             key=lambda x:x[1],
-                             reverse=True)[:20]
+                              key=lambda x: x[1],
+                              reverse=True)[:20]
         tracker_names = [x[0] for x in tracker_auc_]
 
 
         tracker_name_len = max((max([len(x) for x in success_ret.keys()])+2), 12)
-        header = ("|{:^"+str(tracker_name_len)+"}|{:^9}|{:^16}|{:^11}|").format(
-                "Tracker name", "Success", "Norm Precision", "Precision")
+        header = ("|{:^"+str(tracker_name_len)+"}|{:^9}|{:^16}|{:^11}|").format("Tracker name",
+                                                                                "Success",
+                                                                                "Norm Precision",
+                                                                                "Precision")
         formatter = "|{:^"+str(tracker_name_len)+"}|{:^9.3f}|{:^16.3f}|{:^11.3f}|"
         print('-'*len(header))
         print(header)
@@ -191,7 +201,7 @@ class OPEBenchmark:
                 precision = 0
             if norm_precision_ret is not None:
                 norm_precision = np.mean(list(norm_precision_ret[tracker_name].values()),
-                        axis=0)[20]
+                                         axis=0)[20]
             else:
                 norm_precision = 0
             print(formatter.format(tracker_name, success, norm_precision, precision))
@@ -230,4 +240,3 @@ class OPEBenchmark:
                         row += precision_str+'|'
                 print(row)
             print('-'*len(header1))
-

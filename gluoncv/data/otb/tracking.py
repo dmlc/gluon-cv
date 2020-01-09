@@ -1,12 +1,11 @@
+"""Visual Tracker Benchmark."""
 import json
 import os
-import numpy as np
 import cv2
-from PIL import Image
 from tqdm import tqdm
-from glob import glob
 
 class Dataset(object):
+    """Dataset."""
     def __init__(self, name, dataset_root):
         self.name = name
         self.dataset_root = dataset_root
@@ -17,6 +16,7 @@ class Dataset(object):
             return self.videos[idx]
         elif isinstance(idx, int):
             return self.videos[sorted(list(self.videos.keys()))[idx]]
+        return None
 
     def __len__(self):
         return len(self.videos)
@@ -25,7 +25,6 @@ class Dataset(object):
         keys = sorted(list(self.videos.keys()))
         for key in keys:
             yield self.videos[key]
-
     def set_tracker(self, path, tracker_names):
         """
         Args:
@@ -36,8 +35,13 @@ class Dataset(object):
         self.tracker_names = tracker_names
 
 class Video(object):
+    """
+    Args:
+        path: path to tracker results,
+        tracker_names: list of tracker name
+    """
     def __init__(self, name, root, video_dir, init_rect, img_names,
-            gt_rect, attr, load_img=False):
+                 gt_rect, attr, load_img=False):
         self.name = name
         self.video_dir = video_dir
         self.init_rect = init_rect
@@ -65,15 +69,15 @@ class Video(object):
         """
         if not tracker_names:
             tracker_names = [x.split('/')[-1] for x in glob(path)
-                    if os.path.isdir(x)]
+                             if os.path.isdir(x)]
         if isinstance(tracker_names, str):
             tracker_names = [tracker_names]
         for name in tracker_names:
             traj_file = os.path.join(path, name, self.name+'.txt')
             if os.path.exists(traj_file):
-                with open(traj_file, 'r') as f :
+                with open(traj_file, 'r') as f:
                     pred_traj = [list(map(float, x.strip().split(',')))
-                            for x in f.readlines()]
+                                 for x in f.readlines()]
                 if len(pred_traj) != len(self.gt_traj):
                     print(name, len(pred_traj), len(self.gt_traj), self.name)
                 if store:
@@ -83,6 +87,7 @@ class Video(object):
             else:
                 print(traj_file)
         self.tracker_names = list(self.pred_trajs.keys())
+        return None
 
     def load_img(self):
         if self.imgs is None:
@@ -109,66 +114,6 @@ class Video(object):
             else:
                 yield cv2.imread(self.img_names[i]), self.gt_traj[i]
 
-    def draw_box(self, roi, img, linewidth, color, name=None):
-        """
-            roi: rectangle or polygon
-            img: numpy array img
-            linewith: line width of the bbox
-        """
-        if len(roi) > 6 and len(roi) % 2 == 0:
-            pts = np.array(roi, np.int32).reshape(-1, 1, 2)
-            color = tuple(map(int, color))
-            img = cv2.polylines(img, [pts], True, color, linewidth)
-            pt = (pts[0, 0, 0], pts[0, 0, 1]-5)
-            if name:
-                img = cv2.putText(img, name, pt, cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, color, 1)
-        elif len(roi) == 4:
-            if not np.isnan(roi[0]):
-                roi = list(map(int, roi))
-                color = tuple(map(int, color))
-                img = cv2.rectangle(img, (roi[0], roi[1]), (roi[0]+roi[2], roi[1]+roi[3]),
-                         color, linewidth)
-                if name:
-                    img = cv2.putText(img, name, (roi[0], roi[1]-5), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, color, 1)
-        return img
-
-    def show(self, pred_trajs={}, linewidth=2, show_name=False):
-        """
-            pred_trajs: dict of pred_traj, {'tracker_name': list of traj}
-                        pred_traj should contain polygon or rectangle(x, y, width, height)
-            linewith: line width of the bbox
-        """
-        assert self.imgs is not None
-        video = []
-        cv2.namedWindow(self.name, cv2.WINDOW_NORMAL)
-        colors = {}
-        if len(pred_trajs) == 0 and len(self.pred_trajs) > 0:
-            pred_trajs = self.pred_trajs
-        for i, (roi, img) in enumerate(zip(self.gt_traj,
-                self.imgs[self.start_frame:self.end_frame+1])):
-            img = img.copy()
-            if len(img.shape) == 2:
-                img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
-            else:
-                img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-            img = self.draw_box(roi, img, linewidth, (0, 255, 0),
-                    'gt' if show_name else None)
-            for name, trajs in pred_trajs.items():
-                if name not in colors:
-                    color = tuple(np.random.randint(0, 256, 3))
-                    colors[name] = color
-                else:
-                    color = colors[name]
-                img = self.draw_box(trajs[0][i], img, linewidth, color,
-                        name if show_name else None)
-            cv2.putText(img, str(i+self.start_frame), (5, 20),
-                    cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (255, 255, 0), 2)
-            cv2.imshow(self.name, img)
-            cv2.waitKey(40)
-            video.append(img.copy())
-        return video
-
-
 class OTBVideo(Video):
     """
     Args:
@@ -181,9 +126,9 @@ class OTBVideo(Video):
         attr: attribute of video
     """
     def __init__(self, name, root, video_dir, init_rect, img_names,
-            gt_rect, attr, load_img=False):
+                 gt_rect, attr, load_img=False):
         super(OTBVideo, self).__init__(name, root, video_dir,
-                init_rect, img_names, gt_rect, attr, load_img)
+                                       init_rect, img_names, gt_rect, attr, load_img)
 
     def load_tracker(self, path, tracker_names=None, store=True):
         """
@@ -193,7 +138,7 @@ class OTBVideo(Video):
         """
         if not tracker_names:
             tracker_names = [x.split('/')[-1] for x in glob(path)
-                    if os.path.isdir(x)]
+                             if os.path.isdir(x)]
         if isinstance(tracker_names, str):
             tracker_names = [tracker_names]
         for name in tracker_names:
@@ -219,9 +164,9 @@ class OTBVideo(Video):
                     txt_name = self.name[0].lower()+self.name[1:]+'.txt'
                 traj_file = os.path.join(path, name, txt_name)
             if os.path.exists(traj_file):
-                with open(traj_file, 'r') as f :
+                with open(traj_file, 'r') as f:
                     pred_traj = [list(map(float, x.strip().split(',')))
-                            for x in f.readlines()]
+                                 for x in f.readlines()]
                     if len(pred_traj) != len(self.gt_traj):
                         print(name, len(pred_traj), len(self.gt_traj), self.name)
                     if store:
@@ -231,16 +176,10 @@ class OTBVideo(Video):
             else:
                 print(traj_file)
         self.tracker_names = list(self.pred_trajs.keys())
-
-
+        return None
 
 class OTBTracking(Dataset):
-    """
-    Args:
-        name: dataset name, should be 'OTB100', 'CVPR13', 'OTB50'
-        dataset_root: dataset root
-        load_img: wether to load all imgs
-    """
+    """OTBTracking"""
     def __init__(self, name, dataset_root, load_img=False):
         super(OTBTracking, self).__init__(name, dataset_root)
         with open(os.path.join(dataset_root, name+'.json'), 'r') as f:
@@ -271,6 +210,3 @@ class OTBTracking(Dataset):
         for k, v in self.videos.items():
             for attr_ in v.attr:
                 self.attr[attr_].append(k)
-
-if __name__ == '__main__':
-    OTBDataset(name='OTB2015',dataset_root='/home/ubuntu/cyk/tracking/tracking_test_2/testing_dataset/OTB2015/',load_img=False)
