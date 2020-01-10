@@ -19,6 +19,7 @@ from mxnet import gluon
 from mxnet import autograd
 from mxnet.contrib import amp
 import gluoncv as gcv
+
 gcv.utils.check_version('0.6.0')
 from gluoncv import data as gdata
 from gluoncv import utils as gutils
@@ -97,6 +98,14 @@ def parse_args():
                              ' and no normalization layer will be used. '
                              'Currently supports \'bn\', and None, default is None.'
                              'Note that if horovod is enabled, sync bn will not work correctly.')
+
+    # Loss options
+    parser.add_argument('--rpn-smoothl1-rho', type=float, default=1. / 9.,
+                        help='RPN box regression transition point from L1 to L2 loss.'
+                             'Set to 0.0 to make the loss simply L1.')
+    parser.add_argument('--rcnn-smoothl1-rho', type=float, default=1.,
+                        help='RCNN box regression transition point from L1 to L2 loss.'
+                             'Set to 0.0 to make the loss simply L1.')
 
     # FPN options
     parser.add_argument('--use-fpn', action='store_true',
@@ -324,7 +333,7 @@ def train(net, train_data, val_data, eval_metric, batch_size, ctx, args):
     net.collect_train_params().setattr('grad_req', 'write')
     optimizer_params = {'learning_rate': args.lr, 'wd': args.wd, 'momentum': args.momentum}
     if args.amp:
-         optimizer_params['multi_precision'] = True
+        optimizer_params['multi_precision'] = True
     if args.horovod:
         hvd.broadcast_parameters(net.collect_params(), root_rank=0)
         trainer = hvd.DistributedTrainer(
@@ -348,9 +357,9 @@ def train(net, train_data, val_data, eval_metric, batch_size, ctx, args):
 
     # TODO(zhreshold) losses?
     rpn_cls_loss = mx.gluon.loss.SigmoidBinaryCrossEntropyLoss(from_sigmoid=False)
-    rpn_box_loss = mx.gluon.loss.HuberLoss(rho=1 / 9.)  # == smoothl1
+    rpn_box_loss = mx.gluon.loss.HuberLoss(rho=args.rpn_smoothl1_rho)  # == smoothl1
     rcnn_cls_loss = mx.gluon.loss.SoftmaxCrossEntropyLoss()
-    rcnn_box_loss = mx.gluon.loss.HuberLoss()  # == smoothl1
+    rcnn_box_loss = mx.gluon.loss.HuberLoss(rho=args.rcnn_smoothl1_rho)  # == smoothl1
     metrics = [mx.metric.Loss('RPN_Conf'),
                mx.metric.Loss('RPN_SmoothL1'),
                mx.metric.Loss('RCNN_CrossEntropy'),
@@ -486,7 +495,7 @@ if __name__ == '__main__':
     if args.norm_layer is not None:
         module_list.append(args.norm_layer)
         if args.norm_layer == 'bn':
-            kwargs['num_devices'] = len(args.gpus.split(','))
+            kwargs['num_devices'] = len(ctx)
     num_gpus = hvd.size() if args.horovod else len(ctx)
     net_name = '_'.join(('faster_rcnn', *module_list, args.network, args.dataset))
     args.save_prefix += net_name
