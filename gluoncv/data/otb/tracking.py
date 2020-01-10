@@ -206,6 +206,6 @@ class OTBTracking(dataset.Dataset):
         elif isinstance(idx, int):
             return self.videos[sorted(list(self.videos.keys()))[idx]]
         return None
-    
+
     def __len__(self):
         return len(self.videos)
