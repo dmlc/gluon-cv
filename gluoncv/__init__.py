@@ -9,7 +9,8 @@ from . import data
 from . import model_zoo
 from . import nn
 from . import utils
-from .utils.version import _require_mxnet_version
+from .utils.version import _require_mxnet_version, _deprecate_python2
 from . import loss
 
+_deprecate_python2()
 _require_mxnet_version('1.4.0')
