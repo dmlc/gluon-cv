@@ -166,7 +166,7 @@ class OTBTracking(dataset.Dataset):
     dataset_root: string
         path to dataset root
     """
-    def __init__(self, name = 'OTB2015', dataset_root, load_img=False):
+    def __init__(self, name, dataset_root, load_img=False):
         #super(OTBTracking, self).__init__(name, dataset_root)
         super(OTBTracking, self).__init__()
         self.name = name
