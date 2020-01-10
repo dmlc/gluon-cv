@@ -6,7 +6,6 @@ from multiprocessing import Pool
 from tqdm import tqdm
 from gluoncv.utils.metrics.tracking import OPEBenchmark
 from gluoncv.data.otb.tracking import OTBTracking as OTBDataset
-
 def parse_args():
     """ benchmark test."""
     parser = argparse.ArgumentParser(description='tracking evaluation')
@@ -22,21 +21,24 @@ def parse_args():
 
 def main():
     """SiamRPN benchmark..
-    Parameters
-    ----------
-    tracker_path : str, txt of test result path.
-    tracker_prefix : str, model name.
-    test_dataset : str, Path to test label json.
-
     Function
     ----------
     evaluation according to txt of test result.
     now supports benchmark is Success and Precision
     Currently only supports test OTB 2015 dataset.
+    
+    Parameters
+    ----------
+    tracker_path : str, txt of test result path.
+    tracker_prefix : str, model name.
+    test_dataset : str, Path to test label json.
     """
     opt = parse_args()
     tracker_dir = os.path.join(opt.tracker_path, opt.dataset)
     trackers = glob(os.path.join(opt.tracker_path,
+                                 opt.dataset,
+                                 opt.tracker_prefix+'*'))
+    print(os.path.join(opt.tracker_path,
                                  opt.dataset,
                                  opt.tracker_prefix+'*'))
     trackers = [x.split('/')[-1] for x in trackers]

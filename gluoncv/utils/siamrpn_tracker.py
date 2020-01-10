@@ -211,17 +211,17 @@ class SiamRPNTracker(BaseTracker):
 
     def get_subwindow(self, img, pos, model_sz, original_sz, avg_chans):
         """
+        function
+        ----------
+            Adjust the position of the frame to prevent the boundary from being exceeded.
+            If the boundary is exceeded,
+            the average value of each channel of the image is used to replace the exceeded value.
         args:
             im: BGR based image
             pos: center position
             model_sz: exemplar size,x is 127, z is 287 in ours
             s_z: original size
             avg_chans: channel average
-        function
-        ----------
-            Adjust the position of the frame to prevent the boundary from being exceeded.
-            If the boundary is exceeded,
-            the average value of each channel of the image is used to replace the exceeded value.
         """
         cv2 = try_import_cv2()
         if isinstance(pos, float):

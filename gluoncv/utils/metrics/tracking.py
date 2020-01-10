@@ -50,6 +50,9 @@ def success_error(gt_center, result_center, thresholds, n_frame):
 
 class OPEBenchmark:
     """
+    SiamRPN OPEBenchmark have eval_success, precision to select.
+    eval_success is  distance between the center point of the predicted position
+    precision is Compute overlap ratio between two rects through thresholds_overlap
     Args:
         result_path: result path of your tracker
     """

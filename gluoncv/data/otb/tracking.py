@@ -1,44 +1,20 @@
 """Visual Tracker Benchmark."""
 import json
 import os
-import cv2
 from tqdm import tqdm
-
-class Dataset(object):
-    """Dataset."""
-    def __init__(self, name, dataset_root):
-        self.name = name
-        self.dataset_root = dataset_root
-        self.videos = None
-
-    def __getitem__(self, idx):
-        if isinstance(idx, str):
-            return self.videos[idx]
-        elif isinstance(idx, int):
-            return self.videos[sorted(list(self.videos.keys()))[idx]]
-        return None
-
-    def __len__(self):
-        return len(self.videos)
-
-    def __iter__(self):
-        keys = sorted(list(self.videos.keys()))
-        for key in keys:
-            yield self.videos[key]
-    def set_tracker(self, path, tracker_names):
-        """
-        Args:
-            path: path to tracker results,
-            tracker_names: list of tracker name
-        """
-        self.tracker_path = path
-        self.tracker_names = tracker_names
+from mxnet.gluon.data import dataset
 
 class Video(object):
     """
+    Abstract video class. get video class information for example imgs.
     Args:
-        path: path to tracker results,
-        tracker_names: list of tracker name
+        name: video name
+        root: dataset root
+        video_dir: video directory
+        init_rect: init rectangle
+        img_names: image names
+        gt_rect: groundtruth rectangle
+        attr: attribute of video
     """
     def __init__(self, name, root, video_dir, init_rect, img_names,
                  gt_rect, attr, load_img=False):
@@ -50,13 +26,14 @@ class Video(object):
         self.pred_trajs = {}
         self.img_names = [os.path.join(root, x) for x in img_names]
         self.imgs = None
+        self.cv2 = try_import_cv2()
 
         if load_img:
-            self.imgs = [cv2.imread(x) for x in self.img_names]
+            self.imgs = [self.cv2.imread(x) for x in self.img_names]
             self.width = self.imgs[0].shape[1]
             self.height = self.imgs[0].shape[0]
         else:
-            img = cv2.imread(self.img_names[0])
+            img = self.cv2.imread(self.img_names[0])
             assert img is not None, self.img_names[0]
             self.width = img.shape[1]
             self.height = img.shape[0]
@@ -91,7 +68,7 @@ class Video(object):
 
     def load_img(self):
         if self.imgs is None:
-            self.imgs = [cv2.imread(x) for x in self.img_names]
+            self.imgs = [self.cv2.imread(x) for x in self.img_names]
             self.width = self.imgs[0].shape[1]
             self.height = self.imgs[0].shape[0]
 
@@ -116,6 +93,7 @@ class Video(object):
 
 class OTBVideo(Video):
     """
+    OTBVideo class. Including video operation
     Args:
         name: video name
         root: dataset root
@@ -178,20 +156,31 @@ class OTBVideo(Video):
         self.tracker_names = list(self.pred_trajs.keys())
         return None
 
-class OTBTracking(Dataset):
-    """OTBTracking"""
-    def __init__(self, name, dataset_root, load_img=False):
-        super(OTBTracking, self).__init__(name, dataset_root)
-        with open(os.path.join(dataset_root, name+'.json'), 'r') as f:
+class OTBTracking(dataset.Dataset):
+    """OTB Visual Tracker Benchmark.
+
+    Parameters
+    ----------
+    name : string
+        name to data, and name to dataset json Default is 'OTB2015'
+    dataset_root: string
+        path to dataset root
+    """
+    def __init__(self, name = 'OTB2015', dataset_root, load_img=False):
+        #super(OTBTracking, self).__init__(name, dataset_root)
+        super(OTBTracking, self).__init__()
+        self.name = name
+        self.dataset_root = dataset_root
+        with open(os.path.join(self.dataset_root, self.name+'.json'), 'r') as f:
             meta_data = json.load(f)
 
         # load videos
-        pbar = tqdm(meta_data.keys(), desc='loading '+name, ncols=100)
+        pbar = tqdm(meta_data.keys(), desc='loading '+self.name, ncols=100)
         self.videos = {}
         for video in pbar:
             pbar.set_postfix_str(video)
             self.videos[video] = OTBVideo(video,
-                                          dataset_root,
+                                          self.dataset_root,
                                           meta_data[video]['video_dir'],
                                           meta_data[video]['init_rect'],
                                           meta_data[video]['img_names'],
@@ -210,3 +199,13 @@ class OTBTracking(Dataset):
         for k, v in self.videos.items():
             for attr_ in v.attr:
                 self.attr[attr_].append(k)
+
+    def __getitem__(self, idx):
+        if isinstance(idx, str):
+            return self.videos[idx]
+        elif isinstance(idx, int):
+            return self.videos[sorted(list(self.videos.keys()))[idx]]
+        return None
+    
+    def __len__(self):
+        return len(self.videos)

@@ -31,19 +31,18 @@ def parse_args():
 
 def main():
     """SiamRPN test.
-    Parameters
-    ----------
-    dataset_root : str, default '~/mxnet/datasets/OTB2015'
-                   Path to folder test the dataset.
-    model_path :   str, Path of test model .
-    results_path:  str, Path to store txt of test reslut .
-
     function
     ----------
         record the output of the model. The output information of each video is recorded in the txt
     corresponding to the video name.
         if you want to evaluation, you need to python benchmark.py according to txt of text result.
         Currently only supports test OTB 2015 dataset
+    Parameters
+    ----------
+    dataset_root : str, default '~/mxnet/datasets/OTB2015'
+                   Path to folder test the dataset.
+    model_path :   str, Path of test model .
+    results_path:  str, Path to store txt of test reslut .
     """
     opt = parse_args()
     # dataloader

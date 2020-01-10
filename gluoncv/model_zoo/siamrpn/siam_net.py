@@ -1,4 +1,10 @@
-"""SiamRPN network"""
+"""SiamRPN network
+Reference:
+Li, Yan, et al. "High Performance Visual Tracking with Siamese Region Proposal Network
+Object tracking, CVPR 2018
+http://openaccess.thecvf.com/content_cvpr_2018/papers/Li_High_Performance_Visual_CVPR_2018_paper.pdf
+"""
+
 # pylint: disable=arguments-differ,unused-argument
 from mxnet.gluon.block import HybridBlock
 from gluoncv.model_zoo.siamrpn.siam_alexnet import alexnetlegacy
