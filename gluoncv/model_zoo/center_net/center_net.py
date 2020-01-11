@@ -739,7 +739,7 @@ def center_net_mobilenetv3_large_duc_voc(pretrained=False, pretrained_base=True,
                           scale=4.0, topk=40, **kwargs)
 
 def center_net_mobilenetv3_small_duc_voc(pretrained=False, pretrained_base=True, **kwargs):
-    """Center net with mobilenetv3_small base network with deformable conv layers on voc dataset.
+    """Center net with mobilenetv3_small base network with DUC layers on voc dataset.
 
     Parameters
     ----------
@@ -799,7 +799,7 @@ def center_net_mobilenetv3_large_duc_coco(pretrained=False, pretrained_base=True
                           scale=4.0, topk=100, **kwargs)
 
 def center_net_mobilenetv3_small_duc_coco(pretrained=False, pretrained_base=True, **kwargs):
-    """Center net with mobilenetv3_small base network with deformable v2 conv layers on coco dataset.
+    """Center net with mobilenetv3_small base network with DUC layers on coco dataset.
 
     Parameters
     ----------

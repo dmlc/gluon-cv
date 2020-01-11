@@ -3,12 +3,9 @@
 from __future__ import absolute_import
 
 import warnings
-import math
 
-import mxnet as mx
 from mxnet.context import cpu
 from mxnet.gluon import nn
-from mxnet.gluon import contrib
 from .. model_zoo import get_model
 from ...nn.block import DUC
 
@@ -17,6 +14,24 @@ __all__ = ['DUCMobilenet', 'get_duc_mobilenet',
 
 
 class DUCMobilenet(nn.HybridBlock):
+    """Mobilenet with DUC upsampling block.
+
+    Parameters
+    ----------
+    base_network : str
+        Name of the base feature extraction network.
+    up_filters : list of int
+        Number of filters for DUC layers.
+    up_scales : list of int
+        Upsampling scales for DUC layers.
+    pretrained_base : bool
+        Whether load pretrained base network.
+    norm_layer : mxnet.gluon.nn.HybridBlock
+        Type of Norm layers, can be BatchNorm, SyncBatchNorm, GroupNorm, etc.
+    norm_kwargs : dict
+        Additional kwargs for `norm_layer`.
+
+    """
     def __init__(self, base_network='mobilenetv3_small',
                  up_filters=(512, 256, 128), up_scales=(2, 2, 2),
                  pretrained_base=True, norm_layer=nn.BatchNorm, norm_kwargs=None, **kwargs):
@@ -51,8 +66,6 @@ def get_duc_mobilenet(base_network, pretrained=False, ctx=cpu(), **kwargs):
         Whether load pretrained base network.
     ctx : mxnet.Context
         mx.cpu() or mx.gpu()
-    pretrained : type
-        Description of parameter `pretrained`.
     Returns
     -------
     nn.HybridBlock
