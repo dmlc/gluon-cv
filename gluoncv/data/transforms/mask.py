@@ -122,7 +122,7 @@ def fill(masks, bboxes, size, fast_fill=True):
         Full size binary mask of shape (height, width)
     """
     from scipy import interpolate
-    
+
     width, height = size
     x1, y1, x2, y2 = np.split(bboxes, 4, axis=1)
     m_h, m_w = masks.shape[1:]
