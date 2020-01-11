@@ -210,6 +210,10 @@ _model_sha1 = {name: checksum for checksum, name in [
     ('b36ab13a611bfd196c46dc9cdda918b63789722d', 'hrnet_w44_cls'),
     ('be50e56dea846e87343b09b4ba9687b98bd47d0c', 'hrnet_w48_cls'),
     ('76f1b7077179f21c4147ff77f9e0999db879d7ec', 'hrnet_w64_cls'),
+    ('8a8e9cbcbac3a496f0904dc22e148b1978ea672f', 'center_net_mobilenetv3_small_duc_voc'),
+    ('f782057569a768faa03940d8106f944ffe3c9733', 'center_net_mobilenetv3_small_duc_coco'),
+    ('2cab979937586d3f8532d86130030c611ae38d2d', 'center_net_mobilenetv3_large_duc_voc'),
+    ('bfc55dfd13ef8e9fd052141a3c42338179f5949d', 'center_net_mobilenetv3_large_duc_coco'),
 ]}
 
 apache_repo_url = 'https://apache-mxnet.s3-accelerate.dualstack.amazonaws.com/'
