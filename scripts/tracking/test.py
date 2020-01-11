@@ -6,13 +6,15 @@ from __future__ import unicode_literals
 import argparse
 import os
 import numpy as np
-from mxnet import gpu
-from gluoncv.model_zoo.siamrpn.siam_net import SiamrpnNet as ModelBuilder
+import mxnet as mx
+from mxnet import gluon
+import pdb
+# from gluoncv.model_zoo.siamrpn.siam_net import SiamRPN as ModelBuilder
 from gluoncv.utils.siamrpn_tracker import SiamRPNTracker as build_tracker
 from gluoncv.data.otb.tracking import OTBTracking as OTBDataset
 from gluoncv.utils.siamrpn_tracker import get_axis_aligned_bbox
+from gluoncv.model_zoo import get_model
 from gluoncv.utils.filesystem import try_import_cv2
-
 def parse_args():
     """parameter test."""
     parser = argparse.ArgumentParser(description='siamrpn tracking test result')
@@ -26,8 +28,20 @@ def parse_args():
                         help='whether visualzie result')
     parser.add_argument('--mode', type=str, default='hybrid',
                         help='mode in which to train the model.options are symbolic, hybrid')
-    opt = parser.parse_args()
+    parser.add_argument('--moe', type=str, default='hybrid',
+                        help='mode in which to train the model.options are symbolic, hybrid')
+    parser.add_argument('--num_gpus', type=int, default = 0,
+                        help='number of gpus to use.')
+    parser.add_argument('--model_name', type=str, default = 'siamrpn_alexnet_v2_otb',
+                        help='name of model.')
+    parser.add_argument('--batch-size', type=int, default=32,
+                        help='training batch size per device (CPU/GPU).')
+    parser.add_argument('--num_workers', default=4, type=int,
+                        help='number of preprocessing workers')      
+    parser.add_argument('--pretrained', action='store_true', default='True',
+                        help='enable using pretrained model from gluon.')
     return opt
+
 
 def main():
     """SiamRPN test.
@@ -45,15 +59,24 @@ def main():
     results_path:  str, Path to store txt of test reslut .
     """
     opt = parse_args()
+    num_gpus = opt.num_gpus
+    batch_size = opt.batch_size
+    contxt = [mx.cpu()]
+    if num_gpus > 0:
+        batch_size *= max(1, num_gpus)
+        context = [mx.gpu(i) for i in range(num_gpus)]
     # dataloader
     dataset = OTBDataset(name=opt.dataset, dataset_root=opt.dataset_root, load_img=False)
-    # network
-    model = ModelBuilder()
+    net = get_model(opt.model_name, ctx = mx.gpu(), pretrained = True)
     if opt.mode == 'hybrid':
-        model.hybridize(static_alloc=True, static_shape=True)
-    model.load_parameters(opt.model_path, ctx=gpu())
+        net.hybridize(static_alloc=True, static_shape=True)
+    if opt.model_path is not '': 
+        net.load_parameters(opt.model_path, ctx = mx.gpu())
+        print('Pre-trained model %s is successfully loaded.' % (opt.model_path))
+    else:
+        print('Pre-trained model is successfully loaded from the model zoo.')
     # bulid tracker
-    tracker = build_tracker(model)
+    tracker = build_tracker(net)
     # record the output of the model.
     test(dataset, tracker, opt)
 
@@ -71,10 +94,12 @@ def test(dataset, tracker, opt):
         track_times = []
         for idx, (img, gt_bbox) in enumerate(video):
             tic = cv2.getTickCount()
+            print(gt_bbox)
+            print(img.shape)
+            pdb.set_trace() 
             if idx == 0:
                 x_max, y_max, gt_w, gt_t = get_axis_aligned_bbox(np.array(gt_bbox))
                 gt_bbox_ = [x_max-(gt_w-1)/2, y_max-(gt_t-1)/2, gt_w, gt_t]
-                gt_bbox_ = np.array(gt_bbox)
                 tracker.init(img, gt_bbox_)
                 pred_bbox = gt_bbox_
                 scores.append(None)
