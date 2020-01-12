@@ -1,9 +1,9 @@
 """Visual Tracker Benchmark."""
 import json
 import os
+from glob import glob
 from tqdm import tqdm
 from mxnet.gluon.data import dataset
-from glob import glob
 import cv2
 from gluoncv.utils.filesystem import try_import_cv2
 cv2 = try_import_cv2()
@@ -182,7 +182,7 @@ class OTBTracking(dataset.Dataset):
 
     def __len__(self):
         return len(self.videos)
-    
+
     def set_tracker(self, path, tracker_names):
         """
         Args:

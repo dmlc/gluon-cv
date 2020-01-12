@@ -58,9 +58,11 @@ def get_Siam_RPN(base_name, pretrained=False, ctx=cpu(),
     return net
 
 def siamrpn_alexnet_v2_otb15(**kwargs):
-    r"""Alexnet backbone model from `"High Performance Visual Tracking with Siamese Region Proposal Network
+    r"""Alexnet backbone model from 
+    `"High Performance Visual Tracking with Siamese Region Proposal Network
         Object tracking"
-    <http://openaccess.thecvf.com/content_cvpr_2018/papers/Li_High_Performance_Visual_CVPR_2018_paper.pdf>`_ paper.
+    <http://openaccess.thecvf.com/content_cvpr_2018/papers/
+    Li_High_Performance_Visual_CVPR_2018_paper.pdf>`_ paper.
     Parameters
     ----------
     pretrained : bool or str
