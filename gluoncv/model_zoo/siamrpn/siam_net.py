@@ -47,7 +47,7 @@ class SiamRPN(HybridBlock):
             }
 
 
-def get_Siam_RPN(base_name, pretrained= False, ctx= mx.cpu(0),
+def get_Siam_RPN(base_name, pretrained=False, ctx=mx.cpu(0),
                  root='~/.mxnet/models', **kwargs):
     r"""get Siam_RPN net and get pretrained model if have pretrained"""
     net = SiamRPN()
