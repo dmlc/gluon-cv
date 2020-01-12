@@ -69,7 +69,8 @@ sphinx_gallery_conf = {
         'tutorials/pose',
         'tutorials/action_recognition',
         'tutorials/distributed',
-        'tutorials/deployment',],
+        'tutorials/deployment',
+        'tutorials/tracking'],
     # path where to save gallery generated examples
     'gallery_dirs': [
         'build/examples_datasets',
@@ -80,7 +81,8 @@ sphinx_gallery_conf = {
         'build/examples_pose',
         'build/examples_action_recognition',
         'build/examples_distributed',
-        'build/examples_deployment',],
+        'build/examples_deployment',
+        'build/examples_tracking',],
 
     'filename_pattern': '.py',
     'ignore_pattern': 'im2rec.py',

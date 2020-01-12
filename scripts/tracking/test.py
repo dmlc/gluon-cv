@@ -40,6 +40,7 @@ def parse_args():
                         help='number of preprocessing workers')      
     parser.add_argument('--pretrained', action='store_true', default='True',
                         help='enable using pretrained model from gluon.')
+    opt = parser.parse_args()
     return opt
 
 

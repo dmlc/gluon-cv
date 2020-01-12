@@ -3,6 +3,10 @@ import json
 import os
 from tqdm import tqdm
 from mxnet.gluon.data import dataset
+from glob import glob
+import cv2
+from gluoncv.utils.filesystem import try_import_cv2
+cv2 = try_import_cv2()
 
 class Video(object):
     """
@@ -26,49 +30,20 @@ class Video(object):
         self.pred_trajs = {}
         self.img_names = [os.path.join(root, x) for x in img_names]
         self.imgs = None
-        self.cv2 = try_import_cv2()
 
         if load_img:
-            self.imgs = [self.cv2.imread(x) for x in self.img_names]
+            self.imgs = [cv2.imread(x) for x in self.img_names]
             self.width = self.imgs[0].shape[1]
             self.height = self.imgs[0].shape[0]
         else:
-            img = self.cv2.imread(self.img_names[0])
+            img = cv2.imread(self.img_names[0])
             assert img is not None, self.img_names[0]
             self.width = img.shape[1]
             self.height = img.shape[0]
 
-    def load_tracker(self, path, tracker_names=None, store=True):
-        """
-        Args:
-            path(str): path to result
-            tracker_name(list): name of tracker
-        """
-        if not tracker_names:
-            tracker_names = [x.split('/')[-1] for x in glob(path)
-                             if os.path.isdir(x)]
-        if isinstance(tracker_names, str):
-            tracker_names = [tracker_names]
-        for name in tracker_names:
-            traj_file = os.path.join(path, name, self.name+'.txt')
-            if os.path.exists(traj_file):
-                with open(traj_file, 'r') as f:
-                    pred_traj = [list(map(float, x.strip().split(',')))
-                                 for x in f.readlines()]
-                if len(pred_traj) != len(self.gt_traj):
-                    print(name, len(pred_traj), len(self.gt_traj), self.name)
-                if store:
-                    self.pred_trajs[name] = pred_traj
-                else:
-                    return pred_traj
-            else:
-                print(traj_file)
-        self.tracker_names = list(self.pred_trajs.keys())
-        return None
-
     def load_img(self):
         if self.imgs is None:
-            self.imgs = [self.cv2.imread(x) for x in self.img_names]
+            self.imgs = [cv2.imread(x) for x in self.img_names]
             self.width = self.imgs[0].shape[1]
             self.height = self.imgs[0].shape[0]
 
@@ -167,13 +142,11 @@ class OTBTracking(dataset.Dataset):
         path to dataset root
     """
     def __init__(self, name, dataset_root, load_img=False):
-        #super(OTBTracking, self).__init__(name, dataset_root)
         super(OTBTracking, self).__init__()
         self.name = name
         self.dataset_root = dataset_root
         with open(os.path.join(self.dataset_root, self.name+'.json'), 'r') as f:
             meta_data = json.load(f)
-
         # load videos
         pbar = tqdm(meta_data.keys(), desc='loading '+self.name, ncols=100)
         self.videos = {}
@@ -209,3 +182,12 @@ class OTBTracking(dataset.Dataset):
 
     def __len__(self):
         return len(self.videos)
+    
+    def set_tracker(self, path, tracker_names):
+        """
+        Args:
+            path: path to tracker results,
+            tracker_names: list of tracker name
+        """
+        self.tracker_path = path
+        self.tracker_names = tracker_names

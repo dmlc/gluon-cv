@@ -11,9 +11,8 @@ import cv2
 import numpy as np
 import mxnet as mx
 import os
-import imageio
 from mxnet import nd
-
+import argparse
 ######################################################################
 # Load a pretrained model
 # -------------------------
@@ -40,15 +39,21 @@ tracker = build_tracker(net)
 # And returns is Dictionaries. keys are gt_bbox and score.Represents the coordinates and scores of the predicted frame.
 
 im_video = utils.download('https://raw.githubusercontent.com/FrankYoungchen/siam_data/master/Dog.mp4')
-gif_path = im_video.split('.')[0] + '.gif'
 gt_bbox = [74, 86, 56, 48]
+
+def parse_args():
+    """parameter demo."""
+    parser = argparse.ArgumentParser(description='siamrpn tracking demo')
+    parser.add_argument('--result_path', default = './result', type=str, help='save result path')
+    opt = parser.parse_args()
+    return opt
+opt = parse_args()
 
 cap = cv2.VideoCapture(im_video)
 frames_total_num = cap.get(7)
 index = 1
 scores = []
 pred_bboxes = []
-gif_frame = []
 
 while(True):
     ret, img = cap.read()
@@ -65,15 +70,12 @@ while(True):
         pred_bboxes.append(pred_bbox)
         scores.append(outputs['best_score'])
         gt_bbox_ = pred_bbox
-    
     gt_bbox = list(map(int, gt_bbox))
     pred_bbox = list(map(int, pred_bbox))
     cv2.rectangle(img, (pred_bbox[0], pred_bbox[1]),
                             (pred_bbox[0]+pred_bbox[2], pred_bbox[1]+pred_bbox[3]),
                             (0, 255, 255), 3)
-    gif_frame.append(img)
+    cv2.imwrite(os.path.join(opt.result_path, '%04d.jpg'%index), img)
     index = index+1 
     if index>frames_total_num:        
         break
-# Finally, Generate GIF based on prediction results
-imageio.mimsave(gif_path, gif_frame, 'GIF', duration=0.1)

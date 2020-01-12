@@ -1,25 +1,24 @@
-"""SiamRPN network
-Reference:
-Li, Yan, et al. "High Performance Visual Tracking with Siamese Region Proposal Network
-Object tracking, CVPR 2018
-http://openaccess.thecvf.com/content_cvpr_2018/papers/Li_High_Performance_Visual_CVPR_2018_paper.pdf
-"""
+"""SiamRPN network"""
 
 # pylint: disable=arguments-differ,unused-argument
 from mxnet.gluon.block import HybridBlock
 from gluoncv.model_zoo.siamrpn.siam_alexnet import alexnetlegacy
 from gluoncv.model_zoo.siamrpn.siam_rpn import DepthwiseRPN
+from mxnet import cpu
 
-class SiamrpnNet(HybridBlock):
+
+class SiamRPN(HybridBlock):
     """
-        SiamrpnNet
+        SiamRPN
     """
-    def __init__(self):
-        super(SiamrpnNet, self).__init__()
+    def __init__(self, **kwargs):
+        super(SiamRPN, self).__init__(**kwargs)
         self.backbone = alexnetlegacy()
         self.rpn_head = DepthwiseRPN()
         self.zbranch = None
         self.xbranch = None
+        self.cls = None
+        self.loc = None
 
 
     def template(self, zinput):
@@ -34,10 +33,10 @@ class SiamrpnNet(HybridBlock):
         track x branch
         """
         xbranch = self.backbone(xinput)
-        cls, loc = self.rpn_head(self.zbranch, xbranch)
+        self.cls, self.loc = self.rpn_head(self.zbranch, xbranch)
         return {
-            'cls': cls,
-            'loc': loc,
+            'cls': self.cls,
+            'loc': self.loc,
             }
 
     def mask_refine(self, pos):
@@ -49,26 +48,37 @@ class SiamrpnNet(HybridBlock):
         cls = cls.permute(0, 2, 3, 4, 1).contiguous()
         cls = F.log_softmax(cls, dim=4)
         return cls
-
-    def hybrid_forward(self, F, data):
+    
+    def hybrid_forward(self, F):
         """ only used in training """
-        template = data['template'].cuda()
-        search = data['search'].cuda()
-        label_cls = data['label_cls'].cuda()
-        label_loc = data['label_loc'].cuda()
-        label_loc_weight = data['label_loc_weight'].cuda()
-        # get feature
-        zf = self.backbone(template)
-        xf = self.backbone(search)
+        return {
+            'cls': self.cls,
+            'loc': self.loc,
+            }
 
-        cls, loc = self.rpn_head(zf, xf)
-        # get loss
-        cls = self.log_softmax(cls)
-        cls_loss = select_cross_entropy_loss(cls, label_cls)
-        loc_loss = weight_l1_loss(loc, label_loc, label_loc_weight)
 
-        outputs = {}
-        outputs['total_loss'] = cfg.TRAIN.CLS_WEIGHT * cls_loss + \
-            cfg.TRAIN.LOC_WEIGHT * loc_loss
-        outputs['cls_loss'] = cls_loss
-        outputs['loc_loss'] = loc_loss
+def get_Siam_RPN(base_name, pretrained=False, ctx=cpu(),
+                 root='~/.mxnet/models', **kwargs):
+    r"""get Siam_RPN net and get pretrained model if have pretrained"""
+    net = SiamRPN()
+    if pretrained:
+        from gluoncv.model_zoo.model_store import get_model_file
+        net.load_parameters(get_model_file('siamrpn_%s'%(base_name),
+                                           tag=pretrained, root=root), ctx=ctx)
+    return net
+
+def siamrpn_alexnet_v2_otb15(**kwargs):
+    r"""Alexnet backbone model from `"High Performance Visual Tracking with Siamese Region Proposal Network
+        Object tracking"
+    <http://openaccess.thecvf.com/content_cvpr_2018/papers/Li_High_Performance_Visual_CVPR_2018_paper.pdf>`_ paper.
+    Parameters
+    ----------
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '$MXNET_HOME/models'
+        Location for keeping the model parameters.
+    """
+    return get_Siam_RPN('alexnet_v2_otb15', **kwargs)

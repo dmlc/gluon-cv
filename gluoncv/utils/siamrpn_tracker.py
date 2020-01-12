@@ -38,6 +38,8 @@ def parse_args():
                         help='eval one special video')
     parser.add_argument('--ANCHOR_NUM', default=5, type=int,
                         help='eval one special video')
+    parser.add_argument('--num-gpus', default=0, type=int,
+                        help='number of gpus to use.')
     opt = parser.parse_args()
     return opt
 
@@ -267,7 +269,7 @@ class SiamRPNTracker(BaseTracker):
         im_patch = im_patch.transpose(2, 0, 1)
         im_patch = im_patch[np.newaxis, :, :, :]
         im_patch = im_patch.astype(np.float32)
-        if mx.context.num_gpus():
+        if self.opt.num_gpus>0:
             im_patch = mx.nd.array(im_patch, ctx=gpu())
         else:
             im_patch = mx.nd.array(im_patch, ctx=cpu())
