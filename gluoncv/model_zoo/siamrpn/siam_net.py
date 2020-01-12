@@ -4,7 +4,7 @@
 from mxnet.gluon.block import HybridBlock
 from gluoncv.model_zoo.siamrpn.siam_alexnet import alexnetlegacy
 from gluoncv.model_zoo.siamrpn.siam_rpn import DepthwiseRPN
-from mxnet import cpu
+import mxnet as mx
 
 
 class SiamRPN(HybridBlock):
@@ -47,7 +47,7 @@ class SiamRPN(HybridBlock):
             }
 
 
-def get_Siam_RPN(base_name, pretrained=False, ctx=cpu(),
+def get_Siam_RPN(base_name, pretrained= False, ctx= mx.cpu(0),
                  root='~/.mxnet/models', **kwargs):
     r"""get Siam_RPN net and get pretrained model if have pretrained"""
     net = SiamRPN()
@@ -58,7 +58,7 @@ def get_Siam_RPN(base_name, pretrained=False, ctx=cpu(),
     return net
 
 def siamrpn_alexnet_v2_otb15(**kwargs):
-    r"""Alexnet backbone model from 
+    r"""Alexnet backbone model from
     `"High Performance Visual Tracking with Siamese Region Proposal Network
         Object tracking"
     <http://openaccess.thecvf.com/content_cvpr_2018/papers/

@@ -269,7 +269,7 @@ class SiamRPNTracker(BaseTracker):
         im_patch = im_patch.transpose(2, 0, 1)
         im_patch = im_patch[np.newaxis, :, :, :]
         im_patch = im_patch.astype(np.float32)
-        if self.opt.num_gpus>0:
+        if self.opt.num_gpus > 0:
             im_patch = mx.nd.array(im_patch, ctx=gpu())
         else:
             im_patch = mx.nd.array(im_patch, ctx=cpu())
