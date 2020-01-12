@@ -56,6 +56,7 @@ def download(url, path=None, overwrite=False, sha1_hash=None):
             fname = os.path.join(path, url.split('/')[-1])
         else:
             fname = path
+
     if overwrite or not os.path.exists(fname) or (sha1_hash and not check_sha1(fname, sha1_hash)):
         dirname = os.path.dirname(os.path.abspath(os.path.expanduser(fname)))
         if not os.path.exists(dirname):

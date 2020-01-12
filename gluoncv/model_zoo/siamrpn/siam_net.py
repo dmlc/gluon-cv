@@ -39,16 +39,6 @@ class SiamRPN(HybridBlock):
             'loc': self.loc,
             }
 
-    def mask_refine(self, pos):
-        return self.refine_head(self.xf, self.mask_corr_feature, pos)
-
-    def log_softmax(self, cls):
-        b, a2, h, w = cls.size()
-        cls = cls.view(b, 2, a2//2, h, w)
-        cls = cls.permute(0, 2, 3, 4, 1).contiguous()
-        cls = F.log_softmax(cls, dim=4)
-        return cls
-    
     def hybrid_forward(self, F):
         """ only used in training """
         return {

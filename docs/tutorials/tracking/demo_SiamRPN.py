@@ -11,21 +11,19 @@ import cv2
 import numpy as np
 import mxnet as mx
 import os
-from mxnet import nd
-import argparse
+
 ######################################################################
 # Load a pretrained model
 # -------------------------
 #
-# Let's get an siamrpn model trained 
-# dataset with Alexnet as the base model. By specifying
-# ``pretrained=True``, it will automatically download the model from the model
+# Let's get an siamrpn model trained. We pick the one using Alexnet as the base model.
+# By specifying ``pretrained=True``, it will automatically download the model from the model
 # zoo if necessary. For more pretrained models, please refer to
 # :doc:`../../model_zoo/index`.
 net = model_zoo.get_model('siamrpn_alexnet_v2_otb15', ctx = mx.cpu(0), pretrained=True)
 
 ######################################################################
-# Build a pretrained model
+# Build a tracker model
 # -------------------------
 tracker = build_tracker(net)
 ######################################################################
@@ -36,19 +34,22 @@ tracker = build_tracker(net)
 # gt_bbox is first frame object coordinates，and it is bbox(center_x,center_y,center_w,center_h)
 # this model has two module，one is tracker.init. it has Picture and coordinates of the previous frame as input.
 # the other is tracker.track. it has Picture of the predict frame needed as input.
-# And returns is Dictionaries. keys are gt_bbox and score.Represents the coordinates and scores of the predicted frame.
+# And returns is Dictionaries. keys are bbox and best_score. Represents the coordinates and scores of the predicted frame.
+# scores list record everyframe best_score and pred_bboxes list record everyframe predict bbox coordinate.
+# result_path is the path where you save the result ，which draw pictures and save tracking result.
+# this is example of our tracking
+# .. raw:: html
+#
+#     <div align="center">
+#         <img src="../../_static/tracking_demo.gif">
+#     </div>
+#
+#     <br>
 
-im_video = utils.download('https://raw.githubusercontent.com/FrankYoungchen/siam_data/master/Dog.mp4')
-gt_bbox = [74, 86, 56, 48]
+im_video = utils.download('https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/tracking/Woman.mp4')
+gt_bbox = [213,121,21,95]
 
-def parse_args():
-    """parameter demo."""
-    parser = argparse.ArgumentParser(description='siamrpn tracking demo')
-    parser.add_argument('--result_path', default = './result', type=str, help='save result path')
-    opt = parser.parse_args()
-    return opt
-opt = parse_args()
-
+result_path = './result'
 cap = cv2.VideoCapture(im_video)
 frames_total_num = cap.get(7)
 index = 1
@@ -57,6 +58,8 @@ pred_bboxes = []
 
 while(True):
     ret, img = cap.read()
+    if not ret:
+        break
     gt_bbox_ = np.array(gt_bbox)
     tracker.init(img, gt_bbox_)
     if index == 1:
@@ -69,13 +72,13 @@ while(True):
         pred_bbox = outputs['bbox']
         pred_bboxes.append(pred_bbox)
         scores.append(outputs['best_score'])
-        gt_bbox_ = pred_bbox
+
     gt_bbox = list(map(int, gt_bbox))
     pred_bbox = list(map(int, pred_bbox))
     cv2.rectangle(img, (pred_bbox[0], pred_bbox[1]),
                             (pred_bbox[0]+pred_bbox[2], pred_bbox[1]+pred_bbox[3]),
                             (0, 255, 255), 3)
-    cv2.imwrite(os.path.join(opt.result_path, '%04d.jpg'%index), img)
+    cv2.imwrite(os.path.join(result_path, '%04d.jpg'%index), img)
     index = index+1 
     if index>frames_total_num:        
         break

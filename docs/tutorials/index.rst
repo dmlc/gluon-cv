@@ -257,6 +257,17 @@ Action Recognition
 
         An efficient and flexible video reader for training deep video neural networks.
 
+Object Tracking
+---------------------
+
+.. container:: cards
+
+    .. card::
+        :title: Pre-trained Siam RPN Models
+        :link: ../build/examples_tracking/demo_SiamRPN.html
+
+        Estimate Single Object Tracking in real-world video with pre-trained Object Tracking models
+
 Dataset Preparation
 -------------------
 
@@ -349,16 +360,3 @@ Deployment
     ../build/examples_distributed/index
     ../build/examples_deployment/index
     ../build/examples_tracking/index
-
-
-
-Object Tracking
----------------------
-
-.. container:: cards
-
-    .. card::
-        :title: Pre-trained Siam RPN Models
-        :link: ../build/examples_tracking/demo_Siam_RPN.html
-
-        Estimate Single Object Tracking in real-world video with pre-trained Object Tracking models
