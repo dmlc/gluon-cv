@@ -371,4 +371,3 @@ class SiamRPNTracker(BaseTracker):
         best_score = score[best_idx]
         return {'bbox': bbox,
                 'best_score': best_score}
-
