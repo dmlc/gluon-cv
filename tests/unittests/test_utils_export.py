@@ -30,6 +30,8 @@ def test_export_model_zoo():
             continue
         if '_dcnv2' in model:
             continue
+        if 'siamrpn' in model:
+            continue
         try:
             gcv.utils.export_block(model, gcv.model_zoo.get_model(model, pretrained=True),
                                    ctx=mx.context.current_context(), **kwargs)

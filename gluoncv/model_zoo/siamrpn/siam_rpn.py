@@ -19,7 +19,7 @@ class RPN(HybridBlock):
 class DepthwiseXCorr(HybridBlock):
     """
         regard output of x backbone as kernel,kernel shape is (1, 256, 4, 4) reshape (256, 1, 4, 4)
-        regard output of z backbone as search feature ，which shape is (1, 256, 24, 24)
+        regard output of z backbone as search feature,which shape is (1, 256, 24, 24)
         make Depthwise conv get (1, 256, 21, 21)
         output loc is (1, 10, 21, 21) though conv
         output cls is (1, 20, 21, 21) though conv
