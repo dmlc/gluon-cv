@@ -4,7 +4,6 @@ import os
 from glob import glob
 from tqdm import tqdm
 from mxnet.gluon.data import dataset
-import cv2
 from gluoncv.utils.filesystem import try_import_cv2
 cv2 = try_import_cv2()
 

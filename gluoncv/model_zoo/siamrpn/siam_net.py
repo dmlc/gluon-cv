@@ -1,5 +1,5 @@
 """SiamRPN network"""
-
+# coding:utf-8
 # pylint: disable=arguments-differ,unused-argument
 from mxnet.gluon.block import HybridBlock
 from gluoncv.model_zoo.siamrpn.siam_alexnet import alexnetlegacy
@@ -39,8 +39,11 @@ class SiamRPN(HybridBlock):
             'loc': self.loc,
             }
 
-    def hybrid_forward(self, F):
+    def hybrid_forward(self, F, zinput, xinput):
         """ only used in training """
+        zbranch = self.backbone(zinput)
+        xbranch = self.backbone(xinput)
+        self.cls, self.loc = self.rpn_head(zbranch, xbranch)
         return {
             'cls': self.cls,
             'loc': self.loc,
