@@ -200,7 +200,7 @@ class SiamRPNTracker(BaseTracker):
         score = nd.transpose(score, axes=(1, 2, 3, 0))
         score = nd.reshape(score, shape=(2, -1))
         score = nd.transpose(score, axes=(1, 0))
-        score = nd.softmax(score, axis=1).asnumpy()[:, 1]
+        score = nd.softmax(score, axis=1)[:, 1].asscalar()
         return score
 
     def _bbox_clip(self, center_x, center_y, width, height, boundary):
