@@ -80,9 +80,9 @@ sphinx_gallery_conf = {
         'build/examples_segmentation',
         'build/examples_pose',
         'build/examples_action_recognition',
+        'build/examples_tracking',
         'build/examples_distributed',
-        'build/examples_deployment',
-        'build/examples_tracking',],
+        'build/examples_deployment',],
 
     'filename_pattern': '.py',
     'ignore_pattern': 'im2rec.py',

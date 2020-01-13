@@ -98,10 +98,11 @@ for ind , img in enumerate(video_frames):
                             (pred_bbox[0]+pred_bbox[2], pred_bbox[1]+pred_bbox[3]),
                             (0, 255, 255), 3)
     cv2.imwrite('%04d.jpg'%(ind+1), img)
-
+################################################################
 # this is example of our tracking.We can find Our model is very stable.
 # It can still track this object when moving at high speed and partially occluded. Welcome to use.
 # .. raw:: html
+#
 #
 #     <div align="center">
 #         <img src="../../_static/tracking_demo.gif">
