@@ -74,10 +74,10 @@ plt.show()
 # Predict with a SiamRPN and make inference
 # --------------------
 #
-# this function returns a dictionaries result. which has two keys.one is
 # this function returns a dictionaries result. which has two keys. one is bbox,
 # which represents the coordinates of the predicted frame,
 # the other is best_score, which records everyframe best_score.
+# Save output in current path
 scores = []
 pred_bboxes = []
 for ind , img in enumerate(video_frames):
