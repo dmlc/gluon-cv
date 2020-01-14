@@ -68,9 +68,9 @@ sphinx_gallery_conf = {
         'tutorials/segmentation',
         'tutorials/pose',
         'tutorials/action_recognition',
+        'tutorials/tracking',
         'tutorials/distributed',
-        'tutorials/deployment',
-        'tutorials/tracking'],
+        'tutorials/deployment',],
     # path where to save gallery generated examples
     'gallery_dirs': [
         'build/examples_datasets',
