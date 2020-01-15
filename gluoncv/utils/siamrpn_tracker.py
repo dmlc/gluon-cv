@@ -195,16 +195,24 @@ class SiamRPNTracker(BaseTracker):
         delta[3, :] = np.exp(delta[3, :]) * anchor[:, 3]
         return delta
 
+    # def _convert_score(self, score):
+    #     """from cls to score"""
+    #     score = nd.transpose(score, axes=(1, 2, 3, 0))
+    #     score = nd.reshape(score, shape=(2, -1))
+    #     score = nd.transpose(score, axes=(1, 0))
+    #     score = nd.softmax(score, axis=1)
+    #     score = nd.slice_axis(score, axis=1, begin=1, end=2)
+    #     score = np.squeeze(score, axis=1)
+    #     return score.asnumpy()
     def _convert_score(self, score):
         """from cls to score"""
         score = nd.transpose(score, axes=(1, 2, 3, 0))
         score = nd.reshape(score, shape=(2, -1))
         score = nd.transpose(score, axes=(1, 0))
         score = nd.softmax(score, axis=1)
-        score = nd.slice_axis(score, axis=1, begin=1, end=2).asnumpy()
+        score = nd.slice_axis(score, axis=1, begin=1, end=2)
         score = np.squeeze(score, axis=1)
-
-        return score
+        return score.asnumpy()
 
     def _bbox_clip(self, center_x, center_y, width, height, boundary):
         """get bbox in image """
@@ -321,10 +329,10 @@ class SiamRPNTracker(BaseTracker):
                                     self.opt.INSTANCE_SIZE,
                                     round(s_x), self.channel_average)
         outputs = self.model.track(x_crop)
-        #get cls
-        score = self._convert_score(outputs['cls'])
         #get coordinate
         pred_bbox = self._convert_bbox(outputs['loc'], self.anchors)
+        #get cls
+        score = self._convert_score(outputs['cls'])
         def change(hw_r):
             return np.maximum(hw_r, 1. / hw_r)
 
