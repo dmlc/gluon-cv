@@ -206,12 +206,9 @@ class SiamRPNTracker(BaseTracker):
     #     return score.asnumpy()
     def _convert_score(self, score):
         """from cls to score"""
-        score = nd.transpose(score, axes=(1, 2, 3, 0))
-        score = nd.reshape(score, shape=(2, -1))
-        score = nd.transpose(score, axes=(1, 0))
-        score = nd.softmax(score, axis=1)
-        score = nd.slice_axis(score, axis=1, begin=1, end=2)
-        score = np.squeeze(score, axis=1)
+        score = score.asnumpy()
+        score = score.permute(1 ,2, 3, 4).reshape(2, -1).permute(1, 0)
+        score = nd.softmax(nd.array(score), axis=1)[:, -1].asnumpy()
         return score.asnumpy()
 
     def _bbox_clip(self, center_x, center_y, width, height, boundary):
