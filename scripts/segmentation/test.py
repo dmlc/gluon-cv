@@ -233,10 +233,16 @@ if __name__ == "__main__":
             model.collect_params().reset_ctx(ctx=args.ctx)
         else:
             assert "_in8" not in model_prefix, "Currently, Int8 models are not supported when pretrained=False"
-            model = get_segmentation_model(model=args.model, dataset=args.dataset, ctx=args.ctx,
-                                           backbone=args.backbone, norm_layer=args.norm_layer,
-                                           norm_kwargs=args.norm_kwargs, aux=args.aux,
-                                           base_size=args.base_size, crop_size=args.crop_size)
+            if 'icnet' in args.model:
+                model = get_segmentation_model(model=args.model, dataset=args.dataset, ctx=args.ctx,
+                                               backbone=args.backbone, norm_layer=args.norm_layer,
+                                               norm_kwargs=args.norm_kwargs, aux=args.aux,
+                                               base_size=args.base_size, height=1024, width=2048)
+            else:
+                model = get_segmentation_model(model=args.model, dataset=args.dataset, ctx=args.ctx,
+                                               backbone=args.backbone, norm_layer=args.norm_layer,
+                                               norm_kwargs=args.norm_kwargs, aux=args.aux,
+                                               base_size=args.base_size, crop_size=args.crop_size)
             # load local pretrained weight
             assert args.resume is not None, '=> Please provide the checkpoint using --resume'
             if os.path.isfile(args.resume):

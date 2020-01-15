@@ -6,39 +6,8 @@ from mxnet.context import cpu
 from mxnet.gluon.nn import HybridBlock
 from gluoncv.model_zoo.segbase import SegBaseModel
 from gluoncv.model_zoo.pspnet import _PSPHead
-from gluoncv.loss import SoftmaxCrossEntropyLoss
 
-__all__ = ['ICNet', 'get_icnet', 'get_icnet_resnet50_citys', 'ICNetLoss']
-
-
-class ICNetLoss(SoftmaxCrossEntropyLoss):
-    """Weighted SoftmaxCrossEntropyLoss2D
-
-    Parameters
-    ----------
-    weights : tuple, default (0.4, 0.4, 1.0)
-        The weight for cascade label guidance.
-    """
-
-    def __init__(self, weights=(0.4, 0.4, 1.0), height=None, width=None, crop_size=480, **kwargs):
-        super(ICNetLoss, self).__init__(**kwargs)
-        self.weights = weights
-        self.height = height if height is not None else crop_size
-        self.width = width if width is not None else crop_size
-
-    def _weighted_forward(self, F, *input, **kwargs):
-        label = input[4]
-        loss = []
-        for i in range(len(input) - 1):
-            scale_pred = F.contrib.BilinearResize2D(input[i], height=self.height, width=self.width)
-            loss.append(super(ICNetLoss, self).hybrid_forward(F, scale_pred, label))
-
-        return loss[0] + self.weights[0] * loss[1] + \
-               self.weights[1] * loss[2] + self.weights[2] * loss[3]
-
-    def hybrid_forward(self, F, *inputs, **kwargs):
-        """Compute loss"""
-        return self._weighted_forward(F, *inputs, **kwargs)
+__all__ = ['ICNet', 'get_icnet', 'get_icnet_resnet50_citys']
 
 
 class ICNet(SegBaseModel):
@@ -78,6 +47,7 @@ class ICNet(SegBaseModel):
                                     base_size=base_size, crop_size=crop_size,
                                     pretrained_base=pretrained_base, **kwargs)
 
+        # TODO: hybridize
         height = height if height is not None else crop_size
         width = width if width is not None else crop_size
         self._up_kwargs = {'height': height, 'width': width}
@@ -98,6 +68,7 @@ class ICNet(SegBaseModel):
             self.psp_head.initialize(ctx=ctx)
             self.psp_head.collect_params().setattr('lr_mult', 10)
 
+            # TODO: hybridize need height and width
             self.head = _ICHead(
                 nclass=nclass, height=self._up_kwargs['height'], width=self._up_kwargs['width']
             )
@@ -125,9 +96,14 @@ class ICNet(SegBaseModel):
         x_sub1_out = self.conv_sub1(x)
 
         # sub_2
+        # TODO: hybridize
+        # x_sub2 = F.contrib.BilinearResize2D(
+        #     x, height=self._up_kwargs['height'] // 2, width=self._up_kwargs['width'] // 2
+        # )
         x_sub2 = F.contrib.BilinearResize2D(
-            x, height=self._up_kwargs['height'] // 2, width=self._up_kwargs['width'] // 2
+            x, height=x.shape[2] // 2, width=x.shape[3] // 2
         )
+
         x = self.conv1(x_sub2)
         x = self.bn1(x)
         x = self.relu(x)
@@ -137,9 +113,14 @@ class ICNet(SegBaseModel):
         x_sub2_out = self.layer2(x)
 
         # sub 4
+        # TODO: hybridize
+        # x_sub4 = F.contrib.BilinearResize2D(
+        #     x_sub2_out, height=self._up_kwargs['height'] // 32, width=self._up_kwargs['width'] // 32
+        # )
         x_sub4 = F.contrib.BilinearResize2D(
-            x_sub2_out, height=self._up_kwargs['height'] // 32, width=self._up_kwargs['width'] // 32
+            x_sub2_out, height=x_sub2_out.shape[2] // 2, width=x_sub2_out.shape[3] // 2
         )
+
         x = self.layer3(x_sub4)
         x = self.layer4(x)
         x_sub4_out = self.psp_head(x)
@@ -155,17 +136,15 @@ class ICNet(SegBaseModel):
         return self.predict(x)
 
     def predict(self, x):
-        h, w = x.shape[2:]
-        self._up_kwargs['height'] = h
-        self._up_kwargs['width'] = w
         import mxnet.ndarray as F
         # sub 1
         x_sub1_out = self.conv_sub1(x)
 
         # sub_2
         x_sub2 = F.contrib.BilinearResize2D(
-            x, height=self._up_kwargs['height'] // 2, width=self._up_kwargs['width'] // 2
+            x, height=x.shape[2] // 2, width=x.shape[3] // 2
         )
+
         x = self.conv1(x_sub2)
         x = self.bn1(x)
         x = self.relu(x)
@@ -176,8 +155,9 @@ class ICNet(SegBaseModel):
 
         # sub 4
         x_sub4 = F.contrib.BilinearResize2D(
-            x_sub2_out, height=self._up_kwargs['height'] // 16, width=self._up_kwargs['width'] // 16
+            x_sub2_out, height=x_sub2_out.shape[2] // 2, width=x_sub2_out.shape[3] // 2
         )
+
         x = self.layer3(x_sub4)
         x = self.layer4(x)
         x_sub4_out = self.psp_head(x)
@@ -190,14 +170,140 @@ class ICNet(SegBaseModel):
         return res[0]
 
 
+class _ICHead(HybridBlock):
+    # pylint: disable=redefined-outer-name
+    def __init__(self, nclass, height=None, width=None, norm_layer=nn.BatchNorm):
+        super(_ICHead, self).__init__()
+
+        # TODO: hybridize
+        # self._up_kwargs = {'height': height, 'width': width}
+        # self.cff_12 = CascadeFeatureFusion(
+        #     128, 64, 128, height//8, width//8, nclass, norm_layer
+        # )
+        # self.cff_24 = CascadeFeatureFusion(
+        #     256, 256, 128, height//16, width//16, nclass, norm_layer
+        # )
+
+        self.cff_12 = CascadeFeatureFusion(128, 64, 128, nclass, norm_layer=norm_layer)
+        self.cff_24 = CascadeFeatureFusion(256, 256, 128, nclass, norm_layer=norm_layer)
+
+        with self.name_scope():
+            self.conv_cls = nn.Conv2D(in_channels=128, channels=nclass,
+                                      kernel_size=1, use_bias=False)
+
+    def hybrid_forward(self, F, x_sub1, x_sub2, x_sub4):
+        outputs = []
+
+        x_cff_24, x_24_cls = self.cff_24(x_sub4, x_sub2)
+        outputs.append(x_24_cls)
+        x_cff_12, x_12_cls = self.cff_12(x_cff_24, x_sub1)
+        outputs.append(x_12_cls)
+
+        # TODO: hybridize
+        # up_x2 = F.contrib.BilinearResize2D(
+        #     x_cff_12, height=self._up_kwargs['height'] // 4, width=self._up_kwargs['width'] // 4
+        # )
+        up_x2 = F.contrib.BilinearResize2D(x_cff_12, height=2*x_cff_12.shape[2], width=2*x_cff_12.shape[3])
+        up_x2 = self.conv_cls(up_x2)
+        outputs.append(up_x2)
+
+        # TODO: hybridize
+        # up_x8 = F.contrib.BilinearResize2D(
+        #     up_x2, height=self._up_kwargs['height'], width=self._up_kwargs['width']
+        # )
+        up_x8 = F.contrib.BilinearResize2D(up_x2, height=4*up_x2.shape[2], width=4*up_x2.shape[3])
+        outputs.append(up_x8)
+
+        # 1 -> 1/4 -> 1/8 -> 1/16
+        outputs.reverse()
+        return tuple(outputs)
+
+    def demo(self, x_sub1, x_sub2, x_sub4):
+        outputs = []
+
+        x_cff_24, x_24_cls = self.cff_24(x_sub4, x_sub2)
+        outputs.append(x_24_cls)
+        x_cff_12, x_12_cls = self.cff_12(x_cff_24, x_sub1)
+        outputs.append(x_12_cls)
+
+        import mxnet.ndarray as F
+        up_x2 = F.contrib.BilinearResize2D(
+            x_cff_12, height=2*x_cff_12.shape[2], width=2*x_cff_12.shape[3]
+        )
+        up_x2 = self.conv_cls(up_x2)
+        outputs.append(up_x2)
+
+        up_x8 = F.contrib.BilinearResize2D(
+            up_x2, height=4*up_x2.shape[2], width=4*up_x2.shape[3]
+        )
+        outputs.append(up_x8)
+
+        # 1 -> 1/4 -> 1/8 -> 1/16
+        outputs.reverse()
+        return tuple(outputs)
+
+
+class CascadeFeatureFusion(HybridBlock):
+    def __init__(self, low_channels, high_channels, out_channels,
+                 nclass,  height=None, width=None, norm_layer=nn.BatchNorm):
+        super(CascadeFeatureFusion, self).__init__()
+
+        with self.name_scope():
+            self.conv_low = nn.HybridSequential()
+            with self.conv_low.name_scope():
+                self.conv_low.add(nn.Conv2D(in_channels=low_channels, channels=out_channels,
+                                            kernel_size=3, padding=2, dilation=2, use_bias=False))
+                self.conv_low.add(norm_layer(in_channels=out_channels))
+
+            self.conv_hign = nn.HybridSequential()
+            with self.conv_hign.name_scope():
+                self.conv_hign.add(nn.Conv2D(in_channels=high_channels, channels=out_channels,
+                                             kernel_size=1, use_bias=False))
+                self.conv_hign.add(norm_layer(in_channels=out_channels))
+
+            self.conv_low_cls = nn.Conv2D(in_channels=out_channels, channels=nclass,
+                                          kernel_size=1, use_bias=False)
+
+    def hybrid_forward(self, F, x_low, x_high):
+        # TODO: hybridize
+        # x_low = F.contrib.BilinearResize2D(
+        #     x_low, height=self._up_kwargs['height'], width=self._up_kwargs['width']
+        # )
+        x_low = F.contrib.BilinearResize2D(x_low, height=x_high.shape[2], width=x_high.shape[3])
+        x_low = self.conv_low(x_low)
+
+        x_high = self.conv_hign(x_high)
+
+        x = x_low + x_high
+        x = F.relu(x)
+
+        x_low_cls = self.conv_low_cls(x_low)
+
+        return x, x_low_cls
+
+    def demo(self, x_low, x_high):
+        import mxnet.ndarray as F
+        x_low = F.contrib.BilinearResize2D(
+            x_low, height=x_high.shape[2], width=x_high.shape[3]
+        )
+        x_low = self.conv_low(x_low)
+
+        x_high = self.conv_hign(x_high)
+
+        x = x_low + x_high
+        x = F.relu(x)
+
+        return x
+
+
 class ConvBnRelu(HybridBlock):
     def __init__(self, in_planes, out_planes, ksize, stride=1, pad=0, dilation=1,
                  groups=1, has_bn=True, norm_layer=nn.BatchNorm, bn_eps=1e-5,
                  has_relu=True, has_bias=False):
         super(ConvBnRelu, self).__init__()
         with self.name_scope():
-            self.conv = nn.Conv2D(in_channels=in_planes, channels=out_planes, kernel_size=ksize,
-                                  padding=pad, strides=stride,
+            self.conv = nn.Conv2D(in_channels=in_planes, channels=out_planes,
+                                  kernel_size=ksize, padding=pad, strides=stride,
                                   dilation=dilation, groups=groups, use_bias=has_bias)
             self.has_bn = has_bn
             self.has_relu = has_relu
@@ -224,113 +330,6 @@ class ConvBnRelu(HybridBlock):
             x = self.relu(x)
 
         return x
-
-
-class CascadeFeatureFusion(HybridBlock):
-    def __init__(self, low_channels, high_channels, out_channels,
-                 height, width, nclass, norm_layer=nn.BatchNorm):
-        super(CascadeFeatureFusion, self).__init__()
-        self._up_kwargs = {'height': height, 'width': width}
-
-        with self.name_scope():
-            self.conv_low = nn.HybridSequential()
-            with self.conv_low.name_scope():
-                self.conv_low.add(nn.Conv2D(in_channels=low_channels, channels=out_channels,
-                                            kernel_size=3, padding=2, dilation=2, use_bias=False))
-                self.conv_low.add(norm_layer(in_channels=out_channels))
-
-            self.conv_hign = nn.HybridSequential()
-            with self.conv_hign.name_scope():
-                self.conv_hign.add(nn.Conv2D(in_channels=high_channels, channels=out_channels,
-                                             kernel_size=1, use_bias=False))
-                self.conv_hign.add(norm_layer(in_channels=out_channels))
-
-            self.conv_low_cls = nn.Conv2D(in_channels=out_channels, channels=nclass,
-                                          kernel_size=1, use_bias=False)
-
-    def hybrid_forward(self, F, x_low, x_high):
-        x_low = F.contrib.BilinearResize2D(
-            x_low, height=self._up_kwargs['height'], width=self._up_kwargs['width']
-        )
-        x_low = self.conv_low(x_low)
-        x_high = self.conv_hign(x_high)
-
-        x = x_low + x_high
-        x = F.relu(x)
-
-        x_low_cls = self.conv_low_cls(x_low)
-
-        return x, x_low_cls
-
-    def demo(self, x_low, x_high):
-        import mxnet.ndarray as F
-        x_low = F.contrib.BilinearResize2D(x_low, height=x_high.shape[2], width=x_high.shape[3])
-        x_low = self.conv_low(x_low)
-        x_high = self.conv_hign(x_high)
-
-        x = x_low + x_high
-        x = F.relu(x)
-
-        return x
-
-
-class _ICHead(HybridBlock):
-    # pylint: disable=redefined-outer-name
-    def __init__(self, nclass, height, width, norm_layer=nn.BatchNorm):
-        super(_ICHead, self).__init__()
-        self._up_kwargs = {'height': height, 'width': width}
-        self.cff_12 = CascadeFeatureFusion(
-            128, 64, 128, height//8, width//8, nclass, norm_layer
-        )
-        self.cff_24 = CascadeFeatureFusion(
-            256, 256, 128, height//16, width//16, nclass, norm_layer
-        )
-
-        with self.name_scope():
-            self.conv_cls = nn.Conv2D(in_channels=128, channels=nclass,
-                                      kernel_size=1, use_bias=False)
-
-    def hybrid_forward(self, F, x_sub1, x_sub2, x_sub4):
-        outputs = []
-
-        x_cff_24, x_24_cls = self.cff_24(x_sub4, x_sub2)
-        outputs.append(x_24_cls)
-        x_cff_12, x_12_cls = self.cff_12(x_cff_24, x_sub1)
-        outputs.append(x_12_cls)
-
-        up_x2 = F.contrib.BilinearResize2D(
-            x_cff_12, height=self._up_kwargs['height'] // 4, width=self._up_kwargs['width'] // 4
-        )
-        up_x2 = self.conv_cls(up_x2)
-        outputs.append(up_x2)
-
-        up_x8 = F.contrib.BilinearResize2D(
-            up_x2, height=self._up_kwargs['height'], width=self._up_kwargs['width']
-        )
-        outputs.append(up_x8)
-
-        # 1 -> 1/4 -> 1/8 -> 1/16
-        outputs.reverse()
-        return tuple(outputs)
-
-    def demo(self, x_sub1, x_sub2, x_sub4):
-        outputs = []
-
-        x_cff_24, x_24_cls = self.cff_24(x_sub4, x_sub2)
-        outputs.append(x_24_cls)
-        x_cff_12, x_12_cls = self.cff_12(x_cff_24, x_sub1)
-        outputs.append(x_12_cls)
-
-        import mxnet.ndarray as F
-        up_x2 = F.contrib.BilinearResize2D(x_cff_12,
-                                           height=2 * x_cff_12.shape[2], width=2 * x_cff_12.shape[3])
-        up_x2 = self.conv_cls(up_x2)
-        outputs.append(up_x2)
-        up_x8 = F.contrib.BilinearResize2D(up_x2, height=4 * up_x2.shape[2], width=4 * up_x2.shape[3])
-        outputs.append(up_x8)
-        # 1 -> 1/4 -> 1/8 -> 1/16
-        outputs.reverse()
-        return tuple(outputs)
 
 
 def get_icnet(dataset='citys', backbone='resnet50', pretrained=False,
@@ -370,7 +369,7 @@ def get_icnet(dataset='citys', backbone='resnet50', pretrained=False,
 
     if pretrained:
         from .model_store import get_model_file
-        model.load_parameters(get_model_file('icnet_%s_%s' % (backbone, acronyms[dataset]),
+        model.load_parameters(get_model_file('icnet_%s_%s'%(backbone, acronyms[dataset]),
                                              tag=pretrained, root=root), ctx=ctx)
 
     return model

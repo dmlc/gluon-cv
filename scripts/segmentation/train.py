@@ -144,7 +144,11 @@ class Trainer(object):
                 raise RuntimeError("=> no checkpoint found at '{}'" \
                     .format(args.resume))
         # create criterion
-        criterion = MixSoftmaxCrossEntropyLoss(args.aux, aux_weight=args.aux_weight)
+        if 'icnet' in args.model_zoo \
+                or 'icnet' in args.model:
+            criterion = ICNetLoss(crop_size=args.crop_size)
+        else:
+            criterion = MixSoftmaxCrossEntropyLoss(args.aux, aux_weight=args.aux_weight)
         self.criterion = DataParallelCriterion(criterion, args.ctx, args.syncbn)
         # optimizer and lr scheduling
         self.lr_scheduler = LRScheduler(mode='poly', base_lr=args.lr,
