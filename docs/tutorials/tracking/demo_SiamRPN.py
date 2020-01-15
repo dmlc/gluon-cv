@@ -25,8 +25,8 @@ import numpy as np
 import mxnet as mx
 import matplotlib.pyplot as plt
 from gluoncv import model_zoo, utils
-from gluoncv.utils.siamrpn_tracker import SiamRPNTracker as build_tracker
-from gluoncv.utils.siamrpn_tracker import get_axis_aligned_bbox
+from gluoncv.model_zoo.siamrpn.siamrpn_tracker import SiamRPNTracker as build_tracker
+from gluoncv.model_zoo.siamrpn.siamrpn_tracker import get_axis_aligned_bbox
 from gluoncv.utils.filesystem import try_import_cv2
 cv2 = try_import_cv2()
 
@@ -38,7 +38,7 @@ cv2 = try_import_cv2()
 # By specifying ``pretrained=True``, it will automatically download the model from the model
 # zoo if necessary. For more pretrained models, please refer to
 # :doc:`../../model_zoo/index`.
-net = model_zoo.get_model('siamrpn_alexnet_v2_otb15', ctx=mx.cpu(0), pretrained=True)
+net = model_zoo.get_model('siamrpn_alexnet_v2_otb15', ctx=mx.cpu(), pretrained=True)
 ######################################################################
 # Build a tracker model
 # -------------------------
@@ -84,12 +84,12 @@ for ind, img in enumerate(video_frames):
     if ind == 0:
         cx, cy, w, h = get_axis_aligned_bbox(np.array(gt_bbox))
         gt_bbox_ = [cx-(w-1)/2, cy-(h-1)/2, w, h]
-        tracker.init(img, gt_bbox_)
+        tracker.init(img, gt_bbox_, ctx=mx.cpu())
         pred_bbox = gt_bbox_
         scores.append(None)
         pred_bboxes.append(pred_bbox)
     else:
-        outputs = tracker.track(img)
+        outputs = tracker.track(img, ctx=mx.cpu())
         pred_bbox = outputs['bbox']
         pred_bboxes.append(pred_bbox)
         scores.append(outputs['best_score'])

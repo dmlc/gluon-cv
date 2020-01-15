@@ -2,9 +2,9 @@
 # coding:utf-8
 # pylint: disable=arguments-differ,unused-argument
 from mxnet.gluon.block import HybridBlock
+import mxnet as mx
 from gluoncv.model_zoo.siamrpn.siam_alexnet import alexnetlegacy
 from gluoncv.model_zoo.siamrpn.siam_rpn import DepthwiseRPN
-import mxnet as mx
 
 
 class SiamRPN(HybridBlock):
@@ -58,6 +58,7 @@ def get_Siam_RPN(base_name, pretrained=False, ctx=mx.cpu(0),
         from gluoncv.model_zoo.model_store import get_model_file
         net.load_parameters(get_model_file('siamrpn_%s'%(base_name),
                                            tag=pretrained, root=root), ctx=ctx)
+
     return net
 
 def siamrpn_alexnet_v2_otb15(**kwargs):

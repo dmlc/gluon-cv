@@ -3,45 +3,12 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
-import argparse
 import math
 from collections import namedtuple
 import numpy as np
 import mxnet as mx
-from mxnet import nd, cpu, gpu
+from mxnet import nd
 from gluoncv.utils.filesystem import try_import_cv2
-
-def parse_args():
-    """siamrpn_tracker test."""
-    parser = argparse.ArgumentParser(description='siamrpn tracker')
-    parser.add_argument('--PENALTY_K', default=0.16, type=float,
-                        help='datasets')
-    parser.add_argument('--WINDOW_INFLUENCE', default=0.40, type=float,
-                        help='config file')
-    parser.add_argument('--LR', default=0.30, type=float,
-                        help='snapshot of models to eval')
-    parser.add_argument('--EXEMPLAR_SIZE', default=127, type=int,
-                        help='EXEMPLAR_SIZE')
-    parser.add_argument('--INSTANCE_SIZE', default=287, type=int,
-                        help='INSTANCE_SIZE')
-    parser.add_argument('--BASE_SIZE', default=0, type=int,
-                        help='eval one special video')
-    parser.add_argument('--CONTEXT_AMOUNT', default=0.5, type=float,
-                        help='eval one special video')
-    parser.add_argument('--CUDA', default=True, type=str,
-                        help='eval one special video')
-    parser.add_argument('--STRIDE', default=8, type=int,
-                        help='eval one special video')
-    parser.add_argument('--RATIOS', default=[0.33, 0.5, 1, 2, 3], type=list,
-                        help='eval one special video')
-    parser.add_argument('--SCALES', default=[8], type=list,
-                        help='eval one special video')
-    parser.add_argument('--ANCHOR_NUM', default=5, type=int,
-                        help='eval one special video')
-    parser.add_argument('--num-gpus', default=0, type=int,
-                        help='number of gpus to use.')
-    opt = parser.parse_args()
-    return opt
 
 Corner = namedtuple('Corner', 'x1 y1 x2 y2')
 BBox = Corner
@@ -130,7 +97,7 @@ class Anchors():
 
 class BaseTracker(object):
     """ Base tracker of single objec tracking """
-    def init(self, img, bbox):
+    def init(self, img, bbox, ctx):
         """
         args:
             img(np.ndarray): BGR image
@@ -139,7 +106,7 @@ class BaseTracker(object):
         """
         raise NotImplementedError
 
-    def track(self, img):
+    def track(self, img, ctx):
         """
         args:
             img(np.ndarray): BGR image
@@ -149,13 +116,34 @@ class BaseTracker(object):
         raise NotImplementedError
 
 class SiamRPNTracker(BaseTracker):
-    """ SiamRPNTracker"""
+    """ SiamRPNTracker
+        Parameters
+        ----------
+        PENALTY_K : float, Scale penalty
+        WINDOW_INFLUENCE :float, Window influence
+        LR : float, Interpolation learning rate
+        EXEMPLAR_SIZE : int, EXEMPLAR_SIZE
+        INSTANCE_SIZE : int, INSTANCE_SIZE
+        BASE_SIZE : Base size
+        CONTEXT_AMOUNT : float, Context amount
+        RATIOS : list, Anchor ratios
+        SCALES : list, Anchor scales
+    """
     def __init__(self, model):
         super(SiamRPNTracker, self).__init__()
-        self.opt = parse_args()
-        self.score_size = (self.opt.INSTANCE_SIZE - self.opt.EXEMPLAR_SIZE) // \
-            self.opt.STRIDE + 1 + self.opt.BASE_SIZE
-        self.anchor_num = len(self.opt.RATIOS) * len(self.opt.SCALES)
+        self.PENALTY_K = 0.16
+        self.WINDOW_INFLUENCE = 0.40
+        self.LR = 0.30
+        self.EXEMPLAR_SIZE = 127
+        self.INSTANCE_SIZE = 287
+        self.BASE_SIZE = 0
+        self.CONTEXT_AMOUNT = 0.5
+        self.STRIDE = 8
+        self.RATIOS = [0.33, 0.5, 1, 2, 3]
+        self.SCALES = [8]
+        self.score_size = (self.INSTANCE_SIZE - self.EXEMPLAR_SIZE) // \
+            self.STRIDE + 1 + self.BASE_SIZE
+        self.anchor_num = len(self.RATIOS) * len(self.SCALES)
         hanning = np.hanning(self.score_size)
         window = np.outer(hanning, hanning)
         self.window = np.tile(window.flatten(), self.anchor_num)
@@ -167,9 +155,9 @@ class SiamRPNTracker(BaseTracker):
 
     def generate_anchor(self, score_size):
         """generate_anchor"""
-        anchors = Anchors(self.opt.STRIDE,
-                          self.opt.RATIOS,
-                          self.opt.SCALES)
+        anchors = Anchors(self.STRIDE,
+                          self.RATIOS,
+                          self.SCALES)
         anchor = anchors.anchors
         x_min, y_min, x_max, y_max = anchor[:, 0], anchor[:, 1], anchor[:, 2], anchor[:, 3]
         anchor = np.stack([(x_min+x_max)*0.5, (y_min+y_max)*0.5, x_max-x_min, y_max-y_min], 1)
@@ -195,20 +183,14 @@ class SiamRPNTracker(BaseTracker):
         delta[3, :] = np.exp(delta[3, :]) * anchor[:, 3]
         return delta
 
-    # def _convert_score(self, score):
-    #     """from cls to score"""
-    #     score = nd.transpose(score, axes=(1, 2, 3, 0))
-    #     score = nd.reshape(score, shape=(2, -1))
-    #     score = nd.transpose(score, axes=(1, 0))
-    #     score = nd.softmax(score, axis=1)
-    #     score = nd.slice_axis(score, axis=1, begin=1, end=2)
-    #     score = np.squeeze(score, axis=1)
-    #     return score.asnumpy()
     def _convert_score(self, score):
         """from cls to score"""
-        score = score.asnumpy()
-        score = score.permute(1 ,2, 3, 4).reshape(2, -1).permute(1, 0)
-        score = nd.softmax(nd.array(score), axis=1)[:, -1].asnumpy()
+        score = nd.transpose(score, axes=(1, 2, 3, 0))
+        score = nd.reshape(score, shape=(2, -1))
+        score = nd.transpose(score, axes=(1, 0))
+        score = nd.softmax(score, axis=1)
+        score = nd.slice_axis(score, axis=1, begin=1, end=2)
+        score = nd.squeeze(score, axis=1)
         return score.asnumpy()
 
     def _bbox_clip(self, center_x, center_y, width, height, boundary):
@@ -219,7 +201,7 @@ class SiamRPNTracker(BaseTracker):
         height = max(10, min(height, boundary[0]))
         return center_x, center_y, width, height
 
-    def get_subwindow(self, img, pos, model_sz, original_sz, avg_chans):
+    def get_subwindow(self, img, pos, model_sz, original_sz, avg_chans, ctx):
         """
         function
         ----------
@@ -277,13 +259,14 @@ class SiamRPNTracker(BaseTracker):
         im_patch = im_patch.transpose(2, 0, 1)
         im_patch = im_patch[np.newaxis, :, :, :]
         im_patch = im_patch.astype(np.float32)
-        if self.opt.num_gpus > 0:
-            im_patch = mx.nd.array(im_patch, ctx=gpu())
-        else:
-            im_patch = mx.nd.array(im_patch, ctx=cpu())
+        # if self.opt.num_gpus > 0:
+        #     im_patch = mx.nd.array(im_patch, ctx=gpu())
+        # else:
+        #     im_patch = mx.nd.array(im_patch, ctx=cpu())
+        im_patch = mx.nd.array(im_patch, ctx)
         return im_patch
 
-    def init(self, img, bbox):
+    def init(self, img, bbox, ctx):
         """
         args:
             img(np.ndarray): BGR image
@@ -296,8 +279,8 @@ class SiamRPNTracker(BaseTracker):
         self.size = np.array([bbox[2], bbox[3]])
 
         # calculate z crop size
-        w_z = self.size[0] + self.opt.CONTEXT_AMOUNT * np.sum(self.size)
-        h_z = self.size[1] + self.opt.CONTEXT_AMOUNT * np.sum(self.size)
+        w_z = self.size[0] + self.CONTEXT_AMOUNT * np.sum(self.size)
+        h_z = self.size[1] + self.CONTEXT_AMOUNT * np.sum(self.size)
         s_z = round(np.sqrt(w_z * h_z))
 
         # calculate channle average
@@ -305,11 +288,11 @@ class SiamRPNTracker(BaseTracker):
 
         # get crop
         z_crop = self.get_subwindow(img, self.center_pos,
-                                    self.opt.EXEMPLAR_SIZE,
-                                    s_z, self.channel_average)
+                                    self.EXEMPLAR_SIZE,
+                                    s_z, self.channel_average, ctx)
         self.model.template(z_crop)
 
-    def track(self, img):
+    def track(self, img, ctx):
         """
         args:
             img(np.ndarray): BGR image
@@ -317,14 +300,14 @@ class SiamRPNTracker(BaseTracker):
             bbox(list):[x, y, width, height]
         """
         # calculate z crop size
-        w_z = self.size[0] + self.opt.CONTEXT_AMOUNT * np.sum(self.size)
-        h_z = self.size[1] + self.opt.CONTEXT_AMOUNT * np.sum(self.size)
+        w_z = self.size[0] + self.CONTEXT_AMOUNT * np.sum(self.size)
+        h_z = self.size[1] + self.CONTEXT_AMOUNT * np.sum(self.size)
         s_z = np.sqrt(w_z * h_z)
-        scale_z = self.opt.EXEMPLAR_SIZE / s_z
-        s_x = s_z * (self.opt.INSTANCE_SIZE / self.opt.EXEMPLAR_SIZE)
+        scale_z = self.EXEMPLAR_SIZE / s_z
+        s_x = s_z * (self.INSTANCE_SIZE / self.EXEMPLAR_SIZE)
         x_crop = self.get_subwindow(img, self.center_pos,
-                                    self.opt.INSTANCE_SIZE,
-                                    round(s_x), self.channel_average)
+                                    self.INSTANCE_SIZE,
+                                    round(s_x), self.channel_average, ctx)
         outputs = self.model.track(x_crop)
         #get coordinate
         pred_bbox = self._convert_bbox(outputs['loc'], self.anchors)
@@ -346,16 +329,16 @@ class SiamRPNTracker(BaseTracker):
         # compare proposal’s ratio and last frame
         r_c = change((self.size[0]/self.size[1]) /
                      (pred_bbox[2, :]/pred_bbox[3, :]))
-        penalty = np.exp(-(r_c * s_c - 1) * self.opt.PENALTY_K)
+        penalty = np.exp(-(r_c * s_c - 1) * self.PENALTY_K)
         pscore = penalty * score
 
         # window penalty
-        pscore = pscore * (1 - self.opt.WINDOW_INFLUENCE) + \
-            self.window * self.opt.WINDOW_INFLUENCE
+        pscore = pscore * (1 - self.WINDOW_INFLUENCE) + \
+            self.window * self.WINDOW_INFLUENCE
         best_idx = np.argmax(pscore)
 
         bbox = pred_bbox[:, best_idx] / scale_z
-        penalty_lr = penalty[best_idx] * score[best_idx] * self.opt.LR
+        penalty_lr = penalty[best_idx] * score[best_idx] * self.LR
 
         center_x = bbox[0] + self.center_pos[0]
         center_y = bbox[1] + self.center_pos[1]
