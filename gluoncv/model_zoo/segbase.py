@@ -25,7 +25,7 @@ def get_segmentation_model(model, **kwargs):
         'deeplab': get_deeplab,
         'deeplabplus': get_deeplab_plus,
         'deeplabplusv3b': get_deeplabv3b_plus,
-        'icnet': get_icnet()
+        'icnet': get_icnet
     }
     return models[model](**kwargs)
 
