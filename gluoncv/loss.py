@@ -390,7 +390,7 @@ class ICNetLoss(SoftmaxCrossEntropyLoss):
     #     return loss[0] + self.weights[0] * loss[1] + \
     #            self.weights[1] * loss[2] + self.weights[2] * loss[3]
 
-    def hybrid_forward(self, F, *inputs, **kwargs):
+    def hybrid_forward(self, F, *inputs):
         """Compute loss"""
         return self._weighted_forward(F, *inputs)
 
