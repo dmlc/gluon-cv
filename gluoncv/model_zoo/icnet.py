@@ -115,7 +115,8 @@ class ICNet(SegBaseModel):
         # sub 4
         # TODO: hybridize
         # x_sub4 = F.contrib.BilinearResize2D(
-        #     x_sub2_out, height=self._up_kwargs['height'] // 32, width=self._up_kwargs['width'] // 32
+        #     x_sub2_out,
+        #     height=self._up_kwargs['height'] // 32, width=self._up_kwargs['width'] // 32
         # )
         x_sub4 = F.contrib.BilinearResize2D(
             x_sub2_out, height=x_sub2_out.shape[2] // 2, width=x_sub2_out.shape[3] // 2
@@ -201,7 +202,8 @@ class _ICHead(HybridBlock):
 
         # TODO: hybridize
         # up_x2 = F.contrib.BilinearResize2D(
-        #     x_cff_12, height=self._up_kwargs['height'] // 4, width=self._up_kwargs['width'] // 4
+        #     x_cff_12,
+        #     height=self._up_kwargs['height'] // 4, width=self._up_kwargs['width'] // 4
         # )
         up_x2 = F.contrib.BilinearResize2D(x_cff_12, height=2*x_cff_12.shape[2], width=2*x_cff_12.shape[3])
         up_x2 = self.conv_cls(up_x2)
@@ -245,7 +247,7 @@ class _ICHead(HybridBlock):
 
 class CascadeFeatureFusion(HybridBlock):
     def __init__(self, low_channels, high_channels, out_channels,
-                 nclass,  height=None, width=None, norm_layer=nn.BatchNorm):
+                 nclass, height=None, width=None, norm_layer=nn.BatchNorm):
         super(CascadeFeatureFusion, self).__init__()
 
         with self.name_scope():

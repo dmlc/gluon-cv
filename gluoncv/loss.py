@@ -382,7 +382,9 @@ class ICNetLoss(SoftmaxCrossEntropyLoss):
     #     label = input[4]
     #     loss = []
     #     for i in range(len(input) - 1):
-    #         scale_pred = F.contrib.BilinearResize2D(input[i], height=self.height, width=self.width)
+    #         scale_pred = F.contrib.BilinearResize2D(
+    #             input[i], height=self.height, width=self.width
+    #         )
     #         loss.append(super(ICNetLoss, self).hybrid_forward(F, scale_pred, label))
     #
     #     return loss[0] + self.weights[0] * loss[1] + \
