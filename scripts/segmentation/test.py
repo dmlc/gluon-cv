@@ -17,6 +17,7 @@ from gluoncv.model_zoo.segbase import *
 from gluoncv.model_zoo import get_model
 from gluoncv.data import get_segmentation_dataset, ms_batchify_fn
 from gluoncv.utils.viz import get_color_pallete
+from gluoncv.utils.parallel import *
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Validation on Segmentation model')
@@ -113,31 +114,60 @@ def test(model, args, input_transform):
     else:
         testset = get_segmentation_dataset(
             args.dataset, split='test', mode='test', transform=input_transform)
-    test_data = gluon.data.DataLoader(
-        testset, batch_size, shuffle=False, last_batch='keep',
-        batchify_fn=ms_batchify_fn, num_workers=args.workers)
+
+    if 'icnet' in args.model:
+        test_data = gluon.data.DataLoader(
+            testset, batch_size, shuffle=False, last_batch='rollover',
+            num_workers=args.workers)
+    else:
+        test_data = gluon.data.DataLoader(
+            testset, batch_size, shuffle=False, last_batch='rollover',
+            batchify_fn=ms_batchify_fn, num_workers=args.workers)
     print(model)
-    evaluator = MultiEvalModel(model, testset.num_class, ctx_list=args.ctx)
+
+    if 'icnet' in args.model:
+        evaluator = DataParallelModel(SegEvalModel(model), ctx_list=args.ctx)
+    else:
+        evaluator = MultiEvalModel(model, testset.num_class, ctx_list=args.ctx)
+
     metric = gluoncv.utils.metrics.SegmentationMetric(testset.num_class)
 
-    tbar = tqdm(test_data)
-    for i, (data, dsts) in enumerate(tbar):
-        if args.eval:
-            predicts = [pred[0] for pred in evaluator.parallel_forward(data)]
-            targets = [target.as_in_context(predicts[0].context) \
-                       for target in dsts]
-            metric.update(targets, predicts)
+    if 'icnet' in args.model:
+        tbar = tqdm(test_data)
+        t_gpu = 0
+        num = 0
+        for i, (data, dsts) in enumerate(tbar):
+            tic = time.time()
+            outputs = evaluator(data.astype('float32', copy=False))
+            t_gpu += time.time() - tic
+            num += 1
+
+            outputs = [x[0] for x in outputs]
+            targets = mx.gluon.utils.split_and_load(dsts, ctx_list=args.ctx, even_split=False)
+            metric.update(targets, outputs)
+
             pixAcc, mIoU = metric.get()
-            tbar.set_description('pixAcc: %.4f, mIoU: %.4f' % (pixAcc, mIoU))
-        else:
-            im_paths = dsts
-            predicts = evaluator.parallel_forward(data)
-            for predict, impath in zip(predicts, im_paths):
-                predict = mx.nd.squeeze(mx.nd.argmax(predict[0], 1)).asnumpy() + \
-                    testset.pred_offset
-                mask = get_color_pallete(predict, args.dataset)
-                outname = os.path.splitext(impath)[0] + '.png'
-                mask.save(os.path.join(outdir, outname))
+            gpu_time = t_gpu / num
+            tbar.set_description('pixAcc: %.4f, mIoU: %.4f, t_gpu: %.2fms' % (pixAcc, mIoU, gpu_time*1000))
+    else:
+        tbar = tqdm(test_data)
+        for i, (data, dsts) in enumerate(tbar):
+            if args.eval:
+                predicts = [pred[0] for pred in evaluator.parallel_forward(data)]
+                targets = [target.as_in_context(predicts[0].context) \
+                           for target in dsts]
+                metric.update(targets, predicts)
+                pixAcc, mIoU = metric.get()
+                tbar.set_description('pixAcc: %.4f, mIoU: %.4f' % (pixAcc, mIoU))
+            else:
+                im_paths = dsts
+                predicts = evaluator.parallel_forward(data)
+                for predict, impath in zip(predicts, im_paths):
+                    predict = mx.nd.squeeze(mx.nd.argmax(predict[0], 1)).asnumpy() + \
+                        testset.pred_offset
+                    mask = get_color_pallete(predict, args.dataset)
+                    outname = os.path.splitext(impath)[0] + '.png'
+                    mask.save(os.path.join(outdir, outname))
 
 
 def test_quantization(model, args, test_data, size, num_class, pred_offset):
