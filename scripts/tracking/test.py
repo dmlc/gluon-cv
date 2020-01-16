@@ -42,7 +42,6 @@ def parse_args():
     opt = parser.parse_args()
     return opt
 
-
 def main():
     """SiamRPN test.
     function
@@ -78,7 +77,6 @@ def main():
     tracker = build_tracker(net)
     # record the output of the model.
     test(dataset, tracker, opt, ctx)
-
 
 def test(dataset, tracker, opt, ctx):
     """SiamRPN test."""
