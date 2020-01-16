@@ -205,7 +205,9 @@ class _ICHead(HybridBlock):
         #     x_cff_12,
         #     height=self._up_kwargs['height'] // 4, width=self._up_kwargs['width'] // 4
         # )
-        up_x2 = F.contrib.BilinearResize2D(x_cff_12, height=2*x_cff_12.shape[2], width=2*x_cff_12.shape[3])
+        up_x2 = F.contrib.BilinearResize2D(
+            x_cff_12, height=2*x_cff_12.shape[2], width=2*x_cff_12.shape[3]
+        )
         up_x2 = self.conv_cls(up_x2)
         outputs.append(up_x2)
 
