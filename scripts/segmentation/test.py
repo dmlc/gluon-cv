@@ -133,8 +133,8 @@ def test(model, args, input_transform):
             im_paths = dsts
             predicts = evaluator.parallel_forward(data)
             for predict, impath in zip(predicts, im_paths):
-                predict = mx.nd.squeeze(mx.nd.argmax(predict[0], 1)).asnumpy() + \
-                    testset.pred_offset
+                predict = mx.nd.squeeze(mx.nd.argmax(predict, 1), axis=0).\
+                        asnumpy() + testset.pred_offset
                 mask = get_color_pallete(predict, args.dataset)
                 outname = os.path.splitext(impath)[0] + '.png'
                 mask.save(os.path.join(outdir, outname))
@@ -198,6 +198,7 @@ def benchmarking(model, args):
 
 if __name__ == "__main__":
     args = parse_args()
+    args.test_batch_size = max(1, args.ngpus)
     logging.basicConfig()
     logger = logging.getLogger('logger')
     logger.setLevel(logging.INFO)
