@@ -129,18 +129,20 @@ class SiamRPNTracker(BaseTracker):
         RATIOS : list, Anchor ratios
         SCALES : list, Anchor scales
     """
-    def __init__(self, model):
+    def __init__(self, model, PENALTY_K=0.16, WINDOW_INFLUENCE=0.40, LR=0.30, EXEMPLAR_SIZE=127,
+                 INSTANCE_SIZ=287, BASE_SIZE=0, CONTEXT_AMOUNT=0.5,
+                 STRIDE=8, RATIOS=[0.33, 0.5, 1, 2, 3], SCALES=[8]):
         super(SiamRPNTracker, self).__init__()
-        self.PENALTY_K = 0.16
-        self.WINDOW_INFLUENCE = 0.40
-        self.LR = 0.30
-        self.EXEMPLAR_SIZE = 127
-        self.INSTANCE_SIZE = 287
-        self.BASE_SIZE = 0
-        self.CONTEXT_AMOUNT = 0.5
-        self.STRIDE = 8
-        self.RATIOS = [0.33, 0.5, 1, 2, 3]
-        self.SCALES = [8]
+        self.PENALTY_K = PENALTY_K
+        self.WINDOW_INFLUENCE = WINDOW_INFLUENCE
+        self.LR = LR
+        self.EXEMPLAR_SIZE = EXEMPLAR_SIZE
+        self.INSTANCE_SIZE = INSTANCE_SIZ
+        self.BASE_SIZE = BASE_SIZE
+        self.CONTEXT_AMOUNT = CONTEXT_AMOUNT
+        self.STRIDE = STRIDE
+        self.RATIOS = RATIOS
+        self.SCALES = SCALES
         self.score_size = (self.INSTANCE_SIZE - self.EXEMPLAR_SIZE) // \
             self.STRIDE + 1 + self.BASE_SIZE
         self.anchor_num = len(self.RATIOS) * len(self.SCALES)
@@ -259,10 +261,6 @@ class SiamRPNTracker(BaseTracker):
         im_patch = im_patch.transpose(2, 0, 1)
         im_patch = im_patch[np.newaxis, :, :, :]
         im_patch = im_patch.astype(np.float32)
-        # if self.opt.num_gpus > 0:
-        #     im_patch = mx.nd.array(im_patch, ctx=gpu())
-        # else:
-        #     im_patch = mx.nd.array(im_patch, ctx=cpu())
         im_patch = mx.nd.array(im_patch, ctx)
         return im_patch
 

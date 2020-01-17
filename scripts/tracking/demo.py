@@ -1,26 +1,3 @@
-"""01. Predict with pre-trained SiamRPN models
-Object tracking is often used in video object detection, but unlike image object detection,
-it predicts the position of the next frame according to the position of the object of previous frame
-
-`SiamRPN <http://openaccess.thecvf.com/content_cvpr_2018/papers/
-Li_High_Performance_Visual_CVPR_2018_paper.pdf>`_ (Siamese Region Proposal Network)
-is a widely adopted Object tracking method.
-it consists of Siamese subnetwork for
-feature extraction and region proposal subnetwork
-including the classification branch and regression branch.
-In the inference phase, the proposed framework is formulated as a local one-shot detection task.
-We can pre-compute the template branch of the Siamese subnetwork and formulate the
-correlation layers as trivial convolution layers to perform online tracking.
-
-In this tutorial, we will demonstrate how to load a pre-trained SiamRPN model
-from :ref:`gluoncv-model-zoo`
-and predict video object location from the Internet according to first frame video object location.
-
-==========================================
-This article shows how to play with pre-trained SiamRPN models with only a few
-lines of code.
-First let's import some necessary libraries:
-"""
 import os
 import argparse
 import numpy as np
@@ -45,7 +22,7 @@ def parse_args():
                         help='if set to True, read videos directly instead of reading frames.')
     parser.add_argument('--netwrok', type=str, default='siamrpn_alexnet_v2_otb15',
                         help='SiamRPN network name')
-    parser.add_argument('--gt-bbox', type=list, default=[298, 160, 48, 80],
+    parser.add_argument('--gt-bbox', type=int, nargs='+', default=[298, 160, 48, 80],
                         help='first frame object location')
     parser.add_argument('--save-dir', type=str, default='./predictions',
                         help='directory of saved results')
@@ -89,7 +66,7 @@ def inference(video_frames, tracker, opt):
     """
     scores = []
     pred_bboxes = []
-    gt_bbox = opt.gt_bbox
+    gt_bbox = list(map(int, opt.gt_bbox))
     if not os.path.exists(opt.save_dir):
         os.makedirs(opt.save_dir)
     for ind, frame in enumerate(video_frames):
