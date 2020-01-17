@@ -131,7 +131,7 @@ class Trainer(object):
             model = get_segmentation_model(model=args.model, dataset=args.dataset,
                                            backbone=args.backbone, norm_layer=args.norm_layer,
                                            norm_kwargs=args.norm_kwargs, aux=args.aux,
-                                           crop_size=args.crop_size)
+                                           base_size=args.base_size, crop_size=args.crop_size)
         model.cast(args.dtype)
         print(model)
         self.net = DataParallelModel(model, args.ctx, args.syncbn)
@@ -144,7 +144,11 @@ class Trainer(object):
                 raise RuntimeError("=> no checkpoint found at '{}'" \
                     .format(args.resume))
         # create criterion
-        criterion = MixSoftmaxCrossEntropyLoss(args.aux, aux_weight=args.aux_weight)
+        if 'icnet' in args.model or \
+                (args.model is not None and 'icnet' in args.model_zoo):
+            criterion = ICNetLoss(crop_size=args.crop_size)
+        else:
+            criterion = MixSoftmaxCrossEntropyLoss(args.aux, aux_weight=args.aux_weight)
         self.criterion = DataParallelCriterion(criterion, args.ctx, args.syncbn)
         # optimizer and lr scheduling
         self.lr_scheduler = LRScheduler(mode='poly', base_lr=args.lr,
