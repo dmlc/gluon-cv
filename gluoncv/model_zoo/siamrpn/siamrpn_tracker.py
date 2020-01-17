@@ -131,7 +131,7 @@ class SiamRPNTracker(BaseTracker):
     """
     def __init__(self, model, PENALTY_K=0.16, WINDOW_INFLUENCE=0.40, LR=0.30, EXEMPLAR_SIZE=127,
                  INSTANCE_SIZ=287, BASE_SIZE=0, CONTEXT_AMOUNT=0.5,
-                 STRIDE=8, RATIOS=[0.33, 0.5, 1, 2, 3], SCALES=[8]):
+                 STRIDE=8, RATIOS=(0.33, 0.5, 1, 2, 3), SCALES=(8,)):
         super(SiamRPNTracker, self).__init__()
         self.PENALTY_K = PENALTY_K
         self.WINDOW_INFLUENCE = WINDOW_INFLUENCE
@@ -141,8 +141,8 @@ class SiamRPNTracker(BaseTracker):
         self.BASE_SIZE = BASE_SIZE
         self.CONTEXT_AMOUNT = CONTEXT_AMOUNT
         self.STRIDE = STRIDE
-        self.RATIOS = RATIOS
-        self.SCALES = SCALES
+        self.RATIOS = list(RATIOS)
+        self.SCALES = list(SCALES)
         self.score_size = (self.INSTANCE_SIZE - self.EXEMPLAR_SIZE) // \
             self.STRIDE + 1 + self.BASE_SIZE
         self.anchor_num = len(self.RATIOS) * len(self.SCALES)
