@@ -21,7 +21,8 @@ class ICNet(SegBaseModel):
         Pre-trained dilated backbone network type (default:'resnet50'; 'resnet50',
         'resnet101' or 'resnet152').
     norm_layer : object
-        Normalization layer used in backbone network (default: :class:`mxnet.gluon.nn.BatchNorm`）
+        Normalization layer used in backbone network (default: :class:`mxnet.gluon.nn.BatchNorm`;
+        for Synchronized Cross-GPU BachNormalization).
     norm_kwargs : dict
         Additional `norm_layer` arguments, for example `num_devices=4`
         for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
