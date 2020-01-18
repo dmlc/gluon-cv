@@ -256,7 +256,10 @@ if __name__ == "__main__":
             args.pretrained = True
         # create network
         if args.pretrained:
-            model = get_model(model_prefix, pretrained=True)
+            if 'icnet' in model_prefix:
+                model = get_model(model_prefix, pretrained=True, height=args.height, width=args.width)
+            else:
+                model = get_model(model_prefix, pretrained=True)
             model.collect_params().reset_ctx(ctx=args.ctx)
         else:
             assert "_in8" not in model_prefix, "Currently, Int8 models are not supported when pretrained=False"
@@ -281,7 +284,7 @@ if __name__ == "__main__":
         model.hybridize(static_alloc=True, static_shape=True)
 
     logger.info('Successfully loaded %s model' % model_prefix)
-    logger.info('Testing model: ' % args.resume)
+    logger.info('Testing model: %s' % args.resume)
 
     # benchmark
     if args.benchmark:
