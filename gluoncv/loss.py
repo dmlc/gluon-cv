@@ -369,17 +369,6 @@ class ICNetLoss(SoftmaxCrossEntropyLoss):
         self.height = height if height is not None else crop_size
         self.width = width if width is not None else crop_size
 
-    # def _weighted_forward(self, F, *inputs):
-    #     label = inputs[4]
-    #     h, w = label.shape[1], label.shape[2]
-    #     loss = []
-    #     for i in range(len(inputs) - 1):
-    #         scale_pred = F.contrib.BilinearResize2D(inputs[i], height=h, width=w)
-    #         loss.append(super(ICNetLoss, self).hybrid_forward(F, scale_pred, label))
-
-    #     return loss[0] + self.weights[0] * loss[1] + \
-    #            self.weights[1] * loss[2] + self.weights[2] * loss[3]
-
     def _weighted_forward(self, F, *inputs):
         label = inputs[4]
         loss = []

@@ -100,7 +100,6 @@ class ICNet(SegBaseModel):
         x_sub1_out = self.conv_sub1(x)
 
         # medium resolution branch
-        # x_sub2 = F.contrib.BilinearResize2D(x, height=x.shape[2] // 2, width=x.shape[3] // 2)
         x_sub2 = F.contrib.BilinearResize2D(x,
                                             height=self._up_kwargs['height'] // 2,
                                             width=self._up_kwargs['width'] // 2)
@@ -112,9 +111,6 @@ class ICNet(SegBaseModel):
         x_sub2_out = self.layer2(x)
 
         # small resolution branch
-        # x_sub4 = F.contrib.BilinearResize2D(x_sub2_out,
-        #                                     height=x_sub2_out.shape[2] // 2,
-        #                                     width=x_sub2_out.shape[3] // 2)
         x_sub4 = F.contrib.BilinearResize2D(x_sub2_out,
                                             height=self._up_kwargs['height'] // 32,
                                             width=self._up_kwargs['width'] // 32)
@@ -181,9 +177,6 @@ class _ICHead(HybridBlock):
                                            norm_layer=norm_layer,
                                            **kwargs)
 
-        # self.cff_12 = CascadeFeatureFusion(128, 64, 128, nclass, norm_layer=norm_layer, **kwargs)
-        # self.cff_24 = CascadeFeatureFusion(256, 256, 128, nclass, norm_layer=norm_layer, **kwargs)
-
         with self.name_scope():
             self.conv_cls = nn.Conv2D(in_channels=128, channels=nclass,
                                       kernel_size=1, use_bias=False)
@@ -199,18 +192,12 @@ class _ICHead(HybridBlock):
         up_x2 = F.contrib.BilinearResize2D(x_cff_12,
                                            height=self._up_kwargs['height'] // 4,
                                            width=self._up_kwargs['width'] // 4)
-        # up_x2 = F.contrib.BilinearResize2D(x_cff_12,
-        #                                    height=x_cff_12.shape[2] * 2,
-        #                                    width=x_cff_12.shape[3] * 2)
         up_x2 = self.conv_cls(up_x2)
         outputs.append(up_x2)
 
         up_x8 = F.contrib.BilinearResize2D(up_x2,
                                            height=self._up_kwargs['height'],
                                            width=self._up_kwargs['width'])
-        # up_x8 = F.contrib.BilinearResize2D(up_x2,
-        #                                    height=up_x2.shape[2] * 4,
-        #                                    width=up_x2.shape[3] * 4)
         outputs.append(up_x8)
 
         # 1 -> 1/4 -> 1/8 -> 1/16
@@ -268,7 +255,6 @@ class CascadeFeatureFusion(HybridBlock):
         x_low = F.contrib.BilinearResize2D(x_low,
                                            height=self._up_kwargs['height'],
                                            width=self._up_kwargs['width'])
-        # x_low = F.contrib.BilinearResize2D(x_low, height=x_high.shape[2], width=x_high.shape[3])
         x_low = self.conv_low(x_low)
         x_high = self.conv_hign(x_high)
 
