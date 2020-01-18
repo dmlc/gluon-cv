@@ -352,43 +352,45 @@ class MixSoftmaxCrossEntropyLoss(SoftmaxCrossEntropyLoss):
 
 
 class ICNetLoss(SoftmaxCrossEntropyLoss):
-    """Weighted SoftmaxCrossEntropyLoss2D
+    """Weighted SoftmaxCrossEntropyLoss2D for ICNet training
 
     Parameters
     ----------
     weights : tuple, default (0.4, 0.4, 1.0)
         The weight for cascade label guidance.
+    ignore_label : int, default -1
+        The label to ignore.
     """
 
-    def __init__(self, weights=(0.4, 0.4, 1.0), height=None, width=None, crop_size=480, **kwargs):
+    def __init__(self, weights=(0.4, 0.4, 1.0), height=None, width=None,
+                 crop_size=480, ignore_label=-1, **kwargs):
         super(ICNetLoss, self).__init__(**kwargs)
         self.weights = weights
         self.height = height if height is not None else crop_size
         self.width = width if width is not None else crop_size
 
-    def _weighted_forward(self, F, *inputs):
+    # def _weighted_forward(self, F, *inputs):
+    #     label = inputs[4]
+    #     h, w = label.shape[1], label.shape[2]
+    #     loss = []
+    #     for i in range(len(inputs) - 1):
+    #         scale_pred = F.contrib.BilinearResize2D(inputs[i], height=h, width=w)
+    #         loss.append(super(ICNetLoss, self).hybrid_forward(F, scale_pred, label))
+
+    #     return loss[0] + self.weights[0] * loss[1] + \
+    #            self.weights[1] * loss[2] + self.weights[2] * loss[3]
+
+    def _weighted_forward(self, F, *inputs, **kwargs):
         label = inputs[4]
-        h, w = label.shape[1], label.shape[2]
         loss = []
         for i in range(len(inputs) - 1):
-            scale_pred = F.contrib.BilinearResize2D(inputs[i], height=h, width=w)
+            scale_pred = F.contrib.BilinearResize2D(inputs[i],
+                                                    height=self.height,
+                                                    width=self.width)
             loss.append(super(ICNetLoss, self).hybrid_forward(F, scale_pred, label))
 
         return loss[0] + self.weights[0] * loss[1] + \
                self.weights[1] * loss[2] + self.weights[2] * loss[3]
-
-    # TODO: hybridize
-    # def _weighted_forward(self, F, *input, **kwargs):
-    #     label = input[4]
-    #     loss = []
-    #     for i in range(len(input) - 1):
-    #         scale_pred = F.contrib.BilinearResize2D(
-    #             input[i], height=self.height, width=self.width
-    #         )
-    #         loss.append(super(ICNetLoss, self).hybrid_forward(F, scale_pred, label))
-    #
-    #     return loss[0] + self.weights[0] * loss[1] + \
-    #            self.weights[1] * loss[2] + self.weights[2] * loss[3]
 
     def hybrid_forward(self, F, *inputs):
         """Compute loss"""
