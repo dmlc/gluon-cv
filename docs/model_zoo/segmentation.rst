@@ -31,7 +31,7 @@ Table of pre-trained models for semantic segmentation and their performance.
   The test script :download:`Download test.py<../../scripts/segmentation/test.py>` can be used for
   evaluating the models (VOC results are evaluated using the official server). For example ``fcn_resnet50_ade``::
 
-    python test.py --dataset ade20k --model-zoo fcn_resnet50_ade --eval
+    python test.py --dataset ade20k --pretrained --model fcn --backbone resnet50 --eval
 
   The training commands work with the script: :download:`Download train.py<../../scripts/segmentation/train.py>`
 

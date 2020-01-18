@@ -123,7 +123,7 @@ def test(model, args, input_transform):
     tbar = tqdm(test_data)
     for i, (data, dsts) in enumerate(tbar):
         if args.eval:
-            predicts = [pred[0] for pred in evaluator.parallel_forward(data)]
+            predicts = [pred for pred in evaluator.parallel_forward(data)]
             targets = [target.as_in_context(predicts[0].context) \
                        for target in dsts]
             metric.update(targets, predicts)

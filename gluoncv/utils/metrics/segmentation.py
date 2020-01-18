@@ -7,14 +7,18 @@ from mxnet.metric import EvalMetric
 __all__ = ['SegmentationMetric', 'batch_pix_accuracy', 'batch_intersection_union',
            'pixelAccuracy', 'intersectionAndUnion']
 
+
 class SegmentationMetric(EvalMetric):
     """Computes pixAcc and mIoU metric scores
     """
+
+
     def __init__(self, nclass):
         super(SegmentationMetric, self).__init__('pixAcc & mIoU')
         self.nclass = nclass
         self.lock = threading.Lock()
         self.reset()
+
 
     def update(self, labels, preds):
         """Updates the internal evaluation result.
@@ -27,6 +31,8 @@ class SegmentationMetric(EvalMetric):
         preds : 'NDArray' or list of `NDArray`
             Predicted values.
         """
+
+
         def evaluate_worker(self, label, pred):
             correct, labeled = batch_pix_accuracy(
                 pred, label)
@@ -38,17 +44,19 @@ class SegmentationMetric(EvalMetric):
                 self.total_inter += inter
                 self.total_union += union
 
+
         if isinstance(preds, mx.nd.NDArray):
             evaluate_worker(self, labels, preds)
         elif isinstance(preds, (list, tuple)):
             threads = [threading.Thread(target=evaluate_worker,
                                         args=(self, label, pred),
-                                       )
+                                        )
                        for (label, pred) in zip(labels, preds)]
             for thread in threads:
                 thread.start()
             for thread in threads:
                 thread.join()
+
 
     def get(self):
         """Gets the current evaluation result.
@@ -63,12 +71,14 @@ class SegmentationMetric(EvalMetric):
         mIoU = IoU.mean()
         return pixAcc, mIoU
 
+
     def reset(self):
         """Resets the internal evaluation result to initial state."""
         self.total_inter = 0
         self.total_union = 0
         self.total_correct = 0
         self.total_label = 0
+
 
 def batch_pix_accuracy(output, target):
     """PixAcc"""
@@ -79,7 +89,7 @@ def batch_pix_accuracy(output, target):
     target = target.asnumpy().astype('int64') + 1
 
     pixel_labeled = np.sum(target > 0)
-    pixel_correct = np.sum((predict == target)*(target > 0))
+    pixel_correct = np.sum((predict == target) * (target > 0))
 
     assert pixel_correct <= pixel_labeled, "Correct area should be smaller than Labeled"
     return pixel_correct, pixel_labeled
@@ -119,7 +129,7 @@ def pixelAccuracy(imPred, imLab):
     # Remove classes from unlabeled pixels in gt image.
     # We should not penalize detections in unlabeled portions of the image.
     pixel_labeled = np.sum(imLab > 0)
-    pixel_correct = np.sum((imPred == imLab)*(imLab > 0))
+    pixel_correct = np.sum((imPred == imLab) * (imLab > 0))
     pixel_accuracy = 1.0 * pixel_correct / pixel_labeled
     return (pixel_accuracy, pixel_correct, pixel_labeled)
 
