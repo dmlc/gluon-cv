@@ -154,8 +154,7 @@ def main():
 
     kwargs = {'ctx': context, 'pretrained': opt.use_pretrained, 'classes': classes}
     if opt.use_gn:
-        from gluoncv.nn import GroupNorm
-        kwargs['norm_layer'] = GroupNorm
+        kwargs['norm_layer'] = nn.GroupNorm
     if model_name.startswith('vgg'):
         kwargs['batch_norm'] = opt.batch_norm
     elif model_name.startswith('resnext'):
