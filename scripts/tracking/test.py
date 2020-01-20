@@ -15,12 +15,14 @@ from gluoncv.utils.filesystem import try_import_cv2
 
 def main():
     """SiamRPN test.
+
     function
     ----------
         record the output of the model. The output information of each video is recorded in the txt
     corresponding to the video name.
         if you want to evaluation, you need to python benchmark.py according to txt of text result.
         Currently only supports test OTB 2015 dataset
+
     Parameters
     ----------
     dataset_root : str, default '~/mxnet/datasets/OTB2015'

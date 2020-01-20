@@ -18,11 +18,18 @@ class RPN(HybridBlock):
 
 class DepthwiseXCorr(HybridBlock):
     """
-        regard output of x backbone as kernel,kernel shape is (1, 256, 4, 4) reshape (256, 1, 4, 4)
-        regard output of z backbone as search feature,which shape is (1, 256, 24, 24)
-        make Depthwise conv get (1, 256, 21, 21)
-        output loc is (1, 10, 21, 21) though conv
-        output cls is (1, 20, 21, 21) though conv
+        SiamRPN RPN after network backbone, regard output of x backbone as kernel,
+        and regard output of z backbone as search feature, make Depthwise conv.
+        get cls and loc though two streams netwrok
+
+    Parameters
+    ----------
+        hidden : int
+            hidden feature channel
+        out_channels : int
+            output feature channel
+        kernel_size : float
+            hidden kernel size
     """
     def __init__(self, hidden, out_channels, kernel_size=3):
         super(DepthwiseXCorr, self).__init__()
@@ -62,9 +69,15 @@ class DepthwiseXCorr(HybridBlock):
 
 class DepthwiseRPN(RPN):
     """DepthwiseRPN
-        function
-        ----------
-        get cls and loc throught z_f and x_f"""
+    get cls and loc throught z_f and x_f
+    
+    Parameters
+    ----------
+        anchor_num : int
+            number of anchor
+        out_channels : int
+            hidden feature channel
+    """
     def __init__(self, anchor_num=5, out_channels=256):
         super(DepthwiseRPN, self).__init__()
         self.cls = DepthwiseXCorr(out_channels, 2 * anchor_num)

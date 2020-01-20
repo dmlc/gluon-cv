@@ -15,12 +15,18 @@ BBox = Corner
 Center = namedtuple('Center', 'x y w h')
 
 def get_axis_aligned_bbox(region):
-    """ convert region to (center_x, center_y, bbox_w, bbox_h)
-        that represent by axis aligned box
-    Args:
-        conrner: region or np.array (4*N)
+    """
+    convert region to (center_x, center_y, bbox_w, bbox_h)
+    that represent by axis aligned box
+
+    Parameters
+    ----------
+        region: np.array (4*N)
+        bbox region location
+
     Return:
-        Center or np.array (4 * N)"""
+        Center location weight and height 
+    """
     region_x = region[0]
     region_y = region[1]
     bbox_w = region[2]
@@ -30,11 +36,16 @@ def get_axis_aligned_bbox(region):
     return center_x, center_y, bbox_w, bbox_h
 
 def corner2center(corner):
-    """ convert (x1, y1, x2, y2) to (cx, cy, w, h)
-    Args:
-        conrner: Corner or np.array (4*N)
+    """
+    convert (x1, y1, x2, y2) to (cx, cy, w, h)
+
+    Parameters
+    ----------
+        conrner: list or np.ndarray
+            Corner lefttop and rightdown location
+
     Return:
-        Center or np.array (4 * N)
+        Center location weight and height 
     """
     if isinstance(corner, Corner):
         x_min, y_min, x_max, y_max = corner
@@ -48,13 +59,16 @@ def corner2center(corner):
         bbox_h = y_max - y_min
         return center_x, center_y, bbox_w, bbox_h
 
-
 def center2corner(center):
     """ convert (cx, cy, w, h) to (x1, y1, x2, y2)
-    Args:
-        center: Center or np.array (4 * N)
+
+    Parameters
+    ----------
+        center: list or np.ndarray
+            center location, weight and height
+
     Return:
-        center or np.array (4 * N)
+        Corner lefttop and rightdown location
     """
     if isinstance(center, Center):
         center_x, center_y, bbox_w, bbox_h = center
@@ -69,12 +83,23 @@ def center2corner(center):
         return x_min, y_min, x_max, y_max
 
 class Anchors():
-    """This class generate anchors."""
-    def __init__(self, stride, ratios, scales, image_center=0, size=0):
+    """This generate anchors.
+
+    Parameters
+    ----------
+    stride : int
+        Anchor stride
+    ratios : tuple
+        Anchor ratios
+    scales : tuple
+        Anchor scales
+    size : int
+        anchor size
+    """
+    def __init__(self, stride, ratios, scales, size=0):
         self.stride = stride
         self.ratios = ratios
         self.scales = scales
-        self.image_center = image_center
         self.size = size
         self.anchor_num = len(self.scales) * len(self.ratios)
         self.anchors = None
@@ -99,35 +124,54 @@ class BaseTracker(object):
     """ Base tracker of single objec tracking """
     def init(self, img, bbox, ctx):
         """
-        args:
-            img(np.ndarray): BGR image
-            bbox(list): [x, y, width, height]
-                        x, y need to be 0-based
+        Parameters
+        ----------
+        img : np.ndarray
+            BGR image
+        bbox : list
+            [x, y, width, height] x, y need to be 0-based
+        ctx : mxnet.Context
+            Context such as mx.cpu(), mx.gpu(0).
         """
         raise NotImplementedError
 
     def track(self, img, ctx):
         """
-        args:
-            img(np.ndarray): BGR image
-        return:
-            bbox(list):[x, y, width, height]
+        Parameters
+        ----------
+        img : np.ndarray
+            BGR image
+        ctx : mxnet.Context
+            Context such as mx.cpu(), mx.gpu(0).
         """
         raise NotImplementedError
 
 class SiamRPNTracker(BaseTracker):
-    """ SiamRPNTracker
-        Parameters
-        ----------
-        PENALTY_K : float, Scale penalty
-        WINDOW_INFLUENCE :float, Window influence
-        LR : float, Interpolation learning rate
-        EXEMPLAR_SIZE : int, EXEMPLAR_SIZE
-        INSTANCE_SIZE : int, INSTANCE_SIZE
-        BASE_SIZE : Base size
-        CONTEXT_AMOUNT : float, Context amount
-        RATIOS : list, Anchor ratios
-        SCALES : list, Anchor scales
+    """ build SiamRPNTracker.predicted tracking result.and according to 
+    tracking result, product window penalty and smooth bbox
+
+    Parameters
+    ----------
+        PENALTY_K : float
+            Scale penalty
+        WINDOW_INFLUENCE :float
+            Window influence
+        LR : float
+            Interpolation learning rate
+        EXEMPLAR_SIZE : int
+            EXEMPLAR_SIZE
+        INSTANCE_SIZE : int
+            INSTANCE_SIZE
+        BASE_SIZE : int
+            Base size
+        CONTEXT_AMOUNT : float
+            Context amount
+        STRIDE : int
+            Anchor stride
+        RATIOS : tuple
+            Anchor ratios
+        SCALES : tuple
+            Anchor scales
     """
     def __init__(self, model, PENALTY_K=0.16, WINDOW_INFLUENCE=0.40, LR=0.30, EXEMPLAR_SIZE=127,
                  INSTANCE_SIZ=287, BASE_SIZE=0, CONTEXT_AMOUNT=0.5,
@@ -156,7 +200,18 @@ class SiamRPNTracker(BaseTracker):
         self.center_pos = None
 
     def generate_anchor(self, score_size):
-        """generate_anchor"""
+        """
+        generate score map anchors based on predefined configuration
+
+        Parameters
+        ----------
+            score_size : int
+                score map size
+        
+        Returns
+        ----------
+            score map anchor
+        """
         anchors = Anchors(self.STRIDE,
                           self.RATIOS,
                           self.SCALES)
@@ -175,7 +230,19 @@ class SiamRPNTracker(BaseTracker):
         return anchor
 
     def _convert_bbox(self, delta, anchor):
-        """from loc to predict postion"""
+        """from loc to predict postion
+        
+        Parameters
+        ----------
+            delta : ndarray or np.ndarray
+                network output
+            anchor : np.ndarray
+                generate anchor location
+        
+        Returns
+        -------
+            rejust predict postion though Anchor
+        """
         delta = nd.transpose(delta, axes=(1, 2, 3, 0))
         delta = nd.reshape(delta, shape=(4, -1))
         delta = delta.asnumpy()
@@ -186,7 +253,17 @@ class SiamRPNTracker(BaseTracker):
         return delta
 
     def _convert_score(self, score):
-        """from cls to score"""
+        """from cls to score
+        
+        Parameters
+        ----------
+            score : ndarray
+                network output
+        
+        Returns
+        -------
+            get feature map score though softmax
+        """
         score = nd.transpose(score, axes=(1, 2, 3, 0))
         score = nd.reshape(score, shape=(2, -1))
         score = nd.transpose(score, axes=(1, 0))
@@ -196,7 +273,26 @@ class SiamRPNTracker(BaseTracker):
         return score.asnumpy()
 
     def _bbox_clip(self, center_x, center_y, width, height, boundary):
-        """get bbox in image """
+        """get bbox in image, Make sure the center point of the frame is within the image range
+        and boundary
+        
+        Parameters
+        ----------
+            center_x : float
+                bbox center x location
+            center_y : float
+                bbox center y location
+            width : float
+                bbox width location
+            height : float
+                bbox height location
+            boundary : np.ndarray
+                img boundary
+
+        Returns
+        -------
+            rejust location within the image range and boundary
+        """
         center_x = max(0, min(center_x, boundary[1]))
         center_y = max(0, min(center_y, boundary[0]))
         width = max(10, min(width, boundary[1]))
@@ -205,17 +301,28 @@ class SiamRPNTracker(BaseTracker):
 
     def get_subwindow(self, img, pos, model_sz, original_sz, avg_chans, ctx):
         """
-        function
+        Adjust the position of the frame to prevent the boundary from being exceeded.
+        If the boundary is exceeded,
+        the average value of each channel of the image is used to replace the exceeded value.
+        
+        Parameters
         ----------
-            Adjust the position of the frame to prevent the boundary from being exceeded.
-            If the boundary is exceeded,
-            the average value of each channel of the image is used to replace the exceeded value.
-        args:
-            im: BGR based image
-            pos: center position
-            model_sz: exemplar size,x is 127, z is 287 in ours
-            s_z: original size
-            avg_chans: channel average
+        im : np.ndarray
+            BGR based image
+        pos : list
+            center position
+        model_sz : array
+            exemplar size, x is 127, z is 287 in ours
+        original_sz: array
+            original size
+        avg_chans : array
+            channel average
+        ctx : mxnet.Context
+            Context such as mx.cpu(), mx.gpu(0).
+
+        Returns
+        -------
+            rejust window though avg channel
         """
         cv2 = try_import_cv2()
         if isinstance(pos, float):
@@ -266,9 +373,16 @@ class SiamRPNTracker(BaseTracker):
 
     def init(self, img, bbox, ctx):
         """
-        args:
-            img(np.ndarray): BGR image
-            bbox: (x, y, w, h) bbox
+        init z_crop Parameters
+
+        Parameters
+        ----------
+        img : np.ndarray
+            BGR image
+        bbox: list or np.ndarray
+            bbox
+        ctx : mxnet.Context
+            Context such as mx.cpu(), mx.gpu(0).
         """
         # center postion(x,y)
         self.center_pos = np.array([bbox[0]+(bbox[2]-1)/2,
@@ -292,10 +406,20 @@ class SiamRPNTracker(BaseTracker):
 
     def track(self, img, ctx):
         """
-        args:
-            img(np.ndarray): BGR image
-        return:
-            bbox(list):[x, y, width, height]
+        Get the predicted box according to the previous definition
+        and simultaneously perform the scale penalty, window penalty, and smooth bbox.
+        get best score bbox
+        
+        Parameters
+        ----------
+        img : np.ndarray
+            BGR image
+        ctx : mxnet.Context
+            Context such as mx.cpu(), mx.gpu(0).
+
+        Returns
+        ----------
+            bbox location and score
         """
         # calculate z crop size
         w_z = self.size[0] + self.CONTEXT_AMOUNT * np.sum(self.size)

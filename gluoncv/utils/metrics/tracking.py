@@ -4,12 +4,19 @@ from colorama import Style, Fore
 
 
 def overlap_ratio(rect1, rect2):
-    '''Compute overlap ratio between two rects
-    Args
-        rect:2d array of N x [x,y,w,h]
-    Return:
-        iou
-    '''
+    """Compute overlap ratio between two rects
+
+    Parameters
+    ----------
+        rect1 : nd.array
+            2d array of N x [x,y,w,h]
+        rect2 : nd.array
+            2d array of N x [x,y,w,h]
+
+    Return
+    ----------
+        IOU
+    """
     left = np.maximum(rect1[:, 0], rect2[:, 0])
     right = np.minimum(rect1[:, 0]+rect1[:, 2], rect2[:, 0]+rect2[:, 2])
     top = np.maximum(rect1[:, 1], rect2[:, 1])
@@ -22,12 +29,19 @@ def overlap_ratio(rect1, rect2):
     return iou
 
 def success_overlap(gt_bb, result_bb, n_frame):
-    '''Compute overlap ratio between two rects
-    Args
-        rect:2d array of N x [x,y,w,h]
-    Return:
-        iou
-    '''
+    """get success_overlap score
+
+    Parameters
+    ----------
+        result_bb : nd.array
+            2d array of N x [x,y,w,h]
+        n_frame : int
+            frame number
+
+    Return
+    ----------
+        success score
+    """
     thresholds_overlap = np.arange(0, 1.05, 0.05)
     success = np.zeros(len(thresholds_overlap))
     iou = np.ones(len(gt_bb)) * (-1)
@@ -38,6 +52,23 @@ def success_overlap(gt_bb, result_bb, n_frame):
     return success
 
 def success_error(gt_center, result_center, thresholds, n_frame):
+    """get success_error score
+
+    Parameters
+    ----------
+        gt_center : np.ndarray
+            2d array of N x [x,y,w,h]
+        result_center : np.ndarray
+            2d array of N x [x,y,w,h]
+        thresholds : float
+            error float
+        n_frame : int
+            frame number
+
+    Return
+    ----------
+        success_error score
+    """
     success = np.zeros(len(thresholds))
     dist = np.ones(len(gt_center)) * (-1)
     mask = np.sum(gt_center > 0, axis=1) == 2
@@ -53,8 +84,11 @@ class OPEBenchmark:
     SiamRPN OPEBenchmark have eval_success, precision to select.
     eval_success is  distance between the center point of the predicted position
     precision is Compute overlap ratio between two rects through thresholds_overlap
-    Args:
-        result_path: result path of your tracker
+
+    Parameters
+    ----------
+        dataset
+            dataset Benchmark
     """
     def __init__(self, dataset):
         self.dataset = dataset
@@ -69,10 +103,14 @@ class OPEBenchmark:
     def eval_success(self, eval_trackers=None):
         """eval_success is  distance between the center point of the predicted position
            and the center position marked in the benchmark
-        Args:
+
+        Parameters
+        ----------
             eval_trackers: list of tracker name or single tracker name
-        Return:
-            res: dict of results
+
+        Return
+        ----------
+            return: dict of results
         """
         if eval_trackers is None:
             eval_trackers = self.dataset.tracker_names
@@ -100,10 +138,15 @@ class OPEBenchmark:
 
     def eval_precision(self, eval_trackers=None):
         """
-        Args:
+        eval model precision in eval_precision
+
+        Parameters
+        ----------
             eval_trackers: list of tracker name or single tracker name
-        Return:
-            res: dict of results
+
+        Return
+        ----------
+            return: dict of results
         """
         if eval_trackers is None:
             eval_trackers = self.dataset.tracker_names
@@ -135,10 +178,14 @@ class OPEBenchmark:
 
     def eval_norm_precision(self, eval_trackers=None):
         """
-        Args:
+        eval model precision in eval_norm_precision
+
+        Parameters
+        ----------
             eval_trackers: list of tracker name or single tracker name
-        Return:
-            res: dict of results
+        Return
+        ----------
+            return: dict of results
         """
         if eval_trackers is None:
             eval_trackers = self.dataset.tracker_names
@@ -172,8 +219,10 @@ class OPEBenchmark:
     def show_result(self, success_ret, precision_ret=None,
                     norm_precision_ret=None, show_video_level=False, helight_threshold=0.6):
         """pretty print result
-        Args:
-            result: returned dict from function eval
+
+        Parameters
+        ----------
+            success_ret: returned dict from function eval
         """
         # sort tracker
         tracker_auc = {}

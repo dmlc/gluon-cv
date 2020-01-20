@@ -21,11 +21,8 @@ def parse_args():
     return opt
 
 def main():
-    """SiamRPN benchmark..
-    Function
-    ----------
-    evaluation according to txt of test result.
-    now supports benchmark is Success and Precision
+    """SiamRPN benchmark.
+    evaluation according to txt of test result.now supports benchmark is Success and Precision
     Currently only supports test OTB 2015 dataset.
 
     Parameters

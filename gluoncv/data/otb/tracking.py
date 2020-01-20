@@ -10,14 +10,23 @@ cv2 = try_import_cv2()
 class Video(object):
     """
     Abstract video class. get video class information for example imgs.
-    Args:
-        name: video name
-        root: dataset root
-        video_dir: video directory
-        init_rect: init rectangle
-        img_names: image names
-        gt_rect: groundtruth rectangle
-        attr: attribute of video
+
+    Parameters
+    ----------
+        name : str
+            video name
+        root: str
+            dataset root
+        video_dir: str
+            video directory
+        init_rect: list
+            init rectangle
+        img_names: str
+            image names
+        gt_rect: list
+            groundtruth rectangle
+        attr: str
+            attribute of video
     """
     def __init__(self, name, root, video_dir, init_rect, img_names,
                  gt_rect, attr, load_img=False):
@@ -68,14 +77,23 @@ class Video(object):
 class OTBVideo(Video):
     """
     OTBVideo class. Including video operation
-    Args:
-        name: video name
-        root: dataset root
-        video_dir: video directory
-        init_rect: init rectangle
-        img_names: image names
-        gt_rect: groundtruth rectangle
-        attr: attribute of video
+
+    Parameters
+    ----------
+        name : str
+            video name
+        root: str
+            dataset root
+        video_dir: str
+            video directory
+        init_rect: list
+            init rectangle
+        img_names: str
+            image names
+        gt_rect: list
+            groundtruth rectangle
+        attr: str
+            attribute of video
     """
     def __init__(self, name, root, video_dir, init_rect, img_names,
                  gt_rect, attr, load_img=False):
@@ -84,9 +102,13 @@ class OTBVideo(Video):
 
     def load_tracker(self, path, tracker_names=None, store=True):
         """
-        Args:
-            path(str): path to result
-            tracker_name(list): name of tracker
+        open txt and load_tracker
+        Parameters
+        ----------
+            path : str
+                path to result
+            tracker_name : list
+                name of tracker
         """
         if not tracker_names:
             tracker_names = [x.split('/')[-1] for x in glob(path)
@@ -135,9 +157,9 @@ class OTBTracking(dataset.Dataset):
 
     Parameters
     ----------
-    name : string
+    name : str
         name to data, and name to dataset json Default is 'OTB2015'
-    dataset_root: string
+    dataset_root: str
         path to dataset root
     """
     def __init__(self, name, dataset_root, load_img=False):

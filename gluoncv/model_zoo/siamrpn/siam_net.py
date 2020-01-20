@@ -8,9 +8,7 @@ from gluoncv.model_zoo.siamrpn.siam_rpn import DepthwiseRPN
 
 
 class SiamRPN(HybridBlock):
-    """
-        SiamRPN
-    """
+    """SiamRPN"""
     def __init__(self, **kwargs):
         super(SiamRPN, self).__init__(**kwargs)
         self.backbone = alexnetlegacy()
@@ -22,15 +20,22 @@ class SiamRPN(HybridBlock):
 
 
     def template(self, zinput):
-        """
-        template z branch
-        """
+        """template z branch"""
         zbranch = self.backbone(zinput)
         self.zbranch = zbranch
 
     def track(self, xinput):
-        """
-        track x branch
+        """track x branch
+
+        Parameters
+        ----------
+            xinput : np.ndarray
+                predicted frame
+
+        Returns
+        -------
+        dic
+            predicted frame result
         """
         xbranch = self.backbone(xinput)
         self.cls, self.loc = self.rpn_head(self.zbranch, xbranch)
@@ -40,7 +45,8 @@ class SiamRPN(HybridBlock):
             }
 
     def hybrid_forward(self, F, zinput, xinput):
-        """ only used in training """
+        """ Hybrid forward of SiamRPN net
+            only used in training """
         zbranch = self.backbone(zinput)
         xbranch = self.backbone(xinput)
         self.cls, self.loc = self.rpn_head(zbranch, xbranch)
@@ -52,7 +58,27 @@ class SiamRPN(HybridBlock):
 
 def get_Siam_RPN(base_name, pretrained=False, ctx=mx.cpu(0),
                  root='~/.mxnet/models', **kwargs):
-    r"""get Siam_RPN net and get pretrained model if have pretrained"""
+    """get Siam_RPN net and get pretrained model if have pretrained
+
+    Parameters
+    ----------
+    
+    base_name : str
+        Backbone model name
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    ctx : mxnet.Context
+        Context such as mx.cpu(), mx.gpu(0).
+    root : str
+        Model weights storing path.
+    
+    Returns
+    -------
+    HybridBlock
+        A SiamRPN Tracking network.
+    """
+
     net = SiamRPN()
     if pretrained:
         from gluoncv.model_zoo.model_store import get_model_file
@@ -62,19 +88,10 @@ def get_Siam_RPN(base_name, pretrained=False, ctx=mx.cpu(0),
     return net
 
 def siamrpn_alexnet_v2_otb15(**kwargs):
-    r"""Alexnet backbone model from
+    """Alexnet backbone model from
     `"High Performance Visual Tracking with Siamese Region Proposal Network
         Object tracking"
     <http://openaccess.thecvf.com/content_cvpr_2018/papers/
     Li_High_Performance_Visual_CVPR_2018_paper.pdf>`_ paper.
-    Parameters
-    ----------
-    pretrained : bool or str
-        Boolean value controls whether to load the default pretrained weights for model.
-        String value represents the hashtag for a certain version of pretrained weights.
-    ctx : Context, default CPU
-        The context in which to load the pretrained weights.
-    root : str, default '$MXNET_HOME/models'
-        Location for keeping the model parameters.
     """
     return get_Siam_RPN('alexnet_v2_otb15', **kwargs)
