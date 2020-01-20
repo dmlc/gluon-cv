@@ -45,6 +45,10 @@ The following table lists pre-trained models trained on Kinetics400.
 
   ``Clip Length`` is the number of frames within an input clip. ``32 (64/2)`` means we use 32 frames, but actually the frames are formed by randomly selecting 64 consecutive frames from the video and then skipping every other frame. This strategy is widely adopted to reduce computation and memory cost.
 
+  ``Segments`` is the number of segments used during training. For testing (reporting these numbers), we use 250 views for 2D networks (25 frames and 10-crop) and 30 views for 3D networks (10 clips and 3-crop) following the convention.
+
+  For ``SlowFast`` family of networks, our performance has a small gap to the numbers reported in the paper. This is because the performance of SlowFast network heavily depends on the frame rate. The official implementation forces re-encoding every video to a fixed frame rate of 30. For fair comparison to other methods, we do not adopt that strategy, which leads to the small gap.
+
 .. table::
     :widths: 40 8 8 8 10 8 8 10
 
