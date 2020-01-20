@@ -19,6 +19,7 @@ from mxnet import gluon
 from mxnet import autograd
 from mxnet.contrib import amp
 import gluoncv as gcv
+
 gcv.utils.check_version('0.6.0')
 from gluoncv import data as gdata
 from gluoncv import utils as gutils
@@ -101,6 +102,14 @@ def parse_args():
                              'If set to None, backbone normalization layer will be fixed,'
                              ' and no normalization layer will be used. '
                              'Currently supports \'bn\', and None, default is None')
+
+    # Loss options
+    parser.add_argument('--rpn-smoothl1-rho', type=float, default=1. / 9.,
+                        help='RPN box regression transition point from L1 to L2 loss.'
+                             'Set to 0.0 to make the loss simply L1.')
+    parser.add_argument('--rcnn-smoothl1-rho', type=float, default=1.,
+                        help='RCNN box regression transition point from L1 to L2 loss.'
+                             'Set to 0.0 to make the loss simply L1.')
 
     # FPN options
     parser.add_argument('--use-fpn', action='store_true',
@@ -331,7 +340,7 @@ class ForwardBackwardTask(Parallelizable):
             gt_label = label[:, :, 4:5]
             gt_box = label[:, :, :4]
             cls_pred, box_pred, mask_pred, roi, samples, matches, rpn_score, rpn_box, anchors, \
-            cls_targets, box_targets, box_masks, indices = net(data, gt_box, gt_label)
+                cls_targets, box_targets, box_masks, indices = net(data, gt_box, gt_label)
             # losses of rpn
             rpn_score = rpn_score.squeeze(axis=-1)
             num_rpn_pos = (rpn_cls_targets >= 0).sum()
@@ -404,7 +413,7 @@ def train(net, train_data, val_data, eval_metric, batch_size, ctx, logger, args)
     if args.clip_gradient > 0.0:
         optimizer_params['clip_gradient'] = args.clip_gradient
     if args.amp:
-         optimizer_params['multi_precision'] = True
+        optimizer_params['multi_precision'] = True
     if args.horovod:
         hvd.broadcast_parameters(net.collect_params(), root_rank=0)
         trainer = hvd.DistributedTrainer(
@@ -429,9 +438,9 @@ def train(net, train_data, val_data, eval_metric, batch_size, ctx, logger, args)
     lr_warmup = float(args.lr_warmup)  # avoid int division
 
     rpn_cls_loss = mx.gluon.loss.SigmoidBinaryCrossEntropyLoss(from_sigmoid=False)
-    rpn_box_loss = mx.gluon.loss.HuberLoss(rho=1 / 9.)  # == smoothl1
+    rpn_box_loss = mx.gluon.loss.HuberLoss(rho=args.rpn_smoothl1_rho)  # == smoothl1
     rcnn_cls_loss = mx.gluon.loss.SoftmaxCrossEntropyLoss()
-    rcnn_box_loss = mx.gluon.loss.HuberLoss()  # == smoothl1
+    rcnn_box_loss = mx.gluon.loss.HuberLoss(rho=args.rcnn_smoothl1_rho)  # == smoothl1
     rcnn_mask_loss = mx.gluon.loss.SigmoidBinaryCrossEntropyLoss(from_sigmoid=False)
     metrics = [mx.metric.Loss('RPN_Conf'),
                mx.metric.Loss('RPN_SmoothL1'),
