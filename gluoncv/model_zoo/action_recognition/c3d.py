@@ -1,4 +1,4 @@
-"""C3D, implemented in Gluon."""
+"""C3D, implemented in Gluon. https://arxiv.org/abs/1412.0767"""
 # pylint: disable=arguments-differ,unused-argument
 
 __all__ = ['C3D', 'c3d_kinetics400']
@@ -67,6 +67,7 @@ class C3D(HybridBlock):
             self.relu = nn.Activation('relu')
 
     def hybrid_forward(self, F, x):
+        """Hybrid forward of C3D net"""
         x = self.relu(self.conv1(x))
         x = self.pool1(x)
 
