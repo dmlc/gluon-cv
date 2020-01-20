@@ -13,6 +13,34 @@ from gluoncv.model_zoo.siamrpn.siamrpn_tracker import get_axis_aligned_bbox
 from gluoncv.model_zoo import get_model
 from gluoncv.utils.filesystem import try_import_cv2
 
+def parse_args():
+    """parameter test."""
+    parser = argparse.ArgumentParser(description='siamrpn tracking test result')
+    parser.add_argument('--dataset', default='OTB2015', type=str, help='dataset name')
+    parser.add_argument('--dataset_root', type=str, default='~/.mxnet/datasets/OTB2015',
+                        help='dataset_root')
+    parser.add_argument('--model_path', type=str, help='path of models to eval')
+    parser.add_argument('--results_path', type=str, help='results path')
+    parser.add_argument('--video', default='', type=str,
+                        help='eval one special video')
+    parser.add_argument('--vis', action='store_true',
+                        help='whether visualzie result')
+    parser.add_argument('--mode', type=str, default='hybrid',
+                        help='mode in which to train the model.options are symbolic, hybrid')
+    parser.add_argument('--moe', type=str, default='hybrid',
+                        help='mode in which to train the model.options are symbolic, hybrid')
+    parser.add_argument('--num_gpus', type=int, default=0,
+                        help='number of gpus to use.')
+    parser.add_argument('--model_name', type=str, default='siamrpn_alexnet_v2_otb',
+                        help='name of model.')
+    parser.add_argument('--batch-size', type=int, default=32,
+                        help='training batch size per device (CPU/GPU).')
+    parser.add_argument('--num_workers', default=4, type=int,
+                        help='number of preprocessing workers')
+    parser.add_argument('--pretrained', action='store_true', default='True',
+                        help='enable using pretrained model from gluon.')
+    opt = parser.parse_args()
+    return opt
 def main():
     """SiamRPN test.
 

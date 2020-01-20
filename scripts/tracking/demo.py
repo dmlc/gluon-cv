@@ -1,9 +1,9 @@
 """SiamRPN Demo script."""
 import os
 import argparse
+import matplotlib.pyplot as plt
 import numpy as np
 import mxnet as mx
-import matplotlib.pyplot as plt
 from gluoncv import model_zoo, utils
 from gluoncv.model_zoo.siamrpn.siamrpn_tracker import SiamRPNTracker as build_tracker
 from gluoncv.model_zoo.siamrpn.siamrpn_tracker import get_axis_aligned_bbox
