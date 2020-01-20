@@ -25,7 +25,7 @@ def get_axis_aligned_bbox(region):
         bbox region location
 
     Return:
-        Center location weight and height 
+        Center location weight and height
     """
     region_x = region[0]
     region_y = region[1]
@@ -45,7 +45,7 @@ def corner2center(corner):
             Corner lefttop and rightdown location
 
     Return:
-        Center location weight and height 
+        Center location weight and height
     """
     if isinstance(corner, Corner):
         x_min, y_min, x_max, y_max = corner
@@ -147,7 +147,7 @@ class BaseTracker(object):
         raise NotImplementedError
 
 class SiamRPNTracker(BaseTracker):
-    """ build SiamRPNTracker.predicted tracking result.and according to 
+    """ build SiamRPNTracker.predicted tracking result.and according to
     tracking result, product window penalty and smooth bbox
 
     Parameters
@@ -207,7 +207,7 @@ class SiamRPNTracker(BaseTracker):
         ----------
             score_size : int
                 score map size
-        
+
         Returns
         ----------
             score map anchor
@@ -231,14 +231,14 @@ class SiamRPNTracker(BaseTracker):
 
     def _convert_bbox(self, delta, anchor):
         """from loc to predict postion
-        
+
         Parameters
         ----------
             delta : ndarray or np.ndarray
                 network output
             anchor : np.ndarray
                 generate anchor location
-        
+
         Returns
         -------
             rejust predict postion though Anchor
@@ -254,12 +254,12 @@ class SiamRPNTracker(BaseTracker):
 
     def _convert_score(self, score):
         """from cls to score
-        
+
         Parameters
         ----------
             score : ndarray
                 network output
-        
+
         Returns
         -------
             get feature map score though softmax
@@ -275,7 +275,7 @@ class SiamRPNTracker(BaseTracker):
     def _bbox_clip(self, center_x, center_y, width, height, boundary):
         """get bbox in image, Make sure the center point of the frame is within the image range
         and boundary
-        
+
         Parameters
         ----------
             center_x : float
@@ -304,7 +304,7 @@ class SiamRPNTracker(BaseTracker):
         Adjust the position of the frame to prevent the boundary from being exceeded.
         If the boundary is exceeded,
         the average value of each channel of the image is used to replace the exceeded value.
-        
+
         Parameters
         ----------
         im : np.ndarray
@@ -409,7 +409,7 @@ class SiamRPNTracker(BaseTracker):
         Get the predicted box according to the previous definition
         and simultaneously perform the scale penalty, window penalty, and smooth bbox.
         get best score bbox
-        
+
         Parameters
         ----------
         img : np.ndarray

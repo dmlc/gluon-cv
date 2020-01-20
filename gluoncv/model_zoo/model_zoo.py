@@ -36,6 +36,7 @@ from .yolo import *
 from .alpha_pose import *
 from .action_recognition import *
 from .center_net import *
+from .icnet import *
 from .siamrpn import *
 
 __all__ = ['get_model', 'get_model_list']

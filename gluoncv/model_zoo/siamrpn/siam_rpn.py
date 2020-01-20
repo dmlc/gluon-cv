@@ -70,7 +70,7 @@ class DepthwiseXCorr(HybridBlock):
 class DepthwiseRPN(RPN):
     """DepthwiseRPN
     get cls and loc throught z_f and x_f
-    
+
     Parameters
     ----------
         anchor_num : int

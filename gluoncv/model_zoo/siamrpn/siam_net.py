@@ -62,7 +62,6 @@ def get_Siam_RPN(base_name, pretrained=False, ctx=mx.cpu(0),
 
     Parameters
     ----------
-    
     base_name : str
         Backbone model name
     pretrained : bool or str
@@ -72,7 +71,7 @@ def get_Siam_RPN(base_name, pretrained=False, ctx=mx.cpu(0),
         Context such as mx.cpu(), mx.gpu(0).
     root : str
         Model weights storing path.
-    
+
     Returns
     -------
     HybridBlock
