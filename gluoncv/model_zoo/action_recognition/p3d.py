@@ -11,7 +11,7 @@ from mxnet.gluon import nn
 from mxnet.gluon.nn import BatchNorm
 
 def conv1x3x3(in_planes, out_planes, spatial_stride=1, temporal_stride=1, dilation=1):
-    "1x3x3 convolution with padding"
+    """1x3x3 convolution with padding"""
     return nn.Conv3D(in_channels=in_planes,
                      channels=out_planes,
                      kernel_size=(1, 3, 3),
@@ -21,7 +21,7 @@ def conv1x3x3(in_planes, out_planes, spatial_stride=1, temporal_stride=1, dilati
                      use_bias=False)
 
 def conv3x1x1(in_planes, out_planes, spatial_stride=1, temporal_stride=1, dilation=1):
-    "3x1x1 convolution with padding"
+    """3x1x1 convolution with padding"""
     return nn.Conv3D(in_channels=in_planes,
                      channels=out_planes,
                      kernel_size=(3, 1, 1),
@@ -31,7 +31,38 @@ def conv3x1x1(in_planes, out_planes, spatial_stride=1, temporal_stride=1, dilati
                      use_bias=False)
 
 class Bottleneck(HybridBlock):
-    """ResBlock for P3D"""
+    r"""ResBlock for P3D
+
+    Parameters
+    ----------
+        inplanes : int.
+            Input channels of each block.
+        planes : int.
+            Output channels of each block.
+        spatial_stride : int, default is 1.
+            Stride in spatial dimension of convolutional layers in a block.
+        temporal_stride : int, default is 1.
+            Stride in temporal dimension of convolutional layers in a block.
+        dilation : int, default is 1.
+            Dilation of convolutional layers in a block.
+        downsample : bool.
+            Whether to contain a downsampling layer in the block.
+        num_layers : int.
+            The current depth of this layer.
+        depth_3d : int.
+            Number of 3D layers in the network. For example,
+            a P3D with ResNet50 backbone has a depth_3d of 13, which is the sum of 3, 4 and 6.
+        block_design : tuple of str.
+            Different designs for each block, from 'A', 'B' or 'C'.
+        norm_layer : object
+            Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+            Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+        norm_kwargs : dict
+            Additional `norm_layer` arguments, for example `num_devices=4`
+            for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+        layer_name : str, default is ''.
+            Give a name to current block.
+    """
     expansion = 4
 
     def __init__(self,
@@ -167,7 +198,7 @@ class Bottleneck(HybridBlock):
         return spatial_x + st_residual_x
 
     def hybrid_forward(self, F, x):
-        """Hybrid forward of ResBlock"""
+        """Hybrid forward of a ResBlock in P3D."""
         identity = x
         out = self.conv1(x)
         out = self.bn1(out)
@@ -197,7 +228,7 @@ class Bottleneck(HybridBlock):
         return out
 
 class P3D(HybridBlock):
-    """
+    r"""
     The Pseudo 3D network (P3D).
     Learning Spatio-Temporal Representation with Pseudo-3D Residual Networks.
     ICCV, 2017. https://arxiv.org/abs/1711.10305
@@ -206,12 +237,34 @@ class P3D(HybridBlock):
     ----------
         nclass : int
             Number of classes in the training dataset.
-        dropout_ratio : float
-            Dropout value used in the dropout layers after dense layers to avoid overfitting.
-        init_std : float
-            Default standard deviation value for initializing dense layers.
-        ctx : str
-            Context, default CPU. The context in which to load the pretrained weights.
+        block : Block, default is `Bottleneck`.
+            Class for the residual block.
+        layers : list of int
+            Numbers of layers in each block
+        block_design : tuple of str.
+            Different designs for each block, from 'A', 'B' or 'C'.
+        dropout_ratio : float, default is 0.5.
+            The dropout rate of a dropout layer.
+            The larger the value, the more strength to prevent overfitting.
+        num_segments : int, default is 1.
+            Number of segments used to evenly divide a video.
+        num_crop : int, default is 1.
+            Number of crops used during evaluation, choices are 1, 3 or 10.
+        feat_ext : bool.
+            Whether to extract features before dense classification layer or
+            do a complete forward pass.
+        init_std : float, default is 0.001.
+            Standard deviation value when initialize the dense layers.
+        ctx : Context, default CPU.
+            The context in which to load the pretrained weights.
+        partial_bn : bool, default False.
+            Freeze all batch normalization layers during training except the first layer.
+        norm_layer : object
+            Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+            Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+        norm_kwargs : dict
+            Additional `norm_layer` arguments, for example `num_devices=4`
+            for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
 
     def __init__(self, nclass, block, layers, shortcut_type='B',
@@ -286,7 +339,7 @@ class P3D(HybridBlock):
                         norm_layer=BatchNorm,
                         norm_kwargs=None,
                         layer_name=''):
-
+        """Build each stage of a ResNet"""
         downsample = None
 
         if self.layer_cnt < self.depth_3d:
@@ -367,9 +420,28 @@ def p3d_resnet50_kinetics400(nclass=400, pretrained=False, pretrained_base=True,
                              root='~/.mxnet/models', num_segments=1, num_crop=1,
                              feat_ext=False, ctx=cpu(), **kwargs):
     r"""The Pseudo 3D network (P3D) with ResNet50 backbone trained on Kinetics400 dataset.
-    Learning Spatio-Temporal Representation with Pseudo-3D Residual Networks.
-    ICCV, 2017. https://arxiv.org/abs/1711.10305
 
+    Parameters
+    ----------
+    nclass : int.
+        Number of categories in the dataset.
+    pretrained : bool or str.
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True.
+        Load pretrained base network, the extra layers are randomized. Note that
+        if pretrained is `True`, this has no effect.
+    ctx : Context, default CPU.
+        The context in which to load the pretrained weights.
+    root : str, default $MXNET_HOME/models
+        Location for keeping the model parameters.
+    num_segments : int, default is 1.
+        Number of segments used to evenly divide a video.
+    num_crop : int, default is 1.
+        Number of crops used during evaluation, choices are 1, 3 or 10.
+    feat_ext : bool.
+        Whether to extract features before dense classification layer or
+        do a complete forward pass.
     """
 
     model = P3D(nclass=nclass,
