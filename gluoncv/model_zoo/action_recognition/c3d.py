@@ -103,7 +103,7 @@ def c3d_kinetics400(nclass=400, pretrained=False, ctx=cpu(),
     """
 
     model = C3D(nclass=nclass, ctx=ctx, **kwargs)
-    model.initialize()
+    model.initialize(init.MSRAPrelu(), ctx=ctx)
 
     if pretrained:
         from ..model_store import get_model_file
