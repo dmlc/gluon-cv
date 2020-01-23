@@ -115,6 +115,10 @@ def import_try_install(package, extern_url=None):
             from pip import main as pipmain
         except ImportError:
             from pip._internal import main as pipmain
+            from types import ModuleType
+            # fix for pip 19.3
+            if isinstance(pipmain, ModuleType):
+                from pip._internal.main import main as pipmain
 
         # trying to install package
         url = package if extern_url is None else extern_url
