@@ -6,6 +6,7 @@ dependencies:
 - numpy
 - matplotlib
 - sphinx_rtd_theme
+- pip==20.0.1
 - pip:
   - https://github.com/mli/mx-theme/tarball/0.3.1
   - sphinx-gallery
