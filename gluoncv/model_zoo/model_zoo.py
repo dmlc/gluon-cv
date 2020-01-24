@@ -248,6 +248,7 @@ _models = {
     'inceptionv3_kinetics400': inceptionv3_kinetics400,
     'inceptionv3_sthsthv2': inceptionv3_sthsthv2,
     'c3d_kinetics400': c3d_kinetics400,
+    'p3d_resnet50_kinetics400': p3d_resnet50_kinetics400,
     'i3d_resnet50_v1_ucf101': i3d_resnet50_v1_ucf101,
     'i3d_resnet50_v1_hmdb51': i3d_resnet50_v1_hmdb51,
     'i3d_resnet50_v1_kinetics400': i3d_resnet50_v1_kinetics400,
