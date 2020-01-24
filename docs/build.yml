@@ -20,5 +20,3 @@ dependencies:
   - opencv-python
   - portalocker
   - decord
-  - cython
-  - pycocotools
