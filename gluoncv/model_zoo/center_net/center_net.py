@@ -180,7 +180,7 @@ class CenterNet(nn.HybridBlock):
             out[0] = (out[0] + out_flip[0].flip(axis=3)) * 0.5
             out[1] = (out[1] + out_flip[1].flip(axis=3)) * 0.5
         heatmap = out[0]
-        keep = self.heatmap_nms(heatmap) == heatmap
+        keep = F.broadcast_equal(self.heatmap_nms(heatmap), heatmap)
         results = self.decoder(keep * heatmap, out[1], out[2])
         return results
 
