@@ -3,7 +3,9 @@
 Code partially borrowed from https://github.com/pytorch/vision/blob/master/torchvision/models/video/resnet.py."""
 
 
-__all__ = ['R2Plus1D', 'r2plus1d_resnet18_kinetics400']
+__all__ = ['R2Plus1D', 'r2plus1d_resnet18_kinetics400',
+           'r2plus1d_resnet34_kinetics400', 'r2plus1d_resnet50_kinetics400',
+           'r2plus1d_resnet101_kinetics400', 'r2plus1d_resnet152_kinetics400']
 
 from mxnet import init
 from mxnet.context import cpu
@@ -270,30 +272,30 @@ class R2Plus1D(HybridBlock):
                     norm_kwargs = {}
                     norm_kwargs['use_global_stats'] = True
 
-        self.layer1 = self._make_res_layer(block=block,
-                                           planes=64 * block.expansion,
-                                           blocks=layers[0],
-                                           layer_name='layer1_')
-        self.layer2 = self._make_res_layer(block=block,
-                                           planes=128 * block.expansion,
-                                           blocks=layers[1],
-                                           stride=2,
-                                           layer_name='layer2_')
-        self.layer3 = self._make_res_layer(block=block,
-                                           planes=256 * block.expansion,
-                                           blocks=layers[2],
-                                           stride=2,
-                                           layer_name='layer3_')
-        self.layer4 = self._make_res_layer(block=block,
-                                           planes=512 * block.expansion,
-                                           blocks=layers[3],
-                                           stride=2,
-                                           layer_name='layer4_')
+            self.layer1 = self._make_res_layer(block=block,
+                                               planes=64 * block.expansion,
+                                               blocks=layers[0],
+                                               layer_name='layer1_')
+            self.layer2 = self._make_res_layer(block=block,
+                                               planes=128 * block.expansion,
+                                               blocks=layers[1],
+                                               stride=2,
+                                               layer_name='layer2_')
+            self.layer3 = self._make_res_layer(block=block,
+                                               planes=256 * block.expansion,
+                                               blocks=layers[2],
+                                               stride=2,
+                                               layer_name='layer3_')
+            self.layer4 = self._make_res_layer(block=block,
+                                               planes=512 * block.expansion,
+                                               blocks=layers[3],
+                                               stride=2,
+                                               layer_name='layer4_')
 
-        self.avgpool = nn.GlobalAvgPool3D()
-        self.dropout = nn.Dropout(rate=self.dropout_ratio)
-        self.fc = nn.Dense(in_units=self.feat_dim, units=nclass,
-                           weight_initializer=init.Normal(sigma=self.init_std))
+            self.avgpool = nn.GlobalAvgPool3D()
+            self.dropout = nn.Dropout(rate=self.dropout_ratio)
+            self.fc = nn.Dense(in_units=self.feat_dim, units=nclass,
+                               weight_initializer=init.Normal(sigma=self.init_std))
 
     def hybrid_forward(self, F, x):
         """Hybrid forward of R2+1D net"""
