@@ -36,6 +36,7 @@ from .yolo import *
 from .alpha_pose import *
 from .action_recognition import *
 from .center_net import *
+from .siamrpn import *
 from .icnet import *
 
 __all__ = ['get_model', 'get_model_list']
@@ -313,7 +314,8 @@ _models = {
     'inceptionv3_ucf101_int8': inceptionv3_ucf101_int8,
     'resnet18_v1b_kinetics400_int8': resnet18_v1b_kinetics400_int8,
     'resnet50_v1b_kinetics400_int8': resnet50_v1b_kinetics400_int8,
-    'inceptionv3_kinetics400_int8': inceptionv3_kinetics400_int8
+    'inceptionv3_kinetics400_int8': inceptionv3_kinetics400_int8,
+    'siamrpn_alexnet_v2_otb15': siamrpn_alexnet_v2_otb15,
 }
 
 
