@@ -36,8 +36,8 @@ from .yolo import *
 from .alpha_pose import *
 from .action_recognition import *
 from .center_net import *
-from .icnet import *
 from .siamrpn import *
+from .icnet import *
 
 __all__ = ['get_model', 'get_model_list']
 
@@ -161,6 +161,7 @@ _models = {
     'deeplab_resnet50_ade': get_deeplab_resnet50_ade,
     'deeplab_resnet101_ade': get_deeplab_resnet101_ade,
     'deeplab_v3b_plus_wideresnet_citys': get_deeplab_v3b_plus_wideresnet_citys,
+    'icnet_resnet50_citys': get_icnet_resnet50_citys,
     'resnet18_v1b': resnet18_v1b,
     'resnet34_v1b': resnet34_v1b,
     'resnet50_v1b': resnet50_v1b,
@@ -247,6 +248,8 @@ _models = {
     'inceptionv3_hmdb51': inceptionv3_hmdb51,
     'inceptionv3_kinetics400': inceptionv3_kinetics400,
     'inceptionv3_sthsthv2': inceptionv3_sthsthv2,
+    'c3d_kinetics400': c3d_kinetics400,
+    'p3d_resnet50_kinetics400': p3d_resnet50_kinetics400,
     'i3d_resnet50_v1_ucf101': i3d_resnet50_v1_ucf101,
     'i3d_resnet50_v1_hmdb51': i3d_resnet50_v1_hmdb51,
     'i3d_resnet50_v1_kinetics400': i3d_resnet50_v1_kinetics400,

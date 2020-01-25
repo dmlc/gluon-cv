@@ -8,7 +8,7 @@ from mxnet import nd
 from mxnet.gluon.loss import Loss, _apply_weighting, _reshape_like
 
 __all__ = ['FocalLoss', 'SSDMultiBoxLoss', 'YOLOV3Loss',
-           'MixSoftmaxCrossEntropyLoss', 'MixSoftmaxCrossEntropyOHEMLoss',
+           'MixSoftmaxCrossEntropyLoss', 'ICNetLoss', 'MixSoftmaxCrossEntropyOHEMLoss',
            'DistillationSoftmaxCrossEntropyLoss']
 
 class FocalLoss(Loss):
@@ -349,6 +349,42 @@ class MixSoftmaxCrossEntropyLoss(SoftmaxCrossEntropyLoss):
             else:
                 return super(MixSoftmaxCrossEntropyLoss, self). \
                     hybrid_forward(F, *inputs, **kwargs)
+
+
+class ICNetLoss(SoftmaxCrossEntropyLoss):
+    """Weighted SoftmaxCrossEntropyLoss2D for ICNet training
+
+    Parameters
+    ----------
+    weights : tuple, default (0.4, 0.4, 1.0)
+        The weight for cascade label guidance.
+    ignore_label : int, default -1
+        The label to ignore.
+    """
+
+    def __init__(self, weights=(0.4, 0.4, 1.0), height=None, width=None,
+                 crop_size=480, ignore_label=-1, **kwargs):
+        super(ICNetLoss, self).__init__(**kwargs)
+        self.weights = weights
+        self.height = height if height is not None else crop_size
+        self.width = width if width is not None else crop_size
+
+    def _weighted_forward(self, F, *inputs):
+        label = inputs[4]
+        loss = []
+        for i in range(len(inputs) - 1):
+            scale_pred = F.contrib.BilinearResize2D(inputs[i],
+                                                    height=self.height,
+                                                    width=self.width)
+            loss.append(super(ICNetLoss, self).hybrid_forward(F, scale_pred, label))
+
+        return loss[0] + self.weights[0] * loss[1] + \
+               self.weights[1] * loss[2] + self.weights[2] * loss[3]
+
+    def hybrid_forward(self, F, *inputs):
+        """Compute loss"""
+        return self._weighted_forward(F, *inputs)
+
 
 class SoftmaxCrossEntropyOHEMLoss(Loss):
     r"""SoftmaxCrossEntropyLoss with ignore labels

@@ -421,7 +421,7 @@ def test_segmentation_models():
               'fcn_resnet50_ade', 'psp_resnet50_ade', 'deeplab_resnet50_ade',
               'fcn_resnet101_ade', 'psp_resnet101_ade', 'deeplab_resnet101_ade',
               'psp_resnet101_citys', 'deeplab_resnet152_voc', 'deeplab_resnet152_coco',
-              'deeplab_v3b_plus_wideresnet_citys']
+              'deeplab_v3b_plus_wideresnet_citys', 'icnet_resnet50_citys']
     _test_model_list(models, ctx, x, pretrained=True, pretrained_base=True)
     _test_model_list(models, ctx, x, pretrained=False, pretrained_base=False)
     _test_model_list(models, ctx, x, pretrained=False, pretrained_base=True)
