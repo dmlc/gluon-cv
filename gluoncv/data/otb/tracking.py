@@ -5,7 +5,7 @@ from glob import glob
 from tqdm import tqdm
 from mxnet.gluon.data import dataset
 from gluoncv.utils.filesystem import try_import_cv2
-cv2 = try_import_cv2()
+
 
 class Video(object):
     """
@@ -30,6 +30,7 @@ class Video(object):
     """
     def __init__(self, name, root, video_dir, init_rect, img_names,
                  gt_rect, attr, load_img=False):
+        cv2 = try_import_cv2()
         self.name = name
         self.video_dir = video_dir
         self.init_rect = init_rect
