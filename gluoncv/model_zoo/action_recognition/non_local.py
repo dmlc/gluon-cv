@@ -16,6 +16,31 @@ def build_nonlocal_block(cfg):
     return NonLocal(**cfg_)
 
 class NonLocal(HybridBlock):
+    r"""Non-local block
+
+    Parameters
+    ----------
+    in_channels : int.
+        Input channels of each block.
+    nonlocal_type : str.
+        Types of design for non-local block.
+    dim : int, default 3.
+        2D or 3D non-local block.
+    embed_dim : int.
+        Intermediate number of channels.
+    sub_sample : bool.
+        Whether to downsample the feature map to save computation.
+    use_bn : bool.
+        Whether to use batch normalization layer inside a non-local block.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    ctx : Context, default CPU.
+        The context in which to load the pretrained weights.
+    """
     def __init__(self, in_channels=1024, nonlocal_type="gaussian", dim=3,
                  embed=True, embed_dim=None, sub_sample=False, use_bn=True,
                  norm_layer=BatchNorm, norm_kwargs=None, ctx=None, **kwargs):

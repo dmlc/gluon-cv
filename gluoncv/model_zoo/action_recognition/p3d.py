@@ -35,33 +35,33 @@ class Bottleneck(HybridBlock):
 
     Parameters
     ----------
-        inplanes : int.
-            Input channels of each block.
-        planes : int.
-            Output channels of each block.
-        spatial_stride : int, default is 1.
-            Stride in spatial dimension of convolutional layers in a block.
-        temporal_stride : int, default is 1.
-            Stride in temporal dimension of convolutional layers in a block.
-        dilation : int, default is 1.
-            Dilation of convolutional layers in a block.
-        downsample : bool.
-            Whether to contain a downsampling layer in the block.
-        num_layers : int.
-            The current depth of this layer.
-        depth_3d : int.
-            Number of 3D layers in the network. For example,
-            a P3D with ResNet50 backbone has a depth_3d of 13, which is the sum of 3, 4 and 6.
-        block_design : tuple of str.
-            Different designs for each block, from 'A', 'B' or 'C'.
-        norm_layer : object
-            Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
-            Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
-        norm_kwargs : dict
-            Additional `norm_layer` arguments, for example `num_devices=4`
-            for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
-        layer_name : str, default is ''.
-            Give a name to current block.
+    inplanes : int.
+        Input channels of each block.
+    planes : int.
+        Output channels of each block.
+    spatial_stride : int, default is 1.
+        Stride in spatial dimension of convolutional layers in a block.
+    temporal_stride : int, default is 1.
+        Stride in temporal dimension of convolutional layers in a block.
+    dilation : int, default is 1.
+        Dilation of convolutional layers in a block.
+    downsample : bool.
+        Whether to contain a downsampling layer in the block.
+    num_layers : int.
+        The current depth of this layer.
+    depth_3d : int.
+        Number of 3D layers in the network. For example,
+        a P3D with ResNet50 backbone has a depth_3d of 13, which is the sum of 3, 4 and 6.
+    block_design : tuple of str.
+        Different designs for each block, from 'A', 'B' or 'C'.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    layer_name : str, default is ''.
+        Give a name to current block.
     """
     expansion = 4
 
@@ -235,38 +235,37 @@ class P3D(HybridBlock):
 
     Parameters
     ----------
-        nclass : int
-            Number of classes in the training dataset.
-        block : Block, default is `Bottleneck`.
-            Class for the residual block.
-        layers : list of int
-            Numbers of layers in each block
-        block_design : tuple of str.
-            Different designs for each block, from 'A', 'B' or 'C'.
-        dropout_ratio : float, default is 0.5.
-            The dropout rate of a dropout layer.
-            The larger the value, the more strength to prevent overfitting.
-        num_segments : int, default is 1.
-            Number of segments used to evenly divide a video.
-        num_crop : int, default is 1.
-            Number of crops used during evaluation, choices are 1, 3 or 10.
-        feat_ext : bool.
-            Whether to extract features before dense classification layer or
-            do a complete forward pass.
-        init_std : float, default is 0.001.
-            Standard deviation value when initialize the dense layers.
-        ctx : Context, default CPU.
-            The context in which to load the pretrained weights.
-        partial_bn : bool, default False.
-            Freeze all batch normalization layers during training except the first layer.
-        norm_layer : object
-            Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
-            Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
-        norm_kwargs : dict
-            Additional `norm_layer` arguments, for example `num_devices=4`
-            for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    nclass : int
+        Number of classes in the training dataset.
+    block : Block, default is `Bottleneck`.
+        Class for the residual block.
+    layers : list of int
+        Numbers of layers in each block
+    block_design : tuple of str.
+        Different designs for each block, from 'A', 'B' or 'C'.
+    dropout_ratio : float, default is 0.5.
+        The dropout rate of a dropout layer.
+        The larger the value, the more strength to prevent overfitting.
+    num_segments : int, default is 1.
+        Number of segments used to evenly divide a video.
+    num_crop : int, default is 1.
+        Number of crops used during evaluation, choices are 1, 3 or 10.
+    feat_ext : bool.
+        Whether to extract features before dense classification layer or
+        do a complete forward pass.
+    init_std : float, default is 0.001.
+        Standard deviation value when initialize the dense layers.
+    ctx : Context, default CPU.
+        The context in which to load the pretrained weights.
+    partial_bn : bool, default False.
+        Freeze all batch normalization layers during training except the first layer.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
-
     def __init__(self, nclass, block, layers, shortcut_type='B',
                  block_design=('A', 'B', 'C'), dropout_ratio=0.5,
                  num_segments=1, num_crop=1, feat_ext=False,

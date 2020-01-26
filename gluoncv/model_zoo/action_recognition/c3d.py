@@ -16,14 +16,14 @@ class C3D(HybridBlock):
 
     Parameters
     ----------
-        nclass : int
-            Number of classes in the training dataset.
-        dropout_ratio : float
-            Dropout value used in the dropout layers after dense layers to avoid overfitting.
-        init_std : float
-            Default standard deviation value for initializing dense layers.
-        ctx : str
-            Context, default CPU. The context in which to load the pretrained weights.
+    nclass : int
+        Number of classes in the training dataset.
+    dropout_ratio : float
+        Dropout value used in the dropout layers after dense layers to avoid overfitting.
+    init_std : float
+        Default standard deviation value for initializing dense layers.
+    ctx : str
+        Context, default CPU. The context in which to load the pretrained weights.
     """
 
     def __init__(self, nclass, dropout_ratio=0.5,
@@ -100,6 +100,24 @@ def c3d_kinetics400(nclass=400, pretrained=False, ctx=cpu(),
     Learning Spatiotemporal Features with 3D Convolutional Networks.
     ICCV, 2015. https://arxiv.org/abs/1412.0767
 
+    Parameters
+    ----------
+    nclass : int.
+        Number of categories in the dataset.
+    pretrained : bool or str.
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    ctx : Context, default CPU.
+        The context in which to load the pretrained weights.
+    root : str, default $MXNET_HOME/models
+        Location for keeping the model parameters.
+    num_segments : int, default is 1.
+        Number of segments used to evenly divide a video.
+    num_crop : int, default is 1.
+        Number of crops used during evaluation, choices are 1, 3 or 10.
+    feat_ext : bool.
+        Whether to extract features before dense classification layer or
+        do a complete forward pass.
     """
 
     model = C3D(nclass=nclass, ctx=ctx, **kwargs)
