@@ -108,32 +108,35 @@ def import_try_install(package, extern_url=None):
         The imported python module.
 
     """
-    try:
-        return __import__(package)
-    except ImportError:
-        try:
-            from pip import main as pipmain
-        except ImportError:
-            from pip._internal import main as pipmain
-            from types import ModuleType
-            # fix for pip 19.3
-            if isinstance(pipmain, ModuleType):
-                from pip._internal.main import main as pipmain
-
-        # trying to install package
-        url = package if extern_url is None else extern_url
-        pipmain(['install', '--user', url])  # will raise SystemExit Error if fails
-
-        # trying to load again
+    import tempfile
+    lockfile = os.path.join(tempfile.gettempdir(), package + '_install.lck')
+    with portalocker.Lock(lockfile):
         try:
             return __import__(package)
         except ImportError:
-            import sys
-            import site
-            user_site = site.getusersitepackages()
-            if user_site not in sys.path:
-                sys.path.append(user_site)
-            return __import__(package)
+            try:
+                from pip import main as pipmain
+            except ImportError:
+                from pip._internal import main as pipmain
+                from types import ModuleType
+                # fix for pip 19.3
+                if isinstance(pipmain, ModuleType):
+                    from pip._internal.main import main as pipmain
+
+            # trying to install package
+            url = package if extern_url is None else extern_url
+            pipmain(['install', '--user', url])  # will raise SystemExit Error if fails
+
+            # trying to load again
+            try:
+                return __import__(package)
+            except ImportError:
+                import sys
+                import site
+                user_site = site.getusersitepackages()
+                if user_site not in sys.path:
+                    sys.path.append(user_site)
+                return __import__(package)
     return __import__(package)
 
 def try_import_dali():

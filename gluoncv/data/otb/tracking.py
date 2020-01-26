@@ -30,7 +30,6 @@ class Video(object):
     """
     def __init__(self, name, root, video_dir, init_rect, img_names,
                  gt_rect, attr, load_img=False):
-        cv2 = try_import_cv2()
         self.name = name
         self.video_dir = video_dir
         self.init_rect = init_rect
@@ -39,6 +38,7 @@ class Video(object):
         self.pred_trajs = {}
         self.img_names = [os.path.join(root, x) for x in img_names]
         self.imgs = None
+        cv2 = try_import_cv2()
 
         if load_img:
             self.imgs = [cv2.imread(x) for x in self.img_names]
@@ -52,6 +52,7 @@ class Video(object):
 
     def load_img(self):
         if self.imgs is None:
+            cv2 = try_import_cv2()
             self.imgs = [cv2.imread(x) for x in self.img_names]
             self.width = self.imgs[0].shape[1]
             self.height = self.imgs[0].shape[0]
@@ -64,6 +65,7 @@ class Video(object):
 
     def __getitem__(self, idx):
         if self.imgs is None:
+            cv2 = try_import_cv2()
             return cv2.imread(self.img_names[idx]), self.gt_traj[idx]
         else:
             return self.imgs[idx], self.gt_traj[idx]
@@ -73,6 +75,7 @@ class Video(object):
             if self.imgs is not None:
                 yield self.imgs[i], self.gt_traj[i]
             else:
+                cv2 = try_import_cv2()
                 yield cv2.imread(self.img_names[i]), self.gt_traj[i]
 
 class OTBVideo(Video):
