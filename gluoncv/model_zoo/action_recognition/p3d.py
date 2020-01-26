@@ -306,22 +306,22 @@ class P3D(HybridBlock):
             self.layer1 = self._make_res_layer(block=block,
                                                planes=64,
                                                blocks=layers[0],
-                                               layer_name='layers1_')
+                                               layer_name='layer1_')
             self.layer2 = self._make_res_layer(block=block,
                                                planes=128,
                                                blocks=layers[1],
                                                spatial_stride=2,
-                                               layer_name='layers2_')
+                                               layer_name='layer2_')
             self.layer3 = self._make_res_layer(block=block,
                                                planes=256,
                                                blocks=layers[2],
                                                spatial_stride=2,
-                                               layer_name='layers3_')
+                                               layer_name='layer3_')
             self.layer4 = self._make_res_layer(block=block,
                                                planes=512,
                                                blocks=layers[3],
                                                spatial_stride=2,
-                                               layer_name='layers4_')
+                                               layer_name='layer4_')
 
             self.avgpool = nn.GlobalAvgPool2D()
             self.dropout = nn.Dropout(rate=self.dropout_ratio)
