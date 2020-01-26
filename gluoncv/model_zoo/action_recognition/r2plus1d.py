@@ -28,22 +28,22 @@ class Conv2Plus1D(HybridBlock):
 
     Parameters
     ----------
-        inplanes : int.
-            Input channels of each block.
-        planes : int.
-            Output channels of each block.
-        midplanes : int.
-            Intermediate channels of each block.
-        stride : int, default is 1.
-            Stride in each dimension of 3D convolutional layers in a block.
-        padding : int, default is 1.
-            Padding in each dimension of the feature map.
-        norm_layer : object
-            Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
-            Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
-        norm_kwargs : dict
-            Additional `norm_layer` arguments, for example `num_devices=4`
-            for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    inplanes : int.
+        Input channels of each block.
+    planes : int.
+        Output channels of each block.
+    midplanes : int.
+        Intermediate channels of each block.
+    stride : int, default is 1.
+        Stride in each dimension of 3D convolutional layers in a block.
+    padding : int, default is 1.
+        Padding in each dimension of the feature map.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
     def __init__(self,
                  inplanes,
@@ -86,22 +86,22 @@ class BasicBlock(HybridBlock):
 
     Parameters
     ----------
-        inplanes : int.
-            Input channels of each block.
-        planes : int.
-            Output channels of each block.
-        stride : int, default is 1.
-            Stride in each dimension of 3D convolutional layers in a block.
-        downsample : bool.
-            Whether to contain a downsampling layer in the block.
-        norm_layer : object
-            Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
-            Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
-        norm_kwargs : dict
-            Additional `norm_layer` arguments, for example `num_devices=4`
-            for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
-        layer_name : str, default is ''.
-            Give a name to current block.
+    inplanes : int.
+        Input channels of each block.
+    planes : int.
+        Output channels of each block.
+    stride : int, default is 1.
+        Stride in each dimension of 3D convolutional layers in a block.
+    downsample : bool.
+        Whether to contain a downsampling layer in the block.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    layer_name : str, default is ''.
+        Give a name to current block.
     """
     expansion = 1
 
@@ -142,22 +142,22 @@ class Bottleneck(HybridBlock):
 
     Parameters
     ----------
-        inplanes : int.
-            Input channels of each block.
-        planes : int.
-            Output channels of each block.
-        stride : int, default is 1.
-            Stride in each dimension of 3D convolutional layers in a block.
-        downsample : bool.
-            Whether to contain a downsampling layer in the block.
-        norm_layer : object
-            Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
-            Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
-        norm_kwargs : dict
-            Additional `norm_layer` arguments, for example `num_devices=4`
-            for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
-        layer_name : str, default is ''.
-            Give a name to current block.
+    inplanes : int.
+        Input channels of each block.
+    planes : int.
+        Output channels of each block.
+    stride : int, default is 1.
+        Stride in each dimension of 3D convolutional layers in a block.
+    downsample : bool.
+        Whether to contain a downsampling layer in the block.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    layer_name : str, default is ''.
+        Give a name to current block.
     """
     expansion = 4
 
@@ -207,41 +207,40 @@ class Bottleneck(HybridBlock):
         return out
 
 class R2Plus1D(HybridBlock):
-    r"""
-    The R2+1D network.
+    r"""The R2+1D network.
     A Closer Look at Spatiotemporal Convolutions for Action Recognition.
     CVPR, 2018. https://arxiv.org/abs/1711.11248
 
     Parameters
     ----------
-        nclass : int
-            Number of classes in the training dataset.
-        block : Block, default is `Bottleneck`.
-            Class for the residual block.
-        layers : list of int
-            Numbers of layers in each block
-        dropout_ratio : float, default is 0.5.
-            The dropout rate of a dropout layer.
-            The larger the value, the more strength to prevent overfitting.
-        num_segments : int, default is 1.
-            Number of segments used to evenly divide a video.
-        num_crop : int, default is 1.
-            Number of crops used during evaluation, choices are 1, 3 or 10.
-        feat_ext : bool.
-            Whether to extract features before dense classification layer or
-            do a complete forward pass.
-        init_std : float, default is 0.001.
-            Standard deviation value when initialize the dense layers.
-        ctx : Context, default CPU.
-            The context in which to load the pretrained weights.
-        partial_bn : bool, default False.
-            Freeze all batch normalization layers during training except the first layer.
-        norm_layer : object
-            Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
-            Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
-        norm_kwargs : dict
-            Additional `norm_layer` arguments, for example `num_devices=4`
-            for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    nclass : int
+        Number of classes in the training dataset.
+    block : Block, default is `Bottleneck`.
+        Class for the residual block.
+    layers : list of int
+        Numbers of layers in each block
+    dropout_ratio : float, default is 0.5.
+        The dropout rate of a dropout layer.
+        The larger the value, the more strength to prevent overfitting.
+    num_segments : int, default is 1.
+        Number of segments used to evenly divide a video.
+    num_crop : int, default is 1.
+        Number of crops used during evaluation, choices are 1, 3 or 10.
+    feat_ext : bool.
+        Whether to extract features before dense classification layer or
+        do a complete forward pass.
+    init_std : float, default is 0.001.
+        Standard deviation value when initialize the dense layers.
+    ctx : Context, default CPU.
+        The context in which to load the pretrained weights.
+    partial_bn : bool, default False.
+        Freeze all batch normalization layers during training except the first layer.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
     def __init__(self, nclass, block, layers, dropout_ratio=0.5,
                  num_segments=1, num_crop=1, feat_ext=False,
