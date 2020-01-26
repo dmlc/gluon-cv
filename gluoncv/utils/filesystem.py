@@ -109,6 +109,7 @@ def import_try_install(package, extern_url=None):
 
     """
     import tempfile
+    import portalocker
     lockfile = os.path.join(tempfile.gettempdir(), package + '_install.lck')
     with portalocker.Lock(lockfile):
         try:
