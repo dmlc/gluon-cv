@@ -197,7 +197,7 @@ def main():
         std_rgb = [58.393, 57.12, 57.375]
 
         def batch_fn(batch, ctx):
-            data = gluon.utils.split_and_load(batch.data[0], ctx_list=ctx, batch_axis=0)
+            data = gluon.utils.split_and_load(batch.data[0].astype(opt.dtype, copy=False), ctx_list=ctx, batch_axis=0)
             label = gluon.utils.split_and_load(batch.label[0], ctx_list=ctx, batch_axis=0)
             return data, label
 
@@ -264,6 +264,7 @@ def main():
                                         saturation=jitter_param),
             transforms.RandomLighting(lighting_param),
             transforms.ToTensor(),
+            transforms.Cast(opt.dtype),
             normalize
         ])
         transform_test = transforms.Compose([
