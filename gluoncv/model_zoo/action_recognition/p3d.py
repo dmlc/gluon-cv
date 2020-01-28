@@ -1,5 +1,5 @@
 """P3D, implemented in Gluon. https://arxiv.org/abs/1711.10305.
-Code partially borrowed from https://github.com/qijiezhao/pseudo-3d-pytorch."""
+Code adapted from https://github.com/qijiezhao/pseudo-3d-pytorch."""
 # pylint: disable=arguments-differ,unused-argument,line-too-long
 
 __all__ = ['P3D', 'p3d_resnet50_kinetics400']
@@ -446,6 +446,9 @@ def p3d_resnet50_kinetics400(nclass=400, pretrained=False, pretrained_base=True,
     model = P3D(nclass=nclass,
                 block=Bottleneck,
                 layers=[3, 4, 6, 3],
+                num_segments=num_segments,
+                num_crop=num_crop,
+                feat_ext=feat_ext,
                 ctx=ctx,
                 **kwargs)
     model.initialize(init.MSRAPrelu(), ctx=ctx)

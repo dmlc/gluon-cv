@@ -1,5 +1,5 @@
 # pylint: disable=line-too-long,too-many-lines,missing-docstring,arguments-differ,unused-argument
-# Code partially borrowed from https://github.com/r1ch88/SlowFastNetworks.
+# Code adapted from https://github.com/r1ch88/SlowFastNetworks.
 
 __all__ = ['SlowFast', 'slowfast_4x16_resnet50_kinetics400', 'slowfast_8x8_resnet50_kinetics400',
            'slowfast_4x16_resnet101_kinetics400', 'slowfast_8x8_resnet101_kinetics400',

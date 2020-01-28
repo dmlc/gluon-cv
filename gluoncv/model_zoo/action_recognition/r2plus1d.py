@@ -1,6 +1,6 @@
 # pylint: disable=arguments-differ,unused-argument,line-too-long
 """R2Plus1D, implemented in Gluon. https://arxiv.org/abs/1711.11248.
-Code partially borrowed from https://github.com/pytorch/vision/blob/master/torchvision/models/video/resnet.py."""
+Code adapted from https://github.com/pytorch/vision/blob/master/torchvision/models/video/resnet.py."""
 
 
 __all__ = ['R2Plus1D', 'r2plus1d_resnet18_kinetics400',
@@ -389,6 +389,9 @@ def r2plus1d_resnet18_kinetics400(nclass=400, pretrained=False, pretrained_base=
     model = R2Plus1D(nclass=nclass,
                      block=BasicBlock,
                      layers=[2, 2, 2, 2],
+                     num_segments=num_segments,
+                     num_crop=num_crop,
+                     feat_ext=feat_ext,
                      ctx=ctx,
                      **kwargs)
     model.initialize(init.MSRAPrelu(), ctx=ctx)
@@ -435,6 +438,9 @@ def r2plus1d_resnet34_kinetics400(nclass=400, pretrained=False, pretrained_base=
     model = R2Plus1D(nclass=nclass,
                      block=BasicBlock,
                      layers=[3, 4, 6, 3],
+                     num_segments=num_segments,
+                     num_crop=num_crop,
+                     feat_ext=feat_ext,
                      ctx=ctx,
                      **kwargs)
     model.initialize(init.MSRAPrelu(), ctx=ctx)
@@ -481,6 +487,9 @@ def r2plus1d_resnet50_kinetics400(nclass=400, pretrained=False, pretrained_base=
     model = R2Plus1D(nclass=nclass,
                      block=Bottleneck,
                      layers=[3, 4, 6, 3],
+                     num_segments=num_segments,
+                     num_crop=num_crop,
+                     feat_ext=feat_ext,
                      ctx=ctx,
                      **kwargs)
     model.initialize(init.MSRAPrelu(), ctx=ctx)
@@ -527,6 +536,9 @@ def r2plus1d_resnet101_kinetics400(nclass=400, pretrained=False, pretrained_base
     model = R2Plus1D(nclass=nclass,
                      block=Bottleneck,
                      layers=[3, 4, 23, 3],
+                     num_segments=num_segments,
+                     num_crop=num_crop,
+                     feat_ext=feat_ext,
                      ctx=ctx,
                      **kwargs)
     model.initialize(init.MSRAPrelu(), ctx=ctx)
@@ -573,6 +585,9 @@ def r2plus1d_resnet152_kinetics400(nclass=400, pretrained=False, pretrained_base
     model = R2Plus1D(nclass=nclass,
                      block=Bottleneck,
                      layers=[3, 8, 36, 3],
+                     num_segments=num_segments,
+                     num_crop=num_crop,
+                     feat_ext=feat_ext,
                      ctx=ctx,
                      **kwargs)
     model.initialize(init.MSRAPrelu(), ctx=ctx)
