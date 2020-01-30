@@ -669,7 +669,7 @@ def test_quantized_action_recognition_models():
     x = mx.random.uniform(shape=(1 * num_segments, 3, 299, 299), ctx=ctx)
     _test_model_list(model_list, ctx, x)
 
-    num_segments = 7
+    num_segments = 3
     model_list = ['resnet18_v1b_kinetics400_int8', 'resnet50_v1b_kinetics400_int8']
     x = mx.random.uniform(shape=(1 * num_segments, 3, 224, 224), ctx=ctx)
     _test_model_list(model_list, ctx, x)
