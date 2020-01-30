@@ -10,6 +10,7 @@ from mxnet.gluon import nn
 from mxnet.gluon.contrib.nn import SyncBatchNorm
 
 from .rcnn_target import MaskTargetGenerator
+from ..rcnn import custom_rcnn_fpn
 from ....model_zoo.rcnn.faster_rcnn import FasterRCNN
 from ....nn.feature import FPNFeatureExpander
 
@@ -845,10 +846,10 @@ def mask_rcnn_fpn_bn_mobilenet1_0_coco(pretrained=False, pretrained_base=True, n
 
 
 def custom_mask_rcnn_fpn(classes, transfer=None, dataset='custom', pretrained_base=True,
-                           base_network_name='resnet18_v1b', norm_layer=nn.BatchNorm,
-                           norm_kwargs=None, sym_norm_layer=None, sym_norm_kwargs=None,
-                           num_fpn_filters=256, num_box_head_conv=4, num_box_head_conv_filters=256,
-                           num_box_head_dense_filters=1024, **kwargs):
+                         base_network_name='resnet18_v1b', norm_layer=nn.BatchNorm,
+                         norm_kwargs=None, sym_norm_layer=None, sym_norm_kwargs=None,
+                         num_fpn_filters=256, num_box_head_conv=4, num_box_head_conv_filters=256,
+                         num_box_head_dense_filters=1024, **kwargs):
     r"""Mask RCNN model with resnet base network and FPN on custom dataset.
 
     Parameters
@@ -900,51 +901,10 @@ def custom_mask_rcnn_fpn(classes, transfer=None, dataset='custom', pretrained_ba
         else '(?!.*moving)'  # excluding symbol bn moving mean and var
 
     if transfer is None:
-        if base_network_name == 'resnet18_v1b':
-            from ....model_zoo.resnetv1b import resnet18_v1b
-            base_network = resnet18_v1b(pretrained=pretrained_base, dilated=False,
-                                        use_global_stats=use_global_stats, norm_kwargs=norm_kwargs,
-                                        **kwargs)
-            fpn_inputs_names = ['layers1_relu3_fwd', 'layers2_relu3_fwd', 'layers3_relu3_fwd',
-                                'layers4_relu3_fwd']
-        elif base_network_name == 'resnet50_v1b':
-            from ....model_zoo.resnetv1b import resnet50_v1b
-            base_network = resnet50_v1b(pretrained=pretrained_base, dilated=False,
-                                        use_global_stats=use_global_stats, norm_kwargs=norm_kwargs,
-                                        **kwargs)
-            fpn_inputs_names = ['layers1_relu8_fwd', 'layers2_relu11_fwd', 'layers3_relu17_fwd',
-                                'layers4_relu8_fwd']
-        elif base_network_name == 'resnet101_v1d':
-            from ....model_zoo.resnetv1b import resnet101_v1d
-            base_network = resnet101_v1d(pretrained=pretrained_base, dilated=False,
-                                         use_global_stats=use_global_stats, norm_kwargs=norm_kwargs,
-                                         **kwargs)
-            fpn_inputs_names = ['layers1_relu8_fwd', 'layers2_relu11_fwd', 'layers3_relu68_fwd',
-                                'layers4_relu8_fwd']
-        else:
-            raise NotImplementedError('Unsupported network', base_network_name)
-
-        features = FPNFeatureExpander(
-            network=base_network, outputs=fpn_inputs_names,
-            num_filters=[num_fpn_filters] * len(fpn_inputs_names), use_1x1=True,
-            use_upsample=True, use_elewadd=True, use_p6=True, no_bias=not use_global_stats,
-            pretrained=pretrained_base, norm_layer=sym_norm_layer, norm_kwargs=sym_norm_kwargs)
-        top_features = None
-        # 1 Conv 1 FC layer before RCNN cls and reg
-        box_features = nn.HybridSequential()
-        if use_global_stats:
-            box_features.add(
-                nn.Dense(num_box_head_dense_filters, weight_initializer=mx.init.Normal(0.01)),
-                nn.Activation('relu'))
-        else:
-            for _ in range(num_box_head_conv):
-                box_features.add(nn.Conv2D(num_box_head_conv_filters, 3, padding=1, use_bias=False),
-                                 norm_layer(**norm_kwargs),
-                                 nn.Activation('relu'))
-        box_features.add(
-            nn.Dense(num_box_head_dense_filters, weight_initializer=mx.init.Normal(0.01)),
-            nn.Activation('relu'))
-
+        features, top_features, box_features = \
+            custom_rcnn_fpn(pretrained_base, base_network_name, norm_layer, norm_kwargs,
+                            sym_norm_layer, sym_norm_kwargs, num_fpn_filters, num_box_head_conv,
+                            num_box_head_conv_filters, num_box_head_dense_filters)
         return get_mask_rcnn(
             name='fpn_' + base_network_name, dataset=dataset, pretrained=False, features=features,
             top_features=top_features, classes=classes, box_features=box_features,
@@ -959,4 +919,3 @@ def custom_mask_rcnn_fpn(classes, transfer=None, dataset='custom', pretrained_ba
         reuse_classes = [x for x in classes if x in net.classes]
         net.reset_class(classes, reuse_weights=reuse_classes)
     return net
-
