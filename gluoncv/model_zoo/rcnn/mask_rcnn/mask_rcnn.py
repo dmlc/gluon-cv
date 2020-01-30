@@ -426,7 +426,7 @@ def custom_mask_rcnn_fpn(classes, transfer=None, dataset='custom', pretrained_ba
                             sym_norm_layer, sym_norm_kwargs, num_fpn_filters, num_box_head_conv,
                             num_box_head_conv_filters, num_box_head_dense_filters)
         return get_mask_rcnn(
-            name='fpn_' + base_network_name, dataset=dataset, pretrained=False, features=features,
+            name='fpn_' + base_network_name, dataset=dataset, features=features,
             top_features=top_features, classes=classes, box_features=box_features,
             train_patterns=train_patterns, **kwargs)
     else:
@@ -434,7 +434,7 @@ def custom_mask_rcnn_fpn(classes, transfer=None, dataset='custom', pretrained_ba
         module_list = ['fpn']
         if norm_layer is not None:
             module_list.append(norm_layer)
-        net = get_model('_'.join(['faster_rcnn', *module_list, base_network_name, str(transfer)]),
+        net = get_model('_'.join(['mask_rcnn', *module_list, base_network_name, str(transfer)]),
                         pretrained=True, **kwargs)
         reuse_classes = [x for x in classes if x in net.classes]
         net.reset_class(classes, reuse_weights=reuse_classes)

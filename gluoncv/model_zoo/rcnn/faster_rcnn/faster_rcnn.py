@@ -564,7 +564,7 @@ def custom_faster_rcnn_fpn(classes, transfer=None, dataset='custom', pretrained_
                             sym_norm_layer, sym_norm_kwargs, num_fpn_filters, num_box_head_conv,
                             num_box_head_conv_filters, num_box_head_dense_filters)
         return get_faster_rcnn(
-            name='fpn_' + base_network_name, dataset=dataset, pretrained=False, features=features,
+            name='fpn_' + base_network_name, dataset=dataset, features=features,
             top_features=top_features, classes=classes, box_features=box_features,
             train_patterns=train_patterns, **kwargs)
     else:
