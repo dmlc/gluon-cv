@@ -1,5 +1,6 @@
 # pylint: disable=wildcard-import
-"""Video related tasks. Custom data loader
+"""
+Customized data loader for video classification related tasks.
 """
 from __future__ import absolute_import
 from .classification import *
