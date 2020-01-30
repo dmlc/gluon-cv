@@ -1,5 +1,5 @@
 # pylint: disable=line-too-long,too-many-lines,missing-docstring,arguments-differ,unused-argument
-# Code partially borrowed from https://github.com/open-mmlab/mmaction.
+# Code adapted from https://github.com/open-mmlab/mmaction.
 
 __all__ = ['I3D_ResNetV1', 'i3d_resnet50_v1_kinetics400', 'i3d_resnet101_v1_kinetics400',
            'i3d_nl5_resnet50_v1_kinetics400', 'i3d_nl10_resnet50_v1_kinetics400',
