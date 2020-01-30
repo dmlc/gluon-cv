@@ -4,8 +4,8 @@ from __future__ import absolute_import
 from mxnet import autograd
 from mxnet import gluon
 
-from ...nn.bbox import BBoxCornerToCenter, BBoxClipToImage
-from ...nn.coder import NormalizedBoxCenterDecoder
+from ....nn.bbox import BBoxCornerToCenter, BBoxClipToImage
+from ....nn.coder import NormalizedBoxCenterDecoder
 
 
 class RPNProposal(gluon.HybridBlock):

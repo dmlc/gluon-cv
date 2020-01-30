@@ -10,8 +10,8 @@ from mxnet.gluon import nn
 from mxnet.gluon.contrib.nn import SyncBatchNorm
 
 from .rcnn_target import MaskTargetGenerator
-from ..faster_rcnn.faster_rcnn import FasterRCNN
-from ...nn.feature import FPNFeatureExpander
+from ....model_zoo.rcnn.faster_rcnn import FasterRCNN
+from ....nn.feature import FPNFeatureExpander
 
 __all__ = ['MaskRCNN', 'get_mask_rcnn',
            'mask_rcnn_resnet50_v1b_coco',
@@ -21,7 +21,8 @@ __all__ = ['MaskRCNN', 'get_mask_rcnn',
            'mask_rcnn_resnet18_v1b_coco',
            'mask_rcnn_fpn_resnet18_v1b_coco',
            'mask_rcnn_fpn_bn_resnet18_v1b_coco',
-           'mask_rcnn_fpn_bn_mobilenet1_0_coco']
+           'mask_rcnn_fpn_bn_mobilenet1_0_coco',
+           'custom_mask_rcnn_fpn']
 
 
 class Mask(nn.HybridBlock):
@@ -360,7 +361,7 @@ def get_mask_rcnn(name, dataset, pretrained=False, ctx=mx.cpu(),
     """
     net = MaskRCNN(**kwargs)
     if pretrained:
-        from ..model_store import get_model_file
+        from gluoncv.model_zoo.model_store import get_model_file
         full_name = '_'.join(('mask_rcnn', name, dataset))
         net.load_parameters(get_model_file(full_name, tag=pretrained, root=root), ctx=ctx,
                             ignore_extra=True, allow_missing=True)
@@ -395,8 +396,8 @@ def mask_rcnn_resnet50_v1b_coco(pretrained=False, pretrained_base=True, **kwargs
     >>> model = mask_rcnn_resnet50_v1b_coco(pretrained=True)
     >>> print(model)
     """
-    from ..resnetv1b import resnet50_v1b
-    from ...data import COCODetection
+    from ....model_zoo.resnetv1b import resnet50_v1b
+    from ....data import COCODetection
     classes = COCODetection.CLASSES
     pretrained_base = False if pretrained else pretrained_base
     base_network = resnet50_v1b(pretrained=pretrained_base, dilated=False, use_global_stats=True)
@@ -445,8 +446,8 @@ def mask_rcnn_fpn_resnet50_v1b_coco(pretrained=False, pretrained_base=True, **kw
     >>> model = mask_rcnn_resnet50_v1b_coco(pretrained=True)
     >>> print(model)
     """
-    from ..resnetv1b import resnet50_v1b
-    from ...data import COCODetection
+    from ....model_zoo.resnetv1b import resnet50_v1b
+    from ....data import COCODetection
     classes = COCODetection.CLASSES
     pretrained_base = False if pretrained else pretrained_base
     base_network = resnet50_v1b(pretrained=pretrained_base, dilated=False, use_global_stats=True)
@@ -500,8 +501,8 @@ def mask_rcnn_resnet101_v1d_coco(pretrained=False, pretrained_base=True, **kwarg
     >>> model = mask_rcnn_resnet101_v1d_coco(pretrained=True)
     >>> print(model)
     """
-    from ..resnetv1b import resnet101_v1d
-    from ...data import COCODetection
+    from ....model_zoo.resnetv1b import resnet101_v1d
+    from ....data import COCODetection
     classes = COCODetection.CLASSES
     pretrained_base = False if pretrained else pretrained_base
     base_network = resnet101_v1d(pretrained=pretrained_base, dilated=False, use_global_stats=True)
@@ -550,8 +551,8 @@ def mask_rcnn_fpn_resnet101_v1d_coco(pretrained=False, pretrained_base=True, **k
     >>> model = mask_rcnn_fpn_resnet101_v1d_coco(pretrained=True)
     >>> print(model)
     """
-    from ..resnetv1b import resnet101_v1d
-    from ...data import COCODetection
+    from ....model_zoo.resnetv1b import resnet101_v1d
+    from ....data import COCODetection
     classes = COCODetection.CLASSES
     pretrained_base = False if pretrained else pretrained_base
     base_network = resnet101_v1d(pretrained=pretrained_base, dilated=False, use_global_stats=True)
@@ -612,8 +613,8 @@ def mask_rcnn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, rcnn_max
     >>> model = mask_rcnn_resnet18_v1b_coco(pretrained=True)
     >>> print(model)
     """
-    from ..resnetv1b import resnet18_v1b
-    from ...data import COCODetection
+    from ....model_zoo.resnetv1b import resnet18_v1b
+    from ....data import COCODetection
     classes = COCODetection.CLASSES
     pretrained_base = False if pretrained else pretrained_base
     rcnn_max_dets = rpn_test_post_nms if rcnn_max_dets > rpn_test_post_nms else rcnn_max_dets
@@ -670,8 +671,8 @@ def mask_rcnn_fpn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, rcnn
     >>> model = mask_rcnn_fpn_resnet18_v1b_coco(pretrained=True)
     >>> print(model)
     """
-    from ..resnetv1b import resnet18_v1b
-    from ...data import COCODetection
+    from ....model_zoo.resnetv1b import resnet18_v1b
+    from ....data import COCODetection
     classes = COCODetection.CLASSES
     pretrained_base = False if pretrained else pretrained_base
     rcnn_max_dets = rpn_test_post_nms if rcnn_max_dets > rpn_test_post_nms else rcnn_max_dets
@@ -735,8 +736,8 @@ def mask_rcnn_fpn_bn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, n
     >>> model = mask_rcnn_fpn_resnet18_v1b_coco(pretrained=True)
     >>> print(model)
     """
-    from ..resnetv1b import resnet18_v1b
-    from ...data import COCODetection
+    from ....model_zoo.resnetv1b import resnet18_v1b
+    from ....data import COCODetection
     classes = COCODetection.CLASSES
     pretrained_base = False if pretrained else pretrained_base
     rcnn_max_dets = rpn_test_post_nms if rcnn_max_dets > rpn_test_post_nms else rcnn_max_dets
@@ -806,8 +807,8 @@ def mask_rcnn_fpn_bn_mobilenet1_0_coco(pretrained=False, pretrained_base=True, n
     >>> model = mask_rcnn_fpn_bn_mobilenet1_0_coco(pretrained=True)
     >>> print(model)
     """
-    from ..mobilenet import mobilenet1_0
-    from ...data import COCODetection
+    from ....model_zoo.mobilenet import mobilenet1_0
+    from ....data import COCODetection
     classes = COCODetection.CLASSES
     pretrained_base = False if pretrained else pretrained_base
     rcnn_max_dets = rpn_test_post_nms if rcnn_max_dets > rpn_test_post_nms else rcnn_max_dets
@@ -841,3 +842,121 @@ def mask_rcnn_fpn_bn_mobilenet1_0_coco(pretrained=False, pretrained_base=True, n
         rpn_test_pre_nms=rpn_test_pre_nms, rpn_test_post_nms=rpn_test_post_nms, rpn_min_size=1,
         num_sample=512, pos_iou_thresh=0.5, pos_ratio=0.25, target_roi_scale=2, num_fcn_convs=2,
         norm_layer=SyncBatchNorm, norm_kwargs=gluon_norm_kwargs, **kwargs)
+
+
+def custom_mask_rcnn_fpn(classes, transfer=None, dataset='custom', pretrained_base=True,
+                           base_network_name='resnet18_v1b', norm_layer=nn.BatchNorm,
+                           norm_kwargs=None, sym_norm_layer=None, sym_norm_kwargs=None,
+                           num_fpn_filters=256, num_box_head_conv=4, num_box_head_conv_filters=256,
+                           num_box_head_dense_filters=1024, **kwargs):
+    r"""Mask RCNN model with resnet base network and FPN on custom dataset.
+
+    Parameters
+    ----------
+    classes : iterable of str
+        Names of custom foreground classes. `len(classes)` is the number of foreground classes.
+    transfer : str or None
+        Dataset from witch to transfer from. If not `None`, will try to reuse pre-trained weights
+        from faster RCNN networks trained on other dataset, specified by the parameter.
+    dataset : str, default 'custom'
+        Dataset name attached to the network name
+    pretrained_base : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    base_network_name : str, default 'resnet18_v1b'
+        base network for mask RCNN. Currently support: 'resnet18_v1b', 'resnet50_v1b',
+        and 'resnet101_v1d'
+    norm_layer : nn.HybridBlock, default nn.BatchNorm
+        Gluon normalization layer to use. Default is frozen batch normalization layer.
+    norm_kwargs : dict
+        Keyword arguments for gluon normalization layer
+    sym_norm_layer : nn.SymbolBlock, default `None`
+        Symbol normalization layer to use in FPN. This is due to FPN being implemented using
+        SymbolBlock. Default is `None`, meaning no normalization layer will be used in FPN.
+    sym_norm_kwargs : dict
+        Keyword arguments for symbol normalization layer used in FPN.
+    num_fpn_filters : int, default 256
+        Number of filters for FPN output layers.
+    num_box_head_conv : int, default 4
+        Number of convolution layers to use in box head if batch normalization is not frozen.
+    num_box_head_conv_filters : int, default 256
+        Number of filters for convolution layers in box head.
+        Only applicable if batch normalization is not frozen.
+    num_box_head_dense_filters : int, default 1024
+        Number of hidden units for the last fully connected layer in box head.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+
+    Returns
+    -------
+    mxnet.gluon.HybridBlock
+        Hybrid faster RCNN network.
+    """
+    use_global_stats = norm_layer is nn.BatchNorm
+    train_patterns = '|'.join(['.*dense', '.*rpn', '.*down(2|3|4)_conv',
+                               '.*layers(2|3|4)_conv']) if use_global_stats \
+        else '(?!.*moving)'  # excluding symbol bn moving mean and var
+
+    if transfer is None:
+        if base_network_name == 'resnet18_v1b':
+            from ....model_zoo.resnetv1b import resnet18_v1b
+            base_network = resnet18_v1b(pretrained=pretrained_base, dilated=False,
+                                        use_global_stats=use_global_stats, norm_kwargs=norm_kwargs,
+                                        **kwargs)
+            fpn_inputs_names = ['layers1_relu3_fwd', 'layers2_relu3_fwd', 'layers3_relu3_fwd',
+                                'layers4_relu3_fwd']
+        elif base_network_name == 'resnet50_v1b':
+            from ....model_zoo.resnetv1b import resnet50_v1b
+            base_network = resnet50_v1b(pretrained=pretrained_base, dilated=False,
+                                        use_global_stats=use_global_stats, norm_kwargs=norm_kwargs,
+                                        **kwargs)
+            fpn_inputs_names = ['layers1_relu8_fwd', 'layers2_relu11_fwd', 'layers3_relu17_fwd',
+                                'layers4_relu8_fwd']
+        elif base_network_name == 'resnet101_v1d':
+            from ....model_zoo.resnetv1b import resnet101_v1d
+            base_network = resnet101_v1d(pretrained=pretrained_base, dilated=False,
+                                         use_global_stats=use_global_stats, norm_kwargs=norm_kwargs,
+                                         **kwargs)
+            fpn_inputs_names = ['layers1_relu8_fwd', 'layers2_relu11_fwd', 'layers3_relu68_fwd',
+                                'layers4_relu8_fwd']
+        else:
+            raise NotImplementedError('Unsupported network', base_network_name)
+
+        features = FPNFeatureExpander(
+            network=base_network, outputs=fpn_inputs_names,
+            num_filters=[num_fpn_filters] * len(fpn_inputs_names), use_1x1=True,
+            use_upsample=True, use_elewadd=True, use_p6=True, no_bias=not use_global_stats,
+            pretrained=pretrained_base, norm_layer=sym_norm_layer, norm_kwargs=sym_norm_kwargs)
+        top_features = None
+        # 1 Conv 1 FC layer before RCNN cls and reg
+        box_features = nn.HybridSequential()
+        if use_global_stats:
+            box_features.add(
+                nn.Dense(num_box_head_dense_filters, weight_initializer=mx.init.Normal(0.01)),
+                nn.Activation('relu'))
+        else:
+            for _ in range(num_box_head_conv):
+                box_features.add(nn.Conv2D(num_box_head_conv_filters, 3, padding=1, use_bias=False),
+                                 norm_layer(**norm_kwargs),
+                                 nn.Activation('relu'))
+        box_features.add(
+            nn.Dense(num_box_head_dense_filters, weight_initializer=mx.init.Normal(0.01)),
+            nn.Activation('relu'))
+
+        return get_mask_rcnn(
+            name='fpn_' + base_network_name, dataset=dataset, pretrained=False, features=features,
+            top_features=top_features, classes=classes, box_features=box_features,
+            train_patterns=train_patterns, **kwargs)
+    else:
+        from gluoncv.model_zoo import get_model
+        module_list = ['fpn']
+        if norm_layer is not None:
+            module_list.append(norm_layer)
+        net = get_model('_'.join(['faster_rcnn', *module_list, base_network_name, str(transfer)]),
+                        pretrained=True, **kwargs)
+        reuse_classes = [x for x in classes if x in net.classes]
+        net.reset_class(classes, reuse_weights=reuse_classes)
+    return net
+
