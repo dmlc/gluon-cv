@@ -15,7 +15,7 @@ class Kinetics400(VideoClsCustom):
 
     Parameters
     ----------
-    root : str, required.
+    root : str, required. Default '~/.mxnet/datasets/kinetics400/rawframes_train'.
         Path to the root folder storing the dataset.
     setting : str, required.
         A text file describing the dataset, each line per video sample.
