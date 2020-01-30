@@ -104,11 +104,6 @@ class Kinetics400(VideoClsCustom):
                                           video_loader, use_decord, slowfast, slow_temporal_stride,
                                           fast_temporal_stride, transform)
 
-        # self.clips = self._make_dataset(root, setting)
-        # if len(self.clips) == 0:
-        #     raise(RuntimeError("Found 0 video clips in subfolders of: " + root + "\n"
-        #                        "Check your data directory (opt.data-dir)."))
-
 class Kinetics400Attr(object):
     def __init__(self):
         self.num_class = 400

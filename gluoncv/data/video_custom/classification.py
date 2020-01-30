@@ -3,7 +3,6 @@
 Code adapted from https://github.com/open-mmlab/mmaction
 and https://github.com/bryanyzhu/two-stream-pytorch"""
 import os
-import random
 import numpy as np
 from mxnet import nd
 from mxnet.gluon.data import dataset
