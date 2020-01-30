@@ -572,8 +572,9 @@ def custom_faster_rcnn_fpn(classes, transfer=None, dataset='custom', pretrained_
         module_list = ['fpn']
         if norm_layer is SyncBatchNorm:
             module_list.append('bn')
-        net = get_model('_'.join(['faster_rcnn', *module_list, base_network_name, str(transfer)]),
-                        pretrained=True)
+        net = get_model(
+            '_'.join(['faster_rcnn'] + module_list + [base_network_name, str(transfer)]),
+            pretrained=True)
         reuse_classes = [x for x in classes if x in net.classes]
         net.reset_class(classes, reuse_weights=reuse_classes)
     return net

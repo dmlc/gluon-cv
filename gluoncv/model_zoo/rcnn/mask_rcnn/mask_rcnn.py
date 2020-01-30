@@ -434,7 +434,7 @@ def custom_mask_rcnn_fpn(classes, transfer=None, dataset='custom', pretrained_ba
         module_list = ['fpn']
         if norm_layer is not None:
             module_list.append(norm_layer)
-        net = get_model('_'.join(['mask_rcnn', *module_list, base_network_name, str(transfer)]),
+        net = get_model('_'.join(['mask_rcnn'] + module_list + [base_network_name, str(transfer)]),
                         pretrained=True, **kwargs)
         reuse_classes = [x for x in classes if x in net.classes]
         net.reset_class(classes, reuse_weights=reuse_classes)
