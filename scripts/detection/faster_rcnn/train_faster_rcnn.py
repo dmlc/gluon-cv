@@ -288,6 +288,8 @@ def parse_args():
         args.anchor_scales = str_args2num_args(args.anchor_scales, '--anchor-scales', float)
         args.anchor_alloc_size = str_args2num_args(args.anchor_alloc_size,
                                                    '--anchor-alloc-size', int)
+    if args.amp and args.norm_layer == 'bn':
+        raise NotImplementedError('SyncBatchNorm currently does not support AMP.')
 
     return args
 
