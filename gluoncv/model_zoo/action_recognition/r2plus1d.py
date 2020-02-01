@@ -272,21 +272,21 @@ class R2Plus1D(HybridBlock):
                     norm_kwargs['use_global_stats'] = True
 
             self.layer1 = self._make_res_layer(block=block,
-                                               planes=64 * block.expansion,
+                                               planes=64,
                                                blocks=layers[0],
                                                layer_name='layer1_')
             self.layer2 = self._make_res_layer(block=block,
-                                               planes=128 * block.expansion,
+                                               planes=128,
                                                blocks=layers[1],
                                                stride=2,
                                                layer_name='layer2_')
             self.layer3 = self._make_res_layer(block=block,
-                                               planes=256 * block.expansion,
+                                               planes=256,
                                                blocks=layers[2],
                                                stride=2,
                                                layer_name='layer3_')
             self.layer4 = self._make_res_layer(block=block,
-                                               planes=512 * block.expansion,
+                                               planes=512,
                                                blocks=layers[3],
                                                stride=2,
                                                layer_name='layer4_')

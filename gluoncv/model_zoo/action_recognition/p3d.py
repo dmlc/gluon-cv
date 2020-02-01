@@ -2,7 +2,7 @@
 Code adapted from https://github.com/qijiezhao/pseudo-3d-pytorch."""
 # pylint: disable=arguments-differ,unused-argument,line-too-long
 
-__all__ = ['P3D', 'p3d_resnet50_kinetics400']
+__all__ = ['P3D', 'p3d_resnet50_kinetics400', 'p3d_resnet101_kinetics400']
 
 from mxnet import init
 from mxnet.context import cpu
@@ -456,6 +456,55 @@ def p3d_resnet50_kinetics400(nclass=400, pretrained=False, pretrained_base=True,
     if pretrained:
         from ..model_store import get_model_file
         model.load_parameters(get_model_file('p3d_resnet50_kinetics400',
+                                             tag=pretrained, root=root), ctx=ctx)
+        from ...data import Kinetics400Attr
+        attrib = Kinetics400Attr()
+        model.classes = attrib.classes
+    model.collect_params().reset_ctx(ctx)
+
+    return model
+
+def p3d_resnet101_kinetics400(nclass=400, pretrained=False, pretrained_base=True,
+                              root='~/.mxnet/models', num_segments=1, num_crop=1,
+                              feat_ext=False, ctx=cpu(), **kwargs):
+    r"""The Pseudo 3D network (P3D) with ResNet101 backbone trained on Kinetics400 dataset.
+
+    Parameters
+    ----------
+    nclass : int.
+        Number of categories in the dataset.
+    pretrained : bool or str.
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True.
+        Load pretrained base network, the extra layers are randomized. Note that
+        if pretrained is `True`, this has no effect.
+    ctx : Context, default CPU.
+        The context in which to load the pretrained weights.
+    root : str, default $MXNET_HOME/models
+        Location for keeping the model parameters.
+    num_segments : int, default is 1.
+        Number of segments used to evenly divide a video.
+    num_crop : int, default is 1.
+        Number of crops used during evaluation, choices are 1, 3 or 10.
+    feat_ext : bool.
+        Whether to extract features before dense classification layer or
+        do a complete forward pass.
+    """
+
+    model = P3D(nclass=nclass,
+                block=Bottleneck,
+                layers=[3, 4, 23, 3],
+                num_segments=num_segments,
+                num_crop=num_crop,
+                feat_ext=feat_ext,
+                ctx=ctx,
+                **kwargs)
+    model.initialize(init.MSRAPrelu(), ctx=ctx)
+
+    if pretrained:
+        from ..model_store import get_model_file
+        model.load_parameters(get_model_file('p3d_resnet101_kinetics400',
                                              tag=pretrained, root=root), ctx=ctx)
         from ...data import Kinetics400Attr
         attrib = Kinetics400Attr()
