@@ -332,6 +332,7 @@ def custom_rcnn_fpn(pretrained_base=True, base_network_name='resnet18_v1b', norm
         pretrained=pretrained_base, norm_layer=sym_norm_layer, norm_kwargs=sym_norm_kwargs)
     top_features = None
     box_features = nn.HybridSequential()
+    box_features.add(nn.AvgPool2D(pool_size=(3, 3), strides=2, padding=1))  # reduce to 7x7
     if use_global_stats:
         box_features.add(
             nn.Dense(num_box_head_dense_filters, weight_initializer=mx.init.Normal(0.01)),
