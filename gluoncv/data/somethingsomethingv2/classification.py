@@ -27,7 +27,7 @@ class SomethingSomethingV2(VideoClsCustom):
         Usually there is three-crop or ten-crop evaluation strategy involved.
     name_pattern : str, default None.
         The naming pattern of the decoded video frames.
-        For example, img_00012.jpg.
+        For example, 000012.jpg.
     video_ext : str, default 'mp4'.
         If video_loader is set to True, please specify the video format accordinly.
     is_color : bool, default True.
