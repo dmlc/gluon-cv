@@ -54,6 +54,14 @@ gluoncv.data
 
     gluoncv.data.ADE20KSegmentation
 
+`Kinetics400 <https://deepmind.com/research/open-source/kinetics>`_
+---------------------------------------------------------------
+
+.. autosummary::
+    :nosignatures:
+
+    gluoncv.data.Kinetics400
+
 
 Customized Dataset
 ------------------
