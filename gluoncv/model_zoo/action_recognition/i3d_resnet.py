@@ -1223,6 +1223,8 @@ def i3d_resnet50_v1_custom(nclass=400, pretrained=False, pretrained_base=True, c
     feat_ext : bool.
         Whether to extract features before dense classification layer or
         do a complete forward pass.
+    use_kinetics_pretrain : bool.
+        Whether to load Kinetics-400 pre-trained model weights.
     """
 
     model = I3D_ResNetV1(nclass=nclass,
