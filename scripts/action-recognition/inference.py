@@ -24,7 +24,7 @@ def parse_args():
     parser.add_argument('--dtype', type=str, default='float32',
                         help='data type for training. default is float32')
     parser.add_argument('--gpu-id', type=int, default=0,
-                        help='number of gpus to use.')
+                        help='number of gpus to use. use -1 for CPU')
     parser.add_argument('--mode', type=str,
                         help='mode in which to train the model. options are symbolic, imperative, hybrid')
     parser.add_argument('--model', type=str, required=True,
@@ -188,8 +188,11 @@ def main(logger):
     gc.set_threshold(100, 5, 5)
 
     # set env
-    gpu_id = opt.gpu_id
-    context = mx.gpu(gpu_id)
+    if opt.gpu_id == -1:
+        context = mx.cpu()
+    else:
+        gpu_id = opt.gpu_id
+        context = mx.gpu(gpu_id)
 
     # get data preprocess
     image_norm_mean = [0.485, 0.456, 0.406]
