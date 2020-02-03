@@ -305,7 +305,7 @@ Action Recognition
     i3d_resnet50_v1_sthsthv2
     i3d_resnet50_v1_hmdb51
     i3d_resnet50_v1_ucf101
-    i3d_resnet50_v1_custom'
+    i3d_resnet50_v1_custom
 
 :hidden:`P3D`
 ~~~~~~~~~~~~~~~~

@@ -9,7 +9,7 @@ from mxnet.gluon.block import HybridBlock
 from mxnet.gluon import nn
 
 class C3D(HybridBlock):
-    """
+    r"""
     The Convolutional 3D network (C3D).
     Learning Spatiotemporal Features with 3D Convolutional Networks.
     ICCV, 2015. https://arxiv.org/abs/1412.0767

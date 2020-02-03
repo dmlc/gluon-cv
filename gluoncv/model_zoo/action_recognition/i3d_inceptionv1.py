@@ -326,7 +326,7 @@ def i3d_inceptionv1_kinetics400(nclass=400, pretrained=False, pretrained_base=Tr
                                 ctx=cpu(), root='~/.mxnet/models', use_tsn=False,
                                 num_segments=1, num_crop=1, partial_bn=False,
                                 feat_ext=False, **kwargs):
-    r"""Inception v1 model from
+    r"""Inception v1 model trained on Kinetics400 dataset from
     `"Going Deeper with Convolutions"
     <https://arxiv.org/abs/1409.4842>`_ paper.
 

@@ -112,6 +112,29 @@ def resnet18_v1b_sthsthv2(nclass=174, pretrained=False, pretrained_base=True,
                           use_tsn=False, partial_bn=False,
                           num_segments=1, num_crop=1, root='~/.mxnet/models',
                           ctx=mx.cpu(), **kwargs):
+    r"""ResNet18 model trained on Something-Something-V2 dataset.
+
+    Parameters
+    ----------
+    nclass : int.
+        Number of categories in the dataset.
+    pretrained : bool or str.
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True.
+        Load pretrained base network, the extra layers are randomized. Note that
+        if pretrained is `True`, this has no effect.
+    ctx : Context, default CPU.
+        The context in which to load the pretrained weights.
+    root : str, default $MXNET_HOME/models
+        Location for keeping the model parameters.
+    num_segments : int, default is 1.
+        Number of segments used to evenly divide a video.
+    num_crop : int, default is 1.
+        Number of crops used during evaluation, choices are 1, 3 or 10.
+    partial_bn : bool, default False.
+        Freeze all batch normalization layers during training except the first layer.
+    """
     model = ActionRecResNetV1b(depth=18,
                                nclass=nclass,
                                partial_bn=partial_bn,
@@ -134,6 +157,29 @@ def resnet34_v1b_sthsthv2(nclass=174, pretrained=False, pretrained_base=True,
                           use_tsn=False, partial_bn=False,
                           num_segments=1, num_crop=1, root='~/.mxnet/models',
                           ctx=mx.cpu(), **kwargs):
+    r"""ResNet34 model trained on Something-Something-V2 dataset.
+
+    Parameters
+    ----------
+    nclass : int.
+        Number of categories in the dataset.
+    pretrained : bool or str.
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True.
+        Load pretrained base network, the extra layers are randomized. Note that
+        if pretrained is `True`, this has no effect.
+    ctx : Context, default CPU.
+        The context in which to load the pretrained weights.
+    root : str, default $MXNET_HOME/models
+        Location for keeping the model parameters.
+    num_segments : int, default is 1.
+        Number of segments used to evenly divide a video.
+    num_crop : int, default is 1.
+        Number of crops used during evaluation, choices are 1, 3 or 10.
+    partial_bn : bool, default False.
+        Freeze all batch normalization layers during training except the first layer.
+    """
     model = ActionRecResNetV1b(depth=34,
                                nclass=nclass,
                                partial_bn=partial_bn,
@@ -156,6 +202,29 @@ def resnet50_v1b_sthsthv2(nclass=174, pretrained=False, pretrained_base=True,
                           use_tsn=False, partial_bn=False,
                           num_segments=1, num_crop=1, root='~/.mxnet/models',
                           ctx=mx.cpu(), **kwargs):
+    r"""ResNet50 model trained on Something-Something-V2 dataset.
+
+    Parameters
+    ----------
+    nclass : int.
+        Number of categories in the dataset.
+    pretrained : bool or str.
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True.
+        Load pretrained base network, the extra layers are randomized. Note that
+        if pretrained is `True`, this has no effect.
+    ctx : Context, default CPU.
+        The context in which to load the pretrained weights.
+    root : str, default $MXNET_HOME/models
+        Location for keeping the model parameters.
+    num_segments : int, default is 1.
+        Number of segments used to evenly divide a video.
+    num_crop : int, default is 1.
+        Number of crops used during evaluation, choices are 1, 3 or 10.
+    partial_bn : bool, default False.
+        Freeze all batch normalization layers during training except the first layer.
+    """
     model = ActionRecResNetV1b(depth=50,
                                nclass=nclass,
                                partial_bn=partial_bn,
@@ -178,6 +247,29 @@ def resnet101_v1b_sthsthv2(nclass=174, pretrained=False, pretrained_base=True,
                            use_tsn=False, partial_bn=False,
                            num_segments=1, num_crop=1, root='~/.mxnet/models',
                            ctx=mx.cpu(), **kwargs):
+    r"""ResNet101 model trained on Something-Something-V2 dataset.
+
+    Parameters
+    ----------
+    nclass : int.
+        Number of categories in the dataset.
+    pretrained : bool or str.
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True.
+        Load pretrained base network, the extra layers are randomized. Note that
+        if pretrained is `True`, this has no effect.
+    ctx : Context, default CPU.
+        The context in which to load the pretrained weights.
+    root : str, default $MXNET_HOME/models
+        Location for keeping the model parameters.
+    num_segments : int, default is 1.
+        Number of segments used to evenly divide a video.
+    num_crop : int, default is 1.
+        Number of crops used during evaluation, choices are 1, 3 or 10.
+    partial_bn : bool, default False.
+        Freeze all batch normalization layers during training except the first layer.
+    """
     model = ActionRecResNetV1b(depth=101,
                                nclass=nclass,
                                partial_bn=partial_bn,
@@ -200,6 +292,29 @@ def resnet152_v1b_sthsthv2(nclass=174, pretrained=False, pretrained_base=True,
                            use_tsn=False, partial_bn=False,
                            num_segments=1, num_crop=1, root='~/.mxnet/models',
                            ctx=mx.cpu(), **kwargs):
+    r"""ResNet152 model trained on Something-Something-V2 dataset.
+
+    Parameters
+    ----------
+    nclass : int.
+        Number of categories in the dataset.
+    pretrained : bool or str.
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True.
+        Load pretrained base network, the extra layers are randomized. Note that
+        if pretrained is `True`, this has no effect.
+    ctx : Context, default CPU.
+        The context in which to load the pretrained weights.
+    root : str, default $MXNET_HOME/models
+        Location for keeping the model parameters.
+    num_segments : int, default is 1.
+        Number of segments used to evenly divide a video.
+    num_crop : int, default is 1.
+        Number of crops used during evaluation, choices are 1, 3 or 10.
+    partial_bn : bool, default False.
+        Freeze all batch normalization layers during training except the first layer.
+    """
     model = ActionRecResNetV1b(depth=152,
                                nclass=nclass,
                                partial_bn=partial_bn,
@@ -222,6 +337,29 @@ def resnet18_v1b_kinetics400(nclass=400, pretrained=False, pretrained_base=True,
                              use_tsn=False, partial_bn=False,
                              num_segments=1, num_crop=1, root='~/.mxnet/models',
                              ctx=mx.cpu(), **kwargs):
+    r"""ResNet18 model trained on Kinetics400 dataset.
+
+    Parameters
+    ----------
+    nclass : int.
+        Number of categories in the dataset.
+    pretrained : bool or str.
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True.
+        Load pretrained base network, the extra layers are randomized. Note that
+        if pretrained is `True`, this has no effect.
+    ctx : Context, default CPU.
+        The context in which to load the pretrained weights.
+    root : str, default $MXNET_HOME/models
+        Location for keeping the model parameters.
+    num_segments : int, default is 1.
+        Number of segments used to evenly divide a video.
+    num_crop : int, default is 1.
+        Number of crops used during evaluation, choices are 1, 3 or 10.
+    partial_bn : bool, default False.
+        Freeze all batch normalization layers during training except the first layer.
+    """
     model = ActionRecResNetV1b(depth=18,
                                nclass=nclass,
                                partial_bn=partial_bn,
@@ -244,6 +382,29 @@ def resnet34_v1b_kinetics400(nclass=400, pretrained=False, pretrained_base=True,
                              use_tsn=False, partial_bn=False,
                              num_segments=1, num_crop=1, root='~/.mxnet/models',
                              ctx=mx.cpu(), **kwargs):
+    r"""ResNet34 model trained on Kinetics400 dataset.
+
+    Parameters
+    ----------
+    nclass : int.
+        Number of categories in the dataset.
+    pretrained : bool or str.
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True.
+        Load pretrained base network, the extra layers are randomized. Note that
+        if pretrained is `True`, this has no effect.
+    ctx : Context, default CPU.
+        The context in which to load the pretrained weights.
+    root : str, default $MXNET_HOME/models
+        Location for keeping the model parameters.
+    num_segments : int, default is 1.
+        Number of segments used to evenly divide a video.
+    num_crop : int, default is 1.
+        Number of crops used during evaluation, choices are 1, 3 or 10.
+    partial_bn : bool, default False.
+        Freeze all batch normalization layers during training except the first layer.
+    """
     model = ActionRecResNetV1b(depth=34,
                                nclass=nclass,
                                partial_bn=partial_bn,
@@ -266,6 +427,29 @@ def resnet50_v1b_kinetics400(nclass=400, pretrained=False, pretrained_base=True,
                              use_tsn=False, partial_bn=False,
                              num_segments=1, num_crop=1, root='~/.mxnet/models',
                              ctx=mx.cpu(), **kwargs):
+    r"""ResNet50 model trained on Kinetics400 dataset.
+
+    Parameters
+    ----------
+    nclass : int.
+        Number of categories in the dataset.
+    pretrained : bool or str.
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True.
+        Load pretrained base network, the extra layers are randomized. Note that
+        if pretrained is `True`, this has no effect.
+    ctx : Context, default CPU.
+        The context in which to load the pretrained weights.
+    root : str, default $MXNET_HOME/models
+        Location for keeping the model parameters.
+    num_segments : int, default is 1.
+        Number of segments used to evenly divide a video.
+    num_crop : int, default is 1.
+        Number of crops used during evaluation, choices are 1, 3 or 10.
+    partial_bn : bool, default False.
+        Freeze all batch normalization layers during training except the first layer.
+    """
     model = ActionRecResNetV1b(depth=50,
                                nclass=nclass,
                                partial_bn=partial_bn,
@@ -288,6 +472,29 @@ def resnet101_v1b_kinetics400(nclass=400, pretrained=False, pretrained_base=True
                               use_tsn=False, partial_bn=False,
                               num_segments=1, num_crop=1, root='~/.mxnet/models',
                               ctx=mx.cpu(), **kwargs):
+    r"""ResNet101 model trained on Kinetics400 dataset.
+
+    Parameters
+    ----------
+    nclass : int.
+        Number of categories in the dataset.
+    pretrained : bool or str.
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True.
+        Load pretrained base network, the extra layers are randomized. Note that
+        if pretrained is `True`, this has no effect.
+    ctx : Context, default CPU.
+        The context in which to load the pretrained weights.
+    root : str, default $MXNET_HOME/models
+        Location for keeping the model parameters.
+    num_segments : int, default is 1.
+        Number of segments used to evenly divide a video.
+    num_crop : int, default is 1.
+        Number of crops used during evaluation, choices are 1, 3 or 10.
+    partial_bn : bool, default False.
+        Freeze all batch normalization layers during training except the first layer.
+    """
     model = ActionRecResNetV1b(depth=101,
                                nclass=nclass,
                                partial_bn=partial_bn,
@@ -310,6 +517,29 @@ def resnet152_v1b_kinetics400(nclass=400, pretrained=False, pretrained_base=True
                               use_tsn=False, partial_bn=False,
                               num_segments=1, num_crop=1, root='~/.mxnet/models',
                               ctx=mx.cpu(), **kwargs):
+    r"""ResNet152 model trained on Kinetics400 dataset.
+
+    Parameters
+    ----------
+    nclass : int.
+        Number of categories in the dataset.
+    pretrained : bool or str.
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True.
+        Load pretrained base network, the extra layers are randomized. Note that
+        if pretrained is `True`, this has no effect.
+    ctx : Context, default CPU.
+        The context in which to load the pretrained weights.
+    root : str, default $MXNET_HOME/models
+        Location for keeping the model parameters.
+    num_segments : int, default is 1.
+        Number of segments used to evenly divide a video.
+    num_crop : int, default is 1.
+        Number of crops used during evaluation, choices are 1, 3 or 10.
+    partial_bn : bool, default False.
+        Freeze all batch normalization layers during training except the first layer.
+    """
     model = ActionRecResNetV1b(depth=152,
                                nclass=nclass,
                                partial_bn=partial_bn,
@@ -332,6 +562,29 @@ def resnet50_v1b_ucf101(nclass=101, pretrained=False, pretrained_base=True,
                         use_tsn=False, partial_bn=False,
                         num_segments=1, num_crop=1, root='~/.mxnet/models',
                         ctx=mx.cpu(), **kwargs):
+    r"""ResNet50 model trained on UCF101 dataset.
+
+    Parameters
+    ----------
+    nclass : int.
+        Number of categories in the dataset.
+    pretrained : bool or str.
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True.
+        Load pretrained base network, the extra layers are randomized. Note that
+        if pretrained is `True`, this has no effect.
+    ctx : Context, default CPU.
+        The context in which to load the pretrained weights.
+    root : str, default $MXNET_HOME/models
+        Location for keeping the model parameters.
+    num_segments : int, default is 1.
+        Number of segments used to evenly divide a video.
+    num_crop : int, default is 1.
+        Number of crops used during evaluation, choices are 1, 3 or 10.
+    partial_bn : bool, default False.
+        Freeze all batch normalization layers during training except the first layer.
+    """
     model = ActionRecResNetV1b(depth=50,
                                nclass=nclass,
                                partial_bn=partial_bn,
@@ -354,6 +607,29 @@ def resnet50_v1b_hmdb51(nclass=51, pretrained=False, pretrained_base=True,
                         use_tsn=False, partial_bn=False,
                         num_segments=1, num_crop=1, root='~/.mxnet/models',
                         ctx=mx.cpu(), **kwargs):
+    r"""ResNet50 model trained on HMDB51 dataset.
+
+    Parameters
+    ----------
+    nclass : int.
+        Number of categories in the dataset.
+    pretrained : bool or str.
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True.
+        Load pretrained base network, the extra layers are randomized. Note that
+        if pretrained is `True`, this has no effect.
+    ctx : Context, default CPU.
+        The context in which to load the pretrained weights.
+    root : str, default $MXNET_HOME/models
+        Location for keeping the model parameters.
+    num_segments : int, default is 1.
+        Number of segments used to evenly divide a video.
+    num_crop : int, default is 1.
+        Number of crops used during evaluation, choices are 1, 3 or 10.
+    partial_bn : bool, default False.
+        Freeze all batch normalization layers during training except the first layer.
+    """
     model = ActionRecResNetV1b(depth=50,
                                nclass=nclass,
                                partial_bn=partial_bn,

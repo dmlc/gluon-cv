@@ -288,7 +288,7 @@ def i3d_inceptionv3_kinetics400(nclass=400, pretrained=False, pretrained_base=Tr
                                 ctx=cpu(), root='~/.mxnet/models', use_tsn=False,
                                 num_segments=1, num_crop=1, partial_bn=False,
                                 feat_ext=False, **kwargs):
-    r"""Inception v3 model from
+    r"""Inception v3 model trained on Kinetics400 dataset from
     `"Rethinking the Inception Architecture for Computer Vision"
     <http://arxiv.org/abs/1512.00567>`_ paper.
 

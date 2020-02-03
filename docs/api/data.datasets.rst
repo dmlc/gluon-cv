@@ -82,6 +82,7 @@ API Reference
 .. autoclass:: gluoncv.data.COCODetection
 .. autoclass:: gluoncv.data.COCOInstance
 .. autoclass:: gluoncv.data.ADE20KSegmentation
+.. autoclass:: gluoncv.data.Kinetics400
 .. autoclass:: gluoncv.data.DetectionDataLoader
 .. autoclass:: gluoncv.data.LstDetection
 .. autoclass:: gluoncv.data.RecordFileDetection
