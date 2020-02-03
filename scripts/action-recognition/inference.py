@@ -1,12 +1,9 @@
 import os
-import sys
 import time
 import argparse
 import logging
-import math
 import gc
 import decord
-import json
 
 import numpy as np
 import mxnet as mx
@@ -14,7 +11,6 @@ from mxnet import nd
 from mxnet.gluon.data.vision import transforms
 from gluoncv.data.transforms import video
 from gluoncv.model_zoo import get_model
-from gluoncv.data import VideoClsCustom
 from gluoncv.utils import makedirs
 
 def parse_args():
