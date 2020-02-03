@@ -41,7 +41,7 @@ The following table lists pre-trained models trained on Kinetics400.
 
   Our pre-trained models reproduce results from "Temporal Segment Networks (TSN)" [2]_ , "Inflated 3D Networks (I3D)" [3]_ , "Non-local Neural Networks" [4]_ and "SlowFast" [5]_ . Please check the reference paper for further information.
 
-  ``InceptionV3`` is trained and evaluated with input size of 299x299.
+  All models are trained using input size 224x224, except ``InceptionV3`` is trained and evaluated with input size of 299x299, ``C3D`` and ``R2+1D`` models are trained and evaluated with input size of 112x112.
 
   ``Clip Length`` is the number of frames within an input clip. ``32 (64/2)`` means we use 32 frames, but actually the frames are formed by randomly selecting 64 consecutive frames from the video and then skipping every other frame. This strategy is widely adopted to reduce computation and memory cost.
 
