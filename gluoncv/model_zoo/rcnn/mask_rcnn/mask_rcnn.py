@@ -417,7 +417,7 @@ def custom_mask_rcnn_fpn(classes, transfer=None, dataset='custom', pretrained_ba
     """
     use_global_stats = norm_layer is nn.BatchNorm
     train_patterns = '|'.join(['.*dense', '.*rpn', '.*down(2|3|4)_conv', '.*layers(2|3|4)_conv',
-                               'P']) if use_global_stats \
+                               '.*mask', 'P']) if use_global_stats \
         else '(?!.*moving)'  # excluding symbol bn moving mean and var'''
 
     if transfer is None:
