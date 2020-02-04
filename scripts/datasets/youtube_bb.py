@@ -1,4 +1,5 @@
-"""Prepare Youtube-bb(YouTube-BoundingBoxes Dataset) datasets"""
+"""this script is used to prepare Youtube-bb dataset for tracking,
+which is YouTube-BoundingBoxes Dataset"""
 import os
 import time
 import argparse
@@ -6,7 +7,7 @@ import tarfile
 from gluoncv.utils import download, makedirs
 
 def parse_args():
-    """dataset parameter."""
+    """Youtube_bb dataset parameter."""
     parser = argparse.ArgumentParser(
         description='Download Youtube_bb dataset and prepare for tracking')
     parser.add_argument('--download-dir', type=str, default='~/.mxnet/datasets/Youtube_bb/',
@@ -16,10 +17,16 @@ def parse_args():
     return args
 
 def download_youtube_bb(args, overwrite=False):
+    """
+    download Youtube-bb dataset and Unzip to download_dir
+    The data has been crop
+    """
     url_json = 'https://yizhu-migrate-data.s3.amazonaws.com/YouTube-BB/train.json'
     url_train = 'https://yizhu-migrate-data.s3.amazonaws.com/YouTube-BB/train'
     url_val = 'https://yizhu-migrate-data.s3.amazonaws.com/YouTube-BB/val'
-    makedirs(args.download_dir)
+    download(url_json, path=args.download_dir, overwrite=overwrite)
+    if not isdir(args.download_dir):
+        makedirs(args.download_dir)
     for i in range(100):
         print(url_train+str(i).zfill(4)+'.tar')
         filename = download(url_train+str(i).zfill(4)+'.tar', path=args.download_dir, overwrite=overwrite)
@@ -30,7 +37,9 @@ def download_youtube_bb(args, overwrite=False):
             tar.extractall(path=args.download_dir)
 
 def main(args):
+    # download Youtube_bb dataset
     download_youtube_bb(args)
+    print('Youtube_bb dataset for tracking has already download completed')
 
 if __name__ == '__main__':
     since = time.time()
