@@ -4,13 +4,14 @@ import os
 import time
 import argparse
 import tarfile
+from os.path import isdir
 from gluoncv.utils import download, makedirs
 
 def parse_args():
     """Youtube_bb dataset parameter."""
     parser = argparse.ArgumentParser(
         description='Download Youtube_bb dataset and prepare for tracking')
-    parser.add_argument('--download-dir', type=str, default='~/.mxnet/datasets/Youtube_bb/',
+    parser.add_argument('--download-dir', type=str, default='~/.mxnet/datasets/yt_bb/',
                         help='dataset directory on disk')
     args = parser.parse_args()
     args.download_dir = os.path.expanduser(args.download_dir)
@@ -24,9 +25,9 @@ def download_youtube_bb(args, overwrite=False):
     url_json = 'https://yizhu-migrate-data.s3.amazonaws.com/YouTube-BB/train.json'
     url_train = 'https://yizhu-migrate-data.s3.amazonaws.com/YouTube-BB/train'
     url_val = 'https://yizhu-migrate-data.s3.amazonaws.com/YouTube-BB/val'
-    download(url_json, path=args.download_dir, overwrite=overwrite)
     if not isdir(args.download_dir):
         makedirs(args.download_dir)
+    download(url_json, path=args.download_dir, overwrite=overwrite)
     for i in range(100):
         print(url_train+str(i).zfill(4)+'.tar')
         filename = download(url_train+str(i).zfill(4)+'.tar', path=args.download_dir, overwrite=overwrite)

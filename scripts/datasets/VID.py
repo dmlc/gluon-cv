@@ -2,7 +2,7 @@
 which is Object detection from video in Large Scale Visual
 Recognition Challenge 2015 (ILSVRC2015)"""
 import json
-from os.path import join, isdir
+from os.path import join, isdir, expanduser
 from os import listdir, chdir, system
 import glob
 from concurrent import futures
@@ -23,14 +23,14 @@ def parse_args():
     """VID dataset parameter."""
     parser = argparse.ArgumentParser(
         description='Download VID dataset and prepare for tracking')
-    parser.add_argument('--download-dir', type=str, default='~/.mxnet/datasets/VID/',
+    parser.add_argument('--download-dir', type=str, default='~/.mxnet/datasets/vid/',
                         help='dataset directory on disk')
     parser.add_argument('--instance-size', type=int, default=511,
                         help='instance image size')
     parser.add_argument('--num-threads', type=int, default=12,
                         help='threads number')
     args = parser.parse_args()
-    args.download_dir = os.path.expanduser(args.download_dir)
+    args.download_dir = expanduser(args.download_dir)
     return args
 
 def download_VID(overwrite=False):

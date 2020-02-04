@@ -222,7 +222,7 @@ def gen_json(args):
 
 def main(args):
     # download COCO dataset
-    # download_coco(args, overwrite=args.overwrite)
+    download_coco(args, overwrite=args.overwrite)
     print('COCO dataset json has already generat completed')
     # crop COCO dataset for prepare for tracking
     crop_coco(args)
