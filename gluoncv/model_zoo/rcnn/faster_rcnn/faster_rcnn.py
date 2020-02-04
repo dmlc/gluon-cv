@@ -124,6 +124,9 @@ class FasterRCNN(RCNN):
     force_nms : bool, default is False
         Appy NMS to all categories, this is to avoid overlapping detection results from different
         categories.
+    export_mode : bool, default is False
+        Temporary work around for exporting R-CNN models as some of the parameters are not needed
+        in forward. eg. *normalizedperclassboxcenterencoder*
 
     Attributes
     ----------
@@ -165,7 +168,7 @@ class FasterRCNN(RCNN):
                  rpn_train_pre_nms=12000, rpn_train_post_nms=2000, rpn_test_pre_nms=6000,
                  rpn_test_post_nms=300, rpn_min_size=16, per_device_batch_size=1, num_sample=128,
                  pos_iou_thresh=0.5, pos_ratio=0.25, max_num_gt=300, additional_output=False,
-                 force_nms=False, **kwargs):
+                 force_nms=False, export_mode=False, **kwargs):
         super(FasterRCNN, self).__init__(
             features=features, top_features=top_features, classes=classes,
             box_features=box_features, short=short, max_size=max_size,
@@ -191,8 +194,13 @@ class FasterRCNN(RCNN):
         self._batch_size = per_device_batch_size
         self._num_sample = num_sample
         self._rpn_test_post_nms = rpn_test_post_nms
-        self._target_generator = RCNNTargetGenerator(self.num_class, int(num_sample * pos_ratio),
-                                                     self._batch_size)
+        if export_mode:
+            self._target_generator = None
+        else:
+            self._target_generator = RCNNTargetGenerator(self.num_class,
+                                                         int(num_sample * pos_ratio),
+                                                         self._batch_size)
+
         self._additional_output = additional_output
         with self.name_scope():
             self.rpn = RPN(
