@@ -103,6 +103,7 @@ def parse_args():
         args.ctx = [mx.cpu(0)]
     else:
         print('Number of GPUs:', args.ngpus)
+        assert args.ngpus > 0, 'No GPUs found, please enable --no-cuda to start training in CPU mode.'
         args.ctx = [mx.gpu(i) for i in range(args.ngpus)]
 
     # logging and checkpoint saving
