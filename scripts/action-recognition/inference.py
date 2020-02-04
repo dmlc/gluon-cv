@@ -1,20 +1,18 @@
 import os
-import sys
 import time
 import argparse
 import logging
-import math
 import gc
 import decord
-import json
 
 import numpy as np
 import mxnet as mx
 from mxnet import nd
 from mxnet.gluon.data.vision import transforms
+
+from gluoncv.data import Kinetics400Attr, UCF101Attr, SomethingSomethingV2Attr, HMDB51Attr
 from gluoncv.data.transforms import video
 from gluoncv.model_zoo import get_model
-from gluoncv.data import VideoClsCustom
 from gluoncv.utils import makedirs
 
 def parse_args():
@@ -28,7 +26,7 @@ def parse_args():
     parser.add_argument('--dtype', type=str, default='float32',
                         help='data type for training. default is float32')
     parser.add_argument('--gpu-id', type=int, default=0,
-                        help='number of gpus to use.')
+                        help='number of gpus to use. use -1 for CPU')
     parser.add_argument('--mode', type=str,
                         help='mode in which to train the model. options are symbolic, imperative, hybrid')
     parser.add_argument('--model', type=str, required=True,
@@ -192,8 +190,11 @@ def main(logger):
     gc.set_threshold(100, 5, 5)
 
     # set env
-    gpu_id = opt.gpu_id
-    context = mx.gpu(gpu_id)
+    if opt.gpu_id == -1:
+        context = mx.cpu()
+    else:
+        gpu_id = opt.gpu_id
+        context = mx.gpu(gpu_id)
 
     # get data preprocess
     image_norm_mean = [0.485, 0.456, 0.406]
@@ -234,6 +235,18 @@ def main(logger):
         logger.info('Pre-trained model is successfully loaded from the model zoo.')
     logger.info("Successfully built model {}".format(model_name))
 
+    # get classes list, if we are using a pretrained network from the model_zoo
+    classes = None
+    if opt.use_pretrained:
+        if "kinetics400" in model_name:
+            classes = Kinetics400Attr().classes
+        elif "ucf101" in model_name:
+            classes = UCF101Attr().classes
+        elif "hmdb51" in model_name:
+            classes = HMDB51Attr().classes
+        elif "sthsth" in model_name:
+            classes = SomethingSomethingV2Attr().classes
+
     # get data
     anno_file = opt.data_list
     f = open(anno_file, 'r')
@@ -257,7 +270,11 @@ def main(logger):
             preds_file = '%s_%s_preds.npy' % (model_name, video_name)
             np.save(os.path.join(opt.save_dir, preds_file), pred_label)
 
-        logger.info('%04d/%04d: %s is predicted to class %d' % (vid, len(data_list), video_name, pred_label))
+        # Try to report a text label instead of the number.
+        if classes:
+            pred_label = classes[pred_label]
+
+        logger.info('%04d/%04d: %s is predicted to class %s' % (vid, len(data_list), video_name, pred_label))
 
     end_time = time.time()
     logger.info('Total inference time is %4.2f minutes' % ((end_time - start_time) / 60))
