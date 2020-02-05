@@ -546,8 +546,8 @@ class ForwardBackwardTask(Parallelizable):
                 total_loss.backward()
 
         return rpn_loss1_metric, rpn_loss2_metric, rcnn_loss1_metric, rcnn_loss2_metric, \
-               mask_loss_metric, rpn_acc_metric, rpn_l1_loss_metric, rcnn_acc_metric, \
-               rcnn_l1_loss_metric, rcnn_mask_metric, rcnn_fgmask_metric
+            mask_loss_metric, rpn_acc_metric, rpn_l1_loss_metric, rcnn_acc_metric, \
+            rcnn_l1_loss_metric, rcnn_mask_metric, rcnn_fgmask_metric
 
 
 def train(net, train_data, val_data, eval_metric, batch_size, ctx, logger, args):
