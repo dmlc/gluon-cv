@@ -2,6 +2,7 @@
 from __future__ import absolute_import
 
 import os
+import re
 
 import mxnet as mx
 from mxnet import autograd
@@ -12,7 +13,6 @@ from .rcnn_target import RCNNTargetSampler, RCNNTargetGenerator
 from ..rcnn import custom_rcnn_fpn
 from ....model_zoo.rcnn import RCNN
 from ....model_zoo.rcnn.rpn import RPN
-import re
 
 
 __all__ = ['FasterRCNN', 'get_faster_rcnn', 'custom_faster_rcnn_fpn']
@@ -469,7 +469,7 @@ class FasterRCNN(RCNN):
         ret = super().collect_params(select)
         tmp = []
         pattern = re.compile('.*normalizedperclassboxcenterencoder.*')
-        for key, param in ret.items():
+        for key, _ in ret.items():
             if pattern.match(key):
                 tmp.append(key)
         for key in tmp:
