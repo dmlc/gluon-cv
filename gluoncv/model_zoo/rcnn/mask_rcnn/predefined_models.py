@@ -14,8 +14,8 @@ __all__ = ['mask_rcnn_resnet50_v1b_coco',
            'mask_rcnn_fpn_resnet101_v1d_coco',
            'mask_rcnn_resnet18_v1b_coco',
            'mask_rcnn_fpn_resnet18_v1b_coco',
-           'mask_rcnn_fpn_bn_resnet18_v1b_coco',
-           'mask_rcnn_fpn_bn_mobilenet1_0_coco']
+           'mask_rcnn_fpn_syncbn_resnet18_v1b_coco',
+           'mask_rcnn_fpn_syncbn_mobilenet1_0_coco']
 
 
 def mask_rcnn_resnet50_v1b_coco(pretrained=False, pretrained_base=True, **kwargs):
@@ -348,9 +348,9 @@ def mask_rcnn_fpn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, rcnn
         target_roi_scale=2, num_fcn_convs=2, **kwargs)
 
 
-def mask_rcnn_fpn_bn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, num_devices=0,
-                                       rcnn_max_dets=1000, rpn_test_pre_nms=6000,
-                                       rpn_test_post_nms=1000, **kwargs):
+def mask_rcnn_fpn_syncbn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, num_devices=0,
+                                           rcnn_max_dets=1000, rpn_test_pre_nms=6000,
+                                           rpn_test_post_nms=1000, **kwargs):
     r"""Mask RCNN model from the paper
     "He, K., Gkioxari, G., Doll&ar, P., & Girshick, R. (2017). Mask R-CNN"
 
@@ -377,7 +377,7 @@ def mask_rcnn_fpn_bn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, n
 
     Examples
     --------
-    >>> model = mask_rcnn_fpn_resnet18_v1b_coco(pretrained=True)
+    >>> model = mask_rcnn_fpn_syncbn_resnet18_v1b_coco(pretrained=True)
     >>> print(model)
     """
     from ....model_zoo.resnetv1b import resnet18_v1b
@@ -404,7 +404,7 @@ def mask_rcnn_fpn_bn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, n
                      nn.Activation('relu'))
     train_patterns = '(?!.*moving)'
     return get_mask_rcnn(
-        name='fpn_bn_resnet18_v1b', dataset='coco', pretrained=pretrained,
+        name='fpn_syncbn_resnet18_v1b', dataset='coco', pretrained=pretrained,
         features=features, top_features=top_features, classes=classes,
         box_features=box_features, mask_channels=256, rcnn_max_dets=rcnn_max_dets,
         short=(640, 800), max_size=1333, min_stage=2, max_stage=6,
@@ -419,9 +419,9 @@ def mask_rcnn_fpn_bn_resnet18_v1b_coco(pretrained=False, pretrained_base=True, n
         norm_kwargs=gluon_norm_kwargs, **kwargs)
 
 
-def mask_rcnn_fpn_bn_mobilenet1_0_coco(pretrained=False, pretrained_base=True, num_devices=0,
-                                       rcnn_max_dets=1000, rpn_test_pre_nms=6000,
-                                       rpn_test_post_nms=1000, **kwargs):
+def mask_rcnn_fpn_syncbn_mobilenet1_0_coco(pretrained=False, pretrained_base=True, num_devices=0,
+                                           rcnn_max_dets=1000, rpn_test_pre_nms=6000,
+                                           rpn_test_post_nms=1000, **kwargs):
     r"""Mask RCNN model from the paper
     "He, K., Gkioxari, G., Doll&ar, P., & Girshick, R. (2017). Mask R-CNN"
 
@@ -448,7 +448,7 @@ def mask_rcnn_fpn_bn_mobilenet1_0_coco(pretrained=False, pretrained_base=True, n
 
     Examples
     --------
-    >>> model = mask_rcnn_fpn_bn_mobilenet1_0_coco(pretrained=True)
+    >>> model = mask_rcnn_fpn_syncbn_mobilenet1_0_coco(pretrained=True)
     >>> print(model)
     """
     from ....model_zoo.mobilenet import mobilenet1_0
@@ -476,7 +476,7 @@ def mask_rcnn_fpn_bn_mobilenet1_0_coco(pretrained=False, pretrained_base=True, n
                      nn.Activation('relu'))
     train_patterns = '(?!.*moving)'
     return get_mask_rcnn(
-        name='fpn_bn_mobilenet1_0', dataset='coco', pretrained=pretrained, features=features,
+        name='fpn_syncbn_mobilenet1_0', dataset='coco', pretrained=pretrained, features=features,
         top_features=top_features, classes=classes, box_features=box_features, mask_channels=256,
         rcnn_max_dets=rcnn_max_dets, short=(640, 800), max_size=1333, min_stage=2, max_stage=6,
         train_patterns=train_patterns, nms_thresh=0.5, nms_topk=-1, post_nms=-1, roi_mode='align',

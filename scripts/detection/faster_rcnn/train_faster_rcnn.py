@@ -94,11 +94,11 @@ def parse_args():
                         help='Disable mixup training if enabled in the last N epochs.')
 
     # Norm layer options
-    parser.add_argument('--norm-layer', type=str, default=None, choices=[None, 'bn'],
+    parser.add_argument('--norm-layer', type=str, default=None, choices=[None, 'syncbn'],
                         help='Type of normalization layer to use. '
                              'If set to None, backbone normalization layer will be fixed,'
                              ' and no normalization layer will be used. '
-                             'Currently supports \'bn\', and None, default is None.'
+                             'Currently supports \'syncbn\', and None, default is None.'
                              'Note that if horovod is enabled, sync bn will not work correctly.')
 
     # Loss options
@@ -288,7 +288,7 @@ def parse_args():
         args.anchor_scales = str_args2num_args(args.anchor_scales, '--anchor-scales', float)
         args.anchor_alloc_size = str_args2num_args(args.anchor_alloc_size,
                                                    '--anchor-alloc-size', int)
-    if args.amp and args.norm_layer == 'bn':
+    if args.amp and args.norm_layer == 'syncbn':
         raise NotImplementedError('SyncBatchNorm currently does not support AMP.')
 
     return args
@@ -639,7 +639,7 @@ if __name__ == '__main__':
         module_list.append('fpn')
     if args.norm_layer is not None:
         module_list.append(args.norm_layer)
-        if args.norm_layer == 'bn':
+        if args.norm_layer == 'syncbn':
             kwargs['num_devices'] = len(ctx)
 
     num_gpus = hvd.size() if args.horovod else len(ctx)
@@ -647,7 +647,7 @@ if __name__ == '__main__':
     if args.custom_model:
         args.use_fpn = True
         net_name = '_'.join(('custom_faster_rcnn_fpn', args.network, args.dataset))
-        if args.norm_layer == 'bn':
+        if args.norm_layer == 'syncbn':
             norm_layer = gluon.contrib.nn.SyncBatchNorm
             norm_kwargs = {'num_devices': len(ctx)}
             sym_norm_layer = mx.sym.contrib.SyncBatchNorm

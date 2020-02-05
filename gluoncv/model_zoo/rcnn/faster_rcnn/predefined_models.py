@@ -13,12 +13,12 @@ from ....nn.feature import FPNFeatureExpander
 __all__ = ['faster_rcnn_resnet50_v1b_voc',
            'faster_rcnn_resnet50_v1b_coco',
            'faster_rcnn_fpn_resnet50_v1b_coco',
-           'faster_rcnn_fpn_bn_resnet50_v1b_coco',
+           'faster_rcnn_fpn_syncbn_resnet50_v1b_coco',
            'faster_rcnn_resnet50_v1b_custom',
            'faster_rcnn_resnet101_v1d_voc',
            'faster_rcnn_resnet101_v1d_coco',
            'faster_rcnn_fpn_resnet101_v1d_coco',
-           'faster_rcnn_fpn_bn_resnet101_v1d_coco',
+           'faster_rcnn_fpn_syncbn_resnet101_v1d_coco',
            'faster_rcnn_resnet101_v1d_custom']
 
 
@@ -179,8 +179,8 @@ def faster_rcnn_fpn_resnet50_v1b_coco(pretrained=False, pretrained_base=True, **
         pos_iou_thresh=0.5, pos_ratio=0.25, max_num_gt=100, **kwargs)
 
 
-def faster_rcnn_fpn_bn_resnet50_v1b_coco(pretrained=False, pretrained_base=True, num_devices=0,
-                                         **kwargs):
+def faster_rcnn_fpn_syncbn_resnet50_v1b_coco(pretrained=False, pretrained_base=True, num_devices=0,
+                                             **kwargs):
     r"""Faster RCNN model with FPN from the paper
     "Ren, S., He, K., Girshick, R., & Sun, J. (2015). Faster r-cnn: Towards
     real-time object detection with region proposal networks"
@@ -204,7 +204,7 @@ def faster_rcnn_fpn_bn_resnet50_v1b_coco(pretrained=False, pretrained_base=True,
 
     Examples
     --------
-    >>> model = get_faster_rcnn_fpn_bn_resnet50_v1b_coco(pretrained=True)
+    >>> model = get_faster_rcnn_fpn_syncbn_resnet50_v1b_coco(pretrained=True)
     >>> print(model)
     """
     from ....model_zoo.resnetv1b import resnet50_v1b
@@ -232,7 +232,7 @@ def faster_rcnn_fpn_bn_resnet50_v1b_coco(pretrained=False, pretrained_base=True,
 
     train_patterns = '(?!.*moving)'  # excluding symbol bn moving mean and var
     return get_faster_rcnn(
-        name='fpn_bn_resnet50_v1b', dataset='coco', pretrained=pretrained, features=features,
+        name='fpn_syncbn_resnet50_v1b', dataset='coco', pretrained=pretrained, features=features,
         top_features=top_features, classes=classes, box_features=box_features,
         short=(640, 800), max_size=1333, min_stage=2, max_stage=6, train_patterns=train_patterns,
         nms_thresh=0.5, nms_topk=-1, post_nms=-1, roi_mode='align', roi_size=(7, 7),
@@ -451,8 +451,8 @@ def faster_rcnn_fpn_resnet101_v1d_coco(pretrained=False, pretrained_base=True, *
         pos_iou_thresh=0.5, pos_ratio=0.25, max_num_gt=100, **kwargs)
 
 
-def faster_rcnn_fpn_bn_resnet101_v1d_coco(pretrained=False, pretrained_base=True, num_devices=0,
-                                          **kwargs):
+def faster_rcnn_fpn_syncbn_resnet101_v1d_coco(pretrained=False, pretrained_base=True, num_devices=0,
+                                              **kwargs):
     r"""Faster RCNN model with FPN from the paper
     "Ren, S., He, K., Girshick, R., & Sun, J. (2015). Faster r-cnn: Towards
     real-time object detection with region proposal networks"
@@ -476,7 +476,7 @@ def faster_rcnn_fpn_bn_resnet101_v1d_coco(pretrained=False, pretrained_base=True
 
     Examples
     --------
-    >>> model = get_faster_rcnn_fpn_bn_resnet101_v1d_coco(pretrained=True)
+    >>> model = get_faster_rcnn_fpn_syncbn_resnet101_v1d_coco(pretrained=True)
     >>> print(model)
     """
     from ....model_zoo.resnetv1b import resnet101_v1d
@@ -505,7 +505,7 @@ def faster_rcnn_fpn_bn_resnet101_v1d_coco(pretrained=False, pretrained_base=True
 
     train_patterns = '(?!.*moving)'  # excluding symbol bn moving mean and var
     return get_faster_rcnn(
-        name='fpn_bn_resnet101_v1d', dataset='coco', pretrained=pretrained, features=features,
+        name='fpn_syncbn_resnet101_v1d', dataset='coco', pretrained=pretrained, features=features,
         top_features=top_features, classes=classes, box_features=box_features,
         short=(640, 800), max_size=1333, min_stage=2, max_stage=6, train_patterns=train_patterns,
         nms_thresh=0.5, nms_topk=-1, post_nms=-1, roi_mode='align', roi_size=(7, 7),

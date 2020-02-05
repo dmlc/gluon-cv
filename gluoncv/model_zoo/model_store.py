@@ -61,7 +61,7 @@ _model_sha1 = {name: checksum for checksum, name in [
     ('5b4690fb7c5b62c44fb36c67d0642b633697f1bb', 'faster_rcnn_resnet50_v1b_coco'),
     ('a465eca35e78aba6ebdf99bf52031a447e501063', 'faster_rcnn_resnet101_v1d_coco'),
     ('233572743bc537291590f4edf8a0c17c14b234bb', 'faster_rcnn_fpn_resnet50_v1b_coco'),
-    ('977c247d70c33d1426f62147fc0e04dd329fc5ec', 'faster_rcnn_fpn_bn_resnet50_v1b_coco'),
+    ('977c247d70c33d1426f62147fc0e04dd329fc5ec', 'faster_rcnn_fpn_syncbn_resnet50_v1b_coco'),
     ('1194ab4ec6e06386aadd55820add312c8ef59c74', 'faster_rcnn_fpn_resnet101_v1d_coco'),
     ('e071cf1550bc0331c218a9072b59e9550595d1e7', 'mask_rcnn_resnet18_v1b_coco'),
     ('a3527fdc2cee5b1f32a61e5fd7cda8fb673e86e5', 'mask_rcnn_resnet50_v1b_coco'),
