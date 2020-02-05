@@ -58,7 +58,7 @@ def parse_args():
     parser.add_argument('--video-loader', action='store_true', default=True,
                         help='if set to True, read videos directly instead of reading frames.')
     parser.add_argument('--use-decord', action='store_true', default=True,
-                        help='if set to True, use Decord video loader to load data. Otherwise use mmcv video loader.')
+                        help='if set to True, use Decord video loader to load data.')
     parser.add_argument('--slowfast', action='store_true',
                         help='if set to True, use data loader designed for SlowFast network.')
     parser.add_argument('--slow-temporal-stride', type=int, default=16,
