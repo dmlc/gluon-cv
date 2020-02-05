@@ -310,7 +310,7 @@ def main(args):
     # download VID dataset
     download_VID(args)
     print('VID dataset has already download completed')
-    VID_base_path = os.path.join(args.download_dir, 'ILSVRC2015')
+    VID_base_path = join(args.download_dir, 'ILSVRC2015')
     ann_base_path = join(VID_base_path, 'Annotations/VID/train/')
     symlink(args)
     # Format XML and save it in JSON
