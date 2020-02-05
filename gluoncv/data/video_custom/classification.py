@@ -70,6 +70,8 @@ class VideoClsCustom(dataset.Dataset):
         The temporal stride for sparse sampling of video frames in slow branch of a SlowFast network.
     fast_temporal_stride : int, default 2.
         The temporal stride for sparse sampling of video frames in fast branch of a SlowFast network.
+    lazy_init : bool, default False.
+        If set to True, build a dataset instance without loading any dataset.
     """
     def __init__(self,
                  root,
@@ -94,6 +96,7 @@ class VideoClsCustom(dataset.Dataset):
                  slowfast=False,
                  slow_temporal_stride=16,
                  fast_temporal_stride=2,
+                 lazy_init=False,
                  transform=None):
 
         super(VideoClsCustom, self).__init__()
@@ -124,6 +127,7 @@ class VideoClsCustom(dataset.Dataset):
         self.slowfast = slowfast
         self.slow_temporal_stride = slow_temporal_stride
         self.fast_temporal_stride = fast_temporal_stride
+        self.lazy_init = lazy_init
 
         if self.slowfast:
             assert slow_temporal_stride % fast_temporal_stride == 0, 'slow_temporal_stride needs to be multiples of slow_temporal_stride, please set it accordinly.'
@@ -136,10 +140,11 @@ class VideoClsCustom(dataset.Dataset):
             else:
                 self.mmcv = try_import_mmcv()
 
-        self.clips = self._make_dataset(root, setting)
-        if len(self.clips) == 0:
-            raise(RuntimeError("Found 0 video clips in subfolders of: " + root + "\n"
-                               "Check your data directory (opt.data-dir)."))
+        if not self.lazy_init:
+            self.clips = self._make_dataset(root, setting)
+            if len(self.clips) == 0:
+                raise(RuntimeError("Found 0 video clips in subfolders of: " + root + "\n"
+                                   "Check your data directory (opt.data-dir)."))
 
     def __getitem__(self, index):
 
