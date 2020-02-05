@@ -96,8 +96,8 @@ def parse_args():
     # Norm layer options
     parser.add_argument('--norm-layer', type=str, default=None, choices=[None, 'syncbn'],
                         help='Type of normalization layer to use. '
-                             'If set to None, backbone normalization layer will be fixed,'
-                             ' and no normalization layer will be used. '
+                             'If set to None, backbone normalization layer will be frozen,'
+                             ' and no normalization layer will be used in R-CNN. '
                              'Currently supports \'syncbn\', and None, default is None.'
                              'Note that if horovod is enabled, sync bn will not work correctly.')
 
