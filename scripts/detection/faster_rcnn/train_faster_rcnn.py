@@ -426,7 +426,7 @@ class ForwardBackwardTask(Parallelizable):
             gt_label = label[:, :, 4:5]
             gt_box = label[:, :, :4]
             cls_pred, box_pred, roi, samples, matches, rpn_score, rpn_box, anchors, cls_targets, \
-                box_targets, box_masks, _ = net(data, gt_box, gt_label)
+                box_targets, box_masks, _ = self.net(data, gt_box, gt_label)
             # losses of rpn
             rpn_score = rpn_score.squeeze(axis=-1)
             num_rpn_pos = (rpn_cls_targets >= 0).sum()
