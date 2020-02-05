@@ -3,14 +3,14 @@ import time
 import argparse
 import logging
 import gc
-import decord
+from gluoncv.utils.filesystem import try_import_decord
 
 import numpy as np
 import mxnet as mx
 from mxnet import nd
 from mxnet.gluon.data.vision import transforms
 
-from gluoncv.data import Kinetics400Attr, UCF101Attr, SomethingSomethingV2Attr, HMDB51Attr
+from gluoncv.data import Kinetics400Attr, UCF101Attr, SomethingSomethingV2Attr, HMDB51Attr, VideoClsCustom
 from gluoncv.data.transforms import video
 from gluoncv.model_zoo import get_model
 from gluoncv.utils import makedirs
@@ -22,7 +22,7 @@ def parse_args():
     parser.add_argument('--need-root', action='store_true',
                         help='if set to True, --data-dir needs to be provided as the root path to find your videos.')
     parser.add_argument('--data-list', type=str, default='',
-                        help='the list of your data')
+                        help='the list of your data. You can either provide complete path or relative path.')
     parser.add_argument('--dtype', type=str, default='float32',
                         help='data type for training. default is float32')
     parser.add_argument('--gpu-id', type=int, default=0,
@@ -34,7 +34,7 @@ def parse_args():
     parser.add_argument('--input-size', type=int, default=224,
                         help='size of the input image size. default is 224')
     parser.add_argument('--use-pretrained', action='store_true', default=True,
-                        help='enable using pretrained model from gluon.')
+                        help='enable using pretrained model from GluonCV.')
     parser.add_argument('--hashtag', type=str, default='',
                         help='hashtag for pretrained models.')
     parser.add_argument('--resume-params', type=str, default='',
@@ -80,82 +80,22 @@ def parse_args():
     opt = parser.parse_args()
     return opt
 
-def sample_indices(opt, num_frames):
-    if num_frames > opt.skip_length - 1:
-        tick = (num_frames - opt.skip_length + 1) / \
-            float(opt.num_segments)
-        offsets = np.array([int(tick / 2.0 + tick * x)
-                            for x in range(opt.num_segments)])
-    else:
-        offsets = np.zeros((opt.num_segments,))
+def read_data(opt, video_name, transform, video_utils):
 
-    skip_offsets = np.zeros(opt.skip_length // opt.new_step, dtype=int)
-    return offsets + 1, skip_offsets
-
-def video_TSN_decord_batch_loader(opt, directory, video_reader, duration, indices, skip_offsets):
-        sampled_list = []
-        frame_id_list = []
-        for seg_ind in indices:
-            offset = int(seg_ind)
-            for i, _ in enumerate(range(0, opt.skip_length, opt.new_step)):
-                if offset + skip_offsets[i] <= duration:
-                    frame_id = offset + skip_offsets[i] - 1
-                else:
-                    frame_id = offset - 1
-                frame_id_list.append(frame_id)
-                if offset + opt.new_step < duration:
-                    offset += opt.new_step
-        try:
-            video_data = video_reader.get_batch(frame_id_list).asnumpy()
-            sampled_list = [video_data[vid, :, :, :] for vid, _ in enumerate(frame_id_list)]
-        except:
-            raise RuntimeError('Error occured in reading frames {} from video {} of duration {}.'.format(frame_id_list, directory, duration))
-        return sampled_list
-
-def video_TSN_decord_slowfast_loader(opt, directory, video_reader, duration, indices, skip_offsets):
-    sampled_list = []
-    frame_id_list = []
-    for seg_ind in indices:
-        fast_id_list = []
-        slow_id_list = []
-        offset = int(seg_ind)
-        for i, _ in enumerate(range(0, opt.skip_length, opt.new_step)):
-            if offset + skip_offsets[i] <= duration:
-                frame_id = offset + skip_offsets[i] - 1
-            else:
-                frame_id = offset - 1
-
-            if (i + 1) % opt.fast_temporal_stride == 0:
-                fast_id_list.append(frame_id)
-
-                if (i + 1) % opt.slow_temporal_stride == 0:
-                    slow_id_list.append(frame_id)
-
-            if offset + opt.new_step < duration:
-                offset += opt.new_step
-
-        fast_id_list.extend(slow_id_list)
-        frame_id_list.extend(fast_id_list)
-    try:
-        video_data = video_reader.get_batch(frame_id_list).asnumpy()
-        sampled_list = [video_data[vid, :, :, :] for vid, _ in enumerate(frame_id_list)]
-    except:
-        raise RuntimeError('Error occured in reading frames {} from video {} of duration {}.'.format(frame_id_list, directory, duration))
-    return sampled_list
-
-def read_data(opt, video_name, transform):
-
+    decord = try_import_decord()
     decord_vr = decord.VideoReader(video_name, width=opt.new_width, height=opt.new_height)
     duration = len(decord_vr)
 
     opt.skip_length = opt.new_length * opt.new_step
-    segment_indices, skip_offsets = sample_indices(opt, duration)
+    segment_indices, skip_offsets = video_utils._sample_test_indices(duration)
 
     if opt.video_loader:
         if opt.slowfast:
-            clip_input = video_TSN_decord_slowfast_loader(opt, video_name, decord_vr, duration, segment_indices, skip_offsets)
+            clip_input = video_utils._video_TSN_decord_slowfast_loader(video_name, decord_vr, duration, segment_indices, skip_offsets)
         else:
-            clip_input = video_TSN_decord_batch_loader(opt, video_name, decord_vr, duration, segment_indices, skip_offsets)
+            clip_input = video_utils._video_TSN_decord_batch_loader(video_name, decord_vr, duration, segment_indices, skip_offsets)
+    else:
+        raise RuntimeError('We only support video-based inference.')
 
     clip_input = transform(clip_input)
 
@@ -174,7 +114,7 @@ def read_data(opt, video_name, transform):
 
     return nd.array(clip_input)
 
-def main(logger):
+def main():
     opt = parse_args()
 
     makedirs(opt.save_dir)
@@ -253,13 +193,29 @@ def main(logger):
     data_list = f.readlines()
     logger.info('Load %d video samples.' % len(data_list))
 
+    # build a pseudo dataset instance to use its children class methods
+    video_utils = VideoClsCustom(root=opt.data_dir,
+                                 setting=opt.data_list,
+                                 num_segments=opt.num_segments,
+                                 num_crop=opt.num_crop,
+                                 new_length=opt.new_length,
+                                 new_step=opt.new_step,
+                                 new_width=opt.new_width,
+                                 new_height=opt.new_height,
+                                 video_loader=opt.video_loader,
+                                 use_decord=opt.use_decord,
+                                 slowfast=opt.slowfast,
+                                 slow_temporal_stride=opt.slow_temporal_stride,
+                                 fast_temporal_stride=opt.fast_temporal_stride,
+                                 lazy_init=True)
+
     start_time = time.time()
     for vid, vline in enumerate(data_list):
         video_path = vline.split()[0]
         video_name = video_path.split('/')[-1]
         if opt.need_root:
             video_path = os.path.join(opt.data_dir, video_path)
-        video_data = read_data(opt, video_path, transform_test)
+        video_data = read_data(opt, video_path, transform_test, video_utils)
         video_input = video_data.as_in_context(context)
         pred = net(video_input.astype(opt.dtype, copy=False))
         if opt.save_logits:
@@ -280,8 +236,4 @@ def main(logger):
     logger.info('Total inference time is %4.2f minutes' % ((end_time - start_time) / 60))
 
 if __name__ == '__main__':
-    logging.basicConfig()
-    logger = logging.getLogger('logger')
-    logger.setLevel(logging.INFO)
-
-    main(logger)
+    main()

@@ -71,6 +71,8 @@ class Kinetics400(VideoClsCustom):
         The temporal stride for sparse sampling of video frames in slow branch of a SlowFast network.
     fast_temporal_stride : int, default 2.
         The temporal stride for sparse sampling of video frames in fast branch of a SlowFast network.
+    lazy_init : bool, default False.
+        If set to True, build a dataset instance without loading any dataset.
     """
     def __init__(self,
                  root=os.path.expanduser('~/.mxnet/datasets/kinetics400/rawframes_train'),
@@ -95,6 +97,7 @@ class Kinetics400(VideoClsCustom):
                  slowfast=False,
                  slow_temporal_stride=16,
                  fast_temporal_stride=2,
+                 lazy_init=False,
                  transform=None):
 
         super(Kinetics400, self).__init__(root, setting, train, test_mode, name_pattern,
@@ -102,7 +105,7 @@ class Kinetics400(VideoClsCustom):
                                           num_crop, new_length, new_step, new_width, new_height,
                                           target_width, target_height, temporal_jitter,
                                           video_loader, use_decord, slowfast, slow_temporal_stride,
-                                          fast_temporal_stride, transform)
+                                          fast_temporal_stride, lazy_init, transform)
 
 class Kinetics400Attr(object):
     def __init__(self):
