@@ -27,8 +27,6 @@ def parse_args():
                         help='whether visualzie result')
     parser.add_argument('--mode', type=str, default='hybrid',
                         help='mode in which to train the model.options are symbolic, hybrid')
-    parser.add_argument('--moe', type=str, default='hybrid',
-                        help='mode in which to train the model.options are symbolic, hybrid')
     parser.add_argument('--num_gpus', type=int, default=0,
                         help='number of gpus to use.')
     parser.add_argument('--model_name', type=str, default='siamrpn_alexnet_v2_otb',
