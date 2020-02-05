@@ -466,7 +466,9 @@ class FasterRCNN(RCNN):
         return ids, scores, bboxes
 
     def collect_params(self, select=None):
-        ret = super().collect_params(select)
+        if select:
+            return super().collect_params(select)
+        ret = super().collect_params()
         tmp = []
         pattern = re.compile('.*normalizedperclassboxcenterencoder.*')
         for key, _ in ret.items():
