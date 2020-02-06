@@ -1,5 +1,6 @@
 """this script is used to prepare DET dataset for tracking,
-which is Object detection in Large Scale Visual Recognition Challenge 2015 (ILSVRC2015)"""
+which is Object detection in Large Scale Visual Recognition Challenge 2015 (ILSVRC2015)
+Code adapted from https://github.com/STVIR/pysot"""
 import argparse
 import tarfile
 from os.path import join, isdir, expanduser
@@ -16,7 +17,6 @@ from concurrent import futures
 import numpy as np
 from gluoncv.utils.filesystem import try_import_cv2
 from gluoncv.utils import download, makedirs
-cv2 = try_import_cv2()
 
 def parse_args():
     """DET dataset parameter."""
@@ -32,12 +32,19 @@ def parse_args():
 
 def download_det(args, overwrite=False):
     """download DET dataset and Unzip to download_dir"""
-    url = 'http://image-net.org/image/ILSVRC2015/ILSVRC2015_DET.tar.gz'
-    makedirs(args.download_dir)
-    filename = download(url, path=args.download_dir, overwrite=overwrite)
-    with tarfile.open(filename) as tar:
-        tar.extractall(path=args.download_dir)
-    rename(join(args.download_dir, 'ILSVRC2015'), join(args.download_dir, 'ILSVRC'))
+    _DOWNLOAD_URLS = [
+    ('http://image-net.org/image/ILSVRC2015/ILSVRC2015_DET.tar.gz',
+    'cbf602d89f2877fa8843392a1ffde03450a18d38'),
+    ]
+    if not isdir(args.download_dir):
+        makedirs(args.download_dir)
+    for url, checksum in _DOWNLOAD_URLS:
+        filename = download(url, path=args.download_dir, overwrite=overwrite, sha1_hash=checksum)
+        print(' dataset has already download completed')
+        with tarfile.open(filename) as tar:
+            tar.extractall(path=args.download_dir)
+    if not isdir(join(args.download_dir, 'ILSVRC2015')):
+        rename(join(args.download_dir, 'ILSVRC2015'), join(args.download_dir, 'ILSVRC'))
 
 
 def printProgress(iteration, total, prefix='', suffix='', decimals=1, barLength=100):
@@ -75,6 +82,7 @@ def crop_hwc(image, bbox, out_sz, padding=(0, 0, 0)):
     Return:
         crop result
     """
+    cv2 = try_import_cv2()
     a = (out_sz - 1) / (bbox[2] - bbox[0])
     b = (out_sz - 1) / (bbox[3] - bbox[1])
     c = -a * bbox[0]
@@ -142,6 +150,7 @@ def crop_xml(args, xml, sub_set_crop_path, instance_size=511):
     sub_set_crop_path: str, xml crop path
     instance_size: int, instance_size
     """
+    cv2 = try_import_cv2()
     xmltree = ET.parse(xml)
     objects = xmltree.findall('object')
 

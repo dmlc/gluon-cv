@@ -1,4 +1,5 @@
-"""SiamRPN Demo script."""
+"""SiamRPN Demo script.
+Code adapted from https://github.com/STVIR/pysot"""
 import os
 import argparse
 import matplotlib.pyplot as plt

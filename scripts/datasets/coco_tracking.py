@@ -1,5 +1,6 @@
 """this script is used to prepare COCO dataset for tracking,
-which is 2017 COCO"""
+which is 2017 COCO
+Code adapted from https://github.com/STVIR/pysot"""
 import argparse
 import zipfile
 from os.path import join, isdir, expanduser
@@ -11,7 +12,6 @@ import numpy as np
 from gluoncv.utils import download, makedirs
 from gluoncv.data.mscoco.utils import try_import_pycocotools
 from gluoncv.utils.filesystem import try_import_cv2
-cv2 = try_import_cv2()
 
 def parse_args():
     """COCO dataset parameter."""
@@ -152,7 +152,7 @@ def crop_img(img, anns, set_crop_base_path, set_img_base_path, instance_size=511
     """
     frame_crop_base_path = join(set_crop_base_path, img['file_name'].split('/')[-1].split('.')[0])
     if not isdir(frame_crop_base_path): makedirs(frame_crop_base_path)
-
+    cv2 = try_import_cv2()
     im = cv2.imread('{}/{}'.format(set_img_base_path, img['file_name']))
     avg_chans = np.mean(im, axis=(0, 1))
     for trackid, ann in enumerate(anns):
@@ -222,7 +222,7 @@ def gen_json(args):
 
 def main(args):
     # download COCO dataset
-    download_coco(args, overwrite=args.overwrite)
+    # download_coco(args, overwrite=args.overwrite)
     print('COCO dataset json has already generat completed')
     # crop COCO dataset for prepare for tracking
     crop_coco(args)

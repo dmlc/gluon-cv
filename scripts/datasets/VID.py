@@ -1,6 +1,7 @@
 """this script is used to prepare VID dataset for tracking,
 which is Object detection from video in Large Scale Visual
-Recognition Challenge 2015 (ILSVRC2015)"""
+Recognition Challenge 2015 (ILSVRC2015)
+Code adapted from https://github.com/STVIR/pysot"""
 import json
 from os.path import join, isdir, expanduser
 from os import listdir, chdir, system
@@ -17,7 +18,6 @@ import sys
 import numpy as np
 from gluoncv.utils import download, makedirs
 from gluoncv.utils.filesystem import try_import_cv2
-cv2 = try_import_cv2()
 
 def parse_args():
     """VID dataset parameter."""
@@ -35,11 +35,17 @@ def parse_args():
 
 def download_VID(overwrite=False):
     """download VID dataset and Unzip to download_dir"""
-    url = 'http://bvisionweb1.cs.unc.edu/ilsvrc2015/ILSVRC2015_VID.tar.gz'
-    makedirs(args.download_dir)
-    filename = download(url, path=args.download_dir, overwrite=overwrite)
-    with tarfile.open(filename) as tar:
-        tar.extractall(path=args.download_dir)
+    _DOWNLOAD_URLS = [ 
+    ('http://bvisionweb1.cs.unc.edu/ilsvrc2015/ILSVRC2015_VID.tar.gz',
+    '077dbdea4dff1853edd81b04fa98e19392287ca3'),
+    ]
+    if not isdir(args.download_dir):
+        makedirs(args.download_dir)
+    for url, checksum in _DOWNLOAD_URLS:
+        filename = download(url, path=args.download_dir, overwrite=overwrite, sha1_hash=checksum)
+        print('dataset is unziping')
+        with tarfile.open(filename) as tar:
+           tar.extractall(path=args.download_dir)
 
 def parse_vid(ann_base_path, args):
     """
@@ -132,6 +138,7 @@ def crop_hwc(image, bbox, out_sz, padding=(0, 0, 0)):
     d = -b * bbox[1]
     mapping = np.array([[a, 0, c],
                         [0, b, d]]).astype(np.float)
+    cv2 = try_import_cv2()
     crop = cv2.warpAffine(image, mapping, (out_sz, out_sz), borderMode=cv2.BORDER_CONSTANT, borderValue=padding)
     return crop
 
@@ -195,6 +202,7 @@ def crop_video(args, sub_set, video, crop_path, ann_base_path):
     crop_path: str, crop_path
     ann_base_path: str, Annotations base path
     """
+    cv2 = try_import_cv2()
     video_crop_base_path = join(crop_path, sub_set, video)
     if not isdir(video_crop_base_path):
         makedirs(video_crop_base_path)

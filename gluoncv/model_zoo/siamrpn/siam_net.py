@@ -1,4 +1,5 @@
-"""SiamRPN network"""
+"""SiamRPN network
+Code adapted from https://github.com/STVIR/pysot"""
 # coding:utf-8
 # pylint: disable=arguments-differ,unused-argument
 from mxnet.gluon.block import HybridBlock
