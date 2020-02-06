@@ -9,7 +9,7 @@ from ....nn.bbox import BBoxSplit
 from ....nn.coder import SigmoidClassEncoder, NumPyNormalizedBoxCenterEncoder
 
 try:
-    import gluoncv.model_zoo.rcnn.rpn.cython_rpn_target as cython_rpn_target
+    import cython_rpn_target
 except ImportError:
     cython_rpn_target = None
 
