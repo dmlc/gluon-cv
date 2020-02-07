@@ -10,11 +10,11 @@ from .deeplabv3 import *
 from .deeplabv3b_plus import *
 from .densenet import *
 from .dla import *
-from .faster_rcnn import *
+from .rcnn.faster_rcnn import *
 from .fcn import *
 from .googlenet import *
 from .inception import *
-from .mask_rcnn import *
+from .rcnn.mask_rcnn import *
 from .mobilenet import *
 from .mobilenetv3 import *
 from .nasnet import *
@@ -120,19 +120,22 @@ _models = {
     'mask_rcnn_resnet18_v1b_coco': mask_rcnn_resnet18_v1b_coco,
     'faster_rcnn_resnet50_v1b_coco': faster_rcnn_resnet50_v1b_coco,
     'faster_rcnn_fpn_resnet50_v1b_coco': faster_rcnn_fpn_resnet50_v1b_coco,
-    'faster_rcnn_fpn_bn_resnet50_v1b_coco': faster_rcnn_fpn_bn_resnet50_v1b_coco,
+    'faster_rcnn_fpn_syncbn_resnet50_v1b_coco': faster_rcnn_fpn_syncbn_resnet50_v1b_coco,
     'faster_rcnn_resnet50_v1b_custom': faster_rcnn_resnet50_v1b_custom,
     'faster_rcnn_resnet101_v1d_voc': faster_rcnn_resnet101_v1d_voc,
     'faster_rcnn_resnet101_v1d_coco': faster_rcnn_resnet101_v1d_coco,
     'faster_rcnn_fpn_resnet101_v1d_coco': faster_rcnn_fpn_resnet101_v1d_coco,
+    'faster_rcnn_fpn_syncbn_resnet101_v1d_coco': faster_rcnn_fpn_syncbn_resnet101_v1d_coco,
     'faster_rcnn_resnet101_v1d_custom': faster_rcnn_resnet101_v1d_custom,
+    'custom_faster_rcnn_fpn': custom_faster_rcnn_fpn,
     'mask_rcnn_resnet50_v1b_coco': mask_rcnn_resnet50_v1b_coco,
     'mask_rcnn_fpn_resnet50_v1b_coco': mask_rcnn_fpn_resnet50_v1b_coco,
     'mask_rcnn_resnet101_v1d_coco': mask_rcnn_resnet101_v1d_coco,
     'mask_rcnn_fpn_resnet101_v1d_coco': mask_rcnn_fpn_resnet101_v1d_coco,
     'mask_rcnn_fpn_resnet18_v1b_coco': mask_rcnn_fpn_resnet18_v1b_coco,
-    'mask_rcnn_fpn_bn_resnet18_v1b_coco': mask_rcnn_fpn_bn_resnet18_v1b_coco,
-    'mask_rcnn_fpn_bn_mobilenet1_0_coco': mask_rcnn_fpn_bn_mobilenet1_0_coco,
+    'mask_rcnn_fpn_syncbn_resnet18_v1b_coco': mask_rcnn_fpn_syncbn_resnet18_v1b_coco,
+    'mask_rcnn_fpn_syncbn_mobilenet1_0_coco': mask_rcnn_fpn_syncbn_mobilenet1_0_coco,
+    'custom_mask_rcnn_fpn': custom_mask_rcnn_fpn,
     'cifar_resnet20_v1': cifar_resnet20_v1,
     'cifar_resnet56_v1': cifar_resnet56_v1,
     'cifar_resnet110_v1': cifar_resnet110_v1,

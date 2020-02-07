@@ -174,7 +174,7 @@ class FasterRCNNDefaultTrainTransform(object):
         if not hasattr(net, 'features'):
             raise ValueError("Cannot find features in network, it is a Faster-RCNN network?")
         self._feat_sym = net.features(mx.sym.var(name='data'))
-        from ....model_zoo.rpn.rpn_target import RPNTargetGenerator
+        from ....model_zoo.rcnn.rpn.rpn_target import RPNTargetGenerator
         self._target_generator = RPNTargetGenerator(
             num_sample=num_sample, pos_iou_thresh=pos_iou_thresh,
             neg_iou_thresh=neg_iou_thresh, pos_ratio=pos_ratio,
@@ -355,7 +355,7 @@ class MaskRCNNDefaultTrainTransform(object):
         if not hasattr(net, 'features'):
             raise ValueError("Cannot find features in network, it is a Mask RCNN network?")
         self._feat_sym = net.features(mx.sym.var(name='data'))
-        from ....model_zoo.rpn.rpn_target import RPNTargetGenerator
+        from ....model_zoo.rcnn.rpn.rpn_target import RPNTargetGenerator
         self._target_generator = RPNTargetGenerator(
             num_sample=num_sample, pos_iou_thresh=pos_iou_thresh,
             neg_iou_thresh=neg_iou_thresh, pos_ratio=pos_ratio,

@@ -5,11 +5,11 @@ import mxnet as mx
 import numpy as np
 from mxnet import autograd, gluon
 
-from ...nn.bbox import BBoxSplit
-from ...nn.coder import SigmoidClassEncoder, NumPyNormalizedBoxCenterEncoder
+from ....nn.bbox import BBoxSplit
+from ....nn.coder import SigmoidClassEncoder, NumPyNormalizedBoxCenterEncoder
 
 try:
-    import gluoncv.model_zoo.rpn.cython_rpn_target as cython_rpn_target
+    import cython_rpn_target
 except ImportError:
     cython_rpn_target = None
 
