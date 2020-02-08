@@ -1,4 +1,5 @@
-"""siamRPN RPN"""
+"""siamRPN RPN
+Code adapted from https://github.com/STVIR/pysot"""
 # pylint: disable=arguments-differ
 from __future__ import absolute_import
 from __future__ import division

@@ -1,4 +1,5 @@
-"""Alexnet, implemented in Gluon."""
+"""Alexnet, implemented in Gluon.
+Code adapted from https://github.com/STVIR/pysot"""
 # coding: utf-8
 # pylint: disable=arguments-differ,unused-argument
 from __future__ import division

@@ -1,4 +1,5 @@
-""" SiamRPN benchmark """
+""" SiamRPN benchmark
+Code adapted from https://github.com/STVIR/pysot"""
 from glob import glob
 import argparse
 import os

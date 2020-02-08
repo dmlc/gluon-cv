@@ -1,4 +1,5 @@
-"""Visual Tracker Benchmark."""
+"""Visual Tracker Benchmark.
+Code adapted from https://github.com/STVIR/pysot"""
 import json
 import os
 from glob import glob
