@@ -115,11 +115,9 @@ class BipartiteMatcher(gluon.HybridBlock):
         Rargax = arg_(x, axis=-1)
         Rm = max_min_(x, axis=-1)
         # Filter value
-        Rargax = F.where(comp_(Rm, self._threshold), 
-                             Rargax, F.ones_like(Rargax) * -1)
+        Rargax = F.where(comp_(Rm, self._threshold), Rargax, F.ones_like(Rargax) * -1)
         # add shared gt index
-        result = F.where(comp_(F.pick(x, match[0], axis=-1), Rm), 
-                             match[0], Rargax)
+        result = F.where(comp_(F.pick(x, match[0], axis=-1), Rm), match[0], Rargax)
         return result
 
 class MaximumMatcher(gluon.HybridBlock):
