@@ -102,7 +102,6 @@ class BipartiteMatcher(gluon.HybridBlock):
         if self._share_max is False:
             # if share_max is False, can directly return
             return match[0]
-        
         if self._is_ascend:
             arg_ = F.argmin
             max_min_ = F.min
@@ -111,7 +110,6 @@ class BipartiteMatcher(gluon.HybridBlock):
             arg_ = F.argmax
             max_min_ = F.max
             comp_ = lambda a, b: a + self._eps > b
-            
         Rargax = arg_(x, axis=-1)
         Rm = max_min_(x, axis=-1)
         # Filter value
