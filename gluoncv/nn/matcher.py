@@ -80,26 +80,47 @@ class BipartiteMatcher(gluon.HybridBlock):
         ----------
         x : NDArray or Symbol
             IOU overlaps with shape (N, M), batching is supported.
+        ###############################
+        can use this array for test:
+        ious = nd.array([
+       [[0.56910074, 0.13997258, 0.4071833,  0., 0.],
+        [0.03322238, 0.06916699, 0.98257494, 0., 0.],
+        [0.69742876, 0.37329075, 0.45354268, 0., 0.],
+        [0.42007536, 0.7220556 , 0.05058811, 0., 0.],
+        [0.8663823 , 0.3654961 , 0.9755215 , 0., 0.]],
+
+       [[0.01662797, 0.8558034 , 0.23074234, 0., 0.],
+        [0.01171408, 0.7649117 , 0.35997805 ,0., 0.],
+        [0.9441235,  0.72999054, 0.7499992 , 0., 0.],
+        [0.17162968, 0.3394038 , 0.5210366 , 0., 0.],
+        [0.48954895, 0.05433799, 0.33898512, 0., 0.]]])
 
         """
+        # bipartite_matching returns the no-shared overlap
         match = F.contrib.bipartite_matching(x, threshold=self._threshold,
                                              is_ascend=self._is_ascend)
-        # make sure if iou(a, y) == iou(b, y), then b should also be a good match
-        # otherwise positive/negative samples are confusing
-        # potential argmax and max
-        pargmax = x.argmax(axis=-1, keepdims=True)  # (B, num_anchor, 1)
-        maxs = x.max(axis=-2, keepdims=True)  # (B, 1, num_gt)
-        if self._share_max:
-            mask = F.broadcast_greater_equal(x + self._eps, maxs)  # (B, num_anchor, num_gt)
-            mask = F.sum(mask, axis=-1, keepdims=True)  # (B, num_anchor, 1)
+        if self._share_max is False:
+            # if share_max is False, can directly return
+            return match[0]
+        
+        if self._is_ascend:
+            arg_ = F.argmin
+            max_min_ = F.min
+            comp_ = lambda a, b: a < b + self._eps
         else:
-            pmax = F.pick(x, pargmax, axis=-1, keepdims=True)   # (B, num_anchor, 1)
-            mask = F.broadcast_greater_equal(pmax + self._eps, maxs)  # (B, num_anchor, num_gt)
-            mask = F.pick(mask, pargmax, axis=-1, keepdims=True)  # (B, num_anchor, 1)
-        new_match = F.where(mask > 0, pargmax, F.ones_like(pargmax) * -1)
-        result = F.where(match[0] < 0, new_match.squeeze(axis=-1), match[0])
+            arg_ = F.argmax
+            max_min_ = F.max
+            comp_ = lambda a, b: a + self._eps > b
+            
+        Rargax = arg_(x, axis=-1)
+        Rm = max_min_(x, axis=-1)
+        # Filter value
+        Rargax = F.where(comp_(Rm, self._threshold), 
+                             Rargax, F.ones_like(Rargax) * -1)
+        # add shared gt index
+        result = F.where(comp_(F.pick(x, match[0], axis=-1), Rm), 
+                             match[0], Rargax)
         return result
-
 
 class MaximumMatcher(gluon.HybridBlock):
     """A Matcher implementing maximum matching strategy.
