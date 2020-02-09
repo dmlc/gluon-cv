@@ -78,7 +78,8 @@ class OHEMSampler(gluon.Block):
             ious = F.max(ious, axis=2)
         score = F.where(ious < self._thresh, score, mask)  # mask out if iou is large
         argmaxs = F.argsort(score, axis=1, is_ascend=False)
-
+        # negative may change
+        num_negative = F.minimum((score != -1).sum(axis=1), num_negative)
         # neg number is different in each batch, using dynamic numpy operations.
         y = np.zeros(x.shape)
         y[np.where(x.asnumpy() >= 0)] = 1  # assign positive samples
