@@ -103,8 +103,12 @@ def parse_args():
         args.ctx = [mx.cpu(0)]
     else:
         print('Number of GPUs:', args.ngpus)
-        assert args.ngpus > 0, 'No GPUs found, please enable --no-cuda to start training in CPU mode.'
+        assert args.ngpus > 0, 'No GPUs found, please enable --no-cuda for CPU mode.'
         args.ctx = [mx.gpu(i) for i in range(args.ngpus)]
+
+    if 'psp' in args.model or 'deeplab' in args.model:
+        assert args.crop_size % 8 == 0, ('For PSPNet and DeepLabV3 model families, '
+        'we only support input crop size as multiples of 8.')
 
     # logging and checkpoint saving
     if args.save_dir is None:
