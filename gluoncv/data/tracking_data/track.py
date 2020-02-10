@@ -14,7 +14,8 @@ import numpy as np
 
 from mxnet.gluon.data import dataset
 from gluoncv.utils.filesystem import try_import_cv2
-from gluoncv.model_zoo.siamrpn.siamrpn_tracker import corner2center, center2corner, Corner, Center, Anchors
+from gluoncv.model_zoo.siamrpn.siamrpn_tracker import corner2center, center2corner
+from gluoncv.model_zoo.siamrpn.siamrpn_tracker import Corner, Center, Anchors
 
 def IoU(rect1, rect2):
     """
@@ -74,7 +75,7 @@ class SubDataset(object):
         self.start_idx = start_idx
         logging.basicConfig(level=logging.INFO)
         self.logger = logging.getLogger("global")
-        self.logger.info("loading " + self.name)
+        self.logger.info("loading %s", self.name)
         # load json
         with open(self.anno, 'r') as f:
             meta_data = json.load(f)
@@ -88,19 +89,19 @@ class SubDataset(object):
                 frames.sort()
                 meta_data[video][track]['frames'] = frames
                 if len(frames) <= 0:
-                    self.logger.warning("{}/{} has no frames".format(video, track))
+                    self.logger.warning("%d/%d has no frames", int(video), int(track))
                     del meta_data[video][track]
 
         for video in list(meta_data.keys()):
             if len(meta_data[video]) <= 0:
-                self.logger.warning("{} has no tracks".format(video))
+                self.logger.warning("%d has no tracks", int(video))
                 del meta_data[video]
 
         self.labels = meta_data
         self.num = len(self.labels)
         self.num_use = self.num if self.num_use == -1 else self.num_use
         self.videos = list(meta_data.keys())
-        self.logger.info("{} loaded".format(self.name))
+        self.logger.info("%s loaded", self.name)
         self.path_format = '{}.{}.{}.jpg'
         self.pick = self.shuffle()
 
@@ -138,9 +139,8 @@ class SubDataset(object):
         return meta_data_new
 
     def log(self):
-        self.logger.info("{} start-index {} select [{}/{}] path_format {}".format(
-            self.name, self.start_idx, self.num_use,
-            self.num, self.path_format))
+        self.logger.info("%s start-index %d select [%d/%d] path_format %s",
+                         self.name, self.start_idx, self.num_use, self.num, self.path_format)
 
     def shuffle(self):
         """shuffle data"""
@@ -278,15 +278,16 @@ class TrkDataset(dataset.Dataset):
     """
     def __init__(self,
                  data_path=os.path.expanduser('~/.mxnet/datasets'),
-                 dataset_names=['vid', 'coco', 'det', 'yt_bb'],
-                 detaset_root=['vid/crop511', 'coco/crop511', 'det/crop511', 'yt_bb/crop511'],
-                 detaset_anno=['vid/train.json', 'coco/train2017.json', 'det/train.json', 'yt_bb/train.json'],
-                 dataset_frame_range=[100, 1, 1, 3],
-                 dataset_num_use=[100000, -1, -1, -1],
+                 dataset_names=('vid', 'coco', 'det', 'yt_bb'),
+                 detaset_root=('vid/crop511', 'coco/crop511', 'det/crop511', 'yt_bb/crop511'),
+                 detaset_anno=('vid/train.json', 'coco/train2017.json', 'det/train.json',
+                               'yt_bb/train.json'),
+                 dataset_frame_range=(100, 1, 1, 3),
+                 dataset_num_use=(100000, -1, -1, -1),
                  train_search_size=255,
                  train_exemplar_size=127,
                  anchor_stride=8,
-                 anchor_ratios=[0.33, 0.5, 1, 2, 3],
+                 anchor_ratios=(0.33, 0.5, 1, 2, 3),
                  train_base_size=8,
                  train_output_size=25,
                  template_shift=4,
@@ -308,15 +309,15 @@ class TrkDataset(dataset.Dataset):
         self.train_search_size = train_search_size
         self.train_exemplar_size = train_exemplar_size
         self.anchor_stride = anchor_stride
-        self.anchor_ratios = anchor_ratios
+        self.anchor_ratios = list(anchor_ratios)
         self.train_base_size = train_base_size
         self.train_output_size = train_output_size
         self.data_path = data_path
-        self.dataset_names = dataset_names
-        self.detaset_root = detaset_root
-        self.detaset_anno = detaset_anno
-        self.dataset_frame_range = dataset_frame_range
-        self.dataset_num_use = dataset_num_use
+        self.dataset_names = list(dataset_names)
+        self.detaset_root = list(detaset_root)
+        self.detaset_anno = list(detaset_anno)
+        self.dataset_frame_range = list(dataset_frame_range)
+        self.dataset_num_use = list(dataset_num_use)
         self.template_shift = template_shift
         self.template_scale = template_scale
         self.template_blur = template_blur
@@ -390,13 +391,13 @@ class TrkDataset(dataset.Dataset):
             pick += p
             m = len(pick)
         self.logger.info("shuffle done!")
-        self.logger.info("dataset length {}".format(self.num))
+        self.logger.info("dataset length %d", self.num)
         return pick[:self.num]
 
     def _find_dataset(self, index):
-        for dataset in self.all_dataset:
-            if dataset.start_idx + dataset.num > index:
-                return dataset, index - dataset.start_idx
+        for per_dataset in self.all_dataset:
+            if per_dataset.start_idx + per_dataset.num > index:
+                return per_dataset, index - per_dataset.start_idx
 
     def _get_bbox(self, image, shape):
         imh, imw = image.shape[:2]
@@ -421,17 +422,17 @@ class TrkDataset(dataset.Dataset):
 
     def __getitem__(self, index):
         index = self.pick[index]
-        dataset, index = self._find_dataset(index)
+        data, index = self._find_dataset(index)
 
         gray = self.gray and self.gray > np.random.random()
         neg = self.neg and self.neg > np.random.random()
 
         # get one dataset
         if neg:
-            template = dataset.get_random_target(index)
+            template = data.get_random_target(index)
             search = np.random.choice(self.all_dataset).get_random_target()
         else:
-            template, search = dataset.get_positive_pair(index)
+            template, search = data.get_positive_pair(index)
 
         # get image
         template_image = self.cv2.imread(template[0])
@@ -453,7 +454,7 @@ class TrkDataset(dataset.Dataset):
                                        gray=gray)
 
         # get labels
-        cls, delta, delta_weight, overlap = self.anchor_target(bbox, self.train_output_size, neg)
+        cls, delta, delta_weight, _ = self.anchor_target(bbox, self.train_output_size, neg)
         template = template.transpose((2, 0, 1)).astype(np.float32)
         search = search.transpose((2, 0, 1)).astype(np.float32)
 
@@ -688,7 +689,7 @@ class AnchorTarget:
         """
         self.anchor_stride = anchor_stride
         self.anchor_ratios = anchor_ratios
-        self.anchor_scales= [8]
+        self.anchor_scales = [8]
         self.anchors = Anchors(self.anchor_stride,
                                self.anchor_ratios,
                                self.anchor_scales)
@@ -733,7 +734,7 @@ class AnchorTarget:
             cx = size // 2
             cy = size // 2
             cx += int(np.ceil((tcx - self.train_search_size // 2) /
-                      self.anchor_stride + 0.5))
+                              self.anchor_stride + 0.5))
             cy += int(np.ceil((tcy - self.train_search_size // 2) /
                               self.anchor_stride + 0.5))
             l = max(0, cx - 3)
@@ -742,7 +743,7 @@ class AnchorTarget:
             d = min(size, cy + 4)
             cls[:, u:d, l:r] = 0
 
-            neg, neg_num = select(np.where(cls == 0), self.train_neg_num)
+            neg, _ = select(np.where(cls == 0), self.train_neg_num)
             cls[:] = -1
             cls[neg] = 0
 
@@ -768,7 +769,7 @@ class AnchorTarget:
         neg = np.where(overlap < self.thain_thr_low)
 
         pos, pos_num = select(pos, self.train_pos_num)
-        neg, neg_num = select(neg, self.train_total_num - self.train_pos_num)
+        neg, _ = select(neg, self.train_total_num - self.train_pos_num)
 
         cls[pos] = 1
         delta_weight[pos] = 1. / (pos_num + 1e-6)
