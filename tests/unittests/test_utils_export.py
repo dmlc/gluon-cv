@@ -17,6 +17,9 @@ def test_export_model_zoo():
         elif '3d' in model:
             # video action recognition models require 4d data shape
             kwargs = {'data_shape':(3, 32, 224, 224), 'layout':'CTHW', 'preprocess':None}
+        elif 'r2plus1d' in model:
+            # video action recognition models require 4d data shape
+            kwargs = {'data_shape':(3, 16, 112, 112), 'layout':'CTHW', 'preprocess':None}
         elif 'slowfast_4x16' in model:
             # video action recognition models require 4d data shape
             kwargs = {'data_shape':(3, 36, 224, 224), 'layout':'CTHW', 'preprocess':None}
@@ -32,6 +35,7 @@ def test_export_model_zoo():
             continue
         if 'siamrpn' in model:
             continue
+
         try:
             gcv.utils.export_block(model, gcv.model_zoo.get_model(model, pretrained=True),
                                    ctx=mx.context.current_context(), **kwargs)

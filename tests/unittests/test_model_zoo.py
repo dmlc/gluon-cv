@@ -519,10 +519,22 @@ def test_action_recognition_c3d_models():
 @try_gpu(0)
 def test_action_recognition_p3d_models():
     ctx = mx.context.current_context()
-    models = ['p3d_resnet50_kinetics400']
+    models = ['p3d_resnet50_kinetics400', 'p3d_resnet101_kinetics400']
 
     # 224x224
     x = mx.random.uniform(shape=(2, 3, 16, 224, 224), ctx=ctx)
+    _test_model_list(models, ctx, x, pretrained=True, pretrained_base=True)
+    _test_model_list(models, ctx, x, pretrained=False, pretrained_base=False)
+    _test_model_list(models, ctx, x, pretrained=False, pretrained_base=True)
+
+@try_gpu(0)
+def test_action_recognition_r2plus1d_models():
+    ctx = mx.context.current_context()
+    models = ['r2plus1d_resnet18_kinetics400', 'r2plus1d_resnet34_kinetics400',
+              'r2plus1d_resnet50_kinetics400']
+
+    # 112x112
+    x = mx.random.uniform(shape=(2, 3, 16, 112, 112), ctx=ctx)
     _test_model_list(models, ctx, x, pretrained=True, pretrained_base=True)
     _test_model_list(models, ctx, x, pretrained=False, pretrained_base=False)
     _test_model_list(models, ctx, x, pretrained=False, pretrained_base=True)
