@@ -1,3 +1,7 @@
+""" siamrpn dataloader,include youtube-bb,VID,DET,COCO dataset
+Code adapted from https://github.com/STVIR/pysot """
+# coding: utf-8
+# pylint: disable=missing-docstring,unused-argument,arguments-differ
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -5,24 +9,17 @@ from __future__ import unicode_literals
 
 import json
 import logging
-import sys
 import os
-import math
-from gluoncv.utils.filesystem import try_import_cv2
-from gluoncv.model_zoo.siamrpn.siamrpn_tracker import corner2center, center2corner, Corner, Center, Anchors
 import numpy as np
 
 from mxnet.gluon.data import dataset
-from mxnet import gluon
-from collections import namedtuple
-
-logging.basicConfig(level = logging.INFO)
-logger = logging.getLogger()
+from gluoncv.utils.filesystem import try_import_cv2
+from gluoncv.model_zoo.siamrpn.siamrpn_tracker import corner2center, center2corner, Corner, Center, Anchors
 
 def IoU(rect1, rect2):
     """
     caculate interection over union
-    
+
     Parameters
     ----------
     rect1: list or np.array, rectangle1
@@ -75,7 +72,9 @@ class SubDataset(object):
         self.frame_range = frame_range
         self.num_use = num_use
         self.start_idx = start_idx
-        logger.info("loading " + name)
+        logging.basicConfig(level=logging.INFO)
+        self.logger = logging.getLogger("global")
+        self.logger.info("loading " + self.name)
         # load json
         with open(self.anno, 'r') as f:
             meta_data = json.load(f)
@@ -85,23 +84,23 @@ class SubDataset(object):
             for track in meta_data[video]:
                 frames = meta_data[video][track]
                 frames = list(map(int,
-                              filter(lambda x: x.isdigit(), frames.keys())))
+                                  filter(lambda x: x.isdigit(), frames.keys())))
                 frames.sort()
                 meta_data[video][track]['frames'] = frames
                 if len(frames) <= 0:
-                    logger.warning("{}/{} has no frames".format(video, track))
+                    self.logger.warning("{}/{} has no frames".format(video, track))
                     del meta_data[video][track]
 
         for video in list(meta_data.keys()):
             if len(meta_data[video]) <= 0:
-                logger.warning("{} has no tracks".format(video))
+                self.logger.warning("{} has no tracks".format(video))
                 del meta_data[video]
 
         self.labels = meta_data
         self.num = len(self.labels)
         self.num_use = self.num if self.num_use == -1 else self.num_use
         self.videos = list(meta_data.keys())
-        logger.info("{} loaded".format(self.name))
+        self.logger.info("{} loaded".format(self.name))
         self.path_format = '{}.{}.{}.jpg'
         self.pick = self.shuffle()
 
@@ -139,12 +138,12 @@ class SubDataset(object):
         return meta_data_new
 
     def log(self):
-        logger.info("{} start-index {} select [{}/{}] path_format {}".format(
+        self.logger.info("{} start-index {} select [{}/{}] path_format {}".format(
             self.name, self.start_idx, self.num_use,
             self.num, self.path_format))
 
     def shuffle(self):
-        """shuffle data"""       
+        """shuffle data"""
         lists = list(range(self.start_idx, self.start_idx + self.num))
         pick = []
         while len(pick) < self.num_use:
@@ -164,7 +163,7 @@ class SubDataset(object):
             frame : str
                 frame number
         Returns
-            image_path and image bbox 
+            image_path and image bbox
         """
         frame = "{:06d}".format(frame)
         image_path = os.path.join(self.root, video,
@@ -177,7 +176,7 @@ class SubDataset(object):
 
         Parameters
         ----------
-            index : int 
+            index : int
                 per video_index
 
         Returns
@@ -249,11 +248,11 @@ class TrkDataset(dataset.Dataset):
     train_output_size : int
         train output size
     template_shift : int
-        length of template augmentation shift 
+        length of template augmentation shift
     template_scale : float
         template augmentation scale ratio
     template_blur : float
-        template augmentation blur ratio     
+        template augmentation blur ratio
     template_flip : float
         template augmentation flip ratio
     template_color : float
@@ -276,40 +275,35 @@ class TrkDataset(dataset.Dataset):
         if gray=1, image graying
     neg : float
         negative ratio
-    """ 
+    """
     def __init__(self,
-                 data_path = os.path.expanduser('~/.mxnet/datasets'),
-                #  dataset_names = ['vid', 'coco', 'det', 'yt_bb'],
-                #  detaset_root = ['vid/crop511','coco/crop511','det/crop511','yt_bb/crop511'],
-                #  detaset_anno = ['vid/train.json','coco/train2017.json','det/train.json','yt_bb/train.json'],
-                #  dataset_frame_range = [100, 1, 1, 3],
-                #  dataset_num_use = [100000, -1, -1, -1],
-                 dataset_names = ['coco'],
-                 detaset_root = ['coco/crop511'],
-                 detaset_anno = ['coco/train2017.json'],
-                 dataset_frame_range = [1],
-                 dataset_num_use = [-1],
-                 train_search_size = 255,
-                 train_exemplar_size = 127,
-                 anchor_stride = 8,
-                 anchor_ratios = [0.33, 0.5, 1, 2, 3],
-                 train_base_size = 8,
-                 train_output_size = 25,
-                 template_shift = 4,
-                 template_scale = 0.05,
-                 template_blur = 0,
-                 template_flip = 0,
-                 template_color = 1.0,
-                 search_shift = 64,
-                 search_scale = 0.18,
-                 search_blur = 0,
-                 search_flip = 0,
-                 search_color = 1.0,
-                 videos_per_epoch = 600000,
-                 train_epoch = 20,
-                 gray = 0.0,
-                 neg = 0.2,
-                 ):
+                 data_path=os.path.expanduser('~/.mxnet/datasets'),
+                 dataset_names=['vid', 'coco', 'det', 'yt_bb'],
+                 detaset_root=['vid/crop511', 'coco/crop511', 'det/crop511', 'yt_bb/crop511'],
+                 detaset_anno=['vid/train.json', 'coco/train2017.json', 'det/train.json', 'yt_bb/train.json'],
+                 dataset_frame_range=[100, 1, 1, 3],
+                 dataset_num_use=[100000, -1, -1, -1],
+                 train_search_size=255,
+                 train_exemplar_size=127,
+                 anchor_stride=8,
+                 anchor_ratios=[0.33, 0.5, 1, 2, 3],
+                 train_base_size=8,
+                 train_output_size=25,
+                 template_shift=4,
+                 template_scale=0.05,
+                 template_blur=0,
+                 template_flip=0,
+                 template_color=1.0,
+                 search_shift=64,
+                 search_scale=0.18,
+                 search_blur=0,
+                 search_flip=0,
+                 search_color=1.0,
+                 videos_per_epoch=600000,
+                 train_epoch=20,
+                 gray=0.0,
+                 neg=0.2,
+                ):
         super(TrkDataset, self).__init__()
         self.train_search_size = train_search_size
         self.train_exemplar_size = train_exemplar_size
@@ -338,16 +332,17 @@ class TrkDataset(dataset.Dataset):
         self.gray = gray
         self.neg = neg
         self.cv2 = try_import_cv2()
+        self.logger = logging.getLogger()
         desired_size = (self.train_search_size - self.train_exemplar_size) / \
             self.anchor_stride + 1 + self.train_base_size
         if desired_size != self.train_output_size:
             raise Exception('size not match!')
 
         # create anchor target
-        self.anchor_target = AnchorTarget(anchor_stride = self.anchor_stride,
-                                          anchor_ratios = self.anchor_ratios, 
-                                          train_search_size = self.train_search_size,
-                                          train_output_size = self.train_output_size)
+        self.anchor_target = AnchorTarget(anchor_stride=self.anchor_stride,
+                                          anchor_ratios=self.anchor_ratios,
+                                          train_search_size=self.train_search_size,
+                                          train_output_size=self.train_output_size)
         print(self.anchor_target)
         # create sub dataset
         self.all_dataset = []
@@ -355,14 +350,12 @@ class TrkDataset(dataset.Dataset):
         self.num = 0
 
         for idx in range(len(self.dataset_names)):
-            sub_dataset = SubDataset(
-                    self.dataset_names[idx],
-                    os.path.join(self.data_path, self.detaset_root[idx]),
-                    os.path.join(self.data_path, self.detaset_anno[idx]),
-                    self.dataset_frame_range[idx],
-                    self.dataset_num_use[idx],
-                    start
-                )
+            sub_dataset = SubDataset(self.dataset_names[idx],
+                                     os.path.join(self.data_path, self.detaset_root[idx]),
+                                     os.path.join(self.data_path, self.detaset_anno[idx]),
+                                     self.dataset_frame_range[idx],
+                                     self.dataset_num_use[idx],
+                                     start)
             start += sub_dataset.num
             self.num += sub_dataset.num_use
 
@@ -370,20 +363,16 @@ class TrkDataset(dataset.Dataset):
             self.all_dataset.append(sub_dataset)
 
         # data augmentation
-        self.template_aug = Augmentation(
-                self.template_shift,
-                self.template_scale,
-                self.template_blur,
-                self.template_flip,
-                self.template_color
-            )
-        self.search_aug = Augmentation(
-                self.search_shift,
-                self.search_scale,
-                self.search_blur,
-                self.search_flip,
-                self.search_color
-            )
+        self.template_aug = Augmentation(self.template_shift,
+                                         self.template_scale,
+                                         self.template_blur,
+                                         self.template_flip,
+                                         self.template_color)
+        self.search_aug = Augmentation(self.search_shift,
+                                       self.search_scale,
+                                       self.search_blur,
+                                       self.search_flip,
+                                       self.search_color)
         videos_per_epoch = self.videos_per_epoch
         self.num = videos_per_epoch if videos_per_epoch > 0 else self.num
         self.num *= self.train_epoch
@@ -400,8 +389,8 @@ class TrkDataset(dataset.Dataset):
             np.random.shuffle(p)
             pick += p
             m = len(pick)
-        logger.info("shuffle done!")
-        logger.info("dataset length {}".format(self.num))
+        self.logger.info("shuffle done!")
+        self.logger.info("dataset length {}".format(self.num))
         return pick[:self.num]
 
     def _find_dataset(self, index):
@@ -464,8 +453,7 @@ class TrkDataset(dataset.Dataset):
                                        gray=gray)
 
         # get labels
-        cls, delta, delta_weight, overlap = self.anchor_target(
-                bbox, self.train_output_size , neg)
+        cls, delta, delta_weight, overlap = self.anchor_target(bbox, self.train_output_size, neg)
         template = template.transpose((2, 0, 1)).astype(np.float32)
         search = search.transpose((2, 0, 1)).astype(np.float32)
 
@@ -477,11 +465,11 @@ class Augmentation:
     Parameters
     ----------
     shift : int
-        length of template augmentation shift 
+        length of template augmentation shift
     scale : float
         template augmentation scale ratio
     blur : float
-        template augmentation blur ratio     
+        template augmentation blur ratio
     flip : float
         template augmentation flip ratio
     color : float
@@ -494,9 +482,9 @@ class Augmentation:
         self.flip = flip
         self.color = color
         self.rgbVar = np.array(
-            [[-0.55919361,  0.98062831, - 0.41940627],
-             [1.72091413,  0.19879334, - 1.82968581],
-             [4.64467907,  4.73710203, 4.88324118]], dtype=np.float32)
+            [[-0.55919361, 0.98062831, - 0.41940627],
+             [1.72091413, 0.19879334, - 1.82968581],
+             [4.64467907, 4.73710203, 4.88324118]], dtype=np.float32)
         self.cv2 = try_import_cv2()
 
     @staticmethod
@@ -526,8 +514,8 @@ class Augmentation:
         mapping = np.array([[a, 0, c],
                             [0, b, d]]).astype(np.float)
         crop = self.cv2.warpAffine(image, mapping, (out_sz, out_sz),
-                              borderMode=self.cv2.BORDER_CONSTANT,
-                              borderValue=padding)
+                                   borderMode=self.cv2.BORDER_CONSTANT,
+                                   borderValue=padding)
         return crop
 
     def _blur_aug(self, image):
@@ -581,7 +569,7 @@ class Augmentation:
 
         Return:
             image after Grayscale
-        """    
+        """
         grayed = self.cv2.cvtColor(image, self.cv2.COLOR_BGR2GRAY)
         image = self.cv2.cvtColor(grayed, self.cv2.COLOR_GRAY2BGR)
         return image
@@ -595,12 +583,12 @@ class Augmentation:
             image
         bbox : list or np.array
             bbox
-        crop_bbox : 
-            crop size image from center 
+        crop_bbox :
+            crop size image from center
 
         Return
             image ,bbox after shift and scale
-        """   
+        """
         im_h, im_w = image.shape[:2]
 
         # adjust crop bounding box
@@ -653,7 +641,7 @@ class Augmentation:
 
         Return
             image and bbox after filp
-        """   
+        """
         image = self.cv2.flip(image, 1)
         width = image.shape[1]
         bbox = Corner(width - 1 - bbox.x2, bbox.y1,
@@ -697,7 +685,7 @@ class AnchorTarget:
 
         Return
             image and bbox after filp
-        """   
+        """
         self.anchor_stride = anchor_stride
         self.anchor_ratios = anchor_ratios
         self.anchor_scales= [8]
@@ -709,7 +697,7 @@ class AnchorTarget:
 
         self.anchors.generate_all_anchors(im_c=self.train_search_size//2,
                                           size=self.train_output_size)
-        # Positive anchor threshold                        
+        # Positive anchor threshold
         self.train_thr_high = 0.6
         # Negative anchor threshold
         self.thain_thr_low = 0.3
@@ -747,7 +735,7 @@ class AnchorTarget:
             cx += int(np.ceil((tcx - self.train_search_size // 2) /
                       self.anchor_stride + 0.5))
             cy += int(np.ceil((tcy - self.train_search_size // 2) /
-                      self.anchor_stride + 0.5))
+                              self.anchor_stride + 0.5))
             l = max(0, cx - 3)
             r = min(size, cx + 4)
             u = max(0, cy - 3)
@@ -787,15 +775,3 @@ class AnchorTarget:
 
         cls[neg] = 0
         return cls, delta, delta_weight, overlap
-
-if __name__ == '__main__':
-    train_dataset = TrkDataset()
-    train_sampler = None
-    train_loader = gluon.data.DataLoader(train_dataset,
-                              batch_size=32,
-                              num_workers=1,
-                              sampler=train_sampler)
-
-    for i, data in enumerate(train_loader):
-        # print(data)
-        continue
