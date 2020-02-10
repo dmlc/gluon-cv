@@ -398,6 +398,7 @@ class TrkDataset(dataset.Dataset):
         for per_dataset in self.all_dataset:
             if per_dataset.start_idx + per_dataset.num > index:
                 return per_dataset, index - per_dataset.start_idx
+        return None, None
 
     def _get_bbox(self, image, shape):
         imh, imw = image.shape[:2]
