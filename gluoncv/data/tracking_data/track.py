@@ -15,37 +15,9 @@ import numpy as np
 from mxnet.gluon.data import dataset
 from gluoncv.utils.filesystem import try_import_cv2
 from gluoncv.model_zoo.siamrpn.siamrpn_tracker import corner2center, center2corner
-from gluoncv.model_zoo.siamrpn.siamrpn_tracker import Corner, Center, Anchors
-
-def IoU(rect1, rect2):
-    """
-    caculate interection over union
-
-    Parameters
-    ----------
-    rect1: list or np.array, rectangle1
-    rect2: list or np.array, rectangle2
-
-    Returns
-    -------
-    iou
-    """
-    x1, y1, x2, y2 = rect1[0], rect1[1], rect1[2], rect1[3]
-    tx1, ty1, tx2, ty2 = rect2[0], rect2[1], rect2[2], rect2[3]
-
-    xx1 = np.maximum(tx1, x1)
-    yy1 = np.maximum(ty1, y1)
-    xx2 = np.minimum(tx2, x2)
-    yy2 = np.minimum(ty2, y2)
-
-    ww = np.maximum(0, xx2 - xx1)
-    hh = np.maximum(0, yy2 - yy1)
-
-    area = (x2-x1) * (y2-y1)
-    target_a = (tx2-tx1) * (ty2 - ty1)
-    inter = ww * hh
-    iou = inter / (area + target_a - inter)
-    return iou
+from gluoncv.model_zoo.siamrpn.siamrpn_tracker import Center, Anchors
+from gluoncv.data.transforms.track import Augmentation
+from gluoncv.utils.metrics.tracking import Iou
 
 class SubDataset(object):
     """Load the dataset for tracking.
@@ -344,7 +316,6 @@ class TrkDataset(dataset.Dataset):
                                           anchor_ratios=self.anchor_ratios,
                                           train_search_size=self.train_search_size,
                                           train_output_size=self.train_output_size)
-        print(self.anchor_target)
         # create sub dataset
         self.all_dataset = []
         start = 0
@@ -461,232 +432,20 @@ class TrkDataset(dataset.Dataset):
 
         return template, search, cls, delta, delta_weight, np.array(bbox)
 
-class Augmentation:
-    """dataset Augmentation for tracking.
-
-    Parameters
-    ----------
-    shift : int
-        length of template augmentation shift
-    scale : float
-        template augmentation scale ratio
-    blur : float
-        template augmentation blur ratio
-    flip : float
-        template augmentation flip ratio
-    color : float
-        template augmentation color ratio
-    """
-    def __init__(self, shift, scale, blur, flip, color):
-        self.shift = shift
-        self.scale = scale
-        self.blur = blur
-        self.flip = flip
-        self.color = color
-        self.rgbVar = np.array(
-            [[-0.55919361, 0.98062831, - 0.41940627],
-             [1.72091413, 0.19879334, - 1.82968581],
-             [4.64467907, 4.73710203, 4.88324118]], dtype=np.float32)
-        self.cv2 = try_import_cv2()
-
-    @staticmethod
-    def random():
-        return np.random.random() * 2 - 1.0
-
-    def _crop_roi(self, image, bbox, out_sz, padding=(0, 0, 0)):
-        """crop image roi size.
-
-        Parameters
-        ----------
-        image : np.array
-            image
-        bbox : list or np.array
-            bbox coordinate，like (xmin,ymin,xmax,ymax)
-        out_sz : int
-            size after crop
-
-        Return:
-            image after crop
-        """
-        bbox = [float(x) for x in bbox]
-        a = (out_sz-1) / (bbox[2]-bbox[0])
-        b = (out_sz-1) / (bbox[3]-bbox[1])
-        c = -a * bbox[0]
-        d = -b * bbox[1]
-        mapping = np.array([[a, 0, c],
-                            [0, b, d]]).astype(np.float)
-        crop = self.cv2.warpAffine(image, mapping, (out_sz, out_sz),
-                                   borderMode=self.cv2.BORDER_CONSTANT,
-                                   borderValue=padding)
-        return crop
-
-    def _blur_aug(self, image):
-        """blur filter to smooth image
-
-        Parameters
-        ----------
-        image : np.array
-            image
-
-        Return:
-            image after blur
-        """
-        def rand_kernel():
-            sizes = np.arange(5, 46, 2)
-            size = np.random.choice(sizes)
-            kernel = np.zeros((size, size))
-            c = int(size/2)
-            wx = np.random.random()
-            kernel[:, c] += 1. / size * wx
-            kernel[c, :] += 1. / size * (1-wx)
-            return kernel
-        kernel = rand_kernel()
-        image = self.cv2.filter2D(image, -1, kernel)
-        return image
-
-    def _color_aug(self, image):
-        """Random increase of image channel
-
-        Parameters
-        ----------
-        image : np.array
-            image
-
-        Return:
-            image after Random increase of channel
-        """
-        offset = np.dot(self.rgbVar, np.random.randn(3, 1))
-        offset = offset[::-1]  # bgr 2 rgb
-        offset = offset.reshape(3)
-        image = image - offset
-        return image
-
-    def _gray_aug(self, image):
-        """image Grayscale
-
-        Parameters
-        ----------
-        image : np.array
-            image
-
-        Return:
-            image after Grayscale
-        """
-        grayed = self.cv2.cvtColor(image, self.cv2.COLOR_BGR2GRAY)
-        image = self.cv2.cvtColor(grayed, self.cv2.COLOR_GRAY2BGR)
-        return image
-
-    def _shift_scale_aug(self, image, bbox, crop_bbox, size):
-        """shift scale augmentation
-
-        Parameters
-        ----------
-        image : np.array
-            image
-        bbox : list or np.array
-            bbox
-        crop_bbox :
-            crop size image from center
-
-        Return
-            image ,bbox after shift and scale
-        """
-        im_h, im_w = image.shape[:2]
-
-        # adjust crop bounding box
-        crop_bbox_center = corner2center(crop_bbox)
-
-        if self.scale:
-            scale_x = (1.0 + Augmentation.random() * self.scale)
-            scale_y = (1.0 + Augmentation.random() * self.scale)
-            h, w = crop_bbox_center.h, crop_bbox_center.w
-            scale_x = min(scale_x, float(im_w) / w)
-            scale_y = min(scale_y, float(im_h) / h)
-            crop_bbox_center = Center(crop_bbox_center.x,
-                                      crop_bbox_center.y,
-                                      crop_bbox_center.w * scale_x,
-                                      crop_bbox_center.h * scale_y)
-
-        crop_bbox = center2corner(crop_bbox_center)
-        if self.shift:
-            sx = Augmentation.random() * self.shift
-            sy = Augmentation.random() * self.shift
-
-            x1, y1, x2, y2 = crop_bbox
-
-            sx = max(-x1, min(im_w - 1 - x2, sx))
-            sy = max(-y1, min(im_h - 1 - y2, sy))
-
-            crop_bbox = Corner(x1 + sx, y1 + sy, x2 + sx, y2 + sy)
-
-        # adjust target bounding box
-        x1, y1 = crop_bbox.x1, crop_bbox.y1
-        bbox = Corner(bbox.x1 - x1, bbox.y1 - y1,
-                      bbox.x2 - x1, bbox.y2 - y1)
-
-        if self.scale:
-            bbox = Corner(bbox.x1 / scale_x, bbox.y1 / scale_y,
-                          bbox.x2 / scale_x, bbox.y2 / scale_y)
-
-        image = self._crop_roi(image, crop_bbox, size)
-        return image, bbox
-
-    def _flip_aug(self, image, bbox):
-        """flip augmentation
-
-        Parameters
-        ----------
-        image : np.array
-            image
-        bbox : list or np.array
-            bbox
-
-        Return
-            image and bbox after filp
-        """
-        image = self.cv2.flip(image, 1)
-        width = image.shape[1]
-        bbox = Corner(width - 1 - bbox.x2, bbox.y1,
-                      width - 1 - bbox.x1, bbox.y2)
-        return image, bbox
-
-    def __call__(self, image, bbox, size, gray=False):
-        shape = image.shape
-        crop_bbox = center2corner(Center(shape[0]//2, shape[1]//2,
-                                         size-1, size-1))
-        # gray augmentation
-        if gray:
-            image = self._gray_aug(image)
-
-        # shift scale augmentation
-        image, bbox = self._shift_scale_aug(image, bbox, crop_bbox, size)
-
-        # color augmentation
-        if self.color > np.random.random():
-            image = self._color_aug(image)
-
-        # blur augmentation
-        if self.blur > np.random.random():
-            image = self._blur_aug(image)
-
-        # flip augmentation
-        if self.flip and self.flip > np.random.random():
-            image, bbox = self._flip_aug(image, bbox)
-        return image, bbox
-
 class AnchorTarget:
     def __init__(self, anchor_stride, anchor_ratios, train_search_size, train_output_size):
-        """flip augmentation
+        """create anchor target
 
         Parameters
         ----------
-        image : np.array
-            image
-        bbox : list or np.array
-            bbox
-
-        Return
-            image and bbox after filp
+        anchor_stride : int
+            anchor stride
+        anchor_ratios : tuple
+            anchor ratios
+        train_search_size : int
+            train search size
+        train_output_size : int
+            train output size
         """
         self.anchor_stride = anchor_stride
         self.anchor_ratios = anchor_ratios
@@ -764,8 +523,7 @@ class AnchorTarget:
         delta[2] = np.log(tw / w)
         delta[3] = np.log(th / h)
 
-        overlap = IoU([x1, y1, x2, y2], target)
-
+        overlap = Iou([x1, y1, x2, y2], target)
         pos = np.where(overlap > self.train_thr_high)
         neg = np.where(overlap < self.thain_thr_low)
 

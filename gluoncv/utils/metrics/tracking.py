@@ -3,6 +3,36 @@ import numpy as np
 from colorama import Style, Fore
 
 
+def Iou(rect1, rect2):
+    """
+    caculate interection over union
+
+    Parameters
+    ----------
+        rect1: list or np.array, rectangle1
+        rect2: list or np.array, rectangle2
+
+    Returns
+    -------
+    iou
+    """
+    x1, y1, x2, y2 = rect1[0], rect1[1], rect1[2], rect1[3]
+    tx1, ty1, tx2, ty2 = rect2[0], rect2[1], rect2[2], rect2[3]
+
+    xx1 = np.maximum(tx1, x1)
+    yy1 = np.maximum(ty1, y1)
+    xx2 = np.minimum(tx2, x2)
+    yy2 = np.minimum(ty2, y2)
+
+    ww = np.maximum(0, xx2 - xx1)
+    hh = np.maximum(0, yy2 - yy1)
+
+    area = (x2-x1) * (y2-y1)
+    target_a = (tx2-tx1) * (ty2 - ty1)
+    inter = ww * hh
+    iou = inter / (area + target_a - inter)
+    return iou
+
 def overlap_ratio(rect1, rect2):
     """Compute overlap ratio between two rects
 
