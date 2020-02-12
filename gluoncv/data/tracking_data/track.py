@@ -191,7 +191,7 @@ class SubDataset(object):
         return self.num
 
 class TrkDataset(dataset.Dataset):
-    """Load the dataset for tracking, and data Augmentation for search image 
+    """Load the dataset for tracking, and data Augmentation for search image
     and template image. Meanwhile get anchor target
 
     Parameters
@@ -450,8 +450,9 @@ class TrkDataset(dataset.Dataset):
         return template, search, cls, delta, delta_weight, np.array(bbox)
 
 class AnchorTarget:
-    def __init__(self, anchor_stride, anchor_ratios, train_search_size, train_output_size, train_thr_high=0.6,
-    train_thr_low=0.3, train_pos_num=16, train_neg_num=16, train_total_num=64):
+    def __init__(self, anchor_stride, anchor_ratios, train_search_size, train_output_size,
+                 train_thr_high=0.6,train_thr_low=0.3, train_pos_num=16, train_neg_num=16,
+                 train_total_num=64):
         """create anchor target
 
         Parameters

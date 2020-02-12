@@ -34,8 +34,8 @@ class Augmentation:
         self.flip = flip
         self.color = color
         self.rgbVar = np.array([[-0.55919361, 0.98062831, - 0.41940627],
-                               [1.72091413, 0.19879334, - 1.82968581],
-                               [4.64467907, 4.73710203, 4.88324118]], dtype=np.float32)
+                                [1.72091413, 0.19879334, - 1.82968581],
+                                [4.64467907, 4.73710203, 4.88324118]], dtype=np.float32)
         self.cv2 = try_import_cv2()
 
     @staticmethod
