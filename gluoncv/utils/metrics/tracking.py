@@ -251,7 +251,7 @@ class OPEBenchmark:
             auc = np.mean(list(success_ret[tracker_name].values()))
             tracker_auc[tracker_name] = auc
         tracker_auc_ = sorted(tracker_auc.items(),
-                              key=lambda x : x[1],
+                              key=lambda x: x[1],
                               reverse=True)[:20]
         tracker_names = [x[0] for x in tracker_auc_]
 
