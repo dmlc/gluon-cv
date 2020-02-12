@@ -451,7 +451,7 @@ class TrkDataset(dataset.Dataset):
 
 class AnchorTarget:
     def __init__(self, anchor_stride, anchor_ratios, train_search_size, train_output_size,
-                 train_thr_high=0.6,train_thr_low=0.3, train_pos_num=16, train_neg_num=16,
+                 train_thr_high=0.6, train_thr_low=0.3, train_pos_num=16, train_neg_num=16,
                  train_total_num=64):
         """create anchor target
 
