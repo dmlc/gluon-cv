@@ -20,7 +20,8 @@ from gluoncv.data.transforms.track import Augmentation
 from gluoncv.utils.metrics.tracking import Iou
 
 class SubDataset(object):
-    """Load the dataset for tracking.
+    """Load the subdataset for tracking.
+    get annotation data,and get positive pair every frame range.
 
     Parameters
     ----------
@@ -190,7 +191,8 @@ class SubDataset(object):
         return self.num
 
 class TrkDataset(dataset.Dataset):
-    """Load the dataset for tracking.
+    """Load the dataset for tracking, and data Augmentation for search image 
+    and template image. Meanwhile get anchor target
 
     Parameters
     ----------
@@ -274,6 +276,11 @@ class TrkDataset(dataset.Dataset):
                  search_color=1.0,
                  videos_per_epoch=600000,
                  train_epoch=20,
+                 train_thr_high=0.6,
+                 train_thr_low=0.3,
+                 train_pos_num=16,
+                 train_neg_num=16,
+                 train_total_num=64,
                  gray=0.0,
                  neg=0.2,
                 ):
@@ -302,6 +309,11 @@ class TrkDataset(dataset.Dataset):
         self.search_color = search_color
         self.videos_per_epoch = videos_per_epoch
         self.train_epoch = train_epoch
+        self.train_thr_high = train_thr_high
+        self.train_thr_low = train_thr_low
+        self.train_pos_num = train_pos_num
+        self.train_neg_num = train_neg_num
+        self.train_total_num = train_total_num
         self.gray = gray
         self.neg = neg
         self.cv2 = try_import_cv2()
@@ -315,7 +327,12 @@ class TrkDataset(dataset.Dataset):
         self.anchor_target = AnchorTarget(anchor_stride=self.anchor_stride,
                                           anchor_ratios=self.anchor_ratios,
                                           train_search_size=self.train_search_size,
-                                          train_output_size=self.train_output_size)
+                                          train_output_size=self.train_output_size,
+                                          train_thr_high=self.train_thr_high,
+                                          train_thr_low=self.train_thr_low,
+                                          train_pos_num=self.train_pos_num,
+                                          train_neg_num=self.train_neg_num,
+                                          train_total_num=self.train_total_num)
         # create sub dataset
         self.all_dataset = []
         start = 0
@@ -433,7 +450,8 @@ class TrkDataset(dataset.Dataset):
         return template, search, cls, delta, delta_weight, np.array(bbox)
 
 class AnchorTarget:
-    def __init__(self, anchor_stride, anchor_ratios, train_search_size, train_output_size):
+    def __init__(self, anchor_stride, anchor_ratios, train_search_size, train_output_size, train_thr_high=0.6,
+    train_thr_low=0.3, train_pos_num=16, train_neg_num=16, train_total_num=64):
         """create anchor target
 
         Parameters
@@ -446,6 +464,16 @@ class AnchorTarget:
             train search size
         train_output_size : int
             train output size
+        train_thr_high : float
+            Positive anchor threshold
+        train_thr_low : float
+            Negative anchor threshold
+        train_pos_num : int
+            Number of Positive
+        train_neg_num : int
+            Number of Negative
+        train_total_num : int
+            total number
         """
         self.anchor_stride = anchor_stride
         self.anchor_ratios = anchor_ratios
@@ -458,14 +486,11 @@ class AnchorTarget:
 
         self.anchors.generate_all_anchors(im_c=self.train_search_size//2,
                                           size=self.train_output_size)
-        # Positive anchor threshold
-        self.train_thr_high = 0.6
-        # Negative anchor threshold
-        self.thain_thr_low = 0.3
-        # Number of negative
-        self.train_pos_num = 16
-        self.train_neg_num = 16
-        self.train_total_num = 64
+        self.train_thr_high = train_thr_high
+        self.train_thr_low = train_thr_low
+        self.train_pos_num = train_pos_num
+        self.train_neg_num = train_neg_num
+        self.train_total_num = train_total_num
 
     def __call__(self, target, size, neg=False):
         anchor_num = len(self.anchor_ratios) * len(self.anchor_scales)
@@ -487,9 +512,6 @@ class AnchorTarget:
         tcx, tcy, tw, th = corner2center(target)
 
         if neg:
-            # l = size // 2 - 3
-            # r = size // 2 + 3 + 1
-            # cls[:, l:r, l:r] = 0
 
             cx = size // 2
             cy = size // 2
