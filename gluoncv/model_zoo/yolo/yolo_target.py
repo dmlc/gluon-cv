@@ -263,7 +263,6 @@ class YOLOV3TargetMerger(gluon.HybridBlock):
             weights = F.where(mask2, weights[1], weights[0])
             mask3 = mask.tile(reps=(self._num_class,))
             class_targets = F.where(mask3, clas[1], clas[0])
-            smooth_weight = 1. / self._num_class
             if self._label_smooth:
                 smooth_weight = min(1. / self._num_class, 1. / 40)
                 class_targets = F.where(
