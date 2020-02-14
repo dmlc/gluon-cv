@@ -176,7 +176,7 @@ class Trainer(object):
 
         # create criterion
         if 'icnet' in args.model:
-            criterion = ICNetLoss(crop_size=args.crop_size)
+            criterion = ICNetLoss(crop_size=args.crop_size, ignore_label=0)
         else:
             criterion = MixSoftmaxCrossEntropyLoss(args.aux, aux_weight=args.aux_weight)
         self.criterion = DataParallelCriterion(criterion, args.ctx, args.syncbn)
