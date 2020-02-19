@@ -60,6 +60,9 @@ def parse_args():
     parser.add_argument('--no-wd', action='store_true',
                         help='whether to remove weight decay on bias, \
                         and beta/gamma for batchnorm layers.')
+    parser.add_argument('--clip-grad', type=int, default=0,
+                        help='clip gradient to a certain threshold. \
+                        Set the value to be larger than zero to enable gradient clipping.')
     parser.add_argument('--mode', type=str, default=None,
                         help='whether to turn on model hybridization')
     # cuda and distribute
@@ -146,7 +149,7 @@ class Trainer(object):
                                           **data_kwargs)
         self.train_data = gluon.data.DataLoader(trainset,
                                                 args.batch_size,
-                                                shuffle=False,
+                                                shuffle=True,
                                                 last_batch='rollover',
                                                 num_workers=args.workers)
         self.eval_data = gluon.data.DataLoader(valset,
@@ -163,7 +166,7 @@ class Trainer(object):
                                            norm_kwargs=args.norm_kwargs, aux=args.aux,
                                            base_size=args.base_size, crop_size=args.crop_size)
         model.cast(args.dtype)
-        logger.info(model)
+        # logger.info(model)
 
         self.net = DataParallelModel(model, args.ctx, args.syncbn)
         self.evaluator = DataParallelModel(SegEvalModel(model), args.ctx)
@@ -186,11 +189,16 @@ class Trainer(object):
                                         nepochs=args.epochs,
                                         iters_per_epoch=len(self.train_data),
                                         power=0.9)
+        # self.lr_scheduler = LRScheduler(mode='constant', base_lr=args.lr,
+        #                                 nepochs=args.epochs,
+        #                                 iters_per_epoch=len(self.train_data),
+        #                                 power=0.9)
         kv = mx.kv.create(args.kvstore)
         optimizer_params = {'lr_scheduler': self.lr_scheduler,
                             'wd': args.weight_decay,
                             'momentum': args.momentum,
                             'learning_rate': args.lr}
+                            # 'clip_gradient': args.clip_grad}
 
         if args.dtype == 'float16':
             optimizer_params['multi_precision'] = True
@@ -219,8 +227,8 @@ class Trainer(object):
             tbar.set_description('Epoch %d, training loss %.3f' % \
                 (epoch, train_loss/(i+1)))
             if i != 0 and i % self.args.log_interval == 0:
-                self.logger.info('Epoch %d iteration %04d/%04d: training loss %.3f' % \
-                    (epoch, i, len(self.train_data), train_loss/(i+1)))
+                self.logger.info('Epoch %d iteration %04d/%04d: training loss %.3f; learning rate %f' % \
+                    (epoch, i, len(self.train_data), train_loss/(i+1), self.lr_scheduler.learning_rate))
             mx.nd.waitall()
 
         # save every epoch
