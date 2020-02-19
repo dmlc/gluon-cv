@@ -49,6 +49,11 @@ class MHPSegmentation(SegmentationDataset):
 
     def __getitem__(self, index):
         img = Image.open(self.images[index]).convert('RGB')
+
+        # nan check
+        img_np = np.array(img, dtype=np.uint8)
+        assert not np.isnan(np.sum(img_np))
+
         if self.mode == 'test':
             img = self._img_transform(img)
             if self.transform is not None:
@@ -168,6 +173,9 @@ def _get_mask(mask_paths):
 
     # nan check
     assert not np.isnan(np.sum(mask_np))
+
+    # categories check
+    assert (np.max(mask_np) <= 18 and np.min(mask_np) >= 0)
 
     mask = Image.fromarray(mask_np)
 
