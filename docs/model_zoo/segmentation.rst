@@ -98,9 +98,11 @@ Cityscapes Dataset
 +-------------------------------------+-----------------+-----------+-----------+---------------------------------------------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------+
 | Name                                | Method          | pixAcc    | mIoU      | Command                                                                                                                                     | log                                                                                                                                |
 +=====================================+=================+===========+===========+=============================================================================================================================================+====================================================================================================================================+
-| psp_resnet101_citys                 | PSP [3]_        | N/A       | 77.1      | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/psp_resnet101_city.sh>`_                    | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/psp_resnet101_city.log>`_                   |
+| psp_resnet101_citys                 | PSP [3]_        | 96.4      | 79.9      | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/psp_resnet101_citys.sh>`_                   | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/psp_resnet101_citys.log>`_                  |
 +-------------------------------------+-----------------+-----------+-----------+---------------------------------------------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------+
-| deeplab_v3b_plus_wideresnet_citys   | VPLR [5]_       | N/A       | 83.5      | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/deeplab_v3b_plus_wideresnet_citys.sh>`_     | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/deeplab_v3b_plus_wideresnet_citys.log>`_    |
+| icnet_resnet50_citys                | ICNet [5]_      | 95.5      | 74.5      | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/icnet_resnet50_citys.sh>`_                  | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/icnet_resnet50_citys.log>`_                 |
++-------------------------------------+-----------------+-----------+-----------+---------------------------------------------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------+
+| deeplab_v3b_plus_wideresnet_citys   | VPLR [6]_       | N/A       | 83.5      | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/deeplab_v3b_plus_wideresnet_citys.sh>`_     | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/deeplab_v3b_plus_wideresnet_citys.log>`_    |
 +-------------------------------------+-----------------+-----------+-----------+---------------------------------------------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------+
 
 
@@ -151,5 +153,7 @@ MS COCO
        "Pyramid scene parsing network." *CVPR*, 2017.
 .. [4] Chen, Liang-Chieh, et al. "Rethinking atrous convolution for semantic image segmentation." \
        arXiv preprint arXiv:1706.05587 (2017).
-.. [5] Zhu, Yi, et al. "Improving Semantic Segmentation via Video Propagation and Label Relaxation." \
+.. [5] Zhao, Hengshuang, et al. "ICNet for Real-Time Semantic Segmentation on High-Resolution Images." \
+       ECCV 2018.
+.. [6] Zhu, Yi, et al. "Improving Semantic Segmentation via Video Propagation and Label Relaxation." \
        CVPR 2019.

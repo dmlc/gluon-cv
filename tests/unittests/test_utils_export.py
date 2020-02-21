@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 import numpy as np
+import mxnet as mx
 import gluoncv as gcv
 from gluoncv.model_zoo.model_store import pretrained_model_list
 from common import try_gpu
@@ -10,12 +11,15 @@ def test_export_model_zoo():
     for model in pretrained_model_list():
         print('exporting:', model)
 
-        if 'deeplab' in model or 'psp' in model:
+        if 'deeplab' in model or 'psp' in model or 'icnet' in model:
             # semantic segmentation models require fixed data shape
             kwargs = {'data_shape':(480, 480, 3)}
         elif '3d' in model:
             # video action recognition models require 4d data shape
             kwargs = {'data_shape':(3, 32, 224, 224), 'layout':'CTHW', 'preprocess':None}
+        elif 'r2plus1d' in model:
+            # video action recognition models require 4d data shape
+            kwargs = {'data_shape':(3, 16, 112, 112), 'layout':'CTHW', 'preprocess':None}
         elif 'slowfast_4x16' in model:
             # video action recognition models require 4d data shape
             kwargs = {'data_shape':(3, 36, 224, 224), 'layout':'CTHW', 'preprocess':None}
@@ -29,8 +33,13 @@ def test_export_model_zoo():
             continue
         if '_dcnv2' in model:
             continue
+        if 'siamrpn' in model:
+            continue
+
         try:
-            gcv.utils.export_block(model, gcv.model_zoo.get_model(model, pretrained=True), **kwargs)
+            gcv.utils.export_block(model, gcv.model_zoo.get_model(model, pretrained=True),
+                                   ctx=mx.context.current_context(), **kwargs)
+            mx.nd.waitall()
         except ValueError:
             # ignore non defined model name
             pass

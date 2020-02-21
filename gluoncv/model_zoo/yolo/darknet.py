@@ -78,7 +78,11 @@ class DarknetV3(gluon.HybridBlock):
     """
     def __init__(self, layers, channels, classes=1000,
                  norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
-        super(DarknetV3, self).__init__(**kwargs)
+        # Checking the kwargs
+        for kwarg_key in kwargs:
+            if kwarg_key not in ['prefix', 'params']:
+                raise Warning("class DraknetV3 should only accept kwargs {'params', or 'prefix'}")
+        super(DarknetV3, self).__init__(kwargs.get('prefix', None), kwargs.get('params', None))
         assert len(layers) == len(channels) - 1, (
             "len(channels) should equal to len(layers) + 1, given {} vs {}".format(
                 len(channels), len(layers)))
@@ -95,8 +99,8 @@ class DarknetV3(gluon.HybridBlock):
                 # add nlayer basic blocks
                 for _ in range(nlayer):
                     self.features.add(DarknetBasicBlockV3(channel // 2,
-                                                          norm_layer=BatchNorm,
-                                                          norm_kwargs=None))
+                                                          norm_layer=norm_layer,
+                                                          norm_kwargs=norm_kwargs))
             # output
             self.output = nn.Dense(classes)
 

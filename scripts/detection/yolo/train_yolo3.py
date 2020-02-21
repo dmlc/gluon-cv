@@ -10,6 +10,7 @@ from mxnet import nd
 from mxnet import gluon
 from mxnet import autograd
 import gluoncv as gcv
+gcv.utils.check_version('0.6.0')
 from gluoncv import data as gdata
 from gluoncv import utils as gutils
 from gluoncv.model_zoo import get_model
@@ -20,6 +21,12 @@ from gluoncv.data.dataloader import RandomTransformDataLoader
 from gluoncv.utils.metrics.voc_detection import VOC07MApMetric
 from gluoncv.utils.metrics.coco_detection import COCODetectionMetric
 from gluoncv.utils import LRScheduler, LRSequential
+
+from mxnet.contrib import amp
+try:
+    import horovod.mxnet as hvd
+except ImportError:
+    hvd = None
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train YOLO networks with random input shape.')
@@ -88,6 +95,12 @@ def parse_args():
     parser.add_argument('--no-mixup-epochs', type=int, default=20,
                         help='Disable mixup training if enabled in the last N epochs.')
     parser.add_argument('--label-smooth', action='store_true', help='Use label smoothing.')
+    parser.add_argument('--amp', action='store_true',
+                        help='Use MXNet AMP for mixed precision training.')
+    parser.add_argument('--horovod', action='store_true',
+                        help='Use MXNet Horovod for distributed training. Must be run with OpenMPI. '
+                        '--gpus is ignored when using --horovod.')
+
     args = parser.parse_args()
     return args
 
@@ -200,10 +213,19 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
                     step_factor=args.lr_decay, power=2),
     ])
 
-    trainer = gluon.Trainer(
-        net.collect_params(), 'sgd',
-        {'wd': args.wd, 'momentum': args.momentum, 'lr_scheduler': lr_scheduler},
-        kvstore='local')
+    if args.horovod:
+        hvd.broadcast_parameters(net.collect_params(), root_rank=0)
+        trainer = hvd.DistributedTrainer(
+                        net.collect_params(), 'sgd',
+                        {'wd': args.wd, 'momentum': args.momentum, 'lr_scheduler': lr_scheduler})
+    else:
+        trainer = gluon.Trainer(
+            net.collect_params(), 'sgd',
+            {'wd': args.wd, 'momentum': args.momentum, 'lr_scheduler': lr_scheduler},
+            kvstore='local', update_on_kvstore=(False if args.amp else None))
+
+    if args.amp:
+        amp.init_trainer(trainer)
 
     # targets
     sigmoid_ce = gluon.loss.SigmoidBinaryCrossEntropyLoss(from_sigmoid=False)
@@ -246,7 +268,6 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
         mx.nd.waitall()
         net.hybridize()
         for i, batch in enumerate(train_data):
-            batch_size = batch[0].shape[0]
             data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
             # objectness, center_targets, scale_targets, weights, class_targets
             fixed_targets = [gluon.utils.split_and_load(batch[it], ctx_list=ctx, batch_axis=0) for it in range(1, 6)]
@@ -264,45 +285,64 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
                     center_losses.append(center_loss)
                     scale_losses.append(scale_loss)
                     cls_losses.append(cls_loss)
-                autograd.backward(sum_losses)
+                if args.amp:
+                    with amp.scale_loss(sum_losses, trainer) as scaled_loss:
+                        autograd.backward(scaled_loss)
+                else:
+                    autograd.backward(sum_losses)
             trainer.step(batch_size)
-            obj_metrics.update(0, obj_losses)
-            center_metrics.update(0, center_losses)
-            scale_metrics.update(0, scale_losses)
-            cls_metrics.update(0, cls_losses)
-            if args.log_interval and not (i + 1) % args.log_interval:
-                name1, loss1 = obj_metrics.get()
-                name2, loss2 = center_metrics.get()
-                name3, loss3 = scale_metrics.get()
-                name4, loss4 = cls_metrics.get()
-                logger.info('[Epoch {}][Batch {}], LR: {:.2E}, Speed: {:.3f} samples/sec, {}={:.3f}, {}={:.3f}, {}={:.3f}, {}={:.3f}'.format(
-                    epoch, i, trainer.learning_rate, batch_size/(time.time()-btic), name1, loss1, name2, loss2, name3, loss3, name4, loss4))
-            btic = time.time()
+            if (not args.horovod or hvd.rank() == 0):
+                obj_metrics.update(0, obj_losses)
+                center_metrics.update(0, center_losses)
+                scale_metrics.update(0, scale_losses)
+                cls_metrics.update(0, cls_losses)
+                if args.log_interval and not (i + 1) % args.log_interval:
+                    name1, loss1 = obj_metrics.get()
+                    name2, loss2 = center_metrics.get()
+                    name3, loss3 = scale_metrics.get()
+                    name4, loss4 = cls_metrics.get()
+                    logger.info('[Epoch {}][Batch {}], LR: {:.2E}, Speed: {:.3f} samples/sec, {}={:.3f}, {}={:.3f}, {}={:.3f}, {}={:.3f}'.format(
+                        epoch, i, trainer.learning_rate, args.batch_size/(time.time()-btic), name1, loss1, name2, loss2, name3, loss3, name4, loss4))
+                btic = time.time()
 
-        name1, loss1 = obj_metrics.get()
-        name2, loss2 = center_metrics.get()
-        name3, loss3 = scale_metrics.get()
-        name4, loss4 = cls_metrics.get()
-        logger.info('[Epoch {}] Training cost: {:.3f}, {}={:.3f}, {}={:.3f}, {}={:.3f}, {}={:.3f}'.format(
-            epoch, (time.time()-tic), name1, loss1, name2, loss2, name3, loss3, name4, loss4))
-        if not (epoch + 1) % args.val_interval:
-            # consider reduce the frequency of validation to save time
-            map_name, mean_ap = validate(net, val_data, ctx, eval_metric)
-            val_msg = '\n'.join(['{}={}'.format(k, v) for k, v in zip(map_name, mean_ap)])
-            logger.info('[Epoch {}] Validation: \n{}'.format(epoch, val_msg))
-            current_map = float(mean_ap[-1])
-        else:
-            current_map = 0.
-        save_params(net, best_map, current_map, epoch, args.save_interval, args.save_prefix)
+        if (not args.horovod or hvd.rank() == 0):
+            name1, loss1 = obj_metrics.get()
+            name2, loss2 = center_metrics.get()
+            name3, loss3 = scale_metrics.get()
+            name4, loss4 = cls_metrics.get()
+            logger.info('[Epoch {}] Training cost: {:.3f}, {}={:.3f}, {}={:.3f}, {}={:.3f}, {}={:.3f}'.format(
+                epoch, (time.time()-tic), name1, loss1, name2, loss2, name3, loss3, name4, loss4))
+            if not (epoch + 1) % args.val_interval:
+                # consider reduce the frequency of validation to save time
+                map_name, mean_ap = validate(net, val_data, ctx, eval_metric)
+                val_msg = '\n'.join(['{}={}'.format(k, v) for k, v in zip(map_name, mean_ap)])
+                logger.info('[Epoch {}] Validation: \n{}'.format(epoch, val_msg))
+                current_map = float(mean_ap[-1])
+            else:
+                current_map = 0.
+            save_params(net, best_map, current_map, epoch, args.save_interval, args.save_prefix)
 
 if __name__ == '__main__':
     args = parse_args()
+
+    if args.amp:
+        amp.init()
+
+    if args.horovod:
+        if hvd is None:
+            raise SystemExit("Horovod not found, please check if you installed it correctly.")
+        hvd.init()
+
     # fix seed for mxnet, numpy and python builtin random generator.
     gutils.random.seed(args.seed)
 
+
     # training contexts
-    ctx = [mx.gpu(int(i)) for i in args.gpus.split(',') if i.strip()]
-    ctx = ctx if ctx else [mx.cpu()]
+    if args.horovod:
+        ctx = [mx.gpu(hvd.local_rank())]
+    else:
+        ctx = [mx.gpu(int(i)) for i in args.gpus.split(',') if i.strip()]
+        ctx = ctx if ctx else [mx.cpu()]
 
     # network
     net_name = '_'.join(('yolo3', args.network, args.dataset))
@@ -325,9 +365,10 @@ if __name__ == '__main__':
             async_net.initialize()
 
     # training data
+    batch_size = (args.batch_size // hvd.size()) if args.horovod else args.batch_size
     train_dataset, val_dataset, eval_metric = get_dataset(args.dataset, args)
     train_data, val_data = get_dataloader(
-        async_net, train_dataset, val_dataset, args.data_shape, args.batch_size, args.num_workers, args)
+        async_net, train_dataset, val_dataset, args.data_shape, batch_size, args.num_workers, args)
 
     # training
     train(net, train_data, val_data, eval_metric, ctx, args)

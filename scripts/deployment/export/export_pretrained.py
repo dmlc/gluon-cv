@@ -2,6 +2,7 @@
 from __future__ import print_function
 import argparse
 import gluoncv as gcv
+gcv.utils.check_version('0.6.0')
 
 def parse_args():
     parser = argparse.ArgumentParser("Export model helper.")

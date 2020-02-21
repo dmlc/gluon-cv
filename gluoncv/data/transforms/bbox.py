@@ -76,7 +76,7 @@ def flip(bbox, size, flip_x=False, flip_y=False):
         Tuple of length 2: (width, height).
     flip_x : bool
         Whether flip horizontally.
-    flip_y : type
+    flip_y : bool
         Whether flip vertically.
 
     Returns

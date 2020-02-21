@@ -1,5 +1,6 @@
 # pylint: disable=missing-docstring,arguments-differ
-"""Extended image transformations to video transformations."""
+"""Extended image transformations to video transformations.
+Code adapted from https://github.com/bryanyzhu/two-stream-pytorch"""
 from __future__ import division
 import random
 import numbers

@@ -12,6 +12,7 @@ from tqdm import tqdm
 from mxnet import nd
 from mxnet import gluon
 import gluoncv as gcv
+gcv.utils.check_version('0.6.0')
 from gluoncv import data as gdata
 from gluoncv.data.batchify import Tuple, Stack, Pad
 from gluoncv.data.transforms.presets.ssd import SSDDefaultValTransform
@@ -36,7 +37,7 @@ def parse_args():
     parser.add_argument('--benchmark', action='store_true',
                         help="run dummy-data based benchmarking")
     parser.add_argument('--num-iterations', type=int, default=100,
-                        help="number of benchmarking iterations.")     
+                        help="number of benchmarking iterations.")
     parser.add_argument('--dataset', type=str, default='voc',
                         help='eval dataset.')
     parser.add_argument('--num-workers', '-j', dest='num_workers', type=int,
@@ -51,7 +52,7 @@ def parse_args():
                         help='quantize model')
     parser.add_argument('--num-calib-batches', type=int, default=5,
                         help='number of batches for calibration')
-    parser.add_argument('--quantized-dtype', type=str, default='auto', 
+    parser.add_argument('--quantized-dtype', type=str, default='auto',
                         choices=['auto', 'int8', 'uint8'],
                         help='quantization destination data type for input data')
     parser.add_argument('--calib-mode', type=str, default='naive',
@@ -174,7 +175,7 @@ if __name__ == '__main__':
     if args.benchmark:
         print('-----benchmarking on %s -----'%net_name)
         #input_shape = (args.batch_size, 3) + (args.data_shape, args.data_shape)
-        #data = mx.random.uniform(-1.0, 1.0, shape=input_shape, ctx=ctx[0], dtype='float32')  
+        #data = mx.random.uniform(-1.0, 1.0, shape=input_shape, ctx=ctx[0], dtype='float32')
         speed = (args.batch_size*args.num_iterations)/benchmarking(net, ctx=ctx[0], num_iteration=args.num_iterations,
                 datashape=args.data_shape, batch_size=args.batch_size)
         print('Inference speed on %s, with batchsize %d is %.2f img/sec'%(net_name, args.batch_size, speed))

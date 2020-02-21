@@ -1,10 +1,11 @@
 # pylint: disable=line-too-long,too-many-lines,missing-docstring,arguments-differ,unused-argument
-# Code partially borrowed from https://github.com/open-mmlab/mmaction.
+# Code adapted from https://github.com/open-mmlab/mmaction.
 
 __all__ = ['I3D_ResNetV1', 'i3d_resnet50_v1_kinetics400', 'i3d_resnet101_v1_kinetics400',
            'i3d_nl5_resnet50_v1_kinetics400', 'i3d_nl10_resnet50_v1_kinetics400',
            'i3d_nl5_resnet101_v1_kinetics400', 'i3d_nl10_resnet101_v1_kinetics400',
-           'i3d_resnet50_v1_sthsthv2', 'i3d_resnet50_v1_hmdb51', 'i3d_resnet50_v1_ucf101']
+           'i3d_resnet50_v1_sthsthv2', 'i3d_resnet50_v1_hmdb51', 'i3d_resnet50_v1_ucf101',
+           'i3d_resnet50_v1_custom']
 
 from mxnet import nd
 from mxnet import init
@@ -16,7 +17,7 @@ from ..resnetv1b import resnet50_v1b, resnet101_v1b
 from .non_local import build_nonlocal_block
 
 def conv3x3x3(in_planes, out_planes, spatial_stride=1, temporal_stride=1, dilation=1):
-    "3x3x3 convolution with padding"
+    """3x3x3 convolution with padding"""
     return nn.Conv3D(in_channels=in_planes,
                      channels=out_planes,
                      kernel_size=3,
@@ -26,7 +27,7 @@ def conv3x3x3(in_planes, out_planes, spatial_stride=1, temporal_stride=1, dilati
 
 
 def conv1x3x3(in_planes, out_planes, spatial_stride=1, temporal_stride=1, dilation=1):
-    "1x3x3 convolution with padding"
+    """1x3x3 convolution with padding"""
     return nn.Conv3D(in_channels=in_planes,
                      channels=out_planes,
                      kernel_size=(1, 3, 3),
@@ -36,6 +37,10 @@ def conv1x3x3(in_planes, out_planes, spatial_stride=1, temporal_stride=1, dilati
                      use_bias=False)
 
 class BasicBlock(HybridBlock):
+    """
+    Basic building block for ResNet18 and ResNet34.
+    Not supported for I3D at this moment.
+    """
     expansion = 1
 
     def __init__(self,
@@ -79,6 +84,7 @@ class BasicBlock(HybridBlock):
             self.dilation = dilation
 
     def hybrid_forward(self, F, x):
+        """Hybrid forward of a ResNet basic block"""
         identity = x
         out = self.conv1(x)
         out = self.bn1(out)
@@ -91,6 +97,40 @@ class BasicBlock(HybridBlock):
         return out
 
 class Bottleneck(HybridBlock):
+    r"""
+    Bottleneck building block for ResNet50, ResNet101 and ResNet152.
+
+    Parameters
+    ----------
+    inplanes : int.
+        Input channels of each block.
+    planes : int.
+        Output channels of each block.
+    spatial_stride : int, default is 1.
+        Stride in spatial dimension of convolutional layers in a block.
+    temporal_stride : int, default is 1.
+        Stride in temporal dimension of convolutional layers in a block.
+    dilation : int, default is 1.
+        Dilation of convolutional layers in a block.
+    downsample : bool.
+        Whether to contain a downsampling layer in the block.
+    if_inflate : bool.
+        Whether enable inflation of 3D convolutional layers in this block.
+    inflate_style : str, default is '3x1x1'.
+        How to inflate a 2D kernel, either '3x1x1' or '1x3x3'.
+    if_nonlocal : bool.
+        Whether to insert a non-local block after this ResNet block.
+    nonlocal_cfg : dict.
+        Additional `non-local` arguments, for example `nonlocal_type='gaussian'`.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    layer_name : str, default is ''.
+        Give a name to current block.
+    """
     expansion = 4
 
     def __init__(self,
@@ -194,6 +234,7 @@ class Bottleneck(HybridBlock):
                 self.nonlocal_block = None
 
     def hybrid_forward(self, F, x):
+        """Hybrid forward of a ResNet bottleneck block"""
         identity = x
         out = self.conv1(x)
         out = self.bn1(out)
@@ -226,7 +267,7 @@ def make_res_layer(block,
                    norm_layer=BatchNorm,
                    norm_kwargs=None,
                    layer_name=''):
-
+    """Build each stage of a ResNet"""
     inflate_freq = inflate_freq if not isinstance(inflate_freq, int) else (inflate_freq, ) * blocks
     nonlocal_freq = nonlocal_freq if not isinstance(nonlocal_freq, int) else (nonlocal_freq, ) * blocks
     assert len(inflate_freq) == blocks
@@ -277,22 +318,83 @@ def make_res_layer(block,
 
 
 class I3D_ResNetV1(HybridBlock):
-    """ResNet_I3D backbone.
+    r"""ResNet_I3D backbone.
     Inflated 3D model (I3D) from
     `"Quo Vadis, Action Recognition? A New Model and the Kinetics Dataset"
     <https://arxiv.org/abs/1705.07750>`_ paper.
 
-    Args:
-        depth (int): Depth of resnet, from {18, 34, 50, 101, 152}.
-        num_stages (int): Resnet stages, normally 4.
-        strides (Sequence[int]): Strides of the first block of each stage.
-        dilations (Sequence[int]): Dilation of each stage.
-        out_indices (Sequence[int]): Output from which stages.
-        frozen_stages (int): Stages to be frozen (all param fixed). -1 means
-            not freezing any parameters.
-        bn_eval (bool): Whether to set BN layers to eval mode, namely, freeze
-            running stats (mean and var).
-        bn_frozen (bool): Whether to freeze weight and bias of BN layers.
+    Parameters
+    ----------
+    nclass : int.
+        Number of categories in the dataset.
+    depth : int, default is 50.
+        Depth of ResNet, from {18, 34, 50, 101, 152}.
+    num_stages : int, default is 4.
+        Number of stages in a ResNet.
+    pretrained : bool or str.
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True.
+        Load pretrained base network, the extra layers are randomized. Note that
+        if pretrained is `True`, this has no effect.
+    feat_ext : bool.
+        Whether to extract features before dense classification layer or
+        do a complete forward pass.
+    num_segments : int, default is 1.
+        Number of segments used to evenly divide a video.
+    num_crop : int, default is 1.
+        Number of crops used during evaluation, choices are 1, 3 or 10.
+    spatial_strides : tuple of int.
+        Strides in the spatial dimension of the first block of each stage.
+    temporal_strides : tuple of int.
+        Strides in the temporal dimension of the first block of each stage.
+    dilations : tuple of int.
+        Dilation ratio of each stage.
+    out_indices : tuple of int.
+        Collect features from the selected stages of ResNet,
+        usually used for feature extraction or auxililary loss.
+    conv1_kernel_t : int, default is 5.
+        The kernel size of first convolutional layer in a ResNet.
+    conv1_stride_t : int, default is 2.
+        The stride of first convolutional layer in a ResNet.
+    pool1_kernel_t : int, default is 1.
+        The kernel size of first pooling layer in a ResNet.
+    pool1_stride_t : int, default is 2.
+        The stride of first pooling layer in a ResNet.
+    inflate_freq : tuple of int.
+        Select which 2D convolutional layers to be inflated to 3D convolutional layers in each stage.
+    inflate_stride : tuple of int.
+        The stride for inflated layers in each stage.
+    inflate_style : str, default is '3x1x1'.
+        How to inflate a 2D kernel, either '3x1x1' or '1x3x3'.
+    nonlocal_stages : tuple of int.
+        Select which stage we need non-local blocks.
+    nonlocal_freq : tuple of int.
+        Select where to insert non-local blocks in each stage.
+    nonlocal_cfg : dict.
+        Additional `non-local` arguments, for example `nonlocal_type='gaussian'`.
+    bn_eval : bool.
+        Whether to set BN layers to eval mode, namely, freeze
+        running stats (mean and var).
+    bn_frozen : bool.
+        Whether to freeze weight and bias of BN layers.
+    partial_bn : bool, default False.
+        Freeze all batch normalization layers during training except the first layer.
+    frozen_stages : int.
+        Stages to be frozen (all param fixed). -1 means not freezing any parameters.
+    dropout_ratio : float, default is 0.5.
+        The dropout rate of a dropout layer.
+        The larger the value, the more strength to prevent overfitting.
+    init_std : float, default is 0.001.
+        Standard deviation value when initialize the dense layers.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    ctx : Context, default CPU.
+        The context in which to load the pretrained weights.
     """
 
     arch_settings = {
@@ -309,6 +411,7 @@ class I3D_ResNetV1(HybridBlock):
                  num_stages=4,
                  pretrained=False,
                  pretrained_base=True,
+                 feat_ext=False,
                  num_segments=1,
                  num_crop=1,
                  spatial_strides=(1, 2, 2, 2),
@@ -345,6 +448,7 @@ class I3D_ResNetV1(HybridBlock):
         self.num_stages = num_stages
         self.pretrained = pretrained
         self.pretrained_base = pretrained_base
+        self.feat_ext = feat_ext
         self.num_segments = num_segments
         self.num_crop = num_crop
         self.spatial_strides = spatial_strides
@@ -368,6 +472,13 @@ class I3D_ResNetV1(HybridBlock):
         self.block, stage_blocks = self.arch_settings[depth]
         self.stage_blocks = stage_blocks[:num_stages]
         self.inplanes = 64
+
+        if self.bn_frozen:
+            if norm_kwargs is not None:
+                norm_kwargs['use_global_stats'] = True
+            else:
+                norm_kwargs = {}
+                norm_kwargs['use_global_stats'] = True
 
         self.first_stage = nn.HybridSequential(prefix='')
         self.first_stage.add(nn.Conv3D(in_channels=3, channels=64, kernel_size=(conv1_kernel_t, 7, 7),
@@ -426,6 +537,7 @@ class I3D_ResNetV1(HybridBlock):
         self.init_weights(ctx)
 
     def init_weights(self, ctx):
+        """Initial I3D network with its 2D pretrained weights."""
 
         self.first_stage.initialize(ctx=ctx)
         self.res_layers.initialize(ctx=ctx)
@@ -487,6 +599,7 @@ class I3D_ResNetV1(HybridBlock):
             assert cnt == len(weights2d.keys()), 'Not all parameters have been ported, check the initialization.'
 
     def hybrid_forward(self, F, x):
+        """Hybrid forward of I3D network"""
         x = self.first_stage(x)
         outs = []
         for i, res_layer in enumerate(self.res_layers):
@@ -506,45 +619,56 @@ class I3D_ResNetV1(HybridBlock):
         x = F.reshape(x, shape=(-1, self.num_segments * self.num_crop, self.feat_dim))
         x = F.mean(x, axis=1)
 
+        if self.feat_ext:
+            return x
+
         x = self.head(x)
         return x
 
 def i3d_resnet50_v1_kinetics400(nclass=400, pretrained=False, pretrained_base=True, ctx=cpu(),
                                 root='~/.mxnet/models', use_tsn=False, num_segments=1, num_crop=1,
-                                partial_bn=False, **kwargs):
-    r"""Inflated 3D model (I3D) from
-    `"Quo Vadis, Action Recognition? A New Model and the Kinetics Dataset"
-    <https://arxiv.org/abs/1705.07750>`_ paper.
+                                partial_bn=False, bn_frozen=False, feat_ext=False, **kwargs):
+    r"""Inflated 3D model (I3D) with ResNet50 backbone trained on Kinetics400 dataset.
 
     Parameters
     ----------
-    pretrained : bool or str
+    nclass : int.
+        Number of categories in the dataset.
+    pretrained : bool or str.
         Boolean value controls whether to load the default pretrained weights for model.
         String value represents the hashtag for a certain version of pretrained weights.
-    ctx : Context, default CPU
+    pretrained_base : bool or str, optional, default is True.
+        Load pretrained base network, the extra layers are randomized. Note that
+        if pretrained is `True`, this has no effect.
+    ctx : Context, default CPU.
         The context in which to load the pretrained weights.
     root : str, default $MXNET_HOME/models
         Location for keeping the model parameters.
-    partial_bn : bool, default False
+    num_segments : int, default is 1.
+        Number of segments used to evenly divide a video.
+    num_crop : int, default is 1.
+        Number of crops used during evaluation, choices are 1, 3 or 10.
+    partial_bn : bool, default False.
         Freeze all batch normalization layers during training except the first layer.
-    norm_layer : object
-        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
-        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
-    norm_kwargs : dict
-        Additional `norm_layer` arguments, for example `num_devices=4`
-        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    bn_frozen : bool.
+        Whether to freeze weight and bias of BN layers.
+    feat_ext : bool.
+        Whether to extract features before dense classification layer or
+        do a complete forward pass.
     """
 
     model = I3D_ResNetV1(nclass=nclass,
                          depth=50,
                          pretrained=pretrained,
                          pretrained_base=pretrained_base,
+                         feat_ext=feat_ext,
                          num_segments=num_segments,
                          num_crop=num_crop,
                          out_indices=[3],
                          inflate_freq=((1, 1, 1), (1, 0, 1, 0), (1, 0, 1, 0, 1, 0), (0, 1, 0)),
                          bn_eval=False,
                          partial_bn=partial_bn,
+                         bn_frozen=bn_frozen,
                          ctx=ctx,
                          **kwargs)
 
@@ -561,34 +685,41 @@ def i3d_resnet50_v1_kinetics400(nclass=400, pretrained=False, pretrained_base=Tr
 
 def i3d_resnet101_v1_kinetics400(nclass=400, pretrained=False, pretrained_base=True, ctx=cpu(),
                                  root='~/.mxnet/models', use_tsn=False, num_segments=1, num_crop=1,
-                                 partial_bn=False, **kwargs):
-    r"""Inflated 3D model (I3D) from
-    `"Quo Vadis, Action Recognition? A New Model and the Kinetics Dataset"
-    <https://arxiv.org/abs/1705.07750>`_ paper.
+                                 partial_bn=False, feat_ext=False, **kwargs):
+    r"""Inflated 3D model (I3D) with ResNet101 backbone trained on Kinetics400 dataset.
 
     Parameters
     ----------
-    pretrained : bool or str
+    nclass : int.
+        Number of categories in the dataset.
+    pretrained : bool or str.
         Boolean value controls whether to load the default pretrained weights for model.
         String value represents the hashtag for a certain version of pretrained weights.
-    ctx : Context, default CPU
+    pretrained_base : bool or str, optional, default is True.
+        Load pretrained base network, the extra layers are randomized. Note that
+        if pretrained is `True`, this has no effect.
+    ctx : Context, default CPU.
         The context in which to load the pretrained weights.
     root : str, default $MXNET_HOME/models
         Location for keeping the model parameters.
-    partial_bn : bool, default False
+    num_segments : int, default is 1.
+        Number of segments used to evenly divide a video.
+    num_crop : int, default is 1.
+        Number of crops used during evaluation, choices are 1, 3 or 10.
+    partial_bn : bool, default False.
         Freeze all batch normalization layers during training except the first layer.
-    norm_layer : object
-        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
-        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
-    norm_kwargs : dict
-        Additional `norm_layer` arguments, for example `num_devices=4`
-        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    bn_frozen : bool.
+        Whether to freeze weight and bias of BN layers.
+    feat_ext : bool.
+        Whether to extract features before dense classification layer or
+        do a complete forward pass.
     """
 
     model = I3D_ResNetV1(nclass=nclass,
                          depth=101,
                          pretrained=pretrained,
                          pretrained_base=pretrained_base,
+                         feat_ext=feat_ext,
                          num_segments=num_segments,
                          num_crop=num_crop,
                          out_indices=[3],
@@ -611,36 +742,42 @@ def i3d_resnet101_v1_kinetics400(nclass=400, pretrained=False, pretrained_base=T
 
 def i3d_nl5_resnet50_v1_kinetics400(nclass=400, pretrained=False, pretrained_base=True, ctx=cpu(),
                                     root='~/.mxnet/models', use_tsn=False, num_segments=1, num_crop=1,
-                                    partial_bn=False, **kwargs):
-    r"""Inflated 3D model (I3D) from
-    `"Quo Vadis, Action Recognition? A New Model and the Kinetics Dataset"
-    <https://arxiv.org/abs/1705.07750>`_ paper.
-    `"Non-local Neural Networks"
-    <https://arxiv.org/abs/1711.07971>`_ paper.
+                                    partial_bn=False, feat_ext=False, **kwargs):
+    r"""Inflated 3D model (I3D) with ResNet50 backbone and 5 non-local blocks
+    trained on Kinetics400 dataset.
 
     Parameters
     ----------
-    pretrained : bool or str
+    nclass : int.
+        Number of categories in the dataset.
+    pretrained : bool or str.
         Boolean value controls whether to load the default pretrained weights for model.
         String value represents the hashtag for a certain version of pretrained weights.
-    ctx : Context, default CPU
+    pretrained_base : bool or str, optional, default is True.
+        Load pretrained base network, the extra layers are randomized. Note that
+        if pretrained is `True`, this has no effect.
+    ctx : Context, default CPU.
         The context in which to load the pretrained weights.
     root : str, default $MXNET_HOME/models
         Location for keeping the model parameters.
-    partial_bn : bool, default False
+    num_segments : int, default is 1.
+        Number of segments used to evenly divide a video.
+    num_crop : int, default is 1.
+        Number of crops used during evaluation, choices are 1, 3 or 10.
+    partial_bn : bool, default False.
         Freeze all batch normalization layers during training except the first layer.
-    norm_layer : object
-        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
-        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
-    norm_kwargs : dict
-        Additional `norm_layer` arguments, for example `num_devices=4`
-        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    bn_frozen : bool.
+        Whether to freeze weight and bias of BN layers.
+    feat_ext : bool.
+        Whether to extract features before dense classification layer or
+        do a complete forward pass.
     """
 
     model = I3D_ResNetV1(nclass=nclass,
                          depth=50,
                          pretrained=pretrained,
                          pretrained_base=pretrained_base,
+                         feat_ext=feat_ext,
                          num_segments=num_segments,
                          num_crop=num_crop,
                          out_indices=[3],
@@ -666,36 +803,42 @@ def i3d_nl5_resnet50_v1_kinetics400(nclass=400, pretrained=False, pretrained_bas
 
 def i3d_nl10_resnet50_v1_kinetics400(nclass=400, pretrained=False, pretrained_base=True, ctx=cpu(),
                                      root='~/.mxnet/models', use_tsn=False, num_segments=1, num_crop=1,
-                                     partial_bn=False, **kwargs):
-    r"""Inflated 3D model (I3D) from
-    `"Quo Vadis, Action Recognition? A New Model and the Kinetics Dataset"
-    <https://arxiv.org/abs/1705.07750>`_ paper.
-    `"Non-local Neural Networks"
-    <https://arxiv.org/abs/1711.07971>`_ paper.
+                                     partial_bn=False, feat_ext=False, **kwargs):
+    r"""Inflated 3D model (I3D) with ResNet50 backbone and 10 non-local blocks
+    trained on Kinetics400 dataset.
 
     Parameters
     ----------
-    pretrained : bool or str
+    nclass : int.
+        Number of categories in the dataset.
+    pretrained : bool or str.
         Boolean value controls whether to load the default pretrained weights for model.
         String value represents the hashtag for a certain version of pretrained weights.
-    ctx : Context, default CPU
+    pretrained_base : bool or str, optional, default is True.
+        Load pretrained base network, the extra layers are randomized. Note that
+        if pretrained is `True`, this has no effect.
+    ctx : Context, default CPU.
         The context in which to load the pretrained weights.
     root : str, default $MXNET_HOME/models
         Location for keeping the model parameters.
-    partial_bn : bool, default False
+    num_segments : int, default is 1.
+        Number of segments used to evenly divide a video.
+    num_crop : int, default is 1.
+        Number of crops used during evaluation, choices are 1, 3 or 10.
+    partial_bn : bool, default False.
         Freeze all batch normalization layers during training except the first layer.
-    norm_layer : object
-        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
-        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
-    norm_kwargs : dict
-        Additional `norm_layer` arguments, for example `num_devices=4`
-        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    bn_frozen : bool.
+        Whether to freeze weight and bias of BN layers.
+    feat_ext : bool.
+        Whether to extract features before dense classification layer or
+        do a complete forward pass.
     """
 
     model = I3D_ResNetV1(nclass=nclass,
                          depth=50,
                          pretrained=pretrained,
                          pretrained_base=pretrained_base,
+                         feat_ext=feat_ext,
                          num_segments=num_segments,
                          num_crop=num_crop,
                          out_indices=[3],
@@ -721,36 +864,42 @@ def i3d_nl10_resnet50_v1_kinetics400(nclass=400, pretrained=False, pretrained_ba
 
 def i3d_nl5_resnet101_v1_kinetics400(nclass=400, pretrained=False, pretrained_base=True, ctx=cpu(),
                                      root='~/.mxnet/models', use_tsn=False, num_segments=1, num_crop=1,
-                                     partial_bn=False, **kwargs):
-    r"""Inflated 3D model (I3D) from
-    `"Quo Vadis, Action Recognition? A New Model and the Kinetics Dataset"
-    <https://arxiv.org/abs/1705.07750>`_ paper.
-    `"Non-local Neural Networks"
-    <https://arxiv.org/abs/1711.07971>`_ paper.
+                                     partial_bn=False, feat_ext=False, **kwargs):
+    r"""Inflated 3D model (I3D) with ResNet101 backbone and 5 non-local blocks
+    trained on Kinetics400 dataset.
 
     Parameters
     ----------
-    pretrained : bool or str
+    nclass : int.
+        Number of categories in the dataset.
+    pretrained : bool or str.
         Boolean value controls whether to load the default pretrained weights for model.
         String value represents the hashtag for a certain version of pretrained weights.
-    ctx : Context, default CPU
+    pretrained_base : bool or str, optional, default is True.
+        Load pretrained base network, the extra layers are randomized. Note that
+        if pretrained is `True`, this has no effect.
+    ctx : Context, default CPU.
         The context in which to load the pretrained weights.
     root : str, default $MXNET_HOME/models
         Location for keeping the model parameters.
-    partial_bn : bool, default False
+    num_segments : int, default is 1.
+        Number of segments used to evenly divide a video.
+    num_crop : int, default is 1.
+        Number of crops used during evaluation, choices are 1, 3 or 10.
+    partial_bn : bool, default False.
         Freeze all batch normalization layers during training except the first layer.
-    norm_layer : object
-        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
-        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
-    norm_kwargs : dict
-        Additional `norm_layer` arguments, for example `num_devices=4`
-        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    bn_frozen : bool.
+        Whether to freeze weight and bias of BN layers.
+    feat_ext : bool.
+        Whether to extract features before dense classification layer or
+        do a complete forward pass.
     """
 
     model = I3D_ResNetV1(nclass=nclass,
                          depth=101,
                          pretrained=pretrained,
                          pretrained_base=pretrained_base,
+                         feat_ext=feat_ext,
                          num_segments=num_segments,
                          num_crop=num_crop,
                          out_indices=[3],
@@ -776,36 +925,42 @@ def i3d_nl5_resnet101_v1_kinetics400(nclass=400, pretrained=False, pretrained_ba
 
 def i3d_nl10_resnet101_v1_kinetics400(nclass=400, pretrained=False, pretrained_base=True, ctx=cpu(),
                                       root='~/.mxnet/models', use_tsn=False, num_segments=1, num_crop=1,
-                                      partial_bn=False, **kwargs):
-    r"""Inflated 3D model (I3D) from
-    `"Quo Vadis, Action Recognition? A New Model and the Kinetics Dataset"
-    <https://arxiv.org/abs/1705.07750>`_ paper.
-    `"Non-local Neural Networks"
-    <https://arxiv.org/abs/1711.07971>`_ paper.
+                                      partial_bn=False, feat_ext=False, **kwargs):
+    r"""Inflated 3D model (I3D) with ResNet101 backbone and 10 non-local blocks
+    trained on Kinetics400 dataset.
 
     Parameters
     ----------
-    pretrained : bool or str
+    nclass : int.
+        Number of categories in the dataset.
+    pretrained : bool or str.
         Boolean value controls whether to load the default pretrained weights for model.
         String value represents the hashtag for a certain version of pretrained weights.
-    ctx : Context, default CPU
+    pretrained_base : bool or str, optional, default is True.
+        Load pretrained base network, the extra layers are randomized. Note that
+        if pretrained is `True`, this has no effect.
+    ctx : Context, default CPU.
         The context in which to load the pretrained weights.
     root : str, default $MXNET_HOME/models
         Location for keeping the model parameters.
-    partial_bn : bool, default False
+    num_segments : int, default is 1.
+        Number of segments used to evenly divide a video.
+    num_crop : int, default is 1.
+        Number of crops used during evaluation, choices are 1, 3 or 10.
+    partial_bn : bool, default False.
         Freeze all batch normalization layers during training except the first layer.
-    norm_layer : object
-        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
-        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
-    norm_kwargs : dict
-        Additional `norm_layer` arguments, for example `num_devices=4`
-        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    bn_frozen : bool.
+        Whether to freeze weight and bias of BN layers.
+    feat_ext : bool.
+        Whether to extract features before dense classification layer or
+        do a complete forward pass.
     """
 
     model = I3D_ResNetV1(nclass=nclass,
                          depth=101,
                          pretrained=pretrained,
                          pretrained_base=pretrained_base,
+                         feat_ext=feat_ext,
                          num_segments=num_segments,
                          num_crop=num_crop,
                          out_indices=[3],
@@ -831,34 +986,41 @@ def i3d_nl10_resnet101_v1_kinetics400(nclass=400, pretrained=False, pretrained_b
 
 def i3d_resnet50_v1_sthsthv2(nclass=174, pretrained=False, pretrained_base=True, ctx=cpu(),
                              root='~/.mxnet/models', use_tsn=False, num_segments=1, num_crop=1,
-                             partial_bn=False, **kwargs):
-    r"""Inflated 3D model (I3D) from
-    `"Quo Vadis, Action Recognition? A New Model and the Kinetics Dataset"
-    <https://arxiv.org/abs/1705.07750>`_ paper.
+                             partial_bn=False, feat_ext=False, **kwargs):
+    r"""Inflated 3D model (I3D) with ResNet50 backbone trained on Something-Something-V2 dataset.
 
     Parameters
     ----------
-    pretrained : bool or str
+    nclass : int.
+        Number of categories in the dataset.
+    pretrained : bool or str.
         Boolean value controls whether to load the default pretrained weights for model.
         String value represents the hashtag for a certain version of pretrained weights.
-    ctx : Context, default CPU
+    pretrained_base : bool or str, optional, default is True.
+        Load pretrained base network, the extra layers are randomized. Note that
+        if pretrained is `True`, this has no effect.
+    ctx : Context, default CPU.
         The context in which to load the pretrained weights.
     root : str, default $MXNET_HOME/models
         Location for keeping the model parameters.
-    partial_bn : bool, default False
+    num_segments : int, default is 1.
+        Number of segments used to evenly divide a video.
+    num_crop : int, default is 1.
+        Number of crops used during evaluation, choices are 1, 3 or 10.
+    partial_bn : bool, default False.
         Freeze all batch normalization layers during training except the first layer.
-    norm_layer : object
-        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
-        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
-    norm_kwargs : dict
-        Additional `norm_layer` arguments, for example `num_devices=4`
-        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    bn_frozen : bool.
+        Whether to freeze weight and bias of BN layers.
+    feat_ext : bool.
+        Whether to extract features before dense classification layer or
+        do a complete forward pass.
     """
 
     model = I3D_ResNetV1(nclass=nclass,
                          depth=50,
                          pretrained=pretrained,
                          pretrained_base=pretrained_base,
+                         feat_ext=feat_ext,
                          num_segments=num_segments,
                          num_crop=num_crop,
                          out_indices=[3],
@@ -881,34 +1043,41 @@ def i3d_resnet50_v1_sthsthv2(nclass=174, pretrained=False, pretrained_base=True,
 
 def i3d_resnet50_v1_hmdb51(nclass=51, pretrained=False, pretrained_base=True, ctx=cpu(),
                            root='~/.mxnet/models', use_tsn=False, num_segments=1, num_crop=1,
-                           partial_bn=False, use_kinetics_pretrain=True, **kwargs):
-    r"""Inflated 3D model (I3D) from
-    `"Quo Vadis, Action Recognition? A New Model and the Kinetics Dataset"
-    <https://arxiv.org/abs/1705.07750>`_ paper.
+                           partial_bn=False, use_kinetics_pretrain=True, feat_ext=False, **kwargs):
+    r"""Inflated 3D model (I3D) with ResNet50 backbone trained on HMDB51 dataset.
 
     Parameters
     ----------
-    pretrained : bool or str
+    nclass : int.
+        Number of categories in the dataset.
+    pretrained : bool or str.
         Boolean value controls whether to load the default pretrained weights for model.
         String value represents the hashtag for a certain version of pretrained weights.
-    ctx : Context, default CPU
+    pretrained_base : bool or str, optional, default is True.
+        Load pretrained base network, the extra layers are randomized. Note that
+        if pretrained is `True`, this has no effect.
+    ctx : Context, default CPU.
         The context in which to load the pretrained weights.
     root : str, default $MXNET_HOME/models
         Location for keeping the model parameters.
-    partial_bn : bool, default False
+    num_segments : int, default is 1.
+        Number of segments used to evenly divide a video.
+    num_crop : int, default is 1.
+        Number of crops used during evaluation, choices are 1, 3 or 10.
+    partial_bn : bool, default False.
         Freeze all batch normalization layers during training except the first layer.
-    norm_layer : object
-        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
-        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
-    norm_kwargs : dict
-        Additional `norm_layer` arguments, for example `num_devices=4`
-        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    bn_frozen : bool.
+        Whether to freeze weight and bias of BN layers.
+    feat_ext : bool.
+        Whether to extract features before dense classification layer or
+        do a complete forward pass.
     """
 
     model = I3D_ResNetV1(nclass=nclass,
                          depth=50,
                          pretrained=pretrained,
                          pretrained_base=pretrained_base,
+                         feat_ext=feat_ext,
                          num_segments=num_segments,
                          num_crop=num_crop,
                          out_indices=[3],
@@ -950,34 +1119,41 @@ def i3d_resnet50_v1_hmdb51(nclass=51, pretrained=False, pretrained_base=True, ct
 
 def i3d_resnet50_v1_ucf101(nclass=101, pretrained=False, pretrained_base=True, ctx=cpu(),
                            root='~/.mxnet/models', use_tsn=False, num_segments=1, num_crop=1,
-                           partial_bn=False, use_kinetics_pretrain=True, **kwargs):
-    r"""Inflated 3D model (I3D) from
-    `"Quo Vadis, Action Recognition? A New Model and the Kinetics Dataset"
-    <https://arxiv.org/abs/1705.07750>`_ paper.
+                           partial_bn=False, use_kinetics_pretrain=True, feat_ext=False, **kwargs):
+    r"""Inflated 3D model (I3D) with ResNet50 backbone trained on UCF101 dataset.
 
     Parameters
     ----------
-    pretrained : bool or str
+    nclass : int.
+        Number of categories in the dataset.
+    pretrained : bool or str.
         Boolean value controls whether to load the default pretrained weights for model.
         String value represents the hashtag for a certain version of pretrained weights.
-    ctx : Context, default CPU
+    pretrained_base : bool or str, optional, default is True.
+        Load pretrained base network, the extra layers are randomized. Note that
+        if pretrained is `True`, this has no effect.
+    ctx : Context, default CPU.
         The context in which to load the pretrained weights.
     root : str, default $MXNET_HOME/models
         Location for keeping the model parameters.
-    partial_bn : bool, default False
+    num_segments : int, default is 1.
+        Number of segments used to evenly divide a video.
+    num_crop : int, default is 1.
+        Number of crops used during evaluation, choices are 1, 3 or 10.
+    partial_bn : bool, default False.
         Freeze all batch normalization layers during training except the first layer.
-    norm_layer : object
-        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
-        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
-    norm_kwargs : dict
-        Additional `norm_layer` arguments, for example `num_devices=4`
-        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    bn_frozen : bool.
+        Whether to freeze weight and bias of BN layers.
+    feat_ext : bool.
+        Whether to extract features before dense classification layer or
+        do a complete forward pass.
     """
 
     model = I3D_ResNetV1(nclass=nclass,
                          depth=50,
                          pretrained=pretrained,
                          pretrained_base=pretrained_base,
+                         feat_ext=feat_ext,
                          num_segments=num_segments,
                          num_crop=num_crop,
                          out_indices=[3],
@@ -1013,6 +1189,77 @@ def i3d_resnet50_v1_ucf101(nclass=101, pretrained=False, pretrained_base=True, c
         from ...data import UCF101Attr
         attrib = UCF101Attr()
         model.classes = attrib.classes
+    model.collect_params().reset_ctx(ctx)
+
+    return model
+
+def i3d_resnet50_v1_custom(nclass=400, pretrained=False, pretrained_base=True, ctx=cpu(),
+                           root='~/.mxnet/models', use_tsn=False, num_segments=1, num_crop=1,
+                           partial_bn=False, use_kinetics_pretrain=True, feat_ext=False, **kwargs):
+    r"""Inflated 3D model (I3D) with ResNet50 backbone. Customized for users's own dataset.
+
+    Parameters
+    ----------
+    nclass : int.
+        Number of categories in the dataset.
+    pretrained : bool or str.
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True.
+        Load pretrained base network, the extra layers are randomized. Note that
+        if pretrained is `True`, this has no effect.
+    ctx : Context, default CPU.
+        The context in which to load the pretrained weights.
+    root : str, default $MXNET_HOME/models
+        Location for keeping the model parameters.
+    num_segments : int, default is 1.
+        Number of segments used to evenly divide a video.
+    num_crop : int, default is 1.
+        Number of crops used during evaluation, choices are 1, 3 or 10.
+    partial_bn : bool, default False.
+        Freeze all batch normalization layers during training except the first layer.
+    bn_frozen : bool.
+        Whether to freeze weight and bias of BN layers.
+    feat_ext : bool.
+        Whether to extract features before dense classification layer or
+        do a complete forward pass.
+    use_kinetics_pretrain : bool.
+        Whether to load Kinetics-400 pre-trained model weights.
+    """
+
+    model = I3D_ResNetV1(nclass=nclass,
+                         depth=50,
+                         pretrained=pretrained,
+                         pretrained_base=pretrained_base,
+                         feat_ext=feat_ext,
+                         num_segments=num_segments,
+                         num_crop=num_crop,
+                         out_indices=[3],
+                         inflate_freq=((1, 1, 1), (1, 0, 1, 0), (1, 0, 1, 0, 1, 0), (0, 1, 0)),
+                         bn_eval=False,
+                         partial_bn=True,
+                         ctx=ctx,
+                         dropout_ratio=0.8,
+                         init_std=0.001,
+                         **kwargs)
+
+    if use_kinetics_pretrain and not pretrained:
+        from gluoncv.model_zoo import get_model
+        kinetics_model = get_model('i3d_resnet50_v1_kinetics400', nclass=400, pretrained=True)
+        source_params = kinetics_model.collect_params()
+        target_params = model.collect_params()
+        assert len(source_params.keys()) == len(target_params.keys())
+
+        pretrained_weights = []
+        for layer_name in source_params.keys():
+            pretrained_weights.append(source_params[layer_name].data())
+
+        for i, layer_name in enumerate(target_params.keys()):
+            if i + 2 == len(source_params.keys()):
+                # skip the last dense layer
+                break
+            target_params[layer_name].set_data(pretrained_weights[i])
+
     model.collect_params().reset_ctx(ctx)
 
     return model

@@ -155,8 +155,8 @@ def fill(masks, bboxes, size, fast_fill=True):
         mask_continuous = interpolate.interp2d(mask_pixels, mask_pixels, mask, fill_value=0.0)
         ys = np.arange(0.5, height + 0.5)
         xs = np.arange(0.5, width + 0.5)
-        ys = (ys - y1) / (y2 - y1) * mask.shape[0]
-        xs = (xs - x1) / (x2 - x1) * mask.shape[1]
+        ys = (ys - y1[i]) / (y2[i] - y1[i]) * mask.shape[0]
+        xs = (xs - x1[i]) / (x2[i] - x1[i]) * mask.shape[1]
         res = mask_continuous(xs, ys)
         ret[i, :, :] = (res >= 0.5).astype('uint8')
     return ret

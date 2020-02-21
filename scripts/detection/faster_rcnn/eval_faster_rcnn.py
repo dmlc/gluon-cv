@@ -15,6 +15,7 @@ from tqdm import tqdm
 from mxnet import nd
 from mxnet import gluon
 import gluoncv as gcv
+gcv.utils.check_version('0.6.0')
 from gluoncv import data as gdata
 from gluoncv.data import batchify
 from gluoncv.data.transforms.presets.rcnn import FasterRCNNDefaultValTransform
@@ -137,7 +138,7 @@ if __name__ == '__main__':
         net = gcv.model_zoo.get_model(net_name, pretrained=True, **kwargs)
     else:
         net = gcv.model_zoo.get_model(net_name, pretrained=False, **kwargs)
-        net.load_parameters(args.pretrained.strip())
+        net.load_parameters(args.pretrained.strip(), cast_dtype=True)
     net.collect_params().reset_ctx(ctx)
 
     # validation data

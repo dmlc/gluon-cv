@@ -229,6 +229,128 @@ Semantic Segmentation
     get_deeplab_resnet101_ade
 
 
+Action Recognition
+^^^^^^^^^^^^^^^^^^
+
+.. currentmodule:: gluoncv.model_zoo
+
+:hidden:`TSN`
+~~~~~~~~~~~~~
+
+.. autosummary::
+    :nosignatures:
+
+    vgg16_ucf101
+    vgg16_hmdb51
+    vgg16_kinetics400
+    vgg16_sthsthv2
+
+    inceptionv1_ucf101
+    inceptionv1_hmdb51
+    inceptionv1_kinetics400
+    inceptionv1_sthsthv2
+
+    inceptionv3_ucf101
+    inceptionv3_hmdb51
+    inceptionv3_kinetics400
+    inceptionv3_sthsthv2
+
+    resnet18_v1b_sthsthv2
+    resnet34_v1b_sthsthv2
+    resnet50_v1b_sthsthv2
+    resnet101_v1b_sthsthv2
+    resnet152_v1b_sthsthv2
+    resnet18_v1b_kinetics400
+    resnet34_v1b_kinetics400
+    resnet50_v1b_kinetics400
+    resnet101_v1b_kinetics400
+    resnet152_v1b_kinetics400
+    resnet50_v1b_ucf101
+    resnet50_v1b_hmdb51
+    resnet50_v1b_custom
+
+:hidden:`C3D`
+~~~~~~~~~~~~~~~~
+
+.. autosummary::
+    :nosignatures:
+
+    C3D
+
+    c3d_kinetics400
+
+
+:hidden:`I3D`
+~~~~~~~~~~~~~~~~~~~
+
+.. autosummary::
+    :nosignatures:
+
+    I3D_InceptionV1
+
+    i3d_inceptionv1_kinetics400
+
+    I3D_InceptionV3
+
+    i3d_inceptionv3_kinetics400
+
+    I3D_ResNetV1
+
+    i3d_resnet50_v1_kinetics400
+    i3d_resnet101_v1_kinetics400
+    i3d_nl5_resnet50_v1_kinetics400
+    i3d_nl10_resnet50_v1_kinetics400
+    i3d_nl5_resnet101_v1_kinetics400
+    i3d_nl10_resnet101_v1_kinetics400
+    i3d_resnet50_v1_sthsthv2
+    i3d_resnet50_v1_hmdb51
+    i3d_resnet50_v1_ucf101
+    i3d_resnet50_v1_custom
+
+:hidden:`P3D`
+~~~~~~~~~~~~~~~~
+
+.. autosummary::
+    :nosignatures:
+
+    P3D
+
+    p3d_resnet50_kinetics400
+    p3d_resnet101_kinetics400
+
+
+:hidden:`R2+1D`
+~~~~~~~~~~~~~~~~
+
+.. autosummary::
+    :nosignatures:
+
+    R2Plus1D
+
+    r2plus1d_resnet18_kinetics400
+    r2plus1d_resnet34_kinetics400
+    r2plus1d_resnet50_kinetics400
+    r2plus1d_resnet101_kinetics400
+    r2plus1d_resnet152_kinetics400
+
+
+:hidden:`SlowFast`
+~~~~~~~~~~~~~~~~
+
+.. autosummary::
+    :nosignatures:
+
+    SlowFast
+
+    slowfast_4x16_resnet50_kinetics400
+    slowfast_8x8_resnet50_kinetics400
+    slowfast_4x16_resnet101_kinetics400
+    slowfast_8x8_resnet101_kinetics400
+    slowfast_16x8_resnet101_kinetics400
+    slowfast_16x8_resnet101_50_50_kinetics400
+    slowfast_4x16_resnet50_custom
+
+
 API Reference
 ^^^^^^^^^^^^^
 

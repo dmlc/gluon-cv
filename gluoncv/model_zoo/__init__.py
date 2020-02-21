@@ -2,8 +2,8 @@
 # pylint: disable=wildcard-import
 from .model_zoo import get_model, get_model_list
 from .model_store import pretrained_model_list
-from .faster_rcnn import *
-from .mask_rcnn import *
+from .rcnn.faster_rcnn import *
+from .rcnn.mask_rcnn import *
 from .ssd import *
 from .yolo import *
 from .cifarresnet import *
@@ -33,3 +33,4 @@ from .vgg import *
 from .mobilenet import *
 from .residual_attentionnet import *
 from .center_net import *
+from .siamrpn import *
