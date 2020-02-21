@@ -242,6 +242,8 @@ if __name__ == "__main__":
         model_prefix += '_ade'
     elif args.dataset == 'citys':
         model_prefix += '_citys'
+    elif args.dataset == 'mhp':
+        model_prefix += '_mhp'
     else:
         raise ValueError('Unsupported dataset {} used'.format(args.dataset))
 
