@@ -187,9 +187,13 @@ class Trainer(object):
                                         iters_per_epoch=len(self.train_data),
                                         power=0.9)
         kv = mx.kv.create(args.kvstore)
+        # optimizer_params = {'lr_scheduler': self.lr_scheduler,
+        #                     'wd': args.weight_decay,
+        #                     'momentum': args.momentum,
+        #                     'learning_rate': args.lr}
+
         optimizer_params = {'lr_scheduler': self.lr_scheduler,
                             'wd': args.weight_decay,
-                            'momentum': args.momentum,
                             'learning_rate': args.lr}
 
         if args.dtype == 'float16':
