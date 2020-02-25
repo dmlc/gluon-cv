@@ -199,7 +199,7 @@ class Trainer(object):
             for k, v in self.net.module.collect_params('.*beta|.*gamma|.*bias').items():
                 v.wd_mult = 0.0
 
-        self.optimizer = gluon.Trainer(self.net.module.collect_params(), 'sgd',
+        self.optimizer = gluon.Trainer(self.net.module.collect_params(), 'adam',
                                        optimizer_params, kvstore=kv)
         # evaluation metrics
         self.metric = gluoncv.utils.metrics.SegmentationMetric(trainset.num_class)
