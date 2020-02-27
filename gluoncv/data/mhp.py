@@ -67,9 +67,13 @@ class MHPSegmentation(SegmentationDataset):
         if h < w:
             oh = 768
             ow = int(1.0 * w * oh / h + 0.5)
+            if ow % 8:
+                ow = int(round(ow / 8) * 8)
         else:
             ow = 768
             oh = int(1.0 * h * ow / w + 0.5)
+            if oh % 8:
+                oh = int(round(oh / 8) * 8)
 
         img = img.resize((ow, oh), Image.BILINEAR)
         mask = mask.resize((ow, oh), Image.NEAREST)
