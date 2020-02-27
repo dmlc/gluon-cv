@@ -26,8 +26,7 @@ __all__ = ['YOLOV3',
            'yolo3_mobilenet1_0_custom',
            'yolo3_mobilenet0_25_coco',
            'yolo3_mobilenet0_25_voc',
-           'yolo3_mobilenet0_25_custom'
-           ]
+           'yolo3_mobilenet0_25_custom']
 
 def _upsample(x, stride=2):
     """Simple upsampling layer by stack pixel alongside horizontal and vertical directions.
