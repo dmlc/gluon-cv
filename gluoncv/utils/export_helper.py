@@ -89,8 +89,9 @@ def export_block(path, block, data_shape=None, epoch=0, preprocess=True, layout=
         data_shapes = [data_shape]
 
     # use deepcopy of network to avoid in-place modification
-    copy_block = copy.deepcopy(block)
+    copy_block = block
     if '_target_generator' in copy_block._children:
+        copy_block = copy.deepcopy(block)
         copy_block._children.pop('_target_generator')
 
     if preprocess:
