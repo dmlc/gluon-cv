@@ -126,7 +126,7 @@ def test(model, args, input_transform):
     print(model)
 
     if 'icnet' in args.model:
-        evaluator = DataParallelModel(SegEvalModel(model), ctx_list=args.ctx)
+        evaluator = DataParallelModel(SegEvalModel(model, use_predict=True), ctx_list=args.ctx)
     else:
         evaluator = MultiEvalModel(model, testset.num_class, ctx_list=args.ctx)
 
