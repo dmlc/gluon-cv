@@ -371,3 +371,17 @@ def get_icnet_resnet50_citys(**kwargs):
 
     """
     return get_icnet(dataset='citys', backbone='resnet50', **kwargs)
+
+
+def get_icnet_resnet50_mhpv1(**kwargs):
+    r"""Image Cascade Network
+
+    Parameters
+    ----------
+    dataset : str, default citys
+        The dataset that model pretrained on. (default: cityscapes)
+    backbone : string
+        Pre-trained dilated backbone network type (default:'resnet50').
+
+    """
+    return get_icnet(dataset='mhpv1', backbone='resnet50', **kwargs)
