@@ -1,4 +1,4 @@
-"""Multi-Human-Parsing Dataset."""
+"""Multi-Human-Parsing V1 Dataset."""
 import os
 from PIL import Image
 import numpy as np
@@ -9,8 +9,8 @@ from PIL import ImageFile
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
-class MHPSegmentation(SegmentationDataset):
-    """Multi-Human-Parsing Dataset.
+class MHPV1Segmentation(SegmentationDataset):
+    """Multi-Human-Parsing V1 Dataset.
     Parameters
     ----------
     root : string
@@ -28,7 +28,7 @@ class MHPSegmentation(SegmentationDataset):
     >>>     transforms.Normalize([.485, .456, .406], [.229, .224, .225]),
     >>> ])
     >>> # Create Dataset
-    >>> trainset = gluoncv.data.MHPSegmentation(split='train', transform=input_transform)
+    >>> trainset = gluoncv.data.MHPV1Segmentation(split='train', transform=input_transform)
     >>> # Create Training Loader
     >>> train_data = gluon.data.DataLoader(
     >>>     trainset, 4, shuffle=True, last_batch='rollover',
@@ -39,7 +39,7 @@ class MHPSegmentation(SegmentationDataset):
 
     def __init__(self, root=os.path.expanduser('~/.mxnet/datasets/mhp/LV-MHP-v1'),
                  split='train', mode=None, transform=None, **kwargs):
-        super(MHPSegmentation, self).__init__(root, split, mode, transform, **kwargs)
+        super(MHPV1Segmentation, self).__init__(root, split, mode, transform, **kwargs)
         assert os.path.exists(root), "Please setup the dataset using" + "scripts/datasets/mhp.py"
         self.images, self.masks = _get_mhp_pairs(root, split)
         assert (len(self.images) == len(self.masks))
