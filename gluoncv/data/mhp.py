@@ -40,7 +40,7 @@ class MHPV1Segmentation(SegmentationDataset):
     def __init__(self, root=os.path.expanduser('~/.mxnet/datasets/mhp/LV-MHP-v1'),
                  split='train', mode=None, transform=None, **kwargs):
         super(MHPV1Segmentation, self).__init__(root, split, mode, transform, **kwargs)
-        assert os.path.exists(root), "Please setup the dataset using" + "scripts/datasets/mhp.py"
+        assert os.path.exists(root), "Please setup the dataset using" + "scripts/datasets/mhp_v1.py"
         self.images, self.masks = _get_mhp_pairs(root, split)
         assert (len(self.images) == len(self.masks))
         if len(self.images) == 0:

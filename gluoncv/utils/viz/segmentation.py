@@ -34,9 +34,9 @@ def get_color_pallete(npimg, dataset='pascal_voc'):
         out_img = Image.fromarray(npimg.astype('uint8'))
         out_img.putpalette(cityspallete)
         return out_img
-    elif dataset == 'mhp':
+    elif dataset == 'mhpv1':
         out_img = Image.fromarray(npimg.astype('uint8'))
-        out_img.putpalette(mhppallete)
+        out_img.putpalette(mhpv1pallete)
         return out_img
     out_img = Image.fromarray(npimg.astype('uint8'))
     out_img.putpalette(vocpallete)
@@ -130,7 +130,7 @@ cityspallete = [
     119, 11, 32,
 ]
 
-mhppallete = [
+mhpv1pallete = [
     255, 255, 255,
     165, 42, 42,
     255, 0, 0,
