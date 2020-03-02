@@ -54,7 +54,7 @@ predict = mx.nd.squeeze(mx.nd.argmax(output, 1)).asnumpy()
 # Add color pallete for visualization
 from gluoncv.utils.viz import get_color_pallete
 import matplotlib.image as mpimg
-mask = get_color_pallete(predict, 'mhp_v1')
+mask = get_color_pallete(predict, 'mhpv1')
 mask.save('output.png')
 
 ##############################################################################
