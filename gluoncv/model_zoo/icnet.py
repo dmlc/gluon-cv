@@ -11,7 +11,7 @@ from mxnet.gluon.nn import HybridBlock
 from gluoncv.model_zoo.segbase import SegBaseModel
 from gluoncv.model_zoo.pspnet import _PSPHead
 
-__all__ = ['ICNet', 'get_icnet', 'get_icnet_resnet50_citys']
+__all__ = ['ICNet', 'get_icnet', 'get_icnet_resnet50_citys', 'get_icnet_resnet50_mhpv1']
 
 class ICNet(SegBaseModel):
     r"""Image Cascade Network (ICNet)

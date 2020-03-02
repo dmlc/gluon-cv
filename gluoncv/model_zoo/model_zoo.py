@@ -167,6 +167,7 @@ _models = {
     'deeplab_resnet101_citys': get_deeplab_resnet101_citys,
     'deeplab_v3b_plus_wideresnet_citys': get_deeplab_v3b_plus_wideresnet_citys,
     'icnet_resnet50_citys': get_icnet_resnet50_citys,
+    'icnet_resnet50_mhpv1': get_icnet_resnet50_mhpv1,
     'resnet18_v1b': resnet18_v1b,
     'resnet34_v1b': resnet34_v1b,
     'resnet50_v1b': resnet50_v1b,
