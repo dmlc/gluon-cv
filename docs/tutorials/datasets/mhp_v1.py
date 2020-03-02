@@ -70,7 +70,7 @@ import numpy as np
 img, mask = test_dataset[0]
 # get pallete for the mask
 from gluoncv.utils.viz import get_color_pallete
-mask = get_color_pallete(mask.asnumpy(), dataset='mhp')
+mask = get_color_pallete(mask.asnumpy(), dataset='mhpv1')
 mask.save('mask.png')
 
 

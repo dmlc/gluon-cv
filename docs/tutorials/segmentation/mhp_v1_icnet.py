@@ -18,7 +18,7 @@ ctx = mx.cpu(0)
 #
 # download the example image
 url = 'https://github.com/KuangHaofei/GluonCV_Test/blob/master/' + \
-      'notes/mhp/demo%20images/1528.jpg?raw=true'
+      'mhp_v1/demo%20images/1528.jpg?raw=true'
 filename = 'mhp_v1_example.jpg'
 gluoncv.utils.download(url, filename, True)
 
@@ -54,7 +54,7 @@ predict = mx.nd.squeeze(mx.nd.argmax(output, 1)).asnumpy()
 # Add color pallete for visualization
 from gluoncv.utils.viz import get_color_pallete
 import matplotlib.image as mpimg
-mask = get_color_pallete(predict, 'ade20k')
+mask = get_color_pallete(predict, 'mhp_v1')
 mask.save('output.png')
 
 ##############################################################################
