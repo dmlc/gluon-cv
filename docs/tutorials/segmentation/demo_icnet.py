@@ -41,9 +41,7 @@ img = test_transform(img, ctx)
 # ----------------------------------------------
 #
 # get pre-trained model
-model = gluoncv.model_zoo.get_model('icnet_resnet50_mhpv1', pretrained=False)
-resume = './runs/mhp/icnet/resnet50/epoch_0105_mIoU_0.3974.params'
-model.load_parameters(resume, ctx=ctx, allow_missing=True)
+model = gluoncv.model_zoo.get_model('icnet_resnet50_mhpv1', pretrained=True)
 
 ##############################################################################
 # make prediction using single scale
