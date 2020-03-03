@@ -345,6 +345,7 @@ def get_icnet(dataset='citys', backbone='resnet50', pretrained=False,
         'ade20k': 'ade',
         'coco': 'coco',
         'citys': 'citys',
+        'mhpv1': 'mhpv1',
     }
     from ..data import datasets
     # infer number of classes
