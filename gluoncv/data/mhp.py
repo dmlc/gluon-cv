@@ -130,22 +130,17 @@ def _get_mhp_pairs(folder, split='train'):
                 if maskname.startswith(basename):
                     maskpath = os.path.join(mask_folder, maskname)
                     if os.path.isfile(maskpath):
-                        try:
-                            Image.open(maskpath)
-                        except Exception:
-                            continue
                         mask_short_path.append(maskpath)
                     else:
                         print('cannot find the mask:', maskpath)
-            mask_paths.append(mask_short_path)
+
+            # mask_short_path is not empty
+            if not mask_short_path:
+                mask_paths.append(mask_short_path)
 
             # record img paths
             imgpath = os.path.join(img_folder, filename.rstrip('\n'))
             if os.path.isfile(imgpath):
-                try:
-                    Image.open(imgpath)
-                except Exception:
-                    continue
                 img_paths.append(imgpath)
             else:
                 print('cannot find the image:', imgpath)
@@ -163,7 +158,7 @@ def _get_mhp_pairs(folder, split='train'):
 def _get_mask(mask_paths):
     mask_np = None
     mask_idx = None
-    for i, mask_path in enumerate(mask_paths):
+    for _, mask_path in enumerate(mask_paths):
         mask_sub = Image.open(mask_path)
         mask_sub_np = np.array(mask_sub, dtype=np.uint8)
         if mask_idx is None:
