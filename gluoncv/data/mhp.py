@@ -1,11 +1,12 @@
 """Multi-Human-Parsing V1 Dataset."""
 import os
-from PIL import Image
 import numpy as np
+from PIL import Image
+from PIL import ImageFile
+
 import mxnet as mx
 from .segbase import SegmentationDataset
 
-from PIL import ImageFile
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
@@ -162,8 +163,8 @@ def _get_mhp_pairs(folder, split='train'):
 def _get_mask(mask_paths):
     mask_np = None
     mask_idx = None
-    for i in range(len(mask_paths)):
-        mask_sub = Image.open(mask_paths[i])
+    for i, mask_path in enumerate(mask_paths):
+        mask_sub = Image.open(mask_path)
         mask_sub_np = np.array(mask_sub, dtype=np.uint8)
         if mask_idx is None:
             mask_idx = np.zeros(mask_sub_np.shape, dtype=np.uint8)
