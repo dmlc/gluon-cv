@@ -3,8 +3,8 @@ import os
 import shutil
 import argparse
 import zipfile
-from gluoncv.utils import download, makedirs
-from googleDriveFileDownloader import googleDriveFileDownloader
+from gluoncv.utils import makedirs
+from gluoncv.utils.filesystem import try_import_gdfDownloader, try_import_html5lib
 
 _TARGET_DIR = os.path.expanduser('~/.mxnet/datasets/mhp')
 
@@ -20,7 +20,10 @@ def parse_args():
 
 
 def download_mhp_v1(path, overwrite=False):
-    downloader = googleDriveFileDownloader()
+    try_import_html5lib()
+    gdf = try_import_gdfDownloader()
+    downloader = gdf.googleDriveFileDownloader()
+
     file_link = 'https://drive.google.com/uc?id=1hTS8QJBuGdcppFAr_bvW2tsD9hW_ptr5&export=download'
     download_dir = os.path.join(path, 'downloads')
     makedirs(download_dir)
@@ -45,4 +48,5 @@ if __name__ == '__main__':
             os.remove(_TARGET_DIR)
         # make symlink
         os.symlink(args.download_dir, _TARGET_DIR)
+
     download_mhp_v1(_TARGET_DIR, overwrite=False)

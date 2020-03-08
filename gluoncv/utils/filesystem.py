@@ -157,6 +157,18 @@ def try_import_dali():
                     raise NotImplementedError(msg)
     return dali
 
+def try_import_html5lib():
+    """Try import html5lib at runtime.
+
+    Returns
+    -------
+    html5lib module if found. Raise ImportError otherwise
+
+    """
+    msg = "html5lib is required, you can install by package manager, " \
+          "e.g. pip install html5lib --user` (note that this is unofficial PYPI package)."
+    return try_import('html5lib', msg)
+
 def try_import_gdfDownloader():
     """Try import googleDriveFileDownloader at runtime.
 
