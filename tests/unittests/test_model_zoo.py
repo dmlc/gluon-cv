@@ -669,16 +669,6 @@ def test_quantized_pose_estimation_models():
     _test_model_list(model_list, ctx, x)
 
 
-@with_cpu(0)
-def test_quantized_action_recognition_models():
-    # num_segments should be aligned with value when calibrating FP32 models
-    num_segments = 3
-    model_list = ['vgg16_ucf101_int8']
-    ctx = mx.context.current_context()
-    x = mx.random.uniform(shape=(1 * num_segments, 3, 224, 224), ctx=ctx)
-    _test_model_list(model_list, ctx, x)
-
-
 if __name__ == '__main__':
     import nose
 
