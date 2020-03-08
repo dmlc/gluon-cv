@@ -80,7 +80,7 @@ plt.show()
 #
 #   The benefits of using single LST file are two fold:
 #
-#   1. It's easier to manege single file rather than scattered annotation files.
+#   1. It's easier to manage a single file rather than scattered annotation files.
 #
 #   2. It's compatible with ``RecordFile`` binary format which we will cover in this tutorial later.
 #
