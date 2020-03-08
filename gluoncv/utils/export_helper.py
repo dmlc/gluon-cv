@@ -94,6 +94,13 @@ def export_block(path, block, data_shape=None, epoch=0, preprocess=True, layout=
         copy_block = copy.deepcopy(block)
         copy_block._children.pop('_target_generator')
 
+    # avoid using some optimized operators that are not yet available outside mxnet
+    if 'box_encode' in mx.sym.contrib.__dict__:
+        box_encode = mx.sym.contrib.box_encode
+        mx.sym.contrib.__dict__.pop('box_encode')
+    else:
+        box_encode = None
+
     if preprocess:
         # add preprocess block
         if preprocess is True:
@@ -144,3 +151,6 @@ def export_block(path, block, data_shape=None, epoch=0, preprocess=True, layout=
             last_exception = e
     if last_exception is not None:
         raise RuntimeError(str(last_exception).splitlines()[0])
+
+    if box_encode is not None:
+        mx.sym.contrib.__dict__['box_encode'] = box_encode
