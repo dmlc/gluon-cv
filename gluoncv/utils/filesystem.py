@@ -156,3 +156,16 @@ def try_import_dali():
                 def __init__(self):
                     raise NotImplementedError(msg)
     return dali
+
+def try_import_gdfDownloader():
+    """Try import googleDriveFileDownloader at runtime.
+
+    Returns
+    -------
+    googleDriveFileDownloader module if found. Raise ImportError otherwise
+
+    """
+    msg = "googleDriveFileDownloader is required, you can install by package manager, " \
+          "e.g. pip install googleDriveFileDownloader --user` " \
+          "(note that this is unofficial PYPI package)."
+    return try_import('googleDriveFileDownloader', msg)

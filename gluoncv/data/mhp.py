@@ -15,7 +15,7 @@ class MHPV1Segmentation(SegmentationDataset):
     Parameters
     ----------
     root : string
-        Path to VOCdevkit folder. Default is '$(HOME)/mxnet/datasplits/mhp/LV-MHP-v1'
+        Path to MHPV1 folder. Default is '$(HOME)/.mxnet/datasets/mhp/LV-MHP-v1'
     split: string
         'train', 'val' or 'test'
     transform : callable, optional
@@ -39,8 +39,8 @@ class MHPV1Segmentation(SegmentationDataset):
     NUM_CLASS = 18
 
     def __init__(self, root=os.path.expanduser('~/.mxnet/datasets/mhp/LV-MHP-v1'),
-                 split='train', mode=None, transform=None, **kwargs):
-        super(MHPV1Segmentation, self).__init__(root, split, mode, transform, **kwargs)
+                 split='train', mode=None, transform=None, base_size=768, **kwargs):
+        super(MHPV1Segmentation, self).__init__(root, split, mode, transform, base_size, **kwargs)
         assert os.path.exists(root), "Please setup the dataset using" + "scripts/datasets/mhp_v1.py"
         self.images, self.masks = _get_mhp_pairs(root, split)
         assert (len(self.images) == len(self.masks))
@@ -66,12 +66,12 @@ class MHPV1Segmentation(SegmentationDataset):
         # algin data
         w, h = img.size
         if h < w:
-            oh = 768
+            oh = self.base_size
             ow = int(1.0 * w * oh / h + 0.5)
             if ow % 8:
                 ow = int(round(ow / 8) * 8)
         else:
-            ow = 768
+            ow = self.base_size
             oh = int(1.0 * h * ow / w + 0.5)
             if oh % 8:
                 oh = int(round(oh / 8) * 8)
