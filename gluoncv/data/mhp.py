@@ -135,7 +135,7 @@ def _get_mhp_pairs(folder, split='train'):
                         print('cannot find the mask:', maskpath)
 
             # mask_short_path is not empty
-            if not mask_short_path:
+            if mask_short_path:
                 mask_paths.append(mask_short_path)
 
             # record img paths
