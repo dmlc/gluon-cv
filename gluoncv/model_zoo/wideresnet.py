@@ -61,8 +61,7 @@ class IdentityResidualBlock(HybridBlock):
                  groups=1,
                  norm_act=bnrelu,
                  dropout=None,
-                 dist_bn=False
-                 ):
+                 dist_bn=False):
         """Configurable identity-mapping residual block
 
         Parameters
@@ -206,8 +205,7 @@ class WiderResNetA2(HybridBlock):
                  norm_act=bnrelu,
                  classes=0,
                  dilation=False,
-                 dist_bn=False
-                 ):
+                 dist_bn=False):
         super(WiderResNetA2, self).__init__()
         self.dist_bn = dist_bn
 

@@ -11,8 +11,7 @@ from ..resnetv1b import BottleneckV1b
 
 
 __all__ = ['resnet18_v1b_89', 'resnet50_v1d_86', 'resnet50_v1d_48', 'resnet50_v1d_37',
-           'resnet50_v1d_11', 'resnet101_v1d_76', 'resnet101_v1d_73'
-           ]
+           'resnet50_v1d_11', 'resnet101_v1d_76', 'resnet101_v1d_73']
 
 
 def prune_gluon_block(net, prefix, params_shapes, params=None, pretrained=False, ctx=cpu(0)):
