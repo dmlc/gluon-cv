@@ -63,7 +63,8 @@ class MHPV1Segmentation(SegmentationDataset):
 
         mask = _get_mask(self.masks[index])
 
-        # algin data
+        # Here, we resize input image resolution to the multiples of 8
+        # for avoiding resolution misalignment during downsampling and upsampling
         w, h = img.size
         if h < w:
             oh = self.base_size

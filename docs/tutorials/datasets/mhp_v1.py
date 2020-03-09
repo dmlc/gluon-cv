@@ -42,7 +42,7 @@ downloading them again. For example
 
 .. code-block:: python
 
-   python mhp_v1.py --download-dir ~/mhp_v1_downloads
+   python mhp_v1.py --download-dir ~/.mxnet/datasets/mhp/LV-MHP-v1
 
 """
 
