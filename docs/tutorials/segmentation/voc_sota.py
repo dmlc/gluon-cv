@@ -116,12 +116,12 @@ input_transform = transforms.Compose([
 trainset = gluoncv.data.COCOSegmentation(split='train', transform=input_transform)
 print('Training images:', len(trainset))
 
-# set batch_size = 1 for toy example
-batch_size = 1
+# set batch_size = 2 for toy example
+batch_size = 2
 # Create Training Loader
 train_data = gluon.data.DataLoader(
     trainset, batch_size, shuffle=True, last_batch='rollover',
-    num_workers=batch_size)
+    num_workers=0)
 
 
 ##############################################################################
