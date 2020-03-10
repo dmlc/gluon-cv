@@ -1,7 +1,7 @@
-"""7. Test with ICNet Pre-trained Models on Multi-Human Parsing V1 Dataset
+"""7. Test with ICNet Pre-trained Models for Multi-Human Parsing
 ======================================
 
-This is a quick demo of using GluonCV ICNet model on MHP-v1 dataset.
+This is a quick demo of using GluonCV ICNet model for multi-human parsing on real-world images.
 Please follow the `installation guide <../index.html>`_ to install MXNet and GluonCV if not yet.
 """
 import mxnet as mx

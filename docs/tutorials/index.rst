@@ -164,7 +164,7 @@ Semantic Segmentation
         state-of-the-art accuracy.
 
     .. card::
-        :title: Pre-trained ICNet Models on Multi-Human Parsing V1
+        :title: Pre-trained ICNet Models for Multi-Human Parsing
         :link: ../build/examples_segmentation/demo_icnet.html
 
         Perform semantic segmentation on real-world images with pre-trained ICNet models
