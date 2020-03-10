@@ -126,7 +126,7 @@ def test(model, args, input_transform):
     print(model)
 
     if 'icnet' in args.model:
-        evaluator = DataParallelModel(SegEvalModel(model), ctx_list=args.ctx)
+        evaluator = DataParallelModel(SegEvalModel(model, use_predict=True), ctx_list=args.ctx)
     else:
         evaluator = MultiEvalModel(model, testset.num_class, ctx_list=args.ctx)
 
@@ -242,6 +242,8 @@ if __name__ == "__main__":
         model_prefix += '_ade'
     elif args.dataset == 'citys':
         model_prefix += '_citys'
+    elif args.dataset == 'mhpv1':
+        model_prefix += '_mhpv1'
     else:
         raise ValueError('Unsupported dataset {} used'.format(args.dataset))
 

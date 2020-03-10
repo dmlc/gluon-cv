@@ -106,11 +106,15 @@ class SegBaseModel(HybridBlock):
 
 class SegEvalModel(object):
     """Segmentation Eval Module"""
-    def __init__(self, module):
+    def __init__(self, module, use_predict=False):
         self.module = module
+        self.use_predict = use_predict
 
     def __call__(self, *inputs, **kwargs):
-        return self.module.evaluate(*inputs, **kwargs)
+        if self.use_predict:
+            return self.module.predict(*inputs, **kwargs)
+        else:
+            return self.module.evaluate(*inputs, **kwargs)
 
     def collect_params(self):
         return self.module.collect_params()

@@ -51,6 +51,8 @@ def parse_args():
     parser.add_argument('--test-batch-size', type=int, default=16,
                         metavar='N', help='input batch size for \
                         testing (default: 16)')
+    parser.add_argument('--optimizer', type=str, default='sgd',
+                        help='optimizer (default: sgd)')
     parser.add_argument('--lr', type=float, default=1e-3, metavar='LR',
                         help='learning rate (default: 1e-3)')
     parser.add_argument('--momentum', type=float, default=0.9,
@@ -187,10 +189,18 @@ class Trainer(object):
                                         iters_per_epoch=len(self.train_data),
                                         power=0.9)
         kv = mx.kv.create(args.kvstore)
-        optimizer_params = {'lr_scheduler': self.lr_scheduler,
-                            'wd': args.weight_decay,
-                            'momentum': args.momentum,
-                            'learning_rate': args.lr}
+
+        if args.optimizer == 'sgd':
+            optimizer_params = {'lr_scheduler': self.lr_scheduler,
+                                'wd': args.weight_decay,
+                                'momentum': args.momentum,
+                                'learning_rate': args.lr}
+        elif args.optimizer == 'adam':
+            optimizer_params = {'lr_scheduler': self.lr_scheduler,
+                                'wd': args.weight_decay,
+                                'learning_rate': args.lr}
+        else:
+            raise ValueError('Unsupported optimizer {} used'.format(args.optimizer))
 
         if args.dtype == 'float16':
             optimizer_params['multi_precision'] = True
@@ -199,7 +209,7 @@ class Trainer(object):
             for k, v in self.net.module.collect_params('.*beta|.*gamma|.*bias').items():
                 v.wd_mult = 0.0
 
-        self.optimizer = gluon.Trainer(self.net.module.collect_params(), 'sgd',
+        self.optimizer = gluon.Trainer(self.net.module.collect_params(), args.optimizer,
                                        optimizer_params, kvstore=kv)
         # evaluation metrics
         self.metric = gluoncv.utils.metrics.SegmentationMetric(trainset.num_class)
