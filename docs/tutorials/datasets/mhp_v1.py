@@ -55,11 +55,7 @@ downloading them again. For example
 
 from gluoncv.data import MHPV1Segmentation
 train_dataset = MHPV1Segmentation(split='train')
-val_dataset = MHPV1Segmentation(split='val')
-test_dataset = MHPV1Segmentation(split='test', mode='testval')
 print('Training images:', len(train_dataset))
-print('Validation images:', len(val_dataset))
-print('Testing images:', len(test_dataset))
 
 
 ################################################################
@@ -67,7 +63,7 @@ print('Testing images:', len(test_dataset))
 # --------------------
 #
 import numpy as np
-img, mask = test_dataset[0]
+img, mask = train_dataset[0]
 # get pallete for the mask
 from gluoncv.utils.viz import get_color_pallete
 mask = get_color_pallete(mask.asnumpy(), dataset='mhpv1')
