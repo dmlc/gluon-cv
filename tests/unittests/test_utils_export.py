@@ -54,6 +54,11 @@ def test_export_model_zoo_no_preprocess():
     model_name = 'resnet18_v1b'
     gcv.utils.export_block(model_name, gcv.model_zoo.get_model(model_name, pretrained=True), preprocess=None, layout='CHW')
 
+@try_gpu(0)
+def test_rcnn_export_target_generator():
+    model_name = 'faster_rcnn_fpn_resnet50_v1b_coco'
+    gcv.utils.export_block(model_name, gcv.model_zoo.get_model(model_name, pretrained=True))
+
 if __name__ == '__main__':
     import nose
     nose.runmodule()

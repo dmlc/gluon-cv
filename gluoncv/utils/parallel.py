@@ -295,8 +295,7 @@ def parallel_apply(module, inputs, kwargs_tup=None, sync=False):
     is_recording = autograd.is_recording()
     threads = [threading.Thread(target=_worker,
                                 args=(i, module, input, kwargs, results,
-                                      is_recording, is_training, lock),
-                                )
+                                      is_recording, is_training, lock),)
                for i, (input, kwargs) in
                enumerate(zip(inputs, kwargs_tup))]
 
@@ -348,8 +347,7 @@ def criterion_parallel_apply(module, inputs, targets, kwargs_tup=None, sync=Fals
 
     threads = [threading.Thread(target=_worker,
                                 args=(i, module, input, target,
-                                      kwargs, results, is_recording, is_training, lock),
-                                )
+                                      kwargs, results, is_recording, is_training, lock),)
                for i, (input, target, kwargs) in
                enumerate(zip(inputs, targets, kwargs_tup))]
 

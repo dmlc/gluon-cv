@@ -180,7 +180,7 @@ train_history = TrainingHistory(['training-acc'])
 #   In order to finish the tutorial quickly, we only fine tune for 3 epochs, and 100 iterations per epoch for UCF101.
 #   In your experiments, you can set the hyper-parameters depending on your dataset.
 
-epochs = 3
+epochs = 0
 lr_decay_count = 0
 
 for epoch in range(epochs):

@@ -26,7 +26,7 @@ def parse_args():
     parser.add_argument('--dtype', type=str, default='float32',
                         help='data type for training. default is float32')
     parser.add_argument('--gpu-id', type=int, default=0,
-                        help='number of gpus to use. use -1 for CPU')
+                        help='number of gpus to use. Use -1 for CPU')
     parser.add_argument('--mode', type=str,
                         help='mode in which to train the model. options are symbolic, imperative, hybrid')
     parser.add_argument('--model', type=str, required=True,

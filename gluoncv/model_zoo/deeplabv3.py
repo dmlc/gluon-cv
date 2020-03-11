@@ -10,7 +10,8 @@ from .fcn import _FCNHead
 
 __all__ = ['DeepLabV3', 'get_deeplab', 'get_deeplab_resnet101_coco',
     'get_deeplab_resnet101_voc', 'get_deeplab_resnet50_ade', 'get_deeplab_resnet101_ade',
-    'get_deeplab_resnet152_coco', 'get_deeplab_resnet152_voc']
+    'get_deeplab_resnet152_coco', 'get_deeplab_resnet152_voc', 'get_deeplab_resnet50_citys',
+    'get_deeplab_resnet101_citys']
 
 class DeepLabV3(SegBaseModel):
     r"""DeepLabV3
@@ -181,7 +182,7 @@ def get_deeplab(dataset='pascal_voc', backbone='resnet50', pretrained=False,
     Parameters
     ----------
     dataset : str, default pascal_voc
-        The dataset that model pretrained on. (pascal_voc, ade20k)
+        The dataset that model pretrained on. (pascal_voc, pascal_aug, ade20k, coco, citys)
     pretrained : bool or str
         Boolean value controls whether to load the default pretrained weights for model.
         String value represents the hashtag for a certain version of pretrained weights.
@@ -200,6 +201,7 @@ def get_deeplab(dataset='pascal_voc', backbone='resnet50', pretrained=False,
         'pascal_aug': 'voc',
         'ade20k': 'ade',
         'coco': 'coco',
+        'citys': 'citys',
     }
     from ..data import datasets
     # infer number of classes
@@ -324,3 +326,41 @@ def get_deeplab_resnet101_ade(**kwargs):
     >>> print(model)
     """
     return get_deeplab('ade20k', 'resnet101', **kwargs)
+
+def get_deeplab_resnet50_citys(**kwargs):
+    r"""DeepLabV3
+    Parameters
+    ----------
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+
+    Examples
+    --------
+    >>> model = get_deeplab_resnet50_citys(pretrained=True)
+    >>> print(model)
+    """
+    return get_deeplab('citys', 'resnet50', **kwargs)
+
+def get_deeplab_resnet101_citys(**kwargs):
+    r"""DeepLabV3
+    Parameters
+    ----------
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+
+    Examples
+    --------
+    >>> model = get_deeplab_resnet101_citys(pretrained=True)
+    >>> print(model)
+    """
+    return get_deeplab('citys', 'resnet101', **kwargs)

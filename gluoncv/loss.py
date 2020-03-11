@@ -364,7 +364,7 @@ class ICNetLoss(SoftmaxCrossEntropyLoss):
 
     def __init__(self, weights=(0.4, 0.4, 1.0), height=None, width=None,
                  crop_size=480, ignore_label=-1, **kwargs):
-        super(ICNetLoss, self).__init__(**kwargs)
+        super(ICNetLoss, self).__init__(ignore_label=ignore_label, **kwargs)
         self.weights = weights
         self.height = height if height is not None else crop_size
         self.width = width if width is not None else crop_size
