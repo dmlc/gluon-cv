@@ -123,15 +123,15 @@ def gen_json(args):
                 dataset[video_crop_base_path]['{:02d}'.format(trackid)] = {'000000': bbox}
 
         print('save json (dataset), please wait 20 seconds~')
-        json.dump(dataset, open('{}.json'.format(dataType), 'w'), indent=4, sort_keys=True)
+        json.dump(dataset, open(os.path.join(download_dir,'{}.json'.format(dataType)), 'w'), indent=4, sort_keys=True)
         print('done!')
 
 def main(args):
     # download COCO dataset
-    #download_coco(args, overwrite=args.overwrite)
+    download_coco(args, overwrite=args.overwrite)
     print('COCO dataset json has already generat completed')
     # crop COCO dataset for prepare for tracking
-    #crop_coco(args)
+    crop_coco(args)
     print('COCO dataset has already crop completed')
     # generat COCO json for prepare for tracking
     gen_json(args)
