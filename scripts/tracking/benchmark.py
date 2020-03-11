@@ -56,5 +56,6 @@ def main():
     benchmark.show_result(success_ret, precision_ret,
                           show_video_level=opt.show_video_level)
 
+
 if __name__ == '__main__':
     main()

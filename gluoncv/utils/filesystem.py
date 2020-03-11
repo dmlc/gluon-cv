@@ -52,6 +52,18 @@ def try_import_cv2():
         or `pip install opencv-python --user` (note that this is unofficial PYPI package)."
     return try_import('cv2', msg)
 
+def try_import_colorama():
+    """Try import cv2 at runtime.
+
+    Returns
+    -------
+    colorama module if found. Raise ImportError otherwise
+
+    """
+    msg = "colorama is required, you can install by `pip install colorama --user` \
+         (note that this is unofficial PYPI package)."
+    return try_import('colorama', msg)
+
 def try_import_decord():
     """Try import decord at runtime.
 

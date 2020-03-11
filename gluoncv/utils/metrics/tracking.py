@@ -1,7 +1,35 @@
 """ SiamRPN metrics """
 import numpy as np
-from colorama import Style, Fore
 
+def Iou(rect1, rect2):
+    """
+    caculate interection over union
+
+    Parameters
+    ----------
+        rect1: list or np.array, rectangle1
+        rect2: list or np.array, rectangle2
+
+    Returns
+    -------
+    iou
+    """
+    x1, y1, x2, y2 = rect1[0], rect1[1], rect1[2], rect1[3]
+    tx1, ty1, tx2, ty2 = rect2[0], rect2[1], rect2[2], rect2[3]
+
+    xx1 = np.maximum(tx1, x1)
+    yy1 = np.maximum(ty1, y1)
+    xx2 = np.minimum(tx2, x2)
+    yy2 = np.minimum(ty2, y2)
+
+    ww = np.maximum(0, xx2 - xx1)
+    hh = np.maximum(0, yy2 - yy1)
+
+    area = (x2-x1) * (y2-y1)
+    target_a = (tx2-tx1) * (ty2 - ty1)
+    inter = ww * hh
+    iou = inter / (area + target_a - inter)
+    return iou
 
 def overlap_ratio(rect1, rect2):
     """Compute overlap ratio between two rects
@@ -84,7 +112,6 @@ class OPEBenchmark:
     SiamRPN OPEBenchmark have eval_success, precision to select.
     eval_success is  distance between the center point of the predicted position
     precision is Compute overlap ratio between two rects through thresholds_overlap
-
     Parameters
     ----------
         dataset
@@ -103,11 +130,9 @@ class OPEBenchmark:
     def eval_success(self, eval_trackers=None):
         """eval_success is  distance between the center point of the predicted position
            and the center position marked in the benchmark
-
         Parameters
         ----------
             eval_trackers: list of tracker name or single tracker name
-
         Return
         ----------
             return: dict of results
@@ -139,11 +164,9 @@ class OPEBenchmark:
     def eval_precision(self, eval_trackers=None):
         """
         eval model precision in eval_precision
-
         Parameters
         ----------
             eval_trackers: list of tracker name or single tracker name
-
         Return
         ----------
             return: dict of results
@@ -179,7 +202,6 @@ class OPEBenchmark:
     def eval_norm_precision(self, eval_trackers=None):
         """
         eval model precision in eval_norm_precision
-
         Parameters
         ----------
             eval_trackers: list of tracker name or single tracker name
@@ -212,19 +234,18 @@ class OPEBenchmark:
                 thresholds = np.arange(0, 51, 1) / 100
                 norm_precision_ret_[video.name] = success_error(gt_center_norm,
                                                                 tracker_center_norm,
-                                                                thresholds, n_frame)
+                                                                thresholds,
+                                                                n_frame)
             norm_precision_ret[tracker_name] = norm_precision_ret_
         return norm_precision_ret
 
     def show_result(self, success_ret, precision_ret=None,
                     norm_precision_ret=None, show_video_level=False, helight_threshold=0.6):
         """pretty print result
-
         Parameters
         ----------
             success_ret: returned dict from function eval
         """
-        # sort tracker
         tracker_auc = {}
         for tracker_name in success_ret.keys():
             auc = np.mean(list(success_ret[tracker_name].values()))
@@ -245,7 +266,6 @@ class OPEBenchmark:
         print(header)
         print('-'*len(header))
         for tracker_name in tracker_names:
-            # success = np.mean(list(success_ret[tracker_name].values()))
             success = tracker_auc[tracker_name]
             if precision_ret is not None:
                 precision = np.mean(list(precision_ret[tracker_name].values()), axis=0)[20]
@@ -266,7 +286,6 @@ class OPEBenchmark:
             header1 = "|{:^21}|".format("Tracker name")
             header2 = "|{:^21}|".format("Video name")
             for tracker_name in success_ret.keys():
-                # col_len = max(20, len(tracker_name))
                 header1 += ("{:^21}|").format(tracker_name)
                 header2 += "{:^9}|{:^11}|".format("success", "precision")
             print('-'*len(header1))

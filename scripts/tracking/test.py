@@ -38,6 +38,8 @@ def parse_args():
                         help='number of preprocessing workers')
     parser.add_argument('--pretrained', action='store_true', default='True',
                         help='enable using pretrained model from gluon.')
+    parser.add_argument('--use_gpu', action='store_true', default='True',
+                        help='Whether to use GPU.')
     opt = parser.parse_args()
     return opt
 def main():
