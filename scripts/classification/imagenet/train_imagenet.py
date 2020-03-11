@@ -107,6 +107,8 @@ def parse_args():
                         help='whether to use group norm.')
     parser.add_argument('--amp', action='store_true',
                     help='Use MXNet AMP for mixed precision training.')
+    parser.add_argument('--auto-layout', action='store_true',
+                        help='Add layout optimization to AMP. Must be used in addition of `--amp`.')
     opt = parser.parse_args()
     return opt
 
@@ -124,8 +126,10 @@ def main():
 
     logger.info(opt)
 
+    assert not opt.auto_layout or opt.amp, "--auto-layout needs to be used with --amp"
+
     if opt.amp:
-        amp.init()
+        amp.init(layout_optimization=opt.auto_layout)
 
     batch_size = opt.batch_size
     classes = 1000
