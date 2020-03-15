@@ -1,10 +1,11 @@
 # pylint: disable= arguments-differ,missing-docstring
 """Basic neural network layers."""
-__all__ = ['GroupNorm']
+__all__ = ["GroupNorm"]
 import numpy as np
 
 from mxnet.gluon.block import HybridBlock
 from mxnet import autograd
+
 
 class GroupNorm(HybridBlock):
     """GroupNorm normalization layer (Wu and He, 2014).
@@ -27,6 +28,10 @@ class GroupNorm(HybridBlock):
         Initializer for the beta weight.
     gamma_initializer: str or `Initializer`, default 'ones'
         Initializer for the gamma weight.
+    scale: bool, default True
+        If True, multiply by `gamma`. If False, `gamma` is not used.
+        When the next layer is linear (also e.g. `nn.relu`),
+        this can be disabled since the scaling will be done by the next layer.
 
     Inputs:
         - **data**: input tensor with arbitrary shape.
@@ -34,28 +39,56 @@ class GroupNorm(HybridBlock):
     Outputs:
         - **out**: output tensor with the same shape as `data`.
     """
-    def __init__(self, ngroups=32, in_channels=0, axis=1, epsilon=1e-5,
-                 beta_initializer='zeros', gamma_initializer='ones', **kwargs):
+
+    def __init__(
+        self,
+        ngroups=32,
+        in_channels=0,
+        axis=1,
+        epsilon=1e-5,
+        beta_initializer="zeros",
+        gamma_initializer="ones",
+        scale=True,
+        **kwargs
+    ):
         super(GroupNorm, self).__init__(**kwargs)
-        self._kwargs = {'axis': axis, 'eps': epsilon, 'momentum': 0,
-                        'fix_gamma': True, 'use_global_stats': False}
+        self._kwargs = {
+            "axis": axis,
+            "eps": epsilon,
+            "momentum": 0,
+            "fix_gamma": True,
+            "use_global_stats": False,
+        }
         self.ngroups = ngroups
-        assert in_channels % ngroups == 0, "Channel number should be divisible by groups."
+        self.scale = scale
+        assert (
+            in_channels % ngroups == 0
+        ), "Channel number should be divisible by groups."
         if in_channels != 0:
             self.in_channels = in_channels
 
-        self.gamma = self.params.get('gamma', grad_req='write',
-                                     shape=(in_channels,), init=gamma_initializer,
-                                     allow_deferred_init=True, differentiable=True)
-        self.beta = self.params.get('beta', grad_req='write',
-                                    shape=(in_channels,), init=beta_initializer,
-                                    allow_deferred_init=True, differentiable=True)
+        self.gamma = self.params.get(
+            "gamma",
+            grad_req="write",
+            shape=(in_channels,),
+            init=gamma_initializer,
+            allow_deferred_init=True,
+            differentiable=True,
+        )
+        self.beta = self.params.get(
+            "beta",
+            grad_req="write",
+            shape=(in_channels,),
+            init=beta_initializer,
+            allow_deferred_init=True,
+            differentiable=True,
+        )
         # hacky
         self.inited = False
 
     def cast(self, dtype):
-        if np.dtype(dtype).name == 'float16':
-            dtype = 'float32'
+        if np.dtype(dtype).name == "float16":
+            dtype = "float32"
         super(GroupNorm, self).cast(dtype)
 
     def hybrid_forward(self, F, x, gamma, beta):
@@ -64,23 +97,32 @@ class GroupNorm(HybridBlock):
             y = x.expand_dims(0).reshape(0, 0, self.ngroups, -1)
             y = y.reshape(1, -3, -1)
             batch = x.shape[0]
-            y = F.BatchNorm(y,
-                            F.ones(batch*self.ngroups, ctx=x.context),
-                            F.zeros(batch*self.ngroups, ctx=x.context),
-                            F.zeros(batch*self.ngroups, ctx=x.context),
-                            F.ones(batch*self.ngroups, ctx=x.context),
-                            name='fwd', **self._kwargs)
+            y = F.BatchNorm(
+                y,
+                F.ones(batch * self.ngroups, ctx=x.context),
+                F.zeros(batch * self.ngroups, ctx=x.context),
+                F.zeros(batch * self.ngroups, ctx=x.context),
+                F.ones(batch * self.ngroups, ctx=x.context),
+                name="fwd",
+                **self._kwargs
+            )
         # scale and shift
         y = y.reshape_like(x).reshape(0, 0, -1)
-        y = y * gamma.reshape(1, -1, 1) + beta.reshape(1, -1, 1)
+        if self.scale:
+            y = y * gamma.reshape(1, -1, 1) + beta.reshape(1, -1, 1)
+        else:
+            y = y + beta.reshape(1, -1, 1)
         return y.reshape_like(x)
 
     def __repr__(self):
-        s = '{name}({content}'
+        s = "{name}({content}"
         in_channels = self.gamma.shape[0]
-        s += ', ngroups={0}'.format(self.ngroups)
-        s += ', in_channels={0}'.format(in_channels if in_channels else None)
-        s += ')'
-        return s.format(name=self.__class__.__name__,
-                        content=', '.join(['='.join([k, v.__repr__()])
-                                           for k, v in self._kwargs.items()]))
+        s += ", ngroups={0}".format(self.ngroups)
+        s += ", in_channels={0}".format(in_channels if in_channels else None)
+        s += ")"
+        return s.format(
+            name=self.__class__.__name__,
+            content=", ".join(
+                ["=".join([k, v.__repr__()]) for k, v in self._kwargs.items()]
+            ),
+        )
