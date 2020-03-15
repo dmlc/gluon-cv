@@ -10,11 +10,11 @@ from .deeplabv3 import *
 from .deeplabv3b_plus import *
 from .densenet import *
 from .dla import *
-from .faster_rcnn import *
+from .rcnn.faster_rcnn import *
 from .fcn import *
 from .googlenet import *
 from .inception import *
-from .mask_rcnn import *
+from .rcnn.mask_rcnn import *
 from .mobilenet import *
 from .mobilenetv3 import *
 from .nasnet import *
@@ -36,6 +36,7 @@ from .yolo import *
 from .alpha_pose import *
 from .action_recognition import *
 from .center_net import *
+from .siamrpn import *
 from .icnet import *
 
 __all__ = ['get_model', 'get_model_list']
@@ -119,19 +120,22 @@ _models = {
     'mask_rcnn_resnet18_v1b_coco': mask_rcnn_resnet18_v1b_coco,
     'faster_rcnn_resnet50_v1b_coco': faster_rcnn_resnet50_v1b_coco,
     'faster_rcnn_fpn_resnet50_v1b_coco': faster_rcnn_fpn_resnet50_v1b_coco,
-    'faster_rcnn_fpn_bn_resnet50_v1b_coco': faster_rcnn_fpn_bn_resnet50_v1b_coco,
+    'faster_rcnn_fpn_syncbn_resnet50_v1b_coco': faster_rcnn_fpn_syncbn_resnet50_v1b_coco,
     'faster_rcnn_resnet50_v1b_custom': faster_rcnn_resnet50_v1b_custom,
     'faster_rcnn_resnet101_v1d_voc': faster_rcnn_resnet101_v1d_voc,
     'faster_rcnn_resnet101_v1d_coco': faster_rcnn_resnet101_v1d_coco,
     'faster_rcnn_fpn_resnet101_v1d_coco': faster_rcnn_fpn_resnet101_v1d_coco,
+    'faster_rcnn_fpn_syncbn_resnet101_v1d_coco': faster_rcnn_fpn_syncbn_resnet101_v1d_coco,
     'faster_rcnn_resnet101_v1d_custom': faster_rcnn_resnet101_v1d_custom,
+    'custom_faster_rcnn_fpn': custom_faster_rcnn_fpn,
     'mask_rcnn_resnet50_v1b_coco': mask_rcnn_resnet50_v1b_coco,
     'mask_rcnn_fpn_resnet50_v1b_coco': mask_rcnn_fpn_resnet50_v1b_coco,
     'mask_rcnn_resnet101_v1d_coco': mask_rcnn_resnet101_v1d_coco,
     'mask_rcnn_fpn_resnet101_v1d_coco': mask_rcnn_fpn_resnet101_v1d_coco,
     'mask_rcnn_fpn_resnet18_v1b_coco': mask_rcnn_fpn_resnet18_v1b_coco,
-    'mask_rcnn_fpn_bn_resnet18_v1b_coco': mask_rcnn_fpn_bn_resnet18_v1b_coco,
-    'mask_rcnn_fpn_bn_mobilenet1_0_coco': mask_rcnn_fpn_bn_mobilenet1_0_coco,
+    'mask_rcnn_fpn_syncbn_resnet18_v1b_coco': mask_rcnn_fpn_syncbn_resnet18_v1b_coco,
+    'mask_rcnn_fpn_syncbn_mobilenet1_0_coco': mask_rcnn_fpn_syncbn_mobilenet1_0_coco,
+    'custom_mask_rcnn_fpn': custom_mask_rcnn_fpn,
     'cifar_resnet20_v1': cifar_resnet20_v1,
     'cifar_resnet56_v1': cifar_resnet56_v1,
     'cifar_resnet110_v1': cifar_resnet110_v1,
@@ -159,8 +163,11 @@ _models = {
     'deeplab_resnet152_voc': get_deeplab_resnet152_voc,
     'deeplab_resnet50_ade': get_deeplab_resnet50_ade,
     'deeplab_resnet101_ade': get_deeplab_resnet101_ade,
+    'deeplab_resnet50_citys': get_deeplab_resnet50_citys,
+    'deeplab_resnet101_citys': get_deeplab_resnet101_citys,
     'deeplab_v3b_plus_wideresnet_citys': get_deeplab_v3b_plus_wideresnet_citys,
     'icnet_resnet50_citys': get_icnet_resnet50_citys,
+    'icnet_resnet50_mhpv1': get_icnet_resnet50_mhpv1,
     'resnet18_v1b': resnet18_v1b,
     'resnet34_v1b': resnet34_v1b,
     'resnet50_v1b': resnet50_v1b,
@@ -248,6 +255,13 @@ _models = {
     'inceptionv3_kinetics400': inceptionv3_kinetics400,
     'inceptionv3_sthsthv2': inceptionv3_sthsthv2,
     'c3d_kinetics400': c3d_kinetics400,
+    'p3d_resnet50_kinetics400': p3d_resnet50_kinetics400,
+    'p3d_resnet101_kinetics400': p3d_resnet101_kinetics400,
+    'r2plus1d_resnet18_kinetics400': r2plus1d_resnet18_kinetics400,
+    'r2plus1d_resnet34_kinetics400': r2plus1d_resnet34_kinetics400,
+    'r2plus1d_resnet50_kinetics400': r2plus1d_resnet50_kinetics400,
+    'r2plus1d_resnet101_kinetics400': r2plus1d_resnet101_kinetics400,
+    'r2plus1d_resnet152_kinetics400': r2plus1d_resnet152_kinetics400,
     'i3d_resnet50_v1_ucf101': i3d_resnet50_v1_ucf101,
     'i3d_resnet50_v1_hmdb51': i3d_resnet50_v1_hmdb51,
     'i3d_resnet50_v1_kinetics400': i3d_resnet50_v1_kinetics400,
@@ -312,7 +326,8 @@ _models = {
     'inceptionv3_ucf101_int8': inceptionv3_ucf101_int8,
     'resnet18_v1b_kinetics400_int8': resnet18_v1b_kinetics400_int8,
     'resnet50_v1b_kinetics400_int8': resnet50_v1b_kinetics400_int8,
-    'inceptionv3_kinetics400_int8': inceptionv3_kinetics400_int8
+    'inceptionv3_kinetics400_int8': inceptionv3_kinetics400_int8,
+    'siamrpn_alexnet_v2_otb15': siamrpn_alexnet_v2_otb15,
 }
 
 

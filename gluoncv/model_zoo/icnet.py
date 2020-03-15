@@ -11,7 +11,7 @@ from mxnet.gluon.nn import HybridBlock
 from gluoncv.model_zoo.segbase import SegBaseModel
 from gluoncv.model_zoo.pspnet import _PSPHead
 
-__all__ = ['ICNet', 'get_icnet', 'get_icnet_resnet50_citys']
+__all__ = ['ICNet', 'get_icnet', 'get_icnet_resnet50_citys', 'get_icnet_resnet50_mhpv1']
 
 class ICNet(SegBaseModel):
     r"""Image Cascade Network (ICNet)
@@ -67,14 +67,11 @@ class ICNet(SegBaseModel):
             self.conv_sub1.collect_params().setattr('lr_mult', lr_mult)
 
             # small and medium resolution branches, backbone comes from segbase.py
-            base_psp_head = _PSPHead(nclass,
+            self.psp_head = _PSPHead(nclass,
                                      feature_map_height=self._up_kwargs['height'] // 32,
                                      feature_map_width=self._up_kwargs['width'] // 32,
                                      **kwargs)
-            self.psp_head = nn.HybridSequential()
-            with self.psp_head.name_scope():
-                self.psp_head.add(base_psp_head.psp,
-                                  base_psp_head.block[:-1])
+            self.psp_head.block = self.psp_head.block[:-1]
             self.psp_head.initialize(ctx=ctx)
             self.psp_head.collect_params().setattr('lr_mult', lr_mult)
 
@@ -130,10 +127,16 @@ class ICNet(SegBaseModel):
         return self.predict(x)
 
     def predict(self, x):
+        h, w = x.shape[2:]
+        self._up_kwargs['height'] = h
+        self._up_kwargs['width'] = w
+
         import mxnet.ndarray as F
         x_sub1_out = self.conv_sub1(x)
 
-        x_sub2 = F.contrib.BilinearResize2D(x, height=x.shape[2] // 2, width=x.shape[3] // 2)
+        x_sub2 = F.contrib.BilinearResize2D(x,
+                                            height=self._up_kwargs['height'] // 2,
+                                            width=self._up_kwargs['width'] // 2)
         x = self.conv1(x_sub2)
         x = self.bn1(x)
         x = self.relu(x)
@@ -142,15 +145,15 @@ class ICNet(SegBaseModel):
         x_sub2_out = self.layer2(x)
 
         x_sub4 = F.contrib.BilinearResize2D(x_sub2_out,
-                                            height=x_sub2_out.shape[2] // 2,
-                                            width=x_sub2_out.shape[3] // 2)
+                                            height=self._up_kwargs['height'] // 32,
+                                            width=self._up_kwargs['width'] // 32)
         x = self.layer3(x_sub4)
         x = self.layer4(x)
-        x_sub4_out = self.psp_head(x)
+        x_sub4_out = self.psp_head.demo(x)
 
         x_sub4_out = self.conv_sub4(x_sub4_out)
         x_sub2_out = self.conv_sub2(x_sub2_out)
-        res = self.head(x_sub1_out, x_sub2_out, x_sub4_out)
+        res = self.head.demo(x_sub1_out, x_sub2_out, x_sub4_out)
         return res[0]
 
 class _ICHead(HybridBlock):
@@ -207,9 +210,9 @@ class _ICHead(HybridBlock):
     def demo(self, x_sub1, x_sub2, x_sub4):
         outputs = []
 
-        x_cff_24, x_24_cls = self.cff_24(x_sub4, x_sub2)
+        x_cff_24, x_24_cls = self.cff_24.demo(x_sub4, x_sub2)
         outputs.append(x_24_cls)
-        x_cff_12, x_12_cls = self.cff_12(x_cff_24, x_sub1)
+        x_cff_12, x_12_cls = self.cff_12.demo(x_cff_24, x_sub1)
         outputs.append(x_12_cls)
 
         import mxnet.ndarray as F
@@ -265,8 +268,13 @@ class CascadeFeatureFusion(HybridBlock):
         return x, x_low_cls
 
     def demo(self, x_low, x_high):
+        self._up_kwargs['height'] = x_high.shape[2]
+        self._up_kwargs['width'] = x_high.shape[3]
+
         import mxnet.ndarray as F
-        x_low = F.contrib.BilinearResize2D(x_low, height=x_high.shape[2], width=x_high.shape[3])
+        x_low = F.contrib.BilinearResize2D(x_low,
+                                           height=self._up_kwargs['height'],
+                                           width=self._up_kwargs['width'])
         x_low = self.conv_low(x_low)
         x_high = self.conv_hign(x_high)
 
@@ -337,6 +345,7 @@ def get_icnet(dataset='citys', backbone='resnet50', pretrained=False,
         'ade20k': 'ade',
         'coco': 'coco',
         'citys': 'citys',
+        'mhpv1': 'mhpv1',
     }
     from ..data import datasets
     # infer number of classes
@@ -363,3 +372,17 @@ def get_icnet_resnet50_citys(**kwargs):
 
     """
     return get_icnet(dataset='citys', backbone='resnet50', **kwargs)
+
+
+def get_icnet_resnet50_mhpv1(**kwargs):
+    r"""Image Cascade Network
+
+    Parameters
+    ----------
+    dataset : str, default citys
+        The dataset that model pretrained on. (default: cityscapes)
+    backbone : string
+        Pre-trained dilated backbone network type (default:'resnet50').
+
+    """
+    return get_icnet(dataset='mhpv1', backbone='resnet50', **kwargs)

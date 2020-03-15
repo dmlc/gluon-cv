@@ -34,14 +34,14 @@ import gluoncv
 ##############################################################################
 # Evils in the Training Details
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# 
+#
 # State-of-the-art results [Chen17]_ [Zhao17]_ on Pascal VOC dataset are typically
 # difficult to reproduce due to the sophisticated training details.
 # In this tutorial we walk through our state-of-the-art implementation step-by-step.
 #
 # DeepLabV3 Implementation
 # ------------------------
-# 
+#
 # We implemented state-of-the-art semantic segmentation model of DeepLabV3 in Gluon-CV.
 # Atrous Spatial Pyramid Pooling (ASPP) is the key part of DeepLabV3 model, which is
 # built on top of FCN. It combines multiple scale features with different receptive
@@ -60,14 +60,14 @@ import gluoncv
 #                                  kernel_size=1, use_bias=False))
 #                 b0.add(norm_layer(in_channels=out_channels, **norm_kwargs))
 #                 b0.add(nn.Activation("relu"))
-#     
+#
 #             rate1, rate2, rate3 = tuple(atrous_rates)
 #             b1 = _ASPPConv(in_channels, out_channels, rate1, norm_layer, norm_kwargs)
 #             b2 = _ASPPConv(in_channels, out_channels, rate2, norm_layer, norm_kwargs)
 #             b3 = _ASPPConv(in_channels, out_channels, rate3, norm_layer, norm_kwargs)
 #             b4 = _AsppPooling(in_channels, out_channels, norm_layer=norm_layer,
 #                               norm_kwargs=norm_kwargs)
-#     
+#
 #             self.concurent = gluon.contrib.nn.HybridConcurrent(axis=1)
 #             with self.concurent.name_scope():
 #                 self.concurent.add(b0)
@@ -75,7 +75,7 @@ import gluoncv
 #                 self.concurent.add(b2)
 #                 self.concurent.add(b3)
 #                 self.concurent.add(b4)
-#     
+#
 #             self.project = nn.HybridSequential()
 #             with self.project.name_scope():
 #                 self.project.add(nn.Conv2D(in_channels=5*out_channels, channels=out_channels,
@@ -83,7 +83,7 @@ import gluoncv
 #                 self.project.add(norm_layer(in_channels=out_channels, **norm_kwargs))
 #                 self.project.add(nn.Activation("relu"))
 #                 self.project.add(nn.Dropout(0.5))
-#     
+#
 #         def hybrid_forward(self, F, x):
 #             return self.project(self.concurent(x))
 #
@@ -96,14 +96,14 @@ print(model)
 ##############################################################################
 # COCO Pretraining
 # ----------------
-# 
+#
 # COCO dataset is an large instance segmentation dataset with 80 categories, which has 127K
 # training images. From the training set of MS-COCO dataset, we select with
 # images containing the 20 classes shared with PASCAL dataset with more than 1,000 labeled pixels,
 # resulting 92.5K images. All the other classes are marked as background. You can simply get this
 # dataset using the following command:
-# 
-# 
+#
+#
 
 # image transform for color normalization
 from mxnet.gluon.data.vision import transforms
@@ -121,7 +121,7 @@ batch_size = 2
 # Create Training Loader
 train_data = gluon.data.DataLoader(
     trainset, batch_size, shuffle=True, last_batch='rollover',
-    num_workers=batch_size)
+    num_workers=0)
 
 
 ##############################################################################
@@ -169,14 +169,14 @@ plt.show()
 # Pascal VOC and the Augmented Set
 # --------------------------------
 #
-# Pascal VOC dataset [Everingham10]_ has 2,913 images in training and validation sets. 
+# Pascal VOC dataset [Everingham10]_ has 2,913 images in training and validation sets.
 # The augmented set [Hariharan15]_ has 10,582 and 1449 training and validation images.
 # We first fine-tune the COCO pretrained model on Pascal Augmentation dataset, then
 # fine-tune again on Pascal VOC dataset to get the best performance.
-# 
+#
 # Learning Rates
 # --------------
-# 
+#
 # We use different learning rates for pretrained base network and the DeepLab head without
 # pretrained weights.
 # We enlarge the learning rate of the head by 10 times. A poly-like cosine learning rate

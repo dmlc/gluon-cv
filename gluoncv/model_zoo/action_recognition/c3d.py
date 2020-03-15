@@ -9,26 +9,38 @@ from mxnet.gluon.block import HybridBlock
 from mxnet.gluon import nn
 
 class C3D(HybridBlock):
-    """
+    r"""
     The Convolutional 3D network (C3D).
     Learning Spatiotemporal Features with 3D Convolutional Networks.
     ICCV, 2015. https://arxiv.org/abs/1412.0767
 
     Parameters
     ----------
-        nclass : int
-            Number of classes in the training dataset.
-        dropout_ratio : float
-            Dropout value used in the dropout layers after dense layers to avoid overfitting.
-        init_std : float
-            Default standard deviation value for initializing dense layers.
-        ctx : str
-            Context, default CPU. The context in which to load the pretrained weights.
+    nclass : int
+        Number of classes in the training dataset.
+    num_segments : int, default is 1.
+        Number of segments used to evenly divide a video.
+    num_crop : int, default is 1.
+        Number of crops used during evaluation, choices are 1, 3 or 10.
+    feat_ext : bool.
+        Whether to extract features before dense classification layer or
+        do a complete forward pass.
+    dropout_ratio : float
+        Dropout value used in the dropout layers after dense layers to avoid overfitting.
+    init_std : float
+        Default standard deviation value for initializing dense layers.
+    ctx : str
+        Context, default CPU. The context in which to load the pretrained weights.
     """
 
     def __init__(self, nclass, dropout_ratio=0.5,
+                 num_segments=1, num_crop=1, feat_ext=False,
                  init_std=0.001, ctx=None, **kwargs):
         super(C3D, self).__init__()
+        self.num_segments = num_segments
+        self.num_crop = num_crop
+        self.feat_ext = feat_ext
+        self.feat_dim = 8192
 
         with self.name_scope():
             self.conv1 = nn.Conv3D(in_channels=3, channels=64,
@@ -86,8 +98,16 @@ class C3D(HybridBlock):
         x = self.relu(self.conv5b(x))
         x = self.pool5(x)
 
+        # segmental consensus
+        x = F.reshape(x, shape=(-1, self.num_segments * self.num_crop, self.feat_dim))
+        x = F.mean(x, axis=1)
+
         x = self.relu(self.fc6(x))
         x = self.dropout(x)
+
+        if self.feat_ext:
+            return x
+
         x = self.relu(self.fc7(x))
         x = self.dropout(x)
         x = self.fc8(x)
@@ -100,10 +120,29 @@ def c3d_kinetics400(nclass=400, pretrained=False, ctx=cpu(),
     Learning Spatiotemporal Features with 3D Convolutional Networks.
     ICCV, 2015. https://arxiv.org/abs/1412.0767
 
+    Parameters
+    ----------
+    nclass : int.
+        Number of categories in the dataset.
+    pretrained : bool or str.
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    ctx : Context, default CPU.
+        The context in which to load the pretrained weights.
+    root : str, default $MXNET_HOME/models
+        Location for keeping the model parameters.
+    num_segments : int, default is 1.
+        Number of segments used to evenly divide a video.
+    num_crop : int, default is 1.
+        Number of crops used during evaluation, choices are 1, 3 or 10.
+    feat_ext : bool.
+        Whether to extract features before dense classification layer or
+        do a complete forward pass.
     """
 
-    model = C3D(nclass=nclass, ctx=ctx, **kwargs)
-    model.initialize()
+    model = C3D(nclass=nclass, ctx=ctx, num_segments=num_segments,
+                num_crop=num_crop, feat_ext=feat_ext, **kwargs)
+    model.initialize(init.MSRAPrelu(), ctx=ctx)
 
     if pretrained:
         from ..model_store import get_model_file

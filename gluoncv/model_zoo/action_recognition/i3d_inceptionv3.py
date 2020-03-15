@@ -145,16 +145,36 @@ class I3D_InceptionV3(HybridBlock):
 
     Parameters
     ----------
-    nclass : int, default 1000
-        Number of classification classes.
+    nclass : int
+        Number of classes in the training dataset.
+    pretrained : bool or str.
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True.
+        Load pretrained base network, the extra layers are randomized. Note that
+        if pretrained is `True`, this has no effect.
+    dropout_ratio : float, default is 0.5.
+        The dropout rate of a dropout layer.
+        The larger the value, the more strength to prevent overfitting.
+    num_segments : int, default is 1.
+        Number of segments used to evenly divide a video.
+    num_crop : int, default is 1.
+        Number of crops used during evaluation, choices are 1, 3 or 10.
+    feat_ext : bool.
+        Whether to extract features before dense classification layer or
+        do a complete forward pass.
+    init_std : float, default is 0.001.
+        Standard deviation value when initialize the dense layers.
+    ctx : Context, default CPU.
+        The context in which to load the pretrained weights.
+    partial_bn : bool, default False.
+        Freeze all batch normalization layers during training except the first layer.
     norm_layer : object
         Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
         Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     norm_kwargs : dict
         Additional `norm_layer` arguments, for example `num_devices=4`
         for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
-    partial_bn : bool, default False
-        Freeze all batch normalization layers during training except the first layer.
     """
     def __init__(self, nclass=1000, pretrained=False, pretrained_base=True,
                  num_segments=1, num_crop=1, feat_ext=False,
@@ -268,7 +288,7 @@ def i3d_inceptionv3_kinetics400(nclass=400, pretrained=False, pretrained_base=Tr
                                 ctx=cpu(), root='~/.mxnet/models', use_tsn=False,
                                 num_segments=1, num_crop=1, partial_bn=False,
                                 feat_ext=False, **kwargs):
-    r"""Inception v3 model from
+    r"""Inception v3 model trained on Kinetics400 dataset from
     `"Rethinking the Inception Architecture for Computer Vision"
     <http://arxiv.org/abs/1512.00567>`_ paper.
 
@@ -278,21 +298,27 @@ def i3d_inceptionv3_kinetics400(nclass=400, pretrained=False, pretrained_base=Tr
 
     Parameters
     ----------
-    pretrained : bool or str
+    nclass : int.
+        Number of categories in the dataset.
+    pretrained : bool or str.
         Boolean value controls whether to load the default pretrained weights for model.
         String value represents the hashtag for a certain version of pretrained weights.
-    ctx : Context, default CPU
+    pretrained_base : bool or str, optional, default is True.
+        Load pretrained base network, the extra layers are randomized. Note that
+        if pretrained is `True`, this has no effect.
+    ctx : Context, default CPU.
         The context in which to load the pretrained weights.
     root : str, default $MXNET_HOME/models
         Location for keeping the model parameters.
-    partial_bn : bool, default False
+    num_segments : int, default is 1.
+        Number of segments used to evenly divide a video.
+    num_crop : int, default is 1.
+        Number of crops used during evaluation, choices are 1, 3 or 10.
+    partial_bn : bool, default False.
         Freeze all batch normalization layers during training except the first layer.
-    norm_layer : object
-        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
-        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
-    norm_kwargs : dict
-        Additional `norm_layer` arguments, for example `num_devices=4`
-        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    feat_ext : bool.
+        Whether to extract features before dense classification layer or
+        do a complete forward pass.
     """
 
     model = I3D_InceptionV3(nclass=nclass,

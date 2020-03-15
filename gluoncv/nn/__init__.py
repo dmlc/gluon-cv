@@ -1,4 +1,5 @@
 """GluonCV neural network layers"""
+# pylint: disable=wildcard-import
 from __future__ import absolute_import
 
 from . import bbox

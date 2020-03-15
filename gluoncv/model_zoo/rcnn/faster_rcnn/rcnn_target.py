@@ -4,7 +4,7 @@ from __future__ import absolute_import
 from mxnet import autograd
 from mxnet import gluon
 
-from ...nn.coder import MultiClassEncoder, NormalizedPerClassBoxCenterEncoder
+from ....nn.coder import MultiClassEncoder, NormalizedPerClassBoxCenterEncoder
 
 
 class RCNNTargetSampler(gluon.HybridBlock):
@@ -25,7 +25,7 @@ class RCNNTargetSampler(gluon.HybridBlock):
         ``pos_ratio`` defines how many positive samples (``pos_ratio * num_sample``) is
         to be sampled.
     max_num_gt : int
-        Maximum ground-truth number in whole training dataset. This is only an upper bound, not
+        Maximum ground-truth number for each example. This is only an upper bound, not
         necessarily very precise. However, using a very big number may impact the training speed.
 
     """

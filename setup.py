@@ -68,8 +68,8 @@ if with_cython:
             extra_compile_args=['-Wno-cpp', '-O3'],
             include_dirs=[_NP_INCLUDE_DIRS]),
         Extension(
-            name='gluoncv.model_zoo.rpn.cython_rpn_target',
-            sources=['gluoncv/model_zoo/rpn/cython_rpn_target.pyx'],
+            name='gluoncv.model_zoo.rcnn.rpn.cython_rpn_target',
+            sources=['gluoncv/model_zoo/rcnn/rpn/cython_rpn_target.pyx'],
             extra_compile_args=['-Wno-cpp', '-O3'],
             include_dirs=[_NP_INCLUDE_DIRS]),
     ])

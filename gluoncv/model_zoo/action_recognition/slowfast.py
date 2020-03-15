@@ -1,5 +1,6 @@
+"""SlowFast, implemented in Gluon. https://arxiv.org/abs/1812.03982.
+Code adapted from https://github.com/r1ch88/SlowFastNetworks."""
 # pylint: disable=line-too-long,too-many-lines,missing-docstring,arguments-differ,unused-argument
-# Code partially borrowed from https://github.com/r1ch88/SlowFastNetworks.
 
 __all__ = ['SlowFast', 'slowfast_4x16_resnet50_kinetics400', 'slowfast_8x8_resnet50_kinetics400',
            'slowfast_4x16_resnet101_kinetics400', 'slowfast_8x8_resnet101_kinetics400',
@@ -13,6 +14,30 @@ from mxnet.gluon import nn
 from mxnet.gluon.nn import BatchNorm
 
 class Bottleneck(HybridBlock):
+    r"""
+    Bottleneck building block for ResNet50, ResNet101 and ResNet152.
+
+    Parameters
+    ----------
+    inplanes : int.
+        Input channels of each block.
+    planes : int.
+        Output channels of each block.
+    strides : int, default is 1.
+        Stride in convolution layers.
+    head_conv : int, default is 1.
+        Determin whether we do 1x1x1 convolution or 3x1x1 convolution.
+    downsample : bool.
+        Whether to contain a downsampling layer in the block.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    layer_name : str, default is ''.
+        Give a name to current block.
+    """
     expansion = 4
 
     def __init__(self,
@@ -44,6 +69,7 @@ class Bottleneck(HybridBlock):
             self.downsample = downsample
 
     def hybrid_forward(self, F, x):
+        """Hybrid forward of a ResNet bottleneck block"""
         identity = x
         out = self.conv1(x)
         out = self.bn1(out)
@@ -63,6 +89,78 @@ class SlowFast(HybridBlock):
     """SlowFast networks (SlowFast) from
     `"SlowFast Networks for Video Recognition"
     <https://arxiv.org/abs/1812.03982>`_ paper.
+
+    Parameters
+    ----------
+    nclass : int.
+        Number of categories in the dataset.
+    block : a HybridBlock.
+        Building block of a ResNet, could be Basic or Bottleneck.
+    layers : a list or tuple, default is None.
+        Number of stages in a ResNet, e.g., [3, 4, 6, 3] in ResNet50.
+    num_block_temp_kernel_fast : int, default is None.
+        If the current block has more than NUM_BLOCK_TEMP_KERNEL blocks,
+        use temporal kernel of 1 for the rest of the blocks.
+    num_block_temp_kernel_slow : int, default is None.
+        If the current block has more than NUM_BLOCK_TEMP_KERNEL blocks,
+        use temporal kernel of 1 for the rest of the blocks.
+    pretrained : bool or str.
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True.
+        Load pretrained base network, the extra layers are randomized. Note that
+        if pretrained is `True`, this has no effect.
+    feat_ext : bool.
+        Whether to extract features before dense classification layer or
+        do a complete forward pass.
+    num_segments : int, default is 1.
+        Number of segments used to evenly divide a video.
+    num_crop : int, default is 1.
+        Number of crops used during evaluation, choices are 1, 3 or 10.
+    bn_eval : bool.
+        Whether to set BN layers to eval mode, namely, freeze
+        running stats (mean and var).
+    bn_frozen : bool.
+        Whether to freeze weight and bias of BN layers.
+    partial_bn : bool, default False.
+        Freeze all batch normalization layers during training except the first layer.
+    frozen_stages : int.
+        Stages to be frozen (all param fixed). -1 means not freezing any parameters.
+    dropout_ratio : float, default is 0.5.
+        The dropout rate of a dropout layer.
+        The larger the value, the more strength to prevent overfitting.
+    init_std : float, default is 0.001.
+        Standard deviation value when initialize the dense layers.
+    alpha : int, default is 8.
+        Corresponds to the frame rate reduction ratio between the Slow and Fast pathways.
+    beta_inv : int, default is 8.
+        Corresponds to the inverse of the channel reduction ratio between the Slow and Fast pathways.
+    fusion_conv_channel_ratio : int, default is 2.
+        Ratio of channel dimensions between the Slow and Fast pathways.
+    fusion_kernel_size : int, default is 5.
+        Kernel dimension used for fusing information from Fast pathway to Slow pathway.
+    width_per_group : int, default is 64.
+        Width of each group (64 -> ResNet; 4 -> ResNeXt).
+    num_groups : int, default is 1.
+        Number of groups for the convolution.
+        Num_groups=1 is for standard ResNet like networks,
+        and num_groups>1 is for ResNeXt like networks.
+    slow_temporal_stride : int, default 16.
+        The temporal stride for sparse sampling of video frames in slow branch of a SlowFast network.
+    fast_temporal_stride : int, default 2.
+        The temporal stride for sparse sampling of video frames in fast branch of a SlowFast network.
+    slow_frames : int, default 4.
+        The number of frames used as input to a slow branch.
+    fast_frames : int, default 32.
+        The number of frames used as input to a fast branch.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    ctx : Context, default CPU.
+        The context in which to load the pretrained weights.
     """
     def __init__(self,
                  nclass,
@@ -257,6 +355,7 @@ class SlowFast(HybridBlock):
             self.initialize(init.MSRAPrelu(), ctx=ctx)
 
     def hybrid_forward(self, F, x):
+        """Hybrid forward of SlowFast network"""
         fast_input = F.slice(x, begin=(None, None, 0, None, None), end=(None, None, self.fast_frames, None, None))
         slow_input = F.slice(x, begin=(None, None, self.fast_frames, None, None), end=(None, None, self.fast_frames + self.slow_frames, None, None))
 
@@ -276,6 +375,7 @@ class SlowFast(HybridBlock):
         return x
 
     def SlowPath(self, F, x, lateral):
+        """Hybrid forward of the slow branch"""
         x = self.slow_conv1(x)                          # bx64x4x112x112, input is bx3x4x224x224
         x = self.slow_bn1(x)
         x = self.slow_relu(x)
@@ -297,6 +397,7 @@ class SlowFast(HybridBlock):
         return out
 
     def FastPath(self, F, x):
+        """Hybrid forward of the fast branch"""
         lateral = []
         x = self.fast_conv1(x)                          # bx8x32x112x112, input is bx3x32x224x224
         x = self.fast_bn1(x)
@@ -333,6 +434,7 @@ class SlowFast(HybridBlock):
                          norm_layer=BatchNorm,
                          norm_kwargs=None,
                          layer_name=''):
+        """Build each stage of within the fast branch."""
         downsample = None
         if strides != 1 or inplanes != planes * block.expansion:
             downsample = nn.HybridSequential(prefix=layer_name+'downsample_')
@@ -387,6 +489,7 @@ class SlowFast(HybridBlock):
                          norm_layer=BatchNorm,
                          norm_kwargs=None,
                          layer_name=''):
+        """Build each stage of within the slow branch."""
         downsample = None
         if strides != 1 or inplanes != planes * block.expansion:
             downsample = nn.HybridSequential(prefix=layer_name+'downsample_')
@@ -433,27 +536,31 @@ def slowfast_4x16_resnet50_kinetics400(nclass=400, pretrained=False, pretrained_
                                        use_tsn=False, num_segments=1, num_crop=1,
                                        partial_bn=False, feat_ext=False,
                                        root='~/.mxnet/models', ctx=cpu(), **kwargs):
-    r"""SlowFast networks (SlowFast) from
-    `"SlowFast Networks for Video Recognition"
-    <https://arxiv.org/abs/1812.03982>`_ paper.
+    r"""SlowFast 4x16 networks (SlowFast) with ResNet50 backbone trained on Kinetics400 dataset.
 
     Parameters
     ----------
-    pretrained : bool or str
+    nclass : int.
+        Number of categories in the dataset.
+    pretrained : bool or str.
         Boolean value controls whether to load the default pretrained weights for model.
         String value represents the hashtag for a certain version of pretrained weights.
-    ctx : Context, default CPU
+    pretrained_base : bool or str, optional, default is True.
+        Load pretrained base network, the extra layers are randomized. Note that
+        if pretrained is `True`, this has no effect.
+    ctx : Context, default CPU.
         The context in which to load the pretrained weights.
     root : str, default $MXNET_HOME/models
         Location for keeping the model parameters.
-    partial_bn : bool, default False
+    num_segments : int, default is 1.
+        Number of segments used to evenly divide a video.
+    num_crop : int, default is 1.
+        Number of crops used during evaluation, choices are 1, 3 or 10.
+    partial_bn : bool, default False.
         Freeze all batch normalization layers during training except the first layer.
-    norm_layer : object
-        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
-        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
-    norm_kwargs : dict
-        Additional `norm_layer` arguments, for example `num_devices=4`
-        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    feat_ext : bool.
+        Whether to extract features before dense classification layer or
+        do a complete forward pass.
     """
 
     model = SlowFast(nclass=nclass,
@@ -492,27 +599,31 @@ def slowfast_8x8_resnet50_kinetics400(nclass=400, pretrained=False, pretrained_b
                                       use_tsn=False, num_segments=1, num_crop=1,
                                       partial_bn=False, feat_ext=False,
                                       root='~/.mxnet/models', ctx=cpu(), **kwargs):
-    r"""SlowFast networks (SlowFast) from
-    `"SlowFast Networks for Video Recognition"
-    <https://arxiv.org/abs/1812.03982>`_ paper.
+    r"""SlowFast 8x8 networks (SlowFast) with ResNet50 backbone trained on Kinetics400 dataset.
 
     Parameters
     ----------
-    pretrained : bool or str
+    nclass : int.
+        Number of categories in the dataset.
+    pretrained : bool or str.
         Boolean value controls whether to load the default pretrained weights for model.
         String value represents the hashtag for a certain version of pretrained weights.
-    ctx : Context, default CPU
+    pretrained_base : bool or str, optional, default is True.
+        Load pretrained base network, the extra layers are randomized. Note that
+        if pretrained is `True`, this has no effect.
+    ctx : Context, default CPU.
         The context in which to load the pretrained weights.
     root : str, default $MXNET_HOME/models
         Location for keeping the model parameters.
-    partial_bn : bool, default False
+    num_segments : int, default is 1.
+        Number of segments used to evenly divide a video.
+    num_crop : int, default is 1.
+        Number of crops used during evaluation, choices are 1, 3 or 10.
+    partial_bn : bool, default False.
         Freeze all batch normalization layers during training except the first layer.
-    norm_layer : object
-        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
-        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
-    norm_kwargs : dict
-        Additional `norm_layer` arguments, for example `num_devices=4`
-        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    feat_ext : bool.
+        Whether to extract features before dense classification layer or
+        do a complete forward pass.
     """
 
     model = SlowFast(nclass=nclass,
@@ -551,27 +662,31 @@ def slowfast_4x16_resnet101_kinetics400(nclass=400, pretrained=False, pretrained
                                         use_tsn=False, num_segments=1, num_crop=1,
                                         partial_bn=False, feat_ext=False,
                                         root='~/.mxnet/models', ctx=cpu(), **kwargs):
-    r"""SlowFast networks (SlowFast) from
-    `"SlowFast Networks for Video Recognition"
-    <https://arxiv.org/abs/1812.03982>`_ paper.
+    r"""SlowFast 4x16 networks (SlowFast) with ResNet101 backbone trained on Kinetics400 dataset.
 
     Parameters
     ----------
-    pretrained : bool or str
+    nclass : int.
+        Number of categories in the dataset.
+    pretrained : bool or str.
         Boolean value controls whether to load the default pretrained weights for model.
         String value represents the hashtag for a certain version of pretrained weights.
-    ctx : Context, default CPU
+    pretrained_base : bool or str, optional, default is True.
+        Load pretrained base network, the extra layers are randomized. Note that
+        if pretrained is `True`, this has no effect.
+    ctx : Context, default CPU.
         The context in which to load the pretrained weights.
     root : str, default $MXNET_HOME/models
         Location for keeping the model parameters.
-    partial_bn : bool, default False
+    num_segments : int, default is 1.
+        Number of segments used to evenly divide a video.
+    num_crop : int, default is 1.
+        Number of crops used during evaluation, choices are 1, 3 or 10.
+    partial_bn : bool, default False.
         Freeze all batch normalization layers during training except the first layer.
-    norm_layer : object
-        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
-        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
-    norm_kwargs : dict
-        Additional `norm_layer` arguments, for example `num_devices=4`
-        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    feat_ext : bool.
+        Whether to extract features before dense classification layer or
+        do a complete forward pass.
     """
 
     model = SlowFast(nclass=nclass,
@@ -610,27 +725,31 @@ def slowfast_8x8_resnet101_kinetics400(nclass=400, pretrained=False, pretrained_
                                        use_tsn=False, num_segments=1, num_crop=1,
                                        partial_bn=False, feat_ext=False,
                                        root='~/.mxnet/models', ctx=cpu(), **kwargs):
-    r"""SlowFast networks (SlowFast) from
-    `"SlowFast Networks for Video Recognition"
-    <https://arxiv.org/abs/1812.03982>`_ paper.
+    r"""SlowFast 8x8 networks (SlowFast) with ResNet101 backbone trained on Kinetics400 dataset.
 
     Parameters
     ----------
-    pretrained : bool or str
+    nclass : int.
+        Number of categories in the dataset.
+    pretrained : bool or str.
         Boolean value controls whether to load the default pretrained weights for model.
         String value represents the hashtag for a certain version of pretrained weights.
-    ctx : Context, default CPU
+    pretrained_base : bool or str, optional, default is True.
+        Load pretrained base network, the extra layers are randomized. Note that
+        if pretrained is `True`, this has no effect.
+    ctx : Context, default CPU.
         The context in which to load the pretrained weights.
     root : str, default $MXNET_HOME/models
         Location for keeping the model parameters.
-    partial_bn : bool, default False
+    num_segments : int, default is 1.
+        Number of segments used to evenly divide a video.
+    num_crop : int, default is 1.
+        Number of crops used during evaluation, choices are 1, 3 or 10.
+    partial_bn : bool, default False.
         Freeze all batch normalization layers during training except the first layer.
-    norm_layer : object
-        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
-        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
-    norm_kwargs : dict
-        Additional `norm_layer` arguments, for example `num_devices=4`
-        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    feat_ext : bool.
+        Whether to extract features before dense classification layer or
+        do a complete forward pass.
     """
 
     model = SlowFast(nclass=nclass,
@@ -669,27 +788,31 @@ def slowfast_16x8_resnet101_kinetics400(nclass=400, pretrained=False, pretrained
                                         use_tsn=False, num_segments=1, num_crop=1,
                                         partial_bn=False, feat_ext=False,
                                         root='~/.mxnet/models', ctx=cpu(), **kwargs):
-    r"""SlowFast networks (SlowFast) from
-    `"SlowFast Networks for Video Recognition"
-    <https://arxiv.org/abs/1812.03982>`_ paper.
+    r"""SlowFast 16x8 networks (SlowFast) with ResNet101 backbone trained on Kinetics400 dataset.
 
     Parameters
     ----------
-    pretrained : bool or str
+    nclass : int.
+        Number of categories in the dataset.
+    pretrained : bool or str.
         Boolean value controls whether to load the default pretrained weights for model.
         String value represents the hashtag for a certain version of pretrained weights.
-    ctx : Context, default CPU
+    pretrained_base : bool or str, optional, default is True.
+        Load pretrained base network, the extra layers are randomized. Note that
+        if pretrained is `True`, this has no effect.
+    ctx : Context, default CPU.
         The context in which to load the pretrained weights.
     root : str, default $MXNET_HOME/models
         Location for keeping the model parameters.
-    partial_bn : bool, default False
+    num_segments : int, default is 1.
+        Number of segments used to evenly divide a video.
+    num_crop : int, default is 1.
+        Number of crops used during evaluation, choices are 1, 3 or 10.
+    partial_bn : bool, default False.
         Freeze all batch normalization layers during training except the first layer.
-    norm_layer : object
-        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
-        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
-    norm_kwargs : dict
-        Additional `norm_layer` arguments, for example `num_devices=4`
-        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    feat_ext : bool.
+        Whether to extract features before dense classification layer or
+        do a complete forward pass.
     """
 
     model = SlowFast(nclass=nclass,
@@ -728,27 +851,32 @@ def slowfast_16x8_resnet101_50_50_kinetics400(nclass=400, pretrained=False, pret
                                               use_tsn=False, num_segments=1, num_crop=1,
                                               partial_bn=False, feat_ext=False,
                                               root='~/.mxnet/models', ctx=cpu(), **kwargs):
-    r"""SlowFast networks (SlowFast) from
-    `"SlowFast Networks for Video Recognition"
-    <https://arxiv.org/abs/1812.03982>`_ paper.
+    r"""SlowFast 16x8 networks (SlowFast) with ResNet101 backbone trained on Kinetics400 dataset,
+    but the temporal head is initialized with ResNet50 structure (3, 4, 6, 3).
 
     Parameters
     ----------
-    pretrained : bool or str
+    nclass : int.
+        Number of categories in the dataset.
+    pretrained : bool or str.
         Boolean value controls whether to load the default pretrained weights for model.
         String value represents the hashtag for a certain version of pretrained weights.
-    ctx : Context, default CPU
+    pretrained_base : bool or str, optional, default is True.
+        Load pretrained base network, the extra layers are randomized. Note that
+        if pretrained is `True`, this has no effect.
+    ctx : Context, default CPU.
         The context in which to load the pretrained weights.
     root : str, default $MXNET_HOME/models
         Location for keeping the model parameters.
-    partial_bn : bool, default False
+    num_segments : int, default is 1.
+        Number of segments used to evenly divide a video.
+    num_crop : int, default is 1.
+        Number of crops used during evaluation, choices are 1, 3 or 10.
+    partial_bn : bool, default False.
         Freeze all batch normalization layers during training except the first layer.
-    norm_layer : object
-        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
-        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
-    norm_kwargs : dict
-        Additional `norm_layer` arguments, for example `num_devices=4`
-        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    feat_ext : bool.
+        Whether to extract features before dense classification layer or
+        do a complete forward pass.
     """
 
     model = SlowFast(nclass=nclass,
@@ -789,27 +917,33 @@ def slowfast_4x16_resnet50_custom(nclass=400, pretrained=False, pretrained_base=
                                   use_tsn=False, num_segments=1, num_crop=1,
                                   partial_bn=False, feat_ext=False, use_kinetics_pretrain=True,
                                   root='~/.mxnet/models', ctx=cpu(), **kwargs):
-    r"""SlowFast networks (SlowFast) from
-    `"SlowFast Networks for Video Recognition"
-    <https://arxiv.org/abs/1812.03982>`_ paper.
+    r"""SlowFast 4x16 networks (SlowFast) with ResNet50 backbone. Customized for users's own dataset.
 
     Parameters
     ----------
-    pretrained : bool or str
+    nclass : int.
+        Number of categories in the dataset.
+    pretrained : bool or str.
         Boolean value controls whether to load the default pretrained weights for model.
         String value represents the hashtag for a certain version of pretrained weights.
-    ctx : Context, default CPU
+    pretrained_base : bool or str, optional, default is True.
+        Load pretrained base network, the extra layers are randomized. Note that
+        if pretrained is `True`, this has no effect.
+    ctx : Context, default CPU.
         The context in which to load the pretrained weights.
     root : str, default $MXNET_HOME/models
         Location for keeping the model parameters.
-    partial_bn : bool, default False
+    num_segments : int, default is 1.
+        Number of segments used to evenly divide a video.
+    num_crop : int, default is 1.
+        Number of crops used during evaluation, choices are 1, 3 or 10.
+    partial_bn : bool, default False.
         Freeze all batch normalization layers during training except the first layer.
-    norm_layer : object
-        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
-        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
-    norm_kwargs : dict
-        Additional `norm_layer` arguments, for example `num_devices=4`
-        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    feat_ext : bool.
+        Whether to extract features before dense classification layer or
+        do a complete forward pass.
+    use_kinetics_pretrain : bool.
+        Whether to load Kinetics-400 pre-trained model weights.
     """
 
     model = SlowFast(nclass=nclass,

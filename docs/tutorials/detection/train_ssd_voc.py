@@ -194,7 +194,7 @@ for ib, batch in enumerate(train_loader):
 # network, anchor generators, class predictors and bounding box offset predictors.
 #
 # For more details on how SSD detector works, please refer to our introductory
-# [tutorial](http://gluon.mxnet.io/chapter08_computer-vision/object-detection.html)
+# `tutorial <http://gluon.mxnet.io/chapter08_computer-vision/object-detection.html>`__
 # You can also refer to the original paper to learn more about the intuitions
 # behind SSD.
 #

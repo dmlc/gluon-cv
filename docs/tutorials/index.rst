@@ -163,6 +163,12 @@ Semantic Segmentation
         Hands on DeepLabV3 model training on Pascal VOC dataset, and achieves
         state-of-the-art accuracy.
 
+    .. card::
+        :title: Pre-trained ICNet Models for Multi-Human Parsing
+        :link: ../build/examples_segmentation/demo_icnet.html
+
+        Perform semantic segmentation on real-world images with pre-trained ICNet models
+
 Pose Estimation
 ---------------------
 
@@ -257,6 +263,17 @@ Action Recognition
 
         An efficient and flexible video reader for training deep video neural networks.
 
+Object Tracking
+---------------------
+
+.. container:: cards
+
+    .. card::
+        :title: Pre-trained Siam RPN Models
+        :link: ../build/examples_tracking/demo_SiamRPN.html
+
+        Estimate Single Object Tracking in real-world video with pre-trained Object Tracking models
+
 Dataset Preparation
 -------------------
 
@@ -306,6 +323,10 @@ Dataset Preparation
         :title: Prepare HMDB51 Dataset
         :link: ../build/examples_datasets/hmdb51.html
 
+    .. card::
+        :title: Prepare Multi-Human Parsing V1 Dataset
+        :link: ../build/examples_datasets/mhp_v1.html
+
 Distributed Training
 --------------------
 
@@ -345,6 +366,7 @@ Deployment
     ../build/examples_segmentation/index
     ../build/examples_pose/index
     ../build/examples_action_recognition/index
+    ../build/examples_tracking/index
     ../build/examples_datasets/index
     ../build/examples_distributed/index
     ../build/examples_deployment/index

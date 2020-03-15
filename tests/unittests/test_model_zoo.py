@@ -421,7 +421,8 @@ def test_segmentation_models():
               'fcn_resnet50_ade', 'psp_resnet50_ade', 'deeplab_resnet50_ade',
               'fcn_resnet101_ade', 'psp_resnet101_ade', 'deeplab_resnet101_ade',
               'psp_resnet101_citys', 'deeplab_resnet152_voc', 'deeplab_resnet152_coco',
-              'deeplab_v3b_plus_wideresnet_citys', 'icnet_resnet50_citys']
+              'deeplab_v3b_plus_wideresnet_citys', 'icnet_resnet50_citys',
+              'deeplab_resnet50_citys', 'deeplab_resnet101_citys']
     _test_model_list(models, ctx, x, pretrained=True, pretrained_base=True)
     _test_model_list(models, ctx, x, pretrained=False, pretrained_base=False)
     _test_model_list(models, ctx, x, pretrained=False, pretrained_base=True)
@@ -501,6 +502,40 @@ def test_action_recognition_resnet_models():
 
     # 224x224
     x = mx.random.uniform(shape=(2, 3, 224, 224), ctx=ctx)
+    _test_model_list(models, ctx, x, pretrained=True, pretrained_base=True)
+    _test_model_list(models, ctx, x, pretrained=False, pretrained_base=False)
+    _test_model_list(models, ctx, x, pretrained=False, pretrained_base=True)
+
+@try_gpu(0)
+def test_action_recognition_c3d_models():
+    ctx = mx.context.current_context()
+    models = ['c3d_kinetics400']
+
+    # 112x112
+    x = mx.random.uniform(shape=(2, 3, 16, 112, 112), ctx=ctx)
+    _test_model_list(models, ctx, x, pretrained=True, pretrained_base=True)
+    _test_model_list(models, ctx, x, pretrained=False, pretrained_base=False)
+    _test_model_list(models, ctx, x, pretrained=False, pretrained_base=True)
+
+@try_gpu(0)
+def test_action_recognition_p3d_models():
+    ctx = mx.context.current_context()
+    models = ['p3d_resnet50_kinetics400', 'p3d_resnet101_kinetics400']
+
+    # 224x224
+    x = mx.random.uniform(shape=(2, 3, 16, 224, 224), ctx=ctx)
+    _test_model_list(models, ctx, x, pretrained=True, pretrained_base=True)
+    _test_model_list(models, ctx, x, pretrained=False, pretrained_base=False)
+    _test_model_list(models, ctx, x, pretrained=False, pretrained_base=True)
+
+@try_gpu(0)
+def test_action_recognition_r2plus1d_models():
+    ctx = mx.context.current_context()
+    models = ['r2plus1d_resnet18_kinetics400', 'r2plus1d_resnet34_kinetics400',
+              'r2plus1d_resnet50_kinetics400']
+
+    # 112x112
+    x = mx.random.uniform(shape=(2, 3, 16, 112, 112), ctx=ctx)
     _test_model_list(models, ctx, x, pretrained=True, pretrained_base=True)
     _test_model_list(models, ctx, x, pretrained=False, pretrained_base=False)
     _test_model_list(models, ctx, x, pretrained=False, pretrained_base=True)
@@ -631,25 +666,6 @@ def test_quantized_pose_estimation_models():
                   'simple_pose_resnet101_v1b_int8', 'simple_pose_resnet101_v1d_int8']
     ctx = mx.context.current_context()
     x = mx.random.uniform(shape=(1, 3, 256, 192), ctx=ctx)
-    _test_model_list(model_list, ctx, x)
-
-
-@with_cpu(0)
-def test_quantized_action_recognition_models():
-    # num_segments should be aligned with value when calibrating FP32 models
-    num_segments = 3
-    model_list = ['vgg16_ucf101_int8']
-    ctx = mx.context.current_context()
-    x = mx.random.uniform(shape=(1 * num_segments, 3, 224, 224), ctx=ctx)
-    _test_model_list(model_list, ctx, x)
-
-    model_list = ['inceptionv3_ucf101_int8', 'inceptionv3_kinetics400_int8']
-    x = mx.random.uniform(shape=(1 * num_segments, 3, 299, 299), ctx=ctx)
-    _test_model_list(model_list, ctx, x)
-
-    num_segments = 7
-    model_list = ['resnet18_v1b_kinetics400_int8', 'resnet50_v1b_kinetics400_int8']
-    x = mx.random.uniform(shape=(1 * num_segments, 3, 224, 224), ctx=ctx)
     _test_model_list(model_list, ctx, x)
 
 
