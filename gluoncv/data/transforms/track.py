@@ -11,8 +11,8 @@ import numpy as np
 from gluoncv.utils.filesystem import try_import_cv2
 from gluoncv.model_zoo.siamrpn.siamrpn_tracker import corner2center, center2corner
 from gluoncv.model_zoo.siamrpn.siamrpn_tracker import Center, Corner
-class Augmentation:
-    """dataset Augmentation for tracking.
+class SiamRPNaugmentation:
+    """dataset Augmentation for SiamRPN tracking.
 
     Parameters
     ----------
@@ -146,8 +146,8 @@ class Augmentation:
         crop_bbox_center = corner2center(crop_bbox)
 
         if self.scale:
-            scale_x = (1.0 + Augmentation.random() * self.scale)
-            scale_y = (1.0 + Augmentation.random() * self.scale)
+            scale_x = (1.0 + SiamRPNaugmentation.random() * self.scale)
+            scale_y = (1.0 + SiamRPNaugmentation.random() * self.scale)
             h, w = crop_bbox_center.h, crop_bbox_center.w
             scale_x = min(scale_x, float(im_w) / w)
             scale_y = min(scale_y, float(im_h) / h)
@@ -158,8 +158,8 @@ class Augmentation:
 
         crop_bbox = center2corner(crop_bbox_center)
         if self.shift:
-            sx = Augmentation.random() * self.shift
-            sy = Augmentation.random() * self.shift
+            sx = SiamRPNaugmentation.random() * self.shift
+            sy = SiamRPNaugmentation.random() * self.shift
 
             x1, y1, x2, y2 = crop_bbox
 
