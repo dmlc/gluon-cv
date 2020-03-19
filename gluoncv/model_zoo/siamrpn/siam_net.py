@@ -4,6 +4,7 @@ Code adapted from https://github.com/STVIR/pysot"""
 # pylint: disable=arguments-differ,unused-argument
 from mxnet.gluon.block import HybridBlock
 from mxnet.context import cpu
+import mxnet as mx
 from gluoncv.model_zoo.siamrpn.siam_alexnet import alexnetlegacy
 from gluoncv.model_zoo.siamrpn.siam_rpn import DepthwiseRPN
 
