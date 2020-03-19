@@ -95,7 +95,7 @@ def parse_args():
 
     # logging and checkpoint saving
     if not os.path.exists(opt.save_dir):
-        makedirs(opt.save_dir)
+        os.makedirs(opt.save_dir)
 
     # Synchronized BatchNorm
     opt.norm_layer = mx.gluon.contrib.nn.SyncBatchNorm if opt.syncbn \
