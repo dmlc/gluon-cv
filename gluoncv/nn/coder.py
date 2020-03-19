@@ -255,10 +255,15 @@ class NormalizedBoxCenterDecoder(gluon.HybridBlock):
         If given, bounding box target will be clipped to this value.
     convert_anchor : boolean, default is False
         Whether to convert anchor from corner to center format.
-
+    minimal_opset : bool
+        We sometimes add special operators to accelerate training/inference, however, for exporting
+        to third party compilers we want to utilize most widely used operators.
+        If `minimal_opset` is `True`, the network will use a minimal set of operators good
+        for e.g., `TVM`.
     """
 
-    def __init__(self, stds=(0.1, 0.1, 0.2, 0.2), convert_anchor=False, clip=None):
+    def __init__(self, stds=(0.1, 0.1, 0.2, 0.2), convert_anchor=False, clip=None,
+                 minimal_opset=False):
         super(NormalizedBoxCenterDecoder, self).__init__()
         assert len(stds) == 4, "Box Encoder requires 4 std values."
         self._stds = stds
@@ -268,9 +273,10 @@ class NormalizedBoxCenterDecoder(gluon.HybridBlock):
         else:
             self.corner_to_center = None
         self._format = 'corner' if convert_anchor else 'center'
+        self._minimal_opset = minimal_opset
 
     def hybrid_forward(self, F, x, anchors):
-        if 'box_decode' in F.contrib.__dict__:
+        if not self._minimal_opset and 'box_decode' in F.contrib.__dict__:
             x, anchors = F.amp_multicast(x, anchors, num_outputs=2, cast_narrow=True)
             if self._clip is None:
                 self._clip = -1  # match the signature of c++ operator

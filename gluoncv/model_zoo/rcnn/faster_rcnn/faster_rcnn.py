@@ -125,9 +125,11 @@ class FasterRCNN(RCNN):
     force_nms : bool, default is False
         Appy NMS to all categories, this is to avoid overlapping detection results from different
         categories.
-    export_mode : bool, default is False
-        Temporary work around for exporting R-CNN models as some of the parameters are not needed
-        in forward. eg. *normalizedperclassboxcenterencoder*
+    minimal_opset : bool, default is `False`
+        We sometimes add special operators to accelerate training/inference, however, for exporting
+        to third party compilers we want to utilize most widely used operators.
+        If `minimal_opset` is `True`, the network will use a minimal set of operators good
+        for e.g., `TVM`.
 
     Attributes
     ----------
@@ -169,7 +171,7 @@ class FasterRCNN(RCNN):
                  rpn_train_pre_nms=12000, rpn_train_post_nms=2000, rpn_test_pre_nms=6000,
                  rpn_test_post_nms=300, rpn_min_size=16, per_device_batch_size=1, num_sample=128,
                  pos_iou_thresh=0.5, pos_ratio=0.25, max_num_gt=300, additional_output=False,
-                 force_nms=False, export_mode=False, **kwargs):
+                 force_nms=False, minimal_opset=False, **kwargs):
         super(FasterRCNN, self).__init__(
             features=features, top_features=top_features, classes=classes,
             box_features=box_features, short=short, max_size=max_size,
@@ -195,7 +197,7 @@ class FasterRCNN(RCNN):
         self._batch_size = per_device_batch_size
         self._num_sample = num_sample
         self._rpn_test_post_nms = rpn_test_post_nms
-        if export_mode:
+        if minimal_opset:
             self._target_generator = None
         else:
             self._target_generator = RCNNTargetGenerator(self.num_class,
@@ -496,7 +498,7 @@ def get_faster_rcnn(name, dataset, pretrained=False, ctx=mx.cpu(),
         The Faster-RCNN network.
 
     """
-    net = FasterRCNN(**kwargs)
+    net = FasterRCNN(minimal_opset=pretrained, **kwargs)
     if pretrained:
         from ....model_zoo.model_store import get_model_file
         full_name = '_'.join(('faster_rcnn', name, dataset))
