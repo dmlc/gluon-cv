@@ -1,6 +1,4 @@
-import sys
 import numpy as np
-import mxnet as mx
 from mxnet.gluon import contrib
 from mxnet.gluon import nn
 from mxnet.gluon.nn import BatchNorm
@@ -9,8 +7,8 @@ from mxnet.context import cpu
 from .resnet import BasicBlockV1, BottleneckV1
 
 __all__ = ['get_hrnet', 'hrnet_w18_small_v1_c', 'hrnet_w18_small_v2_c', 'hrnet_w30_c',
-             'hrnet_w32_c', 'hrnet_w40_c', 'hrnet_w44_c', 'hrnet_w48_c', 
-             'hrnet_w18_small_v1_s', 'hrnet_w18_small_v2_s', 'hrnet_w48_s']
+           'hrnet_w32_c', 'hrnet_w40_c', 'hrnet_w44_c', 'hrnet_w48_c',
+           'hrnet_w18_small_v1_s', 'hrnet_w18_small_v2_s', 'hrnet_w48_s']
 class HRBasicBlock(BasicBlockV1):
     expansion = 1
 
@@ -21,16 +19,16 @@ class HighResolutionModule(nn.HybridBlock):
     '''
     interp_type can be 'nearest'/'bilinear'/'bilinear_like'
     '''
-    def __init__(self, num_branches, blocks, num_blocks,num_channels, fuse_method,
-            num_inchannels=None, multi_scale_output=True, interp_type='nearest',
-            norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
+    def __init__(self, num_branches, blocks, num_blocks, num_channels, fuse_method,
+                 num_inchannels=None, multi_scale_output=True, interp_type='nearest',
+                 norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
         super(HighResolutionModule, self).__init__()
 
         if num_inchannels is not None:
             self.num_inchannels = num_inchannels
         else:
             self.num_inchannels = num_channels
-            
+
         self.fuse_method = fuse_method
         self.num_branches = num_branches
 
@@ -44,18 +42,20 @@ class HighResolutionModule(nn.HybridBlock):
 
     def _make_one_branch(self, branch_index, block, num_blocks, num_channels,
                          stride=1):
-        if stride != 1 or  self.num_inchannels[branch_index] != num_channels[branch_index] * block.expansion:
+        if stride != 1 or  self.num_inchannels[branch_index] != \
+            num_channels[branch_index] * block.expansion:
             downsample = True
         else:
             downsample = False
 
         layers = nn.HybridSequential()
-        layers.add(block(num_channels[branch_index]* block.expansion, stride, downsample, self.num_inchannels[branch_index]))
+        layers.add(block(num_channels[branch_index]* block.expansion, stride,
+                         downsample, self.num_inchannels[branch_index]))
         self.num_inchannels[branch_index] = \
                 num_channels[branch_index] * block.expansion
         for i in range(1, num_blocks[branch_index]):
-            layers.add(block(num_channels[branch_index]* block.expansion, 1, False, self.num_inchannels[branch_index]))
-
+            layers.add(block(num_channels[branch_index]* block.expansion, 1,
+                             False, self.num_inchannels[branch_index]))
 
         return layers
 
@@ -67,7 +67,6 @@ class HighResolutionModule(nn.HybridBlock):
             branches.add(
                 self._make_one_branch(i, block, num_blocks, num_channels)
             )
-        
         return branches
 
     def _make_fuse_layers(self, norm_layer=BatchNorm, norm_kwargs=None):
@@ -79,7 +78,6 @@ class HighResolutionModule(nn.HybridBlock):
         fuse_layers = nn.HybridSequential()
         for i in range(num_branches if self.multi_scale_output else 1):
             fuse_layer = nn.HybridSequential()
-            
             for j in range(num_branches):
                 if j > i:
                     seq = nn.HybridSequential()
@@ -109,7 +107,7 @@ class HighResolutionModule(nn.HybridBlock):
                             )
                     fuse_layer.add(conv3x3s)
             fuse_layers.add(fuse_layer)
-        
+
         return fuse_layers
 
     def get_num_inchannels(self):
@@ -119,12 +117,12 @@ class HighResolutionModule(nn.HybridBlock):
         x = self.branches[0](x)
         if self.num_branches == 1:
             return [x]
-        
+
         X = []
         X.append(x)
 
         for i in range(1, self.num_branches):
-            X.append( self.branches[i](args[i-1]))
+            X.append(self.branches[i](args[i-1]))
 
         x_fuse = []
         for i in range(len(self.fuse_layers)):
@@ -157,38 +155,37 @@ class HighResolutionModule(nn.HybridBlock):
                     y = y + self.fuse_layers[i][j](X[j])
             x_fuse.append(self.relu(y))
 
-        return x_fuse   
+        return x_fuse
 
-BN_MOMENTUM = 0.9
-
-blocks_dict = {
+BLOCKS_DICT = {
     'BASIC': HRBasicBlock,
     'BOTTLENECK': HRBottleneck
 }
 
 class HighResolutionBaseNet(nn.HybridBlock):
-    def __init__(self, cfg, stage_interp_type='nearst', norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
+    def __init__(self, cfg, stage_interp_type='nearst', norm_layer=BatchNorm, \
+                 norm_kwargs=None, **kwargs):
         self.stage_interp_type = stage_interp_type
         super(HighResolutionBaseNet, self).__init__()
 
         self.conv1 = nn.Conv2D(64, kernel_size=3, strides=2, padding=1,
-                use_bias=False)
+                               use_bias=False)
         self.bn1 = norm_layer(**({} if norm_kwargs is None else norm_kwargs))
         self.conv2 = nn.Conv2D(64, kernel_size=3, strides=2, padding=1,
-                use_bias=False)
+                               use_bias=False)
         self.bn2 = norm_layer(**({} if norm_kwargs is None else norm_kwargs))
         self.relu = nn.Activation('relu')
 
         self.stage1_cfg = cfg[0]
         num_channels = self.stage1_cfg[3][0]
-        block = blocks_dict[self.stage1_cfg[1]]
+        block = BLOCKS_DICT[self.stage1_cfg[1]]
         num_blocks = self.stage1_cfg[2][0]
         self.layer1 = self._make_layer(block, num_channels, num_blocks, inplanes=64)
         stage1_out_channel = block.expansion*num_channels
 
         self.stage2_cfg = cfg[1]
         num_channels = self.stage2_cfg[3]
-        block = blocks_dict[self.stage2_cfg[1]]
+        block = BLOCKS_DICT[self.stage2_cfg[1]]
         num_channels = [
             num_channels[i] * block.expansion for i in range(len(num_channels))]
         self.transition1 = self._make_transition_layer(
@@ -198,7 +195,7 @@ class HighResolutionBaseNet(nn.HybridBlock):
 
         self.stage3_cfg = cfg[2]
         num_channels = self.stage3_cfg[3]
-        block = blocks_dict[self.stage3_cfg[1]]
+        block = BLOCKS_DICT[self.stage3_cfg[1]]
         num_channels = [
             num_channels[i] * block.expansion for i in range(len(num_channels))]
         self.transition2 = self._make_transition_layer(
@@ -208,7 +205,7 @@ class HighResolutionBaseNet(nn.HybridBlock):
 
         self.stage4_cfg = cfg[3]
         num_channels = self.stage4_cfg[3]
-        block = blocks_dict[self.stage4_cfg[1]]
+        block = BLOCKS_DICT[self.stage4_cfg[1]]
         num_channels = [
             num_channels[i] * block.expansion for i in range(len(num_channels))]
         self.transition3 = self._make_transition_layer(
@@ -218,20 +215,20 @@ class HighResolutionBaseNet(nn.HybridBlock):
 
         self.pre_stage_channels = pre_stage_channels
 
-    def _make_transition_layer(
-            self, num_channels_pre_layer, num_channels_cur_layer, norm_layer=BatchNorm, norm_kwargs=None):
+    def _make_transition_layer(self, num_channels_pre_layer, num_channels_cur_layer,
+                               norm_layer=BatchNorm, norm_kwargs=None):
         num_branches_cur = len(num_channels_cur_layer)
-        num_branches_pre = len(num_channels_pre_layer)  
+        num_branches_pre = len(num_channels_pre_layer)
 
         transition_layers = nn.HybridSequential()
-        
+
         for i in range(num_branches_cur):
             if i < num_branches_pre:
                 if num_channels_cur_layer[i] != num_channels_pre_layer[i]:
                     transition_layer = nn.HybridSequential()
                     transition_layer.add(
-                        nn.Conv2D(num_channels_cur_layer[i], 3, 1, 1
-                            , use_bias=False, in_channels=num_channels_pre_layer[i]),
+                        nn.Conv2D(num_channels_cur_layer[i], 3, 1, 1,
+                                  use_bias=False, in_channels=num_channels_pre_layer[i]),
                         norm_layer(**({} if norm_kwargs is None else norm_kwargs)),
                         nn.Activation('relu')
                     )
@@ -246,8 +243,8 @@ class HighResolutionBaseNet(nn.HybridBlock):
                         if j == i-num_branches_pre else inchannels
                     cba = nn.HybridSequential()
                     cba.add(
-                        nn.Conv2D(outchannels, 3, 2, 1
-                            , use_bias=False, in_channels=inchannels),
+                        nn.Conv2D(outchannels, 3, 2, 1,
+                                  use_bias=False, in_channels=inchannels),
                         norm_layer(**({} if norm_kwargs is None else norm_kwargs)),
                         nn.Activation('relu')
                     )
@@ -275,7 +272,7 @@ class HighResolutionBaseNet(nn.HybridBlock):
         num_blocks = layer_config[2]
         num_branches = len(num_blocks)
         num_channels = layer_config[3]
-        block = blocks_dict[layer_config[1]]
+        block = BLOCKS_DICT[layer_config[1]]
         fuse_method = layer_config[4]
 
         blocks = nn.HybridSequential()
@@ -285,19 +282,17 @@ class HighResolutionBaseNet(nn.HybridBlock):
                 reset_multi_scale_output = False
             else:
                 reset_multi_scale_output = True
-            hrm  =  HighResolutionModule(num_branches,
-                        block,
-                        num_blocks,
-                        num_channels,
-                        fuse_method,
-                        num_inchannels,
-                        reset_multi_scale_output,
-                        self.stage_interp_type)
-            blocks.add(
-                    hrm
-                )
+            hrm = HighResolutionModule(num_branches,
+                                       block,
+                                       num_blocks,
+                                       num_channels,
+                                       fuse_method,
+                                       num_inchannels,
+                                       reset_multi_scale_output,
+                                       self.stage_interp_type)
+            blocks.add(hrm)
             num_inchannels = hrm.get_num_inchannels()
-        
+
         return blocks, num_inchannels
 
     def hybrid_forward(self, F, x): # , *args, **kwargs):
@@ -307,12 +302,12 @@ class HighResolutionBaseNet(nn.HybridBlock):
         x = self.conv2(x)
         x = self.bn2(x)
         x = self.relu(x)
-        x = self.layer1(x)        
+        x = self.layer1(x)
         x_list = []
 
         for i in range(len(self.stage2_cfg[2])):
             x_list.append(self.transition1[i](x))
-        
+
         y_list = x_list
         for s in self.stage2:
             y_list = s(*y_list)
@@ -337,14 +332,15 @@ class HighResolutionBaseNet(nn.HybridBlock):
 
         y_list = x_list
         for s in self.stage4:
-            y_list = s(*y_list)        
+            y_list = s(*y_list)
 
         return y_list
 
 class HighResolutionClsNet(HighResolutionBaseNet):
-    def __init__(self, config, stage_interp_type='nearest', norm_layer=BatchNorm, norm_kwargs=None, num_classes=1000, **kwargs):
+    def __init__(self, config, stage_interp_type='nearest', norm_layer=BatchNorm, norm_kwargs=None,
+                 num_classes=1000, **kwargs):
         super(HighResolutionClsNet, self).__init__(config, stage_interp_type=stage_interp_type,
-            norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+                                                   norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
         # Classification Head
         self.incre_blocks, self.downsamp_blocks, \
@@ -377,10 +373,10 @@ class HighResolutionClsNet(HighResolutionBaseNet):
         incre_blocks = nn.HybridSequential()
         for i, channels in enumerate(pre_stage_channels):
             incre_block = self._make_layer(head_block,
-                                            head_channels[i],
-                                            1,
-                                            channels,
-                                            stride=1)
+                                           head_channels[i],
+                                           1,
+                                           channels,
+                                           stride=1)
             incre_blocks.add(incre_block)
 
         downsamp_blocks = nn.HybridSequential()
@@ -406,17 +402,16 @@ class HighResolutionClsNet(HighResolutionBaseNet):
         return incre_blocks, downsamp_blocks, final_layer
 
 class HighResolutionSegNet(HighResolutionBaseNet):
-    def __init__(self, config, stage_interp_type='bilinear_like', norm_layer=BatchNorm, norm_kwargs=None, num_classes=19, **kwargs):
+    def __init__(self, config, stage_interp_type='bilinear_like', norm_layer=BatchNorm,
+                 norm_kwargs=None, num_classes=19, **kwargs):
         super(HighResolutionSegNet, self).__init__(config, stage_interp_type=stage_interp_type,
-            norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+                                                   norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
         self.last_layer = self._make_head(self.pre_stage_channels,
-                norm_layer=norm_layer,
-                norm_kwargs=norm_kwargs,
-                num_classes=num_classes,
-                **kwargs
-                )
-
+                                          norm_layer=norm_layer,
+                                          norm_kwargs=norm_kwargs,
+                                          num_classes=num_classes,
+                                          **kwargs)
 
     def hybrid_forward(self, F, x):
         y_list = super(HighResolutionSegNet, self).hybrid_forward(F, x)
@@ -432,7 +427,8 @@ class HighResolutionSegNet(HighResolutionBaseNet):
 
         return y
 
-    def _make_head(self, pre_stage_channels, norm_layer=BatchNorm, norm_kwargs=None, num_classes=19, final_conv_kernel=1):
+    def _make_head(self, pre_stage_channels, norm_layer=BatchNorm, norm_kwargs=None,
+                   num_classes=19, final_conv_kernel=1):
         last_inp_channels = np.int(np.sum(pre_stage_channels))
 
         last_layer = nn.HybridSequential()
@@ -453,69 +449,72 @@ class HighResolutionSegNet(HighResolutionBaseNet):
         )
         return last_layer
 
-hrnet_spec = {}
-hrnet_spec['w18_small_v1'] = [
+# pylint: disable=C0326
+HRNET_SPEC = {}
+HRNET_SPEC['w18_small_v1'] = [
     #modules, block_type, blocks, channels, fuse_method
-    (1,    'BOTTLENECK', [1],           [32],           'SUM'),
-    (1,    'BASIC',      [2]*2,         [16,32],        'SUM'),
-    (1,    'BASIC',      [2]*3,         [16,32,64],     'SUM'),
-    (1,    'BASIC',      [2]*4,         [16,32,64,128],' SUM')
+    (1,    'BOTTLENECK', [1],           [32],              'SUM'),
+    (1,    'BASIC',      [2]*2,         [16, 32],          'SUM'),
+    (1,    'BASIC',      [2]*3,         [16, 32, 64],      'SUM'),
+    (1,    'BASIC',      [2]*4,         [16, 32, 64, 128], 'SUM')
 ]
 
-hrnet_spec['w18_small_v2'] = [
+HRNET_SPEC['w18_small_v2'] = [
     #modules, block_type, blocks, channels, fuse_method
-    (1,    'BOTTLENECK', [2],           [64],           'SUM'),
-    (1,    'BASIC',      [2]*2,         [18,36],        'SUM'),
-    (3,    'BASIC',      [2]*3,         [18,36,72],     'SUM'),
-    (2,    'BASIC',      [2]*4,         [18,36,72,144], 'SUM')
+    (1,    'BOTTLENECK', [2],           [64],               'SUM'),
+    (1,    'BASIC',      [2]*2,         [18, 36],           'SUM'),
+    (3,    'BASIC',      [2]*3,         [18, 36, 72],       'SUM'),
+    (2,    'BASIC',      [2]*4,         [18, 36, 72, 144],  'SUM')
 ]
 
-hrnet_spec['w30'] = [
+HRNET_SPEC['w30'] = [
     #modules, block_type, blocks, channels, fuse_method
-    (1,    'BOTTLENECK', [4],           [64],           'SUM'),
-    (1,    'BASIC',      [4]*2,         [30,60],        'SUM'),
-    (4,    'BASIC',      [4]*3,         [30,60,120],    'SUM'),
-    (3,    'BASIC',      [4]*4,         [30,60,120,240],'SUM')
+    (1,    'BOTTLENECK', [4],           [64],               'SUM'),
+    (1,    'BASIC',      [4]*2,         [30, 60],           'SUM'),
+    (4,    'BASIC',      [4]*3,         [30, 60, 120],      'SUM'),
+    (3,    'BASIC',      [4]*4,         [30, 60, 120, 240], 'SUM')
 ]
 
-hrnet_spec['w32'] = [
+HRNET_SPEC['w32'] = [
     #modules, block_type, blocks, channels, fuse_method
-    (1,    'BOTTLENECK', [4],           [64],           'SUM'),
-    (1,    'BASIC',      [4]*2,         [32,64],        'SUM'),
-    (4,    'BASIC',      [4]*3,         [32,64,128],    'SUM'),
-    (3,    'BASIC',      [4]*4,         [32,64,128,256],'SUM')
+    (1,    'BOTTLENECK', [4],           [64],               'SUM'),
+    (1,    'BASIC',      [4]*2,         [32, 64],           'SUM'),
+    (4,    'BASIC',      [4]*3,         [32, 64, 128],      'SUM'),
+    (3,    'BASIC',      [4]*4,         [32, 64, 128, 256], 'SUM')
 ]
 
 
-hrnet_spec['w40'] = [
+HRNET_SPEC['w40'] = [
     #modules, block_type, blocks, channels, fuse_method
-    (1,    'BOTTLENECK', [4],           [64],           'SUM'),
-    (1,    'BASIC',      [4]*2,         [40,80],        'SUM'),
-    (4,    'BASIC',      [4]*3,         [40,80,160],    'SUM'),
-    (3,    'BASIC',      [4]*4,         [40,80,160,320],'SUM')
+    (1,    'BOTTLENECK', [4],           [64],               'SUM'),
+    (1,    'BASIC',      [4]*2,         [40, 80],           'SUM'),
+    (4,    'BASIC',      [4]*3,         [40, 80, 160],      'SUM'),
+    (3,    'BASIC',      [4]*4,         [40, 80, 160, 320], 'SUM')
 ]
 
-hrnet_spec['w44'] = [
+HRNET_SPEC['w44'] = [
     #modules, block_type, blocks, channels, fuse_method
-    (1,    'BOTTLENECK', [4],           [64],           'SUM'),
-    (1,    'BASIC',      [4]*2,         [44,88],        'SUM'),
-    (4,    'BASIC',      [4]*3,         [44,88,176],    'SUM'),
-    (3,    'BASIC',      [4]*4,         [44,88,176,352],'SUM')
+    (1,    'BOTTLENECK', [4],           [64],               'SUM'),
+    (1,    'BASIC',      [4]*2,         [44, 88],           'SUM'),
+    (4,    'BASIC',      [4]*3,         [44, 88, 176],      'SUM'),
+    (3,    'BASIC',      [4]*4,         [44, 88, 176, 352], 'SUM')
 ]
 
-hrnet_spec['w48'] = [
+HRNET_SPEC['w48'] = [
     #modules, block_type, blocks, channels, fuse_method
-    (1,    'BOTTLENECK', [4],           [64],           'SUM'),
-    (1,    'BASIC',      [4]*2,         [48,96],        'SUM'),
-    (4,    'BASIC',      [4]*3,         [48,96,192],    'SUM'),
-    (3,    'BASIC',      [4]*4,         [48,96,192,384],'SUM')
+    (1,    'BOTTLENECK', [4],           [64],               'SUM'),
+    (1,    'BASIC',      [4]*2,         [48, 96],           'SUM'),
+    (4,    'BASIC',      [4]*3,         [48, 96, 192],      'SUM'),
+    (3,    'BASIC',      [4]*4,         [48, 96, 192, 384], 'SUM')
 ]
+# pylint: enable=C0326
 
 def get_hrnet(model_name, stage_interp_type='nearest', purpose='cls', pretrained=False, ctx=cpu(),
-                 root='~/.mxnet/models', norm_layer=BatchNorm, norm_kwargs=None, num_classes=1000, **kwargs):
-    r"""MobileNet model from the
-    `"Searching for MobileNetV3"
-    <https://arxiv.org/abs/1905.02244>`_ paper.
+              root='~/.mxnet/models', norm_layer=BatchNorm, norm_kwargs=None, num_classes=1000,
+              **kwargs):
+    r"""HRNet model from the
+    `"Deep High-Resolution Representation Learning for Visual Recognition"
+    <https://arxiv.org/pdf/1908.07919>`_ paper.
 
     Parameters
     ----------
@@ -540,54 +539,73 @@ def get_hrnet(model_name, stage_interp_type='nearest', purpose='cls', pretrained
         Additional `norm_layer` arguments, for example `num_devices=4`
         for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
-    if model_name not in hrnet_spec.keys():
+    if model_name not in HRNET_SPEC.keys():
         raise NotImplementedError
 
-    spec = hrnet_spec[model_name]
+    spec = HRNET_SPEC[model_name]
 
     if purpose == 'cls':
         net = HighResolutionClsNet(spec, stage_interp_type, norm_layer,
-            norm_kwargs, num_classes, **kwargs)
+                                   norm_kwargs, num_classes, **kwargs)
     elif purpose == 'seg':
         net = HighResolutionSegNet(spec, stage_interp_type, norm_layer,
-            norm_kwargs, num_classes, **kwargs)
+                                   norm_kwargs, num_classes, **kwargs)
     else:
         raise NotImplementedError
 
     if pretrained:
         raise RuntimeError('Pretrained model of hrnet is not available now.')
-    
     return net
 
 def hrnet_w18_small_v1_c(**kwargs):
+    r"""hhrnet_w18_small_v1 for Imagenet classification
+    """
     return get_hrnet('w18_small_v1', **kwargs)
 
 def hrnet_w18_small_v2_c(**kwargs):
+    r"""hhrnet_w18_small_v2 for Imagenet classification
+    """
     return get_hrnet('w18_small_v2', **kwargs)
 
 def hrnet_w30_c(**kwargs):
+    r"""hhrnet_w30 for Imagenet classification
+    """
     return get_hrnet('w30', **kwargs)
 
 def hrnet_w32_c(**kwargs):
+    r"""hhrnet_w32 for Imagenet classification
+    """
     return get_hrnet('w32', **kwargs)
 
 def hrnet_w40_c(**kwargs):
+    r"""hhrnet_w40 for Imagenet classification
+    """
     return get_hrnet('w40', **kwargs)
 
 def hrnet_w44_c(**kwargs):
+    r"""hhrnet_w44 for Imagenet classification
+    """
     return get_hrnet('w44', **kwargs)
 
 def hrnet_w48_c(**kwargs):
+    r"""hhrnet_w48 for Imagenet classification
+    """
     return get_hrnet('w48', **kwargs)
 
 def hrnet_w18_small_v1_s(**kwargs):
+    r"""hrnet_w18_small_v1 for cityscapes segmentation
+    """
     return get_hrnet('w18_small_v1', stage_interp_type='bilinear_like', purpose='seg',
-        norm_kwargs={'momentum': 0.99}, num_classes=19, **kwargs)
+                     norm_kwargs={'momentum': 0.99}, num_classes=19, **kwargs)
 
 def hrnet_w18_small_v2_s(**kwargs):
+    r"""hrnet_w18_small_v2 for cityscapes segmentation
+    """
     return get_hrnet('w18_small_v1', stage_interp_type='bilinear_like', purpose='seg',
-        norm_kwargs={'momentum': 0.99}, num_classes=19, **kwargs)
+                     norm_kwargs={'momentum': 0.99}, num_classes=19, **kwargs)
 
 def hrnet_w48_s(**kwargs):
+    r"""hrnet_w48 for cityscapes segmentation
+    """
     return get_hrnet('w48', stage_interp_type='bilinear_like', purpose='seg',
-        norm_kwargs={'momentum': 0.99}, num_classes=19, **kwargs)
+                     norm_kwargs={'momentum': 0.99}, num_classes=19, **kwargs)
