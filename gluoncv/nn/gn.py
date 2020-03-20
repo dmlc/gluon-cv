@@ -27,6 +27,8 @@ class GroupNorm(HybridBlock):
         Initializer for the beta weight.
     gamma_initializer: str or `Initializer`, default 'ones'
         Initializer for the gamma weight.
+    scale: bool, default True
+        If True, multiply by `gamma`. If False, `gamma` is not used.
 
     Inputs:
         - **data**: input tensor with arbitrary shape.
@@ -35,11 +37,12 @@ class GroupNorm(HybridBlock):
         - **out**: output tensor with the same shape as `data`.
     """
     def __init__(self, ngroups=32, in_channels=0, axis=1, epsilon=1e-5,
-                 beta_initializer='zeros', gamma_initializer='ones', **kwargs):
+                 beta_initializer='zeros', gamma_initializer='ones', scale=True, **kwargs):
         super(GroupNorm, self).__init__(**kwargs)
         self._kwargs = {'axis': axis, 'eps': epsilon, 'momentum': 0,
                         'fix_gamma': True, 'use_global_stats': False}
         self.ngroups = ngroups
+        self.scale = scale
         assert in_channels % ngroups == 0, "Channel number should be divisible by groups."
         if in_channels != 0:
             self.in_channels = in_channels
@@ -51,7 +54,7 @@ class GroupNorm(HybridBlock):
                                     shape=(in_channels,), init=beta_initializer,
                                     allow_deferred_init=True, differentiable=True)
         # hacky
-        self.inited = False
+        self.inited = False # orphan?
 
     def cast(self, dtype):
         if np.dtype(dtype).name == 'float16':
@@ -72,7 +75,10 @@ class GroupNorm(HybridBlock):
                             name='fwd', **self._kwargs)
         # scale and shift
         y = y.reshape_like(x).reshape(0, 0, -1)
-        y = y * gamma.reshape(1, -1, 1) + beta.reshape(1, -1, 1)
+        if self.scale:
+            y = y * gamma.reshape(1, -1, 1) + beta.reshape(1, -1, 1)
+        else:
+            y = y + beta.reshape(1, -1, 1)
         return y.reshape_like(x)
 
     def __repr__(self):
