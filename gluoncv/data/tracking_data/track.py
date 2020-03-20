@@ -11,13 +11,14 @@ import json
 import logging
 import os
 import numpy as np
-
+import pdb
 from mxnet.gluon.data import dataset
 from gluoncv.utils.filesystem import try_import_cv2
 from gluoncv.model_zoo.siamrpn.siamrpn_tracker import corner2center, center2corner
 from gluoncv.model_zoo.siamrpn.siamrpn_tracker import Center, Anchors
 from gluoncv.data.transforms.track import SiamRPNaugmentation
 from gluoncv.utils.metrics.tracking import Iou
+from gluoncv.utils.bbox import bbox_iou
 
 class SubDataset(object):
     """Load the subdataset for tracking.
@@ -252,12 +253,17 @@ class TrkDataset(dataset.Dataset):
     """
     def __init__(self,
                  data_path=os.path.expanduser('~/.mxnet/datasets'),
-                 dataset_names=('vid', 'yt_bb', 'coco', 'det'),
-                 detaset_root=('vid/crop511', 'yt_bb/crop511', 'coco/crop511', 'det/crop511'),
-                 detaset_anno=('vid/train.json', 'yt_bb/train.json', 'coco/train2017.json',
-                               'det/train.json'),
-                 dataset_frame_range=(100, 3, 1, 1),
-                 dataset_num_use=(100000, -1, -1, -1),
+                #  dataset_names=('vid', 'yt_bb', 'coco', 'det'),
+                #  detaset_root=('vid/crop511', 'yt_bb/crop511', 'coco/crop511', 'det/crop511'),
+                #  detaset_anno=('vid/train.json', 'yt_bb/train.json', 'coco/train2017.json',
+                #                'det/train.json'),
+                #  dataset_frame_range=(100, 3, 1, 1),
+                #  dataset_num_use=(100000, -1, -1, -1),
+                 dataset_names=('vid',),
+                 detaset_root=('vid/crop511',),
+                 detaset_anno=('vid/train.json',),
+                 dataset_frame_range=(100,),
+                 dataset_num_use=(100000,),
                  train_search_size=255,
                  train_exemplar_size=127,
                  anchor_stride=8,
@@ -509,6 +515,14 @@ class AnchorTarget:
             np.random.shuffle(slt)
             slt = slt[:keep_num]
             return tuple(p[slt] for p in position), keep_num
+        # def select(position, keep_num=16):
+        #     num = position.shape[0]
+        #     if num <= keep_num:
+        #         return position, num
+        #     slt = np.arange(num)
+        #     np.random.shuffle(slt)
+        #     slt = slt[:keep_num]
+        #     return tuple(p[slt] for p in position), keep_num
 
         tcx, tcy, tw, th = corner2center(target)
 
@@ -546,10 +560,12 @@ class AnchorTarget:
         delta[2] = np.log(tw / w)
         delta[3] = np.log(th / h)
 
-        overlap = Iou([x1, y1, x2, y2], target)
+        target_temple = np.array([target[0], target[1], target[2], target[3]]).reshape(1, -1)
+        bbox_temple = np.array([x1, y1, x2, y2]).reshape(4, -1).T
+        overlap = bbox_iou(bbox_temple, target_temple)
+        overlap = overlap.reshape(-1, self.train_output_size, self.train_output_size)
         pos = np.where(overlap > self.train_thr_high)
         neg = np.where(overlap < self.train_thr_low)
-
         pos, pos_num = select(pos, self.train_pos_num)
         neg, _ = select(neg, self.train_total_num - self.train_pos_num)
 
