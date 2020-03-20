@@ -509,14 +509,6 @@ class AnchorTarget:
             np.random.shuffle(slt)
             slt = slt[:keep_num]
             return tuple(p[slt] for p in position), keep_num
-        # def select(position, keep_num=16):
-        #     num = position.shape[0]
-        #     if num <= keep_num:
-        #         return position, num
-        #     slt = np.arange(num)
-        #     np.random.shuffle(slt)
-        #     slt = slt[:keep_num]
-        #     return tuple(p[slt] for p in position), keep_num
 
         tcx, tcy, tw, th = corner2center(target)
 
