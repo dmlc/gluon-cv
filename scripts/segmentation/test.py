@@ -17,10 +17,10 @@ from gluoncv.model_zoo.segbase import *
 from gluoncv.model_zoo import get_model
 from gluoncv.data import get_segmentation_dataset, ms_batchify_fn
 from gluoncv.utils.viz import get_color_pallete
+from gluoncv.utils.parallel import *
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='Validation on Segmentation model')
-    # model and dataset
+    parser = argparse.ArgumentParser(description='Validation on Semantic Segmentation model')
     parser.add_argument('--model', type=str, default='fcn',
                         help='model name (default: fcn)')
     parser.add_argument('--backbone', type=str, default='resnet101',
@@ -35,13 +35,17 @@ def parse_args():
                         help='base image size')
     parser.add_argument('--crop-size', type=int, default=480,
                         help='crop image size')
+    parser.add_argument('--height', type=int, default=None,
+                        help='height of original image size')
+    parser.add_argument('--width', type=int, default=None,
+                        help='width of original image size')
     parser.add_argument('--mode', type=str, default='val',
                         help='val, testval')
     parser.add_argument('--dataset', type=str, default='pascal_voc',
                         help='dataset used for validation [pascal_voc, pascal_aug, coco, ade20k]')
     parser.add_argument('--quantized', action='store_true',
                         help='whether to use int8 pretrained  model')
-    parser.add_argument('--batch-size', type=int, default=32)
+    parser.add_argument('--batch-size', type=int, default=16)
     parser.add_argument('--num-iterations', type=int, default=100,
                         help='number of benchmarking iterations.')
     parser.add_argument('--workers', type=int, default=4,
@@ -53,12 +57,10 @@ def parse_args():
                         help='number of GPUs (default: 4)')
     parser.add_argument('--aux', action='store_true', default=False,
                         help='Auxiliary loss')
-    # synchronized Batch Normalization
     parser.add_argument('--syncbn', action='store_true', default=False,
                         help='using Synchronized Cross-GPU BatchNorm')
     parser.add_argument('--resume', type=str, default=None,
                         help='put the path to resuming file if needed')
-    # evaluation only
     parser.add_argument('--eval', action='store_true', default=False,
                         help='evaluation only')
     # dummy benchmark
@@ -96,49 +98,76 @@ def parse_args():
     args.norm_kwargs = {'num_devices': args.ngpus} if args.syncbn else {}
     return args
 
-
 def test(model, args, input_transform):
     # DO NOT modify!!! Only support batch_size=ngus
     batch_size = args.ngpus
+
     # output folder
     outdir = 'outdir'
     if not os.path.exists(outdir):
         os.makedirs(outdir)
+
     # get dataset
     if args.eval:
         testset = get_segmentation_dataset(
             args.dataset, split='val', mode='testval', transform=input_transform)
-        total_inter, total_union, total_correct, total_label = \
-            np.int64(0), np.int64(0), np.int64(0), np.int64(0)
     else:
         testset = get_segmentation_dataset(
             args.dataset, split='test', mode='test', transform=input_transform)
-    test_data = gluon.data.DataLoader(
-        testset, batch_size, shuffle=False, last_batch='keep',
-        batchify_fn=ms_batchify_fn, num_workers=args.workers)
+
+    if 'icnet' in args.model:
+        test_data = gluon.data.DataLoader(
+            testset, batch_size, shuffle=False, last_batch='rollover',
+            num_workers=args.workers)
+    else:
+        test_data = gluon.data.DataLoader(
+            testset, batch_size, shuffle=False, last_batch='rollover',
+            batchify_fn=ms_batchify_fn, num_workers=args.workers)
     print(model)
-    evaluator = MultiEvalModel(model, testset.num_class, ctx_list=args.ctx)
+
+    if 'icnet' in args.model:
+        evaluator = DataParallelModel(SegEvalModel(model, use_predict=True), ctx_list=args.ctx)
+    else:
+        evaluator = MultiEvalModel(model, testset.num_class, ctx_list=args.ctx)
+
     metric = gluoncv.utils.metrics.SegmentationMetric(testset.num_class)
 
-    tbar = tqdm(test_data)
-    for i, (data, dsts) in enumerate(tbar):
-        if args.eval:
-            predicts = [pred[0] for pred in evaluator.parallel_forward(data)]
-            targets = [target.as_in_context(predicts[0].context) \
-                       for target in dsts]
-            metric.update(targets, predicts)
-            pixAcc, mIoU = metric.get()
-            tbar.set_description('pixAcc: %.4f, mIoU: %.4f' % (pixAcc, mIoU))
-        else:
-            im_paths = dsts
-            predicts = evaluator.parallel_forward(data)
-            for predict, impath in zip(predicts, im_paths):
-                predict = mx.nd.squeeze(mx.nd.argmax(predict[0], 1)).asnumpy() + \
-                    testset.pred_offset
-                mask = get_color_pallete(predict, args.dataset)
-                outname = os.path.splitext(impath)[0] + '.png'
-                mask.save(os.path.join(outdir, outname))
+    if 'icnet' in args.model:
+        tbar = tqdm(test_data)
+        t_gpu = 0
+        num = 0
+        for i, (data, dsts) in enumerate(tbar):
+            tic = time.time()
+            outputs = evaluator(data.astype('float32', copy=False))
+            t_gpu += time.time() - tic
+            num += 1
 
+            outputs = [x[0] for x in outputs]
+            targets = mx.gluon.utils.split_and_load(dsts, ctx_list=args.ctx, even_split=False)
+            metric.update(targets, outputs)
+
+            pixAcc, mIoU = metric.get()
+            gpu_time = t_gpu / num
+            tbar.set_description('pixAcc: %.4f, mIoU: %.4f, t_gpu: %.2fms' % (pixAcc, mIoU, gpu_time*1000))
+    else:
+        tbar = tqdm(test_data)
+        for i, (data, dsts) in enumerate(tbar):
+            if args.eval:
+                predicts = [pred[0] for pred in evaluator.parallel_forward(data)]
+                targets = [target.as_in_context(predicts[0].context) \
+                           for target in dsts]
+                metric.update(targets, predicts)
+                pixAcc, mIoU = metric.get()
+                tbar.set_description('pixAcc: %.4f, mIoU: %.4f' % (pixAcc, mIoU))
+            else:
+                im_paths = dsts
+                predicts = evaluator.parallel_forward(data)
+                for predict, impath in zip(predicts, im_paths):
+                    predict = mx.nd.squeeze(mx.nd.argmax(predict[0], 1)).asnumpy() + \
+                        testset.pred_offset
+                    mask = get_color_pallete(predict, args.dataset)
+                    outname = os.path.splitext(impath)[0] + '.png'
+                    mask.save(os.path.join(outdir, outname))
 
 def test_quantization(model, args, test_data, size, num_class, pred_offset):
     # output folder
@@ -175,7 +204,6 @@ def test_quantization(model, args, test_data, size, num_class, pred_offset):
     speed = size / (time.time() - tic)
     print('Inference speed with batchsize %d is %.2f img/sec' % (args.batch_size, speed))
 
-
 def benchmarking(model, args):
     bs = args.batch_size
     num_iterations = args.num_iterations
@@ -194,7 +222,6 @@ def benchmarking(model, args):
             pbar.update(bs)
     speed = size / (time.time() - tic)
     print('With batch size %d , %d batches, throughput is %f imgs/sec' % (bs, num_iterations, speed))
-
 
 if __name__ == "__main__":
     args = parse_args()
@@ -215,6 +242,8 @@ if __name__ == "__main__":
         model_prefix += '_ade'
     elif args.dataset == 'citys':
         model_prefix += '_citys'
+    elif args.dataset == 'mhpv1':
+        model_prefix += '_mhpv1'
     else:
         raise ValueError('Unsupported dataset {} used'.format(args.dataset))
 
@@ -229,14 +258,18 @@ if __name__ == "__main__":
             args.pretrained = True
         # create network
         if args.pretrained:
-            model = get_model(model_prefix, pretrained=True)
+            if 'icnet' in model_prefix:
+                model = get_model(model_prefix, pretrained=True, height=args.height, width=args.width)
+            else:
+                model = get_model(model_prefix, pretrained=True)
             model.collect_params().reset_ctx(ctx=args.ctx)
         else:
             assert "_in8" not in model_prefix, "Currently, Int8 models are not supported when pretrained=False"
             model = get_segmentation_model(model=args.model, dataset=args.dataset, ctx=args.ctx,
                                            backbone=args.backbone, norm_layer=args.norm_layer,
                                            norm_kwargs=args.norm_kwargs, aux=args.aux,
-                                           base_size=args.base_size, crop_size=args.crop_size)
+                                           base_size=args.base_size, crop_size=args.crop_size,
+                                           height=args.height, width=args.width)
             # load local pretrained weight
             assert args.resume is not None, '=> Please provide the checkpoint using --resume'
             if os.path.isfile(args.resume):
@@ -252,12 +285,12 @@ if __name__ == "__main__":
               ['data'], '{}-0000.params'.format(args.model_prefix))
         model.hybridize(static_alloc=True, static_shape=True)
 
-    print("Successfully loaded %s model" % model_prefix)
-    print('Testing model: ', args.resume)
+    logger.info('Successfully loaded %s model' % model_prefix)
+    logger.info('Testing model: %s' % args.resume)
 
     # benchmark
     if args.benchmark:
-        print('------benchmarking on %s model------' % model_prefix)
+        logger.info('------benchmarking on %s model------' % model_prefix)
         benchmarking(model, args)
         sys.exit()
 

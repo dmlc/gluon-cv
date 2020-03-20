@@ -80,6 +80,7 @@ class CitySegmentation(SegmentationDataset):
 
 def _get_city_pairs(folder, split='train'):
     def get_path_pairs(img_folder, mask_folder):
+        """get image and mask path pair"""
         img_paths = []
         mask_paths = []
         for root, _, files in os.walk(img_folder):

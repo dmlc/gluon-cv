@@ -18,8 +18,7 @@ __all__ = ['CenterNet', 'get_center_net',
            'center_net_resnet101_v1b_voc', 'center_net_resnet101_v1b_dcnv2_voc',
            'center_net_resnet101_v1b_coco', 'center_net_resnet101_v1b_dcnv2_coco',
            'center_net_dla34_voc', 'center_net_dla34_dcnv2_voc',
-           'center_net_dla34_coco', 'center_net_dla34_dcnv2_coco',
-           ]
+           'center_net_dla34_coco', 'center_net_dla34_dcnv2_coco',]
 
 class CenterNet(nn.HybridBlock):
     """Objects as Points. https://arxiv.org/abs/1904.07850v2
@@ -180,7 +179,7 @@ class CenterNet(nn.HybridBlock):
             out[0] = (out[0] + out_flip[0].flip(axis=3)) * 0.5
             out[1] = (out[1] + out_flip[1].flip(axis=3)) * 0.5
         heatmap = out[0]
-        keep = self.heatmap_nms(heatmap) == heatmap
+        keep = F.broadcast_equal(self.heatmap_nms(heatmap), heatmap)
         results = self.decoder(keep * heatmap, out[1], out[2])
         return results
 

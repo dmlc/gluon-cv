@@ -15,6 +15,7 @@ from .cityscapes import CitySegmentation
 from .pascal_voc.segmentation import VOCSegmentation
 from .pascal_aug.segmentation import VOCAugSegmentation
 from .ade20k.segmentation import ADE20KSegmentation
+from .mhp import MHPV1Segmentation
 from .segbase import ms_batchify_fn
 from .recordio.detection import RecordFileDetection
 from .lst.detection import LstDetection
@@ -25,6 +26,7 @@ from .somethingsomethingv2.classification import SomethingSomethingV2, Something
 from .hmdb51.classification import HMDB51, HMDB51Attr
 from .video_custom.classification import VideoClsCustom
 from .sampler import SplitSampler, ShuffleSplitSampler
+from .otb.tracking import OTBTracking
 
 datasets = {
     'ade20k': ADE20KSegmentation,
@@ -32,6 +34,7 @@ datasets = {
     'pascal_aug': VOCAugSegmentation,
     'coco' : COCOSegmentation,
     'citys' : CitySegmentation,
+    'mhpv1' : MHPV1Segmentation,
 }
 
 def get_segmentation_dataset(name, **kwargs):

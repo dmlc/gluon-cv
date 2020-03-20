@@ -52,6 +52,18 @@ def try_import_cv2():
         or `pip install opencv-python --user` (note that this is unofficial PYPI package)."
     return try_import('cv2', msg)
 
+def try_import_colorama():
+    """Try import cv2 at runtime.
+
+    Returns
+    -------
+    colorama module if found. Raise ImportError otherwise
+
+    """
+    msg = "colorama is required, you can install by `pip install colorama --user` \
+         (note that this is unofficial PYPI package)."
+    return try_import('colorama', msg)
+
 def try_import_decord():
     """Try import decord at runtime.
 
@@ -108,28 +120,36 @@ def import_try_install(package, extern_url=None):
         The imported python module.
 
     """
-    try:
-        return __import__(package)
-    except ImportError:
-        try:
-            from pip import main as pipmain
-        except ImportError:
-            from pip._internal import main as pipmain
-
-        # trying to install package
-        url = package if extern_url is None else extern_url
-        pipmain(['install', '--user', url])  # will raise SystemExit Error if fails
-
-        # trying to load again
+    import tempfile
+    import portalocker
+    lockfile = os.path.join(tempfile.gettempdir(), package + '_install.lck')
+    with portalocker.Lock(lockfile):
         try:
             return __import__(package)
         except ImportError:
-            import sys
-            import site
-            user_site = site.getusersitepackages()
-            if user_site not in sys.path:
-                sys.path.append(user_site)
-            return __import__(package)
+            try:
+                from pip import main as pipmain
+            except ImportError:
+                from pip._internal import main as pipmain
+                from types import ModuleType
+                # fix for pip 19.3
+                if isinstance(pipmain, ModuleType):
+                    from pip._internal.main import main as pipmain
+
+            # trying to install package
+            url = package if extern_url is None else extern_url
+            pipmain(['install', '--user', url])  # will raise SystemExit Error if fails
+
+            # trying to load again
+            try:
+                return __import__(package)
+            except ImportError:
+                import sys
+                import site
+                user_site = site.getusersitepackages()
+                if user_site not in sys.path:
+                    sys.path.append(user_site)
+                return __import__(package)
     return __import__(package)
 
 def try_import_dali():
@@ -148,3 +168,28 @@ def try_import_dali():
                 def __init__(self):
                     raise NotImplementedError(msg)
     return dali
+
+def try_import_html5lib():
+    """Try import html5lib at runtime.
+
+    Returns
+    -------
+    html5lib module if found. Raise ImportError otherwise
+
+    """
+    msg = "html5lib is required, you can install by package manager, " \
+          "e.g. pip install html5lib --user` (note that this is unofficial PYPI package)."
+    return try_import('html5lib', msg)
+
+def try_import_gdfDownloader():
+    """Try import googleDriveFileDownloader at runtime.
+
+    Returns
+    -------
+    googleDriveFileDownloader module if found. Raise ImportError otherwise
+
+    """
+    msg = "googleDriveFileDownloader is required, you can install by package manager, " \
+          "e.g. pip install googleDriveFileDownloader --user` " \
+          "(note that this is unofficial PYPI package)."
+    return try_import('googleDriveFileDownloader', msg)

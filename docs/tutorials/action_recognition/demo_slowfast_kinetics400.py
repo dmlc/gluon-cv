@@ -35,7 +35,12 @@ from gluoncv import utils
 from gluoncv.model_zoo import get_model
 
 ################################################################
-# Then, we download the video and extract a 32-frame clip from it.
+# Then, we download the video and extract a 64-frame clip from it.
+# Note that SlowFast has two branches, which require different inputs.
+# The fast branch needs more frames, which we sample every other frame (stride=2).
+# The slow branch needs less frames, which we sample every 16th frame (stride=16).
+# In the end, we have 32 frames as the input to the fast branch and 4 frames to the slow branch.
+# Hence, the final input to the whole network is a clip of 36 frames.
 
 from gluoncv.utils.filesystem import try_import_decord
 decord = try_import_decord()
@@ -52,7 +57,7 @@ clip_input = [video_data[vid, :, :, :] for vid, _ in enumerate(frame_id_list)]
 ################################################################
 # Now we define transformations for the video clip.
 # This transformation function does three things:
-# center crop the image to 224x224 in size,
+# center crop each image to 224x224 in size,
 # transpose it to ``num_channels*num_frames*height*width``,
 # and normalize with mean and standard deviation calculated across all ImageNet images.
 
@@ -64,7 +69,7 @@ clip_input = np.transpose(clip_input, (0, 2, 1, 3, 4))
 print('Video data is downloaded and preprocessed.')
 
 ################################################################
-# Next, we load a pre-trained I3D model.
+# Next, we load a pre-trained SlowFast model with ResNet50 as backbone.
 
 model_name = 'slowfast_4x16_resnet50_kinetics400'
 net = get_model(model_name, nclass=400, pretrained=True)

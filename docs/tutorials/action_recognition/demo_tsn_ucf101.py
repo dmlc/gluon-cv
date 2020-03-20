@@ -7,7 +7,7 @@ from 101 action categories, it is one of the most widely used dataset in the res
 community for benchmarking state-of-the-art video action recognition models.
 
 `TSN <https://arxiv.org/abs/1608.00859>`_ (Temporal Segment Network) is a widely adopted video
-classification method. It is proposed to incoporate temporal information from an entire video.
+classification method. It is proposed to incorporate temporal information from an entire video.
 The idea is straightforward: we can evenly divide the video into several segments,
 process each segment individually, obtain segmental consensus from each segment, and perform
 final prediction. TSN is more like a general algorithm, rather than a specific network architecture.
@@ -74,7 +74,7 @@ plt.show()
 # Can't recognize anything? *Don't panic!* Neither do I.
 # The transformation makes it more "model-friendly", instead of "human-friendly".
 #
-# Next, we load a pre-trained VGG16 model. The VGG16 model is trained using TSN.
+# Next, we load a pre-trained VGG16 model. The VGG16 model is trained using TSN with three segments.
 
 net = get_model('vgg16_ucf101', nclass=101, pretrained=True)
 
@@ -168,4 +168,4 @@ for i in range(topK):
 # ---------
 #
 # If you would like to dive deeper into training TSN models on ``UCF101``,
-# feel free to read the next `tutorial on UCF101 <dive_deep_ucf101.html>`__.
+# feel free to read the next `tutorial on UCF101 <dive_deep_tsn_ucf101.html>`__.

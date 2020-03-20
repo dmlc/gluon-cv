@@ -11,12 +11,15 @@ def test_export_model_zoo():
     for model in pretrained_model_list():
         print('exporting:', model)
 
-        if 'deeplab' in model or 'psp' in model:
+        if 'deeplab' in model or 'psp' in model or 'icnet' in model:
             # semantic segmentation models require fixed data shape
             kwargs = {'data_shape':(480, 480, 3)}
         elif '3d' in model:
             # video action recognition models require 4d data shape
             kwargs = {'data_shape':(3, 32, 224, 224), 'layout':'CTHW', 'preprocess':None}
+        elif 'r2plus1d' in model:
+            # video action recognition models require 4d data shape
+            kwargs = {'data_shape':(3, 16, 112, 112), 'layout':'CTHW', 'preprocess':None}
         elif 'slowfast_4x16' in model:
             # video action recognition models require 4d data shape
             kwargs = {'data_shape':(3, 36, 224, 224), 'layout':'CTHW', 'preprocess':None}
@@ -30,6 +33,9 @@ def test_export_model_zoo():
             continue
         if '_dcnv2' in model:
             continue
+        if 'siamrpn' in model:
+            continue
+
         try:
             gcv.utils.export_block(model, gcv.model_zoo.get_model(model, pretrained=True),
                                    ctx=mx.context.current_context(), **kwargs)
@@ -47,6 +53,11 @@ def test_export_model_zoo_no_preprocess():
     # 1. no preprocess 2d model
     model_name = 'resnet18_v1b'
     gcv.utils.export_block(model_name, gcv.model_zoo.get_model(model_name, pretrained=True), preprocess=None, layout='CHW')
+
+@try_gpu(0)
+def test_rcnn_export_target_generator():
+    model_name = 'faster_rcnn_fpn_resnet50_v1b_coco'
+    gcv.utils.export_block(model_name, gcv.model_zoo.get_model(model_name, pretrained=True))
 
 if __name__ == '__main__':
     import nose

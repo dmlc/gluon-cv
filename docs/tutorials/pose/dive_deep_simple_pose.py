@@ -64,7 +64,7 @@ transform_train = SimplePoseDefaultTrainTransform(num_joints=train_dataset.num_j
 batch_size = 32
 train_data = gluon.data.DataLoader(
     train_dataset.transform(transform_train),
-    batch_size=batch_size, shuffle=True, last_batch='discard', num_workers=8)
+    batch_size=batch_size, shuffle=True, last_batch='discard', num_workers=0)
 
 
 #############################################################################

@@ -204,6 +204,9 @@ train_history.plot()
 # Due to the tiny subset, the accuracy number is quite low.
 # You can `Start Training Now`_ on the full Kinetics400 dataset.
 #
+# If you would like to explore more recent models (e.g., SlowFast),
+# feel free to read the next `tutorial on SlowFast <demo_slowfast_kinetics400.html>`__.
+#
 # References
 # ----------
 #

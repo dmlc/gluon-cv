@@ -34,6 +34,10 @@ def get_color_pallete(npimg, dataset='pascal_voc'):
         out_img = Image.fromarray(npimg.astype('uint8'))
         out_img.putpalette(cityspallete)
         return out_img
+    elif dataset == 'mhpv1':
+        out_img = Image.fromarray(npimg.astype('uint8'))
+        out_img.putpalette(mhpv1pallete)
+        return out_img
     out_img = Image.fromarray(npimg.astype('uint8'))
     out_img.putpalette(vocpallete)
     return out_img
@@ -71,6 +75,19 @@ def _getvocpallete(num_cls):
 vocpallete = _getvocpallete(256)
 
 # pylint: disable=bad-whitespace
+
+"""
+The following numerical list is the color palette when visualizing a semantic segmentation mask.
+Every three numbers is a RGB combination, corresponding to a specific color for each class.
+For example, [0,0,0] is black indicating background. [120,120,120] is gray indicating wall.
+
+For complete information, please see the color encoding table for ADE20K at:
+https://docs.google.com/spreadsheets/d/1se8YEtb2detS7OuPE86fXGyD269pMycAWe2mtKUj2W8/edit#gid=0
+
+Please see the color encoding table for Cityscapes at:
+https://github.com/mcordts/cityscapesScripts/blob/master/cityscapesscripts/helpers/labels.py
+"""
+
 adepallete = [
     0,0,0,120,120,120,180,120,120,6,230,230,80,50,50,4,200,3,120,120,80,140,140,140,204,
     5,255,230,230,230,4,250,7,224,5,255,235,255,7,150,5,61,120,120,70,8,255,51,255,6,82,
@@ -111,4 +128,26 @@ cityspallete = [
     0, 80, 100,
     0, 0, 230,
     119, 11, 32,
+]
+
+mhpv1pallete = [
+    255, 255, 255,
+    165, 42, 42,
+    255, 0, 0,
+    0, 128, 0,
+    165, 42, 42,
+    255, 69, 0,
+    255, 20, 147,
+    30, 144, 255,
+    85, 107, 47,
+    0, 128, 128,
+    139, 69, 19,
+    70, 130, 180,
+    50, 205, 50,
+    0, 0, 205,
+    0, 191, 255,
+    0, 255, 255,
+    0, 250, 154,
+    173, 255, 47,
+    255, 255, 0,
 ]

@@ -6,6 +6,7 @@ import mxnet as mx
 from mxnet import gluon
 from mxnet.gluon import nn
 from ...nn.coder import NormalizedBoxCenterDecoder, MultiPerClassDecoder
+from ...nn.feature import FPNFeatureExpander
 
 
 class RCNN(gluon.HybridBlock):
@@ -256,3 +257,92 @@ class RCNN(gluon.HybridBlock):
     def hybrid_forward(self, F, x, width, height):
         """Not implemented yet."""
         raise NotImplementedError
+
+
+def custom_rcnn_fpn(pretrained_base=True, base_network_name='resnet18_v1b', norm_layer=nn.BatchNorm,
+                    norm_kwargs=None, sym_norm_layer=None, sym_norm_kwargs=None,
+                    num_fpn_filters=256, num_box_head_conv=4, num_box_head_conv_filters=256,
+                    num_box_head_dense_filters=1024):
+    r"""Generate custom RCNN model with resnet base network w/FPN.
+
+    Parameters
+    ----------
+    pretrained_base : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    base_network_name : str, default 'resnet18_v1b'
+        base network for mask RCNN. Currently support: 'resnet18_v1b', 'resnet50_v1b',
+        and 'resnet101_v1d'
+    norm_layer : nn.HybridBlock, default nn.BatchNorm
+        Gluon normalization layer to use. Default is frozen batch normalization layer.
+    norm_kwargs : dict
+        Keyword arguments for gluon normalization layer
+    sym_norm_layer : nn.SymbolBlock, default `None`
+        Symbol normalization layer to use in FPN. This is due to FPN being implemented using
+        SymbolBlock. Default is `None`, meaning no normalization layer will be used in FPN.
+    sym_norm_kwargs : dict
+        Keyword arguments for symbol normalization layer used in FPN.
+    num_fpn_filters : int, default 256
+        Number of filters for FPN output layers.
+    num_box_head_conv : int, default 4
+        Number of convolution layers to use in box head if batch normalization is not frozen.
+    num_box_head_conv_filters : int, default 256
+        Number of filters for convolution layers in box head.
+        Only applicable if batch normalization is not frozen.
+    num_box_head_dense_filters : int, default 1024
+        Number of hidden units for the last fully connected layer in box head.
+
+    Returns
+    -------
+    SymbolBlock or HybridBlock
+        Base feature extractor eg. resnet w/ FPN.
+    None or HybridBlock
+        R-CNN feature before each task heads.
+    HybridBlock
+        Box feature extractor
+    """
+    use_global_stats = norm_layer is nn.BatchNorm
+    if base_network_name == 'resnet18_v1b':
+        from ...model_zoo.resnetv1b import resnet18_v1b
+        base_network = resnet18_v1b(pretrained=pretrained_base, dilated=False,
+                                    use_global_stats=use_global_stats, norm_layer=norm_layer,
+                                    norm_kwargs=norm_kwargs)
+        fpn_inputs_names = ['layers1_relu3_fwd', 'layers2_relu3_fwd', 'layers3_relu3_fwd',
+                            'layers4_relu3_fwd']
+    elif base_network_name == 'resnet50_v1b':
+        from ...model_zoo.resnetv1b import resnet50_v1b
+        base_network = resnet50_v1b(pretrained=pretrained_base, dilated=False,
+                                    use_global_stats=use_global_stats, norm_layer=norm_layer,
+                                    norm_kwargs=norm_kwargs)
+        fpn_inputs_names = ['layers1_relu8_fwd', 'layers2_relu11_fwd', 'layers3_relu17_fwd',
+                            'layers4_relu8_fwd']
+    elif base_network_name == 'resnet101_v1d':
+        from ...model_zoo.resnetv1b import resnet101_v1d
+        base_network = resnet101_v1d(pretrained=pretrained_base, dilated=False,
+                                     use_global_stats=use_global_stats, norm_layer=norm_layer,
+                                     norm_kwargs=norm_kwargs)
+        fpn_inputs_names = ['layers1_relu8_fwd', 'layers2_relu11_fwd', 'layers3_relu68_fwd',
+                            'layers4_relu8_fwd']
+    else:
+        raise NotImplementedError('Unsupported network', base_network_name)
+    features = FPNFeatureExpander(
+        network=base_network, outputs=fpn_inputs_names,
+        num_filters=[num_fpn_filters] * len(fpn_inputs_names), use_1x1=True,
+        use_upsample=True, use_elewadd=True, use_p6=True, no_bias=not use_global_stats,
+        pretrained=pretrained_base, norm_layer=sym_norm_layer, norm_kwargs=sym_norm_kwargs)
+    top_features = None
+    box_features = nn.HybridSequential()
+    box_features.add(nn.AvgPool2D(pool_size=(3, 3), strides=2, padding=1))  # reduce to 7x7
+    if use_global_stats:
+        box_features.add(
+            nn.Dense(num_box_head_dense_filters, weight_initializer=mx.init.Normal(0.01)),
+            nn.Activation('relu'))
+    else:
+        for _ in range(num_box_head_conv):
+            box_features.add(nn.Conv2D(num_box_head_conv_filters, 3, padding=1, use_bias=False),
+                             norm_layer(**norm_kwargs),
+                             nn.Activation('relu'))
+    box_features.add(
+        nn.Dense(num_box_head_dense_filters, weight_initializer=mx.init.Normal(0.01)),
+        nn.Activation('relu'))
+    return features, top_features, box_features

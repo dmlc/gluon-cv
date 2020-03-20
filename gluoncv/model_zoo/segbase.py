@@ -6,7 +6,7 @@ import mxnet as mx
 from mxnet.ndarray import NDArray
 from mxnet.gluon.nn import HybridBlock
 from ..utils.parallel import parallel_apply
-from .resnetv1b import resnet50_v1s, resnet101_v1s, resnet152_v1s
+from .resnetv1b import resnet18_v1b, resnet34_v1b, resnet50_v1s, resnet101_v1s, resnet152_v1s
 from ..utils.parallel import tuple_map
 # pylint: disable=wildcard-import,abstract-method,arguments-differ,dangerous-default-value,missing-docstring
 
@@ -18,12 +18,14 @@ def get_segmentation_model(model, **kwargs):
     from .deeplabv3 import get_deeplab
     from .deeplabv3_plus import get_deeplab_plus
     from .deeplabv3b_plus import get_deeplabv3b_plus
+    from .icnet import get_icnet
     models = {
         'fcn': get_fcn,
         'psp': get_psp,
         'deeplab': get_deeplab,
         'deeplabplus': get_deeplab_plus,
         'deeplabplusv3b': get_deeplabv3b_plus,
+        'icnet': get_icnet
     }
     return models[model](**kwargs)
 
@@ -104,11 +106,15 @@ class SegBaseModel(HybridBlock):
 
 class SegEvalModel(object):
     """Segmentation Eval Module"""
-    def __init__(self, module):
+    def __init__(self, module, use_predict=False):
         self.module = module
+        self.use_predict = use_predict
 
     def __call__(self, *inputs, **kwargs):
-        return self.module.evaluate(*inputs, **kwargs)
+        if self.use_predict:
+            return self.module.predict(*inputs, **kwargs)
+        else:
+            return self.module.evaluate(*inputs, **kwargs)
 
     def collect_params(self):
         return self.module.collect_params()

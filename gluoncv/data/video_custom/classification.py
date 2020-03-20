@@ -1,9 +1,8 @@
 # pylint: disable=line-too-long,too-many-lines,missing-docstring
-"""Custom data loader for general video classification problems.
-Code partially borrowed from https://github.com/open-mmlab/mmaction
+"""Customized dataloader for general video classification tasks.
+Code adapted from https://github.com/open-mmlab/mmaction
 and https://github.com/bryanyzhu/two-stream-pytorch"""
 import os
-import random
 import numpy as np
 from mxnet import nd
 from mxnet.gluon.data import dataset
@@ -15,53 +14,64 @@ class VideoClsCustom(dataset.Dataset):
 
     Parameters
     ----------
-    root : str, required,
-        Path to the folder stored the dataset.
-    setting : str, required
-        Config file of the prepared dataset.
-    train : bool, default True
+    root : str, required.
+        Path to the root folder storing the dataset.
+    setting : str, required.
+        A text file describing the dataset, each line per video sample.
+        There are three items in each line: (1) video path; (2) video length and (3) video label.
+    train : bool, default True.
         Whether to load the training or validation set.
-    test_mode : bool, default False
-        Whether to perform evaluation on the test set
-    name_pattern : str, default None
+    test_mode : bool, default False.
+        Whether to perform evaluation on the test set.
+        Usually there is three-crop or ten-crop evaluation strategy involved.
+    name_pattern : str, default None.
         The naming pattern of the decoded video frames.
-        For example, img_00012.jpg
-    video_ext : str, default 'mp4'
+        For example, img_00012.jpg.
+    video_ext : str, default 'mp4'.
         If video_loader is set to True, please specify the video format accordinly.
-    is_color : bool, default True
-        Whether the loaded image is color or grayscale
-    modality : str, default 'rgb'
+    is_color : bool, default True.
+        Whether the loaded image is color or grayscale.
+    modality : str, default 'rgb'.
         Input modalities, we support only rgb video frames for now.
         Will add support for rgb difference image and optical flow image later.
-    num_segments : int, default 1
+    num_segments : int, default 1.
         Number of segments to evenly divide the video into clips.
         A useful technique to obtain global video-level information.
-        Limin Wang, etal, Temporal Segment Networks: Towards Good Practices for Deep Action Recognition, ECCV 2016
-    num_crop : int, default 1
+        Limin Wang, etal, Temporal Segment Networks: Towards Good Practices for Deep Action Recognition, ECCV 2016.
+    num_crop : int, default 1.
         Number of crops for each image. default is 1.
         Common choices are three crops and ten crops during evaluation.
-    new_length : int, default 1
+    new_length : int, default 1.
         The length of input video clip. Default is a single image, but it can be multiple video frames.
         For example, new_length=16 means we will extract a video clip of consecutive 16 frames.
-    new_step : int, default 1
+    new_step : int, default 1.
         Temporal sampling rate. For example, new_step=1 means we will extract a video clip of consecutive frames.
         new_step=2 means we will extract a video clip of every other frame.
-    new_width : int, default 340
+    new_width : int, default 340.
         Scale the width of loaded image to 'new_width' for later multiscale cropping and resizing.
-    new_height : int, default 256
+    new_height : int, default 256.
         Scale the height of loaded image to 'new_height' for later multiscale cropping and resizing.
-    target_width : int, default 224
+    target_width : int, default 224.
         Scale the width of transformed image to the same 'target_width' for batch forwarding.
-    target_height : int, default 224
+    target_height : int, default 224.
         Scale the height of transformed image to the same 'target_height' for batch forwarding.
-    temporal_jitter : bool, default False
+    temporal_jitter : bool, default False.
         Whether to temporally jitter if new_step > 1.
-    video_loader : bool, default False
+    video_loader : bool, default False.
         Whether to use video loader to load data.
-    use_decord : bool, default True
+    use_decord : bool, default True.
         Whether to use Decord video loader to load data. Otherwise use mmcv video loader.
-    transform : function, default None
+    transform : function, default None.
         A function that takes data and label and transforms them.
+    slowfast : bool, default False.
+        If set to True, use data loader designed for SlowFast network.
+        Christoph Feichtenhofer, etal, SlowFast Networks for Video Recognition, ICCV 2019.
+    slow_temporal_stride : int, default 16.
+        The temporal stride for sparse sampling of video frames in slow branch of a SlowFast network.
+    fast_temporal_stride : int, default 2.
+        The temporal stride for sparse sampling of video frames in fast branch of a SlowFast network.
+    lazy_init : bool, default False.
+        If set to True, build a dataset instance without loading any dataset.
     """
     def __init__(self,
                  root,
@@ -86,6 +96,7 @@ class VideoClsCustom(dataset.Dataset):
                  slowfast=False,
                  slow_temporal_stride=16,
                  fast_temporal_stride=2,
+                 lazy_init=False,
                  transform=None):
 
         super(VideoClsCustom, self).__init__()
@@ -116,6 +127,7 @@ class VideoClsCustom(dataset.Dataset):
         self.slowfast = slowfast
         self.slow_temporal_stride = slow_temporal_stride
         self.fast_temporal_stride = fast_temporal_stride
+        self.lazy_init = lazy_init
 
         if self.slowfast:
             assert slow_temporal_stride % fast_temporal_stride == 0, 'slow_temporal_stride needs to be multiples of slow_temporal_stride, please set it accordinly.'
@@ -128,10 +140,11 @@ class VideoClsCustom(dataset.Dataset):
             else:
                 self.mmcv = try_import_mmcv()
 
-        self.clips = self._make_dataset(root, setting)
-        if len(self.clips) == 0:
-            raise(RuntimeError("Found 0 video clips in subfolders of: " + root + "\n"
-                               "Check your data directory (opt.data-dir)."))
+        if not self.lazy_init:
+            self.clips = self._make_dataset(root, setting)
+            if len(self.clips) == 0:
+                raise(RuntimeError("Found 0 video clips in subfolders of: " + root + "\n"
+                                   "Check your data directory (opt.data-dir)."))
 
     def __getitem__(self, index):
 
@@ -206,8 +219,6 @@ class VideoClsCustom(dataset.Dataset):
         clips = []
         with open(setting) as split_f:
             data = split_f.readlines()
-            if not self.test_mode:
-                random.shuffle(data)
             for line in data:
                 line_info = line.split()
                 # line format: video_path, video_duration, video_label
@@ -375,9 +386,9 @@ class VideoClsCustom(dataset.Dataset):
             offset = int(seg_ind)
             for i, _ in enumerate(range(0, self.skip_length, self.new_step)):
                 if offset + skip_offsets[i] <= duration:
-                    frame_id = offset + skip_offsets[i]
+                    frame_id = offset + skip_offsets[i] - 1
                 else:
-                    frame_id = offset
+                    frame_id = offset - 1
                 frame_id_list.append(frame_id)
                 if offset + self.new_step < duration:
                     offset += self.new_step
@@ -397,9 +408,9 @@ class VideoClsCustom(dataset.Dataset):
             offset = int(seg_ind)
             for i, _ in enumerate(range(0, self.skip_length, self.new_step)):
                 if offset + skip_offsets[i] <= duration:
-                    frame_id = offset + skip_offsets[i]
+                    frame_id = offset + skip_offsets[i] - 1
                 else:
-                    frame_id = offset
+                    frame_id = offset - 1
 
                 if (i + 1) % self.fast_temporal_stride == 0:
                     fast_id_list.append(frame_id)

@@ -163,6 +163,12 @@ Semantic Segmentation
         Hands on DeepLabV3 model training on Pascal VOC dataset, and achieves
         state-of-the-art accuracy.
 
+    .. card::
+        :title: Pre-trained ICNet Models for Multi-Human Parsing
+        :link: ../build/examples_segmentation/demo_icnet.html
+
+        Perform semantic segmentation on real-world images with pre-trained ICNet models
+
 Pose Estimation
 ---------------------
 
@@ -234,20 +240,20 @@ Action Recognition
         Hands on SlowFast action recognition model training on Kinetics400 dataset
 
     .. card::
-        :title: Fine-tuning I3D mdoels on Your Own Dataset
-        :link: ../build/examples_action_recognition/finetune_i3d_custom.html
+        :title: Fine-tuning video mdoels on Your Own Dataset
+        :link: ../build/examples_action_recognition/finetune_custom.html
 
-        Hands on I3D models fine-tuning on your own dataset
+        Hands on SOTA video models fine-tuning on your own dataset
 
     .. card::
-        :title: Extracting features from I3D models
-        :link: ../build/examples_action_recognition/feat_i3d_custom.html
+        :title: Extracting video features from pre-trained models
+        :link: ../build/examples_action_recognition/feat_custom.html
 
-        Extracting video features from pre-trained I3D models on your own videos
+        Extracting video features from pre-trained models on your own videos
 
     .. card::
         :title: Inference on your own videos using pre-trained models
-        :link: ../build/examples_action_recognition/demo_i3d_custom.html
+        :link: ../build/examples_action_recognition/demo_custom.html
 
         Inference on your own videos using pre-trained models and save the predictions.
 
@@ -256,6 +262,17 @@ Action Recognition
         :link: ../build/examples_action_recognition/decord_loader.html
 
         An efficient and flexible video reader for training deep video neural networks.
+
+Object Tracking
+---------------------
+
+.. container:: cards
+
+    .. card::
+        :title: Pre-trained Siam RPN Models
+        :link: ../build/examples_tracking/demo_SiamRPN.html
+
+        Estimate Single Object Tracking in real-world video with pre-trained Object Tracking models
 
 Dataset Preparation
 -------------------
@@ -306,6 +323,21 @@ Dataset Preparation
         :title: Prepare HMDB51 Dataset
         :link: ../build/examples_datasets/hmdb51.html
 
+    .. card::
+        :title: Prepare Multi-Human Parsing V1 Dataset
+        :link: ../build/examples_datasets/mhp_v1.html
+
+Distributed Training
+--------------------
+
+.. container:: cards
+
+    .. card::
+        :title: Distributed training of deep video models: SlowFast
+        :link: ../build/examples_distributed/distributed_slowfast.html
+
+        Hands on distributed training of SlowFast models on Kinetics400 dataset.
+
 
 Deployment
 ----------
@@ -334,5 +366,7 @@ Deployment
     ../build/examples_segmentation/index
     ../build/examples_pose/index
     ../build/examples_action_recognition/index
+    ../build/examples_tracking/index
     ../build/examples_datasets/index
+    ../build/examples_distributed/index
     ../build/examples_deployment/index
