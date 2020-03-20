@@ -11,13 +11,12 @@ import json
 import logging
 import os
 import numpy as np
-import pdb
+
 from mxnet.gluon.data import dataset
 from gluoncv.utils.filesystem import try_import_cv2
 from gluoncv.model_zoo.siamrpn.siamrpn_tracker import corner2center, center2corner
 from gluoncv.model_zoo.siamrpn.siamrpn_tracker import Center, Anchors
 from gluoncv.data.transforms.track import SiamRPNaugmentation
-from gluoncv.utils.metrics.tracking import Iou
 from gluoncv.utils.bbox import bbox_iou
 
 class SubDataset(object):
@@ -253,17 +252,12 @@ class TrkDataset(dataset.Dataset):
     """
     def __init__(self,
                  data_path=os.path.expanduser('~/.mxnet/datasets'),
-                #  dataset_names=('vid', 'yt_bb', 'coco', 'det'),
-                #  detaset_root=('vid/crop511', 'yt_bb/crop511', 'coco/crop511', 'det/crop511'),
-                #  detaset_anno=('vid/train.json', 'yt_bb/train.json', 'coco/train2017.json',
-                #                'det/train.json'),
-                #  dataset_frame_range=(100, 3, 1, 1),
-                #  dataset_num_use=(100000, -1, -1, -1),
-                 dataset_names=('vid',),
-                 detaset_root=('vid/crop511',),
-                 detaset_anno=('vid/train.json',),
-                 dataset_frame_range=(100,),
-                 dataset_num_use=(100000,),
+                 dataset_names=('vid', 'yt_bb', 'coco', 'det'),
+                 detaset_root=('vid/crop511', 'yt_bb/crop511', 'coco/crop511', 'det/crop511'),
+                 detaset_anno=('vid/train.json', 'yt_bb/train.json', 'coco/train2017.json',
+                               'det/train.json'),
+                 dataset_frame_range=(100, 3, 1, 1),
+                 dataset_num_use=(100000, -1, -1, -1),
                  train_search_size=255,
                  train_exemplar_size=127,
                  anchor_stride=8,
