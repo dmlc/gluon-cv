@@ -32,14 +32,14 @@ class DepthwiseXCorr(HybridBlock):
             output feature channel.
         bz : int
             batch size for train, bz = 1 if test.
-        if_train : str
-            if_train is True if train, False if test.
+        is_train : str
+            is_train is True if train, False if test.
         kernel_size : float
             hidden kernel size.
         ctx : mxnet.Context
             Context such as mx.cpu(), mx.gpu(0).
     """
-    def __init__(self, hidden, out_channels, bz=1, if_train=False, kernel_size=3, ctx=cpu()):
+    def __init__(self, hidden, out_channels, bz=1, is_train=False, kernel_size=3, ctx=cpu()):
         super(DepthwiseXCorr, self).__init__()
         self.conv_kernel = nn.HybridSequential(prefix='')
         self.conv_search = nn.HybridSequential(prefix='')
@@ -55,7 +55,7 @@ class DepthwiseXCorr(HybridBlock):
                       nn.BatchNorm(),
                       nn.Activation('relu'),
                       nn.Conv2D(out_channels, kernel_size=1))
-        if if_train:
+        if is_train:
             self.kernel_size = [bz, 256, 4, 4]
             self.search_size = [bz, 256, 20, 20]
             self.out_size = [bz, 256, 17, 17]
@@ -91,8 +91,8 @@ class DepthwiseRPN(RPN):
     ----------
         bz : int
             batch size for train, bz = 1 if test.
-        if_train : str
-            if_train is True if train, False if test.
+        is_train : str
+            is_train is True if train, False if test.
         ctx : mxnet.Context
             Context such as mx.cpu(), mx.gpu(0).
         anchor_num : int
@@ -100,10 +100,10 @@ class DepthwiseRPN(RPN):
         out_channels : int
             hidden feature channel.
     """
-    def __init__(self, bz=1, if_train=False, ctx=cpu(), anchor_num=5, out_channels=256):
+    def __init__(self, bz=1, is_train=False, ctx=cpu(), anchor_num=5, out_channels=256):
         super(DepthwiseRPN, self).__init__()
-        self.cls = DepthwiseXCorr(out_channels, 2 * anchor_num, bz=bz, if_train=if_train, ctx=ctx)
-        self.loc = DepthwiseXCorr(out_channels, 4 * anchor_num, bz=bz, if_train=if_train, ctx=ctx)
+        self.cls = DepthwiseXCorr(out_channels, 2 * anchor_num, bz=bz, is_train=is_train, ctx=ctx)
+        self.loc = DepthwiseXCorr(out_channels, 4 * anchor_num, bz=bz, is_train=is_train, ctx=ctx)
 
     def hybrid_forward(self, F, z_f, x_f):
         cls = self.cls(z_f, x_f)

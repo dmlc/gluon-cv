@@ -10,18 +10,16 @@ import os
 import time
 
 import numpy as np
-
+os.environ['MXNET_CUDNN_AUTOTUNE_DEFAULT'] = '0'
 import mxnet as mx
 
-from mxnet import gluon, nd, context, autograd
+from mxnet import gluon, nd, autograd
 from mxnet.contrib import amp
 
 from gluoncv.utils import LRScheduler, LRSequential, split_and_load
 from gluoncv.data.tracking_data.track import TrkDataset
 from gluoncv.model_zoo import get_model
 from gluoncv.loss import SiamRPNLoss
-
-os.system("export MXNET_CUDNN_AUTOTUNE_DEFAULT=0")
 
 def parse_args():
     """parameter test."""
@@ -122,6 +120,7 @@ def build_data_loader(batch_size):
 
     train_loader = gluon.data.DataLoader(train_dataset,
                                          batch_size=batch_size,
+                                         last_batch='discard',
                                          num_workers=opt.num_workers)
     return train_loader
 
@@ -144,15 +143,16 @@ def main(logger, opt):
     train_loader = build_data_loader(batch_size)
 
     # create model
-    net = get_model(opt.model_name, bz=opt.batch_size, if_train=opt.is_train, ctx=opt.ctx)
+    net = get_model(opt.model_name, bz=opt.batch_size, is_train=opt.is_train, ctx=opt.ctx)
     net.cast(opt.dtype)
     logger.info(net)
+    net.collect_params().reset_ctx(opt.ctx)
     if opt.resume_params is not None:
         if os.path.isfile(opt.resume_params):
-            net.load_parameters(opt.resume_params, ctx=context)
+            net.load_parameters(opt.resume_params, ctx=opt.ctx)
             print('Continue training from model %s.' % (opt.resume_params))
         else:
-            raise RuntimeError("=> no checkpoint found at '{}'".format(opt.resume))
+            raise RuntimeError("=> no checkpoint found at '{}'".format(opt.resume_params))
 
     # create criterion
     criterion = SiamRPNLoss(opt.batch_size)
@@ -211,7 +211,6 @@ def save_checkpoint(net, opt, epoch, is_best=False):
 
 def train(opt, net, train_loader, criterion, trainer, batch_size, logger):
     """train model"""
-    begin_time = time.time()
     for epoch in range(opt.start_epoch, opt.epochs):
         loss_total_val = 0
         loss_loc_val = 0
@@ -260,7 +259,6 @@ def train(opt, net, train_loader, criterion, trainer, batch_size, logger):
                              loss_total_val/(i+1), time.time()-batch_time))
                 batch_time = time.time()
             mx.nd.waitall()
-
         # save every epoch
         if opt.no_val:
             save_checkpoint(net, opt, epoch, False)

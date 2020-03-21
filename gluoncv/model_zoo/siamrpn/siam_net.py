@@ -10,12 +10,12 @@ from gluoncv.model_zoo.siamrpn.siam_rpn import DepthwiseRPN
 
 class SiamRPN(HybridBlock):
     """SiamRPN"""
-    def __init__(self, bz=1, if_train=False, ctx=cpu(), **kwargs):
+    def __init__(self, bz=1, is_train=False, ctx=cpu(), **kwargs):
         super(SiamRPN, self).__init__(**kwargs)
         self.backbone = alexnetlegacy(ctx=ctx)
-        self.rpn_head = DepthwiseRPN(bz=bz, if_train=if_train, ctx=ctx)
+        self.rpn_head = DepthwiseRPN(bz=bz, is_train=is_train, ctx=ctx)
         self.bz = bz
-        self.if_train = if_train
+        self.is_train = is_train
         self.zbranch = None
         self.xbranch = None
         self.cls = None
@@ -56,7 +56,7 @@ class SiamRPN(HybridBlock):
         return self.cls, self.loc
 
 
-def get_Siam_RPN(base_name, bz=1, if_train=False, pretrained=False, ctx=mx.cpu(0),
+def get_Siam_RPN(base_name, bz=1, is_train=False, pretrained=False, ctx=mx.cpu(0),
                  root='~/.mxnet/models', **kwargs):
     """get Siam_RPN net and get pretrained model if have pretrained
 
@@ -66,8 +66,8 @@ def get_Siam_RPN(base_name, bz=1, if_train=False, pretrained=False, ctx=mx.cpu(0
         Backbone model name
     bz : int
         batch size for train, bz = 1 if test
-    if_train : str
-        if_train is True if train, False if test
+    is_train : str
+        is_train is True if train, False if test
     pretrained : bool or str
         Boolean value controls whether to load the default pretrained weights for model.
         String value represents the hashtag for a certain version of pretrained weights.
@@ -81,7 +81,7 @@ def get_Siam_RPN(base_name, bz=1, if_train=False, pretrained=False, ctx=mx.cpu(0
     HybridBlock
         A SiamRPN Tracking network.
     """
-    net = SiamRPN(bz=bz, if_train=if_train, ctx=ctx)
+    net = SiamRPN(bz=bz, is_train=is_train, ctx=ctx)
     if pretrained:
         from gluoncv.model_zoo.model_store import get_model_file
         net.load_parameters(get_model_file('siamrpn_%s'%(base_name),
