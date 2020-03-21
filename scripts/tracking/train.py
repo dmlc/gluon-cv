@@ -80,7 +80,7 @@ def parse_args():
     parser.add_argument('--mode', type=str, default='hybrid',
                         help='mode in which to train the model. options are symbolic, hybrid')
     parser.add_argument('--is-train', type=str, default=True,
-                        help='if train the model. options are True, False')
+                        help='whether to train the model. options are True, False')
     opt = parser.parse_args()
 
     if opt.no_cuda:
