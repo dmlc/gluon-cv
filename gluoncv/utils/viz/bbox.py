@@ -7,7 +7,8 @@ from .image import plot_image
 
 def plot_bbox(img, bboxes, scores=None, labels=None, thresh=0.5,
               class_names=None, colors=None, ax=None,
-              reverse_rgb=False, absolute_coordinates=True):
+              reverse_rgb=False, absolute_coordinates=True,
+              linewidth=3.5, fontsize=12):
     """Visualize bounding boxes.
 
     Parameters
@@ -36,6 +37,10 @@ def plot_bbox(img, bboxes, scores=None, labels=None, thresh=0.5,
     absolute_coordinates : bool
         If `True`, absolute coordinates will be considered, otherwise coordinates
         are interpreted as in range(0, 1).
+    linewidth : float, optional, default 3.5
+        Line thickness for bounding boxes.
+    fontsize : int, optional, default 12
+        Font size for display of class labels and threshold.
 
     Returns
     -------
@@ -89,7 +94,7 @@ def plot_bbox(img, bboxes, scores=None, labels=None, thresh=0.5,
         rect = plt.Rectangle((xmin, ymin), xmax - xmin,
                              ymax - ymin, fill=False,
                              edgecolor=colors[cls_id],
-                             linewidth=3.5)
+                             linewidth=linewidth)
         ax.add_patch(rect)
         if class_names is not None and cls_id < len(class_names):
             class_name = class_names[cls_id]
@@ -100,12 +105,12 @@ def plot_bbox(img, bboxes, scores=None, labels=None, thresh=0.5,
             ax.text(xmin, ymin - 2,
                     '{:s} {:s}'.format(class_name, score),
                     bbox=dict(facecolor=colors[cls_id], alpha=0.5),
-                    fontsize=12, color='white')
+                    fontsize=fontsize, color='white')
     return ax
 
 def cv_plot_bbox(img, bboxes, scores=None, labels=None, thresh=0.5,
                  class_names=None, colors=None,
-                 absolute_coordinates=True, scale=1.0):
+                 absolute_coordinates=True, scale=1.0, linewidth=2):
     """Visualize bounding boxes with OpenCV.
 
     Parameters
@@ -132,6 +137,9 @@ def cv_plot_bbox(img, bboxes, scores=None, labels=None, thresh=0.5,
         are interpreted as in range(0, 1).
     scale : float
         The scale of output image, which may affect the positions of boxes
+    linewidth : int, optional, default 2
+        Line thickness for bounding boxes.
+        Use negative values to fill the bounding boxes.
 
     Returns
     -------
@@ -187,7 +195,7 @@ def cv_plot_bbox(img, bboxes, scores=None, labels=None, thresh=0.5,
                 colors[cls_id] = (random.random(), random.random(), random.random())
         xmin, ymin, xmax, ymax = [int(x) for x in bbox]
         bcolor = [x * 255 for x in colors[cls_id]]
-        cv2.rectangle(img, (xmin, ymin), (xmax, ymax), bcolor, 2)
+        cv2.rectangle(img, (xmin, ymin), (xmax, ymax), bcolor, linewidth)
 
         if class_names is not None and cls_id < len(class_names):
             class_name = class_names[cls_id]

@@ -350,7 +350,7 @@ def get_mask_rcnn(name, dataset, pretrained=False, ctx=mx.cpu(),
         The Mask RCNN network.
 
     """
-    net = MaskRCNN(**kwargs)
+    net = MaskRCNN(minimal_opset=pretrained, **kwargs)
     if pretrained:
         from ....model_zoo.model_store import get_model_file
         full_name = '_'.join(('mask_rcnn', name, dataset))
