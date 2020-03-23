@@ -7,7 +7,7 @@ from .image import plot_image
 
 def plot_bbox(img, bboxes, scores=None, labels=None, thresh=0.5,
               class_names=None, colors=None, ax=None,
-              reverse_rgb=False, absolute_coordinates=True, 
+              reverse_rgb=False, absolute_coordinates=True,
               linewidth=3.5, fontsize=12):
     """Visualize bounding boxes.
 
@@ -140,7 +140,6 @@ def cv_plot_bbox(img, bboxes, scores=None, labels=None, thresh=0.5,
     linewidth : int, optional, default 2
         Line thickness for bounding boxes.
         Use negative values to fill the bounding boxes.
-    
 
     Returns
     -------
