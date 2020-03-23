@@ -137,9 +137,9 @@ class SSDMultiBoxLoss(gluon.Block):
         box_pred : mxnet.nd.NDArray
         Predicted bounding-boxes.
         cls_target : mxnet.nd.NDArray
-        Expected classes.
+        Ground-truth classes.
         box_target : mxnet.nd.NDArray
-        Expected bounding-boxes.
+        Ground-truth bounding-boxes.
         
         Returns
         -------
