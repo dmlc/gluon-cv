@@ -5,7 +5,6 @@ import mxnet as mx
 import gluoncv as gcv
 from mxnet import gluon, nd
 from mxnet import autograd as ag
-from mxnet.gluon import nn
 from mxnet.gluon.data.vision import transforms
 
 import gluoncv as gcv
@@ -154,8 +153,7 @@ def main():
 
     kwargs = {'ctx': context, 'pretrained': opt.use_pretrained, 'classes': classes}
     if opt.use_gn:
-        from gluoncv.nn import GroupNorm
-        kwargs['norm_layer'] = GroupNorm
+        kwargs['norm_layer'] = gcv.nn.GroupNorm
     if model_name.startswith('vgg'):
         kwargs['batch_norm'] = opt.batch_norm
     elif model_name.startswith('resnext'):
@@ -171,7 +169,7 @@ def main():
 
     net = get_model(model_name, **kwargs)
     net.cast(opt.dtype)
-    if opt.resume_params is not '':
+    if opt.resume_params != '':
         net.load_parameters(opt.resume_params, ctx = context)
 
     # teacher model for distillation training
@@ -342,7 +340,7 @@ def main():
     def train(ctx):
         if isinstance(ctx, mx.Context):
             ctx = [ctx]
-        if opt.resume_params is '':
+        if opt.resume_params == '':
             net.initialize(mx.init.MSRAPrelu(), ctx=ctx)
 
         if opt.no_wd:
@@ -350,7 +348,7 @@ def main():
                 v.wd_mult = 0.0
 
         trainer = gluon.Trainer(net.collect_params(), optimizer, optimizer_params)
-        if opt.resume_states is not '':
+        if opt.resume_states != '':
             trainer.load_states(opt.resume_states)
 
         if opt.label_smoothing or opt.mixup:
