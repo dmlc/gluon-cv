@@ -51,7 +51,7 @@ def parse_args():
     parser.add_argument('--base-lr', type=float, default=0.005,
                         help='base lr')
     parser.add_argument('--warmup-epochs', type=int, default=5,
-                        help='base lr')
+                        help='warmup epochs number')
     parser.add_argument('--weight-decay', type=float, default=1e-4,
                         metavar='M', help='w-decay (default: 1e-4)')
     parser.add_argument('--momentum', type=float, default=0.9,
@@ -62,9 +62,9 @@ def parse_args():
                         help='whether to remove weight decay on bias, \
                         and beta/gamma for batchnorm layers.')
     parser.add_argument('--cls-weight', type=float, default=1.0,
-                        help='learning rate (default: 1e-3)')
+                        help='cls weight (default: 1e-3)')
     parser.add_argument('--loc-weight', type=float, default=1.2,
-                        help='learning rate (default: 1e-3)')
+                        help='loc weight (default: 1e-3)')
     parser.add_argument('--log-interval', type=int, default=128,
                         help='Logging mini-batch interval. Default is 128.')
     parser.add_argument('--no-cuda', action='store_true', default=False,
