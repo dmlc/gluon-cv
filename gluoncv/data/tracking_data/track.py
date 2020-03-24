@@ -546,9 +546,9 @@ class AnchorTarget:
         delta[2] = np.log(tw / w)
         delta[3] = np.log(th / h)
 
-        target_temple = np.array([target[0], target[1], target[2], target[3]]).reshape(1, -1)
-        bbox_temple = np.array([x1, y1, x2, y2]).reshape(4, -1).T
-        overlap = bbox_iou(bbox_temple, target_temple)
+        target = np.array([target[0], target[1], target[2], target[3]]).reshape(1, -1)
+        bbox = np.array([x1, y1, x2, y2]).reshape(4, -1).T
+        overlap = bbox_iou(bbox, target)
         overlap = overlap.reshape(-1, self.train_output_size, self.train_output_size)
         pos = np.where(overlap > self.train_thr_high)
         neg = np.where(overlap < self.train_thr_low)

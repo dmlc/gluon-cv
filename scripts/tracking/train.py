@@ -24,7 +24,7 @@ from gluoncv.loss import SiamRPNLoss
 def parse_args():
     """parameter test."""
     parser = argparse.ArgumentParser(description='siamrpn tracking test result')
-    parser.add_argument('--model_name', type=str, default='siamrpn_alexnet_v2_otb15',
+    parser.add_argument('--model-name', type=str, default='siamrpn_alexnet_v2_otb15',
                         help='name of model.')
     parser.add_argument('--use-pretrained', action='store_true', default=False,
                         help='enable using pretrained model from gluon.')
@@ -44,7 +44,7 @@ def parse_args():
                         help='number of preprocessing workers')
     parser.add_argument('--epochs', type=int, default=50,
                         help='number of training epochs.')
-    parser.add_argument('--start_epoch', type=int, default=0,
+    parser.add_argument('--start-epoch', type=int, default=0,
                         help='training start epochs.')
     parser.add_argument('--lr-mode', type=str, default='step',
                         help='lr mode')
