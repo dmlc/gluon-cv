@@ -5,11 +5,12 @@ Code adapted from https://github.com/STVIR/pysot"""
 from __future__ import division
 from mxnet.gluon import nn
 from mxnet.gluon.block import HybridBlock
+from mxnet.context import cpu
 
 class AlexNetLegacy(HybridBlock):
     """AlexNetLegacy model as backbone"""
     configs = [3, 96, 256, 384, 384, 256]
-    def __init__(self, width_mult=1, **kwargs):
+    def __init__(self, width_mult=1, ctx=cpu(), **kwargs):
         configs = list(map(lambda x: 3 if x == 3 else
                            int(x*width_mult), AlexNetLegacy.configs))
         super(AlexNetLegacy, self).__init__(**kwargs)
@@ -32,6 +33,7 @@ class AlexNetLegacy(HybridBlock):
                                   nn.Activation('relu'))
                 self.features.add(nn.Conv2D(configs[5], kernel_size=3),
                                   nn.BatchNorm())
+            self.features.initialize(ctx=ctx)
 
     def hybrid_forward(self, F, x):
         x = self.features(x)

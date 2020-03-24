@@ -11,12 +11,12 @@ from gluoncv.data.otb.tracking import OTBTracking as OTBDataset
 def parse_args():
     """ benchmark test."""
     parser = argparse.ArgumentParser(description='tracking evaluation')
-    parser.add_argument('--tracker_path', '-p', type=str, help='test result path')
+    parser.add_argument('--tracker-path', '-p', type=str, help='test result path')
     parser.add_argument('--dataset', '-d', default='OTB2015', type=str, help='dataset name')
     parser.add_argument('--num', '-n', default=1, type=int, help='number of thread to eval')
-    parser.add_argument('--tracker_prefix', '-t', type=str, help='tracker name')
-    parser.add_argument('--show_video_level', '-s', dest='show_video_level', action='store_true')
-    parser.add_argument('--test_dataset', type=str, help='test_json dataset dir')
+    parser.add_argument('--tracker-prefix', '-t', type=str, help='tracker name')
+    parser.add_argument('--show-video-level', '-s', action='store_true')
+    parser.add_argument('--test-dataset', type=str, help='test_json dataset dir')
     parser.set_defaults(show_video_level=False)
     opt = parser.parse_args()
     return opt

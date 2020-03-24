@@ -16,8 +16,8 @@ from mxnet.gluon.data import dataset
 from gluoncv.utils.filesystem import try_import_cv2
 from gluoncv.model_zoo.siamrpn.siamrpn_tracker import corner2center, center2corner
 from gluoncv.model_zoo.siamrpn.siamrpn_tracker import Center, Anchors
-from gluoncv.data.transforms.track import Augmentation
-from gluoncv.utils.metrics.tracking import Iou
+from gluoncv.data.transforms.track import SiamRPNaugmentation
+from gluoncv.utils.bbox import bbox_iou
 
 class SubDataset(object):
     """Load the subdataset for tracking.
@@ -252,18 +252,18 @@ class TrkDataset(dataset.Dataset):
     """
     def __init__(self,
                  data_path=os.path.expanduser('~/.mxnet/datasets'),
-                 dataset_names=('vid', 'coco', 'det', 'yt_bb'),
-                 detaset_root=('vid/crop511', 'coco/crop511', 'det/crop511', 'yt_bb/crop511'),
-                 detaset_anno=('vid/train.json', 'coco/train2017.json', 'det/train.json',
-                               'yt_bb/train.json'),
-                 dataset_frame_range=(100, 1, 1, 3),
+                 dataset_names=('vid', 'yt_bb', 'coco', 'det'),
+                 detaset_root=('vid/crop511', 'yt_bb/crop511', 'coco/crop511', 'det/crop511'),
+                 detaset_anno=('vid/train.json', 'yt_bb/train.json', 'coco/train2017.json',
+                               'det/train.json'),
+                 dataset_frame_range=(100, 3, 1, 1),
                  dataset_num_use=(100000, -1, -1, -1),
                  train_search_size=255,
                  train_exemplar_size=127,
                  anchor_stride=8,
                  anchor_ratios=(0.33, 0.5, 1, 2, 3),
-                 train_base_size=8,
-                 train_output_size=25,
+                 train_base_size=0,
+                 train_output_size=17,
                  template_shift=4,
                  template_scale=0.05,
                  template_blur=0,
@@ -275,14 +275,14 @@ class TrkDataset(dataset.Dataset):
                  search_flip=0,
                  search_color=1.0,
                  videos_per_epoch=600000,
-                 train_epoch=20,
+                 train_epoch=50,
                  train_thr_high=0.6,
                  train_thr_low=0.3,
                  train_pos_num=16,
                  train_neg_num=16,
                  train_total_num=64,
                  gray=0.0,
-                 neg=0.2,
+                 neg=0.05,
                 ):
         super(TrkDataset, self).__init__()
         self.train_search_size = train_search_size
@@ -352,16 +352,16 @@ class TrkDataset(dataset.Dataset):
             self.all_dataset.append(sub_dataset)
 
         # data augmentation
-        self.template_aug = Augmentation(self.template_shift,
-                                         self.template_scale,
-                                         self.template_blur,
-                                         self.template_flip,
-                                         self.template_color)
-        self.search_aug = Augmentation(self.search_shift,
-                                       self.search_scale,
-                                       self.search_blur,
-                                       self.search_flip,
-                                       self.search_color)
+        self.template_aug = SiamRPNaugmentation(self.template_shift,
+                                                self.template_scale,
+                                                self.template_blur,
+                                                self.template_flip,
+                                                self.template_color)
+        self.search_aug = SiamRPNaugmentation(self.search_shift,
+                                              self.search_scale,
+                                              self.search_blur,
+                                              self.search_flip,
+                                              self.search_color)
         videos_per_epoch = self.videos_per_epoch
         self.num = videos_per_epoch if videos_per_epoch > 0 else self.num
         self.num *= self.train_epoch
@@ -546,10 +546,12 @@ class AnchorTarget:
         delta[2] = np.log(tw / w)
         delta[3] = np.log(th / h)
 
-        overlap = Iou([x1, y1, x2, y2], target)
+        target = np.array([target[0], target[1], target[2], target[3]]).reshape(1, -1)
+        bbox = np.array([x1, y1, x2, y2]).reshape(4, -1).T
+        overlap = bbox_iou(bbox, target)
+        overlap = overlap.reshape(-1, self.train_output_size, self.train_output_size)
         pos = np.where(overlap > self.train_thr_high)
-        neg = np.where(overlap < self.thain_thr_low)
-
+        neg = np.where(overlap < self.train_thr_low)
         pos, pos_num = select(pos, self.train_pos_num)
         neg, _ = select(neg, self.train_total_num - self.train_pos_num)
 
