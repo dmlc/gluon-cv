@@ -2,7 +2,8 @@
 ======================================
 
 This is a quick demo of using GluonCV PSPNet model on ADE20K dataset.
-Please follow the `installation guide <../index.html>`_ to install MXNet and GluonCV if not yet.
+Please follow the `installation guide <../../index.html#installation>`__
+to install MXNet and GluonCV if not yet.
 """
 import mxnet as mx
 from mxnet import image
