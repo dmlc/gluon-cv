@@ -206,7 +206,7 @@ def get_deeplab(dataset='pascal_voc', backbone='resnet50', pretrained=False,
     from ..data import datasets
     # infer number of classes
     model = DeepLabV3(datasets[dataset].NUM_CLASS, backbone=backbone, ctx=ctx, **kwargs)
-    model.classes = datasets[dataset].classes
+    model.classes = datasets[dataset].CLASSES
     if pretrained:
         from .model_store import get_model_file
         model.load_parameters(get_model_file('deeplab_%s_%s'%(backbone, acronyms[dataset]),
