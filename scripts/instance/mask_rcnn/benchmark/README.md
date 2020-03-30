@@ -1,7 +1,7 @@
 # Benchmarking instruction to run Mask R-CNN
 
 ## Operating System
-We recommend to use AWS Deep Learning AMI as it provides all the infrastructure and tools to 
+We recommend to use the latest AWS Deep Learning AMI as it provides all the infrastructure and tools to 
 accelerate deep learning in the cloud, at any scale. 
 Please find more information about DLAMI [here](https://docs.aws.amazon.com/dlami/latest/devguide/options.html)
 
@@ -62,9 +62,12 @@ python mscoco.py
 ```
 
 ## Library path
-If you are training the model using AWS P3dn.24xlarge, make sure your `LD_LIBRARY_PATH` have this below library path:
+If you are training the model using AWS P3dn.24xlarge, make sure your `LD_LIBRARY_PATH` have this below library path.
+Since the AWS P3dn.24xlarge supports [EFA](https://aws.amazon.com/hpc/efa/), we just want to make sure `EFA` and `libfabric` paths are included in `LD_LIBRARY_PATH
+.
 ```bash
-/usr/local/cuda/lib:/usr/local/cuda/lib64:/opt/amazon/efa/lib64:/usr/local/mpi/lib:/home/ec2-user/nccl/build/lib:/home/ec2-user/aws-ofi-nccl/install/lib
+/opt/amazon/efa/lib64
+$HOME/aws-ofi-nccl/install/lib
 ```
 
 ## Export Flags
