@@ -4,7 +4,7 @@ from mxnet.gluon import nn
 from mxnet.gluon.nn import BatchNorm
 from mxnet.context import cpu
 
-from .resnet import BasicBlockV1, BottleneckV1
+from .resnet import BasicBlockV1, BottleneckV1, _conv3x3
 
 __all__ = ['get_hrnet', 'hrnet_w18_small_v1_c', 'hrnet_w18_small_v2_c', 'hrnet_w30_c',
            'hrnet_w32_c', 'hrnet_w40_c', 'hrnet_w44_c', 'hrnet_w48_c',
@@ -13,7 +13,92 @@ class HRBasicBlock(BasicBlockV1):
     expansion = 1
 
 class HRBottleneck(BottleneckV1):
+    '''
+    warning: It's mxnet compatable bottleneck, the orginal implementation is different from this bottleneck
+    as it's all convolutions are no bias
+    '''
     expansion = 4
+
+class OrigHRBottleneck(nn.HybridBlock):
+    r"""Modified Bottleneck V1 from `"Deep Residual Learning for Image Recognition"
+    <http://arxiv.org/abs/1512.03385>`_ paper.
+    This is used for ResNet V1 for 50, 101, 152 layers. It's all convolutions are
+    no bias to match with the original hrnet implementation.
+
+    Parameters
+    ----------
+    channels : int
+        Number of output channels.
+    stride : int
+        Stride size.
+    downsample : bool, default False
+        Whether to downsample the input.
+    in_channels : int, default 0
+        Number of input channels. Default is 0, to infer from the graph.
+    last_gamma : bool, default False
+        Whether to initialize the gamma of the last BatchNorm layer in each bottleneck to zero.
+    use_se : bool, default False
+        Whether to use Squeeze-and-Excitation module
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    """
+    expansion = 4
+    def __init__(self, channels, stride, downsample=False, in_channels=0,
+                 last_gamma=False, use_se=False, norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
+        super(OrigHRBottleneck, self).__init__(**kwargs)
+        self.body = nn.HybridSequential(prefix='')
+        # add use_bias=False here to match with the original implementation
+        self.body.add(nn.Conv2D(channels//4, kernel_size=1, strides=stride, use_bias=False))
+        self.body.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
+        self.body.add(nn.Activation('relu'))
+        self.body.add(_conv3x3(channels//4, 1, channels//4))
+        self.body.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
+        self.body.add(nn.Activation('relu'))
+        # add use_bias=False here to match with the original implementation
+        self.body.add(nn.Conv2D(channels, kernel_size=1, strides=1, use_bias=False))
+
+        if use_se:
+            self.se = nn.HybridSequential(prefix='')
+            self.se.add(nn.Dense(channels // 16, use_bias=False))
+            self.se.add(nn.Activation('relu'))
+            self.se.add(nn.Dense(channels, use_bias=False))
+            self.se.add(nn.Activation('sigmoid'))
+        else:
+            self.se = None
+
+        if not last_gamma:
+            self.body.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
+        else:
+            self.body.add(norm_layer(gamma_initializer='zeros',
+                                     **({} if norm_kwargs is None else norm_kwargs)))
+
+        if downsample:
+            self.downsample = nn.HybridSequential(prefix='')
+            self.downsample.add(nn.Conv2D(channels, kernel_size=1, strides=stride,
+                                          use_bias=False, in_channels=in_channels))
+            self.downsample.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
+        else:
+            self.downsample = None
+
+    def hybrid_forward(self, F, x):
+        residual = x
+
+        x = self.body(x)
+
+        if self.se:
+            w = F.contrib.AdaptiveAvgPooling2D(x, output_size=1)
+            w = self.se(w)
+            x = F.broadcast_mul(x, w.expand_dims(axis=2).expand_dims(axis=2))
+
+        if self.downsample:
+            residual = self.downsample(residual)
+
+        x = F.Activation(x + residual, act_type='relu')
+        return x
 
 class HighResolutionModule(nn.HybridBlock):
     '''
@@ -157,9 +242,11 @@ class HighResolutionModule(nn.HybridBlock):
 
         return x_fuse
 
+# TODO: Now, We use OrigHRBottleneck to match with the origial implementation. You 
+#       can also replace it with the mxnet compatable HRBottleneck.
 BLOCKS_DICT = {
     'BASIC': HRBasicBlock,
-    'BOTTLENECK': HRBottleneck
+    'BOTTLENECK': OrigHRBottleneck
 }
 
 class HighResolutionBaseNet(nn.HybridBlock):
@@ -367,7 +454,7 @@ class HighResolutionClsNet(HighResolutionBaseNet):
 
 
     def _make_head(self, pre_stage_channels, norm_layer=BatchNorm, norm_kwargs=None):
-        head_block = HRBottleneck
+        head_block = BLOCKS_DICT['BOTTLENECK']
         head_channels = [32, 64, 128, 256]
 
         incre_blocks = nn.HybridSequential()
