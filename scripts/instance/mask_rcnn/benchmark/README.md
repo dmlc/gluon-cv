@@ -1,5 +1,11 @@
 # Benchmarking instruction to run Mask R-CNN
 
+## Operating System
+We recommend to use AWS Deep Learning AMI as it provides all the infrastructure and tools to 
+accelerate deep learning in the cloud, at any scale. 
+Please find more information about DLAMI [here](https://docs.aws.amazon.com/dlami/latest/devguide/options.html)
+
+
 ## Installation
 
 #### 1. MXNet with CUDA-10.0
@@ -41,11 +47,6 @@ sudo apt-get update -y
 sudo apt-get install -y numactl
 ```
 
-## Operating System
-We recommend to use AWS Deep Learning AMI as it provides all the infrastructure and tools to 
-accelerate deep learning in the cloud, at any scale. For our testing, 
-we used `Deep Learning AMI (Ubuntu 18.04) Version 27.0`. 
-Please find more information about DLAMI [here](https://docs.aws.amazon.com/dlami/latest/devguide/options.html)
 
 ## Download MSCOCO-2017 dataset
 Download the dataset on all nodes locally using below command:
