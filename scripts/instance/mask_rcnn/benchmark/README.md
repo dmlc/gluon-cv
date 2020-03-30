@@ -42,9 +42,15 @@ cd $HOME
 ```
 
 #### 5. numactl
+This package only requires if using `ompi_bind_DGX1.sh`
 ```bash
+# Ubuntu
 sudo apt-get update -y
 sudo apt-get install -y numactl
+
+# RHEL
+sudo yum check-update
+sudo yum install numactl
 ```
 
 
