@@ -351,7 +351,7 @@ def get_icnet(dataset='citys', backbone='resnet50', pretrained=False,
     # infer number of classes
     model = ICNet(datasets[dataset].NUM_CLASS, backbone=backbone,
                   pretrained_base=pretrained_base, ctx=ctx, **kwargs)
-    model.classes = datasets[dataset].classes
+    model.classes = datasets[dataset].CLASSES
 
     if pretrained:
         from .model_store import get_model_file

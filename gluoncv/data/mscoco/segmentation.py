@@ -38,6 +38,11 @@ class COCOSegmentation(SegmentationDataset):
     CAT_LIST = [0, 5, 2, 16, 9, 44, 6, 3, 17, 62, 21, 67, 18, 19, 4,
                 1, 64, 20, 63, 7, 72]
     NUM_CLASS = 21
+    CLASSES = ("background", "airplane", "bicycle", "bird", "boat", "bottle",
+               "bus", "car", "cat", "chair", "cow", "diningtable", "dog", "horse",
+               "motorcycle", "person", "potted-plant", "sheep", "sofa", "train",
+               "tv")
+
     def __init__(self, root=os.path.expanduser('~/.mxnet/datasets/coco'),
                  split='train', mode=None, transform=None, **kwargs):
         super(COCOSegmentation, self).__init__(root, split, mode, transform, **kwargs)
@@ -131,7 +136,4 @@ class COCOSegmentation(SegmentationDataset):
     @property
     def classes(self):
         """Category names."""
-        return ('background', 'airplane', 'bicycle', 'bird', 'boat', 'bottle',
-                'bus', 'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse',
-                'motorcycle', 'person', 'potted-plant', 'sheep', 'sofa', 'train',
-                'tv')
+        return type(self).CLASSES

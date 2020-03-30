@@ -35,6 +35,11 @@ class VOCSegmentation(SegmentationDataset):
     """
     BASE_DIR = 'VOC2012'
     NUM_CLASS = 21
+    CLASSES = ("background", "airplane", "bicycle", "bird", "boat", "bottle",
+               "bus", "car", "cat", "chair", "cow", "diningtable", "dog", "horse",
+               "motorcycle", "person", "potted-plant", "sheep", "sofa", "train",
+               "tv")
+
     def __init__(self, root=os.path.expanduser('~/.mxnet/datasets/voc'),
                  split='train', mode=None, transform=None, **kwargs):
         super(VOCSegmentation, self).__init__(root, split, mode, transform, **kwargs)
@@ -100,7 +105,4 @@ class VOCSegmentation(SegmentationDataset):
     @property
     def classes(self):
         """Category names."""
-        return ('background', 'airplane', 'bicycle', 'bird', 'boat', 'bottle',
-                'bus', 'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse',
-                'motorcycle', 'person', 'potted-plant', 'sheep', 'sofa', 'train',
-                'tv')
+        return type(self).CLASSES
