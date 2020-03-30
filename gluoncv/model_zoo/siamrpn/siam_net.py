@@ -3,17 +3,19 @@ Code adapted from https://github.com/STVIR/pysot"""
 # coding:utf-8
 # pylint: disable=arguments-differ,unused-argument
 from mxnet.gluon.block import HybridBlock
+from mxnet.context import cpu
 import mxnet as mx
 from gluoncv.model_zoo.siamrpn.siam_alexnet import alexnetlegacy
 from gluoncv.model_zoo.siamrpn.siam_rpn import DepthwiseRPN
 
-
 class SiamRPN(HybridBlock):
     """SiamRPN"""
-    def __init__(self, **kwargs):
+    def __init__(self, bz=1, is_train=False, ctx=cpu(), **kwargs):
         super(SiamRPN, self).__init__(**kwargs)
-        self.backbone = alexnetlegacy()
-        self.rpn_head = DepthwiseRPN()
+        self.backbone = alexnetlegacy(ctx=ctx)
+        self.rpn_head = DepthwiseRPN(bz=bz, is_train=is_train, ctx=ctx)
+        self.bz = bz
+        self.is_train = is_train
         self.zbranch = None
         self.xbranch = None
         self.cls = None
@@ -45,19 +47,16 @@ class SiamRPN(HybridBlock):
             'loc': self.loc,
             }
 
-    def hybrid_forward(self, F, zinput, xinput):
+    def hybrid_forward(self, F, template, search):
         """ Hybrid forward of SiamRPN net
             only used in training """
-        zbranch = self.backbone(zinput)
-        xbranch = self.backbone(xinput)
+        zbranch = self.backbone(template)
+        xbranch = self.backbone(search)
         self.cls, self.loc = self.rpn_head(zbranch, xbranch)
-        return {
-            'cls': self.cls,
-            'loc': self.loc,
-            }
+        return self.cls, self.loc
 
 
-def get_Siam_RPN(base_name, pretrained=False, ctx=mx.cpu(0),
+def get_Siam_RPN(base_name, bz=1, is_train=False, pretrained=False, ctx=mx.cpu(0),
                  root='~/.mxnet/models', **kwargs):
     """get Siam_RPN net and get pretrained model if have pretrained
 
@@ -65,6 +64,10 @@ def get_Siam_RPN(base_name, pretrained=False, ctx=mx.cpu(0),
     ----------
     base_name : str
         Backbone model name
+    bz : int
+        batch size for train, bz = 1 if test
+    is_train : str
+        is_train is True if train, False if test
     pretrained : bool or str
         Boolean value controls whether to load the default pretrained weights for model.
         String value represents the hashtag for a certain version of pretrained weights.
@@ -78,8 +81,7 @@ def get_Siam_RPN(base_name, pretrained=False, ctx=mx.cpu(0),
     HybridBlock
         A SiamRPN Tracking network.
     """
-
-    net = SiamRPN()
+    net = SiamRPN(bz=bz, is_train=is_train, ctx=ctx)
     if pretrained:
         from gluoncv.model_zoo.model_store import get_model_file
         net.load_parameters(get_model_file('siamrpn_%s'%(base_name),

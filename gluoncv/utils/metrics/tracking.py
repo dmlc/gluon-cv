@@ -1,5 +1,6 @@
 """ SiamRPN metrics """
 import numpy as np
+from gluoncv.utils.filesystem import try_import_colorama
 
 def Iou(rect1, rect2):
     """
@@ -246,6 +247,7 @@ class OPEBenchmark:
         ----------
             success_ret: returned dict from function eval
         """
+        colorama = try_import_colorama()
         tracker_auc = {}
         for tracker_name in success_ret.keys():
             auc = np.mean(list(success_ret[tracker_name].values()))
@@ -301,12 +303,12 @@ class OPEBenchmark:
                     precision = np.mean(precision_ret[tracker_name][video])
                     success_str = "{:^9.3f}".format(success)
                     if success < helight_threshold:
-                        row += f'{Fore.RED}{success_str}{Style.RESET_ALL}|'
+                        row += f'{colorama.Fore.RED}{success_str}{colorama.Style.RESET_ALL}|'
                     else:
                         row += success_str+'|'
                     precision_str = "{:^11.3f}".format(precision)
                     if precision < helight_threshold:
-                        row += f'{Fore.RED}{precision_str}{Style.RESET_ALL}|'
+                        row += f'{colorama.Fore.RED}{precision_str}{colorama.Style.RESET_ALL}|'
                     else:
                         row += precision_str+'|'
                 print(row)

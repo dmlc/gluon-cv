@@ -123,7 +123,7 @@ def gen_json(args):
                 dataset[video_crop_base_path]['{:02d}'.format(trackid)] = {'000000': bbox}
 
         print('save json (dataset), please wait 20 seconds~')
-        json.dump(dataset, open(os.path.join(download_dir,'{}.json'.format(dataType)), 'w'), indent=4, sort_keys=True)
+        json.dump(dataset, open(os.path.join(args.download_dir,'{}.json'.format(dataType)), 'w'), indent=4, sort_keys=True)
         print('done!')
 
 def main(args):
