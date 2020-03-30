@@ -98,7 +98,7 @@ sphinx_gallery_conf = {
     'reference_url': {
         'gluoncv': None,
     },
-    'backreferences_dir': False,
+    'backreferences_dir': None,
 }
 
 
