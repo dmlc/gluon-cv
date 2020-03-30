@@ -124,7 +124,8 @@ python -u $HOME/gluoncv/scripts/instance/mask_rcnn/train_mask_rcnn.py \
 --clip-gradient 1.5 --use-ext
 ```
 
-#### 2. Multi Node: The below command is an example on how to run the horovod training on 24 P3dn.24xlarge node
+#### 2. Multi Node: The below command is an example on how to run the horovod training on 24 P3dn.24xlarge node.
+Note: The `hostfile` should looks like list of `<ip address> slots=<num_of_gpus>`
 ```bash
 mpirun --allow-run-as-root \
 -np 192 --hostfile $HOME/hosts_24 \
