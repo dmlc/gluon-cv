@@ -167,3 +167,5 @@ python -u $HOME/gluoncv/scripts/instance/mask_rcnn/train_mask_rcnn.py \
 Warning: could not find environment variable <name of env. variable>
 ```
 - The `ompi_bind_DGX1.sh ` file provided here is specific to AWS [p3dn.24xlarge](https://aws.amazon.com/ec2/instance-types/p3/) Instance.
+
+Please find the sample [logfile](https://github.com/dmlc/web-data/tree/master/gluoncv/logs/instance/mask_rcnn_fpn_resnet50_v1b_coco_train_horovod_24_p3dn24xlarge.log) that ran on AWS 24 P3dn.24xlarge Instances using Horovod(mpirun command).
