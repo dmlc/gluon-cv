@@ -1,14 +1,34 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+# coding: utf-8
+# pylint: disable= arguments-differ,unused-argument,unused-variable
+"""HRNet, implemented in Gluon."""
+__all__ = ['get_hrnet', 'hrnet_w18_small_v1_c', 'hrnet_w18_small_v2_c', 'hrnet_w30_c',
+           'hrnet_w32_c', 'hrnet_w40_c', 'hrnet_w44_c', 'hrnet_w48_c',
+           'hrnet_w18_small_v1_s', 'hrnet_w18_small_v2_s', 'hrnet_w48_s']
+
 import numpy as np
 from mxnet.gluon import contrib
 from mxnet.gluon import nn
 from mxnet.gluon.nn import BatchNorm
 from mxnet.context import cpu
-
 from .resnet import BasicBlockV1, BottleneckV1, _conv3x3
 
-__all__ = ['get_hrnet', 'hrnet_w18_small_v1_c', 'hrnet_w18_small_v2_c', 'hrnet_w30_c',
-           'hrnet_w32_c', 'hrnet_w40_c', 'hrnet_w44_c', 'hrnet_w48_c',
-           'hrnet_w18_small_v1_s', 'hrnet_w18_small_v2_s', 'hrnet_w48_s']
 class HRBasicBlock(BasicBlockV1):
     r"""BasicBlock V1 from `"Deep Residual Learning for Image Recognition"
     """
@@ -380,7 +400,7 @@ class HighResolutionBaseNet(nn.HybridBlock):
 
         return blocks, num_inchannels
 
-    def hybrid_forward(self, F, x): # , *args, **kwargs):
+    def hybrid_forward(self, F, x):
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
