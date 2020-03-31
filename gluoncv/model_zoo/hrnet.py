@@ -10,19 +10,21 @@ __all__ = ['get_hrnet', 'hrnet_w18_small_v1_c', 'hrnet_w18_small_v2_c', 'hrnet_w
            'hrnet_w32_c', 'hrnet_w40_c', 'hrnet_w44_c', 'hrnet_w48_c',
            'hrnet_w18_small_v1_s', 'hrnet_w18_small_v2_s', 'hrnet_w48_s']
 class HRBasicBlock(BasicBlockV1):
+    r"""BasicBlock V1 from `"Deep Residual Learning for Image Recognition"
+    """
     expansion = 1
 
 class HRBottleneck(BottleneckV1):
     '''
-    warning: It's mxnet compatable bottleneck, the orginal implementation is different from this bottleneck
-    as it's all convolutions are no bias
+    warning: It's mxnet compatable bottleneck, the orginal implementation is different
+    from this bottleneck as its all convolutions are no bias
     '''
     expansion = 4
 
 class OrigHRBottleneck(nn.HybridBlock):
     r"""Modified Bottleneck V1 from `"Deep Residual Learning for Image Recognition"
     <http://arxiv.org/abs/1512.03385>`_ paper.
-    This is used for ResNet V1 for 50, 101, 152 layers. It's all convolutions are
+    This is used for ResNet V1 for 50, 101, 152 layers. Its all convolutions are
     no bias to match with the original hrnet implementation.
 
     Parameters
@@ -107,7 +109,7 @@ class HighResolutionModule(nn.HybridBlock):
     def __init__(self, num_branches, blocks, num_blocks, num_channels, fuse_method,
                  num_inchannels=None, multi_scale_output=True, interp_type='nearest',
                  norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
-        super(HighResolutionModule, self).__init__()
+        super(HighResolutionModule, self).__init__(**kwargs)
 
         if num_inchannels is not None:
             self.num_inchannels = num_inchannels
@@ -127,11 +129,8 @@ class HighResolutionModule(nn.HybridBlock):
 
     def _make_one_branch(self, branch_index, block, num_blocks, num_channels,
                          stride=1):
-        if stride != 1 or  self.num_inchannels[branch_index] != \
-            num_channels[branch_index] * block.expansion:
-            downsample = True
-        else:
-            downsample = False
+        downsample = stride != 1 or self.num_inchannels[branch_index] != \
+            num_channels[branch_index] * block.expansion
 
         layers = nn.HybridSequential()
         layers.add(block(num_channels[branch_index]* block.expansion, stride,
@@ -242,7 +241,7 @@ class HighResolutionModule(nn.HybridBlock):
 
         return x_fuse
 
-# TODO: Now, We use OrigHRBottleneck to match with the origial implementation. You 
+# TODO: Now, We use OrigHRBottleneck to match with the origial implementation. You
 #       can also replace it with the mxnet compatable HRBottleneck.
 BLOCKS_DICT = {
     'BASIC': HRBasicBlock,
@@ -250,6 +249,8 @@ BLOCKS_DICT = {
 }
 
 class HighResolutionBaseNet(nn.HybridBlock):
+    r"""Base class for classification and segmentation
+    """
     def __init__(self, cfg, stage_interp_type='nearst', norm_layer=BatchNorm, \
                  norm_kwargs=None, **kwargs):
         self.stage_interp_type = stage_interp_type
@@ -341,10 +342,7 @@ class HighResolutionBaseNet(nn.HybridBlock):
         return transition_layers
 
     def _make_layer(self, block, planes, blocks, inplanes=0, stride=1):
-        if stride != 1 or inplanes != planes * block.expansion:
-            downsample = True
-        else:
-            downsample = False
+        downsample = stride != 1 or inplanes != planes * block.expansion
 
         layers = nn.HybridSequential()
         layers.add(block(planes* block.expansion, stride, downsample, inplanes))
@@ -424,6 +422,8 @@ class HighResolutionBaseNet(nn.HybridBlock):
         return y_list
 
 class HighResolutionClsNet(HighResolutionBaseNet):
+    r"""HRNet for Classification
+    """
     def __init__(self, config, stage_interp_type='nearest', norm_layer=BatchNorm, norm_kwargs=None,
                  num_classes=1000, **kwargs):
         super(HighResolutionClsNet, self).__init__(config, stage_interp_type=stage_interp_type,
@@ -489,6 +489,8 @@ class HighResolutionClsNet(HighResolutionBaseNet):
         return incre_blocks, downsamp_blocks, final_layer
 
 class HighResolutionSegNet(HighResolutionBaseNet):
+    r"""HRNet for Segmentation
+    """
     def __init__(self, config, stage_interp_type='bilinear_like', norm_layer=BatchNorm,
                  norm_kwargs=None, num_classes=19, **kwargs):
         super(HighResolutionSegNet, self).__init__(config, stage_interp_type=stage_interp_type,
@@ -641,7 +643,9 @@ def get_hrnet(model_name, stage_interp_type='nearest', purpose='cls', pretrained
         raise NotImplementedError
 
     if pretrained:
-        raise RuntimeError('Pretrained model of hrnet is not available now.')
+        from .model_store import get_model_file
+        net.load_parameters(get_model_file('hrnet_%s_%s'%(model_name, purpose),
+                                           tag=pretrained, root=root), ctx=ctx)
     return net
 
 def hrnet_w18_small_v1_c(**kwargs):
