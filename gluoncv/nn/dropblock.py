@@ -1,6 +1,6 @@
 # pylint: disable=arguments-differ,line-too-long,missing-docstring,missing-module-docstring
-import mxnet as mx
 from functools import partial
+import mxnet as mx
 from mxnet.gluon.nn import HybridBlock
 
 __all__ = ['DropBlock', 'set_drop_prob', 'DropBlockScheduler']
@@ -52,6 +52,7 @@ def set_drop_prob(drop_prob, module):
 
 
 class DropBlockScheduler(object):
+    # pylint: disable=chained-comparison
     def __init__(self, net, start_prob, end_prob, num_epochs):
         self.net = net
         self.start_prob = start_prob
@@ -64,4 +65,3 @@ class DropBlockScheduler(object):
         apply_drop_prob = partial(set_drop_prob, ratio)
         self.net.apply(apply_drop_prob)
         self.net.hybridize()
-

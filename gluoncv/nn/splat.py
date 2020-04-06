@@ -1,11 +1,8 @@
 # pylint: disable=arguments-differ,line-too-long,missing-docstring,missing-module-docstring
-import mxnet as mx
 from mxnet.gluon import nn
-from mxnet.gluon.nn import Conv2D, Block, HybridBlock, Dense, BatchNorm, Activation
+from mxnet.gluon.nn import Conv2D, HybridBlock, BatchNorm, Activation
 
 __all__ = ['SplitAttentionConv']
-
-USE_BN = True
 
 class SplitAttentionConv(HybridBlock):
     def __init__(self, channels, kernel_size, strides=(1, 1), padding=(0, 0),
@@ -18,11 +15,12 @@ class SplitAttentionConv(HybridBlock):
         self.cardinality = groups
         self.conv = Conv2D(channels*radix, kernel_size, strides, padding, dilation,
                            groups=groups*radix, *args, in_channels=in_channels, **kwargs)
-        if USE_BN:
+        self.use_bn = norm_layer is not None
+        if self.use_bn:
             self.bn = norm_layer(in_channels=channels*radix, **norm_kwargs)
         self.relu = Activation('relu')
         self.fc1 = Conv2D(inter_channels, 1, in_channels=channels, groups=self.cardinality)
-        if USE_BN:
+        if self.use_bn:
             self.bn1 = norm_layer(in_channels=inter_channels, **norm_kwargs)
         self.relu1 = Activation('relu')
         if drop_ratio > 0:
@@ -34,7 +32,7 @@ class SplitAttentionConv(HybridBlock):
 
     def hybrid_forward(self, F, x):
         x = self.conv(x)
-        if USE_BN:
+        if self.use_bn:
             x = self.bn(x)
         x = self.relu(x)
         if self.radix > 1:
@@ -44,7 +42,7 @@ class SplitAttentionConv(HybridBlock):
             gap = x
         gap = F.contrib.AdaptiveAvgPooling2D(gap, 1)
         gap = self.fc1(gap)
-        if USE_BN:
+        if self.use_bn:
             gap = self.bn1(gap)
         atten = self.relu1(gap)
         if self.drop:
@@ -61,5 +59,3 @@ class SplitAttentionConv(HybridBlock):
         else:
             out = F.broadcast_mul(atten, x)
         return out
-
-

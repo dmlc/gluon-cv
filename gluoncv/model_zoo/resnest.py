@@ -62,7 +62,7 @@ class Bottleneck(HybridBlock):
                                             in_channels=group_width, norm_layer=norm_layer, norm_kwargs=norm_kwargs,
                                             radix=radix, drop_ratio=split_drop_ratio, **kwargs)
         else:
-            self.conv2 = nn.Conv2D(channels=group_width, kernel_size=3, strides = 1 if self.avd else strides,
+            self.conv2 = nn.Conv2D(channels=group_width, kernel_size=3, strides=1 if self.avd else strides,
                                    padding=dilation, dilation=dilation, groups=cardinality, use_bias=False,
                                    in_channels=group_width, **kwargs)
             self.bn2 = norm_layer(in_channels=group_width, **norm_kwargs)
@@ -199,7 +199,7 @@ class ResNeSt(HybridBlock):
                                            norm_layer=norm_layer, last_gamma=last_gamma, use_splat=use_splat,
                                            avd=avd)
             input_size = _update_input_size(input_size, 2)
-            if dilated or dilation==4:
+            if dilated or dilation == 4:
                 self.layer3 = self._make_layer(3, block, 256, layers[2], strides=1, dilation=2,
                                                avg_down=avg_down, norm_layer=norm_layer,
                                                last_gamma=last_gamma, dropblock_prob=dropblock_prob,
@@ -257,7 +257,7 @@ class ResNeSt(HybridBlock):
                     if pre_dilation == 1:
                         downsample.add(nn.AvgPool2D(pool_size=strides, strides=strides,
                                                     ceil_mode=True, count_include_pad=False))
-                    elif strides==1:
+                    elif strides == 1:
                         downsample.add(nn.AvgPool2D(pool_size=1, strides=1,
                                                     ceil_mode=True, count_include_pad=False))
                     else:
