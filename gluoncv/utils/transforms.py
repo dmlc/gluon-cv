@@ -2,11 +2,11 @@
 import math
 import random
 
-  
 # code adapted from:
 # https://github.com/kakaobrain/fast-autoaugment
 # https://github.com/rpmcruz/autoaugment
 class EfficientNetRandomCrop:
+    # pylint: disable=misplaced-comparison-constant
     def __init__(self, imgsize, min_covered=0.1, aspect_ratio_range=(3./4, 4./3),
                  area_range=(0.1, 1.0), max_attempts=10):
         assert 0.0 < min_covered
