@@ -158,6 +158,14 @@ ResNet
    +---------------------------+--------+--------+----------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
    | ResNet152_v2 [2]_         | 79.21  | 94.31  | f2695542 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet152_v2.sh>`_        | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnet152_v2.log>`_         |
    +---------------------------+--------+--------+----------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
+   | ResNeSt50 [17]_           | 81.04  | 95.42  | bcfefe1d | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnest50.sh>`_           | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnest50.log>`_            |
+   +---------------------------+--------+--------+----------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
+   | ResNeSt101 [17]_          | 82.83  | 96.42  | 5da943b3 | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnest101.sh>`_          | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnest101.log>`_           |
+   +---------------------------+--------+--------+----------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
+   | ResNeSt200 [17]_          | 83.86  | 96.86  | 0c5d117d | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnest200.sh>`_          | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnest200.log>`_           |
+   +---------------------------+--------+--------+----------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
+   | ResNeSt269 [17]_          | 84.53  | 96.98  | 11ae7f5d | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnest200.sh>`_          | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/resnest269.log>`_           |
+   +---------------------------+--------+--------+----------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
 
 ResNext
 -------
@@ -420,3 +428,6 @@ The following table lists pre-trained models trained on CIFAR10.
 .. [16] Christian Szegedy, Wei Liu, Yangqing Jia, Pierre Sermanet, Scott Reed, Dragomir Anguelov, Dumitru Erhan, Vincent Vanhoucke, Andrew Rabinovich \
         "Going Deeper with Convolutions" \
         arXiv preprint arXiv:1409.4842 (2014).
+.. [17] Hang Zhang, Chongruo Wu, Zhongyue Zhang, Yi Zhu, Zhi Zhang, Haibin Lin, Yue Sun, Tong He, Jonas Muller, R. Manmatha, Mu Li and Alex Smola \
+        "ResNeSt: Split-Attention Network" \
+        arXiv preprint (2020).

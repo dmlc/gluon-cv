@@ -131,4 +131,11 @@ If you feel our code or models helps in your research, kindly cite our papers:
   journal={arXiv preprint arXiv:1902.04103},
   year={2019}
 }
+
+@article{zhang2020resnest,
+title={ResNeSt: Split-Attention Networks},
+author={Zhang, Hang and Wu, Chongruo and Zhang, Zhongyue and Zhu, Yi and Zhang, Zhi and Lin, Haibin and Sun, Yue and He, Tong and Muller, Jonas and Manmatha, R. and Li, Mu and Smola, Alexander},
+journal={arXiv preprint},
+year={2020}
+}
 ```
