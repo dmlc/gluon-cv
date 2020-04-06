@@ -1,5 +1,5 @@
 """ResNeSt implemented in Gluon."""
-# pylint: disable=arguments-differ,unused-argument,missing-docstring
+# pylint: disable=arguments-differ,unused-argument,missing-docstring,line-too-long
 from __future__ import division
 
 import os
@@ -57,10 +57,10 @@ class Bottleneck(HybridBlock):
         self.bn1 = norm_layer(in_channels=group_width, **norm_kwargs)
         self.relu1 = nn.Activation('relu')
         if self.use_splat:
-            self.conv2 = SplitAttentionConv(channels=group_width, kernel_size=3, strides = 1 if self.avd else strides,
-                                              padding=dilation, dilation=dilation, groups=cardinality, use_bias=False,
-                                              in_channels=group_width, norm_layer=norm_layer, norm_kwargs=norm_kwargs,
-                                              radix=radix, drop_ratio=split_drop_ratio, **kwargs)
+            self.conv2 = SplitAttentionConv(channels=group_width, kernel_size=3, strides=1 if self.avd else strides,
+                                            padding=dilation, dilation=dilation, groups=cardinality, use_bias=False,
+                                            in_channels=group_width, norm_layer=norm_layer, norm_kwargs=norm_kwargs,
+                                            radix=radix, drop_ratio=split_drop_ratio, **kwargs)
         else:
             self.conv2 = nn.Conv2D(channels=group_width, kernel_size=3, strides = 1 if self.avd else strides,
                                    padding=dilation, dilation=dilation, groups=cardinality, use_bias=False,
@@ -208,7 +208,7 @@ class ResNeSt(HybridBlock):
                                                avg_down=avg_down, norm_layer=norm_layer,
                                                last_gamma=last_gamma, dropblock_prob=dropblock_prob,
                                                input_size=input_size, use_splat=use_splat, avd=avd)
-            elif dilation==3:
+            elif dilation == 3:
                 # special
                 self.layer3 = self._make_layer(3, block, 256, layers[2], strides=1, dilation=2,
                                                avg_down=avg_down, norm_layer=norm_layer,
@@ -218,7 +218,7 @@ class ResNeSt(HybridBlock):
                                                avg_down=avg_down, norm_layer=norm_layer,
                                                last_gamma=last_gamma, dropblock_prob=dropblock_prob,
                                                input_size=input_size, use_splat=use_splat, avd=avd)
-            elif dilation==2:
+            elif dilation == 2:
                 self.layer3 = self._make_layer(3, block, 256, layers[2], strides=2,
                                                avg_down=avg_down, norm_layer=norm_layer,
                                                last_gamma=last_gamma, dropblock_prob=dropblock_prob,

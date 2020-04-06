@@ -1,3 +1,4 @@
+# pylint: disable=arguments-differ,line-too-long,missing-docstring,missing-module-docstring
 import mxnet as mx
 from mxnet.gluon import nn
 from mxnet.gluon.nn import Conv2D, Block, HybridBlock, Dense, BatchNorm, Activation

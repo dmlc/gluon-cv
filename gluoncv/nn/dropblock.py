@@ -1,6 +1,7 @@
+# pylint: disable=arguments-differ,line-too-long,missing-docstring,missing-module-docstring
 import mxnet as mx
 from functools import partial
-from mxnet.gluon.nn import MaxPool2D, Block, HybridBlock
+from mxnet.gluon.nn import HybridBlock
 
 __all__ = ['DropBlock', 'set_drop_prob', 'DropBlockScheduler']
 
@@ -63,5 +64,4 @@ class DropBlockScheduler(object):
         apply_drop_prob = partial(set_drop_prob, ratio)
         self.net.apply(apply_drop_prob)
         self.net.hybridize()
-
 
