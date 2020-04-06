@@ -34,8 +34,7 @@ import random
 import gluoncv as gcv
 gcv.utils.check_version('0.6.0')
 
-#from gluoncv.model_zoo import get_model
-from autogluon.model_zoo import get_model
+from gluoncv.model_zoo import get_model
 from gluoncv.utils import makedirs#, LRSequential, LRScheduler
 import horovod.mxnet as hvd
 import mxnet as mx
@@ -134,12 +133,6 @@ parser.add_argument('--use_sk', action='store_true',
                     help='use SK layers or not in resnext. default is false.')
 parser.add_argument('--auto_aug', action='store_true',
                     help='use auto_aug. default is false.')
-parser.add_argument('--rand_aug', action='store_true',
-                    help='use auto_aug. default is false.')
-parser.add_argument('--aug_n', type=int, default=2,
-                    help='number of transforms.')
-parser.add_argument('--aug_m', type=int, default=15,
-                    help='strength of transforms.')
 parser.add_argument('--use_avd', action='store_true',
                     help='use avd. default is false.')
 
@@ -215,16 +208,10 @@ def get_train_data(rec_train, batch_size, data_nthreads, input_size, crop_ratio,
     train_transforms = []
     if args.auto_aug:
         print('Using AutoAugment')
-        from autogluon.utils.autoaugment2 import AugmentationBlock, autoaug_imagenet_policies
+        from autogluon.utils.augment import AugmentationBlock, autoaug_imagenet_policies
         train_transforms.append(AugmentationBlock(autoaug_imagenet_policies()))
 
-    if args.rand_aug:
-        #print('Random Augment')
-        print('Random 2 Augment')
-        from autogluon.utils.autoaugment import RandAugment, Rand2Augment
-        train_transforms.append(Rand2Augment(args.aug_n, args.aug_m))
-
-    from autogluon.utils.autoaugment import EfficientNetRandomCrop, EfficientNetCenterCrop, ToPIL, ToNDArray
+    from gluoncv.utils.transforms import EfficientNetRandomCrop
     from autogluon.utils import pil_transforms
 
     if input_size >= 320:
@@ -233,14 +220,14 @@ def get_train_data(rec_train, batch_size, data_nthreads, input_size, crop_ratio,
             pil_transforms.Resize((input_size, input_size), interpolation=Image.BICUBIC),
             pil_transforms.RandomHorizontalFlip(),
             pil_transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4),
-            ToNDArray(),
+            pil_transforms.ToNDArray(),
             transforms.RandomLighting(lighting_param),
             transforms.ToTensor(),
             transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ])
     else:
         train_transforms.extend([
-            ToNDArray(),
+            pil_transforms.ToNDArray(),
             transforms.RandomResizedCrop(input_size),
             transforms.RandomFlipLeftRight(),
             transforms.RandomColorJitter(brightness=jitter_param, contrast=jitter_param,
@@ -271,16 +258,15 @@ def get_val_data(rec_val, batch_size, data_nthreads, input_size, crop_ratio):
     crop_ratio = crop_ratio if crop_ratio > 0 else 0.875
     resize = int(math.ceil(input_size/crop_ratio))
 
-    from autogluon.utils.autoaugment import EfficientNetCenterCrop, ToPIL, ToNDArray
-    #from torchvision.transforms import transforms as pth_transforms
+    from gluoncv.utils.transforms import EfficientNetCenterCrop
     from autogluon.utils import pil_transforms
 
     if input_size >= 320:
         transform_test = transforms.Compose([
-            ToPIL(),
+            pil_transforms.ToPIL(),
             EfficientNetCenterCrop(input_size),
             pil_transforms.Resize((input_size, input_size), interpolation=Image.BICUBIC),
-            ToNDArray(),
+            pil_transforms.ToNDArray(),
             transforms.ToTensor(),
             normalize
         ])
@@ -332,7 +318,7 @@ if args.use_avd:
 net = get_model(args.model, **kwargs)
 net.cast(args.dtype)
 
-from autogluon.model_zoo.models.dropblock import DropBlockScheduler
+from gluoncv.nn.dropblock import DropBlockScheduler
 # does not impact normal model
 drop_scheduler = DropBlockScheduler(net, 0, 0.1, args.num_epochs)
 
@@ -352,8 +338,6 @@ def train_gluon():
         save_frequency = 0
 
     def evaluate(epoch):
-        #if not args.auto_aug:
-        #val_data.reset()
         acc_top1 = mx.metric.Accuracy()
         acc_top5 = mx.metric.TopKAccuracy(5)
         for _, batch in enumerate(val_data):
