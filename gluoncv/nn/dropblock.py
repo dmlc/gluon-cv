@@ -7,7 +7,7 @@ __all__ = ['DropBlock', 'set_drop_prob', 'DropBlockScheduler']
 
 class DropBlock(HybridBlock):
     def __init__(self, drop_prob, block_size, c, h, w):
-        super().__init__()
+        super(DropBlock, self).__init__()
         self.drop_prob = drop_prob
         self.block_size = block_size
         self.c, self.h, self.w = c, h, w
