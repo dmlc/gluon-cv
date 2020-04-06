@@ -345,12 +345,12 @@ def resnest50(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     dilated: bool, default False
-        Whether to apply dilation strategy to ResNetV1b, yielding a stride 8 model.
+        Whether to apply dilation strategy to ResNeSt, yielding a stride 8 model.
     norm_layer : object
         Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`).
         Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
-    model = ResNetV1b(BottleneckV1b, [3, 4, 6, 3],
+    model = ResNeSt(BottleneckV1b, [3, 4, 6, 3],
                       radix=2, cardinality=1, bottleneck_width=64,
                       deep_stem=True, avg_down=True,
                       avd=True, avd_first=False,
@@ -379,12 +379,12 @@ def resnest101(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     dilated: bool, default False
-        Whether to apply dilation strategy to ResNetV1b, yielding a stride 8 model.
+        Whether to apply dilation strategy to ResNeSt, yielding a stride 8 model.
     norm_layer : object
         Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`).
         Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
-    model = ResNetV1b(BottleneckV1b, [3, 4, 23, 3],
+    model = ResNeSt(BottleneckV1b, [3, 4, 23, 3],
                       radix=2, cardinality=1, bottleneck_width=64,
                       deep_stem=True, avg_down=True, stem_width=64,
                       avd=True, avd_first=False, use_splat=True, dropblock_prob=0.1,
@@ -412,12 +412,12 @@ def resnest200(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     dilated: bool, default False
-        Whether to apply dilation strategy to ResNetV1b, yielding a stride 8 model.
+        Whether to apply dilation strategy to ResNeSt, yielding a stride 8 model.
     norm_layer : object
         Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`).
         Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
-    model = ResNetV1b(BottleneckV1b, [3, 24, 36, 3], deep_stem=True, avg_down=True, stem_width=64,
+    model = ResNeSt(BottleneckV1b, [3, 24, 36, 3], deep_stem=True, avg_down=True, stem_width=64,
                       avd=True, use_splat=True, dropblock_prob=0.1, final_drop=0.2,
                       name_prefix='resnest_', **kwargs)
     if pretrained:
@@ -443,12 +443,12 @@ def resnest269(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     dilated: bool, default False
-        Whether to apply dilation strategy to ResNetV1b, yielding a stride 8 model.
+        Whether to apply dilation strategy to ResNeSt, yielding a stride 8 model.
     norm_layer : object
         Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`).
         Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
-    model = ResNetV1b(BottleneckV1b, [3, 30, 48, 8], deep_stem=True, avg_down=True, stem_width=64,
+    model = ResNeSt(BottleneckV1b, [3, 30, 48, 8], deep_stem=True, avg_down=True, stem_width=64,
                       avd=True, use_splat=True, dropblock_prob=0.1, final_drop=0.2,
                       name_prefix='resnest_', **kwargs)
     if pretrained:
