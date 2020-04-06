@@ -2,7 +2,6 @@
 # pylint: disable=arguments-differ,unused-argument,missing-docstring,line-too-long
 from __future__ import division
 
-import os
 import math
 from mxnet.context import cpu
 from mxnet.gluon.block import HybridBlock
@@ -31,7 +30,7 @@ class Bottleneck(HybridBlock):
                  downsample=None, previous_dilation=1, norm_layer=None,
                  norm_kwargs=None, last_gamma=False,
                  dropblock_prob=0, input_size=None, use_splat=False,
-                 radix=2, avd=False, avd_first=False, in_channels=None, 
+                 radix=2, avd=False, avd_first=False, in_channels=None,
                  split_drop_ratio=0, **kwargs):
         super(Bottleneck, self).__init__()
         group_width = int(channels * (bottleneck_width / 64.)) * cardinality
