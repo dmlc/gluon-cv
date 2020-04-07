@@ -23,6 +23,7 @@ from .pspnet import *
 from .quantized import *
 from .residual_attentionnet import *
 from .resnet import *
+from .resnest import *
 from .resnetv1b import *
 from .resnext import *
 from .senet import *
@@ -53,6 +54,10 @@ _models = {
     'resnet50_v2': resnet50_v2,
     'resnet101_v2': resnet101_v2,
     'resnet152_v2': resnet152_v2,
+    'resnest50': resnest50,
+    'resnest101': resnest101,
+    'resnest200': resnest200,
+    'resnest269': resnest269,
     'se_resnet18_v1': se_resnet18_v1,
     'se_resnet34_v1': se_resnet34_v1,
     'se_resnet50_v1': se_resnet50_v1,
