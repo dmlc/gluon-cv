@@ -532,13 +532,13 @@ def train(net, train_data, val_data, eval_metric, batch_size, ctx, args):
         logger.info(net.collect_train_params().keys())
     logger.info('Start training from [Epoch {}]'.format(args.start_epoch))
     best_map = [0]
+    rcnn_task = ForwardBackwardTask(net, trainer, rpn_cls_loss, rpn_box_loss, rcnn_cls_loss,
+                                    rcnn_box_loss, mix_ratio=1.0)
+    executor = Parallel(args.executor_threads, rcnn_task) if not args.horovod else None
     for epoch in range(args.start_epoch, args.epochs):
         mix_ratio = 1.0
         if not args.disable_hybridization:
             net.hybridize(static_alloc=args.static_alloc)
-        rcnn_task = ForwardBackwardTask(net, trainer, rpn_cls_loss, rpn_box_loss, rcnn_cls_loss,
-                                        rcnn_box_loss, mix_ratio=1.0)
-        executor = Parallel(args.executor_threads, rcnn_task) if not args.horovod else None
         if args.mixup:
             # TODO(zhreshold) only support evenly mixup now, target generator needs to be modified otherwise
             train_data._dataset._data.set_mixup(np.random.uniform, 0.5, 0.5)
