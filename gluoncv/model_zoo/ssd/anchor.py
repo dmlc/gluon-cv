@@ -30,17 +30,18 @@ class SSDAnchorGenerator(gluon.HybridBlock):
 
     """
     def __init__(self, index, im_size, sizes, ratios, step, alloc_size=(128, 128),
-                 offsets=(0.5, 0.5), clip=False, **kwargs):
+                 offsets=(0.5, 0.5), clip=False, is_lite=False, **kwargs):
         super(SSDAnchorGenerator, self).__init__(**kwargs)
         assert len(im_size) == 2
         self._im_size = im_size
         self._clip = clip
         self._sizes = (sizes[0], np.sqrt(sizes[0] * sizes[1]))
         self._ratios = ratios
-        anchors = self._generate_anchors(self._sizes, self._ratios, step, alloc_size, offsets)
+        self._is_lite = is_lite
+        anchors = self._generate_anchors(self._sizes, self._ratios, step, alloc_size, offsets, index, is_lite)
         self.anchors = self.params.get_constant('anchor_%d'%(index), anchors)
 
-    def _generate_anchors(self, sizes, ratios, step, alloc_size, offsets):
+    def _generate_anchors(self, sizes, ratios, step, alloc_size, offsets, index, is_lite):
         """Generate anchors for once. Anchors are stored with (center_x, center_y, w, h) format."""
         assert len(sizes) == 2, "SSD requires sizes to be (size_min, size_max)"
         anchors = []
@@ -50,14 +51,21 @@ class SSDAnchorGenerator(gluon.HybridBlock):
                 cx = (j + offsets[1]) * step
                 # ratio = ratios[0], size = size_min or sqrt(size_min * size_max)
                 r = ratios[0]
-                anchors.append([cx, cy, sizes[0], sizes[0]])
-                anchors.append([cx, cy, sizes[1], sizes[1]])
+                if not self._is_lite:
+                    anchors.append([cx, cy, sizes[0], sizes[0]])
+                else:
+                    anchors.append([cx, cy, sizes[0] / 2, sizes[0] / 2])
                 # size = sizes[0], ratio = ...
                 for r in ratios[1:]:
                     sr = np.sqrt(r)
                     w = sizes[0] * sr
                     h = sizes[0] / sr
                     anchors.append([cx, cy, w, h])
+                if not self._is_lite:
+                    anchors.append([cx, cy, sizes[1], sizes[1]])
+                else:
+                    if index > 0:
+                        anchors.append([cx, cy, sizes[1], sizes[1]])
         return np.array(anchors).reshape(1, 1, alloc_size[0], alloc_size[1], -1)
 
     @property

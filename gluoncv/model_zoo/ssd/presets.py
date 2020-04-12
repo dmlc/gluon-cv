@@ -22,6 +22,7 @@ __all__ = ['ssd_300_vgg16_atrous_voc',
            'ssd_512_resnet152_v2_voc',
            'ssd_512_mobilenet1_0_voc',
            'ssd_512_mobilenet1_0_coco',
+           'ssd_300_mobilenet1_0_lite_coco',
            'ssd_512_mobilenet1_0_custom',
            'ssd_300_mobilenet0_25_voc',
            'ssd_300_mobilenet0_25_coco',
@@ -570,6 +571,20 @@ def ssd_512_mobilenet1_0_coco(pretrained=False, pretrained_base=True, **kwargs):
                    steps=[16, 32, 64, 128, 256, 512],
                    classes=classes, dataset='coco', pretrained=pretrained,
                    pretrained_base=pretrained_base, **kwargs)
+
+def ssd_300_mobilenet1_0_lite_coco(pretrained=False, pretrained_base=True, **kwargs):
+    from ...data import COCODetection
+    classes = COCODetection.CLASSES
+    return get_ssd('mobilenet1.0', 300,
+                   features=['relu22_fwd', 'relu26_fwd'],
+                   filters=[512, 256, 256, 128],
+                   sizes=[60., 105., 150., 195., 240., 285., 300.],
+                   ratios=[[1, 2, 0.5]] + [[1, 2, 0.5, 3, 1.0/3]] * 5,
+                   steps=[16, 30, 60, 100, 150, 300],
+                   classes=classes, dataset='coco', pretrained=pretrained,
+                   pretrained_base=pretrained_base,
+                   predictors_kernel=(1,1), predictors_pad=(0,0), is_lite=True,
+                   min_depth=64, reduce_ratio=0.5, **kwargs)
 
 def ssd_512_mobilenet1_0_custom(classes, pretrained_base=True, pretrained=False,
                                 transfer=None, **kwargs):
