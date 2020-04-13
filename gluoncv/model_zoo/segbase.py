@@ -37,7 +37,7 @@ def get_backbone(name, **kwargs):
         'resnet50': resnet50_v1s,
         'resnet101': resnet101_v1s,
         'resnet152': resnet152_v1s,
-        'resnets50': resnest50,
+        'resnest50': resnest50,
         'resnest101': resnest101,
         'resnest200': resnest200,
         'resnest269': resnest269,
