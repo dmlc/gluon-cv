@@ -338,6 +338,7 @@ _models = {
     'hrnet_w18_small_v2_c' : hrnet_w18_small_v2_c,
     'hrnet_w30_c' : hrnet_w30_c,
     'hrnet_w32_c' : hrnet_w32_c,
+    'hrnet_w32_c' : hrnet_w32_c,
     'hrnet_w40_c' : hrnet_w40_c,
     'hrnet_w44_c' : hrnet_w44_c,
     'hrnet_w48_c' : hrnet_w48_c,
