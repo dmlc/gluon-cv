@@ -12,7 +12,7 @@ from mxnet.gluon.data.vision import transforms
 import gluoncv
 gluoncv.utils.check_version('0.6.0')
 from gluoncv.loss import *
-from gluoncv.utils import makedirs, LRScheduler
+from gluoncv.utils import makedirs, LRScheduler, LRSequential
 from gluoncv.model_zoo.segbase import *
 from gluoncv.model_zoo import get_model
 from gluoncv.utils.parallel import *
@@ -55,6 +55,8 @@ def parse_args():
                         help='optimizer (default: sgd)')
     parser.add_argument('--lr', type=float, default=1e-3, metavar='LR',
                         help='learning rate (default: 1e-3)')
+    parser.add_argument('--warmup-epochs', type=int, default=0,
+                        help='number of warmup epochs.')
     parser.add_argument('--momentum', type=float, default=0.9,
                         metavar='M', help='momentum (default: 0.9)')
     parser.add_argument('--weight-decay', type=float, default=1e-4,
@@ -192,10 +194,14 @@ class Trainer(object):
         self.criterion = DataParallelCriterion(criterion, args.ctx, args.syncbn)
 
         # optimizer and lr scheduling
-        self.lr_scheduler = LRScheduler(mode='poly', base_lr=args.lr,
-                                        nepochs=args.epochs,
-                                        iters_per_epoch=len(self.train_data),
-                                        power=0.9)
+        self.lr_scheduler = LRSequential([
+                LRScheduler('linear', base_lr=0, target_lr=args.lr,
+                            nepochs=args.warmup_epochs, iters_per_epoch=len(self.train_data)),
+                LRScheduler(mode='poly', base_lr=args.lr,
+                            nepochs=args.epochs-args.warmup_epochs,
+                            iters_per_epoch=len(self.train_data),
+                            power=0.9)
+            ])
         kv = mx.kv.create(args.kvstore)
 
         if args.optimizer == 'sgd':
