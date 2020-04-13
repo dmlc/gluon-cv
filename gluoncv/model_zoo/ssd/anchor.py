@@ -53,19 +53,17 @@ class SSDAnchorGenerator(gluon.HybridBlock):
                 r = ratios[0]
                 if not self._is_lite:
                     anchors.append([cx, cy, sizes[0], sizes[0]])
+                    anchors.append([cx, cy, sizes[1], sizes[1]])
                 else:
                     anchors.append([cx, cy, sizes[0] / 2, sizes[0] / 2])
+                    if index > 0:
+                        anchors.append([cx, cy, sizes[1], sizes[1]])
                 # size = sizes[0], ratio = ...
                 for r in ratios[1:]:
                     sr = np.sqrt(r)
                     w = sizes[0] * sr
                     h = sizes[0] / sr
                     anchors.append([cx, cy, w, h])
-                if not self._is_lite:
-                    anchors.append([cx, cy, sizes[1], sizes[1]])
-                else:
-                    if index > 0:
-                        anchors.append([cx, cy, sizes[1], sizes[1]])
         return np.array(anchors).reshape(1, 1, alloc_size[0], alloc_size[1], -1)
 
     @property
