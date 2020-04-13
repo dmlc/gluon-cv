@@ -10,6 +10,8 @@ from .fcn import _FCNHead
 
 __all__ = ['DeepLabV3', 'get_deeplab', 'get_deeplab_resnet101_coco',
     'get_deeplab_resnet101_voc', 'get_deeplab_resnet50_ade', 'get_deeplab_resnet101_ade',
+    'get_deeplab_resnest50_ade', 'get_deeplab_resnest101_ade',
+    'get_deeplab_resnest200_ade', 'get_deeplab_resnest269_ade',
     'get_deeplab_resnet152_coco', 'get_deeplab_resnet152_voc', 'get_deeplab_resnet50_citys',
     'get_deeplab_resnet101_citys']
 
@@ -326,6 +328,83 @@ def get_deeplab_resnet101_ade(**kwargs):
     >>> print(model)
     """
     return get_deeplab('ade20k', 'resnet101', **kwargs)
+
+def get_deeplab_resnest50_ade(**kwargs):
+    r"""DeepLabV3
+    Parameters
+    ----------
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+
+    Examples
+    --------
+    >>> model = get_deeplab_resnest50_ade(pretrained=True)
+    >>> print(model)
+    """
+    return get_deeplab('ade20k', 'resnest50', **kwargs)
+
+
+def get_deeplab_resnest101_ade(**kwargs):
+    r"""DeepLabV3
+    Parameters
+    ----------
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+
+    Examples
+    --------
+    >>> model = get_deeplab_resnest101_ade(pretrained=True)
+    >>> print(model)
+    """
+    return get_deeplab('ade20k', 'resnest101', **kwargs)
+
+def get_deeplab_resnest200_ade(**kwargs):
+    r"""DeepLabV3
+    Parameters
+    ----------
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+
+    Examples
+    --------
+    >>> model = get_deeplab_resnest200_ade(pretrained=True)
+    >>> print(model)
+    """
+    return get_deeplab('ade20k', 'resnest200', **kwargs)
+
+def get_deeplab_resnest269_ade(**kwargs):
+    r"""DeepLabV3
+    Parameters
+    ----------
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+
+    Examples
+    --------
+    >>> model = get_deeplab_resnest269_ade(pretrained=True)
+    >>> print(model)
+    """
+    return get_deeplab('ade20k', 'resnest269', **kwargs)
 
 def get_deeplab_resnet50_citys(**kwargs):
     r"""DeepLabV3

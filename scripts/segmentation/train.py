@@ -158,12 +158,20 @@ class Trainer(object):
 
         # create network
         if args.model_zoo is not None:
-            model = get_model(args.model_zoo, pretrained=True)
+            model = get_model(args.model_zoo, norm_layer=args.norm_layer,
+                              norm_kwargs=args.norm_kwargs, aux=args.aux,
+                              base_size=args.base_size, crop_size=args.crop_size)
         else:
             model = get_segmentation_model(model=args.model, dataset=args.dataset,
                                            backbone=args.backbone, norm_layer=args.norm_layer,
                                            norm_kwargs=args.norm_kwargs, aux=args.aux,
                                            base_size=args.base_size, crop_size=args.crop_size)
+        # for resnest use only
+        from gluoncv.nn.dropblock import set_drop_prob
+        from functools import partial
+        apply_drop_prob = partial(set_drop_prob, 0.0)
+        model.apply(apply_drop_prob)
+
         model.cast(args.dtype)
         logger.info(model)
 
