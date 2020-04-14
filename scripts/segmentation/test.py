@@ -21,6 +21,8 @@ from gluoncv.utils.parallel import *
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Validation on Semantic Segmentation model')
+    parser.add_argument('--model-zoo', type=str, default=None,
+                        help='evaluating on model zoo model')
     parser.add_argument('--model', type=str, default='fcn',
                         help='model name (default: fcn)')
     parser.add_argument('--backbone', type=str, default='resnet101',
@@ -257,6 +259,11 @@ if __name__ == "__main__":
         if args.calibration:
             args.pretrained = True
         # create network
+        if args.model_zoo is not None:
+            model = get_model(args.model_zoo, norm_layer=args.norm_layer,
+                              norm_kwargs=args.norm_kwargs, aux=args.aux,
+                              base_size=args.base_size, crop_size=args.crop_size,
+                              ctx=args.ctx)
         if args.pretrained:
             if 'icnet' in model_prefix:
                 model = get_model(model_prefix, pretrained=True, height=args.height, width=args.width)
