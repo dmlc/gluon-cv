@@ -4,6 +4,7 @@ from __future__ import division
 import os
 import logging
 import warnings
+import glob
 import numpy as np
 try:
     import xml.etree.cElementTree as ET
@@ -11,7 +12,6 @@ except ImportError:
     import xml.etree.ElementTree as ET
 import mxnet as mx
 from ..base import VisionDataset
-import glob
 
 
 class VOCDetection(VisionDataset):
@@ -130,7 +130,7 @@ class VOCDetection(VisionDataset):
                 self._validate_label(xmin, ymin, xmax, ymax, width, height)
                 label.append([xmin, ymin, xmax, ymax, cls_id, difficult])
             except AssertionError as e:
-                logging.warning("Invalid label at {}, {}".format(anno_path, e))
+                logging.warning("Invalid label at %s, %s" % (anno_path, e))
         return np.array(label)
 
     def _validate_label(self, xmin, ymin, xmax, ymax, width, height):
@@ -162,9 +162,7 @@ class VOCDetection(VisionDataset):
                 if child.tag == 'object':
                     for item in child:
                         if item.tag == 'name':
-                            object_name = item.text
-                            if object_name not in classes:
-                                classes.add(object_name)
+                            classes.add(item.text)
 
         classes = sorted(list(classes))
         return classes
