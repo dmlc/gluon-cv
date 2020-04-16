@@ -11,6 +11,7 @@ except ImportError:
     import xml.etree.ElementTree as ET
 import mxnet as mx
 from ..base import VisionDataset
+import glob
 
 
 class VOCDetection(VisionDataset):
@@ -40,6 +41,8 @@ class VOCDetection(VisionDataset):
         initialization. It often accelerate speed but require more memory
         usage. Typical preloaded labels took tens of MB. You only need to disable it
         when your dataset is extremely large.
+    generate_classes : bool, default False
+        If True, generate class labels base on the annotations instead of the default classe labels.
     """
     CLASSES = ('aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car',
                'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse', 'motorbike',
@@ -47,7 +50,7 @@ class VOCDetection(VisionDataset):
 
     def __init__(self, root=os.path.join('~', '.mxnet', 'datasets', 'voc'),
                  splits=((2007, 'trainval'), (2012, 'trainval')),
-                 transform=None, index_map=None, preload_label=True):
+                 transform=None, index_map=None, preload_label=True, generate_classes=False):
         super(VOCDetection, self).__init__(root)
         self._im_shapes = {}
         self._root = os.path.expanduser(root)
@@ -58,6 +61,8 @@ class VOCDetection(VisionDataset):
         self._image_path = os.path.join('{}', 'JPEGImages', '{}.jpg')
         self.index_map = index_map or dict(zip(self.classes, range(self.num_class)))
         self._label_cache = self._preload_labels() if preload_label else None
+        if generate_classes:
+            self.CLASSES = self._generate_classes()
 
     def __str__(self):
         detail = ','.join([str(s[0]) + s[1] for s in self._splits])
@@ -87,8 +92,9 @@ class VOCDetection(VisionDataset):
     def _load_items(self, splits):
         """Load individual image indices from splits."""
         ids = []
-        for year, name in splits:
-            root = os.path.join(self._root, 'VOC' + str(year))
+        for subfolder, name in splits:
+            root = os.path.join(
+                self._root, ('VOC' + str(subfolder)) if isinstance(subfolder, int) else subfolder)
             lf = os.path.join(root, 'ImageSets', 'Main', name + '.txt')
             with open(lf, 'r') as f:
                 ids += [(root, line.strip()) for line in f.readlines()]
@@ -122,9 +128,9 @@ class VOCDetection(VisionDataset):
             ymax = (float(xml_box.find('ymax').text) - 1)
             try:
                 self._validate_label(xmin, ymin, xmax, ymax, width, height)
+                label.append([xmin, ymin, xmax, ymax, cls_id, difficult])
             except AssertionError as e:
-                raise RuntimeError("Invalid label at {}, {}".format(anno_path, e))
-            label.append([xmin, ymin, xmax, ymax, cls_id, difficult])
+                logging.warning("Invalid label at {}, {}".format(anno_path, e))
         return np.array(label)
 
     def _validate_label(self, xmin, ymin, xmax, ymax, width, height):
@@ -145,3 +151,20 @@ class VOCDetection(VisionDataset):
         """Preload all labels into memory."""
         logging.debug("Preloading %s labels into memory...", str(self))
         return [self._load_label(idx) for idx in range(len(self))]
+
+    def _generate_classes(self):
+        classes = set()
+        all_xml = glob.glob(os.path.join(self._root, 'Annotations', '*.xml'))
+        for each_xml_file in all_xml:
+            tree = ET.parse(each_xml_file)
+            root = tree.getroot()
+            for child in root:
+                if child.tag == 'object':
+                    for item in child:
+                        if item.tag == 'name':
+                            object_name = item.text
+                            if object_name not in classes:
+                                classes.add(object_name)
+
+        classes = sorted(list(classes))
+        return classes

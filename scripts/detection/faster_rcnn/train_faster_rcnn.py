@@ -43,7 +43,8 @@ except ImportError:
 def parse_args():
     parser = argparse.ArgumentParser(description='Train Faster-RCNN networks e2e.')
     parser.add_argument('--network', type=str, default='resnet50_v1b',
-                        choices=['resnet18_v1b', 'resnet50_v1b', 'resnet101_v1d'],
+                        choices=['resnet18_v1b', 'resnet50_v1b', 'resnet101_v1d',
+                                 'resnest50', 'resnest101', 'resnest269'],
                         help="Base network name which serves as feature extraction base.")
     parser.add_argument('--dataset', type=str, default='voc',
                         help='Training dataset. Now support voc and coco.')
@@ -300,6 +301,11 @@ def get_dataset(dataset, args):
             splits=[(2007, 'trainval'), (2012, 'trainval')])
         val_dataset = gdata.VOCDetection(
             splits=[(2007, 'test')])
+        val_metric = VOC07MApMetric(iou_thresh=0.5, class_names=val_dataset.classes)
+    elif dataset.lower() in ['clipart', 'comic', 'watercolor']:
+        root = os.path.join('~', '.mxnet', 'datasets', dataset.lower())
+        train_dataset = gdata.VOCDetection(root=root, splits=[('', 'train')], generate_classes=True)
+        val_dataset = gdata.VOCDetection(root=root, splits=[('', 'test')],  generate_classes=True)
         val_metric = VOC07MApMetric(iou_thresh=0.5, class_names=val_dataset.classes)
     elif dataset.lower() == 'coco':
         train_dataset = gdata.COCODetection(splits='instances_train2017', use_crowd=False)
@@ -632,6 +638,9 @@ if __name__ == '__main__':
         ctx = [mx.gpu(int(i)) for i in args.gpus.split(',') if i.strip()]
         ctx = ctx if ctx else [mx.cpu()]
 
+    # training data
+    train_dataset, val_dataset, eval_metric = get_dataset(args.dataset, args)
+
     # network
     kwargs = {}
     module_list = []
@@ -662,11 +671,7 @@ if __name__ == '__main__':
             norm_kwargs = None
             sym_norm_layer = None
             sym_norm_kwargs = None
-        if args.dataset == 'coco':
-            classes = COCODetection.CLASSES
-        else:
-            # default to VOC
-            classes = VOCDetection.CLASSES
+        classes = train_dataset.CLASSES
         net = get_model('custom_faster_rcnn_fpn', classes=classes, transfer=None,
                         dataset=args.dataset, pretrained_base=not args.no_pretrained_base,
                         base_network_name=args.network, norm_layer=norm_layer,
@@ -709,8 +714,7 @@ if __name__ == '__main__':
         net.collect_params('.*batchnorm.*').setattr('dtype', 'float32')
         net.collect_params('.*normalizedperclassboxcenterencoder.*').setattr('dtype', 'float32')
 
-    # training data
-    train_dataset, val_dataset, eval_metric = get_dataset(args.dataset, args)
+    # dataloader
     batch_size = args.batch_size // num_gpus if args.horovod else args.batch_size
     train_data, val_data = get_dataloader(
         net, train_dataset, val_dataset, FasterRCNNDefaultTrainTransform,
