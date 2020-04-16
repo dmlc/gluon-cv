@@ -130,7 +130,7 @@ class VOCDetection(VisionDataset):
                 self._validate_label(xmin, ymin, xmax, ymax, width, height)
                 label.append([xmin, ymin, xmax, ymax, cls_id, difficult])
             except AssertionError as e:
-                logging.warning("Invalid label at %s, %s" % (anno_path, e))
+                logging.warning("Invalid label at %s, %s", anno_path, e)
         return np.array(label)
 
     def _validate_label(self, xmin, ymin, xmax, ymax, width, height):
@@ -163,6 +163,5 @@ class VOCDetection(VisionDataset):
                     for item in child:
                         if item.tag == 'name':
                             classes.add(item.text)
-
         classes = sorted(list(classes))
         return classes
