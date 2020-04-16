@@ -263,7 +263,7 @@ if __name__ == "__main__":
             model = get_model(args.model_zoo, norm_layer=args.norm_layer,
                               norm_kwargs=args.norm_kwargs, aux=args.aux,
                               base_size=args.base_size, crop_size=args.crop_size,
-                              ctx=args.ctx, pretrained=args.pretrained)
+                              ctx=args.ctx, pretrained=True)
         elif args.pretrained:
             if 'icnet' in model_prefix:
                 model = get_model(model_prefix, pretrained=True, height=args.height, width=args.width)
