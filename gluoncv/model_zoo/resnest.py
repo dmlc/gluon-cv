@@ -37,7 +37,7 @@ class Bottleneck(HybridBlock):
         norm_kwargs = norm_kwargs if norm_kwargs is not None else {}
         self.dropblock_prob = dropblock_prob
         self.use_splat = use_splat
-        self.avd = avd and (strides > 1 or dilation > 1)
+        self.avd = avd and (strides > 1 or previous_dilation != dilation)
         self.avd_first = avd_first
         if self.dropblock_prob > 0:
             self.dropblock1 = DropBlock(dropblock_prob, 3, group_width, *input_size)
