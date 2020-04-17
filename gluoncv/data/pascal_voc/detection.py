@@ -160,7 +160,7 @@ class CustomVOCDetection(VOCDetection):
     """
 
     def __init__(self, generate_classes=False, **kwargs):
-        super(VOCDetection, self).__init__(**kwargs)
+        super(CustomVOCDetection, self).__init__(**kwargs)
         if generate_classes:
             self.CLASSES = self._generate_classes()
 
