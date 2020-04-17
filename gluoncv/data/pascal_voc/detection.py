@@ -1,11 +1,14 @@
 """Pascal VOC object detection dataset."""
 from __future__ import absolute_import
 from __future__ import division
-import os
-import logging
-import warnings
+
 import glob
+import logging
+import os
+import warnings
+
 import numpy as np
+
 try:
     import xml.etree.cElementTree as ET
 except ImportError:
@@ -41,8 +44,6 @@ class VOCDetection(VisionDataset):
         initialization. It often accelerate speed but require more memory
         usage. Typical preloaded labels took tens of MB. You only need to disable it
         when your dataset is extremely large.
-    generate_classes : bool, default False
-        If True, generate class labels base on the annotations instead of the default classe labels.
     """
     CLASSES = ('aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car',
                'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse', 'motorbike',
@@ -50,7 +51,7 @@ class VOCDetection(VisionDataset):
 
     def __init__(self, root=os.path.join('~', '.mxnet', 'datasets', 'voc'),
                  splits=((2007, 'trainval'), (2012, 'trainval')),
-                 transform=None, index_map=None, preload_label=True, generate_classes=False):
+                 transform=None, index_map=None, preload_label=True):
         super(VOCDetection, self).__init__(root)
         self._im_shapes = {}
         self._root = os.path.expanduser(root)
@@ -61,8 +62,6 @@ class VOCDetection(VisionDataset):
         self._image_path = os.path.join('{}', 'JPEGImages', '{}.jpg')
         self.index_map = index_map or dict(zip(self.classes, range(self.num_class)))
         self._label_cache = self._preload_labels() if preload_label else None
-        if generate_classes:
-            self.CLASSES = self._generate_classes()
 
     def __str__(self):
         detail = ','.join([str(s[0]) + s[1] for s in self._splits])
@@ -151,6 +150,19 @@ class VOCDetection(VisionDataset):
         """Preload all labels into memory."""
         logging.debug("Preloading %s labels into memory...", str(self))
         return [self._load_label(idx) for idx in range(len(self))]
+
+
+class CustomVOCDetection(VOCDetection):
+    """Custom Pascal VOC detection Dataset.
+    Classes are generated from dataset
+    generate_classes : bool, default False
+        If True, generate class labels base on the annotations instead of the default classe labels.
+    """
+
+    def __init__(self, generate_classes=False, **kwargs):
+        super(VOCDetection, self).__init__(**kwargs)
+        if generate_classes:
+            self.CLASSES = self._generate_classes()
 
     def _generate_classes(self):
         classes = set()

@@ -32,7 +32,6 @@ from gluoncv.utils.metrics.coco_detection import COCODetectionMetric
 from gluoncv.utils.parallel import Parallelizable, Parallel
 from gluoncv.utils.metrics.rcnn import RPNAccMetric, RPNL1LossMetric, RCNNAccMetric, \
     RCNNL1LossMetric
-from gluoncv.data import COCODetection, VOCDetection
 
 try:
     import horovod.mxnet as hvd
@@ -304,8 +303,10 @@ def get_dataset(dataset, args):
         val_metric = VOC07MApMetric(iou_thresh=0.5, class_names=val_dataset.classes)
     elif dataset.lower() in ['clipart', 'comic', 'watercolor']:
         root = os.path.join('~', '.mxnet', 'datasets', dataset.lower())
-        train_dataset = gdata.VOCDetection(root=root, splits=[('', 'train')], generate_classes=True)
-        val_dataset = gdata.VOCDetection(root=root, splits=[('', 'test')],  generate_classes=True)
+        train_dataset = gdata.CustomVOCDetection(root=root, splits=[('', 'train')],
+                                                 generate_classes=True)
+        val_dataset = gdata.CustomVOCDetection(root=root, splits=[('', 'test')],
+                                               generate_classes=True)
         val_metric = VOC07MApMetric(iou_thresh=0.5, class_names=val_dataset.classes)
     elif dataset.lower() == 'coco':
         train_dataset = gdata.COCODetection(splits='instances_train2017', use_crowd=False)
@@ -432,7 +433,7 @@ class ForwardBackwardTask(Parallelizable):
             gt_label = label[:, :, 4:5]
             gt_box = label[:, :, :4]
             cls_pred, box_pred, roi, samples, matches, rpn_score, rpn_box, anchors, cls_targets, \
-                box_targets, box_masks, _ = self.net(data, gt_box, gt_label)
+            box_targets, box_masks, _ = self.net(data, gt_box, gt_label)
             # losses of rpn
             rpn_score = rpn_score.squeeze(axis=-1)
             num_rpn_pos = (rpn_cls_targets >= 0).sum()
@@ -469,7 +470,7 @@ class ForwardBackwardTask(Parallelizable):
                 total_loss.backward()
 
         return rpn_loss1_metric, rpn_loss2_metric, rcnn_loss1_metric, rcnn_loss2_metric, \
-            rpn_acc_metric, rpn_l1_loss_metric, rcnn_acc_metric, rcnn_l1_loss_metric
+               rpn_acc_metric, rpn_l1_loss_metric, rcnn_acc_metric, rcnn_l1_loss_metric
 
 
 def train(net, train_data, val_data, eval_metric, batch_size, ctx, args):
