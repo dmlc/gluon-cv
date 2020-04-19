@@ -347,7 +347,7 @@ class SSD(HybridBlock):
 
 def get_ssd(name, base_size, features, filters, sizes, ratios, steps, classes,
             dataset, pretrained=False, pretrained_base=True, ctx=mx.cpu(),
-            root=os.path.join('~', '.mxnet', 'models'), **kwargs):
+            root=os.path.join('~', '.mxnet', 'models'), anchor_generator=SSDAnchorGenerator, **kwargs):
     """Get SSD models.
 
     Parameters
@@ -407,7 +407,7 @@ def get_ssd(name, base_size, features, filters, sizes, ratios, steps, classes,
     base_name = None if callable(features) else name
     net = SSD(base_name, base_size, features, filters, sizes, ratios, steps,
               pretrained=pretrained_base, classes=classes, ctx=ctx, root=root, 
-              anchor_generator=SSDAnchorGenerator, **kwargs)
+              anchor_generator=anchor_generator, **kwargs)
     if pretrained:
         from ..model_store import get_model_file
         full_name = '_'.join(('ssd', str(base_size), name, dataset))

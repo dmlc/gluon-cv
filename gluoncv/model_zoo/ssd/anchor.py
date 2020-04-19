@@ -95,7 +95,7 @@ class LiteAnchorGenerator(SSDAnchorGenerator):
                     w = sizes[0] * sr
                     h = sizes[0] / sr
                     anchors.append([cx, cy, w, h])
-                if index > 0:
+                if self._index > 0:
                     anchors.append([cx, cy, sizes[1], sizes[1]])
         return np.array(anchors).reshape(1, 1, alloc_size[0], alloc_size[1], -1)
 
@@ -103,6 +103,6 @@ class LiteAnchorGenerator(SSDAnchorGenerator):
     def num_depth(self):
         """Number of anchors at each pixel."""
         if self._index == 0:
-            return len(self.ratios)
+            return len(self._ratios)
         else:
             return len(self._sizes) + len(self._ratios) - 1
