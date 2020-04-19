@@ -37,11 +37,11 @@ class SSDAnchorGenerator(gluon.HybridBlock):
         self._clip = clip
         self._sizes = (sizes[0], np.sqrt(sizes[0] * sizes[1]))
         self._ratios = ratios
-        self._is_lite = is_lite
-        anchors = self._generate_anchors(self._sizes, self._ratios, step, alloc_size, offsets, index, is_lite)
-        self.anchors = self.params.get_constant('anchor_%d'%(index), anchors)
+        self._index = index
+        anchors = self._generate_anchors(self._sizes, self._ratios, step, alloc_size, offsets)
+        self.anchors = self.params.get_constant('anchor_%d'%(self._index), anchors)
 
-    def _generate_anchors(self, sizes, ratios, step, alloc_size, offsets, index, is_lite):
+    def _generate_anchors(self, sizes, ratios, step, alloc_size, offsets):
         """Generate anchors for once. Anchors are stored with (center_x, center_y, w, h) format."""
         assert len(sizes) == 2, "SSD requires sizes to be (size_min, size_max)"
         anchors = []
@@ -51,13 +51,8 @@ class SSDAnchorGenerator(gluon.HybridBlock):
                 cx = (j + offsets[1]) * step
                 # ratio = ratios[0], size = size_min or sqrt(size_min * size_max)
                 r = ratios[0]
-                if not self._is_lite:
-                    anchors.append([cx, cy, sizes[0], sizes[0]])
-                    anchors.append([cx, cy, sizes[1], sizes[1]])
-                else:
-                    anchors.append([cx, cy, sizes[0] / 2, sizes[0] / 2])
-                    if index > 0:
-                        anchors.append([cx, cy, sizes[1], sizes[1]])
+                anchors.append([cx, cy, sizes[0], sizes[0]])
+                anchors.append([cx, cy, sizes[1], sizes[1]])
                 # size = sizes[0], ratio = ...
                 for r in ratios[1:]:
                     sr = np.sqrt(r)
@@ -80,3 +75,34 @@ class SSDAnchorGenerator(gluon.HybridBlock):
             H, W = self._im_size
             a = F.concat(*[cx.clip(0, W), cy.clip(0, H), cw.clip(0, W), ch.clip(0, H)], dim=-1)
         return a.reshape((1, -1, 4))
+   
+
+class LiteAnchorGenerator(SSDAnchorGenerator):
+    def _generate_anchors(self, sizes, ratios, step, alloc_size, offsets):
+        """Generate anchors for once. Anchors are stored with (center_x, center_y, w, h) format."""
+        assert len(sizes) == 2, "SSD requires sizes to be (size_min, size_max)"
+        anchors = []
+        for i in range(alloc_size[0]):
+            for j in range(alloc_size[1]):
+                cy = (i + offsets[0]) * step
+                cx = (j + offsets[1]) * step
+                # ratio = ratios[0], size = size_min or sqrt(size_min * size_max)
+                r = ratios[0]
+                anchors.append([cx, cy, sizes[0] / 2, sizes[0] / 2])
+                # size = sizes[0], ratio = ...
+                for r in ratios[1:]:
+                    sr = np.sqrt(r)
+                    w = sizes[0] * sr
+                    h = sizes[0] / sr
+                    anchors.append([cx, cy, w, h])
+                if index > 0:
+                    anchors.append([cx, cy, sizes[1], sizes[1]])
+        return np.array(anchors).reshape(1, 1, alloc_size[0], alloc_size[1], -1)
+
+    @property
+    def num_depth(self):
+        """Number of anchors at each pixel."""
+        if self._index == 0:
+            return len(self.ratios)
+        else:
+            return len(self._sizes) + len(self._ratios) - 1

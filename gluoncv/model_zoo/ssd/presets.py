@@ -3,6 +3,7 @@ from __future__ import absolute_import
 
 import warnings
 from .ssd import get_ssd
+from .anchor import LiteAnchorGenerator
 from .vgg_atrous import vgg16_atrous_300, vgg16_atrous_512
 from ...data import VOCDetection
 
@@ -582,9 +583,10 @@ def ssd_300_mobilenet1_0_lite_coco(pretrained=False, pretrained_base=True, **kwa
                    ratios=[[1, 2, 0.5]] + [[1, 2, 0.5, 3, 1.0/3]] * 5,
                    steps=[16, 30, 60, 100, 150, 300],
                    classes=classes, dataset='coco', pretrained=pretrained,
-                   pretrained_base=pretrained_base,
-                   predictors_kernel=(1,1), predictors_pad=(0,0), is_lite=True,
-                   min_depth=64, reduce_ratio=0.5, **kwargs)
+                   pretrained_base=pretrained_base, 
+                   predictors_kernel=(1,1), predictors_pad=(0,0),
+                   min_depth=64, reduce_ratio=0.5, anchor_generator=LiteAnchorGenerator,
+                   **kwargs)
 
 def ssd_512_mobilenet1_0_custom(classes, pretrained_base=True, pretrained=False,
                                 transfer=None, **kwargs):

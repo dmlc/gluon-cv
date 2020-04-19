@@ -94,10 +94,9 @@ class SSD(HybridBlock):
         Dimension of predictor kernel
     predictor_pad: tuple of int. default is (1,1)
         Padding of the predictor kenrel conv.
-    is_lite: bool, default is False
-        Switch this flag to True in case you want to use ssd-lite arch. First branch will not be added
-        with another anchor, and first anchor will be half size from the rest of the anchors for this branch.
-        This flag is needed in order to create the slim mobilenet-ssd arch. like in TF object detection API.
+    anchor_generator: default is SSDAnchorGenerator
+        Anchor Generator to be used. The default it SSDAnchorGenerator corresponding to SSD published article
+        This argument can be used for other custom anchor generators. Like LiteAnchorGenerator.
 
     """
     def __init__(self, network, base_size, features, num_filters, sizes, ratios,
@@ -107,7 +106,8 @@ class SSD(HybridBlock):
                  anchor_alloc_size=128, ctx=mx.cpu(),
                  norm_layer=nn.BatchNorm, norm_kwargs=None,
                  root=os.path.join('~', '.mxnet', 'models', minimal_opset=False,
-                 predictors_kernel=(3,3), predictors_pad=(1,1), is_lite=False, **kwargs):
+                 predictors_kernel=(3,3), predictors_pad=(1,1), 
+                 anchor_generator=SSDAnchorGenerator, **kwargs):
         super(SSD, self).__init__(**kwargs)
         if norm_kwargs is None:
             norm_kwargs = {}
@@ -158,13 +158,10 @@ class SSD(HybridBlock):
             asz = anchor_alloc_size
             im_size = (base_size, base_size)
             for i, s, r, st in zip(range(num_layers), sizes, ratios, steps):
-                anchor_generator = SSDAnchorGenerator(i, im_size, s, r, st, (asz, asz), is_lite=is_lite)
-                self.anchor_generators.add(anchor_generator)
+                branch_anchor_generator = anchor_generator(i, im_size, s, r, st, (asz, asz))
+                self.anchor_generators.add(branch_anchor_generator)
                 asz = max(asz // 2, 16)  # pre-compute larger than 16x16 anchor map
-                if is_lite and i == 0:
-                    num_anchors = len(r)
-                else:
-                    num_anchors = anchor_generator.num_depth
+                num_anchors = branch_anchor_generator.num_depth
                 self.class_predictors.add(ConvPredictor(num_anchors * (len(self.classes) + 1), kernel=predictors_kernel, pad=predictors_pad))
                 self.box_predictors.add(ConvPredictor(num_anchors * 4, kernel=predictors_kernel, pad=predictors_pad))
             self.bbox_decoder = NormalizedBoxCenterDecoder(stds)
@@ -409,7 +406,8 @@ def get_ssd(name, base_size, features, filters, sizes, ratios, steps, classes,
     pretrained_base = False if pretrained else pretrained_base
     base_name = None if callable(features) else name
     net = SSD(base_name, base_size, features, filters, sizes, ratios, steps,
-              pretrained=pretrained_base, classes=classes, ctx=ctx, root=root, **kwargs)
+              pretrained=pretrained_base, classes=classes, ctx=ctx, root=root, 
+              anchor_generator=SSDAnchorGenerator, **kwargs)
     if pretrained:
         from ..model_store import get_model_file
         full_name = '_'.join(('ssd', str(base_size), name, dataset))
