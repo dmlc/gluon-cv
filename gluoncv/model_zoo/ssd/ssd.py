@@ -164,7 +164,7 @@ class SSD(HybridBlock):
                 num_anchors = branch_anchor_generator.num_depth
                 self.class_predictors.add(ConvPredictor(num_anchors * (len(self.classes) + 1), kernel=predictors_kernel, pad=predictors_pad))
                 self.box_predictors.add(ConvPredictor(num_anchors * 4, kernel=predictors_kernel, pad=predictors_pad))
-            self.bbox_decoder = NormalizedBoxCenterDecoder(stds)
+            self.bbox_decoder = NormalizedBoxCenterDecoder(stds, minimal_opset=minimal_opset)
             self.cls_decoder = MultiPerClassDecoder(len(self.classes) + 1, thresh=0.01)
 
     @property
