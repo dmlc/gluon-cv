@@ -77,7 +77,7 @@ class VisDroneDetection(VisionDataset):
         return ids
 
     def _load_label(self, idx, height=None, width=None):
-        """Parse xml file and return labels."""
+        """Parse csv file and return labels."""
         img_id = self._items[idx]
         anno_path = self._anno_path.format(*img_id)
         height = float(height) if height else None
