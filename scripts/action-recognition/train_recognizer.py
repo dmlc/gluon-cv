@@ -168,8 +168,13 @@ def get_data_loader(opt, batch_size, num_workers, logger, kvstore=None):
         label = split_and_load(batch[1], ctx_list=ctx, batch_axis=0, even_split=False)
         return data, label
 
-    transform_train = video.VideoGroupTrainTransform(size=(input_size, input_size), scale_ratios=scale_ratios, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-    transform_test = video.VideoGroupValTransform(size=input_size, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    # transform_train = video.VideoGroupTrainTransform(size=(input_size, input_size), scale_ratios=scale_ratios, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    # transform_test = video.VideoGroupValTransform(size=input_size, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+
+    transform_train = video.VideoGroupTrainTransformV2(crop_size=(input_size, input_size), min_size=opt.new_height, max_size=opt.new_width,
+                                                       mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    transform_test = video.VideoGroupValTransformV2(crop_size=(input_size, input_size), short_side=opt.new_height,
+                                                    mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
     if opt.dataset == 'kinetics400':
         train_dataset = Kinetics400(setting=opt.train_list, root=data_dir, train=True,
@@ -482,27 +487,27 @@ def main():
                 kv.init(555555, nd.zeros(1))
                 kv.init(999999, nd.zeros(1))
 
-            if opt.kvstore is not None:
-                acc_top1_val, acc_top5_val, loss_val = test(ctx, val_data, kv)
-            else:
-                acc_top1_val, acc_top5_val, loss_val = test(ctx, val_data)
+            # if opt.kvstore is not None:
+            #     acc_top1_val, acc_top5_val, loss_val = test(ctx, val_data, kv)
+            # else:
+            #     acc_top1_val, acc_top5_val, loss_val = test(ctx, val_data)
 
             logger.info('[Epoch %03d] training: %s=%f\t loss=%f' % (epoch, train_metric_name, train_metric_score*100, train_loss_epoch/num_train_iter))
             logger.info('[Epoch %03d] speed: %d samples/sec\ttime cost: %f' % (epoch, throughput, time.time()-tic))
-            logger.info('[Epoch %03d] validation: acc-top1=%f acc-top5=%f loss=%f' % (epoch, acc_top1_val*100, acc_top5_val*100, loss_val))
+            # logger.info('[Epoch %03d] validation: acc-top1=%f acc-top5=%f loss=%f' % (epoch, acc_top1_val*100, acc_top5_val*100, loss_val))
 
             sw.add_scalar(tag='train_loss_epoch', value=train_loss_epoch/num_train_iter, global_step=epoch)
-            sw.add_scalar(tag='val_loss_epoch', value=loss_val, global_step=epoch)
-            sw.add_scalar(tag='val_acc_top1_epoch', value=acc_top1_val*100, global_step=epoch)
+            # sw.add_scalar(tag='val_loss_epoch', value=loss_val, global_step=epoch)
+            # sw.add_scalar(tag='val_acc_top1_epoch', value=acc_top1_val*100, global_step=epoch)
 
-            if acc_top1_val > best_val_score:
-                best_val_score = acc_top1_val
-                net.save_parameters('%s/%.4f-%s-%s-%03d-best.params'%(opt.save_dir, best_val_score, opt.dataset, model_name, epoch))
-                trainer.save_states('%s/%.4f-%s-%s-%03d-best.states'%(opt.save_dir, best_val_score, opt.dataset, model_name, epoch))
-            else:
-                if opt.save_frequency and opt.save_dir and (epoch + 1) % opt.save_frequency == 0:
-                    net.save_parameters('%s/%s-%s-%03d.params'%(opt.save_dir, opt.dataset, model_name, epoch))
-                    trainer.save_states('%s/%s-%s-%03d.states'%(opt.save_dir, opt.dataset, model_name, epoch))
+            # if acc_top1_val > best_val_score:
+            #     best_val_score = acc_top1_val
+            #     net.save_parameters('%s/%.4f-%s-%s-%03d-best.params'%(opt.save_dir, best_val_score, opt.dataset, model_name, epoch))
+            #     trainer.save_states('%s/%.4f-%s-%s-%03d-best.states'%(opt.save_dir, best_val_score, opt.dataset, model_name, epoch))
+            # else:
+            #     if opt.save_frequency and opt.save_dir and (epoch + 1) % opt.save_frequency == 0:
+            #         net.save_parameters('%s/%s-%s-%03d.params'%(opt.save_dir, opt.dataset, model_name, epoch))
+            #         trainer.save_states('%s/%s-%s-%03d.states'%(opt.save_dir, opt.dataset, model_name, epoch))
 
         # save the last model
         net.save_parameters('%s/%s-%s-%03d.params'%(opt.save_dir, opt.dataset, model_name, opt.num_epochs-1))

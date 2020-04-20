@@ -293,10 +293,16 @@ def main(logger):
         opt.num_crop = 10
     elif opt.three_crop:
         transform_test = transforms.Compose([
+            video.ShortSideRescale(opt.input_size),
             video.VideoThreeCrop(opt.input_size),
             video.VideoToTensor(),
             video.VideoNormalize(image_norm_mean, image_norm_std)
         ])
+        # transform_test = transforms.Compose([
+        #     video.VideoThreeCrop(opt.input_size),
+        #     video.VideoToTensor(),
+        #     video.VideoNormalize(image_norm_mean, image_norm_std)
+        # ])
         opt.num_crop = 3
     else:
         transform_test = video.VideoGroupValTransform(size=opt.input_size, mean=image_norm_mean, std=image_norm_std)

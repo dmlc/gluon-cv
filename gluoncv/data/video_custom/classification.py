@@ -158,7 +158,8 @@ class VideoClsCustom(dataset.Dataset):
                 # So we need to provide extension (i.e., .mp4) to complete the file name.
                 video_name = '{}.{}'.format(directory, self.video_ext)
             if self.use_decord:
-                decord_vr = self.decord.VideoReader(video_name, width=self.new_width, height=self.new_height)
+                # decord_vr = self.decord.VideoReader(video_name, width=self.new_width, height=self.new_height)
+                decord_vr = self.decord.VideoReader(video_name)
                 duration = len(decord_vr)
             else:
                 mmcv_vr = self.mmcv.VideoReader(video_name)

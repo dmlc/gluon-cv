@@ -3,12 +3,144 @@
 Code adapted from https://github.com/bryanyzhu/two-stream-pytorch"""
 from __future__ import division
 import random
+import math
 import numbers
 import numpy as np
 from mxnet.gluon import Block
 
 __all__ = ['VideoToTensor', 'VideoNormalize', 'VideoRandomHorizontalFlip', 'VideoMultiScaleCrop',
-           'VideoCenterCrop', 'VideoTenCrop', 'VideoGroupTrainTransform', 'VideoGroupValTransform']
+           'VideoCenterCrop', 'VideoTenCrop', 'VideoGroupTrainTransform', 'VideoGroupValTransform',
+           'VideoGroupTrainTransformV2', 'VideoGroupValTransformV2', 'ShortSideRescale']
+
+
+class VideoGroupTrainTransformV2(Block):
+    """Combination of transforms for training.
+    Follow the style of https://github.com/facebookresearch/SlowFast/
+        (1) random short side scale jittering
+        (2) random crop
+        (3) random horizontal flip
+        (4) to tensor
+        (5) normalize
+    """
+    def __init__(self, crop_size, min_size, max_size,
+                 mean, std, prob=0.5, max_intensity=255.0):
+        super(VideoGroupTrainTransformV2, self).__init__()
+
+        from ...utils.filesystem import try_import_cv2
+        self.cv2 = try_import_cv2()
+        self.height = crop_size[0]
+        self.width = crop_size[1]
+        self.min_size = min_size
+        self.max_size = max_size
+        self.mean = np.asarray(mean).reshape((len(mean), 1, 1))
+        self.std = np.asarray(std).reshape((len(std), 1, 1))
+        self.prob = prob
+        self.max_intensity = max_intensity
+
+    def forward(self, clips):
+        h, w, _ = clips[0].shape
+
+        # step 1: random short side scale jittering
+        size = int(round(np.random.uniform(self.min_size, self.max_size)))
+        new_w = size
+        new_h = size
+        if w < h:
+            new_h = int(math.floor((float(h) / w) * size))
+        else:
+            new_w = int(math.floor((float(w) / h) * size))
+
+        # step 2: random crop
+        h_off = 0
+        if new_h > self.height:
+            h_off = int(np.random.randint(0, new_h - self.height))
+        w_off = 0
+        if new_w > self.width:
+            w_off = int(np.random.randint(0, new_w - self.width))
+
+        # step 3: random horizontal flip
+        is_flip = random.random() < self.prob
+
+        new_clips = []
+        for cur_img in clips:
+            scale_img = self.cv2.resize(cur_img, (new_w, new_h))
+            crop_img = scale_img[h_off : h_off + self.height, w_off : w_off + self.width, :]
+            if is_flip:
+                flip_img = np.flip(crop_img, axis=1)
+            else:
+                flip_img = crop_img
+            tensor_img = np.transpose(flip_img, axes=(2, 0, 1)) / self.max_intensity
+            new_clips.append((tensor_img - self.mean) / self.std)
+        return new_clips
+
+class VideoGroupValTransformV2(Block):
+    """Combination of transforms for validation.
+    Follow the style of https://github.com/facebookresearch/SlowFast/
+        (1) short side keep aspect ratio resize
+        (2) center crop
+        (3) to tensor
+        (4) normalize
+    """
+
+    def __init__(self, crop_size, short_side, mean, std, max_intensity=255.0):
+        super(VideoGroupValTransformV2, self).__init__()
+
+        from ...utils.filesystem import try_import_cv2
+        self.cv2 = try_import_cv2()
+        self.height = crop_size[0]
+        self.width = crop_size[1]
+        self.short_side = short_side
+        self.mean = np.asarray(mean).reshape((len(mean), 1, 1))
+        self.std = np.asarray(std).reshape((len(std), 1, 1))
+        self.max_intensity = max_intensity
+
+    def forward(self, clips):
+        h, w, _ = clips[0].shape
+
+        # step 1: short side keep aspect ratio resize
+        new_w = self.short_side
+        new_h = self.short_side
+        if w < h:
+            new_h = int(math.floor((float(h) / w) * self.short_side))
+        else:
+            new_w = int(math.floor((float(w) / h) * self.short_side))
+
+        # step 2: center crop
+        h_off = int(math.ceil((new_h - self.height) / 2))
+        w_off = int(math.ceil((new_w - self.width) / 2))
+
+        new_clips = []
+        for cur_img in clips:
+            scale_img = self.cv2.resize(cur_img, (new_w, new_h))
+            crop_img = scale_img[h_off : h_off + self.height, w_off : w_off + self.width, :]
+            tensor_img = np.transpose(crop_img, axes=(2, 0, 1)) / self.max_intensity
+            new_clips.append((tensor_img - self.mean) / self.std)
+        return new_clips
+
+class ShortSideRescale(Block):
+    """short side rescale, keeping aspect ratio
+    """
+
+    def __init__(self, short_side):
+        super(ShortSideRescale, self).__init__()
+
+        from ...utils.filesystem import try_import_cv2
+        self.cv2 = try_import_cv2()
+        self.short_side = short_side
+
+    def forward(self, clips):
+        h, w, _ = clips[0].shape
+
+        new_w = self.short_side
+        new_h = self.short_side
+        if w < h:
+            new_h = int(math.floor((float(h) / w) * self.short_side))
+        else:
+            new_w = int(math.floor((float(w) / h) * self.short_side))
+
+        new_clips = []
+        for cur_img in clips:
+            new_clips.append(self.cv2.resize(cur_img, (new_w, new_h)))
+        return new_clips
 
 class VideoGroupValTransform(Block):
     """Combination of transforms for validation.
