@@ -105,7 +105,7 @@ class SSD(HybridBlock):
                  stds=(0.1, 0.1, 0.2, 0.2), nms_thresh=0.45, nms_topk=400, post_nms=100,
                  anchor_alloc_size=128, ctx=mx.cpu(),
                  norm_layer=nn.BatchNorm, norm_kwargs=None,
-                 root=os.path.join('~', '.mxnet', 'models', minimal_opset=False,
+                 root=os.path.join('~', '.mxnet', 'models'), minimal_opset=False,
                  predictors_kernel=(3,3), predictors_pad=(1,1), 
                  anchor_generator=SSDAnchorGenerator, **kwargs):
         super(SSD, self).__init__(**kwargs)
