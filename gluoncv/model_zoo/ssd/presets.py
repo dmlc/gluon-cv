@@ -583,8 +583,8 @@ def ssd_300_mobilenet1_0_lite_coco(pretrained=False, pretrained_base=True, **kwa
                    ratios=[[1, 2, 0.5]] + [[1, 2, 0.5, 3, 1.0/3]] * 5,
                    steps=[16, 30, 60, 100, 150, 300],
                    classes=classes, dataset='coco', pretrained=pretrained,
-                   pretrained_base=pretrained_base, 
-                   predictors_kernel=(1,1), predictors_pad=(0,0),
+                   pretrained_base=pretrained_base,
+                   predictors_kernel=(1, 1), predictors_pad=(0, 0),
                    min_depth=64, reduce_ratio=0.5, anchor_generator=LiteAnchorGenerator,
                    **kwargs)
 

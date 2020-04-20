@@ -75,9 +75,20 @@ class SSDAnchorGenerator(gluon.HybridBlock):
             H, W = self._im_size
             a = F.concat(*[cx.clip(0, W), cy.clip(0, H), cw.clip(0, W), ch.clip(0, H)], dim=-1)
         return a.reshape((1, -1, 4))
-   
+
 
 class LiteAnchorGenerator(SSDAnchorGenerator):
+    '''
+    Bounding box anchor generator for Single-shot Object Detection, corresponding to anchors
+    structure used in ssd_mobilenet_v1_coco from TF Object Detection API
+    This class inherits SSDAnchorGenerator and uses the same input parameters.
+    Main differences:
+      - First branch is not added with another anchor with size extracted from
+        the geomtric mean of current and next branch sizes.
+      - First anchor in the first branch has half the size of the rest of the anchors.
+      - Geometric sum anchors are added to all other branches as the last anchor.
+
+    '''
     def _generate_anchors(self, sizes, ratios, step, alloc_size, offsets):
         """Generate anchors for once. Anchors are stored with (center_x, center_y, w, h) format."""
         assert len(sizes) == 2, "SSD requires sizes to be (size_min, size_max)"

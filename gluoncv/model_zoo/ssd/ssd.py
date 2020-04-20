@@ -95,8 +95,9 @@ class SSD(HybridBlock):
     predictor_pad: tuple of int. default is (1,1)
         Padding of the predictor kenrel conv.
     anchor_generator: default is SSDAnchorGenerator
-        Anchor Generator to be used. The default it SSDAnchorGenerator corresponding to SSD published article
-        This argument can be used for other custom anchor generators. Like LiteAnchorGenerator.
+        Anchor Generator to be used. The default it SSDAnchorGenerator corresponding 
+        to SSD published article. This argument can be used for other custom 
+        anchor generators. Like LiteAnchorGenerator.
 
     """
     def __init__(self, network, base_size, features, num_filters, sizes, ratios,
@@ -106,7 +107,7 @@ class SSD(HybridBlock):
                  anchor_alloc_size=128, ctx=mx.cpu(),
                  norm_layer=nn.BatchNorm, norm_kwargs=None,
                  root=os.path.join('~', '.mxnet', 'models'), minimal_opset=False,
-                 predictors_kernel=(3,3), predictors_pad=(1,1), 
+                 predictors_kernel=(3, 3), predictors_pad=(1, 1),
                  anchor_generator=SSDAnchorGenerator, **kwargs):
         super(SSD, self).__init__(**kwargs)
         if norm_kwargs is None:
@@ -162,8 +163,12 @@ class SSD(HybridBlock):
                 self.anchor_generators.add(branch_anchor_generator)
                 asz = max(asz // 2, 16)  # pre-compute larger than 16x16 anchor map
                 num_anchors = branch_anchor_generator.num_depth
-                self.class_predictors.add(ConvPredictor(num_anchors * (len(self.classes) + 1), kernel=predictors_kernel, pad=predictors_pad))
-                self.box_predictors.add(ConvPredictor(num_anchors * 4, kernel=predictors_kernel, pad=predictors_pad))
+                self.class_predictors.add(ConvPredictor(num_anchors * (len(self.classes) + 1),
+                                                        kernel=predictors_kernel,
+                                                        pad=predictors_pad))
+                self.box_predictors.add(ConvPredictor(num_anchors * 4,
+                                                      kernel=predictors_kernel,
+                                                      pad=predictors_pad))
             self.bbox_decoder = NormalizedBoxCenterDecoder(stds, minimal_opset=minimal_opset)
             self.cls_decoder = MultiPerClassDecoder(len(self.classes) + 1, thresh=0.01)
 
@@ -347,7 +352,8 @@ class SSD(HybridBlock):
 
 def get_ssd(name, base_size, features, filters, sizes, ratios, steps, classes,
             dataset, pretrained=False, pretrained_base=True, ctx=mx.cpu(),
-            root=os.path.join('~', '.mxnet', 'models'), anchor_generator=SSDAnchorGenerator, **kwargs):
+            root=os.path.join('~', '.mxnet', 'models'), 
+            anchor_generator=SSDAnchorGenerator, **kwargs):
     """Get SSD models.
 
     Parameters
