@@ -406,8 +406,8 @@ def get_ssd(name, base_size, features, filters, sizes, ratios, steps, classes,
     pretrained_base = False if pretrained else pretrained_base
     base_name = None if callable(features) else name
     net = SSD(base_name, base_size, features, filters, sizes, ratios, steps,
-              pretrained=pretrained_base, classes=classes, ctx=ctx, root=root, 
-              anchor_generator=anchor_generator, **kwargs)
+              pretrained=pretrained_base, classes=classes, ctx=ctx, root=root,
+              minimal_opset=pretrained, anchor_generator=anchor_generator, **kwargs)
     if pretrained:
         from ..model_store import get_model_file
         full_name = '_'.join(('ssd', str(base_size), name, dataset))
