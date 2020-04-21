@@ -118,6 +118,7 @@ _models = {
     'ssd_512_resnet152_v2_voc': ssd_512_resnet152_v2_voc,
     'ssd_512_mobilenet1.0_voc': ssd_512_mobilenet1_0_voc,
     'ssd_512_mobilenet1.0_coco': ssd_512_mobilenet1_0_coco,
+    'ssd_300_mobilenet1.0_lite_coco': ssd_300_mobilenet1_0_lite_coco,
     'ssd_512_mobilenet1.0_custom': ssd_512_mobilenet1_0_custom,
     'ssd_300_mobilenet0.25_voc': ssd_300_mobilenet0_25_voc,
     'ssd_300_mobilenet0.25_coco': ssd_300_mobilenet0_25_coco,
