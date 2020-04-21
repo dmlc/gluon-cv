@@ -672,6 +672,11 @@ def get_hrnet(model_name, stage_interp_type='nearest', purpose='cls', pretrained
     if purpose == 'cls':
         net = HighResolutionClsNet(spec, stage_interp_type, norm_layer,
                                    norm_kwargs, num_classes, **kwargs)
+        from ..data import ImageNet1kAttr
+        attrib = ImageNet1kAttr()
+        net.synset = attrib.synset
+        net.classes = attrib.classes
+        net.classes_long = attrib.classes_long
     elif purpose == 'seg':
         net = HighResolutionSegNet(spec, stage_interp_type, norm_layer,
                                    norm_kwargs, num_classes, **kwargs)

@@ -192,6 +192,15 @@ _model_sha1 = {name: checksum for checksum, name in [
     ('6f9cd4a945cb554c38539009eede20f45786519e', 'center_net_resnet101_v1b_coco'),
     ('52daf2d9faca82c08924d08e7e0c253a782a1653', 'center_net_resnet101_v1b_dcnv2_coco'),
     ('df6ae9f896cabf5e47d39294d0d78282192d3c24', 'siamrpn_alexnet_v2_otb15'),
+    ('9c946e56229ae6d1e4ec482c3be63ae2ee33d654', 'hrnet_w18_cls'),
+    ('c224ae0fe80dd060d244b6a934dada1de0a9c021', 'hrnet_w18_small_v1_cls'),
+    ('346da53060b949a3a3ffb83a9b6f9ba46c5c4fbc', 'hrnet_w18_small_v2_cls'),
+    ('2d8eb90b4a3dc8a4fc8d95910e83de425f002c74', 'hrnet_w30_cls'),
+    ('d1d41a36de3d1eca7b595973779268bc3f828f5b', 'hrnet_w32_cls'),
+    ('f8b0a2f9e2db56d23c594847b7f913db9e56cc57', 'hrnet_w40_cls'),
+    ('b36ab13a611bfd196c46dc9cdda918b63789722d', 'hrnet_w44_cls'),
+    ('be50e56dea846e87343b09b4ba9687b98bd47d0c', 'hrnet_w48_cls'),
+    ('76f1b7077179f21c4147ff77f9e0999db879d7ec', 'hrnet_w64_cls'),
 ]}
 
 apache_repo_url = 'https://apache-mxnet.s3-accelerate.dualstack.amazonaws.com/'
