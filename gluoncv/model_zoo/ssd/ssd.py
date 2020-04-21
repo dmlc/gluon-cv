@@ -95,8 +95,8 @@ class SSD(HybridBlock):
     predictor_pad: tuple of int. default is (1,1)
         Padding of the predictor kenrel conv.
     anchor_generator: default is SSDAnchorGenerator
-        Anchor Generator to be used. The default it SSDAnchorGenerator corresponding 
-        to SSD published article. This argument can be used for other custom 
+        Anchor Generator to be used. The default it SSDAnchorGenerator corresponding
+        to SSD published article. This argument can be used for other custom
         anchor generators. Like LiteAnchorGenerator.
 
     """
@@ -352,7 +352,7 @@ class SSD(HybridBlock):
 
 def get_ssd(name, base_size, features, filters, sizes, ratios, steps, classes,
             dataset, pretrained=False, pretrained_base=True, ctx=mx.cpu(),
-            root=os.path.join('~', '.mxnet', 'models'), 
+            root=os.path.join('~', '.mxnet', 'models'),
             anchor_generator=SSDAnchorGenerator, **kwargs):
     """Get SSD models.
 
