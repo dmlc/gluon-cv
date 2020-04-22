@@ -19,7 +19,7 @@ from gluoncv.data.sampler import SplitSampler, ShuffleSplitSampler
 
 # CLI
 def parse_args():
-    parser = argparse.ArgumentParser(description='Train a model for action recognition.')
+    parser = argparse.ArgumentParser(description='Train a model for video action recognition.')
     parser.add_argument('--dataset', type=str, default='ucf101', choices=['ucf101', 'kinetics400', 'somethingsomethingv2', 'hmdb51', 'custom'],
                         help='which dataset to use.')
     parser.add_argument('--data-dir', type=str, default='~/.mxnet/datasets/ucf101/rawframes',
@@ -154,6 +154,8 @@ def parse_args():
                         help='the temporal stride for sparse sampling of video frames for fast branch in SlowFast network.')
     parser.add_argument('--num-crop', type=int, default=1,
                         help='number of crops for each image. default is 1')
+    parser.add_argument('--data-aug', type=str, default='v1',
+                        help='different types of data augmentation pipelines. Supports v1, v2 and v3.')
     opt = parser.parse_args()
     return opt
 
@@ -162,69 +164,81 @@ def get_data_loader(opt, batch_size, num_workers, logger, kvstore=None):
     val_data_dir = opt.val_data_dir
     scale_ratios = [float(i) for i in opt.scale_ratios.split(',')]
     input_size = opt.input_size
+    default_mean = [0.485, 0.456, 0.406]
+    default_std = [0.229, 0.224, 0.225]
 
     def batch_fn(batch, ctx):
         data = split_and_load(batch[0], ctx_list=ctx, batch_axis=0, even_split=False)
         label = split_and_load(batch[1], ctx_list=ctx, batch_axis=0, even_split=False)
         return data, label
 
-    # transform_train = video.VideoGroupTrainTransform(size=(input_size, input_size), scale_ratios=scale_ratios, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-    # transform_test = video.VideoGroupValTransform(size=input_size, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-
-    transform_train = video.VideoGroupTrainTransformV2(crop_size=(input_size, input_size), min_size=opt.new_height, max_size=opt.new_width,
-                                                       mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-    transform_test = video.VideoGroupValTransformV2(crop_size=(input_size, input_size), short_side=opt.new_height,
-                                                    mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    if opt.data_aug == 'v1':
+        transform_train = video.VideoGroupTrainTransform(size=(input_size, input_size), scale_ratios=scale_ratios,
+                                                         mean=default_mean, std=default_std)
+        transform_test = video.VideoGroupValTransform(size=input_size,
+                                                      mean=default_mean, std=default_std)
+    elif opt.data_aug == 'v2':
+        transform_train = video.VideoGroupTrainTransformV2(crop_size=(input_size, input_size), min_size=opt.new_height, max_size=opt.new_width,
+                                                           mean=default_mean, std=default_std)
+        transform_test = video.VideoGroupValTransformV2(crop_size=(input_size, input_size), short_side=opt.new_height,
+                                                        mean=default_mean, std=default_std)
+    elif opt.data_aug == 'v3':
+        transform_train = video.VideoGroupTrainTransformV3(size=(input_size, input_size), short_side=opt.new_height, scale_ratios=scale_ratios,
+                                                         mean=default_mean, std=default_std)
+        transform_test = video.VideoGroupValTransformV2(crop_size=(input_size, input_size), short_side=opt.new_height,
+                                                        mean=default_mean, std=default_std)
+    else:
+        logger.info('Data augmentation %s is not supported yet.' % (opt.data_aug))
 
     if opt.dataset == 'kinetics400':
         train_dataset = Kinetics400(setting=opt.train_list, root=data_dir, train=True,
                                     new_width=opt.new_width, new_height=opt.new_height, new_length=opt.new_length, new_step=opt.new_step,
                                     target_width=input_size, target_height=input_size, video_loader=opt.video_loader, use_decord=opt.use_decord,
                                     slowfast=opt.slowfast, slow_temporal_stride=opt.slow_temporal_stride, fast_temporal_stride=opt.fast_temporal_stride,
-                                    num_segments=opt.num_segments, transform=transform_train)
+                                    data_aug=opt.data_aug, num_segments=opt.num_segments, transform=transform_train)
         val_dataset = Kinetics400(setting=opt.val_list, root=val_data_dir, train=False,
                                   new_width=opt.new_width, new_height=opt.new_height, new_length=opt.new_length, new_step=opt.new_step,
                                   target_width=input_size, target_height=input_size, video_loader=opt.video_loader, use_decord=opt.use_decord,
                                   slowfast=opt.slowfast, slow_temporal_stride=opt.slow_temporal_stride, fast_temporal_stride=opt.fast_temporal_stride,
-                                  num_segments=opt.num_segments, transform=transform_test)
+                                  data_aug=opt.data_aug, num_segments=opt.num_segments, transform=transform_test)
     elif opt.dataset == 'ucf101':
         train_dataset = UCF101(setting=opt.train_list, root=data_dir, train=True,
                                new_width=opt.new_width, new_height=opt.new_height, new_length=opt.new_length,
                                target_width=input_size, target_height=input_size,
-                               num_segments=opt.num_segments, transform=transform_train)
+                               data_aug=opt.data_aug, num_segments=opt.num_segments, transform=transform_train)
         val_dataset = UCF101(setting=opt.val_list, root=data_dir, train=False,
                              new_width=opt.new_width, new_height=opt.new_height, new_length=opt.new_length,
                              target_width=input_size, target_height=input_size,
-                             num_segments=opt.num_segments, transform=transform_test)
+                             data_aug=opt.data_aug, num_segments=opt.num_segments, transform=transform_test)
     elif opt.dataset == 'somethingsomethingv2':
         train_dataset = SomethingSomethingV2(setting=opt.train_list, root=data_dir, train=True,
                                              new_width=opt.new_width, new_height=opt.new_height, new_length=opt.new_length, new_step=opt.new_step,
                                              target_width=input_size, target_height=input_size, video_loader=opt.video_loader, use_decord=opt.use_decord,
-                                             num_segments=opt.num_segments, transform=transform_train)
+                                             data_aug=opt.data_aug, num_segments=opt.num_segments, transform=transform_train)
         val_dataset = SomethingSomethingV2(setting=opt.val_list, root=data_dir, train=False,
                                            new_width=opt.new_width, new_height=opt.new_height, new_length=opt.new_length, new_step=opt.new_step,
                                            target_width=input_size, target_height=input_size, video_loader=opt.video_loader, use_decord=opt.use_decord,
-                                           num_segments=opt.num_segments, transform=transform_test)
+                                           data_aug=opt.data_aug, num_segments=opt.num_segments, transform=transform_test)
     elif opt.dataset == 'hmdb51':
         train_dataset = HMDB51(setting=opt.train_list, root=data_dir, train=True,
                                new_width=opt.new_width, new_height=opt.new_height, new_length=opt.new_length, new_step=opt.new_step,
                                target_width=input_size, target_height=input_size, video_loader=opt.video_loader, use_decord=opt.use_decord,
-                               num_segments=opt.num_segments, transform=transform_train)
+                               data_aug=opt.data_aug, num_segments=opt.num_segments, transform=transform_train)
         val_dataset = HMDB51(setting=opt.val_list, root=data_dir, train=False,
                              new_width=opt.new_width, new_height=opt.new_height, new_length=opt.new_length, new_step=opt.new_step,
                              target_width=input_size, target_height=input_size, video_loader=opt.video_loader, use_decord=opt.use_decord,
-                             num_segments=opt.num_segments, transform=transform_test)
+                             data_aug=opt.data_aug, num_segments=opt.num_segments, transform=transform_test)
     elif opt.dataset == 'custom':
         train_dataset = VideoClsCustom(setting=opt.train_list, root=data_dir, train=True,
                                        new_width=opt.new_width, new_height=opt.new_height, new_length=opt.new_length, new_step=opt.new_step,
                                        target_width=input_size, target_height=input_size, video_loader=opt.video_loader, use_decord=opt.use_decord,
                                        slowfast=opt.slowfast, slow_temporal_stride=opt.slow_temporal_stride, fast_temporal_stride=opt.fast_temporal_stride,
-                                       num_segments=opt.num_segments, transform=transform_train)
+                                       data_aug=opt.data_aug, num_segments=opt.num_segments, transform=transform_train)
         val_dataset = VideoClsCustom(setting=opt.val_list, root=val_data_dir, train=False,
                                      new_width=opt.new_width, new_height=opt.new_height, new_length=opt.new_length, new_step=opt.new_step,
                                      target_width=input_size, target_height=input_size, video_loader=opt.video_loader, use_decord=opt.use_decord,
                                      slowfast=opt.slowfast, slow_temporal_stride=opt.slow_temporal_stride, fast_temporal_stride=opt.fast_temporal_stride,
-                                     num_segments=opt.num_segments, transform=transform_test)
+                                     data_aug=opt.data_aug, num_segments=opt.num_segments, transform=transform_test)
     else:
         logger.info('Dataset %s is not supported yet.' % (opt.dataset))
 
@@ -487,27 +501,27 @@ def main():
                 kv.init(555555, nd.zeros(1))
                 kv.init(999999, nd.zeros(1))
 
-            # if opt.kvstore is not None:
-            #     acc_top1_val, acc_top5_val, loss_val = test(ctx, val_data, kv)
-            # else:
-            #     acc_top1_val, acc_top5_val, loss_val = test(ctx, val_data)
+            if opt.kvstore is not None:
+                acc_top1_val, acc_top5_val, loss_val = test(ctx, val_data, kv)
+            else:
+                acc_top1_val, acc_top5_val, loss_val = test(ctx, val_data)
 
             logger.info('[Epoch %03d] training: %s=%f\t loss=%f' % (epoch, train_metric_name, train_metric_score*100, train_loss_epoch/num_train_iter))
             logger.info('[Epoch %03d] speed: %d samples/sec\ttime cost: %f' % (epoch, throughput, time.time()-tic))
-            # logger.info('[Epoch %03d] validation: acc-top1=%f acc-top5=%f loss=%f' % (epoch, acc_top1_val*100, acc_top5_val*100, loss_val))
+            logger.info('[Epoch %03d] validation: acc-top1=%f acc-top5=%f loss=%f' % (epoch, acc_top1_val*100, acc_top5_val*100, loss_val))
 
             sw.add_scalar(tag='train_loss_epoch', value=train_loss_epoch/num_train_iter, global_step=epoch)
-            # sw.add_scalar(tag='val_loss_epoch', value=loss_val, global_step=epoch)
-            # sw.add_scalar(tag='val_acc_top1_epoch', value=acc_top1_val*100, global_step=epoch)
+            sw.add_scalar(tag='val_loss_epoch', value=loss_val, global_step=epoch)
+            sw.add_scalar(tag='val_acc_top1_epoch', value=acc_top1_val*100, global_step=epoch)
 
-            # if acc_top1_val > best_val_score:
-            #     best_val_score = acc_top1_val
-            #     net.save_parameters('%s/%.4f-%s-%s-%03d-best.params'%(opt.save_dir, best_val_score, opt.dataset, model_name, epoch))
-            #     trainer.save_states('%s/%.4f-%s-%s-%03d-best.states'%(opt.save_dir, best_val_score, opt.dataset, model_name, epoch))
-            # else:
-            #     if opt.save_frequency and opt.save_dir and (epoch + 1) % opt.save_frequency == 0:
-            #         net.save_parameters('%s/%s-%s-%03d.params'%(opt.save_dir, opt.dataset, model_name, epoch))
-            #         trainer.save_states('%s/%s-%s-%03d.states'%(opt.save_dir, opt.dataset, model_name, epoch))
+            if acc_top1_val > best_val_score:
+                best_val_score = acc_top1_val
+                net.save_parameters('%s/%.4f-%s-%s-%03d-best.params'%(opt.save_dir, best_val_score, opt.dataset, model_name, epoch))
+                trainer.save_states('%s/%.4f-%s-%s-%03d-best.states'%(opt.save_dir, best_val_score, opt.dataset, model_name, epoch))
+            else:
+                if opt.save_frequency and opt.save_dir and (epoch + 1) % opt.save_frequency == 0:
+                    net.save_parameters('%s/%s-%s-%03d.params'%(opt.save_dir, opt.dataset, model_name, epoch))
+                    trainer.save_states('%s/%s-%s-%03d.states'%(opt.save_dir, opt.dataset, model_name, epoch))
 
         # save the last model
         net.save_parameters('%s/%s-%s-%03d.params'%(opt.save_dir, opt.dataset, model_name, opt.num_epochs-1))

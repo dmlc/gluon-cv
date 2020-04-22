@@ -70,6 +70,8 @@ class VideoClsCustom(dataset.Dataset):
         The temporal stride for sparse sampling of video frames in slow branch of a SlowFast network.
     fast_temporal_stride : int, default 2.
         The temporal stride for sparse sampling of video frames in fast branch of a SlowFast network.
+    data_aug : str, default 'v1'.
+        Different types of data augmentation pipelines. Supports v1, v2 and v3.
     lazy_init : bool, default False.
         If set to True, build a dataset instance without loading any dataset.
     """
@@ -96,6 +98,7 @@ class VideoClsCustom(dataset.Dataset):
                  slowfast=False,
                  slow_temporal_stride=16,
                  fast_temporal_stride=2,
+                 data_aug='v1',
                  lazy_init=False,
                  transform=None):
 
@@ -127,6 +130,7 @@ class VideoClsCustom(dataset.Dataset):
         self.slowfast = slowfast
         self.slow_temporal_stride = slow_temporal_stride
         self.fast_temporal_stride = fast_temporal_stride
+        self.data_aug = data_aug
         self.lazy_init = lazy_init
 
         if self.slowfast:
@@ -158,8 +162,10 @@ class VideoClsCustom(dataset.Dataset):
                 # So we need to provide extension (i.e., .mp4) to complete the file name.
                 video_name = '{}.{}'.format(directory, self.video_ext)
             if self.use_decord:
-                # decord_vr = self.decord.VideoReader(video_name, width=self.new_width, height=self.new_height)
-                decord_vr = self.decord.VideoReader(video_name)
+                if self.data_aug == 'v1':
+                    decord_vr = self.decord.VideoReader(video_name, width=self.new_width, height=self.new_height)
+                else:
+                    decord_vr = self.decord.VideoReader(video_name)
                 duration = len(decord_vr)
             else:
                 mmcv_vr = self.mmcv.VideoReader(video_name)

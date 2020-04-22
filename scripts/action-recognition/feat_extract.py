@@ -68,6 +68,8 @@ def parse_args():
                         help='the temporal stride for sparse sampling of video frames for fast branch in SlowFast network.')
     parser.add_argument('--num-crop', type=int, default=1,
                         help='number of crops for each image. default is 1')
+    parser.add_argument('--data-aug', type=str, default='v1',
+                        help='different types of data augmentation pipelines. Supports v1, v2 and v3.')
     parser.add_argument('--num-segments', type=int, default=1,
                         help='number of segments to evenly split the video.')
     parser.add_argument('--save-dir', type=str, default='./',
@@ -183,6 +185,7 @@ def main(logger):
                                  slowfast=opt.slowfast,
                                  slow_temporal_stride=opt.slow_temporal_stride,
                                  fast_temporal_stride=opt.fast_temporal_stride,
+                                 data_aug=opt.data_aug,
                                  lazy_init=True)
 
     start_time = time.time()
