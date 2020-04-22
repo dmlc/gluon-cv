@@ -59,9 +59,11 @@ _model_sha1 = {name: checksum for checksum, name in [
     ('da9756faa5b9b4e34dedcf83ee0733d5895796ad', 'ssd_512_mobilenet1.0_coco'),
     ('447328d89d70ae1e2ca49226b8d834e5a5456df3', 'faster_rcnn_resnet50_v1b_voc'),
     ('5b4690fb7c5b62c44fb36c67d0642b633697f1bb', 'faster_rcnn_resnet50_v1b_coco'),
+    ('6df46961827647d418b11ffaf616a6a60d9dd16e', 'faster_rcnn_fpn_syncbn_resnest50_coco'),
     ('a465eca35e78aba6ebdf99bf52031a447e501063', 'faster_rcnn_resnet101_v1d_coco'),
     ('233572743bc537291590f4edf8a0c17c14b234bb', 'faster_rcnn_fpn_resnet50_v1b_coco'),
     ('1194ab4ec6e06386aadd55820add312c8ef59c74', 'faster_rcnn_fpn_resnet101_v1d_coco'),
+    ('baebfa1b7d7f56dd33a7687efea4b014736bd791', 'faster_rcnn_fpn_syncbn_resnest101_coco'),
     ('e071cf1550bc0331c218a9072b59e9550595d1e7', 'mask_rcnn_resnet18_v1b_coco'),
     ('a3527fdc2cee5b1f32a61e5fd7cda8fb673e86e5', 'mask_rcnn_resnet50_v1b_coco'),
     ('4a3249c584f81c2a9b5d852b742637cd692ebdcb', 'mask_rcnn_resnet101_v1d_coco'),
@@ -198,6 +200,15 @@ _model_sha1 = {name: checksum for checksum, name in [
     ('6f9cd4a945cb554c38539009eede20f45786519e', 'center_net_resnet101_v1b_coco'),
     ('52daf2d9faca82c08924d08e7e0c253a782a1653', 'center_net_resnet101_v1b_dcnv2_coco'),
     ('df6ae9f896cabf5e47d39294d0d78282192d3c24', 'siamrpn_alexnet_v2_otb15'),
+    ('9c946e56229ae6d1e4ec482c3be63ae2ee33d654', 'hrnet_w18_cls'),
+    ('c224ae0fe80dd060d244b6a934dada1de0a9c021', 'hrnet_w18_small_v1_cls'),
+    ('346da53060b949a3a3ffb83a9b6f9ba46c5c4fbc', 'hrnet_w18_small_v2_cls'),
+    ('2d8eb90b4a3dc8a4fc8d95910e83de425f002c74', 'hrnet_w30_cls'),
+    ('d1d41a36de3d1eca7b595973779268bc3f828f5b', 'hrnet_w32_cls'),
+    ('f8b0a2f9e2db56d23c594847b7f913db9e56cc57', 'hrnet_w40_cls'),
+    ('b36ab13a611bfd196c46dc9cdda918b63789722d', 'hrnet_w44_cls'),
+    ('be50e56dea846e87343b09b4ba9687b98bd47d0c', 'hrnet_w48_cls'),
+    ('76f1b7077179f21c4147ff77f9e0999db879d7ec', 'hrnet_w64_cls'),
 ]}
 
 apache_repo_url = 'https://apache-mxnet.s3-accelerate.dualstack.amazonaws.com/'
