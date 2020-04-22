@@ -18,9 +18,9 @@
 # coding: utf-8
 # pylint: disable= arguments-differ,unused-argument,unused-variable,missing-docstring
 """HRNet, implemented in Gluon."""
-__all__ = ['get_hrnet', 'hrnet_w18_small_v1_c', 'hrnet_w18_small_v2_c', 'hrnet_w30_c',
-           'hrnet_w32_c', 'hrnet_w40_c', 'hrnet_w44_c', 'hrnet_w48_c',
-           'hrnet_w18_small_v1_s', 'hrnet_w18_small_v2_s', 'hrnet_w48_s']
+__all__ = ['get_hrnet', 'hrnet_w18_c', 'hrnet_w18_small_v1_c', 'hrnet_w18_small_v2_c',
+           'hrnet_w30_c', 'hrnet_w32_c', 'hrnet_w40_c', 'hrnet_w44_c', 'hrnet_w48_c',
+           'hrnet_w64_c', 'hrnet_w18_small_v1_s', 'hrnet_w18_small_v2_s', 'hrnet_w48_s']
 
 import numpy as np
 from mxnet.gluon import contrib
@@ -560,6 +560,14 @@ class HighResolutionSegNet(HighResolutionBaseNet):
 
 # pylint: disable=C0326
 HRNET_SPEC = {}
+HRNET_SPEC['w18'] = [
+    #modules, block_type, blocks, channels, fuse_method
+    (1,    'BOTTLENECK', [4],           [64],              'SUM'),
+    (1,    'BASIC',      [4]*2,         [18, 36],          'SUM'),
+    (4,    'BASIC',      [4]*3,         [18, 36, 72],      'SUM'),
+    (3,    'BASIC',      [4]*4,         [18, 36, 72, 144], 'SUM')
+]
+
 HRNET_SPEC['w18_small_v1'] = [
     #modules, block_type, blocks, channels, fuse_method
     (1,    'BOTTLENECK', [1],           [32],              'SUM'),
@@ -616,6 +624,14 @@ HRNET_SPEC['w48'] = [
     (4,    'BASIC',      [4]*3,         [48, 96, 192],      'SUM'),
     (3,    'BASIC',      [4]*4,         [48, 96, 192, 384], 'SUM')
 ]
+
+HRNET_SPEC['w64'] = [
+    #modules, block_type, blocks, channels, fuse_method
+    (1,    'BOTTLENECK', [4],           [64],                'SUM'),
+    (1,    'BASIC',      [4]*2,         [64, 128],           'SUM'),
+    (4,    'BASIC',      [4]*3,         [64, 128, 256],      'SUM'),
+    (3,    'BASIC',      [4]*4,         [64, 128, 256, 512], 'SUM')
+]
 # pylint: enable=C0326
 
 def get_hrnet(model_name, stage_interp_type='nearest', purpose='cls', pretrained=False, ctx=cpu(),
@@ -656,6 +672,11 @@ def get_hrnet(model_name, stage_interp_type='nearest', purpose='cls', pretrained
     if purpose == 'cls':
         net = HighResolutionClsNet(spec, stage_interp_type, norm_layer,
                                    norm_kwargs, num_classes, **kwargs)
+        from ..data import ImageNet1kAttr
+        attrib = ImageNet1kAttr()
+        net.synset = attrib.synset
+        net.classes = attrib.classes
+        net.classes_long = attrib.classes_long
     elif purpose == 'seg':
         net = HighResolutionSegNet(spec, stage_interp_type, norm_layer,
                                    norm_kwargs, num_classes, **kwargs)
@@ -667,6 +688,11 @@ def get_hrnet(model_name, stage_interp_type='nearest', purpose='cls', pretrained
         net.load_parameters(get_model_file('hrnet_%s_%s'%(model_name, purpose),
                                            tag=pretrained, root=root), ctx=ctx)
     return net
+
+def hrnet_w18_c(**kwargs):
+    r"""hrnet_w18 for Imagenet classification
+    """
+    return get_hrnet('w18', **kwargs)
 
 def hrnet_w18_small_v1_c(**kwargs):
     r"""hhrnet_w18_small_v1 for Imagenet classification
@@ -702,6 +728,11 @@ def hrnet_w48_c(**kwargs):
     r"""hhrnet_w48 for Imagenet classification
     """
     return get_hrnet('w48', **kwargs)
+
+def hrnet_w64_c(**kwargs):
+    r"""hhrnet_w64 for Imagenet classification
+    """
+    return get_hrnet('w64', **kwargs)
 
 def hrnet_w18_small_v1_s(**kwargs):
     r"""hrnet_w18_small_v1 for cityscapes segmentation
