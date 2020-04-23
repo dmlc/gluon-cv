@@ -611,10 +611,10 @@ class VideoGroupTrainTransformV2(Block):
     Follow the style of https://github.com/open-mmlab/mmaction
         (1) short side keep aspect ratio resize
         (2) multiscale crop
-        (2) scale
-        (3) random horizontal flip
-        (4) to tensor
-        (5) normalize
+        (3) scale
+        (4) random horizontal flip
+        (5) to tensor
+        (6) normalize
     """
     def __init__(self, size, short_side, scale_ratios, mean, std, fix_crop=True,
                  more_fix_crop=True, max_distort=1, prob=0.5, max_intensity=255.0):
