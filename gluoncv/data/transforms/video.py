@@ -1,4 +1,4 @@
-# pylint: disable=missing-docstring,arguments-differ
+# pylint: disable=missing-docstring,arguments-differ,line-too-long
 """Extended image transformations to video transformations.
 Code adapted from:
 https://github.com/bryanyzhu/two-stream-pytorch
@@ -14,7 +14,7 @@ from mxnet.gluon import Block
 __all__ = ['VideoToTensor', 'VideoNormalize', 'VideoRandomHorizontalFlip', 'VideoMultiScaleCrop',
            'VideoCenterCrop', 'VideoTenCrop', 'VideoGroupTrainTransform', 'VideoGroupValTransform',
            'VideoGroupTrainTransformV2', 'VideoGroupValTransformV2', 'ShortSideRescale',
-           'VideoGroupTrainTransformV3']
+           'VideoGroupTrainTransformV3', 'RandomResizedCrop', 'VideoGroupTrainTransformV4']
 
 
 class VideoGroupTrainTransform(Block):
@@ -33,6 +33,11 @@ class VideoGroupTrainTransform(Block):
         self.cv2 = try_import_cv2()
         self.height = size[0]
         self.width = size[1]
+        self.multiScaleCrop = VideoMultiScaleCrop(size=size,
+                                                  scale_ratios=scale_ratios,
+                                                  fix_crop=fix_crop,
+                                                  more_fix_crop=more_fix_crop,
+                                                  max_distort=max_distort)
         self.scale_ratios = scale_ratios
         self.fix_crop = fix_crop
         self.more_fix_crop = more_fix_crop
@@ -42,60 +47,24 @@ class VideoGroupTrainTransform(Block):
         self.mean = np.asarray(mean).reshape((len(mean), 1, 1))
         self.std = np.asarray(std).reshape((len(std), 1, 1))
 
-    def fillFixOffset(self, datum_height, datum_width):
-        h_off = int((datum_height - self.height) / 4)
-        w_off = int((datum_width - self.width) / 4)
-
-        offsets = []
-        offsets.append((0, 0))          # upper left
-        offsets.append((0, 4*w_off))    # upper right
-        offsets.append((4*h_off, 0))    # lower left
-        offsets.append((4*h_off, 4*w_off))  # lower right
-        offsets.append((2*h_off, 2*w_off))  # center
-
-        if self.more_fix_crop:
-            offsets.append((0, 2*w_off))        # top center
-            offsets.append((4*h_off, 2*w_off))  # bottom center
-            offsets.append((2*h_off, 0))        # left center
-            offsets.append((2*h_off, 4*w_off))  # right center
-
-            offsets.append((1*h_off, 1*w_off))  # upper left quarter
-            offsets.append((1*h_off, 3*w_off))  # upper right quarter
-            offsets.append((3*h_off, 1*w_off))  # lower left quarter
-            offsets.append((3*h_off, 3*w_off))  # lower right quarter
-
-        return offsets
-
-    def fillCropSize(self, input_height, input_width):
-        crop_sizes = []
-        base_size = np.min((input_height, input_width))
-        scale_rates = self.scale_ratios
-        for h, scale_rate_h in enumerate(scale_rates):
-            crop_h = int(base_size * scale_rate_h)
-            for w, scale_rate_w in enumerate(scale_rates):
-                crop_w = int(base_size * scale_rate_w)
-                if (np.absolute(h - w) <= self.max_distort):
-                    crop_sizes.append((crop_h, crop_w))
-
-        return crop_sizes
 
     def forward(self, clips):
         h, w, _ = clips[0].shape
 
-        crop_size_pairs = self.fillCropSize(h, w)
-        size_sel = random.randint(0, len(crop_size_pairs)-1)
-        crop_height = crop_size_pairs[size_sel][0]
-        crop_width = crop_size_pairs[size_sel][1]
+        crop_size_pairs = self.multiScaleCrop.fillCropSize(self.scale_ratios, self.max_distort, h, w)
+        size_sel = random.choice(crop_size_pairs)
+        crop_height = size_sel[0]
+        crop_width = size_sel[1]
 
         is_flip = random.random() < self.prob
         if self.fix_crop:
-            offsets = self.fillFixOffset(h, w)
-            off_sel = random.randint(0, len(offsets)-1)
-            h_off = offsets[off_sel][0]
-            w_off = offsets[off_sel][1]
+            offsets = self.multiScaleCrop.fillFixOffset(self.more_fix_crop, h, w, crop_height, crop_width)
+            off_sel = random.choice(offsets)
+            h_off = off_sel[0]
+            w_off = off_sel[1]
         else:
-            h_off = random.randint(0, h - self.height)
-            w_off = random.randint(0, w - self.width)
+            h_off = random.randint(0, h - crop_height)
+            w_off = random.randint(0, w - crop_width)
 
         new_clips = []
         for cur_img in clips:
@@ -275,6 +244,94 @@ class ShortSideRescale(Block):
         return new_clips
 
 
+class RandomResizedCrop(Block):
+    """Random crop and resize.
+    A crop of random size (default: of 0.08 to 1.0) of the original size and a random
+    aspect ratio (default: of 3/4 to 4/3) of the original aspect ratio is made. This crop
+    is finally resized to given size.
+    This is popularly used to train the Inception networks.
+
+    Parameters
+    ----------
+    size : tuple of int
+        Expected output size of each edge
+    scale : tuple of float
+        Range of size of the origin size cropped
+    ratio : tuple of float
+        Range of aspect ratio of the origin aspect ratio cropped
+
+    Inputs:
+        - **data**: a list of frames with shape [H x W x C]
+
+    Outputs:
+        - **out**: a list of cropped and resized frames with shape [size x size x C]
+    """
+
+    def __init__(self, size, scale=(0.08, 1.0), ratio=(3. / 4., 4. / 3.)):
+        super(RandomResizedCrop, self).__init__()
+
+        from ...utils.filesystem import try_import_cv2
+        self.cv2 = try_import_cv2()
+        self.height = size[0]
+        self.width = size[1]
+        self.scale = scale
+        self.ratio = ratio
+
+    def get_params(self, img, scale, ratio):
+        """Get parameters for ``crop`` for a random sized crop.
+
+        Parameters:
+            img (cv2 Image): Image to be cropped.
+            scale (tuple): range of size of the origin size cropped
+            ratio (tuple): range of aspect ratio of the origin aspect ratio cropped
+        Returns:
+            tuple: params (i, j, h, w) to be passed to ``crop`` for a random
+                sized crop.
+        """
+        height, width, _ = img.shape
+        area = height * width
+
+        for _ in range(10):
+            target_area = random.uniform(*scale) * area
+            aspect_ratio = random.uniform(*ratio)
+
+            w = int(round(math.sqrt(target_area * aspect_ratio)))
+            h = int(round(math.sqrt(target_area / aspect_ratio)))
+
+            if random.random() < 0.5:
+                w, h = h, w
+
+            if 0 < w <= width and 0 < h <= height:
+                i = random.randint(0, height - h)
+                j = random.randint(0, width - w)
+                return i, j, h, w
+
+        # Fallback to center crop
+        in_ratio = float(width) / float(height)
+        if (in_ratio < min(ratio)):
+            w = width
+            h = int(round(w / min(ratio)))
+        elif (in_ratio > max(ratio)):
+            h = height
+            w = int(round(h * max(ratio)))
+        else:  # whole image
+            w = width
+            h = height
+
+        i = (height - h) // 2
+        j = (width - w) // 2
+        return i, j, h, w
+
+    def forward(self, clips):
+        h_off, w_off, crop_height, crop_width = self.get_params(clips[0], self.scale, self.ratio)
+
+        new_clips = []
+        for cur_img in clips:
+            crop_img = cur_img[h_off:h_off+crop_height, w_off:w_off+crop_width, :]
+            new_clips.append(self.cv2.resize(crop_img, (self.width, self.height)))
+        return new_clips
+
+
 class VideoMultiScaleCrop(Block):
     """Corner cropping and multi-scale cropping.
     	Two data augmentation techniques introduced in:
@@ -315,7 +372,7 @@ class VideoMultiScaleCrop(Block):
         self.more_fix_crop = more_fix_crop
         self.max_distort = max_distort
 
-    def fillFixOffset(self, datum_height, datum_width):
+    def fillFixOffset(self, more_fix_crop, image_h, image_w, crop_h, crop_w):
         """Fixed cropping strategy. Only crop the 4 corners and the center.
         If more_fix_crop is turned on, more corners will be counted.
 
@@ -326,8 +383,8 @@ class VideoMultiScaleCrop(Block):
             - **out**: a list of locations to crop the image
 
         """
-        h_off = int((datum_height - self.height) / 4)
-        w_off = int((datum_width - self.width) / 4)
+        h_off = (image_h - crop_h) // 4
+        w_off = (image_w - crop_w) // 4
 
         offsets = []
         offsets.append((0, 0))          # upper left
@@ -336,7 +393,7 @@ class VideoMultiScaleCrop(Block):
         offsets.append((4*h_off, 4*w_off))  # lower right
         offsets.append((2*h_off, 2*w_off))  # center
 
-        if self.more_fix_crop:
+        if more_fix_crop:
             offsets.append((0, 2*w_off))        # top center
             offsets.append((4*h_off, 2*w_off))  # bottom center
             offsets.append((2*h_off, 0))        # left center
@@ -349,7 +406,7 @@ class VideoMultiScaleCrop(Block):
 
         return offsets
 
-    def fillCropSize(self, input_height, input_width):
+    def fillCropSize(self, scale_ratios, max_distort, image_h, image_w):
         """Fixed cropping strategy. Select crop size from
         pre-defined list (computed by scale_ratios).
 
@@ -361,13 +418,12 @@ class VideoMultiScaleCrop(Block):
 
         """
         crop_sizes = []
-        base_size = np.min((input_height, input_width))
-        scale_rates = self.scale_ratios
-        for h, scale_rate_h in enumerate(scale_rates):
+        base_size = np.min((image_h, image_w))
+        for h_index, scale_rate_h in enumerate(scale_ratios):
             crop_h = int(base_size * scale_rate_h)
-            for w, scale_rate_w in enumerate(scale_rates):
+            for w_index, scale_rate_w in enumerate(scale_ratios):
                 crop_w = int(base_size * scale_rate_w)
-                if (np.absolute(h - w) <= self.max_distort):
+                if (np.absolute(h_index - w_index) <= max_distort):
                     # To control the aspect ratio distortion
                     crop_sizes.append((crop_h, crop_w))
 
@@ -376,19 +432,19 @@ class VideoMultiScaleCrop(Block):
     def forward(self, clips):
         h, w, _ = clips[0].shape
 
-        crop_size_pairs = self.fillCropSize(h, w)
-        size_sel = random.randint(0, len(crop_size_pairs)-1)
-        crop_height = crop_size_pairs[size_sel][0]
-        crop_width = crop_size_pairs[size_sel][1]
+        crop_size_pairs = self.fillCropSize(self.scale_ratios, self.max_distort, h, w)
+        size_sel = random.choice(crop_size_pairs)
+        crop_height = size_sel[0]
+        crop_width = size_sel[1]
 
         if self.fix_crop:
-            offsets = self.fillFixOffset(h, w)
-            off_sel = random.randint(0, len(offsets)-1)
-            h_off = offsets[off_sel][0]
-            w_off = offsets[off_sel][1]
+            offsets = self.fillFixOffset(self.more_fix_crop, h, w, crop_height, crop_width)
+            off_sel = random.choice(offsets)
+            h_off = off_sel[0]
+            w_off = off_sel[1]
         else:
-            h_off = random.randint(0, h - self.height)
-            w_off = random.randint(0, w - self.width)
+            h_off = random.randint(0, h - crop_height)
+            w_off = random.randint(0, w - crop_width)
 
         new_clips = []
         for cur_img in clips:
@@ -552,59 +608,73 @@ class VideoTenCrop(Block):
 
 class VideoGroupTrainTransformV2(Block):
     """Combination of transforms for training.
-    Follow the style of https://github.com/facebookresearch/SlowFast/
-        (1) random short side scale jittering
-        (2) random crop
+    Follow the style of https://github.com/open-mmlab/mmaction
+        (1) short side keep aspect ratio resize
+        (2) multiscale crop
+        (2) scale
         (3) random horizontal flip
         (4) to tensor
         (5) normalize
     """
-    def __init__(self, crop_size, min_size, max_size,
-                 mean, std, prob=0.5, max_intensity=255.0):
+    def __init__(self, size, short_side, scale_ratios, mean, std, fix_crop=True,
+                 more_fix_crop=True, max_distort=1, prob=0.5, max_intensity=255.0):
         super(VideoGroupTrainTransformV2, self).__init__()
 
         from ...utils.filesystem import try_import_cv2
         self.cv2 = try_import_cv2()
-        self.height = crop_size[0]
-        self.width = crop_size[1]
-        self.min_size = min_size
-        self.max_size = max_size
-        self.mean = np.asarray(mean).reshape((len(mean), 1, 1))
-        self.std = np.asarray(std).reshape((len(std), 1, 1))
+        self.height = size[0]
+        self.width = size[1]
+        self.short_side = short_side
+        self.multiScaleCrop = VideoMultiScaleCrop(size=size,
+                                                  scale_ratios=scale_ratios,
+                                                  fix_crop=fix_crop,
+                                                  more_fix_crop=more_fix_crop,
+                                                  max_distort=max_distort)
+        self.scale_ratios = scale_ratios
+        self.fix_crop = fix_crop
+        self.more_fix_crop = more_fix_crop
+        self.max_distort = max_distort
         self.prob = prob
         self.max_intensity = max_intensity
+        self.mean = np.asarray(mean).reshape((len(mean), 1, 1))
+        self.std = np.asarray(std).reshape((len(std), 1, 1))
 
     def forward(self, clips):
         h, w, _ = clips[0].shape
 
-        # step 1: random short side scale jittering
-        size = int(round(np.random.uniform(self.min_size, self.max_size)))
-        new_w = size
-        new_h = size
+        # step 1: short side keep aspect ratio resize
+        new_w = self.short_side
+        new_h = self.short_side
         if w < h:
-            new_h = int(math.floor((float(h) / w) * size))
+            new_h = int(math.floor((float(h) / w) * self.short_side))
         else:
-            new_w = int(math.floor((float(w) / h) * size))
+            new_w = int(math.floor((float(w) / h) * self.short_side))
 
-        # step 2: random crop
-        h_off = 0
-        if new_h > self.height:
-            h_off = int(np.random.randint(0, new_h - self.height))
-        w_off = 0
-        if new_w > self.width:
-            w_off = int(np.random.randint(0, new_w - self.width))
+        # step 2: multiscale crop
+        crop_size_pairs = self.multiScaleCrop.fillCropSize(self.scale_ratios, self.max_distort, new_h, new_w)
+        size_sel = random.choice(crop_size_pairs)
+        crop_height = size_sel[0]
+        crop_width = size_sel[1]
 
-        # step 3: random horizontal flip
         is_flip = random.random() < self.prob
+        if self.fix_crop:
+            offsets = self.multiScaleCrop.fillFixOffset(self.more_fix_crop, new_h, new_w, crop_height, crop_width)
+            off_sel = random.choice(offsets)
+            h_off = off_sel[0]
+            w_off = off_sel[1]
+        else:
+            h_off = random.randint(0, new_h - crop_height)
+            w_off = random.randint(0, new_w - crop_width)
 
         new_clips = []
         for cur_img in clips:
             scale_img = self.cv2.resize(cur_img, (new_w, new_h))
-            crop_img = scale_img[h_off : h_off + self.height, w_off : w_off + self.width, :]
+            crop_img = scale_img[h_off:h_off+crop_height, w_off:w_off+crop_width, :]
+            resize_img = self.cv2.resize(crop_img, (self.width, self.height))
             if is_flip:
-                flip_img = np.flip(crop_img, axis=1)
+                flip_img = np.flip(resize_img, axis=1)
             else:
-                flip_img = crop_img
+                flip_img = resize_img
             tensor_img = np.transpose(flip_img, axes=(2, 0, 1)) / self.max_intensity
             new_clips.append((tensor_img - self.mean) / self.std)
         return new_clips
@@ -649,7 +719,7 @@ class VideoGroupValTransformV2(Block):
         new_clips = []
         for cur_img in clips:
             scale_img = self.cv2.resize(cur_img, (new_w, new_h))
-            crop_img = scale_img[h_off : h_off + self.height, w_off : w_off + self.width, :]
+            crop_img = scale_img[h_off:h_off+self.height, w_off:w_off+self.width, :]
             tensor_img = np.transpose(crop_img, axes=(2, 0, 1)) / self.max_intensity
             new_clips.append((tensor_img - self.mean) / self.std)
         return new_clips
@@ -657,100 +727,98 @@ class VideoGroupValTransformV2(Block):
 
 class VideoGroupTrainTransformV3(Block):
     """Combination of transforms for training.
-    Follow the style of https://github.com/open-mmlab/mmaction
-        (1) short side keep aspect ratio resize
-        (2) multiscale crop
-        (2) scale
+    Follow the style of https://github.com/facebookresearch/SlowFast/
+        (1) random short side scale jittering
+        (2) random crop
         (3) random horizontal flip
         (4) to tensor
         (5) normalize
     """
-    def __init__(self, size, short_side, scale_ratios, mean, std, fix_crop=True,
-                 more_fix_crop=True, max_distort=1, prob=0.5, max_intensity=255.0):
+    def __init__(self, crop_size, min_size, max_size,
+                 mean, std, prob=0.5, max_intensity=255.0):
         super(VideoGroupTrainTransformV3, self).__init__()
+
+        from ...utils.filesystem import try_import_cv2
+        self.cv2 = try_import_cv2()
+        self.height = crop_size[0]
+        self.width = crop_size[1]
+        self.min_size = min_size
+        self.max_size = max_size
+        self.mean = np.asarray(mean).reshape((len(mean), 1, 1))
+        self.std = np.asarray(std).reshape((len(std), 1, 1))
+        self.prob = prob
+        self.max_intensity = max_intensity
+
+    def forward(self, clips):
+        h, w, _ = clips[0].shape
+
+        # step 1: random short side scale jittering
+        size = int(round(np.random.uniform(self.min_size, self.max_size)))
+        new_w = size
+        new_h = size
+        if w < h:
+            new_h = int(math.floor((float(h) / w) * size))
+        else:
+            new_w = int(math.floor((float(w) / h) * size))
+
+        # step 2: random crop
+        h_off = 0
+        if new_h > self.height:
+            h_off = int(np.random.randint(0, new_h - self.height))
+        w_off = 0
+        if new_w > self.width:
+            w_off = int(np.random.randint(0, new_w - self.width))
+
+        # step 3: random horizontal flip
+        is_flip = random.random() < self.prob
+
+        new_clips = []
+        for cur_img in clips:
+            scale_img = self.cv2.resize(cur_img, (new_w, new_h))
+            crop_img = scale_img[h_off:h_off+self.height, w_off:w_off+self.width, :]
+            if is_flip:
+                flip_img = np.flip(crop_img, axis=1)
+            else:
+                flip_img = crop_img
+            tensor_img = np.transpose(flip_img, axes=(2, 0, 1)) / self.max_intensity
+            new_clips.append((tensor_img - self.mean) / self.std)
+        return new_clips
+
+
+class VideoGroupTrainTransformV4(Block):
+    """Combination of transforms for training.
+    Follow the style of https://github.com/open-mmlab/mmaction.
+    This is only for tranining SlowFast family networks in mmaction.
+        (1) random crop and resize
+        (2) random horizontal flip
+        (3) to tensor
+        (4) normalize
+    """
+    def __init__(self, size, mean, std, scale=(0.08, 1.0), ratio=(3. / 4., 4. / 3.),
+                 prob=0.5, max_intensity=255.0):
+        super(VideoGroupTrainTransformV4, self).__init__()
 
         from ...utils.filesystem import try_import_cv2
         self.cv2 = try_import_cv2()
         self.height = size[0]
         self.width = size[1]
-        self.short_side = short_side
-        self.scale_ratios = scale_ratios
-        self.fix_crop = fix_crop
-        self.more_fix_crop = more_fix_crop
-        self.max_distort = max_distort
+        self.randomResizedCrop = RandomResizedCrop(size=size,
+                                                   scale=scale,
+                                                   ratio=ratio)
+        self.scale = scale
+        self.ratio = ratio
         self.prob = prob
         self.max_intensity = max_intensity
         self.mean = np.asarray(mean).reshape((len(mean), 1, 1))
         self.std = np.asarray(std).reshape((len(std), 1, 1))
 
-    def fillFixOffset(self, datum_height, datum_width):
-        h_off = int((datum_height - self.height) / 4)
-        w_off = int((datum_width - self.width) / 4)
-
-        offsets = []
-        offsets.append((0, 0))          # upper left
-        offsets.append((0, 4*w_off))    # upper right
-        offsets.append((4*h_off, 0))    # lower left
-        offsets.append((4*h_off, 4*w_off))  # lower right
-        offsets.append((2*h_off, 2*w_off))  # center
-
-        if self.more_fix_crop:
-            offsets.append((0, 2*w_off))        # top center
-            offsets.append((4*h_off, 2*w_off))  # bottom center
-            offsets.append((2*h_off, 0))        # left center
-            offsets.append((2*h_off, 4*w_off))  # right center
-
-            offsets.append((1*h_off, 1*w_off))  # upper left quarter
-            offsets.append((1*h_off, 3*w_off))  # upper right quarter
-            offsets.append((3*h_off, 1*w_off))  # lower left quarter
-            offsets.append((3*h_off, 3*w_off))  # lower right quarter
-
-        return offsets
-
-    def fillCropSize(self, input_height, input_width):
-        crop_sizes = []
-        base_size = np.min((input_height, input_width))
-        scale_rates = self.scale_ratios
-        for h, scale_rate_h in enumerate(scale_rates):
-            crop_h = int(base_size * scale_rate_h)
-            for w, scale_rate_w in enumerate(scale_rates):
-                crop_w = int(base_size * scale_rate_w)
-                if (np.absolute(h - w) <= self.max_distort):
-                    crop_sizes.append((crop_h, crop_w))
-
-        return crop_sizes
-
     def forward(self, clips):
-        h, w, _ = clips[0].shape
-
-        # step 1: short side keep aspect ratio resize
-        new_w = self.short_side
-        new_h = self.short_side
-        if w < h:
-            new_h = int(math.floor((float(h) / w) * self.short_side))
-        else:
-            new_w = int(math.floor((float(w) / h) * self.short_side))
-
-        # step 2: multiscale crop
-        crop_size_pairs = self.fillCropSize(new_h, new_w)
-        size_sel = random.randint(0, len(crop_size_pairs)-1)
-        crop_height = crop_size_pairs[size_sel][0]
-        crop_width = crop_size_pairs[size_sel][1]
-
+        h_off, w_off, crop_height, crop_width = self.randomResizedCrop.get_params(clips[0], self.scale, self.ratio)
         is_flip = random.random() < self.prob
-        if self.fix_crop:
-            offsets = self.fillFixOffset(new_h, new_w)
-            off_sel = random.randint(0, len(offsets)-1)
-            h_off = offsets[off_sel][0]
-            w_off = offsets[off_sel][1]
-        else:
-            h_off = random.randint(0, new_h - self.height)
-            w_off = random.randint(0, new_w - self.width)
 
         new_clips = []
         for cur_img in clips:
-            scale_img = self.cv2.resize(cur_img, (new_w, new_h))
-            crop_img = scale_img[h_off:h_off+crop_height, w_off:w_off+crop_width, :]
+            crop_img = cur_img[h_off:h_off+crop_height, w_off:w_off+crop_width, :]
             resize_img = self.cv2.resize(crop_img, (self.width, self.height))
             if is_flip:
                 flip_img = np.flip(resize_img, axis=1)

@@ -155,7 +155,7 @@ def parse_args():
     parser.add_argument('--num-crop', type=int, default=1,
                         help='number of crops for each image. default is 1')
     parser.add_argument('--data-aug', type=str, default='v1',
-                        help='different types of data augmentation pipelines. Supports v1, v2 and v3.')
+                        help='different types of data augmentation pipelines. Supports v1, v2, v3 and v4.')
     opt = parser.parse_args()
     return opt
 
@@ -173,18 +173,27 @@ def get_data_loader(opt, batch_size, num_workers, logger, kvstore=None):
         return data, label
 
     if opt.data_aug == 'v1':
+        # GluonCV style, not keeping aspect ratio
         transform_train = video.VideoGroupTrainTransform(size=(input_size, input_size), scale_ratios=scale_ratios,
                                                          mean=default_mean, std=default_std)
         transform_test = video.VideoGroupValTransform(size=input_size,
                                                       mean=default_mean, std=default_std)
     elif opt.data_aug == 'v2':
-        transform_train = video.VideoGroupTrainTransformV2(crop_size=(input_size, input_size), min_size=opt.new_height, max_size=opt.new_width,
-                                                           mean=default_mean, std=default_std)
+        # GluonCV style, keeping aspect ratio, also same as mmaction style
+        transform_train = video.VideoGroupTrainTransformV2(size=(input_size, input_size), short_side=opt.new_height, scale_ratios=scale_ratios,
+                                                         mean=default_mean, std=default_std)
         transform_test = video.VideoGroupValTransformV2(crop_size=(input_size, input_size), short_side=opt.new_height,
                                                         mean=default_mean, std=default_std)
     elif opt.data_aug == 'v3':
-        transform_train = video.VideoGroupTrainTransformV3(size=(input_size, input_size), short_side=opt.new_height, scale_ratios=scale_ratios,
-                                                         mean=default_mean, std=default_std)
+        # PySlowFast style, keeping aspect ratio
+        transform_train = video.VideoGroupTrainTransformV3(crop_size=(input_size, input_size), min_size=opt.new_height, max_size=opt.new_width,
+                                                           mean=default_mean, std=default_std)
+        transform_test = video.VideoGroupValTransformV2(crop_size=(input_size, input_size), short_side=opt.new_height,
+                                                        mean=default_mean, std=default_std)
+    elif opt.data_aug == 'v4':
+        # mmaction style, keeping aspect ratio, only for SlowFast family models
+        transform_train = video.VideoGroupTrainTransformV4(size=(input_size, input_size),
+                                                           mean=default_mean, std=default_std)
         transform_test = video.VideoGroupValTransformV2(crop_size=(input_size, input_size), short_side=opt.new_height,
                                                         mean=default_mean, std=default_std)
     else:
