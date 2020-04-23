@@ -19,7 +19,7 @@ from gluoncv.utils import makedirs, LRSequential, LRScheduler, split_and_load
 
 # CLI
 def parse_args():
-    parser = argparse.ArgumentParser(description='Test a trained model for action recognition.')
+    parser = argparse.ArgumentParser(description='Test a trained model for video action recognition.')
     parser.add_argument('--dataset', type=str, default='ucf101', choices=['ucf101', 'kinetics400', 'somethingsomethingv2', 'hmdb51'],
                         help='which dataset to use.')
     parser.add_argument('--data-dir', type=str, default=os.path.expanduser('~/.mxnet/datasets/ucf101/rawframes'),
@@ -156,6 +156,8 @@ def parse_args():
                         help='the temporal stride for sparse sampling of video frames for fast branch in SlowFast network.')
     parser.add_argument('--num-crop', type=int, default=1,
                         help='number of crops for each image. default is 1')
+    parser.add_argument('--data-aug', type=str, default='v1',
+                        help='different types of data augmentation pipelines. Supports v1, v2, v3 and v4.')
     # dummy benchmark
     parser.add_argument('--benchmark', action='store_true',
                         help='whether to use dummy data for benchmarking performance.')
@@ -187,6 +189,7 @@ def batch_fn(batch, ctx):
     data = split_and_load(batch[0], ctx_list=ctx, batch_axis=0, even_split=False)
     label = split_and_load(batch[1], ctx_list=ctx, batch_axis=0, even_split=False)
     return data, label
+
 
 def test(ctx, val_data, opt, net):
     acc_top1 = mx.metric.Accuracy()
@@ -277,29 +280,49 @@ def main(logger):
     if num_gpus > 0:
         batch_size *= max(1, num_gpus)
         context = [mx.gpu(i) for i in range(num_gpus)]
-    
+
     num_workers = opt.num_workers
     print('Total batch size is set to %d on %d GPUs' % (batch_size, num_gpus))
 
     # get data
-    image_norm_mean = [0.485, 0.456, 0.406]
-    image_norm_std = [0.229, 0.224, 0.225]
+    default_mean = [0.485, 0.456, 0.406]
+    default_std = [0.229, 0.224, 0.225]
     if opt.ten_crop:
-        transform_test = transforms.Compose([
-            video.VideoTenCrop(opt.input_size),
-            video.VideoToTensor(),
-            video.VideoNormalize(image_norm_mean, image_norm_std)
-        ])
+        if opt.data_aug == 'v1':
+            transform_test = transforms.Compose([
+                video.VideoTenCrop(opt.input_size),
+                video.VideoToTensor(),
+                video.VideoNormalize(default_mean, default_std)
+            ])
+        else:
+            transform_test = transforms.Compose([
+                video.ShortSideRescale(opt.input_size),
+                video.VideoTenCrop(opt.input_size),
+                video.VideoToTensor(),
+                video.VideoNormalize(default_mean, default_std)
+            ])
         opt.num_crop = 10
     elif opt.three_crop:
-        transform_test = transforms.Compose([
-            video.VideoThreeCrop(opt.input_size),
-            video.VideoToTensor(),
-            video.VideoNormalize(image_norm_mean, image_norm_std)
-        ])
+        if opt.data_aug == 'v1':
+            transform_test = transforms.Compose([
+                video.VideoThreeCrop(opt.input_size),
+                video.VideoToTensor(),
+                video.VideoNormalize(default_mean, default_std)
+            ])
+        else:
+            transform_test = transforms.Compose([
+                video.ShortSideRescale(opt.input_size),
+                video.VideoThreeCrop(opt.input_size),
+                video.VideoToTensor(),
+                video.VideoNormalize(default_mean, default_std)
+            ])
         opt.num_crop = 3
     else:
-        transform_test = video.VideoGroupValTransform(size=opt.input_size, mean=image_norm_mean, std=image_norm_std)
+        if opt.data_aug == 'v1':
+            transform_test = video.VideoGroupValTransform(size=opt.input_size, mean=default_mean, std=default_std)
+        else:
+            transform_test = video.VideoGroupValTransformV2(crop_size=(input_size, input_size), short_side=input_size,
+                                                            mean=default_mean, std=default_std)
         opt.num_crop = 1
 
     if not opt.deploy:
@@ -312,7 +335,7 @@ def main(logger):
         if opt.quantized:
             model_name += '_int8'
             opt.use_pretrained = True
-        
+
         net = get_model(name=model_name, nclass=classes, pretrained=opt.use_pretrained, num_segments=opt.num_segments, num_crop=opt.num_crop)
         net.cast(opt.dtype)
         net.collect_params().reset_ctx(context)
@@ -339,23 +362,23 @@ def main(logger):
         val_dataset = UCF101(setting=opt.val_list, root=opt.data_dir, train=False,
                              new_width=opt.new_width, new_height=opt.new_height, new_length=opt.new_length,
                              target_width=opt.input_size, target_height=opt.input_size,
-                             test_mode=True, num_segments=opt.num_segments, transform=transform_test)
+                             test_mode=True, data_aug=opt.data_aug, num_segments=opt.num_segments, transform=transform_test)
     elif opt.dataset == 'kinetics400':
         val_dataset = Kinetics400(setting=opt.val_list, root=opt.data_dir, train=False,
                                   new_width=opt.new_width, new_height=opt.new_height, new_length=opt.new_length, new_step=opt.new_step,
                                   target_width=opt.input_size, target_height=opt.input_size, video_loader=opt.video_loader, use_decord=opt.use_decord,
                                   slowfast=opt.slowfast, slow_temporal_stride=opt.slow_temporal_stride, fast_temporal_stride=opt.fast_temporal_stride,
-                                  test_mode=True, num_segments=opt.num_segments, num_crop=opt.num_crop, transform=transform_test)
+                                  test_mode=True, data_aug=opt.data_aug, num_segments=opt.num_segments, num_crop=opt.num_crop, transform=transform_test)
     elif opt.dataset == 'somethingsomethingv2':
         val_dataset = SomethingSomethingV2(setting=opt.val_list, root=opt.data_dir, train=False,
                                            new_width=opt.new_width, new_height=opt.new_height, new_length=opt.new_length, new_step=opt.new_step,
                                            target_width=opt.input_size, target_height=opt.input_size, video_loader=opt.video_loader, use_decord=opt.use_decord,
-                                           num_segments=opt.num_segments, transform=transform_test)
+                                           data_aug=opt.data_aug, num_segments=opt.num_segments, transform=transform_test)
     elif opt.dataset == 'hmdb51':
         val_dataset = HMDB51(setting=opt.val_list, root=opt.data_dir, train=False,
                              new_width=opt.new_width, new_height=opt.new_height, new_length=opt.new_length, new_step=opt.new_step,
                              target_width=opt.input_size, target_height=opt.input_size, video_loader=opt.video_loader, use_decord=opt.use_decord,
-                             num_segments=opt.num_segments, transform=transform_test)
+                             data_aug=opt.data_aug, num_segments=opt.num_segments, transform=transform_test)
     else:
         logger.info('Dataset %s is not supported yet.' % (opt.dataset))
 
@@ -374,6 +397,7 @@ def main(logger):
 
     print('Test accuracy: acc-top1=%f acc-top5=%f' % (acc_top1_val*100, acc_top5_val*100))
     print('Total evaluation time is %4.2f minutes' % ((end_time - start_time) / 60))
+
 
 if __name__ == '__main__':
     logging.basicConfig()
