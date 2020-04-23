@@ -173,25 +173,25 @@ def get_data_loader(opt, batch_size, num_workers, logger, kvstore=None):
         return data, label
 
     if opt.data_aug == 'v1':
-        # GluonCV style, not keeping aspect ratio
+        # GluonCV style, not keeping aspect ratio, multi-scale crop
         transform_train = video.VideoGroupTrainTransform(size=(input_size, input_size), scale_ratios=scale_ratios,
                                                          mean=default_mean, std=default_std)
         transform_test = video.VideoGroupValTransform(size=input_size,
                                                       mean=default_mean, std=default_std)
     elif opt.data_aug == 'v2':
-        # GluonCV style, keeping aspect ratio, also same as mmaction style
+        # GluonCV style, keeping aspect ratio, multi-scale crop, same as mmaction style
         transform_train = video.VideoGroupTrainTransformV2(size=(input_size, input_size), short_side=opt.new_height, scale_ratios=scale_ratios,
                                                          mean=default_mean, std=default_std)
         transform_test = video.VideoGroupValTransformV2(crop_size=(input_size, input_size), short_side=opt.new_height,
                                                         mean=default_mean, std=default_std)
     elif opt.data_aug == 'v3':
-        # PySlowFast style, keeping aspect ratio
+        # PySlowFast style, keeping aspect ratio, random short side scale jittering
         transform_train = video.VideoGroupTrainTransformV3(crop_size=(input_size, input_size), min_size=opt.new_height, max_size=opt.new_width,
                                                            mean=default_mean, std=default_std)
         transform_test = video.VideoGroupValTransformV2(crop_size=(input_size, input_size), short_side=opt.new_height,
                                                         mean=default_mean, std=default_std)
     elif opt.data_aug == 'v4':
-        # mmaction style, keeping aspect ratio, only for SlowFast family models
+        # mmaction style, keeping aspect ratio, random crop and resize, only for SlowFast family models, similar to 'v3'
         transform_train = video.VideoGroupTrainTransformV4(size=(input_size, input_size),
                                                            mean=default_mean, std=default_std)
         transform_test = video.VideoGroupValTransformV2(crop_size=(input_size, input_size), short_side=opt.new_height,

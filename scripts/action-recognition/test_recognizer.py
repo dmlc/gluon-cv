@@ -285,21 +285,21 @@ def main(logger):
     print('Total batch size is set to %d on %d GPUs' % (batch_size, num_gpus))
 
     # get data
-    image_norm_mean = [0.485, 0.456, 0.406]
-    image_norm_std = [0.229, 0.224, 0.225]
+    default_mean = [0.485, 0.456, 0.406]
+    default_std = [0.229, 0.224, 0.225]
     if opt.ten_crop:
         if opt.data_aug == 'v1':
             transform_test = transforms.Compose([
                 video.VideoTenCrop(opt.input_size),
                 video.VideoToTensor(),
-                video.VideoNormalize(image_norm_mean, image_norm_std)
+                video.VideoNormalize(default_mean, default_std)
             ])
         else:
             transform_test = transforms.Compose([
                 video.ShortSideRescale(opt.input_size),
                 video.VideoTenCrop(opt.input_size),
                 video.VideoToTensor(),
-                video.VideoNormalize(image_norm_mean, image_norm_std)
+                video.VideoNormalize(default_mean, default_std)
             ])
         opt.num_crop = 10
     elif opt.three_crop:
@@ -307,22 +307,22 @@ def main(logger):
             transform_test = transforms.Compose([
                 video.VideoThreeCrop(opt.input_size),
                 video.VideoToTensor(),
-                video.VideoNormalize(image_norm_mean, image_norm_std)
+                video.VideoNormalize(default_mean, default_std)
             ])
         else:
             transform_test = transforms.Compose([
                 video.ShortSideRescale(opt.input_size),
                 video.VideoThreeCrop(opt.input_size),
                 video.VideoToTensor(),
-                video.VideoNormalize(image_norm_mean, image_norm_std)
+                video.VideoNormalize(default_mean, default_std)
             ])
         opt.num_crop = 3
     else:
         if opt.data_aug == 'v1':
-            transform_test = video.VideoGroupValTransform(size=opt.input_size, mean=image_norm_mean, std=image_norm_std)
+            transform_test = video.VideoGroupValTransform(size=opt.input_size, mean=default_mean, std=default_std)
         else:
             transform_test = video.VideoGroupValTransformV2(crop_size=(input_size, input_size), short_side=input_size,
-                                                            mean=image_norm_mean, std=image_norm_std)
+                                                            mean=default_mean, std=default_std)
         opt.num_crop = 1
 
     if not opt.deploy:
