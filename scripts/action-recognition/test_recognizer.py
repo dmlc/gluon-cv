@@ -19,7 +19,7 @@ from gluoncv.utils import makedirs, LRSequential, LRScheduler, split_and_load
 
 # CLI
 def parse_args():
-    parser = argparse.ArgumentParser(description='Test a trained model for action recognition.')
+    parser = argparse.ArgumentParser(description='Test a trained model for video action recognition.')
     parser.add_argument('--dataset', type=str, default='ucf101', choices=['ucf101', 'kinetics400', 'somethingsomethingv2', 'hmdb51'],
                         help='which dataset to use.')
     parser.add_argument('--data-dir', type=str, default=os.path.expanduser('~/.mxnet/datasets/ucf101/rawframes'),
@@ -157,7 +157,7 @@ def parse_args():
     parser.add_argument('--num-crop', type=int, default=1,
                         help='number of crops for each image. default is 1')
     parser.add_argument('--data-aug', type=str, default='v1',
-                        help='different types of data augmentation pipelines. Supports v1, v2 and v3.')
+                        help='different types of data augmentation pipelines. Supports v1, v2, v3 and v4.')
     # dummy benchmark
     parser.add_argument('--benchmark', action='store_true',
                         help='whether to use dummy data for benchmarking performance.')
@@ -288,11 +288,19 @@ def main(logger):
     image_norm_mean = [0.485, 0.456, 0.406]
     image_norm_std = [0.229, 0.224, 0.225]
     if opt.ten_crop:
-        transform_test = transforms.Compose([
-            video.VideoTenCrop(opt.input_size),
-            video.VideoToTensor(),
-            video.VideoNormalize(image_norm_mean, image_norm_std)
-        ])
+        if opt.data_aug == 'v1':
+            transform_test = transforms.Compose([
+                video.VideoTenCrop(opt.input_size),
+                video.VideoToTensor(),
+                video.VideoNormalize(image_norm_mean, image_norm_std)
+            ])
+        else:
+            transform_test = transforms.Compose([
+                video.ShortSideRescale(opt.input_size),
+                video.VideoTenCrop(opt.input_size),
+                video.VideoToTensor(),
+                video.VideoNormalize(image_norm_mean, image_norm_std)
+            ])
         opt.num_crop = 10
     elif opt.three_crop:
         if opt.data_aug == 'v1':
@@ -310,7 +318,11 @@ def main(logger):
             ])
         opt.num_crop = 3
     else:
-        transform_test = video.VideoGroupValTransform(size=opt.input_size, mean=image_norm_mean, std=image_norm_std)
+        if opt.data_aug == 'v1':
+            transform_test = video.VideoGroupValTransform(size=opt.input_size, mean=image_norm_mean, std=image_norm_std)
+        else:
+            transform_test = video.VideoGroupValTransformV2(crop_size=(input_size, input_size), short_side=input_size,
+                                                            mean=image_norm_mean, std=image_norm_std)
         opt.num_crop = 1
 
     if not opt.deploy:
