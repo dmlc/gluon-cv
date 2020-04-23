@@ -54,6 +54,7 @@ _models = {
     'resnet50_v2': resnet50_v2,
     'resnet101_v2': resnet101_v2,
     'resnet152_v2': resnet152_v2,
+    'resnest26': resnest26,
     'resnest50': resnest50,
     'resnest101': resnest101,
     'resnest200': resnest200,

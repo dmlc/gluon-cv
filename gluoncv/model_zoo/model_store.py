@@ -80,6 +80,7 @@ _model_sha1 = {name: checksum for checksum, name in [
     ('4a3466aadd4c3ddbcb968bca862d0e59d6f15ec1', 'cifar_wideresnet28_10'),
     ('085ca2afabbe0ddfe87d0edc5408bcfcfbffd414', 'cifar_wideresnet40_8'),
     ('e8ff9f4f9cb319dfbf524d01e487af9a7f8a3cf5', 'cifar_resnext29_16x64d'),
+    ('364590740605b6a2b95f5bb77436d781a817436f', 'resnest26'),
     ('bcfefe1dd1dd1ef5cfed5563123c1490ea37b42e', 'resnest50'),
     ('5da943b3230f071525a98639945a6b3b3a45ac95', 'resnest101'),
     ('0c5d117df664ace220aa6fc2922c094bb079d381', 'resnest200'),

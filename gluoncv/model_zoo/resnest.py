@@ -11,7 +11,7 @@ from mxnet.gluon.nn import BatchNorm
 from ..nn.dropblock import DropBlock
 from ..nn.splat import SplitAttentionConv
 
-__all__ = ['ResNeSt', 'Bottleneck', 'resnest50', 'resnest101',
+__all__ = ['ResNeSt', 'Bottleneck', 'resnest26', 'resnest50', 'resnest101',
            'resnest200', 'resnest269']
 
 def _update_input_size(input_size, stride):
@@ -330,6 +330,41 @@ class ResNeSt(HybridBlock):
         x = self.fc(x)
 
         return x
+
+
+def resnest26(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
+    """Constructs a ResNeSt-26 model.
+
+    Parameters
+    ----------
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    dilated: bool, default False
+        Whether to apply dilation strategy to ResNeSt, yielding a stride 8 model.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`).
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    """
+    model = ResNeSt(Bottleneck, [2, 2, 2, 2],
+                    radix=2, cardinality=1, bottleneck_width=64,
+                    deep_stem=True, avg_down=True,
+                    avd=True, avd_first=False,
+                    use_splat=True, dropblock_prob=0.1,
+                    name_prefix='resnest_', **kwargs)
+    if pretrained:
+        from .model_store import get_model_file
+        model.load_parameters(get_model_file('resnest26', root=root), ctx=ctx)
+        from ..data import ImageNet1kAttr
+        attrib = ImageNet1kAttr()
+        model.synset = attrib.synset
+        model.classes = attrib.classes
+        model.classes_long = attrib.classes_long
+    return model
 
 
 def resnest50(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
