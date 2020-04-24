@@ -7,6 +7,9 @@
 [![PyPI Pre-release](https://img.shields.io/badge/pypi--prerelease-v0.8.0-ff69b4.svg)](https://pypi.org/project/gluoncv/#history)
 [![Downloads](http://pepy.tech/badge/gluoncv)](http://pepy.tech/project/gluoncv)
 
+[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/resnest-split-attention-networks/semantic-segmentation-on-ade20k)](https://paperswithcode.com/sota/semantic-segmentation-on-ade20k?p=resnest-split-attention-networks)
+[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/resnest-split-attention-networks/image-classification-on-imagenet)](https://paperswithcode.com/sota/image-classification-on-imagenet?p=resnest-split-attention-networks)
+
 | [Installation](https://gluon-cv.mxnet.io/install.html) | [Documentation](https://gluon-cv.mxnet.io) | [Tutorials](https://gluon-cv.mxnet.io/tutorials/index.html) |
 
 GluonCV provides implementations of the state-of-the-art (SOTA) deep learning models in computer vision.
