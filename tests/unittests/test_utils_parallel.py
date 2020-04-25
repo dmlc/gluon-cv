@@ -7,10 +7,10 @@ def test_data_parallel():
     # test gluon.contrib.parallel.DataParallelModel
     net = nn.HybridSequential()
     with net.name_scope():
-        net.add(nn.Conv2D(in_channels=1, channels=20, kernel_size=5))
+        net.add(nn.Conv2D(in_channels=1, channels=5, kernel_size=5))
         net.add(nn.Activation('relu'))
         net.add(nn.MaxPool2D(pool_size=2, strides=2))
-        net.add(nn.Conv2D(in_channels=20, channels=5, kernel_size=5))
+        net.add(nn.Conv2D(in_channels=5, channels=5, kernel_size=5))
         net.add(nn.Activation('relu'))
         net.add(nn.MaxPool2D(pool_size=2, strides=2))
         # The Flatten layer collapses all axis, except the first one, into one axis.
