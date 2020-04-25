@@ -615,12 +615,12 @@ def train(net, train_data, val_data, eval_metric, batch_size, ctx, logger, args)
     logger.info('Start training from [Epoch {}]'.format(args.start_epoch))
     best_map = [0]
     base_lr = trainer.learning_rate
+    rcnn_task = ForwardBackwardTask(net, trainer, rpn_cls_loss, rpn_box_loss, rcnn_cls_loss,
+                                    rcnn_box_loss, rcnn_mask_loss)
+    executor = Parallel(args.executor_threads, rcnn_task) if not args.horovod else None
     for epoch in range(args.start_epoch, args.epochs):
         if not args.disable_hybridization:
             net.hybridize(static_alloc=args.static_alloc)
-        rcnn_task = ForwardBackwardTask(net, trainer, rpn_cls_loss, rpn_box_loss, rcnn_cls_loss,
-                                        rcnn_box_loss, rcnn_mask_loss)
-        executor = Parallel(args.executor_threads, rcnn_task) if not args.horovod else None
         while lr_steps and epoch >= lr_steps[0]:
             new_lr = trainer.learning_rate * lr_decay
             lr_steps.pop(0)
