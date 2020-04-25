@@ -220,14 +220,12 @@ def get_train_data(rec_train, batch_size, data_nthreads, input_size, crop_ratio,
             pil_transforms.Resize((input_size, input_size), interpolation=Image.BICUBIC),
             pil_transforms.RandomHorizontalFlip(),
             pil_transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4),
-            pil_transforms.ToNDArray(),
             transforms.RandomLighting(lighting_param),
             transforms.ToTensor(),
             transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ])
     else:
         train_transforms.extend([
-            pil_transforms.ToNDArray(),
             transforms.RandomResizedCrop(input_size),
             transforms.RandomFlipLeftRight(),
             transforms.RandomColorJitter(brightness=jitter_param, contrast=jitter_param,

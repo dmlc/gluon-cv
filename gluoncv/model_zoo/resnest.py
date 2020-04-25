@@ -419,7 +419,7 @@ def resnest26(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
                     deep_stem=True, avg_down=True,
                     avd=True, avd_first=False,
                     use_splat=True, dropblock_prob=0.1,
-                    name_prefix='resnest_', parallel=True, **kwargs)
+                    name_prefix='resnest_', **kwargs)
     if pretrained:
         from .model_store import get_model_file
         model.load_parameters(get_model_file('resnest26', root=root), ctx=ctx)
