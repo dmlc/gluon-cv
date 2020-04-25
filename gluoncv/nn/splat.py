@@ -4,12 +4,12 @@ from mxnet.gluon.nn import Conv2D, HybridBlock, BatchNorm, Activation
 
 __all__ = ['SplitAttentionConv']
 
+
 class SplitAttentionConv(HybridBlock):
     # pylint: disable=keyword-arg-before-vararg
     def __init__(self, channels, kernel_size, strides=(1, 1), padding=(0, 0),
                  dilation=(1, 1), groups=1, radix=2, in_channels=None, r=2,
-                 norm_layer=BatchNorm, norm_kwargs=None, drop_ratio=0,
-                 *args, **kwargs):
+                 norm_layer=BatchNorm, norm_kwargs=None, drop_ratio=0, *args, **kwargs):
         super(SplitAttentionConv, self).__init__()
         norm_kwargs = norm_kwargs if norm_kwargs is not None else {}
         inter_channels = max(in_channels*radix//2//r, 32)
