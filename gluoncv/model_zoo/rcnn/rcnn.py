@@ -247,8 +247,8 @@ class RCNN(gluon.HybridBlock):
                                 warnings.warn("reuse mapping {}/{} -> {}/{} out of range".format(
                                     k, self.classes, v, old_classes))
                                 continue
-                            new_data[(k + offset) * l:(k + offset + 1) * l] = \
-                                old_data[(v + offset) * l:(v + offset + 1) * l]
+                            new_data[(k+offset)*l:(k+offset+1)*l] = \
+                                old_data[(v+offset)*l:(v+offset+1)*l]
                         # reuse background weights as well
                         if offset > 0:
                             new_data[0:l] = old_data[0:l]
