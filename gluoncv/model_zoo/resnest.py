@@ -274,8 +274,7 @@ class ResNeSt(HybridBlock):
                     else:
                         downsample.add(
                             nn.AvgPool2D(pool_size=pre_dilation * strides, strides=strides,
-                                         padding=1,
-                                         ceil_mode=True, count_include_pad=False))
+                                         padding=1, ceil_mode=True, count_include_pad=False))
                     downsample.add(nn.Conv2D(channels=planes * block.expansion, kernel_size=1,
                                              strides=1, use_bias=False, in_channels=self.inplanes))
                     downsample.add(norm_layer(in_channels=planes * block.expansion,
