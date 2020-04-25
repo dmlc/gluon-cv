@@ -12,7 +12,6 @@ from mxnet.gluon.nn import BatchNorm
 from ..nn.dropblock import DropBlock
 from ..nn.splat import SplitAttentionConv
 
-
 __all__ = ['ResNeSt', 'Bottleneck', 'resnest14', 'resnest26', 'resnest50', 'resnest101',
            'resnest200', 'resnest269']
 
@@ -36,7 +35,7 @@ class Bottleneck(HybridBlock):
                  norm_kwargs=None, last_gamma=False,
                  dropblock_prob=0, input_size=None, use_splat=False,
                  radix=2, avd=False, avd_first=False, in_channels=None,
-                 split_drop_ratio=0, parallel=False, **kwargs):
+                 split_drop_ratio=0, **kwargs):
         super(Bottleneck, self).__init__()
         group_width = int(channels * (bottleneck_width / 64.)) * cardinality
         norm_kwargs = norm_kwargs if norm_kwargs is not None else {}
@@ -67,13 +66,12 @@ class Bottleneck(HybridBlock):
                                             use_bias=False, in_channels=group_width,
                                             norm_layer=norm_layer, norm_kwargs=norm_kwargs,
                                             radix=radix, drop_ratio=split_drop_ratio,
-                                            parallel=parallel, **kwargs)
+                                            **kwargs)
         else:
             self.conv2 = nn.Conv2D(channels=group_width, kernel_size=3,
                                    strides=1 if self.avd else strides,
                                    padding=dilation, dilation=dilation, groups=cardinality,
-                                   use_bias=False,
-                                   in_channels=group_width, **kwargs)
+                                   use_bias=False, in_channels=group_width, **kwargs)
             self.bn2 = norm_layer(in_channels=group_width, **norm_kwargs)
             self.relu2 = nn.Activation('relu')
         self.conv3 = nn.Conv2D(channels=channels * 4, kernel_size=1, use_bias=False,
@@ -170,8 +168,7 @@ class ResNeSt(HybridBlock):
                  norm_kwargs=None, last_gamma=False, deep_stem=False, stem_width=32,
                  avg_down=False, final_drop=0.0, use_global_stats=False,
                  name_prefix='', dropblock_prob=0, input_size=224,
-                 use_splat=False, radix=2, avd=False, avd_first=False, split_drop_ratio=0,
-                 parallel=False):
+                 use_splat=False, radix=2, avd=False, avd_first=False, split_drop_ratio=0):
         self.cardinality = cardinality
         self.bottleneck_width = bottleneck_width
         self.inplanes = stem_width * 2 if deep_stem else 64
@@ -207,61 +204,51 @@ class ResNeSt(HybridBlock):
             input_size = _update_input_size(input_size, 2)
             self.layer1 = self._make_layer(1, block, 64, layers[0], avg_down=avg_down,
                                            norm_layer=norm_layer, last_gamma=last_gamma,
-                                           use_splat=use_splat,
-                                           avd=avd, parallel=parallel)
+                                           use_splat=use_splat, avd=avd)
             self.layer2 = self._make_layer(2, block, 128, layers[1], strides=2, avg_down=avg_down,
                                            norm_layer=norm_layer, last_gamma=last_gamma,
-                                           use_splat=use_splat,
-                                           avd=avd, parallel=parallel)
+                                           use_splat=use_splat, avd=avd)
             input_size = _update_input_size(input_size, 2)
             if dilated or dilation == 4:
                 self.layer3 = self._make_layer(3, block, 256, layers[2], strides=1, dilation=2,
                                                avg_down=avg_down, norm_layer=norm_layer,
                                                last_gamma=last_gamma, dropblock_prob=dropblock_prob,
-                                               input_size=input_size, use_splat=use_splat, avd=avd,
-                                               parallel=parallel)
+                                               input_size=input_size, use_splat=use_splat, avd=avd)
                 self.layer4 = self._make_layer(4, block, 512, layers[3], strides=1, dilation=4,
                                                pre_dilation=2,
                                                avg_down=avg_down, norm_layer=norm_layer,
                                                last_gamma=last_gamma, dropblock_prob=dropblock_prob,
-                                               input_size=input_size, use_splat=use_splat, avd=avd,
-                                               parallel=parallel)
+                                               input_size=input_size, use_splat=use_splat, avd=avd)
             elif dilation == 3:
                 # special
                 self.layer3 = self._make_layer(3, block, 256, layers[2], strides=1, dilation=2,
                                                avg_down=avg_down, norm_layer=norm_layer,
                                                last_gamma=last_gamma, dropblock_prob=dropblock_prob,
-                                               input_size=input_size, use_splat=use_splat, avd=avd,
-                                               parallel=parallel)
+                                               input_size=input_size, use_splat=use_splat, avd=avd)
                 self.layer4 = self._make_layer(4, block, 512, layers[3], strides=2, dilation=2,
                                                pre_dilation=2,
                                                avg_down=avg_down, norm_layer=norm_layer,
                                                last_gamma=last_gamma, dropblock_prob=dropblock_prob,
-                                               input_size=input_size, use_splat=use_splat, avd=avd,
-                                               parallel=parallel)
+                                               input_size=input_size, use_splat=use_splat, avd=avd)
             elif dilation == 2:
                 self.layer3 = self._make_layer(3, block, 256, layers[2], strides=2,
                                                avg_down=avg_down, norm_layer=norm_layer,
                                                last_gamma=last_gamma, dropblock_prob=dropblock_prob,
-                                               input_size=input_size, use_splat=use_splat, avd=avd,
-                                               parallel=parallel)
+                                               input_size=input_size, use_splat=use_splat, avd=avd)
                 self.layer4 = self._make_layer(4, block, 512, layers[3], strides=1, dilation=2,
                                                avg_down=avg_down, norm_layer=norm_layer,
                                                last_gamma=last_gamma, dropblock_prob=dropblock_prob,
-                                               input_size=input_size, use_splat=use_splat, avd=avd,
-                                               parallel=parallel)
+                                               input_size=input_size, use_splat=use_splat, avd=avd)
             else:
                 self.layer3 = self._make_layer(3, block, 256, layers[2], strides=2,
                                                avg_down=avg_down, norm_layer=norm_layer,
                                                last_gamma=last_gamma, dropblock_prob=dropblock_prob,
-                                               input_size=input_size, use_splat=use_splat, avd=avd,
-                                               parallel=parallel)
+                                               input_size=input_size, use_splat=use_splat, avd=avd)
                 input_size = _update_input_size(input_size, 2)
                 self.layer4 = self._make_layer(4, block, 512, layers[3], strides=2,
                                                avg_down=avg_down, norm_layer=norm_layer,
                                                last_gamma=last_gamma, dropblock_prob=dropblock_prob,
-                                               input_size=input_size, use_splat=use_splat, avd=avd,
-                                               parallel=parallel)
+                                               input_size=input_size, use_splat=use_splat, avd=avd)
                 input_size = _update_input_size(input_size, 2)
             self.avgpool = nn.GlobalAvgPool2D()
             self.flat = nn.Flatten()
@@ -272,7 +259,7 @@ class ResNeSt(HybridBlock):
 
     def _make_layer(self, stage_index, block, planes, blocks, strides=1, dilation=1, pre_dilation=1,
                     avg_down=False, norm_layer=None, last_gamma=False, dropblock_prob=0,
-                    input_size=224, use_splat=False, avd=False, parallel=False):
+                    input_size=224, use_splat=False, avd=False):
         downsample = None
         if strides != 1 or self.inplanes != planes * block.expansion:
             downsample = nn.HybridSequential(prefix='down%d_' % stage_index)
@@ -311,8 +298,7 @@ class ResNeSt(HybridBlock):
                                  last_gamma=last_gamma, dropblock_prob=dropblock_prob,
                                  input_size=input_size, use_splat=use_splat, avd=avd,
                                  avd_first=self.avd_first, radix=self.radix,
-                                 in_channels=self.inplanes, split_drop_ratio=self.split_drop_ratio,
-                                 parallel=parallel))
+                                 in_channels=self.inplanes, split_drop_ratio=self.split_drop_ratio))
             elif dilation == 4:
                 layers.add(block(planes, cardinality=self.cardinality,
                                  bottleneck_width=self.bottleneck_width,
@@ -322,8 +308,7 @@ class ResNeSt(HybridBlock):
                                  last_gamma=last_gamma, dropblock_prob=dropblock_prob,
                                  input_size=input_size, use_splat=use_splat, avd=avd,
                                  avd_first=self.avd_first, radix=self.radix,
-                                 in_channels=self.inplanes, split_drop_ratio=self.split_drop_ratio,
-                                 parallel=parallel))
+                                 in_channels=self.inplanes, split_drop_ratio=self.split_drop_ratio))
             else:
                 raise RuntimeError("=> unknown dilation size: {}".format(dilation))
 
@@ -337,7 +322,7 @@ class ResNeSt(HybridBlock):
                                  dropblock_prob=dropblock_prob, input_size=input_size,
                                  use_splat=use_splat, avd=avd, avd_first=self.avd_first,
                                  radix=self.radix, in_channels=self.inplanes,
-                                 split_drop_ratio=self.split_drop_ratio, parallel=parallel))
+                                 split_drop_ratio=self.split_drop_ratio))
 
         return layers
 
@@ -454,7 +439,7 @@ def resnest50(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
                     deep_stem=True, avg_down=True,
                     avd=True, avd_first=False,
                     use_splat=True, dropblock_prob=0.1,
-                    name_prefix='resnest_', parallel=True, **kwargs)
+                    name_prefix='resnest_', **kwargs)
     if pretrained:
         from .model_store import get_model_file
         model.load_parameters(get_model_file('resnest50', root=root), ctx=ctx)
