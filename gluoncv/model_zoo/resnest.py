@@ -346,7 +346,7 @@ class ResNeSt(HybridBlock):
 
 
 def resnest14(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
-    """Constructs a ResNeSt-26 model.
+    """Constructs a ResNeSt-14 model.
 
     Parameters
     ----------
