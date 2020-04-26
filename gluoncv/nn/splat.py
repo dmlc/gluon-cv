@@ -4,6 +4,7 @@ from mxnet.gluon.nn import Conv2D, HybridBlock, BatchNorm, Activation
 
 __all__ = ['SplitAttentionConv']
 
+
 class SplitAttentionConv(HybridBlock):
     # pylint: disable=keyword-arg-before-vararg
     def __init__(self, channels, kernel_size, strides=(1, 1), padding=(0, 0),
