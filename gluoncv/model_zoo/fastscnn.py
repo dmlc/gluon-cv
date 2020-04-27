@@ -9,9 +9,18 @@ import mxnet as mx
 
 
 class FastSCNN(HybridBlock):
-    """
-    Fast-SCNN: Fast Semantic Segmentation Network - BMVC 2019
-    """
+    r"""Fast-SCNN
+
+        Parameters
+        ----------
+        nclass : int
+            Number of categories for the training dataset.
+        aux : bool
+            Auxiliary loss.
+
+        Reference:
+            Fast-SCNN: Fast Semantic Segmentation Network - BMVC 2019
+        """
     def __init__(self, nclass, aux=True, ctx=cpu(), pretrained_base=False,
                  height=None, width=None, base_size=2048, crop_size=1024, **kwargs):
         super(FastSCNN, self).__init__()
@@ -295,7 +304,7 @@ class _FastPyramidPooling(HybridBlock):
         return x
 
 def get_fastscnn(dataset='citys', root='~/.mxnet/models', ctx=cpu(0), **kwargs):
-    r"""Pyramid Scene Parsing Network
+    r"""Fast-SCNN: Fast Semantic Segmentation Network
     Parameters
     ----------
     dataset : str, default cityscapes
