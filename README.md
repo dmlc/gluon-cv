@@ -5,8 +5,11 @@
 [![GitHub license](docs/_static/apache2.svg)](./LICENSE)
 [![Code Coverage](http://gluon-cv.mxnet.io/coverage.svg?)](http://gluon-cv.mxnet.io/coverage.svg)
 [![PyPI](https://img.shields.io/pypi/v/gluoncv.svg)](https://pypi.python.org/pypi/gluoncv)
-[![PyPI Pre-release](https://img.shields.io/badge/pypi--prerelease-v0.7.0-ff69b4.svg)](https://pypi.org/project/gluoncv/#history)
+[![PyPI Pre-release](https://img.shields.io/badge/pypi--prerelease-v0.8.0-ff69b4.svg)](https://pypi.org/project/gluoncv/#history)
 [![Downloads](http://pepy.tech/badge/gluoncv)](http://pepy.tech/project/gluoncv)
+
+[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/resnest-split-attention-networks/semantic-segmentation-on-ade20k)](https://paperswithcode.com/sota/semantic-segmentation-on-ade20k?p=resnest-split-attention-networks)
+[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/resnest-split-attention-networks/image-classification-on-imagenet)](https://paperswithcode.com/sota/image-classification-on-imagenet?p=resnest-split-attention-networks)
 
 | [Installation](https://gluon-cv.mxnet.io/install.html) | [Documentation](https://gluon-cv.mxnet.io) | [Tutorials](https://gluon-cv.mxnet.io/tutorials/index.html) |
 
@@ -53,9 +56,9 @@ The following commands install the stable version of GluonCV and MXNet:
 
 ```bash
 pip install gluoncv --upgrade
-pip install mxnet-mkl --upgrade
+pip install -U --pre mxnet -f https://dist.mxnet.io/python/mkl
 # if cuda 10.1 is installed
-pip install mxnet-cu101mkl --upgrade
+pip install -U --pre mxnet -f https://dist.mxnet.io/python/cu100mkl
 ```
 
 **The latest stable version of GluonCV is 0.6 and depends on mxnet >= 1.4.0**
@@ -66,9 +69,9 @@ You may get access to latest features and bug fixes with the following commands 
 
 ```bash
 pip install gluoncv --pre --upgrade
-pip install mxnet-mkl --pre --upgrade
+pip install -U --pre mxnet -f https://dist.mxnet.io/python/mkl
 # if cuda 10.1 is installed
-pip install mxnet-cu101mkl --pre --upgrade
+pip install -U --pre mxnet -f https://dist.mxnet.io/python/cu100mkl
 ```
 
 There are multiple versions of MXNet pre-built package available. Please refer to [mxnet packages](https://gluon-crash-course.mxnet.io/mxnet_packages.html) if you need more details about MXNet versions.
@@ -131,5 +134,12 @@ If you feel our code or models helps in your research, kindly cite our papers:
   author={Zhang, Zhi and He, Tong and Zhang, Hang and Zhang, Zhongyue and Xie, Junyuan and Li, Mu},
   journal={arXiv preprint arXiv:1902.04103},
   year={2019}
+}
+
+@article{zhang2020resnest,
+title={ResNeSt: Split-Attention Networks},
+author={Zhang, Hang and Wu, Chongruo and Zhang, Zhongyue and Zhu, Yi and Zhang, Zhi and Lin, Haibin and Sun, Yue and He, Tong and Muller, Jonas and Manmatha, R. and Li, Mu and Smola, Alexander},
+journal={arXiv preprint},
+year={2020}
 }
 ```
