@@ -1,7 +1,7 @@
 import mxnet as mx
 from mxnet.gluon import nn
 from mxnet.gluon.nn import HybridBlock
-
+# pylint: disable=wildcard-import,abstract-method,arguments-differ,dangerous-default-value,missing-docstring
 
 __all__ = ['PAM_Module', 'CAM_Module']
 
