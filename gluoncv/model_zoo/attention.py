@@ -18,7 +18,7 @@ class PAM_Module(HybridBlock):
         self.value_conv = nn.Conv2D(in_channels=in_dim, channels=in_dim, kernel_size=(1, 1))
         self.gamma = self.params.get('gamma', shape=(1,), init=mx.init.Zero())
 
-    def hybrid_forward(self, F, x, *args, **kwargs):
+    def hybrid_forward(self, F, x, **kwargs):
         """
             inputs :
                 x : input feature maps( B X C X H X W)
@@ -48,7 +48,7 @@ class CAM_Module(HybridBlock):
 
         self.gamma = self.params.get('gamma', shape=(1,), init=mx.init.Zero())
 
-    def hybrid_forward(self, F, x, *args, **kwargs):
+    def hybrid_forward(self, F, x, **kwargs):
         """
             inputs :
                 x : input feature maps( B X C X H X W)
