@@ -118,7 +118,7 @@ def parse_args():
 
     # logging and checkpoint saving
     if args.save_dir is None:
-        args.save_dir = "runs/%s/%s/%s/" % (args.dataset, args.model, args.checkname)
+        args.save_dir = "runs/%s/%s/%s/" % (args.dataset, args.model, args.backbone)
     makedirs(args.save_dir)
 
     # Synchronized BatchNorm
