@@ -581,11 +581,14 @@ def custom_faster_rcnn_fpn(classes, transfer=None, dataset='custom', pretrained_
     else:
         from ....model_zoo import get_model
         module_list = ['fpn']
+        num_devices = 0
         if norm_layer is SyncBatchNorm:
-            module_list.append('bn')
+            module_list.append('syncbn')
+            num_devices = norm_kwargs['num_devices']
         net = get_model(
             '_'.join(['faster_rcnn'] + module_list + [base_network_name, str(transfer)]),
-            pretrained=True)
+            pretrained=True, per_device_batch_size=kwargs['per_device_batch_size'],
+            num_devices=num_devices)
         reuse_classes = [x for x in classes if x in net.classes]
         net.reset_class(classes, reuse_weights=reuse_classes)
     return net

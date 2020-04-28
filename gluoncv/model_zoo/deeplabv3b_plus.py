@@ -239,7 +239,7 @@ def get_deeplabv3b_plus(dataset='citys', backbone='wideresnet', pretrained=False
     from ..data import datasets
     # infer number of classes
     model = DeepLabWV3Plus(datasets[dataset].NUM_CLASS, backbone=backbone, ctx=ctx, **kwargs)
-    model.classes = datasets[dataset].classes
+    model.classes = datasets[dataset].CLASSES
     if pretrained:
         from .model_store import get_model_file
         model.load_parameters(get_model_file('deeplab_v3b_plus_%s_%s'%(backbone, acronyms[dataset]),

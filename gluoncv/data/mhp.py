@@ -37,6 +37,9 @@ class MHPV1Segmentation(SegmentationDataset):
     """
     # pylint: disable=abstract-method
     NUM_CLASS = 18
+    CLASSES = ("hat", "hair", "sunglasses", "upper clothes", "skirt",
+               "pants", "dress", "belt", "left shoe", "right shoe", "face", "left leg",
+               "right leg", "left arm", "right arm", "bag", "scarf", "torso skin")
 
     def __init__(self, root=os.path.expanduser('~/.mxnet/datasets/mhp/LV-MHP-v1'),
                  split='train', mode=None, transform=None, base_size=768, **kwargs):

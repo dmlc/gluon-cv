@@ -12,7 +12,7 @@ from mxnet.gluon.data.vision import transforms
 import gluoncv
 gluoncv.utils.check_version('0.6.0')
 from gluoncv.loss import *
-from gluoncv.utils import makedirs, LRScheduler
+from gluoncv.utils import makedirs, LRScheduler, LRSequential
 from gluoncv.model_zoo.segbase import *
 from gluoncv.model_zoo import get_model
 from gluoncv.utils.parallel import *
@@ -24,6 +24,10 @@ def parse_args():
     # model and dataset
     parser.add_argument('--model', type=str, default='fcn',
                         help='model name (default: fcn)')
+    parser.add_argument('--model-zoo', type=str, default=None,
+                        help='evaluating on model zoo model')
+    parser.add_argument('--pretrained', action="store_true",
+                        help='whether to use pretrained params')
     parser.add_argument('--backbone', type=str, default='resnet50',
                         help='backbone name (default: resnet50)')
     parser.add_argument('--dataset', type=str, default='pascal',
@@ -55,6 +59,8 @@ def parse_args():
                         help='optimizer (default: sgd)')
     parser.add_argument('--lr', type=float, default=1e-3, metavar='LR',
                         help='learning rate (default: 1e-3)')
+    parser.add_argument('--warmup-epochs', type=int, default=0,
+                        help='number of warmup epochs.')
     parser.add_argument('--momentum', type=float, default=0.9,
                         metavar='M', help='momentum (default: 0.9)')
     parser.add_argument('--weight-decay', type=float, default=1e-4,
@@ -79,8 +85,6 @@ def parse_args():
                         help='put the path to resuming file if needed')
     parser.add_argument('--checkname', type=str, default='default',
                         help='set the checkpoint name')
-    parser.add_argument('--model-zoo', type=str, default=None,
-                        help='evaluating on model zoo model')
     parser.add_argument('--save-dir', type=str, default=None,
                         help='directory of saved models')
     parser.add_argument('--log-interval', type=int, default=20,
@@ -158,12 +162,21 @@ class Trainer(object):
 
         # create network
         if args.model_zoo is not None:
-            model = get_model(args.model_zoo, pretrained=True)
+            model = get_model(args.model_zoo, norm_layer=args.norm_layer,
+                              norm_kwargs=args.norm_kwargs, aux=args.aux,
+                              base_size=args.base_size, crop_size=args.crop_size,
+                              pretrained=args.pretrained)
         else:
             model = get_segmentation_model(model=args.model, dataset=args.dataset,
                                            backbone=args.backbone, norm_layer=args.norm_layer,
                                            norm_kwargs=args.norm_kwargs, aux=args.aux,
                                            base_size=args.base_size, crop_size=args.crop_size)
+        # for resnest use only
+        from gluoncv.nn.dropblock import set_drop_prob
+        from functools import partial
+        apply_drop_prob = partial(set_drop_prob, 0.0)
+        model.apply(apply_drop_prob)
+
         model.cast(args.dtype)
         logger.info(model)
 
@@ -186,10 +199,14 @@ class Trainer(object):
         self.criterion = DataParallelCriterion(criterion, args.ctx, args.syncbn)
 
         # optimizer and lr scheduling
-        self.lr_scheduler = LRScheduler(mode='poly', base_lr=args.lr,
-                                        nepochs=args.epochs,
-                                        iters_per_epoch=len(self.train_data),
-                                        power=0.9)
+        self.lr_scheduler = LRSequential([
+                LRScheduler('linear', base_lr=0, target_lr=args.lr,
+                            nepochs=args.warmup_epochs, iters_per_epoch=len(self.train_data)),
+                LRScheduler(mode='poly', base_lr=args.lr,
+                            nepochs=args.epochs-args.warmup_epochs,
+                            iters_per_epoch=len(self.train_data),
+                            power=0.9)
+            ])
         kv = mx.kv.create(args.kvstore)
 
         if args.optimizer == 'sgd':
