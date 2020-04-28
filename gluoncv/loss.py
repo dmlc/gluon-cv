@@ -363,7 +363,6 @@ class MixSoftmaxCrossEntropyLoss(SoftmaxCrossEntropyLoss):
             if self.mixup:
                 return self._aux_mixup_forward(F, *inputs, **kwargs)
             else:
-
                 return self._aux_forward(F, *inputs, **kwargs)
         else:
             if self.mixup:
