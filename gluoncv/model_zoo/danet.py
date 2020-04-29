@@ -5,7 +5,7 @@ from mxnet.gluon.nn import HybridBlock
 from .segbase import SegBaseModel
 from .fcn import _FCNHead
 from .attention import PAM_Module, CAM_Module
-
+# pylint: disable-all
 
 __all__ = ['DANet', 'get_danet', 'get_danet_resnet50_citys', 'get_danet_resnet101_citys']
 
