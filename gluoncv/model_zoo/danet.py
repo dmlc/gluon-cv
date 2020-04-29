@@ -1,4 +1,4 @@
-"""Pyramid Scene Parsing Network"""
+"""Dual Attention Network"""
 from mxnet.gluon import nn
 from mxnet.context import cpu
 from mxnet.gluon.nn import HybridBlock
@@ -9,22 +9,22 @@ from .fcn import _FCNHead
 from .attention import PAM_Module, CAM_Module
 # pylint: disable-all
 
-__all__ = ['DANet', 'get_danet', 'get_danet_coco']
+__all__ = ['DANet', 'get_danet', 'get_danet_resnet50_citys', 'get_danet_resnet101_citys']
 
 class DANet(SegBaseModel):
-    r"""Fully Convolutional Networks for Semantic Segmentation
+    r"""Dual Attention Networks for Semantic Segmentation
     Parameters
     ----------
     nclass : int
         Number of categories for the training dataset.
     backbone : string
         Pre-trained dilated backbone network type (default:'resnet50'; 'resnet50',
-        'resnet101' or 'resnet152').
+        'resnet101').
     norm_layer : object
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.nn.BatchNorm`;
     Reference:
-        Long, Jonathan, Evan Shelhamer, and Trevor Darrell. "Fully convolutional networks
-        for semantic segmentation." *CVPR*, 2015
+        Jun Fu, Jing Liu, Haijie Tian, Yong Li, Yongjun Bao, Zhiwei Fang, Hanqing Lu. "Dual Attention 
+        Network for Scene Segmentation." *CVPR*, 2019
     """
 
     def __init__(self, nclass, backbone='resnet50', aux=False, ctx=cpu(), pretrained_base=True,
@@ -79,14 +79,12 @@ class DANetHead(HybridBlock):
                                                             padding=1, use_bias=False))
         self.conv5a.add(norm_layer(in_channels=inter_channels, **({} if norm_kwargs is None else norm_kwargs)))
         self.conv5a.add(nn.Activation('relu'))
-        # self.conv5a.initialize(ctx=ctx)
 
         self.conv5c = nn.HybridSequential()
         self.conv5c.add(nn.Conv2D(in_channels=in_channels, channels=inter_channels, kernel_size=3, 
                                                             padding=1, use_bias=False))
         self.conv5c.add(norm_layer(in_channels=inter_channels, **({} if norm_kwargs is None else norm_kwargs)))
         self.conv5c.add(nn.Activation('relu'))
-        # self.conv5c.initialize(ctx=ctx)
         
         self.sa = PAM_Module(inter_channels)
         self.sc = CAM_Module(inter_channels)
@@ -95,7 +93,6 @@ class DANetHead(HybridBlock):
                                                             padding=1, use_bias=False))
         self.conv51.add(norm_layer(in_channels=inter_channels, **({} if norm_kwargs is None else norm_kwargs)))
         self.conv51.add(nn.Activation('relu'))
-        # self.conv51.initialize(ctx=ctx)
 
         self.conv52 = nn.HybridSequential()
         self.conv52.add(nn.Conv2D(in_channels=inter_channels, channels=inter_channels, kernel_size=3, 
@@ -135,6 +132,7 @@ class DANetHead(HybridBlock):
         output = [sasc_output]
         output.append(sa_output)
         output.append(sc_output)
+
         return tuple(output)
 
     def predict(self, x):
@@ -151,7 +149,7 @@ class DANetHead(HybridBlock):
 def get_danet(dataset='pascal_voc', backbone='resnet50', pretrained=False,
             root='~/.mxnet/models', ctx=cpu(0), **kwargs):
     r"""DANet model from the paper `"Dual Attention Network for Scene Segmentation"
-    <https://arxiv.org/abs/1809.02983.pdf>`
+    <https://arxiv.org/abs/1809.02983>`
     """
     acronyms = {
         'pascal_voc': 'voc',
@@ -170,4 +168,42 @@ def get_danet(dataset='pascal_voc', backbone='resnet50', pretrained=False,
         model.load_parameters(get_model_file('danet_%s_%s'%(backbone, acronyms[dataset]),
                                              tag=pretrained, root=root), ctx=ctx)
     return model
+
+def get_danet_resnet50_citys(**kwargs):
+    r"""DANet
+    Parameters
+    ----------
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+
+    Examples
+    --------
+    >>> model = get_danet_resnet50_citys(pretrained=True)
+    >>> print(model)
+    """
+    return get_danet('citys', 'resnet50', **kwargs)
+
+def get_danet_resnet101_citys(**kwargs):
+    r"""DANet
+    Parameters
+    ----------
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+
+    Examples
+    --------
+    >>> model = get_danet_resnet101_citys(pretrained=True)
+    >>> print(model)
+    """
+    return get_danet('citys', 'resnet101', **kwargs)
 
