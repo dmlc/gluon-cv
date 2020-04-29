@@ -9,8 +9,7 @@ from mxnet.gluon.loss import Loss, _apply_weighting, _reshape_like
 
 __all__ = ['FocalLoss', 'SSDMultiBoxLoss', 'YOLOV3Loss',
            'MixSoftmaxCrossEntropyLoss', 'ICNetLoss', 'MixSoftmaxCrossEntropyOHEMLoss',
-           'SegmentationMultiLosses',
-           'DistillationSoftmaxCrossEntropyLoss', 'SiamRPNLoss']
+           'SegmentationMultiLosses', 'DistillationSoftmaxCrossEntropyLoss', 'SiamRPNLoss']
 
 class FocalLoss(Loss):
     """Focal Loss for inbalanced classification.
@@ -295,8 +294,6 @@ class SegmentationMultiLosses(SoftmaxCrossEntropyLoss):
         super(SegmentationMultiLosses, self).__init__(size_average, ignore_label, **kwargs)
 
     def hybrid_forward(self, F, *inputs, **kwargs):
-        # *preds, label = tuple(inputs)
-        # pred1, pred2, pred3 = tuple(preds)
         pred1, pred2, pred3, label = tuple(inputs)
 
         loss1 = super(SegmentationMultiLosses, self).hybrid_forward(F, pred1, label, **kwargs)
