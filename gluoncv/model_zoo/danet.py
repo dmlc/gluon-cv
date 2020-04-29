@@ -48,7 +48,6 @@ class DANet(SegBaseModel):
 
 
     def hybrid_forward(self, F, x):
-        # imsize = x.size()[2:]
         c3, c4 = self.base_forward(x)
 
         x = self.head(c4)
@@ -56,7 +55,6 @@ class DANet(SegBaseModel):
         x[0] = F.contrib.BilinearResize2D(x[0], **self._up_kwargs)
         x[1] = F.contrib.BilinearResize2D(x[1], **self._up_kwargs)
         x[2] = F.contrib.BilinearResize2D(x[2], **self._up_kwargs)
-
 
         outputs = [x[0]]
         outputs.append(x[1])
