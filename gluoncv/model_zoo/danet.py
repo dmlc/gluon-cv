@@ -61,7 +61,6 @@ class DANet(SegBaseModel):
         outputs.append(x[2])
 
         if self.aux:
-
             auxout = self.auxlayer(c3)
             auxout = F.contrib.BilinearResize2D(auxout, **self._up_kwargs)
             outputs.append(auxout)
