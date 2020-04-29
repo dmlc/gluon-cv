@@ -291,19 +291,16 @@ class SoftmaxCrossEntropyLoss(Loss):
 
 class SegmentationMultiLosses(SoftmaxCrossEntropyLoss):
     """2D Cross Entropy Loss with Multi-L1oss"""
-    def __init__(self, size_average=True, ignore_label=-1,**kwargs):
-        super(SegmentationMultiLosses, self).__init__(size_average, ignore_label,**kwargs)
-        # self.nclass = nclass
+    def __init__(self, size_average=True, ignore_label=-1, **kwargs):
+        super(SegmentationMultiLosses, self).__init__(size_average, ignore_label, **kwargs)
 
-
-    def hybrid_forward(self, F, *inputs,**kwargs):
+    def hybrid_forward(self, F, *inputs, **kwargs):
         *preds, label = tuple(inputs)
-        pred1, pred2 ,pred3= tuple(preds)
+        pred1, pred2, pred3 = tuple(preds)
 
-
-        loss1 = super(SegmentationMultiLosses, self).hybrid_forward(F, pred1, label,**kwargs)
-        loss2 = super(SegmentationMultiLosses, self).hybrid_forward(F, pred2, label,**kwargs)
-        loss3 = super(SegmentationMultiLosses, self).hybrid_forward(F, pred3, label,**kwargs)
+        loss1 = super(SegmentationMultiLosses, self).hybrid_forward(F, pred1, label, **kwargs)
+        loss2 = super(SegmentationMultiLosses, self).hybrid_forward(F, pred2, label, **kwargs)
+        loss3 = super(SegmentationMultiLosses, self).hybrid_forward(F, pred3, label, **kwargs)
         loss = loss1 + loss2 + loss3
         return loss
 
