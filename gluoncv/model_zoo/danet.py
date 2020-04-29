@@ -11,6 +11,7 @@ __all__ = ['DANet', 'get_danet', 'get_danet_resnet50_citys', 'get_danet_resnet10
 
 class DANet(SegBaseModel):
     r"""Dual Attention Networks for Semantic Segmentation
+
     Parameters
     ----------
     nclass : int
@@ -20,6 +21,7 @@ class DANet(SegBaseModel):
         'resnet101').
     norm_layer : object
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.nn.BatchNorm`;
+        
     Reference:
         Jun Fu, Jing Liu, Haijie Tian, Yong Li, Yongjun Bao, Zhiwei Fang, Hanqing Lu. "Dual Attention 
         Network for Scene Segmentation." *CVPR*, 2019
@@ -158,7 +160,7 @@ def get_danet(dataset='pascal_voc', backbone='resnet50', pretrained=False,
     model.classes = datasets[dataset].classes
     if pretrained:
         from .model_store import get_model_file
-        model.load_parameters(get_model_file('danet_%s_%s'%(backbone, acronyms[dataset]),
+        model.load_parameters(get_model_file('danet_%s_%s' % (backbone, acronyms[dataset]),
                                              tag=pretrained, root=root), ctx=ctx)
     return model
 
