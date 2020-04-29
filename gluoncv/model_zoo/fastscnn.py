@@ -1,6 +1,6 @@
 # pylint: disable=unused-argument, arguments-differ, unused-variable
 """Fast-SCNN, implemented in Gluon. Code adapted from lxtGH/Fast_Seg"""
-__all__ = ['FastSCNN', 'get_fastscnn']
+__all__ = ['FastSCNN', 'get_fastscnn', 'get_fastscnn_citys']
 
 from mxnet.context import cpu
 from mxnet.gluon.block import HybridBlock
@@ -86,6 +86,7 @@ class FeatureFusionModule(HybridBlock):
         super(FeatureFusionModule, self).__init__()
         self.scale_factor = scale_factor
         self._up_kwargs = {'height': height, 'width': width}
+
         with self.name_scope():
             self.dwconv = _DWConv(lower_in_channels, out_channels,
                                   norm_layer=norm_layer, norm_kwargs=norm_kwargs)
@@ -144,7 +145,6 @@ class _auxHead(HybridBlock):
                 self.block.add(nn.Conv2D(in_channels=channels, channels=nclass,
                                          kernel_size=1))
 
-    # pylint: disable=arguments-differ
     def hybrid_forward(self, F, x):
         return self.block(x)
 
@@ -156,35 +156,35 @@ class _ConvBNReLU(HybridBlock):
                  norm_layer=nn.BatchNorm, norm_kwargs=None, **kwargs):
         super(_ConvBNReLU, self).__init__()
         with self.name_scope():
-            self.conv = nn.Conv2D(in_channels=in_channels, channels=out_channels,
+            self.block = nn.HybridSequential()
+            self.block.add(nn.Conv2D(in_channels=in_channels, channels=out_channels,
                                   kernel_size=kernel_size,
-                                  padding=padding, strides=stride, use_bias=False)
-            self.bn = norm_layer(in_channels=out_channels)
-            self.relu = nn.Activation('relu')
+                                  padding=padding, strides=stride, use_bias=False))
+            self.block.add(norm_layer(in_channels=out_channels,
+                                     **({} if norm_kwargs is None else norm_kwargs)))
+            self.block.add(nn.Activation('relu'))
 
     def hybrid_forward(self, F, x):
-        x = self.conv(x)
-        x = self.bn(x)
-        x = self.relu(x)
-        return x
+        return self.block(x)
 
 
 class _DSConv(HybridBlock):
     """Depthwise Separable Convolutions"""
-
     def __init__(self, dw_channels, out_channels, stride=1,
                  norm_layer=nn.BatchNorm, norm_kwargs=None, **kwargs):
         super(_DSConv, self).__init__()
-        self.conv = nn.HybridSequential()
         with self.name_scope():
+            self.conv = nn.HybridSequential()
             self.conv.add(nn.Conv2D(in_channels=dw_channels, channels=dw_channels,
                                     kernel_size=3, strides=stride,
                                     padding=1, groups=dw_channels, use_bias=False))
-            self.conv.add(norm_layer(in_channels=dw_channels))
+            self.conv.add(norm_layer(in_channels=dw_channels,
+                                     **({} if norm_kwargs is None else norm_kwargs)))
             self.conv.add(nn.Activation('relu'))
             self.conv.add(nn.Conv2D(in_channels=dw_channels, channels=out_channels,
                                     kernel_size=1, use_bias=False))
-            self.conv.add(norm_layer(in_channels=out_channels))
+            self.conv.add(norm_layer(in_channels=out_channels,
+                                     **({} if norm_kwargs is None else norm_kwargs)))
             self.conv.add(nn.Activation('relu'))
 
     def hybrid_forward(self, F, x):
@@ -193,13 +193,16 @@ class _DSConv(HybridBlock):
 
 class LearningToDownsample(HybridBlock):
     """Learning to downsample module"""
-
-    def __init__(self, dw_channels1=32, dw_channels2=48, out_channels=64, **kwargs):
+    def __init__(self, dw_channels1=32, dw_channels2=48, out_channels=64,
+                 norm_layer=nn.BatchNorm, norm_kwargs=None, **kwargs):
         super(LearningToDownsample, self).__init__()
         with self.name_scope():
-            self.conv = _ConvBNReLU(3, dw_channels1, 3, 2, **kwargs)
-            self.dsconv1 = _DSConv(dw_channels1, dw_channels2, 2, **kwargs)
-            self.dsconv2 = _DSConv(dw_channels2, out_channels, 2, **kwargs)
+            self.conv = _ConvBNReLU(3, dw_channels1, 3, 2,
+                                    norm_layer=norm_layer, norm_kwargs=norm_kwargs, **kwargs)
+            self.dsconv1 = _DSConv(dw_channels1, dw_channels2, 2,
+                                   norm_layer=norm_layer, norm_kwargs=norm_kwargs, **kwargs)
+            self.dsconv2 = _DSConv(dw_channels2, out_channels, 2,
+                                   norm_layer=norm_layer, norm_kwargs=norm_kwargs, **kwargs)
 
     def hybrid_forward(self, F, x):
         x = self.conv(x)
@@ -210,7 +213,6 @@ class LearningToDownsample(HybridBlock):
 
 class GlobalFeatureExtractor(HybridBlock):
     """Global feature extractor module"""
-
     def __init__(self, in_channels=64, block_channels=(64, 96, 128), out_channels=128, t=6,
                  num_blocks=(3, 3, 3), height=32, width=64,
                  norm_layer=nn.BatchNorm, norm_kwargs=None, **kwargs):
@@ -227,17 +229,15 @@ class GlobalFeatureExtractor(HybridBlock):
                                                 norm_layer, norm_kwargs)
             self.ppm = _FastPyramidPooling(block_channels[2], out_channels,
                                            height=height, width=width,
-                                           norm_layer=norm_layer, norm_kwargs=norm_kwargs, **kwargs)
+                                           norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
     def _make_layer(self, block, inplanes, planes, blocks, t=6, stride=1,
                     norm_layer=nn.BatchNorm, norm_kwargs=None):
         layers = nn.HybridSequential()
         with layers.name_scope():
-            layers.add(block(inplanes, planes, t, stride,
-                             norm_layer=norm_layer, norm_kwargs=norm_kwargs))
+            layers.add(block(inplanes, planes, t, stride, norm_layer, norm_kwargs))
             for i in range(1, blocks):
-                layers.add(block(planes, planes, t, 1,
-                                 norm_layer=norm_layer, norm_kwargs=norm_kwargs))
+                layers.add(block(planes, planes, t, 1, norm_layer, norm_kwargs))
         return layers
 
     def hybrid_forward(self, F, x):
@@ -250,21 +250,20 @@ class GlobalFeatureExtractor(HybridBlock):
 
 class LinearBottleneck(HybridBlock):
     """LinearBottleneck used in MobileNetV2"""
-
     def __init__(self, in_channels, out_channels, t=6, stride=2,
-                 norm_layer=nn.BatchNorm, norm_kwargs=None, **kwargs):
+                 norm_layer=nn.BatchNorm, norm_kwargs=None):
         super(LinearBottleneck, self).__init__()
         self.use_shortcut = stride == 1 and in_channels == out_channels
-
-        self.block = nn.HybridSequential()
         with self.name_scope():
+            self.block = nn.HybridSequential()
             self.block.add(_ConvBNReLU(in_channels, in_channels * t, 1,
                                        norm_layer=norm_layer, norm_kwargs=norm_kwargs))
             self.block.add(_DWConv(in_channels * t, in_channels * t, stride,
                                    norm_layer=norm_layer, norm_kwargs=norm_kwargs))
             self.block.add(nn.Conv2D(in_channels=in_channels * t, channels=out_channels,
                                      kernel_size=1, use_bias=False))
-            self.block.add(norm_layer(in_channels=out_channels))
+            self.block.add(norm_layer(in_channels=out_channels,
+                                      **({} if norm_kwargs is None else norm_kwargs)))
 
     def hybrid_forward(self, F, x):
         out = self.block(x)
@@ -275,20 +274,21 @@ class LinearBottleneck(HybridBlock):
 
 class _DWConv(HybridBlock):
     def __init__(self, dw_channels, out_channels, stride=1,
-                 norm_layer=nn.BatchNorm, norm_kwargs=None, **kwargs):
+                 norm_layer=nn.BatchNorm, norm_kwargs=None):
         super(_DWConv, self).__init__()
-        self.conv = nn.HybridSequential()
         with self.name_scope():
+            self.conv = nn.HybridSequential()
             self.conv.add(nn.Conv2D(in_channels=dw_channels, channels=out_channels, kernel_size=3,
                                     strides=stride, padding=1, groups=dw_channels, use_bias=False))
-            self.conv.add(norm_layer(in_channels=out_channels))
+            self.conv.add(norm_layer(in_channels=out_channels,
+                                     **({} if norm_kwargs is None else norm_kwargs)))
             self.conv.add(nn.Activation('relu'))
 
     def hybrid_forward(self, F, x):
         return self.conv(x)
 
 
-def _PSP1x1Conv(in_channels, out_channels, norm_layer=nn.BatchNorm, norm_kwargs=None, **kwargs):
+def _PSP1x1Conv(in_channels, out_channels, norm_layer, norm_kwargs):
     block = nn.HybridSequential()
     with block.name_scope():
         block.add(nn.Conv2D(in_channels=in_channels, channels=out_channels,
@@ -301,20 +301,15 @@ def _PSP1x1Conv(in_channels, out_channels, norm_layer=nn.BatchNorm, norm_kwargs=
 
 class _FastPyramidPooling(HybridBlock):
     def __init__(self, in_channels, ppm_out_channels, height=32, width=64,
-                 norm_layer=nn.BatchNorm, norm_kwargs=None, **kwargs):
+                 norm_layer=nn.BatchNorm, norm_kwargs=None):
         super(_FastPyramidPooling, self).__init__()
         out_channels = int(in_channels/4)
         self._up_kwargs = {'height': height, 'width': width}
         with self.name_scope():
-            self.conv1 = _PSP1x1Conv(in_channels, out_channels,
-                                     norm_layer=norm_layer, norm_kwargs=norm_kwargs)
-            self.conv2 = _PSP1x1Conv(in_channels, out_channels,
-                                     norm_layer=norm_layer, norm_kwargs=norm_kwargs)
-            self.conv3 = _PSP1x1Conv(in_channels, out_channels,
-                                     norm_layer=norm_layer, norm_kwargs=norm_kwargs)
-            self.conv4 = _PSP1x1Conv(in_channels, out_channels,
-                                     norm_layer=norm_layer, norm_kwargs=norm_kwargs)
-
+            self.conv1 = _PSP1x1Conv(in_channels, out_channels, norm_layer, norm_kwargs)
+            self.conv2 = _PSP1x1Conv(in_channels, out_channels, norm_layer, norm_kwargs)
+            self.conv3 = _PSP1x1Conv(in_channels, out_channels, norm_layer, norm_kwargs)
+            self.conv4 = _PSP1x1Conv(in_channels, out_channels, norm_layer, norm_kwargs)
             self.out = _ConvBNReLU(in_channels * 2, ppm_out_channels, 1,
                                    norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
@@ -353,8 +348,6 @@ def get_fastscnn(dataset='citys', ctx=cpu(0), **kwargs):
     dataset : str, default cityscapes
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
-    root : str, default '~/.mxnet/models'
-        Location for keeping the model parameters.
 
     Examples
     --------
@@ -367,3 +360,18 @@ def get_fastscnn(dataset='citys', ctx=cpu(0), **kwargs):
     model.classes = datasets[dataset].classes
     model.initialize(ctx=ctx)
     return model
+
+def get_fastscnn_citys(**kwargs):
+    r"""Fast-SCNN: Fast Semantic Segmentation Network
+        Parameters
+        ----------
+        dataset : str, default cityscapes
+        ctx : Context, default CPU
+            The context in which to load the pretrained weights.
+
+        Examples
+        --------
+        >>> model = get_fastscnn_citys()
+        >>> print(model)
+        """
+    return get_fastscnn('citys', **kwargs)
