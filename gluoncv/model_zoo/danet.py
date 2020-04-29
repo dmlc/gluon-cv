@@ -199,7 +199,3 @@ def get_danet_resnet101_citys(**kwargs):
     >>> print(model)
     """
     return get_danet('citys', 'resnet101', **kwargs)
-<<<<<<< HEAD
-=======
-
->>>>>>> master
