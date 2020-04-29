@@ -290,7 +290,11 @@ class SoftmaxCrossEntropyLoss(Loss):
 
 
 class SegmentationMultiLosses(SoftmaxCrossEntropyLoss):
+<<<<<<< HEAD
     """2D Cross Entropy Loss with Multi-Loss"""
+=======
+    """2D Cross Entropy Loss with Multi-L1oss"""
+>>>>>>> master
     def __init__(self, size_average=True, ignore_label=-1, **kwargs):
         super(SegmentationMultiLosses, self).__init__(size_average, ignore_label, **kwargs)
 
