@@ -26,7 +26,7 @@ class DANet(SegBaseModel):
     """
 
     def __init__(self, nclass, backbone='resnet50', aux=False, ctx=cpu(), pretrained_base=True,
-                 height=None, width=None, base_size=576, crop_size=512, dilated=True, **kwargs):
+                 height=None, width=None, base_size=520, crop_size=480, dilated=True, **kwargs):
         super(DANet, self).__init__(nclass, aux, backbone, ctx=ctx, base_size=base_size,
                                     crop_size=crop_size, pretrained_base=pretrained_base, **kwargs)
         self.aux = aux
