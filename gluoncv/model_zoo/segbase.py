@@ -21,6 +21,8 @@ def get_segmentation_model(model, **kwargs):
     from .deeplabv3b_plus import get_deeplabv3b_plus
     from .icnet import get_icnet
     from .fastscnn import get_fastscnn
+    from .danet import get_danet
+
     models = {
         'fcn': get_fcn,
         'psp': get_psp,
@@ -29,6 +31,7 @@ def get_segmentation_model(model, **kwargs):
         'deeplabplusv3b': get_deeplabv3b_plus,
         'icnet': get_icnet,
         'fastscnn': get_fastscnn,
+        'danet': get_danet
     }
     return models[model](**kwargs)
 

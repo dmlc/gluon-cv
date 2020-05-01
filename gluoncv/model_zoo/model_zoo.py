@@ -41,6 +41,7 @@ from .hrnet import *
 from .siamrpn import *
 from .icnet import *
 from .fastscnn import *
+from .danet import *
 
 __all__ = ['get_model', 'get_model_list']
 
@@ -186,6 +187,8 @@ _models = {
     'icnet_resnet50_citys': get_icnet_resnet50_citys,
     'icnet_resnet50_mhpv1': get_icnet_resnet50_mhpv1,
     'fastscnn_citys': get_fastscnn_citys,
+    'danet_resnet50_citys': get_danet_resnet50_citys,
+    'danet_resnet101_citys': get_danet_resnet101_citys,
     'resnet18_v1b': resnet18_v1b,
     'resnet34_v1b': resnet34_v1b,
     'resnet50_v1b': resnet50_v1b,
