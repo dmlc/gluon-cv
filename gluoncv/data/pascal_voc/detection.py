@@ -74,7 +74,7 @@ class VOCDetection(VisionDataset):
             self._validate_class_names(self.CLASSES)
         except AssertionError as e:
             raise RuntimeError("Class names must not contain {}".format(e))
-        return type(self).CLASSES
+        return self.CLASSES
 
     def __len__(self):
         return len(self._items)
