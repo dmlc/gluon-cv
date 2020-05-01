@@ -9,7 +9,7 @@ from mxnet.gluon.loss import Loss, _apply_weighting, _reshape_like
 
 __all__ = ['FocalLoss', 'SSDMultiBoxLoss', 'YOLOV3Loss',
            'MixSoftmaxCrossEntropyLoss', 'ICNetLoss', 'MixSoftmaxCrossEntropyOHEMLoss',
-           'DistillationSoftmaxCrossEntropyLoss', 'SiamRPNLoss']
+           'SegmentationMultiLosses', 'DistillationSoftmaxCrossEntropyLoss', 'SiamRPNLoss']
 
 class FocalLoss(Loss):
     """Focal Loss for inbalanced classification.
@@ -286,6 +286,22 @@ class SoftmaxCrossEntropyLoss(Loss):
         loss = F.where(label.expand_dims(axis=1) == self._ignore_label,
                        F.zeros_like(loss), loss)
         return F.mean(loss, axis=self._batch_axis, exclude=True)
+
+
+class SegmentationMultiLosses(SoftmaxCrossEntropyLoss):
+    """2D Cross Entropy Loss with Multi-Loss"""
+    def __init__(self, size_average=True, ignore_label=-1, **kwargs):
+        super(SegmentationMultiLosses, self).__init__(size_average, ignore_label, **kwargs)
+
+    def hybrid_forward(self, F, *inputs, **kwargs):
+        pred1, pred2, pred3, label = tuple(inputs)
+
+        loss1 = super(SegmentationMultiLosses, self).hybrid_forward(F, pred1, label, **kwargs)
+        loss2 = super(SegmentationMultiLosses, self).hybrid_forward(F, pred2, label, **kwargs)
+        loss3 = super(SegmentationMultiLosses, self).hybrid_forward(F, pred3, label, **kwargs)
+        loss = loss1 + loss2 + loss3
+        return loss
+
 
 class MixSoftmaxCrossEntropyLoss(SoftmaxCrossEntropyLoss):
     """SoftmaxCrossEntropyLoss2D with Auxiliary Loss
