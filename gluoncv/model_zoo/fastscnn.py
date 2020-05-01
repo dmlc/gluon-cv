@@ -17,7 +17,7 @@ class FastSCNN(HybridBlock):
         Auxiliary loss.
 
     Reference:
-    
+
         Rudra P K Poudel, Stephan Liwicki, Roberto Cipolla.
         Fast-SCNN: Fast Semantic Segmentation Network. *BMVC* 2019.
         https://bmvc2019.org/wp-content/uploads/papers/0959-paper.pdf
