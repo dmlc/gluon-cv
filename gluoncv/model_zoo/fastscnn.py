@@ -13,14 +13,17 @@ class FastSCNN(HybridBlock):
     ----------
     nclass : int
         Number of categories for the training dataset.
+    norm_layer : object
+        Normalization layer used in backbone network (default: :class:`mxnet.gluon.nn.BatchNorm`).
     aux : bool
         Auxiliary loss.
 
+
     Reference:
 
-        Rudra P K Poudel, Stephan Liwicki, Roberto Cipolla.
-        Fast-SCNN: Fast Semantic Segmentation Network. *BMVC* 2019.
-        https://bmvc2019.org/wp-content/uploads/papers/0959-paper.pdf
+        Rudra P K Poudel, et al. https://bmvc2019.org/wp-content/uploads/papers/0959-paper.pdf
+        "Fast-SCNN: Fast Semantic Segmentation Network." *BMVC*, 2019
+
     """
     def __init__(self, nclass, aux=True, ctx=cpu(), pretrained_base=False,
                  height=None, width=None, base_size=2048, crop_size=1024, **kwargs):
@@ -361,6 +364,11 @@ def get_fastscnn(dataset='citys', ctx=cpu(0), pretrained=False,
     dataset : str, default cityscapes
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
 
     Examples
     --------
