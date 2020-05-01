@@ -70,6 +70,8 @@ class FastSCNN(HybridBlock):
         h, w = x.shape[2:]
         self._up_kwargs['height'] = h
         self._up_kwargs['width'] = w
+        self.global_feature_extractor.ppm._up_kwargs = {'height': h // 32, 'width': w // 32}
+        self.feature_fusion._up_kwargs = {'height': h // 8, 'width': w // 8}
 
         higher_res_features = self.learning_to_downsample(x)
         x = self.global_feature_extractor(higher_res_features)
