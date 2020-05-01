@@ -7,7 +7,7 @@ from mxnet.gluon.block import HybridBlock
 from mxnet.gluon import nn
 
 class FastSCNN(HybridBlock):
-    r"""Fast-SCNN
+    r"""Fast-SCNN: Fast Semantic Segmentation Network
 
         Parameters
         ----------
@@ -17,31 +17,37 @@ class FastSCNN(HybridBlock):
             Auxiliary loss.
 
         Reference:
-            Fast-SCNN: Fast Semantic Segmentation Network - BMVC 2019
+            Rudra P K Poudel, Stephan Liwicki, Roberto Cipolla.
+            Fast-SCNN: Fast Semantic Segmentation Network - *BMVC*, 2019
             https://bmvc2019.org/wp-content/uploads/papers/0959-paper.pdf
         """
     def __init__(self, nclass, aux=True, ctx=cpu(), pretrained_base=False,
                  height=None, width=None, base_size=2048, crop_size=1024, **kwargs):
         super(FastSCNN, self).__init__()
+
         height = height if height is not None else crop_size
         width = width if width is not None else crop_size
+        self._up_kwargs = {'height': height, 'width': width}
+        self.base_size = base_size
+        self.crop_size = crop_size
+
         self.aux = aux
         with self.name_scope():
             self.learning_to_downsample = LearningToDownsample(32, 48, 64, **kwargs)
+            self.learning_to_downsample.initialize(ctx=ctx)
             self.global_feature_extractor = GlobalFeatureExtractor(
                 64, [64, 96, 128], 128, 6, [3, 3, 3], height=height//32, width=width//32, **kwargs)
+            self.global_feature_extractor.initialize(ctx=ctx)
             self.feature_fusion = FeatureFusionModule(64, 128, 128,
                                                       height=height//8, width=width//8, **kwargs)
+            self.feature_fusion.initialize(ctx=ctx)
             self.classifier = Classifer(128, nclass, **kwargs)
+            self.classifier.initialize(ctx=ctx)
 
             if self.aux:
                 self.auxlayer = _auxHead(in_channels=64, channels=64, nclass=nclass, **kwargs)
                 self.auxlayer.initialize(ctx=ctx)
                 self.auxlayer.collect_params().setattr('lr_mult', 10)
-
-        self._up_kwargs = {'height': height, 'width': width}
-        self.base_size = base_size
-        self.crop_size = crop_size
 
     def hybrid_forward(self, F, x):
         """hybrid forward for Fast SCNN"""
@@ -57,11 +63,10 @@ class FastSCNN(HybridBlock):
             auxout = self.auxlayer(higher_res_features)
             auxout = F.contrib.BilinearResize2D(auxout, **self._up_kwargs)
             outputs.append(auxout)
-
         return tuple(outputs)
 
     def demo(self, x):
-        """demo"""
+        """fastscnn demo"""
         h, w = x.shape[2:]
         self._up_kwargs['height'] = h
         self._up_kwargs['width'] = w
@@ -73,6 +78,10 @@ class FastSCNN(HybridBlock):
         import mxnet.ndarray as F
         x = F.contrib.BilinearResize2D(x, **self._up_kwargs)
         return x
+
+    def predict(self, x):
+        """fastscnn predict"""
+        return self.demo(x)
 
     def evaluate(self, x):
         """evaluating network with inputs and targets"""
@@ -158,10 +167,10 @@ class _ConvBNReLU(HybridBlock):
         with self.name_scope():
             self.block = nn.HybridSequential()
             self.block.add(nn.Conv2D(in_channels=in_channels, channels=out_channels,
-                                  kernel_size=kernel_size,
-                                  padding=padding, strides=stride, use_bias=False))
+                                     kernel_size=kernel_size,
+                                     padding=padding, strides=stride, use_bias=False))
             self.block.add(norm_layer(in_channels=out_channels,
-                                     **({} if norm_kwargs is None else norm_kwargs)))
+                                      **({} if norm_kwargs is None else norm_kwargs)))
             self.block.add(nn.Activation('relu'))
 
     def hybrid_forward(self, F, x):
@@ -341,7 +350,8 @@ class _FastPyramidPooling(HybridBlock):
         x = self.out(x)
         return x
 
-def get_fastscnn(dataset='citys', ctx=cpu(0), **kwargs):
+def get_fastscnn(dataset='citys', ctx=cpu(0), pretrained=False,
+                 root='~/.mxnet/models', **kwargs):
     r"""Fast-SCNN: Fast Semantic Segmentation Network
     Parameters
     ----------
@@ -354,11 +364,18 @@ def get_fastscnn(dataset='citys', ctx=cpu(0), **kwargs):
     >>> model = get_fastscnn(dataset='citys')
     >>> print(model)
     """
+    acronyms = {
+        'citys': 'citys',
+    }
     from ..data import datasets
 
     model = FastSCNN(datasets[dataset].NUM_CLASS, ctx=ctx, **kwargs)
     model.classes = datasets[dataset].classes
-    model.initialize(ctx=ctx)
+
+    if pretrained:
+        from .model_store import get_model_file
+        model.load_parameters(get_model_file('fastscnn_%s' % (acronyms[dataset]),
+                                             tag=pretrained, root=root), ctx=ctx)
     return model
 
 def get_fastscnn_citys(**kwargs):
