@@ -11,7 +11,7 @@ def test_export_model_zoo():
     for model in pretrained_model_list():
         print('exporting:', model)
 
-        if 'deeplab' in model or 'psp' in model or 'icnet' in model:
+        if 'deeplab' in model or 'psp' in model or 'icnet' in model or 'danet' in model:
             # semantic segmentation models require fixed data shape
             kwargs = {'data_shape':(480, 480, 3)}
         elif '3d' in model:
