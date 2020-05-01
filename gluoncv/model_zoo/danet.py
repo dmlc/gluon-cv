@@ -39,11 +39,6 @@ class DANet(SegBaseModel):
             self.head = DANetHead(2048, nclass, **kwargs)
             self.head.initialize(ctx=ctx)
 
-        if self.aux:
-            self.auxlayer = _FCNHead(1024, nclass, **kwargs)
-            self.auxlayer.initialize(ctx=ctx)
-            self.auxlayer.collect_params().setattr('lr_mult', 10)
-
         self._up_kwargs = {'height': height, 'width': width}
 
 
@@ -59,11 +54,6 @@ class DANet(SegBaseModel):
         outputs = [x[0]]
         outputs.append(x[1])
         outputs.append(x[2])
-
-        if self.aux:
-            auxout = self.auxlayer(c3)
-            auxout = F.contrib.BilinearResize2D(auxout, **self._up_kwargs)
-            outputs.append(auxout)
 
         return tuple(outputs)
         
