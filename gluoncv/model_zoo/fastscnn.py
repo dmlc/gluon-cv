@@ -6,6 +6,7 @@ from mxnet.context import cpu
 from mxnet.gluon.block import HybridBlock
 from mxnet.gluon import nn
 
+
 class FastSCNN(HybridBlock):
     r"""Fast-SCNN: Fast Semantic Segmentation Network
 
@@ -356,6 +357,7 @@ class _FastPyramidPooling(HybridBlock):
         x = self.out(x)
         return x
 
+
 def get_fastscnn(dataset='citys', ctx=cpu(0), pretrained=False,
                  root='~/.mxnet/models', **kwargs):
     r"""Fast-SCNN: Fast Semantic Segmentation Network
@@ -388,6 +390,7 @@ def get_fastscnn(dataset='citys', ctx=cpu(0), pretrained=False,
         model.load_parameters(get_model_file('fastscnn_%s' % (acronyms[dataset]),
                                              tag=pretrained, root=root), ctx=ctx)
     return model
+
 
 def get_fastscnn_citys(**kwargs):
     r"""Fast-SCNN: Fast Semantic Segmentation Network

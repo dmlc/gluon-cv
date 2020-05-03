@@ -1,4 +1,5 @@
-"""Dual Attention Network"""
+"""Dual Attention Network
+https://arxiv.org/abs/1809.02983"""
 from mxnet.gluon import nn
 from mxnet.context import cpu
 from mxnet.gluon.nn import HybridBlock
@@ -8,6 +9,7 @@ from .attention import PAM_Module, CAM_Module
 # pylint: disable-all
 
 __all__ = ['DANet', 'get_danet', 'get_danet_resnet50_citys', 'get_danet_resnet101_citys']
+
 
 class DANet(SegBaseModel):
     r"""Dual Attention Networks for Semantic Segmentation
@@ -21,9 +23,9 @@ class DANet(SegBaseModel):
         'resnet101').
     norm_layer : object
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.nn.BatchNorm`;
-        
+
     Reference:
-        Jun Fu, Jing Liu, Haijie Tian, Yong Li, Yongjun Bao, Zhiwei Fang, Hanqing Lu. "Dual Attention 
+        Jun Fu, Jing Liu, Haijie Tian, Yong Li, Yongjun Bao, Zhiwei Fang, Hanqing Lu. "Dual Attention
         Network for Scene Segmentation." *CVPR*, 2019
     """
 
@@ -41,7 +43,6 @@ class DANet(SegBaseModel):
 
         self._up_kwargs = {'height': height, 'width': width}
 
-
     def hybrid_forward(self, F, x):
         c3, c4 = self.base_forward(x)
 
@@ -56,7 +57,8 @@ class DANet(SegBaseModel):
         outputs.append(x[2])
 
         return tuple(outputs)
-        
+
+
 class DANetHead(HybridBlock):
     def __init__(self, in_channels, out_channels, norm_layer=nn.BatchNorm, norm_kwargs=None, **kwargs):
         super(DANetHead, self).__init__()
@@ -72,7 +74,7 @@ class DANetHead(HybridBlock):
                                   padding=1, use_bias=False))
         self.conv5c.add(norm_layer(in_channels=inter_channels, **({} if norm_kwargs is None else norm_kwargs)))
         self.conv5c.add(nn.Activation('relu'))
-        
+
         self.sa = PAM_Module(inter_channels)
         self.sc = CAM_Module(inter_channels)
         self.conv51 = nn.HybridSequential()
@@ -99,9 +101,7 @@ class DANetHead(HybridBlock):
         self.conv8.add(nn.Conv2D(in_channels=512, channels=out_channels, kernel_size=1))
         self.conv8.add(nn.Dropout(0.1))
 
-
     def hybrid_forward(self, F, x):
-
         feat1 = self.conv5a(x)
         sa_feat = self.sa(feat1)
         sa_conv = self.conv51(sa_feat)
@@ -112,7 +112,7 @@ class DANetHead(HybridBlock):
         sc_conv = self.conv52(sc_feat)
         sc_output = self.conv7(sc_conv)
 
-        feat_sum = sa_conv+sc_conv 
+        feat_sum = sa_conv + sc_conv
         sasc_output = self.conv8(feat_sum)
 
         output = [sasc_output]
@@ -154,6 +154,7 @@ def get_danet(dataset='pascal_voc', backbone='resnet50', pretrained=False,
                                              tag=pretrained, root=root), ctx=ctx)
     return model
 
+
 def get_danet_resnet50_citys(**kwargs):
     r"""DANet
     Parameters
@@ -172,6 +173,7 @@ def get_danet_resnet50_citys(**kwargs):
     >>> print(model)
     """
     return get_danet('citys', 'resnet50', **kwargs)
+
 
 def get_danet_resnet101_citys(**kwargs):
     r"""DANet

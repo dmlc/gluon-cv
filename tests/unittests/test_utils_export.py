@@ -35,6 +35,8 @@ def test_export_model_zoo():
             continue
         if 'siamrpn' in model:
             continue
+        if 'danet' in model or 'fastscnn' in model:
+            continue
 
         try:
             gcv.utils.export_block(model, gcv.model_zoo.get_model(model, pretrained=True),
