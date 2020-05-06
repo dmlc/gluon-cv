@@ -8,7 +8,26 @@ from gluoncv.utils.parallel import Parallelizable
 
 
 class ForwardBackwardTask(Parallelizable):
-    """ Mask R-CNN tarining task that can be scheduled concurrently using Parallel."""
+    """ Mask R-CNN training task that can be scheduled concurrently using Parallel.
+    Parameters
+    ----------
+    net : gluon.HybridBlock
+        Faster R-CNN network.
+    optimizer : gluon.Trainer
+        Optimizer for the training.
+    rpn_cls_loss : gluon.loss
+        RPN box classification loss.
+    rpn_box_loss : gluon.loss
+        RPN box regression loss.
+    rcnn_cls_loss : gluon.loss
+        R-CNN box head classification loss.
+    rcnn_box_loss : gluon.loss
+        R-CNN box head regression loss.
+    rcnn_mask_loss : gluon.loss
+        R-CNN mask head segmentation loss.
+    amp_enabled : bool
+        Whether to enable Automatic Mixed Precision.
+    """
     def __init__(self, net, optimizer, rpn_cls_loss, rpn_box_loss, rcnn_cls_loss, rcnn_box_loss,
                  rcnn_mask_loss, amp_enabled):
         super(ForwardBackwardTask, self).__init__()

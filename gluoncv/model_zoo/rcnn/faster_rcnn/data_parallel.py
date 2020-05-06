@@ -7,7 +7,27 @@ from gluoncv.utils.parallel import Parallelizable
 
 
 class ForwardBackwardTask(Parallelizable):
-    """ Faster R-CNN tarining task that can be scheduled concurrently using Parallel."""
+    """ Faster R-CNN training task that can be scheduled concurrently using Parallel.
+    Parameters
+    ----------
+    net : gluon.HybridBlock
+        Faster R-CNN network.
+    optimizer : gluon.Trainer
+        Optimizer for the training.
+    rpn_cls_loss : gluon.loss
+        RPN box classification loss.
+    rpn_box_loss : gluon.loss
+        RPN box regression loss.
+    rcnn_cls_loss : gluon.loss
+        R-CNN box head classification loss.
+    rcnn_box_loss : gluon.loss
+        R-CNN box head regression loss.
+    mix_ratio : int
+        Object detection mixup ratio.
+    amp_enabled : bool
+        Whether to enable Automatic Mixed Precision.
+    """
+
     def __init__(self, net, optimizer, rpn_cls_loss, rpn_box_loss, rcnn_cls_loss, rcnn_box_loss,
                  mix_ratio, amp_enabled):
         super(ForwardBackwardTask, self).__init__()
