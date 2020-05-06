@@ -537,7 +537,6 @@ def train(net, train_data, val_data, eval_metric, batch_size, ctx, args):
                 for pred in records:
                     metric.update(pred[0], pred[1])
             trainer.step(batch_size)
-            break
 
             # update metrics
             if (not args.horovod or hvd.rank() == 0) and args.log_interval \

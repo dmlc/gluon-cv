@@ -24,7 +24,7 @@ class ForwardBackwardTask(Parallelizable):
             gt_label = label[:, :, 4:5]
             gt_box = label[:, :, :4]
             cls_pred, box_pred, mask_pred, roi, samples, matches, rpn_score, rpn_box, anchors, \
-            cls_targets, box_targets, box_masks, indices = self.net(data, gt_box, gt_label)
+                cls_targets, box_targets, box_masks, indices = self.net(data, gt_box, gt_label)
             # losses of rpn
             rpn_score = rpn_score.squeeze(axis=-1)
             num_rpn_pos = (rpn_cls_targets >= 0).sum()
@@ -37,11 +37,11 @@ class ForwardBackwardTask(Parallelizable):
 
             # losses of rcnn
             num_rcnn_pos = (cls_targets >= 0).sum()
-            rcnn_loss1 = self.rcnn_cls_loss(cls_pred, cls_targets,
-                                            cls_targets.expand_dims(-1) >= 0) * cls_targets.size / \
-                         num_rcnn_pos
+            rcnn_loss1 = self.rcnn_cls_loss(
+                cls_pred, cls_targets, cls_targets.expand_dims(-1) >= 0) * cls_targets.size / \
+                num_rcnn_pos
             rcnn_loss2 = self.rcnn_box_loss(box_pred, box_targets, box_masks) * box_pred.size / \
-                         num_rcnn_pos
+                num_rcnn_pos
             rcnn_loss = rcnn_loss1 + rcnn_loss2
 
             # generate targets for mask
@@ -81,5 +81,5 @@ class ForwardBackwardTask(Parallelizable):
                 total_loss.backward()
 
         return rpn_loss1_metric, rpn_loss2_metric, rcnn_loss1_metric, rcnn_loss2_metric, \
-               mask_loss_metric, rpn_acc_metric, rpn_l1_loss_metric, rcnn_acc_metric, \
-               rcnn_l1_loss_metric, rcnn_mask_metric, rcnn_fgmask_metric
+            mask_loss_metric, rpn_acc_metric, rpn_l1_loss_metric, rcnn_acc_metric, \
+            rcnn_l1_loss_metric, rcnn_mask_metric, rcnn_fgmask_metric
