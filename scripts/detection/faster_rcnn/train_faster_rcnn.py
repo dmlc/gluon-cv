@@ -481,10 +481,10 @@ def train(net, train_data, val_data, eval_metric, batch_size, ctx, args):
         logger.info(net.collect_train_params().keys())
     logger.info('Start training from [Epoch {}]'.format(args.start_epoch))
     best_map = [0]
-    rcnn_task = ForwardBackwardTask(net, trainer, rpn_cls_loss, rpn_box_loss, rcnn_cls_loss,
-                                    rcnn_box_loss, mix_ratio=1.0, amp_enabled=args.amp)
-    executor = Parallel(args.executor_threads, rcnn_task) if not args.horovod else None
     for epoch in range(args.start_epoch, args.epochs):
+        rcnn_task = ForwardBackwardTask(net, trainer, rpn_cls_loss, rpn_box_loss, rcnn_cls_loss,
+                                        rcnn_box_loss, mix_ratio=1.0, amp_enabled=args.amp)
+        executor = Parallel(args.executor_threads, rcnn_task) if not args.horovod else None
         mix_ratio = 1.0
         if not args.disable_hybridization:
             net.hybridize(static_alloc=args.static_alloc)
@@ -537,6 +537,7 @@ def train(net, train_data, val_data, eval_metric, batch_size, ctx, args):
                 for pred in records:
                     metric.update(pred[0], pred[1])
             trainer.step(batch_size)
+            break
 
             # update metrics
             if (not args.horovod or hvd.rank() == 0) and args.log_interval \
