@@ -1,4 +1,4 @@
-"""Data parallel task for Mask RCNN Model."""
+"""Data parallel task for Mask R-CNN Model."""
 
 import mxnet as mx
 from mxnet import autograd
@@ -8,6 +8,7 @@ from gluoncv.utils.parallel import Parallelizable
 
 
 class ForwardBackwardTask(Parallelizable):
+    """ Mask R-CNN tarining task that can be scheduled concurrently using Parallel."""
     def __init__(self, net, optimizer, rpn_cls_loss, rpn_box_loss, rcnn_cls_loss, rcnn_box_loss,
                  rcnn_mask_loss, amp_enabled):
         super(ForwardBackwardTask, self).__init__()
@@ -25,8 +26,8 @@ class ForwardBackwardTask(Parallelizable):
         with autograd.record():
             gt_label = label[:, :, 4:5]
             gt_box = label[:, :, :4]
-            cls_pred, box_pred, mask_pred, roi, samples, matches, rpn_score, rpn_box, anchors, \
-            cls_targets, box_targets, box_masks, indices = self.net(data, gt_box, gt_label)
+            cls_pred, box_pred, mask_pred, roi, _, matches, rpn_score, rpn_box, _, \
+                cls_targets, box_targets, box_masks, indices = self.net(data, gt_box, gt_label)
             # losses of rpn
             rpn_score = rpn_score.squeeze(axis=-1)
             num_rpn_pos = (rpn_cls_targets >= 0).sum()
