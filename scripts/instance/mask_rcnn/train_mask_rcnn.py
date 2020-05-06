@@ -16,7 +16,6 @@ import time
 import numpy as np
 import mxnet as mx
 from mxnet import gluon
-from mxnet import autograd
 from mxnet.contrib import amp
 import gluoncv as gcv
 
@@ -30,9 +29,10 @@ from gluoncv.data.transforms.presets.rcnn import MaskRCNNDefaultTrainTransform, 
 from gluoncv.utils.metrics.coco_instance import COCOInstanceMetric
 from gluoncv.utils.metrics.rcnn import RPNAccMetric, RPNL1LossMetric, RCNNAccMetric, \
     RCNNL1LossMetric, MaskAccMetric, MaskFGAccMetric
-from gluoncv.utils.parallel import Parallelizable, Parallel
+from gluoncv.utils.parallel import Parallel
 from gluoncv.data import COCODetection, VOCDetection
 from multiprocessing import Process
+from gluoncv.model_zoo.rcnn.mask_rcnn.data_parallel import ForwardBackwardTask
 
 try:
     import horovod.mxnet as hvd
