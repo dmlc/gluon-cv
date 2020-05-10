@@ -7,6 +7,7 @@ from .. import bbox as tbbox
 from .. import image as timage
 from .. import experimental
 from ....utils.filesystem import try_import_cv2
+import copy
 
 __all__ = ['transform_test', 'load_test',
            'CenterNetDefaultTrainTransform', 'CenterNetDefaultValTransform',
@@ -206,7 +207,7 @@ class CenterNetDefaultValTransform(object):
     def __call__(self, src, label):
         """Apply transform to validation image/label."""
         # resize
-        img, bbox = src.asnumpy(), label
+        img, bbox = src.asnumpy(), copy.copy(label)
         cv2 = try_import_cv2()
         input_h, input_w = self._height, self._width
         h, w, _ = src.shape
