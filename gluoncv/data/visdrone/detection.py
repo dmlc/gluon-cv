@@ -29,7 +29,7 @@ class VisDroneDetection(VisionDataset):
                'motor', 'others')
 
     def __init__(self, root=os.path.join('~', '.mxnet', 'datasets', 'visdrone'),
-                 splits=['train'],
+                 splits=['train',],
                  transform=None):
         super(VisDroneDetection, self).__init__(root)
         self._im_shapes = {}
@@ -39,7 +39,7 @@ class VisDroneDetection(VisionDataset):
         self._anno_path = os.path.join('{}', 'annotations', '{}.txt')
         self._image_path = os.path.join('{}', 'images', '{}.jpg')
         self._images_dir = os.path.join('{}', 'images')
-        self._items = self._load_items(splits)
+        self._items = self._load_items(self._splits)
         self.num_classes = len(self.CLASSES)
         self.index_map = dict(zip(self.CLASSES, range(self.num_class)))
 
@@ -67,7 +67,7 @@ class VisDroneDetection(VisionDataset):
 
     def _load_items(self, splits):
         """Load individual image indices from splits."""
-        ids = []
+        ids = list()
         for name in splits:
             root = os.path.join(self._root, 'VisDrone2019-DET-' + name)
             images_dir = self._images_dir.format(root)
