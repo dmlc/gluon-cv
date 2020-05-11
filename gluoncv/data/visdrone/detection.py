@@ -29,7 +29,7 @@ class VisDroneDetection(VisionDataset):
                'motor', 'others')
 
     def __init__(self, root=os.path.join('~', '.mxnet', 'datasets', 'visdrone'),
-                 splits=['train',],
+                 splits=('train',),
                  transform=None):
         super(VisDroneDetection, self).__init__(root)
         self._im_shapes = {}
