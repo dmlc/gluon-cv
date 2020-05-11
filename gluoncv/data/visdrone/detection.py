@@ -3,7 +3,6 @@ from __future__ import absolute_import
 from __future__ import division
 import os
 import logging
-import warnings
 import numpy as np
 import mxnet as mx
 from ..base import VisionDataset
@@ -72,7 +71,8 @@ class VisDroneDetection(VisionDataset):
         for name in splits:
             root = os.path.join(self._root, 'VisDrone2019-DET-' + name)
             images_dir = self._images_dir.format(root)
-            images = [f[:-4] for f in os.listdir(images_dir) if os.path.isfile(os.path.join(images_dir, f)) and f[-3:]=='jpg']
+            images = [f[:-4] for f in os.listdir(images_dir)
+                      if os.path.isfile(os.path.join(images_dir, f)) and f[-3:] == 'jpg']
             ids += [(root, line.strip()) for line in images]
         return ids
 
@@ -95,7 +95,7 @@ class VisDroneDetection(VisionDataset):
             xmax, ymax = xmin + w, ymin + h
             cls_id = int(ann_info[5]) - 1
             try:
-                if not height and not width: 
+                if not height and not width:
                     self._validate_label(xmin, ymin, xmax, ymax, width, height)
             except AssertionError as e:
                 raise RuntimeError("Invalid label at {}, {}".format(anno_path, e))
