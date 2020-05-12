@@ -163,9 +163,9 @@ class VideoClsCustom(dataset.Dataset):
                 video_name = '{}.{}'.format(directory, self.video_ext)
             if self.use_decord:
                 if self.data_aug == 'v1':
-                    decord_vr = self.decord.VideoReader(video_name, width=self.new_width, height=self.new_height)
+                    decord_vr = self.decord.VideoReader(video_name, width=self.new_width, height=self.new_height, num_threads=1)
                 else:
-                    decord_vr = self.decord.VideoReader(video_name)
+                    decord_vr = self.decord.VideoReader(video_name, num_threads=1)
                 duration = len(decord_vr)
             else:
                 mmcv_vr = self.mmcv.VideoReader(video_name)

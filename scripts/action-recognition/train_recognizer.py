@@ -156,6 +156,8 @@ def parse_args():
                         help='number of crops for each image. default is 1')
     parser.add_argument('--data-aug', type=str, default='v1',
                         help='different types of data augmentation pipelines. Supports v1, v2, v3 and v4.')
+    parser.add_argument('--train-only', action='store_true',
+                        help='if set to True, no evaluation is performed during training. Only save the last epoch model to speed up training.')
     opt = parser.parse_args()
     return opt
 
@@ -505,32 +507,33 @@ def main():
             throughput = int(batch_size * i /(time.time() - tic))
             mx.ndarray.waitall()
 
-            if opt.kvstore is not None and epoch == opt.resume_epoch:
-                kv.init(111111, nd.zeros(1))
-                kv.init(555555, nd.zeros(1))
-                kv.init(999999, nd.zeros(1))
-
-            if opt.kvstore is not None:
-                acc_top1_val, acc_top5_val, loss_val = test(ctx, val_data, kv)
-            else:
-                acc_top1_val, acc_top5_val, loss_val = test(ctx, val_data)
-
             logger.info('[Epoch %03d] training: %s=%f\t loss=%f' % (epoch, train_metric_name, train_metric_score*100, train_loss_epoch/num_train_iter))
             logger.info('[Epoch %03d] speed: %d samples/sec\ttime cost: %f' % (epoch, throughput, time.time()-tic))
-            logger.info('[Epoch %03d] validation: acc-top1=%f acc-top5=%f loss=%f' % (epoch, acc_top1_val*100, acc_top5_val*100, loss_val))
-
             sw.add_scalar(tag='train_loss_epoch', value=train_loss_epoch/num_train_iter, global_step=epoch)
-            sw.add_scalar(tag='val_loss_epoch', value=loss_val, global_step=epoch)
-            sw.add_scalar(tag='val_acc_top1_epoch', value=acc_top1_val*100, global_step=epoch)
 
-            if acc_top1_val > best_val_score:
-                best_val_score = acc_top1_val
-                net.save_parameters('%s/%.4f-%s-%s-%03d-best.params'%(opt.save_dir, best_val_score, opt.dataset, model_name, epoch))
-                trainer.save_states('%s/%.4f-%s-%s-%03d-best.states'%(opt.save_dir, best_val_score, opt.dataset, model_name, epoch))
-            else:
-                if opt.save_frequency and opt.save_dir and (epoch + 1) % opt.save_frequency == 0:
-                    net.save_parameters('%s/%s-%s-%03d.params'%(opt.save_dir, opt.dataset, model_name, epoch))
-                    trainer.save_states('%s/%s-%s-%03d.states'%(opt.save_dir, opt.dataset, model_name, epoch))
+            if not opt.train_only:
+                if opt.kvstore is not None and epoch == opt.resume_epoch:
+                    kv.init(111111, nd.zeros(1))
+                    kv.init(555555, nd.zeros(1))
+                    kv.init(999999, nd.zeros(1))
+
+                if opt.kvstore is not None:
+                    acc_top1_val, acc_top5_val, loss_val = test(ctx, val_data, kv)
+                else:
+                    acc_top1_val, acc_top5_val, loss_val = test(ctx, val_data)
+
+                logger.info('[Epoch %03d] validation: acc-top1=%f acc-top5=%f loss=%f' % (epoch, acc_top1_val*100, acc_top5_val*100, loss_val))
+                sw.add_scalar(tag='val_loss_epoch', value=loss_val, global_step=epoch)
+                sw.add_scalar(tag='val_acc_top1_epoch', value=acc_top1_val*100, global_step=epoch)
+
+                if acc_top1_val > best_val_score:
+                    best_val_score = acc_top1_val
+                    net.save_parameters('%s/%.4f-%s-%s-%03d-best.params'%(opt.save_dir, best_val_score, opt.dataset, model_name, epoch))
+                    trainer.save_states('%s/%.4f-%s-%s-%03d-best.states'%(opt.save_dir, best_val_score, opt.dataset, model_name, epoch))
+                else:
+                    if opt.save_frequency and opt.save_dir and (epoch + 1) % opt.save_frequency == 0:
+                        net.save_parameters('%s/%s-%s-%03d.params'%(opt.save_dir, opt.dataset, model_name, epoch))
+                        trainer.save_states('%s/%s-%s-%03d.states'%(opt.save_dir, opt.dataset, model_name, epoch))
 
         # save the last model
         net.save_parameters('%s/%s-%s-%03d.params'%(opt.save_dir, opt.dataset, model_name, opt.num_epochs-1))
