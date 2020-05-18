@@ -1,9 +1,13 @@
 """RCNN framewark Training Metrics."""
 
 import mxnet as mx
+try:
+    from mxnet.metric import EvalMetric
+except ImportError:
+    from mxnet.gluon.metric import EvalMetric
 
 
-class RPNAccMetric(mx.metric.EvalMetric):
+class RPNAccMetric(EvalMetric):
     """ RPN accuracy. """
 
     def __init__(self):

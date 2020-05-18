@@ -9,10 +9,13 @@ from os import path as osp
 import mxnet as mx
 import numpy as np
 
-from ...data.mscoco.utils import try_import_pycocotools
+try:
+    from mxnet.metric import EvalMetric
+except ImportError:
+    from mxnet.gluon.metric import EvalMetric
 
 
-class COCOInstanceMetric(mx.metric.EvalMetric):
+class COCOInstanceMetric(EvalMetric):
     """Instance segmentation metric for COCO bbox and segm task.
     Will return box summary, box metric, seg summary and seg metric.
 
@@ -54,7 +57,7 @@ class COCOInstanceMetric(mx.metric.EvalMetric):
         self._current_id = starting_id
         self._results = []
         self._score_thresh = score_thresh
-
+        from ...data.mscoco.utils import try_import_pycocotools
         try_import_pycocotools()
         import pycocotools.mask as cocomask
         self._cocomask = cocomask
@@ -142,6 +145,7 @@ class COCOInstanceMetric(mx.metric.EvalMetric):
                 pred = self.dataset.coco.loadRes(self._filename)
         gt = self.dataset.coco
         # lazy import pycocotools
+        from ...data.mscoco.utils import try_import_pycocotools
         try_import_pycocotools()
         from pycocotools.cocoeval import COCOeval
         # only NVIDIA MSCOCO API support use_ext

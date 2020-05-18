@@ -2,7 +2,10 @@
 import threading
 import numpy as np
 import mxnet as mx
-from mxnet.metric import EvalMetric
+try:
+    from mxnet.metric import EvalMetric
+except ImportError:
+    from mxnet.gluon.metric import EvalMetric
 
 __all__ = ['SegmentationMetric', 'batch_pix_accuracy', 'batch_intersection_union',
            'pixelAccuracy', 'intersectionAndUnion']
