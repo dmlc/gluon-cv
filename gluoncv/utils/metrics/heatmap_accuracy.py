@@ -1,7 +1,6 @@
 """Accuracy metric for heatmap prediction."""
 # pylint: disable=assignment-from-no-return
 import numpy as np
-import mxnet as mx
 try:
     from mxnet.metric import EvalMetric, check_label_shapes
 except ImportError:

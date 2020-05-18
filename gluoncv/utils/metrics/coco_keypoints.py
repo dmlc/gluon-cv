@@ -5,7 +5,6 @@ import os
 from os import path as osp
 from collections import OrderedDict
 import warnings
-import mxnet as mx
 try:
     from mxnet.metric import EvalMetric
 except ImportError:
