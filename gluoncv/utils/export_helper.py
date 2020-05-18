@@ -230,10 +230,10 @@ def export_tvm(path, block, data_shape, epoch=0, preprocess=True, layout='HWC',
 
     if use_autotvm:
         def tune_kernels(tasks,
-                 measure_option,
-                 tuner='gridsearch',
-                 early_stopping=None,
-                 log_filename='tuning.log'):
+                         measure_option,
+                         tuner='gridsearch',
+                         early_stopping=None,
+                         log_filename='tuning.log'):
             for i, tsk in enumerate(tasks):
                 prefix = "[Task %2d/%2d] " % (i+1, len(tasks))
 
@@ -251,7 +251,7 @@ def export_tvm(path, block, data_shape, epoch=0, preprocess=True, layout='HWC',
                 task.workload = tsk.workload
 
                 # create tuner
-                if tuner == 'xgb' or tuner == 'xgb-rank':
+                if tuner in ('xgb', 'xgb-rank'):
                     tuner_obj = XGBTuner(task, loss_type='rank')
                 elif tuner == 'ga':
                     tuner_obj = GATuner(task, pop_size=50)
@@ -263,7 +263,7 @@ def export_tvm(path, block, data_shape, epoch=0, preprocess=True, layout='HWC',
                     raise ValueError("Invalid tuner: " + tuner)
 
                 # do tuning
-                n_trial=len(task.config_space)
+                n_trial = len(task.config_space)
                 tuner_obj.tune(n_trial=n_trial,
                                early_stopping=early_stopping,
                                measure_option=measure_option,
