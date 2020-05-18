@@ -1,6 +1,6 @@
 """ SiamRPN metrics """
 import numpy as np
-from gluoncv.utils.filesystem import try_import_colorama
+from ..filesystem import try_import_colorama
 
 def Iou(rect1, rect2):
     """
