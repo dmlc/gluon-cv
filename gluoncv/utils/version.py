@@ -2,7 +2,7 @@
 import sys
 import warnings
 
-__all__ = ['check_version', '_require_mxnet_version', '_deprecate_python2']
+__all__ = ['check_version', '_require_mxnet_version', '_deprecate_python2', '_mxnet_v2_legacy_hook']
 
 def check_version(min_version, warning_only=False):
     """Check the version of gluoncv satisfies the provided minimum version.
@@ -52,3 +52,10 @@ def _deprecate_python2():
             'A future version of gluoncv will drop support for Python 2.'
         warnings.simplefilter('always', DeprecationWarning)
         warnings.warn(msg, DeprecationWarning)
+
+def _mxnet_v2_legacy_hook():
+    import mxnet
+    try:
+        from mxnet import metric
+    except ImportError:
+        mxnet.metric = mxnet.gluon.metric
