@@ -56,6 +56,8 @@ def _deprecate_python2():
 def _mxnet_v2_legacy_hook():
     import mxnet
     try:
+        # pylint: disable=unused-import
         from mxnet import metric
+        # TODO(zhreshold): migrate to mxnet 2.0 style
     except ImportError:
         mxnet.metric = mxnet.gluon.metric
