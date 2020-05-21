@@ -35,11 +35,11 @@ def _require_mxnet_version(mx_version, max_mx_version='2.0.0'):
             LooseVersion(mx.__version__) >= LooseVersion(max_mx_version):
             version_str = '>={},<{}'.format(mx_version, max_mx_version)
             msg = (
-                "Legacy mxnet-mkl=={} detected, some modules may not work properly. "
-                "mxnet-mkl{} is required. You can use pip to upgrade mxnet "
-                "`pip install -U 'mxnet-mkl{}'` "
-                "or `pip install -U 'mxnet-cu100mkl{}'`\
-                ").format(mx.__version__, version_str, version_str, version_str)
+                "Legacy mxnet-mkl=={0} detected, some modules may not work properly. "
+                "mxnet-mkl{1} is required. You can use pip to upgrade mxnet "
+                "`pip install -U 'mxnet-mkl{1}'` "
+                "or `pip install -U 'mxnet-cu100mkl{1}'`\
+                ").format(mx.__version__, version_str)
             raise RuntimeError(msg)
     except ImportError:
         raise ImportError(
