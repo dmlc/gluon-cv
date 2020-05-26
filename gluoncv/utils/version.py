@@ -55,3 +55,6 @@ def _deprecate_python2():
             'A future version of gluoncv will drop support for Python 2.'
         warnings.simplefilter('always', DeprecationWarning)
         warnings.warn(msg, DeprecationWarning)
+
+_deprecate_python2()
+_require_mxnet_version('1.4.0', '2.0.0')
