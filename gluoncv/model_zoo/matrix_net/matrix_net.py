@@ -302,8 +302,8 @@ def matrix_net_resnet101_v1d_coco(pretrained=False, pretrained_base=True, **kwar
         A CenterNet detection network.
 
     """
-    from ....model_zoo.resnetv1b import resnet101_v1d
-    from ....data import COCODetection
+    from ...model_zoo.resnetv1b import resnet101_v1d
+    from ...data import COCODetection
     classes = COCODetection.CLASSES
     pretrained_base = False if pretrained else pretrained_base
     base_network = resnet101_v1d(pretrained=pretrained_base, dilated=False,
