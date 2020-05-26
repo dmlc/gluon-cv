@@ -6,3 +6,4 @@ from . import center_net
 from . import imagenet
 from . import simple_pose
 from . import segmentation
+from . import matrix_net
