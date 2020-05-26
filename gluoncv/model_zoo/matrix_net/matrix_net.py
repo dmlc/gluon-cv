@@ -9,6 +9,7 @@ import mxnet as mx
 from mxnet.gluon import nn
 from mxnet import autograd
 from ...nn.coder import MatrixNetDecoder
+from ...nn.feature import FPNFeatureExpander
 
 __all__ = ['MatrixNet', 'get_matrix_net','matrix_net_resnet101_v1d_coco']
 
