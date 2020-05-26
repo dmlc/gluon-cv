@@ -323,7 +323,7 @@ def matrix_net_resnet101_v1d_coco(pretrained=False, pretrained_base=True, **kwar
                  [[0,48,96,192],[48,96,96,192],[96,192,96,192],[192,384,96,192],[384,2000,96,192]],
                  [-1, [0,96,192,384],[96,192,192,384],[192,384,192,384],[384,2000,192,384]],
                  [-1, -1, [0,192,384,2000],[192,384,384,2000],[384,2000,384,2000]]]
-    return get_matrix_net('resnet101_v1d', 'coco', base_network=features, heads=heads, layers_range = layers_range
+    return get_matrix_net('resnet101_v1d', 'coco', base_network=features, heads=heads, layers_range = layers_range, 
                           head_conv_channel=64, pretrained=pretrained, classes=classes,
                           base_layer_scale=8.0, topk=100, **kwargs)
     
