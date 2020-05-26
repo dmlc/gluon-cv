@@ -11,11 +11,13 @@ from os import path as osp
 import warnings
 import numpy as np
 import mxnet as mx
-from ...data.mscoco.utils import try_import_pycocotools
-from ...data.transforms.bbox import affine_transform
+try:
+    from mxnet.metric import EvalMetric
+except ImportError:
+    from mxnet.gluon.metric import EvalMetric
 
 
-class COCODetectionMetric(mx.metric.EvalMetric):
+class COCODetectionMetric(EvalMetric):
     """Detection metric for COCO bbox task.
 
     Parameters
@@ -108,6 +110,7 @@ class COCODetectionMetric(mx.metric.EvalMetric):
         pred = self.dataset.coco.loadRes(self._filename)
         gt = self.dataset.coco
         # lazy import pycocotools
+        from ...data.mscoco.utils import try_import_pycocotools
         try_import_pycocotools()
         from pycocotools.cocoeval import COCOeval
         coco_eval = COCOeval(gt, pred, 'bbox')
@@ -180,6 +183,7 @@ class COCODetectionMetric(mx.metric.EvalMetric):
             Prediction bounding boxes scores with shape `B, N`.
 
         """
+        from ...data.transforms.bbox import affine_transform
         def as_numpy(a):
             """Convert a (list of) mx.NDArray into numpy.ndarray"""
             if isinstance(a, (list, tuple)):

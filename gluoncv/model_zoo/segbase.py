@@ -7,6 +7,7 @@ from mxnet.ndarray import NDArray
 from mxnet.gluon.nn import HybridBlock
 from ..utils.parallel import parallel_apply
 from .resnetv1b import resnet18_v1b, resnet34_v1b, resnet50_v1s, resnet101_v1s, resnet152_v1s
+from .resnest import resnest50, resnest101, resnest200, resnest269
 from ..utils.parallel import tuple_map
 # pylint: disable=wildcard-import,abstract-method,arguments-differ,dangerous-default-value,missing-docstring
 
@@ -19,15 +20,38 @@ def get_segmentation_model(model, **kwargs):
     from .deeplabv3_plus import get_deeplab_plus
     from .deeplabv3b_plus import get_deeplabv3b_plus
     from .icnet import get_icnet
+    from .fastscnn import get_fastscnn
+    from .danet import get_danet
+
     models = {
         'fcn': get_fcn,
         'psp': get_psp,
         'deeplab': get_deeplab,
         'deeplabplus': get_deeplab_plus,
         'deeplabplusv3b': get_deeplabv3b_plus,
-        'icnet': get_icnet
+        'icnet': get_icnet,
+        'fastscnn': get_fastscnn,
+        'danet': get_danet
     }
     return models[model](**kwargs)
+
+def get_backbone(name, **kwargs):
+    models = {
+        'resnet18': resnet18_v1b,
+        'resnet34': resnet34_v1b,
+        'resnet50': resnet50_v1s,
+        'resnet101': resnet101_v1s,
+        'resnet152': resnet152_v1s,
+        'resnest50': resnest50,
+        'resnest101': resnest101,
+        'resnest200': resnest200,
+        'resnest269': resnest269,
+    }
+    name = name.lower()
+    if name not in models:
+        raise ValueError('%s\n\t%s' % (str(name), '\n\t'.join(sorted(models.keys()))))
+    net = models[name](**kwargs)
+    return net
 
 class SegBaseModel(HybridBlock):
     r"""Base Model for Semantic Segmentation
@@ -48,18 +72,7 @@ class SegBaseModel(HybridBlock):
         self.aux = aux
         self.nclass = nclass
         with self.name_scope():
-            if backbone == 'resnet18':
-                pretrained = resnet18_v1b(pretrained=pretrained_base, dilated=True, **kwargs)
-            elif backbone == 'resnet34':
-                pretrained = resnet34_v1b(pretrained=pretrained_base, dilated=True, **kwargs)
-            elif backbone == 'resnet50':
-                pretrained = resnet50_v1s(pretrained=pretrained_base, dilated=True, **kwargs)
-            elif backbone == 'resnet101':
-                pretrained = resnet101_v1s(pretrained=pretrained_base, dilated=True, **kwargs)
-            elif backbone == 'resnet152':
-                pretrained = resnet152_v1s(pretrained=pretrained_base, dilated=True, **kwargs)
-            else:
-                raise RuntimeError('unknown backbone: {}'.format(backbone))
+            pretrained = get_backbone(backbone, pretrained=pretrained_base, dilated=True, **kwargs)
             self.conv1 = pretrained.conv1
             self.bn1 = pretrained.bn1
             self.relu = pretrained.relu

@@ -9,7 +9,7 @@ from mxnet.gluon.loss import Loss, _apply_weighting, _reshape_like
 
 __all__ = ['FocalLoss', 'SSDMultiBoxLoss', 'YOLOV3Loss',
            'MixSoftmaxCrossEntropyLoss', 'ICNetLoss', 'MixSoftmaxCrossEntropyOHEMLoss',
-           'DistillationSoftmaxCrossEntropyLoss']
+           'SegmentationMultiLosses', 'DistillationSoftmaxCrossEntropyLoss', 'SiamRPNLoss']
 
 class FocalLoss(Loss):
     """Focal Loss for inbalanced classification.
@@ -128,7 +128,28 @@ class SSDMultiBoxLoss(gluon.Block):
         self._min_hard_negatives = max(0, min_hard_negatives)
 
     def forward(self, cls_pred, box_pred, cls_target, box_target):
-        """Compute loss in entire batch across devices."""
+        """Compute loss in entire batch across devices.
+
+        Parameters
+        ----------
+        cls_pred : mxnet.nd.NDArray
+        Predicted classes.
+        box_pred : mxnet.nd.NDArray
+        Predicted bounding-boxes.
+        cls_target : mxnet.nd.NDArray
+        Ground-truth classes.
+        box_target : mxnet.nd.NDArray
+        Ground-truth bounding-boxes.
+
+        Returns
+        -------
+        tuple of NDArrays
+            sum_losses : array with containing the sum of
+                class prediction and bounding-box regression loss.
+            cls_losses : array of class prediction loss.
+            box_losses : array of box regression L1 loss.
+
+        """
         # require results across different devices at this time
         cls_pred, box_pred, cls_target, box_target = [_as_list(x) \
             for x in (cls_pred, box_pred, cls_target, box_target)]
@@ -286,6 +307,22 @@ class SoftmaxCrossEntropyLoss(Loss):
         loss = F.where(label.expand_dims(axis=1) == self._ignore_label,
                        F.zeros_like(loss), loss)
         return F.mean(loss, axis=self._batch_axis, exclude=True)
+
+
+class SegmentationMultiLosses(SoftmaxCrossEntropyLoss):
+    """2D Cross Entropy Loss with Multi-Loss"""
+    def __init__(self, size_average=True, ignore_label=-1, **kwargs):
+        super(SegmentationMultiLosses, self).__init__(size_average, ignore_label, **kwargs)
+
+    def hybrid_forward(self, F, *inputs, **kwargs):
+        pred1, pred2, pred3, label = tuple(inputs)
+
+        loss1 = super(SegmentationMultiLosses, self).hybrid_forward(F, pred1, label, **kwargs)
+        loss2 = super(SegmentationMultiLosses, self).hybrid_forward(F, pred2, label, **kwargs)
+        loss3 = super(SegmentationMultiLosses, self).hybrid_forward(F, pred3, label, **kwargs)
+        loss = loss1 + loss2 + loss3
+        return loss
+
 
 class MixSoftmaxCrossEntropyLoss(SoftmaxCrossEntropyLoss):
     """SoftmaxCrossEntropyLoss2D with Auxiliary Loss
@@ -567,3 +604,54 @@ class MaskedL1Loss(Loss):
         loss = _apply_weighting(F, loss, self._weight, sample_weight)
         norm = F.sum(mask).clip(1, 1e30)
         return F.sum(loss) / norm
+
+class SiamRPNLoss(gluon.HybridBlock):
+    r"""Weighted l1 loss and cross entropy loss for SiamRPN training
+
+    Parameters
+    ----------
+    batch_size : int, default 128
+        training batch size per device (CPU/GPU).
+
+    """
+    def __init__(self, batch_size=128, **kwargs):
+        super(SiamRPNLoss, self).__init__(**kwargs)
+        self.conf_loss = gluon.loss.SoftmaxCrossEntropyLoss()
+        self.h = 17
+        self.w = 17
+        self.b = batch_size
+        self.loc_c = 10
+        self.cls_c = 5
+
+    def weight_l1_loss(self, F, pred_loc, label_loc, loss_weight):
+        """Compute weight_l1_loss"""
+        pred_loc = pred_loc.reshape((self.b, 4, -1, self.h, self.w))
+        diff = F.abs((pred_loc - label_loc))
+        diff = F.sum(diff, axis=1).reshape((self.b, -1, self.h, self.w))
+        loss = diff * loss_weight
+        return F.sum(loss)/self.b
+
+    def get_cls_loss(self, F, pred, label, select):
+        """Compute SoftmaxCrossEntropyLoss"""
+        if len(select) == 0:
+            return 0
+        pred = F.gather_nd(pred, select.reshape(1, -1))
+        label = F.gather_nd(label.reshape(-1, 1), select.reshape(1, -1)).reshape(-1)
+        return self.conf_loss(pred, label).mean()
+
+    def cross_entropy_loss(self, F, pred, label, pos_index, neg_index):
+        """Compute cross_entropy_loss"""
+        pred = pred.reshape(self.b, 2, self.loc_c//2, self.h, self.h)
+        pred = F.transpose(pred, axes=((0, 2, 3, 4, 1)))
+        pred = pred.reshape(-1, 2)
+        label = label.reshape(-1)
+        loss_pos = self.get_cls_loss(F, pred, label, pos_index)
+        loss_neg = self.get_cls_loss(F, pred, label, neg_index)
+        return loss_pos * 0.5 + loss_neg * 0.5
+
+    def hybrid_forward(self, F, cls_pred, loc_pred, label_cls, pos_index, neg_index,
+                       label_loc, label_loc_weight):
+        """Compute loss"""
+        loc_loss = self.weight_l1_loss(F, loc_pred, label_loc, label_loc_weight)
+        cls_loss = self.cross_entropy_loss(F, cls_pred, label_cls, pos_index, neg_index)
+        return cls_loss, loc_loss

@@ -34,14 +34,12 @@ class SubpixelBlock(gluon.nn.HybridBlock):
         self.conv = nn.Conv2D(256, kernel_size=3, strides=1,padding=1)
         self.relu = nn.Activation('relu')
 
-    def hybrid_forward(self, F, x,*args, **kwargs):
+    def hybrid_forward(self, F, x, *args, **kwargs):
         x = self.conv(x)
-        x = x.transpose([0, 2, 3, 1])
-        batchsize,height,width,depth = x.shape
-        x = x.reshape((batchsize, height , width, 2, 2, int(depth / 4)))
-        x = x.transpose([0, 1,3,2,4,5])
-        x = x.reshape((batchsize, height * 2, width * 2, int(depth / 4)))
-        x = x.transpose([0, 3, 1, 2])
+        x = x.reshape((0, -4, -1, 4, 0, 0))  # bs, c // 4, h, w
+        x = x.reshape((0, 0, -4, 2, 2, 0, 0))  # bs, c // 4, 2, 2, h, w
+        x = x.transpose((0, 1, 2, 4, 3, 5))  # bs, c // 4, 2, h, 2, w
+        x = x.reshape((0, 0, -3, -3))  # bs, c // 4, h * 2, w * 2
         x = self.relu(x)
         return x
 

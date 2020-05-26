@@ -150,7 +150,7 @@ class FeatureExpander(SymbolBlock):
                 no_bias=use_bn, name='expand_conv{}'.format(i), attr={'__init__': weight_init})
             if use_bn:
                 y = mx.sym.BatchNorm(y, name='expand_bn{}'.format(i))
-            y = mx.sym.Activation(y, act_type='relu', name='expand_reu{}'.format(i))
+            y = mx.sym.Activation(y, act_type='relu', name='expand_relu{}'.format(i))
             outputs.append(y)
         if global_pool:
             outputs.append(mx.sym.Pooling(y, pool_type='avg', global_pool=True, kernel=(1, 1)))

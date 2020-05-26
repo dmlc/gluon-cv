@@ -7,10 +7,10 @@ def test_data_parallel():
     # test gluon.contrib.parallel.DataParallelModel
     net = nn.HybridSequential()
     with net.name_scope():
-        net.add(nn.Conv2D(in_channels=1, channels=20, kernel_size=5))
+        net.add(nn.Conv2D(in_channels=1, channels=5, kernel_size=5))
         net.add(nn.Activation('relu'))
         net.add(nn.MaxPool2D(pool_size=2, strides=2))
-        net.add(nn.Conv2D(in_channels=20, channels=5, kernel_size=5))
+        net.add(nn.Conv2D(in_channels=5, channels=5, kernel_size=5))
         net.add(nn.Activation('relu'))
         net.add(nn.MaxPool2D(pool_size=2, strides=2))
         # The Flatten layer collapses all axis, except the first one, into one axis.
@@ -26,18 +26,19 @@ def test_data_parallel():
         ctx_list = [mx.cpu(0) for i in range(nDevices)]
         net = DataParallelModel(net, ctx_list, sync=sync)
         criterion = DataParallelCriterion(criterion, ctx_list, sync=sync)
-        iters = 100
+        iters = 10
+        bs = 2
         # train mode
         for i in range(iters):
-            x = mx.random.uniform(shape=(8, 1, 28, 28))
-            t = nd.ones(shape=(8))
+            x = mx.random.uniform(shape=(bs, 1, 28, 28))
+            t = nd.ones(shape=(bs))
             with autograd.record():
                 y = net(x)
                 loss = criterion(y, t)
                 autograd.backward(loss)
         # evaluation mode
         for i in range(iters):
-            x = mx.random.uniform(shape=(8, 1, 28, 28))
+            x = mx.random.uniform(shape=(bs, 1, 28, 28))
             y = net(x)
         nd.waitall()
 

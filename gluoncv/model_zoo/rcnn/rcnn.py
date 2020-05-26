@@ -2,9 +2,11 @@
 from __future__ import absolute_import
 
 import warnings
+
 import mxnet as mx
 from mxnet import gluon
 from mxnet.gluon import nn
+
 from ...nn.coder import NormalizedBoxCenterDecoder, MultiPerClassDecoder
 from ...nn.feature import FPNFeatureExpander
 
@@ -323,6 +325,20 @@ def custom_rcnn_fpn(pretrained_base=True, base_network_name='resnet18_v1b', norm
                                      norm_kwargs=norm_kwargs)
         fpn_inputs_names = ['layers1_relu8_fwd', 'layers2_relu11_fwd', 'layers3_relu68_fwd',
                             'layers4_relu8_fwd']
+    elif base_network_name == 'resnest50':
+        from ...model_zoo.resnest import resnet50
+        base_network = resnet50(pretrained=pretrained_base, dilated=False,
+                                use_global_stats=use_global_stats, norm_layer=norm_layer,
+                                norm_kwargs=norm_kwargs)
+        fpn_inputs_names = ['layers1_relu11_fwd', 'layers2_relu15_fwd', 'layers3_relu23_fwd',
+                            'layers4_relu11_fwd']
+    elif base_network_name == 'resnest101':
+        from ...model_zoo.resnest import resnest101
+        base_network = resnest101(pretrained=pretrained_base, dilated=False,
+                                  use_global_stats=use_global_stats, norm_layer=norm_layer,
+                                  norm_kwargs=norm_kwargs)
+        fpn_inputs_names = ['layers1_relu11_fwd', 'layers2_relu15_fwd', 'layers3_relu91_fwd',
+                            'layers4_relu11_fwd']
     else:
         raise NotImplementedError('Unsupported network', base_network_name)
     features = FPNFeatureExpander(

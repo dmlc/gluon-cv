@@ -21,6 +21,8 @@ from gluoncv.utils.parallel import *
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Validation on Semantic Segmentation model')
+    parser.add_argument('--model-zoo', type=str, default=None,
+                        help='evaluating on model zoo model')
     parser.add_argument('--model', type=str, default='fcn',
                         help='model name (default: fcn)')
     parser.add_argument('--backbone', type=str, default='resnet101',
@@ -115,7 +117,7 @@ def test(model, args, input_transform):
         testset = get_segmentation_dataset(
             args.dataset, split='test', mode='test', transform=input_transform)
 
-    if 'icnet' in args.model:
+    if 'icnet' or 'fastscnn' in args.model:
         test_data = gluon.data.DataLoader(
             testset, batch_size, shuffle=False, last_batch='rollover',
             num_workers=args.workers)
@@ -125,20 +127,21 @@ def test(model, args, input_transform):
             batchify_fn=ms_batchify_fn, num_workers=args.workers)
     print(model)
 
-    if 'icnet' in args.model:
+    if 'icnet' or 'fastscnn' in args.model:
         evaluator = DataParallelModel(SegEvalModel(model, use_predict=True), ctx_list=args.ctx)
     else:
         evaluator = MultiEvalModel(model, testset.num_class, ctx_list=args.ctx)
 
     metric = gluoncv.utils.metrics.SegmentationMetric(testset.num_class)
 
-    if 'icnet' in args.model:
+    if 'icnet' or 'fastscnn' in args.model:
         tbar = tqdm(test_data)
         t_gpu = 0
         num = 0
         for i, (data, dsts) in enumerate(tbar):
             tic = time.time()
             outputs = evaluator(data.astype('float32', copy=False))
+            # outputs = evaluator(data.astype('float32', copy=False))
             t_gpu += time.time() - tic
             num += 1
 
@@ -257,8 +260,13 @@ if __name__ == "__main__":
         if args.calibration:
             args.pretrained = True
         # create network
-        if args.pretrained:
-            if 'icnet' in model_prefix:
+        if args.model_zoo is not None:
+            model = get_model(args.model_zoo, norm_layer=args.norm_layer,
+                              norm_kwargs=args.norm_kwargs, aux=args.aux,
+                              base_size=args.base_size, crop_size=args.crop_size,
+                              ctx=args.ctx, pretrained=True)
+        elif args.pretrained:
+            if 'icnet' or 'fastscnn' in model_prefix:
                 model = get_model(model_prefix, pretrained=True, height=args.height, width=args.width)
             else:
                 model = get_model(model_prefix, pretrained=True)

@@ -16,7 +16,6 @@ import time
 import numpy as np
 import mxnet as mx
 from mxnet import gluon
-from mxnet import autograd
 from mxnet.contrib import amp
 import gluoncv as gcv
 
@@ -29,10 +28,10 @@ from gluoncv.data.transforms.presets.rcnn import FasterRCNNDefaultTrainTransform
     FasterRCNNDefaultValTransform
 from gluoncv.utils.metrics.voc_detection import VOC07MApMetric
 from gluoncv.utils.metrics.coco_detection import COCODetectionMetric
-from gluoncv.utils.parallel import Parallelizable, Parallel
+from gluoncv.utils.parallel import Parallel
 from gluoncv.utils.metrics.rcnn import RPNAccMetric, RPNL1LossMetric, RCNNAccMetric, \
     RCNNL1LossMetric
-from gluoncv.data import COCODetection, VOCDetection
+from gluoncv.model_zoo.rcnn.faster_rcnn.data_parallel import ForwardBackwardTask
 
 try:
     import horovod.mxnet as hvd
@@ -43,7 +42,8 @@ except ImportError:
 def parse_args():
     parser = argparse.ArgumentParser(description='Train Faster-RCNN networks e2e.')
     parser.add_argument('--network', type=str, default='resnet50_v1b',
-                        choices=['resnet18_v1b', 'resnet50_v1b', 'resnet101_v1d'],
+                        choices=['resnet18_v1b', 'resnet50_v1b', 'resnet101_v1d',
+                                 'resnest50', 'resnest101', 'resnest269'],
                         help="Base network name which serves as feature extraction base.")
     parser.add_argument('--dataset', type=str, default='voc',
                         help='Training dataset. Now support voc and coco.')
@@ -301,6 +301,13 @@ def get_dataset(dataset, args):
         val_dataset = gdata.VOCDetection(
             splits=[(2007, 'test')])
         val_metric = VOC07MApMetric(iou_thresh=0.5, class_names=val_dataset.classes)
+    elif dataset.lower() in ['clipart', 'comic', 'watercolor']:
+        root = os.path.join('~', '.mxnet', 'datasets', dataset.lower())
+        train_dataset = gdata.CustomVOCDetection(root=root, splits=[('', 'train')],
+                                                 generate_classes=True)
+        val_dataset = gdata.CustomVOCDetection(root=root, splits=[('', 'test')],
+                                               generate_classes=True)
+        val_metric = VOC07MApMetric(iou_thresh=0.5, class_names=val_dataset.classes)
     elif dataset.lower() == 'coco':
         train_dataset = gdata.COCODetection(splits='instances_train2017', use_crowd=False)
         val_dataset = gdata.COCODetection(splits='instances_val2017', skip_empty=False)
@@ -408,64 +415,6 @@ def get_lr_at_iter(alpha, lr_warmup_factor=1. / 3.):
     return lr_warmup_factor * (1 - alpha) + alpha
 
 
-class ForwardBackwardTask(Parallelizable):
-    def __init__(self, net, optimizer, rpn_cls_loss, rpn_box_loss, rcnn_cls_loss, rcnn_box_loss,
-                 mix_ratio):
-        super(ForwardBackwardTask, self).__init__()
-        self.net = net
-        self._optimizer = optimizer
-        self.rpn_cls_loss = rpn_cls_loss
-        self.rpn_box_loss = rpn_box_loss
-        self.rcnn_cls_loss = rcnn_cls_loss
-        self.rcnn_box_loss = rcnn_box_loss
-        self.mix_ratio = mix_ratio
-
-    def forward_backward(self, x):
-        data, label, rpn_cls_targets, rpn_box_targets, rpn_box_masks = x
-        with autograd.record():
-            gt_label = label[:, :, 4:5]
-            gt_box = label[:, :, :4]
-            cls_pred, box_pred, roi, samples, matches, rpn_score, rpn_box, anchors, cls_targets, \
-                box_targets, box_masks, _ = self.net(data, gt_box, gt_label)
-            # losses of rpn
-            rpn_score = rpn_score.squeeze(axis=-1)
-            num_rpn_pos = (rpn_cls_targets >= 0).sum()
-            rpn_loss1 = self.rpn_cls_loss(rpn_score, rpn_cls_targets,
-                                          rpn_cls_targets >= 0) * rpn_cls_targets.size / num_rpn_pos
-            rpn_loss2 = self.rpn_box_loss(rpn_box, rpn_box_targets,
-                                          rpn_box_masks) * rpn_box.size / num_rpn_pos
-            # rpn overall loss, use sum rather than average
-            rpn_loss = rpn_loss1 + rpn_loss2
-            # losses of rcnn
-            num_rcnn_pos = (cls_targets >= 0).sum()
-            rcnn_loss1 = self.rcnn_cls_loss(cls_pred, cls_targets,
-                                            cls_targets.expand_dims(-1) >= 0) * cls_targets.size / \
-                         num_rcnn_pos
-            rcnn_loss2 = self.rcnn_box_loss(box_pred, box_targets, box_masks) * box_pred.size / \
-                         num_rcnn_pos
-            rcnn_loss = rcnn_loss1 + rcnn_loss2
-            # overall losses
-            total_loss = rpn_loss.sum() * self.mix_ratio + rcnn_loss.sum() * self.mix_ratio
-
-            rpn_loss1_metric = rpn_loss1.mean() * self.mix_ratio
-            rpn_loss2_metric = rpn_loss2.mean() * self.mix_ratio
-            rcnn_loss1_metric = rcnn_loss1.mean() * self.mix_ratio
-            rcnn_loss2_metric = rcnn_loss2.mean() * self.mix_ratio
-            rpn_acc_metric = [[rpn_cls_targets, rpn_cls_targets >= 0], [rpn_score]]
-            rpn_l1_loss_metric = [[rpn_box_targets, rpn_box_masks], [rpn_box]]
-            rcnn_acc_metric = [[cls_targets], [cls_pred]]
-            rcnn_l1_loss_metric = [[box_targets, box_masks], [box_pred]]
-
-            if args.amp:
-                with amp.scale_loss(total_loss, self._optimizer) as scaled_losses:
-                    autograd.backward(scaled_losses)
-            else:
-                total_loss.backward()
-
-        return rpn_loss1_metric, rpn_loss2_metric, rcnn_loss1_metric, rcnn_loss2_metric, \
-            rpn_acc_metric, rpn_l1_loss_metric, rcnn_acc_metric, rcnn_l1_loss_metric
-
-
 def train(net, train_data, val_data, eval_metric, batch_size, ctx, args):
     """Training pipeline"""
     args.kv_store = 'device' if (args.amp and 'nccl' in args.kv_store) else args.kv_store
@@ -533,12 +482,12 @@ def train(net, train_data, val_data, eval_metric, batch_size, ctx, args):
     logger.info('Start training from [Epoch {}]'.format(args.start_epoch))
     best_map = [0]
     for epoch in range(args.start_epoch, args.epochs):
+        rcnn_task = ForwardBackwardTask(net, trainer, rpn_cls_loss, rpn_box_loss, rcnn_cls_loss,
+                                        rcnn_box_loss, mix_ratio=1.0, amp_enabled=args.amp)
+        executor = Parallel(args.executor_threads, rcnn_task) if not args.horovod else None
         mix_ratio = 1.0
         if not args.disable_hybridization:
             net.hybridize(static_alloc=args.static_alloc)
-        rcnn_task = ForwardBackwardTask(net, trainer, rpn_cls_loss, rpn_box_loss, rcnn_cls_loss,
-                                        rcnn_box_loss, mix_ratio=1.0)
-        executor = Parallel(args.executor_threads, rcnn_task) if not args.horovod else None
         if args.mixup:
             # TODO(zhreshold) only support evenly mixup now, target generator needs to be modified otherwise
             train_data._dataset._data.set_mixup(np.random.uniform, 0.5, 0.5)
@@ -632,6 +581,9 @@ if __name__ == '__main__':
         ctx = [mx.gpu(int(i)) for i in args.gpus.split(',') if i.strip()]
         ctx = ctx if ctx else [mx.cpu()]
 
+    # training data
+    train_dataset, val_dataset, eval_metric = get_dataset(args.dataset, args)
+
     # network
     kwargs = {}
     module_list = []
@@ -662,11 +614,7 @@ if __name__ == '__main__':
             norm_kwargs = None
             sym_norm_layer = None
             sym_norm_kwargs = None
-        if args.dataset == 'coco':
-            classes = COCODetection.CLASSES
-        else:
-            # default to VOC
-            classes = VOCDetection.CLASSES
+        classes = train_dataset.CLASSES
         net = get_model('custom_faster_rcnn_fpn', classes=classes, transfer=None,
                         dataset=args.dataset, pretrained_base=not args.no_pretrained_base,
                         base_network_name=args.network, norm_layer=norm_layer,
@@ -709,8 +657,7 @@ if __name__ == '__main__':
         net.collect_params('.*batchnorm.*').setattr('dtype', 'float32')
         net.collect_params('.*normalizedperclassboxcenterencoder.*').setattr('dtype', 'float32')
 
-    # training data
-    train_dataset, val_dataset, eval_metric = get_dataset(args.dataset, args)
+    # dataloader
     batch_size = args.batch_size // num_gpus if args.horovod else args.batch_size
     train_data, val_data = get_dataloader(
         net, train_dataset, val_dataset, FasterRCNNDefaultTrainTransform,

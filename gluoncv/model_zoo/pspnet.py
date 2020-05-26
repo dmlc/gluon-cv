@@ -178,7 +178,7 @@ def get_psp(dataset='pascal_voc', backbone='resnet50', pretrained=False,
     # infer number of classes
     model = PSPNet(datasets[dataset].NUM_CLASS, backbone=backbone,
                    pretrained_base=pretrained_base, ctx=ctx, **kwargs)
-    model.classes = datasets[dataset].classes
+    model.classes = datasets[dataset].CLASSES
     if pretrained:
         from .model_store import get_model_file
         model.load_parameters(get_model_file('psp_%s_%s'%(backbone, acronyms[dataset]),

@@ -5,7 +5,7 @@ from . import transforms
 from . import batchify
 from .imagenet.classification import ImageNet, ImageNet1kAttr
 from .dataloader import DetectionDataLoader, RandomTransformDataLoader
-from .pascal_voc.detection import VOCDetection
+from .pascal_voc.detection import VOCDetection, CustomVOCDetection
 from .mscoco.detection import COCODetection
 from .mscoco.detection import COCODetectionDALI
 from .mscoco.instance import COCOInstance
@@ -16,6 +16,7 @@ from .pascal_voc.segmentation import VOCSegmentation
 from .pascal_aug.segmentation import VOCAugSegmentation
 from .ade20k.segmentation import ADE20KSegmentation
 from .mhp import MHPV1Segmentation
+from .visdrone.detection import VisDroneDetection
 from .segbase import ms_batchify_fn
 from .recordio.detection import RecordFileDetection
 from .lst.detection import LstDetection

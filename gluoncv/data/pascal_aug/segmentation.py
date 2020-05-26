@@ -33,6 +33,11 @@ class VOCAugSegmentation(SegmentationDataset):
     """
     TRAIN_BASE_DIR = 'VOCaug/dataset/'
     NUM_CLASS = 21
+    CLASSES = ("background", "airplane", "bicycle", "bird", "boat", "bottle",
+               "bus", "car", "cat", "chair", "cow", "diningtable", "dog", "horse",
+               "motorcycle", "person", "potted-plant", "sheep", "sofa", "train",
+               "tv")
+
     def __init__(self, root=os.path.expanduser('~/.mxnet/datasets/voc'),
                  split='train', mode=None, transform=None, **kwargs):
         super(VOCAugSegmentation, self).__init__(root, split, mode, transform, **kwargs)
@@ -87,7 +92,4 @@ class VOCAugSegmentation(SegmentationDataset):
     @property
     def classes(self):
         """Category names."""
-        return ('background', 'airplane', 'bicycle', 'bird', 'boat', 'bottle',
-                'bus', 'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse',
-                'motorcycle', 'person', 'potted-plant', 'sheep', 'sofa', 'train',
-                'tv')
+        return type(self).CLASSES

@@ -53,7 +53,7 @@ def try_import_cv2():
     return try_import('cv2', msg)
 
 def try_import_colorama():
-    """Try import cv2 at runtime.
+    """Try import colorama at runtime.
 
     Returns
     -------

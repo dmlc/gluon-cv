@@ -71,6 +71,8 @@ class UCF101(VideoClsCustom):
         The temporal stride for sparse sampling of video frames in slow branch of a SlowFast network.
     fast_temporal_stride : int, default 2.
         The temporal stride for sparse sampling of video frames in fast branch of a SlowFast network.
+    data_aug : str, default 'v1'.
+        Different types of data augmentation pipelines. Supports v1, v2, v3 and v4.
     lazy_init : bool, default False.
         If set to True, build a dataset instance without loading any dataset.
     """
@@ -97,6 +99,7 @@ class UCF101(VideoClsCustom):
                  slowfast=False,
                  slow_temporal_stride=16,
                  fast_temporal_stride=2,
+                 data_aug='v1',
                  lazy_init=False,
                  transform=None):
 
@@ -105,7 +108,7 @@ class UCF101(VideoClsCustom):
                                      num_crop, new_length, new_step, new_width, new_height,
                                      target_width, target_height, temporal_jitter,
                                      video_loader, use_decord, slowfast, slow_temporal_stride,
-                                     fast_temporal_stride, lazy_init, transform)
+                                     fast_temporal_stride, data_aug, lazy_init, transform)
 
 class UCF101Attr(object):
     def __init__(self):

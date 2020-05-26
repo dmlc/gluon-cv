@@ -23,6 +23,7 @@ from .pspnet import *
 from .quantized import *
 from .residual_attentionnet import *
 from .resnet import *
+from .resnest import *
 from .resnetv1b import *
 from .resnext import *
 from .senet import *
@@ -36,8 +37,11 @@ from .yolo import *
 from .alpha_pose import *
 from .action_recognition import *
 from .center_net import *
+from .hrnet import *
 from .siamrpn import *
 from .icnet import *
+from .fastscnn import *
+from .danet import *
 
 __all__ = ['get_model', 'get_model_list']
 
@@ -52,6 +56,12 @@ _models = {
     'resnet50_v2': resnet50_v2,
     'resnet101_v2': resnet101_v2,
     'resnet152_v2': resnet152_v2,
+    'resnest14': resnest14,
+    'resnest26': resnest26,
+    'resnest50': resnest50,
+    'resnest101': resnest101,
+    'resnest200': resnest200,
+    'resnest269': resnest269,
     'se_resnet18_v1': se_resnet18_v1,
     'se_resnet34_v1': se_resnet34_v1,
     'se_resnet50_v1': se_resnet50_v1,
@@ -112,6 +122,7 @@ _models = {
     'ssd_512_resnet152_v2_voc': ssd_512_resnet152_v2_voc,
     'ssd_512_mobilenet1.0_voc': ssd_512_mobilenet1_0_voc,
     'ssd_512_mobilenet1.0_coco': ssd_512_mobilenet1_0_coco,
+    'ssd_300_mobilenet1.0_lite_coco': ssd_300_mobilenet1_0_lite_coco,
     'ssd_512_mobilenet1.0_custom': ssd_512_mobilenet1_0_custom,
     'ssd_300_mobilenet0.25_voc': ssd_300_mobilenet0_25_voc,
     'ssd_300_mobilenet0.25_coco': ssd_300_mobilenet0_25_coco,
@@ -121,12 +132,15 @@ _models = {
     'faster_rcnn_resnet50_v1b_coco': faster_rcnn_resnet50_v1b_coco,
     'faster_rcnn_fpn_resnet50_v1b_coco': faster_rcnn_fpn_resnet50_v1b_coco,
     'faster_rcnn_fpn_syncbn_resnet50_v1b_coco': faster_rcnn_fpn_syncbn_resnet50_v1b_coco,
+    'faster_rcnn_fpn_syncbn_resnest50_coco': faster_rcnn_fpn_syncbn_resnest50_coco,
     'faster_rcnn_resnet50_v1b_custom': faster_rcnn_resnet50_v1b_custom,
     'faster_rcnn_resnet101_v1d_voc': faster_rcnn_resnet101_v1d_voc,
     'faster_rcnn_resnet101_v1d_coco': faster_rcnn_resnet101_v1d_coco,
     'faster_rcnn_fpn_resnet101_v1d_coco': faster_rcnn_fpn_resnet101_v1d_coco,
     'faster_rcnn_fpn_syncbn_resnet101_v1d_coco': faster_rcnn_fpn_syncbn_resnet101_v1d_coco,
+    'faster_rcnn_fpn_syncbn_resnest101_coco': faster_rcnn_fpn_syncbn_resnest101_coco,
     'faster_rcnn_resnet101_v1d_custom': faster_rcnn_resnet101_v1d_custom,
+    'faster_rcnn_fpn_syncbn_resnest269_coco': faster_rcnn_fpn_syncbn_resnest269_coco,
     'custom_faster_rcnn_fpn': custom_faster_rcnn_fpn,
     'mask_rcnn_resnet50_v1b_coco': mask_rcnn_resnet50_v1b_coco,
     'mask_rcnn_fpn_resnet50_v1b_coco': mask_rcnn_fpn_resnet50_v1b_coco,
@@ -163,11 +177,18 @@ _models = {
     'deeplab_resnet152_voc': get_deeplab_resnet152_voc,
     'deeplab_resnet50_ade': get_deeplab_resnet50_ade,
     'deeplab_resnet101_ade': get_deeplab_resnet101_ade,
+    'deeplab_resnest50_ade': get_deeplab_resnest50_ade,
+    'deeplab_resnest101_ade': get_deeplab_resnest101_ade,
+    'deeplab_resnest200_ade': get_deeplab_resnest200_ade,
+    'deeplab_resnest269_ade': get_deeplab_resnest269_ade,
     'deeplab_resnet50_citys': get_deeplab_resnet50_citys,
     'deeplab_resnet101_citys': get_deeplab_resnet101_citys,
     'deeplab_v3b_plus_wideresnet_citys': get_deeplab_v3b_plus_wideresnet_citys,
     'icnet_resnet50_citys': get_icnet_resnet50_citys,
     'icnet_resnet50_mhpv1': get_icnet_resnet50_mhpv1,
+    'fastscnn_citys': get_fastscnn_citys,
+    'danet_resnet50_citys': get_danet_resnet50_citys,
+    'danet_resnet101_citys': get_danet_resnet101_citys,
     'resnet18_v1b': resnet18_v1b,
     'resnet34_v1b': resnet34_v1b,
     'resnet50_v1b': resnet50_v1b,
@@ -316,6 +337,10 @@ _models = {
     'center_net_dla34_dcnv2_voc': center_net_dla34_dcnv2_voc,
     'center_net_dla34_coco': center_net_dla34_coco,
     'center_net_dla34_dcnv2_coco': center_net_dla34_dcnv2_coco,
+    'center_net_mobilenetv3_large_duc_voc': center_net_mobilenetv3_large_duc_voc,
+    'center_net_mobilenetv3_large_duc_coco': center_net_mobilenetv3_large_duc_coco,
+    'center_net_mobilenetv3_small_duc_voc': center_net_mobilenetv3_small_duc_voc,
+    'center_net_mobilenetv3_small_duc_coco': center_net_mobilenetv3_small_duc_coco,
     'dla34': dla34,
     'simple_pose_resnet18_v1b_int8': simple_pose_resnet18_v1b_int8,
     'simple_pose_resnet50_v1b_int8': simple_pose_resnet50_v1b_int8,
@@ -327,6 +352,18 @@ _models = {
     'resnet18_v1b_kinetics400_int8': resnet18_v1b_kinetics400_int8,
     'resnet50_v1b_kinetics400_int8': resnet50_v1b_kinetics400_int8,
     'inceptionv3_kinetics400_int8': inceptionv3_kinetics400_int8,
+    'hrnet_w18_c' : hrnet_w18_c,
+    'hrnet_w18_small_v1_c' : hrnet_w18_small_v1_c,
+    'hrnet_w18_small_v2_c' : hrnet_w18_small_v2_c,
+    'hrnet_w30_c' : hrnet_w30_c,
+    'hrnet_w32_c' : hrnet_w32_c,
+    'hrnet_w40_c' : hrnet_w40_c,
+    'hrnet_w44_c' : hrnet_w44_c,
+    'hrnet_w48_c' : hrnet_w48_c,
+    'hrnet_w64_c' : hrnet_w64_c,
+    'hrnet_w18_small_v1_s' : hrnet_w18_small_v1_s,
+    'hrnet_w18_small_v2_s' : hrnet_w18_small_v2_s,
+    'hrnet_w48_s' : hrnet_w48_s,
     'siamrpn_alexnet_v2_otb15': siamrpn_alexnet_v2_otb15,
 }
 

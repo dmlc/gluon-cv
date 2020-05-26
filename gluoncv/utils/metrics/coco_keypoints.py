@@ -5,10 +5,12 @@ import os
 from os import path as osp
 from collections import OrderedDict
 import warnings
-import mxnet as mx
-from ...data.mscoco.utils import try_import_pycocotools
+try:
+    from mxnet.metric import EvalMetric
+except ImportError:
+    from mxnet.gluon.metric import EvalMetric
 
-class COCOKeyPointsMetric(mx.metric.EvalMetric):
+class COCOKeyPointsMetric(EvalMetric):
     """Detection metric for COCO bbox task.
 
     Parameters
@@ -84,6 +86,7 @@ class COCOKeyPointsMetric(mx.metric.EvalMetric):
         pred = self.dataset.coco.loadRes(self._filename)
         gt = self.dataset.coco
         # lazy import pycocotools
+        from ...data.mscoco.utils import try_import_pycocotools
         try_import_pycocotools()
         from pycocotools.cocoeval import COCOeval
         coco_eval = COCOeval(gt, pred, 'keypoints')

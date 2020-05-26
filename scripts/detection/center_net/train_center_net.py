@@ -25,7 +25,7 @@ from gluoncv.utils import LRScheduler, LRSequential
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='Train SSD networks.')
+    parser = argparse.ArgumentParser(description='Train CenterNet networks.')
     parser.add_argument('--network', type=str, default='resnet18_v1b',
                         help="Base network name which serves as feature extraction base.")
     parser.add_argument('--data-shape', type=int, default=512,

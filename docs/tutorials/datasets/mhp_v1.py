@@ -1,9 +1,10 @@
-"""Prepare Multi-Human Parsing V1 dataset.
-========================
+"""Prepare Multi-Human Parsing V1 dataset
+=========================================
 
-`Multi-Human Parsing V1 (MHP-v1) <https://github.com/ZhaoJ9014/Multi-Human-Parsing/>`_ is a human-centric containing
-5 thousands images annotated with 18 object categories.
-This tutorial help you to download MHP-v1 and set it up for later experiments.
+`Multi-Human Parsing V1 (MHP-v1) <https://github.com/ZhaoJ9014/Multi-Human-Parsing/>`_ is
+a human-centric dataset for multi-human parsing task. It contains
+five thousands images annotated with 18 categories.
+This tutorial helps you to download MHP-v1 and set it up for later experiments.
 
 .. image:: https://raw.githubusercontent.com/ZhaoJ9014/Multi-Human-Parsing/master/Figures/Fig1.png
    :width: 600 px
@@ -24,7 +25,7 @@ We will download and unzip the following files:
 +-------------------------------------------------------------------------------------------------------+--------+
 | File name                                                                                             | Size   |
 +=======================================================================================================+========+
-| `LV-MHP-v1.zip <https://drive.google.com/uc?id=1hTS8QJBuGdcppFAr_bvW2tsD9hW_ptr5&export=download>`_  | 850 MB |
+| `LV-MHP-v1.zip <https://drive.google.com/uc?id=1hTS8QJBuGdcppFAr_bvW2tsD9hW_ptr5&export=download>`_   | 850 MB |
 +-------------------------------------------------------------------------------------------------------+--------+
 
 

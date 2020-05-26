@@ -91,25 +91,29 @@ Select your preferences and run the install command.
 
            .. code-block:: bash
 
-              pip install --pre --upgrade mxnet gluoncv
+              pip install --pre --upgrade gluoncv
+              pip install --upgrade mxnet -f https://dist.mxnet.io/python/all
 
         .. container:: cuda
 
            .. code-block:: bash
 
-              pip install --pre --upgrade mxnet-cu100 gluoncv
+              pip install --pre --upgrade gluoncv
+              pip install --upgrade mxnet-cu100 -f https://dist.mxnet.io/python/all
 
         .. container:: mkl-dnn
 
            .. code-block:: bash
 
-              pip install --pre --upgrade mxnet-mkl gluoncv
+              pip install --pre --upgrade gluoncv
+              pip install --upgrade mxnet-mkl -f https://dist.mxnet.io/python/all
 
         .. container:: cuda-mkl-dnn
 
            .. code-block:: bash
 
-               pip install --pre --upgrade mxnet-cu100mkl gluoncv
+               pip install --pre --upgrade gluoncv
+               pip install --upgrade mxnet-cu100mkl -f https://dist.mxnet.io/python/all
 
      .. container:: source
 
@@ -117,7 +121,7 @@ Select your preferences and run the install command.
 
            .. code-block:: bash
 
-              pip install --pre --upgrade mxnet
+              pip install --upgrade mxnet -f https://dist.mxnet.io/python/all
               git clone https://github.com/dmlc/gluon-cv
               cd gluon-cv && python setup.py install --user
 
@@ -125,7 +129,7 @@ Select your preferences and run the install command.
 
            .. code-block:: bash
 
-              pip install --pre --upgrade mxnet-cu100
+              pip install --upgrade mxnet-cu100 -f https://dist.mxnet.io/python/all
               git clone https://github.com/dmlc/gluon-cv
               cd gluon-cv && python setup.py install --user
 
@@ -133,7 +137,7 @@ Select your preferences and run the install command.
 
            .. code-block:: bash
 
-              pip install --pre --upgrade mxnet-mkl
+              pip install --upgrade mxnet-mkl -f https://dist.mxnet.io/python/all
               git clone https://github.com/dmlc/gluon-cv
               cd gluon-cv && python setup.py install --user
 
@@ -141,6 +145,6 @@ Select your preferences and run the install command.
 
            .. code-block:: bash
 
-               pip install --pre --upgrade mxnet-cu100mkl
+               pip install --upgrade mxnet-cu100mkl -f https://dist.mxnet.io/python/all
                git clone https://github.com/dmlc/gluon-cv
                cd gluon-cv && python setup.py install --user

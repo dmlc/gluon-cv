@@ -91,7 +91,7 @@ class DeconvResnet(nn.HybridBlock):
                        net.layer4])
             self.base_network = feat
         else:
-            raise NotImplementedError()
+            raise NotImplementedError('Only v1 variants of resnet are supported so far.')
         with self.name_scope():
             self.deconv = self._make_deconv_layer(deconv_filters, deconv_kernels)
 
@@ -181,8 +181,8 @@ def get_deconv_resnet(base_network, pretrained=False, ctx=cpu(), use_dcnv2=False
         Description of parameter `pretrained`.
     Returns
     -------
-    get_deconv_resnet(base_network, pretrained=False,
-        Description of returned object.
+    nn.HybridBlock
+        Network instance of resnet with deconv layers
 
     """
     net = DeconvResnet(base_network=base_network, pretrained_base=pretrained,

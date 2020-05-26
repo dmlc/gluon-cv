@@ -90,6 +90,14 @@ class SSD(HybridBlock):
         to third party compilers we want to utilize most widely used operators.
         If `minimal_opset` is `True`, the network will use a minimal set of operators good
         for e.g., `TVM`.
+    predictor_kernel: tuple of int. default is (3,3)
+        Dimension of predictor kernel
+    predictor_pad: tuple of int. default is (1,1)
+        Padding of the predictor kenrel conv.
+    anchor_generator: default is SSDAnchorGenerator
+        Anchor Generator to be used. The default it SSDAnchorGenerator corresponding
+        to SSD published article. This argument can be used for other custom
+        anchor generators. Like LiteAnchorGenerator.
 
     """
     def __init__(self, network, base_size, features, num_filters, sizes, ratios,
@@ -98,7 +106,9 @@ class SSD(HybridBlock):
                  stds=(0.1, 0.1, 0.2, 0.2), nms_thresh=0.45, nms_topk=400, post_nms=100,
                  anchor_alloc_size=128, ctx=mx.cpu(),
                  norm_layer=nn.BatchNorm, norm_kwargs=None,
-                 root=os.path.join('~', '.mxnet', 'models'), minimal_opset=False, **kwargs):
+                 root=os.path.join('~', '.mxnet', 'models'), minimal_opset=False,
+                 predictors_kernel=(3, 3), predictors_pad=(1, 1),
+                 anchor_generator=SSDAnchorGenerator, **kwargs):
         super(SSD, self).__init__(**kwargs)
         if norm_kwargs is None:
             norm_kwargs = {}
@@ -149,12 +159,16 @@ class SSD(HybridBlock):
             asz = anchor_alloc_size
             im_size = (base_size, base_size)
             for i, s, r, st in zip(range(num_layers), sizes, ratios, steps):
-                anchor_generator = SSDAnchorGenerator(i, im_size, s, r, st, (asz, asz))
-                self.anchor_generators.add(anchor_generator)
+                branch_anchor_generator = anchor_generator(i, im_size, s, r, st, (asz, asz))
+                self.anchor_generators.add(branch_anchor_generator)
                 asz = max(asz // 2, 16)  # pre-compute larger than 16x16 anchor map
-                num_anchors = anchor_generator.num_depth
-                self.class_predictors.add(ConvPredictor(num_anchors * (len(self.classes) + 1)))
-                self.box_predictors.add(ConvPredictor(num_anchors * 4))
+                num_anchors = branch_anchor_generator.num_depth
+                self.class_predictors.add(ConvPredictor(num_anchors * (len(self.classes) + 1),
+                                                        kernel=predictors_kernel,
+                                                        pad=predictors_pad))
+                self.box_predictors.add(ConvPredictor(num_anchors * 4,
+                                                      kernel=predictors_kernel,
+                                                      pad=predictors_pad))
             self.bbox_decoder = NormalizedBoxCenterDecoder(stds, minimal_opset=minimal_opset)
             self.cls_decoder = MultiPerClassDecoder(len(self.classes) + 1, thresh=0.01)
 
@@ -338,7 +352,8 @@ class SSD(HybridBlock):
 
 def get_ssd(name, base_size, features, filters, sizes, ratios, steps, classes,
             dataset, pretrained=False, pretrained_base=True, ctx=mx.cpu(),
-            root=os.path.join('~', '.mxnet', 'models'), **kwargs):
+            root=os.path.join('~', '.mxnet', 'models'),
+            anchor_generator=SSDAnchorGenerator, **kwargs):
     """Get SSD models.
 
     Parameters
@@ -398,7 +413,7 @@ def get_ssd(name, base_size, features, filters, sizes, ratios, steps, classes,
     base_name = None if callable(features) else name
     net = SSD(base_name, base_size, features, filters, sizes, ratios, steps,
               pretrained=pretrained_base, classes=classes, ctx=ctx, root=root,
-              minimal_opset=pretrained, **kwargs)
+              minimal_opset=pretrained, anchor_generator=anchor_generator, **kwargs)
     if pretrained:
         from ..model_store import get_model_file
         full_name = '_'.join(('ssd', str(base_size), name, dataset))
