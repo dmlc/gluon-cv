@@ -1,0 +1,3 @@
+[submodule "scripts/deployment/tvm-deploy/tvm"]
+	path = scripts/deployment/tvm-deploy/tvm
+	url = https://github.com/apache/incubator-tvm.git

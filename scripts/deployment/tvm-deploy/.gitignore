@@ -1,0 +1,4 @@
+build/*
+pack/*
+!pack/pack.py
+!pack/imagenet_classes.txt
