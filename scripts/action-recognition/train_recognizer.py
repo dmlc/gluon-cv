@@ -338,7 +338,7 @@ def main():
     else:
         train_data, val_data, batch_fn = get_data_loader(opt, batch_size, num_workers, logger)
 
-    num_batches = len(train_data)
+    num_batches = len(train_data) // opt.accumulate
     lr_scheduler = LRSequential([
         LRScheduler('linear', base_lr=opt.warmup_lr, target_lr=opt.lr,
                     nepochs=opt.warmup_epochs, iters_per_epoch=num_batches),
@@ -474,12 +474,13 @@ def main():
                     else:
                         ag.backward(loss)
 
-                if opt.accumulate > 1 and (i + 1) % opt.accumulate == 0:
-                    if opt.kvstore is not None:
-                        trainer.step(batch_size * kv.num_workers * opt.accumulate)
-                    else:
-                        trainer.step(batch_size * opt.accumulate)
-                        net.collect_params().zero_grad()
+                if opt.accumulate > 1:
+                    if (i + 1) % opt.accumulate == 0:
+                        if opt.kvstore is not None:
+                            trainer.step(batch_size * kv.num_workers * opt.accumulate)
+                        else:
+                            trainer.step(batch_size * opt.accumulate)
+                            net.collect_params().zero_grad()
                 else:
                     if opt.kvstore is not None:
                         trainer.step(batch_size * kv.num_workers)

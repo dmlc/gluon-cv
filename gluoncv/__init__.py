@@ -7,7 +7,7 @@ __version__ = '0.8.0'
 
 from .utils.version import _require_mxnet_version, _deprecate_python2
 _deprecate_python2()
-_require_mxnet_version('1.4.0')
+_require_mxnet_version('1.4.0', '2.0.0')
 
 from . import data
 from . import model_zoo
