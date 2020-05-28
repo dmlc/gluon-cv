@@ -50,7 +50,7 @@ class BaseEstimator(object):
         self.config = self._get_default_config()
         self._update_config(config)
         self.reporter = reporter
-        self.logdir = os.path.abspath(logdir) if cwd else os.getcwd()
+        self.logdir = os.path.abspath(logdir) if logdir else os.getcwd()
 
     def _update_config(self, config=None):
         if not config:
