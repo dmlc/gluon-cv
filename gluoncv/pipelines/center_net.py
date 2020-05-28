@@ -2,7 +2,7 @@
 from .base import BaseEstimator, set_default
 from yacs.config import CfgNode as CN
 
-def get_cfg_defaults():
+def get_center_net_defaults():
     _C = CN()
 
     _C.SYSTEM = CN()
@@ -18,7 +18,7 @@ def get_cfg_defaults():
     _C.TRAIN.SCALES = (2, 4, 8, 16)
     return _C.clone()
 
-@set_default(get_cfg_defaults)
+@set_default(get_center_net_defaults)
 class CenterNetEstimator(BaseEstimator):
     """CenterNet Estimator."""
     def __init__(self, config=None, reporter=None, logdir=None):
@@ -26,3 +26,4 @@ class CenterNetEstimator(BaseEstimator):
 
     def fit(self, train_data):
         self.finalize_config()
+        # setup trainer, metrics, loss...
