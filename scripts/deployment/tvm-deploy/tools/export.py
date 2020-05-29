@@ -14,7 +14,7 @@ args = parser.parse_args()
 
 class TvmPreprocess(HybridBlock):
     def __init__(self, **kwargs):
-        super(MyPreprocess, self).__init__(**kwargs)
+        super(TvmPreprocess, self).__init__(**kwargs)
         with self.name_scope():
             mean = mx.nd.array([123.675, 116.28, 103.53]).reshape((1, 3, 1, 1))
             scale = mx.nd.array([58.395, 57.12, 57.375]).reshape((1, 3, 1, 1))
