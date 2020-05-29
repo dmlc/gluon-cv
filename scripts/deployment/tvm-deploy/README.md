@@ -2,7 +2,7 @@
 This is a demo application which illustrates how to use pretrained GluonCV models in c++ environments with the support of TVM.
 
 ## Build instruction
-Always use `git clone --recursive`, if not, we can update tvm submodule `git submodule update --recursive --init`.
+Please clone the full TVM repository by `git clone --recursive https://github.com/apache/incubator-tvm.git tvm`
 
 Since we want to build libjpeg and libpng statically and link to them in order that the executables could work on user's clean environment, you cannot directly build using the existing files.
 

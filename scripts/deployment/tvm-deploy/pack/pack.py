@@ -11,7 +11,7 @@ def main():
     for model_name in model_list_c:
         cmd_r = "mv {} {}".format(name_prev, model_name)
         os.system(cmd_r)
-        cmd_m = "python ../tools/export_classify.py --model {}".format(model_name)
+        cmd_m = "python ../tools/export.py --type 'classify' --model {}".format(model_name)
         os.system(cmd_m)
         cmd_p = "zip {}.zip {} model_0000.params model_graph.json model_lib.so imagenet_classes.txt".format(model_name, model_name)
         os.system(cmd_p)
@@ -23,7 +23,7 @@ def main():
     for model_name in model_list_d:
         cmd_r = "mv {} {}".format(name_prev, model_name)
         os.system(cmd_r)
-        cmd_m = "python ../tools/export_detect.py --model {}".format(model_name)
+        cmd_m = "python ../tools/export.py --type 'detect' --model {}".format(model_name)
         os.system(cmd_m)
         cmd_p = "zip {}.zip {} model_0000.params model_graph.json model_lib.so".format(model_name, model_name)
         os.system(cmd_p)
