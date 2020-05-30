@@ -88,6 +88,9 @@ class BaseEstimator(object):
     def fit(self, train_data):
         raise NotImplementedError
 
+    def evaluate(self, val_data):
+        raise NotImplementedError
+
     def predict(self, test_data):
         raise NotImplementedError
 
