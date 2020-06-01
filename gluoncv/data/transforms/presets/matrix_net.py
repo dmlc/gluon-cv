@@ -114,7 +114,7 @@ class MatrixNetDefaultTrainTransform(object):
 
 
 class MatrixNetDefaultValTransform(object):
-    """Default SSD validation transform.
+    """Default MatrixNet validation transform.
 
     Parameters
     ----------
