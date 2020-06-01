@@ -114,7 +114,8 @@ def get_dataloader(net, train_dataset, val_dataset, data_shape, batch_size, num_
     """Get dataloader."""
     width, height = data_shape, data_shape
     num_class = len(train_dataset.classes)
-    batchify_fn = Tuple([Stack() for _ in range(96)])  # stack image, cls_targets, box_targets
+    # 96 = 1(image) + 19 (number of matrix layers) * 5 (heatmap, wh_target, wh_mask, offset_target, offset_mask)
+    batchify_fn = Tuple([Stack() for _ in range(96)])  
     train_loader = gluon.data.DataLoader(
         train_dataset.transform(MatrixNetDefaultTrainTransform(
             width, height, num_class=num_class, layers_range=net.layers_range)),
@@ -221,28 +222,35 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
 
         for i, batch in enumerate(train_data):
             split_data = [gluon.utils.split_and_load(batch[ind], ctx_list=ctx, batch_axis=0) for ind in range(96)]
-            inter_num = len(split_data[0])
+            inter_num = len(split_data[0]) # number of gpus
             batch_size = args.batch_size
             with autograd.record():
                 sum_losses = []
-                mid_layers_num = 19
-                heatmap_losses = [0 for _ in range(inter_num)]
-                wh_losses = [0 for _ in range(inter_num)]
-                center_reg_losses = [0 for _ in range(inter_num)]
+                mid_layers_num = 19 # number of matrix layers
+                heatmap_losses = []
+                wh_losses = []
+                center_reg_losses = []
                 wh_preds = [[] for _ in range(mid_layers_num)]
                 center_reg_preds = [[] for _ in range(mid_layers_num)]
                 for ind in range(inter_num):
-                
+                    # just sum the loss of 19 matrix layers respectively, so heatmap_losses, wh_losses, center_reg_losses are all  lists containing #gpu items
                     heatmap_pred, wh_pred, center_reg_pred = net(split_data[0][ind])
                     for ii in range(mid_layers_num):
                         wh_preds[ii].append(wh_pred[ii])
                         center_reg_preds[ii].append(center_reg_pred[ii])
-                        wh_losses[ind] += wh_loss(wh_pred[ii], split_data[1+mid_layers_num+ii][ind],\
-                                                     split_data[1+mid_layers_num*2+ii][ind])
-                        center_reg_losses[ind] += center_reg_loss(center_reg_pred[ii], split_data[1+mid_layers_num*3+ii][ind],\
-                                                     split_data[1+mid_layers_num*4+ii][ind])
-                        heatmap_losses[ind] += heatmap_loss(heatmap_pred[ii], split_data[1+ii][ind])
-                
+                        if ii == 0:
+                            wh_losses.append(wh_loss(wh_pred[ii], split_data[1+mid_layers_num+ii][ind],
+                                                     split_data[1+mid_layers_num*2+ii][ind]))
+                            center_reg_losses.append(center_reg_loss(center_reg_pred[ii], split_data[1+mid_layers_num*3+ii][ind],
+                                                     split_data[1+mid_layers_num*4+ii][ind]))
+                            heatmap_losses.append(heatmap_loss(heatmap_pred[ii], split_data[1+ii][ind]))
+                        else:
+                            wh_losses[-1] =  wh_losses[-1] + wh_loss(wh_pred[ii], split_data[1+mid_layers_num+ii][ind], 
+                                                                     split_data[1+mid_layers_num*2+ii][ind])
+                            center_reg_losses[-1] = center_reg_losses[-1] + center_reg_loss(center_reg_pred[ii], 
+                                                  split_data[1+mid_layers_num*3+ii][ind], split_data[1+mid_layers_num*4+ii][ind])
+                            heatmap_losses[-1] = heatmap_losses[-1] + heatmap_loss(heatmap_pred[ii], split_data[1+ii][ind])
+ 
                 sum_losses = [heatmap_losses[ii]+wh_losses[ii]+center_reg_losses[ii] for ii in range(inter_num)]
                 autograd.backward(sum_losses)
             trainer.step(len(sum_losses))  # step with # gpus

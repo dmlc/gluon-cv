@@ -7,10 +7,29 @@ from mxnet import nd
 from mxnet import gluon
 
 def layer_map_using_ranges(width, height, layer_ranges, fpn_flag=0):
-    layers = []
-   
+    """Map each object to some of 19 matrix layers according to the object's height and width
+    
+    Parameters
+    ----------
+    width : int
+        Width of the object.
+    height : int
+        Height of the object
+    layer_ranges : list of list of list of number
+        The range of object size correspond to each matrix layer.
+    fpn_flag : bool
+        Whether the matrix layers only contain diagonal layers
+        
+    Returns
+    -------
+    list of number
+        index of layer(s) to which the object is mapped
+    """
+    layers = []   
     for i, layer_range in enumerate(layer_ranges):
         if fpn_flag ==0:
+            if type(layer_range) !=  list:
+                print('index: {} is of type {}, value {}'.format(i, type(layer_range), layer_range))
             if (width >= 0.8 * layer_range[2]) and (width <= 1.3 * layer_range[3]) and (height >= 0.8 * layer_range[0]) and (height <= 1.3 * layer_range[1]):
                 layers.append(i)
         else:
@@ -30,10 +49,12 @@ class MatrixNetTargetGenerator(gluon.Block):
     ----------
     num_class : int
         Number of categories.
-    output_width : int
-        Width of the network output.
-    output_height : int
-        Height of the network output.
+    input_width : int
+        Width of the network input.
+    input_height : int
+        Height of the networl input.
+    layers_range : list of list of number(list of number)
+        Represents the same meaning as that of MatrixNet
 
     """
     def __init__(self, num_class, input_width, input_height, layers_range):
@@ -42,32 +63,37 @@ class MatrixNetTargetGenerator(gluon.Block):
         self._input_width = int(input_width)
         self._input_height = int(input_height)
         self._layers_range = layers_range
+        #output_sizes is a list containing feature maps' height and width of matrix layers
+        #_dict is used to clear -1 in layers_range
+        _dict={}
+        output_sizes=[]
+        # indexing layer map
+        for i,l in enumerate(layers_range):
+            for j,e in enumerate(l):
+                if e !=-1:
+                    output_sizes.append([self._input_height//(4*2**(j)), self._input_width//(4*2**(i))])
+                    _dict[(i+1)*10+(j+1)]=e
+    
+        self._layers_range=[_dict[i] for i in sorted(_dict)]
+        self._fpn_flag = set(_dict.keys()) == set([11,22,33,44,55])
+        self._output_sizes = output_sizes
+        
 
     def forward(self, gt_boxes, gt_ids):
         """Target generation"""
         # pylint: disable=arguments-differ
-        _dict={}
-        output_sizes=[]
-        # indexing layer map
-        for i,l in enumerate(self._layers_range):
-            for j,e in enumerate(l):
-                if e !=-1:
-                    output_sizes.append([self._input_height//(8*2**(j)), self._input_width//(8*2**(i))])
-                    _dict[(i+1)*10+(j+1)]=e
-    
-        self._layers_range=[_dict[i] for i in sorted(_dict)]
-        fpn_flag = set(_dict.keys()) == set([11,22,33,44,55])
-        
-        heatmaps = [np.zeros((self._num_class, output_size[0], output_size[1]), dtype=np.float32) for output_size in output_sizes]
-        wh_targets = [np.zeros((2, output_size[0], output_size[1]), dtype=np.float32) for output_size in output_sizes]
-        wh_masks = [np.zeros((2, output_size[0], output_size[1]), dtype=np.float32) for output_size in output_sizes]
-        center_regs = [np.zeros((2, output_size[0], output_size[1]), dtype=np.float32) for output_size in output_sizes]
-        center_reg_masks = [np.zeros((2, output_size[0], output_size[1]), dtype=np.float32) for output_size in output_sizes]
+        # the following five variables are all lists containing #(matrix layers) np.array
+        heatmaps = [np.zeros((self._num_class, output_size[0], output_size[1]), dtype=np.float32) for output_size in self._output_sizes]
+        wh_targets = [np.zeros((2, output_size[0], output_size[1]), dtype=np.float32) for output_size in self._output_sizes]
+        wh_masks = [np.zeros((2, output_size[0], output_size[1]), dtype=np.float32) for output_size in self._output_sizes]
+        center_regs = [np.zeros((2, output_size[0], output_size[1]), dtype=np.float32) for output_size in self._output_sizes]
+        center_reg_masks = [np.zeros((2, output_size[0], output_size[1]), dtype=np.float32) for output_size in self._output_sizes]
         for bbox, cid in zip(gt_boxes, gt_ids):
-            for olayer_idx in layer_map_using_ranges(bbox[2] - bbox[0], bbox[3] - bbox[1], self._layers_range, fpn_flag):
+            for olayer_idx in layer_map_using_ranges(bbox[2] - bbox[0], bbox[3] - bbox[1], self._layers_range, self._fpn_flag):
                 cid = int(cid)
-                width_ratio = output_sizes[olayer_idx][1] / self._input_width
-                height_ratio = output_sizes[olayer_idx][0] / self._input_height
+                # the following two ratios are used to adjust the coordinates of bounding box according to the size of each layer's feature map
+                width_ratio = self._output_sizes[olayer_idx][1] / self._input_width
+                height_ratio = self._output_sizes[olayer_idx][0] / self._input_height
                 xtl, ytl = bbox[0], bbox[1]
                 xbr, ybr = bbox[2], bbox[3]
                 fxtl = (xtl * width_ratio)
@@ -84,16 +110,17 @@ class MatrixNetTargetGenerator(gluon.Block):
                         dtype=np.float32)
                     center_int = center.astype(np.int32)
                     center_x, center_y = center_int
-                    assert center_x < output_sizes[olayer_idx][1], \
-                        'center_x: {} > output_width: {}'.format(center_x, output_sizes[olayer_idx][1])
-                    assert center_y < output_sizes[olayer_idx][0], \
-                        'center_y: {} > output_height: {}'.format(center_y, output_sizes[olayer_idx][0])
+                    assert center_x < self._output_sizes[olayer_idx][1], \
+                        'center_x: {} > output_width: {}'.format(center_x, self._output_sizes[olayer_idx][1])
+                    assert center_y < self._output_sizes[olayer_idx][0], \
+                        'center_y: {} > output_height: {}'.format(center_y, self._output_sizes[olayer_idx][0])
                     _draw_umich_gaussian(heatmaps[olayer_idx][cid], center_int, radius)
                     wh_targets[olayer_idx][0, center_y, center_x] = box_w 
                     wh_targets[olayer_idx][1, center_y, center_x] = box_h 
                     wh_masks[olayer_idx][:, center_y, center_x] = 1.0
                     center_regs[olayer_idx][:, center_y, center_x] = center - center_int
                     center_reg_masks[olayer_idx][:, center_y, center_x] = 1.0
+        
         heatmaps = [nd.array(heatmap) for heatmap in heatmaps]
         wh_targets = [nd.array(wh_target) for wh_target in wh_targets]
         wh_masks = [nd.array(wh_mask) for wh_mask in wh_masks]

@@ -1,4 +1,5 @@
-"""MatrixNet object detector: https://arxiv.org/abs/2001.03194"""
+"""MatrixNet object detector: using matrix layers to extract features and heads of CenterNet to predict
+     matrix layers: https://arxiv.org/abs/2001.03194 and its code on github"""
 from __future__ import absolute_import
 
 import os
@@ -18,8 +19,9 @@ class MatrixNet(nn.HybridBlock):
 
     Parameters
     ----------
-    base_network : mxnet.gluon.nn.HybridBlock
+    base_network : mxnet.gluon.nn.SymbolBlock
         The base feature extraction network.
+        Currently just using pre-defined resnet101_v1d_fpn
     heads : OrderedDict
         OrderedDict with specifications for each head.
         For example: OrderedDict([
@@ -29,20 +31,25 @@ class MatrixNet(nn.HybridBlock):
             ])
     classes : list of str
         Category names.
+    layers_range : list of list of number(list of number)
+        Denotes the size of objects assigned to each matrix layer
+        layers_range is a 5 * 5 matrix, where each element is -1 or a list of 4 numbers
+         -1 denotes this layer is pruned, a list of 4 numbers is min height, max height, 
+         min width, max width of the objects respectively.
     head_conv_channel : int, default is 0
         If > 0, will use an extra conv layer before each of the real heads.
-    scale : float, default is 4.0
-        The downsampling ratio of the entire network.
+    base_layer_scale : float, default is 4.0
+        The downsampling ratio of the first (top-left) layer in the matrix.
     topk : int, default is 100
         Number of outputs .
     flip_test : bool
         Whether apply flip test in inference (training mode not affected).
-    nms_thresh : float, default is 0.
+    nms_thresh : float, default is 0.5.
         Non-maximum suppression threshold. You can specify < 0 or > 1 to disable NMS.
-        By default nms is disabled.
-    nms_topk : int, default is 400
+    nms_topk : int, default is 300
         Apply NMS to top k detection results, use -1 to disable so that every Detection
          result is used in NMS.
+        Choose the default value according to the code of matrixnets. 
     post_nms : int, default is 100
         Only return top `post_nms` detection results, the rest is discarded. The number is
         based on COCO dataset which has maximum 100 objects per image. You can adjust this
@@ -50,7 +57,7 @@ class MatrixNet(nn.HybridBlock):
 
     """
     def __init__(self, base_network, heads, classes, layers_range,
-                 head_conv_channel=0, base_layer_scale=8.0, topk=100, flip_test=False,
+                 head_conv_channel=0, base_layer_scale=4.0, topk=100, flip_test=False,
                  nms_thresh=0.5, nms_topk=300, post_nms=100, **kwargs):
         if 'norm_layer' in kwargs:
             kwargs.pop('norm_layer')
@@ -73,9 +80,7 @@ class MatrixNet(nn.HybridBlock):
             self.base_network = base_network
             self.heatmap_nms = nn.MaxPool2D(pool_size=3, strides=1, padding=1)
             weight_initializer = mx.init.Normal(0.01)
-            self.pyramid_transformation_7 = nn.Conv2D(
-                        256, kernel_size=3, padding=1, strides=2, use_bias=True,
-                        weight_initializer=weight_initializer, bias_initializer='zeros')
+            # the following two layers are used to generate the off-diagonal layers' features from diagonal layers' features
             self.downsample_transformation_12 = nn.Conv2D(
                         256, kernel_size=3, padding=1, strides=(1,2), use_bias=True,
                         weight_initializer=weight_initializer, bias_initializer='zeros')
@@ -83,6 +88,7 @@ class MatrixNet(nn.HybridBlock):
                         256, kernel_size=3, padding=1, strides=(2,1), use_bias=True,
                         weight_initializer=weight_initializer, bias_initializer='zeros')
             self.decoder = MatrixNetDecoder(topk=topk, base_layer_scale=base_layer_scale)
+            # using heads of CenterNet( Objects as Point )
             self.heads = nn.HybridSequential('heads')
             for name, values in heads.items():
                 head = nn.HybridSequential(name)
@@ -152,31 +158,22 @@ class MatrixNet(nn.HybridBlock):
             This allows the new predictor to reuse the
             previously trained weights specified.
 
-        Example
-        -------
-        >>> net = gluoncv.model_zoo.get_model('center_net_resnet50_v1b_voc', pretrained=True)
-        >>> # use direct name to name mapping to reuse weights
-        >>> net.reset_class(classes=['person'], reuse_weights={'person':'person'})
-        >>> # or use interger mapping, person is the 14th category in VOC
-        >>> net.reset_class(classes=['person'], reuse_weights={0:14})
-        >>> # you can even mix them
-        >>> net.reset_class(classes=['person'], reuse_weights={'person':14})
-        >>> # or use a list of string if class name don't change
-        >>> net.reset_class(classes=['person'], reuse_weights=['person'])
-
         """
         raise NotImplementedError("Not yet implemented, please wait for future updates.")
 
     def hybrid_forward(self, F, x):
         # pylint: disable=arguments-differ
         """Hybrid forward of matrixnet"""
+        # following lines computes the features of 19 matrix layers
+        # 5 diagonal features are FPN outputs, others are computed from the diagonal features
+        # this part can be impoved by modifying the code of FPNFeatureExpander
         feature_2, feature_3, feature_4, feature_5, feature_6 = self.base_network(x)
         _dict = {}
-        _dict[11] = feature_3
-        _dict[22] = feature_4
-        _dict[33] = feature_5
-        _dict[44] = feature_6
-        _dict[55] = self.pyramid_transformation_7(_dict[44])
+        _dict[11] = feature_2
+        _dict[22] = feature_3
+        _dict[33] = feature_4
+        _dict[44] = feature_5
+        _dict[55] = feature_6
         _dict[12] = self.downsample_transformation_21(_dict[11])
         _dict[13] = self.downsample_transformation_21(_dict[12])
         _dict[23] = self.downsample_transformation_21(_dict[22])
@@ -191,6 +188,8 @@ class MatrixNet(nn.HybridBlock):
         _dict[43] = self.downsample_transformation_12(_dict[33])
         _dict[53] = self.downsample_transformation_12(_dict[43])
         _dict[54] = self.downsample_transformation_12(_dict[44])
+        
+        # run the shared heads on the 19 features
         ys = [ _dict[i] for i in sorted(_dict)]
         heatmaps = [self.heads[0](y) for y in ys]
         wh_preds = [self.heads[1](y) for y in ys]
@@ -199,14 +198,16 @@ class MatrixNet(nn.HybridBlock):
         if autograd.is_training():
             heatmaps = [F.clip(heatmap, 1e-4, 1 - 1e-4) for heatmap in heatmaps]
             return heatmaps, wh_preds, center_regrs
+        print('whether flip_test: {}'.format(self.flip_test))
         if self.flip_test:
+            # some duplicate code, can be optimized by modifying the code of FPNFeatureExpander.
             feature_2_flip, feature_3_flip, feature_4_flip, feature_5_flip, feature_6_flip = self.base_network(x.flip(axis=3))
             _dict_flip = {}
-            _dict_flip[11] = feature_3_flip
-            _dict_flip[22] = feature_4_flip
-            _dict_flip[33] = feature_5_flip
-            _dict_flip[44] = feature_6_flip
-            _dict_flip[55] = self.pyramid_transformation_7(_dict_flip[44])
+            _dict_flip[11] = feature_2_flip
+            _dict_flip[22] = feature_3_flip
+            _dict_flip[33] = feature_4_flip
+            _dict_flip[44] = feature_5_flip
+            _dict_flip[55] = feature_6_flip
             _dict_flip[12] = self.downsample_transformation_21(_dict_flip[11])
             _dict_flip[13] = self.downsample_transformation_21(_dict_flip[12])
             _dict_flip[23] = self.downsample_transformation_21(_dict_flip[22])
@@ -233,6 +234,7 @@ class MatrixNet(nn.HybridBlock):
         
         keeps = [F.broadcast_equal(self.heatmap_nms(heatmap), heatmap) for heatmap in heatmaps]
         results = self.decoder(keeps, heatmaps, wh_preds, center_regrs)
+        #since the 19 matrix layers may generate duplicate results, add soft-nms for post-processing
         if self.nms_thresh > 0 and self.nms_thresh < 1:
             results = F.contrib.box_nms(
                 results, overlap_thresh=self.nms_thresh, topk=self.nms_topk, valid_thresh=0.01,
@@ -288,7 +290,7 @@ def get_matrix_net(name, dataset, pretrained=False, ctx=mx.cpu(),
     return net
 
 def matrix_net_resnet101_v1d_coco(pretrained=False, pretrained_base=True, **kwargs):
-    """Matrix net with resnet101_v1d base network on coco dataset.
+    """MatrixNet with resnet101_v1d base network on coco dataset.
 
     Parameters
     ----------
@@ -300,7 +302,7 @@ def matrix_net_resnet101_v1d_coco(pretrained=False, pretrained_base=True, **kwar
     Returns
     -------
     HybridBlock
-        A CenterNet detection network.
+        A MatrixNet detection network.
 
     """
     from ...model_zoo.resnetv1b import resnet101_v1d
@@ -319,6 +321,11 @@ def matrix_net_resnet101_v1d_coco(pretrained=False, pretrained_base=True, **kwar
         ('wh', {'num_output': 2}),
         ('reg', {'num_output': 2})
         ])
+    # according to the reference code of the paper(https://arxiv.org/abs/2001.03194), there can be up to 25 matrix layers
+    # layers_range is the configuration containing 5*5 elements. 
+    # Each element can be -1 (meaning this layer is cut, so this position is empty, no need to generate features
+    # Or the element can be a list of 4 numbers, standing for min_height, max_height, min_width, max_width of the objects assigned
+    #    as this layers' traing target
     layers_range = [[[0,48,0,48],[48,96,0,48],[96,192,0,48], -1, -1],
                  [[0,48,48,96],[48,96,48,96],[96,192,48,96],[192,384,0,96], -1],
                  [[0,48,96,192],[48,96,96,192],[96,192,96,192],[192,384,96,192],[384,2000,96,192]],
@@ -326,5 +333,5 @@ def matrix_net_resnet101_v1d_coco(pretrained=False, pretrained_base=True, **kwar
                  [-1, -1, [0,192,384,2000],[192,384,384,2000],[384,2000,384,2000]]]
     return get_matrix_net('resnet101_v1d', 'coco', base_network=features, heads=heads, layers_range = layers_range, 
                           head_conv_channel=64, pretrained=pretrained, classes=classes,
-                          base_layer_scale=8.0, topk=100, **kwargs)
+                          base_layer_scale=4.0, topk=100, **kwargs)
     

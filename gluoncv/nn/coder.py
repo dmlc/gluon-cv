@@ -506,26 +506,27 @@ class MatrixNetDecoder(gluon.HybridBlock):
     ----------
     topk : int
         Only keep `topk` results.
-    scale : float, default is 4.0
-        Downsampling scale for the network.
+    base_layer_scale : float, default is 4.0
+        The downsampling ratio of the first (top-left) layer in the matrix.
 
     """
-    def __init__(self, topk=100, base_layer_scale=8.0):
+    def __init__(self, topk=100, base_layer_scale=4.0):
         super(MatrixNetDecoder, self).__init__()
         self._topk = topk
         self._base_layer_scale = base_layer_scale
 
-    def hybrid_forward(self, F, keeps, xs, whs, regs):
+    def hybrid_forward(self, F, keeps, in_xs, whs, regs):
         """Forward of decoder"""
-        _, _, out_h0, out_w0 = xs[0].shape_array().split(num_outputs=4, axis=0)
+        #keeps, in_xs, whs, regs are all lists containing #(matrix layer) NDArrays
+        _, _, out_h0, out_w0 = in_xs[0].shape_array().split(num_outputs=4, axis=0)
         results = []
-        for i in range(len(xs)):
-            x = keeps[i] * xs[i]
+        for i in range(len(in_xs)):
+            x = keeps[i] * in_xs[i]
             wh = whs[i]
             reg = regs[i]
             _, _, out_h, out_w = x.shape_array().split(num_outputs=4, axis=0)
-            height_scale = out_h0.asscalar() / out_h.asscalar()
-            width_scale = out_w0.asscalar() / out_w.asscalar()
+            height_scale = out_h0 / out_h
+            width_scale = out_w0 / out_w
             scores, indices = x.reshape((0, -1)).topk(k=self._topk, ret_typ='both')
             indices = F.cast(indices, 'int64')
             topk_classes = F.cast(F.broadcast_div(indices, (out_h * out_w)), 'float32')
@@ -548,22 +549,17 @@ class MatrixNetDecoder(gluon.HybridBlock):
             h = F.cast(F.gather_nd(wh, reg_ys).reshape((-1, self._topk)), 'float32')
             half_w = w / 2
             half_h = h / 2
-            result = [topk_xs - half_w, topk_ys - half_h, topk_xs + half_w, topk_ys + half_h]
+            result = []
+            # adjust to the size of first (top-left) layer firstly
+            result.append(F.broadcast_mul((topk_xs - half_w), F.cast(width_scale, 'float32')))
+            result.append(F.broadcast_mul((topk_ys - half_h), F.cast(height_scale, 'float32')))
+            result.append(F.broadcast_mul((topk_xs + half_w), F.cast(width_scale, 'float32')))
+            result.append(F.broadcast_mul((topk_ys + half_h), F.cast(height_scale, 'float32')))
             result = F.concat(*[tmp.expand_dims(-1) for tmp in result], dim=-1)
-            result[:,:,0:4:2] *= width_scale
-            result[:,:,1:4:2] *= height_scale
+            # adjust to the size of original input
+            result = result * self._base_layer_scale
             result = F.concat(*[topk_classes.expand_dims(-1), scores.expand_dims(-1), result],dim=-1)
             results.append(result)
         results = F.concat(*results, dim=1)
-        results[:,:,2:6] *= self._base_layer_scale
         
-        '''
-        batch_num = len(results)
-        batch_indices = F.cast(F.arange(256).slice_like(
-            results, axes=(0)).expand_dims(-1).tile(reps=(1, 300*6)), 'int64')
-        topk_indices = F.cast(results[:,:,1].topk(k=300).expand_dims(-1).tile(reps=(1, 1, 6)), 'int64').reshape((0, -1))
-        val_indices = F.cast(nd.arange(6).expand_dims(0).tile(reps=(300 * batch_num, 1)), 'int64').reshape((batch_num,-1))
-        inds = F.concat(batch_indices, topk_indices, val_indices, dim=0).reshape((3, -1))
-        results = F.cast(F.gather_nd(results, inds).reshape((batch_num, 300, -1)), 'float32')
-        '''
         return results

@@ -22,6 +22,8 @@ class MatrixNetDefaultTrainTransform(object):
         Image height.
     num_class : int
         Number of categories
+    layers_range : list of list of number(list of number)
+        Represents the same meaning as that of MatrixNet
     scale_factor : int, default is 4
         The downsampling scale factor between input image and output heatmap
     mean : array-like of size 3
