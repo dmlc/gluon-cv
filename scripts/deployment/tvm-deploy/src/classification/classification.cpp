@@ -28,7 +28,7 @@
 #include <tvm/runtime/packed_func.h>
 #include <tvm/runtime/c_runtime_api.h>
 #include "common.hpp"
-#include "clipp.hpp"
+#include "../clipp.hpp"
 #include <chrono>
 
 namespace synset {
