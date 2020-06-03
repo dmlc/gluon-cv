@@ -11,7 +11,6 @@ from ...data.batchify import Tuple, Stack, Pad
 from ...utils.metrics import COCODetectionMetric
 from ...utils.metrics.accuracy import Accuracy
 from ...utils import LRScheduler, LRSequential
-from ...utils import random as _random
 from ...model_zoo.center_net import get_center_net
 from ...loss import *
 

@@ -6,6 +6,8 @@ from sacred.commands import _format_config, save_config, print_config
 # from sacred.settings import SETTINGS
 # SETTINGS.CONFIG.READ_ONLY_CONFIG = False
 
+from ...utils import random as _random
+
 def _fullname(o):
     module = o.__class__.__module__
     if module is None or module == str.__class__.__module__:
@@ -49,11 +51,14 @@ class BaseEstimator:
         self._logdir = os.path.abspath(logdir) if logdir else os.getcwd()
 
     def fit(self):
+        # finalize the config
         r = self._ex.run('_get_config', options={'--loglevel': 50})
         print_config(r)
         config_fn = _fullname(self) + datetime.now().strftime("-%m-%d-%Y-%H-%M-%S.yaml")
         config_file = os.path.join(self._logdir, config_fn)
         save_config(r.config, self._log, config_file)
+        self._cfg = r.config
+        _random.seed(self._cfg.seed)
         self._fit()
 
     def _fit(self):
