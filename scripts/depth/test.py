@@ -7,10 +7,13 @@
 from __future__ import absolute_import, division, print_function
 
 import os
+import sys
 import cv2
 import numpy as np
 
 import mxnet as mx
+import mxnet.numpy as _mx_np
+from mxnet.util import is_np_array
 from mxnet import gluon
 from utils import readlines
 from gluoncv.data.kitti import kitti_dataset
@@ -261,6 +264,17 @@ def batch_post_process_disparity(l_disp, r_disp):
     return r_mask * l_disp + l_mask * r_disp + (1.0 - l_mask - r_mask) * m_disp
 
 
+def dict_batchify_fn(data):
+    """dict batchify function"""
+    if isinstance(data[0], mx.nd.NDArray):
+        return _mx_np.stack(data) if is_np_array() else mx.nd.stack(*data)
+    elif isinstance(data[0], dict):
+        elem = data[0]
+        return {key: dict_batchify_fn([d[key] for d in data]) for key in elem}
+
+    raise RuntimeError('unknown datatype')
+
+
 def evaluate(opt):
     """Evaluates a pretrained model using a specified test set
     """
@@ -276,19 +290,20 @@ def evaluate(opt):
         ############################ loading dataset ############################
         filenames = readlines(os.path.join(splits_dir, opt.eval_split, "test_files.txt"))
 
+        img_ext = '.png' if opt.png else '.jpg'
         dataset = kitti_dataset.KITTIRAWDataset(opt.data_path, filenames,
                                                 opt.height, opt.width,
-                                                [0], 4, is_train=False)
-        dataloader = gluon.data.DataLoader(dataset, 16, shuffle=False, num_workers=opt.num_workers,
-                                           pin_memory=True, last_batch='keep')
+                                                [0], 4, is_train=False, img_ext=img_ext)
+        dataloader = gluon.data.DataLoader(dataset, 16, shuffle=False, batchify_fn=dict_batchify_fn,
+                                           num_workers=opt.num_workers, pin_memory=True, last_batch='keep')
 
         ############################ inference ############################
         pred_disps = []
 
         for data in dataloader:
             input_color = data[("color", 0, 0)]
-            print(input_color.shape)
-        exit()
+            print(input_color)
+            sys.exit()
     else:
         # Load predictions from file
         print("-> Loading predictions from {}".format(opt.ext_disp_to_eval))

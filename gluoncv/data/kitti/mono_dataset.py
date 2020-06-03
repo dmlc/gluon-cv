@@ -1,4 +1,5 @@
 import os
+import sys
 import random
 import numpy as np
 import copy
@@ -46,7 +47,7 @@ class MonoDataset(dataset.Dataset):
         self.height = height
         self.width = width
         self.num_scales = num_scales
-        self.interp = Image.ANTIALIAS  # 1: BILINEAR
+        self.interp = Image.ANTIALIAS
 
         self.frame_idxs = frame_idxs
 
@@ -60,12 +61,6 @@ class MonoDataset(dataset.Dataset):
         self.contrast = 0.2
         self.saturation = 0.2
         self.hue = 0.1
-
-        self.resize = {}
-        for i in range(self.num_scales):
-            s = 2 ** i
-            self.resize[i] = transforms.Resize((self.height // s, self.width // s),
-                                               interpolation=self.interp)
 
         self.load_depth = self.check_depth()
 
@@ -81,10 +76,12 @@ class MonoDataset(dataset.Dataset):
             if "color" in k:
                 n, im, i = k
                 for i in range(self.num_scales):
-                    inputs[(n, im, i)] = self.resize[i](inputs[(n, im, i - 1)])
+                    s = 2 ** i
+                    size = (self.height // s, self.width // s)
+                    inputs[(n, im, i)] = copy.deepcopy(inputs[(n, im, i - 1)].resize(size[::-1], self.interp))
 
         for k in list(inputs):
-            f = inputs[k]
+            f = mx.nd.array(inputs[k])
             if "color" in k:
                 n, im, i = k
                 inputs[(n, im, i)] = self.to_tensor(f)
@@ -96,7 +93,7 @@ class MonoDataset(dataset.Dataset):
     def __getitem__(self, index):
         """Returns a single training item from the dataset as a dictionary.
 
-        Values correspond to torch tensors.
+        Values correspond to mxnet NDArray.
         Keys in the dictionary are either strings or tuples:
 
             ("color", <frame_id>, <scale>)          for raw colour images,
@@ -119,8 +116,8 @@ class MonoDataset(dataset.Dataset):
         """
         inputs = {}
 
-        do_color_aug = self.is_train and random.random() > 0.5
-        do_flip = self.is_train and random.random() > 0.5
+        do_color_aug = False  # self.is_train and random.random() > 0.5
+        do_flip = False  # self.is_train and random.random() > 0.5
 
         line = self.filenames[index].split()
         folder = line[0]
