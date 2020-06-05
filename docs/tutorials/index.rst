@@ -272,7 +272,13 @@ Object Tracking
         :title: Pre-trained Siam RPN Models
         :link: ../build/examples_tracking/demo_SiamRPN.html
 
-        Estimate Single Object Tracking in real-world video with pre-trained Object Tracking models
+        Estimate Single Object Tracking in real-world video with pre-trained Object Tracking models.
+    
+    .. card::
+        :title: Dive Deep intp Training SiamRPN models
+        :link: ../build/examples_tracking/train_siamrpn.html
+
+        SiamRPN training on VID、DET、COCO、Youtube_bb and test on Otb2015
 
 Dataset Preparation
 -------------------
