@@ -8,8 +8,10 @@ from __future__ import absolute_import, division, print_function
 
 import os
 import sys
+from tqdm import tqdm
 import cv2
 import numpy as np
+import time
 
 import mxnet as mx
 import mxnet.numpy as _mx_np
@@ -17,6 +19,8 @@ from mxnet.util import is_np_array
 from mxnet import gluon
 from utils import readlines
 from gluoncv.data.kitti import kitti_dataset
+from gluoncv.model_zoo import monodepthv2
+from gluoncv.utils.parallel import *
 
 
 cv2.setNumThreads(0)  # This speeds up evaluation 5x on our unix systems (OpenCV 3.3.1)
@@ -227,8 +231,17 @@ class MonodepthOptions:
                                       "from the original monodepth paper",
                                  action="store_true")
 
+        self.parser.add_argument('--ngpus', type=int,
+                                 default=len(mx.test_utils.list_gpus()),
+                                 help='number of GPUs (default: 4)')
+
     def parse(self):
         self.options = self.parser.parse_args()
+
+        self.options.ctx = [mx.cpu(0)]
+        self.options.ctx = [mx.gpu(i) for i in range(self.options.ngpus)] \
+            if self.options.ngpus > 0 else self.options.ctx
+
         return self.options
 
 
@@ -281,29 +294,48 @@ def evaluate(opt):
     MIN_DEPTH = 1e-3
     MAX_DEPTH = 80
 
+    # DO NOT modify!!! Only support batch_size=ngus
+    batch_size = opt.ngpus
+
     assert sum((opt.eval_mono, opt.eval_stereo)) == 1, \
         "Please choose mono or stereo evaluation by setting either --eval_mono or --eval_stereo"
 
     if opt.ext_disp_to_eval is None:
-        ############################ loading model ############################
+        ############################ loading weights ############################
 
         ############################ loading dataset ############################
+        tic = time.time()
         filenames = readlines(os.path.join(splits_dir, opt.eval_split, "test_files.txt"))
 
         img_ext = '.png' if opt.png else '.jpg'
         dataset = kitti_dataset.KITTIRAWDataset(opt.data_path, filenames,
                                                 opt.height, opt.width,
                                                 [0], 4, is_train=False, img_ext=img_ext)
-        dataloader = gluon.data.DataLoader(dataset, 16, shuffle=False, batchify_fn=dict_batchify_fn,
-                                           num_workers=opt.num_workers, pin_memory=True, last_batch='keep')
+        dataloader = gluon.data.DataLoader(dataset, batch_size=batch_size, shuffle=False,
+                                           batchify_fn=dict_batchify_fn, num_workers=opt.num_workers,
+                                           pin_memory=True, last_batch='keep')
+        print('Runtime of create dataloader : %.2f' % (time.time() - tic))
+        ############################ loading model ############################
+        tic = time.time()
+        encoder = monodepthv2.ResnetEncoder(opt.num_layers, pretrained=False, ctx=opt.ctx)
+        encoder.initialize(ctx=opt.ctx[0])
+        depth_decoder = monodepthv2.DepthDecoder(encoder.num_ch_enc)
+        depth_decoder.initialize(ctx=opt.ctx[0])
 
+        # encoder_ = DataParallelModel(encoder, ctx_list=opt.ctx)
+        # depth_decoder_ = DataParallelModel(depth_decoder, ctx_list=opt.ctx)
+        print('Runtime of create model : %.2f' % (time.time() - tic))
         ############################ inference ############################
         pred_disps = []
-
-        for data in dataloader:
+        tbar = tqdm(dataloader)
+        for i, data in enumerate(tbar):
             input_color = data[("color", 0, 0)]
-            print(input_color)
-            sys.exit()
+            input_color = input_color.as_in_context(context=opt.ctx[0])
+            features = encoder(input_color)
+            output = depth_decoder(features)
+
+            exit()
+        sys.exit()
     else:
         # Load predictions from file
         print("-> Loading predictions from {}".format(opt.ext_disp_to_eval))
