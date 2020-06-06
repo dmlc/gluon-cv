@@ -34,3 +34,5 @@ the easiest way is to run this script:
 .. code-block:: bash
 
    python ilsvrc_det.py
+
+"""

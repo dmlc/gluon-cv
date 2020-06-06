@@ -33,15 +33,15 @@ We need the following four files from `COCO <http://cocodataset.org/#download>`_
 
 
 The easiest way to download and unpack these files is to download helper script and we suggest run the command because it included download dataset and data processing
-:download:`mscoco.py<../../../scripts/datasets/coco_tracking.py>` and run
+:download:`mscoco_racking.py<../../../scripts/datasets/mscoco_racking.py>` and run
 the following command:
 
 The easiest way is to run this script:
 
- :download:`Download script: coco_tracking.py<../../../scripts/datasets/coco_tracking.py>`
+ :download:`Download script: coco_tracking.py<../../../scripts/datasets/mscoco_racking.py>`
 
 .. code-block:: bash
 
-   python coco_tracking.py
+   python mscoco_tracking.py
 
 """
