@@ -11,7 +11,7 @@ import json
 import logging
 import os
 import numpy as np
-
+import pdb
 from mxnet.gluon.data import dataset
 from gluoncv.utils.filesystem import try_import_cv2
 from gluoncv.model_zoo.siamrpn.siamrpn_tracker import corner2center, center2corner
@@ -252,9 +252,9 @@ class TrkDataset(dataset.Dataset):
     """
     def __init__(self,
                  data_path=os.path.expanduser('~/.mxnet/datasets'),
-                 dataset_names=('vid', 'yt_bb', 'coco', 'det'),
-                 detaset_root=('vid/crop511', 'yt_bb/crop511', 'coco/crop511', 'det/crop511'),
-                 detaset_anno=('vid/train.json', 'yt_bb/train.json', 'coco/train2017.json',
+                 dataset_names=('vid', 'Youtube_bb', 'coco', 'det'),
+                 detaset_root=('vid/crop511', 'Youtube_bb/crop511', 'coco/crop511', 'det/crop511'),
+                 detaset_anno=('vid/train.json', 'Youtube_bb/train.json', 'coco/train2017.json',
                                'det/train.json'),
                  dataset_frame_range=(100, 3, 1, 1),
                  dataset_num_use=(100000, -1, -1, -1),
