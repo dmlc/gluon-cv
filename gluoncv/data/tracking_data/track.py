@@ -11,7 +11,7 @@ import json
 import logging
 import os
 import numpy as np
-import pdb
+
 from mxnet.gluon.data import dataset
 from gluoncv.utils.filesystem import try_import_cv2
 from gluoncv.model_zoo.siamrpn.siamrpn_tracker import corner2center, center2corner
