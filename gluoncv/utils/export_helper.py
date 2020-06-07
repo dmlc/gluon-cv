@@ -307,4 +307,3 @@ def export_tvm(path, block, data_shape, epoch=0, preprocess=True, layout='HWC',
             fo.write(relay.compiler.save_param_dict(params))
         except AttributeError:
             fo.write(relay.save_param_dict(params))
-
