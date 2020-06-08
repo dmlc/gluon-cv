@@ -303,4 +303,7 @@ def export_tvm(path, block, data_shape, epoch=0, preprocess=True, layout='HWC',
     with open(path + '_deploy_graph.json', 'w') as fo:
         fo.write(graph)
     with open(path + '_deploy_{:04n}.params'.format(epoch), 'wb') as fo:
-        fo.write(relay.compiler.save_param_dict(params))
+        try:
+            fo.write(relay.compiler.save_param_dict(params))
+        except AttributeError:
+            fo.write(relay.save_param_dict(params))
