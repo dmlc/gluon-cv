@@ -1,0 +1,407 @@
+import logging
+import os
+
+import mxnet as mx
+import numpy as np
+from mxnet import gluon
+
+from ...data.batchify import FasterRCNNTrainBatchify, Tuple, Append
+from ...data.sampler import SplitSortedBucketSampler
+from ...data.transforms import presets
+from ...data.transforms.presets.rcnn import FasterRCNNDefaultTrainTransform, \
+    FasterRCNNDefaultValTransform
+from ...model_zoo import get_model
+from ...model_zoo.rcnn.faster_rcnn.data_parallel import ForwardBackwardTask
+from ...nn.bbox import BBoxClipToImage
+from ...utils.metrics.rcnn import RPNAccMetric, RPNL1LossMetric, RCNNAccMetric, \
+    RCNNL1LossMetric
+from ...utils.parallel import Parallel
+
+logger = logging.getLogger(__name__)
+
+try:
+    import horovod.mxnet as hvd
+except ImportError:
+    hvd = None
+import time
+
+__all__ = ['FasterRCNNEstimator']
+
+
+def get_lr_at_iter(alpha, lr_warmup_factor=1. / 3.):
+    return lr_warmup_factor * (1 - alpha) + alpha
+
+
+def split_and_load(batch, ctx_list):
+    """Split data to 1 batch each device."""
+    new_batch = []
+    for i, data in enumerate(batch):
+        if isinstance(data, (list, tuple)):
+            new_data = [x.as_in_context(ctx) for x, ctx in zip(data, ctx_list)]
+        else:
+            new_data = [data.as_in_context(ctx_list[0])]
+        new_batch.append(new_data)
+    return new_batch
+
+
+def save_params(net, logger, best_map, current_map, epoch, save_interval, prefix):
+    current_map = float(current_map)
+    if current_map > best_map[0]:
+        logger.info('[Epoch {}] mAP {} higher than current best {} saving to {}'.format(
+            epoch, current_map, best_map, '{:s}_best.params'.format(prefix)))
+        best_map[0] = current_map
+        net.save_parameters('{:s}_best.params'.format(prefix))
+        with open(prefix + '_best_map.log', 'a') as f:
+            f.write('{:04d}:\t{:.4f}\n'.format(epoch, current_map))
+    if save_interval and (epoch + 1) % save_interval == 0:
+        logger.info('[Epoch {}] Saving parameters to {}'.format(
+            epoch, '{:s}_{:04d}_{:.4f}.params'.format(prefix, epoch, current_map)))
+        net.save_parameters('{:s}_{:04d}_{:.4f}.params'.format(prefix, epoch, current_map))
+
+
+def get_dataloader(net, train_dataset, val_dataset, train_transform, val_transform, batch_size,
+                   num_shards, args):
+    """Get dataloader."""
+    train_bfn = FasterRCNNTrainBatchify(net, num_shards)
+    if hasattr(train_dataset, 'get_im_aspect_ratio'):
+        im_aspect_ratio = train_dataset.get_im_aspect_ratio()
+    else:
+        im_aspect_ratio = [1.] * len(train_dataset)
+    train_sampler = \
+        SplitSortedBucketSampler(im_aspect_ratio, batch_size,
+                                 num_parts=hvd.size() if args.horovod else 1,
+                                 part_index=hvd.rank() if args.horovod else 0,
+                                 shuffle=True)
+    train_loader = mx.gluon.data.DataLoader(train_dataset.transform(
+        train_transform(net.short, net.max_size, net, ashape=net.ashape, multi_stage=args.use_fpn)),
+        batch_sampler=train_sampler, batchify_fn=train_bfn, num_workers=args.num_workers)
+    val_bfn = Tuple(*[Append() for _ in range(3)])
+    short = net.short[-1] if isinstance(net.short, (tuple, list)) else net.short
+    # validation use 1 sample per device
+    val_loader = mx.gluon.data.DataLoader(
+        val_dataset.transform(val_transform(short, net.max_size)), num_shards, False,
+        batchify_fn=val_bfn, last_batch='keep', num_workers=args.num_workers)
+    return train_loader, val_loader
+
+
+class FasterRCNNEstimator:
+    """ Estimator for Faster R-CNN.
+    """
+
+    def __init__(self, cfg, eval_metric=None):
+        """
+        Parameters
+        ----------
+        cfg : str or :class:`autogluon.task.ObjectDectection.Dataset`
+            Training dataset containing images and corresponding object bounding boxes.
+        """
+        self.cfg = cfg
+        # training contexts
+        if self.cfg.horovod:
+            self.ctx = [mx.gpu(hvd.local_rank())]
+        else:
+            ctx = [mx.gpu(int(i)) for i in self.cfg.gpus.split(',') if i.strip()]
+            self.ctx = ctx if ctx else [mx.cpu()]
+        self.eval_metric = eval_metric
+        # network
+        kwargs = {}
+        module_list = []
+        if self.cfg.use_fpn:
+            module_list.append('fpn')
+        if self.cfg.norm_layer is not None:
+            module_list.append(self.cfg.norm_layer)
+            if self.cfg.norm_layer == 'syncbn':
+                kwargs['num_devices'] = len(self.ctx)
+
+        self.num_gpus = hvd.size() if self.cfg.horovod else len(self.ctx)
+        net_name = '_'.join(('faster_rcnn', *module_list, self.cfg.network, self.cfg.dataset))
+        if self.cfg.custom_model:
+            self.cfg.use_fpn = True
+            net_name = '_'.join(('custom_faster_rcnn_fpn', self.cfg.network, self.cfg.dataset))
+            if self.cfg.norm_layer == 'syncbn':
+                norm_layer = gluon.contrib.nn.SyncBatchNorm
+                norm_kwargs = {'num_devices': len(self.ctx)}
+                sym_norm_layer = mx.sym.contrib.SyncBatchNorm
+                sym_norm_kwargs = {'ndev': len(self.ctx)}
+            elif self.cfg.norm_layer == 'gn':
+                norm_layer = gluon.nn.GroupNorm
+                norm_kwargs = {'groups': 8}
+                sym_norm_layer = mx.sym.GroupNorm
+                sym_norm_kwargs = {'groups': 8}
+            else:
+                norm_layer = gluon.nn.BatchNorm
+                norm_kwargs = None
+                sym_norm_layer = None
+                sym_norm_kwargs = None
+            classes = self.cfg.classes
+            self.net = get_model('custom_faster_rcnn_fpn', classes=classes, transfer=None,
+                                 dataset=self.cfg.dataset,
+                                 pretrained_base=not self.cfg.no_pretrained_base,
+                                 base_network_name=self.cfg.network, norm_layer=norm_layer,
+                                 norm_kwargs=norm_kwargs, sym_norm_layer=sym_norm_layer,
+                                 sym_norm_kwargs=sym_norm_kwargs,
+                                 num_fpn_filters=self.cfg.num_fpn_filters,
+                                 num_box_head_conv=self.cfg.num_box_head_conv,
+                                 num_box_head_conv_filters=self.cfg.num_box_head_conv_filters,
+                                 num_box_head_dense_filters=self.cfg.num_box_head_dense_filters,
+                                 short=self.cfg.image_short, max_size=self.cfg.image_max_size,
+                                 min_stage=2, max_stage=6, nms_thresh=self.cfg.nms_thresh,
+                                 nms_topk=self.cfg.nms_topk, post_nms=self.cfg.post_nms,
+                                 roi_mode=self.cfg.roi_mode, roi_size=self.cfg.roi_size,
+                                 strides=self.cfg.strides, clip=self.cfg.clip,
+                                 rpn_channel=self.cfg.rpn_channel,
+                                 base_size=self.cfg.anchor_base_size,
+                                 scales=self.cfg.anchor_scales, ratios=self.cfg.anchor_aspect_ratio,
+                                 alloc_size=self.cfg.anchor_alloc_size,
+                                 rpn_nms_thresh=self.cfg.rpn_nms_thresh,
+                                 rpn_train_pre_nms=self.cfg.rpn_train_pre_nms,
+                                 rpn_train_post_nms=self.cfg.rpn_train_post_nms,
+                                 rpn_test_pre_nms=self.cfg.rpn_test_pre_nms,
+                                 rpn_test_post_nms=self.cfg.rpn_test_post_nms,
+                                 rpn_min_size=self.cfg.rpn_min_size,
+                                 per_device_batch_size=self.cfg.batch_size // self.num_gpus,
+                                 num_sample=self.cfg.rcnn_num_samples,
+                                 pos_iou_thresh=self.cfg.rcnn_pos_iou_thresh,
+                                 pos_ratio=self.cfg.rcnn_pos_ratio, max_num_gt=self.cfg.max_num_gt)
+        else:
+            self.net = get_model(net_name, pretrained_base=True,
+                                 per_device_batch_size=self.cfg.batch_size // self.num_gpus,
+                                 **kwargs)
+        self.cfg.save_prefix += net_name
+        if self.cfg.resume.strip():
+            self.net.load_parameters(self.cfg.resume.strip())
+        else:
+            for param in self.net.collect_params().values():
+                if param._data is not None:
+                    continue
+                param.initialize()
+        self.net.collect_params().reset_ctx(ctx)
+        if self.cfg.amp:
+            # Cast both weights and gradients to 'float16'
+            self.net.cast('float16')
+            # These layers don't support type 'float16'
+            self.net.collect_params('.*batchnorm.*').setattr('dtype', 'float32')
+            self.net.collect_params('.*normalizedperclassboxcenterencoder.*').setattr('dtype',
+                                                                                      'float32')
+        self.cfg.save_prefix += net_name
+        if self.cfg.resume.strip():
+            self.net.load_parameters(self.cfg.resume.strip())
+        else:
+            for param in self.net.collect_params().values():
+                if param._data is not None:
+                    continue
+                param.initialize()
+        self.net.collect_params().reset_ctx(self.ctx)
+
+    def _validate(self, val_data, ctx, eval_metric):
+        """Test on validation dataset."""
+        clipper = BBoxClipToImage()
+        eval_metric.reset()
+        if not self.cfg.disable_hybridization:
+            # input format is differnet than training, thus rehybridization is needed.
+            self.net.hybridize(static_alloc=self.cfg.static_alloc)
+        for batch in val_data:
+            batch = split_and_load(batch, ctx_list=ctx)
+            det_bboxes = []
+            det_ids = []
+            det_scores = []
+            gt_bboxes = []
+            gt_ids = []
+            gt_difficults = []
+            for x, y, im_scale in zip(*batch):
+                # get prediction results
+                ids, scores, bboxes = self.net(x)
+                det_ids.append(ids)
+                det_scores.append(scores)
+                # clip to image size
+                det_bboxes.append(clipper(bboxes, x))
+                # rescale to original resolution
+                im_scale = im_scale.reshape((-1)).asscalar()
+                det_bboxes[-1] *= im_scale
+                # split ground truths
+                gt_ids.append(y.slice_axis(axis=-1, begin=4, end=5))
+                gt_bboxes.append(y.slice_axis(axis=-1, begin=0, end=4))
+                gt_bboxes[-1] *= im_scale
+                gt_difficults.append(
+                    y.slice_axis(axis=-1, begin=5, end=6) if y.shape[-1] > 5 else None)
+
+            # update metric
+            for det_bbox, det_id, det_score, gt_bbox, gt_id, gt_diff in zip(det_bboxes, det_ids,
+                                                                            det_scores, gt_bboxes,
+                                                                            gt_ids, gt_difficults):
+                eval_metric.update(det_bbox, det_id, det_score, gt_bbox, gt_id, gt_diff)
+        return eval_metric.get()
+
+    def fit(self, train_data, val_data=None):
+
+        """
+        Fit faster R-CNN models.
+
+
+        Examples
+        --------
+        """
+        batch_size = self.cfg.batch_size // self.num_gpus if self.cfg.horovod else self.cfg.batch_size
+        train_data, val_data = get_dataloader(
+            self.net, train_data, val_data, FasterRCNNDefaultTrainTransform,
+            FasterRCNNDefaultValTransform, batch_size, len(self.ctx), self.cfg)
+
+        self.cfg.kv_store = 'device' if (self.cfg.amp and 'nccl' in self.cfg.kv_store) \
+            else self.cfg.kv_store
+        kv = mx.kvstore.create(self.cfg.kv_store)
+        self.net.collect_params().setattr('grad_req', 'null')
+        self.net.collect_train_params().setattr('grad_req', 'write')
+        optimizer_params = {'learning_rate': self.cfg.lr, 'wd': self.cfg.wd,
+                            'momentum': self.cfg.momentum}
+        if self.cfg.amp:
+            optimizer_params['multi_precision'] = True
+        if self.cfg.horovod:
+            hvd.broadcast_parameters(self.net.collect_params(), root_rank=0)
+            trainer = hvd.DistributedTrainer(
+                self.net.collect_train_params(),  # fix batchnorm, fix first stage, etc...
+                'sgd',
+                optimizer_params)
+        else:
+            trainer = gluon.Trainer(
+                self.net.collect_train_params(),  # fix batchnorm, fix first stage, etc...
+                'sgd',
+                optimizer_params,
+                update_on_kvstore=(False if self.cfg.amp else None), kvstore=kv)
+
+        if self.cfg.amp:
+            self.cfg.init_trainer(trainer)
+
+        # lr decay policy
+        lr_decay = float(self.cfg.lr_decay)
+        lr_steps = sorted([float(ls) for ls in self.cfg.lr_decay_epoch.split(',') if ls.strip()])
+        lr_warmup = float(self.cfg.lr_warmup)  # avoid int division
+
+        # TODO(zhreshold) losses?
+        rpn_cls_loss = mx.gluon.loss.SigmoidBinaryCrossEntropyLoss(from_sigmoid=False)
+        rpn_box_loss = mx.gluon.loss.HuberLoss(rho=self.cfg.rpn_smoothl1_rho)  # == smoothl1
+        rcnn_cls_loss = mx.gluon.loss.SoftmaxCrossEntropyLoss()
+        rcnn_box_loss = mx.gluon.loss.HuberLoss(rho=self.cfg.rcnn_smoothl1_rho)  # == smoothl1
+        metrics = [mx.metric.Loss('RPN_Conf'),
+                   mx.metric.Loss('RPN_SmoothL1'),
+                   mx.metric.Loss('RCNN_CrossEntropy'),
+                   mx.metric.Loss('RCNN_SmoothL1'), ]
+
+        rpn_acc_metric = RPNAccMetric()
+        rpn_bbox_metric = RPNL1LossMetric()
+        rcnn_acc_metric = RCNNAccMetric()
+        rcnn_bbox_metric = RCNNL1LossMetric()
+        metrics2 = [rpn_acc_metric, rpn_bbox_metric, rcnn_acc_metric, rcnn_bbox_metric]
+
+        # set up logger
+        logging.basicConfig()
+        logger = logging.getLogger()
+        logger.setLevel(logging.INFO)
+        log_file_path = self.cfg.save_prefix + '_train.log'
+        log_dir = os.path.dirname(log_file_path)
+        if log_dir and not os.path.exists(log_dir):
+            os.makedirs(log_dir)
+        fh = logging.FileHandler(log_file_path)
+        logger.addHandler(fh)
+        if self.cfg.custom_model:
+            logger.info(
+                'Custom model enabled. Expert Only!! Currently non-FPN model is not supported!!'
+                ' Default setting is for MS-COCO.')
+        logger.info(self.cfg)
+
+        if self.cfg.verbose:
+            logger.info('Trainable parameters:')
+            logger.info(self.net.collect_train_params().keys())
+        logger.info('Start training from [Epoch {}]'.format(self.cfg.start_epoch))
+        best_map = [0]
+        for epoch in range(self.cfg.start_epoch, self.cfg.epochs):
+            rcnn_task = ForwardBackwardTask(self.net, trainer, rpn_cls_loss, rpn_box_loss,
+                                            rcnn_cls_loss, rcnn_box_loss, mix_ratio=1.0,
+                                            amp_enabled=self.cfg.amp)
+            executor = Parallel(self.cfg.executor_threads,
+                                rcnn_task) if not self.cfg.horovod else None
+            mix_ratio = 1.0
+            if not self.cfg.disable_hybridization:
+                self.net.hybridize(static_alloc=self.cfg.static_alloc)
+            if self.cfg.mixup:
+                # TODO(zhreshold) only support evenly mixup now, target generator needs to be modified otherwise
+                train_data._dataset._data.set_mixup(np.random.uniform, 0.5, 0.5)
+                mix_ratio = 0.5
+                if epoch >= self.cfg.epochs - self.cfg.no_mixup_epochs:
+                    train_data._dataset._data.set_mixup(None)
+                    mix_ratio = 1.0
+            while lr_steps and epoch >= lr_steps[0]:
+                new_lr = trainer.learning_rate * lr_decay
+                lr_steps.pop(0)
+                trainer.set_learning_rate(new_lr)
+                logger.info("[Epoch {}] Set learning rate to {}".format(epoch, new_lr))
+            for metric in metrics:
+                metric.reset()
+            tic = time.time()
+            btic = time.time()
+            base_lr = trainer.learning_rate
+            rcnn_task.mix_ratio = mix_ratio
+            for i, batch in enumerate(train_data):
+                if epoch == 0 and i <= lr_warmup:
+                    # adjust based on real percentage
+                    new_lr = base_lr * get_lr_at_iter(i / lr_warmup, self.cfg.lr_warmup_factor)
+                    if new_lr != trainer.learning_rate:
+                        if i % self.cfg.log_interval == 0:
+                            logger.info(
+                                '[Epoch 0 Iteration {}] Set learning rate to {}'.format(i, new_lr))
+                        trainer.set_learning_rate(new_lr)
+                batch = split_and_load(batch, ctx_list=self.ctx)
+                metric_losses = [[] for _ in metrics]
+                add_losses = [[] for _ in metrics2]
+                if executor is not None:
+                    for data in zip(*batch):
+                        executor.put(data)
+                for j in range(len(self.ctx)):
+                    if executor is not None:
+                        result = executor.get()
+                    else:
+                        result = rcnn_task.forward_backward(list(zip(*batch))[0])
+                    if (not self.cfg.horovod) or hvd.rank() == 0:
+                        for k in range(len(metric_losses)):
+                            metric_losses[k].append(result[k])
+                        for k in range(len(add_losses)):
+                            add_losses[k].append(result[len(metric_losses) + k])
+                for metric, record in zip(metrics, metric_losses):
+                    metric.update(0, record)
+                for metric, records in zip(metrics2, add_losses):
+                    for pred in records:
+                        metric.update(pred[0], pred[1])
+                trainer.step(self.cfg.batch_size)
+
+                # update metrics
+                if (not self.cfg.horovod or hvd.rank() == 0) and self.cfg.log_interval \
+                        and not (i + 1) % self.cfg.log_interval:
+                    msg = ','.join(
+                        ['{}={:.3f}'.format(*metric.get()) for metric in metrics + metrics2])
+                    logger.info('[Epoch {}][Batch {}], Speed: {:.3f} samples/sec, {}'.format(
+                        epoch, i,
+                        self.cfg.log_interval * self.cfg.batch_size / (time.time() - btic), msg))
+                    btic = time.time()
+
+            if (not self.cfg.horovod) or hvd.rank() == 0:
+                msg = ','.join(['{}={:.3f}'.format(*metric.get()) for metric in metrics])
+                logger.info('[Epoch {}] Training cost: {:.3f}, {}'.format(
+                    epoch, (time.time() - tic), msg))
+                if not (epoch + 1) % self.cfg.val_interval:
+                    # consider reduce the frequency of validation to save time
+                    map_name, mean_ap = self._validate(val_data, self.ctx, self.eval_metric)
+                    val_msg = '\n'.join(['{}={}'.format(k, v) for k, v in zip(map_name, mean_ap)])
+                    logger.info('[Epoch {}] Validation: \n{}'.format(epoch, val_msg))
+                    current_map = float(mean_ap[-1])
+                else:
+                    current_map = 0.
+                save_params(self.net, logger, best_map, current_map, epoch, self.cfg.save_interval,
+                            self.cfg.save_prefix)
+
+    def evaluate(self, dataset):
+        return self._validate(dataset, self.ctx, self.eval_metric)
+
+    def predict(self, x):
+        x, img = presets.rcnn.load_test(x, short=self.net.short, max_size=self.net.max_size)
+        x = x.as_in_context(self.ctx[0])
+        ids, scores, bboxes = [xx[0].asnumpy() for xx in self.net(x)]
+        return ids, scores, bboxes
