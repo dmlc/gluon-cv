@@ -158,6 +158,10 @@ def parse_args():
                         help='different types of data augmentation pipelines. Supports v1, v2, v3 and v4.')
     parser.add_argument('--train-only', action='store_true',
                         help='if set to True, no evaluation is performed during training. Only save the last epoch model to speed up training.')
+    parser.add_argument('--more-fix-crop', action='store_false',
+                        help='if set to True, enable fixed corner cropping with more corners.')
+    parser.add_argument('--max-distort', type=int, default=1,
+                        help='maximum image aspect ratio distortion allowed during data augmentation. default is 1')
     opt = parser.parse_args()
     return opt
 
@@ -177,6 +181,7 @@ def get_data_loader(opt, batch_size, num_workers, logger, kvstore=None):
     if opt.data_aug == 'v1':
         # GluonCV style, not keeping aspect ratio, multi-scale crop
         transform_train = video.VideoGroupTrainTransform(size=(input_size, input_size), scale_ratios=scale_ratios,
+                                                         more_fix_crop=opt.more_fix_crop, max_distort=opt.max_distort,
                                                          mean=default_mean, std=default_std)
         transform_test = video.VideoGroupValTransform(size=input_size,
                                                       mean=default_mean, std=default_std)
