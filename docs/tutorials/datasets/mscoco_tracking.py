@@ -2,7 +2,7 @@
 ==============================
 
 `COCO <http://cocodataset.org/#home>`_ is a large-scale object detection, segmentation, and captioning datasetself.
-This tutorial will walk through the steps of preparing this dataset for GluonCV for object tracking.
+This tutorial will walk through the steps of preparing this dataset for object tracking in GluonCV.
 
 .. image:: http://cocodataset.org/images/coco-logo.png
 
@@ -33,7 +33,7 @@ We need the following four files from `COCO <http://cocodataset.org/#download>`_
 
 
 The easiest way to download and unpack these files is to download helper script and we suggest run the command because it included download dataset and data processing
-:download:`mscoco_racking.py<../../../scripts/datasets/mscoco_racking.py>` and run
+:download:`mscoco_tracking.py<../../../scripts/datasets/mscoco_tracking.py>` and run
 the following command:
 
 The easiest way is to run this script:

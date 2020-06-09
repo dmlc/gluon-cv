@@ -1,7 +1,7 @@
 """Prepare Youtube_bb dataset
 =========================================
 
-`ILSVRC DET dataset <http://research.google.com/youtube_bb/>`_ is
+`Youtube_bb dataset <http://research.google.com/youtube_bb/>`_ is
 The data set consists of approximately 380,000 15-20s video segments extracted from 240,000 different publicly visible YouTube videos.
 
 This tutorial helps you to download Youtube_bb and set it up for later experiments.
@@ -13,6 +13,6 @@ This tutorial helps you to download Youtube_bb and set it up for later experimen
    The time it takes to prepare the dataset depends on your Internet connection
    and disk speed. 
 
-If you want to download it and follow it <http://github.com/STVIR/pysot/tree/master/training_dataset/yt_bb>`
+If you want to download this dataset, please follow yt_bb<http://github.com/STVIR/pysot/tree/master/training_dataset/yt_bb>`
 
 """

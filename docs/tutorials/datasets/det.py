@@ -1,9 +1,9 @@
-"""Prepare ILSVRC 2015DET dataset
+"""Prepare ILSVRC 2015 DET dataset
 =========================================
 
 `ILSVRC DET dataset <http://image-net.org/>`_ is
 a dataset for object localization/detection and image/scene classification task.
-It contains two thousands full labeled categories for detection and one thousands categories for 1000 categories
+It contains two hundred full labeled categories for detection and 1000 categories for Object localization
 
 This tutorial helps you to download ILSVRC DET and set it up for later experiments.
 
