@@ -128,7 +128,28 @@ class SSDMultiBoxLoss(gluon.Block):
         self._min_hard_negatives = max(0, min_hard_negatives)
 
     def forward(self, cls_pred, box_pred, cls_target, box_target):
-        """Compute loss in entire batch across devices."""
+        """Compute loss in entire batch across devices.
+
+        Parameters
+        ----------
+        cls_pred : mxnet.nd.NDArray
+        Predicted classes.
+        box_pred : mxnet.nd.NDArray
+        Predicted bounding-boxes.
+        cls_target : mxnet.nd.NDArray
+        Ground-truth classes.
+        box_target : mxnet.nd.NDArray
+        Ground-truth bounding-boxes.
+
+        Returns
+        -------
+        tuple of NDArrays
+            sum_losses : array with containing the sum of
+                class prediction and bounding-box regression loss.
+            cls_losses : array of class prediction loss.
+            box_losses : array of box regression L1 loss.
+
+        """
         # require results across different devices at this time
         cls_pred, box_pred, cls_target, box_target = [_as_list(x) \
             for x in (cls_pred, box_pred, cls_target, box_target)]

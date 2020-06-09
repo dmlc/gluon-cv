@@ -4,8 +4,6 @@ from __future__ import absolute_import, division
 import numpy as np
 import mxnet as mx
 
-from ...data.transforms.mask import fill
-
 def expand_mask(masks, bboxes, im_shape, scores=None, thresh=0.5, scale=1.0, sortby=None):
     """Expand instance segmentation mask to full image size.
 
@@ -36,6 +34,7 @@ def expand_mask(masks, bboxes, im_shape, scores=None, thresh=0.5, scale=1.0, sor
     numpy.ndarray
         Index array of sorted masks
     """
+    from ...data.transforms.mask import fill
     if len(masks) != len(bboxes):
         raise ValueError('The length of bboxes and masks mismatch, {} vs {}'
                          .format(len(bboxes), len(masks)))

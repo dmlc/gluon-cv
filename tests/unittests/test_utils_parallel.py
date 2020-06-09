@@ -26,18 +26,19 @@ def test_data_parallel():
         ctx_list = [mx.cpu(0) for i in range(nDevices)]
         net = DataParallelModel(net, ctx_list, sync=sync)
         criterion = DataParallelCriterion(criterion, ctx_list, sync=sync)
-        iters = 100
+        iters = 10
+        bs = 2
         # train mode
         for i in range(iters):
-            x = mx.random.uniform(shape=(8, 1, 28, 28))
-            t = nd.ones(shape=(8))
+            x = mx.random.uniform(shape=(bs, 1, 28, 28))
+            t = nd.ones(shape=(bs))
             with autograd.record():
                 y = net(x)
                 loss = criterion(y, t)
                 autograd.backward(loss)
         # evaluation mode
         for i in range(iters):
-            x = mx.random.uniform(shape=(8, 1, 28, 28))
+            x = mx.random.uniform(shape=(bs, 1, 28, 28))
             y = net(x)
         nd.waitall()
 

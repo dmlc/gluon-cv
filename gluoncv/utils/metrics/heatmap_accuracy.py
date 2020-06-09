@@ -1,12 +1,13 @@
 """Accuracy metric for heatmap prediction."""
 # pylint: disable=assignment-from-no-return
 import numpy as np
-import mxnet as mx
-from mxnet.metric import check_label_shapes
+try:
+    from mxnet.metric import EvalMetric, check_label_shapes
+except ImportError:
+    from mxnet.gluon.metric import EvalMetric, check_label_shapes
 
-from ...data.transforms.pose import get_max_pred
 
-class HeatmapAccuracy(mx.metric.EvalMetric):
+class HeatmapAccuracy(EvalMetric):
     """Computes heatmap accuracy for keypoint
     Parameters
     ----------
@@ -77,6 +78,7 @@ class HeatmapAccuracy(mx.metric.EvalMetric):
             Prediction values for samples. Each prediction value can either be the class index,
             or a vector of likelihoods for all classes.
         """
+        from ...data.transforms.pose import get_max_pred
         labels, preds = check_label_shapes(labels, preds, True)
 
         num_joints = preds[0].shape[1]
