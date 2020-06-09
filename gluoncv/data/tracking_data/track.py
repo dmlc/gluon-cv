@@ -251,7 +251,7 @@ class TrkDataset(dataset.Dataset):
         negative ratio
     """
     def __init__(self,
-                 data_path=os.path.expanduser('~/.mxnet/datasets'),
+                 data_path=os.path.expanduser('~/.mxnet/datasets/tracking'),
                  dataset_names=('vid', 'Youtube_bb', 'coco', 'det'),
                  detaset_root=('vid/crop511', 'Youtube_bb/crop511', 'coco/crop511', 'det/crop511'),
                  detaset_anno=('vid/train.json', 'Youtube_bb/train.json', 'coco/train2017.json',
