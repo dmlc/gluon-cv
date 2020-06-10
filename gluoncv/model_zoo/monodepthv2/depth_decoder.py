@@ -49,8 +49,9 @@ class DepthDecoder(nn.HybridBlock):
             # register blocks
             for k in self.convs:
                 self.register_child(self.convs[k])
+            self.decoder = nn.HybridSequential()
+            self.decoder.add(*list(self.convs.values()))
 
-            # self.decoder = nn.ModuleList(list(self.convs.values()))
             self.sigmoid = nn.Activation('sigmoid')
 
     def hybrid_forward(self, F, input_features):

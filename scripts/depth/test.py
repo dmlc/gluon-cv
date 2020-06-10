@@ -22,6 +22,8 @@ from gluoncv.data.kitti import kitti_dataset
 from gluoncv.model_zoo import monodepthv2
 from gluoncv.utils.parallel import *
 
+from gluoncv.model_zoo.monodepthv2.layers import disp_to_depth
+
 
 cv2.setNumThreads(0)  # This speeds up evaluation 5x on our unix systems (OpenCV 3.3.1)
 
@@ -295,13 +297,16 @@ def evaluate(opt):
     MAX_DEPTH = 80
 
     # DO NOT modify!!! Only support batch_size=ngus
-    batch_size = opt.ngpus
+    batch_size = 16  # opt.ngpus
 
     assert sum((opt.eval_mono, opt.eval_stereo)) == 1, \
         "Please choose mono or stereo evaluation by setting either --eval_mono or --eval_stereo"
 
     if opt.ext_disp_to_eval is None:
         ############################ loading weights ############################
+        # TODO: loading pretrained weights
+        encoder_path = os.path.join(opt.load_weights_folder, "encoder.params")
+        decoder_path = os.path.join(opt.load_weights_folder, "depth.params")
 
         ############################ loading dataset ############################
         tic = time.time()
@@ -318,9 +323,13 @@ def evaluate(opt):
         ############################ loading model ############################
         tic = time.time()
         encoder = monodepthv2.ResnetEncoder(opt.num_layers, pretrained=False, ctx=opt.ctx)
-        encoder.initialize(ctx=opt.ctx[0])
         depth_decoder = monodepthv2.DepthDecoder(encoder.num_ch_enc)
-        depth_decoder.initialize(ctx=opt.ctx[0])
+
+        # TODO: using real weights
+        encoder.load_parameters(encoder_path, ctx=opt.ctx[0])
+        depth_decoder.load_parameters(decoder_path, ctx=opt.ctx[0])
+        # encoder.initialize(ctx=opt.ctx[0])
+        # depth_decoder.initialize(ctx=opt.ctx[0])
 
         # encoder_ = DataParallelModel(encoder, ctx_list=opt.ctx)
         # depth_decoder_ = DataParallelModel(depth_decoder, ctx_list=opt.ctx)
@@ -334,8 +343,13 @@ def evaluate(opt):
             features = encoder(input_color)
             output = depth_decoder(features)
 
-            exit()
-        sys.exit()
+            pred_disp, _ = disp_to_depth(output[("disp", 0)], opt.min_depth, opt.max_depth)
+            pred_disp = pred_disp.as_in_context(mx.cpu())[:, 0].asnumpy()
+
+            pred_disps.append(pred_disp)
+
+        pred_disps = np.concatenate(pred_disps)
+
     else:
         # Load predictions from file
         print("-> Loading predictions from {}".format(opt.ext_disp_to_eval))
@@ -375,7 +389,7 @@ def evaluate(opt):
         quit()
 
     gt_path = os.path.join(splits_dir, opt.eval_split, "gt_depths.npz")
-    gt_depths = np.load(gt_path, fix_imports=True, encoding='latin1')["data"]
+    gt_depths = np.load(gt_path, allow_pickle=True,fix_imports=True, encoding='latin1')["data"]
 
     print("-> Evaluating")
 
