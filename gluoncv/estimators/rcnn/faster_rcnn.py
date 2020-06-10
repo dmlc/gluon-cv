@@ -1,5 +1,6 @@
 import logging
 import os
+import time
 
 import mxnet as mx
 import numpy as np
@@ -17,13 +18,13 @@ from ...utils.metrics.rcnn import RPNAccMetric, RPNL1LossMetric, RCNNAccMetric, 
     RCNNL1LossMetric
 from ...utils.parallel import Parallel
 
+logging.basicConfig()
 logger = logging.getLogger(__name__)
 
 try:
     import horovod.mxnet as hvd
 except ImportError:
     hvd = None
-import time
 
 __all__ = ['FasterRCNNEstimator']
 
@@ -92,8 +93,10 @@ class FasterRCNNEstimator:
         """
         Parameters
         ----------
-        cfg : str or :class:`autogluon.task.ObjectDectection.Dataset`
-            Training dataset containing images and corresponding object bounding boxes.
+        cfg : configuration object
+            configuration object containing information for constructing Faster R-CNN estimator.
+        eval_metric : evaluation metric
+            evaluation metric that would be used for validation.
         """
         self.cfg = cfg
         # training contexts
@@ -175,7 +178,7 @@ class FasterRCNNEstimator:
                 if param._data is not None:
                     continue
                 param.initialize()
-        self.net.collect_params().reset_ctx(ctx)
+        self.net.collect_params().reset_ctx(self.ctx)
         if self.cfg.amp:
             # Cast both weights and gradients to 'float16'
             self.net.cast('float16')
@@ -192,6 +195,34 @@ class FasterRCNNEstimator:
                     continue
                 param.initialize()
         self.net.collect_params().reset_ctx(self.ctx)
+        # set up logger
+        logger.setLevel(logging.INFO)
+        log_file_path = self.cfg.save_prefix + '_train.log'
+        log_dir = os.path.dirname(log_file_path)
+        if log_dir and not os.path.exists(log_dir):
+            os.makedirs(log_dir)
+        fh = logging.FileHandler(log_file_path)
+        logger.addHandler(fh)
+        if self.cfg.custom_model:
+            logger.info(
+                'Custom model enabled. Expert Only!! Currently non-FPN model is not supported!!'
+                ' Default setting is for MS-COCO.')
+        logger.info(self.cfg)
+        self.rpn_cls_loss = mx.gluon.loss.SigmoidBinaryCrossEntropyLoss(from_sigmoid=False)
+        self.rpn_box_loss = mx.gluon.loss.HuberLoss(rho=self.cfg.rpn_smoothl1_rho)  # == smoothl1
+        self.rcnn_cls_loss = mx.gluon.loss.SoftmaxCrossEntropyLoss()
+        self.rcnn_box_loss = mx.gluon.loss.HuberLoss(rho=self.cfg.rcnn_smoothl1_rho)  # == smoothl1
+        self.metrics = [mx.metric.Loss('RPN_Conf'),
+                        mx.metric.Loss('RPN_SmoothL1'),
+                        mx.metric.Loss('RCNN_CrossEntropy'),
+                        mx.metric.Loss('RCNN_SmoothL1'), ]
+
+        self.rpn_acc_metric = RPNAccMetric()
+        self.rpn_bbox_metric = RPNL1LossMetric()
+        self.rcnn_acc_metric = RCNNAccMetric()
+        self.rcnn_bbox_metric = RCNNL1LossMetric()
+        self.metrics2 = [self.rpn_acc_metric, self.rpn_bbox_metric, self.rcnn_acc_metric,
+                         self.rcnn_bbox_metric]
 
     def _validate(self, val_data, ctx, eval_metric):
         """Test on validation dataset."""
@@ -276,46 +307,14 @@ class FasterRCNNEstimator:
         lr_steps = sorted([float(ls) for ls in self.cfg.lr_decay_epoch.split(',') if ls.strip()])
         lr_warmup = float(self.cfg.lr_warmup)  # avoid int division
 
-        # TODO(zhreshold) losses?
-        rpn_cls_loss = mx.gluon.loss.SigmoidBinaryCrossEntropyLoss(from_sigmoid=False)
-        rpn_box_loss = mx.gluon.loss.HuberLoss(rho=self.cfg.rpn_smoothl1_rho)  # == smoothl1
-        rcnn_cls_loss = mx.gluon.loss.SoftmaxCrossEntropyLoss()
-        rcnn_box_loss = mx.gluon.loss.HuberLoss(rho=self.cfg.rcnn_smoothl1_rho)  # == smoothl1
-        metrics = [mx.metric.Loss('RPN_Conf'),
-                   mx.metric.Loss('RPN_SmoothL1'),
-                   mx.metric.Loss('RCNN_CrossEntropy'),
-                   mx.metric.Loss('RCNN_SmoothL1'), ]
-
-        rpn_acc_metric = RPNAccMetric()
-        rpn_bbox_metric = RPNL1LossMetric()
-        rcnn_acc_metric = RCNNAccMetric()
-        rcnn_bbox_metric = RCNNL1LossMetric()
-        metrics2 = [rpn_acc_metric, rpn_bbox_metric, rcnn_acc_metric, rcnn_bbox_metric]
-
-        # set up logger
-        logging.basicConfig()
-        logger = logging.getLogger()
-        logger.setLevel(logging.INFO)
-        log_file_path = self.cfg.save_prefix + '_train.log'
-        log_dir = os.path.dirname(log_file_path)
-        if log_dir and not os.path.exists(log_dir):
-            os.makedirs(log_dir)
-        fh = logging.FileHandler(log_file_path)
-        logger.addHandler(fh)
-        if self.cfg.custom_model:
-            logger.info(
-                'Custom model enabled. Expert Only!! Currently non-FPN model is not supported!!'
-                ' Default setting is for MS-COCO.')
-        logger.info(self.cfg)
-
         if self.cfg.verbose:
             logger.info('Trainable parameters:')
             logger.info(self.net.collect_train_params().keys())
         logger.info('Start training from [Epoch {}]'.format(self.cfg.start_epoch))
         best_map = [0]
         for epoch in range(self.cfg.start_epoch, self.cfg.epochs):
-            rcnn_task = ForwardBackwardTask(self.net, trainer, rpn_cls_loss, rpn_box_loss,
-                                            rcnn_cls_loss, rcnn_box_loss, mix_ratio=1.0,
+            rcnn_task = ForwardBackwardTask(self.net, trainer, self.rpn_cls_loss, self.rpn_box_loss,
+                                            self.rcnn_cls_loss, self.rcnn_box_loss, mix_ratio=1.0,
                                             amp_enabled=self.cfg.amp)
             executor = Parallel(self.cfg.executor_threads,
                                 rcnn_task) if not self.cfg.horovod else None
@@ -334,7 +333,7 @@ class FasterRCNNEstimator:
                 lr_steps.pop(0)
                 trainer.set_learning_rate(new_lr)
                 logger.info("[Epoch {}] Set learning rate to {}".format(epoch, new_lr))
-            for metric in metrics:
+            for metric in self.metrics:
                 metric.reset()
             tic = time.time()
             btic = time.time()
@@ -350,8 +349,8 @@ class FasterRCNNEstimator:
                                 '[Epoch 0 Iteration {}] Set learning rate to {}'.format(i, new_lr))
                         trainer.set_learning_rate(new_lr)
                 batch = split_and_load(batch, ctx_list=self.ctx)
-                metric_losses = [[] for _ in metrics]
-                add_losses = [[] for _ in metrics2]
+                metric_losses = [[] for _ in self.metrics]
+                add_losses = [[] for _ in self.metrics2]
                 if executor is not None:
                     for data in zip(*batch):
                         executor.put(data)
@@ -361,13 +360,13 @@ class FasterRCNNEstimator:
                     else:
                         result = rcnn_task.forward_backward(list(zip(*batch))[0])
                     if (not self.cfg.horovod) or hvd.rank() == 0:
-                        for k in range(len(metric_losses)):
-                            metric_losses[k].append(result[k])
-                        for k in range(len(add_losses)):
-                            add_losses[k].append(result[len(metric_losses) + k])
-                for metric, record in zip(metrics, metric_losses):
+                        for k, metric_loss in enumerate(metric_losses):
+                            metric_loss.append(result[k])
+                        for k, add_loss in enumerate(add_losses):
+                            add_loss.append(result[len(metric_losses) + k])
+                for metric, record in zip(self.metrics, metric_losses):
                     metric.update(0, record)
-                for metric, records in zip(metrics2, add_losses):
+                for metric, records in zip(self.metrics2, add_losses):
                     for pred in records:
                         metric.update(pred[0], pred[1])
                 trainer.step(self.cfg.batch_size)
@@ -376,14 +375,15 @@ class FasterRCNNEstimator:
                 if (not self.cfg.horovod or hvd.rank() == 0) and self.cfg.log_interval \
                         and not (i + 1) % self.cfg.log_interval:
                     msg = ','.join(
-                        ['{}={:.3f}'.format(*metric.get()) for metric in metrics + metrics2])
+                        ['{}={:.3f}'.format(*metric.get()) for metric in
+                         self.metrics + self.metrics2])
                     logger.info('[Epoch {}][Batch {}], Speed: {:.3f} samples/sec, {}'.format(
                         epoch, i,
                         self.cfg.log_interval * self.cfg.batch_size / (time.time() - btic), msg))
                     btic = time.time()
 
             if (not self.cfg.horovod) or hvd.rank() == 0:
-                msg = ','.join(['{}={:.3f}'.format(*metric.get()) for metric in metrics])
+                msg = ','.join(['{}={:.3f}'.format(*metric.get()) for metric in self.metrics])
                 logger.info('[Epoch {}] Training cost: {:.3f}, {}'.format(
                     epoch, (time.time() - tic), msg))
                 if not (epoch + 1) % self.cfg.val_interval:
