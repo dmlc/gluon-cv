@@ -304,7 +304,6 @@ def evaluate(opt):
 
     if opt.ext_disp_to_eval is None:
         ############################ loading weights ############################
-        # TODO: loading pretrained weights
         encoder_path = os.path.join(opt.load_weights_folder, "encoder.params")
         decoder_path = os.path.join(opt.load_weights_folder, "depth.params")
 
@@ -317,33 +316,59 @@ def evaluate(opt):
                                                 opt.height, opt.width,
                                                 [0], 4, is_train=False, img_ext=img_ext)
         dataloader = gluon.data.DataLoader(dataset, batch_size=batch_size, shuffle=False,
-                                           batchify_fn=dict_batchify_fn, num_workers=opt.num_workers,
-                                           pin_memory=True, last_batch='keep')
+                                           batchify_fn=dict_batchify_fn,
+                                           num_workers=opt.num_workers,
+                                           pin_memory=True, last_batch='rollover')
         print('Runtime of create dataloader : %.2f' % (time.time() - tic))
         ############################ loading model ############################
         tic = time.time()
         encoder = monodepthv2.ResnetEncoder(opt.num_layers, pretrained=False, ctx=opt.ctx)
         depth_decoder = monodepthv2.DepthDecoder(encoder.num_ch_enc)
 
-        # TODO: using real weights
-        encoder.load_parameters(encoder_path, ctx=opt.ctx[0])
-        depth_decoder.load_parameters(decoder_path, ctx=opt.ctx[0])
+        # encoder.load_parameters(encoder_path, ctx=opt.ctx[0])
+        # depth_decoder.load_parameters(decoder_path, ctx=opt.ctx[0])
+        encoder.load_parameters(encoder_path, ctx=opt.ctx)
+        depth_decoder.load_parameters(decoder_path, ctx=opt.ctx)
+
         # encoder.initialize(ctx=opt.ctx[0])
         # depth_decoder.initialize(ctx=opt.ctx[0])
 
-        # encoder_ = DataParallelModel(encoder, ctx_list=opt.ctx)
-        # depth_decoder_ = DataParallelModel(depth_decoder, ctx_list=opt.ctx)
+        encoder_ = DataParallelModel(encoder, ctx_list=opt.ctx)
+        depth_decoder_ = DataParallelModel(depth_decoder, ctx_list=opt.ctx)
         print('Runtime of create model : %.2f' % (time.time() - tic))
         ############################ inference ############################
         pred_disps = []
         tbar = tqdm(dataloader)
         for i, data in enumerate(tbar):
-            input_color = data[("color", 0, 0)]
-            input_color = input_color.as_in_context(context=opt.ctx[0])
-            features = encoder(input_color)
-            output = depth_decoder(features)
+            # input_color = data[("color", 0, 0)]
+            # input_color = input_color.as_in_context(context=opt.ctx[0])
+            # features = encoder(input_color)
+            # output = depth_decoder(features)
 
-            pred_disp, _ = disp_to_depth(output[("disp", 0)], opt.min_depth, opt.max_depth)
+            input_color = data[("color", 0, 0)]
+            print(input_color.shape[0])
+            features = encoder_(input_color)
+            encoder_outputs = [x for x in features[0]]
+            for i in range(1, len(features)):
+                for j in range(len(features[i])):
+                    encoder_outputs[j] = mx.nd.concat(
+                        encoder_outputs[j],
+                        features[i][j].as_in_context(encoder_outputs[j].context),
+                        dim=0
+                    )
+
+            output = depth_decoder_(encoder_outputs)
+            decoder_output = output[0]
+
+            for i in range(1, len(output)):
+                for key in decoder_output.keys():
+                    decoder_output[key] = mx.nd.concat(
+                        decoder_output[key],
+                        output[i][key].as_in_context(decoder_output[key].context),
+                        dim=0
+                    )
+
+            pred_disp, _ = disp_to_depth(decoder_output[("disp", 0)], opt.min_depth, opt.max_depth)
             pred_disp = pred_disp.as_in_context(mx.cpu())[:, 0].asnumpy()
 
             pred_disps.append(pred_disp)
