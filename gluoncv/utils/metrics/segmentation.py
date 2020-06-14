@@ -65,6 +65,11 @@ class SegmentationMetric(EvalMetric):
         IoU = 1.0 * self.total_inter / (np.spacing(1) + self.total_union)
         mIoU = IoU.mean()
         return pixAcc, mIoU
+    
+    def get_class_iou(self):
+        """Gets per-class IoU scores."""
+        IoU = 1.0 * self.total_inter / (np.spacing(1) + self.total_union)
+        return IoU
 
     def reset(self):
         """Resets the internal evaluation result to initial state."""
