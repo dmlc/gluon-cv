@@ -103,7 +103,7 @@ num_gpus = 1
 ctx = [mx.gpu(i) for i in range(num_gpus)]
 transform_train = video.VideoGroupTrainTransform(size=(224, 224), scale_ratios=[1.0, 0.8], mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 per_device_batch_size = 5
-num_workers = 8
+num_workers = 0
 batch_size = per_device_batch_size * num_gpus
 
 train_dataset = VideoClsCustom(root=os.path.expanduser('~/.mxnet/datasets/ucf101/rawframes'),
