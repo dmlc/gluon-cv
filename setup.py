@@ -56,6 +56,7 @@ requirements = [
     'portalocker',
     'Pillow',
     'scipy',
+    'sacred',
 ]
 if with_cython:
     _NP_INCLUDE_DIRS = np.get_include()
