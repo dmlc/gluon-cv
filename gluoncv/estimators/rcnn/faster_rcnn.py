@@ -6,6 +6,7 @@ import mxnet as mx
 import numpy as np
 from mxnet import gluon
 
+from ... import data as gdata
 from ...data.batchify import FasterRCNNTrainBatchify, Tuple, Append
 from ...data.sampler import SplitSortedBucketSampler
 from ...data.transforms import presets
@@ -14,8 +15,10 @@ from ...data.transforms.presets.rcnn import FasterRCNNDefaultTrainTransform, \
 from ...model_zoo import get_model
 from ...model_zoo.rcnn.faster_rcnn.data_parallel import ForwardBackwardTask
 from ...nn.bbox import BBoxClipToImage
+from ...utils.metrics.coco_detection import COCODetectionMetric
 from ...utils.metrics.rcnn import RPNAccMetric, RPNL1LossMetric, RCNNAccMetric, \
     RCNNL1LossMetric
+from ...utils.metrics.voc_detection import VOC07MApMetric
 from ...utils.parallel import Parallel
 
 logging.basicConfig()
@@ -85,18 +88,42 @@ def get_dataloader(net, train_dataset, val_dataset, train_transform, val_transfo
     return train_loader, val_loader
 
 
+def get_dataset(dataset, args):
+    if dataset.lower() == 'voc':
+        train_dataset = gdata.VOCDetection(
+            splits=[(2007, 'trainval'), (2012, 'trainval')])
+        val_dataset = gdata.VOCDetection(
+            splits=[(2007, 'test')])
+        val_metric = VOC07MApMetric(iou_thresh=0.5, class_names=val_dataset.classes)
+    elif dataset.lower() in ['clipart', 'comic', 'watercolor']:
+        root = os.path.join('~', '.mxnet', 'datasets', dataset.lower())
+        train_dataset = gdata.CustomVOCDetection(root=root, splits=[('', 'train')],
+                                                 generate_classes=True)
+        val_dataset = gdata.CustomVOCDetection(root=root, splits=[('', 'test')],
+                                               generate_classes=True)
+        val_metric = VOC07MApMetric(iou_thresh=0.5, class_names=val_dataset.classes)
+    elif dataset.lower() == 'coco':
+        train_dataset = gdata.COCODetection(splits='instances_train2017', use_crowd=False)
+        val_dataset = gdata.COCODetection(splits='instances_val2017', skip_empty=False)
+        val_metric = COCODetectionMetric(val_dataset, args.save_prefix + '_eval', cleanup=True)
+    else:
+        raise NotImplementedError('Dataset: {} not implemented.'.format(dataset))
+    if args.mixup:
+        from gluoncv.data.mixup import detection
+        train_dataset = detection.MixupDetection(train_dataset)
+    return train_dataset, val_dataset, val_metric
+
+
 class FasterRCNNEstimator:
     """ Estimator for Faster R-CNN.
     """
 
-    def __init__(self, cfg, eval_metric=None):
+    def __init__(self, cfg):
         """
         Parameters
         ----------
         cfg : configuration object
             configuration object containing information for constructing Faster R-CNN estimator.
-        eval_metric : evaluation metric
-            evaluation metric that would be used for validation.
         """
         self.cfg = cfg
         # training contexts
@@ -105,7 +132,9 @@ class FasterRCNNEstimator:
         else:
             ctx = [mx.gpu(int(i)) for i in self.cfg.gpus.split(',') if i.strip()]
             self.ctx = ctx if ctx else [mx.cpu()]
-        self.eval_metric = eval_metric
+        # training data
+        self.train_dataset, self.val_dataset, self.eval_metric = \
+            get_dataset(self.cfg.dataset, self.cfg)
         # network
         kwargs = {}
         module_list = []
@@ -263,18 +292,14 @@ class FasterRCNNEstimator:
                 eval_metric.update(det_bbox, det_id, det_score, gt_bbox, gt_id, gt_diff)
         return eval_metric.get()
 
-    def fit(self, train_data, val_data=None):
+    def fit(self):
 
         """
-        Fit faster R-CNN models.
-
-
-        Examples
-        --------
+        Fit faster R-CNN models. All parameters are set
         """
         batch_size = self.cfg.batch_size // self.num_gpus if self.cfg.horovod else self.cfg.batch_size
         train_data, val_data = get_dataloader(
-            self.net, train_data, val_data, FasterRCNNDefaultTrainTransform,
+            self.net, self.train_data, self.val_data, FasterRCNNDefaultTrainTransform,
             FasterRCNNDefaultValTransform, batch_size, len(self.ctx), self.cfg)
 
         self.cfg.kv_store = 'device' if (self.cfg.amp and 'nccl' in self.cfg.kv_store) \

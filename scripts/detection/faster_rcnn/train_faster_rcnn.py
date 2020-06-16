@@ -15,11 +15,8 @@ from mxnet.contrib import amp
 import gluoncv as gcv
 
 gcv.utils.check_version('0.7.0')
-from gluoncv import data as gdata
 from gluoncv import utils as gutils
 from gluoncv.estimators.rcnn.faster_rcnn import FasterRCNNEstimator
-from gluoncv.utils.metrics.voc_detection import VOC07MApMetric
-from gluoncv.utils.metrics.coco_detection import COCODetectionMetric
 
 try:
     import horovod.mxnet as hvd
@@ -282,32 +279,6 @@ def parse_args():
     return args
 
 
-def get_dataset(dataset, args):
-    if dataset.lower() == 'voc':
-        train_dataset = gdata.VOCDetection(
-            splits=[(2007, 'trainval'), (2012, 'trainval')])
-        val_dataset = gdata.VOCDetection(
-            splits=[(2007, 'test')])
-        val_metric = VOC07MApMetric(iou_thresh=0.5, class_names=val_dataset.classes)
-    elif dataset.lower() in ['clipart', 'comic', 'watercolor']:
-        root = os.path.join('~', '.mxnet', 'datasets', dataset.lower())
-        train_dataset = gdata.CustomVOCDetection(root=root, splits=[('', 'train')],
-                                                 generate_classes=True)
-        val_dataset = gdata.CustomVOCDetection(root=root, splits=[('', 'test')],
-                                               generate_classes=True)
-        val_metric = VOC07MApMetric(iou_thresh=0.5, class_names=val_dataset.classes)
-    elif dataset.lower() == 'coco':
-        train_dataset = gdata.COCODetection(splits='instances_train2017', use_crowd=False)
-        val_dataset = gdata.COCODetection(splits='instances_val2017', skip_empty=False)
-        val_metric = COCODetectionMetric(val_dataset, args.save_prefix + '_eval', cleanup=True)
-    else:
-        raise NotImplementedError('Dataset: {} not implemented.'.format(dataset))
-    if args.mixup:
-        from gluoncv.data.mixup import detection
-        train_dataset = detection.MixupDetection(train_dataset)
-    return train_dataset, val_dataset, val_metric
-
-
 if __name__ == '__main__':
     import sys
 
@@ -319,10 +290,7 @@ if __name__ == '__main__':
     if args.amp:
         amp.init()
 
-    # training data
-    train_dataset, val_dataset, eval_metric = get_dataset(args.dataset, args)
-
-    frcnn_estimator = FasterRCNNEstimator(args, eval_metric)
+    frcnn_estimator = FasterRCNNEstimator(args)
 
     # training
-    frcnn_estimator.fit(train_dataset, val_dataset)
+    frcnn_estimator.fit()
