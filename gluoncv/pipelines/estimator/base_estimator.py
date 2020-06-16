@@ -50,7 +50,6 @@ class BaseEstimator:
         self._log = logger if logger is not None else logging.getLogger(__name__)
         self._logdir = os.path.abspath(logdir) if logdir else os.getcwd()
 
-    def fit(self):
         # finalize the config
         r = self._ex.run('_get_config', options={'--loglevel': 50})
         print_config(r)
@@ -59,6 +58,8 @@ class BaseEstimator:
         save_config(r.config, self._log, config_file)
         self._cfg = r.config
         _random.seed(self._cfg.seed)
+
+    def fit(self):
         self._fit()
 
     def _fit(self):
