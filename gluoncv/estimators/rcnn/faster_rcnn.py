@@ -1,10 +1,13 @@
+"""Faster RCNN Estimator."""
+
 import logging
 import os
 import time
 
 import mxnet as mx
-import numpy as np
 from mxnet import gluon
+
+import numpy as np
 
 from ... import data as gdata
 from ...data.batchify import FasterRCNNTrainBatchify, Tuple, Append
@@ -21,9 +24,6 @@ from ...utils.metrics.rcnn import RPNAccMetric, RPNL1LossMetric, RCNNAccMetric, 
 from ...utils.metrics.voc_detection import VOC07MApMetric
 from ...utils.parallel import Parallel
 
-logging.basicConfig()
-logger = logging.getLogger(__name__)
-
 try:
     import horovod.mxnet as hvd
 except ImportError:
@@ -32,14 +32,14 @@ except ImportError:
 __all__ = ['FasterRCNNEstimator']
 
 
-def get_lr_at_iter(alpha, lr_warmup_factor=1. / 3.):
+def _get_lr_at_iter(alpha, lr_warmup_factor=1. / 3.):
     return lr_warmup_factor * (1 - alpha) + alpha
 
 
-def split_and_load(batch, ctx_list):
+def _split_and_load(batch, ctx_list):
     """Split data to 1 batch each device."""
     new_batch = []
-    for i, data in enumerate(batch):
+    for _, data in enumerate(batch):
         if isinstance(data, (list, tuple)):
             new_data = [x.as_in_context(ctx) for x, ctx in zip(data, ctx_list)]
         else:
@@ -48,23 +48,23 @@ def split_and_load(batch, ctx_list):
     return new_batch
 
 
-def save_params(net, logger, best_map, current_map, epoch, save_interval, prefix):
+def _save_params(net, logger, best_map, current_map, epoch, save_interval, prefix):
     current_map = float(current_map)
     if current_map > best_map[0]:
         logger.info('[Epoch {}] mAP {} higher than current best {} saving to {}'.format(
             epoch, current_map, best_map, '{:s}_best.params'.format(prefix)))
         best_map[0] = current_map
         net.save_parameters('{:s}_best.params'.format(prefix))
-        with open(prefix + '_best_map.log', 'a') as f:
-            f.write('{:04d}:\t{:.4f}\n'.format(epoch, current_map))
+        with open(prefix + '_best_map.log', 'a') as log_file:
+            log_file.write('{:04d}:\t{:.4f}\n'.format(epoch, current_map))
     if save_interval and (epoch + 1) % save_interval == 0:
         logger.info('[Epoch {}] Saving parameters to {}'.format(
             epoch, '{:s}_{:04d}_{:.4f}.params'.format(prefix, epoch, current_map)))
         net.save_parameters('{:s}_{:04d}_{:.4f}.params'.format(prefix, epoch, current_map))
 
 
-def get_dataloader(net, train_dataset, val_dataset, train_transform, val_transform, batch_size,
-                   num_shards, args):
+def _get_dataloader(net, train_dataset, val_dataset, train_transform, val_transform, batch_size,
+                    num_shards, args):
     """Get dataloader."""
     train_bfn = FasterRCNNTrainBatchify(net, num_shards)
     if hasattr(train_dataset, 'get_im_aspect_ratio'):
@@ -76,19 +76,21 @@ def get_dataloader(net, train_dataset, val_dataset, train_transform, val_transfo
                                  num_parts=hvd.size() if args.horovod else 1,
                                  part_index=hvd.rank() if args.horovod else 0,
                                  shuffle=True)
-    train_loader = mx.gluon.data.DataLoader(train_dataset.transform(
-        train_transform(net.short, net.max_size, net, ashape=net.ashape, multi_stage=args.use_fpn)),
+    train_loader = gluon.data.DataLoader(
+        train_dataset.transform(
+            train_transform(net.short, net.max_size, net, ashape=net.ashape,
+                            multi_stage=args.use_fpn)),
         batch_sampler=train_sampler, batchify_fn=train_bfn, num_workers=args.num_workers)
     val_bfn = Tuple(*[Append() for _ in range(3)])
     short = net.short[-1] if isinstance(net.short, (tuple, list)) else net.short
     # validation use 1 sample per device
-    val_loader = mx.gluon.data.DataLoader(
+    val_loader = gluon.data.DataLoader(
         val_dataset.transform(val_transform(short, net.max_size)), num_shards, False,
         batchify_fn=val_bfn, last_batch='keep', num_workers=args.num_workers)
     return train_loader, val_loader
 
 
-def get_dataset(dataset, args):
+def _get_dataset(dataset, args):
     if dataset.lower() == 'voc':
         train_dataset = gdata.VOCDetection(
             splits=[(2007, 'trainval'), (2012, 'trainval')])
@@ -118,13 +120,19 @@ class FasterRCNNEstimator:
     """ Estimator for Faster R-CNN.
     """
 
-    def __init__(self, cfg):
+    def __init__(self, cfg, logger=None):
         """
+        Constructs Faster R-CNN estimator.
+
         Parameters
         ----------
         cfg : configuration object
-            configuration object containing information for constructing Faster R-CNN estimator.
+            Configuration object containing information for constructing Faster R-CNN estimator.
+        logger : logger object, default is None
+            If not `None`, will use default logging object.
         """
+        super().__init__(self)
+        self._logger = logger if logger is not None else logging.getLogger(__name__)
         self.cfg = cfg
         # training contexts
         if self.cfg.horovod:
@@ -134,7 +142,7 @@ class FasterRCNNEstimator:
             self.ctx = ctx if ctx else [mx.cpu()]
         # training data
         self.train_dataset, self.val_dataset, self.eval_metric = \
-            get_dataset(self.cfg.dataset, self.cfg)
+            _get_dataset(self.cfg.dataset, self.cfg)
         # network
         kwargs = {}
         module_list = []
@@ -166,6 +174,7 @@ class FasterRCNNEstimator:
                 sym_norm_layer = None
                 sym_norm_kwargs = None
             classes = self.cfg.classes
+            # TODO: maybe refactor this to pass configuration into the model instead.
             self.net = get_model('custom_faster_rcnn_fpn', classes=classes, transfer=None,
                                  dataset=self.cfg.dataset,
                                  pretrained_base=not self.cfg.no_pretrained_base,
@@ -237,10 +246,10 @@ class FasterRCNNEstimator:
                 'Custom model enabled. Expert Only!! Currently non-FPN model is not supported!!'
                 ' Default setting is for MS-COCO.')
         logger.info(self.cfg)
-        self.rpn_cls_loss = mx.gluon.loss.SigmoidBinaryCrossEntropyLoss(from_sigmoid=False)
-        self.rpn_box_loss = mx.gluon.loss.HuberLoss(rho=self.cfg.rpn_smoothl1_rho)  # == smoothl1
-        self.rcnn_cls_loss = mx.gluon.loss.SoftmaxCrossEntropyLoss()
-        self.rcnn_box_loss = mx.gluon.loss.HuberLoss(rho=self.cfg.rcnn_smoothl1_rho)  # == smoothl1
+        self.rpn_cls_loss = gluon.loss.SigmoidBinaryCrossEntropyLoss(from_sigmoid=False)
+        self.rpn_box_loss = gluon.loss.HuberLoss(rho=self.cfg.rpn_smoothl1_rho)  # == smoothl1
+        self.rcnn_cls_loss = gluon.loss.SoftmaxCrossEntropyLoss()
+        self.rcnn_box_loss = gluon.loss.HuberLoss(rho=self.cfg.rcnn_smoothl1_rho)  # == smoothl1
         self.metrics = [mx.metric.Loss('RPN_Conf'),
                         mx.metric.Loss('RPN_SmoothL1'),
                         mx.metric.Loss('RCNN_CrossEntropy'),
@@ -261,7 +270,7 @@ class FasterRCNNEstimator:
             # input format is differnet than training, thus rehybridization is needed.
             self.net.hybridize(static_alloc=self.cfg.static_alloc)
         for batch in val_data:
-            batch = split_and_load(batch, ctx_list=ctx)
+            batch = _split_and_load(batch, ctx_list=ctx)
             det_bboxes = []
             det_ids = []
             det_scores = []
@@ -295,11 +304,12 @@ class FasterRCNNEstimator:
     def fit(self):
 
         """
-        Fit faster R-CNN models. All parameters are set
+        Fit faster R-CNN models.
         """
-        batch_size = self.cfg.batch_size // self.num_gpus if self.cfg.horovod else self.cfg.batch_size
-        train_data, val_data = get_dataloader(
-            self.net, self.train_data, self.val_data, FasterRCNNDefaultTrainTransform,
+        batch_size = self.cfg.batch_size // self.num_gpus \
+            if self.cfg.horovod else self.cfg.batch_size
+        train_data, val_data = _get_dataloader(
+            self.net, self.train_dataset, self.val_dataset, FasterRCNNDefaultTrainTransform,
             FasterRCNNDefaultValTransform, batch_size, len(self.ctx), self.cfg)
 
         self.cfg.kv_store = 'device' if (self.cfg.amp and 'nccl' in self.cfg.kv_store) \
@@ -333,9 +343,9 @@ class FasterRCNNEstimator:
         lr_warmup = float(self.cfg.lr_warmup)  # avoid int division
 
         if self.cfg.verbose:
-            logger.info('Trainable parameters:')
-            logger.info(self.net.collect_train_params().keys())
-        logger.info('Start training from [Epoch {}]'.format(self.cfg.start_epoch))
+            self._logger.info('Trainable parameters:')
+            self._logger.info(self.net.collect_train_params().keys())
+        self._logger.info('Start training from [Epoch {}]'.format(self.cfg.start_epoch))
         best_map = [0]
         for epoch in range(self.cfg.start_epoch, self.cfg.epochs):
             rcnn_task = ForwardBackwardTask(self.net, trainer, self.rpn_cls_loss, self.rpn_box_loss,
@@ -347,7 +357,8 @@ class FasterRCNNEstimator:
             if not self.cfg.disable_hybridization:
                 self.net.hybridize(static_alloc=self.cfg.static_alloc)
             if self.cfg.mixup:
-                # TODO(zhreshold) only support evenly mixup now, target generator needs to be modified otherwise
+                # TODO(zhreshold) only support evenly mixup now, target generator needs to be
+                #  modified otherwise
                 train_data._dataset._data.set_mixup(np.random.uniform, 0.5, 0.5)
                 mix_ratio = 0.5
                 if epoch >= self.cfg.epochs - self.cfg.no_mixup_epochs:
@@ -357,7 +368,7 @@ class FasterRCNNEstimator:
                 new_lr = trainer.learning_rate * lr_decay
                 lr_steps.pop(0)
                 trainer.set_learning_rate(new_lr)
-                logger.info("[Epoch {}] Set learning rate to {}".format(epoch, new_lr))
+                self._logger.info("[Epoch {}] Set learning rate to {}".format(epoch, new_lr))
             for metric in self.metrics:
                 metric.reset()
             tic = time.time()
@@ -367,19 +378,19 @@ class FasterRCNNEstimator:
             for i, batch in enumerate(train_data):
                 if epoch == 0 and i <= lr_warmup:
                     # adjust based on real percentage
-                    new_lr = base_lr * get_lr_at_iter(i / lr_warmup, self.cfg.lr_warmup_factor)
+                    new_lr = base_lr * _get_lr_at_iter(i / lr_warmup, self.cfg.lr_warmup_factor)
                     if new_lr != trainer.learning_rate:
                         if i % self.cfg.log_interval == 0:
-                            logger.info(
+                            self._logger.info(
                                 '[Epoch 0 Iteration {}] Set learning rate to {}'.format(i, new_lr))
                         trainer.set_learning_rate(new_lr)
-                batch = split_and_load(batch, ctx_list=self.ctx)
+                batch = _split_and_load(batch, ctx_list=self.ctx)
                 metric_losses = [[] for _ in self.metrics]
                 add_losses = [[] for _ in self.metrics2]
                 if executor is not None:
                     for data in zip(*batch):
                         executor.put(data)
-                for j in range(len(self.ctx)):
+                for _ in range(len(self.ctx)):
                     if executor is not None:
                         result = executor.get()
                     else:
@@ -402,31 +413,45 @@ class FasterRCNNEstimator:
                     msg = ','.join(
                         ['{}={:.3f}'.format(*metric.get()) for metric in
                          self.metrics + self.metrics2])
-                    logger.info('[Epoch {}][Batch {}], Speed: {:.3f} samples/sec, {}'.format(
+                    self._logger.info('[Epoch {}][Batch {}], Speed: {:.3f} samples/sec, {}'.format(
                         epoch, i,
                         self.cfg.log_interval * self.cfg.batch_size / (time.time() - btic), msg))
                     btic = time.time()
 
             if (not self.cfg.horovod) or hvd.rank() == 0:
                 msg = ','.join(['{}={:.3f}'.format(*metric.get()) for metric in self.metrics])
-                logger.info('[Epoch {}] Training cost: {:.3f}, {}'.format(
+                self._logger.info('[Epoch {}] Training cost: {:.3f}, {}'.format(
                     epoch, (time.time() - tic), msg))
                 if not (epoch + 1) % self.cfg.val_interval:
                     # consider reduce the frequency of validation to save time
                     map_name, mean_ap = self._validate(val_data, self.ctx, self.eval_metric)
                     val_msg = '\n'.join(['{}={}'.format(k, v) for k, v in zip(map_name, mean_ap)])
-                    logger.info('[Epoch {}] Validation: \n{}'.format(epoch, val_msg))
+                    self._logger.info('[Epoch {}] Validation: \n{}'.format(epoch, val_msg))
                     current_map = float(mean_ap[-1])
                 else:
                     current_map = 0.
-                save_params(self.net, logger, best_map, current_map, epoch, self.cfg.save_interval,
-                            self.cfg.save_prefix)
+                _save_params(self.net, self._logger, best_map, current_map, epoch,
+                             self.cfg.save_interval, self.cfg.save_prefix)
 
-    def evaluate(self, dataset):
-        return self._validate(dataset, self.ctx, self.eval_metric)
+    def evaluate(self):
+        """Evaluate the current model on dataset.
+
+        Parameters
+        ----------
+        dataset : mxnet.gluon.data.DataLoader
+            DataLoader containing dataset for evaluation.
+        """
+        return self._validate(self.val_dataset, self.ctx, self.eval_metric)
 
     def predict(self, x):
-        x, img = presets.rcnn.load_test(x, short=self.net.short, max_size=self.net.max_size)
+        """Predict an individual example.
+
+        Parameters
+        ----------
+        x : file
+            An image.
+        """
+        x, _ = presets.rcnn.transform_test(x, short=self.net.short, max_size=self.net.max_size)
         x = x.as_in_context(self.ctx[0])
         ids, scores, bboxes = [xx[0].asnumpy() for xx in self.net(x)]
         return ids, scores, bboxes

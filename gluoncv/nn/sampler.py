@@ -356,4 +356,3 @@ class QuotaSamplerProp(mx.operator.CustomOpProp):
         return QuotaSamplerOp(self.num_sample, self.pos_thresh, self.neg_thresh_high,
                               self.neg_thresh_low, self.pos_ratio, self.neg_ratio,
                               self.fill_negative)
-
