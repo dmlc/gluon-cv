@@ -5,24 +5,24 @@ import os
 import time
 
 import mxnet as mx
+import numpy as np
 from mxnet import gluon
 
-import numpy as np
-
-from ... import data as gdata
-from ...data.batchify import FasterRCNNTrainBatchify, Tuple, Append
-from ...data.sampler import SplitSortedBucketSampler
-from ...data.transforms import presets
-from ...data.transforms.presets.rcnn import FasterRCNNDefaultTrainTransform, \
+from gluoncv import data as gdata
+from gluoncv.data.batchify import FasterRCNNTrainBatchify, Tuple, Append
+from gluoncv.data.sampler import SplitSortedBucketSampler
+from gluoncv.data.transforms import presets
+from gluoncv.data.transforms.presets.rcnn import FasterRCNNDefaultTrainTransform, \
     FasterRCNNDefaultValTransform
-from ...model_zoo import get_model
-from ...model_zoo.rcnn.faster_rcnn.data_parallel import ForwardBackwardTask
-from ...nn.bbox import BBoxClipToImage
-from ...utils.metrics.coco_detection import COCODetectionMetric
-from ...utils.metrics.rcnn import RPNAccMetric, RPNL1LossMetric, RCNNAccMetric, \
+from gluoncv.model_zoo import get_model
+from gluoncv.model_zoo.rcnn.faster_rcnn.data_parallel import ForwardBackwardTask
+from gluoncv.nn.bbox import BBoxClipToImage
+from gluoncv.pipelines.estimators.base_estimator import BaseEstimator
+from gluoncv.utils.metrics.coco_detection import COCODetectionMetric
+from gluoncv.utils.metrics.rcnn import RPNAccMetric, RPNL1LossMetric, RCNNAccMetric, \
     RCNNL1LossMetric
-from ...utils.metrics.voc_detection import VOC07MApMetric
-from ...utils.parallel import Parallel
+from gluoncv.utils.metrics.voc_detection import VOC07MApMetric
+from gluoncv.utils.parallel import Parallel
 
 try:
     import horovod.mxnet as hvd
@@ -116,18 +116,18 @@ def _get_dataset(dataset, args):
     return train_dataset, val_dataset, val_metric
 
 
-class FasterRCNNEstimator:
+class FasterRCNNEstimator(BaseEstimator):
     """ Estimator for Faster R-CNN.
     """
 
     def __init__(self, cfg, logger=None):
         """
-        Constructs Faster R-CNN estimator.
+        Constructs Faster R-CNN estimators.
 
         Parameters
         ----------
         cfg : configuration object
-            Configuration object containing information for constructing Faster R-CNN estimator.
+            Configuration object containing information for constructing Faster R-CNN estimators.
         logger : logger object, default is None
             If not `None`, will use default logging object.
         """
@@ -301,8 +301,7 @@ class FasterRCNNEstimator:
                 eval_metric.update(det_bbox, det_id, det_score, gt_bbox, gt_id, gt_diff)
         return eval_metric.get()
 
-    def fit(self):
-
+    def _fit(self):
         """
         Fit faster R-CNN models.
         """

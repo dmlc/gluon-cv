@@ -16,7 +16,7 @@ import gluoncv as gcv
 
 gcv.utils.check_version('0.7.0')
 from gluoncv import utils as gutils
-from gluoncv.estimators.rcnn.faster_rcnn import FasterRCNNEstimator
+from gluoncv.pipelines.estimators.rcnn import FasterRCNNEstimator
 
 try:
     import horovod.mxnet as hvd
