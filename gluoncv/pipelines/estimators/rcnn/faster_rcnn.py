@@ -115,7 +115,7 @@ def _get_dataset(dataset, args):
     return train_dataset, val_dataset, val_metric
 
 
-class FasterRCNNEstimator():
+class FasterRCNNEstimator:
     """ Estimator for Faster R-CNN.
     TODO: use base estimators.
     """
@@ -236,18 +236,18 @@ class FasterRCNNEstimator():
                 param.initialize()
         self.net.collect_params().reset_ctx(self.ctx)
         # set up logger
-        logger.setLevel(logging.INFO)
+        self._logger.setLevel(logging.INFO)
         log_file_path = self._cfg.save_prefix + '_train.log'
         log_dir = os.path.dirname(log_file_path)
         if log_dir and not os.path.exists(log_dir):
             os.makedirs(log_dir)
         fh = logging.FileHandler(log_file_path)
-        logger.addHandler(fh)
+        self._logger.addHandler(fh)
         if self._cfg.custom_model:
-            logger.info(
+            self._logger.info(
                 'Custom model enabled. Expert Only!! Currently non-FPN model is not supported!!'
                 ' Default setting is for MS-COCO.')
-        logger.info(self._cfg)
+        self._logger.info(self._cfg)
         self.rpn_cls_loss = gluon.loss.SigmoidBinaryCrossEntropyLoss(from_sigmoid=False)
         self.rpn_box_loss = gluon.loss.HuberLoss(rho=self._cfg.rpn_smoothl1_rho)  # == smoothl1
         self.rcnn_cls_loss = gluon.loss.SoftmaxCrossEntropyLoss()
