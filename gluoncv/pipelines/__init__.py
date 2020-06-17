@@ -1,2 +1,2 @@
 """GluonCV pipelines"""
-from .estimator import *
+from .estimators import *

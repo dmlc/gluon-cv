@@ -110,7 +110,7 @@ class SSDMultiBoxLoss(gluon.Block):
     negative_mining_ratio : float, default is 3
         Ratio of negative vs. positive samples.
     rho : float, default is 1.0
-        Threshold for trimmed mean estimator. This is the smooth parameter for the
+        Threshold for trimmed mean estimators. This is the smooth parameter for the
         L1-L2 transition.
     lambd : float, default is 1.0
         Relative weight between classification and box regression loss.
