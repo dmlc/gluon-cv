@@ -303,7 +303,7 @@ class FasterRCNNEstimator:
                 eval_metric.update(det_bbox, det_id, det_score, gt_bbox, gt_id, gt_diff)
         return eval_metric.get()
 
-    def _fit(self):
+    def fit(self):
         """
         Fit faster R-CNN models.
         """
