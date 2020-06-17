@@ -7,18 +7,16 @@
 from __future__ import absolute_import, division, print_function
 
 import os
-import sys
 from tqdm import tqdm
 import cv2
 import numpy as np
 import time
 
 import mxnet as mx
-import mxnet.numpy as _mx_np
-from mxnet.util import is_np_array
 from mxnet import gluon
 from utils import readlines
 from gluoncv.data.kitti import kitti_dataset
+from gluoncv.data.kitti.kitti_utils import dict_batchify_fn
 from gluoncv.model_zoo import monodepthv2
 from gluoncv.utils.parallel import *
 
@@ -67,17 +65,6 @@ def batch_post_process_disparity(l_disp, r_disp):
     l_mask = (1.0 - np.clip(20 * (l - 0.05), 0, 1))[None, ...]
     r_mask = l_mask[:, :, ::-1]
     return r_mask * l_disp + l_mask * r_disp + (1.0 - l_mask - r_mask) * m_disp
-
-
-def dict_batchify_fn(data):
-    """dict batchify function"""
-    if isinstance(data[0], mx.nd.NDArray):
-        return _mx_np.stack(data) if is_np_array() else mx.nd.stack(*data)
-    elif isinstance(data[0], dict):
-        elem = data[0]
-        return {key: dict_batchify_fn([d[key] for d in data]) for key in elem}
-
-    raise RuntimeError('unknown datatype')
 
 
 def evaluate(opt):

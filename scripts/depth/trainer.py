@@ -13,6 +13,7 @@ import mxnet.numpy as _mx_np
 from mxnet.util import is_np_array
 
 import gluoncv.data.kitti as kitti_dataset
+from gluoncv.data.kitti.kitti_utils import dict_batchify_fn
 from gluoncv.model_zoo import monodepthv2
 from gluoncv.model_zoo.monodepthv2.layers import *
 from gluoncv.utils.parallel import *
@@ -74,7 +75,37 @@ class Trainer:
             exit()
 
         ################### dataloader ###################
-        train_dataset = None
+        datasets_dict = {"kitti": kitti_dataset.KITTIRAWDataset,
+                         "kitti_odom": kitti_dataset.KITTIOdomDataset}
+        self.dataset = datasets_dict[self.opt.dataset]
+
+        # TODO: move splits file to a common position
+        fpath = os.path.join(os.path.dirname(__file__), "splits", self.opt.split, "{}_files.txt")
+
+        train_filenames = readlines(fpath.format("train"))
+        val_filenames = readlines(fpath.format("val"))
+        img_ext = '.png' if self.opt.png else '.jpg'
+
+        num_train_samples = len(train_filenames)
+        self.num_total_steps = num_train_samples // self.opt.batch_size * self.opt.num_epochs
+
+        train_dataset = self.dataset(self.opt.data_path, train_filenames,
+                                     self.opt.height, self.opt.width,
+                                     self.opt.frame_ids, num_scales=4,
+                                     is_train=True, img_ext=img_ext)
+        self.train_loader = gluon.data.DataLoader(
+            train_dataset, batch_size=self.opt.batch_size, shuffle=False,
+            batchify_fn=dict_batchify_fn, num_workers=self.opt.num_workers,
+            pin_memory=True, last_batch='discard')
+
+        val_dataset = self.dataset(self.opt.data_path, val_filenames,
+                                   self.opt.height, self.opt.width,
+                                   self.opt.frame_ids, num_scales=4,
+                                   is_train=False, img_ext=img_ext)
+        self.val_loader = gluon.data.DataLoader(
+            val_dataset, batch_size=self.opt.batch_size, shuffle=True,
+            batchify_fn=dict_batchify_fn, num_workers=self.opt.num_workers,
+            pin_memory=True, last_batch='discard')
 
         ################### optimization setting ###################
         self.lr_scheduler = LRSequential([

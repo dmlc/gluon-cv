@@ -4,6 +4,10 @@ import os
 import numpy as np
 from collections import Counter
 
+import mxnet as mx
+import mxnet.numpy as _mx_np
+from mxnet.util import is_np_array
+
 
 def load_velodyne_points(filename):
     """Load 3D point cloud from KITTI file format
@@ -96,3 +100,14 @@ def generate_depth_map(calib_dir, velo_filename, cam=2, vel_depth=False):
     depth[depth < 0] = 0
 
     return depth
+
+
+def dict_batchify_fn(data):
+    """dict batchify function"""
+    if isinstance(data[0], mx.nd.NDArray):
+        return _mx_np.stack(data) if is_np_array() else mx.nd.stack(*data)
+    elif isinstance(data[0], dict):
+        elem = data[0]
+        return {key: dict_batchify_fn([d[key] for d in data]) for key in elem}
+
+    raise RuntimeError('unknown datatype')
