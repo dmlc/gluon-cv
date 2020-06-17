@@ -27,8 +27,8 @@ class Trainer:
         """
         TODO:
             1. model initialization
-            2. optimization setting
-            3. dataloader
+            2. dataloader
+            3. optimization setting
             4. loss function
             5. metrics
         """
@@ -60,11 +60,12 @@ class Trainer:
             self.opt.num_layers,
             pretrained=(self.opt.weights_init == "pretrained"),
             ctx=self.opt.ctx)
-        self.parameters_to_train += list(self.models["encoder"].collect_params())
+        self.parameters_to_train = self.models["encoder"].collect_params()
 
         self.models["depth"] = monodepthv2.DepthDecoder(
             self.models["encoder"].num_ch_enc, self.opt.scales)
-        self.parameters_to_train += list(self.models["depth"].collect_params())
+        self.models["depth"].initialize(ctx=self.opt.ctx)
+        self.parameters_to_train.update(self.models["depth"].collect_params())
 
         # TODO: use_pose_net for mono training
         if self.use_pose_net:
@@ -116,6 +117,7 @@ class Trainer:
         optimizer_params = {'lr_scheduler': self.lr_scheduler,
                             'learning_rate': self.opt.learning_rate}
 
+        # TODO: current use ParamterDict.update(); use multiple Trainer to replace it later
         self.optimizer = gluon.Trainer(self.parameters_to_train, 'adam',
                                        optimizer_params)
 

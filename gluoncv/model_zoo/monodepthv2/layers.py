@@ -203,7 +203,8 @@ class Conv3x3(nn.HybridBlock):
 def upsample(x):
     """Upsample input tensor by a factor of 2
     """
-    return mx.nd.contrib.BilinearResize2D(x, height=x.shape[2]*2, width=x.shape[3]*2)
+    # return mx.nd.contrib.BilinearResize2D(x, height=x.shape[2]*2, width=x.shape[3]*2)
+    return mx.nd.UpSampling(x, scale=2, sample_type='nearest')
 
 
 # def get_smooth_loss(disp, img):
