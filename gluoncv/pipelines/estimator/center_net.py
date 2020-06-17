@@ -44,9 +44,11 @@ def model():
 
 @set_default(ex)
 class CenterNetEstimator(BaseEstimator):
-    def __init__(self, config, logger=None, logdir=None):
-        super(CenterNetEstimator, self).__init__(config, logger, logdir)
-        # print(self._cfg)
+    def __init__(self, config, logger=None):
+        super(CenterNetEstimator, self).__init__(config, logger)
+        print(self._cfg)
+        self._cfg.train_hyperparams.batch_size = 256
+        print(self._cfg)
 
     def _fit(self):
         pass

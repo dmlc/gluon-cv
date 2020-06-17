@@ -1,18 +1,13 @@
 """Base Estimator"""
 import os
 import logging
+import warnings
 from datetime import datetime
 from sacred.commands import _format_config, save_config, print_config
 # from sacred.settings import SETTINGS
 # SETTINGS.CONFIG.READ_ONLY_CONFIG = False
 
 from ...utils import random as _random
-
-def _fullname(o):
-    module = o.__class__.__module__
-    if module is None or module == str.__class__.__module__:
-        return o.__class__.__name__
-    return module + '.' + o.__class__.__name__
 
 def _get_config():
     pass
@@ -42,21 +37,69 @@ def set_default(ex):
     return _apply
 
 
+class DotDict(dict):
+    MARKER = object()
+    """The view of a config dict where keys can be accessed like attribute, it also prevents
+    naive modifications to the key-values.
+
+    Parameters
+    ----------
+    config : dict
+        The sacred configuration dict.
+
+    Attributes
+    ----------
+    __dict__ : type
+        The internal config as a `__dict__`.
+
+    """
+    def __init__(self, value=None):
+        self.__dict__['_inited'] = False
+        if value is None:
+            pass
+        elif isinstance(value, dict):
+            for key in value:
+                self.__setitem__(key, value[key])
+        else:
+            raise TypeError('expected dict')
+        self.__dict__['_inited'] = True
+
+    def __setitem__(self, key, value):
+        if self.__dict__['_inited']:
+            msg = ('You are trying to modify the config to "{}={}" after initialization, '
+                   ' which is not recommended'.format(key, value))
+            warnings.warn(msg)
+        if isinstance(value, dict) and not isinstance(value, DotDict):
+            value = DotDict(value)
+        super(DotDict, self).__setitem__(key, value)
+
+    def __getitem__(self, key):
+        found = self.get(key, DotDict.MARKER)
+        if found is DotDict.MARKER:
+            found = DotDict()
+            super(DotDict, self).__setitem__(key, found)
+        return found
+
+    __setattr__, __getattr__ = __setitem__, __getitem__
+
+
 class BaseEstimator:
-    def __init__(self, config, logger=None, logdir=None):
+    def __init__(self, config, logger=None):
         self._ex.add_config(config)
         r = self._ex.run('_get_config', options={'--loglevel': 50})
         self._cfg = r.config
         self._log = logger if logger is not None else logging.getLogger(__name__)
-        self._logdir = os.path.abspath(logdir) if logdir else os.getcwd()
 
         # finalize the config
         r = self._ex.run('_get_config', options={'--loglevel': 50})
         print_config(r)
-        config_fn = _fullname(self) + datetime.now().strftime("-%m-%d-%Y-%H-%M-%S.yaml")
+        config_fn = self.__class__.__name__ + datetime.now().strftime("-%m-%d-%Y-%H-%M-%S.yaml")
+
+        logdir = r.config.get('logdir', '.')
+        self._logdir = os.path.abspath(logdir) if logdir else os.getcwd()
         config_file = os.path.join(self._logdir, config_fn)
         save_config(r.config, self._log, config_file)
-        self._cfg = r.config
+        self._cfg = DotDict(r.config)
         _random.seed(self._cfg.seed)
 
     def fit(self):
