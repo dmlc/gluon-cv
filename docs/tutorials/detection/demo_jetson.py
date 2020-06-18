@@ -37,29 +37,37 @@ To install MXNet with Jetson support, you can follow the `installation guide <ht
 Alternatively, you can also directly install MXNet v1.6 wheel with Jetson support, hosted on a public s3 bucket. Here are the steps to install this wheel:
 
 .. note::
-    *WARNING: this MXNet wheel is provided for your convenience but it contains packages that are not provided nor endorsed by the Apache Software Foundation.
+    WARNING: this MXNet wheel is provided for your convenience but it contains packages that are not provided nor endorsed by the Apache Software Foundation.
     As such, they might contain software components with more restrictive licenses than the Apache License and you'll need to decide whether they are appropriate for your usage. Like all Apache Releases, the
-    official Apache MXNet (incubating) releases consist of source code only and are found at https://mxnet.apache.org/get_started/download .*
+    official Apache MXNet (incubating) releases consist of source code only and are found `here <https://mxnet.apache.org/get_started/download>`__ .
 
 We start by installing MXNet dependencies
+
 .. code-block:: bash
+
     sudo apt-get update
     sudo apt-get install -y git build-essential libopenblas-dev python3-pip
     sudo pip3 install -U pip
 
 Then we download and install MXNet v1.6 wheel with Jetson support
+
 .. code-block:: bash
+
     wget https://mxnet-public.s3.us-east-2.amazonaws.com/install/jetson/1.6.0/mxnet_cu102-1.6.0-py2.py3-none-linux_aarch64.whl
     sudo pip3 install mxnet_cu102-1.6.0-py2.py3-none-linux_aarch64.whl
 
 And we are done. You can test the installation now by importing mxnet from python3
+
 .. code-block:: bash
+
     >>> python3 -c 'import mxnet'
 
 Installing GluonCV and its dependencies
 ---------------------------------------
-We can install GluonCV on Jetson module using the following commands: 
+We can install GluonCV on Jetson module using the following commands:
+
 .. code-block:: bash
+
     sudo apt-get update
     sudo apt-get install -y python3-scipy python3-pil python3-matplotlib
     sudo apt autoremove -y
@@ -70,12 +78,17 @@ Running a pre-trained GluonCV YOLOv3 model on Jetson
 We are now ready to deploy a pre-trained model and run inference on a Jetson module. In this tutorial we are using YOLOv3 model trained on Pascal VOC dataset with Darknet53 as the base model. The object detection script below can be run with either cpu/gpu context using python3.
 
 .. note::
-    If running with GPU context, set the environment variable MXNET_CUDNN_AUTOTUNE_DEFAULT to 0 to disable cuDNN autotune*
+
+    If running with GPU context, set the environment variable MXNET_CUDNN_AUTOTUNE_DEFAULT to 0 to disable cuDNN autotune
+
     .. code-block:: bash
+
         export MXNET_CUDNN_AUTOTUNE_DEFAULT=0
 
 Here's the object detection python script:
+
 .. code-block:: python
+
     from gluoncv import model_zoo, data, utils
     from matplotlib import pyplot as plt
     import mxnet as mx
@@ -100,9 +113,11 @@ Here's the object detection python script:
     plt.show()
 
 This is the input image:
+
 .. image:: https://raw.githubusercontent.com/zhreshold/mxnet-ssd/master/data/demo/dog.jpg
 
 After running the above script, you should get the following plot as output:
+
 .. image:: https://gluon-cv.mxnet.io/_images/sphx_glr_demo_yolo_001.png
 
 
