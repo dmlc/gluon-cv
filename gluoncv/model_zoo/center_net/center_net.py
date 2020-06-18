@@ -10,7 +10,7 @@ from mxnet.gluon import nn
 from mxnet import autograd
 from ...nn.coder import CenterNetDecoder
 
-__all__ = ['CenterNet', 'get_center_net',
+__all__ = ['CenterNet', 'get_center_net', 'get_base_network',
            'center_net_resnet18_v1b_voc', 'center_net_resnet18_v1b_dcnv2_voc',
            'center_net_resnet18_v1b_coco', 'center_net_resnet18_v1b_dcnv2_coco',
            'center_net_resnet50_v1b_voc', 'center_net_resnet50_v1b_dcnv2_voc',
@@ -185,6 +185,18 @@ class CenterNet(nn.HybridBlock):
         keep = F.broadcast_equal(self.heatmap_nms(heatmap), heatmap)
         results = self.decoder(keep * heatmap, out[1], out[2])
         return results
+
+def get_base_network(name, **kwargs):
+    if 'dla' in name:
+        from .deconv_dla import get_deconv_dla
+        kwargs['use_dcnv2'] = 'dcnv2' in name
+        return get_deconv_dla(name.split('_')[0], **kwargs)
+    elif 'resnet' in name:
+        from .deconv_resnet import get_deconv_resnet
+        kwargs['use_dcnv2'] = 'dcnv2' in name
+        return get_deconv_resnet('_'.join(name.split('_')[:2]), **kwargs)
+    else:
+        raise ValueError(name)
 
 def get_center_net(name, dataset, pretrained=False, ctx=mx.cpu(),
                    root=os.path.join('~', '.mxnet', 'models'), **kwargs):
