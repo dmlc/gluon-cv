@@ -123,7 +123,6 @@ def evaluate(opt):
             # output = depth_decoder(features)
 
             input_color = data[("color", 0, 0)]
-            print(input_color.shape[0])
             features = encoder_(input_color)
             encoder_outputs = [x for x in features[0]]
             for i in range(1, len(features)):
@@ -136,7 +135,6 @@ def evaluate(opt):
 
             output = depth_decoder_(encoder_outputs)
             decoder_output = output[0]
-
             for i in range(1, len(output)):
                 for key in decoder_output.keys():
                     decoder_output[key] = mx.nd.concat(
