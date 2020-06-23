@@ -97,6 +97,7 @@ def evaluate(opt):
                                            num_workers=opt.num_workers,
                                            pin_memory=True, last_batch='rollover')
         print('Runtime of create dataloader : %.2f' % (time.time() - tic))
+
         ############################ loading model ############################
         tic = time.time()
         encoder = monodepthv2.ResnetEncoder(opt.num_layers, pretrained=False, ctx=opt.ctx)
@@ -113,6 +114,7 @@ def evaluate(opt):
         encoder_ = DataParallelModel(encoder, ctx_list=opt.ctx)
         depth_decoder_ = DataParallelModel(depth_decoder, ctx_list=opt.ctx)
         print('Runtime of create model : %.2f' % (time.time() - tic))
+
         ############################ inference ############################
         pred_disps = []
         tbar = tqdm(dataloader)

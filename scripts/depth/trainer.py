@@ -7,6 +7,8 @@ import cv2
 import numpy as np
 import time
 
+import json
+
 import mxnet as mx
 from mxnet import gluon
 import mxnet.numpy as _mx_np
@@ -121,9 +123,36 @@ class Trainer:
         self.optimizer = gluon.Trainer(self.parameters_to_train, 'adam',
                                        optimizer_params)
 
-        ################### loss function ###################
+        print("Training model named:\n  ", self.opt.model_name)
+        print("Models are saved to:\n  ", self.opt.log_dir)
+        print("Training is using:\n  ", "CPU" if self.opt.ctx[0] is mx.cpu() else "GPU")
 
-        ################### metrics ###################
+        ################### loss function ###################
+        if not self.opt.no_ssim:
+            self.ssim = SSIM()
+            # self.ssim.to(self.device)
+
+        self.backproject_depth = {}
+        self.project_3d = {}
+        for scale in self.opt.scales:
+            h = self.opt.height // (2 ** scale)
+            w = self.opt.width // (2 ** scale)
+
+            self.backproject_depth[scale] = BackprojectDepth(self.opt.batch_size, h, w, ctx=self.opt.ctx)
+            # TODO: initialization ?
+
+            self.project_3d[scale] = Project3D(self.opt.batch_size, h, w)
+            # TODO: initialization ?
+
+        ################### metrics ###################\
+        self.depth_metric_names = [
+            "de/abs_rel", "de/sq_rel", "de/rms", "de/log_rms", "da/a1", "da/a2", "da/a3"]
+
+        print("Using split:\n  ", self.opt.split)
+        print("There are {:d} training items and {:d} validation items\n".format(
+            len(train_dataset), len(val_dataset)))
+
+        self.save_opts()
 
     def train(self):
         """
@@ -143,3 +172,13 @@ class Trainer:
         pass
 
 
+    def save_opts(self):
+        """Save options to disk so we know what we ran this experiment with
+        """
+        models_dir = os.path.join(self.log_path, "models")
+        if not os.path.exists(models_dir):
+            os.makedirs(models_dir)
+        to_save = self.opt.__dict__.copy()
+
+        with open(os.path.join(models_dir, 'opt.json'), 'w') as f:
+            json.dump(to_save, f, indent=2)
