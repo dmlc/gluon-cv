@@ -4,8 +4,8 @@ import logging
 import warnings
 from datetime import datetime
 from sacred.commands import _format_config, save_config, print_config
-# from sacred.settings import SETTINGS
-# SETTINGS.CONFIG.READ_ONLY_CONFIG = False
+from sacred.settings import SETTINGS
+SETTINGS.CONFIG.READ_ONLY_CONFIG = False
 
 from ...utils import random as _random
 
@@ -54,7 +54,7 @@ class DotDict(dict):
 
     """
     def __init__(self, value=None):
-        self.__dict__['_inited'] = False
+        self.__dict__['_freeze'] = False
         if value is None:
             pass
         elif isinstance(value, dict):
@@ -62,12 +62,20 @@ class DotDict(dict):
                 self.__setitem__(key, value[key])
         else:
             raise TypeError('expected dict')
-        self.__dict__['_inited'] = True
+
+    def freeze(self):
+        self.__dict__['_freeze'] = True
+
+    def is_frozen(self):
+        return self.__dict__['_freeze']
+
+    def unfreeze(self):
+        self.__dict__['_freeze'] = False
 
     def __setitem__(self, key, value):
-        if self.__dict__['_inited']:
+        if self.__dict__['_freeze']:
             msg = ('You are trying to modify the config to "{}={}" after initialization, '
-                   ' which is not recommended'.format(key, value))
+                   ' this may result in unpredictable behaviour'.format(key, value))
             warnings.warn(msg)
         if isinstance(value, dict) and not isinstance(value, DotDict):
             value = DotDict(value)
@@ -78,6 +86,8 @@ class DotDict(dict):
         if found is DotDict.MARKER:
             found = DotDict()
             super(DotDict, self).__setitem__(key, found)
+        if isinstance(found, DotDict):
+            found.__dict__['_freeze'] = self.__dict__['_freeze']
         return found
 
     __setattr__, __getattr__ = __setitem__, __getitem__
@@ -85,25 +95,26 @@ class DotDict(dict):
 
 class BaseEstimator:
     def __init__(self, config, logger=None):
-        self._ex.add_config(config)
-        r = self._ex.run('_get_config', options={'--loglevel': 50})
-        self._cfg = r.config
         self._log = logger if logger is not None else logging.getLogger(__name__)
 
         # finalize the config
-        r = self._ex.run('_get_config', options={'--loglevel': 50})
+        r = self._ex.run('_get_config', config_updates=config, options={'--loglevel': 50})
         print_config(r)
         config_fn = self.__class__.__name__ + datetime.now().strftime("-%m-%d-%Y-%H-%M-%S.yaml")
 
-        logdir = r.config.get('logdir', '.')
+        logdir = r.config.get('logdir', None)
         self._logdir = os.path.abspath(logdir) if logdir else os.getcwd()
         config_file = os.path.join(self._logdir, config_fn)
         save_config(r.config, self._log, config_file)
         self._cfg = DotDict(r.config)
+        self._cfg.freeze()
         _random.seed(self._cfg.seed)
 
     def fit(self):
         self._fit()
+
+    def evaluate(self):
+        self._evaluate()
 
     def _fit(self):
         raise NotImplementedError
