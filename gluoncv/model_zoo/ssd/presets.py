@@ -861,7 +861,7 @@ def ssd_300_resnet34_v1b_custom(classes, pretrained_base=True, pretrained=False,
                       sizes=[21, 45, 99, 153, 207, 261, 315],
                       ratios=[[1, 2, 0.5]] + [[1, 2, 0.5, 3, 1.0/3]] * 3 + [[1, 2, 0.5]] * 2,
                       steps=[8, 16, 32, 64, 100, 300],
-                      classes=classes, dataset='', pretrained=pretrained,
+                      classes=classes, dataset='',
                       pretrained_base=pretrained_base, **kwargs)
     else:
         from ...model_zoo import get_model
