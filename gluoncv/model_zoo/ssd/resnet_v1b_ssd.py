@@ -4,7 +4,6 @@ from __future__ import absolute_import
 import mxnet as mx
 from mxnet.gluon import HybridBlock
 from mxnet.gluon.nn import HybridSequential, Conv2D, Activation, BatchNorm
-from ..resnetv1b import *
 from ..model_zoo import get_model
 
 
