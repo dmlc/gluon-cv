@@ -850,6 +850,7 @@ def ssd_300_resnet34_v1b_custom(classes, pretrained_base=True, pretrained=False,
     >>> net = ssd_300_resnet34_v1b_custom(classes=['foo', 'bar'], transfer='coco')
 
     """
+    from .resnet_v1b_ssd import resnet34_v1b_ssd
     if pretrained:
         warnings.warn("Custom models don't provide `pretrained` weights, ignored.")
     if transfer is None:
