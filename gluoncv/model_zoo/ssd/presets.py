@@ -778,7 +778,6 @@ def ssd_300_resnet34_v1b_voc(pretrained=False, pretrained_base=True, **kwargs):
     HybridBlock
         A SSD detection network.
     """
-    from mxnet import sym
     from .resnet_v1b_ssd import resnet34_v1b_ssd
     classes = VOCDetection.CLASSES
 
@@ -813,7 +812,6 @@ def ssd_300_resnet34_v1b_coco(pretrained=False, pretrained_base=True, **kwargs):
     HybridBlock
         A SSD detection network.
     """
-    from mxnet import sym
     from .resnet_v1b_ssd import resnet34_v1b_ssd
     from ...data import COCODetection
     classes = COCODetection.CLASSES
@@ -857,13 +855,13 @@ def ssd_300_resnet34_v1b_custom(classes, pretrained_base=True, pretrained=False,
     if transfer is None:
         kwargs['pretrained'] = False
         net = get_ssd('resnet34_v1b', 300,
-                       features=resnet34_v1b_ssd,
-                       filters=None,
-                       sizes=[21, 45, 99, 153, 207, 261, 315],
-                       ratios=[[1, 2, 0.5]] + [[1, 2, 0.5, 3, 1.0/3]] * 3 + [[1, 2, 0.5]] * 2,
-                       steps=[8, 16, 32, 64, 100, 300],
-                       classes=classes, dataset='', pretrained=pretrained,
-                       pretrained_base=pretrained_base, **kwargs)
+                      features=resnet34_v1b_ssd,
+                      filters=None,
+                      sizes=[21, 45, 99, 153, 207, 261, 315],
+                      ratios=[[1, 2, 0.5]] + [[1, 2, 0.5, 3, 1.0/3]] * 3 + [[1, 2, 0.5]] * 2,
+                      steps=[8, 16, 32, 64, 100, 300],
+                      classes=classes, dataset='', pretrained=pretrained,
+                      pretrained_base=pretrained_base, **kwargs)
     else:
         from ...model_zoo import get_model
         net = get_model('ssd_300_resnet34_v1b_' + str(transfer), pretrained=True, **kwargs)
