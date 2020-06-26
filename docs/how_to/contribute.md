@@ -36,6 +36,7 @@ How-to
 -   [Make changes](#make-changes)
 -   [Contribute scripts](#contribute-scripts)
 -   [Contribute tutorials](#contribute-tutorials)
+-   [Contribute new CV algorithms](#contribute-computer-vision-algorithms)
 -   [Contribute new API](#contribute-new-api)
 -   [Git Workflow Howtos](#git-workflow-howtos)
 
@@ -116,6 +117,27 @@ in the existing documentation, a patch to fix is most welcome! To locate
 the code responsible for the doc, you may use \"View page source\" in
 the top right corner, or the \"\[source\]\" links after each API. Also,
 \"\[git grep\]\" works nicely if there\'s unique string.
+
+
+### Contribute computer vision algorithms
+
+Officially supported algorithms in GluonCV consist of the following five components:
+
+- [Model definition](https://github.com/dmlc/gluon-cv/tree/estimator/gluoncv/model_zoo). Models are written in `mxnet.gluon.HybridBlock` or `mxnet.gluon.Block`. You may get a better idea to start with the implementation of famous [resnet](https://github.com/dmlc/gluon-cv/blob/estimator/gluoncv/model_zoo/resnetv1b.py) models. In addition to base `ResNetV1b` class definition, we also encourage the definition of individual network with names so that consumption of specific model variant is made easy. For example, [`def resnet18_v1b`](https://github.com/dmlc/gluon-cv/blob/estimator/gluoncv/model_zoo/resnetv1b.py#L268)
+- Accompanying datasets, preprocessing function, data augmentation, evaluation metric, loss functions. You will only need to implement them in case you don't find appropriate ones in the existing library.
+    - [dataset definitions](https://github.com/dmlc/gluon-cv/tree/estimator/gluoncv/data)
+    - [data transformations](https://github.com/dmlc/gluon-cv/tree/estimator/gluoncv/data/transforms)
+    - [data transformation presets for specific algorithms](https://github.com/dmlc/gluon-cv/tree/estimator/gluoncv/data/transforms/presets)
+    - [reusable neural network components](https://github.com/dmlc/gluon-cv/tree/estimator/gluoncv/nn)
+    - [utils](https://github.com/dmlc/gluon-cv/tree/estimator/gluoncv/utils): anything else you find it's not appropriate to reside in other major components
+- [Scripts](https://github.com/dmlc/gluon-cv/tree/estimator/scripts). Scripts folder includes training/evaluation/demo python scripts that people can play with and modify. You can use these script to train/evaluate models in development as well.
+- [Pretrained weights](https://github.com/dmlc/gluon-cv/blob/estimator/gluoncv/model_zoo/model_store.py): organized by hashing codes, the pretrained weights are hosted on S3 bucket for all users to consume the models directly. Obviously, do not discard the best `params` file you have trained and evaluated, share with us in the PR, the organizers can help upload the weights and make it new algorithm easier to digest!
+- [Documents](https://github.com/dmlc/gluon-cv/tree/estimator/docs). Let more people to know your new shining algorithm by adding the scores to the tables in model zoo website. [Contribute tutorials](#contribute-tutorials) for inference/training can definitely flatten the learning curve of users to adopt the new models.
+
+#### About hybrid/non-hybrid models in GluonCV
+
+GluonCV recommends the hybrid version of network([context of hybrid network](https://mxnet.apache.org/api/python/docs/tutorials/packages/gluon/blocks/hybridize.html)) for GluonCV built-in algorithm. The advantage of fully hybrid network is to enable hassle-free deployment outside of python ecosystem. The major limitation of fully hybrid network is the restricted usage of accessing shape of tensors inside the network. [shape_array](https://mxnet.apache.org/api/python/docs/api/ndarray/ndarray.html?highlight=shape_array#mxnet.ndarray.shape_array) operator is used in many cases though it's not fully interchangeable with a normal `.shape` attribute. Don't worry, we are address this issue and feel free to discuss with existing contributors and committers for situations where fully hybrid network isn't applicable.
+
 
 ### Git Workflow Howtos
 
