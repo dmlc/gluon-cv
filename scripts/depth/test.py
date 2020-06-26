@@ -103,13 +103,8 @@ def evaluate(opt):
         encoder = monodepthv2.ResnetEncoder(opt.num_layers, pretrained=False, ctx=opt.ctx)
         depth_decoder = monodepthv2.DepthDecoder(encoder.num_ch_enc)
 
-        # encoder.load_parameters(encoder_path, ctx=opt.ctx[0])
-        # depth_decoder.load_parameters(decoder_path, ctx=opt.ctx[0])
         encoder.load_parameters(encoder_path, ctx=opt.ctx)
         depth_decoder.load_parameters(decoder_path, ctx=opt.ctx)
-
-        # encoder.initialize(ctx=opt.ctx[0])
-        # depth_decoder.initialize(ctx=opt.ctx[0])
 
         encoder_ = DataParallelModel(encoder, ctx_list=opt.ctx)
         depth_decoder_ = DataParallelModel(depth_decoder, ctx_list=opt.ctx)
@@ -135,17 +130,17 @@ def evaluate(opt):
                         dim=0
                     )
 
-            output = depth_decoder_(encoder_outputs)
-            decoder_output = output[0]
-            for i in range(1, len(output)):
-                for key in decoder_output.keys():
-                    decoder_output[key] = mx.nd.concat(
-                        decoder_output[key],
-                        output[i][key].as_in_context(decoder_output[key].context),
+            outputs = depth_decoder_(encoder_outputs)
+            decoder_outputs = outputs[0]
+            for i in range(1, len(outputs)):
+                for key in decoder_outputs.keys():
+                    decoder_outputs[key] = mx.nd.concat(
+                        decoder_outputs[key],
+                        outputs[i][key].as_in_context(decoder_outputs[key].context),
                         dim=0
                     )
 
-            pred_disp, _ = disp_to_depth(decoder_output[("disp", 0)], opt.min_depth, opt.max_depth)
+            pred_disp, _ = disp_to_depth(decoder_outputs[("disp", 0)], opt.min_depth, opt.max_depth)
             pred_disp = pred_disp.as_in_context(mx.cpu())[:, 0].asnumpy()
 
             pred_disps.append(pred_disp)

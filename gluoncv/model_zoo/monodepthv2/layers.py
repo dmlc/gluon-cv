@@ -176,16 +176,17 @@ class BackprojectDepth(nn.HybridBlock):
                 axis=0)
             self.pix_coords = self.pix_coords.repeat(repeats=batch_size, axis=0)
 
-            pix_coords = mx.gluon.Parameter('pix_coords', shape=self.id_coords.shape,
+            pix_coords = mx.gluon.Parameter('pix_coords',
+                                            shape=(self.batch_size, 3, self.height * self.width),
                                             init=mx.init.Zero(), grad_req='null')
             pix_coords.initialize(ctx=self.ctx)
             pix_coords.set_data(mx.nd.concat(*[self.pix_coords, self.ones.data()], dim=1))
             self.pix_coords = pix_coords
 
-    def hybrid_forward(self, F, depth, inv_K):
+    def hybrid_forward(self, F, depth, inv_K, **kwargs):
         cam_points = mx.nd.batch_dot(inv_K[:, :3, :3], self.pix_coords.data())
         cam_points = depth.reshape(self.batch_size, 1, -1) * cam_points
-        cam_points = mx.nd.concat(*[cam_points, self.ones], dim=1)
+        cam_points = mx.nd.concat(*[cam_points, self.ones.data()], dim=1)
 
         return cam_points
 
@@ -206,19 +207,19 @@ class Project3D(nn.HybridBlock):
 
         cam_points = mx.nd.batch_dot(P, points)
 
-        pix_coords = cam_points[:, :2, :] / (cam_points[:, 2, :].unsqueeze(1) + self.eps)
-        pix_coords = pix_coords.view(self.batch_size, 2, self.height, self.width)
-        pix_coords = pix_coords.permute(0, 2, 3, 1)
-        pix_coords[..., 0] /= self.width - 1
-        pix_coords[..., 1] /= self.height - 1
+        pix_coords = cam_points[:, :2, :] / (cam_points[:, 2, :].expand_dims(1) + self.eps)
+        pix_coords = pix_coords.reshape(self.batch_size, 2, self.height, self.width)
+
+        pix_coords[:, 0, :, :] /= self.width - 1
+        pix_coords[:, 1, :, :] /= self.height - 1
         pix_coords = (pix_coords - 0.5) * 2
+
         return pix_coords
 
 
 def upsample(x):
     """Upsample input tensor by a factor of 2
     """
-    # return mx.nd.contrib.BilinearResize2D(x, height=x.shape[2]*2, width=x.shape[3]*2)
     return mx.nd.UpSampling(x, scale=2, sample_type='nearest')
 
 
