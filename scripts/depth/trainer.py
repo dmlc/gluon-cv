@@ -67,8 +67,7 @@ class Trainer:
         self.models["depth"] = monodepthv2.DepthDecoder(
             self.models["encoder"].num_ch_enc, self.opt.scales)
         # TODO: initialization method should equal to PyTorch implementation
-        # self.models["depth"].initialize(ctx=self.opt.ctx)
-
+        self.models["depth"].initialize(ctx=self.opt.ctx)
         self.parameters_to_train.update(self.models["depth"].collect_params())
 
         # debug : using pretrained model
@@ -80,8 +79,8 @@ class Trainer:
         print("loading time: ", time.time() - tic)
         # end
 
-        # self.models["encoder"] = DataParallelModel(self.models["encoder"], ctx_list=self.opt.ctx)
-        # self.models["depth"] = DataParallelModel(self.models["depth"], ctx_list=self.opt.ctx)
+        self.models["encoder"] = DataParallelModel(self.models["encoder"], ctx_list=self.opt.ctx)
+        self.models["depth"] = DataParallelModel(self.models["depth"], ctx_list=self.opt.ctx)
 
         # TODO: use_pose_net for mono training
         if self.use_pose_net:
@@ -196,7 +195,10 @@ class Trainer:
         for batch_idx, inputs in enumerate(tbar):
             before_op_time = time.time()
 
-            self.process_batch(inputs)
+            outputs, losses = self.process_batch(inputs)
+            print(outputs)
+            print(losses)
+            exit()
 
     def process_batch(self, inputs):
         for key, ipt in inputs.items():
@@ -207,29 +209,24 @@ class Trainer:
             pass
         else:
             # Otherwise, we only feed the image with frame_id 0 through the depth encoder
-            # Single GPU for debug
-            features = self.models["encoder"](inputs["color_aug", 0, 0].as_in_context(context=self.opt.ctx[0]))
+            encoder_outputs = self.models["encoder"](inputs["color_aug", 0, 0])
+            features = [x for x in encoder_outputs[0]]
+            for i in range(1, len(encoder_outputs)):
+                for j in range(len(encoder_outputs[i])):
+                    features[j] = mx.nd.concat(
+                        features[j],
+                        encoder_outputs[i][j].as_in_context(features[j].context),
+                        dim=0
+                    )
             decoder_outputs = self.models["depth"](features)
-
-            # Multi-GPU for real training
-            # features = self.models["encoder"](inputs["color_aug", 0, 0])
-            # encoder_outputs = [x for x in features[0]]
-            # for i in range(1, len(features)):
-            #     for j in range(len(features[i])):
-            #         encoder_outputs[j] = mx.nd.concat(
-            #             encoder_outputs[j],
-            #             features[i][j].as_in_context(encoder_outputs[j].context),
-            #             dim=0
-            #         )
-            # outputs = self.models["depth"](encoder_outputs)
-            # decoder_outputs = outputs[0]
-            # for i in range(1, len(outputs)):
-            #     for key in decoder_outputs.keys():
-            #         decoder_outputs[key] = mx.nd.concat(
-            #             decoder_outputs[key],
-            #             outputs[i][key].as_in_context(decoder_outputs[key].context),
-            #             dim=0
-            #         )
+            outputs = decoder_outputs[0]
+            for i in range(1, len(decoder_outputs)):
+                for key in outputs.keys():
+                    outputs[key] = mx.nd.concat(
+                        outputs[key],
+                        decoder_outputs[i][key].as_in_context(outputs[key].context),
+                        dim=0
+                    )
 
         ################### image reconstruction ###################
         if self.opt.predictive_mask:
@@ -240,10 +237,11 @@ class Trainer:
             # TODO: use_pose_net for mono training
             pass
 
-        self.generate_images_pred(inputs, decoder_outputs)
-        exit()
+        self.generate_images_pred(inputs, outputs)
 
         ################### compute loss ###################
+        losses = self.compute_losses(inputs, outputs)
+        return outputs, losses
 
     def generate_images_pred(self, inputs, outputs):
         for scale in self.opt.scales:
@@ -285,6 +283,105 @@ class Trainer:
                 if not self.opt.disable_automasking:
                     outputs[("color_identity", frame_id, scale)] = \
                         inputs[("color", frame_id, source_scale)]
+
+    def compute_reprojection_loss(self, pred, target):
+        """Computes reprojection loss between a batch of predicted and target images
+        """
+        abs_diff = mx.nd.abs(target - pred)
+        l1_loss = abs_diff.mean(axis=1, keepdims=True)
+
+        if self.opt.no_ssim:
+            reprojection_loss = l1_loss
+        else:
+            ssim_loss = self.ssim(pred, target).mean(axis=1, keepdims=True)
+            reprojection_loss = 0.85 * ssim_loss + 0.15 * l1_loss
+
+        return reprojection_loss
+
+    def compute_losses(self, inputs, outputs):
+        """Compute the reprojection and smoothness losses for a minibatch
+          """
+        losses = {}
+        total_loss = 0
+
+        for scale in self.opt.scales:
+            loss = 0
+            reprojection_losses = []
+
+            if self.opt.v1_multiscale:
+                source_scale = scale
+            else:
+                source_scale = 0
+
+            disp = outputs[("disp", scale)]
+            color = inputs[("color", 0, scale)]
+            target = inputs[("color", 0, source_scale)]
+
+            for frame_id in self.opt.frame_ids[1:]:
+                pred = outputs[("color", frame_id, scale)]
+                reprojection_losses.append(self.compute_reprojection_loss(pred, target))
+
+            reprojection_losses = mx.nd.concat(*reprojection_losses, dim=1)
+
+            if not self.opt.disable_automasking:
+                identity_reprojection_losses = []
+                for frame_id in self.opt.frame_ids[1:]:
+                    pred = inputs[("color", frame_id, source_scale)]
+                    identity_reprojection_losses.append(
+                        self.compute_reprojection_loss(pred, target))
+
+                identity_reprojection_losses = mx.nd.concat(*identity_reprojection_losses, dim=1)
+
+                if self.opt.avg_reprojection:
+                    identity_reprojection_loss = \
+                        identity_reprojection_losses.mean(axis=1, keepdims=True)
+                else:
+                    # save both images, and do min all at once below
+                    identity_reprojection_loss = identity_reprojection_losses
+
+            elif self.opt.predictive_mask:
+                # TODO: use predictive_mask
+                pass
+
+            if self.opt.avg_reprojection:
+                reprojection_loss = reprojection_losses.mean(axis=1, keepdims=True)
+            else:
+                reprojection_loss = reprojection_losses
+
+            if not self.opt.disable_automasking:
+                # add random numbers to break ties
+                identity_reprojection_loss += mx.nd.random.randn(
+                    *identity_reprojection_loss.shape).as_in_context(
+                    identity_reprojection_loss.context) * 0.00001
+
+                combined = mx.nd.concat(identity_reprojection_loss, reprojection_loss, dim=1)
+            else:
+                combined = reprojection_loss
+
+            if combined.shape[1] == 1:
+                to_optimise = combined
+            else:
+                to_optimise = mx.nd.min(data=combined, axis=1)
+                idxs = mx.nd.argmin(data=combined, axis=1)
+
+            if not self.opt.disable_automasking:
+                outputs["identity_selection/{}".format(scale)] = (
+                    idxs > identity_reprojection_loss.shape[1] - 1).astype('float')
+
+            loss += to_optimise.mean()
+
+            mean_disp = disp.mean(axis=2, keepdims=True).mean(axis=3, keepdims=True)
+            norm_disp = disp / (mean_disp + 1e-7)
+
+            smooth_loss = get_smooth_loss(norm_disp, color)
+
+            loss += self.opt.disparity_smoothness * smooth_loss / (2 ** scale)
+            total_loss += loss
+            losses["loss/{}".format(scale)] = loss
+
+        total_loss /= self.num_scales
+        losses["loss"] = total_loss
+        return losses
 
     def save_opts(self):
         """Save options to disk so we know what we ran this experiment with

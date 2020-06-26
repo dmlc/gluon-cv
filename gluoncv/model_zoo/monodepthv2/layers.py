@@ -223,20 +223,22 @@ def upsample(x):
     return mx.nd.UpSampling(x, scale=2, sample_type='nearest')
 
 
-# def get_smooth_loss(disp, img):
-#     """Computes the smoothness loss for a disparity image
-#     The color image is used for edge-aware smoothness
-#     """
-#     grad_disp_x = torch.abs(disp[:, :, :, :-1] - disp[:, :, :, 1:])
-#     grad_disp_y = torch.abs(disp[:, :, :-1, :] - disp[:, :, 1:, :])
-#
-#     grad_img_x = torch.mean(torch.abs(img[:, :, :, :-1] - img[:, :, :, 1:]), 1, keepdim=True)
-#     grad_img_y = torch.mean(torch.abs(img[:, :, :-1, :] - img[:, :, 1:, :]), 1, keepdim=True)
-#
-#     grad_disp_x *= torch.exp(-grad_img_x)
-#     grad_disp_y *= torch.exp(-grad_img_y)
-#
-#     return grad_disp_x.mean() + grad_disp_y.mean()
+def get_smooth_loss(disp, img):
+    """Computes the smoothness loss for a disparity image
+    The color image is used for edge-aware smoothness
+    """
+    grad_disp_x = mx.nd.abs(disp[:, :, :, :-1] - disp[:, :, :, 1:])
+    grad_disp_y = mx.nd.abs(disp[:, :, :-1, :] - disp[:, :, 1:, :])
+
+    grad_img_x = mx.nd.mean(data=mx.nd.abs(img[:, :, :, :-1] - img[:, :, :, 1:]),
+                            axis=1, keepdims=True)
+    grad_img_y = mx.nd.mean(data=mx.nd.abs(img[:, :, :-1, :] - img[:, :, 1:, :]),
+                            axis=1, keepdims=True)
+
+    grad_disp_x *= mx.nd.exp(-grad_img_x)
+    grad_disp_y *= mx.nd.exp(-grad_img_y)
+
+    return grad_disp_x.mean() + grad_disp_y.mean()
 
 
 class SSIM(nn.HybridBlock):

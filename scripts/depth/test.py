@@ -120,27 +120,27 @@ def evaluate(opt):
             # output = depth_decoder(features)
 
             input_color = data[("color", 0, 0)]
-            features = encoder_(input_color)
-            encoder_outputs = [x for x in features[0]]
-            for i in range(1, len(features)):
-                for j in range(len(features[i])):
-                    encoder_outputs[j] = mx.nd.concat(
-                        encoder_outputs[j],
-                        features[i][j].as_in_context(encoder_outputs[j].context),
+
+            encoder_outputs = encoder_(input_color)
+            features = [x for x in encoder_outputs[0]]
+            for i in range(1, len(encoder_outputs)):
+                for j in range(len(encoder_outputs[i])):
+                    features[j] = mx.nd.concat(
+                        features[j],
+                        encoder_outputs[i][j].as_in_context(features[j].context),
+                        dim=0
+                    )
+            decoder_outputs = depth_decoder_(features)
+            outputs = decoder_outputs[0]
+            for i in range(1, len(decoder_outputs)):
+                for key in outputs.keys():
+                    outputs[key] = mx.nd.concat(
+                        outputs[key],
+                        decoder_outputs[i][key].as_in_context(outputs[key].context),
                         dim=0
                     )
 
-            outputs = depth_decoder_(encoder_outputs)
-            decoder_outputs = outputs[0]
-            for i in range(1, len(outputs)):
-                for key in decoder_outputs.keys():
-                    decoder_outputs[key] = mx.nd.concat(
-                        decoder_outputs[key],
-                        outputs[i][key].as_in_context(decoder_outputs[key].context),
-                        dim=0
-                    )
-
-            pred_disp, _ = disp_to_depth(decoder_outputs[("disp", 0)], opt.min_depth, opt.max_depth)
+            pred_disp, _ = disp_to_depth(outputs[("disp", 0)], opt.min_depth, opt.max_depth)
             pred_disp = pred_disp.as_in_context(mx.cpu())[:, 0].asnumpy()
 
             pred_disps.append(pred_disp)
