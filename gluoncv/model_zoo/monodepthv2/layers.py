@@ -155,38 +155,37 @@ class BackprojectDepth(nn.HybridBlock):
 
         self.ctx = ctx
 
+        meshgrid = np.meshgrid(range(self.width), range(self.height), indexing='xy')
+        id_coords = np.stack(meshgrid, axis=0).astype(np.float32)
+        id_coords = mx.nd.array(id_coords).as_in_context(self.ctx)
+
+        pix_coords = mx.nd.expand_dims(mx.nd.stack(*[id_coords[0].reshape(-1),
+                                                     id_coords[1].reshape(-1)], axis=0),
+                                       axis=0)
+        pix_coords = pix_coords.repeat(repeats=batch_size, axis=0)
+        pix_coords = pix_coords.as_in_context(self.ctx)
+
         with self.name_scope():
-            meshgrid = np.meshgrid(range(self.width), range(self.height), indexing='xy')
-            self.id_coords = np.stack(meshgrid, axis=0).astype(np.float32)
+            self.id_coords = self.params.get('id_coords', shape=id_coords.shape,
+                                             init=mx.init.Zero(), grad_req='null')
+            self.id_coords.initialize(ctx=self.ctx)
+            self.id_coords.set_data(mx.nd.array(id_coords))
 
-            id_coords = mx.gluon.Parameter('id_coords', shape=self.id_coords.shape,
-                                           init=mx.init.Zero(), grad_req='null')
-            id_coords.initialize(ctx=self.ctx)
-            id_coords.set_data(mx.nd.array(self.id_coords))
-            self.id_coords = id_coords
-
-            self.ones = mx.gluon.Parameter('ones',
-                                           shape=(self.batch_size, 1, self.height * self.width),
-                                           init=mx.init.One(), grad_req='null')
+            self.ones = self.params.get('ones',
+                                        shape=(self.batch_size, 1, self.height * self.width),
+                                        init=mx.init.One(), grad_req='null')
             self.ones.initialize(ctx=self.ctx)
 
-            self.pix_coords = mx.nd.expand_dims(
-                mx.nd.stack(*[self.id_coords.data()[0].reshape(-1),
-                              self.id_coords.data()[1].reshape(-1)], axis=0),
-                axis=0)
-            self.pix_coords = self.pix_coords.repeat(repeats=batch_size, axis=0)
-
-            pix_coords = mx.gluon.Parameter('pix_coords',
-                                            shape=(self.batch_size, 3, self.height * self.width),
-                                            init=mx.init.Zero(), grad_req='null')
-            pix_coords.initialize(ctx=self.ctx)
-            pix_coords.set_data(mx.nd.concat(*[self.pix_coords, self.ones.data()], dim=1))
-            self.pix_coords = pix_coords
+            self.pix_coords = self.params.get('pix_coords',
+                                              shape=(self.batch_size, 3, self.height * self.width),
+                                              init=mx.init.Zero(), grad_req='null')
+            self.pix_coords.initialize(ctx=self.ctx)
+            self.pix_coords.set_data(mx.nd.concat(pix_coords, self.ones.data(), dim=1))
 
     def hybrid_forward(self, F, depth, inv_K, **kwargs):
         cam_points = mx.nd.batch_dot(inv_K[:, :3, :3], self.pix_coords.data())
         cam_points = depth.reshape(self.batch_size, 1, -1) * cam_points
-        cam_points = mx.nd.concat(*[cam_points, self.ones.data()], dim=1)
+        cam_points = mx.nd.concat(cam_points, self.ones.data(), dim=1)
 
         return cam_points
 

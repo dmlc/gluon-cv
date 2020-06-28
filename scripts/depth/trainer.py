@@ -10,7 +10,7 @@ import time
 import json
 
 import mxnet as mx
-from mxnet import gluon
+from mxnet import gluon, autograd
 import mxnet.numpy as _mx_np
 from mxnet.util import is_np_array
 
@@ -34,7 +34,7 @@ class Trainer:
             4. loss function
             5. metrics
         """
-
+        tic = time.time()
         # configuration setting
         self.opt = options
         self.log_path = os.path.join(self.opt.log_dir, self.opt.model_name)
@@ -71,12 +71,10 @@ class Trainer:
         self.parameters_to_train.update(self.models["depth"].collect_params())
 
         # debug : using pretrained model
-        tic = time.time()
         encoder_path = os.path.join("./models/mono+stereo_640x192_mx", "encoder.params")
         decoder_path = os.path.join("./models/mono+stereo_640x192_mx", "depth.params")
         self.models["encoder"].load_parameters(encoder_path, ctx=self.opt.ctx)
         self.models["depth"].load_parameters(decoder_path, ctx=self.opt.ctx)
-        print("loading time: ", time.time() - tic)
         # end
 
         self.models["encoder"] = DataParallelModel(self.models["encoder"], ctx_list=self.opt.ctx)
@@ -165,6 +163,7 @@ class Trainer:
             len(train_dataset), len(val_dataset)))
 
         self.save_opts()
+        print("init time: ", time.time() - tic)
 
     def train(self):
         """
@@ -193,12 +192,14 @@ class Trainer:
         print("Training")
         tbar = tqdm(self.train_loader)
         for batch_idx, inputs in enumerate(tbar):
-            before_op_time = time.time()
+            with autograd.record(True):
+                before_op_time = time.time()
 
-            outputs, losses = self.process_batch(inputs)
-            print(outputs)
-            print(losses)
-            exit()
+                outputs, losses = self.process_batch(inputs)
+                mx.nd.waitall()
+                autograd.backward(losses['loss'])
+                exit()
+            self.optimizer.step(self.opt.batch_size)
 
     def process_batch(self, inputs):
         for key, ipt in inputs.items():
