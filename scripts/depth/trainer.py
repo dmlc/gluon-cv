@@ -60,7 +60,7 @@ class Trainer:
 
         self.models["encoder"] = monodepthv2.ResnetEncoder(
             self.opt.num_layers,
-            pretrained=False,  # (self.opt.weights_init == "pretrained"),
+            pretrained=(self.opt.weights_init == "pretrained"),
             ctx=self.opt.ctx)
         self.parameters_to_train = self.models["encoder"].collect_params()
 
@@ -71,10 +71,10 @@ class Trainer:
         self.parameters_to_train.update(self.models["depth"].collect_params())
 
         # debug : using pretrained model
-        encoder_path = os.path.join("./models/mono+stereo_640x192_mx", "encoder.params")
-        decoder_path = os.path.join("./models/mono+stereo_640x192_mx", "depth.params")
-        self.models["encoder"].load_parameters(encoder_path, ctx=self.opt.ctx)
-        self.models["depth"].load_parameters(decoder_path, ctx=self.opt.ctx)
+        # encoder_path = os.path.join("./models/mono+stereo_640x192_mx", "encoder.params")
+        # decoder_path = os.path.join("./models/mono+stereo_640x192_mx", "depth.params")
+        # self.models["encoder"].load_parameters(encoder_path, ctx=self.opt.ctx)
+        # self.models["depth"].load_parameters(decoder_path, ctx=self.opt.ctx)
         # end
 
         self.models["encoder"] = DataParallelModel(self.models["encoder"], ctx_list=self.opt.ctx)
@@ -105,9 +105,9 @@ class Trainer:
 
         train_dataset = self.dataset(
             self.opt.data_path, train_filenames, self.opt.height, self.opt.width,
-            self.opt.frame_ids, num_scales=4, is_train=False, img_ext=img_ext)
+            self.opt.frame_ids, num_scales=4, is_train=True, img_ext=img_ext)
         self.train_loader = gluon.data.DataLoader(
-            train_dataset, batch_size=self.opt.batch_size, shuffle=False,
+            train_dataset, batch_size=self.opt.batch_size, shuffle=True,
             batchify_fn=dict_batchify_fn, num_workers=self.opt.num_workers,
             pin_memory=True, last_batch='discard')
 
@@ -116,7 +116,7 @@ class Trainer:
                                    self.opt.frame_ids, num_scales=4,
                                    is_train=False, img_ext=img_ext)
         self.val_loader = gluon.data.DataLoader(
-            val_dataset, batch_size=self.opt.batch_size, shuffle=True,
+            val_dataset, batch_size=self.opt.batch_size, shuffle=False,
             batchify_fn=dict_batchify_fn, num_workers=self.opt.num_workers,
             pin_memory=True, last_batch='discard')
 
@@ -177,12 +177,12 @@ class Trainer:
         self.step = 0
         self.start_time = time.time()
         for self.epoch in range(self.opt.num_epochs):
-            self.run_epoch()
+            self.run_epoch(self.epoch)
             # TODO: save model
             # if (self.epoch + 1) % self.opt.save_frequency == 0:
             #     self.save_model()
 
-    def run_epoch(self):
+    def run_epoch(self, epoch):
         """
         TODO:
             1. prediction
@@ -191,15 +191,21 @@ class Trainer:
         """
         print("Training")
         tbar = tqdm(self.train_loader)
+        train_loss = 0.0
         for batch_idx, inputs in enumerate(tbar):
             with autograd.record(True):
                 before_op_time = time.time()
 
                 outputs, losses = self.process_batch(inputs)
                 mx.nd.waitall()
+
                 autograd.backward(losses['loss'])
-                exit()
-            self.optimizer.step(self.opt.batch_size)
+            self.optimizer.step(self.opt.batch_size, ignore_stale_grad=True)
+
+            train_loss += losses['loss'].asscalar()
+            tbar.set_description('Epoch %d, training loss %.3f' % \
+                (epoch, train_loss/(batch_idx+1)))
+            mx.nd.waitall()
 
     def process_batch(self, inputs):
         for key, ipt in inputs.items():
@@ -250,7 +256,9 @@ class Trainer:
             if self.opt.v1_multiscale:
                 source_scale = scale
             else:
-                disp = mx.nd.contrib.BilinearResize2D(disp, height=self.opt.height, width=self.opt.width)
+                disp = mx.nd.contrib.BilinearResize2D(disp,
+                                                      height=self.opt.height,
+                                                      width=self.opt.width)
                 source_scale = 0
 
             _, depth = disp_to_depth(disp, self.opt.min_depth, self.opt.max_depth)
@@ -351,9 +359,9 @@ class Trainer:
 
             if not self.opt.disable_automasking:
                 # add random numbers to break ties
-                identity_reprojection_loss += mx.nd.random.randn(
-                    *identity_reprojection_loss.shape).as_in_context(
-                    identity_reprojection_loss.context) * 0.00001
+                identity_reprojection_loss = identity_reprojection_loss + \
+                    mx.nd.random.randn(*identity_reprojection_loss.shape).as_in_context(
+                        identity_reprojection_loss.context) * 0.00001
 
                 combined = mx.nd.concat(identity_reprojection_loss, reprojection_loss, dim=1)
             else:
@@ -376,11 +384,11 @@ class Trainer:
 
             smooth_loss = get_smooth_loss(norm_disp, color)
 
-            loss += self.opt.disparity_smoothness * smooth_loss / (2 ** scale)
-            total_loss += loss
+            loss = loss + self.opt.disparity_smoothness * smooth_loss / (2 ** scale)
+            total_loss = total_loss + loss
             losses["loss/{}".format(scale)] = loss
 
-        total_loss /= self.num_scales
+        total_loss = total_loss / self.num_scales
         losses["loss"] = total_loss
         return losses
 

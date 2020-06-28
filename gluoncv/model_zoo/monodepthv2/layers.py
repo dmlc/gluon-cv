@@ -206,11 +206,15 @@ class Project3D(nn.HybridBlock):
 
         cam_points = mx.nd.batch_dot(P, points)
 
-        pix_coords = cam_points[:, :2, :] / (cam_points[:, 2, :].expand_dims(1) + self.eps)
-        pix_coords = pix_coords.reshape(self.batch_size, 2, self.height, self.width)
+        cam_pix = cam_points[:, :2, :] / (cam_points[:, 2, :].expand_dims(1) + self.eps)
+        cam_pix = cam_pix.reshape(self.batch_size, 2, self.height, self.width)
 
-        pix_coords[:, 0, :, :] /= self.width - 1
-        pix_coords[:, 1, :, :] /= self.height - 1
+        x_src = cam_pix[:, 0, :, :] / (self.width - 1)
+        y_src = cam_pix[:, 1, :, :] / (self.height - 1)
+        pix_coords = mx.nd.concat(x_src.expand_dims(1),
+                                  y_src.expand_dims(1),
+                                  dim=1)
+
         pix_coords = (pix_coords - 0.5) * 2
 
         return pix_coords
@@ -234,8 +238,8 @@ def get_smooth_loss(disp, img):
     grad_img_y = mx.nd.mean(data=mx.nd.abs(img[:, :, :-1, :] - img[:, :, 1:, :]),
                             axis=1, keepdims=True)
 
-    grad_disp_x *= mx.nd.exp(-grad_img_x)
-    grad_disp_y *= mx.nd.exp(-grad_img_y)
+    grad_disp_x = grad_disp_x * mx.nd.exp(-grad_img_x)
+    grad_disp_y = grad_disp_y * mx.nd.exp(-grad_img_y)
 
     return grad_disp_x.mean() + grad_disp_y.mean()
 
