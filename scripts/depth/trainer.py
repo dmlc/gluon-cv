@@ -31,7 +31,7 @@ class Trainer:
     def __init__(self, options):
         """
         TODO:
-            1. model initialization : Done
+            1. model initialization : not complete
             2. dataloader   : Done
             3. optimization setting : not complete
             4. loss function    : Done
@@ -73,13 +73,6 @@ class Trainer:
         self.models["depth"].initialize(ctx=self.opt.ctx)
         self.parameters_to_train.update(self.models["depth"].collect_params())
 
-        # debug : using pretrained model
-        # encoder_path = os.path.join("./models/mono+stereo_640x192_mx", "encoder.params")
-        # decoder_path = os.path.join("./models/mono+stereo_640x192_mx", "depth.params")
-        # self.models["encoder"].load_parameters(encoder_path, ctx=self.opt.ctx)
-        # self.models["depth"].load_parameters(decoder_path, ctx=self.opt.ctx)
-        # end
-
         self.models["encoder"] = DataParallelModel(self.models["encoder"], ctx_list=self.opt.ctx)
         self.models["depth"] = DataParallelModel(self.models["depth"], ctx_list=self.opt.ctx)
 
@@ -91,7 +84,7 @@ class Trainer:
         if self.opt.predictive_mask:
             exit()
 
-        ################### dataloader ###################
+        ######################### dataloader #########################
         datasets_dict = {"kitti": kitti_dataset.KITTIRAWDataset,
                          "kitti_odom": kitti_dataset.KITTIOdomDataset}
         self.dataset = datasets_dict[self.opt.dataset]
@@ -169,12 +162,6 @@ class Trainer:
         print("init time: ", time.time() - tic)
 
     def train(self):
-        """
-        TODO:
-            1. run epochs   : Done
-            2. evaluation
-            3. save model
-        """
         """Run the entire training pipeline
         """
         self.epoch = 0
@@ -186,7 +173,7 @@ class Trainer:
         """
         TODO:
             1. prediction   : Done
-            2. compute loss : Done
+            2. compute loss : not complete
         """
         print("Training")
         tbar = tqdm(self.train_loader)
@@ -235,6 +222,10 @@ class Trainer:
                     )
 
         if eval_mode:
+            _, depth = disp_to_depth(outputs[("disp", 0)],
+                                     self.opt.min_depth, self.opt.max_depth)
+            outputs[("depth", 0, 0)] = depth
+
             return outputs
 
         ################### image reconstruction ###################
@@ -261,14 +252,25 @@ class Trainer:
         for metric in self.depth_metric_names:
             depth_metrics[metric] = 0
         for i, inputs in enumerate(tbar):
-            outputs = self.process_batch(inputs, eval_mode=True)
+            outputs = self.process_batch(inputs, True)
 
             if "depth_gt" in inputs:
                 self.compute_metrics(inputs, outputs, depth_metrics)
+
+                # print evaluation results
+                abs_rel = depth_metrics['de/abs_rel'] / (i + 1)
+                sq_rel = depth_metrics['de/sq_rel'] / (i + 1)
                 rmse = depth_metrics['de/rms'] / (i + 1)
+                rmse_log = depth_metrics['de/log_rms'] / (i + 1)
                 delta_1 = depth_metrics['da/a1'] / (i + 1)
-                tbar.set_description('Epoch %d, validation RMSE: %.3f, Delta_1: %.3f' %
-                                     (self.epoch, rmse, delta_1 / i))
+                delta_2 = depth_metrics['da/a2'] / (i + 1)
+                delta_3 = depth_metrics['da/a3'] / (i + 1)
+                tbar.set_description(
+                    'Epoch %d, validation '
+                    'abs_REL: %.3f sq_REL: %.3f '
+                    'RMSE: %.3f, RMSE_log: %.3f '
+                    'Delta_1: %.3f Delta_2: %.3f Delta_2: %.3f' %
+                    (self.epoch, abs_rel, sq_rel, rmse, rmse_log, delta_1, delta_2, delta_3))
             else:
                 print("Cannot find ground truth upon validation dataset!")
                 return
@@ -427,27 +429,27 @@ class Trainer:
             mx.nd.contrib.BilinearResize2D(depth_pred, height=375, width=1242),
             a_min=1e-3, a_max=80
         )
-        depth_pred = depth_pred.detach()
-
-        depth_gt = inputs["depth_gt"]
-        mask = depth_gt > 0
+        depth_pred = depth_pred.detach().asnumpy()
+        depth_gt = inputs["depth_gt"].asnumpy()
 
         # garg/eigen crop
-        crop_mask = mx.nd.zeros_like(mask)
+        mask = depth_gt > 0
+        crop_mask = np.zeros_like(mask)
         crop_mask[:, :, 153:371, 44:1197] = 1
-        mask = mask * crop_mask
+        mask = np.logical_and(mask, crop_mask)
 
         depth_gt = depth_gt[mask]
         depth_pred = depth_pred[mask]
-        scale_factor = np.median(depth_gt.asnumpy()) / np.median(depth_pred.asnumpy())
+
+        scale_factor = np.median(depth_gt) / np.median(depth_pred)
         depth_pred *= scale_factor
 
-        depth_pred = mx.nd.clip(depth_pred, a_min=1e-3, a_max=80)
+        depth_pred = np.clip(depth_pred, a_min=1e-3, a_max=80)
 
         depth_errors = compute_depth_errors(depth_gt, depth_pred)
 
         for i, metric in enumerate(self.depth_metric_names):
-            depth_metrics[metric] += np.array(depth_errors[i].cpu())
+            depth_metrics[metric] += depth_errors[i]
 
     def save_opts(self):
         """Save options to disk so we know what we ran this experiment with
@@ -471,7 +473,7 @@ class Trainer:
         if not os.path.exists(save_folder):
             os.makedirs(save_folder)
 
-        filename = 'epoch_%04d_mIoU_%2.4f_{}.params' % (self.epoch, rmse)
+        filename = 'epoch_%04d_RMSE_%2.4f_{}.params' % (self.epoch, rmse)
         for model_name, model in self.models.items():
             filepath = os.path.join(save_folder, filename.format(model_name))
             model.module.save_parameters(filepath)
