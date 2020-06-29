@@ -2,7 +2,10 @@ from __future__ import absolute_import, division, print_function
 
 import os
 import sys
+import shutil
 from tqdm import tqdm
+
+
 import cv2
 import numpy as np
 import time
@@ -28,11 +31,11 @@ class Trainer:
     def __init__(self, options):
         """
         TODO:
-            1. model initialization
-            2. dataloader
-            3. optimization setting
-            4. loss function
-            5. metrics
+            1. model initialization : Done
+            2. dataloader   : Done
+            3. optimization setting : not complete
+            4. loss function    : Done
+            5. metrics  : Done
         """
         tic = time.time()
         # configuration setting
@@ -168,26 +171,22 @@ class Trainer:
     def train(self):
         """
         TODO:
-            1. run epochs
-            2. save model
+            1. run epochs   : Done
+            2. evaluation
+            3. save model
         """
         """Run the entire training pipeline
         """
         self.epoch = 0
-        self.step = 0
-        self.start_time = time.time()
         for self.epoch in range(self.opt.num_epochs):
-            self.run_epoch(self.epoch)
-            # TODO: save model
-            # if (self.epoch + 1) % self.opt.save_frequency == 0:
-            #     self.save_model()
+            self.run_epoch()
+            self.val()
 
-    def run_epoch(self, epoch):
+    def run_epoch(self):
         """
         TODO:
-            1. prediction
-            2. compute loss
-            3. evaluation
+            1. prediction   : Done
+            2. compute loss : Done
         """
         print("Training")
         tbar = tqdm(self.train_loader)
@@ -204,10 +203,10 @@ class Trainer:
 
             train_loss += losses['loss'].asscalar()
             tbar.set_description('Epoch %d, training loss %.3f' % \
-                (epoch, train_loss/(batch_idx+1)))
+                                 (self.epoch, train_loss / (batch_idx + 1)))
             mx.nd.waitall()
 
-    def process_batch(self, inputs):
+    def process_batch(self, inputs, eval_mode=False):
         for key, ipt in inputs.items():
             inputs[key] = ipt.as_in_context(self.opt.ctx[0])
 
@@ -235,6 +234,9 @@ class Trainer:
                         dim=0
                     )
 
+        if eval_mode:
+            return outputs
+
         ################### image reconstruction ###################
         if self.opt.predictive_mask:
             # TODO: use predictive_mask
@@ -249,6 +251,28 @@ class Trainer:
         ################### compute loss ###################
         losses = self.compute_losses(inputs, outputs)
         return outputs, losses
+
+    def val(self):
+        """Validate the model on a single minibatch
+        """
+        tbar = tqdm(self.val_loader)
+        depth_metrics = {}
+        rmse = 0
+        for metric in self.depth_metric_names:
+            depth_metrics[metric] = 0
+        for i, inputs in enumerate(tbar):
+            outputs = self.process_batch(inputs, eval_mode=True)
+
+            if "depth_gt" in inputs:
+                self.compute_metrics(inputs, outputs, depth_metrics)
+                rmse = depth_metrics['de/rms'] / (i + 1)
+                delta_1 = depth_metrics['da/a1'] / (i + 1)
+                tbar.set_description('Epoch %d, validation RMSE: %.3f, Delta_1: %.3f' %
+                                     (self.epoch, rmse, delta_1 / i))
+            else:
+                print("Cannot find ground truth upon validation dataset!")
+                return
+        self.save_checkpoint(rmse, False)
 
     def generate_images_pred(self, inputs, outputs):
         for scale in self.opt.scales:
@@ -360,8 +384,8 @@ class Trainer:
             if not self.opt.disable_automasking:
                 # add random numbers to break ties
                 identity_reprojection_loss = identity_reprojection_loss + \
-                    mx.nd.random.randn(*identity_reprojection_loss.shape).as_in_context(
-                        identity_reprojection_loss.context) * 0.00001
+                                             mx.nd.random.randn(*identity_reprojection_loss.shape).as_in_context(
+                                                 identity_reprojection_loss.context) * 0.00001
 
                 combined = mx.nd.concat(identity_reprojection_loss, reprojection_loss, dim=1)
             else:
@@ -375,7 +399,7 @@ class Trainer:
 
             if not self.opt.disable_automasking:
                 outputs["identity_selection/{}".format(scale)] = (
-                    idxs > identity_reprojection_loss.shape[1] - 1).astype('float')
+                        idxs > identity_reprojection_loss.shape[1] - 1).astype('float')
 
             loss += to_optimise.mean()
 
@@ -392,6 +416,39 @@ class Trainer:
         losses["loss"] = total_loss
         return losses
 
+    def compute_metrics(self, inputs, outputs, depth_metrics):
+        """Compute depth metrics, to allow monitoring during training
+
+        This isn't particularly accurate as it averages over the entire batch,
+        so is only used to give an indication of validation performance
+        """
+        depth_pred = outputs[("depth", 0, 0)]
+        depth_pred = mx.nd.clip(
+            mx.nd.contrib.BilinearResize2D(depth_pred, height=375, width=1242),
+            a_min=1e-3, a_max=80
+        )
+        depth_pred = depth_pred.detach()
+
+        depth_gt = inputs["depth_gt"]
+        mask = depth_gt > 0
+
+        # garg/eigen crop
+        crop_mask = mx.nd.zeros_like(mask)
+        crop_mask[:, :, 153:371, 44:1197] = 1
+        mask = mask * crop_mask
+
+        depth_gt = depth_gt[mask]
+        depth_pred = depth_pred[mask]
+        scale_factor = np.median(depth_gt.asnumpy()) / np.median(depth_pred.asnumpy())
+        depth_pred *= scale_factor
+
+        depth_pred = mx.nd.clip(depth_pred, a_min=1e-3, a_max=80)
+
+        depth_errors = compute_depth_errors(depth_gt, depth_pred)
+
+        for i, metric in enumerate(self.depth_metric_names):
+            depth_metrics[metric] += np.array(depth_errors[i].cpu())
+
     def save_opts(self):
         """Save options to disk so we know what we ran this experiment with
         """
@@ -407,3 +464,17 @@ class Trainer:
 
         with open(os.path.join(models_dir, 'opt.json'), 'w') as f:
             json.dump(to_save, f, indent=2)
+
+    def save_checkpoint(self, rmse, is_best=False):
+        """Save Checkpoint"""
+        save_folder = os.path.join(self.log_path, "models", "weights")
+        if not os.path.exists(save_folder):
+            os.makedirs(save_folder)
+
+        filename = 'epoch_%04d_mIoU_%2.4f_{}.params' % (self.epoch, rmse)
+        for model_name, model in self.models.items():
+            filepath = os.path.join(save_folder, filename.format(model_name))
+            model.module.save_parameters(filepath)
+
+        if is_best:
+            shutil.copyfile(filename, os.path.join(save_folder, 'model_best.params'))
