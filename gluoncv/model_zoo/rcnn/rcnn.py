@@ -328,8 +328,8 @@ def custom_rcnn_fpn(pretrained_base=True, base_network_name='resnet18_v1b', norm
     elif base_network_name == 'resnest50':
         from ...model_zoo.resnest import resnest50
         base_network = resnest50(pretrained=pretrained_base, dilated=False,
-                                use_global_stats=use_global_stats, norm_layer=norm_layer,
-                                norm_kwargs=norm_kwargs)
+                                 use_global_stats=use_global_stats, norm_layer=norm_layer,
+                                 norm_kwargs=norm_kwargs)
         fpn_inputs_names = ['layers1_relu11_fwd', 'layers2_relu15_fwd', 'layers3_relu23_fwd',
                             'layers4_relu11_fwd']
     elif base_network_name == 'resnest101':

@@ -90,8 +90,8 @@ def _get_dataloader(net, train_dataset, val_dataset, train_transform, val_transf
 
 
 def _get_testloader(net, test_dataset, num_devices, config):
+    """Get faster rcnn test dataloader."""
     if config.meta_arch == 'faster_rcnn':
-        """Get faster rcnn dataloader."""
         test_bfn = Tuple(*[Append() for _ in range(3)])
         short = net.short[-1] if isinstance(net.short, (tuple, list)) else net.short
         # validation use 1 sample per device
@@ -488,10 +488,9 @@ class FasterRCNNEstimator:
         param_dict = self.net._collect_params_with_prefix()
         kwargs = {'ctx': None} if mx.__version__[:3] == '1.4' else {'cast_dtype': multi_precision,
                                                                     'ctx': None}
-        for k, v in param_dict.items():
+        for k, _ in param_dict.items():
             param_dict[k]._load_init(parameters[k], **kwargs)
 
     def get_parameters(self):
         """Return model parameters"""
         return self.net._collect_params_with_prefix()
-
