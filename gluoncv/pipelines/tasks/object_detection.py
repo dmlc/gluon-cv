@@ -41,7 +41,6 @@ def _train_object_detection(args, reporter):
         vars(args).update(kwargs)
     else:
         raise NotImplementedError(args.meta_arch, 'is not implemented.')
-    args.save_prefix += net_name
 
     if args.meta_arch == 'faster_rcnn':
         estimator = FasterRCNNEstimator(args, reporter=reporter)

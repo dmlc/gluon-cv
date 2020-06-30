@@ -250,7 +250,6 @@ class FasterRCNNEstimator:
             self.net.collect_params('.*batchnorm.*').setattr('dtype', 'float32')
             self.net.collect_params('.*normalizedperclassboxcenterencoder.*').setattr('dtype',
                                                                                       'float32')
-        self._cfg.save_prefix += net_name
         if self._cfg.resume.strip():
             self.net.load_parameters(self._cfg.resume.strip())
         else:
@@ -470,7 +469,6 @@ class FasterRCNNEstimator:
         """
         dataloader = _get_testloader(self.net, dataset, len(self.ctx), self._cfg)
         return self._validate(dataloader, self.ctx, self.eval_metric)
-
 
     def predict(self, x):
         """Predict an individual example.

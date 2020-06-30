@@ -160,14 +160,14 @@ if __name__ == '__main__':
                   'lr_decay_epoch': ag.Categorical('24,28', '35', '50,55', '40', '45', '55',
                                                    '30, 35', '20'),
                   'warmup_iters': ag.Int(5, 500),
-                  'wd': ag.Categorical(1e-4, 5e-4, 2.5e-4), 'syncbn': True,
+                  'wd': ag.Categorical(1e-4, 5e-4, 2.5e-4), 'syncbn': ag.Bool(),
                   'label_smooth': False, 'time_limits': time_limits, 'dist_ip_addrs': []}
     else:
         raise NotImplementedError('%s is not implemented.', args.meta_arch)
     default_args = {'dataset': 'voc', 'net': Categorical('mobilenet1.0'), 'meta_arch': 'yolo3',
                     'lr': Categorical(5e-4, 1e-4), 'loss': gluon.loss.SoftmaxCrossEntropyLoss(),
                     'split_ratio': 0.8, 'batch_size': 16, 'epochs': 50, 'num_trials': 2,
-                    'nthreads_per_trial': 12, 'num_workers': 32, 'ngpus_per_trial': 1,
+                    'nthreads_per_trial': 12, 'num_workers': 16, 'ngpus_per_trial': 1,
                     'hybridize': True, 'search_strategy': 'random', 'search_options': {},
                     'time_limits': None, 'verbose': False, 'transfer': 'coco', 'resume': '',
                     'checkpoint': 'checkpoint/exp1.ag', 'visualizer': 'none', 'dist_ip_addrs': [],
