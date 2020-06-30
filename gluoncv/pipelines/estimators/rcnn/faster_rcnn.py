@@ -155,6 +155,7 @@ class FasterRCNNEstimator:
         super(FasterRCNNEstimator, self).__init__()
         self._logger = logger if logger is not None else logging.getLogger(__name__)
         self._reporter = reporter
+
         self._cfg = config
         # training contexts
         if self._cfg.horovod:
@@ -196,6 +197,7 @@ class FasterRCNNEstimator:
                 sym_norm_layer = None
                 sym_norm_kwargs = None
             classes = self.train_dataset.CLASSES
+
             # TODO: maybe refactor this to pass configuration into the model instead.
             self.net = get_model('custom_faster_rcnn_fpn', classes=classes, transfer=None,
                                  dataset=self._cfg.dataset,
@@ -469,6 +471,7 @@ class FasterRCNNEstimator:
         dataloader = _get_testloader(self.net, dataset, len(self.ctx), self._cfg)
         return self._validate(dataloader, self.ctx, self.eval_metric)
 
+
     def predict(self, x):
         """Predict an individual example.
 
@@ -493,3 +496,4 @@ class FasterRCNNEstimator:
     def get_parameters(self):
         """Return model parameters"""
         return self.net._collect_params_with_prefix()
+
