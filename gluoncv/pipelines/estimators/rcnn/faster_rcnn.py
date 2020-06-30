@@ -89,6 +89,25 @@ def _get_dataloader(net, train_dataset, val_dataset, train_transform, val_transf
     return train_loader, val_loader
 
 
+def _get_testloader(net, test_dataset, num_devices, config):
+    if config.meta_arch == 'faster_rcnn':
+        """Get faster rcnn dataloader."""
+        test_bfn = Tuple(*[Append() for _ in range(3)])
+        short = net.short[-1] if isinstance(net.short, (tuple, list)) else net.short
+        # validation use 1 sample per device
+        test_loader = gluon.data.DataLoader(
+            test_dataset.transform(FasterRCNNDefaultValTransform(short, net.max_size)),
+            num_devices,
+            False,
+            batchify_fn=test_bfn,
+            last_batch='keep',
+            num_workers=config.num_workers
+        )
+        return test_loader
+    else:
+        raise NotImplementedError('%s not implemented.' % config.meta_arch)
+
+
 def _get_dataset(dataset, args):
     if dataset.lower() == 'voc':
         train_dataset = gdata.VOCDetection(
@@ -120,7 +139,7 @@ class FasterRCNNEstimator:
     TODO: use base estimators.
     """
 
-    def __init__(self, config, logger=None):
+    def __init__(self, config, logger=None, reporter=None):
         """
         Constructs Faster R-CNN estimators.
 
@@ -130,9 +149,12 @@ class FasterRCNNEstimator:
             Configuration object containing information for constructing Faster R-CNN estimators.
         logger : logger object, default is None
             If not `None`, will use default logging object.
+        reporter : reporter object, default is None
+
         """
         super(FasterRCNNEstimator, self).__init__()
         self._logger = logger if logger is not None else logging.getLogger(__name__)
+        self._reporter = reporter
         self._cfg = config
         # training contexts
         if self._cfg.horovod:
@@ -173,7 +195,7 @@ class FasterRCNNEstimator:
                 norm_kwargs = None
                 sym_norm_layer = None
                 sym_norm_kwargs = None
-            classes = self._cfg.classes
+            classes = self.train_dataset.CLASSES
             # TODO: maybe refactor this to pass configuration into the model instead.
             self.net = get_model('custom_faster_rcnn_fpn', classes=classes, transfer=None,
                                  dataset=self._cfg.dataset,
@@ -184,7 +206,7 @@ class FasterRCNNEstimator:
                                  num_fpn_filters=self._cfg.num_fpn_filters,
                                  num_box_head_conv=self._cfg.num_box_head_conv,
                                  num_box_head_conv_filters=self._cfg.num_box_head_conv_filters,
-                                 num_box_head_dense_filters=self.cfg.num_box_head_dense_filters,
+                                 num_box_head_dense_filters=self._cfg.num_box_head_dense_filters,
                                  short=self._cfg.image_short, max_size=self._cfg.image_max_size,
                                  min_stage=2, max_stage=6, nms_thresh=self._cfg.nms_thresh,
                                  nms_topk=self._cfg.nms_topk, post_nms=self._cfg.post_nms,
@@ -433,8 +455,10 @@ class FasterRCNNEstimator:
                     current_map = 0.
                 _save_params(self.net, self._logger, best_map, current_map, epoch,
                              self._cfg.save_interval, self._cfg.save_prefix)
+                if self._reporter:
+                    self._reporter(epoch=epoch, map_reward=current_map)
 
-    def evaluate(self):
+    def evaluate(self, dataset):
         """Evaluate the current model on dataset.
 
         Parameters
@@ -442,7 +466,8 @@ class FasterRCNNEstimator:
         dataset : mxnet.gluon.data.DataLoader
             DataLoader containing dataset for evaluation.
         """
-        return self._validate(self.val_dataset, self.ctx, self.eval_metric)
+        dataloader = _get_testloader(self.net, dataset, len(self.ctx), self._cfg)
+        return self._validate(dataloader, self.ctx, self.eval_metric)
 
     def predict(self, x):
         """Predict an individual example.
@@ -456,3 +481,15 @@ class FasterRCNNEstimator:
         x = x.as_in_context(self.ctx[0])
         ids, scores, bboxes = [xx[0].asnumpy() for xx in self.net(x)]
         return ids, scores, bboxes
+
+    def load_parameters(self, parameters, multi_precision=False):
+        """Load saved parameters into the model"""
+        param_dict = self.net._collect_params_with_prefix()
+        kwargs = {'ctx': None} if mx.__version__[:3] == '1.4' else {'cast_dtype': multi_precision,
+                                                                    'ctx': None}
+        for k, v in param_dict.items():
+            param_dict[k]._load_init(parameters[k], **kwargs)
+
+    def get_parameters(self):
+        """Return model parameters"""
+        return self.net._collect_params_with_prefix()
