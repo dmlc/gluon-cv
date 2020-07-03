@@ -5,7 +5,6 @@ import sys
 import shutil
 from tqdm import tqdm
 
-
 import cv2
 import numpy as np
 import time
@@ -28,7 +27,7 @@ from utils import *
 
 
 class Trainer:
-    def __init__(self, options):
+    def __init__(self, options, logger):
         """
         TODO:
             1. model initialization : not complete
@@ -40,6 +39,7 @@ class Trainer:
         tic = time.time()
         # configuration setting
         self.opt = options
+        self.logger = logger
         self.log_path = os.path.join(self.opt.log_dir, self.opt.model_name)
 
         # checking height and width are multiples of 32
@@ -71,7 +71,11 @@ class Trainer:
             self.models["encoder"].num_ch_enc, self.opt.scales)
         # TODO: initialization method should equal to PyTorch implementation
         self.models["depth"].initialize(ctx=self.opt.ctx)
+        # self.models["depth"].initialize(init=mx.init.MSRAPrelu(), ctx=self.opt.ctx)
         self.parameters_to_train.update(self.models["depth"].collect_params())
+
+        self.logger.info(self.models["encoder"])
+        self.logger.info(self.models["depth"])
 
         self.models["encoder"] = DataParallelModel(self.models["encoder"], ctx_list=self.opt.ctx)
         self.models["depth"] = DataParallelModel(self.models["depth"], ctx_list=self.opt.ctx)
@@ -191,6 +195,11 @@ class Trainer:
             train_loss += losses['loss'].asscalar()
             tbar.set_description('Epoch %d, training loss %.3f' % \
                                  (self.epoch, train_loss / (batch_idx + 1)))
+
+            if batch_idx != 0 and batch_idx % self.opt.log_frequency == 0:
+                self.logger.info('Epoch %d iteration %04d/%04d: training loss %.3f' %
+                                 (self.epoch, batch_idx, len(self.train_loader),
+                                  train_loss / (batch_idx + 1)))
             mx.nd.waitall()
 
     def process_batch(self, inputs, eval_mode=False):
@@ -248,7 +257,9 @@ class Trainer:
         """
         tbar = tqdm(self.val_loader)
         depth_metrics = {}
-        rmse = 0
+        abs_rel, sq_rel, rmse, rmse_log = 0, 0, 0, 0
+        delta_1, delta_2, delta_3 = 0, 0, 0
+
         for metric in self.depth_metric_names:
             depth_metrics[metric] = 0
         for i, inputs in enumerate(tbar):
@@ -274,6 +285,12 @@ class Trainer:
             else:
                 print("Cannot find ground truth upon validation dataset!")
                 return
+        self.logger.info(
+                    'Epoch %d, validation '
+                    'abs_REL: %.3f sq_REL: %.3f '
+                    'RMSE: %.3f, RMSE_log: %.3f '
+                    'Delta_1: %.3f Delta_2: %.3f Delta_2: %.3f' %
+                    (self.epoch, abs_rel, sq_rel, rmse, rmse_log, delta_1, delta_2, delta_3))
         self.save_checkpoint(rmse, False)
 
     def generate_images_pred(self, inputs, outputs):

@@ -6,6 +6,9 @@
 
 from __future__ import absolute_import, division, print_function
 
+import os
+import logging
+
 from trainer import Trainer
 from options import MonodepthOptions
 
@@ -14,5 +17,14 @@ opts = options.parse()
 
 
 if __name__ == "__main__":
-    trainer = Trainer(opts)
+    # build logger
+    file_handler = logging.FileHandler(os.path.join(opts.log_dir, "train.log"))
+    stream_handler = logging.StreamHandler()
+    logger = logging.getLogger('')
+    logger.setLevel(logging.INFO)
+    logger.addHandler(file_handler)
+    logger.addHandler(stream_handler)
+    logger.info(opts)
+
+    trainer = Trainer(opts, logger)
     trainer.train()
