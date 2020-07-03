@@ -203,6 +203,10 @@ class MonodepthOptions:
     def parse(self):
         self.options = self.parser.parse_args()
 
+        # logging and checkpoint saving
+        if not os.path.exists(self.options.log_dirs):
+            os.makedirs(self.options.log_dirs)
+
         self.options.ctx = [mx.cpu(0)]
         self.options.ctx = [mx.gpu(i) for i in range(self.options.ngpus)] \
             if self.options.ngpus > 0 else self.options.ctx

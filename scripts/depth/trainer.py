@@ -70,8 +70,8 @@ class Trainer:
         self.models["depth"] = monodepthv2.DepthDecoder(
             self.models["encoder"].num_ch_enc, self.opt.scales)
         # TODO: initialization method should equal to PyTorch implementation
-        self.models["depth"].initialize(ctx=self.opt.ctx)
-        # self.models["depth"].initialize(init=mx.init.MSRAPrelu(), ctx=self.opt.ctx)
+        # self.models["depth"].initialize(ctx=self.opt.ctx)
+        self.models["depth"].initialize(init=mx.init.MSRAPrelu(), ctx=self.opt.ctx)
         self.parameters_to_train.update(self.models["depth"].collect_params())
 
         self.logger.info(self.models["encoder"])
