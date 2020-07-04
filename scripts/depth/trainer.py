@@ -70,8 +70,10 @@ class Trainer:
         self.models["depth"] = monodepthv2.DepthDecoder(
             self.models["encoder"].num_ch_enc, self.opt.scales)
         # TODO: initialization method should equal to PyTorch implementation
-        # self.models["depth"].initialize(ctx=self.opt.ctx)
-        self.models["depth"].initialize(init=mx.init.MSRAPrelu(), ctx=self.opt.ctx)
+        self.models["depth"].initialize(ctx=self.opt.ctx)
+        # self.models["depth"].initialize(init=mx.init.MSRAPrelu(), ctx=self.opt.ctx)
+
+        # combine the parameter of two models for optimization
         self.parameters_to_train.update(self.models["depth"].collect_params())
 
         self.logger.info(self.models["encoder"])
@@ -105,7 +107,7 @@ class Trainer:
 
         train_dataset = self.dataset(
             self.opt.data_path, train_filenames, self.opt.height, self.opt.width,
-            self.opt.frame_ids, num_scales=4, is_train=True, img_ext=img_ext)
+            self.opt.frame_ids, num_scales=4, is_train=False, img_ext=img_ext)
         self.train_loader = gluon.data.DataLoader(
             train_dataset, batch_size=self.opt.batch_size, shuffle=True,
             batchify_fn=dict_batchify_fn, num_workers=self.opt.num_workers,
@@ -163,7 +165,12 @@ class Trainer:
             len(train_dataset), len(val_dataset)))
 
         self.save_opts()
-        print("init time: ", time.time() - tic)
+
+        # for save best model
+        self.best_rmse = np.inf
+        self.best_models = self.models.copy()
+
+        print("initialization time: ", time.time() - tic)
 
     def train(self):
         """Run the entire training pipeline
@@ -172,6 +179,10 @@ class Trainer:
         for self.epoch in range(self.opt.num_epochs):
             self.run_epoch()
             self.val()
+
+        # save final model
+        self.save_model("final")
+        self.save_model("best")
 
     def run_epoch(self):
         """
@@ -184,8 +195,6 @@ class Trainer:
         train_loss = 0.0
         for batch_idx, inputs in enumerate(tbar):
             with autograd.record(True):
-                before_op_time = time.time()
-
                 outputs, losses = self.process_batch(inputs)
                 mx.nd.waitall()
 
@@ -291,7 +300,11 @@ class Trainer:
                     'RMSE: %.3f, RMSE_log: %.3f '
                     'Delta_1: %.3f Delta_2: %.3f Delta_2: %.3f' %
                     (self.epoch, abs_rel, sq_rel, rmse, rmse_log, delta_1, delta_2, delta_3))
-        self.save_checkpoint(rmse, False)
+        self.save_checkpoint(rmse)
+
+        if rmse < self.best_rmse:
+            self.best_models = self.models.copy()
+            self.best_rmse = rmse
 
     def generate_images_pred(self, inputs, outputs):
         for scale in self.opt.scales:
@@ -484,7 +497,7 @@ class Trainer:
         with open(os.path.join(models_dir, 'opt.json'), 'w') as f:
             json.dump(to_save, f, indent=2)
 
-    def save_checkpoint(self, rmse, is_best=False):
+    def save_checkpoint(self, rmse):
         """Save Checkpoint"""
         save_folder = os.path.join(self.log_path, "models", "weights")
         if not os.path.exists(save_folder):
@@ -495,5 +508,17 @@ class Trainer:
             filepath = os.path.join(save_folder, filename.format(model_name))
             model.module.save_parameters(filepath)
 
-        if is_best:
-            shutil.copyfile(filename, os.path.join(save_folder, 'model_best.params'))
+    def save_model(self, model_type="final"):
+        """Save Checkpoint"""
+        save_folder = os.path.join(self.log_path, model_type)
+        if not os.path.exists(save_folder):
+            os.makedirs(save_folder)
+
+        models = self.models
+        if model_type == "best":
+            models = self.best_models
+
+        filename = '{}.params'
+        for model_name, model in models.items():
+            filepath = os.path.join(save_folder, filename.format(model_name))
+            model.module.save_parameters(filepath)
