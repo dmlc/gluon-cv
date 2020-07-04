@@ -204,7 +204,7 @@ class MonodepthOptions:
         self.options = self.parser.parse_args()
 
         # logging and checkpoint saving
-        log_path = os.path.join(self.options.log_dirs, self.options.model_name)
+        log_path = os.path.join(self.options.log_dir, self.options.model_name)
         if not os.path.exists(log_path):
             os.makedirs(log_path)
 
