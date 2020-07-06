@@ -27,7 +27,10 @@ __all__ = ['ssd_300_vgg16_atrous_voc',
            'ssd_512_mobilenet1_0_custom',
            'ssd_300_mobilenet0_25_voc',
            'ssd_300_mobilenet0_25_coco',
-           'ssd_300_mobilenet0_25_custom']
+           'ssd_300_mobilenet0_25_custom',
+           'ssd_300_resnet34_v1b_voc',
+           'ssd_300_resnet34_v1b_coco',
+           'ssd_300_resnet34_v1b_custom']
 
 def ssd_300_vgg16_atrous_voc(pretrained=False, pretrained_base=True, **kwargs):
     """SSD architecture with VGG16 atrous 300x300 base network for Pascal VOC.
@@ -749,6 +752,120 @@ def ssd_300_mobilenet0_25_custom(classes, pretrained_base=True, pretrained=False
     else:
         from ...model_zoo import get_model
         net = get_model('ssd_300_mobilenet0.25_' + str(transfer), pretrained=True, **kwargs)
+        reuse_classes = [x for x in classes if x in net.classes]
+        net.reset_class(classes, reuse_weights=reuse_classes)
+    return net
+
+def ssd_300_resnet34_v1b_voc(pretrained=False, pretrained_base=True, **kwargs):
+    """SSD architecture with ResNet v1b 34 layers.
+
+    Parameters
+    ----------
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True
+        Load pretrained base network, the extra layers are randomized.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+
+    Returns
+    -------
+    HybridBlock
+        A SSD detection network.
+    """
+    from .resnet_v1b_ssd import resnet34_v1b_ssd
+    classes = VOCDetection.CLASSES
+
+    return get_ssd('resnet34_v1b', 300,
+                   features=resnet34_v1b_ssd,
+                   filters=None,
+                   sizes=[21, 45, 99, 153, 207, 261, 315],
+                   ratios=[[1, 2, 0.5]] + [[1, 2, 0.5, 3, 1.0/3]] * 3 + [[1, 2, 0.5]] * 2,
+                   steps=[8, 16, 32, 64, 100, 300],
+                   classes=classes, dataset='voc', pretrained=pretrained,
+                   pretrained_base=pretrained_base, **kwargs)
+
+def ssd_300_resnet34_v1b_coco(pretrained=False, pretrained_base=True, **kwargs):
+    """SSD architecture with ResNet v1b 34 layers.
+
+    Parameters
+    ----------
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True
+        Load pretrained base network, the extra layers are randomized.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+
+    Returns
+    -------
+    HybridBlock
+        A SSD detection network.
+    """
+    from .resnet_v1b_ssd import resnet34_v1b_ssd
+    from ...data import COCODetection
+    classes = COCODetection.CLASSES
+
+    return get_ssd('resnet34_v1b', 300,
+                   features=resnet34_v1b_ssd,
+                   filters=None,
+                   sizes=[21, 45, 99, 153, 207, 261, 315],
+                   ratios=[[1, 2, 0.5]] + [[1, 2, 0.5, 3, 1.0/3]] * 3 + [[1, 2, 0.5]] * 2,
+                   steps=[8, 16, 32, 64, 100, 300],
+                   classes=classes, dataset='coco', pretrained=pretrained,
+                   pretrained_base=pretrained_base, **kwargs)
+
+def ssd_300_resnet34_v1b_custom(classes, pretrained_base=True, pretrained=False,
+                                transfer=None, **kwargs):
+    """SSD architecture with ResNet v1b 34 layers for custom dataset.
+
+    Parameters
+    ----------
+    classes : iterable of str
+        Names of custom foreground classes. `len(classes)` is the number of foreground classes.
+    pretrained_base : bool or str, optional, default is True
+        Load pretrained base network, the extra layers are randomized.
+    transfer : str or None
+        If not `None`, will try to reuse pre-trained weights from SSD networks trained on other
+        datasets.
+
+    Returns
+    -------
+    HybridBlock
+        A SSD detection network.
+
+    Example
+    -------
+    >>> net = ssd_300_resnet34_v1b_custom(classes=['a', 'b', 'c'], pretrained_base=True)
+    >>> net = ssd_300_resnet34_v1b_custom(classes=['foo', 'bar'], transfer='coco')
+
+    """
+    from .resnet_v1b_ssd import resnet34_v1b_ssd
+    if pretrained:
+        warnings.warn("Custom models don't provide `pretrained` weights, ignored.")
+    if transfer is None:
+        kwargs['pretrained'] = False
+        net = get_ssd('resnet34_v1b', 300,
+                      features=resnet34_v1b_ssd,
+                      filters=None,
+                      sizes=[21, 45, 99, 153, 207, 261, 315],
+                      ratios=[[1, 2, 0.5]] + [[1, 2, 0.5, 3, 1.0/3]] * 3 + [[1, 2, 0.5]] * 2,
+                      steps=[8, 16, 32, 64, 100, 300],
+                      classes=classes, dataset='',
+                      pretrained_base=pretrained_base, **kwargs)
+    else:
+        from ...model_zoo import get_model
+        net = get_model('ssd_300_resnet34_v1b_' + str(transfer), pretrained=True, **kwargs)
         reuse_classes = [x for x in classes if x in net.classes]
         net.reset_class(classes, reuse_weights=reuse_classes)
     return net
