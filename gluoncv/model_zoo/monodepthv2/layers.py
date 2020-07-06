@@ -47,7 +47,8 @@ def transformation_from_parameters(axisangle, translation, invert=False):
 def get_translation_matrix(translation_vector):
     """Convert a translation vector into a 4x4 transformation matrix
     """
-    T = mx.nd.zeros(translation_vector.shape[0], 4, 4).as_in_context(context=translation_vector.context)
+    T = mx.nd.zeros(translation_vector.shape[0], 4, 4).as_in_context(
+        context=translation_vector.context)
 
     t = translation_vector.contiguous().view(-1, 3, 1)
 
@@ -131,13 +132,15 @@ class Conv3x3(nn.HybridBlock):
         #     self.pad = nn.ZeroPad2d(1)
         with self.name_scope():
             self.pad = nn.ReflectionPad2D(1)
-            self.conv = nn.Conv2D(in_channels=int(in_channels), channels=int(out_channels), kernel_size=3)
+            self.conv = nn.Conv2D(in_channels=int(in_channels),
+                                  channels=int(out_channels), kernel_size=3)
 
     def hybrid_forward(self, F, x):
         if self.use_refl:
             out = self.pad(x)
         else:
-            out = mx.nd.pad(x, mode='constant', constant_value=0, pad_width=(0, 0, 0, 0, 1, 1, 1, 1))
+            out = mx.nd.pad(x, mode='constant', constant_value=0,
+                            pad_width=(0, 0, 0, 0, 1, 1, 1, 1))
 
         out = self.conv(out)
         return out

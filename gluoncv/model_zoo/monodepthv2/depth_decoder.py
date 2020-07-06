@@ -44,7 +44,8 @@ class DepthDecoder(nn.HybridBlock):
                 self.convs[("upconv", i, 1)] = ConvBlock(num_ch_in, num_ch_out)
 
             for s in self.scales:
-                self.convs[("dispconv", s)] = Conv3x3(self.num_ch_dec[s], self.num_output_channels)
+                self.convs[("dispconv", s)] = Conv3x3(
+                    self.num_ch_dec[s], self.num_output_channels)
 
             # register blocks
             for k in self.convs:

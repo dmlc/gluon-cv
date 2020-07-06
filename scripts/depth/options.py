@@ -127,9 +127,12 @@ class MonodepthOptions:
                                  choices=["posecnn", "separate_resnet", "shared"])
 
         # SYSTEM options
-        self.parser.add_argument("--no_cuda",
-                                 help="if set disables CUDA",
+        self.parser.add_argument("--no_gpu",
+                                 help="if set disables gpu",
                                  action="store_true")
+        self.parser.add_argument('--gpu', type=int,
+                                 default=0,
+                                 help='GPU index')
         self.parser.add_argument("--num_workers",
                                  type=int,
                                  help="number of dataloader workers",
@@ -196,9 +199,6 @@ class MonodepthOptions:
                                       "from the original monodepth paper",
                                  action="store_true")
 
-        self.parser.add_argument('--ngpus', type=int,
-                                 default=len(mx.test_utils.list_gpus()),
-                                 help='number of GPUs (default: 4)')
 
     def parse(self):
         self.options = self.parser.parse_args()
@@ -208,8 +208,8 @@ class MonodepthOptions:
         if not os.path.exists(log_path):
             os.makedirs(log_path)
 
-        self.options.ctx = [mx.cpu(0)]
-        self.options.ctx = [mx.gpu(i) for i in range(self.options.ngpus)] \
-            if self.options.ngpus > 0 else self.options.ctx
+        self.options.ctx = [mx.gpu(self.options.gpu)]
+        if self.options.no_gpu:
+            self.options.ctx = [mx.cpu(0)]
 
         return self.options

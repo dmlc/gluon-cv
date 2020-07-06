@@ -34,15 +34,6 @@ STEREO_SCALE_FACTOR = 5.4
 
 class Trainer:
     def __init__(self, options, logger):
-        """
-        TODO:
-            1. model initialization : not complete
-            2. dataloader   : Done
-            3. optimization setting : not complete
-            4. loss function    : Done
-            5. metrics  : Done
-        """
-        tic = time.time()
         # configuration setting
         self.opt = options
         self.logger = logger
@@ -75,7 +66,6 @@ class Trainer:
 
         self.models["depth"] = monodepthv2.DepthDecoder(
             self.models["encoder"].num_ch_enc, self.opt.scales)
-        # TODO: initialization method should equal to PyTorch implementation
         self.models["depth"].initialize(ctx=self.opt.ctx)
         # self.models["depth"].initialize(init=mx.init.MSRAPrelu(), ctx=self.opt.ctx)
 
@@ -84,9 +74,6 @@ class Trainer:
 
         self.logger.info(self.models["encoder"])
         self.logger.info(self.models["depth"])
-
-        self.models["encoder"] = DataParallelModel(self.models["encoder"], ctx_list=self.opt.ctx)
-        self.models["depth"] = DataParallelModel(self.models["depth"], ctx_list=self.opt.ctx)
 
         # TODO: use_pose_net for mono training
         if self.use_pose_net:
@@ -101,7 +88,6 @@ class Trainer:
                          "kitti_odom": kitti_dataset.KITTIOdomDataset}
         self.dataset = datasets_dict[self.opt.dataset]
 
-        # TODO: move splits file to a common position
         fpath = os.path.join(os.path.dirname(__file__), "splits", self.opt.split, "{}_files.txt")
 
         train_filenames = readlines(fpath.format("train"))
@@ -137,7 +123,6 @@ class Trainer:
         optimizer_params = {'lr_scheduler': self.lr_scheduler,
                             'learning_rate': self.opt.learning_rate}
 
-        # TODO: current use ParamterDict.update(); use multiple Trainer to replace it later
         self.optimizer = gluon.Trainer(self.parameters_to_train, 'adam',
                                        optimizer_params)
 
@@ -148,7 +133,6 @@ class Trainer:
         ################### loss function ###################
         if not self.opt.no_ssim:
             self.ssim = SSIM()
-            # TODO: Multi-GPU (DataParalleCriterion)
 
         self.backproject_depth = {}
         self.project_3d = {}
@@ -159,8 +143,6 @@ class Trainer:
             self.backproject_depth[scale] = BackprojectDepth(
                 self.opt.batch_size, h, w, ctx=self.opt.ctx[0])
             self.project_3d[scale] = Project3D(self.opt.batch_size, h, w)
-
-        # TODO: Multi-GPU (DataParalleCriterion)
 
         ################### metrics ###################
         self.depth_metric_names = [
@@ -176,8 +158,6 @@ class Trainer:
         self.best_rmse = np.inf
         self.best_models = self.models.copy()
 
-        print("initialization time: ", time.time() - tic)
-
     def train(self):
         """Run the entire training pipeline
         """
@@ -191,10 +171,7 @@ class Trainer:
         self.save_model("best")
 
     def run_epoch(self):
-        """
-        TODO:
-            1. prediction   : Done
-            2. compute loss : not complete
+        """Run a single epoch of training and validation
         """
         print("Training")
         tbar = tqdm(self.train_loader)
@@ -226,24 +203,10 @@ class Trainer:
             pass
         else:
             # Otherwise, we only feed the image with frame_id 0 through the depth encoder
-            encoder_outputs = self.models["encoder"](inputs["color_aug", 0, 0])
-            features = [x for x in encoder_outputs[0]]
-            for i in range(1, len(encoder_outputs)):
-                for j in range(len(encoder_outputs[i])):
-                    features[j] = mx.nd.concat(
-                        features[j],
-                        encoder_outputs[i][j].as_in_context(features[j].context),
-                        dim=0
-                    )
-            decoder_outputs = self.models["depth"](features)
-            outputs = decoder_outputs[0]
-            for i in range(1, len(decoder_outputs)):
-                for key in outputs.keys():
-                    outputs[key] = mx.nd.concat(
-                        outputs[key],
-                        decoder_outputs[i][key].as_in_context(outputs[key].context),
-                        dim=0
-                    )
+            input_color_aug = inputs[("color_aug", 0, 0)]
+            input_color = input_color_aug.as_in_context(context=self.opt.ctx[0])
+            features = self.models["encoder"](input_color)
+            outputs = self.models["depth"](features)
 
         if eval_mode:
             _, depth = disp_to_depth(outputs[("disp", 0)],
@@ -421,9 +384,10 @@ class Trainer:
 
             if not self.opt.disable_automasking:
                 # add random numbers to break ties
-                identity_reprojection_loss = identity_reprojection_loss + \
-                                             mx.nd.random.randn(*identity_reprojection_loss.shape).as_in_context(
-                                                 identity_reprojection_loss.context) * 0.00001
+                identity_reprojection_loss = \
+                    identity_reprojection_loss + \
+                    mx.nd.random.randn(*identity_reprojection_loss.shape).as_in_context(
+                        identity_reprojection_loss.context) * 0.00001
 
                 combined = mx.nd.concat(identity_reprojection_loss, reprojection_loss, dim=1)
             else:
@@ -515,7 +479,7 @@ class Trainer:
         filename = 'epoch_%04d_RMSE_%2.4f_{}.params' % (self.epoch, rmse)
         for model_name, model in self.models.items():
             filepath = os.path.join(save_folder, filename.format(model_name))
-            model.module.save_parameters(filepath)
+            model.save_parameters(filepath)
 
     def save_model(self, model_type="final"):
         """Save Checkpoint"""
@@ -530,4 +494,4 @@ class Trainer:
         filename = '{}.params'
         for model_name, model in models.items():
             filepath = os.path.join(save_folder, filename.format(model_name))
-            model.module.save_parameters(filepath)
+            model.save_parameters(filepath)

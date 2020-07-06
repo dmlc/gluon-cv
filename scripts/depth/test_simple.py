@@ -33,14 +33,14 @@ def parse_args():
                         help="if set, uses stereo pair for training", action="store_true")
     parser.add_argument('--ext', type=str,
                         help='image extension to search for in folder', default="jpg")
-    parser.add_argument("--no_cuda",
-                        help='if set, disables CUDA',
+    parser.add_argument("--no_gpu",
+                        help='if set, disables GPU',
                         action='store_true')
 
     args = parser.parse_args()
     args.ctx = mx.gpu(0)
 
-    if args.no_cuda:
+    if args.no_gpu:
         args.ctx = mx.cpu()
 
     return args

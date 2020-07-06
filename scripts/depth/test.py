@@ -72,7 +72,7 @@ def evaluate(opt):
     MAX_DEPTH = 80
 
     # DO NOT modify!!! Only support batch_size=ngus
-    batch_size = 16  # opt.ngpus
+    batch_size = opt.batch_size
 
     assert sum((opt.eval_mono, opt.eval_stereo)) == 1, \
         "Please choose mono or stereo evaluation by setting either --eval_mono or --eval_stereo"
@@ -104,39 +104,16 @@ def evaluate(opt):
         encoder.load_parameters(encoder_path, ctx=opt.ctx)
         depth_decoder.load_parameters(decoder_path, ctx=opt.ctx)
 
-        encoder_ = DataParallelModel(encoder, ctx_list=opt.ctx)
-        depth_decoder_ = DataParallelModel(depth_decoder, ctx_list=opt.ctx)
         print('Runtime of create model : %.2f' % (time.time() - tic))
 
         ############################ inference ############################
         pred_disps = []
         tbar = tqdm(dataloader)
         for i, data in enumerate(tbar):
-            # input_color = data[("color", 0, 0)]
-            # input_color = input_color.as_in_context(context=opt.ctx[0])
-            # features = encoder(input_color)
-            # output = depth_decoder(features)
-
             input_color = data[("color", 0, 0)]
-
-            encoder_outputs = encoder_(input_color)
-            features = [x for x in encoder_outputs[0]]
-            for i in range(1, len(encoder_outputs)):
-                for j in range(len(encoder_outputs[i])):
-                    features[j] = mx.nd.concat(
-                        features[j],
-                        encoder_outputs[i][j].as_in_context(features[j].context),
-                        dim=0
-                    )
-            decoder_outputs = depth_decoder_(features)
-            outputs = decoder_outputs[0]
-            for i in range(1, len(decoder_outputs)):
-                for key in outputs.keys():
-                    outputs[key] = mx.nd.concat(
-                        outputs[key],
-                        decoder_outputs[i][key].as_in_context(outputs[key].context),
-                        dim=0
-                    )
+            input_color = input_color.as_in_context(context=opt.ctx[0])
+            features = encoder(input_color)
+            outputs = depth_decoder(features)
 
             pred_disp, _ = disp_to_depth(outputs[("disp", 0)], opt.min_depth, opt.max_depth)
             pred_disp = pred_disp.as_in_context(mx.cpu())[:, 0].asnumpy()
@@ -241,7 +218,8 @@ def evaluate(opt):
 
     mean_errors = np.array(errors).mean(0)
 
-    print("\n  " + ("{:>8} | " * 7).format("abs_rel", "sq_rel", "rmse", "rmse_log", "a1", "a2", "a3"))
+    print("\n  " + ("{:>8} | " * 7).format(
+        "abs_rel", "sq_rel", "rmse", "rmse_log", "a1", "a2", "a3"))
     print(("&{: 8.3f}  " * 7).format(*mean_errors.tolist()) + "\\\\")
     print("\n-> Done!")
 

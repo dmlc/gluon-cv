@@ -25,7 +25,6 @@ class ResnetEncoder(nn.HybridBlock):
 
         if num_input_images > 1:
             pass
-            # self.encoder = resnet_multiimage_input(num_layers, pretrained, num_input_images)
         else:
             self.encoder = resnets[num_layers](pretrained=pretrained, ctx=ctx, **kwargs)
 

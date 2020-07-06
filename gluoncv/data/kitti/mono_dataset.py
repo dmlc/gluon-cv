@@ -31,6 +31,7 @@ class MonoDataset(dataset.Dataset):
         is_train
         img_ext
     """
+
     def __init__(self,
                  data_path,
                  filenames,
@@ -78,7 +79,8 @@ class MonoDataset(dataset.Dataset):
                 for i in range(self.num_scales):
                     s = 2 ** i
                     size = (self.height // s, self.width // s)
-                    inputs[(n, im, i)] = copy.deepcopy(inputs[(n, im, i - 1)].resize(size[::-1], self.interp))
+                    inputs[(n, im, i)] = copy.deepcopy(
+                        inputs[(n, im, i - 1)].resize(size[::-1], self.interp))
 
         for k in list(inputs):
             f = mx.nd.array(inputs[k])
@@ -135,9 +137,11 @@ class MonoDataset(dataset.Dataset):
         for i in self.frame_idxs:
             if i == "s":
                 other_side = {"r": "l", "l": "r"}[side]
-                inputs[("color", i, -1)] = self.get_color(folder, frame_index, other_side, do_flip)
+                inputs[("color", i, -1)] = self.get_color(
+                    folder, frame_index, other_side, do_flip)
             else:
-                inputs[("color", i, -1)] = self.get_color(folder, frame_index + i, side, do_flip)
+                inputs[("color", i, -1)] = self.get_color(
+                    folder, frame_index + i, side, do_flip)
 
         # adjusting intrinsics to match each scale in the pyramid
         for scale in range(self.num_scales):
