@@ -18,7 +18,7 @@ opts = options.parse()
 
 if __name__ == "__main__":
     # build logger
-    file_handler = logging.FileHandler(os.path.join(opts.log_dir, "train.log"))
+    file_handler = logging.FileHandler(os.path.join(opts.log_dir, opts.model_name, "train.log"))
     stream_handler = logging.StreamHandler()
     logger = logging.getLogger('')
     logger.setLevel(logging.INFO)

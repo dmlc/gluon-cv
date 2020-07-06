@@ -26,6 +26,12 @@ from gluoncv.utils import LRScheduler, LRSequential
 from utils import *
 
 
+# Models which were trained with stereo supervision were trained with a nominal
+# baseline of 0.1 units. The KITTI rig has a baseline of 54cm. Therefore,
+# to convert our stereo predictions to real-world scale we multiply our depths by 5.4.
+STEREO_SCALE_FACTOR = 5.4
+
+
 class Trainer:
     def __init__(self, options, logger):
         """
@@ -471,7 +477,10 @@ class Trainer:
         depth_gt = depth_gt[mask]
         depth_pred = depth_pred[mask]
 
-        scale_factor = np.median(depth_gt) / np.median(depth_pred)
+        if self.opt.use_stereo:
+            scale_factor = STEREO_SCALE_FACTOR
+        else:
+            scale_factor = np.median(depth_gt) / np.median(depth_pred)
         depth_pred *= scale_factor
 
         depth_pred = np.clip(depth_pred, a_min=1e-3, a_max=80)
