@@ -55,6 +55,7 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
+    'sphinx.ext.autosectionlabel',
     'sphinx_gallery.gen_gallery',
 ]
 
@@ -84,7 +85,7 @@ sphinx_gallery_conf = {
         'build/examples_distributed',
         'build/examples_deployment',],
 
-    'filename_pattern': '.py',
+    'filename_pattern': '.pyy',
     'ignore_pattern': 'im2rec.py',
 
     # 'subsection_order': ExplicitOrder(['tutorials/classification',
