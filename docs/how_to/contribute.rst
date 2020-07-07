@@ -143,7 +143,7 @@ Contribute new CV algorithms
 
 Officially supported algorithms in GluonCV consist of the following five components:
 
-- `Model definition <https://github.com/dmlc/gluon-cv/tree/estimator/gluoncv/model_zoo>`_. Models are written in `mxnet.gluon.HybridBlock` or `mxnet.gluon.Block`. You may get a better idea to start with the implementation of famous [resnet <https://github.com/dmlc/gluon-cv/blob/estimator/gluoncv/model_zoo/resnetv1b.py) models. In addition to base `ResNetV1b` class definition, we also encourage the definition of individual network with names so that consumption of specific model variant is made easy. For example, `def resnet18_v1b <https://github.com/dmlc/gluon-cv/blob/estimator/gluoncv/model_zoo/resnetv1b.py#L268>`_
+- `Model definition <https://github.com/dmlc/gluon-cv/tree/estimator/gluoncv/model_zoo>`_. Models are written in `mxnet.gluon.HybridBlock` or `mxnet.gluon.Block`. You may get a better idea to start with the implementation of famous `resnet <https://github.com/dmlc/gluon-cv/blob/estimator/gluoncv/model_zoo/resnetv1b.py`_ models. In addition to base `ResNetV1b` class definition, we also encourage the definition of individual network with names so that consumption of specific model variant is made easy. For example: `def resnet18_v1b <https://github.com/dmlc/gluon-cv/blob/estimator/gluoncv/model_zoo/resnetv1b.py#L268>`_
 - Accompanying datasets, preprocessing function, data augmentation, evaluation metric, loss functions. You will only need to implement them in case you don't find appropriate ones in the existing library.
     - `dataset definitions <https://github.com/dmlc/gluon-cv/tree/estimator/gluoncv/data>`_
     - `data transformations <https://github.com/dmlc/gluon-cv/tree/estimator/gluoncv/data/transforms>`_
@@ -152,7 +152,7 @@ Officially supported algorithms in GluonCV consist of the following five compone
     - `utils <https://github.com/dmlc/gluon-cv/tree/estimator/gluoncv/utils>`_: anything else you find it's not appropriate to reside in other major components
 - `Python Scripts <https://github.com/dmlc/gluon-cv/tree/estimator/scripts>`_. Scripts folder includes training/evaluation/demo python scripts that people can play with and modify. You can use these script to train/evaluate models in development as well.
 - `Pretrained weights <https://github.com/dmlc/gluon-cv/blob/estimator/gluoncv/model_zoo/model_store.py>`_: organized by hashing codes, the pretrained weights are hosted on S3 bucket for all users to consume the models directly. Obviously, do not discard the best `params` file you have trained and evaluated, share with us in the PR, the organizers can help upload the weights and make it new algorithm easier to digest!
-- `Documents <https://github.com/dmlc/gluon-cv/tree/estimator/docs>`_. Let more people to know your new shining algorithm by adding the scores to the tables in model zoo website. [Contribute tutorials <#contribute-tutorials) for inference/training can definitely flatten the learning curve of users to adopt the new models.
+- `Documents <https://github.com/dmlc/gluon-cv/tree/estimator/docs>`_. Let more people to know your new shining algorithm by adding the scores to the tables in model zoo website. `Contribute Tutorials`_ for inference/training can definitely flatten the learning curve of users to adopt the new models.
 
 About hybrid/non-hybrid models in GluonCV
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
