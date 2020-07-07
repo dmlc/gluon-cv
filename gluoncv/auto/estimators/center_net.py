@@ -72,8 +72,8 @@ def default_configs():
 
 @set_default(ex)
 class CenterNetEstimator(BaseEstimator):
-    def __init__(self, config, logger=None):
-        super(CenterNetEstimator, self).__init__(config, logger)
+    def __init__(self, config, logger=None, reporter=None):
+        super(CenterNetEstimator, self).__init__(config, logger, reporter=reporter, name=None)
 
         # dataset
         if self._cfg.dataset == 'coco':
@@ -109,6 +109,8 @@ class CenterNetEstimator(BaseEstimator):
                              norm_layer=gluon.nn.BatchNorm)
         if self._cfg.train_hp.resume.strip():
             net.load_parameters(self._cfg.train_hp.resume.strip())
+        elif os.isfile(os.path.join(self._logdir, 'latest.params')):
+            net.load_parameters(os.path.join(self._logdir, 'latest.params'))
         else:
             with warnings.catch_warnings(record=True) as w:
                 warnings.simplefilter("always")
@@ -260,6 +262,8 @@ class CenterNetEstimator(BaseEstimator):
         return self._eval_metric.get()
 
     def _save_params(self, current_map, epoch, save_interval, prefix):
+        self._net.save_parameters('latest.params')
+        self._trainer.save_states('latest.states')
         current_map = float(current_map)
         if current_map > self._best_map:
             self._best_map = current_map

@@ -10,6 +10,7 @@ def cfg():
     batch_size = 32
     epochs = 3
     resume = ''
+    auto_resume = True           # try to automatically resume last trial if config is default
     start_epoch = 0
     momentum = 0.9               # SGD momentum
     wd = 1e-4                    # weight decay
