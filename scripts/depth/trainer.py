@@ -99,16 +99,15 @@ class Trainer:
 
         train_dataset = self.dataset(
             self.opt.data_path, train_filenames, self.opt.height, self.opt.width,
-            self.opt.frame_ids, num_scales=4, is_train=False, img_ext=img_ext)
+            self.opt.frame_ids, num_scales=4, is_train=True, img_ext=img_ext)
         self.train_loader = gluon.data.DataLoader(
             train_dataset, batch_size=self.opt.batch_size, shuffle=True,
             batchify_fn=dict_batchify_fn, num_workers=self.opt.num_workers,
             pin_memory=True, last_batch='discard')
 
-        val_dataset = self.dataset(self.opt.data_path, val_filenames,
-                                   self.opt.height, self.opt.width,
-                                   self.opt.frame_ids, num_scales=4,
-                                   is_train=False, img_ext=img_ext)
+        val_dataset = self.dataset(
+            self.opt.data_path, val_filenames, self.opt.height, self.opt.width,
+            self.opt.frame_ids, num_scales=4, is_train=False, img_ext=img_ext)
         self.val_loader = gluon.data.DataLoader(
             val_dataset, batch_size=self.opt.batch_size, shuffle=False,
             batchify_fn=dict_batchify_fn, num_workers=self.opt.num_workers,
@@ -203,9 +202,12 @@ class Trainer:
             pass
         else:
             # Otherwise, we only feed the image with frame_id 0 through the depth encoder
-            input_color_aug = inputs[("color_aug", 0, 0)]
-            input_color = input_color_aug.as_in_context(context=self.opt.ctx[0])
-            features = self.models["encoder"](input_color)
+            input_img = inputs[("color_aug", 0, 0)]
+            if eval_mode:
+                input_img = inputs[("color", 0, 0)]
+
+            input_img = input_img.as_in_context(context=self.opt.ctx[0])
+            features = self.models["encoder"](input_img)
             outputs = self.models["depth"](features)
 
         if eval_mode:
