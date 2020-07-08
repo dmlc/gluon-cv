@@ -109,7 +109,7 @@ def parse_args():
         args.ctx = [mx.cpu(0)]
     else:
         print('Number of GPUs:', args.ngpus)
-        # assert args.ngpus > 0, 'No GPUs found, please enable --no-cuda for CPU mode.'
+        assert args.ngpus > 0, 'No GPUs found, please enable --no-cuda for CPU mode.'
         args.ctx = [mx.gpu(i) for i in range(args.ngpus)]
 
     if 'psp' in args.model or 'deeplab' in args.model:
@@ -118,7 +118,7 @@ def parse_args():
 
     # logging and checkpoint saving
     if args.save_dir is None:
-        args.save_dir = "runs/%s/%s/%s/" % (args.dataset, args.model, args.checkname)
+        args.save_dir = "runs/%s/%s/%s/" % (args.dataset, args.model, args.backbone)
     makedirs(args.save_dir)
 
     # Synchronized BatchNorm
@@ -192,13 +192,8 @@ class Trainer(object):
         # create criterion
         if 'icnet' in args.model:
             criterion = ICNetLoss(crop_size=args.crop_size)
-<<<<<<< HEAD
-        elif 'danet' in args.model:
-            criterion=SegmentationMultiLosses()
-=======
         elif 'danet' in args.model or (args.model_zoo and 'danet' in args.model_zoo):
             criterion = SegmentationMultiLosses()
->>>>>>> upstream/master
         else:
             criterion = MixSoftmaxCrossEntropyLoss(args.aux, aux_weight=args.aux_weight)
         self.criterion = DataParallelCriterion(criterion, args.ctx, args.syncbn)
