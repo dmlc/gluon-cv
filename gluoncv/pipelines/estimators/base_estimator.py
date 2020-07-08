@@ -95,7 +95,7 @@ class DotDict(dict):
 
 class BaseEstimator:
     def __init__(self, config, logger=None):
-        self._log = logger if logger is not None else logging.getLogger(__name__)
+        self._logger = logger if logger is not None else logging.getLogger(__name__)
 
         # finalize the config
         r = self._ex.run('_get_config', config_updates=config, options={'--loglevel': 50})
@@ -105,7 +105,7 @@ class BaseEstimator:
         logdir = r.config.get('logdir', None)
         self._logdir = os.path.abspath(logdir) if logdir else os.getcwd()
         config_file = os.path.join(self._logdir, config_fn)
-        save_config(r.config, self._log, config_file)
+        save_config(r.config, self._logger, config_file)
         self._cfg = DotDict(r.config)
         self._cfg.freeze()
         _random.seed(self._cfg.seed)
