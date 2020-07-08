@@ -131,6 +131,7 @@ class BaseEstimator:
                 r2 = self._ex.run('_get_config', options={'--loglevel': 50})
                 if  _compare_config(r2.config, r.config):
                     self._logger.info('Auto resume detected previous run: {}'.format(prefix))
+                    r.config['seed'] = r2.config['seed']
                 else:
                     prefix = None
         if not prefix:

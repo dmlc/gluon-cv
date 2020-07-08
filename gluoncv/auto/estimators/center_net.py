@@ -45,7 +45,7 @@ def center_net_default():
 def update_train_config():
     gpus = (0, 1, 2, 3, 4, 5, 6, 7)
     pretrained_base = True  # whether load the imagenet pre-trained base
-    batch_size = 32
+    batch_size = 128
     epochs = 140
     lr = 1.25e-4  # learning rate
     lr_decay = 0.1  # decay rate of learning rate.
@@ -92,6 +92,7 @@ class CenterNetEstimator(BaseEstimator):
         # network
         ctx = [mx.gpu(int(i)) for i in self._cfg.train_hp.gpus]
         ctx = ctx if ctx else [mx.cpu()]
+        self._ctx = ctx
         net_name = '_'.join(('center_net', self._cfg.center_net.base_network, self._cfg.dataset))
         heads = OrderedDict([
             ('heatmap', {'num_output': train_dataset.num_class, 'bias': self._cfg.center_net.heads.bias}),
@@ -109,7 +110,7 @@ class CenterNetEstimator(BaseEstimator):
                              norm_layer=gluon.nn.BatchNorm)
         if self._cfg.train_hp.resume.strip():
             net.load_parameters(self._cfg.train_hp.resume.strip())
-        elif os.isfile(os.path.join(self._logdir, 'latest.params')):
+        elif os.path.isfile(os.path.join(self._logdir, 'latest.params')):
             net.load_parameters(os.path.join(self._logdir, 'latest.params'))
         else:
             with warnings.catch_warnings(record=True) as w:
@@ -146,7 +147,7 @@ class CenterNetEstimator(BaseEstimator):
         lr_scheduler = LRSequential([
             LRScheduler('linear', base_lr=0, target_lr=self._cfg.train_hp.lr,
                         nepochs=self._cfg.train_hp.warmup_epochs, iters_per_epoch=num_batches),
-            LRScheduler(self._cfg.train_hp.lr_mode, base_lr=self._cfg.train_hp.LR,
+            LRScheduler(self._cfg.train_hp.lr_mode, base_lr=self._cfg.train_hp.lr,
                         nepochs=self._cfg.train_hp.epochs - self._cfg.train_hp.warmup_epochs,
                         iters_per_epoch=num_batches,
                         step_epoch=lr_decay_epoch,
@@ -180,7 +181,7 @@ class CenterNetEstimator(BaseEstimator):
             self._net.hybridize()
 
             for i, batch in enumerate(self._train_data):
-                split_data = [gluon.utils.split_and_load(batch[ind], ctx_list=ctx, batch_axis=0) for ind in range(6)]
+                split_data = [gluon.utils.split_and_load(batch[ind], ctx_list=self._ctx, batch_axis=0) for ind in range(6)]
                 data, heatmap_targets, wh_targets, wh_masks, center_reg_targets, center_reg_masks = split_data
                 batch_size = self._cfg.train_hp.batch_size
                 with autograd.record():
@@ -210,7 +211,7 @@ class CenterNetEstimator(BaseEstimator):
                     name3, loss3 = center_reg_metric.get()
                     name4, loss4 = heatmap_loss_metric.get()
                     self._log.info('[Epoch {}][Batch {}], Speed: {:.3f} samples/sec, LR={}, {}={:.3f}, {}={:.3f}, {}={:.3f}'.format(
-                        epoch, i, batch_size/(time.time()-btic), trainer.learning_rate, name2, loss2, name3, loss3, name4, loss4))
+                        epoch, i, batch_size/(time.time()-btic), self._trainer.learning_rate, name2, loss2, name3, loss3, name4, loss4))
                 btic = time.time()
 
             name2, loss2 = wh_metric.get()
@@ -218,11 +219,11 @@ class CenterNetEstimator(BaseEstimator):
             name4, loss4 = heatmap_loss_metric.get()
             self._log.info('[Epoch {}] Training cost: {:.3f}, {}={:.3f}, {}={:.3f}, {}={:.3f}'.format(
                 epoch, (time.time()-tic), name2, loss2, name3, loss3, name4, loss4))
-            if (epoch % self._cfg.valid_hp.val_interval == 0) or \
+            if (epoch % self._cfg.valid_hp.interval == 0) or \
                (self._cfg.train_hp.save_interval and epoch % self._cfg.train_hp.save_interval == 0) or \
                (epoch == self._cfg.train_hp.epochs - 1):
                 # consider reduce the frequency of validation to save time
-                map_name, mean_ap = validate()
+                map_name, mean_ap = self._evaluate()
                 val_msg = '\n'.join(['{}={}'.format(k, v) for k, v in zip(map_name, mean_ap)])
                 self._log.info('[Epoch {}] Validation: \n{}'.format(epoch, val_msg))
                 current_map = float(mean_ap[-1])
@@ -237,8 +238,8 @@ class CenterNetEstimator(BaseEstimator):
         mx.nd.waitall()
         self._net.hybridize()
         for batch in self._val_data:
-            data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0, even_split=False)
-            label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0, even_split=False)
+            data = gluon.utils.split_and_load(batch[0], ctx_list=self._ctx, batch_axis=0, even_split=False)
+            label = gluon.utils.split_and_load(batch[1], ctx_list=self._ctx, batch_axis=0, even_split=False)
             det_bboxes = []
             det_ids = []
             det_scores = []
