@@ -92,6 +92,25 @@ def _get_dataloader(net, train_dataset, val_dataset, train_transform, val_transf
     return train_loader, val_loader
 
 
+def _get_testloader(net, test_dataset, num_devices, config):
+    """Get faster rcnn test dataloader."""
+    if config.meta_arch == 'faster_rcnn':
+        test_bfn = Tuple(*[Append() for _ in range(3)])
+        short = net.short[-1] if isinstance(net.short, (tuple, list)) else net.short
+        # validation use 1 sample per device
+        test_loader = gluon.data.DataLoader(
+            test_dataset.transform(FasterRCNNDefaultValTransform(short, net.max_size)),
+            num_devices,
+            False,
+            batchify_fn=test_bfn,
+            last_batch='keep',
+            num_workers=config.num_workers
+        )
+        return test_loader
+    else:
+        raise NotImplementedError('%s not implemented.' % config.meta_arch)
+
+
 def _get_dataset(dataset, args):
     if dataset.lower() == 'voc':
         train_dataset = gdata.VOCDetection(
@@ -262,9 +281,11 @@ class FasterRCNNEstimator(BaseEstimator):
                 ' Default setting is for MS-COCO.')
         self._logger.info(self._cfg)
         self.rpn_cls_loss = gluon.loss.SigmoidBinaryCrossEntropyLoss(from_sigmoid=False)
-        self.rpn_box_loss = gluon.loss.HuberLoss(rho=self._cfg.train_hp.rpn_smoothl1_rho)  # == smoothl1
+        self.rpn_box_loss = gluon.loss.HuberLoss(
+            rho=self._cfg.train_hp.rpn_smoothl1_rho)  # == smoothl1
         self.rcnn_cls_loss = gluon.loss.SoftmaxCrossEntropyLoss()
-        self.rcnn_box_loss = gluon.loss.HuberLoss(rho=self._cfg.train_hp.rcnn_smoothl1_rho)  # == smoothl1
+        self.rcnn_box_loss = gluon.loss.HuberLoss(
+            rho=self._cfg.train_hp.rcnn_smoothl1_rho)  # == smoothl1
         self.metrics = [mx.metric.Loss('RPN_Conf'),
                         mx.metric.Loss('RPN_SmoothL1'),
                         mx.metric.Loss('RCNN_CrossEntropy'),
