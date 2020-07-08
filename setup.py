@@ -56,6 +56,7 @@ requirements = [
     'portalocker',
     'Pillow',
     'scipy',
+    'pyyaml',
     'sacred',
 ]
 if with_cython:

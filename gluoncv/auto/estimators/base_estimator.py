@@ -1,5 +1,6 @@
 """Base Estimator"""
 import os
+import copy
 import logging
 import warnings
 from datetime import datetime
@@ -11,6 +12,15 @@ from ...utils import random as _random
 
 def _get_config():
     pass
+
+def  _compare_config(r1, r2):
+    r1 = copy.deepcopy(r1)
+    r2 = copy.deepcopy(r2)
+    ignored_keys = ('seed', 'logdir')
+    for key in ignored_keys:
+        r1.pop(key, None)
+        r2.pop(key, None)
+    return r1 == r2
 
 def set_default(ex):
     def _apply(cls):
@@ -94,18 +104,49 @@ class DotDict(dict):
 
 
 class BaseEstimator:
-    def __init__(self, config, logger=None):
+    def __init__(self, config, logger=None, reporter=None, name=None):
+        self._reporter = reporter
+        name = name if isinstance(name, str) else self.__class__.__name__
         self._logger = logger if logger is not None else logging.getLogger(__name__)
+        self._logger.setLevel(logging.INFO)
 
         # finalize the config
         r = self._ex.run('_get_config', config_updates=config, options={'--loglevel': 50})
         print_config(r)
-        config_fn = self.__class__.__name__ + datetime.now().strftime("-%m-%d-%Y-%H-%M-%S.yaml")
 
+        # logdir
         logdir = r.config.get('logdir', None)
         self._logdir = os.path.abspath(logdir) if logdir else os.getcwd()
-        config_file = os.path.join(self._logdir, config_fn)
+
+        # try to auto resume
+        prefix = None
+        if r.config.get('train_hp', {}).get('auto_resume', True):
+            exists = [d for d in os.listdir(self._logdir) if d.startswith(name)]
+            # latest timestamp
+            exists = sorted(exists)
+            prefix = exists[-1] if exists else None
+            # compare config, if altered, then skip auto resume
+            if prefix:
+                self._ex.add_config(os.path.join(self._logdir, prefix, 'config.yaml'))
+                r2 = self._ex.run('_get_config', options={'--loglevel': 50})
+                if  _compare_config(r2.config, r.config):
+                    self._logger.info('Auto resume detected previous run: {}'.format(prefix))
+                    r.config['seed'] = r2.config['seed']
+                else:
+                    prefix = None
+        if not prefix:
+            prefix = name + datetime.now().strftime("-%m-%d-%Y-%H-%M-%S")
+        self._logdir = os.path.join(self._logdir, prefix)
+        r.config['logdir'] = self._logdir
+        os.makedirs(self._logdir, exist_ok=True)
+        config_file = os.path.join(self._logdir, 'config.yaml')
+        # log file
+        log_file = os.path.join(self._logdir, 'estimator.log')
+        fh = logging.FileHandler(log_file)
+        self._logger.addHandler(fh)
         save_config(r.config, self._logger, config_file)
+
+        # dot access for config
         self._cfg = DotDict(r.config)
         self._cfg.freeze()
         _random.seed(self._cfg.seed)
