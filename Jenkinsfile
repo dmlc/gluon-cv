@@ -6,8 +6,8 @@ stage("Sanity Check") {
         checkout scm
         sh """#!/bin/bash
         set -e
-        conda env update -n gluon_vision_pylint -f tests/pylint.yml --prune
-        conda activate gluon_vision_pylint
+        conda env update -n gluon-cv-lint -f tests/pylint.yml --prune
+        conda activate gluon-cv-lint
         conda list
         make clean
         make pylint

@@ -1,4 +1,5 @@
 name: gluon_cv_pylint
 dependencies:
 - python=3.6
-- pylint=2.4.4
+- pip:
+  - pylint==2.4.4

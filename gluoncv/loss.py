@@ -9,8 +9,12 @@ from mxnet.gluon.loss import Loss, _apply_weighting, _reshape_like
 
 __all__ = ['FocalLoss', 'SSDMultiBoxLoss', 'YOLOV3Loss',
            'MixSoftmaxCrossEntropyLoss', 'ICNetLoss', 'MixSoftmaxCrossEntropyOHEMLoss',
+<<<<<<< HEAD
            'SegmentationMultiLosses',
            'DistillationSoftmaxCrossEntropyLoss', 'SiamRPNLoss']
+=======
+           'SegmentationMultiLosses', 'DistillationSoftmaxCrossEntropyLoss', 'SiamRPNLoss']
+>>>>>>> upstream/master
 
 class FocalLoss(Loss):
     """Focal Loss for inbalanced classification.
@@ -129,7 +133,28 @@ class SSDMultiBoxLoss(gluon.Block):
         self._min_hard_negatives = max(0, min_hard_negatives)
 
     def forward(self, cls_pred, box_pred, cls_target, box_target):
-        """Compute loss in entire batch across devices."""
+        """Compute loss in entire batch across devices.
+
+        Parameters
+        ----------
+        cls_pred : mxnet.nd.NDArray
+        Predicted classes.
+        box_pred : mxnet.nd.NDArray
+        Predicted bounding-boxes.
+        cls_target : mxnet.nd.NDArray
+        Ground-truth classes.
+        box_target : mxnet.nd.NDArray
+        Ground-truth bounding-boxes.
+
+        Returns
+        -------
+        tuple of NDArrays
+            sum_losses : array with containing the sum of
+                class prediction and bounding-box regression loss.
+            cls_losses : array of class prediction loss.
+            box_losses : array of box regression L1 loss.
+
+        """
         # require results across different devices at this time
         cls_pred, box_pred, cls_target, box_target = [_as_list(x) \
             for x in (cls_pred, box_pred, cls_target, box_target)]
@@ -290,13 +315,21 @@ class SoftmaxCrossEntropyLoss(Loss):
 
 
 class SegmentationMultiLosses(SoftmaxCrossEntropyLoss):
+<<<<<<< HEAD
     """2D Cross Entropy Loss with Multi-L1oss"""
+=======
+    """2D Cross Entropy Loss with Multi-Loss"""
+>>>>>>> upstream/master
     def __init__(self, size_average=True, ignore_label=-1, **kwargs):
         super(SegmentationMultiLosses, self).__init__(size_average, ignore_label, **kwargs)
 
     def hybrid_forward(self, F, *inputs, **kwargs):
+<<<<<<< HEAD
         *preds, label = tuple(inputs)
         pred1, pred2, pred3 = tuple(preds)
+=======
+        pred1, pred2, pred3, label = tuple(inputs)
+>>>>>>> upstream/master
 
         loss1 = super(SegmentationMultiLosses, self).hybrid_forward(F, pred1, label, **kwargs)
         loss2 = super(SegmentationMultiLosses, self).hybrid_forward(F, pred2, label, **kwargs)

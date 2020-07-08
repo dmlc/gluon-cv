@@ -35,6 +35,8 @@ def test_export_model_zoo():
             continue
         if 'siamrpn' in model:
             continue
+        if 'danet' in model or 'fastscnn' in model:
+            continue
 
         try:
             gcv.utils.export_block(model, gcv.model_zoo.get_model(model, pretrained=True),
@@ -58,6 +60,15 @@ def test_export_model_zoo_no_preprocess():
 def test_rcnn_export_target_generator():
     model_name = 'faster_rcnn_fpn_resnet50_v1b_coco'
     gcv.utils.export_block(model_name, gcv.model_zoo.get_model(model_name, pretrained=True))
+
+def test_export_model_zoo_tvm():
+    try:
+        import tvm
+    except ImportError:
+        print("No tvm installed, skipping...")
+        return
+    for model in ['resnet18_v1']:
+        gcv.utils.export_block(model, gcv.model_zoo.get_model(model, pretrained=True))
 
 if __name__ == '__main__':
     import nose

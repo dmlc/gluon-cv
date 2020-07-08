@@ -93,7 +93,7 @@ transform_train = transforms.Compose([
 # Batch Size for Each GPU
 per_device_batch_size = 5
 # Number of data loader workers
-num_workers = 8
+num_workers = 0
 # Calculate effective total batch size
 batch_size = per_device_batch_size * num_gpus
 

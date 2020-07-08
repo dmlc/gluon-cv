@@ -35,3 +35,4 @@ from .residual_attentionnet import *
 from .center_net import *
 from .hrnet import *
 from .siamrpn import *
+from .fastscnn import *

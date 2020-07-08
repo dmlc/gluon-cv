@@ -7,8 +7,16 @@ __all__ = ['PAM_Module', 'CAM_Module']
 
 
 class PAM_Module(HybridBlock):
+<<<<<<< HEAD
     """ Position attention module"""
     #Ref from SAGAN
+=======
+    r""" Position attention module
+    from the paper `"Dual Attention Network for Scene Segmentation"
+    <https://arxiv.org/abs/1809.02983>`
+    PAM_Module captures long-range spatial contextual information.
+    """
+>>>>>>> upstream/master
     def __init__(self, in_dim):
         super(PAM_Module, self).__init__()
         self.chanel_in = in_dim
@@ -35,13 +43,25 @@ class PAM_Module(HybridBlock):
         out = F.batch_dot(proj_value, attention, transpose_b=True)
         out = F.reshape_like(out, x, lhs_begin=2, lhs_end=None, rhs_begin=2, rhs_end=None)
 
+<<<<<<< HEAD
         out = gamma * out + x
+=======
+        out = F.broadcast_mul(gamma, out) + x
+>>>>>>> upstream/master
 
         return out
 
 
 class CAM_Module(HybridBlock):
+<<<<<<< HEAD
     """ Channel attention module"""
+=======
+    r""" Channel attention module
+    from the paper `"Dual Attention Network for Scene Segmentation"
+    <https://arxiv.org/abs/1809.02983>`
+    CAM_Module explicitly models interdependencies between channels.
+    """
+>>>>>>> upstream/master
     def __init__(self, in_dim):
         super(CAM_Module, self).__init__()
         self.chanel_in = in_dim
@@ -67,5 +87,9 @@ class CAM_Module(HybridBlock):
         out = F.batch_dot(attention, proj_value)
         out = F.reshape_like(out, x, lhs_begin=2, lhs_end=None, rhs_begin=2, rhs_end=None)
 
+<<<<<<< HEAD
         out = gamma * out + x
+=======
+        out = F.broadcast_mul(gamma, out) + x
+>>>>>>> upstream/master
         return out

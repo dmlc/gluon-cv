@@ -27,24 +27,27 @@ def check_version(min_version, warning_only=False):
             raise AssertionError(msg)
 
 
-def _require_mxnet_version(mx_version):
+def _require_mxnet_version(mx_version, max_mx_version='2.0.0'):
     try:
         import mxnet as mx
         from distutils.version import LooseVersion
-        if LooseVersion(mx.__version__) < LooseVersion(mx_version):
+        if LooseVersion(mx.__version__) < LooseVersion(mx_version) or \
+            LooseVersion(mx.__version__) >= LooseVersion(max_mx_version):
+            version_str = '>={},<{}'.format(mx_version, max_mx_version)
             msg = (
-                "Legacy mxnet-mkl=={} detected, some new modules may not work properly. "
-                "mxnet-mkl>={} is required. You can use pip to upgrade mxnet "
-                "`pip install -U --pre mxnet -f https://dist.mxnet.io/python/mkl` "
-                "or `pip install -U --pre mxnet -f https://dist.mxnet.io/python/cu100mkl`\
-                ").format(mx.__version__, mx_version)
-            raise ImportError(msg)
+                "Legacy mxnet-mkl=={0} detected, some modules may not work properly. "
+                "mxnet-mkl{1} is required. You can use pip to upgrade mxnet "
+                "`pip install -U 'mxnet-mkl{1}'` "
+                "or `pip install -U 'mxnet-cu100mkl{1}'`\
+                ").format(mx.__version__, version_str)
+            raise RuntimeError(msg)
     except ImportError:
         raise ImportError(
             "Unable to import dependency mxnet. "
             "A quick tip is to install via "
-            "`pip install --pre mxnet -f https://dist.mxnet.io/python/cu100mkl`. "
-            "please refer to https://gluon-cv.mxnet.io/#installation for details.")
+            "`pip install 'mxnet-cu100mkl<{}'`. "
+            "please refer to https://gluon-cv.mxnet.io/#installation for details.".format(
+                max_mx_version))
 
 def _deprecate_python2():
     if sys.version_info[0] < 3:

@@ -1,12 +1,14 @@
 """Accuracy metirc with ignored labels."""
 # pylint: disable=assignment-from-no-return
 import numpy as np
-import mxnet as mx
 from mxnet import ndarray
-from mxnet.metric import check_label_shapes
+try:
+    from mxnet.metric import EvalMetric, check_label_shapes
+except ImportError:
+    from mxnet.gluon.metric import EvalMetric, check_label_shapes
 
 
-class Accuracy(mx.metric.EvalMetric):
+class Accuracy(EvalMetric):
     """Computes accuracy classification score with optional ignored labels.
     The accuracy score is defined as
     .. math::

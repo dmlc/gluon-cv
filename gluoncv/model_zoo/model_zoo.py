@@ -40,6 +40,10 @@ from .center_net import *
 from .hrnet import *
 from .siamrpn import *
 from .icnet import *
+<<<<<<< HEAD
+=======
+from .fastscnn import *
+>>>>>>> upstream/master
 from .danet import *
 
 __all__ = ['get_model', 'get_model_list']
@@ -126,6 +130,9 @@ _models = {
     'ssd_300_mobilenet0.25_voc': ssd_300_mobilenet0_25_voc,
     'ssd_300_mobilenet0.25_coco': ssd_300_mobilenet0_25_coco,
     'ssd_300_mobilenet0.25_custom': ssd_300_mobilenet0_25_custom,
+    'ssd_300_resnet34_v1b_voc': ssd_300_resnet34_v1b_voc,
+    'ssd_300_resnet34_v1b_coco': ssd_300_resnet34_v1b_coco,
+    'ssd_300_resnet34_v1b_custom': ssd_300_resnet34_v1b_custom,
     'faster_rcnn_resnet50_v1b_voc': faster_rcnn_resnet50_v1b_voc,
     'mask_rcnn_resnet18_v1b_coco': mask_rcnn_resnet18_v1b_coco,
     'faster_rcnn_resnet50_v1b_coco': faster_rcnn_resnet50_v1b_coco,
@@ -185,8 +192,14 @@ _models = {
     'deeplab_v3b_plus_wideresnet_citys': get_deeplab_v3b_plus_wideresnet_citys,
     'icnet_resnet50_citys': get_icnet_resnet50_citys,
     'icnet_resnet50_mhpv1': get_icnet_resnet50_mhpv1,
+<<<<<<< HEAD
     'danet_resnet50_citys':get_danet_resnet50_citys,
     'danet_resnet101_citys':get_danet_resnet101_citys,
+=======
+    'fastscnn_citys': get_fastscnn_citys,
+    'danet_resnet50_citys': get_danet_resnet50_citys,
+    'danet_resnet101_citys': get_danet_resnet101_citys,
+>>>>>>> upstream/master
     'resnet18_v1b': resnet18_v1b,
     'resnet34_v1b': resnet34_v1b,
     'resnet50_v1b': resnet50_v1b,

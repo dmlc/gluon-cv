@@ -145,7 +145,6 @@ class HighResolutionModule(nn.HybridBlock):
         self.branches = self._make_branches(
             num_branches, blocks, num_blocks, num_channels)
         self.fuse_layers = self._make_fuse_layers(norm_layer=norm_layer, norm_kwargs=norm_kwargs)
-        self.relu = nn.Activation('relu')
 
     def _make_one_branch(self, branch_index, block, num_blocks, num_channels,
                          stride=1):
@@ -257,7 +256,7 @@ class HighResolutionModule(nn.HybridBlock):
 
                 else:
                     y = y + self.fuse_layers[i][j](X[j])
-            x_fuse.append(self.relu(y))
+            x_fuse.append(F.relu(y))
 
         return x_fuse
 
@@ -282,7 +281,6 @@ class HighResolutionBaseNet(nn.HybridBlock):
         self.conv2 = nn.Conv2D(64, kernel_size=3, strides=2, padding=1,
                                use_bias=False)
         self.bn2 = norm_layer(**({} if norm_kwargs is None else norm_kwargs))
-        self.relu = nn.Activation('relu')
 
         self.stage1_cfg = cfg[0]
         num_channels = self.stage1_cfg[3][0]
@@ -403,10 +401,10 @@ class HighResolutionBaseNet(nn.HybridBlock):
     def hybrid_forward(self, F, x):
         x = self.conv1(x)
         x = self.bn1(x)
-        x = self.relu(x)
+        x = F.relu(x)
         x = self.conv2(x)
         x = self.bn2(x)
-        x = self.relu(x)
+        x = F.relu(x)
         x = self.layer1(x)
         x_list = []
 

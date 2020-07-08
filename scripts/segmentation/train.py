@@ -192,8 +192,13 @@ class Trainer(object):
         # create criterion
         if 'icnet' in args.model:
             criterion = ICNetLoss(crop_size=args.crop_size)
+<<<<<<< HEAD
         elif 'danet' in args.model:
             criterion=SegmentationMultiLosses()
+=======
+        elif 'danet' in args.model or (args.model_zoo and 'danet' in args.model_zoo):
+            criterion = SegmentationMultiLosses()
+>>>>>>> upstream/master
         else:
             criterion = MixSoftmaxCrossEntropyLoss(args.aux, aux_weight=args.aux_weight)
         self.criterion = DataParallelCriterion(criterion, args.ctx, args.syncbn)

@@ -16,6 +16,7 @@ from .pascal_voc.segmentation import VOCSegmentation
 from .pascal_aug.segmentation import VOCAugSegmentation
 from .ade20k.segmentation import ADE20KSegmentation
 from .mhp import MHPV1Segmentation
+from .visdrone.detection import VisDroneDetection
 from .segbase import ms_batchify_fn
 from .recordio.detection import RecordFileDetection
 from .lst.detection import LstDetection
