@@ -1,2 +1,2 @@
-"""GluonCV pipelines"""
+"""GluonCV auto"""
 from .estimators import *

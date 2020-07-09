@@ -6,7 +6,6 @@ from autogluon.scheduler.resource import get_cpu_count, get_gpu_count
 from autogluon.task import BaseTask
 from autogluon.utils import collect_params
 
-from ..estimators.rcnn import FasterRCNNEstimator
 from ... import utils as gutils
 
 __all__ = ['ObjectDetection']
@@ -43,7 +42,7 @@ def _train_object_detection(args, reporter):
         raise NotImplementedError(args.meta_arch, 'is not implemented.')
 
     if args.meta_arch == 'faster_rcnn':
-        estimator = FasterRCNNEstimator(args, reporter=reporter)
+        estimator = args.estimator(args, reporter=reporter)
     else:
         raise NotImplementedError('%s' % args.meta_arch)
 
@@ -55,9 +54,10 @@ def _train_object_detection(args, reporter):
 
 
 class ObjectDetection(BaseTask):
-    def __init__(self, config, logger=None):
+    def __init__(self, config, estimator, logger=None):
         super(ObjectDetection, self).__init__()
         self._logger = logger if logger is not None else logging.getLogger(__name__)
+        self._estimator = estimator
         self._config = config
         nthreads_per_trial = get_cpu_count() if self._config.nthreads_per_trial > get_cpu_count() \
             else self._config.nthreads_per_trial
@@ -87,7 +87,7 @@ class ObjectDetection(BaseTask):
             label_smooth=self._config.label_smooth, resume=self._config.resume,
             syncbn=self._config.syncbn, reuse_pred_weights=self._config.reuse_pred_weights,
             horovod=self._config.horovod, gpus='0,1,2,3,4,5,6,7', use_fpn=True,
-            norm_layer='syncbn' if self._config.syncbn else None,
+            norm_layer='syncbn' if self._config.syncbn else None, estimator=self._estimator
         )
 
         self._config.scheduler_options = {
@@ -117,6 +117,6 @@ class ObjectDetection(BaseTask):
         best_config = sample_config(_train_object_detection.args, results['best_config'])
         self._logger.info('The best config: {}'.format(results['best_config']))
 
-        estimator = FasterRCNNEstimator(best_config)
+        estimator = self._estimator(best_config)
         estimator.load_parameters(results.pop('model_params'))
         return estimator
