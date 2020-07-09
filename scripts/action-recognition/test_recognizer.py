@@ -157,7 +157,7 @@ def parse_args():
     parser.add_argument('--num-crop', type=int, default=1,
                         help='number of crops for each image. default is 1')
     parser.add_argument('--data-aug', type=str, default='v1',
-                        help='different types of data augmentation pipelines. Supports v1, v2, v3 and v4.')
+                        help='different types of data augmentation auto. Supports v1, v2, v3 and v4.')
     # dummy benchmark
     parser.add_argument('--benchmark', action='store_true',
                         help='whether to use dummy data for benchmarking performance.')

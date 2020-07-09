@@ -225,7 +225,7 @@ class COCODetectionDALI(object):
     Parameters
     ----------
     num_shards: int
-         DALI pipeline arg - Number of pipelines used, indicating to the reader
+         DALI pipeline arg - Number of auto used, indicating to the reader
          how to split/shard the dataset.
     shard_id: int
          DALI pipeline arg - Shard id of the pipeline must be in [0, num_shards).
