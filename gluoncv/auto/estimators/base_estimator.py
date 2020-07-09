@@ -47,7 +47,7 @@ def set_default(ex):
     return _apply
 
 
-class DotDict(dict):
+class ConfigDict(dict):
     MARKER = object()
     """The view of a config dict where keys can be accessed like attribute, it also prevents
     naive modifications to the key-values.
@@ -72,6 +72,7 @@ class DotDict(dict):
                 self.__setitem__(key, value[key])
         else:
             raise TypeError('expected dict')
+        self.freeze()
 
     def freeze(self):
         self.__dict__['_freeze'] = True
@@ -87,16 +88,16 @@ class DotDict(dict):
             msg = ('You are trying to modify the config to "{}={}" after initialization, '
                    ' this may result in unpredictable behaviour'.format(key, value))
             warnings.warn(msg)
-        if isinstance(value, dict) and not isinstance(value, DotDict):
-            value = DotDict(value)
-        super(DotDict, self).__setitem__(key, value)
+        if isinstance(value, dict) and not isinstance(value, ConfigDict):
+            value = ConfigDict(value)
+        super(ConfigDict, self).__setitem__(key, value)
 
     def __getitem__(self, key):
-        found = self.get(key, DotDict.MARKER)
-        if found is DotDict.MARKER:
-            found = DotDict()
-            super(DotDict, self).__setitem__(key, found)
-        if isinstance(found, DotDict):
+        found = self.get(key, ConfigDict.MARKER)
+        if found is ConfigDict.MARKER:
+            found = ConfigDict()
+            super(ConfigDict, self).__setitem__(key, found)
+        if isinstance(found, ConfigDict):
             found.__dict__['_freeze'] = self.__dict__['_freeze']
         return found
 
@@ -120,7 +121,7 @@ class BaseEstimator:
 
         # try to auto resume
         prefix = None
-        if r.config.get('train_hp', {}).get('auto_resume', True):
+        if r.config.get('train', {}).get('auto_resume', True):
             exists = [d for d in os.listdir(self._logdir) if d.startswith(name)]
             # latest timestamp
             exists = sorted(exists)
@@ -129,7 +130,7 @@ class BaseEstimator:
             if prefix:
                 self._ex.add_config(os.path.join(self._logdir, prefix, 'config.yaml'))
                 r2 = self._ex.run('_get_config', options={'--loglevel': 50})
-                if  _compare_config(r2.config, r.config):
+                if _compare_config(r2.config, r.config):
                     self._logger.info('Auto resume detected previous run: {}'.format(prefix))
                     r.config['seed'] = r2.config['seed']
                 else:
@@ -147,7 +148,7 @@ class BaseEstimator:
         save_config(r.config, self._logger, config_file)
 
         # dot access for config
-        self._cfg = DotDict(r.config)
+        self._cfg = ConfigDict(r.config)
         self._cfg.freeze()
         _random.seed(self._cfg.seed)
 

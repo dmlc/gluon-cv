@@ -1,6 +1,5 @@
 """Faster RCNN Estimator."""
 
-import logging
 import os
 import time
 
@@ -10,18 +9,14 @@ from mxnet import gluon
 
 from gluoncv.utils.metrics.rcnn import RPNAccMetric, RPNL1LossMetric, RCNNAccMetric, \
     RCNNL1LossMetric
+from .utils import _get_lr_at_iter, _get_dataloader, _get_dataset, _save_params, _split_and_load
 from ..base_estimator import BaseEstimator, set_default
-from .... import data as gdata
-from ....data.batchify import FasterRCNNTrainBatchify, Tuple, Append
-from ....data.sampler import SplitSortedBucketSampler
 from ....data.transforms import presets
 from ....data.transforms.presets.rcnn import FasterRCNNDefaultTrainTransform, \
     FasterRCNNDefaultValTransform
 from ....model_zoo import get_model
 from ....model_zoo.rcnn.faster_rcnn.data_parallel import ForwardBackwardTask
 from ....nn.bbox import BBoxClipToImage
-from ....utils.metrics.coco_detection import COCODetectionMetric
-from ....utils.metrics.voc_detection import VOC07MApMetric
 from ....utils.parallel import Parallel
 
 try:
@@ -32,109 +27,6 @@ except ImportError:
 from .default import ex
 
 __all__ = ['FasterRCNNEstimator']
-
-
-def _get_lr_at_iter(alpha, lr_warmup_factor=1. / 3.):
-    return lr_warmup_factor * (1 - alpha) + alpha
-
-
-def _split_and_load(batch, ctx_list):
-    """Split data to 1 batch each device."""
-    new_batch = []
-    for _, data in enumerate(batch):
-        if isinstance(data, (list, tuple)):
-            new_data = [x.as_in_context(ctx) for x, ctx in zip(data, ctx_list)]
-        else:
-            new_data = [data.as_in_context(ctx_list[0])]
-        new_batch.append(new_data)
-    return new_batch
-
-
-def _save_params(net, logger, best_map, current_map, epoch, save_interval, prefix):
-    current_map = float(current_map)
-    if current_map > best_map[0]:
-        logger.info('[Epoch {}] mAP {} higher than current best {} saving to {}'.format(
-            epoch, current_map, best_map, '{:s}_best.params'.format(prefix)))
-        best_map[0] = current_map
-        net.save_parameters('{:s}_best.params'.format(prefix))
-        with open(prefix + '_best_map.log', 'a') as log_file:
-            log_file.write('{:04d}:\t{:.4f}\n'.format(epoch, current_map))
-    if save_interval and (epoch + 1) % save_interval == 0:
-        logger.info('[Epoch {}] Saving parameters to {}'.format(
-            epoch, '{:s}_{:04d}_{:.4f}.params'.format(prefix, epoch, current_map)))
-        net.save_parameters('{:s}_{:04d}_{:.4f}.params'.format(prefix, epoch, current_map))
-
-
-def _get_dataloader(net, train_dataset, val_dataset, train_transform, val_transform, batch_size,
-                    num_shards, args):
-    """Get dataloader."""
-    train_bfn = FasterRCNNTrainBatchify(net, num_shards)
-    if hasattr(train_dataset, 'get_im_aspect_ratio'):
-        im_aspect_ratio = train_dataset.get_im_aspect_ratio()
-    else:
-        im_aspect_ratio = [1.] * len(train_dataset)
-    train_sampler = \
-        SplitSortedBucketSampler(im_aspect_ratio, batch_size,
-                                 num_parts=hvd.size() if args.horovod else 1,
-                                 part_index=hvd.rank() if args.horovod else 0,
-                                 shuffle=True)
-    train_loader = gluon.data.DataLoader(
-        train_dataset.transform(
-            train_transform(net.short, net.max_size, net, ashape=net.ashape,
-                            multi_stage=args.faster_rcnn.use_fpn)),
-        batch_sampler=train_sampler, batchify_fn=train_bfn, num_workers=args.num_workers)
-    val_bfn = Tuple(*[Append() for _ in range(3)])
-    short = net.short[-1] if isinstance(net.short, (tuple, list)) else net.short
-    # validation use 1 sample per device
-    val_loader = gluon.data.DataLoader(
-        val_dataset.transform(val_transform(short, net.max_size)), num_shards, False,
-        batchify_fn=val_bfn, last_batch='keep', num_workers=args.num_workers)
-    return train_loader, val_loader
-
-
-def _get_testloader(net, test_dataset, num_devices, config):
-    """Get faster rcnn test dataloader."""
-    if config.meta_arch == 'faster_rcnn':
-        test_bfn = Tuple(*[Append() for _ in range(3)])
-        short = net.short[-1] if isinstance(net.short, (tuple, list)) else net.short
-        # validation use 1 sample per device
-        test_loader = gluon.data.DataLoader(
-            test_dataset.transform(FasterRCNNDefaultValTransform(short, net.max_size)),
-            num_devices,
-            False,
-            batchify_fn=test_bfn,
-            last_batch='keep',
-            num_workers=config.num_workers
-        )
-        return test_loader
-    else:
-        raise NotImplementedError('%s not implemented.' % config.meta_arch)
-
-
-def _get_dataset(dataset, args):
-    if dataset.lower() == 'voc':
-        train_dataset = gdata.VOCDetection(
-            splits=[(2007, 'trainval'), (2012, 'trainval')])
-        val_dataset = gdata.VOCDetection(
-            splits=[(2007, 'test')])
-        val_metric = VOC07MApMetric(iou_thresh=0.5, class_names=val_dataset.classes)
-    elif dataset.lower() in ['clipart', 'comic', 'watercolor']:
-        root = os.path.join('~', '.mxnet', 'datasets', dataset.lower())
-        train_dataset = gdata.CustomVOCDetection(root=root, splits=[('', 'train')],
-                                                 generate_classes=True)
-        val_dataset = gdata.CustomVOCDetection(root=root, splits=[('', 'test')],
-                                               generate_classes=True)
-        val_metric = VOC07MApMetric(iou_thresh=0.5, class_names=val_dataset.classes)
-    elif dataset.lower() == 'coco':
-        train_dataset = gdata.COCODetection(splits='instances_train2017', use_crowd=False)
-        val_dataset = gdata.COCODetection(splits='instances_val2017', skip_empty=False)
-        val_metric = COCODetectionMetric(val_dataset, args.save_prefix + '_eval', cleanup=True)
-    else:
-        raise NotImplementedError('Dataset: {} not implemented.'.format(dataset))
-    if args.train.mixup:
-        from gluoncv.data.mixup import detection
-        train_dataset = detection.MixupDetection(train_dataset)
-    return train_dataset, val_dataset, val_metric
 
 
 @set_default(ex)
@@ -164,13 +56,10 @@ class FasterRCNNEstimator(BaseEstimator):
         else:
             ctx = [mx.gpu(int(i)) for i in self._cfg.gpus]
             self.ctx = ctx if ctx else [mx.cpu()]
-        # training data
-        self.train_dataset, self.val_dataset, self.eval_metric = \
-            _get_dataset(self._cfg.dataset, self._cfg)
         # network
         kwargs = {}
         module_list = []
-        if self._cfg.faster_rcnn.use_fpn:
+        if self._cfg.faster_rcnn.use_fpn or self._cfg.faster_rcnn.custom_model:
             module_list.append('fpn')
         if self._cfg.faster_rcnn.norm_layer is not None:
             module_list.append(self._cfg.faster_rcnn.norm_layer)
@@ -180,10 +69,15 @@ class FasterRCNNEstimator(BaseEstimator):
         self.num_gpus = hvd.size() if self._cfg.horovod else len(self.ctx)
         net_name = '_'.join(('faster_rcnn', *module_list, self._cfg.faster_rcnn.backbone,
                              self._cfg.dataset))
+
+        self._cfg.save_prefix += net_name
+
+        # training data
+        self.train_dataset, self.val_dataset, self.eval_metric = \
+            _get_dataset(self._cfg.dataset, self._cfg)
+
         if self._cfg.faster_rcnn.custom_model:
             self._cfg.faster_rcnn.use_fpn = True
-            net_name = '_'.join(('custom_faster_rcnn_fpn', self._cfg.faster_rcnn.backbone,
-                                 self._cfg.dataset))
             if self._cfg.faster_rcnn.norm_layer == 'syncbn':
                 norm_layer = gluon.contrib.nn.SyncBatchNorm
                 norm_kwargs = {'num_devices': len(self.ctx)}
@@ -241,7 +135,7 @@ class FasterRCNNEstimator(BaseEstimator):
             self.net = get_model(net_name, pretrained_base=True,
                                  per_device_batch_size=self._cfg.batch_size // self.num_gpus,
                                  **kwargs)
-        self._cfg.save_prefix += net_name
+
         if self._cfg.resume.strip():
             self.net.load_parameters(self._cfg.resume.strip())
         else:
@@ -265,14 +159,6 @@ class FasterRCNNEstimator(BaseEstimator):
                     continue
                 param.initialize()
         self.net.collect_params().reset_ctx(self.ctx)
-        # set up logger
-        self._logger.setLevel(logging.INFO)
-        log_file_path = self._cfg.save_prefix + '_train.log'
-        log_dir = os.path.dirname(log_file_path)
-        if log_dir and not os.path.exists(log_dir):
-            os.makedirs(log_dir)
-        fh = logging.FileHandler(log_file_path)
-        self._logger.addHandler(fh)
         if self._cfg.faster_rcnn.custom_model:
             self._logger.info(
                 'Custom model enabled. Expert Only!! Currently non-FPN model is not supported!!'
@@ -457,7 +343,7 @@ class FasterRCNNEstimator(BaseEstimator):
                 msg = ','.join(['{}={:.3f}'.format(*metric.get()) for metric in self.metrics])
                 self._logger.info('[Epoch {}] Training cost: {:.3f}, {}'.format(
                     epoch, (time.time() - tic), msg))
-                if not (epoch + 1) % self._cfg.val_interval:
+                if not (epoch + 1) % self._cfg.validation.val_interval:
                     # consider reduce the frequency of validation to save time
                     map_name, mean_ap = self._validate(self._val_data, self.ctx, self.eval_metric)
                     val_msg = '\n'.join(['{}={}'.format(k, v) for k, v in zip(map_name, mean_ap)])
@@ -466,7 +352,8 @@ class FasterRCNNEstimator(BaseEstimator):
                 else:
                     current_map = 0.
                 _save_params(self.net, self._logger, best_map, current_map, epoch,
-                             self._cfg.save_interval, self._cfg.save_prefix)
+                             self._cfg.save_interval,
+                             os.path.join(self._logdir, self._cfg.save_prefix))
                 if self._reporter:
                     self._reporter(epoch=epoch, map_reward=current_map)
 

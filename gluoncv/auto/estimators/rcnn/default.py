@@ -89,7 +89,7 @@ def train_cfg():
     # Whether load the imagenet pre-trained base
     pretrained_base = True
     # Batch size during training
-    batch_size = 16
+    batch_size = 8
     # starting epoch
     start_epoch = 0
     # total epoch for training
@@ -195,3 +195,5 @@ def default_configs():
     kv_store = 'nccl'
     # Whether to disable hybridize the model. Memory usage and speed will decrese.
     disable_hybridization = False
+    # Output directory for all training/validation artifacts.
+    logdir = None
