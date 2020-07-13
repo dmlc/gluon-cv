@@ -3,28 +3,23 @@ from __future__ import absolute_import, division, print_function
 import os
 import sys
 import shutil
+import copy
 from tqdm import tqdm
 
-import cv2
 import numpy as np
-import time
-
 import json
 
 import mxnet as mx
 from mxnet import gluon, autograd
-import mxnet.numpy as _mx_np
-from mxnet.util import is_np_array
 
-import gluoncv.data.kitti as kitti_dataset
+from gluoncv.data import KITTIRAWDataset, KITTIOdomDataset
 from gluoncv.data.kitti.kitti_utils import dict_batchify_fn
-from gluoncv.model_zoo import monodepthv2
+
+from gluoncv.model_zoo import get_model
 from gluoncv.model_zoo.monodepthv2.layers import *
-from gluoncv.utils.parallel import *
 from gluoncv.utils import LRScheduler, LRSequential
 
-from utils import *
-
+from .utils import *
 
 # Models which were trained with stereo supervision were trained with a nominal
 # baseline of 0.1 units. The KITTI rig has a baseline of 54cm. Therefore,
@@ -44,9 +39,6 @@ class Trainer:
         assert self.opt.width % 32 == 0, "'width' must be a multiple of 32"
 
         ################### model initialization ###################
-        self.models = {}
-        self.parameters_to_train = []
-
         self.num_scales = len(self.opt.scales)
         self.num_input_frames = len(self.opt.frame_ids)
         self.num_pose_frames = 2 if self.opt.pose_model_input == "pairs" else self.num_input_frames
@@ -58,34 +50,20 @@ class Trainer:
         if self.opt.use_stereo:
             self.opt.frame_ids.append("s")
 
-        self.models["encoder"] = monodepthv2.ResnetEncoder(
-            self.opt.num_layers,
-            pretrained=(self.opt.weights_init == "pretrained"),
-            ctx=self.opt.ctx)
-        self.parameters_to_train = self.models["encoder"].collect_params()
+        # create network
+        if self.opt.model_zoo is not None:
+            self.model = get_model(self.opt.model_zoo, pretrained_base=self.opt.pretrained_base,
+                                   scales=self.opt.scales, ctx=self.opt.ctx)
+        else:
+            assert "Must choose a model from model_zoo, " \
+                   "please provide the model_zoo using --model_zoo"
 
-        self.models["depth"] = monodepthv2.DepthDecoder(
-            self.models["encoder"].num_ch_enc, self.opt.scales)
-        self.models["depth"].initialize(ctx=self.opt.ctx)
-        # self.models["depth"].initialize(init=mx.init.MSRAPrelu(), ctx=self.opt.ctx)
-
-        # combine the parameter of two models for optimization
-        self.parameters_to_train.update(self.models["depth"].collect_params())
-
-        self.logger.info(self.models["encoder"])
-        self.logger.info(self.models["depth"])
-
-        # TODO: use_pose_net for mono training
-        if self.use_pose_net:
-            exit()
-
-        # TODO: predictive_mask
-        if self.opt.predictive_mask:
-            exit()
+        self.parameters_to_train = self.model.collect_params()
+        self.logger.info(self.model)
 
         ######################### dataloader #########################
-        datasets_dict = {"kitti": kitti_dataset.KITTIRAWDataset,
-                         "kitti_odom": kitti_dataset.KITTIOdomDataset}
+        datasets_dict = {"kitti": KITTIRAWDataset,
+                         "kitti_odom": KITTIOdomDataset}
         self.dataset = datasets_dict[self.opt.dataset]
 
         fpath = os.path.join(os.path.dirname(__file__), "splits", self.opt.split, "{}_files.txt")
@@ -122,10 +100,9 @@ class Trainer:
         optimizer_params = {'lr_scheduler': self.lr_scheduler,
                             'learning_rate': self.opt.learning_rate}
 
-        self.optimizer = gluon.Trainer(self.parameters_to_train, 'adam',
-                                       optimizer_params)
+        self.optimizer = gluon.Trainer(self.parameters_to_train, 'adam', optimizer_params)
 
-        print("Training model named:\n  ", self.opt.model_name)
+        print("Training model named:\n  ", self.opt.model_zoo)
         print("Models are saved to:\n  ", self.opt.log_dir)
         print("Training is using:\n  ", "CPU" if self.opt.ctx[0] is mx.cpu() else "GPU")
 
@@ -155,7 +132,7 @@ class Trainer:
 
         # for save best model
         self.best_rmse = np.inf
-        self.best_models = self.models.copy()
+        self.best_model = copy.deepcopy(self.model)
 
     def train(self):
         """Run the entire training pipeline
@@ -197,18 +174,14 @@ class Trainer:
         for key, ipt in inputs.items():
             inputs[key] = ipt.as_in_context(self.opt.ctx[0])
 
-        ################### prediction disp ###################
-        if self.opt.pose_model_type == "shared":
-            pass
-        else:
-            # Otherwise, we only feed the image with frame_id 0 through the depth encoder
-            input_img = inputs[("color_aug", 0, 0)]
-            if eval_mode:
-                input_img = inputs[("color", 0, 0)]
+        # prediction disparity map
+        # Otherwise, we only feed the image with frame_id 0 through the depth encoder
+        input_img = inputs[("color_aug", 0, 0)]
+        if eval_mode:
+            input_img = inputs[("color", 0, 0)]
 
-            input_img = input_img.as_in_context(context=self.opt.ctx[0])
-            features = self.models["encoder"](input_img)
-            outputs = self.models["depth"](features)
+        input_img = input_img.as_in_context(context=self.opt.ctx[0])
+        outputs = self.model(input_img)
 
         if eval_mode:
             _, depth = disp_to_depth(outputs[("disp", 0)],
@@ -217,18 +190,10 @@ class Trainer:
 
             return outputs
 
-        ################### image reconstruction ###################
-        if self.opt.predictive_mask:
-            # TODO: use predictive_mask
-            pass
-
-        if self.use_pose_net:
-            # TODO: use_pose_net for mono training
-            pass
-
+        # image reconstruction
         self.generate_images_pred(inputs, outputs)
 
-        ################### compute loss ###################
+        # compute loss
         losses = self.compute_losses(inputs, outputs)
         return outputs, losses
 
@@ -266,15 +231,18 @@ class Trainer:
                 print("Cannot find ground truth upon validation dataset!")
                 return
         self.logger.info(
-                    'Epoch %d, validation '
-                    'abs_REL: %.3f sq_REL: %.3f '
-                    'RMSE: %.3f, RMSE_log: %.3f '
-                    'Delta_1: %.3f Delta_2: %.3f Delta_2: %.3f' %
-                    (self.epoch, abs_rel, sq_rel, rmse, rmse_log, delta_1, delta_2, delta_3))
-        self.save_checkpoint(rmse)
+            'Epoch %d, validation '
+            'abs_REL: %.3f sq_REL: %.3f '
+            'RMSE: %.3f, RMSE_log: %.3f '
+            'Delta_1: %.3f Delta_2: %.3f Delta_2: %.3f' %
+            (self.epoch, abs_rel, sq_rel, rmse, rmse_log, delta_1, delta_2, delta_3))
+
+        mx.nd.waitall()
+        if self.epoch % self.opt.save_frequency == 0:
+            self.save_checkpoint(rmse)
 
         if rmse < self.best_rmse:
-            self.best_models = self.models.copy()
+            self.best_model = copy.deepcopy(self.model)
             self.best_rmse = rmse
 
     def generate_images_pred(self, inputs, outputs):
@@ -297,11 +265,6 @@ class Trainer:
                     T = inputs["stereo_T"]
                 else:
                     T = outputs[("cam_T_cam", 0, frame_id)]
-
-                # from the authors of https://arxiv.org/abs/1712.00175
-                if self.opt.pose_model_type == "posecnn":
-                    # TODO: using pose cnn
-                    pass
 
                 cam_points = self.backproject_depth[source_scale](depth,
                                                                   inputs[("inv_K", source_scale)])
@@ -374,10 +337,6 @@ class Trainer:
                 else:
                     # save both images, and do min all at once below
                     identity_reprojection_loss = identity_reprojection_losses
-
-            elif self.opt.predictive_mask:
-                # TODO: use predictive_mask
-                pass
 
             if self.opt.avg_reprojection:
                 reprojection_loss = reprojection_losses.mean(axis=1, keepdims=True)
@@ -478,22 +437,20 @@ class Trainer:
         if not os.path.exists(save_folder):
             os.makedirs(save_folder)
 
-        filename = 'epoch_%04d_RMSE_%2.4f_{}.params' % (self.epoch, rmse)
-        for model_name, model in self.models.items():
-            filepath = os.path.join(save_folder, filename.format(model_name))
-            model.save_parameters(filepath)
+        filename = 'epoch_%04d_RMSE_%2.4f.params' % (self.epoch, rmse)
+        filepath = os.path.join(save_folder, filename)
+        self.model.save_parameters(filepath)
 
     def save_model(self, model_type="final"):
         """Save Checkpoint"""
-        save_folder = os.path.join(self.log_path, model_type)
+        save_folder = os.path.join(self.log_path, "models", "weights")
         if not os.path.exists(save_folder):
             os.makedirs(save_folder)
 
-        models = self.models
+        model = self.model
         if model_type == "best":
-            models = self.best_models
+            model = self.best_model
 
         filename = '{}.params'
-        for model_name, model in models.items():
-            filepath = os.path.join(save_folder, filename.format(model_name))
-            model.save_parameters(filepath)
+        filepath = os.path.join(save_folder, filename.format(model_type))
+        model.save_parameters(filepath)

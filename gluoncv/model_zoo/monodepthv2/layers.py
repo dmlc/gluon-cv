@@ -126,10 +126,6 @@ class Conv3x3(nn.HybridBlock):
         super(Conv3x3, self).__init__()
         self.use_refl = use_refl
 
-        # if use_refl:
-        #     self.pad = nn.ReflectionPad2D(1)
-        # else:
-        #     self.pad = nn.ZeroPad2d(1)
         with self.name_scope():
             self.pad = nn.ReflectionPad2D(1)
             self.conv = nn.Conv2D(in_channels=int(in_channels),

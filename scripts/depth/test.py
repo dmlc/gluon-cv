@@ -10,18 +10,16 @@ import os
 from tqdm import tqdm
 import cv2
 import numpy as np
-import time
 
 import mxnet as mx
 from mxnet import gluon
-from utils import readlines
-from gluoncv.data.kitti import kitti_dataset
+from .utils import readlines
+from gluoncv.data import KITTIRAWDataset
 from gluoncv.data.kitti.kitti_utils import dict_batchify_fn
-from gluoncv.model_zoo import monodepthv2
-from gluoncv.utils.parallel import *
+from gluoncv.model_zoo import get_model
 
 from gluoncv.model_zoo.monodepthv2.layers import disp_to_depth
-from options import MonodepthOptions
+from .options import MonodepthOptions
 
 cv2.setNumThreads(0)  # This speeds up evaluation 5x on our unix systems (OpenCV 3.3.1)
 
@@ -71,40 +69,38 @@ def evaluate(opt):
     MIN_DEPTH = 1e-3
     MAX_DEPTH = 80
 
-    # DO NOT modify!!! Only support batch_size=ngus
-    batch_size = opt.batch_size
-
     assert sum((opt.eval_mono, opt.eval_stereo)) == 1, \
         "Please choose mono or stereo evaluation by setting either --eval_mono or --eval_stereo"
 
     if opt.ext_disp_to_eval is None:
-        ############################ loading weights ############################
-        encoder_path = os.path.join(opt.load_weights_folder, "encoder.params")
-        decoder_path = os.path.join(opt.load_weights_folder, "depth.params")
-
         ############################ loading dataset ############################
-        tic = time.time()
         filenames = readlines(os.path.join(splits_dir, opt.eval_split, "test_files.txt"))
 
         img_ext = '.png' if opt.png else '.jpg'
-        dataset = kitti_dataset.KITTIRAWDataset(opt.data_path, filenames,
-                                                opt.height, opt.width,
-                                                [0], 4, is_train=False, img_ext=img_ext)
-        dataloader = gluon.data.DataLoader(dataset, batch_size=batch_size, shuffle=False,
-                                           batchify_fn=dict_batchify_fn,
-                                           num_workers=opt.num_workers,
-                                           pin_memory=True, last_batch='rollover')
-        print('Runtime of create dataloader : %.2f' % (time.time() - tic))
+        dataset = KITTIRAWDataset(opt.data_path, filenames, opt.height, opt.width,
+                                  [0], 4, is_train=False, img_ext=img_ext)
+        dataloader = gluon.data.DataLoader(
+            dataset, batch_size=opt.batch_size, shuffle=False,
+            batchify_fn=dict_batchify_fn, num_workers=opt.num_workers,
+            pin_memory=True, last_batch='rollover')
 
         ############################ loading model ############################
-        tic = time.time()
-        encoder = monodepthv2.ResnetEncoder(opt.num_layers, pretrained=False, ctx=opt.ctx)
-        depth_decoder = monodepthv2.DepthDecoder(encoder.num_ch_enc)
-
-        encoder.load_parameters(encoder_path, ctx=opt.ctx)
-        depth_decoder.load_parameters(decoder_path, ctx=opt.ctx)
-
-        print('Runtime of create model : %.2f' % (time.time() - tic))
+        model = None
+        # create network
+        if opt.model_zoo is not None:
+            if opt.pretrained_type == "gluoncv":
+                # use gluoncv pretrained model
+                model = get_model(opt.model_zoo, pretrained_base=False, ctx=opt.ctx,
+                                  pretrained=True)
+            else:
+                # loading weights from customer
+                assert opt.resume is not None, '=> Please provide the checkpoint using --resume'
+                weights_path = os.path.join(opt.load_weights_folder, opt.resume)
+                model = get_model(opt.model_zoo, pretrained_base=False, ctx=opt.ctx)
+                model.load_parameters(weights_path, ctx=opt.ctx)
+        else:
+            assert "Must choose a model from model_zoo, " \
+                   "please provide the model_zoo using --model_zoo"
 
         ############################ inference ############################
         pred_disps = []
@@ -112,8 +108,7 @@ def evaluate(opt):
         for i, data in enumerate(tbar):
             input_color = data[("color", 0, 0)]
             input_color = input_color.as_in_context(context=opt.ctx[0])
-            features = encoder(input_color)
-            outputs = depth_decoder(features)
+            outputs = model(input_color)
 
             pred_disp, _ = disp_to_depth(outputs[("disp", 0)], opt.min_depth, opt.max_depth)
             pred_disp = pred_disp.as_in_context(mx.cpu())[:, 0].asnumpy()

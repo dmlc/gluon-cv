@@ -9,8 +9,8 @@ from __future__ import absolute_import, division, print_function
 import os
 import logging
 
-from trainer import Trainer
-from options import MonodepthOptions
+from .trainer import Trainer
+from .options import MonodepthOptions
 
 options = MonodepthOptions()
 opts = options.parse()

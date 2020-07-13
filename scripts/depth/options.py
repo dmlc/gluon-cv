@@ -19,21 +19,28 @@ class MonodepthOptions:
                                  help="log directory",
                                  default=os.path.join(os.path.expanduser("~"), "tmp"))
 
-        # TRAINING options
-        self.parser.add_argument("--model_name",
+        # MODEL options
+        self.parser.add_argument('--model_zoo', type=str, default=None,
+                                 help='choose model from model zoo model')
+        self.parser.add_argument('--pretrained_type',
                                  type=str,
-                                 help="the name of the folder to save the model in",
-                                 default="mdp")
+                                 help="use gluoncv pretrained model or customer model",
+                                 choices=["gluoncv", "customer"],
+                                 default="customer")
+        self.parser.add_argument('--pretrained_base', action="store_true",
+                                 help='whether to use pretrained resnet')
+        self.parser.add_argument("--scales",
+                                 nargs="+",
+                                 type=int,
+                                 help="scales used in the loss",
+                                 default=[0, 1, 2, 3])
+
+        # DATA options
         self.parser.add_argument("--split",
                                  type=str,
                                  help="which training split to use",
                                  choices=["eigen_zhou", "eigen_full", "odom", "benchmark"],
                                  default="eigen_zhou")
-        self.parser.add_argument("--num_layers",
-                                 type=int,
-                                 help="number of resnet layers",
-                                 default=18,
-                                 choices=[18, 34, 50, 101, 152])
         self.parser.add_argument("--dataset",
                                  type=str,
                                  help="dataset to train on",
@@ -54,11 +61,6 @@ class MonodepthOptions:
                                  type=float,
                                  help="disparity smoothness weight",
                                  default=1e-3)
-        self.parser.add_argument("--scales",
-                                 nargs="+",
-                                 type=int,
-                                 help="scales used in the loss",
-                                 default=[0, 1, 2, 3])
         self.parser.add_argument("--min_depth",
                                  type=float,
                                  help="minimum depth",
@@ -104,27 +106,14 @@ class MonodepthOptions:
         self.parser.add_argument("--disable_automasking",
                                  help="if set, doesn't do auto-masking",
                                  action="store_true")
-        self.parser.add_argument("--predictive_mask",
-                                 help="if set, uses a predictive masking scheme as in Zhou et al",
-                                 action="store_true")
         self.parser.add_argument("--no_ssim",
                                  help="if set, disables ssim in the loss",
                                  action="store_true")
-        self.parser.add_argument("--weights_init",
-                                 type=str,
-                                 help="pretrained or scratch",
-                                 default="pretrained",
-                                 choices=["pretrained", "scratch"])
         self.parser.add_argument("--pose_model_input",
                                  type=str,
                                  help="how many images the pose network gets",
                                  default="pairs",
                                  choices=["pairs", "all"])
-        self.parser.add_argument("--pose_model_type",
-                                 type=str,
-                                 help="normal or shared",
-                                 default="separate_resnet",
-                                 choices=["posecnn", "separate_resnet", "shared"])
 
         # SYSTEM options
         self.parser.add_argument("--no_gpu",
@@ -142,11 +131,8 @@ class MonodepthOptions:
         self.parser.add_argument("--load_weights_folder",
                                  type=str,
                                  help="name of model to load")
-        self.parser.add_argument("--models_to_load",
-                                 nargs="+",
-                                 type=str,
-                                 help="models to load",
-                                 default=["encoder", "depth", "pose_encoder", "pose"])
+        self.parser.add_argument('--resume', type=str, default=None,
+                                 help='put the path to resuming file if needed')
 
         # LOGGING options
         self.parser.add_argument("--log_frequency",
@@ -179,7 +165,7 @@ class MonodepthOptions:
                                  type=str,
                                  default="eigen",
                                  choices=[
-                                    "eigen", "eigen_benchmark", "benchmark", "odom_9", "odom_10"],
+                                     "eigen", "eigen_benchmark", "benchmark", "odom_9", "odom_10"],
                                  help="which split to run eval on")
         self.parser.add_argument("--save_pred_disps",
                                  help="if set saves predicted disparities",
@@ -191,14 +177,6 @@ class MonodepthOptions:
                                  help="if set assume we are loading eigen results from npy but "
                                       "we want to evaluate using the new benchmark.",
                                  action="store_true")
-        self.parser.add_argument("--eval_out_dir",
-                                 help="if set will output the disparities to this folder",
-                                 type=str)
-        self.parser.add_argument("--post_process",
-                                 help="if set will perform the flipping post processing "
-                                      "from the original monodepth paper",
-                                 action="store_true")
-
 
     def parse(self):
         self.options = self.parser.parse_args()

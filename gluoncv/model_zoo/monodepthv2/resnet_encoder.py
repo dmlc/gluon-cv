@@ -9,26 +9,26 @@ from gluoncv.model_zoo.resnetv1b import \
 
 
 class ResnetEncoder(nn.HybridBlock):
-    def __init__(self, num_layers, pretrained, num_input_images=1, ctx=cpu(), **kwargs):
+    def __init__(self, backbone, pretrained, num_input_images=1, ctx=cpu(), **kwargs):
         super(ResnetEncoder, self).__init__()
 
         self.num_ch_enc = np.array([64, 64, 128, 256, 512])
 
-        resnets = {18: resnet18_v1b,
-                   34: resnet34_v1b,
-                   50: resnet50_v1s,
-                   101: resnet101_v1s,
-                   152: resnet152_v1s}
+        resnets = {'resnet18': resnet18_v1b,
+                   'resnet34': resnet34_v1b,
+                   'resnet50': resnet50_v1s,
+                   'resnet101': resnet101_v1s,
+                   'resnet152': resnet152_v1s}
 
-        if num_layers not in resnets:
-            raise ValueError("{} is not a valid number of resnet layers".format(num_layers))
+        if backbone not in resnets:
+            raise ValueError("{} is not a valid resnet".format(backbone))
 
         if num_input_images > 1:
             pass
         else:
-            self.encoder = resnets[num_layers](pretrained=pretrained, ctx=ctx, **kwargs)
+            self.encoder = resnets[backbone](pretrained=pretrained, ctx=ctx, **kwargs)
 
-        if num_layers > 34:
+        if backbone != 'resnet18' and backbone != 'resnet34':
             self.num_ch_enc[1:] *= 4
 
     def hybrid_forward(self, F, input_image):
