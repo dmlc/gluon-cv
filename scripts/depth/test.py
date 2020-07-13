@@ -13,13 +13,13 @@ import numpy as np
 
 import mxnet as mx
 from mxnet import gluon
-from .utils import readlines
+from utils import readlines
 from gluoncv.data import KITTIRAWDataset
 from gluoncv.data.kitti.kitti_utils import dict_batchify_fn
 from gluoncv.model_zoo import get_model
 
 from gluoncv.model_zoo.monodepthv2.layers import disp_to_depth
-from .options import MonodepthOptions
+from options import MonodepthOptions
 
 cv2.setNumThreads(0)  # This speeds up evaluation 5x on our unix systems (OpenCV 3.3.1)
 
@@ -221,4 +221,9 @@ def evaluate(opt):
 
 if __name__ == "__main__":
     options = MonodepthOptions()
-    evaluate(options.parse())
+    opts = options.parse()
+    print("Testing model named:\n  ", opts.model_zoo)
+    print("Weights are loaded from:\n  ", opts.load_weights_folder)
+    print("Inference is using:\n  ", "CPU" if opts.ctx[0] is mx.cpu() else "GPU")
+
+    evaluate(opts)

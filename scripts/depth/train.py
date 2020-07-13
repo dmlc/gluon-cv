@@ -9,8 +9,8 @@ from __future__ import absolute_import, division, print_function
 import os
 import logging
 
-from .trainer import Trainer
-from .options import MonodepthOptions
+from trainer import Trainer
+from options import MonodepthOptions
 
 options = MonodepthOptions()
 opts = options.parse()
@@ -18,7 +18,7 @@ opts = options.parse()
 
 if __name__ == "__main__":
     # build logger
-    file_handler = logging.FileHandler(os.path.join(opts.log_dir, opts.model_name, "train.log"))
+    file_handler = logging.FileHandler(os.path.join(opts.log_dir, opts.model_zoo, "train.log"))
     stream_handler = logging.StreamHandler()
     logger = logging.getLogger('')
     logger.setLevel(logging.INFO)

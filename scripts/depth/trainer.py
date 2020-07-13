@@ -19,7 +19,7 @@ from gluoncv.model_zoo import get_model
 from gluoncv.model_zoo.monodepthv2.layers import *
 from gluoncv.utils import LRScheduler, LRSequential
 
-from .utils import *
+from utils import *
 
 # Models which were trained with stereo supervision were trained with a nominal
 # baseline of 0.1 units. The KITTI rig has a baseline of 54cm. Therefore,
@@ -32,7 +32,7 @@ class Trainer:
         # configuration setting
         self.opt = options
         self.logger = logger
-        self.log_path = os.path.join(self.opt.log_dir, self.opt.model_name)
+        self.log_path = os.path.join(self.opt.log_dir, self.opt.model_zoo)
 
         # checking height and width are multiples of 32
         assert self.opt.height % 32 == 0, "'height' must be a multiple of 32"
@@ -168,6 +168,7 @@ class Trainer:
                 self.logger.info('Epoch %d iteration %04d/%04d: training loss %.3f' %
                                  (self.epoch, batch_idx, len(self.train_loader),
                                   train_loss / (batch_idx + 1)))
+                break
             mx.nd.waitall()
 
     def process_batch(self, inputs, eval_mode=False):
