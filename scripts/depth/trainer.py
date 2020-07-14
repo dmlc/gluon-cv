@@ -299,7 +299,7 @@ class Trainer:
 
     def compute_losses(self, inputs, outputs):
         """Compute the reprojection and smoothness losses for a minibatch
-          """
+        """
         losses = {}
         total_loss = 0
 
@@ -385,13 +385,15 @@ class Trainer:
         This isn't particularly accurate as it averages over the entire batch,
         so is only used to give an indication of validation performance
         """
+        depth_gt = inputs["depth_gt"].asnumpy()
+        gt_height, gt_width = depth_gt.shape[2:]
+
         depth_pred = outputs[("depth", 0, 0)]
         depth_pred = mx.nd.clip(
-            mx.nd.contrib.BilinearResize2D(depth_pred, height=375, width=1242),
+            mx.nd.contrib.BilinearResize2D(depth_pred, height=gt_height, width=gt_width),
             a_min=1e-3, a_max=80
         )
         depth_pred = depth_pred.detach().asnumpy()
-        depth_gt = inputs["depth_gt"].asnumpy()
 
         # garg/eigen crop
         mask = depth_gt > 0
