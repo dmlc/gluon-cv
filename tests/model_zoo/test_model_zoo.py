@@ -24,7 +24,7 @@ import logging
 
 import mxnet as mx
 from mxnet.contrib.quantization import *
-from common import try_gpu, with_cpu
+from ..unittests.common import try_gpu, with_cpu
 
 import gluoncv as gcv
 
