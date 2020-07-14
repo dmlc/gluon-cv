@@ -4,7 +4,7 @@ http://www.cvlibs.net/datasets/kitti/raw_data.php
 Code partially borrowed from
 https://github.com/nianticlabs/monodepth2/blob/master/datasets/kitti_dataset.py
 """
-
+# pylint: disable=abstract-method
 # Copyright Niantic 2019. Patent Pending. All rights reserved.
 #
 # This software is licensed under the terms of the Monodepth2 licence
@@ -25,8 +25,6 @@ from .mono_dataset import MonoDataset
 class KITTIDataset(MonoDataset):
     """Superclass for different types of KITTI dataset loaders
     """
-
-    # pylint: disable=abstract-method
     def __init__(self, *args, **kwargs):
         super(KITTIDataset, self).__init__(*args, **kwargs)
 
@@ -81,6 +79,7 @@ class KITTIRAWDataset(KITTIDataset):
     >>>     pin_memory=True, last_batch='discard')
     """
 
+    # pylint: disable=keyword-arg-before-vararg
     def __init__(self, data_path='~/.mxnet/datasets/kitti/kitti_data', *args, **kwargs):
         super(KITTIRAWDataset, self).__init__(data_path, *args, **kwargs)
 

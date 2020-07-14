@@ -74,7 +74,7 @@ class DepthDecoder(nn.HybridBlock):
             self.sigmoid = nn.Activation('sigmoid')
 
     def hybrid_forward(self, F, input_features):
-        # pylint: disable=unused-argument
+        # pylint: disable=unused-argument, missing-function-docstring
         self.outputs = {}
 
         # decoder

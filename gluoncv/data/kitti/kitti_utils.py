@@ -47,7 +47,7 @@ def read_calib_file(path):
 def sub2ind(matrixSize, rowSub, colSub):
     """Convert row, col matrix subscripts to linear indices
     """
-    # pylint: disable=unused-argument
+    # pylint: disable=unused-variable
     m, n = matrixSize
     return rowSub * (n-1) + colSub - 1
 
