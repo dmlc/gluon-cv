@@ -42,6 +42,7 @@ from .siamrpn import *
 from .icnet import *
 from .fastscnn import *
 from .danet import *
+from .matrix_net import *
 
 __all__ = ['get_model', 'get_model_list']
 
@@ -368,6 +369,7 @@ _models = {
     'hrnet_w18_small_v2_s' : hrnet_w18_small_v2_s,
     'hrnet_w48_s' : hrnet_w48_s,
     'siamrpn_alexnet_v2_otb15': siamrpn_alexnet_v2_otb15,
+    'matrix_net_resnet101_v1d_coco': matrix_net_resnet101_v1d_coco,
 }
 
 
