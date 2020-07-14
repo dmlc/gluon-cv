@@ -95,6 +95,8 @@ class ConfigDict(dict):
     def __getitem__(self, key):
         found = self.get(key, ConfigDict.MARKER)
         if found is ConfigDict.MARKER:
+            if self.__dict__['_freeze']:
+                raise KeyError(key)
             found = ConfigDict()
             super(ConfigDict, self).__setitem__(key, found)
         if isinstance(found, ConfigDict):
