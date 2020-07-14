@@ -1,3 +1,7 @@
+"""Monodepth
+Digging Into Self-Supervised Monocular Depth Estimation, ICCV 2019
+https://arxiv.org/abs/1806.01260
+"""
 import mxnet as mx
 from mxnet.gluon import nn
 from mxnet.context import cpu
@@ -7,16 +11,49 @@ from .depth_decoder import DepthDecoder
 
 
 class MonoDepth2(nn.HybridBlock):
+    r"""Monodepth2
+
+    Parameters
+    ----------
+    backbone : string
+        Pre-trained dilated backbone network type ('resnet18', 'resnet34', 'resnet50',
+        'resnet101' or 'resnet152').
+    pretrained : bool or str
+        Refers to if the backbone is pretrained or not. If `True`,
+        model weights of a model that was trained on ImageNet is loaded.
+    num_input_images : int
+        The number of input sequences. 1 for depth encoder, larger than 1 for pose encoder.
+        (Default: 1)
+    scales: list
+        The scales used in the loss. (Default: range(4))
+    num_output_channels: int
+        The number of output channels. (Default: 1)
+    use_skips: bool
+        This will use skip architecture in the network. (Default: True)
+
+    Reference:
+
+        Clément Godard, Oisin Mac Aodha, Michael Firman, Gabriel Brostow.
+        "Digging Into Self-Supervised Monocular Depth Estimation." *ICCV*, 2019
+
+    Examples
+    --------
+    >>> model = MonoDepth2(backbone='resnet18', pretrained_base=True)
+    >>> print(model)
+    """
+    # pylint: disable=unused-argument
     def __init__(self, backbone, pretrained_base, num_input_images=1,
                  scales=range(4), num_output_channels=1, use_skips=True, ctx=cpu(), **kwargs):
         super(MonoDepth2, self).__init__()
 
         self.encoder = ResnetEncoder(backbone, pretrained_base, num_input_images, ctx=ctx)
-        self.decoder = DepthDecoder(self.encoder.num_ch_enc, scales, num_output_channels, use_skips)
+        self.decoder = DepthDecoder(self.encoder.num_ch_enc, scales,
+                                    num_output_channels, use_skips)
 
         self.decoder.initialize(init=mx.init.MSRAPrelu(), ctx=ctx)
 
     def hybrid_forward(self, F, x):
+        # pylint: disable=unused-argument
         features = self.encoder(x)
         outputs = self.decoder(features)
 

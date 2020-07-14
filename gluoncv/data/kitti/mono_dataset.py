@@ -1,8 +1,12 @@
-import os
-import sys
+"""Monocular Depth Estimation Dataset.
+Digging into Self-Supervised Monocular Depth Prediction, ICCV 2019
+https://arxiv.org/abs/1806.01260
+Code partially borrowed from
+https://github.com/nianticlabs/monodepth2/blob/master/datasets/mono_dataset.py
+"""
 import random
-import numpy as np
 import copy
+import numpy as np
 from PIL import Image  # using pillow-simd for increased speed
 
 import mxnet as mx
@@ -20,27 +24,31 @@ def pil_loader(path):
 
 class MonoDataset(dataset.Dataset):
     """Superclass for monocular dataloaders
-
-    Args:
-        data_path
-        filenames
-        height
-        width
-        frame_idxs
-        num_scales
-        is_train
-        img_ext
+    Parameters
+    ----------
+    data_path : string
+        Path to dataset folder.
+    filenames : string
+        Path to splite file.
+        For exmaple: '$(HOME)/.mxnet/datasets/kitti/splits/eigen_full/train_files.txt'
+    height : int
+        The height for input images.
+    width : int
+        The height for input images.
+    frame_idxs : list
+        The frames to load.
+        an integer (e.g. 0, -1, or 1) representing the temporal step relative to 'index',
+        or "s" for the opposite image in the stereo pair.
+    num_scales : int
+        The number of scales of the image relative to the fullsize image.
+    is_train : bool
+        Whether use Data Augmentation. Default is: False
+    img_ext : string
+        The extension name of input image. Default is '.jpg'
     """
 
-    def __init__(self,
-                 data_path,
-                 filenames,
-                 height,
-                 width,
-                 frame_idxs,
-                 num_scales,
-                 is_train=False,
-                 img_ext='.jpg'):
+    def __init__(self, data_path, filenames, height, width, frame_idxs,
+                 num_scales, is_train=False, img_ext='.jpg'):
         super(MonoDataset, self).__init__()
 
         self.data_path = data_path
@@ -73,7 +81,6 @@ class MonoDataset(dataset.Dataset):
         same augmentation.
         """
         for k in list(inputs):
-            frame = inputs[k]
             if "color" in k:
                 n, im, i = k
                 for i in range(self.num_scales):

@@ -1,3 +1,7 @@
+"""Decoder module of Monodepth2
+Code partially borrowed from
+https://github.com/nianticlabs/monodepth2/blob/master/networks/depth_decoder.py
+"""
 # Copyright Niantic 2019. Patent Pending. All rights reserved.
 #
 # This software is licensed under the terms of the Monodepth2 licence
@@ -6,15 +10,29 @@
 
 from __future__ import absolute_import, division, print_function
 
+from collections import OrderedDict
 import numpy as np
 import mxnet as mx
 import mxnet.gluon.nn as nn
 
-from collections import OrderedDict
 from .layers import ConvBlock, Conv3x3, upsample
 
 
 class DepthDecoder(nn.HybridBlock):
+    r"""Decoder of Monodepth2
+
+    Parameters
+    ----------
+    num_ch_enc : list
+        The channels number of encoder.
+    scales: list
+        The scales used in the loss. (Default: range(4))
+    num_output_channels: int
+        The number of output channels. (Default: 1)
+    use_skips: bool
+        This will use skip architecture in the network. (Default: True)
+
+    """
     def __init__(self, num_ch_enc, scales=range(4), num_output_channels=1,
                  use_skips=True):
         super(DepthDecoder, self).__init__()
@@ -56,6 +74,7 @@ class DepthDecoder(nn.HybridBlock):
             self.sigmoid = nn.Activation('sigmoid')
 
     def hybrid_forward(self, F, input_features):
+        # pylint: disable=unused-argument
         self.outputs = {}
 
         # decoder

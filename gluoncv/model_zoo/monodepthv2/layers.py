@@ -1,3 +1,8 @@
+"""The functions for monodepth2 model and loss
+Code partially borrowed from
+https://github.com/nianticlabs/monodepth2/blob/master/layers.py.
+"""
+# pylint: disable=unused-argument, missing-function-docstring
 # Copyright Niantic 2019. Patent Pending. All rights reserved.
 #
 # This software is licensed under the terms of the Monodepth2 licence
@@ -106,6 +111,7 @@ def rot_from_axisangle(vec):
 class ConvBlock(nn.HybridBlock):
     """Layer to perform a convolution followed by ELU
     """
+
     def __init__(self, in_channels, out_channels):
         super(ConvBlock, self).__init__()
 
@@ -122,6 +128,7 @@ class ConvBlock(nn.HybridBlock):
 class Conv3x3(nn.HybridBlock):
     """Layer to pad and convolve input
     """
+
     def __init__(self, in_channels, out_channels, use_refl=True):
         super(Conv3x3, self).__init__()
         self.use_refl = use_refl
@@ -145,6 +152,7 @@ class Conv3x3(nn.HybridBlock):
 class BackprojectDepth(nn.HybridBlock):
     """Layer to transform a depth image into a point cloud
     """
+
     def __init__(self, batch_size, height, width, ctx=mx.cpu()):
         super(BackprojectDepth, self).__init__()
 
@@ -192,6 +200,7 @@ class BackprojectDepth(nn.HybridBlock):
 class Project3D(nn.HybridBlock):
     """Layer which projects 3D points into a camera with intrinsics K and at position T
     """
+
     def __init__(self, batch_size, height, width, eps=1e-7):
         super(Project3D, self).__init__()
 
@@ -246,12 +255,13 @@ def get_smooth_loss(disp, img):
 class SSIM(nn.HybridBlock):
     """Layer to compute the SSIM loss between a pair of images
     """
+
     def __init__(self):
         super(SSIM, self).__init__()
-        self.mu_x_pool   = nn.AvgPool2D(3, 1)
-        self.mu_y_pool   = nn.AvgPool2D(3, 1)
-        self.sig_x_pool  = nn.AvgPool2D(3, 1)
-        self.sig_y_pool  = nn.AvgPool2D(3, 1)
+        self.mu_x_pool = nn.AvgPool2D(3, 1)
+        self.mu_y_pool = nn.AvgPool2D(3, 1)
+        self.sig_x_pool = nn.AvgPool2D(3, 1)
+        self.sig_y_pool = nn.AvgPool2D(3, 1)
         self.sig_xy_pool = nn.AvgPool2D(3, 1)
 
         self.refl = nn.ReflectionPad2D(1)
@@ -266,8 +276,8 @@ class SSIM(nn.HybridBlock):
         mu_x = self.mu_x_pool(x)
         mu_y = self.mu_y_pool(y)
 
-        sigma_x  = self.sig_x_pool(x ** 2) - mu_x ** 2
-        sigma_y  = self.sig_y_pool(y ** 2) - mu_y ** 2
+        sigma_x = self.sig_x_pool(x ** 2) - mu_x ** 2
+        sigma_y = self.sig_y_pool(y ** 2) - mu_y ** 2
         sigma_xy = self.sig_xy_pool(x * y) - mu_x * mu_y
 
         SSIM_n = (2 * mu_x * mu_y + self.C1) * (2 * sigma_xy + self.C2)

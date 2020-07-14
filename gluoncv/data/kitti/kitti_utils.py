@@ -1,8 +1,12 @@
+"""Tools for KITTI Dataset
+Code partially borrowed from
+https://github.com/nianticlabs/monodepth2/blob/master/kitti_utils.py
+"""
 from __future__ import absolute_import, division, print_function
 
 import os
-import numpy as np
 from collections import Counter
+import numpy as np
 
 import mxnet as mx
 import mxnet.numpy as _mx_np
@@ -43,6 +47,7 @@ def read_calib_file(path):
 def sub2ind(matrixSize, rowSub, colSub):
     """Convert row, col matrix subscripts to linear indices
     """
+    # pylint: disable=unused-argument
     m, n = matrixSize
     return rowSub * (n-1) + colSub - 1
 
@@ -50,6 +55,7 @@ def sub2ind(matrixSize, rowSub, colSub):
 def generate_depth_map(calib_dir, velo_filename, cam=2, vel_depth=False):
     """Generate a depth map from velodyne data
     """
+    # pylint: disable=unsupported-assignment-operation
     # load calibration files
     cam2cam = read_calib_file(os.path.join(calib_dir, 'calib_cam_to_cam.txt'))
     velo2cam = read_calib_file(os.path.join(calib_dir, 'calib_velo_to_cam.txt'))

@@ -1,3 +1,7 @@
+"""Encoder module of Monodepth2
+Code partially borrowed from
+https://github.com/nianticlabs/monodepth2/blob/master/networks/resnet_encoder.py
+"""
 from __future__ import absolute_import, division, print_function
 
 import numpy as np
@@ -9,6 +13,20 @@ from gluoncv.model_zoo.resnetv1b import \
 
 
 class ResnetEncoder(nn.HybridBlock):
+    r"""Encoder of Monodepth2
+
+    Parameters
+    ----------
+    backbone : string
+        Pre-trained dilated backbone network type ('resnet18', 'resnet34', 'resnet50',
+        'resnet101' or 'resnet152').
+    pretrained : bool or str
+        Refers to if the backbone is pretrained or not. If `True`,
+        model weights of a model that was trained on ImageNet is loaded.
+    num_input_images : int
+        The number of input sequences. 1 for depth encoder, larger than 1 for pose encoder.
+        (Default: 1)
+    """
     def __init__(self, backbone, pretrained, num_input_images=1, ctx=cpu(), **kwargs):
         super(ResnetEncoder, self).__init__()
 
@@ -28,10 +46,11 @@ class ResnetEncoder(nn.HybridBlock):
         else:
             self.encoder = resnets[backbone](pretrained=pretrained, ctx=ctx, **kwargs)
 
-        if backbone != 'resnet18' and backbone != 'resnet34':
+        if backbone not in ('resnet18', 'resnet34'):
             self.num_ch_enc[1:] *= 4
 
     def hybrid_forward(self, F, input_image):
+        # pylint: disable=unused-argument, missing-function-docstring
         self.features = []
         x = (input_image - 0.45) / 0.225
         x = self.encoder.conv1(x)

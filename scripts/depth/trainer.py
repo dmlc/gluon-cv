@@ -168,7 +168,6 @@ class Trainer:
                 self.logger.info('Epoch %d iteration %04d/%04d: training loss %.3f' %
                                  (self.epoch, batch_idx, len(self.train_loader),
                                   train_loss / (batch_idx + 1)))
-                break
             mx.nd.waitall()
 
     def process_batch(self, inputs, eval_mode=False):

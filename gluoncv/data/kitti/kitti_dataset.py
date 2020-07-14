@@ -1,3 +1,10 @@
+"""KITTI Dataset. (KITTI Raw, KITTI Odom, KITTI Depth)
+Vision meets Robotics: The KITTI Dataset, IJRR 2013
+http://www.cvlibs.net/datasets/kitti/raw_data.php
+Code partially borrowed from
+https://github.com/nianticlabs/monodepth2/blob/master/datasets/kitti_dataset.py
+"""
+
 # Copyright Niantic 2019. Patent Pending. All rights reserved.
 #
 # This software is licensed under the terms of the Monodepth2 licence
@@ -18,6 +25,8 @@ from .mono_dataset import MonoDataset
 class KITTIDataset(MonoDataset):
     """Superclass for different types of KITTI dataset loaders
     """
+
+    # pylint: disable=abstract-method
     def __init__(self, *args, **kwargs):
         super(KITTIDataset, self).__init__(*args, **kwargs)
 
@@ -52,10 +61,28 @@ class KITTIDataset(MonoDataset):
 
 
 class KITTIRAWDataset(KITTIDataset):
-    """KITTI dataset which loads the original velodyne depth maps for ground truth
+    """KITTI Raw Dataset.
+    Parameters
+    ----------
+    data_path : string
+        Path to KITTI RAW dataset folder. Default is '$(HOME)/.mxnet/datasets/kitti/kitti_data'
+
+    Examples
+    --------
+    >>> from gluoncv.data.kitti.kitti_utils import dict_batchify_fn
+    >>> train_filenames = '~/.mxnet/datasets/kitti/splits/eigen_full/train_files.txt'
+    >>> # Create Dataset
+    >>> trainset = gluoncv.data.KITTIRAWDataset(
+    >>>     train_filenames, 192, 640, [0], 4, is_train=True, img_ext='.png')
+    >>> # Create Training Loader
+    >>> train_data = gluon.data.DataLoader(
+    >>>     trainset, batch_size=12, shuffle=True,
+    >>>     batchify_fn=dict_batchify_fn, num_workers=12,
+    >>>     pin_memory=True, last_batch='discard')
     """
-    def __init__(self, *args, **kwargs):
-        super(KITTIRAWDataset, self).__init__(*args, **kwargs)
+
+    def __init__(self, data_path='~/.mxnet/datasets/kitti/kitti_data', *args, **kwargs):
+        super(KITTIRAWDataset, self).__init__(data_path, *args, **kwargs)
 
     def get_image_path(self, folder, frame_index, side):
         f_str = "{:010d}{}".format(frame_index, self.img_ext)
@@ -84,6 +111,7 @@ class KITTIRAWDataset(KITTIDataset):
 class KITTIOdomDataset(KITTIDataset):
     """KITTI dataset for odometry training and testing
     """
+
     def __init__(self, *args, **kwargs):
         super(KITTIOdomDataset, self).__init__(*args, **kwargs)
 
@@ -100,6 +128,7 @@ class KITTIOdomDataset(KITTIDataset):
 class KITTIDepthDataset(KITTIDataset):
     """KITTI dataset which uses the updated ground truth depth maps
     """
+
     def __init__(self, *args, **kwargs):
         super(KITTIDepthDataset, self).__init__(*args, **kwargs)
 
