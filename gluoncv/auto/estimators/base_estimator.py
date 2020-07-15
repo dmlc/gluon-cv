@@ -118,7 +118,7 @@ class BaseEstimator:
         print_config(r)
 
         # logdir
-        logdir = r.config.get('logdir', None)
+        logdir = r.config.get('logging.logdir', None)
         self._logdir = os.path.abspath(logdir) if logdir else os.getcwd()
 
         # try to auto resume

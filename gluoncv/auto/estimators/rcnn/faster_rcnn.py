@@ -47,8 +47,7 @@ class FasterRCNNEstimator(BaseEstimator):
         reporter : reporter object, default is None
             If set, use reporter callback to report the metrics of the current estimator.
         """
-        super(FasterRCNNEstimator, self).__init__(config, logger)
-        self._reporter = reporter
+        super(FasterRCNNEstimator, self).__init__(config, logger, reporter)
 
         # training contexts
         if self._cfg.horovod:
@@ -193,7 +192,7 @@ class FasterRCNNEstimator(BaseEstimator):
         eval_metric.reset()
         if not self._cfg.disable_hybridization:
             # input format is differnet than training, thus rehybridization is needed.
-            self.net.hybridize(static_alloc=self._cfg.static_alloc)
+            self.net.hybridize(static_alloc=self._cfg.faster_rcnn.static_alloc)
         for batch in val_data:
             batch = _split_and_load(batch, ctx_list=ctx)
             det_bboxes = []
@@ -375,7 +374,7 @@ class FasterRCNNEstimator(BaseEstimator):
         ids, scores, bboxes = [xx[0].asnumpy() for xx in self.net(x)]
         return ids, scores, bboxes
 
-    def load_parameters(self, parameters, multi_precision=False):
+    def put_parameters(self, parameters, multi_precision=False):
         """Load saved parameters into the model"""
         param_dict = self.net._collect_params_with_prefix()
         kwargs = {'ctx': None} if mx.__version__[:3] == '1.4' else {'cast_dtype': multi_precision,
