@@ -26,7 +26,6 @@ train = Ingredient('training')
 validation = Ingredient('validation')
 
 
-
 @center_net.config
 def center_net_default():
     base_network = 'dla34_deconv'  # base feature network
@@ -46,7 +45,7 @@ def center_net_default():
 
 @train.config
 def train_config():
-    gpus = (0, 1, 2, 3, 4, 5, 6, 7) # gpu individual ids, not necessarily consecutive
+    gpus = (0, 1, 2, 3, 4, 5, 6, 7)  # gpu individual ids, not necessarily consecutive
     pretrained_base = True  # whether load the imagenet pre-trained base
     batch_size = 128
     epochs = 140
@@ -66,8 +65,6 @@ def train_config():
     log_interval = 100  # logging interval
 
 
-
-
 @validation.config
 def valid_config():
     flip_test = True  # use flip in validation test
@@ -79,7 +76,8 @@ def valid_config():
     interval = 10  # validation epoch interval, for slow validations
 
 
-ex = Experiment('center_net_default', ingredients=[logging, coco_detection, train, validation, center_net])
+ex = Experiment('center_net_default',
+                ingredients=[logging, coco_detection, train, validation, center_net])
 
 
 @ex.config
