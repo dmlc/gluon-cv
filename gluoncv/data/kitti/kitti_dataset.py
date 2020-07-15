@@ -4,7 +4,7 @@ http://www.cvlibs.net/datasets/kitti/raw_data.php
 Code partially borrowed from
 https://github.com/nianticlabs/monodepth2/blob/master/datasets/kitti_dataset.py
 """
-# pylint: disable=abstract-method, unused-import, wrong-import-position
+# pylint: disable=abstract-method, unused-import
 # Copyright Niantic 2019. Patent Pending. All rights reserved.
 #
 # This software is licensed under the terms of the Monodepth2 licence

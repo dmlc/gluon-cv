@@ -33,8 +33,8 @@ class MonoDepth2(nn.HybridBlock):
 
     Reference:
 
-        Clément Godard, Oisin Mac Aodha, Michael Firman, Gabriel Brostow.
-        "Digging Into Self-Supervised Monocular Depth Estimation." *ICCV*, 2019
+        Clement Godard, Oisin Mac Aodha, Michael Firman, Gabriel Brostow.
+        "Digging Into Self-Supervised Monocular Depth Estimation." ICCV, 2019
 
     Examples
     --------
