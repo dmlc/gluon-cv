@@ -4,7 +4,7 @@ http://www.cvlibs.net/datasets/kitti/raw_data.php
 Code partially borrowed from
 https://github.com/nianticlabs/monodepth2/blob/master/datasets/kitti_dataset.py
 """
-# pylint: disable=abstract-method, unused-import
+# pylint: disable=abstract-method, unused-import, wrong-import-position
 # Copyright Niantic 2019. Patent Pending. All rights reserved.
 #
 # This software is licensed under the terms of the Monodepth2 licence
@@ -15,8 +15,6 @@ from __future__ import absolute_import, division, print_function
 
 import os
 from gluoncv.utils.filesystem import try_import_skimage
-skimage = try_import_skimage()
-from skimage import transform
 
 import numpy as np
 import PIL.Image as pil
@@ -101,6 +99,8 @@ class KITTIRAWDataset(KITTIDataset):
             "velodyne_points/data/{:010d}.bin".format(int(frame_index)))
 
         depth_gt = generate_depth_map(calib_path, velo_filename, self.side_map[side])
+        skimage = try_import_skimage()
+        from skimage import transform
         depth_gt = skimage.transform.resize(
             depth_gt, self.full_res_shape[::-1], order=0, preserve_range=True, mode='constant')
 
