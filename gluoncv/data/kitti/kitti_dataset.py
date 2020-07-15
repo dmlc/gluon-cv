@@ -14,7 +14,8 @@ https://github.com/nianticlabs/monodepth2/blob/master/datasets/kitti_dataset.py
 from __future__ import absolute_import, division, print_function
 
 import os
-import skimage.transform
+import skimage
+from skimage import transform
 import numpy as np
 import PIL.Image as pil
 
