@@ -17,32 +17,42 @@ def _train_object_detection(args, reporter):
     gutils.random.seed(args.seed)
 
     # training contexts
-    if args.meta_arch == 'yolo3':
-        net_name = '_'.join((args.meta_arch, args.net, 'custom'))
-    elif args.meta_arch == 'faster_rcnn':
-        net_name = '_'.join(('custom', args.meta_arch, 'fpn'))
-        kwargs = {'network': args.net, 'base_network_name': args.net,
-                  'image_short': args.data_shape, 'max_size': 1000, 'nms_thresh': 0.5,
-                  'nms_topk': -1, 'min_stage': 2, 'max_stage': 6, 'post_nms': -1,
-                  'roi_mode': 'align', 'roi_size': (7, 7), 'strides': (4, 8, 16, 32, 64),
-                  'clip': 4.14, 'rpn_channel': 256, 'anchor_scales': (2, 4, 8, 16, 32),
-                  'anchor_aspect_ratio': (0.5, 1, 2), 'anchor_alloc_size': (384, 384),
-                  'rpn_nms_thresh': 0.7, 'rpn_train_pre_nms': 12000, 'rpn_train_post_nms': 2000,
-                  'rpn_test_pre_nms': 6000, 'rpn_test_post_nms': 1000, 'rpn_min_size': 1,
-                  'per_device_batch_size': args.batch_size // args.num_gpus, 'num_sample': 512,
-                  'rcnn_pos_iou_thresh': 0.5, 'rcnn_pos_ratio': 0.25, 'max_num_gt': 100,
-                  'custom_model': True, 'no_pretrained_base': True, 'num_fpn_filters': 256,
-                  'num_box_head_conv': 4, 'num_box_head_conv_filters': 256, 'amp': False,
-                  'num_box_head_dense_filters': 1024, 'image_max_size': 1333, 'kv_store': 'nccl',
-                  'anchor_base_size': 16, 'rcnn_num_samples': 512, 'rpn_smoothl1_rho': 0.001,
-                  'rcnn_smoothl1_rho': 0.001, 'lr_warmup_factor': 1. / 3., 'lr_warmup': 500,
-                  'executor_threads': 4, 'disable_hybridization': False, 'static_alloc': False}
-        vars(args).update(kwargs)
+    if args.meta_arch == 'faster_rcnn':
+        config = {'dataset': args.dataset, 'gpus': [0, 1, 2, 3], 'resume': '', 'save_prefix': '',
+                  'save_interval': 1, 'horovod': False, 'num_workers': 16, 'kv_store': 'nccl',
+                  'disable_hybridization': False, 'logdir': None, 'seed': 826994795,
+                  'train': {'pretrained_base': True, 'batch_size': args.batch_size,
+                            'start_epoch': 0, 'epochs': args.epochs, 'lr': args.lr, 'lr_decay': 0.1,
+                            'lr_decay_epoch': args.lr_decay_epoch, 'lr_mode': 'step',
+                            'lr_warmup': 500, 'lr_warmup_factor': 0.3333333333333333,
+                            'momentum': 0.9, 'wd': 0.0001, 'rpn_train_pre_nms': 12000,
+                            'rpn_train_post_nms': 2000, 'rpn_smoothl1_rho': 0.001,
+                            'rpn_min_size': 1, 'rcnn_num_samples': 512,
+                            'rcnn_pos_iou_thresh': 0.5, 'rcnn_pos_ratio': 0.25,
+                            'rcnn_smoothl1_rho': 0.001, 'log_interval': 100, 'seed': 233,
+                            'verbose': False, 'mixup': False, 'no_mixup_epochs': 20,
+                            'executor_threads': 4, },
+                  'validation': {'rpn_test_pre_nms': 6000, 'rpn_test_post_nms': 1000,
+                                 'val_interval': 1},
+                  'faster_rcnn': {'backbone': args.net, 'nms_thresh': 0.5, 'nms_topk': -1,
+                                  'roi_mode': 'align', 'roi_size': [7, 7],
+                                  'strides': [4, 8, 16, 32, 64], 'clip': 4.14,
+                                  'anchor_base_size': 16, 'anchor_aspect_ratio': [0.5, 1, 2],
+                                  'anchor_scales': [2, 4, 8, 16, 32],
+                                  'anchor_alloc_size': [384, 384], 'rpn_channel': 256,
+                                  'rpn_nms_thresh': 0.7, 'max_num_gt': 100,
+                                  'norm_layer': args.norm_layer, 'use_fpn': True,
+                                  'num_fpn_filters': 256, 'num_box_head_conv': 4,
+                                  'num_box_head_conv_filters': 256,
+                                  'num_box_head_dense_filters': 1024, 'image_short': (640, 800),
+                                  'image_max_size': 1333, 'custom_model': True, 'amp': False,
+                                  'static_alloc': False}}
+        # vars(args).update(kwargs)
     else:
         raise NotImplementedError(args.meta_arch, 'is not implemented.')
 
     if args.meta_arch == 'faster_rcnn':
-        estimator = args.estimator(args, reporter=reporter)
+        estimator = args.estimator(config, reporter=reporter)
     else:
         raise NotImplementedError('%s' % args.meta_arch)
 
@@ -118,5 +128,5 @@ class ObjectDetection(BaseTask):
         self._logger.info('The best config: {}'.format(results['best_config']))
 
         estimator = self._estimator(best_config)
-        estimator.load_parameters(results.pop('model_params'))
+        estimator.put_parameters(results.pop('model_params'))
         return estimator

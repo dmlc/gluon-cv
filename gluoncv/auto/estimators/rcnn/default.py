@@ -1,5 +1,7 @@
 from sacred import Experiment, Ingredient
 
+from ..common import logging
+
 faster_rcnn = Ingredient('faster_rcnn')
 train = Ingredient('train')
 validation = Ingredient('validation')
@@ -169,7 +171,7 @@ def valid_cfg():
     val_interval = 1
 
 
-ex = Experiment('faster_rcnn_default', ingredients=[train, validation, faster_rcnn])
+ex = Experiment('faster_rcnn_default', ingredients=[logging, train, validation, faster_rcnn])
 
 
 @ex.config
@@ -195,5 +197,3 @@ def default_configs():
     kv_store = 'nccl'
     # Whether to disable hybridize the model. Memory usage and speed will decrese.
     disable_hybridization = False
-    # Output directory for all training/validation artifacts.
-    logdir = None

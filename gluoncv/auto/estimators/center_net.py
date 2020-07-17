@@ -5,30 +5,32 @@ import warnings
 from collections import OrderedDict
 
 import mxnet as mx
-from mxnet import gluon
 from mxnet import autograd
+from mxnet import gluon
+from sacred import Experiment, Ingredient
+
+from .base_estimator import BaseEstimator, set_default
+from .common import logging
+from ..data.coco_detection import coco_detection, load_coco_detection
+from ...data.batchify import Tuple, Stack, Pad
 from ...data.transforms.presets.center_net import CenterNetDefaultTrainTransform
 from ...data.transforms.presets.center_net import CenterNetDefaultValTransform, get_post_transform
-from ...data.batchify import Tuple, Stack, Pad
-from ...utils import LRScheduler, LRSequential
-from ...model_zoo.center_net import get_center_net, get_base_network
 from ...loss import MaskedL1Loss, HeatmapFocalLoss
-
-from ..data.coco_detection import coco_detection, load_coco_detection
-from .base_estimator import BaseEstimator, set_default, ConfigDict
-from .common import train, validation
-
-from sacred import Experiment, Ingredient
+from ...model_zoo.center_net import get_center_net, get_base_network
+from ...utils import LRScheduler, LRSequential
 
 __all__ = ['CenterNetEstimator']
 
 center_net = Ingredient('center_net')
+train = Ingredient('training')
+validation = Ingredient('validation')
+
 
 @center_net.config
 def center_net_default():
-    base_network = 'dla34_deconv'    # base feature network
+    base_network = 'dla34_deconv'  # base feature network
     heads = {
-        'bias': -2.19,    # use bias = -log((1 - 0.1) / 0.1)
+        'bias': -2.19,  # use bias = -log((1 - 0.1) / 0.1)
         'wh_outputs': 2,  # wh head channel
         'reg_outputs': 2,  # regression head channel
         'head_conv_channel': 64,  # additional conv channel
@@ -40,9 +42,10 @@ def center_net_default():
     center_reg_weight = 1.0  # Center regression loss weight
     data_shape = (512, 512)
 
+
 @train.config
-def update_train_config():
-    gpus = (0, 1, 2, 3, 4, 5, 6, 7)
+def train_config():
+    gpus = (0, 1, 2, 3, 4, 5, 6, 7)  # gpu individual ids, not necessarily consecutive
     pretrained_base = True  # whether load the imagenet pre-trained base
     batch_size = 128
     epochs = 140
@@ -52,17 +55,30 @@ def update_train_config():
     lr_mode = 'step'  # learning rate scheduler mode. options are step, poly and cosine
     warmup_lr = 0.0  # starting warmup learning rate.
     warmup_epochs = 0  # number of warmup epochs
+    num_workers = 16  # cpu workers, the larger the more processes used
+    resume = ''
+    auto_resume = True  # try to automatically resume last trial if config is default
+    start_epoch = 0
+    momentum = 0.9  # SGD momentum
+    wd = 1e-4  # weight decay
+    save_interval = 10  # Saving parameters epoch interval, best model will always be saved
+    log_interval = 100  # logging interval
 
 
 @validation.config
-def update_valid_config():
+def valid_config():
     flip_test = True  # use flip in validation test
     nms_thresh = 0  # 0 means disable
     nms_topk = 400  # pre nms topk
     post_nms = 100  # post nms topk
+    num_workers = 32  # cpu workers, the larger the more processes used
+    batch_size = 32  # validation batch size
+    interval = 10  # validation epoch interval, for slow validations
+
 
 ex = Experiment('center_net_default',
-                ingredients=[coco_detection, train, validation, center_net])
+                ingredients=[logging, coco_detection, train, validation, center_net])
+
 
 @ex.config
 def default_configs():
@@ -94,10 +110,12 @@ class CenterNetEstimator(BaseEstimator):
         self._ctx = ctx
         net_name = '_'.join(('center_net', self._cfg.center_net.base_network, self._cfg.dataset))
         heads = OrderedDict([
-            ('heatmap', {'num_output': train_dataset.num_class, 'bias': self._cfg.center_net.heads.bias}),
+            ('heatmap',
+             {'num_output': train_dataset.num_class, 'bias': self._cfg.center_net.heads.bias}),
             ('wh', {'num_output': self._cfg.center_net.heads.wh_outputs}),
             ('reg', {'num_output': self._cfg.center_net.heads.reg_outputs})])
-        base_network = get_base_network(self._cfg.center_net.base_network, pretrained=self._cfg.train.pretrained_base)
+        base_network = get_base_network(self._cfg.center_net.base_network,
+                                        pretrained=self._cfg.train.pretrained_base)
         net = get_center_net(self._cfg.center_net.base_network,
                              self._cfg.dataset,
                              base_network=base_network,
@@ -156,9 +174,9 @@ class CenterNetEstimator(BaseEstimator):
         for k, v in self._net.collect_params('.*bias').items():
             v.wd_mult = 0.0
         self._trainer = gluon.Trainer(
-                    self._net.collect_params(), 'adam',
-                    {'learning_rate': self._cfg.train.lr, 'wd': self._cfg.train.wd,
-                     'lr_scheduler': lr_scheduler})
+            self._net.collect_params(), 'adam',
+            {'learning_rate': self._cfg.train.lr, 'wd': self._cfg.train.wd,
+             'lr_scheduler': lr_scheduler})
 
         self._save_prefix = os.path.join(self._logdir, net_name)
         self._best_map = 0
@@ -180,7 +198,9 @@ class CenterNetEstimator(BaseEstimator):
             self._net.hybridize()
 
             for i, batch in enumerate(self._train_data):
-                split_data = [gluon.utils.split_and_load(batch[ind], ctx_list=self._ctx, batch_axis=0) for ind in range(6)]
+                split_data = [
+                    gluon.utils.split_and_load(batch[ind], ctx_list=self._ctx, batch_axis=0) for ind
+                    in range(6)]
                 data, heatmap_targets, wh_targets, wh_masks, center_reg_targets, center_reg_masks = split_data
                 batch_size = self._cfg.train.batch_size
                 with autograd.record():
@@ -190,14 +210,16 @@ class CenterNetEstimator(BaseEstimator):
                     center_reg_losses = []
                     wh_preds = []
                     center_reg_preds = []
-                    for x, heatmap_target, wh_target, wh_mask, center_reg_target, center_reg_mask in zip(*split_data):
+                    for x, heatmap_target, wh_target, wh_mask, center_reg_target, center_reg_mask in zip(
+                            *split_data):
                         heatmap_pred, wh_pred, center_reg_pred = self._net(x)
                         wh_preds.append(wh_pred)
                         center_reg_preds.append(center_reg_pred)
                         wh_losses.append(wh_loss(wh_pred, wh_target, wh_mask))
-                        center_reg_losses.append(center_reg_loss(center_reg_pred, center_reg_target, center_reg_mask))
+                        center_reg_losses.append(
+                            center_reg_loss(center_reg_pred, center_reg_target, center_reg_mask))
                         heatmap_losses.append(heatmap_loss(heatmap_pred, heatmap_target))
-                        curr_loss = heatmap_losses[-1]+ wh_losses[-1] + center_reg_losses[-1]
+                        curr_loss = heatmap_losses[-1] + wh_losses[-1] + center_reg_losses[-1]
                         sum_losses.append(curr_loss)
                     autograd.backward(sum_losses)
                 self._trainer.step(len(sum_losses))  # step with # gpus
@@ -209,18 +231,22 @@ class CenterNetEstimator(BaseEstimator):
                     name2, loss2 = wh_metric.get()
                     name3, loss3 = center_reg_metric.get()
                     name4, loss4 = heatmap_loss_metric.get()
-                    self._log.info('[Epoch {}][Batch {}], Speed: {:.3f} samples/sec, LR={}, {}={:.3f}, {}={:.3f}, {}={:.3f}'.format(
-                        epoch, i, batch_size/(time.time()-btic), self._trainer.learning_rate, name2, loss2, name3, loss3, name4, loss4))
+                    self._log.info(
+                        '[Epoch {}][Batch {}], Speed: {:.3f} samples/sec, LR={}, {}={:.3f}, {}={:.3f}, {}={:.3f}'.format(
+                            epoch, i, batch_size / (time.time() - btic),
+                            self._trainer.learning_rate, name2, loss2, name3, loss3, name4, loss4))
                 btic = time.time()
 
             name2, loss2 = wh_metric.get()
             name3, loss3 = center_reg_metric.get()
             name4, loss4 = heatmap_loss_metric.get()
-            self._log.info('[Epoch {}] Training cost: {:.3f}, {}={:.3f}, {}={:.3f}, {}={:.3f}'.format(
-                epoch, (time.time()-tic), name2, loss2, name3, loss3, name4, loss4))
+            self._log.info(
+                '[Epoch {}] Training cost: {:.3f}, {}={:.3f}, {}={:.3f}, {}={:.3f}'.format(
+                    epoch, (time.time() - tic), name2, loss2, name3, loss3, name4, loss4))
             if (epoch % self._cfg.validation.interval == 0) or \
-               (self._cfg.train.save_interval and epoch % self._cfg.train.save_interval == 0) or \
-               (epoch == self._cfg.train.epochs - 1):
+                    (
+                            self._cfg.train.save_interval and epoch % self._cfg.train.save_interval == 0) or \
+                    (epoch == self._cfg.train.epochs - 1):
                 # consider reduce the frequency of validation to save time
                 map_name, mean_ap = self._evaluate()
                 val_msg = '\n'.join(['{}={}'.format(k, v) for k, v in zip(map_name, mean_ap)])
@@ -237,8 +263,10 @@ class CenterNetEstimator(BaseEstimator):
         mx.nd.waitall()
         self._net.hybridize()
         for batch in self._val_data:
-            data = gluon.utils.split_and_load(batch[0], ctx_list=self._ctx, batch_axis=0, even_split=False)
-            label = gluon.utils.split_and_load(batch[1], ctx_list=self._ctx, batch_axis=0, even_split=False)
+            data = gluon.utils.split_and_load(batch[0], ctx_list=self._ctx, batch_axis=0,
+                                              even_split=False)
+            label = gluon.utils.split_and_load(batch[1], ctx_list=self._ctx, batch_axis=0,
+                                               even_split=False)
             det_bboxes = []
             det_ids = []
             det_scores = []
@@ -255,10 +283,12 @@ class CenterNetEstimator(BaseEstimator):
                 # split ground truths
                 gt_ids.append(y.slice_axis(axis=-1, begin=4, end=5))
                 gt_bboxes.append(y.slice_axis(axis=-1, begin=0, end=4))
-                gt_difficults.append(y.slice_axis(axis=-1, begin=5, end=6) if y.shape[-1] > 5 else None)
+                gt_difficults.append(
+                    y.slice_axis(axis=-1, begin=5, end=6) if y.shape[-1] > 5 else None)
 
             # update metric
-            self._eval_metric.update(det_bboxes, det_ids, det_scores, gt_bboxes, gt_ids, gt_difficults)
+            self._eval_metric.update(det_bboxes, det_ids, det_scores, gt_bboxes, gt_ids,
+                                     gt_difficults)
         return self._eval_metric.get()
 
     def _save_params(self, current_map, epoch, save_interval, prefix):
@@ -268,10 +298,12 @@ class CenterNetEstimator(BaseEstimator):
         if current_map > self._best_map:
             self._best_map = current_map
             self._net.save_parameters('{:s}_best.params'.format(prefix, epoch, current_map))
-            with open(prefix+'_best_map.log', 'a') as f:
+            with open(prefix + '_best_map.log', 'a') as f:
                 f.write('{:04d}:\t{:.4f}\n'.format(epoch, current_map))
         if save_interval and epoch % save_interval == 0:
-            self._net.save_parameters('{:s}_{:04d}_{:.4f}.params'.format(prefix, epoch, current_map))
+            self._net.save_parameters(
+                '{:s}_{:04d}_{:.4f}.params'.format(prefix, epoch, current_map))
+
 
 @ex.automain
 def main(_config, _log):

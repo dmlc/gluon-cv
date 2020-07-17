@@ -5,12 +5,10 @@ import autogluon as ag
 from autogluon.core.space import Categorical
 from mxnet import gluon
 
-from gluoncv.auto.tasks.object_detection import ObjectDetection
 from gluoncv.auto.estimators.rcnn import FasterRCNNEstimator
-
+from gluoncv.auto.tasks.object_detection import ObjectDetection
 
 logger = logging.getLogger(__name__)
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='benchmark for object detection')
@@ -25,8 +23,8 @@ if __name__ == '__main__':
     parser.add_argument('--classes', type=tuple, default=None, help="classes for custom classes")
     parser.add_argument('--no-redownload', action='store_true',
                         help="whether need to re-download dataset")
-    parser.add_argument('--meta-arch', type=str, default='yolo3', choices=['yolo3', 'faster_rcnn'],
-                        help="Meta architecture of the model")
+    parser.add_argument('--meta-arch', type=str, default='faster_rcnn',
+                        choices=['yolo3', 'faster_rcnn'], help="Meta architecture of the model")
 
     args = parser.parse_args()
     logging.info('args: {}'.format(args))
@@ -49,11 +47,11 @@ if __name__ == '__main__':
         kwargs = {'num_trials': 30, 'epochs': ag.Categorical(30, 40, 50, 60),
                   'net': ag.Categorical('resnest101', 'resnest50'),
                   'meta_arch': args.meta_arch,
-                  'lr': ag.Categorical(0.02, 0.01, 0.005, 0.002, 2e-4, 5e-4), 'transfer': transfer,
+                  'lr': ag.Categorical(0.005, 0.002, 2e-4, 5e-4), 'transfer': transfer,
                   'data_shape': (640, 800), 'nthreads_per_trial': 16,
-                  'ngpus_per_trial': 8, 'batch_size': 16,
-                  'lr_decay_epoch': ag.Categorical('24,28', '35', '50,55', '40', '45', '55',
-                                                   '30, 35', '20'),
+                  'ngpus_per_trial': 4, 'batch_size': 4,
+                  'lr_decay_epoch': ag.Categorical([24, 28], [35], [50, 55], [40], [45], [55],
+                                                   [30, 35], [20]),
                   'warmup_iters': ag.Int(5, 500),
                   'wd': ag.Categorical(1e-4, 5e-4, 2.5e-4), 'syncbn': ag.Bool(),
                   'label_smooth': False, 'time_limits': time_limits, 'dist_ip_addrs': []}
@@ -74,7 +72,6 @@ if __name__ == '__main__':
                     'num_samples': -1, 'no_random_shape': False, 'no_wd': False, 'mixup': False,
                     'no_mixup_epochs': 20, 'label_smooth': False, 'syncbn': False,
                     'reuse_pred_weights': True, 'horovod': False}
-
     vars(args).update(default_args)
     vars(args).update(kwargs)
     task = ObjectDetection(args, FasterRCNNEstimator)
