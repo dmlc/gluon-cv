@@ -14,7 +14,7 @@ https://github.com/nianticlabs/monodepth2/blob/master/datasets/kitti_dataset.py
 from __future__ import absolute_import, division, print_function
 
 import os
-from gluoncv.utils.filesystem import try_import_skimage
+from ...utils.filesystem import try_import_skimage
 
 import numpy as np
 import PIL.Image as pil

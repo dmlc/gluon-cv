@@ -63,8 +63,8 @@ class MonoDepth2(nn.HybridBlock):
         return self.predict(x)
 
     def predict(self, x):
-        features = self.encoder(x)
-        outputs = self.decoder(features)
+        features = self.encoder.predict(x)
+        outputs = self.decoder.predict(features)
 
         return outputs
 

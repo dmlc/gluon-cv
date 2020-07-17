@@ -15,7 +15,7 @@ import numpy as np
 import mxnet as mx
 import mxnet.gluon.nn as nn
 
-from .layers import ConvBlock, Conv3x3, upsample
+from .layers import ConvBlock, Conv3x3
 
 
 class DepthDecoder(nn.HybridBlock):
@@ -75,18 +75,36 @@ class DepthDecoder(nn.HybridBlock):
 
     def hybrid_forward(self, F, input_features):
         # pylint: disable=unused-argument, missing-function-docstring
-        self.outputs = {}
+        self.outputs = []
 
         # decoder
         x = input_features[-1]
         for i in range(4, -1, -1):
             x = self.convs[("upconv", i, 0)](x)
-            x = [upsample(x)]
+            x = [F.UpSampling(x, scale=2, sample_type='nearest')]
+            if self.use_skips and i > 0:
+                x += [input_features[i - 1]]
+            x = F.concat(*x, dim=1)
+            x = self.convs[("upconv", i, 1)](x)
+            if i in self.scales:
+                self.outputs.append(self.sigmoid(self.convs[("dispconv", i)](x)))
+
+        return self.outputs
+
+    def predict(self, input_features):
+        # pylint: disable=unused-argument, missing-function-docstring
+        self.outputs = {}
+
+        # decoder
+        x = input_features[-1]
+        for i in range(4, -1, -1):
+            x = self.convs[("upconv", i, 0)].predict(x)
+            x = [mx.nd.UpSampling(x, scale=2, sample_type='nearest')]
             if self.use_skips and i > 0:
                 x += [input_features[i - 1]]
             x = mx.nd.concat(*x, dim=1)
-            x = self.convs[("upconv", i, 1)](x)
+            x = self.convs[("upconv", i, 1)].predict(x)
             if i in self.scales:
-                self.outputs[("disp", i)] = self.sigmoid(self.convs[("dispconv", i)](x))
+                self.outputs[("disp", i)] = self.sigmoid(self.convs[("dispconv", i)].predict(x))
 
         return self.outputs

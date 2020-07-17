@@ -124,6 +124,11 @@ class ConvBlock(nn.HybridBlock):
         out = self.nonlin(out)
         return out
 
+    def predict(self, x):
+        out = self.conv.predict(x)
+        out = self.nonlin(out)
+        return out
+
 
 class Conv3x3(nn.HybridBlock):
     """Layer to pad and convolve input
@@ -139,6 +144,16 @@ class Conv3x3(nn.HybridBlock):
                                   channels=int(out_channels), kernel_size=3)
 
     def hybrid_forward(self, F, x):
+        if self.use_refl:
+            out = self.pad(x)
+        else:
+            out = F.pad(x, mode='constant', constant_value=0,
+                        pad_width=(0, 0, 0, 0, 1, 1, 1, 1))
+
+        out = self.conv(out)
+        return out
+
+    def predict(self, x):
         if self.use_refl:
             out = self.pad(x)
         else:
@@ -190,6 +205,13 @@ class BackprojectDepth(nn.HybridBlock):
             self.pix_coords.set_data(mx.nd.concat(pix_coords, self.ones.data(), dim=1))
 
     def hybrid_forward(self, F, depth, inv_K, **kwargs):
+        cam_points = F.batch_dot(inv_K[:, :3, :3], self.pix_coords.data())
+        cam_points = depth.reshape(self.batch_size, 1, -1) * cam_points
+        cam_points = F.concat(cam_points, self.ones.data(), dim=1)
+
+        return cam_points
+
+    def predict(self, depth, inv_K, **kwargs):
         cam_points = mx.nd.batch_dot(inv_K[:, :3, :3], self.pix_coords.data())
         cam_points = depth.reshape(self.batch_size, 1, -1) * cam_points
         cam_points = mx.nd.concat(cam_points, self.ones.data(), dim=1)
@@ -210,6 +232,21 @@ class Project3D(nn.HybridBlock):
         self.eps = eps
 
     def hybrid_forward(self, F, points, K, T):
+        P = F.batch_dot(K, T)[:, :3, :]
+
+        cam_points = F.batch_dot(P, points)
+
+        cam_pix = cam_points[:, :2, :] / (cam_points[:, 2, :].expand_dims(1) + self.eps)
+        cam_pix = cam_pix.reshape(self.batch_size, 2, self.height, self.width)
+
+        x_src = cam_pix[:, 0, :, :] / (self.width - 1)
+        y_src = cam_pix[:, 1, :, :] / (self.height - 1)
+        pix_coords = F.concat(x_src.expand_dims(1), y_src.expand_dims(1), dim=1)
+        pix_coords = (pix_coords - 0.5) * 2
+
+        return pix_coords
+
+    def predict(self, points, K, T):
         P = mx.nd.batch_dot(K, T)[:, :3, :]
 
         cam_points = mx.nd.batch_dot(P, points)
@@ -226,12 +263,6 @@ class Project3D(nn.HybridBlock):
         pix_coords = (pix_coords - 0.5) * 2
 
         return pix_coords
-
-
-def upsample(x):
-    """Upsample input tensor by a factor of 2
-    """
-    return mx.nd.UpSampling(x, scale=2, sample_type='nearest')
 
 
 def get_smooth_loss(disp, img):
@@ -270,6 +301,22 @@ class SSIM(nn.HybridBlock):
         self.C2 = 0.03 ** 2
 
     def hybrid_forward(self, F, x, y):
+        x = self.refl(x)
+        y = self.refl(y)
+
+        mu_x = self.mu_x_pool(x)
+        mu_y = self.mu_y_pool(y)
+
+        sigma_x = self.sig_x_pool(x ** 2) - mu_x ** 2
+        sigma_y = self.sig_y_pool(y ** 2) - mu_y ** 2
+        sigma_xy = self.sig_xy_pool(x * y) - mu_x * mu_y
+
+        SSIM_n = (2 * mu_x * mu_y + self.C1) * (2 * sigma_xy + self.C2)
+        SSIM_d = (mu_x ** 2 + mu_y ** 2 + self.C1) * (sigma_x + sigma_y + self.C2)
+
+        return F.clip((1 - SSIM_n / SSIM_d) / 2, 0, 1)
+
+    def predict(self, x, y):
         x = self.refl(x)
         y = self.refl(y)
 

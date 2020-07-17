@@ -7,6 +7,7 @@
 from __future__ import absolute_import, division, print_function
 
 import os
+import time
 import logging
 
 from trainer import Trainer
@@ -27,4 +28,9 @@ if __name__ == "__main__":
     logger.info(opts)
 
     trainer = Trainer(opts, logger)
+
+    logger.info("Strat Training !")
+    tic = time.time()
     trainer.train()
+    logger.info("Training Finished! Total training time is %dh %dm" %
+                (int((time.time() - tic) / 3600), int((time.time() - tic) % 3600 / 60)) )

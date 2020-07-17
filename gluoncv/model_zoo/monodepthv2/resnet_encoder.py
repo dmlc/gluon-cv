@@ -8,7 +8,7 @@ import numpy as np
 
 from mxnet.gluon import nn
 from mxnet.context import cpu
-from gluoncv.model_zoo.resnetv1b import \
+from ...model_zoo.resnetv1b import \
     resnet18_v1b, resnet34_v1b, resnet50_v1s, resnet101_v1s, resnet152_v1s
 
 
@@ -50,6 +50,20 @@ class ResnetEncoder(nn.HybridBlock):
             self.num_ch_enc[1:] *= 4
 
     def hybrid_forward(self, F, input_image):
+        # pylint: disable=unused-argument, missing-function-docstring
+        self.features = []
+        x = (input_image - 0.45) / 0.225
+        x = self.encoder.conv1(x)
+        x = self.encoder.bn1(x)
+        self.features.append(self.encoder.relu(x))
+        self.features.append(self.encoder.layer1(self.encoder.maxpool(self.features[-1])))
+        self.features.append(self.encoder.layer2(self.features[-1]))
+        self.features.append(self.encoder.layer3(self.features[-1]))
+        self.features.append(self.encoder.layer4(self.features[-1]))
+
+        return self.features
+
+    def predict(self, input_image):
         # pylint: disable=unused-argument, missing-function-docstring
         self.features = []
         x = (input_image - 0.45) / 0.225

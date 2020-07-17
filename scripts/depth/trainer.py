@@ -131,8 +131,8 @@ class Trainer:
         self.save_opts()
 
         # for save best model
-        self.best_rmse = np.inf
-        self.best_model = copy.deepcopy(self.model)
+        self.best_delta1 = 0
+        self.best_model = self.model
 
     def train(self):
         """Run the entire training pipeline
@@ -164,7 +164,7 @@ class Trainer:
             tbar.set_description('Epoch %d, training loss %.3f' % \
                                  (self.epoch, train_loss / (batch_idx + 1)))
 
-            if batch_idx != 0 and batch_idx % self.opt.log_frequency == 0:
+            if batch_idx % self.opt.log_frequency == 0:
                 self.logger.info('Epoch %d iteration %04d/%04d: training loss %.3f' %
                                  (self.epoch, batch_idx, len(self.train_loader),
                                   train_loss / (batch_idx + 1)))
@@ -181,7 +181,17 @@ class Trainer:
             input_img = inputs[("color", 0, 0)]
 
         input_img = input_img.as_in_context(context=self.opt.ctx[0])
-        outputs = self.model(input_img)
+        self.model.hybridize()
+        decoder_output = self.model(input_img)
+
+        # for hybridize mode, the output of HybridBlock must is NDArray or List.
+        # Here, we have to transfer the output to dict type.
+        outputs = {}
+        idx = 0
+        for i in range(4, -1, -1):
+            if i in self.opt.scales:
+                outputs[("disp", i)] = decoder_output[idx]
+                idx += 1
 
         if eval_mode:
             _, depth = disp_to_depth(outputs[("disp", 0)],
@@ -239,11 +249,11 @@ class Trainer:
 
         mx.nd.waitall()
         if self.epoch % self.opt.save_frequency == 0:
-            self.save_checkpoint(rmse)
+            self.save_checkpoint(delta_1)
 
-        if rmse < self.best_rmse:
-            self.best_model = copy.deepcopy(self.model)
-            self.best_rmse = rmse
+        if delta_1 > self.best_delta1:
+            self.best_model = self.model
+            self.best_delta1 = delta_1
 
     def generate_images_pred(self, inputs, outputs):
         for scale in self.opt.scales:
@@ -433,13 +443,13 @@ class Trainer:
         with open(os.path.join(models_dir, 'opt.json'), 'w') as f:
             json.dump(to_save, f, indent=2)
 
-    def save_checkpoint(self, rmse):
+    def save_checkpoint(self, delta_1):
         """Save Checkpoint"""
         save_folder = os.path.join(self.log_path, "models", "weights")
         if not os.path.exists(save_folder):
             os.makedirs(save_folder)
 
-        filename = 'epoch_%04d_RMSE_%2.4f.params' % (self.epoch, rmse)
+        filename = 'epoch_%04d_Delta1_%2.4f.params' % (self.epoch, delta_1)
         filepath = os.path.join(save_folder, filename)
         self.model.save_parameters(filepath)
 
