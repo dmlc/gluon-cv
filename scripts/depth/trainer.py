@@ -150,7 +150,7 @@ class Trainer:
         """Run the entire training pipeline
         """
         self.logger.info('Starting Epoch: %d' % self.opt.start_epoch)
-        self.logger.info('Total Epochs: %d' % self.opt.epochs)
+        self.logger.info('Total Epochs: %d' % self.opt.num_epochs)
 
         self.epoch = 0
         for self.epoch in range(self.opt.start_epoch, self.opt.num_epochs):
