@@ -102,13 +102,30 @@ def evaluate(opt):
             assert "Must choose a model from model_zoo, " \
                    "please provide the model_zoo using --model_zoo"
 
+        # use hybridize mode
+        if opt.hybridize:
+            model.hybridize()
+
         ############################ inference ############################
         pred_disps = []
         tbar = tqdm(dataloader)
         for i, data in enumerate(tbar):
             input_color = data[("color", 0, 0)]
             input_color = input_color.as_in_context(context=opt.ctx[0])
-            outputs = model.predict(input_color)
+
+            if opt.hybridize:
+                decoder_output = model(input_color)
+
+                # for hybridize mode, the output of HybridBlock must is NDArray or List.
+                # Here, we have to transfer the output to dict type.
+                outputs = {}
+                idx = 0
+                for i in range(4, -1, -1):
+                    if i in opt.scales:
+                        outputs[("disp", i)] = decoder_output[idx]
+                        idx += 1
+            else:
+                outputs = model.predict(input_color)
 
             pred_disp, _ = disp_to_depth(outputs[("disp", 0)], opt.min_depth, opt.max_depth)
             pred_disp = pred_disp.as_in_context(mx.cpu())[:, 0].asnumpy()

@@ -29,8 +29,8 @@ class MonoDataset(dataset.Dataset):
     data_path : string
         Path to dataset folder.
     filenames : string
-        Path to splite file.
-        For exmaple: '$(HOME)/.mxnet/datasets/kitti/splits/eigen_full/train_files.txt'
+        Path to split file.
+        For example: '$(HOME)/.mxnet/datasets/kitti/splits/eigen_full/train_files.txt'
     height : int
         The height for input images.
     width : int
@@ -40,7 +40,7 @@ class MonoDataset(dataset.Dataset):
         an integer (e.g. 0, -1, or 1) representing the temporal step relative to 'index',
         or "s" for the opposite image in the stereo pair.
     num_scales : int
-        The number of scales of the image relative to the fullsize image.
+        The number of scales of the image relative to the full-size image.
     is_train : bool
         Whether use Data Augmentation. Default is: False
     img_ext : string
@@ -116,7 +116,7 @@ class MonoDataset(dataset.Dataset):
         or
             "s" for the opposite image in the stereo pair.
 
-        <scale> is an integer representing the scale of the image relative to the fullsize image:
+        <scale> is an integer representing the scale of the image relative to the full-size image:
             -1      images at native resolution as loaded from disk
             0       images resized to (self.width,      self.height     )
             1       images resized to (self.width // 2, self.height // 2)
