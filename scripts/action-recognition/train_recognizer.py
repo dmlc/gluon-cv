@@ -336,7 +336,7 @@ def main():
     net.collect_params().reset_ctx(context)
     logger.info(net)
 
-    if opt.resume_params is not '':
+    if opt.resume_params != '':
         net.load_parameters(opt.resume_params, ctx=context)
         print('Continue training from model %s.' % (opt.resume_params))
 
@@ -445,7 +445,7 @@ def main():
             for p in params:
                 p.grad_req = 'add'
 
-        if opt.resume_states is not '':
+        if opt.resume_states != '':
             trainer.load_states(opt.resume_states)
 
         if opt.use_amp:
