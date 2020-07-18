@@ -29,7 +29,6 @@ if __name__ == "__main__":
 
     trainer = Trainer(opts, logger)
 
-    logger.info("Strat Training !")
     tic = time.time()
     trainer.train()
     logger.info("Training Finished! Total training time is %dh %dm" %

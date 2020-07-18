@@ -57,9 +57,17 @@ class Trainer:
         else:
             assert "Must choose a model from model_zoo, " \
                    "please provide the model_zoo using --model_zoo"
+        self.logger.info(self.model)
+
+        # resume checkpoint if needed
+        if self.opt.resume is not None:
+            if os.path.isfile(self.opt.resume):
+                logger.info('Resume model: %s' % self.opt.resume)
+                self.model.load_parameters(self.opt.resume, ctx=self.opt.ctx)
+            else:
+                raise RuntimeError("=> no checkpoint found at '{}'".format(self.opt.resume))
 
         self.parameters_to_train = self.model.collect_params()
-        self.logger.info(self.model)
 
         if self.opt.hybridize:
             self.model.hybridize()
@@ -97,8 +105,9 @@ class Trainer:
         ################### optimization setting ###################
         self.lr_scheduler = LRSequential([
             LRScheduler('step', base_lr=self.opt.learning_rate,
-                        nepochs=self.opt.num_epochs, iters_per_epoch=len(train_dataset),
-                        step_epoch=[self.opt.scheduler_step_size])
+                        nepochs=self.opt.num_epochs - self.opt.warmup_epochs,
+                        iters_per_epoch=len(train_dataset),
+                        step_epoch=[self.opt.scheduler_step_size - self.opt.warmup_epochs])
         ])
         optimizer_params = {'lr_scheduler': self.lr_scheduler,
                             'learning_rate': self.opt.learning_rate}
@@ -140,8 +149,11 @@ class Trainer:
     def train(self):
         """Run the entire training pipeline
         """
+        self.logger.info('Starting Epoch: %d' % self.opt.start_epoch)
+        self.logger.info('Total Epochs: %d' % self.opt.epochs)
+
         self.epoch = 0
-        for self.epoch in range(self.opt.num_epochs):
+        for self.epoch in range(self.opt.start_epoch, self.opt.num_epochs):
             self.run_epoch()
             self.val()
 

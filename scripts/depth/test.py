@@ -94,8 +94,8 @@ def evaluate(opt):
                                   pretrained=True)
             else:
                 # loading weights from customer
-                assert opt.resume is not None, '=> Please provide the checkpoint using --resume'
-                weights_path = os.path.join(opt.load_weights_folder, opt.resume)
+                assert opt.eval_model is not None, '=> Please provide the checkpoint using --eval_model'
+                weights_path = os.path.join(opt.load_weights_folder, opt.eval_model)
                 model = get_model(opt.model_zoo, pretrained_base=False, ctx=opt.ctx)
                 model.load_parameters(weights_path, ctx=opt.ctx)
         else:

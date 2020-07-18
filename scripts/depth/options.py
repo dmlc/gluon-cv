@@ -93,6 +93,10 @@ class MonodepthOptions:
                                  type=int,
                                  help="number of epochs",
                                  default=20)
+        self.parser.add_argument('--start_epoch', type=int, default=0,
+                                 metavar='N', help='start epochs (default:0)')
+        self.parser.add_argument('--warmup_epochs', type=int, default=0,
+                                 help='number of warmup epochs.')
         self.parser.add_argument("--scheduler_step_size",
                                  type=int,
                                  help="step size of the scheduler",
@@ -133,6 +137,8 @@ class MonodepthOptions:
         self.parser.add_argument("--load_weights_folder",
                                  type=str,
                                  help="name of model to load")
+        self.parser.add_argument('--eval_model', type=str, default=None,
+                                 help='the name of evaluation model')
         self.parser.add_argument('--resume', type=str, default=None,
                                  help='put the path to resuming file if needed')
 
