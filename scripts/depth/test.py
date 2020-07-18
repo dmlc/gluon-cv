@@ -108,7 +108,7 @@ def evaluate(opt):
         for i, data in enumerate(tbar):
             input_color = data[("color", 0, 0)]
             input_color = input_color.as_in_context(context=opt.ctx[0])
-            outputs = model(input_color)
+            outputs = model.predict(input_color)
 
             pred_disp, _ = disp_to_depth(outputs[("disp", 0)], opt.min_depth, opt.max_depth)
             pred_disp = pred_disp.as_in_context(mx.cpu())[:, 0].asnumpy()

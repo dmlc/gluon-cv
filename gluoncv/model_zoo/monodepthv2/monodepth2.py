@@ -113,7 +113,7 @@ def get_monodepth2(backbone='resnet18', pretrained_base=True, num_input_images=1
                        ctx=ctx, **kwargs)
 
     if pretrained:
-        from gluoncv.model_zoo.model_store import get_model_file
+        from ...model_zoo.model_store import get_model_file
         model.load_parameters(
             get_model_file('monodepth2_%s_%s' % (backbone, acronyms[pretrained_model]),
                            tag=pretrained, root=root),

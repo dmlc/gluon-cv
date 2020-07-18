@@ -34,6 +34,8 @@ class MonodepthOptions:
                                  type=int,
                                  help="scales used in the loss",
                                  default=[0, 1, 2, 3])
+        self.parser.add_argument('--hybridize', action="store_true",
+                                 help='whether to turn on model hybridization')
 
         # DATA options
         self.parser.add_argument("--split",

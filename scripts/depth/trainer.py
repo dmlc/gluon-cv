@@ -61,6 +61,9 @@ class Trainer:
         self.parameters_to_train = self.model.collect_params()
         self.logger.info(self.model)
 
+        if self.opt.hybridize:
+            self.model.hybridize()
+
         ######################### dataloader #########################
         datasets_dict = {"kitti": KITTIRAWDataset,
                          "kitti_odom": KITTIOdomDataset}
@@ -181,7 +184,6 @@ class Trainer:
             input_img = inputs[("color", 0, 0)]
 
         input_img = input_img.as_in_context(context=self.opt.ctx[0])
-        self.model.hybridize()
         decoder_output = self.model(input_img)
 
         # for hybridize mode, the output of HybridBlock must is NDArray or List.
