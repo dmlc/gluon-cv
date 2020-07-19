@@ -101,6 +101,10 @@ Object Detection
     .. card::
         :title: Skip Finetuning by reusing part of pre-trained model
         :link: ../build/examples_detection/skip_fintune.html
+    
+    .. card::
+        :title: Object Detection on NVIDIA Jetson module
+        :link: ../build/examples_detection/demo_jetson.html
 
 
 Instance Segmentation
