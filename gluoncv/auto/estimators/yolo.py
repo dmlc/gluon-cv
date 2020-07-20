@@ -26,7 +26,6 @@ from ...utils.metrics.coco_detection import COCODetectionMetric
 
 from ..data.coco_detection import coco_detection, load_coco_detection
 from .base_estimator import BaseEstimator, set_default
-from .common import logging
 
 from mxnet.contrib import amp
 try:
@@ -55,19 +54,19 @@ def yolo_net_default():
 
 @train.config
 def train_config():
-    gpus = (0, 1, 2, 3, 4, 5, 6, 7)
+    gpus = (0,)       # if using 8 gpus, you can set gpus = (0, 1, 2, 3, 4, 5, 6, 7)
     pretrained_base = True  # whether load the imagenet pre-trained base
-    batch_size = 32
+    batch_size = 4    
     epochs = 140
     lr = 1.25e-4  # learning rate
     lr_decay = 0.1  # decay rate of learning rate.
-    lr_decay_epoch = (90, 120)  # epochs at which learning rate decays
+    lr_decay_epoch = "160,180"  # epochs at which learning rate decays
     lr_mode = 'step'  # learning rate scheduler mode. options are step, poly and cosine
     warmup_lr = 0.0  # starting warmup learning rate.
     warmup_epochs = 0  # number of warmup epochs
     amp  = False
     horovod = False 
-    save_prefix = False
+    save_prefix = ''
     resume = ''
     data_shape = 416
     num_samples =  -1
@@ -84,6 +83,10 @@ def train_config():
     save_interval = 10
     save_prefix = ''
     seed  = 233
+    num_workers = 4
+    no_wd = False
+    label_smooth = False
+    momentum = 0.9
 
 @valid.config
 def valid_config():
@@ -120,7 +123,7 @@ class YoloEstimator(BaseEstimator):
             self.ctx = self.ctx if self.ctx else [mx.cpu()]
         
         # network
-        net_name = '_'.join(('yolo3', self._cfg.yolo_net.base_network, args.dataset))
+        net_name = '_'.join(('yolo3', self._cfg.yolo_net.base_network, self._cfg.dataset))
         self._cfg.train.save_prefix += net_name
 
         if self._cfg.yolo_net.syncbn and len(ctx) > 1:
@@ -129,7 +132,7 @@ class YoloEstimator(BaseEstimator):
             async_net = get_model(net_name, pretrained_base=False)  # used by cpu worker
         else:
             self.net = get_model(net_name, pretrained_base=True)
-            async_net = net
+            async_net = self.net
         if self._cfg.train.resume.strip():
             self.net.load_parameters(self._cfg.train.resume.strip())
             async_net.load_parameters(self._cfg.train.resume.strip())
@@ -184,14 +187,14 @@ class YoloEstimator(BaseEstimator):
 
         batch_size = (self._cfg.trainbatch_size // hvd.size()) if self._cfg.train.horovod else self._cfg.train.batch_size
         self.train_dataset, self.val_dataset, self.eval_metric = get_dataset(self._cfg.dataset)
-        train_data, val_data = get_dataloader(
-                                async_net, train_dataset, val_dataset, 
+        self.train_data, self.val_data = get_dataloader(
+                                async_net, self.train_dataset, self.val_dataset, 
                                 self._cfg.train.data_shape, batch_size, 
                                 self._cfg.train.num_workers)
     
     def _fit(self):
         """Training pipeline"""
-        self.net.collect_params().reset_ctx(ctx)
+        self.net.collect_params().reset_ctx(self.ctx)
         if self._cfg.train.no_wd:
             for k, v in self.net.collect_params('.*beta|.*gamma|.*bias').items():
                 v.wd_mult = 0.0
@@ -204,9 +207,9 @@ class YoloEstimator(BaseEstimator):
                                         self._cfg.train.epochs, 
                                         self._cfg.train.lr_decay_period))
         else:
-            lr_decay_epoch = [int(i) for i in args.lr_decay_epoch.split(',')]
+            lr_decay_epoch = [int(i) for i in self._cfg.train.lr_decay_epoch.split(',')]
         
-        lr_decay_epoch = [e - args.warmup_epochs for e in lr_decay_epoch]
+        lr_decay_epoch = [e - self._cfg.train.warmup_epochs for e in lr_decay_epoch]
         num_batches = self._cfg.train.num_samples // self._cfg.train.batch_size
         lr_scheduler = LRSequential([
             LRScheduler('linear', base_lr=0, target_lr=self._cfg.train.lr,
@@ -251,30 +254,28 @@ class YoloEstimator(BaseEstimator):
         logging.basicConfig()
         logger = logging.getLogger()
         logger.setLevel(logging.INFO)
-        log_file_path = args.save_prefix + '_train.log'
+        log_file_path = self._cfg.train.save_prefix + '_train.log'
         log_dir = os.path.dirname(log_file_path)
         if log_dir and not os.path.exists(log_dir):
             os.makedirs(log_dir)
         fh = logging.FileHandler(log_file_path)
         logger.addHandler(fh)
-        logger.info(args)
-        logger.info('Start training from [Epoch {}]'.format(args.start_epoch))
+        logger.info('Start training from [Epoch {}]'.format(self._cfg.train.start_epoch))
         best_map = [0]
-        for epoch in range(args.start_epoch, args.epochs):
-            if args.mixup:
+        for epoch in range(self._cfg.train.start_epoch, self._cfg.train.epochs):
+            if self._cfg.train.mixup:
                 # TODO(zhreshold): more elegant way to control mixup during runtime
                 try:
                     train_data._dataset.set_mixup(np.random.beta, 1.5, 1.5)
                 except AttributeError:
                     train_data._dataset._data.set_mixup(np.random.beta, 1.5, 1.5)
-                if epoch >= args.epochs - args.no_mixup_epochs:
+                if epoch >= self._cfg.train.epochs - self._cfg.train.no_mixup_epochs:
                     try:
                         train_data._dataset.set_mixup(None)
                     except AttributeError:
                         train_data._dataset._data.set_mixup(None)
         
         # set up logger
-        logging.basicConfig()
         self.logger = logging.getLogger()
         self.logger.setLevel(logging.INFO)
         log_file_path = self._cfg.train.save_prefix + '_train.log'
@@ -283,8 +284,7 @@ class YoloEstimator(BaseEstimator):
             os.makedirs(log_dir)
         fh = logging.FileHandler(log_file_path)
         self.logger.addHandler(fh)
-        self.logger.info(args)
-        self.logger.info('Start training from [Epoch {}]'.format(args.start_epoch))
+        self.logger.info('Start training from [Epoch {}]'.format(self._cfg.train.start_epoch))
         best_map = [0]
 
         for epoch in range(self._cfg.train.start_epoch, self._cfg.train.epochs):
@@ -305,7 +305,7 @@ class YoloEstimator(BaseEstimator):
             mx.nd.waitall()
             self.net.hybridize()
             for i, batch in enumerate(self.train_data):
-                data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
+                data = gluon.utils.split_and_load(batch[0], ctx_list=self.ctx, batch_axis=0)
                 # objectness, center_targets, scale_targets, weights, class_targets
                 fixed_targets = [gluon.utils.split_and_load(batch[it], ctx_list=self.ctx, batch_axis=0) for it in range(1, 6)]
                 gt_boxes = gluon.utils.split_and_load(batch[6], ctx_list=self.ctx, batch_axis=0)
@@ -328,19 +328,19 @@ class YoloEstimator(BaseEstimator):
                     else:
                         autograd.backward(sum_losses)
 
-                self.trainer.step(batch_size)
+                trainer.step(self._cfg.train.batch_size)
                 if (not self._cfg.train.horovod or hvd.rank() == 0):
                     obj_metrics.update(0, obj_losses)
                     center_metrics.update(0, center_losses)
                     scale_metrics.update(0, scale_losses)
                     cls_metrics.update(0, cls_losses)
-                    if self._cfg.train.log_interval and not (i + 1) % self._cfg_train.log_interval:
+                    if self._cfg.train.log_interval and not (i + 1) % self._cfg.train.log_interval:
                         name1, loss1 = obj_metrics.get()
                         name2, loss2 = center_metrics.get()
                         name3, loss3 = scale_metrics.get()
                         name4, loss4 = cls_metrics.get()
                         logger.info('[Epoch {}][Batch {}], LR: {:.2E}, Speed: {:.3f} samples/sec, {}={:.3f}, {}={:.3f}, {}={:.3f}, {}={:.3f}'.format(
-                            epoch, i, trainer.learning_rate, args.batch_size/(time.time()-btic), name1, loss1, name2, loss2, name3, loss3, name4, loss4))
+                            epoch, i, trainer.learning_rate, self._cfg.train.batch_size/(time.time()-btic), name1, loss1, name2, loss2, name3, loss3, name4, loss4))
                     btic = time.time()
 
             if (not self._cfg.train.horovod or hvd.rank() == 0):
@@ -415,7 +415,6 @@ class YoloEstimator(BaseEstimator):
 def main(_config, _log):
     # main is the commandline entry for user w/o coding
     c = YoloEstimator(_config, _log)
-    #c = YoloEstimator()
     c.fit()
 
 
