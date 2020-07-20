@@ -21,7 +21,7 @@ def parse_args():
     """DET dataset parameter."""
     parser = argparse.ArgumentParser(
         description='Download DET dataset and prepare for tracking')
-    parser.add_argument('--download-dir', type=str, default='~/.mxnet/datasets/det/',
+    parser.add_argument('--download-dir', type=str, default='~/.mxnet/datasets/tracking/det/',
                         help='dataset directory on disk')
     parser.add_argument('--instance-size', type=int, default=511, help='instance image size')
     parser.add_argument('--num-threads', type=int, default=12, help='threads number')
