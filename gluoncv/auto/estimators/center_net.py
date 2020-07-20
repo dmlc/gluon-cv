@@ -22,7 +22,7 @@ from ...utils import LRScheduler, LRSequential
 __all__ = ['CenterNetEstimator']
 
 center_net = Ingredient('center_net')
-train = Ingredient('training')
+train = Ingredient('train')
 validation = Ingredient('validation')
 
 
