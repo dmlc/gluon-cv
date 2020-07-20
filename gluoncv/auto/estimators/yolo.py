@@ -39,8 +39,8 @@ from sacred import Experiment, Ingredient
 __all__ = ['YoloEstimator']
 
 yolo_net = Ingredient('yolo_net')
-train = Ingredient('training')
-valid = Ingredient('validation')
+train = Ingredient('train')
+valid = Ingredient('valid')
 
 @yolo_net.config
 def yolo_net_default():
@@ -83,10 +83,11 @@ def train_config():
     val_interval = 1 
     save_interval = 10
     save_prefix = ''
+    seed  = 233
 
 @valid.config
 def valid_config():
-    pass
+    test = 1
 
 ex = Experiment('yolo_net_default',
                 ingredients=[coco_detection, train, valid, yolo_net])
@@ -116,7 +117,7 @@ class YoloEstimator(BaseEstimator):
             self.ctx = [mx.gpu(hvd.local_rank())]
         else:
             self.ctx = [mx.gpu(int(i)) for i in self._cfg.train.gpus] 
-            self.ctx = ctx if ctx else [mx.cpu()]
+            self.ctx = self.ctx if self.ctx else [mx.cpu()]
         
         # network
         net_name = '_'.join(('yolo3', self._cfg.yolo_net.base_network, args.dataset))
@@ -411,11 +412,10 @@ class YoloEstimator(BaseEstimator):
 
 
 @ex.automain
-#def main(_config, _log):
-def main():
+def main(_config, _log):
     # main is the commandline entry for user w/o coding
-    #c = YoloEstimator(_config, _log)
-    c = YoloEstimator()
+    c = YoloEstimator(_config, _log)
+    #c = YoloEstimator()
     c.fit()
 
 
