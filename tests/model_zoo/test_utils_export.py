@@ -37,6 +37,8 @@ def test_export_model_zoo():
             continue
         if 'danet' in model or 'fastscnn' in model:
             continue
+        if 'monodepth2' in model:
+            continue
 
         try:
             gcv.utils.export_block(model, gcv.model_zoo.get_model(model, pretrained=True),
