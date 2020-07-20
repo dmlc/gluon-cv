@@ -1,4 +1,4 @@
-"""2. Train SiamRPN on COCO、VID、DET、Youtube_bb
+"""02. Train SiamRPN on COCO、VID、DET、Youtube_bb
 ==================================================
 
 This is a Single Obejct Tracking tutorial using Gluon CV toolkit, a step-by-step example.

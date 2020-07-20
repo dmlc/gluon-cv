@@ -277,12 +277,31 @@ Object Tracking
         :link: ../build/examples_tracking/demo_SiamRPN.html
 
         Estimate Single Object Tracking in real-world video with pre-trained Object Tracking models.
-    
+
     .. card::
-        :title: Dive Deep intp Training SiamRPN models
+        :title: Dive Deep into Training SiamRPN Models
         :link: ../build/examples_tracking/train_siamrpn.html
 
         SiamRPN training on VID、DET、COCO、Youtube_bb and test on Otb2015
+
+
+Depth Prediction
+---------------------
+
+.. container:: cards
+
+    .. card::
+        :title: Pre-trained Monodepth2 Models
+        :link: ../build/examples_depth/demo_monodepth2.html
+
+        Predict depth from a single image using Monodepth2.
+
+    .. card::
+        :title: Dive Deep into Training Monodepth2 Models
+        :link: ../build/examples_depth/train_monodepth2.html
+
+        Monodepth2 training on KITTI dataset.
+
 
 Dataset Preparation
 -------------------
@@ -377,6 +396,7 @@ Deployment
     ../build/examples_pose/index
     ../build/examples_action_recognition/index
     ../build/examples_tracking/index
+    ../build/examples_depth/index
     ../build/examples_datasets/index
     ../build/examples_distributed/index
     ../build/examples_deployment/index
