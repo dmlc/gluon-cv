@@ -7,9 +7,10 @@ from autogluon.task import BaseTask
 from autogluon.utils import collect_params
 
 from ... import utils as gutils
+from ..estimators.base_estimator import ConfigDict
+
 
 __all__ = ['ObjectDetection']
-
 
 @ag.args()
 def _train_object_detection(args, reporter):
@@ -20,7 +21,7 @@ def _train_object_detection(args, reporter):
     if args.meta_arch == 'faster_rcnn':
         config = {'dataset': args.dataset, 'gpus': [0, 1, 2, 3], 'resume': '', 'save_prefix': '',
                   'save_interval': 1, 'horovod': False, 'num_workers': 16, 'kv_store': 'nccl',
-                  'disable_hybridization': False, 'logdir': None, 'seed': 826994795,
+                  'disable_hybridization': False, 'seed': 826994795,
                   'train': {'pretrained_base': True, 'batch_size': args.batch_size,
                             'start_epoch': 0, 'epochs': args.epochs, 'lr': args.lr, 'lr_decay': 0.1,
                             'lr_decay_epoch': args.lr_decay_epoch, 'lr_mode': 'step',
@@ -31,7 +32,7 @@ def _train_object_detection(args, reporter):
                             'rcnn_pos_iou_thresh': 0.5, 'rcnn_pos_ratio': 0.25,
                             'rcnn_smoothl1_rho': 0.001, 'log_interval': 100, 'seed': 233,
                             'verbose': False, 'mixup': False, 'no_mixup_epochs': 20,
-                            'executor_threads': 4, },
+                            'executor_threads': 4},
                   'validation': {'rpn_test_pre_nms': 6000, 'rpn_test_post_nms': 1000,
                                  'val_interval': 1},
                   'faster_rcnn': {'backbone': args.net, 'nms_thresh': 0.5, 'nms_topk': -1,
@@ -51,24 +52,36 @@ def _train_object_detection(args, reporter):
     else:
         raise NotImplementedError(args.meta_arch, 'is not implemented.')
 
-    if args.meta_arch == 'faster_rcnn':
-        estimator = args.estimator(config, reporter=reporter)
+    # disable auto_resume for HPO tasks
+    if 'train' in config:
+        config['train']['auto_resume'] = False
     else:
-        raise NotImplementedError('%s' % args.meta_arch)
+        config['train'] = {'auto_resume': False}
 
-    # training
-    estimator.fit()
+    try:
+        if args.meta_arch == 'faster_rcnn':
+            estimator = args.estimator(config, reporter=reporter)
+        else:
+            raise NotImplementedError('%s' % args.meta_arch)
+        # training
+        estimator.fit()
+    except Exception as e:
+        return str(e)
 
     if args.final_fit:
         return {'model_params': collect_params(estimator.net)}
+
+    return {}
 
 
 class ObjectDetection(BaseTask):
     def __init__(self, config, estimator, logger=None):
         super(ObjectDetection, self).__init__()
         self._logger = logger if logger is not None else logging.getLogger(__name__)
+        self._logger.setLevel(logging.INFO)
         self._estimator = estimator
-        self._config = config
+        #self._config = config
+        self._config = ConfigDict(config)
         nthreads_per_trial = get_cpu_count() if self._config.nthreads_per_trial > get_cpu_count() \
             else self._config.nthreads_per_trial
         if self._config.ngpus_per_trial > get_gpu_count():
@@ -79,7 +92,7 @@ class ObjectDetection(BaseTask):
 
         _train_object_detection.register_args(
             meta_arch=self._config.meta_arch, dataset=self._config.dataset, net=self._config.net,
-            lr=self._config.lr, loss=self._config.loss, num_gpus=self._config.ngpus_per_trial,
+            lr=self._config.lr,  num_gpus=self._config.ngpus_per_trial,
             batch_size=self._config.batch_size, split_ratio=self._config.split_ratio,
             epochs=self._config.epochs, num_workers=self._config.nthreads_per_trial,
             hybridize=self._config.hybridize, verbose=self._config.verbose, final_fit=False,
@@ -125,7 +138,7 @@ class ObjectDetection(BaseTask):
                                self._config.scheduler_options)
         self._logger.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> finish model fitting")
         best_config = sample_config(_train_object_detection.args, results['best_config'])
-        self._logger.info('The best config: {}'.format(results['best_config']))
+        self._logger.info('The best config: {}'.format(best_config))
 
         estimator = self._estimator(best_config)
         estimator.put_parameters(results.pop('model_params'))

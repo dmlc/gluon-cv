@@ -114,7 +114,7 @@ class BaseEstimator:
         self._logger.setLevel(logging.INFO)
 
         # finalize the config
-        r = self._ex.run('_get_config', config_updates=config, options={'--loglevel': 50})
+        r = self._ex.run('_get_config', config_updates=config, options={'--loglevel': 50, '--force': True})
         print_config(r)
 
         # logdir
@@ -131,7 +131,7 @@ class BaseEstimator:
             # compare config, if altered, then skip auto resume
             if prefix:
                 self._ex.add_config(os.path.join(self._logdir, prefix, 'config.yaml'))
-                r2 = self._ex.run('_get_config', options={'--loglevel': 50})
+                r2 = self._ex.run('_get_config', options={'--loglevel': 50, '--force': True})
                 if _compare_config(r2.config, r.config):
                     self._logger.info('Auto resume detected previous run: {}'.format(prefix))
                     r.config['seed'] = r2.config['seed']

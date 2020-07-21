@@ -82,7 +82,7 @@ class FasterRCNNEstimator(BaseEstimator):
                 norm_kwargs = {'num_devices': len(self.ctx)}
                 sym_norm_layer = mx.sym.contrib.SyncBatchNorm
                 sym_norm_kwargs = {'ndev': len(self.ctx)}
-            elif self._cfg.norm_layer == 'gn':
+            elif self._cfg.faster_rcnn.norm_layer == 'gn':
                 norm_layer = gluon.nn.GroupNorm
                 norm_kwargs = {'groups': 8}
                 sym_norm_layer = mx.sym.GroupNorm
@@ -229,14 +229,14 @@ class FasterRCNNEstimator(BaseEstimator):
         """
         Fit faster R-CNN models.
         """
-        self._cfg.kv_store = 'device' if (self._cfg.amp and 'nccl' in self._cfg.kv_store) \
+        self._cfg.kv_store = 'device' if (self._cfg.faster_rcnn.amp and 'nccl' in self._cfg.kv_store) \
             else self._cfg.kv_store
         kv = mx.kvstore.create(self._cfg.kv_store)
         self.net.collect_params().setattr('grad_req', 'null')
         self.net.collect_train_params().setattr('grad_req', 'write')
         optimizer_params = {'learning_rate': self._cfg.train.lr, 'wd': self._cfg.train.wd,
                             'momentum': self._cfg.train.momentum}
-        if self._cfg.amp:
+        if self._cfg.faster_rcnn.amp:
             optimizer_params['multi_precision'] = True
         if self._cfg.horovod:
             hvd.broadcast_parameters(self.net.collect_params(), root_rank=0)
@@ -249,9 +249,9 @@ class FasterRCNNEstimator(BaseEstimator):
                 self.net.collect_train_params(),  # fix batchnorm, fix first stage, etc...
                 'sgd',
                 optimizer_params,
-                update_on_kvstore=(False if self._cfg.amp else None), kvstore=kv)
+                update_on_kvstore=(False if self._cfg.faster_rcnn.amp else None), kvstore=kv)
 
-        if self._cfg.amp:
+        if self._cfg.faster_rcnn.amp:
             self._cfg.init_trainer(trainer)
 
         # lr decay policy
@@ -260,7 +260,7 @@ class FasterRCNNEstimator(BaseEstimator):
             [float(ls) for ls in self._cfg.train.lr_decay_epoch])
         lr_warmup = float(self._cfg.train.lr_warmup)  # avoid int division
 
-        if self._cfg.verbose:
+        if self._cfg.train.verbose:
             self._logger.info('Trainable parameters:')
             self._logger.info(self.net.collect_train_params().keys())
         self._logger.info('Start training from [Epoch {}]'.format(self._cfg.train.start_epoch))
@@ -268,7 +268,7 @@ class FasterRCNNEstimator(BaseEstimator):
         for epoch in range(self._cfg.train.start_epoch, self._cfg.train.epochs):
             rcnn_task = ForwardBackwardTask(self.net, trainer, self.rpn_cls_loss, self.rpn_box_loss,
                                             self.rcnn_cls_loss, self.rcnn_box_loss, mix_ratio=1.0,
-                                            amp_enabled=self._cfg.amp)
+                                            amp_enabled=self._cfg.faster_rcnn.amp)
             executor = Parallel(self._cfg.train.executor_threads,
                                 rcnn_task) if not self._cfg.horovod else None
             mix_ratio = 1.0
