@@ -74,10 +74,10 @@ class OrigHRBottleneck(nn.HybridBlock):
         super(OrigHRBottleneck, self).__init__(**kwargs)
         self.body = nn.HybridSequential(prefix='')
         # add use_bias=False here to match with the original implementation
-        self.body.add(nn.Conv2D(channels//4, kernel_size=1, strides=stride, use_bias=False))
+        self.body.add(nn.Conv2D(channels//4, kernel_size=1, strides=1, use_bias=False))
         self.body.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
         self.body.add(nn.Activation('relu'))
-        self.body.add(_conv3x3(channels//4, 1, channels//4))
+        self.body.add(_conv3x3(channels//4, stride, channels//4))
         self.body.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
         self.body.add(nn.Activation('relu'))
         # add use_bias=False here to match with the original implementation
