@@ -108,7 +108,7 @@ class _DeepLabHead(HybridBlock):
         self.aspp.concurent[-1]._up_kwargs['width'] = w
         x = self.aspp(x)
         return self.block(x)
-        
+
 
 def _ASPPConv(in_channels, out_channels, atrous_rate, norm_layer, norm_kwargs):
     block = nn.HybridSequential()
@@ -207,6 +207,9 @@ def get_deeplab(dataset='pascal_voc', backbone='resnet50', pretrained=False,
     }
     from ..data import datasets
     # infer number of classes
+    if pretrained:
+        kwargs['pretrained_base'] = False
+    kwargs['root'] = root
     model = DeepLabV3(datasets[dataset].NUM_CLASS, backbone=backbone, ctx=ctx, **kwargs)
     model.classes = datasets[dataset].CLASSES
     if pretrained:

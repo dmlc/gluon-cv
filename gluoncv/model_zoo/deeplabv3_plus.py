@@ -268,6 +268,9 @@ def get_deeplab_plus(dataset='pascal_voc', backbone='xception', pretrained=False
     }
     from ..data import datasets
     # infer number of classes
+    if pretrained:
+        kwargs['pretrained_base'] = False
+    kwargs['root'] = root
     model = DeepLabV3Plus(datasets[dataset].NUM_CLASS, backbone=backbone, ctx=ctx, **kwargs)
     model.classes = datasets[dataset].CLASSES
     if pretrained:
