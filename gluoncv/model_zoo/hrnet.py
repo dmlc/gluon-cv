@@ -233,24 +233,24 @@ class HighResolutionModule(nn.HybridBlock):
             for j in range(1, self.num_branches):
                 if j > i:
                     if self.interp_type == 'nearest':
-                        y = y + F.UpSampling(
+                        y = F.broadcast_add(y, F.UpSampling(
                             self.fuse_layers[i][j](X[j]),
                             scale=2**(j-i),
-                            sample_type='nearest')
+                            sample_type='nearest'))
                     elif self.interp_type == 'bilinear':
-                        y = y + F.contrib.BilinearResize2D(
+                        y = F.broadcast_add(y, F.contrib.BilinearResize2D(
                             self.fuse_layers[i][j](X[j]),
                             scale_height=2**(j-i),
                             scale_width=2**(j-i),
                             align_corners=False
-                        )
+                        ))
                     elif self.interp_type == 'bilinear_like':
-                        y = y + F.contrib.BilinearResize2D(
+                        y = F.broadcast_add(y, F.contrib.BilinearResize2D(
                             self.fuse_layers[i][j](X[j]),
                             like=X[i],
                             mode='like',
                             align_corners=False
-                        )
+                        ))
                     else:
                         raise NotImplementedError
 
