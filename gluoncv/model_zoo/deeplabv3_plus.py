@@ -40,6 +40,7 @@ class DeepLabV3Plus(HybridBlock):
         with self.name_scope():
             pretrained = get_xcetption(pretrained=pretrained_base, output_stride=output_stride,
                                        ctx=ctx, **kwargs)
+            kwargs.pop('root', None)
             # base network
             self.conv1 = pretrained.conv1
             self.bn1 = pretrained.bn1
