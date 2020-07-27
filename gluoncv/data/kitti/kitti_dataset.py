@@ -71,7 +71,8 @@ class KITTIRAWDataset(KITTIDataset):
     >>> train_filenames = '~/.mxnet/datasets/kitti/splits/eigen_full/train_files.txt'
     >>> # Create Dataset
     >>> trainset = gluoncv.data.KITTIRAWDataset(
-    >>>     train_filenames, 192, 640, [0], 4, is_train=True, img_ext='.png')
+    >>>         filenames=train_filenames, height=192, width=640,
+    >>>         frame_idxs=[0], num_scales=4, is_train=True, img_ext='.png')
     >>> # Create Training Loader
     >>> train_data = gluon.data.DataLoader(
     >>>     trainset, batch_size=12, shuffle=True,
