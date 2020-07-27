@@ -67,8 +67,10 @@ class KITTIRAWDataset(KITTIDataset):
 
     Examples
     --------
-    >>> from gluoncv.data.kitti.kitti_utils import dict_batchify_fn
-    >>> train_filenames = '~/.mxnet/datasets/kitti/splits/eigen_full/train_files.txt'
+    >>> from gluoncv.data.kitti.kitti_utils import dict_batchify_fn, readlines
+    >>> train_filenames = os.path.join(
+    >>>     os.path.expanduser("~"), '/.mxnet/datasets/kitti/splits/eigen_full/train_files.txt')
+    >>> train_filenames = readlines(train_filenames)
     >>> # Create Dataset
     >>> trainset = gluoncv.data.KITTIRAWDataset(
     >>>         filenames=train_filenames, height=192, width=640,

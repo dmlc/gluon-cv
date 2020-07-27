@@ -173,9 +173,11 @@ print(model)
 ##############################################################################
 # We provide self-supervised depth estimation datasets in :class:`gluoncv.data`.
 # For example, we can easily get the KITTI RAW dataset:
+import os
 from gluoncv.data.kitti import readlines, dict_batchify_fn
 
-train_filenames = '~/.mxnet/datasets/kitti/splits/eigen_full/train_files.txt'
+train_filenames = os.path.join(
+    os.path.expanduser("~"), '/.mxnet/datasets/kitti/splits/eigen_full/train_files.txt')
 train_filenames = readlines(train_filenames)
 train_dataset = gluoncv.data.KITTIRAWDataset(
     filenames=train_filenames, height=192, width=640,
