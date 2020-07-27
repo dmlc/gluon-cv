@@ -83,7 +83,8 @@ class KITTIRAWDataset(KITTIDataset):
     """
 
     # pylint: disable=keyword-arg-before-vararg
-    def __init__(self, data_path='~/.mxnet/datasets/kitti/kitti_data', *args, **kwargs):
+    def __init__(self, data_path=os.path.join(
+        os.path.expanduser("~"), '.mxnet/datasets/kitti/kitti_data'), *args, **kwargs):
         super(KITTIRAWDataset, self).__init__(data_path, *args, **kwargs)
 
     def get_image_path(self, folder, frame_index, side):
