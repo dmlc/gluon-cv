@@ -58,7 +58,7 @@ import gluoncv
 # features with different receptive field sizes. It pools the featuremaps
 # into different sizes and then concatenating together after upsampling.
 #
-# The Encoder module is a ResNet, it is defined as::
+# The Encoder module is a ResNet, it is defined as:
 #
 # class ResnetEncoder(nn.HybridBlock):
 #     def __init__(self, backbone, pretrained, num_input_images=1, ctx=cpu(), **kwargs):
@@ -172,7 +172,7 @@ print(model)
 #
 ##############################################################################
 # We provide self-supervised depth estimation datasets in :class:`gluoncv.data`.
-# For example, we can easily get the KITTI RAW dataset:
+# For example, we can easily get the KITTI RAW Stereo dataset:
 import os
 from gluoncv.data.kitti import readlines, dict_batchify_fn
 
@@ -200,14 +200,217 @@ from datetime import datetime
 random.seed(datetime.now())
 idx = random.randint(0, len(train_dataset))
 
-print(train_dataset[idx])
+data = train_dataset[idx]
+input_img = data[("color", 0, 0)]
+input_stereo_img = data[("color", 's', 0)]
+input_gt = data['depth_gt']
+
+input_img = np.transpose((input_img.asnumpy() * 255).astype(np.uint8), (1, 2, 0))
+input_stereo_img = np.transpose((input_stereo_img.asnumpy() * 255).astype(np.uint8), (1, 2, 0))
+input_gt = np.transpose((input_gt.asnumpy()).astype(np.uint8), (1, 2, 0))
+
+from PIL import Image
+input_img = Image.fromarray(input_img)
+input_stereo_img = Image.fromarray(input_stereo_img)
+input_gt = Image.fromarray(input_gt[:, :, 0])
+
+input_img.save("input_img.png")
+input_stereo_img.save("input_stereo_img.png")
+input_gt.save("input_gt.png")
+
+##############################################################################
+# Plot the stereo image pairs and ground truth of the left image
+from matplotlib import pyplot as plt
+
+input_img = Image.open('input_img.png').convert('RGB')
+input_stereo_img = Image.open('input_stereo_img.png').convert('RGB')
+input_gt = Image.open('input_gt.png')
+
+fig = plt.figure()
+# subplot 1 for left image
+plt.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=None, hspace=0.75)
+fig.add_subplot(3, 1, 1)
+plt.title("left image")
+plt.imshow(input_img)
+# subplot 2 for right images
+fig.add_subplot(3, 1, 2)
+plt.title("right image")
+plt.imshow(input_stereo_img)
+# subplot 3 for the ground truth
+fig.add_subplot(3, 1, 3)
+plt.title("ground truth of left input (the reprojection of LiDAR data)")
+plt.imshow(input_gt)
+# display
+plt.show()
+
+##############################################################################
+# Training Details
+# ----------------
+#
+# - Training Losses:
+#
+#     We apply a standard reprojection loss to train Monodepth2.
+#     As describes in Monodepth2 [Godard19]_ , the reprojection loss include three parts:
+#     a multi-scale reprojection loss (combined L1 loss and SSIM loss), an auto-masking loss and
+#     a edge-aware smoothness loss as in Monodepth [Godard17]_ .
+#
+# The computation of loss is defined as (please look train.py<../../../scripts/depth/trainer.py> in details):
+# def compute_losses(self, inputs, outputs):
+#     """Compute the reprojection and smoothness losses for a minibatch
+#     """
+#     losses = {}
+#     total_loss = 0
+#
+#     for scale in self.opt.scales:
+#         loss = 0
+#         reprojection_losses = []
+#
+#         if self.opt.v1_multiscale:
+#             source_scale = scale
+#         else:
+#             source_scale = 0
+#
+#         disp = outputs[("disp", scale)]
+#         color = inputs[("color", 0, scale)]
+#         target = inputs[("color", 0, source_scale)]
+#
+#         for frame_id in self.opt.frame_ids[1:]:
+#             pred = outputs[("color", frame_id, scale)]
+#             reprojection_losses.append(self.compute_reprojection_loss(pred, target))
+#
+#         reprojection_losses = mx.nd.concat(*reprojection_losses, dim=1)
+#
+#         if not self.opt.disable_automasking:
+#             identity_reprojection_losses = []
+#             for frame_id in self.opt.frame_ids[1:]:
+#                 pred = inputs[("color", frame_id, source_scale)]
+#                 identity_reprojection_losses.append(
+#                     self.compute_reprojection_loss(pred, target))
+#
+#             identity_reprojection_losses = mx.nd.concat(*identity_reprojection_losses, dim=1)
+#
+#             if self.opt.avg_reprojection:
+#                 identity_reprojection_loss = \
+#                     identity_reprojection_losses.mean(axis=1, keepdims=True)
+#             else:
+#                 # save both images, and do min all at once below
+#                 identity_reprojection_loss = identity_reprojection_losses
+#
+#         if self.opt.avg_reprojection:
+#             reprojection_loss = reprojection_losses.mean(axis=1, keepdims=True)
+#         else:
+#             reprojection_loss = reprojection_losses
+#
+#         if not self.opt.disable_automasking:
+#             # add random numbers to break ties
+#             identity_reprojection_loss = \
+#                 identity_reprojection_loss + \
+#                 mx.nd.random.randn(*identity_reprojection_loss.shape).as_in_context(
+#                     identity_reprojection_loss.context) * 0.00001
+#
+#             combined = mx.nd.concat(identity_reprojection_loss, reprojection_loss, dim=1)
+#         else:
+#             combined = reprojection_loss
+#
+#         if combined.shape[1] == 1:
+#             to_optimise = combined
+#         else:
+#             to_optimise = mx.nd.min(data=combined, axis=1)
+#             idxs = mx.nd.argmin(data=combined, axis=1)
+#
+#         if not self.opt.disable_automasking:
+#             outputs["identity_selection/{}".format(scale)] = (
+#                     idxs > identity_reprojection_loss.shape[1] - 1).astype('float')
+#
+#         loss += to_optimise.mean()
+#
+#         mean_disp = disp.mean(axis=2, keepdims=True).mean(axis=3, keepdims=True)
+#         norm_disp = disp / (mean_disp + 1e-7)
+#
+#         smooth_loss = get_smooth_loss(norm_disp, color)
+#
+#         loss = loss + self.opt.disparity_smoothness * smooth_loss / (2 ** scale)
+#         total_loss = total_loss + loss
+#         losses["loss/{}".format(scale)] = loss
+#
+#     total_loss = total_loss / self.num_scales
+#     losses["loss"] = total_loss
+#     return losses
+
+##############################################################################
+# - Learning Rate and Scheduling:
+#
+#     Here, we follow the standard strategy of monodepth. The network is trained for 20 epochs using Adam.
+#     We use a 'step' learning rate scheduler for Monodepth2 training, provided in :class:`gluoncv.utils.LRScheduler`.
+#     We use a learning rate of 10−4 for the first 15 epochs which is then dropped to 10−5 for the remainder.
+#
+lr_scheduler = gluoncv.utils.LRSequential([
+    gluoncv.utils.LRScheduler(
+        'step', base_lr=1e-4, nepochs=20, iters_per_epoch=len(train_dataset), step_epoch=[15])
+])
+optimizer_params = {'lr_scheduler': lr_scheduler,
+                    'learning_rate': 1e-4}
+
+##############################################################################
+# - Create Adam solver
+optimizer = gluon.Trainer(model.collect_params(), 'adam', optimizer_params)
+
+##############################################################################
+# The training loop
+# Please look train.py<../../../scripts/depth/trainer.py> in details.
+# -----------------
+#
+# def train(self):
+#     """Run the entire training pipeline
+#     """
+#     self.logger.info('Starting Epoch: %d' % self.opt.start_epoch)
+#     self.logger.info('Total Epochs: %d' % self.opt.num_epochs)
+#
+#     self.epoch = 0
+#     for self.epoch in range(self.opt.start_epoch, self.opt.num_epochs):
+#         self.run_epoch()
+#         self.val()
+#
+#     # save final model
+#     self.save_model("final")
+#     self.save_model("best")
+#
+#
+# def run_epoch(self):
+#     """Run a single epoch of training and validation
+#     """
+#     print("Training")
+#     tbar = tqdm(self.train_loader)
+#     train_loss = 0.0
+#     for batch_idx, inputs in enumerate(tbar):
+#         with autograd.record(True):
+#             outputs, losses = self.process_batch(inputs)
+#             mx.nd.waitall()
+#
+#             autograd.backward(losses['loss'])
+#         self.optimizer.step(self.opt.batch_size, ignore_stale_grad=True)
+#
+#         train_loss += losses['loss'].asscalar()
+#         tbar.set_description('Epoch %d, training loss %.3f' % \
+#                              (self.epoch, train_loss / (batch_idx + 1)))
+#
+#         if batch_idx % self.opt.log_frequency == 0:
+#             self.logger.info('Epoch %d iteration %04d/%04d: training loss %.3f' %
+#                              (self.epoch, batch_idx, len(self.train_loader),
+#                               train_loss / (batch_idx + 1)))
+#         mx.nd.waitall()
+
 
 ##############################################################################
 # You can `Start Training Now`_.
 #
 # References
 # ----------
-# .. [Godard19] Clement Godard, Oisin Mac Aodha, Michael Firman, Gabriel Brostow. \
+# .. [Godard17] Clement Godard, Oisin Mac Aodha and Gabriel J. Brostow \
+#       "Unsupervised Monocular Depth Estimation with Left-Right Consistency." \
+#       Proceedings of the IEEE conference on computer vision and pattern recognition (CVPR). 2017.
+#
+# .. [Godard19] Clement Godard, Oisin Mac Aodha, Michael Firman and Gabriel Brostow. \
 #       "Digging Into Self-Supervised Monocular Depth Estimation." \
-#       Proceedings of the IEEE conference on computer vision. 2019.
+#       Proceedings of the IEEE conference on computer vision (ICCV). 2019.
 #
