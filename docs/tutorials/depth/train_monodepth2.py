@@ -177,17 +177,31 @@ import os
 from gluoncv.data.kitti import readlines, dict_batchify_fn
 
 train_filenames = os.path.join(
-    os.path.expanduser("~"), '/.mxnet/datasets/kitti/splits/eigen_full/train_files.txt')
+    os.path.expanduser("~"), '.mxnet/datasets/kitti/splits/eigen_full/train_files.txt')
 train_filenames = readlines(train_filenames)
 train_dataset = gluoncv.data.KITTIRAWDataset(
     filenames=train_filenames, height=192, width=640,
-    frame_idxs=[0], num_scales=4, is_train=True, img_ext='.png')
+    frame_idxs=[0, "s"], num_scales=4, is_train=True, img_ext='.png')
 print('Training images:', len(train_dataset))
 # set batch_size = 12 for toy example
 batch_size = 12
 train_loader = gluon.data.DataLoader(
     train_dataset, batch_size=batch_size, shuffle=True, batchify_fn=dict_batchify_fn,
     num_workers=12, pin_memory=True, last_batch='discard')
+
+##############################################################################
+# For data augmentation,
+# we follow the standard data augmentation routine to transform the input image.
+# Here, we just use RandomFlip with 50% probability for input images.
+#
+# Random pick one example for visualization:
+import random
+from datetime import datetime
+random.seed(datetime.now())
+idx = random.randint(0, len(train_dataset))
+
+print(train_dataset[idx])
+
 ##############################################################################
 # You can `Start Training Now`_.
 #
