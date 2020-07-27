@@ -25,6 +25,7 @@ from .mono_dataset import MonoDataset
 class KITTIDataset(MonoDataset):
     """Superclass for different types of KITTI dataset loaders
     """
+
     def __init__(self, *args, **kwargs):
         super(KITTIDataset, self).__init__(*args, **kwargs)
 
@@ -84,7 +85,7 @@ class KITTIRAWDataset(KITTIDataset):
 
     # pylint: disable=keyword-arg-before-vararg
     def __init__(self, data_path=os.path.join(
-        os.path.expanduser("~"), '.mxnet/datasets/kitti/kitti_data'), *args, **kwargs):
+            os.path.expanduser("~"), '.mxnet/datasets/kitti/kitti_data'), *args, **kwargs):
         super(KITTIRAWDataset, self).__init__(data_path, *args, **kwargs)
 
     def get_image_path(self, folder, frame_index, side):
