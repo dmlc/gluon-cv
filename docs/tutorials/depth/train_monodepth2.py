@@ -165,6 +165,7 @@ import gluoncv
 model = gluoncv.model_zoo.get_monodepth2(backbone='resnet18')
 print(model)
 
+
 ##############################################################################
 # Dataset and Data Augmentation
 # -----------------------------
@@ -172,14 +173,16 @@ print(model)
 ##############################################################################
 # We provide self-supervised depth estimation datasets in :class:`gluoncv.data`.
 # For example, we can easily get the KITTI RAW dataset:
+from gluoncv.data.kitti import readlines, dict_batchify_fn
+
 train_filenames = '~/.mxnet/datasets/kitti/splits/eigen_full/train_files.txt'
+train_filenames = readlines(train_filenames)
 train_dataset = gluoncv.data.KITTIRAWDataset(
     filenames=train_filenames, height=192, width=640,
     frame_idxs=[0], num_scales=4, is_train=True, img_ext='.png')
 print('Training images:', len(train_dataset))
 # set batch_size = 12 for toy example
 batch_size = 12
-from gluoncv.data.kitti import dict_batchify_fn
 train_loader = gluon.data.DataLoader(
     train_dataset, batch_size=batch_size, shuffle=True, batchify_fn=dict_batchify_fn,
     num_workers=12, pin_memory=True, last_batch='discard')

@@ -13,9 +13,8 @@ import numpy as np
 
 import mxnet as mx
 from mxnet import gluon
-from utils import readlines
 from gluoncv.data import KITTIRAWDataset
-from gluoncv.data.kitti.kitti_utils import dict_batchify_fn
+from gluoncv.data.kitti.kitti_utils import dict_batchify_fn, readlines
 from gluoncv.model_zoo import get_model
 
 from gluoncv.model_zoo.monodepthv2.layers import disp_to_depth
