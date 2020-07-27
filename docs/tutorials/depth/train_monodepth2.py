@@ -252,7 +252,7 @@ plt.show()
 #     We apply a standard reprojection loss to train Monodepth2.
 #     As describes in Monodepth2 [Godard19]_ , the reprojection loss include three parts:
 #     a multi-scale reprojection loss (combined L1 loss and SSIM loss), an auto-masking loss and
-#     a edge-aware smoothness loss as in Monodepth [Godard17]_ .
+#     an edge-aware smoothness loss as in Monodepth [Godard17]_ .
 #
 # The computation of loss is defined as (please look train.py<../../../scripts/depth/trainer.py> in details):
 # def compute_losses(self, inputs, outputs):
@@ -340,7 +340,7 @@ plt.show()
 ##############################################################################
 # - Learning Rate and Scheduling:
 #
-#     Here, we follow the standard strategy of monodepth. The network is trained for 20 epochs using Adam.
+#     Here, we follow the standard strategy of monodepth2. The network is trained for 20 epochs using Adam.
 #     We use a 'step' learning rate scheduler for Monodepth2 training, provided in :class:`gluoncv.utils.LRScheduler`.
 #     We use a learning rate of 10−4 for the first 15 epochs which is then dropped to 10−5 for the remainder.
 #
