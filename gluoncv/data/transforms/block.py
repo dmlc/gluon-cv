@@ -66,7 +66,7 @@ class RandomCrop(Block):
         self.forward = self.forward_pad if self.pad else self.forward_nopad
     def forward_pad(self, x):
         return image.random_crop(nd.array(np.pad(x.asnumpy(), self.pad, mode='constant',
-                                                    constant_values=0)), *self._args)[0]
+                                                 constant_values=0)), *self._args)[0]
     def forward_nopad(self, x):
         return image.random_crop(x, *self._args)[0]
 
