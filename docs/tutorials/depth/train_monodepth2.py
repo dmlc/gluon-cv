@@ -99,9 +99,9 @@ import gluoncv
 #
 #
 # The Decoder module is a fully convolutional network with skip architecture, it expolit the featuremaps
-# in different scale and concatenating together after upsampling. It is defined as:
+# in different scale and concatenating together after upsampling. It is defined as:：
 #
-#     class DepthDecoder(nn.HybridBlock)::
+#     class DepthDecoder(nn.HybridBlock):
 #         def __init__(self, num_ch_enc, scales=range(4), num_output_channels=1,
 #                      use_skips=True):
 #             super(DepthDecoder, self).__init__()
@@ -254,7 +254,7 @@ plt.show()
 #     a multi-scale reprojection loss (combined L1 loss and SSIM loss), an auto-masking loss and
 #     an edge-aware smoothness loss as in Monodepth [Godard17]_ .
 #
-# The computation of loss is defined as (please look trainer.py<../../scripts/depth/trainer.py> in details)::
+# The computation of loss is defined as (please look `trainer.py<../../../scripts/depth/trainer.py>` in details)::
 #
 #     def compute_losses(self, inputs, outputs):
 #         """Compute the reprojection and smoothness losses for a minibatch
@@ -358,8 +358,8 @@ optimizer = gluon.Trainer(model.collect_params(), 'adam', optimizer_params)
 
 ##############################################################################
 # The training loop
-# Please look trainer.py<../../scripts/depth/trainer.py> in details.
-# This is an example of training loop:：
+# Please look `trainer.py<../../../scripts/depth/trainer.py>` in details.
+# This is an example of training loop::
 #
 #     def train(self):
 #         """Run the entire training pipeline
