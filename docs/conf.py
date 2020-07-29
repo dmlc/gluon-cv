@@ -70,6 +70,7 @@ sphinx_gallery_conf = {
         'tutorials/pose',
         'tutorials/action_recognition',
         'tutorials/tracking',
+        'tutorials/depth',
         'tutorials/distributed',
         'tutorials/deployment',],
     # path where to save gallery generated examples
@@ -82,6 +83,7 @@ sphinx_gallery_conf = {
         'build/examples_pose',
         'build/examples_action_recognition',
         'build/examples_tracking',
+        'build/examples_depth',
         'build/examples_distributed',
         'build/examples_deployment',],
 
