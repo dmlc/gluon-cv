@@ -58,7 +58,7 @@ import gluoncv
 # features with different receptive field sizes. It pools the featuremaps
 # into different sizes and then concatenating together after upsampling.
 #
-# The Encoder module is a ResNet, it is defined as:
+# The Encoder module is a ResNet, it is defined as::
 #
 #     class ResnetEncoder(nn.HybridBlock):
 #         def __init__(self, backbone, pretrained, num_input_images=1, ctx=cpu(), **kwargs):
@@ -101,7 +101,7 @@ import gluoncv
 # The Decoder module is a fully convolutional network with skip architecture, it expolit the featuremaps
 # in different scale and concatenating together after upsampling. It is defined as:
 #
-#     class DepthDecoder(nn.HybridBlock):
+#     class DepthDecoder(nn.HybridBlock)::
 #         def __init__(self, num_ch_enc, scales=range(4), num_output_channels=1,
 #                      use_skips=True):
 #             super(DepthDecoder, self).__init__()
@@ -254,90 +254,90 @@ plt.show()
 #     a multi-scale reprojection loss (combined L1 loss and SSIM loss), an auto-masking loss and
 #     an edge-aware smoothness loss as in Monodepth [Godard17]_ .
 #
-# The computation of loss is defined as (please look trainer.py<../../scripts/depth/trainer.py> in details):
+# The computation of loss is defined as (please look trainer.py<../../scripts/depth/trainer.py> in details)::
 #
-# def compute_losses(self, inputs, outputs):
-#     """Compute the reprojection and smoothness losses for a minibatch
-#     """
-#     losses = {}
-#     total_loss = 0
+#     def compute_losses(self, inputs, outputs):
+#         """Compute the reprojection and smoothness losses for a minibatch
+#         """
+#         losses = {}
+#         total_loss = 0
 #
-#     for scale in self.opt.scales:
-#         loss = 0
-#         reprojection_losses = []
+#         for scale in self.opt.scales:
+#             loss = 0
+#             reprojection_losses = []
 #
-#         if self.opt.v1_multiscale:
-#             source_scale = scale
-#         else:
-#             source_scale = 0
+#             if self.opt.v1_multiscale:
+#                 source_scale = scale
+#             else:
+#                 source_scale = 0
 #
-#         disp = outputs[("disp", scale)]
-#         color = inputs[("color", 0, scale)]
-#         target = inputs[("color", 0, source_scale)]
+#             disp = outputs[("disp", scale)]
+#             color = inputs[("color", 0, scale)]
+#             target = inputs[("color", 0, source_scale)]
 #
-#         for frame_id in self.opt.frame_ids[1:]:
-#             pred = outputs[("color", frame_id, scale)]
-#             reprojection_losses.append(self.compute_reprojection_loss(pred, target))
-#
-#         reprojection_losses = mx.nd.concat(*reprojection_losses, dim=1)
-#
-#         if not self.opt.disable_automasking:
-#             identity_reprojection_losses = []
 #             for frame_id in self.opt.frame_ids[1:]:
-#                 pred = inputs[("color", frame_id, source_scale)]
-#                 identity_reprojection_losses.append(
-#                     self.compute_reprojection_loss(pred, target))
+#                 pred = outputs[("color", frame_id, scale)]
+#                 reprojection_losses.append(self.compute_reprojection_loss(pred, target))
 #
-#             identity_reprojection_losses = mx.nd.concat(*identity_reprojection_losses, dim=1)
+#             reprojection_losses = mx.nd.concat(*reprojection_losses, dim=1)
+#
+#             if not self.opt.disable_automasking:
+#                 identity_reprojection_losses = []
+#                 for frame_id in self.opt.frame_ids[1:]:
+#                     pred = inputs[("color", frame_id, source_scale)]
+#                     identity_reprojection_losses.append(
+#                         self.compute_reprojection_loss(pred, target))
+#
+#                 identity_reprojection_losses = mx.nd.concat(*identity_reprojection_losses, dim=1)
+#
+#                 if self.opt.avg_reprojection:
+#                     identity_reprojection_loss = \
+#                         identity_reprojection_losses.mean(axis=1, keepdims=True)
+#                 else:
+#                     # save both images, and do min all at once below
+#                     identity_reprojection_loss = identity_reprojection_losses
 #
 #             if self.opt.avg_reprojection:
-#                 identity_reprojection_loss = \
-#                     identity_reprojection_losses.mean(axis=1, keepdims=True)
+#                 reprojection_loss = reprojection_losses.mean(axis=1, keepdims=True)
 #             else:
-#                 # save both images, and do min all at once below
-#                 identity_reprojection_loss = identity_reprojection_losses
+#                 reprojection_loss = reprojection_losses
 #
-#         if self.opt.avg_reprojection:
-#             reprojection_loss = reprojection_losses.mean(axis=1, keepdims=True)
-#         else:
-#             reprojection_loss = reprojection_losses
+#             if not self.opt.disable_automasking:
+#                 # add random numbers to break ties
+#                 identity_reprojection_loss = \
+#                     identity_reprojection_loss + \
+#                     mx.nd.random.randn(*identity_reprojection_loss.shape).as_in_context(
+#                         identity_reprojection_loss.context) * 0.00001
 #
-#         if not self.opt.disable_automasking:
-#             # add random numbers to break ties
-#             identity_reprojection_loss = \
-#                 identity_reprojection_loss + \
-#                 mx.nd.random.randn(*identity_reprojection_loss.shape).as_in_context(
-#                     identity_reprojection_loss.context) * 0.00001
+#                 combined = mx.nd.concat(identity_reprojection_loss, reprojection_loss, dim=1)
+#             else:
+#                 combined = reprojection_loss
 #
-#             combined = mx.nd.concat(identity_reprojection_loss, reprojection_loss, dim=1)
-#         else:
-#             combined = reprojection_loss
+#             if combined.shape[1] == 1:
+#                 to_optimise = combined
+#             else:
+#                 to_optimise = mx.nd.min(data=combined, axis=1)
+#                 idxs = mx.nd.argmin(data=combined, axis=1)
 #
-#         if combined.shape[1] == 1:
-#             to_optimise = combined
-#         else:
-#             to_optimise = mx.nd.min(data=combined, axis=1)
-#             idxs = mx.nd.argmin(data=combined, axis=1)
+#             if not self.opt.disable_automasking:
+#                 outputs["identity_selection/{}".format(scale)] = (
+#                         idxs > identity_reprojection_loss.shape[1] - 1).astype('float')
 #
-#         if not self.opt.disable_automasking:
-#             outputs["identity_selection/{}".format(scale)] = (
-#                     idxs > identity_reprojection_loss.shape[1] - 1).astype('float')
+#             loss += to_optimise.mean()
 #
-#         loss += to_optimise.mean()
+#             mean_disp = disp.mean(axis=2, keepdims=True).mean(axis=3, keepdims=True)
+#             norm_disp = disp / (mean_disp + 1e-7)
 #
-#         mean_disp = disp.mean(axis=2, keepdims=True).mean(axis=3, keepdims=True)
-#         norm_disp = disp / (mean_disp + 1e-7)
+#             smooth_loss = get_smooth_loss(norm_disp, color)
 #
-#         smooth_loss = get_smooth_loss(norm_disp, color)
+#             loss = loss + self.opt.disparity_smoothness * smooth_loss / (2 ** scale)
+#             total_loss = total_loss + loss
+#             losses["loss/{}".format(scale)] = loss
 #
-#         loss = loss + self.opt.disparity_smoothness * smooth_loss / (2 ** scale)
-#         total_loss = total_loss + loss
-#         losses["loss/{}".format(scale)] = loss
+#         total_loss = total_loss / self.num_scales
+#         losses["loss"] = total_loss
+#         return losses
 #
-#     total_loss = total_loss / self.num_scales
-#     losses["loss"] = total_loss
-#     return losses
-
 ##############################################################################
 # - Learning Rate and Scheduling:
 #
@@ -359,50 +359,49 @@ optimizer = gluon.Trainer(model.collect_params(), 'adam', optimizer_params)
 ##############################################################################
 # The training loop
 # Please look trainer.py<../../scripts/depth/trainer.py> in details.
-# This is an example of training loop:
-# -----------------
+# This is an example of training loop:：
 #
-# def train(self):
-#     """Run the entire training pipeline
-#     """
-#     self.logger.info('Starting Epoch: %d' % self.opt.start_epoch)
-#     self.logger.info('Total Epochs: %d' % self.opt.num_epochs)
+#     def train(self):
+#         """Run the entire training pipeline
+#         """
+#         self.logger.info('Starting Epoch: %d' % self.opt.start_epoch)
+#         self.logger.info('Total Epochs: %d' % self.opt.num_epochs)
 #
-#     self.epoch = 0
-#     for self.epoch in range(self.opt.start_epoch, self.opt.num_epochs):
-#         self.run_epoch()
-#         self.val()
+#         self.epoch = 0
+#         for self.epoch in range(self.opt.start_epoch, self.opt.num_epochs):
+#             self.run_epoch()
+#             self.val()
 #
-#     # save final model
-#     self.save_model("final")
-#     self.save_model("best")
+#         # save final model
+#         self.save_model("final")
+#         self.save_model("best")
 #
 #
-# def run_epoch(self):
-#     """Run a single epoch of training and validation
-#     """
-#     print("Training")
-#     tbar = tqdm(self.train_loader)
-#     train_loss = 0.0
-#     for batch_idx, inputs in enumerate(tbar):
-#         with autograd.record(True):
-#             outputs, losses = self.process_batch(inputs)
+#     def run_epoch(self):
+#         """Run a single epoch of training and validation
+#         """
+#         print("Training")
+#         tbar = tqdm(self.train_loader)
+#         train_loss = 0.0
+#         for batch_idx, inputs in enumerate(tbar):
+#             with autograd.record(True):
+#                 outputs, losses = self.process_batch(inputs)
+#                 mx.nd.waitall()
+#
+#                 autograd.backward(losses['loss'])
+#             self.optimizer.step(self.opt.batch_size, ignore_stale_grad=True)
+#
+#             train_loss += losses['loss'].asscalar()
+#             tbar.set_description('Epoch %d, training loss %.3f' % \
+#                                  (self.epoch, train_loss / (batch_idx + 1)))
+#
+#             if batch_idx % self.opt.log_frequency == 0:
+#                 self.logger.info('Epoch %d iteration %04d/%04d: training loss %.3f' %
+#                                  (self.epoch, batch_idx, len(self.train_loader),
+#                                   train_loss / (batch_idx + 1)))
 #             mx.nd.waitall()
 #
-#             autograd.backward(losses['loss'])
-#         self.optimizer.step(self.opt.batch_size, ignore_stale_grad=True)
 #
-#         train_loss += losses['loss'].asscalar()
-#         tbar.set_description('Epoch %d, training loss %.3f' % \
-#                              (self.epoch, train_loss / (batch_idx + 1)))
-#
-#         if batch_idx % self.opt.log_frequency == 0:
-#             self.logger.info('Epoch %d iteration %04d/%04d: training loss %.3f' %
-#                              (self.epoch, batch_idx, len(self.train_loader),
-#                               train_loss / (batch_idx + 1)))
-#         mx.nd.waitall()
-
-
 ##############################################################################
 # You can `Start Training Now`_.
 #
