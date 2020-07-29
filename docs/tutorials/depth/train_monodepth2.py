@@ -35,7 +35,7 @@ import gluoncv
 # -----------------------------
 #
 # .. image:: https://raw.githubusercontent.com/KuangHaofei/GluonCV_Test/master/monodepthv2/tutorials/monodepth2.png
-#     :width: 80%
+#     :width: 100%
 #     :align: center
 #
 # (figure credit to `Godard et al. <https://arxiv.org/pdf/1806.01260.pdf>`_ )
@@ -60,42 +60,42 @@ import gluoncv
 #
 # The Encoder module is a ResNet, it is defined as:
 #
-# class ResnetEncoder(nn.HybridBlock):
-#     def __init__(self, backbone, pretrained, num_input_images=1, ctx=cpu(), **kwargs):
-#         super(ResnetEncoder, self).__init__()
+#     class ResnetEncoder(nn.HybridBlock):
+#         def __init__(self, backbone, pretrained, num_input_images=1, ctx=cpu(), **kwargs):
+#             super(ResnetEncoder, self).__init__()
 #
-#         self.num_ch_enc = np.array([64, 64, 128, 256, 512])
+#             self.num_ch_enc = np.array([64, 64, 128, 256, 512])
 #
-#         resnets = {'resnet18': resnet18_v1b,
-#                    'resnet34': resnet34_v1b,
-#                    'resnet50': resnet50_v1s,
-#                    'resnet101': resnet101_v1s,
-#                    'resnet152': resnet152_v1s}
+#             resnets = {'resnet18': resnet18_v1b,
+#                        'resnet34': resnet34_v1b,
+#                        'resnet50': resnet50_v1s,
+#                        'resnet101': resnet101_v1s,
+#                        'resnet152': resnet152_v1s}
 #
-#         if backbone not in resnets:
-#             raise ValueError("{} is not a valid resnet".format(backbone))
+#             if backbone not in resnets:
+#                 raise ValueError("{} is not a valid resnet".format(backbone))
 #
-#         if num_input_images > 1:
-#             pass
-#         else:
-#             self.encoder = resnets[backbone](pretrained=pretrained, ctx=ctx, **kwargs)
+#             if num_input_images > 1:
+#                 pass
+#             else:
+#                 self.encoder = resnets[backbone](pretrained=pretrained, ctx=ctx, **kwargs)
 #
-#         if backbone not in ('resnet18', 'resnet34'):
-#             self.num_ch_enc[1:] *= 4
+#             if backbone not in ('resnet18', 'resnet34'):
+#                 self.num_ch_enc[1:] *= 4
 #
-#     def hybrid_forward(self, F, input_image):
-#         # pylint: disable=unused-argument, missing-function-docstring
-#         self.features = []
-#         x = (input_image - 0.45) / 0.225
-#         x = self.encoder.conv1(x)
-#         x = self.encoder.bn1(x)
-#         self.features.append(self.encoder.relu(x))
-#         self.features.append(self.encoder.layer1(self.encoder.maxpool(self.features[-1])))
-#         self.features.append(self.encoder.layer2(self.features[-1]))
-#         self.features.append(self.encoder.layer3(self.features[-1]))
-#         self.features.append(self.encoder.layer4(self.features[-1]))
+#         def hybrid_forward(self, F, input_image):
+#             # pylint: disable=unused-argument, missing-function-docstring
+#             self.features = []
+#             x = (input_image - 0.45) / 0.225
+#             x = self.encoder.conv1(x)
+#             x = self.encoder.bn1(x)
+#             self.features.append(self.encoder.relu(x))
+#             self.features.append(self.encoder.layer1(self.encoder.maxpool(self.features[-1])))
+#             self.features.append(self.encoder.layer2(self.features[-1]))
+#             self.features.append(self.encoder.layer3(self.features[-1]))
+#             self.features.append(self.encoder.layer4(self.features[-1]))
 #
-#         return self.features
+#             return self.features
 #
 #
 # The Decoder module is a fully convolutional network with skip architecture, it expolit the featuremaps
@@ -254,7 +254,8 @@ plt.show()
 #     a multi-scale reprojection loss (combined L1 loss and SSIM loss), an auto-masking loss and
 #     an edge-aware smoothness loss as in Monodepth [Godard17]_ .
 #
-# The computation of loss is defined as (please look train.py<../../../scripts/depth/trainer.py> in details):
+# The computation of loss is defined as (please look trainer.py<../../scripts/depth/trainer.py> in details):
+#
 # def compute_losses(self, inputs, outputs):
 #     """Compute the reprojection and smoothness losses for a minibatch
 #     """
@@ -357,7 +358,8 @@ optimizer = gluon.Trainer(model.collect_params(), 'adam', optimizer_params)
 
 ##############################################################################
 # The training loop
-# Please look train.py<../../../scripts/depth/trainer.py> in details.
+# Please look trainer.py<../../scripts/depth/trainer.py> in details.
+# This is an example of training loop:
 # -----------------
 #
 # def train(self):
