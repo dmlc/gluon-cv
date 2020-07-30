@@ -15,6 +15,8 @@ Start Training Now
 
     :download:`Download Full Python Script: train.py<../../../scripts/depth/train.py>`
 
+    :download:`Download Full Python Script: trainer.py<../../../scripts/depth/trainer.py>`
+
     Example training command::
 
         python train.py --model_zoo monodepth2_resnet18_kitti_stereo_640x192 --pretrained_base --frame_ids 0 --use_stereo --split eigen_full --log_dir ./tmp/stereo/ --png --gpu 0
@@ -253,7 +255,8 @@ plt.show()
 #     a multi-scale reprojection loss (combined L1 loss and SSIM loss), an auto-masking loss and
 #     an edge-aware smoothness loss as in Monodepth [Godard17]_ .
 #
-# The computation of loss is defined as (please look `trainer.py<../../../scripts/depth/trainer.py>`_ in details)::
+# The computation of loss is defined as
+# (Please checkout the full :download:`trainer.py<../../../scripts/depth/trainer.py>` for complete implementation.)::
 #
 #     def compute_losses(self, inputs, outputs):
 #         """Compute the reprojection and smoothness losses for a minibatch
@@ -359,7 +362,7 @@ optimizer = gluon.Trainer(model.collect_params(), 'adam', optimizer_params)
 # The training loop
 # -----------------
 #
-# Please look `trainer.py<../../../scripts/depth/trainer.py>`_ in details.
+# Please checkout the full :download:`trainer.py<../../../scripts/depth/trainer.py>` for complete implementation.
 # This is an example of training loop::
 #
 #     def train(self):
