@@ -99,7 +99,7 @@ import gluoncv
 #
 #
 # The Decoder module is a fully convolutional network with skip architecture, it expolit the featuremaps
-# in different scale and concatenating together after upsampling. It is defined as:：
+# in different scale and concatenating together after upsampling. It is defined as::
 #
 #     class DepthDecoder(nn.HybridBlock):
 #         def __init__(self, num_ch_enc, scales=range(4), num_output_channels=1,
@@ -170,7 +170,6 @@ print(model)
 # Dataset and Data Augmentation
 # -----------------------------
 #
-##############################################################################
 # We provide self-supervised depth estimation datasets in :class:`gluoncv.data`.
 # For example, we can easily get the KITTI RAW Stereo dataset:
 import os
@@ -254,7 +253,7 @@ plt.show()
 #     a multi-scale reprojection loss (combined L1 loss and SSIM loss), an auto-masking loss and
 #     an edge-aware smoothness loss as in Monodepth [Godard17]_ .
 #
-# The computation of loss is defined as (please look `trainer.py<../../../scripts/depth/trainer.py>` in details)::
+# The computation of loss is defined as (please look `trainer.py<../../../scripts/depth/trainer.py>`_ in details)::
 #
 #     def compute_losses(self, inputs, outputs):
 #         """Compute the reprojection and smoothness losses for a minibatch
@@ -337,7 +336,7 @@ plt.show()
 #         total_loss = total_loss / self.num_scales
 #         losses["loss"] = total_loss
 #         return losses
-#
+
 ##############################################################################
 # - Learning Rate and Scheduling:
 #
@@ -358,7 +357,9 @@ optimizer = gluon.Trainer(model.collect_params(), 'adam', optimizer_params)
 
 ##############################################################################
 # The training loop
-# Please look `trainer.py<../../../scripts/depth/trainer.py>` in details.
+# -----------------
+#
+# Please look `trainer.py<../../../scripts/depth/trainer.py>`_ in details.
 # This is an example of training loop::
 #
 #     def train(self):
@@ -402,6 +403,8 @@ optimizer = gluon.Trainer(model.collect_params(), 'adam', optimizer_params)
 #             mx.nd.waitall()
 #
 #
+
+
 ##############################################################################
 # You can `Start Training Now`_.
 #
