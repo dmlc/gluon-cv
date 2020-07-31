@@ -98,7 +98,7 @@ import gluoncv
 #             return self.features
 #
 #
-# The Decoder module is a fully convolutional network with skip architecture, it expolit the featuremaps
+# The Decoder module is a fully convolutional network with skip architecture, it exploit the featuremaps
 # in different scale and concatenating together after upsampling. It is defined as::
 #
 #     class DepthDecoder(nn.HybridBlock):
@@ -169,6 +169,29 @@ print(model)
 ##############################################################################
 # Dataset and Data Augmentation
 # -----------------------------
+#
+# - Prepare KITTI RAW Dataset:
+#
+#     Here we give an example of training monodepth2 on the KITTI RAW dataset [Godard19]_. First,
+#     we need to prepare the dataset. The official implementation of monodepth2 does not use all
+#     the data of KITTI, here we use the same dataset and split method as it. You need download
+#     the split zip file, and extract it to '$(HOME)/.mxnet/datasets/kitti/'. Follow the step to
+#     get the dataset::
+#
+#     cd ~
+#     mkdir -p .mxnet/datasets/kitti
+#     cd .mxnet/datasets/kitti
+#     wget https://github.com/KuangHaofei/GluonCV_Test/raw/master/monodepthv2/tutorials/splits.zip
+#     unzip splits.zip
+#     wget -i splits/kitti_archives_to_download.txt -P kitti_data/
+#     cd kitti_data
+#     unzip "*.zip"
+#
+#  .. hint::
+#
+#     You need 175GB, free disk space to download and extract this dataset. SSD harddrives are recommended
+#     for faster speed. The time it takes to prepare the dataset depends on your Internet connection and
+#     disk speed. For example, it takes around 2 hours on an AWS EC2 instance with EBS.
 #
 # We provide self-supervised depth estimation datasets in :class:`gluoncv.data`.
 # For example, we can easily get the KITTI RAW Stereo dataset:

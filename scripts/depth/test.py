@@ -239,7 +239,9 @@ if __name__ == "__main__":
     options = MonodepthOptions()
     opts = options.parse()
     print("Testing model named:\n  ", opts.model_zoo)
-    print("Weights are loaded from:\n  ", opts.load_weights_folder)
+    print("Weights are loaded from:\n  ",
+          "gluoncv pretrained model" if opts.pretrained_type == "gluoncv"
+          else opts.load_weights_folder)
     print("Inference is using:\n  ", "CPU" if opts.ctx[0] is mx.cpu() else "GPU")
 
     evaluate(opts)
