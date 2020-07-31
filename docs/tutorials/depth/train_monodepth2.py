@@ -15,8 +15,6 @@ Start Training Now
 
     :download:`Download Full Python Script: train.py<../../../scripts/depth/train.py>`
 
-    :download:`Download Full Python Script: trainer.py<../../../scripts/depth/trainer.py>`
-
     Example training command::
 
         python train.py --model_zoo monodepth2_resnet18_kitti_stereo_640x192 --pretrained_base --frame_ids 0 --use_stereo --split eigen_full --log_dir ./tmp/stereo/ --png --gpu 0
