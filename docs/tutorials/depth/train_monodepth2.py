@@ -175,17 +175,18 @@ print(model)
 #     Here we give an example of training monodepth2 on the KITTI RAW dataset [Godard19]_. First,
 #     we need to prepare the dataset. The official implementation of monodepth2 does not use all
 #     the data of KITTI, here we use the same dataset and split method as it. You need download
-#     the split zip file, and extract it to '$(HOME)/.mxnet/datasets/kitti/'. Follow the step to
-#     get the dataset::
+#     the split zip file, and extract it to ``$(HOME)/.mxnet/datasets/kitti/``.
 #
-#     cd ~
-#     mkdir -p .mxnet/datasets/kitti
-#     cd .mxnet/datasets/kitti
-#     wget https://github.com/KuangHaofei/GluonCV_Test/raw/master/monodepthv2/tutorials/splits.zip
-#     unzip splits.zip
-#     wget -i splits/kitti_archives_to_download.txt -P kitti_data/
-#     cd kitti_data
-#     unzip "*.zip"
+#     Follow the command to get the dataset::
+#
+#       cd ~
+#       mkdir -p .mxnet/datasets/kitti
+#       cd .mxnet/datasets/kitti
+#       wget https://github.com/KuangHaofei/GluonCV_Test/raw/master/monodepthv2/tutorials/splits.zip
+#       unzip splits.zip
+#       wget -i splits/kitti_archives_to_download.txt -P kitti_data/
+#       cd kitti_data
+#       unzip "*.zip"
 #
 #  .. hint::
 #
