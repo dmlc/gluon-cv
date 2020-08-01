@@ -36,7 +36,8 @@ class DeepLabWV3Plus(HybridBlock):
         self._up_kwargs = {'height': height, 'width': width}
         self.base_size = base_size
         self.crop_size = crop_size
-        print('self.crop_size', self.crop_size)
+        #print('self.crop_size', self.crop_size)
+        kwargs.pop('root', None)
 
         with self.name_scope():
             pretrained = wider_resnet38_a2(classes=1000, dilation=True)
@@ -238,6 +239,9 @@ def get_deeplabv3b_plus(dataset='citys', backbone='wideresnet', pretrained=False
     }
     from ..data import datasets
     # infer number of classes
+    if pretrained:
+        kwargs['pretrained_base'] = False
+    kwargs['root'] = root
     model = DeepLabWV3Plus(datasets[dataset].NUM_CLASS, backbone=backbone, ctx=ctx, **kwargs)
     model.classes = datasets[dataset].CLASSES
     if pretrained:
