@@ -42,6 +42,7 @@ class PAM_Module(HybridBlock):
 
         return out
 
+
 class CAM_Module(HybridBlock):
     r""" Channel attention module
     from the paper `"Dual Attention Network for Scene Segmentation"
@@ -74,5 +75,4 @@ class CAM_Module(HybridBlock):
         out = F.reshape_like(out, x, lhs_begin=2, lhs_end=None, rhs_begin=2, rhs_end=None)
 
         out = F.broadcast_mul(gamma, out) + x
-        
         return out
