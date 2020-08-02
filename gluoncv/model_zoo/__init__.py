@@ -36,3 +36,4 @@ from .center_net import *
 from .hrnet import *
 from .siamrpn import *
 from .fastscnn import *
+from .monodepthv2 import *

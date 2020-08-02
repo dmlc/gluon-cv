@@ -45,6 +45,7 @@ from .icnet import *
 from .fastscnn import *
 >>>>>>> upstream/master
 from .danet import *
+from .monodepthv2.monodepth2 import *
 
 __all__ = ['get_model', 'get_model_list']
 
@@ -376,6 +377,7 @@ _models = {
     'hrnet_w18_small_v2_s' : hrnet_w18_small_v2_s,
     'hrnet_w48_s' : hrnet_w48_s,
     'siamrpn_alexnet_v2_otb15': siamrpn_alexnet_v2_otb15,
+    'monodepth2_resnet18_kitti_stereo_640x192': get_monodepth2_resnet18_kitti_stereo_640x192
 }
 
 

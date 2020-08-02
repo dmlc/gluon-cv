@@ -26,7 +26,7 @@ and perform single object tracking on an arbitrary video.
 #
 # You need to prepare two things to start a tracking demo, the video and its first frame object coordinates.
 # The coordinates show the region of interest where to track, and in the format of
-# (center_x, center_y, width, height).
+# (min_x, min_y, width, height).
 #
 # Here we download a video and set the region of interest in the first frame as [298, 160, 48, 80].
 
