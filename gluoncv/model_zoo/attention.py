@@ -42,7 +42,6 @@ class PAM_Module(HybridBlock):
 
         return out
 
-
 class CAM_Module(HybridBlock):
     r""" Channel attention module
     from the paper `"Dual Attention Network for Scene Segmentation"

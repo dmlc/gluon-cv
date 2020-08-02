@@ -40,10 +40,7 @@ from .center_net import *
 from .hrnet import *
 from .siamrpn import *
 from .icnet import *
-<<<<<<< HEAD
-=======
 from .fastscnn import *
->>>>>>> upstream/master
 from .danet import *
 from .monodepthv2.monodepth2 import *
 
@@ -193,14 +190,11 @@ _models = {
     'deeplab_v3b_plus_wideresnet_citys': get_deeplab_v3b_plus_wideresnet_citys,
     'icnet_resnet50_citys': get_icnet_resnet50_citys,
     'icnet_resnet50_mhpv1': get_icnet_resnet50_mhpv1,
-<<<<<<< HEAD
     'danet_resnet50_citys':get_danet_resnet50_citys,
     'danet_resnet101_citys':get_danet_resnet101_citys,
-=======
     'fastscnn_citys': get_fastscnn_citys,
     'danet_resnet50_citys': get_danet_resnet50_citys,
     'danet_resnet101_citys': get_danet_resnet101_citys,
->>>>>>> upstream/master
     'resnet18_v1b': resnet18_v1b,
     'resnet34_v1b': resnet34_v1b,
     'resnet50_v1b': resnet50_v1b,
