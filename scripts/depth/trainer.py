@@ -13,13 +13,11 @@ import mxnet as mx
 from mxnet import gluon, autograd
 
 from gluoncv.data import KITTIRAWDataset, KITTIOdomDataset
-from gluoncv.data.kitti.kitti_utils import dict_batchify_fn
+from gluoncv.data.kitti.kitti_utils import dict_batchify_fn, readlines
 
 from gluoncv.model_zoo import get_model
 from gluoncv.model_zoo.monodepthv2.layers import *
 from gluoncv.utils import LRScheduler, LRSequential
-
-from utils import *
 
 # Models which were trained with stereo supervision were trained with a nominal
 # baseline of 0.1 units. The KITTI rig has a baseline of 54cm. Therefore,
@@ -77,8 +75,8 @@ class Trainer:
                          "kitti_odom": KITTIOdomDataset}
         self.dataset = datasets_dict[self.opt.dataset]
 
-        fpath = os.path.join(os.path.dirname(__file__), "splits", self.opt.split, "{}_files.txt")
-
+        fpath = os.path.join(os.path.expanduser("~"), ".mxnet/datasets/kitti",
+                             "splits", self.opt.split, "{}_files.txt")
         train_filenames = readlines(fpath.format("train"))
         val_filenames = readlines(fpath.format("val"))
         img_ext = '.png' if self.opt.png else '.jpg'

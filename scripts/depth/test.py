@@ -13,9 +13,8 @@ import numpy as np
 
 import mxnet as mx
 from mxnet import gluon
-from utils import readlines
 from gluoncv.data import KITTIRAWDataset
-from gluoncv.data.kitti.kitti_utils import dict_batchify_fn
+from gluoncv.data.kitti.kitti_utils import dict_batchify_fn, readlines
 from gluoncv.model_zoo import get_model
 
 from gluoncv.model_zoo.monodepthv2.layers import disp_to_depth
@@ -23,7 +22,7 @@ from options import MonodepthOptions
 
 cv2.setNumThreads(0)  # This speeds up evaluation 5x on our unix systems (OpenCV 3.3.1)
 
-splits_dir = os.path.join(os.path.dirname(__file__), "splits")
+splits_dir = os.path.join(os.path.expanduser("~"), ".mxnet/datasets/kitti", "splits")
 
 # Models which were trained with stereo supervision were trained with a nominal
 # baseline of 0.1 units. The KITTI rig has a baseline of 54cm. Therefore,
@@ -240,7 +239,9 @@ if __name__ == "__main__":
     options = MonodepthOptions()
     opts = options.parse()
     print("Testing model named:\n  ", opts.model_zoo)
-    print("Weights are loaded from:\n  ", opts.load_weights_folder)
+    print("Weights are loaded from:\n  ",
+          "gluoncv pretrained model" if opts.pretrained_type == "gluoncv"
+          else opts.load_weights_folder)
     print("Inference is using:\n  ", "CPU" if opts.ctx[0] is mx.cpu() else "GPU")
 
     evaluate(opts)

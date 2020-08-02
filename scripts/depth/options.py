@@ -2,8 +2,6 @@ import os
 import argparse
 import mxnet as mx
 
-file_dir = os.path.dirname(__file__)  # the directory that options.py resides in
-
 
 class MonodepthOptions:
     def __init__(self):
@@ -13,11 +11,12 @@ class MonodepthOptions:
         self.parser.add_argument("--data_path",
                                  type=str,
                                  help="path to the training data",
-                                 default=os.path.join(file_dir, "kitti_data"))
+                                 default=os.path.join(os.path.expanduser("~"),
+                                                      ".mxnet/datasets/kitti", "kitti_data"))
         self.parser.add_argument("--log_dir",
                                  type=str,
                                  help="log directory",
-                                 default=os.path.join(os.path.expanduser("~"), "tmp"))
+                                 default=os.path.join(os.path.expanduser("."), "tmp"))
 
         # MODEL options
         self.parser.add_argument('--model_zoo', type=str, default=None,

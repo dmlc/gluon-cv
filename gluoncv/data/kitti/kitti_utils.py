@@ -49,7 +49,7 @@ def sub2ind(matrixSize, rowSub, colSub):
     """
     # pylint: disable=unused-variable
     m, n = matrixSize
-    return rowSub * (n-1) + colSub - 1
+    return rowSub * (n - 1) + colSub - 1
 
 
 def generate_depth_map(calib_dir, velo_filename, cam=2, vel_depth=False):
@@ -68,7 +68,7 @@ def generate_depth_map(calib_dir, velo_filename, cam=2, vel_depth=False):
     # compute projection matrix velodyne->image plane
     R_cam2rect = np.eye(4)
     R_cam2rect[:3, :3] = cam2cam['R_rect_00'].reshape(3, 3)
-    P_rect = cam2cam['P_rect_0'+str(cam)].reshape(3, 4)
+    P_rect = cam2cam['P_rect_0' + str(cam)].reshape(3, 4)
     P_velo2im = np.dot(np.dot(P_rect, R_cam2rect), velo2cam)
 
     # load velodyne points and remove all behind image plane (approximation)
@@ -117,3 +117,11 @@ def dict_batchify_fn(data):
         return {key: dict_batchify_fn([d[key] for d in data]) for key in elem}
 
     raise RuntimeError('unknown datatype')
+
+
+def readlines(filename):
+    """Read all the lines in a text file and return as a list
+    """
+    with open(filename, 'r') as f:
+        lines = f.read().splitlines()
+    return lines
