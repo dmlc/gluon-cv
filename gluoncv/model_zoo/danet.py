@@ -13,6 +13,7 @@ __all__ = ['DANet', 'get_danet', 'get_danet_resnet50_citys', 'get_danet_resnet10
 
 class DANet(SegBaseModel):
     r"""Dual Attention Networks for Semantic Segmentation
+
     Parameters
     ----------
     nclass : int
@@ -22,6 +23,7 @@ class DANet(SegBaseModel):
         'resnet101').
     norm_layer : object
         Normalization layer used in backbone network (default: :class:`mxnet.gluon.nn.BatchNorm`;
+
     Reference:
         Jun Fu, Jing Liu, Haijie Tian, Yong Li, Yongjun Bao, Zhiwei Fang, Hanqing Lu. "Dual Attention
         Network for Scene Segmentation." *CVPR*, 2019
@@ -183,9 +185,11 @@ def get_danet_resnet101_citys(**kwargs):
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
+
     Examples
     --------
     >>> model = get_danet_resnet101_citys(pretrained=True)
     >>> print(model)
     """
     return get_danet('citys', 'resnet101', **kwargs)
+    
