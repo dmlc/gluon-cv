@@ -193,3 +193,15 @@ def try_import_gdfDownloader():
           "e.g. pip install googleDriveFileDownloader --user` " \
           "(note that this is unofficial PYPI package)."
     return try_import('googleDriveFileDownloader', msg)
+
+def try_import_skimage():
+    """Try import scikit-image at runtime.
+
+    Returns
+    -------
+    scikit-image module if found. Raise ImportError otherwise
+
+    """
+    msg = "skimage is required, you can install by package manager, e.g. " \
+          "`pip install scikit-image --user` (note that this is unofficial PYPI package)."
+    return try_import('skimage', msg)

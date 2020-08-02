@@ -40,6 +40,7 @@ class DeepLabV3Plus(HybridBlock):
         with self.name_scope():
             pretrained = get_xcetption(pretrained=pretrained_base, output_stride=output_stride,
                                        ctx=ctx, **kwargs)
+            kwargs.pop('root', None)
             # base network
             self.conv1 = pretrained.conv1
             self.bn1 = pretrained.bn1
@@ -268,6 +269,9 @@ def get_deeplab_plus(dataset='pascal_voc', backbone='xception', pretrained=False
     }
     from ..data import datasets
     # infer number of classes
+    if pretrained:
+        kwargs['pretrained_base'] = False
+    kwargs['root'] = root
     model = DeepLabV3Plus(datasets[dataset].NUM_CLASS, backbone=backbone, ctx=ctx, **kwargs)
     model.classes = datasets[dataset].CLASSES
     if pretrained:

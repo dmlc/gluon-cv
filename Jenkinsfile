@@ -42,7 +42,8 @@ stage("Unit Test") {
           export LD_LIBRARY_PATH=/usr/local/cuda-10.0/lib64
           export MPLBACKEND=Agg
           export MXNET_CUDNN_AUTOTUNE_DEFAULT=0
-          nosetests --with-timer --timer-ok 5 --timer-warning 20 -x --with-coverage --cover-package gluoncv -v tests/unittests
+          nosetests --with-timer --timer-ok 5 --timer-warning 20 -x -v tests/unittests
+          nosetests --with-timer --timer-ok 5 --timer-warning 20 -x -v tests/model_zoo
           """
         }
       }
@@ -72,6 +73,7 @@ stage("Unit Test") {
           export MPLBACKEND=Agg
           export MXNET_CUDNN_AUTOTUNE_DEFAULT=0
           nosetests --with-timer --timer-ok 5 --timer-warning 20 -x --with-coverage --cover-package gluoncv -v tests/unittests
+          nosetests --with-timer --timer-ok 5 --timer-warning 20 -x --with-coverage --cover-package gluoncv -v tests/model_zoo
           rm -f coverage.svg
           coverage-badge -o coverage.svg
           if [[ ${env.BRANCH_NAME} == master ]]; then
