@@ -18,6 +18,7 @@ stage("Sanity Check") {
 }
 
 stage("Unit Test") {
+<<<<<<< HEAD
   parallel 'Python 2': {
     node('linux-gpu') {
       ws('workspace/gluon-cv-py2') {
@@ -49,6 +50,8 @@ stage("Unit Test") {
     }
   },
   'Python 3': {
+=======
+>>>>>>> e4a580d... deprecate python2 finally
     node('linux-gpu') {
       ws('workspace/gluon-cv-py3') {
         timeout(time: max_time, unit: 'MINUTES') {
@@ -83,8 +86,7 @@ stage("Unit Test") {
           fi
           """
         }
-      }
-    }
+     }
   }
 }
 
