@@ -4,15 +4,14 @@ import mxnet as mx
 from mxnet import gluon
 from mxnet import autograd
 
-from gluoncv import data as gdata
-from gluoncv.data.batchify import Tuple, Stack, Pad
-from gluoncv.data.sampler import SplitSortedBucketSampler
-from gluoncv.data.transforms.presets.ssd import SSDDefaultTrainTransform
-from gluoncv.data.transforms.presets.ssd import SSDDefaultValTransform
-from gluoncv.data.transforms.presets.ssd import SSDDALIPipeline
-from gluoncv.utils.metrics.voc_detection import VOC07MApMetric
-from gluoncv.utils.metrics.coco_detection import COCODetectionMetric
-from gluoncv.utils.metrics.accuracy import Accuracy
+from .... import data as gdata
+from ....data.batchify import Tuple, Stack, Pad
+from ....data.transforms.presets.ssd import SSDDefaultTrainTransform
+from ....data.transforms.presets.ssd import SSDDefaultValTransform
+from ....data.transforms.presets.ssd import SSDDALIPipeline
+from ....utils.metrics.voc_detection import VOC07MApMetric
+from ....utils.metrics.coco_detection import COCODetectionMetric
+from ....utils.metrics.accuracy import Accuracy
 
 try:
     import horovod.mxnet as hvd
@@ -88,7 +87,7 @@ def _get_dali_dataset(dataset_name, devices, args):
                                               skip_empty=False)
             val_metric = COCODetectionMetric(
                 val_dataset, os.path.join(args.logdir, args.save_prefix + '_eval'), cleanup=True,
-                data_shape=(args.data_shape, args.data_shape))
+                data_shape=(args.ssd.data_shape, args.ssd.data_shape))
         else:
             val_dataset = None
             val_metric = None

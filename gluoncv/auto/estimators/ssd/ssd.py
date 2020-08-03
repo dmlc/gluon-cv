@@ -11,18 +11,18 @@ from mxnet import gluon
 from mxnet import autograd
 import gluoncv as gcv
 
-from gluoncv import data as gdata
-from gluoncv import utils as gutils
-from gluoncv.model_zoo import get_model
-from gluoncv.data.batchify import Tuple, Stack, Pad
-from gluoncv.data.transforms import presets
-from gluoncv.data.transforms.presets.ssd import SSDDefaultTrainTransform
-from gluoncv.data.transforms.presets.ssd import SSDDefaultValTransform
-from gluoncv.data.transforms.presets.ssd import SSDDALIPipeline
-from gluoncv.nn.bbox import BBoxClipToImage
-from gluoncv.utils.metrics.voc_detection import VOC07MApMetric
-from gluoncv.utils.metrics.coco_detection import COCODetectionMetric
-from gluoncv.utils.metrics.accuracy import Accuracy
+from .... import data as gdata
+from .... import utils as gutils
+from ....model_zoo import get_model
+from ....data.batchify import Tuple, Stack, Pad
+from ....data.transforms import presets
+from ....data.transforms.presets.ssd import SSDDefaultTrainTransform
+from ....data.transforms.presets.ssd import SSDDefaultValTransform
+from ....data.transforms.presets.ssd import SSDDALIPipeline
+from ....nn.bbox import BBoxClipToImage
+from ....utils.metrics.voc_detection import VOC07MApMetric
+from ....utils.metrics.coco_detection import COCODetectionMetric
+from ....utils.metrics.accuracy import Accuracy
 
 from mxnet.contrib import amp
 
