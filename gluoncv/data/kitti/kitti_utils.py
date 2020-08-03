@@ -9,7 +9,6 @@ from collections import Counter
 import numpy as np
 
 import mxnet as mx
-import mxnet.numpy as _mx_np
 from mxnet.util import is_np_array
 
 
@@ -110,6 +109,7 @@ def generate_depth_map(calib_dir, velo_filename, cam=2, vel_depth=False):
 
 def dict_batchify_fn(data):
     """dict batchify function"""
+    import mxnet.numpy as _mx_np
     if isinstance(data[0], mx.nd.NDArray):
         return _mx_np.stack(data) if is_np_array() else mx.nd.stack(*data)
     elif isinstance(data[0], dict):
