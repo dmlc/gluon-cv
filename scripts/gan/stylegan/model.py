@@ -64,8 +64,7 @@ class Generator(nn.HybridBlock):
 
             if i > 0 and step > 0:
                 out_prev = out
-                
-            
+
             out = conv(out, style_step, nd.array(noise[i], ctx=style[0].context))
 
             if i == step:
@@ -85,13 +84,13 @@ class Generator(nn.HybridBlock):
 class StyledGenerator(nn.HybridBlock):
     r"""Style-based GAN
     Reference:
-        Tero Karras, Samuli Laine, Timo Aila. "A Style-Based Generator 
+        Tero Karras, Samuli Laine, Timo Aila. "A Style-Based Generator
         Architecture for Generative Adversarial Networks." *CVPR*, 2019
     """
     def __init__(self, code_dim=512, n_mlp=8):
         super().__init__()
 
-        self.generator = Generator(code_dim)
+        self.generator = Generator()
 
         self.style = nn.HybridSequential()
 
@@ -104,7 +103,7 @@ class StyledGenerator(nn.HybridBlock):
                 self.style.add(nn.LeakyReLU(0.2))
 
 
-    def hybrid_forward(self, F, x, step=0, alpha=-1, mean_style=None, 
+    def hybrid_forward(self, F, x, step=0, alpha=-1, mean_style=None,
                        style_weight=0, noise=None, mixing_range=(-1, -1)):
 
         styles = []
@@ -143,5 +142,3 @@ class StyledGenerator(nn.HybridBlock):
         style = self.style(x).mean(axis=0, keepdims=True)
 
         return style
-
-
