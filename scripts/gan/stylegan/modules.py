@@ -37,7 +37,7 @@ class FusedUpsample(nn.HybridBlock):
         self.pad = (padding, padding)
 
     def hybrid_forward(self, F, x, **kwargs):
-        weight = F.pad(kwargs['weight'] * self.multiplier, mode='constant', 
+        weight = F.pad(kwargs['weight'] * self.multiplier, mode='constant',
                        constant_value=0, pad_width=(0, 0, 0, 0, 1, 1, 1, 1))
         weight = (
             weight[:, :, 1:, 1:]
@@ -46,7 +46,7 @@ class FusedUpsample(nn.HybridBlock):
             + weight[:, :, :-1, :-1]
         ) / 4
 
-        out = F.Deconvolution(x, weight, kwargs['bias'], kernel=weight.shape[-2:], stride=(2, 2), 
+        out = F.Deconvolution(x, weight, kwargs['bias'], kernel=weight.shape[-2:], stride=(2, 2),
                               pad=self.pad, num_filter=weight.shape[1], no_bias=False)
 
         return out
@@ -62,7 +62,7 @@ class PixelNorm(nn.HybridBlock):
 
 class Blur(nn.HybridBlock):
     def __init__(self, channel):
-        super().__init__() 
+        super().__init__()
         self.channel = channel
 
         weight = np.array([[1, 2, 1], [2, 4, 2], [1, 2, 1]], dtype=np.float32)
@@ -78,7 +78,7 @@ class Blur(nn.HybridBlock):
     def hybrid_forward(self, F, x, **kwargs):
 
         weight = nd.array(self.weight, ctx=x.context)
-        output = F.Convolution(x, weight, kernel=self.weight.shape[-2:], pad=(1, 1), 
+        output = F.Convolution(x, weight, kernel=self.weight.shape[-2:], pad=(1, 1),
                                num_filter=self.channel, num_group=x.shape[1], no_bias=True)
 
         return output
@@ -88,11 +88,11 @@ class EqualConv2d(nn.HybridBlock):
     def __init__(self, in_dim, out_dim, kernel, padding=0):
         super().__init__()
 
-        self.conv = nn.Conv2D(channels=out_dim, in_channels=in_dim, kernel_size=kernel, padding=padding, 
+        self.conv = nn.Conv2D(channels=out_dim, in_channels=in_dim, kernel_size=kernel, padding=padding,
                               weight_initializer=mx.init.Normal(1), bias_initializer='zeros')
 
         self.weight_key = get_weight_key(self.conv)
-        self.weight_orig = self.params.get('weight_orig', shape=self.conv.params[self.weight_key].shape, 
+        self.weight_orig = self.params.get('weight_orig', shape=self.conv.params[self.weight_key].shape,
                                            init=mx.init.Zero())
 
     def hybrid_forward(self, F, x, **kwargs):
@@ -107,10 +107,10 @@ class EqualLinear(nn.HybridBlock):
     def __init__(self, in_dim, out_dim):
         super().__init__()
 
-        self.linear = nn.Dense(units=out_dim, in_units=in_dim, 
+        self.linear = nn.Dense(units=out_dim, in_units=in_dim,
                                weight_initializer=mx.init.Normal(1), bias_initializer='zeros')
         self.weight_key = get_weight_key(self.linear)
-        self.weight_orig = self.params.get('weight_orig', shape=self.linear.params[self.weight_key].shape, 
+        self.weight_orig = self.params.get('weight_orig', shape=self.linear.params[self.weight_key].shape,
                                            init=mx.init.Zero())
 
     def hybrid_forward(self, F, x, **kwargs):
@@ -178,7 +178,6 @@ class StyledConvBlock(nn.HybridBlock):
         self.upsample = None
         if initial:
             self.conv1 = ConstantInput(in_channel)
-        
         else:
             if upsample:
                 if fused:
@@ -187,17 +186,15 @@ class StyledConvBlock(nn.HybridBlock):
                     with self.conv1.name_scope():
                         self.conv1.add(FusedUpsample(in_channel, out_channel, kernel_size, padding=padding))
                         self.conv1.add(Blur(out_channel))
-                    
                 else:
                     self.upsample = 'nearest'
                     self.conv1 = nn.HybridSequential()
                     with self.conv1.name_scope():
-                        self.conv1.add(EqualConv2d(in_dim=in_channel, out_dim=out_channel, 
+                        self.conv1.add(EqualConv2d(in_dim=in_channel, out_dim=out_channel,
                                                    kernel=kernel_size, padding=padding))
                         self.conv1.add(Blur(out_channel))
-
             else:
-                self.conv1 = EqualConv2d(in_dim=in_channel, out_dim=out_channel, 
+                self.conv1 = EqualConv2d(in_dim=in_channel, out_dim=out_channel,
                                          kernel=kernel_size, padding=padding)
 
 
@@ -225,5 +222,3 @@ class StyledConvBlock(nn.HybridBlock):
         out = self.adain2(out, style)
 
         return out
-
-
