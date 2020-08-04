@@ -61,7 +61,7 @@ if __name__ == '__main__':
     parser.add_argument('--n_sample', type=int, default=10, help='number of rows of sample matrix')
     parser.add_argument('--gpu_id', type=str, default='0', help='gpu id: e.g. 0. use -1 for CPU')
     parser.add_argument('--out_dir', type=str, default='samples/', help='output directory for samples')
-    parser.add_argument('--path', type=str, default='./stylegan-ffhq-1024px-new-v2.params', 
+    parser.add_argument('--path', type=str, default='./stylegan-ffhq-1024px-new.params', 
                         help='path to checkpoint file')
     
     args = parser.parse_args()   

@@ -8,7 +8,7 @@ from modules import *
 # pylint: disable-all
 
 class Generator(nn.HybridBlock):
-    def __init__(self, code_dim, fused=True):
+    def __init__(self, fused=True):
         super().__init__()
 
         self.progression = nn.HybridSequential()
