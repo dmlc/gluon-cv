@@ -501,6 +501,9 @@ def train(net, train_data, val_data, eval_metric, batch_size, ctx, logger, args)
 
     if args.amp:
         amp.init_trainer(trainer)
+        amp_enabled = True
+    else:
+        amp_enabled = False
 
     # lr decay policy
     lr_decay = float(args.lr_decay)
@@ -538,7 +541,7 @@ def train(net, train_data, val_data, eval_metric, batch_size, ctx, logger, args)
     base_lr = trainer.learning_rate
     for epoch in range(args.start_epoch, args.epochs):
         rcnn_task = ForwardBackwardTask(net, trainer, rpn_cls_loss, rpn_box_loss, rcnn_cls_loss,
-                                        rcnn_box_loss, rcnn_mask_loss)
+                                        rcnn_box_loss, rcnn_mask_loss, amp_enabled)
         executor = Parallel(args.executor_threads, rcnn_task) if not args.horovod else None
         if not args.disable_hybridization:
             net.hybridize(static_alloc=args.static_alloc)
