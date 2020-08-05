@@ -64,7 +64,7 @@ class RCNN(gluon.HybridBlock):
     """
 
     def __init__(self, features, top_features, classes, box_features, short, max_size,
-                 train_patterns, nms_thresh, nms_topk, roi_mode, roi_size, strides, clip,
+                 train_patterns, nms_thresh, nms_topk, post_nms, roi_mode, roi_size, strides, clip,
                  force_nms=False, **kwargs):
         super(RCNN, self).__init__(**kwargs)
         self.classes = classes
