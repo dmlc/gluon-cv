@@ -76,7 +76,7 @@ net = gcv.model_zoo.get_model('ssd_512_mobilenet1.0_custom', classes=classes,
 # .. hint::
 #
 #     You will find a more detailed training implementation of SSD here:
-#     :download:`Download fit_ssd.py<../../../scripts/detection/ssd/train_ssd.py>`
+#     :download:`Download train_ssd.py<../../../scripts/detection/ssd/train_ssd.py>`
 def get_dataloader(net, train_dataset, data_shape, batch_size, num_workers):
     from gluoncv.data.batchify import Tuple, Stack, Pad
     from gluoncv.data.transforms.presets.ssd import SSDDefaultTrainTransform
