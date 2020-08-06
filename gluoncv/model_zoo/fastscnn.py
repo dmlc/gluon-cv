@@ -111,6 +111,7 @@ class FeatureFusionModule(HybridBlock):
             self.conv_higher_res = nn.Conv2D(in_channels=highter_in_channels,
                                              channels=out_channels, kernel_size=1)
             self.bn = norm_layer(in_channels=out_channels)
+            self.bn_high = norm_layer(in_channels=out_channels)
             self.relu = nn.Activation('relu')
 
     def hybrid_forward(self, F, higher_res_feature, lower_res_feature):
@@ -118,7 +119,7 @@ class FeatureFusionModule(HybridBlock):
 
         lower_res_feature = self.dwconv(lower_res_feature)
         lower_res_feature = self.bn(self.conv_lower_res(lower_res_feature))
-        higher_res_feature = self.bn(self.conv_higher_res(higher_res_feature))
+        higher_res_feature = self.bn_high(self.conv_higher_res(higher_res_feature))
         out = higher_res_feature + lower_res_feature
         return self.relu(out)
 
