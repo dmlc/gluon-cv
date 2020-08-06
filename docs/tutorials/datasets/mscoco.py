@@ -89,5 +89,5 @@ plt.show()
 ##################################################################
 # Finally, to use both ``train_dataset`` and ``val_dataset`` for training, we
 # can pass them through data transformations and load with
-# :py:class:`mxnet.gluon.data.DataLoader`, see :download:`fit_ssd.py
-# <../../../scripts/detection/ssd/fit_ssd.py>` for more information.
+# :py:class:`mxnet.gluon.data.DataLoader`, see :download:`train_ssd.py
+# <../../../scripts/detection/ssd/train_ssd.py>` for more information.

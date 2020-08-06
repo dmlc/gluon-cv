@@ -12,7 +12,7 @@ This is also a good starting point for your own object detection project.
     You can skip the rest of this tutorial and start training your SSD model
     right away by downloading this script:
 
-    :download:`Download fit_ssd.py<../../../scripts/detection/ssd/fit_ssd.py>`
+    :download:`Download train_ssd.py<../../../scripts/detection/ssd/train_ssd.py>`
 
     Example usage:
 
@@ -20,19 +20,19 @@ This is also a good starting point for your own object detection project.
 
     .. code-block:: bash
 
-        python fit_ssd.py
+        python train_ssd.py
 
     Train a resnet50_v1 512x512 model on GPU 0,1,2,3:
 
     .. code-block:: bash
 
-        python fit_ssd.py --gpus 0,1,2,3 --network resnet50_v1 --data-shape 512
+        python train_ssd.py --gpus 0,1,2,3 --network resnet50_v1 --data-shape 512
 
     Check the supported arguments:
 
     .. code-block:: bash
 
-        python fit_ssd.py --help
+        python train_ssd.py --help
 
 """
 
@@ -291,7 +291,7 @@ for ib, batch in enumerate(train_loader):
 # .. hint::
 #
 # Please checkout the full :download:`training script
-# <../../../scripts/detection/ssd/fit_ssd.py>` for complete
+# <../../../scripts/detection/ssd/train_ssd.py>` for complete
 # implementation.
 
 ##########################################################
