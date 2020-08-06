@@ -1,6 +1,7 @@
 from sacred import Experiment, Ingredient
 
 from ..common import logging
+from ....model_zoo import vgg16_atrous_300, vgg16_atrous_512
 
 ssd = Ingredient('ssd')
 train = Ingredient('train')
@@ -11,13 +12,24 @@ validation = Ingredient('validation')
 def ssd_default():
     # Backbone network.
     backbone = 'vgg16_atrous'  # base feature network
-
-    # Use synchronize BN across devices.
-    syncbn = False
-
     # Input data shape, use 300, 512.
     data_shape = 300
-
+    # List of network internal output names, in order to specify which layers are
+    # used for predicting bbox values.
+    features = vgg16_atrous_300
+    # List of convolution layer channels which is going to be appended to the base
+    # network feature extractor. If `name` is `None`, this is ignored.
+    filters = None
+    # Sizes of anchor boxes, this should be a list of floats, in incremental order.
+    # The length of `sizes` must be len(layers) + 1.
+    sizes = [30, 60, 111, 162, 213, 264, 315]
+    # Aspect ratios of anchors in each output layer. Its length must be equals
+    # to the number of SSD output layers.
+    ratios = [[1, 2, 0.5]] + [[1, 2, 0.5, 3, 1.0/3]] * 3 + [[1, 2, 0.5]] * 2
+    # Step size of anchor boxes in each output layer.
+    steps = [8, 16, 32, 64, 100, 300]
+    # Use synchronize BN across devices.
+    syncbn = False
     # Whether to use automatic mixed precision
     amp = False
 
@@ -30,9 +42,6 @@ def train_cfg():
     start_epoch = 0
     # total epoch for training
     epochs = 240
-
-    # Solver
-    # ------
     # Learning rate.
     lr = 0.001
     # Decay rate of learning rate.
@@ -45,13 +54,9 @@ def train_cfg():
     momentum = 0.9
     # Weight decay
     wd = 5e-4
-
-    # Misc
-    # ----
     # log interval in terms of iterations
     log_interval = 100
     seed = 233
-
     # Use DALI for data loading and data preprocessing in training.
     # Currently supports only COCO.
     dali = False

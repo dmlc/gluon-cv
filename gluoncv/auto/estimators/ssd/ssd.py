@@ -14,6 +14,7 @@ import gluoncv as gcv
 from .... import data as gdata
 from .... import utils as gutils
 from ....model_zoo import get_model
+from ....model_zoo import get_ssd
 from ....data.batchify import Tuple, Stack, Pad
 from ....data.transforms import presets
 from ....data.transforms.presets.ssd import SSDDefaultTrainTransform
@@ -81,15 +82,59 @@ class SSDEstimator(BaseEstimator):
             ctx = [mx.gpu(int(i)) for i in self._cfg.gpus]
             self.ctx = ctx if ctx else [mx.cpu()]
 
+        # training dataset
+        devices = [int(i) for i in self._cfg.gpus]
+        if self._cfg.train.dali:
+            if not dali_found:
+                raise SystemExit("DALI not found, please check if you installed it correctly.")
+            self.train_dataset, self.val_dataset, self.eval_metric = _get_dali_dataset(self._cfg.dataset, devices, self._cfg)
+        else:
+            self.train_dataset, self.val_dataset, self.eval_metric = _get_dataset(self._cfg.dataset, self._cfg)
+
+        classes = self.train_dataset.CLASSES
+
         # network
         net_name = '_'.join(('ssd', str(self._cfg.ssd.data_shape), self._cfg.ssd.backbone, self._cfg.dataset))
         self._cfg.save_prefix += net_name
         if self._cfg.ssd.syncbn and len(self.ctx) > 1:
-            self.net = get_model(net_name, pretrained_base=True, norm_layer=gluon.contrib.nn.SyncBatchNorm,
-                            norm_kwargs={'num_devices': len(self.ctx)})
-            self.async_net = get_model(net_name, pretrained_base=False)  # used by cpu worker
+            # self.net = get_model(net_name, pretrained_base=True, norm_layer=gluon.contrib.nn.SyncBatchNorm,
+            #                      norm_kwargs={'num_devices': len(self.ctx)})
+            self.net = get_ssd(name=net_name,
+                               base_size=self._cfg.ssd.data_shape,
+                               features=self._cfg.ssd.features,
+                               filters=self._cfg.ssd.filters,
+                               sizes=self._cfg.ssd.sizes,
+                               ratios=self._cfg.ssd.ratios,
+                               steps=self._cfg.ssd.steps,
+                               classes=classes,
+                               dataset=self._cfg.dataset,
+                               pretrained_base=True,
+                               norm_layer=gluon.contrib.nn.SyncBatchNorm,
+                               norm_kwargs={'num_devices': len(self.ctx)})
+            # self.async_net = get_model(net_name, pretrained_base=False)  # used by cpu worker
+            self.async_net = get_ssd(name=net_name,
+                                     base_size=self._cfg.ssd.data_shape,
+                                     features=self._cfg.ssd.features,
+                                     filters=self._cfg.ssd.filters,
+                                     sizes=self._cfg.ssd.sizes,
+                                     ratios=self._cfg.ssd.ratios,
+                                     steps=self._cfg.ssd.steps,
+                                     classes=classes,
+                                     dataset=self._cfg.dataset,
+                                     pretrained_base=False)
         else:
-            self.net = get_model(net_name, pretrained_base=True, norm_layer=gluon.nn.BatchNorm)
+            # self.net = get_model(net_name, pretrained_base=True, norm_layer=gluon.nn.BatchNorm)
+            self.net = get_ssd(name=net_name,
+                               base_size=self._cfg.ssd.data_shape,
+                               features=self._cfg.ssd.features,
+                               filters=self._cfg.ssd.filters,
+                               sizes=self._cfg.ssd.sizes,
+                               ratios=self._cfg.ssd.ratios,
+                               steps=self._cfg.ssd.steps,
+                               classes=classes,
+                               dataset=self._cfg.dataset,
+                               pretrained_base=True,
+                               norm_layer=gluon.nn.BatchNorm)
             self.async_net = self.net
         if self._cfg.resume.strip():
             self.net.load_parameters(self._cfg.resume.strip())
@@ -102,17 +147,14 @@ class SSDEstimator(BaseEstimator):
                 # needed for net to be first gpu when using AMP
                 self.net.collect_params().reset_ctx(self.ctx[0])
 
-        # training data
+        # training dataloader
         if self._cfg.train.dali:
             if not dali_found:
                 raise SystemExit("DALI not found, please check if you installed it correctly.")
-            devices = [int(i) for i in self._cfg.gpus]
-            self.train_dataset, self.val_dataset, self.eval_metric = _get_dali_dataset(self._cfg.dataset, devices, self._cfg)
             self._train_data, self._val_data = _get_dali_dataloader(
                 self.async_net, self.train_dataset, self.val_dataset, self._cfg.ssd.data_shape, self._cfg.train.batch_size, self._cfg.num_workers,
                 devices, self.ctx[0], self._cfg.horovod)
         else:
-            self.train_dataset, self.val_dataset, self.eval_metric = _get_dataset(self._cfg.dataset, self._cfg)
             batch_size = (self._cfg.train.batch_size // hvd.size()) if self._cfg.horovod else self._cfg.train.batch_size
             self._train_data, self._val_data = _get_dataloader(
                 self.async_net, self.train_dataset, self.val_dataset, self._cfg.ssd.data_shape, batch_size, self._cfg.num_workers, self.ctx[0])
@@ -121,6 +163,16 @@ class SSDEstimator(BaseEstimator):
         self.ce_metric = mx.metric.Loss('CrossEntropy')
         self.smoothl1_metric = mx.metric.Loss('SmoothL1')
 
+        # set up logger
+        logging.basicConfig()
+        self._logger = logging.getLogger()
+        self._logger.setLevel(logging.INFO)
+        log_file_path = self._cfg.save_prefix + '_train.log'
+        log_dir = os.path.dirname(log_file_path)
+        if log_dir and not os.path.exists(log_dir):
+            os.makedirs(log_dir)
+        fh = logging.FileHandler(log_file_path)
+        self._logger.addHandler(fh)
         self._logger.info(self._cfg)
 
     def _validate(self, val_data, ctx, eval_metric):
