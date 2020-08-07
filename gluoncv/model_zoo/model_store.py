@@ -126,7 +126,7 @@ _model_sha1 = {name: checksum for checksum, name in [
     ('63db8a7938586525256a0bdc6632ed986e4026cf', 'icnet_resnet50_mhpv1'),
     ('cf6a7bb3d55360933de647a8505f7936003902a4', 'deeplab_resnet50_citys'),
     ('eb8477a91efc244c85b364c0736664078aaf0e65', 'deeplab_resnet101_citys'),
-    ('b34e59e3e98e8d99f2609ff53f24629ed287b31c', 'fastscnn_citys'),
+    ('95aad0b699ae17c67caa44b3ead4b23474e98954', 'fastscnn_citys'),
     ('143e1f1c1c1f2d3a3416887e088ebfdd4e1e2345', 'danet_resnet50_citys'),
     ('6ead3d099f7a320846bddb51148c3fe3b5ade5c2', 'danet_resnet101_citys'),
     ('f5ece5ce1422eeca3ce2908004e469ffdf91fd41', 'yolo3_darknet53_voc'),
