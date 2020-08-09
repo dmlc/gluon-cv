@@ -63,12 +63,12 @@ class RandomCrop(Block):
             size = (size, size)
         self._args = (size, interpolation)
         self.pad = ((pad, pad), (pad, pad), (0, 0)) if isinstance(pad, int) else pad
-        self.forward = self.forward_pad if self.pad else self.forward_nopad
-    def forward_pad(self, x):
-        return image.random_crop(nd.array(np.pad(x.asnumpy(), self.pad, mode='constant',
-                                                 constant_values=0)), *self._args)[0]
-    def forward_nopad(self, x):
-        return image.random_crop(x, *self._args)[0]
+    def forward(self, x):
+        if self.pad:
+            return image.random_crop(nd.array(np.pad(x.asnumpy(), self.pad, 
+                             mode='constant', constant_values=0)), *self._args)[0]
+        else:
+            return image.random_crop(x, *self._args)[0]
 
 class RandomErasing(Block):
     """Randomly erasing the area in `src` between `s_min` and `s_max` with `probability`.
