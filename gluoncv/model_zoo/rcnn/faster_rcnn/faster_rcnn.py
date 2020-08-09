@@ -155,7 +155,7 @@ class FasterRCNN(RCNN):
 
     def __init__(self, features, top_features, classes, box_features=None,
                  short=600, max_size=1000, min_stage=4, max_stage=4, train_patterns=None,
-                 nms_thresh=0.3, nms_topk=400, roi_mode='align', roi_size=(14, 14), strides=16,
+                 nms_thresh=0.3, nms_topk=400, post_nms=100, roi_mode='align', roi_size=(14, 14), strides=16,
                  clip=None, rpn_channel=1024, base_size=16, scales=(8, 16, 32),
                  ratios=(0.5, 1, 2), alloc_size=(128, 128), rpn_nms_thresh=0.7,
                  rpn_train_pre_nms=12000, rpn_train_post_nms=2000, rpn_test_pre_nms=6000,
@@ -165,7 +165,7 @@ class FasterRCNN(RCNN):
         super(FasterRCNN, self).__init__(
             features=features, top_features=top_features, classes=classes,
             box_features=box_features, short=short, max_size=max_size,
-            train_patterns=train_patterns, nms_thresh=nms_thresh, nms_topk=nms_topk,
+            train_patterns=train_patterns, nms_thresh=nms_thresh, nms_topk=nms_topk, post_nms=post_nms,
             roi_mode=roi_mode, roi_size=roi_size, strides=strides, clip=clip, force_nms=force_nms,
             **kwargs)
         if max_stage - min_stage > 1 and isinstance(strides, (int, float)):
