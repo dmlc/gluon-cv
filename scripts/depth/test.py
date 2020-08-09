@@ -119,9 +119,9 @@ def evaluate(opt):
                 # Here, we have to transfer the output to dict type.
                 outputs = {}
                 idx = 0
-                for i in range(4, -1, -1):
-                    if i in opt.scales:
-                        outputs[("disp", i)] = decoder_output[idx]
+                for scale in range(4, -1, -1):
+                    if scale in opt.scales:
+                        outputs[("disp", scale)] = decoder_output[idx]
                         idx += 1
             else:
                 outputs = model.predict(input_color)

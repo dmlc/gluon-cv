@@ -12,6 +12,27 @@ from ...model_zoo.resnetv1b import \
     resnet18_v1b, resnet34_v1b, resnet50_v1s, resnet101_v1s, resnet152_v1s
 
 
+# def resnet_multiimage_input(backbone, pretrained=False, num_input_images=1):
+#     """Constructs a ResNet model.
+#     Args:
+#         backbone (str): resnet backbone. Must be resnet18 or resnet18
+#         pretrained (bool): If True, returns a model pre-trained on ImageNet
+#         num_input_images (int): Number of frames stacked as input
+#     """
+#     assert backbone in ['resnet18', 'resnet18'], "Can only run with 18 or 50 layer resnet"
+#
+#     blocks = {18: [2, 2, 2, 2], 50: [3, 4, 6, 3]}[num_layers]
+#     block_type = {18: models.resnet.BasicBlock, 50: models.resnet.Bottleneck}[num_layers]
+#     model = ResNetMultiImageInput(block_type, blocks, num_input_images=num_input_images)
+#
+#     if pretrained:
+#         loaded = model_zoo.load_url(models.resnet.model_urls['resnet{}'.format(num_layers)])
+#         loaded['conv1.weight'] = torch.cat(
+#             [loaded['conv1.weight']] * num_input_images, 1) / num_input_images
+#         model.load_state_dict(loaded)
+#     return model
+
+
 class ResnetEncoder(nn.HybridBlock):
     r"""Encoder of Monodepth2
 
@@ -42,7 +63,8 @@ class ResnetEncoder(nn.HybridBlock):
             raise ValueError("{} is not a valid resnet".format(backbone))
 
         if num_input_images > 1:
-            pass
+            self.encoder = resnets[backbone](pretrained=pretrained, ctx=ctx, **kwargs)
+            # self.encoder = resnet_multiimage_input(backbone, pretrained, num_input_images)
         else:
             self.encoder = resnets[backbone](pretrained=pretrained, ctx=ctx, **kwargs)
 
