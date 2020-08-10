@@ -79,7 +79,7 @@ def evaluate(opt):
     pose_encoder_path = os.path.join(opt.load_weights_folder, "pose_encoder.params")
     pose_decoder_path = os.path.join(opt.load_weights_folder, "pose.params")
 
-    pose_encoder = ResnetEncoder(backbone='resnet18', pretrained=False, num_input_images=2)
+    pose_encoder = ResnetEncoder(backbone='resnet18', pretrained=False)
     pose_encoder.load_parameters(pose_encoder_path, ctx=opt.ctx)
 
     pose_decoder = PoseDecoder(pose_encoder.num_ch_enc, 1, 2)

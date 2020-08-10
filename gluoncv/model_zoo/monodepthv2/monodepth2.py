@@ -42,11 +42,11 @@ class MonoDepth2(nn.HybridBlock):
     >>> print(model)
     """
     # pylint: disable=unused-argument
-    def __init__(self, backbone, pretrained_base, num_input_images=1,
-                 scales=range(4), num_output_channels=1, use_skips=True, ctx=cpu(), **kwargs):
+    def __init__(self, backbone, pretrained_base, scales=range(4),
+                 num_output_channels=1, use_skips=True, ctx=cpu(), **kwargs):
         super(MonoDepth2, self).__init__()
 
-        self.encoder = ResnetEncoder(backbone, pretrained_base, num_input_images, ctx=ctx)
+        self.encoder = ResnetEncoder(backbone, pretrained_base, ctx=ctx)
         self.decoder = DepthDecoder(self.encoder.num_ch_enc, scales,
                                     num_output_channels, use_skips)
 
@@ -69,7 +69,7 @@ class MonoDepth2(nn.HybridBlock):
         return outputs
 
 
-def get_monodepth2(backbone='resnet18', pretrained_base=True, num_input_images=1,
+def get_monodepth2(backbone='resnet18', pretrained_base=True,
                    scales=range(4), num_output_channels=1, use_skips=True,
                    root='~/.mxnet/models', ctx=cpu(0),
                    pretrained=False, pretrained_model='kitti_stereo_640x192', **kwargs):
@@ -82,8 +82,6 @@ def get_monodepth2(backbone='resnet18', pretrained_base=True, num_input_images=1
         ('resnet18', 'resnet34', 'resnet50', 'resnet101' or 'resnet152').
     pretrained_base : bool or str, default: True
         This will load pretrained backbone network, that was trained on ImageNet.
-    num_input_images : int, default: 1
-        The number of input images. 1 for depth encoder, larger than 1 for pose encoder.
 
     scales: list, default: range(4)
         The scales used in the loss.
@@ -108,9 +106,8 @@ def get_monodepth2(backbone='resnet18', pretrained_base=True, num_input_images=1
     }
 
     model = MonoDepth2(backbone=backbone, pretrained_base=pretrained_base,
-                       num_input_images=num_input_images, scales=scales,
-                       num_output_channels=num_output_channels, use_skips=use_skips,
-                       ctx=ctx, **kwargs)
+                       scales=scales, num_output_channels=num_output_channels,
+                       use_skips=use_skips, ctx=ctx, **kwargs)
 
     if pretrained:
         from ...model_zoo.model_store import get_model_file

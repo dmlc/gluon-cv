@@ -44,11 +44,8 @@ class ResnetEncoder(nn.HybridBlock):
     pretrained : bool or str
         Refers to if the backbone is pretrained or not. If `True`,
         model weights of a model that was trained on ImageNet is loaded.
-    num_input_images : int
-        The number of input sequences. 1 for depth encoder, larger than 1 for pose encoder.
-        (Default: 1)
     """
-    def __init__(self, backbone, pretrained, num_input_images=1, ctx=cpu(), **kwargs):
+    def __init__(self, backbone, pretrained, ctx=cpu(), **kwargs):
         super(ResnetEncoder, self).__init__()
 
         self.num_ch_enc = np.array([64, 64, 128, 256, 512])
@@ -62,11 +59,7 @@ class ResnetEncoder(nn.HybridBlock):
         if backbone not in resnets:
             raise ValueError("{} is not a valid resnet".format(backbone))
 
-        if num_input_images > 1:
-            self.encoder = resnets[backbone](pretrained=pretrained, ctx=ctx, **kwargs)
-            # self.encoder = resnet_multiimage_input(backbone, pretrained, num_input_images)
-        else:
-            self.encoder = resnets[backbone](pretrained=pretrained, ctx=ctx, **kwargs)
+        self.encoder = resnets[backbone](pretrained=pretrained, ctx=ctx, **kwargs)
 
         if backbone not in ('resnet18', 'resnet34'):
             self.num_ch_enc[1:] *= 4
