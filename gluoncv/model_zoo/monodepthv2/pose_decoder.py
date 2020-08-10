@@ -54,7 +54,7 @@ class PoseDecoder(nn.HybridBlock):
         for i in range(3):
             out = self.convs[("pose", i)](out)
             if i != 2:
-                out = F.relu()(out)
+                out = F.relu(out)
 
         out = out.mean(3).mean(2)
 
@@ -75,7 +75,7 @@ class PoseDecoder(nn.HybridBlock):
         for i in range(3):
             out = self.convs[("pose", i)](out)
             if i != 2:
-                out = mx.nd.relu()(out)
+                out = mx.nd.relu(out)
 
         out = out.mean(3).mean(2)
 
