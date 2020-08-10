@@ -130,15 +130,26 @@ def get_dataloader(net, train_dataset, val_dataset, data_shape, batch_size, num_
     """Get dataloader."""
     width, height = data_shape, data_shape
     batchify_fn = Tuple(*([Stack() for _ in range(6)] + [Pad(axis=0, pad_val=-1) for _ in range(1)]))  # stack image, all targets generated
+
+    if args.mixup:
+        im_aspect_ratio = train_dataset._dataset.get_im_aspect_ratio()
+    else:
+        im_aspect_ratio = train_dataset.get_im_aspect_ratio()
+    train_sampler = \
+        gcv.nn.sampler.SplitSortedBucketSampler(im_aspect_ratio,
+                                                batch_size,
+                                                num_parts=hvd.size() if args.horovod else 1,
+                                                part_index=hvd.rank() if args.horovod else 0,
+                                                shuffle=True)
     if args.no_random_shape:
         train_loader = gluon.data.DataLoader(
             train_dataset.transform(YOLO3DefaultTrainTransform(width, height, net, mixup=args.mixup)),
-            batch_size, True, batchify_fn=batchify_fn, last_batch='rollover', num_workers=num_workers)
+            batch_sampler=train_sampler, batchify_fn=batchify_fn, num_workers=num_workers)
     else:
         transform_fns = [YOLO3DefaultTrainTransform(x * 32, x * 32, net, mixup=args.mixup) for x in range(10, 20)]
         train_loader = RandomTransformDataLoader(
-            transform_fns, train_dataset, batch_size=batch_size, interval=10, last_batch='rollover',
-            shuffle=True, batchify_fn=batchify_fn, num_workers=num_workers)
+            transform_fns, train_dataset, interval=10,
+            batch_sampler=train_sampler, batchify_fn=batchify_fn, num_workers=num_workers)
     val_batchify_fn = Tuple(Stack(), Pad(pad_val=-1))
     val_loader = gluon.data.DataLoader(
         val_dataset.transform(YOLO3DefaultValTransform(width, height)),
