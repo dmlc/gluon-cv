@@ -67,22 +67,23 @@ def evaluate(opt):
 
     img_ext = '.png' if opt.png else '.jpg'
 
-    dataset = KITTIOdomDataset(opt.data_path, filenames, opt.height, opt.width,
-                               [0, 1], 4, is_train=False, img_ext=img_ext)
+    dataset = KITTIOdomDataset(data_path=opt.data_path, filenames=filenames,
+                               height=opt.height, width=opt.width, frame_idxs=[0, 1],
+                               num_scales=4, is_train=False, img_ext=img_ext)
     dataloader = gluon.data.DataLoader(
         dataset, batch_size=opt.batch_size, shuffle=False,
         batchify_fn=dict_batchify_fn, num_workers=opt.num_workers,
-        pin_memory=True, last_batch='rollover')
+        pin_memory=True, last_batch='keep')
 
     ############################ loading model ############################
-    pose_encoder_path = os.path.join(opt.load_weights_folder, "pose_encoder.pth")
-    pose_decoder_path = os.path.join(opt.load_weights_folder, "pose.pth")
+    pose_encoder_path = os.path.join(opt.load_weights_folder, "pose_encoder.params")
+    pose_decoder_path = os.path.join(opt.load_weights_folder, "pose.params")
 
     pose_encoder = ResnetEncoder(backbone='resnet18', pretrained=False, num_input_images=2)
-    pose_encoder.load_params(pose_encoder_path, ctx=opt.ctx)
+    pose_encoder.load_parameters(pose_encoder_path, ctx=opt.ctx)
 
     pose_decoder = PoseDecoder(pose_encoder.num_ch_enc, 1, 2)
-    pose_decoder.load_params(pose_decoder_path)
+    pose_decoder.load_parameters(pose_decoder_path, ctx=opt.ctx)
 
     ############################ inference ############################
     pred_poses = []
@@ -124,7 +125,6 @@ def evaluate(opt):
     for i in range(0, num_frames - 1):
         local_xyzs = np.array(dump_xyz(pred_poses[i:i + track_length - 1]))
         gt_local_xyzs = np.array(dump_xyz(gt_local_poses[i:i + track_length - 1]))
-
         ates.append(compute_ate(gt_local_xyzs, local_xyzs))
 
     print("\n   Trajectory error: {:0.3f}, std: {:0.3f}\n".format(np.mean(ates), np.std(ates)))
