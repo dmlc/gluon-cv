@@ -103,6 +103,7 @@ def get_monodepth2(backbone='resnet18', pretrained_base=True,
     """
     acronyms = {
         'kitti_stereo_640x192': 'kitti_stereo_640x192',
+        'kitti_mono_640x192': 'kitti_mono_640x192',
     }
 
     model = MonoDepth2(backbone=backbone, pretrained_base=pretrained_base,
@@ -129,3 +130,15 @@ def get_monodepth2_resnet18_kitti_stereo_640x192(**kwargs):
 
     """
     return get_monodepth2(backbone='resnet18', pretrained_model='kitti_stereo_640x192', **kwargs)
+
+
+def get_monodepth2_resnet18_kitti_mono_640x192(**kwargs):
+    r"""Monodepth2
+
+    Parameters
+    ----------
+    backbone : string
+        Pre-trained dilated backbone network type (default:'resnet18').
+
+    """
+    return get_monodepth2(backbone='resnet18', pretrained_model='kitti_mono_640x192', **kwargs)

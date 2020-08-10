@@ -36,10 +36,36 @@ class Trainer:
         assert self.opt.height % 32 == 0, "'height' must be a multiple of 32"
         assert self.opt.width % 32 == 0, "'width' must be a multiple of 32"
 
+        ######################### dataloader #########################
+        datasets_dict = {"kitti": KITTIRAWDataset,
+                         "kitti_odom": KITTIOdomDataset}
+        self.dataset = datasets_dict[self.opt.dataset]
+
+        fpath = os.path.join(os.path.expanduser("~"), ".mxnet/datasets/kitti",
+                             "splits", self.opt.split, "{}_files.txt")
+        train_filenames = readlines(fpath.format("train"))
+        val_filenames = readlines(fpath.format("val"))
+        img_ext = '.png' if self.opt.png else '.jpg'
+
+        train_dataset = self.dataset(
+            self.opt.data_path, train_filenames, self.opt.height, self.opt.width,
+            self.opt.frame_ids, num_scales=4, is_train=True, img_ext=img_ext)
+        self.train_loader = gluon.data.DataLoader(
+            train_dataset, batch_size=self.opt.batch_size, shuffle=True,
+            batchify_fn=dict_batchify_fn, num_workers=self.opt.num_workers,
+            pin_memory=True, last_batch='discard')
+
+        val_dataset = self.dataset(
+            self.opt.data_path, val_filenames, self.opt.height, self.opt.width,
+            self.opt.frame_ids, num_scales=4, is_train=False, img_ext=img_ext)
+        self.val_loader = gluon.data.DataLoader(
+            val_dataset, batch_size=self.opt.batch_size, shuffle=False,
+            batchify_fn=dict_batchify_fn, num_workers=self.opt.num_workers,
+            pin_memory=True, last_batch='discard')
+
         ################### model initialization ###################
         self.num_scales = len(self.opt.scales)
         self.num_input_frames = len(self.opt.frame_ids)
-        self.num_pose_frames = 2 if self.opt.pose_model_input == "pairs" else self.num_input_frames
 
         assert self.opt.frame_ids[0] == 0, "frame_ids must start with 0"
 
@@ -67,38 +93,25 @@ class Trainer:
 
         self.parameters_to_train = self.model.collect_params()
 
+        # TODO: define pose net
+        if self.use_pose_net:
+            from gluoncv.model_zoo.monodepthv2 import ResnetEncoder, PoseDecoder
+            self.pose_encoder = ResnetEncoder(
+                backbone='resnet18',
+                pretrained=self.opt.pretrained_base)
+            self.pose_decoder = PoseDecoder(
+                self.pose_encoder.num_ch_enc,
+                num_input_features=1,
+                num_frames_to_predict_for=2)
+            self.pose_decoder.initialize(init=mx.init.MSRAPrelu(), ctx=self.opt.ctx)
+
+            self.parameters_to_train.update(self.pose_encoder.collect_params())
+            self.parameters_to_train.update(self.pose_decoder.collect_params())
+
         if self.opt.hybridize:
             self.model.hybridize()
-
-        ######################### dataloader #########################
-        datasets_dict = {"kitti": KITTIRAWDataset,
-                         "kitti_odom": KITTIOdomDataset}
-        self.dataset = datasets_dict[self.opt.dataset]
-
-        fpath = os.path.join(os.path.expanduser("~"), ".mxnet/datasets/kitti",
-                             "splits", self.opt.split, "{}_files.txt")
-        train_filenames = readlines(fpath.format("train"))
-        val_filenames = readlines(fpath.format("val"))
-        img_ext = '.png' if self.opt.png else '.jpg'
-
-        num_train_samples = len(train_filenames)
-        self.num_total_steps = num_train_samples // self.opt.batch_size * self.opt.num_epochs
-
-        train_dataset = self.dataset(
-            self.opt.data_path, train_filenames, self.opt.height, self.opt.width,
-            self.opt.frame_ids, num_scales=4, is_train=True, img_ext=img_ext)
-        self.train_loader = gluon.data.DataLoader(
-            train_dataset, batch_size=self.opt.batch_size, shuffle=True,
-            batchify_fn=dict_batchify_fn, num_workers=self.opt.num_workers,
-            pin_memory=True, last_batch='discard')
-
-        val_dataset = self.dataset(
-            self.opt.data_path, val_filenames, self.opt.height, self.opt.width,
-            self.opt.frame_ids, num_scales=4, is_train=False, img_ext=img_ext)
-        self.val_loader = gluon.data.DataLoader(
-            val_dataset, batch_size=self.opt.batch_size, shuffle=False,
-            batchify_fn=dict_batchify_fn, num_workers=self.opt.num_workers,
-            pin_memory=True, last_batch='discard')
+            self.pose_decoder.hybridize()
+            self.pose_encoder.hybridize()
 
         ################### optimization setting ###################
         self.lr_scheduler = LRSequential([
@@ -212,6 +225,9 @@ class Trainer:
 
             return outputs
 
+        if self.use_pose_net:
+            outputs.update(self.predict_poses(inputs))
+
         # image reconstruction
         self.generate_images_pred(inputs, outputs)
 
@@ -266,6 +282,30 @@ class Trainer:
         if delta_1 > self.best_delta1:
             self.best_model = self.model
             self.best_delta1 = delta_1
+
+    def predict_poses(self, inputs):
+        outputs = {}
+
+        pose_feats = {f_i: inputs["color_aug", f_i, 0] for f_i in self.opt.frame_ids}
+
+        for f_i in self.opt.frame_ids[1:]:
+            if f_i != "s":
+                # To maintain ordering we always pass frames in temporal order
+                if f_i < 0:
+                    pose_inputs = [pose_feats[f_i], pose_feats[0]]
+                else:
+                    pose_inputs = [pose_feats[0], pose_feats[f_i]]
+
+                pose_features = [self.pose_encoder(mx.nd.concat(*pose_inputs, dim=1))]
+                axisangle, translation = self.pose_decoder(pose_features)
+                outputs[("axisangle", 0, f_i)] = axisangle
+                outputs[("translation", 0, f_i)] = translation
+
+                # Invert the matrix if the frame id is negative
+                outputs[("cam_T_cam", 0, f_i)] = transformation_from_parameters(
+                    axisangle[:, 0], translation[:, 0], invert=(f_i < 0))
+
+        return outputs
 
     def generate_images_pred(self, inputs, outputs):
         for scale in self.opt.scales:
