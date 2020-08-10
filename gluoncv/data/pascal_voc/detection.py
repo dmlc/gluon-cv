@@ -54,6 +54,7 @@ class VOCDetection(VisionDataset):
                  transform=None, index_map=None, preload_label=True):
         super(VOCDetection, self).__init__(root)
         self._im_shapes = {}
+        self._im_aspect_ratios = None
         self._root = os.path.expanduser(root)
         self._transform = transform
         self._splits = splits
@@ -150,6 +151,16 @@ class VOCDetection(VisionDataset):
         """Preload all labels into memory."""
         logging.debug("Preloading %s labels into memory...", str(self))
         return [self._load_label(idx) for idx in range(len(self))]
+
+    def get_im_aspect_ratio(self):
+        """Return the aspect ratio of each image in the order of the raw data."""
+        if self._im_aspect_ratios is not None:
+            return self._im_aspect_ratios
+        self._im_aspect_ratios = [None] * len(self._im_shapes)
+        for i, im_shape in self._im_shapes.items():
+            self._im_aspect_ratios[i] = 1.0 * im_shape[0] / im_shape[1]
+
+        return self._im_aspect_ratios
 
 
 class CustomVOCDetection(VOCDetection):
