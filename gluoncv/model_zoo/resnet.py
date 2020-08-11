@@ -18,7 +18,7 @@
 # coding: utf-8
 # pylint: disable= arguments-differ,unused-argument,missing-docstring,too-many-lines
 """ResNets, implemented in Gluon."""
-from __future__ import division
+from __future__ import division, print_function
 
 __all__ = ['ResNetV1', 'ResNetV2',
            'BasicBlockV1', 'BasicBlockV2',
@@ -119,7 +119,7 @@ class BasicBlockV1(HybridBlock):
 
         x = F.npx.activation(residual+x, act_type='relu')
 
-        return x
+        return x.as_np_ndarray()
 
 @use_np
 class BottleneckV1(HybridBlock):
@@ -197,7 +197,7 @@ class BottleneckV1(HybridBlock):
             residual = self.downsample(residual)
 
         x = F.npx.activation(x + residual, act_type='relu')
-        return x
+        return x.as_np_ndarray()
 
 @use_np
 class BasicBlockV2(HybridBlock):
@@ -272,7 +272,7 @@ class BasicBlockV2(HybridBlock):
             w = self.se(w)
             x = x * w.as_nd_ndarray().expand_dims(axis=2).expand_dims(axis=2).as_np_ndarray()
 
-        return x + residual
+        return (x + residual).as_np_ndarray()
 
 @use_np
 class BottleneckV2(HybridBlock):
@@ -352,7 +352,7 @@ class BottleneckV2(HybridBlock):
             w = self.se(w)
             x = x * w.as_nd_ndarray().expand_dims(axis=2).expand_dims(axis=2).as_np_ndarray()
 
-        return x + residual
+        return (x + residual).as_np_ndarray()
 
 
 # Nets
@@ -425,7 +425,7 @@ class ResNetV1(HybridBlock):
         x = self.features(x)
         x = self.output(x)
 
-        return x
+        return x.as_np_ndarray()
 
 
 class ResNetV2(HybridBlock):
@@ -503,7 +503,7 @@ class ResNetV2(HybridBlock):
     def hybrid_forward(self, F, x):
         x = self.features(x)
         x = self.output(x)
-        return x
+        return x.as_np_ndarray()
 
 
 # Specification
