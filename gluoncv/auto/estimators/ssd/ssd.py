@@ -91,51 +91,57 @@ class SSDEstimator(BaseEstimator):
         else:
             self.train_dataset, self.val_dataset, self.eval_metric = _get_dataset(self._cfg.dataset, self._cfg)
 
-        classes = self.train_dataset.CLASSES
-
         # network
         net_name = '_'.join(('ssd', str(self._cfg.ssd.data_shape), self._cfg.ssd.backbone, self._cfg.dataset))
         self._cfg.save_prefix += net_name
-        if self._cfg.ssd.syncbn and len(self.ctx) > 1:
-            # self.net = get_model(net_name, pretrained_base=True, norm_layer=gluon.contrib.nn.SyncBatchNorm,
-            #                      norm_kwargs={'num_devices': len(self.ctx)})
-            self.net = get_ssd(name=net_name,
-                               base_size=self._cfg.ssd.data_shape,
-                               features=self._cfg.ssd.features,
-                               filters=self._cfg.ssd.filters,
-                               sizes=self._cfg.ssd.sizes,
-                               ratios=self._cfg.ssd.ratios,
-                               steps=self._cfg.ssd.steps,
-                               classes=classes,
-                               dataset=self._cfg.dataset,
-                               pretrained_base=True,
-                               norm_layer=gluon.contrib.nn.SyncBatchNorm,
-                               norm_kwargs={'num_devices': len(self.ctx)})
-            # self.async_net = get_model(net_name, pretrained_base=False)  # used by cpu worker
-            self.async_net = get_ssd(name=net_name,
+
+        if self._cfg.ssd.custom_model:
+            classes = self.train_dataset.CLASSES
+            if self._cfg.ssd.syncbn and len(self.ctx) > 1:
+                self.net = get_model(name='custom_ssd',
+                                     base_network_name=self._cfg.ssd.backbone,
                                      base_size=self._cfg.ssd.data_shape,
-                                     features=self._cfg.ssd.features,
                                      filters=self._cfg.ssd.filters,
                                      sizes=self._cfg.ssd.sizes,
                                      ratios=self._cfg.ssd.ratios,
                                      steps=self._cfg.ssd.steps,
                                      classes=classes,
                                      dataset=self._cfg.dataset,
-                                     pretrained_base=False)
+                                     pretrained_base=True,
+                                     norm_layer=gluon.contrib.nn.SyncBatchNorm,
+                                     norm_kwargs={'num_devices': len(self.ctx)})
+                self.async_net = get_model(name='custom_ssd',
+                                           base_network_name=self._cfg.ssd.backbone,
+                                           base_size=self._cfg.ssd.data_shape,
+                                           filters=self._cfg.ssd.filters,
+                                           sizes=self._cfg.ssd.sizes,
+                                           ratios=self._cfg.ssd.ratios,
+                                           steps=self._cfg.ssd.steps,
+                                           classes=classes,
+                                           dataset=self._cfg.dataset,
+                                           pretrained_base=False)
+            else:
+                self.net = get_model(name='custom_ssd',
+                                     base_network_name=self._cfg.ssd.backbone,
+                                     base_size=self._cfg.ssd.data_shape,
+                                     filters=self._cfg.ssd.filters,
+                                     sizes=self._cfg.ssd.sizes,
+                                     ratios=self._cfg.ssd.ratios,
+                                     steps=self._cfg.ssd.steps,
+                                     classes=classes,
+                                     dataset=self._cfg.dataset,
+                                     pretrained_base=True,
+                                     norm_layer=gluon.nn.BatchNorm)
+                self.async_net = self.net
         else:
-            # self.net = get_model(net_name, pretrained_base=True, norm_layer=gluon.nn.BatchNorm)
-            self.net = get_ssd(name=net_name,
-                               base_size=self._cfg.ssd.data_shape,
-                               features=self._cfg.ssd.features,
-                               filters=self._cfg.ssd.filters,
-                               sizes=self._cfg.ssd.sizes,
-                               ratios=self._cfg.ssd.ratios,
-                               steps=self._cfg.ssd.steps,
-                               classes=classes,
-                               dataset=self._cfg.dataset,
-                               pretrained_base=True,
-                               norm_layer=gluon.nn.BatchNorm)
-            self.async_net = self.net
+            if self._cfg.ssd.syncbn and len(self.ctx) > 1:
+                self.net = get_model(net_name, pretrained_base=True, norm_layer=gluon.contrib.nn.SyncBatchNorm,
+                                     norm_kwargs={'num_devices': len(self.ctx)})
+                self.async_net = get_model(net_name, pretrained_base=False)  # used by cpu worker
+            else:
+                self.net = get_model(net_name, pretrained_base=True, norm_layer=gluon.nn.BatchNorm)
+                self.async_net = self.net
+
         if self._cfg.resume.strip():
             self.net.load_parameters(self._cfg.resume.strip())
             self.async_net.load_parameters(self._cfg.resume.strip())

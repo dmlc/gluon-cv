@@ -62,7 +62,7 @@ if __name__ == '__main__':
                   'meta_arch': args.meta_arch,
                   'lr': ag.Categorical(1e-2, 1e-3, 1e-4), 'transfer': transfer,
                   'data_shape': 300, 'nthreads_per_trial': 16,
-                  'ngpus_per_trial': 8, 'batch_size': 32,
+                  'ngpus_per_trial': 4, 'batch_size': 32,
                   'lr_decay_epoch': ag.Categorical([80, 90], [160, 200]),
                   'wd': ag.Categorical(1e-4, 5e-4, 2.5e-4), 'syncbn': ag.Bool(),
                   'label_smooth': False, 'time_limits': time_limits, 'dist_ip_addrs': []}

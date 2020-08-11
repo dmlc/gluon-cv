@@ -14,9 +14,6 @@ def ssd_default():
     backbone = 'vgg16_atrous'  # base feature network
     # Input data shape, use 300, 512.
     data_shape = 300
-    # List of network internal output names, in order to specify which layers are
-    # used for predicting bbox values.
-    features = vgg16_atrous_300
     # List of convolution layer channels which is going to be appended to the base
     # network feature extractor. If `name` is `None`, this is ignored.
     filters = None
@@ -32,6 +29,8 @@ def ssd_default():
     syncbn = False
     # Whether to use automatic mixed precision
     amp = False
+    # Whether to enable custom model.
+    custom_model = True
 
 
 @train.config
