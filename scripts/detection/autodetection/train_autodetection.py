@@ -5,6 +5,7 @@ import autogluon as ag
 from autogluon.core.space import Categorical
 from mxnet import gluon
 
+from gluoncv.auto.estimators.ssd import SSDEstimator
 from gluoncv.auto.estimators.rcnn import FasterRCNNEstimator
 from gluoncv.auto.tasks.object_detection import ObjectDetection
 
@@ -24,7 +25,7 @@ if __name__ == '__main__':
     parser.add_argument('--no-redownload', action='store_true',
                         help="whether need to re-download dataset")
     parser.add_argument('--meta-arch', type=str, default='faster_rcnn',
-                        choices=['yolo3', 'faster_rcnn'], help="Meta architecture of the model")
+                        choices=['yolo3', 'faster_rcnn', 'ssd'], help="Meta architecture of the model")
 
     args = parser.parse_args()
     logging.info('args: {}'.format(args))
@@ -55,6 +56,16 @@ if __name__ == '__main__':
                   'warmup_iters': ag.Int(5, 500),
                   'wd': ag.Categorical(1e-4, 5e-4, 2.5e-4), 'syncbn': ag.Bool(),
                   'label_smooth': False, 'time_limits': time_limits, 'dist_ip_addrs': []}
+    elif args.meta_arch == 'ssd':
+        kwargs = {'num_trials': 30, 'epochs': epochs,
+                  'net': ag.Categorical('vgg16_atrous'),
+                  'meta_arch': args.meta_arch,
+                  'lr': ag.Categorical(1e-2, 1e-3, 1e-4), 'transfer': transfer,
+                  'data_shape': 300, 'nthreads_per_trial': 16,
+                  'ngpus_per_trial': 8, 'batch_size': 32,
+                  'lr_decay_epoch': ag.Categorical([80, 90], [160, 200]),
+                  'wd': ag.Categorical(1e-4, 5e-4, 2.5e-4), 'syncbn': ag.Bool(),
+                  'label_smooth': False, 'time_limits': time_limits, 'dist_ip_addrs': []}
     else:
         raise NotImplementedError('%s is not implemented.', args.meta_arch)
     default_args = {'dataset': 'voc', 'net': Categorical('mobilenet1.0'), 'meta_arch': 'yolo3',
@@ -62,7 +73,7 @@ if __name__ == '__main__':
                     'split_ratio': 0.8, 'batch_size': 16, 'epochs': 50, 'num_trials': 2,
                     'nthreads_per_trial': 12, 'num_workers': 16, 'ngpus_per_trial': 1,
                     'hybridize': True, 'search_strategy': 'random', 'search_options': {},
-                    'time_limits': None, 'verbose': False, 'transfer': 'coco', 'resume': '',
+                    'time_limits': None, 'verbose': False, 'transfer': 'coco', 'resume': False,
                     'checkpoint': 'checkpoint/exp1.ag', 'visualizer': 'none', 'dist_ip_addrs': [],
                     'grace_period': None, 'auto_search': True, 'seed': 223, 'data_shape': 416,
                     'start_epoch': 0, 'lr_mode': 'step', 'lr_decay': 0.1, 'lr_decay_period': 0,
@@ -74,7 +85,10 @@ if __name__ == '__main__':
                     'reuse_pred_weights': True, 'horovod': False}
     vars(args).update(default_args)
     vars(args).update(kwargs)
-    task = ObjectDetection(args, FasterRCNNEstimator)
+    if args.meta_arch == 'faster_rcnn':
+        task = ObjectDetection(vars(args), FasterRCNNEstimator)
+    elif args.meta_arch == 'ssd':
+        task = ObjectDetection(vars(args), SSDEstimator)
     estimator = task.fit()
     test_map = estimator.evaluate()
     print("mAP on test dataset: {}".format(test_map[-1][-1]))

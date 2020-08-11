@@ -48,14 +48,13 @@ def train_cfg():
     lr_decay = 0.1
     # Epochs at which learning rate decays
     lr_decay_epoch = (160, 200)
-    # Learning rate scheduler mode. options are step, poly and cosine
-    lr_mode = 'step'
     # Momentum
     momentum = 0.9
     # Weight decay
     wd = 5e-4
     # log interval in terms of iterations
     log_interval = 100
+    # Random seed to be fixed.
     seed = 233
     # Use DALI for data loading and data preprocessing in training.
     # Currently supports only COCO.
