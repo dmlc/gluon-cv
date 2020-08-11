@@ -4,33 +4,14 @@ https://github.com/nianticlabs/monodepth2/blob/master/networks/resnet_encoder.py
 """
 from __future__ import absolute_import, division, print_function
 
+import os
 import numpy as np
+import mxnet as mx
 
 from mxnet.gluon import nn
 from mxnet.context import cpu
 from ...model_zoo.resnetv1b import \
     resnet18_v1b, resnet34_v1b, resnet50_v1s, resnet101_v1s, resnet152_v1s
-
-
-# def resnet_multiimage_input(backbone, pretrained=False, num_input_images=1):
-#     """Constructs a ResNet model.
-#     Args:
-#         backbone (str): resnet backbone. Must be resnet18 or resnet18
-#         pretrained (bool): If True, returns a model pre-trained on ImageNet
-#         num_input_images (int): Number of frames stacked as input
-#     """
-#     assert backbone in ['resnet18', 'resnet18'], "Can only run with 18 or 50 layer resnet"
-#
-#     blocks = {18: [2, 2, 2, 2], 50: [3, 4, 6, 3]}[num_layers]
-#     block_type = {18: models.resnet.BasicBlock, 50: models.resnet.Bottleneck}[num_layers]
-#     model = ResNetMultiImageInput(block_type, blocks, num_input_images=num_input_images)
-#
-#     if pretrained:
-#         loaded = model_zoo.load_url(models.resnet.model_urls['resnet{}'.format(num_layers)])
-#         loaded['conv1.weight'] = torch.cat(
-#             [loaded['conv1.weight']] * num_input_images, 1) / num_input_images
-#         model.load_state_dict(loaded)
-#     return model
 
 
 class ResnetEncoder(nn.HybridBlock):
@@ -51,7 +32,8 @@ class ResnetEncoder(nn.HybridBlock):
         Location for keeping the model parameters.
     """
     def __init__(self, backbone, pretrained, num_input_images=1,
-                 root='~/.mxnet/models', ctx=cpu(), **kwargs):
+                 root=os.path.join(os.path.expanduser('~'), '.mxnet/models'),
+                 ctx=cpu(), **kwargs):
         super(ResnetEncoder, self).__init__()
 
         self.num_ch_enc = np.array([64, 64, 128, 256, 512])
@@ -75,9 +57,14 @@ class ResnetEncoder(nn.HybridBlock):
             self.encoder = resnets[backbone](pretrained=False, ctx=ctx, **kwargs)
             if pretrained:
                 from ..model_store import get_model_file
-                self.encoder.load_parameters(
-                    get_model_file('resnet%d_v%db' % (num_layers[backbone], 1),
-                                   tag=pretrained, root=root), ctx=ctx)
+                loaded = mx.nd.load(get_model_file('resnet%d_v%db' % (num_layers[backbone], 1),
+                                                   tag=pretrained, root=root))
+                loaded['conv1.weight'] = mx.nd.concat(
+                    *([loaded['conv1.weight']] * num_input_images), dim=1) / num_input_images
+                filename = os.path.join(
+                    root, 'resnet%d_v%db_multiple_inputs.params' % (num_layers[backbone], 1))
+                mx.nd.save(filename, loaded)
+                self.encoder.load_parameters(filename, ctx=ctx)
                 from ...data import ImageNet1kAttr
                 attrib = ImageNet1kAttr()
                 self.encoder.synset = attrib.synset

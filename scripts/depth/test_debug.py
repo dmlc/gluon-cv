@@ -79,7 +79,6 @@ def evaluate(opt):
     posenet = MonoDepth2PoseNet(
         backbone='resnet18', pretrained_base=True, num_input_images=2,
         num_input_features=1, num_frames_to_predict_for=2, ctx=opt.ctx)
-    posenet.initialize(init=mx.init.MSRAPrelu(), ctx=opt.ctx)
     print(posenet)
 
     ############################ inference ############################
