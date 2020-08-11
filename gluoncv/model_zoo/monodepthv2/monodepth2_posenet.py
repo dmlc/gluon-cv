@@ -16,13 +16,14 @@ class MonoDepth2PoseNet(nn.HybridBlock):
                  num_frames_to_predict_for=None, stride=1, ctx=cpu(), **kwargs):
         super(MonoDepth2PoseNet, self).__init__()
 
-        self.encoder = ResnetEncoder(backbone, pretrained_base, ctx=ctx)
-        self.decoder = PoseDecoder(self.encoder.num_ch_enc,
-                                   num_input_features=num_input_features,
-                                   num_frames_to_predict_for=num_frames_to_predict_for,
-                                   stride=stride)
+        with self.name_scope():
+            self.encoder = ResnetEncoder(backbone, pretrained_base, ctx=ctx)
+            self.decoder = PoseDecoder(self.encoder.num_ch_enc,
+                                       num_input_features=num_input_features,
+                                       num_frames_to_predict_for=num_frames_to_predict_for,
+                                       stride=stride)
 
-        self.decoder.initialize(init=mx.init.MSRAPrelu(), ctx=ctx)
+            self.decoder.initialize(init=mx.init.MSRAPrelu(), ctx=ctx)
 
     def hybrid_forward(self, F, x):
         # pylint: disable=unused-argument
