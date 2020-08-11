@@ -156,6 +156,8 @@ class Trainer:
         # for save best model
         self.best_delta1 = 0
         self.best_model = self.model
+        self.best_pose_encoder = self.pose_encoder
+        self.best_pose_decoder = self.pose_decoder
 
     def train(self):
         """Run the entire training pipeline
@@ -282,6 +284,8 @@ class Trainer:
         if delta_1 > self.best_delta1:
             self.best_model = self.model
             self.best_delta1 = delta_1
+            self.best_pose_encoder = self.pose_encoder
+            self.best_pose_decoder = self.pose_decoder
 
     def predict_poses(self, inputs):
         outputs = {}
@@ -501,9 +505,19 @@ class Trainer:
         if not os.path.exists(save_folder):
             os.makedirs(save_folder)
 
+        # depth model
         filename = 'epoch_%04d_Delta1_%2.4f.params' % (self.epoch, delta_1)
         filepath = os.path.join(save_folder, filename)
         self.model.save_parameters(filepath)
+
+        # pose encoder model
+        filename = 'epoch_%04d_Delta1_%2.4f_pose_encoder.params' % (self.epoch, delta_1)
+        filepath = os.path.join(save_folder, filename)
+        self.pose_encoder.save_parameters(filepath)
+
+        filename = 'epoch_%04d_Delta1_%2.4f_pose_decoder.params' % (self.epoch, delta_1)
+        filepath = os.path.join(save_folder, filename)
+        self.pose_decoder.save_parameters(filepath)
 
     def save_model(self, model_type="final"):
         """Save Checkpoint"""
@@ -512,9 +526,23 @@ class Trainer:
             os.makedirs(save_folder)
 
         model = self.model
+        pose_encoder = self.pose_encoder
+        pose_decoder = self.pose_decoder
         if model_type == "best":
             model = self.best_model
+            pose_encoder = self.best_pose_encoder
+            pose_decoder = self.best_pose_decoder
 
-        filename = '{}.params'
+        # save depth model
+        filename = 'depth_{}.params'
         filepath = os.path.join(save_folder, filename.format(model_type))
         model.save_parameters(filepath)
+
+        # save pose model
+        filename = 'pose_encoder_{}.params'
+        filepath = os.path.join(save_folder, filename.format(model_type))
+        pose_encoder.save_parameters(filepath)
+
+        filename = 'pose_decoder_{}.params'
+        filepath = os.path.join(save_folder, filename.format(model_type))
+        pose_decoder.save_parameters(filepath)
