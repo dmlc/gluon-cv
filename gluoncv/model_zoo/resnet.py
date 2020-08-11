@@ -32,11 +32,11 @@ __all__ = ['ResNetV1', 'ResNetV2',
            'get_resnet']
 
 import mxnet as mx
-from mxnet.context import cpu
-from mxnet.gluon.block import HybridBlock
-from mxnet.gluon import nn
-from mxnet.gluon.nn import BatchNorm
-from mxnet import use_np
+from mx.context import cpu
+from mx.gluon.block import HybridBlock
+from mx.gluon import nn
+from mx.gluon.nn import BatchNorm
+from mx import use_np
 mx.npx.set_np()
 
 # Helpers
