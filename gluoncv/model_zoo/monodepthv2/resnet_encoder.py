@@ -44,8 +44,14 @@ class ResnetEncoder(nn.HybridBlock):
     pretrained : bool or str
         Refers to if the backbone is pretrained or not. If `True`,
         model weights of a model that was trained on ImageNet is loaded.
+    num_input_images : int
+        The number of input sequences. 1 for depth encoder, larger than 1 for pose encoder.
+        (Default: 1)
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
     """
-    def __init__(self, backbone, pretrained, ctx=cpu(), **kwargs):
+    def __init__(self, backbone, pretrained, num_input_images=1,
+                 root='~/.mxnet/models', ctx=cpu(), **kwargs):
         super(ResnetEncoder, self).__init__()
 
         self.num_ch_enc = np.array([64, 64, 128, 256, 512])
@@ -56,10 +62,29 @@ class ResnetEncoder(nn.HybridBlock):
                    'resnet101': resnet101_v1s,
                    'resnet152': resnet152_v1s}
 
+        num_layers = {'resnet18': 18,
+                      'resnet34': 34,
+                      'resnet50': 50,
+                      'resnet101': 101,
+                      'resnet152': 152}
+
         if backbone not in resnets:
             raise ValueError("{} is not a valid resnet".format(backbone))
 
-        self.encoder = resnets[backbone](pretrained=pretrained, ctx=ctx, **kwargs)
+        if num_input_images > 1:
+            self.encoder = resnets[backbone](pretrained=False, ctx=ctx, **kwargs)
+            if pretrained:
+                from ..model_store import get_model_file
+                self.encoder.load_parameters(
+                    get_model_file('resnet%d_v%db' % (num_layers[backbone], 1),
+                                   tag=pretrained, root=root), ctx=ctx)
+                from ...data import ImageNet1kAttr
+                attrib = ImageNet1kAttr()
+                self.encoder.synset = attrib.synset
+                self.encoder.classes = attrib.classes
+                self.encoder.classes_long = attrib.classes_long
+        else:
+            self.encoder = resnets[backbone](pretrained=pretrained, ctx=ctx, **kwargs)
 
         if backbone not in ('resnet18', 'resnet34'):
             self.num_ch_enc[1:] *= 4

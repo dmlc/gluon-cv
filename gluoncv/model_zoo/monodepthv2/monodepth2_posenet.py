@@ -12,12 +12,13 @@ from .pose_decoder import PoseDecoder
 
 class MonoDepth2PoseNet(nn.HybridBlock):
     # pylint: disable=unused-argument
-    def __init__(self, backbone, pretrained_base, num_input_features=1,
+    def __init__(self, backbone, pretrained_base, num_input_images=1, num_input_features=1,
                  num_frames_to_predict_for=None, stride=1, ctx=cpu(), **kwargs):
         super(MonoDepth2PoseNet, self).__init__()
 
         with self.name_scope():
-            self.encoder = ResnetEncoder(backbone, pretrained_base, ctx=ctx)
+            self.encoder = ResnetEncoder(backbone, pretrained_base,
+                                         num_input_images=num_input_images, ctx=ctx)
             self.decoder = PoseDecoder(self.encoder.num_ch_enc,
                                        num_input_features=num_input_features,
                                        num_frames_to_predict_for=num_frames_to_predict_for,

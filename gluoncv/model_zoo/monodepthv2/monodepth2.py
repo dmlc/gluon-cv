@@ -42,12 +42,13 @@ class MonoDepth2(nn.HybridBlock):
     >>> print(model)
     """
     # pylint: disable=unused-argument
-    def __init__(self, backbone, pretrained_base, scales=range(4),
+    def __init__(self, backbone, pretrained_base, num_input_images=1, scales=range(4),
                  num_output_channels=1, use_skips=True, ctx=cpu(), **kwargs):
         super(MonoDepth2, self).__init__()
 
         with self.name_scope():
-            self.encoder = ResnetEncoder(backbone, pretrained_base, ctx=ctx)
+            self.encoder = ResnetEncoder(backbone, pretrained_base,
+                                         num_input_images=num_input_images, ctx=ctx)
             self.decoder = DepthDecoder(self.encoder.num_ch_enc, scales,
                                         num_output_channels, use_skips)
 
