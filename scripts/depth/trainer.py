@@ -17,6 +17,7 @@ from gluoncv.data.kitti.kitti_utils import dict_batchify_fn, readlines
 
 from gluoncv.model_zoo import get_model
 from gluoncv.model_zoo.monodepthv2.layers import *
+from gluoncv.model_zoo.monodepthv2 import MonoDepth2PoseNet
 from gluoncv.utils import LRScheduler, LRSequential
 
 # Models which were trained with stereo supervision were trained with a nominal
@@ -95,23 +96,16 @@ class Trainer:
 
         # TODO: define pose net
         if self.use_pose_net:
-            from gluoncv.model_zoo.monodepthv2 import ResnetEncoder, PoseDecoder
-            self.pose_encoder = ResnetEncoder(
-                backbone='resnet18',
-                pretrained=self.opt.pretrained_base)
-            self.pose_decoder = PoseDecoder(
-                self.pose_encoder.num_ch_enc,
+            self.posenet = MonoDepth2PoseNet(
+                backbone='resnet18', pretrained_base=self.opt.pretrained_base,
                 num_input_features=1,
                 num_frames_to_predict_for=2)
-            self.pose_decoder.initialize(init=mx.init.MSRAPrelu(), ctx=self.opt.ctx)
 
-            self.parameters_to_train.update(self.pose_encoder.collect_params())
-            self.parameters_to_train.update(self.pose_decoder.collect_params())
+            self.parameters_to_train.update(self.posenet.collect_params())
 
         if self.opt.hybridize:
             self.model.hybridize()
-            self.pose_decoder.hybridize()
-            self.pose_encoder.hybridize()
+            self.posenet.hybridize()
 
         ################### optimization setting ###################
         self.lr_scheduler = LRSequential([
@@ -156,8 +150,7 @@ class Trainer:
         # for save best model
         self.best_delta1 = 0
         self.best_model = self.model
-        self.best_pose_encoder = self.pose_encoder
-        self.best_pose_decoder = self.pose_decoder
+        self.best_posenet = self.posenet
 
     def train(self):
         """Run the entire training pipeline
@@ -189,7 +182,7 @@ class Trainer:
             self.optimizer.step(self.opt.batch_size, ignore_stale_grad=True)
 
             train_loss += losses['loss'].asscalar()
-            tbar.set_description('Epoch %d, training loss %.3f' % \
+            tbar.set_description('Epoch %d, training loss %.3f' %
                                  (self.epoch, train_loss / (batch_idx + 1)))
 
             if batch_idx % self.opt.log_frequency == 0:
@@ -284,8 +277,7 @@ class Trainer:
         if delta_1 > self.best_delta1:
             self.best_model = self.model
             self.best_delta1 = delta_1
-            self.best_pose_encoder = self.pose_encoder
-            self.best_pose_decoder = self.pose_decoder
+            self.best_posenet = self.posenet
 
     def predict_poses(self, inputs):
         outputs = {}
@@ -300,8 +292,7 @@ class Trainer:
                 else:
                     pose_inputs = [pose_feats[0], pose_feats[f_i]]
 
-                pose_features = [self.pose_encoder(mx.nd.concat(*pose_inputs, dim=1))]
-                axisangle, translation = self.pose_decoder(pose_features)
+                axisangle, translation = self.posenet(mx.nd.concat(*pose_inputs, dim=1))
                 outputs[("axisangle", 0, f_i)] = axisangle
                 outputs[("translation", 0, f_i)] = translation
 
@@ -511,13 +502,9 @@ class Trainer:
         self.model.save_parameters(filepath)
 
         # pose encoder model
-        filename = 'epoch_%04d_Delta1_%2.4f_pose_encoder.params' % (self.epoch, delta_1)
+        filename = 'epoch_%04d_Delta1_%2.4f_posenet.params' % (self.epoch, delta_1)
         filepath = os.path.join(save_folder, filename)
-        self.pose_encoder.save_parameters(filepath)
-
-        filename = 'epoch_%04d_Delta1_%2.4f_pose_decoder.params' % (self.epoch, delta_1)
-        filepath = os.path.join(save_folder, filename)
-        self.pose_decoder.save_parameters(filepath)
+        self.posenet.save_parameters(filepath)
 
     def save_model(self, model_type="final"):
         """Save Checkpoint"""
@@ -526,12 +513,10 @@ class Trainer:
             os.makedirs(save_folder)
 
         model = self.model
-        pose_encoder = self.pose_encoder
-        pose_decoder = self.pose_decoder
+        posenet = self.posenet
         if model_type == "best":
             model = self.best_model
-            pose_encoder = self.best_pose_encoder
-            pose_decoder = self.best_pose_decoder
+            posenet = self.best_posenet
 
         # save depth model
         filename = 'depth_{}.params'
@@ -539,10 +524,7 @@ class Trainer:
         model.save_parameters(filepath)
 
         # save pose model
-        filename = 'pose_encoder_{}.params'
+        filename = 'pose_{}.params'
         filepath = os.path.join(save_folder, filename.format(model_type))
-        pose_encoder.save_parameters(filepath)
+        posenet.save_parameters(filepath)
 
-        filename = 'pose_decoder_{}.params'
-        filepath = os.path.join(save_folder, filename.format(model_type))
-        pose_decoder.save_parameters(filepath)
