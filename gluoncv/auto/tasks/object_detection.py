@@ -7,7 +7,6 @@ from autogluon.task import BaseTask
 from autogluon.utils import collect_params
 
 from ... import utils as gutils
-from ...model_zoo import vgg16_atrous_300, vgg16_atrous_512
 from ..estimators.base_estimator import ConfigDict
 
 
