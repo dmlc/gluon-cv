@@ -150,7 +150,9 @@ class Trainer:
         # for save best model
         self.best_delta1 = 0
         self.best_model = self.model
-        self.best_posenet = self.posenet
+
+        if self.use_pose_net:
+            self.best_posenet = self.posenet
 
     def train(self):
         """Run the entire training pipeline
@@ -277,7 +279,8 @@ class Trainer:
         if delta_1 > self.best_delta1:
             self.best_model = self.model
             self.best_delta1 = delta_1
-            self.best_posenet = self.posenet
+            if self.use_pose_net:
+                self.best_posenet = self.posenet
 
     def predict_poses(self, inputs):
         outputs = {}
@@ -502,9 +505,10 @@ class Trainer:
         self.model.save_parameters(filepath)
 
         # pose encoder model
-        filename = 'epoch_%04d_Delta1_%2.4f_posenet.params' % (self.epoch, delta_1)
-        filepath = os.path.join(save_folder, filename)
-        self.posenet.save_parameters(filepath)
+        if self.use_pose_net:
+            filename = 'epoch_%04d_Delta1_%2.4f_posenet.params' % (self.epoch, delta_1)
+            filepath = os.path.join(save_folder, filename)
+            self.posenet.save_parameters(filepath)
 
     def save_model(self, model_type="final"):
         """Save Checkpoint"""
@@ -513,10 +517,12 @@ class Trainer:
             os.makedirs(save_folder)
 
         model = self.model
-        posenet = self.posenet
+        if self.use_pose_net:
+            posenet = self.posenet
         if model_type == "best":
             model = self.best_model
-            posenet = self.best_posenet
+            if self.use_pose_net:
+                posenet = self.best_posenet
 
         # save depth model
         filename = 'depth_{}.params'
@@ -524,7 +530,7 @@ class Trainer:
         model.save_parameters(filepath)
 
         # save pose model
-        filename = 'pose_{}.params'
-        filepath = os.path.join(save_folder, filename.format(model_type))
-        posenet.save_parameters(filepath)
-
+        if self.use_pose_net:
+            filename = 'pose_{}.params'
+            filepath = os.path.join(save_folder, filename.format(model_type))
+            posenet.save_parameters(filepath)
