@@ -42,6 +42,7 @@ class DeepLabV3(SegBaseModel):
                  height=None, width=None, base_size=520, crop_size=480, **kwargs):
         super(DeepLabV3, self).__init__(nclass, aux, backbone, ctx=ctx, base_size=base_size,
                                      crop_size=crop_size, pretrained_base=pretrained_base, **kwargs)
+        kwargs.pop('root', None)
         height = height if height is not None else crop_size
         width = width if width is not None else crop_size
         with self.name_scope():
@@ -108,7 +109,7 @@ class _DeepLabHead(HybridBlock):
         self.aspp.concurent[-1]._up_kwargs['width'] = w
         x = self.aspp(x)
         return self.block(x)
-        
+
 
 def _ASPPConv(in_channels, out_channels, atrous_rate, norm_layer, norm_kwargs):
     block = nn.HybridSequential()
@@ -207,6 +208,9 @@ def get_deeplab(dataset='pascal_voc', backbone='resnet50', pretrained=False,
     }
     from ..data import datasets
     # infer number of classes
+    if pretrained:
+        kwargs['pretrained_base'] = False
+    kwargs['root'] = root
     model = DeepLabV3(datasets[dataset].NUM_CLASS, backbone=backbone, ctx=ctx, **kwargs)
     model.classes = datasets[dataset].CLASSES
     if pretrained:

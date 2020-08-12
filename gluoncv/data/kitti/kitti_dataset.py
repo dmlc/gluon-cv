@@ -25,6 +25,7 @@ from .mono_dataset import MonoDataset
 class KITTIDataset(MonoDataset):
     """Superclass for different types of KITTI dataset loaders
     """
+
     def __init__(self, *args, **kwargs):
         super(KITTIDataset, self).__init__(*args, **kwargs)
 
@@ -67,11 +68,14 @@ class KITTIRAWDataset(KITTIDataset):
 
     Examples
     --------
-    >>> from gluoncv.data.kitti.kitti_utils import dict_batchify_fn
-    >>> train_filenames = '~/.mxnet/datasets/kitti/splits/eigen_full/train_files.txt'
+    >>> from gluoncv.data.kitti.kitti_utils import dict_batchify_fn, readlines
+    >>> train_filenames = os.path.join(
+    >>>     os.path.expanduser("~"), '/.mxnet/datasets/kitti/splits/eigen_full/train_files.txt')
+    >>> train_filenames = readlines(train_filenames)
     >>> # Create Dataset
     >>> trainset = gluoncv.data.KITTIRAWDataset(
-    >>>     train_filenames, 192, 640, [0], 4, is_train=True, img_ext='.png')
+    >>>         filenames=train_filenames, height=192, width=640,
+    >>>         frame_idxs=[0], num_scales=4, is_train=True, img_ext='.png')
     >>> # Create Training Loader
     >>> train_data = gluon.data.DataLoader(
     >>>     trainset, batch_size=12, shuffle=True,
@@ -80,7 +84,8 @@ class KITTIRAWDataset(KITTIDataset):
     """
 
     # pylint: disable=keyword-arg-before-vararg
-    def __init__(self, data_path='~/.mxnet/datasets/kitti/kitti_data', *args, **kwargs):
+    def __init__(self, data_path=os.path.join(
+            os.path.expanduser("~"), '.mxnet/datasets/kitti/kitti_data'), *args, **kwargs):
         super(KITTIRAWDataset, self).__init__(data_path, *args, **kwargs)
 
     def get_image_path(self, folder, frame_index, side):
