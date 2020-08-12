@@ -37,6 +37,16 @@ class Trainer:
         assert self.opt.height % 32 == 0, "'height' must be a multiple of 32"
         assert self.opt.width % 32 == 0, "'width' must be a multiple of 32"
 
+        self.num_scales = len(self.opt.scales)
+        self.num_input_frames = len(self.opt.frame_ids)
+
+        assert self.opt.frame_ids[0] == 0, "frame_ids must start with 0"
+
+        self.use_pose_net = not (self.opt.use_stereo and self.opt.frame_ids == [0])
+
+        if self.opt.use_stereo:
+            self.opt.frame_ids.append("s")
+
         ######################### dataloader #########################
         datasets_dict = {"kitti": KITTIRAWDataset,
                          "kitti_odom": KITTIOdomDataset}
@@ -65,16 +75,6 @@ class Trainer:
             pin_memory=True, last_batch='discard')
 
         ################### model initialization ###################
-        self.num_scales = len(self.opt.scales)
-        self.num_input_frames = len(self.opt.frame_ids)
-
-        assert self.opt.frame_ids[0] == 0, "frame_ids must start with 0"
-
-        self.use_pose_net = not (self.opt.use_stereo and self.opt.frame_ids == [0])
-
-        if self.opt.use_stereo:
-            self.opt.frame_ids.append("s")
-
         # create network
         if self.opt.model_zoo is not None:
             self.model = get_model(self.opt.model_zoo, pretrained_base=self.opt.pretrained_base,
