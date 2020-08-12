@@ -97,7 +97,7 @@ class Trainer:
         # TODO: define pose net
         if self.use_pose_net:
             self.posenet = MonoDepth2PoseNet(
-                backbone='resnet18', pretrained_base=self.opt.pretrained_base, num_input_images=2,
+                backbone='resnet18', pretrained_base=False, num_input_images=2,
                 num_input_features=1, num_frames_to_predict_for=2, ctx=self.opt.ctx)
 
             self.logger.info(self.posenet)

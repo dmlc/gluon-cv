@@ -24,7 +24,7 @@ class MonoDepth2PoseNet(nn.HybridBlock):
                                        num_frames_to_predict_for=num_frames_to_predict_for,
                                        stride=stride)
 
-            self.decoder.initialize(init=mx.init.MSRAPrelu(), ctx=ctx)
+            self.decoder.initialize(init=mx.init.Uniform(), ctx=ctx)
 
     def hybrid_forward(self, F, x):
         # pylint: disable=unused-argument
