@@ -18,7 +18,7 @@
 # coding: utf-8
 # pylint: disable= arguments-differ,unused-argument,missing-docstring,too-many-lines
 """ResNets, implemented in Gluon."""
-from __future__ import division
+from __future__ import division, print_function
 
 __all__ = ['ResNetV1', 'ResNetV2',
            'BasicBlockV1', 'BasicBlockV2',

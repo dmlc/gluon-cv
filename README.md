@@ -4,7 +4,7 @@
 [![GitHub license](docs/_static/apache2.svg)](./LICENSE)
 [![Code Coverage](http://gluon-cv.mxnet.io/coverage.svg?)](http://gluon-cv.mxnet.io/coverage.svg)
 [![PyPI](https://img.shields.io/pypi/v/gluoncv.svg)](https://pypi.python.org/pypi/gluoncv)
-[![PyPI Pre-release](https://img.shields.io/badge/pypi--prerelease-v0.8.0-ff69b4.svg)](https://pypi.org/project/gluoncv/#history)
+[![PyPI Pre-release](https://img.shields.io/badge/pypi--prerelease-v0.9.0-ff69b4.svg)](https://pypi.org/project/gluoncv/#history)
 [![Downloads](http://pepy.tech/badge/gluoncv)](http://pepy.tech/project/gluoncv)
 
 [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/resnest-split-attention-networks/semantic-segmentation-on-ade20k)](https://paperswithcode.com/sota/semantic-segmentation-on-ade20k?p=resnest-split-attention-networks)
@@ -46,7 +46,8 @@ Check the HD video at [Youtube](https://www.youtube.com/watch?v=nfpouVAzXt0) or 
 | [Instance Segmentation:](https://gluon-cv.mxnet.io/model_zoo/segmentation.html#instance-segmentation) <br/>detect objects and associate <br/> each pixel inside object area with an <br/> instance label. | <a href="https://gluon-cv.mxnet.io/model_zoo/segmentation.html#instance-segmentation"><img src="docs/_static/instance-segmentation.png" alt="instance" height="200"/></a> | <a href="https://gluon-cv.mxnet.io/model_zoo/segmentation.html#instance-segmentation">Mask RCNN</a>|
 | [Pose Estimation:](https://gluon-cv.mxnet.io/model_zoo/pose.html) <br/>detect human pose <br/> from images. | <a href="https://gluon-cv.mxnet.io/model_zoo/pose.html"><img src="docs/_static/pose-estimation.svg" alt="pose" height="200"/></a> | <a href="https://gluon-cv.mxnet.io/model_zoo/pose.html#simple-pose-with-resnet">Simple Pose</a>|
 | [Video Action Recognition:](https://gluon-cv.mxnet.io/model_zoo/action_recognition.html) <br/>recognize human actions <br/> in a video. | <a href="https://gluon-cv.mxnet.io/model_zoo/action_recognition.html"><img src="docs/_static/action-recognition.png" alt="action_recognition" height="200"/></a> | <a href="https://gluon-cv.mxnet.io/model_zoo/action_recognition.html">TSN</a>, <a href="https://gluon-cv.mxnet.io/model_zoo/action_recognition.html">C3D</a>, <a href="https://gluon-cv.mxnet.io/model_zoo/action_recognition.html">I3D</a>, <a href="https://gluon-cv.mxnet.io/model_zoo/action_recognition.html">P3D</a>, <a href="https://gluon-cv.mxnet.io/model_zoo/action_recognition.html">R3D</a>, <a href="https://gluon-cv.mxnet.io/model_zoo/action_recognition.html">R2+1D</a>, <a href="https://gluon-cv.mxnet.io/model_zoo/action_recognition.html">Non-local</a>, <a href="https://gluon-cv.mxnet.io/model_zoo/action_recognition.html">SlowFast</a> |
-| [GAN:](https://github.com/dmlc/gluon-cv/tree/master/scripts/gan) <br/>generate visually deceptive images | <a href="https://github.com/dmlc/gluon-cv/tree/master/scripts/gan"><img src="https://github.com/dmlc/gluon-cv/raw/master/scripts/gan/wgan/fake_samples_400000.png" alt="lsun" height="200"/></a> | <a href="https://github.com/dmlc/gluon-cv/tree/master/scripts/gan/wgan">WGAN</a>, <a href="https://github.com/dmlc/gluon-cv/tree/master/scripts/gan/cycle_gan">CycleGAN</a> |
+| [Depth Prediction:](https://gluon-cv.mxnet.io/model_zoo/depth.html) <br/>predict depth map <br/> from images. | <a href="https://gluon-cv.mxnet.io/model_zoo/depth.html"><img src="docs/_static/depth.png" alt="depth" height="200"/></a> | <a href="https://gluon-cv.mxnet.io/model_zoo/depth.html#kitti-dataset">Monodepth2</a>|
+| [GAN:](https://github.com/dmlc/gluon-cv/tree/master/scripts/gan) <br/>generate visually deceptive images | <a href="https://github.com/dmlc/gluon-cv/tree/master/scripts/gan"><img src="https://github.com/dmlc/gluon-cv/raw/master/scripts/gan/wgan/fake_samples_400000.png" alt="lsun" height="200"/></a> | <a href="https://github.com/dmlc/gluon-cv/tree/master/scripts/gan/wgan">WGAN</a>, <a href="https://github.com/dmlc/gluon-cv/tree/master/scripts/gan/cycle_gan">CycleGAN</a>, <a href="https://github.com/dmlc/gluon-cv/tree/master/scripts/gan/stylegan">StyleGAN</a>|
 | [Person Re-ID:](https://github.com/dmlc/gluon-cv/tree/master/scripts/re-id/baseline) <br/>re-identify pedestrians across scenes | <a href="https://github.com/dmlc/gluon-cv/tree/master/scripts/re-id/baseline"><img src="https://user-images.githubusercontent.com/3307514/46702937-f4311800-cbd9-11e8-8eeb-c945ec5643fb.png" alt="re-id" height="160"/></a> |<a href="https://github.com/dmlc/gluon-cv/tree/master/scripts/re-id/baseline">Market1501 baseline</a> |
 
 # Installation
@@ -94,6 +95,8 @@ All tutorials are available at [our website](https://gluon-cv.mxnet.io/index.htm
 - [Instance Segmentation](http://gluon-cv.mxnet.io/build/examples_instance/index.html)
 
 - [Video Action Recognition](https://gluon-cv.mxnet.io/build/examples_action_recognition/index.html)
+
+- [Depth Prediction](https://gluon-cv.mxnet.io/build/examples_depth/index.html)
 
 - [Generative Adversarial Network](https://github.com/dmlc/gluon-cv/tree/master/scripts/gan)
 
