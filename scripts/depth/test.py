@@ -7,6 +7,7 @@
 from __future__ import absolute_import, division, print_function
 
 import os
+import time
 from tqdm import tqdm
 import cv2
 import numpy as np
@@ -81,7 +82,7 @@ def evaluate(opt):
         dataloader = gluon.data.DataLoader(
             dataset, batch_size=opt.batch_size, shuffle=False,
             batchify_fn=dict_batchify_fn, num_workers=opt.num_workers,
-            pin_memory=True, last_batch='rollover')
+            pin_memory=True, last_batch='keep')
 
         ############################ loading model ############################
         model = None
@@ -108,10 +109,12 @@ def evaluate(opt):
         ############################ inference ############################
         pred_disps = []
         tbar = tqdm(dataloader)
+        t_gpu = 0
         for i, data in enumerate(tbar):
             input_color = data[("color", 0, 0)]
             input_color = input_color.as_in_context(context=opt.ctx[0])
 
+            tic = time.time()
             if opt.hybridize:
                 decoder_output = model(input_color)
 
@@ -125,13 +128,15 @@ def evaluate(opt):
                         idx += 1
             else:
                 outputs = model.predict(input_color)
-
+            t_gpu += time.time() - tic
             pred_disp, _ = disp_to_depth(outputs[("disp", 0)], opt.min_depth, opt.max_depth)
             pred_disp = pred_disp.as_in_context(mx.cpu())[:, 0].asnumpy()
 
             pred_disps.append(pred_disp)
 
         pred_disps = np.concatenate(pred_disps)
+        gpu_time = t_gpu / len(dataset)
+        print(" Average inference time {:0.3f}ms, {:0.3f}fps".format(gpu_time*1000, 1/gpu_time))
 
     else:
         # Load predictions from file
