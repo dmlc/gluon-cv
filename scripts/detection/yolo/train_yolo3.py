@@ -313,8 +313,10 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
                     name3, loss3 = scale_metrics.get()
                     name4, loss4 = cls_metrics.get()
                     logger.info('[Epoch {}][Batch {}], LR: {:.2E}, Speed: {:.3f} samples/sec, {}={:.3f}, {}={:.3f}, {}={:.3f}, {}={:.3f}'.format(
-                        epoch, i, trainer.learning_rate, args.batch_size/(time.time()-btic), name1, loss1, name2, loss2, name3, loss3, name4, loss4))
-                btic = time.time()
+                        epoch, i, trainer.learning_rate,
+                        args.log_interval * args.batch_size / (time.time() - btic),
+                        name1, loss1, name2, loss2, name3, loss3, name4, loss4))
+                    btic = time.time()
 
         if (not args.horovod or hvd.rank() == 0):
             name1, loss1 = obj_metrics.get()
