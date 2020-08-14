@@ -12,7 +12,7 @@ from .pose_decoder import PoseDecoder
 
 class MonoDepth2PoseNet(nn.HybridBlock):
     # pylint: disable=unused-argument
-    def __init__(self, backbone, pretrained_base, num_input_images=1, num_input_features=1,
+    def __init__(self, backbone, pretrained_base, num_input_images=2, num_input_features=1,
                  num_frames_to_predict_for=None, stride=1, ctx=cpu(), **kwargs):
         super(MonoDepth2PoseNet, self).__init__()
 
@@ -28,15 +28,15 @@ class MonoDepth2PoseNet(nn.HybridBlock):
     def hybrid_forward(self, F, x):
         # pylint: disable=unused-argument
         features = [self.encoder(x)]
-        outputs = self.decoder(features)
+        axisangle, translation = self.decoder(features)
 
-        return outputs
+        return axisangle, translation
 
     def demo(self, x):
         return self.predict(x)
 
     def predict(self, x):
         features = [self.encoder.predict(x)]
-        outputs = self.decoder.predict(features)
+        axisangle, translation = self.decoder.predict(features)
 
-        return outputs
+        return axisangle, translation

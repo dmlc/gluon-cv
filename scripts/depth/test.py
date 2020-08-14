@@ -18,7 +18,7 @@ from gluoncv.data import KITTIRAWDataset
 from gluoncv.data.kitti.kitti_utils import dict_batchify_fn, readlines
 from gluoncv.model_zoo import get_model
 
-from gluoncv.model_zoo.monodepthv2.layers import disp_to_depth
+from gluoncv.model_zoo.monodepthv2.layers import disp_to_depth, compute_depth_errors
 from options import MonodepthOptions
 
 cv2.setNumThreads(0)  # This speeds up evaluation 5x on our unix systems (OpenCV 3.3.1)
@@ -29,27 +29,6 @@ splits_dir = os.path.join(os.path.expanduser("~"), ".mxnet/datasets/kitti", "spl
 # baseline of 0.1 units. The KITTI rig has a baseline of 54cm. Therefore,
 # to convert our stereo predictions to real-world scale we multiply our depths by 5.4.
 STEREO_SCALE_FACTOR = 5.4
-
-
-def compute_errors(gt, pred):
-    """Computation of error metrics between predicted and ground truth depths
-    """
-    thresh = np.maximum((gt / pred), (pred / gt))
-    a1 = (thresh < 1.25).mean()
-    a2 = (thresh < 1.25 ** 2).mean()
-    a3 = (thresh < 1.25 ** 3).mean()
-
-    rmse = (gt - pred) ** 2
-    rmse = np.sqrt(rmse.mean())
-
-    rmse_log = (np.log(gt) - np.log(pred)) ** 2
-    rmse_log = np.sqrt(rmse_log.mean())
-
-    abs_rel = np.mean(np.abs(gt - pred) / gt)
-
-    sq_rel = np.mean(((gt - pred) ** 2) / gt)
-
-    return abs_rel, sq_rel, rmse, rmse_log, a1, a2, a3
 
 
 def batch_post_process_disparity(l_disp, r_disp):
@@ -136,7 +115,7 @@ def evaluate(opt):
 
         pred_disps = np.concatenate(pred_disps)
         gpu_time = t_gpu / len(dataset)
-        print(" Average inference time {:0.3f}ms, {:0.3f}fps".format(gpu_time*1000, 1/gpu_time))
+        print("\nAverage inference time {:0.3f}ms, {:0.3f}fps\n".format(gpu_time * 1000, 1 / gpu_time))
 
     else:
         # Load predictions from file
@@ -225,7 +204,7 @@ def evaluate(opt):
         pred_depth[pred_depth < MIN_DEPTH] = MIN_DEPTH
         pred_depth[pred_depth > MAX_DEPTH] = MAX_DEPTH
 
-        errors.append(compute_errors(gt_depth, pred_depth))
+        errors.append(compute_depth_errors(gt_depth, pred_depth))
 
     if not opt.disable_median_scaling:
         ratios = np.array(ratios)
