@@ -71,12 +71,12 @@ ex = Experiment('ssd_default', ingredients=[logging, train, validation, ssd])
 
 @ex.config
 def default_configs():
-    # Dataset name. eg. 'coco', 'voc'
-    dataset = 'voc'
+    # Dataset name. eg. 'coco', 'voc', 'voc_tiny'
+    dataset = 'voc_tiny'
     # Path of the directory where the dataset is located.
     dataset_root = '~/.mxnet/datasets/'
     # Training with GPUs, you can specify (1,3) for example.
-    gpus = (0,)
+    gpus = (0, 1, 2, 3)
     # Resume from previously saved parameters if not None.
     # For example, you can resume from ./faster_rcnn_xxx_0123.params.
     resume = ''

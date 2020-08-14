@@ -154,6 +154,7 @@ class ObjectDetection(BaseTask):
         best_config = sample_config(_train_object_detection.args, results['best_config'])
         self._logger.info('The best config: {}'.format(best_config))
 
+        best_config.pop('estimator')
         estimator = self._estimator(best_config)
         estimator.put_parameters(results.pop('model_params'))
         return estimator

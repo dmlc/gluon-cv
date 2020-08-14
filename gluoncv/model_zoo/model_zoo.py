@@ -127,7 +127,6 @@ _models = {
     'ssd_300_mobilenet0.25_voc': ssd_300_mobilenet0_25_voc,
     'ssd_300_mobilenet0.25_coco': ssd_300_mobilenet0_25_coco,
     'ssd_300_mobilenet0.25_custom': ssd_300_mobilenet0_25_custom,
-    'custom_ssd': custom_ssd,
     'faster_rcnn_resnet50_v1b_voc': faster_rcnn_resnet50_v1b_voc,
     'mask_rcnn_resnet18_v1b_coco': mask_rcnn_resnet18_v1b_coco,
     'faster_rcnn_resnet50_v1b_coco': faster_rcnn_resnet50_v1b_coco,

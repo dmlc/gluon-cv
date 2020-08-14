@@ -9,6 +9,8 @@ from ....data.transforms.presets.rcnn import FasterRCNNDefaultValTransform
 from ....utils.metrics.coco_detection import COCODetectionMetric
 from ....utils.metrics.voc_detection import VOC07MApMetric
 
+from autogluon.task.object_detection.dataset.voc import CustomVOCDetectionBase
+
 try:
     import horovod.mxnet as hvd
 except ImportError:
@@ -98,6 +100,15 @@ def _get_dataset(dataset, args):
             splits=[(2007, 'trainval'), (2012, 'trainval')])
         val_dataset = gdata.VOCDetection(
             splits=[(2007, 'test')])
+        val_metric = VOC07MApMetric(iou_thresh=0.5, class_names=val_dataset.classes)
+    elif dataset.lower() == 'voc_tiny':
+        # need to download the dataset and specify the path to store the dataset in
+        # root = './'
+        # filename_zip = ag.download('https://autogluon.s3.amazonaws.com/datasets/tiny_motorbike.zip', path=root)
+        # filename = ag.unzip(filename_zip, root=root)
+        # data_root = os.path.join(root, filename)
+        train_dataset = CustomVOCDetectionBase(classes=('motorbike',), root='~/tiny_motorbike', splits=[('', 'trainval')])
+        val_dataset = CustomVOCDetectionBase(classes=('motorbike',), root='~/tiny_motorbike', splits=[('', 'test')])
         val_metric = VOC07MApMetric(iou_thresh=0.5, class_names=val_dataset.classes)
     elif dataset.lower() in ['clipart', 'comic', 'watercolor']:
         root = os.path.join('~', '.mxnet', 'datasets', dataset.lower())

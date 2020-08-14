@@ -91,7 +91,7 @@ def train_cfg():
     # Whether load the imagenet pre-trained base
     pretrained_base = True
     # Batch size during training
-    batch_size = 8
+    batch_size = 4
     # starting epoch
     start_epoch = 0
     # total epoch for training
@@ -176,10 +176,10 @@ ex = Experiment('faster_rcnn_default', ingredients=[logging, train, validation, 
 
 @ex.config
 def default_configs():
-    # Dataset name. eg. 'coco', 'voc'
-    dataset = 'coco'
+    # Dataset name. eg. 'coco', 'voc', 'voc_tiny'
+    dataset = 'voc_tiny'
     # Training with GPUs, you can specify (1,3) for example.
-    gpus = (0, 1, 2, 3, 4, 5, 6, 7)
+    gpus = (0, 1, 2, 3)
     # Resume from previously saved parameters if not None.
     # For example, you can resume from ./faster_rcnn_xxx_0123.params.
     resume = ''

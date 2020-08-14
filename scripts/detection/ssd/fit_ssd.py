@@ -2,7 +2,7 @@
 
 import gluoncv as gcv
 
-gcv.utils.check_version('0.7.0')
+gcv.utils.check_version('0.8.0')
 from gluoncv.auto.estimators.ssd import SSDEstimator
 from gluoncv.auto.estimators.ssd import ex
 

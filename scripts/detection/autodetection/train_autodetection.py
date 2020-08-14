@@ -24,14 +24,14 @@ if __name__ == '__main__':
     parser.add_argument('--classes', type=tuple, default=None, help="classes for custom classes")
     parser.add_argument('--no-redownload', action='store_true',
                         help="whether need to re-download dataset")
-    parser.add_argument('--meta-arch', type=str, default='faster_rcnn',
+    parser.add_argument('--meta-arch', type=str, default='ssd',
                         choices=['yolo3', 'faster_rcnn', 'ssd'], help="Meta architecture of the model")
 
     args = parser.parse_args()
     logging.info('args: {}'.format(args))
 
     time_limits = 7 * 24 * 60 * 60  # 7 days
-    epochs = 20
+    epochs = 5
     # use coco pre-trained model for custom datasets
     transfer = None if ('voc' in args.dataset_name) or ('coco' in args.dataset_name) else 'coco'
     if args.meta_arch == 'yolo3':
@@ -57,22 +57,22 @@ if __name__ == '__main__':
                   'wd': ag.Categorical(1e-4, 5e-4, 2.5e-4), 'syncbn': ag.Bool(),
                   'label_smooth': False, 'time_limits': time_limits, 'dist_ip_addrs': []}
     elif args.meta_arch == 'ssd':
-        kwargs = {'num_trials': 30, 'epochs': epochs,
+        kwargs = {'num_trials': 3, 'epochs': epochs,
                   'net': ag.Categorical('vgg16_atrous'),
                   'meta_arch': args.meta_arch,
-                  'lr': ag.Categorical(1e-2, 1e-3, 1e-4), 'transfer': transfer,
+                  'lr': ag.Categorical(5e-3, 1e-3, 5e-4), 'transfer': transfer,
                   'data_shape': 300, 'nthreads_per_trial': 16,
                   'ngpus_per_trial': 4, 'batch_size': 32,
-                  'lr_decay_epoch': ag.Categorical([80, 90], [160, 200]),
-                  'wd': ag.Categorical(1e-4, 5e-4, 2.5e-4), 'syncbn': ag.Bool(),
+                  'lr_decay_epoch': [160, 200],
+                  'wd': 5e-4, 'syncbn': ag.Bool(),
                   'label_smooth': False, 'time_limits': time_limits, 'dist_ip_addrs': []}
     else:
         raise NotImplementedError('%s is not implemented.', args.meta_arch)
-    default_args = {'dataset': 'voc', 'net': Categorical('mobilenet1.0'), 'meta_arch': 'yolo3',
+    default_args = {'dataset': 'voc_tiny', 'net': Categorical('mobilenet1.0'), 'meta_arch': 'yolo3',
                     'lr': Categorical(5e-4, 1e-4), 'loss': gluon.loss.SoftmaxCrossEntropyLoss(),
                     'split_ratio': 0.8, 'batch_size': 16, 'epochs': 50, 'num_trials': 2,
                     'nthreads_per_trial': 12, 'num_workers': 16, 'ngpus_per_trial': 1,
-                    'hybridize': True, 'search_strategy': 'random', 'search_options': {},
+                    'hybridize': True, 'search_strategy': 'skopt', 'search_options': {},
                     'time_limits': None, 'verbose': False, 'transfer': 'coco', 'resume': False,
                     'checkpoint': 'checkpoint/exp1.ag', 'visualizer': 'none', 'dist_ip_addrs': [],
                     'grace_period': None, 'auto_search': True, 'seed': 223, 'data_shape': 416,
