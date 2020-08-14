@@ -49,6 +49,20 @@ def _train_object_detection(args, reporter):
                                   'image_max_size': 1333, 'custom_model': True, 'amp': False,
                                   'static_alloc': False}}
         # vars(args).update(kwargs)
+    elif args.meta_arch == 'ssd':
+        config = {'dataset': args.dataset, 'dataset_root': '~/.mxnet/datasets/',
+                  'gpus': [0, 1, 2, 3], 'resume': '', 'save_prefix': '', 'save_interval': 1,
+                  'horovod': False, 'num_workers': 16, 'seed': 826994795,
+                  'train': {'batch_size': args.batch_size, 'start_epoch': 0, 'epochs': args.epochs,
+                            'lr': args.lr, 'lr_decay': 0.1, 'lr_decay_epoch': args.lr_decay_epoch,
+                            'momentum': 0.9, 'wd': 5e-4, 'log_interval': 100, 'seed': 233, 'dali': False},
+                  'validation': {'val_interval': 1},
+                  'ssd': {'backbone': args.net, 'data_shape': 300,
+                          'filters': None,
+                          'sizes': [30, 60, 111, 162, 213, 264, 315],
+                          'ratios': [[1, 2, 0.5]] + [[1, 2, 0.5, 3, 1.0/3]] * 3 + [[1, 2, 0.5]] * 2,
+                          'steps': [8, 16, 32, 64, 100, 300],
+                          'syncbn': False, 'amp': False, 'custom_model': True}}
     else:
         raise NotImplementedError(args.meta_arch, 'is not implemented.')
 
@@ -59,7 +73,7 @@ def _train_object_detection(args, reporter):
         config['train'] = {'auto_resume': False}
 
     try:
-        if args.meta_arch == 'faster_rcnn':
+        if args.meta_arch == 'faster_rcnn' or 'ssd':
             estimator = args.estimator(config, reporter=reporter)
         else:
             raise NotImplementedError('%s' % args.meta_arch)
@@ -140,6 +154,7 @@ class ObjectDetection(BaseTask):
         best_config = sample_config(_train_object_detection.args, results['best_config'])
         self._logger.info('The best config: {}'.format(best_config))
 
+        best_config.pop('estimator')
         estimator = self._estimator(best_config)
         estimator.put_parameters(results.pop('model_params'))
         return estimator
