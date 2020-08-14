@@ -100,7 +100,7 @@ def build_file_list(args):
             # counting the number of frames in each video folders
             dir_files = os.listdir(os.path.join(args.frame_root, curFolder))
             if len(dir_files) == 0:
-                print('video decoding fails at %s' (curFolder))
+                print('video decoding fails at %s', (curFolder))
                 sys.exit()
             output.append('%s %d %d' % (curFolder, len(dir_files), curIDX))
             print('%d/%d' % (i, len(folders)))
