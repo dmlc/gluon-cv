@@ -90,9 +90,9 @@ def parse_args():
 
 def get_dataset(dataset, args):
     if dataset.lower() == 'voc':
-        train_dataset = gdata.VOCDetection(
+        train_dataset = gdata.VOCDetection(root=args.dataset_root,
             splits=[(2007, 'trainval'), (2012, 'trainval')])
-        val_dataset = gdata.VOCDetection(
+        val_dataset = gdata.VOCDetection(root=args.dataset_root,
             splits=[(2007, 'test')])
         val_metric = VOC07MApMetric(iou_thresh=0.5, class_names=val_dataset.classes)
     elif dataset.lower() == 'coco':

@@ -47,6 +47,8 @@ def parse_args():
                         help="Base network name which serves as feature extraction base.")
     parser.add_argument('--dataset', type=str, default='voc',
                         help='Training dataset. Now support voc and coco.')
+    parser.add_argument('--dataset-root', type=str, default='~/.mxnet/datasets/',
+                        help='Path of the directory where the dataset is located.')
     parser.add_argument('--num-workers', '-j', dest='num_workers', type=int,
                         default=4, help='Number of data workers, you can use larger '
                                         'number to accelerate data loading, '
@@ -296,9 +298,9 @@ def parse_args():
 
 def get_dataset(dataset, args):
     if dataset.lower() == 'voc':
-        train_dataset = gdata.VOCDetection(
+        train_dataset = gdata.VOCDetection(root=args.dataset_root,
             splits=[(2007, 'trainval'), (2012, 'trainval')])
-        val_dataset = gdata.VOCDetection(
+        val_dataset = gdata.VOCDetection(root=args.dataset_root,
             splits=[(2007, 'test')])
         val_metric = VOC07MApMetric(iou_thresh=0.5, class_names=val_dataset.classes)
     elif dataset.lower() in ['clipart', 'comic', 'watercolor']:
