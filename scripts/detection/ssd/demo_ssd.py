@@ -25,7 +25,7 @@ def parse_args():
 if __name__ == '__main__':
     args = parse_args()
     # context list
-    ctx = [mx.gpu(int(i)) for i in args.gpus.split(',') if i.strip()]
+    ctx = [mx.gpu(int(i)) for i in args.gpus.split(',') if i.strip() and int(i) > 0]
     ctx = [mx.cpu()] if not ctx else ctx
 
     # grab some image if not specified

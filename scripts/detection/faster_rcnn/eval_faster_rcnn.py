@@ -119,7 +119,7 @@ if __name__ == '__main__':
     args = parse_args()
 
     # contexts
-    ctx = [mx.gpu(int(i)) for i in args.gpus.split(',') if i.strip()]
+    ctx = [mx.gpu(int(i)) for i in args.gpus.split(',') if i.strip() and int(i) > 0]
     ctx = ctx if ctx else [mx.cpu()]
     args.batch_size = len(ctx)  # 1 batch per device
 
