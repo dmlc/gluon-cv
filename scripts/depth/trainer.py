@@ -99,7 +99,8 @@ class Trainer:
             self.posenet = MonoDepth2PoseNet(
                 backbone='resnet18', pretrained_base=self.opt.pretrained_base, num_input_images=2,
                 num_input_features=1, num_frames_to_predict_for=2, ctx=self.opt.ctx)
-
+            # pose_weights_path = os.path.join(self.opt.load_weights_folder, "monodepth2_posenet.params")
+            # self.posenet.load_parameters(pose_weights_path, ctx=self.opt.ctx)
             self.logger.info(self.posenet)
             self.parameters_to_train.update(self.posenet.collect_params())
 

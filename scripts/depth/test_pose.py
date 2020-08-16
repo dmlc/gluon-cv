@@ -76,14 +76,12 @@ def evaluate(opt):
         pin_memory=True, last_batch='keep')
 
     ############################ loading model ############################
-    pose_encoder_path = os.path.join(opt.load_weights_folder, "pose_encoder.params")
-    pose_decoder_path = os.path.join(opt.load_weights_folder, "pose.params")
+    pose_weights_path = os.path.join(opt.load_weights_folder, "monodepth2_posenet.params")
 
-    pose_encoder = ResnetEncoder(backbone='resnet18', pretrained=False, num_input_images=2)
-    pose_encoder.load_parameters(pose_encoder_path, ctx=opt.ctx)
-
-    pose_decoder = PoseDecoder(pose_encoder.num_ch_enc, 1, 2)
-    pose_decoder.load_parameters(pose_decoder_path, ctx=opt.ctx)
+    posenet = MonoDepth2PoseNet(
+        backbone='resnet18', pretrained_base=False, num_input_images=2,
+        num_input_features=1, num_frames_to_predict_for=2, ctx=opt.ctx)
+    posenet.load_parameters(pose_weights_path, ctx=opt.ctx)
 
     ############################ inference ############################
     pred_poses = []
@@ -96,8 +94,7 @@ def evaluate(opt):
             data[key] = ipt.as_in_context(context=opt.ctx[0])
 
         all_color_aug = mx.nd.concat(*[data[("color_aug", i, 0)] for i in opt.frame_ids], dim=1)
-        features = [pose_encoder(all_color_aug)]
-        axisangle, translation = pose_decoder(features)
+        axisangle, translation = posenet(all_color_aug)
 
         pred_poses.append(
             transformation_from_parameters(
