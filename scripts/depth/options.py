@@ -189,9 +189,10 @@ class MonodepthOptions:
         self.options = self.parser.parse_args()
 
         # logging and checkpoint saving
-        log_path = os.path.join(self.options.log_dir, self.options.model_zoo)
-        if not os.path.exists(log_path):
-            os.makedirs(log_path)
+        if not (self.options.eval_mono or self.options.eval_stereo):
+            log_path = os.path.join(self.options.log_dir, self.options.model_zoo)
+            if not os.path.exists(log_path):
+                os.makedirs(log_path)
 
         self.options.ctx = [mx.gpu(self.options.gpu)]
         if self.options.no_gpu:
