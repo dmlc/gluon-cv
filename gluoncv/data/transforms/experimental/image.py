@@ -53,8 +53,8 @@ def random_color_distort(src, brightness_delta=32, contrast_low=0.5, contrast_hi
         """Saturation distortion."""
         if np.random.uniform(0, 1) > p:
             alpha = np.random.uniform(low, high)
-            gray = src * nd.array([[[0.299, 0.587, 0.114]]], ctx=src.context)
-            gray = mx.nd.sum(gray, axis=2, keepdims=True)
+            gray = src * mx.np.array([[[0.299, 0.587, 0.114]]], ctx=src.context)
+            gray = mx.np.sum(gray, axis=2, keepdims=True)
             gray *= (1.0 - alpha)
             src *= alpha
             src += gray
@@ -77,7 +77,8 @@ def random_color_distort(src, brightness_delta=32, contrast_low=0.5, contrast_hi
                               [1.0, -0.272, -0.647],
                               [1.0, -1.107, 1.705]])
             t = np.dot(np.dot(ityiq, bt), tyiq).T
-            src = nd.dot(src, nd.array(t, ctx=src.context))
+            # import pdb; pdb.set_trace()
+            src = mx.np.dot(src, mx.np.array(t, ctx=src.context).astype('float32'))
             return src
         return src
 

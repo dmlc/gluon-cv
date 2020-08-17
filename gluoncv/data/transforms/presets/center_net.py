@@ -51,9 +51,9 @@ def transform_test(imgs, short, max_size=1024, mean=(0.485, 0.456, 0.406),
     for img in imgs:
         img = timage.resize_short_within(img, short, max_size)
         orig_img = img.asnumpy().astype('uint8')
-        img = mx.nd.image.to_tensor(img)
-        img = mx.nd.image.normalize(img, mean=mean, std=std)
-        tensors.append(img.expand_dims(0))
+        img = mx.npx.image.to_tensor(img)
+        img = mx.npx.image.normalize(img, mean=mean, std=std)
+        tensors.append(img.as_nd_ndarray().expand_dims(0).as_np_ndarray())
         origs.append(orig_img)
     if len(tensors) == 1:
         return tensors[0], origs[0]

@@ -214,7 +214,7 @@ def random_pca_lighting(src, alphastd, eigval=None, eigvec=None):
 
     alpha = np.random.normal(0, alphastd, size=(3,))
     rgb = np.dot(eigvec * alpha, eigval)
-    src += nd.array(rgb, ctx=src.context)
+    src += mx.np.array(rgb, ctx=src.context).astype('float32')
     return src
 
 def random_expand(src, max_ratio=4, fill=0, keep_ratio=True):
@@ -398,6 +398,6 @@ def ten_crop(src, size):
     bl = src[h - oh:h, 0:ow, :]
     tr = src[0:oh, w - ow:w, :]
     br = src[h - oh:h, w - ow:w, :]
-    crops = nd.stack(*[center, tl, bl, tr, br], axis=0)
-    crops = nd.concat(*[crops, nd.flip(crops, axis=2)], dim=0)
+    crops = mx.np.stack([center, tl, bl, tr, br], axis=0)
+    crops = mx.np.concatenate([crops, np.flip(crops, axis=2)], axis=0)
     return crops
