@@ -3,7 +3,6 @@ from __future__ import division
 import random
 import numpy as np
 import mxnet as mx
-from mxnet import nd
 
 def random_color_distort(src, brightness_delta=32, contrast_low=0.5, contrast_high=1.5,
                          saturation_low=0.5, saturation_high=1.5, hue_delta=18):
@@ -77,7 +76,6 @@ def random_color_distort(src, brightness_delta=32, contrast_low=0.5, contrast_hi
                               [1.0, -0.272, -0.647],
                               [1.0, -1.107, 1.705]])
             t = np.dot(np.dot(ityiq, bt), tyiq).T
-            # import pdb; pdb.set_trace()
             src = mx.np.dot(src, mx.np.array(t, ctx=src.context).astype('float32'))
             return src
         return src
