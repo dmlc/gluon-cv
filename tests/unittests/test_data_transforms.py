@@ -13,7 +13,6 @@ from gluoncv.data.transforms.presets import ssd
 from gluoncv.data.transforms.presets import rcnn
 from gluoncv.data.transforms.presets import yolo
 from gluoncv.data.transforms.presets import center_net
-mx.npx.setup()
 
 def test_bbox_crop():
     bbox = np.array([[10, 20, 200, 500], [150, 200, 400, 300]])
