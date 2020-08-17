@@ -3,7 +3,6 @@ from __future__ import division
 import random
 import numpy as np
 import mxnet as mx
-from mxnet import nd
 from mxnet.base import numeric_types
 
 __all__ = ['imresize', 'resize_long', 'resize_short_within',
