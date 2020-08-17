@@ -397,5 +397,5 @@ def ten_crop(src, size):
     tr = src[0:oh, w - ow:w, :]
     br = src[h - oh:h, w - ow:w, :]
     crops = mx.np.stack([center, tl, bl, tr, br], axis=0)
-    crops = mx.np.concatenate([crops, np.flip(crops, axis=2)], axis=0)
+    crops = mx.np.concatenate([crops, mx.np.flip(crops, axis=2)], axis=0)
     return crops
