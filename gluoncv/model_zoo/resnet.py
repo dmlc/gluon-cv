@@ -426,7 +426,7 @@ class ResNetV1(HybridBlock):
         return layer
 
     def hybrid_forward(self, F, x):
-        x = x.as_np_ndarray()
+        x = x
         x = self.features(x)
         x = self.output(x)
 
