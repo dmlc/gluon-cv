@@ -120,7 +120,7 @@ class BasicBlockV1(HybridBlock):
 
         x = F.npx.activation(residual+x, act_type='relu')
 
-        return x
+        return x.as_nd_ndarray()
 
 @use_np
 class BottleneckV1(HybridBlock):
@@ -199,7 +199,7 @@ class BottleneckV1(HybridBlock):
             residual = self.downsample(residual)
 
         x = F.npx.activation(x + residual, act_type='relu')
-        return x
+        return x.as_nd_ndarray()
 
 @use_np
 class BasicBlockV2(HybridBlock):
@@ -275,7 +275,7 @@ class BasicBlockV2(HybridBlock):
             w = self.se(w)
             x = x * w.as_nd_ndarray().expand_dims(axis=2).expand_dims(axis=2).as_np_ndarray()
 
-        return x + residual
+        return (x + residual).as_nd_ndarray()
 
 @use_np
 class BottleneckV2(HybridBlock):
@@ -356,7 +356,7 @@ class BottleneckV2(HybridBlock):
             w = self.se(w)
             x = x * w.as_nd_ndarray().expand_dims(axis=2).expand_dims(axis=2).as_np_ndarray()
 
-        return x + residual
+        return (x + residual).as_nd_ndarray
 
 
 # Nets
@@ -430,7 +430,7 @@ class ResNetV1(HybridBlock):
         x = self.features(x)
         x = self.output(x)
 
-        return x
+        return x.as_nd_ndarray()
 
 
 class ResNetV2(HybridBlock):
@@ -509,7 +509,7 @@ class ResNetV2(HybridBlock):
         x = x.as_np_ndarray()
         x = self.features(x)
         x = self.output(x)
-        return x
+        return x.as_nd_ndarray()
 
 
 # Specification
