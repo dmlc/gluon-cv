@@ -105,6 +105,7 @@ class BasicBlockV1(HybridBlock):
             self.downsample = None
 
     def hybrid_forward(self, F, x):
+        x = x.as_np_ndarray()
         residual = x
 
         x = self.body(x)
@@ -119,7 +120,7 @@ class BasicBlockV1(HybridBlock):
 
         x = F.npx.activation(residual+x, act_type='relu')
 
-        return x.as_np_ndarray()
+        return x
 
 @use_np
 class BottleneckV1(HybridBlock):
@@ -184,6 +185,7 @@ class BottleneckV1(HybridBlock):
             self.downsample = None
 
     def hybrid_forward(self, F, x):
+        x = x.as_np_ndarray()
         residual = x
 
         x = self.body(x)
@@ -197,7 +199,7 @@ class BottleneckV1(HybridBlock):
             residual = self.downsample(residual)
 
         x = F.npx.activation(x + residual, act_type='relu')
-        return x.as_np_ndarray()
+        return x
 
 @use_np
 class BasicBlockV2(HybridBlock):
@@ -256,6 +258,7 @@ class BasicBlockV2(HybridBlock):
             self.downsample = None
 
     def hybrid_forward(self, F, x):
+        x = x.as_np_ndarray()
         residual = x
         x = self.bn1(x)
         x = F.npx.activation(x, act_type='relu')
@@ -272,7 +275,7 @@ class BasicBlockV2(HybridBlock):
             w = self.se(w)
             x = x * w.as_nd_ndarray().expand_dims(axis=2).expand_dims(axis=2).as_np_ndarray()
 
-        return (x + residual).as_np_ndarray()
+        return x + residual
 
 @use_np
 class BottleneckV2(HybridBlock):
@@ -332,6 +335,7 @@ class BottleneckV2(HybridBlock):
             self.downsample = None
 
     def hybrid_forward(self, F, x):
+        x = x.as_np_ndarray()
         residual = x
         x = self.bn1(x)
         x = F.npx.activation(x, act_type='relu')
@@ -352,7 +356,7 @@ class BottleneckV2(HybridBlock):
             w = self.se(w)
             x = x * w.as_nd_ndarray().expand_dims(axis=2).expand_dims(axis=2).as_np_ndarray()
 
-        return (x + residual).as_np_ndarray()
+        return x + residual
 
 
 # Nets
@@ -422,10 +426,11 @@ class ResNetV1(HybridBlock):
         return layer
 
     def hybrid_forward(self, F, x):
+        x = x.as_np_ndarray()
         x = self.features(x)
         x = self.output(x)
 
-        return x.as_np_ndarray()
+        return x
 
 
 class ResNetV2(HybridBlock):
@@ -501,9 +506,10 @@ class ResNetV2(HybridBlock):
         return layer
 
     def hybrid_forward(self, F, x):
+        x = x.as_np_ndarray()
         x = self.features(x)
         x = self.output(x)
-        return x.as_np_ndarray()
+        return x
 
 
 # Specification
