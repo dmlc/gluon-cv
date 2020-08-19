@@ -37,12 +37,12 @@ from sacred import Experiment, Ingredient
 
 __all__ = ['YoloEstimator']
 
-yolo_net = Ingredient('yolo_net')
+yolo3 = Ingredient('yolo3')
 train = Ingredient('train')
 valid = Ingredient('valid')
 
-@yolo_net.config
-def yolo_net_default():
+@yolo3.config
+def yolo3_default():
     base_network = 'darknet53'    # base feature network
     scale = 4.0  # output vs input scaling ratio, e.g., input_h // feature_h
     topk = 100  # topk detection results will be kept after inference
@@ -92,8 +92,8 @@ def train_config():
 def valid_config():
     test = 1
 
-ex = Experiment('yolo_net_default',
-                ingredients=[coco_detection, train, valid, yolo_net])
+ex = Experiment('yolo3_default',
+                ingredients=[coco_detection, train, valid, yolo3])
 
 @ex.config
 def default_configs():
@@ -123,10 +123,10 @@ class YoloEstimator(BaseEstimator):
             self.ctx = self.ctx if self.ctx else [mx.cpu()]
         
         # network
-        net_name = '_'.join(('yolo3', self._cfg.yolo_net.base_network, self._cfg.dataset))
+        net_name = '_'.join(('yolo3', self._cfg.yolo3.base_network, self._cfg.dataset))
         self._cfg.train.save_prefix += net_name
 
-        if self._cfg.yolo_net.syncbn and len(ctx) > 1:
+        if self._cfg.yolo3.syncbn and len(ctx) > 1:
             self.net = get_model(net_name, pretrained_base=True, norm_layer=gluon.contrib.nn.SyncBatchNorm,
                             norm_kwargs={'num_devices': len(ctx)})
             async_net = get_model(net_name, pretrained_base=False)  # used by cpu worker
