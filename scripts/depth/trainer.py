@@ -112,15 +112,15 @@ class Trainer:
 
         ################### optimization setting ###################
         self.lr_scheduler_depth = LRSequential([
-            LRScheduler('step', base_lr=1e-3,
+            LRScheduler('step', base_lr=self.opt.learning_rate,
                         nepochs=self.opt.num_epochs - self.opt.warmup_epochs,
                         iters_per_epoch=len(train_dataset),
                         step_epoch=[self.opt.scheduler_step_size - self.opt.warmup_epochs])
         ])
         optimizer_params_depth = {'lr_scheduler': self.lr_scheduler_depth,
-                                  'learning_rate': 1e-1}
+                                  'learning_rate': self.opt.learning_rate}
 
-        self.depth_optimizer = gluon.Trainer(self.model.collect_params(), 'sgd', optimizer_params_depth)
+        self.depth_optimizer = gluon.Trainer(self.model.collect_params(), 'adam', optimizer_params_depth)
 
         if self.use_pose_net:
             self.lr_scheduler_pose = LRSequential([
