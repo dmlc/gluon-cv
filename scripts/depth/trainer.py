@@ -79,6 +79,8 @@ class Trainer:
         if self.opt.model_zoo is not None:
             self.model = get_model(self.opt.model_zoo, pretrained_base=self.opt.pretrained_base,
                                    scales=self.opt.scales, ctx=self.opt.ctx)
+            # depth_weights_path = os.path.join(self.opt.load_weights_folder, "depth_best.params")
+            # self.model.load_parameters(depth_weights_path, ctx=self.opt.ctx)
         else:
             assert "Must choose a model from model_zoo, " \
                    "please provide the model_zoo using --model_zoo"
@@ -109,16 +111,29 @@ class Trainer:
             self.posenet.hybridize()
 
         ################### optimization setting ###################
-        self.lr_scheduler = LRSequential([
-            LRScheduler('step', base_lr=self.opt.learning_rate,
+        self.lr_scheduler_depth = LRSequential([
+            LRScheduler('step', base_lr=1e-3,
                         nepochs=self.opt.num_epochs - self.opt.warmup_epochs,
                         iters_per_epoch=len(train_dataset),
                         step_epoch=[self.opt.scheduler_step_size - self.opt.warmup_epochs])
         ])
-        optimizer_params = {'lr_scheduler': self.lr_scheduler,
-                            'learning_rate': self.opt.learning_rate}
+        optimizer_params_depth = {'lr_scheduler': self.lr_scheduler_depth,
+                                  'learning_rate': 1e-1}
 
-        self.optimizer = gluon.Trainer(self.parameters_to_train, 'adam', optimizer_params)
+        self.depth_optimizer = gluon.Trainer(self.model.collect_params(), 'sgd', optimizer_params_depth)
+
+        if self.use_pose_net:
+            self.lr_scheduler_pose = LRSequential([
+                LRScheduler('step', base_lr=self.opt.learning_rate,
+                            nepochs=self.opt.num_epochs - self.opt.warmup_epochs,
+                            iters_per_epoch=len(train_dataset),
+                            step_epoch=[self.opt.scheduler_step_size - self.opt.warmup_epochs])
+            ])
+            optimizer_params_pose = {'lr_scheduler': self.lr_scheduler_pose,
+                                      'learning_rate': self.opt.learning_rate}
+            self.pose_optimizer = gluon.Trainer(self.posenet.collect_params(), 'adam', optimizer_params_pose)
+
+        # self.optimizer = gluon.Trainer(self.parameters_to_train, 'adam', optimizer_params)
 
         print("Training model named:\n  ", self.opt.model_zoo)
         print("Models are saved to:\n  ", self.opt.log_dir)
@@ -182,7 +197,9 @@ class Trainer:
                 mx.nd.waitall()
 
                 autograd.backward(losses['loss'])
-            self.optimizer.step(self.opt.batch_size, ignore_stale_grad=True)
+            self.depth_optimizer.step(self.opt.batch_size, ignore_stale_grad=True)
+            if self.use_pose_net:
+                self.pose_optimizer.step(self.opt.batch_size, ignore_stale_grad=True)
 
             train_loss += losses['loss'].asscalar()
             tbar.set_description('Epoch %d, training loss %.3f' %

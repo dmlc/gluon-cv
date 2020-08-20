@@ -76,7 +76,7 @@ def evaluate(opt):
         pin_memory=True, last_batch='keep')
 
     ############################ loading model ############################
-    pose_weights_path = os.path.join(opt.load_weights_folder, "monodepth2_posenet.params")
+    pose_weights_path = os.path.join(opt.load_weights_folder, "pose_best.params")
 
     posenet = MonoDepth2PoseNet(
         backbone='resnet18', pretrained_base=False, num_input_images=2,
