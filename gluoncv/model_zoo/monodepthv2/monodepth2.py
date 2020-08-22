@@ -52,7 +52,8 @@ class MonoDepth2(nn.HybridBlock):
             self.decoder = DepthDecoder(self.encoder.num_ch_enc, scales,
                                         num_output_channels, use_skips)
 
-            self.decoder.initialize(init=mx.init.MSRAPrelu(), ctx=ctx)
+            # self.decoder.initialize(init=mx.init.MSRAPrelu(), ctx=ctx)
+            self.decoder.initialize(ctx=ctx)
 
     def hybrid_forward(self, F, x):
         # pylint: disable=unused-argument

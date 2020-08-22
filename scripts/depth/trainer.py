@@ -130,7 +130,7 @@ class Trainer:
                             step_epoch=[self.opt.scheduler_step_size - self.opt.warmup_epochs])
             ])
             optimizer_params_pose = {'lr_scheduler': self.lr_scheduler_pose,
-                                      'learning_rate': self.opt.learning_rate}
+                                     'learning_rate': self.opt.learning_rate}
             self.pose_optimizer = gluon.Trainer(self.posenet.collect_params(), 'adam', optimizer_params_pose)
 
         # self.optimizer = gluon.Trainer(self.parameters_to_train, 'adam', optimizer_params)
