@@ -46,14 +46,14 @@ def _pad_arrs_to_max_length(arrs, pad_axis, pad_val, num_shards=1, use_shared_me
         for j, axis in enumerate(pad_axis):
             shape[1 + axis] = max_lengths[i][j]
     if use_shared_mem:
-        ret = [mx.nd.full(shape=tuple(shape), val=pad_val, ctx=mx.Context('cpu_shared', 0),
+        ret = [mx.np.full(shape=tuple(shape), fill_value=pad_val, ctx=mx.Context('cpu_shared', 0),
                           dtype=arrs[0].dtype) for shape in ret_shape]
-        original_length = [mx.nd.array(l, ctx=mx.Context('cpu_shared', 0),
+        original_length = [mx.np.array(l, ctx=mx.Context('cpu_shared', 0),
                                        dtype=np.int32) for l in original_length]
     else:
-        ret = [mx.nd.full(shape=tuple(shape), val=pad_val, dtype=arrs[0].dtype) for shape in
+        ret = [mx.np.full(shape=tuple(shape), fill_value=pad_val, dtype=arrs[0].dtype) for shape in
                ret_shape]
-        original_length = [mx.nd.array(l, dtype=np.int32) for l in original_length]
+        original_length = [mx.np.array(l, dtype=np.int32) for l in original_length]
     for i, arr in enumerate(arrs):
         if ret[i // ret[0].shape[0]].shape[1:] == arr.shape:
             ret[i // ret[0].shape[0]][i % ret[0].shape[0]] = arr
@@ -77,9 +77,9 @@ def _stack_arrs(arrs, use_shared_mem=False):
     else:
         out = np.asarray(arrs)
         if use_shared_mem:
-            return mx.nd.array(out, ctx=mx.Context('cpu_shared', 0))
+            return mx.np.array(out, ctx=mx.Context('cpu_shared', 0))
         else:
-            return mx.nd.array(out)
+            return mx.np.array(out)
 
 
 def _append_arrs(arrs, use_shared_mem=False, expand=False, batch_axis=0):
@@ -91,13 +91,13 @@ def _append_arrs(arrs, use_shared_mem=False, expand=False, batch_axis=0):
             out = arrs
     else:
         if use_shared_mem:
-            out = [mx.nd.array(x, ctx=mx.Context('cpu_shared', 0)) for x in arrs]
+            out = [mx.np.array(x, ctx=mx.Context('cpu_shared', 0)) for x in arrs]
         else:
-            out = [mx.nd.array(x) for x in arrs]
+            out = [mx.np.array(x) for x in arrs]
 
     # add batch axis
     if expand:
-        out = [np.expand_dims(x, axis=batch_axis) for x in out]
+        out = [x.as_nd_ndarray().expand_dims(axis=batch_axis).as_np_ndarray() for x in out]
     return out
 
 
@@ -407,7 +407,7 @@ class FasterRCNNTrainBatchify(object):
             The input data samples
         Returns
         -------
-        batch_data : a tuple of NDArray
+        batch_data : a tuple of numpy ndarray
         """
         assert len(data[0]) == self.NUM_ELEMENTS, \
             'The number of attributes in each data sample should contains' \
@@ -424,28 +424,28 @@ class FasterRCNNTrainBatchify(object):
             for feat_sym, cls_target, box_target, box_mask in zip(self._feat_sym, cls_targets,
                                                                   box_targets, box_masks):
                 _, _, w, h = feat_sym.infer_shape(data=(1, 3, in_shape[0], in_shape[1]))[1][0]
-                padded_cls_target = mx.nd.ones(shape=(w, h, cls_target.shape[-1])) * -1.0
-                padded_box_target = mx.nd.zeros(shape=(w, h, box_target.shape[-1]))
-                padded_box_mask = mx.nd.zeros(shape=(w, h, box_mask.shape[-1]))
+                padded_cls_target = mx.np.ones(shape=(w, h, cls_target.shape[-1])) * -1.0
+                padded_box_target = mx.np.zeros(shape=(w, h, box_target.shape[-1]))
+                padded_box_mask = mx.np.zeros(shape=(w, h, box_mask.shape[-1]))
                 padded_cls_target[:cls_target.shape[0], :cls_target.shape[1]] = cls_target
                 padded_box_target[:box_target.shape[0], :box_target.shape[1]] = box_target
                 padded_box_mask[:box_mask.shape[0], :box_mask.shape[1]] = box_mask
                 padded_cls_targets.append(padded_cls_target.reshape(1, -1))
                 padded_box_targets.append(padded_box_target.reshape(1, -1, 4))
                 padded_box_masks.append(padded_box_mask.reshape(1, -1, 4))
-            sharded_cls_targets.append(mx.nd.concat(*padded_cls_targets, dim=1))
-            sharded_box_targets.append(mx.nd.concat(*padded_box_targets, dim=1))
-            sharded_box_masks.append(mx.nd.concat(*padded_box_masks, dim=1))
+            sharded_cls_targets.append(mx.np.concatenate(*padded_cls_targets, axis=1))
+            sharded_box_targets.append(mx.np.concatenate(*padded_box_targets, axis=1))
+            sharded_box_masks.append(mx.np.concatenate(*padded_box_masks, axis=1))
         shard_size = int(np.ceil(1.0 * len(sharded_cls_targets) / self._num_shards))
         for i in range(self._num_shards):
             start_ind = int(i * shard_size)
             end_ind = int(start_ind + shard_size)
             sharded_cls_targets[i], sharded_box_targets[i], sharded_box_masks[i] \
-                = mx.nd.concat(*sharded_cls_targets[start_ind:end_ind], dim=0).as_in_context(
+                = mx.np.concatenate(*sharded_cls_targets[start_ind:end_ind], axis=0).as_in_context(
                     mx.Context('cpu_shared', 0)), \
-                  mx.nd.concat(*sharded_box_targets[start_ind:end_ind], dim=0).as_in_context(
+                  mx.np.concatenate(*sharded_box_targets[start_ind:end_ind], axis=0).as_in_context(
                       mx.Context('cpu_shared', 0)), \
-                  mx.nd.concat(*sharded_box_masks[start_ind:end_ind], dim=0).as_in_context(
+                  mx.np.concatenate(*sharded_box_masks[start_ind:end_ind], axis=0).as_in_context(
                       mx.Context('cpu_shared', 0))
 
         return sharded_img, sharded_label, tuple(sharded_cls_targets[:self._num_shards]), \
