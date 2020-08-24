@@ -79,8 +79,6 @@ class Trainer:
         if self.opt.model_zoo is not None:
             self.model = get_model(self.opt.model_zoo, pretrained_base=self.opt.pretrained_base,
                                    scales=self.opt.scales, ctx=self.opt.ctx)
-            # depth_weights_path = os.path.join(self.opt.load_weights_folder, "depth_best.params")
-            # self.model.load_parameters(depth_weights_path, ctx=self.opt.ctx)
         else:
             assert "Must choose a model from model_zoo, " \
                    "please provide the model_zoo using --model_zoo"
@@ -96,13 +94,10 @@ class Trainer:
 
         self.parameters_to_train = self.model.collect_params()
 
-        # TODO: define pose net
         if self.use_pose_net:
             self.posenet = MonoDepth2PoseNet(
                 backbone='resnet18', pretrained_base=self.opt.pretrained_base, num_input_images=2,
                 num_input_features=1, num_frames_to_predict_for=2, ctx=self.opt.ctx)
-            # pose_weights_path = os.path.join(self.opt.load_weights_folder, "monodepth2_posenet.params")
-            # self.posenet.load_parameters(pose_weights_path, ctx=self.opt.ctx)
             self.logger.info(self.posenet)
             self.parameters_to_train.update(self.posenet.collect_params())
 
