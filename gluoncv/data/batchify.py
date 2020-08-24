@@ -46,12 +46,12 @@ def _pad_arrs_to_max_length(arrs, pad_axis, pad_val, num_shards=1, use_shared_me
         for j, axis in enumerate(pad_axis):
             shape[1 + axis] = max_lengths[i][j]
     if use_shared_mem:
-        ret = [mx.np.full(shape=tuple(shape), val=pad_val, ctx=mx.Context('cpu_shared', 0),
+        ret = [mx.np.full(shape=tuple(shape), fill_value=pad_val, ctx=mx.Context('cpu_shared', 0),
                           dtype=arrs[0].dtype) for shape in ret_shape]
         original_length = [mx.np.array(l, ctx=mx.Context('cpu_shared', 0),
                                        dtype=np.int32) for l in original_length]
     else:
-        ret = [mx.np.full(shape=tuple(shape), val=pad_val, dtype=arrs[0].dtype) for shape in
+        ret = [mx.np.full(shape=tuple(shape), fill_value=pad_val, dtype=arrs[0].dtype) for shape in
                ret_shape]
         original_length = [mx.np.array(l, dtype=np.int32) for l in original_length]
     for i, arr in enumerate(arrs):
@@ -98,6 +98,7 @@ def _append_arrs(arrs, use_shared_mem=False, expand=False, batch_axis=0):
     # add batch axis
     if expand:
         out = [np.expand_dims(x, axis=batch_axis) for x in out]
+        print("1")
     return out
 
 
