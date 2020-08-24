@@ -67,15 +67,15 @@ class SSDAnchorGenerator(gluon.HybridBlock):
         return len(self._sizes) + len(self._ratios) - 1
 
     # pylint: disable=arguments-differ
-    def hybrid_forward(self, F, x, anchors):
-        a = F.slice_like(anchors.as_nd_ndarray(), 
-                         (x * 0).as_nd_ndarray(), 
+    def hybrid_forward(self, F, x, anchors): # pylint: disable=C0116
+        a = F.slice_like(anchors.as_nd_ndarray(),
+                         (x * 0).as_nd_ndarray(),
                          axes=(2, 3)).as_np_ndarray()
         a = a.reshape((1, -1, 4))
         if self._clip:
             cx, cy, cw, ch = a.split(axis=-1, num_outputs=4)
             H, W = self._im_size
-            a = F.np.concatenate(*[cx.clip(0, W), cy.clip(0, H), cw.clip(0, W), ch.clip(0, H)], 
+            a = F.np.concatenate(*[cx.clip(0, W), cy.clip(0, H), cw.clip(0, W), ch.clip(0, H)],
                                  axis=-1)
         return a.reshape((1, -1, 4))
 
