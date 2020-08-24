@@ -92,14 +92,11 @@ class Trainer:
             else:
                 raise RuntimeError("=> no checkpoint found at '{}'".format(self.opt.resume))
 
-        self.parameters_to_train = self.model.collect_params()
-
         if self.use_pose_net:
             self.posenet = MonoDepth2PoseNet(
                 backbone='resnet18', pretrained_base=self.opt.pretrained_base, num_input_images=2,
                 num_input_features=1, num_frames_to_predict_for=2, ctx=self.opt.ctx)
             self.logger.info(self.posenet)
-            self.parameters_to_train.update(self.posenet.collect_params())
 
         if self.opt.hybridize:
             self.model.hybridize()
@@ -127,8 +124,6 @@ class Trainer:
             optimizer_params_pose = {'lr_scheduler': self.lr_scheduler_pose,
                                      'learning_rate': self.opt.learning_rate}
             self.pose_optimizer = gluon.Trainer(self.posenet.collect_params(), 'adam', optimizer_params_pose)
-
-        # self.optimizer = gluon.Trainer(self.parameters_to_train, 'adam', optimizer_params)
 
         print("Training model named:\n  ", self.opt.model_zoo)
         print("Models are saved to:\n  ", self.opt.log_dir)
