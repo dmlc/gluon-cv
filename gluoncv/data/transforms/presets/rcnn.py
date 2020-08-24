@@ -22,7 +22,7 @@ def transform_test(imgs, short=600, max_size=1000, mean=(0.485, 0.456, 0.406),
 
     Parameters
     ----------
-    imgs : NDArray or iterable of NDArray
+    imgs : numpy.ndarray or iterable of numpy.ndarray
         Image(s) to be transformed.
     short : int, optional, default is 600
         Resize image short side to this `short` and keep aspect ratio.
@@ -36,17 +36,17 @@ def transform_test(imgs, short=600, max_size=1000, mean=(0.485, 0.456, 0.406),
 
     Returns
     -------
-    (mxnet.NDArray, numpy.ndarray) or list of such tuple
-        A (1, 3, H, W) mxnet NDArray as input to network, and a numpy ndarray as
+    (numpy.ndarray, numpy.ndarray) or list of such tuple
+        A (1, 3, H, W) numpy.ndarray as input to network, and a numpy ndarray as
         original un-normalized color image for display.
         If multiple image names are supplied, return two lists. You can use
         `zip()`` to collapse it.
 
     """
-    if isinstance(imgs, mx.nd.NDArray):
+    if isinstance(imgs, mx.np.ndarray):
         imgs = [imgs]
     for im in imgs:
-        assert isinstance(im, mx.nd.NDArray), "Expect NDArray, got {}".format(type(im))
+        assert isinstance(im, mx.np.ndarray), "Expect numpy.ndarray, got {}".format(type(im))
 
     tensors = []
     origs = []
@@ -163,17 +163,17 @@ class FasterRCNNDefaultTrainTransform(object):
         anchor_generator.collect_params().reset_ctx(None)
         if self._multi_stage:
             for ag in anchor_generator:
-                anchor = ag(mx.nd.zeros((1, 3, ashape, ashape))).reshape((1, 1, ashape, ashape, -1))
+                anchor = ag(mx.np.zeros((1, 3, ashape, ashape))).reshape((1, 1, ashape, ashape, -1))
                 ashape = max(ashape // 2, 16)
                 anchors.append(anchor)
         else:
             anchors = anchor_generator(
-                mx.nd.zeros((1, 3, ashape, ashape))).reshape((1, 1, ashape, ashape, -1))
+                mx.np.zeros((1, 3, ashape, ashape))).reshape((1, 1, ashape, ashape, -1))
         self._anchors = anchors
         # record feature extractor for infer_shape
         if not hasattr(net, 'features'):
             raise ValueError("Cannot find features in network, it is a Faster-RCNN network?")
-        self._feat_sym = net.features(mx.sym.var(name='data'))
+        self._feat_sym = net.features(mx.sym.var(name='data').as_np_ndarray())
         from ....model_zoo.rcnn.rpn.rpn_target import RPNTargetGenerator
         self._target_generator = RPNTargetGenerator(
             num_sample=num_sample, pos_iou_thresh=pos_iou_thresh,
@@ -197,15 +197,15 @@ class FasterRCNNDefaultTrainTransform(object):
         bbox = tbbox.flip(bbox, (w, h), flip_x=flips[0])
 
         # to tensor
-        img = mx.nd.image.to_tensor(img)
-        img = mx.nd.image.normalize(img, mean=self._mean, std=self._std)
+        img = mx.npx.image.to_tensor(img)
+        img = mx.npx.image.normalize(img, mean=self._mean, std=self._std)
 
         if self._anchors is None:
             return img, bbox.astype(img.dtype)
 
         # generate RPN target so cpu workers can help reduce the workload
         # feat_h, feat_w = (img.shape[1] // self._stride, img.shape[2] // self._stride)
-        gt_bboxes = mx.nd.array(bbox[:, :4])
+        gt_bboxes = mx.np.array(bbox[:, :4])
         if self._multi_stage:
             anchor_targets = []
             oshapes = []
@@ -215,7 +215,7 @@ class FasterRCNNDefaultTrainTransform(object):
                 anchor = anchor[:, :, :oshape[2], :oshape[3], :]
                 oshapes.append(anchor.shape)
                 anchor_targets.append(anchor.reshape((-1, 4)))
-            anchor_targets = mx.nd.concat(*anchor_targets, dim=0)
+            anchor_targets = mx.np.concatenate([anchor_targets], axis=0)
             cls_target, box_target, box_mask = self._target_generator(
                 gt_bboxes, anchor_targets, img.shape[2], img.shape[1])
             start_ind = 0
@@ -276,8 +276,8 @@ class FasterRCNNDefaultValTransform(object):
         bbox = tbbox.resize(label, (w, h), (img.shape[1], img.shape[0]))
         im_scale = h / float(img.shape[0])
 
-        img = mx.nd.image.to_tensor(img)
-        img = mx.nd.image.normalize(img, mean=self._mean, std=self._std)
+        img = mx.npx.image.to_tensor(img)
+        img = mx.npx.image.normalize(img, mean=self._mean, std=self._std)
         return img, bbox.astype('float32'), mx.nd.array([im_scale])
 
 
@@ -344,17 +344,17 @@ class MaskRCNNDefaultTrainTransform(object):
         anchor_generator.collect_params().reset_ctx(None)
         if self._multi_stage:
             for ag in anchor_generator:
-                anchor = ag(mx.nd.zeros((1, 3, ashape, ashape))).reshape((1, 1, ashape, ashape, -1))
+                anchor = ag(mx.np.zeros((1, 3, ashape, ashape))).reshape((1, 1, ashape, ashape, -1))
                 ashape = max(ashape // 2, 16)
                 anchors.append(anchor)
         else:
             anchors = anchor_generator(
-                mx.nd.zeros((1, 3, ashape, ashape))).reshape((1, 1, ashape, ashape, -1))
+                mx.np.zeros((1, 3, ashape, ashape))).reshape((1, 1, ashape, ashape, -1))
         self._anchors = anchors
         # record feature extractor for infer_shape
         if not hasattr(net, 'features'):
             raise ValueError("Cannot find features in network, it is a Mask RCNN network?")
-        self._feat_sym = net.features(mx.sym.var(name='data'))
+        self._feat_sym = net.features(mx.sym.var(name='data').as_np_ndarray())
         from ....model_zoo.rcnn.rpn.rpn_target import RPNTargetGenerator
         self._target_generator = RPNTargetGenerator(
             num_sample=num_sample, pos_iou_thresh=pos_iou_thresh,
@@ -380,20 +380,20 @@ class MaskRCNNDefaultTrainTransform(object):
         segm = [tmask.flip(polys, (w, h), flip_x=flips[0]) for polys in segm]
 
         # gt_masks (n, im_height, im_width) of uint8 -> float32 (cannot take uint8)
-        masks = [mx.nd.array(tmask.to_mask(polys, (w, h))) for polys in segm]
+        masks = [mx.np.array(tmask.to_mask(polys, (w, h))) for polys in segm]
         # n * (im_height, im_width) -> (n, im_height, im_width)
-        masks = mx.nd.stack(*masks, axis=0)
+        masks = mx.np.stack(*masks, axis=0)
 
         # to tensor
-        img = mx.nd.image.to_tensor(img)
-        img = mx.nd.image.normalize(img, mean=self._mean, std=self._std)
+        img = mx.npx.image.to_tensor(img)
+        img = mx.npx.image.normalize(img, mean=self._mean, std=self._std)
 
         if self._anchors is None:
             return img, bbox.astype(img.dtype), masks
 
         # generate RPN target so cpu workers can help reduce the workload
         # feat_h, feat_w = (img.shape[1] // self._stride, img.shape[2] // self._stride)
-        gt_bboxes = mx.nd.array(bbox[:, :4])
+        gt_bboxes = mx.np.array(bbox[:, :4])
         if self._multi_stage:
             anchor_targets = []
             oshapes = []
@@ -403,7 +403,7 @@ class MaskRCNNDefaultTrainTransform(object):
                 anchor = anchor[:, :, :oshape[2], :oshape[3], :]
                 oshapes.append(anchor.shape)
                 anchor_targets.append(anchor.reshape((-1, 4)))
-            anchor_targets = mx.nd.concat(*anchor_targets, dim=0)
+            anchor_targets = mx.np.concatenate([anchor_targets], dim=0)
             cls_target, box_target, box_mask = self._target_generator(
                 gt_bboxes, anchor_targets, img.shape[2], img.shape[1])
             start_ind = 0
@@ -463,6 +463,6 @@ class MaskRCNNDefaultValTransform(object):
         # no scaling ground-truth, return image scaling ratio instead
         im_scale = float(img.shape[0]) / h
 
-        img = mx.nd.image.to_tensor(img)
-        img = mx.nd.image.normalize(img, mean=self._mean, std=self._std)
-        return img, mx.nd.array([img.shape[-2], img.shape[-1], im_scale])
+        img = mx.npx.image.to_tensor(img)
+        img = mx.npx.image.normalize(img, mean=self._mean, std=self._std)
+        return img, mx.np.array([img.shape[-2], img.shape[-1], im_scale])
