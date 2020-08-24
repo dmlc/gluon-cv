@@ -154,7 +154,9 @@ class RPNTargetGenerator(gluon.Block):
         with autograd.pause():
             # calculate ious between (N, 4) anchors and (M, 4) bbox ground-truths
             # ious is (N, M)
-            ious = mx.nd.contrib.box_iou(anchor.as_nd_ndarray(), bbox.as_nd_ndarray().astype('float32'), format='corner').asnumpy()
+            ious = mx.nd.contrib.box_iou(anchor.as_nd_ndarray(),
+                                         bbox.as_nd_ndarray().astype('float32'),
+                                         format='corner').asnumpy()
 
             # mask out invalid anchors, (N, 4)
             a_xmin, a_ymin, a_xmax, a_ymax = mx.np.split(anchor, 4, axis=-1)
