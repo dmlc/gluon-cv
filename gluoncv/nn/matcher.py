@@ -5,7 +5,6 @@ The matching process is a prerequisite to training target assignment.
 Matching is usually not required during testing.
 """
 from __future__ import absolute_import
-import mxnet as mx
 from mxnet import gluon
 from mxnet.gluon import nn
 
@@ -88,7 +87,7 @@ class BipartiteMatcher(gluon.HybridBlock):
         # make sure if iou(a, y) == iou(b, y), then b should also be a good match
         # otherwise positive/negative samples are confusing
         # potential argmax and max
-        pargmax = x.as_nd_ndarray().argmax(axis=-1, keepdims=True).as_np_ndarray()  
+        pargmax = x.as_nd_ndarray().argmax(axis=-1, keepdims=True).as_np_ndarray()
         # (B, num_anchor, 1)
         maxs = x.max(axis=len(x.shape)-2, keepdims=True)  # (B, 1, num_gt)
         if self._share_max:
@@ -128,6 +127,7 @@ class MaximumMatcher(gluon.HybridBlock):
 
     def hybrid_forward(self, F, x):
         argmax = F.np.argmax(x, axis=-1)
-        match = F.where((F.npx.pick(x, argmax, axis=-1) >= self._threshold).as_nd_ndarray(), argmax.as_nd_ndarray(),
+        match = F.where((F.npx.pick(x, argmax, axis=-1) >= self._threshold).as_nd_ndarray(),
+                        argmax.as_nd_ndarray(),
                         (F.np.ones_like(argmax) * -1).as_nd_ndarray()).as_np_ndarray()
         return match
