@@ -146,6 +146,7 @@ def train_cfg():
     # ----
     # log interval in terms of iterations
     log_interval = 100
+    # Random seed to be fixed.
     seed = 233
     # Whether to enable verbose logging
     verbose = False

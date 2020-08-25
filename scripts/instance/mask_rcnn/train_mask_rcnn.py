@@ -108,7 +108,7 @@ def parse_args():
     parser.add_argument('--rpn-smoothl1-rho', type=float, default=1. / 9.,
                         help='RPN box regression transition point from L1 to L2 loss.'
                              'Set to 0.0 to make the loss simply L1.')
-    parser.add_argument('--rcnn-smoothl1-rho', type=float, default=1.,
+    parser.add_argument('--faster_rcnn-smoothl1-rho', type=float, default=1.,
                         help='RCNN box regression transition point from L1 to L2 loss.'
                              'Set to 0.0 to make the loss simply L1.')
 
@@ -240,13 +240,13 @@ def parse_args():
         '--rpn-min-size', type=int, default=1,
         help='Proposals whose size is smaller than ``min_size`` will be discarded.')
     custom_model_parser.add_argument(
-        '--rcnn-num-samples', type=int, default=512, help='Number of samples for RCNN training.')
+        '--faster_rcnn-num-samples', type=int, default=512, help='Number of samples for RCNN training.')
     custom_model_parser.add_argument(
-        '--rcnn-pos-iou-thresh', type=float, default=0.5,
+        '--faster_rcnn-pos-iou-thresh', type=float, default=0.5,
         help='Proposal whose IOU larger than ``pos_iou_thresh`` is '
              'regarded as positive samples for R-CNN.')
     custom_model_parser.add_argument(
-        '--rcnn-pos-ratio', type=float, default=0.25,
+        '--faster_rcnn-pos-ratio', type=float, default=0.25,
         help='``pos_ratio`` defines how many positive samples '
              '(``pos_ratio * num_sample``) is to be sampled for R-CNN.')
     custom_model_parser.add_argument(

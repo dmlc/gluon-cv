@@ -43,6 +43,7 @@ def set_default(ex):
         cls.__doc__ += str("\n".join(_format_config(r.config, r.config_modifications).splitlines()[1:]))
         # default config
         cls._ex = ex
+        cls._default_config = r.config
         return cls
     return _apply
 

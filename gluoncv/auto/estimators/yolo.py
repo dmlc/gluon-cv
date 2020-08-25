@@ -39,61 +39,58 @@ __all__ = ['YoloEstimator']
 
 yolo3 = Ingredient('yolo3')
 train = Ingredient('train')
-valid = Ingredient('valid')
+validation = Ingredient('validation')
 
 @yolo3.config
 def yolo3_default():
-    base_network = 'darknet53'    # base feature network
+    base_network = 'darknet53'  # base feature network
     scale = 4.0  # output vs input scaling ratio, e.g., input_h // feature_h
     topk = 100  # topk detection results will be kept after inference
     root = os.path.expanduser(os.path.join('~', '.mxnet', 'models'))  # model zoo root dir
     wh_weight = 0.1  # Loss weight for width/height
     center_reg_weight = 1.0  # Center regression loss weight
-    data_shape = (512, 512)
+    data_shape = 416
     syncbn = False
 
 @train.config
 def train_config():
-    gpus = (0,)       # if using 8 gpus, you can set gpus = (0, 1, 2, 3, 4, 5, 6, 7)
+    dataset = 'voc'
     pretrained_base = True  # whether load the imagenet pre-trained base
-    batch_size = 4    
-    epochs = 140
+    gpus = (0,)  # if using 8 gpus, you can set gpus = (0, 1, 2, 3, 4, 5, 6, 7)
+    num_workers = 4
+    resume = ''
+    batch_size = 4
+    epochs = 200
+    start_epoch = 0
     lr = 1.25e-4  # learning rate
-    lr_decay = 0.1  # decay rate of learning rate.
-    lr_decay_epoch = "160,180"  # epochs at which learning rate decays
     lr_mode = 'step'  # learning rate scheduler mode. options are step, poly and cosine
+    lr_decay = 0.1  # decay rate of learning rate.
+    lr_decay_period = 0
+    lr_decay_epoch = '160,180'  # epochs at which learning rate decays
     warmup_lr = 0.0  # starting warmup learning rate.
     warmup_epochs = 0  # number of warmup epochs
-    amp  = False
-    horovod = False 
-    save_prefix = ''
-    resume = ''
-    data_shape = 416
-    num_samples =  -1
-    mixup = False
-    no_random_shape = False
+    momentum = 0.9
     wd = 0.0005
-    lr_decay_period = 0
-    epochs = 200
-    lr_mode = 'step'
-    start_epoch = 0
-    no_mixup_epochs = 20
-    log_interval = 100 
-    val_interval = 1 
+    log_interval = 100
     save_interval = 10
     save_prefix = ''
-    seed  = 233
-    num_workers = 4
+    seed = 233
+    num_samples = -1
+    no_random_shape = False
     no_wd = False
+    mixup = False
+    no_mixup_epochs = 20
     label_smooth = False
-    momentum = 0.9
+    amp = False
+    horovod = False
 
-@valid.config
+@validation.config
 def valid_config():
+    val_interval = 1
     test = 1
 
 ex = Experiment('yolo3_default',
-                ingredients=[coco_detection, train, valid, yolo3])
+                ingredients=[coco_detection, train, validation, yolo3])
 
 @ex.config
 def default_configs():
@@ -154,7 +151,7 @@ class YoloEstimator(BaseEstimator):
                 val_dataset = gdata.COCODetection(splits='instances_val2017', skip_empty=False)
                 val_metric = COCODetectionMetric(
                     val_dataset, self._cfg.train.save_prefix + '_eval', cleanup=True,
-                    data_shape=(self._cfg.train.data_shape, self._cfg.train.data_shape))
+                    data_shape=(self._cfg.yolo3.data_shape, self._cfg.yolo3.data_shape))
             else:
                 raise NotImplementedError('Dataset: {} not implemented.'.format(dataset))
             if self._cfg.train.num_samples < 0:
@@ -189,7 +186,7 @@ class YoloEstimator(BaseEstimator):
         self.train_dataset, self.val_dataset, self.eval_metric = get_dataset(self._cfg.dataset)
         self.train_data, self.val_data = get_dataloader(
                                 async_net, self.train_dataset, self.val_dataset, 
-                                self._cfg.train.data_shape, batch_size, 
+                                self._cfg.yolo3.data_shape, batch_size,
                                 self._cfg.train.num_workers)
     
     def _fit(self):
@@ -350,7 +347,7 @@ class YoloEstimator(BaseEstimator):
                 name4, loss4 = cls_metrics.get()
                 logger.info('[Epoch {}] Training cost: {:.3f}, {}={:.3f}, {}={:.3f}, {}={:.3f}, {}={:.3f}'.format(
                     epoch, (time.time()-tic), name1, loss1, name2, loss2, name3, loss3, name4, loss4))
-                if not (epoch + 1) % self._cfg.train.val_interval:
+                if not (epoch + 1) % self._cfg.validation.val_interval:
                     # consider reduce the frequency of validation to save time
                     map_name, mean_ap = self._evaluate()
                     val_msg = '\n'.join(['{}={}'.format(k, v) for k, v in zip(map_name, mean_ap)])

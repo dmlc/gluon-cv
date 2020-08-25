@@ -76,7 +76,7 @@ def _get_dataloader(net, train_dataset, val_dataset, train_transform, val_transf
 
 
 def _get_testloader(net, test_dataset, num_devices, config):
-    """Get faster rcnn test dataloader."""
+    """Get faster faster_rcnn test dataloader."""
     if config.meta_arch == 'faster_rcnn':
         test_bfn = Tuple(*[Append() for _ in range(3)])
         short = net.short[-1] if isinstance(net.short, (tuple, list)) else net.short
