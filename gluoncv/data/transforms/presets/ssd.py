@@ -171,8 +171,8 @@ class SSDDefaultTrainTransform(object):
         bbox = tbbox.flip(bbox, (w, h), flip_x=flips[0])
 
         # to tensor
-        img = mx.nd.image.to_tensor(img)
-        img = mx.nd.image.normalize(img, mean=self._mean, std=self._std)
+        img = mx.npx.image.to_tensor(img)
+        img = mx.npx.image.normalize(img, mean=self._mean, std=self._std)
 
         if self._anchors is None:
             return img, bbox.astype(img.dtype)
@@ -213,8 +213,8 @@ class SSDDefaultValTransform(object):
         img = timage.imresize(src, self._width, self._height, interp=9)
         bbox = tbbox.resize(label, in_size=(w, h), out_size=(self._width, self._height))
 
-        img = mx.nd.image.to_tensor(img)
-        img = mx.nd.image.normalize(img, mean=self._mean, std=self._std)
+        img = mx.npx.image.to_tensor(img)
+        img = mx.npx.image.normalize(img, mean=self._mean, std=self._std)
         return img, bbox.astype(img.dtype)
 
 class SSDDALIPipeline(dali.Pipeline):

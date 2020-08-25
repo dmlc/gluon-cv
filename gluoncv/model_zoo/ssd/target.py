@@ -1,6 +1,7 @@
 """SSD training target generator."""
 from __future__ import absolute_import
 
+import mxnet as mx
 from mxnet import nd
 from mxnet.gluon import Block
 from ...nn.matcher import CompositeMatcher, BipartiteMatcher, MaximumMatcher
@@ -42,7 +43,9 @@ class SSDTargetGenerator(Block):
     def forward(self, anchors, cls_preds, gt_boxes, gt_ids):
         """Generate training targets."""
         anchors = self._center_to_corner(anchors.reshape((-1, 4)))
-        ious = nd.transpose(nd.contrib.box_iou(anchors, gt_boxes), (1, 0, 2))
+        ious = mx.np.transpose(nd.contrib.box_iou(anchors.astype('float32').as_nd_ndarray(),
+                    gt_boxes.as_nd_ndarray()).as_np_ndarray(),
+                    (1, 0, 2))
         matches = self._matcher(ious)
         if self._use_negative_sampling:
             samples = self._sampler(matches, cls_preds, ious)

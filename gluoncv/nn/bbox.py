@@ -103,7 +103,7 @@ class BBoxCenterToCorner(gluon.HybridBlock):
 
     def hybrid_forward(self, F, x):
         """Hybrid forward"""
-        x, y, w, h = F.split(x, axis=self._axis, num_outputs=4)
+        x, y, w, h = F.np.split(x, axis=self._axis, indices_or_sections=4)
         hw = w * 0.5
         hh = h * 0.5
         xmin = x - hw
@@ -111,7 +111,7 @@ class BBoxCenterToCorner(gluon.HybridBlock):
         xmax = x + hw
         ymax = y + hh
         if not self._split:
-            return F.concat(xmin, ymin, xmax, ymax, dim=self._axis)
+            return F.np.concatenate((xmin, ymin, xmax, ymax), axis=self._axis)
         else:
             return xmin, ymin, xmax, ymax
 

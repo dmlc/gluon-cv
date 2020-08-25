@@ -5,6 +5,7 @@ The matching process is a prerequisite to training target assignment.
 Matching is usually not required during testing.
 """
 from __future__ import absolute_import
+import mxnet as mx
 from mxnet import gluon
 from mxnet.gluon import nn
 
@@ -82,23 +83,25 @@ class BipartiteMatcher(gluon.HybridBlock):
             IOU overlaps with shape (N, M), batching is supported.
 
         """
-        match = F.contrib.bipartite_matching(x, threshold=self._threshold,
+        match = F.contrib.bipartite_matching(x.as_nd_ndarray(), threshold=self._threshold,
                                              is_ascend=self._is_ascend)
         # make sure if iou(a, y) == iou(b, y), then b should also be a good match
         # otherwise positive/negative samples are confusing
         # potential argmax and max
-        pargmax = x.argmax(axis=-1, keepdims=True)  # (B, num_anchor, 1)
-        maxs = x.max(axis=-2, keepdims=True)  # (B, 1, num_gt)
+        pargmax = x.as_nd_ndarray().argmax(axis=-1, keepdims=True).as_np_ndarray()  # (B, num_anchor, 1)
+        maxs = x.max(axis=len(x.shape)-2, keepdims=True)  # (B, 1, num_gt)
         if self._share_max:
-            mask = F.broadcast_greater_equal(x + self._eps, maxs)  # (B, num_anchor, num_gt)
-            mask = F.sum(mask, axis=-1, keepdims=True)  # (B, num_anchor, 1)
+            mask = F.broadcast_greater_equal((x + self._eps).as_nd_ndarray(),
+                                             maxs.as_nd_ndarray()).as_np_ndarray()  # (B, num_anchor, num_gt)
+            mask = F.np.sum(mask, axis=-1, keepdims=True)  # (B, num_anchor, 1)
         else:
-            pmax = F.pick(x, pargmax, axis=-1, keepdims=True)   # (B, num_anchor, 1)
-            mask = F.broadcast_greater_equal(pmax + self._eps, maxs)  # (B, num_anchor, num_gt)
-            mask = F.pick(mask, pargmax, axis=-1, keepdims=True)  # (B, num_anchor, 1)
-        new_match = F.where(mask > 0, pargmax, F.ones_like(pargmax) * -1)
-        result = F.where(match[0] < 0, new_match.squeeze(axis=-1), match[0])
-        return result
+            pmax = F.npx.pick(x, pargmax, axis=-1, keepdims=True)   # (B, num_anchor, 1)
+            mask = F.broadcast_greater_equal((pmax + self._eps).as_nd_ndarray(),
+                                             maxs.as_nd_ndarray()).as_np_ndarray()  # (B, num_anchor, num_gt)
+            mask = F.npx.pick(mask, pargmax, axis=-1, keepdims=True)  # (B, num_anchor, 1)
+        new_match = F.where((mask > 0).as_nd_ndarray(), pargmax.as_nd_ndarray(), (F.np.ones_like(pargmax) * -1).as_nd_ndarray())
+        result = F.where((match[0] < 0).as_nd_ndarray(), new_match.squeeze(axis=-1), match[0].as_nd_ndarray())
+        return result.as_np_ndarray()
 
 
 class MaximumMatcher(gluon.HybridBlock):
@@ -115,7 +118,7 @@ class MaximumMatcher(gluon.HybridBlock):
         self._threshold = threshold
 
     def hybrid_forward(self, F, x):
-        argmax = F.argmax(x, axis=-1)
-        match = F.where(F.pick(x, argmax, axis=-1) >= self._threshold, argmax,
-                        F.ones_like(argmax) * -1)
+        argmax = F.np.argmax(x, axis=-1)
+        match = F.where((F.npx.pick(x, argmax, axis=-1) >= self._threshold).as_nd_ndarray(), argmax.as_nd_ndarray(),
+                        (F.np.ones_like(argmax) * -1).as_nd_ndarray()).as_np_ndarray()
         return match
