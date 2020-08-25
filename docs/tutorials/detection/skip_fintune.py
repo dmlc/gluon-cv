@@ -28,7 +28,7 @@ net = model_zoo.get_model('faster_rcnn_resnet50_v1b_coco', pretrained=True)
 ######################################################################
 # Pre-process an image
 # --------------------
-# Similar to faster faster_rcnn inference tutorial, we grab and preprocess a demo image
+# Similar to faster rcnn inference tutorial, we grab and preprocess a demo image
 
 im_fname = utils.download('https://github.com/dmlc/web-data/blob/master/' +
                           'gluoncv/detection/biking.jpg?raw=true',
@@ -69,7 +69,7 @@ plt.show()
 # The same story for different models
 # --------------------------------------------------------
 # We can apply this strategy to SSD, YOLO and Mask-RCNN models
-# Now we can use mask faster_rcnn and reset class to detect person only
+# Now we can use mask rcnn and reset class to detect person only
 
 net = model_zoo.get_model('mask_rcnn_resnet50_v1b_coco', pretrained=True)
 net.reset_class(classes=['person'], reuse_weights=['person'])

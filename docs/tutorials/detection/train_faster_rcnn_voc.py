@@ -281,11 +281,11 @@ for ib, batch in enumerate(train_loader):
             # box and class labels
             print('box:', gt_box.shape)
             print('label:', gt_label.shape)
-            # faster_rcnn does not have ignored label
-            print('faster_rcnn cls label:', cls_targets.shape)
+            # rcnn does not have ignored label
+            print('rcnn cls label:', cls_targets.shape)
             # mask out ignored box label
-            print('faster_rcnn box label:', box_targets.shape)
-            print('faster_rcnn box mask:', box_masks.shape)
+            print('rcnn box label:', box_targets.shape)
+            print('rcnn box mask:', box_masks.shape)
 
 ##########################################################
 # Training loop
@@ -312,7 +312,7 @@ for ib, batch in enumerate(train_loader):
             rpn_loss2 = rpn_box_loss(rpn_box, rpn_box_targets,
                                      rpn_box_masks) * rpn_box.size / num_rpn_pos
 
-            # losses of faster_rcnn
+            # losses of rcnn
             num_rcnn_pos = (cls_targets >= 0).sum()
             rcnn_loss1 = rcnn_cls_loss(cls_preds, cls_targets,
                                        cls_targets >= 0) * cls_targets.size / cls_targets.shape[

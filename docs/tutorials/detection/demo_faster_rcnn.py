@@ -34,7 +34,7 @@ net = model_zoo.get_model('faster_rcnn_resnet50_v1b_voc', pretrained=True)
 # But you can feed an arbitrarily sized image.
 #
 # You can provide a list of image file names, such as ``[im_fname1, im_fname2,
-# ...]`` to :py:func:`gluoncv.data.transforms.presets.faster_rcnn.load_test` if you
+# ...]`` to :py:func:`gluoncv.data.transforms.presets.rcnn.load_test` if you
 # want to load multiple image together.
 #
 # This function returns two results. The first is a NDArray with shape

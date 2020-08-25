@@ -107,9 +107,9 @@ plt.show()
 ##############################################################################
 # Data transforms, i.e. decoding and transformation, are identical to Faster R-CNN
 # with the exception of segmentation polygons as an additional input.
-# :py:class:`gluoncv.data.transforms.presets.faster_rcnn.MaskRCNNDefaultTrainTransform`
+# :py:class:`gluoncv.data.transforms.presets.rcnn.MaskRCNNDefaultTrainTransform`
 # converts the segmentation polygons to binary segmentation mask.
-# :py:class:`gluoncv.data.transforms.presets.faster_rcnn.MaskRCNNDefaultValTransform`
+# :py:class:`gluoncv.data.transforms.presets.rcnn.MaskRCNNDefaultValTransform`
 # ignores the segmentation polygons and returns image tensor and ``[im_height, im_width, im_scale]``.
 from gluoncv.data.transforms import presets
 from gluoncv import utils
@@ -250,7 +250,7 @@ train_loader = DataLoader(train_dataset.transform(train_transform), batch_size, 
                           batchify_fn=batchify_fn, last_batch='rollover', num_workers=num_workers)
 
 ##########################################################
-# Mask targets are generated with the intermediate outputs after faster_rcnn target is generated.
+# Mask targets are generated with the intermediate outputs after rcnn target is generated.
 
 for ib, batch in enumerate(train_loader):
     if ib > 0:
@@ -287,13 +287,13 @@ for ib, batch in enumerate(train_loader):
             # mask out ignored box label
             print('rpn box label:', rpn_box_targets.shape)
             print('rpn box mask:', rpn_box_masks.shape)
-            # faster_rcnn does not have ignored label
-            print('faster_rcnn cls label:', cls_targets.shape)
+            # rcnn does not have ignored label
+            print('rcnn cls label:', cls_targets.shape)
             # mask out ignored box label
-            print('faster_rcnn box label:', box_targets.shape)
-            print('faster_rcnn box mask:', box_masks.shape)
-            print('faster_rcnn mask label:', mask_targets.shape)
-            print('faster_rcnn mask mask:', mask_masks.shape)
+            print('rcnn box label:', box_targets.shape)
+            print('rcnn box mask:', box_masks.shape)
+            print('rcnn mask label:', mask_targets.shape)
+            print('rcnn mask mask:', mask_masks.shape)
 
 ##########################################################
 # Training loop
@@ -334,7 +334,7 @@ for ib, batch in enumerate(train_loader):
             rpn_loss2 = rpn_box_loss(rpn_box, rpn_box_targets,
                                      rpn_box_masks) * rpn_box.size / num_rpn_pos
 
-            # losses of faster_rcnn
+            # losses of rcnn
             num_rcnn_pos = (cls_targets >= 0).sum()
             rcnn_loss1 = rcnn_cls_loss(cls_preds, cls_targets,
                                        cls_targets >= 0) * cls_targets.size / cls_targets.shape[
