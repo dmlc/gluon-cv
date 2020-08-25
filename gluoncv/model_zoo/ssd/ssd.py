@@ -214,15 +214,15 @@ class SSD(HybridBlock):
         """Hybrid forward"""
         x = x.as_np_ndarray()
         features = self.features(x)
-        cls_preds = [F.npx.batch_flatten(F.np.transpose(cp(feat), (0, 2, 3, 1)))
+        cls_preds = [F.npx.batch_flatten(F.np.transpose(cp(feat), (0, 2, 3, 1))).as_nd_ndarray()
                      for feat, cp in zip(features, self.class_predictors)]
-        box_preds = [F.npx.batch_flatten(F.np.transpose(bp(feat), (0, 2, 3, 1)))
+        box_preds = [F.npx.batch_flatten(F.np.transpose(bp(feat), (0, 2, 3, 1))).as_nd_ndarray()
                      for feat, bp in zip(features, self.box_predictors)]
-        anchors = [F.np.reshape(ag(feat), (1, -1))
+        anchors = [F.np.reshape(ag(feat), (1, -1)).as_nd_ndarray()
                    for feat, ag in zip(features, self.anchor_generators)]
-        cls_preds = F.np.concatenate([cls_preds], axis=1).reshape((0, -1, self.num_classes + 1))
-        box_preds = F.np.concatenate([box_preds], axis=1).reshape((0, -1, 4))
-        anchors = F.np.concatenate([anchors], axis=1).reshape((1, -1, 4))
+        cls_preds = F.concat(*cls_preds, axis=1).reshape((0, -1, self.num_classes + 1)).as_np_ndarray()
+        box_preds = F.concat(*box_preds, axis=1).reshape((0, -1, 4)).as_np_ndarray()
+        anchors = F.concat(*anchors, axis=1).reshape((1, -1, 4)).as_np_ndarray()
         if autograd.is_training():
             return [cls_preds, box_preds, anchors]
         bboxes = self.bbox_decoder(box_preds, anchors)
