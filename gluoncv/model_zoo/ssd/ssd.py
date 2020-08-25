@@ -220,7 +220,9 @@ class SSD(HybridBlock):
                      for feat, bp in zip(features, self.box_predictors)]
         anchors = [F.np.reshape(ag(feat), (1, -1)).as_nd_ndarray()
                    for feat, ag in zip(features, self.anchor_generators)]
-        cls_preds = F.concat(*cls_preds, dim=1).reshape((0, -1, self.num_classes + 1)).as_np_ndarray()
+        cls_preds = F.concat(*cls_preds, dim=1).reshape((0,
+                                                         -1,
+                                                         self.num_classes + 1)).as_np_ndarray()
         box_preds = F.concat(*box_preds, dim=1).reshape((0, -1, 4)).as_np_ndarray()
         anchors = F.concat(*anchors, dim=1).reshape((1, -1, 4)).as_np_ndarray()
         if autograd.is_training():

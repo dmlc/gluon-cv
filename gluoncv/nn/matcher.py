@@ -88,19 +88,28 @@ class BipartiteMatcher(gluon.HybridBlock):
         # make sure if iou(a, y) == iou(b, y), then b should also be a good match
         # otherwise positive/negative samples are confusing
         # potential argmax and max
-        pargmax = x.as_nd_ndarray().argmax(axis=-1, keepdims=True).as_np_ndarray()  # (B, num_anchor, 1)
+        pargmax = x.as_nd_ndarray().argmax(axis=-1, keepdims=True).as_np_ndarray()  
+        # (B, num_anchor, 1)
         maxs = x.max(axis=len(x.shape)-2, keepdims=True)  # (B, 1, num_gt)
         if self._share_max:
             mask = F.broadcast_greater_equal((x + self._eps).as_nd_ndarray(),
-                                             maxs.as_nd_ndarray()).as_np_ndarray()  # (B, num_anchor, num_gt)
+                                             maxs.as_nd_ndarray()).as_np_ndarray()
+                                             # (B, num_anchor, num_gt)
             mask = F.np.sum(mask, axis=-1, keepdims=True)  # (B, num_anchor, 1)
         else:
-            pmax = F.npx.pick(x, pargmax, axis=-1, keepdims=True)   # (B, num_anchor, 1)
+            pmax = F.npx.pick(x, pargmax, axis=-1, keepdims=True)
+            # (B, num_anchor, 1)
             mask = F.broadcast_greater_equal((pmax + self._eps).as_nd_ndarray(),
-                                             maxs.as_nd_ndarray()).as_np_ndarray()  # (B, num_anchor, num_gt)
-            mask = F.npx.pick(mask, pargmax, axis=-1, keepdims=True)  # (B, num_anchor, 1)
-        new_match = F.where((mask > 0).as_nd_ndarray(), pargmax.as_nd_ndarray(), (F.np.ones_like(pargmax) * -1).as_nd_ndarray())
-        result = F.where((match[0] < 0).as_nd_ndarray(), new_match.squeeze(axis=-1), match[0].as_nd_ndarray())
+                                             maxs.as_nd_ndarray()).as_np_ndarray()
+                                             # (B, num_anchor, num_gt)
+            mask = F.npx.pick(mask, pargmax, axis=-1, keepdims=True)
+            # (B, num_anchor, 1)
+        new_match = F.where((mask > 0).as_nd_ndarray(),
+                            pargmax.as_nd_ndarray(),
+                            (F.np.ones_like(pargmax) * -1).as_nd_ndarray())
+        result = F.where((match[0] < 0).as_nd_ndarray(),
+                         new_match.squeeze(axis=-1),
+                         match[0].as_nd_ndarray())
         return result.as_np_ndarray()
 
 

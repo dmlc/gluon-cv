@@ -44,8 +44,8 @@ class SSDTargetGenerator(Block):
         """Generate training targets."""
         anchors = self._center_to_corner(anchors.reshape((-1, 4)))
         ious = mx.np.transpose(nd.contrib.box_iou(anchors.astype('float32').as_nd_ndarray(),
-                    gt_boxes.as_nd_ndarray()).as_np_ndarray(),
-                    (1, 0, 2))
+                                                  gt_boxes.as_nd_ndarray()).as_np_ndarray(),
+                               (1, 0, 2))
         matches = self._matcher(ious)
         if self._use_negative_sampling:
             samples = self._sampler(matches, cls_preds, ious)
