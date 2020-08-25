@@ -21,13 +21,6 @@ def _train_object_detection(args, reporter):
     # print('ARGS TYPE:', type(args))  # <class 'autogluon.utils.edict.EasyDict'>
     # print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
 
-    # for k, v in args.items():
-    #     print('key:', k)
-    #     print('key type:', type(k))  # <class 'str'>
-    #     print('value:', v)
-    #     print('value type:', type(v))  # <class 'str'>
-    #     break
-
     # fix seed for mxnet, numpy and python builtin random generator.
     # gutils.random.seed(args.seed)
     gutils.random.seed(args.train.seed)
