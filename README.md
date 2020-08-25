@@ -52,7 +52,7 @@ Check the HD video at [Youtube](https://www.youtube.com/watch?v=nfpouVAzXt0) or 
 
 # Installation
 
-GluonCV supports Python 2.7/3.5 or later. The easiest way to install is via pip.
+GluonCV supports Python 3.5 or later. The easiest way to install is via pip.
 
 ## Stable Release
 The following commands install the stable version of GluonCV and MXNet:
@@ -64,7 +64,7 @@ pip install -U --pre mxnet -f https://dist.mxnet.io/python/mkl
 pip install -U --pre mxnet -f https://dist.mxnet.io/python/cu100mkl
 ```
 
-**The latest stable version of GluonCV is 0.7 and depends on mxnet >= 1.4.0**
+**The latest stable version of GluonCV is 0.8 and we recommend mxnet 1.6.0/1.7.0**
 
 ## Nightly Release
 
