@@ -99,8 +99,8 @@ def _test_bn_global_stats(model_list, **kwargs):
     for model in model_list:
         gcv.model_zoo.get_model(model, norm_layer=_BatchNorm, use_global_stats=True, **kwargs)
 
-@unittest.skip("temporarily disabled")
 @try_gpu(0)
+@unittest.skip("temporarily disabled")
 def test_classification_models():
     ctx = mx.context.current_context()
     x = mx.random.uniform(shape=(2, 3, 32, 32), ctx=ctx)
@@ -349,8 +349,8 @@ def test_mask_rcnn_reset_class():
     net.reset_class(["bus", "car", "bird"])
     net(x)
 
-@unittest.skip("temporarily disabled")
 @try_gpu(0)
+@unittest.skip("temporarily disabled")
 def test_faster_rcnn_models():
     ctx = mx.context.current_context()
     x = mx.random.uniform(shape=(1, 3, 300, 400), ctx=ctx)  # allow non-squre and larger inputs
@@ -358,8 +358,8 @@ def test_faster_rcnn_models():
               'faster_rcnn_fpn_resnet50_v1b_coco']
     _test_model_list(models, ctx, x)
 
-@unittest.skip("temporarily disabled")
 @try_gpu(0)
+@unittest.skip("temporarily disabled")
 def test_mask_rcnn_models():
     ctx = mx.context.current_context()
     x = mx.random.uniform(shape=(1, 3, 300, 400), ctx=ctx)
@@ -367,8 +367,8 @@ def test_mask_rcnn_models():
               'mask_rcnn_resnet18_v1b_coco', 'mask_rcnn_fpn_resnet18_v1b_coco']
     _test_model_list(models, ctx, x)
 
-@unittest.skip("temporarily disabled")
 @try_gpu(0)
+@unittest.skip("temporarily disabled")
 def test_rcnn_max_dets_greater_than_nms_mask_rcnn_models():
     ctx = mx.context.current_context()
     x = mx.random.uniform(shape=(1, 3, 300, 400), ctx=ctx)
@@ -389,8 +389,9 @@ def test_yolo3_models():
     models = ['yolo3_darknet53_voc']
     _test_model_list(models, ctx, x)
 
-@unittest.skip("temporarily disabled")
+
 @try_gpu(0)
+@unittest.skip("temporarily disabled")
 def test_two_stage_ctx_loading():
     model_name = 'yolo3_darknet53_coco'
     ctx = mx.test_utils.default_context()
@@ -416,8 +417,8 @@ def test_set_nms():
         net.set_nms(nms_thresh=0.3, nms_topk=200, post_nms=50)
         net(x)
 
-@unittest.skip("temporarily disabled")
 @try_gpu(0)
+@unittest.skip("temporarily disabled")
 def test_segmentation_models():
     ctx = mx.context.current_context()
     x = mx.random.uniform(shape=(1, 3, 480, 480), ctx=ctx)
@@ -465,8 +466,8 @@ def test_segmentation_models_custom_size():
     result = net.forward(x)
     assert result[0].shape == (1, num_classes, height, width)
 
-@unittest.skip("temporarily disabled")
 @try_gpu(0)
+@unittest.skip("temporarily disabled")
 def test_action_recognition_vgg_models():
     ctx = mx.context.current_context()
     models = ['vgg16_ucf101']
@@ -477,8 +478,8 @@ def test_action_recognition_vgg_models():
     _test_model_list(models, ctx, x, pretrained=False, pretrained_base=False)
     _test_model_list(models, ctx, x, pretrained=False, pretrained_base=True)
 
-@unittest.skip("temporarily disabled")
 @try_gpu(0)
+@unittest.skip("temporarily disabled")
 def test_action_recognition_inceptionv1_models():
     ctx = mx.context.current_context()
     models = ['inceptionv1_kinetics400']
@@ -489,8 +490,8 @@ def test_action_recognition_inceptionv1_models():
     _test_model_list(models, ctx, x, pretrained=False, pretrained_base=False)
     _test_model_list(models, ctx, x, pretrained=False, pretrained_base=True)
 
-@unittest.skip("temporarily disabled")
 @try_gpu(0)
+@unittest.skip("temporarily disabled")
 def test_action_recognition_inceptionv3_models():
     ctx = mx.context.current_context()
     models = ['inceptionv3_ucf101', 'inceptionv3_kinetics400']
@@ -514,8 +515,8 @@ def test_action_recognition_resnet_models():
     _test_model_list(models, ctx, x, pretrained=False, pretrained_base=False)
     _test_model_list(models, ctx, x, pretrained=False, pretrained_base=True)
 
-@unittest.skip("temporarily disabled")
 @try_gpu(0)
+@unittest.skip("temporarily disabled")
 def test_action_recognition_c3d_models():
     ctx = mx.context.current_context()
     models = ['c3d_kinetics400']
@@ -537,8 +538,8 @@ def test_action_recognition_p3d_models():
     _test_model_list(models, ctx, x, pretrained=False, pretrained_base=False)
     _test_model_list(models, ctx, x, pretrained=False, pretrained_base=True)
 
-@unittest.skip("temporarily disabled")
 @try_gpu(0)
+@unittest.skip("temporarily disabled")
 def test_action_recognition_r2plus1d_models():
     ctx = mx.context.current_context()
     models = ['r2plus1d_resnet18_kinetics400', 'r2plus1d_resnet34_kinetics400',
@@ -550,8 +551,8 @@ def test_action_recognition_r2plus1d_models():
     _test_model_list(models, ctx, x, pretrained=False, pretrained_base=False)
     _test_model_list(models, ctx, x, pretrained=False, pretrained_base=True)
 
-@unittest.skip("temporarily disabled")
 @try_gpu(0)
+@unittest.skip("temporarily disabled")
 def test_action_recognition_i3d_models():
     ctx = mx.context.current_context()
     models = ['i3d_resnet50_v1_kinetics400', 'i3d_resnet101_v1_kinetics400', 'i3d_inceptionv1_kinetics400',
@@ -565,8 +566,8 @@ def test_action_recognition_i3d_models():
     _test_model_list(models, ctx, x, pretrained=False, pretrained_base=False)
     _test_model_list(models, ctx, x, pretrained=False, pretrained_base=True)
 
-@unittest.skip("temporarily disabled")
 @try_gpu(0)
+@unittest.skip("temporarily disabled")
 def test_action_recognition_slowfast_models():
     ctx = mx.context.current_context()
 
@@ -588,8 +589,8 @@ def test_action_recognition_slowfast_models():
     _test_model_list(models, ctx, x, pretrained=False, pretrained_base=False)
     _test_model_list(models, ctx, x, pretrained=False, pretrained_base=True)
 
-@unittest.skip("temporarily disabled")
 @with_cpu(0)
+@unittest.skip("temporarily disabled")
 def test_mobilenet_sync_bn():
     model_name = "mobilenet1.0"
     net = gcv.model_zoo.get_model(model_name, pretrained=True)
@@ -606,8 +607,8 @@ def test_quantized_imagenet_models():
     x = mx.random.uniform(shape=(1, 3, 224, 224), ctx=ctx)
     _test_model_list(model_list, ctx, x)
 
-@unittest.skip("temporarily disabled")
 @with_cpu(0)
+@unittest.skip("temporarily disabled")
 def test_quantized_ssd_models():
     model_list = ['ssd_300_vgg16_atrous_voc_int8', 'ssd_512_mobilenet1.0_voc_int8',
                   'ssd_512_resnet50_v1_voc_int8', 'ssd_512_vgg16_atrous_voc_int8']
@@ -615,8 +616,8 @@ def test_quantized_ssd_models():
     x = mx.random.uniform(shape=(1, 3, 512, 544), ctx=ctx)
     _test_model_list(model_list, ctx, x)
 
-@unittest.skip("temporarily disabled")
 @with_cpu(0)
+@unittest.skip("temporarily disabled")
 def test_calib_models():
     model_list = ['resnet50_v1', 'resnet50_v1d_0.11',
                   'mobilenet1.0', 'mobilenetv2_1.0',
@@ -664,8 +665,8 @@ def test_calib_models():
     x = mx.random.uniform(shape=(1, 3, 416, 416), ctx=ctx)
     _calib_model_list(model_list, ctx, x)
 
-@unittest.skip("temporarily disabled")
 @with_cpu(0)
+@unittest.skip("temporarily disabled")
 def test_quantized_segmentation_models():
     model_list = ['fcn_resnet101_voc_int8', 'fcn_resnet101_coco_int8',
                   'psp_resnet101_voc_int8', 'psp_resnet101_coco_int8',
