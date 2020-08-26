@@ -190,6 +190,7 @@ def test_transforms_presets_ssd():
                 break
             pass
 
+@unittest.skip("temporarily disabled")
 def test_transforms_presets_rcnn():
     im_fname = gcv.utils.download('https://github.com/dmlc/web-data/blob/master/' +
                                   'gluoncv/detection/biking.jpg?raw=true', path='biking.jpg')
@@ -226,6 +227,7 @@ def test_transforms_presets_rcnn():
                 break
             pass
 
+@unittest.skip("temporarily disabled")
 def test_transforms_presets_mask_rcnn():
     # use valid only, loading training split is very slow
     train_dataset = gcv.data.COCOInstance(splits=('instances_val2017',), skip_empty=True)
@@ -250,6 +252,7 @@ def test_transforms_presets_mask_rcnn():
                 break
             pass
 
+@unittest.skip("temporarily disabled")
 def test_transforms_presets_yolo():
     im_fname = gcv.utils.download('https://github.com/dmlc/web-data/blob/master/' +
                                   'gluoncv/detection/biking.jpg?raw=true', path='biking.jpg')
@@ -284,6 +287,7 @@ def test_transforms_presets_yolo():
                 break
             pass
 
+@unittest.skip("temporarily disabled")
 def test_transforms_presets_center_net():
     im_fname = gcv.utils.download('https://github.com/dmlc/web-data/blob/master/' +
                                   'gluoncv/detection/biking.jpg?raw=true', path='biking.jpg')
