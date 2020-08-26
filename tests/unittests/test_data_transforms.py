@@ -13,6 +13,7 @@ from gluoncv.data.transforms.presets import ssd
 from gluoncv.data.transforms.presets import rcnn
 from gluoncv.data.transforms.presets import yolo
 from gluoncv.data.transforms.presets import center_net
+import unittest
 
 def test_bbox_crop():
     bbox = np.array([[10, 20, 200, 500], [150, 200, 400, 300]])
@@ -152,6 +153,7 @@ def test_experimental_image_random_color_distort():
             saturation_high=saturation_high, hue_delta=hue_delta)
         np.testing.assert_allclose(out.shape, image.shape)
 
+@unittest.skip("temporarily disabled")
 def test_transforms_presets_ssd():
     im_fname = gcv.utils.download('https://github.com/dmlc/web-data/blob/master/' +
                                   'gluoncv/detection/biking.jpg?raw=true', path='biking.jpg')
@@ -314,5 +316,6 @@ def test_transforms_presets_center_net():
             pass
 
 if __name__ == '__main__':
-    import nose
-    nose.runmodule()
+    # import nose
+    # nose.runmodule()
+    test_transforms_presets_ssd()
