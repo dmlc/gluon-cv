@@ -29,7 +29,7 @@ from ..unittests.common import try_gpu, with_cpu
 import gluoncv as gcv
 import unittest
 
-
+@unittest.skip("temporarily disabled")
 def test_get_all_models():
     names = gcv.model_zoo.get_model_list()
     for name in names:
