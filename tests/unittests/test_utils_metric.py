@@ -5,6 +5,7 @@ import gluoncv as gcv
 import mxnet as mx
 from mxnet import autograd, gluon
 from gluoncv.utils import download, viz
+import unittest
 
 @unittest.skip("temporarily disabled")
 def test_voc07_metric_difficult():

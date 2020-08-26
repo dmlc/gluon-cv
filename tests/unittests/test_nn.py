@@ -1,5 +1,6 @@
 import mxnet as mx
 from gluoncv.nn import GroupNorm
+import unittest
 
 @unittest.skip("temporarily disabled")
 def test_groupnorm():
