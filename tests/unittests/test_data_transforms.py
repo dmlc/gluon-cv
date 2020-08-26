@@ -316,6 +316,6 @@ def test_transforms_presets_center_net():
             pass
 
 if __name__ == '__main__':
-    # import nose
-    # nose.runmodule()
-    test_transforms_presets_ssd()
+    import nose
+    nose.runmodule()
+    
