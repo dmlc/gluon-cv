@@ -3,6 +3,7 @@ from __future__ import print_function
 import numpy as np
 import gluoncv as gcv
 
+@unittest.skip("temporarily disabled")
 def test_bbox_xywh_to_xyxy():
     # test list
     a = [20, 30, 100.2, 300.4]

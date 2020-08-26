@@ -6,6 +6,7 @@ import mxnet as mx
 from mxnet import autograd, gluon
 from gluoncv.utils import download, viz
 
+@unittest.skip("temporarily disabled")
 def test_voc07_metric_difficult():
     url = 'https://apache-mxnet.s3-accelerate.amazonaws.com/gluon/dataset/pikachu/train.rec'
     idx_url = 'https://apache-mxnet.s3-accelerate.amazonaws.com/gluon/dataset/pikachu/train.idx'
