@@ -439,6 +439,7 @@ def test_segmentation_models():
 
 
 @try_gpu(0)
+@unittest.skip("temporarily disabled")
 def test_segmentation_models_custom_size():
     ctx = mx.context.current_context()
     num_classes = 5
