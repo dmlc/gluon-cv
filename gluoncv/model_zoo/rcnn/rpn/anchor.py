@@ -82,7 +82,7 @@ class RPNAnchorGenerator(gluon.HybridBlock):
             - **out**: output anchor with (1, N, 4) shape. N is the number of anchors.
 
         """
-        a = F.slice_like(anchors.as_nd_ndarray(), x.as_nd_ndarray(), axes=(2, 3)).as_np_ndarray()
+        a = F.slice_like(anchors, x, axes=(2, 3))
         return a.reshape((1, -1, 4))
 
 

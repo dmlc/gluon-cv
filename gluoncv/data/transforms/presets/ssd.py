@@ -52,9 +52,9 @@ def transform_test(imgs, short, max_size=1024, mean=(0.485, 0.456, 0.406),
     for img in imgs:
         img = timage.resize_short_within(img, short, max_size)
         orig_img = img.asnumpy().astype('uint8')
-        img = mx.npx.image.to_tensor(img)
-        img = mx.npx.image.normalize(img, mean=mean, std=std)
-        tensors.append(img.as_nd_ndarray().expand_dims(0).as_np_ndarray())
+        img = mx.nd.image.to_tensor(img)
+        img = mx.nd.image.normalize(img, mean=mean, std=std)
+        tensors.append(img.expand_dims(0))
         origs.append(orig_img)
     if len(tensors) == 1:
         return tensors[0], origs[0]
@@ -171,8 +171,8 @@ class SSDDefaultTrainTransform(object):
         bbox = tbbox.flip(bbox, (w, h), flip_x=flips[0])
 
         # to tensor
-        img = mx.npx.image.to_tensor(img)
-        img = mx.npx.image.normalize(img, mean=self._mean, std=self._std)
+        img = mx.nd.image.to_tensor(img)
+        img = mx.nd.image.normalize(img, mean=self._mean, std=self._std)
 
         if self._anchors is None:
             return img, bbox.astype(img.dtype)
@@ -213,8 +213,8 @@ class SSDDefaultValTransform(object):
         img = timage.imresize(src, self._width, self._height, interp=9)
         bbox = tbbox.resize(label, in_size=(w, h), out_size=(self._width, self._height))
 
-        img = mx.npx.image.to_tensor(img)
-        img = mx.npx.image.normalize(img, mean=self._mean, std=self._std)
+        img = mx.nd.image.to_tensor(img)
+        img = mx.nd.image.normalize(img, mean=self._mean, std=self._std)
         return img, bbox.astype(img.dtype)
 
 class SSDDALIPipeline(dali.Pipeline):

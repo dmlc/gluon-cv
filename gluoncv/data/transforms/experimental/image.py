@@ -3,6 +3,7 @@ from __future__ import division
 import random
 import numpy as np
 import mxnet as mx
+from mxnet import nd
 
 def random_color_distort(src, brightness_delta=32, contrast_low=0.5, contrast_high=1.5,
                          saturation_low=0.5, saturation_high=1.5, hue_delta=18):
@@ -52,8 +53,8 @@ def random_color_distort(src, brightness_delta=32, contrast_low=0.5, contrast_hi
         """Saturation distortion."""
         if np.random.uniform(0, 1) > p:
             alpha = np.random.uniform(low, high)
-            gray = src * mx.np.array([[[0.299, 0.587, 0.114]]], ctx=src.context)
-            gray = mx.np.sum(gray, axis=2, keepdims=True)
+            gray = src * nd.array([[[0.299, 0.587, 0.114]]], ctx=src.context)
+            gray = mx.nd.sum(gray, axis=2, keepdims=True)
             gray *= (1.0 - alpha)
             src *= alpha
             src += gray
@@ -76,7 +77,7 @@ def random_color_distort(src, brightness_delta=32, contrast_low=0.5, contrast_hi
                               [1.0, -0.272, -0.647],
                               [1.0, -1.107, 1.705]])
             t = np.dot(np.dot(ityiq, bt), tyiq).T
-            src = mx.np.dot(src, mx.np.array(t, ctx=src.context).astype('float32'))
+            src = nd.dot(src, nd.array(t, ctx=src.context))
             return src
         return src
 
