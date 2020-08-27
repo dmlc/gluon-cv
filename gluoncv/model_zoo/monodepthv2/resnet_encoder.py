@@ -56,14 +56,15 @@ class ResnetEncoder(nn.HybridBlock):
         if num_input_images > 1:
             self.encoder = resnets[backbone](pretrained=False, ctx=ctx, **kwargs)
             if pretrained:
-                from ..model_store import get_model_file
-                loaded = mx.nd.load(get_model_file('resnet%d_v%db' % (num_layers[backbone], 1),
-                                                   tag=pretrained, root=root))
-                loaded['conv1.weight'] = mx.nd.concat(
-                    *([loaded['conv1.weight']] * num_input_images), dim=1) / num_input_images
                 filename = os.path.join(
                     root, 'resnet%d_v%db_multiple_inputs.params' % (num_layers[backbone], 1))
-                mx.nd.save(filename, loaded)
+                if not os.path.isfile(filename):
+                    from ..model_store import get_model_file
+                    loaded = mx.nd.load(get_model_file('resnet%d_v%db' % (num_layers[backbone], 1),
+                                                       tag=pretrained, root=root))
+                    loaded['conv1.weight'] = mx.nd.concat(
+                        *([loaded['conv1.weight']] * num_input_images), dim=1) / num_input_images
+                    mx.nd.save(filename, loaded)
                 self.encoder.load_parameters(filename, ctx=ctx)
                 from ...data import ImageNet1kAttr
                 attrib = ImageNet1kAttr()
