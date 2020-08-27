@@ -5,6 +5,7 @@ import mxnet as mx
 import gluoncv as gcv
 from gluoncv.model_zoo.model_store import pretrained_model_list
 from ..unittests.common import try_gpu
+import unittest
 
 @try_gpu(0)
 @unittest.skip("temporarily disabled")
