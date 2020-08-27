@@ -7,6 +7,7 @@ from gluoncv.model_zoo.model_store import pretrained_model_list
 from ..unittests.common import try_gpu
 
 @try_gpu(0)
+@unittest.skip("temporarily disabled")
 def test_export_model_zoo():
     for model in pretrained_model_list():
         print('exporting:', model)
@@ -52,6 +53,7 @@ def test_export_model_zoo():
             pass
 
 @try_gpu(0)
+@unittest.skip("temporarily disabled")
 def test_export_model_zoo_no_preprocess():
     # special cases
     # 1. no preprocess 2d model
@@ -59,10 +61,12 @@ def test_export_model_zoo_no_preprocess():
     gcv.utils.export_block(model_name, gcv.model_zoo.get_model(model_name, pretrained=True), preprocess=None, layout='CHW')
 
 @try_gpu(0)
+@unittest.skip("temporarily disabled")
 def test_rcnn_export_target_generator():
     model_name = 'faster_rcnn_fpn_resnet50_v1b_coco'
     gcv.utils.export_block(model_name, gcv.model_zoo.get_model(model_name, pretrained=True))
 
+@unittest.skip("temporarily disabled")
 def test_export_model_zoo_tvm():
     try:
         import tvm
