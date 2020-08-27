@@ -534,6 +534,7 @@ def test_action_recognition_c3d_models():
     _test_model_list(models, ctx, x, pretrained=False, pretrained_base=True)
 
 @try_gpu(0)
+@unittest.skip("temporarily disabled")
 def test_action_recognition_p3d_models():
     ctx = mx.context.current_context()
     models = ['p3d_resnet50_kinetics400', 'p3d_resnet101_kinetics400']
@@ -607,6 +608,7 @@ def test_mobilenet_sync_bn():
     net.load_parameters(model_name + '.params')
 
 @with_cpu(0)
+resnet50_v1_int8
 def test_quantized_imagenet_models():
     model_list = ['mobilenet1.0_int8', 'resnet50_v1_int8']
     ctx = mx.context.current_context()
