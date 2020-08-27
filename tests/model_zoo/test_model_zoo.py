@@ -608,7 +608,7 @@ def test_mobilenet_sync_bn():
     net.load_parameters(model_name + '.params')
 
 @with_cpu(0)
-resnet50_v1_int8
+@unittest.skip("temporarily disabled")
 def test_quantized_imagenet_models():
     model_list = ['mobilenet1.0_int8', 'resnet50_v1_int8']
     ctx = mx.context.current_context()
