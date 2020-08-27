@@ -194,7 +194,7 @@ class MonodepthOptions:
 
         # logging and checkpoint saving
         if not (self.options.eval_mono or self.options.eval_stereo):
-            if self.options.model_zoo_pose is None:
+            if self.options.model_zoo_pose and self.options.model_zoo:
                 log_path = os.path.join(self.options.log_dir, self.options.model_zoo)
                 if not os.path.exists(log_path):
                     os.makedirs(log_path)
