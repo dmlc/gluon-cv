@@ -78,7 +78,7 @@ def evaluate(opt):
     ############################ loading model ############################
     posenet = None
     # create network
-    if opt.model_zoo is not None:
+    if opt.model_zoo_pose is not None:
         if opt.pretrained_type == "gluoncv":
             # use gluoncv pretrained model
             posenet = get_model(
