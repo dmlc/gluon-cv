@@ -105,7 +105,6 @@ class BasicBlockV1(HybridBlock):
             self.downsample = None
 
     def hybrid_forward(self, F, x):
-        x = x.as_np_ndarray()
         residual = x
 
         x = self.body(x)
@@ -113,7 +112,7 @@ class BasicBlockV1(HybridBlock):
         if self.se:
             w = F.contrib.AdaptiveAvgPooling2D(x.as_nd_ndarray(), output_size=1).as_np_ndarray()
             w = self.se(w)
-            x = x * w.as_nd_ndarray().expand_dims(axis=2).expand_dims(axis=2).as_np_ndarray()
+            x = F.np.expand_dims(x * F.np.expand_dims(w, axis=2), axis=2)
 
         if self.downsample:
             residual = self.downsample(residual)
@@ -185,7 +184,6 @@ class BottleneckV1(HybridBlock):
             self.downsample = None
 
     def hybrid_forward(self, F, x):
-        x = x.as_np_ndarray()
         residual = x
 
         x = self.body(x)
@@ -193,7 +191,7 @@ class BottleneckV1(HybridBlock):
         if self.se:
             w = F.contrib.AdaptiveAvgPooling2D(x.as_nd_ndarray(), output_size=1).as_np_ndarray()
             w = self.se(w)
-            x = x * w.as_nd_ndarray().expand_dims(axis=2).expand_dims(axis=2).as_np_ndarray()
+            x = x * F.np.expand_dims(w, axis=2).expand_dims(axis=2)
 
         if self.downsample:
             residual = self.downsample(residual)
@@ -258,7 +256,6 @@ class BasicBlockV2(HybridBlock):
             self.downsample = None
 
     def hybrid_forward(self, F, x):
-        x = x.as_np_ndarray()
         residual = x
         x = self.bn1(x)
         x = F.npx.activation(x, act_type='relu')
@@ -273,7 +270,7 @@ class BasicBlockV2(HybridBlock):
         if self.se:
             w = F.contrib.AdaptiveAvgPooling2D(x.as_nd_ndarray(), output_size=1).as_np_ndarray()
             w = self.se(w)
-            x = x * w.as_nd_ndarray().expand_dims(axis=2).expand_dims(axis=2).as_np_ndarray()
+            x = F.np.expand_dims(x * F.np.expand_dims(w, axis=2), axis=2)
 
         return x + residual
 
@@ -335,7 +332,6 @@ class BottleneckV2(HybridBlock):
             self.downsample = None
 
     def hybrid_forward(self, F, x):
-        x = x.as_np_ndarray()
         residual = x
         x = self.bn1(x)
         x = F.npx.activation(x, act_type='relu')
@@ -354,7 +350,7 @@ class BottleneckV2(HybridBlock):
         if self.se:
             w = F.contrib.AdaptiveAvgPooling2D(x.as_nd_ndarray(), output_size=1).as_np_ndarray()
             w = self.se(w)
-            x = x * w.as_nd_ndarray().expand_dims(axis=2).expand_dims(axis=2).as_np_ndarray()
+            x = F.np.expand_dims(x * F.np.expand_dims(w, axis=2), axis=2)
 
         return x + residual
 
@@ -426,7 +422,6 @@ class ResNetV1(HybridBlock):
         return layer
 
     def hybrid_forward(self, F, x):
-        x = x.as_np_ndarray()
         x = self.features(x)
         x = self.output(x)
 
@@ -506,7 +501,6 @@ class ResNetV2(HybridBlock):
         return layer
 
     def hybrid_forward(self, F, x):
-        x = x.as_np_ndarray()
         x = self.features(x)
         x = self.output(x)
         return x
