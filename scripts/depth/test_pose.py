@@ -76,12 +76,30 @@ def evaluate(opt):
         pin_memory=True, last_batch='keep')
 
     ############################ loading model ############################
-    pose_weights_path = os.path.join(opt.load_weights_folder, "pose_best.params")
+    posenet = None
+    # create network
+    if opt.model_zoo is not None:
+        if opt.pretrained_type == "gluoncv":
+            # use gluoncv pretrained model
+            posenet = get_model(
+                opt.model_zoo_pose, pretrained_base=False, num_input_images=2,
+                num_input_features=1, num_frames_to_predict_for=2, pretrained=True, ctx=opt.ctx)
+        else:
+            # loading weights from customer
+            assert opt.eval_model is not None, \
+                '=> Please provide the checkpoint using --eval_model'
+            weights_path = os.path.join(opt.load_weights_folder, opt.eval_model)
+            posenet = get_model(
+                opt.model_zoo_pose, pretrained_base=False, num_input_images=2,
+                num_input_features=1, num_frames_to_predict_for=2, ctx=opt.ctx)
+            posenet.load_parameters(weights_path, ctx=opt.ctx)
+    else:
+        assert "Must choose a pose model from model_zoo, " \
+               "please provide the model_zoo using --model_zoo_pose"
 
-    posenet = MonoDepth2PoseNet(
-        backbone='resnet18', pretrained_base=False, num_input_images=2,
-        num_input_features=1, num_frames_to_predict_for=2, ctx=opt.ctx)
-    posenet.load_parameters(pose_weights_path, ctx=opt.ctx)
+    # use hybridize mode
+    if opt.hybridize:
+        posenet.hybridize()
 
     ############################ inference ############################
     pred_poses = []
@@ -131,7 +149,7 @@ def evaluate(opt):
 if __name__ == "__main__":
     options = MonodepthOptions()
     opts = options.parse()
-    print("Testing model named:\n  ", opts.model_zoo)
+    print("Testing model named:\n  ", opts.model_zoo_pose)
     print("Weights are loaded from:\n  ",
           "gluoncv pretrained model" if opts.pretrained_type == "gluoncv"
           else opts.load_weights_folder)

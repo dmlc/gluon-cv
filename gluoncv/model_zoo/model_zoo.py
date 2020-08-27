@@ -42,7 +42,7 @@ from .siamrpn import *
 from .icnet import *
 from .fastscnn import *
 from .danet import *
-from .monodepthv2.monodepth2 import *
+from .monodepthv2 import *
 
 __all__ = ['get_model', 'get_model_list']
 
@@ -372,7 +372,11 @@ _models = {
     'monodepth2_resnet18_kitti_stereo_640x192': get_monodepth2_resnet18_kitti_stereo_640x192,
     'monodepth2_resnet18_kitti_mono_640x192': get_monodepth2_resnet18_kitti_mono_640x192,
     'monodepth2_resnet18_kitti_mono+stereo_640x192':
-        get_monodepth2_resnet18_kitti_mono_stereo_640x192
+        get_monodepth2_resnet18_kitti_mono_stereo_640x192,
+    "monodepth2_resnet18_posenet_kitti_mono_640x192":
+        get_monodepth2_resnet18_posenet_kitti_mono_640x192,
+    "monodepth2_resnet18_posenet_kitti_mono+stereo_640x192":
+        get_monodepth2_resnet18_posenet_kitti_mono_stereo_640x192
 }
 
 

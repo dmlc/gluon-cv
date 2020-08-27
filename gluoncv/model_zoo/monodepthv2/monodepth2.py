@@ -18,7 +18,7 @@ class MonoDepth2(nn.HybridBlock):
     backbone : string
         Pre-trained dilated backbone network type ('resnet18', 'resnet34', 'resnet50',
         'resnet101' or 'resnet152').
-    pretrained : bool or str
+    pretrained_base : bool or str
         Refers to if the backbone is pretrained or not. If `True`,
         model weights of a model that was trained on ImageNet is loaded.
     num_input_images : int
@@ -49,6 +49,8 @@ class MonoDepth2(nn.HybridBlock):
         with self.name_scope():
             self.encoder = ResnetEncoder(backbone, pretrained_base,
                                          num_input_images=num_input_images, ctx=ctx)
+            if not pretrained_base:
+                self.encoder.initialize(ctx=ctx)
             self.decoder = DepthDecoder(self.encoder.num_ch_enc, scales,
                                         num_output_channels, use_skips)
             self.decoder.initialize(ctx=ctx)

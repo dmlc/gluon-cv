@@ -75,28 +75,43 @@ class Trainer:
             pin_memory=True, last_batch='discard')
 
         ################### model initialization ###################
-        # create network
+        # create depth network
         if self.opt.model_zoo is not None:
             self.model = get_model(self.opt.model_zoo, pretrained_base=self.opt.pretrained_base,
                                    scales=self.opt.scales, ctx=self.opt.ctx)
         else:
             assert "Must choose a model from model_zoo, " \
-                   "please provide the model_zoo using --model_zoo"
+                   "please provide depth the model_zoo using --model_zoo"
         self.logger.info(self.model)
 
         # resume checkpoint if needed
-        if self.opt.resume is not None:
-            if os.path.isfile(self.opt.resume):
-                logger.info('Resume model: %s' % self.opt.resume)
-                self.model.load_parameters(self.opt.resume, ctx=self.opt.ctx)
+        if self.opt.resume_depth is not None:
+            if os.path.isfile(self.opt.resume_depth):
+                logger.info('Resume depth model: %s' % self.opt.resume_depth)
+                self.model.load_parameters(self.opt.resume_depth, ctx=self.opt.ctx)
             else:
-                raise RuntimeError("=> no checkpoint found at '{}'".format(self.opt.resume))
+                raise RuntimeError("=> no checkpoint found at '{}'".format(self.opt.resume_depth))
 
         if self.use_pose_net:
-            self.posenet = MonoDepth2PoseNet(
-                backbone='resnet18', pretrained_base=self.opt.pretrained_base, num_input_images=2,
-                num_input_features=1, num_frames_to_predict_for=2, ctx=self.opt.ctx)
+            # create pose network
+            if self.opt.model_zoo_pose is not None:
+                self.posenet = get_model(
+                    self.opt.model_zoo_pose, pretrained_base=self.opt.pretrained_base,
+                    num_input_images=2, num_input_features=1, num_frames_to_predict_for=2,
+                    ctx=self.opt.ctx)
+            else:
+                assert "Must choose a model from model_zoo, " \
+                       "please provide the pose model_zoo_pose using --model_zoo_pose"
             self.logger.info(self.posenet)
+
+            # resume checkpoint if needed
+            if self.opt.resume_pose is not None:
+                if os.path.isfile(self.opt.resume_pose):
+                    logger.info('Resume pose model: %s' % self.opt.resume_pose)
+                    self.model.load_parameters(self.opt.resume_pose, ctx=self.opt.ctx)
+                else:
+                    raise RuntimeError("=> no checkpoint found at '{}'".format(
+                                        self.opt.resume_pose))
 
         if self.opt.hybridize:
             self.model.hybridize()
