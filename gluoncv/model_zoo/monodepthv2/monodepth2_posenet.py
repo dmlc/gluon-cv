@@ -2,7 +2,6 @@
 Digging Into Self-Supervised Monocular Depth Estimation, ICCV 2019
 https://arxiv.org/abs/1806.01260
 """
-import mxnet as mx
 from mxnet.gluon import nn
 from mxnet.context import cpu
 

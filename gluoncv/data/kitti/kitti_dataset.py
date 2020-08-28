@@ -118,6 +118,7 @@ class KITTIOdomDataset(KITTIDataset):
     """KITTI dataset for odometry training and testing
     """
 
+    # pylint: disable=keyword-arg-before-vararg
     def __init__(self, data_path=os.path.join(
             os.path.expanduser("~"), '.mxnet/datasets/kitti/kitti_odom'), *args, **kwargs):
         super(KITTIOdomDataset, self).__init__(data_path, *args, **kwargs)

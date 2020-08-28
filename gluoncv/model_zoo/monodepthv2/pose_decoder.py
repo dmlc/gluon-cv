@@ -11,12 +11,27 @@ https://github.com/nianticlabs/monodepth2/blob/master/networks/pose_decoder.py
 from __future__ import absolute_import, division, print_function
 
 from collections import OrderedDict
-import numpy as np
 import mxnet as mx
 import mxnet.gluon.nn as nn
 
 
 class PoseDecoder(nn.HybridBlock):
+    r"""Decoder of Monodepth2 PoseNet
+
+    Parameters
+    ----------
+    num_ch_enc : list
+        The channels number of encoder.
+    num_input_features: int
+        The number of input sequences. 1 for depth encoder, larger than 1 for pose encoder.
+        (Default: 2)
+    num_frames_to_predict_for: int
+        The number of output pose between frames; If None, it equals num_input_features - 1.
+        (Default: None)
+    stride: int
+        The stride number for Conv in pose decoder. (Default: 1)
+
+    """
     def __init__(self, num_ch_enc, num_input_features, num_frames_to_predict_for=None, stride=1):
         super(PoseDecoder, self).__init__()
 
@@ -45,6 +60,7 @@ class PoseDecoder(nn.HybridBlock):
         self.net.add(*list(self.convs.values()))
 
     def hybrid_forward(self, F, input_features):
+        # pylint: disable=unused-argument, missing-function-docstring
         last_features = [f[-1] for f in input_features]
 
         cat_features = [F.relu(self.convs["squeeze"](f)) for f in last_features]
@@ -66,6 +82,7 @@ class PoseDecoder(nn.HybridBlock):
         return axisangle, translation
 
     def predict(self, input_features):
+        # pylint: disable=unused-argument, missing-function-docstring
         last_features = [f[-1] for f in input_features]
 
         cat_features = [mx.nd.relu()(self.convs["squeeze"](f)) for f in last_features]

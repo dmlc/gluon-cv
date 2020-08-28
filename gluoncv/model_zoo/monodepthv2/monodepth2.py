@@ -2,7 +2,6 @@
 Digging Into Self-Supervised Monocular Depth Estimation, ICCV 2019
 https://arxiv.org/abs/1806.01260
 """
-import mxnet as mx
 from mxnet.gluon import nn
 from mxnet.context import cpu
 
@@ -157,4 +156,5 @@ def get_monodepth2_resnet18_kitti_mono_stereo_640x192(**kwargs):
         Pre-trained dilated backbone network type (default:'resnet18').
 
     """
-    return get_monodepth2(backbone='resnet18', pretrained_model='kitti_mono+stereo_640x192', **kwargs)
+    return get_monodepth2(backbone='resnet18',
+                          pretrained_model='kitti_mono+stereo_640x192', **kwargs)
