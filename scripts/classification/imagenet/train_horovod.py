@@ -361,7 +361,7 @@ def train_gluon():
     # Hybridize and initialize model
     net.hybridize()
     #net.initialize(initializer, ctx=context)
-    if args.resume_params is not '':
+    if args.resume_params != '':
         net.load_parameters(args.resume_params, ctx = context)
 
     else:
@@ -387,7 +387,7 @@ def train_gluon():
 
     # Horovod: create DistributedTrainer, a subclass of gluon.Trainer
     trainer = hvd.DistributedTrainer(params, opt)
-    if args.resume_states is not '':
+    if args.resume_states != '':
         trainer.load_states(args.resume_states)
 
     # Create loss function and train metric

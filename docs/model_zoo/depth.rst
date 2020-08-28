@@ -29,7 +29,6 @@ The following table lists pre-trained models trained on KITTI.
 
     python test.py --model_zoo monodepth2_resnet18_kitti_stereo_640x192 --pretrained_type gluoncv --eval_stereo --png
 
-  The training commands work with the script: :download:`Download train.py<../../scripts/depth/train.py>`
 
 
 .. note::
