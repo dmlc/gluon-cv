@@ -6,7 +6,6 @@ import autogluon as ag
 
 from ..estimators.base_estimator import BaseEstimator
 
-
 def config_to_nested(config):
     if config['meta_arch'] == 'ssd':
         config_mapping = {
@@ -84,8 +83,6 @@ def config_to_space(config):
         else:
             space.update({k: v})
     return space
-
-##############################
 
 def cfg_to_space(cfg, space):
     for k, v in cfg.items():
