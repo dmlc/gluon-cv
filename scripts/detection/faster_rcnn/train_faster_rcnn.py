@@ -13,8 +13,8 @@ os.environ['MXNET_OPTIMIZER_AGGREGATION_SIZE'] = '54'
 import gluoncv as gcv
 
 gcv.utils.check_version('0.7.0')
-from gluoncv.auto.estimators.rcnn import FasterRCNNEstimator
-from gluoncv.auto.estimators.rcnn import ex
+from gluoncv.auto.estimators.faster_rcnn import FasterRCNNEstimator
+from gluoncv.auto.estimators.faster_rcnn import ex
 
 try:
     import horovod.mxnet as hvd
