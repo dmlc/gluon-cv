@@ -8,12 +8,7 @@ from ..estimators.base_estimator import BaseEstimator
 
 
 def config_to_nested(config):
-    if isinstance(config, dict):
-        meta_arch = config['meta_arch']
-    else:
-        meta_arch = config.meta_arch
-
-    if meta_arch == 'ssd':
+    if config['meta_arch'] == 'ssd':
         config_mapping = {
             'ssd': ['backbone', 'data_shape', 'filters', 'sizes', 'ratios', 'steps', 'syncbn',
                     'amp', 'custom_model'],
@@ -21,7 +16,7 @@ def config_to_nested(config):
                       'momentum', 'wd', 'log_interval', 'seed', 'dali'],
             'validation': ['val_interval']
         }
-    elif meta_arch == 'faster_rcnn':
+    elif config['meta_arch'] == 'faster_rcnn':
         config_mapping = {
             'faster_rcnn': ['backbone', 'nms_thresh', 'nms_topk', 'roi_mode', 'roi_size', 'strides', 'clip',
                             'anchor_base_size', 'anchor_aspect_ratio', 'anchor_scales', 'anchor_alloc_size',
@@ -35,7 +30,7 @@ def config_to_nested(config):
                       'log_interval', 'seed', 'verbose', 'mixup', 'no_mixup_epochs', 'executor_threads'],
             'validation': ['rpn_test_pre_nms', 'rpn_test_post_nms', 'val_interval']
         }
-    elif meta_arch == 'yolo3':
+    elif config['meta_arch'] == 'yolo3':
         config_mapping = {
             'yolo3': ['base_network', 'scale', 'topk', 'root', 'wh_weight', 'center_reg_weight',
                       'data_shape', 'syncbn'],
@@ -46,7 +41,7 @@ def config_to_nested(config):
                       'amp', 'horovod'],
             'validation': ['val_interval', 'test']
         }
-    elif meta_arch == 'center_net':
+    elif config['meta_arch'] == 'center_net':
         config_mapping = {
             'center_net': ['base_network', 'heads', 'scale', 'topk', 'root', 'wh_weight', 'center_reg_weight',
                            'data_shape'],
@@ -57,15 +52,15 @@ def config_to_nested(config):
                            'batch_size', 'interval']
         }
     else:
-        raise NotImplementedError(meta_arch, 'is not implemented.')
+        raise NotImplementedError(config['meta_arch'], 'is not implemented.')
 
     nested_config = {}
 
     for k, v in config.items():
-        if k in config_mapping[meta_arch]:
-            if meta_arch not in nested_config.keys():
-                nested_config[meta_arch] = {}
-            nested_config[meta_arch].update({k: v})
+        if k in config_mapping[config['meta_arch']]:
+            if config['meta_arch'] not in nested_config.keys():
+                nested_config[config['meta_arch']] = {}
+            nested_config[config['meta_arch']].update({k: v})
         elif k in config_mapping['train']:
             if 'train' not in nested_config.keys():
                 nested_config['train'] = {}
@@ -78,22 +73,6 @@ def config_to_nested(config):
             nested_config.update({k: v})
 
     return nested_config
-
-def config_to_dict(config):
-    """
-    Parameters
-    ----------
-    config: <class 'autogluon.utils.edict.EasyDict'> or <class 'autogluon.core.space.Dict'>
-    """
-    config_dict = {}
-    for k, v in config.items():
-        if isinstance(v, dict):
-            if k not in config_dict.keys():
-                config_dict[k] = {}
-            config_dict[k] = config_to_dict(v)
-        else:
-            config_dict.update({k: v})
-    return config_dict
 
 def config_to_space(config):
     space = ag.Dict()
