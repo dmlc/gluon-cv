@@ -16,7 +16,7 @@ Faster-RCNN [Ren15]_ object detection model provided by GluonCV.
 import autogluon as ag
 
 from gluoncv.auto.estimators.faster_rcnn import FasterRCNNEstimator
-from gluoncv.auto.tasks.object_detection_v2 import ObjectDetection
+from gluoncv.auto.tasks.object_detection import ObjectDetection
 
 # Define search space
 time_limits = 60 * 60  # 1hr
