@@ -27,12 +27,12 @@ class PoseDecoder(nn.HybridBlock):
         (Default: 2)
     num_frames_to_predict_for: int
         The number of output pose between frames; If None, it equals num_input_features - 1.
-        (Default: None)
+        (Default: 2)
     stride: int
         The stride number for Conv in pose decoder. (Default: 1)
 
     """
-    def __init__(self, num_ch_enc, num_input_features, num_frames_to_predict_for=None, stride=1):
+    def __init__(self, num_ch_enc, num_input_features, num_frames_to_predict_for=2, stride=1):
         super(PoseDecoder, self).__init__()
 
         self.num_ch_enc = num_ch_enc

@@ -27,7 +27,7 @@ class MonoDepth2PoseNet(nn.HybridBlock):
         The number of input feature maps from posenet encoder. (Default: 1)
     num_frames_to_predict_for: int
         The number of output pose between frames; If None, it equals num_input_features - 1.
-        (Default: None)
+        (Default: 2)
     stride: int
         The stride number for Conv in pose decoder. (Default: 1)
 
@@ -43,7 +43,7 @@ class MonoDepth2PoseNet(nn.HybridBlock):
     """
     # pylint: disable=unused-argument
     def __init__(self, backbone, pretrained_base, num_input_images=2, num_input_features=1,
-                 num_frames_to_predict_for=None, stride=1, ctx=cpu(), **kwargs):
+                 num_frames_to_predict_for=2, stride=1, ctx=cpu(), **kwargs):
         super(MonoDepth2PoseNet, self).__init__()
 
         with self.name_scope():
@@ -75,7 +75,7 @@ class MonoDepth2PoseNet(nn.HybridBlock):
 
 
 def get_monodepth2posenet(backbone='resnet18', pretrained_base=True, num_input_images=2,
-                          num_input_features=1, num_frames_to_predict_for=None, stride=1,
+                          num_input_features=1, num_frames_to_predict_for=2, stride=1,
                           root='~/.mxnet/models', ctx=cpu(0), pretrained=False,
                           pretrained_model='kitti_stereo_640x192', **kwargs):
     r"""Monodepth2
@@ -95,7 +95,7 @@ def get_monodepth2posenet(backbone='resnet18', pretrained_base=True, num_input_i
         The number of input feature maps from posenet encoder. (Default: 1)
     num_frames_to_predict_for: int
         The number of output pose between frames; If None, it equals num_input_features - 1.
-        (Default: None)
+        (Default: 2)
     stride: int
         The stride number for Conv in pose decoder. (Default: 1)
 
