@@ -110,10 +110,6 @@ def get_monodepth2posenet(backbone='resnet18', pretrained_base=True, num_input_i
         The dataset that model pretrained on.
 
     """
-    acronyms = {
-        'pose_kitti_mono_640x192': 'pose_kitti_mono_640x192',
-        'pose_kitti_mono+stereo_640x192': 'pose_kitti_mono+stereo_640x192',
-    }
 
     model = MonoDepth2PoseNet(
         backbone=backbone, pretrained_base=pretrained_base,
@@ -124,7 +120,7 @@ def get_monodepth2posenet(backbone='resnet18', pretrained_base=True, num_input_i
     if pretrained:
         from ...model_zoo.model_store import get_model_file
         model.load_parameters(
-            get_model_file('monodepth2_%s_%s' % (backbone, acronyms[pretrained_model]),
+            get_model_file('monodepth2_%s_%s' % (backbone, pretrained_model),
                            tag=pretrained, root=root),
             ctx=ctx
         )
