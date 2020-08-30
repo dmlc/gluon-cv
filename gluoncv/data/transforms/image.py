@@ -3,7 +3,6 @@ from __future__ import division
 import random
 import numpy as np
 import mxnet as mx
-from mxnet import nd
 from mxnet.base import numeric_types
 
 __all__ = ['imresize', 'resize_long', 'resize_short_within',
@@ -184,7 +183,7 @@ def random_pca_lighting(src, alphastd, eigval=None, eigvec=None):
 
     Parameters
     ----------
-    img : mxnet.nd.NDArray
+    img : mxnet.np.ndarray
         Input image with HWC format.
     alphastd : float
         Noise level [0, 1) for image with range [0, 255].
@@ -198,7 +197,7 @@ def random_pca_lighting(src, alphastd, eigval=None, eigvec=None):
 
     Returns
     -------
-    mxnet.nd.NDArray
+    mxnet.np.ndarray
         Augmented image.
 
     """
@@ -214,7 +213,7 @@ def random_pca_lighting(src, alphastd, eigval=None, eigvec=None):
 
     alpha = np.random.normal(0, alphastd, size=(3,))
     rgb = np.dot(eigvec * alpha, eigval)
-    src += nd.array(rgb, ctx=src.context)
+    src += mx.np.array(rgb, ctx=src.context).astype('float32')
     return src
 
 def random_expand(src, max_ratio=4, fill=0, keep_ratio=True):
@@ -223,7 +222,7 @@ def random_expand(src, max_ratio=4, fill=0, keep_ratio=True):
 
     Parameters
     ----------
-    src : mxnet.nd.NDArray
+    src : mxnet.np.ndarray
         The original image with HWC format.
     max_ratio : int or float
         Maximum ratio of the output image on both direction(vertical and horizontal)
@@ -236,7 +235,7 @@ def random_expand(src, max_ratio=4, fill=0, keep_ratio=True):
 
     Returns
     -------
-    mxnet.nd.NDArray
+    mxnet.np.ndarray
         Augmented image.
     tuple
         Tuple of (offset_x, offset_y, new_width, new_height)
@@ -258,12 +257,12 @@ def random_expand(src, max_ratio=4, fill=0, keep_ratio=True):
 
     # make canvas
     if isinstance(fill, numeric_types):
-        dst = nd.full(shape=(oh, ow, c), val=fill, dtype=src.dtype)
+        dst = mx.np.full(shape=(oh, ow, c), fill_value=fill, dtype=src.dtype)
     else:
-        fill = nd.array(fill, dtype=src.dtype, ctx=src.context)
+        fill = mx.np.array(fill, dtype=src.dtype, ctx=src.context)
         if not c == fill.size:
             raise ValueError("Channel and fill size mismatch, {} vs {}".format(c, fill.size))
-        dst = nd.tile(fill.reshape((1, c)), reps=(oh * ow, 1)).reshape((oh, ow, c))
+        dst = mx.np.tile(fill.reshape((1, c)), reps=(oh * ow, 1)).reshape((oh, ow, c))
 
     dst[off_y:off_y+h, off_x:off_x+w, :] = src
     return dst, (off_x, off_y, ow, oh)
@@ -273,7 +272,7 @@ def random_flip(src, px=0, py=0, copy=False):
 
     Parameters
     ----------
-    src : mxnet.nd.NDArray
+    src : mxnet.np.ndarray
         Input image with HWC format.
     px : float
         Horizontal flip probability [0, 1].
@@ -284,7 +283,7 @@ def random_flip(src, px=0, py=0, copy=False):
 
     Returns
     -------
-    mxnet.nd.NDArray
+    mxnet.np.ndarray
         Augmented image.
     tuple
         Tuple of (flip_x, flip_y), records of whether flips are applied.
@@ -293,9 +292,9 @@ def random_flip(src, px=0, py=0, copy=False):
     flip_y = np.random.choice([False, True], p=[1-py, py])
     flip_x = np.random.choice([False, True], p=[1-px, px])
     if flip_y:
-        src = nd.flip(src, axis=0)
+        src = mx.np.flip(src, axis=0)
     if flip_x:
-        src = nd.flip(src, axis=1)
+        src = mx.np.flip(src, axis=1)
     if copy:
         src = src.copy()
     return src, (flip_x, flip_y)
@@ -311,7 +310,7 @@ def resize_contain(src, size, fill=0):
 
     Parameters
     ----------
-    src : mxnet.nd.NDArray
+    src : mxnet.np.ndarray
         The original image with HWC format.
     size : tuple
         Tuple of length 2 as (width, height).
@@ -322,7 +321,7 @@ def resize_contain(src, size, fill=0):
 
     Returns
     -------
-    mxnet.nd.NDArray
+    mxnet.np.ndarray
         Augmented image.
     tuple
         Tuple of (offset_x, offset_y, scaled_x, scaled_y)
@@ -343,13 +342,12 @@ def resize_contain(src, size, fill=0):
 
     # make canvas
     if isinstance(fill, numeric_types):
-        dst = nd.full(shape=(oh, ow, c), val=fill, dtype=src.dtype)
+        dst = mx.np.full(shape=(oh, ow, c), fill_value=fill, dtype=src.dtype)
     else:
-        fill = nd.array(fill, ctx=src.context)
+        fill = mx.np.array(fill, ctx=src.context)
         if not c == fill.size:
             raise ValueError("Channel and fill size mismatch, {} vs {}".format(c, fill.size))
-        dst = nd.repeat(fill, repeats=oh * ow).reshape((oh, ow, c))
-
+        dst = mx.np.repeat(fill, repeats=oh * ow).reshape((oh, ow, c))
     dst[off_y:off_y+scaled_y, off_x:off_x+scaled_x, :] = src
     return dst, (off_x, off_y, scaled_x, scaled_y)
 
@@ -375,14 +373,14 @@ def ten_crop(src, size):
 
     Parameters
     ----------
-    src : mxnet.nd.NDArray
+    src : mxnet.np.ndarray
         Input image.
     size : tuple
         Tuple of length 2, as (width, height) of the cropped areas.
 
     Returns
     -------
-    mxnet.nd.NDArray
+    mxnet.np.ndarray
         The cropped images with shape (10, size[1], size[0], C)
 
     """
@@ -398,6 +396,6 @@ def ten_crop(src, size):
     bl = src[h - oh:h, 0:ow, :]
     tr = src[0:oh, w - ow:w, :]
     br = src[h - oh:h, w - ow:w, :]
-    crops = nd.stack(*[center, tl, bl, tr, br], axis=0)
-    crops = nd.concat(*[crops, nd.flip(crops, axis=2)], dim=0)
+    crops = mx.np.stack([center, tl, bl, tr, br], axis=0)
+    crops = mx.np.concatenate([crops, mx.np.flip(crops, axis=2)], axis=0)
     return crops

@@ -74,10 +74,10 @@ class OrigHRBottleneck(nn.HybridBlock):
         super(OrigHRBottleneck, self).__init__(**kwargs)
         self.body = nn.HybridSequential(prefix='')
         # add use_bias=False here to match with the original implementation
-        self.body.add(nn.Conv2D(channels//4, kernel_size=1, strides=stride, use_bias=False))
+        self.body.add(nn.Conv2D(channels//4, kernel_size=1, strides=1, use_bias=False))
         self.body.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
         self.body.add(nn.Activation('relu'))
-        self.body.add(_conv3x3(channels//4, 1, channels//4))
+        self.body.add(_conv3x3(channels//4, stride, channels//4))
         self.body.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
         self.body.add(nn.Activation('relu'))
         # add use_bias=False here to match with the original implementation
@@ -233,24 +233,24 @@ class HighResolutionModule(nn.HybridBlock):
             for j in range(1, self.num_branches):
                 if j > i:
                     if self.interp_type == 'nearest':
-                        y = y + F.UpSampling(
+                        y = F.broadcast_add(y, F.UpSampling(
                             self.fuse_layers[i][j](X[j]),
                             scale=2**(j-i),
-                            sample_type='nearest')
+                            sample_type='nearest'))
                     elif self.interp_type == 'bilinear':
-                        y = y + F.contrib.BilinearResize2D(
+                        y = F.broadcast_add(y, F.contrib.BilinearResize2D(
                             self.fuse_layers[i][j](X[j]),
                             scale_height=2**(j-i),
                             scale_width=2**(j-i),
                             align_corners=False
-                        )
+                        ))
                     elif self.interp_type == 'bilinear_like':
-                        y = y + F.contrib.BilinearResize2D(
+                        y = F.broadcast_add(y, F.contrib.BilinearResize2D(
                             self.fuse_layers[i][j](X[j]),
                             like=X[i],
                             mode='like',
                             align_corners=False
-                        )
+                        ))
                     else:
                         raise NotImplementedError
 

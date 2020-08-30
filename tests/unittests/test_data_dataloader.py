@@ -63,16 +63,16 @@ class DummySequentialDataset(mx.gluon.data.Dataset):
         return self.size
 
     def __getitem__(self, idx):
-        return mx.nd.ones(shape=self.shape) * idx
+        return mx.np.ones(shape=self.shape) * idx
 
 def _fn0(x):
     return x
 
 def _fn1(x):
-    return x.tile(reps=(2,))
+    return mx.np.tile(x, reps=(2,))
 
 def _fn2(x):
-    return x.tile(reps=(3,))
+    return mx.np.tile(x, reps=(3,))
 
 def test_random_transform_dataloader():
     dataset = DummySequentialDataset(20)
