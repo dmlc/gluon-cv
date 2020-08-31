@@ -118,8 +118,10 @@ class KITTIOdomDataset(KITTIDataset):
     """KITTI dataset for odometry training and testing
     """
 
-    def __init__(self, *args, **kwargs):
-        super(KITTIOdomDataset, self).__init__(*args, **kwargs)
+    # pylint: disable=keyword-arg-before-vararg
+    def __init__(self, data_path=os.path.join(
+            os.path.expanduser("~"), '.mxnet/datasets/kitti/kitti_odom'), *args, **kwargs):
+        super(KITTIOdomDataset, self).__init__(data_path, *args, **kwargs)
 
     def get_image_path(self, folder, frame_index, side):
         f_str = "{:06d}{}".format(frame_index, self.img_ext)

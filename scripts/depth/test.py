@@ -7,6 +7,7 @@
 from __future__ import absolute_import, division, print_function
 
 import os
+import time
 from tqdm import tqdm
 import cv2
 import numpy as np
@@ -17,7 +18,7 @@ from gluoncv.data import KITTIRAWDataset
 from gluoncv.data.kitti.kitti_utils import dict_batchify_fn, readlines
 from gluoncv.model_zoo import get_model
 
-from gluoncv.model_zoo.monodepthv2.layers import disp_to_depth
+from gluoncv.model_zoo.monodepthv2.layers import disp_to_depth, compute_depth_errors
 from options import MonodepthOptions
 
 cv2.setNumThreads(0)  # This speeds up evaluation 5x on our unix systems (OpenCV 3.3.1)
@@ -28,27 +29,6 @@ splits_dir = os.path.join(os.path.expanduser("~"), ".mxnet/datasets/kitti", "spl
 # baseline of 0.1 units. The KITTI rig has a baseline of 54cm. Therefore,
 # to convert our stereo predictions to real-world scale we multiply our depths by 5.4.
 STEREO_SCALE_FACTOR = 5.4
-
-
-def compute_errors(gt, pred):
-    """Computation of error metrics between predicted and ground truth depths
-    """
-    thresh = np.maximum((gt / pred), (pred / gt))
-    a1 = (thresh < 1.25).mean()
-    a2 = (thresh < 1.25 ** 2).mean()
-    a3 = (thresh < 1.25 ** 3).mean()
-
-    rmse = (gt - pred) ** 2
-    rmse = np.sqrt(rmse.mean())
-
-    rmse_log = (np.log(gt) - np.log(pred)) ** 2
-    rmse_log = np.sqrt(rmse_log.mean())
-
-    abs_rel = np.mean(np.abs(gt - pred) / gt)
-
-    sq_rel = np.mean(((gt - pred) ** 2) / gt)
-
-    return abs_rel, sq_rel, rmse, rmse_log, a1, a2, a3
 
 
 def batch_post_process_disparity(l_disp, r_disp):
@@ -81,7 +61,7 @@ def evaluate(opt):
         dataloader = gluon.data.DataLoader(
             dataset, batch_size=opt.batch_size, shuffle=False,
             batchify_fn=dict_batchify_fn, num_workers=opt.num_workers,
-            pin_memory=True, last_batch='rollover')
+            pin_memory=True, last_batch='keep')
 
         ############################ loading model ############################
         model = None
@@ -93,12 +73,13 @@ def evaluate(opt):
                                   pretrained=True)
             else:
                 # loading weights from customer
-                assert opt.eval_model is not None, '=> Please provide the checkpoint using --eval_model'
+                assert opt.eval_model is not None, \
+                    '=> Please provide the checkpoint using --eval_model'
                 weights_path = os.path.join(opt.load_weights_folder, opt.eval_model)
                 model = get_model(opt.model_zoo, pretrained_base=False, ctx=opt.ctx)
                 model.load_parameters(weights_path, ctx=opt.ctx)
         else:
-            assert "Must choose a model from model_zoo, " \
+            assert "Must choose a depth model from model_zoo, " \
                    "please provide the model_zoo using --model_zoo"
 
         # use hybridize mode
@@ -108,10 +89,12 @@ def evaluate(opt):
         ############################ inference ############################
         pred_disps = []
         tbar = tqdm(dataloader)
+        t_gpu = 0
         for i, data in enumerate(tbar):
             input_color = data[("color", 0, 0)]
             input_color = input_color.as_in_context(context=opt.ctx[0])
 
+            tic = time.time()
             if opt.hybridize:
                 decoder_output = model(input_color)
 
@@ -119,19 +102,21 @@ def evaluate(opt):
                 # Here, we have to transfer the output to dict type.
                 outputs = {}
                 idx = 0
-                for i in range(4, -1, -1):
-                    if i in opt.scales:
-                        outputs[("disp", i)] = decoder_output[idx]
+                for scale in range(4, -1, -1):
+                    if scale in opt.scales:
+                        outputs[("disp", scale)] = decoder_output[idx]
                         idx += 1
             else:
                 outputs = model.predict(input_color)
-
+            t_gpu += time.time() - tic
             pred_disp, _ = disp_to_depth(outputs[("disp", 0)], opt.min_depth, opt.max_depth)
             pred_disp = pred_disp.as_in_context(mx.cpu())[:, 0].asnumpy()
 
             pred_disps.append(pred_disp)
 
         pred_disps = np.concatenate(pred_disps)
+        gpu_time = t_gpu / len(dataset)
+        print("\nAverage inference time {:0.3f}ms, {:0.3f}fps\n".format(gpu_time * 1000, 1 / gpu_time))
 
     else:
         # Load predictions from file
@@ -220,7 +205,7 @@ def evaluate(opt):
         pred_depth[pred_depth < MIN_DEPTH] = MIN_DEPTH
         pred_depth[pred_depth > MAX_DEPTH] = MAX_DEPTH
 
-        errors.append(compute_errors(gt_depth, pred_depth))
+        errors.append(compute_depth_errors(gt_depth, pred_depth))
 
     if not opt.disable_median_scaling:
         ratios = np.array(ratios)

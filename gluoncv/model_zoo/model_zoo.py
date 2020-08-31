@@ -1,4 +1,4 @@
-# pylint: disable=wildcard-import, unused-wildcard-import
+# pylint: disable=wildcard-import, unused-wildcard-import, line-too-long
 """Model store which handles pretrained models from both
 mxnet.gluon.model_zoo.vision and gluoncv.models
 """
@@ -42,7 +42,7 @@ from .siamrpn import *
 from .icnet import *
 from .fastscnn import *
 from .danet import *
-from .monodepthv2.monodepth2 import *
+from .monodepthv2 import *
 
 __all__ = ['get_model', 'get_model_list']
 
@@ -369,7 +369,11 @@ _models = {
     'hrnet_w18_small_v2_s' : hrnet_w18_small_v2_s,
     'hrnet_w48_s' : hrnet_w48_s,
     'siamrpn_alexnet_v2_otb15': siamrpn_alexnet_v2_otb15,
-    'monodepth2_resnet18_kitti_stereo_640x192': get_monodepth2_resnet18_kitti_stereo_640x192
+    'monodepth2_resnet18_kitti_stereo_640x192': get_monodepth2_resnet18_kitti_stereo_640x192,
+    'monodepth2_resnet18_kitti_mono_640x192': get_monodepth2_resnet18_kitti_mono_640x192,
+    'monodepth2_resnet18_kitti_mono+stereo_640x192': get_monodepth2_resnet18_kitti_mono_stereo_640x192,
+    'monodepth2_resnet18_posenet_kitti_mono_640x192': get_monodepth2_resnet18_posenet_kitti_mono_640x192,
+    'monodepth2_resnet18_posenet_kitti_mono+stereo_640x192': get_monodepth2_resnet18_posenet_kitti_mono_stereo_640x192
 }
 
 

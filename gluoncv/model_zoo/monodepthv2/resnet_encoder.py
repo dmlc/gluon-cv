@@ -4,7 +4,9 @@ https://github.com/nianticlabs/monodepth2/blob/master/networks/resnet_encoder.py
 """
 from __future__ import absolute_import, division, print_function
 
+import os
 import numpy as np
+import mxnet as mx
 
 from mxnet.gluon import nn
 from mxnet.context import cpu
@@ -26,8 +28,12 @@ class ResnetEncoder(nn.HybridBlock):
     num_input_images : int
         The number of input sequences. 1 for depth encoder, larger than 1 for pose encoder.
         (Default: 1)
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
     """
-    def __init__(self, backbone, pretrained, num_input_images=1, ctx=cpu(), **kwargs):
+    def __init__(self, backbone, pretrained, num_input_images=1,
+                 root=os.path.join(os.path.expanduser('~'), '.mxnet/models'),
+                 ctx=cpu(), **kwargs):
         super(ResnetEncoder, self).__init__()
 
         self.num_ch_enc = np.array([64, 64, 128, 256, 512])
@@ -38,11 +44,33 @@ class ResnetEncoder(nn.HybridBlock):
                    'resnet101': resnet101_v1s,
                    'resnet152': resnet152_v1s}
 
+        num_layers = {'resnet18': 18,
+                      'resnet34': 34,
+                      'resnet50': 50,
+                      'resnet101': 101,
+                      'resnet152': 152}
+
         if backbone not in resnets:
             raise ValueError("{} is not a valid resnet".format(backbone))
 
         if num_input_images > 1:
-            pass
+            self.encoder = resnets[backbone](pretrained=False, ctx=ctx, **kwargs)
+            if pretrained:
+                filename = os.path.join(
+                    root, 'resnet%d_v%db_multiple_inputs.params' % (num_layers[backbone], 1))
+                if not os.path.isfile(filename):
+                    from ..model_store import get_model_file
+                    loaded = mx.nd.load(get_model_file('resnet%d_v%db' % (num_layers[backbone], 1),
+                                                       tag=pretrained, root=root))
+                    loaded['conv1.weight'] = mx.nd.concat(
+                        *([loaded['conv1.weight']] * num_input_images), dim=1) / num_input_images
+                    mx.nd.save(filename, loaded)
+                self.encoder.load_parameters(filename, ctx=ctx)
+                from ...data import ImageNet1kAttr
+                attrib = ImageNet1kAttr()
+                self.encoder.synset = attrib.synset
+                self.encoder.classes = attrib.classes
+                self.encoder.classes_long = attrib.classes_long
         else:
             self.encoder = resnets[backbone](pretrained=pretrained, ctx=ctx, **kwargs)
 

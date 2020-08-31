@@ -16,7 +16,6 @@ from options import MonodepthOptions
 options = MonodepthOptions()
 opts = options.parse()
 
-
 if __name__ == "__main__":
     # build logger
     file_handler = logging.FileHandler(os.path.join(opts.log_dir, opts.model_zoo, "train.log"))
@@ -32,4 +31,4 @@ if __name__ == "__main__":
     tic = time.time()
     trainer.train()
     logger.info("Training Finished! Total training time is %dh %dm" %
-                (int((time.time() - tic) / 3600), int((time.time() - tic) % 3600 / 60)) )
+                (int((time.time() - tic) / 3600), int((time.time() - tic) % 3600 / 60)))
