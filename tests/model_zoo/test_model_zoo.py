@@ -100,7 +100,6 @@ def _test_bn_global_stats(model_list, **kwargs):
         gcv.model_zoo.get_model(model, norm_layer=_BatchNorm, use_global_stats=True, **kwargs)
 
 @try_gpu(0)
-@unittest.skip("temporarily disabled")
 def test_classification_models():
     ctx = mx.context.current_context()
     x = mx.random.uniform(shape=(2, 3, 32, 32), ctx=ctx)
@@ -123,31 +122,31 @@ def test_imagenet_models():
     x = mx.random.uniform(shape=(2, 3, 224, 224), ctx=ctx)
     models = ['resnet18_v1', 'resnet34_v1',
               'resnet50_v1', 'resnet101_v1', 'resnet152_v1',
-            #   'resnet18_v1b', 'resnet34_v1b', 'resnet50_v1b_gn',
-            #   'resnet50_v1b', 'resnet101_v1b', 'resnet152_v1b',
-            #   'resnet50_v1c', 'resnet101_v1c', 'resnet152_v1c',
-            #   'resnet50_v1d', 'resnet101_v1d', 'resnet152_v1d',
-            #   'resnet50_v1e', 'resnet101_v1e', 'resnet152_v1e',
+              'resnet18_v1b', 'resnet34_v1b', 'resnet50_v1b_gn',
+              'resnet50_v1b', 'resnet101_v1b', 'resnet152_v1b',
+              'resnet50_v1c', 'resnet101_v1c', 'resnet152_v1c',
+              'resnet50_v1d', 'resnet101_v1d', 'resnet152_v1d',
+              'resnet50_v1e', 'resnet101_v1e', 'resnet152_v1e',
               'resnet18_v2', 'resnet34_v2',
               'resnet50_v2', 'resnet101_v2', 'resnet152_v2',
-            #   'resnest50', 'resnest101', 'resnest200', 'resnest269',
-            #   'resnext50_32x4d', 'resnext101_32x4d', 'resnext101_64x4d',
-            #   'se_resnext50_32x4d', 'se_resnext101_32x4d', 'se_resnext101_64x4d',
-            #   'se_resnet18_v1', 'se_resnet34_v1', 'se_resnet50_v1',
-            #   'se_resnet101_v1', 'se_resnet152_v1',
-            #   'se_resnet18_v2', 'se_resnet34_v2', 'se_resnet50_v2',
-            #   'se_resnet101_v2', 'se_resnet152_v2',
-            # #   'senet_154', 'squeezenet1.0', 'squeezenet1.1',
+              'resnest50', 'resnest101', 'resnest200', 'resnest269',
+              'resnext50_32x4d', 'resnext101_32x4d', 'resnext101_64x4d',
+              'se_resnext50_32x4d', 'se_resnext101_32x4d', 'se_resnext101_64x4d',
+              'se_resnet18_v1', 'se_resnet34_v1', 'se_resnet50_v1',
+              'se_resnet101_v1', 'se_resnet152_v1',
+              'se_resnet18_v2', 'se_resnet34_v2', 'se_resnet50_v2',
+              'se_resnet101_v2', 'se_resnet152_v2',
+            #   'senet_154', 'squeezenet1.0', 'squeezenet1.1',
             #   'mobilenet1.0', 'mobilenet0.75', 'mobilenet0.5', 'mobilenet0.25',
             #   'mobilenetv2_1.0', 'mobilenetv2_0.75', 'mobilenetv2_0.5', 'mobilenetv2_0.25',
             #   'mobilenetv3_large', 'mobilenetv3_small',
-            #   'densenet121', 'densenet161', 'densenet169', 'densenet201',
+              'densenet121', 'densenet161', 'densenet169', 'densenet201',
             #   'darknet53', 'alexnet', 'googlenet',
             #   'vgg11', 'vgg11_bn', 'vgg13', 'vgg13_bn',
             #   'vgg16', 'vgg16_bn', 'vgg19', 'vgg19_bn',
-            #   'residualattentionnet56', 'residualattentionnet92',
-            #   'residualattentionnet128', 'residualattentionnet164',
-            #   'residualattentionnet200', 'residualattentionnet236', 'residualattentionnet452',
+              'residualattentionnet56', 'residualattentionnet92',
+              'residualattentionnet128', 'residualattentionnet164',
+              'residualattentionnet200', 'residualattentionnet236', 'residualattentionnet452',
             #   'resnet18_v1b_0.89', 'resnet50_v1d_0.86', 'resnet50_v1d_0.48',
             #   'resnet50_v1d_0.37', 'resnet50_v1d_0.11',
             #   'resnet101_v1d_0.76', 'resnet101_v1d_0.73'
@@ -422,7 +421,6 @@ def test_set_nms():
         net(x)
 
 @try_gpu(0)
-@unittest.skip("temporarily disabled")
 def test_segmentation_models():
     ctx = mx.context.current_context()
     x = mx.random.uniform(shape=(1, 3, 480, 480), ctx=ctx)

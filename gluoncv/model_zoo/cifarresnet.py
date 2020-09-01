@@ -29,6 +29,8 @@ from mxnet.gluon.block import HybridBlock
 from mxnet.gluon import nn
 from mxnet.gluon.nn import BatchNorm
 from mxnet import cpu
+import mxnet as mx
+mx.npx.set_up()
 
 # Helpers
 def _conv3x3(channels, stride, in_channels):
@@ -78,6 +80,7 @@ class CIFARBasicBlockV1(HybridBlock):
 
     def hybrid_forward(self, F, x):
         """Hybrid forward"""
+        x = x.as_np_ndarray()
         residual = x
 
         x = self.body(x)
@@ -85,7 +88,7 @@ class CIFARBasicBlockV1(HybridBlock):
         if self.downsample:
             residual = self.downsample(residual)
 
-        x = F.Activation(residual+x, act_type='relu')
+        x = F.npx.activation(residual+x, act_type='relu')
 
         return x
 
@@ -127,14 +130,15 @@ class CIFARBasicBlockV2(HybridBlock):
 
     def hybrid_forward(self, F, x):
         """Hybrid forward"""
+        x = x.as_np_ndarray()
         residual = x
 
         x = self.bn1(x)
-        x = F.Activation(x, act_type='relu')
+        x = F.npx.activation(x, act_type='relu')
         x = self.conv1(x)
 
         x = self.bn2(x)
-        x = F.Activation(x, act_type='relu')
+        x = F.npx.activation(x, act_type='relu')
         x = self.conv2(x)
 
         if self.downsample:
@@ -194,6 +198,7 @@ class CIFARResNetV1(HybridBlock):
         return layer
 
     def hybrid_forward(self, F, x):
+        x = x.as_np_ndarray()
         x = self.features(x)
         x = self.output(x)
 
@@ -259,6 +264,7 @@ class CIFARResNetV2(HybridBlock):
         return layer
 
     def hybrid_forward(self, F, x):
+        x = x.as_np_ndarray()
         x = self.features(x)
         x = self.output(x)
         return x

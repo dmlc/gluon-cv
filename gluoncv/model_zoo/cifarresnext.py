@@ -78,6 +78,7 @@ class CIFARBlock(HybridBlock):
 
     def hybrid_forward(self, F, x):
         """Hybrid forward"""
+        x = x.as_np_ndarray()
         residual = x
 
         x = self.body(x)
@@ -85,7 +86,7 @@ class CIFARBlock(HybridBlock):
         if self.downsample:
             residual = self.downsample(residual)
 
-        x = F.Activation(residual+x, act_type='relu')
+        x = F.npx.activation(residual+x, act_type='relu')
 
         return x
 
@@ -147,6 +148,7 @@ class CIFARResNext(HybridBlock):
         return layer
 
     def hybrid_forward(self, F, x):
+        x = x.as_np_ndarray()
         x = self.features(x)
         x = self.output(x)
 

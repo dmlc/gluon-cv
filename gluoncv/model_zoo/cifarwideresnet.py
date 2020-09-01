@@ -73,17 +73,18 @@ class CIFARBasicBlockV2(HybridBlock):
 
     def hybrid_forward(self, F, x):
         """Hybrid forward"""
+        x = x.as_np_ndarray()
         residual = x
         x = self.bn1(x)
-        x = F.Activation(x, act_type='relu')
+        x = F.npx.activation(x, act_type='relu')
         if self.downsample:
             residual = self.downsample(x)
         x = self.conv1(x)
 
         x = self.bn2(x)
-        x = F.Activation(x, act_type='relu')
+        x = F.npx.activation(x, act_type='relu')
         if self.droprate > 0:
-            x = F.Dropout(x, self.droprate)
+            x = F.npx.dropout(x, self.droprate)
         x = self.conv2(x)
 
         return x + residual

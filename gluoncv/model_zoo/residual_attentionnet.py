@@ -47,7 +47,8 @@ class UpsamplingBilinear2d(HybridBlock):
         self.size = size
 
     def hybrid_forward(self, F, x):
-        return F.contrib.BilinearResize2D(x, height=self.size, width=self.size)
+        x = x.as_np_ndarray()
+        return F.contrib.BilinearResize2D(x.as_nd_ndarray(), height=self.size, width=self.size).as_np_ndarray()
 
 
 class ResidualBlock(HybridBlock):
@@ -88,15 +89,16 @@ class ResidualBlock(HybridBlock):
                 self.conv4 = nn.Conv2D(channels, 1, stride, use_bias=False)
 
     def hybrid_forward(self, F, x):
+        x = x.as_nd_ndarray()
         residual = x
         out = self.bn1(x)
-        out1 = F.Activation(out, act_type='relu')
+        out1 = F.npx.activation(out, act_type='relu')
         out = self.conv1(out1)
         out = self.bn2(out)
-        out = F.Activation(out, act_type='relu')
+        out = F.npx.activation(out, act_type='relu')
         out = self.conv2(out)
         out = self.bn3(out)
-        out = F.Activation(out, act_type='relu')
+        out = F.npx.activation(out, act_type='relu')
         out = self.conv3(out)
         if self.stride != 1 or (self.channels != self.in_channels):
             residual = self.conv4(out1)
@@ -198,6 +200,7 @@ class AttentionModule_stage1(nn.HybridBlock):
             self.last_blocks = ResidualBlock(channels)
 
     def hybrid_forward(self, F, x):
+        x = x.as_np_ndarray()
         x = self.first_residual_blocks(x)
         out_trunk = self.trunk_branches(x)
 
@@ -212,19 +215,19 @@ class AttentionModule_stage1(nn.HybridBlock):
         out_mpool3 = self.mpool3(out_softmax2)
         out_softmax3 = self.softmax3_blocks(out_mpool3)
 
-        out_interp3 = F.elemwise_add(self.interpolation3(out_softmax3), out_softmax2)
-        out = F.elemwise_add(out_interp3, out_skip2_connection)
+        out_interp3 = self.interpolation3(out_softmax3) + out_softmax2
+        out = out_interp3 + out_skip2_connection
 
         out_softmax4 = self.softmax4_blocks(out)
-        out_interp2 = F.elemwise_add(self.interpolation2(out_softmax4), out_softmax1)
-        out = F.elemwise_add(out_interp2, out_skip1_connection)
+        out_interp2 =self.interpolation2(out_softmax4) + out_softmax1
+        out = out_interp2 + out_skip1_connection
 
         out_softmax5 = self.softmax5_blocks(out)
-        out_interp1 = F.elemwise_add(self.interpolation1(out_softmax5), out_trunk)
+        out_interp1 = self.interpolation1(out_softmax5) + out_trunk
 
         out_softmax6 = self.softmax6_blocks(out_interp1)
-        out = F.elemwise_add(F.ones_like(out_softmax6), out_softmax6)
-        out = F.elemwise_mul(out, out_trunk)
+        out = F.np.ones_like(out_softmax6) + out_softmax6
+        out = out * out_trunk
 
         out_last = self.last_blocks(out)
         return out_last
@@ -294,6 +297,7 @@ class AttentionModule_stage2(nn.HybridBlock):
             self.last_blocks = ResidualBlock(channels)
 
     def hybrid_forward(self, F, x):
+        x = x.as_np_ndarray()
         x = self.first_residual_blocks(x)
         out_trunk = self.trunk_branches(x)
         out_mpool1 = self.mpool1(x)
@@ -301,13 +305,13 @@ class AttentionModule_stage2(nn.HybridBlock):
         out_skip1_connection = self.skip1_connection_residual_block(out_softmax1)
         out_mpool2 = self.mpool2(out_softmax1)
         out_softmax2 = self.softmax2_blocks(out_mpool2)
-        out_interp2 = F.elemwise_add(self.interpolation2(out_softmax2), out_softmax1)
-        out = F.elemwise_add(out_interp2, out_skip1_connection)
+        out_interp2 = self.interpolation2(out_softmax2) + out_softmax1
+        out = out_interp2 + out_skip1_connection
         out_softmax3 = self.softmax3_blocks(out)
-        out_interp1 = F.elemwise_add(self.interpolation1(out_softmax3), out_trunk)
+        out_interp1 = self.interpolation1(out_softmax3) + out_trunk
         out_softmax4 = self.softmax4_blocks(out_interp1)
-        out = F.elemwise_add(F.ones_like(out_softmax4), out_softmax4)
-        out = F.elemwise_mul(out, out_trunk)
+        out = F.np.ones_like(out_softmax4) + out_softmax4
+        out = out + out_trunk
         out_last = self.last_blocks(out)
         return out_last
 
@@ -363,14 +367,15 @@ class AttentionModule_stage3(nn.HybridBlock):
             self.last_blocks = ResidualBlock(channels)
 
     def hybrid_forward(self, F, x):
+        x = x.as_np_ndarray()
         x = self.first_residual_blocks(x)
         out_trunk = self.trunk_branches(x)
         out_mpool1 = self.mpool1(x)
         out_softmax1 = self.softmax1_blocks(out_mpool1)
-        out_interp1 = F.elemwise_add(self.interpolation1(out_softmax1), out_trunk)
+        out_interp1 = self.interpolation1(out_softmax1) + out_trunk
         out_softmax2 = self.softmax2_blocks(out_interp1)
-        out = F.elemwise_add(F.ones_like(out_softmax2), out_softmax2)
-        out = F.elemwise_mul(out, out_trunk)
+        out = F.np.ones_like(out_softmax2) + out_softmax2
+        out = out * out_trunk
         out_last = self.last_blocks(out)
         return out_last
 
@@ -417,12 +422,13 @@ class AttentionModule_stage4(nn.HybridBlock):
             self.last_blocks = ResidualBlock(channels)
 
     def hybrid_forward(self, F, x):
+        x = x.as_np_ndarray()
         x = self.first_residual_blocks(x)
         out_trunk = self.trunk_branches(x)
         out_softmax1 = self.softmax1_blocks(x)
         out_softmax2 = self.softmax2_blocks(out_softmax1)
-        out = F.elemwise_add(F.ones_like(out_softmax2), out_softmax2)
-        out = F.elemwise_mul(out, out_trunk)
+        out = F.np.ones_like(out_softmax2) * out_softmax2
+        out = out * out_trunk
         out_last = self.last_blocks(out)
         return out_last
 
@@ -484,6 +490,7 @@ class ResidualAttentionModel(nn.HybridBlock):
             self.fc = nn.Conv2D(classes, kernel_size=1)
 
     def hybrid_forward(self, F, x):
+        x = x.as_np_ndarray()
         x = self.conv1(x)
         x = self.mpool1(x)
         x = self.residual_block1(x)
@@ -497,7 +504,7 @@ class ResidualAttentionModel(nn.HybridBlock):
         x = self.residual_block6(x)
         x = self.mpool2(x)
         x = self.fc(x)
-        x = F.Flatten(x)
+        x = F.npx.batch_flatten(x)
         return x
 
 
@@ -564,6 +571,7 @@ class cifar_ResidualAttentionModel(nn.HybridBlock):
             self.fc = nn.Conv2D(classes, kernel_size=1)
 
     def hybrid_forward(self, F, x):
+        x = x.as_np_ndarray()
         x = self.conv1(x)
         x = self.residual_block1(x)
         x = self.attention_module1(x)
@@ -576,7 +584,7 @@ class cifar_ResidualAttentionModel(nn.HybridBlock):
         x = self.residual_block6(x)
         x = self.mpool2(x)
         x = self.fc(x)
-        x = F.Flatten(x)
+        x = F.npx.batch_flatten(x)
         return x
 
 

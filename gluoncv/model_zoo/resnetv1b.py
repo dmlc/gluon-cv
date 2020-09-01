@@ -37,6 +37,7 @@ class BasicBlockV1b(HybridBlock):
         self.strides = strides
 
     def hybrid_forward(self, F, x):
+        x = x.as_np_ndarray()
         residual = x
 
         out = self.conv1(x)
@@ -84,6 +85,7 @@ class BottleneckV1b(HybridBlock):
         self.strides = strides
 
     def hybrid_forward(self, F, x):
+        x = x.as_np_ndarray()
         residual = x
 
         out = self.conv1(x)
@@ -246,6 +248,7 @@ class ResNetV1b(HybridBlock):
         return layers
 
     def hybrid_forward(self, F, x):
+        x = x.as_np_ndarray()
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
