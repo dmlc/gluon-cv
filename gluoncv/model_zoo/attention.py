@@ -77,3 +77,4 @@ class CAM_Module(HybridBlock):
 
         out = gamma * out + x
         return out
+        
