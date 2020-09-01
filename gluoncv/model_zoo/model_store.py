@@ -1,3 +1,4 @@
+# pylint: disable=wildcard-import, unused-wildcard-import, line-too-long
 """Model store which provides pretrained models."""
 from __future__ import print_function
 
