@@ -13,7 +13,7 @@ from ...utils import random as _random
 def _get_config():
     pass
 
-def  _compare_config(r1, r2):
+def _compare_config(r1, r2):
     r1 = copy.deepcopy(r1)
     r2 = copy.deepcopy(r2)
     ignored_keys = ('seed', 'logdir')

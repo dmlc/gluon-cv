@@ -1,11 +1,14 @@
 import logging
+import numpy as np
 
 import autogluon as ag
 from autogluon.core.decorator import sample_config
 from autogluon.scheduler.resource import get_cpu_count, get_gpu_count
 from autogluon.task import BaseTask
+from autogluon.task.object_detection.dataset.voc import CustomVOCDetectionBase
 from autogluon.utils import collect_params
 
+from ... import data as gdata
 from ... import utils as gutils
 from ..estimators.base_estimator import ConfigDict, BaseEstimator
 from ..estimators.ssd import SSDEstimator
@@ -58,9 +61,75 @@ class ObjectDetection(BaseTask):
         self._config = ConfigDict(config)
 
         if self._config.get('auto_search', True):
-            # The strategies can be injected here, for example: automatic suggest some hps
+            # The strategies can be injected here, for example: automatic suggest some hyperparameters
             # based on the dataset statistics
-            pass
+
+            # get dataset statistics
+            dataset_name = self._config.get('dataset', 'voc')
+            dataset_root = self._config.get('dataset_root', '~/.mxnet/datasets/')
+            if dataset_name == 'voc':
+                train_dataset = gdata.VOCDetection(splits=[(2007, 'trainval'), (2012, 'trainval')])
+            elif dataset_name == 'voc_tiny':
+                train_dataset = CustomVOCDetectionBase(classes=('motorbike',),
+                                                       root=dataset_root + 'tiny_motorbike',
+                                                       splits=[('', 'trainval')])
+            elif dataset_name == 'coco':
+                train_dataset = gdata.COCODetection(splits=['instances_train2017'])
+            else:
+                # user needs to define a Dataset object "train_dataset" when using custom dataset
+                train_dataset = self._config.get('train_dataset', None)
+
+            # choose 100 examples to calculate average statistics
+            num_examples = 100
+            image_height_list = []
+            image_width_list = []
+            image_size_list = []
+            num_objects_list = []
+            object_height_list = []
+            object_width_list = []
+            object_size_list = []
+
+            for i in range(num_examples):
+                train_image, train_label = train_dataset[i]
+
+                image_height_list.append(train_image.shape[0])
+                image_width_list.append(train_image.shape[1])
+                image_size_list.append(train_image.shape[0] * train_image.shape[1])
+
+                bounding_boxes = train_label[:, :4]
+                num_objects_list.append(bounding_boxes.shape[0])
+                object_height_list.append(np.mean(bounding_boxes[:, 3] - bounding_boxes[:, 1]))
+                object_width_list.append(np.mean(bounding_boxes[:, 2] - bounding_boxes[:, 0]))
+                object_size_list.append(np.mean((bounding_boxes[:, 3] - bounding_boxes[:, 1]) *
+                                                (bounding_boxes[:, 2] - bounding_boxes[:, 0])))
+
+            num_images = len(train_dataset)
+            image_height = np.mean(image_height_list)
+            image_width = np.mean(image_width_list)
+            image_size = np.mean(image_size_list)
+            num_classes = len(train_dataset.CLASSES)
+            num_objects = np.mean(num_objects_list)
+            object_height = np.mean(object_height_list)
+            object_width = np.mean(object_width_list)
+            object_size = np.mean(object_size_list)
+
+            print('number of training images:', num_images)
+            print('average image height:', image_height)
+            print('average image width:', image_width)
+            print('average image size:', image_size)
+            print('number of total object classes:', num_classes)
+            print('average number of objects in an image:', num_objects)
+            print('average bounding box height:', object_height)
+            print('average bounding box width:', object_width)
+            print('average bounding box size:', object_size)
+
+            # specify 3 parts of config: dataset, model, training
+            if num_images >= 1000:
+                pass
+            elif 100 <= num_images < 1000:
+                pass
+            else:
+                pass
 
         cpu_count = get_cpu_count()
         nthreads_per_trial = self._config.get('nthreads_per_trial', cpu_count)
