@@ -1,3 +1,4 @@
+# pylint: disable=wildcard-import, unused-wildcard-import, line-too-long
 """Model store which provides pretrained models."""
 from __future__ import print_function
 
@@ -221,7 +222,11 @@ _model_sha1 = {name: checksum for checksum, name in [
     ('f782057569a768faa03940d8106f944ffe3c9733', 'center_net_mobilenetv3_small_duc_coco'),
     ('2cab979937586d3f8532d86130030c611ae38d2d', 'center_net_mobilenetv3_large_duc_voc'),
     ('bfc55dfd13ef8e9fd052141a3c42338179f5949d', 'center_net_mobilenetv3_large_duc_coco'),
-    ('92871317cdc4155ab9ed7895d363c0750abf973d', 'monodepth2_resnet18_kitti_stereo_640x192'),
+    ('83eea4a9dda3323dca4b11c34c2d0c557056d7b5', 'monodepth2_resnet18_kitti_stereo_640x192'),
+    ('c881771d720e321efd85f9e8ce4ef455de9ae9fc', 'monodepth2_resnet18_kitti_mono_640x192'),
+    ('9515c219cf72575636e2168728ebb9f12fe8e4df', 'monodepth2_resnet18_kitti_mono+stereo_640x192'),
+    ('661ee2e1bf824f4f4549b3488c59dec0b0078c38', 'monodepth2_resnet18_posenet_kitti_mono_640x192'),
+    ('c14979bb016ed4f555fa09004ddc7616dd60b8b9', 'monodepth2_resnet18_posenet_kitti_mono+stereo_640x192'),
 ]}
 
 apache_repo_url = 'https://apache-mxnet.s3-accelerate.dualstack.amazonaws.com/'
