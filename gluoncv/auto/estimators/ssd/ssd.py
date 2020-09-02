@@ -59,7 +59,7 @@ class SSDEstimator(BaseEstimator):
         Parameters
         ----------
         config : configuration object
-            Configuration object containing information for constructing Faster R-CNN estimators.
+            Configuration object containing information for constructing SSD estimators.
         logger : logger object, default is None
             If not `None`, will use default logging object.
         reporter : reporter object, default is None

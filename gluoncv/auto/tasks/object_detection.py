@@ -11,13 +11,21 @@ from ..estimators.base_estimator import ConfigDict, BaseEstimator
 from ..estimators.ssd import SSDEstimator
 from ..estimators.faster_rcnn import FasterRCNNEstimator
 from ..estimators import YoloEstimator, CenterNetEstimator
-from .auto_config import auto_args
+from .auto_config import auto_args, config_to_nested
 
 
 __all__ = ['ObjectDetection']
 
 @ag.args()
 def _train_object_detection(args, reporter):
+    """
+    Parameters
+    ----------
+    args: <class 'autogluon.utils.edict.EasyDict'>
+    """
+    # convert user defined config to nested form
+    args = config_to_nested(args)
+
     # fix seed for mxnet, numpy and python builtin random generator.
     gutils.random.seed(args.train.seed)
 
@@ -35,8 +43,8 @@ def _train_object_detection(args, reporter):
         return str(e)
 
     # TODO: checkpointing needs to be done in a better way
-    # if args.final_fit:
-    #     return {'model_params': collect_params(estimator.net)}
+    if args.final_fit:
+        return {'model_params': collect_params(estimator.net)}
 
     return {}
 
@@ -67,8 +75,7 @@ class ObjectDetection(BaseTask):
                 "The number of requested GPUs is greater than the number of available GPUs."
                 "Reduce the number to {}".format(ngpus_per_trial))
 
-        # If only time_limits is given, the scheduler starts trials until the
-        # time limit is reached
+        # If only time_limits is given, the scheduler starts trials until the time limit is reached
         if self._config.num_trials is None and self._config.time_limits is None:
             self._config.num_trials = 2
 
@@ -83,12 +90,14 @@ class ObjectDetection(BaseTask):
         config['estimator'] = ag.Categorical(*estimator)
         config['num_workers'] = nthreads_per_trial
         config['gpus'] = [int(i) for i in range(ngpus_per_trial)]
+        config['seed'] = self._config.get('seed', 233)
         config['final_fit'] = False
 
         # automatically merge search configs according to user specified values
         args = auto_args(estimator, config)
 
-        _train_object_detection.register_args(**args)
+        # _train_object_detection.register_args(**args)
+        _train_object_detection.register_args(**config)
 
         self._config.search_strategy = self._config.get('search_strategy', 'random')
         self._config.scheduler_options = {
@@ -114,9 +123,11 @@ class ObjectDetection(BaseTask):
                                self._config.scheduler_options)
         self._logger.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> finish model fitting")
         best_config = sample_config(_train_object_detection.args, results['best_config'])
+        # convert best config to nested form
+        best_config = config_to_nested(best_config)
         self._logger.info('The best config: {}'.format(best_config))
 
         estimator = self._estimator(best_config)
         # TODO: checkpointing needs to be done in a better way
-        # estimator.put_parameters(results.pop('model_params'))
+        estimator.put_parameters(results.pop('model_params'))
         return estimator

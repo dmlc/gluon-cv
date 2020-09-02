@@ -40,14 +40,14 @@ def _get_dataset(dataset, args):
         # filename_zip = ag.download('https://autogluon.s3.amazonaws.com/datasets/tiny_motorbike.zip', path=root)
         # filename = ag.unzip(filename_zip, root=root)
         # data_root = os.path.join(root, filename)
-        train_dataset = CustomVOCDetectionBase(classes=('motorbike',), root=args.dataset_root + '/tiny_motorbike',
+        train_dataset = CustomVOCDetectionBase(classes=('motorbike',), root=args.dataset_root + 'tiny_motorbike',
                                                splits=[('', 'trainval')])
-        val_dataset = CustomVOCDetectionBase(classes=('motorbike',), root=args.dataset_root + '/tiny_motorbike',
+        val_dataset = CustomVOCDetectionBase(classes=('motorbike',), root=args.dataset_root + 'tiny_motorbike',
                                              splits=[('', 'test')])
         val_metric = VOC07MApMetric(iou_thresh=0.5, class_names=val_dataset.classes)
     elif dataset.lower() == 'coco':
-        train_dataset = gdata.COCODetection(root=args.dataset_root + '/coco', splits='instances_train2017')
-        val_dataset = gdata.COCODetection(root=args.dataset_root + '/coco', splits='instances_val2017', skip_empty=False)
+        train_dataset = gdata.COCODetection(root=args.dataset_root + 'coco', splits='instances_train2017')
+        val_dataset = gdata.COCODetection(root=args.dataset_root + 'coco', splits='instances_val2017', skip_empty=False)
         val_metric = COCODetectionMetric(
             val_dataset, os.path.join(args.logdir, args.save_prefix + '_eval'), cleanup=True,
             data_shape=(args.ssd.data_shape, args.ssd.data_shape))

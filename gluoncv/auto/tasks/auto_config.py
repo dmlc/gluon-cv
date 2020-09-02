@@ -1,8 +1,8 @@
 """Utils for auto configs"""
 import copy
-import collections.abc
 
 import autogluon as ag
+from autogluon.utils import EasyDict
 
 from ..estimators.base_estimator import BaseEstimator
 
@@ -54,7 +54,10 @@ def config_to_nested(config):
     else:
         raise NotImplementedError(config['meta_arch'], 'is not implemented.')
 
-    nested_config = {}
+    if isinstance(config, EasyDict):
+        nested_config = EasyDict()
+    elif isinstance(config, dict):
+        nested_config = {}
 
     for k, v in config.items():
         if k in config_mapping[config['meta_arch']]:
@@ -82,40 +85,44 @@ def config_to_space(config):
                 space[k] = ag.Dict()
             space[k] = config_to_space(v)
         else:
-            space.update({k: v})
+            space[k] = v
     return space
 
-##############################
-
-def cfg_to_space(cfg, space):
-    for k, v in cfg.items():
+def recursive_update(total_config, config):
+    for k, v in config.items():
         if isinstance(v, dict):
-            if k not in space.keys():
-                space[k] = ag.Dict()
-            cfg_to_space(v, space[k])
+            total_config[k] = recursive_update(total_config.get(k, {}), v)
         else:
-            space[k] = v
-
-def recursive_update(d, u):
-    for k, v in u.items():
-        if isinstance(v, collections.abc.Mapping):
-            d[k] = recursive_update(d.get(k, {}), v)
-        else:
-            d[k] = v
-    return d
+            total_config[k] = v
+    return total_config
 
 def auto_args(estimators, config):
-    """Merge updated config to default, and convert to search space"""
-    config = config_to_nested(config)
+    """
+    Merge user defined config to estimator default config, and convert to search space
+
+    Parameters
+    ----------
+    config: <class 'dict'>
+
+    Returns
+    -------
+    ag_space: <class 'autogluon.core.space.Dict'>
+    """
+    total_config = {}
+
+    # estimator default config
     if not isinstance(estimators, (tuple, list)):
         estimators = [estimators]
-    _cfg = {}
     for estimator in estimators:
         assert issubclass(estimator, BaseEstimator), estimator
-        cfg = copy.deepcopy(estimator._default_config)
-        recursive_update(_cfg, cfg)
-    # user custom search space
-    recursive_update(_cfg, config)
-    ag_space = ag.Dict()
-    cfg_to_space(_cfg, ag_space)
+        default_config = copy.deepcopy(estimator._default_config)  # <class 'dict'>
+        total_config = recursive_update(total_config, default_config)
+
+    # user defined config
+    nested_config = config_to_nested(config)
+    total_config = recursive_update(total_config, nested_config)
+
+    # convert to search space
+    ag_space = config_to_space(total_config)
+
     return ag_space
