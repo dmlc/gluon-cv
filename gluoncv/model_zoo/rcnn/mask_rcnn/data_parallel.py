@@ -2,7 +2,6 @@
 
 import mxnet as mx
 from mxnet import autograd
-from mxnet.contrib import amp
 
 from gluoncv.utils.parallel import Parallelizable
 
@@ -97,6 +96,7 @@ class ForwardBackwardTask(Parallelizable):
             rcnn_fgmask_metric = [[mask_targets, mask_masks], [mask_pred]]
 
             if self.amp_enabled:
+                from mxnet.contrib import amp
                 with amp.scale_loss(total_loss, self._optimizer) as scaled_losses:
                     autograd.backward(scaled_losses)
             else:
