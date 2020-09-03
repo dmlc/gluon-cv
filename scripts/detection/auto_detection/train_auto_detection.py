@@ -61,10 +61,10 @@ if __name__ == '__main__':
         'warmup_factor': 1. / 3.,
         'momentum': 0.9,
         'wd': 0.0005,
-        # 'log_interval': 100,
-        # 'save_prefix': '',
-        # 'save_interval': 10,
-        # 'val_interval': 1,
+        'log_interval': 100,
+        'save_prefix': '',
+        'save_interval': 10,
+        'val_interval': 1,
         'hybridize': True,
         'verbose': False,
         'transfer': 'coco',
@@ -190,6 +190,8 @@ if __name__ == '__main__':
         estimator = YoloEstimator
     elif args.meta_arch == 'center_net':
         estimator = CenterNetEstimator
+    else:
+        estimator = None
     task = ObjectDetection(vars(args), estimator)
     detector = task.fit()
     test_map = detector.evaluate()

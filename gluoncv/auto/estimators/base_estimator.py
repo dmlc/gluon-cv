@@ -13,7 +13,7 @@ from ...utils import random as _random
 def _get_config():
     pass
 
-def  _compare_config(r1, r2):
+def _compare_config(r1, r2):
     r1 = copy.deepcopy(r1)
     r2 = copy.deepcopy(r2)
     ignored_keys = ('seed', 'logdir')
@@ -124,7 +124,7 @@ class BaseEstimator:
 
         # try to auto resume
         prefix = None
-        if r.config.get('train', {}).get('auto_resume', True):
+        if r.config.get('train', {}).get('auto_resume', False):
             exists = [d for d in os.listdir(self._logdir) if d.startswith(name)]
             # latest timestamp
             exists = sorted(exists)
