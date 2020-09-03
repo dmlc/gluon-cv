@@ -281,6 +281,7 @@ print(posenet)
 #     the data of the KITTI RAW dataset, here we use the same dataset and split method as [Godard19]_.
 #     You need download the split zip file, and extract it to ``$(HOME)/.mxnet/datasets/kitti/``.
 #
+#
 #     Follow the command to get the dataset::
 #
 #       cd ~
@@ -325,7 +326,7 @@ train_loader = gluon.data.DataLoader(
 ##############################################################################
 # - Data Augmentation
 #
-#     we follow the standard data augmentation routine to transform the input image.
+#     We follow the standard data augmentation routine to transform the input image.
 #     Here, we just use RandomFlip with 50% probability for input images.
 #
 # Random pick one example for visualization:
@@ -421,14 +422,14 @@ plt.show()
 #     photometric loss between the reconstructed source image with the real source image.
 #
 #
-#     The whole process is divided into three steps,
+# The whole process is divided into three steps,
 #
-#     1. To back project each point of the target image to 3D space according to depth and camera intrinsic;
+# 1. To back project each point of the target image to 3D space according to depth and camera intrinsic;
 #
-#     2. To project 3D points to image plane according to camera extrinsic (pose) and intrinsic;
+# 2. To project 3D points to image plane according to camera extrinsic (pose) and intrinsic;
 #
-#     3. Sampling pixels from the source image to reconstruct a new image according to the projected points
-#     (exploit Spatial Transformer Networks (STN) to ensure that the sampling is differentiable).
+# 3. Sampling pixels from the source image to reconstruct a new image according to the projected points
+# (exploit Spatial Transformer Networks (STN) to ensure that the sampling is differentiable).
 #
 #
 # Back projection (2D to 3D) is defined as::
