@@ -14,14 +14,19 @@ Start Training Now
     Feel free to skip the tutorial because the training script is self-complete and ready to launch.
 
     :download:`Download Full Python Script: train.py<../../../scripts/depth/train.py>`
+
     :download:`Download Full Python Script: train.py<../../../scripts/depth/trainer.py>`
 
-    Example training command::
-        - mono+stereo
+    mono+stereo mode training command::
+
         python train.py --model_zoo monodepth2_resnet18_kitti_mono+stereo_640x192 --model_zoo_pose monodepth2_resnet18_posenet_kitti_mono+stereo_640x192 --pretrained_base --frame_ids 0 -1 1 --use_stereo --log_dir ./tmp/mono_stereo/ --png --gpu 0 --batch_size 8
-        - mono
+
+    mono mode training command::
+
         python train.py --model_zoo monodepth2_resnet18_kitti_mono_640x192 --model_zoo_pose monodepth2_resnet18_posenet_kitti_mono_640x192 --pretrained_base --log_dir ./tmp/mono/ --png --gpu 0 --batch_size 12
-        - stereo
+
+    stereo mode training command::
+
         python train.py --model_zoo monodepth2_resnet18_kitti_stereo_640x192 --pretrained_base --split eigen_full --frame_ids 0 --use_stereo --log_dir ./tmp/stereo/ --png --gpu 0 --batch_size 12
 
     For more training command options, please run ``python train.py -h``
@@ -74,65 +79,65 @@ import gluoncv
 #
 # The encoder is defined as::
 #
-# class ResnetEncoder(nn.HybridBlock):
-#     def __init__(self, backbone, pretrained, num_input_images=1,
-#                  root=os.path.join(os.path.expanduser('~'), '.mxnet/models'),
-#                  ctx=cpu(), **kwargs):
-#         super(ResnetEncoder, self).__init__()
+#     class ResnetEncoder(nn.HybridBlock):
+#         def __init__(self, backbone, pretrained, num_input_images=1,
+#                      root=os.path.join(os.path.expanduser('~'), '.mxnet/models'),
+#                      ctx=cpu(), **kwargs):
+#             super(ResnetEncoder, self).__init__()
 #
-#         self.num_ch_enc = np.array([64, 64, 128, 256, 512])
+#             self.num_ch_enc = np.array([64, 64, 128, 256, 512])
 #
-#         resnets = {'resnet18': resnet18_v1b,
-#                    'resnet34': resnet34_v1b,
-#                    'resnet50': resnet50_v1s,
-#                    'resnet101': resnet101_v1s,
-#                    'resnet152': resnet152_v1s}
+#             resnets = {'resnet18': resnet18_v1b,
+#                        'resnet34': resnet34_v1b,
+#                        'resnet50': resnet50_v1s,
+#                        'resnet101': resnet101_v1s,
+#                        'resnet152': resnet152_v1s}
 #
-#         num_layers = {'resnet18': 18,
-#                       'resnet34': 34,
-#                       'resnet50': 50,
-#                       'resnet101': 101,
-#                       'resnet152': 152}
+#             num_layers = {'resnet18': 18,
+#                           'resnet34': 34,
+#                           'resnet50': 50,
+#                           'resnet101': 101,
+#                           'resnet152': 152}
 #
-#         if backbone not in resnets:
-#             raise ValueError("{} is not a valid resnet".format(backbone))
+#             if backbone not in resnets:
+#                 raise ValueError("{} is not a valid resnet".format(backbone))
 #
-#         if num_input_images > 1:
-#             self.encoder = resnets[backbone](pretrained=False, ctx=ctx, **kwargs)
-#             if pretrained:
-#                 filename = os.path.join(
-#                     root, 'resnet%d_v%db_multiple_inputs.params' % (num_layers[backbone], 1))
-#                 if not os.path.isfile(filename):
-#                     from ..model_store import get_model_file
-#                     loaded = mx.nd.load(get_model_file('resnet%d_v%db' % (num_layers[backbone], 1),
-#                                                        tag=pretrained, root=root))
-#                     loaded['conv1.weight'] = mx.nd.concat(
-#                         *([loaded['conv1.weight']] * num_input_images), dim=1) / num_input_images
-#                     mx.nd.save(filename, loaded)
-#                 self.encoder.load_parameters(filename, ctx=ctx)
-#                 from ...data import ImageNet1kAttr
-#                 attrib = ImageNet1kAttr()
-#                 self.encoder.synset = attrib.synset
-#                 self.encoder.classes = attrib.classes
-#                 self.encoder.classes_long = attrib.classes_long
-#         else:
-#             self.encoder = resnets[backbone](pretrained=pretrained, ctx=ctx, **kwargs)
+#             if num_input_images > 1:
+#                 self.encoder = resnets[backbone](pretrained=False, ctx=ctx, **kwargs)
+#                 if pretrained:
+#                     filename = os.path.join(
+#                         root, 'resnet%d_v%db_multiple_inputs.params' % (num_layers[backbone], 1))
+#                     if not os.path.isfile(filename):
+#                         from ..model_store import get_model_file
+#                         loaded = mx.nd.load(get_model_file('resnet%d_v%db' % (num_layers[backbone], 1),
+#                                                            tag=pretrained, root=root))
+#                         loaded['conv1.weight'] = mx.nd.concat(
+#                             *([loaded['conv1.weight']] * num_input_images), dim=1) / num_input_images
+#                         mx.nd.save(filename, loaded)
+#                     self.encoder.load_parameters(filename, ctx=ctx)
+#                     from ...data import ImageNet1kAttr
+#                     attrib = ImageNet1kAttr()
+#                     self.encoder.synset = attrib.synset
+#                     self.encoder.classes = attrib.classes
+#                     self.encoder.classes_long = attrib.classes_long
+#             else:
+#                 self.encoder = resnets[backbone](pretrained=pretrained, ctx=ctx, **kwargs)
 #
-#         if backbone not in ('resnet18', 'resnet34'):
-#             self.num_ch_enc[1:] *= 4
+#             if backbone not in ('resnet18', 'resnet34'):
+#                 self.num_ch_enc[1:] *= 4
 #
-#     def hybrid_forward(self, F, input_image):
-#         self.features = []
-#         x = (input_image - 0.45) / 0.225
-#         x = self.encoder.conv1(x)
-#         x = self.encoder.bn1(x)
-#         self.features.append(self.encoder.relu(x))
-#         self.features.append(self.encoder.layer1(self.encoder.maxpool(self.features[-1])))
-#         self.features.append(self.encoder.layer2(self.features[-1]))
-#         self.features.append(self.encoder.layer3(self.features[-1]))
-#         self.features.append(self.encoder.layer4(self.features[-1]))
+#         def hybrid_forward(self, F, input_image):
+#             self.features = []
+#             x = (input_image - 0.45) / 0.225
+#             x = self.encoder.conv1(x)
+#             x = self.encoder.bn1(x)
+#             self.features.append(self.encoder.relu(x))
+#             self.features.append(self.encoder.layer1(self.encoder.maxpool(self.features[-1])))
+#             self.features.append(self.encoder.layer2(self.features[-1]))
+#             self.features.append(self.encoder.layer3(self.features[-1]))
+#             self.features.append(self.encoder.layer4(self.features[-1]))
 #
-#         return self.features
+#             return self.features
 #
 #
 # The Decoder module is a fully convolutional network with skip architecture, it exploit the featuremaps
@@ -205,61 +210,63 @@ import gluoncv
 #
 # It is defined as::
 #
-# class PoseDecoder(nn.HybridBlock):
-#     def __init__(self, num_ch_enc, num_input_features, num_frames_to_predict_for=2, stride=1):
-#         super(PoseDecoder, self).__init__()
+#     class PoseDecoder(nn.HybridBlock):
+#         def __init__(self, num_ch_enc, num_input_features, num_frames_to_predict_for=2, stride=1):
+#             super(PoseDecoder, self).__init__()
 #
-#         self.num_ch_enc = num_ch_enc
-#         self.num_input_features = num_input_features
+#             self.num_ch_enc = num_ch_enc
+#             self.num_input_features = num_input_features
 #
-#         if num_frames_to_predict_for is None:
-#             num_frames_to_predict_for = num_input_features - 1
-#         self.num_frames_to_predict_for = num_frames_to_predict_for
+#             if num_frames_to_predict_for is None:
+#                 num_frames_to_predict_for = num_input_features - 1
+#             self.num_frames_to_predict_for = num_frames_to_predict_for
 #
-#         self.convs = OrderedDict()
-#         self.convs[("squeeze")] = nn.Conv2D(
-#             in_channels=self.num_ch_enc[-1], channels=256, kernel_size=1)
-#         self.convs[("pose", 0)] = nn.Conv2D(
-#             in_channels=num_input_features * 256, channels=256,
-#             kernel_size=3, strides=stride, padding=1)
-#         self.convs[("pose", 1)] = nn.Conv2D(
-#             in_channels=256, channels=256, kernel_size=3, strides=stride, padding=1)
-#         self.convs[("pose", 2)] = nn.Conv2D(
-#             in_channels=256, channels=6 * num_frames_to_predict_for, kernel_size=1)
+#             self.convs = OrderedDict()
+#             self.convs[("squeeze")] = nn.Conv2D(
+#                 in_channels=self.num_ch_enc[-1], channels=256, kernel_size=1)
+#             self.convs[("pose", 0)] = nn.Conv2D(
+#                 in_channels=num_input_features * 256, channels=256,
+#                 kernel_size=3, strides=stride, padding=1)
+#             self.convs[("pose", 1)] = nn.Conv2D(
+#                 in_channels=256, channels=256, kernel_size=3, strides=stride, padding=1)
+#             self.convs[("pose", 2)] = nn.Conv2D(
+#                 in_channels=256, channels=6 * num_frames_to_predict_for, kernel_size=1)
 #
-#         # register blocks
-#         for k in self.convs:
-#             self.register_child(self.convs[k])
-#         self.net = nn.HybridSequential()
-#         self.net.add(*list(self.convs.values()))
+#             # register blocks
+#             for k in self.convs:
+#                 self.register_child(self.convs[k])
+#             self.net = nn.HybridSequential()
+#             self.net.add(*list(self.convs.values()))
 #
-#     def hybrid_forward(self, F, input_features):
-#         last_features = [f[-1] for f in input_features]
+#         def hybrid_forward(self, F, input_features):
+#             last_features = [f[-1] for f in input_features]
 #
-#         cat_features = [F.relu(self.convs["squeeze"](f)) for f in last_features]
-#         cat_features = F.concat(*cat_features, dim=1)
+#             cat_features = [F.relu(self.convs["squeeze"](f)) for f in last_features]
+#             cat_features = F.concat(*cat_features, dim=1)
 #
-#         out = cat_features
-#         for i in range(3):
-#             out = self.convs[("pose", i)](out)
-#             if i != 2:
-#                 out = F.relu(out)
+#             out = cat_features
+#             for i in range(3):
+#                 out = self.convs[("pose", i)](out)
+#                 if i != 2:
+#                     out = F.relu(out)
 #
-#         out = out.mean(3).mean(2)
+#             out = out.mean(3).mean(2)
 #
-#         out = 0.01 * out.reshape(-1, self.num_frames_to_predict_for, 1, 6)
+#             out = 0.01 * out.reshape(-1, self.num_frames_to_predict_for, 1, 6)
 #
-#         axisangle = out[..., :3]
-#         translation = out[..., 3:]
+#             axisangle = out[..., :3]
+#             translation = out[..., 3:]
 #
-#         return axisangle, translation
-
+#             return axisangle, translation
+#
 # Monodepth model is provided in :class:`gluoncv.model_zoo.MonoDepth2` and PoseNet is provide
 # in :class:`gluoncv.model_zoo.MonoDepth2PoseNet`. To get Monodepth2 model using ResNet18 base network:
 model = gluoncv.model_zoo.get_monodepth2(backbone='resnet18')
 print(model)
 
+##############################################################################
 # To get PoseNet using ResNet18 base network:
+#
 posenet = gluoncv.model_zoo.get_monodepth2posenet(backbone='resnet18')
 print(posenet)
 
@@ -292,7 +299,7 @@ print(posenet)
 #     for faster speed. The time it takes to prepare the dataset depends on your Internet connection and
 #     disk speed. For example, it takes around 2 hours on an AWS EC2 instance with EBS.
 #
-# We provide self-supervised depth estimation datasets in :class:`gluoncv.data.kitti`.
+# We provide self-supervised depth estimation datasets in :class:`gluoncv.data`.
 # For example, we can easily get the KITTI RAW Stereo dataset:
 import os
 from gluoncv.data.kitti import readlines, dict_batchify_fn
@@ -310,6 +317,7 @@ train_loader = gluon.data.DataLoader(
     train_dataset, batch_size=batch_size, shuffle=True, batchify_fn=dict_batchify_fn,
     num_workers=12, pin_memory=True, last_batch='discard')
 
+##############################################################################
 # Here, ``frame_idxs`` argument is used to decided the input frame. It is a list and the first element
 # must be 0 means source frame. Other elements mean target frames. Numerical values represents relative frame id in
 # image sequences. "s" means other side of source image upon stereo paris.
@@ -371,6 +379,7 @@ plt.imshow(input_gt)
 # display
 plt.show()
 
+##############################################################################
 # The Dataloader will provide a dictionary which include raw images, augmented images, camera intrinsics,
 # camera extrinsics (stereo), and ground truth depth maps (for validation).
 
@@ -383,158 +392,159 @@ plt.show()
 # The prediction of loss is defined as
 # (Please checkout the full :download:`trainer.py<../../../scripts/depth/trainer.py>` for complete implementation.)::
 #
-# def predict_poses(self, inputs):
-#     outputs = {}
+#     def predict_poses(self, inputs):
+#         outputs = {}
 #
-#     pose_feats = {f_i: inputs["color_aug", f_i, 0] for f_i in self.opt.frame_ids}
+#         pose_feats = {f_i: inputs["color_aug", f_i, 0] for f_i in self.opt.frame_ids}
 #
-#     for f_i in self.opt.frame_ids[1:]:
-#         if f_i != "s":
-#             # To maintain ordering we always pass frames in temporal order
-#             if f_i < 0:
-#                 pose_inputs = [pose_feats[f_i], pose_feats[0]]
-#             else:
-#                 pose_inputs = [pose_feats[0], pose_feats[f_i]]
+#         for f_i in self.opt.frame_ids[1:]:
+#             if f_i != "s":
+#                 # To maintain ordering we always pass frames in temporal order
+#                 if f_i < 0:
+#                     pose_inputs = [pose_feats[f_i], pose_feats[0]]
+#                 else:
+#                     pose_inputs = [pose_feats[0], pose_feats[f_i]]
 #
-#             axisangle, translation = self.posenet(mx.nd.concat(*pose_inputs, dim=1))
-#             outputs[("axisangle", 0, f_i)] = axisangle
-#             outputs[("translation", 0, f_i)] = translation
+#                 axisangle, translation = self.posenet(mx.nd.concat(*pose_inputs, dim=1))
+#                 outputs[("axisangle", 0, f_i)] = axisangle
+#                 outputs[("translation", 0, f_i)] = translation
 #
-#             # Invert the matrix if the frame id is negative
-#             outputs[("cam_T_cam", 0, f_i)] = transformation_from_parameters(
-#                 axisangle[:, 0], translation[:, 0], invert=(f_i < 0))
+#                 # Invert the matrix if the frame id is negative
+#                 outputs[("cam_T_cam", 0, f_i)] = transformation_from_parameters(
+#                     axisangle[:, 0], translation[:, 0], invert=(f_i < 0))
 #
-#     return outputs
+#         return outputs
 #
 # - Image Reconstruction:
 #     For training the network via self-supervised manner, we have to reconstruction a source image from target image
-#     according to predicted depth and pose (or use camera extrinsics of stereo pairs). Then, calculating reprojection
-#     photometric loss between reconstructed source image with real source image. The whole process is divided into
-#     three steps: to back project each point of target image to 3D space according to depth and camera intrinsic;
-#     to project 3D points to image plane according to camera extrinsic (pose) and intrinsic; sampling pixels from
-#     source image to reconstruct a new images according to the projected points (exploit STN to ensure that the
-#     sampling is differentiable)
+#     according to predicted depth and pose (or use camera extrinsic of stereo pairs). Then, calculating reprojection
+#     photometric loss between reconstructed source image with real source image.
+#
+#     The whole process is divided into three steps: to back project each point of target image to 3D space according
+#     to depth and camera intrinsic; to project 3D points to image plane according to camera extrinsic (pose) and
+#     intrinsic; sampling pixels from source image to reconstruct a new images according to the projected points
+#     (exploit STN to ensure that the sampling is differentiable)
 #
 # Back projection (2D to 3D) is defined as::
 #
-# class BackprojectDepth(nn.HybridBlock):
-#     """Layer to transform a depth image into a point cloud
-#     """
+#     class BackprojectDepth(nn.HybridBlock):
+#         """Layer to transform a depth image into a point cloud
+#         """
 #
-#     def __init__(self, batch_size, height, width, ctx=mx.cpu()):
-#         super(BackprojectDepth, self).__init__()
+#         def __init__(self, batch_size, height, width, ctx=mx.cpu()):
+#             super(BackprojectDepth, self).__init__()
 #
-#         self.batch_size = batch_size
-#         self.height = height
-#         self.width = width
+#             self.batch_size = batch_size
+#             self.height = height
+#             self.width = width
 #
-#         self.ctx = ctx
+#             self.ctx = ctx
 #
-#         meshgrid = np.meshgrid(range(self.width), range(self.height), indexing='xy')
-#         id_coords = np.stack(meshgrid, axis=0).astype(np.float32)
-#         id_coords = mx.nd.array(id_coords).as_in_context(self.ctx)
+#             meshgrid = np.meshgrid(range(self.width), range(self.height), indexing='xy')
+#             id_coords = np.stack(meshgrid, axis=0).astype(np.float32)
+#             id_coords = mx.nd.array(id_coords).as_in_context(self.ctx)
 #
-#         pix_coords = mx.nd.expand_dims(mx.nd.stack(*[id_coords[0].reshape(-1),
-#                                                      id_coords[1].reshape(-1)], axis=0),
-#                                        axis=0)
-#         pix_coords = pix_coords.repeat(repeats=batch_size, axis=0)
-#         pix_coords = pix_coords.as_in_context(self.ctx)
+#             pix_coords = mx.nd.expand_dims(mx.nd.stack(*[id_coords[0].reshape(-1),
+#                                                          id_coords[1].reshape(-1)], axis=0),
+#                                            axis=0)
+#             pix_coords = pix_coords.repeat(repeats=batch_size, axis=0)
+#             pix_coords = pix_coords.as_in_context(self.ctx)
 #
-#         with self.name_scope():
-#             self.id_coords = self.params.get('id_coords', shape=id_coords.shape,
-#                                              init=mx.init.Zero(), grad_req='null')
-#             self.id_coords.initialize(ctx=self.ctx)
-#             self.id_coords.set_data(mx.nd.array(id_coords))
+#             with self.name_scope():
+#                 self.id_coords = self.params.get('id_coords', shape=id_coords.shape,
+#                                                  init=mx.init.Zero(), grad_req='null')
+#                 self.id_coords.initialize(ctx=self.ctx)
+#                 self.id_coords.set_data(mx.nd.array(id_coords))
 #
-#             self.ones = self.params.get('ones',
-#                                         shape=(self.batch_size, 1, self.height * self.width),
-#                                         init=mx.init.One(), grad_req='null')
-#             self.ones.initialize(ctx=self.ctx)
+#                 self.ones = self.params.get('ones',
+#                                             shape=(self.batch_size, 1, self.height * self.width),
+#                                             init=mx.init.One(), grad_req='null')
+#                 self.ones.initialize(ctx=self.ctx)
 #
-#             self.pix_coords = self.params.get('pix_coords',
-#                                               shape=(self.batch_size, 3, self.height * self.width),
-#                                               init=mx.init.Zero(), grad_req='null')
-#             self.pix_coords.initialize(ctx=self.ctx)
-#             self.pix_coords.set_data(mx.nd.concat(pix_coords, self.ones.data(), dim=1))
+#                 self.pix_coords = self.params.get('pix_coords',
+#                                                   shape=(self.batch_size, 3, self.height * self.width),
+#                                                   init=mx.init.Zero(), grad_req='null')
+#                 self.pix_coords.initialize(ctx=self.ctx)
+#                 self.pix_coords.set_data(mx.nd.concat(pix_coords, self.ones.data(), dim=1))
 #
-#     def hybrid_forward(self, F, depth, inv_K, **kwargs):
-#         cam_points = F.batch_dot(inv_K[:, :3, :3], self.pix_coords.data())
-#         cam_points = depth.reshape(self.batch_size, 1, -1) * cam_points
-#         cam_points = F.concat(cam_points, self.ones.data(), dim=1)
+#         def hybrid_forward(self, F, depth, inv_K, **kwargs):
+#             cam_points = F.batch_dot(inv_K[:, :3, :3], self.pix_coords.data())
+#             cam_points = depth.reshape(self.batch_size, 1, -1) * cam_points
+#             cam_points = F.concat(cam_points, self.ones.data(), dim=1)
 #
-#         return cam_points
+#             return cam_points
 #
 #
 # Projection (3D to 2D) is defined as::
 #
-# class Project3D(nn.HybridBlock):
-#     """Layer which projects 3D points into a camera with intrinsics K and at position T
-#     """
+#     class Project3D(nn.HybridBlock):
+#         """Layer which projects 3D points into a camera with intrinsics K and at position T
+#         """
 #
-#     def __init__(self, batch_size, height, width, eps=1e-7):
-#         super(Project3D, self).__init__()
+#         def __init__(self, batch_size, height, width, eps=1e-7):
+#             super(Project3D, self).__init__()
 #
-#         self.batch_size = batch_size
-#         self.height = height
-#         self.width = width
-#         self.eps = eps
+#             self.batch_size = batch_size
+#             self.height = height
+#             self.width = width
+#             self.eps = eps
 #
-#     def hybrid_forward(self, F, points, K, T):
-#         P = F.batch_dot(K, T)[:, :3, :]
+#         def hybrid_forward(self, F, points, K, T):
+#             P = F.batch_dot(K, T)[:, :3, :]
 #
-#         cam_points = F.batch_dot(P, points)
+#             cam_points = F.batch_dot(P, points)
 #
-#         cam_pix = cam_points[:, :2, :] / (cam_points[:, 2, :].expand_dims(1) + self.eps)
-#         cam_pix = cam_pix.reshape(self.batch_size, 2, self.height, self.width)
+#             cam_pix = cam_points[:, :2, :] / (cam_points[:, 2, :].expand_dims(1) + self.eps)
+#             cam_pix = cam_pix.reshape(self.batch_size, 2, self.height, self.width)
 #
-#         x_src = cam_pix[:, 0, :, :] / (self.width - 1)
-#         y_src = cam_pix[:, 1, :, :] / (self.height - 1)
-#         pix_coords = F.concat(x_src.expand_dims(1), y_src.expand_dims(1), dim=1)
-#         pix_coords = (pix_coords - 0.5) * 2
+#             x_src = cam_pix[:, 0, :, :] / (self.width - 1)
+#             y_src = cam_pix[:, 1, :, :] / (self.height - 1)
+#             pix_coords = F.concat(x_src.expand_dims(1), y_src.expand_dims(1), dim=1)
+#             pix_coords = (pix_coords - 0.5) * 2
 #
-#         return pix_coords
+#             return pix_coords
 #
 #
 # The image reconstruction function is defined as
 # (Please checkout the full :download:`trainer.py<../../../scripts/depth/trainer.py>` for complete implementation.)::
 #
-# def generate_images_pred(self, inputs, outputs):
-#     for scale in self.opt.scales:
-#         disp = outputs[("disp", scale)]
-#         if self.opt.v1_multiscale:
-#             source_scale = scale
-#         else:
-#             disp = mx.nd.contrib.BilinearResize2D(disp,
-#                                                   height=self.opt.height,
-#                                                   width=self.opt.width)
-#             source_scale = 0
-#
-#         _, depth = disp_to_depth(disp, self.opt.min_depth, self.opt.max_depth)
-#         outputs[("depth", 0, scale)] = depth
-#
-#         for i, frame_id in enumerate(self.opt.frame_ids[1:]):
-#
-#             if frame_id == "s":
-#                 T = inputs["stereo_T"]
+#     def generate_images_pred(self, inputs, outputs):
+#         for scale in self.opt.scales:
+#             disp = outputs[("disp", scale)]
+#             if self.opt.v1_multiscale:
+#                 source_scale = scale
 #             else:
-#                 T = outputs[("cam_T_cam", 0, frame_id)]
+#                 disp = mx.nd.contrib.BilinearResize2D(disp,
+#                                                       height=self.opt.height,
+#                                                       width=self.opt.width)
+#                 source_scale = 0
 #
-#             cam_points = self.backproject_depth[source_scale](depth,
-#                                                               inputs[("inv_K", source_scale)])
-#             pix_coords = self.project_3d[source_scale](cam_points,
-#                                                        inputs[("K", source_scale)],
-#                                                        T)
+#             _, depth = disp_to_depth(disp, self.opt.min_depth, self.opt.max_depth)
+#             outputs[("depth", 0, scale)] = depth
 #
-#             outputs[("sample", frame_id, scale)] = pix_coords
+#             for i, frame_id in enumerate(self.opt.frame_ids[1:]):
 #
-#             outputs[("color", frame_id, scale)] = mx.nd.BilinearSampler(
-#                 data=inputs[("color", frame_id, source_scale)],
-#                 grid=outputs[("sample", frame_id, scale)],
-#                 name='sampler')
+#                 if frame_id == "s":
+#                     T = inputs["stereo_T"]
+#                 else:
+#                     T = outputs[("cam_T_cam", 0, frame_id)]
 #
-#             if not self.opt.disable_automasking:
-#                 outputs[("color_identity", frame_id, scale)] = \
-#                     inputs[("color", frame_id, source_scale)]
+#                 cam_points = self.backproject_depth[source_scale](depth,
+#                                                                   inputs[("inv_K", source_scale)])
+#                 pix_coords = self.project_3d[source_scale](cam_points,
+#                                                            inputs[("K", source_scale)],
+#                                                            T)
+#
+#                 outputs[("sample", frame_id, scale)] = pix_coords
+#
+#                 outputs[("color", frame_id, scale)] = mx.nd.BilinearSampler(
+#                     data=inputs[("color", frame_id, source_scale)],
+#                     grid=outputs[("sample", frame_id, scale)],
+#                     name='sampler')
+#
+#                 if not self.opt.disable_automasking:
+#                     outputs[("color_identity", frame_id, scale)] = \
+#                         inputs[("color", frame_id, source_scale)]
 #
 #
 # - Training Losses:

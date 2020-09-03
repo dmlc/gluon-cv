@@ -16,6 +16,7 @@ Start Testing Now
     :download:`Download Full Python Script: train.py<../../../scripts/depth/test_pose.py>`
 
     Example testing PoseNet command::
+
         python test_pose.py --model_zoo_pose monodepth2_resnet18_posenet_kitti_mono+stereo_640x192 --data_path ~/.mxnet/datasets/kitti/kitti_odom --eval_split odom_9 --pretrained_type gluoncv --png
 
     For more training command options, please run ``python test_pose.py -h``
@@ -39,13 +40,13 @@ ctx = mx.cpu(0)
 # - Prepare KITTI Odometry Dataset:
 #
 #     You can download KITTI Odometry Dataset from http://www.cvlibs.net/datasets/kitti/eval_odometry.php.
-#     You need download 'data_odometry_color.zip': 'http://www.cvlibs.net/download.php?file=data_odometry_color.zip' and
-#     'data_odometry_poses.zip': 'http://www.cvlibs.net/download.php?file=data_odometry_poses.zip' (you will get the
+#     You need download http://www.cvlibs.net/download.php?file=data_odometry_color.zip and
+#     http://www.cvlibs.net/download.php?file=data_odometry_poses.zip (you will get the
 #     download link via emails.) to ``$(HOME)/.mxnet/datasets/kitti/``, then extract them. Here is an example commands::
 #
 #       cd ~
-#       wget https://s3.eu-central-1.amazonaws.com/avg-kitti/data_odometry_color.zip
-#       wget https://s3.eu-central-1.amazonaws.com/avg-kitti/data_odometry_poses.zip
+#       wget [the link of data_odometry_color.zip file]
+#       wget [the link of data_odometry_poses.zip file]
 #       unzip data_odometry_color.zip
 #       unzip data_odometry_poses.zip
 #       mv dataset/ kitti_odom/
@@ -76,6 +77,7 @@ dataloader = gluon.data.DataLoader(
     dataset, batch_size=1, shuffle=False, batchify_fn=dict_batchify_fn, num_workers=12,
     pin_memory=True, last_batch='keep')
 
+##############################################################################
 # Here, ``frame_idxs`` argument is [0, 1]. It means that the dataloader provide current frame and next frame
 # as input. The PoseNet need predict the relative pose between two frames.
 #
@@ -133,6 +135,7 @@ posenet = get_model(model_zoo, pretrained_base=False, num_input_images=2,
 #     truth pose.
 #
 # The ATE function is defined as::
+#
 #       def compute_ate(gtruth_xyz, pred_xyz_o):
 #           offset = gtruth_xyz[0] - pred_xyz_o[0]
 #           pred_xyz = pred_xyz_o + offset[None, :]
