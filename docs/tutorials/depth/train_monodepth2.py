@@ -428,8 +428,7 @@ plt.show()
 #
 # 2. To project 3D points to image plane according to camera extrinsic (pose) and intrinsic;
 #
-# 3. Sampling pixels from the source image to reconstruct a new image according to the projected points
-# (exploit Spatial Transformer Networks (STN) to ensure that the sampling is differentiable).
+# 3. Sampling pixels from the source image to reconstruct a new image according to the projected points (exploit Spatial Transformer Networks (STN) to ensure that the sampling is differentiable).
 #
 #
 # Back projection (2D to 3D) is defined as::
