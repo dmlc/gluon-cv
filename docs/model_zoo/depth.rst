@@ -27,8 +27,7 @@ The following table lists pre-trained models trained on KITTI.
   evaluating the models (KITTI RAW results are evaluated using the official server). For example
   ``monodepth2_resnet18_kitti_stereo_640x192``::
 
-    python test.py --model_zoo monodepth2_resnet18_kitti_stereo_640x192 --pretrained_type gluoncv --eval_stereo --png
-
+    python test.py --model_zoo monodepth2_resnet18_kitti_stereo_640x192 --pretrained_type gluoncv --batch_size 1 --eval_stereo --png
 
 
 .. note::
@@ -64,9 +63,10 @@ Monodepth2 trains depth and pose models at same time via self-supervised manner.
   evaluating the models (KITTI Odometry results are evaluated using the official server). For example
   ``monodepth2_resnet18_posenet_kitti_mono+stereo_640x192``::
 
-    python test_pose.py --model_zoo_pose monodepth2_resnet18_posenet_kitti_mono+stereo_640x192 --data_path ~/.mxnet/datasets/kitti/kitti_odom --eval_split odom_9 --pretrained_type gluoncv --png
+    python test_pose.py --model_zoo_pose monodepth2_resnet18_posenet_kitti_mono_640x192 --data_path ~/.mxnet/datasets/kitti/kitti_odom --eval_split odom_9  --pretrained_type gluoncv --batch_size 1 --png
 
   Please check the full tutorials `Testing PoseNet from image sequences with pre-trained Monodepth2 Pose models <../examples_depth/test_monodepth2_posenet.html>`_.
+
 
 .. note::
 
