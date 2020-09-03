@@ -13,7 +13,7 @@ Start Testing Now
 
     Feel free to skip the tutorial because the testing script is self-complete and ready to launch.
 
-    :download:`Download Full Python Script: train.py<../../../scripts/depth/test_pose.py>`
+    :download:`Download Full Python Script: test_pose.py<../../../scripts/depth/test_pose.py>`
 
     Example testing PoseNet command::
 
@@ -40,6 +40,7 @@ ctx = mx.cpu(0)
 # - Prepare KITTI Odometry Dataset:
 #
 #     You can download KITTI Odometry Dataset from http://www.cvlibs.net/datasets/kitti/eval_odometry.php.
+#
 #     You need download http://www.cvlibs.net/download.php?file=data_odometry_color.zip and
 #     http://www.cvlibs.net/download.php?file=data_odometry_poses.zip (you will get the
 #     download link via emails.) to ``$(HOME)/.mxnet/datasets/kitti/``, then extract them. Here is an example commands::
@@ -52,7 +53,7 @@ ctx = mx.cpu(0)
 #       mv dataset/ kitti_odom/
 #
 #
-# KITTI dataset is provided in :class:`gluoncv.data.kitti`.
+# KITTI dataset is provided in :class:`gluoncv.data`.
 # For example, we can easily get the KITTI Odometry dataset (we suppose you have prepared split file as described in
 # `Dive Deep into Training Monodepth2 Models <./train_monodepth2.html>`_.)
 

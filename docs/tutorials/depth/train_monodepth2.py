@@ -15,7 +15,7 @@ Start Training Now
 
     :download:`Download Full Python Script: train.py<../../../scripts/depth/train.py>`
 
-    :download:`Download Full Python Script: train.py<../../../scripts/depth/trainer.py>`
+    :download:`Download Full Python Script: trainer.py<../../../scripts/depth/trainer.py>`
 
     mono+stereo mode training command::
 
@@ -188,7 +188,6 @@ import gluoncv
 #                 self.sigmoid = nn.Activation('sigmoid')
 #
 #         def hybrid_forward(self, F, input_features):
-#             # pylint: disable=unused-argument, missing-function-docstring
 #             self.outputs = []
 #
 #             # decoder
@@ -277,21 +276,21 @@ print(posenet)
 #
 # - Prepare KITTI RAW Dataset:
 #
-#     Here we give an example of training monodepth2 on the KITTI RAW dataset [Godard19]_. First,
-#     we need to prepare the dataset. The official implementation of monodepth2 does not use all
-#     the data of KITTI RAW dataset, here we use the same dataset and split method as [Godard19]_.
-#     You need download the split zip file, and extract it to ``$(HOME)/.mxnet/datasets/kitti/``.
+# Here we give an example of training monodepth2 on the KITTI RAW dataset [Godard19]_. First,
+# we need to prepare the dataset. The official implementation of monodepth2 does not use all
+# the data of KITTI RAW dataset, here we use the same dataset and split method as [Godard19]_.
+# You need download the split zip file, and extract it to ``$(HOME)/.mxnet/datasets/kitti/``.
 #
-#     Follow the command to get the dataset::
+# Follow the command to get the dataset::
 #
-#       cd ~
-#       mkdir -p .mxnet/datasets/kitti
-#       cd .mxnet/datasets/kitti
-#       wget https://github.com/KuangHaofei/GluonCV_Test/raw/master/monodepthv2/tutorials/splits.zip
-#       unzip splits.zip
-#       wget -i splits/kitti_archives_to_download.txt -P kitti_data/
-#       cd kitti_data
-#       unzip "*.zip"
+#     cd ~
+#     mkdir -p .mxnet/datasets/kitti
+#     cd .mxnet/datasets/kitti
+#     wget https://github.com/KuangHaofei/GluonCV_Test/raw/master/monodepthv2/tutorials/splits.zip
+#     unzip splits.zip
+#     wget -i splits/kitti_archives_to_download.txt -P kitti_data/
+#     cd kitti_data
+#     unzip "*.zip"
 #
 #  .. hint::
 #
@@ -321,12 +320,11 @@ train_loader = gluon.data.DataLoader(
 # Here, ``frame_idxs`` argument is used to decided the input frame. It is a list and the first element
 # must be 0 means source frame. Other elements mean target frames. Numerical values represents relative frame id in
 # image sequences. "s" means other side of source image upon stereo paris.
-#
-# We provide self-supervised depth estimation datasets in :class:`gluoncv.data`.
-# For example, we can easily get the KITTI RAW Stereo dataset:
+
 
 ##############################################################################
-# For data augmentation,
+# - Data Augmentation
+#
 # we follow the standard data augmentation routine to transform the input image.
 # Here, we just use RandomFlip with 50% probability for input images.
 #
@@ -387,6 +385,7 @@ plt.show()
 # Training Details
 # ----------------
 # - Predict Camera Pose:
+#
 #     When training network with mono or mono+stereo mode, we have to get the predicted camera pose throught PoseNet.
 #
 # The prediction of loss is defined as
@@ -416,13 +415,19 @@ plt.show()
 #         return outputs
 #
 # - Image Reconstruction:
+
 #     For training the network via self-supervised manner, we have to reconstruction a source image from target image
 #     according to predicted depth and pose (or use camera extrinsic of stereo pairs). Then, calculating reprojection
 #     photometric loss between reconstructed source image with real source image.
 #
-#     The whole process is divided into three steps: to back project each point of target image to 3D space according
-#     to depth and camera intrinsic; to project 3D points to image plane according to camera extrinsic (pose) and
-#     intrinsic; sampling pixels from source image to reconstruct a new images according to the projected points
+#
+#     The whole process is divided into three steps:
+#
+#     1. to back project each point of target image to 3D space according to depth and camera intrinsic;
+#
+#     2. to project 3D points to image plane according to camera extrinsic (pose) and intrinsic;
+#
+#     3. sampling pixels from source image to reconstruct a new images according to the projected points
 #     (exploit STN to ensure that the sampling is differentiable)
 #
 # Back projection (2D to 3D) is defined as::
