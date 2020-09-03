@@ -302,6 +302,12 @@ Depth Prediction
 
         Monodepth2 training on KITTI dataset.
 
+    .. card::
+        :title: Dive Deep into Testing Pretrained PoseNet Models
+        :link: ../build/examples_depth/test_monodepth2_posenet.html
+
+        Monodepth2 PoseNet testing on KITTI dataset.
+
 
 Dataset Preparation
 -------------------

@@ -53,9 +53,6 @@ def evaluate(opt):
     """Evaluate odometry on the KITTI dataset
     """
     ############################ loading dataset ############################
-    assert os.path.isdir(opt.load_weights_folder), \
-        "Cannot find a folder at {}".format(opt.load_weights_folder)
-
     assert opt.eval_split == "odom_9" or opt.eval_split == "odom_10", \
         "eval_split should be either odom_9 or odom_10"
 
@@ -88,6 +85,9 @@ def evaluate(opt):
             # loading weights from customer
             assert opt.eval_model is not None, \
                 '=> Please provide the checkpoint using --eval_model'
+            assert os.path.isdir(opt.load_weights_folder), \
+                "Cannot find a folder at {}".format(opt.load_weights_folder)
+
             weights_path = os.path.join(opt.load_weights_folder, opt.eval_model)
             posenet = get_model(
                 opt.model_zoo_pose, pretrained_base=False, num_input_images=2,
