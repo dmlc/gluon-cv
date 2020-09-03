@@ -4,7 +4,7 @@ Depth Prediction
 ================
 
 
-Here is the model zoo for task of depth prediction.
+Here is the model zoo for the task of depth prediction.
 
 
 .. hint::
@@ -55,7 +55,7 @@ The following table lists pre-trained models trained on KITTI.
 PoseNet
 -------------------
 
-Monodepth2 trains depth and pose models at same time via self-supervised manner. So, we also give reproduced results of our pre-trained models here.
+Monodepth2 trains depth and pose models at the same time via a self-supervised manner. So, we also give reproduced results of our pre-trained models here.
 
 .. hint::
 
@@ -72,7 +72,7 @@ Monodepth2 trains depth and pose models at same time via self-supervised manner.
 
   Our pre-trained models reproduce results from recent state-of-the-art approaches. Please check the reference paper for further information.
 
-  ``Sequence 09`` and ``Sequence 10`` means the model is tested on sequence 9 and sequence 10 of KITTI Odometry dataset respectively.
+  ``Sequence 09`` and ``Sequence 10`` means the model is tested on sequence 9 and sequence 10 of the KITTI Odometry dataset respectively.
   Results show the average absolute trajectory error (ATE), and standard deviation, in meter.
 
 

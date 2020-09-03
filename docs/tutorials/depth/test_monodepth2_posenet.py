@@ -1,10 +1,10 @@
 """03. Testing PoseNet from image sequences with pre-trained Monodepth2 Pose models
 ===========================================================================
 
-This is a quick demo of using GluonCV Monodepth2 model for KITTI on real-world images.
+This is a quick demo of using the GluonCV Monodepth2 model for KITTI on real-world images.
 Please follow the `installation guide <../../index.html#installation>`__
-to install MXNet and GluonCV if not yet. This tutorials is divided into three parts:
-prepare KITTI Odometry datasets, get pretrained PoseNet through GluonCV, and testing PoseNet on the dataset.
+to install MXNet and GluonCV if not yet. This tutorial is divided into three parts:
+prepare KITTI Odometry datasets, get pre-trained PoseNet through GluonCV, and testing PoseNet on the dataset.
 
 Start Testing Now
 ~~~~~~~~~~~~~~~~~~
@@ -41,7 +41,7 @@ ctx = mx.cpu(0)
 #
 #     You can download KITTI Odometry Dataset from http://www.cvlibs.net/datasets/kitti/eval_odometry.php.
 #
-#     You need download http://www.cvlibs.net/download.php?file=data_odometry_color.zip and
+#     You need to download http://www.cvlibs.net/download.php?file=data_odometry_color.zip and
 #     http://www.cvlibs.net/download.php?file=data_odometry_poses.zip (you will get the
 #     download link via emails.) to ``$(HOME)/.mxnet/datasets/kitti/``, then extract them. Here is an example commands::
 #
@@ -54,7 +54,7 @@ ctx = mx.cpu(0)
 #
 #
 # KITTI dataset is provided in :class:`gluoncv.data`.
-# For example, we can easily get the KITTI Odometry dataset (we suppose you have prepared split file as described in
+# For example, we can easily get the KITTI Odometry dataset (we suppose you have prepared a split file as described in
 # `Dive Deep into Training Monodepth2 Models <./train_monodepth2.html>`_.)
 
 from gluoncv.data.kitti import readlines, dict_batchify_fn
@@ -79,14 +79,14 @@ dataloader = gluon.data.DataLoader(
     pin_memory=True, last_batch='keep')
 
 ##############################################################################
-# Here, ``frame_idxs`` argument is [0, 1]. It means that the dataloader provide current frame and next frame
-# as input. The PoseNet need predict the relative pose between two frames.
+# Here, ``frame_idxs`` argument is [0, 1]. It means that the dataloader provide the current frame and the next frame
+# as input. The PoseNet need to predict the relative pose between two frames.
 #
-# Please checkout the full :download:`test_pose.py<../../../scripts/depth/test_pose.py>` for complete implementation.
+# Please check out the full :download:`test_pose.py<../../../scripts/depth/test_pose.py>` for complete implementation.
 
 
 ##############################################################################
-# Pretrained PoseNet
+# Pre-trained PoseNet
 # -----------------------------
 # Next, we get a pre-trained model from our model zoo,
 from gluoncv.model_zoo import get_model
@@ -102,10 +102,11 @@ posenet = get_model(model_zoo, pretrained_base=False, num_input_images=2,
 #
 # - Inference of PoseNet:
 #
-#     Firstly, we need generate transformation between two frames via PoseNet. PoseNet will output axisangle and
-#     translation directly, and we transfer it to transformation matrix. Then, we store predicted pose to pose sequence.
+#     Firstly, we need to generate transformation between two frames via PoseNet. PoseNet will output axisangle and
+#     translation directly, and we transfer it to the transformation matrix. Then, we store predicted pose to pose
+#     sequence.
 #
-# Please checkout the full :download:`test_pose.py<../../../scripts/depth/test_pose.py>` for complete implementation.
+# Please check out the full :download:`test_pose.py<../../../scripts/depth/test_pose.py>` for complete implementation.
 # This is an example of test::
 #
 #       pred_poses = []
@@ -131,9 +132,9 @@ posenet = get_model(model_zoo, pretrained_base=False, num_input_images=2,
 # - Calculate ATE:
 #
 #     Here, we use absolute trajectory error (ATE) to evaluate the performance of PoseNet. Because the PoseNet
-#     also belongs to monocular system, it have scale ambiguity problem. For evaluating model with ground truth pose,
-#     we align the first pose with ground truth and calculating scaling factor by compare predicted pose and ground
-#     truth pose.
+#     also belongs to the monocular system, it have a scale ambiguity problem. For evaluating the model with
+#     ground truth pose, we align the first pose with ground truth and calculating the scaling factor by comparing
+#     predicted pose and ground truth pose.
 #
 # The ATE function is defined as::
 #

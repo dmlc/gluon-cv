@@ -1,7 +1,7 @@
 """02. Monodepth2 training on KITTI dataset
 ==================================================
 
-This is a tutorial of training MonoDepth2 on KITTI dataset using Gluon CV toolkit.
+This is a tutorial of training MonoDepth2 on the KITTI dataset using Gluon CV toolkit.
 The readers should have basic knowledge of deep learning and should be familiar with Gluon API.
 New users may first go through `A 60-minute Gluon Crash Course <http://gluon-crash-course.mxnet.io/>`_.
 You can `Start Training Now`_ or `Dive into Deep`_.
@@ -50,9 +50,9 @@ import gluoncv
 #
 # (figure credit to `Godard et al. <https://arxiv.org/pdf/1806.01260.pdf>`_ )
 #
-# Self-Supervised Monocular Depth Estimation (Monodepth2) [Godard19]_ build a
-# simple depth model and train it with a self-supervised manner by exploit the
-# spatial geometry constrain. The key idea of Monodepth2 is that it build a novel
+# Self-Supervised Monocular Depth Estimation (Monodepth2) [Godard19]_ builds a
+# simple depth model and train it with a self-supervised manner by exploiting the
+# spatial geometry constrain. The key idea of Monodepth2 is that it builds a novel
 # reprojection loss, include (1) a minimum reprojection loss, designed to robustly
 # handle occlusions, (2) a full-resolution multi-scale sampling method that reduces
 # visual artifacts, and (3) an auto-masking loss to ignore training pixels that violate
@@ -65,16 +65,16 @@ import gluoncv
 # ------------
 #
 # A simple U-Net architecture is used in Monodepth2, which combines multiple scale
-# features with different receptive field sizes. It pools the featuremaps into different sizes
-# and then concatenating together after upsampling. There are two decoder for depth estimation and
+# features with different receptive field sizes. It pools the feature maps into different sizes
+# and then concatenating together after upsampling. There are two decoders for depth estimation and
 # camera pose estimation.
 #
-# The encoder module is a ResNet, it accept single RGB images as input for depth model.
-# For pose model, The pose encoder is modified to accept a pair of frames, or six channels, as input.
-# So, the pose encoder therefore has convolutional weights in the first layer of shape 6×64×3×3,
-# instead of the ResNet default of 3×64×3×3. When using pretrained weights for the pose encoder,
-# the first pretrained filter tensor is duplicated along the channel dimension to make a filter of shape 6 × 64 × 3 × 3.
-# All weights in this new expanded filter are divided by 2 to make the output of the convolution
+# The encoder module is a ResNet, it accepts single RGB images as input for the depth model.
+# For the pose model, The pose encoder is modified to accept a pair of frames, or six channels, as input.
+# Therefore, the pose encoder has convolutional weights in the first layer of shape 6×64×3×3,
+# instead of the ResNet default of 3×64×3×3. When using pre-trained weights for the pose encoder,
+# the first pre-trained filter tensor is duplicated along the channel dimension to make a filter of
+# shape 6 × 64 × 3 × 3. All weights in this new expanded filter are divided by 2 to make the output of the convolution
 # in the same numerical range as the original, one-image ResNet.
 #
 # The encoder is defined as::
@@ -140,9 +140,9 @@ import gluoncv
 #             return self.features
 #
 #
-# The Decoder module is a fully convolutional network with skip architecture, it exploit the featuremaps
-# in different scale and concatenating together after upsampling. A sigmoid activation at last layer.
-# It bound the output to [0, 1], which means that the depth decoder outputs an normalized disparity map.
+# The Decoder module is a fully convolutional network with skip architecture, it exploits the feature maps
+# in a different scale and concatenating together after upsampling. A sigmoid activation at the last layer.
+# It bound the output to [0, 1], which means that the depth decoder outputs a normalized disparity map.
 #
 # It is defined as::
 #
@@ -204,8 +204,8 @@ import gluoncv
 #
 #             return self.outputs
 #
-# The PoseNet Decoder module is a fully convolutional network and it predict the rotation
-# using an axis-angle representation, and scale the rotation and translation outputs by 0.01.
+# The PoseNet Decoder module is a fully convolutional network and it predicts the rotation
+# using an axis-angle representation and scale the rotation and translation outputs by 0.01.
 #
 # It is defined as::
 #
@@ -276,12 +276,12 @@ print(posenet)
 #
 # - Prepare KITTI RAW Dataset:
 #
-# Here we give an example of training monodepth2 on the KITTI RAW dataset [Godard19]_. First,
-# we need to prepare the dataset. The official implementation of monodepth2 does not use all
-# the data of KITTI RAW dataset, here we use the same dataset and split method as [Godard19]_.
-# You need download the split zip file, and extract it to ``$(HOME)/.mxnet/datasets/kitti/``.
+#     Here we give an example of training monodepth2 on the KITTI RAW dataset [Godard19]_. First,
+#     we need to prepare the dataset. The official implementation of monodepth2 does not use all
+#     the data of the KITTI RAW dataset, here we use the same dataset and split method as [Godard19]_.
+#     You need download the split zip file, and extract it to ``$(HOME)/.mxnet/datasets/kitti/``.
 #
-# Follow the command to get the dataset::
+#     Follow the command to get the dataset::
 #
 #     cd ~
 #     mkdir -p .mxnet/datasets/kitti
@@ -317,16 +317,16 @@ train_loader = gluon.data.DataLoader(
     num_workers=12, pin_memory=True, last_batch='discard')
 
 ##############################################################################
-# Here, ``frame_idxs`` argument is used to decided the input frame. It is a list and the first element
-# must be 0 means source frame. Other elements mean target frames. Numerical values represents relative frame id in
-# image sequences. "s" means other side of source image upon stereo paris.
+# Here, the ``frame_idxs`` argument is used to decide the input frame. It is a list and the first element
+# must be 0 means source frame. Other elements mean target frames. Numerical values represent relative frame id in
+# image sequences. "s" means another side of the source image upon stereo pairs.
 
 
 ##############################################################################
 # - Data Augmentation
 #
-# we follow the standard data augmentation routine to transform the input image.
-# Here, we just use RandomFlip with 50% probability for input images.
+#     we follow the standard data augmentation routine to transform the input image.
+#     Here, we just use RandomFlip with 50% probability for input images.
 #
 # Random pick one example for visualization:
 import random
@@ -378,18 +378,18 @@ plt.imshow(input_gt)
 plt.show()
 
 ##############################################################################
-# The Dataloader will provide a dictionary which include raw images, augmented images, camera intrinsics,
-# camera extrinsics (stereo), and ground truth depth maps (for validation).
+# The Dataloader will provide a dictionary which includes raw images, augmented images, camera intrinsics,
+# camera extrinsic (stereo), and ground truth depth maps (for validation).
 
 ##############################################################################
 # Training Details
 # ----------------
 # - Predict Camera Pose:
 #
-#     When training network with mono or mono+stereo mode, we have to get the predicted camera pose throught PoseNet.
+#     When training network with mono or mono+stereo mode, we have to get the predicted camera pose through PoseNet.
 #
 # The prediction of loss is defined as
-# (Please checkout the full :download:`trainer.py<../../../scripts/depth/trainer.py>` for complete implementation.)::
+# (Please check out the full :download:`trainer.py<../../../scripts/depth/trainer.py>` for complete implementation.)::
 #
 #     def predict_poses(self, inputs):
 #         outputs = {}
@@ -415,19 +415,19 @@ plt.show()
 #         return outputs
 #
 # - Image Reconstruction:
-
-#     For training the network via self-supervised manner, we have to reconstruction a source image from target image
+#
+#     For training the network via self-supervised manner, we have to reconstruct a source image from target image
 #     according to predicted depth and pose (or use camera extrinsic of stereo pairs). Then, calculating reprojection
-#     photometric loss between reconstructed source image with real source image.
+#     photometric loss between the reconstructed source image with the real source image.
 #
 #
 #     The whole process is divided into three steps:
 #
-#     1. to back project each point of target image to 3D space according to depth and camera intrinsic;
+#     1. to back project each point of the target image to 3D space according to depth and camera intrinsic;
 #
 #     2. to project 3D points to image plane according to camera extrinsic (pose) and intrinsic;
 #
-#     3. sampling pixels from source image to reconstruct a new images according to the projected points
+#     3. sampling pixels from the source image to reconstruct a new image according to the projected points
 #     (exploit STN to ensure that the sampling is differentiable)
 #
 # Back projection (2D to 3D) is defined as::
@@ -511,7 +511,7 @@ plt.show()
 #
 #
 # The image reconstruction function is defined as
-# (Please checkout the full :download:`trainer.py<../../../scripts/depth/trainer.py>` for complete implementation.)::
+# (Please check out the full :download:`trainer.py<../../../scripts/depth/trainer.py>` for complete implementation.)::
 #
 #     def generate_images_pred(self, inputs, outputs):
 #         for scale in self.opt.scales:
@@ -555,7 +555,7 @@ plt.show()
 # - Training Losses:
 #
 #     We apply a standard reprojection loss to train Monodepth2.
-#     As describes in Monodepth2 [Godard19]_ , the reprojection loss include three parts:
+#     As describes in Monodepth2 [Godard19]_ , the reprojection loss includes three parts:
 #     a multi-scale reprojection photometric loss (combined L1 loss and SSIM loss), an auto-masking loss and
 #     an edge-aware smoothness loss as in Monodepth [Godard17]_ .
 #
