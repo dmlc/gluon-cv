@@ -30,7 +30,7 @@ def _train_object_detection(args, reporter):
     args = config_to_nested(args)
 
     # fix seed for mxnet, numpy and python builtin random generator.
-    gutils.random.seed(args.train.seed)
+    gutils.random.seed(args['train']['seed'])
 
     # disable auto_resume for HPO tasks
     if 'train' in args:
@@ -39,14 +39,14 @@ def _train_object_detection(args, reporter):
         args['train'] = {'auto_resume': False}
 
     try:
-        estimator = args.estimator(args, reporter=reporter)
+        estimator = args['estimator'](args, reporter=reporter)
         # training
         estimator.fit()
     except Exception as e:
         return str(e)
 
     # TODO: checkpointing needs to be done in a better way
-    if args.final_fit:
+    if args['final_fit']:
         return {'model_params': collect_params(estimator.net)}
 
     return {}

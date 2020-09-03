@@ -124,7 +124,7 @@ class BaseEstimator:
 
         # try to auto resume
         prefix = None
-        if r.config.get('train', {}).get('auto_resume', True):
+        if r.config.get('train', {}).get('auto_resume', False):
             exists = [d for d in os.listdir(self._logdir) if d.startswith(name)]
             # latest timestamp
             exists = sorted(exists)

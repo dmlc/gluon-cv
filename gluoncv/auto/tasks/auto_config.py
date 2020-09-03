@@ -2,7 +2,6 @@
 import copy
 
 import autogluon as ag
-from autogluon.utils import EasyDict
 
 from ..estimators.base_estimator import BaseEstimator
 
@@ -54,10 +53,7 @@ def config_to_nested(config):
     else:
         raise NotImplementedError(config['meta_arch'], 'is not implemented.')
 
-    if isinstance(config, EasyDict):
-        nested_config = EasyDict()
-    elif isinstance(config, dict):
-        nested_config = {}
+    nested_config = {}
 
     for k, v in config.items():
         if k in config_mapping[config['meta_arch']]:
