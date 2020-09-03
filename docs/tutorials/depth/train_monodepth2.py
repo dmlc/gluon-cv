@@ -283,14 +283,14 @@ print(posenet)
 #
 #     Follow the command to get the dataset::
 #
-#     cd ~
-#     mkdir -p .mxnet/datasets/kitti
-#     cd .mxnet/datasets/kitti
-#     wget https://github.com/KuangHaofei/GluonCV_Test/raw/master/monodepthv2/tutorials/splits.zip
-#     unzip splits.zip
-#     wget -i splits/kitti_archives_to_download.txt -P kitti_data/
-#     cd kitti_data
-#     unzip "*.zip"
+#       cd ~
+#       mkdir -p .mxnet/datasets/kitti
+#       cd .mxnet/datasets/kitti
+#       wget https://github.com/KuangHaofei/GluonCV_Test/raw/master/monodepthv2/tutorials/splits.zip
+#       unzip splits.zip
+#       wget -i splits/kitti_archives_to_download.txt -P kitti_data/
+#       cd kitti_data
+#       unzip "*.zip"
 #
 #  .. hint::
 #
@@ -421,14 +421,15 @@ plt.show()
 #     photometric loss between the reconstructed source image with the real source image.
 #
 #
-#     The whole process is divided into three steps:
+#     The whole process is divided into three steps,
 #
-#     1. to back project each point of the target image to 3D space according to depth and camera intrinsic;
+#     1. To back project each point of the target image to 3D space according to depth and camera intrinsic;
 #
-#     2. to project 3D points to image plane according to camera extrinsic (pose) and intrinsic;
+#     2. To project 3D points to image plane according to camera extrinsic (pose) and intrinsic;
 #
-#     3. sampling pixels from the source image to reconstruct a new image according to the projected points
-#     (exploit STN to ensure that the sampling is differentiable)
+#     3. Sampling pixels from the source image to reconstruct a new image according to the projected points
+#     (exploit Spatial Transformer Networks (STN) to ensure that the sampling is differentiable).
+#
 #
 # Back projection (2D to 3D) is defined as::
 #
