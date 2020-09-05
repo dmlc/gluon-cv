@@ -49,7 +49,7 @@ The following table lists pre-trained models trained on KITTI.
     +-------------------------------------------------------+------------------+--------------+-----------------+--------------+-----------+------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------+
     | monodepth2_resnet18_kitti_mono_640x192 [1]_           |   Mono           |  640x192     |     0.121       | 0.858        | c881771d  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/depth/kitti/monodepth2_resnet18_kitti_mono_640x192.sh>`_                | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/depth/kitti/monodepth2_resnet18_kitti_mono_640x192.log>`_                |
     +-------------------------------------------------------+------------------+--------------+-----------------+--------------+-----------+------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------+
-    | monodepth2_resnet18_kitti_mono+stereo_640x192 [1]_    | Mono + Stereo    |  640x192     |     0.109       | 0.872        | 9515c219  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/depth/kitti/monodepth2_resnet18_kitti_mono+stereo_640x192.sh>`_         | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/depth/kitti/monodepth2_resnet18_kitti_mono+stereo_640x192.log>`_         |
+    | monodepth2_resnet18_kitti_mono_stereo_640x192 [1]_    | Mono + Stereo    |  640x192     |     0.109       | 0.872        | 9515c219  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/depth/kitti/monodepth2_resnet18_kitti_mono+stereo_640x192.sh>`_         | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/depth/kitti/monodepth2_resnet18_kitti_mono+stereo_640x192.log>`_         |
     +-------------------------------------------------------+------------------+--------------+-----------------+--------------+-----------+------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------+
 
 PoseNet
@@ -61,7 +61,7 @@ Monodepth2 trains depth and pose models at the same time via a self-supervised m
 
   The test script :download:`Download test_pose.py<../../scripts/depth/test_pose.py>` can be used for
   evaluating the models (KITTI Odometry results are evaluated using the official server). For example
-  ``monodepth2_resnet18_posenet_kitti_mono+stereo_640x192``::
+  ``monodepth2_resnet18_posenet_kitti_mono_stereo_640x192``::
 
     python test_pose.py --model_zoo_pose monodepth2_resnet18_posenet_kitti_mono_640x192 --data_path ~/.mxnet/datasets/kitti/kitti_odom --eval_split odom_9  --pretrained_type gluoncv --batch_size 1 --png
 
@@ -84,7 +84,7 @@ Monodepth2 trains depth and pose models at the same time via a self-supervised m
     +===============================================================+==================+==============+=================+==============+
     | monodepth2_resnet18_posenet_kitti_mono_640x192 [1]_           |   Mono           |  640x192     |   0.021±0.012   | 0.018±0.011  |
     +---------------------------------------------------------------+------------------+--------------+-----------------+--------------+
-    | monodepth2_resnet18_posenet_kitti_mono+stereo_640x192 [1]_    | Mono + Stereo    |  640x192     |   0.021±0.010   | 0.016±0.010  |
+    | monodepth2_resnet18_posenet_kitti_mono_stereo_640x192 [1]_    | Mono + Stereo    |  640x192     |   0.021±0.010   | 0.016±0.010  |
     +---------------------------------------------------------------+------------------+--------------+-----------------+--------------+
 
 
