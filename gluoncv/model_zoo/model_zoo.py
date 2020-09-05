@@ -371,9 +371,9 @@ _models = {
     'siamrpn_alexnet_v2_otb15': siamrpn_alexnet_v2_otb15,
     'monodepth2_resnet18_kitti_stereo_640x192': get_monodepth2_resnet18_kitti_stereo_640x192,
     'monodepth2_resnet18_kitti_mono_640x192': get_monodepth2_resnet18_kitti_mono_640x192,
-    'monodepth2_resnet18_kitti_mono+stereo_640x192': get_monodepth2_resnet18_kitti_mono_stereo_640x192,
+    'monodepth2_resnet18_kitti_mono_stereo_640x192': get_monodepth2_resnet18_kitti_mono_stereo_640x192,
     'monodepth2_resnet18_posenet_kitti_mono_640x192': get_monodepth2_resnet18_posenet_kitti_mono_640x192,
-    'monodepth2_resnet18_posenet_kitti_mono+stereo_640x192': get_monodepth2_resnet18_posenet_kitti_mono_stereo_640x192
+    'monodepth2_resnet18_posenet_kitti_mono_stereo_640x192': get_monodepth2_resnet18_posenet_kitti_mono_stereo_640x192
 }
 
 

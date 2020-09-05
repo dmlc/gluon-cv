@@ -150,4 +150,4 @@ def get_monodepth2_resnet18_posenet_kitti_mono_stereo_640x192(**kwargs):
 
     """
     return get_monodepth2posenet(backbone='resnet18',
-                                 pretrained_model='posenet_kitti_mono+stereo_640x192', **kwargs)
+                                 pretrained_model='posenet_kitti_mono_stereo_640x192', **kwargs)

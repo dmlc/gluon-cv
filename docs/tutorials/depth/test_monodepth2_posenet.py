@@ -17,7 +17,7 @@ Start Testing Now
 
     Example testing PoseNet command::
 
-        python test_pose.py --model_zoo_pose monodepth2_resnet18_posenet_kitti_mono+stereo_640x192 --data_path ~/.mxnet/datasets/kitti/kitti_odom --eval_split odom_9 --pretrained_type gluoncv --png
+        python test_pose.py --model_zoo_pose monodepth2_resnet18_posenet_kitti_mono_stereo_640x192 --data_path ~/.mxnet/datasets/kitti/kitti_odom --eval_split odom_9 --pretrained_type gluoncv --png
 
     For more training command options, please run ``python test_pose.py -h``
     Please checkout the `model_zoo <../../model_zoo/depth.html>`_ for training commands of reproducing the pretrained model.
@@ -91,7 +91,7 @@ dataloader = gluon.data.DataLoader(
 # Next, we get a pre-trained model from our model zoo,
 from gluoncv.model_zoo import get_model
 
-model_zoo = 'monodepth2_resnet18_posenet_kitti_mono+stereo_640x192'
+model_zoo = 'monodepth2_resnet18_posenet_kitti_mono_stereo_640x192'
 
 posenet = get_model(model_zoo, pretrained_base=False, num_input_images=2,
                     num_input_features=1, num_frames_to_predict_for=2, pretrained=True, ctx=ctx)
