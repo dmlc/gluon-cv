@@ -30,7 +30,7 @@ from mxnet.gluon import nn
 from mxnet.gluon.nn import BatchNorm
 from mxnet import cpu
 import mxnet as mx
-mx.npx.set_up()
+mx.npx.set_np()
 
 # Helpers
 def _conv3x3(channels, stride, in_channels):

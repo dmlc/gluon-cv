@@ -115,6 +115,7 @@ class DenseNet(HybridBlock):
             self.output = nn.Dense(classes)
 
     def hybrid_forward(self, F, x):
+        x = x.as_np_ndarray()
         x = self.features(x)
         x = self.output(x)
         return x
