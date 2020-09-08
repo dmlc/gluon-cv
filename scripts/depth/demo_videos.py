@@ -13,10 +13,7 @@ from gluoncv.model_zoo.monodepthv2.layers import disp_to_depth
 ctx = mx.cpu(0)
 
 
-def reading_img(root, height=192, width=640):
-    files = os.listdir(root)
-    files.sort()
-
+def reading_img(files):
     raw_img_squences = []
     for file in files:
         file = os.path.join(root, file)
@@ -33,11 +30,18 @@ if __name__ == '__main__':
     # 1. loading image squences or videos
     # 2. saving it to list
 
-    root = '2011_09_28/2011_09_28_drive_0001_sync/image_02/data'
+    # root = '2011_09_28/2011_09_28_drive_0001_sync/image_00/data'
+    root = '2011_09_26/2011_09_26_drive_0095_sync/image_02/data'
+    files = os.listdir(root)
+    files.sort()
+
+    pred_path = os.path.join('2011_09_26/2011_09_26_drive_0095_sync/image_02', 'pred')
+    if not os.path.exists(pred_path):
+        os.makedirs(pred_path)
     feed_height = 192
     feed_width = 640
     raw_img_squences, original_width, original_height = \
-        reading_img(root=root, height=feed_height, width=feed_width)
+        reading_img(files=files)
 
     ############################ Prepare Models and Prediction ############################
     # 1. loading pretrained model
@@ -77,7 +81,7 @@ if __name__ == '__main__':
     import cv2
 
     output_squences = []
-    for raw_img, pred in zip(raw_img_squences, pred_squences):
+    for raw_img, pred, file in zip(raw_img_squences, pred_squences, files):
         disp_resized_np = pred.squeeze().as_in_context(mx.cpu()).asnumpy()
         vmax = np.percentile(disp_resized_np, 95)
         normalizer = mpl.colors.Normalize(vmin=disp_resized_np.min(), vmax=vmax)
@@ -85,18 +89,29 @@ if __name__ == '__main__':
         colormapped_im = (mapper.to_rgba(disp_resized_np)[:, :, :3] * 255).astype(np.uint8)
         im = pil.fromarray(colormapped_im)
 
-        # TODO: save prediction to pred dir
-
         raw_img = np.array(raw_img)
         pred = np.array(im)
         output = np.concatenate((raw_img, pred), axis=0)
         output_squences.append(output)
 
-    for output in output_squences:
-        cv2.imshow('demo', cv2.cvtColor(output, cv2.COLOR_RGB2BGR))
-        cv2.waitKey(100)
+        # TODO: save prediction to pred dir
+        pred_out_file = os.path.join(pred_path, file)
+        cv2.imwrite(pred_out_file, cv2.cvtColor(pred, cv2.COLOR_RGB2BGR))
 
-    # TODO: save videos
+    width = int(output_squences[0].shape[1] + 0.5)
+    height = int(output_squences[0].shape[0] + 0.5)
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    out = cv2.VideoWriter(
+        'demo.mp4', fourcc, 20.0, (width, height))
 
-    cv2.waitKey(0)
+    for frame in output_squences:
+        frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+
+        out.write(frame)
+        cv2.imshow('demo', frame)
+
+        if cv2.waitKey(25) & 0xFF == ord('q'):
+            break
+
+    out.release()
     cv2.destroyAllWindows()
