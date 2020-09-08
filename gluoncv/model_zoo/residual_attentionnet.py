@@ -48,7 +48,8 @@ class UpsamplingBilinear2d(HybridBlock):
 
     def hybrid_forward(self, F, x):
         x = x.as_np_ndarray()
-        return F.contrib.BilinearResize2D(x.as_nd_ndarray(), height=self.size, width=self.size).as_np_ndarray()
+        return F.contrib.BilinearResize2D(x.as_nd_ndarray(), 
+                                          height=self.size, width=self.size).as_np_ndarray()
 
 
 class ResidualBlock(HybridBlock):
@@ -219,7 +220,7 @@ class AttentionModule_stage1(nn.HybridBlock):
         out = out_interp3 + out_skip2_connection
 
         out_softmax4 = self.softmax4_blocks(out)
-        out_interp2 =self.interpolation2(out_softmax4) + out_softmax1
+        out_interp2 = self.interpolation2(out_softmax4) + out_softmax1
         out = out_interp2 + out_skip1_connection
 
         out_softmax5 = self.softmax5_blocks(out)
