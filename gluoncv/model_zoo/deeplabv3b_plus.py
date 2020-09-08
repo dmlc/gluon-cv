@@ -71,6 +71,9 @@ class DeepLabWV3Plus(HybridBlock):
 
     def demo(self, x):
         return self.predict(x)
+    
+    def evaluate(self, x):
+        return self.forward(x)[0]
 
     def predict(self, x):
         h, w = x.shape[2:]
