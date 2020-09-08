@@ -88,7 +88,7 @@ class DeepLabWV3Plus(HybridBlock):
         x = self.mod7(x)
         x = self.head.demo(x, m2)
         import mxnet.ndarray as F
-        x = F.contrib.BilinearResize2D(x.as_nd_ndarray(), **self._up_kwargs).as_np_ndarray(),
+        x = F.contrib.BilinearResize2D(x.as_nd_ndarray(), **self._up_kwargs).as_np_ndarray()
         return x
 
 class _DeepLabHead(HybridBlock):
@@ -122,7 +122,7 @@ class _DeepLabHead(HybridBlock):
         x = x.as_np_ndarray()
         c1 = self.c1_block(c1)
         x = self.aspp(x)
-        x = F.contrib.BilinearResize2D(x.as_nd_ndarray(), **self._up_kwargs).as_np_ndarray(),
+        x = F.contrib.BilinearResize2D(x.as_nd_ndarray(), **self._up_kwargs).as_np_ndarray()
         return self.block(F.np.concatentate(c1, x, axis=1))
 
     def demo(self, x, c1):
@@ -133,7 +133,7 @@ class _DeepLabHead(HybridBlock):
         c1 = self.c1_block(c1)
         x = self.aspp.demo(x)
         import mxnet.ndarray as F
-        x = F.contrib.BilinearResize2D(x.as_nd_ndarray(), **self._up_kwargs).as_np_ndarray(),
+        x = F.contrib.BilinearResize2D(x.as_nd_ndarray(), **self._up_kwargs).as_np_ndarray()
         return self.block(F.concatentate(c1, x, axis=1))
 
 def _ASPPConv(in_channels, out_channels, atrous_rate, norm_layer, norm_kwargs):
@@ -164,7 +164,7 @@ class _AsppPooling(nn.HybridBlock):
     def hybrid_forward(self, F, x):
         x = x.as_np_ndarray()
         pool = self.gap(x)
-        return F.contrib.BilinearResize2D(pool.as_nd_ndarray(), **self._up_kwargs).as_np_ndarray(),
+        return F.contrib.BilinearResize2D(pool.as_nd_ndarray(), **self._up_kwargs).as_np_ndarray()
 
     def demo(self, x):
         x = x.as_np_ndarray()
@@ -173,7 +173,7 @@ class _AsppPooling(nn.HybridBlock):
         self._up_kwargs['width'] = w
         pool = self.gap(x)
         import mxnet.ndarray as F
-        return F.contrib.BilinearResize2D(pool.as_nd_ndarray(), **self._up_kwargs).as_np_ndarray(),
+        return F.contrib.BilinearResize2D(pool.as_nd_ndarray(), **self._up_kwargs).as_np_ndarray()
 
 class _ASPP(nn.HybridBlock):
     def __init__(self, in_channels, atrous_rates, norm_layer, norm_kwargs,
