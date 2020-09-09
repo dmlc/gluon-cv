@@ -73,6 +73,124 @@ We apply dilattion strategy to pre-trained ResNet models (with stride of 8). Ple
 
     resnet152_v1b
 
+:hidden:`ResNext`
+~~~~~~~~~~~~~~~~~~
+
+.. currentmodule:: gluoncv.model_zoo
+
+.. autosummary::
+    :nosignatures:
+
+    ResNext
+
+    get_resnext
+
+    resnext50_32x4d
+
+    resnext101_32x4d
+
+    resnext101_64x4d
+
+    resnext101b_64x4d
+
+    se_resnext50_32x4d
+
+    se_resnext101_32x4d
+
+    se_resnext101_64x4d
+
+    se_resnext101e_64x4d
+
+:hidden:`ResNeSt`
+~~~~~~~~~~~~~~~~~~
+
+.. currentmodule:: gluoncv.model_zoo
+
+.. autosummary::
+    :nosignatures:
+
+    ResNeSt
+
+    resnest14
+
+    resnest26
+
+    resnest50
+
+    resnest101
+
+    resnest200
+
+    resnest269
+
+:hidden:`MobileNet`
+~~~~~~~~~~~~~~~~~~
+
+.. currentmodule:: gluoncv.model_zoo
+
+.. autosummary::
+    :nosignatures:
+
+    MobileNet
+
+    MobileNetV2
+
+    get_mobilenet
+
+    get_mobilenet_v2
+
+    mobilenet1_0
+
+    mobilenet0_75
+
+    mobilenet0_5
+
+    mobilenet0_25
+
+    mobilenetv2_1_0
+
+    mobilenetv2_0_75
+
+    mobilenetv2_0_5
+
+    mobilenetv2_0_25
+
+    mobilenetv3_large
+
+    mobilenetv3_small
+
+:hidden:`SqueezeNet`
+~~~~~~~~~~~~~~~~~~
+
+.. currentmodule:: gluoncv.model_zoo
+
+.. autosummary::
+    :nosignatures:
+
+    SqueezeNet
+
+    squeezenet1_0
+
+    squeezenet1_1
+
+:hidden:`DenseNet`
+~~~~~~~~~~~~~~~~~~
+
+.. currentmodule:: gluoncv.model_zoo
+
+.. autosummary::
+    :nosignatures:
+
+    DenseNet
+
+    densenet121
+
+    densenet161
+
+    densenet169
+
+    densenet201
+
 Object Detection
 ^^^^^^^^^^^^^^^^
 
