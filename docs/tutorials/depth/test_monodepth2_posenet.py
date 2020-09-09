@@ -45,7 +45,7 @@ ctx = mx.cpu(0)
 #     http://www.cvlibs.net/download.php?file=data_odometry_poses.zip (you will get the
 #     download link via emails.) to ``$(HOME)/.mxnet/datasets/kitti/``, then extract them. Here is an example commands::
 #
-#       cd ~
+#       cd ~/.mxnet/datasets/kitti/
 #       wget [the link of data_odometry_color.zip file]
 #       wget [the link of data_odometry_poses.zip file]
 #       unzip data_odometry_color.zip

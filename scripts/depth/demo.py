@@ -39,9 +39,9 @@ def parse_args():
     parser.add_argument("--width", type=int, help="input image width", default=640)
 
     parser.add_argument('--prediction_only', action="store_true",
-                        help='if true, just store predicted results, not store videos')
+                        help='if true, just store pure prediction results')
     parser.add_argument('--use_depth', action="store_true",
-                        help='store depth map')
+                        help='use depth map as prediction results')
     parser.add_argument('--output_format', type=str,
                         choices=['image', 'video'], default='video',
                         help='choose the format of output')
