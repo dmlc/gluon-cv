@@ -1,4 +1,6 @@
 import os
+import argparse
+import time
 import PIL.Image as pil
 import numpy as np
 
@@ -8,15 +10,54 @@ from mxnet.gluon.data.vision import transforms
 import gluoncv
 from gluoncv.model_zoo.monodepthv2.layers import disp_to_depth
 
+import matplotlib as mpl
+import matplotlib.cm as cm
+import cv2
+
 
 # using cpu
 ctx = mx.cpu(0)
 
 
-def reading_img(files):
+def parse_args():
+    """Training Options for Semantic Segmentation Experiments"""
+    parser = argparse.ArgumentParser(description='MXNet Gluon Monodepth2 Demo')
+
+    # model and dataset
+    parser.add_argument('--model_zoo', type=str,
+                        choices=['monodepth2_resnet18_kitti_stereo_640x192',
+                                 'monodepth2_resnet18_kitti_mono_640x192',
+                                 'monodepth2_resnet18_kitti_mono_stereo_640x192'],
+                        default='monodepth2_resnet18_kitti_mono_stereo_640x192',
+                        help='choose depth model from model zoo model')
+
+    parser.add_argument('--input_format', type=str,
+                        choices=['image', 'video'], default='image',
+                        help='choose the format of input data')
+    parser.add_argument("--data_path", type=str, help="path to the data")
+    parser.add_argument("--height", type=int, help="input image height", default=192)
+    parser.add_argument("--width", type=int, help="input image width", default=640)
+
+    parser.add_argument('--prediction_only', action="store_true",
+                        help='if true, just store predicted results, not store videos')
+    parser.add_argument('--use_depth', action="store_true",
+                        help='store depth map')
+    parser.add_argument('--output_format', type=str,
+                        choices=['image', 'video'], default='video',
+                        help='choose the format of output')
+    parser.add_argument("--output_path", type=str, help="path to store the results",
+                        default=os.path.join(os.path.expanduser("."), "tmp"))
+
+    # the parser
+    args = parser.parse_args()
+
+    return args
+
+
+def reading_img(files, data_path):
     raw_img_squences = []
     for file in files:
-        file = os.path.join(root, file)
+        file = os.path.join(data_path, file)
         img = pil.open(file).convert('RGB')
         raw_img_squences.append(img)
 
@@ -26,33 +67,42 @@ def reading_img(files):
 
 
 if __name__ == '__main__':
+    args = parse_args()
+
     ############################ Loading Data ############################
-    # 1. loading image squences or videos
-    # 2. saving it to list
+    print("Loading Data......")
+    tic = time.time()
 
-    # root = '2011_09_28/2011_09_28_drive_0001_sync/image_00/data'
-    root = '2011_09_26/2011_09_26_drive_0095_sync/image_02/data'
-    files = os.listdir(root)
-    files.sort()
+    if args.input_format == 'image':
+        assert os.path.isdir(args.data_path), \
+            "--data_path must be a direction when input_format is 'image'"
 
-    pred_path = os.path.join('2011_09_26/2011_09_26_drive_0095_sync/image_02', 'pred')
-    if not os.path.exists(pred_path):
-        os.makedirs(pred_path)
-    feed_height = 192
-    feed_width = 640
-    raw_img_squences, original_width, original_height = \
-        reading_img(files=files)
+        files = os.listdir(args.data_path)
+        files.sort()
+        raw_img_squences, original_width, original_height = \
+            reading_img(files=files, data_path=args.data_path)
+    elif args.input_format == 'video':
+        pass
+
+    feed_height = args.height
+    feed_width = args.width
+
+    t_consuming = time.time() - tic
+    print("Data loaded! Time consuming: {:0.3f}s".format(t_consuming))
 
     ############################ Prepare Models and Prediction ############################
-    # 1. loading pretrained model
-    # 2. inference
-    # 3. disp to depth
+    print("Loading Model and Prediction......")
+    tic = time.time()
 
+    # while use stereo or mono+stereo model, we could get real depth value
     min_depth = 0.1
     max_depth = 100
-    scale_factor = 5.4
 
-    model = gluoncv.model_zoo.get_model('monodepth2_resnet18_kitti_mono_stereo_640x192',
+    scale_factor = 5.4
+    MIN_DEPTH = 1e-3
+    MAX_DEPTH = 80
+
+    model = gluoncv.model_zoo.get_model(args.model_zoo,
                                         pretrained_base=False, ctx=ctx, pretrained=True)
     pred_squences = []
     for img in raw_img_squences:
@@ -60,58 +110,79 @@ if __name__ == '__main__':
         img = transforms.ToTensor()(mx.nd.array(img)).expand_dims(0).as_in_context(context=ctx)
 
         outputs = model.predict(img)
-        disp = outputs[("disp", 0)]
-        disp, _ = disp_to_depth(disp, min_depth, max_depth)
-        disp_resized = mx.nd.contrib.BilinearResize2D(disp, height=original_height, width=original_width)
+        mx.nd.waitall()
+        pred_disp, _ = disp_to_depth(outputs[("disp", 0)], min_depth, max_depth)
+        t = time.time()
+        pred_disp = pred_disp.squeeze().as_in_context(mx.cpu()).asnumpy()
 
-        depth_pred = disp_resized * scale_factor
-        depth_pred = np.clip(depth_pred, a_min=1e-3, a_max=80)
+        pred_disp = cv2.resize(src=pred_disp, dsize=(original_width, original_height))
+        pred_depth = 1 / pred_disp
 
-        pred_squences.append(depth_pred)
+        if args.model_zoo != 'monodepth2_resnet18_kitti_mono_640x192':
+            pred_depth *= scale_factor
+            pred_depth[pred_depth < MIN_DEPTH] = MIN_DEPTH
+            pred_depth[pred_depth > MAX_DEPTH] = MAX_DEPTH
+
+        if args.use_depth:
+            pred_squences.append(pred_depth)
+        else:
+            pred_squences.append(pred_disp)
+
+    t_consuming = time.time() - tic
+    print("Finished prediction! Time consuming: {:0.3f}s".format(t_consuming))
 
     ############################ Visualization & Store Videos ############################
-    # 1. visualization, using cv2
-    # 2. concat prediction and inputs
-    # 2. store it as videos
-    import matplotlib as mpl
-    import matplotlib.cm as cm
+    print("Visualization and Store Results......")
+    tic = time.time()
 
-    # from gluoncv.utils import try_import_cv2
-    # cv2 = try_import_cv2()
-    import cv2
+    if args.prediction_only:
+        pred_path = os.path.join(args.output_path, 'pred')
+        if not os.path.exists(pred_path):
+            os.makedirs(pred_path)
 
-    output_squences = []
-    for raw_img, pred, file in zip(raw_img_squences, pred_squences, files):
-        disp_resized_np = pred.squeeze().as_in_context(mx.cpu()).asnumpy()
-        vmax = np.percentile(disp_resized_np, 95)
-        normalizer = mpl.colors.Normalize(vmin=disp_resized_np.min(), vmax=vmax)
-        mapper = cm.ScalarMappable(norm=normalizer, cmap='magma')
-        colormapped_im = (mapper.to_rgba(disp_resized_np)[:, :, :3] * 255).astype(np.uint8)
-        im = pil.fromarray(colormapped_im)
+        for pred, file in zip(pred_squences, files):
+            pred_out_file = os.path.join(pred_path, file)
+            cv2.imwrite(pred_out_file, pred)
+    else:
+        rgb_path = os.path.join(args.output_path, 'rgb')
+        if not os.path.exists(rgb_path):
+            os.makedirs(rgb_path)
 
-        raw_img = np.array(raw_img)
-        pred = np.array(im)
-        output = np.concatenate((raw_img, pred), axis=0)
-        output_squences.append(output)
+        output_squences = []
+        for raw_img, pred, file in zip(raw_img_squences, pred_squences, files):
+            vmax = np.percentile(pred, 95)
+            normalizer = mpl.colors.Normalize(vmin=pred.min(), vmax=vmax)
+            mapper = cm.ScalarMappable(norm=normalizer, cmap='magma')
+            colormapped_im = (mapper.to_rgba(pred)[:, :, :3] * 255).astype(np.uint8)
+            im = pil.fromarray(colormapped_im)
 
-        # TODO: save prediction to pred dir
-        pred_out_file = os.path.join(pred_path, file)
-        cv2.imwrite(pred_out_file, cv2.cvtColor(pred, cv2.COLOR_RGB2BGR))
+            raw_img = np.array(raw_img)
+            pred = np.array(im)
+            output = np.concatenate((raw_img, pred), axis=0)
+            output_squences.append(output)
 
-    width = int(output_squences[0].shape[1] + 0.5)
-    height = int(output_squences[0].shape[0] + 0.5)
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    out = cv2.VideoWriter(
-        'demo.mp4', fourcc, 20.0, (width, height))
+            if args.output_format == 'image':
+                pred_out_file = os.path.join(rgb_path, file)
+                cv2.imwrite(pred_out_file, cv2.cvtColor(pred, cv2.COLOR_RGB2BGR))
 
-    for frame in output_squences:
-        frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+        if args.output_format == 'video':
+            width = int(output_squences[0].shape[1] + 0.5)
+            height = int(output_squences[0].shape[0] + 0.5)
+            fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+            out = cv2.VideoWriter(
+                os.path.join(args.output_path, 'demo.mp4'), fourcc, 20.0, (width, height))
 
-        out.write(frame)
-        cv2.imshow('demo', frame)
+            for frame in output_squences:
+                frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
 
-        if cv2.waitKey(25) & 0xFF == ord('q'):
-            break
+                out.write(frame)
+                cv2.imshow('demo', frame)
 
-    out.release()
-    cv2.destroyAllWindows()
+                if cv2.waitKey(25) & 0xFF == ord('q'):
+                    break
+
+            out.release()
+            cv2.destroyAllWindows()
+
+    t_consuming = time.time() - tic
+    print("Finished! Time consuming: {:0.3f}s".format(t_consuming))
