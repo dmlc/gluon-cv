@@ -1,4 +1,4 @@
-"""02. Predict depth from a image sequence or a video with pre-trained Monodepth2 models
+"""02. Predict depth from an image sequence or a video with pre-trained Monodepth2 models
 ===========================================================================
 This article will demonstrate how to estimate depth from your image sequence or video stream.
 
@@ -30,8 +30,8 @@ ctx = mx.cpu(0)
 # Prepare the data
 # -----------------
 #
-# In this tutorial, we use one sequence of KITTI RAW dataset as example. Because KITTI RAW dataset only provide image
-# sequences, the input format is image sequences in this tutorials.
+# In this tutorial, we use one sequence of KITTI RAW datasets as an example.
+# Because the KITTI RAW dataset only provides image sequences, the input format is image sequences in this tutorial.
 #
 # Follow the command to download example data::
 #
@@ -40,7 +40,7 @@ ctx = mx.cpu(0)
 #       unzip 2011_09_26_drive_0095_sync.zip
 #
 #
-# After getting the dataset, we can easily loading images with PIL.
+# After getting the dataset, we can easily load images with PIL.
 data_path = "~/.mxnet/datasets/kitti/example/2011_09_26/2011_09_26_drive_0095_sync/image_02/data"
 
 files = os.listdir(data_path)
@@ -61,14 +61,14 @@ original_width, original_height = raw_img_sequences[0].size
 # In this tutorial we feed frames from the image sequences into a depth estimation model,
 # then we could get the depth map of the input frame.
 #
-# For the model we use monodepth2_resnet18_kitti_mono_stereo_640x192 as it is accurate and
-# could be recovery scaling factor of stereo baseline.
+# For the model, we use monodepth2_resnet18_kitti_mono_stereo_640x192 as it is accurate and
+# could recover the scaling factor of stereo baseline.
 
 model_zoo = 'monodepth2_resnet18_kitti_mono_stereo_640x192'
 model = gluoncv.model_zoo.get_model(model_zoo, pretrained_base=False, ctx=ctx, pretrained=True)
 
 ##############################################################################
-# Estimation loop
+# Prediction loop
 # -----------------
 #
 # For each frame, we perform the following steps:
@@ -112,10 +112,11 @@ for img in raw_img_sequences:
 
 
 ##############################################################################
-# Visualization and store results
+# Store results
 # -----------------
 #
-# Here, we provide the example of store the prediction results. Including:
+# Here, we provide an example of storing the prediction results. Including:
+#
 # - store depth map
 output_path = os.path.join(os.path.expanduser("."), "tmp")
 
@@ -171,7 +172,7 @@ cv2.destroyAllWindows()
 
 
 ##############################################################################
-# You can start with example code.
+# You can start with the example code.
 # -----------------
 #
 # Download the script to run the demo
@@ -183,12 +184,13 @@ cv2.destroyAllWindows()
 #         python demo.py --model_zoo monodepth2_resnet18_kitti_mono_stereo_640x192 --input_format image --data_path ~/.mxnet/datasets/kitti/example/2011_09_26/2011_09_26_drive_0095_sync/image_02/data --output_format video
 #
 # For more demo command options, please run ``python demo.py -h``
-
+#
+#
 #  .. hint::
 #
 #     This tutorial directly loads the image sequence or video into a list,
 #     so it cannot work when the image sequence or video is large.
-#     Here is just provide a example about using pretrained monodepth2 model to do prediction for users.
+#     Here is just provide an example about using a pretrained monodepth2 model to do a prediction for users.
 #
 
 
