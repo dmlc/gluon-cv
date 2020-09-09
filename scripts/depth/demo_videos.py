@@ -54,16 +54,46 @@ def parse_args():
     return args
 
 
-def reading_img(files, data_path):
-    raw_img_squences = []
+def read_img(files, data_path):
+    raw_img_sequences = []
     for file in files:
         file = os.path.join(data_path, file)
         img = pil.open(file).convert('RGB')
-        raw_img_squences.append(img)
+        raw_img_sequences.append(img)
 
-    original_width, original_height = raw_img_squences[0].size
+    original_width, original_height = raw_img_sequences[0].size
 
-    return raw_img_squences, original_width, original_height
+    return raw_img_sequences, original_width, original_height
+
+
+def read_video(data_path):
+    raw_img_sequences = []
+    files = []
+    frame_index = 0
+
+    cap = cv2.VideoCapture(data_path)
+    while cap.isOpened():
+        ret, frame = cap.read()
+        # if frame is read correctly ret is True
+        if not ret:
+            print("Can't receive frame (stream end?). Exiting ...")
+            break
+
+        img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        img = pil.fromarray(img)
+        raw_img_sequences.append(img)
+
+        f_str = "{:010d}.png".format(frame_index)
+        files.append(f_str)
+        frame_index += 1
+        if cv2.waitKey(1) == ord('q'):
+            break
+    cap.release()
+    cv2.destroyAllWindows()
+
+    original_width, original_height = raw_img_sequences[0].size
+
+    return raw_img_sequences, files, original_width, original_height
 
 
 if __name__ == '__main__':
@@ -79,16 +109,19 @@ if __name__ == '__main__':
 
         files = os.listdir(args.data_path)
         files.sort()
-        raw_img_squences, original_width, original_height = \
-            reading_img(files=files, data_path=args.data_path)
+        raw_img_sequences, original_width, original_height = \
+            read_img(files=files, data_path=args.data_path)
     elif args.input_format == 'video':
-        pass
+        assert os.path.isfile(args.data_path), \
+            "--data_path must be a video file when input_format is 'video'"
+        raw_img_sequences, files, original_width, original_height = \
+            read_video(data_path=args.data_path)
 
     feed_height = args.height
     feed_width = args.width
 
     t_consuming = time.time() - tic
-    print("Data loaded! Time consuming: {:0.3f}s".format(t_consuming))
+    print("Data loaded! Time consuming: {:0.3f}s\n".format(t_consuming))
 
     ############################ Prepare Models and Prediction ############################
     print("Loading Model and Prediction......")
@@ -104,8 +137,8 @@ if __name__ == '__main__':
 
     model = gluoncv.model_zoo.get_model(args.model_zoo,
                                         pretrained_base=False, ctx=ctx, pretrained=True)
-    pred_squences = []
-    for img in raw_img_squences:
+    pred_sequences = []
+    for img in raw_img_sequences:
         img = img.resize((feed_width, feed_height), pil.LANCZOS)
         img = transforms.ToTensor()(mx.nd.array(img)).expand_dims(0).as_in_context(context=ctx)
 
@@ -124,12 +157,12 @@ if __name__ == '__main__':
             pred_depth[pred_depth > MAX_DEPTH] = MAX_DEPTH
 
         if args.use_depth:
-            pred_squences.append(pred_depth)
+            pred_sequences.append(pred_depth)
         else:
-            pred_squences.append(pred_disp)
+            pred_sequences.append(pred_disp)
 
     t_consuming = time.time() - tic
-    print("Finished prediction! Time consuming: {:0.3f}s".format(t_consuming))
+    print("Finished prediction! Time consuming: {:0.3f}s\n".format(t_consuming))
 
     ############################ Visualization & Store Videos ############################
     print("Visualization and Store Results......")
@@ -140,7 +173,7 @@ if __name__ == '__main__':
         if not os.path.exists(pred_path):
             os.makedirs(pred_path)
 
-        for pred, file in zip(pred_squences, files):
+        for pred, file in zip(pred_sequences, files):
             pred_out_file = os.path.join(pred_path, file)
             cv2.imwrite(pred_out_file, pred)
     else:
@@ -148,8 +181,8 @@ if __name__ == '__main__':
         if not os.path.exists(rgb_path):
             os.makedirs(rgb_path)
 
-        output_squences = []
-        for raw_img, pred, file in zip(raw_img_squences, pred_squences, files):
+        output_sequences = []
+        for raw_img, pred, file in zip(raw_img_sequences, pred_sequences, files):
             vmax = np.percentile(pred, 95)
             normalizer = mpl.colors.Normalize(vmin=pred.min(), vmax=vmax)
             mapper = cm.ScalarMappable(norm=normalizer, cmap='magma')
@@ -159,20 +192,20 @@ if __name__ == '__main__':
             raw_img = np.array(raw_img)
             pred = np.array(im)
             output = np.concatenate((raw_img, pred), axis=0)
-            output_squences.append(output)
+            output_sequences.append(output)
 
             if args.output_format == 'image':
                 pred_out_file = os.path.join(rgb_path, file)
                 cv2.imwrite(pred_out_file, cv2.cvtColor(pred, cv2.COLOR_RGB2BGR))
 
         if args.output_format == 'video':
-            width = int(output_squences[0].shape[1] + 0.5)
-            height = int(output_squences[0].shape[0] + 0.5)
+            width = int(output_sequences[0].shape[1] + 0.5)
+            height = int(output_sequences[0].shape[0] + 0.5)
             fourcc = cv2.VideoWriter_fourcc(*'mp4v')
             out = cv2.VideoWriter(
                 os.path.join(args.output_path, 'demo.mp4'), fourcc, 20.0, (width, height))
 
-            for frame in output_squences:
+            for frame in output_sequences:
                 frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
 
                 out.write(frame)

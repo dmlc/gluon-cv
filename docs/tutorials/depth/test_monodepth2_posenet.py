@@ -1,4 +1,4 @@
-"""03. Testing PoseNet from image sequences with pre-trained Monodepth2 Pose models
+"""04. Testing PoseNet from image sequences with pre-trained Monodepth2 Pose models
 ===========================================================================
 
 This is a quick demo of using the GluonCV Monodepth2 model for KITTI on real-world images.
