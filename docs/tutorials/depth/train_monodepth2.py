@@ -1,4 +1,4 @@
-"""02. Monodepth2 training on KITTI dataset
+"""03. Monodepth2 training on KITTI dataset
 ==================================================
 
 This is a tutorial of training MonoDepth2 on the KITTI dataset using Gluon CV toolkit.

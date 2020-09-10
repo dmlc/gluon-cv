@@ -297,6 +297,12 @@ Depth Prediction
         Predict depth from a single image using Monodepth2.
 
     .. card::
+        :title: Pre-trained Monodepth2 Models
+        :link: ../build/examples_depth/videos_monodepth2.html
+
+        Predict depth from an image sequence or a video using Monodepth2.
+
+    .. card::
         :title: Dive Deep into Training Monodepth2 Models
         :link: ../build/examples_depth/train_monodepth2.html
 

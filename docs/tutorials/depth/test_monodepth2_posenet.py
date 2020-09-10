@@ -1,4 +1,4 @@
-"""03. Testing PoseNet from image sequences with pre-trained Monodepth2 Pose models
+"""04. Testing PoseNet from image sequences with pre-trained Monodepth2 Pose models
 ===========================================================================
 
 This is a quick demo of using the GluonCV Monodepth2 model for KITTI on real-world images.
@@ -45,7 +45,7 @@ ctx = mx.cpu(0)
 #     http://www.cvlibs.net/download.php?file=data_odometry_poses.zip (you will get the
 #     download link via emails.) to ``$(HOME)/.mxnet/datasets/kitti/``, then extract them. Here is an example commands::
 #
-#       cd ~
+#       cd ~/.mxnet/datasets/kitti/
 #       wget [the link of data_odometry_color.zip file]
 #       wget [the link of data_odometry_poses.zip file]
 #       unzip data_odometry_color.zip
