@@ -103,12 +103,14 @@ def _get_dataset(dataset, args):
         val_metric = VOC07MApMetric(iou_thresh=0.5, class_names=val_dataset.classes)
     elif dataset.lower() == 'voc_tiny':
         # need to download the dataset and specify the path to store the dataset in
-        # root = './'
+        # root = os.path.expanduser('~/.mxnet/datasets/')
         # filename_zip = ag.download('https://autogluon.s3.amazonaws.com/datasets/tiny_motorbike.zip', path=root)
         # filename = ag.unzip(filename_zip, root=root)
         # data_root = os.path.join(root, filename)
-        train_dataset = CustomVOCDetectionBase(classes=('motorbike',), root='~/tiny_motorbike', splits=[('', 'trainval')])
-        val_dataset = CustomVOCDetectionBase(classes=('motorbike',), root='~/tiny_motorbike', splits=[('', 'test')])
+        train_dataset = CustomVOCDetectionBase(classes=('motorbike',), root=args.dataset_root + 'tiny_motorbike',
+                                               splits=[('', 'trainval')])
+        val_dataset = CustomVOCDetectionBase(classes=('motorbike',), root=args.dataset_root + 'tiny_motorbike',
+                                             splits=[('', 'test')])
         val_metric = VOC07MApMetric(iou_thresh=0.5, class_names=val_dataset.classes)
     elif dataset.lower() in ['clipart', 'comic', 'watercolor']:
         root = os.path.join('~', '.mxnet', 'datasets', dataset.lower())

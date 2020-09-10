@@ -10,20 +10,20 @@ validation = Ingredient('validation')
 @ssd.config
 def ssd_default():
     # Backbone network.
-    backbone = 'resnet18_v1'  # base feature network
+    backbone = 'vgg16_atrous'  # base feature network
     # Input data shape, use 300, 512.
-    data_shape = 512
+    data_shape = 300
     # List of convolution layer channels which is going to be appended to the base
     # network feature extractor. If `name` is `None`, this is ignored.
-    filters = [512, 512, 256, 256]
+    filters = None
     # Sizes of anchor boxes, this should be a list of floats, in incremental order.
     # The length of `sizes` must be len(layers) + 1.
-    sizes = [51.2, 102.4, 189.4, 276.4, 363.52, 450.6, 492]
+    sizes = [30, 60, 111, 162, 213, 264, 315]
     # Aspect ratios of anchors in each output layer. Its length must be equals
     # to the number of SSD output layers.
     ratios = [[1, 2, 0.5]] + [[1, 2, 0.5, 3, 1.0/3]] * 3 + [[1, 2, 0.5]] * 2
     # Step size of anchor boxes in each output layer.
-    steps = [16, 32, 64, 128, 256, 512]
+    steps = [8, 16, 32, 64, 100, 300]
     # Use synchronize BN across devices.
     syncbn = False
     # Whether to use automatic mixed precision

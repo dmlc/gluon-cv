@@ -179,6 +179,8 @@ ex = Experiment('faster_rcnn_default', ingredients=[logging, train, validation, 
 def default_configs():
     # Dataset name. eg. 'coco', 'voc', 'voc_tiny'
     dataset = 'voc_tiny'
+    # Path of the directory where the dataset is located.
+    dataset_root = '~/.mxnet/datasets/'
     # Training with GPUs, you can specify (1,3) for example.
     gpus = (0, 1, 2, 3)
     # Resume from previously saved parameters if not None.
