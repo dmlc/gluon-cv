@@ -10,10 +10,10 @@ from gluoncv.auto.tasks.object_detection import ObjectDetection
 
 if __name__ == '__main__':
     args = {
-        'dataset': 'voc',
-        'meta_arch': 'yolo',
+        'dataset': 'voc_tiny',
+        'meta_arch': 'ssd',
         'lr': ag.Categorical(1e-3, 5e-4),
-        'epochs': 2,
+        'epochs': 5,
         'num_trials': 2
     }
 
