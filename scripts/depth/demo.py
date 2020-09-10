@@ -20,7 +20,7 @@ ctx = mx.cpu(0)
 
 
 def parse_args():
-    """Training Options for Semantic Segmentation Experiments"""
+    """Training Options for Depth Prediction Experiments"""
     parser = argparse.ArgumentParser(description='MXNet Gluon Monodepth2 Demo')
 
     # model and dataset

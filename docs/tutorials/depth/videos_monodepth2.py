@@ -61,7 +61,7 @@ original_width, original_height = raw_img_sequences[0].size
 # In this tutorial we feed frames from the image sequences into a depth estimation model,
 # then we could get the depth map of the input frame.
 #
-# For the model, we use monodepth2_resnet18_kitti_mono_stereo_640x192 as it is accurate and
+# For the model, we use ``monodepth2_resnet18_kitti_mono_stereo_640x192`` as it is accurate and
 # could recover the scaling factor of stereo baseline.
 
 model_zoo = 'monodepth2_resnet18_kitti_mono_stereo_640x192'
@@ -170,6 +170,14 @@ for frame in output_sequences:
 out.release()
 cv2.destroyAllWindows()
 
+##############################################################################
+# The result video for the example:
+#
+# .. image:: https://raw.githubusercontent.com/KuangHaofei/GluonCV_Test/master/monodepthv2/our_depth_demo.gif
+#     :width: 100%
+#     :align: center
+#
+
 
 ##############################################################################
 # You can start with the example code.
@@ -179,9 +187,21 @@ cv2.destroyAllWindows()
 #
 # :download:`Download cam_demo.py<../../../scripts/depth/demo.py>`
 #
-# Example running command::
+# This example command will loading a image sequence then store a video::
 #
 #         python demo.py --model_zoo monodepth2_resnet18_kitti_mono_stereo_640x192 --input_format image --data_path ~/.mxnet/datasets/kitti/example/2011_09_26/2011_09_26_drive_0095_sync/image_02/data --output_format video
+#
+#
+# This example command will loading a image sequence then store the corresponding colorized disparity sequence::
+#
+#         python demo.py --model_zoo monodepth2_resnet18_kitti_mono_stereo_640x192 --input_format image --data_path ~/.mxnet/datasets/kitti/example/2011_09_26/2011_09_26_drive_0095_sync/image_02/data --output_format image
+#
+#
+# This example command will loading a image sequence then store the corresponding depth sequence
+# (real depth can only be obtained in mono or mono+stereo mode.)::
+#
+#         python demo.py --model_zoo monodepth2_resnet18_kitti_mono_stereo_640x192 --input_format image --data_path ~/.mxnet/datasets/kitti/example/2011_09_26/2011_09_26_drive_0095_sync/image_02/data --prediction_only --use_depth
+#
 #
 # For more demo command options, please run ``python demo.py -h``
 #
