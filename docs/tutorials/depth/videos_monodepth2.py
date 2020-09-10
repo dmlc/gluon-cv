@@ -187,12 +187,12 @@ cv2.destroyAllWindows()
 #
 # :download:`Download cam_demo.py<../../../scripts/depth/demo.py>`
 #
-# This example command will load a image sequence then store a video::
+# This example command will load an image sequence then store a video::
 #
 #         python demo.py --model_zoo monodepth2_resnet18_kitti_mono_stereo_640x192 --input_format image --data_path ~/.mxnet/datasets/kitti/example/2011_09_26/2011_09_26_drive_0095_sync/image_02/data --output_format video
 #
 #
-# This example command will load a image sequence then store the corresponding colorized disparity sequence::
+# This example command will load an image sequence then store the corresponding colorized disparity sequence::
 #
 #         python demo.py --model_zoo monodepth2_resnet18_kitti_mono_stereo_640x192 --input_format image --data_path ~/.mxnet/datasets/kitti/example/2011_09_26/2011_09_26_drive_0095_sync/image_02/data --output_format image
 #
