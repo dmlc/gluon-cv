@@ -174,7 +174,7 @@ cv2.destroyAllWindows()
 # The result video for the example:
 #
 # .. image:: https://raw.githubusercontent.com/KuangHaofei/GluonCV_Test/master/monodepthv2/our_depth_demo.gif
-#     :width: 100%
+#     :width: 60%
 #     :align: center
 #
 
@@ -187,20 +187,14 @@ cv2.destroyAllWindows()
 #
 # :download:`Download cam_demo.py<../../../scripts/depth/demo.py>`
 #
-# This example command will loading a image sequence then store a video::
+# This example command will load a image sequence then store a video::
 #
 #         python demo.py --model_zoo monodepth2_resnet18_kitti_mono_stereo_640x192 --input_format image --data_path ~/.mxnet/datasets/kitti/example/2011_09_26/2011_09_26_drive_0095_sync/image_02/data --output_format video
 #
 #
-# This example command will loading a image sequence then store the corresponding colorized disparity sequence::
+# This example command will load a image sequence then store the corresponding colorized disparity sequence::
 #
 #         python demo.py --model_zoo monodepth2_resnet18_kitti_mono_stereo_640x192 --input_format image --data_path ~/.mxnet/datasets/kitti/example/2011_09_26/2011_09_26_drive_0095_sync/image_02/data --output_format image
-#
-#
-# This example command will loading a image sequence then store the corresponding depth sequence
-# (real depth can only be obtained in mono or mono+stereo mode.)::
-#
-#         python demo.py --model_zoo monodepth2_resnet18_kitti_mono_stereo_640x192 --input_format image --data_path ~/.mxnet/datasets/kitti/example/2011_09_26/2011_09_26_drive_0095_sync/image_02/data --prediction_only --use_depth
 #
 #
 # For more demo command options, please run ``python demo.py -h``
