@@ -64,22 +64,24 @@ class GroupNorm(HybridBlock):
     def hybrid_forward(self, F, x, gamma, beta):
         # normalization
         with autograd.train_mode():
-            y = x.expand_dims(0).reshape(0, 0, self.ngroups, -1)
-            y = y.reshape(1, -3, -1)
+            y = F.np.expand_dims(x, 0)
+            y = F.np.reshape(y, (y.shape[0], y.shape[1], self.ngroups, -1))
+            y = F.np.reshape(y, (1, y.shape[1] * y.shape[2], -1))
             batch = x.shape[0]
-            y = F.BatchNorm(y,
-                            F.ones(batch*self.ngroups, ctx=x.context),
-                            F.zeros(batch*self.ngroups, ctx=x.context),
-                            F.zeros(batch*self.ngroups, ctx=x.context),
-                            F.ones(batch*self.ngroups, ctx=x.context),
-                            name='fwd', **self._kwargs)
+            y = F.npx.batch_norm(y,
+                                 F.np.ones(batch*self.ngroups, ctx=x.context),
+                                 F.np.zeros(batch*self.ngroups, ctx=x.context),
+                                 F.np.zeros(batch*self.ngroups, ctx=x.context),
+                                 F.np.ones(batch*self.ngroups, ctx=x.context),
+                                 name='fwd', **self._kwargs)
         # scale and shift
-        y = y.reshape_like(x).reshape(0, 0, -1)
+        y = F.npx.reshape_like(y, x)
+        y = F.np.reshape(y, (y.shape[0], y.shape[1], -1))
         if self.scale:
             y = y * gamma.reshape(1, -1, 1) + beta.reshape(1, -1, 1)
         else:
             y = y + beta.reshape(1, -1, 1)
-        return y.reshape_like(x)
+        return F.npx.reshape_like(y, x)
 
     def __repr__(self):
         s = '{name}({content}'
