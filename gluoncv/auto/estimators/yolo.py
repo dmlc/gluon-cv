@@ -1,28 +1,30 @@
 """YOLO Estimator"""
+
 import os
 import time
-import warnings
-from collections import OrderedDict
-import numpy as np
-
 import logging
+import warnings
+import numpy as np
+from collections import OrderedDict
+
 import mxnet as mx
 from mxnet import gluon
 from mxnet import autograd
-from gluoncv import data as gdata
-from ... import utils as gutils
-from ...model_zoo import get_model
-from ...data.batchify import Tuple, Stack, Pad
-from ...utils.metrics.accuracy import Accuracy
-from ...utils import LRScheduler, LRSequential
-from ...model_zoo.center_net import get_center_net, get_base_network
-from ...loss import MaskedL1Loss, HeatmapFocalLoss
 
+from ... import data as gdata
+from ... import utils as gutils
+from ...data import MixupDetection
+from ...data.batchify import Tuple, Stack, Pad
+from ...data.dataloader import RandomTransformDataLoader
 from ...data.transforms.presets.yolo import YOLO3DefaultTrainTransform
 from ...data.transforms.presets.yolo import YOLO3DefaultValTransform
-from ...data.dataloader import RandomTransformDataLoader
+from ...model_zoo import get_model
+from ...model_zoo.center_net import get_center_net, get_base_network
+from ...utils import LRScheduler, LRSequential
+from ...utils.metrics.accuracy import Accuracy
 from ...utils.metrics.voc_detection import VOC07MApMetric
 from ...utils.metrics.coco_detection import COCODetectionMetric
+from ...loss import MaskedL1Loss, HeatmapFocalLoss
 
 from ..data.coco_detection import coco_detection, load_coco_detection
 from .base_estimator import BaseEstimator, set_default
@@ -34,6 +36,7 @@ except ImportError:
     hvd = None
 
 from sacred import Experiment, Ingredient
+
 
 __all__ = ['YoloEstimator']
 
@@ -54,9 +57,8 @@ def yolo3_default():
 
 @train.config
 def train_config():
-    dataset = 'voc'
     pretrained_base = True  # whether load the imagenet pre-trained base
-    gpus = (0,)  # if using 8 gpus, you can set gpus = (0, 1, 2, 3, 4, 5, 6, 7)
+    gpus = (0, 1, 2, 3)
     num_workers = 4
     resume = ''
     batch_size = 4
@@ -87,14 +89,15 @@ def train_config():
 @validation.config
 def valid_config():
     val_interval = 1
-    test = 1
 
 ex = Experiment('yolo3_default',
                 ingredients=[coco_detection, train, validation, yolo3])
 
 @ex.config
 def default_configs():
-    dataset = 'coco'
+    dataset = 'voc'
+    dataset_root = '~/.mxnet/datasets/'
+
 
 @set_default(ex)
 class YoloEstimator(BaseEstimator):
@@ -123,9 +126,9 @@ class YoloEstimator(BaseEstimator):
         net_name = '_'.join(('yolo3', self._cfg.yolo3.base_network, self._cfg.dataset))
         self._cfg.train.save_prefix += net_name
 
-        if self._cfg.yolo3.syncbn and len(ctx) > 1:
+        if self._cfg.yolo3.syncbn and len(self.ctx) > 1:
             self.net = get_model(net_name, pretrained_base=True, norm_layer=gluon.contrib.nn.SyncBatchNorm,
-                            norm_kwargs={'num_devices': len(ctx)})
+                            norm_kwargs={'num_devices': len(self.ctx)})
             async_net = get_model(net_name, pretrained_base=False)  # used by cpu worker
         else:
             self.net = get_model(net_name, pretrained_base=True)
@@ -157,7 +160,6 @@ class YoloEstimator(BaseEstimator):
             if self._cfg.train.num_samples < 0:
                 self._cfg.train.num_samples = len(train_dataset)
             if self._cfg.train.mixup:
-                from ....data import MixupDetection
                 train_dataset = MixupDetection(train_dataset)
             return train_dataset, val_dataset, val_metric
         
@@ -180,15 +182,13 @@ class YoloEstimator(BaseEstimator):
                 batch_size, False, batchify_fn=val_batchify_fn, last_batch='keep', num_workers=num_workers)
             return train_loader, val_loader
 
-
-
         batch_size = (self._cfg.trainbatch_size // hvd.size()) if self._cfg.train.horovod else self._cfg.train.batch_size
         self.train_dataset, self.val_dataset, self.eval_metric = get_dataset(self._cfg.dataset)
         self.train_data, self.val_data = get_dataloader(
                                 async_net, self.train_dataset, self.val_dataset, 
                                 self._cfg.yolo3.data_shape, batch_size,
                                 self._cfg.train.num_workers)
-    
+
     def _fit(self):
         """Training pipeline"""
         self.net.collect_params().reset_ctx(self.ctx)
@@ -221,7 +221,7 @@ class YoloEstimator(BaseEstimator):
         if self._cfg.train.horovod:
             hvd.broadcast_parameters(self.net.collect_params(), root_rank=0)
             trainer = hvd.DistributedTrainer(
-                            net.collect_params(), 'sgd',
+                            self.net.collect_params(), 'sgd',
                             {'wd': self._cfg.train.wd, 
                              'momentum': self._cfg.train.momentum, 
                              'lr_scheduler': lr_scheduler})
@@ -246,7 +246,6 @@ class YoloEstimator(BaseEstimator):
         scale_metrics = mx.metric.Loss('BoxScaleLoss')
         cls_metrics = mx.metric.Loss('ClassLoss')
 
-
         # set up logger
         logging.basicConfig()
         logger = logging.getLogger()
@@ -263,14 +262,14 @@ class YoloEstimator(BaseEstimator):
             if self._cfg.train.mixup:
                 # TODO(zhreshold): more elegant way to control mixup during runtime
                 try:
-                    train_data._dataset.set_mixup(np.random.beta, 1.5, 1.5)
+                    self.train_data._dataset.set_mixup(np.random.beta, 1.5, 1.5)
                 except AttributeError:
-                    train_data._dataset._data.set_mixup(np.random.beta, 1.5, 1.5)
+                    self.train_data._dataset._data.set_mixup(np.random.beta, 1.5, 1.5)
                 if epoch >= self._cfg.train.epochs - self._cfg.train.no_mixup_epochs:
                     try:
-                        train_data._dataset.set_mixup(None)
+                        self.train_data._dataset.set_mixup(None)
                     except AttributeError:
-                        train_data._dataset._data.set_mixup(None)
+                        self.train_data._dataset._data.set_mixup(None)
         
         # set up logger
         self.logger = logging.getLogger()
@@ -359,8 +358,6 @@ class YoloEstimator(BaseEstimator):
                                  self._cfg.train.save_interval, 
                                  self._cfg.train.save_prefix)
 
-
-
     def _evaluate(self):
         """Test on validation dataset."""
         self.eval_metric.reset()
@@ -369,8 +366,8 @@ class YoloEstimator(BaseEstimator):
         mx.nd.waitall()
         self.net.hybridize()
         for batch in self.val_data:
-            data = ....utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0, even_split=False)
-            label = ....utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0, even_split=False)
+            data = gluon.utils.split_and_load(batch[0], ctx_list=self.ctx, batch_axis=0, even_split=False)
+            label = gluon.utils.split_and_load(batch[1], ctx_list=self.ctx, batch_axis=0, even_split=False)
             det_bboxes = []
             det_ids = []
             det_scores = []
@@ -392,8 +389,6 @@ class YoloEstimator(BaseEstimator):
             # update metric
             self.eval_metric.update(det_bboxes, det_ids, det_scores, gt_bboxes, gt_ids, gt_difficults)
         return self.eval_metric.get()
-
-        
     
     def _save_params(self, best_map, current_map, epoch, save_interval, prefix):
         current_map = float(current_map)
@@ -406,17 +401,8 @@ class YoloEstimator(BaseEstimator):
             self.net.save_parameters('{:s}_{:04d}_{:.4f}.params'.format(prefix, epoch, current_map))
 
 
-
-
 @ex.automain
 def main(_config, _log):
     # main is the commandline entry for user w/o coding
     c = YoloEstimator(_config, _log)
     c.fit()
-
-
-
-
-
-
-

@@ -7,17 +7,15 @@ import mxnet as mx
 import numpy as np
 from mxnet import gluon
 
-from gluoncv.utils.metrics.rcnn import RPNAccMetric, RPNL1LossMetric, RCNNAccMetric, \
-    RCNNL1LossMetric
-from .utils import _get_lr_at_iter, _get_dataloader, _get_dataset, _save_params, _split_and_load
-from ..base_estimator import BaseEstimator, set_default
 from ....data.transforms import presets
-from ....data.transforms.presets.rcnn import FasterRCNNDefaultTrainTransform, \
-    FasterRCNNDefaultValTransform
+from ....data.transforms.presets.rcnn import FasterRCNNDefaultTrainTransform, FasterRCNNDefaultValTransform
 from ....model_zoo import get_model
 from ....model_zoo.rcnn.faster_rcnn.data_parallel import ForwardBackwardTask
 from ....nn.bbox import BBoxClipToImage
 from ....utils.parallel import Parallel
+from ....utils.metrics.rcnn import RPNAccMetric, RPNL1LossMetric, RCNNAccMetric, RCNNL1LossMetric
+from ..base_estimator import BaseEstimator, set_default
+from .utils import _get_lr_at_iter, _get_dataloader, _get_dataset, _save_params, _split_and_load
 
 try:
     import horovod.mxnet as hvd
@@ -225,7 +223,7 @@ class FasterRCNNEstimator(BaseEstimator):
                 eval_metric.update(det_bbox, det_id, det_score, gt_bbox, gt_id, gt_diff)
         return eval_metric.get()
 
-    def fit(self):
+    def _fit(self):
         """
         Fit faster R-CNN models.
         """

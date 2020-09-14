@@ -9,7 +9,6 @@ import mxnet as mx
 from mxnet import nd
 from mxnet import gluon
 from mxnet import autograd
-import gluoncv as gcv
 
 from .... import data as gdata
 from .... import utils as gutils
@@ -25,6 +24,7 @@ from ....nn.bbox import BBoxClipToImage
 from ....utils.metrics.voc_detection import VOC07MApMetric
 from ....utils.metrics.coco_detection import COCODetectionMetric
 from ....utils.metrics.accuracy import Accuracy
+from ....loss import SSDMultiBoxLoss
 
 from mxnet.contrib import amp
 
@@ -163,7 +163,7 @@ class SSDEstimator(BaseEstimator):
             self._train_data, self._val_data = _get_dataloader(
                 self.async_net, self.train_dataset, self.val_dataset, self._cfg.ssd.data_shape, batch_size, self._cfg.num_workers, self.ctx[0])
 
-        self.mbox_loss = gcv.loss.SSDMultiBoxLoss()
+        self.mbox_loss = SSDMultiBoxLoss()
         self.ce_metric = mx.metric.Loss('CrossEntropy')
         self.smoothl1_metric = mx.metric.Loss('SmoothL1')
 

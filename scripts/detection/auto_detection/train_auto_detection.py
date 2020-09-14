@@ -6,7 +6,9 @@ from mxnet import gluon
 
 from gluoncv.auto.estimators.ssd import SSDEstimator
 from gluoncv.auto.estimators.faster_rcnn import FasterRCNNEstimator
-from gluoncv.auto.estimators import YoloEstimator, CenterNetEstimator
+from gluoncv.auto.estimators.yolo import YoloEstimator
+from gluoncv.auto.estimators.center_net import CenterNetEstimator
+# from gluoncv.auto.estimators import SSDEstimator, FasterRCNNEstimator, YoloEstimator, CenterNetEstimator
 from gluoncv.auto.tasks.object_detection import ObjectDetection
 
 logger = logging.getLogger(__name__)
@@ -80,7 +82,7 @@ if __name__ == '__main__':
         'horovod': False,
         'amp': False,
         'custom_model': True,
-        'auto_search': True,
+        'auto_suggest': True,
         # scheduler options
         'scheduler_options': None,
         'search_strategy': 'random',
@@ -96,13 +98,13 @@ if __name__ == '__main__':
     if args.meta_arch == 'ssd':
         kwargs = {
             'meta_arch': args.meta_arch,
-            'backbone': ag.Categorical('resnet18_v1'),
+            'backbone': ag.Categorical('vgg16_atrous'),
             'lr': ag.Categorical(1e-3, 5e-4),
             'batch_size': 32,
             'epochs': 5,
             'nthreads_per_trial': 16,
             'ngpus_per_trial': 4,
-            'data_shape': 512,
+            'data_shape': 300,
             'lr_decay_epoch': [160, 200],
             # 'warmup_epochs': 2,
             # 'warmup_iters': 1000,
@@ -191,10 +193,10 @@ if __name__ == '__main__':
     elif args.meta_arch == 'center_net':
         estimator = CenterNetEstimator
     else:
-        estimator = None
+        raise NotImplementedError('%s is not implemented.', args.meta_arch)
     task = ObjectDetection(vars(args), estimator)
     detector = task.fit()
     test_map = detector.evaluate()
     print("mAP on test dataset: {}".format(test_map[-1][-1]))
     print(test_map)
-    detector.save('final_model.model')
+    # detector.save('final_model.model')

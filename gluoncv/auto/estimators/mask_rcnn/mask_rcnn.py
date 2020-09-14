@@ -10,20 +10,19 @@ from mxnet import gluon
 from mxnet.contrib import amp
 from multiprocessing import Process
 
-from gluoncv import data as gdata
-from gluoncv import utils as gutils
-from .utils import _get_dataset, _get_dataloader, _save_params, _stage_data, _split_and_load, _get_lr_at_iter
-from ..base_estimator import BaseEstimator, set_default
-from ....data.transforms import presets
-from ....data.transforms.presets.rcnn import MaskRCNNDefaultTrainTransform, \
-    MaskRCNNDefaultValTransform
+from .... import data as gdata
+from .... import utils as gutils
 from ....data import COCODetection, VOCDetection
+from ....data.transforms import presets
+from ....data.transforms.presets.rcnn import MaskRCNNDefaultTrainTransform, MaskRCNNDefaultValTransform
 from ....model_zoo import get_model
 from ....model_zoo.rcnn.mask_rcnn.data_parallel import ForwardBackwardTask
 from ....nn.bbox import BBoxClipToImage
-from ....utils.metrics.rcnn import RPNAccMetric, RPNL1LossMetric, RCNNAccMetric, \
-    RCNNL1LossMetric, MaskAccMetric, MaskFGAccMetric
 from ....utils.parallel import Parallel
+from ....utils.metrics.rcnn import RPNAccMetric, RPNL1LossMetric, RCNNAccMetric, RCNNL1LossMetric, \
+    MaskAccMetric, MaskFGAccMetric
+from ..base_estimator import BaseEstimator, set_default
+from .utils import _get_dataset, _get_dataloader, _save_params, _stage_data, _split_and_load, _get_lr_at_iter
 
 try:
     import horovod.mxnet as hvd

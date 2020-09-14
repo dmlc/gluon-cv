@@ -163,3 +163,6 @@ class BaseEstimator:
 
     def _fit(self):
         raise NotImplementedError
+
+    def _evaluate(self):
+        raise NotImplementedError
