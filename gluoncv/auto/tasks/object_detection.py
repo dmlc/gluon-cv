@@ -10,9 +10,9 @@ from ... import utils as gutils
 from ..estimators.base_estimator import ConfigDict, BaseEstimator
 from ..estimators.ssd import SSDEstimator
 from ..estimators.faster_rcnn import FasterRCNNEstimator
-from ..estimators.yolo import YoloEstimator
+from ..estimators.yolo import YOLOEstimator
 from ..estimators.center_net import CenterNetEstimator
-# from gluoncv.auto.estimators import SSDEstimator, FasterRCNNEstimator, YoloEstimator, CenterNetEstimator
+# from gluoncv.auto.estimators import SSDEstimator, FasterRCNNEstimator, YOLOEstimator, CenterNetEstimator
 from .utils import auto_suggest, auto_args, config_to_nested
 
 
@@ -63,7 +63,7 @@ class ObjectDetection(BaseTask):
             auto_suggest(config, estimator)
         else:
             if estimator is None:
-                estimator = [SSDEstimator, FasterRCNNEstimator, YoloEstimator, CenterNetEstimator]
+                estimator = [SSDEstimator, FasterRCNNEstimator, YOLOEstimator, CenterNetEstimator]
             elif isinstance(estimator, (tuple, list)):
                 pass
             else:

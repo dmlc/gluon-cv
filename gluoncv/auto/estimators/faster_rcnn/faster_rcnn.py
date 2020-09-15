@@ -178,11 +178,11 @@ class FasterRCNNEstimator(BaseEstimator):
         self.rcnn_bbox_metric = RCNNL1LossMetric()
         self.metrics2 = [self.rpn_acc_metric, self.rpn_bbox_metric, self.rcnn_acc_metric,
                          self.rcnn_bbox_metric]
-        batch_size = self._cfg.train.batch_size // self.num_gpus \
+        self.batch_size = self._cfg.train.batch_size // self.num_gpus \
             if self._cfg.horovod else self._cfg.train.batch_size
         self._train_data, self._val_data = _get_dataloader(
             self.net, self.train_dataset, self.val_dataset, FasterRCNNDefaultTrainTransform,
-            FasterRCNNDefaultValTransform, batch_size, len(self.ctx), self._cfg)
+            FasterRCNNDefaultValTransform, self.batch_size, len(self.ctx), self._cfg)
 
     def _validate(self, val_data, ctx, eval_metric):
         """Test on validation dataset."""
@@ -322,7 +322,7 @@ class FasterRCNNEstimator(BaseEstimator):
                 for metric, records in zip(self.metrics2, add_losses):
                     for pred in records:
                         metric.update(pred[0], pred[1])
-                trainer.step(self._cfg.train.batch_size)
+                trainer.step(self.batch_size)
 
                 # update metrics
                 if (not self._cfg.horovod or hvd.rank() == 0) and self._cfg.train.log_interval \

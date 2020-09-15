@@ -35,14 +35,14 @@ def parse_args():
     parser.add_argument('--data-shape', type=int, default=416,
                         help="Input data shape for evaluation, use 320, 416, 608... " +
                              "Training is with random shapes from (320 to 608).")
-    parser.add_argument('--batch-size', type=int, default=64,
+    parser.add_argument('--batch-size', type=int, default=32,
                         help='Training mini-batch size')
     parser.add_argument('--dataset', type=str, default='voc',
                         help='Training dataset. Now support voc.')
     parser.add_argument('--num-workers', '-j', dest='num_workers', type=int,
                         default=4, help='Number of data workers, you can use larger '
                         'number to accelerate data loading, if you CPU and GPUs are powerful.')
-    parser.add_argument('--gpus', type=str, default='0',
+    parser.add_argument('--gpus', type=str, default='0,1,2,3',
                         help='Training with GPUs, you can specify 1,3 for example.')
     parser.add_argument('--epochs', type=int, default=200,
                         help='Training epochs.')
@@ -187,7 +187,7 @@ def validate(net, val_data, ctx, eval_metric):
         eval_metric.update(det_bboxes, det_ids, det_scores, gt_bboxes, gt_ids, gt_difficults)
     return eval_metric.get()
 
-def train(net, train_data, val_data, eval_metric, ctx, args):
+def train(net, train_data, val_data, eval_metric, batch_size, ctx, args):
     """Training pipeline"""
     net.collect_params().reset_ctx(ctx)
     if args.no_wd:
@@ -371,4 +371,4 @@ if __name__ == '__main__':
         async_net, train_dataset, val_dataset, args.data_shape, batch_size, args.num_workers, args)
 
     # training
-    train(net, train_data, val_data, eval_metric, ctx, args)
+    train(net, train_data, val_data, eval_metric, batch_size, ctx, args)

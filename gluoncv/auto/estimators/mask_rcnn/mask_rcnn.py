@@ -192,10 +192,10 @@ class MaskRCNNEstimator(BaseEstimator):
 
         # training data
         self.train_dataset, self.val_dataset, self.eval_metric = _get_dataset(self._cfg.dataset, self._cfg)
-        batch_size = self._cfg.train.batch_size // self.num_gpus if self._cfg.horovod else self._cfg.train.batch_size
+        self.batch_size = self._cfg.train.batch_size // self.num_gpus if self._cfg.horovod else self._cfg.train.batch_size
         self._train_data, self._val_data = _get_dataloader(
             self.net, self.train_dataset, self.val_dataset, MaskRCNNDefaultTrainTransform, MaskRCNNDefaultValTransform,
-            batch_size, len(self.ctx), self._cfg)
+            self.batch_size, len(self.ctx), self._cfg)
 
     def _validate(self, val_data, async_eval_processes, ctx, eval_metric, logger, epoch, best_map):
         """Test on validation dataset."""
@@ -370,7 +370,7 @@ class MaskRCNNEstimator(BaseEstimator):
                 for metric, records in zip(self.metrics2, add_losses):
                     for pred in records:
                         metric.update(pred[0], pred[1])
-                trainer.step(self._cfg.train.batch_size)
+                trainer.step(self.batch_size)
                 if (not self._cfg.horovod or hvd.rank() == 0) and self._cfg.train.log_interval \
                         and not (i + 1) % self._cfg.train.log_interval:
                     msg = ','.join(['{}={:.3f}'.format(*metric.get()) for metric in self.metrics + self.metrics2])

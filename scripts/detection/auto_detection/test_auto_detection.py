@@ -2,9 +2,9 @@ import autogluon as ag
 
 from gluoncv.auto.estimators.ssd import SSDEstimator
 from gluoncv.auto.estimators.faster_rcnn import FasterRCNNEstimator
-from gluoncv.auto.estimators.yolo import YoloEstimator
+from gluoncv.auto.estimators.yolo import YOLOEstimator
 from gluoncv.auto.estimators.center_net import CenterNetEstimator
-# from gluoncv.auto.estimators import SSDEstimator, FasterRCNNEstimator, YoloEstimator, CenterNetEstimator
+# from gluoncv.auto.estimators import SSDEstimator, FasterRCNNEstimator, YOLOEstimator, CenterNetEstimator
 from gluoncv.auto.tasks.object_detection import ObjectDetection
 
 
@@ -23,7 +23,7 @@ if __name__ == '__main__':
         elif args['meta_arch'] == 'faster_rcnn':
             estimator = FasterRCNNEstimator
         elif args['meta_arch'] == 'yolo3':
-            estimator = YoloEstimator
+            estimator = YOLOEstimator
         elif args['meta_arch'] == 'center_net':
             estimator = CenterNetEstimator
         else:
