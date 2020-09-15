@@ -53,7 +53,8 @@ class SplitAttentionConv(HybridBlock):
         atten = self.relu1(gap)
         if self.drop:
             atten = self.drop(atten)
-        atten = self.fc2(atten).reshape((0, self.cardinality, self.radix, -1)).swapaxes(1, 2)
+        atten = self.fc2(atten)
+        atten = atten.reshape((atten.shape[0], self.cardinality, self.radix, -1)).swapaxes(1, 2)
         if self.radix > 1:
             atten = F.npx.softmax(atten, axis=1).reshape((0, self.radix, -1, 1, 1))
         else:
