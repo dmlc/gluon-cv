@@ -40,8 +40,9 @@ class SplitAttentionConv(HybridBlock):
         x = self.relu(x)
         if self.radix > 1:
             x_mod = F.np.expand_dims(x, 1)
-            splited = F.np.reshape(x_mod, x_mod.shape[0],
-                                   (self.radix, self.channels, x_mod.shape[3], x_mod.shape[4]))
+            splited = F.np.reshape(x_mod,
+                                   (x_mod.shape[0], self.radix, self.channels,
+                                    x_mod.shape[3], x_mod.shape[4]))
             gap = F.np.sum(splited, axis=1)
         else:
             gap = x
