@@ -216,6 +216,7 @@ class ResNext(HybridBlock):
 
     # pylint: disable=unused-argument
     def hybrid_forward(self, F, x):
+        x = x.as_np_ndarray()
         x = self.features(x)
         x = self.output(x)
 
