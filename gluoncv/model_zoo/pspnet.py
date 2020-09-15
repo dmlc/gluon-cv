@@ -49,26 +49,22 @@ class PSPNet(SegBaseModel):
         print('self.crop_size', self.crop_size)
 
     def hybrid_forward(self, F, x):
-        x = x.as_np_ndarray()
         c3, c4 = self.base_forward(x)
         outputs = []
         x = self.head(c4)
-        x = F.contrib.BilinearResize2D(x.as_nd_ndarray(), **self._up_kwargs).as_np_ndarray()
+        x = F.contrib.BilinearResize2D(x, **self._up_kwargs)
         outputs.append(x)
 
         if self.aux:
             auxout = self.auxlayer(c3)
-            auxout = F.contrib.BilinearResize2D(auxout.as_nd_ndarray(),
-                                                **self._up_kwargs).as_np_ndarray()
+            auxout = F.contrib.BilinearResize2D(auxout, **self._up_kwargs)
             outputs.append(auxout)
         return tuple(outputs)
 
     def demo(self, x):
-        x = x.as_np_ndarray()
         return self.predict(x)
 
     def predict(self, x):
-        x = x.as_np_ndarray()
         h, w = x.shape[2:]
         self._up_kwargs['height'] = h
         self._up_kwargs['width'] = w
@@ -76,8 +72,7 @@ class PSPNet(SegBaseModel):
         outputs = []
         x = self.head.demo(c4)
         import mxnet.ndarray as F
-        pred = F.contrib.BilinearResize2D(x.as_nd_ndarray(),
-                                          **self._up_kwargs).as_np_ndarray()
+        pred = F.contrib.BilinearResize2D(x, **self._up_kwargs)
         return pred
 
 def _PSP1x1Conv(in_channels, out_channels, norm_layer, norm_kwargs):
@@ -102,23 +97,19 @@ class _PyramidPooling(HybridBlock):
             self.conv4 = _PSP1x1Conv(in_channels, out_channels, **kwargs)
 
     def pool(self, F, x, size):
-        return F.contrib.AdaptiveAvgPooling2D(x.as_nd_ndarray(),
-                                              output_size=size).as_np_ndarray()
+        return F.contrib.AdaptiveAvgPooling2D(x, output_size=size)
 
     def upsample(self, F, x):
-        return F.contrib.BilinearResize2D(x.as_nd_ndarray(),
-                                          **self._up_kwargs).as_np_ndarray()
+        return F.contrib.BilinearResize2D(x, **self._up_kwargs)
 
     def hybrid_forward(self, F, x):
-        x = x.as_np_ndarray()
         feat1 = self.upsample(F, self.conv1(self.pool(F, x, 1)))
         feat2 = self.upsample(F, self.conv2(self.pool(F, x, 2)))
         feat3 = self.upsample(F, self.conv3(self.pool(F, x, 3)))
         feat4 = self.upsample(F, self.conv4(self.pool(F, x, 6)))
-        return F.np.concatenate(x, feat1, feat2, feat3, feat4, axis=1)
+        return F.concat(x, feat1, feat2, feat3, feat4, dim=1)
 
     def demo(self, x):
-        x = x.as_np_ndarray()
         self._up_kwargs['height'] = x.shape[2]
         self._up_kwargs['width'] = x.shape[3]
         import mxnet.ndarray as F
@@ -126,7 +117,7 @@ class _PyramidPooling(HybridBlock):
         feat2 = self.upsample(F, self.conv2(self.pool(F, x, 2)))
         feat3 = self.upsample(F, self.conv3(self.pool(F, x, 3)))
         feat4 = self.upsample(F, self.conv4(self.pool(F, x, 6)))
-        return F.np.concatenate(x, feat1, feat2, feat3, feat4, axis=1)
+        return F.concat(x, feat1, feat2, feat3, feat4, dim=1)
 
 class _PSPHead(HybridBlock):
     def __init__(self, nclass, norm_layer=nn.BatchNorm, norm_kwargs=None,
@@ -146,12 +137,10 @@ class _PSPHead(HybridBlock):
                                      kernel_size=1))
 
     def hybrid_forward(self, F, x):
-        x = x.as_np_ndarray()
         x = self.psp(x)
         return self.block(x)
 
     def demo(self, x):
-        x = x.as_np_ndarray()
         x = self.psp.demo(x)
         return self.block(x)
         

@@ -44,14 +44,13 @@ class DANet(SegBaseModel):
         self._up_kwargs = {'height': height, 'width': width}
 
     def hybrid_forward(self, F, x):
-        x = x.as_np_ndarray()
         c3, c4 = self.base_forward(x)
 
         x = self.head(c4)
         x = list(x)
-        x[0] = F.contrib.BilinearResize2D(x[0].as_nd_ndarray(), **self._up_kwargs).as_np_ndarray()
-        x[1] = F.contrib.BilinearResize2D(x[1].as_nd_ndarray(), **self._up_kwargs).as_np_ndarray()
-        x[2] = F.contrib.BilinearResize2D(x[2].as_nd_ndarray(), **self._up_kwargs).as_np_ndarray()
+        x[0] = F.contrib.BilinearResize2D(x[0], **self._up_kwargs)
+        x[1] = F.contrib.BilinearResize2D(x[1], **self._up_kwargs)
+        x[2] = F.contrib.BilinearResize2D(x[2], **self._up_kwargs)
 
         outputs = [x[0]]
         outputs.append(x[1])
@@ -103,7 +102,6 @@ class DANetHead(HybridBlock):
         self.conv8.add(nn.Dropout(0.1))
 
     def hybrid_forward(self, F, x):
-        x = x.as_np_ndarray()
         feat1 = self.conv5a(x)
         sa_feat = self.sa(feat1)
         sa_conv = self.conv51(sa_feat)
@@ -130,7 +128,7 @@ class DANetHead(HybridBlock):
         _, c4 = self.base_forward(x)
         x = self.head.demo(c4)
         import mxnet.ndarray as F
-        pred = F.contrib.BilinearResize2D(x.as_nd_ndarray(), **self._up_kwargs).as_np_ndarray()
+        pred = F.contrib.BilinearResize2D(x, **self._up_kwargs)
         return pred
 
 

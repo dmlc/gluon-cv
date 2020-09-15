@@ -23,12 +23,11 @@ class DropBlock(HybridBlock):
         gamma = self.drop_prob * (self.h * self.w) / (self.block_size ** 2) / \
             ((self.w - self.block_size + 1) * (self.h - self.block_size + 1))
         # generate mask
-        mask = F.random.uniform(0, 1, shape=(1, self.c, self.h, self.w), dtype=self.dtype) < gamma
-        mask = F.Pooling(mask, pool_type='max',
+        mask = F.np.random.uniform(0, 1, size=(1, self.c, self.h, self.w), dtype=self.dtype) < gamma
+        mask = F.npx.pooling(mask, pool_type='max',
                          kernel=(self.block_size, self.block_size), pad=self.padding)
         mask = 1 - mask
-        y = F.broadcast_mul(F.broadcast_mul(x, mask),
-                            (1.0 * self.numel / mask.sum(axis=0, exclude=True).expand_dims(1).expand_dims(1).expand_dims(1)))
+        y = (x * mask) * (1.0 * self.numel / F.np.expand_dims(F.np.expand_dims(F.np.expand_dims(mask.sum(axis=0, exclude=True), 1), 1), 1))
         return y
 
     def cast(self, dtype):

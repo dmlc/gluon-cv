@@ -57,32 +57,29 @@ class DeepLabV3(SegBaseModel):
         self._up_kwargs = {'height': height, 'width': width}
 
     def hybrid_forward(self, F, x):
-        x = x.as_np_ndarray()
         c3, c4 = self.base_forward(x)
         outputs = []
         x = self.head(c4)
-        x = F.contrib.BilinearResize2D(x.as_nd_ndarray(), **self._up_kwargs).as_np_ndarray()
+        x = F.contrib.BilinearResize2D(x, **self._up_kwargs)
         outputs.append(x)
 
         if self.aux:
             auxout = self.auxlayer(c3)
-            auxout = F.contrib.BilinearResize2D(auxout.as_nd_ndarray(), **self._up_kwargs).as_np_ndarray()
+            auxout = F.contrib.BilinearResize2D(auxout, **self._up_kwargs)
             outputs.append(auxout)
         return tuple(outputs)
 
     def demo(self, x):
-        x = x.as_np_ndarray()
         return self.predict(x)
 
     def predict(self, x):
-        x = x.as_np_ndarray()
         h, w = x.shape[2:]
         self._up_kwargs['height'] = h
         self._up_kwargs['width'] = w
         c3, c4 = self.base_forward(x)
         x = self.head.demo(c4)
         import mxnet.ndarray as F
-        pred = F.contrib.BilinearResize2D(x.as_nd_ndarray(), **self._up_kwargs).as_np_ndarray()
+        pred = F.contrib.BilinearResize2D(x, **self._up_kwargs)
         return pred
 
 
@@ -103,12 +100,10 @@ class _DeepLabHead(HybridBlock):
                                      kernel_size=1))
 
     def hybrid_forward(self, F, x):
-        x = x.as_np_ndarray()
         x = self.aspp(x)
         return self.block(x)
 
     def demo(self, x):
-        x = x.as_np_ndarray()
         h, w = x.shape[2:]
         self.aspp.concurent[-1]._up_kwargs['height'] = h
         self.aspp.concurent[-1]._up_kwargs['width'] = w
@@ -141,9 +136,8 @@ class _AsppPooling(nn.HybridBlock):
             self.gap.add(nn.Activation("relu"))
 
     def hybrid_forward(self, F, x):
-        x = x.as_np_ndarray()
         pool = self.gap(x)
-        return F.contrib.BilinearResize2D(pool.as_nd_ndarray(), **self._up_kwargs).as_np_ndarray()
+        return F.contrib.BilinearResize2D(pool, **self._up_kwargs)
 
 class _ASPP(nn.HybridBlock):
     def __init__(self, in_channels, atrous_rates, norm_layer, norm_kwargs,
@@ -182,7 +176,6 @@ class _ASPP(nn.HybridBlock):
             self.project.add(nn.Dropout(0.5))
 
     def hybrid_forward(self, F, x):
-        x = x.as_np_ndarray()
         return self.project(self.concurent(x))
 
 

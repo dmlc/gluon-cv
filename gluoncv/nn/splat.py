@@ -39,11 +39,13 @@ class SplitAttentionConv(HybridBlock):
             x = self.bn(x)
         x = self.relu(x)
         if self.radix > 1:
-            splited = F.reshape(x.expand_dims(1), (0, self.radix, self.channels, 0, 0))
-            gap = F.sum(splited, axis=1)
+            x_mod = F.np.expand_dims(x, 1)
+            splited = F.np.reshape(x_mod, x_mod.shape[0], 
+                                   (self.radix, self.channels, x_mod.shape[3], x_mod.shape[4]))
+            gap = F.np.sum(splited, axis=1)
         else:
             gap = x
-        gap = F.contrib.AdaptiveAvgPooling2D(gap, 1)
+        gap = F.contrib.AdaptiveAvgPooling2D(gap.as_nd_ndarray(), 1).as_np_ndarray()
         gap = self.fc1(gap)
         if self.use_bn:
             gap = self.bn1(gap)
@@ -52,12 +54,12 @@ class SplitAttentionConv(HybridBlock):
             atten = self.drop(atten)
         atten = self.fc2(atten).reshape((0, self.cardinality, self.radix, -1)).swapaxes(1, 2)
         if self.radix > 1:
-            atten = F.softmax(atten, axis=1).reshape((0, self.radix, -1, 1, 1))
+            atten = F.npx.softmax(atten, axis=1).reshape((0, self.radix, -1, 1, 1))
         else:
-            atten = F.sigmoid(atten).reshape((0, -1, 1, 1))
+            atten = F.npx.sigmoid(atten).reshape((0, -1, 1, 1))
         if self.radix > 1:
-            outs = F.broadcast_mul(atten, splited)
-            out = F.sum(outs, axis=1)
+            outs = atten * splited
+            out = F.snp.um(outs, axis=1)
         else:
-            out = F.broadcast_mul(atten, x)
+            out = atten * x
         return out
