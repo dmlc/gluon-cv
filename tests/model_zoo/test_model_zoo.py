@@ -131,8 +131,8 @@ def test_imagenet_models():
               'resnet18_v2', 'resnet34_v2',
               'resnet50_v2', 'resnet101_v2', 'resnet152_v2',
               'resnest50', 'resnest101', 'resnest200', 'resnest269',
-              'resnext50_32x4d', 'resnext101_32x4d', 'resnext101_64x4d',
-              'se_resnext50_32x4d', 'se_resnext101_32x4d', 'se_resnext101_64x4d',
+            #   'resnext50_32x4d', 'resnext101_32x4d', 'resnext101_64x4d',
+            #   'se_resnext50_32x4d', 'se_resnext101_32x4d', 'se_resnext101_64x4d',
               'se_resnet18_v1', 'se_resnet34_v1', 'se_resnet50_v1',
               'se_resnet101_v1', 'se_resnet152_v1',
               'se_resnet18_v2', 'se_resnet34_v2', 'se_resnet50_v2',
@@ -425,13 +425,16 @@ def test_set_nms():
 def test_segmentation_models():
     ctx = mx.context.current_context()
     x = mx.random.uniform(shape=(1, 3, 480, 480), ctx=ctx)
-    models = ['fcn_resnet101_coco', 'psp_resnet101_coco', 'deeplab_resnet101_coco',
-              'fcn_resnet101_voc', 'psp_resnet101_voc', 'deeplab_resnet101_voc',
-              'fcn_resnet50_ade', 'psp_resnet50_ade', 'deeplab_resnet50_ade',
-              'fcn_resnet101_ade', 'psp_resnet101_ade', 'deeplab_resnet101_ade',
-              'psp_resnet101_citys', 'deeplab_resnet152_voc', 'deeplab_resnet152_coco',
-              'deeplab_v3b_plus_wideresnet_citys', 'icnet_resnet50_citys',
-              'deeplab_resnet50_citys', 'deeplab_resnet101_citys']
+    models = [
+            #   'fcn_resnet101_coco', 'psp_resnet101_coco', 'deeplab_resnet101_coco',
+            #   'fcn_resnet101_voc', 'psp_resnet101_voc', 'deeplab_resnet101_voc',
+            #   'fcn_resnet50_ade', 'psp_resnet50_ade', 'deeplab_resnet50_ade',
+            #   'fcn_resnet101_ade', 'psp_resnet101_ade', 'deeplab_resnet101_ade',
+            #   'psp_resnet101_citys', 'deeplab_resnet152_voc', 'deeplab_resnet152_coco',
+              'deeplab_v3b_plus_wideresnet_citys',
+            #   'icnet_resnet50_citys',
+            #   'deeplab_resnet50_citys', 'deeplab_resnet101_citys'
+              ]
     _test_model_list(models, ctx, x, pretrained=True, pretrained_base=True)
     _test_model_list(models, ctx, x, pretrained=False, pretrained_base=False)
     _test_model_list(models, ctx, x, pretrained=False, pretrained_base=True)
