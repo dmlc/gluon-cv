@@ -11,7 +11,7 @@ def test_groupnorm():
     y = y.reshape(y.shape[0], 4, -1)
     print('y.mean(2) =', y.mean(2))
     mx.test_utils.assert_almost_equal(y.mean(2).asnumpy(),
-                                      mx.np.zeros_like(y.mean(2)),
+                                      mx.np.zeros_like(y.mean(2)).asnumpy(),
                                       rtol=1e-3, atol=1e-3)
 
 if __name__ == '__main__':
