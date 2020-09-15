@@ -25,7 +25,7 @@ class DropBlock(HybridBlock):
         # generate mask
         mask = F.np.random.uniform(0, 1, size=(1, self.c, self.h, self.w), dtype=self.dtype) < gamma
         mask = F.npx.pooling(mask, pool_type='max',
-                         kernel=(self.block_size, self.block_size), pad=self.padding)
+                             kernel=(self.block_size, self.block_size), pad=self.padding)
         mask = 1 - mask
         y = (x * mask) * (1.0 * self.numel / F.np.expand_dims(F.np.expand_dims(F.np.expand_dims(mask.sum(axis=0, exclude=True), 1), 1), 1))
         return y
