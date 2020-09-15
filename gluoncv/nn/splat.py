@@ -63,7 +63,7 @@ class SplitAttentionConv(HybridBlock):
             atten = atten.reshape((atten.shape[0], -1, 1, 1))
         if self.radix > 1:
             outs = atten * splited
-            out = F.snp.um(outs, axis=1)
+            out = F.np.sum(outs, axis=1)
         else:
             out = atten * x
         return out
