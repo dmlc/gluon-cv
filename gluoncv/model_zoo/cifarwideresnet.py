@@ -24,16 +24,20 @@ __all__ = ['get_cifar_wide_resnet', 'cifar_wideresnet16_10',
            'cifar_wideresnet28_10', 'cifar_wideresnet40_8']
 
 import os
+import mxnet as mx
 from mxnet.gluon.block import HybridBlock
 from mxnet.gluon import nn
 from mxnet.gluon.nn import BatchNorm
 from mxnet import cpu
+from mxnet import use_np
+mx.npx.set_np()
 
 # Helpers
 def _conv3x3(channels, stride, in_channels):
     return nn.Conv2D(channels, kernel_size=3, strides=stride, padding=1,
                      use_bias=False, in_channels=in_channels)
 
+@use_np
 class CIFARBasicBlockV2(HybridBlock):
     r"""BasicBlock V2 from
     `"Identity Mappings in Deep Residual Networks"
@@ -90,6 +94,7 @@ class CIFARBasicBlockV2(HybridBlock):
         return x + residual
 
 
+@use_np
 class CIFARWideResNet(HybridBlock):
     r"""ResNet V2 model from
     `"Identity Mappings in Deep Residual Networks"
@@ -150,6 +155,7 @@ class CIFARWideResNet(HybridBlock):
         return layer
 
     def hybrid_forward(self, F, x):
+        x = x.as_np_ndarray()
         x = self.features(x)
         x = self.output(x)
         return x

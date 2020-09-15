@@ -2,10 +2,13 @@
 # pylint: disable=arguments-differ,unused-argument,missing-docstring
 from __future__ import division
 
+import mxnet as mx
 from mxnet.context import cpu
 from mxnet.gluon.block import HybridBlock
 from mxnet.gluon import nn
 from mxnet.gluon.nn import BatchNorm
+from mxnet import use_np
+mx.npx.set_np()
 
 __all__ = ['ResNetV1b', 'resnet18_v1b', 'resnet34_v1b',
            'resnet50_v1b', 'resnet50_v1b_gn',
@@ -16,6 +19,7 @@ __all__ = ['ResNetV1b', 'resnet18_v1b', 'resnet34_v1b',
            'resnet50_v1e', 'resnet101_v1e', 'resnet152_v1e',
            'resnet50_v1s', 'resnet101_v1s', 'resnet152_v1s']
 
+@use_np
 class BasicBlockV1b(HybridBlock):
     """ResNetV1b BasicBlockV1b
     """
@@ -55,6 +59,7 @@ class BasicBlockV1b(HybridBlock):
 
         return out
 
+@use_np
 class BottleneckV1b(HybridBlock):
     """ResNetV1b BottleneckV1b
     """
@@ -107,6 +112,7 @@ class BottleneckV1b(HybridBlock):
 
         return out
 
+@use_np
 class ResNetV1b(HybridBlock):
     """ Pre-trained ResNetV1b Model, which produces the strides of 8
     featuremaps at conv5.

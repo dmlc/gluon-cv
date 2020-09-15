@@ -20,11 +20,15 @@
 """Alexnet, implemented in Gluon."""
 __all__ = ['AlexNet', 'alexnet']
 
+import mxnet as mx
 from mxnet.context import cpu
 from mxnet.gluon.block import HybridBlock
 from mxnet.gluon import nn
+from mxnet import use_np
+mx.npx.set_np()
 
 # Net
+@use_np
 class AlexNet(HybridBlock):
     r"""AlexNet model from the `"One weird trick..." <https://arxiv.org/abs/1404.5997>`_ paper.
 

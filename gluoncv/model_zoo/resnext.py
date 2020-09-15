@@ -27,12 +27,16 @@ __all__ = ['ResNext', 'Block', 'get_resnext',
 
 import os
 import math
+import mxnet as mx
 from mxnet import cpu
 from mxnet.gluon import nn
 from mxnet.gluon.nn import BatchNorm
 from mxnet.gluon.block import HybridBlock
+from mxnet import use_np
+mx.npx.set_np()
 
 
+@use_np
 class Block(HybridBlock):
     r"""Bottleneck Block from `"Aggregated Residual Transformations for Deep Neural Network"
     <http://arxiv.org/abs/1611.05431>`_ paper.
@@ -125,6 +129,7 @@ class Block(HybridBlock):
 
 
 # Nets
+@use_np
 class ResNext(HybridBlock):
     r"""ResNext model from
     `"Aggregated Residual Transformations for Deep Neural Network"

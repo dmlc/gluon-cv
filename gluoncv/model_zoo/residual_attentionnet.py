@@ -29,11 +29,15 @@ __all__ = ['ResidualAttentionModel', 'cifar_ResidualAttentionModel',
 __modify__ = 'X.Yang'
 __modified_date__ = '18/11/10'
 
+import mxnet as mx
 from mxnet.gluon import nn
 from mxnet.gluon.nn import BatchNorm
 from mxnet.gluon.block import HybridBlock
+from mxnet import use_np
+mx.npx.set_np()
 
 
+@use_np
 class UpsamplingBilinear2d(HybridBlock):
     r"""
     Parameters
@@ -52,6 +56,7 @@ class UpsamplingBilinear2d(HybridBlock):
                                           height=self.size, width=self.size).as_np_ndarray()
 
 
+@use_np
 class ResidualBlock(HybridBlock):
     r"""ResNet V2 model from
     `"Identity Mappings in Deep Residual Networks"
@@ -90,7 +95,7 @@ class ResidualBlock(HybridBlock):
                 self.conv4 = nn.Conv2D(channels, 1, stride, use_bias=False)
 
     def hybrid_forward(self, F, x):
-        x = x.as_nd_ndarray()
+        x = x.as_np_ndarray()
         residual = x
         out = self.bn1(x)
         out1 = F.npx.activation(out, act_type='relu')
@@ -125,6 +130,7 @@ def _add_sigmoid_layer(out, channels, norm_layer, norm_kwargs):
         out.add(nn.Activation('sigmoid'))
 
 
+@use_np
 class AttentionModule_stage1(nn.HybridBlock):
     r"""AttentionModel 56 model from
     `"Residual Attention Network for Image Classification"
@@ -234,6 +240,7 @@ class AttentionModule_stage1(nn.HybridBlock):
         return out_last
 
 
+@use_np
 class AttentionModule_stage2(nn.HybridBlock):
     r"""AttentionModel 56 model from
     `"Residual Attention Network for Image Classification"
@@ -317,6 +324,7 @@ class AttentionModule_stage2(nn.HybridBlock):
         return out_last
 
 
+@use_np
 class AttentionModule_stage3(nn.HybridBlock):
     r"""AttentionModel 56 model from
     `"Residual Attention Network for Image Classification"
@@ -381,6 +389,7 @@ class AttentionModule_stage3(nn.HybridBlock):
         return out_last
 
 
+@use_np
 class AttentionModule_stage4(nn.HybridBlock):
     r"""AttentionModel 56 model from
     `"Residual Attention Network for Image Classification"
@@ -434,6 +443,7 @@ class AttentionModule_stage4(nn.HybridBlock):
         return out_last
 
 
+@use_np
 class ResidualAttentionModel(nn.HybridBlock):
     r"""AttentionModel model from
     `"Residual Attention Network for Image Classification"
@@ -509,6 +519,7 @@ class ResidualAttentionModel(nn.HybridBlock):
         return x
 
 
+@use_np
 class cifar_ResidualAttentionModel(nn.HybridBlock):
     r"""AttentionModel model from
     `"Residual Attention Network for Image Classification"

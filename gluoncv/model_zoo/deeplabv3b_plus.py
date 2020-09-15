@@ -1,12 +1,16 @@
 """DeepLabV3+ with wideresnet backbone for semantic segmentation"""
 # pylint: disable=missing-docstring,arguments-differ,unused-argument
+import mxnet as mx
 from mxnet.gluon import nn
 from mxnet.context import cpu
 from mxnet.gluon.nn import HybridBlock
 from .wideresnet import wider_resnet38_a2
+from mxnet import use_np
+mx.npx.set_np()
 
 __all__ = ['DeepLabWV3Plus', 'get_deeplabv3b_plus', 'get_deeplab_v3b_plus_wideresnet_citys']
 
+@use_np
 class DeepLabWV3Plus(HybridBlock):
     r"""DeepLabWV3Plus
 
@@ -91,6 +95,7 @@ class DeepLabWV3Plus(HybridBlock):
         x = F.contrib.BilinearResize2D(x.as_nd_ndarray(), **self._up_kwargs).as_np_ndarray()
         return x
 
+@use_np
 class _DeepLabHead(HybridBlock):
     def __init__(self, nclass, c1_channels=128, norm_layer=nn.BatchNorm, norm_kwargs=None,
                  height=240, width=240, **kwargs):
@@ -123,7 +128,7 @@ class _DeepLabHead(HybridBlock):
         c1 = self.c1_block(c1)
         x = self.aspp(x)
         x = F.contrib.BilinearResize2D(x.as_nd_ndarray(), **self._up_kwargs).as_np_ndarray()
-        return self.block(F.np.concatentate(c1, x, axis=1))
+        return self.block(F.np.concatenate((c1, x), axis=1))
 
     def demo(self, x, c1):
         x = x.as_np_ndarray()
@@ -134,7 +139,7 @@ class _DeepLabHead(HybridBlock):
         x = self.aspp.demo(x)
         import mxnet.ndarray as F
         x = F.contrib.BilinearResize2D(x.as_nd_ndarray(), **self._up_kwargs).as_np_ndarray()
-        return self.block(F.concatentate(c1, x, axis=1))
+        return self.block(F.concatenate((c1, x), axis=1))
 
 def _ASPPConv(in_channels, out_channels, atrous_rate, norm_layer, norm_kwargs):
     block = nn.HybridSequential()
@@ -147,6 +152,7 @@ def _ASPPConv(in_channels, out_channels, atrous_rate, norm_layer, norm_kwargs):
         block.add(nn.Activation('relu'))
     return block
 
+@use_np
 class _AsppPooling(nn.HybridBlock):
     def __init__(self, in_channels, out_channels, norm_layer, norm_kwargs,
                  height=60, width=60, **kwargs):
@@ -175,6 +181,7 @@ class _AsppPooling(nn.HybridBlock):
         import mxnet.ndarray as F
         return F.contrib.BilinearResize2D(pool.as_nd_ndarray(), **self._up_kwargs).as_np_ndarray()
 
+@use_np
 class _ASPP(nn.HybridBlock):
     def __init__(self, in_channels, atrous_rates, norm_layer, norm_kwargs,
                  height=60, width=60):
@@ -205,7 +212,7 @@ class _ASPP(nn.HybridBlock):
         feat3 = self.b2(x)
         feat4 = self.b3(x)
         x = self.b4(x)
-        x = F.np.concatentate(x, feat1, feat2, feat3, feat4, axis=1)
+        x = F.np.concatenate((x, feat1, feat2, feat3, feat4), axis=1)
         return self.project(x)
 
     def demo(self, x):
@@ -216,7 +223,7 @@ class _ASPP(nn.HybridBlock):
         feat4 = self.b3(x)
         x = self.b4.demo(x)
         import mxnet.ndarray as F
-        x = F.np.concatentate(x, feat1, feat2, feat3, feat4, axis=1)
+        x = F.np.concatenate((x, feat1, feat2, feat3, feat4), axis=1)
         return self.project(x)
 
 def get_deeplabv3b_plus(dataset='citys', backbone='wideresnet', pretrained=False,

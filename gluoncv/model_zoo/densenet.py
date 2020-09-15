@@ -20,14 +20,11 @@
 """DenseNet, implemented in Gluon."""
 __all__ = ['DenseNet', 'densenet121', 'densenet161', 'densenet169', 'densenet201']
 
-import mxnet as mx
 from mxnet.context import cpu
 from mxnet.gluon.block import HybridBlock
 from mxnet.gluon import nn
 from mxnet.gluon.nn import BatchNorm
 from mxnet.gluon.contrib.nn import HybridConcurrent, Identity
-from mxnet import use_np
-mx.npx.set_np()
 
 # Helpers
 def _make_dense_block(num_layers, bn_size, growth_rate, dropout, stage_index,
@@ -64,7 +61,6 @@ def _make_transition(num_output_features, norm_layer, norm_kwargs):
     return out
 
 # Net
-@use_np
 class DenseNet(HybridBlock):
     r"""Densenet-BC model from the
     `"Densely Connected Convolutional Networks" <https://arxiv.org/pdf/1608.06993.pdf>`_ paper.
@@ -119,7 +115,6 @@ class DenseNet(HybridBlock):
             self.output = nn.Dense(classes)
 
     def hybrid_forward(self, F, x):
-        x = x.as_np_ndarray()
         x = self.features(x)
         x = self.output(x)
         return x

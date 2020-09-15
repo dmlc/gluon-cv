@@ -3,9 +3,13 @@
 __all__ = ['GroupNorm']
 import numpy as np
 
+import mxnet as mx
 from mxnet.gluon.block import HybridBlock
 from mxnet import autograd
+from mxnet import use_np
+mx.npx.set_np()
 
+@use_np
 class GroupNorm(HybridBlock):
     """GroupNorm normalization layer (Wu and He, 2014).
 

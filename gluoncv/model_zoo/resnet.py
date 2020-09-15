@@ -113,7 +113,7 @@ class BasicBlockV1(HybridBlock):
         if self.se:
             w = F.contrib.AdaptiveAvgPooling2D(x.as_nd_ndarray(), output_size=1).as_np_ndarray()
             w = self.se(w)
-            x = F.np.expand_dims(x * F.np.expand_dims(w, axis=2), axis=2)
+            x = x * F.np.expand_dims(F.np.expand_dims(w, axis=2), axis=2)
 
         if self.downsample:
             residual = self.downsample(residual)
@@ -193,7 +193,7 @@ class BottleneckV1(HybridBlock):
         if self.se:
             w = F.contrib.AdaptiveAvgPooling2D(x.as_nd_ndarray(), output_size=1).as_np_ndarray()
             w = self.se(w)
-            x = x * F.np.expand_dims(w, axis=2).expand_dims(axis=2)
+            x = x * F.np.expand_dims(F.np.expand_dims(w, axis=2), axis=2)
 
         if self.downsample:
             residual = self.downsample(residual)
@@ -273,7 +273,7 @@ class BasicBlockV2(HybridBlock):
         if self.se:
             w = F.contrib.AdaptiveAvgPooling2D(x.as_nd_ndarray(), output_size=1).as_np_ndarray()
             w = self.se(w)
-            x = F.np.expand_dims(x * F.np.expand_dims(w, axis=2), axis=2)
+            x = x * F.np.expand_dims(F.np.expand_dims(w, axis=2), axis=2)
 
         return x + residual
 
@@ -354,12 +354,13 @@ class BottleneckV2(HybridBlock):
         if self.se:
             w = F.contrib.AdaptiveAvgPooling2D(x.as_nd_ndarray(), output_size=1).as_np_ndarray()
             w = self.se(w)
-            x = F.np.expand_dims(x * F.np.expand_dims(w, axis=2), axis=2)
+            x = x * F.np.expand_dims(F.np.expand_dims(w, axis=2), axis=2)
 
         return x + residual
 
 
 # Nets
+@use_np
 class ResNetV1(HybridBlock):
     r"""ResNet V1 model from
     `"Deep Residual Learning for Image Recognition"
@@ -432,7 +433,7 @@ class ResNetV1(HybridBlock):
 
         return x
 
-
+@use_np
 class ResNetV2(HybridBlock):
     r"""ResNet V2 model from
     `"Identity Mappings in Deep Residual Networks"

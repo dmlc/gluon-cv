@@ -25,11 +25,12 @@ __all__ = ['get_cifar_resnet',
            'cifar_resnet20_v2', 'cifar_resnet56_v2', 'cifar_resnet110_v2']
 
 import os
+import mxnet as mx
 from mxnet.gluon.block import HybridBlock
 from mxnet.gluon import nn
 from mxnet.gluon.nn import BatchNorm
 from mxnet import cpu
-import mxnet as mx
+from mxnet import use_np
 mx.npx.set_np()
 
 # Helpers
@@ -39,6 +40,7 @@ def _conv3x3(channels, stride, in_channels):
 
 
 # Blocks
+@use_np
 class CIFARBasicBlockV1(HybridBlock):
     r"""BasicBlock V1 from `"Deep Residual Learning for Image Recognition"
     <http://arxiv.org/abs/1512.03385>`_ paper.
@@ -92,6 +94,7 @@ class CIFARBasicBlockV1(HybridBlock):
 
         return x
 
+@use_np
 class CIFARBasicBlockV2(HybridBlock):
     r"""BasicBlock V2 from
     `"Identity Mappings in Deep Residual Networks"
@@ -146,6 +149,7 @@ class CIFARBasicBlockV2(HybridBlock):
         return x + residual
 
 # Nets
+@use_np
 class CIFARResNetV1(HybridBlock):
     r"""ResNet V1 model from
     `"Deep Residual Learning for Image Recognition"
@@ -204,7 +208,7 @@ class CIFARResNetV1(HybridBlock):
 
         return x
 
-
+@use_np
 class CIFARResNetV2(HybridBlock):
     r"""ResNet V2 model from
     `"Identity Mappings in Deep Residual Networks"
@@ -321,6 +325,7 @@ def get_cifar_resnet(version, num_layers, pretrained=False, ctx=cpu(),
                                            tag=pretrained, root=root), ctx=ctx)
     return net
 
+@use_np
 def cifar_resnet20_v1(**kwargs):
     r"""ResNet-20 V1 model for CIFAR10 from `"Deep Residual Learning for Image Recognition"
     <http://arxiv.org/abs/1512.03385>`_ paper.

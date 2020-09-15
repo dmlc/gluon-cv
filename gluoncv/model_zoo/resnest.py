@@ -4,6 +4,7 @@ from __future__ import division
 
 import math
 
+import mxnet as mx
 from mxnet.context import cpu
 from mxnet.gluon import nn
 from mxnet.gluon.block import HybridBlock
@@ -11,6 +12,8 @@ from mxnet.gluon.nn import BatchNorm
 
 from ..nn.dropblock import DropBlock
 from ..nn.splat import SplitAttentionConv
+from mxnet import use_np
+mx.npx.set_np()
 
 __all__ = ['ResNeSt', 'Bottleneck', 'resnest14', 'resnest26', 'resnest50', 'resnest101',
            'resnest200', 'resnest269']
@@ -24,6 +27,7 @@ def _update_input_size(input_size, stride):
     return input_size
 
 
+@use_np
 class Bottleneck(HybridBlock):
     """ResNeSt Bottleneck
     """
@@ -130,6 +134,7 @@ class Bottleneck(HybridBlock):
         return out
 
 
+@use_np
 class ResNeSt(HybridBlock):
     """ ResNeSt Model
     Parameters

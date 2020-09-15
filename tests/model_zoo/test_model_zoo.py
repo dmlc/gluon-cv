@@ -100,10 +100,9 @@ def _test_bn_global_stats(model_list, **kwargs):
         gcv.model_zoo.get_model(model, norm_layer=_BatchNorm, use_global_stats=True, **kwargs)
 
 @try_gpu(0)
-@unittest.skip("temporarily disabled")
 def test_classification_models():
     ctx = mx.context.current_context()
-    x = mx.random.uniform(shape=(2, 3, 32, 32), ctx=ctx)
+    x = mx.np.random.uniform(size=(2, 3, 32, 32), ctx=ctx)
     cifar_models = [
         'cifar_resnet20_v1', 'cifar_resnet56_v1', 'cifar_resnet110_v1',
         'cifar_resnet20_v2', 'cifar_resnet56_v2', 'cifar_resnet110_v2',
@@ -141,7 +140,7 @@ def test_imagenet_models():
             #   'mobilenet1.0', 'mobilenet0.75', 'mobilenet0.5', 'mobilenet0.25',
             #   'mobilenetv2_1.0', 'mobilenetv2_0.75', 'mobilenetv2_0.5', 'mobilenetv2_0.25',
             #   'mobilenetv3_large', 'mobilenetv3_small',
-              'densenet121', 'densenet161', 'densenet169', 'densenet201',
+            #   'densenet121', 'densenet161', 'densenet169', 'densenet201',
             #   'darknet53', 'alexnet', 'googlenet',
             #   'vgg11', 'vgg11_bn', 'vgg13', 'vgg13_bn',
             #   'vgg16', 'vgg16_bn', 'vgg19', 'vgg19_bn',

@@ -2,9 +2,12 @@
 from functools import partial
 import mxnet as mx
 from mxnet.gluon.nn import HybridBlock
+from mxnet import use_np
+mx.npx.set_np()
 
 __all__ = ['DropBlock', 'set_drop_prob', 'DropBlockScheduler']
 
+@use_np
 class DropBlock(HybridBlock):
     def __init__(self, drop_prob, block_size, c, h, w):
         super(DropBlock, self).__init__()
@@ -50,6 +53,7 @@ def set_drop_prob(drop_prob, module):
         module.drop_prob = drop_prob
 
 
+@use_np
 class DropBlockScheduler(object):
     # pylint: disable=chained-comparison
     def __init__(self, net, start_prob, end_prob, num_epochs):

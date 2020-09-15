@@ -1,10 +1,14 @@
 # pylint: disable=arguments-differ,line-too-long,missing-docstring,missing-module-docstring
+import mxnet as mx
 from mxnet.gluon import nn
 from mxnet.gluon.nn import Conv2D, HybridBlock, BatchNorm, Activation
+from mxnet import use_np
+mx.npx.set_np()
 
 __all__ = ['SplitAttentionConv']
 
 
+@use_np
 class SplitAttentionConv(HybridBlock):
     # pylint: disable=keyword-arg-before-vararg
     def __init__(self, channels, kernel_size, strides=(1, 1), padding=(0, 0),
