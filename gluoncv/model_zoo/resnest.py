@@ -9,10 +9,10 @@ from mxnet.context import cpu
 from mxnet.gluon import nn
 from mxnet.gluon.block import HybridBlock
 from mxnet.gluon.nn import BatchNorm
+from mxnet import use_np
 
 from ..nn.dropblock import DropBlock
 from ..nn.splat import SplitAttentionConv
-from mxnet import use_np
 mx.npx.set_np()
 
 __all__ = ['ResNeSt', 'Bottleneck', 'resnest14', 'resnest26', 'resnest50', 'resnest101',

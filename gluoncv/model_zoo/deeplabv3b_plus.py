@@ -4,8 +4,8 @@ import mxnet as mx
 from mxnet.gluon import nn
 from mxnet.context import cpu
 from mxnet.gluon.nn import HybridBlock
-from .wideresnet import wider_resnet38_a2
 from mxnet import use_np
+from .wideresnet import wider_resnet38_a2
 mx.npx.set_np()
 
 __all__ = ['DeepLabWV3Plus', 'get_deeplabv3b_plus', 'get_deeplab_v3b_plus_wideresnet_citys']
