@@ -10,7 +10,7 @@ python prepare_data.py --out LMDB_PATH --n_worker N_WORKER DATASET_PATH
 
 Second, train the StyleGAN for FFHQ dataset.
 ```bash
-python train.py --mixing LMDB_PATH
+python train.py --path LMDB_PATH --sched
 ```
 
 *Notes for training*
