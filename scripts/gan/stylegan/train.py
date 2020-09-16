@@ -19,57 +19,12 @@ plt.switch_backend('agg')
 import mxnet as mx
 import mxnet.ndarray as nd
 from mxnet import gluon, autograd
-# from mxnet.gluon.data.vision import transforms
-# from mxnet.gluon.data import DataLoader
+from mxnet.gluon.data.vision import transforms
+from mxnet.gluon.data import DataLoader
 
 from model import StyledGenerator, Discriminator
 
-import torch
-from torchvision import datasets, transforms, utils
-from torch.utils.data import DataLoader
-
-# class MultiResolutionDataset(gluon.data.Dataset):
-#     def __init__(self, path, transform, resolution=8):
-#         self.env = lmdb.open(
-#             path,
-#             max_readers=32,
-#             readonly=True,
-#             lock=False,
-#             readahead=False,
-#             meminit=False,
-#         )
-
-#         if not self.env:
-#             raise IOError('Cannot open lmdb dataset', path)
-
-#         with self.env.begin(write=False) as txn:
-#             self.length = int(txn.get('length'.encode('utf-8')).decode('utf-8'))
-
-#         self.resolution = resolution
-#         self.transform = transform
-
-#     def __len__(self):
-#         return self.length
-
-#     def __getitem__(self, index):
-#         with self.env.begin(write=False) as txn:
-#             key = f'{self.resolution}-{str(index).zfill(5)}'.encode('utf-8')
-#             img_bytes = txn.get(key)
-
-#         buffer = BytesIO(img_bytes)
-#         img = np.asarray(Image.open(buffer))
-#         img = self.transform(nd.array(img))
-
-#         return img
-
-# from io import BytesIO
-
-# import lmdb
-# from PIL import Image
-from torch.utils.data import Dataset
-
-
-class MultiResolutionDataset(Dataset):
+class MultiResolutionDataset(gluon.data.Dataset):
     def __init__(self, path, transform, resolution=8):
         self.env = lmdb.open(
             path,
@@ -98,8 +53,8 @@ class MultiResolutionDataset(Dataset):
             img_bytes = txn.get(key)
 
         buffer = BytesIO(img_bytes)
-        img = Image.open(buffer)
-        img = self.transform(img)
+        img = np.asarray(Image.open(buffer))
+        img = self.transform(nd.array(img))
 
         return img
 
@@ -126,25 +81,17 @@ def accumulate(model1, model2, decay=0.999):
               'hybridsequential2':'hybridsequential7'}
     
     for k in par2.keys():
-        # par1[k].data.mul_(decay).add_(1 - decay, par2[k].data)
         k2 = k.split('_')[0]
         k1 = k.replace(k2, key_dict[k2], 1)
-
         par1[k1].set_data(par1[k1].data()*decay+((1-decay)*par2[k].data()))
 
     par1.reset_ctx(mx.gpu())
     par2.reset_ctx(context)
 
 
-# def sample_data(dataset, batch_size, image_size=4):
-#     dataset.resolution = image_size
-#     loader = DataLoader(dataset, shuffle=True, batch_size=batch_size, num_workers=1, last_batch='discard')
-
-#     return loader
-
 def sample_data(dataset, batch_size, image_size=4):
     dataset.resolution = image_size
-    loader = DataLoader(dataset, shuffle=True, batch_size=batch_size, num_workers=1, drop_last=True)
+    loader = DataLoader(dataset, shuffle=True, batch_size=batch_size, num_workers=1, last_batch='discard')
 
     return loader
 
@@ -193,7 +140,7 @@ def plot_images(images, path, ncols, nrows):
     plt.savefig(path, bbox_inches='tight')
 
 
-def train(args, dataset, generator, discriminator, context, logger):
+def train(args, dataset, generator, discriminator):
 
 
     step = int(math.log2(args.init_size)) - 2
@@ -207,7 +154,6 @@ def train(args, dataset, generator, discriminator, context, logger):
     adjust_lr(d_optimizer, args.lr.get(resolution, args.lr_default))
 
     alpha = 0
-    # used_sample = 1024000
     used_sample = 0
 
     max_step = int(math.log2(args.max_size)) - 2
@@ -218,15 +164,13 @@ def train(args, dataset, generator, discriminator, context, logger):
 
 
     pbar = tqdm(range(1_000_000))
-    # i=4000
     i = 0
 
     for j in pbar:
 
         alpha = min(1, 1 / args.phase * (used_sample + 1))
 
-        # if (resolution == args.init_size and args.ckpt is None) or final_progress:
-        if (resolution == args.init_size) or final_progress:
+        if (resolution == args.init_size and args.ckpt is None) or final_progress:
             alpha = 1
 
         if used_sample > args.phase * 2:
@@ -266,27 +210,12 @@ def train(args, dataset, generator, discriminator, context, logger):
 
         used_sample += real_image.shape[0]
 
-        # real_image = np.load('/home/ubuntu/style-based-gan-pytorch/real_image_iter{}.npy'.format(i))
 
         b_size = real_image.shape[0]
 
-        # real_image = nd.array(real_image, ctx=context)
         real_image = real_image.numpy()
 
         real_image_list = gluon.utils.split_and_load(real_image, ctx_list=context, batch_axis=0)
-
-        # if args.loss == 'wgan-gp':
-        #     with autograd.record():
-        #         real_predict_list = []
-        #         for j, rl_image in enumerate(real_image_list):
-        #             real_predict = discriminator(rl_image, step, alpha)
-        #             real_predict = -real_predict.mean()
-        #             real_predict_list.append(real_predict)
-        #         # real_predict_loss = real_predict_list.mean()
-        #         # (-real_predict_loss).backward()
-
-        #         autograd.backward(real_predict_list)
-
 
         if args.mixing and random.random() < 0.9:
             gen_in11, gen_in12, gen_in21, gen_in22 = nd.random.randn(
@@ -302,12 +231,10 @@ def train(args, dataset, generator, discriminator, context, logger):
         gen_in1_list = gluon.utils.split_and_load(gen_in1, ctx_list=context, batch_axis=0)
         gen_in2_list = gluon.utils.split_and_load(gen_in2, ctx_list=context, batch_axis=0)
 
-        # gen_in1 = nd.array(gen_in1, ctx=context)
-        # gen_in2 = nd.array(gen_in2, ctx=context)
-        if args.loss == 'wgan-gp':
+        if args.loss == 'wgan':
             fake_predict_list = []
             real_predict_list = []
-            loss_list = []
+            D_loss_list = []
             with autograd.record():
                 for j, (rl_image,g1) in enumerate(zip(real_image_list, gen_in1_list)):      
                     real_predict = discriminator(rl_image, step, alpha)
@@ -319,12 +246,15 @@ def train(args, dataset, generator, discriminator, context, logger):
                     fake_predict = fake_predict.mean()
                     fake_predict_list.append(fake_predict)
 
-                    loss_list.append(real_predict+fake_predict)
+                    D_loss_list.append(real_predict+fake_predict)
 
             autograd.backward(loss_list)
-            # autograd.backward(fake_predict_list)
-            # fake_predict_loss.backward()
-            # autograd.backward(fake_predict)
+
+        elif args.loss == 'r1':
+            # Not able to implement r1 loss
+            raise Exception('r1 loss has not been implemented, please use wgan loss')
+        else:
+            raise Exception('Not valid loss, please use wgan loss')
 
         if i%10 == 0:
             real_predict_val = [i.asnumpy() for i in real_predict_list]
@@ -332,12 +262,9 @@ def train(args, dataset, generator, discriminator, context, logger):
             d_real_val = np.concatenate(real_predict_val).mean()
             d_fake_val = np.concatenate(fake_predict_val).mean()
             disc_loss_val = d_real_val + d_fake_val
-            # disc_loss_val = fake_predict_loss - real_predict_loss
-            # disc_loss_val = fake_predict + real_predict
-            # disc_loss_val = disc_loss_val.asnumpy().mean()
+
 
         d_optimizer.step(b_size, ignore_stale_grad=True)
-        # d_optimizer.step(1, ignore_stale_grad=True)
 
         if (i +1) % n_critic == 0:
 
@@ -352,35 +279,23 @@ def train(args, dataset, generator, discriminator, context, logger):
                         predict = discriminator(fake_image, step, alpha)
                         predict = -predict.mean()
                         predict_list.append(predict)
-                # (-predict_loss).backward(retain_graph=True)
                 autograd.backward(predict_list)
+            elif args.loss == 'r1':
+                # Not able to implement r1 loss
+                raise Exception('r1 loss has not been implemented, please use wgan loss')
+            else:
+                raise Exception('Not valid loss, please use wgan loss')
 
             if i%10 == 0:
                 predict_val = [i.asnumpy() for i in predict_list]
                 gen_loss_val = np.concatenate(predict_val).mean()
-                # gen_loss_val = (-predict_loss)
-                # gen_loss_val = predict.asnumpy().mean()
 
             g_optimizer.step(b_size, ignore_stale_grad=True)
-            # g_optimizer.step(1, ignore_stale_grad=True)
+
             accumulate(g_running, generator)
 
             requires_grad(generator, False)
             requires_grad(discriminator, True)
-
-        # if (i ) % 100 == 0:
-        #     images = []
-
-        #     gen_i, gen_j = args.gen_sample.get(resolution, (10, 5))
-
-        #     for _ in range(gen_i):
-        #         results = g_running(
-        #                 nd.random.randn(gen_j, code_size, ctx=mx.gpu(0)), step, alpha
-        #             )
-        #         for r in results:
-        #             images.append(r)
-
-        #     plot_images(images, osp.join(args.out, f'{str(i + 1).zfill(6)}.png'), gen_i, gen_j)
 
         if (i ) % 100 == 0:
             images = []
@@ -391,18 +306,10 @@ def train(args, dataset, generator, discriminator, context, logger):
                 results = g_running(
                         nd.random.randn(gen_j, code_size, ctx=mx.gpu(0)), step, alpha
                     )
-
                 for r in results:
-                    images.append(torch.from_numpy(r.expand_dims(0).asnumpy()))
+                    images.append(r)
 
-
-            utils.save_image(
-                torch.cat(images, 0),
-                os.path.join(args.out, f'{str(i + 1).zfill(6)}.png'),
-                nrow=gen_i,
-                normalize=True,
-                range=(-1, 1),
-            )
+            plot_images(images, osp.join(args.out, f'{str(i + 1).zfill(6)}.png'), gen_i, gen_j)
 
 
 
@@ -453,7 +360,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # build logger
-    filehandler = logging.FileHandler('stylegan_0911_1.log')
+    filehandler = logging.FileHandler('stylegan.log')
     streamhandler = logging.StreamHandler()
     logger = logging.getLogger('')
     logger.setLevel(logging.INFO)
@@ -466,8 +373,6 @@ if __name__ == '__main__':
     else:
         context = [mx.gpu(int(i)) for i in args.gpu_ids.split(',') if i.strip()]
 
-    # context = mx.gpu(0)
-
     generator = StyledGenerator(code_size)
     generator.initialize(ctx=context)
     generator.collect_params().reset_ctx(context)
@@ -476,19 +381,16 @@ if __name__ == '__main__':
                                 optimizer_params={'learning_rate': args.lr_default,'beta1':0.0, 'beta2':0.99},
                                 kvstore='local')
 
+    # Set a different learning rate for style by setting the lr_mult of 0.01
     for k in generator.collect_params().keys():
         if k.startswith('hybridsequential2'):
             generator.collect_params()[k].lr_mult = 0.01
-
-    # for k in generator.collect_params().keys():
-    #     print(k)
-    #     print(generator.collect_params()[k].lr_mult)
 
 
     discriminator = Discriminator(from_rgb_activate=not args.no_from_rgb_activate)
     discriminator.initialize(ctx=context)
     discriminator.collect_params().reset_ctx(context)
-    # lr = args.lr
+
     d_optimizer = gluon.Trainer(discriminator.collect_params(), optimizer='adam', 
                             optimizer_params={'learning_rate': args.lr_default, 'beta1':0.0, 'beta2':0.99}, kvstore='local')
 
@@ -499,28 +401,18 @@ if __name__ == '__main__':
     requires_grad(g_running, False)
 
     if args.ckpt_g:
-        # g_running.load_params(args.ckpt_g_running, ctx=context, allow_missing=True)
+        g_running.load_params(args.ckpt_g_running, ctx=mx.gpu(), allow_missing=True)
         generator.load_parameters(args.ckpt_g, ctx=context, allow_missing=True)
         discriminator.load_parameters(args.ckpt_d, ctx=context, allow_missing=True)
 
 
     accumulate(g_running, generator, 0)
 
-    # transform = transforms.Compose(
-    #     [
-    #         transforms.RandomFlipLeftRight(),
-    #         transforms.ToTensor(),
-    #         transforms.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5)),
-    #     ]
-    # )
-
-    # dataset = MultiResolutionDataset(args.path, transform)
-
     transform = transforms.Compose(
         [
-            transforms.RandomHorizontalFlip(),
+            transforms.RandomFlipLeftRight(),
             transforms.ToTensor(),
-            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+            transforms.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5)),
         ]
     )
 
@@ -544,6 +436,6 @@ if __name__ == '__main__':
 
     args.batch_default = 32
 
-    train(args, dataset, generator, discriminator, context, logger)
+    train(args, dataset, generator, discriminator)
 
 

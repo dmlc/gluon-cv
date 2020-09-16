@@ -5,7 +5,6 @@ import mxnet as mx
 import mxnet.ndarray as nd
 import mxnet.gluon.nn as nn
 from numpy import prod
-# pylint: disable-all
 
 def get_weight_key(module):
 
@@ -126,12 +125,6 @@ class EqualConv2d(nn.HybridBlock):
             self.kernel = (kernel, kernel)
             self.channel = out_dim
             self.padding = (padding,padding)
-            # self.conv = nn.Conv2D(channels=out_dim, in_channels=in_dim, kernel_size=kernel, padding=padding, 
-            #                       weight_initializer=mx.init.Normal(1), bias_initializer='zeros')
-
-            # self.weight_key = get_weight_key(self.conv)
-            # self.weight_orig = self.params.get('weight_orig', shape=self.conv.params[self.weight_key].shape, 
-            #                                    grad_req='null',init=mx.init.Normal(1))
 
     def hybrid_forward(self, F, x, **kwargs):
 
@@ -238,14 +231,12 @@ class ConvBlock(nn.HybridBlock):
             if fused:
                 self.conv2 = nn.HybridSequential()
                 with self.conv2.name_scope():
-                    # self.conv2.add(Blur(out_channel))
                     self.conv2.add(FusedDownsample(out_channel, out_channel, kernel2, padding=pad2))
                     self.conv2.add(nn.LeakyReLU(0.2))
                 
             else:
                 self.conv2 = nn.HybridSequential()
                 with self.conv2.name_scope():
-                    # self.conv2.add(Blur(out_channel))
                     self.conv2.add(EqualConv2d(out_channel, out_channel, kernel2, padding=pad2))
                     self.conv2.add(nn.AvgPool2D(pool_size=(2,2)))
                     self.conv2.add(nn.LeakyReLU(0.2))
@@ -265,7 +256,7 @@ class ConvBlock(nn.HybridBlock):
 
 class StyledConvBlock(nn.HybridBlock):
     def __init__(self, in_channel, out_channel, kernel_size=3, padding=1, style_dim=512,
-                 initial=False, upsample=False, fused=False):
+                 initial=False, upsample=False, fused=False, blur=False):
         super().__init__()
 
         self.upsample = None
@@ -279,7 +270,8 @@ class StyledConvBlock(nn.HybridBlock):
                     self.conv1 = nn.HybridSequential()
                     with self.conv1.name_scope():
                         self.conv1.add(FusedUpsample(in_channel, out_channel, kernel_size, padding=padding))
-                        # self.conv1.add(Blur(out_channel))
+                        if blur:
+                            self.conv1.add(Blur(out_channel))
                     
                 else:
                     self.upsample = 'nearest'
@@ -287,7 +279,8 @@ class StyledConvBlock(nn.HybridBlock):
                     with self.conv1.name_scope():
                         self.conv1.add(EqualConv2d(in_dim=in_channel, out_dim=out_channel, 
                                                    kernel=kernel_size, padding=padding))
-                        # self.conv1.add(Blur(out_channel))
+                        if blur:
+                            self.conv1.add(Blur(out_channel))
 
             else:
                 self.conv1 = EqualConv2d(in_dim=in_channel, out_dim=out_channel, 
@@ -305,7 +298,6 @@ class StyledConvBlock(nn.HybridBlock):
 
     def hybrid_forward(self, F, x, style, noise):
         #  Upsample
-
         if self.upsample == 'nearest':
             x = F.UpSampling(x, scale=2, sample_type='nearest')
         out = self.conv1(x)
@@ -319,5 +311,3 @@ class StyledConvBlock(nn.HybridBlock):
         out = self.adain2(out, style)
 
         return out
-
-
