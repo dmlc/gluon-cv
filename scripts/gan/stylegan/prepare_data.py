@@ -8,20 +8,13 @@ import lmdb
 from tqdm import tqdm
 
 import mxnet.ndarray as nd
-from mxnet import image
-# from torchvision import datasets
+
 from mxnet.gluon.data.vision.datasets import ImageFolderDataset
-from torchvision.transforms import functional as trans_fn
 
 
 def resize_and_convert(img, size, quality=100):
-    #### change to mxnet
-    # img.load()
-    # img = nd.array(np.asarray(img, dtype="int32" ))
-    # buffer = BytesIO()
-    # img = Image.fromarray( np.asarray( np.clip(img,0,255), dtype="uint8"))
-    img = trans_fn.resize(img, size, Image.LANCZOS)
-    img = trans_fn.center_crop(img, size)
+    img = img.resize(size)
+    # img = trans_fn.center_crop(img, size)
     buffer = BytesIO()
     img.save(buffer, format='jpeg', quality=quality)
     val = buffer.getvalue()
