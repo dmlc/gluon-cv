@@ -70,7 +70,7 @@ if __name__ == '__main__':
     else:
         device = mx.gpu(int(args.gpu_id.strip()))
 
-    generator = StyledGenerator(512)
+    generator = StyledGenerator(512, blur=True)
     generator.initialize()
     generator.collect_params().reset_ctx(device)
     generator.load_parameters(args.path, ctx=device)
