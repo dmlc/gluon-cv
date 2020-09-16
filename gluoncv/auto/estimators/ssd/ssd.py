@@ -159,9 +159,9 @@ class SSDEstimator(BaseEstimator):
                 self.async_net, self.train_dataset, self.val_dataset, self._cfg.ssd.data_shape, self._cfg.train.batch_size, self._cfg.num_workers,
                 devices, self.ctx[0], self._cfg.horovod)
         else:
-            batch_size = (self._cfg.train.batch_size // hvd.size()) if self._cfg.horovod else self._cfg.train.batch_size
+            self.batch_size = (self._cfg.train.batch_size // hvd.size()) if self._cfg.horovod else self._cfg.train.batch_size
             self._train_data, self._val_data = _get_dataloader(
-                self.async_net, self.train_dataset, self.val_dataset, self._cfg.ssd.data_shape, batch_size, self._cfg.num_workers, self.ctx[0])
+                self.async_net, self.train_dataset, self.val_dataset, self._cfg.ssd.data_shape, self.batch_size, self._cfg.num_workers, self.ctx[0])
 
         self.mbox_loss = SSDMultiBoxLoss()
         self.ce_metric = mx.metric.Loss('CrossEntropy')

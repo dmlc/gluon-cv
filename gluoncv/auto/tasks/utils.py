@@ -8,9 +8,9 @@ from ... import data as gdata
 from ..estimators.base_estimator import BaseEstimator
 from ..estimators.ssd import SSDEstimator
 from ..estimators.faster_rcnn import FasterRCNNEstimator
-from ..estimators.yolo import YoloEstimator
+from ..estimators.yolo import YOLOEstimator
 from ..estimators.center_net import CenterNetEstimator
-# from gluoncv.auto.estimators import SSDEstimator, FasterRCNNEstimator, YoloEstimator, CenterNetEstimator
+# from gluoncv.auto.estimators import SSDEstimator, FasterRCNNEstimator, YOLOEstimator, CenterNetEstimator
 
 
 def auto_suggest(config, estimator):
@@ -75,7 +75,7 @@ def auto_suggest(config, estimator):
     if bbox_rel_size < 0.2 or num_objects > 5:
         suggested_estimator = [FasterRCNNEstimator]
     else:
-        suggested_estimator = [SSDEstimator, YoloEstimator]
+        suggested_estimator = [SSDEstimator, YOLOEstimator]
 
     config['lr'] = config.get('lr', ag.Categorical(1e-2, 5e-3, 1e-3, 5e-4, 1e-4))
 
@@ -95,7 +95,7 @@ def config_to_nested(config):
             config['meta_arch'] = 'ssd'
         elif config['estimator'] == FasterRCNNEstimator:
             config['meta_arch'] = 'faster_rcnn'
-        elif config['estimator'] == YoloEstimator:
+        elif config['estimator'] == YOLOEstimator:
             config['meta_arch'] = 'yolo3'
         elif config['estimator'] == CenterNetEstimator:
             config['meta_arch'] = 'center_net'
@@ -128,13 +128,11 @@ def config_to_nested(config):
         }
     elif config['meta_arch'] == 'yolo3':
         config_mapping = {
-            'yolo3': ['base_network', 'scale', 'topk', 'root', 'wh_weight', 'center_reg_weight',
-                      'data_shape', 'syncbn'],
-            'train': ['pretrained_base', 'gpus', 'num_workers', 'resume', 'batch_size',
-                      'epochs', 'start_epoch', 'lr', 'lr_mode', 'lr_decay', 'lr_decay_period', 'lr_decay_epoch',
-                      'warmup_lr', 'warmup_epochs', 'momentum', 'wd', 'log_interval', 'save_interval', 'save_prefix',
-                      'seed', 'num_samples', 'no_random_shape', 'no_wd', 'mixup', 'no_mixup_epochs', 'label_smooth',
-                      'amp', 'horovod'],
+            'yolo3': ['backbone', 'filters', 'anchors', 'strides', 'data_shape', 'syncbn', 'no_random_shape',
+                      'amp', 'custom_model'],
+            'train': ['batch_size', 'epochs', 'start_epoch', 'lr', 'lr_mode', 'lr_decay', 'lr_decay_period',
+                      'lr_decay_epoch', 'warmup_lr', 'warmup_epochs', 'momentum', 'wd', 'log_interval',
+                      'seed', 'num_samples', 'no_wd', 'mixup', 'no_mixup_epochs', 'label_smooth'],
             'validation': ['val_interval']
         }
     elif config['meta_arch'] == 'center_net':
