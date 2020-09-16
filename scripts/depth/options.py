@@ -20,7 +20,9 @@ class MonodepthOptions:
 
         # MODEL options
         self.parser.add_argument('--model_zoo', type=str, default=None,
-                                 help='choose model from model zoo model')
+                                 help='choose depth model from model zoo model')
+        self.parser.add_argument('--model_zoo_pose', type=str, default=None,
+                                 help='choose pose model from model zoo model')
         self.parser.add_argument('--pretrained_type',
                                  type=str,
                                  help="use gluoncv pretrained model or customer model",
@@ -138,8 +140,10 @@ class MonodepthOptions:
                                  help="name of model to load")
         self.parser.add_argument('--eval_model', type=str, default=None,
                                  help='the name of evaluation model')
-        self.parser.add_argument('--resume', type=str, default=None,
-                                 help='put the path to resuming file if needed')
+        self.parser.add_argument('--resume_depth', type=str, default=None,
+                                 help='put the path to depthnet resuming file if needed')
+        self.parser.add_argument('--resume_pose', type=str, default=None,
+                                 help='put the path to posenet resuming file if needed')
 
         # LOGGING options
         self.parser.add_argument("--log_frequency",
@@ -189,9 +193,11 @@ class MonodepthOptions:
         self.options = self.parser.parse_args()
 
         # logging and checkpoint saving
-        log_path = os.path.join(self.options.log_dir, self.options.model_zoo)
-        if not os.path.exists(log_path):
-            os.makedirs(log_path)
+        if not (self.options.eval_mono or self.options.eval_stereo):
+            if self.options.model_zoo_pose and self.options.model_zoo:
+                log_path = os.path.join(self.options.log_dir, self.options.model_zoo)
+                if not os.path.exists(log_path):
+                    os.makedirs(log_path)
 
         self.options.ctx = [mx.gpu(self.options.gpu)]
         if self.options.no_gpu:

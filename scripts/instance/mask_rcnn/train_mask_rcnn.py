@@ -538,7 +538,7 @@ def train(net, train_data, val_data, eval_metric, batch_size, ctx, logger, args)
     base_lr = trainer.learning_rate
     for epoch in range(args.start_epoch, args.epochs):
         rcnn_task = ForwardBackwardTask(net, trainer, rpn_cls_loss, rpn_box_loss, rcnn_cls_loss,
-                                        rcnn_box_loss, rcnn_mask_loss)
+                                        rcnn_box_loss, rcnn_mask_loss, args.amp)
         executor = Parallel(args.executor_threads, rcnn_task) if not args.horovod else None
         if not args.disable_hybridization:
             net.hybridize(static_alloc=args.static_alloc)

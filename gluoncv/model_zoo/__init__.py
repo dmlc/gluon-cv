@@ -22,6 +22,8 @@ from .simple_pose.mobile_pose import *
 from .action_recognition import *
 from .wideresnet import *
 
+from .resnest import *
+from .resnext import *
 from .alexnet import *
 from .densenet import *
 from .googlenet import *

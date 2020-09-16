@@ -17,6 +17,7 @@ from gluoncv.data.kitti.kitti_utils import dict_batchify_fn, readlines
 
 from gluoncv.model_zoo import get_model
 from gluoncv.model_zoo.monodepthv2.layers import *
+from gluoncv.model_zoo.monodepthv2 import MonoDepth2PoseNet
 from gluoncv.utils import LRScheduler, LRSequential
 
 # Models which were trained with stereo supervision were trained with a nominal
@@ -36,10 +37,8 @@ class Trainer:
         assert self.opt.height % 32 == 0, "'height' must be a multiple of 32"
         assert self.opt.width % 32 == 0, "'width' must be a multiple of 32"
 
-        ################### model initialization ###################
         self.num_scales = len(self.opt.scales)
         self.num_input_frames = len(self.opt.frame_ids)
-        self.num_pose_frames = 2 if self.opt.pose_model_input == "pairs" else self.num_input_frames
 
         assert self.opt.frame_ids[0] == 0, "frame_ids must start with 0"
 
@@ -47,28 +46,6 @@ class Trainer:
 
         if self.opt.use_stereo:
             self.opt.frame_ids.append("s")
-
-        # create network
-        if self.opt.model_zoo is not None:
-            self.model = get_model(self.opt.model_zoo, pretrained_base=self.opt.pretrained_base,
-                                   scales=self.opt.scales, ctx=self.opt.ctx)
-        else:
-            assert "Must choose a model from model_zoo, " \
-                   "please provide the model_zoo using --model_zoo"
-        self.logger.info(self.model)
-
-        # resume checkpoint if needed
-        if self.opt.resume is not None:
-            if os.path.isfile(self.opt.resume):
-                logger.info('Resume model: %s' % self.opt.resume)
-                self.model.load_parameters(self.opt.resume, ctx=self.opt.ctx)
-            else:
-                raise RuntimeError("=> no checkpoint found at '{}'".format(self.opt.resume))
-
-        self.parameters_to_train = self.model.collect_params()
-
-        if self.opt.hybridize:
-            self.model.hybridize()
 
         ######################### dataloader #########################
         datasets_dict = {"kitti": KITTIRAWDataset,
@@ -80,9 +57,6 @@ class Trainer:
         train_filenames = readlines(fpath.format("train"))
         val_filenames = readlines(fpath.format("val"))
         img_ext = '.png' if self.opt.png else '.jpg'
-
-        num_train_samples = len(train_filenames)
-        self.num_total_steps = num_train_samples // self.opt.batch_size * self.opt.num_epochs
 
         train_dataset = self.dataset(
             self.opt.data_path, train_filenames, self.opt.height, self.opt.width,
@@ -100,17 +74,71 @@ class Trainer:
             batchify_fn=dict_batchify_fn, num_workers=self.opt.num_workers,
             pin_memory=True, last_batch='discard')
 
+        ################### model initialization ###################
+        # create depth network
+        if self.opt.model_zoo is not None:
+            self.model = get_model(self.opt.model_zoo, pretrained_base=self.opt.pretrained_base,
+                                   scales=self.opt.scales, ctx=self.opt.ctx)
+        else:
+            assert "Must choose a model from model_zoo, " \
+                   "please provide depth the model_zoo using --model_zoo"
+        self.logger.info(self.model)
+
+        # resume checkpoint if needed
+        if self.opt.resume_depth is not None:
+            if os.path.isfile(self.opt.resume_depth):
+                logger.info('Resume depth model: %s' % self.opt.resume_depth)
+                self.model.load_parameters(self.opt.resume_depth, ctx=self.opt.ctx)
+            else:
+                raise RuntimeError("=> no checkpoint found at '{}'".format(self.opt.resume_depth))
+
+        if self.use_pose_net:
+            # create pose network
+            if self.opt.model_zoo_pose is not None:
+                self.posenet = get_model(
+                    self.opt.model_zoo_pose, pretrained_base=self.opt.pretrained_base,
+                    num_input_images=2, num_input_features=1, num_frames_to_predict_for=2,
+                    ctx=self.opt.ctx)
+            else:
+                assert "Must choose a model from model_zoo, " \
+                       "please provide the pose model_zoo_pose using --model_zoo_pose"
+            self.logger.info(self.posenet)
+
+            # resume checkpoint if needed
+            if self.opt.resume_pose is not None:
+                if os.path.isfile(self.opt.resume_pose):
+                    logger.info('Resume pose model: %s' % self.opt.resume_pose)
+                    self.model.load_parameters(self.opt.resume_pose, ctx=self.opt.ctx)
+                else:
+                    raise RuntimeError("=> no checkpoint found at '{}'".format(
+                                        self.opt.resume_pose))
+
+        if self.opt.hybridize:
+            self.model.hybridize()
+            self.posenet.hybridize()
+
         ################### optimization setting ###################
-        self.lr_scheduler = LRSequential([
+        self.lr_scheduler_depth = LRSequential([
             LRScheduler('step', base_lr=self.opt.learning_rate,
                         nepochs=self.opt.num_epochs - self.opt.warmup_epochs,
                         iters_per_epoch=len(train_dataset),
                         step_epoch=[self.opt.scheduler_step_size - self.opt.warmup_epochs])
         ])
-        optimizer_params = {'lr_scheduler': self.lr_scheduler,
-                            'learning_rate': self.opt.learning_rate}
+        optimizer_params_depth = {'lr_scheduler': self.lr_scheduler_depth,
+                                  'learning_rate': self.opt.learning_rate}
 
-        self.optimizer = gluon.Trainer(self.parameters_to_train, 'adam', optimizer_params)
+        self.depth_optimizer = gluon.Trainer(self.model.collect_params(), 'adam', optimizer_params_depth)
+
+        if self.use_pose_net:
+            self.lr_scheduler_pose = LRSequential([
+                LRScheduler('step', base_lr=self.opt.learning_rate,
+                            nepochs=self.opt.num_epochs - self.opt.warmup_epochs,
+                            iters_per_epoch=len(train_dataset),
+                            step_epoch=[self.opt.scheduler_step_size - self.opt.warmup_epochs])
+            ])
+            optimizer_params_pose = {'lr_scheduler': self.lr_scheduler_pose,
+                                     'learning_rate': self.opt.learning_rate}
+            self.pose_optimizer = gluon.Trainer(self.posenet.collect_params(), 'adam', optimizer_params_pose)
 
         print("Training model named:\n  ", self.opt.model_zoo)
         print("Models are saved to:\n  ", self.opt.log_dir)
@@ -144,6 +172,9 @@ class Trainer:
         self.best_delta1 = 0
         self.best_model = self.model
 
+        if self.use_pose_net:
+            self.best_posenet = self.posenet
+
     def train(self):
         """Run the entire training pipeline
         """
@@ -171,10 +202,12 @@ class Trainer:
                 mx.nd.waitall()
 
                 autograd.backward(losses['loss'])
-            self.optimizer.step(self.opt.batch_size, ignore_stale_grad=True)
+            self.depth_optimizer.step(self.opt.batch_size, ignore_stale_grad=True)
+            if self.use_pose_net:
+                self.pose_optimizer.step(self.opt.batch_size, ignore_stale_grad=True)
 
             train_loss += losses['loss'].asscalar()
-            tbar.set_description('Epoch %d, training loss %.3f' % \
+            tbar.set_description('Epoch %d, training loss %.3f' %
                                  (self.epoch, train_loss / (batch_idx + 1)))
 
             if batch_idx % self.opt.log_frequency == 0:
@@ -211,6 +244,9 @@ class Trainer:
             outputs[("depth", 0, 0)] = depth
 
             return outputs
+
+        if self.use_pose_net:
+            outputs.update(self.predict_poses(inputs))
 
         # image reconstruction
         self.generate_images_pred(inputs, outputs)
@@ -266,6 +302,31 @@ class Trainer:
         if delta_1 > self.best_delta1:
             self.best_model = self.model
             self.best_delta1 = delta_1
+            if self.use_pose_net:
+                self.best_posenet = self.posenet
+
+    def predict_poses(self, inputs):
+        outputs = {}
+
+        pose_feats = {f_i: inputs["color_aug", f_i, 0] for f_i in self.opt.frame_ids}
+
+        for f_i in self.opt.frame_ids[1:]:
+            if f_i != "s":
+                # To maintain ordering we always pass frames in temporal order
+                if f_i < 0:
+                    pose_inputs = [pose_feats[f_i], pose_feats[0]]
+                else:
+                    pose_inputs = [pose_feats[0], pose_feats[f_i]]
+
+                axisangle, translation = self.posenet(mx.nd.concat(*pose_inputs, dim=1))
+                outputs[("axisangle", 0, f_i)] = axisangle
+                outputs[("translation", 0, f_i)] = translation
+
+                # Invert the matrix if the frame id is negative
+                outputs[("cam_T_cam", 0, f_i)] = transformation_from_parameters(
+                    axisangle[:, 0], translation[:, 0], invert=(f_i < 0))
+
+        return outputs
 
     def generate_images_pred(self, inputs, outputs):
         for scale in self.opt.scales:
@@ -461,9 +522,16 @@ class Trainer:
         if not os.path.exists(save_folder):
             os.makedirs(save_folder)
 
+        # depth model
         filename = 'epoch_%04d_Delta1_%2.4f.params' % (self.epoch, delta_1)
         filepath = os.path.join(save_folder, filename)
         self.model.save_parameters(filepath)
+
+        # pose encoder model
+        if self.use_pose_net:
+            filename = 'epoch_%04d_Delta1_%2.4f_posenet.params' % (self.epoch, delta_1)
+            filepath = os.path.join(save_folder, filename)
+            self.posenet.save_parameters(filepath)
 
     def save_model(self, model_type="final"):
         """Save Checkpoint"""
@@ -472,9 +540,20 @@ class Trainer:
             os.makedirs(save_folder)
 
         model = self.model
+        if self.use_pose_net:
+            posenet = self.posenet
         if model_type == "best":
             model = self.best_model
+            if self.use_pose_net:
+                posenet = self.best_posenet
 
-        filename = '{}.params'
+        # save depth model
+        filename = 'depth_{}.params'
         filepath = os.path.join(save_folder, filename.format(model_type))
         model.save_parameters(filepath)
+
+        # save pose model
+        if self.use_pose_net:
+            filename = 'pose_{}.params'
+            filepath = os.path.join(save_folder, filename.format(model_type))
+            posenet.save_parameters(filepath)

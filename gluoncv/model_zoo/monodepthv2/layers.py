@@ -33,18 +33,18 @@ def transformation_from_parameters(axisangle, translation, invert=False):
     """Convert the network's (axisangle, translation) output into a 4x4 matrix
     """
     R = rot_from_axisangle(axisangle)
-    t = translation.clone()
+    t = translation.copy()
 
     if invert:
-        R = R.transpose(1, 2)
-        t *= -1
+        R = R.transpose(axes=(0, 2, 1))
+        t = t * -1
 
     T = get_translation_matrix(t)
 
     if invert:
-        M = mx.nd.dot(R, T)
+        M = mx.nd.batch_dot(R, T)
     else:
-        M = mx.nd.dot(T, R)
+        M = mx.nd.batch_dot(T, R)
 
     return M
 
@@ -52,16 +52,44 @@ def transformation_from_parameters(axisangle, translation, invert=False):
 def get_translation_matrix(translation_vector):
     """Convert a translation vector into a 4x4 transformation matrix
     """
-    T = mx.nd.zeros(translation_vector.shape[0], 4, 4).as_in_context(
-        context=translation_vector.context)
+    t = translation_vector.reshape((-1, 3, 1))
 
-    t = translation_vector.contiguous().view(-1, 3, 1)
+    elem1 = mx.nd.ones(translation_vector.shape[0]).as_in_context(
+        context=translation_vector.context).reshape((translation_vector.shape[0], 1))
+    elem2 = mx.nd.zeros(translation_vector.shape[0]).as_in_context(
+        context=translation_vector.context).reshape((translation_vector.shape[0], 1))
+    elem3 = mx.nd.zeros(translation_vector.shape[0]).as_in_context(
+        context=translation_vector.context).reshape((translation_vector.shape[0], 1))
+    elem4 = t[:, 0, :]
 
-    T[:, 0, 0] = 1
-    T[:, 1, 1] = 1
-    T[:, 2, 2] = 1
-    T[:, 3, 3] = 1
-    T[:, :3, 3, None] = t
+    elem5 = mx.nd.zeros(translation_vector.shape[0]).as_in_context(
+        context=translation_vector.context).reshape((translation_vector.shape[0], 1))
+    elem6 = mx.nd.ones(translation_vector.shape[0]).as_in_context(
+        context=translation_vector.context).reshape((translation_vector.shape[0], 1))
+    elem7 = mx.nd.zeros(translation_vector.shape[0]).as_in_context(
+        context=translation_vector.context).reshape((translation_vector.shape[0], 1))
+    elem8 = t[:, 1, :]
+
+    elem9 = mx.nd.zeros(translation_vector.shape[0]).as_in_context(
+        context=translation_vector.context).reshape((translation_vector.shape[0], 1))
+    elem10 = mx.nd.zeros(translation_vector.shape[0]).as_in_context(
+        context=translation_vector.context).reshape((translation_vector.shape[0], 1))
+    elem11 = mx.nd.ones(translation_vector.shape[0]).as_in_context(
+        context=translation_vector.context).reshape((translation_vector.shape[0], 1))
+    elem12 = t[:, 2, :]
+
+    elem13 = mx.nd.zeros(translation_vector.shape[0]).as_in_context(
+        context=translation_vector.context).reshape((translation_vector.shape[0], 1))
+    elem14 = mx.nd.zeros(translation_vector.shape[0]).as_in_context(
+        context=translation_vector.context).reshape((translation_vector.shape[0], 1))
+    elem15 = mx.nd.zeros(translation_vector.shape[0]).as_in_context(
+        context=translation_vector.context).reshape((translation_vector.shape[0], 1))
+    elem16 = mx.nd.ones(translation_vector.shape[0]).as_in_context(
+        context=translation_vector.context).reshape((translation_vector.shape[0], 1))
+
+    elem = [elem1, elem2, elem3, elem4, elem5, elem6, elem7, elem8,
+            elem9, elem10, elem11, elem12, elem13, elem14, elem15, elem16]
+    T = mx.nd.concat(*elem, dim=1).reshape((translation_vector.shape[0], 4, 4))
 
     return T
 
@@ -71,16 +99,16 @@ def rot_from_axisangle(vec):
     (adapted from https://github.com/Wallacoloo/printipi)
     Input 'vec' has to be Bx1x3
     """
-    angle = mx.nd.norm(vec, 2, 2, True)
+    angle = mx.nd.norm(vec, 2, 2, keepdims=True)
     axis = vec / (angle + 1e-7)
 
     ca = mx.nd.cos(angle)
     sa = mx.nd.sin(angle)
     C = 1 - ca
 
-    x = axis[..., 0].unsqueeze(1)
-    y = axis[..., 1].unsqueeze(1)
-    z = axis[..., 2].unsqueeze(1)
+    x = axis[..., 0].expand_dims(axis=1)
+    y = axis[..., 1].expand_dims(axis=1)
+    z = axis[..., 2].expand_dims(axis=1)
 
     xs = x * sa
     ys = y * sa
@@ -92,18 +120,33 @@ def rot_from_axisangle(vec):
     yzC = y * zC
     zxC = z * xC
 
-    rot = mx.nd.zeros((vec.shape[0], 4, 4)).as_in_context(context=vec.context)
+    elem1 = mx.nd.squeeze(x * xC + ca).reshape((vec.shape[0], 1))
+    elem2 = mx.nd.squeeze(xyC - zs).reshape((vec.shape[0], 1))
+    elem3 = mx.nd.squeeze(zxC + ys).reshape((vec.shape[0], 1))
+    elem4 = mx.nd.zeros(vec.shape[0]).as_in_context(
+        context=vec.context).reshape((vec.shape[0], 1))
+    elem5 = mx.nd.squeeze(xyC + zs).reshape((vec.shape[0], 1))
+    elem6 = mx.nd.squeeze(y * yC + ca).reshape((vec.shape[0], 1))
+    elem7 = mx.nd.squeeze(yzC - xs).reshape((vec.shape[0], 1))
+    elem8 = mx.nd.zeros(vec.shape[0]).as_in_context(
+        context=vec.context).reshape((vec.shape[0], 1))
+    elem9 = mx.nd.squeeze(zxC - ys).reshape((vec.shape[0], 1))
+    elem10 = mx.nd.squeeze(yzC + xs).reshape((vec.shape[0], 1))
+    elem11 = mx.nd.squeeze(z * zC + ca).reshape((vec.shape[0], 1))
+    elem12 = mx.nd.zeros(vec.shape[0]).as_in_context(
+        context=vec.context).reshape((vec.shape[0], 1))
+    elem13 = mx.nd.zeros(vec.shape[0]).as_in_context(
+        context=vec.context).reshape((vec.shape[0], 1))
+    elem14 = mx.nd.zeros(vec.shape[0]).as_in_context(
+        context=vec.context).reshape((vec.shape[0], 1))
+    elem15 = mx.nd.zeros(vec.shape[0]).as_in_context(
+        context=vec.context).reshape((vec.shape[0], 1))
+    elem16 = mx.nd.ones(vec.shape[0]).as_in_context(
+        context=vec.context).reshape((vec.shape[0], 1))
 
-    rot[:, 0, 0] = mx.nd.squeeze(x * xC + ca)
-    rot[:, 0, 1] = mx.nd.squeeze(xyC - zs)
-    rot[:, 0, 2] = mx.nd.squeeze(zxC + ys)
-    rot[:, 1, 0] = mx.nd.squeeze(xyC + zs)
-    rot[:, 1, 1] = mx.nd.squeeze(y * yC + ca)
-    rot[:, 1, 2] = mx.nd.squeeze(yzC - xs)
-    rot[:, 2, 0] = mx.nd.squeeze(zxC - ys)
-    rot[:, 2, 1] = mx.nd.squeeze(yzC + xs)
-    rot[:, 2, 2] = mx.nd.squeeze(z * zC + ca)
-    rot[:, 3, 3] = 1
+    elem = [elem1, elem2, elem3, elem4, elem5, elem6, elem7, elem8,
+            elem9, elem10, elem11, elem12, elem13, elem14, elem15, elem16]
+    rot = mx.nd.concat(*elem, dim=1).reshape((vec.shape[0], 4, 4))
 
     return rot
 

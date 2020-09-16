@@ -6,6 +6,7 @@ import mxnet.ndarray as nd
 import mxnet.gluon.nn as nn
 from numpy import prod
 
+
 def get_weight_key(module):
 
     for k in module.params.keys():
@@ -22,12 +23,14 @@ def compute_weight(weight_orig):
     return weight_orig * sqrt(2 / (fan_in + 1e-8))
 
 
+
 class FusedUpsample(nn.HybridBlock):
     def __init__(self, in_channel, out_channel, kernel_size, padding=0):
         super().__init__()
 
         fan_in = in_channel * kernel_size * kernel_size
         self.multiplier = sqrt(2 / (fan_in))
+
 
         self.weight = self.params.get('weight', shape=(in_channel, out_channel, kernel_size, kernel_size),
                                       init=mx.init.Normal(sigma=1))
@@ -38,6 +41,7 @@ class FusedUpsample(nn.HybridBlock):
 
     def hybrid_forward(self, F, x, **kwargs):
         weight = F.pad(kwargs['weight'] * self.multiplier, mode='constant', 
+
                        constant_value=0, pad_width=(0, 0, 0, 0, 1, 1, 1, 1))
         weight = (
             weight[:, :, 1:, 1:]
@@ -47,6 +51,7 @@ class FusedUpsample(nn.HybridBlock):
         ) / 4
 
         out = F.Deconvolution(x, weight, kwargs['bias'], kernel=weight.shape[-2:], stride=(2, 2), 
+
                               pad=self.pad, num_filter=weight.shape[1], no_bias=False)
 
         return out
@@ -93,11 +98,13 @@ class PixelNorm(nn.HybridBlock):
 class Blur(nn.HybridBlock):
     def __init__(self, channel):
         super().__init__() 
+
         self.channel = channel
 
         weight = np.array([[1, 2, 1], [2, 4, 2], [1, 2, 1]], dtype=np.float32)
         weight = weight.reshape((1, 1, 3, 3))
         weight = weight / (weight.sum()+1e-8)
+
 
 
         self. weight = nd.array(weight).tile((channel, 1, 1, 1))
@@ -109,6 +116,7 @@ class Blur(nn.HybridBlock):
 
         weight = nd.array(self.weight, ctx=x.context)
         output = F.Convolution(x, weight, kernel=self.weight.shape[-2:], pad=(1, 1), 
+
                                num_filter=self.channel, num_group=x.shape[1], no_bias=True)
 
         return output
@@ -257,12 +265,12 @@ class ConvBlock(nn.HybridBlock):
 class StyledConvBlock(nn.HybridBlock):
     def __init__(self, in_channel, out_channel, kernel_size=3, padding=1, style_dim=512,
                  initial=False, upsample=False, fused=False, blur=False):
+
         super().__init__()
 
         self.upsample = None
         if initial:
             self.conv1 = ConstantInput(in_channel)
-        
         else:
             if upsample:
                 if fused:
@@ -273,6 +281,7 @@ class StyledConvBlock(nn.HybridBlock):
                         if blur:
                             self.conv1.add(Blur(out_channel))
                     
+
                 else:
                     self.upsample = 'nearest'
                     self.conv1 = nn.HybridSequential()
@@ -284,6 +293,7 @@ class StyledConvBlock(nn.HybridBlock):
 
             else:
                 self.conv1 = EqualConv2d(in_dim=in_channel, out_dim=out_channel, 
+
                                          kernel=kernel_size, padding=padding)
 
 

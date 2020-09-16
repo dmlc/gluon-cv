@@ -341,7 +341,7 @@ def main(logger):
         net.collect_params().reset_ctx(context)
         if opt.mode == 'hybrid':
             net.hybridize(static_alloc=True, static_shape=True)
-        if opt.resume_params is not '' and not opt.use_pretrained:
+        if opt.resume_params != '' and not opt.use_pretrained:
             net.load_parameters(opt.resume_params, ctx=context)
             print('Pre-trained model %s is successfully loaded.' % (opt.resume_params))
         else:

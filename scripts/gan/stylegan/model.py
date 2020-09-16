@@ -24,6 +24,7 @@ class Generator(nn.HybridBlock):
             self.progression.add(StyledConvBlock(32, 16, 3, 1, upsample=True, fused=fused, blur=blur))  # 1024
 
 
+
         self.to_rgb = nn.HybridSequential()
         with self.to_rgb.name_scope():
             self.to_rgb.add(EqualConv2d(512, 3, 1))
@@ -64,7 +65,7 @@ class Generator(nn.HybridBlock):
 
             if i > 0 and step > 0:
                 out_prev = out
-                
+
             out = conv(out, style_step, nd.array(noise[i], ctx=style[0].context))
 
             if i == step:
@@ -84,6 +85,7 @@ class Generator(nn.HybridBlock):
 class StyledGenerator(nn.HybridBlock):
     r"""Style-based GAN
     Reference:
+
         Tero Karras, Samuli Laine, Timo Aila. "A Style-Based Generator 
         Architecture for Generative Adversarial Networks." *CVPR*, 2019
     """
@@ -91,6 +93,7 @@ class StyledGenerator(nn.HybridBlock):
         super().__init__()
 
         self.generator = Generator(code_dim, blur)
+
 
         self.style = nn.HybridSequential()
 
@@ -107,6 +110,7 @@ class StyledGenerator(nn.HybridBlock):
                        style_weight=0,  mixing_range=(-1, -1)):
 
         styles = []
+
 
         if type(x) not in (list, tuple):
             x = [x]
@@ -143,7 +147,6 @@ class StyledGenerator(nn.HybridBlock):
         style = self.style(x).mean(axis=0, keepdims=True)
 
         return style
-
 
 
 class Discriminator(nn.HybridBlock):
@@ -220,3 +223,4 @@ class Discriminator(nn.HybridBlock):
         out = self.linear(out)
 
         return out
+

@@ -297,10 +297,22 @@ Depth Prediction
         Predict depth from a single image using Monodepth2.
 
     .. card::
+        :title: Pre-trained Monodepth2 Models
+        :link: ../build/examples_depth/videos_monodepth2.html
+
+        Predict depth from an image sequence or a video using Monodepth2.
+
+    .. card::
         :title: Dive Deep into Training Monodepth2 Models
         :link: ../build/examples_depth/train_monodepth2.html
 
         Monodepth2 training on KITTI dataset.
+
+    .. card::
+        :title: Dive Deep into Testing Pretrained PoseNet Models
+        :link: ../build/examples_depth/test_monodepth2_posenet.html
+
+        Monodepth2 PoseNet testing on KITTI dataset.
 
 
 Dataset Preparation

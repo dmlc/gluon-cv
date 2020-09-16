@@ -3,7 +3,7 @@
 """GluonCV: a deep learning vision toolkit powered by Gluon."""
 from __future__ import absolute_import
 
-__version__ = '0.8.0'
+__version__ = '0.9.0'
 
 from .utils.version import _require_mxnet_version, _deprecate_python2
 _deprecate_python2()

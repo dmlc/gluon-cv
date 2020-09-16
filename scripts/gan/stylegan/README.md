@@ -20,6 +20,7 @@ python train.py --path LMDB_PATH --sched
 
 ![images](sample_train.png "Generated 128x128 FFHQ images from the trained StyleGAN")
 
+
 **Test StyleGAN**
 
 Test the converted pretrained weights on [Flickr-Faces-HQ Dataset (FFHQ)](https://github.com/NVlabs/ffhq-dataset). The converted pretrained model "stylegan-ffhq-1024px-new.params" can be downloaded from [Google Drive](https://drive.google.com/file/d/1dYWAT9L3r2jmGe741AiSSAxg1su3ODvj/view?usp=sharing).
