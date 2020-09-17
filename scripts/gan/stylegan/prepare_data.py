@@ -7,14 +7,11 @@ from PIL import Image
 import lmdb
 from tqdm import tqdm
 
-import mxnet.ndarray as nd
-
 from mxnet.gluon.data.vision.datasets import ImageFolderDataset
-
+# pylint: disable-all
 
 def resize_and_convert(img, size, quality=100):
     img = img.resize(size)
-    # img = trans_fn.center_crop(img, size)
     buffer = BytesIO()
     img.save(buffer, format='jpeg', quality=quality)
     val = buffer.getvalue()

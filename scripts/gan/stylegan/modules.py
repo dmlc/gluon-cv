@@ -5,10 +5,9 @@ import mxnet as mx
 import mxnet.ndarray as nd
 import mxnet.gluon.nn as nn
 from numpy import prod
-
+# pylint: disable-all
 
 def get_weight_key(module):
-
     for k in module.params.keys():
         if 'weight' in k:
             weight_key = k
@@ -17,11 +16,9 @@ def get_weight_key(module):
 
 
 def compute_weight(weight_orig):
-
     fan_in = weight_orig.shape[1] * weight_orig[0][0].size
 
     return weight_orig * sqrt(2 / (fan_in + 1e-8))
-
 
 
 class FusedUpsample(nn.HybridBlock):
@@ -30,18 +27,13 @@ class FusedUpsample(nn.HybridBlock):
 
         fan_in = in_channel * kernel_size * kernel_size
         self.multiplier = sqrt(2 / (fan_in))
-
-
         self.weight = self.params.get('weight', shape=(in_channel, out_channel, kernel_size, kernel_size),
                                       init=mx.init.Normal(sigma=1))
-
         self.bias = self.params.get('bias', shape=(out_channel), init=mx.init.Zero())
-
         self.pad = (padding, padding)
 
     def hybrid_forward(self, F, x, **kwargs):
         weight = F.pad(kwargs['weight'] * self.multiplier, mode='constant', 
-
                        constant_value=0, pad_width=(0, 0, 0, 0, 1, 1, 1, 1))
         weight = (
             weight[:, :, 1:, 1:]
@@ -51,9 +43,7 @@ class FusedUpsample(nn.HybridBlock):
         ) / 4
 
         out = F.Deconvolution(x, weight, kwargs['bias'], kernel=weight.shape[-2:], stride=(2, 2), 
-
                               pad=self.pad, num_filter=weight.shape[1], no_bias=False)
-
         return out
 
 
@@ -64,10 +54,8 @@ class FusedDownsample(nn.HybridBlock):
         self.weight = self.params.get('weight', shape=(in_channel, out_channel, kernel_size, kernel_size),
                                       grad_req='write', init=mx.init.Normal(sigma=1))
         self.bias = self.params.get('bias', shape=(out_channel), grad_req='write', init=mx.init.Zero())
-
         fan_in = in_channel * kernel_size * kernel_size
         self.multiplier = sqrt(2 / (fan_in + 1e-8))
-
         self.pad = (padding, padding)
 
 
@@ -83,7 +71,6 @@ class FusedDownsample(nn.HybridBlock):
 
         out = F.Convolution(x, weight, kwargs['bias'], kernel=weight.shape[-2:], stride=(2, 2), 
                             pad=self.pad, num_filter=weight.shape[1], no_bias=False)
-
         return out
 
 
@@ -105,10 +92,7 @@ class Blur(nn.HybridBlock):
         weight = weight.reshape((1, 1, 3, 3))
         weight = weight / (weight.sum()+1e-8)
 
-
-
         self. weight = nd.array(weight).tile((channel, 1, 1, 1))
-
         weight_flip = np.flip(weight, 2)
         self.weight_flip = nd.array(weight_flip).tile((channel, 1, 1, 1))
 
@@ -116,9 +100,7 @@ class Blur(nn.HybridBlock):
 
         weight = nd.array(self.weight, ctx=x.context)
         output = F.Convolution(x, weight, kernel=self.weight.shape[-2:], pad=(1, 1), 
-
                                num_filter=self.channel, num_group=x.shape[1], no_bias=True)
-
         return output
 
 
@@ -128,11 +110,11 @@ class EqualConv2d(nn.HybridBlock):
 
         with self.name_scope():
             self.weight = self.params.get('weight_orig', shape=(out_dim, in_dim, kernel, kernel), grad_req='write',
-                                           init=mx.init.Normal(1))
+                                          init=mx.init.Normal(1))
             self.bias = self.params.get('bias', shape=(out_dim), grad_req='write', init=mx.init.Zero())
             self.kernel = (kernel, kernel)
             self.channel = out_dim
-            self.padding = (padding,padding)
+            self.padding = (padding, padding)
 
     def hybrid_forward(self, F, x, **kwargs):
 
@@ -142,7 +124,6 @@ class EqualConv2d(nn.HybridBlock):
 
         out = F.Convolution(x, kwargs['weight']*multiplier, kwargs['bias'], kernel=self.kernel, pad=self.padding,
                                num_filter=self.channel)
-
         return out 
 
 
@@ -154,12 +135,10 @@ class EqualLinear(nn.HybridBlock):
         self.bias = self.params.get('bias', shape=(out_dim), grad_req='write', init=mx.init.Zero())
         self.num_hidden = out_dim
 
-
     def hybrid_forward(self, F, x, **kwargs):
 
         size = kwargs['weight'].shape
         fan_in = prod(size[1:])
-
         multiplier = sqrt(2.0 / fan_in)
 
         out = F.FullyConnected(x, kwargs['weight']*multiplier, kwargs['bias'], num_hidden=self.num_hidden)
@@ -184,7 +163,6 @@ class AdaptiveInstanceNorm(nn.HybridBlock):
     def hybrid_forward(self, F, x, style, **kwargs):
         style = self.style(style).expand_dims(2).expand_dims(3)
         gamma, beta = style.split(2, 1)
-
         out = self.norm(x)
         out = gamma * out + beta
 
@@ -246,7 +224,7 @@ class ConvBlock(nn.HybridBlock):
                 self.conv2 = nn.HybridSequential()
                 with self.conv2.name_scope():
                     self.conv2.add(EqualConv2d(out_channel, out_channel, kernel2, padding=pad2))
-                    self.conv2.add(nn.AvgPool2D(pool_size=(2,2)))
+                    self.conv2.add(nn.AvgPool2D(pool_size=(2, 2)))
                     self.conv2.add(nn.LeakyReLU(0.2))
                 
         else:
@@ -280,8 +258,6 @@ class StyledConvBlock(nn.HybridBlock):
                         self.conv1.add(FusedUpsample(in_channel, out_channel, kernel_size, padding=padding))
                         if blur:
                             self.conv1.add(Blur(out_channel))
-                    
-
                 else:
                     self.upsample = 'nearest'
                     self.conv1 = nn.HybridSequential()
@@ -290,12 +266,10 @@ class StyledConvBlock(nn.HybridBlock):
                                                    kernel=kernel_size, padding=padding))
                         if blur:
                             self.conv1.add(Blur(out_channel))
-
             else:
                 self.conv1 = EqualConv2d(in_dim=in_channel, out_dim=out_channel, 
 
                                          kernel=kernel_size, padding=padding)
-
 
         self.noise1 = NoiseInjection(out_channel)
         self.adain1 = AdaptiveInstanceNorm(out_channel, style_dim)

@@ -1,17 +1,15 @@
 import os
 import random
-import lmdb
 import math
 import argparse
 import logging
-import numpy as np
 import os.path as osp
-import pickle
-
 from io import BytesIO
+import lmdb
+import numpy as np
 from PIL import Image
-from math import sqrt
 from tqdm import tqdm
+
 from mpl_toolkits.axes_grid1 import ImageGrid
 import matplotlib.pyplot as plt
 plt.switch_backend('agg')
@@ -23,6 +21,7 @@ from mxnet.gluon.data.vision import transforms
 from mxnet.gluon.data import DataLoader
 
 from model import StyledGenerator, Discriminator
+# pylint: disable-all
 
 class MultiResolutionDataset(gluon.data.Dataset):
     def __init__(self, path, transform, resolution=8):
@@ -69,16 +68,15 @@ def requires_grad(model, flag=True):
 
 
 def accumulate(model1, model2, decay=0.999):
-
     par1 = model1.collect_params()
     par2 = model2.collect_params()
     par1.reset_ctx(mx.cpu())
     par2.reset_ctx(mx.cpu())
 
     requires_grad(model1, False)
-    key_dict={'hybridsequential0':'hybridsequential5', 
-              'hybridsequential1':'hybridsequential6', 
-              'hybridsequential2':'hybridsequential7'}
+    key_dict = {'hybridsequential0':'hybridsequential5', 
+               'hybridsequential1':'hybridsequential6', 
+               'hybridsequential2':'hybridsequential7'}
     
     for k in par2.keys():
         k2 = k.split('_')[0]
@@ -92,7 +90,6 @@ def accumulate(model1, model2, decay=0.999):
 def sample_data(dataset, batch_size, image_size=4):
     dataset.resolution = image_size
     loader = DataLoader(dataset, shuffle=True, batch_size=batch_size, num_workers=1, last_batch='discard')
-
     return loader
 
 
@@ -104,30 +101,15 @@ def normalize_image(img, dmin, dmax):
     result = img.copy()
     result = nd.clip(img, dmin, dmax)
     result = (result - dmin)/(dmax - dmin + 1e-5)
-
     return result
 
 
-def save_image(data, file, normalize=True, img_range=None):
-
-    if img_range is None:
-        img_range = [min(data), max(data)]
-
-    norm_img = normalize_image(data, img_range[0], img_range[1])
-    img = nd.clip(norm_img * 255 + 0.5, 0, 255).asnumpy().astype(np.uint8) 
-    img = Image.fromarray(np.transpose(img, (1, 2, 0)))
-    img.save(file)
-
 def plot_images(images, path, ncols, nrows):
-
-
-    fig=plt.figure(figsize=(25, 25))
-    columns = ncols
-    rows = nrows
+    fig = plt.figure(figsize=(25, 25))
     grid = ImageGrid(fig, 111,  # similar to subplot(111)
-         nrows_ncols=(nrows, ncols),  # creates 2x2 grid of axes
-         axes_pad=0.1,  # pad between axes in inch.
-         )
+                     nrows_ncols=(nrows, ncols),  # creates 2x2 grid of axes
+                     axes_pad=0.1,  # pad between axes in inch.
+                     )
 
     for ax, img in zip(grid, images):
         norm_img = normalize_image(img, -1, 1)
@@ -135,7 +117,6 @@ def plot_images(images, path, ncols, nrows):
         img = np.transpose(img, (1, 2, 0))
         ax.imshow(img)
         ax.axis('off')
-
 
     plt.savefig(path, bbox_inches='tight')
 
@@ -163,10 +144,9 @@ def train(args, dataset, generator, discriminator):
     requires_grad(discriminator, True)
 
 
-    pbar = tqdm(range(1_000_000))
-    i = 0
+    pbar = tqdm(range(200_000))
 
-    for j in pbar:
+    for i in pbar:
 
         alpha = min(1, 1 / args.phase * (used_sample + 1))
 
@@ -200,7 +180,6 @@ def train(args, dataset, generator, discriminator):
             adjust_lr(g_optimizer, args.lr.get(resolution, args.lr_default))
             adjust_lr(d_optimizer, args.lr.get(resolution, args.lr_default))
 
-
         try:
             real_image = next(data_loader)
 
@@ -209,12 +188,7 @@ def train(args, dataset, generator, discriminator):
             real_image = next(data_loader)
 
         used_sample += real_image.shape[0]
-
-
         b_size = real_image.shape[0]
-
-        real_image = real_image.numpy()
-
         real_image_list = gluon.utils.split_and_load(real_image, ctx_list=context, batch_axis=0)
 
         if args.mixing and random.random() < 0.9:
@@ -236,7 +210,7 @@ def train(args, dataset, generator, discriminator):
             real_predict_list = []
             D_loss_list = []
             with autograd.record():
-                for j, (rl_image,g1) in enumerate(zip(real_image_list, gen_in1_list)):      
+                for _, (rl_image, g1) in enumerate(zip(real_image_list, gen_in1_list)):      
                     real_predict = discriminator(rl_image, step, alpha)
                     real_predict = -real_predict.mean()
                     real_predict_list.append(real_predict)
@@ -263,7 +237,6 @@ def train(args, dataset, generator, discriminator):
             d_fake_val = np.concatenate(fake_predict_val).mean()
             disc_loss_val = d_real_val + d_fake_val
 
-
         d_optimizer.step(b_size, ignore_stale_grad=True)
 
         if (i +1) % n_critic == 0:
@@ -274,7 +247,7 @@ def train(args, dataset, generator, discriminator):
             if args.loss == 'wgan-gp':
                 predict_list = []
                 with autograd.record():
-                    for j,g2 in enumerate(gen_in2_list):
+                    for _, g2 in enumerate(gen_in2_list):
                         fake_image = generator(g2, step, alpha)
                         predict = discriminator(fake_image, step, alpha)
                         predict = -predict.mean()
@@ -297,7 +270,7 @@ def train(args, dataset, generator, discriminator):
             requires_grad(generator, False)
             requires_grad(discriminator, True)
 
-        if (i ) % 100 == 0:
+        if (i+1) % 100 == 0:
             images = []
 
             gen_i, gen_j = args.gen_sample.get(resolution, (10, 5))
@@ -311,8 +284,6 @@ def train(args, dataset, generator, discriminator):
 
             plot_images(images, osp.join(args.out, f'{str(i + 1).zfill(6)}.png'), gen_i, gen_j)
 
-
-
         if (i+1) % 1000 == 0:
             generator.save_parameters(osp.join(args.ckpt_dir, f'g-{str(i + 1).zfill(6)}.params'))
             discriminator.save_parameters(osp.join(args.ckpt_dir, f'd-{str(i + 1).zfill(6)}.params'))
@@ -322,8 +293,6 @@ def train(args, dataset, generator, discriminator):
             f'Size: {4 * 2 ** step}; G: {gen_loss_val:.1f}; D: {disc_loss_val:.1f};'
             f'D_real: {d_real_val:.1f}; D_fake: {d_fake_val:.1f}; Alpha: {alpha:.4f}'
         )
-
-        i+=1
 
         logger.info(f'Size: {4 * 2 ** step}; G: {gen_loss_val:.1f}; D: {disc_loss_val:.1f}\
             D_real: {d_real_val:1f}; D_fake: {d_fake_val:1f}; Alpha: {alpha:.4f}')
@@ -378,7 +347,7 @@ if __name__ == '__main__':
     generator.collect_params().reset_ctx(context)
 
     g_optimizer = gluon.Trainer(generator.collect_params(), optimizer='adam', 
-                                optimizer_params={'learning_rate': args.lr_default,'beta1':0.0, 'beta2':0.99},
+                                optimizer_params={'learning_rate': args.lr_default, 'beta1':0.0, 'beta2':0.99},
                                 kvstore='local')
 
     # Set a different learning rate for style by setting the lr_mult of 0.01
@@ -393,7 +362,6 @@ if __name__ == '__main__':
 
     d_optimizer = gluon.Trainer(discriminator.collect_params(), optimizer='adam', 
                             optimizer_params={'learning_rate': args.lr_default, 'beta1':0.0, 'beta2':0.99}, kvstore='local')
-
 
     g_running = StyledGenerator(code_size)
     g_running.initialize(ctx=mx.gpu(0))

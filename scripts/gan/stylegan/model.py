@@ -6,6 +6,7 @@ import mxnet as mx
 import mxnet.ndarray as nd
 
 from modules import *
+# pylint: disable-all
 
 class Generator(nn.HybridBlock):
     def __init__(self, fused=True):
@@ -22,8 +23,6 @@ class Generator(nn.HybridBlock):
             self.progression.add(StyledConvBlock(128, 64, 3, 1, upsample=True, fused=fused, blur=blur))  # 256
             self.progression.add(StyledConvBlock(64, 32, 3, 1, upsample=True, fused=fused, blur=blur))  # 512
             self.progression.add(StyledConvBlock(32, 16, 3, 1, upsample=True, fused=fused, blur=blur))  # 1024
-
-
 
         self.to_rgb = nn.HybridSequential()
         with self.to_rgb.name_scope():
@@ -94,7 +93,6 @@ class StyledGenerator(nn.HybridBlock):
 
         self.generator = Generator(code_dim, blur)
 
-
         self.style = nn.HybridSequential()
 
         with self.style.name_scope():
@@ -110,7 +108,6 @@ class StyledGenerator(nn.HybridBlock):
                        style_weight=0,  mixing_range=(-1, -1)):
 
         styles = []
-
 
         if type(x) not in (list, tuple):
             x = [x]
