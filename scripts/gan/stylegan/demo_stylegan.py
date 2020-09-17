@@ -50,7 +50,8 @@ def save_image(data, file, normalize=True, img_range=None):
         img_range = [min(data), max(data)]
 
     norm_img = normalize_image(data, img_range[0], img_range[1])
-    img = nd.clip(norm_img * 255 + 0.5, 0, 255).asnumpy().astype(np.uint8)
+    img = nd.clip(norm_img * 255 + 0.5, 0, 255).asnumpy().astype(np.uint8) 
+
     img = Image.fromarray(np.transpose(img, (1, 2, 0)))
     img.save(file)
 
@@ -61,16 +62,18 @@ if __name__ == '__main__':
     parser.add_argument('--n_sample', type=int, default=10, help='number of rows of sample matrix')
     parser.add_argument('--gpu_id', type=str, default='0', help='gpu id: e.g. 0. use -1 for CPU')
     parser.add_argument('--out_dir', type=str, default='samples/', help='output directory for samples')
-    parser.add_argument('--path', type=str, default='./stylegan-ffhq-1024px-new.params',
+    parser.add_argument('--path', type=str, default='./stylegan-ffhq-1024px-new.params', 
                         help='path to checkpoint file')
+    
+    args = parser.parse_args()   
 
-    args = parser.parse_args()
     if args.gpu_id == '-1':
         device = mx.cpu()
     else:
         device = mx.gpu(int(args.gpu_id.strip()))
 
-    generator = StyledGenerator(code_dim=512)
+    generator = StyledGenerator(512, blur=True)
+
     generator.initialize()
     generator.collect_params().reset_ctx(device)
     generator.load_parameters(args.path, ctx=device)
@@ -82,7 +85,9 @@ if __name__ == '__main__':
     imgs = sample(generator, step, mean_style, args.n_sample, device)
 
     if not os.path.isdir(args.out_dir):
-        os.makedirs(args.out_dir)
+        os.makedirs(args.out_dir) 
 
     for i in range(args.n_sample):
         save_image(imgs[i], os.path.join(args.out_dir, 'sample_{}.png'.format(i)), normalize=True, img_range=(-1, 1))
+    
+
