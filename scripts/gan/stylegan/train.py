@@ -300,7 +300,6 @@ def train(args, dataset, generator, discriminator):
         pbar.set_description(state_msg)
 
 
-
 if __name__ == '__main__':
 
     code_size = 512
