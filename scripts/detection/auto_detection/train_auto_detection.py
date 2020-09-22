@@ -4,11 +4,7 @@ import logging
 import autogluon as ag
 from mxnet import gluon
 
-from gluoncv.auto.estimators.ssd import SSDEstimator
-from gluoncv.auto.estimators.faster_rcnn import FasterRCNNEstimator
-from gluoncv.auto.estimators.yolo import YOLOEstimator
-from gluoncv.auto.estimators.center_net import CenterNetEstimator
-# from gluoncv.auto.estimators import SSDEstimator, FasterRCNNEstimator, YOLOEstimator, CenterNetEstimator
+from gluoncv.auto.estimators import SSDEstimator, FasterRCNNEstimator, YOLOEstimator, CenterNetEstimator
 from gluoncv.auto.tasks.object_detection import ObjectDetection
 
 logger = logging.getLogger(__name__)
