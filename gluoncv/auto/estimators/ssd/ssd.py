@@ -1,35 +1,23 @@
 """SSD Estimator."""
-
+# pylint: disable=logging-format-interpolation
 import os
 import logging
 import warnings
 import time
-import numpy as np
 import mxnet as mx
 from mxnet import nd
 from mxnet import gluon
 from mxnet import autograd
-
-from .... import data as gdata
-from .... import utils as gutils
-from ....model_zoo import get_model
-from ....model_zoo import get_ssd
-from ....model_zoo import custom_ssd
-from ....data.batchify import Tuple, Stack, Pad
-from ....data.transforms import presets
-from ....data.transforms.presets.ssd import SSDDefaultTrainTransform
-from ....data.transforms.presets.ssd import SSDDefaultValTransform
-from ....data.transforms.presets.ssd import SSDDALIPipeline
-from ....nn.bbox import BBoxClipToImage
-from ....utils.metrics.voc_detection import VOC07MApMetric
-from ....utils.metrics.coco_detection import COCODetectionMetric
-from ....utils.metrics.accuracy import Accuracy
-from ....loss import SSDMultiBoxLoss
-
 from mxnet.contrib import amp
 
+from .... import utils as gutils
+from ....model_zoo import get_model
+from ....model_zoo import custom_ssd
+from ....data.transforms import presets
+from ....loss import SSDMultiBoxLoss
 from .utils import _get_dataset, _get_dataloader, _get_dali_dataset, _get_dali_dataloader, _save_params
 from ..base_estimator import BaseEstimator, set_default
+from .default import ex
 
 try:
     import horovod.mxnet as hvd
@@ -37,34 +25,36 @@ except ImportError:
     hvd = None
 
 try:
-    from nvidia.dali.plugin.mxnet import DALIGenericIterator
     dali_found = True
 except ImportError:
     dali_found = False
-
-from .default import ex
 
 __all__ = ['SSDEstimator']
 
 
 @set_default(ex)
 class SSDEstimator(BaseEstimator):
-    """ Estimator for SSD.
+    """Estimator implementation for SSD.
+
+    Parameters
+    ----------
+    config : dict
+        Config in nested dict.
+    logger : logging.Logger, default is None
+        Optional logger for this estimator, can be `None` when default setting is used.
+    reporter : callable, default is None
+        If set, use reporter callback to report the metrics of the current estimator.
+
+    Attributes
+    ----------
+    _logger : logging.Logger
+        The customized/default logger for this estimator.
+    _logdir : str
+        The temporary dir for logs.
+    _cfg : ConfigDict
+        The configurations.
     """
-
     def __init__(self, config, logger=None, reporter=None):
-        """
-        Constructs SSD estimators.
-
-        Parameters
-        ----------
-        config : configuration object
-            Configuration object containing information for constructing SSD estimators.
-        logger : logger object, default is None
-            If not `None`, will use default logging object.
-        reporter : reporter object, default is None
-            If set, use reporter callback to report the metrics of the current estimator.
-        """
         super(SSDEstimator, self).__init__(config, logger, reporter)
 
         if self._cfg.ssd.amp:
@@ -88,7 +78,8 @@ class SSDEstimator(BaseEstimator):
         if self._cfg.train.dali:
             if not dali_found:
                 raise SystemExit("DALI not found, please check if you installed it correctly.")
-            self.train_dataset, self.val_dataset, self.eval_metric = _get_dali_dataset(self._cfg.dataset, devices, self._cfg)
+            self.train_dataset, self.val_dataset, self.eval_metric = _get_dali_dataset(self._cfg.dataset, devices,
+                                                                                       self._cfg)
         else:
             self.train_dataset, self.val_dataset, self.eval_metric = _get_dataset(self._cfg.dataset, self._cfg)
 
@@ -156,12 +147,15 @@ class SSDEstimator(BaseEstimator):
             if not dali_found:
                 raise SystemExit("DALI not found, please check if you installed it correctly.")
             self._train_data, self._val_data = _get_dali_dataloader(
-                self.async_net, self.train_dataset, self.val_dataset, self._cfg.ssd.data_shape, self._cfg.train.batch_size, self._cfg.num_workers,
+                self.async_net, self.train_dataset, self.val_dataset, self._cfg.ssd.data_shape,
+                self._cfg.train.batch_size, self._cfg.num_workers,
                 devices, self.ctx[0], self._cfg.horovod)
         else:
-            self.batch_size = (self._cfg.train.batch_size // hvd.size()) if self._cfg.horovod else self._cfg.train.batch_size
+            self.batch_size = self._cfg.train.batch_size // hvd.size() \
+                if self._cfg.horovod else self._cfg.train.batch_size
             self._train_data, self._val_data = _get_dataloader(
-                self.async_net, self.train_dataset, self.val_dataset, self._cfg.ssd.data_shape, self.batch_size, self._cfg.num_workers, self.ctx[0])
+                self.async_net, self.train_dataset, self.val_dataset, self._cfg.ssd.data_shape,
+                self.batch_size, self._cfg.num_workers, self.ctx[0])
 
         self.mbox_loss = SSDMultiBoxLoss()
         self.ce_metric = mx.metric.Loss('CrossEntropy')
@@ -219,13 +213,15 @@ class SSDEstimator(BaseEstimator):
         if self._cfg.horovod:
             hvd.broadcast_parameters(self.net.collect_params(), root_rank=0)
             trainer = hvd.DistributedTrainer(
-                            self.net.collect_params(), 'sgd',
-                            {'learning_rate': self._cfg.train.lr, 'wd': self._cfg.train.wd, 'momentum': self._cfg.train.momentum})
+                self.net.collect_params(), 'sgd',
+                {'learning_rate': self._cfg.train.lr, 'wd': self._cfg.train.wd,
+                 'momentum': self._cfg.train.momentum})
         else:
             trainer = gluon.Trainer(
-                        self.net.collect_params(), 'sgd',
-                        {'learning_rate': self._cfg.train.lr, 'wd': self._cfg.train.wd, 'momentum': self._cfg.train.momentum},
-                        update_on_kvstore=(False if self._cfg.ssd.amp else None))
+                self.net.collect_params(), 'sgd',
+                {'learning_rate': self._cfg.train.lr, 'wd': self._cfg.train.wd,
+                 'momentum': self._cfg.train.momentum},
+                update_on_kvstore=(False if self._cfg.ssd.amp else None))
 
         if self._cfg.ssd.amp:
             amp.init_trainer(trainer)
@@ -286,24 +282,27 @@ class SSDEstimator(BaseEstimator):
                     if self._cfg.train.log_interval and not (i + 1) % self._cfg.train.log_interval:
                         name1, loss1 = self.ce_metric.get()
                         name2, loss2 = self.smoothl1_metric.get()
-                        self._logger.info('[Epoch {}][Batch {}], Speed: {:.3f} samples/sec, {}={:.3f}, {}={:.3f}'.format(
-                            epoch, i, self._cfg.train.batch_size/(time.time()-btic), name1, loss1, name2, loss2))
+                        self._logger.info(
+                            '[Epoch %d][Batch %d], Speed: %f samples/sec, %s=%f, %s=%f',
+                            epoch, i, self._cfg.train.batch_size/(time.time()-btic), name1, loss1, name2, loss2)
                     btic = time.time()
 
             if (not self._cfg.horovod or hvd.rank() == 0):
                 name1, loss1 = self.ce_metric.get()
                 name2, loss2 = self.smoothl1_metric.get()
-                self._logger.info('[Epoch {}] Training cost: {:.3f}, {}={:.3f}, {}={:.3f}'.format(
-                    epoch, (time.time()-tic), name1, loss1, name2, loss2))
-                if (epoch % self._cfg.validation.val_interval == 0) or (self._cfg.save_interval and epoch % self._cfg.save_interval == 0):
+                self._logger.info('[Epoch %d] Training cost: %f, %s=%f, %s=%f',
+                                  epoch, (time.time()-tic), name1, loss1, name2, loss2)
+                if (epoch % self._cfg.validation.val_interval == 0) or \
+                    (self._cfg.save_interval and epoch % self._cfg.save_interval == 0):
                     # consider reduce the frequency of validation to save time
                     map_name, mean_ap = self._validate(self._val_data, self.ctx, self.eval_metric)
                     val_msg = '\n'.join(['{}={}'.format(k, v) for k, v in zip(map_name, mean_ap)])
-                    self._logger.info('[Epoch {}] Validation: \n{}'.format(epoch, val_msg))
+                    self._logger.info('[Epoch %d] Validation: \n%s', epoch, str(val_msg))
                     current_map = float(mean_ap[-1])
                 else:
                     current_map = 0.
-                _save_params(self.net, best_map, current_map, epoch, self._cfg.save_interval, os.path.join(self._logdir, self._cfg.save_prefix))
+                _save_params(self.net, best_map, current_map, epoch, self._cfg.save_interval,
+                             os.path.join(self._logdir, self._cfg.save_prefix))
                 if self._reporter:
                     self._reporter(epoch=epoch, map_reward=current_map)
 

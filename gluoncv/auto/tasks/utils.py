@@ -1,3 +1,4 @@
+"""Utils for auto tasks"""
 import copy
 import numpy as np
 
@@ -85,6 +86,7 @@ def auto_suggest(config, estimator):
     config['estimator'] = ag.Categorical(*estimator)
 
 def config_to_nested(config):
+    """Convert config to nested version"""
     if 'meta_arch' not in config:
         if config['estimator'] == SSDEstimator:
             config['meta_arch'] = 'ssd'
@@ -141,7 +143,7 @@ def config_to_nested(config):
                            'batch_size', 'interval']
         }
     else:
-        raise NotImplementedError('%s is not implemented.', config['meta_arch'])
+        raise NotImplementedError('%s is not implemented.' % config['meta_arch'])
 
     nested_config = {}
 
@@ -164,6 +166,7 @@ def config_to_nested(config):
     return nested_config
 
 def recursive_update(total_config, config):
+    """update config recursively"""
     for k, v in config.items():
         if isinstance(v, dict):
             if k not in total_config:
@@ -173,6 +176,7 @@ def recursive_update(total_config, config):
             total_config[k] = v
 
 def config_to_space(config):
+    """Convert config to ag.space"""
     space = ag.Dict()
     for k, v in config.items():
         if isinstance(v, dict):

@@ -1,3 +1,4 @@
+"""Auto pipeline for object detection task"""
 import logging
 
 import autogluon as ag
@@ -9,7 +10,7 @@ from autogluon.utils import collect_params
 from ... import utils as gutils
 from ..estimators.base_estimator import ConfigDict, BaseEstimator
 from ..estimators import SSDEstimator, FasterRCNNEstimator, YOLOEstimator, CenterNetEstimator
-from .utils import auto_suggest, auto_args, config_to_nested
+from .utils import auto_suggest, config_to_nested
 
 
 __all__ = ['ObjectDetection']
@@ -37,6 +38,7 @@ def _train_object_detection(args, reporter):
         estimator = args['estimator'](args, reporter=reporter)
         # training
         estimator.fit()
+    # pylint: disable=broad-except
     except Exception as e:
         return str(e)
 
@@ -48,6 +50,16 @@ def _train_object_detection(args, reporter):
 
 
 class ObjectDetection(BaseTask):
+    """Object Detection general task.
+
+    Parameters
+    ----------
+    config : dict
+        The configurations, can be nested dict.
+    logger : logging.Logger
+        The desired logger object, use `None` for module specific logger with default setting.
+
+    """
     def __init__(self, config, estimator=None, logger=None):
         super(ObjectDetection, self).__init__()
         self._logger = logger if logger is not None else logging.getLogger(__name__)
@@ -78,7 +90,7 @@ class ObjectDetection(BaseTask):
             ngpus_per_trial = gpu_count
             self._logger.warning(
                 "The number of requested GPUs is greater than the number of available GPUs."
-                "Reduce the number to {}".format(ngpus_per_trial))
+                "Reduce the number to %d", ngpus_per_trial)
 
         # additional configs
         config['num_workers'] = nthreads_per_trial
@@ -114,13 +126,21 @@ class ObjectDetection(BaseTask):
                 'grace_period': self._config.get('grace_period', self._config.epochs // 4)})
 
     def fit(self):
+        """Fit auto estimator given the input data .
+
+        Returns
+        -------
+        Estimator
+            The estimator obtained by training on the specified dataset.
+
+        """
         results = self.run_fit(_train_object_detection, self._config.search_strategy,
                                self._config.scheduler_options)
         self._logger.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> finish model fitting")
         best_config = sample_config(_train_object_detection.args, results['best_config'])
         # convert best config to nested form
         best_config = config_to_nested(best_config)
-        self._logger.info('The best config: {}'.format(best_config))
+        self._logger.info('The best config: %s', str(best_config))
 
         estimator = best_config['estimator'](best_config)
         # TODO: checkpointing needs to be done in a better way

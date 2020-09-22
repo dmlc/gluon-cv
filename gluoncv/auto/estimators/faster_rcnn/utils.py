@@ -1,11 +1,13 @@
+"""Utils for Faster RCNN estimator"""
 import os
 
 from mxnet import gluon
+from autogluon.task.object_detection.dataset.voc import CustomVOCDetectionBase
 
-from .... import data as gdata
 from ....data.batchify import FasterRCNNTrainBatchify, Tuple, Append
 from ....data.sampler import SplitSortedBucketSampler
 from ....data.transforms.presets.rcnn import FasterRCNNDefaultValTransform
+from .... import data as gdata
 from ....utils.metrics.coco_detection import COCODetectionMetric
 from ....utils.metrics.voc_detection import VOC07MApMetric
 

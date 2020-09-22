@@ -1,10 +1,9 @@
 """VOC detection pipeline"""
+# pylint: disable=unused-variable,missing-function-docstring
 import os
 import tempfile
 from sacred import Ingredient
 
-from ...data import VOCDetection
-from ...utils.metrics import VOC07MApMetric, VOCMApMetric
 
 voc_detection = Ingredient('voc_detection')
 
@@ -18,7 +17,7 @@ def cfg():
     cleanup = True
 
 def load_voc_detection(root, train_splits, valid_splits, valid_skip_empty,
-                        data_shape, cleanup=True, post_affine=None):
+                       data_shape, cleanup=True, post_affine=None):
     train_dataset = COCODetection(root=os.path.join(root, 'coco'), splits=train_splits)
     val_dataset = COCODetection(root=os.path.join(root, 'coco'),
                                 splits=valid_splits, skip_empty=valid_skip_empty)

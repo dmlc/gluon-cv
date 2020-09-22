@@ -1,23 +1,23 @@
 """Classification Estimator"""
-import argparse, time, logging, os, math
+# pylint: disable=unused-variable,bad-whitespace, missing-function-docstring
+import time
+import logging
+import os
+import math
 
 import numpy as np
 import mxnet as mx
 from mxnet import gluon, nd
 from mxnet import autograd as ag
 from mxnet.gluon.data.vision import transforms
+from sacred import Experiment, Ingredient
 
 from ...data import imagenet
 from ...model_zoo import get_model
 from ...utils import makedirs, LRSequential, LRScheduler
 from ... import nn
 from ... import loss
-
-
 from .base_estimator import BaseEstimator, set_default
-
-
-from sacred import Experiment, Ingredient
 
 __all__ = ['ClassificationEstimator']
 
@@ -60,18 +60,18 @@ def train_config():
     input_size = 224
     crop_ratio = 0.875
     use_rec = False
-    rec_train = '~/.mxnet/datasets/imagenet/rec/train.rec' 
+    rec_train = '~/.mxnet/datasets/imagenet/rec/train.rec'
     rec_train_idx = '~/.mxnet/datasets/imagenet/rec/train.idx'
-    rec_val = '~/.mxnet/datasets/imagenet/rec/val.rec' 
-    rec_val_idx = '~/.mxnet/datasets/imagenet/rec/val.idx' 
-    data_dir = '~/.mxnet/datasets/imagenet' 
+    rec_val = '~/.mxnet/datasets/imagenet/rec/val.rec'
+    rec_val_idx = '~/.mxnet/datasets/imagenet/rec/val.idx'
+    data_dir = '~/.mxnet/datasets/imagenet'
     mixup = False
     save_frequency = 10
     save_dir = 'params'
     logging_file = 'train_imagenet.log'
-    no_wd = False  
+    no_wd = False
     resume_states = ''
-    label_smoothing = False 
+    label_smoothing = False
     temperature = 20
     hard_weight = 0.5
     resume_epoch = 0
@@ -79,7 +79,7 @@ def train_config():
     mixup_off_epoch = 0
     log_interval = 50
     mode = ''
-    
+
 
 @validation.config
 def valid_config():
@@ -93,6 +93,26 @@ ex = Experiment('cls_net_default',
 
 @set_default(ex)
 class ClassificationEstimator(BaseEstimator):
+    """Estimator implementation for Image Classification.
+
+    Parameters
+    ----------
+    config : dict
+        Config in nested dict.
+    logger : logging.Logger, default is None
+        Optional logger for this estimator, can be `None` when default setting is used.
+    reporter : callable, default is None
+        If set, use reporter callback to report the metrics of the current estimator.
+
+    Attributes
+    ----------
+    _logger : logging.Logger
+        The customized/default logger for this estimator.
+    _logdir : str
+        The temporary dir for logs.
+    _cfg : ConfigDict
+        The configurations.
+    """
     def __init__(self, config, logger=None):
         super(ClassificationEstimator, self).__init__(config, logger)
 
@@ -144,22 +164,22 @@ class ClassificationEstimator(BaseEstimator):
             kwargs['batch_norm'] = self._cfg.cls_net.batch_norm
         elif self.model_name.startswith('resnext'):
             kwargs['use_se'] = self._cfg.cls_net.use_se
-        
+
         if self._cfg.cls_net.last_gamma:
             kwargs['last_gamma'] = True
-        
+
 
         self.optimizer = 'nag'
-        self.optimizer_params = {'wd': self._cfg.train.wd, 
-                            'momentum': self._cfg.train.momentum, 
-                            'lr_scheduler': lr_scheduler}
+        self.optimizer_params = {'wd': self._cfg.train.wd,
+                                 'momentum': self._cfg.train.momentum,
+                                 'lr_scheduler': lr_scheduler}
         if self._cfg.train.dtype != 'float32':
             optimizer_params['multi_precision'] = True
 
         self.net = get_model(self.model_name, **kwargs)
         self.net.cast(self._cfg.train.dtype)
         if self._cfg.train.resume_params != '':
-            net.load_parameters(self._cfg.train.resume_params, ctx = self.ctx)
+            net.load_parameters(self._cfg.train.resume_params, ctx=self.ctx)
 
         # teacher model for distillation training
         if self._cfg.train.teacher is not None and self._cfg.train.hard_weight < 1.0:
@@ -169,7 +189,7 @@ class ClassificationEstimator(BaseEstimator):
             self.distillation = True
         else:
             self.distillation = False
-    
+
 
 
 
@@ -233,7 +253,7 @@ class ClassificationEstimator(BaseEstimator):
                 std_b               = std_rgb[2],
             )
             return train_data, val_data, batch_fn
-        
+
         def get_data_loader(data_dir, batch_size, num_workers):
             normalize = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
             jitter_param = 0.4
@@ -251,7 +271,7 @@ class ClassificationEstimator(BaseEstimator):
                 transforms.RandomResizedCrop(input_size),
                 transforms.RandomFlipLeftRight(),
                 transforms.RandomColorJitter(brightness=jitter_param, contrast=jitter_param,
-                                            saturation=jitter_param),
+                                             saturation=jitter_param),
                 transforms.RandomLighting(lighting_param),
                 transforms.ToTensor(),
                 normalize
@@ -273,15 +293,15 @@ class ClassificationEstimator(BaseEstimator):
             return train_data, val_data, batch_fn
 
         if self._cfg.train.use_rec:
-            self.train_data, self.val_data, self.batch_fn = get_data_rec(self._cfg.train.rec_train, 
-                                                          self._cfg.train.rec_train_idx,
-                                                          self._cfg.train.rec_val, 
-                                                          self._cfg.train.rec_val_idx,
-                                                          batch_size, num_workers)
+            self.train_data, self.val_data, self.batch_fn = get_data_rec(self._cfg.train.rec_train,
+                                                                         self._cfg.train.rec_train_idx,
+                                                                         self._cfg.train.rec_val,
+                                                                         self._cfg.train.rec_val_idx,
+                                                                         batch_size, num_workers)
         else:
-            self.train_data, self.val_data, self.batch_fn = get_data_loader(self._cfg.train.data_dir, 
-                                                             batch_size, num_workers)
-        
+            self.train_data, self.val_data, self.batch_fn = get_data_loader(self._cfg.train.data_dir,
+                                                                            batch_size, num_workers)
+
         if self._cfg.train.mixup:
             self.train_metric = mx.metric.RMSE()
         else:
@@ -296,9 +316,9 @@ class ClassificationEstimator(BaseEstimator):
         else:
             save_dir = ''
             save_frequency = 0
-        
 
-        
+
+
         if self._cfg.train.mode == 'hybrid':
             self.net.hybridize(static_alloc=True, static_shape=True)
             if self.distillation:
@@ -306,7 +326,7 @@ class ClassificationEstimator(BaseEstimator):
 
         self.batch_size = batch_size
         self.save_dir = save_dir
-    
+
     def _fit(self):
         ctx = self.ctx
         if isinstance(ctx, mx.Context):
@@ -340,17 +360,17 @@ class ClassificationEstimator(BaseEstimator):
                 label = [label]
             res = []
             for l in label:
-                y1 = l.one_hot(classes, on_value = 1 - eta + eta/classes, off_value = eta/classes)
-                y2 = l[::-1].one_hot(classes, on_value = 1 - eta + eta/classes, off_value = eta/classes)
+                y1 = l.one_hot(classes, on_value=1 - eta + eta/classes, off_value=eta/classes)
+                y2 = l[::-1].one_hot(classes, on_value=1 - eta + eta/classes, off_value=eta/classes)
                 res.append(lam*y1 + (1-lam)*y2)
             return res
-    
+
         def smooth(label, classes, eta=0.1):
             if isinstance(label, nd.NDArray):
                 label = [label]
             smoothed = []
             for l in label:
-                res = l.one_hot(classes, on_value = 1 - eta + eta/classes, off_value = eta/classes)
+                res = l.one_hot(classes, on_value=1 - eta + eta/classes, off_value=eta/classes)
                 smoothed.append(res)
             return smoothed
 
@@ -361,11 +381,12 @@ class ClassificationEstimator(BaseEstimator):
             self.train_metric.reset()
             btic = time.time()
 
+            # pylint: disable=undefined-loop-variable
             for i, batch in enumerate(self.train_data):
                 data, label = self.batch_fn(batch, ctx)
 
                 if self._cfg.train.mixup:
-                    lam = np.random.beta(self._cfg.train.mixup_alpha, 
+                    lam = np.random.beta(self._cfg.train.mixup_alpha,
                                          self._cfg.train.mixup_alpha)
                     if epoch >= self._cfg.train.num_epochs - self._cfg.train.mixup_off_epoch:
                         lam = 1
@@ -382,18 +403,20 @@ class ClassificationEstimator(BaseEstimator):
                     label = smooth(label, classes)
 
                 if self.distillation:
-                    teacher_prob = [nd.softmax(self.teacher(X.astype(self._cfg.train.dtype, copy=False)) / self._cfg.train.temperature) \
-                                    for X in data]
+                    teacher_prob = [nd.softmax(self.teacher(X.astype(self._cfg.train.dtype, copy=False)) \
+                                    / self._cfg.train.temperature) for X in data]
 
                 with ag.record():
                     outputs = [self.net(X.astype(self._cfg.train.dtype, copy=False)) for X in data]
                     if self.distillation:
-                        loss = [L(yhat.astype('float32', copy=False),
-                                  y.astype('float32', copy=False),
-                                  p.astype('float32', copy=False)) for yhat, y, p in zip(outputs, label, teacher_prob)]
+                        losses = [L(yhat.astype('float32', copy=False),
+                                    y.astype('float32', copy=False),
+                                    p.astype('float32', copy=False)) \
+                                        for yhat, y, p in zip(outputs, label, teacher_prob)]
                     else:
-                        loss = [L(yhat, y.astype(self._cfg.train.dtype, copy=False)) for yhat, y in zip(outputs, label)]
-                for l in loss:
+                        losses = [L(yhat,
+                                    y.astype(self._cfg.train.dtype, copy=False)) for yhat, y in zip(outputs, label)]
+                for l in losses:
                     l.backward()
                 trainer.step(self.batch_size)
 
@@ -409,24 +432,27 @@ class ClassificationEstimator(BaseEstimator):
 
                 if self._cfg.train.log_interval and not (i+1)%self._cfg.train.log_interval:
                     train_metric_name, train_metric_score = self.train_metric.get()
-                    self.logger.info('Epoch[%d] Batch [%d]\tSpeed: %f samples/sec\t%s=%f\tlr=%f'%(
-                                epoch, i, self._cfg.train.batch_size*self._cfg.train.log_interval/(time.time()-btic),
-                                train_metric_name, train_metric_score, trainer.learning_rate))
+                    self.logger.info('Epoch[%d] Batch [%d]\tSpeed: %f samples/sec\t%s=%f\tlr=%f',
+                                     epoch, i,
+                                     self._cfg.train.batch_size*self._cfg.train.log_interval/(time.time()-btic),
+                                     train_metric_name, train_metric_score, trainer.learning_rate)
                     btic = time.time()
 
             train_metric_name, train_metric_score = self.train_metric.get()
             throughput = int(self.batch_size * i /(time.time() - tic))
 
-            err_top1_val, err_top5_val = self._evaluate(ctx, val_data)
+            err_top1_val, err_top5_val = self._evaluate()
 
-            self.logger.info('[Epoch %d] training: %s=%f'%(epoch, train_metric_name, train_metric_score))
-            self.logger.info('[Epoch %d] speed: %d samples/sec\ttime cost: %f'%(epoch, throughput, time.time()-tic))
-            self.logger.info('[Epoch %d] validation: err-top1=%f err-top5=%f'%(epoch, err_top1_val, err_top5_val))
+            self.logger.info('[Epoch %d] training: %s=%f', epoch, train_metric_name, train_metric_score)
+            self.logger.info('[Epoch %d] speed: %d samples/sec\ttime cost: %f', epoch, throughput, time.time()-tic)
+            self.logger.info('[Epoch %d] validation: err-top1=%f err-top5=%f', epoch, err_top1_val, err_top5_val)
 
             if err_top1_val < best_val_score:
                 best_val_score = err_top1_val
-                self.net.save_parameters('%s/%.4f-imagenet-%s-%d-best.params'%(self.save_dir, best_val_score, model_name, epoch))
-                trainer.save_states('%s/%.4f-imagenet-%s-%d-best.states'%(self.save_dir, best_val_score, model_name, epoch))
+                self.net.save_parameters(
+                    '%s/%.4f-imagenet-%s-%d-best.params'%(self.save_dir, best_val_score, model_name, epoch))
+                trainer.save_states(
+                    '%s/%.4f-imagenet-%s-%d-best.states'%(self.save_dir, best_val_score, model_name, epoch))
 
             if save_frequency and save_dir and (epoch + 1) % save_frequency == 0:
                 net.save_parameters('%s/imagenet-%s-%d.params'%(self.save_dir, self.model_name, epoch))
@@ -435,15 +461,14 @@ class ClassificationEstimator(BaseEstimator):
         if save_frequency and save_dir:
             net.save_parameters('%s/imagenet-%s-%d.params'%(self.save_dir, self.model_name, opt.num_epochs-1))
             trainer.save_states('%s/imagenet-%s-%d.states'%(self.save_dir, self.model_name, opt.num_epochs-1))
-        pass
-    
+
     def _evaluate(self):
         """Test on validation dataset."""
         if self._cfg.train.use_rec:
             self.val_data.reset()
         self.acc_top1.reset()
         self.acc_top5.reset()
-        for i, batch in enumerate(self.val_data):
+        for _, batch in enumerate(self.val_data):
             data, label = self.batch_fn(batch, self.ctx)
             outputs = [self.net(X.astype(self._cfg.train.dtype, copy=False)) for X in data]
             self.acc_top1.update(label, outputs)
@@ -452,17 +477,6 @@ class ClassificationEstimator(BaseEstimator):
         _, top1 = self.acc_top1.get()
         _, top5 = self.acc_top5.get()
         return (1-top1, 1-top5)
-    
-    def _save_params(self, current_map, epoch, save_interval, prefix):
-        current_map = float(current_map)
-        if current_map > self._best_map:
-            self._best_map = current_map
-            self._net.save_parameters('{:s}_best.params'.format(prefix, epoch, current_map))
-            with open(prefix+'_best_map.log', 'a') as f:
-                f.write('{:04d}:\t{:.4f}\n'.format(epoch, current_map))
-        if save_interval and epoch % save_interval == 0:
-            self._net.save_parameters('{:s}_{:04d}_{:.4f}.params'.format(prefix, epoch, current_map))
-
 
 
 @ex.automain

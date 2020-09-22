@@ -1,14 +1,17 @@
+"""Utils for auto SSD estimator"""
 import os
 
 import mxnet as mx
 from mxnet import gluon
 from mxnet import autograd
 
-from .... import data as gdata
+from autogluon.task.object_detection.dataset.voc import CustomVOCDetectionBase
+
 from ....data.batchify import Tuple, Stack, Pad
 from ....data.transforms.presets.ssd import SSDDefaultTrainTransform
 from ....data.transforms.presets.ssd import SSDDefaultValTransform
 from ....data.transforms.presets.ssd import SSDDALIPipeline
+from .... import data as gdata
 from ....utils.metrics.voc_detection import VOC07MApMetric
 from ....utils.metrics.coco_detection import COCODetectionMetric
 
@@ -88,7 +91,8 @@ def _get_dali_dataset(dataset_name, devices, args):
                                                      annotations_file=coco_annotations, device_id=hvd.local_rank())]
         else:
             train_dataset = [gdata.COCODetectionDALI(num_shards=len(devices), shard_id=i, file_root=coco_root,
-                                                     annotations_file=coco_annotations, device_id=i) for i, _ in enumerate(devices)]
+                                                     annotations_file=coco_annotations, device_id=i) \
+                                                     for i, _ in enumerate(devices)]
 
         # validation
         if (not args.horovod or hvd.rank() == 0):
@@ -106,7 +110,8 @@ def _get_dali_dataset(dataset_name, devices, args):
 
     return train_dataset, val_dataset, val_metric
 
-def _get_dali_dataloader(net, train_dataset, val_dataset, data_shape, global_batch_size, num_workers, devices, ctx, horovod):
+def _get_dali_dataloader(net, train_dataset, val_dataset, data_shape, global_batch_size,
+                         num_workers, devices, ctx, horovod):
     width, height = data_shape, data_shape
     with autograd.train_mode():
         _, _, anchors = net(mx.nd.zeros((1, 3, height, width), ctx=ctx))
@@ -129,9 +134,9 @@ def _get_dali_dataloader(net, train_dataset, val_dataset, data_shape, global_bat
     if horovod:
         epoch_size //= hvd.size()
     train_loader = DALIGenericIterator(pipelines, [('data', DALIGenericIterator.DATA_TAG),
-                                                    ('bboxes', DALIGenericIterator.LABEL_TAG),
-                                                    ('label', DALIGenericIterator.LABEL_TAG)],
-                                                    epoch_size, auto_reset=True)
+                                                   ('bboxes', DALIGenericIterator.LABEL_TAG),
+                                                   ('label', DALIGenericIterator.LABEL_TAG)],
+                                       epoch_size, auto_reset=True)
 
     # validation
     if (not horovod or hvd.rank() == 0):
@@ -148,7 +153,7 @@ def _save_params(net, best_map, current_map, epoch, save_interval, prefix):
     current_map = float(current_map)
     if current_map > best_map[0]:
         best_map[0] = current_map
-        net.save_params('{:s}_best.params'.format(prefix, epoch, current_map))
+        net.save_params('{:s}_{:04d}_{:.4f}best.params'.format(prefix, epoch, current_map))
         with open(prefix+'_best_map.log', 'a') as log_file:
             log_file.write('{:04d}:\t{:.4f}\n'.format(epoch, current_map))
     if save_interval and epoch % save_interval == 0:

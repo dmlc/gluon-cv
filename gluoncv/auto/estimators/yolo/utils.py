@@ -1,13 +1,15 @@
+"""Utils for auto YOLO estimator"""
 import os
 
 from mxnet import gluon
+from autogluon.task.object_detection.dataset.voc import CustomVOCDetectionBase
 
-from .... import data as gdata
 from ....data import MixupDetection
 from ....data.batchify import Tuple, Stack, Pad
 from ....data.dataloader import RandomTransformDataLoader
 from ....data.transforms.presets.yolo import YOLO3DefaultTrainTransform
 from ....data.transforms.presets.yolo import YOLO3DefaultValTransform
+from .... import data as gdata
 from ....utils.metrics.voc_detection import VOC07MApMetric
 from ....utils.metrics.coco_detection import COCODetectionMetric
 
@@ -47,7 +49,8 @@ def _get_dataset(dataset, args):
 def _get_dataloader(net, train_dataset, val_dataset, data_shape, batch_size, num_workers, args):
     """Get dataloader."""
     width, height = data_shape, data_shape
-    batchify_fn = Tuple(*([Stack() for _ in range(6)] + [Pad(axis=0, pad_val=-1) for _ in range(1)]))  # stack image, all targets generated
+    # stack image, all targets generated
+    batchify_fn = Tuple(*([Stack() for _ in range(6)] + [Pad(axis=0, pad_val=-1) for _ in range(1)]))
     if args.yolo3.no_random_shape:
         train_loader = gluon.data.DataLoader(
             train_dataset.transform(YOLO3DefaultTrainTransform(width, height, net, mixup=args.train.mixup)),
@@ -67,7 +70,7 @@ def _save_params(net, best_map, current_map, epoch, save_interval, prefix):
     current_map = float(current_map)
     if current_map > best_map[0]:
         best_map[0] = current_map
-        net.save_parameters('{:s}_best.params'.format(prefix, epoch, current_map))
+        net.save_parameters('{:s}_{:04d}_{:.4f}_best.params'.format(prefix, epoch, current_map))
         with open(prefix+'_best_map.log', 'a') as log_file:
             log_file.write('{:04d}:\t{:.4f}\n'.format(epoch, current_map))
     if save_interval and epoch % save_interval == 0:

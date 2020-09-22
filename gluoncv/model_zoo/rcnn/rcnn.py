@@ -74,6 +74,7 @@ class RCNN(gluon.HybridBlock):
         self.train_patterns = train_patterns
         self.nms_thresh = nms_thresh
         self.nms_topk = nms_topk
+        self.pose_nms = post_nms
         self.force_nms = force_nms
 
         assert self.num_class > 0, "Invalid number of class : {}".format(self.num_class)

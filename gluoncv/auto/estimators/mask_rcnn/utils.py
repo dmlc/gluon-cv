@@ -1,3 +1,5 @@
+"""Utils for auto Mask-RCNN estimator"""
+# pylint: disable=consider-using-enumerate
 import os
 import logging
 
@@ -7,7 +9,6 @@ from mxnet import gluon
 from .... import data as gdata
 from ....data import batchify
 from ....data.sampler import SplitSortedBucketSampler
-from ....data.transforms.presets.rcnn import MaskRCNNDefaultValTransform
 from ....utils.metrics.coco_instance import COCOInstanceMetric
 
 try:
@@ -43,7 +44,7 @@ def _get_dataset(dataset, args):
 
 
 def _get_dataloader(net, train_dataset, val_dataset, train_transform, val_transform, batch_size,
-                   num_shards_per_process, args):
+                    num_shards_per_process, args):
     """Get dataloader."""
     train_bfn = batchify.MaskRCNNTrainBatchify(net, num_shards_per_process)
     train_sampler = \
@@ -52,8 +53,9 @@ def _get_dataloader(net, train_dataset, val_dataset, train_transform, val_transf
                                  num_parts=hvd.size() if args.horovod else 1,
                                  part_index=hvd.rank() if args.horovod else 0,
                                  shuffle=True)
-    train_loader = gluon.data.DataLoader(train_dataset.transform(
-        train_transform(net.short, net.max_size, net, ashape=net.ashape, multi_stage=args.mask_rcnn.use_fpn)),
+    train_loader = gluon.data.DataLoader(
+        train_dataset.transform(train_transform(net.short, net.max_size,
+                                                net, ashape=net.ashape, multi_stage=args.mask_rcnn.use_fpn)),
         batch_sampler=train_sampler, batchify_fn=train_bfn, num_workers=args.num_workers)
     val_bfn = batchify.Tuple(*[batchify.Append() for _ in range(2)])
     short = net.short[-1] if isinstance(net.short, (tuple, list)) else net.short
@@ -105,7 +107,7 @@ def _stage_data(i, data, ctx_list, pinned_data_stage):
 def _split_and_load(batch, ctx_list):
     """Split data to 1 batch each device."""
     new_batch = []
-    for i, data in enumerate(batch):
+    for _, data in enumerate(batch):
         if isinstance(data, (list, tuple)):
             new_data = [x.as_in_context(ctx) for x, ctx in zip(data, ctx_list)]
         else:
