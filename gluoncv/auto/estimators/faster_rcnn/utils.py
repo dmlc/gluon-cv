@@ -2,7 +2,6 @@
 import os
 
 from mxnet import gluon
-from autogluon.task.object_detection.dataset.voc import CustomVOCDetectionBase
 
 from ....data.batchify import FasterRCNNTrainBatchify, Tuple, Append
 from ....data.sampler import SplitSortedBucketSampler

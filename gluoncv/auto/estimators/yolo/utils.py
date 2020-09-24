@@ -2,7 +2,6 @@
 import os
 
 from mxnet import gluon
-from autogluon.task.object_detection.dataset.voc import CustomVOCDetectionBase
 
 from ....data import MixupDetection
 from ....data.batchify import Tuple, Stack, Pad

@@ -5,7 +5,6 @@ import mxnet as mx
 from mxnet import gluon
 from mxnet import autograd
 
-from autogluon.task.object_detection.dataset.voc import CustomVOCDetectionBase
 
 from ....data.batchify import Tuple, Stack, Pad
 from ....data.transforms.presets.ssd import SSDDefaultTrainTransform
