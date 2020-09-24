@@ -11,9 +11,6 @@ from ....data.transforms.presets.ssd import SSDDefaultValTransform
 from ....data.transforms.presets.ssd import SSDDALIPipeline
 from ....utils.metrics.voc_detection import VOC07MApMetric
 from ....utils.metrics.coco_detection import COCODetectionMetric
-from ....utils.metrics.accuracy import Accuracy
-
-from autogluon.task.object_detection.dataset.voc import CustomVOCDetectionBase
 
 try:
     import horovod.mxnet as hvd
@@ -40,10 +37,10 @@ def _get_dataset(dataset, args):
         # filename_zip = ag.download('https://autogluon.s3.amazonaws.com/datasets/tiny_motorbike.zip', path=root)
         # filename = ag.unzip(filename_zip, root=root)
         # data_root = os.path.join(root, filename)
-        train_dataset = CustomVOCDetectionBase(classes=('motorbike',), root=args.dataset_root + 'tiny_motorbike',
-                                               splits=[('', 'trainval')])
-        val_dataset = CustomVOCDetectionBase(classes=('motorbike',), root=args.dataset_root + 'tiny_motorbike',
-                                             splits=[('', 'test')])
+        train_dataset = gdata.CustomVOCDetectionBase(classes=('motorbike',), root=args.dataset_root + 'tiny_motorbike',
+                                                     splits=[('', 'trainval')])
+        val_dataset = gdata.CustomVOCDetectionBase(classes=('motorbike',), root=args.dataset_root + 'tiny_motorbike',
+                                                   splits=[('', 'test')])
         val_metric = VOC07MApMetric(iou_thresh=0.5, class_names=val_dataset.classes)
     elif dataset.lower() == 'coco':
         train_dataset = gdata.COCODetection(splits=['instances_train2017'])

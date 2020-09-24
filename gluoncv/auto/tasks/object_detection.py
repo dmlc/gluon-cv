@@ -8,11 +8,7 @@ from autogluon.utils import collect_params
 
 from ... import utils as gutils
 from ..estimators.base_estimator import ConfigDict, BaseEstimator
-from ..estimators.ssd import SSDEstimator
-from ..estimators.faster_rcnn import FasterRCNNEstimator
-from ..estimators.yolo import YOLOEstimator
-from ..estimators.center_net import CenterNetEstimator
-# from gluoncv.auto.estimators import SSDEstimator, FasterRCNNEstimator, YOLOEstimator, CenterNetEstimator
+from ..estimators import SSDEstimator, FasterRCNNEstimator, YOLOEstimator, CenterNetEstimator
 from .utils import auto_suggest, auto_args, config_to_nested
 
 

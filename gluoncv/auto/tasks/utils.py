@@ -2,15 +2,10 @@ import copy
 import numpy as np
 
 import autogluon as ag
-from autogluon.task.object_detection.dataset.voc import CustomVOCDetectionBase
 
 from ... import data as gdata
 from ..estimators.base_estimator import BaseEstimator
-from ..estimators.ssd import SSDEstimator
-from ..estimators.faster_rcnn import FasterRCNNEstimator
-from ..estimators.yolo import YOLOEstimator
-from ..estimators.center_net import CenterNetEstimator
-# from gluoncv.auto.estimators import SSDEstimator, FasterRCNNEstimator, YOLOEstimator, CenterNetEstimator
+from ..estimators import SSDEstimator, FasterRCNNEstimator, YOLOEstimator, CenterNetEstimator
 
 
 def auto_suggest(config, estimator):
@@ -23,9 +18,9 @@ def auto_suggest(config, estimator):
     if dataset_name == 'voc':
         train_dataset = gdata.VOCDetection(splits=[(2007, 'trainval'), (2012, 'trainval')])
     elif dataset_name == 'voc_tiny':
-        train_dataset = CustomVOCDetectionBase(classes=('motorbike',),
-                                               root=dataset_root + 'tiny_motorbike',
-                                               splits=[('', 'trainval')])
+        train_dataset = gdata.CustomVOCDetectionBase(classes=('motorbike',),
+                                                     root=dataset_root + 'tiny_motorbike',
+                                                     splits=[('', 'trainval')])
     elif dataset_name == 'coco':
         train_dataset = gdata.COCODetection(splits=['instances_train2017'])
     else:
