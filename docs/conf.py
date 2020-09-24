@@ -87,7 +87,7 @@ sphinx_gallery_conf = {
         'build/examples_distributed',
         'build/examples_deployment',],
 
-    'filename_pattern': '.pyy',
+    'filename_pattern': '.py',
     'ignore_pattern': 'im2rec.py',
 
     # 'subsection_order': ExplicitOrder(['tutorials/classification',
