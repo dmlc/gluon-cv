@@ -93,7 +93,6 @@ class Bottleneck(HybridBlock):
         self.strides = strides
 
     def hybrid_forward(self, F, x):
-        x = x.as_np_ndarray()
         residual = x
 
         out = self.conv1(x)
@@ -332,7 +331,6 @@ class ResNeSt(HybridBlock):
         return layers
 
     def hybrid_forward(self, F, x):
-        x = x.as_np_ndarray()
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)

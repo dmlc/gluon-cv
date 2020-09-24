@@ -95,7 +95,6 @@ class ResidualBlock(HybridBlock):
                 self.conv4 = nn.Conv2D(channels, 1, stride, use_bias=False)
 
     def hybrid_forward(self, F, x):
-        x = x.as_np_ndarray()
         residual = x
         out = self.bn1(x)
         out1 = F.npx.activation(out, act_type='relu')
@@ -207,7 +206,6 @@ class AttentionModule_stage1(nn.HybridBlock):
             self.last_blocks = ResidualBlock(channels)
 
     def hybrid_forward(self, F, x):
-        x = x.as_np_ndarray()
         x = self.first_residual_blocks(x)
         out_trunk = self.trunk_branches(x)
 
@@ -305,7 +303,6 @@ class AttentionModule_stage2(nn.HybridBlock):
             self.last_blocks = ResidualBlock(channels)
 
     def hybrid_forward(self, F, x):
-        x = x.as_np_ndarray()
         x = self.first_residual_blocks(x)
         out_trunk = self.trunk_branches(x)
         out_mpool1 = self.mpool1(x)
@@ -376,7 +373,6 @@ class AttentionModule_stage3(nn.HybridBlock):
             self.last_blocks = ResidualBlock(channels)
 
     def hybrid_forward(self, F, x):
-        x = x.as_np_ndarray()
         x = self.first_residual_blocks(x)
         out_trunk = self.trunk_branches(x)
         out_mpool1 = self.mpool1(x)
@@ -432,7 +428,6 @@ class AttentionModule_stage4(nn.HybridBlock):
             self.last_blocks = ResidualBlock(channels)
 
     def hybrid_forward(self, F, x):
-        x = x.as_np_ndarray()
         x = self.first_residual_blocks(x)
         out_trunk = self.trunk_branches(x)
         out_softmax1 = self.softmax1_blocks(x)
@@ -501,7 +496,6 @@ class ResidualAttentionModel(nn.HybridBlock):
             self.fc = nn.Conv2D(classes, kernel_size=1)
 
     def hybrid_forward(self, F, x):
-        x = x.as_np_ndarray()
         x = self.conv1(x)
         x = self.mpool1(x)
         x = self.residual_block1(x)
@@ -583,7 +577,6 @@ class cifar_ResidualAttentionModel(nn.HybridBlock):
             self.fc = nn.Conv2D(classes, kernel_size=1)
 
     def hybrid_forward(self, F, x):
-        x = x.as_np_ndarray()
         x = self.conv1(x)
         x = self.residual_block1(x)
         x = self.attention_module1(x)

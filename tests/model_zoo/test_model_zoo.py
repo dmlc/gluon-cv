@@ -119,7 +119,7 @@ def test_imagenet_models():
     ctx = mx.context.current_context()
 
     # 224x224
-    x = mx.random.uniform(shape=(2, 3, 224, 224), ctx=ctx)
+    x = mx.np.random.uniform(size=(2, 3, 224, 224), ctx=ctx)
     models = ['resnet18_v1', 'resnet34_v1',
               'resnet50_v1', 'resnet101_v1', 'resnet152_v1',
               'resnet18_v1b', 'resnet34_v1b', 'resnet50_v1b_gn',
@@ -423,7 +423,7 @@ def test_set_nms():
 @try_gpu(0)
 def test_segmentation_models():
     ctx = mx.context.current_context()
-    x = mx.random.uniform(shape=(1, 3, 480, 480), ctx=ctx)
+    x = mx.np.random.uniform(size=(1, 3, 480, 480), ctx=ctx)
     models = [
             #   'fcn_resnet101_coco', 'psp_resnet101_coco', 'deeplab_resnet101_coco',
             #   'fcn_resnet101_voc', 'psp_resnet101_voc', 'deeplab_resnet101_voc',

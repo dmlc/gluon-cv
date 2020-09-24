@@ -60,7 +60,6 @@ class DeepLabWV3Plus(HybridBlock):
             self.head.initialize(ctx=ctx)
 
     def hybrid_forward(self, F, x):
-        x = x.as_np_ndarray()
         outputs = []
         x = self.mod1(x)
         m2 = self.mod2(self.pool2(x))
@@ -75,11 +74,9 @@ class DeepLabWV3Plus(HybridBlock):
         return tuple(outputs)
 
     def demo(self, x):
-        x = x.as_np_ndarray()
         return self.predict(x)
 
     def predict(self, x):
-        x = x.as_np_ndarray()
         h, w = x.shape[2:]
         self._up_kwargs['height'] = h
         self._up_kwargs['width'] = w
@@ -124,14 +121,12 @@ class _DeepLabHead(HybridBlock):
                                      kernel_size=1, use_bias=False))
 
     def hybrid_forward(self, F, x, c1):
-        x = x.as_np_ndarray()
         c1 = self.c1_block(c1)
         x = self.aspp(x)
         x = F.contrib.BilinearResize2D(x.as_nd_ndarray(), **self._up_kwargs).as_np_ndarray()
         return self.block(F.np.concatenate((c1, x), axis=1))
 
     def demo(self, x, c1):
-        x = x.as_np_ndarray()
         h, w = c1.shape[2:]
         self._up_kwargs['height'] = h
         self._up_kwargs['width'] = w
@@ -168,12 +163,10 @@ class _AsppPooling(nn.HybridBlock):
             self.gap.add(nn.Activation("relu"))
 
     def hybrid_forward(self, F, x):
-        x = x.as_np_ndarray()
         pool = self.gap(x)
         return F.contrib.BilinearResize2D(pool.as_nd_ndarray(), **self._up_kwargs).as_np_ndarray()
 
     def demo(self, x):
-        x = x.as_np_ndarray()
         h, w = x.shape[2:]
         self._up_kwargs['height'] = h
         self._up_kwargs['width'] = w
@@ -206,7 +199,6 @@ class _ASPP(nn.HybridBlock):
                                    kernel_size=1, use_bias=False))
 
     def hybrid_forward(self, F, x):
-        x = x.as_np_ndarray()
         feat1 = self.b0(x)
         feat2 = self.b1(x)
         feat3 = self.b2(x)
@@ -216,7 +208,6 @@ class _ASPP(nn.HybridBlock):
         return self.project(x)
 
     def demo(self, x):
-        x = x.as_np_ndarray()
         feat1 = self.b0(x)
         feat2 = self.b1(x)
         feat3 = self.b2(x)
