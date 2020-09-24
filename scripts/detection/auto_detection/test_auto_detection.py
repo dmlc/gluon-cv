@@ -33,4 +33,4 @@ if __name__ == '__main__':
     test_map = detector.evaluate()
     print("mAP on test dataset: {}".format(test_map[-1][-1]))
     print(test_map)
-    # detector.save('final_model.model')
+    detector.save('models/detector.json')

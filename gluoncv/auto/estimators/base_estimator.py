@@ -1,5 +1,7 @@
 """Base Estimator"""
 import os
+import pickle
+import json
 import copy
 import logging
 import warnings
@@ -9,6 +11,9 @@ from sacred.settings import SETTINGS
 SETTINGS.CONFIG.READ_ONLY_CONFIG = False
 
 from ...utils import random as _random
+
+from ...utils.savers import save_pkl, save_json
+from ...utils.loaders import load_pkl
 
 def _get_config():
     pass
@@ -106,6 +111,12 @@ class ConfigDict(dict):
 
     __setattr__, __getattr__ = __setitem__, __getitem__
 
+    def __setstate__(self, state):
+        vars(self).update(state)
+
+    def __getstate__(self):
+        return vars(self)
+
 
 class BaseEstimator:
     def __init__(self, config, logger=None, reporter=None, name=None):
@@ -166,3 +177,18 @@ class BaseEstimator:
 
     def _evaluate(self):
         raise NotImplementedError
+
+    def save(self, path):
+        # os.makedirs(os.path.dirname(path), exist_ok=True)
+        # with open(path, 'wb') as f:
+        #     pickle.dump(self, f, protocol=4)
+        save_json.save(path=path, obj=self)
+        self._logger.info("estimator saved at \"%s\"" % path)
+
+    def load(self, path):
+        # with open(path, 'rb') as f:
+        #     estimator = pickle.load(f)
+        with open(path, 'r') as f:
+            estimator = json.load(f)
+        self._logger.info("estimator loaded from \"%s\"" % path)
+        return estimator
