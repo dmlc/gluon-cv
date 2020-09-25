@@ -218,5 +218,5 @@ class BaseEstimator:
             obj._logger.info('Unpickled from %s', filename)
             ctx = getattr(self, 'ctx', None)
             if ctx:
-                self.net.reset_ctx(ctx)
+                self.net.collect_params().reset_ctx(ctx)
             return obj

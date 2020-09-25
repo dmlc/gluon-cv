@@ -345,7 +345,7 @@ class SSDEstimator(BaseEstimator):
         if getattr(self, '_val_data'):
             val_data = self._val_data
             self._val_data = None
-        self.net.reset_ctx(mx.cpu())
+        self.net.collect_params().reset_ctx(mx.cpu())
         super().save(filename)
         self._train_data = train_data
         self._val_data = val_data
