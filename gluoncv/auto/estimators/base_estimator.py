@@ -217,6 +217,6 @@ class BaseEstimator:
             obj = pickle.load(fid)
             obj._logger.info('Unpickled from %s', filename)
             ctx = getattr(obj, 'ctx', None)
-            if ctx:
-                self.net.collect_params().reset_ctx(ctx)
+            if ctx and getattr(obj, 'net', None):
+                obj.net.collect_params().reset_ctx(ctx)
             return obj
