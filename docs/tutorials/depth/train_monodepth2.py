@@ -301,7 +301,7 @@ print(posenet)
 #
 # We provide self-supervised depth estimation datasets in :class:`gluoncv.data`.
 # For example, we can easily get the KITTI RAW Stereo dataset:
-import os
+# import os
 from gluoncv.data.kitti import readlines, dict_batchify_fn
 
 train_filenames = os.path.join(
