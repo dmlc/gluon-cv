@@ -300,22 +300,24 @@ print(posenet)
 #     disk speed. For example, it takes around 2 hours on an AWS EC2 instance with EBS.
 #
 # We provide self-supervised depth estimation datasets in :class:`gluoncv.data`.
-# For example, we can easily get the KITTI RAW Stereo dataset:
-import os
-from gluoncv.data.kitti import readlines, dict_batchify_fn
-
-train_filenames = os.path.join(
-    os.path.expanduser("~"), '.mxnet/datasets/kitti/splits/eigen_full/train_files.txt')
-train_filenames = readlines(train_filenames)
-train_dataset = gluoncv.data.KITTIRAWDataset(
-    filenames=train_filenames, height=192, width=640,
-    frame_idxs=[0, -1, 1, "s"], num_scales=4, is_train=True, img_ext='.png')
-print('Training images:', len(train_dataset))
-# set batch_size = 12 for toy example
-batch_size = 12
-train_loader = gluon.data.DataLoader(
-    train_dataset, batch_size=batch_size, shuffle=True, batchify_fn=dict_batchify_fn,
-    num_workers=12, pin_memory=True, last_batch='discard')
+#
+# For example, we can easily get the KITTI RAW Stereo dataset::
+#
+#     import os
+#     from gluoncv.data.kitti import readlines, dict_batchify_fn
+#
+#     train_filenames = os.path.join(
+#         os.path.expanduser("~"), '.mxnet/datasets/kitti/splits/eigen_full/train_files.txt')
+#     train_filenames = readlines(train_filenames)
+#     train_dataset = gluoncv.data.KITTIRAWDataset(
+#         filenames=train_filenames, height=192, width=640,
+#         frame_idxs=[0, -1, 1, "s"], num_scales=4, is_train=True, img_ext='.png')
+#     print('Training images:', len(train_dataset))
+#     # set batch_size = 12 for toy example
+#     batch_size = 12
+#     train_loader = gluon.data.DataLoader(
+#         train_dataset, batch_size=batch_size, shuffle=True, batchify_fn=dict_batchify_fn,
+#         num_workers=12, pin_memory=True, last_batch='discard')
 
 ##############################################################################
 # Here, the ``frame_idxs`` argument is used to decide the input frame. It is a list and the first element
@@ -329,54 +331,56 @@ train_loader = gluon.data.DataLoader(
 #     We follow the standard data augmentation routine to transform the input image.
 #     Here, we just use RandomFlip with 50% probability for input images.
 #
-# Random pick one example for visualization:
-import random
-from datetime import datetime
-random.seed(datetime.now())
-idx = random.randint(0, len(train_dataset))
-
-data = train_dataset[idx]
-input_img = data[("color", 0, 0)]
-input_stereo_img = data[("color", 's', 0)]
-input_gt = data['depth_gt']
-
-input_img = np.transpose((input_img.asnumpy() * 255).astype(np.uint8), (1, 2, 0))
-input_stereo_img = np.transpose((input_stereo_img.asnumpy() * 255).astype(np.uint8), (1, 2, 0))
-input_gt = np.transpose((input_gt.asnumpy()).astype(np.uint8), (1, 2, 0))
-
-from PIL import Image
-input_img = Image.fromarray(input_img)
-input_stereo_img = Image.fromarray(input_stereo_img)
-input_gt = Image.fromarray(input_gt[:, :, 0])
-
-input_img.save("input_img.png")
-input_stereo_img.save("input_stereo_img.png")
-input_gt.save("input_gt.png")
+# Random pick one example for visualization::
+#
+#     import random
+#     from datetime import datetime
+#     random.seed(datetime.now())
+#     idx = random.randint(0, len(train_dataset))
+#
+#     data = train_dataset[idx]
+#     input_img = data[("color", 0, 0)]
+#     input_stereo_img = data[("color", 's', 0)]
+#     input_gt = data['depth_gt']
+#
+#     input_img = np.transpose((input_img.asnumpy() * 255).astype(np.uint8), (1, 2, 0))
+#     input_stereo_img = np.transpose((input_stereo_img.asnumpy() * 255).astype(np.uint8), (1, 2, 0))
+#     input_gt = np.transpose((input_gt.asnumpy()).astype(np.uint8), (1, 2, 0))
+#
+#     from PIL import Image
+#     input_img = Image.fromarray(input_img)
+#     input_stereo_img = Image.fromarray(input_stereo_img)
+#     input_gt = Image.fromarray(input_gt[:, :, 0])
+#
+#     input_img.save("input_img.png")
+#     input_stereo_img.save("input_stereo_img.png")
+#     input_gt.save("input_gt.png")
 
 ##############################################################################
-# Plot the stereo image pairs and ground truth of the left image
-from matplotlib import pyplot as plt
-
-input_img = Image.open('input_img.png').convert('RGB')
-input_stereo_img = Image.open('input_stereo_img.png').convert('RGB')
-input_gt = Image.open('input_gt.png')
-
-fig = plt.figure()
-# subplot 1 for left image
-plt.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=None, hspace=0.75)
-fig.add_subplot(3, 1, 1)
-plt.title("left image")
-plt.imshow(input_img)
-# subplot 2 for right images
-fig.add_subplot(3, 1, 2)
-plt.title("right image")
-plt.imshow(input_stereo_img)
-# subplot 3 for the ground truth
-fig.add_subplot(3, 1, 3)
-plt.title("ground truth of left input (the reprojection of LiDAR data)")
-plt.imshow(input_gt)
-# display
-plt.show()
+# Plot the stereo image pairs and ground truth of the left image::
+#
+#     from matplotlib import pyplot as plt
+#
+#     input_img = Image.open('input_img.png').convert('RGB')
+#     input_stereo_img = Image.open('input_stereo_img.png').convert('RGB')
+#     input_gt = Image.open('input_gt.png')
+#
+#     fig = plt.figure()
+#     # subplot 1 for left image
+#     plt.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=None, hspace=0.75)
+#     fig.add_subplot(3, 1, 1)
+#     plt.title("left image")
+#     plt.imshow(input_img)
+#     # subplot 2 for right images
+#     fig.add_subplot(3, 1, 2)
+#     plt.title("right image")
+#     plt.imshow(input_stereo_img)
+#     # subplot 3 for the ground truth
+#     fig.add_subplot(3, 1, 3)
+#     plt.title("ground truth of left input (the reprojection of LiDAR data)")
+#     plt.imshow(input_gt)
+#     # display
+#     plt.show()
 
 ##############################################################################
 # The Dataloader will provide a dictionary which includes raw images, augmented images, camera intrinsics,
@@ -652,17 +656,22 @@ plt.show()
 #     We use a 'step' learning rate scheduler for Monodepth2 training, provided in :class:`gluoncv.utils.LRScheduler`.
 #     We use a learning rate of 10−4 for the first 15 epochs which is then dropped to 10−5 for the remainder.
 #
-lr_scheduler = gluoncv.utils.LRSequential([
-    gluoncv.utils.LRScheduler(
-        'step', base_lr=1e-4, nepochs=20, iters_per_epoch=len(train_dataset), step_epoch=[15])
-])
-optimizer_params = {'lr_scheduler': lr_scheduler,
-                    'learning_rate': 1e-4}
+# The example of optimization is defined as::
+#
+#     lr_scheduler = gluoncv.utils.LRSequential([
+#         gluoncv.utils.LRScheduler(
+#             'step', base_lr=1e-4, nepochs=20, iters_per_epoch=len(train_dataset), step_epoch=[15])
+#     ])
+#     optimizer_params = {'lr_scheduler': lr_scheduler,
+#                         'learning_rate': 1e-4}
 
 ##############################################################################
 # - Create Adam solver
-depth_optimizer = gluon.Trainer(model.collect_params(), 'adam', optimizer_params)
-pose_optimizer = gluon.Trainer(posenet.collect_params(), 'adam', optimizer_params)
+#
+# The example for depth & pose optimizer are defined as::
+#
+#     depth_optimizer = gluon.Trainer(model.collect_params(), 'adam', optimizer_params)
+#     pose_optimizer = gluon.Trainer(posenet.collect_params(), 'adam', optimizer_params)
 
 ##############################################################################
 # The training loop
