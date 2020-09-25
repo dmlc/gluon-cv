@@ -1,6 +1,7 @@
 """Base Estimator"""
 import os
 import copy
+import pickle
 import logging
 import warnings
 from datetime import datetime
@@ -81,7 +82,7 @@ class ConfigDict(dict):
             for key in value:
                 self.__setitem__(key, value[key])
         else:
-            raise TypeError('expected dict')
+            raise TypeError('expected dict, given {}'.format(type(value)))
         self.freeze()
 
     def freeze(self):
@@ -94,7 +95,7 @@ class ConfigDict(dict):
         self.__dict__['_freeze'] = False
 
     def __setitem__(self, key, value):
-        if self.__dict__['_freeze']:
+        if self.__dict__.get('_freeze', False):
             msg = ('You are trying to modify the config to "{}={}" after initialization, '
                    ' this may result in unpredictable behaviour'.format(key, value))
             warnings.warn(msg)
@@ -112,6 +113,12 @@ class ConfigDict(dict):
         if isinstance(found, ConfigDict):
             found.__dict__['_freeze'] = self.__dict__['_freeze']
         return found
+
+    def __setstate__(self, state):
+        vars(self).update(state)
+
+    def __getstate__(self):
+        return vars(self)
 
     __setattr__, __getattr__ = __setitem__, __getitem__
 
@@ -198,3 +205,15 @@ class BaseEstimator:
 
     def _evaluate(self):
         raise NotImplementedError
+
+    def save(self, filename):
+        with open(filename, 'wb') as fid:
+            pickle.dump(self, fid)
+        self._logger.info('Pickled to %s', filename)
+
+    @classmethod
+    def load(cls, filename):
+        with open(filename, 'rb') as fid:
+            obj = pickle.load(fid)
+            obj._logger.info('Unpickled from %s', filename)
+            return obj

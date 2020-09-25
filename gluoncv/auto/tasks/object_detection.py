@@ -146,3 +146,7 @@ class ObjectDetection(BaseTask):
         # TODO: checkpointing needs to be done in a better way
         estimator.put_parameters(results.pop('model_params'))
         return estimator
+
+    @classmethod
+    def load(cls, filename):
+        return BaseEstimator.load(filename)

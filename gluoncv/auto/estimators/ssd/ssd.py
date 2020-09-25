@@ -336,3 +336,15 @@ class SSDEstimator(BaseEstimator):
     def get_parameters(self):
         """Return model parameters"""
         return self.net._collect_params_with_prefix()
+
+    def save(self, filename):
+        # TODO(): remove this part once dataloader is no longer attributes
+        if getattr(self, '_train_data'):
+            train_data = self._train_data
+            self._train_data = None
+        if getattr(self, '_val_data'):
+            val_data = self._val_data
+            self._val_data = None
+        super().save(filename)
+        self._train_data = train_data
+        self._val_data = val_data
