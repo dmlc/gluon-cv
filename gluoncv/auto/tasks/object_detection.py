@@ -149,4 +149,7 @@ class ObjectDetection(BaseTask):
 
     @classmethod
     def load(cls, filename):
-        return BaseEstimator.load(filename)
+        obj = BaseEstimator.load(filename)
+        # make sure not accidentally loading e.g. classification model
+        assert type(obj) in (SSDEstimator, FasterRCNNEstimator, YOLOEstimator, CenterNetEstimator)
+        return obj
