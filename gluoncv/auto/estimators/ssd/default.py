@@ -1,3 +1,5 @@
+"""SSD default config"""
+# pylint: disable=unused-variable,missing-function-docstring
 from sacred import Experiment, Ingredient
 
 from ..common import logging

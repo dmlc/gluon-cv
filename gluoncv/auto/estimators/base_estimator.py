@@ -6,9 +6,10 @@ import warnings
 from datetime import datetime
 from sacred.commands import _format_config, save_config, print_config
 from sacred.settings import SETTINGS
+from ...utils import random as _random
+
 SETTINGS.CONFIG.READ_ONLY_CONFIG = False
 
-from ...utils import random as _random
 
 def _get_config():
     pass
@@ -23,6 +24,13 @@ def _compare_config(r1, r2):
     return r1 == r2
 
 def set_default(ex):
+    """A special hook to register the default values for decorated Estimator.
+
+    Parameters
+    ----------
+    ex : sacred.Experiment
+        sacred experiment object.
+    """
     def _apply(cls):
         # docstring
         cls.__doc__ = str(cls.__doc__) if cls.__doc__ else ''
@@ -49,7 +57,6 @@ def set_default(ex):
 
 
 class ConfigDict(dict):
-    MARKER = object()
     """The view of a config dict where keys can be accessed like attribute, it also prevents
     naive modifications to the key-values.
 
@@ -64,7 +71,9 @@ class ConfigDict(dict):
         The internal config as a `__dict__`.
 
     """
+    MARKER = object()
     def __init__(self, value=None):
+        super(ConfigDict, self).__init__()
         self.__dict__['_freeze'] = False
         if value is None:
             pass
@@ -108,6 +117,29 @@ class ConfigDict(dict):
 
 
 class BaseEstimator:
+    """This is the base estimator for gluoncv.auto.Estimators.
+
+    Parameters
+    ----------
+    config : dict
+        Config in nested dict.
+    logger : logging.Logger
+        Optional logger for this estimator, can be `None` when default setting is used.
+    reporter : callable
+        The reporter for metric checkpointing.
+    name : str
+        Optional name for the estimator.
+
+    Attributes
+    ----------
+    _logger : logging.Logger
+        The customized/default logger for this estimator.
+    _logdir : str
+        The temporary dir for logs.
+    _cfg : ConfigDict
+        The configurations.
+
+    """
     def __init__(self, config, logger=None, reporter=None, name=None):
         self._reporter = reporter
         name = name if isinstance(name, str) else self.__class__.__name__
@@ -134,7 +166,7 @@ class BaseEstimator:
                 self._ex.add_config(os.path.join(self._logdir, prefix, 'config.yaml'))
                 r2 = self._ex.run('_get_config', options={'--loglevel': 50, '--force': True})
                 if _compare_config(r2.config, r.config):
-                    self._logger.info('Auto resume detected previous run: {}'.format(prefix))
+                    self._logger.info('Auto resume detected previous run: %s', str(prefix))
                     r.config['seed'] = r2.config['seed']
                 else:
                     prefix = None

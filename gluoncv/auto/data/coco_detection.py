@@ -1,4 +1,5 @@
 """COCO detection pipeline"""
+# pylint: disable=unused-variable,missing-function-docstring
 import os
 import tempfile
 from sacred import Ingredient

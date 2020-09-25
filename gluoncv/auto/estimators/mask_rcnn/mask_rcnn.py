@@ -1,14 +1,14 @@
 """Mask RCNN Estimator."""
-
+# pylint: disable=consider-using-enumerate
 import os
 import time
 import logging
+from multiprocessing import Process
 
 import numpy as np
 import mxnet as mx
 from mxnet import gluon
 from mxnet.contrib import amp
-from multiprocessing import Process
 
 from .... import data as gdata
 from .... import utils as gutils
@@ -22,7 +22,7 @@ from ....utils.parallel import Parallel
 from ....utils.metrics.rcnn import RPNAccMetric, RPNL1LossMetric, RCNNAccMetric, RCNNL1LossMetric, \
     MaskAccMetric, MaskFGAccMetric
 from ..base_estimator import BaseEstimator, set_default
-from .utils import _get_dataset, _get_dataloader, _save_params, _stage_data, _split_and_load, _get_lr_at_iter
+from .utils import _get_dataset, _get_dataloader, _save_params, _split_and_load, _get_lr_at_iter
 
 try:
     import horovod.mxnet as hvd
@@ -42,22 +42,27 @@ __all__ = ['MaskRCNNEstimator']
 
 @set_default(ex)
 class MaskRCNNEstimator(BaseEstimator):
-    """ Estimator for Mask R-CNN.
+    """Estimator implementation for Mask-RCNN.
+
+    Parameters
+    ----------
+    config : dict
+        Config in nested dict.
+    logger : logging.Logger, default is None
+        Optional logger for this estimator, can be `None` when default setting is used.
+    reporter : callable, default is None
+        If set, use reporter callback to report the metrics of the current estimator.
+
+    Attributes
+    ----------
+    _logger : logging.Logger
+        The customized/default logger for this estimator.
+    _logdir : str
+        The temporary dir for logs.
+    _cfg : ConfigDict
+        The configurations.
     """
-
     def __init__(self, config, logger=None, reporter=None):
-        """
-        Constructs Mask R-CNN estimators.
-
-        Parameters
-        ----------
-        config : configuration object
-            Configuration object containing information for constructing Faster R-CNN estimators.
-        logger : logger object, default is None
-            If not `None`, will use default logging object.
-        reporter : reporter object, default is None
-            If set, use reporter callback to report the metrics of the current estimator.
-        """
         super(MaskRCNNEstimator, self).__init__(config, logger, reporter)
 
         # fix seed for mxnet, numpy and python builtin random generator.
@@ -90,17 +95,17 @@ class MaskRCNNEstimator(BaseEstimator):
             if self._cfg.mask_rcnn.norm_layer == 'bn':
                 norm_layer = gluon.contrib.nn.SyncBatchNorm
                 norm_kwargs = {'num_devices': len(self.ctx)}
-                sym_norm_layer = mx.sym.contrib.SyncBatchNorm
+                # sym_norm_layer = mx.sym.contrib.SyncBatchNorm
                 sym_norm_kwargs = {'ndev': len(self.ctx)}
             elif self._cfg.mask_rcnn.norm_layer == 'gn':
                 norm_layer = gluon.nn.GroupNorm
                 norm_kwargs = {'groups': 8}
-                sym_norm_layer = mx.sym.GroupNorm
+                # sym_norm_layer = mx.sym.GroupNorm
                 sym_norm_kwargs = {'groups': 8}
             else:
                 norm_layer = gluon.nn.BatchNorm
                 norm_kwargs = None
-                sym_norm_layer = None
+                # sym_norm_layer = None
                 sym_norm_kwargs = None
             if self._cfg.dataset == 'coco':
                 classes = COCODetection.CLASSES
@@ -115,20 +120,27 @@ class MaskRCNNEstimator(BaseEstimator):
                                  num_box_head_conv=self._cfg.mask_rcnn.num_box_head_conv,
                                  num_box_head_conv_filters=self._cfg.mask_rcnn.num_box_head_conv_filters,
                                  num_box_head_dense_filters=self._cfg.mask_rcnn.num_box_head_dense_filters,
-                                 short=self._cfg.mask_rcnn.image_short, max_size=self._cfg.mask_rcnn.image_max_size, min_stage=2,
-                                 max_stage=6, nms_thresh=self._cfg.mask_rcnn.nms_thresh, nms_topk=self._cfg.mask_rcnn.nms_topk,
-                                 post_nms=self._cfg.mask_rcnn.post_nms, roi_mode=self._cfg.mask_rcnn.roi_mode, roi_size=self._cfg.mask_rcnn.roi_size,
-                                 strides=self._cfg.mask_rcnn.strides, clip=self._cfg.mask_rcnn.clip, rpn_channel=self._cfg.mask_rcnn.rpn_channel,
-                                 base_size=self._cfg.mask_rcnn.anchor_base_size, scales=self._cfg.mask_rcnn.anchor_scales,
-                                 ratios=self._cfg.mask_rcnn.anchor_aspect_ratio, alloc_size=self._cfg.mask_rcnn.anchor_alloc_size,
+                                 short=self._cfg.mask_rcnn.image_short, max_size=self._cfg.mask_rcnn.image_max_size,
+                                 min_stage=2, max_stage=6, nms_thresh=self._cfg.mask_rcnn.nms_thresh,
+                                 nms_topk=self._cfg.mask_rcnn.nms_topk, post_nms=self._cfg.mask_rcnn.post_nms,
+                                 roi_mode=self._cfg.mask_rcnn.roi_mode, roi_size=self._cfg.mask_rcnn.roi_size,
+                                 strides=self._cfg.mask_rcnn.strides, clip=self._cfg.mask_rcnn.clip,
+                                 rpn_channel=self._cfg.mask_rcnn.rpn_channel,
+                                 base_size=self._cfg.mask_rcnn.anchor_base_size,
+                                 scales=self._cfg.mask_rcnn.anchor_scales,
+                                 ratios=self._cfg.mask_rcnn.anchor_aspect_ratio,
+                                 alloc_size=self._cfg.mask_rcnn.anchor_alloc_size,
                                  rpn_nms_thresh=self._cfg.mask_rcnn.rpn_nms_thresh,
                                  rpn_train_pre_nms=self._cfg.train.rpn_train_pre_nms,
                                  rpn_train_post_nms=self._cfg.train.rpn_train_post_nms,
                                  rpn_test_pre_nms=self._cfg.validation.rpn_test_pre_nms,
-                                 rpn_test_post_nms=self._cfg.validation.rpn_test_post_nms, rpn_min_size=self._cfg.train.rpn_min_size,
+                                 rpn_test_post_nms=self._cfg.validation.rpn_test_post_nms,
+                                 rpn_min_size=self._cfg.train.rpn_min_size,
                                  per_device_batch_size=self._cfg.train.batch_size // self.num_gpus,
-                                 num_sample=self._cfg.train.rcnn_num_samples, pos_iou_thresh=self._cfg.train.rcnn_pos_iou_thresh,
-                                 pos_ratio=self._cfg.train.rcnn_pos_ratio, max_num_gt=self._cfg.mask_rcnn.max_num_gt,
+                                 num_sample=self._cfg.train.rcnn_num_samples,
+                                 pos_iou_thresh=self._cfg.train.rcnn_pos_iou_thresh,
+                                 pos_ratio=self._cfg.train.rcnn_pos_ratio,
+                                 max_num_gt=self._cfg.mask_rcnn.max_num_gt,
                                  target_roi_scale=self._cfg.mask_rcnn.target_roi_scale,
                                  num_fcn_convs=self._cfg.mask_rcnn.num_mask_head_convs)
         else:
@@ -192,7 +204,8 @@ class MaskRCNNEstimator(BaseEstimator):
 
         # training data
         self.train_dataset, self.val_dataset, self.eval_metric = _get_dataset(self._cfg.dataset, self._cfg)
-        self.batch_size = self._cfg.train.batch_size // self.num_gpus if self._cfg.horovod else self._cfg.train.batch_size
+        self.batch_size = self._cfg.train.batch_size // self.num_gpus \
+            if self._cfg.horovod else self._cfg.train.batch_size
         self._train_data, self._val_data = _get_dataloader(
             self.net, self.train_dataset, self.val_dataset, MaskRCNNDefaultTrainTransform, MaskRCNNDefaultValTransform,
             self.batch_size, len(self.ctx), self._cfg)
@@ -204,7 +217,7 @@ class MaskRCNNEstimator(BaseEstimator):
         if not self._cfg.disable_hybridization:
             self.net.hybridize(static_alloc=self._cfg.mask_rcnn.static_alloc)
         tic = time.time()
-        for ib, batch in enumerate(val_data):
+        for _, batch in enumerate(val_data):
             batch = _split_and_load(batch, ctx_list=ctx)
             det_bboxes = []
             det_ids = []
@@ -273,13 +286,15 @@ class MaskRCNNEstimator(BaseEstimator):
         """
         Fit Mask R-CNN models.
         """
-        self._cfg.kv_store = 'device' if (self._cfg.mask_rcnn.amp and 'nccl' in self._cfg.kv_store) else self._cfg.kv_store
+        self._cfg.kv_store = 'device' \
+            if (self._cfg.mask_rcnn.amp and 'nccl' in self._cfg.kv_store) else self._cfg.kv_store
         kv = mx.kvstore.create(self._cfg.kv_store)
         self.net.collect_params().setattr('grad_req', 'null')
         self.net.collect_train_params().setattr('grad_req', 'write')
         for k, v in self.net.collect_params('.*bias').items():
             v.wd_mult = 0.0
-        optimizer_params = {'learning_rate': self._cfg.train.lr, 'wd': self._cfg.train.wd, 'momentum': self._cfg.train.momentum, }
+        optimizer_params = {'learning_rate': self._cfg.train.lr, 'wd': self._cfg.train.wd,
+                            'momentum': self._cfg.train.momentum, }
         if self._cfg.train.clip_gradient > 0.0:
             optimizer_params['clip_gradient'] = self._cfg.train.clip_gradient
         if self._cfg.mask_rcnn.amp:
@@ -310,13 +325,14 @@ class MaskRCNNEstimator(BaseEstimator):
         if self._cfg.train.verbose:
             self._logger.info('Trainable parameters:')
             self._logger.info(self.net.collect_train_params().keys())
-        self._logger.info('Start training from [Epoch {}]'.format(self._cfg.train.start_epoch))
+        self._logger.info('Start training from [Epoch %d]', self._cfg.train.start_epoch)
 
         base_lr = trainer.learning_rate
         for epoch in range(self._cfg.train.start_epoch, self._cfg.train.epochs):
             self.epoch = epoch
             rcnn_task = ForwardBackwardTask(self.net, trainer, self.rpn_cls_loss, self.rpn_box_loss, self.rcnn_cls_loss,
-                                            self.rcnn_box_loss, self.rcnn_mask_loss, amp_enabled=self._cfg.mask_rcnn.amp)
+                                            self.rcnn_box_loss, self.rcnn_mask_loss,
+                                            amp_enabled=self._cfg.mask_rcnn.amp)
             executor = Parallel(self._cfg.train.executor_threads, rcnn_task) if not self._cfg.horovod else None
             if not self._cfg.disable_hybridization:
                 self.net.hybridize(static_alloc=self._cfg.mask_rcnn.static_alloc)
@@ -324,7 +340,7 @@ class MaskRCNNEstimator(BaseEstimator):
                 new_lr = trainer.learning_rate * lr_decay
                 lr_steps.pop(0)
                 trainer.set_learning_rate(new_lr)
-                self._logger.info("[Epoch {}] Set learning rate to {}".format(epoch, new_lr))
+                self._logger.info("[Epoch %d] Set learning rate to %f", epoch, new_lr)
             for metric in self.metrics:
                 metric.reset()
             tic = time.time()
@@ -337,18 +353,17 @@ class MaskRCNNEstimator(BaseEstimator):
                 if i + epoch * len(self._train_data) <= lr_warmup:
                     # adjust based on real percentage
                     new_lr = base_lr * _get_lr_at_iter((i + epoch * len(self._train_data)) / lr_warmup,
-                                                      self._cfg.train.lr_warmup_factor)
+                                                       self._cfg.train.lr_warmup_factor)
                     if new_lr != trainer.learning_rate:
                         if i % self._cfg.train.log_interval == 0:
-                            self._logger.info('[Epoch {} Iteration {}] Set learning rate to {}'
-                                              .format(epoch, i, new_lr))
+                            self._logger.info('[Epoch %d Iteration %d] Set learning rate to %f', epoch, i, new_lr)
                         trainer.set_learning_rate(new_lr)
                 metric_losses = [[] for _ in self.metrics]
                 add_losses = [[] for _ in self.metrics2]
                 if executor is not None:
                     for data in zip(*batch):
                         executor.put(data)
-                for j in range(len(self.ctx)):
+                for _ in range(len(self.ctx)):
                     if executor is not None:
                         result = executor.get()
                     else:
@@ -375,7 +390,8 @@ class MaskRCNNEstimator(BaseEstimator):
                         and not (i + 1) % self._cfg.train.log_interval:
                     msg = ','.join(['{}={:.3f}'.format(*metric.get()) for metric in self.metrics + self.metrics2])
                     self._logger.info('[Epoch {}][Batch {}], Speed: {:.3f} samples/sec, {}'.format(
-                        epoch, i, self._cfg.train.log_interval * self._cfg.train.batch_size / (time.time() - btic), msg))
+                        epoch, i,
+                        self._cfg.train.log_interval * self._cfg.train.batch_size / (time.time() - btic), msg))
                     btic = time.time()
             # validate and save params
             if (not self._cfg.horovod) or hvd.rank() == 0:
@@ -384,11 +400,12 @@ class MaskRCNNEstimator(BaseEstimator):
                     epoch, (time.time() - tic), msg))
             if not (epoch + 1) % self._cfg.validation.val_interval:
                 # consider reduce the frequency of validation to save time
-                self._validate(self._val_data, self.async_eval_processes, self.ctx, self.eval_metric, self._logger, epoch, self.best_map)
+                self._validate(self._val_data, self.async_eval_processes, self.ctx, self.eval_metric,
+                               self._logger, epoch, self.best_map)
             elif (not self._cfg.horovod) or hvd.rank() == 0:
                 current_map = 0.
                 _save_params(self.net, self._logger, self.best_map, current_map, epoch, self._cfg.save_interval,
-                            os.path.join(self._logdir, self._cfg.save_prefix))
+                             os.path.join(self._logdir, self._cfg.save_prefix))
             if self._reporter:
                 self._reporter(epoch=epoch, map_reward=current_map)
         for thread in self.async_eval_processes:
@@ -397,7 +414,8 @@ class MaskRCNNEstimator(BaseEstimator):
     def _evaluate(self):
         """Evaluate the current model on dataset.
         """
-        return self._validate(self._val_data, self.async_eval_processes, self.ctx, self.eval_metric, self._logger, self.epoch, self.best_map)
+        return self._validate(self._val_data, self.async_eval_processes, self.ctx, self.eval_metric,
+                              self._logger, self.epoch, self.best_map)
 
     def predict(self, x):
         """Predict an individual example.

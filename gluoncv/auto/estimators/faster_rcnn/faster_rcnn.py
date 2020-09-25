@@ -3,8 +3,8 @@
 import os
 import time
 
-import mxnet as mx
 import numpy as np
+import mxnet as mx
 from mxnet import gluon
 
 from ....data.transforms import presets
@@ -29,22 +29,27 @@ __all__ = ['FasterRCNNEstimator']
 
 @set_default(ex)
 class FasterRCNNEstimator(BaseEstimator):
-    """ Estimator for Faster R-CNN.
+    """Estimator implementation for Faster-RCNN.
+
+    Parameters
+    ----------
+    config : dict
+        Config in nested dict.
+    logger : logging.Logger, default is None
+        Optional logger for this estimator, can be `None` when default setting is used.
+    reporter : callable, default is None
+        If set, use reporter callback to report the metrics of the current estimator.
+
+    Attributes
+    ----------
+    _logger : logging.Logger
+        The customized/default logger for this estimator.
+    _logdir : str
+        The temporary dir for logs.
+    _cfg : ConfigDict
+        The configurations.
     """
-
     def __init__(self, config, logger=None, reporter=None):
-        """
-        Constructs Faster R-CNN estimators.
-
-        Parameters
-        ----------
-        config : configuration object
-            Configuration object containing information for constructing Faster R-CNN estimators.
-        logger : logger object, default is None
-            If not `None`, will use default logging object.
-        reporter : reporter object, default is None
-            If set, use reporter callback to report the metrics of the current estimator.
-        """
         super(FasterRCNNEstimator, self).__init__(config, logger, reporter)
 
         # training contexts
@@ -261,7 +266,7 @@ class FasterRCNNEstimator(BaseEstimator):
         if self._cfg.train.verbose:
             self._logger.info('Trainable parameters:')
             self._logger.info(self.net.collect_train_params().keys())
-        self._logger.info('Start training from [Epoch {}]'.format(self._cfg.train.start_epoch))
+        self._logger.info('Start training from [Epoch %d]', self._cfg.train.start_epoch)
         best_map = [0]
         for epoch in range(self._cfg.train.start_epoch, self._cfg.train.epochs):
             rcnn_task = ForwardBackwardTask(self.net, trainer, self.rpn_cls_loss, self.rpn_box_loss,
@@ -284,7 +289,7 @@ class FasterRCNNEstimator(BaseEstimator):
                 new_lr = trainer.learning_rate * lr_decay
                 lr_steps.pop(0)
                 trainer.set_learning_rate(new_lr)
-                self._logger.info("[Epoch {}] Set learning rate to {}".format(epoch, new_lr))
+                self._logger.info("[Epoch %d] Set learning rate to %f", epoch, new_lr)
             for metric in self.metrics:
                 metric.reset()
             tic = time.time()
@@ -299,7 +304,7 @@ class FasterRCNNEstimator(BaseEstimator):
                     if new_lr != trainer.learning_rate:
                         if i % self._cfg.train.log_interval == 0:
                             self._logger.info(
-                                '[Epoch 0 Iteration {}] Set learning rate to {}'.format(i, new_lr))
+                                '[Epoch 0 Iteration %d] Set learning rate to %f', i, new_lr)
                         trainer.set_learning_rate(new_lr)
                 batch = _split_and_load(batch, ctx_list=self.ctx)
                 metric_losses = [[] for _ in self.metrics]
@@ -333,11 +338,12 @@ class FasterRCNNEstimator(BaseEstimator):
                     self._logger.info('[Epoch {}][Batch {}], Speed: {:.3f} samples/sec, {}'.format(
                         epoch, i,
                         self._cfg.train.log_interval * self._cfg.train.batch_size / (
-                                time.time() - btic), msg))
+                            time.time() - btic), msg))
                     btic = time.time()
 
             if (not self._cfg.horovod) or hvd.rank() == 0:
                 msg = ','.join(['{}={:.3f}'.format(*metric.get()) for metric in self.metrics])
+                # pylint: disable=logging-format-interpolation
                 self._logger.info('[Epoch {}] Training cost: {:.3f}, {}'.format(
                     epoch, (time.time() - tic), msg))
                 if not (epoch + 1) % self._cfg.validation.val_interval:

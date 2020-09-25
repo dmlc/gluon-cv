@@ -74,6 +74,7 @@ class RCNN(gluon.HybridBlock):
         self.train_patterns = train_patterns
         self.nms_thresh = nms_thresh
         self.nms_topk = nms_topk
+        self.post_nms = post_nms
         self.force_nms = force_nms
 
         assert self.num_class > 0, "Invalid number of class : {}".format(self.num_class)
@@ -117,7 +118,7 @@ class RCNN(gluon.HybridBlock):
             return self.collect_params(self.train_patterns)
         return self.collect_params(select)
 
-    def set_nms(self, nms_thresh=0.3, nms_topk=400, force_nms=False):
+    def set_nms(self, nms_thresh=0.3, nms_topk=400, force_nms=False, post_nms=100):
         """Set NMS parameters to the network.
 
         .. Note::
@@ -144,6 +145,7 @@ class RCNN(gluon.HybridBlock):
         self.nms_thresh = nms_thresh
         self.nms_topk = nms_topk
         self.force_nms = force_nms
+        self.post_nms = post_nms
 
     def reset_class(self, classes, reuse_weights=None):
         """Reset class categories and class predictors.

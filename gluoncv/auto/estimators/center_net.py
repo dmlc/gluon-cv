@@ -1,5 +1,5 @@
 """CenterNet Estimator"""
-
+# pylint: disable=unused-variable,missing-function-docstring
 import os
 import time
 import warnings
@@ -88,6 +88,27 @@ def default_configs():
 
 @set_default(ex)
 class CenterNetEstimator(BaseEstimator):
+    """Estimator implementation for CenterNet.
+
+    Parameters
+    ----------
+    config : dict
+        Config in nested dict.
+    logger : logging.Logger
+        Optional logger for this estimator, can be `None` when default setting is used.
+    reporter : callable
+        The reporter for metric checkpointing.
+
+    Attributes
+    ----------
+    _logger : logging.Logger
+        The customized/default logger for this estimator.
+    _logdir : str
+        The temporary dir for logs.
+    _cfg : ConfigDict
+        The configurations.
+
+    """
     def __init__(self, config, logger=None, reporter=None):
         super(CenterNetEstimator, self).__init__(config, logger, reporter=reporter, name=None)
 
@@ -233,7 +254,8 @@ class CenterNetEstimator(BaseEstimator):
                     name3, loss3 = center_reg_metric.get()
                     name4, loss4 = heatmap_loss_metric.get()
                     self._log.info(
-                        '[Epoch {}][Batch {}], Speed: {:.3f} samples/sec, LR={}, {}={:.3f}, {}={:.3f}, {}={:.3f}'.format(
+                        '[Epoch {}][Batch {}], Speed: {:.3f} samples/sec, '
+                        'LR={}, {}={:.3f}, {}={:.3f}, {}={:.3f}'.format(
                             epoch, i, batch_size / (time.time() - btic),
                             self._trainer.learning_rate, name2, loss2, name3, loss3, name4, loss4))
                 btic = time.time()
@@ -298,7 +320,7 @@ class CenterNetEstimator(BaseEstimator):
         current_map = float(current_map)
         if current_map > self._best_map:
             self._best_map = current_map
-            self._net.save_parameters('{:s}_best.params'.format(prefix, epoch, current_map))
+            self._net.save_parameters('{:s}_{:04d}_{:.4f}_best.params'.format(prefix, epoch, current_map))
             with open(prefix + '_best_map.log', 'a') as f:
                 f.write('{:04d}:\t{:.4f}\n'.format(epoch, current_map))
         if save_interval and epoch % save_interval == 0:

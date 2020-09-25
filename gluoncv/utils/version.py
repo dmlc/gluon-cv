@@ -52,6 +52,5 @@ def _require_mxnet_version(mx_version, max_mx_version='2.0.0'):
 def _deprecate_python2():
     if sys.version_info[0] < 3:
         msg = 'Python2 has reached the end of its life on January 1st, 2020. ' + \
-            'A future version of gluoncv will drop support for Python 2.'
-        warnings.simplefilter('always', DeprecationWarning)
-        warnings.warn(msg, DeprecationWarning)
+            'GluonCV has now dropped support for Python 2.'
+        raise DeprecationWarning(msg)

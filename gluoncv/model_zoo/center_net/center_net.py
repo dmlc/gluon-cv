@@ -187,6 +187,7 @@ class CenterNet(nn.HybridBlock):
         return results
 
 def get_base_network(name, **kwargs):
+    """Get centernet base network"""
     if 'dla' in name:
         from .deconv_dla import get_deconv_dla
         kwargs['use_dcnv2'] = 'dcnv2' in name

@@ -221,7 +221,7 @@ class CustomVOCDetectionBase(VOCDetection):
                                                      splits=splits,
                                                      transform=transform,
                                                      index_map=index_map,
-                                                     preload_label=False),
+                                                     preload_label=False)
         self._items_new = [self._items[each_id] for each_id in range(len(self._items)) if self._check_valid(each_id)]
         self._items = self._items_new
         self._label_cache = self._preload_labels() if preload_label else None
@@ -240,7 +240,7 @@ class CustomVOCDetectionBase(VOCDetection):
                 ids += [(root, line.strip()) for line in f.readlines()]
         return ids
 
-    def _check_valid(self, idx):
+    def _check_valid(self, idx, allow_difficult=True):
         """Parse xml file and return labels."""
         img_id = self._items[idx]
         anno_path = self._anno_path.format(*img_id)
@@ -251,7 +251,6 @@ class CustomVOCDetectionBase(VOCDetection):
         if idx not in self._im_shapes:
             # store the shapes for later usage
             self._im_shapes[idx] = (width, height)
-        label = []
         for obj in root.iter('object'):
             try:
                 difficult = int(obj.find('difficult').text)
@@ -260,14 +259,17 @@ class CustomVOCDetectionBase(VOCDetection):
             cls_name = obj.find('name').text.strip().lower()
             if cls_name not in self.classes:
                 continue
-            cls_id = self.index_map[cls_name]
+            if difficult and not allow_difficult:
+                continue
+            # cls_id = self.index_map[cls_name]
             xml_box = obj.find('bndbox')
             xmin = (float(xml_box.find('xmin').text) - 1)
             ymin = (float(xml_box.find('ymin').text) - 1)
             xmax = (float(xml_box.find('xmax').text) - 1)
             ymax = (float(xml_box.find('ymax').text) - 1)
 
-            if not ((0 <= xmin < width) and (0 <= ymin < height) and (xmin < xmax <= width) and (ymin < ymax <= height)):
+            if not ((0 <= xmin < width) and (0 <= ymin < height) \
+                and (xmin < xmax <= width) and (ymin < ymax <= height)):
                 return False
 
         return True

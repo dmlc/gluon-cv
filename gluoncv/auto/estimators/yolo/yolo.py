@@ -1,5 +1,5 @@
 """YOLO Estimator."""
-
+# pylint: disable=logging-format-interpolation
 import os
 import logging
 import time
@@ -31,21 +31,27 @@ __all__ = ['YOLOEstimator']
 
 @set_default(ex)
 class YOLOEstimator(BaseEstimator):
-    """Estimator for YOLO."""
+    """Estimator implementation for YOLOv3.
 
+    Parameters
+    ----------
+    config : dict
+        Config in nested dict.
+    logger : logging.Logger, default is None
+        Optional logger for this estimator, can be `None` when default setting is used.
+    reporter : callable, default is None
+        If set, use reporter callback to report the metrics of the current estimator.
+
+    Attributes
+    ----------
+    _logger : logging.Logger
+        The customized/default logger for this estimator.
+    _logdir : str
+        The temporary dir for logs.
+    _cfg : ConfigDict
+        The configurations.
+    """
     def __init__(self, config, logger=None, reporter=None):
-        """
-        Constructs YOLO estimators.
-
-        Parameters
-        ----------
-        config : configuration object
-            Configuration object containing information for constructing YOLO estimators.
-        logger : logger object, default is None
-            If not `None`, will use default logging object.
-        reporter : reporter object, default is None
-            If set, use reporter callback to report the metrics of the current estimator.
-        """
         super(YOLOEstimator, self).__init__(config, logger, reporter)
 
         if self._cfg.yolo3.amp:
@@ -122,9 +128,10 @@ class YOLOEstimator(BaseEstimator):
                 self.async_net.initialize()
 
         # training dataloader
-        self.batch_size = (self._cfg.train.batch_size // hvd.size()) if self._cfg.horovod else self._cfg.train.batch_size
+        self.batch_size = self._cfg.train.batch_size // hvd.size() if self._cfg.horovod else self._cfg.train.batch_size
         self._train_data, self._val_data = _get_dataloader(
-            self.async_net, self.train_dataset, self.val_dataset, self._cfg.yolo3.data_shape, self.batch_size, self._cfg.num_workers, self._cfg)
+            self.async_net, self.train_dataset, self.val_dataset, self._cfg.yolo3.data_shape,
+            self.batch_size, self._cfg.num_workers, self._cfg)
 
         # targets
         self.sigmoid_ce = gluon.loss.SigmoidBinaryCrossEntropyLoss(from_sigmoid=False)
@@ -184,14 +191,16 @@ class YOLOEstimator(BaseEstimator):
         """Fit YOLO models."""
         self.net.collect_params().reset_ctx(self.ctx)
         if self._cfg.train.no_wd:
-            for k, v in self.net.collect_params('.*beta|.*gamma|.*bias').items():
+            for _, v in self.net.collect_params('.*beta|.*gamma|.*bias').items():
                 v.wd_mult = 0.0
 
         if self._cfg.train.label_smooth:
             self.net._target_generator._label_smooth = True
 
         if self._cfg.train.lr_decay_period > 0:
-            lr_decay_epoch = list(range(self._cfg.train.lr_decay_period, self._cfg.train.epochs, self._cfg.train.lr_decay_period))
+            lr_decay_epoch = list(range(self._cfg.train.lr_decay_period,
+                                        self._cfg.train.epochs,
+                                        self._cfg.train.lr_decay_period))
         else:
             lr_decay_epoch = [int(i) for i in self._cfg.train.lr_decay_epoch]
         lr_decay_epoch = [e - self._cfg.train.warmup_epochs for e in lr_decay_epoch]
@@ -220,7 +229,7 @@ class YOLOEstimator(BaseEstimator):
         if self._cfg.yolo3.amp:
             amp.init_trainer(trainer)
 
-        self._logger.info('Start training from [Epoch {}]'.format(self._cfg.train.start_epoch))
+        self._logger.info('Start training from [Epoch %d]', self._cfg.train.start_epoch)
         best_map = [0]
         for epoch in range(self._cfg.train.start_epoch, self._cfg.train.epochs):
             if self._cfg.train.mixup:
@@ -253,7 +262,7 @@ class YOLOEstimator(BaseEstimator):
                 with autograd.record():
                     for ix, x in enumerate(data):
                         obj_loss, center_loss, scale_loss, cls_loss = self.net(x, gt_boxes[ix],
-                                                                          *[ft[ix] for ft in fixed_targets])
+                                                                               *[ft[ix] for ft in fixed_targets])
                         sum_losses.append(obj_loss + center_loss + scale_loss + cls_loss)
                         obj_losses.append(obj_loss)
                         center_losses.append(center_loss)
@@ -276,9 +285,10 @@ class YOLOEstimator(BaseEstimator):
                         name3, loss3 = self.scale_metrics.get()
                         name4, loss4 = self.cls_metrics.get()
                         self._logger.info(
-                            '[Epoch {}][Batch {}], LR: {:.2E}, Speed: {:.3f} samples/sec, {}={:.3f}, {}={:.3f}, {}={:.3f}, {}={:.3f}'.format(
-                                epoch, i, trainer.learning_rate, self._cfg.train.batch_size / (time.time() - btic), name1, loss1,
-                                name2, loss2, name3, loss3, name4, loss4))
+                            '[Epoch {}][Batch {}], LR: {:.2E}, Speed: {:.3f} samples/sec,'
+                            ' {}={:.3f}, {}={:.3f}, {}={:.3f}, {}={:.3f}'.format(
+                                epoch, i, trainer.learning_rate, self._cfg.train.batch_size / (time.time() - btic),
+                                name1, loss1, name2, loss2, name3, loss3, name4, loss4))
                     btic = time.time()
 
             if (not self._cfg.horovod or hvd.rank() == 0):
