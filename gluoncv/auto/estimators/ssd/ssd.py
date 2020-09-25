@@ -345,6 +345,7 @@ class SSDEstimator(BaseEstimator):
         if getattr(self, '_val_data'):
             val_data = self._val_data
             self._val_data = None
+        self.net.as_in_context(mx.cpu())
         super().save(filename)
         self._train_data = train_data
         self._val_data = val_data
