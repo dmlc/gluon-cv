@@ -55,7 +55,7 @@ class SSDEstimator(BaseEstimator):
         The configurations.
     """
     def __init__(self, config, logger=None, reporter=None):
-        super(SSDEstimator, self).__init__(config, logger, reporter)
+        super(SSDEstimator, self).__init__(config, logger, reporter, name=self.__class__.__name__)
 
         if self._cfg.ssd.amp:
             amp.init()
@@ -313,18 +313,16 @@ class SSDEstimator(BaseEstimator):
         ids, scores, bboxes = [xx[0].asnumpy() for xx in self.net(x)]
         return ids, scores, bboxes
 
-    def put_parameters(self, parameters, multi_precision=False):
+    def put_parameters(self, parameters):
         """Load saved parameters into the model"""
         param_dict = self.net._collect_params_with_prefix()
-        kwargs = {'ctx': None} if mx.__version__[:3] == '1.4' else {'cast_dtype': multi_precision,
-                                                                    'ctx': None}
         for k, _ in param_dict.items():
-            try:
-                param_dict[k]._load_init(parameters[k], **kwargs)
-            except AttributeError:
-                # skip constant parameters
-                pass
+            param_dict[k].set_data(parameters[k])
 
     def get_parameters(self):
         """Return model parameters"""
-        return self.net._collect_params_with_prefix()
+        param_dict = self.net._collect_params_with_prefix()
+        for k, v in param_dict.items():
+            # cast to numpy array
+            param_dict[k] = v.data().asnumpy()
+        return param_dict

@@ -151,7 +151,7 @@ class BaseEstimator:
         self._init_args = [config, logger, reporter]
         self._reporter = reporter
         name = name if isinstance(name, str) else self.__class__.__name__
-        self._logger = logger if logger is not None else logging.getLogger(__name__)
+        self._logger = logger if logger is not None else logging.getLogger(name)
         self._logger.setLevel(logging.INFO)
 
         # finalize the config
