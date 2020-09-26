@@ -161,18 +161,6 @@ class SSDEstimator(BaseEstimator):
         self.ce_metric = mx.metric.Loss('CrossEntropy')
         self.smoothl1_metric = mx.metric.Loss('SmoothL1')
 
-        # set up logger
-        logging.basicConfig()
-        self._logger = logging.getLogger()
-        self._logger.setLevel(logging.INFO)
-        log_file_path = self._cfg.save_prefix + '_train.log'
-        log_dir = os.path.dirname(log_file_path)
-        if log_dir and not os.path.exists(log_dir):
-            os.makedirs(log_dir)
-        fh = logging.FileHandler(log_file_path)
-        self._logger.addHandler(fh)
-        self._logger.info(self._cfg)
-
     def _validate(self, val_data, ctx, eval_metric):
         """Test on validation dataset."""
         eval_metric.reset()
@@ -331,21 +319,12 @@ class SSDEstimator(BaseEstimator):
         kwargs = {'ctx': None} if mx.__version__[:3] == '1.4' else {'cast_dtype': multi_precision,
                                                                     'ctx': None}
         for k, _ in param_dict.items():
-            param_dict[k]._load_init(parameters[k], **kwargs)
+            try:
+                param_dict[k]._load_init(parameters[k], **kwargs)
+            except AttributeError:
+                # skip constant parameters
+                pass
 
     def get_parameters(self):
         """Return model parameters"""
         return self.net._collect_params_with_prefix()
-
-    def save(self, filename):
-        # TODO(): remove this part once dataloader is no longer attributes
-        if getattr(self, '_train_data'):
-            train_data = self._train_data
-            self._train_data = None
-        if getattr(self, '_val_data'):
-            val_data = self._val_data
-            self._val_data = None
-        self.net.collect_params().reset_ctx(mx.cpu())
-        super().save(filename)
-        self._train_data = train_data
-        self._val_data = val_data

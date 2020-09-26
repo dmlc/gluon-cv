@@ -148,6 +148,7 @@ class BaseEstimator:
 
     """
     def __init__(self, config, logger=None, reporter=None, name=None):
+        self._init_args = [config, logger, reporter]
         self._reporter = reporter
         name = name if isinstance(name, str) else self.__class__.__name__
         self._logger = logger if logger is not None else logging.getLogger(__name__)
@@ -184,8 +185,8 @@ class BaseEstimator:
         os.makedirs(self._logdir, exist_ok=True)
         config_file = os.path.join(self._logdir, 'config.yaml')
         # log file
-        log_file = os.path.join(self._logdir, 'estimator.log')
-        fh = logging.FileHandler(log_file)
+        self._log_file = os.path.join(self._logdir, 'estimator.log')
+        fh = logging.FileHandler(self._log_file)
         self._logger.addHandler(fh)
         save_config(r.config, self._logger, config_file)
 
@@ -206,17 +207,26 @@ class BaseEstimator:
     def _evaluate(self):
         raise NotImplementedError
 
+    def state_dict(self):
+        state = {
+            'init_args': self._init_args,
+            '__class__': self.__class__,
+            'params': self.get_parameters(),
+        }
+        return state
+
     def save(self, filename):
+        state = self.state_dict()
         with open(filename, 'wb') as fid:
-            pickle.dump(self, fid)
+            pickle.dump(state, fid)
         self._logger.info('Pickled to %s', filename)
 
     @classmethod
     def load(cls, filename):
         with open(filename, 'rb') as fid:
-            obj = pickle.load(fid)
+            state = pickle.load(fid)
+            cls = state['__class__']
+            obj = cls(*state['init_args'])
+            obj.put_parameters(state['params'])
             obj._logger.info('Unpickled from %s', filename)
-            ctx = getattr(obj, 'ctx', None)
-            if ctx and getattr(obj, 'net', None):
-                obj.net.collect_params().reset_ctx(ctx)
             return obj
