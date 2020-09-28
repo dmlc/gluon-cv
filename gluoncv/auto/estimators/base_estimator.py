@@ -225,8 +225,8 @@ class BaseEstimator:
     def load(cls, filename):
         with open(filename, 'rb') as fid:
             state = pickle.load(fid)
-            cls = state['__class__']
-            obj = cls(*state['init_args'])
+            _cls = state['__class__']
+            obj = _cls(*state['init_args'])
             obj.put_parameters(state['params'])
             obj._logger.info('Unpickled from %s', filename)
             return obj

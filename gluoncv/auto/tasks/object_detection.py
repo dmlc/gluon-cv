@@ -151,5 +151,6 @@ class ObjectDetection(BaseTask):
     def load(cls, filename):
         obj = BaseEstimator.load(filename)
         # make sure not accidentally loading e.g. classification model
+        # pylint: disable=unidiomatic-typecheck
         assert type(obj) in (SSDEstimator, FasterRCNNEstimator, YOLOEstimator, CenterNetEstimator)
         return obj

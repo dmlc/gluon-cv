@@ -1,7 +1,6 @@
 """SSD Estimator."""
 # pylint: disable=logging-format-interpolation
 import os
-import logging
 import warnings
 import time
 import mxnet as mx
@@ -324,5 +323,5 @@ class SSDEstimator(BaseEstimator):
         param_dict = self.net._collect_params_with_prefix()
         for k, v in param_dict.items():
             # cast to numpy array
-            param_dict[k] = v.data().asnumpy()
+            param_dict[k] = v.data(ctx=self.ctx[0]).asnumpy()
         return param_dict
