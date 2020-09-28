@@ -327,17 +327,3 @@ class YOLOEstimator(BaseEstimator):
         x = x.as_in_context(self.ctx[0])
         ids, scores, bboxes = [xx[0].asnumpy() for xx in self.net(x)]
         return ids, scores, bboxes
-
-    def put_parameters(self, parameters):
-        """Load saved parameters into the model"""
-        param_dict = self.net._collect_params_with_prefix()
-        for k, _ in param_dict.items():
-            param_dict[k].set_data(parameters[k])
-
-    def get_parameters(self):
-        """Return model parameters"""
-        param_dict = self.net._collect_params_with_prefix()
-        for k, v in param_dict.items():
-            # cast to numpy array
-            param_dict[k] = v.data().asnumpy()
-        return param_dict

@@ -230,3 +230,17 @@ class BaseEstimator:
             obj.put_parameters(state['params'])
             obj._logger.info('Unpickled from %s', filename)
             return obj
+
+    def put_parameters(self, parameters):
+        """Load saved parameters into the model"""
+        param_dict = self.net._collect_params_with_prefix()
+        for k, _ in param_dict.items():
+            param_dict[k].set_data(parameters[k])
+
+    def get_parameters(self):
+        """Return model parameters"""
+        param_dict = self.net._collect_params_with_prefix()
+        for k, v in param_dict.items():
+            # cast to numpy array
+            param_dict[k] = v.data(ctx=self.ctx[0]).asnumpy()
+        return param_dict
