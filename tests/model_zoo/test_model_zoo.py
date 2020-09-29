@@ -421,6 +421,7 @@ def test_segmentation_models():
               'fcn_resnet101_voc', 'psp_resnet101_voc', 'deeplab_resnet101_voc',
               'fcn_resnet50_ade', 'psp_resnet50_ade', 'deeplab_resnet50_ade',
               'fcn_resnet101_ade', 'psp_resnet101_ade', 'deeplab_resnet101_ade',
+              'deeplab_resnest200_ade',
               'psp_resnet101_citys', 'deeplab_resnet152_voc', 'deeplab_resnet152_coco',
               'deeplab_v3b_plus_wideresnet_citys', 'icnet_resnet50_citys',
               'deeplab_resnet50_citys', 'deeplab_resnet101_citys']
