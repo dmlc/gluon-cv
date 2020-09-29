@@ -1,0 +1,9 @@
+Model,mAP,Training Command,Training log
+ssd_300_vgg16_atrous_voc [1]_,77.6,`shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/ssd_300_vgg16_atrous_voc.sh>`_,`log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/ssd_300_vgg16_atrous_voc_train.log>`_
+ssd_300_vgg16_atrous_voc_int8* [1]_,77.46,,
+ssd_512_vgg16_atrous_voc [1]_,79.2,`shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/ssd_512_vgg16_atrous_voc.sh>`_,`log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/ssd_512_vgg16_atrous_voc_train.log>`_
+ssd_512_vgg16_atrous_voc_int8* [1]_,78.39,,
+ssd_512_resnet50_v1_voc  [1]_,80.1,`shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/ssd_512_resnet50_v1_voc.sh>`_,`log  <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/ssd_512_resnet50_v1_voc_train.log>`_
+ssd_512_resnet50_v1_voc_int8* [1]_,80.16,,
+ssd_512_mobilenet1.0_voc [1]_,75.4,`shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/ssd_512_mobilenet1_0_voc.sh>`_,`log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/ssd_512_mobilenet1_0_voc_train.log>`_
+ssd_512_mobilenet1.0_voc_int8* [1]_,75.04,,

@@ -1,0 +1,8 @@
+Model,Top-1,Top-5,Hashtag,Speedup (to original ResNet)
+resnet18_v1b_0.89,67.2,87.45,54f7742b,2x
+resnet50_v1d_0.86,78.02,93.82,a230c33f,1.68x
+resnet50_v1d_0.48,74.66,92.34,0d3e69bb,3.3x
+resnet50_v1d_0.37,70.71,89.74,9982ae49,5.01x
+resnet50_v1d_0.11,63.22,84.79,6a25eece,8.78x
+resnet101_v1d_0.76,79.46,94.69,a872796b,1.8x
+resnet101_v1d_0.73,78.89,94.48,712fccb1,2.02x

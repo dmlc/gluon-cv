@@ -65,28 +65,11 @@ SSD
 
 Checkout SSD demo tutorial here: :ref:`sphx_glr_build_examples_detection_demo_ssd.py`
 
-.. table::
+.. csv-table::
+   :file: ./csv_tables/Detections/Pascal_SSD.csv
+   :header-rows: 1
+   :class: tight-table
    :widths: 50 5 25 20
-
-   +----------------------------------------+-------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
-   | Model                                  | mAP   | Training Command                                                                                                                     | Training log                                                                                                                        |
-   +========================================+=======+======================================================================================================================================+=====================================================================================================================================+
-   | ssd_300_vgg16_atrous_voc [1]_          | 77.6  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/ssd_300_vgg16_atrous_voc.sh>`_          | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/ssd_300_vgg16_atrous_voc_train.log>`_           |
-   +----------------------------------------+-------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
-   | ssd_300_vgg16_atrous_voc_int8* [1]_    | 77.46 |                                                                                                                                      |                                                                                                                                     |
-   +----------------------------------------+-------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
-   | ssd_512_vgg16_atrous_voc [1]_          | 79.2  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/ssd_512_vgg16_atrous_voc.sh>`_          | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/ssd_512_vgg16_atrous_voc_train.log>`_           |
-   +----------------------------------------+-------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
-   | ssd_512_vgg16_atrous_voc_int8* [1]_    | 78.39 |                                                                                                                                      |                                                                                                                                     |
-   +----------------------------------------+-------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
-   | ssd_512_resnet50_v1_voc  [1]_          | 80.1  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/ssd_512_resnet50_v1_voc.sh>`_           | `log  <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/ssd_512_resnet50_v1_voc_train.log>`_           |
-   +----------------------------------------+-------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
-   | ssd_512_resnet50_v1_voc_int8* [1]_     | 80.16 |                                                                                                                                      |                                                                                                                                     |
-   +----------------------------------------+-------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
-   | ssd_512_mobilenet1.0_voc [1]_          | 75.4  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/ssd_512_mobilenet1_0_voc.sh>`_          | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/ssd_512_mobilenet1_0_voc_train.log>`_           |
-   +----------------------------------------+-------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
-   | ssd_512_mobilenet1.0_voc_int8* [1]_    | 75.04 |                                                                                                                                      |                                                                                                                                     |
-   +----------------------------------------+-------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
 
 Faster-RCNN
 -----------
@@ -95,14 +78,11 @@ Faster-RCNN models of VOC dataset are evaluated with native resolutions with ``s
 
 Checkout Faster-RCNN demo tutorial here: :ref:`sphx_glr_build_examples_detection_demo_faster_rcnn.py`
 
-.. table::
+.. csv-table::
+   :file: ./csv_tables/Detections/Pascal_Faster-RCNN.csv
+   :header-rows: 1
+   :class: tight-table
    :widths: 50 5 25 20
-
-   +----------------------------------+-------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
-   | Model                            | mAP   | Training Command                                                                                                                     | Training log                                                                                                                        |
-   +==================================+=======+======================================================================================================================================+=====================================================================================================================================+
-   | faster_rcnn_resnet50_v1b_voc [2]_| 78.3  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/faster_rcnn_resnet50_v1b_voc.sh>`_      | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/faster_rcnn_resnet50_v1b_voc_train.log>`_       |
-   +----------------------------------+-------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
 
 YOLO-v3
 -------
@@ -111,20 +91,11 @@ YOLO-v3 models can be evaluated and used for prediction at different resolutions
 
 Checkout YOLO demo tutorial here: :ref:`sphx_glr_build_examples_detection_demo_yolo.py`
 
-.. table::
+.. csv-table::
+   :file: ./csv_tables/Detections/Pascal_YOLO-v3.csv
+   :header-rows: 1
+   :class: tight-table
    :widths: 50 5 25 20
-
-   +----------------------------------------------+-------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
-   | Model                                        | mAP   | Training Command                                                                                                                     | Training log                                                                                                                        |
-   +==============================================+=======+======================================================================================================================================+=====================================================================================================================================+
-   | yolo3_darknet53_voc [3]_ :gray:`(320x320)`   | 79.3  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/yolo3_darknet53_voc.sh>`_               | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/yolo3_darknet53_voc.log>`_                      |
-   +----------------------------------------------+-------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
-   | yolo3_darknet53_voc [3]_ :gray:`(416x416)`   | 81.5  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/yolo3_darknet53_voc.sh>`_               | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/yolo3_darknet53_voc.log>`_                      |
-   +----------------------------------------------+-------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
-   | yolo3_mobilenet1.0_voc [3]_ :gray:`(320x320)`| 73.9  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/yolo3_mobilenet1.0_voc.sh>`_            | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/yolo3_mobilenet1.0_voc.log>`_                   |
-   +----------------------------------------------+-------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
-   | yolo3_mobilenet1.0_voc [3]_ :gray:`(416x416)`| 75.8  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/yolo3_mobilenet1.0_voc.sh>`_            | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/yolo3_mobilenet1.0_voc.log>`_                   |
-   +----------------------------------------------+-------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
 
 CenterNet
 ---------
@@ -134,24 +105,11 @@ Checkout CenterNet demo tutorial here: :ref:`sphx_glr_build_examples_detection_d
 
 Note that ``dcnv2`` indicate that models include Modulated Deformable Convolution (DCNv2) layers, you may need to upgrade MXNet in order to use them.
 
-.. table::
-  :widths: 50 5 25 20
-
-  +----------------------------------------------+-------------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
-  | Model                                        | mAP(Orig/F) | Training Command                                                                                                                     | Training log                                                                                                                        |
-  +==============================================+=============+======================================================================================================================================+=====================================================================================================================================+
-  | center_net_resnet18_v1b_voc [6]_             | 66.8/69.5   | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/center_net_resnet18_v1b_voc.sh>`_       | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/center_net_resnet18_v1b_voc_train.log>`_        |
-  +----------------------------------------------+-------------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
-  | center_net_resnet18_v1b_dcnv2_voc [6]_       | 71.2/74.7   | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/center_net_resnet18_v1b_dcnv2_voc.sh>`_ | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/center_net_resnet18_v1b_dcnv2_voc_train.log>`_  |
-  +----------------------------------------------+-------------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
-  | center_net_resnet50_v1b_voc [6]_             | 71.8/76.1   | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/center_net_resnet50_v1b_voc.sh>`_       | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/center_net_resnet50_v1b_voc_train.log>`_        |
-  +----------------------------------------------+-------------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
-  | center_net_resnet50_v1b_dcnv2_voc [6]_       | 75.6/78.7   | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/center_net_resnet50_v1b_dcnv2_voc.sh>`_ | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/center_net_resnet50_v1b_dcnv2_voc_train.log>`_  |
-  +----------------------------------------------+-------------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
-  | center_net_resnet101_v1b_voc [6]_            | 75.5/78.2   | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/center_net_resnet101_v1b_voc.sh>`_      | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/center_net_resnet101_v1b_voc_train.log>`_       |
-  +----------------------------------------------+-------------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
-  | center_net_resnet101_v1b_dcnv2_voc [6]_      | 76.7/79.2   | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/center_net_resnet101_v1b_dcnv2_voc.sh>`_| `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/center_net_resnet101_v1b_dcnv2_voc_train.log>`_ |
-  +----------------------------------------------+-------------+--------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
+.. csv-table::
+   :file: ./csv_tables/Detections/Pascal_CenterNet.csv
+   :header-rows: 1
+   :class: tight-table
+   :widths: 50 5 25 20
 
 MS COCO
 ~~~~~~~~~~
@@ -171,23 +129,11 @@ SSD
 
 Checkout SSD demo tutorial here: :ref:`sphx_glr_build_examples_detection_demo_ssd.py`
 
-.. table::
+.. csv-table::
+   :file: ./csv_tables/Detections/MSCOCO_SSD.csv
+   :header-rows: 1
+   :class: tight-table
    :widths: 50 5 25 20
-
-   +-----------------------------------+-----------------+-----------------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------+
-   | Model                             | Box AP          | Training Command                                                                                                                  | Training Log                                                                                                                     |
-   +===================================+=================+===================================================================================================================================+==================================================================================================================================+
-   | ssd_300_vgg16_atrous_coco [1]_    | 25.1/42.9/25.8  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/ssd_300_vgg16_atrous_coco.sh>`_      | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/ssd_300_vgg16_atrous_coco_train.log>`_       |
-   +-----------------------------------+-----------------+-----------------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------+
-   | ssd_512_vgg16_atrous_coco [1]_    | 28.9/47.9/30.6  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/ssd_512_vgg16_atrous_coco.sh>`_      | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/ssd_512_vgg16_atrous_coco_train.log>`_       |
-   +-----------------------------------+-----------------+-----------------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------+
-   | ssd_300_resnet34_v1b_coco [1]_    | 25.1/41.7/26.2  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/ssd_300_resnet34_v1b_coco.sh>`_      | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/ssd_300_resnet34_v1b_coco_train.log>`_       |
-   +-----------------------------------+-----------------+-----------------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------+
-   | ssd_512_resnet50_v1_coco [1]_     | 30.6/50.0/32.2  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/ssd_512_resnet50_v1_coco.sh>`_       | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/ssd_512_resnet50_v1_coco_train.log>`_        |
-   +-----------------------------------+-----------------+-----------------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------+
-   | ssd_512_mobilenet1.0_coco [1]_    | 21.7/39.2/21.3  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/ssd_512_mobilenet1_0_coco.sh>`_      | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/ssd_512_mobilenet1_0_coco_train.log>`_       |
-   +-----------------------------------+-----------------+-----------------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------+
-
 
 Faster-RCNN
 -----------
@@ -196,28 +142,11 @@ Faster-RCNN models of VOC dataset are evaluated with native resolutions with ``s
 
 Checkout Faster-RCNN demo tutorial here: :ref:`sphx_glr_build_examples_detection_demo_faster_rcnn.py`
 
-.. table::
+.. csv-table::
+   :file: ./csv_tables/Detections/MSCOCO_Faster-RCNN.csv
+   :header-rows: 1
+   :class: tight-table
    :widths: 50 5 25 20
-
-   +---------------------------------------------+-----------------+-------------------------------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------+
-   | Model                                       | Box AP          | Training Command                                                                                                                          | Training Log                                                                                                                            |
-   +=============================================+=================+===========================================================================================================================================+=========================================================================================================================================+
-   | faster_rcnn_resnet50_v1b_coco [2]_          | 37.0/57.8/39.6  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/faster_rcnn_resnet50_v1b_coco.sh>`_          | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/faster_rcnn_resnet50_v1b_coco_train.log>`_          |
-   +---------------------------------------------+-----------------+-------------------------------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------+
-   | faster_rcnn_resnet101_v1d_coco [2]_         | 40.1/60.9/43.3  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/faster_rcnn_resnet101_v1d_coco.sh>`_         | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/faster_rcnn_resnet101_v1d_coco_train.log>`_         |
-   +---------------------------------------------+-----------------+-------------------------------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------+
-   | faster_rcnn_fpn_resnet50_v1b_coco [4]_      | 38.4/60.2/41.6  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/faster_rcnn_fpn_resnet50_v1b_coco.sh>`_      | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/faster_rcnn_fpn_resnet50_v1b_coco_train.log>`_      |
-   +---------------------------------------------+-----------------+-------------------------------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------+
-   | faster_rcnn_fpn_resnet101_v1d_coco [4]_     | 40.8/62.4/44.7  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/faster_rcnn_fpn_resnet101_v1d_coco.sh>`_     | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/faster_rcnn_fpn_resnet101_v1d_coco_train.log>`_     |
-   +---------------------------------------------+-----------------+-------------------------------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------+
-   | faster_rcnn_fpn_bn_resnet50_v1b_coco [5]_   | 39.3/61.3/42.9  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/faster_rcnn_fpn_bn_resnet50_v1b_coco.sh>`_   | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/faster_rcnn_fpn_bn_resnet50_v1b_coco_train.log>`_   |
-   +---------------------------------------------+-----------------+-------------------------------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------+
-   | faster_rcnn_fpn_syncbn_resnest50_coco [7]_  | 42.7/64.1/46.4  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/faster_rcnn_fpn_syncbn_resnest50_coco.sh>`_  | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/faster_rcnn_fpn_syncbn_resnest50_coco_train.log>`_  |
-   +---------------------------------------------+-----------------+-------------------------------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------+
-   | faster_rcnn_fpn_syncbn_resnest101_coco [7]_ | 44.9/66.4/48.9  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/faster_rcnn_fpn_syncbn_resnest101_coco.sh>`_ | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/faster_rcnn_fpn_syncbn_resnest101_coco_train.log>`_ |
-   +---------------------------------------------+-----------------+-------------------------------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------+
-   | faster_rcnn_fpn_syncbn_resnest269_coco [7]_ | 46.5/67.5/50.7  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/faster_rcnn_fpn_syncbn_resnest269_coco.sh>`_ | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/faster_rcnn_fpn_syncbn_resnest269_coco_train.log>`_ |
-   +---------------------------------------------+-----------------+-------------------------------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------+
 
 YOLO-v3
 -------
@@ -226,24 +155,11 @@ YOLO-v3 models can be evaluated and used for prediction at different resolutions
 
 Checkout YOLO demo tutorial here: :ref:`sphx_glr_build_examples_detection_demo_yolo.py`
 
-.. table::
+.. csv-table::
+   :file: ./csv_tables/Detections/MSCOCO_YOLO-v3.csv
+   :header-rows: 1
+   :class: tight-table
    :widths: 50 5 25 20
-
-   +------------------------------------------------+-----------------+-----------------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------+
-   | Model                                          | Box AP          | Training Command                                                                                                                  | Training Log                                                                                                                     |
-   +================================================+=================+===================================================================================================================================+==================================================================================================================================+
-   | yolo3_darknet53_coco [3]_ :gray:`(320x320)`    | 33.6/54.1/35.8  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/yolo3_darknet53_coco.sh>`_           | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/yolo3_darknet53_coco_train.log>`_            |
-   +------------------------------------------------+-----------------+-----------------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------+
-   | yolo3_darknet53_coco [3]_ :gray:`(416x416)`    | 36.0/57.2/38.7  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/yolo3_darknet53_coco.sh>`_           | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/yolo3_darknet53_coco_train.log>`_            |
-   +------------------------------------------------+-----------------+-----------------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------+
-   | yolo3_darknet53_coco [3]_ :gray:`(608x608)`    | 37.0/58.2/40.1  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/yolo3_darknet53_coco.sh>`_           | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/yolo3_darknet53_coco_train.log>`_            |
-   +------------------------------------------------+-----------------+-----------------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------+
-   | yolo3_mobilenet1.0_coco [3]_ :gray:`(320x320)` | 26.7/46.1/27.5  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/yolo3_mobilenet1.0_coco.sh>`_        | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/yolo3_mobilenet1.0_coco.log>`_               |
-   +------------------------------------------------+-----------------+-----------------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------+
-   | yolo3_mobilenet1.0_coco [3]_ :gray:`(416x416)` | 28.6/48.9/29.9  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/yolo3_mobilenet1.0_coco.sh>`_        | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/yolo3_mobilenet1.0_coco.log>`_               |
-   +------------------------------------------------+-----------------+-----------------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------+
-   | yolo3_mobilenet1.0_coco [3]_ :gray:`(608x608)` | 28.0/49.8/27.8  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/yolo3_mobilenet1.0_coco.sh>`_        | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/yolo3_mobilenet1.0_coco.log>`_               |
-   +------------------------------------------------+-----------------+-----------------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------+
 
 CenterNet
 ---------
@@ -253,24 +169,11 @@ Checkout CenterNet demo tutorial here: :ref:`sphx_glr_build_examples_detection_d
 
 Note that ``dcnv2`` indicate that models include Modulated Deformable Convolution (DCNv2) layers, you may need to upgrade MXNet in order to use them.
 
-.. table::
- :widths: 50 5 25 20
-
- +----------------------------------------------+-------------+----------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
- | Model                                        | mAP(Orig/F) | Training Command                                                                                                                       | Training log                                                                                                                        |
- +==============================================+=============+========================================================================================================================================+=====================================================================================================================================+
- | center_net_resnet18_v1b_coco [6]_            | 26.6/28.1   | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/center_net_resnet18_v1b_coco.sh>`_        | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/center_net_resnet18_v1b_coco_train.log>`_       |
- +----------------------------------------------+-------------+----------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
- | center_net_resnet18_v1b_dcnv2_coco [6]_      | 28.9/30.3   | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/center_net_resnet18_v1b_dcnv2_coco.sh>`_  | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/center_net_resnet18_v1b_dcnv2_coco_train.log>`_ |
- +----------------------------------------------+-------------+----------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
- | center_net_resnet50_v1b_coco [6]_            | 32.1/33.4   | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/center_net_resnet50_v1b_coco.sh>`_        | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/center_net_resnet50_v1b_coco_train.log>`_       |
- +----------------------------------------------+-------------+----------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
- | center_net_resnet50_v1b_dcnv2_coco [6]_      | 34.0/35.3   | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/center_net_resnet50_v1b_dcnv2_coco.sh>`_  | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/center_net_resnet50_v1b_dcnv2_coco_train.log>`_ |
- +----------------------------------------------+-------------+----------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
- | center_net_resnet101_v1b_coco [6]_           | 34.5/35.8   | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/center_net_resnet101_v1b_coco.sh>`_       | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/center_net_resnet101_v1b_coco_train.log>`_      |
- +----------------------------------------------+-------------+----------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
- | center_net_resnet101_v1b_dcnv2_coco [6]_     | 35.8/37.1   | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/center_net_resnet101_v1b_dcnv2_coco.sh>`_ | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/center_net_resnet101_v1b_dcnv2_coco_train.log>`_|
- +----------------------------------------------+-------------+----------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
+.. csv-table::
+   :file: ./csv_tables/Detections/MSCOCO_CenterNet.csv
+   :header-rows: 1
+   :class: tight-table
+   :widths: 50 5 25 20
 
 
 

@@ -1,0 +1,5 @@
+Model,Top-1,Top-5,Hashtag,Training Command,Training Log
+DenseNet121 [7]_,74.97,92.25,f27dbf2d,,
+DenseNet161 [7]_,77.70,93.80,b6c8a957,,
+DenseNet169 [7]_,76.17,93.17,2603f878,,
+DenseNet201 [7]_,77.32,93.62,1cdbc116,,

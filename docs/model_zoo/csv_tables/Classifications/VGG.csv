@@ -1,0 +1,9 @@
+Model,Top-1,Top-5,Hashtag,Training Command,Training Log
+VGG11 [9]_,66.62,87.34,dd221b16,,
+VGG13 [9]_,67.74,88.11,6bc5de58,,
+VGG16 [9]_,73.23,91.31,e660d456,`shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/vgg16.sh>`_,`log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/vgg16.log>`_
+VGG19 [9]_,74.11,91.35,ad2f660d,`shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/vgg19.sh>`_,`log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/vgg19.log>`_
+VGG11_bn [9]_,68.59,88.72,ee79a809,,
+VGG13_bn [9]_,68.84,88.82,7d97a06c,,
+VGG16_bn [9]_,73.10,91.76,7f01cf05,`shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/vgg16_bn.sh>`_,`log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/vgg16_bn.log>`_
+VGG19_bn [9]_,74.33,91.85,f360b758,`shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/vgg19_bn.sh>`_,`log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/vgg19_bn.log>`_
