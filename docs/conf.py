@@ -89,7 +89,10 @@ sphinx_gallery_conf = {
 
     'filename_pattern': '.py',
     'ignore_pattern': 'im2rec.py',
-    'expected_failing_examples': ['tutorials/action_recognition/demo_tsn_ucf101.py'],
+    'expected_failing_examples': [
+        'tutorials/action_recognition/demo_tsn_ucf101.py',
+        'tutorials/tracking/train_siamrpn.py'
+    ],
 
     # 'subsection_order': ExplicitOrder(['tutorials/classification',
     #                                    'tutorials/detection',
