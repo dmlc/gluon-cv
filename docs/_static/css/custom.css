@@ -1,3 +1,12 @@
+td {
+    word-wrap: break-word;
+}
+
+table { 
+    table-layout: fixed;
+    width: 100%
+}
+
 .tag {
     color:grey;
 }

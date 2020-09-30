@@ -52,7 +52,7 @@ Parameters with :greytag:`a grey name` can be downloaded by passing the correspo
    :file: ./csv_tables/Poses/MSCOCO_Simple-Pose.csv
    :header-rows: 1
    :class: tight-table
-   :widths: 45 5 5 10 20 15
+   :widths: 33 15 15 10 15 12
 
 Mobile Pose Models
 ------
@@ -67,7 +67,7 @@ Models are trained with input size 256x192, unless specified.
    :file: ./csv_tables/Poses/MSCOCO_Mobile-Pose.csv
    :header-rows: 1
    :class: tight-table
-   :widths: 45 5 5 10 20 15
+   :widths: 33 15 15 10 15 12
 
 AlphaPose
 ---------
@@ -79,7 +79,7 @@ Alpha Pose models are evaluated with input size (320*256), unless otherwise spec
    :file: ./csv_tables/Poses/MSCOCO_Alpha-Pose.csv
    :header-rows: 1
    :class: tight-table
-   :widths: 45 5 5 10 20 15
+   :widths: 33 15 15 10 15 12
 
 .. [1] Xiao, Bin, Haiping Wu, and Yichen Wei. \
        "Simple baselines for human pose estimation and tracking." \

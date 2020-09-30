@@ -53,7 +53,7 @@ The following table lists pre-trained models trained on Kinetics400.
    :file: ./csv_tables/Action_Recognitions/Kinetics400.csv
    :header-rows: 1
    :class: tight-table
-   :widths: 40 8 8 8 10 8 8 10
+   :widths: 30 12 10 10 8 10 12 8
 
 UCF101 Dataset
 --------------
@@ -74,7 +74,7 @@ The following table lists pre-trained models trained on UCF101.
    :file: ./csv_tables/Action_Recognitions/UCF101.csv
    :header-rows: 1
    :class: tight-table
-   :widths: 40 8 8 8 10 8 8 10
+   :widths: 30 12 10 10 8 10 12 8
 
 HMDB51 Dataset
 --------------
@@ -91,7 +91,7 @@ The following table lists pre-trained models trained on HMDB51.
    :file: ./csv_tables/Action_Recognitions/HMDB51.csv
    :header-rows: 1
    :class: tight-table
-   :widths: 40 8 8 8 10 8 8 10
+   :widths: 30 12 10 10 8 10 12 8
 
 Something-Something-V2 Dataset
 ------------------------------
@@ -106,7 +106,7 @@ The following table lists pre-trained models trained on Something-Something-V2.
    :file: ./csv_tables/Action_Recognitions/Something-Something-V2.csv
    :header-rows: 1
    :class: tight-table
-   :widths: 40 8 8 8 10 8 8 10
+   :widths: 30 12 10 10 8 10 12 8
 
 .. [1] Limin Wang, Yuanjun Xiong, Zhe Wang and Yu Qiao. \
        "Towards Good Practices for Very Deep Two-Stream ConvNets." \

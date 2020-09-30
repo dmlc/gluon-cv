@@ -104,7 +104,7 @@ ResNet
    :file: ./csv_tables/Classifications/ResNet.csv
    :header-rows: 1
    :class: tight-table
-   :widths: 45 5 5 10 20 15
+   :widths: 35 10 10 15 15 15
 
 ResNext
 -------
@@ -113,7 +113,7 @@ ResNext
    :file: ./csv_tables/Classifications/ResNext.csv
    :header-rows: 1
    :class: tight-table
-   :widths: 45 5 5 10 20 15
+   :widths: 35 10 10 15 15 15
 
 ResNeSt
 -------
@@ -122,7 +122,7 @@ ResNeSt
    :file: ./csv_tables/Classifications/ResNeSt.csv
    :header-rows: 1
    :class: tight-table
-   :widths: 45 5 5 10 20 15
+   :widths: 35 10 10 15 15 15
 
 MobileNet
 ---------
@@ -135,7 +135,7 @@ MobileNet
    :file: ./csv_tables/Classifications/MobileNet.csv
    :header-rows: 1
    :class: tight-table
-   :widths: 45 5 5 10 20 15
+   :widths: 35 10 10 15 15 15
 
 VGG
 ---
@@ -144,7 +144,7 @@ VGG
    :file: ./csv_tables/Classifications/VGG.csv
    :header-rows: 1
    :class: tight-table
-   :widths: 45 5 5 10 20 15
+   :widths: 35 10 10 15 15 15
 
 SqueezeNet
 ----------
@@ -153,7 +153,7 @@ SqueezeNet
    :file: ./csv_tables/Classifications/SqueezeNet.csv
    :header-rows: 1
    :class: tight-table
-   :widths: 45 5 5 10 20 15
+   :widths: 35 10 10 15 15 15
 
 DenseNet
 --------
@@ -162,7 +162,7 @@ DenseNet
    :file: ./csv_tables/Classifications/DenseNet.csv
    :header-rows: 1
    :class: tight-table
-   :widths: 45 5 5 10 20 15
+   :widths: 35 10 10 15 15 15
 
 Pruned ResNet
 -------------
@@ -171,7 +171,7 @@ Pruned ResNet
    :file: ./csv_tables/Classifications/Pruned_ResNet.csv
    :header-rows: 1
    :class: tight-table
-   :widths: 45 5 5 10 35
+   :widths: 35 10 10 15 30
 
 Others
 ------
@@ -184,7 +184,7 @@ Others
    :file: ./csv_tables/Classifications/Others.csv
    :header-rows: 1
    :class: tight-table
-   :widths: 45 5 5 10 20 15
+   :widths: 35 10 10 15 15 15
 
 CIFAR10
 ~~~~~~~
@@ -205,7 +205,7 @@ The following table lists pre-trained models trained on CIFAR10.
    :file: ./csv_tables/Classifications/CIFAR10.csv
    :header-rows: 1
    :class: tight-table
-   :widths: 40 15 25 30
+   :widths: 35 25 25 25
 
 .. [1] He, Kaiming, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. \
        "Deep residual learning for image recognition." \

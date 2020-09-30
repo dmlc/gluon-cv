@@ -43,7 +43,7 @@ The following table lists pre-trained models trained on KITTI.
    :file: ./csv_tables/Depths/KITTI.csv
    :header-rows: 1
    :class: tight-table
-   :widths: 40 8 8 8 10 8 8 10
+   :widths: 37 9 10 8 8 10 10 8
 
 PoseNet
 -------------------
@@ -72,7 +72,7 @@ Monodepth2 trains depth and pose models at the same time via a self-supervised m
    :file: ./csv_tables/Depths/PoseNet.csv
    :header-rows: 1
    :class: tight-table
-   :widths: 40 8 8 15 15
+   :widths: 40 10 10 13 13
 
 .. [1] Clement Godard, Oisin Mac Aodha, Michael Firman and Gabriel J. Brostow. \
        "Digging into Self-Supervised Monocular Depth Prediction." \

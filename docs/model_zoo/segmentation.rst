@@ -46,7 +46,7 @@ ADE20K Dataset
    :file: ./csv_tables/Segmentations/SS_ADE20K.csv
    :header-rows: 1
    :class: tight-table
-   :widths: 45 10 5 5 15 15
+   :widths: 35 15 10 10 15 15
 
 MS-COCO Dataset Pretrain
 ------------------------
@@ -55,7 +55,7 @@ MS-COCO Dataset Pretrain
    :file: ./csv_tables/Segmentations/SS_MS-COCO.csv
    :header-rows: 1
    :class: tight-table
-   :widths: 45 10 5 5 15 15
+   :widths: 35 15 10 10 15 15
 
 Pascal VOC Dataset
 ------------------
@@ -64,7 +64,7 @@ Pascal VOC Dataset
    :file: ./csv_tables/Segmentations/SS_Pascal-VOC.csv
    :header-rows: 1
    :class: tight-table
-   :widths: 45 10 5 5 15 15
+   :widths: 35 15 10 10 15 15
 
 .. _83.6:  http://host.robots.ox.ac.uk:8080/anonymous/YB1AN5.html
 .. _85.1:  http://host.robots.ox.ac.uk:8080/anonymous/9RTTZC.html
@@ -78,7 +78,7 @@ Cityscapes Dataset
    :file: ./csv_tables/Segmentations/SS_Cityscapes.csv
    :header-rows: 1
    :class: tight-table
-   :widths: 45 10 5 5 15 15
+   :widths: 35 15 10 10 15 15
 
 MHP-V1 Dataset
 --------------
@@ -87,7 +87,7 @@ MHP-V1 Dataset
    :file: ./csv_tables/Segmentations/SS_MHP-V1.csv
    :header-rows: 1
    :class: tight-table
-   :widths: 45 10 5 5 15 15
+   :widths: 35 15 10 10 15 15
 
 Instance Segmentation
 ~~~~~~~~~~~~~~~~~~~~~
@@ -114,7 +114,8 @@ MS COCO
    :file: ./csv_tables/Segmentations/IS_MS-COCO.csv
    :header-rows: 1
    :class: tight-table
-   :widths: 60 5 5 10 20
+   :widths: 35 18 18 14 15
+
 
 .. [1] He, Kaming, Georgia Gkioxari, Piotr Dollár and Ross Girshick. \
        "Mask R-CNN." \

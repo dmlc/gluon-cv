@@ -69,7 +69,7 @@ Checkout SSD demo tutorial here: :ref:`sphx_glr_build_examples_detection_demo_ss
    :file: ./csv_tables/Detections/Pascal_SSD.csv
    :header-rows: 1
    :class: tight-table
-   :widths: 50 5 25 20
+   :widths: 50 10 20 20
 
 Faster-RCNN
 -----------
@@ -82,7 +82,7 @@ Checkout Faster-RCNN demo tutorial here: :ref:`sphx_glr_build_examples_detection
    :file: ./csv_tables/Detections/Pascal_Faster-RCNN.csv
    :header-rows: 1
    :class: tight-table
-   :widths: 50 5 25 20
+   :widths: 50 10 20 20
 
 YOLO-v3
 -------
@@ -95,7 +95,7 @@ Checkout YOLO demo tutorial here: :ref:`sphx_glr_build_examples_detection_demo_y
    :file: ./csv_tables/Detections/Pascal_YOLO-v3.csv
    :header-rows: 1
    :class: tight-table
-   :widths: 50 5 25 20
+   :widths: 50 10 20 20
 
 CenterNet
 ---------
@@ -109,7 +109,7 @@ Note that ``dcnv2`` indicate that models include Modulated Deformable Convolutio
    :file: ./csv_tables/Detections/Pascal_CenterNet.csv
    :header-rows: 1
    :class: tight-table
-   :widths: 50 5 25 20
+   :widths: 50 15 15 20
 
 MS COCO
 ~~~~~~~~~~
@@ -133,7 +133,7 @@ Checkout SSD demo tutorial here: :ref:`sphx_glr_build_examples_detection_demo_ss
    :file: ./csv_tables/Detections/MSCOCO_SSD.csv
    :header-rows: 1
    :class: tight-table
-   :widths: 50 5 25 20
+   :widths: 50 20 15 15
 
 Faster-RCNN
 -----------
@@ -146,7 +146,7 @@ Checkout Faster-RCNN demo tutorial here: :ref:`sphx_glr_build_examples_detection
    :file: ./csv_tables/Detections/MSCOCO_Faster-RCNN.csv
    :header-rows: 1
    :class: tight-table
-   :widths: 50 5 25 20
+   :widths: 50 20 15 15
 
 YOLO-v3
 -------
@@ -159,7 +159,7 @@ Checkout YOLO demo tutorial here: :ref:`sphx_glr_build_examples_detection_demo_y
    :file: ./csv_tables/Detections/MSCOCO_YOLO-v3.csv
    :header-rows: 1
    :class: tight-table
-   :widths: 50 5 25 20
+   :widths: 50 20 15 15
 
 CenterNet
 ---------
@@ -173,7 +173,7 @@ Note that ``dcnv2`` indicate that models include Modulated Deformable Convolutio
    :file: ./csv_tables/Detections/MSCOCO_CenterNet.csv
    :header-rows: 1
    :class: tight-table
-   :widths: 50 5 25 20
+   :widths: 50 15 15 20
 
 
 
