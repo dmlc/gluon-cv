@@ -1,0 +1,2 @@
+Model,mAP,Training Command,Training log
+faster_rcnn_resnet50_v1b_voc [2]_,78.3,`shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/faster_rcnn_resnet50_v1b_voc.sh>`_,`log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/faster_rcnn_resnet50_v1b_voc_train.log>`_

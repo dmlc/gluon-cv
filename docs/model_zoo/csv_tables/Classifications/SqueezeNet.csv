@@ -1,0 +1,3 @@
+Model,Top-1,Top-5,Hashtag,Training Command,Training Log
+SqueezeNet1.0 [10]_,56.11,79.09,264ba497,,
+SqueezeNet1.1 [10]_,54.96,78.17,33ba0f93,,

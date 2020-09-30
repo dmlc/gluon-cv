@@ -1,0 +1,5 @@
+Model,mAP,Training Command,Training log
+yolo3_darknet53_voc [3]_ :gray:`(320x320)`,79.3,`shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/yolo3_darknet53_voc.sh>`_,`log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/yolo3_darknet53_voc.log>`_
+yolo3_darknet53_voc [3]_ :gray:`(416x416)`,81.5,`shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/yolo3_darknet53_voc.sh>`_,`log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/yolo3_darknet53_voc.log>`_
+yolo3_mobilenet1.0_voc [3]_ :gray:`(320x320)`,73.9,`shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/yolo3_mobilenet1.0_voc.sh>`_,`log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/yolo3_mobilenet1.0_voc.log>`_
+yolo3_mobilenet1.0_voc [3]_ :gray:`(416x416)`,75.8,`shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/yolo3_mobilenet1.0_voc.sh>`_,`log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/detection/yolo3_mobilenet1.0_voc.log>`_

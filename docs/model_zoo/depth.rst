@@ -39,18 +39,11 @@ The following table lists pre-trained models trained on KITTI.
 
   ``Resolution`` is the input size of the model during training. ``640x192`` means we resize the raw image (1242x375) to 640x192.
 
-.. table::
-    :widths: 40 8 8 8 10 8 8 10
-
-    +-------------------------------------------------------+------------------+--------------+-----------------+--------------+-----------+------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------+
-    | Name                                                  |   Modality       |   Resolution | Abs. Rel. Error | delta < 1.25 | Hashtag   | Train Command                                                                                                                                              | Train Log                                                                                                                                          |
-    +=======================================================+==================+==============+=================+==============+===========+============================================================================================================================================================+====================================================================================================================================================+
-    | monodepth2_resnet18_kitti_stereo_640x192 [1]_         |   Stereo         |  640x192     |     0.114       | 0.860        | 83eea4a9  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/depth/kitti/monodepth2_resnet18_kitti_stereo_640x192.sh>`_              | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/depth/kitti/monodepth2_resnet18_kitti_stereo_640x192.log>`_              |
-    +-------------------------------------------------------+------------------+--------------+-----------------+--------------+-----------+------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------+
-    | monodepth2_resnet18_kitti_mono_640x192 [1]_           |   Mono           |  640x192     |     0.121       | 0.858        | c881771d  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/depth/kitti/monodepth2_resnet18_kitti_mono_640x192.sh>`_                | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/depth/kitti/monodepth2_resnet18_kitti_mono_640x192.log>`_                |
-    +-------------------------------------------------------+------------------+--------------+-----------------+--------------+-----------+------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------+
-    | monodepth2_resnet18_kitti_mono_stereo_640x192 [1]_    | Mono + Stereo    |  640x192     |     0.109       | 0.872        | 9515c219  | `shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/depth/kitti/monodepth2_resnet18_kitti_mono+stereo_640x192.sh>`_         | `log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/depth/kitti/monodepth2_resnet18_kitti_mono+stereo_640x192.log>`_         |
-    +-------------------------------------------------------+------------------+--------------+-----------------+--------------+-----------+------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------+
+.. csv-table::
+   :file: ./csv_tables/Depths/KITTI.csv
+   :header-rows: 1
+   :class: tight-table
+   :widths: 37 9 10 8 8 10 10 8
 
 PoseNet
 -------------------
@@ -75,18 +68,11 @@ Monodepth2 trains depth and pose models at the same time via a self-supervised m
   ``Sequence 09`` and ``Sequence 10`` means the model is tested on sequence 9 and sequence 10 of the KITTI Odometry dataset respectively.
   Results show the average absolute trajectory error (ATE), and standard deviation, in meter.
 
-
-.. table::
-    :widths: 40 8 8 15 15
-
-    +---------------------------------------------------------------+------------------+--------------+-----------------+--------------+
-    | Name                                                          |   Modality       |   Resolution | Sequence 09     | Sequence 10  |
-    +===============================================================+==================+==============+=================+==============+
-    | monodepth2_resnet18_posenet_kitti_mono_640x192 [1]_           |   Mono           |  640x192     |   0.021±0.012   | 0.018±0.011  |
-    +---------------------------------------------------------------+------------------+--------------+-----------------+--------------+
-    | monodepth2_resnet18_posenet_kitti_mono_stereo_640x192 [1]_    | Mono + Stereo    |  640x192     |   0.021±0.010   | 0.016±0.010  |
-    +---------------------------------------------------------------+------------------+--------------+-----------------+--------------+
-
+.. csv-table::
+   :file: ./csv_tables/Depths/PoseNet.csv
+   :header-rows: 1
+   :class: tight-table
+   :widths: 40 10 10 13 13
 
 .. [1] Clement Godard, Oisin Mac Aodha, Michael Firman and Gabriel J. Brostow. \
        "Digging into Self-Supervised Monocular Depth Prediction." \

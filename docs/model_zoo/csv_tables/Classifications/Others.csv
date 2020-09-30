@@ -1,0 +1,9 @@
+Model,Top-1,Top-5,Hashtag,Training Command,Training Log
+AlexNet [6]_,54.92,78.03,44335d1f,,
+darknet53   [3]_,78.56,94.43,2189ea49,`shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/darknet53-mixup.sh>`_,`log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/darknet53-mixup.log>`_
+:tag:`darknet53` [3]_,78.13,93.86,95975047,`shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/darknet53.sh>`_,`log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/darknet53.log>`_
+InceptionV3 [8]_,78.77,94.39,a5050dbc,`shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/inceptionv3-mixup.sh>`_,`log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/inceptionv3-mixup.log>`_
+GoogLeNet [16]_,72.87,91.17,c7c89366,`shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/googlenet-mixup.sh>`_,`log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/googlenet-mixup.log>`_
+Xception [8]_,79.56,94.77,37c1c90b,`shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/train_xception.sh>`_,`log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/xception.log>`_
+:tag:`InceptionV3` [8]_,78.41,94.13,e132adf2,`shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/inceptionv3.sh>`_,`log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/classification/imagenet/inceptionv3.log>`_
+SENet_154 [14]_,81.26,95.51,b5538ef1,,

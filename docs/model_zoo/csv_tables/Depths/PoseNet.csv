@@ -1,0 +1,3 @@
+Name,Modality,Resolution,Sequence 09,Sequence 10
+monodepth2_resnet18_posenet_kitti_mono_640x192 [1]_,Mono,640x192,0.021±0.012,0.018±0.011
+monodepth2_resnet18_posenet_kitti_mono_stereo_640x192 [1]_,Mono + Stereo,640x192,0.021±0.010,0.016±0.010
