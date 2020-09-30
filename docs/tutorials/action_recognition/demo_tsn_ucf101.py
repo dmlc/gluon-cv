@@ -139,21 +139,21 @@ print('We evenly extract %d frames from the video %s.' % (len(video_frames), vid
 #
 # Now we transform each video frame and feed them into the model.
 # In the end, we average the predictions from multiple video frames to get a reasonable prediction.
+if video_frames:
+    video_frames_transformed = transform_fn(video_frames)
+    final_pred = 0
+    for _, frame_img in enumerate(video_frames_transformed):
+        pred = net(nd.array(frame_img).expand_dims(axis=0))
+        final_pred += pred
+    final_pred /= len(video_frames)
 
-video_frames_transformed = transform_fn(video_frames)
-final_pred = 0
-for _, frame_img in enumerate(video_frames_transformed):
-    pred = net(nd.array(frame_img).expand_dims(axis=0))
-    final_pred += pred
-final_pred /= len(video_frames)
-
-classes = net.classes
-topK = 5
-ind = nd.topk(final_pred, k=topK)[0].astype('int')
-print('The input video is classified to be')
-for i in range(topK):
-    print('\t[%s], with probability %.3f.'%
-          (classes[ind[i].asscalar()], nd.softmax(final_pred)[0][ind[i]].asscalar()))
+    classes = net.classes
+    topK = 5
+    ind = nd.topk(final_pred, k=topK)[0].astype('int')
+    print('The input video is classified to be')
+    for i in range(topK):
+        print('\t[%s], with probability %.3f.'%
+              (classes[ind[i].asscalar()], nd.softmax(final_pred)[0][ind[i]].asscalar()))
 
 ################################################################
 #

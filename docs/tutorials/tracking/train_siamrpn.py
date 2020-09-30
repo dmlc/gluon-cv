@@ -48,7 +48,7 @@ from gluoncv.loss import SiamRPNLoss
 ################################################################
 #
 # `SiamRPN <http://openaccess.thecvf.com/content_cvpr_2018/papers/Li_High_Performance_Visual_CVPR_2018_paper.pdf>`_ is a widely adopted Single Object Tracking method.
-# Send the template frame and detection frame to the siamese network, 
+# Send the template frame and detection frame to the siamese network,
 # and get the score map and coordinate regression of the anchor through the RPN network and cross correlation layers.
 
 # number of GPUs to use
@@ -92,7 +92,7 @@ def train_batch_fn(data, ctx):
 #
 # - Training Losses:
 #
-#     We apply Softmax Cross Entropy Loss and L2 loss to train SiamRPN. 
+#     We apply Softmax Cross Entropy Loss and L2 loss to train SiamRPN.
 #
 
 criterion = SiamRPNLoss(batch_size)
@@ -124,7 +124,8 @@ loc_weight = 1.2
 #
 # .. note::
 #   In your experiments, we recommend setting ``epochs=50`` for the dataset.
-epoch = 3
+#   We will skip the training in this tutorial
+epoch = 0
 
 for epoch in range(epochs):
     loss_total_val = 0
