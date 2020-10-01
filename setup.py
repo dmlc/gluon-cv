@@ -58,6 +58,7 @@ requirements = [
     'scipy',
     'pyyaml',
     'sacred',
+    'pandas'
 ]
 if with_cython:
     _NP_INCLUDE_DIRS = np.get_include()

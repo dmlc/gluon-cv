@@ -154,3 +154,6 @@ class ObjectDetection(BaseTask):
         # pylint: disable=unidiomatic-typecheck
         assert type(obj) in (SSDEstimator, FasterRCNNEstimator, YOLOEstimator, CenterNetEstimator)
         return obj
+
+# Dataset = ObjectDetectionDataset
+# from tasks.object_detection import Dataset
