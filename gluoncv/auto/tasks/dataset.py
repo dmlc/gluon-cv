@@ -13,12 +13,12 @@ class ObjectDetectionDataset(pd.DataFrame):
     # preserved properties that will be copied to a new instance
     _metadata = ['dataset_type', 'classes']
 
-    def __init__(self, data, dataset_type=None, classes=None):
+    def __init__(self, data, dataset_type=None, classes=None, **kwargs):
         # dataset_type will be used to determine metrics, if None then auto resolve at runtime
         self.dataset_type = dataset_type
         # if classes is not specified(None), then infer from the annotations
         self.classes = classes
-        super().__init__(data)
+        super().__init__(data, **kwargs)
 
     @classmethod
     def from_iterable(cls, iterable):
@@ -57,6 +57,7 @@ class ObjectDetectionDataset(pd.DataFrame):
             tree = ET.parse(anno_file)
             xml_root = tree.getroot()
             size = xml_root.find('size')
+            im_path = xml_root.find('filename').text
             width = float(size.find('width').text)
             height = float(size.find('height').text)
             rois = []
@@ -78,10 +79,11 @@ class ObjectDetectionDataset(pd.DataFrame):
                                  'xmin': xmin, 'ymin': ymin, 'xmax': xmax, 'ymax': ymax,
                                  'difficult': difficult})
             if rois:
-                d['image'].append(str(anno_file))
+                d['image'].append(str(rpath / 'JPEGImages' / im_path))
                 d['rois'].append(rois)
                 d['image_attr'].append({'width': width, 'height': height})
-        return cls(d)
+        df = pd.DataFrame(d)
+        return cls(df.sort_values('image').reset_index(drop=True), dataset_type='voc')
 
     @classmethod
     def from_coco(cls, path):
@@ -97,16 +99,26 @@ class ObjectDetectionDataset(pd.DataFrame):
         """Convert object-centric entries to image-centric entries.
         Where multiple entries belonging to single image can be merged to rois column.
         """
-        new_df = self.groupby('image').apply().reset_index()
+        if self.is_packed():
+            return self
+        rois_columns = ['class', 'xmin', 'ymin', 'xmax', 'ymax', 'difficult']
+        image_attr_columns = ['width', 'height']
+        new_df = self.groupby(['image'], as_index=False).agg(list).reset_index(drop=True)
+        new_df['rois'] = new_df.agg(
+            lambda y : [{k : y[new_df.columns.get_loc(k)][i] for k in rois_columns if k in new_df.columns} for i in range(len(y[new_df.columns.get_loc('class')]))], axis=1)
+        new_df = new_df.drop(rois_columns, axis=1, errors='ignore')
+        new_df['image_attr'] = new_df.agg(
+            lambda y: {k : y[new_df.columns.get_loc(k)][0] for k in image_attr_columns if k in new_df.columns}, axis=1)
+        new_df = new_df.drop(image_attr_columns, axis=1, errors='ignore')
+        return self.__class__(new_df.reset_index(drop=True))
 
     def unpack(self):
-        if self.is_packed():
-            new_df = self.explode('rois')
-            new_df = pd.concat([new_df.drop(['rois'], axis=1), new_df['rois'].apply(pd.Series)], axis=1)
-            new_df = pd.concat([new_df.drop(['image_attr'], axis=1), new_df['image_attr'].apply(pd.Series)], axis=1)
-        else:
-            new_df = self
-        return new_df
+        if not self.is_packed():
+            return self
+        new_df = self.explode('rois')
+        new_df = pd.concat([new_df.drop(['rois'], axis=1), new_df['rois'].apply(pd.Series)], axis=1)
+        new_df = pd.concat([new_df.drop(['image_attr'], axis=1), new_df['image_attr'].apply(pd.Series)], axis=1)
+        return self.__class__(new_df.reset_index(drop=True))
 
     def is_packed(self):
         return 'rois' in self.columns and 'xmin' not in self.columns
