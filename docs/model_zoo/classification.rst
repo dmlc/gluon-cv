@@ -3,7 +3,22 @@
 Classification
 ====================
 
+.. role:: framework
+   :class: framework
+.. role:: select
+   :class: selected framework
 
+.. container:: Frameworks
+
+  .. container:: framework-group
+
+     :framework:`MXNet`
+     :framework:`Pytorch`
+
+.. rst-class:: MXNet
+
+MXNet
+*************
 
 Visualization of Inference Throughputs vs. Validation Accuracy of ImageNet pre-trained models is illustrated in the following graph. Throughputs are measured with single V100 GPU and batch size 64.
 
@@ -256,3 +271,105 @@ The following table lists pre-trained models trained on CIFAR10.
 .. [17] Hang Zhang, Chongruo Wu, Zhongyue Zhang, Yi Zhu, Zhi Zhang, Haibin Lin, Yue Sun, Tong He, Jonas Muller, R. Manmatha, Mu Li and Alex Smola \
         "ResNeSt: Split-Attention Network" \
         arXiv preprint (2020).
+
+.. rst-class:: Pytorch
+
+Pytorch
+*************
+
+Somet testing
+
+Title 1
+~~~~~~~~~
+
+title 1 testing
+
+Title 2
+~~~~~~~~
+
+title 2 testing
+
+.. list-table:: Title
+   :header-rows: 1
+   :name: mytable
+   :widths: 40,30,30
+
+   * - Heading row 1, column 1
+     - Heading row 1, column 2
+     - Heading row 1, column 3
+   * - Row 1, column 1
+     - Row 1, column 2
+     - Row 1, column 3
+   * - Row 2, column 1
+     - Row 2, column 2
+     - Row 2, column 3
+
+Title 3
+~~~~~~~~
+
+title 3 testing
+
+Title 4
+~~~~~~~~
+
+title 4 testing
+
+.. list-table:: Title
+   :header-rows: 1
+   :name: mytable
+   :widths: 40,30,30
+
+   * - Heading row 1, column 1
+     - Heading row 1, column 2
+     - Heading row 1, column 3
+   * - Row 1, column 1
+     - Row 1, column 2
+     - Row 1, column 3
+   * - Row 2, column 1
+     - Row 2, column 2
+     - Row 2, column 3
+
+.. list-table:: Title
+   :header-rows: 1
+   :name: mytable
+   :widths: 40,30,30
+
+   * - Heading row 1, column 1
+     - Heading row 1, column 2
+     - Heading row 1, column 3
+   * - Row 1, column 1
+     - Row 1, column 2
+     - Row 1, column 3
+   * - Row 2, column 1
+     - Row 2, column 2
+     - Row 2, column 3
+
+.. list-table:: Title
+   :header-rows: 1
+   :name: mytable
+   :widths: 40,30,30
+
+   * - Heading row 1, column 1
+     - Heading row 1, column 2
+     - Heading row 1, column 3
+   * - Row 1, column 1
+     - Row 1, column 2
+     - Row 1, column 3
+   * - Row 2, column 1
+     - Row 2, column 2
+     - Row 2, column 3
+
+.. list-table:: Title
+   :header-rows: 1
+   :name: mytable
+   :widths: 40,30,30
+
+   * - Heading row 1, column 1
+     - Heading row 1, column 2
+     - Heading row 1, column 3
+   * - Row 1, column 1
+     - Row 1, column 2
+     - Row 1, column 3
+   * - Row 2, column 1
+     - Row 2, column 2
+     - Row 2, column 3

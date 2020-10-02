@@ -284,6 +284,7 @@ def setup(app):
     app.add_javascript('google_analytics.js')
     app.add_javascript('hidebib.js')
     app.add_javascript('install-options.js')
+    app.add_javascript('tabs.js')
     app.add_stylesheet('css/custom.css')
      #app.add_transform(AutoStructify)
     #app.add_config_value('recommonmark_config', {
