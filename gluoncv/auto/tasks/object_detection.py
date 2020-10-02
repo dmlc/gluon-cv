@@ -146,3 +146,11 @@ class ObjectDetection(BaseTask):
         # TODO: checkpointing needs to be done in a better way
         estimator.put_parameters(results.pop('model_params'))
         return estimator
+
+    @classmethod
+    def load(cls, filename):
+        obj = BaseEstimator.load(filename)
+        # make sure not accidentally loading e.g. classification model
+        # pylint: disable=unidiomatic-typecheck
+        assert type(obj) in (SSDEstimator, FasterRCNNEstimator, YOLOEstimator, CenterNetEstimator)
+        return obj

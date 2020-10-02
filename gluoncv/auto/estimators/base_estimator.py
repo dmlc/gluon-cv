@@ -1,6 +1,7 @@
 """Base Estimator"""
 import os
 import copy
+import pickle
 import logging
 import warnings
 from datetime import datetime
@@ -81,7 +82,7 @@ class ConfigDict(dict):
             for key in value:
                 self.__setitem__(key, value[key])
         else:
-            raise TypeError('expected dict')
+            raise TypeError('expected dict, given {}'.format(type(value)))
         self.freeze()
 
     def freeze(self):
@@ -94,7 +95,7 @@ class ConfigDict(dict):
         self.__dict__['_freeze'] = False
 
     def __setitem__(self, key, value):
-        if self.__dict__['_freeze']:
+        if self.__dict__.get('_freeze', False):
             msg = ('You are trying to modify the config to "{}={}" after initialization, '
                    ' this may result in unpredictable behaviour'.format(key, value))
             warnings.warn(msg)
@@ -112,6 +113,12 @@ class ConfigDict(dict):
         if isinstance(found, ConfigDict):
             found.__dict__['_freeze'] = self.__dict__['_freeze']
         return found
+
+    def __setstate__(self, state):
+        vars(self).update(state)
+
+    def __getstate__(self):
+        return vars(self)
 
     __setattr__, __getattr__ = __setitem__, __getitem__
 
@@ -141,9 +148,10 @@ class BaseEstimator:
 
     """
     def __init__(self, config, logger=None, reporter=None, name=None):
+        self._init_args = [config, logger, reporter]
         self._reporter = reporter
         name = name if isinstance(name, str) else self.__class__.__name__
-        self._logger = logger if logger is not None else logging.getLogger(__name__)
+        self._logger = logger if logger is not None else logging.getLogger(name)
         self._logger.setLevel(logging.INFO)
 
         # finalize the config
@@ -177,8 +185,8 @@ class BaseEstimator:
         os.makedirs(self._logdir, exist_ok=True)
         config_file = os.path.join(self._logdir, 'config.yaml')
         # log file
-        log_file = os.path.join(self._logdir, 'estimator.log')
-        fh = logging.FileHandler(log_file)
+        self._log_file = os.path.join(self._logdir, 'estimator.log')
+        fh = logging.FileHandler(self._log_file)
         self._logger.addHandler(fh)
         save_config(r.config, self._logger, config_file)
 
@@ -198,3 +206,41 @@ class BaseEstimator:
 
     def _evaluate(self):
         raise NotImplementedError
+
+    def state_dict(self):
+        state = {
+            'init_args': self._init_args,
+            '__class__': self.__class__,
+            'params': self.get_parameters(),
+        }
+        return state
+
+    def save(self, filename):
+        state = self.state_dict()
+        with open(filename, 'wb') as fid:
+            pickle.dump(state, fid)
+        self._logger.info('Pickled to %s', filename)
+
+    @classmethod
+    def load(cls, filename):
+        with open(filename, 'rb') as fid:
+            state = pickle.load(fid)
+            _cls = state['__class__']
+            obj = _cls(*state['init_args'])
+            obj.put_parameters(state['params'])
+            obj._logger.info('Unpickled from %s', filename)
+            return obj
+
+    def put_parameters(self, parameters):
+        """Load saved parameters into the model"""
+        param_dict = self.net._collect_params_with_prefix()
+        for k, _ in param_dict.items():
+            param_dict[k].set_data(parameters[k])
+
+    def get_parameters(self):
+        """Return model parameters"""
+        param_dict = self.net._collect_params_with_prefix()
+        for k, v in param_dict.items():
+            # cast to numpy array
+            param_dict[k] = v.data(ctx=self.ctx[0]).asnumpy()
+        return param_dict

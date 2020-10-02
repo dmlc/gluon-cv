@@ -1,7 +1,6 @@
 """SSD Estimator."""
 # pylint: disable=logging-format-interpolation
 import os
-import logging
 import warnings
 import time
 import mxnet as mx
@@ -55,7 +54,7 @@ class SSDEstimator(BaseEstimator):
         The configurations.
     """
     def __init__(self, config, logger=None, reporter=None):
-        super(SSDEstimator, self).__init__(config, logger, reporter)
+        super(SSDEstimator, self).__init__(config, logger, reporter, name=self.__class__.__name__)
 
         if self._cfg.ssd.amp:
             amp.init()
@@ -160,18 +159,6 @@ class SSDEstimator(BaseEstimator):
         self.mbox_loss = SSDMultiBoxLoss()
         self.ce_metric = mx.metric.Loss('CrossEntropy')
         self.smoothl1_metric = mx.metric.Loss('SmoothL1')
-
-        # set up logger
-        logging.basicConfig()
-        self._logger = logging.getLogger()
-        self._logger.setLevel(logging.INFO)
-        log_file_path = self._cfg.save_prefix + '_train.log'
-        log_dir = os.path.dirname(log_file_path)
-        if log_dir and not os.path.exists(log_dir):
-            os.makedirs(log_dir)
-        fh = logging.FileHandler(log_file_path)
-        self._logger.addHandler(fh)
-        self._logger.info(self._cfg)
 
     def _validate(self, val_data, ctx, eval_metric):
         """Test on validation dataset."""
@@ -324,15 +311,3 @@ class SSDEstimator(BaseEstimator):
         x = x.as_in_context(self.ctx[0])
         ids, scores, bboxes = [xx[0].asnumpy() for xx in self.net(x)]
         return ids, scores, bboxes
-
-    def put_parameters(self, parameters, multi_precision=False):
-        """Load saved parameters into the model"""
-        param_dict = self.net._collect_params_with_prefix()
-        kwargs = {'ctx': None} if mx.__version__[:3] == '1.4' else {'cast_dtype': multi_precision,
-                                                                    'ctx': None}
-        for k, _ in param_dict.items():
-            param_dict[k]._load_init(parameters[k], **kwargs)
-
-    def get_parameters(self):
-        """Return model parameters"""
-        return self.net._collect_params_with_prefix()

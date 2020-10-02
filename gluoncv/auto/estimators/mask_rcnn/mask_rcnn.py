@@ -429,15 +429,3 @@ class MaskRCNNEstimator(BaseEstimator):
         x = x.as_in_context(self.ctx[0])
         ids, scores, bboxes, masks = [xx[0].asnumpy() for xx in self.net(x)]
         return ids, scores, bboxes, masks
-
-    def put_parameters(self, parameters, multi_precision=False):
-        """Load saved parameters into the model"""
-        param_dict = self.net._collect_params_with_prefix()
-        kwargs = {'ctx': None} if mx.__version__[:3] == '1.4' else {'cast_dtype': multi_precision,
-                                                                    'ctx': None}
-        for k, _ in param_dict.items():
-            param_dict[k]._load_init(parameters[k], **kwargs)
-
-    def get_parameters(self):
-        """Return model parameters"""
-        return self.net._collect_params_with_prefix()
