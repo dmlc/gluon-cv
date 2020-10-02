@@ -43,7 +43,7 @@ ctx = mx.cpu(0)
 # After getting the dataset, we can easily load images with PIL.
 data_path = "~/.mxnet/datasets/kitti/example/2011_09_26/2011_09_26_drive_0095_sync/image_02/data"
 
-files = os.listdir(os.expanduser(data_path))
+files = os.listdir(os.path.expanduser(data_path))
 files.sort()
 
 raw_img_sequences = []

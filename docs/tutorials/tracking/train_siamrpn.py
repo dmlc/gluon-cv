@@ -125,7 +125,7 @@ loc_weight = 1.2
 # .. note::
 #   In your experiments, we recommend setting ``epochs=50`` for the dataset.
 #   We will skip the training in this tutorial
-epoch = 0
+epochs = 0
 
 for epoch in range(epochs):
     loss_total_val = 0
