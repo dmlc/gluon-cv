@@ -44,7 +44,10 @@ class ObjectDetectionDataset(pd.DataFrame):
                 with split_file.open(mode='r') as fi:
                     img_list += [line.split()[0].strip() for line in fi.readlines()]
         else:
-            logger.debug('No split provided, use full image list in %s', str(rpath/'JPEGImages'))
+            logger.debug('No split provided, use full image list in %s, with extension %s',
+                         str(rpath/'JPEGImages'), str(exts))
+            if not isinstance(exts, (list, tuple)):
+                exts = [exts]
             for ext in exts:
                 img_list.extend([rp.stem for rp in rpath.glob('JPEGImages/*' + ext)])
         # d = {'file': [], 'name': [],
