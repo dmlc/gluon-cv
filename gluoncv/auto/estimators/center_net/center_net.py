@@ -19,6 +19,7 @@ from ...data.transforms.presets.center_net import CenterNetDefaultValTransform, 
 from ...loss import MaskedL1Loss, HeatmapFocalLoss
 from ...model_zoo.center_net import get_center_net, get_base_network
 from ...utils import LRScheduler, LRSequential
+from ...utils.metrics import VOCMApMetric
 
 __all__ = ['CenterNetEstimator']
 
@@ -112,49 +113,14 @@ class CenterNetEstimator(BaseEstimator):
     def __init__(self, config, logger=None, reporter=None):
         super(CenterNetEstimator, self).__init__(config, logger, reporter=reporter, name=None)
 
-        # dataset
-        if self._cfg.dataset == 'coco':
-            train_dataset, val_dataset, val_metric = load_coco_detection(
-                self._cfg.coco_detection.root,
-                self._cfg.coco_detection.train_splits,
-                self._cfg.coco_detection.valid_splits,
-                self._cfg.coco_detection.valid_skip_empty,
-                self._cfg.center_net.data_shape,
-                self._cfg.coco_detection.cleanup,
-                get_post_transform
-            )
-        else:
-            raise NotImplementedError
-
-        # network
-        ctx = [mx.gpu(int(i)) for i in self._cfg.train.gpus]
-        ctx = ctx if ctx else [mx.cpu()]
-        self._ctx = ctx
-        net_name = '_'.join(('center_net', self._cfg.center_net.base_network, self._cfg.dataset))
-        heads = OrderedDict([
-            ('heatmap',
-             {'num_output': train_dataset.num_class, 'bias': self._cfg.center_net.heads.bias}),
-            ('wh', {'num_output': self._cfg.center_net.heads.wh_outputs}),
-            ('reg', {'num_output': self._cfg.center_net.heads.reg_outputs})])
-        base_network = get_base_network(self._cfg.center_net.base_network,
-                                        pretrained=self._cfg.train.pretrained_base)
-        net = get_center_net(self._cfg.center_net.base_network,
-                             self._cfg.dataset,
-                             base_network=base_network,
-                             heads=heads,
-                             head_conv_channel=self._cfg.center_net.heads.head_conv_channel,
-                             classes=train_dataset.classes,
-                             scale=self._cfg.center_net.scale,
-                             topk=self._cfg.center_net.topk,
-                             norm_layer=gluon.nn.BatchNorm)
-        if self._cfg.train.resume.strip():
-            net.load_parameters(self._cfg.train.resume.strip())
-        elif os.path.isfile(os.path.join(self._logdir, 'latest.params')):
-            net.load_parameters(os.path.join(self._logdir, 'latest.params'))
-        else:
-            with warnings.catch_warnings(record=True) as w:
-                warnings.simplefilter("always")
-                net.initialize()
+    def _fit(self, train_data, val_data):
+        self.classes = train_data.classes
+        self.num_class = len(self.classes)
+        if not self.classes or not self.num_class:
+            raise ValueError('Unable to determine classes of dataset')
+        train_dataset = train_data.to_mxnet()
+        val_dataset = val_data.to_mxnet()
+        val_metric = VOCMApMetric(class_names=self.classes)
 
         # dataloader
         batch_size = self._cfg.train.batch_size
@@ -163,7 +129,7 @@ class CenterNetEstimator(BaseEstimator):
         batchify_fn = Tuple([Stack() for _ in range(6)])  # stack image, cls_targets, box_targets
         train_loader = gluon.data.DataLoader(
             train_dataset.transform(CenterNetDefaultTrainTransform(
-                width, height, num_class=num_class, scale_factor=net.scale)),
+                width, height, num_class=num_class, scale_factor=self.net.scale)),
             batch_size, True, batchify_fn=batchify_fn, last_batch='rollover',
             num_workers=self._cfg.train.num_workers)
         val_batchify_fn = Tuple(Stack(), Pad(pad_val=-1))
@@ -177,8 +143,7 @@ class CenterNetEstimator(BaseEstimator):
         self._eval_metric = val_metric
 
         # trainer
-        self._net = net
-        self._net.collect_params().reset_ctx(ctx)
+        self.net.collect_params().reset_ctx(ctx)
         lr_decay = float(self._cfg.train.lr_decay)
         lr_steps = sorted(self._cfg.train.lr_decay_epoch)
         lr_decay_epoch = [e - self._cfg.train.warmup_epochs for e in lr_steps]
@@ -193,17 +158,16 @@ class CenterNetEstimator(BaseEstimator):
                         step_factor=self._cfg.train.lr_decay, power=2),
         ])
 
-        for k, v in self._net.collect_params('.*bias').items():
+        for k, v in self.net.collect_params('.*bias').items():
             v.wd_mult = 0.0
         self._trainer = gluon.Trainer(
-            self._net.collect_params(), 'adam',
+            self.net.collect_params(), 'adam',
             {'learning_rate': self._cfg.train.lr, 'wd': self._cfg.train.wd,
              'lr_scheduler': lr_scheduler})
 
         self._save_prefix = os.path.join(self._logdir, net_name)
         self._best_map = 0
 
-    def _fit(self):
         wh_loss = MaskedL1Loss(weight=self._cfg.center_net.wh_weight)
         heatmap_loss = HeatmapFocalLoss(from_logits=True)
         center_reg_loss = MaskedL1Loss(weight=self._cfg.center_net.center_reg_weight)
@@ -217,11 +181,11 @@ class CenterNetEstimator(BaseEstimator):
             heatmap_loss_metric.reset()
             tic = time.time()
             btic = time.time()
-            self._net.hybridize()
+            self.net.hybridize()
 
             for i, batch in enumerate(self._train_data):
                 split_data = [
-                    gluon.utils.split_and_load(batch[ind], ctx_list=self._ctx, batch_axis=0) for ind
+                    gluon.utils.split_and_load(batch[ind], ctx_list=self.ctx, batch_axis=0) for ind
                     in range(6)]
                 data, heatmap_targets, wh_targets, wh_masks, center_reg_targets, center_reg_masks = split_data
                 batch_size = self._cfg.train.batch_size
@@ -234,7 +198,7 @@ class CenterNetEstimator(BaseEstimator):
                     center_reg_preds = []
                     for x, heatmap_target, wh_target, wh_mask, center_reg_target, center_reg_mask in zip(
                             *split_data):
-                        heatmap_pred, wh_pred, center_reg_pred = self._net(x)
+                        heatmap_pred, wh_pred, center_reg_pred = self.net(x)
                         wh_preds.append(wh_pred)
                         center_reg_preds.append(center_reg_pred)
                         wh_losses.append(wh_loss(wh_pred, wh_target, wh_mask))
@@ -253,7 +217,7 @@ class CenterNetEstimator(BaseEstimator):
                     name2, loss2 = wh_metric.get()
                     name3, loss3 = center_reg_metric.get()
                     name4, loss4 = heatmap_loss_metric.get()
-                    self._log.info(
+                    self._logger.info(
                         '[Epoch {}][Batch {}], Speed: {:.3f} samples/sec, '
                         'LR={}, {}={:.3f}, {}={:.3f}, {}={:.3f}'.format(
                             epoch, i, batch_size / (time.time() - btic),
@@ -263,7 +227,7 @@ class CenterNetEstimator(BaseEstimator):
             name2, loss2 = wh_metric.get()
             name3, loss3 = center_reg_metric.get()
             name4, loss4 = heatmap_loss_metric.get()
-            self._log.info(
+            self._logger.info(
                 '[Epoch {}] Training cost: {:.3f}, {}={:.3f}, {}={:.3f}, {}={:.3f}'.format(
                     epoch, (time.time() - tic), name2, loss2, name3, loss3, name4, loss4))
             if (epoch % self._cfg.validation.interval == 0) or \
@@ -273,22 +237,22 @@ class CenterNetEstimator(BaseEstimator):
                 # consider reduce the frequency of validation to save time
                 map_name, mean_ap = self._evaluate()
                 val_msg = '\n'.join(['{}={}'.format(k, v) for k, v in zip(map_name, mean_ap)])
-                self._log.info('[Epoch {}] Validation: \n{}'.format(epoch, val_msg))
+                self._logger.info('[Epoch {}] Validation: \n{}'.format(epoch, val_msg))
                 current_map = float(mean_ap[-1])
             else:
                 current_map = 0.
-            save_params(current_map, epoch, self._cfg.train.save_interval, self._save_prefix)
+            self._save_params(current_map, epoch, self._cfg.train.save_interval, self._save_prefix)
 
     def _evaluate(self):
         """Test on validation dataset."""
         self._eval_metric.reset()
-        self._net.flip_test = self._cfg.validation.flip_test
+        self.net.flip_test = self._cfg.validation.flip_test
         mx.nd.waitall()
-        self._net.hybridize()
+        self.net.hybridize()
         for batch in self._val_data:
-            data = gluon.utils.split_and_load(batch[0], ctx_list=self._ctx, batch_axis=0,
+            data = gluon.utils.split_and_load(batch[0], ctx_list=self.ctx, batch_axis=0,
                                               even_split=False)
-            label = gluon.utils.split_and_load(batch[1], ctx_list=self._ctx, batch_axis=0,
+            label = gluon.utils.split_and_load(batch[1], ctx_list=self.ctx, batch_axis=0,
                                                even_split=False)
             det_bboxes = []
             det_ids = []
@@ -298,7 +262,7 @@ class CenterNetEstimator(BaseEstimator):
             gt_difficults = []
             for x, y in zip(data, label):
                 # get prediction results
-                ids, scores, bboxes = self._net(x)
+                ids, scores, bboxes = self.net(x)
                 det_ids.append(ids)
                 det_scores.append(scores)
                 # clip to image size
@@ -315,17 +279,45 @@ class CenterNetEstimator(BaseEstimator):
         return self._eval_metric.get()
 
     def _save_params(self, current_map, epoch, save_interval, prefix):
-        self._net.save_parameters('latest.params')
+        self.net.save_parameters('latest.params')
         self._trainer.save_states('latest.states')
         current_map = float(current_map)
         if current_map > self._best_map:
             self._best_map = current_map
-            self._net.save_parameters('{:s}_{:04d}_{:.4f}_best.params'.format(prefix, epoch, current_map))
+            self.net.save_parameters('{:s}_{:04d}_{:.4f}_best.params'.format(prefix, epoch, current_map))
             with open(prefix + '_best_map.log', 'a') as f:
                 f.write('{:04d}:\t{:.4f}\n'.format(epoch, current_map))
         if save_interval and epoch % save_interval == 0:
-            self._net.save_parameters(
+            self.net.save_parameters(
                 '{:s}_{:04d}_{:.4f}.params'.format(prefix, epoch, current_map))
+
+    def _init_network(self):
+        super()._init_network()
+        # network
+        ctx = [mx.gpu(int(i)) for i in self._cfg.train.gpus]
+        ctx = ctx if ctx else [mx.cpu()]
+        self.ctx = ctx
+        net_name = '_'.join(('center_net', self._cfg.center_net.base_network, self._cfg.dataset))
+        heads = OrderedDict([
+            ('heatmap',
+             {'num_output': self.num_class, 'bias': self._cfg.center_net.heads.bias}),
+            ('wh', {'num_output': self._cfg.center_net.heads.wh_outputs}),
+            ('reg', {'num_output': self._cfg.center_net.heads.reg_outputs})])
+        base_network = get_base_network(self._cfg.center_net.base_network,
+                                        pretrained=self._cfg.train.pretrained_base)
+        net = get_center_net(self._cfg.center_net.base_network,
+                             self.dataset,
+                             base_network=base_network,
+                             heads=heads,
+                             head_conv_channel=self._cfg.center_net.heads.head_conv_channel,
+                             classes=self.classes,
+                             scale=self._cfg.center_net.scale,
+                             topk=self._cfg.center_net.topk,
+                             norm_layer=gluon.nn.BatchNorm)
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            net.initialize()
+        self.net = net
 
 
 @ex.automain

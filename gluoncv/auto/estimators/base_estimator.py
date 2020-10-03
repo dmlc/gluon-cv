@@ -5,6 +5,8 @@ import pickle
 import logging
 import warnings
 from datetime import datetime
+import numpy as np
+import pandas as pd
 from sacred.commands import _format_config, save_config, print_config
 from sacred.settings import SETTINGS
 from ...utils import random as _random
@@ -154,6 +156,14 @@ class BaseEstimator:
         self._logger = logger if logger is not None else logging.getLogger(name)
         self._logger.setLevel(logging.INFO)
 
+        # reserved attributes
+        self.net = None
+        self.num_class = None
+        self.classes = []
+        self.ctx = [None]
+        self.dataset = 'auto'
+        self.current_epoch = 0
+
         # finalize the config
         r = self._ex.run('_get_config', config_updates=config, options={'--loglevel': 50, '--force': True})
         print_config(r)
@@ -195,16 +205,43 @@ class BaseEstimator:
         self._cfg.freeze()
         _random.seed(self._cfg.seed)
 
-    def fit(self):
-        self._fit()
+    def fit(self, train_data, val_data=None, train_size=0.9, random_seed=None, resume=False):
+        if not isinstance(train_data, pd.DataFrame):
+            assert val_data is not None, \
+                "Please provide `val_data` as we do not know how to split `train_data` of type: \
+                {}".format(type(train_data))
+            return self._fit(train_data, val_data) if not resume else self._resume_fit(train_data, val_data)
+
+        if not val_data:
+            assert train_size >= 0 and train_size <= 1.0
+            if random_seed:
+                np.random.seed(random_seed)
+            split_mask = np.random.rand(len(train_data)) < train_size
+            train = train_data[split_mask]
+            val = train_data[~split_mask]
+            self._logger.info('Randomly split train_data into train[%d]/validation[%d] splits.',
+                len(train), len(val))
+            return self._fit(train, val) if not resume else self._resume_fit(train, val)
+
+        return self._fit(train_data, val_data) if not resume else self._resume_fit(train_data, val_data)
 
     def evaluate(self):
         return self._evaluate()
 
-    def _fit(self):
+    def _fit(self, train_data, val_data):
+        raise NotImplementedError
+
+    def _resume_fit(self, train_data, val_data):
         raise NotImplementedError
 
     def _evaluate(self):
+        raise NotImplementedError
+
+    def _init_network(self):
+        if not self.num_class:
+            raise ValueError('Unable to create network when `num_class` is unknown. \
+                It should be inferred from dataset or resumed from saved states.')
+        assert len(self.classes) == self.num_class
         raise NotImplementedError
 
     def state_dict(self):
@@ -212,6 +249,9 @@ class BaseEstimator:
             'init_args': self._init_args,
             '__class__': self.__class__,
             'params': self.get_parameters(),
+            'classes': self.classes,
+            'dataset': self.dataset,
+            'current_epoch': self.current_epoch
         }
         return state
 
@@ -227,18 +267,40 @@ class BaseEstimator:
             state = pickle.load(fid)
             _cls = state['__class__']
             obj = _cls(*state['init_args'])
+            obj.classes = state['classes']
+            obj.num_class = len(obj.classes)
+            obj.dataset = state['dataset']
+            obj.current_epoch = state['current_epoch']
             obj.put_parameters(state['params'])
             obj._logger.info('Unpickled from %s', filename)
             return obj
 
     def put_parameters(self, parameters):
         """Load saved parameters into the model"""
-        param_dict = self.net._collect_params_with_prefix()
-        for k, _ in param_dict.items():
-            param_dict[k].set_data(parameters[k])
+        if not parameters:
+            return
+        if not self.net:
+            # reinit
+            if not self.num_class:
+                raise ValueError('Unable to resume state when `num_class` is unknown. \
+                    This usually means that you have not correctly saved the previous state.')
+            self._init_network()
+
+        try:
+            param_dict = self.net._collect_params_with_prefix()
+            for k, _ in param_dict.items():
+                param_dict[k].set_data(parameters[k])
+        except Exception as e:
+            self._logger.info('Failed to resume previous parameters, possible reasons: \
+                1) The network structure has changed. \
+                2) The number of categories has changed. Details: %s',
+                str(e))
 
     def get_parameters(self):
         """Return model parameters"""
+        if not self.net:
+            # Estimator is not initialized, thus no state
+            return {}
         param_dict = self.net._collect_params_with_prefix()
         for k, v in param_dict.items():
             # cast to numpy array

@@ -1,6 +1,7 @@
 """Dataset implementation for specific task(s)"""
 import logging
 from pathlib import Path
+import numpy as np
 import pandas as pd
 try:
     import xml.etree.cElementTree as ET
@@ -11,7 +12,7 @@ logger = logging.getLogger()
 
 class ObjectDetectionDataset(pd.DataFrame):
     # preserved properties that will be copied to a new instance
-    _metadata = ['dataset_type', 'classes']
+    _metadata = ['dataset_type', 'classes', 'pack', 'unpack', 'is_packed', 'to_mxnet']
 
     def __init__(self, data, dataset_type=None, classes=None, **kwargs):
         # dataset_type will be used to determine metrics, if None then auto resolve at runtime
@@ -31,6 +32,7 @@ class ObjectDetectionDataset(pd.DataFrame):
         from ...data.pascal_voc.detection import CustomVOCDetectionBase
         rpath = Path(root).expanduser()
         img_list = []
+        class_names = set()
         if splits:
             logger.debug('Use splits: %s for root: %s', str(splits), root)
             if isinstance(splits, str):
@@ -81,12 +83,13 @@ class ObjectDetectionDataset(pd.DataFrame):
                     rois.append({'class': cls_name,
                                  'xmin': xmin, 'ymin': ymin, 'xmax': xmax, 'ymax': ymax,
                                  'difficult': difficult})
+                    class_names.update(cls_name)
             if rois:
                 d['image'].append(str(rpath / 'JPEGImages' / im_path))
                 d['rois'].append(rois)
                 d['image_attr'].append({'width': width, 'height': height})
         df = pd.DataFrame(d)
-        return cls(df.sort_values('image').reset_index(drop=True), dataset_type='voc')
+        return cls(df.sort_values('image').reset_index(drop=True), dataset_type='voc', classes=class_names)
 
     @classmethod
     def from_coco(cls, path):
@@ -125,3 +128,43 @@ class ObjectDetectionDataset(pd.DataFrame):
 
     def is_packed(self):
         return 'rois' in self.columns and 'xmin' not in self.columns
+
+    def to_mxnet(self):
+        """Return a mxnet based iterator that returns ndarray and labels"""
+        return _MXObjectDetectionDataset(self)
+
+
+class _MXObjectDetectionDataset(object):
+    """Internal wrapper read entries in pd.DataFrame as images/labels.
+
+    Parameters
+    ----------
+    dataset : ObjectDetectionDataset
+        DataFrame as ObjectDetectionDataset.
+
+    """
+    def __init__(self, dataset):
+        assert isinstance(dataset, ObjectDetectionDataset)
+        if not dataset.is_packed():
+            dataset = dataset.pack()
+        assert 'image' in dataset.columns
+        assert 'rois' in dataset.columns
+        assert 'image_attr' in dataset.columns
+        self._dataset = dataset
+        import mxnet as mx
+        self._imread = mx.image.imread
+
+    def __len__(self):
+        return self._dataset.shape[0]
+
+    def __getitem__(self, idx):
+        im_path = self._dataset['image'][idx]
+        rois = self._dataset['rois'][idx]
+        img_attr = self._dataset['image_attr'][idx]
+        width = img_attr['width']
+        height = img_attr['height']
+        img = self._imread(im_path)
+        label = np.array([rois[key] for key in ['xmin', 'ymin', 'xmax', 'ymax', 'name', 'difficult'])
+        label[:, (0, 2)] *= width
+        label[:, (1, 3)] *= height
+        return img, label
