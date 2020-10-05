@@ -10,16 +10,16 @@ from mxnet import autograd
 from mxnet import gluon
 from sacred import Experiment, Ingredient
 
-from .base_estimator import BaseEstimator, set_default
-from .common import logging
-from ..data.coco_detection import coco_detection, load_coco_detection
-from ...data.batchify import Tuple, Stack, Pad
-from ...data.transforms.presets.center_net import CenterNetDefaultTrainTransform
-from ...data.transforms.presets.center_net import CenterNetDefaultValTransform, get_post_transform
-from ...loss import MaskedL1Loss, HeatmapFocalLoss
-from ...model_zoo.center_net import get_center_net, get_base_network
-from ...utils import LRScheduler, LRSequential
-from ...utils.metrics import VOCMApMetric
+from ..base_estimator import BaseEstimator, set_default
+from ..common import logging
+from ...data.coco_detection import coco_detection, load_coco_detection
+from ....data.batchify import Tuple, Stack, Pad
+from ....data.transforms.presets.center_net import CenterNetDefaultTrainTransform
+from ....data.transforms.presets.center_net import CenterNetDefaultValTransform, get_post_transform
+from ....loss import MaskedL1Loss, HeatmapFocalLoss
+from ....model_zoo.center_net import get_center_net, get_base_network
+from ....utils import LRScheduler, LRSequential
+from ....utils.metrics import VOCMApMetric
 
 __all__ = ['CenterNetEstimator']
 
@@ -114,8 +114,6 @@ class CenterNetEstimator(BaseEstimator):
         super(CenterNetEstimator, self).__init__(config, logger, reporter=reporter, name=None)
 
     def _fit(self, train_data, val_data):
-        self.classes = train_data.classes
-        self.num_class = len(self.classes)
         if not self.classes or not self.num_class:
             raise ValueError('Unable to determine classes of dataset')
         train_dataset = train_data.to_mxnet()
@@ -143,7 +141,7 @@ class CenterNetEstimator(BaseEstimator):
         self._eval_metric = val_metric
 
         # trainer
-        self.net.collect_params().reset_ctx(ctx)
+        self.net.collect_params().reset_ctx(self.ctx)
         lr_decay = float(self._cfg.train.lr_decay)
         lr_steps = sorted(self._cfg.train.lr_decay_epoch)
         lr_decay_epoch = [e - self._cfg.train.warmup_epochs for e in lr_steps]
@@ -165,7 +163,7 @@ class CenterNetEstimator(BaseEstimator):
             {'learning_rate': self._cfg.train.lr, 'wd': self._cfg.train.wd,
              'lr_scheduler': lr_scheduler})
 
-        self._save_prefix = os.path.join(self._logdir, net_name)
+        # self._save_prefix = os.path.join(self._logdir, net_name)
         self._best_map = 0
 
         wh_loss = MaskedL1Loss(weight=self._cfg.center_net.wh_weight)
@@ -241,7 +239,7 @@ class CenterNetEstimator(BaseEstimator):
                 current_map = float(mean_ap[-1])
             else:
                 current_map = 0.
-            self._save_params(current_map, epoch, self._cfg.train.save_interval, self._save_prefix)
+            # self._save_params(current_map, epoch, self._cfg.train.save_interval, self._save_prefix)
 
     def _evaluate(self):
         """Test on validation dataset."""

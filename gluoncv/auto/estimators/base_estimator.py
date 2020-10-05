@@ -206,6 +206,10 @@ class BaseEstimator:
         _random.seed(self._cfg.seed)
 
     def fit(self, train_data, val_data=None, train_size=0.9, random_seed=None, resume=False):
+        if not resume:
+            self.classes = train_data.classes
+            self.num_class = len(self.classes)
+            self._init_network()
         if not isinstance(train_data, pd.DataFrame):
             assert val_data is not None, \
                 "Please provide `val_data` as we do not know how to split `train_data` of type: \
@@ -242,7 +246,6 @@ class BaseEstimator:
             raise ValueError('Unable to create network when `num_class` is unknown. \
                 It should be inferred from dataset or resumed from saved states.')
         assert len(self.classes) == self.num_class
-        raise NotImplementedError
 
     def state_dict(self):
         state = {

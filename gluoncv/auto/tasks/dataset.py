@@ -8,6 +8,12 @@ try:
 except ImportError:
     import xml.etree.ElementTree as ET
 
+try:
+    import mxnet as mx
+    MXDataset = mx.gluon.data.Dataset
+except ImportError:
+    MXDataset = object
+
 logger = logging.getLogger()
 
 class ObjectDetectionDataset(pd.DataFrame):
@@ -20,6 +26,14 @@ class ObjectDetectionDataset(pd.DataFrame):
         # if classes is not specified(None), then infer from the annotations
         self.classes = classes
         super().__init__(data, **kwargs)
+
+    @property
+    def _constructor(self):
+        return ObjectDetectionDataset
+
+    @property
+    def _constructor_sliced(self):
+        return pd.Series
 
     @classmethod
     def from_iterable(cls, iterable):
@@ -83,13 +97,13 @@ class ObjectDetectionDataset(pd.DataFrame):
                     rois.append({'class': cls_name,
                                  'xmin': xmin, 'ymin': ymin, 'xmax': xmax, 'ymax': ymax,
                                  'difficult': difficult})
-                    class_names.update(cls_name)
+                    class_names.update((cls_name,))
             if rois:
                 d['image'].append(str(rpath / 'JPEGImages' / im_path))
                 d['rois'].append(rois)
                 d['image_attr'].append({'width': width, 'height': height})
         df = pd.DataFrame(d)
-        return cls(df.sort_values('image').reset_index(drop=True), dataset_type='voc', classes=class_names)
+        return cls(df.sort_values('image').reset_index(drop=True), dataset_type='voc', classes=list(class_names))
 
     @classmethod
     def from_coco(cls, path):
@@ -134,7 +148,7 @@ class ObjectDetectionDataset(pd.DataFrame):
         return _MXObjectDetectionDataset(self)
 
 
-class _MXObjectDetectionDataset(object):
+class _MXObjectDetectionDataset(MXDataset):
     """Internal wrapper read entries in pd.DataFrame as images/labels.
 
     Parameters
@@ -151,6 +165,7 @@ class _MXObjectDetectionDataset(object):
         assert 'rois' in dataset.columns
         assert 'image_attr' in dataset.columns
         self._dataset = dataset
+        self.classes = self._dataset.classes
         import mxnet as mx
         self._imread = mx.image.imread
 
@@ -164,7 +179,10 @@ class _MXObjectDetectionDataset(object):
         width = img_attr['width']
         height = img_attr['height']
         img = self._imread(im_path)
-        label = np.array([rois[key] for key in ['xmin', 'ymin', 'xmax', 'ymax', 'name', 'difficult'])
+        def convert_entry(roi):
+            return [float(roi[key]) for key in ['xmin', 'ymin', 'xmax', 'ymax']] + \
+                [self.classes.index(roi['class']), float(roi['difficult'])]
+        label = np.array([convert_entry(roi) for roi in rois])
         label[:, (0, 2)] *= width
         label[:, (1, 3)] *= height
         return img, label
