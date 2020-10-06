@@ -54,8 +54,8 @@ from gluoncv.loss import SiamRPNLoss
 # number of GPUs to use
 num_gpus = 1
 ctx = [mx.cpu(0)]
-batch_size = 128
-epochs=1
+batch_size = 32  # adjust to 128 if memory is sufficient
+epochs = 1
 # Get the model siamrpn_alexnet with SiamRPN backbone
 net = get_model('siamrpn_alexnet_v2_otb15', bz=batch_size, is_train=True, ctx=ctx)
 net.collect_params().reset_ctx(ctx)
@@ -71,7 +71,7 @@ print(net)
 # prepare dataset and dataloader
 train_dataset = TrkDataset(train_epoch=epochs)
 print('Training images:', len(train_dataset))
-workers =1
+workers = 0
 train_loader = gluon.data.DataLoader(train_dataset,
                                      batch_size=batch_size,
                                      last_batch='discard',

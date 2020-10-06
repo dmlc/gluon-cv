@@ -160,7 +160,8 @@ for frame in output_sequences:
     frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
 
     out.write(frame)
-    cv2.imshow('demo', frame)
+    # uncomment to display the frames
+    # cv2.imshow('demo', frame)
 
     if cv2.waitKey(25) & 0xFF == ord('q'):
         break
