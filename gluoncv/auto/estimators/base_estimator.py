@@ -3,6 +3,7 @@ import os
 import copy
 import pickle
 import logging
+import contextlib
 import warnings
 from datetime import datetime
 import numpy as np
@@ -153,6 +154,7 @@ class BaseEstimator:
         self._init_args = [config, logger, reporter]
         self._reporter = reporter
         name = name if isinstance(name, str) else self.__class__.__name__
+        self._name = name
         self._logger = logger if logger is not None else logging.getLogger(name)
         self._logger.setLevel(logging.INFO)
 
@@ -242,10 +244,10 @@ class BaseEstimator:
         raise NotImplementedError
 
     def _init_network(self):
-        if not self.num_class:
-            raise ValueError('Unable to create network when `num_class` is unknown. \
-                It should be inferred from dataset or resumed from saved states.')
-        assert len(self.classes) == self.num_class
+        raise NotImplementedError
+
+    def _init_trainer(self):
+        raise NotImplementedError
 
     def state_dict(self):
         state = {
@@ -259,22 +261,23 @@ class BaseEstimator:
         return state
 
     def save(self, filename):
-        state = self.state_dict()
+        # state = self.state_dict()
         with open(filename, 'wb') as fid:
-            pickle.dump(state, fid)
+            pickle.dump(self, fid)
         self._logger.info('Pickled to %s', filename)
 
     @classmethod
     def load(cls, filename):
         with open(filename, 'rb') as fid:
-            state = pickle.load(fid)
-            _cls = state['__class__']
-            obj = _cls(*state['init_args'])
-            obj.classes = state['classes']
-            obj.num_class = len(obj.classes)
-            obj.dataset = state['dataset']
-            obj.current_epoch = state['current_epoch']
-            obj.put_parameters(state['params'])
+            obj = pickle.load(fid)
+            # state = pickle.load(fid)
+            # _cls = state['__class__']
+            # obj = _cls(*state['init_args'])
+            # obj.classes = state['classes']
+            # obj.num_class = len(obj.classes)
+            # obj.dataset = state['dataset']
+            # obj.current_epoch = state['current_epoch']
+            # obj.put_parameters(state['params'])
             obj._logger.info('Unpickled from %s', filename)
             return obj
 
@@ -307,5 +310,75 @@ class BaseEstimator:
         param_dict = self.net._collect_params_with_prefix()
         for k, v in param_dict.items():
             # cast to numpy array
-            param_dict[k] = v.data(ctx=self.ctx[0]).asnumpy()
+            param_dict[k] = v._reduce().asnumpy()
         return param_dict
+
+    def __getstate__(self):
+        d = self.__dict__.copy()
+        try:
+            import mxnet as mx
+            net = d.get('net', None)
+            if isinstance(net, mx.gluon.HybridBlock):
+                with temporary_filename() as tfile:
+                    net.save_parameters(tfile)
+                    with open(tfile, 'rb') as fi:
+                        d['net'] = fi.read()
+            trainer = d.get('trainer', None)
+            if isinstance(trainer, mx.gluon.Trainer):
+                with temporary_filename() as tfile:
+                    trainer.save_states(tfile)
+                    with open(tfile, 'rb') as fi:
+                        d['trainer'] = fi.read()
+        except ImportError:
+            pass
+        d['_logger'] = None
+        return d
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        try:
+            import mxnet as mx
+            net_params = state['net']
+            self._init_network()
+            with temporary_filename() as tfile:
+                with open(tfile, 'wb') as fo:
+                    fo.write(net_params)
+                self.net.load_parameters(tfile)
+            trainer_state = state['trainer']
+            self._init_trainer()
+            with temporary_filename() as tfile:
+                with open(tfile, 'wb') as fo:
+                    fo.write(trainer_state)
+                self.trainer.load_states(tfile)
+        except ImportError:
+            pass
+        # logger
+        self._logger = logging.getLogger(state.get('_name', self.__class__.__name__))
+        self._logger.setLevel(logging.INFO)
+        fh = logging.FileHandler(self._log_file)
+        self._logger.addHandler(fh)
+
+
+@contextlib.contextmanager
+def temporary_filename(suffix=None):
+  """Context that introduces a temporary file.
+
+  Creates a temporary file, yields its name, and upon context exit, deletes it.
+  (In contrast, tempfile.NamedTemporaryFile() provides a 'file' object and
+  deletes the file as soon as that file object is closed, so the temporary file
+  cannot be safely re-opened by another library or process.)
+
+  Args:
+    suffix: desired filename extension (e.g. '.mp4').
+
+  Yields:
+    The name of the temporary file.
+  """
+  import tempfile
+  try:
+    f = tempfile.NamedTemporaryFile(suffix=suffix, delete=False)
+    tmp_name = f.name
+    f.close()
+    yield tmp_name
+  finally:
+    os.unlink(tmp_name)

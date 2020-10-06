@@ -5,6 +5,7 @@ import time
 import warnings
 from collections import OrderedDict
 
+import pandas as pd
 import mxnet as mx
 from mxnet import autograd
 from mxnet import gluon
@@ -112,8 +113,19 @@ class CenterNetEstimator(BaseEstimator):
     """
     def __init__(self, config, logger=None, reporter=None):
         super(CenterNetEstimator, self).__init__(config, logger, reporter=reporter, name=None)
+        self.last_train = None
 
     def _fit(self, train_data, val_data):
+        self._best_map = 0
+        self.epoch = 0
+        if not isinstance(train_data, pd.DataFrame):
+            self.last_train = len(train_data)
+        else:
+            self.last_train = train_data
+        self._init_trainer()
+        self._resume_fit(train_data, val_data)
+
+    def _resume_fit(self, train_data, val_data):
         if not self.classes or not self.num_class:
             raise ValueError('Unable to determine classes of dataset')
         train_dataset = train_data.to_mxnet()
@@ -136,36 +148,9 @@ class CenterNetEstimator(BaseEstimator):
             self._cfg.validation.batch_size, False, batchify_fn=val_batchify_fn, last_batch='keep',
             num_workers=self._cfg.validation.num_workers)
 
-        self._train_data = train_loader
-        self._val_data = val_loader
-        self._eval_metric = val_metric
+        self._train_loop(train_loader, val_loader, val_metric)
 
-        # trainer
-        self.net.collect_params().reset_ctx(self.ctx)
-        lr_decay = float(self._cfg.train.lr_decay)
-        lr_steps = sorted(self._cfg.train.lr_decay_epoch)
-        lr_decay_epoch = [e - self._cfg.train.warmup_epochs for e in lr_steps]
-        num_batches = len(train_dataset) // self._cfg.train.batch_size
-        lr_scheduler = LRSequential([
-            LRScheduler('linear', base_lr=0, target_lr=self._cfg.train.lr,
-                        nepochs=self._cfg.train.warmup_epochs, iters_per_epoch=num_batches),
-            LRScheduler(self._cfg.train.lr_mode, base_lr=self._cfg.train.lr,
-                        nepochs=self._cfg.train.epochs - self._cfg.train.warmup_epochs,
-                        iters_per_epoch=num_batches,
-                        step_epoch=lr_decay_epoch,
-                        step_factor=self._cfg.train.lr_decay, power=2),
-        ])
-
-        for k, v in self.net.collect_params('.*bias').items():
-            v.wd_mult = 0.0
-        self._trainer = gluon.Trainer(
-            self.net.collect_params(), 'adam',
-            {'learning_rate': self._cfg.train.lr, 'wd': self._cfg.train.wd,
-             'lr_scheduler': lr_scheduler})
-
-        # self._save_prefix = os.path.join(self._logdir, net_name)
-        self._best_map = 0
-
+    def _train_loop(self, train_data, val_data, val_metric):
         wh_loss = MaskedL1Loss(weight=self._cfg.center_net.wh_weight)
         heatmap_loss = HeatmapFocalLoss(from_logits=True)
         center_reg_loss = MaskedL1Loss(weight=self._cfg.center_net.center_reg_weight)
@@ -173,15 +158,16 @@ class CenterNetEstimator(BaseEstimator):
         wh_metric = mx.metric.Loss('WHL1')
         center_reg_metric = mx.metric.Loss('CenterRegL1')
 
-        for epoch in range(self._cfg.train.start_epoch, self._cfg.train.epochs):
+        for self.epoch in range(max(self._cfg.train.start_epoch, self.epoch), self._cfg.train.epochs):
             wh_metric.reset()
             center_reg_metric.reset()
             heatmap_loss_metric.reset()
             tic = time.time()
             btic = time.time()
             self.net.hybridize()
+            epoch = self.epoch
 
-            for i, batch in enumerate(self._train_data):
+            for i, batch in enumerate(train_data):
                 split_data = [
                     gluon.utils.split_and_load(batch[ind], ctx_list=self.ctx, batch_axis=0) for ind
                     in range(6)]
@@ -206,7 +192,7 @@ class CenterNetEstimator(BaseEstimator):
                         curr_loss = heatmap_losses[-1] + wh_losses[-1] + center_reg_losses[-1]
                         sum_losses.append(curr_loss)
                     autograd.backward(sum_losses)
-                self._trainer.step(len(sum_losses))  # step with # gpus
+                self.trainer.step(len(sum_losses))  # step with # gpus
 
                 heatmap_loss_metric.update(0, heatmap_losses)
                 wh_metric.update(0, wh_losses)
@@ -219,7 +205,7 @@ class CenterNetEstimator(BaseEstimator):
                         '[Epoch {}][Batch {}], Speed: {:.3f} samples/sec, '
                         'LR={}, {}={:.3f}, {}={:.3f}, {}={:.3f}'.format(
                             epoch, i, batch_size / (time.time() - btic),
-                            self._trainer.learning_rate, name2, loss2, name3, loss3, name4, loss4))
+                            self.trainer.learning_rate, name2, loss2, name3, loss3, name4, loss4))
                 btic = time.time()
 
             name2, loss2 = wh_metric.get()
@@ -229,25 +215,25 @@ class CenterNetEstimator(BaseEstimator):
                 '[Epoch {}] Training cost: {:.3f}, {}={:.3f}, {}={:.3f}, {}={:.3f}'.format(
                     epoch, (time.time() - tic), name2, loss2, name3, loss3, name4, loss4))
             if (epoch % self._cfg.validation.interval == 0) or \
-                    (
-                            self._cfg.train.save_interval and epoch % self._cfg.train.save_interval == 0) or \
+                    (self._cfg.train.save_interval and epoch % self._cfg.train.save_interval == 0) or \
                     (epoch == self._cfg.train.epochs - 1):
                 # consider reduce the frequency of validation to save time
-                map_name, mean_ap = self._evaluate()
+                map_name, mean_ap = self._evaluate(val_data, val_metric)
                 val_msg = '\n'.join(['{}={}'.format(k, v) for k, v in zip(map_name, mean_ap)])
                 self._logger.info('[Epoch {}] Validation: \n{}'.format(epoch, val_msg))
                 current_map = float(mean_ap[-1])
-            else:
-                current_map = 0.
-            # self._save_params(current_map, epoch, self._cfg.train.save_interval, self._save_prefix)
+                if current_map > self._best_map:
+                    self._logger.info('[Epoch %d] Current best map: %f vs previous %f',
+                        self.epoch, current_map, self._best_map)
+                    self._best_map = current_map
 
-    def _evaluate(self):
+    def _evaluate(self, val_data, eval_metric):
         """Test on validation dataset."""
-        self._eval_metric.reset()
+        eval_metric.reset()
         self.net.flip_test = self._cfg.validation.flip_test
         mx.nd.waitall()
         self.net.hybridize()
-        for batch in self._val_data:
+        for batch in val_data:
             data = gluon.utils.split_and_load(batch[0], ctx_list=self.ctx, batch_axis=0,
                                               even_split=False)
             label = gluon.utils.split_and_load(batch[1], ctx_list=self.ctx, batch_axis=0,
@@ -272,25 +258,15 @@ class CenterNetEstimator(BaseEstimator):
                     y.slice_axis(axis=-1, begin=5, end=6) if y.shape[-1] > 5 else None)
 
             # update metric
-            self._eval_metric.update(det_bboxes, det_ids, det_scores, gt_bboxes, gt_ids,
+            eval_metric.update(det_bboxes, det_ids, det_scores, gt_bboxes, gt_ids,
                                      gt_difficults)
-        return self._eval_metric.get()
-
-    def _save_params(self, current_map, epoch, save_interval, prefix):
-        self.net.save_parameters('latest.params')
-        self._trainer.save_states('latest.states')
-        current_map = float(current_map)
-        if current_map > self._best_map:
-            self._best_map = current_map
-            self.net.save_parameters('{:s}_{:04d}_{:.4f}_best.params'.format(prefix, epoch, current_map))
-            with open(prefix + '_best_map.log', 'a') as f:
-                f.write('{:04d}:\t{:.4f}\n'.format(epoch, current_map))
-        if save_interval and epoch % save_interval == 0:
-            self.net.save_parameters(
-                '{:s}_{:04d}_{:.4f}.params'.format(prefix, epoch, current_map))
+        return eval_metric.get()
 
     def _init_network(self):
-        super()._init_network()
+        if not self.num_class:
+            raise ValueError('Unable to create network when `num_class` is unknown. \
+                It should be inferred from dataset or resumed from saved states.')
+        assert len(self.classes) == self.num_class
         # network
         ctx = [mx.gpu(int(i)) for i in self._cfg.train.gpus]
         ctx = ctx if ctx else [mx.cpu()]
@@ -316,7 +292,36 @@ class CenterNetEstimator(BaseEstimator):
             warnings.simplefilter("always")
             net.initialize()
         self.net = net
+        for k, v in self.net.collect_params('.*bias').items():
+            v.wd_mult = 0.0
+        self.net.collect_params().reset_ctx(self.ctx)
 
+    def _init_trainer(self):
+        if self.last_train is None:
+            raise RuntimeError('Cannot init trainer without knowing the size of training data')
+        if isinstance(self.last_train, pd.DataFrame):
+            train_size = len(self.last_train)
+        elif isinstance(self.last_train, int):
+            train_size = self.last_train
+        else:
+            raise ValueError("Unknown type of self.last_train: {}".format(type(self.last_train)))
+        lr_decay = float(self._cfg.train.lr_decay)
+        lr_steps = sorted(self._cfg.train.lr_decay_epoch)
+        lr_decay_epoch = [e - self._cfg.train.warmup_epochs for e in lr_steps]
+        num_batches = train_size // self._cfg.train.batch_size
+        lr_scheduler = LRSequential([
+            LRScheduler('linear', base_lr=0, target_lr=self._cfg.train.lr,
+                        nepochs=self._cfg.train.warmup_epochs, iters_per_epoch=num_batches),
+            LRScheduler(self._cfg.train.lr_mode, base_lr=self._cfg.train.lr,
+                        nepochs=self._cfg.train.epochs - self._cfg.train.warmup_epochs,
+                        iters_per_epoch=num_batches,
+                        step_epoch=lr_decay_epoch,
+                        step_factor=self._cfg.train.lr_decay, power=2),
+        ])
+        self.trainer = gluon.Trainer(
+            self.net.collect_params(), 'adam',
+            {'learning_rate': self._cfg.train.lr, 'wd': self._cfg.train.wd,
+             'lr_scheduler': lr_scheduler})
 
 @ex.automain
 def main(_config, _log):
