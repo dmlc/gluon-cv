@@ -41,9 +41,9 @@ ctx = mx.cpu(0)
 #
 #
 # After getting the dataset, we can easily load images with PIL.
-data_path = "~/.mxnet/datasets/kitti/example/2011_09_26/2011_09_26_drive_0095_sync/image_02/data"
+data_path = os.path.expanduser("~/.mxnet/datasets/kitti/example/2011_09_26/2011_09_26_drive_0095_sync/image_02/data")
 
-files = os.listdir(data_path)
+files = os.listdir(os.path.expanduser(data_path))
 files.sort()
 
 raw_img_sequences = []
@@ -160,15 +160,16 @@ for frame in output_sequences:
     frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
 
     out.write(frame)
-    cv2.imshow('demo', frame)
+    # uncomment to display the frames
+    # cv2.imshow('demo', frame)
 
-    if cv2.waitKey(25) & 0xFF == ord('q'):
-        break
+    # if cv2.waitKey(25) & 0xFF == ord('q'):
+    #    break
 
 ##############################################################################
 # We release the webcam before exiting:
 out.release()
-cv2.destroyAllWindows()
+# cv2.destroyAllWindows()
 
 ##############################################################################
 # The result video for the example:
@@ -206,5 +207,3 @@ cv2.destroyAllWindows()
 #     so it cannot work when the image sequence or video is large.
 #     Here is just provide an example about using a pretrained monodepth2 model to do a prediction for users.
 #
-
-

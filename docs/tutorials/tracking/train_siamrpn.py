@@ -48,14 +48,14 @@ from gluoncv.loss import SiamRPNLoss
 ################################################################
 #
 # `SiamRPN <http://openaccess.thecvf.com/content_cvpr_2018/papers/Li_High_Performance_Visual_CVPR_2018_paper.pdf>`_ is a widely adopted Single Object Tracking method.
-# Send the template frame and detection frame to the siamese network, 
+# Send the template frame and detection frame to the siamese network,
 # and get the score map and coordinate regression of the anchor through the RPN network and cross correlation layers.
 
 # number of GPUs to use
 num_gpus = 1
 ctx = [mx.cpu(0)]
-batch_size = 128
-epochs=1
+batch_size = 32  # adjust to 128 if memory is sufficient
+epochs = 1
 # Get the model siamrpn_alexnet with SiamRPN backbone
 net = get_model('siamrpn_alexnet_v2_otb15', bz=batch_size, is_train=True, ctx=ctx)
 net.collect_params().reset_ctx(ctx)
@@ -71,7 +71,7 @@ print(net)
 # prepare dataset and dataloader
 train_dataset = TrkDataset(train_epoch=epochs)
 print('Training images:', len(train_dataset))
-workers =1
+workers = 0
 train_loader = gluon.data.DataLoader(train_dataset,
                                      batch_size=batch_size,
                                      last_batch='discard',
@@ -92,7 +92,7 @@ def train_batch_fn(data, ctx):
 #
 # - Training Losses:
 #
-#     We apply Softmax Cross Entropy Loss and L2 loss to train SiamRPN. 
+#     We apply Softmax Cross Entropy Loss and L2 loss to train SiamRPN.
 #
 
 criterion = SiamRPNLoss(batch_size)
@@ -124,7 +124,8 @@ loc_weight = 1.2
 #
 # .. note::
 #   In your experiments, we recommend setting ``epochs=50`` for the dataset.
-epoch = 3
+#   We will skip the training in this tutorial
+epochs = 0
 
 for epoch in range(epochs):
     loss_total_val = 0

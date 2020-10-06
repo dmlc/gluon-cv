@@ -75,7 +75,7 @@ dataset = gluoncv.data.KITTIOdomDataset(
     data_path=data_path, filenames=filenames, height=192, width=640, frame_idxs=[0, 1],
     num_scales=4, is_train=False, img_ext=".png")
 dataloader = gluon.data.DataLoader(
-    dataset, batch_size=1, shuffle=False, batchify_fn=dict_batchify_fn, num_workers=12,
+    dataset, batch_size=1, shuffle=False, batchify_fn=dict_batchify_fn, num_workers=0,
     pin_memory=True, last_batch='keep')
 
 ##############################################################################
