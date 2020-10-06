@@ -163,13 +163,13 @@ for frame in output_sequences:
     # uncomment to display the frames
     # cv2.imshow('demo', frame)
 
-    if cv2.waitKey(25) & 0xFF == ord('q'):
-        break
+    # if cv2.waitKey(25) & 0xFF == ord('q'):
+    #    break
 
 ##############################################################################
 # We release the webcam before exiting:
 out.release()
-cv2.destroyAllWindows()
+# cv2.destroyAllWindows()
 
 ##############################################################################
 # The result video for the example:
