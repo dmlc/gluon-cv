@@ -1,5 +1,6 @@
 """Auto pipeline for object detection task"""
 import logging
+import uuid
 
 import autogluon as ag
 from autogluon.core.decorator import sample_config
@@ -11,6 +12,7 @@ from ... import utils as gutils
 from ..estimators.base_estimator import ConfigDict, BaseEstimator
 from ..estimators import SSDEstimator, FasterRCNNEstimator, YOLOEstimator, CenterNetEstimator
 from .utils import auto_suggest, config_to_nested
+from .dataset import ObjectDetectionDataset
 
 
 __all__ = ['ObjectDetection']
@@ -44,8 +46,9 @@ def _train_object_detection(args, reporter):
 
     # TODO: checkpointing needs to be done in a better way
     if args['final_fit']:
-        return {'model_params': collect_params(estimator.net)}
-
+        unique_checkpoint = str(uuid.uuid4())
+        estimator.save(unique_checkpoint)
+        return {'model_checkpoint': unique_checkpoint}
     return {}
 
 
@@ -142,9 +145,9 @@ class ObjectDetection(BaseTask):
         best_config = config_to_nested(best_config)
         self._logger.info('The best config: %s', str(best_config))
 
-        estimator = best_config['estimator'](best_config)
+        # estimator = best_config['estimator'](best_config)
         # TODO: checkpointing needs to be done in a better way
-        estimator.put_parameters(results.pop('model_params'))
+        estimator = self.load(results.pop('model_checkpoint'))
         return estimator
 
     @classmethod
@@ -155,5 +158,4 @@ class ObjectDetection(BaseTask):
         assert type(obj) in (SSDEstimator, FasterRCNNEstimator, YOLOEstimator, CenterNetEstimator)
         return obj
 
-# Dataset = ObjectDetectionDataset
-# from tasks.object_detection import Dataset
+Dataset = ObjectDetectionDataset

@@ -231,8 +231,8 @@ class BaseEstimator:
 
         return self._fit(train_data, val_data) if not resume else self._resume_fit(train_data, val_data)
 
-    def evaluate(self):
-        return self._evaluate()
+    def evaluate(self, val_data):
+        return self._evaluate(val_data)
 
     def _fit(self, train_data, val_data):
         raise NotImplementedError
@@ -240,7 +240,7 @@ class BaseEstimator:
     def _resume_fit(self, train_data, val_data):
         raise NotImplementedError
 
-    def _evaluate(self):
+    def _evaluate(self, val_data):
         raise NotImplementedError
 
     def _init_network(self):
@@ -249,19 +249,7 @@ class BaseEstimator:
     def _init_trainer(self):
         raise NotImplementedError
 
-    def state_dict(self):
-        state = {
-            'init_args': self._init_args,
-            '__class__': self.__class__,
-            'params': self.get_parameters(),
-            'classes': self.classes,
-            'dataset': self.dataset,
-            'current_epoch': self.current_epoch
-        }
-        return state
-
     def save(self, filename):
-        # state = self.state_dict()
         with open(filename, 'wb') as fid:
             pickle.dump(self, fid)
         self._logger.info('Pickled to %s', filename)
@@ -270,48 +258,40 @@ class BaseEstimator:
     def load(cls, filename):
         with open(filename, 'rb') as fid:
             obj = pickle.load(fid)
-            # state = pickle.load(fid)
-            # _cls = state['__class__']
-            # obj = _cls(*state['init_args'])
-            # obj.classes = state['classes']
-            # obj.num_class = len(obj.classes)
-            # obj.dataset = state['dataset']
-            # obj.current_epoch = state['current_epoch']
-            # obj.put_parameters(state['params'])
             obj._logger.info('Unpickled from %s', filename)
             return obj
 
-    def put_parameters(self, parameters):
-        """Load saved parameters into the model"""
-        if not parameters:
-            return
-        if not self.net:
-            # reinit
-            if not self.num_class:
-                raise ValueError('Unable to resume state when `num_class` is unknown. \
-                    This usually means that you have not correctly saved the previous state.')
-            self._init_network()
-
-        try:
-            param_dict = self.net._collect_params_with_prefix()
-            for k, _ in param_dict.items():
-                param_dict[k].set_data(parameters[k])
-        except Exception as e:
-            self._logger.info('Failed to resume previous parameters, possible reasons: \
-                1) The network structure has changed. \
-                2) The number of categories has changed. Details: %s',
-                str(e))
-
-    def get_parameters(self):
-        """Return model parameters"""
-        if not self.net:
-            # Estimator is not initialized, thus no state
-            return {}
-        param_dict = self.net._collect_params_with_prefix()
-        for k, v in param_dict.items():
-            # cast to numpy array
-            param_dict[k] = v._reduce().asnumpy()
-        return param_dict
+    # def put_parameters(self, parameters):
+    #     """Load saved parameters into the model"""
+    #     if not parameters:
+    #         return
+    #     if not self.net:
+    #         # reinit
+    #         if not self.num_class:
+    #             raise ValueError('Unable to resume state when `num_class` is unknown. \
+    #                 This usually means that you have not correctly saved the previous state.')
+    #         self._init_network()
+    #
+    #     try:
+    #         param_dict = self.net._collect_params_with_prefix()
+    #         for k, _ in param_dict.items():
+    #             param_dict[k].set_data(parameters[k])
+    #     except Exception as e:
+    #         self._logger.info('Failed to resume previous parameters, possible reasons: \
+    #             1) The network structure has changed. \
+    #             2) The number of categories has changed. Details: %s',
+    #             str(e))
+    #
+    # def get_parameters(self):
+    #     """Return model parameters"""
+    #     if not self.net:
+    #         # Estimator is not initialized, thus no state
+    #         return {}
+    #     param_dict = self.net._collect_params_with_prefix()
+    #     for k, v in param_dict.items():
+    #         # cast to numpy array
+    #         param_dict[k] = v._reduce().asnumpy()
+    #     return param_dict
 
     def __getstate__(self):
         d = self.__dict__.copy()

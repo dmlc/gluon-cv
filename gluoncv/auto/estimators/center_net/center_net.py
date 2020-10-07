@@ -227,12 +227,24 @@ class CenterNetEstimator(BaseEstimator):
                         self.epoch, current_map, self._best_map)
                     self._best_map = current_map
 
-    def _evaluate(self, val_data, eval_metric):
+    def _evaluate(self, val_data, eval_metric=None):
         """Test on validation dataset."""
+        if eval_metric is None:
+            eval_metric = VOCMApMetric(class_names=self.classes)
         eval_metric.reset()
         self.net.flip_test = self._cfg.validation.flip_test
         mx.nd.waitall()
         self.net.hybridize()
+        if not isinstance(val_data, gluon.data.DataLoader):
+            from ...tasks.dataset import ObjectDetectionDataset
+            if isinstance(val_data, ObjectDetectionDataset):
+                val_data = val_data.to_mxnet()
+            val_batchify_fn = Tuple(Stack(), Pad(pad_val=-1))
+            width, height = self._cfg.center_net.data_shape
+            val_data = gluon.data.DataLoader(
+                val_data.transform(CenterNetDefaultValTransform(width, height)),
+                self._cfg.validation.batch_size, False, batchify_fn=val_batchify_fn, last_batch='keep',
+                num_workers=self._cfg.validation.num_workers)
         for batch in val_data:
             data = gluon.utils.split_and_load(batch[0], ctx_list=self.ctx, batch_axis=0,
                                               even_split=False)
