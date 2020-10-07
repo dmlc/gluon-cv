@@ -53,6 +53,7 @@ def _train_object_detection(args, reporter):
 
 
 class ObjectDetection(BaseTask):
+    Dataset = ObjectDetectionDataset
     """Object Detection general task.
 
     Parameters
@@ -157,5 +158,3 @@ class ObjectDetection(BaseTask):
         # pylint: disable=unidiomatic-typecheck
         assert type(obj) in (SSDEstimator, FasterRCNNEstimator, YOLOEstimator, CenterNetEstimator)
         return obj
-
-Dataset = ObjectDetectionDataset
