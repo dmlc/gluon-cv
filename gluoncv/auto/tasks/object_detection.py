@@ -15,7 +15,7 @@ from .utils import auto_suggest, config_to_nested
 from .dataset import ObjectDetectionDataset
 
 
-__all__ = ['ObjectDetection']
+__all__ = ['ObjectDetection', 'Dataset']
 
 @ag.args()
 def _train_object_detection(args, reporter):
