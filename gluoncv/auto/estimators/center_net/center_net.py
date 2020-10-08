@@ -128,9 +128,11 @@ class CenterNetEstimator(BaseEstimator):
             return pd.concat([self._predict(xx) for xx in x['image']])
         else:
             raise ValueError('Input is not supported: {}'.format(type(x)))
+        height, width = x.shape[2:4]
         x = x.as_in_context(self.ctx[0])
         ids, scores, bboxes = [xx[0].asnumpy().tolist() for xx in self.net(x)]
-        return pd.DataFrame({'id': ids, 'score': scores, 'rois': bboxes})
+        return pd.DataFrame({'id': [self.classes[id] for id in ids], 'score': scores,
+            'rois': [{'xmin': bbox[0], 'ymin': bbox[1], 'xmax': bbox[2], 'ymax': bbox[3]} for bbox in bboxes]})
 
     def _fit(self, train_data, val_data):
         self._best_map = 0
