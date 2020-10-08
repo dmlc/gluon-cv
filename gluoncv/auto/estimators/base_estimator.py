@@ -234,6 +234,12 @@ class BaseEstimator:
     def evaluate(self, val_data):
         return self._evaluate(val_data)
 
+    def predict(self, x):
+        return self._predict(x)
+
+    def _predict(self, x):
+        raise NotImplementedError
+
     def _fit(self, train_data, val_data):
         raise NotImplementedError
 
