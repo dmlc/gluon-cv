@@ -1,5 +1,6 @@
 """Dataset implementation for specific task(s)"""
 import logging
+import os
 from pathlib import Path
 import numpy as np
 import pandas as pd
@@ -15,6 +16,95 @@ except ImportError:
     MXDataset = object
 
 logger = logging.getLogger()
+
+def _absolute_pathify(df, root=None, column='image'):
+    """Convert relative paths to absolute"""
+    if root is None:
+        return df
+    assert column in df.columns
+    assert isinstance(root, str), 'Invalid root path: {}'.format(root)
+    root = os.path.abspath(os.path.expanduser(root))
+    for i, row in df.iterrows():
+        path = df.at[i, 'image']
+        if not os.path.isabs(path):
+            df.at[i, 'image'] = os.path.join(root, os.path.expanduser(path))
+    return df
+
+
+class ImageClassificationDataset(pd.DataFrame):
+    # preserved properties that will be copied to a new instance
+    _metadata = ['classes', 'to_mxnet']
+
+    def __init__(self, data, classes=None, **kwargs):
+        if isinstance(data, str) and data.endswith('csv'):
+            self = self.from_csv(data, root=kwargs.get('root', None))
+        self.classes = classes
+        super().__init__(data, **kwargs)
+
+    @property
+    def _constructor(self):
+        return ImageClassificationDataset
+
+    @property
+    def _constructor_sliced(self):
+        return pd.Series
+
+    @classmethod
+    def from_csv(cls, csv_file, root=None):
+        df = pd.read_csv(csv_file)
+        assert 'image' in df.columns, "`image` column is required, used for accessing the original images"
+        if not 'class' in df.columns:
+            logger.debug('class not in columns, no access to labels of images')
+            classes = None
+        else:
+            classes = df.class.unique()
+        df = _absolute_pathify(df, root=root, column='image')
+        return cls(df, classes=classes)
+
+    @classmethod
+    def from_folder(cls, root, exts=('.jpg', '.jpeg', '.png')):
+        """A dataset for loading image files stored in a folder structure.
+        like::
+            root/car/0001.jpg
+            root/car/xxxa.jpg
+            root/car/yyyb.jpg
+            root/bus/123.png
+            root/bus/023.jpg
+            root/bus/wwww.jpg
+        """
+        synsets = []
+        items = {'image': [], 'class': []}
+        assert isinstance(root, str)
+        root = os.path.abspath(os.path.expanduser(root))
+
+        for folder in sorted(os.listdir(root)):
+            path = os.path.join(root, folder)
+            if not os.path.isdir(path):
+                logger.debug('Ignoring %s, which is not a directory.'%path, stacklevel=3)
+                continue
+            label = len(synsets)
+            synsets.append(folder)
+            for filename in sorted(os.listdir(path)):
+                filename = os.path.join(path, filename)
+                ext = os.path.splitext(filename)[1]
+                if ext.lower() not in exts:
+                    logger.debug('Ignoring %s of type %s. Only support %s'%(
+                        filename, ext, ', '.join(exts)))
+                    continue
+                items['image'].append(filename)
+                items['class'].append(label)
+        return cls(items, classes=synsets)
+
+    @classmethod
+    def from_path_func(cls, fn):
+        # create from a function
+        raise NotImplementedError
+
+    @classmethod
+    def from_label_func(cls, fn):
+        # create from a label function
+        raise NotImplementedError
+
 
 class ObjectDetectionDataset(pd.DataFrame):
     # preserved properties that will be copied to a new instance
@@ -34,11 +124,6 @@ class ObjectDetectionDataset(pd.DataFrame):
     @property
     def _constructor_sliced(self):
         return pd.Series
-
-    @classmethod
-    def from_iterable(cls, iterable):
-        # lst is a python list with element pairs [(path, label, bbox), (path, label, bbox)...]
-        raise NotImplementedError
 
     @classmethod
     def from_voc(cls, root, splits=None, exts=('.jpg', '.jpeg', '.png')):
@@ -66,9 +151,6 @@ class ObjectDetectionDataset(pd.DataFrame):
                 exts = [exts]
             for ext in exts:
                 img_list.extend([rp.stem for rp in rpath.glob('JPEGImages/*' + ext)])
-        # d = {'file': [], 'name': [],
-        #      'xmin': [], 'ymin': [], 'xmax': [], 'ymax': [],
-        #      'difficult': [], 'width': [], 'height': []}
         d = {'image': [], 'rois': [], 'image_attr': []}
         for stem in img_list:
             basename = stem + '.xml'
@@ -113,6 +195,11 @@ class ObjectDetectionDataset(pd.DataFrame):
     @classmethod
     def from_path_func(cls, fn):
         # create from a function
+        raise NotImplementedError
+
+    @classmethod
+    def from_label_func(cls, fn):
+        # create from a label function
         raise NotImplementedError
 
     def pack(self):

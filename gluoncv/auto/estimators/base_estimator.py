@@ -261,38 +261,6 @@ class BaseEstimator:
             obj._logger.info('Unpickled from %s', filename)
             return obj
 
-    # def put_parameters(self, parameters):
-    #     """Load saved parameters into the model"""
-    #     if not parameters:
-    #         return
-    #     if not self.net:
-    #         # reinit
-    #         if not self.num_class:
-    #             raise ValueError('Unable to resume state when `num_class` is unknown. \
-    #                 This usually means that you have not correctly saved the previous state.')
-    #         self._init_network()
-    #
-    #     try:
-    #         param_dict = self.net._collect_params_with_prefix()
-    #         for k, _ in param_dict.items():
-    #             param_dict[k].set_data(parameters[k])
-    #     except Exception as e:
-    #         self._logger.info('Failed to resume previous parameters, possible reasons: \
-    #             1) The network structure has changed. \
-    #             2) The number of categories has changed. Details: %s',
-    #             str(e))
-    #
-    # def get_parameters(self):
-    #     """Return model parameters"""
-    #     if not self.net:
-    #         # Estimator is not initialized, thus no state
-    #         return {}
-    #     param_dict = self.net._collect_params_with_prefix()
-    #     for k, v in param_dict.items():
-    #         # cast to numpy array
-    #         param_dict[k] = v._reduce().asnumpy()
-    #     return param_dict
-
     def __getstate__(self):
         d = self.__dict__.copy()
         try:

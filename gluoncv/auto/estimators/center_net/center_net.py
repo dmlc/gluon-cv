@@ -18,6 +18,7 @@ from ....data.batchify import Tuple, Stack, Pad
 from ....data.transforms.presets.center_net import CenterNetDefaultTrainTransform
 from ....data.transforms.presets.center_net import CenterNetDefaultValTransform, get_post_transform
 from ....loss import MaskedL1Loss, HeatmapFocalLoss
+from ....model_zoo import get_model
 from ....model_zoo.center_net import get_center_net, get_base_network
 from ....utils import LRScheduler, LRSequential
 from ....utils.metrics import VOCMApMetric
@@ -44,6 +45,7 @@ def center_net_default():
     wh_weight = 0.1  # Loss weight for width/height
     center_reg_weight = 1.0  # Center regression loss weight
     data_shape = (512, 512)
+    transfer = None  # use the pre-trained detector for transfer learning(use preset, ignore other network settings)
 
 
 @train.config
@@ -85,7 +87,7 @@ ex = Experiment('center_net_default',
 
 @ex.config
 def default_configs():
-    dataset = 'coco'
+    dataset = 'custom'
 
 
 @set_default(ex)
@@ -283,26 +285,33 @@ class CenterNetEstimator(BaseEstimator):
         ctx = [mx.gpu(int(i)) for i in self._cfg.train.gpus]
         ctx = ctx if ctx else [mx.cpu()]
         self.ctx = ctx
-        net_name = '_'.join(('center_net', self._cfg.center_net.base_network, self._cfg.dataset))
-        heads = OrderedDict([
-            ('heatmap',
-             {'num_output': self.num_class, 'bias': self._cfg.center_net.heads.bias}),
-            ('wh', {'num_output': self._cfg.center_net.heads.wh_outputs}),
-            ('reg', {'num_output': self._cfg.center_net.heads.reg_outputs})])
-        base_network = get_base_network(self._cfg.center_net.base_network,
-                                        pretrained=self._cfg.train.pretrained_base)
-        net = get_center_net(self._cfg.center_net.base_network,
-                             self.dataset,
-                             base_network=base_network,
-                             heads=heads,
-                             head_conv_channel=self._cfg.center_net.heads.head_conv_channel,
-                             classes=self.classes,
-                             scale=self._cfg.center_net.scale,
-                             topk=self._cfg.center_net.topk,
-                             norm_layer=gluon.nn.BatchNorm)
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-            net.initialize()
+        if self._cfg.center_net.transfer is not None:
+            assert isinstance(self._cfg.center_net.transfer, str)
+            self._logger.info('Using transfer learning from %s, ignoring some of the network configs',
+                self._cfg.center_net.transfer)
+            net = get_model(self._cfg.center_net.transfer, pretrained=True)
+            net.reset_class(self.classes, reuse_weights=self.classes)
+        else:
+            net_name = '_'.join(('center_net', self._cfg.center_net.base_network, self._cfg.dataset))
+            heads = OrderedDict([
+                ('heatmap',
+                 {'num_output': self.num_class, 'bias': self._cfg.center_net.heads.bias}),
+                ('wh', {'num_output': self._cfg.center_net.heads.wh_outputs}),
+                ('reg', {'num_output': self._cfg.center_net.heads.reg_outputs})])
+            base_network = get_base_network(self._cfg.center_net.base_network,
+                                            pretrained=self._cfg.train.pretrained_base)
+            net = get_center_net(self._cfg.center_net.base_network,
+                                 self.dataset,
+                                 base_network=base_network,
+                                 heads=heads,
+                                 head_conv_channel=self._cfg.center_net.heads.head_conv_channel,
+                                 classes=self.classes,
+                                 scale=self._cfg.center_net.scale,
+                                 topk=self._cfg.center_net.topk,
+                                 norm_layer=gluon.nn.BatchNorm)
+            with warnings.catch_warnings(record=True) as w:
+                warnings.simplefilter("always")
+                net.initialize()
         self.net = net
         for k, v in self.net.collect_params('.*bias').items():
             v.wd_mult = 0.0
