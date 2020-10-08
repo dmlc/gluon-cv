@@ -57,7 +57,7 @@ class ImageClassificationDataset(pd.DataFrame):
             logger.debug('class not in columns, no access to labels of images')
             classes = None
         else:
-            classes = df.class.unique()
+            classes = df['class'].unique()
         df = _absolute_pathify(df, root=root, column='image')
         return cls(df, classes=classes)
 
