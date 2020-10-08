@@ -121,9 +121,9 @@ class CenterNetEstimator(BaseEstimator):
     def _predict(self, x):
         short_size = min(self._cfg.center_net.data_shape)
         if isinstance(x, str):
-            x = load_test(x, short=short_size, max_size=1024)
+            x = load_test(x, short=short_size, max_size=1024)[0]
         elif isinstance(x, mx.nd.NDArray):
-            x = transform_test(x, short=short_size, max_size=1024)
+            x = transform_test(x, short=short_size, max_size=1024)[0]
         elif isinstance(x, pd.DataFrame):
             return pd.concat([self._predict(xx) for xx in x['image']])
         else:
