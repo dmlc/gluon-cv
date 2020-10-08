@@ -290,7 +290,7 @@ class CenterNetEstimator(BaseEstimator):
             self._logger.info('Using transfer learning from %s, ignoring some of the network configs',
                 self._cfg.center_net.transfer)
             net = get_model(self._cfg.center_net.transfer, pretrained=True)
-            net.reset_class(self.classes, reuse_weights=self.classes)
+            net.reset_class(self.classes, reuse_weights=[cname for cname in self.classes if cname in net.classes])
         else:
             net_name = '_'.join(('center_net', self._cfg.center_net.base_network, self._cfg.dataset))
             heads = OrderedDict([
