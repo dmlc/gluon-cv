@@ -284,6 +284,11 @@ class BaseEstimator:
 
     def __setstate__(self, state):
         self.__dict__.update(state)
+        # logger
+        self._logger = logging.getLogger(state.get('_name', self.__class__.__name__))
+        self._logger.setLevel(logging.INFO)
+        fh = logging.FileHandler(self._log_file)
+        self._logger.addHandler(fh)
         try:
             import mxnet as mx
             net_params = state['net']
@@ -300,11 +305,6 @@ class BaseEstimator:
                 self.trainer.load_states(tfile)
         except ImportError:
             pass
-        # logger
-        self._logger = logging.getLogger(state.get('_name', self.__class__.__name__))
-        self._logger.setLevel(logging.INFO)
-        fh = logging.FileHandler(self._log_file)
-        self._logger.addHandler(fh)
 
 
 @contextlib.contextmanager
