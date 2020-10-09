@@ -6,6 +6,7 @@ import warnings
 from collections import OrderedDict
 
 import pandas as pd
+import numpy as np
 import mxnet as mx
 from mxnet import autograd
 from mxnet import gluon
