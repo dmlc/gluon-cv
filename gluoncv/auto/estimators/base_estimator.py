@@ -3,7 +3,6 @@ import os
 import copy
 import pickle
 import logging
-import contextlib
 import warnings
 from datetime import datetime
 import numpy as np
@@ -11,6 +10,7 @@ import pandas as pd
 from sacred.commands import _format_config, save_config, print_config
 from sacred.settings import SETTINGS
 from ...utils import random as _random
+from ...utils.filesystem import temporary_filename
 
 SETTINGS.CONFIG.READ_ONLY_CONFIG = False
 
@@ -174,24 +174,7 @@ class BaseEstimator:
         logdir = r.config.get('logging.logdir', None)
         self._logdir = os.path.abspath(logdir) if logdir else os.getcwd()
 
-        # try to auto resume
-        prefix = None
-        if r.config.get('train', {}).get('auto_resume', False):
-            exists = [d for d in os.listdir(self._logdir) if d.startswith(name)]
-            # latest timestamp
-            exists = sorted(exists)
-            prefix = exists[-1] if exists else None
-            # compare config, if altered, then skip auto resume
-            if prefix:
-                self._ex.add_config(os.path.join(self._logdir, prefix, 'config.yaml'))
-                r2 = self._ex.run('_get_config', options={'--loglevel': 50, '--force': True})
-                if _compare_config(r2.config, r.config):
-                    self._logger.info('Auto resume detected previous run: %s', str(prefix))
-                    r.config['seed'] = r2.config['seed']
-                else:
-                    prefix = None
-        if not prefix:
-            prefix = name + datetime.now().strftime("-%m-%d-%Y-%H-%M-%S")
+        prefix = name.lower() + datetime.now().strftime("-%m-%d-%Y")
         self._logdir = os.path.join(self._logdir, prefix)
         r.config['logdir'] = self._logdir
         os.makedirs(self._logdir, exist_ok=True)
@@ -311,28 +294,3 @@ class BaseEstimator:
                 self.trainer.load_states(tfile)
         except ImportError:
             pass
-
-
-@contextlib.contextmanager
-def temporary_filename(suffix=None):
-  """Context that introduces a temporary file.
-
-  Creates a temporary file, yields its name, and upon context exit, deletes it.
-  (In contrast, tempfile.NamedTemporaryFile() provides a 'file' object and
-  deletes the file as soon as that file object is closed, so the temporary file
-  cannot be safely re-opened by another library or process.)
-
-  Args:
-    suffix: desired filename extension (e.g. '.mp4').
-
-  Yields:
-    The name of the temporary file.
-  """
-  import tempfile
-  try:
-    f = tempfile.NamedTemporaryFile(suffix=suffix, delete=False)
-    tmp_name = f.name
-    f.close()
-    yield tmp_name
-  finally:
-    os.unlink(tmp_name)
