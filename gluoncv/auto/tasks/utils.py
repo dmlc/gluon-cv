@@ -9,7 +9,7 @@ from ..estimators.base_estimator import BaseEstimator
 from ..estimators import SSDEstimator, FasterRCNNEstimator, YOLOEstimator, CenterNetEstimator
 
 
-def auto_suggest(config, estimator):
+def auto_suggest(config, estimator, logger):
     """
     Automatically suggest some hyperparameters based on the dataset statistics.
     """
@@ -60,12 +60,13 @@ def auto_suggest(config, estimator):
     bbox_size = np.mean(bbox_size_list)
     bbox_rel_size = np.mean(bbox_rel_size_list)
 
-    print('number of training images:', num_images)
-    print('average image size:', image_size)
-    print('number of total object classes:', num_classes)
-    print('average number of objects in an image:', num_objects)
-    print('average bounding box size:', bbox_size)
-    print('average bounding box relative size:', bbox_rel_size)
+    logger.info("Printing dataset statistics")
+    logger.info("number of training images: %d", num_images)
+    logger.info("average image size: %.2f", image_size)
+    logger.info("number of total object classes: %d", num_classes)
+    logger.info("average number of objects in an image: %.2f", num_objects)
+    logger.info("average bounding box size: %.2f", bbox_size)
+    logger.info("average bounding box relative size: %.2f", bbox_rel_size)
 
     # specify 3 parts of config: data preprocessing, model selection, training settings
     if bbox_rel_size < 0.2 or num_objects > 5:
