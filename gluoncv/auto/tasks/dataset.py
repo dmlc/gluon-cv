@@ -53,11 +53,11 @@ class ImageClassificationDataset(pd.DataFrame):
     def from_csv(cls, csv_file, root=None):
         df = pd.read_csv(csv_file)
         assert 'image' in df.columns, "`image` column is required, used for accessing the original images"
-        if not 'class' in df.columns:
-            logger.debug('class not in columns, no access to labels of images')
+        if not 'label' in df.columns:
+            logger.debug('label not in columns, no access to labels of images')
             classes = None
         else:
-            classes = df['class'].unique()
+            classes = df['label'].unique()
         df = _absolute_pathify(df, root=root, column='image')
         return cls(df, classes=classes)
 
@@ -73,7 +73,7 @@ class ImageClassificationDataset(pd.DataFrame):
             root/bus/wwww.jpg
         """
         synsets = []
-        items = {'image': [], 'class': []}
+        items = {'image': [], 'label': []}
         assert isinstance(root, str)
         root = os.path.abspath(os.path.expanduser(root))
 
@@ -92,18 +92,53 @@ class ImageClassificationDataset(pd.DataFrame):
                         filename, ext, ', '.join(exts)))
                     continue
                 items['image'].append(filename)
-                items['class'].append(label)
+                items['label'].append(label)
         return cls(items, classes=synsets)
 
     @classmethod
-    def from_path_func(cls, fn):
-        # create from a function
+    def from_name_func(cls, fn):
+        # create from a function parsed from name
+        raise NotImplementedError
+
+    @classmethod
+    def from_name_re(cls, fn):
+        # create from a re parsed from name
         raise NotImplementedError
 
     @classmethod
     def from_label_func(cls, fn):
-        # create from a label function
+        # create from a function parsed from labels
         raise NotImplementedError
+
+
+class _MXImageClassificationDataset(MXDataset):
+    """Internal wrapper read entries in pd.DataFrame as images/labels.
+
+    Parameters
+    ----------
+    dataset : ImageClassificationDataset
+        DataFrame as ImageClassificationDataset.
+
+    """
+    def __init__(self, dataset):
+        assert isinstance(dataset, ImageClassificationDataset)
+        assert 'image' in dataset.columns
+        self._has_label = 'label' in dataset.columns
+        self._dataset = dataset
+        self.classes = self._dataset.classes
+        import mxnet as mx
+        self._imread = mx.image.imread
+
+    def __len__(self):
+        return self._dataset.shape[0]
+
+    def __getitem__(self, idx):
+        im_path = self._dataset['image'][idx]
+        img = self._imread(im_path)
+        label = None
+        if self._has_label:
+            label = self._dataset['label'][idx]
+        return img, label
 
 
 class ObjectDetectionDataset(pd.DataFrame):
@@ -193,11 +228,6 @@ class ObjectDetectionDataset(pd.DataFrame):
         raise NotImplementedError
 
     @classmethod
-    def from_path_func(cls, fn):
-        # create from a function
-        raise NotImplementedError
-
-    @classmethod
     def from_label_func(cls, fn):
         # create from a label function
         raise NotImplementedError
@@ -250,7 +280,6 @@ class _MXObjectDetectionDataset(MXDataset):
             dataset = dataset.pack()
         assert 'image' in dataset.columns
         assert 'rois' in dataset.columns
-        assert 'image_attr' in dataset.columns
         self._dataset = dataset
         self.classes = self._dataset.classes
         import mxnet as mx
@@ -262,10 +291,8 @@ class _MXObjectDetectionDataset(MXDataset):
     def __getitem__(self, idx):
         im_path = self._dataset['image'][idx]
         rois = self._dataset['rois'][idx]
-        img_attr = self._dataset['image_attr'][idx]
-        width = img_attr['width']
-        height = img_attr['height']
         img = self._imread(im_path)
+        width, height = img.shape[1], img.shape[0]
         def convert_entry(roi):
             return [float(roi[key]) for key in ['xmin', 'ymin', 'xmax', 'ymax']] + \
                 [self.classes.index(roi['class']), float(roi['difficult'])]
