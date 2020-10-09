@@ -125,14 +125,22 @@ class CenterNetEstimator(BaseEstimator):
         elif isinstance(x, mx.nd.NDArray):
             x = transform_test(x, short=short_size, max_size=1024)[0]
         elif isinstance(x, pd.DataFrame):
-            return pd.concat([self._predict(xx) for xx in x['image']])
+            assert 'image' in x.columns, "Expect column `image` for input images"
+            def _predict_merge(x):
+                y = self._predict(x)
+                y['image'] = x
+                return y
+            return pd.concat([_predict_merge(xx) for xx in x['image']])
         else:
             raise ValueError('Input is not supported: {}'.format(type(x)))
         height, width = x.shape[2:4]
         x = x.as_in_context(self.ctx[0])
-        ids, scores, bboxes = [xx[0].asnumpy().tolist() for xx in self.net(x)]
-        return pd.DataFrame({'predict_class': [self.classes[int(id)] for id in ids], 'score': scores,
-            'rois': [{'xmin': bbox[0], 'ymin': bbox[1], 'xmax': bbox[2], 'ymax': bbox[3]} for bbox in bboxes]})
+        ids, scores, bboxes = [xx[0].asnumpy() for xx in self.net(x)]
+        bboxes[:, (0, 2)] /= width
+        bboxes[:, (1, 3)] /= height
+        bboxes = np.clip(bboxes, 0.0, 1.0).tolist()
+        return pd.DataFrame({'predict_class': [self.classes[int(id)] for id in ids], 'predict_score': scores,
+            'predict_rois': [{'xmin': bbox[0], 'ymin': bbox[1], 'xmax': bbox[2], 'ymax': bbox[3]} for bbox in bboxes]})
 
     def _fit(self, train_data, val_data):
         self._best_map = 0
