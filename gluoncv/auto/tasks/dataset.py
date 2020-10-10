@@ -88,7 +88,7 @@ class ImageClassificationDataset(pd.DataFrame):
             if not shuffle:
                 indices = range(nsample)
             else:
-                indices = list(range(len(df)))
+                indices = list(range(len(self)))
                 np.random.shuffle(indices)
                 indices = indices[:min(nsample, len(indices))]
         images = [cv2.cvtColor(cv2.resize(cv2.imread(self.at[idx, 'image']), (resize, resize),
