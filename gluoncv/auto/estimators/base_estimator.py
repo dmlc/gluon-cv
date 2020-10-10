@@ -190,7 +190,7 @@ class BaseEstimator:
         self._cfg.freeze()
         _random.seed(self._cfg.seed)
 
-    def fit(self, train_data, val_data=None, train_size=0.9, random_seed=None, resume=False):
+    def fit(self, train_data, val_data=None, train_size=0.9, random_state=None, resume=False):
         if not resume:
             self.classes = train_data.classes
             self.num_class = len(self.classes)
@@ -203,8 +203,8 @@ class BaseEstimator:
 
         if not val_data:
             assert train_size >= 0 and train_size <= 1.0
-            if random_seed:
-                np.random.seed(random_seed)
+            if random_state:
+                np.random.seed(random_state)
             split_mask = np.random.rand(len(train_data)) < train_size
             train = train_data[split_mask]
             val = train_data[~split_mask]

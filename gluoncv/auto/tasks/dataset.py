@@ -2,8 +2,12 @@
 import logging
 import os
 from pathlib import Path
+import warnings
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
+from PIL import Image
+
 try:
     import xml.etree.cElementTree as ET
 except ImportError:
@@ -33,7 +37,7 @@ def _absolute_pathify(df, root=None, column='image'):
 
 class ImageClassificationDataset(pd.DataFrame):
     # preserved properties that will be copied to a new instance
-    _metadata = ['classes', 'to_mxnet']
+    _metadata = ['classes', 'to_mxnet', 'show_images', 'random_split']
 
     def __init__(self, data, classes=None, **kwargs):
         if isinstance(data, str) and data.endswith('csv'):
@@ -48,6 +52,51 @@ class ImageClassificationDataset(pd.DataFrame):
     @property
     def _constructor_sliced(self):
         return pd.Series
+
+    def random_split(self, test_size=0.1, val_size=0, random_state=None, shuffle=False):
+        assert test_size >= 0 and test_size < 1.0
+        assert val_size >= 0 and val_size < 1.0
+        assert (val_size + test_size) < 1.0, 'val_size + test_size is larger than 1.0!'
+        if random_state:
+            np.random.seed(random_state)
+        test_mask = np.random.rand(len(self)) < test_size
+        test = self[test_mask]
+        trainval = self[~test_mask]
+        val_mask = np.random.rand(len(trainval)) < val_size
+        val = trainval[val_mask]
+        train = trainval[~val_mask]
+        return train, val, test
+
+    def show_images(self, indices=None, nsample=9, ncol=3, shuffle=True, resize=224):
+        """Display images in dataset.
+
+        Parameters
+        ----------
+        indices : iterable of int, optional
+            The image indices to be displayed, if `None`, will generate `nsample` indices.
+            If `shuffle` == `True`(default), the indices are random numbers.
+        nsample : int, optional
+            The number of samples to be displayed.
+        ncol : int, optional
+            The column size of ploted image matrix.
+        shuffle : bool, optional
+            If `shuffle` is False, will always sample from the begining.
+        resize : int, optional
+            The image will be resized to (resize, resize) for better visual experience.
+
+        """
+        if indices is None:
+            if not shuffle:
+                indices = range(nsample)
+            else:
+                indices = np.random.randint(0, len(self), size=nsample)
+        images = [Image.open(self.at[idx, 'image']).resize(
+            (resize, resize), Image.ANTIALIAS) for idx in indices if idx < len(self)]
+        titles = None
+        if 'label' in self.columns:
+            titles = [self.classes[int(self.at[idx, 'label'])] + ': ' + str(self.at[idx, 'label']) \
+                for idx in indices if idx < len(self)]
+        _show_images(images, cols=ncol, titles=titles)
 
     @classmethod
     def from_csv(cls, csv_file, root=None):
@@ -74,6 +123,9 @@ class ImageClassificationDataset(pd.DataFrame):
         """
         synsets = []
         items = {'image': [], 'label': []}
+        if isinstance(root, Path):
+            assert root.exists(), '{} not exist'.format(str(root))
+            root = str(root.resolve())
         assert isinstance(root, str)
         root = os.path.abspath(os.path.expanduser(root))
 
@@ -96,17 +148,103 @@ class ImageClassificationDataset(pd.DataFrame):
         return cls(items, classes=synsets)
 
     @classmethod
-    def from_name_func(cls, fn):
-        # create from a function parsed from name
-        raise NotImplementedError
+    def from_folders(cls, root, train='train', val='val', test='test', exts=('.jpg', '.jpeg', '.png')):
+        """Method for loading splited datasets under root.
+        like::
+            root/train/car/0001.jpg
+            root/train/car/xxxa.jpg
+            root/train/car/yyyb.jpg
+            root/val/bus/123.png
+            root/test/bus/023.jpg
+            root/test/bus/wwww.jpg
+        will be loaded into three splits, with 3/1/2 images, respectively.
+        You can specify the sub-folder names of `train`/`val`/`test` individually. If one particular sub-folder is not
+        found, the corresponding returned dataset will be `None`.
+
+        Example:
+        >>> train_data, val_data, test_data = ImageClassificationDataset.from_folders('./data', val='validation')
+        >> assert len(train_data) == 3
+
+
+        Parameters
+        ----------
+        root : str or pathlib.Path
+            The root dir for the entire dataset.
+        train : str
+            The sub-folder name for training images.
+        val : str
+            The sub-folder name for training images.
+        test : str
+            The sub-folder name for training images.
+        exts : iterable of str
+            The supported image extensions when searching for sub-sub-directories.
+
+        Returns
+        -------
+        (train_data, val_data, test_data) of type tuple(ImageClassificationDataset, )
+            splited datasets, can be `None` if no sub-directory found.
+
+        """
+        if isinstance(root, Path):
+            assert root.exists(), '{} not exist'.format(str(root))
+            root = str(root.resolve())
+        assert isinstance(root, str)
+        root = os.path.abspath(os.path.expanduser(root))
+        train_root = os.path.join(root, train)
+        val_root = os.path.join(root, val)
+        test_root = os.path.join(root, test)
+        empty = cls({'image': [], 'label': []})
+        train_data, val_data, test_data = empty, empty, empty
+        # train
+        if os.path.isdir(train_root):
+            train_data = cls.from_folder(train_root, exts=exts)
+        else:
+            raise ValueError('Train split does not exist: {}'.format(train))
+        # val
+        if os.path.isdir(val_root):
+            val_data = cls.from_folder(val_root, exts=exts)
+        # test
+        if os.path.isdir(test_root):
+            test_data = cls.from_folder(test_root, exts=exts)
+
+        # check synsets, val/test synsets can be subsets(order matters!) or exact matches of train synset
+        if len(val_data) and not _check_synsets(train_data.classes, val_data.classes):
+            warnings.warn('Train/val synsets does not match: {} vs {}'.format(train_data.classes, val_data.classes))
+        if len(test_data) and not _check_synsets(train_data.classes, test_data.classes):
+            warnings.warn('Train/val synsets does not match: {} vs {}'.format(train_data.classes, test_data.classes))
+
+        return train_data, val_data, test_data
 
     @classmethod
-    def from_name_re(cls, fn):
+    def from_name_func(cls, im_list, fn, root=None):
+        # create from a function parsed from name
+        synsets = []
+        items = {'image': [], 'label': []}
+        for im in im_list:
+            if isinstance(im, Path):
+                path = str(im.resolve())
+            else:
+                assert isinstance(im, str)
+                if root is not None and not os.path.isabs(im):
+                    path = os.path.abspath(os.path.join(root, os.path.expanduser(im)))
+            items['image'].append(path)
+            label = fn(Path(path))
+            if isinstance(label, (int, bool, str)):
+                label = str(label)
+            else:
+                raise ValueError('Expect returned label to be (str, int, bool), received {}'.format(type(label)))
+            if label not in synsets:
+                synsets.append(label)
+            items['label'].append(synsets.index(label))  # int label id
+        return cls(items, classes=synsets)
+
+    @classmethod
+    def from_name_re(cls, im_list, fn, root=None):
         # create from a re parsed from name
         raise NotImplementedError
 
     @classmethod
-    def from_label_func(cls, fn):
+    def from_label_func(cls, label_list, fn):
         # create from a function parsed from labels
         raise NotImplementedError
 
@@ -300,3 +438,46 @@ class _MXObjectDetectionDataset(MXDataset):
         label[:, (0, 2)] *= width
         label[:, (1, 3)] *= height
         return img, label
+
+def _check_synsets(ref_synset, other_synset):
+    """Check if other_synset is part of ref_synsetself.
+    Not that even if other_synset is a subset, still be careful when comparing them.
+
+    E.g., ref: ['apple', 'orange', 'melon'], other: ['apple', 'orange'] is OK
+          ref: ['apple', 'orange', 'melon'], other: ['orange', 'melon'] is not!
+    """
+    if ref_synset == other_synset:
+        return True
+    if len(other_synset) < len(ref_synset):
+        if ref_synset[:len(other_synset)] == other_synset:
+            return True
+    return False
+
+def _show_images(images, cols=1, titles=None):
+    """Display a list of images in a single figure with matplotlib.
+
+    Parameters
+    ---------
+    images: List of np.arrays compatible with plt.imshow.
+
+    cols (Default = 1): Number of columns in figure (number of rows is
+                        set to np.ceil(n_images/float(cols))).
+
+    titles: List of titles corresponding to each image. Must have
+            the same length as titles.
+    """
+    assert((titles is None)or (len(images) == len(titles)))
+    n_images = len(images)
+    if titles is None:
+        titles = ['Image (%d)' % i for i in range(1,n_images + 1)]
+    fig = plt.figure()
+    for n, (image, title) in enumerate(zip(images, titles)):
+        a = fig.add_subplot(cols, np.ceil(n_images/float(cols)), n + 1)
+        if isinstance(image, Image.Image):
+            image = np.array(image)
+        if image.ndim == 2:
+            plt.gray()
+        plt.imshow(image)
+        a.set_title(title, fontsize=20)
+    fig.set_size_inches(np.array(fig.get_size_inches()) * n_images)
+    plt.show()
