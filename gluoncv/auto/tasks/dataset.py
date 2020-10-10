@@ -470,7 +470,7 @@ def _show_images(images, cols=1, titles=None):
         titles = ['Image (%d)' % i for i in range(1,n_images + 1)]
     fig = plt.figure()
     for n, (image, title) in enumerate(zip(images, titles)):
-        a = fig.add_subplot(cols, np.ceil(n_images/float(cols)), n + 1)
+        a = fig.add_subplot(cols, int(np.ceil(n_images/float(cols))), n + 1)
         if isinstance(image, Image.Image):
             image = np.array(image)
         if image.ndim == 2:
