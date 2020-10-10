@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from PIL import Image
+import cv2
 try:
     import xml.etree.cElementTree as ET
 except ImportError:
@@ -51,7 +52,7 @@ class ImageClassificationDataset(pd.DataFrame):
     def _constructor_sliced(self):
         return pd.Series
 
-    def random_split(self, test_size=0.1, val_size=0, random_state=None, shuffle=False):
+    def random_split(self, test_size=0.1, val_size=0, random_state=None):
         assert test_size >= 0 and test_size < 1.0
         assert val_size >= 0 and val_size < 1.0
         assert (val_size + test_size) < 1.0, 'val_size + test_size is larger than 1.0!'
@@ -65,7 +66,7 @@ class ImageClassificationDataset(pd.DataFrame):
         train = trainval[~val_mask]
         return train, val, test
 
-    def show_images(self, indices=None, nsample=9, ncol=3, shuffle=True, resize=224):
+    def show_images(self, indices=None, nsample=16, ncol=4, shuffle=True, resize=224):
         r"""Display images in dataset.
 
         Parameters
@@ -87,9 +88,11 @@ class ImageClassificationDataset(pd.DataFrame):
             if not shuffle:
                 indices = range(nsample)
             else:
-                indices = np.random.randint(0, len(self), size=nsample)
-        images = [Image.open(self.at[idx, 'image']).resize(
-            (resize, resize), Image.ANTIALIAS) for idx in indices if idx < len(self)]
+                indices = list(range(len(df)))
+                np.random.shuffle(indices)
+                indices = indices[:min(nsample, len(indices))]
+        images = [cv2.cvtColor(cv2.resize(cv2.imread(self.at[idx, 'image']), (resize, resize),
+            interpolation=cv2.INTER_AREA), cv2.COLOR_BGR2RGB) for idx in indices if idx < len(self)]
         titles = None
         if 'label' in self.columns:
             titles = [self.classes[int(self.at[idx, 'label'])] + ': ' + str(self.at[idx, 'label']) \
@@ -279,13 +282,15 @@ class _MXImageClassificationDataset(MXDataset):
 
 class ObjectDetectionDataset(pd.DataFrame):
     # preserved properties that will be copied to a new instance
-    _metadata = ['dataset_type', 'classes', 'pack', 'unpack', 'is_packed', 'to_mxnet']
+    _metadata = ['dataset_type', 'classes', 'pack', 'unpack', 'is_packed',
+                 'to_mxnet', 'color_map', 'show_images', 'random_split']
 
     def __init__(self, data, dataset_type=None, classes=None, **kwargs):
         # dataset_type will be used to determine metrics, if None then auto resolve at runtime
         self.dataset_type = dataset_type
         # if classes is not specified(None), then infer from the annotations
         self.classes = classes
+        self.color_map = {}
         super().__init__(data, **kwargs)
 
     @property
@@ -400,6 +405,70 @@ class ObjectDetectionDataset(pd.DataFrame):
         """Return a mxnet based iterator that returns ndarray and labels"""
         return _MXObjectDetectionDataset(self)
 
+    def random_split(self, test_size=0.1, val_size=0, random_state=None):
+        assert test_size >= 0 and test_size < 1.0
+        assert val_size >= 0 and val_size < 1.0
+        assert (val_size + test_size) < 1.0, 'val_size + test_size is larger than 1.0!'
+        if random_state:
+            np.random.seed(random_state)
+        test_mask = np.random.rand(len(self)) < test_size
+        test = self[test_mask]
+        trainval = self[~test_mask]
+        val_mask = np.random.rand(len(trainval)) < val_size
+        val = trainval[val_mask]
+        train = trainval[~val_mask]
+        return train, val, test
+
+    def show_images(self, indices=None, nsample=16, ncol=4, shuffle=True, resize=512):
+        r"""Display images in dataset.
+
+        Parameters
+        ----------
+        indices : iterable of int, optional
+            The image indices to be displayed, if `None`, will generate `nsample` indices.
+            If `shuffle` == `True`(default), the indices are random numbers.
+        nsample : int, optional
+            The number of samples to be displayed.
+        ncol : int, optional
+            The column size of ploted image matrix.
+        shuffle : bool, optional
+            If `shuffle` is False, will always sample from the begining.
+        resize : int, optional
+            The image will be resized to (resize, resize) for better visual experience.
+
+        """
+        df = self.pack()
+        if indices is None:
+            if not shuffle:
+                indices = range(nsample)
+            else:
+                indices = list(range(len(df)))
+                np.random.shuffle(indices)
+                indices = indices[:min(nsample, len(indices))]
+        images = [cv2.cvtColor(cv2.resize(cv2.imread(df.at[idx, 'image']), (resize, resize),
+            interpolation=cv2.INTER_AREA), cv2.COLOR_BGR2RGB) for idx in indices if idx < len(df)]
+        # draw bounding boxes
+        assert 'rois' in df.columns
+        for i, image in enumerate(images):
+            height, width, _ = image.shape
+            for roi in df.at[indices[i], 'rois']:
+                xmin, ymin, xmax, ymax, cls_name = \
+                    roi['xmin'], roi['ymin'], roi['xmax'], roi['ymax'], roi['class']
+                xmin, xmax = (np.array([xmin, xmax]) * width).astype('int')
+                ymin, ymax = (np.array([ymin, ymax]) * height).astype('int')
+                if cls_name not in df.color_map:
+                    df.color_map[cls_name] = tuple([np.random.randint(0, 255) for _ in range(3)])
+                bcolor = df.color_map[cls_name]
+                cv2.rectangle(image, (xmin, ymin), (xmax, ymax), bcolor, 2, lineType=cv2.LINE_AA)
+            images[i] = image
+
+        # reuse the color map
+        if not self.color_map:
+            self.color_map = df.color_map
+
+        titles = ['Image(' + str(idx) + ')' for idx in indices if idx < len(df)]
+        _show_images(images, cols=ncol, titles=titles)
+
 
 class _MXObjectDetectionDataset(MXDataset):
     """Internal wrapper read entries in pd.DataFrame as images/labels.
@@ -470,7 +539,7 @@ def _show_images(images, cols=1, titles=None):
         titles = ['Image (%d)' % i for i in range(1,n_images + 1)]
     fig = plt.figure()
     for n, (image, title) in enumerate(zip(images, titles)):
-        a = fig.add_subplot(cols, int(np.ceil(n_images/float(cols))), n + 1)
+        a = fig.add_subplot(int(np.ceil(n_images/float(cols))), cols, n + 1)
         if isinstance(image, Image.Image):
             image = np.array(image)
         if image.ndim == 2:
