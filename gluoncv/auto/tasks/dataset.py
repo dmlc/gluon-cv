@@ -7,12 +7,10 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from PIL import Image
-
 try:
     import xml.etree.cElementTree as ET
 except ImportError:
     import xml.etree.ElementTree as ET
-
 try:
     import mxnet as mx
     MXDataset = mx.gluon.data.Dataset
@@ -68,7 +66,7 @@ class ImageClassificationDataset(pd.DataFrame):
         return train, val, test
 
     def show_images(self, indices=None, nsample=9, ncol=3, shuffle=True, resize=224):
-        """Display images in dataset.
+        r"""Display images in dataset.
 
         Parameters
         ----------
@@ -112,7 +110,7 @@ class ImageClassificationDataset(pd.DataFrame):
 
     @classmethod
     def from_folder(cls, root, exts=('.jpg', '.jpeg', '.png')):
-        """A dataset for loading image files stored in a folder structure.
+        r"""A dataset for loading image files stored in a folder structure.
         like::
             root/car/0001.jpg
             root/car/xxxa.jpg
