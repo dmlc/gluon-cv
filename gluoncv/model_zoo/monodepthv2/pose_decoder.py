@@ -32,6 +32,7 @@ class PoseDecoder(nn.HybridBlock):
         The stride number for Conv in pose decoder. (Default: 1)
 
     """
+
     def __init__(self, num_ch_enc, num_input_features, num_frames_to_predict_for=2, stride=1):
         super(PoseDecoder, self).__init__()
 
@@ -74,11 +75,10 @@ class PoseDecoder(nn.HybridBlock):
 
         out = out.mean(3).mean(2)
 
-        # TODO: reshape issue
-        out = 0.01 * out.reshape(-1, self.num_frames_to_predict_for, 1, 6)
+        out = 0.01 * out.reshape(shape=(-1, self.num_frames_to_predict_for, 1, 6))
 
-        axisangle = out[..., :3]
-        translation = out[..., 3:]
+        axisangle = F.slice(out, begin=(0, 0, 0, 0), end=(None, 2, 1, 3))
+        translation = F.slice(out, begin=(0, 0, 0, 3), end=(None, 2, 1, 6))
 
         return axisangle, translation
 
