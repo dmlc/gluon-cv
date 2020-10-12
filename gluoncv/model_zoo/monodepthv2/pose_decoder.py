@@ -74,6 +74,7 @@ class PoseDecoder(nn.HybridBlock):
 
         out = out.mean(3).mean(2)
 
+        # TODO: reshape issue
         out = 0.01 * out.reshape(-1, self.num_frames_to_predict_for, 1, 6)
 
         axisangle = out[..., :3]
