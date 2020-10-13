@@ -2,6 +2,7 @@
 import logging
 import uuid
 
+import pandas as pd
 import autogluon as ag
 from autogluon.core.decorator import sample_config
 from autogluon.scheduler.resource import get_cpu_count, get_gpu_count
@@ -36,10 +37,14 @@ def _train_object_detection(args, reporter):
     else:
         args['train'] = {'auto_resume': False}
 
+    # train, val data
+    train_data = args['train_data']
+    val_data = args['val_data']
+
     try:
         estimator = args['estimator'](args, reporter=reporter)
         # training
-        estimator.fit()
+        estimator.fit(train_data=train_data, val_data=val_data)
     # pylint: disable=broad-except
     except Exception as e:
         return str(e)
@@ -102,12 +107,14 @@ class ObjectDetection(BaseTask):
         config['seed'] = self._config.get('seed', 233)
         config['final_fit'] = False
 
+
         # automatically merge search configs according to user specified values
         # args = auto_args(config, estimator)
 
         # register args for HPO
         # _train_object_detection.register_args(**args)
-        _train_object_detection.register_args(**config)
+        # _train_object_detection.register_args(**config)
+        self._train_config = config
 
         # scheduler options
         self._config.search_strategy = self._config.get('search_strategy', 'random')
@@ -129,8 +136,8 @@ class ObjectDetection(BaseTask):
                 'max_t': self._config.get('epochs', 50),
                 'grace_period': self._config.get('grace_period', self._config.epochs // 4)})
 
-    def fit(self):
-        """Fit auto estimator given the input data .
+    def fit(self, train_data, val_data=None, train_size=0.9, random_state=None):
+        """Fit auto estimator given the input data.
 
         Returns
         -------
@@ -138,6 +145,29 @@ class ObjectDetection(BaseTask):
             The estimator obtained by training on the specified dataset.
 
         """
+        # split train/val before HPO to make fair comparisons
+        if not isinstance(train_data, pd.DataFrame):
+            assert val_data is not None, \
+                "Please provide `val_data` as we do not know how to split `train_data` of type: \
+                {}".format(type(train_data))
+
+        if not val_data:
+            assert train_size >= 0 and train_size <= 1.0
+            if random_state:
+                np.random.seed(random_state)
+            split_mask = np.random.rand(len(train_data)) < train_size
+            train = train_data[split_mask]
+            val = train_data[~split_mask]
+            self._logger.info('Randomly split train_data into train[%d]/validation[%d] splits.',
+                len(train), len(val))
+            train_data, val_data = train, val
+
+        # register args
+        config = self._train_config.copy()
+        config['train_data'] = train_data
+        config['val_data'] = val_data
+        _train_object_detection.register_args(**config)
+
         results = self.run_fit(_train_object_detection, self._config.search_strategy,
                                self._config.scheduler_options)
         self._logger.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> finish model fitting")

@@ -191,10 +191,11 @@ class SSDEstimator(BaseEstimator):
             eval_metric.update(det_bboxes, det_ids, det_scores, gt_bboxes, gt_ids, gt_difficults)
         return eval_metric.get()
 
-    def _fit(self):
+    def _fit(self, train_data, val_data):
         """
         Fit SSD models.
         """
+        # TODO(zhreshold): remove 'dataset' in config, use train_data/val_data instead
         self.net.collect_params().reset_ctx(self.ctx)
 
         if self._cfg.horovod:
@@ -293,9 +294,10 @@ class SSDEstimator(BaseEstimator):
                 if self._reporter:
                     self._reporter(epoch=epoch, map_reward=current_map)
 
-    def _evaluate(self):
+    def _evaluate(self, val_data):
         """Evaluate the current model on dataset.
         """
+        # TODO(zhreshold): remove self._val_data, use passed in val_data at runtime
         self.net.collect_params().reset_ctx(self.ctx)
         return self._validate(self._val_data, self.ctx, self.eval_metric)
 
