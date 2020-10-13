@@ -8,6 +8,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from PIL import Image
 import cv2
+from ...data.mscoco.utils import try_import_pycocotools
+from ...utils.bbox import bbox_xywh_to_xyxy, bbox_clip_xyxy
 try:
     import xml.etree.cElementTree as ET
 except ImportError:
@@ -364,9 +366,59 @@ class ObjectDetectionDataset(pd.DataFrame):
         return cls(df.sort_values('image').reset_index(drop=True), dataset_type='voc', classes=list(class_names))
 
     @classmethod
-    def from_coco(cls, path):
+    def from_coco(cls, anno_file, root=None, min_object_area=0, use_crowd=False):
+        """Load dataset from coco format annotations.
+
+        The structure of a default coco 2017 dataset looks like:
+        .
+        ├── annotations
+        |   |── instances_val2017.json
+        ├── train2017
+        └── val2017
+
+        The default relative root folder (if set to `None`) is `anno_file/../`.
+        """
         # construct from COCO format
-        raise NotImplementedError
+        try_import_pycocotools()
+        from pycocotools.coco import COCO
+        if isinstance(anno_file, Path):
+            anno_file = str(anno_file.expanduser().resolve())
+        elif isinstance(anno_file, str):
+            anno_file = os.path.expanduser(anno_file)
+        coco = COCO(anno_file)
+
+        if isinstance(root, Path):
+            root = str(root.expanduser().resolve())
+        elif isinstance(root, str):
+            root = os.path.abspath(anno_file, os.path.expanduser(root))
+        elif root is None:
+            # try to use the default coco structure
+            root = os.path.join(os.path.dirname(anno_file), '..')
+            logger.info('Using default root folder: {}. Specify `root=...` if you feel it is wrong...'.format(root))
+        else:
+            raise valueError("Unable to parse root: {}".format(root))
+
+        # synsets
+        classes = [c['name'] for c in coco.loadCats(coco.getCatIds())]
+        # load entries
+        d = {'image': [], 'rois': [], 'image_attr': []}
+        image_ids = sorted(coco.getImgIds())
+        for entry in coco.loadImgs(image_ids):
+            if 'coco_url' in entry:
+                dirname, filename = entry['coco_url'].split('/')[-2:]
+                abs_path = os.path.join(root, dirname, filename)
+            else:
+                abs_path = os.path.join(root, entry['file_name'])
+            if not os.path.exists(abs_path):
+                raise IOError('Image: {} not exists.'.format(abs_path))
+            label = _check_load_coco_bbox(coco, entry, min_object_area=min_object_area, use_crowd=use_crowd)
+            if not label:
+                continue
+            d['image_attr'].append({'width': entry['width'], 'height': entry['height']})
+            d['image'].append(abs_path)
+            d['rois'].append(label)
+        df = pd.DataFrame(d)
+        return cls(df.sort_values('image').reset_index(drop=True), dataset_type='coco', classes=list(classes))
 
     @classmethod
     def from_label_func(cls, fn):
@@ -548,3 +600,31 @@ def _show_images(images, cols=1, titles=None):
         a.set_title(title, fontsize=20)
     fig.set_size_inches(np.array(fig.get_size_inches()) * n_images)
     plt.show()
+
+def _check_load_coco_bbox(coco, entry, min_object_area=0, use_crowd=False):
+    """Check and load ground-truth labels"""
+    entry_id = entry['id']
+    # fix pycocotools _isArrayLike which don't work for str in python3
+    entry_id = [entry_id] if not isinstance(entry_id, (list, tuple)) else entry_id
+    ann_ids = coco.getAnnIds(imgIds=entry_id, iscrowd=None)
+    objs = coco.loadAnns(ann_ids)
+    # check valid bboxes
+    valid_objs = []
+    width = entry['width']
+    height = entry['height']
+    for obj in objs:
+        if obj['area'] < min_object_area:
+            continue
+        if obj.get('ignore', 0) == 1:
+            continue
+        is_crowd = obj.get('iscrowd', 0)
+        if not use_crowd and is_crowd:
+            continue
+        # convert from (x, y, w, h) to (xmin, ymin, xmax, ymax) and clip bound
+        xmin, ymin, xmax, ymax = bbox_clip_xyxy(bbox_xywh_to_xyxy(obj['bbox']), width, height)
+        # require non-zero box area
+        if obj['area'] > 0 and xmax > xmin and ymax > ymin:
+            cname = coco.loadCats(obj['category_id'])[0]['name']
+            valid_objs.append({'xmin': xmin / width, 'ymin': ymin / height, 'xmax': xmax / width,
+                               'ymax': ymax, 'class': cname, 'is_crowd': is_crowd})
+    return valid_objs
