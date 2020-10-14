@@ -313,7 +313,9 @@ class YOLOEstimator(BaseEstimator):
     def _evaluate(self):
         """Evaluate the current model on dataset."""
         self.net.collect_params().reset_ctx(self.ctx)
-        return self._validate(self._val_data, self.ctx, self.eval_metric)
+        eval_metric = self._validate(self._val_data, self.ctx, self.eval_metric)
+        self._logger.info("mAP on test dataset: %f", eval_metric[-1][-1])
+        return eval_metric
 
     def predict(self, x):
         """Predict an individual example.
