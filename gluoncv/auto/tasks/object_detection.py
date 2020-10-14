@@ -1,4 +1,5 @@
 """Auto pipeline for object detection task"""
+import time
 import logging
 import uuid
 
@@ -25,6 +26,16 @@ def _train_object_detection(args, reporter):
     ----------
     args: <class 'autogluon.utils.edict.EasyDict'>
     """
+    logger = args.get('logger', logging.getLogger())
+    logger.setLevel(logging.INFO)
+
+    if args['task_id'] < args['num_trials']:
+        logger.info("Running trial %d / %d", args['task_id'] + 1, args['num_trials'])
+        logger.info('The training config: %s', str(args))
+    else:
+        logger.info("Retraining with the best config")
+        logger.info('The best config: %s', str(args))
+
     # convert user defined config to nested form
     args = config_to_nested(args)
 
@@ -71,13 +82,14 @@ class ObjectDetection(BaseTask):
     """
     def __init__(self, config, estimator=None, logger=None):
         super(ObjectDetection, self).__init__()
+        self._config = ConfigDict(config)
         self._logger = logger if logger is not None else logging.getLogger(__name__)
         self._logger.setLevel(logging.INFO)
-        self._config = ConfigDict(config)
+        self._logger.info("Starting HPO experiments")
 
         # automatically suggest some hyperparameters based on the dataset statistics
         if self._config.get('auto_suggest', True):
-            auto_suggest(config, estimator)
+            auto_suggest(config, estimator, self._logger)
         else:
             if estimator is None:
                 estimator = [SSDEstimator, FasterRCNNEstimator, YOLOEstimator, CenterNetEstimator]
@@ -106,6 +118,7 @@ class ObjectDetection(BaseTask):
         config['gpus'] = [int(i) for i in range(ngpus_per_trial)]
         config['seed'] = self._config.get('seed', 233)
         config['final_fit'] = False
+        config['logger'] = self._logger
 
 
         # automatically merge search configs according to user specified values
@@ -168,9 +181,13 @@ class ObjectDetection(BaseTask):
         config['val_data'] = val_data
         _train_object_detection.register_args(**config)
 
+        start_time = time.time()
+
         results = self.run_fit(_train_object_detection, self._config.search_strategy,
                                self._config.scheduler_options)
+        end_time = time.time()
         self._logger.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> finish model fitting")
+        self._logger.info("total runtime is %.2f s", end_time - start_time)
         best_config = sample_config(_train_object_detection.args, results['best_config'])
         # convert best config to nested form
         best_config = config_to_nested(best_config)

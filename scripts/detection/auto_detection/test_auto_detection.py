@@ -1,7 +1,7 @@
 import autogluon as ag
 
 from gluoncv.auto.estimators import SSDEstimator, FasterRCNNEstimator, YOLOEstimator, CenterNetEstimator
-from gluoncv.auto.tasks.object_detection import ObjectDetection
+from gluoncv.auto.tasks import ObjectDetection
 
 
 if __name__ == '__main__':
@@ -31,6 +31,7 @@ if __name__ == '__main__':
 
     detector = task.fit()
     test_map = detector.evaluate()
-    print("mAP on test dataset: {}".format(test_map[-1][-1]))
-    print(test_map)
-    # detector.save('final_model.model')
+    # print("mAP on test dataset: {}".format(test_map[-1][-1]))
+    # print(test_map)
+    detector.save('detector.pkl')
+    detector = ObjectDetection.load('detector.pkl')
