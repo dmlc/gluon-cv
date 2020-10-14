@@ -156,7 +156,7 @@ class BaseEstimator:
 
         # finalize the config
         r = self._ex.run('_get_config', config_updates=config, options={'--loglevel': 50, '--force': True})
-        # print_config(r)
+        print_config(r)
 
         # logdir
         logdir = r.config.get('logging.logdir', None)
