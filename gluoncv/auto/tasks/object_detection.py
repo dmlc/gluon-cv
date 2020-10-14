@@ -8,7 +8,6 @@ import autogluon as ag
 from autogluon.core.decorator import sample_config
 from autogluon.scheduler.resource import get_cpu_count, get_gpu_count
 from autogluon.task import BaseTask
-from autogluon.utils import collect_params
 
 from ... import utils as gutils
 from ..estimators.base_estimator import ConfigDict, BaseEstimator
@@ -69,7 +68,6 @@ def _train_object_detection(args, reporter):
 
 
 class ObjectDetection(BaseTask):
-    Dataset = ObjectDetectionDataset
     """Object Detection general task.
 
     Parameters
@@ -80,6 +78,8 @@ class ObjectDetection(BaseTask):
         The desired logger object, use `None` for module specific logger with default setting.
 
     """
+    Dataset = ObjectDetectionDataset
+
     def __init__(self, config, estimator=None, logger=None):
         super(ObjectDetection, self).__init__()
         self._config = ConfigDict(config)
@@ -165,14 +165,14 @@ class ObjectDetection(BaseTask):
                 {}".format(type(train_data))
 
         if not val_data:
-            assert train_size >= 0 and train_size <= 1.0
+            assert 0 <= train_size <= 1.0
             if random_state:
                 np.random.seed(random_state)
             split_mask = np.random.rand(len(train_data)) < train_size
             train = train_data[split_mask]
             val = train_data[~split_mask]
             self._logger.info('Randomly split train_data into train[%d]/validation[%d] splits.',
-                len(train), len(val))
+                              len(train), len(val))
             train_data, val_data = train, val
 
         # register args

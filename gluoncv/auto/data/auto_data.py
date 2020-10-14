@@ -1,7 +1,7 @@
 """Auto data preparation."""
 import os
-import yaml
 from pathlib import Path
+import yaml
 from ...utils.download import download
 from ...utils.filesystem import unzip, untar, PathTree
 
@@ -64,20 +64,20 @@ class Config:
         if not self.config_file.exists(): self.create_config()
         self.d = self.load_config()
 
-    def __getitem__(self,k):
+    def __getitem__(self, k):
         k = k.lower()
         if k not in self.d:
-            k = k+'_path'
+            k = k + '_path'
         return Path(self.d[k])
 
-    def __getattr__(self,k):
-        if k=='d':
+    def __getattr__(self, k):
+        if k == 'd':
             raise AttributeError
         return self[k]
 
-    def __setitem__(self,k,v):
+    def __setitem__(self, k, v):
         self.d[k] = str(v)
-    def __contains__(self,k):
+    def __contains__(self, k):
         return k in self.d
 
     def load_config(self):
@@ -109,6 +109,7 @@ class Config:
         with self.config_file.open('w') as f: yaml.dump(config, f, default_flow_style=False)
 
 
+# pylint: disable=bad-whitespace
 class URLs():
     "Global constants for dataset and model URLs."
     LOCAL_PATH = Path.cwd()
@@ -118,10 +119,7 @@ class URLs():
 
     S3_IMAGE    = f'{S3}imageclas/'
     S3_IMAGELOC = f'{S3}imagelocal/'
-    S3_AUDI     = f'{S3}audio/'
-    S3_NLP      = f'{S3}nlp/'
     S3_COCO     = f'{S3}coco/'
-    S3_MODEL    = f'{S3}modelzoo/'
 
     # main datasets
     ADULT_SAMPLE        = f'{URL}adult_sample.tgz'
@@ -162,19 +160,6 @@ class URLs():
     MNIST        = f'{S3_IMAGE}mnist_png.tgz'
     PETS         = f'{S3_IMAGE}oxford-iiit-pet.tgz'
 
-    # NLP datasets
-    AG_NEWS                 = f'{S3_NLP}ag_news_csv.tgz'
-    AMAZON_REVIEWS          = f'{S3_NLP}amazon_review_full_csv.tgz'
-    AMAZON_REVIEWS_POLARITY = f'{S3_NLP}amazon_review_polarity_csv.tgz'
-    DBPEDIA                 = f'{S3_NLP}dbpedia_csv.tgz'
-    MT_ENG_FRA              = f'{S3_NLP}giga-fren.tgz'
-    SOGOU_NEWS              = f'{S3_NLP}sogou_news_csv.tgz'
-    WIKITEXT                = f'{S3_NLP}wikitext-103.tgz'
-    WIKITEXT_TINY           = f'{S3_NLP}wikitext-2.tgz'
-    YAHOO_ANSWERS           = f'{S3_NLP}yahoo_answers_csv.tgz'
-    YELP_REVIEWS            = f'{S3_NLP}yelp_review_full_csv.tgz'
-    YELP_REVIEWS_POLARITY   = f'{S3_NLP}yelp_review_polarity_csv.tgz'
-
     # Image localization datasets
     BIWI_HEAD_POSE     = f"{S3_IMAGELOC}biwi_head_pose.tgz"
     CAMVID             = f'{S3_IMAGELOC}camvid.tgz'
@@ -183,23 +168,15 @@ class URLs():
     PASCAL_2007        = f'{S3_IMAGELOC}pascal_2007.tgz'
     PASCAL_2012        = f'{S3_IMAGELOC}pascal_2012.tgz'
 
-    # Audio classification datasets
-    MACAQUES           = 'https://storage.googleapis.com/ml-animal-sounds-datasets/macaques.zip'
-    ZEBRA_FINCH        = 'https://storage.googleapis.com/ml-animal-sounds-datasets/zebra_finch.zip'
-
     # Medical Imaging datasets
     #SKIN_LESION        = f'{S3_IMAGELOC}skin_lesion.tgz'
     SIIM_SMALL         = f'{S3_IMAGELOC}siim_small.tgz'
 
-    #Pretrained models
-    OPENAI_TRANSFORMER = f'{S3_MODEL}transformer.tgz'
-    WT103_FWD          = f'{S3_MODEL}wt103-fwd.tgz'
-    WT103_BWD          = f'{S3_MODEL}wt103-bwd.tgz'
-
+    @staticmethod
     def path(url='.', c_key='archive'):
         "Return local path where to download based on `c_key`"
         fname = url.split('/')[-1]
-        local_path = URLs.LOCAL_PATH/('models' if c_key=='models' else 'datasets')/fname
+        local_path = URLs.LOCAL_PATH / ('models' if c_key == 'models' else 'datasets')/fname
         if local_path.exists():
             return local_path
         return Config()[c_key]/fname

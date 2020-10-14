@@ -14,11 +14,11 @@ from sacred import Experiment, Ingredient
 
 from ..base_estimator import BaseEstimator, set_default
 from ..common import logging
-from ...data.coco_detection import coco_detection, load_coco_detection
+from ...data.coco_detection import coco_detection
 from ....data.batchify import Tuple, Stack, Pad
 from ....data.transforms.presets.center_net import CenterNetDefaultTrainTransform
 from ....data.transforms.presets.center_net import CenterNetDefaultValTransform
-from ....data.transforms.presets.center_net import load_test, transform_test, get_post_transform
+from ....data.transforms.presets.center_net import load_test, transform_test
 from ....loss import MaskedL1Loss, HeatmapFocalLoss
 from ....model_zoo import get_model
 from ....model_zoo.center_net import get_center_net, get_base_network
@@ -141,7 +141,8 @@ class CenterNetEstimator(BaseEstimator):
         bboxes[:, (1, 3)] /= height
         bboxes = np.clip(bboxes, 0.0, 1.0).tolist()
         return pd.DataFrame({'predict_class': [self.classes[int(id)] for id in ids], 'predict_score': scores,
-            'predict_rois': [{'xmin': bbox[0], 'ymin': bbox[1], 'xmax': bbox[2], 'ymax': bbox[3]} for bbox in bboxes]})
+                             'predict_rois': [{'xmin': bbox[0], 'ymin': bbox[1], 'xmax': bbox[2], 'ymax': bbox[3]} \
+                                for bbox in bboxes]})
 
     def _fit(self, train_data, val_data):
         self._best_map = 0
@@ -158,7 +159,6 @@ class CenterNetEstimator(BaseEstimator):
             raise ValueError('Unable to determine classes of dataset')
         train_dataset = train_data.to_mxnet()
         val_dataset = val_data.to_mxnet()
-        val_metric = VOCMApMetric(class_names=self.classes)
 
         # dataloader
         batch_size = self._cfg.train.batch_size
@@ -176,9 +176,9 @@ class CenterNetEstimator(BaseEstimator):
             self._cfg.validation.batch_size, False, batchify_fn=val_batchify_fn, last_batch='keep',
             num_workers=self._cfg.validation.num_workers)
 
-        self._train_loop(train_loader, val_loader, val_metric)
+        self._train_loop(train_loader, val_loader)
 
-    def _train_loop(self, train_data, val_data, val_metric):
+    def _train_loop(self, train_data, val_data):
         wh_loss = MaskedL1Loss(weight=self._cfg.center_net.wh_weight)
         heatmap_loss = HeatmapFocalLoss(from_logits=True)
         center_reg_loss = MaskedL1Loss(weight=self._cfg.center_net.center_reg_weight)
@@ -246,20 +246,18 @@ class CenterNetEstimator(BaseEstimator):
                     (self._cfg.train.save_interval and epoch % self._cfg.train.save_interval == 0) or \
                     (epoch == self._cfg.train.epochs - 1):
                 # consider reduce the frequency of validation to save time
-                map_name, mean_ap = self._evaluate(val_data, val_metric)
+                map_name, mean_ap = self._evaluate(val_data)
                 val_msg = '\n'.join(['{}={}'.format(k, v) for k, v in zip(map_name, mean_ap)])
-                self._logger.info('[Epoch {}] Validation: \n{}'.format(epoch, val_msg))
+                self._logger.info('[Epoch %d] Validation: \n%s', epoch, val_msg)
                 current_map = float(mean_ap[-1])
                 if current_map > self._best_map:
                     self._logger.info('[Epoch %d] Current best map: %f vs previous %f',
-                        self.epoch, current_map, self._best_map)
+                                      self.epoch, current_map, self._best_map)
                     self._best_map = current_map
 
-    def _evaluate(self, val_data, eval_metric=None):
+    def _evaluate(self, val_data):
         """Test on validation dataset."""
-        if eval_metric is None:
-            eval_metric = VOCMApMetric(class_names=self.classes)
-        eval_metric.reset()
+        eval_metric = VOCMApMetric(class_names=self.classes)
         self.net.flip_test = self._cfg.validation.flip_test
         mx.nd.waitall()
         self.net.hybridize()
@@ -298,8 +296,7 @@ class CenterNetEstimator(BaseEstimator):
                     y.slice_axis(axis=-1, begin=5, end=6) if y.shape[-1] > 5 else None)
 
             # update metric
-            eval_metric.update(det_bboxes, det_ids, det_scores, gt_bboxes, gt_ids,
-                                     gt_difficults)
+            eval_metric.update(det_bboxes, det_ids, det_scores, gt_bboxes, gt_ids, gt_difficults)
         return eval_metric.get()
 
     def _init_network(self):
@@ -314,7 +311,7 @@ class CenterNetEstimator(BaseEstimator):
         if self._cfg.center_net.transfer is not None:
             assert isinstance(self._cfg.center_net.transfer, str)
             self._logger.info('Using transfer learning from %s, ignoring some of the network configs',
-                self._cfg.center_net.transfer)
+                              self._cfg.center_net.transfer)
             net = get_model(self._cfg.center_net.transfer, pretrained=True)
             net.reset_class(self.classes, reuse_weights=[cname for cname in self.classes if cname in net.classes])
         else:

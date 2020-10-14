@@ -7,7 +7,6 @@ import autogluon as ag
 from autogluon.core.decorator import sample_config
 from autogluon.scheduler.resource import get_cpu_count, get_gpu_count
 from autogluon.task import BaseTask
-from autogluon.utils import collect_params
 
 from ... import utils as gutils
 from ..estimators.base_estimator import ConfigDict, BaseEstimator
@@ -58,7 +57,6 @@ def _train_image_classification(args, reporter):
 
 
 class ImageClassification(BaseTask):
-    Dataset = ImageClassificationDataset
     """Whole Image Classification general task.
 
     Parameters
@@ -69,6 +67,8 @@ class ImageClassification(BaseTask):
         The desired logger object, use `None` for module specific logger with default setting.
 
     """
+    Dataset = ImageClassificationDataset
+
     def __init__(self, config, estimator=None, logger=None):
         super(ImageClassification, self).__init__()
         self._logger = logger if logger is not None else logging.getLogger(__name__)
@@ -77,7 +77,7 @@ class ImageClassification(BaseTask):
 
         # automatically suggest some hyperparameters based on the dataset statistics
         if self._config.get('auto_suggest', True):
-            auto_suggest(config, estimator)
+            auto_suggest(config, estimator, self._logger)
         else:
             if estimator is None:
                 estimator = [Classification]
@@ -151,14 +151,14 @@ class ImageClassification(BaseTask):
                 {}".format(type(train_data))
 
         if not val_data:
-            assert train_size >= 0 and train_size <= 1.0
+            assert 0 <= train_size <= 1.0
             if random_state:
                 np.random.seed(random_state)
             split_mask = np.random.rand(len(train_data)) < train_size
             train = train_data[split_mask]
             val = train_data[~split_mask]
             self._logger.info('Randomly split train_data into train[%d]/validation[%d] splits.',
-                len(train), len(val))
+                              len(train), len(val))
             train_data, val_data = train, val
 
         # register args
@@ -184,6 +184,5 @@ class ImageClassification(BaseTask):
     def load(cls, filename):
         obj = BaseEstimator.load(filename)
         # make sure not accidentally loading e.g. classification model
-        # pylint: disable=unidiomatic-typecheck
-        assert type(obj) in (ClassificationEstimator)
+        assert isinstance(obj, ClassificationEstimator)
         return obj

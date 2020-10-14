@@ -191,6 +191,27 @@ class BaseEstimator:
         _random.seed(self._cfg.seed)
 
     def fit(self, train_data, val_data=None, train_size=0.9, random_state=None, resume=False):
+        """Fit with train/validation data.
+
+        Parameters
+        ----------
+        train_data : pd.DataFrame or iterator
+            Training data.
+        val_data : pd.DataFrame or iterator, optional
+            Validation data, optional. If `train_data` is DataFrame, `val_data` will be split from
+            `train_data` given `train_size`.
+        train_size : float
+            The portion of train data split from original `train_data` if `val_data` is not provided.
+        random_state : int
+            Random state for splitting, for `np.random.seed`.
+        resume : bool
+            Whether resume from previous `fit`(if possible) or start as fresh.
+
+        Returns
+        -------
+        None
+
+        """
         if not resume:
             self.classes = train_data.classes
             self.num_class = len(self.classes)
@@ -209,15 +230,31 @@ class BaseEstimator:
             train = train_data[split_mask]
             val = train_data[~split_mask]
             self._logger.info('Randomly split train_data into train[%d]/validation[%d] splits.',
-                len(train), len(val))
+                              len(train), len(val))
             return self._fit(train, val) if not resume else self._resume_fit(train, val)
 
         return self._fit(train_data, val_data) if not resume else self._resume_fit(train_data, val_data)
 
     def evaluate(self, val_data):
+        """Evaluate estimator on validation data.
+
+        Parameters
+        ----------
+        val_data : pd.DataFrame or iterator
+            The validation data.
+
+        """
         return self._evaluate(val_data)
 
     def predict(self, x):
+        """Predict using this estimator.
+
+        Parameters
+        ----------
+        x : str, pd.DataFrame or ndarray
+            The input, can be str(filepath), pd.DataFrame with 'image' column, or raw ndarray input.
+
+        """
         return self._predict(x)
 
     def _predict(self, x):
@@ -239,12 +276,26 @@ class BaseEstimator:
         raise NotImplementedError
 
     def save(self, filename):
+        """Save the state of this estimator to disk.
+
+        Parameters
+        ----------
+        filename : str
+            The file name for storing the full state.
+        """
         with open(filename, 'wb') as fid:
             pickle.dump(self, fid)
         self._logger.info('Pickled to %s', filename)
 
     @classmethod
     def load(cls, filename):
+        """Load the state from disk copy.
+
+        Parameters
+        ----------
+        filename : str
+            The file name to load from.
+        """
         with open(filename, 'rb') as fid:
             obj = pickle.load(fid)
             obj._logger.info('Unpickled from %s', filename)

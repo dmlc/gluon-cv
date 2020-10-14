@@ -29,7 +29,7 @@ def _absolute_pathify(df, root=None, column='image'):
     assert column in df.columns
     assert isinstance(root, str), 'Invalid root path: {}'.format(root)
     root = os.path.abspath(os.path.expanduser(root))
-    for i, row in df.iterrows():
+    for i, _ in df.iterrows():
         path = df.at[i, 'image']
         if not os.path.isabs(path):
             df.at[i, 'image'] = os.path.join(root, os.path.expanduser(path))
@@ -37,6 +37,16 @@ def _absolute_pathify(df, root=None, column='image'):
 
 
 class ImageClassificationDataset(pd.DataFrame):
+    """ImageClassification dataset as DataFrame.
+
+    Parameters
+    ----------
+    data : the input for pd.DataFrame
+        The input data.
+    classes : list of str, optional
+        The class synsets for this dataset, if `None`, it will infer from the data.
+
+    """
     # preserved properties that will be copied to a new instance
     _metadata = ['classes', 'to_mxnet', 'show_images', 'random_split']
 
@@ -55,6 +65,25 @@ class ImageClassificationDataset(pd.DataFrame):
         return pd.Series
 
     def random_split(self, test_size=0.1, val_size=0, random_state=None):
+        r"""Randomly split the dataset into train/val/test sets.
+        Note that it's perfectly fine to set `test_size` or `val_size` to 0, where the
+        returned splits will be empty dataframes.
+
+        Parameters
+        ----------
+        test_size : float
+            The ratio for test set, can be in range [0, 1].
+        val_size : float
+            The ratio for validation set, can be in range [0, 1].
+        random_state : int, optional
+            If not `None`, will set the random state of numpy.random engine.
+
+        Returns
+        -------
+        train, val, test - (DataFrame, DataFrame, DataFrame)
+            The returned dataframes for train/val/test
+
+        """
         assert test_size >= 0 and test_size < 1.0
         assert val_size >= 0 and val_size < 1.0
         assert (val_size + test_size) < 1.0, 'val_size + test_size is larger than 1.0!'
@@ -93,7 +122,7 @@ class ImageClassificationDataset(pd.DataFrame):
                 indices = list(range(len(self)))
                 np.random.shuffle(indices)
                 indices = indices[:min(nsample, len(indices))]
-        images = [cv2.cvtColor(cv2.resize(cv2.imread(self.at[idx, 'image']), (resize, resize),
+        images = [cv2.cvtColor(cv2.resize(cv2.imread(self.at[idx, 'image']), (resize, resize), \
             interpolation=cv2.INTER_AREA), cv2.COLOR_BGR2RGB) for idx in indices if idx < len(self)]
         titles = None
         if 'label' in self.columns:
@@ -103,6 +132,16 @@ class ImageClassificationDataset(pd.DataFrame):
 
     @classmethod
     def from_csv(cls, csv_file, root=None):
+        r"""Create from csv file.
+
+        Parameters
+        ----------
+        csv_file : str
+            The path for csv file.
+        root : str
+            The relative root for image paths stored in csv file.
+
+        """
         df = pd.read_csv(csv_file)
         assert 'image' in df.columns, "`image` column is required, used for accessing the original images"
         if not 'label' in df.columns:
@@ -123,6 +162,13 @@ class ImageClassificationDataset(pd.DataFrame):
             root/bus/123.png
             root/bus/023.jpg
             root/bus/wwww.jpg
+
+        Parameters
+        -----------
+        root : str or pathlib.Path
+            The root folder
+        exts : iterable of str
+            The image file extensions
         """
         synsets = []
         items = {'image': [], 'label': []}
@@ -220,6 +266,25 @@ class ImageClassificationDataset(pd.DataFrame):
 
     @classmethod
     def from_name_func(cls, im_list, fn, root=None):
+        """Short summary.
+
+        Parameters
+        ----------
+        cls : type
+            Description of parameter `cls`.
+        im_list : type
+            Description of parameter `im_list`.
+        fn : type
+            Description of parameter `fn`.
+        root : type
+            Description of parameter `root`.
+
+        Returns
+        -------
+        type
+            Description of returned object.
+
+        """
         # create from a function parsed from name
         synsets = []
         items = {'image': [], 'label': []}
@@ -283,6 +348,18 @@ class _MXImageClassificationDataset(MXDataset):
 
 
 class ObjectDetectionDataset(pd.DataFrame):
+    """ObjectDetection dataset as DataFrame.
+
+    Parameters
+    ----------
+    data : the input for pd.DataFrame
+        The input data.
+    dataset_type : str, optional
+        The dataset type, can be voc/coco or more, used to annotate the optional fields.
+    classes : list of str, optional
+        The class synsets for this dataset, if `None`, it will infer from the data.
+
+    """
     # preserved properties that will be copied to a new instance
     _metadata = ['dataset_type', 'classes', 'pack', 'unpack', 'is_packed',
                  'to_mxnet', 'color_map', 'show_images', 'random_split']
@@ -305,7 +382,27 @@ class ObjectDetectionDataset(pd.DataFrame):
 
     @classmethod
     def from_voc(cls, root, splits=None, exts=('.jpg', '.jpeg', '.png')):
-        # construct from pascal VOC forma
+        """construct from pascal VOC format.
+        Normally you will see a structure like:
+
+        ├── VOC2007
+        │   ├── Annotations
+        │   ├── ImageSets
+        |   |   ├── Main
+        |   |   |   ├── train.txt
+        |   |   |   ├── test.txt
+        │   ├── JPEGImages
+
+        Parameters
+        ----------
+        root : str
+            The root directory for VOC, e.g., the `VOC2007`.
+        splits : tuple of str, optional
+            If given, will search for this name in `ImageSets/Main/`, e.g., ('train', 'test')
+        exts : tuple of str, optional
+            The supported image formats.
+
+        """
         from ...data.pascal_voc.detection import CustomVOCDetectionBase
         rpath = Path(root).expanduser()
         img_list = []
@@ -422,12 +519,14 @@ class ObjectDetectionDataset(pd.DataFrame):
 
     @classmethod
     def from_label_func(cls, fn):
-        # create from a label function
+        """create from a label function"""
         raise NotImplementedError
 
     def pack(self):
         """Convert object-centric entries to image-centric entries.
         Where multiple entries belonging to single image can be merged to rois column.
+
+        The length of returned dataframe is the number of images in the dataset.
         """
         if self.is_packed():
             return self
@@ -435,7 +534,8 @@ class ObjectDetectionDataset(pd.DataFrame):
         image_attr_columns = ['width', 'height']
         new_df = self.groupby(['image'], as_index=False).agg(list).reset_index(drop=True)
         new_df['rois'] = new_df.agg(
-            lambda y : [{k : y[new_df.columns.get_loc(k)][i] for k in rois_columns if k in new_df.columns} for i in range(len(y[new_df.columns.get_loc('class')]))], axis=1)
+            lambda y: [{k : y[new_df.columns.get_loc(k)][i] for k in rois_columns if k in new_df.columns} \
+                for i in range(len(y[new_df.columns.get_loc('class')]))], axis=1)
         new_df = new_df.drop(rois_columns, axis=1, errors='ignore')
         new_df['image_attr'] = new_df.agg(
             lambda y: {k : y[new_df.columns.get_loc(k)][0] for k in image_attr_columns if k in new_df.columns}, axis=1)
@@ -443,6 +543,11 @@ class ObjectDetectionDataset(pd.DataFrame):
         return self.__class__(new_df.reset_index(drop=True))
 
     def unpack(self):
+        """Convert image-centric entries to object-centric entries.
+        Where single entry carries multiple objects, stored in `rois` column.
+
+        The length of returned dataframe is the number of objects in the dataset.
+        """
         if not self.is_packed():
             return self
         new_df = self.explode('rois')
@@ -451,6 +556,8 @@ class ObjectDetectionDataset(pd.DataFrame):
         return self.__class__(new_df.reset_index(drop=True))
 
     def is_packed(self):
+        """Check whether the current dataframe is providing packed representation of rois.
+        """
         return 'rois' in self.columns and 'xmin' not in self.columns
 
     def to_mxnet(self):
@@ -458,6 +565,25 @@ class ObjectDetectionDataset(pd.DataFrame):
         return _MXObjectDetectionDataset(self)
 
     def random_split(self, test_size=0.1, val_size=0, random_state=None):
+        r"""Randomly split the dataset into train/val/test sets.
+        Note that it's perfectly fine to set `test_size` or `val_size` to 0, where the
+        returned splits will be empty dataframes.
+
+        Parameters
+        ----------
+        test_size : float
+            The ratio for test set, can be in range [0, 1].
+        val_size : float
+            The ratio for validation set, can be in range [0, 1].
+        random_state : int, optional
+            If not `None`, will set the random state of numpy.random engine.
+
+        Returns
+        -------
+        train, val, test - (DataFrame, DataFrame, DataFrame)
+            The returned dataframes for train/val/test
+
+        """
         assert test_size >= 0 and test_size < 1.0
         assert val_size >= 0 and val_size < 1.0
         assert (val_size + test_size) < 1.0, 'val_size + test_size is larger than 1.0!'
@@ -497,7 +623,7 @@ class ObjectDetectionDataset(pd.DataFrame):
                 indices = list(range(len(df)))
                 np.random.shuffle(indices)
                 indices = indices[:min(nsample, len(indices))]
-        images = [cv2.cvtColor(cv2.resize(cv2.imread(df.at[idx, 'image']), (resize, resize),
+        images = [cv2.cvtColor(cv2.resize(cv2.imread(df.at[idx, 'image']), (resize, resize), \
             interpolation=cv2.INTER_AREA), cv2.COLOR_BGR2RGB) for idx in indices if idx < len(df)]
         # draw bounding boxes
         assert 'rois' in df.columns
@@ -588,7 +714,7 @@ def _show_images(images, cols=1, titles=None):
     assert((titles is None)or (len(images) == len(titles)))
     n_images = len(images)
     if titles is None:
-        titles = ['Image (%d)' % i for i in range(1,n_images + 1)]
+        titles = ['Image (%d)' % i for i in range(1, n_images + 1)]
     fig = plt.figure()
     for n, (image, title) in enumerate(zip(images, titles)):
         a = fig.add_subplot(int(np.ceil(n_images/float(cols))), cols, n + 1)

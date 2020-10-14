@@ -220,26 +220,28 @@ def untar(tar_file_path, root='./', strict=False):
 
 @contextlib.contextmanager
 def temporary_filename(suffix=None):
-  """Context that introduces a temporary file.
+    """Context that introduces a temporary file.
 
-  Creates a temporary file, yields its name, and upon context exit, deletes it.
-  (In contrast, tempfile.NamedTemporaryFile() provides a 'file' object and
-  deletes the file as soon as that file object is closed, so the temporary file
-  cannot be safely re-opened by another library or process.)
+    Creates a temporary file, yields its name, and upon context exit, deletes it.
+    (In contrast, tempfile.NamedTemporaryFile() provides a 'file' object and
+    deletes the file as soon as that file object is closed, so the temporary file
+    cannot be safely re-opened by another library or process.)
 
-  Args:
+    Parameters
+    ----------
     suffix: desired filename extension (e.g. '.mp4').
 
-  Yields:
+    Yields
+    ----------
     The name of the temporary file.
-  """
-  import tempfile
-  try:
+    """
+    import tempfile
+    try:
     f = tempfile.NamedTemporaryFile(suffix=suffix, delete=False)
     tmp_name = f.name
     f.close()
     yield tmp_name
-  finally:
+    finally:
     os.unlink(tmp_name)
 
 class _DisplayablePath:
@@ -275,14 +277,25 @@ class _DisplayablePath:
         else:
             self.depth = 0
 
-    @property
-    def displayname(self):
-        if self.path.is_dir():
-            return self.path.name + '/'
-        return self.path.name
-
+    # pylint: disable=inconsistent-return-statements
     @classmethod
     def make_tree(cls, root, parent=None, is_last=False, criteria=None, max_depth=1):
+        """Make tree structure from root.
+
+        Parameters
+        ----------
+        root : str
+            The root dir.
+        parent : _DisplayablePath
+            The parent displayable path.
+        is_last : bool
+            Whether it's the last in this level.
+        criteria : function
+            The criteria used to filter dir/path.
+        max_depth : int
+            Maximum depth for search.
+
+        """
         root = Path(str(root))
         criteria = criteria or cls._default_criteria
 
@@ -310,6 +323,7 @@ class _DisplayablePath:
 
     @classmethod
     def _default_criteria(cls, path):
+        _ = path
         return True
 
     @property
@@ -319,6 +333,7 @@ class _DisplayablePath:
         return self.path.name
 
     def displayable(self):
+        """Display string"""
         if self.parent is None:
             return self.displayname
 

@@ -1,8 +1,8 @@
 """Download files with progress bar."""
 import os
+import re
 import hashlib
 import requests
-import re
 from tqdm import tqdm
 
 def check_sha1(filename, sha1_hash):
