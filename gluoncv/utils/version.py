@@ -32,8 +32,8 @@ def _require_mxnet_version(mx_version, max_mx_version='2.0.0'):
         import mxnet as mx
         from distutils.version import LooseVersion
         if LooseVersion(mx.__version__) < LooseVersion(mx_version) or \
-            LooseVersion(mx.__version__) >= LooseVersion(max_mx_version):
-            version_str = '>={},<{}'.format(mx_version, max_mx_version)
+            LooseVersion(mx.__version__) > LooseVersion(max_mx_version):
+            version_str = '>={},<={}'.format(mx_version, max_mx_version)
             msg = (
                 "Legacy mxnet=={0} detected, some modules may not work properly. "
                 "mxnet{1} is required. You can use pip to upgrade mxnet "
