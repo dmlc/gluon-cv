@@ -86,7 +86,7 @@ class ImageClassificationDataset(pd.DataFrame):
 
         """
         assert 0 <= test_size < 1.0
-        assert 0 <= val_size  < 1.0
+        assert 0 <= val_size < 1.0
         assert (val_size + test_size) < 1.0, 'val_size + test_size is larger than 1.0!'
         if random_state:
             np.random.seed(random_state)
@@ -191,7 +191,7 @@ class ImageClassificationDataset(pd.DataFrame):
                 ext = os.path.splitext(filename)[1]
                 if ext.lower() not in exts:
                     logger.debug('Ignoring %s of type %s. Only support %s',
-                        filename, ext, ', '.join(exts))
+                                 filename, ext, ', '.join(exts))
                     continue
                 items['image'].append(filename)
                 items['label'].append(label)
@@ -586,7 +586,7 @@ class ObjectDetectionDataset(pd.DataFrame):
 
         """
         assert 0 <= test_size < 1.0
-        assert 0 <= val_size  < 1.0
+        assert 0 <= val_size < 1.0
         assert (val_size + test_size) < 1.0, 'val_size + test_size is larger than 1.0!'
         if random_state:
             np.random.seed(random_state)

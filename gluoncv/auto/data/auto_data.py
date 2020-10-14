@@ -61,7 +61,8 @@ class Config:
 
     def __init__(self):
         self.config_path.mkdir(parents=True, exist_ok=True)
-        if not self.config_file.exists(): self.create_config()
+        if not self.config_file.exists():
+            self.create_config()
         self.d = self.load_config()
 
     def __getitem__(self, k):
@@ -84,9 +85,12 @@ class Config:
         "load and return config if version equals 2 in existing, else create new config."
         with open(self.config_file, 'r') as f:
             config = yaml.safe_load(f)
-            if 'version' in config and config['version'] == 2: return config
-            elif 'version' in config: self.create_config(config)
-            else: self.create_config()
+            if 'version' in config and config['version'] == 2:
+                return config
+            elif 'version' in config:
+                self.create_config(config)
+            else:
+                self.create_config()
         return self.load_config()
 
     def create_config(self, cfg=None):

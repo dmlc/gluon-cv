@@ -223,7 +223,7 @@ class BaseEstimator:
             return self._fit(train_data, val_data) if not resume else self._resume_fit(train_data, val_data)
 
         if not val_data:
-            assert train_size >= 0 and train_size <= 1.0
+            assert 0 <= train_size <= 1.0
             if random_state:
                 np.random.seed(random_state)
             split_mask = np.random.rand(len(train_data)) < train_size
@@ -330,7 +330,7 @@ class BaseEstimator:
         fh = logging.FileHandler(self._log_file)
         self._logger.addHandler(fh)
         try:
-            import mxnet as mx
+            import mxnet
             net_params = state['net']
             self._init_network()
             with temporary_filename() as tfile:
