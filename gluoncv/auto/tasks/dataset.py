@@ -19,6 +19,7 @@ try:
     MXDataset = mx.gluon.data.Dataset
 except ImportError:
     MXDataset = object
+    mx = None
 
 logger = logging.getLogger()
 
@@ -52,7 +53,7 @@ class ImageClassificationDataset(pd.DataFrame):
 
     def __init__(self, data, classes=None, **kwargs):
         if isinstance(data, str) and data.endswith('csv'):
-            self = self.from_csv(data, root=kwargs.get('root', None))
+            data = self.from_csv(data, root=kwargs.get('root', None))
         self.classes = classes
         super().__init__(data, **kwargs)
 
@@ -84,8 +85,8 @@ class ImageClassificationDataset(pd.DataFrame):
             The returned dataframes for train/val/test
 
         """
-        assert test_size >= 0 and test_size < 1.0
-        assert val_size >= 0 and val_size < 1.0
+        assert 0 <= test_size < 1.0
+        assert 0 <= val_size  < 1.0
         assert (val_size + test_size) < 1.0, 'val_size + test_size is larger than 1.0!'
         if random_state:
             np.random.seed(random_state)
@@ -181,7 +182,7 @@ class ImageClassificationDataset(pd.DataFrame):
         for folder in sorted(os.listdir(root)):
             path = os.path.join(root, folder)
             if not os.path.isdir(path):
-                logger.debug('Ignoring %s, which is not a directory.'%path, stacklevel=3)
+                logger.debug('Ignoring %s, which is not a directory.', path, stacklevel=3)
                 continue
             label = len(synsets)
             synsets.append(folder)
@@ -189,8 +190,8 @@ class ImageClassificationDataset(pd.DataFrame):
                 filename = os.path.join(path, filename)
                 ext = os.path.splitext(filename)[1]
                 if ext.lower() not in exts:
-                    logger.debug('Ignoring %s of type %s. Only support %s'%(
-                        filename, ext, ', '.join(exts)))
+                    logger.debug('Ignoring %s of type %s. Only support %s',
+                        filename, ext, ', '.join(exts))
                     continue
                 items['image'].append(filename)
                 items['label'].append(label)
@@ -327,12 +328,13 @@ class _MXImageClassificationDataset(MXDataset):
 
     """
     def __init__(self, dataset):
+        if mx is None:
+            raise RuntimeError('Unable to import mxnet which is required.')
         assert isinstance(dataset, ImageClassificationDataset)
         assert 'image' in dataset.columns
         self._has_label = 'label' in dataset.columns
         self._dataset = dataset
         self.classes = self._dataset.classes
-        import mxnet as mx
         self._imread = mx.image.imread
 
     def __len__(self):
@@ -403,7 +405,6 @@ class ObjectDetectionDataset(pd.DataFrame):
             The supported image formats.
 
         """
-        from ...data.pascal_voc.detection import CustomVOCDetectionBase
         rpath = Path(root).expanduser()
         img_list = []
         class_names = set()
@@ -449,7 +450,7 @@ class ObjectDetectionDataset(pd.DataFrame):
                 xmax = min(width, float(xml_box.find('xmax').text) - 1) / width
                 ymax = min(height, float(xml_box.find('ymax').text) - 1) / height
                 if xmin >= xmax or ymin >= ymax:
-                    logger.warn('Invalid bbox: {%s} for {%s}', str(xml_box), anno_file.name)
+                    logger.warning('Invalid bbox: {%s} for {%s}', str(xml_box), anno_file.name)
                 else:
                     rois.append({'class': cls_name,
                                  'xmin': xmin, 'ymin': ymin, 'xmax': xmax, 'ymax': ymax,
@@ -491,7 +492,7 @@ class ObjectDetectionDataset(pd.DataFrame):
         elif root is None:
             # try to use the default coco structure
             root = os.path.join(os.path.dirname(anno_file), '..')
-            logger.info('Using default root folder: {}. Specify `root=...` if you feel it is wrong...'.format(root))
+            logger.info('Using default root folder: %s. Specify `root=...` if you feel it is wrong...', root)
         else:
             raise valueError("Unable to parse root: {}".format(root))
 
@@ -584,8 +585,8 @@ class ObjectDetectionDataset(pd.DataFrame):
             The returned dataframes for train/val/test
 
         """
-        assert test_size >= 0 and test_size < 1.0
-        assert val_size >= 0 and val_size < 1.0
+        assert 0 <= test_size < 1.0
+        assert 0 <= val_size  < 1.0
         assert (val_size + test_size) < 1.0, 'val_size + test_size is larger than 1.0!'
         if random_state:
             np.random.seed(random_state)
@@ -658,6 +659,8 @@ class _MXObjectDetectionDataset(MXDataset):
 
     """
     def __init__(self, dataset):
+        if mx is None:
+            raise RuntimeError('Unable to import mxnet which is required.')
         assert isinstance(dataset, ObjectDetectionDataset)
         if not dataset.is_packed():
             dataset = dataset.pack()
@@ -665,7 +668,6 @@ class _MXObjectDetectionDataset(MXDataset):
         assert 'rois' in dataset.columns
         self._dataset = dataset
         self.classes = self._dataset.classes
-        import mxnet as mx
         self._imread = mx.image.imread
 
     def __len__(self):

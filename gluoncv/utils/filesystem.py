@@ -237,12 +237,12 @@ def temporary_filename(suffix=None):
     """
     import tempfile
     try:
-    f = tempfile.NamedTemporaryFile(suffix=suffix, delete=False)
-    tmp_name = f.name
-    f.close()
-    yield tmp_name
+        f = tempfile.NamedTemporaryFile(suffix=suffix, delete=False)
+        tmp_name = f.name
+        f.close()
+        yield tmp_name
     finally:
-    os.unlink(tmp_name)
+        os.unlink(tmp_name)
 
 class _DisplayablePath:
     """A util class for displaying the tree structure of root path.
