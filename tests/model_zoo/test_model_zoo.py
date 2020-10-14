@@ -52,7 +52,7 @@ def _test_model_list(model_list, ctx, x, pretrained=True, **kwargs):
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 net.initialize()
-        net.collect_params().reset_ctx(ctx)
+        net.reset_ctx(ctx)
         net(x)
         mx.nd.waitall()
 
@@ -66,7 +66,7 @@ def _calib_model_list(model_list, ctx, x, pretrained=True, **kwargs):
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 net.initialize()
-        net.collect_params().reset_ctx(ctx)
+        net.reset_ctx(ctx)
         exclude_layers_match = ['flatten']
         if model.find('ssd') != -1 or model.find('psp') != -1 or model.find('deeplab') != -1:
             exclude_layers_match += ['concat']
@@ -103,7 +103,7 @@ def _test_bn_global_stats(model_list, **kwargs):
 @unittest.skip("temporarily disabled")
 def test_classification_models():
     ctx = mx.context.current_context()
-    x = mx.random.uniform(shape=(2, 3, 32, 32), ctx=ctx)
+    x = mx.np.random.uniform(size=(2, 3, 32, 32), ctx=ctx)
     cifar_models = [
         'cifar_resnet20_v1', 'cifar_resnet56_v1', 'cifar_resnet110_v1',
         'cifar_resnet20_v2', 'cifar_resnet56_v2', 'cifar_resnet110_v2',
@@ -120,7 +120,7 @@ def test_imagenet_models():
     ctx = mx.context.current_context()
 
     # 224x224
-    x = mx.random.uniform(shape=(2, 3, 224, 224), ctx=ctx)
+    x = mx.np.random.uniform(size=(2, 3, 224, 224), ctx=ctx)
     models = ['resnet18_v1', 'resnet34_v1',
               'resnet50_v1', 'resnet101_v1', 'resnet152_v1',
             #   'resnet18_v1b', 'resnet34_v1b', 'resnet50_v1b_gn',
@@ -382,7 +382,7 @@ def test_rcnn_max_dets_greater_than_nms_mask_rcnn_models():
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         net.initialize()
-    net.collect_params().reset_ctx(ctx)
+    net.reset_ctx(ctx)
     net(x)
     mx.nd.waitall()
 
@@ -425,7 +425,7 @@ def test_set_nms():
 @unittest.skip("temporarily disabled")
 def test_segmentation_models():
     ctx = mx.context.current_context()
-    x = mx.random.uniform(shape=(1, 3, 480, 480), ctx=ctx)
+    x = mx.np.random.uniform(size=(1, 3, 480, 480), ctx=ctx)
     models = ['fcn_resnet101_coco', 'psp_resnet101_coco', 'deeplab_resnet101_coco',
               'fcn_resnet101_voc', 'psp_resnet101_voc', 'deeplab_resnet101_voc',
               'fcn_resnet50_ade', 'psp_resnet50_ade', 'deeplab_resnet50_ade',
