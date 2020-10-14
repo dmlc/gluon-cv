@@ -1,0 +1,23 @@
+{
+    "LaunchTemplateName":"increase-volume-batch-linux1",
+    "LaunchTemplateData": {
+        "BlockDeviceMappings": [
+          {
+            "Ebs": {
+              "DeleteOnTermination": true,
+              "VolumeSize": 100,
+              "VolumeType": "gp2"
+            },
+            "DeviceName": "/dev/xvda"
+          },
+          {
+            "Ebs": {
+              "DeleteOnTermination": true,
+              "VolumeSize": 100,
+              "VolumeType": "gp2"
+            },
+            "DeviceName": "/dev/xvdcz"
+          }          
+        ]
+  }
+}
