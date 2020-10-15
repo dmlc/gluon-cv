@@ -191,8 +191,6 @@ class MonodepthOptions:
 
     def parse(self):
         self.options = self.parser.parse_args()
-
-        # logging and checkpoint saving
         self.options.ctx = [mx.gpu(self.options.gpu)]
         if self.options.no_gpu:
             self.options.ctx = [mx.cpu(0)]
