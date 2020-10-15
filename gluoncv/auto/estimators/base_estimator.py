@@ -330,7 +330,7 @@ class BaseEstimator:
         fh = logging.FileHandler(self._log_file)
         self._logger.addHandler(fh)
         try:
-            import mxnet
+            import mxnet as _
             net_params = state['net']
             self._init_network()
             with temporary_filename() as tfile:

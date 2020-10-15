@@ -110,7 +110,8 @@ class Config:
 
     def save_file(self, config):
         "save config file at default config location `~/.gluoncv/config.yml`."
-        with self.config_file.open('w') as f: yaml.dump(config, f, default_flow_style=False)
+        with self.config_file.open('w') as f:
+            yaml.dump(config, f, default_flow_style=False)
 
 
 # pylint: disable=bad-whitespace
