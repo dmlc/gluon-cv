@@ -21,3 +21,4 @@ for instance in instance_type_info:
                 '--command', 'python3 demo_cifar10.py'
               ]
     subprocess.run(command)
+    

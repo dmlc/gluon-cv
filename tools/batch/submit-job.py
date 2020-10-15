@@ -8,23 +8,6 @@ from datetime import datetime
 import boto3
 from botocore.compat import total_seconds
 
-# Fetch definitions
-# TODO: find out a way to check if the file has been updated
-#       only download the file if it's been updated
-# job_def_file = 'gluon-cv-job-definitions.csv'
-# if os.path.isfile(f'./{job_def_file}'):
-#     os.remove(job_def_file)
-# url = 'https://raw.githubusercontent.com/sxjscience/aws-batch-config/main/gluon-cv-job-definitions.csv'
-# wget.download(url, './')
-# print('/n')
-# df = pd.read_csv(job_def_file)
-# Construct the info dict into this format:
-# {'p2.8x': {'job_definition': 'gluon-cv-p2_8xlarge:1', 'job_queue': 'p2'}
-# instance_type_info = {f'{instance}'.replace('large',''): \
-#                         {'job_definition': f'gluon-cv-{instance}'.replace('.','_') + f':{revision}', \
-#                          'job_queue': instance.split('.')[0]} \
-#                      for idx, instance, revision in df[['Instance Type','Revision']].itertuples()\
-#                      }
 
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 

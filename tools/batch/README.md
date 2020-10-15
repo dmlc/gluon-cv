@@ -2,6 +2,18 @@
 
 Once you've correctly configured the AWS CLI, you may use submit-job.py to deploy your job.
 
+#### Requirements
+
+**boto3** is required. To install it:
+
+```shell
+pip install boto3
+```
+
+You'll also need to configure it so that the script can authenticate you successfully:
+
+https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html#configuration
+
 #### Some arguments
 
 * --job-type: which instance you want your job to be ran on
