@@ -121,7 +121,7 @@ class Trainer:
         self.lr_scheduler_depth = LRSequential([
             LRScheduler('step', base_lr=self.opt.learning_rate,
                         nepochs=self.opt.num_epochs - self.opt.warmup_epochs,
-                        iters_per_epoch=len(train_dataset),
+                        iters_per_epoch=len(self.train_loader),
                         step_epoch=[self.opt.scheduler_step_size - self.opt.warmup_epochs])
         ])
         optimizer_params_depth = {'lr_scheduler': self.lr_scheduler_depth,
@@ -133,7 +133,7 @@ class Trainer:
             self.lr_scheduler_pose = LRSequential([
                 LRScheduler('step', base_lr=self.opt.learning_rate,
                             nepochs=self.opt.num_epochs - self.opt.warmup_epochs,
-                            iters_per_epoch=len(train_dataset),
+                            iters_per_epoch=len(self.train_loader),
                             step_epoch=[self.opt.scheduler_step_size - self.opt.warmup_epochs])
             ])
             optimizer_params_pose = {'lr_scheduler': self.lr_scheduler_pose,

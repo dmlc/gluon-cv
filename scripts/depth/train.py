@@ -18,7 +18,11 @@ opts = options.parse()
 
 if __name__ == "__main__":
     # build logger
-    file_handler = logging.FileHandler(os.path.join(opts.log_dir, opts.model_zoo, "train.log"))
+    # logging and checkpoint saving
+    log_path = os.path.join(opts.log_dir, opts.model_zoo)
+    if not os.path.exists(log_path):
+        os.makedirs(log_path)
+    file_handler = logging.FileHandler(os.path.join(log_path, "train.log"))
     stream_handler = logging.StreamHandler()
     logger = logging.getLogger('')
     logger.setLevel(logging.INFO)
