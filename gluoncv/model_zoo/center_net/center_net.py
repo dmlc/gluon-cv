@@ -78,6 +78,8 @@ class CenterNet(nn.HybridBlock):
         self.post_nms = post_nms
         self.scale = scale
         self.flip_test = flip_test
+        self._head_setups = heads
+        self._head_conv_channel = head_conv_channel
         with self.name_scope():
             self.base_network = base_network
             self.heatmap_nms = nn.MaxPool2D(pool_size=3, strides=1, padding=1)
@@ -164,7 +166,90 @@ class CenterNet(nn.HybridBlock):
         >>> net.reset_class(classes=['person'], reuse_weights=['person'])
 
         """
-        raise NotImplementedError("Not yet implemented, please wait for future updates.")
+        self._clear_cached_op()
+        old_classes = self.classes
+        self.classes = classes
+        # trying to reuse weights by mapping old and new classes
+        if isinstance(reuse_weights, (dict, list)):
+            if isinstance(reuse_weights, dict):
+                # trying to replace str with indices
+                new_keys = []
+                new_vals = []
+                for k, v in reuse_weights.items():
+                    if isinstance(v, str):
+                        try:
+                            new_vals.append(old_classes.index(v))  # raise ValueError if not found
+                        except ValueError:
+                            raise ValueError(
+                                "{} not found in old class names {}".format(v, old_classes))
+                    else:
+                        if v < 0 or v >= len(old_classes):
+                            raise ValueError(
+                                "Index {} out of bounds for old class names".format(v))
+                        new_vals.append(v)
+                    if isinstance(k, str):
+                        try:
+                            new_keys.append(self.classes.index(k))  # raise ValueError if not found
+                        except ValueError:
+                            raise ValueError(
+                                "{} not found in new class names {}".format(k, self.classes))
+                    else:
+                        if k < 0 or k >= len(self.classes):
+                            raise ValueError(
+                                "Index {} out of bounds for new class names".format(k))
+                        new_keys.append(k)
+                reuse_weights = dict(zip(new_keys, new_vals))
+            else:
+                new_map = {}
+                for x in reuse_weights:
+                    try:
+                        new_idx = self.classes.index(x)
+                        old_idx = old_classes.index(x)
+                        new_map[new_idx] = old_idx
+                    except ValueError:
+                        warnings.warn("{} not found in old: {} or new class names: {}".format(
+                            x, old_classes, self.classes))
+                reuse_weights = new_map
+        # replace class predictors
+        with self.name_scope():
+            hm_head = nn.HybridSequential('heatmap')
+            orig_head = self.heads
+            orig_hm = self.heads[0]
+            for i in range(len(orig_hm) - 1):
+                hm_head.add(orig_hm[i])
+            num_output = len(classes)
+            bias = self._head_setups['heatmap'].get('bias', 0.0)
+            weight_initializer = mx.init.Normal(0.001) if bias == 0 else mx.init.Xavier()
+            # to avoid deferred init, number of in_channels must be defined
+            in_channels = list(orig_hm[0].params.values())[0].shape[1]
+            hm_head.add(nn.Conv2D(num_output, kernel_size=1, strides=1, padding=0, use_bias=True,
+                                  weight_initializer=weight_initializer,
+                                  bias_initializer=mx.init.Constant(bias),
+                                  in_channels=in_channels))
+            with warnings.catch_warnings(record=True) as w:
+                warnings.simplefilter("always")
+                ctx = list(orig_hm[0].params.values())[0].list_ctx()
+                hm_head.initialize(ctx=ctx)
+            if reuse_weights:
+                assert isinstance(reuse_weights, dict)
+                for old_params, new_params in zip(orig_hm[2].params.values(),
+                                                  hm_head[2].params.values()):
+                    old_data = old_params.data()
+                    new_data = new_params.data()
+
+                    for k, v in reuse_weights.items():
+                        if k > len(self.classes) or v > len(old_classes):
+                            warnings.warn("reuse mapping {}/{} -> {}/{} out of range".format(
+                                k, self.classes, v, old_classes))
+                            continue
+                        new_data[k::len(self.classes)] = old_data[v::len(old_classes)]
+                    # set data to new conv layers
+                    new_params.set_data(new_data)
+            old_heads = self.heads
+            self.heads = nn.HybridSequential('heads')
+            self.heads.add(hm_head)
+            self.heads.add(orig_head[1])
+            self.heads.add(orig_head[2])
 
     def hybrid_forward(self, F, x):
         # pylint: disable=arguments-differ

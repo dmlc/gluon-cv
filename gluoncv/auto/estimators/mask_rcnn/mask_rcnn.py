@@ -282,10 +282,11 @@ class MaskRCNNEstimator(BaseEstimator):
             async_eval_processes.append(p)
             p.start()
 
-    def _fit(self):
+    def _fit(self, train_data, val_data):
         """
         Fit Mask R-CNN models.
         """
+        # TODO(zhreshold): remove 'dataset' in config, use train_data/val_data instead
         self._cfg.kv_store = 'device' \
             if (self._cfg.mask_rcnn.amp and 'nccl' in self._cfg.kv_store) else self._cfg.kv_store
         kv = mx.kvstore.create(self._cfg.kv_store)
@@ -411,9 +412,10 @@ class MaskRCNNEstimator(BaseEstimator):
         for thread in self.async_eval_processes:
             thread.join()
 
-    def _evaluate(self):
+    def _evaluate(self, val_data):
         """Evaluate the current model on dataset.
         """
+        # TODO(zhreshold): remove self._val_data, use passed in val_data at runtime
         return self._validate(self._val_data, self.async_eval_processes, self.ctx, self.eval_metric,
                               self._logger, self.epoch, self.best_map)
 

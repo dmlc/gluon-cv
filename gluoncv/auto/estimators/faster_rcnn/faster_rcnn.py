@@ -228,10 +228,11 @@ class FasterRCNNEstimator(BaseEstimator):
                 eval_metric.update(det_bbox, det_id, det_score, gt_bbox, gt_id, gt_diff)
         return eval_metric.get()
 
-    def _fit(self):
+    def _fit(self, train_data, val_data):
         """
         Fit faster R-CNN models.
         """
+        # TODO(zhreshold): remove 'dataset' in config, use train_data/val_data instead
         self._cfg.kv_store = 'device' if (self._cfg.faster_rcnn.amp and 'nccl' in self._cfg.kv_store) \
             else self._cfg.kv_store
         kv = mx.kvstore.create(self._cfg.kv_store)
@@ -360,8 +361,10 @@ class FasterRCNNEstimator(BaseEstimator):
                 if self._reporter:
                     self._reporter(epoch=epoch, map_reward=current_map)
 
-    def _evaluate(self):
-        """Evaluate the current model on dataset."""
+    def _evaluate(self, val_data):
+        """Evaluate the current model on dataset.
+        """
+        # TODO(zhreshold): remove self._val_data, use passed in val_data at runtime
         eval_metric = self._validate(self._val_data, self.ctx, self.eval_metric)
         self._logger.info("mAP on test dataset: %f", eval_metric[-1][-1])
         return eval_metric

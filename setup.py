@@ -3,14 +3,15 @@ import io
 import os
 import re
 import sys
-
-import numpy as np
-
 try:
     from Cython.Build import cythonize
 except ImportError:
     cythonize = None
 from setuptools import setup, find_packages, Extension
+try:
+    import cv2
+except ImportError:
+    cv2 = None
 
 with_cython = False
 if '--with-cython' in sys.argv:
@@ -58,8 +59,11 @@ requirements = [
     'scipy',
     'pyyaml',
     'sacred',
+    'pandas'
 ]
+
 if with_cython:
+    import numpy as np
     _NP_INCLUDE_DIRS = np.get_include()
 
     # Extension modules
@@ -77,6 +81,10 @@ if with_cython:
     ])
 else:
     ext_modules = []
+
+# do not duplicate opencv module if already compiled from source
+if cv2 is None:
+    requirements.append('opencv-python')
 
 setup(
     # Metadata

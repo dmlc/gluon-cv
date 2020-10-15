@@ -1,5 +1,4 @@
-"""Auto pipeline for object detection task"""
-import time
+"""Auto pipeline for image classification task"""
 import logging
 import uuid
 
@@ -11,30 +10,20 @@ from autogluon.task import BaseTask
 
 from ... import utils as gutils
 from ..estimators.base_estimator import ConfigDict, BaseEstimator
-from ..estimators import SSDEstimator, FasterRCNNEstimator, YOLOEstimator, CenterNetEstimator
+from ..estimators import ClassificationEstimator
 from .utils import auto_suggest, config_to_nested
-from .dataset import ObjectDetectionDataset
+from .dataset import ImageClassificationDataset
 
 
-__all__ = ['ObjectDetection']
+__all__ = ['ImageClassification']
 
 @ag.args()
-def _train_object_detection(args, reporter):
+def _train_image_classification(args, reporter):
     """
     Parameters
     ----------
     args: <class 'autogluon.utils.edict.EasyDict'>
     """
-    logger = args.get('logger', logging.getLogger())
-    logger.setLevel(logging.INFO)
-
-    if args['task_id'] < args['num_trials']:
-        logger.info("Running trial %d / %d", args['task_id'] + 1, args['num_trials'])
-        logger.info('The training config: %s', str(args))
-    else:
-        logger.info("Retraining with the best config")
-        logger.info('The best config: %s', str(args))
-
     # convert user defined config to nested form
     args = config_to_nested(args)
 
@@ -67,8 +56,8 @@ def _train_object_detection(args, reporter):
     return {}
 
 
-class ObjectDetection(BaseTask):
-    """Object Detection general task.
+class ImageClassification(BaseTask):
+    """Whole Image Classification general task.
 
     Parameters
     ----------
@@ -78,21 +67,20 @@ class ObjectDetection(BaseTask):
         The desired logger object, use `None` for module specific logger with default setting.
 
     """
-    Dataset = ObjectDetectionDataset
+    Dataset = ImageClassificationDataset
 
     def __init__(self, config, estimator=None, logger=None):
-        super(ObjectDetection, self).__init__()
-        self._config = ConfigDict(config)
+        super(ImageClassification, self).__init__()
         self._logger = logger if logger is not None else logging.getLogger(__name__)
         self._logger.setLevel(logging.INFO)
-        self._logger.info("Starting HPO experiments")
+        self._config = ConfigDict(config)
 
         # automatically suggest some hyperparameters based on the dataset statistics
         if self._config.get('auto_suggest', True):
             auto_suggest(config, estimator, self._logger)
         else:
             if estimator is None:
-                estimator = [SSDEstimator, FasterRCNNEstimator, YOLOEstimator, CenterNetEstimator]
+                estimator = [Classification]
             elif isinstance(estimator, (tuple, list)):
                 pass
             else:
@@ -118,15 +106,13 @@ class ObjectDetection(BaseTask):
         config['gpus'] = [int(i) for i in range(ngpus_per_trial)]
         config['seed'] = self._config.get('seed', 233)
         config['final_fit'] = False
-        config['logger'] = self._logger
-
 
         # automatically merge search configs according to user specified values
         # args = auto_args(config, estimator)
 
         # register args for HPO
         # _train_object_detection.register_args(**args)
-        # _train_object_detection.register_args(**config)
+        # _train_image_classification.register_args(**config)
         self._train_config = config
 
         # scheduler options
@@ -150,7 +136,7 @@ class ObjectDetection(BaseTask):
                 'grace_period': self._config.get('grace_period', self._config.epochs // 4)})
 
     def fit(self, train_data, val_data=None, train_size=0.9, random_state=None):
-        """Fit auto estimator given the input data.
+        """Fit auto estimator given the input data .
 
         Returns
         -------
@@ -179,16 +165,12 @@ class ObjectDetection(BaseTask):
         config = self._train_config.copy()
         config['train_data'] = train_data
         config['val_data'] = val_data
-        _train_object_detection.register_args(**config)
+        _train_image_classification.register_args(**config)
 
-        start_time = time.time()
-
-        results = self.run_fit(_train_object_detection, self._config.search_strategy,
+        results = self.run_fit(_train_image_classification, self._config.search_strategy,
                                self._config.scheduler_options)
-        end_time = time.time()
         self._logger.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> finish model fitting")
-        self._logger.info("total runtime is %.2f s", end_time - start_time)
-        best_config = sample_config(_train_object_detection.args, results['best_config'])
+        best_config = sample_config(_train_image_classification.args, results['best_config'])
         # convert best config to nested form
         best_config = config_to_nested(best_config)
         self._logger.info('The best config: %s', str(best_config))
@@ -202,6 +184,5 @@ class ObjectDetection(BaseTask):
     def load(cls, filename):
         obj = BaseEstimator.load(filename)
         # make sure not accidentally loading e.g. classification model
-        # pylint: disable=unidiomatic-typecheck
-        assert type(obj) in (SSDEstimator, FasterRCNNEstimator, YOLOEstimator, CenterNetEstimator)
+        assert isinstance(obj, ClassificationEstimator)
         return obj

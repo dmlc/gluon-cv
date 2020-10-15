@@ -5,9 +5,12 @@ import pickle
 import logging
 import warnings
 from datetime import datetime
+import numpy as np
+import pandas as pd
 from sacred.commands import _format_config, save_config, print_config
 from sacred.settings import SETTINGS
 from ...utils import random as _random
+from ...utils.filesystem import temporary_filename
 
 SETTINGS.CONFIG.READ_ONLY_CONFIG = False
 
@@ -151,8 +154,17 @@ class BaseEstimator:
         self._init_args = [config, logger, reporter]
         self._reporter = reporter
         name = name if isinstance(name, str) else self.__class__.__name__
+        self._name = name
         self._logger = logger if logger is not None else logging.getLogger(name)
         self._logger.setLevel(logging.INFO)
+
+        # reserved attributes
+        self.net = None
+        self.num_class = None
+        self.classes = []
+        self.ctx = [None]
+        self.dataset = 'auto'
+        self.current_epoch = 0
 
         # finalize the config
         r = self._ex.run('_get_config', config_updates=config, options={'--loglevel': 50, '--force': True})
@@ -162,24 +174,7 @@ class BaseEstimator:
         logdir = r.config.get('logging.logdir', None)
         self._logdir = os.path.abspath(logdir) if logdir else os.getcwd()
 
-        # try to auto resume
-        prefix = None
-        if r.config.get('train', {}).get('auto_resume', False):
-            exists = [d for d in os.listdir(self._logdir) if d.startswith(name)]
-            # latest timestamp
-            exists = sorted(exists)
-            prefix = exists[-1] if exists else None
-            # compare config, if altered, then skip auto resume
-            if prefix:
-                self._ex.add_config(os.path.join(self._logdir, prefix, 'config.yaml'))
-                r2 = self._ex.run('_get_config', options={'--loglevel': 50, '--force': True})
-                if _compare_config(r2.config, r.config):
-                    self._logger.info('Auto resume detected previous run: %s', str(prefix))
-                    r.config['seed'] = r2.config['seed']
-                else:
-                    prefix = None
-        if not prefix:
-            prefix = name + datetime.now().strftime("-%m-%d-%Y-%H-%M-%S")
+        prefix = name.lower() + datetime.now().strftime("-%m-%d-%Y")
         self._logdir = os.path.join(self._logdir, prefix)
         r.config['logdir'] = self._logdir
         os.makedirs(self._logdir, exist_ok=True)
@@ -195,52 +190,158 @@ class BaseEstimator:
         self._cfg.freeze()
         _random.seed(self._cfg.seed)
 
-    def fit(self):
-        self._fit()
+    def fit(self, train_data, val_data=None, train_size=0.9, random_state=None, resume=False):
+        """Fit with train/validation data.
 
-    def evaluate(self):
-        return self._evaluate()
+        Parameters
+        ----------
+        train_data : pd.DataFrame or iterator
+            Training data.
+        val_data : pd.DataFrame or iterator, optional
+            Validation data, optional. If `train_data` is DataFrame, `val_data` will be split from
+            `train_data` given `train_size`.
+        train_size : float
+            The portion of train data split from original `train_data` if `val_data` is not provided.
+        random_state : int
+            Random state for splitting, for `np.random.seed`.
+        resume : bool
+            Whether resume from previous `fit`(if possible) or start as fresh.
 
-    def _fit(self):
+        Returns
+        -------
+        None
+
+        """
+        if not resume:
+            self.classes = train_data.classes
+            self.num_class = len(self.classes)
+            self._init_network()
+        if not isinstance(train_data, pd.DataFrame):
+            assert val_data is not None, \
+                "Please provide `val_data` as we do not know how to split `train_data` of type: \
+                {}".format(type(train_data))
+            return self._fit(train_data, val_data) if not resume else self._resume_fit(train_data, val_data)
+
+        if not val_data:
+            assert 0 <= train_size <= 1.0
+            if random_state:
+                np.random.seed(random_state)
+            split_mask = np.random.rand(len(train_data)) < train_size
+            train = train_data[split_mask]
+            val = train_data[~split_mask]
+            self._logger.info('Randomly split train_data into train[%d]/validation[%d] splits.',
+                              len(train), len(val))
+            return self._fit(train, val) if not resume else self._resume_fit(train, val)
+
+        return self._fit(train_data, val_data) if not resume else self._resume_fit(train_data, val_data)
+
+    def evaluate(self, val_data):
+        """Evaluate estimator on validation data.
+
+        Parameters
+        ----------
+        val_data : pd.DataFrame or iterator
+            The validation data.
+
+        """
+        return self._evaluate(val_data)
+
+    def predict(self, x):
+        """Predict using this estimator.
+
+        Parameters
+        ----------
+        x : str, pd.DataFrame or ndarray
+            The input, can be str(filepath), pd.DataFrame with 'image' column, or raw ndarray input.
+
+        """
+        return self._predict(x)
+
+    def _predict(self, x):
         raise NotImplementedError
 
-    def _evaluate(self):
+    def _fit(self, train_data, val_data):
         raise NotImplementedError
 
-    def state_dict(self):
-        state = {
-            'init_args': self._init_args,
-            '__class__': self.__class__,
-            'params': self.get_parameters(),
-        }
-        return state
+    def _resume_fit(self, train_data, val_data):
+        raise NotImplementedError
+
+    def _evaluate(self, val_data):
+        raise NotImplementedError
+
+    def _init_network(self):
+        raise NotImplementedError
+
+    def _init_trainer(self):
+        raise NotImplementedError
 
     def save(self, filename):
-        state = self.state_dict()
+        """Save the state of this estimator to disk.
+
+        Parameters
+        ----------
+        filename : str
+            The file name for storing the full state.
+        """
         with open(filename, 'wb') as fid:
-            pickle.dump(state, fid)
+            pickle.dump(self, fid)
         self._logger.info('Pickled to %s', filename)
 
     @classmethod
     def load(cls, filename):
+        """Load the state from disk copy.
+
+        Parameters
+        ----------
+        filename : str
+            The file name to load from.
+        """
         with open(filename, 'rb') as fid:
-            state = pickle.load(fid)
-            _cls = state['__class__']
-            obj = _cls(*state['init_args'])
-            obj.put_parameters(state['params'])
+            obj = pickle.load(fid)
             obj._logger.info('Unpickled from %s', filename)
             return obj
 
-    def put_parameters(self, parameters):
-        """Load saved parameters into the model"""
-        param_dict = self.net._collect_params_with_prefix()
-        for k, _ in param_dict.items():
-            param_dict[k].set_data(parameters[k])
+    def __getstate__(self):
+        d = self.__dict__.copy()
+        try:
+            import mxnet as mx
+            net = d.get('net', None)
+            if isinstance(net, mx.gluon.HybridBlock):
+                with temporary_filename() as tfile:
+                    net.save_parameters(tfile)
+                    with open(tfile, 'rb') as fi:
+                        d['net'] = fi.read()
+            trainer = d.get('trainer', None)
+            if isinstance(trainer, mx.gluon.Trainer):
+                with temporary_filename() as tfile:
+                    trainer.save_states(tfile)
+                    with open(tfile, 'rb') as fi:
+                        d['trainer'] = fi.read()
+        except ImportError:
+            pass
+        d['_logger'] = None
+        return d
 
-    def get_parameters(self):
-        """Return model parameters"""
-        param_dict = self.net._collect_params_with_prefix()
-        for k, v in param_dict.items():
-            # cast to numpy array
-            param_dict[k] = v.data(ctx=self.ctx[0]).asnumpy()
-        return param_dict
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        # logger
+        self._logger = logging.getLogger(state.get('_name', self.__class__.__name__))
+        self._logger.setLevel(logging.INFO)
+        fh = logging.FileHandler(self._log_file)
+        self._logger.addHandler(fh)
+        try:
+            import mxnet as _
+            net_params = state['net']
+            self._init_network()
+            with temporary_filename() as tfile:
+                with open(tfile, 'wb') as fo:
+                    fo.write(net_params)
+                self.net.load_parameters(tfile)
+            trainer_state = state['trainer']
+            self._init_trainer()
+            with temporary_filename() as tfile:
+                with open(tfile, 'wb') as fo:
+                    fo.write(trainer_state)
+                self.trainer.load_states(tfile)
+        except ImportError:
+            pass

@@ -1,6 +1,10 @@
 """Filesystem utility functions."""
 import os
 import errno
+import contextlib
+from pathlib import Path
+import tarfile
+import zipfile
 
 def makedirs(path):
     """Create directory recursively if not exists.
@@ -193,3 +197,177 @@ def try_import_gdfDownloader():
           "e.g. pip install googleDriveFileDownloader --user` " \
           "(note that this is unofficial PYPI package)."
     return try_import('googleDriveFileDownloader', msg)
+
+def unzip(zip_file_path, root='./', strict=False):
+    """Unzips files located at `zip_file_path` into parent directory specified by `root`.
+    """
+    root = os.path.expanduser(root)
+    with zipfile.ZipFile(zip_file_path) as zf:
+        if strict or not os.path.exists(os.path.join(root, zf.namelist()[-1])):
+            zf.extractall(root)
+        folder = os.path.commonprefix(zf.namelist())
+    return os.path.join(root, folder)
+
+def untar(tar_file_path, root='./', strict=False):
+    """Untars files located at `tar_file_path` into parent directory specified by `root`.
+    """
+    root = os.path.expanduser(root)
+    with tarfile.open(tar_file_path, 'r:gz') as zf:
+        if strict or not os.path.exists(os.path.join(root, zf.getnames()[-1])):
+            zf.extractall(root)
+        folder = os.path.commonprefix(zf.getnames())
+    return os.path.join(root, folder)
+
+@contextlib.contextmanager
+def temporary_filename(suffix=None):
+    """Context that introduces a temporary file.
+
+    Creates a temporary file, yields its name, and upon context exit, deletes it.
+    (In contrast, tempfile.NamedTemporaryFile() provides a 'file' object and
+    deletes the file as soon as that file object is closed, so the temporary file
+    cannot be safely re-opened by another library or process.)
+
+    Parameters
+    ----------
+    suffix: desired filename extension (e.g. '.mp4').
+
+    Yields
+    ----------
+    The name of the temporary file.
+    """
+    import tempfile
+    try:
+        f = tempfile.NamedTemporaryFile(suffix=suffix, delete=False)
+        tmp_name = f.name
+        f.close()
+        yield tmp_name
+    finally:
+        os.unlink(tmp_name)
+
+class _DisplayablePath:
+    """A util class for displaying the tree structure of root path.
+
+    Example:
+
+    >>> paths = _DisplayablePath.make_tree(Path('doc'))
+    >>> for path in paths:
+    >>>    print(path.displayable())
+
+    Parameters
+    ----------
+    path : str
+        The path.
+    parent_path : str
+        The parent parth.
+    is_last : bool
+        Whether it's the last node in this depth.
+
+    """
+    display_filename_prefix_middle = '├──'
+    display_filename_prefix_last = '└──'
+    display_parent_prefix_middle = '    '
+    display_parent_prefix_last = '│   '
+
+    def __init__(self, path, parent_path, is_last):
+        self.path = Path(str(path))
+        self.parent = parent_path
+        self.is_last = is_last
+        if self.parent:
+            self.depth = self.parent.depth + 1
+        else:
+            self.depth = 0
+
+    # pylint: disable=inconsistent-return-statements
+    @classmethod
+    def make_tree(cls, root, parent=None, is_last=False, criteria=None, max_depth=1):
+        """Make tree structure from root.
+
+        Parameters
+        ----------
+        root : str
+            The root dir.
+        parent : _DisplayablePath
+            The parent displayable path.
+        is_last : bool
+            Whether it's the last in this level.
+        criteria : function
+            The criteria used to filter dir/path.
+        max_depth : int
+            Maximum depth for search.
+
+        """
+        root = Path(str(root))
+        criteria = criteria or cls._default_criteria
+
+        displayable_root = cls(root, parent, is_last)
+        if displayable_root.depth > max_depth:
+            return displayable_root
+        yield displayable_root
+
+        children = sorted(list(path
+                               for path in root.iterdir()
+                               if criteria(path)),
+                          key=lambda s: str(s).lower())
+        count = 1
+        for path in children:
+            is_last = count == len(children)
+            if path.is_dir() and displayable_root.depth < max_depth - 1:
+                yield from cls.make_tree(path,
+                                         parent=displayable_root,
+                                         is_last=is_last,
+                                         criteria=criteria,
+                                         max_depth=max_depth)
+            else:
+                yield cls(path, displayable_root, is_last)
+            count += 1
+
+    @classmethod
+    def _default_criteria(cls, path):
+        _ = path
+        return True
+
+    @property
+    def displayname(self):
+        if self.path.is_dir():
+            return self.path.name + '/'
+        return self.path.name
+
+    def displayable(self):
+        """Display string"""
+        if self.parent is None:
+            return self.displayname
+
+        _filename_prefix = (self.display_filename_prefix_last
+                            if self.is_last
+                            else self.display_filename_prefix_middle)
+
+        parts = ['{!s} {!s}'.format(_filename_prefix,
+                                    self.displayname)]
+
+        parent = self.parent
+        while parent and parent.parent is not None:
+            parts.append(self.display_parent_prefix_middle
+                         if parent.is_last
+                         else self.display_parent_prefix_last)
+            parent = parent.parent
+
+        return ''.join(reversed(parts))
+
+
+class PathTree:
+    """A directory tree structure viewer.
+
+    Parameters
+    ----------
+    root : str or pathlib.Path
+        The root directory.
+    max_depth : int
+        Max depth for recursive sub-folders, please be conservative to not spam the filesystem.
+
+    """
+    def __init__(self, root, max_depth=1):
+        self._disp_path = _DisplayablePath.make_tree(Path(root), max_depth=max_depth)
+
+    def __str__(self):
+        s = '\n'.join([p.displayable() for p in self._disp_path])
+        return s
