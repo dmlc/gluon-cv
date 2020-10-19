@@ -16,7 +16,7 @@ dependencies:
   - tqdm
   - pillow
   - pip:
-    - git+https://github.com/apache/incubator-mxnet.git
+    - https://repo.mxnet.io/dist/python/cu100/mxnet_cu100-2.0.0b20200926-py3-none-manylinux2014_x86_64.whl
     - coverage-badge
     - awscli
     - nose-timer
