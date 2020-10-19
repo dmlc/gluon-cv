@@ -10,7 +10,7 @@ dependencies:
   - coverage=4.5.4
   - scipy
   - cython
-  - pip=20.2.4
+  - pip=20.1.1
   - requests
   - matplotlib
   - tqdm
