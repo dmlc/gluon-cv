@@ -16,7 +16,7 @@ dependencies:
   - tqdm
   - pillow
   - pip:
-    - https://repo.mxnet.io/dist/python/cu100/mxnet_cu100-2.0.0b20200926-py3-none-manylinux2014_x86_64.whl
+    - https://repo.mxnet.io/dist/python/cu100/mxnet_cu100-2.0.0b20200910-py2.py3-none-manylinux2014_x86_64.whl
     - coverage-badge
     - awscli
     - nose-timer
