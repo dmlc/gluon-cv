@@ -41,7 +41,7 @@ def train_cfg():
     # starting epoch
     start_epoch = 0
     # total epoch for training
-    epochs = 2
+    epochs = 240
     # Learning rate.
     lr = 0.001
     # Decay rate of learning rate.
