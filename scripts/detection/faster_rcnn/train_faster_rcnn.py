@@ -1,4 +1,4 @@
-"""Train Faster-RCNN end to end."""
+"""Train Faster R-CNN end to end."""
 import os
 
 # disable autotune
@@ -11,19 +11,18 @@ os.environ['MXNET_GPU_COPY_NTHREADS'] = '1'
 os.environ['MXNET_OPTIMIZER_AGGREGATION_SIZE'] = '54'
 
 import gluoncv as gcv
-
-gcv.utils.check_version('0.7.0')
+gcv.utils.check_version('0.8.0')
 from gluoncv.auto.estimators.faster_rcnn import FasterRCNNEstimator
 from gluoncv.auto.estimators.faster_rcnn import ex
-
-try:
-    import horovod.mxnet as hvd
-except ImportError:
-    hvd = None
-
+from gluoncv.auto.data import url_data
+from gluoncv.auto.tasks import ObjectDetection as Task
 
 @ex.automain
 def main(_config, _log):
+    root = url_data('https://autogluon.s3.amazonaws.com/datasets/tiny_motorbike.zip')
+    dataset = Task.Dataset.from_voc(root)
+    # train_data, val_data, test_data = dataset.random_split(test_size=0.1, val_size=0.1)
+
     # main is the commandline entry for user w/o coding
     c = FasterRCNNEstimator(_config, _log)
-    c.fit()
+    c.fit(train_data=dataset)

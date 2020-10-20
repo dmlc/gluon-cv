@@ -97,7 +97,7 @@ def train_cfg():
     # starting epoch
     start_epoch = 0
     # total epoch for training
-    epochs = 26
+    epochs = 2
 
     # Solver
     # ------

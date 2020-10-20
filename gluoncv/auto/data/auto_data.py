@@ -133,7 +133,7 @@ class URLs():
     COCO_SAMPLE         = f'{S3_COCO}coco_sample.tgz'
     COCO_TINY           = f'{S3_COCO}coco_tiny.tgz'
     HUMAN_NUMBERS       = f'{URL}human_numbers.tgz'
-    IMDB                = f'{S3_NLP}imdb.tgz'
+    # IMDB                = f'{S3_NLP}imdb.tgz'
     IMDB_SAMPLE         = f'{URL}imdb_sample.tgz'
     ML_SAMPLE           = f'{URL}movie_lens_sample.tgz'
     ML_100k             = 'http://files.grouplens.org/datasets/movielens/ml-100k.zip'

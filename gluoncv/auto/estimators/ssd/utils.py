@@ -94,7 +94,7 @@ def _get_dali_dataset(dataset_name, devices, args):
                                                      for i, _ in enumerate(devices)]
 
         # validation
-        if (not args.horovod or hvd.rank() == 0):
+        if not args.horovod or hvd.rank() == 0:
             val_dataset = gdata.COCODetection(root=os.path.join(args.dataset_root + '/coco'),
                                               splits='instances_val2017',
                                               skip_empty=False)
@@ -138,7 +138,7 @@ def _get_dali_dataloader(net, train_dataset, val_dataset, data_shape, global_bat
                                        epoch_size, auto_reset=True)
 
     # validation
-    if (not horovod or hvd.rank() == 0):
+    if not horovod or hvd.rank() == 0:
         val_batchify_fn = Tuple(Stack(), Pad(pad_val=-1))
         val_loader = gluon.data.DataLoader(
             val_dataset.transform(SSDDefaultValTransform(width, height)),
