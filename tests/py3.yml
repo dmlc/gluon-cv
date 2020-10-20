@@ -10,13 +10,13 @@ dependencies:
   - coverage=4.5.4
   - scipy
   - cython
-  - pip=19.1.1
+  - pip=20.1.1
   - requests
   - matplotlib
   - tqdm
   - pillow
   - pip:
-    - https://repo.mxnet.io/dist/python/cu100mkl/mxnet_cu100mkl-1.6.0b20191010-py2.py3-none-manylinux1_x86_64.whl
+    - https://repo.mxnet.io/dist/python/cpu/mxnet-2.0.0b20200908-py2.py3-none-manylinux2014_x86_64.whl
     - coverage-badge
     - awscli
     - nose-timer

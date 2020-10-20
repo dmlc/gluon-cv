@@ -16,7 +16,7 @@ def recursive_visit(net, callback, **kwargs):
     """
     callback(net, **kwargs)
     for _, child in net._children.items():
-        recursive_visit(child, callback, **kwargs)
+        recursive_visit(child(), callback, **kwargs)
 
 def set_lr_mult(net, pattern, mult=1.0, verbose=False):
     """Reset lr_mult to new value for all parameters that match :obj:`pattern`
