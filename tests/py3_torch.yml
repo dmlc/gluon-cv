@@ -1,4 +1,4 @@
-name: gluon_cv_py3
+name: gluon_cv_py3_pytorch
 channels:
   - conda-forge
   - defaults
@@ -17,6 +17,7 @@ dependencies:
   - pillow
   - pip:
     - https://repo.mxnet.io/dist/python/cu100mkl/mxnet_cu100mkl-1.6.0b20191010-py2.py3-none-manylinux1_x86_64.whl
+    - torch
     - coverage-badge
     - awscli
     - nose-timer
