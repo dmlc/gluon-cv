@@ -160,6 +160,7 @@ class FasterRCNNDefaultTrainTransform(object):
         anchors = []  # [P2, P3, P4, P5]
         # in case network has reset_ctx to gpu
         anchor_generator = copy.deepcopy(net.rpn.anchor_generator)
+        old_ctx = list(anchor_generator.collect_params().values())[0].list_ctx()[0]
         anchor_generator.collect_params().reset_ctx(None)
         if self._multi_stage:
             for ag in anchor_generator:
@@ -170,6 +171,7 @@ class FasterRCNNDefaultTrainTransform(object):
             anchors = anchor_generator(
                 mx.nd.zeros((1, 3, ashape, ashape))).reshape((1, 1, ashape, ashape, -1))
         self._anchors = anchors
+        anchor_generator.collect_params().reset_ctx(old_ctx)
         # record feature extractor for infer_shape
         if not hasattr(net, 'features'):
             raise ValueError("Cannot find features in network, it is a Faster-RCNN network?")
