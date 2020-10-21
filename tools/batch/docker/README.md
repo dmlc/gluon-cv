@@ -8,8 +8,11 @@ Our current batch job dockers are in 985964311364.dkr.ecr.us-east-1.amazonaws.co
 - CD to the same folder as the Dockerfile and execute the following:
 
 ```shell
+# First export your ecr repo address as a environment variable
+echo $AWS_ECR_REPO=${your_repo}
+
 # This executes a command that logs into ECR.
-aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 985964311364.dkr.ecr.us-east-1.amazonaws.com
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $AWS_ECR_REPO
 
 # Following script will build, tag, and push the image
 # For cpu
