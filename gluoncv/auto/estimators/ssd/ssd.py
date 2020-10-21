@@ -13,8 +13,7 @@ from mxnet import autograd
 from mxnet.contrib import amp
 
 from .... import utils as gutils
-from ....utils.metrics.voc_detection import VOC07MApMetric
-from ....utils.metrics.coco_detection import COCODetectionMetric
+from ....utils.metrics import VOCMApMetric
 from ....model_zoo import get_model
 from ....model_zoo import custom_ssd
 from ....data.transforms import presets
@@ -193,14 +192,7 @@ class SSDEstimator(BaseEstimator):
     def _evaluate(self, val_data):
         """Evaluate on validation dataset."""
         self.net.collect_params().reset_ctx(self.ctx)
-
-        if self._cfg.dataset.lower() == 'voc' or 'voc_tiny':
-            eval_metric = VOC07MApMetric(iou_thresh=0.5, class_names=self.classes)
-        elif self._cfg.dataset.lower() == 'coco':
-            eval_metric = COCODetectionMetric(
-                self.val_dataset, os.path.join(self._cfg.logdir, self._cfg.save_prefix + '_eval'), cleanup=True,
-                data_shape=(self._cfg.ssd.data_shape, self._cfg.ssd.data_shape))
-
+        eval_metric = VOCMApMetric(class_names=self.classes)
         # set nms threshold and topk constraint
         self.net.set_nms(nms_thresh=0.45, nms_topk=400)
         self.net.hybridize(static_alloc=True, static_shape=True)

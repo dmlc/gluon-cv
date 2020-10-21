@@ -15,8 +15,7 @@ from ....model_zoo.rcnn.faster_rcnn.data_parallel import ForwardBackwardTask
 from ....nn.bbox import BBoxClipToImage
 from ....utils.parallel import Parallel
 from ....utils.metrics.rcnn import RPNAccMetric, RPNL1LossMetric, RCNNAccMetric, RCNNL1LossMetric
-from ....utils.metrics.voc_detection import VOC07MApMetric
-from ....utils.metrics.coco_detection import COCODetectionMetric
+from ....utils.metrics import VOCMApMetric
 from ..base_estimator import BaseEstimator, set_default
 from .utils import _get_lr_at_iter, _get_dataloader, _get_dataset, _save_params, _split_and_load
 
@@ -204,14 +203,7 @@ class FasterRCNNEstimator(BaseEstimator):
     def _evaluate(self, val_data):
         """Evaluate on validation dataset."""
         clipper = BBoxClipToImage()
-
-        if self._cfg.dataset.lower() == 'voc' or 'voc_tiny':
-            eval_metric = VOC07MApMetric(iou_thresh=0.5, class_names=self.classes)
-        elif self._cfg.dataset.lower() == 'coco':
-            eval_metric = COCODetectionMetric(self.val_dataset,
-                                              os.path.join(self._cfg.logdir, self._cfg.save_prefix + '_eval'),
-                                              cleanup=True)
-
+        eval_metric = VOCMApMetric(class_names=self.classes)
         if not self._cfg.disable_hybridization:
             # input format is differnet than training, thus rehybridization is needed.
             self.net.hybridize(static_alloc=self._cfg.faster_rcnn.static_alloc)
