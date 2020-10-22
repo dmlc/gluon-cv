@@ -70,6 +70,7 @@ class SSDEstimator(BaseEstimator):
 
     def _fit(self, train_data, val_data):
         """Fit SSD model."""
+        self._best_map = 0
         self.net.collect_params().reset_ctx(self.ctx)
         self._init_trainer()
         self._resume_fit(train_data, val_data)
@@ -86,22 +87,22 @@ class SSDEstimator(BaseEstimator):
         #     train_dataset, val_dataset, eval_metric = _get_dali_dataset(self._cfg.dataset, devices, self._cfg)
         # else:
         #     train_dataset, val_dataset, eval_metric = _get_dataset(self._cfg.dataset, self._cfg)
-        self.train_dataset = train_data.to_mxnet()
-        self.val_dataset = val_data.to_mxnet()
+        train_dataset = train_data.to_mxnet()
+        val_dataset = val_data.to_mxnet()
 
         # dataloader
         if self._cfg.train.dali:
             if not dali_found:
                 raise SystemExit("DALI not found, please check if you installed it correctly.")
             train_loader, val_loader = _get_dali_dataloader(
-                self.async_net, self.train_dataset, self.val_dataset, self._cfg.ssd.data_shape,
+                self.async_net, train_dataset, val_dataset, self._cfg.ssd.data_shape,
                 self._cfg.train.batch_size, self._cfg.num_workers,
                 devices, self.ctx[0], self._cfg.horovod)
         else:
             self.batch_size = self._cfg.train.batch_size // hvd.size() \
                 if self._cfg.horovod else self._cfg.train.batch_size
             train_loader, val_loader = _get_dataloader(
-                self.async_net, self.train_dataset, self.val_dataset, self._cfg.ssd.data_shape,
+                self.async_net, train_dataset, val_dataset, self._cfg.ssd.data_shape,
                 self.batch_size, self._cfg.num_workers)
 
         self._train_loop(train_loader, val_loader)
@@ -184,10 +185,10 @@ class SSDEstimator(BaseEstimator):
                     val_msg = '\n'.join(['{}={}'.format(k, v) for k, v in zip(map_name, mean_ap)])
                     self._logger.info('[Epoch %d] Validation: \n%s', epoch, str(val_msg))
                     current_map = float(mean_ap[-1])
-                else:
-                    current_map = 0.
-                # _save_params(self.net, best_map, current_map, epoch, self._cfg.save_interval,
-                #              os.path.join(self._logdir, self._cfg.save_prefix))
+                    if current_map > self._best_map:
+                        self._logger.info('[Epoch %d] Current best map: %f vs previous %f',
+                                          self.epoch, current_map, self._best_map)
+                        self._best_map = current_map
                 if self._reporter:
                     self._reporter(epoch=epoch, map_reward=current_map)
 
