@@ -102,7 +102,7 @@ class SSDEstimator(BaseEstimator):
                 if self._cfg.horovod else self._cfg.train.batch_size
             train_loader, val_loader = _get_dataloader(
                 self.async_net, self.train_dataset, self.val_dataset, self._cfg.ssd.data_shape,
-                self.batch_size, self._cfg.num_workers, self.ctx[0])
+                self.batch_size, self._cfg.num_workers)
 
         self._train_loop(train_loader, val_loader)
 

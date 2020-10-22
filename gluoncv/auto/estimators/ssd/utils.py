@@ -57,12 +57,12 @@ def _get_dataset(dataset, args):
         raise NotImplementedError('Dataset: {} not implemented.'.format(dataset))
     return train_dataset, val_dataset, val_metric
 
-def _get_dataloader(net, train_dataset, val_dataset, data_shape, batch_size, num_workers, ctx):
+def _get_dataloader(net, train_dataset, val_dataset, data_shape, batch_size, num_workers):
     """Get dataloader."""
     width, height = data_shape, data_shape
     # use fake data to generate fixed anchors for target generation
     with autograd.train_mode():
-        _, _, anchors = net(mx.nd.zeros((1, 3, height, width), ctx))
+        _, _, anchors = net(mx.nd.zeros((1, 3, height, width)))
     anchors = anchors.as_in_context(mx.cpu())
     batchify_fn = Tuple(Stack(), Stack(), Stack())  # stack image, cls_targets, box_targets
     train_loader = gluon.data.DataLoader(
