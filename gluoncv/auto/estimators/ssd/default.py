@@ -31,7 +31,9 @@ def ssd_default():
     # Whether to use automatic mixed precision
     amp = False
     # Whether to enable custom model.
-    custom_model = True
+    # custom_model = True
+    # whether apply transfer learning from pre-trained models, if True, override other net structures
+    transfer = None
 
 
 @train.config

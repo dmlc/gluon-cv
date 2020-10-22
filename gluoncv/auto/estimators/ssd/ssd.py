@@ -185,21 +185,22 @@ class SSDEstimator(BaseEstimator):
                     current_map = float(mean_ap[-1])
                 else:
                     current_map = 0.
-                _save_params(self.net, best_map, current_map, epoch, self._cfg.save_interval,
-                             os.path.join(self._logdir, self._cfg.save_prefix))
+                # _save_params(self.net, best_map, current_map, epoch, self._cfg.save_interval,
+                #              os.path.join(self._logdir, self._cfg.save_prefix))
                 if self._reporter:
                     self._reporter(epoch=epoch, map_reward=current_map)
 
     def _evaluate(self, val_data):
         """Evaluate on validation dataset."""
         self.net.collect_params().reset_ctx(self.ctx)
+        eval_metric = VOC07MApMetric(iou_thresh=0.5, class_names=self.classes)
 
-        if self._cfg.dataset.lower() == 'voc' or 'voc_tiny':
-            eval_metric = VOC07MApMetric(iou_thresh=0.5, class_names=self.classes)
-        elif self._cfg.dataset.lower() == 'coco':
-            eval_metric = COCODetectionMetric(
-                self.val_dataset, os.path.join(self._cfg.logdir, self._cfg.save_prefix + '_eval'), cleanup=True,
-                data_shape=(self._cfg.ssd.data_shape, self._cfg.ssd.data_shape))
+        # if self._cfg.dataset.lower() == 'voc' or 'voc_tiny':
+        #     eval_metric = VOC07MApMetric(iou_thresh=0.5, class_names=self.classes)
+        # elif self._cfg.dataset.lower() == 'coco':
+        #     eval_metric = COCODetectionMetric(
+        #         self.val_dataset, os.path.join(self._cfg.logdir, self._cfg.save_prefix + '_eval'), cleanup=True,
+        #         data_shape=(self._cfg.ssd.data_shape, self._cfg.ssd.data_shape))
 
         # set nms threshold and topk constraint
         self.net.set_nms(nms_thresh=0.45, nms_topk=400)
@@ -249,10 +250,26 @@ class SSDEstimator(BaseEstimator):
             self.ctx = ctx if ctx else [mx.cpu()]
 
         # network
-        net_name = '_'.join(('ssd', str(self._cfg.ssd.data_shape), self._cfg.ssd.backbone, self._cfg.dataset))
-        self._cfg.save_prefix += net_name
+        # net_name = '_'.join(('ssd', str(self._cfg.ssd.data_shape), self._cfg.ssd.backbone, self._cfg.dataset))
+        # self._cfg.save_prefix += net_name
 
-        if self._cfg.ssd.custom_model:
+        if self._cfg.ssd.transfer is not None:
+            assert isinstance(self._cfg.ssd.transfer, str)
+            self._logger.info(
+                f'Using transfer learning from {self._cfg.ssd.transfer}, the other network parameters are ignored.')
+            if self._cfg.ssd.syncbn and len(self.ctx) > 1:
+                self.net = get_model(self._cfg.ssd.transfer, pretrained=True, norm_layer=gluon.contrib.nn.SyncBatchNorm,
+                                     norm_kwargs={'num_devices': len(self.ctx)})
+                self.async_net = get_model(self._cfg.ssd.transfer, pretrained=True)  # used by cpu worker
+                self.net.reset_class(self.classes,
+                                     reuse_weights=[cname for cname in self.classes if cname in self.net.classes])
+            else:
+                self.net = get_model(self._cfg.ssd.transfer, pretrained=True, norm_layer=gluon.nn.BatchNorm)
+                self.async_net = get_model(self._cfg.ssd.transfer, pretrained=True, norm_layer=gluon.nn.BatchNorm)
+                self.net.reset_class(self.classes,
+                                     reuse_weights=[cname for cname in self.classes if cname in self.net.classes])
+        # elif self._cfg.ssd.custom_model:
+        else:
             if self._cfg.ssd.syncbn and len(self.ctx) > 1:
                 self.net = custom_ssd(base_network_name=self._cfg.ssd.backbone,
                                       base_size=self._cfg.ssd.data_shape,
@@ -261,7 +278,7 @@ class SSDEstimator(BaseEstimator):
                                       ratios=self._cfg.ssd.ratios,
                                       steps=self._cfg.ssd.steps,
                                       classes=self.classes,
-                                      dataset=self._cfg.dataset,
+                                      dataset='auto',
                                       pretrained_base=True,
                                       norm_layer=gluon.contrib.nn.SyncBatchNorm,
                                       norm_kwargs={'num_devices': len(self.ctx)})
@@ -272,7 +289,7 @@ class SSDEstimator(BaseEstimator):
                                             ratios=self._cfg.ssd.ratios,
                                             steps=self._cfg.ssd.steps,
                                             classes=self.classes,
-                                            dataset=self._cfg.dataset,
+                                            dataset='auto',
                                             pretrained_base=False)
             else:
                 self.net = custom_ssd(base_network_name=self._cfg.ssd.backbone,
@@ -286,25 +303,17 @@ class SSDEstimator(BaseEstimator):
                                       pretrained_base=True,
                                       norm_layer=gluon.nn.BatchNorm)
                 self.async_net = self.net
-        else:
-            if self._cfg.ssd.syncbn and len(self.ctx) > 1:
-                self.net = get_model(net_name, pretrained_base=True, norm_layer=gluon.contrib.nn.SyncBatchNorm,
-                                     norm_kwargs={'num_devices': len(self.ctx)})
-                self.async_net = get_model(net_name, pretrained_base=False)  # used by cpu worker
-            else:
-                self.net = get_model(net_name, pretrained_base=True, norm_layer=gluon.nn.BatchNorm)
-                self.async_net = self.net
 
-        if self._cfg.resume.strip():
-            self.net.load_parameters(self._cfg.resume.strip())
-            self.async_net.load_parameters(self._cfg.resume.strip())
-        else:
-            with warnings.catch_warnings(record=True) as w:
-                warnings.simplefilter("always")
-                self.net.initialize()
-                self.async_net.initialize()
-                # needed for net to be first gpu when using AMP
-                self.net.collect_params().reset_ctx(self.ctx[0])
+        # if self._cfg.resume.strip():
+        #     self.net.load_parameters(self._cfg.resume.strip())
+        #     self.async_net.load_parameters(self._cfg.resume.strip())
+        # else:
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            self.net.initialize()
+            self.async_net.initialize()
+            # needed for net to be first gpu when using AMP
+            self.net.collect_params().reset_ctx(self.ctx[0])
 
     def _init_trainer(self):
         if self._cfg.horovod:
