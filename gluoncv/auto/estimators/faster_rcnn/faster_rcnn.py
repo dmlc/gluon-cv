@@ -259,7 +259,7 @@ class FasterRCNNEstimator(BaseEstimator):
 
     def _predict(self, x):
         """Predict an individual example."""
-        short = net.short[-1] if isinstance(net.short, (tuple, list)) else net.short
+        short = self.net.short[-1] if isinstance(self.net.short, (tuple, list)) else self.net.short
         if isinstance(x, str):
             x = load_test(x, short=short_size, max_size=1024)[0]
         elif isinstance(x, mx.nd.NDArray):
