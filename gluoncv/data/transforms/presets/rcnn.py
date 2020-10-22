@@ -159,7 +159,8 @@ class FasterRCNNDefaultTrainTransform(object):
         # use fake data to generate fixed anchors for target generation
         anchors = []  # [P2, P3, P4, P5]
         # in case network has reset_ctx to gpu
-        anchor_generator = copy.deepcopy(net.rpn.anchor_generator)
+        # anchor_generator = copy.deepcopy(net.rpn.anchor_generator)
+        anchor_generator = net.rpn.anchor_generator
         old_ctx = list(anchor_generator.collect_params().values())[0].list_ctx()[0]
         anchor_generator.collect_params().reset_ctx(None)
         if self._multi_stage:
