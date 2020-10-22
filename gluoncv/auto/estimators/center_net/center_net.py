@@ -142,9 +142,12 @@ class CenterNetEstimator(BaseEstimator):
         bboxes[:, (0, 2)] /= width
         bboxes[:, (1, 3)] /= height
         bboxes = np.clip(bboxes, 0.0, 1.0).tolist()
-        return pd.DataFrame({'predict_class': [self.classes[int(id)] for id in ids], 'predict_score': scores,
-                             'predict_rois': [{'xmin': bbox[0], 'ymin': bbox[1], 'xmax': bbox[2], 'ymax': bbox[3]} \
+        df = pd.DataFrame({'predict_class': [self.classes[int(id)] for id in ids], 'predict_score': scores,
+                           'predict_rois': [{'xmin': bbox[0], 'ymin': bbox[1], 'xmax': bbox[2], 'ymax': bbox[3]} \
                                 for bbox in bboxes]})
+        # filter out invalid (scores < 0) rows
+        valid_df = df[df['predict_score'] > 0].reset_index(drop=True)
+        return valid_df
 
     def _fit(self, train_data, val_data):
         self._best_map = 0
