@@ -260,10 +260,7 @@ class SSDEstimator(BaseEstimator):
         bboxes[:, (0, 2)] /= width
         bboxes[:, (1, 3)] /= height
         bboxes = np.clip(bboxes, 0.0, 1.0).tolist()
-        print({'predict_class': [self.classes[int(id)] for id in ids], 'predict_score': scores,
-                             'predict_rois': [{'xmin': bbox[0], 'ymin': bbox[1], 'xmax': bbox[2], 'ymax': bbox[3]} \
-                                for bbox in bboxes]})
-        return pd.DataFrame({'predict_class': [self.classes[int(id)] for id in ids], 'predict_score': scores,
+        return pd.DataFrame({'predict_class': [self.classes[int(id)] for id in ids], 'predict_score': scores.flatten(),
                              'predict_rois': [{'xmin': bbox[0], 'ymin': bbox[1], 'xmax': bbox[2], 'ymax': bbox[3]} \
                                 for bbox in bboxes]})
 
