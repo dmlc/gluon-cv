@@ -119,6 +119,7 @@ class SSDEstimator(BaseEstimator):
         self._logger.info('Start training from [Epoch {}]'.format(self._cfg.train.start_epoch))
         best_map = [0]
 
+        self.net.collect_params().reset_ctx(self.ctx)
         for epoch in range(self._cfg.train.start_epoch, self._cfg.train.epochs):
             while lr_steps and epoch >= lr_steps[0]:
                 new_lr = self.trainer.learning_rate * lr_decay
@@ -192,7 +193,6 @@ class SSDEstimator(BaseEstimator):
 
     def _evaluate(self, val_data):
         """Evaluate on validation dataset."""
-        self.net.collect_params().reset_ctx(self.ctx)
         eval_metric = VOC07MApMetric(iou_thresh=0.5, class_names=self.classes)
 
         # if self._cfg.dataset.lower() == 'voc' or 'voc_tiny':
@@ -204,6 +204,7 @@ class SSDEstimator(BaseEstimator):
 
         # set nms threshold and topk constraint
         self.net.set_nms(nms_thresh=0.45, nms_topk=400)
+        self.net.collect_params().reset_ctx(self.ctx)
         self.net.hybridize(static_alloc=True, static_shape=True)
         for batch in val_data:
             data = gluon.utils.split_and_load(batch[0], ctx_list=self.ctx, batch_axis=0, even_split=False)
