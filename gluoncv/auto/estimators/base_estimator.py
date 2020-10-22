@@ -305,6 +305,7 @@ class BaseEstimator:
         d = self.__dict__.copy()
         try:
             import mxnet as mx
+            d.pop('async_net', None)
             net = d.get('net', None)
             if isinstance(net, mx.gluon.HybridBlock):
                 with temporary_filename() as tfile:
