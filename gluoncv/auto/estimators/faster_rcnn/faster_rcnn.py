@@ -315,6 +315,7 @@ class FasterRCNNEstimator(BaseEstimator):
             self._logger.info(
                 f'Using transfer learning from {self._cfg.faster_rcnn.transfer}, ' +
                 'the other network parameters are ignored.')
+            self._cfg.faster_rcnn.use_fpn = 'fpn' in self._cfg.faster_rcnn.transfer
             self.net = get_model(self._cfg.faster_rcnn.transfer, pretrained=True,
                                  per_device_batch_size=self._cfg.train.batch_size // self.num_gpus,
                                  **kwargs)
