@@ -191,6 +191,7 @@ class CenterNetEstimator(BaseEstimator):
         wh_metric = mx.metric.Loss('WHL1')
         center_reg_metric = mx.metric.Loss('CenterRegL1')
 
+        self._logger.info('Start training from [Epoch %d]', max(self._cfg.train.start_epoch, self.epoch))
         for self.epoch in range(max(self._cfg.train.start_epoch, self.epoch), self._cfg.train.epochs):
             wh_metric.reset()
             center_reg_metric.reset()

@@ -81,11 +81,13 @@ def faster_rcnn_default():
     image_max_size = 1333
 
     # Whether to enable custom model.
-    custom_model = True
+    # custom_model = True
     # Whether to use automatic mixed precision
     amp = False
     # Whether to allocate memory statically.
     static_alloc = False
+    # whether apply transfer learning from pre-trained models, if True, override other net structures
+    transfer = None
 
 
 @train.config
@@ -172,6 +174,10 @@ def valid_cfg():
     rpn_test_post_nms = 1000
     # Epoch interval for validation
     val_interval = 1
+    # metric, 'voc', 'voc07'
+    metric = 'voc07'
+    # iou_thresh for VOC type metrics
+    iou_thresh = 0.5
 
 
 ex = Experiment('faster_rcnn_default', ingredients=[logging, train, validation, faster_rcnn])

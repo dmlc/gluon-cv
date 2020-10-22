@@ -82,12 +82,6 @@ class SSDEstimator(BaseEstimator):
 
         # dataset
         devices = [int(i) for i in self._cfg.gpus]
-        # if self._cfg.train.dali:
-        #     if not dali_found:
-        #         raise SystemExit("DALI not found, please check if you installed it correctly.")
-        #     train_dataset, val_dataset, eval_metric = _get_dali_dataset(self._cfg.dataset, devices, self._cfg)
-        # else:
-        #     train_dataset, val_dataset, eval_metric = _get_dataset(self._cfg.dataset, self._cfg)
         train_dataset = train_data.to_mxnet()
         val_dataset = val_data.to_mxnet()
 
@@ -118,8 +112,7 @@ class SSDEstimator(BaseEstimator):
         lr_decay = float(self._cfg.train.lr_decay)
         lr_steps = sorted([float(ls) for ls in self._cfg.train.lr_decay_epoch])
 
-        self._logger.info('Start training from [Epoch {}]'.format(self._cfg.train.start_epoch))
-        best_map = [0]
+        self._logger.info('Start training from [Epoch %d]', max(self._cfg.train.start_epoch, self.epoch))
 
         self.net.collect_params().reset_ctx(self.ctx)
         for self.epoch in range(max(self._cfg.train.start_epoch, self.epoch), self._cfg.train.epochs):
@@ -280,10 +273,6 @@ class SSDEstimator(BaseEstimator):
             ctx = [mx.gpu(int(i)) for i in self._cfg.gpus]
             self.ctx = ctx if ctx else [mx.cpu()]
 
-        # network
-        # net_name = '_'.join(('ssd', str(self._cfg.ssd.data_shape), self._cfg.ssd.backbone, self._cfg.dataset))
-        # self._cfg.save_prefix += net_name
-
         if self._cfg.ssd.transfer is not None:
             assert isinstance(self._cfg.ssd.transfer, str)
             data_shape = int(self._cfg.ssd.transfer.split('_')[1])
@@ -337,10 +326,6 @@ class SSDEstimator(BaseEstimator):
                                       norm_layer=gluon.nn.BatchNorm)
                 self.async_net = self.net
 
-        # if self._cfg.resume.strip():
-        #     self.net.load_parameters(self._cfg.resume.strip())
-        #     self.async_net.load_parameters(self._cfg.resume.strip())
-        # else:
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
             self.net.initialize()

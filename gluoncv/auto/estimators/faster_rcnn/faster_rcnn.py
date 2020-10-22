@@ -8,7 +8,7 @@ import numpy as np
 import mxnet as mx
 from mxnet import gluon
 
-from ....data.transforms import presets
+from ....data.transforms.presets.ssd import load_test, transform_test
 from ....data.transforms.presets.rcnn import FasterRCNNDefaultTrainTransform, FasterRCNNDefaultValTransform
 from ....model_zoo import get_model
 from ....model_zoo.rcnn.faster_rcnn.data_parallel import ForwardBackwardTask
@@ -57,6 +57,8 @@ class FasterRCNNEstimator(BaseEstimator):
 
     def _fit(self, train_data, val_data):
         """Fit Faster R-CNN model."""
+        self._best_map = 0
+        self.epoch = 0
         self.net.collect_params().setattr('grad_req', 'null')
         self.net.collect_train_params().setattr('grad_req', 'write')
         self._init_trainer()
@@ -68,14 +70,14 @@ class FasterRCNNEstimator(BaseEstimator):
 
         # dataset
         # train_dataset, val_dataset, eval_metric = _get_dataset(self._cfg.dataset, self._cfg)
-        self.train_dataset = train_data.to_mxnet()
-        self.val_dataset = val_data.to_mxnet()
+        train_dataset = train_data.to_mxnet()
+        val_dataset = val_data.to_mxnet()
 
         # dataloader
         self.batch_size = self._cfg.train.batch_size // self.num_gpus \
             if self._cfg.horovod else self._cfg.train.batch_size
         train_loader, val_loader = _get_dataloader(
-            self.net, self.train_dataset, self.val_dataset, FasterRCNNDefaultTrainTransform,
+            self.net, train_dataset, val_dataset, FasterRCNNDefaultTrainTransform,
             FasterRCNNDefaultValTransform, self.batch_size, len(self.ctx), self._cfg)
 
         self._train_loop(train_loader, val_loader)
@@ -106,10 +108,10 @@ class FasterRCNNEstimator(BaseEstimator):
         if self._cfg.train.verbose:
             self._logger.info('Trainable parameters:')
             self._logger.info(self.net.collect_train_params().keys())
-        self._logger.info('Start training from [Epoch %d]', self._cfg.train.start_epoch)
-        best_map = [0]
+        self._logger.info('Start training from [Epoch %d]', max(self._cfg.train.start_epoch, self.epoch))
 
-        for epoch in range(self._cfg.train.start_epoch, self._cfg.train.epochs):
+        for self.epoch in range(max(self._cfg.train.start_epoch, self.epoch), self._cfg.train.epochs):
+            epoch = self.epoch
             rcnn_task = ForwardBackwardTask(self.net, self.trainer, rpn_cls_loss, rpn_box_loss,
                                             rcnn_cls_loss, rcnn_box_loss, mix_ratio=1.0,
                                             amp_enabled=self._cfg.faster_rcnn.amp)
@@ -193,24 +195,33 @@ class FasterRCNNEstimator(BaseEstimator):
                     val_msg = '\n'.join(['{}={}'.format(k, v) for k, v in zip(map_name, mean_ap)])
                     self._logger.info('[Epoch {}] Validation: \n{}'.format(epoch, val_msg))
                     current_map = float(mean_ap[-1])
-                else:
-                    current_map = 0.
-                _save_params(self.net, self._logger, best_map, current_map, epoch,
-                             self._cfg.save_interval,
-                             os.path.join(self._logdir, self._cfg.save_prefix))
+                    if current_map > self._best_map:
+                        self._logger.info('[Epoch %d] Current best map: %f vs previous %f',
+                                          self.epoch, current_map, self._best_map)
+                        self._best_map = current_map
                 if self._reporter:
                     self._reporter(epoch=epoch, map_reward=current_map)
 
     def _evaluate(self, val_data):
         """Evaluate on validation dataset."""
         clipper = BBoxClipToImage()
-
-        if self._cfg.dataset.lower() == 'voc' or 'voc_tiny':
-            eval_metric = VOC07MApMetric(iou_thresh=0.5, class_names=self.classes)
-        elif self._cfg.dataset.lower() == 'coco':
-            eval_metric = COCODetectionMetric(self.val_dataset,
-                                              os.path.join(self._cfg.logdir, self._cfg.save_prefix + '_eval'),
-                                              cleanup=True)
+        if not isinstance(val_data, gluon.data.DataLoader):
+            from ...tasks.dataset import ObjectDetectionDataset
+            if isinstance(val_data, ObjectDetectionDataset):
+                val_data = val_data.to_mxnet()
+            val_bfn = Tuple(*[Append() for _ in range(3)])
+            short = net.short[-1] if isinstance(net.short, (tuple, list)) else net.short
+            # validation use 1 sample per device
+            val_loader = gluon.data.DataLoader(
+                val_data.transform(FasterRcnnDefaultValTransform(short, net.max_size)),
+                len(self.ctx), False, batchify_fn=val_bfn, last_batch='keep',
+                num_workers=self._cfg.validation.num_workers)
+        if self._cfg.validation.metric == 'voc07':
+            eval_metric = VOC07MApMetric(iou_thresh=self._cfg.validation.iou_thresh, class_names=self.classes)
+        elif self._cfg.validation.metric == 'voc':
+            eval_metric = VOCMApMetric(iou_thresh=self._cfg.validation.iou_thresh, class_names=self.classes)
+        else:
+            raise ValueError(f'Invalid metric type: {self._cfg.validation.metric}')
 
         if not self._cfg.disable_hybridization:
             # input format is differnet than training, thus rehybridization is needed.
@@ -248,10 +259,32 @@ class FasterRCNNEstimator(BaseEstimator):
 
     def _predict(self, x):
         """Predict an individual example."""
-        x, _ = presets.rcnn.transform_test(x, short=self.net.short, max_size=self.net.max_size)
+        short = net.short[-1] if isinstance(net.short, (tuple, list)) else net.short
+        if isinstance(x, str):
+            x = load_test(x, short=short_size, max_size=1024)[0]
+        elif isinstance(x, mx.nd.NDArray):
+            x = transform_test(x, short=short_size, max_size=1024)[0]
+        elif isinstance(x, pd.DataFrame):
+            assert 'image' in x.columns, "Expect column `image` for input images"
+            def _predict_merge(x):
+                y = self._predict(x)
+                y['image'] = x
+                return y
+            return pd.concat([_predict_merge(xx) for xx in x['image']]).reset_index(drop=True)
+        else:
+            raise ValueError('Input is not supported: {}'.format(type(x)))
+        height, width = x.shape[2:4]
         x = x.as_in_context(self.ctx[0])
         ids, scores, bboxes = [xx[0].asnumpy() for xx in self.net(x)]
-        return ids, scores, bboxes
+        bboxes[:, (0, 2)] /= width
+        bboxes[:, (1, 3)] /= height
+        bboxes = np.clip(bboxes, 0.0, 1.0).tolist()
+        df = pd.DataFrame({'predict_class': [self.classes[int(id)] for id in ids], 'predict_score': scores.flatten(),
+                           'predict_rois': [{'xmin': bbox[0], 'ymin': bbox[1], 'xmax': bbox[2], 'ymax': bbox[3]} \
+                                for bbox in bboxes]})
+        # filter out invalid (scores < 0) rows
+        valid_df = df[df['predict_score'] > 0].reset_index(drop=True)
+        return valid_df
 
     def _init_network(self):
         if not self.num_class:
@@ -268,7 +301,7 @@ class FasterRCNNEstimator(BaseEstimator):
         # network
         kwargs = {}
         module_list = []
-        if self._cfg.faster_rcnn.use_fpn or self._cfg.faster_rcnn.custom_model:
+        if self._cfg.faster_rcnn.use_fpn:
             module_list.append('fpn')
         if self._cfg.faster_rcnn.norm_layer is not None:
             module_list.append(self._cfg.faster_rcnn.norm_layer)
@@ -276,12 +309,18 @@ class FasterRCNNEstimator(BaseEstimator):
                 kwargs['num_devices'] = len(self.ctx)
 
         self.num_gpus = hvd.size() if self._cfg.horovod else len(self.ctx)
-        net_name = '_'.join(('faster_rcnn', *module_list, self._cfg.faster_rcnn.backbone,
-                             self._cfg.dataset))
 
-        self._cfg.save_prefix += net_name
-
-        if self._cfg.faster_rcnn.custom_model:
+        if self._cfg.faster_rcnn.transfer is not None:
+            assert isinstance(self._cfg.faster_rcnn.transfer, str)
+            self._logger.info(
+                f'Using transfer learning from {self._cfg.faster_rcnn.transfer}, ' +
+                'the other network parameters are ignored.')
+            self.net = get_model(self._cfg.faster_rcnn.transfer, pretrained=True,
+                                 per_device_batch_size=self._cfg.batch_size // self.num_gpus,
+                                 **kwargs)
+            self.net.reset_class(self.classes,
+                                 reuse_weights=[cname for cname in self.classes if cname in self.net.classes])
+        else:
             self._cfg.faster_rcnn.use_fpn = True
             if self._cfg.faster_rcnn.norm_layer == 'syncbn':
                 norm_layer = gluon.contrib.nn.SyncBatchNorm
@@ -335,10 +374,6 @@ class FasterRCNNEstimator(BaseEstimator):
                                  pos_iou_thresh=self._cfg.train.rcnn_pos_iou_thresh,
                                  pos_ratio=self._cfg.train.rcnn_pos_ratio,
                                  max_num_gt=self._cfg.faster_rcnn.max_num_gt)
-        else:
-            self.net = get_model(net_name, pretrained_base=True,
-                                 per_device_batch_size=self._cfg.batch_size // self.num_gpus,
-                                 **kwargs)
 
         if self._cfg.resume.strip():
             self.net.load_parameters(self._cfg.resume.strip())
@@ -362,11 +397,6 @@ class FasterRCNNEstimator(BaseEstimator):
                     continue
                 param.initialize()
         self.net.collect_params().reset_ctx(self.ctx)
-        if self._cfg.faster_rcnn.custom_model:
-            self._logger.info(
-                'Custom model enabled. Expert Only!! Currently non-FPN model is not supported!!'
-                ' Default setting is for MS-COCO.')
-        self._logger.info(self._cfg)
 
     def _init_trainer(self):
         self._cfg.kv_store = 'device' if (self._cfg.faster_rcnn.amp and 'nccl' in self._cfg.kv_store) \
