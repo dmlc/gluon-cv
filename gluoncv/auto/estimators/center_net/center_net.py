@@ -81,6 +81,8 @@ def valid_config():
     num_workers = 32  # cpu workers, the larger the more processes used
     batch_size = 32  # validation batch size
     interval = 10  # validation epoch interval, for slow validations
+    metric = 'voc07' # metric, 'voc', 'voc07'
+    iou_thresh = 0.5 # iou_thresh for VOC type metrics
 
 
 ex = Experiment('center_net_default',
@@ -257,7 +259,12 @@ class CenterNetEstimator(BaseEstimator):
 
     def _evaluate(self, val_data):
         """Test on validation dataset."""
-        eval_metric = VOCMApMetric(class_names=self.classes)
+        if self._cfg.validation.metric == 'voc07':
+            eval_metric = VOC07MApMetric(iou_thresh=self._cfg.validation.iou_thresh, class_names=self.classes)
+        elif self._cfg.validation.metric == 'voc':
+            eval_metric = VOCMApMetric(iou_thresh=self._cfg.validation.iou_thresh, class_names=self.classes)
+        else:
+            raise ValueError(f'Invalid metric type: {self._cfg.validation.metric}')
         self.net.flip_test = self._cfg.validation.flip_test
         mx.nd.waitall()
         self.net.hybridize()

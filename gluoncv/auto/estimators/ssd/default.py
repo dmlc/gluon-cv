@@ -67,6 +67,10 @@ def train_cfg():
 def valid_cfg():
     # Epoch interval for validation
     val_interval = 1
+    # metric, 'voc', 'voc07'
+    metric = 'voc07'
+    # iou_thresh for VOC type metrics
+    iou_thresh = 0.5
 
 
 ex = Experiment('ssd_default', ingredients=[logging, train, validation, ssd])

@@ -17,7 +17,7 @@ from ....utils.metrics.voc_detection import VOC07MApMetric
 from ....utils.metrics.coco_detection import COCODetectionMetric
 from ....model_zoo import get_model
 from ....model_zoo import custom_ssd
-from ....data.transforms import presets
+from ....data.transforms.presets.ssd import load_test, transform_test
 from ....loss import SSDMultiBoxLoss
 from .utils import _get_dataset, _get_dataloader, _get_dali_dataset, _get_dali_dataloader, _save_params
 from ..base_estimator import BaseEstimator, set_default
@@ -196,16 +196,21 @@ class SSDEstimator(BaseEstimator):
 
     def _evaluate(self, val_data):
         """Evaluate on validation dataset."""
-        eval_metric = VOC07MApMetric(iou_thresh=0.5, class_names=self.classes)
-
-        # if self._cfg.dataset.lower() == 'voc' or 'voc_tiny':
-        #     eval_metric = VOC07MApMetric(iou_thresh=0.5, class_names=self.classes)
-        # elif self._cfg.dataset.lower() == 'coco':
-        #     eval_metric = COCODetectionMetric(
-        #         self.val_dataset, os.path.join(self._cfg.logdir, self._cfg.save_prefix + '_eval'), cleanup=True,
-        #         data_shape=(self._cfg.ssd.data_shape, self._cfg.ssd.data_shape))
-
-        # set nms threshold and topk constraint
+        if not isinstance(val_data, gluon.data.DataLoader):
+            from ...tasks.dataset import ObjectDetectionDataset
+            if isinstance(val_data, ObjectDetectionDataset):
+                val_data = val_data.to_mxnet()
+            val_batchify_fn = Tuple(Stack(), Pad(pad_val=-1))
+            val_loader = gluon.data.DataLoader(
+                val_data.transform(SSDDefaultValTransform(width, height)),
+                self._cfg.validation.batch_size, False, batchify_fn=val_batchify_fn, last_batch='keep',
+                num_workers=self._cfg.validation.num_workers)
+        if self._cfg.validation.metric == 'voc07':
+            eval_metric = VOC07MApMetric(iou_thresh=self._cfg.validation.iou_thresh, class_names=self.classes)
+        elif self._cfg.validation.metric == 'voc':
+            eval_metric = VOCMApMetric(iou_thresh=self._cfg.validation.iou_thresh, class_names=self.classes)
+        else:
+            raise ValueError(f'Invalid metric type: {self._cfg.validation.metric}')
         self.net.set_nms(nms_thresh=0.45, nms_topk=400)
         self.net.collect_params().reset_ctx(self.ctx)
         self.net.hybridize(static_alloc=True, static_shape=True)
@@ -235,10 +240,29 @@ class SSDEstimator(BaseEstimator):
 
     def _predict(self, x):
         """Predict an individual example."""
-        x, _ = presets.ssd.transform_test(x, short=512)
+        short_size = int(self._cfg.ssd.data_shape)
+        if isinstance(x, str):
+            x = load_test(x, short=short_size, max_size=1024)[0]
+        elif isinstance(x, mx.nd.NDArray):
+            x = transform_test(x, short=short_size, max_size=1024)[0]
+        elif isinstance(x, pd.DataFrame):
+            assert 'image' in x.columns, "Expect column `image` for input images"
+            def _predict_merge(x):
+                y = self._predict(x)
+                y['image'] = x
+                return y
+            return pd.concat([_predict_merge(xx) for xx in x['image']]).reset_index(drop=True)
+        else:
+            raise ValueError('Input is not supported: {}'.format(type(x)))
+        height, width = x.shape[2:4]
         x = x.as_in_context(self.ctx[0])
         ids, scores, bboxes = [xx[0].asnumpy() for xx in self.net(x)]
-        return ids, scores, bboxes
+        bboxes[:, (0, 2)] /= width
+        bboxes[:, (1, 3)] /= height
+        bboxes = np.clip(bboxes, 0.0, 1.0).tolist()
+        return pd.DataFrame({'predict_class': [self.classes[int(id)] for id in ids], 'predict_score': scores,
+                             'predict_rois': [{'xmin': bbox[0], 'ymin': bbox[1], 'xmax': bbox[2], 'ymax': bbox[3]} \
+                                for bbox in bboxes]})
 
     def _init_network(self):
         if not self.num_class:
@@ -259,6 +283,8 @@ class SSDEstimator(BaseEstimator):
 
         if self._cfg.ssd.transfer is not None:
             assert isinstance(self._cfg.ssd.transfer, str)
+            data_shape = int(self._cfg.ssd.transfer.split('_')[1])
+            self._cfg.ssd.data_shape = data_shape
             self._logger.info(
                 f'Using transfer learning from {self._cfg.ssd.transfer}, the other network parameters are ignored.')
             if self._cfg.ssd.syncbn and len(self.ctx) > 1:
