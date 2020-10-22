@@ -59,17 +59,20 @@ class FasterRCNNEstimator(BaseEstimator):
         """Fit Faster R-CNN model."""
         self._best_map = 0
         self.epoch = 0
+        if max(self._cfg.train.start_epoch, self.epoch) < self._cfg.train.epochs:
+            return
         self.net.collect_params().setattr('grad_req', 'null')
         self.net.collect_train_params().setattr('grad_req', 'write')
         self._init_trainer()
         self._resume_fit(train_data, val_data)
 
     def _resume_fit(self, train_data, val_data):
+        if max(self._cfg.train.start_epoch, self.epoch) < self._cfg.train.epochs:
+            return
         if not self.classes or not self.num_class:
             raise ValueError('Unable to determine classes of dataset')
 
         # dataset
-        # train_dataset, val_dataset, eval_metric = _get_dataset(self._cfg.dataset, self._cfg)
         train_dataset = train_data.to_mxnet()
         val_dataset = val_data.to_mxnet()
 
@@ -259,7 +262,7 @@ class FasterRCNNEstimator(BaseEstimator):
 
     def _predict(self, x):
         """Predict an individual example."""
-        short = self.net.short[-1] if isinstance(self.net.short, (tuple, list)) else self.net.short
+        short_size = self.net.short[-1] if isinstance(self.net.short, (tuple, list)) else self.net.short
         if isinstance(x, str):
             x = load_test(x, short=short_size, max_size=1024)[0]
         elif isinstance(x, mx.nd.NDArray):
