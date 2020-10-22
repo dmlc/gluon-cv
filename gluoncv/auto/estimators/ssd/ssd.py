@@ -71,6 +71,7 @@ class SSDEstimator(BaseEstimator):
     def _fit(self, train_data, val_data):
         """Fit SSD model."""
         self._best_map = 0
+        self.epoch = 0
         self.net.collect_params().reset_ctx(self.ctx)
         self._init_trainer()
         self._resume_fit(train_data, val_data)
@@ -121,7 +122,8 @@ class SSDEstimator(BaseEstimator):
         best_map = [0]
 
         self.net.collect_params().reset_ctx(self.ctx)
-        for epoch in range(self._cfg.train.start_epoch, self._cfg.train.epochs):
+        for self.epoch in range(max(self._cfg.train.start_epoch, self.epoch), self._cfg.train.epochs):
+            epoch = self.epoch
             while lr_steps and epoch >= lr_steps[0]:
                 new_lr = self.trainer.learning_rate * lr_decay
                 lr_steps.pop(0)
