@@ -316,7 +316,7 @@ class FasterRCNNEstimator(BaseEstimator):
                 f'Using transfer learning from {self._cfg.faster_rcnn.transfer}, ' +
                 'the other network parameters are ignored.')
             self.net = get_model(self._cfg.faster_rcnn.transfer, pretrained=True,
-                                 per_device_batch_size=self._cfg.train.batch_size // self.num_gpus
+                                 per_device_batch_size=self._cfg.train.batch_size // self.num_gpus,
                                  **kwargs)
             self.net.reset_class(self.classes,
                                  reuse_weights=[cname for cname in self.classes if cname in self.net.classes])
