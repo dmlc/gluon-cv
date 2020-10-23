@@ -423,6 +423,5 @@ class ImageClassificationEstimator(BaseEstimator):
         topK = min(5, self.num_class)
         ind = nd.topk(pred, k=topK)[0].astype('int').asnumpy().flatten()
         probs = mx.nd.softmax(pred)[0].asnumpy().flatten()
-        df = pd.DataFrame({f'top{i}': {
-            'class': self.classes[ind[i]], 'score': probs[ind[i]], 'id': ind[i]} for i in range(topK)})
+        df = pd.DataFrame([{'class': self.classes[ind[i]], 'score': probs[ind[i]], 'id': ind[i]} for i in range(topK)])
         return df
