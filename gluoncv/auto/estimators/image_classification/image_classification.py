@@ -178,7 +178,7 @@ class ImageClassificationEstimator(BaseEstimator):
 
             # pylint: disable=undefined-loop-variable
             for i, batch in enumerate(train_data):
-                data, label = self.batch_fn(batch, ctx)
+                data, label = self.batch_fn(batch, self.ctx)
 
                 if self._cfg.train.mixup:
                     lam = np.random.beta(self._cfg.train.mixup_alpha,
