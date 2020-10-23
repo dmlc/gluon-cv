@@ -406,9 +406,9 @@ class ImageClassificationEstimator(BaseEstimator):
     def _predict(self, x):
         resize = int(math.ceil(self.input_size / self._cfg.train.crop_ratio))
         if isinstance(x, str):
-            x = transform_eval(mx.image.imread(x), resize_short=resize, crop_size=self.input_size)[0]
+            x = transform_eval(mx.image.imread(x), resize_short=resize, crop_size=self.input_size)
         elif isinstance(x, mx.nd.NDArray):
-            x = transform_eval(x, resize_short=resize, crop_size=self.input_size)[0]
+            x = transform_eval(x, resize_short=resize, crop_size=self.input_size)
         elif isinstance(x, pd.DataFrame):
             assert 'image' in x.columns, "Expect column `image` for input images"
             def _predict_merge(x):
