@@ -128,7 +128,7 @@ class YOLOv3Estimator(BaseEstimator):
             btic = time.time()
             mx.nd.waitall()
             self.net.hybridize()
-            for i, batch in enumerate(self._train_data):
+            for i, batch in enumerate(train_data):
                 data = gluon.utils.split_and_load(batch[0], ctx_list=self.ctx, batch_axis=0)
                 # objectness, center_targets, scale_targets, weights, class_targets
                 fixed_targets = [gluon.utils.split_and_load(batch[it], ctx_list=self.ctx, batch_axis=0) for it in
