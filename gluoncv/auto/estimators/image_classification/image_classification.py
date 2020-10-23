@@ -38,7 +38,7 @@ def train_config():
     gpus = (0,)
     pretrained_base = True  # whether load the imagenet pre-trained base
     batch_size = 128
-    num_epochs = 3
+    epochs = 3
     lr = 0.1  # learning rate
     lr_decay = 0.1  # decay rate of learning rate.
     lr_decay_period = 0
@@ -104,7 +104,7 @@ class ImageClassificationEstimator(BaseEstimator):
     def _fit(self, train_data, val_data):
         self._best_acc = 0
         self.epoch = 0
-        if max(self._cfg.train.start_epoch, self.epoch) >= self._cfg.train.num_epochs:
+        if max(self._cfg.train.start_epoch, self.epoch) >= self._cfg.train.epochs:
             return
         if not isinstance(train_data, pd.DataFrame):
             self.last_train = len(train_data)
@@ -180,7 +180,7 @@ class ImageClassificationEstimator(BaseEstimator):
                 if self._cfg.train.mixup:
                     lam = np.random.beta(self._cfg.train.mixup_alpha,
                                          self._cfg.train.mixup_alpha)
-                    if epoch >= self._cfg.train.num_epochs - self._cfg.train.mixup_off_epoch:
+                    if epoch >= self._cfg.train.epochs - self._cfg.train.mixup_off_epoch:
                         lam = 1
                     data = [lam*X + (1-lam)*X[::-1] for X in data]
 
@@ -330,7 +330,7 @@ class ImageClassificationEstimator(BaseEstimator):
         lr_decay = self._cfg.train.lr_decay
         lr_decay_period = self._cfg.train.lr_decay_period
         if self._cfg.train.lr_decay_period > 0:
-            lr_decay_epoch = list(range(lr_decay_period, self._cfg.train.num_epochs, lr_decay_period))
+            lr_decay_epoch = list(range(lr_decay_period, self._cfg.train.epochs, lr_decay_period))
         else:
             lr_decay_epoch = [int(i) for i in self._cfg.train.lr_decay_epoch.split(',')]
         lr_decay_epoch = [e - self._cfg.train.warmup_epochs for e in lr_decay_epoch]
@@ -340,7 +340,7 @@ class ImageClassificationEstimator(BaseEstimator):
             LRScheduler('linear', base_lr=0, target_lr=self._cfg.train.lr,
                         nepochs=self._cfg.train.warmup_epochs, iters_per_epoch=num_batches),
             LRScheduler(self._cfg.train.lr_mode, base_lr=self._cfg.train.lr, target_lr=0,
-                        nepochs=self._cfg.train.num_epochs - self._cfg.train.warmup_epochs,
+                        nepochs=self._cfg.train.epochs - self._cfg.train.warmup_epochs,
                         iters_per_epoch=num_batches,
                         step_epoch=lr_decay_epoch,
                         step_factor=lr_decay, power=2)
@@ -357,7 +357,7 @@ class ImageClassificationEstimator(BaseEstimator):
     def _evaluate(self, val_data):
         """Test on validation dataset."""
         acc_top1 = mx.metric.Accuracy()
-        acc_top5 = mx.metric.TopKAccuracy(5)
+        acc_top5 = mx.metric.TopKAccuracy(min(5, self.num_class))
 
         if not isinstance(val_data, (gluon.data.DataLoader, mx.io.ImageRecordIter)):
             from ...tasks.dataset import ImageClassificationDataset
