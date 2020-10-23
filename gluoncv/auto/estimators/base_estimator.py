@@ -222,7 +222,7 @@ class BaseEstimator:
                 {}".format(type(train_data))
             return self._fit(train_data, val_data) if not resume else self._resume_fit(train_data, val_data)
 
-        if not val_data:
+        if val_data is None:
             assert 0 <= train_size <= 1.0
             if random_state:
                 np.random.seed(random_state)

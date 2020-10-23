@@ -4,10 +4,10 @@ import logging
 import uuid
 
 import pandas as pd
-import autogluon as ag
+import autogluon.core as ag
 from autogluon.core.decorator import sample_config
-from autogluon.scheduler.resource import get_cpu_count, get_gpu_count
-from autogluon.task import BaseTask
+from autogluon.core.scheduler.resource import get_cpu_count, get_gpu_count
+from autogluon.core.task.base import BaseTask
 
 from ... import utils as gutils
 from ..estimators.base_estimator import ConfigDict, BaseEstimator

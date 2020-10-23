@@ -131,6 +131,10 @@ class ImageClassificationDataset(pd.DataFrame):
                 for idx in indices if idx < len(self)]
         _show_images(images, cols=ncol, titles=titles)
 
+    def to_mxnet(self):
+        """Return a mxnet based iterator that returns ndarray and labels"""
+        return _MXImageClassificationDataset(self)
+
     @classmethod
     def from_csv(cls, csv_file, root=None):
         r"""Create from csv file.

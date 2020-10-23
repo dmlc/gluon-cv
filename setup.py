@@ -59,7 +59,8 @@ requirements = [
     'scipy',
     'pyyaml',
     'sacred',
-    'pandas'
+    'pandas',
+    'autogluon.core>0.0.14'
 ]
 
 if with_cython:

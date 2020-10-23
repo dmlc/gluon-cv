@@ -185,8 +185,10 @@ class SSDEstimator(BaseEstimator):
                     self._logger.info('[Epoch %d] Validation: \n%s', epoch, str(val_msg))
                     current_map = float(mean_ap[-1])
                     if current_map > self._best_map:
-                        self._logger.info('[Epoch %d] Current best map: %f vs previous %f',
-                                          self.epoch, current_map, self._best_map)
+                        cp_name = os.path.join(self._logdir, 'best_checkpoint.pkl')
+                        self._logger.info('[Epoch %d] Current best map: %f vs previous %f, saved to %s',
+                                          self.epoch, top1_val, self._best_acc, cp_name)
+                        self.save(cp_name)
                         self._best_map = current_map
                 if self._reporter:
                     self._reporter(epoch=epoch, map_reward=current_map)

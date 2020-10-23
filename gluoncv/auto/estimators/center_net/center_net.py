@@ -108,15 +108,6 @@ class CenterNetEstimator(BaseEstimator):
     reporter : callable
         The reporter for metric checkpointing.
 
-    Attributes
-    ----------
-    _logger : logging.Logger
-        The customized/default logger for this estimator.
-    _logdir : str
-        The temporary dir for logs.
-    _cfg : ConfigDict
-        The configurations.
-
     """
     def __init__(self, config, logger=None, reporter=None):
         super(CenterNetEstimator, self).__init__(config, logger, reporter=reporter, name=None)
@@ -262,9 +253,13 @@ class CenterNetEstimator(BaseEstimator):
                 self._logger.info('[Epoch %d] Validation: \n%s', epoch, val_msg)
                 current_map = float(mean_ap[-1])
                 if current_map > self._best_map:
-                    self._logger.info('[Epoch %d] Current best map: %f vs previous %f',
-                                      self.epoch, current_map, self._best_map)
+                    cp_name = os.path.join(self._logdir, 'best_checkpoint.pkl')
+                    self._logger.info('[Epoch %d] Current best map: %f vs previous %f, saved to %s',
+                                      self.epoch, top1_val, self._best_acc, cp_name)
+                    self.save(cp_name)
                     self._best_map = current_map
+                if self._reporter:
+                    self._reporter(epoch=epoch, map_reward=current_map)
 
     def _evaluate(self, val_data):
         """Test on validation dataset."""

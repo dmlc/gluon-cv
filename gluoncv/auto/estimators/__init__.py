@@ -1,5 +1,5 @@
 """Estimator implementations"""
-from .classification import ClassificationEstimator
+from .image_classification import ImageClassificationEstimator
 from .ssd import SSDEstimator
 from .yolo import YOLOv3Estimator
 from .faster_rcnn import FasterRCNNEstimator
