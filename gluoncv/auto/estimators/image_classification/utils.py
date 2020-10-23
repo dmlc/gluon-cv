@@ -7,6 +7,11 @@ from mxnet import gluon
 from mxnet.gluon.data.vision import transforms
 from ....data import imagenet
 
+def rec_batch_fn(batch, ctx):
+    data = gluon.utils.split_and_load(batch.data[0], ctx_list=ctx, batch_axis=0)
+    label = gluon.utils.split_and_load(batch.label[0], ctx_list=ctx, batch_axis=0)
+    return data, label
+
 def get_data_rec(rec_train, rec_train_idx, rec_val, rec_val_idx, batch_size, num_workers, input_size, crop_ratio):
     rec_train = os.path.expanduser(rec_train)
     rec_train_idx = os.path.expanduser(rec_train_idx)
@@ -19,11 +24,6 @@ def get_data_rec(rec_train, rec_train_idx, rec_val, rec_val_idx, batch_size, num
     resize = int(math.ceil(input_size / crop_ratio))
     mean_rgb = [123.68, 116.779, 103.939]
     std_rgb = [58.393, 57.12, 57.375]
-
-    def batch_fn(batch, ctx):
-        data = gluon.utils.split_and_load(batch.data[0], ctx_list=ctx, batch_axis=0)
-        label = gluon.utils.split_and_load(batch.label[0], ctx_list=ctx, batch_axis=0)
-        return data, label
 
     train_data = mx.io.ImageRecordIter(
         path_imgrec         = rec_train,
@@ -66,7 +66,12 @@ def get_data_rec(rec_train, rec_train_idx, rec_val, rec_val_idx, batch_size, num
         std_g               = std_rgb[1],
         std_b               = std_rgb[2],
     )
-    return train_data, val_data, batch_fn
+    return train_data, val_data, rec_batch_fn
+
+def loader_batch_fn(batch, ctx):
+    data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
+    label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0)
+    return data, label
 
 def get_data_loader(data_dir, batch_size, num_workers, input_size, crop_ratio, train_dataset=None, val_dataset=None):
     normalize = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
@@ -75,11 +80,6 @@ def get_data_loader(data_dir, batch_size, num_workers, input_size, crop_ratio, t
     input_size = input_size
     crop_ratio = crop_ratio if crop_ratio > 0 else 0.875
     resize = int(math.ceil(input_size / crop_ratio))
-
-    def batch_fn(batch, ctx):
-        data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
-        label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0)
-        return data, label
 
     transform_train = transforms.Compose([
         transforms.RandomResizedCrop(input_size),
@@ -109,7 +109,7 @@ def get_data_loader(data_dir, batch_size, num_workers, input_size, crop_ratio, t
         val_dataset.transform_first(transform_test),
         batch_size=batch_size, shuffle=False, num_workers=num_workers)
 
-    return train_data, val_data, batch_fn
+    return train_data, val_data, loader_batch_fn
 
 def mixup_transform(label, classes, lam=1, eta=0.0):
     if isinstance(label, nd.NDArray):
