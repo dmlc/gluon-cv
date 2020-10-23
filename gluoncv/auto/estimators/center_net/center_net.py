@@ -47,7 +47,8 @@ def center_net_default():
     wh_weight = 0.1  # Loss weight for width/height
     center_reg_weight = 1.0  # Center regression loss weight
     data_shape = (512, 512)
-    transfer = None  # use the pre-trained detector for transfer learning(use preset, ignore other network settings)
+    # use the pre-trained detector for transfer learning(use preset, ignore other network settings)
+    transfer = 'center_net_resnet50_v1b_coco'
 
 
 @train.config

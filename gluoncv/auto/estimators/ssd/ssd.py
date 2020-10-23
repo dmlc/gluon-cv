@@ -65,8 +65,6 @@ class SSDEstimator(BaseEstimator):
             amp.init()
         if self._cfg.horovod:
             hvd.init()
-        # fix seed for mxnet, numpy and python builtin random generator.
-        gutils.random.seed(self._cfg.train.seed)
 
     def _fit(self, train_data, val_data):
         """Fit SSD model."""
@@ -107,6 +105,8 @@ class SSDEstimator(BaseEstimator):
         self._train_loop(train_loader, val_loader)
 
     def _train_loop(self, train_data, val_data):
+        # fix seed for mxnet, numpy and python builtin random generator.
+        gutils.random.seed(self._cfg.train.seed)
         # loss and metric
         mbox_loss = SSDMultiBoxLoss()
         ce_metric = mx.metric.Loss('CrossEntropy')

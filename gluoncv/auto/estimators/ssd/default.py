@@ -33,7 +33,7 @@ def ssd_default():
     # Whether to enable custom model.
     # custom_model = True
     # whether apply transfer learning from pre-trained models, if True, override other net structures
-    transfer = None
+    transfer = 'ssd_512_resnet50_v1_coco'
 
 
 @train.config

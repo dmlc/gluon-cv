@@ -31,7 +31,9 @@ def yolo3_default():
     # Use MXNet AMP for mixed precision training.
     amp = False
     # Whether to enable custom model.
-    custom_model = True
+    # custom_model = True
+    # whether apply transfer learning from pre-trained models, if True, override other net structures
+    transfer = 'yolo3_darknet53_coco'
 
 
 @train.config

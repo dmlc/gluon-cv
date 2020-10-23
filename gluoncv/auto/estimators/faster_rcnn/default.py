@@ -87,7 +87,7 @@ def faster_rcnn_default():
     # Whether to allocate memory statically.
     static_alloc = False
     # whether apply transfer learning from pre-trained models, if True, override other net structures
-    transfer = None
+    transfer = 'faster_rcnn_fpn_resnet50_v1b_coco'
 
 
 @train.config
