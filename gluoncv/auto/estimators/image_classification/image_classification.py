@@ -63,9 +63,6 @@ def train_config():
     rec_val_idx = '~/.mxnet/datasets/imagenet/rec/val.idx'
     data_dir = '~/.mxnet/datasets/imagenet'
     mixup = False
-    save_frequency = 10
-    save_dir = 'params'
-    logging_file = 'train_imagenet.log'
     no_wd = False
     label_smoothing = False
     temperature = 20
@@ -213,7 +210,7 @@ class ImageClassificationEstimator(BaseEstimator):
                                     y.astype(self._cfg.train.dtype, copy=False)) for yhat, y in zip(outputs, label)]
                 for l in losses:
                     l.backward()
-                trainer.step(self.batch_size)
+                self.trainer.step(self.batch_size)
 
                 if self._cfg.train.mixup:
                     output_softmax = [nd.SoftmaxActivation(out.astype('float32', copy=False)) \
@@ -230,7 +227,7 @@ class ImageClassificationEstimator(BaseEstimator):
                     self._logger.info('Epoch[%d] Batch [%d]\tSpeed: %f samples/sec\t%s=%f\tlr=%f',
                                      epoch, i,
                                      self._cfg.train.batch_size*self._cfg.train.log_interval/(time.time()-btic),
-                                     train_metric_name, train_metric_score, trainer.learning_rate)
+                                     train_metric_name, train_metric_score, self.trainer.learning_rate)
                     btic = time.time()
 
             train_metric_name, train_metric_score = train_metric.get()
