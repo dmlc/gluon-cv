@@ -335,7 +335,7 @@ class SSDEstimator(BaseEstimator):
             self.net.initialize()
             self.async_net.initialize()
             # needed for net to be first gpu when using AMP
-            self.net.collect_params().reset_ctx(self.ctx[0])
+            self.net.collect_params().reset_ctx(self.ctx)
 
     def _init_trainer(self):
         if self._cfg.horovod:

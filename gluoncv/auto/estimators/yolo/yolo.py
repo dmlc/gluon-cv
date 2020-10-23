@@ -330,6 +330,7 @@ class YOLOv3Estimator(BaseEstimator):
             warnings.simplefilter("always")
             self.net.initialize()
             self.async_net.initialize()
+        self.net.collect_params().reset_ctx(self.ctx)
 
     def _init_trainer(self):
         if self.last_train is None:
