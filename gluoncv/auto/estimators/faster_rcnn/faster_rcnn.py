@@ -8,14 +8,14 @@ import numpy as np
 import mxnet as mx
 from mxnet import gluon
 
-from ....data.transforms.presets.ssd import load_test, transform_test
+from ....data.transforms.presets.rcnn import load_test, transform_test
 from ....data.transforms.presets.rcnn import FasterRCNNDefaultTrainTransform, FasterRCNNDefaultValTransform
 from ....model_zoo import get_model
 from ....model_zoo.rcnn.faster_rcnn.data_parallel import ForwardBackwardTask
 from ....nn.bbox import BBoxClipToImage
 from ....utils.parallel import Parallel
 from ....utils.metrics.rcnn import RPNAccMetric, RPNL1LossMetric, RCNNAccMetric, RCNNL1LossMetric
-from ....utils.metrics.voc_detection import VOC07MApMetric
+from ....utils.metrics.voc_detection import VOC07MApMetric, VOCMApMetric
 from ....utils.metrics.coco_detection import COCODetectionMetric
 from ..base_estimator import BaseEstimator, set_default
 from .utils import _get_lr_at_iter, _get_dataloader, _get_dataset, _save_params, _split_and_load

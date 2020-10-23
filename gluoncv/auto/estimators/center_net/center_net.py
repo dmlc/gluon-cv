@@ -23,7 +23,7 @@ from ....loss import MaskedL1Loss, HeatmapFocalLoss
 from ....model_zoo import get_model
 from ....model_zoo.center_net import get_center_net, get_base_network
 from ....utils import LRScheduler, LRSequential
-from ....utils.metrics import VOCMApMetric
+from ....utils.metrics import VOCMApMetric, VOC07MApMetric
 
 __all__ = ['CenterNetEstimator']
 

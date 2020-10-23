@@ -15,6 +15,7 @@ from .... import utils as gutils
 from ....data.transforms.presets.yolo import load_test, transform_test
 from ....model_zoo import get_model
 from ....model_zoo import custom_yolov3
+from ....utils.metrics.voc_detection import VOC07MApMetric, VOCMApMetric
 from ....utils import LRScheduler, LRSequential
 
 from ..base_estimator import BaseEstimator, set_default
