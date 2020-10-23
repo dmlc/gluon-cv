@@ -420,7 +420,7 @@ class ImageClassificationEstimator(BaseEstimator):
             raise ValueError('Input is not supported: {}'.format(type(x)))
         x = x.as_in_context(self.ctx[0])
         pred = self.net(x)
-        topK = min(k, self.num_class)
+        topK = min(5, self.num_class)
         ind = nd.topk(pred, k=topK)[0].astype('int')
         probs = mx.nd.softmax(pred)[0].asnumpy().flatten()
         df = pd.DataFrame({f'top{i}': {
