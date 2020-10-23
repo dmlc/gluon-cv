@@ -312,7 +312,7 @@ class YOLOv3Estimator(BaseEstimator):
         else:
             assert isinstance(self._cfg.yolo3.transfer, str)
             self._logger.info(
-                f'Using transfer learning from {self._cfg.ssd.transfer}, the other network parameters are ignored.')
+                f'Using transfer learning from {self._cfg.yolo3.transfer}, the other network parameters are ignored.')
             # use sync bn if specified
             if self._cfg.yolo3.syncbn and len(self.ctx) > 1:
                 self.net = get_model(self._cfg.yolo3.transfer, pretrained=True,
