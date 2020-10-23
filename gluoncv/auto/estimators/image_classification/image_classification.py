@@ -3,6 +3,7 @@
 import time
 import logging
 import os
+import math
 
 import pandas as pd
 import numpy as np
@@ -11,6 +12,7 @@ from mxnet import gluon, nd
 from mxnet import autograd as ag
 from mxnet.gluon.data.vision import transforms
 from sacred import Experiment, Ingredient
+from ....data.transforms.presets.imagenet import transform_eval
 from ....model_zoo import get_model
 from ....utils import makedirs, LRSequential, LRScheduler
 from .... import nn
@@ -73,7 +75,8 @@ def train_config():
     log_interval = 50
     mode = ''
     start_epoch = 0
-    output_lr_mult = 10  # the learning rate multiplier for last fc layer if trained with transfer learning
+    transfer_lr_mult = 0.01  # reduce the backbone lr_mult to avoid quickly destroying the features
+    output_lr_mult = 0.1  # the learning rate multiplier for last fc layer if trained with transfer learning
 
 
 @validation.config
@@ -100,6 +103,7 @@ class ImageClassificationEstimator(BaseEstimator):
     def __init__(self, config, logger=None, reporter=None):
         super(ImageClassificationEstimator, self).__init__(config, logger, reporter=reporter, name=None)
         self.last_train = None
+        self.input_size = self._cfg.train.input_size
 
     def _fit(self, train_data, val_data):
         self._best_acc = 0
@@ -127,14 +131,14 @@ class ImageClassificationEstimator(BaseEstimator):
                                                                          self._cfg.train.rec_val,
                                                                          self._cfg.train.rec_val_idx,
                                                                          self.batch_size, num_workers,
-                                                                         self._cfg.train.input_size,
+                                                                         self.input_size,
                                                                          self._cfg.train.crop_ratio)
         else:
             train_dataset = train_data.to_mxnet()
             val_dataset = val_data.to_mxnet()
             train_loader, val_loader, self.batch_fn = get_data_loader(self._cfg.train.data_dir,
                                                                       self.batch_size, num_workers,
-                                                                      self._cfg.train.input_size,
+                                                                      self.input_size,
                                                                       self._cfg.train.crop_ratio,
                                                                       train_dataset=train_dataset,
                                                                       val_dataset=val_dataset)
@@ -259,7 +263,21 @@ class ImageClassificationEstimator(BaseEstimator):
         self.ctx = self.ctx if self.ctx else [mx.cpu()]
 
         # network
-        model_name = self._cfg.cls_net.model
+        model_name = self._cfg.cls_net.model.lower()
+        input_size = self.input_size
+        if 'inception' in model_name or 'googlenet' in model_name:
+            self.input_size = 299
+        elif 'resnest101' in model_name:
+            self.input_size = 256
+        elif 'resnest200' in model_name:
+            self.input_size = 320
+        elif 'resnest269' in model_name:
+            self.input_size = 416
+        elif 'cifar' in model_name:
+            self.input_size = 28
+
+        if input_size != self.input_size:
+            self._logger.info(f'Change input size to {self.input_size}, given model type: {model_name}')
 
         if self._cfg.cls_net.use_pretrained:
             kwargs = {'ctx': self.ctx, 'pretrained': True, 'classes': 1000 if 'cifar' not in model_name else 10}
@@ -293,8 +311,10 @@ class ImageClassificationEstimator(BaseEstimator):
                 else:
                     raise TypeError(f'Invalid FC layer type {type(fc_layer)} found, expected (Conv2D, Dense)...')
                 new_fc_layer.initialize(mx.init.MSRAPrelu(), ctx=self.ctx)
+                self.net.collect_params().setattr('lr_mult', self._cfg.train.transfer_lr_mult)
                 new_fc_layer.collect_params().setattr('lr_mult', self._cfg.train.output_lr_mult)
-                self._logger.debug(f'Increase last FC layer lr multiplier to {self._cfg.train.output_lr_mult}')
+                self._logger.debug(f'Reduce network lr multiplier to {self._cfg.train.transfer_lr_mult}, while keep ' +
+                    f'last FC layer lr_mult to {self._cfg.train.output_lr_mult}')
                 setattr(self.net, fc_name, new_fc_layer)
             else:
                 raise RuntimeError('Unable to modify the last fc layer in network, (output, fc) expected...')
@@ -365,7 +385,7 @@ class ImageClassificationEstimator(BaseEstimator):
                 val_data = val_data.to_mxnet()
             transform_test = transforms.Compose([
                 transforms.Resize(resize, keep_ratio=True),
-                transforms.CenterCrop(input_size),
+                transforms.CenterCrop(self.input_size),
                 transforms.ToTensor(),
                 normalize
             ])
@@ -382,3 +402,27 @@ class ImageClassificationEstimator(BaseEstimator):
         _, top1 = acc_top1.get()
         _, top5 = acc_top5.get()
         return top1, top5
+
+    def _predict(self, x):
+        resize = int(math.ceil(self.input_size / self._cfg.train.crop_ratio))
+        if isinstance(x, str):
+            x = transform_eval(mx.image.imread(x), resize_short=resize, crop_size=self.input_size)[0]
+        elif isinstance(x, mx.nd.NDArray):
+            x = transform_eval(x, resize_short=resize, crop_size=self.input_size)[0]
+        elif isinstance(x, pd.DataFrame):
+            assert 'image' in x.columns, "Expect column `image` for input images"
+            def _predict_merge(x):
+                y = self._predict(x)
+                y['image'] = x
+                return y
+            return pd.concat([_predict_merge(xx) for xx in x['image']]).reset_index(drop=True)
+        else:
+            raise ValueError('Input is not supported: {}'.format(type(x)))
+        x = x.as_in_context(self.ctx[0])
+        pred = self.net(x)
+        topK = min(k, self.num_class)
+        ind = nd.topk(pred, k=topK)[0].astype('int')
+        probs = mx.nd.softmax(pred)[0].asnumpy().flatten()
+        df = pd.DataFrame({f'top{i}': {
+            'class': self.classes[ind[i]], 'score': probs[ind[i]], 'id': ind[i]} for i in range(topK)})
+        return df
