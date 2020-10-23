@@ -6,7 +6,7 @@ import autogluon as ag
 
 from ... import data as gdata
 from ..estimators.base_estimator import BaseEstimator
-from ..estimators import SSDEstimator, FasterRCNNEstimator, YOLOEstimator, CenterNetEstimator
+from ..estimators import SSDEstimator, FasterRCNNEstimator, YOLOv3Estimator, CenterNetEstimator
 
 
 def auto_suggest(config, estimator, logger):
@@ -72,7 +72,7 @@ def auto_suggest(config, estimator, logger):
     if bbox_rel_size < 0.2 or num_objects > 5:
         suggested_estimator = [FasterRCNNEstimator]
     else:
-        suggested_estimator = [SSDEstimator, YOLOEstimator]
+        suggested_estimator = [SSDEstimator, YOLOv3Estimator]
 
     config['lr'] = config.get('lr', ag.Categorical(1e-2, 5e-3, 1e-3, 5e-4, 1e-4))
 
@@ -93,7 +93,7 @@ def config_to_nested(config):
             config['meta_arch'] = 'ssd'
         elif config['estimator'] == FasterRCNNEstimator:
             config['meta_arch'] = 'faster_rcnn'
-        elif config['estimator'] == YOLOEstimator:
+        elif config['estimator'] == YOLOv3Estimator:
             config['meta_arch'] = 'yolo3'
         elif config['estimator'] == CenterNetEstimator:
             config['meta_arch'] = 'center_net'

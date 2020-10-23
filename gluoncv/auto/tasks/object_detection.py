@@ -11,7 +11,7 @@ from autogluon.task import BaseTask
 
 from ... import utils as gutils
 from ..estimators.base_estimator import ConfigDict, BaseEstimator
-from ..estimators import SSDEstimator, FasterRCNNEstimator, YOLOEstimator, CenterNetEstimator
+from ..estimators import SSDEstimator, FasterRCNNEstimator, YOLOv3Estimator, CenterNetEstimator
 from .utils import auto_suggest, config_to_nested
 from .dataset import ObjectDetectionDataset
 
@@ -92,7 +92,7 @@ class ObjectDetection(BaseTask):
             auto_suggest(config, estimator, self._logger)
         else:
             if estimator is None:
-                estimator = [SSDEstimator, FasterRCNNEstimator, YOLOEstimator, CenterNetEstimator]
+                estimator = [SSDEstimator, FasterRCNNEstimator, YOLOv3Estimator, CenterNetEstimator]
             elif isinstance(estimator, (tuple, list)):
                 pass
             else:
@@ -203,5 +203,5 @@ class ObjectDetection(BaseTask):
         obj = BaseEstimator.load(filename)
         # make sure not accidentally loading e.g. classification model
         # pylint: disable=unidiomatic-typecheck
-        assert type(obj) in (SSDEstimator, FasterRCNNEstimator, YOLOEstimator, CenterNetEstimator)
+        assert type(obj) in (SSDEstimator, FasterRCNNEstimator, YOLOv3Estimator, CenterNetEstimator)
         return obj
