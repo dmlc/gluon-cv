@@ -87,7 +87,7 @@ class YOLOv3Estimator(BaseEstimator):
         val_dataset = val_data.to_mxnet()
         # training dataloader
         self.batch_size = self._cfg.train.batch_size // hvd.size() if self._cfg.horovod else self._cfg.train.batch_size
-        train_data, val_data = _get_dataloader(
+        train_loader, val_loader = _get_dataloader(
             self.async_net, train_dataset, val_dataset, self._cfg.yolo3.data_shape,
             self.batch_size, self._cfg.num_workers, self._cfg)
 
@@ -96,6 +96,8 @@ class YOLOv3Estimator(BaseEstimator):
                 v.wd_mult = 0.0
         if self._cfg.train.label_smooth:
             self.net._target_generator._label_smooth = True
+
+        self._train_loop(train_loader, val_loader)
 
     def _train_loop(self, train_data, val_data):
         # fix seed for mxnet, numpy and python builtin random generator.
@@ -239,7 +241,7 @@ class YOLOv3Estimator(BaseEstimator):
 
     def _predict(self, x):
         """Predict an individual example."""
-        short_size = int(self._cfg.yolo.data_shape)
+        short_size = int(self._cfg.yolo3.data_shape)
         if isinstance(x, str):
             x = load_test(x, short=short_size, max_size=1024)[0]
         elif isinstance(x, mx.nd.NDArray):
