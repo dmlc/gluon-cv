@@ -240,11 +240,11 @@ class ImageClassificationEstimator(BaseEstimator):
             self._logger.info('[Epoch %d] validation: top1=%f top5=%f', epoch, top1_val, top5_val)
 
             if top1_val > self._best_acc:
-                self._best_acc = top1_val
                 cp_name = os.path.join(self._logdir, 'best_checkpoint.pkl')
                 self._logger.info('[Epoch %d] Current best top-1: %f vs previous %f, saved to %s',
                                   self.epoch, top1_val, self._best_acc, cp_name)
                 self.save(cp_name)
+                self._best_acc = top1_val
             if self._reporter:
                 self._reporter(epoch=epoch, map_reward=current_map)
 
