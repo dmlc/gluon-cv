@@ -94,7 +94,7 @@ class ObjectDetection(BaseTask):
         config['gpus'] = [int(i) for i in range(ngpus_per_trial)]
         config['seed'] = self._config.get('seed', 233)
         config['final_fit'] = False
-        config['logger'] = self._logger
+        # config['logger'] = self._logger
 
 
         # automatically merge search configs according to user specified values
