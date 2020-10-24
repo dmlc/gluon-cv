@@ -26,6 +26,7 @@ def auto_suggest(config, estimator, logger):
     # get dataset statistics
     # user needs to define a Dataset object "train_dataset" when using custom dataset
     train_dataset = config.get('train_dataset', None)
+    print(train_dataset)
     try:
         if train_dataset is None:
             dataset_name = config.get('dataset', 'voc')
