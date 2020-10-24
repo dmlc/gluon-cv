@@ -38,8 +38,8 @@ def _train_image_classification(args, reporter):
         args['train'] = {'auto_resume': False}
 
     # train, val data
-    train_data = args['train_data']
-    val_data = args['val_data']
+    train_data = args.pop('train_data')
+    val_data = argspop('val_data')
 
     try:
         estimator = args['estimator'](args, reporter=reporter)

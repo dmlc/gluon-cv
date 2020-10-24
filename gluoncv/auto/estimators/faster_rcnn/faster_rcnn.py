@@ -201,7 +201,7 @@ class FasterRCNNEstimator(BaseEstimator):
                     if current_map > self._best_map:
                         cp_name = os.path.join(self._logdir, 'best_checkpoint.pkl')
                         self._logger.info('[Epoch %d] Current best map: %f vs previous %f, saved to %s',
-                                          self.epoch, top1_val, self._best_acc, cp_name)
+                                          self.epoch, current_map, self._best_map, cp_name)
                         self.save(cp_name)
                         self._best_map = current_map
                 if self._reporter:
