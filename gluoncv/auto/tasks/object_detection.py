@@ -26,17 +26,6 @@ def _train_object_detection(args, reporter):
     ----------
     args: <class 'autogluon.utils.edict.EasyDict'>
     """
-    logger = args.get('logger', logging.getLogger())
-    logger.setLevel(logging.INFO)
-
-    task_id = args.get('task_id', 0)
-    if task_id < args['num_trials']:
-        logger.info("Running trial %d / %d", task_id + 1, args['num_trials'])
-        logger.info('The training config: %s', str(args))
-    else:
-        logger.info("Retraining with the best config")
-        logger.info('The best config: %s', str(args))
-
     # convert user defined config to nested form
     args = config_to_nested(args)
 
