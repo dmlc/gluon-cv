@@ -3,7 +3,7 @@ import copy
 import warnings
 import numpy as np
 
-import autogluon as ag
+import autogluon.core as ag
 
 from ... import data as gdata
 from ..estimators.base_estimator import BaseEstimator
