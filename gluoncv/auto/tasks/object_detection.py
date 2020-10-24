@@ -40,7 +40,7 @@ def _train_object_detection(args, reporter):
 
     # train, val data
     train_data = args.pop('train_data')
-    val_data = argspop('val_data')
+    val_data = args.pop('val_data')
 
     try:
         estimator = args['estimator'](args, reporter=reporter)

@@ -39,7 +39,7 @@ def _train_image_classification(args, reporter):
 
     # train, val data
     train_data = args.pop('train_data')
-    val_data = argspop('val_data')
+    val_data = args.pop('val_data')
 
     try:
         estimator = args['estimator'](args, reporter=reporter)
@@ -111,7 +111,7 @@ class ImageClassification(BaseTask):
             'resume': (len(self._config.get('resume', '')) > 0),
             'visualizer': self._config.get('visualizer', 'none'),
             'time_attr': 'epoch',
-            'reward_attr': 'map_reward',
+            'reward_attr': 'acc_reward',
             'dist_ip_addrs': self._config.get('dist_ip_addrs', None),
             'searcher': self._config.search_strategy,
             'search_options': self._config.get('search_options', None)}
