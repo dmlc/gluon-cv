@@ -40,7 +40,7 @@ def train_config():
     gpus = (0,)
     pretrained_base = True  # whether load the imagenet pre-trained base
     batch_size = 128
-    epochs = 3
+    epochs = 10
     lr = 0.1  # learning rate
     lr_decay = 0.1  # decay rate of learning rate.
     lr_decay_period = 0

@@ -41,7 +41,7 @@ def train_cfg():
     # Training mini-batch size
     batch_size = 32
     # Training epochs.
-    epochs = 200
+    epochs = 20
     # Starting epoch for resuming, default is 0 for new training.
     # You can specify it to 100 for example to start from 100 epoch.
     start_epoch = 0
