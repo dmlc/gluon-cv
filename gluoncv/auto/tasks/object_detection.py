@@ -165,6 +165,7 @@ class ObjectDetection(BaseTask):
 
         # automatically suggest some hyperparameters based on the dataset statistics
         estimator = self._train_config.get('estimator', None)
+        self._train_config['train_dataset'] = train_data
         if self._config.get('auto_suggest', True):
             auto_suggest(self._train_config, estimator, self._logger)
         else:
