@@ -75,19 +75,6 @@ class ImageClassification(BaseTask):
         self._logger.setLevel(logging.INFO)
         self._config = ConfigDict(config)
 
-        # automatically suggest some hyperparameters based on the dataset statistics
-        if self._config.get('auto_suggest', True):
-            auto_suggest(config, estimator, self._logger)
-        else:
-            if estimator is None:
-                estimator = [Classification]
-            elif isinstance(estimator, (tuple, list)):
-                pass
-            else:
-                assert issubclass(estimator, BaseEstimator)
-                estimator = [estimator]
-            config['estimator'] = ag.Categorical(*estimator)
-
         # cpu and gpu setting
         cpu_count = get_cpu_count()
         nthreads_per_trial = self._config.get('nthreads_per_trial', cpu_count)
@@ -119,7 +106,7 @@ class ImageClassification(BaseTask):
         self._config.search_strategy = self._config.get('search_strategy', 'random')
         self._config.scheduler_options = {
             'resource': {'num_cpus': nthreads_per_trial, 'num_gpus': ngpus_per_trial},
-            'checkpoint': self._config.get('checkpoint', 'checkpoint/exp1.ag'),
+            'checkpoint': self._config.get('checkpoint', 'checkpoint/ic_exp.ag'),
             'num_trials': self._config.get('num_trials', 2),
             'time_out': self._config.get('time_limits', 60 * 60),
             'resume': (len(self._config.get('resume', '')) > 0),
@@ -160,6 +147,15 @@ class ImageClassification(BaseTask):
             self._logger.info('Randomly split train_data into train[%d]/validation[%d] splits.',
                               len(train), len(val))
             train_data, val_data = train, val
+
+        if estimator is None:
+            estimator = [ImageClassificationEstimator]
+        elif isinstance(estimator, (tuple, list)):
+            pass
+        else:
+            assert issubclass(estimator, BaseEstimator)
+            estimator = [estimator]
+        self._train_config['estimator'] = ag.Categorical(*estimator)
 
         # register args
         config = self._train_config.copy()

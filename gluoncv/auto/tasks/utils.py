@@ -1,5 +1,6 @@
 """Utils for auto tasks"""
 import copy
+import warnings
 import numpy as np
 
 import autogluon as ag
@@ -7,26 +8,44 @@ import autogluon as ag
 from ... import data as gdata
 from ..estimators.base_estimator import BaseEstimator
 from ..estimators import SSDEstimator, FasterRCNNEstimator, YOLOv3Estimator, CenterNetEstimator
-
+from .dataset import ObjectDetectionDataset
 
 def auto_suggest(config, estimator, logger):
     """
     Automatically suggest some hyperparameters based on the dataset statistics.
     """
-    # get dataset statistics
-    dataset_name = config.get('dataset', 'voc')
-    dataset_root = config.get('dataset_root', '~/.mxnet/datasets/')
-    if dataset_name == 'voc':
-        train_dataset = gdata.VOCDetection(splits=[(2007, 'trainval'), (2012, 'trainval')])
-    elif dataset_name == 'voc_tiny':
-        train_dataset = gdata.CustomVOCDetectionBase(classes=('motorbike',),
-                                                     root=dataset_root + 'tiny_motorbike',
-                                                     splits=[('', 'trainval')])
-    elif dataset_name == 'coco':
-        train_dataset = gdata.COCODetection(splits=['instances_train2017'])
+    if estimator is None:
+        estimator = [SSDEstimator, FasterRCNNEstimator, YOLOv3Estimator, CenterNetEstimator]
+    elif isinstance(estimator, (tuple, list)):
+        pass
     else:
-        # user needs to define a Dataset object "train_dataset" when using custom dataset
-        train_dataset = config.get('train_dataset', None)
+        assert issubclass(estimator, BaseEstimator)
+        estimator = [estimator]
+    config['estimator'] = ag.Categorical(*estimator)
+
+    # get dataset statistics
+    # user needs to define a Dataset object "train_dataset" when using custom dataset
+    train_dataset = config.get('train_dataset', None)
+    try:
+        if train_dataset is None:
+            dataset_name = config.get('dataset', 'voc')
+            dataset_root = config.get('dataset_root', '~/.mxnet/datasets/')
+            if dataset_name == 'voc':
+                train_dataset = gdata.VOCDetection(splits=[(2007, 'trainval'), (2012, 'trainval')])
+            elif dataset_name == 'voc_tiny':
+                train_dataset = gdata.CustomVOCDetectionBase(classes=('motorbike',),
+                                                             root=dataset_root + 'tiny_motorbike',
+                                                             splits=[('', 'trainval')])
+            elif dataset_name == 'coco':
+                train_dataset = gdata.COCODetection(splits=['instances_train2017'])
+        elif isinstance(train_dataset, ObjectDetectionDataset):
+            train_dataset = train_dataset.to_mxnet()
+        else:
+            logger.info('Unknown dataset, quit auto suggestion...')
+            return
+    except Exception as e:
+        logger.info(f'Unexpected error: {e}, quit auto suggestion...')
+        return
 
     # choose 100 examples to calculate average statistics
     num_examples = 100
