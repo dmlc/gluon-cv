@@ -51,6 +51,7 @@ def _train_object_detection(args, reporter):
     # train, val data
     train_data = args['train_data']
     val_data = args['val_data']
+    return {}
 
     try:
         estimator = args['estimator'](args, reporter=reporter)

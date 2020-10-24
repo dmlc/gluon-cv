@@ -82,7 +82,7 @@ def auto_suggest(config, estimator, logger):
     bbox_size = np.mean(bbox_size_list)
     bbox_rel_size = np.mean(bbox_rel_size_list)
 
-    logger.info("Printing dataset statistics")
+    logger.info("[Printing dataset statistics]...")
     logger.info("number of training images: %d", num_images)
     logger.info("average image size: %.2f", image_size)
     logger.info("number of total object classes: %d", num_classes)
