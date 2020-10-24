@@ -3,6 +3,7 @@ import time
 import logging
 import uuid
 
+import numpy as np
 import pandas as pd
 import autogluon.core as ag
 from autogluon.core.decorator import sample_config
