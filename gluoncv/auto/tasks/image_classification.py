@@ -25,6 +25,16 @@ def _train_image_classification(args, reporter):
     ----------
     args: <class 'autogluon.utils.edict.EasyDict'>
     """
+    logger = args.get('logger', logging.getLogger())
+    logger.setLevel(logging.INFO)
+
+    task_id = args.get('task_id', 0)
+    if task_id < args['num_trials']:
+        logger.info("Running trial %d / %d", task_id + 1, args['num_trials'])
+        logger.info('The training config: %s', str(args))
+    else:
+        logger.info("Retraining with the best config")
+        logger.info('The best config: %s', str(args))
     # convert user defined config to nested form
     args = config_to_nested(args)
 
@@ -38,8 +48,8 @@ def _train_image_classification(args, reporter):
         args['train'] = {'auto_resume': False}
 
     # train, val data
-    train_data = args['train_data']
-    val_data = args['val_data']
+    train_data = args.pop('train_data')
+    val_data = args.pop('val_data')
 
     try:
         estimator = args['estimator'](args, reporter=reporter)
@@ -47,7 +57,7 @@ def _train_image_classification(args, reporter):
         estimator.fit(train_data=train_data, val_data=val_data)
     # pylint: disable=broad-except
     except Exception as e:
-        return str(e)
+        return {'stacktrace': str(e)}
 
     # TODO: checkpointing needs to be done in a better way
     if args['final_fit']:
