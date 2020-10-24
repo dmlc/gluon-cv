@@ -121,7 +121,7 @@ class ObjectDetection(BaseTask):
         self._config.search_strategy = self._config.get('search_strategy', 'random')
         self._config.scheduler_options = {
             'resource': {'num_cpus': nthreads_per_trial, 'num_gpus': ngpus_per_trial},
-            'checkpoint': self._config.get('checkpoint', 'checkpoint/exp_od.ag'),
+            'checkpoint': self._config.get('checkpoint', 'checkpoint/exp1.ag'),
             'num_trials': self._config.get('num_trials', 2),
             'time_out': self._config.get('time_limits', 60 * 60),
             'resume': (len(self._config.get('resume', '')) > 0),
