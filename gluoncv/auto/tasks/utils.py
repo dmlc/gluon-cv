@@ -26,7 +26,6 @@ def auto_suggest(config, estimator, logger):
     # get dataset statistics
     # user needs to define a Dataset object "train_dataset" when using custom dataset
     train_dataset = config.get('train_dataset', None)
-    print(train_dataset)
     try:
         if train_dataset is None:
             dataset_name = config.get('dataset', 'voc')
@@ -75,7 +74,10 @@ def auto_suggest(config, estimator, logger):
 
     num_images = len(train_dataset)
     image_size = np.mean(image_size_list)
-    num_classes = len(train_dataset.CLASSES)
+    try:
+        num_classes = len(train_dataset.CLASSES)
+    except AttributeError:
+        num_classes = len(train_dataset.classes)
     num_objects = np.mean(num_objects_list)
     bbox_size = np.mean(bbox_size_list)
     bbox_rel_size = np.mean(bbox_rel_size_list)
