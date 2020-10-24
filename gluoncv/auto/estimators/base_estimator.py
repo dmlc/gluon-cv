@@ -151,7 +151,7 @@ class BaseEstimator:
 
     """
     def __init__(self, config, logger=None, reporter=None, name=None):
-        self._init_args = [config, logger, reporter]
+        # self._init_args = [config, logger, reporter]
         self._reporter = reporter
         name = name if isinstance(name, str) else self.__class__.__name__
         self._name = name
@@ -321,6 +321,7 @@ class BaseEstimator:
         except ImportError:
             pass
         d['_logger'] = None
+        d['_reporter'] = None
         return d
 
     def __setstate__(self, state):
