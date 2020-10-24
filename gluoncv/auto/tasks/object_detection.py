@@ -39,8 +39,8 @@ def _train_object_detection(args, reporter):
         args['train'] = {'auto_resume': False}
 
     # train, val data
-    train_data = args.pop('train_data')
-    val_data = args.pop('val_data')
+    train_data = args['train_data']
+    val_data = args['val_data']
 
     try:
         estimator = args['estimator'](args, reporter=reporter)
@@ -51,11 +51,9 @@ def _train_object_detection(args, reporter):
         return {'stacktrace': str(e)}
 
     # TODO: checkpointing needs to be done in a better way
-    if args['final_fit']:
-        unique_checkpoint = str(uuid.uuid4())
-        estimator.save(unique_checkpoint)
-        return {'model_checkpoint': unique_checkpoint}
-    return {}
+    unique_checkpoint = str(uuid.uuid4())
+    estimator.save(unique_checkpoint)
+    return {'model_checkpoint': unique_checkpoint}
 
 
 class ObjectDetection(BaseTask):
@@ -185,11 +183,17 @@ class ObjectDetection(BaseTask):
         best_config = sample_config(_train_object_detection.args, results['best_config'])
         # convert best config to nested form
         best_config = config_to_nested(best_config)
+        best_config.pop('train_data')
+        best_config.pop('val_data')
         self._logger.info('The best config: %s', str(best_config))
 
         # estimator = best_config['estimator'](best_config)
         # TODO: checkpointing needs to be done in a better way
-        estimator = self.load(results.pop('model_checkpoint'))
+        model_checkpoint = results.get('model_checkpoint', None)
+        if model_checkpoint is None:
+            msg = results.get('stacktrace', '')
+            raise RuntimeError(f'Unexpected error happened during fit: {msg}')
+        estimator = self.load(results['model_checkpoint'])
         return estimator
 
     @classmethod
