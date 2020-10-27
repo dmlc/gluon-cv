@@ -250,7 +250,7 @@ class ImageClassificationEstimator(BaseEstimator):
                 self.save(cp_name)
                 self._best_acc = top1_val
             if self._reporter:
-                self._reporter(epoch=epoch, acc_reward=current_map)
+                self._reporter(epoch=epoch, acc_reward=top1_val)
 
 
     def _init_network(self):
