@@ -107,8 +107,8 @@ class CenterNetEstimator(BaseEstimator):
         val_batchify_fn = Tuple(Stack(), Pad(pad_val=-1))
         val_loader = gluon.data.DataLoader(
             val_dataset.transform(CenterNetDefaultValTransform(width, height)),
-            self._cfg.validation.batch_size, False, batchify_fn=val_batchify_fn, last_batch='keep',
-            num_workers=self._cfg.validation.num_workers)
+            self._cfg.valid.batch_size, False, batchify_fn=val_batchify_fn, last_batch='keep',
+            num_workers=self._cfg.valid.num_workers)
 
         self._train_loop(train_loader, val_loader)
 
@@ -177,7 +177,7 @@ class CenterNetEstimator(BaseEstimator):
             self._logger.info(
                 '[Epoch {}] Training cost: {:.3f}, {}={:.3f}, {}={:.3f}, {}={:.3f}'.format(
                     epoch, (time.time() - tic), name2, loss2, name3, loss3, name4, loss4))
-            if (epoch % self._cfg.validation.interval == 0) or \
+            if (epoch % self._cfg.valid.interval == 0) or \
                     (self._cfg.train.save_interval and epoch % self._cfg.train.save_interval == 0) or \
                     (epoch == self._cfg.train.epochs - 1):
                 # consider reduce the frequency of validation to save time
@@ -196,13 +196,13 @@ class CenterNetEstimator(BaseEstimator):
 
     def _evaluate(self, val_data):
         """Test on validation dataset."""
-        if self._cfg.validation.metric == 'voc07':
-            eval_metric = VOC07MApMetric(iou_thresh=self._cfg.validation.iou_thresh, class_names=self.classes)
-        elif self._cfg.validation.metric == 'voc':
-            eval_metric = VOCMApMetric(iou_thresh=self._cfg.validation.iou_thresh, class_names=self.classes)
+        if self._cfg.valid.metric == 'voc07':
+            eval_metric = VOC07MApMetric(iou_thresh=self._cfg.valid.iou_thresh, class_names=self.classes)
+        elif self._cfg.valid.metric == 'voc':
+            eval_metric = VOCMApMetric(iou_thresh=self._cfg.valid.iou_thresh, class_names=self.classes)
         else:
-            raise ValueError(f'Invalid metric type: {self._cfg.validation.metric}')
-        self.net.flip_test = self._cfg.validation.flip_test
+            raise ValueError(f'Invalid metric type: {self._cfg.valid.metric}')
+        self.net.flip_test = self._cfg.valid.flip_test
         mx.nd.waitall()
         self.net.hybridize()
         if not isinstance(val_data, gluon.data.DataLoader):
@@ -213,8 +213,8 @@ class CenterNetEstimator(BaseEstimator):
             width, height = self._cfg.center_net.data_shape
             val_data = gluon.data.DataLoader(
                 val_data.transform(CenterNetDefaultValTransform(width, height)),
-                self._cfg.validation.batch_size, False, batchify_fn=val_batchify_fn, last_batch='keep',
-                num_workers=self._cfg.validation.num_workers)
+                self._cfg.valid.batch_size, False, batchify_fn=val_batchify_fn, last_batch='keep',
+                num_workers=self._cfg.valid.num_workers)
         for batch in val_data:
             data = gluon.utils.split_and_load(batch[0], ctx_list=self.ctx, batch_axis=0,
                                               even_split=False)
