@@ -3,7 +3,7 @@
 mxnet.gluon.model_zoo.vision and gluoncv.models
 """
 # from .alexnet import *
-# from .cifarresnet import *
+from .cifarresnet import *
 # from .cifarresnext import *
 # from .cifarwideresnet import *
 # from .deeplabv3 import *
@@ -154,12 +154,12 @@ _models = {
     # 'mask_rcnn_fpn_syncbn_resnet18_v1b_coco': mask_rcnn_fpn_syncbn_resnet18_v1b_coco,
     # 'mask_rcnn_fpn_syncbn_mobilenet1_0_coco': mask_rcnn_fpn_syncbn_mobilenet1_0_coco,
     # 'custom_mask_rcnn_fpn': custom_mask_rcnn_fpn,
-    # 'cifar_resnet20_v1': cifar_resnet20_v1,
-    # 'cifar_resnet56_v1': cifar_resnet56_v1,
-    # 'cifar_resnet110_v1': cifar_resnet110_v1,
-    # 'cifar_resnet20_v2': cifar_resnet20_v2,
-    # 'cifar_resnet56_v2': cifar_resnet56_v2,
-    # 'cifar_resnet110_v2': cifar_resnet110_v2,
+    'cifar_resnet20_v1': cifar_resnet20_v1,
+    'cifar_resnet56_v1': cifar_resnet56_v1,
+    'cifar_resnet110_v1': cifar_resnet110_v1,
+    'cifar_resnet20_v2': cifar_resnet20_v2,
+    'cifar_resnet56_v2': cifar_resnet56_v2,
+    'cifar_resnet110_v2': cifar_resnet110_v2,
     # 'cifar_wideresnet16_10': cifar_wideresnet16_10,
     # 'cifar_wideresnet28_10': cifar_wideresnet28_10,
     # 'cifar_wideresnet40_8': cifar_wideresnet40_8,

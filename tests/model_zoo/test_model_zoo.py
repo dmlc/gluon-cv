@@ -100,17 +100,16 @@ def _test_bn_global_stats(model_list, **kwargs):
         gcv.model_zoo.get_model(model, norm_layer=_BatchNorm, use_global_stats=True, **kwargs)
 
 @try_gpu(0)
-@unittest.skip("temporarily disabled")
 def test_classification_models():
     ctx = mx.context.current_context()
     x = mx.np.random.uniform(size=(2, 3, 32, 32), ctx=ctx)
     cifar_models = [
         'cifar_resnet20_v1', 'cifar_resnet56_v1', 'cifar_resnet110_v1',
-        'cifar_resnet20_v2', 'cifar_resnet56_v2', 'cifar_resnet110_v2',
-        'cifar_wideresnet16_10', 'cifar_wideresnet28_10', 'cifar_wideresnet40_8',
-        'cifar_resnext29_32x4d', 'cifar_resnext29_16x64d',
-        'cifar_residualattentionnet56', 'cifar_residualattentionnet92',
-        'cifar_residualattentionnet452'
+        'cifar_resnet20_v2', 'cifar_resnet56_v2', 'cifar_resnet110_v2'
+        # 'cifar_wideresnet16_10', 'cifar_wideresnet28_10', 'cifar_wideresnet40_8',
+        # 'cifar_resnext29_32x4d', 'cifar_resnext29_16x64d',
+        # 'cifar_residualattentionnet56', 'cifar_residualattentionnet92',
+        # 'cifar_residualattentionnet452'
     ]
     _test_model_list(cifar_models, ctx, x)
 
