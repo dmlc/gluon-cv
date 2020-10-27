@@ -158,6 +158,9 @@ class ImageClassification(BaseTask):
 
         # register args
         config = self._train_config.copy()
+        config['lr'] = config.get('lr', ag.Categorical(1e-2, 5e-3, 1e-3, 5e-4))
+        config['model'] = config.get('model', ag.Categorical(
+            'resnet18_v1', 'resnet50_v1b', 'mobilenetv3_small'))
         config['train_data'] = train_data
         config['val_data'] = val_data
         _train_image_classification.register_args(**config)

@@ -22,12 +22,12 @@ from .utils import get_data_loader, get_data_rec
 
 __all__ = ['ImageClassificationEstimator']
 
-cls_net = Ingredient('cls_net')
+img_cls = Ingredient('img_cls')
 train = Ingredient('train')
 validation = Ingredient('validation')
 
-@cls_net.config
-def cls_net_default():
+@img_cls.config
+def img_cls_default():
     model = 'resnet50_v1'
     use_pretrained = True
     use_gn = False
@@ -83,8 +83,8 @@ def train_config():
 def valid_config():
     test = 1
 
-ex = Experiment('cls_net_default',
-                ingredients=[train, validation, cls_net])
+ex = Experiment('img_cls_default',
+                ingredients=[train, validation, img_cls])
 
 
 @set_default(ex)
@@ -263,7 +263,7 @@ class ImageClassificationEstimator(BaseEstimator):
         self.ctx = self.ctx if self.ctx else [mx.cpu()]
 
         # network
-        model_name = self._cfg.cls_net.model.lower()
+        model_name = self._cfg.img_cls.model.lower()
         input_size = self.input_size
         if 'inception' in model_name or 'googlenet' in model_name:
             self.input_size = 299
@@ -279,22 +279,22 @@ class ImageClassificationEstimator(BaseEstimator):
         if input_size != self.input_size:
             self._logger.info(f'Change input size to {self.input_size}, given model type: {model_name}')
 
-        if self._cfg.cls_net.use_pretrained:
+        if self._cfg.img_cls.use_pretrained:
             kwargs = {'ctx': self.ctx, 'pretrained': True, 'classes': 1000 if 'cifar' not in model_name else 10}
         else:
             kwargs = {'ctx': self.ctx, 'pretrained': False, 'classes': self.num_class}
-        if self._cfg.cls_net.use_gn:
+        if self._cfg.img_cls.use_gn:
             kwargs['norm_layer'] = nn.GroupNorm
         if model_name.startswith('vgg'):
-            kwargs['batch_norm'] = self._cfg.cls_net.batch_norm
+            kwargs['batch_norm'] = self._cfg.img_cls.batch_norm
         elif model_name.startswith('resnext'):
-            kwargs['use_se'] = self._cfg.cls_net.use_se
+            kwargs['use_se'] = self._cfg.img_cls.use_se
 
-        if self._cfg.cls_net.last_gamma:
+        if self._cfg.img_cls.last_gamma:
             kwargs['last_gamma'] = True
 
         self.net = get_model(model_name, **kwargs)
-        if self._cfg.cls_net.use_pretrained:
+        if self._cfg.img_cls.use_pretrained:
             # reset last fully connected layer
             fc_layer_found = False
             for fc_name in ('output', 'fc'):

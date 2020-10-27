@@ -94,7 +94,7 @@ def auto_suggest(config, estimator, logger):
     if bbox_rel_size < 0.2 or num_objects > 5:
         suggested_estimator = [FasterRCNNEstimator]
     else:
-        suggested_estimator = [SSDEstimator, YOLOv3Estimator]
+        suggested_estimator = [SSDEstimator, YOLOv3Estimator, CenterNetEstimator]
 
     config['lr'] = config.get('lr', ag.Categorical(1e-2, 5e-3, 1e-3, 5e-4, 1e-4))
 
