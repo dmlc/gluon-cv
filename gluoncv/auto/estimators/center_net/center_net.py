@@ -177,9 +177,7 @@ class CenterNetEstimator(BaseEstimator):
             self._logger.info(
                 '[Epoch {}] Training cost: {:.3f}, {}={:.3f}, {}={:.3f}, {}={:.3f}'.format(
                     epoch, (time.time() - tic), name2, loss2, name3, loss3, name4, loss4))
-            if (epoch % self._cfg.valid.interval == 0) or \
-                    (self._cfg.train.save_interval and epoch % self._cfg.train.save_interval == 0) or \
-                    (epoch == self._cfg.train.epochs - 1):
+            if (epoch % self._cfg.valid.interval == 0) or (epoch == self._cfg.train.epochs - 1):
                 # consider reduce the frequency of validation to save time
                 map_name, mean_ap = self._evaluate(val_data)
                 val_msg = '\n'.join(['{}={}'.format(k, v) for k, v in zip(map_name, mean_ap)])
