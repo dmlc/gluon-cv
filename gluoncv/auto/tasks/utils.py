@@ -119,6 +119,8 @@ def config_to_nested(config):
             config['meta_arch'] = 'yolo3'
         elif config['estimator'] == CenterNetEstimator:
             config['meta_arch'] = 'center_net'
+        elif config['estimator'] == ImageClassificationEstimator:
+            config['meta_arch'] = 'img_cls'
         else:
             config['meta_arch'] = None
     else:
@@ -164,6 +166,12 @@ def config_to_nested(config):
                       'start_epoch', 'momentum', 'wd', 'save_interval', 'log_interval'],
             'validation': ['flip_test', 'nms_thresh', 'nms_topk', 'post_nms', 'num_workers',
                            'batch_size', 'interval']
+        }
+    elif config['meta_arch'] == 'img_cls':
+        config_mapping = {
+            'img_cls': ['model', 'use_pretrained', 'use_gn', 'batch_norm', 'use_se', 'last_gamma'],
+            'train': [],
+            'validation': []
         }
     else:
         raise NotImplementedError('%s is not implemented.' % config['meta_arch'])
