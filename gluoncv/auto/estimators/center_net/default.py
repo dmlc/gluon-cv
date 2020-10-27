@@ -31,7 +31,7 @@ class CenterNet:
 
 @dataclass
 class TrainCfg:
-    gpus : Tuple = (0, 1, 2, 3, 4, 5, 6, 7)  # gpu individual ids, not necessarily consecutive
+    gpus : Union[Tuple, list] = (0, 1, 2, 3, 4, 5, 6, 7)  # gpu individual ids, not necessarily consecutive
     pretrained_base : bool = True  # whether load the imagenet pre-trained base
     batch_size : int = 128
     epochs : int = 15
