@@ -136,7 +136,7 @@ class ImageClassification(BaseTask):
                 "Please provide `val_data` as we do not know how to split `train_data` of type: \
                 {}".format(type(train_data))
 
-        if not val_data:
+        if val_data is None:
             assert 0 <= train_size <= 1.0
             if random_state:
                 np.random.seed(random_state)
