@@ -10,7 +10,8 @@ from autogluon.core.scheduler.resource import get_cpu_count, get_gpu_count
 from autogluon.core.task.base import BaseTask
 
 from ... import utils as gutils
-from ..estimators.base_estimator import ConfigDict, BaseEstimator
+from .utils import ConfigDict
+from ..estimators.base_estimator import BaseEstimator
 from ..estimators import ImageClassificationEstimator
 from .utils import auto_suggest, config_to_nested
 from .dataset import ImageClassificationDataset
@@ -29,7 +30,7 @@ def _train_image_classification(args, reporter):
     args = config_to_nested(args)
 
     # fix seed for mxnet, numpy and python builtin random generator.
-    gutils.random.seed(args['train']['seed'])    
+    gutils.random.seed(args['train']['seed'])
 
     # train, val data
     train_data = args.pop('train_data')

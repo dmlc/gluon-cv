@@ -8,25 +8,10 @@ import warnings
 from datetime import datetime
 import numpy as np
 import pandas as pd
-from sacred.commands import _format_config, save_config, print_config
-from sacred.settings import SETTINGS
 from ...utils import random as _random
 from ...utils.filesystem import temporary_filename
 
-SETTINGS.CONFIG.READ_ONLY_CONFIG = False
-
-
-def _get_config():
-    pass
-
-def _compare_config(r1, r2):
-    r1 = copy.deepcopy(r1)
-    r2 = copy.deepcopy(r2)
-    ignored_keys = ('seed', 'logdir')
-    for key in ignored_keys:
-        r1.pop(key, None)
-        r2.pop(key, None)
-    return r1 == r2
+logging.basicConfig(level=logging.INFO)
 
 def set_default(cfg):
     """A special hook to register the default values for decorated Estimator.
@@ -49,14 +34,6 @@ def set_default(cfg):
                         "logdir : str, default is None.\n"
                         "  Directory for saving logs. If `None`, current working directory is used.\n")
         cls.__doc__ += '\nDefault configurations: \n--------------------\n'
-        # ex.command(_get_config, unobserved=True)
-        # r = ex.run('_get_config', options={'--loglevel': 50})
-        # if 'seed' in r.config:
-        #     r.config.pop('seed')
-        # cls.__doc__ += str("\n".join(_format_config(r.config, r.config_modifications).splitlines()[1:]))
-        # # default config
-        # cls._ex = ex
-        # cls._default_config = r.config
         sio = io.StringIO()
         cfg.save(sio)
         cls.__doc__ += '\n' + sio.getvalue()
@@ -64,72 +41,6 @@ def set_default(cfg):
         cls._default_cfg.freeze()
         return cls
     return _apply
-
-
-class ConfigDict(dict):
-    """The view of a config dict where keys can be accessed like attribute, it also prevents
-    naive modifications to the key-values.
-
-    Parameters
-    ----------
-    config : dict
-        The sacred configuration dict.
-
-    Attributes
-    ----------
-    __dict__ : type
-        The internal config as a `__dict__`.
-
-    """
-    MARKER = object()
-    def __init__(self, value=None):
-        super(ConfigDict, self).__init__()
-        self.__dict__['_freeze'] = False
-        if value is None:
-            pass
-        elif isinstance(value, dict):
-            for key in value:
-                self.__setitem__(key, value[key])
-        else:
-            raise TypeError('expected dict, given {}'.format(type(value)))
-        self.freeze()
-
-    def freeze(self):
-        self.__dict__['_freeze'] = True
-
-    def is_frozen(self):
-        return self.__dict__['_freeze']
-
-    def unfreeze(self):
-        self.__dict__['_freeze'] = False
-
-    def __setitem__(self, key, value):
-        if self.__dict__.get('_freeze', False):
-            msg = ('You are trying to modify the config to "{}={}" after initialization, '
-                   ' this may result in unpredictable behaviour'.format(key, value))
-            warnings.warn(msg)
-        if isinstance(value, dict) and not isinstance(value, ConfigDict):
-            value = ConfigDict(value)
-        super(ConfigDict, self).__setitem__(key, value)
-
-    def __getitem__(self, key):
-        found = self.get(key, ConfigDict.MARKER)
-        if found is ConfigDict.MARKER:
-            if self.__dict__['_freeze']:
-                raise KeyError(key)
-            found = ConfigDict()
-            super(ConfigDict, self).__setitem__(key, found)
-        if isinstance(found, ConfigDict):
-            found.__dict__['_freeze'] = self.__dict__['_freeze']
-        return found
-
-    def __setstate__(self, state):
-        vars(self).update(state)
-
-    def __getstate__(self):
-        return vars(self)
-
-    __setattr__, __getattr__ = __setitem__, __getitem__
 
 
 class BaseEstimator:
@@ -152,7 +63,7 @@ class BaseEstimator:
         The customized/default logger for this estimator.
     _logdir : str
         The temporary dir for logs.
-    _cfg : ConfigDict
+    _cfg : autocfg.dataclass
         The configurations.
 
     """
@@ -171,15 +82,11 @@ class BaseEstimator:
         self.ctx = [None]
         self.dataset = 'auto'
 
-        # finalize the config
-        # r = self._ex.run('_get_config', config_updates=config, options={'--loglevel': 50, '--force': True})
-        # print_config(r)
-
-
         # logdir
         logdir = config.pop('logdir', None)
         self._logdir = os.path.abspath(logdir) if logdir else os.getcwd()
 
+        # finalize config
         cfg = self._default_cfg.merge(config)
         diffs = self._default_cfg.diff(cfg)
         if diffs:
@@ -202,8 +109,7 @@ class BaseEstimator:
         self._cfg.save(config_file)
         self._logger.info(f'Saved config to {config_file}')
 
-        # dot access for config
-        # self._cfg = ConfigDict(r.config)
+        # freeze config
         self._cfg.freeze()
         seed = self._cfg.get('seed', np.random.randint(1000000))
         _random.seed(seed)

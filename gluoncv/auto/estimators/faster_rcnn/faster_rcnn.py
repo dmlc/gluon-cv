@@ -49,7 +49,7 @@ class FasterRCNNEstimator(BaseEstimator):
         The customized/default logger for this estimator.
     _logdir : str
         The temporary dir for logs.
-    _cfg : ConfigDict
+    _cfg : autocfg.dataclass
         The configurations.
     """
     def __init__(self, config, logger=None, reporter=None):
