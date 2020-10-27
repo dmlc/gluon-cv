@@ -171,7 +171,9 @@ def config_to_nested(config):
     elif config['meta_arch'] == 'img_cls':
         config_mapping = {
             'img_cls': ['model', 'use_pretrained', 'use_gn', 'batch_norm', 'use_se', 'last_gamma'],
-            'train': [],
+            'train': ['batch_size', 'epochs', 'start_epoch', 'lr', 'lr_mode', 'lr_decay', 'lr_decay_period',
+                      'lr_decay_epoch', 'warmup_lr', 'warmup_epochs', 'momentum', 'wd', 'log_interval',
+                      'seed', 'num_samples', 'no_wd', 'mixup', 'no_mixup_epochs', 'label_smooth'],
             'validation': []
         }
     else:
