@@ -4,8 +4,8 @@ mxnet.gluon.model_zoo.vision and gluoncv.models
 """
 # from .alexnet import *
 from .cifarresnet import *
-# from .cifarresnext import *
-# from .cifarwideresnet import *
+from .cifarresnext import *
+from .cifarwideresnet import *
 # from .deeplabv3 import *
 # from .deeplabv3b_plus import *
 # from .densenet import *
@@ -160,11 +160,11 @@ _models = {
     'cifar_resnet20_v2': cifar_resnet20_v2,
     'cifar_resnet56_v2': cifar_resnet56_v2,
     'cifar_resnet110_v2': cifar_resnet110_v2,
-    # 'cifar_wideresnet16_10': cifar_wideresnet16_10,
-    # 'cifar_wideresnet28_10': cifar_wideresnet28_10,
-    # 'cifar_wideresnet40_8': cifar_wideresnet40_8,
-    # 'cifar_resnext29_32x4d': cifar_resnext29_32x4d,
-    # 'cifar_resnext29_16x64d': cifar_resnext29_16x64d,
+    'cifar_wideresnet16_10': cifar_wideresnet16_10,
+    'cifar_wideresnet28_10': cifar_wideresnet28_10,
+    'cifar_wideresnet40_8': cifar_wideresnet40_8,
+    'cifar_resnext29_32x4d': cifar_resnext29_32x4d,
+    'cifar_resnext29_16x64d': cifar_resnext29_16x64d,
     # 'fcn_resnet50_voc': get_fcn_resnet50_voc,
     # 'fcn_resnet101_coco': get_fcn_resnet101_coco,
     # 'fcn_resnet101_voc': get_fcn_resnet101_voc,

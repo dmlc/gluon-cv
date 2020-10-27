@@ -30,7 +30,7 @@ from mxnet.gluon.block import HybridBlock
 from mxnet.gluon import nn
 from mxnet.gluon.nn import BatchNorm
 from mxnet import cpu
-from mxnet import np, npx
+from mxnet import npx
 from mxnet import use_np
 mx.npx.set_np()
 
@@ -182,8 +182,8 @@ class CIFARResNetV1(HybridBlock):
         for i, num_layer in enumerate(layers):
             stride = 1 if i == 0 else 2
             self.features.add(self._make_layer(block, num_layer, channels[i+1],
-                                                stride, i+1, in_channels=channels[i],
-                                                norm_layer=norm_layer, norm_kwargs=norm_kwargs))
+                                               stride, i+1, in_channels=channels[i],
+                                               norm_layer=norm_layer, norm_kwargs=norm_kwargs))
         self.features.add(nn.GlobalAvgPool2D())
 
         self.output = nn.Dense(classes, in_units=channels[-1])
@@ -233,7 +233,7 @@ class CIFARResNetV2(HybridBlock):
         assert len(layers) == len(channels) - 1
         self.features = nn.HybridSequential()
         self.features.add(norm_layer(scale=False, center=False,
-                                        **({} if norm_kwargs is None else norm_kwargs)))
+                                     **({} if norm_kwargs is None else norm_kwargs)))
 
         self.features.add(nn.Conv2D(channels[0], 3, 1, 1, use_bias=False))
 
@@ -241,8 +241,8 @@ class CIFARResNetV2(HybridBlock):
         for i, num_layer in enumerate(layers):
             stride = 1 if i == 0 else 2
             self.features.add(self._make_layer(block, num_layer, channels[i+1],
-                                                stride, i+1, in_channels=in_channels,
-                                                norm_layer=norm_layer, norm_kwargs=norm_kwargs))
+                                               stride, i+1, in_channels=in_channels,
+                                               norm_layer=norm_layer, norm_kwargs=norm_kwargs))
             in_channels = channels[i+1]
         self.features.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
         self.features.add(nn.Activation('relu'))
