@@ -147,6 +147,7 @@ class ImageClassification(BaseTask):
                               len(train), len(val))
             train_data, val_data = train, val
 
+        estimator = self._train_config.get('estimator', None)
         if estimator is None:
             estimator = [ImageClassificationEstimator]
         elif isinstance(estimator, (tuple, list)):
