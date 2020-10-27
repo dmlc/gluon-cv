@@ -6,7 +6,7 @@ from .model_store import pretrained_model_list
 # from .rcnn.mask_rcnn import *
 # from .ssd import *
 # from .yolo import *
-# from .cifarresnet import *
+from .cifarresnet import *
 # from .cifarwideresnet import *
 # from .fcn import *
 # from .pspnet import *
