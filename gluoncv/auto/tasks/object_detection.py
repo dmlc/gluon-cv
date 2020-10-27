@@ -30,13 +30,7 @@ def _train_object_detection(args, reporter):
     args = config_to_nested(args)
 
     # fix seed for mxnet, numpy and python builtin random generator.
-    gutils.random.seed(args['train']['seed'])
-
-    # disable auto_resume for HPO tasks
-    if 'train' in args:
-        args['train']['auto_resume'] = False
-    else:
-        args['train'] = {'auto_resume': False}
+    gutils.random.seed(args['train']['seed'])    
 
     # train, val data
     train_data = args.pop('train_data')

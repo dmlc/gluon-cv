@@ -24,78 +24,11 @@ from ....model_zoo import get_model
 from ....model_zoo.center_net import get_center_net, get_base_network
 from ....utils import LRScheduler, LRSequential
 from ....utils.metrics import VOCMApMetric, VOC07MApMetric
+from .default import CenterNetCfg
 
 __all__ = ['CenterNetEstimator']
 
-center_net = Ingredient('center_net')
-train = Ingredient('train')
-validation = Ingredient('validation')
-
-
-@center_net.config
-def center_net_default():
-    base_network = 'dla34_deconv'  # base feature network
-    heads = {
-        'bias': -2.19,  # use bias = -log((1 - 0.1) / 0.1)
-        'wh_outputs': 2,  # wh head channel
-        'reg_outputs': 2,  # regression head channel
-        'head_conv_channel': 64,  # additional conv channel
-    }
-    scale = 4.0  # output vs input scaling ratio, e.g., input_h // feature_h
-    topk = 100  # topk detection results will be kept after inference
-    root = os.path.expanduser(os.path.join('~', '.mxnet', 'models'))  # model zoo root dir
-    wh_weight = 0.1  # Loss weight for width/height
-    center_reg_weight = 1.0  # Center regression loss weight
-    data_shape = (512, 512)
-    # use the pre-trained detector for transfer learning(use preset, ignore other network settings)
-    transfer = 'center_net_resnet50_v1b_coco'
-
-
-@train.config
-def train_config():
-    gpus = (0, 1, 2, 3, 4, 5, 6, 7)  # gpu individual ids, not necessarily consecutive
-    pretrained_base = True  # whether load the imagenet pre-trained base
-    batch_size = 128
-    epochs = 15
-    lr = 1.25e-4  # learning rate
-    lr_decay = 0.1  # decay rate of learning rate.
-    lr_decay_epoch = (90, 120)  # epochs at which learning rate decays
-    lr_mode = 'step'  # learning rate scheduler mode. options are step, poly and cosine
-    warmup_lr = 0.0  # starting warmup learning rate.
-    warmup_epochs = 0  # number of warmup epochs
-    num_workers = 16  # cpu workers, the larger the more processes used
-    resume = ''
-    auto_resume = True  # try to automatically resume last trial if config is default
-    start_epoch = 0
-    momentum = 0.9  # SGD momentum
-    wd = 1e-4  # weight decay
-    save_interval = 10  # Saving parameters epoch interval, best model will always be saved
-    log_interval = 100  # logging interval
-
-
-@validation.config
-def valid_config():
-    flip_test = True  # use flip in validation test
-    nms_thresh = 0  # 0 means disable
-    nms_topk = 400  # pre nms topk
-    post_nms = 100  # post nms topk
-    num_workers = 32  # cpu workers, the larger the more processes used
-    batch_size = 32  # validation batch size
-    interval = 10  # validation epoch interval, for slow validations
-    metric = 'voc07' # metric, 'voc', 'voc07'
-    iou_thresh = 0.5 # iou_thresh for VOC type metrics
-
-
-ex = Experiment('center_net_default',
-                ingredients=[logging, coco_detection, train, validation, center_net])
-
-
-@ex.config
-def default_configs():
-    dataset = 'custom'
-
-
-@set_default(ex)
+@set_default(CenterNetCfg())
 class CenterNetEstimator(BaseEstimator):
     """Estimator implementation for CenterNet.
 
@@ -326,7 +259,7 @@ class CenterNetEstimator(BaseEstimator):
             net = get_model(self._cfg.center_net.transfer, pretrained=True)
             net.reset_class(self.classes, reuse_weights=[cname for cname in self.classes if cname in net.classes])
         else:
-            net_name = '_'.join(('center_net', self._cfg.center_net.base_network, self._cfg.dataset))
+            net_name = '_'.join(('center_net', self._cfg.center_net.base_network, self.dataset))
             heads = OrderedDict([
                 ('heatmap',
                  {'num_output': self.num_class, 'bias': self._cfg.center_net.heads.bias}),
@@ -377,9 +310,3 @@ class CenterNetEstimator(BaseEstimator):
             self.net.collect_params(), 'adam',
             {'learning_rate': self._cfg.train.lr, 'wd': self._cfg.train.wd,
              'lr_scheduler': lr_scheduler})
-
-@ex.automain
-def main(_config, _log):
-    # main is the commandline entry for user w/o coding
-    c = CenterNetEstimator(_config, _log)
-    c.fit()

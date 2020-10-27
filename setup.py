@@ -58,8 +58,8 @@ requirements = [
     'Pillow',
     'scipy',
     'pyyaml',
-    'sacred',
     'pandas',
+    'autocfg>=0.0.2',
     'autogluon.core>0.0.14'
 ]
 

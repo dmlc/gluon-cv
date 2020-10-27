@@ -163,7 +163,7 @@ def config_to_nested(config):
             'center_net': ['base_network', 'heads', 'scale', 'topk', 'root', 'wh_weight', 'center_reg_weight',
                            'data_shape'],
             'train': ['gpus', 'pretrained_base', 'batch_size', 'epochs', 'lr', 'lr_decay', 'lr_decay_epoch',
-                      'lr_mode', 'warmup_lr', 'warmup_epochs', 'num_workers', 'resume', 'auto_resume',
+                      'lr_mode', 'warmup_lr', 'warmup_epochs', 'num_workers', 'resume',
                       'start_epoch', 'momentum', 'wd', 'save_interval', 'log_interval'],
             'validation': ['flip_test', 'nms_thresh', 'nms_topk', 'post_nms', 'num_workers',
                            'batch_size', 'interval']

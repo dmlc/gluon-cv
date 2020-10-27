@@ -2,6 +2,7 @@
 import os
 import copy
 import pickle
+import io
 import logging
 import warnings
 from datetime import datetime
@@ -27,7 +28,7 @@ def _compare_config(r1, r2):
         r2.pop(key, None)
     return r1 == r2
 
-def set_default(ex):
+def set_default(cfg):
     """A special hook to register the default values for decorated Estimator.
 
     Parameters
@@ -47,15 +48,20 @@ def set_default(ex):
                         "  If not `None`, will use default logging object.\n"
                         "logdir : str, default is None.\n"
                         "  Directory for saving logs. If `None`, current working directory is used.\n")
-        cls.__doc__ += '\nDefault configurations: \n----------\n'
-        ex.command(_get_config, unobserved=True)
-        r = ex.run('_get_config', options={'--loglevel': 50})
-        if 'seed' in r.config:
-            r.config.pop('seed')
-        cls.__doc__ += str("\n".join(_format_config(r.config, r.config_modifications).splitlines()[1:]))
-        # default config
-        cls._ex = ex
-        cls._default_config = r.config
+        cls.__doc__ += '\nDefault configurations: \n--------------------\n'
+        # ex.command(_get_config, unobserved=True)
+        # r = ex.run('_get_config', options={'--loglevel': 50})
+        # if 'seed' in r.config:
+        #     r.config.pop('seed')
+        # cls.__doc__ += str("\n".join(_format_config(r.config, r.config_modifications).splitlines()[1:]))
+        # # default config
+        # cls._ex = ex
+        # cls._default_config = r.config
+        sio = io.StringIO()
+        cfg.save(sio)
+        cls.__doc__ += '\n' + sio.getvalue()
+        cls._default_cfg = cfg
+        cls._default_cfg.freeze()
         return cls
     return _apply
 
@@ -164,31 +170,41 @@ class BaseEstimator:
         self.classes = []
         self.ctx = [None]
         self.dataset = 'auto'
-        self.current_epoch = 0
 
         # finalize the config
-        r = self._ex.run('_get_config', config_updates=config, options={'--loglevel': 50, '--force': True})
-        print_config(r)
+        # r = self._ex.run('_get_config', config_updates=config, options={'--loglevel': 50, '--force': True})
+        # print_config(r)
+
 
         # logdir
-        logdir = r.config.get('logging.logdir', None)
+        logdir = config.pop('logdir', None)
         self._logdir = os.path.abspath(logdir) if logdir else os.getcwd()
+
+        cfg = self._default_cfg.merge(config)
+        diffs = self._default_cfg.diff(cfg)
+        if diffs:
+            self._logger.info('>>>>>>>>>>>>>>>Modified Configs<<<<<<<<<<<<<<<')
+            self._logger.info(diffs)
+        self._cfg = cfg
 
         prefix = name.lower() + datetime.now().strftime("-%m-%d-%Y")
         self._logdir = os.path.join(self._logdir, prefix)
-        r.config['logdir'] = self._logdir
+        # r.config['logdir'] = self._logdir
         os.makedirs(self._logdir, exist_ok=True)
         config_file = os.path.join(self._logdir, 'config.yaml')
         # log file
         self._log_file = os.path.join(self._logdir, 'estimator.log')
         fh = logging.FileHandler(self._log_file)
         self._logger.addHandler(fh)
-        save_config(r.config, self._logger, config_file)
+        # save_config(r.config, self._logger, config_file)
+        self._cfg.save(config_file)
+        self._logger.info(f'Saved config to {config_file}')
 
         # dot access for config
-        self._cfg = ConfigDict(r.config)
+        # self._cfg = ConfigDict(r.config)
         self._cfg.freeze()
-        _random.seed(self._cfg.seed)
+        seed = self._cfg.get('seed', np.random.randint(1000000))
+        _random.seed(seed)
 
     def fit(self, train_data, val_data=None, train_size=0.9, random_state=None, resume=False):
         """Fit with train/validation data.
