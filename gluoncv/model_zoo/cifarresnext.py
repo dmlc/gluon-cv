@@ -24,10 +24,14 @@ __all__ = ['get_cifar_resnext', 'cifar_resnext29_32x4d', 'cifar_resnext29_16x64d
 
 import os
 import math
+import mxnet as mx
 from mxnet import cpu
 from mxnet.gluon import nn
 from mxnet.gluon.nn import BatchNorm
 from mxnet.gluon.block import HybridBlock
+from mxnet import npx
+from mxnet import use_np
+mx.npx.set_np()
 
 
 class CIFARBlock(HybridBlock):
@@ -126,22 +130,22 @@ class CIFARResNext(HybridBlock):
         for i, num_layer in enumerate(layers):
             stride = 1 if i == 0 else 2
             self.features.add(self._make_layer(channels, num_layer, stride, i+1,
-                                                norm_layer=norm_layer, norm_kwargs=norm_kwargs))
+                                               norm_layer=norm_layer, norm_kwargs=norm_kwargs))
             channels *= 2
         self.features.add(nn.GlobalAvgPool2D())
 
-            self.output = nn.Dense(classes)
+        self.output = nn.Dense(classes)
 
     def _make_layer(self, channels, num_layer, stride, stage_index,
                     norm_layer=BatchNorm, norm_kwargs=None):
         layer = nn.HybridSequential()
         layer.add(CIFARBlock(channels, self.cardinality, self.bottleneck_width,
-                                stride, True,
-                                norm_layer=norm_layer, norm_kwargs=norm_kwargs))
+                             stride, True,
+                             norm_layer=norm_layer, norm_kwargs=norm_kwargs))
         for _ in range(num_layer-1):
             layer.add(CIFARBlock(channels, self.cardinality, self.bottleneck_width,
-                                    1, False,
-                                    norm_layer=norm_layer, norm_kwargs=norm_kwargs))
+                                 1, False,
+                                 norm_layer=norm_layer, norm_kwargs=norm_kwargs))
         return layer
 
     def forward(self, x):
