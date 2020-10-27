@@ -8,6 +8,7 @@ import autogluon.core as ag
 from ... import data as gdata
 from ..estimators.base_estimator import BaseEstimator
 from ..estimators import SSDEstimator, FasterRCNNEstimator, YOLOv3Estimator, CenterNetEstimator
+from ..estimators import ImageClassificationEstimator
 from .dataset import ObjectDetectionDataset
 
 def auto_suggest(config, estimator, logger):
