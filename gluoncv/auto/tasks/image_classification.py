@@ -40,9 +40,11 @@ def _train_image_classification(args, reporter):
     # train, val data
     train_data = args.pop('train_data')
     val_data = args.pop('val_data')
+    args.pop('meta_arch', None)
 
     try:
-        estimator = args['estimator'](args, reporter=reporter)
+        estimator_cls = args.pop('estimator', None)
+        estimator = estimator_cls(args, reporter=reporter)
         # training
         estimator.fit(train_data=train_data, val_data=val_data)
     # pylint: disable=broad-except
