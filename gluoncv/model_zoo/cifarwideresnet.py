@@ -143,7 +143,7 @@ class CIFARWideResNet(HybridBlock):
 
     def _make_layer(self, block, layers, channels, drop_rate, stride, stage_index, in_channels=0,
                     norm_layer=BatchNorm, norm_kwargs=None):
-        layer = nn.HybridSequential(prefix='stage%d_'%stage_index)
+        layer = nn.HybridSequential()
         layer.add(block(channels, stride, channels != in_channels, drop_rate,
                         in_channels=in_channels,
                         norm_layer=norm_layer, norm_kwargs=norm_kwargs))
