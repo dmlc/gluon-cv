@@ -1,11 +1,11 @@
 import os
-import cv2
 import glob
-import numpy as np
 import subprocess
 import tempfile
-from PIL import Image
 from pathlib import Path
+import cv2
+import numpy as np
+from PIL import Image
 
 
 class ColorSpace(object):
@@ -59,7 +59,7 @@ def format_frame(frame, color_space=ColorSpace.RGB):
 
 
 def read_frame(cap):
-    ret, frame = cap.read()
+    _, frame = cap.read()
     if frame is None:
         return frame
     return Image.fromarray(format_frame(frame, ColorSpace.RGB), 'RGB')
@@ -478,10 +478,11 @@ def write_video_rgb(file, frames, fps=None):
 
     # write the video data frame-by-frame
     writer = None
-    for frame, ts in frames:
+    for frame in frames:
         frame = np.asarray(frame)
         if writer is None:
-            writer = cv2.VideoWriter(file, FFMPEG_FOURCC['libx264'], fps=fps, frameSize=frame.shape[1::-1],
+            writer = cv2.VideoWriter(file, FFMPEG_FOURCC['libx264'],
+                                     fps=fps, frameSize=frame.shape[1::-1],
                                      isColor=True)
         frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
         writer.write(frame)
@@ -499,7 +500,8 @@ def cmd_with_addn_args(cmd, addn_args):
         return cmd
 
 
-def resize_and_write_video_ffmpeg(in_path, out_path, short_edge_res, scaling_algorithm="lanczos", raw_scale_input=None,
+def resize_and_write_video_ffmpeg(in_path, out_path, short_edge_res,
+                                  scaling_algorithm="lanczos", raw_scale_input=None,
                                   keep_audio=True, addn_args=None):
     # See https://trac.ffmpeg.org/wiki/Scaling for scaling options / details
 
@@ -507,15 +509,17 @@ def resize_and_write_video_ffmpeg(in_path, out_path, short_edge_res, scaling_alg
         raise ValueError("Either short_edge_res or raw_scale_input should be provided, not both")
 
     if short_edge_res is not None:
-        # The input height, divided by the minimum of the width and height (so either = 1 or > 1) times the new short
-        # edge, then round to the nearest 2. We keep the aspect ratio of the width and make sure it is also divisible
+        # The input height, divided by the minimum of the width and height 
+        # (so either = 1 or > 1) times the new short edge, 
+        # then round to the nearest 2. 
+        # We keep the aspect ratio of the width and make sure it is also divisible
         # by 2 by using '-2' (see the ffpeg scaling wiki)
         scale_arg = "-2:'round( ih/min(iw,ih) * {} /2)*2'".format(short_edge_res)
 
         # Alternatively:
         # scale_arg = "{res}:{res}:force_original_aspect_ratio=increase".format(res=short_edge_res)
-        # In case the output has a non even dimension (e.g. 301) after rescaling, we crop the single extra pixel
-        # See: https://stackoverflow.com/questions/20847674/ffmpeg-libx264-height-not-divisible-by-2
+        # In case the output has a non even dimension (e.g. 301) after rescaling, 
+        # we crop the single extra pixel
         # crop_arg = "floor(iw/2)*2:floor(ih/2)*2"
     else:
         scale_arg = raw_scale_input
@@ -554,7 +558,7 @@ def resize_and_write_video(file, frames, short_edge_res, fps=None):
     # write the video data frame-by-frame
     writer = None
     new_size = None
-    for frame, ts in frames:
+    for frame in frames:
         if new_size is None:
             factor = float(short_edge_res) / min(frame.size)
             new_size = [int(i * factor) for i in frame.size]
@@ -563,7 +567,8 @@ def resize_and_write_video(file, frames, short_edge_res, fps=None):
         frame_np = np.asarray(frame_np)
 
         if writer is None:
-            writer = cv2.VideoWriter(file, FFMPEG_FOURCC['libx264'], fps=fps, frameSize=frame_np.shape[1::-1],
+            writer = cv2.VideoWriter(file, FFMPEG_FOURCC['libx264'],
+                                     fps=fps, frameSize=frame_np.shape[1::-1],
                                      isColor=True)
         frame_np = cv2.cvtColor(frame_np, cv2.COLOR_RGB2BGR)
         writer.write(frame_np)
@@ -585,7 +590,8 @@ def write_img_files_to_vid(out_file, in_files, fps=None):
             frame = np.asarray(frame)
             frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
             if writer is None:
-                writer = cv2.VideoWriter(out_file, FFMPEG_FOURCC['avc1'], fps=fps, frameSize=frame.shape[1::-1],
+                writer = cv2.VideoWriter(out_file, FFMPEG_FOURCC['avc1'],
+                                         fps=fps, frameSize=frame.shape[1::-1],
                                          isColor=True)
             writer.write(frame)
 
@@ -601,8 +607,10 @@ def write_img_files_to_vid_ffmpeg(out_file, in_files, fps=None):
 
     with tempfile.TemporaryDirectory() as tmp_path:
         tmp_file_path = os.path.join(tmp_path, os.path.basename(out_file))
-        # See https://trac.ffmpeg.org/wiki/Slideshow for why we are using input_str like this (for concat filter)
-        # Need -safe 0 due to: https://stackoverflow.com/questions/38996925/ffmpeg-concat-unsafe-file-name
+        # See https://trac.ffmpeg.org/wiki/Slideshow 
+        # for why we are using input_str like this (for concat filter)
+        # Need -safe 0 due to:
+        # https://stackoverflow.com/questions/38996925/ffmpeg-concat-unsafe-file-name
         ret = subprocess.run(["ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
                               "-f", "concat", "-safe", "0", "-r", str(fps), "-i", "/dev/stdin",
                               tmp_file_path],
@@ -612,7 +620,7 @@ def write_img_files_to_vid_ffmpeg(out_file, in_files, fps=None):
 
 
 def convert_vid_ffmpeg(in_path, out_path, addn_args=None):
-    # muxing queue size bug workaround: https://stackoverflow.com/questions/49686244/ffmpeg-too-many-packets-buffered-for-output-stream-01
+    # muxing queue size bug workaround:
     cmd = ["ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
            "-i", in_path, "-max_muxing_queue_size", "99999"]
     cmd = cmd_with_addn_args(cmd, addn_args)

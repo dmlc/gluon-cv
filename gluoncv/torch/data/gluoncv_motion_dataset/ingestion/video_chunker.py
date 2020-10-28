@@ -1,7 +1,5 @@
 import logging
 import os
-import random
-import numpy as np
 import pickle
 import tqdm
 from pathlib import Path
@@ -17,20 +15,33 @@ _log.setLevel(logging.DEBUG)
 
 def even_chunk(sample, chunk_mins, chunks_per_vid=None, center=False, min_chunk_ms=3000):
     """
-    A function that when given a sample returns evenly spaced timestamp chunks that can be used to crop the video
+    A function that when given a sample returns evenly spaced timestamp chunks
+    that can be used to crop the video
 
-    :param sample: The datasample to be chunked
-    :param chunk_mins: The desired length of each chunk in minutes. This will be the length of all returned chunks
-        unless: 1. The sample is shorter than chunk_mins OR 2. None is provided to chunks_per_vid, then the last chunk
-        might be a shorter length.
-    :param chunks_per_vid: The desired number of chunks per video. If a video is too short to be chunked this many times
-        then the number of chunks will be reduced such that they all fit fully. If the video is shorter than a single
-        chunk a single timestamp of the entire video will be returned. If None is provided (the default) the video
-        will be chunked fully and the final chunk might be a shorter length (but not shorter than min_chunk_ms).
-    :param center: Whether to center the chunks (add space before the first and after the last chunk), False by default.
-    :param min_chunk_ms: Only used when chunks_per_vid is None (chunk the whole video), if the final chunk is smaller
-        than this it will be excluded
-    :return: A list of timestamp pairs where each pair is a tuple of (start_time, end_time) for the chunk
+    :param sample: 
+        The datasample to be chunked
+    :param chunk_mins: 
+        The desired length of each chunk in minutes. 
+        This will be the length of all returned chunks unless:
+        1. The sample is shorter than chunk_mins OR 
+        2. None is provided to chunks_per_vid, then the last chunk might be a shorter length.
+    :param chunks_per_vid: 
+        The desired number of chunks per video. 
+        If a video is too short to be chunked this many times,
+        then the number of chunks will be reduced such that they all fit fully. 
+        If the video is shorter than a single,
+        chunk a single timestamp of the entire video will be returned. 
+        If None is provided (the default),
+        the video will be chunked fully and the final chunk might be a shorter length
+        (but not shorter than min_chunk_ms).
+    :param center: 
+        Whether to center the chunks (add space before the first and after the last chunk).
+        False by default.
+    :param min_chunk_ms: 
+        Only used when chunks_per_vid is None (chunk the whole video), 
+        if the final chunk is smaller than this it will be excluded
+    :return: 
+        A list of timestamp pairs where each pair is a tuple of (start_time, end_time) for the chunk
     """
     duration = sample.frame_reader.duration
     chunk_ms = int(chunk_mins * 60) * 1000
@@ -46,7 +57,6 @@ def even_chunk(sample, chunk_mins, chunks_per_vid=None, center=False, min_chunk_
     if remaining_ms < 0:
         # Reduce num chunks by overrun
         # Equivalent of ceil when int dividing with -ve numbers,
-        # see: https://stackoverflow.com/questions/32558805/ceil-and-floor-equivalent-in-python-3-without-math-module
         num_chunks += remaining_ms // chunk_ms
         num_chunks = max(1, num_chunks)
         remaining_ms = max(0, duration - (chunk_ms * num_chunks))
@@ -59,9 +69,13 @@ def even_chunk(sample, chunk_mins, chunks_per_vid=None, center=False, min_chunk_
 
 def ratio_chunk(sample, ratios):
     """
-    :param sample: The datasample to be chunked
-    :param ratios: The ratios to be chunked, in order relative to the video. If negative it will throw away that chunk
-    :return: See :func:`even_chunk`
+    :param sample: 
+        The datasample to be chunked
+    :param ratios: 
+        The ratios to be chunked, in order relative to the video.
+        If negative it will throw away that chunk
+    :return: 
+        See :func:`even_chunk`
     """
     if sum(abs(x) for x in ratios) > 1 + 1e-2:
         raise ValueError("Ratios add up to more than 1")
@@ -120,19 +134,30 @@ def write_new_split(dataset, time_pairs):
 
 
 def main(anno_path:str="./annotation/anno.json", new_name=None,
-         chunk_mins=5, chunks_per_vid=1, chunk_func=even_chunk, link_unchanged=True, cache_name=None,
-         input_cache=None, name_suffix="", fps=None, split=None, new_split=None, overwrite=False, part=0, parts=1):
+         chunk_mins=5, chunks_per_vid=1, chunk_func=even_chunk,
+         link_unchanged=True, cache_name=None,input_cache=None,
+         name_suffix="", fps=None, split=None, new_split=None,
+         overwrite=False, part=0, parts=1):
 
     fps_suffix = "_{}r".format(fps) if fps is not None else ""
     if name_suffix:
         name_suffix = "_" + name_suffix
     if new_name is None:
-        new_name = "anno_chunks_{}m_{}p{}{}.json".format(chunk_mins, chunks_per_vid, fps_suffix, name_suffix)
+        new_name = "anno_chunks_{}m_{}p{}{}.json".format(chunk_mins,
+                                                         chunks_per_vid,
+                                                         fps_suffix,
+                                                         name_suffix)
     if cache_name is None:
-        cache_name = "vids_chunked/vid_chunks_{}m_{}p{}{}".format(chunk_mins, chunks_per_vid, fps_suffix, name_suffix)
+        cache_name = "vids_chunked/vid_chunks_{}m_{}p{}{}".format(chunk_mins,
+                                                                  chunks_per_vid,
+                                                                  fps_suffix,
+                                                                  name_suffix)
 
     dataset = GluonCVMotionDataset(anno_path)
-    new_dataset = GluonCVMotionDataset(new_name, dataset.root_path, split_file=new_split, load_anno=False)
+    new_dataset = GluonCVMotionDataset(new_name,
+                                       dataset.root_path,
+                                       split_file=new_split,
+                                       load_anno=False)
 
     chunk_cache_dir = Path(dataset.cache_root_path, cache_name)
     chunk_data_link = Path(dataset.data_root_path, cache_name)
@@ -175,9 +200,10 @@ def main(anno_path:str="./annotation/anno.json", new_name=None,
                 else:
                     # output fps
                     addn_args = dict(crop_fn=crop_fn_ffmpeg, fps=fps)
-                cropped, full_output_path = crop_video(input_path, str(output_path), start_time, end_time,
-                                                       overwrite=overwrite, add_output_ts=True, make_dirs=True,
-                                                       **addn_args)
+                cropped, full_output_path = crop_video(input_path, str(output_path),
+                                                       start_time, end_time,
+                                                       overwrite=overwrite, add_output_ts=True,
+                                                       make_dirs=True, **addn_args)
             new_data_path = Path(full_output_path).relative_to(dataset.data_root_path)
             new_id = f"{sample_id}_{start_time}-{end_time}"
             new_sample = sample.get_copy_without_entities(new_id=new_id)

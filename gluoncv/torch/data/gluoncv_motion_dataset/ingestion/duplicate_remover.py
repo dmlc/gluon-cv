@@ -1,17 +1,10 @@
 import logging
-import os
-import hashlib
-import re
-import string
-import tqdm
-import numpy as np
 from pathlib import Path, PosixPath
 from collections import defaultdict
-from PIL import Image
+import tqdm
 
-from ..dataset import GluonCVMotionDataset, FieldNames, get_vis_thumb_location
-from ..utils.serialization_utils import save_json
-from ..utils.ingestion_utils import get_chunked_id_map, get_filepaths
+from ..dataset import GluonCVMotionDataset, get_vis_thumb_location
+from ..utils.ingestion_utils import get_chunked_id_map
 
 
 _log = logging.getLogger()
@@ -68,7 +61,8 @@ def select_to_keep(samples, existing_dataset=None):
     def cond_dim(sample, keep):
         return get_dim(sample) > get_dim(keep)
     def cond_duration(sample, keep):
-        return get_dim(sample) >= (get_dim(keep) * 0.95) and (get_duration(sample) - get_duration(keep) > 5000)
+        return get_dim(sample) >= (get_dim(keep) * 0.95) and \
+               (get_duration(sample) - get_duration(keep) > 5000)
 
     keep = samples[0]
     for sample in samples[1:]:
@@ -89,7 +83,7 @@ def get_merged_dups(duplicates):
             dups_set = set()
         dups_set.add(path)
         dups = duplicates[path]
-        for dup, score in dups:
+        for dup in dups:
             if dup not in dups_set:
                 get_child_dups(dup, dups_set)
         return dups_set
@@ -201,7 +195,6 @@ def main(anno_path, out_anno=None, orig_anno_file=None):
         orig_id_map = {}
 
     image_dir = Path(dataset.cache_root_path) / "thumbnails"
-    images_sub_dir = image_dir / "videos"
 
     thumb_paths = []
     thumb_to_sample_id = {}
@@ -222,17 +215,17 @@ def main(anno_path, out_anno=None, orig_anno_file=None):
         return True
 
 
-    duplicates, encodings, cnndup = get_duplicates(thumb_paths, method="cnn", min_similarity_threshold=0.83)
+    duplicates, _, _ = get_duplicates(thumb_paths, method="cnn", min_similarity_threshold=0.83)
 
     dup_set = set_from_dict(duplicates)
     addn_args = [image_dir, dataset, thumb_to_sample_id, sample_id_to_thumb]
     all_dups, dups_map, selected_dups = get_unique_dups(duplicates, *addn_args)
 
-    dups_map_select = {k: v for k, v in dups_map.items() if sum([x[1] < 0.86 for x in v])}
-    inspect_map = get_files_to_inspect(dups_map, dataset, thumb_to_sample_id, orig_dataset, orig_id_map)
-
     print(len(selected_dups))
-    dup_sample_ids = [thumb_to_sample_id[thumb_path] for thumb_path in selected_dups if "videos_MEVA" not in thumb_path and "Offline_CCTV_Footage" not in thumb_path]
+    dup_sample_ids = [thumb_to_sample_id[thumb_path] \ 
+                     for thumb_path in selected_dups \ 
+                     if "videos_MEVA" not in thumb_path \ 
+                        and "Offline_CCTV_Footage" not in thumb_path]
     print(len(dup_sample_ids))
     for sample_id, sample in tqdm.tqdm(samples):
         if sample_id not in dup_sample_ids:

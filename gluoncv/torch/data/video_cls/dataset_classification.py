@@ -51,18 +51,22 @@ class VideoClsDataset(Dataset):
                         info = self.MG_sampler.get_resize(alpha, beta)
                         scale_s = info[1]
                         tmp.append(video_transforms.Compose([
-                        video_transforms.Resize(int(self.short_side_size / scale_s),
-                                                interpolation='bilinear'),
+                            video_transforms.Resize(int(self.short_side_size / scale_s),
+                                                    interpolation='bilinear'),
                         # TODO: multiscale corner cropping
-                        video_transforms.RandomResize(ratio=(1, 1.25), interpolation='bilinear'),
-                        video_transforms.RandomCrop(size=(int(self.crop_size / scale_s), 
-                                                          int(self.crop_size / scale_s)))]))
+                            video_transforms.RandomResize(ratio=(1, 1.25),
+                                                          interpolation='bilinear'),
+                            video_transforms.RandomCrop(size=(int(self.crop_size / scale_s),
+                                                              int(self.crop_size / scale_s)))]))
                     self.data_transform.append(tmp)
             else:
                 self.data_transform = video_transforms.Compose([
-                        video_transforms.Resize(int(self.short_side_size), interpolation='bilinear'),
-                        video_transforms.RandomResize(ratio=(1, 1.25), interpolation='bilinear'),
-                        video_transforms.RandomCrop(size=(int(self.crop_size), int(self.crop_size)))])
+                        video_transforms.Resize(int(self.short_side_size),
+                                                interpolation='bilinear'),
+                        video_transforms.RandomResize(ratio=(1, 1.25),
+                                                      interpolation='bilinear'),
+                        video_transforms.RandomCrop(size=(int(self.crop_size),
+                                                          int(self.crop_size)))])
 
             self.data_transform_after = video_transforms.Compose([
                 video_transforms.RandomHorizontalFlip(),
@@ -151,8 +155,10 @@ class VideoClsDataset(Dataset):
             if isinstance(buffer, list):
                 buffer = np.stack(buffer, 0)
 
-            spatial_step = 1.0 * (max(buffer.shape[1], buffer.shape[2]) - self.short_side_size) / (self.test_num_crop - 1)
-            temporal_step = max(1.0 * (buffer.shape[0] - self.clip_len) / (self.test_num_segment - 1), 0)
+            spatial_step = 1.0 * (max(buffer.shape[1], buffer.shape[2]) - self.short_side_size) \
+                                 / (self.test_num_crop - 1)
+            temporal_step = max(1.0 * (buffer.shape[0] - self.clip_len) \
+                                / (self.test_num_segment - 1), 0)
             temporal_start = int(chunk_nb * temporal_step)
             spatial_start = int(split_nb * spatial_step)
             if buffer.shape[1] >= buffer.shape[2]:
@@ -163,7 +169,8 @@ class VideoClsDataset(Dataset):
                        :, spatial_start:spatial_start + self.short_side_size, :]
 
             buffer = self.data_transform(buffer)
-            return buffer, self.test_label_array[index], sample.split("/")[-1].split(".")[0], chunk_nb, split_nb
+            return buffer, self.test_label_array[index], sample.split("/")[-1].split(".")[0], \
+                   chunk_nb, split_nb
         else:
             raise NameError('mode {} unkown'.format(self.mode))
 
@@ -182,7 +189,8 @@ class VideoClsDataset(Dataset):
             if self.keep_aspect_ratio:
                 vr = VideoReader(fname, num_threads=1, ctx=cpu(0))
             else:
-                vr = VideoReader(fname, width=self.new_width, height=self.new_height, num_threads=1, ctx=cpu(0))
+                vr = VideoReader(fname, width=self.new_width, height=self.new_height,
+                                 num_threads=1, ctx=cpu(0))
         except:
             print("video cannot be loaded by decord: ", fname)
             return []
@@ -203,7 +211,8 @@ class VideoClsDataset(Dataset):
         for i in range(self.num_segment):
             if seg_len <= converted_len:
                 index = np.linspace(0, seg_len, num=seg_len // self.frame_sample_rate)
-                index = np.concatenate((index, np.ones(self.clip_len - seg_len // self.frame_sample_rate) * seg_len))
+                index = np.concatenate((index,
+                                        np.ones(self.clip_len - seg_len // self.frame_sample_rate) * seg_len))
                 index = np.clip(index, 0, seg_len - 1).astype(np.int64)
             else:
                 end_idx = np.random.randint(converted_len, seg_len)
@@ -263,9 +272,11 @@ def build_dataloader(cfg):
 
     mg_sampler = None
     if cfg.CONFIG.DATA.MULTIGRID:
-        mg_sampler = MultiGridBatchSampler(train_sampler, batch_size=cfg.CONFIG.TRAIN.BATCH_SIZE, drop_last=True)
+        mg_sampler = MultiGridBatchSampler(train_sampler, batch_size=cfg.CONFIG.TRAIN.BATCH_SIZE,
+                                           drop_last=True)
         train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=1, shuffle=False,
-                                                   num_workers=9, pin_memory=True, batch_sampler=mg_sampler)
+                                                   num_workers=9, pin_memory=True,
+                                                   batch_sampler=mg_sampler)
     else:
         train_loader = torch.utils.data.DataLoader(
             train_dataset, batch_size=cfg.CONFIG.TRAIN.BATCH_SIZE, shuffle=(train_sampler is None),

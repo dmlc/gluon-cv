@@ -1,7 +1,7 @@
 import json
-import numpy as np
 import pickle
 import pathlib
+import numpy as np
 
 
 class ComplexEncoder(json.JSONEncoder):
@@ -26,9 +26,11 @@ def load_json(fname, *args, **kwargs):
     return obj
 
 
-def save_json(obj, fname, sort_keys=True, indent=4, separators=None, encoder=ComplexEncoder, *args, **kwargs):
+def save_json(obj, fname, sort_keys=True, indent=4, separators=None,
+              encoder=ComplexEncoder, *args, **kwargs):
     with open(fname, 'w') as fd:
-        json.dump(obj, fd, indent=indent, sort_keys=sort_keys, cls=encoder, separators=separators, *args, **kwargs)
+        json.dump(obj, fd, indent=indent, sort_keys=sort_keys, cls=encoder,
+                  separators=separators, *args, **kwargs)
 
 
 def load_pickle(fname, **kwargs):
@@ -44,9 +46,12 @@ def save_pickle(obj, fname, protocol=None, **kwargs):
 
 def round_floats_for_json(obj, ndigits=2, key_ndigits=None):
     """
-    Tries to round all floats in obj in order to reduce json size. ndigits is the default number of digits to round to,
-    key_ndigits allows you to override this for specific dictionary keys, though there is no concept of nested keys.
-    It converts numpy arrays and iterables to lists so it should only be used when serializing to json
+    Tries to round all floats in obj in order to reduce json size. 
+    ndigits is the default number of digits to round to,
+    key_ndigits allows you to override this for specific dictionary keys,
+    though there is no concept of nested keys.
+    It converts numpy arrays and iterables to lists,
+    so it should only be used when serializing to json
     """
     if key_ndigits is None:
         key_ndigits = {}

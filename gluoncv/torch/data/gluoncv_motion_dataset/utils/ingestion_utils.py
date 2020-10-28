@@ -1,4 +1,3 @@
-import cv2
 import glob
 import numpy as np
 import os
@@ -8,6 +7,7 @@ from addict import Dict
 from collections import defaultdict
 from pathlib import Path
 from subprocess import call
+import cv2
 
 from ..dataset import GluonCVMotionDataset, DataSample, FieldNames, get_resized_video_location
 from ..io.video_io import VideoFrameReader, VideoSortedFolderReader, cmd_with_addn_args, \
@@ -18,8 +18,8 @@ def default_filepath_filter(path):
     return not path.name.startswith('.')
 
 
-def get_filepaths(root_path, ext=".mp4", replace_path=None, filter_fn=default_filepath_filter, glob_exp=None,
-                  parents_only=False):
+def get_filepaths(root_path, ext=".mp4", replace_path=None, filter_fn=default_filepath_filter,
+                  glob_exp=None, parents_only=False):
     if replace_path is None:
         replace_path = root_path
     if glob_exp is None:
@@ -102,7 +102,8 @@ def check_dimensions(dataset, target_sidelen=256, cache_func=None):
 
         vid_reader = VideoFrameReader(vid_path)
         if target_sidelen not in (vid_reader.width, vid_reader.height):
-            print("Warning, target side length {} not in video, actual res: {}x{} , vid path: {}".format(
+            print("Warning, target side length {} not in video, actual res: {}x{} , \
+                vid path: {}".format(
                 target_sidelen, vid_reader.width, vid_reader.height, vid_path))
             bad_vids.append(id)
 
@@ -117,8 +118,10 @@ def check_dimensions(dataset, target_sidelen=256, cache_func=None):
 def crop_fn_ffmpeg(input_path, output_path, t1, t2, fps=None, addn_args=None):
     t1_secs, t2_secs = [t / 1000.0 for t in (t1, t2)]
 
-    # You need -strict experimental on some versions of ffmpeg (including the ubuntu default) or it will throw an error
-    # when decoding aac audio, see: https://stackoverflow.com/a/32932092 and https://superuser.com/a/543593
+    # You need -strict experimental on some versions of ffmpeg (including the ubuntu default) 
+    # or it will throw an error
+    # when decoding aac audio, see: https://stackoverflow.com/a/32932092 
+    # and https://superuser.com/a/543593
     cmd = [
         "ffmpeg",
         "-y",
@@ -144,10 +147,11 @@ def crop_fn_videoframereader_opencv(input_path, output_path, t1, t2):
     ts = start_time
     frame = frame_reader.get_frame_for_time(ts)
 
-    # We are using the VideoWriter directly instead of write_video_rgb due to memory issues of holding all frames
+    # We are using the VideoWriter directly instead of write_video_rgb 
+    # due to memory issues of holding all frames
     # in memory before writing
-    writer = cv2.VideoWriter(output_path, FFMPEG_FOURCC['avc1'], fps=fps, frameSize=(frame.width, frame.height),
-                             isColor=True)
+    writer = cv2.VideoWriter(output_path, FFMPEG_FOURCC['avc1'], fps=fps,
+                             frameSize=(frame.width, frame.height), isColor=True)
     while ts <= end_time and frame is not None:
         frame = np.array(frame)
         frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
@@ -161,7 +165,8 @@ def crop_fn_videoframereader_opencv(input_path, output_path, t1, t2):
     return True
 
 
-def crop_fn_frame_folder(input_path, output_path, t1, t2, in_fps=None, frame_reader=None, symlink=True,
+def crop_fn_frame_folder(input_path, output_path, t1, t2, in_fps=None,
+                         frame_reader=None, symlink=True,
                          copy_names=True, copy_frames=True):
     if in_fps is None and frame_reader is None:
         raise ValueError("Both in_fps and frame_reader can't be None")
@@ -197,26 +202,33 @@ def crop_fn_frame_folder(input_path, output_path, t1, t2, in_fps=None, frame_rea
     return True
 
 
-def crop_video(input_path, output_path, start_time, end_time, overwrite=False, min_video_length_ms=1000,
-               crop_fn=crop_fn_ffmpeg, add_output_ts=False, make_dirs=False, *args, **kwargs):
+def crop_video(input_path, output_path, start_time, end_time,
+               overwrite=False, min_video_length_ms=1000,
+               crop_fn=crop_fn_ffmpeg, add_output_ts=False,
+               make_dirs=False, *args, **kwargs):
     if add_output_ts:
         output_base, ext = os.path.splitext(output_path)
-        output_path = "{name}_{t1}-{t2}{ext}".format(name=output_base, t1=start_time, t2=end_time, ext=ext)
+        output_path = "{name}_{t1}-{t2}{ext}".format(name=output_base,
+                                                     t1=start_time,
+                                                     t2=end_time,
+                                                     ext=ext)
 
     if not os.path.exists(input_path):
         raise ValueError("input video path: {} does not exist".format(input_path))
 
     if end_time - start_time < min_video_length_ms:
-        raise ValueError("End time - start time must be >= {min_len}, error for video: {path}".format(
-            min_len=min_video_length_ms, path=input_path))
+        raise ValueError("End time - start time must be >= {min_len}, \
+                          error for video: {path}".format(
+                            min_len=min_video_length_ms, path=input_path))
 
     parent_dir = os.path.dirname(output_path)
     if not os.path.exists(parent_dir):
         if make_dirs:
             os.makedirs(parent_dir, exist_ok=True)
         else:
-            raise ValueError("Parent output directory for {} does not exist for input video path: {}" .format(
-                output_path, input_path))
+            raise ValueError("Parent output directory for {} \
+                              does not exist for input video path: {}" .format(
+                                output_path, input_path))
 
     if os.path.exists(output_path) and (not overwrite):
         return False, output_path
@@ -233,7 +245,8 @@ def crop_video(input_path, output_path, start_time, end_time, overwrite=False, m
 
 
 class AddictList(Dict):
-    """Class that can be used for gathering statistics about data by easily storing lists of different data"""
+    """Class that can be used for gathering statistics 
+    about data by easily storing lists of different data"""
 
     LKEY = "lst"
 
@@ -267,10 +280,13 @@ def default_chunked_sample_to_orig_id(chunked_sample, chunk_subdir="", orig_data
     return orig_id
 
 
-def get_orig_chunked_sample(sample: DataSample, orig_dataset: GluonCVMotionDataset, chunk_subdirs: []=None,
-                            sample_map_func=default_chunked_sample_to_orig_id, exclude_unchunked=False):
+def get_orig_chunked_sample(sample: DataSample, orig_dataset: GluonCVMotionDataset,
+                            chunk_subdirs: [] = None,
+                            sample_map_func=default_chunked_sample_to_orig_id,
+                            exclude_unchunked=False):
     if chunk_subdirs:
-        chunk_subdir = [subdir for subdir in chunk_subdirs if sample.data_relative_path.startswith(str(subdir))]
+        chunk_subdir = [subdir for subdir in chunk_subdirs \
+                        if sample.data_relative_path.startswith(str(subdir))]
         if not chunk_subdir:
             return None
         chunk_subdir = str(chunk_subdir[0])
@@ -281,7 +297,8 @@ def get_orig_chunked_sample(sample: DataSample, orig_dataset: GluonCVMotionDatas
         return None
     orig_sample = orig_dataset[orig_id]
     if exclude_unchunked and \
-            Path(orig_sample.data_relative_path) == Path(sample.data_relative_path).relative_to(chunk_subdir):
+            Path(orig_sample.data_relative_path) == \
+            Path(sample.data_relative_path).relative_to(chunk_subdir):
         return None
     return orig_sample
 

@@ -2,9 +2,8 @@ import logging
 import os
 import hashlib
 import re
-import string
-import tqdm
 from pathlib import Path
+import tqdm
 
 from ..dataset import GluonCVMotionDataset
 from ..utils.serialization_utils import save_json
@@ -40,7 +39,8 @@ def hash_path(path, algorithm="blake2b", suffix_len=None, num_orig_chars=None, c
     # 1 for underscore between
     max_orig_chars = PATH_MAXLEN - (len(hashstr) + 1) - suffix_len
 
-    orig_take_chars = max_orig_chars if num_orig_chars is None else min(num_orig_chars, max_orig_chars)
+    orig_take_chars = max_orig_chars if num_orig_chars is None \
+                                     else min(num_orig_chars, max_orig_chars)
     if orig_take_chars > 0:
         trunc_stem = filtered_stem[:orig_take_chars]
         if num_orig_chars and constant_len:
@@ -52,7 +52,8 @@ def hash_path(path, algorithm="blake2b", suffix_len=None, num_orig_chars=None, c
     return new_stem
 
 
-def main(anno_path, cache_name="uuid_filenames", ref_cache=None, ref_ext=".mp4", flatten=False, no_ext_hash=False):
+def main(anno_path, cache_name="uuid_filenames", ref_cache=None,
+         ref_ext=".mp4", flatten=False, no_ext_hash=False):
     dataset = GluonCVMotionDataset(anno_path)
 
     id_mapping = {}
@@ -82,7 +83,9 @@ def main(anno_path, cache_name="uuid_filenames", ref_cache=None, ref_ext=".mp4",
         uuid_filepath = cache_dir / uuid_rel_filepath
         if uuid_rel_filepath in new_path_set:
             existing_id = [id for id, p in id_mapping.items() if p == str(uuid_rel_filepath)]
-            _log.error("Unexpected filename collision with: {} , existing id: {} , new sample id: {}".format(
+            _log.error(
+                "Unexpected filename collision with: {} , \
+                 existing id: {} , new sample id: {}".format(
                 uuid_rel_filepath, existing_id, sample_id))
             continue
         new_path_set.add(uuid_rel_filepath)
