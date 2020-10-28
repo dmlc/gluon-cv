@@ -1,6 +1,10 @@
+# pylint: disable=missing-function-docstring, line-too-long
+"""
+Utility functions, misc
+"""
 import os
-import numpy as np
 import time
+import numpy as np
 
 
 def read_labelmap(labelmap_file):
@@ -92,7 +96,6 @@ def accuracy(output, target, topk=(1,)):
 def per_class_error(output, target, num_classes):
     per_class_acc = []
     for i in range(num_classes):
-        cnt = 0
         index = np.where(target == i)
         diff = output[index] - target[index]
         corr = np.where(diff == 0)[0].shape[0] / 1.0
@@ -104,6 +107,7 @@ def per_class_error(output, target, num_classes):
 
 
 class ProgressMeter(object):
+    """Default PyTorch pogress meter"""
     def __init__(self, num_batches, meters, prefix=""):
         self.batch_fmtstr = self._get_batch_fmtstr(num_batches)
         self.meters = meters

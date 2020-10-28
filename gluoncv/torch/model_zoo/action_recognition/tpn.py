@@ -1,4 +1,4 @@
-# pylint: disable=missing-function-docstring, missing-class-docstring, unused-argument, line-too-long
+# pylint: disable=missing-docstring, unused-argument, line-too-long
 """
 Temporal Pyramid Network for Action Recognition
 CVPR 2020, https://arxiv.org/pdf/2004.03548.pdf
@@ -150,6 +150,7 @@ class Downampling(nn.Module):
         self.pool = nn.MaxPool3d(downsample_scale, downsample_scale, (0, 0, 0), ceil_mode=True)
 
     def forward(self, x):
+        # pylint: disable=not-callable
         if self.downsample_position == 'before':
             x = self.pool(x)
         x = self.conv(x)
@@ -165,10 +166,10 @@ class Downampling(nn.Module):
 
 class LevelFusion(nn.Module):
     def __init__(self,
-                 in_channels=[1024, 1024],
-                 mid_channels=[1024, 1024],
+                 in_channels=(1024, 1024),
+                 mid_channels=(1024, 1024),
                  out_channels=2048,
-                 ds_scales=[(1, 1, 1), (1, 1, 1)],
+                 ds_scales=((1, 1, 1), (1, 1, 1)),
                  ):
         super(LevelFusion, self).__init__()
         self.ops = nn.ModuleList()
@@ -194,11 +195,11 @@ class LevelFusion(nn.Module):
 
 
 class SpatialModulation(nn.Module):
-    def __init__(self, inplanes=[1024, 2048], planes=2048):
+    def __init__(self, inplanes=(1024, 2048), planes=2048):
         super(SpatialModulation, self).__init__()
 
         self.spatial_modulation = nn.ModuleList()
-        for i, dim in enumerate(inplanes):
+        for _, dim in enumerate(inplanes):
             op = nn.ModuleList()
             ds_factor = planes // dim
             ds_num = int(np.log2(ds_factor))
@@ -214,10 +215,10 @@ class SpatialModulation(nn.Module):
 
     def forward(self, inputs):
         out = []
-        for i, feature in enumerate(inputs):
+        for i, _ in enumerate(inputs):
             if isinstance(self.spatial_modulation[i], nn.ModuleList):
                 out_ = inputs[i]
-                for III, op in enumerate(self.spatial_modulation[i]):
+                for _, op in enumerate(self.spatial_modulation[i]):
                     out_ = op(out_)
                 out.append(out_)
             else:
@@ -228,7 +229,7 @@ class SpatialModulation(nn.Module):
 class TPN(nn.Module):
 
     def __init__(self,
-                 in_channels=[256, 512, 1024, 2048],
+                 in_channels=(256, 512, 1024, 2048),
                  out_channels=256,
                  spatial_modulation_config=None,
                  temporal_modulation_config=None,
@@ -238,7 +239,7 @@ class TPN(nn.Module):
                  aux_head_config=None,
                  ):
         super(TPN, self).__init__()
-        assert isinstance(in_channels, list)
+        assert isinstance(in_channels, tuple)
         assert isinstance(out_channels, int)
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -605,7 +606,7 @@ class TPNet(nn.Module):
         self.pretrained_base = pretrained_base
         self.num_classes = num_classes
         self.num_stages = num_stages
-        assert num_stages >= 1 and num_stages <= 4
+        assert 1 <= num_stages <= 4
         self.spatial_strides = spatial_strides
         self.temporal_strides = temporal_strides
         self.dilations = dilations

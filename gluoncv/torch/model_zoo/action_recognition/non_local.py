@@ -1,4 +1,4 @@
-# pylint: disable=missing-function-docstring
+# pylint: disable=missing-function-docstring, unused-argument
 """
 Non-local module from Non-local Neural Networks
 CVPR 2018, https://arxiv.org/abs/1711.07971

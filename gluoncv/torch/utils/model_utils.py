@@ -1,3 +1,6 @@
+"""
+Utility functions for model
+"""
 import os
 import hashlib
 import requests
@@ -7,11 +10,16 @@ import torch
 
 
 def deploy_model(model, cfg):
+    """
+    Deploy model to multiple GPUs for DDP training.
+    """
     if cfg.DDP_CONFIG.DISTRIBUTED:
         if cfg.DDP_CONFIG.GPU is not None:
             torch.cuda.set_device(cfg.DDP_CONFIG.GPU)
             model.cuda(cfg.DDP_CONFIG.GPU)
-            model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[cfg.DDP_CONFIG.GPU], find_unused_parameters=True)
+            model = torch.nn.parallel.DistributedDataParallel(model,
+                                                              device_ids=[cfg.DDP_CONFIG.GPU],
+                                                              find_unused_parameters=True)
         else:
             model.cuda()
             model = torch.nn.parallel.DistributedDataParallel(model, find_unused_parameters=True)
@@ -25,7 +33,10 @@ def deploy_model(model, cfg):
     return model
 
 
-def load_model(model, optimizer, cfg, load_fc=True):
+def load_model(model, cfg, load_fc=True, optimizer=None):
+    """
+    Load pretrained model weights.
+    """
     if os.path.isfile(cfg.CONFIG.MODEL.PRETRAINED_PATH):
         print("=> loading checkpoint '{}'".format(cfg.CONFIG.MODEL.PRETRAINED_PATH))
         if cfg.DDP_CONFIG.GPU is None:
@@ -35,7 +46,7 @@ def load_model(model, optimizer, cfg, load_fc=True):
             loc = 'cuda:{}'.format(cfg.DDP_CONFIG.GPU)
             checkpoint = torch.load(cfg.CONFIG.MODEL.PRETRAINED_PATH, map_location=loc)
         model_dict = model.state_dict()
-        if load_fc==False:
+        if not load_fc:
             del model_dict['module.fc.weight']
             del model_dict['module.fc.bias']
         pretrained_dict = {k: v for k, v in checkpoint['state_dict'].items() if k in model_dict}
@@ -54,11 +65,17 @@ def load_model(model, optimizer, cfg, load_fc=True):
 
 
 def save_model(model, optimizer, epoch, cfg):
-    model_save_dir = os.path.join(cfg.CONFIG.LOG.BASE_PATH, cfg.CONFIG.LOG.EXP_NAME, cfg.CONFIG.LOG.SAVE_DIR)
+    """
+    Save trained model weights.
+    """
+    model_save_dir = os.path.join(cfg.CONFIG.LOG.BASE_PATH,
+                                  cfg.CONFIG.LOG.EXP_NAME,
+                                  cfg.CONFIG.LOG.SAVE_DIR)
     if not os.path.exists(model_save_dir):
         os.makedirs(model_save_dir)
-    checkpoint = os.path.join(model_save_dir, "clip_len_{}_frame_sample_rate_{}_checkpoint_{}.pth".format(
-        cfg.CONFIG.DATA.CLIP_LEN, cfg.CONFIG.DATA.FRAME_RATE, epoch))
+    checkpoint = os.path.join(model_save_dir,
+                              "clip_len_{}_frame_sample_rate_{}_checkpoint_{}.pth".format(
+                              cfg.CONFIG.DATA.CLIP_LEN, cfg.CONFIG.DATA.FRAME_RATE, epoch))
     save_checkpoint({
         'epoch': epoch + 1,
         'state_dict': model.state_dict(),

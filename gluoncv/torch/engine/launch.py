@@ -36,7 +36,6 @@ def spawn_workers(main, cfg):
 
 def main_worker(gpu, ngpus_per_node, main, cfg):
     """The main_worker process function (on individual GPU)"""
-    global best_acc1
     cudnn.benchmark = True
 
     cfg.DDP_CONFIG.GPU = gpu

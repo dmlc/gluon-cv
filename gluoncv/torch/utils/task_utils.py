@@ -1,14 +1,19 @@
+# pylint: disable=line-too-long
+"""
+Utility functions for task
+"""
 import os
-import numpy as np
 import time
-import random
+import numpy as np
 
 import torch
 
-from .utils import AverageMeter, accuracy, calculate_mAP
+from .utils import AverageMeter, accuracy
 
 
-def train_classification(base_iter, model, dataloader, epoch, criterion, optimizer, cfg, writer=None):
+def train_classification(base_iter, model, dataloader, epoch, criterion,
+                         optimizer, cfg, writer=None):
+    """Task of training video classification"""
     batch_time = AverageMeter()
     data_time = AverageMeter()
     losses = AverageMeter()
@@ -65,6 +70,7 @@ def train_classification(base_iter, model, dataloader, epoch, criterion, optimiz
 
 
 def validation_classification(model, val_dataloader, epoch, criterion, cfg, writer):
+    """Task of validating video classification"""
     batch_time = AverageMeter()
     data_time = AverageMeter()
     losses = AverageMeter()
@@ -135,6 +141,7 @@ def validation_classification(model, val_dataloader, epoch, criterion, cfg, writ
 
 
 def test_classification(model, test_loader, criterion, cfg, file):
+    """Task of testing video classification"""
     batch_time = AverageMeter()
     data_time = AverageMeter()
     losses = AverageMeter()

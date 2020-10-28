@@ -305,7 +305,7 @@ class ResNet_SlowFast(nn.Module):
         self.pretrained = pretrained
         self.pretrained_base = pretrained_base
         self.num_stages = num_stages
-        assert num_stages >= 1 and num_stages <= 4
+        assert 1 <= num_stages <= 4
         self.spatial_strides = spatial_strides
         self.temporal_strides = temporal_strides
         self.dilations = dilations
