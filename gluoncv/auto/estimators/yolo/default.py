@@ -10,11 +10,11 @@ class YOLOv3:
     backbone : str = 'darknet53'
     # List of convolution layer channels which is going to be appended to the
     # base network feature extractor. If `name` is `None`, this is ignored.
-    filters : Union[Tuple, list] = [512, 256, 128]
+    filters : Union[Tuple, list] = (512, 256, 128)
     # The anchor setting.
-    anchors : Union[Tuple, list] = [[10, 13, 16, 30, 33, 23], [30, 61, 62, 45, 59, 119], [116, 90, 156, 198, 373, 326]]
+    anchors : Union[Tuple, list] = tuple([[10, 13, 16, 30, 33, 23], [30, 61, 62, 45, 59, 119], [116, 90, 156, 198, 373, 326]])
     # Strides of feature map.
-    strides : Union[Tuple, list] = [8, 16, 32]
+    strides : Union[Tuple, list] = (8, 16, 32)
     # Input data shape for evaluation, use 320, 416, 608...
     # Training is with random shapes from (320 to 608).
     data_shape : int = 416
