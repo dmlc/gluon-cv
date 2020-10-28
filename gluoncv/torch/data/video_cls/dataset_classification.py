@@ -51,10 +51,12 @@ class VideoClsDataset(Dataset):
                         info = self.MG_sampler.get_resize(alpha, beta)
                         scale_s = info[1]
                         tmp.append(video_transforms.Compose([
-                        video_transforms.Resize(int(self.short_side_size / scale_s), interpolation='bilinear'),
+                        video_transforms.Resize(int(self.short_side_size / scale_s),
+                                                interpolation='bilinear'),
                         # TODO: multiscale corner cropping
                         video_transforms.RandomResize(ratio=(1, 1.25), interpolation='bilinear'),
-                        video_transforms.RandomCrop(size=(int(self.crop_size / scale_s), int(self.crop_size / scale_s)))]))
+                        video_transforms.RandomCrop(size=(int(self.crop_size / scale_s), 
+                                                          int(self.crop_size / scale_s)))]))
                     self.data_transform.append(tmp)
             else:
                 self.data_transform = video_transforms.Compose([
