@@ -26,12 +26,12 @@ try:
 except ImportError:
     hvd = None
 
-from .default import ex
+from .default import YOLOv3Cfg
 
 __all__ = ['YOLOv3Estimator']
 
 
-@set_default(ex)
+@set_default(YOLOv3Cfg())
 class YOLOv3Estimator(BaseEstimator):
     """Estimator implementation for YOLOv3.
 
@@ -179,7 +179,7 @@ class YOLOv3Estimator(BaseEstimator):
                 name4, loss4 = cls_metrics.get()
                 self._logger.info('[Epoch {}] Training cost: {:.3f}, {}={:.3f}, {}={:.3f}, {}={:.3f}, {}={:.3f}'.format(
                     epoch, (time.time() - tic), name1, loss1, name2, loss2, name3, loss3, name4, loss4))
-                if not (epoch + 1) % self._cfg.validation.val_interval:
+                if not (epoch + 1) % self._cfg.valid.val_interval:
                     # consider reduce the frequency of validation to save time
                     map_name, mean_ap = self._evaluate(val_data)
                     val_msg = '\n'.join(['{}={}'.format(k, v) for k, v in zip(map_name, mean_ap)])
@@ -203,14 +203,14 @@ class YOLOv3Estimator(BaseEstimator):
             val_batchify_fn = Tuple(Stack(), Pad(pad_val=-1))
             val_loader = gluon.data.DataLoader(
                 val_data.transform(SSDDefaultValTransform(width, height)),
-                self._cfg.validation.batch_size, False, batchify_fn=val_batchify_fn, last_batch='keep',
-                num_workers=self._cfg.validation.num_workers)
-        if self._cfg.validation.metric == 'voc07':
-            eval_metric = VOC07MApMetric(iou_thresh=self._cfg.validation.iou_thresh, class_names=self.classes)
-        elif self._cfg.validation.metric == 'voc':
-            eval_metric = VOCMApMetric(iou_thresh=self._cfg.validation.iou_thresh, class_names=self.classes)
+                self._cfg.valid.batch_size, False, batchify_fn=val_batchify_fn, last_batch='keep',
+                num_workers=self._cfg.valid.num_workers)
+        if self._cfg.valid.metric == 'voc07':
+            eval_metric = VOC07MApMetric(iou_thresh=self._cfg.valid.iou_thresh, class_names=self.classes)
+        elif self._cfg.valid.metric == 'voc':
+            eval_metric = VOCMApMetric(iou_thresh=self._cfg.valid.iou_thresh, class_names=self.classes)
         else:
-            raise ValueError(f'Invalid metric type: {self._cfg.validation.metric}')
+            raise ValueError(f'Invalid metric type: {self._cfg.valid.metric}')
         self.net.collect_params().reset_ctx(self.ctx)
         # set nms threshold and topk constraint
         self.net.set_nms(nms_thresh=0.45, nms_topk=400)

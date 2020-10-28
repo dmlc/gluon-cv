@@ -23,4 +23,4 @@ dependencies:
     - opencv-python
     - git+https://github.com/zhanghang1989/detail-api.git#subdirectory=PythonAPI
     - portalocker
-    - sacred
+    - autocfg

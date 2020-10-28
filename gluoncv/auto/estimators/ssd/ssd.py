@@ -21,7 +21,7 @@ from ....data.transforms.presets.ssd import load_test, transform_test
 from ....loss import SSDMultiBoxLoss
 from .utils import _get_dataset, _get_dataloader, _get_dali_dataset, _get_dali_dataloader, _save_params
 from ..base_estimator import BaseEstimator, set_default
-from .default import ex
+from .default import SSDCfg
 
 try:
     import horovod.mxnet as hvd
@@ -36,7 +36,7 @@ except ImportError:
 __all__ = ['SSDEstimator']
 
 
-@set_default(ex)
+@set_default(SSDCfg())
 class SSDEstimator(BaseEstimator):
     """Estimator implementation for SSD.
 
@@ -177,7 +177,7 @@ class SSDEstimator(BaseEstimator):
                 name2, loss2 = smoothl1_metric.get()
                 self._logger.info('[Epoch %d] Training cost: %f, %s=%f, %s=%f',
                                   epoch, (time.time()-tic), name1, loss1, name2, loss2)
-                if (epoch % self._cfg.validation.val_interval == 0) or \
+                if (epoch % self._cfg.valid.val_interval == 0) or \
                     (self._cfg.save_interval and epoch % self._cfg.save_interval == 0):
                     # consider reduce the frequency of validation to save time
                     map_name, mean_ap = self._evaluate(val_data)
@@ -202,14 +202,14 @@ class SSDEstimator(BaseEstimator):
             val_batchify_fn = Tuple(Stack(), Pad(pad_val=-1))
             val_loader = gluon.data.DataLoader(
                 val_data.transform(SSDDefaultValTransform(width, height)),
-                self._cfg.validation.batch_size, False, batchify_fn=val_batchify_fn, last_batch='keep',
-                num_workers=self._cfg.validation.num_workers)
-        if self._cfg.validation.metric == 'voc07':
-            eval_metric = VOC07MApMetric(iou_thresh=self._cfg.validation.iou_thresh, class_names=self.classes)
-        elif self._cfg.validation.metric == 'voc':
-            eval_metric = VOCMApMetric(iou_thresh=self._cfg.validation.iou_thresh, class_names=self.classes)
+                self._cfg.valid.batch_size, False, batchify_fn=val_batchify_fn, last_batch='keep',
+                num_workers=self._cfg.valid.num_workers)
+        if self._cfg.valid.metric == 'voc07':
+            eval_metric = VOC07MApMetric(iou_thresh=self._cfg.valid.iou_thresh, class_names=self.classes)
+        elif self._cfg.valid.metric == 'voc':
+            eval_metric = VOCMApMetric(iou_thresh=self._cfg.valid.iou_thresh, class_names=self.classes)
         else:
-            raise ValueError(f'Invalid metric type: {self._cfg.validation.metric}')
+            raise ValueError(f'Invalid metric type: {self._cfg.valid.metric}')
         self.net.set_nms(nms_thresh=0.45, nms_topk=400)
         self.net.collect_params().reset_ctx(self.ctx)
         self.net.hybridize(static_alloc=True, static_shape=True)
@@ -355,10 +355,3 @@ class SSDEstimator(BaseEstimator):
 
         if self._cfg.ssd.amp:
             amp.init_trainer(self.trainer)
-
-
-@ex.automain
-def main(_config, _log):
-    # main is the commandline entry for user w/o coding
-    c = SSDEstimator(_config, _log)
-    c.fit()

@@ -1,16 +1,11 @@
 """SSD default config"""
 # pylint: disable=unused-variable,missing-function-docstring
-from sacred import Experiment, Ingredient
-
-from ..common import logging
-
-ssd = Ingredient('ssd')
-train = Ingredient('train')
-validation = Ingredient('validation')
+from autocfg import dataclass, field
+from typing import Union, Tuple
 
 
-@ssd.config
-def ssd_default():
+@dataclass
+class SSD:
     # Backbone network.
     backbone = 'vgg16_atrous'  # base feature network
     # Input data shape, use 300, 512.
@@ -36,8 +31,8 @@ def ssd_default():
     transfer = 'ssd_512_resnet50_v1_coco'
 
 
-@train.config
-def train_cfg():
+@dataclass
+class TrainCfg:
     # Batch size during training
     batch_size = 32
     # starting epoch
@@ -63,8 +58,8 @@ def train_cfg():
     dali = False
 
 
-@validation.config
-def valid_cfg():
+@dataclass
+class ValidCfg:
     # Epoch interval for validation
     val_interval = 1
     # metric, 'voc', 'voc07'
@@ -72,12 +67,11 @@ def valid_cfg():
     # iou_thresh for VOC type metrics
     iou_thresh = 0.5
 
-
-ex = Experiment('ssd_default', ingredients=[logging, train, validation, ssd])
-
-
-@ex.config
-def default_configs():
+@dataclass
+class SSDCfg:
+    ssd : SSD = field(default_factory=SSD)
+    train : TrainCfg = field(default_factory=TrainCfg)
+    valid : ValidCfg = field(default_factory=ValidCfg)
     # Dataset name. eg. 'coco', 'voc', 'voc_tiny'
     dataset = 'voc_tiny'
     # Path of the directory where the dataset is located.

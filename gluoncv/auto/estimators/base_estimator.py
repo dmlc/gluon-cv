@@ -18,8 +18,8 @@ def set_default(cfg):
 
     Parameters
     ----------
-    ex : sacred.Experiment
-        sacred experiment object.
+    cfg : autocfg.dataclass
+        Default config as dataclass object
     """
     def _apply(cls):
         # docstring

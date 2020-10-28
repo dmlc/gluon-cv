@@ -47,7 +47,7 @@ def _train_image_classification(args, reporter):
         return {'stacktrace': str(e)}
 
     # TODO: checkpointing needs to be done in a better way
-    unique_checkpoint = str(uuid.uuid4())
+    unique_checkpoint = 'train_image_classification_' + str(uuid.uuid4())
     estimator.save(unique_checkpoint)
     return {'model_checkpoint': unique_checkpoint}
 

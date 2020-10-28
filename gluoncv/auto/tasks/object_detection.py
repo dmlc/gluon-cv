@@ -48,7 +48,7 @@ def _train_object_detection(args, reporter):
         return {'stacktrace': str(e)}
 
     # TODO: checkpointing needs to be done in a better way
-    unique_checkpoint = str(uuid.uuid4())
+    unique_checkpoint = 'train_object_detection_' + str(uuid.uuid4())
     estimator.save(unique_checkpoint)
     return {'model_checkpoint': unique_checkpoint}
 

@@ -55,7 +55,7 @@ class ValidCfg:
     post_nms : int = 100  # post nms topk
     num_workers : int = 32  # cpu workers, the larger the more processes used
     batch_size : int = 32  # validation batch size
-    interval : int = 10  # validation epoch interval, for slow validations
+    interval : int = 1  # validation epoch interval, for slow validations
     metric : str = 'voc07' # metric, 'voc', 'voc07'
     iou_thresh : float = 0.5 # iou_thresh for VOC type metrics
 

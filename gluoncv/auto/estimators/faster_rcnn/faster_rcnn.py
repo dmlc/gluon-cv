@@ -25,12 +25,12 @@ try:
 except ImportError:
     hvd = None
 
-from .default import ex
+from .default import FasterRCNNCfg
 
 __all__ = ['FasterRCNNEstimator']
 
 
-@set_default(ex)
+@set_default(FasterRCNNCfg())
 class FasterRCNNEstimator(BaseEstimator):
     """Estimator implementation for Faster-RCNN.
 
@@ -192,7 +192,7 @@ class FasterRCNNEstimator(BaseEstimator):
                 # pylint: disable=logging-format-interpolation
                 self._logger.info('[Epoch {}] Training cost: {:.3f}, {}'.format(
                     epoch, (time.time() - tic), msg))
-                if not (epoch + 1) % self._cfg.validation.val_interval:
+                if not (epoch + 1) % self._cfg.valid.val_interval:
                     # consider reduce the frequency of validation to save time
                     map_name, mean_ap = self._evaluate(val_data)
                     val_msg = '\n'.join(['{}={}'.format(k, v) for k, v in zip(map_name, mean_ap)])
@@ -220,13 +220,13 @@ class FasterRCNNEstimator(BaseEstimator):
             val_loader = gluon.data.DataLoader(
                 val_data.transform(FasterRcnnDefaultValTransform(short, net.max_size)),
                 len(self.ctx), False, batchify_fn=val_bfn, last_batch='keep',
-                num_workers=self._cfg.validation.num_workers)
-        if self._cfg.validation.metric == 'voc07':
-            eval_metric = VOC07MApMetric(iou_thresh=self._cfg.validation.iou_thresh, class_names=self.classes)
-        elif self._cfg.validation.metric == 'voc':
-            eval_metric = VOCMApMetric(iou_thresh=self._cfg.validation.iou_thresh, class_names=self.classes)
+                num_workers=self._cfg.valid.num_workers)
+        if self._cfg.valid.metric == 'voc07':
+            eval_metric = VOC07MApMetric(iou_thresh=self._cfg.valid.iou_thresh, class_names=self.classes)
+        elif self._cfg.valid.metric == 'voc':
+            eval_metric = VOCMApMetric(iou_thresh=self._cfg.valid.iou_thresh, class_names=self.classes)
         else:
-            raise ValueError(f'Invalid metric type: {self._cfg.validation.metric}')
+            raise ValueError(f'Invalid metric type: {self._cfg.valid.metric}')
 
         if not self._cfg.disable_hybridization:
             # input format is differnet than training, thus rehybridization is needed.
@@ -372,8 +372,8 @@ class FasterRCNNEstimator(BaseEstimator):
                                  rpn_nms_thresh=self._cfg.faster_rcnn.rpn_nms_thresh,
                                  rpn_train_pre_nms=self._cfg.train.rpn_train_pre_nms,
                                  rpn_train_post_nms=self._cfg.train.rpn_train_post_nms,
-                                 rpn_test_pre_nms=self._cfg.validation.rpn_test_pre_nms,
-                                 rpn_test_post_nms=self._cfg.validation.rpn_test_post_nms,
+                                 rpn_test_pre_nms=self._cfg.valid.rpn_test_pre_nms,
+                                 rpn_test_post_nms=self._cfg.valid.rpn_test_post_nms,
                                  rpn_min_size=self._cfg.train.rpn_min_size,
                                  per_device_batch_size=self._cfg.train.batch_size // self.num_gpus,
                                  num_sample=self._cfg.train.rcnn_num_samples,
@@ -427,10 +427,3 @@ class FasterRCNNEstimator(BaseEstimator):
 
         if self._cfg.faster_rcnn.amp:
             self._cfg.init_trainer(self.trainer)
-
-
-@ex.automain
-def main(_config, _log):
-    # main is the commandline entry for user w/o coding
-    c = FasterRCNNEstimator(_config, _log)
-    c.fit()

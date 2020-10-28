@@ -19,7 +19,7 @@ class ConfigDict(dict):
     Parameters
     ----------
     config : dict
-        The sacred configuration dict.
+        The configuration dict.
 
     Attributes
     ----------

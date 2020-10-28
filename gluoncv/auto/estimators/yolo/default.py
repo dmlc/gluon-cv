@@ -1,16 +1,11 @@
 """YOLO default config"""
 # pylint: disable=unused-variable,missing-function-docstring
-from sacred import Experiment, Ingredient
-
-from ..common import logging
-
-yolo3 = Ingredient('yolo3')
-train = Ingredient('train')
-validation = Ingredient('validation')
+from autocfg import dataclass, field
+from typing import Union, Tuple
 
 
-@yolo3.config
-def yolo3_default():
+@dataclass
+class YOLOv3:
     # Base network name which serves as feature extraction base.
     backbone = 'darknet53'
     # List of convolution layer channels which is going to be appended to the
@@ -36,8 +31,8 @@ def yolo3_default():
     transfer = 'yolo3_darknet53_coco'
 
 
-@train.config
-def train_cfg():
+@dataclass
+class TrainCfg:
     # Training mini-batch size
     batch_size = 32
     # Training epochs.
@@ -79,8 +74,8 @@ def train_cfg():
     label_smooth = False
 
 
-@validation.config
-def valid_cfg():
+@dataclass
+class ValidCfg:
     # Epoch interval for validation, increase the number
     # will reduce the training time if validation is slow.
     val_interval = 1
@@ -90,11 +85,11 @@ def valid_cfg():
     iou_thresh = 0.5
 
 
-ex = Experiment('yolo3_default', ingredients=[logging, train, validation, yolo3])
-
-
-@ex.config
-def default_configs():
+@dataclass
+class YOLOv3Cfg:
+    yolo3 : YOLOv3 = field(default_factory=YOLOv3)
+    train : TrainCfg = field(default_factory=TrainCfg)
+    valid : ValidCfg = field(default_factory=ValidCfg)
     # Training dataset. eg. 'coco', 'voc', 'voc_tiny'
     dataset = 'voc_tiny'
     # Path of the directory where the dataset is located.

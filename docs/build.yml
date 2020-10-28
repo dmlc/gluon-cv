@@ -23,4 +23,4 @@ dependencies:
   - decord
   - cython
   - pycocotools
-  - sacred
+  - autocfg

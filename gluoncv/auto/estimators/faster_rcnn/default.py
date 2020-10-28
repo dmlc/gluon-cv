@@ -1,16 +1,10 @@
 """Faster RCNN default config"""
 # pylint: disable=unused-variable,missing-function-docstring
-from sacred import Experiment, Ingredient
+from autocfg import dataclass, field
+from typing import Union, Tuple
 
-from ..common import logging
-
-faster_rcnn = Ingredient('faster_rcnn')
-train = Ingredient('train')
-validation = Ingredient('validation')
-
-
-@faster_rcnn.config
-def faster_rcnn_default():
+@dataclass
+class FasterRCNN:
     # Backbone network.
     backbone = 'resnet50_v1b'  # base feature network
     # Final R-CNN non-maximum suppression threshold. You can specify < 0 or > 1 to disable NMS.
@@ -90,8 +84,8 @@ def faster_rcnn_default():
     transfer = 'faster_rcnn_fpn_resnet50_v1b_coco'
 
 
-@train.config
-def train_cfg():
+@dataclass
+class TrainCfg:
     # Whether load the imagenet pre-trained base
     pretrained_base = True
     # Batch size during training
@@ -165,8 +159,8 @@ def train_cfg():
     executor_threads = 4
 
 
-@validation.config
-def valid_cfg():
+@dataclass
+class ValidCfg:
     # Filter top proposals before NMS in testing of RPN.
     rpn_test_pre_nms = 6000
     # Return top proposal results after NMS in testing of RPN.
@@ -179,12 +173,11 @@ def valid_cfg():
     # iou_thresh for VOC type metrics
     iou_thresh = 0.5
 
-
-ex = Experiment('faster_rcnn_default', ingredients=[logging, train, validation, faster_rcnn])
-
-
-@ex.config
-def default_configs():
+@dataclass
+class FasterRCNNCfg:
+    faster_rcnn : FasterRCNN = field(default_factory=FasterRCNN)
+    train : TrainCfg = field(default_factory=TrainCfg)
+    valid : ValidCfg = field(default_factory=ValidCfg)
     # Dataset name. eg. 'coco', 'voc', 'voc_tiny'
     dataset = 'voc_tiny'
     # Path of the directory where the dataset is located.

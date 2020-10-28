@@ -11,7 +11,6 @@ import mxnet as mx
 from mxnet import gluon, nd
 from mxnet import autograd as ag
 from mxnet.gluon.data.vision import transforms
-from sacred import Experiment, Ingredient
 from ....data.transforms.presets.imagenet import transform_eval
 from ....model_zoo import get_model
 from ....utils import makedirs, LRSequential, LRScheduler
@@ -19,75 +18,12 @@ from .... import nn
 from .... import loss
 from ..base_estimator import BaseEstimator, set_default
 from .utils import get_data_loader, get_data_rec
+from .default import ImageClassificationCfg
 
 __all__ = ['ImageClassificationEstimator']
 
-img_cls = Ingredient('img_cls')
-train = Ingredient('train')
-validation = Ingredient('validation')
 
-@img_cls.config
-def img_cls_default():
-    model = 'resnet50_v1'
-    use_pretrained = True
-    use_gn = False
-    batch_norm = False
-    use_se = False
-    last_gamma = False
-
-@train.config
-def train_config():
-    gpus = (0,)
-    pretrained_base = True  # whether load the imagenet pre-trained base
-    batch_size = 128
-    epochs = 10
-    lr = 0.1  # learning rate
-    lr_decay = 0.1  # decay rate of learning rate.
-    lr_decay_period = 0
-    lr_decay_epoch = '40, 60'  # epochs at which learning rate decays
-    lr_mode = 'step'  # learning rate scheduler mode. options are step, poly and cosine
-    warmup_lr = 0.0  # starting warmup learning rate.
-    warmup_epochs = 0  # number of warmup epochs
-    # classes = 1000
-    num_training_samples = 1281167
-    num_workers = 4
-    wd = 0.0001
-    momentum = 0.9
-    teacher = None
-    hard_weight = 0.5
-    dtype = 'float32'
-    input_size = 224
-    crop_ratio = 0.875
-    use_rec = False
-    rec_train = '~/.mxnet/datasets/imagenet/rec/train.rec'
-    rec_train_idx = '~/.mxnet/datasets/imagenet/rec/train.idx'
-    rec_val = '~/.mxnet/datasets/imagenet/rec/val.rec'
-    rec_val_idx = '~/.mxnet/datasets/imagenet/rec/val.idx'
-    data_dir = '~/.mxnet/datasets/imagenet'
-    mixup = False
-    no_wd = False
-    label_smoothing = False
-    temperature = 20
-    hard_weight = 0.5
-    resume_epoch = 0
-    mixup_alpha = 0.2
-    mixup_off_epoch = 0
-    log_interval = 50
-    mode = ''
-    start_epoch = 0
-    transfer_lr_mult = 0.01  # reduce the backbone lr_mult to avoid quickly destroying the features
-    output_lr_mult = 0.1  # the learning rate multiplier for last fc layer if trained with transfer learning
-
-
-@validation.config
-def valid_config():
-    test = 1
-
-ex = Experiment('img_cls_default',
-                ingredients=[train, validation, img_cls])
-
-
-@set_default(ex)
+@set_default(ImageClassificationCfg())
 class ImageClassificationEstimator(BaseEstimator):
     """Estimator implementation for Image Classification.
 
@@ -391,8 +327,8 @@ class ImageClassificationEstimator(BaseEstimator):
             ])
             val_data = gluon.data.DataLoader(
                 val_data.transform_first(transform_test),
-                batch_size=self._cfg.validation.batch_size, shuffle=False, last_batch='keep',
-                num_workers=self._cfg.validation.num_workers)
+                batch_size=self._cfg.valid.batch_size, shuffle=False, last_batch='keep',
+                num_workers=self._cfg.valid.num_workers)
         for _, batch in enumerate(val_data):
             data, label = self.batch_fn(batch, self.ctx)
             outputs = [self.net(X.astype(self._cfg.train.dtype, copy=False)) for X in data]

@@ -10,11 +10,8 @@ import numpy as np
 import mxnet as mx
 from mxnet import autograd
 from mxnet import gluon
-from sacred import Experiment, Ingredient
 
 from ..base_estimator import BaseEstimator, set_default
-from ..common import logging
-from ...data.coco_detection import coco_detection
 from ....data.batchify import Tuple, Stack, Pad
 from ....data.transforms.presets.center_net import CenterNetDefaultTrainTransform
 from ....data.transforms.presets.center_net import CenterNetDefaultValTransform
