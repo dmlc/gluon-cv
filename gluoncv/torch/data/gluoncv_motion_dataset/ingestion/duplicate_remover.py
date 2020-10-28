@@ -222,9 +222,9 @@ def main(anno_path, out_anno=None, orig_anno_file=None):
     all_dups, dups_map, selected_dups = get_unique_dups(duplicates, *addn_args)
 
     print(len(selected_dups))
-    dup_sample_ids = [thumb_to_sample_id[thumb_path] \ 
-                     for thumb_path in selected_dups \ 
-                     if "videos_MEVA" not in thumb_path \ 
+    dup_sample_ids = [thumb_to_sample_id[thumb_path] \
+                     for thumb_path in selected_dups \
+                     if "videos_MEVA" not in thumb_path \
                         and "Offline_CCTV_Footage" not in thumb_path]
     print(len(dup_sample_ids))
     for sample_id, sample in tqdm.tqdm(samples):

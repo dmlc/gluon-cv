@@ -33,7 +33,7 @@ def deploy_model(model, cfg):
     return model
 
 
-def load_model(model, cfg, load_fc=True, optimizer=None):
+def load_model(model, cfg, load_fc=True):
     """
     Load pretrained model weights.
     """
@@ -65,6 +65,7 @@ def load_model(model, cfg, load_fc=True, optimizer=None):
 
 
 def save_model(model, optimizer, epoch, cfg):
+    # pylint: disable=line-too-long
     """
     Save trained model weights.
     """
@@ -73,8 +74,7 @@ def save_model(model, optimizer, epoch, cfg):
                                   cfg.CONFIG.LOG.SAVE_DIR)
     if not os.path.exists(model_save_dir):
         os.makedirs(model_save_dir)
-    checkpoint = os.path.join(model_save_dir,
-                              "clip_len_{}_frame_sample_rate_{}_checkpoint_{}.pth".format(
+    checkpoint = os.path.join(model_save_dir, "clip_len_{}_frame_sample_rate_{}_checkpoint_{}.pth".format(
                               cfg.CONFIG.DATA.CLIP_LEN, cfg.CONFIG.DATA.FRAME_RATE, epoch))
     save_checkpoint({
         'epoch': epoch + 1,

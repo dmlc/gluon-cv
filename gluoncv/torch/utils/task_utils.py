@@ -137,7 +137,6 @@ def validation_classification(model, val_dataloader, epoch, criterion, cfg, writ
             writer.add_scalar('val_loss_epoch', np.mean(loss_lst), epoch)
             writer.add_scalar('val_top1_acc_epoch', np.mean(top1_lst), epoch)
             writer.add_scalar('val_top5_acc_epoch', np.mean(top5_lst), epoch)
-    return
 
 
 def test_classification(model, test_loader, criterion, cfg, file):

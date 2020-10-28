@@ -1,4 +1,4 @@
-# pylint: disable=missing-docstring, unused-argument, line-too-long
+# pylint: disable=missing-docstring, unused-argument, line-too-long, too-many-lines
 """
 Temporal Pyramid Network for Action Recognition
 CVPR 2020, https://arxiv.org/pdf/2004.03548.pdf

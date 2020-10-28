@@ -1,10 +1,11 @@
+"""Customized dataloader for general video classification tasks."""
 import os
-import numpy as np
 import warnings
+import numpy as np
 from decord import VideoReader, cpu
 
 import torch
-from torch.utils.data import DataLoader, Dataset, Sampler, RandomSampler
+from torch.utils.data import Dataset
 
 from ..transforms.videotransforms import video_transforms, volume_transforms
 from .multigrid_helper import multiGridSampler, MultiGridBatchSampler
@@ -14,6 +15,7 @@ __all__ = ['VideoClsDataset', 'build_dataloader', 'build_dataloader_test']
 
 
 class VideoClsDataset(Dataset):
+    """Load your own video classification dataset."""
 
     def __init__(self, anno_path, data_path, mode='train', clip_len=8,
                  frame_sample_rate=2, crop_size=224, short_side_size=256,
@@ -53,7 +55,7 @@ class VideoClsDataset(Dataset):
                         tmp.append(video_transforms.Compose([
                             video_transforms.Resize(int(self.short_side_size / scale_s),
                                                     interpolation='bilinear'),
-                        # TODO: multiscale corner cropping
+                            # TODO: multiscale corner cropping
                             video_transforms.RandomResize(ratio=(1, 1.25),
                                                           interpolation='bilinear'),
                             video_transforms.RandomCrop(size=(int(self.crop_size / scale_s),
@@ -61,12 +63,12 @@ class VideoClsDataset(Dataset):
                     self.data_transform.append(tmp)
             else:
                 self.data_transform = video_transforms.Compose([
-                        video_transforms.Resize(int(self.short_side_size),
-                                                interpolation='bilinear'),
-                        video_transforms.RandomResize(ratio=(1, 1.25),
-                                                      interpolation='bilinear'),
-                        video_transforms.RandomCrop(size=(int(self.crop_size),
-                                                          int(self.crop_size)))])
+                    video_transforms.Resize(int(self.short_side_size),
+                                            interpolation='bilinear'),
+                    video_transforms.RandomResize(ratio=(1, 1.25),
+                                                  interpolation='bilinear'),
+                    video_transforms.RandomCrop(size=(int(self.crop_size),
+                                                      int(self.crop_size)))])
 
             self.data_transform_after = video_transforms.Compose([
                 video_transforms.RandomHorizontalFlip(),
@@ -175,7 +177,8 @@ class VideoClsDataset(Dataset):
             raise NameError('mode {} unkown'.format(self.mode))
 
     def loadvideo_decord(self, sample, sample_rate_scale=1):
-
+        """Load video content using Decord"""
+        # pylint: disable=line-too-long, bare-except, unnecessary-comprehension
         fname = self.data_path + sample
 
         if not (os.path.exists(fname)):
@@ -211,8 +214,7 @@ class VideoClsDataset(Dataset):
         for i in range(self.num_segment):
             if seg_len <= converted_len:
                 index = np.linspace(0, seg_len, num=seg_len // self.frame_sample_rate)
-                index = np.concatenate((index,
-                                        np.ones(self.clip_len - seg_len // self.frame_sample_rate) * seg_len))
+                index = np.concatenate((index, np.ones(self.clip_len - seg_len // self.frame_sample_rate) * seg_len))
                 index = np.clip(index, 0, seg_len - 1).astype(np.int64)
             else:
                 end_idx = np.random.randint(converted_len, seg_len)
@@ -235,7 +237,7 @@ class VideoClsDataset(Dataset):
 
 
 def build_dataloader(cfg):
-
+    """Build dataloader for training/validation"""
     train_dataset = VideoClsDataset(anno_path=cfg.CONFIG.DATA.TRAIN_ANNO_PATH,
                                     data_path=cfg.CONFIG.DATA.TRAIN_DATA_PATH,
                                     mode='train',
@@ -289,6 +291,7 @@ def build_dataloader(cfg):
     return train_loader, val_loader, train_sampler, val_sampler, mg_sampler
 
 def build_dataloader_test(cfg):
+    """Build dataloader for testing"""
     test_dataset = VideoClsDataset(anno_path=cfg.CONFIG.DATA.VAL_ANNO_PATH,
                                    data_path=cfg.CONFIG.DATA.VAL_DATA_PATH,
                                    mode='test',
