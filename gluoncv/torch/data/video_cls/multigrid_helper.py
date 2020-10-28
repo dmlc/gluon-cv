@@ -1,5 +1,6 @@
-import numpy as np
+"""Multigrid support to speed up training of video models"""
 from functools import reduce
+import numpy as np
 
 from torch.utils.data import Sampler
 from torch._six import int_classes as _int_classes
@@ -10,6 +11,11 @@ __all__ = ['multiGridSampler', 'MultiGridBatchSampler']
 
 sq2 = np.sqrt(2)
 class multiGridSampler(object):
+    """
+    A Multigrid Method for Efficiently Training Video Models
+    Chao-Yuan Wu, Ross Girshick, Kaiming He, Christoph Feichtenhofer, Philipp Krähenbühl
+    CVPR 2020, https://arxiv.org/abs/1912.00998
+    """
     def __init__(self):
         self.long_cycle = np.asarray([[1, 1, 1], [2, 1, 1], [2, sq2, sq2]])[::-1]
         self.short_cycle = np.asarray([[1, 1, 1], [1, sq2, sq2], [1, 2, 2]])[::-1]
@@ -43,7 +49,11 @@ class multiGridSampler(object):
 
 
 class MultiGridBatchSampler(Sampler):
-
+    """
+    A Multigrid Method for Efficiently Training Video Models
+    Chao-Yuan Wu, Ross Girshick, Kaiming He, Christoph Feichtenhofer, Philipp Krähenbühl
+    CVPR 2020, https://arxiv.org/abs/1912.00998
+    """
     def __init__(self, sampler, batch_size, drop_last):
         if not isinstance(sampler, Sampler):
             raise ValueError("sampler should be an instance of "
@@ -97,14 +107,19 @@ class MultiGridBatchSampler(Sampler):
         self.alpha = (self.alpha + 1)%self.MG_sampler.mod_long
 
     def compute_lr_milestone(self, lr_milestone):
+        """
+        long cycle milestones
+        """
         self.len_long = self.MG_sampler.mod_long
         self.n_epoch_long = 0
         for x in range(self.len_long):
             self.n_epoch_long += self.MG_sampler.get_scale_alpha(x)
         lr_long_cycle = []
-        for i, stage in enumerate(lr_milestone):
-            if i == 0: pre = 0
-            else: pre = lr_milestone[i-1]
+        for i, _ in enumerate(lr_milestone):
+            if i == 0:
+                pre = 0
+            else:
+                pre = lr_milestone[i-1]
             cycle_length = (lr_milestone[i] - pre) // self.n_epoch_long
             bonus = (lr_milestone[i] - pre)%self.n_epoch_long // self.len_long
             for j in range(self.len_long)[::-1]:
@@ -121,13 +136,15 @@ class MultiGridBatchSampler(Sampler):
         self.n_epoch_short = 0
         for x in range(self.len_short):
             self.n_epoch_short += self.MG_sampler.get_scale_beta(x)
-        num_short = len(self.sampler) // (self.batch_size*self.MG_sampler.get_scale_alpha(self.alpha))
+        short_batch_size = self.batch_size * self.MG_sampler.get_scale_alpha(self.alpha)
+        num_short = len(self.sampler) // short_batch_size
 
         total = num_short // self.n_epoch_short * self.len_short
         remain = self.n_epoch_short
         for x in range(self.len_short):
             remain = remain - (2**x)
-            if remain <= 0: break
+            if remain <= 0:
+                break
             total = total + int(num_short%self.n_epoch_short >= remain)
 
         return total

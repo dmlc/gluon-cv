@@ -1,3 +1,4 @@
+"""Default setting in training/testing"""
 from yacs.config import CfgNode as CN
 
 
@@ -81,5 +82,5 @@ _C.CONFIG.LOG.EVAL_DIR = None
 
 
 def get_cfg_defaults():
-  """Get a yacs CfgNode object with default values for your project."""
-  return _C.clone()
+    """Get a yacs CfgNode object with default values for your project."""
+    return _C.clone()

@@ -1,3 +1,4 @@
+"""Multiprocessing distributed data parallel support"""
 import torch
 import torch.distributed as dist
 import torch.backends.cudnn as cudnn
@@ -17,6 +18,7 @@ def get_local_ip_and_match(ip_list):
 
 
 def spawn_workers(main, cfg):
+    """Use torch.multiprocessing.spawn to launch distributed processes"""
     if cfg.DDP_CONFIG.AUTO_RANK_MATCH:
         assert len(cfg.DDP_CONFIG.WOLRD_URLS) > 0
         assert cfg.DDP_CONFIG.WOLRD_URLS[0] in cfg.DDP_CONFIG.DIST_URL
@@ -26,7 +28,6 @@ def spawn_workers(main, cfg):
 
     ngpus_per_node = torch.cuda.device_count()
     if cfg.DDP_CONFIG.DISTRIBUTED:
-        # from instance level to GPU level
         cfg.DDP_CONFIG.GPU_WORLD_SIZE = ngpus_per_node * cfg.DDP_CONFIG.WORLD_SIZE
         mp.spawn(main_worker, nprocs=ngpus_per_node, args=(ngpus_per_node, main, cfg))
     else:
@@ -34,6 +35,7 @@ def spawn_workers(main, cfg):
 
 
 def main_worker(gpu, ngpus_per_node, main, cfg):
+    """The main_worker process function (on individual GPU)"""
     global best_acc1
     cudnn.benchmark = True
 
@@ -42,6 +44,8 @@ def main_worker(gpu, ngpus_per_node, main, cfg):
 
     if cfg.DDP_CONFIG.DISTRIBUTED:
         cfg.DDP_CONFIG.GPU_WORLD_RANK = cfg.DDP_CONFIG.WORLD_RANK * ngpus_per_node + gpu
-        dist.init_process_group(backend=cfg.DDP_CONFIG.DIST_BACKEND, init_method=cfg.DDP_CONFIG.DIST_URL,
-                                world_size=cfg.DDP_CONFIG.GPU_WORLD_SIZE, rank=cfg.DDP_CONFIG.GPU_WORLD_RANK)
+        dist.init_process_group(backend=cfg.DDP_CONFIG.DIST_BACKEND,
+                                init_method=cfg.DDP_CONFIG.DIST_URL,
+                                world_size=cfg.DDP_CONFIG.GPU_WORLD_SIZE,
+                                rank=cfg.DDP_CONFIG.GPU_WORLD_RANK)
     main(cfg)
