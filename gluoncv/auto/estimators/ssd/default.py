@@ -15,12 +15,12 @@ class SSD:
     filters : Union[int, None] = None
     # Sizes of anchor boxes, this should be a list of floats, in incremental order.
     # The length of `sizes` must be len(layers) + 1.
-    sizes : Union[Tuple, list] = [30, 60, 111, 162, 213, 264, 315]
+    sizes : Union[Tuple, list] = (30, 60, 111, 162, 213, 264, 315)
     # Aspect ratios of anchors in each output layer. Its length must be equals
     # to the number of SSD output layers.
-    ratios : Union[Tuple, list] = [[1, 2, 0.5]] + [[1, 2, 0.5, 3, 1.0/3]] * 3 + [[1, 2, 0.5]] * 2
+    ratios : Union[Tuple, list] = tuple([[1, 2, 0.5]] + [[1, 2, 0.5, 3, 1.0/3]] * 3 + [[1, 2, 0.5]] * 2)
     # Step size of anchor boxes in each output layer.
-    steps : Union[Tuple, list] = [8, 16, 32, 64, 100, 300]
+    steps : Union[Tuple, list] = (8, 16, 32, 64, 100, 300)
     # Use synchronize BN across devices.
     syncbn : bool = False
     # Whether to use automatic mixed precision
