@@ -1,3 +1,8 @@
+# pylint: disable=missing-function-docstring, missing-class-docstring, unused-argument, line-too-long
+"""
+Temporal Pyramid Network for Action Recognition
+CVPR 2020, https://arxiv.org/pdf/2004.03548.pdf
+"""
 import numpy as np
 
 import torch
@@ -658,8 +663,7 @@ class TPNet(nn.Module):
             self.add_module(layer_name, res_layer)
             self.res_layers.append(layer_name)
 
-        self.feat_dim = self.block.expansion * 64 * 2 ** (
-                len(self.stage_blocks) - 1)
+        self.feat_dim = self.block.expansion * 64 * 2 ** (len(self.stage_blocks) - 1)
 
         self.TPN_neck = TPN_neck
 

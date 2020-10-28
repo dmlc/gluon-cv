@@ -1,3 +1,9 @@
+# pylint: disable=missing-function-docstring, line-too-long, unused-argument
+"""
+SlowFast Networks for Video Recognition
+ICCV 2019, https://arxiv.org/abs/1812.03982
+Code adapted from https://github.com/r1ch88/SlowFastNetworks
+"""
 import torch
 import torch.nn as nn
 from torch.nn import BatchNorm3d
@@ -10,6 +16,8 @@ __all__ = ['SlowFast', 'slowfast_4x16_resnet50_kinetics400', 'slowfast_8x8_resne
 
 
 class Bottleneck(nn.Module):
+    """Bottleneck block for ResNet-SlowFast.
+    """
     expansion = 4
 
     def __init__(self,

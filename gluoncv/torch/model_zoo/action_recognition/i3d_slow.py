@@ -1,4 +1,10 @@
-# Code adapted from https://github.com/open-mmlab/mmaction and https://github.com/decisionforce/TPN
+# pylint: disable=missing-function-docstring, line-too-long
+"""
+SlowFast Networks for Video Recognition
+ICCV 2019, https://arxiv.org/abs/1812.03982
+Code adapted from https://github.com/open-mmlab/mmaction and
+https://github.com/decisionforce/TPN
+"""
 import torch
 import torch.nn as nn
 import torch.utils.checkpoint as cp
@@ -6,9 +12,10 @@ import torch.utils.checkpoint as cp
 from .non_local import build_nonlocal_block
 
 
-__all__ = ['ResNet_SlowFast', 'i3d_slow_resnet50_f32s2_kinetics400', 'i3d_slow_resnet50_f16s4_kinetics400',
-           'i3d_slow_resnet50_f8s8_kinetics400', 'i3d_slow_resnet101_f32s2_kinetics400',
-           'i3d_slow_resnet101_f16s4_kinetics400', 'i3d_slow_resnet101_f8s8_kinetics400']
+__all__ = ['ResNet_SlowFast', 'i3d_slow_resnet50_f32s2_kinetics400',
+           'i3d_slow_resnet50_f16s4_kinetics400', 'i3d_slow_resnet50_f8s8_kinetics400',
+           'i3d_slow_resnet101_f32s2_kinetics400', 'i3d_slow_resnet101_f16s4_kinetics400',
+           'i3d_slow_resnet101_f8s8_kinetics400']
 
 
 def conv3x3x3(in_planes, out_planes, spatial_stride=1, temporal_stride=1, dilation=1):
@@ -34,6 +41,10 @@ def conv1x3x3(in_planes, out_planes, spatial_stride=1, temporal_stride=1, dilati
 
 
 class Bottleneck(nn.Module):
+    """Bottleneck block for ResNet.
+    If style is "pytorch", the stride-two layer is the 3x3 conv layer,
+    if it is "caffe", the stride-two layer is the first 1x1 conv layer.
+    """
     expansion = 4
 
     def __init__(self,
@@ -49,10 +60,7 @@ class Bottleneck(nn.Module):
                  if_nonlocal=True,
                  nonlocal_cfg=None,
                  with_cp=False):
-        """Bottleneck block for ResNet.
-        If style is "pytorch", the stride-two layer is the 3x3 conv layer,
-        if it is "caffe", the stride-two layer is the first 1x1 conv layer.
-        """
+
         super(Bottleneck, self).__init__()
         assert style in ['pytorch', 'caffe']
         assert inflate_style in ['3x1x1', '3x3x3']
@@ -356,8 +364,7 @@ class ResNet_SlowFast(nn.Module):
             self.add_module(layer_name, res_layer)
             self.res_layers.append(layer_name)
 
-        self.feat_dim = self.block.expansion * 64 * 2 ** (
-                len(self.stage_blocks) - 1)
+        self.feat_dim = self.block.expansion * 64 * 2 ** (len(self.stage_blocks) - 1)
 
         if self.dropout_ratio != 0:
             self.dropout = nn.Dropout(p=self.dropout_ratio)
