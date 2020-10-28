@@ -1,3 +1,5 @@
+"""Utility functions"""
+# pylint: disable=missing-docstring, arguments-differ, method-hidden
 import json
 import pickle
 import pathlib
@@ -46,7 +48,7 @@ def save_pickle(obj, fname, protocol=None, **kwargs):
 
 def round_floats_for_json(obj, ndigits=2, key_ndigits=None):
     """
-    Tries to round all floats in obj in order to reduce json size. 
+    Tries to round all floats in obj in order to reduce json size.
     ndigits is the default number of digits to round to,
     key_ndigits allows you to override this for specific dictionary keys,
     though there is no concept of nested keys.

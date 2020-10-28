@@ -1,3 +1,4 @@
+"""Avoid filename collision"""
 import logging
 import os
 import hashlib
@@ -17,6 +18,7 @@ non_word_pattern = re.compile(r'[^A-Za-z0-9_\- ]+')
 
 
 def hash_path(path, algorithm="blake2b", suffix_len=None, num_orig_chars=None, constant_len=False):
+    # pylint: disable=missing-function-docstring
     path = Path(path)
     if suffix_len is None:
         suffix_len = len(path.suffix)
@@ -54,6 +56,7 @@ def hash_path(path, algorithm="blake2b", suffix_len=None, num_orig_chars=None, c
 
 def main(anno_path, cache_name="uuid_filenames", ref_cache=None,
          ref_ext=".mp4", flatten=False, no_ext_hash=False):
+    # pylint: disable=line-too-long， missing-function-docstring
     dataset = GluonCVMotionDataset(anno_path)
 
     id_mapping = {}
@@ -83,10 +86,8 @@ def main(anno_path, cache_name="uuid_filenames", ref_cache=None,
         uuid_filepath = cache_dir / uuid_rel_filepath
         if uuid_rel_filepath in new_path_set:
             existing_id = [id for id, p in id_mapping.items() if p == str(uuid_rel_filepath)]
-            _log.error(
-                "Unexpected filename collision with: {} , \
-                 existing id: {} , new sample id: {}".format(
-                uuid_rel_filepath, existing_id, sample_id))
+            _log.error("Unexpected filename collision with: {} , \
+                       existing id: {} , new sample id: {}".format(uuid_rel_filepath, existing_id, sample_id))
             continue
         new_path_set.add(uuid_rel_filepath)
         id_mapping[sample_id] = str(uuid_rel_filepath)
