@@ -1,3 +1,7 @@
+# pylint: disable=wildcard-import, unused-wildcard-import
+"""
+GluonCV-PyTorch model zoo
+"""
 from .action_recognition import *
 
 

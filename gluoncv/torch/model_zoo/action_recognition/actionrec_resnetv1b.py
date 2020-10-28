@@ -1,3 +1,7 @@
+# pylint: disable=missing-function-docstring
+"""
+C2D video action recognition models based on ResNet
+"""
 import torch
 import torch.nn as nn
 import torchvision

@@ -1,3 +1,8 @@
+# pylint: disable=missing-function-docstring
+"""
+Non-local module from Non-local Neural Networks
+CVPR 2018, https://arxiv.org/abs/1711.07971
+"""
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -16,9 +21,13 @@ def build_nonlocal_block(cfg):
 
 
 class NonLocal(nn.Module):
+    """
+    Non-local module from Non-local Neural Networks
+    CVPR 2018, https://arxiv.org/abs/1711.07971
+    """
     def __init__(self, in_channels=1024, nonlocal_type="gaussian", dim=3,
                  embed=True, embed_dim=None, sub_sample=False, use_bn=True,
-                 norm_layer=BatchNorm3d, norm_kwargs=None, ctx=None, **kwargs):
+                 norm_layer=BatchNorm3d, norm_kwargs=None, **kwargs):
         super(NonLocal, self).__init__()
 
         assert nonlocal_type in ['gaussian', 'dot', 'concat']
@@ -30,30 +39,54 @@ class NonLocal(nn.Module):
 
         if self.embed:
             if dim == 2:
-                self.theta = nn.Conv2d(in_channels=in_channels, out_channels=self.embed_dim, kernel_size=(1, 1),
-                                       stride=(1, 1), padding=(0, 0))
-                self.phi = nn.Conv2d(in_channels=in_channels, out_channels=self.embed_dim, kernel_size=(1, 1),
-                                     stride=(1, 1), padding=(0, 0))
-                self.g = nn.Conv2d(in_channels=in_channels, out_channels=self.embed_dim, kernel_size=(1, 1),
-                                   stride=(1, 1), padding=(0, 0))
+                self.theta = nn.Conv2d(in_channels=in_channels,
+                                       out_channels=self.embed_dim,
+                                       kernel_size=(1, 1),
+                                       stride=(1, 1),
+                                       padding=(0, 0))
+                self.phi = nn.Conv2d(in_channels=in_channels,
+                                     out_channels=self.embed_dim,
+                                     kernel_size=(1, 1),
+                                     stride=(1, 1),
+                                     padding=(0, 0))
+                self.g = nn.Conv2d(in_channels=in_channels,
+                                   out_channels=self.embed_dim,
+                                   kernel_size=(1, 1),
+                                   stride=(1, 1),
+                                   padding=(0, 0))
             elif dim == 3:
-                self.theta = nn.Conv3d(in_channels=in_channels, out_channels=self.embed_dim, kernel_size=(1, 1, 1),
-                                       stride=(1, 1, 1), padding=(0, 0, 0))
-                self.phi = nn.Conv3d(in_channels=in_channels, out_channels=self.embed_dim, kernel_size=(1, 1, 1),
-                                     stride=(1, 1, 1), padding=(0, 0, 0))
-                self.g = nn.Conv3d(in_channels=in_channels, out_channels=self.embed_dim, kernel_size=(1, 1, 1),
-                                   stride=(1, 1, 1), padding=(0, 0, 0))
+                self.theta = nn.Conv3d(in_channels=in_channels,
+                                       out_channels=self.embed_dim,
+                                       kernel_size=(1, 1, 1),
+                                       stride=(1, 1, 1),
+                                       padding=(0, 0, 0))
+                self.phi = nn.Conv3d(in_channels=in_channels,
+                                     out_channels=self.embed_dim,
+                                     kernel_size=(1, 1, 1),
+                                     stride=(1, 1, 1),
+                                     padding=(0, 0, 0))
+                self.g = nn.Conv3d(in_channels=in_channels,
+                                   out_channels=self.embed_dim,
+                                   kernel_size=(1, 1, 1),
+                                   stride=(1, 1, 1),
+                                   padding=(0, 0, 0))
 
         if self.nonlocal_type == 'concat':
             if dim == 2:
                 self.concat_proj = nn.Sequential(
-                    nn.Conv2d(in_channels=self.embed_dim * 2, out_channels=1, kernel_size=(1, 1),
-                              stride=(1, 1), padding=(0, 0)),
+                    nn.Conv2d(in_channels=self.embed_dim * 2,
+                              out_channels=1,
+                              kernel_size=(1, 1),
+                              stride=(1, 1),
+                              padding=(0, 0)),
                     nn.ReLU(inplace=True))
             elif dim == 3:
                 self.concat_proj = nn.Sequential(
-                    nn.Conv3d(in_channels=self.embed_dim * 2, out_channels=1, kernel_size=(1, 1, 1),
-                              stride=(1, 1, 1), padding=(0, 0, 0)),
+                    nn.Conv3d(in_channels=self.embed_dim * 2,
+                              out_channels=1,
+                              kernel_size=(1, 1, 1),
+                              stride=(1, 1, 1),
+                              padding=(0, 0, 0)),
                     nn.ReLU(inplace=True))
 
         if sub_sample:
@@ -65,19 +98,26 @@ class NonLocal(nn.Module):
             self.sub_g = nn.Sequential(self.g, self.max_pool)
 
         if dim == 2:
-            self.W = nn.Conv2d(in_channels=self.embed_dim, out_channels=in_channels, kernel_size=(1, 1),
-                               stride=(1, 1), padding=(0, 0))
+            self.W = nn.Conv2d(in_channels=self.embed_dim,
+                               out_channels=in_channels,
+                               kernel_size=(1, 1),
+                               stride=(1, 1),
+                               padding=(0, 0))
         elif dim == 3:
-            self.W = nn.Conv3d(in_channels=self.embed_dim, out_channels=in_channels, kernel_size=(1, 1, 1),
-                               stride=(1, 1, 1), padding=(0, 0, 0))
+            self.W = nn.Conv3d(in_channels=self.embed_dim,
+                               out_channels=in_channels,
+                               kernel_size=(1, 1, 1),
+                               stride=(1, 1, 1),
+                               padding=(0, 0, 0))
 
         if use_bn:
             # TODO: need to add zero initialized BN, also the conv output
-            self.bn = norm_layer(num_features=in_channels, momentum=0.9, **({} if norm_kwargs is None else norm_kwargs))
+            self.bn = norm_layer(num_features=in_channels,
+                                 momentum=0.9,
+                                 **({} if norm_kwargs is None else norm_kwargs))
             self.W_bn = nn.Sequential(self.W, self.bn)
 
     def forward(self, x):
-        bs, ch, seq_len, h, w, = x.shape
         if self.embed:
             theta = self.theta(x)
             if self.sub_sample:

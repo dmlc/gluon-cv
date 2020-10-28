@@ -1,3 +1,8 @@
+# pylint: disable=missing-function-docstring, missing-class-docstring, unused-argument, line-too-long
+"""
+Quo Vadis, Action Recognition? A New Model and the Kinetics Dataset
+CVPR 2017, https://arxiv.org/abs/1705.07750
+"""
 import torch
 import torch.nn as nn
 from torch.nn import BatchNorm3d
@@ -443,7 +448,7 @@ class I3D_ResNetV1(nn.Module):
 
             R2Dlayers = [R2D.layer1, R2D.layer2, R2D.layer3, R2D.layer4]
 
-            for s in range(len(stages)):
+            for s, _ in enumerate(stages):
                 res = stages[s]._modules
                 count = 0
 

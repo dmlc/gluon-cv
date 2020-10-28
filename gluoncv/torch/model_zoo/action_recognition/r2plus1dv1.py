@@ -1,5 +1,6 @@
-"""R2Plus1D, https://arxiv.org/abs/1711.11248.
-Code adapted from https://github.com/pytorch/vision/blob/master/torchvision/models/video/resnet.py."""
+# pylint: disable=missing-function-docstring, missing-class-docstring, unused-argument
+"""R2Plus1D, https://arxiv.org/abs/1711.11248. Code adapted from
+https://github.com/pytorch/vision/blob/master/torchvision/models/video/resnet.py."""
 import torch
 import torch.nn as nn
 from torch.nn import BatchNorm3d

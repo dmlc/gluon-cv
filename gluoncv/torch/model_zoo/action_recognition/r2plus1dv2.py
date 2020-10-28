@@ -1,3 +1,7 @@
+# pylint: disable=missing-function-docstring, missing-class-docstring
+"""
+R2Plus1D, https://arxiv.org/abs/1711.11248
+"""
 import torch
 import torch.nn as nn
 
@@ -13,7 +17,7 @@ class Affine(nn.Module):
     def __init__(self, feature_in):
         super(Affine, self).__init__()
         self.weight = nn.Parameter(torch.randn(feature_in, 1, 1, 1))
-        self.bias = nn.Parameter(torch.randn(feature_in,1, 1, 1))
+        self.bias = nn.Parameter(torch.randn(feature_in, 1, 1, 1))
         self.weight.requires_grad = True
         self.bias.requires_grad = True
 
@@ -27,12 +31,14 @@ class Bottleneck_R2plus1Dv2(nn.Module):
                  down_sample=None, expansion=2, temporal_kernel=3, use_affine=True):
         super(Bottleneck_R2plus1Dv2, self).__init__()
         self.expansion = expansion
-        self.conv1 = nn.Conv3d(in_planes, planes, kernel_size=(1, 1, 1), bias=False, stride=(1, 1, 1))
+        self.conv1 = nn.Conv3d(in_planes, planes, kernel_size=(1, 1, 1),
+                               bias=False, stride=(1, 1, 1))
 
         if use_affine:
             self.bn1 = Affine(planes)
         else:
-            self.bn1 = nn.BatchNorm3d(planes, track_running_stats=True, eps=eps, momentum=bn_mmt)
+            self.bn1 = nn.BatchNorm3d(planes, track_running_stats=True,
+                                      eps=eps, momentum=bn_mmt)
 
         self.conv2_middle = nn.Conv3d(
             planes,
@@ -45,10 +51,12 @@ class Bottleneck_R2plus1Dv2(nn.Module):
         if use_affine:
             self.bn2_middle = Affine(middle_planes)
         else:
-            self.bn2_middle = nn.BatchNorm3d(middle_planes, track_running_stats=True, eps=eps, momentum=bn_mmt)
+            self.bn2_middle = nn.BatchNorm3d(middle_planes, track_running_stats=True,
+                                             eps=eps, momentum=bn_mmt)
 
         self.conv2 = nn.Conv3d(middle_planes, planes, kernel_size=(temporal_kernel, 1, 1),
-                               bias=False, stride=(temporal_stride, 1, 1), padding=((temporal_kernel - 1) // 2, 0, 0))
+                               bias=False, stride=(temporal_stride, 1, 1),
+                               padding=((temporal_kernel - 1) // 2, 0, 0))
 
         if use_affine:
             self.bn2 = Affine(planes)
@@ -61,7 +69,8 @@ class Bottleneck_R2plus1Dv2(nn.Module):
         if use_affine:
             self.bn3 = Affine(planes * self.expansion)
         else:
-            self.bn3 = nn.BatchNorm3d(planes * self.expansion, track_running_stats=True, eps=eps, momentum=bn_mmt)
+            self.bn3 = nn.BatchNorm3d(planes * self.expansion, track_running_stats=True,
+                                      eps=eps, momentum=bn_mmt)
 
         self.relu = nn.ReLU(inplace=True)
         self.down_sample = down_sample
@@ -97,8 +106,6 @@ class Bottleneck_R2plus1Dv2(nn.Module):
 class ResNet_R2plus1Dv2(nn.Module):
     def __init__(self,
                  block,
-                 sample_size,
-                 sample_duration,
                  block_nums,
                  num_classes=400,
                  use_affine=True):
@@ -118,7 +125,8 @@ class ResNet_R2plus1Dv2(nn.Module):
         if use_affine:
             self.bn1_middle = Affine(45)
         else:
-            self.bn1_middle = nn.BatchNorm3d(45, track_running_stats=True, eps=eps, momentum=bn_mmt)
+            self.bn1_middle = nn.BatchNorm3d(45, track_running_stats=True,
+                                             eps=eps, momentum=bn_mmt)
 
         self.conv1 = nn.Conv3d(
             45,
@@ -134,17 +142,40 @@ class ResNet_R2plus1Dv2(nn.Module):
 
         self.relu = nn.ReLU(inplace=True)
 
-        self.layer1 = self._make_layer(block, in_planes=64, planes=64, middle_planes=144, blocks=block_nums[0],
-                                       stride=1, expansion=4)
+        self.layer1 = self._make_layer(block,
+                                       in_planes=64,
+                                       planes=64,
+                                       middle_planes=144,
+                                       blocks=block_nums[0],
+                                       stride=1,
+                                       expansion=4)
 
-        self.layer2 = self._make_layer(block, in_planes=256, planes=128, middle_planes=288, blocks=block_nums[1],
-                                       stride=2, temporal_stride=2, expansion=4)
+        self.layer2 = self._make_layer(block,
+                                       in_planes=256,
+                                       planes=128,
+                                       middle_planes=288,
+                                       blocks=block_nums[1],
+                                       stride=2,
+                                       temporal_stride=2,
+                                       expansion=4)
 
-        self.layer3 = self._make_layer(block, in_planes=512, planes=256, middle_planes=576, blocks=block_nums[2],
-                                       stride=2, temporal_stride=2, expansion=4)
+        self.layer3 = self._make_layer(block,
+                                       in_planes=512,
+                                       planes=256,
+                                       middle_planes=576,
+                                       blocks=block_nums[2],
+                                       stride=2,
+                                       temporal_stride=2,
+                                       expansion=4)
 
-        self.layer4 = self._make_layer(block, in_planes=1024, planes=512, middle_planes=1152, blocks=block_nums[3],
-                                       stride=2, temporal_stride=2, expansion=4)
+        self.layer4 = self._make_layer(block,
+                                       in_planes=1024,
+                                       planes=512,
+                                       middle_planes=1152,
+                                       blocks=block_nums[3],
+                                       stride=2,
+                                       temporal_stride=2,
+                                       expansion=4)
 
         self.avgpool = nn.AdaptiveAvgPool3d(output_size=(1, 1, 1))
 
@@ -163,7 +194,8 @@ class ResNet_R2plus1Dv2(nn.Module):
         if self.use_affine:
             down_bn = Affine(planes * expansion)
         else:
-            down_bn = nn.BatchNorm3d(planes * expansion, track_running_stats=True, eps=eps, momentum=bn_mmt)
+            down_bn = nn.BatchNorm3d(planes * expansion, track_running_stats=True,
+                                     eps=eps, momentum=bn_mmt)
         down_sample = nn.Sequential(
             nn.Conv3d(
                 in_planes,
@@ -173,9 +205,9 @@ class ResNet_R2plus1Dv2(nn.Module):
                 bias=False), down_bn)
         layers = []
         layers.append(
-            block(in_planes, planes, middle_planes, stride, temporal_stride, down_sample, expansion,
-                  temporal_kernel=3, use_affine=self.use_affine))
-        for i in range(1, blocks):
+            block(in_planes, planes, middle_planes, stride, temporal_stride,
+                  down_sample, expansion, temporal_kernel=3, use_affine=self.use_affine))
+        for _ in range(1, blocks):
             layers.append(block(planes * expansion, planes, middle_planes, expansion=expansion,
                                 temporal_kernel=3, use_affine=self.use_affine))
 
@@ -206,9 +238,7 @@ class ResNet_R2plus1Dv2(nn.Module):
 def r2plus1d_v2_resnet152_kinetics400(cfg):
     model = ResNet_R2plus1Dv2(Bottleneck_R2plus1Dv2,
                               num_classes=cfg.CONFIG.DATA.NUM_CLASSES,
-                              sample_size=112,
                               block_nums=[3, 8, 36, 3],
-                              sample_duration=32,
                               use_affine=False)
 
     if cfg.CONFIG.MODEL.PRETRAINED:
