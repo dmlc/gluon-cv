@@ -2,6 +2,7 @@
 # pylint: disable=wrong-import-position
 """GluonCV: a deep learning vision toolkit powered by Gluon."""
 from __future__ import absolute_import
+import sys
 
 __version__ = '0.9.0'
 
@@ -56,11 +57,11 @@ def _require_pytorch_version(torch_version, max_torch_version='2.0.0'):
             version_str = '>={},<{}'.format(torch_version, max_torch_version)
             msg = (
                 "Legacy torch=={0} detected, some modules may not work properly. "
-                "torch{1} is required. You can use pip or conda to upgrade"
+                "torch{1} is required. You can use pip or conda to upgrade")
             raise RuntimeError(msg)
     except ImportError:
         raise ImportError(
-            "Unable to import dependency pytorch. Please use pip or conda to install."
+            "Unable to import dependency pytorch. Please use pip or conda to install.")
 
 def _deprecate_python2():
     if sys.version_info[0] < 3:

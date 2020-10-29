@@ -1,8 +1,7 @@
 """Utility functions for version checking."""
-import sys
 import warnings
 
-__all__ = ['check_version', '_require_mxnet_version', '_deprecate_python2']
+__all__ = ['check_version']
 
 def check_version(min_version, warning_only=False):
     """Check the version of gluoncv satisfies the provided minimum version.
