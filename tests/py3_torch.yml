@@ -27,5 +27,5 @@ dependencies:
     - portalocker
     - tensorboardx
     - decord
-    - cv2
+    - opencv-python-headless
     - yacs
