@@ -80,7 +80,7 @@ stage("Unit Test") {
           export LD_LIBRARY_PATH=/usr/local/cuda-10.0/lib64
           export MPLBACKEND=Agg
           export MXNET_CUDNN_AUTOTUNE_DEFAULT=0
-          python -c "import torch; torch.__version__"
+          nosetests --with-timer --timer-ok 5 --timer-warning 20 -x --with-coverage --cover-package gluoncv -v tests/model_zoo_torch
           """
         }
       }
