@@ -2,6 +2,7 @@
 """
 Non-local module from Non-local Neural Networks
 CVPR 2018, https://arxiv.org/abs/1711.07971
+Code adapted from https://github.com/open-mmlab/mmaction
 """
 import torch
 import torch.nn as nn

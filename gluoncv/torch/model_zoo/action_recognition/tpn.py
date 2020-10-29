@@ -2,6 +2,7 @@
 """
 Temporal Pyramid Network for Action Recognition
 CVPR 2020, https://arxiv.org/pdf/2004.03548.pdf
+Code adapted from https://github.com/decisionforce/TPN
 """
 import numpy as np
 
