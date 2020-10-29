@@ -34,6 +34,7 @@ from mxnet import use_np
 mx.npx.set_np()
 
 
+@use_np
 class CIFARBlock(HybridBlock):
     r"""Bottleneck Block from `"Aggregated Residual Transformations for Deep Neural Networks"
     <http://arxiv.org/abs/1611.05431>`_ paper.
@@ -94,6 +95,7 @@ class CIFARBlock(HybridBlock):
         return x
 
 # Nets
+@use_np
 class CIFARResNext(HybridBlock):
     r"""ResNext model from `"Aggregated Residual Transformations for Deep Neural Networks"
     <http://arxiv.org/abs/1611.05431>`_ paper.
