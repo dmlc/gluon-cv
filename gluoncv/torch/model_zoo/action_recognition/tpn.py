@@ -239,7 +239,6 @@ class TPN(nn.Module):
                  aux_head_config=None,
                  ):
         super(TPN, self).__init__()
-        assert isinstance(in_channels, tuple)
         assert isinstance(out_channels, int)
         self.in_channels = in_channels
         self.out_channels = out_channels
