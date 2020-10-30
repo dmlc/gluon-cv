@@ -14,6 +14,7 @@ import autogluon.core as ag
 from autogluon.core.decorator import sample_config
 from autogluon.core.scheduler.resource import get_cpu_count, get_gpu_count
 from autogluon.core.task.base import BaseTask
+from autogluon.core.searcher import RandomSearcher
 
 from ... import utils as gutils
 from .utils import ConfigDict
@@ -216,7 +217,8 @@ class ImageClassification(BaseTask):
         start_time = time.time()
         self._fit_summary = {}
         if config.get('num_trials', 1) < 2:
-            args = sample_config(_train_image_classification.args, {})
+            rand_config = RandomSearcher(_train_image_classification.cs).get_config()
+            args = sample_config(_train_image_classification.args, rand_config)
             self._logger.info("Starting fit without HPO")
             results = _train_image_classification(args, None)
             self._fit_summary.update({'train_acc': results.get('train_acc', -1),
