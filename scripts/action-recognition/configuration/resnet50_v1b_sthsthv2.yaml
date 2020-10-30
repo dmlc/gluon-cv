@@ -42,7 +42,7 @@ CONFIG:
 
   MODEL:
     NAME: 'resnet50_v1b_sthsthv2'
-    PRETRAINED: True
+    PRETRAINED: False
 
   LOG:
     BASE_PATH: './logs/resnet50_v1b_sthsthv2'

@@ -42,7 +42,7 @@ CONFIG:
 
   MODEL:
     NAME: 'i3d_resnet50_v1_kinetics400'
-    PRETRAINED: True
+    PRETRAINED: False
 
   LOG:
     BASE_PATH: './logs/i3d_resnet50_v1_kinetics400'

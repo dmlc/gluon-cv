@@ -15,11 +15,13 @@ CONFIG:
   TRAIN:
     EPOCH_NUM: 196
     BATCH_SIZE: 8
-    LR: 0.1
+    LR: 0.01
     MOMENTUM: 0.9
     W_DECAY: 1e-4
-    LR_MILESTONE: [40, 100, 160]
-    STEP: 0.1
+    WARMUP_EPOCHS: 34
+    LR_POLICY: 'Cosine'
+    WARMUP_END_LR: 0.1
+    RESUME_EPOCH: -1
 
   VAL:
     FREQ: 2
@@ -42,7 +44,7 @@ CONFIG:
 
   MODEL:
     NAME: 'slowfast_4x16_resnet50_kinetics400'
-    PRETRAINED: True
+    PRETRAINED: False
 
   LOG:
     BASE_PATH: './logs/slowfast_4x16_resnet50_kinetics400'

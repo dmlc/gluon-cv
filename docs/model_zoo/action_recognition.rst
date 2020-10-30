@@ -138,7 +138,7 @@ The following table lists pre-trained models trained on Something-Something-V2.
        "Quo Vadis, Action Recognition? A New Model and the Kinetics Dataset." \
        In Computer Vision and Pattern Recognition (CVPR), 2017.
 .. [5] Zhaofan Qiu, Ting Yao and Tao Mei. \
-       "SLearning Spatio-Temporal Representation with Pseudo-3D Residual Networks." \
+       "Learning Spatio-Temporal Representation with Pseudo-3D Residual Networks." \
        In International Conference on Computer Vision (ICCV), 2017.
 .. [6] Du Tran, Heng Wang, Lorenzo Torresani, Jamie Ray, Yann LeCun and Manohar Paluri. \
        "A Closer Look at Spatiotemporal Convolutions for Action Recognition." \
@@ -206,7 +206,7 @@ The following table lists pre-trained models trained on Something-Something-V2.
   Our pre-trained models reproduce results from recent state-of-the-art approaches. Please check the reference paper for further information.
 
 .. csv-table::
-   :file: ./csv_tables/Action_Recognitions/Something-Something-V2.csv
+   :file: ./csv_tables/Action_Recognitions/Something-Something-V2_torch.csv
    :header-rows: 1
    :class: tight-table
    :widths: 30 12 10 10 8 10 12 8
@@ -225,7 +225,7 @@ The following table lists pre-trained models trained on Something-Something-V2.
        "Quo Vadis, Action Recognition? A New Model and the Kinetics Dataset." \
        In Computer Vision and Pattern Recognition (CVPR), 2017.
 .. [5] Zhaofan Qiu, Ting Yao and Tao Mei. \
-       "SLearning Spatio-Temporal Representation with Pseudo-3D Residual Networks." \
+       "Learning Spatio-Temporal Representation with Pseudo-3D Residual Networks." \
        In International Conference on Computer Vision (ICCV), 2017.
 .. [6] Du Tran, Heng Wang, Lorenzo Torresani, Jamie Ray, Yann LeCun and Manohar Paluri. \
        "A Closer Look at Spatiotemporal Convolutions for Action Recognition." \
@@ -236,3 +236,6 @@ The following table lists pre-trained models trained on Something-Something-V2.
 .. [8] Christoph Feichtenhofer, Haoqi Fan, Jitendra Malik and Kaiming He. \
        "SlowFast Networks for Video Recognition." \
        In International Conference on Computer Vision (ICCV), 2019.
+.. [9] Yang, Ceyuan and Xu, Yinghao and Shi, Jianping and Dai, Bo and Zhou, Bolei. \
+       "Temporal Pyramid Network for Action Recognition." \
+       In Computer Vision and Pattern Recognition (CVPR), 2020.

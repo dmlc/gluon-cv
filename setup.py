@@ -59,7 +59,8 @@ requirements = [
     'tensorboardx',
     'decord',
     'opencv-python',
-    'yacs'
+    'yacs',
+    'pandas'
 ]
 if with_cython:
     _NP_INCLUDE_DIRS = np.get_include()

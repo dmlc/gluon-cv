@@ -13,13 +13,15 @@ DDP_CONFIG:
 
 CONFIG:
   TRAIN:
-    EPOCH_NUM: 196
+    EPOCH_NUM: 30
     BATCH_SIZE: 8
-    LR: 0.1
+    LR: 0.0001
     MOMENTUM: 0.9
-    W_DECAY: 1e-4
-    LR_MILESTONE: [60, 120, 150]
-    STEP: 0.1
+    W_DECAY: 1e-6
+    WARMUP_EPOCHS: 5
+    LR_POLICY: 'Cosine'
+    WARMUP_END_LR: 0.1
+    RESUME_EPOCH: -1
 
   VAL:
     FREQ: 2
@@ -42,7 +44,7 @@ CONFIG:
 
   MODEL:
     NAME: 'slowfast_16x8_resnet50_sthsthv2'
-    PRETRAINED: True
+    PRETRAINED: False
 
   LOG:
     BASE_PATH: './logs/slowfast_16x8_resnet50_sthsthv2'

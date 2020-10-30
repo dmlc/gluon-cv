@@ -14,6 +14,7 @@ from gluoncv.torch.utils.task_utils import train_classification, validation_clas
 from gluoncv.torch.engine.config import get_cfg_defaults
 from gluoncv.torch.engine.launch import spawn_workers
 from gluoncv.torch.utils.utils import build_log_dir
+from gluoncv.torch.utils.lr_policy import GradualWarmupScheduler
 
 
 def main_worker(cfg):
@@ -31,12 +32,31 @@ def main_worker(cfg):
 
     # create dataset and dataloader
     train_loader, val_loader, train_sampler, val_sampler, mg_sampler = build_dataloader(cfg)
-    optimizer = torch.optim.SGD(model.parameters(), lr=cfg.CONFIG.TRAIN.LR, momentum=cfg.CONFIG.TRAIN.MOMENTUM,
+
+    optimizer = torch.optim.SGD(model.parameters(),
+                                lr=cfg.CONFIG.TRAIN.LR,
+                                momentum=cfg.CONFIG.TRAIN.MOMENTUM,
                                 weight_decay=cfg.CONFIG.TRAIN.W_DECAY)
+
     if cfg.CONFIG.MODEL.LOAD:
         model, _ = load_model(model, optimizer, cfg, load_fc=True)
 
-    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=cfg.CONFIG.TRAIN.LR_MILESTONE, gamma=cfg.CONFIG.TRAIN.STEP)
+    if cfg.CONFIG.TRAIN.LR_POLICY == 'Step':
+        scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer,
+                                                         milestones=cfg.CONFIG.TRAIN.LR_MILESTONE,
+                                                         gamma=cfg.CONFIG.TRAIN.STEP)
+    elif cfg.CONFIG.TRAIN.LR_POLICY == 'Cosine':
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer,
+                                                               T_max=cfg.CONFIG.TRAIN.EPOCH_NUM - cfg.CONFIG.TRAIN.WARMUP_EPOCHS,
+                                                               eta_min=0,
+                                                               last_epoch=cfg.CONFIG.TRAIN.RESUME_EPOCH)
+        scheduler_warmup = GradualWarmupScheduler(optimizer,
+                                                  multiplier=(cfg.CONFIG.TRAIN.WARMUP_END_LR / cfg.CONFIG.TRAIN.LR) * cfg.DDP_CONFIG.WORLD_SIZE,
+                                                  total_epoch=cfg.CONFIG.TRAIN.WARMUP_EPOCHS,
+                                                  after_scheduler=scheduler)
+    else:
+        print('Learning rate schedule %s is not supported yet. Please use Step or Cosine.')
+
     criterion = nn.CrossEntropyLoss().cuda()
 
     base_iter = 0
@@ -45,7 +65,12 @@ def main_worker(cfg):
             train_sampler.set_epoch(epoch)
 
         base_iter = train_classification(base_iter, model, train_loader, epoch, criterion, optimizer, cfg, writer=writer)
-        scheduler.step()
+
+        if cfg.CONFIG.TRAIN.LR_POLICY == 'Step':
+            scheduler.step()
+        elif cfg.CONFIG.TRAIN.LR_POLICY == 'Cosine':
+            scheduler_warmup.step()
+
         if epoch % cfg.CONFIG.VAL.FREQ == 0 or epoch == cfg.CONFIG.TRAIN.EPOCH_NUM - 1:
             validation_classification(model, val_loader, epoch, criterion, cfg, writer)
 
