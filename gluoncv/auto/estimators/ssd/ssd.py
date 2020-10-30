@@ -70,11 +70,12 @@ class SSDEstimator(BaseEstimator):
         """Fit SSD model."""
         self._best_map = 0
         self.epoch = 0
+        self._time_elapsed = 0
         if max(self._cfg.train.start_epoch, self.epoch) >= self._cfg.train.epochs:
             return
         self.net.collect_params().reset_ctx(self.ctx)
         self._init_trainer()
-        self._resume_fit(train_data, val_data)
+        return self._resume_fit(train_data, val_data)
 
     def _resume_fit(self, train_data, val_data):
         if max(self._cfg.train.start_epoch, self.epoch) >= self._cfg.train.epochs:
@@ -102,7 +103,7 @@ class SSDEstimator(BaseEstimator):
                 self.async_net, train_dataset, val_dataset, self._cfg.ssd.data_shape,
                 self.batch_size, self._cfg.num_workers)
 
-        self._train_loop(train_loader, val_loader)
+        return self._train_loop(train_loader, val_loader)
 
     def _train_loop(self, train_data, val_data):
         # fix seed for mxnet, numpy and python builtin random generator.
@@ -192,6 +193,10 @@ class SSDEstimator(BaseEstimator):
                         self._best_map = current_map
                 if self._reporter:
                     self._reporter(epoch=epoch, map_reward=current_map)
+            self._time_elapsed += time.time() - btic
+        # map on train data
+        map_name, mean_ap = self._evaluate(train_data)
+        return {'train_map': float(mean_ap[-1]), 'valid_map': self._best_map, 'time': self._time_elapsed}
 
     def _evaluate(self, val_data):
         """Evaluate on validation dataset."""

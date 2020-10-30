@@ -1,7 +1,7 @@
 """Faster RCNN default config"""
 # pylint: disable=unused-variable,missing-function-docstring,bad-whitespace,missing-class-docstring
-from autocfg import dataclass, field
 from typing import Union, Tuple, Any
+from autocfg import dataclass, field
 
 @dataclass
 class FasterRCNN:

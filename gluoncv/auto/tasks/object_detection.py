@@ -1,6 +1,7 @@
 """Auto pipeline for object detection task"""
 # pylint: disable=bad-whitespace,missing-class-docstring
 import time
+import copy
 import logging
 import uuid
 from typing import Union, Tuple
@@ -24,9 +25,9 @@ __all__ = ['ObjectDetection']
 
 @dataclass
 class LightConfig:
-    transfer : Union[str, ag.Space] = ag.Categorical('center_net_resnet18_v1b_coco', 'ssd_512_mobilenet1.0_coco')
+    transfer : Union[str, ag.Space] = 'center_net_resnet18_v1b_coco'
     lr : Union[ag.Space, float] = 1e-2
-    num_trials : int = 2
+    num_trials : int = 1
     epochs : int = 10
     nthreads_per_trial : int = 32
     ngpus_per_trial : int = 0
@@ -60,20 +61,21 @@ def _train_object_detection(args, reporter):
     # convert user defined config to nested form
     args = config_to_nested(args)
 
+    tic = time.time()
     try:
         estimator_cls = args.pop('estimator', None)
         estimator = estimator_cls(args, reporter=reporter)
         # training
-        estimator.fit(train_data=train_data, val_data=val_data)
+        result = estimator.fit(train_data=train_data, val_data=val_data)
     # pylint: disable=broad-except
     except Exception as e:
-        return {'stacktrace': str(e), 'args': str(args)}
+        return {'stacktrace': str(e), 'args': str(args), 'time': time.time() - tic, 'train_map': -1, 'valid_map': -1}
 
     # TODO: checkpointing needs to be done in a better way
     unique_checkpoint = 'train_object_detection_' + str(uuid.uuid4())
     estimator.save(unique_checkpoint)
-    return {'model_checkpoint': unique_checkpoint}
-
+    result.update({'model_checkpoint': unique_checkpoint})
+    return result
 
 class ObjectDetection(BaseTask):
     """Object Detection general task.
@@ -90,6 +92,7 @@ class ObjectDetection(BaseTask):
 
     def __init__(self, config=None, logger=None):
         super(ObjectDetection, self).__init__()
+        self._fit_summary = {}
         self._logger = logger if logger is not None else logging.getLogger(__name__)
         self._logger.setLevel(logging.INFO)
 
@@ -159,6 +162,18 @@ class ObjectDetection(BaseTask):
     def fit(self, train_data, val_data=None, train_size=0.9, random_state=None):
         """Fit auto estimator given the input data.
 
+        Parameters
+        ----------
+        train_data : pd.DataFrame or iterator
+            Training data.
+        val_data : pd.DataFrame or iterator, optional
+            Validation data, optional. If `train_data` is DataFrame, `val_data` will be split from
+            `train_data` given `train_size`.
+        train_size : float
+            The portion of train data split from original `train_data` if `val_data` is not provided.
+        random_state : int
+            Random state for splitting, for `np.random.seed`.
+
         Returns
         -------
         Estimator
@@ -200,29 +215,44 @@ class ObjectDetection(BaseTask):
         _train_object_detection.register_args(**config)
 
         start_time = time.time()
-        self._logger.info("Starting HPO experiments")
-
-        results = self.run_fit(_train_object_detection, self.search_strategy,
-                               self.scheduler_options)
+        self._fit_summary = {}
+        if config.get('num_trials', 1) < 2:
+            args = sample_config(_train_object_detection.args, {})
+            self._logger.info("Starting fit without HPO")
+            results = _train_object_detection(args, None)
+            self._fit_summary.update({'train_map': results.get('train_map', -1),
+                                      'valid_map': results.get('valid_map', -1),
+                                      'total_time': results.get('time', time.time() - start_time),
+                                      'best_config': args})
+        else:
+            self._logger.info("Starting HPO experiments")
+            results = self.run_fit(_train_object_detection, self.search_strategy,
+                                   self.scheduler_options)
+            self._fit_summary.update({'train_map': results.get('train_map', -1),
+                                      'valid_map': results.get('valid_map', results.get('best_reward', -1)),
+                                      'total_time': results.get('total_time', time.time() - start_time),
+                                      'best_config': results.get('best_config', {})})
         end_time = time.time()
         self._logger.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> finish model fitting")
         self._logger.info("total runtime is %.2f s", end_time - start_time)
-        best_config = sample_config(_train_object_detection.args, results['best_config'])
-        # convert best config to nested form
-        best_config = config_to_nested(best_config)
-        best_config.pop('train_data', None)
-        best_config.pop('val_data', None)
-        self._logger.info('The best config: %s', str(best_config))
+        if config.get('num_trials', 1) > 1:
+            best_config = sample_config(_train_object_detection.args, results['best_config'])
+            # convert best config to nested form
+            best_config = config_to_nested(best_config)
+            best_config.pop('train_data', None)
+            best_config.pop('val_data', None)
+            self._logger.info('The best config: %s', str(best_config))
 
-        # estimator = best_config['estimator'](best_config)
         # TODO: checkpointing needs to be done in a better way
         model_checkpoint = results.get('model_checkpoint', None)
         if model_checkpoint is None:
-            msg = results.get('stacktrace', '')
-            args = results.get('args', '')
-            raise RuntimeError(f'Unexpected error happened during fit: {msg} with {args}')
+            raise RuntimeError(f'Unexpected error happened during fit: {results}')
         estimator = self.load(results['model_checkpoint'])
         return estimator
+
+    @property
+    def fit_summary(self):
+        return copy.copy(self._fit_summary)
 
     @classmethod
     def load(cls, filename):

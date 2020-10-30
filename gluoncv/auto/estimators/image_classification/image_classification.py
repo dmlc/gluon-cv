@@ -44,6 +44,7 @@ class ImageClassificationEstimator(BaseEstimator):
     def _fit(self, train_data, val_data):
         self._best_acc = 0
         self.epoch = 0
+        self._time_elapsed = 0
         if max(self._cfg.train.start_epoch, self.epoch) >= self._cfg.train.epochs:
             return
         if not isinstance(train_data, pd.DataFrame):
@@ -51,7 +52,7 @@ class ImageClassificationEstimator(BaseEstimator):
         else:
             self.last_train = train_data
         self._init_trainer()
-        self._resume_fit(train_data, val_data)
+        return self._resume_fit(train_data, val_data)
 
     def _resume_fit(self, train_data, val_data):
         if max(self._cfg.train.start_epoch, self.epoch) >= self._cfg.train.epochs:
@@ -78,7 +79,7 @@ class ImageClassificationEstimator(BaseEstimator):
                                                                       self._cfg.train.crop_ratio,
                                                                       train_dataset=train_dataset,
                                                                       val_dataset=val_dataset)
-        self._train_loop(train_loader, val_loader)
+        return self._train_loop(train_loader, val_loader)
 
     def _train_loop(self, train_data, val_data):
         if self._cfg.train.no_wd:
@@ -108,10 +109,10 @@ class ImageClassificationEstimator(BaseEstimator):
         for self.epoch in range(max(self._cfg.train.start_epoch, self.epoch), self._cfg.train.epochs):
             epoch = self.epoch
             tic = time.time()
+            btic = time.time()
             if self._cfg.train.use_rec:
                 train_data.reset()
             train_metric.reset()
-            btic = time.time()
 
             # pylint: disable=undefined-loop-variable
             for i, batch in enumerate(train_data):
@@ -187,7 +188,8 @@ class ImageClassificationEstimator(BaseEstimator):
                 self._best_acc = top1_val
             if self._reporter:
                 self._reporter(epoch=epoch, acc_reward=top1_val)
-
+            self._time_elapsed += time.time() - btic
+        return {'train_acc': train_metric_score), 'valid_acc': self._best_acc, 'time': self._time_elapsed}
 
     def _init_network(self):
         if not self.num_class:

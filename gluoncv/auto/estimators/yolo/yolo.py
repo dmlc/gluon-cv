@@ -67,6 +67,7 @@ class YOLOv3Estimator(BaseEstimator):
         """Fit YOLO3 model."""
         self._best_map = 0
         self.epoch = 0
+        self._time_elapsed = 0
         if max(self._cfg.train.start_epoch, self.epoch) >= self._cfg.train.epochs:
             return
         if not isinstance(train_data, pd.DataFrame):
@@ -75,7 +76,7 @@ class YOLOv3Estimator(BaseEstimator):
             self.last_train = train_data
         self.net.collect_params().reset_ctx(self.ctx)
         self._init_trainer()
-        self._resume_fit(train_data, val_data)
+        return self._resume_fit(train_data, val_data)
 
     def _resume_fit(self, train_data, val_data):
         if max(self._cfg.train.start_epoch, self.epoch) >= self._cfg.train.epochs:
@@ -97,8 +98,7 @@ class YOLOv3Estimator(BaseEstimator):
                 v.wd_mult = 0.0
         if self._cfg.train.label_smooth:
             self.net._target_generator._label_smooth = True
-
-        self._train_loop(train_loader, val_loader)
+        return self._train_loop(train_loader, val_loader)
 
     def _train_loop(self, train_data, val_data):
         # fix seed for mxnet, numpy and python builtin random generator.
@@ -113,6 +113,8 @@ class YOLOv3Estimator(BaseEstimator):
         self._logger.info('Start training from [Epoch %d]', max(self._cfg.train.start_epoch, self.epoch))
         for self.epoch in range(max(self._cfg.train.start_epoch, self.epoch), self._cfg.train.epochs):
             epoch = self.epoch
+            tic = time.time()
+            btic = time.time()
             if self._cfg.train.mixup:
                 # TODO(zhreshold): more elegant way to control mixup during runtime
                 try:
@@ -125,8 +127,6 @@ class YOLOv3Estimator(BaseEstimator):
                     except AttributeError:
                         train_data._dataset._data.set_mixup(None)
 
-            tic = time.time()
-            btic = time.time()
             mx.nd.waitall()
             self.net.hybridize()
             for i, batch in enumerate(train_data):
@@ -193,6 +193,11 @@ class YOLOv3Estimator(BaseEstimator):
                         self._best_map = current_map
                 if self._reporter:
                     self._reporter(epoch=epoch, map_reward=current_map)
+            self._time_elapsed += time.time() - btic
+
+        # map on train data
+        map_name, mean_ap = self._evaluate(train_data)
+        return {'train_map': float(mean_ap[-1]), 'valid_map': self._best_map, 'time': self._time_elapsed}
 
     def _evaluate(self, val_data):
         """Evaluate the current model on dataset."""
@@ -240,7 +245,6 @@ class YOLOv3Estimator(BaseEstimator):
             # update metric
             eval_metric.update(det_bboxes, det_ids, det_scores, gt_bboxes, gt_ids, gt_difficults)
         return eval_metric.get()
-        return eval_metric
 
     def _predict(self, x):
         """Predict an individual example."""

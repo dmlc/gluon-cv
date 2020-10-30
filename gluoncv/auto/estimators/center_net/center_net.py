@@ -81,7 +81,7 @@ class CenterNetEstimator(BaseEstimator):
         else:
             self.last_train = train_data
         self._init_trainer()
-        self._resume_fit(train_data, val_data)
+        return self._resume_fit(train_data, val_data)
 
     def _resume_fit(self, train_data, val_data):
         if max(self._cfg.train.start_epoch, self.epoch) >= self._cfg.train.epochs:
@@ -107,7 +107,7 @@ class CenterNetEstimator(BaseEstimator):
             self._cfg.valid.batch_size, False, batchify_fn=val_batchify_fn, last_batch='keep',
             num_workers=self._cfg.valid.num_workers)
 
-        self._train_loop(train_loader, val_loader)
+        return self._train_loop(train_loader, val_loader)
 
     def _train_loop(self, train_data, val_data):
         wh_loss = MaskedL1Loss(weight=self._cfg.center_net.wh_weight)
@@ -188,6 +188,10 @@ class CenterNetEstimator(BaseEstimator):
                     self._best_map = current_map
                 if self._reporter:
                     self._reporter(epoch=epoch, map_reward=current_map)
+            self._time_elapsed += time.time() - btic
+        # map on train data
+        map_name, mean_ap = self._evaluate(train_data)
+        return {'train_map': float(mean_ap[-1]), 'valid_map': self._best_map, 'time': self._time_elapsed}
 
     def _evaluate(self, val_data):
         """Test on validation dataset."""

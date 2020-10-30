@@ -59,12 +59,13 @@ class FasterRCNNEstimator(BaseEstimator):
         """Fit Faster R-CNN model."""
         self._best_map = 0
         self.epoch = 0
+        self._time_elapsed = 0
         if max(self._cfg.train.start_epoch, self.epoch) >= self._cfg.train.epochs:
             return
         self.net.collect_params().setattr('grad_req', 'null')
         self.net.collect_train_params().setattr('grad_req', 'write')
         self._init_trainer()
-        self._resume_fit(train_data, val_data)
+        return self._resume_fit(train_data, val_data)
 
     def _resume_fit(self, train_data, val_data):
         if max(self._cfg.train.start_epoch, self.epoch) >= self._cfg.train.epochs:
@@ -83,7 +84,7 @@ class FasterRCNNEstimator(BaseEstimator):
             self.net, train_dataset, val_dataset, FasterRCNNDefaultTrainTransform,
             FasterRCNNDefaultValTransform, self.batch_size, len(self.ctx), self._cfg)
 
-        self._train_loop(train_loader, val_loader)
+        return self._train_loop(train_loader, val_loader)
 
     def _train_loop(self, train_data, val_data):
         # loss and metric
@@ -115,6 +116,7 @@ class FasterRCNNEstimator(BaseEstimator):
 
         for self.epoch in range(max(self._cfg.train.start_epoch, self.epoch), self._cfg.train.epochs):
             epoch = self.epoch
+            btic = time.time()
             rcnn_task = ForwardBackwardTask(self.net, self.trainer, rpn_cls_loss, rpn_box_loss,
                                             rcnn_cls_loss, rcnn_box_loss, mix_ratio=1.0,
                                             amp_enabled=self._cfg.faster_rcnn.amp)
@@ -139,7 +141,6 @@ class FasterRCNNEstimator(BaseEstimator):
             for metric in metrics:
                 metric.reset()
             tic = time.time()
-            btic = time.time()
             base_lr = self.trainer.learning_rate
             rcnn_task.mix_ratio = mix_ratio
             for i, batch in enumerate(train_data):
@@ -206,6 +207,10 @@ class FasterRCNNEstimator(BaseEstimator):
                         self._best_map = current_map
                 if self._reporter:
                     self._reporter(epoch=epoch, map_reward=current_map)
+            self._time_elapsed += time.time() - btic
+        # map on train data
+        map_name, mean_ap = self._evaluate(train_data)
+        return {'train_map': float(mean_ap[-1]), 'valid_map': self._best_map, 'time': self._time_elapsed}
 
     def _evaluate(self, val_data):
         """Evaluate on validation dataset."""

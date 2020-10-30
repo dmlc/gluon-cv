@@ -1,7 +1,7 @@
 """YOLO default config"""
 # pylint: disable=unused-variable,missing-function-docstring,bad-whitespace,missing-class-docstring
-from autocfg import dataclass, field
 from typing import Union, Tuple
+from autocfg import dataclass, field
 
 
 @dataclass
@@ -12,7 +12,9 @@ class YOLOv3:
     # base network feature extractor. If `name` is `None`, this is ignored.
     filters : Union[Tuple, list] = (512, 256, 128)
     # The anchor setting.
-    anchors : Union[Tuple, list] = tuple([[10, 13, 16, 30, 33, 23], [30, 61, 62, 45, 59, 119], [116, 90, 156, 198, 373, 326]])
+    anchors : Union[Tuple, list] = tuple([[10, 13, 16, 30, 33, 23],
+                                          [30, 61, 62, 45, 59, 119],
+                                          [116, 90, 156, 198, 373, 326]])
     # Strides of feature map.
     strides : Union[Tuple, list] = (8, 16, 32)
     # Input data shape for evaluation, use 320, 416, 608...

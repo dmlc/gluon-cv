@@ -1,8 +1,8 @@
 """Default configs for center net"""
-# pylint: disable=bad-whitespace,missing-class-docstring
+# pylint: disable=bad-whitespace,missing-class-docstring,bad-indentation
 import os
-from autocfg import dataclass, field
 from typing import Union, Tuple
+from autocfg import dataclass, field
 
 @dataclass
 class CenterNetHead:
@@ -15,12 +15,6 @@ class CenterNetHead:
 class CenterNet:
   base_network : str = 'dla34_deconv'  # base feature network
   heads : CenterNetHead = field(default_factory=CenterNetHead)
-  # heads : dict = field(default_factory=lambda: ({
-  #     'bias': -2.19,  # use bias = -log((1 - 0.1) / 0.1)
-  #     'wh_outputs': 2,  # wh head channel
-  #     'reg_outputs': 2,  # regression head channel
-  #     'head_conv_channel': 64,  # additional conv channel
-  # }))
   scale : float = 4.0  # output vs input scaling ratio, e.g., input_h // feature_h
   topk : int = 100  # topk detection results will be kept after inference
   root : str = os.path.expanduser(os.path.join('~', '.mxnet', 'models'))  # model zoo root dir

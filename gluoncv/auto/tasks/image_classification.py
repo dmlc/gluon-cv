@@ -1,6 +1,7 @@
 """Auto pipeline for image classification task"""
 # pylint: disable=bad-whitespace,missing-class-docstring
 import logging
+import copy
 import uuid
 import time
 from typing import Union, Tuple
@@ -60,19 +61,21 @@ def _train_image_classification(args, reporter):
     # convert user defined config to nested form
     args = config_to_nested(args)
 
+    tic = time.time()
     try:
         estimator_cls = args.pop('estimator', None)
         estimator = estimator_cls(args, reporter=reporter)
         # training
-        estimator.fit(train_data=train_data, val_data=val_data)
+        result = estimator.fit(train_data=train_data, val_data=val_data)
     # pylint: disable=broad-except
     except Exception as e:
-        return {'stacktrace': str(e), 'args': str(args)}
+        return {'stacktrace': str(e), 'args': str(args), 'time': time.time() - tic, 'train_acc': -1, 'valid_acc': -1}
 
     # TODO: checkpointing needs to be done in a better way
     unique_checkpoint = 'train_image_classification_' + str(uuid.uuid4())
     estimator.save(unique_checkpoint)
-    return {'model_checkpoint': unique_checkpoint}
+    result.update({'model_checkpoint': unique_checkpoint})
+    return result
 
 
 class ImageClassification(BaseTask):
@@ -90,6 +93,7 @@ class ImageClassification(BaseTask):
 
     def __init__(self, config=None, estimator=None, logger=None):
         super(ImageClassification, self).__init__()
+        self._fit_summary = {}
         self._logger = logger if logger is not None else logging.getLogger(__name__)
         self._logger.setLevel(logging.INFO)
 
@@ -159,7 +163,19 @@ class ImageClassification(BaseTask):
                 'grace_period': config.get('grace_period', config.get('epochs', 50) // 4)})
 
     def fit(self, train_data, val_data=None, train_size=0.9, random_state=None):
-        """Fit auto estimator given the input data .
+        """Fit auto estimator given the input data.
+
+        Parameters
+        ----------
+        train_data : pd.DataFrame or iterator
+            Training data.
+        val_data : pd.DataFrame or iterator, optional
+            Validation data, optional. If `train_data` is DataFrame, `val_data` will be split from
+            `train_data` given `train_size`.
+        train_size : float
+            The portion of train data split from original `train_data` if `val_data` is not provided.
+        random_state : int
+            Random state for splitting, for `np.random.seed`.
 
         Returns
         -------
@@ -197,29 +213,44 @@ class ImageClassification(BaseTask):
         _train_image_classification.register_args(**config)
 
         start_time = time.time()
-        self._logger.info("Starting HPO experiments")
-
-        results = self.run_fit(_train_image_classification, self.search_strategy,
-                               self.scheduler_options)
+        self._fit_summary = {}
+        if config.get('num_trials', 1) < 2:
+            args = sample_config(_train_image_classification.args, {})
+            self._logger.info("Starting fit without HPO")
+            results = _train_image_classification(args, None)
+            self._fit_summary.update({'train_acc': results.get('train_acc', -1),
+                                      'valid_acc': results.get('valid_acc', -1),
+                                      'total_time': results.get('time', time.time() - start_time),
+                                      'best_config': args})
+        else:
+            self._logger.info("Starting HPO experiments")
+            results = self.run_fit(_train_image_classification, self.search_strategy,
+                                   self.scheduler_options)
+            self._fit_summary.update({'train_acc': results.get('train_acc', -1),
+                                      'valid_acc': results.get('valid_acc', results.get('best_reward', -1)),
+                                      'total_time': results.get('total_time', time.time() - start_time),
+                                      'best_config': results.get('best_config', {})})
         end_time = time.time()
         self._logger.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> finish model fitting")
         self._logger.info("total runtime is %.2f s", end_time - start_time)
-        best_config = sample_config(_train_image_classification.args, results['best_config'])
-        # convert best config to nested form
-        best_config = config_to_nested(best_config)
-        best_config.pop('train_data', None)
-        best_config.pop('val_data', None)
-        self._logger.info('The best config: %s', str(best_config))
+        if config.get('num_trials', 1) > 1:
+            best_config = sample_config(_train_image_classification.args, results['best_config'])
+            # convert best config to nested form
+            best_config = config_to_nested(best_config)
+            best_config.pop('train_data', None)
+            best_config.pop('val_data', None)
+            self._logger.info('The best config: %s', str(best_config))
 
-        # estimator = best_config['estimator'](best_config)
         # TODO: checkpointing needs to be done in a better way
         model_checkpoint = results.get('model_checkpoint', None)
         if model_checkpoint is None:
-            msg = results.get('stacktrace', '')
-            args = results.get('args', '')
-            raise RuntimeError(f'Unexpected error happened during fit: {msg} with {args}')
+            raise RuntimeError(f'Unexpected error happened during fit: {results}')
         estimator = self.load(results['model_checkpoint'])
         return estimator
+
+    @property
+    def fit_summary(self):
+        return copy.copy(self._fit_summary)
 
     @classmethod
     def load(cls, filename):
