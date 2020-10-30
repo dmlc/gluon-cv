@@ -189,7 +189,7 @@ class ImageClassificationEstimator(BaseEstimator):
             if self._reporter:
                 self._reporter(epoch=epoch, acc_reward=top1_val)
             self._time_elapsed += time.time() - btic
-        return {'train_acc': train_metric_score), 'valid_acc': self._best_acc, 'time': self._time_elapsed}
+        return {'train_acc': train_metric_score, 'valid_acc': self._best_acc, 'time': self._time_elapsed}
 
     def _init_network(self):
         if not self.num_class:
