@@ -23,7 +23,7 @@ __all__ = ['ObjectDetection']
 
 @dataclass
 class LightConfig:
-    transfer : Union[str, ag.Space] = ag.Categorical('yolo3_mobilenet1.0_coco', 'ssd_512_mobilenet1.0_coco')
+    transfer : Union[str, ag.Space] = ag.Categorical('center_net_resnet18_v1b_coco', 'ssd_512_mobilenet1.0_coco')
     lr : Union[ag.Space, float] = 1e-2
     num_trials : int = 2
     epochs : int = 10
@@ -66,7 +66,7 @@ def _train_object_detection(args, reporter):
         estimator.fit(train_data=train_data, val_data=val_data)
     # pylint: disable=broad-except
     except Exception as e:
-        return {'stacktrace': str(e) + str(args)}
+        return {'stacktrace': str(e), 'args': str(args)}
 
     # TODO: checkpointing needs to be done in a better way
     unique_checkpoint = 'train_object_detection_' + str(uuid.uuid4())
@@ -99,7 +99,7 @@ class ObjectDetection(BaseTask):
         # default settings
         if not config:
             if gpu_count < 1:
-                self._logger.info('No GPU detected, using most conservative search space.')
+                self._logger.info('No GPU detected/allowed, using most conservative search space.')
                 config = LightConfig()
             else:
                 config = DefaultConfig()
@@ -108,7 +108,7 @@ class ObjectDetection(BaseTask):
             if not config.get('dist_ip_addrs', None):
                 ngpus_per_trial = config.get('ngpus_per_trial', gpu_count)
                 if ngpus_per_trial < 1:
-                    self._logger.info('No GPU detected, using most conservative search space.')
+                    self._logger.info('No GPU detected/allowed, using most conservative search space.')
                     default_config = LightConfig()
                 else:
                     default_config = DefaultConfig()
@@ -218,7 +218,8 @@ class ObjectDetection(BaseTask):
         model_checkpoint = results.get('model_checkpoint', None)
         if model_checkpoint is None:
             msg = results.get('stacktrace', '')
-            raise RuntimeError(f'Unexpected error happened during fit: {msg}')
+            args = results.get('args', '')
+            raise RuntimeError(f'Unexpected error happened during fit: {msg} with {args}')
         estimator = self.load(results['model_checkpoint'])
         return estimator
 

@@ -1,7 +1,10 @@
 """Auto pipeline for image classification task"""
 import logging
 import uuid
+import time
+from typing import Union, Tuple
 
+from autocfg import dataclass, field
 import numpy as np
 import pandas as pd
 import autogluon.core as ag
@@ -19,6 +22,30 @@ from .dataset import ImageClassificationDataset
 
 __all__ = ['ImageClassification']
 
+@dataclass
+class LightConfig:
+    model : Union[str, ag.Space] = ag.Categorical('resnet18_v1b', 'mobilenetv3_small')
+    lr : Union[ag.Space, float] = ag.Categorical(1e-2, 1e-3)
+    num_trials : int = 2
+    epochs : int = 10
+    nthreads_per_trial : int = 32
+    ngpus_per_trial : int = 0
+    time_limits : int = 3600
+    search_strategy : str = 'random'
+    dist_ip_addrs : Union[None, list, Tuple] = None
+
+@dataclass
+class DefaultConfig:
+    model : Union[ag.Space, str] = ag.Categorical('resnet50_v1b', 'resnest50')
+    lr : Union[ag.Space, float] = ag.Categorical(1e-2, 1e-3)
+    num_trials : int = 4
+    epochs : int = 20
+    nthreads_per_trial : int = 128
+    ngpus_per_trial : int = 8
+    time_limits : int = 3600
+    search_strategy : str = 'random'
+    dist_ip_addrs : Union[None, list, Tuple] = None
+
 @ag.args()
 def _train_image_classification(args, reporter):
     """
@@ -26,16 +53,11 @@ def _train_image_classification(args, reporter):
     ----------
     args: <class 'autogluon.utils.edict.EasyDict'>
     """
-    # convert user defined config to nested form
-    args = config_to_nested(args)
-
-    # fix seed for mxnet, numpy and python builtin random generator.
-    gutils.random.seed(args['train']['seed'])
-
     # train, val data
     train_data = args.pop('train_data')
     val_data = args.pop('val_data')
-    args.pop('meta_arch', None)
+    # convert user defined config to nested form
+    args = config_to_nested(args)
 
     try:
         estimator_cls = args.pop('estimator', None)
@@ -44,7 +66,7 @@ def _train_image_classification(args, reporter):
         estimator.fit(train_data=train_data, val_data=val_data)
     # pylint: disable=broad-except
     except Exception as e:
-        return {'stacktrace': str(e)}
+        return {'stacktrace': str(e), 'args': str(args)}
 
     # TODO: checkpointing needs to be done in a better way
     unique_checkpoint = 'train_image_classification_' + str(uuid.uuid4())
@@ -65,58 +87,75 @@ class ImageClassification(BaseTask):
     """
     Dataset = ImageClassificationDataset
 
-    def __init__(self, config, estimator=None, logger=None):
+    def __init__(self, config=None, estimator=None, logger=None):
         super(ImageClassification, self).__init__()
         self._logger = logger if logger is not None else logging.getLogger(__name__)
         self._logger.setLevel(logging.INFO)
-        self._config = ConfigDict(config)
+
 
         # cpu and gpu setting
         cpu_count = get_cpu_count()
-        nthreads_per_trial = self._config.get('nthreads_per_trial', cpu_count)
-        if nthreads_per_trial > cpu_count:
-            nthreads_per_trial = cpu_count
         gpu_count = get_gpu_count()
-        ngpus_per_trial = self._config.get('ngpus_per_trial', gpu_count)
-        if ngpus_per_trial > gpu_count:
-            ngpus_per_trial = gpu_count
-            self._logger.warning(
-                "The number of requested GPUs is greater than the number of available GPUs."
-                "Reduce the number to %d", ngpus_per_trial)
+
+        # default settings
+        if not config:
+            if gpu_count < 1:
+                self._logger.info('No GPU detected/allowed, using most conservative search space.')
+                config = LightConfig()
+            else:
+                config = DefaultConfig()
+            config = config.asdict()
+        else:
+            if not config.get('dist_ip_addrs', None):
+                ngpus_per_trial = config.get('ngpus_per_trial', gpu_count)
+                if ngpus_per_trial < 1:
+                    self._logger.info('No GPU detected/allowed, using most conservative search space.')
+                    default_config = LightConfig()
+                else:
+                    default_config = DefaultConfig()
+                config = default_config.merge(config, allow_new_key=True).asdict()
+
+        # adjust cpu/gpu resources
+        if not config.get('dist_ip_addrs', None):
+            nthreads_per_trial = config.get('nthreads_per_trial', cpu_count)
+            if nthreads_per_trial > cpu_count:
+                nthreads_per_trial = cpu_count
+            ngpus_per_trial = config.get('ngpus_per_trial', gpu_count)
+            if ngpus_per_trial > gpu_count:
+                ngpus_per_trial = gpu_count
+                self._logger.warning(
+                    "The number of requested GPUs is greater than the number of available GPUs."
+                    "Reduce the number to %d", ngpus_per_trial)
+        else:
+            raise ValueError('Please specify `nthreads_per_trial` and `ngpus_per_trial` given that dist workers are available')
+
 
         # additional configs
         config['num_workers'] = nthreads_per_trial
         config['gpus'] = [int(i) for i in range(ngpus_per_trial)]
-        config['seed'] = self._config.get('seed', 233)
+        config['seed'] = config.get('seed', np.random.randint(10000))
         config['final_fit'] = False
-
-        # automatically merge search configs according to user specified values
-        # args = auto_args(config, estimator)
-
-        # register args for HPO
-        # _train_object_detection.register_args(**args)
-        # _train_image_classification.register_args(**config)
-        self._train_config = config
+        self._config = config
 
         # scheduler options
-        self._config.search_strategy = self._config.get('search_strategy', 'random')
-        self._config.scheduler_options = {
+        self.search_strategy = config.get('search_strategy', 'random')
+        self.scheduler_options = {
             'resource': {'num_cpus': nthreads_per_trial, 'num_gpus': ngpus_per_trial},
-            'checkpoint': self._config.get('checkpoint', 'checkpoint/exp1.ag'),
-            'num_trials': self._config.get('num_trials', 2),
-            'time_out': self._config.get('time_limits', 60 * 60),
-            'resume': (len(self._config.get('resume', '')) > 0),
-            'visualizer': self._config.get('visualizer', 'none'),
+            'checkpoint': config.get('checkpoint', 'checkpoint/exp1.ag'),
+            'num_trials': config.get('num_trials', 2),
+            'time_out': config.get('time_limits', 60 * 60),
+            'resume': (len(config.get('resume', '')) > 0),
+            'visualizer': config.get('visualizer', 'none'),
             'time_attr': 'epoch',
             'reward_attr': 'acc_reward',
-            'dist_ip_addrs': self._config.get('dist_ip_addrs', None),
-            'searcher': self._config.search_strategy,
-            'search_options': self._config.get('search_options', None)}
-        if self._config.search_strategy == 'hyperband':
-            self._config.scheduler_options.update({
+            'dist_ip_addrs': config.get('dist_ip_addrs', None),
+            'searcher': self.search_strategy,
+            'search_options': config.get('search_options', None)}
+        if self.search_strategy == 'hyperband':
+            self.scheduler_options.update({
                 'searcher': 'random',
-                'max_t': self._config.get('epochs', 50),
-                'grace_period': self._config.get('grace_period', self._config.epochs // 4)})
+                'max_t': config.get('epochs', 50),
+                'grace_period': config.get('grace_period', config.get('epochs', 50) // 4)})
 
     def fit(self, train_data, val_data=None, train_size=0.9, random_state=None):
         """Fit auto estimator given the input data .
@@ -144,28 +183,26 @@ class ImageClassification(BaseTask):
                               len(train), len(val))
             train_data, val_data = train, val
 
-        estimator = self._train_config.get('estimator', None)
+        # automatically suggest some hyperparameters based on the dataset statistics(experimental)
+        estimator = self._config.get('estimator', None)
         if estimator is None:
             estimator = [ImageClassificationEstimator]
-        elif isinstance(estimator, (tuple, list)):
-            pass
-        else:
-            assert issubclass(estimator, BaseEstimator)
-            estimator = [estimator]
-        self._train_config['estimator'] = ag.Categorical(*estimator)
+        self._config['estimator'] = ag.Categorical(*estimator)
 
         # register args
-        config = self._train_config.copy()
-        config['lr'] = config.get('lr', ag.Categorical(1e-2, 5e-3, 1e-3, 5e-4))
-        config['model'] = config.get('model', ag.Categorical(
-            'resnet18_v1', 'resnet50_v1b', 'mobilenetv3_small'))
+        config = self._config.copy()
         config['train_data'] = train_data
         config['val_data'] = val_data
         _train_image_classification.register_args(**config)
 
-        results = self.run_fit(_train_image_classification, self._config.search_strategy,
-                               self._config.scheduler_options)
+        start_time = time.time()
+        self._logger.info("Starting HPO experiments")
+
+        results = self.run_fit(_train_image_classification, self.search_strategy,
+                               self.scheduler_options)
+        end_time = time.time()
         self._logger.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> finish model fitting")
+        self._logger.info("total runtime is %.2f s", end_time - start_time)
         best_config = sample_config(_train_image_classification.args, results['best_config'])
         # convert best config to nested form
         best_config = config_to_nested(best_config)
@@ -178,7 +215,8 @@ class ImageClassification(BaseTask):
         model_checkpoint = results.get('model_checkpoint', None)
         if model_checkpoint is None:
             msg = results.get('stacktrace', '')
-            raise RuntimeError(f'Unexpected error happened during fit: {msg}')
+            args = results.get('args', '')
+            raise RuntimeError(f'Unexpected error happened during fit: {msg} with {args}')
         estimator = self.load(results['model_checkpoint'])
         return estimator
 
