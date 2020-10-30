@@ -1,4 +1,5 @@
 """Auto pipeline for image classification task"""
+# pylint: disable=bad-whitespace
 import logging
 import uuid
 import time

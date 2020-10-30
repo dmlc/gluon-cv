@@ -1,5 +1,5 @@
 """YOLO default config"""
-# pylint: disable=unused-variable,missing-function-docstring
+# pylint: disable=unused-variable,missing-function-docstring,bad-whitespace
 from autocfg import dataclass, field
 from typing import Union, Tuple
 

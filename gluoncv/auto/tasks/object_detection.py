@@ -1,4 +1,5 @@
 """Auto pipeline for object detection task"""
+# pylint: disable=bad-whitespace
 import time
 import logging
 import uuid

@@ -1,4 +1,5 @@
 """Default configs for image classification"""
+# pylint: disable=bad-whitespace
 from autocfg import dataclass, field
 from typing import Union, Tuple
 
