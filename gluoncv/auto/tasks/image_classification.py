@@ -25,7 +25,7 @@ __all__ = ['ImageClassification']
 @dataclass
 class LightConfig:
     model : Union[str, ag.Space] = ag.Categorical('resnet18_v1b', 'mobilenetv3_small')
-    lr : Union[ag.Space, float] = ag.Categorical(1e-2, 1e-3)
+    lr : Union[ag.Space, float] = ag.Categorical(1e-2, 5e-2)
     num_trials : int = 2
     epochs : int = 10
     nthreads_per_trial : int = 32
@@ -37,7 +37,7 @@ class LightConfig:
 @dataclass
 class DefaultConfig:
     model : Union[ag.Space, str] = ag.Categorical('resnet50_v1b', 'resnest50')
-    lr : Union[ag.Space, float] = ag.Categorical(1e-2, 1e-3)
+    lr : Union[ag.Space, float] = ag.Categorical(1e-2, 5e-2)
     num_trials : int = 4
     epochs : int = 20
     nthreads_per_trial : int = 128

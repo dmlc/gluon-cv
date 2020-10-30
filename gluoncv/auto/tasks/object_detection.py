@@ -36,7 +36,7 @@ class LightConfig:
 @dataclass
 class DefaultConfig:
     transfer : Union[ag.Space, str] = ag.Categorical('center_net_resnet50_v1b_coco', 'yolo3_darknet53_coco')
-    lr : Union[ag.Space, float] = ag.Categorical(1e-2, 1e-3)
+    lr : Union[ag.Space, float] = ag.Categorical(1e-2, 5e-3)
     num_trials : int = 3
     epochs : int = 15
     nthreads_per_trial : int = 128
