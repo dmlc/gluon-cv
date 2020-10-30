@@ -126,7 +126,7 @@ class VideoClsDataset(Dataset):
 
             buffer = data_transform_func(buffer)
             buffer = self.data_transform_after(buffer)
-            return buffer, self.label_array[index], sample.split("/")[1].split(".")[0]
+            return buffer, self.label_array[index], sample.split("/")[-1].split(".")[0]
 
         elif self.mode == 'validation':
             sample = self.dataset_samples[index]
