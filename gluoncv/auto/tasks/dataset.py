@@ -8,6 +8,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from PIL import Image
 import cv2
+from ..data import is_url, url_data
 from ...data.mscoco.utils import try_import_pycocotools
 from ...utils.bbox import bbox_xywh_to_xyxy, bbox_clip_xyxy
 try:
@@ -222,8 +223,8 @@ class ImageClassificationDataset(pd.DataFrame):
 
         Parameters
         ----------
-        root : str or pathlib.Path
-            The root dir for the entire dataset.
+        root : str or pathlib.Path or url
+            The root dir for the entire dataset, if url is provided, the data will be downloaded and extracted.
         train : str
             The sub-folder name for training images.
         val : str
@@ -239,6 +240,8 @@ class ImageClassificationDataset(pd.DataFrame):
             splited datasets, can be `None` if no sub-directory found.
 
         """
+        if is_url(root):
+            root = url_data(root)
         if isinstance(root, Path):
             assert root.exists(), '{} not exist'.format(str(root))
             root = str(root.resolve())
@@ -401,14 +404,16 @@ class ObjectDetectionDataset(pd.DataFrame):
 
         Parameters
         ----------
-        root : str
-            The root directory for VOC, e.g., the `VOC2007`.
+        root : str or url
+            The root directory for VOC, e.g., the `VOC2007`. If an url is provided, it will be downloaded and extracted.
         splits : tuple of str, optional
             If given, will search for this name in `ImageSets/Main/`, e.g., ('train', 'test')
         exts : tuple of str, optional
             The supported image formats.
 
         """
+        if is_url(root):
+            root = url_data(root)
         rpath = Path(root).expanduser()
         img_list = []
         class_names = set()

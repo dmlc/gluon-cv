@@ -59,7 +59,7 @@ requirements = [
     'scipy',
     'pyyaml',
     'pandas',
-    'autocfg>=0.0.2',
+    'autocfg>=0.0.5',
     'autogluon.core>0.0.14'
 ]
 

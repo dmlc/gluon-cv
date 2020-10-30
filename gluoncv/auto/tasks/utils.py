@@ -175,7 +175,58 @@ def auto_suggest(config, estimator, logger):
         estimator = [estimator]
     config['estimator'] = ag.Categorical(*estimator)
 
+def get_recursively(search_dict, field):
+    """
+    Takes a dict with nested dicts,
+    and searches all dicts for a key of the field
+    provided.
+    """
+    fields_found = []
+
+    for key, value in search_dict.items():
+
+        if key == field:
+            fields_found.append(value)
+
+        elif isinstance(value, dict):
+            results = get_recursively(value, field)
+            for result in results:
+                fields_found.append(result)
+
+    return fields_found
+
 def config_to_nested(config):
+    """Convert config to nested version"""
+    estimator = config.get('estimator', None)
+    if estimator is None:
+        transfer = config.get('transfer', None)
+        assert transfer is not None, "estimator or transfer is required in search space"
+        if transfer.startswith('ssd'):
+            estimator = SSDEstimator
+        elif transfer.startswith('faster_rcnn'):
+            estimator = FasterRCNNEstimator
+        elif transfer.startswith('yolo3'):
+            estimator = YOLOv3Estimator
+        elif transfer.startswith('center_net'):
+            estimator = CenterNetEstimator
+        else:
+            estimator = ImageClassificationEstimator
+
+    cfg_map = estimator._default_cfg.asdict()
+
+    def _recursive_update(config, key, value):
+        for k, v in config.items():
+            if key == k:
+                config[key] = value
+            elif isinstance(v, dict):
+                _recursive_update(v, key, value)
+
+    for k, v in config.items():
+        _recursive_update(cfg_map, k, v)
+    cfg_map['estimator'] = estimator
+    return cfg_map
+
+def config_to_nested_v0(config):
     """Convert config to nested version"""
     if 'meta_arch' not in config:
         if config['estimator'] == SSDEstimator:
