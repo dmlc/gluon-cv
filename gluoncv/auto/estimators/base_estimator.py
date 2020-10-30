@@ -1,10 +1,8 @@
 """Base Estimator"""
 import os
-import copy
 import pickle
 import io
 import logging
-import warnings
 from datetime import datetime
 import numpy as np
 import pandas as pd
@@ -107,7 +105,7 @@ class BaseEstimator:
         self._logger.addHandler(fh)
         # save_config(r.config, self._logger, config_file)
         self._cfg.save(config_file)
-        self._logger.info(f'Saved config to {config_file}')
+        self._logger.info('Saved config to %s', config_file)
 
         # freeze config
         self._cfg.freeze()

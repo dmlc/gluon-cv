@@ -132,14 +132,14 @@ class ImageClassification(BaseTask):
                     "The number of requested GPUs is greater than the number of available GPUs."
                     "Reduce the number to %d", ngpus_per_trial)
         else:
-            raise ValueError('Please specify `nthreads_per_trial` and `ngpus_per_trial` given that dist workers are available')
+            raise ValueError('Please specify `nthreads_per_trial` and `ngpus_per_trial` '
+                             'given that dist workers are available')
 
 
         # additional configs
         config['num_workers'] = nthreads_per_trial
         config['gpus'] = [int(i) for i in range(ngpus_per_trial)]
         config['seed'] = config.get('seed', np.random.randint(10000))
-        config['final_fit'] = False
         self._config = config
 
         # scheduler options

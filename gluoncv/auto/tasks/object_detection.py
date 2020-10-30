@@ -137,7 +137,6 @@ class ObjectDetection(BaseTask):
         config['num_workers'] = nthreads_per_trial
         config['gpus'] = [int(i) for i in range(ngpus_per_trial)]
         config['seed'] = config.get('seed', np.random.randint(10000))
-        config['final_fit'] = False
         self._config = config
 
         # scheduler options

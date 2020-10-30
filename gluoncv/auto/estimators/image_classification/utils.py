@@ -1,5 +1,5 @@
 """Utils for auto classification estimator"""
-# pylint: disable=bad-whitespace
+# pylint: disable=bad-whitespace,missing-function-docstring
 import os
 import math
 

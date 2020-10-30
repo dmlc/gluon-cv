@@ -1,5 +1,5 @@
 """Faster RCNN Estimator."""
-
+# pylint: disable=logging-not-lazy
 import os
 import time
 
@@ -16,9 +16,8 @@ from ....nn.bbox import BBoxClipToImage
 from ....utils.parallel import Parallel
 from ....utils.metrics.rcnn import RPNAccMetric, RPNL1LossMetric, RCNNAccMetric, RCNNL1LossMetric
 from ....utils.metrics.voc_detection import VOC07MApMetric, VOCMApMetric
-from ....utils.metrics.coco_detection import COCODetectionMetric
 from ..base_estimator import BaseEstimator, set_default
-from .utils import _get_lr_at_iter, _get_dataloader, _get_dataset, _save_params, _split_and_load
+from .utils import _get_lr_at_iter, _get_dataloader, _split_and_load
 
 try:
     import horovod.mxnet as hvd
@@ -222,7 +221,7 @@ class FasterRCNNEstimator(BaseEstimator):
             val_bfn = Tuple(*[Append() for _ in range(3)])
             short = net.short[-1] if isinstance(net.short, (tuple, list)) else net.short
             # validation use 1 sample per device
-            val_loader = gluon.data.DataLoader(
+            val_data = gluon.data.DataLoader(
                 val_data.transform(FasterRcnnDefaultValTransform(short, net.max_size)),
                 len(self.ctx), False, batchify_fn=val_bfn, last_batch='keep',
                 num_workers=self._cfg.valid.num_workers)
