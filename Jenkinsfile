@@ -18,18 +18,19 @@ stage("Sanity Check") {
 }
 
 stage("Unit Test") {
+  parallel 'Mxnet': {
     node('linux-gpu') {
-      ws('workspace/gluon-cv-py3') {
+      ws('workspace/gluon-cv-py3-mxnet') {
         timeout(time: max_time, unit: 'MINUTES') {
           checkout scm
           VISIBLE_GPU=env.EXECUTOR_NUMBER.toInteger() % 8
           sh """#!/bin/bash
-          conda env remove -n gluon_cv_py3_test -y
+          conda env remove -n gluon-cv-py3-mxnet_test -y
           set -ex
           # remove and create new env instead
-          conda env create -n gluon_cv_py3_test -f tests/py3.yml
-          conda env update -n gluon_cv_py3_test -f tests/py3.yml --prune
-          conda activate gluon_cv_py3_test
+          conda env create -n gluon-cv-py3-mxnet_test -f tests/py3_mxnet.yml
+          conda env update -n gluon-cv-py3-mxnet_test -f tests/py3_mxnet.yml --prune
+          conda activate gluon-cv-py3-mxnet_test
           conda list
           export CUDA_VISIBLE_DEVICES=${VISIBLE_GPU}
           export KMP_DUPLICATE_LIB_OK=TRUE
@@ -53,7 +54,37 @@ stage("Unit Test") {
           fi
           """
         }
-     }
+      }
+    }
+  },
+  'Torch': {
+    node('linux-gpu') {
+      ws('workspace/gluon-cv-py3-torch') {
+        timeout(time: max_time, unit: 'MINUTES') {
+          checkout scm
+          VISIBLE_GPU=env.EXECUTOR_NUMBER.toInteger() % 8
+          sh """#!/bin/bash
+          conda env remove -n gluon-cv-py3-torch_test -y
+          set -ex
+          # remove and create new env instead
+          conda env create -n gluon-cv-py3-torch_test -f tests/py3_torch.yml
+          conda env update -n gluon-cv-py3-torch_test -f tests/py3_torch.yml --prune
+          conda activate gluon-cv-py3-torch_test
+          conda list
+          export CUDA_VISIBLE_DEVICES=${VISIBLE_GPU}
+          export KMP_DUPLICATE_LIB_OK=TRUE
+          make clean
+          # from https://stackoverflow.com/questions/19548957/can-i-force-pip-to-reinstall-the-current-version
+          pip install --upgrade --force-reinstall --no-deps .
+          env
+          export LD_LIBRARY_PATH=/usr/local/cuda-10.0/lib64
+          export MPLBACKEND=Agg
+          export MXNET_CUDNN_AUTOTUNE_DEFAULT=0
+          nosetests --with-timer --timer-ok 5 --timer-warning 20 -x --with-coverage --cover-package gluoncv/torch -v tests/model_zoo_torch
+          """
+        }
+      }
+    }
   }
 }
 
@@ -80,7 +111,6 @@ stage("Build Docs") {
         sed -i.bak 's/33\\,150\\,243/23\\,141\\,201/g' build/html/_static/material-design-lite-1.3.0/material.blue-deep_orange.min.css;
         sed -i.bak 's/2196f3/178dc9/g' build/html/_static/sphinx_materialdesign_theme.css;
         sed -i.bak 's/pre{padding:1rem;margin:1.5rem\\s0;overflow:auto;overflow-y:hidden}/pre{padding:1rem;margin:1.5rem 0;overflow:auto;overflow-y:scroll}/g' build/html/_static/sphinx_materialdesign_theme.css
-
         if [[ ${env.BRANCH_NAME} == master ]]; then
             aws s3 cp s3://gluon-cv.mxnet.io/coverage.svg build/html/coverage.svg
             aws s3 sync --delete build/html/ s3://gluon-cv.mxnet.io/ --acl public-read --cache-control max-age=7200

@@ -56,6 +56,10 @@ requirements = [
     'portalocker',
     'Pillow',
     'scipy',
+    'tensorboardx',
+    'decord',
+    'opencv-python',
+    'yacs'
 ]
 if with_cython:
     _NP_INCLUDE_DIRS = np.get_include()
