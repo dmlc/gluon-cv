@@ -219,8 +219,8 @@ class ObjectDetection(BaseTask):
         start_time = time.time()
         self._fit_summary = {}
         if config.get('num_trials', 1) < 2:
-            rand_config = RandomSearcher(_train_object_detection.cs).get_config()
-            args = sample_config(_train_object_detection.args, rand_config)
+            args = RandomSearcher(_train_object_detection.cs).get_config()
+            # args = sample_config(_train_object_detection.args, rand_config)
             self._logger.info("Starting fit without HPO")
             results = _train_object_detection(args, None)
             self._fit_summary.update({'train_map': results.get('train_map', -1),

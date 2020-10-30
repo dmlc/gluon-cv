@@ -217,8 +217,7 @@ class ImageClassification(BaseTask):
         start_time = time.time()
         self._fit_summary = {}
         if config.get('num_trials', 1) < 2:
-            rand_config = RandomSearcher(_train_image_classification.cs).get_config()
-            args = sample_config(_train_image_classification.args, rand_config)
+            args = RandomSearcher(_train_image_classification.cs).get_config()
             self._logger.info("Starting fit without HPO")
             results = _train_image_classification(args, None)
             self._fit_summary.update({'train_acc': results.get('train_acc', -1),
