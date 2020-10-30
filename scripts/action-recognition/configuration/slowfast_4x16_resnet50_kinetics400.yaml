@@ -18,7 +18,7 @@ CONFIG:
     LR: 0.1
     MOMENTUM: 0.9
     W_DECAY: 1e-4
-    LR_MILESTONE: [60, 120, 150]
+    LR_MILESTONE: [40, 100, 160]
     STEP: 0.1
 
   VAL:
@@ -41,7 +41,7 @@ CONFIG:
     KEEP_ASPECT_RATIO: False
 
   MODEL:
-    NAME: 'slowfast_8x8_resnet101_kinetics400'
+    NAME: 'slowfast_4x16_resnet50_kinetics400'
     PRETRAINED: True
 
   LOG:

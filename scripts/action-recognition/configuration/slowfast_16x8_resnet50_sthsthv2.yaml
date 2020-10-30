@@ -31,7 +31,7 @@ CONFIG:
     TRAIN_DATA_PATH: '/home/ubuntu/data/sthsthv2/20bn-something-something-v2/'
     VAL_DATA_PATH:  '/home/ubuntu/data/sthsthv2/20bn-something-something-v2/'
     NUM_CLASSES: 174
-    CLIP_LEN: 128
+    CLIP_LEN: 64
     FRAME_RATE: 2
     NUM_SEGMENT: 1
     NUM_CROP: 1

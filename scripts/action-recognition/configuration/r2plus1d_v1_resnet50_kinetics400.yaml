@@ -13,12 +13,12 @@ DDP_CONFIG:
 
 CONFIG:
   TRAIN:
-    EPOCH_NUM: 100
+    EPOCH_NUM: 196
     BATCH_SIZE: 8
-    LR: 0.01
+    LR: 0.1
     MOMENTUM: 0.9
     W_DECAY: 1e-4
-    LR_MILESTONE: [40, 80]
+    LR_MILESTONE: [40, 100, 160]
     STEP: 0.1
 
   VAL:
@@ -31,7 +31,7 @@ CONFIG:
     TRAIN_DATA_PATH: '/home/ubuntu/data/kinetics400/train_256/'
     VAL_DATA_PATH:  '/home/ubuntu/data/kinetics400/val_256/'
     NUM_CLASSES: 400
-    CLIP_LEN: 32
+    CLIP_LEN: 16
     FRAME_RATE: 2
     NUM_SEGMENT: 1
     NUM_CROP: 1

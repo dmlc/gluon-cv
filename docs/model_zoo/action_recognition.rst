@@ -153,5 +153,86 @@ The following table lists pre-trained models trained on Something-Something-V2.
 
 .. rst-class:: Pytorch
 
-Pytorch
+PyTorch
 *************
+
+
+Here is the PyTorch model zoo for video action recognition task.
+
+.. hint::
+
+  Training commands work with this script:
+  :download:`Download train_ddp_pytorch.py<../../scripts/action-recognition/train_ddp_pytorch.py>`
+
+  ``python train_ddp_pytorch.py --config-file CONFIG``
+
+  The test script :download:`Download test_ddp_pytorch.py<../../scripts/action-recognition/test_ddp_pytorch.py>` can be used for
+  evaluating the trained models on various datasets.
+
+  ``python test_ddp_pytorch.py --config-file CONFIG``
+
+
+
+Kinetics400 Dataset
+-------------------
+
+The following table lists pre-trained models trained on Kinetics400.
+
+.. note::
+
+  Our pre-trained models reproduce results from recent state-of-the-art approaches. Please check the reference paper for further information.
+
+  All models are trained using input size 224x224, except ``R2+1D`` models are trained and evaluated with input size of 112x112.
+
+  ``Clip Length`` is the number of frames within an input clip. ``32 (64/2)`` means we use 32 frames, but actually the frames are formed by randomly selecting 64 consecutive frames from the video and then skipping every other frame. This strategy is widely adopted to reduce computation and memory cost.
+
+  ``Segments`` is the number of segments used during training. For testing (reporting these numbers), we use 250 views for 2D networks (25 frames and 10-crop) and 30 views for 3D networks (10 clips and 3-crop) following the convention.
+
+
+.. csv-table::
+   :file: ./csv_tables/Action_Recognitions/Kinetics400_torch.csv
+   :header-rows: 1
+   :class: tight-table
+   :widths: 30 12 10 10 8 10 12 8
+
+
+Something-Something-V2 Dataset
+------------------------------
+
+The following table lists pre-trained models trained on Something-Something-V2.
+
+.. note::
+
+  Our pre-trained models reproduce results from recent state-of-the-art approaches. Please check the reference paper for further information.
+
+.. csv-table::
+   :file: ./csv_tables/Action_Recognitions/Something-Something-V2.csv
+   :header-rows: 1
+   :class: tight-table
+   :widths: 30 12 10 10 8 10 12 8
+
+
+.. [1] Limin Wang, Yuanjun Xiong, Zhe Wang and Yu Qiao. \
+       "Towards Good Practices for Very Deep Two-Stream ConvNets." \
+       arXiv preprint arXiv:1507.02159, 2015.
+.. [2] Du Tran, Lubomir Bourdev, Rob Fergus, Lorenzo Torresani and Manohar Paluri. \
+       "Learning Spatiotemporal Features with 3D Convolutional Networks." \
+       In International Conference on Computer Vision (ICCV), 2015.
+.. [3] Limin Wang, Yuanjun Xiong, Zhe Wang, Yu Qiao, Dahua Lin, Xiaoou Tang and Luc Van Gool. \
+       "Temporal Segment Networks: Towards Good Practices for Deep Action Recognition." \
+       In European Conference on Computer Vision (ECCV), 2016.
+.. [4] Joao Carreira and Andrew Zisserman. \
+       "Quo Vadis, Action Recognition? A New Model and the Kinetics Dataset." \
+       In Computer Vision and Pattern Recognition (CVPR), 2017.
+.. [5] Zhaofan Qiu, Ting Yao and Tao Mei. \
+       "SLearning Spatio-Temporal Representation with Pseudo-3D Residual Networks." \
+       In International Conference on Computer Vision (ICCV), 2017.
+.. [6] Du Tran, Heng Wang, Lorenzo Torresani, Jamie Ray, Yann LeCun and Manohar Paluri. \
+       "A Closer Look at Spatiotemporal Convolutions for Action Recognition." \
+       In Computer Vision and Pattern Recognition (CVPR), 2018.
+.. [7] Xiaolong Wang, Ross Girshick, Abhinav Gupta and Kaiming He. \
+       "Non-local Neural Networks." \
+       In Computer Vision and Pattern Recognition (CVPR), 2018.
+.. [8] Christoph Feichtenhofer, Haoqi Fan, Jitendra Malik and Kaiming He. \
+       "SlowFast Networks for Video Recognition." \
+       In International Conference on Computer Vision (ICCV), 2019.
