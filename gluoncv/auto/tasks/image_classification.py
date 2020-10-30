@@ -169,8 +169,8 @@ class ImageClassification(BaseTask):
         best_config = sample_config(_train_image_classification.args, results['best_config'])
         # convert best config to nested form
         best_config = config_to_nested(best_config)
-        best_config.pop('train_data')
-        best_config.pop('val_data')
+        best_config.pop('train_data', None)
+        best_config.pop('val_data', None)
         self._logger.info('The best config: %s', str(best_config))
 
         # estimator = best_config['estimator'](best_config)

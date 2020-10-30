@@ -105,14 +105,14 @@ class ObjectDetection(BaseTask):
                 config = DefaultConfig()
             config = config.asdict()
         else:
-            if config.get('dist_ip_addrs', []):
+            if not config.get('dist_ip_addrs', None):
                 ngpus_per_trial = min(config.get('nthreads_per_trial', 0), gpu_count)
-            if ngpus_per_trial < 1:
-                self._logger.info('No GPU detected, using most conservative search space.')
-                default_config = LightConfig()
-            else:
-                default_config = DefaultConfig()
-            config = default_config.merge(config, allow_new_key=True).asdict()
+                if ngpus_per_trial < 1:
+                    self._logger.info('No GPU detected, using most conservative search space.')
+                    default_config = LightConfig()
+                else:
+                    default_config = DefaultConfig()
+                config = default_config.merge(config, allow_new_key=True).asdict()
 
         # adjust cpu/gpu resources
         if not config.get('dist_ip_addrs', None):
@@ -209,8 +209,8 @@ class ObjectDetection(BaseTask):
         best_config = sample_config(_train_object_detection.args, results['best_config'])
         # convert best config to nested form
         best_config = config_to_nested(best_config)
-        best_config.pop('train_data')
-        best_config.pop('val_data')
+        best_config.pop('train_data', None)
+        best_config.pop('val_data', None)
         self._logger.info('The best config: %s', str(best_config))
 
         # estimator = best_config['estimator'](best_config)

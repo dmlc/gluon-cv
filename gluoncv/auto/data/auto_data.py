@@ -196,4 +196,6 @@ _URL_REGEX = re.compile(
     r'(?:/?|[/?]\S+)$', re.IGNORECASE)
 
 def is_url(url_like):
+    if not isinstance(url_like, str):
+        return False
     return re.match(_URL_REGEX, url_like) is not None
