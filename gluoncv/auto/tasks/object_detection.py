@@ -23,7 +23,7 @@ __all__ = ['ObjectDetection']
 
 @dataclass
 class LightConfig:
-    transfer : Union[ag.Space, str] = ag.Categorical('center_net_resnet18_v1b_coco', 'yolo3_mobilenet1.0_coco')
+    transfer : Union[str, ag.Space] = ag.Categorical('yolo3_mobilenet1.0_coco', 'ssd_512_mobilenet1.0_coco')
     lr : Union[ag.Space, float] = 1e-2
     num_trials : int = 2
     epochs : int = 10
@@ -106,7 +106,7 @@ class ObjectDetection(BaseTask):
             config = config.asdict()
         else:
             if not config.get('dist_ip_addrs', None):
-                ngpus_per_trial = min(config.get('nthreads_per_trial', 0), gpu_count)
+                ngpus_per_trial = config.get('ngpus_per_trial', gpu_count)
                 if ngpus_per_trial < 1:
                     self._logger.info('No GPU detected, using most conservative search space.')
                     default_config = LightConfig()
