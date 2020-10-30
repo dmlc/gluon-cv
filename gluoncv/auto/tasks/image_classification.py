@@ -30,6 +30,7 @@ class LightConfig:
     lr : Union[ag.Space, float] = 1e-2
     num_trials : int = 1
     epochs : int = 5
+    batch_size : int = 8
     nthreads_per_trial : int = 32
     ngpus_per_trial : int = 0
     time_limits : int = 3600
@@ -42,6 +43,7 @@ class DefaultConfig:
     lr : Union[ag.Space, float] = ag.Categorical(1e-2, 5e-2)
     num_trials : int = 3
     epochs : int = 15
+    batch_size : int = 16
     nthreads_per_trial : int = 128
     ngpus_per_trial : int = 8
     time_limits : int = 3600
@@ -139,7 +141,11 @@ class ImageClassification(BaseTask):
         # additional configs
         config['num_workers'] = nthreads_per_trial
         config['gpus'] = [int(i) for i in range(ngpus_per_trial)]
-        config['seed'] = config.get('seed', np.random.randint(10000))
+        if config['gpus']:
+            config['batch_size'] = config.get('batch_size', 8) * len(config['gpus'])
+            self._logger.info('Increase batch size to %d based on the number of gpus %d',
+                              config['batch_size'], len(config['gpus']))
+        config['seed'] = config.get('seed', np.random.randint(32,767))
         self._config = config
 
         # scheduler options

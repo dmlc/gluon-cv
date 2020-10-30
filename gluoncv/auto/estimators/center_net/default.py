@@ -28,7 +28,7 @@ class CenterNet:
 class TrainCfg:
     gpus : Union[Tuple, list] = (0, 1, 2, 3, 4, 5, 6, 7)  # gpu individual ids, not necessarily consecutive
     pretrained_base : bool = True  # whether load the imagenet pre-trained base
-    batch_size : int = 128
+    batch_size : int = 32
     epochs : int = 15
     lr : float = 1.25e-4  # learning rate
     lr_decay : float = 0.1  # decay rate of learning rate.
