@@ -4,6 +4,7 @@ import time
 import copy
 import logging
 import uuid
+import pprint
 from typing import Union, Tuple
 
 from autocfg import dataclass, field
@@ -241,7 +242,7 @@ class ObjectDetection(BaseTask):
             best_config = config_to_nested(best_config)
             best_config.pop('train_data', None)
             best_config.pop('val_data', None)
-            self._logger.info('The best config: %s', str(best_config))
+            self._logger.info(pprint.pformat(self._fit_summary, indent=2))
 
         # TODO: checkpointing needs to be done in a better way
         model_checkpoint = results.get('model_checkpoint', None)
