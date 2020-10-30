@@ -3,6 +3,23 @@
 Detection
 ================
 
+.. role:: framework
+   :class: framework
+.. role:: select
+   :class: selected framework
+
+.. container:: Frameworks
+
+  .. container:: framework-group
+
+     :framework:`MXNet`
+     :framework:`Pytorch`
+
+.. rst-class:: MXNet
+
+MXNet
+*************
+
 .. role:: gray
 
 Visualization of Inference Throughputs vs. Validation mAP of COCO pre-trained models is illustrated in the first graph.
@@ -198,3 +215,9 @@ Note that ``dcnv2`` indicate that models include Modulated Deformable Convolutio
 .. [7] Hang Zhang, Chongruo Wu, Zhongyue Zhang, Yi Zhu, Zhi Zhang, Haibin Lin, Yue Sun, Tong He, Jonas Muller, R. Manmatha, Mu Li and Alex Smola \
        "ResNeSt: Split-Attention Network" \
        arXiv preprint (2020).
+
+
+.. rst-class:: Pytorch
+
+Pytorch
+*************

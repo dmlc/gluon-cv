@@ -3,6 +3,23 @@
 Action Recognition
 ==================
 
+.. role:: framework
+   :class: framework
+.. role:: select
+   :class: selected framework
+
+.. container:: Frameworks
+
+  .. container:: framework-group
+
+     :framework:`MXNet`
+     :framework:`Pytorch`
+
+.. rst-class:: MXNet
+
+MXNet
+*************
+
 .. role:: greytag
 
 Here is the model zoo for video action recognition task. We first show a visualization in the graph below, describing the inference throughputs vs. validation accuracy of Kinetics400 pre-trained models.
@@ -132,3 +149,9 @@ The following table lists pre-trained models trained on Something-Something-V2.
 .. [8] Christoph Feichtenhofer, Haoqi Fan, Jitendra Malik and Kaiming He. \
        "SlowFast Networks for Video Recognition." \
        In International Conference on Computer Vision (ICCV), 2019.
+
+
+.. rst-class:: Pytorch
+
+Pytorch
+*************

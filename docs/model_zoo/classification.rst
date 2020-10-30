@@ -3,7 +3,22 @@
 Classification
 ====================
 
+.. role:: framework
+   :class: framework
+.. role:: select
+   :class: selected framework
 
+.. container:: Frameworks
+
+  .. container:: framework-group
+
+     :framework:`MXNet`
+     :framework:`Pytorch`
+
+.. rst-class:: MXNet
+
+MXNet
+*************
 
 Visualization of Inference Throughputs vs. Validation Accuracy of ImageNet pre-trained models is illustrated in the following graph. Throughputs are measured with single V100 GPU and batch size 64.
 
@@ -256,3 +271,9 @@ The following table lists pre-trained models trained on CIFAR10.
 .. [17] Hang Zhang, Chongruo Wu, Zhongyue Zhang, Yi Zhu, Zhi Zhang, Haibin Lin, Yue Sun, Tong He, Jonas Muller, R. Manmatha, Mu Li and Alex Smola \
         "ResNeSt: Split-Attention Network" \
         arXiv preprint (2020).
+
+
+.. rst-class:: Pytorch
+
+Pytorch
+*************

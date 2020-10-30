@@ -105,6 +105,10 @@ sphinx_gallery_conf = {
     'backreferences_dir': None,
 }
 
+# Disable tutorial if needed
+if os.environ.get('GLUONCV_DISABLE_TUTORIALS') == 'True':
+    del sphinx_gallery_conf['filename_pattern']
+
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -285,6 +289,7 @@ def setup(app):
     app.add_javascript('google_analytics.js')
     app.add_javascript('hidebib.js')
     app.add_javascript('install-options.js')
+    app.add_javascript('tabs.js')
     app.add_stylesheet('css/custom.css')
      #app.add_transform(AutoStructify)
     #app.add_config_value('recommonmark_config', {

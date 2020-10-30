@@ -3,6 +3,23 @@
 Segmentation
 ============
 
+.. role:: framework
+   :class: framework
+.. role:: select
+   :class: selected framework
+
+.. container:: Frameworks
+
+  .. container:: framework-group
+
+     :framework:`MXNet`
+     :framework:`Pytorch`
+
+.. rst-class:: MXNet
+
+MXNet
+*************
+
 Visualization of Inference Throughputs vs. Validation mIoU of COCO pre-trained models is illustrated in the following graph. Throughputs are measured with single V100 GPU and batch size 16.
 
 .. image:: /_static/plot_help.png
@@ -141,3 +158,9 @@ MS COCO
 .. [10] Yi Zhu, Zhongyue Zhang, Chongruo Wu, Zhi Zhang, Tong He, Hang Zhang, R. Manmatha, Mu Li and Alexander Smola \
         "Improving Semantic Segmentation via Self-Training" \
         arXiv preprint arXiv:2004.14960 (2020).
+
+
+.. rst-class:: Pytorch
+
+Pytorch
+*************

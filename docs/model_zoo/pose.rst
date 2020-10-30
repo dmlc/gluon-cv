@@ -3,6 +3,23 @@
 Pose Estimation
 ====================
 
+.. role:: framework
+   :class: framework
+.. role:: select
+   :class: selected framework
+
+.. container:: Frameworks
+
+  .. container:: framework-group
+
+     :framework:`MXNet`
+     :framework:`Pytorch`
+
+.. rst-class:: MXNet
+
+MXNet
+*************
+
 Visualization of Inference Throughputs vs. Validation AP of COCO pre-trained models is illustrated in the following graph. Throughputs are measured with single V100 GPU and batch size 64.
 
 .. image:: /_static/plot_help.png
@@ -87,3 +104,9 @@ Alpha Pose models are evaluated with input size (320*256), unless otherwise spec
 .. [2] Fang, Hao-Shu, et al. \
        "Rmpe: Regional multi-person pose estimation." \
        Proceedings of the IEEE International Conference on Computer Vision. 2017.
+
+
+.. rst-class:: Pytorch
+
+Pytorch
+*************
