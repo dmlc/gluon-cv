@@ -61,7 +61,7 @@ class FasterRCNNEstimator(BaseEstimator):
         self.epoch = 0
         self._time_elapsed = 0
         if max(self._cfg.train.start_epoch, self.epoch) >= self._cfg.train.epochs:
-            return
+            return {'time', self._time_elapsed}
         self.net.collect_params().setattr('grad_req', 'null')
         self.net.collect_train_params().setattr('grad_req', 'write')
         self._init_trainer()
@@ -69,7 +69,7 @@ class FasterRCNNEstimator(BaseEstimator):
 
     def _resume_fit(self, train_data, val_data):
         if max(self._cfg.train.start_epoch, self.epoch) >= self._cfg.train.epochs:
-            return
+            return {'time', self._time_elapsed}
         if not self.classes or not self.num_class:
             raise ValueError('Unable to determine classes of dataset')
 

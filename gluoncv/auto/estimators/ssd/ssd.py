@@ -14,12 +14,11 @@ from mxnet.contrib import amp
 
 from .... import utils as gutils
 from ....utils.metrics.voc_detection import VOC07MApMetric, VOCMApMetric
-from ....utils.metrics.coco_detection import COCODetectionMetric
 from ....model_zoo import get_model
 from ....model_zoo import custom_ssd
 from ....data.transforms.presets.ssd import load_test, transform_test
 from ....loss import SSDMultiBoxLoss
-from .utils import _get_dataset, _get_dataloader, _get_dali_dataset, _get_dali_dataloader, _save_params
+from .utils import _get_dataloader, _get_dali_dataloader
 from ..base_estimator import BaseEstimator, set_default
 from .default import SSDCfg
 
@@ -72,14 +71,14 @@ class SSDEstimator(BaseEstimator):
         self.epoch = 0
         self._time_elapsed = 0
         if max(self._cfg.train.start_epoch, self.epoch) >= self._cfg.train.epochs:
-            return
+            return {'time', self._time_elapsed}
         self.net.collect_params().reset_ctx(self.ctx)
         self._init_trainer()
         return self._resume_fit(train_data, val_data)
 
     def _resume_fit(self, train_data, val_data):
         if max(self._cfg.train.start_epoch, self.epoch) >= self._cfg.train.epochs:
-            return
+            return {'time', self._time_elapsed}
         if not self.classes or not self.num_class:
             raise ValueError('Unable to determine classes of dataset')
 
@@ -170,7 +169,8 @@ class SSDEstimator(BaseEstimator):
                         name1, loss1 = ce_metric.get()
                         name2, loss2 = smoothl1_metric.get()
                         self._logger.info('[Epoch %d][Batch %d], Speed: %f samples/sec, %s=%f, %s=%f',
-                                          epoch, i, self._cfg.train.batch_size/(time.time()-btic), name1, loss1, name2, loss2)
+                                          epoch, i, self._cfg.train.batch_size/(time.time()-btic),
+                                          name1, loss1, name2, loss2)
                     btic = time.time()
 
             if not self._cfg.horovod or hvd.rank() == 0:
@@ -205,7 +205,7 @@ class SSDEstimator(BaseEstimator):
             if isinstance(val_data, ObjectDetectionDataset):
                 val_data = val_data.to_mxnet()
             val_batchify_fn = Tuple(Stack(), Pad(pad_val=-1))
-            val_loader = gluon.data.DataLoader(
+            val_data = gluon.data.DataLoader(
                 val_data.transform(SSDDefaultValTransform(width, height)),
                 self._cfg.valid.batch_size, False, batchify_fn=val_batchify_fn, last_batch='keep',
                 num_workers=self._cfg.valid.num_workers)

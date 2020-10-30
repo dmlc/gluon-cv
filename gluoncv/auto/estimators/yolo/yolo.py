@@ -1,7 +1,6 @@
 """YOLO Estimator."""
 # pylint: disable=logging-format-interpolation
 import os
-import logging
 import time
 import warnings
 import pandas as pd
@@ -19,7 +18,7 @@ from ....utils.metrics.voc_detection import VOC07MApMetric, VOCMApMetric
 from ....utils import LRScheduler, LRSequential
 
 from ..base_estimator import BaseEstimator, set_default
-from .utils import _get_dataset, _get_dataloader, _save_params
+from .utils import _get_dataloader
 
 try:
     import horovod.mxnet as hvd
@@ -69,7 +68,7 @@ class YOLOv3Estimator(BaseEstimator):
         self.epoch = 0
         self._time_elapsed = 0
         if max(self._cfg.train.start_epoch, self.epoch) >= self._cfg.train.epochs:
-            return
+            return {'time', self._time_elapsed}
         if not isinstance(train_data, pd.DataFrame):
             self.last_train = len(train_data)
         else:
@@ -80,7 +79,7 @@ class YOLOv3Estimator(BaseEstimator):
 
     def _resume_fit(self, train_data, val_data):
         if max(self._cfg.train.start_epoch, self.epoch) >= self._cfg.train.epochs:
-            return
+            return {'time', self._time_elapsed}
         if not self.classes or not self.num_class:
             raise ValueError('Unable to determine classes of dataset')
 
@@ -206,7 +205,7 @@ class YOLOv3Estimator(BaseEstimator):
             if isinstance(val_data, ObjectDetectionDataset):
                 val_data = val_data.to_mxnet()
             val_batchify_fn = Tuple(Stack(), Pad(pad_val=-1))
-            val_loader = gluon.data.DataLoader(
+            val_data = gluon.data.DataLoader(
                 val_data.transform(SSDDefaultValTransform(width, height)),
                 self._cfg.valid.batch_size, False, batchify_fn=val_batchify_fn, last_batch='keep',
                 num_workers=self._cfg.valid.num_workers)

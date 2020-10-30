@@ -1,7 +1,6 @@
 """Classification Estimator"""
-# pylint: disable=unused-variable,bad-whitespace, missing-function-docstring
+# pylint: disable=unused-variable,bad-whitespace, missing-function-docstring,logging-format-interpolation
 import time
-import logging
 import os
 import math
 
@@ -13,7 +12,7 @@ from mxnet import autograd as ag
 from mxnet.gluon.data.vision import transforms
 from ....data.transforms.presets.imagenet import transform_eval
 from ....model_zoo import get_model
-from ....utils import makedirs, LRSequential, LRScheduler
+from ....utils import LRSequential, LRScheduler
 from .... import nn
 from .... import loss
 from ..base_estimator import BaseEstimator, set_default
@@ -46,7 +45,7 @@ class ImageClassificationEstimator(BaseEstimator):
         self.epoch = 0
         self._time_elapsed = 0
         if max(self._cfg.train.start_epoch, self.epoch) >= self._cfg.train.epochs:
-            return
+            return {'time', self._time_elapsed}
         if not isinstance(train_data, pd.DataFrame):
             self.last_train = len(train_data)
         else:
@@ -56,7 +55,7 @@ class ImageClassificationEstimator(BaseEstimator):
 
     def _resume_fit(self, train_data, val_data):
         if max(self._cfg.train.start_epoch, self.epoch) >= self._cfg.train.epochs:
-            return
+            return {'time', self._time_elapsed}
         if not self.classes or not self.num_class:
             raise ValueError('Unable to determine classes of dataset')
 
@@ -64,12 +63,12 @@ class ImageClassificationEstimator(BaseEstimator):
         if self._cfg.train.use_rec:
             self._logger.info(f'Loading data from rec files: {self._cfg.train.rec_train}/{self._cfg.train.rec_val}')
             train_loader, val_loader, self.batch_fn = get_data_rec(self._cfg.train.rec_train,
-                                                                         self._cfg.train.rec_train_idx,
-                                                                         self._cfg.train.rec_val,
-                                                                         self._cfg.train.rec_val_idx,
-                                                                         self.batch_size, num_workers,
-                                                                         self.input_size,
-                                                                         self._cfg.train.crop_ratio)
+                                                                   self._cfg.train.rec_train_idx,
+                                                                   self._cfg.train.rec_val,
+                                                                   self._cfg.train.rec_val_idx,
+                                                                   self.batch_size, num_workers,
+                                                                   self.input_size,
+                                                                   self._cfg.train.crop_ratio)
         else:
             train_dataset = train_data.to_mxnet()
             val_dataset = val_data.to_mxnet()
@@ -166,9 +165,9 @@ class ImageClassificationEstimator(BaseEstimator):
                 if self._cfg.train.log_interval and not (i+1)%self._cfg.train.log_interval:
                     train_metric_name, train_metric_score = train_metric.get()
                     self._logger.info('Epoch[%d] Batch [%d]\tSpeed: %f samples/sec\t%s=%f\tlr=%f',
-                                     epoch, i,
-                                     self._cfg.train.batch_size*self._cfg.train.log_interval/(time.time()-btic),
-                                     train_metric_name, train_metric_score, self.trainer.learning_rate)
+                                      epoch, i,
+                                      self._cfg.train.batch_size*self._cfg.train.log_interval/(time.time()-btic),
+                                      train_metric_name, train_metric_score, self.trainer.learning_rate)
                     btic = time.time()
 
             train_metric_name, train_metric_score = train_metric.get()
@@ -252,7 +251,7 @@ class ImageClassificationEstimator(BaseEstimator):
                 self.net.collect_params().setattr('lr_mult', self._cfg.train.transfer_lr_mult)
                 new_fc_layer.collect_params().setattr('lr_mult', self._cfg.train.output_lr_mult)
                 self._logger.debug(f'Reduce network lr multiplier to {self._cfg.train.transfer_lr_mult}, while keep ' +
-                    f'last FC layer lr_mult to {self._cfg.train.output_lr_mult}')
+                                   f'last FC layer lr_mult to {self._cfg.train.output_lr_mult}')
                 setattr(self.net, fc_name, new_fc_layer)
             else:
                 raise RuntimeError('Unable to modify the last fc layer in network, (output, fc) expected...')

@@ -7,7 +7,7 @@ import uuid
 import pprint
 from typing import Union, Tuple
 
-from autocfg import dataclass, field
+from autocfg import dataclass
 import numpy as np
 import pandas as pd
 import autogluon.core as ag
@@ -16,8 +16,6 @@ from autogluon.core.scheduler.resource import get_cpu_count, get_gpu_count
 from autogluon.core.task.base import BaseTask
 from autogluon.core.searcher import RandomSearcher
 
-from ... import utils as gutils
-from .utils import ConfigDict
 from ..estimators.base_estimator import BaseEstimator
 from ..estimators import SSDEstimator, FasterRCNNEstimator, YOLOv3Estimator, CenterNetEstimator
 from .utils import auto_suggest, config_to_nested
@@ -132,7 +130,8 @@ class ObjectDetection(BaseTask):
                     "The number of requested GPUs is greater than the number of available GPUs."
                     "Reduce the number to %d", ngpus_per_trial)
         else:
-            raise ValueError('Please specify `nthreads_per_trial` and `ngpus_per_trial` given that dist workers are available')
+            raise ValueError('Please specify `nthreads_per_trial` and `ngpus_per_trial` '
+                             'given that dist workers are available')
 
         # additional configs
         config['num_workers'] = nthreads_per_trial
@@ -246,7 +245,7 @@ class ObjectDetection(BaseTask):
                                       'valid_map': results.get('valid_map', results.get('best_reward', -1)),
                                       'total_time': results.get('total_time', time.time() - start_time),
                                       'best_config': best_config})
-            self._logger.info(pprint.pformat(self._fit_summary, indent=2))
+        self._logger.info(pprint.pformat(self._fit_summary, indent=2))
 
         # TODO: checkpointing needs to be done in a better way
         model_checkpoint = results.get('model_checkpoint', None)

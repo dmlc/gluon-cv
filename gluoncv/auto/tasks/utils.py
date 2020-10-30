@@ -110,6 +110,7 @@ def auto_suggest(config, estimator, logger):
         else:
             logger.info('Unknown dataset, quit auto suggestion...')
             return
+    # pylint: disable=broad-except
     except Exception as e:
         logger.info(f'Unexpected error: {e}, quit auto suggestion...')
         return

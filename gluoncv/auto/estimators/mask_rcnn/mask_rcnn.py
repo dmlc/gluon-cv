@@ -1,5 +1,5 @@
 """Mask RCNN Estimator."""
-# pylint: disable=consider-using-enumerate
+# pylint: disable=consider-using-enumerate,abstract-method
 import os
 import time
 import logging
