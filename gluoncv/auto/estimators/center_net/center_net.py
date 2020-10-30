@@ -74,6 +74,7 @@ class CenterNetEstimator(BaseEstimator):
     def _fit(self, train_data, val_data):
         self._best_map = 0
         self.epoch = 0
+        self._time_elapsed = 0
         if max(self._cfg.train.start_epoch, self.epoch) >= self._cfg.train.epochs:
             return {'time', self._time_elapsed}
         if not isinstance(train_data, pd.DataFrame):
