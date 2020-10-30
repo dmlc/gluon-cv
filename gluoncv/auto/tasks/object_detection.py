@@ -222,10 +222,13 @@ class ObjectDetection(BaseTask):
             rand_config = RandomSearcher(_train_object_detection.cs).get_config()
             self._logger.info("Starting fit without HPO")
             results = _train_object_detection(_train_object_detection.args, rand_config)
+            best_config = sample_config(_train_object_detection.args, rand_config)
+            best_config.pop('train_data', None)
+            best_config.pop('val_data', None)
             self._fit_summary.update({'train_map': results.get('train_map', -1),
                                       'valid_map': results.get('valid_map', -1),
                                       'total_time': results.get('time', time.time() - start_time),
-                                      'best_config': args})
+                                      'best_config': best_config})
         else:
             self._logger.info("Starting HPO experiments")
             results = self.run_fit(_train_object_detection, self.search_strategy,
