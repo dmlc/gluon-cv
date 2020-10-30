@@ -229,10 +229,6 @@ class ObjectDetection(BaseTask):
             self._logger.info("Starting HPO experiments")
             results = self.run_fit(_train_object_detection, self.search_strategy,
                                    self.scheduler_options)
-            self._fit_summary.update({'train_map': results.get('train_map', -1),
-                                      'valid_map': results.get('valid_map', results.get('best_reward', -1)),
-                                      'total_time': results.get('total_time', time.time() - start_time),
-                                      'best_config': results.get('best_config', {})})
         end_time = time.time()
         self._logger.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> finish model fitting")
         self._logger.info("total runtime is %.2f s", end_time - start_time)
@@ -242,6 +238,10 @@ class ObjectDetection(BaseTask):
             best_config = config_to_nested(best_config)
             best_config.pop('train_data', None)
             best_config.pop('val_data', None)
+            self._fit_summary.update({'train_map': results.get('train_map', -1),
+                                      'valid_map': results.get('valid_map', results.get('best_reward', -1)),
+                                      'total_time': results.get('total_time', time.time() - start_time),
+                                      'best_config': best_config})
             self._logger.info(pprint.pformat(self._fit_summary, indent=2))
 
         # TODO: checkpointing needs to be done in a better way

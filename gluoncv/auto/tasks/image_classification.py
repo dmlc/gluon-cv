@@ -28,9 +28,9 @@ __all__ = ['ImageClassification']
 @dataclass
 class LightConfig:
     model : Union[str, ag.Space] = ag.Categorical('resnet18_v1b', 'mobilenetv3_small')
-    lr : Union[ag.Space, float] = ag.Categorical(1e-2, 5e-2)
-    num_trials : int = 2
-    epochs : int = 10
+    lr : Union[ag.Space, float] = 1e-2
+    num_trials : int = 1
+    epochs : int = 5
     nthreads_per_trial : int = 32
     ngpus_per_trial : int = 0
     time_limits : int = 3600
@@ -41,8 +41,8 @@ class LightConfig:
 class DefaultConfig:
     model : Union[ag.Space, str] = ag.Categorical('resnet50_v1b', 'resnest50')
     lr : Union[ag.Space, float] = ag.Categorical(1e-2, 5e-2)
-    num_trials : int = 4
-    epochs : int = 20
+    num_trials : int = 3
+    epochs : int = 15
     nthreads_per_trial : int = 128
     ngpus_per_trial : int = 8
     time_limits : int = 3600
@@ -227,10 +227,6 @@ class ImageClassification(BaseTask):
             self._logger.info("Starting HPO experiments")
             results = self.run_fit(_train_image_classification, self.search_strategy,
                                    self.scheduler_options)
-            self._fit_summary.update({'train_acc': results.get('train_acc', -1),
-                                      'valid_acc': results.get('valid_acc', results.get('best_reward', -1)),
-                                      'total_time': results.get('total_time', time.time() - start_time),
-                                      'best_config': results.get('best_config', {})})
         end_time = time.time()
         self._logger.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> finish model fitting")
         self._logger.info("total runtime is %.2f s", end_time - start_time)
@@ -240,6 +236,10 @@ class ImageClassification(BaseTask):
             best_config = config_to_nested(best_config)
             best_config.pop('train_data', None)
             best_config.pop('val_data', None)
+            self._fit_summary.update({'train_acc': results.get('train_acc', -1),
+                                      'valid_acc': results.get('valid_acc', results.get('best_reward', -1)),
+                                      'total_time': results.get('total_time', time.time() - start_time),
+                                      'best_config': best_config})
             self._logger.info(pprint.pformat(self._fit_summary, indent=2))
 
         # TODO: checkpointing needs to be done in a better way
