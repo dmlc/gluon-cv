@@ -148,6 +148,8 @@ class ImageClassificationDataset(pd.DataFrame):
             The relative root for image paths stored in csv file.
 
         """
+        if is_url(csv_file):
+            csv_file = url_data(csv_file)
         df = pd.read_csv(csv_file)
         assert 'image' in df.columns, "`image` column is required, used for accessing the original images"
         if not 'label' in df.columns:
@@ -176,6 +178,8 @@ class ImageClassificationDataset(pd.DataFrame):
         exts : iterable of str
             The image file extensions
         """
+        if is_url(root):
+            root = url_data(root)
         synsets = []
         items = {'image': [], 'label': []}
         if isinstance(root, Path):
