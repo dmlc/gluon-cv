@@ -1,4 +1,5 @@
 """Utils for auto classification estimator"""
+# pylint: disable=bad-whitespace
 import os
 import math
 

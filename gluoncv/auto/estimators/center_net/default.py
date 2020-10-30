@@ -1,5 +1,5 @@
 """Default configs for center net"""
-# pylint: disable=bad-whitespace
+# pylint: disable=bad-whitespace,missing-class-docstring
 import os
 from autocfg import dataclass, field
 from typing import Union, Tuple
