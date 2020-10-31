@@ -172,11 +172,10 @@ Here is the PyTorch model zoo for video action recognition task.
   ``python test_ddp_pytorch.py --config-file CONFIG``
 
 
-
 Kinetics400 Dataset
 -------------------
 
-The following table lists pre-trained models trained on Kinetics400.
+The following table lists our trained models on Kinetics400.
 
 .. note::
 
@@ -186,20 +185,20 @@ The following table lists pre-trained models trained on Kinetics400.
 
   ``Clip Length`` is the number of frames within an input clip. ``32 (64/2)`` means we use 32 frames, but actually the frames are formed by randomly selecting 64 consecutive frames from the video and then skipping every other frame. This strategy is widely adopted to reduce computation and memory cost.
 
-  ``Segments`` is the number of segments used during training. For testing (reporting these numbers), we use 250 views for 2D networks (25 frames and 10-crop) and 30 views for 3D networks (10 clips and 3-crop) following the convention.
+  ``Segment`` is the number of segments used during training. For testing (reporting these numbers), we use 250 views for 2D networks (25 frames and 10-crop) and 30 views for 3D networks (10 clips and 3-crop) following the convention.
 
 
 .. csv-table::
    :file: ./csv_tables/Action_Recognitions/Kinetics400_torch.csv
    :header-rows: 1
    :class: tight-table
-   :widths: 30 12 10 10 8 10 12 8
+   :widths: 36 12 10 10 8 12 12
 
 
 Something-Something-V2 Dataset
 ------------------------------
 
-The following table lists pre-trained models trained on Something-Something-V2.
+The following table lists our trained models on Something-Something-V2.
 
 .. note::
 
@@ -209,7 +208,7 @@ The following table lists pre-trained models trained on Something-Something-V2.
    :file: ./csv_tables/Action_Recognitions/Something-Something-V2_torch.csv
    :header-rows: 1
    :class: tight-table
-   :widths: 30 12 10 10 8 10 12 8
+   :widths: 36 12 10 10 8 12 12
 
 
 .. [1] Limin Wang, Yuanjun Xiong, Zhe Wang and Yu Qiao. \
