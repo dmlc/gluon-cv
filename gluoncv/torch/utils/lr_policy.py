@@ -3,7 +3,7 @@ Gradually warm-up(increasing) learning rate for pytorch's optimizer.
 Proposed in 'Accurate, Large Minibatch SGD: Training ImageNet in 1 Hour'.
 Code adapted from https://github.com/ildoonet/pytorch-gradual-warmup-lr
 """
-# pylint: disable=missing-function-docstring, line-too-long
+# pylint: disable=missing-function-docstring, line-too-long, inconsistent-return-statements
 from torch.optim.lr_scheduler import _LRScheduler
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
@@ -59,7 +59,6 @@ class GradualWarmupScheduler(_LRScheduler):
                 self.after_scheduler.step(metrics, epoch - self.total_epoch)
 
     def step(self, epoch=None, metrics=None):
-        # pylint: disable=inconsistent-return-statements
         if isinstance(self.after_scheduler) != ReduceLROnPlateau:
             if self.finished and self.after_scheduler:
                 if epoch is None:
