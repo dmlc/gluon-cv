@@ -1,4 +1,8 @@
-# Code adapted from https://github.com/ildoonet/pytorch-gradual-warmup-lr
+"""
+Gradually warm-up(increasing) learning rate for pytorch's optimizer.
+Proposed in 'Accurate, Large Minibatch SGD: Training ImageNet in 1 Hour'.
+Code adapted from https://github.com/ildoonet/pytorch-gradual-warmup-lr
+"""
 # pylint: disable=missing-function-docstring, line-too-long
 from torch.optim.lr_scheduler import _LRScheduler
 from torch.optim.lr_scheduler import ReduceLROnPlateau
@@ -39,9 +43,11 @@ class GradualWarmupScheduler(_LRScheduler):
             return [base_lr * ((self.multiplier - 1.) * self.last_epoch / self.total_epoch + 1.) for base_lr in self.base_lrs]
 
     def step_ReduceLROnPlateau(self, metrics, epoch=None):
+        # pylint: disable=access-member-before-definition
         if epoch is None:
             epoch = self.last_epoch + 1
-        self.last_epoch = epoch if epoch != 0 else 1  # ReduceLROnPlateau is called at the end of epoch, whereas others are called at beginning
+        # ReduceLROnPlateau is called at the end of epoch, whereas others are called at beginning
+        self.last_epoch = epoch if epoch != 0 else 1
         if self.last_epoch <= self.total_epoch:
             warmup_lr = [base_lr * ((self.multiplier - 1.) * self.last_epoch / self.total_epoch + 1.) for base_lr in self.base_lrs]
             for param_group, lr in zip(self.optimizer.param_groups, warmup_lr):
@@ -53,7 +59,8 @@ class GradualWarmupScheduler(_LRScheduler):
                 self.after_scheduler.step(metrics, epoch - self.total_epoch)
 
     def step(self, epoch=None, metrics=None):
-        if type(self.after_scheduler) != ReduceLROnPlateau:
+        # pylint: disable=inconsistent-return-statements
+        if isinstance(self.after_scheduler) != ReduceLROnPlateau:
             if self.finished and self.after_scheduler:
                 if epoch is None:
                     self.after_scheduler.step(None)
