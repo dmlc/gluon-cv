@@ -70,8 +70,9 @@ def _train_image_classification(args, reporter):
         # training
         result = estimator.fit(train_data=train_data, val_data=val_data)
     # pylint: disable=broad-except
-    except Exception as e:
-        return {'stacktrace': str(e.__traceback__), 'args': str(args), 'time': time.time() - tic, 'train_acc': -1, 'valid_acc': -1}
+    except:
+        import trackback
+        return {'traceback': traceback.format_exc(), 'args': str(args), 'time': time.time() - tic, 'train_acc': -1, 'valid_acc': -1}
 
     # TODO: checkpointing needs to be done in a better way
     unique_checkpoint = 'train_image_classification_' + str(uuid.uuid4())
