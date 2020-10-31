@@ -6,18 +6,14 @@ $(document).ready(function () {
     }
 
 	function showTOC(framework) {
-		$('.localtoc .reference').hide();
-		var headers = [];
-		// get all the headings of the current framework
-		$('.'+framework+' :header').each(function(){
-			// substring was usd because a weird sign exists at the end of the string
-			var str = $(this).text();
-			headers.push(str.substring(0, str.length-1));
-		})
-		// hide all the headings
-		for (header of headers) {  
-			$('.localtoc .reference:contains('+header+')').show();
-		}
+        if (framework == 'mxnet') {
+            $('.localtoc ul').children().eq(1).show()
+            $('.localtoc ul').children().eq(2).hide()
+        } 
+        else if (framework == 'pytorch') {
+            $('.localtoc ul').children().eq(1).hide()
+            $('.localtoc ul').children().eq(2).show()
+        }
 	}
 
 	function setSelected() {
