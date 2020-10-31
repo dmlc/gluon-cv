@@ -1,4 +1,3 @@
 """YOLO Estimator implementations"""
 
-from .yolo import YOLOEstimator
-from .default import ex
+from .yolo import YOLOv3Estimator

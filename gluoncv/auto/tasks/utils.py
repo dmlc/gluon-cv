@@ -1,32 +1,119 @@
 """Utils for auto tasks"""
 import copy
+import warnings
 import numpy as np
 
-import autogluon as ag
+import autogluon.core as ag
 
 from ... import data as gdata
 from ..estimators.base_estimator import BaseEstimator
-from ..estimators import SSDEstimator, FasterRCNNEstimator, YOLOEstimator, CenterNetEstimator
+from ..estimators import SSDEstimator, FasterRCNNEstimator, YOLOv3Estimator, CenterNetEstimator
+from ..estimators import ImageClassificationEstimator
+from .dataset import ObjectDetectionDataset
 
+
+class ConfigDict(dict):
+    """The view of a config dict where keys can be accessed like attribute, it also prevents
+    naive modifications to the key-values.
+
+    Parameters
+    ----------
+    config : dict
+        The configuration dict.
+
+    Attributes
+    ----------
+    __dict__ : type
+        The internal config as a `__dict__`.
+
+    """
+    MARKER = object()
+    def __init__(self, value=None):
+        super(ConfigDict, self).__init__()
+        self.__dict__['_freeze'] = False
+        if value is None:
+            pass
+        elif isinstance(value, dict):
+            for key in value:
+                self.__setitem__(key, value[key])
+        else:
+            raise TypeError('expected dict, given {}'.format(type(value)))
+        self.freeze()
+
+    def freeze(self):
+        self.__dict__['_freeze'] = True
+
+    def is_frozen(self):
+        return self.__dict__['_freeze']
+
+    def unfreeze(self):
+        self.__dict__['_freeze'] = False
+
+    def __setitem__(self, key, value):
+        if self.__dict__.get('_freeze', False):
+            msg = ('You are trying to modify the config to "{}={}" after initialization, '
+                   ' this may result in unpredictable behaviour'.format(key, value))
+            warnings.warn(msg)
+        if isinstance(value, dict) and not isinstance(value, ConfigDict):
+            value = ConfigDict(value)
+        super(ConfigDict, self).__setitem__(key, value)
+
+    def __getitem__(self, key):
+        found = self.get(key, ConfigDict.MARKER)
+        if found is ConfigDict.MARKER:
+            if self.__dict__['_freeze']:
+                raise KeyError(key)
+            found = ConfigDict()
+            super(ConfigDict, self).__setitem__(key, found)
+        if isinstance(found, ConfigDict):
+            found.__dict__['_freeze'] = self.__dict__['_freeze']
+        return found
+
+    def __setstate__(self, state):
+        vars(self).update(state)
+
+    def __getstate__(self):
+        return vars(self)
+
+    __setattr__, __getattr__ = __setitem__, __getitem__
 
 def auto_suggest(config, estimator, logger):
     """
     Automatically suggest some hyperparameters based on the dataset statistics.
     """
-    # get dataset statistics
-    dataset_name = config.get('dataset', 'voc')
-    dataset_root = config.get('dataset_root', '~/.mxnet/datasets/')
-    if dataset_name == 'voc':
-        train_dataset = gdata.VOCDetection(splits=[(2007, 'trainval'), (2012, 'trainval')])
-    elif dataset_name == 'voc_tiny':
-        train_dataset = gdata.CustomVOCDetectionBase(classes=('motorbike',),
-                                                     root=dataset_root + 'tiny_motorbike',
-                                                     splits=[('', 'trainval')])
-    elif dataset_name == 'coco':
-        train_dataset = gdata.COCODetection(splits=['instances_train2017'])
+    if estimator is None:
+        estimator = [SSDEstimator, FasterRCNNEstimator, YOLOv3Estimator, CenterNetEstimator]
+    elif isinstance(estimator, (tuple, list)):
+        pass
     else:
-        # user needs to define a Dataset object "train_dataset" when using custom dataset
-        train_dataset = config.get('train_dataset', None)
+        assert issubclass(estimator, BaseEstimator)
+        estimator = [estimator]
+    config['estimator'] = ag.Categorical(*estimator)
+
+    # get dataset statistics
+    # user needs to define a Dataset object "train_dataset" when using custom dataset
+    train_dataset = config.get('train_dataset', None)
+    try:
+        if train_dataset is None:
+            dataset_name = config.get('dataset', 'voc')
+            dataset_root = config.get('dataset_root', '~/.mxnet/datasets/')
+            if dataset_name == 'voc':
+                train_dataset = gdata.VOCDetection(splits=[(2007, 'trainval'), (2012, 'trainval')])
+            elif dataset_name == 'voc_tiny':
+                train_dataset = gdata.CustomVOCDetectionBase(classes=('motorbike',),
+                                                             root=dataset_root + 'tiny_motorbike',
+                                                             splits=[('', 'trainval')])
+            elif dataset_name == 'coco':
+                train_dataset = gdata.COCODetection(splits=['instances_train2017'])
+        elif isinstance(train_dataset, ObjectDetectionDataset):
+            train_dataset = train_dataset.to_mxnet()
+        else:
+            logger.info('Unknown dataset, quit auto suggestion...')
+            return
+    # pylint: disable=broad-except
+    except Exception as e:
+        logger.info(f'Unexpected error: {e}, quit auto suggestion...')
+        return
 
     # choose 100 examples to calculate average statistics
     num_examples = 100
@@ -55,12 +142,15 @@ def auto_suggest(config, estimator, logger):
 
     num_images = len(train_dataset)
     image_size = np.mean(image_size_list)
-    num_classes = len(train_dataset.CLASSES)
+    try:
+        num_classes = len(train_dataset.CLASSES)
+    except AttributeError:
+        num_classes = len(train_dataset.classes)
     num_objects = np.mean(num_objects_list)
     bbox_size = np.mean(bbox_size_list)
     bbox_rel_size = np.mean(bbox_rel_size_list)
 
-    logger.info("Printing dataset statistics")
+    logger.info("[Printing dataset statistics]...")
     logger.info("number of training images: %d", num_images)
     logger.info("average image size: %.2f", image_size)
     logger.info("number of total object classes: %d", num_classes)
@@ -72,7 +162,7 @@ def auto_suggest(config, estimator, logger):
     if bbox_rel_size < 0.2 or num_objects > 5:
         suggested_estimator = [FasterRCNNEstimator]
     else:
-        suggested_estimator = [SSDEstimator, YOLOEstimator]
+        suggested_estimator = [SSDEstimator, YOLOv3Estimator, CenterNetEstimator]
 
     config['lr'] = config.get('lr', ag.Categorical(1e-2, 5e-3, 1e-3, 5e-4, 1e-4))
 
@@ -86,17 +176,70 @@ def auto_suggest(config, estimator, logger):
         estimator = [estimator]
     config['estimator'] = ag.Categorical(*estimator)
 
+def get_recursively(search_dict, field):
+    """
+    Takes a dict with nested dicts,
+    and searches all dicts for a key of the field
+    provided.
+    """
+    fields_found = []
+
+    for key, value in search_dict.items():
+
+        if key == field:
+            fields_found.append(value)
+
+        elif isinstance(value, dict):
+            results = get_recursively(value, field)
+            for result in results:
+                fields_found.append(result)
+
+    return fields_found
+
 def config_to_nested(config):
+    """Convert config to nested version"""
+    estimator = config.get('estimator', None)
+    if estimator is None:
+        transfer = config.get('transfer', None)
+        assert transfer is not None, "estimator or transfer is required in search space"
+        if transfer.startswith('ssd'):
+            estimator = SSDEstimator
+        elif transfer.startswith('faster_rcnn'):
+            estimator = FasterRCNNEstimator
+        elif transfer.startswith('yolo3'):
+            estimator = YOLOv3Estimator
+        elif transfer.startswith('center_net'):
+            estimator = CenterNetEstimator
+        else:
+            estimator = ImageClassificationEstimator
+
+    cfg_map = estimator._default_cfg.asdict()
+
+    def _recursive_update(config, key, value):
+        for k, v in config.items():
+            if key == k:
+                config[key] = value
+            elif isinstance(v, dict):
+                _recursive_update(v, key, value)
+
+    for k, v in config.items():
+        _recursive_update(cfg_map, k, v)
+    cfg_map['estimator'] = estimator
+    return cfg_map
+
+def config_to_nested_v0(config):
     """Convert config to nested version"""
     if 'meta_arch' not in config:
         if config['estimator'] == SSDEstimator:
             config['meta_arch'] = 'ssd'
         elif config['estimator'] == FasterRCNNEstimator:
             config['meta_arch'] = 'faster_rcnn'
-        elif config['estimator'] == YOLOEstimator:
+        elif config['estimator'] == YOLOv3Estimator:
             config['meta_arch'] = 'yolo3'
         elif config['estimator'] == CenterNetEstimator:
             config['meta_arch'] = 'center_net'
+        elif config['estimator'] == ImageClassificationEstimator:
+            config['meta_arch'] = 'img_cls'
         else:
             config['meta_arch'] = None
     else:
@@ -138,10 +281,19 @@ def config_to_nested(config):
             'center_net': ['base_network', 'heads', 'scale', 'topk', 'root', 'wh_weight', 'center_reg_weight',
                            'data_shape'],
             'train': ['gpus', 'pretrained_base', 'batch_size', 'epochs', 'lr', 'lr_decay', 'lr_decay_epoch',
-                      'lr_mode', 'warmup_lr', 'warmup_epochs', 'num_workers', 'resume', 'auto_resume',
+                      'lr_mode', 'warmup_lr', 'warmup_epochs', 'num_workers', 'resume',
                       'start_epoch', 'momentum', 'wd', 'save_interval', 'log_interval'],
             'validation': ['flip_test', 'nms_thresh', 'nms_topk', 'post_nms', 'num_workers',
                            'batch_size', 'interval']
+        }
+    elif config['meta_arch'] == 'img_cls':
+        config_mapping = {
+            'img_cls': ['model', 'use_pretrained', 'use_gn', 'batch_norm', 'use_se', 'last_gamma'],
+            'train': ['gpus', 'num_workers', 'batch_size', 'epochs', 'start_epoch', 'lr', 'lr_mode',
+                      'lr_decay', 'lr_decay_period',
+                      'lr_decay_epoch', 'warmup_lr', 'warmup_epochs', 'momentum', 'wd', 'log_interval',
+                      'seed', 'num_samples', 'no_wd', 'mixup', 'no_mixup_epochs', 'label_smooth'],
+            'validation': []
         }
     else:
         raise NotImplementedError('%s is not implemented.' % config['meta_arch'])

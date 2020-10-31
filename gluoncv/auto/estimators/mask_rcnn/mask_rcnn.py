@@ -1,5 +1,5 @@
 """Mask RCNN Estimator."""
-# pylint: disable=consider-using-enumerate
+# pylint: disable=consider-using-enumerate,abstract-method
 import os
 import time
 import logging
@@ -35,12 +35,12 @@ except ImportError:
     logging.info('mpi4py is not installed. Use "pip install --no-cache mpi4py" to install')
     MPI = None
 
-from .default import ex
+from .default import MaskRCNNCfg
 
 __all__ = ['MaskRCNNEstimator']
 
 
-@set_default(ex)
+@set_default(MaskRCNNCfg())
 class MaskRCNNEstimator(BaseEstimator):
     """Estimator implementation for Mask-RCNN.
 
@@ -59,7 +59,7 @@ class MaskRCNNEstimator(BaseEstimator):
         The customized/default logger for this estimator.
     _logdir : str
         The temporary dir for logs.
-    _cfg : ConfigDict
+    _cfg : autocfg.dataclass
         The configurations.
     """
     def __init__(self, config, logger=None, reporter=None):
@@ -133,8 +133,8 @@ class MaskRCNNEstimator(BaseEstimator):
                                  rpn_nms_thresh=self._cfg.mask_rcnn.rpn_nms_thresh,
                                  rpn_train_pre_nms=self._cfg.train.rpn_train_pre_nms,
                                  rpn_train_post_nms=self._cfg.train.rpn_train_post_nms,
-                                 rpn_test_pre_nms=self._cfg.validation.rpn_test_pre_nms,
-                                 rpn_test_post_nms=self._cfg.validation.rpn_test_post_nms,
+                                 rpn_test_pre_nms=self._cfg.valid.rpn_test_pre_nms,
+                                 rpn_test_post_nms=self._cfg.valid.rpn_test_post_nms,
                                  rpn_min_size=self._cfg.train.rpn_min_size,
                                  per_device_batch_size=self._cfg.train.batch_size // self.num_gpus,
                                  num_sample=self._cfg.train.rcnn_num_samples,
@@ -399,7 +399,7 @@ class MaskRCNNEstimator(BaseEstimator):
                 msg = ','.join(['{}={:.3f}'.format(*metric.get()) for metric in self.metrics])
                 self._logger.info('[Epoch {}] Training cost: {:.3f}, {}'.format(
                     epoch, (time.time() - tic), msg))
-            if not (epoch + 1) % self._cfg.validation.val_interval:
+            if not (epoch + 1) % self._cfg.valid.val_interval:
                 # consider reduce the frequency of validation to save time
                 self._validate(self._val_data, self.async_eval_processes, self.ctx, self.eval_metric,
                                self._logger, epoch, self.best_map)

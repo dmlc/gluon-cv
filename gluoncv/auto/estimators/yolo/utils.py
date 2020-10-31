@@ -63,7 +63,10 @@ def _get_dataloader(net, train_dataset, val_dataset, data_shape, batch_size, num
     val_loader = gluon.data.DataLoader(
         val_dataset.transform(YOLO3DefaultValTransform(width, height)),
         batch_size, False, batchify_fn=val_batchify_fn, last_batch='keep', num_workers=num_workers)
-    return train_loader, val_loader
+    train_eval_loader = gluon.data.DataLoader(
+        train_dataset.transform(YOLO3DefaultValTransform(width, height)),
+        batch_size, False, batchify_fn=val_batchify_fn, last_batch='keep', num_workers=num_workers)
+    return train_loader, val_loader, train_eval_loader
 
 def _save_params(net, best_map, current_map, epoch, save_interval, prefix):
     current_map = float(current_map)

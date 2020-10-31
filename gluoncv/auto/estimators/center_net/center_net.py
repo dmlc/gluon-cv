@@ -10,11 +10,8 @@ import numpy as np
 import mxnet as mx
 from mxnet import autograd
 from mxnet import gluon
-from sacred import Experiment, Ingredient
 
 from ..base_estimator import BaseEstimator, set_default
-from ..common import logging
-from ...data.coco_detection import coco_detection
 from ....data.batchify import Tuple, Stack, Pad
 from ....data.transforms.presets.center_net import CenterNetDefaultTrainTransform
 from ....data.transforms.presets.center_net import CenterNetDefaultValTransform
@@ -23,76 +20,12 @@ from ....loss import MaskedL1Loss, HeatmapFocalLoss
 from ....model_zoo import get_model
 from ....model_zoo.center_net import get_center_net, get_base_network
 from ....utils import LRScheduler, LRSequential
-from ....utils.metrics import VOCMApMetric
+from ....utils.metrics import VOCMApMetric, VOC07MApMetric
+from .default import CenterNetCfg
 
 __all__ = ['CenterNetEstimator']
 
-center_net = Ingredient('center_net')
-train = Ingredient('train')
-validation = Ingredient('validation')
-
-
-@center_net.config
-def center_net_default():
-    base_network = 'dla34_deconv'  # base feature network
-    heads = {
-        'bias': -2.19,  # use bias = -log((1 - 0.1) / 0.1)
-        'wh_outputs': 2,  # wh head channel
-        'reg_outputs': 2,  # regression head channel
-        'head_conv_channel': 64,  # additional conv channel
-    }
-    scale = 4.0  # output vs input scaling ratio, e.g., input_h // feature_h
-    topk = 100  # topk detection results will be kept after inference
-    root = os.path.expanduser(os.path.join('~', '.mxnet', 'models'))  # model zoo root dir
-    wh_weight = 0.1  # Loss weight for width/height
-    center_reg_weight = 1.0  # Center regression loss weight
-    data_shape = (512, 512)
-    transfer = None  # use the pre-trained detector for transfer learning(use preset, ignore other network settings)
-
-
-@train.config
-def train_config():
-    gpus = (0, 1, 2, 3, 4, 5, 6, 7)  # gpu individual ids, not necessarily consecutive
-    pretrained_base = True  # whether load the imagenet pre-trained base
-    batch_size = 128
-    epochs = 140
-    lr = 1.25e-4  # learning rate
-    lr_decay = 0.1  # decay rate of learning rate.
-    lr_decay_epoch = (90, 120)  # epochs at which learning rate decays
-    lr_mode = 'step'  # learning rate scheduler mode. options are step, poly and cosine
-    warmup_lr = 0.0  # starting warmup learning rate.
-    warmup_epochs = 0  # number of warmup epochs
-    num_workers = 16  # cpu workers, the larger the more processes used
-    resume = ''
-    auto_resume = True  # try to automatically resume last trial if config is default
-    start_epoch = 0
-    momentum = 0.9  # SGD momentum
-    wd = 1e-4  # weight decay
-    save_interval = 10  # Saving parameters epoch interval, best model will always be saved
-    log_interval = 100  # logging interval
-
-
-@validation.config
-def valid_config():
-    flip_test = True  # use flip in validation test
-    nms_thresh = 0  # 0 means disable
-    nms_topk = 400  # pre nms topk
-    post_nms = 100  # post nms topk
-    num_workers = 32  # cpu workers, the larger the more processes used
-    batch_size = 32  # validation batch size
-    interval = 10  # validation epoch interval, for slow validations
-
-
-ex = Experiment('center_net_default',
-                ingredients=[logging, coco_detection, train, validation, center_net])
-
-
-@ex.config
-def default_configs():
-    dataset = 'custom'
-
-
-@set_default(ex)
+@set_default(CenterNetCfg())
 class CenterNetEstimator(BaseEstimator):
     """Estimator implementation for CenterNet.
 
@@ -104,15 +37,6 @@ class CenterNetEstimator(BaseEstimator):
         Optional logger for this estimator, can be `None` when default setting is used.
     reporter : callable
         The reporter for metric checkpointing.
-
-    Attributes
-    ----------
-    _logger : logging.Logger
-        The customized/default logger for this estimator.
-    _logdir : str
-        The temporary dir for logs.
-    _cfg : ConfigDict
-        The configurations.
 
     """
     def __init__(self, config, logger=None, reporter=None):
@@ -140,21 +64,29 @@ class CenterNetEstimator(BaseEstimator):
         bboxes[:, (0, 2)] /= width
         bboxes[:, (1, 3)] /= height
         bboxes = np.clip(bboxes, 0.0, 1.0).tolist()
-        return pd.DataFrame({'predict_class': [self.classes[int(id)] for id in ids], 'predict_score': scores,
-                             'predict_rois': [{'xmin': bbox[0], 'ymin': bbox[1], 'xmax': bbox[2], 'ymax': bbox[3]} \
+        df = pd.DataFrame({'predict_class': [self.classes[int(id)] for id in ids], 'predict_score': scores,
+                           'predict_rois': [{'xmin': bbox[0], 'ymin': bbox[1], 'xmax': bbox[2], 'ymax': bbox[3]} \
                                 for bbox in bboxes]})
+        # filter out invalid (scores < 0) rows
+        valid_df = df[df['predict_score'] > 0].reset_index(drop=True)
+        return valid_df
 
     def _fit(self, train_data, val_data):
         self._best_map = 0
         self.epoch = 0
+        self._time_elapsed = 0
+        if max(self._cfg.train.start_epoch, self.epoch) >= self._cfg.train.epochs:
+            return {'time', self._time_elapsed}
         if not isinstance(train_data, pd.DataFrame):
             self.last_train = len(train_data)
         else:
             self.last_train = train_data
         self._init_trainer()
-        self._resume_fit(train_data, val_data)
+        return self._resume_fit(train_data, val_data)
 
     def _resume_fit(self, train_data, val_data):
+        if max(self._cfg.train.start_epoch, self.epoch) >= self._cfg.train.epochs:
+            return {'time', self._time_elapsed}
         if not self.classes or not self.num_class:
             raise ValueError('Unable to determine classes of dataset')
         train_dataset = train_data.to_mxnet()
@@ -173,12 +105,16 @@ class CenterNetEstimator(BaseEstimator):
         val_batchify_fn = Tuple(Stack(), Pad(pad_val=-1))
         val_loader = gluon.data.DataLoader(
             val_dataset.transform(CenterNetDefaultValTransform(width, height)),
-            self._cfg.validation.batch_size, False, batchify_fn=val_batchify_fn, last_batch='keep',
-            num_workers=self._cfg.validation.num_workers)
+            self._cfg.valid.batch_size, False, batchify_fn=val_batchify_fn, last_batch='keep',
+            num_workers=self._cfg.valid.num_workers)
+        train_eval_loader = gluon.data.DataLoader(
+            train_dataset.transform(CenterNetDefaultValTransform(width, height)),
+            self._cfg.valid.batch_size, False, batchify_fn=val_batchify_fn, last_batch='keep',
+            num_workers=self._cfg.valid.num_workers)
 
-        self._train_loop(train_loader, val_loader)
+        return self._train_loop(train_loader, val_loader, train_eval_loader)
 
-    def _train_loop(self, train_data, val_data):
+    def _train_loop(self, train_data, val_data, train_eval_data):
         wh_loss = MaskedL1Loss(weight=self._cfg.center_net.wh_weight)
         heatmap_loss = HeatmapFocalLoss(from_logits=True)
         center_reg_loss = MaskedL1Loss(weight=self._cfg.center_net.center_reg_weight)
@@ -186,6 +122,7 @@ class CenterNetEstimator(BaseEstimator):
         wh_metric = mx.metric.Loss('WHL1')
         center_reg_metric = mx.metric.Loss('CenterRegL1')
 
+        self._logger.info('Start training from [Epoch %d]', max(self._cfg.train.start_epoch, self.epoch))
         for self.epoch in range(max(self._cfg.train.start_epoch, self.epoch), self._cfg.train.epochs):
             wh_metric.reset()
             center_reg_metric.reset()
@@ -242,23 +179,34 @@ class CenterNetEstimator(BaseEstimator):
             self._logger.info(
                 '[Epoch {}] Training cost: {:.3f}, {}={:.3f}, {}={:.3f}, {}={:.3f}'.format(
                     epoch, (time.time() - tic), name2, loss2, name3, loss3, name4, loss4))
-            if (epoch % self._cfg.validation.interval == 0) or \
-                    (self._cfg.train.save_interval and epoch % self._cfg.train.save_interval == 0) or \
-                    (epoch == self._cfg.train.epochs - 1):
+            if (epoch % self._cfg.valid.interval == 0) or (epoch == self._cfg.train.epochs - 1):
                 # consider reduce the frequency of validation to save time
                 map_name, mean_ap = self._evaluate(val_data)
                 val_msg = '\n'.join(['{}={}'.format(k, v) for k, v in zip(map_name, mean_ap)])
                 self._logger.info('[Epoch %d] Validation: \n%s', epoch, val_msg)
                 current_map = float(mean_ap[-1])
                 if current_map > self._best_map:
-                    self._logger.info('[Epoch %d] Current best map: %f vs previous %f',
-                                      self.epoch, current_map, self._best_map)
+                    cp_name = os.path.join(self._logdir, 'best_checkpoint.pkl')
+                    self._logger.info('[Epoch %d] Current best map: %f vs previous %f, saved to %s',
+                                      self.epoch, current_map, self._best_map, cp_name)
+                    self.save(cp_name)
                     self._best_map = current_map
+                if self._reporter:
+                    self._reporter(epoch=epoch, map_reward=current_map)
+            self._time_elapsed += time.time() - btic
+        # map on train data
+        map_name, mean_ap = self._evaluate(train_eval_data)
+        return {'train_map': float(mean_ap[-1]), 'valid_map': self._best_map, 'time': self._time_elapsed}
 
     def _evaluate(self, val_data):
         """Test on validation dataset."""
-        eval_metric = VOCMApMetric(class_names=self.classes)
-        self.net.flip_test = self._cfg.validation.flip_test
+        if self._cfg.valid.metric == 'voc07':
+            eval_metric = VOC07MApMetric(iou_thresh=self._cfg.valid.iou_thresh, class_names=self.classes)
+        elif self._cfg.valid.metric == 'voc':
+            eval_metric = VOCMApMetric(iou_thresh=self._cfg.valid.iou_thresh, class_names=self.classes)
+        else:
+            raise ValueError(f'Invalid metric type: {self._cfg.valid.metric}')
+        self.net.flip_test = self._cfg.valid.flip_test
         mx.nd.waitall()
         self.net.hybridize()
         if not isinstance(val_data, gluon.data.DataLoader):
@@ -269,8 +217,8 @@ class CenterNetEstimator(BaseEstimator):
             width, height = self._cfg.center_net.data_shape
             val_data = gluon.data.DataLoader(
                 val_data.transform(CenterNetDefaultValTransform(width, height)),
-                self._cfg.validation.batch_size, False, batchify_fn=val_batchify_fn, last_batch='keep',
-                num_workers=self._cfg.validation.num_workers)
+                self._cfg.valid.batch_size, False, batchify_fn=val_batchify_fn, last_batch='keep',
+                num_workers=self._cfg.valid.num_workers)
         for batch in val_data:
             data = gluon.utils.split_and_load(batch[0], ctx_list=self.ctx, batch_axis=0,
                                               even_split=False)
@@ -315,7 +263,7 @@ class CenterNetEstimator(BaseEstimator):
             net = get_model(self._cfg.center_net.transfer, pretrained=True)
             net.reset_class(self.classes, reuse_weights=[cname for cname in self.classes if cname in net.classes])
         else:
-            net_name = '_'.join(('center_net', self._cfg.center_net.base_network, self._cfg.dataset))
+            net_name = '_'.join(('center_net', self._cfg.center_net.base_network, self.dataset))
             heads = OrderedDict([
                 ('heatmap',
                  {'num_output': self.num_class, 'bias': self._cfg.center_net.heads.bias}),
@@ -366,9 +314,3 @@ class CenterNetEstimator(BaseEstimator):
             self.net.collect_params(), 'adam',
             {'learning_rate': self._cfg.train.lr, 'wd': self._cfg.train.wd,
              'lr_scheduler': lr_scheduler})
-
-@ex.automain
-def main(_config, _log):
-    # main is the commandline entry for user w/o coding
-    c = CenterNetEstimator(_config, _log)
-    c.fit()

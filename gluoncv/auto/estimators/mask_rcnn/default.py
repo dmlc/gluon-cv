@@ -1,16 +1,10 @@
 """Mask RCNN default config"""
-# pylint: disable=unused-variable,missing-function-docstring
-from sacred import Experiment, Ingredient
+# pylint: disable=unused-variable,missing-function-docstring,bad-whitespace,missing-class-docstring
+# from typing import Union, Tuple
+from autocfg import dataclass, field
 
-from ..common import logging
-
-mask_rcnn = Ingredient('mask_rcnn')
-train = Ingredient('train')
-validation = Ingredient('validation')
-
-
-@mask_rcnn.config
-def mask_rcnn_default():
+@dataclass
+class MaskRCNN:
     # Backbone network.
     backbone = 'resnet50_v1b'  # base feature network
     # Final R-CNN non-maximum suppression threshold. You can specify < 0 or > 1 to disable NMS.
@@ -98,8 +92,8 @@ def mask_rcnn_default():
     num_mask_head_convs = 4
 
 
-@train.config
-def train_cfg():
+@dataclass
+class TrainCfg:
     # Whether load the imagenet pre-trained base
     pretrained_base = True
     # Batch size during training
@@ -170,8 +164,8 @@ def train_cfg():
     executor_threads = 4
 
 
-@validation.config
-def valid_cfg():
+@dataclass
+class ValidCfg:
     # Filter top proposals before NMS in testing of RPN.
     rpn_test_pre_nms = 6000
     # Return top proposal results after NMS in testing of RPN.
@@ -180,13 +174,11 @@ def valid_cfg():
     # Epoch interval for validation
     val_interval = 1
 
-
-ex = Experiment('mask_rcnn_default', ingredients=[logging, train, validation, mask_rcnn])
-
-
-@ex.config
-def default_configs():
-    # Dataset name. eg. 'coco', 'voc'
+@dataclass
+class MaskRCNNCfg:
+    mask_rcnn : MaskRCNN = field(default_factory=MaskRCNN)
+    train : TrainCfg = field(default_factory=TrainCfg)
+    valid : ValidCfg = field(default_factory=ValidCfg)    # Dataset name. eg. 'coco', 'voc'
     dataset = 'coco'
     # Training with GPUs, you can specify (1,3) for example.
     gpus = (0,)

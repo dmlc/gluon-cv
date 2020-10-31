@@ -1,5 +1,6 @@
 """Auto data preparation."""
 import os
+import re
 from pathlib import Path
 import yaml
 from ...utils.download import download
@@ -133,7 +134,7 @@ class URLs():
     COCO_SAMPLE         = f'{S3_COCO}coco_sample.tgz'
     COCO_TINY           = f'{S3_COCO}coco_tiny.tgz'
     HUMAN_NUMBERS       = f'{URL}human_numbers.tgz'
-    IMDB                = f'{S3_NLP}imdb.tgz'
+    # IMDB                = f'{S3_NLP}imdb.tgz'
     IMDB_SAMPLE         = f'{URL}imdb_sample.tgz'
     ML_SAMPLE           = f'{URL}movie_lens_sample.tgz'
     ML_100k             = 'http://files.grouplens.org/datasets/movielens/ml-100k.zip'
@@ -185,3 +186,16 @@ class URLs():
         if local_path.exists():
             return local_path
         return Config()[c_key]/fname
+
+_URL_REGEX = re.compile(
+    r'^(?:http|ftp)s?://' # http:// or https://
+    r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' #domain...
+    r'localhost|' #localhost...
+    r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' # ...or ip
+    r'(?::\d+)?' # optional port
+    r'(?:/?|[/?]\S+)$', re.IGNORECASE)
+
+def is_url(url_like):
+    if not isinstance(url_like, str):
+        return False
+    return re.match(_URL_REGEX, url_like) is not None

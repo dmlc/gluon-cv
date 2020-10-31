@@ -8,6 +8,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from PIL import Image
 import cv2
+from ..data import is_url, url_data
 from ...data.mscoco.utils import try_import_pycocotools
 from ...utils.bbox import bbox_xywh_to_xyxy, bbox_clip_xyxy
 try:
@@ -131,6 +132,10 @@ class ImageClassificationDataset(pd.DataFrame):
                 for idx in indices if idx < len(self)]
         _show_images(images, cols=ncol, titles=titles)
 
+    def to_mxnet(self):
+        """Return a mxnet based iterator that returns ndarray and labels"""
+        return _MXImageClassificationDataset(self)
+
     @classmethod
     def from_csv(cls, csv_file, root=None):
         r"""Create from csv file.
@@ -143,6 +148,8 @@ class ImageClassificationDataset(pd.DataFrame):
             The relative root for image paths stored in csv file.
 
         """
+        if is_url(csv_file):
+            csv_file = url_data(csv_file)
         df = pd.read_csv(csv_file)
         assert 'image' in df.columns, "`image` column is required, used for accessing the original images"
         if not 'label' in df.columns:
@@ -171,6 +178,8 @@ class ImageClassificationDataset(pd.DataFrame):
         exts : iterable of str
             The image file extensions
         """
+        if is_url(root):
+            root = url_data(root)
         synsets = []
         items = {'image': [], 'label': []}
         if isinstance(root, Path):
@@ -218,8 +227,8 @@ class ImageClassificationDataset(pd.DataFrame):
 
         Parameters
         ----------
-        root : str or pathlib.Path
-            The root dir for the entire dataset.
+        root : str or pathlib.Path or url
+            The root dir for the entire dataset, if url is provided, the data will be downloaded and extracted.
         train : str
             The sub-folder name for training images.
         val : str
@@ -235,6 +244,8 @@ class ImageClassificationDataset(pd.DataFrame):
             splited datasets, can be `None` if no sub-directory found.
 
         """
+        if is_url(root):
+            root = url_data(root)
         if isinstance(root, Path):
             assert root.exists(), '{} not exist'.format(str(root))
             root = str(root.resolve())
@@ -397,14 +408,16 @@ class ObjectDetectionDataset(pd.DataFrame):
 
         Parameters
         ----------
-        root : str
-            The root directory for VOC, e.g., the `VOC2007`.
+        root : str or url
+            The root directory for VOC, e.g., the `VOC2007`. If an url is provided, it will be downloaded and extracted.
         splits : tuple of str, optional
             If given, will search for this name in `ImageSets/Main/`, e.g., ('train', 'test')
         exts : tuple of str, optional
             The supported image formats.
 
         """
+        if is_url(root):
+            root = url_data(root)
         rpath = Path(root).expanduser()
         img_list = []
         class_names = set()

@@ -58,8 +58,9 @@ requirements = [
     'Pillow',
     'scipy',
     'pyyaml',
-    'sacred',
-    'pandas'
+    'pandas',
+    'autocfg>=0.0.6',
+    'autogluon.core>0.0.14'
 ]
 
 if with_cython:

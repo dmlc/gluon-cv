@@ -57,12 +57,12 @@ def _get_dataset(dataset, args):
         raise NotImplementedError('Dataset: {} not implemented.'.format(dataset))
     return train_dataset, val_dataset, val_metric
 
-def _get_dataloader(net, train_dataset, val_dataset, data_shape, batch_size, num_workers, ctx):
+def _get_dataloader(net, train_dataset, val_dataset, data_shape, batch_size, num_workers):
     """Get dataloader."""
     width, height = data_shape, data_shape
     # use fake data to generate fixed anchors for target generation
     with autograd.train_mode():
-        _, _, anchors = net(mx.nd.zeros((1, 3, height, width), ctx))
+        _, _, anchors = net(mx.nd.zeros((1, 3, height, width)))
     anchors = anchors.as_in_context(mx.cpu())
     batchify_fn = Tuple(Stack(), Stack(), Stack())  # stack image, cls_targets, box_targets
     train_loader = gluon.data.DataLoader(
@@ -72,7 +72,10 @@ def _get_dataloader(net, train_dataset, val_dataset, data_shape, batch_size, num
     val_loader = gluon.data.DataLoader(
         val_dataset.transform(SSDDefaultValTransform(width, height)),
         batch_size, False, batchify_fn=val_batchify_fn, last_batch='keep', num_workers=num_workers)
-    return train_loader, val_loader
+    train_eval_loader = gluon.data.DataLoader(
+        train_dataset.transform(SSDDefaultValTransform(width, height)),
+        batch_size, False, batchify_fn=val_batchify_fn, last_batch='keep', num_workers=num_workers)
+    return train_loader, val_loader, train_eval_loader
 
 def _get_dali_dataset(dataset_name, devices, args):
     if dataset_name.lower() == "coco":
@@ -94,7 +97,7 @@ def _get_dali_dataset(dataset_name, devices, args):
                                                      for i, _ in enumerate(devices)]
 
         # validation
-        if (not args.horovod or hvd.rank() == 0):
+        if not args.horovod or hvd.rank() == 0:
             val_dataset = gdata.COCODetection(root=os.path.join(args.dataset_root + '/coco'),
                                               splits='instances_val2017',
                                               skip_empty=False)
@@ -138,7 +141,7 @@ def _get_dali_dataloader(net, train_dataset, val_dataset, data_shape, global_bat
                                        epoch_size, auto_reset=True)
 
     # validation
-    if (not horovod or hvd.rank() == 0):
+    if not horovod or hvd.rank() == 0:
         val_batchify_fn = Tuple(Stack(), Pad(pad_val=-1))
         val_loader = gluon.data.DataLoader(
             val_dataset.transform(SSDDefaultValTransform(width, height)),
