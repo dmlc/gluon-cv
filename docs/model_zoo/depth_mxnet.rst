@@ -68,6 +68,3 @@ Monodepth2 trains depth and pose models at the same time via a self-supervised m
    :class: tight-table
    :widths: 40 10 10 13 13
 
-.. [1] Clement Godard, Oisin Mac Aodha, Michael Firman and Gabriel J. Brostow. \
-       "Digging into Self-Supervised Monocular Depth Prediction." \
-       Proceedings of the International Conference on Computer Vision (ICCV), 2019.

@@ -75,10 +75,3 @@ Alpha Pose models are evaluated with input size (320*256), unless otherwise spec
    :header-rows: 1
    :class: tight-table
    :widths: 33 15 15 10 15 12
-
-.. [1] Xiao, Bin, Haiping Wu, and Yichen Wei. \
-       "Simple baselines for human pose estimation and tracking." \
-       Proceedings of the European Conference on Computer Vision (ECCV). 2018.
-.. [2] Fang, Hao-Shu, et al. \
-       "Rmpe: Regional multi-person pose estimation." \
-       Proceedings of the IEEE International Conference on Computer Vision. 2017.
