@@ -106,7 +106,7 @@ sphinx_gallery_conf = {
 }
 
 # Disable tutorial if needed
-if os.environ.get('GLUONCV_DISABLE_TUTORIALS') == 'True':
+if os.environ.get('GLUONCV_DISABLE_TUTORIALS', 'False').lower() == 'true':
     del sphinx_gallery_conf['filename_pattern']
 
 
