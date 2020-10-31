@@ -71,7 +71,10 @@ def _get_dataloader(net, train_dataset, val_dataset, train_transform, val_transf
     val_loader = gluon.data.DataLoader(
         val_dataset.transform(val_transform(short, net.max_size)), num_shards, False,
         batchify_fn=val_bfn, last_batch='keep', num_workers=args.num_workers)
-    return train_loader, val_loader
+    train_eval_loader = gluon.data.DataLoader(
+        train_dataset.transform(val_transform(short, net.max_size)), num_shards, False,
+        batchify_fn=val_bfn, last_batch='keep', num_workers=args.num_workers)
+    return train_loader, val_loader, train_eval_loader
 
 
 def _get_testloader(net, test_dataset, num_devices, config):

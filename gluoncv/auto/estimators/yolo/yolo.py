@@ -88,7 +88,7 @@ class YOLOv3Estimator(BaseEstimator):
         val_dataset = val_data.to_mxnet()
         # training dataloader
         self.batch_size = self._cfg.train.batch_size // hvd.size() if self._cfg.horovod else self._cfg.train.batch_size
-        train_loader, val_loader = _get_dataloader(
+        train_loader, val_loader, train_eval_loader = _get_dataloader(
             self.async_net, train_dataset, val_dataset, self._cfg.yolo3.data_shape,
             self.batch_size, self._cfg.num_workers, self._cfg)
 
@@ -97,9 +97,9 @@ class YOLOv3Estimator(BaseEstimator):
                 v.wd_mult = 0.0
         if self._cfg.train.label_smooth:
             self.net._target_generator._label_smooth = True
-        return self._train_loop(train_loader, val_loader)
+        return self._train_loop(train_loader, val_loader, train_eval_loader)
 
-    def _train_loop(self, train_data, val_data):
+    def _train_loop(self, train_data, val_data, train_eval_data):
         # fix seed for mxnet, numpy and python builtin random generator.
         gutils.random.seed(self._cfg.train.seed)
 
@@ -195,7 +195,7 @@ class YOLOv3Estimator(BaseEstimator):
             self._time_elapsed += time.time() - btic
 
         # map on train data
-        map_name, mean_ap = self._evaluate(train_data)
+        map_name, mean_ap = self._evaluate(train_eval_data)
         return {'train_map': float(mean_ap[-1]), 'valid_map': self._best_map, 'time': self._time_elapsed}
 
     def _evaluate(self, val_data):

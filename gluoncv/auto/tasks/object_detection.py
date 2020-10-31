@@ -254,7 +254,7 @@ class ObjectDetection(BaseTask):
         # TODO: checkpointing needs to be done in a better way
         model_checkpoint = results.get('model_checkpoint', None)
         if model_checkpoint is None:
-            raise RuntimeError(f'Unexpected error happened during fit: {results}')
+            raise RuntimeError(f'Unexpected error happened during fit: {pprint.pformat(results, indent=2)}')
         estimator = self.load(results['model_checkpoint'])
         return estimator
 

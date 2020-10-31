@@ -107,10 +107,14 @@ class CenterNetEstimator(BaseEstimator):
             val_dataset.transform(CenterNetDefaultValTransform(width, height)),
             self._cfg.valid.batch_size, False, batchify_fn=val_batchify_fn, last_batch='keep',
             num_workers=self._cfg.valid.num_workers)
+        train_eval_loader = gluon.data.DataLoader(
+            train_dataset.transform(CenterNetDefaultValTransform(width, height)),
+            self._cfg.valid.batch_size, False, batchify_fn=val_batchify_fn, last_batch='keep',
+            num_workers=self._cfg.valid.num_workers)
 
-        return self._train_loop(train_loader, val_loader)
+        return self._train_loop(train_loader, val_loader, train_eval_loader)
 
-    def _train_loop(self, train_data, val_data):
+    def _train_loop(self, train_data, val_data, train_eval_data):
         wh_loss = MaskedL1Loss(weight=self._cfg.center_net.wh_weight)
         heatmap_loss = HeatmapFocalLoss(from_logits=True)
         center_reg_loss = MaskedL1Loss(weight=self._cfg.center_net.center_reg_weight)
@@ -191,7 +195,7 @@ class CenterNetEstimator(BaseEstimator):
                     self._reporter(epoch=epoch, map_reward=current_map)
             self._time_elapsed += time.time() - btic
         # map on train data
-        map_name, mean_ap = self._evaluate(train_data)
+        map_name, mean_ap = self._evaluate(train_eval_data)
         return {'train_map': float(mean_ap[-1]), 'valid_map': self._best_map, 'time': self._time_elapsed}
 
     def _evaluate(self, val_data):

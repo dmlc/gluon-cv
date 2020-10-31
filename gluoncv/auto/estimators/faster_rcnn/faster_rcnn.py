@@ -79,13 +79,13 @@ class FasterRCNNEstimator(BaseEstimator):
         # dataloader
         self.batch_size = self._cfg.train.batch_size // self.num_gpus \
             if self._cfg.horovod else self._cfg.train.batch_size
-        train_loader, val_loader = _get_dataloader(
+        train_loader, val_loader, train_eval_loader = _get_dataloader(
             self.net, train_dataset, val_dataset, FasterRCNNDefaultTrainTransform,
             FasterRCNNDefaultValTransform, self.batch_size, len(self.ctx), self._cfg)
 
-        return self._train_loop(train_loader, val_loader)
+        return self._train_loop(train_loader, val_loader, train_eval_loader)
 
-    def _train_loop(self, train_data, val_data):
+    def _train_loop(self, train_data, val_data, train_eval_data):
         # loss and metric
         rpn_cls_loss = gluon.loss.SigmoidBinaryCrossEntropyLoss(from_sigmoid=False)
         rpn_box_loss = gluon.loss.HuberLoss(rho=self._cfg.train.rpn_smoothl1_rho)  # == smoothl1
@@ -208,7 +208,7 @@ class FasterRCNNEstimator(BaseEstimator):
                     self._reporter(epoch=epoch, map_reward=current_map)
             self._time_elapsed += time.time() - btic
         # map on train data
-        map_name, mean_ap = self._evaluate(train_data)
+        map_name, mean_ap = self._evaluate(train_eval_data)
         return {'train_map': float(mean_ap[-1]), 'valid_map': self._best_map, 'time': self._time_elapsed}
 
     def _evaluate(self, val_data):
