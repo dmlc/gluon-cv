@@ -25,7 +25,7 @@ __all__ = ['ObjectDetection']
 
 @dataclass
 class LightConfig:
-    transfer : Union[str, ag.Space] = 'center_net_resnet18_v1b_coco'
+    transfer : Union[str, ag.Space] = 'ssd_512_mobilenet1.0_coco'
     lr : Union[ag.Space, float] = 1e-3
     num_trials : int = 1
     epochs : int = 10
@@ -37,7 +37,7 @@ class LightConfig:
 
 @dataclass
 class DefaultConfig:
-    transfer : Union[ag.Space, str] = ag.Categorical('center_net_resnet50_v1b_coco', 'yolo3_darknet53_coco')
+    transfer : Union[ag.Space, str] = ag.Categorical('center_net_resnet50_v1b_coco')
     lr : Union[ag.Space, float] = ag.Categorical(1e-3, 5e-3)
     num_trials : int = 3
     epochs : int = 15
@@ -69,7 +69,7 @@ def _train_object_detection(args, reporter):
         result = estimator.fit(train_data=train_data, val_data=val_data)
     # pylint: disable=broad-except
     except Exception as e:
-        return {'stacktrace': e.__traceback__, 'args': str(args), 'time': time.time() - tic, 'train_map': -1, 'valid_map': -1}
+        return {'stacktrace': str(e.__traceback__), 'args': str(args), 'time': time.time() - tic, 'train_map': -1, 'valid_map': -1}
 
     # TODO: checkpointing needs to be done in a better way
     unique_checkpoint = 'train_object_detection_' + str(uuid.uuid4())
