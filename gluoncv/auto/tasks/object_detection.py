@@ -73,7 +73,7 @@ def _train_object_detection(args, reporter):
         return {'traceback': traceback.format_exc(), 'args': str(args), 'time': time.time() - tic, 'train_map': -1, 'valid_map': -1}
 
     # TODO: checkpointing needs to be done in a better way
-    unique_checkpoint = 'train_object_detection_' + str(uuid.uuid4() + '.pkl')
+    unique_checkpoint = 'train_object_detection_' + str(uuid.uuid4()) + '.pkl'
     estimator.save(unique_checkpoint)
     result.update({'model_checkpoint': unique_checkpoint})
     return result
