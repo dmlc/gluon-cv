@@ -75,7 +75,7 @@ def _train_image_classification(args, reporter):
         return {'traceback': traceback.format_exc(), 'args': str(args), 'time': time.time() - tic, 'train_acc': -1, 'valid_acc': -1}
 
     # TODO: checkpointing needs to be done in a better way
-    unique_checkpoint = 'train_image_classification_' + str(uuid.uuid4())
+    unique_checkpoint = 'train_image_classification_' + str(uuid.uuid4() + '.pkl')
     estimator.save(unique_checkpoint)
     result.update({'model_checkpoint': unique_checkpoint})
     return result

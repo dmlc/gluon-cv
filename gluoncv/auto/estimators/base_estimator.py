@@ -88,10 +88,10 @@ class BaseEstimator:
         cfg = self._default_cfg.merge(config)
         diffs = self._default_cfg.diff(cfg)
         if diffs:
-            self._logger.info('>>>>>>>>>>>>>>>Modified Configs<<<<<<<<<<<<<<<')
+            self._logger.info('modified configs: {')
             for diff in diffs:
                 self._logger.info(diff)
-            self._logger.info('>>>>>>>>>>>>>End Modified Configs<<<<<<<<<<<<<')
+            self._logger.info('}')
         self._cfg = cfg
 
         prefix = name.lower() + datetime.now().strftime("-%m-%d-%Y")

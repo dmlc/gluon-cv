@@ -28,7 +28,7 @@ class LightConfig:
     transfer : Union[str, ag.Space] = ag.Categorical('ssd_512_mobilenet1.0_coco')
     lr : Union[ag.Space, float] = 1e-3
     num_trials : int = 1
-    epochs : int = 10
+    epochs : int = 5
     nthreads_per_trial : int = 32
     ngpus_per_trial : int = 0
     time_limits : int = 3600
@@ -40,7 +40,7 @@ class DefaultConfig:
     transfer : Union[ag.Space, str] = ag.Categorical('yolo3_darknet53_coco', 'ssd_512_resnet50_v1_voc')
     lr : Union[ag.Space, float] = ag.Categorical(1e-3, 5e-3)
     num_trials : int = 3
-    epochs : int = 15
+    epochs : int = 10
     nthreads_per_trial : int = 128
     ngpus_per_trial : int = 8
     time_limits : int = 3600
@@ -73,7 +73,7 @@ def _train_object_detection(args, reporter):
         return {'traceback': traceback.format_exc(), 'args': str(args), 'time': time.time() - tic, 'train_map': -1, 'valid_map': -1}
 
     # TODO: checkpointing needs to be done in a better way
-    unique_checkpoint = 'train_object_detection_' + str(uuid.uuid4())
+    unique_checkpoint = 'train_object_detection_' + str(uuid.uuid4() + '.pkl')
     estimator.save(unique_checkpoint)
     result.update({'model_checkpoint': unique_checkpoint})
     return result
