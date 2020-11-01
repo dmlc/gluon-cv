@@ -1,3 +1,4 @@
+# i3d_resnet50_v1_kinetics400
 
 DDP_CONFIG:
   WORLD_SIZE: 1  # number of nodes for distributed training
@@ -37,7 +38,7 @@ CONFIG:
     NUM_CROP: 1
     TEST_NUM_SEGMENT: 10
     TEST_NUM_CROP: 3
-    MULTIGRID: True
+    MULTIGRID: False
     KEEP_ASPECT_RATIO: False
 
   MODEL:

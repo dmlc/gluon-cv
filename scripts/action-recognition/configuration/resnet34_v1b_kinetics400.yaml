@@ -1,4 +1,4 @@
-# resnet50_v1b_sthsthv2
+# resnet34_v1b_kinetics400
 
 DDP_CONFIG:
   WORLD_SIZE: 1  # number of nodes for distributed training
@@ -14,12 +14,12 @@ DDP_CONFIG:
 
 CONFIG:
   TRAIN:
-    EPOCH_NUM: 30
+    EPOCH_NUM: 100
     BATCH_SIZE: 8
     LR: 0.01
     MOMENTUM: 0.9
     W_DECAY: 1e-4
-    LR_MILESTONE: [10, 20]
+    LR_MILESTONE: [40, 80]
     STEP: 0.1
 
   VAL:
@@ -27,27 +27,27 @@ CONFIG:
     BATCH_SIZE: 8
 
   DATA:
-    TRAIN_ANNO_PATH: '/home/ubuntu/data/sthsthv2/sthsthv2_train.txt'
-    VAL_ANNO_PATH: '/home/ubuntu/data/sthsthv2/sthsthv2_val.txt'
-    TRAIN_DATA_PATH: '/home/ubuntu/data/sthsthv2/20bn-something-something-v2/'
-    VAL_DATA_PATH:  '/home/ubuntu/data/sthsthv2/20bn-something-something-v2/'
-    NUM_CLASSES: 174
+    TRAIN_ANNO_PATH: '/home/ubuntu/data/kinetics400/k400_train.txt'
+    VAL_ANNO_PATH: '/home/ubuntu/data/kinetics400/k400_val.txt'
+    TRAIN_DATA_PATH: '/home/ubuntu/data/kinetics400/train_256/'
+    VAL_DATA_PATH:  '/home/ubuntu/data/kinetics400/val_256/'
+    NUM_CLASSES: 400
     CLIP_LEN: 1
     FRAME_RATE: 1
-    NUM_SEGMENT: 8
+    NUM_SEGMENT: 7
     NUM_CROP: 1
-    TEST_NUM_SEGMENT: 2
+    TEST_NUM_SEGMENT: 25
     TEST_NUM_CROP: 3
     MULTIGRID: False
     KEEP_ASPECT_RATIO: False
 
   MODEL:
-    NAME: 'resnet50_v1b_sthsthv2'
+    NAME: 'resnet34_v1b_kinetics400'
     PRETRAINED: False
 
   LOG:
-    BASE_PATH: './logs/resnet50_v1b_sthsthv2'
+    BASE_PATH: './logs/resnet34_v1b_kinetics400'
     LOG_DIR: 'tb_log'
     SAVE_DIR: 'checkpoints'
-    EVAL_DIR: './logs/resnet50_v1b_sthsthv2/eval'
+    EVAL_DIR: './logs/resnet34_v1b_kinetics400/eval'
     SAVE_FREQ: 2

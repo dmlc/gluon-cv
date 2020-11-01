@@ -1,4 +1,4 @@
-# r2plus1d_v2_resnet152_kinetics400
+# r2plus1d_v1_resnet34_kinetics400
 
 DDP_CONFIG:
   WORLD_SIZE: 1  # number of nodes for distributed training
@@ -48,12 +48,12 @@ CONFIG:
     NEW_WIDTH: 171
 
   MODEL:
-    NAME: 'r2plus1d_v2_resnet152_kinetics400'
+    NAME: 'r2plus1d_v1_resnet34_kinetics400'
     PRETRAINED: False
 
   LOG:
-    BASE_PATH: './logs/r2plus1d_v2_resnet152_kinetics400'
+    BASE_PATH: './logs/r2plus1d_v1_resnet34_kinetics400'
     LOG_DIR: 'tb_log'
     SAVE_DIR: 'checkpoints'
-    EVAL_DIR: './logs/r2plus1d_v2_resnet152_kinetics400/eval'
+    EVAL_DIR: './logs/r2plus1d_v1_resnet34_kinetics400/eval'
     SAVE_FREQ: 2

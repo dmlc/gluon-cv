@@ -1,3 +1,4 @@
+# resnet50_v1b_kinetics400
 
 DDP_CONFIG:
   WORLD_SIZE: 1  # number of nodes for distributed training
