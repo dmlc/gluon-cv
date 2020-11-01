@@ -8,7 +8,8 @@ Here is the PyTorch model zoo for video action recognition task.
   ``python train_ddp_pytorch.py --config-file CONFIG``
 
   The test script :download:`Download test_ddp_pytorch.py<../../scripts/action-recognition/test_ddp_pytorch.py>` can be used for
-  evaluating the trained models on various datasets.
+  performance evaluation on various datasets. Please set ``MODEL.PRETRAINED = True`` in the configuration file if you would like to use
+  the trained models in our model zoo.
 
   ``python test_ddp_pytorch.py --config-file CONFIG``
 
