@@ -13,12 +13,12 @@ DDP_CONFIG:
 
 CONFIG:
   TRAIN:
-    EPOCH_NUM: 100
+    EPOCH_NUM: 30
     BATCH_SIZE: 8
     LR: 0.01
     MOMENTUM: 0.9
     W_DECAY: 1e-4
-    LR_MILESTONE: [40, 80]
+    LR_MILESTONE: [10, 20]
     STEP: 0.1
 
   VAL:
@@ -33,16 +33,16 @@ CONFIG:
     NUM_CLASSES: 174
     CLIP_LEN: 1
     FRAME_RATE: 1
-    NUM_SEGMENT: 3
+    NUM_SEGMENT: 8
     NUM_CROP: 1
-    TEST_NUM_SEGMENT: 8
+    TEST_NUM_SEGMENT: 2
     TEST_NUM_CROP: 3
     MULTIGRID: False
     KEEP_ASPECT_RATIO: False
 
   MODEL:
     NAME: 'resnet50_v1b_sthsthv2'
-    PRETRAINED: True
+    PRETRAINED: False
 
   LOG:
     BASE_PATH: './logs/resnet50_v1b_sthsthv2'

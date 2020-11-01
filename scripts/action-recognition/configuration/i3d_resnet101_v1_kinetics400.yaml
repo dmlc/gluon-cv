@@ -31,22 +31,22 @@ CONFIG:
     TRAIN_DATA_PATH: '/home/ubuntu/data/kinetics400/train_256/'
     VAL_DATA_PATH:  '/home/ubuntu/data/kinetics400/val_256/'
     NUM_CLASSES: 400
-    CLIP_LEN: 1
-    FRAME_RATE: 1
-    NUM_SEGMENT: 7
+    CLIP_LEN: 32
+    FRAME_RATE: 2
+    NUM_SEGMENT: 1
     NUM_CROP: 1
-    TEST_NUM_SEGMENT: 25
+    TEST_NUM_SEGMENT: 10
     TEST_NUM_CROP: 3
-    MULTIGRID: False
+    MULTIGRID: True
     KEEP_ASPECT_RATIO: False
 
   MODEL:
-    NAME: 'resnet50_v1b_kinetics400'
+    NAME: 'i3d_resnet101_v1_kinetics400'
     PRETRAINED: False
 
   LOG:
-    BASE_PATH: './logs/resnet50_v1b_kinetics400'
+    BASE_PATH: './logs/i3d_resnet101_v1_kinetics400'
     LOG_DIR: 'tb_log'
     SAVE_DIR: 'checkpoints'
-    EVAL_DIR: './logs/resnet50_v1b_kinetics400/eval'
+    EVAL_DIR: './logs/i3d_resnet101_v1_kinetics400/eval'
     SAVE_FREQ: 2

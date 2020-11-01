@@ -1,6 +1,10 @@
 # pylint: disable=missing-function-docstring, missing-class-docstring
 """
-R2Plus1D, https://arxiv.org/abs/1711.11248
+A Closer Look at Spatiotemporal Convolutions for Action Recognition
+CVPR 2018, https://arxiv.org/abs/1711.11248
+Large-scale weakly-supervised pre-training for video action recognition
+CVPR 2019, https://arxiv.org/abs/1905.00561
+
 """
 import torch
 import torch.nn as nn
@@ -239,7 +243,7 @@ def r2plus1d_v2_resnet152_kinetics400(cfg):
     model = ResNet_R2plus1Dv2(Bottleneck_R2plus1Dv2,
                               num_classes=cfg.CONFIG.DATA.NUM_CLASSES,
                               block_nums=[3, 8, 36, 3],
-                              use_affine=False)
+                              use_affine=cfg.CONFIG.MODEL.USE_AFFINE)
 
     if cfg.CONFIG.MODEL.PRETRAINED:
         from ..model_store import get_model_file
