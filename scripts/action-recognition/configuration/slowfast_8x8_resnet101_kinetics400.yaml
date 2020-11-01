@@ -1,4 +1,4 @@
-# r2plus1d_v2_resnet152_kinetics400
+# slowfast_8x8_resnet101_kinetics400
 
 DDP_CONFIG:
   WORLD_SIZE: 1  # number of nodes for distributed training
@@ -16,7 +16,7 @@ CONFIG:
   TRAIN:
     EPOCH_NUM: 196
     BATCH_SIZE: 8
-    LR: 0.001
+    LR: 0.01
     MOMENTUM: 0.9
     W_DECAY: 1e-4
     WARMUP_EPOCHS: 34
@@ -34,7 +34,7 @@ CONFIG:
     TRAIN_DATA_PATH: '/home/ubuntu/data/kinetics400/train_256/'
     VAL_DATA_PATH:  '/home/ubuntu/data/kinetics400/val_256/'
     NUM_CLASSES: 400
-    CLIP_LEN: 16
+    CLIP_LEN: 32
     FRAME_RATE: 2
     NUM_SEGMENT: 1
     NUM_CROP: 1
@@ -42,18 +42,14 @@ CONFIG:
     TEST_NUM_CROP: 3
     MULTIGRID: False
     KEEP_ASPECT_RATIO: False
-    CROP_SIZE: 112
-    SHORT_SIDE_SIZE: 128
-    NEW_HEIGHT: 128
-    NEW_WIDTH: 171
 
   MODEL:
-    NAME: 'r2plus1d_v2_resnet152_kinetics400'
+    NAME: 'slowfast_8x8_resnet101_kinetics400'
     PRETRAINED: False
 
   LOG:
-    BASE_PATH: './logs/r2plus1d_v2_resnet152_kinetics400'
+    BASE_PATH: './logs/slowfast_8x8_resnet101_kinetics400'
     LOG_DIR: 'tb_log'
     SAVE_DIR: 'checkpoints'
-    EVAL_DIR: './logs/r2plus1d_v2_resnet152_kinetics400/eval'
+    EVAL_DIR: './logs/slowfast_8x8_resnet101_kinetics400/eval'
     SAVE_FREQ: 2
