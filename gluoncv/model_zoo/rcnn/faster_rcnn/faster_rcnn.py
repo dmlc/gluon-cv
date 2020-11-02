@@ -13,7 +13,6 @@ from ..rcnn import custom_rcnn_fpn
 from ....model_zoo.rcnn import RCNN
 from ....model_zoo.rcnn.rpn import RPN
 
-
 __all__ = ['FasterRCNN', 'get_faster_rcnn', 'custom_faster_rcnn_fpn']
 
 
@@ -46,10 +45,6 @@ class FasterRCNN(RCNN):
     nms_topk : int, default is 400
         Apply NMS to top k detection results, use -1 to disable so that every Detection
         result is used in NMS.
-    post_nms : int, default is 100
-        Only return top `post_nms` detection results, the rest is discarded. The number is
-        based on COCO dataset which has maximum 100 objects per image. You can adjust this
-        number if expecting more objects. You can use -1 to return all detections.
     roi_mode : str, default is align
         ROI pooling mode. Currently support 'pool' and 'align'.
     roi_size : tuple of int, length 2, default is (14, 14)
@@ -61,7 +56,7 @@ class FasterRCNN(RCNN):
     clip : float, default is None
         Clip bounding box prediction to to prevent exponentiation from overflowing.
     rpn_channel : int, default is 1024
-        Channel number used in RPN convolutional layers.
+        number of channels used in RPN convolutional layers.
     base_size : int
         The width(and height) of reference anchor box.
     scales : iterable of float, default is (8, 16, 32)
@@ -151,10 +146,6 @@ class FasterRCNN(RCNN):
     force_nms : bool
         Appy NMS to all categories, this is to avoid overlapping detection results
         from different categories.
-    post_nms : int
-        Only return top `post_nms` detection results, the rest is discarded. The number is
-        based on COCO dataset which has maximum 100 objects per image. You can adjust this
-        number if expecting more objects. You can use -1 to return all detections.
     rpn_target_generator : gluon.Block
         Generate training targets with cls_target, box_target, and box_mask.
     target_generator : gluon.Block
@@ -164,9 +155,8 @@ class FasterRCNN(RCNN):
 
     def __init__(self, features, top_features, classes, box_features=None,
                  short=600, max_size=1000, min_stage=4, max_stage=4, train_patterns=None,
-                 nms_thresh=0.3, nms_topk=400, post_nms=100,
-                 roi_mode='align', roi_size=(14, 14), strides=16, clip=None,
-                 rpn_channel=1024, base_size=16, scales=(8, 16, 32),
+                 nms_thresh=0.3, nms_topk=400, post_nms=100, roi_mode='align', roi_size=(14, 14), strides=16,
+                 clip=None, rpn_channel=1024, base_size=16, scales=(8, 16, 32),
                  ratios=(0.5, 1, 2), alloc_size=(128, 128), rpn_nms_thresh=0.7,
                  rpn_train_pre_nms=12000, rpn_train_post_nms=2000, rpn_test_pre_nms=6000,
                  rpn_test_post_nms=300, rpn_min_size=16, per_device_batch_size=1, num_sample=128,
@@ -175,9 +165,9 @@ class FasterRCNN(RCNN):
         super(FasterRCNN, self).__init__(
             features=features, top_features=top_features, classes=classes,
             box_features=box_features, short=short, max_size=max_size,
-            train_patterns=train_patterns, nms_thresh=nms_thresh, nms_topk=nms_topk,
-            post_nms=post_nms, roi_mode=roi_mode, roi_size=roi_size, strides=strides, clip=clip,
-            force_nms=force_nms, **kwargs)
+            train_patterns=train_patterns, nms_thresh=nms_thresh, nms_topk=nms_topk, post_nms=post_nms,
+            roi_mode=roi_mode, roi_size=roi_size, strides=strides, clip=clip, force_nms=force_nms,
+            **kwargs)
         if max_stage - min_stage > 1 and isinstance(strides, (int, float)):
             raise ValueError('Multi level detected but strides is of a single number:', strides)
 

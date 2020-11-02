@@ -18,6 +18,7 @@ from ...loss import YOLOV3Loss
 
 __all__ = ['YOLOV3',
            'get_yolov3',
+           'custom_yolov3',
            'yolo3_darknet53_voc',
            'yolo3_darknet53_coco',
            'yolo3_darknet53_custom',
@@ -571,6 +572,56 @@ def get_yolov3(name, stages, filters, anchors, strides, classes,
         from ..model_store import get_model_file
         full_name = '_'.join(('yolo3', name, dataset))
         net.load_parameters(get_model_file(full_name, tag=pretrained, root=root), ctx=ctx)
+    return net
+
+def custom_yolov3(base_network_name, filters, anchors, strides, classes, dataset,
+                  pretrained_base=True, pretrained=False, norm_layer=BatchNorm,
+                  norm_kwargs=None, **kwargs):
+    """Custom YOLO models."""
+    pretrained_base = False if pretrained else pretrained_base
+
+    if base_network_name == 'darknet53':
+        base_net = darknet53(
+            pretrained=pretrained_base,
+            norm_layer=norm_layer,
+            norm_kwargs=norm_kwargs,
+            **kwargs)
+        stages = [base_net.features[:15],
+                  base_net.features[15:24],
+                  base_net.features[24:]]
+    elif base_network_name == 'mobilenet1.0':
+        base_net = get_mobilenet(
+            multiplier=1,
+            pretrained=pretrained_base,
+            norm_layer=norm_layer,
+            norm_kwargs=norm_kwargs,
+            **kwargs)
+        stages = [base_net.features[:33],
+                  base_net.features[33:69],
+                  base_net.features[69:-2]]
+    elif base_network_name == 'mobilenet0.25':
+        base_net = get_mobilenet(
+            multiplier=0.25,
+            pretrained=pretrained_base,
+            norm_layer=norm_layer,
+            norm_kwargs=norm_kwargs,
+            **kwargs)
+        stages = [base_net.features[:33],
+                  base_net.features[33:69],
+                  base_net.features[69:-2]]
+    else:
+        raise NotImplementedError('Unsupported network: ', base_network_name)
+
+    net = get_yolov3(name=base_network_name,
+                     stages=stages,
+                     filters=filters,
+                     anchors=anchors,
+                     strides=strides,
+                     classes=classes,
+                     dataset=dataset,
+                     pretrained=pretrained,
+                     **kwargs)
+
     return net
 
 def yolo3_darknet53_voc(pretrained_base=True, pretrained=False,

@@ -10,7 +10,7 @@ dependencies:
   - coverage=4.5.4
   - scipy
   - cython
-  - pip=19.1.1
+  - pip=20.2.4
   - requests
   - matplotlib
   - tqdm
@@ -23,3 +23,4 @@ dependencies:
     - opencv-python
     - git+https://github.com/zhanghang1989/detail-api.git#subdirectory=PythonAPI
     - portalocker
+    - autocfg

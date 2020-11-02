@@ -5,7 +5,7 @@ from . import transforms
 from . import batchify
 from .imagenet.classification import ImageNet, ImageNet1kAttr
 from .dataloader import DetectionDataLoader, RandomTransformDataLoader
-from .pascal_voc.detection import VOCDetection, CustomVOCDetection
+from .pascal_voc.detection import VOCDetection, CustomVOCDetection, CustomVOCDetectionBase
 from .mscoco.detection import COCODetection
 from .mscoco.detection import COCODetectionDALI
 from .mscoco.instance import COCOInstance
