@@ -80,7 +80,7 @@ stage("Unit Test") {
           export LD_LIBRARY_PATH=/usr/local/cuda-10.0/lib64
           export MPLBACKEND=Agg
           export MXNET_CUDNN_AUTOTUNE_DEFAULT=0
-          nosetests --with-timer --timer-ok 5 --timer-warning 20 -x --with-coverage --cover-package gluoncv/torch -v tests/model_zoo_torch
+          nosetests --with-timer --timer-ok 5 --timer-warning 20 -x gluoncv/torch -v tests/model_zoo_torch
           """
         }
       }
@@ -109,7 +109,7 @@ stage("Unit Test") {
           export LD_LIBRARY_PATH=/usr/local/cuda-10.0/lib64
           export MPLBACKEND=Agg
           export MXNET_CUDNN_AUTOTUNE_DEFAULT=0
-          nosetests --with-timer --timer-ok 5 --timer-warning 20 -x --with-coverage --cover-package gluoncv -v tests/auto
+          nosetests --with-timer --timer-ok 60 --timer-warning 120 -x gluoncv -v tests/auto
           """
         }
       }

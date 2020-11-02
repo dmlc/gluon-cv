@@ -38,13 +38,13 @@ def test_center_net_estimator():
 
 def test_ssd_estimator():
     from gluoncv.auto.estimators import SSDEstimator
-    est = SSDEstimator({'train': {'gpus': list(range(get_gpu_count())), 'epochs': 1, 'batch_size': 8}})
+    est = SSDEstimator({'train': {'epochs': 1, 'batch_size': 8}, 'gpus': list(range(get_gpu_count()))})
     res = est.fit(OBJECT_DETCTION_DATASET)
     assert res.get('valid_map', 0) > 0
 
 def test_yolo3_estimator():
     from gluoncv.auto.estimators import YOLOv3Estimator
-    est = YOLOv3Estimator({'train': {'gpus': list(range(get_gpu_count())), 'epochs': 1, 'batch_size': 8}})
+    est = YOLOv3Estimator({'train': {'epochs': 1, 'batch_size': 8}, 'gpus': list(range(get_gpu_count()))})
     res = est.fit(OBJECT_DETCTION_DATASET)
     assert res.get('valid_map', 0) > 0
 
