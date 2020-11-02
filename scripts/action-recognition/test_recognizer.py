@@ -157,7 +157,7 @@ def parse_args():
     parser.add_argument('--num-crop', type=int, default=1,
                         help='number of crops for each image. default is 1')
     parser.add_argument('--data-aug', type=str, default='v1',
-                        help='different types of data augmentation auto. Supports v1, v2, v3 and v4.')
+                        help='different types of data augmentation pipelines. Supports v1, v2, v3 and v4.')
     # dummy benchmark
     parser.add_argument('--benchmark', action='store_true',
                         help='whether to use dummy data for benchmarking performance.')
@@ -341,7 +341,7 @@ def main(logger):
         net.collect_params().reset_ctx(context)
         if opt.mode == 'hybrid':
             net.hybridize(static_alloc=True, static_shape=True)
-        if opt.resume_params is not '' and not opt.use_pretrained:
+        if opt.resume_params != '' and not opt.use_pretrained:
             net.load_parameters(opt.resume_params, ctx=context)
             print('Pre-trained model %s is successfully loaded.' % (opt.resume_params))
         else:

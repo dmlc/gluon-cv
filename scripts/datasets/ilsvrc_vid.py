@@ -22,7 +22,7 @@ def parse_args():
     """VID dataset parameter."""
     parser = argparse.ArgumentParser(
         description='Download VID dataset and prepare for tracking')
-    parser.add_argument('--download-dir', type=str, default='~/.mxnet/datasets/vid/',
+    parser.add_argument('--download-dir', type=str, default='~/.mxnet/datasets/tracking/vid/',
                         help='dataset directory on disk')
     parser.add_argument('--instance-size', type=int, default=511,
                         help='instance image size')

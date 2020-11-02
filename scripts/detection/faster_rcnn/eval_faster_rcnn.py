@@ -8,8 +8,12 @@ import argparse
 import glob
 import logging
 logging.basicConfig(level=logging.INFO)
+import time
+import numpy as np
 import mxnet as mx
 from tqdm import tqdm
+from mxnet import nd
+from mxnet import gluon
 import gluoncv as gcv
 gcv.utils.check_version('0.6.0')
 from gluoncv import data as gdata

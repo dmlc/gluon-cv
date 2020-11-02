@@ -155,7 +155,7 @@ def parse_args():
     parser.add_argument('--num-crop', type=int, default=1,
                         help='number of crops for each image. default is 1')
     parser.add_argument('--data-aug', type=str, default='v1',
-                        help='different types of data augmentation auto. Supports v1, v2, v3 and v4.')
+                        help='different types of data augmentation pipelines. Supports v1, v2, v3 and v4.')
     parser.add_argument('--train-only', action='store_true',
                         help='if set to True, no evaluation is performed during training. Only save the last epoch model to speed up training.')
     parser.add_argument('--more-fix-crop', action='store_false',
@@ -336,7 +336,7 @@ def main():
     net.collect_params().reset_ctx(context)
     logger.info(net)
 
-    if opt.resume_params is not '':
+    if opt.resume_params != '':
         net.load_parameters(opt.resume_params, ctx=context)
         print('Continue training from model %s.' % (opt.resume_params))
 
@@ -445,7 +445,7 @@ def main():
             for p in params:
                 p.grad_req = 'add'
 
-        if opt.resume_states is not '':
+        if opt.resume_states != '':
             trainer.load_states(opt.resume_states)
 
         if opt.use_amp:

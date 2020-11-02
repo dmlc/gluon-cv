@@ -58,7 +58,7 @@ def parse_args():
                         default=4, help='Number of data workers, you can use larger '
                                         'number to accelerate data loading, if you CPU and GPUs '
                                         'are powerful.')
-    parser.add_argument('--batch-size', type=int, default=1, help='Training mini-batch size.')
+    parser.add_argument('--batch-size', type=int, default=8, help='Training mini-batch size.')
     parser.add_argument('--gpus', type=str, default='0',
                         help='Training with GPUs, you can specify 1,3 for example.')
     parser.add_argument('--epochs', type=str, default='',
@@ -324,11 +324,11 @@ def get_dataloader(net, train_dataset, val_dataset, train_transform, val_transfo
     """Get dataloader."""
     train_bfn = batchify.MaskRCNNTrainBatchify(net, num_shards_per_process)
     train_sampler = \
-        gcv.data.sampler.SplitSortedBucketSampler(train_dataset.get_im_aspect_ratio(),
-                                                  batch_size,
-                                                  num_parts=hvd.size() if args.horovod else 1,
-                                                  part_index=hvd.rank() if args.horovod else 0,
-                                                  shuffle=True)
+        gcv.nn.sampler.SplitSortedBucketSampler(train_dataset.get_im_aspect_ratio(),
+                                                batch_size,
+                                                num_parts=hvd.size() if args.horovod else 1,
+                                                part_index=hvd.rank() if args.horovod else 0,
+                                                shuffle=True)
     train_loader = mx.gluon.data.DataLoader(train_dataset.transform(
         train_transform(net.short, net.max_size, net, ashape=net.ashape, multi_stage=args.use_fpn)),
         batch_sampler=train_sampler, batchify_fn=train_bfn, num_workers=args.num_workers)
@@ -538,7 +538,7 @@ def train(net, train_data, val_data, eval_metric, batch_size, ctx, logger, args)
     base_lr = trainer.learning_rate
     for epoch in range(args.start_epoch, args.epochs):
         rcnn_task = ForwardBackwardTask(net, trainer, rpn_cls_loss, rpn_box_loss, rcnn_cls_loss,
-                                        rcnn_box_loss, rcnn_mask_loss, amp_enabled=args.amp)
+                                        rcnn_box_loss, rcnn_mask_loss, args.amp)
         executor = Parallel(args.executor_threads, rcnn_task) if not args.horovod else None
         if not args.disable_hybridization:
             net.hybridize(static_alloc=args.static_alloc)
