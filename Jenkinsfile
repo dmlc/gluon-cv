@@ -96,8 +96,8 @@ stage("Unit Test") {
           conda env remove -n gluon-cv-py3-auto_test -y
           set -ex
           # remove and create new env instead
-          conda env create -n gluon-cv-py3-auto_test -f tests/py3_mxnet.yml
-          conda env update -n gluon-cv-py3-auto_test -f tests/py3_mxnet.yml --prune
+          conda env create -n gluon-cv-py3-auto_test -f tests/py3_auto.yml
+          conda env update -n gluon-cv-py3-auto_test -f tests/py3_auto.yml --prune
           conda activate gluon-cv-py3-auto_test
           conda list
           export CUDA_VISIBLE_DEVICES=${VISIBLE_GPU}
