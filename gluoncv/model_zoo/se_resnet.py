@@ -350,8 +350,8 @@ class SE_ResNetV1(HybridBlock):
         for i, num_layer in enumerate(layers):
             stride = 1 if i == 0 else 2
             self.features.add(self._make_layer(block, num_layer, channels[i+1],
-                                                stride, i+1, in_channels=channels[i],
-                                                norm_layer=norm_layer, norm_kwargs=norm_kwargs))
+                                               stride, i+1, in_channels=channels[i],
+                                               norm_layer=norm_layer, norm_kwargs=norm_kwargs))
         self.features.add(nn.GlobalAvgPool2D())
 
         self.output = nn.Dense(classes, in_units=channels[-1])
@@ -404,7 +404,7 @@ class SE_ResNetV2(HybridBlock):
         assert len(layers) == len(channels) - 1
         self.features = nn.HybridSequential()
         self.features.add(norm_layer(scale=False, center=False,
-                                        **({} if norm_kwargs is None else norm_kwargs)))
+                                     **({} if norm_kwargs is None else norm_kwargs)))
         if thumbnail:
             self.features.add(_conv3x3(channels[0], 1, 0))
         else:
@@ -417,8 +417,8 @@ class SE_ResNetV2(HybridBlock):
         for i, num_layer in enumerate(layers):
             stride = 1 if i == 0 else 2
             self.features.add(self._make_layer(block, num_layer, channels[i+1],
-                                                stride, i+1, in_channels=in_channels,
-                                                norm_layer=norm_layer, norm_kwargs=norm_kwargs))
+                                               stride, i+1, in_channels=in_channels,
+                                               norm_layer=norm_layer, norm_kwargs=norm_kwargs))
             in_channels = channels[i+1]
         self.features.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
         self.features.add(nn.Activation('relu'))
