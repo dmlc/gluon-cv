@@ -409,9 +409,9 @@ class FasterRCNNEstimator(BaseEstimator):
         self.net.collect_params().reset_ctx(self.ctx)
 
     def _init_trainer(self):
-        self._cfg.kv_store = 'device' if (self._cfg.faster_rcnn.amp and 'nccl' in self._cfg.kv_store) \
+        kv_store_type = 'device' if (self._cfg.faster_rcnn.amp and 'nccl' in self._cfg.kv_store) \
             else self._cfg.kv_store
-        kv = mx.kvstore.create(self._cfg.kv_store)
+        kv = mx.kvstore.create(kv_store_type)
         optimizer_params = {'learning_rate': self._cfg.train.lr, 'wd': self._cfg.train.wd,
                             'momentum': self._cfg.train.momentum}
         if self._cfg.faster_rcnn.amp:
