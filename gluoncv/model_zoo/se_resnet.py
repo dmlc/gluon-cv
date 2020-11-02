@@ -46,6 +46,7 @@ def _conv3x3(channels, stride, in_channels):
 
 
 # Blocks
+@use_np
 class SE_BasicBlockV1(HybridBlock):
     r"""BasicBlock V1 from `"Deep Residual Learning for Image Recognition"
     <http://arxiv.org/abs/1512.03385>`_ paper.
@@ -109,6 +110,7 @@ class SE_BasicBlockV1(HybridBlock):
         return x
 
 
+@use_np
 class SE_BottleneckV1(HybridBlock):
     r"""Bottleneck V1 from `"Deep Residual Learning for Image Recognition"
     <http://arxiv.org/abs/1512.03385>`_ paper.
@@ -174,6 +176,7 @@ class SE_BottleneckV1(HybridBlock):
         return x
 
 
+@use_np
 class SE_BasicBlockV2(HybridBlock):
     r"""BasicBlock V2 from
     `"Identity Mappings in Deep Residual Networks"
@@ -236,6 +239,7 @@ class SE_BasicBlockV2(HybridBlock):
         return x + residual
 
 
+@use_np
 class SE_BottleneckV2(HybridBlock):
     r"""Bottleneck V2 from
     `"Identity Mappings in Deep Residual Networks"
@@ -305,6 +309,7 @@ class SE_BottleneckV2(HybridBlock):
 
 
 # Nets
+@use_np
 class SE_ResNetV1(HybridBlock):
     r"""SE_ResNet V1 model from
     `"Deep Residual Learning for Image Recognition"
@@ -368,6 +373,7 @@ class SE_ResNetV1(HybridBlock):
         return x
 
 
+@use_np
 class SE_ResNetV2(HybridBlock):
     r"""SE_ResNet V2 model from
     `"Identity Mappings in Deep Residual Networks"
