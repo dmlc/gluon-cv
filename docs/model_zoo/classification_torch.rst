@@ -1,1 +1,1 @@
-PyTorch will be supported later. Please checkout our MXNet implementation instead.
+Models implemented using PyTorch will be added later. Please checkout our MXNet implementation instead.
