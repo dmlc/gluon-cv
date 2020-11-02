@@ -52,7 +52,9 @@ class UpsamplingBilinear2d(HybridBlock):
         self.size = size
 
     def forward(self, x):
-        return nd.contrib.BilinearResize2D(x.as_nd_ndarray(), height=self.size, width=self.size).as_np_ndarray()
+        return nd.contrib.BilinearResize2D(x.as_nd_ndarray(),
+                                           height=self.size,
+                                           width=self.size).as_np_ndarray()
 
 
 @use_np
