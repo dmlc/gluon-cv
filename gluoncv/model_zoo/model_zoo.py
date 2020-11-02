@@ -21,7 +21,7 @@ from .cifarwideresnet import *
 # from .pruned_resnet.resnetv1b_pruned import *
 # from .pspnet import *
 # from .quantized import *
-# from .residual_attentionnet import *
+from .residual_attentionnet import *
 from .resnet import *
 # from .resnest import *
 # from .resnetv1b import *
@@ -243,16 +243,16 @@ _models = {
     # 'simple_pose_resnet50_v1d': simple_pose_resnet50_v1d,
     # 'simple_pose_resnet101_v1d': simple_pose_resnet101_v1d,
     # 'simple_pose_resnet152_v1d': simple_pose_resnet152_v1d,
-    # 'residualattentionnet56': residualattentionnet56,
-    # 'residualattentionnet92': residualattentionnet92,
-    # 'residualattentionnet128': residualattentionnet128,
-    # 'residualattentionnet164': residualattentionnet164,
-    # 'residualattentionnet200': residualattentionnet200,
-    # 'residualattentionnet236': residualattentionnet236,
-    # 'residualattentionnet452': residualattentionnet452,
-    # 'cifar_residualattentionnet56': cifar_residualattentionnet56,
-    # 'cifar_residualattentionnet92': cifar_residualattentionnet92,
-    # 'cifar_residualattentionnet452': cifar_residualattentionnet452,
+    'residualattentionnet56': residualattentionnet56,
+    'residualattentionnet92': residualattentionnet92,
+    'residualattentionnet128': residualattentionnet128,
+    'residualattentionnet164': residualattentionnet164,
+    'residualattentionnet200': residualattentionnet200,
+    'residualattentionnet236': residualattentionnet236,
+    'residualattentionnet452': residualattentionnet452,
+    'cifar_residualattentionnet56': cifar_residualattentionnet56,
+    'cifar_residualattentionnet92': cifar_residualattentionnet92,
+    'cifar_residualattentionnet452': cifar_residualattentionnet452,
     # 'resnet18_v1b_0.89': resnet18_v1b_89,
     # 'resnet50_v1d_0.86': resnet50_v1d_86,
     # 'resnet50_v1d_0.48': resnet50_v1d_48,
