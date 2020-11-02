@@ -30,7 +30,7 @@ from mxnet.gluon import nn
 from mxnet.gluon.nn import BatchNorm
 from mxnet.gluon.block import HybridBlock
 from mxnet import npx
-from mxnet import use_np
+from mxnet import use_np # pylint: disable=unused-import
 mx.npx.set_np()
 
 
