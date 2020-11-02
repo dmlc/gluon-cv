@@ -14,7 +14,6 @@ class ImageClassification:
 
 @dataclass
 class TrainCfg:
-    gpus : Union[Tuple, list] = (0, )  # gpu individual ids, not necessarily consecutive
     pretrained_base : bool = True  # whether load the imagenet pre-trained base
     batch_size : int = 128
     epochs : int = 10
@@ -64,3 +63,4 @@ class ImageClassificationCfg:
     img_cls : ImageClassification = field(default_factory=ImageClassification)
     train : TrainCfg = field(default_factory=TrainCfg)
     valid : ValidCfg = field(default_factory=ValidCfg)
+    gpus : Union[Tuple, list] = (0, )  # gpu individual ids, not necessarily consecutive

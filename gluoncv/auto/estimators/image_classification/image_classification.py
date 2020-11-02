@@ -196,7 +196,7 @@ class ImageClassificationEstimator(BaseEstimator):
                 It should be inferred from dataset or resumed from saved states.')
         assert len(self.classes) == self.num_class
         # ctx
-        self.ctx = [mx.gpu(int(i)) for i in self._cfg.train.gpus]
+        self.ctx = [mx.gpu(int(i)) for i in self._cfg.gpus]
         self.ctx = self.ctx if self.ctx else [mx.cpu()]
 
         # network

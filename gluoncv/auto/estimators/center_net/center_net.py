@@ -253,7 +253,7 @@ class CenterNetEstimator(BaseEstimator):
                 It should be inferred from dataset or resumed from saved states.')
         assert len(self.classes) == self.num_class
         # network
-        ctx = [mx.gpu(int(i)) for i in self._cfg.train.gpus]
+        ctx = [mx.gpu(int(i)) for i in self._cfg.gpus]
         ctx = ctx if ctx else [mx.cpu()]
         self.ctx = ctx
         if self._cfg.center_net.transfer is not None:

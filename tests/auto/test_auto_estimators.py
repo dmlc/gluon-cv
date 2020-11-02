@@ -26,13 +26,13 @@ OBJECT_DETCTION_DATASET = ObjectDetection.Dataset.from_voc('https://autogluon.s3
 
 def test_image_classification_estimator():
     from gluoncv.auto.estimators import ImageClassificationEstimator
-    est = ImageClassificationEstimator({'train': {'gpus': list(range(get_gpu_count())), 'epochs': 1, 'batch_size': 8}})
+    est = ImageClassificationEstimator({'train': {'epochs': 1, 'batch_size': 8}, 'gpus': list(range(get_gpu_count()))})
     res = est.fit(IMAGE_CLASS_DATASET)
     assert res.get('valid_acc', 0) > 0
 
 def test_center_net_estimator():
     from gluoncv.auto.estimators import CenterNetEstimator
-    est = CenterNetEstimator({'train': {'gpus': list(range(get_gpu_count())), 'epochs': 1, 'batch_size': 8}})
+    est = CenterNetEstimator({'train': {'epochs': 1, 'batch_size': 8}, 'gpus': list(range(get_gpu_count()))})
     res = est.fit(OBJECT_DETCTION_DATASET)
     assert res.get('valid_map', 0) > 0
 
@@ -45,6 +45,12 @@ def test_ssd_estimator():
 def test_yolo3_estimator():
     from gluoncv.auto.estimators import YOLOv3Estimator
     est = YOLOv3Estimator({'train': {'epochs': 1, 'batch_size': 8}, 'gpus': list(range(get_gpu_count()))})
+    res = est.fit(OBJECT_DETCTION_DATASET)
+    assert res.get('valid_map', 0) > 0
+
+def test_frcnn_estimator():
+    from gluoncv.auto.estimators import FasterRCNNEstimator
+    est = FasterRCNNEstimator({'train': {'epochs': 1}, 'gpus': list(range(get_gpu_count()))})
     res = est.fit(OBJECT_DETCTION_DATASET)
     assert res.get('valid_map', 0) > 0
 
