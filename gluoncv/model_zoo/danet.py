@@ -166,7 +166,6 @@ def get_danet_resnet50_citys(**kwargs):
         The context in which to load the pretrained weights.
     root : str, default '~/.mxnet/models'
         Location for keeping the model parameters.
-
     Examples
     --------
     >>> model = get_danet_resnet50_citys(pretrained=True)

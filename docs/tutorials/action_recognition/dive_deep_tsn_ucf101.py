@@ -110,6 +110,8 @@ num_workers = 0
 batch_size = per_device_batch_size * num_gpus
 
 # Set train=True for training the model. Here we set num_segments to 3 to enable TSN training.
+# Make sure you have UCF101 data prepared
+# Please checkout the `ucf101.py <../../../../datasets/ucf101.py>`_ for more details.  
 train_dataset = UCF101(train=True, num_segments=3, transform=transform_train)
 print('Load %d training samples.' % len(train_dataset))
 train_data = gluon.data.DataLoader(train_dataset, batch_size=batch_size,

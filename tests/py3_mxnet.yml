@@ -1,0 +1,26 @@
+name: gluon_cv_py3_mxnet
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.6
+  - perl
+  - sphinx=1.7.2
+  - nose
+  - coverage=4.5.4
+  - scipy
+  - cython
+  - pip=19.1.1
+  - requests
+  - matplotlib
+  - tqdm
+  - pillow
+  - pip:
+    - https://repo.mxnet.io/dist/python/cu100mkl/mxnet_cu100mkl-1.6.0b20191010-py2.py3-none-manylinux1_x86_64.whl
+    - coverage-badge
+    - awscli
+    - nose-timer
+    - opencv-python
+    - git+https://github.com/zhanghang1989/detail-api.git#subdirectory=PythonAPI
+    - portalocker
+    - autocfg

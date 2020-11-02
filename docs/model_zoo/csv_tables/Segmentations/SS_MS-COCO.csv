@@ -1,0 +1,4 @@
+Name,Method,pixAcc,mIoU,Command,log
+fcn_resnet101_coco,FCN [2]_,92.2,66.2,`shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/fcn_resnet101_coco.sh>`_,`log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/fcn_resnet101_coco.log>`_
+psp_resnet101_coco,PSP [3]_,92.4,70.4,`shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/psp_resnet101_coco.sh>`_,`log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/psp_resnet101_coco.log>`_
+deeplab_resnet101_coco,DeepLabV3 [4]_,92.5,70.4,`shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/deeplab_resnet101_coco.sh>`_,`log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/deeplab_resnet101_coco.log>`_

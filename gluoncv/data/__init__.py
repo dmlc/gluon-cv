@@ -28,6 +28,7 @@ from .hmdb51.classification import HMDB51, HMDB51Attr
 from .video_custom.classification import VideoClsCustom
 from .sampler import SplitSampler, ShuffleSplitSampler
 from .otb.tracking import OTBTracking
+from .kitti.kitti_dataset import KITTIRAWDataset, KITTIOdomDataset
 
 datasets = {
     'ade20k': ADE20KSegmentation,

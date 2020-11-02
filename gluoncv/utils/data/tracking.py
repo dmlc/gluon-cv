@@ -2,7 +2,7 @@
 mainly crop data like_SiamFC"""
 import numpy as np
 import sys
-from gluoncv.utils.filesystem import try_import_cv2
+from ..filesystem import try_import_cv2
 
 
 def crop_hwc(image, bbox, out_sz, padding=(0, 0, 0)):

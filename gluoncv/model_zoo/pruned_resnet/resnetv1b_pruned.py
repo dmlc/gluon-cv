@@ -27,13 +27,16 @@ def prune_gluon_block(net, prefix, params_shapes, params=None, pretrained=False,
     :return: "net"
     """
     for _, layer in net._children.items():
-        if pretrained:
-            if isinstance(layer, nn.BatchNorm):
-                params_layer = layer._collect_params_with_prefix()
-                for param_name in ['beta', 'gamma', 'running_mean', 'running_var']:
+        if isinstance(layer, nn.BatchNorm):
+            params_layer = layer._collect_params_with_prefix()
+            for param_name in ['beta', 'gamma', 'running_mean', 'running_var']:
+                if pretrained:
                     param_val = params[layer.name.replace(prefix, "resnetv1d") + "_" + param_name]
                     layer.params.get(param_name)._shape = param_val.shape
                     params_layer[param_name]._load_init(param_val, ctx=ctx)
+                else:
+                    layer.params.get(param_name)._shape = None
+                    layer.params.get(param_name).initialize(ctx=ctx, force_reinit=True)
 
         if isinstance(layer, nn.Conv2D):
             param_shape = params_shapes[layer.name.replace(prefix, "resnetv1d") + "_weight"]

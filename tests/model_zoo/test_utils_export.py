@@ -4,7 +4,7 @@ import numpy as np
 import mxnet as mx
 import gluoncv as gcv
 from gluoncv.model_zoo.model_store import pretrained_model_list
-from common import try_gpu
+from ..unittests.common import try_gpu
 
 @try_gpu(0)
 def test_export_model_zoo():
@@ -36,6 +36,8 @@ def test_export_model_zoo():
         if 'siamrpn' in model:
             continue
         if 'danet' in model or 'fastscnn' in model:
+            continue
+        if 'monodepth2' in model:
             continue
 
         try:

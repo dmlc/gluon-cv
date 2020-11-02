@@ -9,7 +9,7 @@ import gluoncv
 from gluoncv.utils.metrics.segmentation import *
 from gluoncv.data import ADE20KSegmentation
 
-from common import try_gpu, with_cpu
+from .common import try_gpu, with_cpu
 
 @unittest.skip("Temp disabled...")
 @try_gpu(0)

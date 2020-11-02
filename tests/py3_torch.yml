@@ -1,5 +1,6 @@
-name: gluon_cv_py3
+name: gluon_cv_py3_pytorch
 channels:
+  - pytorch
   - conda-forge
   - defaults
 dependencies:
@@ -15,12 +16,16 @@ dependencies:
   - matplotlib
   - tqdm
   - pillow
+  - pytorch=1.6.0
+  - torchvision=0.7.0
   - pip:
-    - https://repo.mxnet.io/dist/python/cu100mkl/mxnet_cu100mkl-1.6.0b20191010-py2.py3-none-manylinux1_x86_64.whl
     - coverage-badge
     - awscli
     - nose-timer
     - opencv-python
     - git+https://github.com/zhanghang1989/detail-api.git#subdirectory=PythonAPI
     - portalocker
-    - autocfg
+    - tensorboardx
+    - decord
+    - opencv-python-headless
+    - yacs

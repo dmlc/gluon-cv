@@ -33,6 +33,12 @@ Model Zoo
 
         Select your models from charts and tables of the action recognition models
 
+    .. card::
+        :title: Depth Prediction
+        :link: depth.html
+
+        Select your models from charts and tables of the depth prediction models
+
 
 .. toctree::
     :hidden:
@@ -43,3 +49,5 @@ Model Zoo
     segmentation
     pose
     action_recognition
+    depth
+

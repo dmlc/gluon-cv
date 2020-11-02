@@ -371,3 +371,15 @@ class PathTree:
     def __str__(self):
         s = '\n'.join([p.displayable() for p in self._disp_path])
         return s
+
+def try_import_skimage():
+    """Try import scikit-image at runtime.
+
+    Returns
+    -------
+    scikit-image module if found. Raise ImportError otherwise
+
+    """
+    msg = "skimage is required, you can install by package manager, e.g. " \
+          "`pip install scikit-image --user` (note that this is unofficial PYPI package)."
+    return try_import('skimage', msg)

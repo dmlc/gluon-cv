@@ -55,6 +55,7 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
+    'sphinx.ext.autosectionlabel',
     'sphinx_gallery.gen_gallery',
 ]
 
@@ -69,6 +70,7 @@ sphinx_gallery_conf = {
         'tutorials/pose',
         'tutorials/action_recognition',
         'tutorials/tracking',
+        'tutorials/depth',
         'tutorials/distributed',
         'tutorials/deployment',],
     # path where to save gallery generated examples
@@ -81,11 +83,13 @@ sphinx_gallery_conf = {
         'build/examples_pose',
         'build/examples_action_recognition',
         'build/examples_tracking',
+        'build/examples_depth',
         'build/examples_distributed',
         'build/examples_deployment',],
 
     'filename_pattern': '.pydisabled',
     'ignore_pattern': 'im2rec.py',
+    'expected_failing_examples': [],
 
     # 'subsection_order': ExplicitOrder(['tutorials/classification',
     #                                    'tutorials/detection',
@@ -100,6 +104,10 @@ sphinx_gallery_conf = {
     },
     'backreferences_dir': None,
 }
+
+# Disable tutorial if needed
+if os.environ.get('GLUONCV_DISABLE_TUTORIALS', 'False').lower() == 'true':
+    del sphinx_gallery_conf['filename_pattern']
 
 
 # Add any paths that contain templates here, relative to this directory.
@@ -160,7 +168,7 @@ html_theme_options = {
     'primary_color': 'blue',
     'accent_color': 'deep_orange',
     'header_links' : [
-        ('Install', '#installation', False, ''),
+        ('Install', 'install/install-more', False, ''),
         ('Tutorial', 'tutorials/index', False, ''),
         ('API', 'api/index', False, ''),
         ('Community', 'how_to/support', False, ''),
@@ -281,6 +289,7 @@ def setup(app):
     app.add_javascript('google_analytics.js')
     app.add_javascript('hidebib.js')
     app.add_javascript('install-options.js')
+    app.add_javascript('tabs.js')
     app.add_stylesheet('css/custom.css')
      #app.add_transform(AutoStructify)
     #app.add_config_value('recommonmark_config', {

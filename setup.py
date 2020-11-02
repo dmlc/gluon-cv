@@ -57,8 +57,12 @@ requirements = [
     'portalocker',
     'Pillow',
     'scipy',
-    'pyyaml',
+    'tensorboardx',
+    'decord',
+    'opencv-python',
+    'yacs',
     'pandas',
+    'pyyaml',
     'autocfg>=0.0.6',
     'autogluon.core>0.0.14'
 ]

@@ -1,3 +1,4 @@
+# pylint: disable=wildcard-import, unused-wildcard-import, line-too-long
 """Model store which provides pretrained models."""
 from __future__ import print_function
 
@@ -49,6 +50,7 @@ _model_sha1 = {name: checksum for checksum, name in [
     ('f360b758e856f1074a85abd5fd873ed1d98297c3', 'vgg19_bn'),
     ('4fa2e1ad96b8c8d1ba9e5a43556cd909d70b3985', 'vgg16_atrous'),
     ('0e169fbb64efdee6985c3c175ec4298c4bda0298', 'ssd_300_vgg16_atrous_voc'),
+    ('ade34ff72a2418fac94afe1048bc305b980c83c5', 'ssd_300_resnet34_v1b_coco'),
     ('daf8181b615b480236fcb8474545077891276945', 'ssd_512_vgg16_atrous_voc'),
     ('9c8b225a552614e4284a0f647331bfdc6940eb4a', 'ssd_512_resnet50_v1_voc'),
     ('2cc0f93edf1467f428018cc7261d3246dfa15259', 'ssd_512_resnet101_v2_voc'),
@@ -114,6 +116,7 @@ _model_sha1 = {name: checksum for checksum, name in [
     ('bf1584dfcec12063eff3075ee643e181c0f6d443', 'deeplab_resnet101_ade'),
     ('a8312db6e30a464151580f2bda83479786455724', 'deeplab_resnest50_ade'),
     ('6d05c630fb7acb38615f7f4d360fb90f47b25042', 'deeplab_resnest101_ade'),
+    ('9134a6f7d1399b549d5803d8faed3dfc74efc0d8', 'deeplab_resnest200_ade'),
     ('d45b33dedf4cca13b8147213c5360e30f93685bd', 'deeplab_resnest269_ade'),
     ('09f89cad0e107cb2bffdb1b07706ba31798096f2', 'psp_resnet101_coco'),
     ('2c2f4e1c2b11461b52598a4b2038bccbcfc166eb', 'psp_resnet101_voc'),
@@ -125,7 +128,7 @@ _model_sha1 = {name: checksum for checksum, name in [
     ('63db8a7938586525256a0bdc6632ed986e4026cf', 'icnet_resnet50_mhpv1'),
     ('cf6a7bb3d55360933de647a8505f7936003902a4', 'deeplab_resnet50_citys'),
     ('eb8477a91efc244c85b364c0736664078aaf0e65', 'deeplab_resnet101_citys'),
-    ('b34e59e3e98e8d99f2609ff53f24629ed287b31c', 'fastscnn_citys'),
+    ('95aad0b699ae17c67caa44b3ead4b23474e98954', 'fastscnn_citys'),
     ('143e1f1c1c1f2d3a3416887e088ebfdd4e1e2345', 'danet_resnet50_citys'),
     ('6ead3d099f7a320846bddb51148c3fe3b5ade5c2', 'danet_resnet101_citys'),
     ('f5ece5ce1422eeca3ce2908004e469ffdf91fd41', 'yolo3_darknet53_voc'),
@@ -220,6 +223,11 @@ _model_sha1 = {name: checksum for checksum, name in [
     ('f782057569a768faa03940d8106f944ffe3c9733', 'center_net_mobilenetv3_small_duc_coco'),
     ('2cab979937586d3f8532d86130030c611ae38d2d', 'center_net_mobilenetv3_large_duc_voc'),
     ('bfc55dfd13ef8e9fd052141a3c42338179f5949d', 'center_net_mobilenetv3_large_duc_coco'),
+    ('83eea4a9dda3323dca4b11c34c2d0c557056d7b5', 'monodepth2_resnet18_kitti_stereo_640x192'),
+    ('c881771d720e321efd85f9e8ce4ef455de9ae9fc', 'monodepth2_resnet18_kitti_mono_640x192'),
+    ('9515c219cf72575636e2168728ebb9f12fe8e4df', 'monodepth2_resnet18_kitti_mono_stereo_640x192'),
+    ('661ee2e1bf824f4f4549b3488c59dec0b0078c38', 'monodepth2_resnet18_posenet_kitti_mono_640x192'),
+    ('c14979bb016ed4f555fa09004ddc7616dd60b8b9', 'monodepth2_resnet18_posenet_kitti_mono_stereo_640x192'),
 ]}
 
 apache_repo_url = 'https://apache-mxnet.s3-accelerate.dualstack.amazonaws.com/'

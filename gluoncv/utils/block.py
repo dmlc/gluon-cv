@@ -1,7 +1,6 @@
 """Utility functions for gluon parameters."""
 import re
 import numpy as np
-from mxnet.gluon.nn import BatchNorm
 
 def recursive_visit(net, callback, **kwargs):
     """Recursively visit and apply callback to a net and its sub-net
@@ -47,6 +46,7 @@ def set_lr_mult(net, pattern, mult=1.0, verbose=False):
             print("Set lr_mult of {} to {}".format(value.name, mult))
 
 def _freeze_bn_callback(net, use_global_stats=True):
+    from mxnet.gluon.nn import BatchNorm
     if isinstance(net, BatchNorm):
         net._kwargs['use_global_stats'] = use_global_stats
 
