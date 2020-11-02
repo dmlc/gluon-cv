@@ -63,8 +63,8 @@ requirements = [
     'yacs',
     'pandas',
     'pyyaml',
-    'autocfg>=0.0.6',
-    'autogluon.core>0.0.14'
+    'autocfg',
+    'autogluon.core'
 ]
 
 if with_cython:
