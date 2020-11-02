@@ -160,39 +160,39 @@ class AttentionModule_stage1(nn.HybridBlock):
         p, t, r = scale
         self.first_residual_blocks = nn.HybridSequential()
         _add_block(self.first_residual_blocks, ResidualBlock, p, channels,
-                    norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+                   norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
         self.trunk_branches = nn.HybridSequential()
         _add_block(self.trunk_branches, ResidualBlock, t, channels,
-                    norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+                   norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
         self.mpool1 = nn.MaxPool2D(pool_size=3, strides=2, padding=1)
         self.softmax1_blocks = nn.HybridSequential()
         _add_block(self.softmax1_blocks, ResidualBlock, r, channels,
-                    norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+                   norm_layer=norm_layer, norm_kwargs=norm_kwargs)
         self.skip1_connection_residual_block = ResidualBlock(channels)
 
         self.mpool2 = nn.MaxPool2D(pool_size=3, strides=2, padding=1)
         self.softmax2_blocks = nn.HybridSequential()
         _add_block(self.softmax2_blocks, ResidualBlock, r, channels,
-                    norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+                   norm_layer=norm_layer, norm_kwargs=norm_kwargs)
         self.skip2_connection_residual_block = ResidualBlock(channels)
 
         self.mpool3 = nn.MaxPool2D(pool_size=3, strides=2, padding=1)
 
         self.softmax3_blocks = nn.HybridSequential()
         _add_block(self.softmax3_blocks, ResidualBlock, 2 * r, channels,
-                    norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+                   norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
         self.interpolation3 = UpsamplingBilinear2d(size=size3)
         self.softmax4_blocks = nn.HybridSequential()
         _add_block(self.softmax4_blocks, ResidualBlock, r, channels,
-                    norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+                   norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
         self.interpolation2 = UpsamplingBilinear2d(size=size2)
         self.softmax5_blocks = nn.HybridSequential()
         _add_block(self.softmax5_blocks, ResidualBlock, r, channels,
-                    norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+                   norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
         self.interpolation1 = UpsamplingBilinear2d(size=size1)
         self.softmax6_blocks = nn.HybridSequential()
@@ -266,28 +266,28 @@ class AttentionModule_stage2(nn.HybridBlock):
         p, t, r = scale
         self.first_residual_blocks = nn.HybridSequential()
         _add_block(self.first_residual_blocks, ResidualBlock, p, channels,
-                    norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+                   norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
         self.trunk_branches = nn.HybridSequential()
         _add_block(self.trunk_branches, ResidualBlock, t, channels,
-                    norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+                   norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
         self.mpool1 = nn.MaxPool2D(pool_size=3, strides=2, padding=1)
         self.softmax1_blocks = nn.HybridSequential()
         _add_block(self.softmax1_blocks, ResidualBlock, r, channels,
-                    norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+                   norm_layer=norm_layer, norm_kwargs=norm_kwargs)
         self.skip1_connection_residual_block = ResidualBlock(channels)
 
         self.mpool2 = nn.MaxPool2D(pool_size=3, strides=2, padding=1)
 
         self.softmax2_blocks = nn.HybridSequential()
         _add_block(self.softmax2_blocks, ResidualBlock, 2 * r, channels,
-                    norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+                   norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
         self.interpolation2 = UpsamplingBilinear2d(size=size2)
         self.softmax3_blocks = nn.HybridSequential()
         _add_block(self.softmax3_blocks, ResidualBlock, r, channels,
-                    norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+                   norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
         self.interpolation1 = UpsamplingBilinear2d(size=size1)
 
@@ -346,17 +346,17 @@ class AttentionModule_stage3(nn.HybridBlock):
         p, t, r = scale
         self.first_residual_blocks = nn.HybridSequential()
         _add_block(self.first_residual_blocks, ResidualBlock, p, channels,
-                    norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+                   norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
         self.trunk_branches = nn.HybridSequential()
         _add_block(self.trunk_branches, ResidualBlock, t, channels,
-                    norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+                   norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
         self.mpool1 = nn.MaxPool2D(pool_size=3, strides=2, padding=1)
 
         self.softmax1_blocks = nn.HybridSequential()
         _add_block(self.softmax1_blocks, ResidualBlock, 2 * r, channels,
-                    norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+                   norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
         self.interpolation1 = UpsamplingBilinear2d(size=size1)
 
@@ -404,15 +404,15 @@ class AttentionModule_stage4(nn.HybridBlock):
         p, t, r = scale
         self.first_residual_blocks = nn.HybridSequential()
         _add_block(self.first_residual_blocks, ResidualBlock, p, channels,
-                    norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+                   norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
         self.trunk_branches = nn.HybridSequential()
         _add_block(self.trunk_branches, ResidualBlock, t, channels,
-                    norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+                   norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
         self.softmax1_blocks = nn.HybridSequential()
         _add_block(self.softmax1_blocks, ResidualBlock, 2 * r, channels,
-                    norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+                   norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
         self.softmax2_blocks = nn.HybridSequential()
         _add_sigmoid_layer(self.softmax2_blocks, channels, norm_layer, norm_kwargs)
@@ -466,15 +466,15 @@ class ResidualAttentionModel(nn.HybridBlock):
         self.residual_block1 = ResidualBlock(256, in_channels=64)
         self.attention_module1 = nn.HybridSequential()
         _add_block(self.attention_module1, AttentionModule_stage1, m1, 256, scale=scale,
-                    norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+                   norm_layer=norm_layer, norm_kwargs=norm_kwargs)
         self.residual_block2 = ResidualBlock(512, in_channels=256, stride=2)
         self.attention_module2 = nn.HybridSequential()
         _add_block(self.attention_module2, AttentionModule_stage2, m2, 512, scale=scale,
-                    norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+                   norm_layer=norm_layer, norm_kwargs=norm_kwargs)
         self.residual_block3 = ResidualBlock(1024, in_channels=512, stride=2)
         self.attention_module3 = nn.HybridSequential()
         _add_block(self.attention_module3, AttentionModule_stage3, m3, 1024, scale=scale,
-                    norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+                   norm_layer=norm_layer, norm_kwargs=norm_kwargs)
         self.residual_block4 = ResidualBlock(2048, in_channels=1024, stride=2)
         self.residual_block5 = ResidualBlock(2048)
         self.residual_block6 = ResidualBlock(2048)
@@ -540,18 +540,18 @@ class cifar_ResidualAttentionModel(nn.HybridBlock):
         self.residual_block1 = ResidualBlock(128, in_channels=32)
         self.attention_module1 = nn.HybridSequential()
         _add_block(self.attention_module1, AttentionModule_stage2,
-                    m1, 128, size1=32, size2=16, scale=scale,
-                    norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+                   m1, 128, size1=32, size2=16, scale=scale,
+                   norm_layer=norm_layer, norm_kwargs=norm_kwargs)
         self.residual_block2 = ResidualBlock(256, in_channels=128, stride=2)
         self.attention_module2 = nn.HybridSequential()
         _add_block(self.attention_module2, AttentionModule_stage3,
-                    m2, 256, size1=16, scale=scale,
-                    norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+                   m2, 256, size1=16, scale=scale,
+                   norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
         self.residual_block3 = ResidualBlock(512, in_channels=256, stride=2)
         self.attention_module3 = nn.HybridSequential()
         _add_block(self.attention_module3, AttentionModule_stage4,
-                    m3, 512, scale=scale, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+                   m3, 512, scale=scale, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
         self.residual_block4 = ResidualBlock(1024, in_channels=512)
         self.residual_block5 = ResidualBlock(1024)
