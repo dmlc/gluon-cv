@@ -89,7 +89,7 @@ class TrainCfg:
     # Whether load the imagenet pre-trained base
     pretrained_base : bool = True
     # Batch size during training
-    batch_size : int = 4
+    batch_size : int = 1
     # starting epoch
     start_epoch : int = 0
     # total epoch for training

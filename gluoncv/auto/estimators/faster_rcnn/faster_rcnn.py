@@ -77,8 +77,11 @@ class FasterRCNNEstimator(BaseEstimator):
         val_dataset = val_data.to_mxnet()
 
         # dataloader
-        self.batch_size = self._cfg.train.batch_size // self.num_gpus \
+        self.batch_size = self._cfg.train.batch_size // min(1, self.num_gpus) \
             if self._cfg.horovod else self._cfg.train.batch_size
+        if not self._cfg.horovod:
+            if self._cfg.train.batch_size == 1 and self.num_gpus > 1:
+                self.batch_size *= self.num_gpus
         train_loader, val_loader, train_eval_loader = _get_dataloader(
             self.net, train_dataset, val_dataset, FasterRCNNDefaultTrainTransform,
             FasterRCNNDefaultValTransform, self.batch_size, len(self.ctx), self._cfg)
