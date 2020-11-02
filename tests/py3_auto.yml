@@ -25,4 +25,4 @@ dependencies:
     - git+https://github.com/zhanghang1989/detail-api.git#subdirectory=PythonAPI
     - portalocker
     - autocfg>=0.0.6
-    - autogluon.core>0.0.14
+    - autogluon.core==0.0.15b20201101
