@@ -34,7 +34,7 @@ class SSD:
 @dataclass
 class TrainCfg:
     # Batch size during training
-    batch_size : int = 32
+    batch_size : int = 16
     # starting epoch
     start_epoch : int = 0
     # total epoch for training

@@ -13,6 +13,7 @@ from mxnet import autograd
 from mxnet.contrib import amp
 
 from .... import utils as gutils
+from ....data.batchify import Tuple, Stack, Pad
 from ....utils.metrics.voc_detection import VOC07MApMetric, VOCMApMetric
 from ....model_zoo import get_model
 from ....model_zoo import custom_ssd
