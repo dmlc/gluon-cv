@@ -36,7 +36,7 @@ class YOLOv3:
 @dataclass
 class TrainCfg:
     # Training mini-batch size
-    batch_size : int = 32
+    batch_size : int = 16
     # Training epochs.
     epochs : int = 20
     # Starting epoch for resuming, default is 0 for new training.
