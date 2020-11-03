@@ -67,24 +67,25 @@ class GroupNorm(HybridBlock):
             dtype = 'float32'
         super(GroupNorm, self).cast(dtype)
 
-    def forward(self, x, gamma, beta):
+    def forward(self, x, gamma=mx.np.ones(16), beta=mx.np.zeros(16)):
         # normalization
         with autograd.train_mode():
-            y = np.expand_dims(x, axis=0).reshape(y.shape[0], y.shape[1], self.ngroups, -1)
+            y = np.expand_dims(x, axis=0)
+            y = np.reshape(y, (y.shape[0], y.shape[1], self.ngroups, -1))
             y = np.reshape(y, (1, y.shape[1] * y.shape[2], -1))
             batch = x.shape[0]
             y = npx.batch_norm(y,
-                            mx.np.ones(batch*self.ngroups, ctx=x.context),
-                            mx.np.zeros(batch*self.ngroups, ctx=x.context),
-                            mx.np.zeros(batch*self.ngroups, ctx=x.context),
-                            mx.np.ones(batch*self.ngroups, ctx=x.context),
-                            name='fwd', **self._kwargs)
+                               mx.np.ones(batch*self.ngroups, ctx=x.context),
+                               mx.np.zeros(batch*self.ngroups, ctx=x.context),
+                               mx.np.zeros(batch*self.ngroups, ctx=x.context),
+                               mx.np.ones(batch*self.ngroups, ctx=x.context),
+                               name='fwd', **self._kwargs)
         # scale and shift
         y = npx.reshape_like(y, x).reshape(y.shape[0], y.shape[1], -1)
         if self.scale:
-            y = y * np.reshape(gamma, (1, -1, 1)) + np.reshape(beta, (1, -1, 1))
+            y = y * gamma.reshape(1, -1, 1) + beta.reshape(1, -1, 1)
         else:
-            y = y + np.reshape(beta, (1, -1, 1))
+            y = y + beta.reshape(1, -1, 1)
         return npx.reshape_like(y, x)
 
     def __repr__(self):
