@@ -7,7 +7,7 @@ import mxnet as mx
 from mxnet.gluon.parameter import Parameter
 from mxnet.gluon.block import HybridBlock
 from mxnet import autograd
-from mxnet import use_np 
+from mxnet import use_np # pylint: disable=unused-import
 mx.npx.set_np()
 
 @use_np
