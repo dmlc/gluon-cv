@@ -54,11 +54,11 @@ class GroupNorm(HybridBlock):
             self.in_channels = in_channels
 
         self.gamma = Parameter('gamma', grad_req='write',
-                                     shape=(in_channels,), init=gamma_initializer,
-                                     allow_deferred_init=True, differentiable=True)
+                               shape=(in_channels,), init=gamma_initializer,
+                               allow_deferred_init=True, differentiable=True)
         self.beta = Parameter('beta', grad_req='write',
-                                    shape=(in_channels,), init=beta_initializer,
-                                    allow_deferred_init=True, differentiable=True)
+                              shape=(in_channels,), init=beta_initializer,
+                              allow_deferred_init=True, differentiable=True)
         # hacky
         self.inited = False # orphan?
 
