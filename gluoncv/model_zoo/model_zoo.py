@@ -24,7 +24,7 @@ from .cifarwideresnet import *
 # from .residual_attentionnet import *
 from .resnet import *
 # from .resnest import *
-# from .resnetv1b import *
+from .resnetv1b import *
 # from .resnext import *
 # from .senet import *
 # from .simple_pose.simple_pose_resnet import *
@@ -193,25 +193,25 @@ _models = {
     # 'fastscnn_citys': get_fastscnn_citys,
     # 'danet_resnet50_citys': get_danet_resnet50_citys,
     # 'danet_resnet101_citys': get_danet_resnet101_citys,
-    # 'resnet18_v1b': resnet18_v1b,
-    # 'resnet34_v1b': resnet34_v1b,
-    # 'resnet50_v1b': resnet50_v1b,
-    # 'resnet50_v1b_gn': resnet50_v1b_gn,
-    # 'resnet101_v1b_gn': resnet101_v1b_gn,
-    # 'resnet101_v1b': resnet101_v1b,
-    # 'resnet152_v1b': resnet152_v1b,
-    # 'resnet50_v1c': resnet50_v1c,
-    # 'resnet101_v1c': resnet101_v1c,
-    # 'resnet152_v1c': resnet152_v1c,
-    # 'resnet50_v1d': resnet50_v1d,
-    # 'resnet101_v1d': resnet101_v1d,
-    # 'resnet152_v1d': resnet152_v1d,
-    # 'resnet50_v1e': resnet50_v1e,
-    # 'resnet101_v1e': resnet101_v1e,
-    # 'resnet152_v1e': resnet152_v1e,
-    # 'resnet50_v1s': resnet50_v1s,
-    # 'resnet101_v1s': resnet101_v1s,
-    # 'resnet152_v1s': resnet152_v1s,
+    'resnet18_v1b': resnet18_v1b,
+    'resnet34_v1b': resnet34_v1b,
+    'resnet50_v1b': resnet50_v1b,
+    'resnet50_v1b_gn': resnet50_v1b_gn,
+    'resnet101_v1b_gn': resnet101_v1b_gn,
+    'resnet101_v1b': resnet101_v1b,
+    'resnet152_v1b': resnet152_v1b,
+    'resnet50_v1c': resnet50_v1c,
+    'resnet101_v1c': resnet101_v1c,
+    'resnet152_v1c': resnet152_v1c,
+    'resnet50_v1d': resnet50_v1d,
+    'resnet101_v1d': resnet101_v1d,
+    'resnet152_v1d': resnet152_v1d,
+    'resnet50_v1e': resnet50_v1e,
+    'resnet101_v1e': resnet101_v1e,
+    'resnet152_v1e': resnet152_v1e,
+    'resnet50_v1s': resnet50_v1s,
+    'resnet101_v1s': resnet101_v1s,
+    'resnet152_v1s': resnet152_v1s,
     # 'resnext50_32x4d': resnext50_32x4d,
     # 'resnext101_32x4d': resnext101_32x4d,
     # 'resnext101_64x4d': resnext101_64x4d,

@@ -14,7 +14,7 @@ from .cifarwideresnet import *
 # from .deeplabv3_plus import *
 # from .deeplabv3b_plus import *
 # from . import segbase
-# from .resnetv1b import *
+from .resnetv1b import *
 # from .se_resnet import *
 # from .nasnet import *
 # from .simple_pose.simple_pose_resnet import *
