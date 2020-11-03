@@ -129,11 +129,11 @@ class YOLOv3Estimator(BaseEstimator):
             mx.nd.waitall()
             self.net.hybridize()
             for i, batch in enumerate(train_data):
-                data = gluon.utils.split_and_load(batch[0], ctx_list=self.ctx, batch_axis=0)
+                data = gluon.utils.split_and_load(batch[0], ctx_list=self.ctx, batch_axis=0, even_split=False)
                 # objectness, center_targets, scale_targets, weights, class_targets
-                fixed_targets = [gluon.utils.split_and_load(batch[it], ctx_list=self.ctx, batch_axis=0) for it in
-                                 range(1, 6)]
-                gt_boxes = gluon.utils.split_and_load(batch[6], ctx_list=self.ctx, batch_axis=0)
+                fixed_targets = [gluon.utils.split_and_load(batch[it], ctx_list=self.ctx,
+                                                            batch_axis=0, even_split=False) for it in range(1, 6)]
+                gt_boxes = gluon.utils.split_and_load(batch[6], ctx_list=self.ctx, batch_axis=0, even_split=False)
                 sum_losses = []
                 obj_losses = []
                 center_losses = []

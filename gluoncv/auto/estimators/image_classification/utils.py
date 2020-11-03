@@ -9,8 +9,8 @@ from mxnet.gluon.data.vision import transforms
 from ....data import imagenet
 
 def rec_batch_fn(batch, ctx):
-    data = gluon.utils.split_and_load(batch.data[0], ctx_list=ctx, batch_axis=0)
-    label = gluon.utils.split_and_load(batch.label[0], ctx_list=ctx, batch_axis=0)
+    data = gluon.utils.split_and_load(batch.data[0], ctx_list=ctx, batch_axis=0, even_split=False)
+    label = gluon.utils.split_and_load(batch.label[0], ctx_list=ctx, batch_axis=0, even_split=False)
     return data, label
 
 def get_data_rec(rec_train, rec_train_idx, rec_val, rec_val_idx, batch_size, num_workers, input_size, crop_ratio):
@@ -70,8 +70,8 @@ def get_data_rec(rec_train, rec_train_idx, rec_val, rec_val_idx, batch_size, num
     return train_data, val_data, rec_batch_fn
 
 def loader_batch_fn(batch, ctx):
-    data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
-    label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0)
+    data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0, even_split=False)
+    label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0, even_split=False)
     return data, label
 
 def get_data_loader(data_dir, batch_size, num_workers, input_size, crop_ratio, train_dataset=None, val_dataset=None):

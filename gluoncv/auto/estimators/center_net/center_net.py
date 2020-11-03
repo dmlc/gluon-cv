@@ -134,7 +134,7 @@ class CenterNetEstimator(BaseEstimator):
 
             for i, batch in enumerate(train_data):
                 split_data = [
-                    gluon.utils.split_and_load(batch[ind], ctx_list=self.ctx, batch_axis=0) for ind
+                    gluon.utils.split_and_load(batch[ind], ctx_list=self.ctx, batch_axis=0, even_split=False) for ind
                     in range(6)]
                 data, heatmap_targets, wh_targets, wh_masks, center_reg_targets, center_reg_masks = split_data
                 batch_size = self._cfg.train.batch_size

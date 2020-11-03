@@ -139,9 +139,11 @@ class SSDEstimator(BaseEstimator):
                     box_targets = [d.label[0] for d in batch]
                     cls_targets = [nd.cast(d.label[1], dtype='float32') for d in batch]
                 else:
-                    data = gluon.utils.split_and_load(batch[0], ctx_list=self.ctx, batch_axis=0)
-                    cls_targets = gluon.utils.split_and_load(batch[1], ctx_list=self.ctx, batch_axis=0)
-                    box_targets = gluon.utils.split_and_load(batch[2], ctx_list=self.ctx, batch_axis=0)
+                    data = gluon.utils.split_and_load(batch[0], ctx_list=self.ctx, batch_axis=0, even_split=False)
+                    cls_targets = gluon.utils.split_and_load(batch[1], ctx_list=self.ctx,
+                                                             batch_axis=0, even_split=False)
+                    box_targets = gluon.utils.split_and_load(batch[2], ctx_list=self.ctx,
+                                                             batch_axis=0, even_split=False)
 
                 with autograd.record():
                     cls_preds = []
