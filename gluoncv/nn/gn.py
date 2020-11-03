@@ -3,9 +3,14 @@
 __all__ = ['GroupNorm']
 import numpy as np
 
+import mxnet as mx
+from mxnet.gluon.parameter import Parameter
 from mxnet.gluon.block import HybridBlock
 from mxnet import autograd
+from mxnet import use_np # pylint: disable=unused-import
+mx.npx.set_np()
 
+@use_np
 class GroupNorm(HybridBlock):
     """GroupNorm normalization layer (Wu and He, 2014).
 
@@ -47,12 +52,12 @@ class GroupNorm(HybridBlock):
         if in_channels != 0:
             self.in_channels = in_channels
 
-        self.gamma = self.params.get('gamma', grad_req='write',
-                                     shape=(in_channels,), init=gamma_initializer,
-                                     allow_deferred_init=True, differentiable=True)
-        self.beta = self.params.get('beta', grad_req='write',
-                                    shape=(in_channels,), init=beta_initializer,
-                                    allow_deferred_init=True, differentiable=True)
+        self.gamma = Parameter('gamma', grad_req='write',
+                               shape=(in_channels,), init=gamma_initializer,
+                               allow_deferred_init=True, differentiable=True)
+        self.beta = Parameter('beta', grad_req='write',
+                              shape=(in_channels,), init=beta_initializer,
+                              allow_deferred_init=True, differentiable=True)
         # hacky
         self.inited = False # orphan?
 
@@ -61,25 +66,30 @@ class GroupNorm(HybridBlock):
             dtype = 'float32'
         super(GroupNorm, self).cast(dtype)
 
-    def hybrid_forward(self, F, x, gamma, beta):
+    def forward(self, x, gamma=None, beta=None):
+        if gamma == None:
+            gamma = mx.np.ones(self.gamma.shape)
+        if beta == None:
+            beta = mx.np.zeros(self.beta.shape)
         # normalization
         with autograd.train_mode():
-            y = x.expand_dims(0).reshape(0, 0, self.ngroups, -1)
-            y = y.reshape(1, -3, -1)
+            y = mx.np.expand_dims(x, axis=0)
+            y = mx.np.reshape(y, (y.shape[0], y.shape[1], self.ngroups, -1))
+            y = mx.np.reshape(y, (1, y.shape[1] * y.shape[2], -1))
             batch = x.shape[0]
-            y = F.BatchNorm(y,
-                            F.ones(batch*self.ngroups, ctx=x.context),
-                            F.zeros(batch*self.ngroups, ctx=x.context),
-                            F.zeros(batch*self.ngroups, ctx=x.context),
-                            F.ones(batch*self.ngroups, ctx=x.context),
-                            name='fwd', **self._kwargs)
+            y = mx.npx.batch_norm(y,
+                                  mx.np.ones(batch*self.ngroups, ctx=x.context),
+                                  mx.np.zeros(batch*self.ngroups, ctx=x.context),
+                                  mx.np.zeros(batch*self.ngroups, ctx=x.context),
+                                  mx.np.ones(batch*self.ngroups, ctx=x.context),
+                                  name='fwd', **self._kwargs)
         # scale and shift
-        y = y.reshape_like(x).reshape(0, 0, -1)
+        y = mx.npx.reshape_like(y, x).reshape(y.shape[0], y.shape[1], -1)
         if self.scale:
             y = y * gamma.reshape(1, -1, 1) + beta.reshape(1, -1, 1)
         else:
             y = y + beta.reshape(1, -1, 1)
-        return y.reshape_like(x)
+        return mx.npx.reshape_like(y, x)
 
     def __repr__(self):
         s = '{name}({content}'
