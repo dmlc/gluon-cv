@@ -6,8 +6,8 @@ import sys
 import warnings
 from os import path as osp
 
-import mxnet as mx
 import numpy as np
+import mxnet as mx
 
 try:
     from mxnet.metric import EvalMetric

@@ -21,7 +21,7 @@ class ForwardBackwardTask(Parallelizable):
         R-CNN box head classification loss.
     rcnn_box_loss : gluon.loss
         R-CNN box head regression loss.
-    mix_ratio : int
+    mix_ratio : float
         Object detection mixup ratio.
     amp_enabled : bool
         Whether to enable Automatic Mixed Precision.

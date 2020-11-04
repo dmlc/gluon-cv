@@ -24,7 +24,7 @@ MXNet
 
 .. rst-class:: Pytorch
 
-Pytorch
+PyTorch
 *************
 
 .. include:: depth_torch.rst

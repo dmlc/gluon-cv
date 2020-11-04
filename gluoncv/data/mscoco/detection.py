@@ -4,9 +4,9 @@ from __future__ import division
 
 import os
 
-import mxnet as mx
 import numpy as np
 from PIL import Image
+import mxnet as mx
 
 from .utils import try_import_pycocotools
 from ..base import VisionDataset
@@ -225,7 +225,7 @@ class COCODetectionDALI(object):
     Parameters
     ----------
     num_shards: int
-         DALI pipeline arg - Number of pipelines used, indicating to the reader
+         DALI pipeline arg - Number of auto used, indicating to the reader
          how to split/shard the dataset.
     shard_id: int
          DALI pipeline arg - Shard id of the pipeline must be in [0, num_shards).

@@ -170,4 +170,4 @@ plt.show()
 #     adapting a training blocks in the following examples:
 #
 #     :download:`Download train_faster_rcnn.py<../../../scripts/detection/faster_rcnn/train_faster_rcnn.py>`
-#     :download:`Download train_yolo3.py<../../../scripts/detection/yolo/train_yolo3.py>`
+#     :download:`Download train_yolo.py<../../../scripts/detection/yolo/train_yolo.py>`

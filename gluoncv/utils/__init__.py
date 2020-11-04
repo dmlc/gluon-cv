@@ -7,6 +7,7 @@ from . import viz
 from . import random
 from . import metrics
 from . import parallel
+from . import filesystem
 
 from .download import download, check_sha1
 from .filesystem import makedirs, try_import_dali, try_import_cv2

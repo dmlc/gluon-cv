@@ -24,7 +24,7 @@ MXNet
 
 .. rst-class:: Pytorch
 
-Pytorch
+PyTorch
 *************
 
 .. include:: pose_torch.rst

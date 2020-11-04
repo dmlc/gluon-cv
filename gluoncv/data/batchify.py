@@ -4,8 +4,8 @@ into batches for fast processing."""
 
 import logging
 
-import mxnet as mx
 import numpy as np
+import mxnet as mx
 
 __all__ = ['Stack', 'Pad', 'Append', 'Tuple', 'FasterRCNNTrainBatchify']
 
