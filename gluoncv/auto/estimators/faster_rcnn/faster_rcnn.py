@@ -8,6 +8,7 @@ import numpy as np
 import mxnet as mx
 from mxnet import gluon
 
+from ....data.batchify import Tuple
 from ....data.transforms.presets.rcnn import load_test, transform_test
 from ....data.transforms.presets.rcnn import FasterRCNNDefaultTrainTransform, FasterRCNNDefaultValTransform
 from ....model_zoo import get_model

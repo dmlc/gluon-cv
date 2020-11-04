@@ -11,6 +11,7 @@ from mxnet import autograd
 from mxnet.contrib import amp
 
 from .... import utils as gutils
+from ....data.batchify import Tuple, Stack, Pad
 from ....data.transforms.presets.yolo import load_test, transform_test
 from ....model_zoo import get_model
 from ....model_zoo import custom_yolov3
