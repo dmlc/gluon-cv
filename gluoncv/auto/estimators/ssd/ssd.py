@@ -211,7 +211,7 @@ class SSDEstimator(BaseEstimator):
             val_data = gluon.data.DataLoader(
                 val_data.transform(SSDDefaultValTransform(self._cfg.ssd.data_shape, self._cfg.ssd.data_shape)),
                 self._cfg.valid.batch_size, False, batchify_fn=val_batchify_fn, last_batch='keep',
-                num_workers=self._cfg.valid.num_workers)
+                num_workers=self._cfg.num_workers)
         if self._cfg.valid.metric == 'voc07':
             eval_metric = VOC07MApMetric(iou_thresh=self._cfg.valid.iou_thresh, class_names=self.classes)
         elif self._cfg.valid.metric == 'voc':

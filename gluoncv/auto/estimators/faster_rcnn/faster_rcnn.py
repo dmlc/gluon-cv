@@ -227,7 +227,7 @@ class FasterRCNNEstimator(BaseEstimator):
             val_data = gluon.data.DataLoader(
                 val_data.transform(FasterRCNNDefaultValTransform(short, net.max_size)),
                 len(self.ctx), False, batchify_fn=val_bfn, last_batch='keep',
-                num_workers=self._cfg.valid.num_workers)
+                num_workers=self._cfg.num_workers)
         if self._cfg.valid.metric == 'voc07':
             eval_metric = VOC07MApMetric(iou_thresh=self._cfg.valid.iou_thresh, class_names=self.classes)
         elif self._cfg.valid.metric == 'voc':
