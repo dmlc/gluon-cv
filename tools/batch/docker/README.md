@@ -1,8 +1,8 @@
 # Updating the Docker Image for AWS Batch
 
-Our current batch job dockers are in 985964311364.dkr.ecr.us-east-1.amazonaws.com/gluon-cv-1. To update the docker:
+To update the docker:
 
-- update the Dockerfile
+- Update the Dockerfile
 - Make sure docker and docker-compose, as well as the docker python package are installed.
 - Export the AWS account credentials as environment variables
 - CD to the same folder as the Dockerfile and execute the following:
