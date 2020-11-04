@@ -209,7 +209,7 @@ class SSDEstimator(BaseEstimator):
                 val_data = val_data.to_mxnet()
             val_batchify_fn = Tuple(Stack(), Pad(pad_val=-1))
             val_data = gluon.data.DataLoader(
-                val_data.transform(SSDDefaultValTransform(width, height)),
+                val_data.transform(SSDDefaultValTransform(self._cfg.ssd.data_shape, self._cfg.ssd.data_shape)),
                 self._cfg.valid.batch_size, False, batchify_fn=val_batchify_fn, last_batch='keep',
                 num_workers=self._cfg.valid.num_workers)
         if self._cfg.valid.metric == 'voc07':
