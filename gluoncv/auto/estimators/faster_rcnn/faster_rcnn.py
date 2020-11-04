@@ -222,7 +222,7 @@ class FasterRCNNEstimator(BaseEstimator):
             if hasattr(val_data, 'to_mxnet'):
                 val_data = val_data.to_mxnet()
             val_bfn = Tuple(*[Append() for _ in range(3)])
-            short = net.short[-1] if isinstance(net.short, (tuple, list)) else net.short
+            short = self.net.short[-1] if isinstance(self.net.short, (tuple, list)) else self.net.short
             # validation use 1 sample per device
             val_data = gluon.data.DataLoader(
                 val_data.transform(FasterRCNNDefaultValTransform(short, net.max_size)),
