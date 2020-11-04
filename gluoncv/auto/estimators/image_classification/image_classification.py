@@ -320,6 +320,7 @@ class ImageClassificationEstimator(BaseEstimator):
             if hasattr(val_data, 'to_mxnet'):
                 val_data = val_data.to_mxnet()
             resize = int(math.ceil(self.input_size / self._cfg.train.crop_ratio))
+            normalize = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
             transform_test = transforms.Compose([
                 transforms.Resize(resize, keep_ratio=True),
                 transforms.CenterCrop(self.input_size),
