@@ -161,6 +161,8 @@ class TrainCfg:
 
 @dataclass
 class ValidCfg:
+    # Batch size during training
+    batch_size : int = 1
     # Filter top proposals before NMS in testing of RPN.
     rpn_test_pre_nms : int = 6000
     # Return top proposal results after NMS in testing of RPN.
