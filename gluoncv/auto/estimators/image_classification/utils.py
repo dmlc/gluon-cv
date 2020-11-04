@@ -78,7 +78,6 @@ def get_data_loader(data_dir, batch_size, num_workers, input_size, crop_ratio, t
     normalize = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
     jitter_param = 0.4
     lighting_param = 0.1
-    input_size = input_size
     crop_ratio = crop_ratio if crop_ratio > 0 else 0.875
     resize = int(math.ceil(input_size / crop_ratio))
 

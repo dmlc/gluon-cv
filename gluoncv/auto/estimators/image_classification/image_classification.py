@@ -319,6 +319,7 @@ class ImageClassificationEstimator(BaseEstimator):
         if not isinstance(val_data, (gluon.data.DataLoader, mx.io.MXDataIter)):
             if hasattr(val_data, 'to_mxnet'):
                 val_data = val_data.to_mxnet()
+            resize = int(math.ceil(self.input_size / self._cfg.train.crop_ratio))
             transform_test = transforms.Compose([
                 transforms.Resize(resize, keep_ratio=True),
                 transforms.CenterCrop(self.input_size),
