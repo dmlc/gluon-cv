@@ -8,7 +8,7 @@ import numpy as np
 import mxnet as mx
 from mxnet import gluon
 
-from ....data.batchify import Tuple
+from ....data.batchify import Tuple, Append
 from ....data.transforms.presets.rcnn import load_test, transform_test
 from ....data.transforms.presets.rcnn import FasterRCNNDefaultTrainTransform, FasterRCNNDefaultValTransform
 from ....model_zoo import get_model
@@ -219,14 +219,13 @@ class FasterRCNNEstimator(BaseEstimator):
         """Evaluate on validation dataset."""
         clipper = BBoxClipToImage()
         if not isinstance(val_data, gluon.data.DataLoader):
-            from ...tasks.dataset import ObjectDetectionDataset
-            if isinstance(val_data, ObjectDetectionDataset):
+            if hasattr(val_data, 'to_mxnet'):
                 val_data = val_data.to_mxnet()
             val_bfn = Tuple(*[Append() for _ in range(3)])
             short = net.short[-1] if isinstance(net.short, (tuple, list)) else net.short
             # validation use 1 sample per device
             val_data = gluon.data.DataLoader(
-                val_data.transform(FasterRcnnDefaultValTransform(short, net.max_size)),
+                val_data.transform(FasterRCNNDefaultValTransform(short, net.max_size)),
                 len(self.ctx), False, batchify_fn=val_bfn, last_batch='keep',
                 num_workers=self._cfg.valid.num_workers)
         if self._cfg.valid.metric == 'voc07':

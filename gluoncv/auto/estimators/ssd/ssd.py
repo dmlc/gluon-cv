@@ -17,6 +17,7 @@ from ....data.batchify import Tuple, Stack, Pad
 from ....utils.metrics.voc_detection import VOC07MApMetric, VOCMApMetric
 from ....model_zoo import get_model
 from ....model_zoo import custom_ssd
+from ....data.transforms.presets.ssd import SSDDefaultValTransform
 from ....data.transforms.presets.ssd import load_test, transform_test
 from ....loss import SSDMultiBoxLoss
 from .utils import _get_dataloader, _get_dali_dataloader
@@ -204,8 +205,7 @@ class SSDEstimator(BaseEstimator):
     def _evaluate(self, val_data):
         """Evaluate on validation dataset."""
         if not isinstance(val_data, gluon.data.DataLoader):
-            from ...tasks.dataset import ObjectDetectionDataset
-            if isinstance(val_data, ObjectDetectionDataset):
+            if hasattr(val_data, 'to_mxnet'):
                 val_data = val_data.to_mxnet()
             val_batchify_fn = Tuple(Stack(), Pad(pad_val=-1))
             val_data = gluon.data.DataLoader(

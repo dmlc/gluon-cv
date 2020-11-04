@@ -12,6 +12,7 @@ from mxnet.contrib import amp
 
 from .... import utils as gutils
 from ....data.batchify import Tuple, Stack, Pad
+from ....data.transforms.presets.yolo import YOLO3DefaultValTransform
 from ....data.transforms.presets.yolo import load_test, transform_test
 from ....model_zoo import get_model
 from ....model_zoo import custom_yolov3
@@ -202,12 +203,11 @@ class YOLOv3Estimator(BaseEstimator):
     def _evaluate(self, val_data):
         """Evaluate the current model on dataset."""
         if not isinstance(val_data, gluon.data.DataLoader):
-            from ...tasks.dataset import ObjectDetectionDataset
-            if isinstance(val_data, ObjectDetectionDataset):
+            if hasattr(val_data, 'to_mxnet'):
                 val_data = val_data.to_mxnet()
             val_batchify_fn = Tuple(Stack(), Pad(pad_val=-1))
             val_data = gluon.data.DataLoader(
-                val_data.transform(SSDDefaultValTransform(width, height)),
+                val_data.transform(YOLO3DefaultValTransform(width, height)),
                 self._cfg.valid.batch_size, False, batchify_fn=val_batchify_fn, last_batch='keep',
                 num_workers=self._cfg.valid.num_workers)
         if self._cfg.valid.metric == 'voc07':
