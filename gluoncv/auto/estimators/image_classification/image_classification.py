@@ -316,7 +316,7 @@ class ImageClassificationEstimator(BaseEstimator):
         acc_top1 = mx.metric.Accuracy()
         acc_top5 = mx.metric.TopKAccuracy(min(5, self.num_class))
 
-        if not isinstance(val_data, (gluon.data.DataLoader, mx.io.ImageRecordIter)):
+        if not isinstance(val_data, (gluon.data.DataLoader, mx.io.MXDataIter)):
             if hasattr(val_data, 'to_mxnet'):
                 val_data = val_data.to_mxnet()
             transform_test = transforms.Compose([
