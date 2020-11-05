@@ -82,7 +82,8 @@ class GroupNorm(HybridBlock):
                                   mx.np.ones(batch*self.ngroups, ctx=x.context),
                                   name='fwd', **self._kwargs)
         # scale and shift
-        y = mx.npx.reshape_like(y, x).reshape(y.shape[0], y.shape[1], -1)
+        y = mx.npx.reshape_like(y, x)
+        y = mx.npx.reshape(y, (y.shape[0], y.shape[1], -1))
         if self.scale:
             y = y * gamma.reshape(1, -1, 1) + beta.reshape(1, -1, 1)
         else:
