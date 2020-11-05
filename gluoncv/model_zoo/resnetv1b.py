@@ -3,7 +3,6 @@
 from __future__ import division
 
 import mxnet as mx
-from mxnet import npx
 from mxnet.context import cpu
 from mxnet.gluon.block import HybridBlock
 from mxnet.gluon import nn
