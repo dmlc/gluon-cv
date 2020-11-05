@@ -66,12 +66,10 @@ class GroupNorm(HybridBlock):
             dtype = 'float32'
         super(GroupNorm, self).cast(dtype)
 
-    def forward(self, x, gamma=None, beta=None):
-        if gamma == None:
-            gamma = mx.np.ones(self.gamma.shape)
-        if beta == None:
-            beta = mx.np.zeros(self.beta.shape)
+    def forward(self, x):
         # normalization
+        gamma = self.gamma.data(ctx=x.context)
+        beta = self.beta.data(ctx=x.context)
         with autograd.train_mode():
             y = mx.np.expand_dims(x, axis=0)
             y = mx.np.reshape(y, (y.shape[0], y.shape[1], self.ngroups, -1))
@@ -84,7 +82,8 @@ class GroupNorm(HybridBlock):
                                   mx.np.ones(batch*self.ngroups, ctx=x.context),
                                   name='fwd', **self._kwargs)
         # scale and shift
-        y = mx.npx.reshape_like(y, x).reshape(y.shape[0], y.shape[1], -1)
+        y = mx.npx.reshape_like(y, x)
+        y = mx.npx.reshape(y, (y.shape[0], y.shape[1], -1))
         if self.scale:
             y = y * gamma.reshape(1, -1, 1) + beta.reshape(1, -1, 1)
         else:
