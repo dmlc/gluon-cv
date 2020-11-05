@@ -225,7 +225,7 @@ class FasterRCNNEstimator(BaseEstimator):
             short = self.net.short[-1] if isinstance(self.net.short, (tuple, list)) else self.net.short
             # validation use 1 sample per device
             val_data = gluon.data.DataLoader(
-                val_data.transform(FasterRCNNDefaultValTransform(short, net.max_size)),
+                val_data.transform(FasterRCNNDefaultValTransform(short, self.net.max_size)),
                 len(self.ctx), False, batchify_fn=val_bfn, last_batch='keep',
                 num_workers=self._cfg.num_workers)
         if self._cfg.valid.metric == 'voc07':
