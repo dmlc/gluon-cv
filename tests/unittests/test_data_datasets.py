@@ -7,6 +7,7 @@ import numpy as np
 
 import gluoncv as gcv
 from gluoncv import data
+from . import mini_coco as mc
 import os.path as osp
 
 
@@ -31,11 +32,9 @@ def test_pascal_voc_detection():
 
 
 def test_coco_detection():
-    if not osp.isdir(osp.expanduser('~/.mxnet/datasets/coco')):
-        return
-
     # use valid only, loading training split is very slow
-    val = data.COCODetection(splits=('instances_val2017'))
+    val = mc.COCODetectionMini(root=os.path.join('~', '.mxnet', 'datasets', 'tiny_coco'),
+                             splits=('instances_val2017_tiny',))
     name = str(val)
     assert len(val.classes) > 0
 
@@ -44,11 +43,9 @@ def test_coco_detection():
         _ = val[index]
 
 def test_coco_instance():
-    if not osp.isdir(osp.expanduser('~/.mxnet/datasets/coco')):
-        return
-
     # use valid only, loading training split is very slow
-    val = data.COCOInstance(splits=('instances_val2017',))
+    val = mc.COCOInstanceMini(root=os.path.join('~', '.mxnet', 'datasets', 'tiny_coco'),
+                            splits=('instances_val2017_tiny',))
     name = str(val)
     assert len(val.classes) > 0
 
