@@ -78,6 +78,8 @@ class TrainCfg:
 
 @dataclass
 class ValidCfg:
+    # Batch size during training
+    batch_size : int = 16
     # Epoch interval for validation, increase the number
     # will reduce the training time if validation is slow.
     val_interval : int = 1
