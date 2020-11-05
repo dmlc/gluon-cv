@@ -13,7 +13,7 @@ from gluoncv.data.transforms.presets import ssd
 from gluoncv.data.transforms.presets import rcnn
 from gluoncv.data.transforms.presets import yolo
 from gluoncv.data.transforms.presets import center_net
-from . import mini_coco as mc
+from . import tiny_coco as tc
 
 def test_bbox_crop():
     bbox = np.array([[10, 20, 200, 500], [150, 200, 400, 300]])
@@ -227,9 +227,9 @@ def test_transforms_presets_rcnn():
 
 def test_transforms_presets_mask_rcnn():
     # use valid only, loading training split is very slow
-    train_dataset = mc.COCOInstanceMini(root=osp.join('~', '.mxnet', 'datasets', 'tiny_coco'),
+    train_dataset = tc.COCOInstanceTiny(root=osp.join('~', '.mxnet', 'datasets', 'tiny_coco'),
                                           splits=('instances_val2017_tiny',), skip_empty=True)
-    val_dataset = mc.COCOInstanceMini(root=osp.join('~', '.mxnet', 'datasets', 'tiny_coco'),
+    val_dataset = tc.COCOInstanceTiny(root=osp.join('~', '.mxnet', 'datasets', 'tiny_coco'),
                                         splits=('instances_val2017_tiny',))
     net = gcv.model_zoo.get_model('mask_rcnn_resnet50_v1b_coco', pretrained=False, pretrained_base=False)
     net.initialize()

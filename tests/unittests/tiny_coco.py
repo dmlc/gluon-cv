@@ -1,7 +1,7 @@
 from gluoncv import data
 
-class COCODetectionMini(data.COCODetection):
+class COCODetectionTiny(data.COCODetection):
     CLASSES = ['bicycle', 'motorcycle']
 
-class COCOInstanceMini(data.COCOInstance):
+class COCOInstanceTiny(data.COCOInstance):
     CLASSES = ['bicycle', 'motorcycle']
