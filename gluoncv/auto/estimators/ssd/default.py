@@ -60,6 +60,8 @@ class TrainCfg:
 
 @dataclass
 class ValidCfg:
+    # Batch size during training
+    batch_size : int = 16
     # Epoch interval for validation
     val_interval : int = 1
     # metric, 'voc', 'voc07'

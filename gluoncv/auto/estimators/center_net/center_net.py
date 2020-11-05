@@ -210,8 +210,7 @@ class CenterNetEstimator(BaseEstimator):
         mx.nd.waitall()
         self.net.hybridize()
         if not isinstance(val_data, gluon.data.DataLoader):
-            from ...tasks.dataset import ObjectDetectionDataset
-            if isinstance(val_data, ObjectDetectionDataset):
+            if hasattr(val_data, 'to_mxnet'):
                 val_data = val_data.to_mxnet()
             val_batchify_fn = Tuple(Stack(), Pad(pad_val=-1))
             width, height = self._cfg.center_net.data_shape

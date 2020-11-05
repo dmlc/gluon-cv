@@ -31,6 +31,7 @@ def test_image_classification_estimator():
     res = est.fit(IMAGE_CLASS_DATASET)
     assert res.get('valid_acc', 0) > 0
     test_result = est.predict(IMAGE_CLASS_TEST)
+    evaluate_result = est.evaluate(IMAGE_CLASS_TEST)
 
 def test_center_net_estimator():
     from gluoncv.auto.estimators import CenterNetEstimator
@@ -39,6 +40,7 @@ def test_center_net_estimator():
     assert res.get('valid_map', 0) > 0
     _, _, test_data = OBJECT_DETCTION_DATASET.random_split()
     test_result = est.predict(test_data)
+    evaluate_result = est.evaluate(test_data)
 
 def test_ssd_estimator():
     from gluoncv.auto.estimators import SSDEstimator
@@ -47,6 +49,7 @@ def test_ssd_estimator():
     assert res.get('valid_map', 0) > 0
     _, _, test_data = OBJECT_DETCTION_DATASET.random_split()
     test_result = est.predict(test_data)
+    evaluate_result = est.evaluate(test_data)
 
 def test_yolo3_estimator():
     from gluoncv.auto.estimators import YOLOv3Estimator
@@ -55,6 +58,7 @@ def test_yolo3_estimator():
     assert res.get('valid_map', 0) > 0
     _, _, test_data = OBJECT_DETCTION_DATASET.random_split()
     test_result = est.predict(test_data)
+    evaluate_result = est.evaluate(test_data)
 
 def test_frcnn_estimator():
     from gluoncv.auto.estimators import FasterRCNNEstimator
@@ -63,6 +67,7 @@ def test_frcnn_estimator():
     assert res.get('valid_map', 0) > 0
     _, _, test_data = OBJECT_DETCTION_DATASET.random_split()
     test_result = est.predict(test_data)
+    evaluate_result = est.evaluate(test_data)
 
 if __name__ == '__main__':
     import nose
