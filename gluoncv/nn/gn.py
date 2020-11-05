@@ -66,19 +66,21 @@ class GroupNorm(HybridBlock):
             dtype = 'float32'
         super(GroupNorm, self).cast(dtype)
 
-    def forward(self, x, gamma=mx.np.ones(16), beta=mx.np.zeros(16)):
+    def forward(self, x):
         # normalization
+        gamma = self.gamma.data(ctx=x.context)
+        beta = self.beta.data(ctx=x.context)
         with autograd.train_mode():
             y = mx.np.expand_dims(x, axis=0)
             y = mx.np.reshape(y, (y.shape[0], y.shape[1], self.ngroups, -1))
             y = mx.np.reshape(y, (1, y.shape[1] * y.shape[2], -1))
             batch = x.shape[0]
             y = mx.npx.batch_norm(y,
-                               mx.np.ones(batch*self.ngroups, ctx=x.context),
-                               mx.np.zeros(batch*self.ngroups, ctx=x.context),
-                               mx.np.zeros(batch*self.ngroups, ctx=x.context),
-                               mx.np.ones(batch*self.ngroups, ctx=x.context),
-                               name='fwd', **self._kwargs)
+                                  mx.np.ones(batch*self.ngroups, ctx=x.context),
+                                  mx.np.zeros(batch*self.ngroups, ctx=x.context),
+                                  mx.np.zeros(batch*self.ngroups, ctx=x.context),
+                                  mx.np.ones(batch*self.ngroups, ctx=x.context),
+                                  name='fwd', **self._kwargs)
         # scale and shift
         y = mx.npx.reshape_like(y, x).reshape(y.shape[0], y.shape[1], -1)
         if self.scale:
