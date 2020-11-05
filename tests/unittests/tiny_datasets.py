@@ -1,3 +1,4 @@
+import os
 from gluoncv import data
 
 class COCODetectionTiny(data.COCODetection):
