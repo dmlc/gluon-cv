@@ -41,6 +41,13 @@ stage("Unit Test") {
           export LD_LIBRARY_PATH=/usr/local/cuda-10.0/lib64
           export MPLBACKEND=Agg
           export MXNET_CUDNN_AUTOTUNE_DEFAULT=0
+          export TINY_COCO=~/.mxnet/datasets/tiny_coco
+          mkdir -p $TINY_COCO/annotations
+          wget -q https://gluoncv-ci.s3-us-west-2.amazonaws.com/mini_coco/sub_val.zip
+          unzip -q sub_val.zip -d $TINY_COCO
+          mv $TINY_COCO/sub_val $TINY_COCO/val2017
+          wget -q https://gluoncv-ci.s3-us-west-2.amazonaws.com/mini_coco/instances_val2017_tiny.json
+          mv instances_val2017_tiny.json $TINY_COCO/annotations
           nosetests --with-timer --timer-ok 5 --timer-warning 20 -x --with-coverage --cover-package gluoncv -v tests/unittests
           nosetests --with-timer --timer-ok 5 --timer-warning 20 -x --with-coverage --cover-package gluoncv -v tests/model_zoo
           rm -f coverage.svg
