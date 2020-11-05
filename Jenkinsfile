@@ -42,12 +42,12 @@ stage("Unit Test") {
           export MPLBACKEND=Agg
           export MXNET_CUDNN_AUTOTUNE_DEFAULT=0
           MINI_COCO=~/.mxnet/datasets/tiny_coco
-          mkdir -p $MINI_COCO/annotations
+          mkdir -p ${MINI_COCO}/annotations
           wget -q https://gluoncv-ci.s3-us-west-2.amazonaws.com/mini_coco/sub_val.zip
           unzip -q sub_val.zip -d ~/.mxnet/datasets/tiny_coco
           mv ~/.mxnet/datasets/tiny_coco/sub_val ~/.mxnet/datasets/tiny_coco/val2017
           wget -q https://gluoncv-ci.s3-us-west-2.amazonaws.com/mini_coco/instances_val2017_tiny.json
-          mv instances_val2017_tiny.json $MINI_COCO/annotations
+          mv instances_val2017_tiny.json ${MINI_COCO}/annotations
           wget -q https://autogluon.s3.amazonaws.com/datasets/tiny_motorbike.zip
           unzip tiny_motorbike.zip
           mkdir -p ~/.mxnet/datasets/tiny_motorbike
