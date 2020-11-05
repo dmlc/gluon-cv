@@ -79,10 +79,10 @@ _C.CONFIG.INFERENCE.FEAT = False
 _C.CONFIG.DATA = CN(new_allowed=True)
 
 # Paths of annotation files and actual data
-_C.CONFIG.DATA.TRAIN_ANNO_PATH = None
-_C.CONFIG.DATA.TRAIN_DATA_PATH = None
-_C.CONFIG.DATA.VAL_ANNO_PATH = None
-_C.CONFIG.DATA.VAL_DATA_PATH = None
+_C.CONFIG.DATA.TRAIN_ANNO_PATH = ''
+_C.CONFIG.DATA.TRAIN_DATA_PATH = ''
+_C.CONFIG.DATA.VAL_ANNO_PATH = ''
+_C.CONFIG.DATA.VAL_DATA_PATH = ''
 # The number of classes to predict for the model.
 _C.CONFIG.DATA.NUM_CLASSES = 400
 # Whether to use multigrid training to speed up.
@@ -117,11 +117,11 @@ _C.CONFIG.DATA.NEW_WIDTH = 340
 
 _C.CONFIG.MODEL = CN(new_allowed=True)
 # Model architecture. You can find available models in the model zoo.
-_C.CONFIG.MODEL.NAME = None
+_C.CONFIG.MODEL.NAME = ''
 # Whether to load a checkpoint file. If True, please set the following PRETRAINED_PATH.
 _C.CONFIG.MODEL.LOAD = False
 # Path (a file path, or URL) to a checkpoint file to be loaded to the model.
-_C.CONFIG.MODEL.PRETRAINED_PATH = None
+_C.CONFIG.MODEL.PRETRAINED_PATH = ''
 # Whether to use the trained weights in the model zoo.
 _C.CONFIG.MODEL.PRETRAINED = False
 # Whether to use pretrained backbone network. Usually this is set to True.
@@ -135,7 +135,7 @@ _C.CONFIG.MODEL.USE_AFFINE = False
 
 _C.CONFIG.LOG = CN(new_allowed=True)
 # Base directory where all output files are written
-_C.CONFIG.LOG.BASE_PATH = None
+_C.CONFIG.LOG.BASE_PATH = ''
 # Pre-defined name for each experiment.
 # If set to 'use_time', the start time will be appended to the directory name.
 _C.CONFIG.LOG.EXP_NAME = 'use_time'
@@ -144,7 +144,7 @@ _C.CONFIG.LOG.LOG_DIR = 'tb_log'
 # Directory where checkpoints are written
 _C.CONFIG.LOG.SAVE_DIR = 'checkpoints'
 # Directory where testing logs are written
-_C.CONFIG.LOG.EVAL_DIR = None
+_C.CONFIG.LOG.EVAL_DIR = ''
 # Save a checkpoint after every this number of epochs
 _C.CONFIG.LOG.SAVE_FREQ = 1
 # Display the training log after every this number of iterations
