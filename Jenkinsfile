@@ -45,12 +45,12 @@ stage("Unit Test") {
           rm -rf ~/.mxnet/datasets/tiny_coco && rm -rf ~/.mxnet/datasets/tiny_motorbike
           ls ~/.mxnet/datasets
           mkdir -p ~/.mxnet/datasets/tiny_coco/annotations
-          wget -q https://gluoncv-ci.s3-us-west-2.amazonaws.com/mini_coco/sub_val.zip
+          wget -O sub_val.zip -q https://gluoncv-ci.s3-us-west-2.amazonaws.com/mini_coco/sub_val.zip
           unzip -q sub_val.zip -d ~/.mxnet/datasets/tiny_coco
           mv ~/.mxnet/datasets/tiny_coco/sub_val ~/.mxnet/datasets/tiny_coco/val2017
-          wget -q https://gluoncv-ci.s3-us-west-2.amazonaws.com/mini_coco/instances_val2017_tiny.json
+          wget -O instances_val2017_tiny.json -q https://gluoncv-ci.s3-us-west-2.amazonaws.com/mini_coco/instances_val2017_tiny.json
           mv instances_val2017_tiny.json ~/.mxnet/datasets/tiny_coco/annotations
-          wget -q https://gluoncv-ci.s3-us-west-2.amazonaws.com/tiny_motorbike.zip
+          wget -O tiny_motorbike.zip -q https://gluoncv-ci.s3-us-west-2.amazonaws.com/tiny_motorbike.zip
           unzip -q tiny_motorbike.zip -d ~/.mxnet/datasets/tiny_motorbike
           ls ~/.mxnet/datasets/
           ls ~/.mxnet/datasets/tiny_motorbike
