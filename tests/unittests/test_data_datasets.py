@@ -7,16 +7,14 @@ import numpy as np
 
 import gluoncv as gcv
 from gluoncv import data
+from .tiny_datasets import COCODetectionTiny, COCOInstanceTiny, VOCDetectionTiny, VOCSegmentationTiny
 import os.path as osp
 
 
 def test_pascal_voc_detection():
-    if not osp.isdir(osp.expanduser('~/.mxnet/datasets/voc')):
-        return
-
-    train = data.VOCDetection(splits=((2007, 'trainval'), (2012, 'trainval')))
+    train = VOCDetectionTiny()
     name = str(train)
-    val = data.VOCDetection(splits=((2007, 'test'), ))
+    val = VOCDetectionTiny(splits=(('tiny_motorbike', 'test'), ))
     name = str(val)
 
     assert train.classes == val.classes
@@ -31,11 +29,8 @@ def test_pascal_voc_detection():
 
 
 def test_coco_detection():
-    if not osp.isdir(osp.expanduser('~/.mxnet/datasets/coco')):
-        return
-
     # use valid only, loading training split is very slow
-    val = data.COCODetection(splits=('instances_val2017'))
+    val = COCODetectionTiny()
     name = str(val)
     assert len(val.classes) > 0
 
@@ -44,11 +39,8 @@ def test_coco_detection():
         _ = val[index]
 
 def test_coco_instance():
-    if not osp.isdir(osp.expanduser('~/.mxnet/datasets/coco')):
-        return
-
     # use valid only, loading training split is very slow
-    val = data.COCOInstance(splits=('instances_val2017',))
+    val = COCOInstanceTiny()
     name = str(val)
     assert len(val.classes) > 0
 
@@ -57,11 +49,9 @@ def test_coco_instance():
         _ = val[index]
 
 def test_voc_segmentation():
-    if not osp.isdir(osp.expanduser('~/.mxnet/datasets/voc')):
-        return
 
     # use valid only, loading training split is very slow
-    val = data.VOCSegmentation(split='train')
+    val = VOCSegmentationTiny()
     name = str(val)
     assert len(val.classes) > 0
 
@@ -70,17 +60,18 @@ def test_voc_segmentation():
         _ = val[index]
 
 def test_voc_aug_segmentation():
-    if not osp.isdir(osp.expanduser('~/.mxnet/datasets/voc')):
-        return
-
-    # use valid only, loading training split is very slow
-    val = data.VOCAugSegmentation(split='train')
-    name = str(val)
-    assert len(val.classes) > 0
-
-    for _ in range(10):
-        index = np.random.randint(0, len(val))
-        _ = val[index]
+    pass
+    # if not osp.isdir(osp.expanduser('~/.mxnet/datasets/voc')):
+    #     return
+    #
+    # # use valid only, loading training split is very slow
+    # val = data.VOCAugSegmentation(split='train')
+    # name = str(val)
+    # assert len(val.classes) > 0
+    #
+    # for _ in range(10):
+    #     index = np.random.randint(0, len(val))
+    #     _ = val[index]
 
 def test_ade_segmentation():
     if not osp.isdir(osp.expanduser('~/.mxnet/datasets/ade')):

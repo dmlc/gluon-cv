@@ -13,6 +13,7 @@ from gluoncv.data.transforms.presets import ssd
 from gluoncv.data.transforms.presets import rcnn
 from gluoncv.data.transforms.presets import yolo
 from gluoncv.data.transforms.presets import center_net
+from .tiny_datasets import COCODetectionTiny, COCOInstanceTiny, VOCDetectionTiny, VOCSegmentationTiny
 
 def test_bbox_crop():
     bbox = np.array([[10, 20, 200, 500], [150, 200, 400, 300]])
@@ -161,8 +162,8 @@ def test_transforms_presets_ssd():
     np.testing.assert_allclose(orig_img, orig_img1)
     if not osp.isdir(osp.expanduser('~/.mxnet/datasets/voc')):
         return
-    train_dataset = gcv.data.VOCDetection(splits=((2007, 'trainval'), (2012, 'trainval')))
-    val_dataset = gcv.data.VOCDetection(splits=[(2007, 'test')])
+    train_dataset = VOCDetectionTiny()
+    val_dataset = VOCDetectionTiny(splits=[('tiny_motorbike', 'test')])
     width, height = (512, 512)
     net = gcv.model_zoo.get_model('ssd_512_resnet50_v1_voc', pretrained=False, pretrained_base=False)
     net.initialize()
@@ -197,8 +198,8 @@ def test_transforms_presets_rcnn():
     np.testing.assert_allclose(orig_img, orig_img1)
     if not osp.isdir(osp.expanduser('~/.mxnet/datasets/voc')):
         return
-    train_dataset = gcv.data.VOCDetection(splits=((2007, 'trainval'), (2012, 'trainval')))
-    val_dataset = gcv.data.VOCDetection(splits=[(2007, 'test')])
+    train_dataset = VOCDetectionTiny()
+    val_dataset = VOCDetectionTiny(splits=[('tiny_motorbike', 'test')])
     width, height = (512, 512)
     net = gcv.model_zoo.get_model('faster_rcnn_resnet50_v1b_voc', pretrained=False, pretrained_base=False)
     net.initialize()
@@ -226,8 +227,10 @@ def test_transforms_presets_rcnn():
 
 def test_transforms_presets_mask_rcnn():
     # use valid only, loading training split is very slow
-    train_dataset = gcv.data.COCOInstance(splits=('instances_val2017',), skip_empty=True)
-    val_dataset = gcv.data.COCOInstance(splits=('instances_val2017',))
+    train_dataset = COCOInstanceTiny(root=osp.join('~', '.mxnet', 'datasets', 'tiny_coco'),
+                                          splits=('instances_val2017_tiny',), skip_empty=True)
+    val_dataset = COCOInstanceTiny(root=osp.join('~', '.mxnet', 'datasets', 'tiny_coco'),
+                                        splits=('instances_val2017_tiny',))
     net = gcv.model_zoo.get_model('mask_rcnn_resnet50_v1b_coco', pretrained=False, pretrained_base=False)
     net.initialize()
     num_workers = 0
@@ -257,8 +260,8 @@ def test_transforms_presets_yolo():
     np.testing.assert_allclose(orig_img, orig_img1)
     if not osp.isdir(osp.expanduser('~/.mxnet/datasets/voc')):
         return
-    train_dataset = gcv.data.VOCDetection(splits=((2007, 'trainval'), (2012, 'trainval')))
-    val_dataset = gcv.data.VOCDetection(splits=[(2007, 'test')])
+    train_dataset = VOCDetectionTiny()
+    val_dataset = VOCDetectionTiny(splits=[('tiny_motorbike', 'test')])
     width, height = (512, 512)
     net = gcv.model_zoo.get_model('yolo3_darknet53_voc', pretrained=False, pretrained_base=False)
     net.initialize()
@@ -291,8 +294,8 @@ def test_transforms_presets_center_net():
     np.testing.assert_allclose(orig_img, orig_img1)
     if not osp.isdir(osp.expanduser('~/.mxnet/datasets/voc')):
         return
-    train_dataset = gcv.data.VOCDetection(splits=((2007, 'trainval'), (2012, 'trainval')))
-    val_dataset = gcv.data.VOCDetection(splits=[(2007, 'test')])
+    train_dataset = VOCDetectionTiny()
+    val_dataset = VOCDetectionTiny(splits=[('tiny_motorbike', 'test')])
     width, height = (512, 512)
     net = gcv.model_zoo.get_model('center_net_resnet18_v1b_voc', pretrained=False, pretrained_base=False)
     net.initialize()
