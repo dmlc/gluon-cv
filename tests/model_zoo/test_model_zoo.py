@@ -107,7 +107,7 @@ def test_classification_models():
         'cifar_resnet20_v1', 'cifar_resnet56_v1', 'cifar_resnet110_v1',
         'cifar_resnet20_v2', 'cifar_resnet56_v2', 'cifar_resnet110_v2',
         'cifar_wideresnet16_10', 'cifar_wideresnet28_10', 'cifar_wideresnet40_8',
-        # 'cifar_resnext29_32x4d', 'cifar_resnext29_16x64d',
+        'cifar_resnext29_32x4d', 'cifar_resnext29_16x64d',
         'cifar_residualattentionnet56', 'cifar_residualattentionnet92',
         'cifar_residualattentionnet452'
     ]
@@ -132,10 +132,10 @@ def test_imagenet_models():
             #   'resnest50', 'resnest101', 'resnest200', 'resnest269',
             #   'resnext50_32x4d', 'resnext101_32x4d', 'resnext101_64x4d',
             #   'se_resnext50_32x4d', 'se_resnext101_32x4d', 'se_resnext101_64x4d',
-            #   'se_resnet18_v1', 'se_resnet34_v1', 'se_resnet50_v1',
-            #   'se_resnet101_v1', 'se_resnet152_v1',
-            #   'se_resnet18_v2', 'se_resnet34_v2', 'se_resnet50_v2',
-            #   'se_resnet101_v2', 'se_resnet152_v2',
+              'se_resnet18_v1', 'se_resnet34_v1', 'se_resnet50_v1',
+              'se_resnet101_v1', 'se_resnet152_v1',
+              'se_resnet18_v2', 'se_resnet34_v2', 'se_resnet50_v2',
+              'se_resnet101_v2', 'se_resnet152_v2',
             # #   'senet_154', 'squeezenet1.0', 'squeezenet1.1',
             #   'mobilenet1.0', 'mobilenet0.75', 'mobilenet0.5', 'mobilenet0.25',
             #   'mobilenetv2_1.0', 'mobilenetv2_0.75', 'mobilenetv2_0.5', 'mobilenetv2_0.25',

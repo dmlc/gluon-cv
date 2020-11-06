@@ -152,7 +152,7 @@ class CIFARWideResNet(HybridBlock):
                             norm_layer=norm_layer, norm_kwargs=norm_kwargs))
         return layer
 
-    def hybrid_forward(self, F, x):
+    def forward(self, x):
         x = self.features(x)
         x = self.output(x)
         return x

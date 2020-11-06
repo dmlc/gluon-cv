@@ -32,7 +32,7 @@ __all__ = ['ResNetV1', 'ResNetV2',
            'get_resnet']
 
 import mxnet as mx
-from mxnet import np, npx
+from mxnet import nd, np, npx
 from mxnet.context import cpu
 from mxnet.gluon.block import HybridBlock
 from mxnet.gluon import nn
@@ -111,7 +111,7 @@ class BasicBlockV1(HybridBlock):
         x = self.body(x)
 
         if self.se:
-            w = contrib.AdaptiveAvgPooling2D(x.as_nd_ndarray(), output_size=1).as_np_ndarray()
+            w = nd.contrib.AdaptiveAvgPooling2D(x.as_nd_ndarray(), output_size=1).as_np_ndarray()
             w = self.se(w)
             x = x * np.expand_dims(np.expand_dims(w, axis=2), axis=2)
 
@@ -190,7 +190,7 @@ class BottleneckV1(HybridBlock):
         x = self.body(x)
 
         if self.se:
-            w = contrib.AdaptiveAvgPooling2D(x.as_nd_ndarray(), output_size=1).as_np_ndarray()
+            w = nd.contrib.AdaptiveAvgPooling2D(x.as_nd_ndarray(), output_size=1).as_np_ndarray()
             w = self.se(w)
             x = x * np.expand_dims(np.expand_dims(w, axis=2), axis=2)
 
@@ -269,7 +269,7 @@ class BasicBlockV2(HybridBlock):
         x = self.conv2(x)
 
         if self.se:
-            w = contrib.AdaptiveAvgPooling2D(x.as_nd_ndarray(), output_size=1).as_np_ndarray()
+            w = nd.contrib.AdaptiveAvgPooling2D(x.as_nd_ndarray(), output_size=1).as_np_ndarray()
             w = self.se(w)
             x = x * np.expand_dims(np.expand_dims(w, axis=2), axis=2)
 
@@ -349,7 +349,7 @@ class BottleneckV2(HybridBlock):
         x = self.conv3(x)
 
         if self.se:
-            w = contrib.AdaptiveAvgPooling2D(x.as_nd_ndarray(), output_size=1).as_np_ndarray()
+            w = nd.contrib.AdaptiveAvgPooling2D(x.as_nd_ndarray(), output_size=1).as_np_ndarray()
             w = self.se(w)
             x = x * np.expand_dims(np.expand_dims(w, axis=2), axis=2)
 
