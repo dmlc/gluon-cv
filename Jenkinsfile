@@ -50,9 +50,7 @@ stage("Unit Test") {
           wget -q https://gluoncv-ci.s3-us-west-2.amazonaws.com/mini_coco/instances_val2017_tiny.json
           mv instances_val2017_tiny.json ~/.mxnet/datasets/tiny_coco/annotations
           wget -q https://gluoncv-ci.s3-us-west-2.amazonaws.com/tiny_motorbike.zip
-          unzip -o -q tiny_motorbike.zip
-          mkdir -p ~/.mxnet/datasets/tiny_motorbike
-          mv tiny_motorbike ~/.mxnet/datasets/tiny_motorbike/
+          unzip -o -q tiny_motorbike.zip -d ~/.mxnet/datasets
           nosetests --with-timer --timer-ok 5 --timer-warning 20 -x --with-coverage --cover-package gluoncv -v tests/unittests
           nosetests --with-timer --timer-ok 5 --timer-warning 20 -x --with-coverage --cover-package gluoncv -v tests/model_zoo
           rm -f coverage.svg
