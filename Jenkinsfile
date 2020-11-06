@@ -41,16 +41,18 @@ stage("Unit Test") {
           export LD_LIBRARY_PATH=/usr/local/cuda-10.0/lib64
           export MPLBACKEND=Agg
           export MXNET_CUDNN_AUTOTUNE_DEFAULT=0
+          # clean up
+          rm -rf ~/.mxnet/datasets/tiny_coco && rm -rf ~/.mxnet/datasets/tiny_motorbike
           mkdir -p ~/.mxnet/datasets/tiny_coco/annotations
           wget -q https://gluoncv-ci.s3-us-west-2.amazonaws.com/mini_coco/sub_val.zip
           unzip -o -q sub_val.zip -d ~/.mxnet/datasets/tiny_coco
-          mv -f ~/.mxnet/datasets/tiny_coco/sub_val ~/.mxnet/datasets/tiny_coco/val2017
+          mv ~/.mxnet/datasets/tiny_coco/sub_val ~/.mxnet/datasets/tiny_coco/val2017
           wget -q https://gluoncv-ci.s3-us-west-2.amazonaws.com/mini_coco/instances_val2017_tiny.json
-          mv -f instances_val2017_tiny.json ~/.mxnet/datasets/tiny_coco/annotations
+          mv instances_val2017_tiny.json ~/.mxnet/datasets/tiny_coco/annotations
           wget -q https://gluoncv-ci.s3-us-west-2.amazonaws.com/tiny_motorbike.zip
           unzip -o -q tiny_motorbike.zip
           mkdir -p ~/.mxnet/datasets/tiny_motorbike
-          mv -f tiny_motorbike ~/.mxnet/datasets/tiny_motorbike/
+          mv tiny_motorbike ~/.mxnet/datasets/tiny_motorbike/
           nosetests --with-timer --timer-ok 5 --timer-warning 20 -x --with-coverage --cover-package gluoncv -v tests/unittests
           nosetests --with-timer --timer-ok 5 --timer-warning 20 -x --with-coverage --cover-package gluoncv -v tests/model_zoo
           rm -f coverage.svg
