@@ -43,6 +43,7 @@ stage("Unit Test") {
           export MXNET_CUDNN_AUTOTUNE_DEFAULT=0
           # clean up
           rm -rf ~/.mxnet/datasets/tiny_coco && rm -rf ~/.mxnet/datasets/tiny_motorbike
+          ls ~/.mxnet/datasets
           mkdir -p ~/.mxnet/datasets/tiny_coco/annotations
           wget -q https://gluoncv-ci.s3-us-west-2.amazonaws.com/mini_coco/sub_val.zip
           unzip -o -q sub_val.zip -d ~/.mxnet/datasets/tiny_coco
@@ -51,6 +52,7 @@ stage("Unit Test") {
           mv instances_val2017_tiny.json ~/.mxnet/datasets/tiny_coco/annotations
           wget -q https://gluoncv-ci.s3-us-west-2.amazonaws.com/tiny_motorbike.zip
           unzip -o -q tiny_motorbike.zip -d ~/.mxnet/datasets/tiny_motorbike
+          ls ~/.mxnet/datasets/tiny_motorbike/tiny_motorbike
           nosetests --with-timer --timer-ok 5 --timer-warning 20 -x --with-coverage --cover-package gluoncv -v tests/unittests
           nosetests --with-timer --timer-ok 5 --timer-warning 20 -x --with-coverage --cover-package gluoncv -v tests/model_zoo
           rm -f coverage.svg
