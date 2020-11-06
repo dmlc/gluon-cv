@@ -27,5 +27,5 @@ class VOCSegmentationTiny(data.VOCSegmentation):
     BASE_DIR = 'tiny_motorbike'
 
     def __init__(self, root=os.path.join('~', '.mxnet', 'datasets', 'tiny_motorbike'),
-                 split='trainval', **kwargs):
+                 split='train', **kwargs):
         super().__init__(root=root, split=split, **kwargs)
