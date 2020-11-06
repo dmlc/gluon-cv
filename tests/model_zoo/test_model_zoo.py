@@ -107,9 +107,9 @@ def test_classification_models():
         'cifar_resnet20_v1', 'cifar_resnet56_v1', 'cifar_resnet110_v1',
         'cifar_resnet20_v2', 'cifar_resnet56_v2', 'cifar_resnet110_v2',
         'cifar_wideresnet16_10', 'cifar_wideresnet28_10', 'cifar_wideresnet40_8',
-        'cifar_resnext29_32x4d', 'cifar_resnext29_16x64d'
-        # 'cifar_residualattentionnet56', 'cifar_residualattentionnet92',
-        # 'cifar_residualattentionnet452'
+        'cifar_resnext29_32x4d', 'cifar_resnext29_16x64d',
+        'cifar_residualattentionnet56', 'cifar_residualattentionnet92',
+        'cifar_residualattentionnet452'
     ]
     _test_model_list(cifar_models, ctx, x)
 
@@ -144,9 +144,9 @@ def test_imagenet_models():
             #   'darknet53', 'alexnet', 'googlenet',
             #   'vgg11', 'vgg11_bn', 'vgg13', 'vgg13_bn',
             #   'vgg16', 'vgg16_bn', 'vgg19', 'vgg19_bn',
-            #   'residualattentionnet56', 'residualattentionnet92',
-            #   'residualattentionnet128', 'residualattentionnet164',
-            #   'residualattentionnet200', 'residualattentionnet236', 'residualattentionnet452',
+              'residualattentionnet56', 'residualattentionnet92',
+              'residualattentionnet128', 'residualattentionnet164',
+              'residualattentionnet200', 'residualattentionnet236', 'residualattentionnet452',
             #   'resnet18_v1b_0.89', 'resnet50_v1d_0.86', 'resnet50_v1d_0.48',
             #   'resnet50_v1d_0.37', 'resnet50_v1d_0.11',
             #   'resnet101_v1d_0.76', 'resnet101_v1d_0.73'

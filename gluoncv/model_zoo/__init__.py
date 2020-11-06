@@ -31,7 +31,7 @@ from .resnet import *
 # from .squeezenet import *
 # from .vgg import *
 # from .mobilenet import *
-# from .residual_attentionnet import *
+from .residual_attentionnet import *
 # from .center_net import *
 # from .hrnet import *
 # from .siamrpn import *
