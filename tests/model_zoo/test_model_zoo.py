@@ -106,10 +106,10 @@ def test_classification_models():
     cifar_models = [
         'cifar_resnet20_v1', 'cifar_resnet56_v1', 'cifar_resnet110_v1',
         'cifar_resnet20_v2', 'cifar_resnet56_v2', 'cifar_resnet110_v2',
-        'cifar_wideresnet16_10', 'cifar_wideresnet28_10', 'cifar_wideresnet40_8'
-        # 'cifar_resnext29_32x4d', 'cifar_resnext29_16x64d',
-        # 'cifar_residualattentionnet56', 'cifar_residualattentionnet92',
-        # 'cifar_residualattentionnet452'
+        'cifar_wideresnet16_10', 'cifar_wideresnet28_10', 'cifar_wideresnet40_8',
+        'cifar_resnext29_32x4d', 'cifar_resnext29_16x64d',
+        'cifar_residualattentionnet56', 'cifar_residualattentionnet92',
+        'cifar_residualattentionnet452'
     ]
     _test_model_list(cifar_models, ctx, x)
 
@@ -132,10 +132,10 @@ def test_imagenet_models():
             #   'resnest50', 'resnest101', 'resnest200', 'resnest269',
             #   'resnext50_32x4d', 'resnext101_32x4d', 'resnext101_64x4d',
             #   'se_resnext50_32x4d', 'se_resnext101_32x4d', 'se_resnext101_64x4d',
-            #   'se_resnet18_v1', 'se_resnet34_v1', 'se_resnet50_v1',
-            #   'se_resnet101_v1', 'se_resnet152_v1',
-            #   'se_resnet18_v2', 'se_resnet34_v2', 'se_resnet50_v2',
-            #   'se_resnet101_v2', 'se_resnet152_v2',
+              'se_resnet18_v1', 'se_resnet34_v1', 'se_resnet50_v1',
+              'se_resnet101_v1', 'se_resnet152_v1',
+              'se_resnet18_v2', 'se_resnet34_v2', 'se_resnet50_v2',
+              'se_resnet101_v2', 'se_resnet152_v2',
             # #   'senet_154', 'squeezenet1.0', 'squeezenet1.1',
             #   'mobilenet1.0', 'mobilenet0.75', 'mobilenet0.5', 'mobilenet0.25',
             #   'mobilenetv2_1.0', 'mobilenetv2_0.75', 'mobilenetv2_0.5', 'mobilenetv2_0.25',
@@ -144,9 +144,9 @@ def test_imagenet_models():
             #   'darknet53', 'alexnet', 'googlenet',
             #   'vgg11', 'vgg11_bn', 'vgg13', 'vgg13_bn',
             #   'vgg16', 'vgg16_bn', 'vgg19', 'vgg19_bn',
-            #   'residualattentionnet56', 'residualattentionnet92',
-            #   'residualattentionnet128', 'residualattentionnet164',
-            #   'residualattentionnet200', 'residualattentionnet236', 'residualattentionnet452',
+              'residualattentionnet56', 'residualattentionnet92',
+              'residualattentionnet128', 'residualattentionnet164',
+              'residualattentionnet200', 'residualattentionnet236', 'residualattentionnet452',
             #   'resnet18_v1b_0.89', 'resnet50_v1d_0.86', 'resnet50_v1d_0.48',
             #   'resnet50_v1d_0.37', 'resnet50_v1d_0.11',
             #   'resnet101_v1d_0.76', 'resnet101_v1d_0.73'
