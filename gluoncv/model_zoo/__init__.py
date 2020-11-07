@@ -15,7 +15,7 @@ from .cifarwideresnet import *
 # from .deeplabv3b_plus import *
 # from . import segbase
 # from .resnetv1b import *
-# from .se_resnet import *
+from .se_resnet import *
 # from .nasnet import *
 # from .simple_pose.simple_pose_resnet import *
 # from .simple_pose.mobile_pose import *
@@ -31,7 +31,7 @@ from .resnet import *
 # from .squeezenet import *
 # from .vgg import *
 # from .mobilenet import *
-# from .residual_attentionnet import *
+from .residual_attentionnet import *
 # from .center_net import *
 # from .hrnet import *
 # from .siamrpn import *

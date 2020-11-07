@@ -4,7 +4,7 @@ mxnet.gluon.model_zoo.vision and gluoncv.models
 """
 # from .alexnet import *
 from .cifarresnet import *
-# from .cifarresnext import *
+from .cifarresnext import *
 from .cifarwideresnet import *
 # from .deeplabv3 import *
 # from .deeplabv3b_plus import *
@@ -21,7 +21,7 @@ from .cifarwideresnet import *
 # from .pruned_resnet.resnetv1b_pruned import *
 # from .pspnet import *
 # from .quantized import *
-# from .residual_attentionnet import *
+from .residual_attentionnet import *
 from .resnet import *
 # from .resnest import *
 # from .resnetv1b import *
@@ -63,16 +63,16 @@ _models = {
     # 'resnest101': resnest101,
     # 'resnest200': resnest200,
     # 'resnest269': resnest269,
-    # 'se_resnet18_v1': se_resnet18_v1,
-    # 'se_resnet34_v1': se_resnet34_v1,
-    # 'se_resnet50_v1': se_resnet50_v1,
-    # 'se_resnet101_v1': se_resnet101_v1,
-    # 'se_resnet152_v1': se_resnet152_v1,
-    # 'se_resnet18_v2': se_resnet18_v2,
-    # 'se_resnet34_v2': se_resnet34_v2,
-    # 'se_resnet50_v2': se_resnet50_v2,
-    # 'se_resnet101_v2': se_resnet101_v2,
-    # 'se_resnet152_v2': se_resnet152_v2,
+    'se_resnet18_v1': se_resnet18_v1,
+    'se_resnet34_v1': se_resnet34_v1,
+    'se_resnet50_v1': se_resnet50_v1,
+    'se_resnet101_v1': se_resnet101_v1,
+    'se_resnet152_v1': se_resnet152_v1,
+    'se_resnet18_v2': se_resnet18_v2,
+    'se_resnet34_v2': se_resnet34_v2,
+    'se_resnet50_v2': se_resnet50_v2,
+    'se_resnet101_v2': se_resnet101_v2,
+    'se_resnet152_v2': se_resnet152_v2,
     # 'vgg11': vgg11,
     # 'vgg13': vgg13,
     # 'vgg16': vgg16,
@@ -163,8 +163,8 @@ _models = {
     'cifar_wideresnet16_10': cifar_wideresnet16_10,
     'cifar_wideresnet28_10': cifar_wideresnet28_10,
     'cifar_wideresnet40_8': cifar_wideresnet40_8,
-    # 'cifar_resnext29_32x4d': cifar_resnext29_32x4d,
-    # 'cifar_resnext29_16x64d': cifar_resnext29_16x64d,
+    'cifar_resnext29_32x4d': cifar_resnext29_32x4d,
+    'cifar_resnext29_16x64d': cifar_resnext29_16x64d,
     # 'fcn_resnet50_voc': get_fcn_resnet50_voc,
     # 'fcn_resnet101_coco': get_fcn_resnet101_coco,
     # 'fcn_resnet101_voc': get_fcn_resnet101_voc,
@@ -243,16 +243,16 @@ _models = {
     # 'simple_pose_resnet50_v1d': simple_pose_resnet50_v1d,
     # 'simple_pose_resnet101_v1d': simple_pose_resnet101_v1d,
     # 'simple_pose_resnet152_v1d': simple_pose_resnet152_v1d,
-    # 'residualattentionnet56': residualattentionnet56,
-    # 'residualattentionnet92': residualattentionnet92,
-    # 'residualattentionnet128': residualattentionnet128,
-    # 'residualattentionnet164': residualattentionnet164,
-    # 'residualattentionnet200': residualattentionnet200,
-    # 'residualattentionnet236': residualattentionnet236,
-    # 'residualattentionnet452': residualattentionnet452,
-    # 'cifar_residualattentionnet56': cifar_residualattentionnet56,
-    # 'cifar_residualattentionnet92': cifar_residualattentionnet92,
-    # 'cifar_residualattentionnet452': cifar_residualattentionnet452,
+    'residualattentionnet56': residualattentionnet56,
+    'residualattentionnet92': residualattentionnet92,
+    'residualattentionnet128': residualattentionnet128,
+    'residualattentionnet164': residualattentionnet164,
+    'residualattentionnet200': residualattentionnet200,
+    'residualattentionnet236': residualattentionnet236,
+    'residualattentionnet452': residualattentionnet452,
+    'cifar_residualattentionnet56': cifar_residualattentionnet56,
+    'cifar_residualattentionnet92': cifar_residualattentionnet92,
+    'cifar_residualattentionnet452': cifar_residualattentionnet452,
     # 'resnet18_v1b_0.89': resnet18_v1b_89,
     # 'resnet50_v1d_0.86': resnet50_v1d_86,
     # 'resnet50_v1d_0.48': resnet50_v1d_48,
