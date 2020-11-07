@@ -107,20 +107,19 @@ class Block(HybridBlock):
             self.downsample = None
 
     def hybrid_forward(self, F, x):
-        x = x.as_np_ndarray()
         residual = x
 
         x = self.body(x)
 
         if self.se:
-            w = F.contrib.AdaptiveAvgPooling2D(x.as_nd_ndarray(), output_size=1).as_np_ndarray()
+            w = F.contrib.AdaptiveAvgPooling2D(x, output_size=1)
             w = self.se(w)
-            x = x * w
+            x = F.broadcast_mul(x, w)
 
         if self.downsample:
             residual = self.downsample(residual)
 
-        x = F.npx.activation(x + residual, act_type='relu')
+        x = F.Activation(x + residual, act_type='relu')
         return x
 
 
