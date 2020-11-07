@@ -10,10 +10,10 @@ from mxnet.gluon import nn
 from mxnet.gluon.block import HybridBlock
 from mxnet.gluon.nn import BatchNorm
 from mxnet import use_np # pylint: disable=unused-import
-mx.npx.set_np()
 
 from ..nn.dropblock import DropBlock
 from ..nn.splat import SplitAttentionConv
+mx.npx.set_np()
 
 __all__ = ['ResNeSt', 'Bottleneck', 'resnest14', 'resnest26', 'resnest50', 'resnest101',
            'resnest200', 'resnest269']
@@ -187,72 +187,72 @@ class ResNeSt(HybridBlock):
         self.norm_kwargs = norm_kwargs
         if not deep_stem:
             self.conv1 = nn.Conv2D(channels=64, kernel_size=7, strides=2,
-                                    padding=3, use_bias=False, in_channels=3)
+                                   padding=3, use_bias=False, in_channels=3)
         else:
             self.conv1 = nn.HybridSequential()
             self.conv1.add(nn.Conv2D(channels=stem_width, kernel_size=3, strides=2,
-                                        padding=1, use_bias=False, in_channels=3))
+                                     padding=1, use_bias=False, in_channels=3))
             self.conv1.add(norm_layer(in_channels=stem_width, **norm_kwargs))
             self.conv1.add(nn.Activation('relu'))
             self.conv1.add(nn.Conv2D(channels=stem_width, kernel_size=3, strides=1,
-                                        padding=1, use_bias=False, in_channels=stem_width))
+                                     padding=1, use_bias=False, in_channels=stem_width))
             self.conv1.add(norm_layer(in_channels=stem_width, **norm_kwargs))
             self.conv1.add(nn.Activation('relu'))
             self.conv1.add(nn.Conv2D(channels=stem_width * 2, kernel_size=3, strides=1,
-                                        padding=1, use_bias=False, in_channels=stem_width))
+                                     padding=1, use_bias=False, in_channels=stem_width))
         input_size = _update_input_size(input_size, 2)
         self.bn1 = norm_layer(in_channels=64 if not deep_stem else stem_width * 2,
-                                **norm_kwargs)
+                              **norm_kwargs)
         self.relu = nn.Activation('relu')
         self.maxpool = nn.MaxPool2D(pool_size=3, strides=2, padding=1)
         input_size = _update_input_size(input_size, 2)
         self.layer1 = self._make_layer(1, block, 64, layers[0], avg_down=avg_down,
-                                        norm_layer=norm_layer, last_gamma=last_gamma,
-                                        use_splat=use_splat, avd=avd)
+                                       norm_layer=norm_layer, last_gamma=last_gamma,
+                                       use_splat=use_splat, avd=avd)
         self.layer2 = self._make_layer(2, block, 128, layers[1], strides=2, avg_down=avg_down,
-                                        norm_layer=norm_layer, last_gamma=last_gamma,
-                                        use_splat=use_splat, avd=avd)
+                                       norm_layer=norm_layer, last_gamma=last_gamma,
+                                       use_splat=use_splat, avd=avd)
         input_size = _update_input_size(input_size, 2)
         if dilated or dilation == 4:
             self.layer3 = self._make_layer(3, block, 256, layers[2], strides=1, dilation=2,
-                                            avg_down=avg_down, norm_layer=norm_layer,
-                                            last_gamma=last_gamma, dropblock_prob=dropblock_prob,
-                                            input_size=input_size, use_splat=use_splat, avd=avd)
+                                           avg_down=avg_down, norm_layer=norm_layer,
+                                           last_gamma=last_gamma, dropblock_prob=dropblock_prob,
+                                           input_size=input_size, use_splat=use_splat, avd=avd)
             self.layer4 = self._make_layer(4, block, 512, layers[3], strides=1, dilation=4,
-                                            pre_dilation=2,
-                                            avg_down=avg_down, norm_layer=norm_layer,
-                                            last_gamma=last_gamma, dropblock_prob=dropblock_prob,
-                                            input_size=input_size, use_splat=use_splat, avd=avd)
+                                           pre_dilation=2,
+                                           avg_down=avg_down, norm_layer=norm_layer,
+                                           last_gamma=last_gamma, dropblock_prob=dropblock_prob,
+                                           input_size=input_size, use_splat=use_splat, avd=avd)
         elif dilation == 3:
             # special
             self.layer3 = self._make_layer(3, block, 256, layers[2], strides=1, dilation=2,
-                                            avg_down=avg_down, norm_layer=norm_layer,
-                                            last_gamma=last_gamma, dropblock_prob=dropblock_prob,
-                                            input_size=input_size, use_splat=use_splat, avd=avd)
+                                           avg_down=avg_down, norm_layer=norm_layer,
+                                           last_gamma=last_gamma, dropblock_prob=dropblock_prob,
+                                           input_size=input_size, use_splat=use_splat, avd=avd)
             self.layer4 = self._make_layer(4, block, 512, layers[3], strides=2, dilation=2,
-                                            pre_dilation=2,
-                                            avg_down=avg_down, norm_layer=norm_layer,
-                                            last_gamma=last_gamma, dropblock_prob=dropblock_prob,
-                                            input_size=input_size, use_splat=use_splat, avd=avd)
+                                           pre_dilation=2,
+                                           avg_down=avg_down, norm_layer=norm_layer,
+                                           last_gamma=last_gamma, dropblock_prob=dropblock_prob,
+                                           input_size=input_size, use_splat=use_splat, avd=avd)
         elif dilation == 2:
             self.layer3 = self._make_layer(3, block, 256, layers[2], strides=2,
-                                            avg_down=avg_down, norm_layer=norm_layer,
-                                            last_gamma=last_gamma, dropblock_prob=dropblock_prob,
-                                            input_size=input_size, use_splat=use_splat, avd=avd)
+                                           avg_down=avg_down, norm_layer=norm_layer,
+                                           last_gamma=last_gamma, dropblock_prob=dropblock_prob,
+                                           input_size=input_size, use_splat=use_splat, avd=avd)
             self.layer4 = self._make_layer(4, block, 512, layers[3], strides=1, dilation=2,
-                                            avg_down=avg_down, norm_layer=norm_layer,
-                                            last_gamma=last_gamma, dropblock_prob=dropblock_prob,
-                                            input_size=input_size, use_splat=use_splat, avd=avd)
+                                           avg_down=avg_down, norm_layer=norm_layer,
+                                           last_gamma=last_gamma, dropblock_prob=dropblock_prob,
+                                           input_size=input_size, use_splat=use_splat, avd=avd)
         else:
             self.layer3 = self._make_layer(3, block, 256, layers[2], strides=2,
-                                            avg_down=avg_down, norm_layer=norm_layer,
-                                            last_gamma=last_gamma, dropblock_prob=dropblock_prob,
-                                            input_size=input_size, use_splat=use_splat, avd=avd)
+                                           avg_down=avg_down, norm_layer=norm_layer,
+                                           last_gamma=last_gamma, dropblock_prob=dropblock_prob,
+                                           input_size=input_size, use_splat=use_splat, avd=avd)
             input_size = _update_input_size(input_size, 2)
             self.layer4 = self._make_layer(4, block, 512, layers[3], strides=2,
-                                            avg_down=avg_down, norm_layer=norm_layer,
-                                            last_gamma=last_gamma, dropblock_prob=dropblock_prob,
-                                            input_size=input_size, use_splat=use_splat, avd=avd)
+                                           avg_down=avg_down, norm_layer=norm_layer,
+                                           last_gamma=last_gamma, dropblock_prob=dropblock_prob,
+                                           input_size=input_size, use_splat=use_splat, avd=avd)
             input_size = _update_input_size(input_size, 2)
         self.avgpool = nn.GlobalAvgPool2D()
         self.flat = nn.Flatten()
@@ -277,39 +277,39 @@ class ResNeSt(HybridBlock):
                 else:
                     downsample.add(
                         nn.AvgPool2D(pool_size=pre_dilation * strides, strides=strides,
-                                        padding=1, ceil_mode=True, count_include_pad=False))
+                                     padding=1, ceil_mode=True, count_include_pad=False))
                 downsample.add(nn.Conv2D(channels=planes * block.expansion, kernel_size=1,
-                                            strides=1, use_bias=False, in_channels=self.inplanes))
+                                         strides=1, use_bias=False, in_channels=self.inplanes))
                 downsample.add(norm_layer(in_channels=planes * block.expansion,
-                                            **self.norm_kwargs))
+                                          **self.norm_kwargs))
             else:
                 downsample.add(nn.Conv2D(channels=planes * block.expansion,
-                                            kernel_size=1, strides=strides, use_bias=False,
-                                            in_channels=self.inplanes))
+                                         kernel_size=1, strides=strides, use_bias=False,
+                                         in_channels=self.inplanes))
                 downsample.add(norm_layer(in_channels=planes * block.expansion,
-                                            **self.norm_kwargs))
+                                          **self.norm_kwargs))
 
         layers = nn.HybridSequential()
         if dilation in (1, 2):
             layers.add(block(planes, cardinality=self.cardinality,
-                                bottleneck_width=self.bottleneck_width,
-                                strides=strides, dilation=pre_dilation,
-                                downsample=downsample, previous_dilation=dilation,
-                                norm_layer=norm_layer, norm_kwargs=self.norm_kwargs,
-                                last_gamma=last_gamma, dropblock_prob=dropblock_prob,
-                                input_size=input_size, use_splat=use_splat, avd=avd,
-                                avd_first=self.avd_first, radix=self.radix,
-                                in_channels=self.inplanes, split_drop_ratio=self.split_drop_ratio))
+                             bottleneck_width=self.bottleneck_width,
+                             strides=strides, dilation=pre_dilation,
+                             downsample=downsample, previous_dilation=dilation,
+                             norm_layer=norm_layer, norm_kwargs=self.norm_kwargs,
+                             last_gamma=last_gamma, dropblock_prob=dropblock_prob,
+                             input_size=input_size, use_splat=use_splat, avd=avd,
+                             avd_first=self.avd_first, radix=self.radix,
+                             in_channels=self.inplanes, split_drop_ratio=self.split_drop_ratio))
         elif dilation == 4:
             layers.add(block(planes, cardinality=self.cardinality,
-                                bottleneck_width=self.bottleneck_width,
-                                strides=strides, dilation=pre_dilation,
-                                downsample=downsample, previous_dilation=dilation,
-                                norm_layer=norm_layer, norm_kwargs=self.norm_kwargs,
-                                last_gamma=last_gamma, dropblock_prob=dropblock_prob,
-                                input_size=input_size, use_splat=use_splat, avd=avd,
-                                avd_first=self.avd_first, radix=self.radix,
-                                in_channels=self.inplanes, split_drop_ratio=self.split_drop_ratio))
+                             bottleneck_width=self.bottleneck_width,
+                             strides=strides, dilation=pre_dilation,
+                             downsample=downsample, previous_dilation=dilation,
+                             norm_layer=norm_layer, norm_kwargs=self.norm_kwargs,
+                             last_gamma=last_gamma, dropblock_prob=dropblock_prob,
+                             input_size=input_size, use_splat=use_splat, avd=avd,
+                             avd_first=self.avd_first, radix=self.radix,
+                             in_channels=self.inplanes, split_drop_ratio=self.split_drop_ratio))
         else:
             raise RuntimeError("=> unknown dilation size: {}".format(dilation))
 
@@ -317,13 +317,13 @@ class ResNeSt(HybridBlock):
         self.inplanes = planes * block.expansion
         for i in range(1, blocks):
             layers.add(block(planes, cardinality=self.cardinality,
-                                bottleneck_width=self.bottleneck_width, dilation=dilation,
-                                previous_dilation=dilation, norm_layer=norm_layer,
-                                norm_kwargs=self.norm_kwargs, last_gamma=last_gamma,
-                                dropblock_prob=dropblock_prob, input_size=input_size,
-                                use_splat=use_splat, avd=avd, avd_first=self.avd_first,
-                                radix=self.radix, in_channels=self.inplanes,
-                                split_drop_ratio=self.split_drop_ratio))
+                             bottleneck_width=self.bottleneck_width, dilation=dilation,
+                             previous_dilation=dilation, norm_layer=norm_layer,
+                             norm_kwargs=self.norm_kwargs, last_gamma=last_gamma,
+                             dropblock_prob=dropblock_prob, input_size=input_size,
+                             use_splat=use_splat, avd=avd, avd_first=self.avd_first,
+                             radix=self.radix, in_channels=self.inplanes,
+                             split_drop_ratio=self.split_drop_ratio))
 
         return layers
 
