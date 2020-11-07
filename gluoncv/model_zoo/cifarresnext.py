@@ -1,0 +1,249 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+# coding: utf-8
+# pylint: disable= arguments-differ,unused-argument
+"""ResNets, implemented in Gluon."""
+from __future__ import division
+
+__all__ = ['get_cifar_resnext', 'cifar_resnext29_32x4d', 'cifar_resnext29_16x64d']
+
+import os
+import math
+import mxnet as mx
+from mxnet import cpu
+from mxnet.gluon import nn
+from mxnet.gluon.nn import BatchNorm
+from mxnet.gluon.block import HybridBlock
+from mxnet import npx
+from mxnet import use_np # pylint: disable=unused-import
+mx.npx.set_np()
+
+
+@use_np
+class CIFARBlock(HybridBlock):
+    r"""Bottleneck Block from `"Aggregated Residual Transformations for Deep Neural Networks"
+    <http://arxiv.org/abs/1611.05431>`_ paper.
+
+    Parameters
+    ----------
+    cardinality: int
+        Number of groups
+    bottleneck_width: int
+        Width of bottleneck block
+    stride : int
+        Stride size.
+    downsample : bool, default False
+        Whether to downsample the input.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    """
+    def __init__(self, channels, cardinality, bottleneck_width,
+                 stride, downsample=False, norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
+        super(CIFARBlock, self).__init__(**kwargs)
+        D = int(math.floor(channels * (bottleneck_width / 64)))
+        group_width = cardinality * D
+
+        self.body = nn.HybridSequential()
+        self.body.add(nn.Conv2D(group_width, kernel_size=1, use_bias=False))
+        self.body.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
+        self.body.add(nn.Activation('relu'))
+        self.body.add(nn.Conv2D(group_width, kernel_size=3, strides=stride, padding=1,
+                                groups=cardinality, use_bias=False))
+        self.body.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
+        self.body.add(nn.Activation('relu'))
+        self.body.add(nn.Conv2D(channels * 4, kernel_size=1, use_bias=False))
+        self.body.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
+
+        if downsample:
+            self.downsample = nn.HybridSequential()
+            self.downsample.add(nn.Conv2D(channels * 4, kernel_size=1, strides=stride,
+                                          use_bias=False))
+            self.downsample.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
+        else:
+            self.downsample = None
+
+    def forward(self, x):
+        """Hybrid forward"""
+        residual = x
+
+        x = self.body(x)
+
+        if self.downsample:
+            residual = self.downsample(residual)
+
+        x = npx.activation(residual+x, act_type='relu')
+
+        return x
+
+# Nets
+@use_np
+class CIFARResNext(HybridBlock):
+    r"""ResNext model from `"Aggregated Residual Transformations for Deep Neural Networks"
+    <http://arxiv.org/abs/1611.05431>`_ paper.
+
+    Parameters
+    ----------
+    layers : list of int
+        Numbers of layers in each block
+    cardinality: int
+        Number of groups
+    bottleneck_width: int
+        Width of bottleneck block
+    classes : int, default 10
+        Number of classification classes.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    """
+    def __init__(self, layers, cardinality, bottleneck_width, classes=10,
+                 norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
+        super(CIFARResNext, self).__init__(**kwargs)
+        self.cardinality = cardinality
+        self.bottleneck_width = bottleneck_width
+        channels = 64
+
+        self.features = nn.HybridSequential()
+        self.features.add(nn.Conv2D(channels, 3, 1, 1, use_bias=False))
+        self.features.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
+        self.features.add(nn.Activation('relu'))
+
+        for i, num_layer in enumerate(layers):
+            stride = 1 if i == 0 else 2
+            self.features.add(self._make_layer(channels, num_layer, stride, i+1,
+                                               norm_layer=norm_layer, norm_kwargs=norm_kwargs))
+            channels *= 2
+        self.features.add(nn.GlobalAvgPool2D())
+
+        self.output = nn.Dense(classes)
+
+    def _make_layer(self, channels, num_layer, stride, stage_index,
+                    norm_layer=BatchNorm, norm_kwargs=None):
+        layer = nn.HybridSequential()
+        layer.add(CIFARBlock(channels, self.cardinality, self.bottleneck_width,
+                             stride, True,
+                             norm_layer=norm_layer, norm_kwargs=norm_kwargs))
+        for _ in range(num_layer-1):
+            layer.add(CIFARBlock(channels, self.cardinality, self.bottleneck_width,
+                                 1, False,
+                                 norm_layer=norm_layer, norm_kwargs=norm_kwargs))
+        return layer
+
+    def forward(self, x):
+        x = self.features(x)
+        x = self.output(x)
+
+        return x
+
+
+# Constructor
+def get_cifar_resnext(num_layers, cardinality=16, bottleneck_width=64,
+                      pretrained=False, ctx=cpu(),
+                      root=os.path.join('~', '.mxnet', 'models'), **kwargs):
+    r"""ResNext model from `"Aggregated Residual Transformations for Deep Neural Networks"
+    <http://arxiv.org/abs/1611.05431>`_ paper.
+
+    Parameters
+    ----------
+    num_layers : int
+        Numbers of layers. Needs to be an integer in the form of 9*n+2, e.g. 29
+    cardinality: int
+        Number of groups
+    bottleneck_width: int
+        Width of bottleneck block
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    """
+    assert (num_layers - 2) % 9 == 0
+    layer = (num_layers - 2) // 9
+    layers = [layer] * 3
+    net = CIFARResNext(layers, cardinality, bottleneck_width, **kwargs)
+    if pretrained:
+        from .model_store import get_model_file
+        net.load_parameters(get_model_file('cifar_resnext%d_%dx%dd'%(num_layers, cardinality,
+                                                                     bottleneck_width),
+                                           tag=pretrained, root=root), ctx=ctx)
+    return net
+
+def cifar_resnext29_32x4d(**kwargs):
+    r"""ResNext-29 32x4d model from `"Aggregated Residual Transformations for Deep Neural Networks"
+    <http://arxiv.org/abs/1611.05431>`_ paper.
+
+    Parameters
+    ----------
+    num_layers : int
+        Numbers of layers. Needs to be an integer in the form of 9*n+2, e.g. 29
+    cardinality: int
+        Number of groups
+    bottleneck_width: int
+        Width of bottleneck block
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    """
+    return get_cifar_resnext(29, 32, 4, **kwargs)
+
+def cifar_resnext29_16x64d(**kwargs):
+    r"""ResNext-29 16x64d model from `"Aggregated Residual Transformations for Deep Neural Networks"
+    <http://arxiv.org/abs/1611.05431>`_ paper.
+
+    Parameters
+    ----------
+    cardinality: int
+        Number of groups
+    bottleneck_width: int
+        Width of bottleneck block
+    pretrained : bool, default False
+        Whether to load the pretrained weights for model.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+    norm_layer : object
+        Normalization layer used (default: :class:`mxnet.gluon.nn.BatchNorm`)
+        Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    norm_kwargs : dict
+        Additional `norm_layer` arguments, for example `num_devices=4`
+        for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
+    """
+    return get_cifar_resnext(29, 16, 64, **kwargs)

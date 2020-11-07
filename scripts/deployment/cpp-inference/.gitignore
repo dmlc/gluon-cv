@@ -1,0 +1,7 @@
+build/
+bin/
+install/
+*.json
+*.param
+*.jpg
+*.names

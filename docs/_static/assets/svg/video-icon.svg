@@ -1,0 +1,1 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="18 -18 60 60" width="54" height="54"><circle fill="#fff" class="st0" cx="48" cy="12" r="30"/><path fill="#202020" d="M42 23.2v-22.2l16 11.1-16 11.1z"/></svg>

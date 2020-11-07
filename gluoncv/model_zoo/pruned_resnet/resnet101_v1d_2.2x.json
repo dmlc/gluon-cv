@@ -1,0 +1,645 @@
+{
+    "resnetv1d_layers1_conv1_weight": [
+        16, 
+        16, 
+        3, 
+        3
+    ], 
+    "resnetv1d_layers3_conv35_weight": [
+        392, 
+        256, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv15_weight": [
+        256, 
+        392, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv2_weight": [
+        392, 
+        176, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv60_weight": [
+        256, 
+        392, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers4_conv3_weight": [
+        512, 
+        2048, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv0_weight": [
+        72, 
+        200, 
+        1, 
+        1
+    ], 
+    "resnetv1d_dense0_bias": [
+        1000
+    ], 
+    "resnetv1d_layers3_conv39_weight": [
+        256, 
+        392, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv25_weight": [
+        256, 
+        256, 
+        3, 
+        3
+    ], 
+    "resnetv1d_layers3_conv41_weight": [
+        392, 
+        256, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv58_weight": [
+        256, 
+        256, 
+        3, 
+        3
+    ], 
+    "resnetv1d_layers3_conv26_weight": [
+        392, 
+        256, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv8_weight": [
+        392, 
+        256, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv46_weight": [
+        256, 
+        256, 
+        3, 
+        3
+    ], 
+    "resnetv1d_layers3_conv3_weight": [
+        256, 
+        392, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers4_conv2_weight": [
+        2048, 
+        512, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv34_weight": [
+        256, 
+        256, 
+        3, 
+        3
+    ], 
+    "resnetv1d_layers3_conv32_weight": [
+        392, 
+        256, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv17_weight": [
+        392, 
+        256, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers1_conv5_weight": [
+        40, 
+        8, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers1_conv3_weight": [
+        8, 
+        40, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv24_weight": [
+        256, 
+        392, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers2_conv0_weight": [
+        32, 
+        40, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers2_conv9_weight": [
+        96, 
+        200, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv66_weight": [
+        256, 
+        392, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv42_weight": [
+        256, 
+        392, 
+        1, 
+        1
+    ], 
+    "resnetv1d_conv2_weight": [
+        32, 
+        24, 
+        3, 
+        3
+    ], 
+    "resnetv1d_down3_conv0_weight": [
+        392, 
+        200, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv33_weight": [
+        256, 
+        392, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv1_weight": [
+        176, 
+        72, 
+        3, 
+        3
+    ], 
+    "resnetv1d_layers3_conv45_weight": [
+        256, 
+        392, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv9_weight": [
+        256, 
+        392, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv57_weight": [
+        256, 
+        392, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv6_weight": [
+        256, 
+        392, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv21_weight": [
+        256, 
+        392, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv11_weight": [
+        392, 
+        256, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv50_weight": [
+        392, 
+        256, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv53_weight": [
+        392, 
+        256, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv16_weight": [
+        256, 
+        256, 
+        3, 
+        3
+    ], 
+    "resnetv1d_layers3_conv64_weight": [
+        256, 
+        256, 
+        3, 
+        3
+    ], 
+    "resnetv1d_layers4_conv4_weight": [
+        512, 
+        512, 
+        3, 
+        3
+    ], 
+    "resnetv1d_layers3_conv20_weight": [
+        392, 
+        256, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers4_conv6_weight": [
+        512, 
+        2048, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv4_weight": [
+        256, 
+        256, 
+        3, 
+        3
+    ], 
+    "resnetv1d_layers2_conv8_weight": [
+        200, 
+        8, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers2_conv2_weight": [
+        200, 
+        128, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers2_conv4_weight": [
+        112, 
+        72, 
+        3, 
+        3
+    ], 
+    "resnetv1d_layers4_conv7_weight": [
+        512, 
+        512, 
+        3, 
+        3
+    ], 
+    "resnetv1d_layers4_conv8_weight": [
+        2048, 
+        512, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv19_weight": [
+        256, 
+        256, 
+        3, 
+        3
+    ], 
+    "resnetv1d_conv1_weight": [
+        24, 
+        16, 
+        3, 
+        3
+    ], 
+    "resnetv1d_layers3_conv56_weight": [
+        392, 
+        256, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv47_weight": [
+        392, 
+        256, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv44_weight": [
+        392, 
+        256, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers1_conv6_weight": [
+        24, 
+        40, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv59_weight": [
+        392, 
+        256, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv65_weight": [
+        392, 
+        256, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv38_weight": [
+        392, 
+        8, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv68_weight": [
+        392, 
+        256, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers2_conv5_weight": [
+        200, 
+        112, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv7_weight": [
+        256, 
+        256, 
+        3, 
+        3
+    ], 
+    "resnetv1d_layers3_conv67_weight": [
+        256, 
+        256, 
+        3, 
+        3
+    ], 
+    "resnetv1d_layers2_conv11_weight": [
+        200, 
+        96, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv51_weight": [
+        256, 
+        392, 
+        1, 
+        1
+    ], 
+    "resnetv1d_down4_conv0_weight": [
+        2048, 
+        392, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers2_conv3_weight": [
+        72, 
+        200, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv22_weight": [
+        256, 
+        256, 
+        3, 
+        3
+    ], 
+    "resnetv1d_dense0_weight": [
+        1000, 
+        2048
+    ], 
+    "resnetv1d_layers1_conv2_weight": [
+        40, 
+        16, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers1_conv0_weight": [
+        16, 
+        32, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv37_weight": [
+        8, 
+        256, 
+        3, 
+        3
+    ], 
+    "resnetv1d_layers3_conv30_weight": [
+        256, 
+        392, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv49_weight": [
+        256, 
+        256, 
+        3, 
+        3
+    ], 
+    "resnetv1d_layers3_conv55_weight": [
+        256, 
+        256, 
+        3, 
+        3
+    ], 
+    "resnetv1d_layers3_conv52_weight": [
+        256, 
+        256, 
+        3, 
+        3
+    ], 
+    "resnetv1d_layers4_conv5_weight": [
+        2048, 
+        512, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers1_conv7_weight": [
+        16, 
+        24, 
+        3, 
+        3
+    ], 
+    "resnetv1d_layers2_conv7_weight": [
+        8, 
+        8, 
+        3, 
+        3
+    ], 
+    "resnetv1d_layers3_conv28_weight": [
+        256, 
+        256, 
+        3, 
+        3
+    ], 
+    "resnetv1d_layers4_conv0_weight": [
+        512, 
+        392, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv10_weight": [
+        256, 
+        256, 
+        3, 
+        3
+    ], 
+    "resnetv1d_layers3_conv23_weight": [
+        392, 
+        256, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers1_conv8_weight": [
+        40, 
+        16, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv48_weight": [
+        256, 
+        392, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv31_weight": [
+        256, 
+        256, 
+        3, 
+        3
+    ], 
+    "resnetv1d_layers3_conv13_weight": [
+        256, 
+        256, 
+        3, 
+        3
+    ], 
+    "resnetv1d_conv0_weight": [
+        16, 
+        3, 
+        3, 
+        3
+    ], 
+    "resnetv1d_layers3_conv61_weight": [
+        256, 
+        256, 
+        3, 
+        3
+    ], 
+    "resnetv1d_layers3_conv5_weight": [
+        392, 
+        256, 
+        1, 
+        1
+    ], 
+    "resnetv1d_down1_conv0_weight": [
+        40, 
+        32, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv27_weight": [
+        256, 
+        392, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv54_weight": [
+        256, 
+        392, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv29_weight": [
+        392, 
+        256, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers2_conv1_weight": [
+        128, 
+        32, 
+        3, 
+        3
+    ], 
+    "resnetv1d_layers2_conv10_weight": [
+        96, 
+        96, 
+        3, 
+        3
+    ], 
+    "resnetv1d_layers2_conv6_weight": [
+        8, 
+        200, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv63_weight": [
+        256, 
+        392, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv43_weight": [
+        256, 
+        256, 
+        3, 
+        3
+    ], 
+    "resnetv1d_layers3_conv40_weight": [
+        256, 
+        256, 
+        3, 
+        3
+    ], 
+    "resnetv1d_layers3_conv18_weight": [
+        256, 
+        392, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers4_conv1_weight": [
+        512, 
+        512, 
+        3, 
+        3
+    ], 
+    "resnetv1d_layers3_conv12_weight": [
+        256, 
+        392, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv14_weight": [
+        392, 
+        256, 
+        1, 
+        1
+    ], 
+    "resnetv1d_down2_conv0_weight": [
+        200, 
+        40, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers1_conv4_weight": [
+        8, 
+        8, 
+        3, 
+        3
+    ], 
+    "resnetv1d_layers3_conv36_weight": [
+        256, 
+        392, 
+        1, 
+        1
+    ], 
+    "resnetv1d_layers3_conv62_weight": [
+        392, 
+        256, 
+        1, 
+        1
+    ]
+}

@@ -1,0 +1,9 @@
+doxygen
+_build
+build
+gen_modules
+__MACOSX
+*.zip
+*.png
+*.jpg*
+*.jpeg
