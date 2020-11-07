@@ -441,10 +441,10 @@ def resnest50(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
                     avd=True, avd_first=False,
                     use_splat=True, dropblock_prob=0.1,
                     **kwargs)
-        attrib = ImageNet1kAttr()
-        model.synset = attrib.synset
-        model.classes = attrib.classes
-        model.classes_long = attrib.classes_long
+    attrib = ImageNet1kAttr()
+    model.synset = attrib.synset
+    model.classes = attrib.classes
+    model.classes_long = attrib.classes_long
     return model
 
 

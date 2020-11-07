@@ -32,9 +32,9 @@ class DropBlock(HybridBlock):
         mask = 1 - mask
         y = (x * mask) * (1.0 * self.numel / mx.np.expand_dims(mx.np.expand_dims(mx.np.expand_dims(mask.sum(axis=0, 
                                                                                                             exclude=True),
-                                                                                                   axis =1),
-                                                                                 axis = 1),
-                                                               axis = 1))
+                                                                                                   axis=1),
+                                                                                 axis=1),
+                                                               axis=1))
         return y
 
     def cast(self, dtype):

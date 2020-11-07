@@ -42,7 +42,7 @@ class SplitAttentionConv(HybridBlock):
             x = self.bn(x)
         x = self.relu(x)
         if self.radix > 1:
-            x_expand_dims = mx.np.expand_dims(x, axis = 1)
+            x_expand_dims = mx.np.expand_dims(x, axis=1)
             splited = mx.np.reshape(x_expand_dims,
                                     (x_expand_dims.shape[0], self.radix, self.channels,
                                      x_expand_dims.shape[3], x_expand_dims.shape[4]))
