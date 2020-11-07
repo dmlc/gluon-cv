@@ -2,7 +2,7 @@
 from functools import partial
 import mxnet as mx
 from mxnet.gluon.nn import HybridBlock
-from mxnet import use_np
+from mxnet import use_np # pylint: disable=unused-import
 mx.npx.set_np()
 
 __all__ = ['DropBlock', 'set_drop_prob', 'DropBlockScheduler']
@@ -30,7 +30,7 @@ class DropBlock(HybridBlock):
         mask = mx.npx.pooling(mask, pool_type='max',
                               kernel=(self.block_size, self.block_size), pad=self.padding)
         mask = 1 - mask
-        y = (x * mask) * (1.0 * self.numel / mx.np.expand_dims(mx.np.expand_dims(mx.np.expand_dims(mask.sum(axis=0, 
+        y = (x * mask) * (1.0 * self.numel / mx.np.expand_dims(mx.np.expand_dims(mx.np.expand_dims(mask.sum(axis=0,
                                                                                                             exclude=True),
                                                                                                    axis=1),
                                                                                  axis=1),

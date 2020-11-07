@@ -9,7 +9,7 @@ from mxnet.context import cpu
 from mxnet.gluon import nn
 from mxnet.gluon.block import HybridBlock
 from mxnet.gluon.nn import BatchNorm
-from mxnet import use_np
+from mxnet import use_np # pylint: disable=unused-import
 mx.npx.set_np()
 
 from ..nn.dropblock import DropBlock
@@ -503,10 +503,10 @@ def resnest200(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
     model = ResNeSt(Bottleneck, [3, 24, 36, 3], deep_stem=True, avg_down=True, stem_width=64,
                     avd=True, use_splat=True, dropblock_prob=0.1, final_drop=0.2,
                     **kwargs)
-        attrib = ImageNet1kAttr()
-        model.synset = attrib.synset
-        model.classes = attrib.classes
-        model.classes_long = attrib.classes_long
+    attrib = ImageNet1kAttr()
+    model.synset = attrib.synset
+    model.classes = attrib.classes
+    model.classes_long = attrib.classes_long
     return model
 
 

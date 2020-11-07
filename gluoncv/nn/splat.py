@@ -2,7 +2,7 @@
 import mxnet as mx
 from mxnet.gluon import nn
 from mxnet.gluon.nn import Conv2D, HybridBlock, BatchNorm, Activation
-from mxnet import use_np
+from mxnet import use_np # pylint: disable=unused-import
 mx.npx.set_np()
 
 __all__ = ['SplitAttentionConv']
