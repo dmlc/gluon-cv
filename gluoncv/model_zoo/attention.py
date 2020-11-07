@@ -29,17 +29,16 @@ class PAM_Module(HybridBlock):
                 out : attention value + input feature
                 attention: B X (HxW) X (HxW)
         """
-        x = x.as_np_ndarray()
         gamma = kwargs['gamma']
-        proj_query = F.np.reshape(self.query_conv(x), (0, 0, -1))
-        proj_key = F.np.reshape(self.key_conv(x), (0, 0, -1))
-        energy = F.npx.batch_dot(proj_query, proj_key, transpose_a=True)
-        attention = F.npx.softmax(energy)
-        proj_value = F.np.reshape(self.value_conv(x), (0, 0, -1))
-        out = F.npx.batch_dot(proj_value, attention, transpose_b=True)
-        out = F.npx.reshape_like(out, x, lhs_begin=2, lhs_end=None, rhs_begin=2, rhs_end=None)
+        proj_query = F.reshape(self.query_conv(x), (0, 0, -1))
+        proj_key = F.reshape(self.key_conv(x), (0, 0, -1))
+        energy = F.batch_dot(proj_query, proj_key, transpose_a=True)
+        attention = F.softmax(energy)
+        proj_value = F.reshape(self.value_conv(x), (0, 0, -1))
+        out = F.batch_dot(proj_value, attention, transpose_b=True)
+        out = F.reshape_like(out, x, lhs_begin=2, lhs_end=None, rhs_begin=2, rhs_end=None)
 
-        out = gamma * out + x
+        out = F.broadcast_mul(gamma, out) + x
 
         return out
 
@@ -65,15 +64,15 @@ class CAM_Module(HybridBlock):
                 attention: B X C X C
         """
         gamma = kwargs['gamma']
-        proj_query = F.np.reshape(x, (0, 0, -1))
-        proj_key = F.np.reshape(x, (0, 0, -1))
-        energy = F.npx.batch_dot(proj_query, proj_key, transpose_b=True)
-        energy_new = F.np.max(energy, -1, True).broadcast_like(energy) - energy
-        attention = F.npx.softmax(energy_new)
-        proj_value = F.np.reshape(x, (0, 0, -1))
+        proj_query = F.reshape(x, (0, 0, -1))
+        proj_key = F.reshape(x, (0, 0, -1))
+        energy = F.batch_dot(proj_query, proj_key, transpose_b=True)
+        energy_new = F.max(energy, -1, True).broadcast_like(energy) - energy
+        attention = F.softmax(energy_new)
+        proj_value = F.reshape(x, (0, 0, -1))
 
-        out = F.npx.batch_dot(attention, proj_value)
-        out = F.npx.reshape_like(out, x, lhs_begin=2, lhs_end=None, rhs_begin=2, rhs_end=None)
+        out = F.batch_dot(attention, proj_value)
+        out = F.reshape_like(out, x, lhs_begin=2, lhs_end=None, rhs_begin=2, rhs_end=None)
 
-        out = gamma * out + x
+        out = F.broadcast_mul(gamma, out) + x
         return out

@@ -54,17 +54,16 @@ class FCN(SegBaseModel):
                 self.auxlayer.collect_params().setattr('lr_mult', 10)
 
     def hybrid_forward(self, F, x):
-        x = x.as_np_ndarray()
         c3, c4 = self.base_forward(x)
 
         outputs = []
         x = self.head(c4)
-        x = F.contrib.BilinearResize2D(x.as_nd_ndarray(), **self._up_kwargs).as_np_ndarray()
+        x = F.contrib.BilinearResize2D(x, **self._up_kwargs)
         outputs.append(x)
 
         if self.aux:
             auxout = self.auxlayer(c3)
-            auxout = F.contrib.BilinearResize2D(auxout.as_nd_ndarray(), **self._up_kwargs).as_np_ndarray()
+            auxout = F.contrib.BilinearResize2D(auxout, **self._up_kwargs)
             outputs.append(auxout)
         return tuple(outputs)
 
@@ -88,7 +87,6 @@ class _FCNHead(HybridBlock):
 
     # pylint: disable=arguments-differ
     def hybrid_forward(self, F, x):
-        x = x.as_np_ndarray()
         return self.block(x)
 
 

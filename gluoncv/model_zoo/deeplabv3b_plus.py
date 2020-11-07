@@ -56,7 +56,6 @@ class DeepLabWV3Plus(HybridBlock):
             self.head.initialize(ctx=ctx)
 
     def hybrid_forward(self, F, x):
-        x = x.as_np_ndarray()
         outputs = []
         x = self.mod1(x)
         m2 = self.mod2(self.pool2(x))
@@ -66,16 +65,14 @@ class DeepLabWV3Plus(HybridBlock):
         x = self.mod6(x)
         x = self.mod7(x)
         x = self.head(x, m2)
-        x = F.contrib.BilinearResize2D(x.as_nd_ndarray(), **self._up_kwargs).as_np_ndarray()
+        x = F.contrib.BilinearResize2D(x, **self._up_kwargs)
         outputs.append(x)
         return tuple(outputs)
 
     def demo(self, x):
-        x = x.as_np_ndarray()
         return self.predict(x)
 
     def predict(self, x):
-        x = x.as_np_ndarray()
         h, w = x.shape[2:]
         self._up_kwargs['height'] = h
         self._up_kwargs['width'] = w
@@ -88,7 +85,7 @@ class DeepLabWV3Plus(HybridBlock):
         x = self.mod7(x)
         x = self.head.demo(x, m2)
         import mxnet.ndarray as F
-        x = F.contrib.BilinearResize2D(x.as_nd_ndarray(),, **self._up_kwargs).as_np_ndarray(),
+        x = F.contrib.BilinearResize2D(x, **self._up_kwargs)
         return x
 
 class _DeepLabHead(HybridBlock):
@@ -119,22 +116,20 @@ class _DeepLabHead(HybridBlock):
                                      kernel_size=1, use_bias=False))
 
     def hybrid_forward(self, F, x, c1):
-        x = x.as_np_ndarray()
         c1 = self.c1_block(c1)
         x = self.aspp(x)
-        x = F.contrib.BilinearResize2D(x.as_nd_ndarray(),, **self._up_kwargs).as_np_ndarray(),
-        return self.block(F.np.concatentate(c1, x, axis=1))
+        x = F.contrib.BilinearResize2D(x, **self._up_kwargs)
+        return self.block(F.concat(c1, x, dim=1))
 
     def demo(self, x, c1):
-        x = x.as_np_ndarray()
         h, w = c1.shape[2:]
         self._up_kwargs['height'] = h
         self._up_kwargs['width'] = w
         c1 = self.c1_block(c1)
         x = self.aspp.demo(x)
         import mxnet.ndarray as F
-        x = F.contrib.BilinearResize2D(x.as_nd_ndarray(),, **self._up_kwargs).as_np_ndarray(),
-        return self.block(F.concatentate(c1, x, axis=1))
+        x = F.contrib.BilinearResize2D(x, **self._up_kwargs)
+        return self.block(F.concat(c1, x, dim=1))
 
 def _ASPPConv(in_channels, out_channels, atrous_rate, norm_layer, norm_kwargs):
     block = nn.HybridSequential()
@@ -162,18 +157,16 @@ class _AsppPooling(nn.HybridBlock):
             self.gap.add(nn.Activation("relu"))
 
     def hybrid_forward(self, F, x):
-        x = x.as_np_ndarray()
         pool = self.gap(x)
-        return F.contrib.BilinearResize2D(pool.as_nd_ndarray(),, **self._up_kwargs).as_np_ndarray(),
+        return F.contrib.BilinearResize2D(pool, **self._up_kwargs)
 
     def demo(self, x):
-        x = x.as_np_ndarray()
         h, w = x.shape[2:]
         self._up_kwargs['height'] = h
         self._up_kwargs['width'] = w
         pool = self.gap(x)
         import mxnet.ndarray as F
-        return F.contrib.BilinearResize2D(pool.as_nd_ndarray(),, **self._up_kwargs).as_np_ndarray(),
+        return F.contrib.BilinearResize2D(pool, **self._up_kwargs)
 
 class _ASPP(nn.HybridBlock):
     def __init__(self, in_channels, atrous_rates, norm_layer, norm_kwargs,
@@ -199,24 +192,22 @@ class _ASPP(nn.HybridBlock):
                                    kernel_size=1, use_bias=False))
 
     def hybrid_forward(self, F, x):
-        x = x.as_np_ndarray()
         feat1 = self.b0(x)
         feat2 = self.b1(x)
         feat3 = self.b2(x)
         feat4 = self.b3(x)
         x = self.b4(x)
-        x = F.np.concatentate(x, feat1, feat2, feat3, feat4, axis=1)
+        x = F.concat(x, feat1, feat2, feat3, feat4, dim=1)
         return self.project(x)
 
     def demo(self, x):
-        x = x.as_np_ndarray()
         feat1 = self.b0(x)
         feat2 = self.b1(x)
         feat3 = self.b2(x)
         feat4 = self.b3(x)
         x = self.b4.demo(x)
         import mxnet.ndarray as F
-        x = F.np.concatentate(x, feat1, feat2, feat3, feat4, axis=1)
+        x = F.concat(x, feat1, feat2, feat3, feat4, dim=1)
         return self.project(x)
 
 def get_deeplabv3b_plus(dataset='citys', backbone='wideresnet', pretrained=False,
