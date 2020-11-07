@@ -2,10 +2,13 @@
 # pylint: disable=arguments-differ,unused-argument,missing-docstring
 from __future__ import division
 
+import mxnet as mx
 from mxnet.context import cpu
 from mxnet.gluon.block import HybridBlock
 from mxnet.gluon import nn
 from mxnet.gluon.nn import BatchNorm
+from mxnet import use_np
+mx.npx.set_np()
 
 __all__ = ['ResNetV1b', 'resnet18_v1b', 'resnet34_v1b',
            'resnet50_v1b', 'resnet50_v1b_gn',
@@ -16,6 +19,7 @@ __all__ = ['ResNetV1b', 'resnet18_v1b', 'resnet34_v1b',
            'resnet50_v1e', 'resnet101_v1e', 'resnet152_v1e',
            'resnet50_v1s', 'resnet101_v1s', 'resnet152_v1s']
 
+@use_np
 class BasicBlockV1b(HybridBlock):
     """ResNetV1b BasicBlockV1b
     """
@@ -36,8 +40,7 @@ class BasicBlockV1b(HybridBlock):
         self.downsample = downsample
         self.strides = strides
 
-    def hybrid_forward(self, F, x):
-        x = x.as_np_ndarray()
+    def forward(self, x):
         residual = x
 
         out = self.conv1(x)
@@ -55,6 +58,7 @@ class BasicBlockV1b(HybridBlock):
 
         return out
 
+@use_np
 class BottleneckV1b(HybridBlock):
     """ResNetV1b BottleneckV1b
     """
@@ -84,8 +88,7 @@ class BottleneckV1b(HybridBlock):
         self.dilation = dilation
         self.strides = strides
 
-    def hybrid_forward(self, F, x):
-        x = x.as_np_ndarray()
+    def forward(self, x):
         residual = x
 
         out = self.conv1(x)
@@ -107,6 +110,7 @@ class BottleneckV1b(HybridBlock):
 
         return out
 
+@use_np
 class ResNetV1b(HybridBlock):
     """ Pre-trained ResNetV1b Model, which produces the strides of 8
     featuremaps at conv5.
@@ -149,106 +153,102 @@ class ResNetV1b(HybridBlock):
     def __init__(self, block, layers, classes=1000, dilated=False, norm_layer=BatchNorm,
                  norm_kwargs=None, last_gamma=False, deep_stem=False, stem_width=32,
                  avg_down=False, final_drop=0.0, use_global_stats=False,
-                 name_prefix='', **kwargs):
+                 **kwargs):
         self.inplanes = stem_width*2 if deep_stem else 64
-        super(ResNetV1b, self).__init__(prefix=name_prefix)
+        super(ResNetV1b, self).__init__()
         norm_kwargs = norm_kwargs if norm_kwargs is not None else {}
         if use_global_stats:
             norm_kwargs['use_global_stats'] = True
         self.norm_kwargs = norm_kwargs
-        with self.name_scope():
-            if not deep_stem:
-                self.conv1 = nn.Conv2D(channels=64, kernel_size=7, strides=2,
-                                       padding=3, use_bias=False)
-            else:
-                self.conv1 = nn.HybridSequential(prefix='conv1')
-                self.conv1.add(nn.Conv2D(channels=stem_width, kernel_size=3, strides=2,
-                                         padding=1, use_bias=False))
-                self.conv1.add(norm_layer(in_channels=stem_width, **norm_kwargs))
-                self.conv1.add(nn.Activation('relu'))
-                self.conv1.add(nn.Conv2D(channels=stem_width, kernel_size=3, strides=1,
-                                         padding=1, use_bias=False))
-                self.conv1.add(norm_layer(in_channels=stem_width, **norm_kwargs))
-                self.conv1.add(nn.Activation('relu'))
-                self.conv1.add(nn.Conv2D(channels=stem_width*2, kernel_size=3, strides=1,
-                                         padding=1, use_bias=False))
-            self.bn1 = norm_layer(in_channels=64 if not deep_stem else stem_width*2,
-                                  **norm_kwargs)
-            self.relu = nn.Activation('relu')
-            self.maxpool = nn.MaxPool2D(pool_size=3, strides=2, padding=1)
-            self.layer1 = self._make_layer(1, block, 64, layers[0], avg_down=avg_down,
-                                           norm_layer=norm_layer, last_gamma=last_gamma)
-            self.layer2 = self._make_layer(2, block, 128, layers[1], strides=2, avg_down=avg_down,
-                                           norm_layer=norm_layer, last_gamma=last_gamma)
-            if dilated:
-                self.layer3 = self._make_layer(3, block, 256, layers[2], strides=1, dilation=2,
-                                               avg_down=avg_down, norm_layer=norm_layer,
-                                               last_gamma=last_gamma)
-                self.layer4 = self._make_layer(4, block, 512, layers[3], strides=1, dilation=4,
-                                               avg_down=avg_down, norm_layer=norm_layer,
-                                               last_gamma=last_gamma)
-            else:
-                self.layer3 = self._make_layer(3, block, 256, layers[2], strides=2,
-                                               avg_down=avg_down, norm_layer=norm_layer,
-                                               last_gamma=last_gamma)
-                self.layer4 = self._make_layer(4, block, 512, layers[3], strides=2,
-                                               avg_down=avg_down, norm_layer=norm_layer,
-                                               last_gamma=last_gamma)
-            self.avgpool = nn.GlobalAvgPool2D()
-            self.flat = nn.Flatten()
-            self.drop = None
-            if final_drop > 0.0:
-                self.drop = nn.Dropout(final_drop)
-            self.fc = nn.Dense(in_units=512 * block.expansion, units=classes)
+        if not deep_stem:
+            self.conv1 = nn.Conv2D(channels=64, kernel_size=7, strides=2,
+                                   padding=3, use_bias=False)
+        else:
+            self.conv1 = nn.HybridSequential()
+            self.conv1.add(nn.Conv2D(channels=stem_width, kernel_size=3, strides=2,
+                                     padding=1, use_bias=False))
+            self.conv1.add(norm_layer(in_channels=stem_width, **norm_kwargs))
+            self.conv1.add(nn.Activation('relu'))
+            self.conv1.add(nn.Conv2D(channels=stem_width, kernel_size=3, strides=1,
+                                     padding=1, use_bias=False))
+            self.conv1.add(norm_layer(in_channels=stem_width, **norm_kwargs))
+            self.conv1.add(nn.Activation('relu'))
+            self.conv1.add(nn.Conv2D(channels=stem_width*2, kernel_size=3, strides=1,
+                                     padding=1, use_bias=False))
+        self.bn1 = norm_layer(in_channels=64 if not deep_stem else stem_width*2,
+                              **norm_kwargs)
+        self.relu = nn.Activation('relu')
+        self.maxpool = nn.MaxPool2D(pool_size=3, strides=2, padding=1)
+        self.layer1 = self._make_layer(1, block, 64, layers[0], avg_down=avg_down,
+                                       norm_layer=norm_layer, last_gamma=last_gamma)
+        self.layer2 = self._make_layer(2, block, 128, layers[1], strides=2, avg_down=avg_down,
+                                       norm_layer=norm_layer, last_gamma=last_gamma)
+        if dilated:
+            self.layer3 = self._make_layer(3, block, 256, layers[2], strides=1, dilation=2,
+                                           avg_down=avg_down, norm_layer=norm_layer,
+                                           last_gamma=last_gamma)
+            self.layer4 = self._make_layer(4, block, 512, layers[3], strides=1, dilation=4,
+                                           avg_down=avg_down, norm_layer=norm_layer,
+                                           last_gamma=last_gamma)
+        else:
+            self.layer3 = self._make_layer(3, block, 256, layers[2], strides=2,
+                                           avg_down=avg_down, norm_layer=norm_layer,
+                                           last_gamma=last_gamma)
+            self.layer4 = self._make_layer(4, block, 512, layers[3], strides=2,
+                                           avg_down=avg_down, norm_layer=norm_layer,
+                                           last_gamma=last_gamma)
+        self.avgpool = nn.GlobalAvgPool2D()
+        self.flat = nn.Flatten()
+        self.drop = None
+        if final_drop > 0.0:
+            self.drop = nn.Dropout(final_drop)
+        self.fc = nn.Dense(in_units=512 * block.expansion, units=classes)
 
     def _make_layer(self, stage_index, block, planes, blocks, strides=1, dilation=1,
                     avg_down=False, norm_layer=None, last_gamma=False):
         downsample = None
         if strides != 1 or self.inplanes != planes * block.expansion:
-            downsample = nn.HybridSequential(prefix='down%d_'%stage_index)
-            with downsample.name_scope():
-                if avg_down:
-                    if dilation == 1:
-                        downsample.add(nn.AvgPool2D(pool_size=strides, strides=strides,
-                                                    ceil_mode=True, count_include_pad=False))
-                    else:
-                        downsample.add(nn.AvgPool2D(pool_size=1, strides=1,
-                                                    ceil_mode=True, count_include_pad=False))
-                    downsample.add(nn.Conv2D(channels=planes * block.expansion, kernel_size=1,
-                                             strides=1, use_bias=False))
-                    downsample.add(norm_layer(in_channels=planes * block.expansion,
-                                              **self.norm_kwargs))
+            downsample = nn.HybridSequential()
+            if avg_down:
+                if dilation == 1:
+                    downsample.add(nn.AvgPool2D(pool_size=strides, strides=strides,
+                                                ceil_mode=True, count_include_pad=False))
                 else:
-                    downsample.add(nn.Conv2D(channels=planes * block.expansion,
-                                             kernel_size=1, strides=strides, use_bias=False))
-                    downsample.add(norm_layer(in_channels=planes * block.expansion,
-                                              **self.norm_kwargs))
-
-        layers = nn.HybridSequential(prefix='layers%d_'%stage_index)
-        with layers.name_scope():
-            if dilation in (1, 2):
-                layers.add(block(planes, strides, dilation=1,
-                                 downsample=downsample, previous_dilation=dilation,
-                                 norm_layer=norm_layer, norm_kwargs=self.norm_kwargs,
-                                 last_gamma=last_gamma))
-            elif dilation == 4:
-                layers.add(block(planes, strides, dilation=2,
-                                 downsample=downsample, previous_dilation=dilation,
-                                 norm_layer=norm_layer, norm_kwargs=self.norm_kwargs,
-                                 last_gamma=last_gamma))
+                    downsample.add(nn.AvgPool2D(pool_size=1, strides=1,
+                                                ceil_mode=True, count_include_pad=False))
+                downsample.add(nn.Conv2D(channels=planes * block.expansion, kernel_size=1,
+                                         strides=1, use_bias=False))
+                downsample.add(norm_layer(in_channels=planes * block.expansion,
+                                          **self.norm_kwargs))
             else:
-                raise RuntimeError("=> unknown dilation size: {}".format(dilation))
+                downsample.add(nn.Conv2D(channels=planes * block.expansion,
+                                         kernel_size=1, strides=strides, use_bias=False))
+                downsample.add(norm_layer(in_channels=planes * block.expansion,
+                                          **self.norm_kwargs))
 
-            self.inplanes = planes * block.expansion
-            for i in range(1, blocks):
-                layers.add(block(planes, dilation=dilation,
-                                 previous_dilation=dilation, norm_layer=norm_layer,
-                                 norm_kwargs=self.norm_kwargs, last_gamma=last_gamma))
+        layers = nn.HybridSequential()
+        if dilation in (1, 2):
+            layers.add(block(planes, strides, dilation=1,
+                             downsample=downsample, previous_dilation=dilation,
+                             norm_layer=norm_layer, norm_kwargs=self.norm_kwargs,
+                             last_gamma=last_gamma))
+        elif dilation == 4:
+            layers.add(block(planes, strides, dilation=2,
+                             downsample=downsample, previous_dilation=dilation,
+                             norm_layer=norm_layer, norm_kwargs=self.norm_kwargs,
+                             last_gamma=last_gamma))
+        else:
+            raise RuntimeError("=> unknown dilation size: {}".format(dilation))
+
+        self.inplanes = planes * block.expansion
+        for i in range(1, blocks):
+            layers.add(block(planes, dilation=dilation,
+                             previous_dilation=dilation, norm_layer=norm_layer,
+                             norm_kwargs=self.norm_kwargs, last_gamma=last_gamma))
 
         return layers
 
-    def hybrid_forward(self, F, x):
-        x = x.as_np_ndarray()
+    def forward(self, x):
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
@@ -291,7 +291,7 @@ def resnet18_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
         Whether forcing BatchNorm to use global statistics instead of minibatch statistics;
         optionally set to True if finetuning using ImageNet classification pretrained models.
     """
-    model = ResNetV1b(BasicBlockV1b, [2, 2, 2, 2], name_prefix='resnetv1b_', **kwargs)
+    model = ResNetV1b(BasicBlockV1b, [2, 2, 2, 2], **kwargs)
     if pretrained:
         from .model_store import get_model_file
         model.load_parameters(get_model_file('resnet%d_v%db'%(18, 1),
@@ -327,7 +327,7 @@ def resnet34_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
         Whether forcing BatchNorm to use global statistics instead of minibatch statistics;
         optionally set to True if finetuning using ImageNet classification pretrained models.
     """
-    model = ResNetV1b(BasicBlockV1b, [3, 4, 6, 3], name_prefix='resnetv1b_', **kwargs)
+    model = ResNetV1b(BasicBlockV1b, [3, 4, 6, 3], **kwargs)
     if pretrained:
         from .model_store import get_model_file
         model.load_parameters(get_model_file('resnet%d_v%db'%(34, 1),
@@ -363,7 +363,7 @@ def resnet50_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
         Whether forcing BatchNorm to use global statistics instead of minibatch statistics;
         optionally set to True if finetuning using ImageNet classification pretrained models.
     """
-    model = ResNetV1b(BottleneckV1b, [3, 4, 6, 3], name_prefix='resnetv1b_', **kwargs)
+    model = ResNetV1b(BottleneckV1b, [3, 4, 6, 3], **kwargs)
     if pretrained:
         from .model_store import get_model_file
         model.load_parameters(get_model_file('resnet%d_v%db'%(50, 1),
@@ -396,7 +396,7 @@ def resnet50_v1b_gn(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwar
         optionally set to True if finetuning using ImageNet classification pretrained models.
     """
     from ..nn import GroupNorm
-    model = ResNetV1b(BottleneckV1b, [3, 4, 6, 3], name_prefix='resnetv1b_',
+    model = ResNetV1b(BottleneckV1b, [3, 4, 6, 3],
                       norm_layer=GroupNorm, **kwargs)
     if pretrained:
         from .model_store import get_model_file
@@ -432,7 +432,7 @@ def resnet101_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
         Whether forcing BatchNorm to use global statistics instead of minibatch statistics;
         optionally set to True if finetuning using ImageNet classification pretrained models.
     """
-    model = ResNetV1b(BottleneckV1b, [3, 4, 23, 3], name_prefix='resnetv1b_', **kwargs)
+    model = ResNetV1b(BottleneckV1b, [3, 4, 23, 3], **kwargs)
     if pretrained:
         from .model_store import get_model_file
         model.load_parameters(get_model_file('resnet%d_v%db'%(101, 1),
@@ -465,7 +465,7 @@ def resnet101_v1b_gn(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwa
         optionally set to True if finetuning using ImageNet classification pretrained models.
     """
     from ..nn import GroupNorm
-    model = ResNetV1b(BottleneckV1b, [3, 4, 23, 3], name_prefix='resnetv1b_',
+    model = ResNetV1b(BottleneckV1b, [3, 4, 23, 3],
                       norm_layer=GroupNorm, **kwargs)
     if pretrained:
         from .model_store import get_model_file
@@ -501,7 +501,7 @@ def resnet152_v1b(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
         Whether forcing BatchNorm to use global statistics instead of minibatch statistics;
         optionally set to True if finetuning using ImageNet classification pretrained models.
     """
-    model = ResNetV1b(BottleneckV1b, [3, 8, 36, 3], name_prefix='resnetv1b_', **kwargs)
+    model = ResNetV1b(BottleneckV1b, [3, 8, 36, 3], **kwargs)
     if pretrained:
         from .model_store import get_model_file
         model.load_parameters(get_model_file('resnet%d_v%db'%(152, 1),
@@ -532,7 +532,7 @@ def resnet50_v1c(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
         Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
     model = ResNetV1b(BottleneckV1b, [3, 4, 6, 3], deep_stem=True,
-                      name_prefix='resnetv1c_', **kwargs)
+                      **kwargs)
     if pretrained:
         from .model_store import get_model_file
         model.load_parameters(get_model_file('resnet%d_v%dc'%(50, 1),
@@ -564,7 +564,7 @@ def resnet101_v1c(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
         Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
     model = ResNetV1b(BottleneckV1b, [3, 4, 23, 3], deep_stem=True,
-                      name_prefix='resnetv1c_', **kwargs)
+                      **kwargs)
     if pretrained:
         from .model_store import get_model_file
         model.load_parameters(get_model_file('resnet%d_v%dc'%(101, 1),
@@ -595,7 +595,7 @@ def resnet152_v1c(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
         Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
     model = ResNetV1b(BottleneckV1b, [3, 8, 36, 3], deep_stem=True,
-                      name_prefix='resnetv1c_', **kwargs)
+                      **kwargs)
     if pretrained:
         from .model_store import get_model_file
         model.load_parameters(get_model_file('resnet%d_v%dc'%(152, 1),
@@ -626,7 +626,7 @@ def resnet50_v1d(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
         Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
     model = ResNetV1b(BottleneckV1b, [3, 4, 6, 3], deep_stem=True, avg_down=True,
-                      name_prefix='resnetv1d_', **kwargs)
+                      **kwargs)
     if pretrained:
         from .model_store import get_model_file
         model.load_parameters(get_model_file('resnet%d_v%dd'%(50, 1),
@@ -657,7 +657,7 @@ def resnet101_v1d(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
         Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
     model = ResNetV1b(BottleneckV1b, [3, 4, 23, 3], deep_stem=True, avg_down=True,
-                      name_prefix='resnetv1d_', **kwargs)
+                      **kwargs)
     if pretrained:
         from .model_store import get_model_file
         model.load_parameters(get_model_file('resnet%d_v%dd'%(101, 1),
@@ -688,7 +688,7 @@ def resnet152_v1d(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
         Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
     model = ResNetV1b(BottleneckV1b, [3, 8, 36, 3], deep_stem=True, avg_down=True,
-                      name_prefix='resnetv1d_', **kwargs)
+                      **kwargs)
     if pretrained:
         from .model_store import get_model_file
         model.load_parameters(get_model_file('resnet%d_v%dd'%(152, 1),
@@ -720,7 +720,7 @@ def resnet50_v1e(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
     """
     model = ResNetV1b(BottleneckV1b, [3, 4, 6, 3],
                       deep_stem=True, avg_down=True, stem_width=64,
-                      name_prefix='resnetv1e_', **kwargs)
+                      **kwargs)
     if pretrained:
         from .model_store import get_model_file
         model.load_parameters(get_model_file('resnet%d_v%dd'%(50, 1),
@@ -752,7 +752,7 @@ def resnet101_v1e(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
     """
     model = ResNetV1b(BottleneckV1b, [3, 4, 23, 3],
                       deep_stem=True, avg_down=True, stem_width=64,
-                      name_prefix='resnetv1e_', **kwargs)
+                      **kwargs)
     if pretrained:
         from .model_store import get_model_file
         model.load_parameters(get_model_file('resnet%d_v%dd'%(101, 1),
@@ -784,7 +784,7 @@ def resnet152_v1e(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
     """
     model = ResNetV1b(BottleneckV1b, [3, 8, 36, 3],
                       deep_stem=True, avg_down=True, stem_width=64,
-                      name_prefix='resnetv1e_', **kwargs)
+                      **kwargs)
     if pretrained:
         from .model_store import get_model_file
         model.load_parameters(get_model_file('resnet%d_v%dd'%(152, 1),
@@ -816,7 +816,7 @@ def resnet50_v1s(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs)
         Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
     model = ResNetV1b(BottleneckV1b, [3, 4, 6, 3], deep_stem=True, stem_width=64,
-                      name_prefix='resnetv1s_', **kwargs)
+                      **kwargs)
     if pretrained:
         from .model_store import get_model_file
         model.load_parameters(get_model_file('resnet%d_v%ds'%(50, 1),
@@ -848,7 +848,7 @@ def resnet101_v1s(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
         Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
     model = ResNetV1b(BottleneckV1b, [3, 4, 23, 3], deep_stem=True, stem_width=64,
-                      name_prefix='resnetv1s_', **kwargs)
+                      **kwargs)
     if pretrained:
         from .model_store import get_model_file
         model.load_parameters(get_model_file('resnet%d_v%ds'%(101, 1),
@@ -880,7 +880,7 @@ def resnet152_v1s(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs
         Can be :class:`mxnet.gluon.nn.BatchNorm` or :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
     model = ResNetV1b(BottleneckV1b, [3, 8, 36, 3], deep_stem=True, stem_width=64,
-                      name_prefix='resnetv1s_', **kwargs)
+                      **kwargs)
     if pretrained:
         from .model_store import get_model_file
         model.load_parameters(get_model_file('resnet%d_v%ds'%(152, 1),
