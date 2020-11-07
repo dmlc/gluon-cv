@@ -24,12 +24,17 @@ __all__ = ['get_cifar_resnext', 'cifar_resnext29_32x4d', 'cifar_resnext29_16x64d
 
 import os
 import math
+import mxnet as mx
 from mxnet import cpu
 from mxnet.gluon import nn
 from mxnet.gluon.nn import BatchNorm
 from mxnet.gluon.block import HybridBlock
+from mxnet import npx
+from mxnet import use_np # pylint: disable=unused-import
+mx.npx.set_np()
 
 
+@use_np
 class CIFARBlock(HybridBlock):
     r"""Bottleneck Block from `"Aggregated Residual Transformations for Deep Neural Networks"
     <http://arxiv.org/abs/1611.05431>`_ paper.
@@ -57,7 +62,7 @@ class CIFARBlock(HybridBlock):
         D = int(math.floor(channels * (bottleneck_width / 64)))
         group_width = cardinality * D
 
-        self.body = nn.HybridSequential(prefix='')
+        self.body = nn.HybridSequential()
         self.body.add(nn.Conv2D(group_width, kernel_size=1, use_bias=False))
         self.body.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
         self.body.add(nn.Activation('relu'))
@@ -69,14 +74,14 @@ class CIFARBlock(HybridBlock):
         self.body.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
 
         if downsample:
-            self.downsample = nn.HybridSequential(prefix='')
+            self.downsample = nn.HybridSequential()
             self.downsample.add(nn.Conv2D(channels * 4, kernel_size=1, strides=stride,
                                           use_bias=False))
             self.downsample.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
         else:
             self.downsample = None
 
-    def hybrid_forward(self, F, x):
+    def forward(self, x):
         """Hybrid forward"""
         x = x.as_np_ndarray()
         residual = x
@@ -86,11 +91,12 @@ class CIFARBlock(HybridBlock):
         if self.downsample:
             residual = self.downsample(residual)
 
-        x = F.npx.activation(residual+x, act_type='relu')
+        x = npx.activation(residual+x, act_type='relu')
 
         return x
 
 # Nets
+@use_np
 class CIFARResNext(HybridBlock):
     r"""ResNext model from `"Aggregated Residual Transformations for Deep Neural Networks"
     <http://arxiv.org/abs/1611.05431>`_ paper.
@@ -119,36 +125,33 @@ class CIFARResNext(HybridBlock):
         self.bottleneck_width = bottleneck_width
         channels = 64
 
-        with self.name_scope():
-            self.features = nn.HybridSequential(prefix='')
-            self.features.add(nn.Conv2D(channels, 3, 1, 1, use_bias=False))
-            self.features.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
-            self.features.add(nn.Activation('relu'))
+        self.features = nn.HybridSequential()
+        self.features.add(nn.Conv2D(channels, 3, 1, 1, use_bias=False))
+        self.features.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
+        self.features.add(nn.Activation('relu'))
 
-            for i, num_layer in enumerate(layers):
-                stride = 1 if i == 0 else 2
-                self.features.add(self._make_layer(channels, num_layer, stride, i+1,
-                                                   norm_layer=norm_layer, norm_kwargs=norm_kwargs))
-                channels *= 2
-            self.features.add(nn.GlobalAvgPool2D())
+        for i, num_layer in enumerate(layers):
+            stride = 1 if i == 0 else 2
+            self.features.add(self._make_layer(channels, num_layer, stride, i+1,
+                                               norm_layer=norm_layer, norm_kwargs=norm_kwargs))
+            channels *= 2
+        self.features.add(nn.GlobalAvgPool2D())
 
-            self.output = nn.Dense(classes)
+        self.output = nn.Dense(classes)
 
     def _make_layer(self, channels, num_layer, stride, stage_index,
                     norm_layer=BatchNorm, norm_kwargs=None):
-        layer = nn.HybridSequential(prefix='stage%d_'%stage_index)
-        with layer.name_scope():
+        layer = nn.HybridSequential()
+        layer.add(CIFARBlock(channels, self.cardinality, self.bottleneck_width,
+                             stride, True,
+                             norm_layer=norm_layer, norm_kwargs=norm_kwargs))
+        for _ in range(num_layer-1):
             layer.add(CIFARBlock(channels, self.cardinality, self.bottleneck_width,
-                                 stride, True, prefix='',
+                                 1, False,
                                  norm_layer=norm_layer, norm_kwargs=norm_kwargs))
-            for _ in range(num_layer-1):
-                layer.add(CIFARBlock(channels, self.cardinality, self.bottleneck_width,
-                                     1, False, prefix='',
-                                     norm_layer=norm_layer, norm_kwargs=norm_kwargs))
         return layer
 
-    def hybrid_forward(self, F, x):
-        x = x.as_np_ndarray()
+    def forward(self, x):
         x = self.features(x)
         x = self.output(x)
 
