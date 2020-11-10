@@ -53,6 +53,8 @@ _C.CONFIG.TRAIN.LR_POLICY: 'Cosine'
 _C.CONFIG.TRAIN.LR_MILESTONE = [40, 80]
 # Exponential decay factor.
 _C.CONFIG.TRAIN.STEP = 0.1
+# Use warm up scheduler or not.
+_C.CONFIG.TRAIN.USE_WARMUP: False
 # Gradually warm up the SOLVER.BASE_LR over this number of epochs.
 _C.CONFIG.TRAIN.WARMUP_EPOCHS: 34
 # The start learning rate of the warm up.

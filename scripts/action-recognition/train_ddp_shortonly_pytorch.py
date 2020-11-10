@@ -36,7 +36,23 @@ def main_worker(cfg):
     if cfg.CONFIG.MODEL.LOAD:
         model, _ = load_model(model, optimizer, cfg, load_fc=True)
 
-    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=cfg.CONFIG.TRAIN.LR_MILESTONE, gamma=cfg.CONFIG.TRAIN.STEP)
+    if cfg.CONFIG.TRAIN.LR_POLICY == 'Step':
+        scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer,
+                                                         milestones=cfg.CONFIG.TRAIN.LR_MILESTONE,
+                                                         gamma=cfg.CONFIG.TRAIN.STEP)
+    elif cfg.CONFIG.TRAIN.LR_POLICY == 'Cosine':
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer,
+                                                               T_max=cfg.CONFIG.TRAIN.EPOCH_NUM - cfg.CONFIG.TRAIN.WARMUP_EPOCHS,
+                                                               eta_min=0,
+                                                               last_epoch=cfg.CONFIG.TRAIN.RESUME_EPOCH)
+    else:
+        print('Learning rate schedule %s is not supported yet. Please use Step or Cosine.')
+    if cfg.CONFIG.TRAIN.USE_WARMUP:
+        scheduler_warmup = GradualWarmupScheduler(optimizer,
+                                                  multiplier=(cfg.CONFIG.TRAIN.WARMUP_END_LR / cfg.CONFIG.TRAIN.LR),
+                                                  total_epoch=cfg.CONFIG.TRAIN.WARMUP_EPOCHS,
+                                                  after_scheduler=scheduler)
+
     criterion = nn.CrossEntropyLoss().cuda()
 
     base_iter = 0
@@ -45,7 +61,11 @@ def main_worker(cfg):
             train_sampler.set_epoch(epoch)
 
         base_iter = train_classification(base_iter, model, train_loader, epoch, criterion, optimizer, cfg, writer=writer)
-        scheduler.step()
+        if cfg.CONFIG.TRAIN.USE_WARMUP:
+            scheduler_warmup.step()
+        else:
+            scheduler.step()
+
         if epoch % cfg.CONFIG.VAL.FREQ == 0 or epoch == cfg.CONFIG.TRAIN.EPOCH_NUM - 1:
             validation_classification(model, val_loader, epoch, criterion, cfg, writer)
 

@@ -50,13 +50,13 @@ def main_worker(cfg):
                                                                T_max=cfg.CONFIG.TRAIN.EPOCH_NUM - cfg.CONFIG.TRAIN.WARMUP_EPOCHS,
                                                                eta_min=0,
                                                                last_epoch=cfg.CONFIG.TRAIN.RESUME_EPOCH)
-        scheduler_warmup = GradualWarmupScheduler(optimizer,
-                                                  multiplier=(cfg.CONFIG.TRAIN.WARMUP_END_LR / cfg.CONFIG.TRAIN.LR) * cfg.DDP_CONFIG.WORLD_SIZE,
-                                                  total_epoch=cfg.CONFIG.TRAIN.WARMUP_EPOCHS,
-                                                  after_scheduler=scheduler)
     else:
         print('Learning rate schedule %s is not supported yet. Please use Step or Cosine.')
-
+    if cfg.CONFIG.TRAIN.USE_WARMUP:
+        scheduler_warmup = GradualWarmupScheduler(optimizer,
+                                                  multiplier=(cfg.CONFIG.TRAIN.WARMUP_END_LR / cfg.CONFIG.TRAIN.LR),
+                                                  total_epoch=cfg.CONFIG.TRAIN.WARMUP_EPOCHS,
+                                                  after_scheduler=scheduler)
     criterion = nn.CrossEntropyLoss().cuda()
 
     base_iter = 0
@@ -65,11 +65,10 @@ def main_worker(cfg):
             train_sampler.set_epoch(epoch)
 
         base_iter = train_classification(base_iter, model, train_loader, epoch, criterion, optimizer, cfg, writer=writer)
-
-        if cfg.CONFIG.TRAIN.LR_POLICY == 'Step':
-            scheduler.step()
-        elif cfg.CONFIG.TRAIN.LR_POLICY == 'Cosine':
+        if cfg.CONFIG.TRAIN.USE_WARMUP:
             scheduler_warmup.step()
+        else:
+            scheduler.step()
 
         if epoch % cfg.CONFIG.VAL.FREQ == 0 or epoch == cfg.CONFIG.TRAIN.EPOCH_NUM - 1:
             validation_classification(model, val_loader, epoch, criterion, cfg, writer)
