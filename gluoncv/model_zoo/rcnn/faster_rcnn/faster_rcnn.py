@@ -407,7 +407,7 @@ class FasterRCNN(RCNN):
         # no need to convert bounding boxes in training, just return
         if autograd.is_training():
             cls_targets, box_targets, box_masks, indices = \
-                self._target_generator(rpn_box, samples, matches, gt_label, gt_box)
+                self.target_generator(rpn_box, samples, matches, gt_label, gt_box)
             box_feat = F.reshape(box_feat.expand_dims(0), (batch_size, -1, 0))
             box_pred = self.box_predictor(F.concat(
                 *[F.take(F.slice_axis(box_feat, axis=0, begin=i, end=i + 1).squeeze(),
