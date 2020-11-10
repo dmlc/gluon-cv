@@ -190,9 +190,9 @@ class FasterRCNN(RCNN):
         if minimal_opset:
             self._target_generator = None
         else:
-            self._target_generator = RCNNTargetGenerator(self.num_class,
-                                                         int(num_sample * pos_ratio),
-                                                         self._batch_size)
+            self._target_generator = lambda: RCNNTargetGenerator(self.num_class,
+                                                                 int(num_sample * pos_ratio),
+                                                                 self._batch_size)
 
         self._additional_output = additional_output
         with self.name_scope():
@@ -218,6 +218,10 @@ class FasterRCNN(RCNN):
             The RCNN target generator
 
         """
+        if self._target_generator is None:
+            raise ValueError("`minimal_opset` enabled, target generator is not available")
+        elif not isinstance(self._target_generator, mx.gluon.Block):
+            self._target_generator = self._target_generator()
         return self._target_generator
 
     def reset_class(self, classes, reuse_weights=None):
@@ -247,8 +251,8 @@ class FasterRCNN(RCNN):
 
         """
         super(FasterRCNN, self).reset_class(classes, reuse_weights)
-        self._target_generator = RCNNTargetGenerator(self.num_class, self.sampler._max_pos,
-                                                     self._batch_size)
+        self._target_generator = lambda: RCNNTargetGenerator(self.num_class, self.sampler._max_pos,
+                                                             self._batch_size)
 
     def _pyramid_roi_feats(self, F, features, rpn_rois, roi_size, strides, roi_mode='align',
                            roi_canonical_scale=224.0, sampling_ratio=2, eps=1e-6):
