@@ -59,7 +59,7 @@ class GradualWarmupScheduler(_LRScheduler):
                 self.after_scheduler.step(metrics, epoch - self.total_epoch)
 
     def step(self, epoch=None, metrics=None):
-        if isinstance(self.after_scheduler) != ReduceLROnPlateau:
+        if not isinstance(self.after_scheduler, ReduceLROnPlateau):
             if self.finished and self.after_scheduler:
                 if epoch is None:
                     self.after_scheduler.step(None)

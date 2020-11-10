@@ -19,6 +19,7 @@ CONFIG:
     LR: 0.01
     MOMENTUM: 0.9
     W_DECAY: 1e-4
+    USE_WARMUP: True
     WARMUP_EPOCHS: 34
     LR_POLICY: 'Cosine'
     WARMUP_END_LR: 0.1
