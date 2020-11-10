@@ -220,7 +220,7 @@ class FasterRCNN(RCNN):
         """
         if self._target_generator is None:
             raise ValueError("`minimal_opset` enabled, target generator is not available")
-        elif not isinstance(self._target_generator, mx.gluon.Block):
+        if not isinstance(self._target_generator, mx.gluon.Block):
             self._target_generator = self._target_generator()
         return self._target_generator
 
