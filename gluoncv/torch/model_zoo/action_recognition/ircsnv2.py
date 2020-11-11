@@ -20,7 +20,7 @@ class Affine(nn.Module):
     def __init__(self, feature_in):
         super(Affine, self).__init__()
         self.weight = nn.Parameter(torch.randn(feature_in, 1, 1, 1))
-        self.bias = nn.Parameter(torch.randn(feature_in,1, 1, 1))
+        self.bias = nn.Parameter(torch.randn(feature_in, 1, 1, 1))
         self.weight.requires_grad = False
         self.bias.requires_grad = False
 
@@ -155,7 +155,7 @@ class ResNet_IRCSNv2(nn.Module):
         layers.append(
             block(in_planes, planes, stride, temporal_stride, down_sample, expansion,
                   temporal_kernel=3, use_affine=self.use_affine))
-        for i in range(1, blocks):
+        for _ in range(1, blocks):
             layers.append(block(planes * expansion, planes, expansion=expansion,
                                 temporal_kernel=3, use_affine=self.use_affine))
 
