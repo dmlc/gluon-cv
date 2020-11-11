@@ -27,12 +27,15 @@ __all__ = ['ResNext', 'Block', 'get_resnext',
 
 import os
 import math
+import mxnet as mx
 from mxnet import cpu
 from mxnet.gluon import nn
 from mxnet.gluon.nn import BatchNorm
 from mxnet.gluon.block import HybridBlock
+from mxnet import use_np # pylint: disable=unused-import
+mx.npx.set_np()
 
-
+@use_np
 class Block(HybridBlock):
     r"""Bottleneck Block from `"Aggregated Residual Transformations for Deep Neural Network"
     <http://arxiv.org/abs/1611.05431>`_ paper.
@@ -68,7 +71,7 @@ class Block(HybridBlock):
         D = int(math.floor(channels * (bottleneck_width / 64)))
         group_width = cardinality * D
 
-        self.body = nn.HybridSequential(prefix='')
+        self.body = nn.HybridSequential()
         self.body.add(nn.Conv2D(group_width, kernel_size=1, use_bias=False))
         self.body.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
         self.body.add(nn.Activation('relu'))
@@ -84,7 +87,7 @@ class Block(HybridBlock):
                                      **({} if norm_kwargs is None else norm_kwargs)))
 
         if use_se:
-            self.se = nn.HybridSequential(prefix='')
+            self.se = nn.HybridSequential()
             self.se.add(nn.Conv2D(channels // 4, kernel_size=1, padding=0))
             self.se.add(nn.Activation('relu'))
             self.se.add(nn.Conv2D(channels * 4, kernel_size=1, padding=0))
@@ -93,7 +96,7 @@ class Block(HybridBlock):
             self.se = None
 
         if downsample:
-            self.downsample = nn.HybridSequential(prefix='')
+            self.downsample = nn.HybridSequential()
             if avg_down:
                 self.downsample.add(nn.AvgPool2D(pool_size=stride, strides=stride,
                                                  ceil_mode=True, count_include_pad=False))
@@ -106,24 +109,25 @@ class Block(HybridBlock):
         else:
             self.downsample = None
 
-    def hybrid_forward(self, F, x):
+    def forward(self, x):
         residual = x
 
         x = self.body(x)
 
         if self.se:
-            w = F.contrib.AdaptiveAvgPooling2D(x, output_size=1)
+            w = mx.nd.contrib.AdaptiveAvgPooling2D(x.as_nd_ndarray(), output_size=1).as_np_ndarray()
             w = self.se(w)
-            x = F.broadcast_mul(x, w)
+            x = x * w
 
         if self.downsample:
             residual = self.downsample(residual)
 
-        x = F.Activation(x + residual, act_type='relu')
+        x = mx.npx.activation(x + residual, act_type='relu')
         return x
 
 
 # Nets
+@use_np
 class ResNext(HybridBlock):
     r"""ResNext model from
     `"Aggregated Residual Transformations for Deep Neural Network"
@@ -165,51 +169,49 @@ class ResNext(HybridBlock):
         self.bottleneck_width = bottleneck_width
         channels = 64
 
-        with self.name_scope():
-            self.features = nn.HybridSequential(prefix='')
-            if not deep_stem:
-                self.features.add(nn.Conv2D(channels=64, kernel_size=7, strides=2,
-                                            padding=3, use_bias=False))
-            else:
-                self.features.add(nn.Conv2D(channels=stem_width, kernel_size=3, strides=2,
-                                            padding=1, use_bias=False))
-                self.features.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
-                self.features.add(nn.Activation('relu'))
-                self.features.add(nn.Conv2D(channels=stem_width, kernel_size=3, strides=1,
-                                            padding=1, use_bias=False))
-                self.features.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
-                self.features.add(nn.Activation('relu'))
-                self.features.add(nn.Conv2D(channels=stem_width * 2, kernel_size=3, strides=1,
-                                            padding=1, use_bias=False))
-
+        self.features = nn.HybridSequential()
+        if not deep_stem:
+            self.features.add(nn.Conv2D(channels=64, kernel_size=7, strides=2,
+                                        padding=3, use_bias=False))
+        else:
+            self.features.add(nn.Conv2D(channels=stem_width, kernel_size=3, strides=2,
+                                        padding=1, use_bias=False))
             self.features.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
             self.features.add(nn.Activation('relu'))
-            self.features.add(nn.MaxPool2D(3, 2, 1))
-            for i, num_layer in enumerate(layers):
-                stride = 1 if i == 0 else 2
-                self.features.add(self._make_layer(channels, num_layer, stride, last_gamma, use_se,
-                                                   False if i == 0 else avg_down, i + 1,
-                                                   norm_layer=norm_layer, norm_kwargs=norm_kwargs))
-                channels *= 2
-            self.features.add(nn.GlobalAvgPool2D())
+            self.features.add(nn.Conv2D(channels=stem_width, kernel_size=3, strides=1,
+                                        padding=1, use_bias=False))
+            self.features.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
+            self.features.add(nn.Activation('relu'))
+            self.features.add(nn.Conv2D(channels=stem_width * 2, kernel_size=3, strides=1,
+                                        padding=1, use_bias=False))
 
-            self.output = nn.Dense(classes)
+        self.features.add(norm_layer(**({} if norm_kwargs is None else norm_kwargs)))
+        self.features.add(nn.Activation('relu'))
+        self.features.add(nn.MaxPool2D(3, 2, 1))
+        for i, num_layer in enumerate(layers):
+            stride = 1 if i == 0 else 2
+            self.features.add(self._make_layer(channels, num_layer, stride, last_gamma, use_se,
+                                               False if i == 0 else avg_down, i + 1,
+                                               norm_layer=norm_layer, norm_kwargs=norm_kwargs))
+            channels *= 2
+        self.features.add(nn.GlobalAvgPool2D())
+
+        self.output = nn.Dense(classes)
 
     def _make_layer(self, channels, num_layers, stride, last_gamma, use_se, avg_down, stage_index,
                     norm_layer=BatchNorm, norm_kwargs=None):
-        layer = nn.HybridSequential(prefix='stage%d_' % stage_index)
-        with layer.name_scope():
+        layer = nn.HybridSequential()
+        layer.add(Block(channels, self.cardinality, self.bottleneck_width,
+                        stride, True, last_gamma=last_gamma, use_se=use_se, avg_down=avg_down,
+                        norm_layer=norm_layer, norm_kwargs=norm_kwargs))
+        for _ in range(num_layers - 1):
             layer.add(Block(channels, self.cardinality, self.bottleneck_width,
-                            stride, True, last_gamma=last_gamma, use_se=use_se, avg_down=avg_down,
-                            prefix='', norm_layer=norm_layer, norm_kwargs=norm_kwargs))
-            for _ in range(num_layers - 1):
-                layer.add(Block(channels, self.cardinality, self.bottleneck_width,
-                                1, False, last_gamma=last_gamma, use_se=use_se, prefix='',
-                                norm_layer=norm_layer, norm_kwargs=norm_kwargs))
+                            1, False, last_gamma=last_gamma, use_se=use_se,
+                            norm_layer=norm_layer, norm_kwargs=norm_kwargs))
         return layer
 
     # pylint: disable=unused-argument
-    def hybrid_forward(self, F, x):
+    def forward(self, x):
         x = self.features(x)
         x = self.output(x)
 

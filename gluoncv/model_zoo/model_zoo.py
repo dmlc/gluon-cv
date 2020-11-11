@@ -25,7 +25,7 @@ from .residual_attentionnet import *
 from .resnet import *
 from .resnest import *
 from .resnetv1b import *
-# from .resnext import *
+from .resnext import *
 # from .senet import *
 # from .simple_pose.simple_pose_resnet import *
 # from .simple_pose.mobile_pose import *
@@ -212,14 +212,14 @@ _models = {
     'resnet50_v1s': resnet50_v1s,
     'resnet101_v1s': resnet101_v1s,
     'resnet152_v1s': resnet152_v1s,
-    # 'resnext50_32x4d': resnext50_32x4d,
-    # 'resnext101_32x4d': resnext101_32x4d,
-    # 'resnext101_64x4d': resnext101_64x4d,
-    # 'resnext101b_64x4d': resnext101e_64x4d,
-    # 'se_resnext50_32x4d': se_resnext50_32x4d,
-    # 'se_resnext101_32x4d': se_resnext101_32x4d,
-    # 'se_resnext101_64x4d': se_resnext101_64x4d,
-    # 'se_resnext101e_64x4d': se_resnext101e_64x4d,
+    'resnext50_32x4d': resnext50_32x4d,
+    'resnext101_32x4d': resnext101_32x4d,
+    'resnext101_64x4d': resnext101_64x4d,
+    'resnext101b_64x4d': resnext101e_64x4d,
+    'se_resnext50_32x4d': se_resnext50_32x4d,
+    'se_resnext101_32x4d': se_resnext101_32x4d,
+    'se_resnext101_64x4d': se_resnext101_64x4d,
+    'se_resnext101e_64x4d': se_resnext101e_64x4d,
     # 'senet_154': senet_154,
     # 'senet_154e': senet_154e,
     # 'darknet53': darknet53,
