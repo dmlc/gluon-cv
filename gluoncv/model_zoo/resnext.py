@@ -191,7 +191,7 @@ class ResNext(HybridBlock):
         for i, num_layer in enumerate(layers):
             stride = 1 if i == 0 else 2
             self.features.add(self._make_layer(channels, num_layer, stride, last_gamma, use_se,
-                                               False if i == 0 else avg_down, i + 1,
+                                               False if i == 0 else avg_down,
                                                norm_layer=norm_layer, norm_kwargs=norm_kwargs))
             channels *= 2
         self.features.add(nn.GlobalAvgPool2D())
