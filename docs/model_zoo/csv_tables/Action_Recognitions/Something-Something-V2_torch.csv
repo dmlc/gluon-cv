@@ -1,4 +1,3 @@
 Name,Pretrained,Segment,Clip Length,Top-1,Hashtag,Config
-resnet50_v1b_sthsthv2 [3]_,ImageNet,8,1,,cbb9167b,`config <https://raw.githubusercontent.com/dmlc/gluon-cv/master/scripts/action-recognition/configuration/resnet18_v1b_sthsthv2.yaml>`_
-i3d_resnet50_v1_sthsthv2 [4]_,ImageNet,1,16 (32/2),,e975d989,`config <https://raw.githubusercontent.com/dmlc/gluon-cv/master/scripts/action-recognition/configuration/i3d_resnet50_v1_sthsthv2.yaml>`_
-slowfast_16x8_resnet50_sthsthv2 [8]_,Scratch,1,64 (128/2),,05203231,`config <https://raw.githubusercontent.com/dmlc/gluon-cv/master/scripts/action-recognition/configurationslowfast_16x8_resnet50_sthsthv2.yaml>`_
+resnet50_v1b_sthsthv2 [3]_,ImageNet,8,1,35.16,cbb9167b,`config <https://raw.githubusercontent.com/dmlc/gluon-cv/master/scripts/action-recognition/configuration/resnet18_v1b_sthsthv2.yaml>`_
+i3d_resnet50_v1_sthsthv2 [4]_,ImageNet,1,16 (32/2),49.61,e975d989,`config <https://raw.githubusercontent.com/dmlc/gluon-cv/master/scripts/action-recognition/configuration/i3d_resnet50_v1_sthsthv2.yaml>`_
