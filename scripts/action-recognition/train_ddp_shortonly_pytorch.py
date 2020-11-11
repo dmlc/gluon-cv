@@ -47,6 +47,7 @@ def main_worker(cfg):
                                                                last_epoch=cfg.CONFIG.TRAIN.RESUME_EPOCH)
     else:
         print('Learning rate schedule %s is not supported yet. Please use Step or Cosine.')
+
     if cfg.CONFIG.TRAIN.USE_WARMUP:
         scheduler_warmup = GradualWarmupScheduler(optimizer,
                                                   multiplier=(cfg.CONFIG.TRAIN.WARMUP_END_LR / cfg.CONFIG.TRAIN.LR),

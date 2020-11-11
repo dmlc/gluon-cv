@@ -9,7 +9,7 @@ import torch.optim
 from tensorboardX import SummaryWriter
 
 from gluoncv.torch.model_zoo import get_model
-from gluoncv.torch.utils.model_utils import deploy_model
+from gluoncv.torch.utils.model_utils import deploy_model, load_model
 from gluoncv.torch.data import build_dataloader_test
 from gluoncv.torch.utils.task_utils import test_classification
 from gluoncv.torch.engine.config import get_cfg_defaults
@@ -80,6 +80,9 @@ def main_worker(cfg):
     # create model
     model = get_model(cfg)
     model = deploy_model(model, cfg)
+
+    if cfg.CONFIG.MODEL.LOAD:
+        model, _ = load_model(model, cfg)
 
     # create dataset and dataloader
     test_loader = build_dataloader_test(cfg)

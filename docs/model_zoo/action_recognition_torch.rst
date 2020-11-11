@@ -51,4 +51,3 @@ The following table lists our trained models on Something-Something-V2.
    :header-rows: 1
    :class: tight-table
    :widths: 36 12 10 10 8 12 12
-   
