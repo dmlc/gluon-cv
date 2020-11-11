@@ -132,7 +132,6 @@ def test_imagenet_models():
               'resnest50', 'resnest101', 'resnest200', 'resnest269',
               'resnext50_32x4d', 'resnext101_32x4d', 'resnext101_64x4d',
               'se_resnext50_32x4d', 'se_resnext101_32x4d', 'se_resnext101_64x4d',
-              'resnext101e_64x4d', 'se_resnext101e_64x4d',
               'se_resnet18_v1', 'se_resnet34_v1', 'se_resnet50_v1',
               'se_resnet101_v1', 'se_resnet152_v1',
               'se_resnet18_v2', 'se_resnet34_v2', 'se_resnet50_v2',
