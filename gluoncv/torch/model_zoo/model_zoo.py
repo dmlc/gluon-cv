@@ -41,6 +41,7 @@ _models = {
     'r2plus1d_v1_resnet101_kinetics400': r2plus1d_v1_resnet101_kinetics400,
     'r2plus1d_v1_resnet152_kinetics400': r2plus1d_v1_resnet152_kinetics400,
     'r2plus1d_v2_resnet152_kinetics400': r2plus1d_v2_resnet152_kinetics400,
+    'ircsn_v2_resnet152_f32s2_kinetics400': ircsn_v2_resnet152_f32s2_kinetics400,
     'tpn_resnet50_f8s8_kinetics400': tpn_resnet50_f8s8_kinetics400,
     'tpn_resnet50_f16s4_kinetics400': tpn_resnet50_f16s4_kinetics400,
     'tpn_resnet50_f32s2_kinetics400': tpn_resnet50_f32s2_kinetics400,
