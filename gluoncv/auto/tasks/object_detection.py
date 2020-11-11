@@ -3,7 +3,7 @@
 import time
 import copy
 import logging
-import uuid
+import pickle
 import pprint
 from typing import Union, Tuple
 
@@ -74,9 +74,9 @@ def _train_object_detection(args, reporter):
                 'time': time.time() - tic, 'train_map': -1, 'valid_map': -1}
 
     # TODO: checkpointing needs to be done in a better way
-    unique_checkpoint = 'train_object_detection_' + str(uuid.uuid4()) + '.pkl'
-    estimator.save(unique_checkpoint)
-    result.update({'model_checkpoint': unique_checkpoint})
+    # unique_checkpoint = 'train_object_detection_' + str(uuid.uuid4()) + '.pkl'
+    # estimator.save(unique_checkpoint)
+    result.update({'model_checkpoint': pickle.dumps(estimator)})
     return result
 
 class ObjectDetection(BaseTask):
@@ -256,10 +256,9 @@ class ObjectDetection(BaseTask):
         model_checkpoint = results.get('model_checkpoint', None)
         if model_checkpoint is None:
             raise RuntimeError(f'Unexpected error happened during fit: {pprint.pformat(results, indent=2)}')
-        estimator = self.load(results['model_checkpoint'])
+        estimator = pickle.loads(results['model_checkpoint'])
         return estimator
 
-    @property
     def fit_summary(self):
         return copy.copy(self._fit_summary)
 

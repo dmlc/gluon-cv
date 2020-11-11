@@ -2,9 +2,9 @@
 # pylint: disable=bad-whitespace,missing-class-docstring
 import logging
 import copy
-import uuid
 import time
 import pprint
+import pickle
 from typing import Union, Tuple
 
 from autocfg import dataclass
@@ -76,9 +76,9 @@ def _train_image_classification(args, reporter):
                 'time': time.time() - tic, 'train_acc': -1, 'valid_acc': -1}
 
     # TODO: checkpointing needs to be done in a better way
-    unique_checkpoint = 'train_image_classification_' + str(uuid.uuid4()) + '.pkl'
-    estimator.save(unique_checkpoint)
-    result.update({'model_checkpoint': unique_checkpoint})
+    # unique_checkpoint = 'train_image_classification_' + str(uuid.uuid4()) + '.pkl'
+    # estimator.save(unique_checkpoint)
+    result.update({'model_checkpoint': pickle.dumps(estimator)})
     return result
 
 
@@ -256,10 +256,9 @@ class ImageClassification(BaseTask):
         model_checkpoint = results.get('model_checkpoint', None)
         if model_checkpoint is None:
             raise RuntimeError(f'Unexpected error happened during fit: {pprint.pformat(results, indent=2)}')
-        estimator = self.load(results['model_checkpoint'])
+        estimator = pickle.loads(results['model_checkpoint'])
         return estimator
 
-    @property
     def fit_summary(self):
         return copy.copy(self._fit_summary)
 
