@@ -441,11 +441,14 @@ def resnest50(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
                     avd=True, avd_first=False,
                     use_splat=True, dropblock_prob=0.1,
                     **kwargs)
-    from ..data import ImageNet1kAttr
-    attrib = ImageNet1kAttr()
-    model.synset = attrib.synset
-    model.classes = attrib.classes
-    model.classes_long = attrib.classes_long
+    if pretrained:
+        from .model_store import get_model_file
+        model.load_parameters(get_model_file('resnest50', root=root), ctx=ctx)
+        from ..data import ImageNet1kAttr
+        attrib = ImageNet1kAttr()
+        model.synset = attrib.synset
+        model.classes = attrib.classes
+        model.classes_long = attrib.classes_long
     return model
 
 
@@ -504,11 +507,14 @@ def resnest200(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwargs):
     model = ResNeSt(Bottleneck, [3, 24, 36, 3], deep_stem=True, avg_down=True, stem_width=64,
                     avd=True, use_splat=True, dropblock_prob=0.1, final_drop=0.2,
                     **kwargs)
-    from ..data import ImageNet1kAttr
-    attrib = ImageNet1kAttr()
-    model.synset = attrib.synset
-    model.classes = attrib.classes
-    model.classes_long = attrib.classes_long
+    if pretrained:
+        from .model_store import get_model_file
+        model.load_parameters(get_model_file('resnest200', root=root), ctx=ctx)
+        from ..data import ImageNet1kAttr
+        attrib = ImageNet1kAttr()
+        model.synset = attrib.synset
+        model.classes = attrib.classes
+        model.classes_long = attrib.classes_long
     return model
 
 
