@@ -198,7 +198,7 @@ class ResNext(HybridBlock):
 
         self.output = nn.Dense(classes)
 
-    def _make_layer(self, channels, num_layers, stride, last_gamma, use_se, avg_down, stage_index,
+    def _make_layer(self, channels, num_layers, stride, last_gamma, use_se, avg_down,
                     norm_layer=BatchNorm, norm_kwargs=None):
         layer = nn.HybridSequential()
         layer.add(Block(channels, self.cardinality, self.bottleneck_width,
