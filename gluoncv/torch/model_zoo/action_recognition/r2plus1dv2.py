@@ -4,7 +4,6 @@ A Closer Look at Spatiotemporal Convolutions for Action Recognition
 CVPR 2018, https://arxiv.org/abs/1711.11248
 Large-scale weakly-supervised pre-training for video action recognition
 CVPR 2019, https://arxiv.org/abs/1905.00561
-
 """
 import torch
 import torch.nn as nn

@@ -1,13 +1,15 @@
 """
 Video Classification with Channel-Separated Convolutional Networks
 ICCV 2019, https://arxiv.org/abs/1904.02811
+Large-scale weakly-supervised pre-training for video action recognition
+CVPR 2019, https://arxiv.org/abs/1905.00561
 """
-
+# pylint: disable=missing-function-docstring, missing-class-docstring
 import torch
 import torch.nn as nn
 
 
-__all__ = ['ir_csn_resnet152_kinetics400']
+__all__ = ['ResNet_IRCSNv2', 'ircsn_v2_resnet152_f32s2_kinetics400']
 
 
 eps = 1e-3
@@ -18,7 +20,7 @@ class Affine(nn.Module):
     def __init__(self, feature_in):
         super(Affine, self).__init__()
         self.weight = nn.Parameter(torch.randn(feature_in, 1, 1, 1))
-        self.bias = nn.Parameter(torch.randn(feature_in,1, 1, 1))
+        self.bias = nn.Parameter(torch.randn(feature_in, 1, 1, 1))
         self.weight.requires_grad = False
         self.bias.requires_grad = False
 
@@ -27,13 +29,11 @@ class Affine(nn.Module):
         return x
 
 
-class ResNeXtBottleneck(nn.Module):
-    # expansion = 2
-
+class Bottleneck_IRCSNv2(nn.Module):
     def __init__(self, in_planes, planes, stride=1, temporal_stride=1,
                  down_sample=None, expansion=2, temporal_kernel=3, use_affine=True):
 
-        super(ResNeXtBottleneck, self).__init__()
+        super(Bottleneck_IRCSNv2, self).__init__()
         self.expansion = expansion
         self.conv1 = nn.Conv3d(in_planes, planes, kernel_size=(1, 1, 1), bias=False, stride=(1, 1, 1))
 
@@ -87,7 +87,7 @@ class ResNeXtBottleneck(nn.Module):
         return out
 
 
-class ResNeXt(nn.Module):
+class ResNet_IRCSNv2(nn.Module):
     def __init__(self,
                  block,
                  block_nums,
@@ -98,7 +98,7 @@ class ResNeXt(nn.Module):
         self.in_planes = 64
         self.num_classes = num_classes
 
-        super(ResNeXt, self).__init__()
+        super(ResNet_IRCSNv2, self).__init__()
 
         self.conv1 = nn.Conv3d(
             3,
@@ -155,7 +155,7 @@ class ResNeXt(nn.Module):
         layers.append(
             block(in_planes, planes, stride, temporal_stride, down_sample, expansion,
                   temporal_kernel=3, use_affine=self.use_affine))
-        for i in range(1, blocks):
+        for _ in range(1, blocks):
             layers.append(block(planes * expansion, planes, expansion=expansion,
                                 temporal_kernel=3, use_affine=self.use_affine))
 
@@ -182,15 +182,14 @@ class ResNeXt(nn.Module):
         return logits
 
 
-def ir_csn_resnet152_kinetics400(cfg):
-    model = ResNeXt(ResNeXtBottleneck,
-                    num_classes=cfg.CONFIG.DATA.NUM_CLASSES,
-                    block_nums=[3, 8, 36, 3],
-                    use_affine=cfg.CONFIG.MODEL.USE_AFFINE)
+def ircsn_v2_resnet152_f32s2_kinetics400(cfg):
+    model = ResNet_IRCSNv2(Bottleneck_IRCSNv2,
+                           num_classes=cfg.CONFIG.DATA.NUM_CLASSES,
+                           block_nums=[3, 8, 36, 3],
+                           use_affine=cfg.CONFIG.MODEL.USE_AFFINE)
 
     if cfg.CONFIG.MODEL.PRETRAINED:
         from ..model_store import get_model_file
-        model.load_state_dict(torch.load(get_model_file('ir_csn_resnet152_kinetics400',
+        model.load_state_dict(torch.load(get_model_file('ircsn_v2_resnet152_f32s2_kinetics400',
                                                         tag=cfg.CONFIG.MODEL.PRETRAINED)))
-
     return model

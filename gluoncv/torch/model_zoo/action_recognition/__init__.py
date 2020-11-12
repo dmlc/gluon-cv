@@ -7,3 +7,4 @@ from .slowfast import *
 from .r2plus1dv1 import *
 from .r2plus1dv2 import *
 from .tpn import *
+from .ircsnv2 import *
