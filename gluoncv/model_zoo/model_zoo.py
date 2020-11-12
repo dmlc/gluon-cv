@@ -26,7 +26,7 @@ from .resnet import *
 from .resnest import *
 from .resnetv1b import *
 from .resnext import *
-# from .senet import *
+from .senet import *
 # from .simple_pose.simple_pose_resnet import *
 # from .simple_pose.mobile_pose import *
 # from .squeezenet import *
@@ -220,8 +220,8 @@ _models = {
     'se_resnext101_32x4d': se_resnext101_32x4d,
     'se_resnext101_64x4d': se_resnext101_64x4d,
     'se_resnext101e_64x4d': se_resnext101e_64x4d,
-    # 'senet_154': senet_154,
-    # 'senet_154e': senet_154e,
+    'senet_154': senet_154,
+    'senet_154e': senet_154e,
     # 'darknet53': darknet53,
     # 'yolo3_darknet53_coco': yolo3_darknet53_coco,
     # 'yolo3_darknet53_voc': yolo3_darknet53_voc,
