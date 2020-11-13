@@ -356,6 +356,8 @@ class ImageClassificationEstimator(BaseEstimator):
                 y['image'] = x
                 return y
             return pd.concat([_predict_merge(xx) for xx in x['image']]).reset_index(drop=True)
+        elif isinstance(x, (list, tuple)):
+            return pd.concat([self._predict(xx) for xx in x]).reset_index(drop=True)
         else:
             raise ValueError('Input is not supported: {}'.format(type(x)))
         x = x.as_in_context(self.ctx[0])
@@ -397,10 +399,12 @@ class ImageClassificationEstimator(BaseEstimator):
                 y['image'] = x
                 return y
             return pd.concat([_predict_merge(xx) for xx in x['image']]).reset_index(drop=True)
+        elif isinstance(x, (list, tuple)):
+            return pd.concat([self._predict_feature(xx) for xx in x]).reset_index(drop=True)
         else:
             raise ValueError('Input is not supported: {}'.format(type(x)))
         x = x.as_in_context(self.ctx[0])
         feat_net = self._get_feature_net()
-        feat = feat_net(x)[0].asnumpy()
-        df = pd.DataFrame({'image_feature': feat})
+        feat = feat_net(x)[0].asnumpy().flatten()
+        df = pd.DataFrame({'image_feature': [feat]})
         return df
