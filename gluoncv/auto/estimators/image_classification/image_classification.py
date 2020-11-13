@@ -3,6 +3,7 @@
 import time
 import os
 import math
+import copy
 
 import pandas as pd
 import numpy as np
@@ -39,6 +40,7 @@ class ImageClassificationEstimator(BaseEstimator):
         super(ImageClassificationEstimator, self).__init__(config, logger, reporter=reporter, name=None)
         self.last_train = None
         self.input_size = self._cfg.train.input_size
+        self._feature_net = None
 
     def _fit(self, train_data, val_data):
         self._best_acc = 0
@@ -362,4 +364,43 @@ class ImageClassificationEstimator(BaseEstimator):
         ind = nd.topk(pred, k=topK)[0].astype('int').asnumpy().flatten()
         probs = mx.nd.softmax(pred)[0].asnumpy().flatten()
         df = pd.DataFrame([{'class': self.classes[ind[i]], 'score': probs[ind[i]], 'id': ind[i]} for i in range(topK)])
+        return df
+
+    def _get_feature_net(self):
+        """Get the network slice for feature extraction only"""
+        if hasattr(self, '_feature_net') and self._feature_net is not None:
+            return self._feature_net
+        self._feature_net = copy.copy(self.net)
+        fc_layer_found = False
+        for fc_name in ('output', 'fc'):
+            fc_layer = getattr(self._feature_net, fc_name, None)
+            if fc_layer is not None:
+                fc_layer_found = True
+                break
+        if fc_layer_found:
+            self._feature_net.register_child(nn.Identity(), fc_name)
+            super(gluon.Block, self._feature_net).__setattr__(fc_name, nn.Identity())
+        else:
+            raise RuntimeError('Unable to modify the last fc layer in network, (output, fc) expected...')
+        return self._feature_net
+
+    def _predict_feature(self, x):
+        resize = int(math.ceil(self.input_size / self._cfg.train.crop_ratio))
+        if isinstance(x, str):
+            x = transform_eval(mx.image.imread(x), resize_short=resize, crop_size=self.input_size)
+        elif isinstance(x, mx.nd.NDArray):
+            x = transform_eval(x, resize_short=resize, crop_size=self.input_size)
+        elif isinstance(x, pd.DataFrame):
+            assert 'image' in x.columns, "Expect column `image` for input images"
+            def _predict_merge(x):
+                y = self._predict_feature(x)
+                y['image'] = x
+                return y
+            return pd.concat([_predict_merge(xx) for xx in x['image']]).reset_index(drop=True)
+        else:
+            raise ValueError('Input is not supported: {}'.format(type(x)))
+        x = x.as_in_context(self.ctx[0])
+        feat_net = self._get_feature_net()
+        feat = feat_net(x)[0].asnumpy()
+        df = pd.DataFrame({'image_feature': feat})
         return df

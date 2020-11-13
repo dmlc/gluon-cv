@@ -135,6 +135,22 @@ class ObjectDetection(BaseTask):
             raise ValueError('Please specify `nthreads_per_trial` and `ngpus_per_trial` '
                              'given that dist workers are available')
 
+        # fix estimator-transfer relationship
+        estimator = config.get('estimator', None)
+        transfer = config.get('transfer', None)
+        if estimator is not None and transfer is not None:
+            if isintance(transfer, ag.Space):
+                transfer = transfer.data
+            if isinstance(transfer, str):
+                transfer = [transfer]
+            transfer = [t for t in transfer if estimator in t]
+            if not transfer:
+                raise ValueError(f'No matching `transfer` model for {estimator}')
+            if len(transfer) == 1:
+                config['transfer'] = transfer[0]
+            else:
+                config['transfer'] = ag.Categorical(**transfer)
+
         # additional configs
         config['num_workers'] = nthreads_per_trial
         config['gpus'] = [int(i) for i in range(ngpus_per_trial)]
