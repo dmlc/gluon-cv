@@ -8,6 +8,7 @@ GluonCV: a Deep Learning Toolkit for Computer Vision
     install
     model_zoo/index
     tutorials/index
+    tutorials_torch/index
     api/index
     how_to/index
     slides
