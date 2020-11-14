@@ -139,7 +139,7 @@ class ObjectDetection(BaseTask):
         estimator = config.get('estimator', None)
         transfer = config.get('transfer', None)
         if estimator is not None and transfer is not None:
-            if isintance(transfer, ag.Space):
+            if isinstance(transfer, ag.Space):
                 transfer = transfer.data
             if isinstance(transfer, str):
                 transfer = [transfer]
