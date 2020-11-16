@@ -329,7 +329,7 @@ def get_dataloader(net, train_dataset, val_dataset, train_transform, val_transfo
     else:
         im_aspect_ratio = [1.] * len(train_dataset)
     train_sampler = \
-        gcv.nn.sampler.SplitSortedBucketSampler(im_aspect_ratio, batch_size,
+        gcv.data.sampler.SplitSortedBucketSampler(im_aspect_ratio, batch_size,
                                                 num_parts=hvd.size() if args.horovod else 1,
                                                 part_index=hvd.rank() if args.horovod else 0,
                                                 shuffle=True)
