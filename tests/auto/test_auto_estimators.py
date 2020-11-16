@@ -32,6 +32,7 @@ def test_image_classification_estimator():
     assert res.get('valid_acc', 0) > 0
     test_result = est.predict(IMAGE_CLASS_TEST)
     evaluate_result = est.evaluate(IMAGE_CLASS_TEST)
+    feature = est.predict_feature(IMAGE_CLASS_TEST)
 
 def test_center_net_estimator():
     from gluoncv.auto.estimators import CenterNetEstimator
