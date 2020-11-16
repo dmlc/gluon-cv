@@ -16,7 +16,7 @@ from .cifarwideresnet import *
 # from .inception import *
 # from .rcnn.mask_rcnn import *
 from .mobilenet import *
-# from .mobilenetv3 import *
+from .mobilenetv3 import *
 # from .nasnet import *
 # from .pruned_resnet.resnetv1b_pruned import *
 # from .pspnet import *
@@ -100,8 +100,8 @@ _models = {
     'mobilenetv2_0.75': mobilenet_v2_0_75,
     'mobilenetv2_0.5': mobilenet_v2_0_5,
     'mobilenetv2_0.25': mobilenet_v2_0_25,
-    # 'mobilenetv3_large': mobilenet_v3_large,
-    # 'mobilenetv3_small': mobilenet_v3_small,
+    'mobilenetv3_large': mobilenet_v3_large,
+    'mobilenetv3_small': mobilenet_v3_small,
     # 'mobile_pose_resnet18_v1b': mobile_pose_resnet18_v1b,
     # 'mobile_pose_resnet50_v1b': mobile_pose_resnet50_v1b,
     # 'mobile_pose_mobilenet1.0': mobile_pose_mobilenet1_0,
