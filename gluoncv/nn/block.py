@@ -7,7 +7,7 @@ from mxnet import initializer
 from mxnet.gluon import nn, contrib
 from mxnet.gluon.nn import BatchNorm, HybridBlock
 from mxnet import use_np
-mx.npx.set_np
+mx.npx.set_np()
 
 __all__ = ['BatchNormCudnnOff', 'Consensus', 'ReLU6', 'HardSigmoid', 'HardSwish']
 
