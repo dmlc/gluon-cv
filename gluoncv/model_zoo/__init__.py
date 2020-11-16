@@ -30,7 +30,7 @@ from .se_resnet import *
 from .resnet import *
 # from .squeezenet import *
 # from .vgg import *
-# from .mobilenet import *
+from .mobilenet import *
 from .residual_attentionnet import *
 # from .center_net import *
 # from .hrnet import *
