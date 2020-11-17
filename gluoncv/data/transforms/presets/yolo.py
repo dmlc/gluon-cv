@@ -141,13 +141,14 @@ class YOLO3DefaultTrainTransform(object):
 
         # in case network has reset_ctx to gpu
         self._fake_x = mx.nd.zeros((1, 3, height, width))
-        net = copy.deepcopy(net)
-        net.collect_params().reset_ctx(None)
+        old_ctx = list(net.collect_params().values())[0].list_ctx()
+        net.collect_params().reset_ctx(mx.cpu())
         with autograd.train_mode():
             _, self._anchors, self._offsets, self._feat_maps, _, _, _, _ = net(self._fake_x)
         from ....model_zoo.yolo.yolo_target import YOLOV3PrefetchTargetGenerator
         self._target_generator = YOLOV3PrefetchTargetGenerator(
             num_class=len(net.classes), **kwargs)
+        net.collect_params().reset_ctx(old_ctx)
 
     def __call__(self, src, label):
         """Apply transform to training image/label."""
