@@ -1,4 +1,4 @@
-"""3. Getting Started with Pre-trained I3D Models on Kinetcis400
+"""1. Getting Started with Pre-trained I3D Models on Kinetcis400
 ================================================================
 
 `Kinetics400 <https://deepmind.com/research/open-source/kinetics>`_  is an action recognition dataset
@@ -22,69 +22,72 @@ Step by Step
 We will try out a pre-trained I3D model on a single video clip.
 
 First, please follow the `installation guide <../../index.html#installation>`__
-to install ``MXNet`` and ``GluonCV`` if you haven't done so yet.
+to install ``PyTorch`` and ``GluonCV`` if you haven't done so yet.
 """
 
-import matplotlib.pyplot as plt
 import numpy as np
-import mxnet as mx
-from mxnet import gluon, nd, image
-from mxnet.gluon.data.vision import transforms
-from gluoncv.data.transforms import video
-from gluoncv import utils
-from gluoncv.model_zoo import get_model
+import decord
+import torch
+
+from gluoncv.torch.utils.model_utils import download
+from gluoncv.torch.data.transforms.videotransforms import video_transforms, volume_transforms
+from gluoncv.torch.engine.config import get_cfg_defaults
+from gluoncv.torch.model_zoo import get_model
+
 
 ################################################################
-# Then, we download the video and extract a 32-frame clip from it.
+# Then, we download a video and extract a 32-frame clip from it.
 
-from gluoncv.utils.filesystem import try_import_decord
-decord = try_import_decord()
 
 url = 'https://github.com/bryanyzhu/tiny-ucf101/raw/master/abseiling_k400.mp4'
-video_fname = utils.download(url)
+video_fname = download(url)
 vr = decord.VideoReader(video_fname)
 frame_id_list = range(0, 64, 2)
 video_data = vr.get_batch(frame_id_list).asnumpy()
-clip_input = [video_data[vid, :, :, :] for vid, _ in enumerate(frame_id_list)]
+
 
 ################################################################
 # Now we define transformations for the video clip.
-# This transformation function does three things:
-# center crop the image to 224x224 in size,
-# transpose it to ``num_channels*num_frames*height*width``,
-# and normalize with mean and standard deviation calculated across all ImageNet images.
+# This transformation function does four things:
+# (1) resize the shorter side of video clip to short_side_size,
+# (2) center crop the video clip to crop_size x crop_size,
+# (3) transpose the video clip to ``num_channels*num_frames*height*width``,
+# and (4) normalize it with mean and standard deviation calculated across all ImageNet images.
 
-transform_fn = video.VideoGroupValTransform(size=224, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-clip_input = transform_fn(clip_input)
-clip_input = np.stack(clip_input, axis=0)
-clip_input = clip_input.reshape((-1,) + (32, 3, 224, 224))
-clip_input = np.transpose(clip_input, (0, 2, 1, 3, 4))
+
+crop_size = 224
+short_side_size = 256
+transform_fn = video_transforms.Compose([video_transforms.Resize(short_side_size, interpolation='bilinear'),
+                                         video_transforms.CenterCrop(size=(crop_size, crop_size)),
+                                         volume_transforms.ClipToTensor(),
+                                         video_transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
+
+
+clip_input = transform_fn(video_data)
 print('Video data is downloaded and preprocessed.')
 
-################################################################
-# Next, we load a pre-trained I3D model.
-
-model_name = 'i3d_inceptionv1_kinetics400'
-net = get_model(model_name, nclass=400, pretrained=True)
-print('%s model is successfully loaded.' % model_name)
 
 ################################################################
-# Note that if you want to use InceptionV3 series model (i.e., i3d_inceptionv3_kinetics400),
-# please resize the image to have both dimensions larger than 299 (e.g., 340x450) and change input size from 224 to 299
-# in the transform function. Finally, we prepare the video clip and feed it to the model.
+# Next, we load a pre-trained I3D model. Make sure to change the ``pretrained`` in the configuration file to True.
 
-pred = net(nd.array(clip_input))
 
-classes = net.classes
-topK = 5
-ind = nd.topk(pred, k=topK)[0].astype('int')
-print('The input video clip is classified to be')
-for i in range(topK):
-    print('\t[%s], with probability %.3f.'%
-          (classes[ind[i].asscalar()], nd.softmax(pred)[0][ind[i]].asscalar()))
+config_file = './scripts/action-recognition/configuration/i3d_resnet50_v1_kinetics400.yaml'
+cfg = get_cfg_defaults()
+cfg.merge_from_file(config_file)
+model = get_model(cfg)
+print('%s model is successfully loaded.' % cfg.CONFIG.MODEL.NAME)
+
 
 ################################################################
-#
+# Finally, we prepare the video clip and feed it to the model.
+
+
+with torch.no_grad():
+    pred = model(torch.unsqueeze(clip_input, dim=0)).numpy()
+print('The input video clip is classified to be class %d' % (np.argmax(pred)))
+
+
+################################################################
 # We can see that our pre-trained model predicts this video clip
 # to be ``abseiling`` action with high confidence.
 
