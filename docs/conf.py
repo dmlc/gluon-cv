@@ -72,7 +72,8 @@ sphinx_gallery_conf = {
         'tutorials/tracking',
         'tutorials/depth',
         'tutorials/distributed',
-        'tutorials/deployment',],
+        'tutorials/deployment',
+        'tutorials_torch/action_recognition',],
     # path where to save gallery generated examples
     'gallery_dirs': [
         'build/examples_datasets',
@@ -85,7 +86,8 @@ sphinx_gallery_conf = {
         'build/examples_tracking',
         'build/examples_depth',
         'build/examples_distributed',
-        'build/examples_deployment',],
+        'build/examples_deployment',
+        'build/examples_torch_action_recognition'],
 
     'filename_pattern': '.pydisabled',
     'ignore_pattern': 'im2rec.py',
