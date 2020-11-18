@@ -27,7 +27,7 @@ parser.add_argument('--work-dir',
 parser.add_argument('--saved-output',
                     help='output to be saved, relative to working directory. '
                          'it can be either a single file or a directory',
-                    type=str, default='.')
+                    type=str, default='None')
 parser.add_argument('--save-path',
                     help='s3 path where files are saved.',
                     type=str, default='batch/temp/{}'.format(datetime.now().isoformat()))
@@ -131,10 +131,11 @@ def main():
         describeJobsResponse = batch.describe_jobs(jobs=[jobId])
         status = describeJobsResponse['jobs'][0]['status']
         if status == 'SUCCEEDED' or status == 'FAILED':
-            print('=' * 80)
-            print('Job [{} - {}] {}'.format(jobName, jobId, status))
+            print('Output [{}]:\n {}'.format(logStreamName, '=' * 80))
             if logStreamName:
                 startTime = printLogs(logGroupName, logStreamName, startTime) + 1
+            print('=' * 80)
+            print('Job [{} - {}] {}'.format(jobName, jobId, status))
             sys.exit(status == 'FAILED')
 
         elif status == 'RUNNING':
@@ -142,10 +143,10 @@ def main():
             if not running:
                 running = True
                 print('\rJob [{}, {}] is RUNNING.'.format(jobName, jobId))
-                if logStreamName:
-                    print('Output [{}]:\n {}'.format(logStreamName, '=' * 80))
-            if logStreamName:
-                startTime = printLogs(logGroupName, logStreamName, startTime) + 1
+                # if logStreamName:
+            # if logStreamName:
+            #     startTime = printLogs(logGroupName, logStreamName, startTime) + 1
+            print('\rJob [{}, {}] is still RUNNING.'.format(jobName, jobId))
         elif status not in status_set:
             status_set.add(status)
             print('\rJob [%s - %s] is %-9s... %s' % (jobName, jobId, status, spin[spinner % len(spin)]),)

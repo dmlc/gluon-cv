@@ -87,7 +87,7 @@ sphinx_gallery_conf = {
         'build/examples_distributed',
         'build/examples_deployment',],
 
-    'filename_pattern': '.pydisabled',
+    'filename_pattern': '.py',
     'ignore_pattern': 'im2rec.py',
     'expected_failing_examples': [],
 
