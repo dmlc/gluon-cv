@@ -4,65 +4,64 @@ on:
     branches:
     - master
   pull_request_target:
-
 jobs:
-  unittests:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [macos-latest, windows-latest, ubuntu-latest]
-    steps:
-      - name: Checkout repository(For push)
-        if: ${{ github.event_name == 'push' }}
-        uses: actions/checkout@v2
-      - name: Checkout Pull Request Repository(For pull request)
-        if: ${{ github.event_name == 'pull_request' || github.event_name == 'pull_request_target' }}
-        uses: actions/checkout@v2
-        with:
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-          ref: ${{ github.event.pull_request.head.ref }}
-      - name: Setup Miniconda
-        uses: conda-incubator/setup-miniconda@v2.0.0
-        with:
-          auto-update-conda: true
-          python-version: 3.7
-      - name: sanity-check
-        shell: bash -l {0}
-        run: |
-          conda env create -n gluon_cv_lint -f ./tests/pylint.yml
-          conda env update -n gluon-cv-lint -f ./tests/pylint.yml --prune
-          conda activate gluon-cv-lint
-          conda list
-          make clean
-          make pylint
-      - name: unit-test
-        shell: bash -l {0}
-        run: |
-          conda env create -n gluon_cv_py3_test -f tests/py3_mxnet_ci.yml
-          conda env update -n gluon_cv_py3_test -f tests/py3_mxnet_ci.yml --prune
-          conda activate gluon_cv_py3_test
-          conda list
-          export CUDA_VISIBLE_DEVICES=0
-          export KMP_DUPLICATE_LIB_OK=TRUE
-          make clean
-          pip install --upgrade --force-reinstall --no-deps .
-          env
-          export LD_LIBRARY_PATH=/usr/local/cuda-10.0/lib64
-          export MPLBACKEND=Agg
-          export MXNET_CUDNN_AUTOTUNE_DEFAULT=0
-          export TINY_COCO=~/.mxnet/datasets/tiny_coco
-          export TINY_MOTORBIKE=~/.mxnet/datasets/tiny_motorbike
-          mkdir -p $TINY_COCO/annotations
-          curl -s https://gluoncv-ci.s3-us-west-2.amazonaws.com/mini_coco/sub_val.zip --output sub_val.zip
-          unzip -q sub_val.zip -d $TINY_COCO
-          mv $TINY_COCO/sub_val $TINY_COCO/val2017
-          curl -s https://gluoncv-ci.s3-us-west-2.amazonaws.com/mini_coco/instances_val2017_tiny.json --output instances_val2017_tiny.json
-          mv instances_val2017_tiny.json $TINY_COCO/annotations
-          curl -s https://gluoncv-ci.s3-us-west-2.amazonaws.com/tiny_motorbike.zip --output tiny_motorbike.zip 
-          unzip -q tiny_motorbike.zip -d $TINY_MOTORBIKE
-          nosetests --with-timer --timer-ok 5 --timer-warning 20 -x --with-coverage --cover-package gluoncv -v tests/unittests
+  # unittests:
+  #   runs-on: ${{ matrix.os }}
+  #   strategy:
+  #     matrix:
+  #       os: [macos-latest, windows-latest, ubuntu-latest]
+  #   steps:
+  #     - name: Checkout repository(For push)
+  #       if: ${{ github.event_name == 'push' }}
+  #       uses: actions/checkout@v2
+  #     - name: Checkout Pull Request Repository(For pull request)
+  #       if: ${{ github.event_name == 'pull_request' || github.event_name == 'pull_request_target' }}
+  #       uses: actions/checkout@v2
+  #       with:
+  #         repository: ${{ github.event.pull_request.head.repo.full_name }}
+  #         ref: ${{ github.event.pull_request.head.ref }}
+  #     - name: Setup Miniconda
+  #       uses: conda-incubator/setup-miniconda@v2.0.0
+  #       with:
+  #         auto-update-conda: true
+  #         python-version: 3.7
+  #     - name: sanity-check
+  #       shell: bash -l {0}
+  #       run: |
+  #         conda env create -n gluon_cv_lint -f ./tests/pylint.yml
+  #         conda env update -n gluon-cv-lint -f ./tests/pylint.yml --prune
+  #         conda activate gluon-cv-lint
+  #         conda list
+  #         make clean
+  #         make pylint
+  #     - name: unit-test
+  #       shell: bash -l {0}
+  #       run: |
+  #         conda env create -n gluon_cv_py3_test -f tests/py3_mxnet_ci.yml
+  #         conda env update -n gluon_cv_py3_test -f tests/py3_mxnet_ci.yml --prune
+  #         conda activate gluon_cv_py3_test
+  #         conda list
+  #         export CUDA_VISIBLE_DEVICES=0
+  #         export KMP_DUPLICATE_LIB_OK=TRUE
+  #         make clean
+  #         pip install --upgrade --force-reinstall --no-deps .
+  #         env
+  #         export LD_LIBRARY_PATH=/usr/local/cuda-10.0/lib64
+  #         export MPLBACKEND=Agg
+  #         export MXNET_CUDNN_AUTOTUNE_DEFAULT=0
+  #         export TINY_COCO=~/.mxnet/datasets/tiny_coco
+  #         export TINY_MOTORBIKE=~/.mxnet/datasets/tiny_motorbike
+  #         mkdir -p $TINY_COCO/annotations
+  #         curl -s https://gluoncv-ci.s3-us-west-2.amazonaws.com/mini_coco/sub_val.zip --output sub_val.zip
+  #         unzip -q sub_val.zip -d $TINY_COCO
+  #         mv $TINY_COCO/sub_val $TINY_COCO/val2017
+  #         curl -s https://gluoncv-ci.s3-us-west-2.amazonaws.com/mini_coco/instances_val2017_tiny.json --output instances_val2017_tiny.json
+  #         mv instances_val2017_tiny.json $TINY_COCO/annotations
+  #         curl -s https://gluoncv-ci.s3-us-west-2.amazonaws.com/tiny_motorbike.zip --output tiny_motorbike.zip 
+  #         unzip -q tiny_motorbike.zip -d $TINY_MOTORBIKE
+  #         nosetests --with-timer --timer-ok 5 --timer-warning 20 -x --with-coverage --cover-package gluoncv -v tests/unittests
   model_zoo_mxnet:
-    needs: unittests
+    # needs: unittests
     runs-on: ubuntu-latest
     steps:
       - name: checkout
@@ -84,7 +83,7 @@ jobs:
           echo "Start submitting job"
           python ./tools/batch/submit-job.py --region us-east-1 \
                                              --job-type g4dn.4x \
-                                             --name GluonCV-GPU-Test-${{ github.ref }} \
+                                             --name GluonCV-GPU-ModelZooMxnet-${{ github.ref }} \
                                              --source-ref ${{ github.ref }} \
                                              --work-dir tests \
                                              --remote https://github.com/${{ github.repository }} \
@@ -96,14 +95,14 @@ jobs:
           echo "Start submitting job"
           python ./tools/batch/submit-job.py --region us-east-1 \
                                              --job-type g4dn.4x \
-                                             --name GluonCV-GPU-Test-PR#${{ github.event.number }} \
+                                             --name GluonCV-GPU-ModelZooMxnet-PR#${{ github.event.number }} \
                                              --source-ref ${{ github.event.pull_request.head.ref }} \
                                              --work-dir tests \
                                              --remote https://github.com/${{ github.event.pull_request.head.repo.full_name }} \
                                              --command "export MXNET_CUDNN_AUTOTUNE_DEFAULT=0 && export MPLBACKEND=Agg && export KMP_DUPLICATE_LIB_OK=TRUE && nosetests --with-timer --timer-ok 5 --timer-warning 20 -x --with-coverage --cover-package gluoncv -v model_zoo" \
                                              --wait
   model_zoo_torch:
-    needs: unittests
+    # needs: unittests
     runs-on: ubuntu-latest
     steps:
       - name: checkout
@@ -125,7 +124,7 @@ jobs:
           echo "Start submitting job"
           python ./tools/batch/submit-job.py --region us-east-1 \
                                              --job-type g4dn.12x \
-                                             --name GluonCV-GPU-Test-${{ github.ref }} \
+                                             --name GluonCV-GPU-ModelZooTorch-${{ github.ref }} \
                                              --source-ref ${{ github.ref }} \
                                              --work-dir tests \
                                              --remote https://github.com/${{ github.repository }} \
@@ -137,64 +136,64 @@ jobs:
           echo "Start submitting job"
           python ./tools/batch/submit-job.py --region us-east-1 \
                                              --job-type g4dn.12x \
-                                             --name GluonCV-GPU-Test-PR#${{ github.event.number }} \
+                                             --name GluonCV-GPU-ModelZooTorch-PR#${{ github.event.number }} \
                                              --source-ref ${{ github.event.pull_request.head.ref }} \
                                              --work-dir tests \
                                              --remote https://github.com/${{ github.event.pull_request.head.repo.full_name }} \
                                              --command "export MXNET_CUDNN_AUTOTUNE_DEFAULT=0 && export MPLBACKEND=Agg && export KMP_DUPLICATE_LIB_OK=TRUE && nosetests --with-timer --timer-ok 5 --timer-warning 20 -x --with-coverage --cover-package gluoncv/torch -v model_zoo_torch" \
                                              --wait
-  build-docs:
-    needs: [unittests, model_zoo_mxnet, model_zoo_torch]
-    runs-on: ubuntu-latest
-    steps:
-      - name: checkout
-        uses: actions/checkout@v2
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.GLUONCV_DEV_ACCESS_ID }}
-          aws-secret-access-key: ${{ secrets.GLUONCV_DEV_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
-      - name: Install dependencies
-        run: |
-          pip install --upgrade --force-reinstall --no-deps .
-          pip install boto3
-      - name: Set outputs
-        id: vars
-        run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
-      - name: Build docs on AWS Batch(For push)
-        shell: bash -l {0}
-        if: ${{ github.event_name == 'push' }}
-        run: |
-          echo "Start submitting job"
-          python ./tools/batch/submit-job.py --region us-east-1 \
-                                             --job-type g4dn.4x \
-                                             --name GluonCV-GPU-BuildDocs-${{ github.ref }} \
-                                             --source-ref ${{ github.ref }} \
-                                             --work-dir . \
-                                             --remote https://github.com/${{ github.repository }} \
-                                             --command "chmod +x ./.github/workflows/build_docs.sh && ./.github/workflows/build_docs.sh ${{ github.ref }} ${{ github.event.number }} ${{ steps.vars.outputs.sha_short }}" \
-                                             --wait
-      - name: Build docs on AWS Batch(For pull request)
-        if: ${{ github.event_name == 'pull_request' || github.event_name == 'pull_request_target' }}
-        run: |
-          echo "Start submitting job"
-          python ./tools/batch/submit-job.py --region us-east-1 \
-                                             --job-type g4dn.4x \
-                                             --name GluonCV-GPU-BuildDocs-PR#${{ github.event.number }} \
-                                             --source-ref ${{ github.event.pull_request.head.ref }} \
-                                             --work-dir . \
-                                             --remote https://github.com/${{ github.event.pull_request.head.repo.full_name }} \
-                                             --command "chmod +x ./.github/workflows/build_docs.sh && ./.github/workflows/build_docs.sh ${{ github.event.pull_request.head.ref }} ${{ github.event.number }} ${{ steps.vars.outputs.sha_short }}" \
-                                             --wait
-      - name: Comment on PR
-        if: ${{ github.event_name == 'pull_request' || github.event_name == 'pull_request_target' }}
-        uses: peter-evans/create-or-update-comment@v1.4.3
-        with:
-          issue-number: ${{ github.event.number }}
-          body: |
-            Job ${{ github.event.number }}-${{ steps.vars.outputs.sha_short }} is done. 
-            Docs are uploaded to http://gluon-vision-staging.s3-website-us-west-2.amazonaws.com/${{ github.event.number }}/${{ steps.vars.outputs.sha_short }}/index.html 
+  # build-docs:
+  #   needs: [unittests, model_zoo_mxnet, model_zoo_torch]
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: checkout
+  #       uses: actions/checkout@v2
+  #     - name: Configure AWS Credentials
+  #       uses: aws-actions/configure-aws-credentials@v1
+  #       with:
+  #         aws-access-key-id: ${{ secrets.GLUONCV_DEV_ACCESS_ID }}
+  #         aws-secret-access-key: ${{ secrets.GLUONCV_DEV_SECRET_ACCESS_KEY }}
+  #         aws-region: us-east-1
+  #     - name: Install dependencies
+  #       run: |
+  #         pip install --upgrade --force-reinstall --no-deps .
+  #         pip install boto3
+  #     - name: Set SHA outputs
+  #       id: vars
+  #       run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+  #     - name: Build docs on AWS Batch(For push)
+  #       shell: bash -l {0}
+  #       if: ${{ github.event_name == 'push' }}
+  #       run: |
+  #         echo "Start submitting job"
+  #         python ./tools/batch/submit-job.py --region us-east-1 \
+  #                                            --job-type g4dn.4x \
+  #                                            --name GluonCV-GPU-BuildDocs-${{ github.ref }} \
+  #                                            --source-ref ${{ github.ref }} \
+  #                                            --work-dir . \
+  #                                            --remote https://github.com/${{ github.repository }} \
+  #                                            --command "chmod +x ./.github/workflows/build_docs.sh && ./.github/workflows/build_docs.sh ${{ github.ref }} ${{ github.event.number }} ${{ steps.vars.outputs.sha_short }}" \
+  #                                            --wait
+  #     - name: Build docs on AWS Batch(For pull request)
+  #       if: ${{ github.event_name == 'pull_request' || github.event_name == 'pull_request_target' }}
+  #       run: |
+  #         echo "Start submitting job"
+  #         python ./tools/batch/submit-job.py --region us-east-1 \
+  #                                            --job-type g4dn.4x \
+  #                                            --name GluonCV-GPU-BuildDocs-PR#${{ github.event.number }} \
+  #                                            --source-ref ${{ github.event.pull_request.head.ref }} \
+  #                                            --work-dir . \
+  #                                            --remote https://github.com/${{ github.event.pull_request.head.repo.full_name }} \
+  #                                            --command "chmod +x ./.github/workflows/build_docs.sh && ./.github/workflows/build_docs.sh ${{ github.event.pull_request.head.ref }} ${{ github.event.number }} ${{ steps.vars.outputs.sha_short }}" \
+  #                                            --wait
+  #     - name: Comment on PR
+  #       if: ${{ github.event_name == 'pull_request' || github.event_name == 'pull_request_target' }}
+  #       uses: peter-evans/create-or-update-comment@v1.4.3
+  #       with:
+  #         issue-number: ${{ github.event.number }}
+  #         body: |
+  #           Job ${{ github.event.number }}-${{ steps.vars.outputs.sha_short }} is done. 
+  #           Docs are uploaded to http://gluon-vision-staging.s3-website-us-west-2.amazonaws.com/${{ github.event.number }}/${{ steps.vars.outputs.sha_short }}/index.html 
 
 
               
