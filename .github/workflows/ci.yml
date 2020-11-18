@@ -82,7 +82,7 @@ jobs:
         run: |
           echo "Start submitting job"
           python ./tools/batch/submit-job.py --region us-east-1 \
-                                             --job-type g4dn.4x \
+                                             --job-type p3.2x \
                                              --name GluonCV-GPU-ModelZooMxnet-${{ github.ref }} \
                                              --source-ref ${{ github.ref }} \
                                              --work-dir tests \
@@ -94,7 +94,7 @@ jobs:
         run: |
           echo "Start submitting job"
           python ./tools/batch/submit-job.py --region us-east-1 \
-                                             --job-type g4dn.4x \
+                                             --job-type p3.2x \
                                              --name GluonCV-GPU-ModelZooMxnet-PR#${{ github.event.number }} \
                                              --source-ref ${{ github.event.pull_request.head.ref }} \
                                              --work-dir tests \
@@ -123,7 +123,7 @@ jobs:
         run: |
           echo "Start submitting job"
           python ./tools/batch/submit-job.py --region us-east-1 \
-                                             --job-type g4dn.12x \
+                                             --job-type p3.2x \
                                              --name GluonCV-GPU-ModelZooTorch-${{ github.ref }} \
                                              --source-ref ${{ github.ref }} \
                                              --work-dir tests \
@@ -135,7 +135,7 @@ jobs:
         run: |
           echo "Start submitting job"
           python ./tools/batch/submit-job.py --region us-east-1 \
-                                             --job-type g4dn.12x \
+                                             --job-type p3.2x \
                                              --name GluonCV-GPU-ModelZooTorch-PR#${{ github.event.number }} \
                                              --source-ref ${{ github.event.pull_request.head.ref }} \
                                              --work-dir tests \
@@ -196,4 +196,4 @@ jobs:
   #           Docs are uploaded to http://gluon-vision-staging.s3-website-us-west-2.amazonaws.com/${{ github.event.number }}/${{ steps.vars.outputs.sha_short }}/index.html 
 
 
-              
+                        
