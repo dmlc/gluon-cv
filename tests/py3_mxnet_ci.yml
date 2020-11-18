@@ -16,7 +16,7 @@ dependencies:
   - tqdm
   - pillow
   - pip:
-    - https://repo.mxnet.io/dist/python/cu100mkl/mxnet_cu100mkl-1.6.0b20191010-py2.py3-none-manylinux1_x86_64.whl
+    - mxnet
     - coverage-badge
     - awscli
     - nose-timer
@@ -24,3 +24,4 @@ dependencies:
     - git+https://github.com/zhanghang1989/detail-api.git#subdirectory=PythonAPI
     - portalocker
     - autocfg
+    - boto3 

@@ -6,11 +6,11 @@ dependencies:
 - numpy
 - matplotlib
 - sphinx_rtd_theme
-- pip=19.1.1
+- pip=20.2
 - pip:
   - https://github.com/mli/mx-theme/tarball/0.3.1
   - sphinx-gallery
-  - https://repo.mxnet.io/dist/python/cu100mkl/mxnet_cu100mkl-1.6.0b20191010-py2.py3-none-manylinux1_x86_64.whl
+  - mxnet
   # - guzzle_sphinx_theme
   - recommonmark
   - Image

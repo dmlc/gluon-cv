@@ -223,6 +223,7 @@ class FasterRCNN(RCNN):
             raise ValueError("`minimal_opset` enabled, target generator is not available")
         if not isinstance(self._target_generator, mx.gluon.Block):
             self._target_generator = self._target_generator()
+            self._target_generator.initialize()
         return self._target_generator
 
     def reset_class(self, classes, reuse_weights=None):
