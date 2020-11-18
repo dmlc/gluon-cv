@@ -24,7 +24,7 @@ sed -i.bak 's/33\\,150\\,243/23\\,141\\,201/g' build/html/_static/material-desig
 sed -i.bak 's/2196f3/178dc9/g' build/html/_static/sphinx_materialdesign_theme.css;
 sed -i.bak 's/pre{padding:1rem;margin:1.5rem\\s0;overflow:auto;overflow-y:hidden}/pre{padding:1rem;margin:1.5rem 0;overflow:auto;overflow-y:scroll}/g' build/html/_static/sphinx_materialdesign_theme.css
 
-if [[ $BRANCH == master ]]; then
+if [[ ($BRANCH == master) && (-z "$PR_NUMBER") ]]; then
 	# aws s3 cp s3://gluon-cv.mxnet.io/coverage.svg build/html/coverage.svg
 	aws s3 sync --delete build/html/ s3://gluoncv-ci/build_docs/master/ --acl public-read --cache-control max-age=7200
 	# aws s3 cp build/html/coverage.svg s3://gluon-cv.mxnet.io/coverage.svg --acl public-read --cache-control max-age=300
