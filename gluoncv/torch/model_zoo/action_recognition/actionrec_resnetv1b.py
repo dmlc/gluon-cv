@@ -9,7 +9,7 @@ import torchvision
 
 __all__ = ['ActionRecResNetV1b', 'resnet18_v1b_kinetics400', 'resnet34_v1b_kinetics400',
            'resnet50_v1b_kinetics400', 'resnet101_v1b_kinetics400', 'resnet152_v1b_kinetics400',
-           'resnet50_v1b_sthsthv2']
+           'resnet50_v1b_sthsthv2', 'resnet50_v1b_custom']
 
 
 class ActionRecResNetV1b(nn.Module):
@@ -216,4 +216,28 @@ def resnet50_v1b_sthsthv2(cfg):
         from ..model_store import get_model_file
         model.load_state_dict(torch.load(get_model_file('resnet50_v1b_sthsthv2',
                                                         tag=cfg.CONFIG.MODEL.PRETRAINED)))
+    return model
+
+
+def resnet50_v1b_custom(cfg):
+    model = ActionRecResNetV1b(depth=50,
+                               num_classes=cfg.CONFIG.DATA.NUM_CLASSES,
+                               pretrained_base=cfg.CONFIG.MODEL.PRETRAINED_BASE,
+                               partial_bn=cfg.CONFIG.MODEL.PARTIAL_BN,
+                               num_segment=cfg.CONFIG.DATA.NUM_SEGMENT,
+                               num_crop=cfg.CONFIG.DATA.NUM_CROP,
+                               dropout_ratio=0.5,
+                               init_std=0.01)
+
+    if cfg.CONFIG.MODEL.PRETRAINED:
+        from ..model_store import get_model_file
+        state_dict = torch.load(get_model_file('resnet50_v1b_kinetics400', tag=cfg.CONFIG.MODEL.PRETRAINED))
+        for k in list(state_dict.keys()):
+            # retain only backbone up to before the classification layer
+            if k.startswith('fc'):
+                del state_dict[k]
+
+        msg = model.load_state_dict(state_dict, strict=False)
+        assert set(msg.missing_keys) == {'fc.weight', 'fc.bias'}
+        print("=> initialized from a ResNet50 model pretrained on Kinetcis400 dataset")
     return model
