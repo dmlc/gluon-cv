@@ -218,7 +218,7 @@ class ImageClassificationEstimator(BaseEstimator):
         elif isinstance(self._cfg.img_cls.model, gluon.Block):
             self.net = self._cfg.img_cls.model
             model_name = ''
-            self.input_size = self._cfg.train.input_size
+            self.input_size = input_size = self._cfg.train.input_size
         else:
             raise ValueError('Expected `model_name` to be (str, gluon.Block), given {}'.format(
                 type(self._cfg.img_cls.model)))
