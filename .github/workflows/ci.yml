@@ -87,7 +87,7 @@ jobs:
   #                                            --source-ref ${{ github.ref }} \
   #                                            --work-dir tests \
   #                                            --remote https://github.com/${{ github.repository }} \
-  #                                            --command "export MXNET_CUDNN_AUTOTUNE_DEFAULT=0 && export MPLBACKEND=Agg && export KMP_DUPLICATE_LIB_OK=TRUE && nosetests --with-timer --timer-ok 5 --timer-warning 20 -x --with-coverage --cover-package gluoncv -v model_zoo" \
+  #                                            --command "chmod +x ./.github/workflows/gpu_test.sh && ./.github/workflows/gpu_test.sh gluoncv tests/model_zoo" \
   #                                            --wait
   #     - name: Test model_zoo_mxnet on AWS Batch(For pull request)
   #       if: ${{ github.event_name == 'pull_request' || github.event_name == 'pull_request_target' }}
@@ -99,7 +99,7 @@ jobs:
   #                                            --source-ref ${{ github.event.pull_request.head.ref }} \
   #                                            --work-dir tests \
   #                                            --remote https://github.com/${{ github.event.pull_request.head.repo.full_name }} \
-  #                                            --command "export MXNET_CUDNN_AUTOTUNE_DEFAULT=0 && export MPLBACKEND=Agg && export KMP_DUPLICATE_LIB_OK=TRUE && nosetests --with-timer --timer-ok 5 --timer-warning 20 -x --with-coverage --cover-package gluoncv -v model_zoo" \
+  #                                            --command "chmod +x ./.github/workflows/gpu_test.sh && ./.github/workflows/gpu_test.sh gluoncv tests/model_zoo" \
   #                                            --wait
   # model_zoo_torch:
   #   needs: unittests
@@ -128,7 +128,7 @@ jobs:
   #                                            --source-ref ${{ github.ref }} \
   #                                            --work-dir tests \
   #                                            --remote https://github.com/${{ github.repository }} \
-  #                                            --command "export MXNET_CUDNN_AUTOTUNE_DEFAULT=0 && export MPLBACKEND=Agg && export KMP_DUPLICATE_LIB_OK=TRUE && nosetests --with-timer --timer-ok 5 --timer-warning 20 -x --with-coverage --cover-package gluoncv/torch -v model_zoo_torch" \
+  #                                            --command "chmod +x ./.github/workflows/gpu_test.sh && ./.github/workflows/gpu_test.sh gluoncv/torch tests/model_zoo_torch" \
   #                                            --wait
   #     - name: Test model_zoo_torch on AWS Batch(For pull request)
   #       if: ${{ github.event_name == 'pull_request' || github.event_name == 'pull_request_target' }}
@@ -140,7 +140,7 @@ jobs:
   #                                            --source-ref ${{ github.event.pull_request.head.ref }} \
   #                                            --work-dir tests \
   #                                            --remote https://github.com/${{ github.event.pull_request.head.repo.full_name }} \
-  #                                            --command "export MXNET_CUDNN_AUTOTUNE_DEFAULT=0 && export MPLBACKEND=Agg && export KMP_DUPLICATE_LIB_OK=TRUE && nosetests --with-timer --timer-ok 5 --timer-warning 20 -x --with-coverage --cover-package gluoncv/torch -v model_zoo_torch" \
+  #                                            --command "chmod +x ./.github/workflows/gpu_test.sh && ./.github/workflows/gpu_test.sh gluoncv/torch tests/model_zoo_torch" \
   #                                            --wait
   auto:
     # needs: unittests
@@ -167,9 +167,9 @@ jobs:
                                              --job-type p3.2x \
                                              --name GluonCV-GPU-Auto-${{ github.ref }} \
                                              --source-ref ${{ github.ref }} \
-                                             --work-dir tests \
+                                             --work-dir . \
                                              --remote https://github.com/${{ github.repository }} \
-                                             --command "export MXNET_CUDNN_AUTOTUNE_DEFAULT=0 && export MPLBACKEND=Agg && export KMP_DUPLICATE_LIB_OK=TRUE && nosetests --with-timer --timer-ok 5 --timer-warning 20 -x --with-coverage --cover-package gluoncv/torch -v auto" \
+                                             --command "chmod +x ./.github/workflows/gpu_test.sh && ./.github/workflows/gpu_test.sh gluoncv tests/auto" \
                                              --wait
       - name: Test model_zoo_torch on AWS Batch(For pull request)
         if: ${{ github.event_name == 'pull_request' || github.event_name == 'pull_request_target' }}
@@ -179,9 +179,9 @@ jobs:
                                              --job-type p3.2x \
                                              --name GluonCV-GPU-Auto-PR#${{ github.event.number }} \
                                              --source-ref ${{ github.event.pull_request.head.ref }} \
-                                             --work-dir tests \
+                                             --work-dir . \
                                              --remote https://github.com/${{ github.event.pull_request.head.repo.full_name }} \
-                                             --command "export MXNET_CUDNN_AUTOTUNE_DEFAULT=0 && export MPLBACKEND=Agg && export KMP_DUPLICATE_LIB_OK=TRUE && nosetests --with-timer --timer-ok 5 --timer-warning 20 -x --with-coverage --cover-package gluoncv/torch -v auto" \
+                                             --command "chmod +x ./.github/workflows/gpu_test.sh && ./.github/workflows/gpu_test.sh gluoncv tests/auto" \
                                              --wait
   # build-docs:
   #   needs: [unittests, model_zoo_mxnet, model_zoo_torch, auto]
@@ -213,7 +213,7 @@ jobs:
   #                                            --source-ref ${{ github.ref }} \
   #                                            --work-dir . \
   #                                            --remote https://github.com/${{ github.repository }} \
-  #                                            --command "chmod +x ./.github/workflows/build_docs.sh && ./.github/workflows/build_docs.sh ${{ github.ref }} ${{ github.event.number }} ${{ steps.vars.outputs.sha_short }}" \
+  #                                            --command "chmod +x ./.github/workflows/build_docs.sh && ./.github/workflows/build_docs.sh ${{ github.ref }} ${{ github.event.number }} ${{ steps.vars.outputs.sha_short }} ${{ github.repository }}" \
   #                                            --wait
   #     - name: Build docs on AWS Batch(For pull request)
   #       if: ${{ github.event_name == 'pull_request' || github.event_name == 'pull_request_target' }}
@@ -225,7 +225,7 @@ jobs:
   #                                            --source-ref ${{ github.event.pull_request.head.ref }} \
   #                                            --work-dir . \
   #                                            --remote https://github.com/${{ github.event.pull_request.head.repo.full_name }} \
-  #                                            --command "chmod +x ./.github/workflows/build_docs.sh && ./.github/workflows/build_docs.sh ${{ github.event.pull_request.head.ref }} ${{ github.event.number }} ${{ steps.vars.outputs.sha_short }}" \
+  #                                            --command "chmod +x ./.github/workflows/build_docs.sh && ./.github/workflows/build_docs.sh ${{ github.event.pull_request.head.ref }} ${{ github.event.number }} ${{ steps.vars.outputs.sha_short }} ${{ github.event.pull_request.head.repo.full_name }}" \
   #                                            --wait
   #     - name: Comment on PR
   #       if: ${{ github.event_name == 'pull_request' || github.event_name == 'pull_request_target' }}
