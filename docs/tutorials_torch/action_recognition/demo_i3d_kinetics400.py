@@ -95,5 +95,5 @@ print('The input video clip is classified to be class %d' % (np.argmax(pred)))
 # Next Step
 # ---------
 #
-# If you would like to dive deeper into training I3D models on ``Kinetics400``,
-# feel free to read the next `tutorial on Kinetics400 <dive_deep_i3d_kinetics400.html>`__.
+# If you would like to dive deeper into finetuing SOTA video models on your datasets,
+# feel free to read the next `tutorial on finetuning <finetune_custom.html>`__.

@@ -15,6 +15,18 @@ Action Recognition
 
         Recognize human actions in real-world videos with pre-trained I3D models
 
+    .. card::
+        :title: Finetuning SOTA Video Models on Your Dataset
+        :link: ../build/examples_torch_action_recognition/finetune_custom.html
+
+        Hands on SOTA video models fine-tuning on your own dataset
+
+    .. card::
+        :title: Extracting video features from pre-trained models
+        :link: ../build/examples_torch_action_recognition/feat_custom.html
+
+        Extracting video features from pre-trained models on your own videos
+
 
 .. toctree::
     :hidden:

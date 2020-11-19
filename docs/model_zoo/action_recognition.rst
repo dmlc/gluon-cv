@@ -59,3 +59,6 @@ Reference
 .. [9] Yang, Ceyuan and Xu, Yinghao and Shi, Jianping and Dai, Bo and Zhou, Bolei. \
        "Temporal Pyramid Network for Action Recognition." \
        In Computer Vision and Pattern Recognition (CVPR), 2020.
+.. [10] Du Tran, Heng Wang, Lorenzo Torresani and Matt Feiszli. \
+       "Video Classification with Channel-Separated Convolutional Networks." \
+       In International Conference on Computer Vision (ICCV), 2019.
