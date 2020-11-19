@@ -202,18 +202,27 @@ class ImageClassificationEstimator(BaseEstimator):
         self.ctx = self.ctx if self.ctx else [mx.cpu()]
 
         # network
-        model_name = self._cfg.img_cls.model.lower()
-        input_size = self.input_size
-        if 'inception' in model_name or 'googlenet' in model_name:
-            self.input_size = 299
-        elif 'resnest101' in model_name:
-            self.input_size = 256
-        elif 'resnest200' in model_name:
-            self.input_size = 320
-        elif 'resnest269' in model_name:
-            self.input_size = 416
-        elif 'cifar' in model_name:
-            self.input_size = 28
+        if isinstance(self._cfg.img_cls.model, str):
+            model_name = self._cfg.img_cls.model.lower()
+            input_size = self.input_size
+            if 'inception' in model_name or 'googlenet' in model_name:
+                self.input_size = 299
+            elif 'resnest101' in model_name:
+                self.input_size = 256
+            elif 'resnest200' in model_name:
+                self.input_size = 320
+            elif 'resnest269' in model_name:
+                self.input_size = 416
+            elif 'cifar' in model_name:
+                self.input_size = 28
+        elif isinstance(self._cfg.img_cls.model, gluon.Block):
+            self.net = self._cfg.img_cls.model
+            model_name = ''
+            self.input_size = self._cfg.train.input_size
+        else:
+            raise ValueError('Expected `model_name` to be (str, gluon.Block), given {}'.format(
+                type(self._cfg.img_cls.model)))
+
 
         if input_size != self.input_size:
             self._logger.info(f'Change input size to {self.input_size}, given model type: {model_name}')
@@ -232,8 +241,9 @@ class ImageClassificationEstimator(BaseEstimator):
         if self._cfg.img_cls.last_gamma:
             kwargs['last_gamma'] = True
 
-        self.net = get_model(model_name, **kwargs)
-        if self._cfg.img_cls.use_pretrained:
+        if self.net is None:
+            self.net = get_model(model_name, **kwargs)
+        if model_name and self._cfg.img_cls.use_pretrained:
             # reset last fully connected layer
             fc_layer_found = False
             for fc_name in ('output', 'fc'):

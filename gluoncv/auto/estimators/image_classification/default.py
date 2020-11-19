@@ -2,10 +2,11 @@
 # pylint: disable=bad-whitespace,missing-class-docstring
 from typing import Union, Tuple
 from autocfg import dataclass, field
+from mxnet import gluon
 
 @dataclass
 class ImageClassification:
-    model : str = 'resnet50_v1'
+    model : Union[str, gluon.Block] = 'resnet50_v1'
     use_pretrained : bool = True
     use_gn : bool = False
     batch_norm : bool = False

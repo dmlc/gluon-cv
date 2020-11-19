@@ -34,6 +34,17 @@ def test_image_classification_estimator():
     evaluate_result = est.evaluate(IMAGE_CLASS_TEST)
     feature = est.predict_feature(IMAGE_CLASS_TEST)
 
+def test_image_classification_estimator_custom_net():
+    from gluoncv.auto.estimators import ImageClassificationEstimator
+    from gluoncv.model_zoo import get_model
+    net = get_model('resnet18_v1')
+    est = ImageClassificationEstimator({'img_cls': {'model': net}, 'train': {'epochs': 1, 'batch_size': 8}, 'gpus': list(range(get_gpu_count()))})
+    res = est.fit(IMAGE_CLASS_DATASET)
+    assert res.get('valid_acc', 0) > 0
+    test_result = est.predict(IMAGE_CLASS_TEST)
+    evaluate_result = est.evaluate(IMAGE_CLASS_TEST)
+    feature = est.predict_feature(IMAGE_CLASS_TEST)
+
 def test_center_net_estimator():
     from gluoncv.auto.estimators import CenterNetEstimator
     est = CenterNetEstimator({'train': {'epochs': 1, 'batch_size': 8}, 'gpus': list(range(get_gpu_count()))})
