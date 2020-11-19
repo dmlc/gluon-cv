@@ -356,4 +356,3 @@ def r2plus1d_v1_resnet50_custom(cfg):
         assert set(msg.missing_keys) == {'fc.weight', 'fc.bias'}
         print("=> initialized from a R2+1D model pretrained on Kinetcis400 dataset")
     return model
-
