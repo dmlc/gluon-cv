@@ -23,7 +23,7 @@ Action Recognition
 
     .. card::
         :title: Extracting video features from pre-trained models
-        :link: ../build/examples_torch_action_recognition/feat_custom.html
+        :link: ../build/examples_torch_action_recognition/extract_feat.html
 
         Extracting video features from pre-trained models on your own videos
 
