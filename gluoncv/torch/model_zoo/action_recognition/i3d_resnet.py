@@ -504,6 +504,10 @@ class I3D_ResNetV1(nn.Module):
         # spatial temporal average
         pooled_feat = self.st_avg(x)
         x = pooled_feat.view(bs, -1)
+
+        if self.feat_ext:
+            return x
+
         x = self.head(x)
         return x
 
