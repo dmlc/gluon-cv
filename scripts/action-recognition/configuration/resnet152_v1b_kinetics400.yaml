@@ -17,9 +17,10 @@ CONFIG:
     EPOCH_NUM: 100
     BATCH_SIZE: 8
     LR: 0.01
-    LR_POLICY: 'Step'
     MOMENTUM: 0.9
-    W_DECAY: 1e-4
+    W_DECAY: 1e-5
+    LR_POLICY: 'Step'
+    USE_WARMUP: False
     LR_MILESTONE: [40, 80]
     STEP: 0.1
 

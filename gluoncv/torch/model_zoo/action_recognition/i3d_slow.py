@@ -15,7 +15,7 @@ from .non_local import build_nonlocal_block
 __all__ = ['ResNet_SlowFast', 'i3d_slow_resnet50_f32s2_kinetics400',
            'i3d_slow_resnet50_f16s4_kinetics400', 'i3d_slow_resnet50_f8s8_kinetics400',
            'i3d_slow_resnet101_f32s2_kinetics400', 'i3d_slow_resnet101_f16s4_kinetics400',
-           'i3d_slow_resnet101_f8s8_kinetics400']
+           'i3d_slow_resnet101_f8s8_kinetics400', 'i3d_slow_resnet50_f32s2_custom']
 
 
 def conv3x3x3(in_planes, out_planes, spatial_stride=1, temporal_stride=1, dilation=1):
@@ -489,4 +489,27 @@ def i3d_slow_resnet101_f8s8_kinetics400(cfg):
         from ..model_store import get_model_file
         model.load_state_dict(torch.load(get_model_file('i3d_slow_resnet101_f8s8_kinetics400',
                                                         tag=cfg.CONFIG.MODEL.PRETRAINED)))
+    return model
+
+
+def i3d_slow_resnet50_f32s2_custom(cfg):
+    model = ResNet_SlowFast(num_classes=cfg.CONFIG.DATA.NUM_CLASSES,
+                            depth=50,
+                            pretrained=cfg.CONFIG.MODEL.PRETRAINED,
+                            pretrained_base=cfg.CONFIG.MODEL.PRETRAINED_BASE,
+                            bn_eval=cfg.CONFIG.MODEL.BN_EVAL,
+                            partial_bn=cfg.CONFIG.MODEL.PARTIAL_BN,
+                            bn_frozen=cfg.CONFIG.MODEL.BN_FROZEN)
+
+    if cfg.CONFIG.MODEL.PRETRAINED:
+        from ..model_store import get_model_file
+        state_dict = torch.load(get_model_file('i3d_slow_resnet50_f32s2_kinetics400', tag=cfg.CONFIG.MODEL.PRETRAINED))
+        for k in list(state_dict.keys()):
+            # retain only backbone up to before the classification layer
+            if k.startswith('fc'):
+                del state_dict[k]
+
+        msg = model.load_state_dict(state_dict, strict=False)
+        assert set(msg.missing_keys) == {'fc.weight', 'fc.bias'}
+        print("=> initialized from a I3D_slow model pretrained on Kinetcis400 dataset")
     return model

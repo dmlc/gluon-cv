@@ -18,7 +18,9 @@ CONFIG:
     BATCH_SIZE: 8
     LR: 0.01
     MOMENTUM: 0.9
-    W_DECAY: 1e-4
+    W_DECAY: 1e-5
+    LR_POLICY: 'Step'
+    USE_WARMUP: False
     LR_MILESTONE: [40, 80]
     STEP: 0.1
 

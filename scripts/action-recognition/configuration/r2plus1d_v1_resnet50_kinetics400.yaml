@@ -18,7 +18,7 @@ CONFIG:
     BATCH_SIZE: 8
     LR: 0.001
     MOMENTUM: 0.9
-    W_DECAY: 1e-4
+    W_DECAY: 1e-5
     USE_WARMUP: True
     WARMUP_EPOCHS: 34
     LR_POLICY: 'Cosine'
