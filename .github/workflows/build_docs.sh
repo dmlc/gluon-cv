@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
 BRANCH=$(basename $1)
-PR_NUMBER=$2
-COMMIT_SHA=$3
-GIT_REPO=$4
+COMMIT_SHA=$2
+GIT_REPO=$3
+PR_NUMBER=$4
 
 EFS=/mnt/efs
 
