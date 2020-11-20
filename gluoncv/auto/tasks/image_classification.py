@@ -66,7 +66,9 @@ def _train_image_classification(args, reporter):
     tic = time.time()
     try:
         estimator_cls = args.pop('estimator', None)
-        estimator = estimator_cls(args, reporter=reporter)
+        assert estimator_cls == ImageClassificationEstimator
+        custom_net = args.pop('custom_net', None)
+        estimator = estimator_cls(args, reporter=reporter, net=custom_net)
         # training
         result = estimator.fit(train_data=train_data, val_data=val_data)
     # pylint: disable=bare-except
@@ -91,7 +93,9 @@ class ImageClassification(BaseTask):
         The configurations, can be nested dict.
     logger : logging.Logger
         The desired logger object, use `None` for module specific logger with default setting.
-
+    net : mx.gluon.Block
+        The custom network. If defined, the model name in config will be ignored so your
+        custom network will be used for training rather than pulling it from model zoo.
     """
     Dataset = ImageClassificationDataset
 
