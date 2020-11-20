@@ -135,9 +135,13 @@ class YOLO3DefaultTrainTransform(object):
         self._mean = mean
         self._std = std
         self._mixup = mixup
-        self._target_generator = None
+        self._internal_target_generator = None
+        self._net_none = False
         if net is None:
+            self._net_none = True
             return
+        self._num_classes = len(net.classes)
+        self._kwargs = kwargs
 
         # in case network has reset_ctx to gpu
         self._fake_x = mx.nd.zeros((1, 3, height, width))
@@ -145,10 +149,20 @@ class YOLO3DefaultTrainTransform(object):
         net.collect_params().reset_ctx(mx.cpu())
         with autograd.train_mode():
             _, self._anchors, self._offsets, self._feat_maps, _, _, _, _ = net(self._fake_x)
-        from ....model_zoo.yolo.yolo_target import YOLOV3PrefetchTargetGenerator
-        self._target_generator = YOLOV3PrefetchTargetGenerator(
-            num_class=len(net.classes), **kwargs)
+        
         net.collect_params().reset_ctx(old_ctx)
+
+    @property
+    def _target_generator(self):
+        if self._internal_target_generator is None:
+            if self._net_none:
+                return None
+            from ....model_zoo.yolo.yolo_target import YOLOV3PrefetchTargetGenerator
+            self._internal_target_generator = YOLOV3PrefetchTargetGenerator(
+                num_class=self._num_classes, **self._kwargs)
+            return self._internal_target_generator
+        else:
+            return self._internal_target_generator
 
     def __call__(self, src, label):
         """Apply transform to training image/label."""

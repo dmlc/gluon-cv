@@ -129,10 +129,19 @@ class CenterNetDefaultTrainTransform(object):
             [-0.5832747, 0.00994535, -0.81221408],
             [-0.56089297, 0.71832671, 0.41158938]
         ], dtype=np.float32)
+        self._internal_target_generator = None
+        self._target_width = width // scale_factor
+        self._target_height = height // scale_factor
 
-        from ....model_zoo.center_net.target_generator import CenterNetTargetGenerator
-        self._target_generator = CenterNetTargetGenerator(
-            num_class, width // scale_factor, height // scale_factor)
+    @property
+    def _target_generator(self):
+        if self._internal_target_generator is None:
+            from ....model_zoo.center_net.target_generator import CenterNetTargetGenerator
+            self._internal_target_generator = CenterNetTargetGenerator(
+                self._num_class, self._target_width, self._target_height)
+            return self._internal_target_generator
+        else:
+            return self._internal_target_generator
 
     def __call__(self, src, label):
         """Apply transform to training image/label."""
