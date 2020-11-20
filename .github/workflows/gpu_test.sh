@@ -7,7 +7,7 @@ EFS=/mnt/efs
 
 mkdir -p ~/.mxnet/models
 for f in $EFS/.mxnet/models/*.params; do
-    ln -s $EFS/.mxnet/models/$f ~/.mxnet/models/$f
+    ln -s $f ~/.mxnet/models/$(basename "$f")
 done
 
 export MXNET_CUDNN_AUTOTUNE_DEFAULT=0 
