@@ -46,12 +46,12 @@ class ImageClassificationEstimator(BaseEstimator):
         self._feature_net = None
         if net is not None:
             assert isinstance(net, gluon.Block), f"given custom network {type(net)}, `gluon.Block` expected"
+            try:
+                # to avoid cuda initialization error, we keep network copies in cpu
+                net.collect_params().reset_ctx(mx.cpu())
+            except ValueError:
+                pass
         self._custom_net = net
-        try:
-            # to avoid cuda initialization error, we keep network copies in cpu
-            self._custom_net.collect_params().reset_ctx(mx.cpu())
-        except ValueError:
-            pass
 
     def _fit(self, train_data, val_data):
         self._best_acc = 0
